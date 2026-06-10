@@ -25,6 +25,7 @@ import { npubToUsername } from '../../helpers/npubToUsername';
 import { formatTimestamp } from '../../helpers/formatTimestamp';
 import { resolveReactionEmoji } from '../../helpers/formatCustomEmojis';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { getZapAmountSats, extractZapMessage, formatNumberWithCommas } from '../../helpers/zapUtils';
 
 export interface NotificationItemOptions {
   event: NostrEvent;
@@ -409,6 +410,7 @@ export class NotificationItem {
     const kTag = this.options.event.tags.find((t: string[]) => t[0] === 'k');
     if (kTag?.[1]) {
       const kind = parseInt(kTag[1]);
+      if (kind === 9735) return 'zap';
       if (kind === 1063) return 'file';
       if (kind === 20) return 'picture';
       if (kind === 21 || kind === 22) return 'video';
@@ -612,7 +614,18 @@ export class NotificationItem {
     // For replies/mentions/thread-replies, fetch the replied-to note for context line ONLY
     // The preview already shows the reply/mention text from getPreviewSync()
     if (this.options.type === 'reply' || this.options.type === 'mention' || this.options.type === 'thread-reply') {
+      const contextElement = this.element.querySelector('.thread-context-content');
+      // Resolve the "Loading…" placeholder in EVERY path — never leave it stuck (e.g. when the
+      // parent event can't be fetched from our read relays, which is common for zap receipts).
+      const hideContext = () => {
+        const item = this.element.querySelector('.thread-context-item');
+        if (item) (item as HTMLElement).style.display = 'none';
+      };
       try {
+        // NIP-22: the reply's own K/k tag names the parent kind without us having to fetch it —
+        // so we can label a zap thread even when the 9735 receipt isn't on our relays.
+        const parentIsZap = this.options.event.tags.some((t: string[]) => (t[0] === 'K' || t[0] === 'k') && t[1] === '9735');
+
         // Find the e-tag referring to the replied-to note.
         // Priority: NIP-10 root marker → NIP-22 root (uppercase E) → NIP-10 reply marker →
         //           NIP-22 parent (lowercase e) / NIP-10 positional fallback.
@@ -621,41 +634,48 @@ export class NotificationItem {
                      this.options.event.tags.find((t: string[]) => t[0] === 'e' && t[3] === 'reply') ||
                      this.options.event.tags.find((t: string[]) => t[0] === 'e');
 
-        if (eTag && eTag[1]) {
-          const originalEvent = await this.fetchOriginalNote(eTag[1]);
-          if (originalEvent && originalEvent.content) {
-            const content = originalEvent.content;
+        const originalEvent = eTag?.[1] ? await this.fetchOriginalNote(eTag[1]) : null;
 
-            // Load profiles from 'p' tags
-            const profiles = new Map();
-            const pTags = originalEvent.tags?.filter((t: string[]) => t[0] === 'p') || [];
-            for (const tag of pTags) {
-              const tagPubkey = tag[1];
-              if (!tagPubkey) continue;
-              try {
-                const profile = await this.userProfileService.getUserProfile(tagPubkey);
-                profiles.set(tagPubkey, profile);
-              } catch {}
-            }
-
-            // Truncate plain text FIRST, THEN resolve mentions with loaded profiles
-            const truncatedPlain = content.length > 150 ? content.slice(0, 150) + '...' : content;
-            const withMentions = npubToUsername(escapeHtml(truncatedPlain), 'html-multi', (hex) => profiles.get(hex) || null);
-
-            // Update context line with replied-to note
-            const contextElement = this.element.querySelector('.thread-context-content');
-            if (contextElement) {
-              contextElement.innerHTML = withMentions;
+        if (parentIsZap || originalEvent?.kind === 9735) {
+          // A zap receipt carries no content. Show "⚡ N sats" if we could fetch it, otherwise a
+          // generic label so the row still reads as a reply to a zap (never "Loading…").
+          if (contextElement) {
+            if (originalEvent?.kind === 9735) {
+              const amount = getZapAmountSats(originalEvent);
+              const msg = extractZapMessage(originalEvent);
+              const msgPart = msg ? ` "${msg.length > 80 ? msg.slice(0, 80) + '…' : msg}"` : '';
+              contextElement.textContent = `⚡ ${formatNumberWithCommas(amount)} sats${msgPart}`;
+            } else {
+              contextElement.textContent = '⚡ a zap';
             }
           }
+        } else if (originalEvent && originalEvent.content) {
+          const content = originalEvent.content;
+
+          // Load profiles from 'p' tags
+          const profiles = new Map();
+          const pTags = originalEvent.tags?.filter((t: string[]) => t[0] === 'p') || [];
+          for (const tag of pTags) {
+            const tagPubkey = tag[1];
+            if (!tagPubkey) continue;
+            try {
+              const profile = await this.userProfileService.getUserProfile(tagPubkey);
+              profiles.set(tagPubkey, profile);
+            } catch {}
+          }
+
+          // Truncate plain text FIRST, THEN resolve mentions with loaded profiles
+          const truncatedPlain = content.length > 150 ? content.slice(0, 150) + '...' : content;
+          const withMentions = npubToUsername(escapeHtml(truncatedPlain), 'html-multi', (hex) => profiles.get(hex) || null);
+
+          if (contextElement) contextElement.innerHTML = withMentions;
+        } else {
+          // Nothing fetchable / no content — drop the placeholder instead of showing "Loading…".
+          hideContext();
         }
       } catch (error) {
         console.warn('Failed to fetch replied-to note:', error);
-        // Hide loading placeholder on error
-        const contextElement = this.element.querySelector('.thread-context-content');
-        if (contextElement) {
-          contextElement.textContent = '';
-        }
+        hideContext();
       }
       return;
     }

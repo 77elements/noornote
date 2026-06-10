@@ -18,6 +18,8 @@ import { truncateNoteContent } from '../../helpers/truncateNoteContent';
 import { encodeNevent } from '../../services/NostrToolsAdapter';
 import { npubToUsername } from '../../helpers/npubToUsername';
 import { escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { extractZapperPubkey, getZapAmountSats, extractZapMessage, formatNumberWithCommas } from '../../helpers/zapUtils';
+import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 export interface ThreadContextIndicatorOptions {
   noteId: string; // The current note (reply) we're showing context for
@@ -138,8 +140,11 @@ export class ThreadContextIndicator {
     item.className = 'thread-context-item';
     item.dataset.eventId = eventId;
 
-    // Get user profile
-    const profile = await this.userProfileService.getUserProfile(pubkey);
+    // For a zap receipt (kind:9735) the event author is the wallet/LNURL server, which has no
+    // profile picture — so resolve the avatar + name to the actual ZAPPER instead.
+    const isZap = kind === 9735;
+    const avatarPubkey = isZap ? extractZapperPubkey({ pubkey, tags, kind } as NostrEvent) : pubkey;
+    const profile = await this.userProfileService.getUserProfile(avatarPubkey);
     const displayName = profile.display_name || profile.name || 'Anonymous';
     const avatarUrl = profile.picture || '';
 
@@ -149,7 +154,16 @@ export class ThreadContextIndicator {
     let previewHtml: string;
     let onClick: (e?: MouseEvent) => void;
 
-    if (isAddressable) {
+    if (isZap) {
+      // Zap receipt has no body — show "⚡ N sats" + optional zap comment; click opens its thread.
+      const synth = { pubkey, tags, kind } as NostrEvent;
+      const msg = extractZapMessage(synth);
+      const msgText = msg ? ` "${msg.length > 80 ? msg.slice(0, 80) + '…' : msg}"` : '';
+      previewHtml = `⚡ ${formatNumberWithCommas(getZapAmountSats(synth))} sats${escapeHtmlAttr(msgText)}`;
+      onClick = (e?: MouseEvent) => {
+        getViewNavigationController().openView('single-note', encodeNevent(eventId), e);
+      };
+    } else if (isAddressable) {
       const titleTag = tags.find(t => t[0] === 'title')?.[1]
                     || tags.find(t => t[0] === 'name')?.[1]
                     || '(untitled)';
