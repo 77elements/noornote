@@ -225,17 +225,17 @@ export class RelayConfig {
     // reduction, so its coverage isn't silently halved on mobile.
     if (isDataSaverEnabled() && !forceFull) {
       return [
-        'wss://relay.damus.io',
+        'wss://nostr.mom',
         'wss://nos.lol',
-        'wss://relay.primal.net',
+        'wss://relay.ditto.pub',
         'wss://noornode.nostr1.com/'
       ];
     }
     return [
-      'wss://relay.damus.io',
+      'wss://nostr.mom',
       'wss://relay.snort.social',
       'wss://nos.lol',
-      'wss://relay.primal.net',
+      'wss://relay.ditto.pub',
       'wss://purplepag.es',
       'wss://relay.mostr.pub',
       'wss://relay.zapstore.dev',

@@ -310,14 +310,16 @@ function generateRandomAvatars(count: number): string[] {
 //     for users who specifically want Mastodon cross-posting, but
 //     shipping them by default ships an opinion most users haven't
 //     formed yet. They can be added manually in Settings → Relays.
-//   - `relay.ditto.pub`, `nostr.mom` — niche / single-instance relays.
+//   - `relay.damus.io`, `relay.primal.net` — removed as defaults 2026-06-10
+//     (relay-operator conduct). Users may still add them manually in Settings.
 //
-// Source for "main four": stats.andotherstuff.org 2026 + cross-checked
-// against nostr.watch reliability metrics.
+// Source: stats.andotherstuff.org 2026 + cross-checked against nostr.watch
+// reliability metrics. nostr.mom + relay.ditto.pub are large, high-uptime
+// general relays (verified to serve reads + accept writes for new accounts).
 const DEFAULT_CONTENT_RELAYS: string[] = [
-  'wss://relay.damus.io',
+  'wss://nostr.mom',
   'wss://nos.lol',
-  'wss://relay.primal.net',
+  'wss://relay.ditto.pub',
   'wss://offchain.pub',
 ];
 

@@ -32,7 +32,7 @@ interface SignedNostrEvent {
  */
 const BROADCAST_RELAYS = [
   // Major relays (high availability)
-  'wss://relay.damus.io',
+  'wss://relay.ditto.pub',
   'wss://nos.lol',
   'wss://relay.nostr.band',
   'wss://relay.snort.social',
@@ -44,7 +44,6 @@ const BROADCAST_RELAYS = [
   'wss://nostr21.com',
   'wss://relayable.org',
   'wss://purplepag.es',
-  'wss://relay.primal.net',
   'wss://nostr.oxtr.dev',
   'wss://relay.nostr.net',
   'wss://nostr.bitcoiner.social',

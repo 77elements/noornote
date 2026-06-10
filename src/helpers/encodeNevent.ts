@@ -8,7 +8,7 @@
  * @returns nostr:nevent string with relay hints
  *
  * @example
- * encodeNevent("abc123...", ["wss://relay.damus.io"], "author123...")
+ * encodeNevent("abc123...", ["wss://relay.example.com"], "author123...")
  * // => "nostr:nevent1qqsabc123..."
  */
 
