@@ -11,5 +11,8 @@ project(':capacitor-filesystem').projectDir = new File('../node_modules/@capacit
 include ':capacitor-local-notifications'
 project(':capacitor-local-notifications').projectDir = new File('../node_modules/@capacitor/local-notifications/android')
 
+include ':capacitor-network'
+project(':capacitor-network').projectDir = new File('../node_modules/@capacitor/network/android')
+
 include ':nostr-signer-capacitor-plugin'
 project(':nostr-signer-capacitor-plugin').projectDir = new File('../node_modules/nostr-signer-capacitor-plugin/android')
