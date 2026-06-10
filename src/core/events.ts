@@ -166,12 +166,11 @@ export interface MutualNotificationNewPayload {
 
 export interface FollowerChangesDetectedPayload {
   newFollowerCount: number;
-  lostFollowerCount: number;
 }
 
 export interface FollowerNotificationNewPayload {
   event: NostrEvent;
-  type: 'follower_new' | 'follower_lost';
+  type: 'follower_new';
 }
 
 // ── Hashtag ──────────────────────────────────────────────────

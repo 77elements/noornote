@@ -31,7 +31,7 @@ import { USER_CONTENT_KINDS } from '../../types/nostr';
 import { getCacheSize } from '../../helpers/LRUCache';
 import { isDataSaverEnabled } from '../DataSaverService';
 
-export type NotificationType = 'mention' | 'reply' | 'thread-reply' | 'quote' | 'repost' | 'reaction' | 'zap' | 'article' | 'mutual_unfollow' | 'mutual_new' | 'follower_new' | 'follower_lost' | 'hashtag' | 'poll_vote' | 'highlight' | 'badge-award';
+export type NotificationType = 'mention' | 'reply' | 'thread-reply' | 'quote' | 'repost' | 'reaction' | 'zap' | 'article' | 'mutual_unfollow' | 'mutual_new' | 'follower_new' | 'hashtag' | 'poll_vote' | 'highlight' | 'badge-award';
 
 export interface NotificationEvent {
   event: NostrEvent;
@@ -174,7 +174,7 @@ export class NotificationsOrchestrator extends Orchestrator {
     });
 
     // Listen for follower change notification events (follower-notification addon)
-    this.eventBus.on('follower-notification:new', (data: { event: NostrEvent; type: 'follower_new' | 'follower_lost' }) => {
+    this.eventBus.on('follower-notification:new', (data: { event: NostrEvent; type: 'follower_new' }) => {
       this.handleFollowerNotification(data);
     });
 
@@ -429,7 +429,7 @@ export class NotificationsOrchestrator extends Orchestrator {
     // Caching them loses the type info (kind 99001 falls back to 'mention').
     return this.notifications
       .filter(n => n.type !== 'hashtag' && n.type !== 'mutual_new' && n.type !== 'mutual_unfollow'
-        && n.type !== 'follower_new' && n.type !== 'follower_lost')
+        && n.type !== 'follower_new')
       .map(n => n.event);
   }
 
@@ -744,7 +744,6 @@ export class NotificationsOrchestrator extends Orchestrator {
       'mutual_new': 2,
       'mutual_unfollow': 2,
       'follower_new': 2,
-      'follower_lost': 2,
       'thread-reply': 3,
       'hashtag': 3,
     };
@@ -1150,7 +1149,7 @@ export class NotificationsOrchestrator extends Orchestrator {
   /**
    * Handle follower change notification from the follower-notification addon's detector.
    */
-  private handleFollowerNotification(data: { event: NostrEvent; type: 'follower_new' | 'follower_lost' }): void {
+  private handleFollowerNotification(data: { event: NostrEvent; type: 'follower_new' }): void {
     if (this.mutedPubkeys.has(data.event.pubkey)) {
       return;
     }
@@ -1163,8 +1162,7 @@ export class NotificationsOrchestrator extends Orchestrator {
 
     if (!this.addNotification(notification)) return;
 
-    const typeLabel = data.type === 'follower_lost' ? 'unfollowed you' : 'new follower';
-    this.systemLogger.info('NotificationsOrchestrator', `🔔 Follower notification: ${typeLabel}`);
+    this.systemLogger.info('NotificationsOrchestrator', '🔔 Follower notification: new follower');
 
     this.eventBus.emit('notifications:badge-update');
     this.eventBus.emit('notifications:new', { notification });
@@ -1261,7 +1259,7 @@ export class NotificationsOrchestrator extends Orchestrator {
     this.systemLogger.info('NotificationsOrchestrator', `Restoring ${changes.length} follower change notifications`);
 
     for (const change of changes) {
-      const type: NotificationType = change.type === 'lost_follower' ? 'follower_lost' : 'follower_new';
+      const type: NotificationType = 'follower_new';
 
       if (this.mutedPubkeys.has(change.pubkey)) {
         continue;

@@ -17,7 +17,7 @@ export interface ProfileModuleApi {
 
   // FollowerCountService
   getFollowerCount(pubkey: string, onUpdate?: (count: number, relay: string) => void): Promise<number>;
-  streamFollowerList(pubkey: string, onBatch: (newPubkeys: string[]) => void): Promise<string[]>;
+  streamFollowerList(pubkey: string, onBatch: (newPubkeys: string[]) => void, opts?: { since?: number; forceFullRelays?: boolean }): Promise<string[]>;
 
   // ProfileMountsService
   getProfileMounts(): string[];

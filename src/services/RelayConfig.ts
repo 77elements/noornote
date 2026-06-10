@@ -219,8 +219,11 @@ export class RelayConfig {
    * down to purplepag-only broke bookmark resolution, zap stats,
    * broadcast-delete reach and onboarding feed coverage — reverted.
    */
-  public getAggregatorRelays(): string[] {
-    if (isDataSaverEnabled()) {
+  public getAggregatorRelays(forceFull = false): string[] {
+    // `forceFull` lets a feature that has explicit informed consent (e.g. the
+    // Follower Notification addon's baseline sweep) bypass the Data Saver
+    // reduction, so its coverage isn't silently halved on mobile.
+    if (isDataSaverEnabled() && !forceFull) {
       return [
         'wss://relay.damus.io',
         'wss://nos.lol',

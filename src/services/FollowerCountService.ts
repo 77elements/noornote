@@ -92,13 +92,18 @@ export class FollowerCountService {
    */
   public async streamFollowerList(
     pubkey: string,
-    onBatch: (newPubkeys: string[]) => void
+    onBatch: (newPubkeys: string[]) => void,
+    opts?: { since?: number; forceFullRelays?: boolean }
   ): Promise<string[]> {
     const followers = await this.collectFollowers(pubkey, (newPubkeys) => {
       if (newPubkeys.length > 0) onBatch(newPubkeys);
-    });
+    }, opts?.since, opts?.forceFullRelays);
 
-    this.cache.set(pubkey, { count: followers.length, timestamp: Date.now() });
+    // Only a FULL sweep (no `since`) reflects the real follower count. An incremental
+    // sweep returns just the lists updated since `since`, so it must not touch the count cache.
+    if (opts?.since === undefined) {
+      this.cache.set(pubkey, { count: followers.length, timestamp: Date.now() });
+    }
     return followers;
   }
 
@@ -109,11 +114,13 @@ export class FollowerCountService {
    */
   private async collectFollowers(
     pubkey: string,
-    onBatch?: (newPubkeys: string[], total: number, lastRelay: string | undefined) => void
+    onBatch?: (newPubkeys: string[], total: number, lastRelay: string | undefined) => void,
+    since?: number,
+    forceFullRelays?: boolean
   ): Promise<string[]> {
     const relays = [
       ...this.relayConfig.getReadRelays(),
-      ...this.relayConfig.getAggregatorRelays(),
+      ...this.relayConfig.getAggregatorRelays(forceFullRelays),
     ];
 
     // De-duplicate relay URLs
@@ -136,7 +143,7 @@ export class FollowerCountService {
       // Query all relays in batch in parallel
       const batchPromises = batch.map(async (relay) => {
         try {
-          const relayFollowers = await this.queryRelayWithPagination(relay, pubkey);
+          const relayFollowers = await this.queryRelayWithPagination(relay, pubkey, since);
           return { relay, followers: relayFollowers, success: true };
         } catch (error) {
           this.systemLogger.error('FollowerCount', `✗ ${relay} failed: ${error}`);
@@ -182,7 +189,7 @@ export class FollowerCountService {
    * Query a single relay with pagination (to overcome 500 event limit)
    * Keeps fetching batches until no more events
    */
-  private async queryRelayWithPagination(relayUrl: string, targetPubkey: string): Promise<string[]> {
+  private async queryRelayWithPagination(relayUrl: string, targetPubkey: string, since?: number): Promise<string[]> {
     const allFollowers: string[] = [];
     let until: number | undefined = undefined;
     let batchCount = 0;
@@ -190,7 +197,7 @@ export class FollowerCountService {
 
     while (batchCount < MAX_BATCHES) {
       try {
-        const batch = await this.queryRelayBatch(relayUrl, targetPubkey, until);
+        const batch = await this.queryRelayBatch(relayUrl, targetPubkey, until, since);
 
         if (batch.followers.length === 0) {
           // No more events
@@ -242,13 +249,17 @@ export class FollowerCountService {
   private async queryRelayBatch(
     relayUrl: string,
     targetPubkey: string,
-    until?: number
+    until?: number,
+    since?: number
   ): Promise<BatchResult> {
     // Single-relay query over NDK's pooled connection (reuses the per-relay socket
     // instead of opening a fresh WebSocket per batch). NDK verifies signatures.
     const filter: NDKFilter = { kinds: [3], '#p': [targetPubkey] };
     if (until !== undefined) {
       filter.until = until;
+    }
+    if (since !== undefined) {
+      filter.since = since;
     }
 
     const events = await this.transport.fetchDirect([relayUrl], [filter], 30000, 'FollowerCount');

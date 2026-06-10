@@ -1,6 +1,8 @@
 import { SettingsSection } from '../../components/settings/SettingsSection';
 import { Switch } from '../../components/ui/Switch';
 import { ToastService } from '../../services/ToastService';
+import { ModalService } from '../../services/ModalService';
+import { isDataSaverEnabled } from '../../services/DataSaverService';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { AddonLoader } from '../AddonLoader';
 import { UserIdentity } from '../../components/shared/UserIdentity';
@@ -35,23 +37,15 @@ export class FollowerNotificationSettings extends SettingsSection {
     this.enableSwitch = new Switch({
       label: '',
       checked: enabled,
-      onChange: (checked) => {
-        setFollowerNotificationEnabled(checked);
-        this.eventBus.emit('follower-notification:addon-toggle', { enabled: checked });
-        ToastService.show(
-          checked ? 'Follower Notification enabled' : 'Follower Notification disabled',
-          'success'
-        );
-        this.renderPanel(checked);
-      }
+      onChange: (checked) => { void this.handleToggle(checked); }
     });
 
     contentContainer.innerHTML = `
       <div class="setting">
         <span class="setting__label">Enable Follower Notification</span>
         <div class="setting__control">${this.enableSwitch.render()}</div>
-        <p class="setting__desc">Get notified when someone follows or unfollows you. Checks every 3 hours
-          in the background; each change is verified against the user's own contact list, so there are no false alarms.</p>
+        <p class="setting__desc">Get notified when someone new follows you. Checks every 3 hours in the
+          background; each new follower is verified against their own contact list, so there are no false alarms.</p>
       </div>
     `;
     this.enableSwitch.setupEventListeners(contentContainer);
@@ -61,6 +55,36 @@ export class FollowerNotificationSettings extends SettingsSection {
     this.subIds.push(this.eventBus.on('follower-changes:seen', () => this.renderPanel(isFollowerNotificationEnabled())));
 
     this.renderPanel(enabled);
+  }
+
+  /**
+   * Enabling on mobile while Data Saver is on is a conflict: the addon's baseline sweep ignores
+   * Data Saver (forces the full relay set so it doesn't miss followers) and pulls a few MB. Get
+   * informed consent before turning it on; if declined, revert the switch and stay off.
+   */
+  private async handleToggle(checked: boolean): Promise<void> {
+    if (checked && isDataSaverEnabled()) {
+      const proceed = await ModalService.getInstance().confirm({
+        title: 'Conflicts with Data Saver',
+        message: 'Data Saver is on. To find followers reliably this addon ignores it for its scan: a ' +
+          'one-time pull of all your followers’ contact lists (a few MB), then small background ' +
+          'checks every few hours. Enable anyway?',
+        confirmText: 'Enable anyway',
+        cancelText: 'Keep off'
+      });
+      if (!proceed) {
+        this.enableSwitch?.setChecked(false);
+        return;
+      }
+    }
+
+    setFollowerNotificationEnabled(checked);
+    this.eventBus.emit('follower-notification:addon-toggle', { enabled: checked });
+    ToastService.show(
+      checked ? 'Follower Notification enabled' : 'Follower Notification disabled',
+      'success'
+    );
+    this.renderPanel(checked);
   }
 
   private getService(): FollowerNotificationRuntime['service'] | null {
@@ -150,10 +174,8 @@ export class FollowerNotificationSettings extends SettingsSection {
     row.appendChild(identity.getElement());
 
     const label = document.createElement('span');
-    label.className = change.type === 'new_follower'
-      ? 'follower-notification__tag follower-notification__tag--new'
-      : 'follower-notification__tag follower-notification__tag--lost';
-    label.textContent = change.type === 'new_follower' ? 'now follows you' : 'unfollowed you';
+    label.className = 'follower-notification__tag follower-notification__tag--new';
+    label.textContent = 'now follows you';
     row.appendChild(label);
 
     return row;

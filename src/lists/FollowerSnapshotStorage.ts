@@ -1,6 +1,6 @@
 /**
  * FollowerSnapshotStorage
- * Dual-layer storage for follower-change detection ("who followed / unfollowed me").
+ * Dual-layer storage for follower-change detection ("who newly followed me"; new followers only).
  *
  * Lives in core (src/lists, next to MutualChangeStorage) so the NotificationsOrchestrator can
  * restore stored changes on startup without importing the follower-notification addon.
@@ -18,8 +18,13 @@
 import { BaseFileStorage, type BaseFileData } from '../services/BaseFileStorage';
 import { PerAccountLocalStorage, StorageKeys } from '../services/PerAccountLocalStorage';
 
-/** Default "count a follow as new for N days" recency window. */
-export const DEFAULT_RECENCY_DAYS = 14;
+/**
+ * Default "count a follow as new for N days" recency window. 7 days fits a roughly-daily user
+ * (checks run every 3h, so genuine new follows are caught within hours); a tighter window also
+ * suppresses more false positives where an old follower resurfaces via a relay gap with a
+ * recently re-published list. Infrequent users can raise it in settings.
+ */
+export const DEFAULT_RECENCY_DAYS = 7;
 
 export interface FollowerSnapshot {
   timestamp: number;
@@ -28,14 +33,13 @@ export interface FollowerSnapshot {
 
 export interface FollowerChange {
   pubkey: string;
-  type: 'new_follower' | 'lost_follower';
+  type: 'new_follower';
   detectedAt: number;
 }
 
 export interface FollowerCheckHistoryEntry {
   timestamp: number;
   newFollowerCount: number;
-  lostFollowerCount: number;
   sweepCount: number;
   durationMs: number;
 }
@@ -63,6 +67,7 @@ const FOLLOWER_STORAGE_KEYS = [
   StorageKeys.FOLLOWER_WARMUP_DONE,
   StorageKeys.FOLLOWER_WARMUP_ROUNDS,
   StorageKeys.FOLLOWER_WARMUP_CLEAN,
+  StorageKeys.FOLLOWER_LAST_SWEEP_AT,
 ] as const;
 
 export class FollowerSnapshotStorage extends BaseFileStorage<FollowerCheckData> {
@@ -193,6 +198,17 @@ export class FollowerSnapshotStorage extends BaseFileStorage<FollowerCheckData> 
 
   public setRecencyDays(days: number): void {
     this.perAccountStorage.set(StorageKeys.FOLLOWER_RECENCY_DAYS, days);
+  }
+
+  // ── Incremental sweep checkpoint ──
+
+  /** Unix seconds floor for the next incremental sweep's `since` (0 if never swept). */
+  public getLastSweepAt(): number {
+    return this.perAccountStorage.get<number>(StorageKeys.FOLLOWER_LAST_SWEEP_AT, 0);
+  }
+
+  public setLastSweepAt(unixSeconds: number): void {
+    this.perAccountStorage.set(StorageKeys.FOLLOWER_LAST_SWEEP_AT, unixSeconds);
   }
 
   // ── Snapshot (acknowledged baseline) ──
