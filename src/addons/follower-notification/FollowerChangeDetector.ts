@@ -392,13 +392,13 @@ if (typeof window !== 'undefined') {
     ),
     state: () => {
       const s = FollowerSnapshotStorage.getInstance();
-      console.log('=== FollowerSnapshotStorage State ===');
-      console.log('Acknowledged snapshot count:', s.getSnapshot()?.followerPubkeys.length ?? null);
-      console.log('Pending snapshot count:', s.getPendingSnapshot()?.length ?? null);
-      console.log('Warm-up complete:', s.isWarmupComplete(), '| rounds:', s.getWarmupRounds());
-      console.log('Last check:', s.getLastCheckTimestamp());
-      console.log('Unseen changes:', s.hasUnseenChanges());
-      console.log('Changes:', s.getChanges());
+      console.debug('=== FollowerSnapshotStorage State ===');
+      console.debug('Acknowledged snapshot count:', s.getSnapshot()?.followerPubkeys.length ?? null);
+      console.debug('Pending snapshot count:', s.getPendingSnapshot()?.length ?? null);
+      console.debug('Warm-up complete:', s.isWarmupComplete(), '| rounds:', s.getWarmupRounds());
+      console.debug('Last check:', s.getLastCheckTimestamp());
+      console.debug('Unseen changes:', s.hasUnseenChanges());
+      console.debug('Changes:', s.getChanges());
     },
     markSeen: () => FollowerChangeDetector.getInstance().markAsSeen(),
     reset: () => FollowerSnapshotStorage.getInstance().reset(),

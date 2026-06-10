@@ -184,6 +184,7 @@ If the app crashes, check the log files:
 - **Polls (legacy / Pollerama)** — kind `6969`, alternative poll format predating NIP-88
 - **Primal Cache `USER_PROFILE_INFO`** — kind `10000105`, consumed from Primal's caching relay for `time_joined` lookup on profile pages
 - **Mutual changes (NoorNote-internal)** — kind `99001`, synthesized for notifications when someone follows or unfollows you. Not published to relays.
+- **Follower changes (NoorNote-internal)** — kind `99002`, synthesized for the Follower Notification addon when someone newly follows or unfollows you. Not published to relays.
 - **Bookmark list (legacy)** — kind `10003`, NIP-51 legacy bookmark list (read for migration; new bookmarks go in kind `30003`)
 - **Ditto geocache** — kind `37516`, proprietary [Ditto](https://ditto.pub) feature with no NIP; rendered as a notice with an "open in Ditto" link instead of broken output
 
