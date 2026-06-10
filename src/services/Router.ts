@@ -284,7 +284,7 @@ export class Router {
     try {
       localStorage.setItem(this.PERSISTENT_STORAGE_KEY, JSON.stringify({ path, ts: Date.now() }));
     } catch (error) {
-      console.warn('Failed to persist route for cold-start restore:', error);
+      console.debug('Failed to persist route for cold-start restore:', error);
     }
   }
 
