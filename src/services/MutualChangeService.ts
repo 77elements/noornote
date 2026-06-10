@@ -1,118 +1,48 @@
 /**
  * MutualChangeService
- * Self-initializing service for mutual change detection (Phase 2-4)
+ * Binds the MutualChangeStorage lifecycle to login/logout so the MANUAL "Check for Changes"
+ * feature (Extended Follows) has its persisted snapshot ready, and clears the cache on account switch.
  *
- * Architecture:
- * - Listens to user:login / user:logout via TypedEventBus
- * - Delayed start: 3 minutes after login
- * - Stops on logout
- * - Completely decoupled from App.ts
+ * The old AUTOMATIC background scheduler was removed on 2026-06-10 (flaky — too many false positives
+ * from relay-coverage noise). See docs/features/mutual-check-feature-04-automation.md. Mutual change
+ * detection is now on-demand only, triggered by the user via the "Check for Changes" button.
  *
- * @purpose Orchestrate mutual change detection lifecycle
- * @used-by Automatically initializes on import
+ * @purpose Storage lifecycle for the manual mutual-change check
+ * @used-by Auto-initializes on import (main.ts, only when the Extended Follows addon is enabled)
  */
 
 import { TypedEventBus } from '../core/TypedEventBus';
 import { MutualChangeStorage } from '../lists/MutualChangeStorage';
-import { MutualChangeScheduler } from './MutualChangeScheduler';
-import { MutualChangeDetector } from './MutualChangeDetector';
 import { SystemLogger } from './SystemLogger';
-
-const DELAYED_START_MS = 3 * 60 * 1000; // 3 minutes
 
 class MutualChangeServiceImpl {
   private eventBus: TypedEventBus;
   private storage: MutualChangeStorage;
-  private scheduler: MutualChangeScheduler;
-  private detector: MutualChangeDetector;
   private systemLogger: SystemLogger;
-  private delayedStartTimeout: ReturnType<typeof setTimeout> | null = null;
-  private isInitialized: boolean = false;
 
   constructor() {
     this.eventBus = TypedEventBus.getInstance();
     this.storage = MutualChangeStorage.getInstance();
-    this.scheduler = MutualChangeScheduler.getInstance();
-    this.detector = MutualChangeDetector.getInstance();
     this.systemLogger = SystemLogger.getInstance();
 
-    this.setupEventListeners();
+    this.eventBus.on('user:login', () => { void this.handleLogin(); });
+    this.eventBus.on('user:logout', () => { this.handleLogout(); });
     this.systemLogger.info('MutualChangeService', 'Service initialized, waiting for login...');
   }
 
-  private setupEventListeners(): void {
-    // Start on login (with delay)
-    this.eventBus.on('user:login', () => {
-      this.handleLogin();
-    });
-
-    // Stop on logout
-    this.eventBus.on('user:logout', () => {
-      this.handleLogout();
-    });
-  }
-
+  /** Load the persisted snapshot so the manual "Check for Changes" can diff against it. */
   private async handleLogin(): Promise<void> {
-    // Cancel any pending delayed start
-    if (this.delayedStartTimeout) {
-      clearTimeout(this.delayedStartTimeout);
-    }
-
-    this.systemLogger.info('MutualChangeService', 'User logged in, initializing storage immediately...');
-
-    // Initialize storage from file IMMEDIATELY (so manual checks work)
     try {
       await this.storage.initFromFile();
       this.systemLogger.info('MutualChangeService', 'Storage initialized from file');
     } catch (error) {
       this.systemLogger.error('MutualChangeService', `Failed to init storage: ${error}`);
     }
-
-    this.systemLogger.info('MutualChangeService', `Scheduling scheduler start in ${DELAYED_START_MS / 1000 / 60} minutes...`);
-
-    // Delayed scheduler start to avoid impacting startup performance
-    this.delayedStartTimeout = setTimeout(async () => {
-      await this.startScheduler();
-    }, DELAYED_START_MS);
   }
 
   private handleLogout(): void {
-    // Cancel pending delayed start
-    if (this.delayedStartTimeout) {
-      clearTimeout(this.delayedStartTimeout);
-      this.delayedStartTimeout = null;
-    }
-
-    // Stop scheduler
-    this.scheduler.stop();
-
-    // Clear localStorage cache
     this.storage.clearLocalStorage();
-
-    this.isInitialized = false;
-    this.systemLogger.info('MutualChangeService', 'Stopped on logout');
-  }
-
-  private async startScheduler(): Promise<void> {
-    if (this.isInitialized) {
-      this.systemLogger.info('MutualChangeService', 'Scheduler already started, skipping');
-      return;
-    }
-
-    try {
-      // Restore notifications from stored changes (survives app restart)
-      // Note: Storage is already initialized from handleLogin()
-      await this.detector.restoreNotificationsFromChanges();
-
-      // Start scheduler
-      // DISABLED: Too many false positives - see docs/todos/bugs.md
-      // await this.scheduler.start();
-
-      this.isInitialized = true;
-      this.systemLogger.info('MutualChangeService', 'Scheduler DISABLED (false positives bug)');
-    } catch (error) {
-      this.systemLogger.error('MutualChangeService', `Failed to start scheduler: ${error}`);
-    }
+    this.systemLogger.info('MutualChangeService', 'Storage cache cleared on logout');
   }
 }
 

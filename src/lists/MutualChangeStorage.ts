@@ -7,7 +7,7 @@
  * - PerAccountLocalStorage = Runtime cache for fast access (per-account isolated)
  *
  * @purpose Store mutual snapshots and detected changes
- * @used-by MutualChangeDetector, MutualChangeScheduler, FollowListSecondaryManager
+ * @used-by MutualChangeDetector, FollowListSecondaryManager (manual "Check for Changes")
  */
 
 import { BaseFileStorage, type BaseFileData } from '../services/BaseFileStorage';

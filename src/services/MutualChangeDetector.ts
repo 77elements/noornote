@@ -9,7 +9,7 @@
  * - Notifications are restored from changes on app start
  *
  * @purpose Detect unfollows and new mutuals by comparing snapshots
- * @used-by MutualChangeScheduler, FollowListSecondaryManager
+ * @used-by FollowListSecondaryManager (manual "Check for Changes")
  */
 
 import { MutualService } from './MutualService';
@@ -54,38 +54,6 @@ export class MutualChangeDetector {
       MutualChangeDetector.instance = new MutualChangeDetector();
     }
     return MutualChangeDetector.instance;
-  }
-
-  /**
-   * Restore notifications from stored changes (called on app start)
-   * This ensures notifications persist across app restarts
-   */
-  public async restoreNotificationsFromChanges(): Promise<void> {
-    const currentUser = this.authService.getCurrentUser();
-    if (!currentUser) return;
-
-    const changes = this.storage.getChanges();
-    if (changes.length === 0) {
-      this.systemLogger.info('MutualChangeDetector', 'No stored changes to restore');
-      return;
-    }
-
-    this.systemLogger.info('MutualChangeDetector', `Restoring ${changes.length} notifications from stored changes`);
-
-    // Inject notifications for all stored changes
-    for (const change of changes) {
-      const type = change.type === 'unfollow' ? 'mutual_unfollow' : 'mutual_new';
-      await this.injectNotification(change.pubkey, type, currentUser.pubkey, change.detectedAt);
-    }
-
-    // Update green dot
-    if (changes.length > 0) {
-      this.storage.setUnseenChanges(true);
-      this.eventBus.emit('mutual-changes:detected', {
-        unfollowCount: changes.filter(c => c.type === 'unfollow').length,
-        newMutualCount: changes.filter(c => c.type === 'new_mutual').length
-      });
-    }
   }
 
   /**

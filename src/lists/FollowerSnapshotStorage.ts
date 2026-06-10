@@ -51,10 +51,8 @@ export interface FollowerCheckData extends BaseFileData {
   unseenChanges: boolean;
   changes: FollowerChange[];
   checkHistory: FollowerCheckHistoryEntry[];
-  /** True once the seeded baseline has been reconciled to authoritative truth. */
+  /** True once the baseline is seeded (set immediately by the single seed sweep). */
   warmupComplete: boolean;
-  /** Number of reconciliation rounds run so far (safety cap). */
-  warmupRounds: number;
 }
 
 /** All PerAccountLocalStorage keys managed by this class */
@@ -65,8 +63,6 @@ const FOLLOWER_STORAGE_KEYS = [
   StorageKeys.FOLLOWER_UNSEEN_CHANGES,
   StorageKeys.FOLLOWER_CHANGES,
   StorageKeys.FOLLOWER_WARMUP_DONE,
-  StorageKeys.FOLLOWER_WARMUP_ROUNDS,
-  StorageKeys.FOLLOWER_WARMUP_CLEAN,
   StorageKeys.FOLLOWER_LAST_SWEEP_AT,
 ] as const;
 
@@ -103,8 +99,7 @@ export class FollowerSnapshotStorage extends BaseFileStorage<FollowerCheckData> 
       unseenChanges: false,
       changes: [],
       checkHistory: [],
-      warmupComplete: false,
-      warmupRounds: 0
+      warmupComplete: false
     };
   }
 
@@ -119,7 +114,6 @@ export class FollowerSnapshotStorage extends BaseFileStorage<FollowerCheckData> 
       this.perAccountStorage.set(StorageKeys.FOLLOWER_UNSEEN_CHANGES, data.unseenChanges);
       this.perAccountStorage.set(StorageKeys.FOLLOWER_CHANGES, data.changes);
       this.perAccountStorage.set(StorageKeys.FOLLOWER_WARMUP_DONE, data.warmupComplete ?? false);
-      this.perAccountStorage.set(StorageKeys.FOLLOWER_WARMUP_ROUNDS, data.warmupRounds ?? 0);
 
       this.systemLogger.info(this.getLoggerName(), 'Initialized from file, per-account storage populated');
     } catch (error) {
@@ -154,8 +148,7 @@ export class FollowerSnapshotStorage extends BaseFileStorage<FollowerCheckData> 
       unseenChanges: this.perAccountStorage.get<boolean>(StorageKeys.FOLLOWER_UNSEEN_CHANGES, false),
       changes: this.perAccountStorage.get<FollowerChange[]>(StorageKeys.FOLLOWER_CHANGES, []),
       checkHistory: [],
-      warmupComplete: this.isWarmupComplete(),
-      warmupRounds: this.getWarmupRounds()
+      warmupComplete: this.isWarmupComplete()
     };
   }
 
@@ -167,25 +160,6 @@ export class FollowerSnapshotStorage extends BaseFileStorage<FollowerCheckData> 
 
   public setWarmupComplete(value: boolean): void {
     this.perAccountStorage.set(StorageKeys.FOLLOWER_WARMUP_DONE, value);
-  }
-
-  public getWarmupRounds(): number {
-    return this.perAccountStorage.get<number>(StorageKeys.FOLLOWER_WARMUP_ROUNDS, 0);
-  }
-
-  public incrementWarmupRounds(): number {
-    const next = this.getWarmupRounds() + 1;
-    this.perAccountStorage.set(StorageKeys.FOLLOWER_WARMUP_ROUNDS, next);
-    return next;
-  }
-
-  /** Consecutive clean (0-diff) warm-up rounds — baseline must be stable across several. */
-  public getWarmupCleanRounds(): number {
-    return this.perAccountStorage.get<number>(StorageKeys.FOLLOWER_WARMUP_CLEAN, 0);
-  }
-
-  public setWarmupCleanRounds(value: number): void {
-    this.perAccountStorage.set(StorageKeys.FOLLOWER_WARMUP_CLEAN, value);
   }
 
   // ── Recency window (user preference) ──

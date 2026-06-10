@@ -402,7 +402,7 @@ if (typeof window !== 'undefined') {
       console.debug('=== FollowerSnapshotStorage State ===');
       console.debug('Acknowledged snapshot count:', s.getSnapshot()?.followerPubkeys.length ?? null);
       console.debug('Pending snapshot count:', s.getPendingSnapshot()?.length ?? null);
-      console.debug('Warm-up complete:', s.isWarmupComplete(), '| rounds:', s.getWarmupRounds());
+      console.debug('Baseline seeded:', s.isWarmupComplete());
       console.debug('Last sweep at:', s.getLastSweepAt(), '| recency days:', s.getRecencyDays());
       console.debug('Unseen changes:', s.hasUnseenChanges(), '| changes:', s.getChanges());
     },
