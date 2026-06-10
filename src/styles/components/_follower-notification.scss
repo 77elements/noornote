@@ -1,0 +1,42 @@
+// Follower Notification addon — settings panel (toggle lives in the shared .setting block).
+// Reuses .section / .ui-list / .ui-list__item / .btn--passive / .l-spread / .form__note.
+
+@use '../abstracts/variables' as *;
+
+.follower-notification {
+  &__status {
+    color: var(--color-5);
+    margin: 0;
+  }
+
+  &__last-check {
+    margin: 0;
+  }
+
+  &__changes-head {
+    margin-top: $gap;
+    margin-bottom: calc($gap / 2);
+  }
+
+  &__recency {
+    .input {
+      width: calc($gap * 6); // ~96px — fits a 1-3 digit day count
+    }
+  }
+
+  &__tag {
+    // Sits at the end of the .ui-list__item row (which already lays out its children).
+    margin-left: auto;
+    padding-left: calc($gap / 2);
+    font-size: 0.85em;
+    white-space: nowrap;
+
+    &--new {
+      color: var(--color-6); // positive / mint
+    }
+
+    &--lost {
+      color: var(--color-3); // muted — informative, not alarming
+    }
+  }
+}

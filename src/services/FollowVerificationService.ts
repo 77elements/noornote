@@ -36,7 +36,7 @@ import { SystemLogger } from './SystemLogger';
 import { LRUCache, getCacheSize } from '../helpers/LRUCache';
 
 export type FollowVerdict =
-  | { status: 'follows';         verifiedAt: number; viaRelays: string[]; theirFollowCount: number }
+  | { status: 'follows';         verifiedAt: number; viaRelays: string[]; theirFollowCount: number; followedAt: number }
   | { status: 'does-not-follow'; verifiedAt: number; viaRelays: string[]; theirFollowCount: number }
   | { status: 'unknown';         reason: 'no-write-relays' | 'no-event' | 'timeout' | 'error' | 'stale' };
 
@@ -196,7 +196,12 @@ export class FollowVerificationService {
         status: 'follows',
         verifiedAt: Date.now(),
         viaRelays: queryRelays,
-        theirFollowCount: pTags.length
+        theirFollowCount: pTags.length,
+        // created_at of the newest kind:3 that includes us — i.e. when they last published a
+        // contact list containing us. Used to suppress "new follower" alerts for long-standing
+        // followers our sweep only just discovered (not actually new). Best-available signal:
+        // it's "last list update", not "started following", which Nostr doesn't record.
+        followedAt: newest.created_at ?? 0
       };
     }
 

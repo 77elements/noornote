@@ -104,6 +104,19 @@ export const StorageKeys = {
   MUTUAL_UNSEEN_CHANGES: 'noornote_mutual_unseen_changes_map',
   MUTUAL_CHANGES: 'noornote_mutual_changes_map',
 
+  // Follower change detection — "who followed / unfollowed me" (per-account)
+  FOLLOWER_NOTIFICATION_ENABLED: 'noornote_follower_notification_enabled',
+  FOLLOWER_SNAPSHOT: 'noornote_follower_snapshot_map',
+  FOLLOWER_PENDING_SNAPSHOT: 'noornote_follower_pending_snapshot_map',
+  FOLLOWER_LAST_CHECK: 'noornote_follower_last_check_map',
+  FOLLOWER_UNSEEN_CHANGES: 'noornote_follower_unseen_changes_map',
+  FOLLOWER_CHANGES: 'noornote_follower_changes_map',
+  // Warm-up: silently reconcile the seeded baseline to authoritative truth before notifying.
+  FOLLOWER_WARMUP_DONE: 'noornote_follower_warmup_done_map',
+  FOLLOWER_WARMUP_ROUNDS: 'noornote_follower_warmup_rounds_map',
+  FOLLOWER_WARMUP_CLEAN: 'noornote_follower_warmup_clean_map',
+  FOLLOWER_RECENCY_DAYS: 'noornote_follower_recency_days_map',
+
   // Quick Zap toggle (per-account)
   QUICK_ZAP_ENABLED: 'noornote_quick_zap_enabled_map',
 

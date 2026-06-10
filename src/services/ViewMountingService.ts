@@ -452,6 +452,15 @@ export class ViewMountingService {
           }
         };
 
+      case 'addon-follower-notification':
+        return {
+          factory: async () => {
+            const { FollowerNotificationAddonView } = await import('../addons/follower-notification/FollowerNotificationAddonView');
+            const view = new FollowerNotificationAddonView();
+            return { element: view.getElement(), view };
+          }
+        };
+
       case 'addon-hashtag-subscriptions':
         return {
           factory: async () => {

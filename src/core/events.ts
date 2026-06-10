@@ -162,6 +162,18 @@ export interface MutualNotificationNewPayload {
   type: 'mutual_unfollow' | 'mutual_new';
 }
 
+// ── Follower Changes ─────────────────────────────────────────
+
+export interface FollowerChangesDetectedPayload {
+  newFollowerCount: number;
+  lostFollowerCount: number;
+}
+
+export interface FollowerNotificationNewPayload {
+  event: NostrEvent;
+  type: 'follower_new' | 'follower_lost';
+}
+
 // ── Hashtag ──────────────────────────────────────────────────
 
 export interface HashtagSubscriptionUpdatedPayload {
@@ -302,6 +314,11 @@ export interface AppEvents {
   'mutual-changes:seen': void;
   'mutual-notification:new': MutualNotificationNewPayload;
 
+  // ── Follower Changes ───────────────────────
+  'follower-changes:detected': FollowerChangesDetectedPayload;
+  'follower-changes:seen': void;
+  'follower-notification:new': FollowerNotificationNewPayload;
+
   // ── Hashtag Subscriptions ──────────────────
   'hashtag-subscription:updated': HashtagSubscriptionUpdatedPayload;
   'hashtag:new-posts': HashtagNewPostsPayload;
@@ -328,6 +345,7 @@ export interface AppEvents {
   'extended-follows:toggle': AddonTogglePayload;
   'follow-packs:addon-toggle': AddonTogglePayload;
   'follow-packs:toggle': AddonTogglePayload;
+  'follower-notification:addon-toggle': AddonTogglePayload;
   'hashtag-subscriptions:addon-toggle': AddonTogglePayload;
   'live-streams-player:addon-toggle': AddonTogglePayload;
   'marketplace:addon-toggle': AddonTogglePayload;

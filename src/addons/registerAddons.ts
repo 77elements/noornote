@@ -20,6 +20,7 @@ import { isContentWordFilterEnabled } from './content-word-filter/index';
 import { isCustomEmojisEnabled } from './custom-emojis/index';
 import { isMarketplaceEnabled } from './marketplace/index';
 import { isFollowPacksEnabled } from './follow-packs/index';
+import { isFollowerNotificationEnabled } from './follower-notification/index';
 import { isScheduledPostsEnabled } from './scheduled-posts/index';
 import { isBadgesEnabled } from './badges/index';
 import { isNoteTakingEnabled } from './note-taking/index';
@@ -50,6 +51,12 @@ export function registerCoreAddons(): void {
     id: 'hashtag-subscriptions',
     isEnabled: isHashtagSubscriptionsEnabled,
     load: () => import('./hashtag-subscriptions/runtime').then(m => m.default),
+  });
+
+  loader.register({
+    id: 'follower-notification',
+    isEnabled: isFollowerNotificationEnabled,
+    load: () => import('./follower-notification/runtime').then(m => m.default),
   });
 
   // Note: registry id is 'wordfilter' (matches ADDON_REGISTRY and App.ts route)

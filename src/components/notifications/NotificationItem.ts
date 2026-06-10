@@ -366,6 +366,12 @@ export class NotificationItem {
       case 'mutual_new':
         return '✅';
 
+      case 'follower_new':
+        return '👤';
+
+      case 'follower_lost':
+        return '👋';
+
       case 'highlight':
         return `<svg width="18" height="18"><use href="#icon-highlight"/></svg>`;
 
@@ -451,6 +457,8 @@ export class NotificationItem {
       }
       case 'mutual_unfollow': return 'stopped following you back';
       case 'mutual_new': return 'started following you back!';
+      case 'follower_new': return 'is now following you';
+      case 'follower_lost': return 'unfollowed you';
       case 'highlight': return `highlighted your ${target}`;
       case 'badge-award': return 'awarded you a badge';
       default: return `interacted with your ${target}`;
@@ -553,8 +561,9 @@ export class NotificationItem {
    * Get preview text synchronously (initial render with raw content)
    */
   private getPreviewSync(): string {
-    // For mutual notifications, no preview needed
-    if (this.options.type === 'mutual_unfollow' || this.options.type === 'mutual_new') {
+    // For mutual / follower notifications, no preview needed
+    if (this.options.type === 'mutual_unfollow' || this.options.type === 'mutual_new'
+        || this.options.type === 'follower_new' || this.options.type === 'follower_lost') {
       return '';
     }
 
@@ -928,8 +937,9 @@ export class NotificationItem {
       return;
     }
 
-    // For mutual notifications, navigate to profile
-    if (type === 'mutual_unfollow' || type === 'mutual_new') {
+    // For mutual / follower notifications, navigate to profile
+    if (type === 'mutual_unfollow' || type === 'mutual_new'
+        || type === 'follower_new' || type === 'follower_lost') {
       const npub = hexToNpub(this.options.event.pubkey);
       if (npub) {
         getViewNavigationController().openView('profile', npub, e);
