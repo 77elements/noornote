@@ -22,12 +22,14 @@ const NOTIFICATION_TYPES: NotificationTypeInfo[] = [
   { type: 'thread-reply', label: 'Thread Replies' },
   { type: 'quote', label: 'Quotes' },
   { type: 'zap', label: 'Zaps' },
+  { type: 'zap-reply', label: 'Zap Reply' },
   { type: 'mention', label: 'Mentions' },
   { type: 'repost', label: 'Reposts' },
   { type: 'reaction', label: 'Reactions' },
   { type: 'article', label: 'Articles' },
   { type: 'mutual_new', label: 'New Mutuals' },
   { type: 'mutual_unfollow', label: 'Mutual Unfollows' },
+  { type: 'follower_new', label: 'New Followers' },
   { type: 'hashtag', label: 'Hashtags' },
 ];
 
@@ -35,12 +37,14 @@ const DEFAULT_PRIORITIES: NotificationPriorityMap = {
   'reply': 1,
   'quote': 1,
   'zap': 1,
+  'zap-reply': 2,
   'mention': 2,
   'repost': 2,
   'reaction': 2,
   'article': 2,
   'mutual_new': 2,
   'mutual_unfollow': 2,
+  'follower_new': 2,
   'thread-reply': 3,
   'hashtag': 3,
 };
@@ -84,7 +88,10 @@ export class NotificationPrioritySection extends SettingsSection {
    * Load priorities from storage or use defaults
    */
   private loadPriorities(): NotificationPriorityMap {
-    return this.storage.get<NotificationPriorityMap>(StorageKeys.NOTIFICATION_PRIORITIES, { ...DEFAULT_PRIORITIES });
+    // Merge stored over defaults so newly added types (e.g. zap-reply, follower_new) always appear
+    // at their default priority for existing users, instead of vanishing from the UI.
+    const saved = this.storage.get<NotificationPriorityMap>(StorageKeys.NOTIFICATION_PRIORITIES, {});
+    return { ...DEFAULT_PRIORITIES, ...saved };
   }
 
   /**
@@ -168,7 +175,6 @@ export class NotificationPrioritySection extends SettingsSection {
   private renderDraggableItem(item: NotificationTypeInfo): string {
     return `
       <div class="priority-item" data-type="${item.type}">
-        <span class="priority-item__handle">⋮⋮</span>
         <span class="priority-item__label">${item.label}</span>
         <span class="priority-item__move" data-type="${item.type}"></span>
       </div>
@@ -550,7 +556,8 @@ export class NotificationPrioritySection extends SettingsSection {
  */
 export function getNotificationPriorities(): NotificationPriorityMap {
   const storage = PerAccountLocalStorage.getInstance();
-  return storage.get<NotificationPriorityMap>(StorageKeys.NOTIFICATION_PRIORITIES, { ...DEFAULT_PRIORITIES });
+  const saved = storage.get<NotificationPriorityMap>(StorageKeys.NOTIFICATION_PRIORITIES, {});
+  return { ...DEFAULT_PRIORITIES, ...saved };
 }
 
 export { DEFAULT_PRIORITIES };

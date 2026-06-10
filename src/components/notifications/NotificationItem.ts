@@ -72,7 +72,7 @@ export class NotificationItem {
     const preview = this.getPreviewSync();
 
     // For replies/mentions/thread-replies, add context line for the replied-to note
-    const needsContext = this.options.type === 'reply' || this.options.type === 'mention' || this.options.type === 'thread-reply';
+    const needsContext = this.options.type === 'reply' || this.options.type === 'mention' || this.options.type === 'thread-reply' || this.options.type === 'zap-reply';
     const contextHtml = needsContext ? '<div class="thread-context-item"><span class="thread-context-content">Loading...</span></div>' : '';
 
     // For badge-award notifications, add Accept/Decline buttons
@@ -244,7 +244,7 @@ export class NotificationItem {
    */
   private isTextNotification(): boolean {
     const type = this.options.type;
-    return type === 'mention' || type === 'reply' || type === 'thread-reply' || type === 'highlight';
+    return type === 'mention' || type === 'reply' || type === 'thread-reply' || type === 'zap-reply' || type === 'highlight';
   }
 
   /**
@@ -325,6 +325,7 @@ export class NotificationItem {
       case 'mention':
       case 'reply':
       case 'thread-reply':
+      case 'zap-reply':
         return `<svg width="18" height="18"><use href="#icon-thread-bubble"/></svg>`;
 
       case 'repost':
@@ -438,6 +439,7 @@ export class NotificationItem {
       case 'mention': return `mentioned you in a ${target}`;
       case 'reply': return `replied to your ${target}`;
       case 'thread-reply': return `replied to a ${target} that mentioned you`;
+      case 'zap-reply': return 'replied to your zap';
       case 'repost': return `reposted your ${target}`;
       case 'reaction': return `reacted to your ${target}`;
       case 'zap': {
@@ -613,7 +615,7 @@ export class NotificationItem {
   private async loadResolvedPreview(): Promise<void> {
     // For replies/mentions/thread-replies, fetch the replied-to note for context line ONLY
     // The preview already shows the reply/mention text from getPreviewSync()
-    if (this.options.type === 'reply' || this.options.type === 'mention' || this.options.type === 'thread-reply') {
+    if (this.options.type === 'reply' || this.options.type === 'mention' || this.options.type === 'thread-reply' || this.options.type === 'zap-reply') {
       const contextElement = this.element.querySelector('.thread-context-content');
       // Resolve the "Loading…" placeholder in EVERY path — never leave it stuck (e.g. when the
       // parent event can't be fetched from our read relays, which is common for zap receipts).

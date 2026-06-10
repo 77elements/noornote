@@ -778,14 +778,30 @@
     width: 140px;
   }
 
-  &__handle {
-    color: var(--text-alpha-light);
-    line-height: 1;
-  }
-
   &__label {
     color: var(--color-5);
     white-space: nowrap;
+  }
+
+  // Borderless, icon-only Move trigger — matches the bookmark cards (_bookmark-cards.scss)
+  // so the move affordance looks identical across the app instead of a heavier pill button.
+  &__move .move-dropdown__trigger {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: none;
+    color: var(--color-5);
+    opacity: 0.6;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    &:hover {
+      background: var(--color-2);
+      opacity: 1;
+    }
   }
 }
 

@@ -17,7 +17,7 @@ import { getViewNavigationController } from '../../services/ViewNavigationContro
 import { truncateNoteContent } from '../../helpers/truncateNoteContent';
 import { encodeNevent } from '../../services/NostrToolsAdapter';
 import { npubToUsername } from '../../helpers/npubToUsername';
-import { escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { extractZapperPubkey, getZapAmountSats, extractZapMessage, formatNumberWithCommas } from '../../helpers/zapUtils';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
@@ -159,7 +159,7 @@ export class ThreadContextIndicator {
       const synth = { pubkey, tags, kind } as NostrEvent;
       const msg = extractZapMessage(synth);
       const msgText = msg ? ` "${msg.length > 80 ? msg.slice(0, 80) + '…' : msg}"` : '';
-      previewHtml = `⚡ ${formatNumberWithCommas(getZapAmountSats(synth))} sats${escapeHtmlAttr(msgText)}`;
+      previewHtml = `⚡ ${formatNumberWithCommas(getZapAmountSats(synth))} sats${escapeHtml(msgText)}`;
       onClick = (e?: MouseEvent) => {
         getViewNavigationController().openView('single-note', encodeNevent(eventId), e);
       };

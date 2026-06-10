@@ -31,7 +31,7 @@ import { USER_CONTENT_KINDS } from '../../types/nostr';
 import { getCacheSize } from '../../helpers/LRUCache';
 import { isDataSaverEnabled } from '../DataSaverService';
 
-export type NotificationType = 'mention' | 'reply' | 'thread-reply' | 'quote' | 'repost' | 'reaction' | 'zap' | 'article' | 'mutual_unfollow' | 'mutual_new' | 'follower_new' | 'hashtag' | 'poll_vote' | 'highlight' | 'badge-award';
+export type NotificationType = 'mention' | 'reply' | 'thread-reply' | 'quote' | 'repost' | 'reaction' | 'zap' | 'zap-reply' | 'article' | 'mutual_unfollow' | 'mutual_new' | 'follower_new' | 'hashtag' | 'poll_vote' | 'highlight' | 'badge-award';
 
 export interface NotificationEvent {
   event: NostrEvent;
@@ -951,6 +951,12 @@ export class NotificationsOrchestrator extends Orchestrator {
     //   lowercase/uppercase 'p'/'P' = mentioned pubkeys
     // No marker strings (unlike NIP-10).
     if (event.kind === 1111) {
+      // A comment whose NIP-22 root/parent is a zap receipt (K/k = 9735) is a reply within a zap
+      // thread — its own priority category so users can tune "Zap Reply" notifications separately.
+      if (event.tags.some(t => (t[0] === 'K' || t[0] === 'k') && t[1] === '9735')) {
+        return 'zap-reply';
+      }
+
       const hasUserPtag = event.tags.some(t => (t[0] === 'p' || t[0] === 'P') && t[1] === currentUser.pubkey);
       const hasAnyEtag = event.tags.some(t => t[0] === 'e' || t[0] === 'E');
       const userMentionedInContent = this.isUserMentionedInContent(event.content, currentUser.pubkey);
