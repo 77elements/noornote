@@ -1,7 +1,12 @@
-# NoorNote 0.11.1
+# NoorNote 0.12.0
 
-**Followers list.** The Followers count on any profile is now clickable and opens the list of accounts following them — results stream in as they're found, and the open tab is kept in the URL so it survives a reload.
+**New**
+- Follower notifications: an opt-in addon that tells you in-app when someone new follows you, verified against their own contact list so there are no false alarms.
+- Reply to zaps: tap a zap to reply (for example a thank-you). Your reply reaches the zapper and shows threaded in your notifications.
 
-**Direct messages.** New DMs now show up live without a reload, and an open conversation no longer comes up empty after refreshing.
+**Changed**
+- Default relays updated: replaced the Damus and Primal relays with nostr.mom and relay.ditto.pub. You can still add any relay manually in Settings.
+- Mobile: after Android closes the app in the background, reopening returns you to where you were instead of the home timeline.
 
-**Fixes and polish.** Fixed interaction counts (reply / repost / zap / like) occasionally vanishing from notes; "View raw event" and reposting now work on every note; more readable Community Dhikr description spacing.
+**Fixes**
+- Various follower-notification and notification-display improvements.
