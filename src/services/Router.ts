@@ -4,6 +4,7 @@
  */
 
 import { AuthStateManager } from './AuthStateManager';
+import { PlatformService } from './PlatformService';
 
 export interface Route {
   pattern: RegExp;
@@ -24,6 +25,12 @@ export class Router {
   private isNavigatingHistory: boolean = false;
   private readonly SESSION_STORAGE_KEY = 'noornote_last_url';
   private readonly HISTORY_STORAGE_KEY = 'noornote_url_history';
+  // Mobile (Capacitor) only: mirror of the last route in localStorage, which — unlike
+  // sessionStorage — survives Android killing the backgrounded process. Lets a cold start restore
+  // where the user was. Timestamped so a genuine later restart starts fresh (see RESTORE_MAX_AGE_MS).
+  // Desktop/Web don't have the background-kill problem, so they keep the plain sessionStorage flow.
+  private readonly PERSISTENT_STORAGE_KEY = 'noornote_last_url_persistent';
+  private readonly RESTORE_MAX_AGE_MS = 6 * 60 * 60 * 1000; // 6h
   private readonly MAX_HISTORY = 50;
 
   private constructor() {
@@ -170,8 +177,9 @@ export class Router {
       }
     }
 
-    // Persist current URL for reload
+    // Persist current URL for reload (sessionStorage) and, on native, for cold-start restore.
     sessionStorage.setItem(this.SESSION_STORAGE_KEY, path);
+    this.persistRoute(path);
 
     // Handle the route
     this.handleRoute(path);
@@ -240,6 +248,44 @@ export class Router {
    */
   public getLastURL(): string | null {
     return sessionStorage.getItem(this.SESSION_STORAGE_KEY);
+  }
+
+  /**
+   * Mobile (Capacitor) cold-start fallback: the last route from localStorage, but only if
+   * it was visited within RESTORE_MAX_AGE_MS. This survives Android killing the backgrounded process
+   * (sessionStorage does not), so the user lands back where they were instead of on the home view.
+   * A genuinely later restart is past the window and starts fresh. Stale entries are cleared.
+   * Returns null on desktop/web (the entry is only ever written on Capacitor).
+   */
+  public getPersistedURL(): string | null {
+    if (!PlatformService.getInstance().isCapacitor) return null;
+    try {
+      const stored = localStorage.getItem(this.PERSISTENT_STORAGE_KEY);
+      if (!stored) return null;
+      const { path, ts } = JSON.parse(stored) as { path: string; ts: number };
+      if (typeof path !== 'string' || typeof ts !== 'number') return null;
+      if (Date.now() - ts > this.RESTORE_MAX_AGE_MS) {
+        localStorage.removeItem(this.PERSISTENT_STORAGE_KEY);
+        return null;
+      }
+      return path;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Mirror the current route to localStorage with a timestamp (Capacitor/mobile only) so a cold
+   * start can restore it. No-op on desktop/web, where the background-kill problem doesn't exist and
+   * sessionStorage already covers reloads (plus per-tab independence on web is desirable).
+   */
+  private persistRoute(path: string): void {
+    if (!PlatformService.getInstance().isCapacitor) return;
+    try {
+      localStorage.setItem(this.PERSISTENT_STORAGE_KEY, JSON.stringify({ path, ts: Date.now() }));
+    } catch (error) {
+      console.warn('Failed to persist route for cold-start restore:', error);
+    }
   }
 
   /**

@@ -74,6 +74,7 @@
     "@capacitor/core": "8.3.0",
     "@capacitor/filesystem": "8.1.2",
     "@capacitor/local-notifications": "^8.2.0",
+    "@capacitor/network": "^8",
     "@noble/ciphers": "^0.5.3",
     "@noble/curves": "^1.9.7",
     "@noble/hashes": "^1.8.0",

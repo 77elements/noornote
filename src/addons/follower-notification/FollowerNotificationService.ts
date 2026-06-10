@@ -9,9 +9,11 @@
  */
 
 import { SystemLogger } from '../../services/SystemLogger';
+import { PlatformService } from '../../services/PlatformService';
 import { diagLog } from '../../services/DiagnosticLogger';
 import { FollowerSnapshotStorage } from '../../lists/FollowerSnapshotStorage';
 import { FollowerChangeDetector } from './FollowerChangeDetector';
+import type { PluginListenerHandle } from '@capacitor/core';
 
 export class FollowerNotificationService {
   private static instance: FollowerNotificationService | null = null;
@@ -31,6 +33,7 @@ export class FollowerNotificationService {
   private interval: number | null = null;
   private running = false;
   private destroyed = false;
+  private networkHandle: PluginListenerHandle | null = null;
 
   private constructor() {
     this.detector = FollowerChangeDetector.getInstance();
@@ -61,6 +64,28 @@ export class FollowerNotificationService {
       void this.tick();
       this.interval = window.setInterval(() => void this.tick(), FollowerNotificationService.CHECK_INTERVAL_MS);
     }, FollowerNotificationService.INITIAL_DELAY_MS);
+
+    void this.setupWifiTrigger();
+  }
+
+  /**
+   * Mobile: the full baseline sweep is deferred on cellular (see detector). Build it the moment WiFi
+   * appears, instead of waiting for the next 3 h tick, but only while no baseline exists yet.
+   */
+  private async setupWifiTrigger(): Promise<void> {
+    if (!PlatformService.getInstance().isCapacitor) return;
+    try {
+      const { Network } = await import('@capacitor/network');
+      if (this.destroyed) return;
+      this.networkHandle = await Network.addListener('networkStatusChange', (status) => {
+        if (status.connectionType === 'wifi' && this.storage.getSnapshot() === null) {
+          void this.runCheck();
+        }
+      });
+      if (this.destroyed) { void this.networkHandle.remove(); this.networkHandle = null; }
+    } catch {
+      // Plugin unavailable — the 3 h scheduler still retries the deferred baseline.
+    }
   }
 
   /** A scheduled tick: run a check only if one is actually due. */
@@ -95,6 +120,7 @@ export class FollowerNotificationService {
     this.destroyed = true;
     if (this.initialTimer !== null) { clearTimeout(this.initialTimer); this.initialTimer = null; }
     if (this.interval !== null) { clearInterval(this.interval); this.interval = null; }
+    if (this.networkHandle) { void this.networkHandle.remove(); this.networkHandle = null; }
     this.detector.cancel();
     FollowerNotificationService.instance = null;
   }

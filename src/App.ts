@@ -131,7 +131,9 @@ export class App {
 
     // Capture intended URL: ?r= override > explicit address-bar path (web) > sessionStorage (reload / Electron restore)
     const relayPath = relayParam ? `/relay/${encodeURIComponent(relayParam)}` : null;
-    const lastURL = this.router.getLastURL();
+    // sessionStorage survives an in-process reload; getPersistedURL is the mobile (Capacitor)
+    // cold-start fallback (localStorage, recency-gated) for when Android killed the backgrounded process.
+    const lastURL = this.router.getLastURL() ?? this.router.getPersistedURL();
     // In Electron prod, window.location.pathname is the on-disk file path of dist/index.html
     // (never matches an SPA route). Honor pathname only in true web builds; native deep links
     // arrive via electronAPI.onDeepLink / Capacitor app URL events.

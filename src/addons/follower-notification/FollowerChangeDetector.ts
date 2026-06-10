@@ -8,18 +8,20 @@
  *   noise can never trigger an alert because the user's own source must confirm it.
  *
  * Two sweep modes:
- *   - FULL (seed + warm-up): pulls every follower's contact list to build a complete baseline.
- *     Silent (no notifications). One-time per account.
+ *   - FULL (seed only): one sweep pulls every follower's contact list to build the baseline.
+ *     Silent, one-time per account, and on mobile deferred until un-metered WiFi (it's ~hundreds
+ *     of MB). There is no multi-round warm-up — the single seed IS the baseline.
  *   - INCREMENTAL (live): pulls only contact lists UPDATED since the last sweep that tag me
  *     (`since` filter) — a handful of events, tiny bandwidth. New followers always publish a fresh
  *     kind:3, so this catches them. Candidates not already known → 3x-confirm → recency-gate → alert.
  *
- * Snapshot model: ACKNOWLEDGED baseline (advanced on markAsSeen, and silently during warm-up) vs
- * PENDING (latest working set). New followers are added to the working set so they aren't re-alerted.
+ * Snapshot model: ACKNOWLEDGED baseline (seeded once, advanced on markAsSeen) vs PENDING (latest
+ * working set). New followers are added to the working set so they aren't re-alerted.
  */
 
 import { FollowVerificationService, type FollowVerdict } from '../../services/FollowVerificationService';
 import { AuthService } from '../../services/AuthService';
+import { PlatformService } from '../../services/PlatformService';
 import { SystemLogger } from '../../services/SystemLogger';
 import { diagLog } from '../../services/DiagnosticLogger';
 import { TypedEventBus } from '../../core/TypedEventBus';
@@ -43,6 +45,8 @@ export interface FollowerDetectionResult {
   phase: 'warmup' | 'live';
   warmupComplete: boolean;
   mode: 'full' | 'incremental';
+  /** Mobile only: the full baseline sweep was skipped because the connection is metered (cellular). */
+  awaitingWifi?: boolean;
 }
 
 export class FollowerChangeDetector {
@@ -56,10 +60,6 @@ export class FollowerChangeDetector {
   private static readonly CONCURRENCY = 5;
   /** Max candidates authoritatively verified per round; the rest defer to the next round. */
   private static readonly CANDIDATE_CAP = 200;
-  /** Consecutive clean (0-new) warm-up rounds required before going live (baseline must be stable). */
-  private static readonly WARMUP_STABLE_ROUNDS = 2;
-  /** Safety cap: go live after this many warm-up rounds even if not strictly converged. */
-  private static readonly MAX_WARMUP_ROUNDS = 4;
   /** Clock-skew margin subtracted from the incremental `since` floor. */
   private static readonly SINCE_SKEW_SECONDS = 5 * 60;
   // The "new follower" recency window (days) is a user preference read from storage
@@ -125,13 +125,23 @@ export class FollowerChangeDetector {
     const previousSnapshot = this.storage.getSnapshot();
     const warmupComplete = this.storage.isWarmupComplete();
 
-    // Seed + warm-up must be full sweeps; live defaults to incremental.
+    // The seed builds the baseline with one FULL sweep; every later check is INCREMENTAL.
     const requested = opts.mode ?? 'auto';
-    const isLive = warmupComplete && !!previousSnapshot;
+    const isLive = !!previousSnapshot;
     const sweepMode: 'full' | 'incremental' =
       requested === 'incremental' ? 'incremental'
       : requested === 'full' ? 'full'
       : (isLive ? 'incremental' : 'full');
+
+    // #2 Mobile data: the FULL baseline sweep is ~hundreds of MB, so on mobile defer it until an
+    // un-metered WiFi connection. Incremental checks are tiny and run on any connection; desktop/web
+    // never defer. The scheduler retries, and the service also triggers a check when WiFi appears.
+    if (sweepMode === 'full' && await this.shouldDeferFullSweep()) {
+      const durationMs = Date.now() - startTime;
+      this.systemLogger.info('FollowerChangeDetector', 'Baseline sweep deferred until WiFi (metered connection)');
+      diagLog('lists', 'follower-check: full sweep deferred (metered connection)', { durationMs });
+      return { ...this.empty(durationMs, !previousSnapshot), awaitingWifi: true };
+    }
 
     // ── 1. Sweep (candidates only) — via the profile module API (decoupled) ──
     let candidates: string[];
@@ -157,10 +167,12 @@ export class FollowerChangeDetector {
       firstCheck: !previousSnapshot
     });
 
-    // ── 2. Seed (first ever check): establish the baseline, never alert ──
+    // ── 2. Seed (first ever check): establish the baseline, never alert. This single full sweep
+    //    IS the baseline — no further warm-up rounds (they re-pulled the full set for little gain). ──
     if (!previousSnapshot) {
       this.storage.saveSnapshot(candidates);
       this.storage.savePendingSnapshot(candidates);
+      this.storage.setWarmupComplete(true);
       this.storage.setLastSweepAt(sweepStartedS);
       await this.storage.saveToFile();
       const durationMs = Date.now() - startTime;
@@ -211,37 +223,11 @@ export class FollowerChangeDetector {
     });
     this.storage.setLastSweepAt(sweepStartedS);
 
-    // ── 7. Warm-up (silent) vs live (alert) ──
-    if (!warmupComplete) {
-      // Build a complete baseline silently. Confirmed followers found here are existing followers
-      // the seed missed (coverage gaps), so they must NOT alert — just absorb until stable.
-      this.storage.saveSnapshot(pending);
-      this.storage.savePendingSnapshot(pending);
-      const rounds = this.storage.incrementWarmupRounds();
-      const cleanRounds = confirmedAll.length === 0 ? this.storage.getWarmupCleanRounds() + 1 : 0;
-      this.storage.setWarmupCleanRounds(cleanRounds);
-      const converged = cleanRounds >= FollowerChangeDetector.WARMUP_STABLE_ROUNDS;
-      const forced = rounds >= FollowerChangeDetector.MAX_WARMUP_ROUNDS;
-      if (converged || forced) this.storage.setWarmupComplete(true);
-      await this.storage.saveToFile();
-
-      this.systemLogger.info('FollowerChangeDetector',
-        `Warm-up round ${rounds} (clean ${cleanRounds}/${FollowerChangeDetector.WARMUP_STABLE_ROUNDS}): ` +
-        `+${confirmedAll.length} absorbed (silent), warmupComplete=${converged || forced}`);
-      diagLog('lists', 'follower-check: warm-up round (silent)', {
-        round: rounds, cleanRounds, absorbed: confirmedAll.length, sweepCount, baselineCount,
-        converged, forced, warmupComplete: converged || forced, durationMs
-      });
-
-      return {
-        newFollowers: genuinelyNew, sweepCount, baselineCount, durationMs, isFirstCheck: false,
-        deferredCandidates: deferred, lateDiscoveries: lateDiscoveries.length,
-        phase: 'warmup', warmupComplete: converged || forced, mode: 'full'
-      };
-    }
-
-    // LIVE: only genuinely-new follows (recent kind:3) alert; late discoveries absorbed silently.
-    // The acknowledged baseline advances only on markAsSeen(); here we update PENDING only.
+    // ── 7. Live: only genuinely-new follows (recent kind:3) alert; late discoveries absorbed
+    // silently. The acknowledged baseline advances only on markAsSeen(); here we update PENDING.
+    // A straggler the seed missed is simply never re-discovered unless it republishes — that's fine,
+    // it's an existing follower, not a new one (the documented seed-only trade-off).
+    if (!warmupComplete) this.storage.setWarmupComplete(true); // migrate accounts left mid warm-up
     this.storage.savePendingSnapshot(pending);
     this.processChanges(genuinelyNew, currentUser.pubkey);
     if (genuinelyNew.length > 0) await this.storage.saveToFile(); // persist changes so a reload restores them
@@ -258,6 +244,22 @@ export class FollowerChangeDetector {
       deferredCandidates: deferred, lateDiscoveries: lateDiscoveries.length,
       phase: 'live', warmupComplete: true, mode: sweepMode
     };
+  }
+
+  /**
+   * Whether to defer a full baseline sweep because the connection is metered. True only on mobile
+   * (Capacitor) when the active connection is cellular. Desktop/web never defer; an undeterminable
+   * connection type does not block (we'd rather build the baseline than wait forever).
+   */
+  private async shouldDeferFullSweep(): Promise<boolean> {
+    if (!PlatformService.getInstance().isCapacitor) return false;
+    try {
+      const { Network } = await import('@capacitor/network');
+      const status = await Network.getStatus();
+      return status.connectionType === 'cellular';
+    } catch {
+      return false;
+    }
   }
 
   /** `since` (unix seconds) for an incremental sweep: the delta since the last sweep, but never
