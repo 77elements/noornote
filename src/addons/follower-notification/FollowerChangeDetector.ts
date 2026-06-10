@@ -14,13 +14,14 @@
  * vs PENDING (last detect()), so changes never flip-flop.
  */
 
-import { FollowerCountService } from '../../services/FollowerCountService';
 import { FollowVerificationService, type FollowVerdict } from '../../services/FollowVerificationService';
 import { AuthService } from '../../services/AuthService';
 import { SystemLogger } from '../../services/SystemLogger';
 import { diagLog } from '../../services/DiagnosticLogger';
 import { TypedEventBus } from '../../core/TypedEventBus';
+import { ModuleLoader } from '../../core/ModuleLoader';
 import { FollowerSnapshotStorage, type FollowerChange } from '../../lists/FollowerSnapshotStorage';
+import type { ProfileModuleApi } from '../../modules/profile/contracts';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 export interface FollowerDetectionResult {
@@ -60,7 +61,6 @@ export class FollowerChangeDetector {
   // storage (getRecencyDays); a confirmed follower whose kind:3 (incl. us) is older than that
   // was discovered late, not newly followed — absorbed silently, not alerted.
 
-  private followerCount: FollowerCountService;
   private followVerification: FollowVerificationService;
   private auth: AuthService;
   private storage: FollowerSnapshotStorage;
@@ -69,7 +69,6 @@ export class FollowerChangeDetector {
   private cancelled = false;
 
   private constructor() {
-    this.followerCount = FollowerCountService.getInstance();
     this.followVerification = FollowVerificationService.getInstance();
     this.auth = AuthService.getInstance();
     this.storage = FollowerSnapshotStorage.getInstance();
@@ -113,10 +112,12 @@ export class FollowerChangeDetector {
 
     const previousSnapshot = this.storage.getSnapshot();
 
-    // ── 1. Discovery sweep (candidates only) ──
+    // ── 1. Discovery sweep (candidates only) — via the profile module API (decoupled) ──
     let candidates: string[];
     try {
-      candidates = await this.followerCount.streamFollowerList(currentUser.pubkey, () => {});
+      const profileApi = ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
+      if (!profileApi) throw new Error('profile module API unavailable');
+      candidates = await profileApi.streamFollowerList(currentUser.pubkey, () => {});
     } catch (error) {
       this.systemLogger.error('FollowerChangeDetector', `Sweep failed: ${error}`);
       diagLog('lists', 'follower-check: sweep failed', { error: String(error) });

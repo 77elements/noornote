@@ -50,6 +50,7 @@ export class ProfileRuntime implements ModuleRuntime<ProfileModuleApi> {
       validateNip05: (nip05) => es?.validateNip05(nip05) ?? false,
       validateLightningAddress: (address) => es?.validateLightningAddress(address) ?? { valid: false, field: 'lud16' },
       getFollowerCount: (pubkey, onUpdate) => fc?.getFollowerCount(pubkey, onUpdate) ?? Promise.resolve(0),
+      streamFollowerList: (pubkey, onBatch) => fc?.streamFollowerList(pubkey, onBatch) ?? Promise.resolve([]),
       getProfileMounts: () => ms?.getMounts() ?? [],
       reorderProfileMounts: (newOrder) => ms?.reorderMounts(newOrder),
       fetchMountsFromRelays: (pubkey, forceRefresh) => mo?.fetchFromRelays(pubkey, forceRefresh) ?? Promise.resolve([]),
