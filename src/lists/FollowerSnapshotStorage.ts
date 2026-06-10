@@ -256,6 +256,21 @@ export class FollowerSnapshotStorage extends BaseFileStorage<FollowerCheckData> 
     this.setUnseenChanges(false);
   }
 
+  /** Drop stored changes for the given pubkeys (e.g. now-muted accounts). Returns true if any were
+   *  removed. Clears the unseen flag if nothing remains. */
+  public removeChanges(pubkeys: Set<string>): boolean {
+    if (pubkeys.size === 0) return false;
+    const existing = this.getChanges();
+    const kept = existing.filter(c => !pubkeys.has(c.pubkey));
+    if (kept.length === existing.length) return false;
+    if (kept.length === 0) {
+      this.clearChanges();
+    } else {
+      this.perAccountStorage.set(StorageKeys.FOLLOWER_CHANGES, kept);
+    }
+    return true;
+  }
+
   public hasUnseenChanges(): boolean {
     return this.perAccountStorage.get<boolean>(StorageKeys.FOLLOWER_UNSEEN_CHANGES, false);
   }

@@ -27,6 +27,7 @@ import { diagLog } from '../../services/DiagnosticLogger';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import { FollowerSnapshotStorage, type FollowerChange } from '../../lists/FollowerSnapshotStorage';
+import { MuteOrchestrator } from '../../lists/mutes';
 import type { ProfileModuleApi } from '../../modules/profile/contracts';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
@@ -188,8 +189,18 @@ export class FollowerChangeDetector {
     const knownSet = new Set(known);
     const baselineCount = previousSnapshot.followerPubkeys.length;
 
-    // ── 3. New-follower candidates = sweep − known (NO unfollow detection) ──
-    let newCandidates = candidates.filter(pk => !knownSet.has(pk));
+    // Mute = "never any sign of this account, in any context." Drop muted pubkeys from detection
+    // (no confirm, no notification, no list entry), and retroactively prune any already-stored
+    // change that is now muted (e.g. a churning bot the user muted after it was first listed).
+    const mutedSet = await this.loadMutedSet(currentUser.pubkey);
+    if (this.storage.removeChanges(mutedSet)) {
+      await this.storage.saveToFile();
+      this.eventBus.emit('follower-changes:seen'); // re-render the addon panel
+      diagLog('lists', 'follower-check: pruned muted accounts from changes', { mutedCount: mutedSet.size });
+    }
+
+    // ── 3. New-follower candidates = sweep − known − muted (NO unfollow detection) ──
+    let newCandidates = candidates.filter(pk => !knownSet.has(pk) && !mutedSet.has(pk));
     let deferred = 0;
     if (newCandidates.length > FollowerChangeDetector.CANDIDATE_CAP) {
       deferred = newCandidates.length - FollowerChangeDetector.CANDIDATE_CAP;
@@ -244,6 +255,19 @@ export class FollowerChangeDetector {
       deferredCandidates: deferred, lateDiscoveries: lateDiscoveries.length,
       phase: 'live', warmupComplete: true, mode: sweepMode
     };
+  }
+
+  /**
+   * Read-only snapshot of the user's muted pubkeys. Fail-open (empty set) if the mute list can't be
+   * loaded this round — better to risk one filterable entry than to block detection entirely.
+   */
+  private async loadMutedSet(myPubkey: string): Promise<Set<string>> {
+    try {
+      return new Set(await MuteOrchestrator.getInstance().getAllMutedUsers(myPubkey));
+    } catch (error) {
+      this.systemLogger.warn('FollowerChangeDetector', `Mute list unavailable this round: ${error}`);
+      return new Set();
+    }
   }
 
   /**
