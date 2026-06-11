@@ -12,11 +12,12 @@ import { NDKNip46Signer } from '@nostr-dev-kit/ndk';
 import { hexToNpub } from '../../helpers/nip19';
 import { Nip46BaseManager, NIP46_STORAGE_KEY, nip46Log, type Nip46AuthResult, type NostrConnectSession } from './Nip46BaseManager';
 
-/** NIP-46 relays for the nostrconnect flow (parallel multi-relay). Two reliable general relays that
- *  store the kind:24133 RPC events; one can fail and the handshake continues via the other. */
+/** NIP-46 relays for the nostrconnect flow (parallel multi-relay). Reliable general relays that
+ *  store the kind:24133 RPC events; one can fail and the handshake continues via the others. */
 const NIP46_RELAYS = [
   'wss://nos.lol',
   'wss://nostr.mom',
+  'wss://relay.primal.net',
 ];
 
 export class NostrConnectSignerManager extends Nip46BaseManager {

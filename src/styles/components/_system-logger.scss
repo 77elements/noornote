@@ -147,6 +147,19 @@
     }
   }
 
+  // Small round status diode (e.g. delete-broadcast per-relay result)
+  &__dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-left: calc($gap / 4);
+    border-radius: $radius-full;
+    vertical-align: middle;
+
+    &--success { background: $color-success; }
+    &--error { background: $color-red; }
+  }
+
   &__data {
     display: block;
     margin: calc($gap / 4) 0 0 0;

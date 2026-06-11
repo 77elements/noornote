@@ -111,6 +111,11 @@ export class App {
     // every video/audio upload regardless of which UI surface triggered it.
     import('./components/ui/UploadProgressOverlay').then(m => m.UploadProgressOverlay.getInstance().mount());
 
+    // Resume any unfinished NIP-09 deletion broadcasts persisted from a previous
+    // session (crash / app-quit / navigation mid-broadcast). Self-wires resume
+    // triggers (app resume, visibility, connectivity) and drains in background.
+    import('./services/BroadcastDeleteService').then(m => m.BroadcastDeleteService.getInstance().resumePending());
+
     const isOnline = await ConnectivityService.getInstance().checkConnectivity();
     if (!isOnline) {
       OfflineOverlay.getInstance().show();

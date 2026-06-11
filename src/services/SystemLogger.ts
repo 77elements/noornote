@@ -21,6 +21,8 @@ export interface LogEntry {
   message: string;
   data?: any;
   count?: number; // How many times this exact log occurred
+  id?: string; // Stable key for in-place updatable lines (see setLine)
+  statusDot?: 'success' | 'error'; // Small round red/green diode after the message
 }
 
 // Global categories: System-wide infrastructure components
@@ -45,7 +47,8 @@ const GLOBAL_CATEGORIES = [
   'tribes.ts',
   'ListAutoSync',
   'DeletionService',
-  'BroadcastDelete'
+  'BroadcastDelete',
+  'DeleteService'
 ];
 
 // View-specific categories mapping (Router viewClass → allowed categories)
@@ -290,6 +293,51 @@ export class SystemLogger {
   }
 
   /**
+   * Create or update a single log line identified by a stable `key`, IN PLACE —
+   * the same in-place entry mutation used by dedup counting, but keyed so the
+   * message text itself can change (the dedup path keeps the original text). Use
+   * this for live progress that must stay at a fixed number of lines instead of
+   * growing a list (e.g. the delete-broadcast: one constant header line + one
+   * line whose relay name + status diode swap as relays are contacted).
+   *
+   * @param bump when true, increments the "(N)" counter on each update (progress
+   *             like the bookmarks-sync line); when false the line just updates.
+   */
+  public setLine(
+    key: string,
+    level: LogLevel,
+    category: string,
+    message: string,
+    statusDot?: 'success' | 'error',
+    bump = true
+  ): void {
+    if (this.suppressInMemory) return;
+
+    const logCategory: LogCategory = GLOBAL_CATEGORIES.includes(category) ? 'global' : 'page';
+    const logs = logCategory === 'global' ? this.globalLogs : this.pageLogs;
+    const existing = logs.find(l => l.id === key);
+
+    if (existing) {
+      existing.level = level;
+      existing.message = message;
+      if (statusDot) existing.statusDot = statusDot;
+      else delete existing.statusDot;
+      existing.timestamp = Date.now();
+      if (bump) existing.count = (existing.count || 1) + 1;
+      this.scheduleRender(logCategory);
+      return;
+    }
+
+    this.addAndRenderLog(
+      {
+        id: key, timestamp: Date.now(), level, category, logCategory, message, count: 1,
+        ...(statusDot ? { statusDot } : {}),
+      },
+      logCategory
+    );
+  }
+
+  /**
    * Render logs by category
    */
   private renderLogs(logCategory: LogCategory): void {
@@ -374,11 +422,16 @@ export class SystemLogger {
     // Add count suffix if log occurred more than once
     const countSuffix = (entry.count && entry.count > 1) ? ` (${entry.count})` : '';
 
+    // Small round status diode (red/green), e.g. per-relay delete-broadcast result
+    const dotHtml = entry.statusDot
+      ? `<span class="system-log-entry__dot system-log-entry__dot--${entry.statusDot}"></span>`
+      : '';
+
     return `
       <tr class="system-log-entry ${levelClass}">
         <td class="system-log-entry__time">${time}</td>
         <td class="system-log-entry__category">[${category}]</td>
-        <td class="system-log-entry__message">${escapeHtml(entry.message)}${countSuffix}${dataHtml}</td>
+        <td class="system-log-entry__message">${escapeHtml(entry.message)}${countSuffix}${dotHtml}${dataHtml}</td>
       </tr>
     `;
   }

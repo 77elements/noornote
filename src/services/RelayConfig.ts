@@ -228,6 +228,7 @@ export class RelayConfig {
         'wss://nostr.mom',
         'wss://nos.lol',
         'wss://relay.ditto.pub',
+        'wss://relay.primal.net',
         'wss://noornode.nostr1.com/'
       ];
     }
@@ -236,6 +237,7 @@ export class RelayConfig {
       'wss://relay.snort.social',
       'wss://nos.lol',
       'wss://relay.ditto.pub',
+      'wss://relay.primal.net',
       'wss://purplepag.es',
       'wss://relay.mostr.pub',
       'wss://relay.zapstore.dev',
