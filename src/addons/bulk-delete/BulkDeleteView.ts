@@ -41,6 +41,8 @@ const PREVIEW_LEN = 90;
 const CACHE_TTL_MS = 30 * 60 * 1000;
 /** sessionStorage key — survives reloads, clears when the tab is closed. */
 const SESSION_KEY = 'noornote_bulk_delete_session';
+/** Bump to invalidate caches written by an older (e.g. mis-ordered) version. */
+const CACHE_VERSION = 2;
 
 /** Slim, JSON-safe event (NDK events carry circular relay refs that can't be stringified). */
 interface SlimEvent {
@@ -53,8 +55,9 @@ interface SlimEvent {
 }
 
 interface BulkDeleteCache {
+  version: number;
   pubkey: string;
-  range: DateRangeResult;
+  range: DateRangeResult | null; // null = the default "recent posts" view
   notes: SlimEvent[];
   selected: string[];
   hasMore: boolean;
@@ -159,7 +162,7 @@ export class BulkDeleteView extends View {
       </div>
       <div class="l-row--split bulk-delete__range-row">
         <span class="bulk-delete__range" data-range></span>
-        <a href="#" data-action="select-all">Select all</a>
+        <a href="#" data-action="select-all">Select all visible</a>
       </div>
       <div class="ui-list" data-list></div>
       <div class="bulk-delete__footer" data-footer hidden>
@@ -205,9 +208,12 @@ export class BulkDeleteView extends View {
       this.saveCache();
     });
 
-    // Restore a recent search (range + notes + selection) so re-opening the
-    // addon doesn't force the user to run the same search again.
-    this.restoreFromCache();
+    // Restore a recent search (range + notes + selection) so re-opening the addon
+    // doesn't force a re-search. If there's nothing to restore (fresh enable or new
+    // session), load the user's recent posts by default — the time range is optional.
+    if (!this.restoreFromCache()) {
+      void this.loadInitial();
+    }
 
     // Attach to live broadcast progress (and reconnect to one already running).
     this.subscribeProgress();
@@ -216,9 +222,10 @@ export class BulkDeleteView extends View {
   /** Persist the current list to sessionStorage so a reload/re-open skips the re-search. */
   private saveCache(): void {
     const pubkey = this.pubkey;
-    if (!pubkey || !this.range) return;
+    if (!pubkey || (!this.range && this.notes.length === 0)) return;
     try {
       const cache: BulkDeleteCache = {
+        version: CACHE_VERSION,
         pubkey,
         range: this.range,
         notes: this.notes.map(n => ({
@@ -241,10 +248,15 @@ export class BulkDeleteView extends View {
       const raw = sessionStorage.getItem(SESSION_KEY);
       if (!raw) return false;
       const c = JSON.parse(raw) as BulkDeleteCache;
+      if (c.version !== CACHE_VERSION) {
+        sessionStorage.removeItem(SESSION_KEY); // purge a cache from an older, possibly broken version
+        return false;
+      }
       if (c.pubkey !== pubkey || Date.now() - c.savedAt > CACHE_TTL_MS) return false;
       this.range = c.range;
       // Slim events are valid for preview / open / cache-seed (sig isn't needed to display).
-      this.notes = c.notes as unknown as NostrEvent[];
+      // Defensive re-sort newest-first so a once-mis-ordered cache can't resurface.
+      this.notes = (c.notes as unknown as NostrEvent[]).slice().sort((a, b) => b.created_at - a.created_at);
       this.selected = new Set(c.selected);
       this.hasMore = c.hasMore;
       this.renderRangeLabel();
@@ -283,18 +295,24 @@ export class BulkDeleteView extends View {
     return ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
   }
 
+  /** The effective [since, until]. Default "recent" view = everything up to now. */
+  private effectiveRange(): { since: number; until: number } {
+    return this.range ?? { since: 0, until: Math.floor(Date.now() / 1000) };
+  }
+
   /**
-   * Config for "my own posts in a time range". Crucially uses `pagination: 'window'`
-   * (NOT the profile 'until'/'direct' combo) so FeedOrchestrator takes the
-   * time-range branch (honoring since/until) instead of loadProfileDirect, which
-   * ignores the range and returns newest posts.
+   * Feed config for the user's own posts. Always the windowed time-range path
+   * (FeedOrchestrator honors since/until via a clean `until`-cursor) — NOT the
+   * profile 'until'/'direct' combo, whose shared, stateful pager mis-orders newly
+   * arrived posts and stalls loadMore. The default "recent" view is just the range
+   * [0, now]; a picked range narrows it.
    */
   private buildFeedConfig(pubkey: string): TimelineConfig {
-    const range = this.range!;
+    const r = this.effectiveRange();
     return {
       source: { kind: 'authors', pubkeys: [pubkey] },
       relays: { kind: 'auto' },
-      range: { kind: 'between', since: range.since, until: range.until },
+      range: { kind: 'between', since: r.since, until: r.until },
       includeReplies: true,
       fetchMode: 'direct',
       pagination: 'window',
@@ -320,7 +338,7 @@ export class BulkDeleteView extends View {
   private async loadInitial(): Promise<void> {
     const pubkey = this.pubkey;
     const api = this.timelineApi;
-    if (!pubkey || !api || !this.range) {
+    if (!pubkey || !api) {
       this.renderList();
       return;
     }
@@ -328,33 +346,42 @@ export class BulkDeleteView extends View {
     this.renderRangeLabel();
     this.renderList();
 
-    try {
-      const result = await api.loadInitialFeed({
-        followingPubkeys: [pubkey],
-        includeReplies: true,
-        since: this.range.since,
-        until: this.range.until,
-        exemptFromMuteFilter: pubkey,
-        config: this.buildFeedConfig(pubkey),
-      });
-      this.notes = result.events;
-      // We drive paging ourselves (see handleLoadMore) — more likely if a full page came back.
-      this.hasMore = result.events.length > 0;
-    } catch (err) {
-      SystemLogger.getInstance().warn('BulkDeleteView', `Failed to load notes: ${err}`);
-      ToastService.show('Failed to load your notes', 'error');
-      this.notes = [];
-      this.hasMore = false;
-    } finally {
-      this.loading = false;
-      this.renderList();
-      this.setupInfiniteScroll();
-      this.saveCache();
+    // Relays are often still cold right after a page load, so the default "recent"
+    // fetch can come back empty on the first try. Retry a few times before giving up.
+    const r = this.effectiveRange();
+    const attempts = this.range ? 1 : 4;
+    for (let i = 0; i < attempts; i++) {
+      try {
+        const result = await api.loadInitialFeed({
+          followingPubkeys: [pubkey],
+          includeReplies: true,
+          exemptFromMuteFilter: pubkey,
+          since: r.since,
+          until: r.until,
+          config: this.buildFeedConfig(pubkey),
+        });
+        this.notes = result.events;
+        // We drive paging ourselves (see handleLoadMore).
+        this.hasMore = result.events.length > 0;
+        if (this.notes.length > 0 || this.range || i === attempts - 1) break;
+      } catch (err) {
+        SystemLogger.getInstance().warn('BulkDeleteView', `Failed to load notes: ${err}`);
+        ToastService.show('Failed to load your notes', 'error');
+        this.notes = [];
+        this.hasMore = false;
+        break;
+      }
+      await new Promise(r => setTimeout(r, 1200));
     }
+
+    this.loading = false;
+    this.renderList();
+    this.setupInfiniteScroll();
+    this.saveCache();
   }
 
   private async handleLoadMore(): Promise<void> {
-    if (this.loading || !this.hasMore || !this.range) return;
+    if (this.loading || !this.hasMore) return;
     const pubkey = this.pubkey;
     const api = this.timelineApi;
     const oldest = this.notes[this.notes.length - 1];
@@ -364,16 +391,15 @@ export class BulkDeleteView extends View {
     this.infiniteScroll?.showLoading();
     try {
       // A huge timeWindowHours collapses the orchestrator's windowed step onto the
-      // full [since, until] range → a clean `until`-cursor page over the whole
-      // range instead of 3h windows (which would be thousands of empty fetches
-      // for a single author over a wide range).
-      const spanHours = Math.ceil((this.range.until - this.range.since) / 3600) + 1;
+      // full [since, until] range → a clean `until`-cursor page over the whole range
+      // (recent view = [0, now]) instead of 3h windows / the stateful profile pager.
+      const r = this.effectiveRange();
       const result = await api.loadMore({
         followingPubkeys: [pubkey],
         includeReplies: true,
-        since: this.range.since,
+        since: r.since,
         until: oldest.created_at,
-        timeWindowHours: spanHours,
+        timeWindowHours: Math.ceil((r.until - r.since) / 3600) + 1,
         exemptFromMuteFilter: pubkey,
         config: this.buildFeedConfig(pubkey),
       });
@@ -409,7 +435,8 @@ export class BulkDeleteView extends View {
 
   private renderRangeLabel(): void {
     const el = this.contentEl?.querySelector('[data-range]') as HTMLElement | null;
-    if (!el || !this.range) return;
+    if (!el) return;
+    if (!this.range) { el.textContent = 'Your recent posts'; return; }
     const fmt = (s: number) => new Date(s * 1000).toLocaleDateString();
     el.textContent = `Your posts from ${fmt(this.range.since)} to ${fmt(this.range.until)}`;
   }
@@ -424,13 +451,8 @@ export class BulkDeleteView extends View {
       if (footer) footer.hidden = true;
       return;
     }
-    if (!this.range) {
-      list.innerHTML = `<div class="bulk-delete__empty">Pick a time range to list your posts.</div>`;
-      if (footer) footer.hidden = true;
-      return;
-    }
     if (this.notes.length === 0) {
-      list.innerHTML = `<div class="bulk-delete__empty">No posts found in this range.</div>`;
+      list.innerHTML = `<div class="bulk-delete__empty">${this.range ? 'No posts found in this range.' : 'No posts found.'}</div>`;
       if (footer) footer.hidden = true;
       return;
     }
@@ -512,7 +534,7 @@ export class BulkDeleteView extends View {
   /** "Select all" when not everything is selected, "Unselect all" when it is. */
   private updateSelectAllLabel(): void {
     const link = this.contentEl?.querySelector('[data-action="select-all"]');
-    if (link) link.textContent = this.allSelected ? 'Unselect all' : 'Select all';
+    if (link) link.textContent = this.allSelected ? 'Unselect all visible' : 'Select all visible';
   }
 
   private updateDeleteButton(): void {
