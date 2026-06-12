@@ -1,12 +1,12 @@
-# NoorNote 0.12.0
+# NoorNote 0.13.0
 
 **New**
-- Follower notifications: an opt-in addon that tells you in-app when someone new follows you, verified against their own contact list so there are no false alarms.
-- Reply to zaps: tap a zap to reply (for example a thank-you). Your reply reaches the zapper and shows threaded in your notifications.
+- Bulk delete: a new opt-in addon to delete many of your own posts at once. It lists your recent posts (or a chosen time range), you tick the ones to remove and delete them in one go, with live progress.
+- Reliable deletions: deletion requests are now broadcast to 1400+ relays in the background and keep going across reloads and restarts until delivered.
+- Paste-to-upload: paste an image from your clipboard straight into any editor and it uploads automatically.
 
 **Changed**
-- Default relays updated: replaced the Damus and Primal relays with nostr.mom and relay.ditto.pub. You can still add any relay manually in Settings.
-- Mobile: after Android closes the app in the background, reopening returns you to where you were instead of the home timeline.
+- Optimized internal relays.
 
 **Fixes**
-- Various follower-notification and notification-display improvements.
+- Restored the green upload-progress ring that fills while images upload.
