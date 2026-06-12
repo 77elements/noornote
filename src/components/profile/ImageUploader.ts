@@ -193,9 +193,14 @@ export class ImageUploader {
       overlay.style.opacity = '1';
     }
 
-    // Replace icon with progress circle (same as PostEditorToolbar)
+    // Replace icon with a transparent ring whose green border fills with progress.
+    // Kept INLINE on purpose (not a sprite <use>): updateProgress() animates the
+    // bar's stroke-dashoffset, which can't reach a circle inside a <use> shadow tree.
     iconContainer.innerHTML = `
-      <svg width="32" height="32" class="upload-progress"><use href="#icon-upload-progress"/></svg>
+      <svg width="32" height="32" viewBox="0 0 24 24" class="upload-progress">
+        <circle class="upload-progress-bg" cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" opacity="0.2"></circle>
+        <circle class="upload-progress-bar" cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="62.83" stroke-dashoffset="62.83"></circle>
+      </svg>
     `;
   }
 
