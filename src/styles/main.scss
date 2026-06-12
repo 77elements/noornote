@@ -39,6 +39,7 @@
 @use 'components/move-dropdown';
 @use 'components/_system-logger';
 @use 'components/_follower-notification';
+@use 'components/_bulk-delete';
 @use 'components/_scc-article-feed';
 @use 'components/_scc-media-feed';
 @use 'components/user-status';

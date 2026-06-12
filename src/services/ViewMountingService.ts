@@ -533,6 +533,15 @@ export class ViewMountingService {
           }
         };
 
+      case 'addon-bulk-delete':
+        return {
+          factory: async () => {
+            const { BulkDeleteView } = await import('../addons/bulk-delete/BulkDeleteView');
+            const view = new BulkDeleteView();
+            return { element: view.getElement(), view };
+          }
+        };
+
       case 'addon-nostr-majlis':
         return {
           factory: async () => {

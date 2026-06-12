@@ -1,5 +1,6 @@
 import type { ModuleRuntime, ModuleContext } from '../../core/ModuleLoader';
 import type { PostsModuleApi } from './contracts';
+import { BroadcastDeleteService } from '../../services/BroadcastDeleteService';
 
 export class PostsRuntime implements ModuleRuntime<PostsModuleApi> {
   private service: import('../../services/PostService').PostService | null = null;
@@ -62,6 +63,9 @@ export class PostsRuntime implements ModuleRuntime<PostsModuleApi> {
       deleteEvent: (eventId, reason) => ds?.deleteEvent(eventId, reason) ?? Promise.resolve(false),
       deleteEvents: (options) => ds?.deleteEvents(options) ?? Promise.resolve(false),
       deleteByCoordinates: (coordinates, reason) => ds?.deleteByCoordinates(coordinates, reason) ?? Promise.resolve(false),
+      subscribeDeleteProgress: (cb) => BroadcastDeleteService.getInstance().subscribeProgress(cb),
+      countActiveDeleteBroadcasts: () => BroadcastDeleteService.getInstance().countActiveSilentJobs(),
+      getDeleteProgressSummary: () => BroadcastDeleteService.getInstance().getSilentProgress(),
       createReport: (options) => rps?.createReport(options) ?? Promise.resolve({ success: false, error: 'Module not loaded' }),
       getReportTypes: () => RpsCls?.getReportTypes() ?? [],
       getReportTypeLabel: (type) => RpsCls?.getReportTypeLabel(type) ?? '',

@@ -24,6 +24,7 @@ import { isFollowerNotificationEnabled } from './follower-notification/index';
 import { isScheduledPostsEnabled } from './scheduled-posts/index';
 import { isBadgesEnabled } from './badges/index';
 import { isNoteTakingEnabled } from './note-taking/index';
+import { isBulkDeleteEnabled } from './bulk-delete/index';
 import { isNostrMajlisEnabled } from './nostr-majlis/index';
 
 export function registerCoreAddons(): void {
@@ -100,6 +101,12 @@ export function registerCoreAddons(): void {
     id: 'note-taking',
     isEnabled: isNoteTakingEnabled,
     load: () => import('./note-taking/runtime').then(m => m.default),
+  });
+
+  loader.register({
+    id: 'bulk-delete',
+    isEnabled: isBulkDeleteEnabled,
+    load: () => import('./bulk-delete/runtime').then(m => m.default),
   });
 
   loader.register({

@@ -1,5 +1,6 @@
 import type { ModuleRuntime, ModuleContext } from '../../core/ModuleLoader';
 import type { SingleNoteModuleApi } from './contracts';
+import { NoteService } from '../../services/NoteService';
 
 export class SingleNoteRuntime implements ModuleRuntime<SingleNoteModuleApi> {
   private orchestrator: import('../../services/orchestration/ThreadOrchestrator').ThreadOrchestrator | null = null;
@@ -38,6 +39,8 @@ export class SingleNoteRuntime implements ModuleRuntime<SingleNoteModuleApi> {
     const qo = this.quoteOrchestrator;
     const po = this.pollOrchestrator;
     return {
+      getCachedNote: (noteId) => NoteService.getInstance().getCachedNote(noteId),
+      cacheNote: (event) => NoteService.getInstance().registerNote(event),
       fetchReplies: (noteId, authorPubkey) => orch?.fetchReplies(noteId, authorPubkey) ?? Promise.resolve([]),
       fetchParentChain: (noteId) => orch?.fetchParentChain(noteId) ?? Promise.resolve({ items: [], rootId: null } as any),
       startLiveReplies: (noteId, callback) => orch?.startLiveReplies(noteId, callback),

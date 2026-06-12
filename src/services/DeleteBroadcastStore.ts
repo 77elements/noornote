@@ -49,6 +49,12 @@ export interface BroadcastJob {
   expiresAt: number;
   /** Per-relay delivery state, keyed by relay URL */
   relays: Record<string, RelayDeliveryState>;
+  /**
+   * When true, this job emits NO System Log progress (the 2 DeleteService lines
+   * are suppressed). Used by the Bulk Delete addon, which shows progress on its
+   * own page instead. Persisted so a resumed silent job stays silent.
+   */
+  silent?: boolean;
 }
 
 const DB_NAME = 'noornote_delete_broadcast';

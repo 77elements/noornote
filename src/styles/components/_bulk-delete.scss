@@ -1,0 +1,91 @@
+/**
+ * Bulk Delete addon — one-line own-post list with selection + on-page delete progress.
+ * Reuses .ui-list / .ui-list__item, .btn, .nn-checkbox. Only layout glue here.
+ */
+
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+.bulk-delete__bar {
+  margin: $gap 0;
+}
+
+.bulk-delete__range-row {
+  margin-bottom: $gap;
+}
+
+.bulk-delete__range {
+  color: var(--color-3);
+  font-weight: 500;
+}
+
+.bulk-delete__empty {
+  padding: $gap;
+  text-align: center;
+  color: var(--color-3);
+}
+
+// One-line row: clickable text (grows) + date + selection checkbox.
+.bulk-delete__row {
+  display: flex;
+  align-items: center;
+  gap: $gap;
+}
+
+.bulk-delete__text {
+  flex: 1;
+  min-width: 0;
+  @include text-truncate;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--color-4);
+  }
+}
+
+.bulk-delete__date {
+  flex-shrink: 0;
+  color: var(--color-3);
+  white-space: nowrap;
+}
+
+.bulk-delete__select {
+  flex-shrink: 0;
+}
+
+.bulk-delete__row .nn-checkbox {
+  padding: calc($gap / 2);
+}
+
+.bulk-delete__footer {
+  margin-top: $gap;
+  padding-top: $gap;
+}
+
+.bulk-delete__progress {
+  margin: 0;
+  padding: $gap 0;
+}
+
+.bulk-delete__progress-head {
+  margin: $gap 0 $gap $gap;
+  font-weight: 500;
+}
+
+.bulk-delete__progress-relay {
+  margin: $gap 0 $gap $gap;
+  color: var(--color-3);
+}
+
+// Small round status diode (red/green), same idea as the System Log diode.
+.bulk-delete__dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: calc($gap / 4);
+  border-radius: $radius-full;
+  vertical-align: middle;
+
+  &--success { background: $color-success; }
+  &--error { background: $color-red; }
+}

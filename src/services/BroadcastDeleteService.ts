@@ -1493,10 +1493,34 @@ const LINE_RELAY = 'delete-broadcast:relay';   // line 2 (swaps): current relay 
 /** Outcome of a single relay send */
 type SendOutcome = 'ok' | 'rejected' | 'failed';
 
+/** Live progress for a silent (addon-driven) broadcast — not persisted. */
+export interface BroadcastProgress {
+  jobId: string;
+  host: string;
+  contacted: number;
+  total: number;
+  /** Last relay's outcome (true = accepted) — for the on-page green/red diode. */
+  ok: boolean;
+  done: boolean;
+}
+
+/** Options for a single broadcast. */
+export interface BroadcastOptions {
+  /** Suppress the System Log progress lines (Bulk Delete shows progress on-page). */
+  silent?: boolean;
+}
+
 export class BroadcastDeleteService {
   private static instance: BroadcastDeleteService;
   private systemLogger: SystemLogger;
   private store: DeleteBroadcastStore;
+
+  /**
+   * Live progress subscribers for silent jobs. Global (not per-job/per-view), so
+   * a re-mounted Bulk Delete view can re-attach and keep showing progress, and
+   * unsubscribing on destroy avoids retaining a dead view for the job's lifetime.
+   */
+  private silentProgressSubs = new Set<(p: BroadcastProgress) => void>();
 
   /** Single-flight guard: only one drain pass runs at a time */
   private draining = false;
@@ -1525,10 +1549,48 @@ export class BroadcastDeleteService {
    * persisted BEFORE the first send, so it survives a reload/crash/app-quit and
    * resumes on the next launch (see resumePending).
    */
-  broadcastInBackground(signedEvent: SignedNostrEvent): void {
-    void this.enqueueAndDrain(signedEvent).catch(error => {
+  broadcastInBackground(signedEvent: SignedNostrEvent, opts: BroadcastOptions = {}): void {
+    void this.enqueueAndDrain(signedEvent, opts).catch(error => {
       this.systemLogger.error('BroadcastDelete', `Unexpected error: ${error}`);
     });
+  }
+
+  /** Subscribe to live progress of every silent job. Returns an unsubscribe fn. */
+  subscribeProgress(cb: (p: BroadcastProgress) => void): () => void {
+    this.silentProgressSubs.add(cb);
+    return () => { this.silentProgressSubs.delete(cb); };
+  }
+
+  /** Count silent (addon-driven) jobs still persisted/in-flight. */
+  async countActiveSilentJobs(): Promise<number> {
+    const jobs = await this.store.getAllJobs();
+    return jobs.filter(j => j.silent).length;
+  }
+
+  /**
+   * Aggregate delivery state across all silent jobs, or null if none are running.
+   * `contacted` = relays attempted at least once (first-pass progress); when it
+   * reaches `total` the deletion has been delivered to every reachable relay and
+   * only dead-relay retries remain in the background.
+   */
+  async getSilentProgress(): Promise<{ total: number; contacted: number; sent: number } | null> {
+    const jobs = (await this.store.getAllJobs()).filter(j => j.silent);
+    if (jobs.length === 0) return null;
+    let total = 0, contacted = 0, sent = 0;
+    for (const job of jobs) {
+      for (const s of Object.values(job.relays)) {
+        total++;
+        if (s.status === 'sent') { sent++; contacted++; }
+        else if (s.status === 'rejected' || s.attempts > 0) contacted++;
+      }
+    }
+    return { total, contacted, sent };
+  }
+
+  private notifySilent(p: BroadcastProgress): void {
+    for (const cb of this.silentProgressSubs) {
+      try { cb(p); } catch { /* a dead subscriber must not break the drain */ }
+    }
   }
 
   /**
@@ -1541,7 +1603,7 @@ export class BroadcastDeleteService {
   }
 
   /** Build the job's relay set and persist it, then kick off draining. */
-  private async enqueueAndDrain(signedEvent: SignedNostrEvent): Promise<void> {
+  private async enqueueAndDrain(signedEvent: SignedNostrEvent, opts: BroadcastOptions = {}): Promise<void> {
     this.wireResumeTriggers();
 
     // Build full relay set: hardcoded + aggregator relays.
@@ -1576,10 +1638,11 @@ export class BroadcastDeleteService {
       expiresAt: now + TTL_MS,
       relays,
     };
+    if (opts.silent) job.silent = true;
 
     await this.store.putJob(job);
-    diagLog('relays', 'Delete broadcast queued', { event: job.id, relays: broadcastRelays.length });
-    // Constant header line (line 1) — shows immediately on click.
+    diagLog('relays', 'Delete broadcast queued', { event: job.id, relays: broadcastRelays.length, silent: !!opts.silent });
+    // Constant header line (line 1) — shows immediately on click (System-Log jobs only).
     this.reportHeader(job);
 
     await this.scheduleDrain();
@@ -1725,28 +1788,38 @@ export class BroadcastDeleteService {
         sent,
         total: states.length,
       });
+      if (job.silent) {
+        this.notifySilent({ jobId: job.id, host: '', contacted: states.length, total: states.length, ok: true, done: true });
+      }
     } else {
       await this.store.putJob(job);
     }
   }
 
-  /** Line 1 (constant): which event is being deleted. No counter. */
+  /** Line 1 (constant): which event is being deleted. No counter. Silent jobs skip the System Log. */
   private reportHeader(job: BroadcastJob): void {
+    if (job.silent) return;
     const shortId = job.id.length > 12 ? `${job.id.slice(0, 12)}…` : job.id;
     this.systemLogger.setLine(LINE_HEADER, 'info', LOG_CATEGORY, `Deleting event ${shortId}`, undefined, false);
   }
 
   /**
-   * Line 2 (swaps in place): current relay + green/red status diode, plus a
-   * "(done/total)" counter scoped to THIS broadcast (relays already contacted
-   * out of the job's total). Caps at the relay count — not a session-cumulative
-   * tally — so it stays meaningful even with several jobs draining at once.
+   * Per-relay progress. For normal jobs: line 2 in the System Log (swapping relay
+   * + green/red diode + "(done/total)" counter scoped to THIS broadcast). For
+   * silent jobs (Bulk Delete): no System Log — fire the live progress callback
+   * instead (only while one is registered; nothing on a resumed silent job).
    */
   private reportRelay(job: BroadcastJob, url: string, outcome: SendOutcome): void {
     const ok = outcome === 'ok';
     const states = Object.values(job.relays);
     const total = states.length;
     const contacted = states.filter(s => s.status !== 'pending' || s.attempts > 0).length;
+
+    if (job.silent) {
+      this.notifySilent({ jobId: job.id, host: this.hostOf(url), contacted, total, ok, done: false });
+      return;
+    }
+
     this.systemLogger.setLine(
       LINE_RELAY,
       ok ? 'success' : 'error',

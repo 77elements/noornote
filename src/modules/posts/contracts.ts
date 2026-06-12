@@ -1,11 +1,12 @@
 import type { PostOptions, ReplyOptions, HighlightOptions } from '../../services/PostService';
 import type { RepostOptions } from '../../services/RepostService';
 import type { DeletionOptions } from '../../services/DeletionService';
+import type { BroadcastProgress } from '../../services/BroadcastDeleteService';
 import type { ReportType, ReportOptions } from '../../services/ReportService';
 import type { MentionSuggestion } from '../../components/mentions/MentionAutocomplete';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
-export type { PostOptions, ReplyOptions, HighlightOptions, RepostOptions, DeletionOptions, ReportType, ReportOptions, MentionSuggestion };
+export type { PostOptions, ReplyOptions, HighlightOptions, RepostOptions, DeletionOptions, BroadcastProgress, ReportType, ReportOptions, MentionSuggestion };
 
 export interface PostsModuleApi {
   createPost(options: PostOptions): Promise<boolean>;
@@ -29,6 +30,11 @@ export interface PostsModuleApi {
   deleteEvent(eventId: string, reason?: string): Promise<boolean>;
   deleteEvents(options: DeletionOptions): Promise<boolean>;
   deleteByCoordinates(coordinates: string[], reason?: string): Promise<boolean>;
+
+  // BroadcastDeleteService — live progress of silent (Bulk Delete) broadcasts
+  subscribeDeleteProgress(cb: (p: BroadcastProgress) => void): () => void;
+  countActiveDeleteBroadcasts(): Promise<number>;
+  getDeleteProgressSummary(): Promise<{ total: number; contacted: number; sent: number } | null>;
 
   // ReportService
   createReport(options: ReportOptions): Promise<{ success: boolean; error?: string }>;

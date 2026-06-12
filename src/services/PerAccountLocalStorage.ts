@@ -144,6 +144,7 @@ export const StorageKeys = {
   WALLET_BALANCE_ADDON_ENABLED: 'noornote_wallet_balance_addon_enabled_map',
   LIVE_STREAMS_PLAYER_ENABLED: 'noornote_live_streams_player_enabled_map',
   BADGES_ENABLED: 'noornote_badges_enabled_map',
+  BULK_DELETE_ENABLED: 'noornote_bulk_delete_enabled_map',
   NOTE_TAKING_ENABLED: 'noornote_note_taking_enabled_map',
   // Note taking deletion tombstones — Record<noteUuid, deletionTimestampSec>.
   // Prevents a GC'd kind:5 from resurrecting a deleted note on next fetch.

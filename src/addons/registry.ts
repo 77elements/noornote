@@ -38,5 +38,6 @@ export const ADDON_REGISTRY: AddonRegistryEntry[] = [
   { id: 'scheduled-posts',       name: 'Scheduled Posts',        route: '/addons/scheduled-posts',       viewId: 'addon-scheduled-posts' },
   { id: 'badges',                name: 'Badges',                 route: '/addons/badges',                viewId: 'addon-badges' },
   { id: 'note-taking',           name: 'Note taking',            route: '/addons/note-taking',           viewId: 'addon-note-taking' },
+  { id: 'bulk-delete',           name: 'Bulk delete',            route: '/addons/bulk-delete',           viewId: 'addon-bulk-delete' },
   { id: 'nostr-majlis',          name: 'Nostr-Majlis',           route: '/addons/nostr-majlis',          viewId: 'addon-nostr-majlis' },
 ];

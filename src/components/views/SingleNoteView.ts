@@ -126,20 +126,20 @@ export class SingleNoteView extends View {
   }
 
   private async fetchNote(noteId: string): Promise<NostrEvent | null> {
-    const relays = this.relayConfig.getReadRelays();
+    // Cache-first: a note already loaded by a feed (e.g. the Bulk Delete list, or
+    // the timeline) resolves instantly from the NoteService LRU and doesn't depend
+    // on the read relays still carrying it — old notes often aren't there anymore.
+    let event: NostrEvent | null = this.singleNoteApi?.getCachedNote(noteId) ?? null;
 
-    const result = await fetchNostrEvents({
-      relays,
-      ids: [noteId],
-      limit: 1
-    });
-
-    if (result.events.length === 0) {
-      this.systemLogger.warn('SNV', `Note not found (${noteId.slice(0, 8)})`);
-      return null;
+    if (!event) {
+      const result = await fetchNostrEvents({
+        relays: this.relayConfig.getReadRelays(),
+        ids: [noteId],
+        limit: 1
+      });
+      event = result.events[0] ?? null;
     }
 
-    const event = result.events[0];
     if (!event) {
       this.systemLogger.warn('SNV', `Note not found (${noteId.slice(0, 8)})`);
       return null;

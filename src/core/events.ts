@@ -339,6 +339,7 @@ export interface AppEvents {
   // ── Addon Toggles ─────────────────────────
   'badges:addon-toggle': AddonTogglePayload;
   'bookmarks:addon-toggle': AddonTogglePayload;
+  'bulk-delete:addon-toggle': AddonTogglePayload;
   'content-word-filter:toggle': AddonTogglePayload;
   'custom-emojis:addon-toggle': AddonTogglePayload;
   'extended-follows:toggle': AddonTogglePayload;

@@ -20,6 +20,10 @@ interface PollOptionInput {
 export type { PollOptionInput };
 
 export interface SingleNoteModuleApi {
+  /** Cache-only lookup (NoteService LRU). Returns a note already loaded by a feed without any relay fetch. */
+  getCachedNote(noteId: string): NostrEvent | null;
+  /** Push a fully-loaded event into the note cache so a subsequent SNV open resolves it without a relay fetch. */
+  cacheNote(event: NostrEvent): void;
   fetchReplies(noteId: string, authorPubkey?: string): Promise<NostrEvent[]>;
   fetchParentChain(noteId: string): Promise<ThreadContext>;
   startLiveReplies(noteId: string, callback: (event: NostrEvent) => void): void;

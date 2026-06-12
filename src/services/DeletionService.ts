@@ -27,6 +27,12 @@ export interface DeletionOptions {
   coordinates?: string[];
   /** Optional: Reason for deletion (shown in content field) */
   reason?: string;
+  /**
+   * Silent mode (Bulk Delete): suppress the success toast and all System Log
+   * output (DeletionService + the broadcast's DeleteService lines). The caller
+   * surfaces progress itself by subscribing to BroadcastDeleteService progress.
+   */
+  silent?: boolean;
 }
 
 export class DeletionService {
@@ -66,7 +72,7 @@ export class DeletionService {
       return false;
     }
 
-    const { eventIds, coordinates, reason } = options;
+    const { eventIds, coordinates, reason, silent } = options;
 
     // Validate authentication (redundant check for safety, but AuthGuard already handled UI)
     const currentUser = this.authService.getCurrentUser();
@@ -117,7 +123,7 @@ export class DeletionService {
       }
 
       // Determine target relays based on local relay status
-      const targetRelays = this.getTargetRelays();
+      const targetRelays = this.getTargetRelays(silent);
 
       if (targetRelays.length === 0) {
         this.systemLogger.error('DeletionService', 'No relays available for deletion');
@@ -127,17 +133,21 @@ export class DeletionService {
       // Publish deletion request
       await this.transport.publish(targetRelays, signedEvent);
 
-      const totalItems = (eventIds?.length || 0) + (coordinates?.length || 0);
-      this.systemLogger.info(
-        'DeletionService',
-        `Deletion request published for ${totalItems} item(s) to ${targetRelays.length} relay(s)`
-      );
+      if (!silent) {
+        const totalItems = (eventIds?.length || 0) + (coordinates?.length || 0);
+        this.systemLogger.info(
+          'DeletionService',
+          `Deletion request published for ${totalItems} item(s) to ${targetRelays.length} relay(s)`
+        );
+      }
 
-      // Broadcast deletion to 1000+ relays in background (fire-and-forget)
-      BroadcastDeleteService.getInstance().broadcastInBackground(signedEvent);
+      // Broadcast deletion to 1000+ relays in background (fire-and-forget).
+      // Silent mode (Bulk Delete) suppresses the System Log; progress is delivered
+      // to BroadcastDeleteService progress subscribers instead.
+      BroadcastDeleteService.getInstance().broadcastInBackground(signedEvent, silent ? { silent: true } : {});
 
-      // Show success toast to user
-      ToastService.show('Deletion request sent successfully', 'success');
+      // Show success toast to user (suppressed in silent mode — caller shows its own status)
+      if (!silent) ToastService.show('Deletion request sent successfully', 'success');
 
       return true;
     } catch (error) {
@@ -159,16 +169,18 @@ export class DeletionService {
    * - Local relay active (TEST mode): ONLY local relay
    * - Otherwise: ALL relays from settings (read + write)
    */
-  private getTargetRelays(): string[] {
+  private getTargetRelays(silent = false): string[] {
     // Load local relay settings from localStorage
     const localRelaySettings = this.relayConfig.loadLocalRelaySettings();
 
     // Check if local relay is active (TEST mode)
     if (localRelaySettings.enabled) {
-      this.systemLogger.info(
-        'DeletionService',
-        `Using local relay in TEST mode: ${localRelaySettings.url}`
-      );
+      if (!silent) {
+        this.systemLogger.info(
+          'DeletionService',
+          `Using local relay in TEST mode: ${localRelaySettings.url}`
+        );
+      }
       return [localRelaySettings.url];
     }
 
@@ -177,10 +189,12 @@ export class DeletionService {
       .filter(r => r.isActive)
       .map(r => r.url);
 
-    this.systemLogger.info(
-      'DeletionService',
-      `Using all ${allRelays.length} relay(s) from settings for deletion`
-    );
+    if (!silent) {
+      this.systemLogger.info(
+        'DeletionService',
+        `Using all ${allRelays.length} relay(s) from settings for deletion`
+      );
+    }
 
     return allRelays;
   }
