@@ -10,6 +10,7 @@ import { ToastService } from '../../services/ToastService';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { MediaModuleApi } from '../../modules/media/contracts';
 import { MarkdownToolbar } from '../../components/ui/MarkdownToolbar';
+import { setupPasteUpload } from '../../helpers/pasteUpload';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { NoteTakingService } from './NoteTakingService';
 import type { NoteChecklistItem, NoteRecord } from './NoteTakingStore';
@@ -87,6 +88,10 @@ export class NoteEditorModal {
 
     const toolbarRoot = content.querySelector('.md-toolbar') as HTMLElement | null;
     if (toolbarRoot) this.toolbar.attach(toolbarRoot);
+
+    // Paste-to-upload: pasted images go through the same upload + markdown-insert path.
+    const noteBody = content.querySelector('.note-taking-editor__body') as HTMLElement | null;
+    if (noteBody) setupPasteUpload(noteBody, files => files.forEach(f => void this.toolbar?.handleImageUpload(f)));
 
     const pinBtn = content.querySelector('.note-taking-editor__pin') as HTMLButtonElement;
     pinBtn.addEventListener('click', () => {

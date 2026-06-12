@@ -21,6 +21,7 @@ import { AuthGuard } from '../../services/AuthGuard';
 import { SystemLogger } from '../../services/SystemLogger';
 import { RelaySelector } from '../post/RelaySelector';
 import { PostEditorToolbar } from '../post/PostEditorToolbar';
+import { setupPasteUpload } from '../../helpers/pasteUpload';
 import { MentionAutocomplete } from '../mentions/MentionAutocomplete';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { MediaModuleApi } from '../../modules/media/contracts';
@@ -499,6 +500,10 @@ export class ArticleEditorView extends View {
     if (this.toolbar && toolbarContainer) {
       this.toolbar.setupEventListeners(toolbarContainer as HTMLElement);
     }
+
+    // Paste-to-upload into the article body.
+    const pasteTarget = this.container.querySelector('.article-editor-content') as HTMLElement | null;
+    if (pasteTarget) setupPasteUpload(pasteTarget, files => void this.toolbar?.handleFileUpload(files));
 
     // Markdown toolbar
     this.setupMarkdownToolbar();

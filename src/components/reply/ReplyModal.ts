@@ -29,6 +29,7 @@ import { AuthService } from '../../services/AuthService';
 import { AuthGuard } from '../../services/AuthGuard';
 import { RelaySelector } from '../post/RelaySelector';
 import { PostEditorToolbar } from '../post/PostEditorToolbar';
+import { setupPasteUpload } from '../../helpers/pasteUpload';
 import { renderPostPreview } from '../../helpers/renderPostPreview';
 import { stripTrackingParams } from '../../helpers/stripTrackingParams';
 import { Switch } from '../ui/Switch';
@@ -359,6 +360,10 @@ export class ReplyModal {
     if (this.toolbar && toolbarContainer) {
       this.toolbar.setupEventListeners(toolbarContainer as HTMLElement);
     }
+
+    // Paste-to-upload: pasted media goes through the same upload path as the button.
+    const pasteTarget = modal.querySelector('[data-textarea]') as HTMLElement | null;
+    if (pasteTarget) setupPasteUpload(pasteTarget, files => void this.toolbar?.handleFileUpload(files));
 
     // Setup Comment/Reply switch (only for kind:1 parents)
     if (this.parentIsKind1) {

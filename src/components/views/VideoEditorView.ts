@@ -19,6 +19,7 @@ import { AuthGuard } from '../../services/AuthGuard';
 import { SystemLogger } from '../../services/SystemLogger';
 import { RelaySelector } from '../post/RelaySelector';
 import { PostEditorToolbar } from '../post/PostEditorToolbar';
+import { setupPasteUpload } from '../../helpers/pasteUpload';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { MediaModuleApi } from '../../modules/media/contracts';
 import { ToastService } from '../../services/ToastService';
@@ -99,10 +100,10 @@ export class VideoEditorView extends View {
     });
 
     this.toolbar = new PostEditorToolbar({
-      onMediaUploaded: (_url) => {
-        // Not used for inline media — video upload is handled separately
-      },
-      onEmojiSelected: (emoji) => this.handleEmojiSelected(emoji),
+      // The video itself is uploaded separately; toolbar/paste media is inserted
+      // into the description text (e.g. a thumbnail or extra image URL).
+      onMediaUploaded: (url) => this.insertAtCursor(url),
+      onEmojiSelected: (emoji) => this.insertAtCursor(emoji),
       textareaSelector: '.video-editor-description',
       showPoll: false
     });
@@ -279,6 +280,10 @@ export class VideoEditorView extends View {
     if (this.toolbar && toolbarContainer) {
       this.toolbar.setupEventListeners(toolbarContainer as HTMLElement);
     }
+
+    // Paste-to-upload into the video description.
+    const pasteTarget = this.container.querySelector('.video-editor-description') as HTMLElement | null;
+    if (pasteTarget) setupPasteUpload(pasteTarget, files => void this.toolbar?.handleFileUpload(files));
 
     // Video upload zone
     this.setupVideoUpload();
@@ -508,7 +513,7 @@ export class VideoEditorView extends View {
     this.updateButtonStates();
   }
 
-  private handleEmojiSelected(emoji: string): void {
+  private insertAtCursor(text: string): void {
     const textarea = this.container.querySelector('.video-editor-description') as HTMLTextAreaElement;
     if (!textarea) return;
 
@@ -516,10 +521,10 @@ export class VideoEditorView extends View {
     const before = this.content.slice(0, start);
     const after = this.content.slice(textarea.selectionEnd);
 
-    this.content = before + emoji + after;
+    this.content = before + text + after;
     textarea.value = this.content;
 
-    const newPos = start + emoji.length;
+    const newPos = start + text.length;
     textarea.setSelectionRange(newPos, newPos);
     textarea.focus();
   }

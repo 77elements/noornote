@@ -120,19 +120,27 @@ export class PostEditorToolbar {
   }
 
   /**
-   * Handle file upload (single or multiple files)
+   * Handle file upload (single or multiple files). Public so other entry points
+   * (e.g. paste-to-upload in the editor) can reuse the exact same upload + insert
+   * + progress + error path as the upload button.
    */
-  private async handleFileUpload(files: File[]): Promise<void> {
+  public async handleFileUpload(files: File[]): Promise<void> {
     if (!this.container || files.length === 0) return;
 
     const uploadBtn = this.container.querySelector('[data-action="upload"]') as HTMLButtonElement;
     if (!uploadBtn) return;
 
-    // Show uploading state
+    // Show uploading state: a transparent ring whose green border fills as the
+    // upload progresses. Kept INLINE on purpose (not a sprite <use>): the bar's
+    // stroke-dashoffset is animated from updateUploadProgress(), which can't reach
+    // a circle inside a <use> shadow tree.
     const originalHTML = uploadBtn.innerHTML;
     uploadBtn.disabled = true;
     uploadBtn.innerHTML = `
-      <svg width="20" height="20" class="upload-progress"><use href="#icon-upload-progress"/></svg>
+      <svg width="20" height="20" viewBox="0 0 24 24" class="upload-progress">
+        <circle class="upload-progress-bg" cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" opacity="0.2"></circle>
+        <circle class="upload-progress-bar" cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="62.83" stroke-dashoffset="62.83"></circle>
+      </svg>
     `;
 
     try {

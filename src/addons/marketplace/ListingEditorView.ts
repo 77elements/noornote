@@ -15,6 +15,7 @@ import { AuthGuard } from '../../services/AuthGuard';
 import { SystemLogger } from '../../services/SystemLogger';
 import { RelaySelector } from '../../components/post/RelaySelector';
 import { PostEditorToolbar } from '../../components/post/PostEditorToolbar';
+import { setupPasteUpload } from '../../helpers/pasteUpload';
 import { MentionAutocomplete } from '../../components/mentions/MentionAutocomplete';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { MediaModuleApi } from '../../modules/media/contracts';
@@ -351,6 +352,10 @@ export class ListingEditorView extends View {
     if (this.toolbar && toolbarContainer) {
       this.toolbar.setupEventListeners(toolbarContainer as HTMLElement);
     }
+
+    // Paste-to-upload into the listing description.
+    const pasteTarget = this.container.querySelector('.listing-editor-content') as HTMLElement | null;
+    if (pasteTarget) setupPasteUpload(pasteTarget, files => void this.toolbar?.handleFileUpload(files));
 
     // Mention autocomplete
     this.mentionAutocomplete = new MentionAutocomplete({

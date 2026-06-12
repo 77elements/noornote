@@ -139,7 +139,8 @@ export class MarkdownToolbar {
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
-  private async handleImageUpload(file: File): Promise<void> {
+  /** Public so paste-to-upload can reuse the same upload + markdown-insert path. */
+  public async handleImageUpload(file: File): Promise<void> {
     if (!file.type.startsWith('image/') || !this.options.onImageUpload) return;
 
     const url = await this.options.onImageUpload(file);

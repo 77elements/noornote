@@ -21,6 +21,7 @@ import { AuthGuard } from '../../services/AuthGuard';
 import { RelaySelector } from './RelaySelector';
 import { PostEditorToolbar } from './PostEditorToolbar';
 import { renderPostPreview } from '../../helpers/renderPostPreview';
+import { setupPasteUpload } from '../../helpers/pasteUpload';
 import { stripTrackingParams } from '../../helpers/stripTrackingParams';
 import { Switch } from '../ui/Switch';
 import { PollCreator, type PollData } from '../poll/PollCreator';
@@ -425,6 +426,10 @@ export class PostNoteModal {
       onSubmit: () => this.handlePost()
     });
     this.eventHandlerManager.setupEventListeners();
+
+    // Paste-to-upload: a pasted image/video/audio is uploaded via the upload path.
+    const textarea = modal.querySelector('[data-textarea]') as HTMLElement | null;
+    if (textarea) setupPasteUpload(textarea, files => void this.toolbar?.handleFileUpload(files));
   }
 
   /**
