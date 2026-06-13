@@ -6,6 +6,7 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { ModuleLoader } from '../../../core/ModuleLoader';
+import { escapeHtml } from '../../../helpers/escapeHtml';
 import type { SingleNoteModuleApi } from '../../../modules/single-note/contracts';
 
 interface LocalPollOption {
@@ -42,7 +43,7 @@ export class PollRenderer {
       optionBtn.disabled = true;
       optionBtn.dataset.optionIndex = option.id;
       optionBtn.innerHTML = `
-        <span class="poll-option-text">${option.label}</span>
+        <span class="poll-option-text">${escapeHtml(option.label)}</span>
         <span class="poll-option-stats">
           <span class="poll-option-count">Loading...</span>
         </span>

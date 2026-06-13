@@ -9,7 +9,7 @@ import { UserProfileService } from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { ZapsModuleApi } from '../../modules/zaps/contracts';
-import { escapeHtml } from '../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { extractZapperPubkey, extractZapMessage, getZapAmountSats, formatNumberWithCommas, isZapAnonymous } from '../../helpers/zapUtils';
 import { UserHoverCard } from './UserHoverCard';
 
@@ -155,11 +155,11 @@ export class ZapsList {
         avatarHtml = `<span class="zaps-list__avatar zaps-list__avatar--anonymous"><svg width="20" height="20"><use href="#icon-lock"></use></svg></span>`;
       } else if (zap.isOwn) {
         const img = zap.avatarUrl
-          ? `<img src="${zap.avatarUrl}" alt="${escapeHtml(zap.username)}" class="zaps-list__avatar" />`
+          ? `<img src="${escapeHtmlAttr(zap.avatarUrl)}" alt="${escapeHtml(zap.username)}" class="zaps-list__avatar" />`
           : `<span class="zaps-list__avatar"></span>`;
         avatarHtml = `<span class="zaps-list__own-anon">${img}<svg class="zaps-list__own-lock" width="12" height="12"><use href="#icon-lock"></use></svg></span>`;
       } else {
-        avatarHtml = `<img src="${zap.avatarUrl}" alt="${escapeHtml(zap.username)}" class="zaps-list__avatar" />`;
+        avatarHtml = `<img src="${escapeHtmlAttr(zap.avatarUrl)}" alt="${escapeHtml(zap.username)}" class="zaps-list__avatar" />`;
       }
 
       badge.innerHTML = `

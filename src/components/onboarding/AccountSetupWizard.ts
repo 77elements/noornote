@@ -74,7 +74,7 @@ interface WizardStep {
 }
 
 import { type FollowPack, parseFollowPackEvent, filterFollowPacks } from '../../helpers/parseFollowPack';
-import { escapeHtml } from '../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr, escapeCssUrl } from '../../helpers/escapeHtml';
 
 // Word lists for random username generation
 const ADJECTIVES = [
@@ -1660,7 +1660,7 @@ IMPORTANT:
         avatarBtn.classList.add('active');
         // Update uploader preview
         const preview = this.container?.querySelector('.wizard-avatar-upload-section [data-preview]') as HTMLElement;
-        if (preview) preview.style.backgroundImage = `url('${url}')`;
+        if (preview) preview.style.backgroundImage = `url('${escapeCssUrl(url)}')`;
       });
       grid.appendChild(avatarBtn);
     });
@@ -1860,7 +1860,7 @@ IMPORTANT:
 
       row.innerHTML = `
         <div class="follow-packs__member-avatar profile-pic-container">
-          <img class="profile-pic profile-pic--medium" src="${escapeHtml(profile?.picture || '')}" alt="${escapeHtml(username)}" />
+          <img class="profile-pic profile-pic--medium" src="${escapeHtmlAttr(profile?.picture || '')}" alt="${escapeHtml(username)}" />
         </div>
         <div class="follow-packs__member-info">
           <div class="follow-packs__member-name">${escapeHtml(username)}</div>
@@ -2085,7 +2085,7 @@ IMPORTANT:
         el.innerHTML = `
           <h1>You're All Set!</h1>
           <div class="wizard-done-preview">
-            <div class="wizard-done-avatar" style="background-image: url('${this.profileData.picture || ''}')"></div>
+            <div class="wizard-done-avatar" style="background-image: url('${escapeCssUrl(this.profileData.picture || '')}')"></div>
             <h3>${escapeHtml(this.profileData.name || '')}</h3>
             <p class="wizard-done-username">@${escapeHtml(this.profileData.name || '')}</p>
             ${this.profileData.about ? `<p class="wizard-done-bio">${escapeHtml(this.profileData.about)}</p>` : ''}

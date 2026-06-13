@@ -44,7 +44,7 @@ import { View } from '../components/views/View';
 import { Timeline } from '../components/timeline/Timeline';
 import { tribeTimelineConfig } from '../components/timeline/TimelineConfig';
 import { PlatformService } from '../services/PlatformService';
-import { escapeHtml } from '../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../helpers/escapeHtml';
 import { ICON_TRASH_16 } from '../helpers/svgIcons';
 import { MoveDropdown } from '../components/ui/MoveDropdown';
 import { getTag } from '../helpers/tagUtils';
@@ -3119,7 +3119,7 @@ export class TribeMemberCard {
       <div class="nn-card__content">
         <div class="avatar">
           ${profilePic
-            ? `<img class="avatar-img" src="${escapeHtml(profilePic)}" alt="" loading="lazy" />`
+            ? `<img class="avatar-img" src="${escapeHtmlAttr(profilePic)}" alt="" loading="lazy" />`
             : '<div class="avatar-img" data-empty></div>'
           }
         </div>

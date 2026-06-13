@@ -7,7 +7,7 @@
 import { UserHoverCard } from '../components/ui/UserHoverCard';
 import { Router } from '../services/Router';
 import { encodeNpub } from '../services/NostrToolsAdapter';
-import { escapeHtml } from './escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from './escapeHtml';
 import { npubToHex } from './nip19';
 
 export interface UserMentionProfile {
@@ -44,7 +44,7 @@ export function renderUserMention(
   const { withBackground = true } = options;
   const bgClass = withBackground ? ' mention-link--bg' : '';
 
-  return `<span class="user-mention" data-pubkey="${pubkey}"><a href="#" class="mention-link${bgClass}" data-profile-pubkey="${pubkey}"><img class="profile-pic profile-pic--mini" src="${profile.avatarUrl}" alt="" /><span class="mention-name">${escapeHtml(profile.username)}</span></a></span>`;
+  return `<span class="user-mention" data-pubkey="${pubkey}"><a href="#" class="mention-link${bgClass}" data-profile-pubkey="${pubkey}"><img class="profile-pic profile-pic--mini" src="${escapeHtmlAttr(profile.avatarUrl ?? '')}" alt="" /><span class="mention-name">${escapeHtml(profile.username)}</span></a></span>`;
 }
 
 /**

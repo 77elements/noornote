@@ -2683,7 +2683,7 @@ export class ExternalFollowListManager {
     itemDiv.innerHTML = `
       <div class="follow-item__content-wrapper">
         <div class="follow-item__avatar">
-          <img class="profile-pic profile-pic--medium" src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(username)}" />
+          <img class="profile-pic profile-pic--medium" src="${escapeHtmlAttr(avatarUrl)}" alt="${escapeHtmlAttr(username)}" />
         </div>
         <div class="follow-item__info">
           <div class="follow-item__username">${escapeHtml(username)}</div>

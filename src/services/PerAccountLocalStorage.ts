@@ -60,6 +60,9 @@ export const StorageKeys = {
   CONTENT_VISIBILITY_AUTO: 'noornote_content_visibility_auto_map', // boolean: enable CSS content-visibility:auto on note cards (memory optimization)
   LAYOUT_MODE: 'noornote_layout_mode_map', // 'default' | 'right-pane' | 'wide'
 
+  // Privacy (per-account)
+  CLIENT_TAG_ENABLED: 'noornote_client_tag_enabled_map', // boolean opt-in: add a `client` tag to signed events
+
   // NWC storage preference (per-account)
   NWC_USE_ENCRYPTED_FILE: 'noornote_nwc_use_encrypted_file_map', // boolean: true = encrypted file, false = keychain
 

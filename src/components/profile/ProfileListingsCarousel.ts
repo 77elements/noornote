@@ -13,11 +13,12 @@
  */
 
 import { NostrTransport } from '../../services/transport/NostrTransport';
+import { ProfileCarouselOrchestrator } from '../../services/orchestration/ProfileCarouselOrchestrator';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
 import { createScrollCarousel, type ScrollCarouselInstance } from '../../helpers/CarouselHelper';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { escapeHtml } from '../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { parseListingMetadata, formatPrice, type ListingMetadata } from '../../addons/marketplace/marketplace-helpers';
 
 interface ListingCardData {
@@ -56,22 +57,12 @@ export class ProfileListingsCarousel {
     const relays = this.transport.getReadRelays();
 
     try {
-      // Parallel: listing events + NIP-09 deletion requests by this author
-      // — mirrors ProfileArticlesCarousel's dedupe pattern. Without the
-      // kind:5 leg, a deleted listing that some relays haven't tombstoned
-      // would re-appear here.
-      const [rawEvents, deletionEvents] = await Promise.all([
-        this.transport.fetch(relays, [{
-          kinds: [30402],
-          authors: [this.pubkey],
-          limit: 50,
-        }], 8000, false, 'ListingsCarousel'),
-        this.transport.fetch(relays, [{
-          kinds: [5],
-          authors: [this.pubkey],
-          limit: 50,
-        }], 8000, false, 'ListingsCarousel:deletions'),
-      ]);
+      // Shared fetch (read + outbound relays) via the carousel orchestrator,
+      // reusing the same cached round-trip as the articles/videos carousels.
+      // It also returns this author's kind:5 deletions for the tombstone filter.
+      const content = await ProfileCarouselOrchestrator.getInstance().fetchProfileContent(this.pubkey);
+      const rawEvents = content.listings;
+      const deletionEvents = content.deletions;
 
       const deletedCoordinates = new Map<string, number>();
       const prefix = `30402:${this.pubkey}:`;
@@ -135,7 +126,7 @@ export class ProfileListingsCarousel {
       const firstImage = metadata.images[0] || '';
 
       const mediaHtml = firstImage
-        ? `<div class="nn-card__media"><img src="${escapeHtml(firstImage)}" alt="" loading="lazy" /></div>`
+        ? `<div class="nn-card__media"><img src="${escapeHtmlAttr(firstImage)}" alt="" loading="lazy" /></div>`
         : `<div class="nn-card__media nn-card__media--empty"></div>`;
 
       const priceLine = formatPrice(metadata.price, metadata.priceCurrency, metadata.priceFrequency);

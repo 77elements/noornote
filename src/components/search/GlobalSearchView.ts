@@ -229,14 +229,25 @@ export class GlobalSearchView {
       if (filteredResults.length > 0) {
         filteredResults.sort((a, b) => b.created_at - a.created_at);
 
-        this.currentResults = [...this.currentResults, ...filteredResults];
+        // Advance the pagination cursor from the raw page (even if everything
+        // gets filtered/deduped) so we don't re-request the same window.
         this.oldestTimestamp = Math.min(...moreResults.map(e => e.created_at));
         this.hasMore = moreResults.length >= 50;
-        this.searchResultsView?.appendResults(filteredResults);
 
-        // Update meta with new total count
-        const newMeta = `${this.currentResults.length} result${this.currentResults.length !== 1 ? 's' : ''} found`;
-        this.searchResultsView?.updateMeta(newMeta);
+        // Dedup against already-shown results: overlapping relay pages can
+        // return the same event again, which would otherwise accumulate in both
+        // currentResults (RAM) and the DOM (duplicate cards).
+        const existingIds = new Set(this.currentResults.map(e => e.id));
+        const newUnique = filteredResults.filter(e => !existingIds.has(e.id));
+
+        if (newUnique.length > 0) {
+          this.currentResults = [...this.currentResults, ...newUnique];
+          this.searchResultsView?.appendResults(newUnique);
+
+          // Update meta with new total count
+          const newMeta = `${this.currentResults.length} result${this.currentResults.length !== 1 ? 's' : ''} found`;
+          this.searchResultsView?.updateMeta(newMeta);
+        }
       } else {
         this.hasMore = false;
       }

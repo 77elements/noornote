@@ -15,6 +15,8 @@ import { ModalService } from '../../services/ModalService';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { RelayConfig } from '../../services/RelayConfig';
+import { loadEditorRelayConfig } from '../../helpers/editorRelayConfig';
+import { switchComposerTab } from '../../helpers/switchComposerTab';
 import { SystemLogger } from '../../services/SystemLogger';
 import { AuthService } from '../../services/AuthService';
 import { AuthGuard } from '../../services/AuthGuard';
@@ -138,33 +140,23 @@ export class PostNoteModal {
    * Load relay configuration based on TEST mode and timeline filter
    */
   private loadRelayConfiguration(): void {
-    const localRelaySettings = this.relayConfig.loadLocalRelaySettings();
+    const cfg = loadEditorRelayConfig(this.relayConfig);
+    this.isTestMode = cfg.isTestMode;
+    this.availableRelays = cfg.availableRelays;
+    this.selectedRelays = cfg.selectedRelays;
 
-    if (localRelaySettings.enabled) {
-      this.isTestMode = true;
-      this.availableRelays = [localRelaySettings.url];
-      this.selectedRelays = new Set([localRelaySettings.url]);
+    if (cfg.isTestMode) {
       this.systemLogger.info('PostNoteModal', 'TEST mode: Using local relay only');
+      return;
+    }
+
+    // Relay-filtered timeline active → pre-select only that relay (on top of base).
+    const selectedRelay = this.appState.getState('timeline').selectedRelay;
+    if (selectedRelay) {
+      this.selectedRelays = new Set([selectedRelay]);
+      this.systemLogger.info('PostNoteModal', `Relay filter active: Pre-selecting ${selectedRelay}`);
     } else {
-      this.isTestMode = false;
-      const allRelays = this.relayConfig.getAllRelays();
-      const uniqueRelayUrls = [...new Set(allRelays.filter(r => r.isActive).map(r => r.url))];
-      this.availableRelays = uniqueRelayUrls;
-
-      // Check if timeline has a relay filter active
-      const timelineState = this.appState.getState('timeline');
-      const selectedRelay = timelineState.selectedRelay;
-
-      if (selectedRelay) {
-        // Relay-filtered timeline active → pre-select only this relay
-        this.selectedRelays = new Set([selectedRelay]);
-        this.systemLogger.info('PostNoteModal', `Relay filter active: Pre-selecting ${selectedRelay}`);
-      } else {
-        // No relay filter → select all write relays (default)
-        const writeRelays = [...new Set(this.relayConfig.getWriteRelays())];
-        this.selectedRelays = new Set(writeRelays);
-        this.systemLogger.info('PostNoteModal', `Normal mode: ${this.availableRelays.length} relays available`);
-      }
+      this.systemLogger.info('PostNoteModal', `Normal mode: ${this.availableRelays.length} relays available`);
     }
   }
 
@@ -438,52 +430,29 @@ export class PostNoteModal {
   private switchTab(tab: TabMode): void {
     this.currentTab = tab;
 
-    // Re-render editor area
-    const modal = document.querySelector('.post-note-modal');
-    if (!modal) return;
-
-    const header = modal.querySelector('.post-note-header');
-    const actions = modal.querySelector('.l-row--split');
-
-    if (header && actions) {
-      const oldEditor = modal.querySelector('.textarea') || modal.querySelector('.post-note-preview');
-      if (oldEditor) {
-        oldEditor.remove();
-      }
-
-      if (this.currentTab === 'edit') {
-        const editorHtml = this.renderEditor();
-        actions.insertAdjacentHTML('beforebegin', editorHtml);
-
-        // Refresh textarea listener after DOM update
-        if (this.eventHandlerManager) {
-          this.eventHandlerManager.refreshTextareaListener();
-        }
-      } else {
-        const previewContainer = document.createElement('div');
-        previewContainer.className = 'post-note-preview';
-
+    const rendered = switchComposerTab({
+      modalSelector: '.post-note-modal',
+      tab,
+      renderEditorHtml: () => this.renderEditor(),
+      onEditRendered: () => this.eventHandlerManager?.refreshTextareaListener(),
+      buildPreviewHtml: () => {
         const currentUser = this.authService.getCurrentUser();
-        previewContainer.innerHTML = renderPostPreview({
+        let html = renderPostPreview({
           content: stripTrackingParams(this.content),
           pubkey: currentUser?.pubkey || '',
           isNSFW: this.isNSFW
         });
-
         // Add poll preview if poll is configured
         const pollPreviewHtml = this.renderPollPreview();
-        if (pollPreviewHtml) {
-          previewContainer.innerHTML += pollPreviewHtml;
-        }
+        if (pollPreviewHtml) html += pollPreviewHtml;
+        return html;
+      },
+      onPreviewRendered: (previewContainer) => this.renderQuotedNotesInPreview(previewContainer),
+    });
 
-        actions.parentNode?.insertBefore(previewContainer, actions);
-
-        // Render quoted notes in preview
-        this.renderQuotedNotesInPreview(previewContainer);
-      }
-
+    if (rendered) {
       // Toggle poll-creator visibility based on tab
-      const pollContainer = modal.querySelector('#poll-creator-container') as HTMLElement;
+      const pollContainer = document.querySelector('.post-note-modal #poll-creator-container') as HTMLElement;
       if (pollContainer) {
         pollContainer.style.display = this.currentTab === 'edit' ? '' : 'none';
       }

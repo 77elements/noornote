@@ -113,6 +113,12 @@
     margin-bottom: 0;
   }
 
+  &__loading {
+    padding: calc($gap / 2) 0;
+    color: $text-alpha-medium;
+    font-size: 0.9rem;
+  }
+
   &__header {
     display: flex;
     align-items: center;

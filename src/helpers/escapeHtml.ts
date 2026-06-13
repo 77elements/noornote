@@ -28,3 +28,15 @@ export function escapeHtmlAttr(text: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 }
+
+/**
+ * Escape a URL for a CSS `url('...')` inside an HTML `style="..."` attribute.
+ * HTML-entity escaping doesn't work in CSS, so strip `"`/newlines and
+ * backslash-escape `\` and the CSS `'` delimiter.
+ */
+export function escapeCssUrl(url: string): string {
+  return url
+    .replace(/[\r\n"]/g, '')
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'");
+}

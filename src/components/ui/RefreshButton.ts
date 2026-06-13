@@ -5,6 +5,7 @@
  */
 
 import { UserProfileService } from '../../services/UserProfileService';
+import { escapeCssUrl } from '../../helpers/escapeHtml';
 
 export interface RefreshButtonOptions {
   newNotesCount: number;
@@ -98,7 +99,7 @@ export class RefreshButton {
       const profile = await profileService.getUserProfile(pubkey);
 
       if (profile?.picture) {
-        avatar.style.backgroundImage = `url(${profile.picture})`;
+        avatar.style.backgroundImage = `url('${escapeCssUrl(profile.picture)}')`;
       }
       // No fallback - just don't show avatar if profile not loaded
     } catch (error) {

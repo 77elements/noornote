@@ -24,7 +24,7 @@ import {
 } from '../../lists/bookmarks';
 import { AuthService } from '../../services/AuthService';
 import { Router } from '../../services/Router';
-import { escapeHtml } from '../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 
 const MAX_ITEMS_COLLAPSED = 3;
 
@@ -236,7 +236,7 @@ export class ProfileListsComponent {
             <svg width="14" height="14"><use href="#icon-share-link"/></svg>
           </span>
           <div class="profile-list-item__content">
-            <a href="${url.startsWith('http') ? url : `https://${url}`}" rel="noopener noreferrer" class="profile-list-item__url">
+            <a href="${escapeHtmlAttr(url.startsWith('http') ? url : `https://${url}`)}" rel="noopener noreferrer" class="profile-list-item__url">
               ${escapeHtml(displayUrl)}
             </a>
             ${description ? `<span class="profile-list-item__desc">${escapeHtml(description)}</span>` : ''}

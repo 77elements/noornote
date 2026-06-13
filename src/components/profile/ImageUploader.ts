@@ -11,6 +11,7 @@
  */
 
 import { ModuleLoader } from '../../core/ModuleLoader';
+import { escapeCssUrl } from '../../helpers/escapeHtml';
 import type { MediaModuleApi } from '../../modules/media/contracts';
 import { SystemLogger } from '../../services/SystemLogger';
 import { ToastService } from '../../services/ToastService';
@@ -58,7 +59,7 @@ export class ImageUploader {
     const typeClass = mediaType === 'avatar' ? 'image-uploader-avatar' : 'image-uploader-banner';
 
     const backgroundStyle = currentUrl
-      ? `background-image: url('${currentUrl}')`
+      ? `background-image: url('${escapeCssUrl(currentUrl)}')`
       : '';
 
     // Store original icon HTML for later restoration
@@ -253,7 +254,7 @@ export class ImageUploader {
 
     const preview = this.container.querySelector('[data-preview]') as HTMLElement;
     if (preview) {
-      preview.style.backgroundImage = `url('${url}')`;
+      preview.style.backgroundImage = `url('${escapeCssUrl(url)}')`;
     }
   }
 

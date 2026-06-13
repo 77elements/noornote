@@ -24,7 +24,7 @@ import { getRepostsOriginalEvent } from '../../helpers/getRepostsOriginalEvent';
 import { npubToUsername } from '../../helpers/npubToUsername';
 import { formatTimestamp } from '../../helpers/formatTimestamp';
 import { resolveReactionEmoji } from '../../helpers/formatCustomEmojis';
-import { escapeHtml } from '../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { getZapAmountSats, extractZapMessage, formatNumberWithCommas } from '../../helpers/zapUtils';
 
 export interface NotificationItemOptions {
@@ -87,8 +87,8 @@ export class NotificationItem {
     const hashtag = this.options.meta?.hashtag;
     const hashtagFooterHtml = this.options.type === 'hashtag' && hashtag
       ? `<div class="notification-item__footer">
-          <a href="#" class="notification-item__footer-link notification-item__footer-link--search" data-hashtag="${hashtag}">Open notes tagged #${hashtag}</a>
-          <a href="#" class="notification-item__footer-link notification-item__footer-link--unsubscribe" data-hashtag="${hashtag}">Unsubscribe from #${hashtag}</a>
+          <a href="#" class="notification-item__footer-link notification-item__footer-link--search" data-hashtag="${escapeHtmlAttr(hashtag)}">Open notes tagged #${escapeHtml(hashtag)}</a>
+          <a href="#" class="notification-item__footer-link notification-item__footer-link--unsubscribe" data-hashtag="${escapeHtmlAttr(hashtag)}">Unsubscribe from #${escapeHtml(hashtag)}</a>
         </div>`
       : '';
 

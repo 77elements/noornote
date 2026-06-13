@@ -12,7 +12,8 @@ import { UserProfileService } from '../../services/UserProfileService';
 import { Router } from '../../services/Router';
 import { ModalService } from '../../services/ModalService';
 import { AuthGuard } from '../../services/AuthGuard';
-import { escapeHtml } from '../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { parseBolt11Amount, formatNumberWithCommas } from '../../helpers/zapUtils';
 import { renderUserMention, setupUserMentionHandlers, type UserMentionProfile } from '../../helpers/UserMentionHelper';
 import { resolveReactionEmoji } from '../../helpers/formatCustomEmojis';
 
@@ -164,7 +165,7 @@ export class AnalyticsModal {
    * Render a note link (for replies and quoted reposts)
    */
   private renderNoteLink(event: NostrEvent, profile: UserMentionProfile): string {
-    return `<span class="user-mention" data-pubkey="${event.pubkey}"><a href="#" class="mention-link mention-link--bg" data-note-id="${event.id}"><img class="profile-pic profile-pic--mini" src="${profile.avatarUrl}" alt="" />${escapeHtml(profile.username)}</a></span>`;
+    return `<span class="user-mention" data-pubkey="${event.pubkey}"><a href="#" class="mention-link mention-link--bg" data-note-id="${event.id}"><img class="profile-pic profile-pic--mini" src="${escapeHtmlAttr(profile.avatarUrl)}" alt="" />${escapeHtml(profile.username)}</a></span>`;
   }
 
   /**
@@ -257,7 +258,7 @@ export class AnalyticsModal {
       const zapMessage = this.extractZapMessage(event);
       const profile = this.getProfile(zapperPubkey, profileMap);
       const bolt11Tag = event.tags.find((tag: string[]) => tag[0] === 'bolt11');
-      const amount = bolt11Tag?.[1] ? this.parseBolt11Amount(bolt11Tag[1]) : 0;
+      const amount = bolt11Tag?.[1] ? parseBolt11Amount(bolt11Tag[1]) : 0;
       totalSats += amount;
 
       const messageHtml = zapMessage ? ` <span class="analytics-modal__zap-message">(${escapeHtml(zapMessage)})</span>` : '';
@@ -265,12 +266,12 @@ export class AnalyticsModal {
       return `
         <div class="analytics-modal__zap-item">
           ${renderUserMention(zapperPubkey, profile)}:
-          <span class="analytics-modal__zap-amount">${this.formatNumber(amount)} Sats</span>${messageHtml}
+          <span class="analytics-modal__zap-amount">${formatNumberWithCommas(amount)} Sats</span>${messageHtml}
         </div>
       `;
     }).join('');
 
-    return this.renderSection(`Zaps (${zapEvents.length}): ${this.formatNumber(totalSats)} Sats`, zapItems, 'analytics-modal__zap-list');
+    return this.renderSection(`Zaps (${zapEvents.length}): ${formatNumberWithCommas(totalSats)} Sats`, zapItems, 'analytics-modal__zap-list');
   }
 
   /**
@@ -383,38 +384,8 @@ export class AnalyticsModal {
   }
 
   /**
-   * Parse bolt11 invoice to get amount in sats
-   */
-  private parseBolt11Amount(invoice: string): number {
-    try {
-      const match = invoice.match(/^ln(bc|tb)(\d+)([munp]?)/i);
-      if (!match?.[2]) return 0;
-
-      const amount = parseInt(match[2]);
-      const multiplier = match[3]?.toLowerCase();
-
-      let millisats = 0;
-      switch (multiplier) {
-        case 'm': millisats = amount * 100_000_000; break;
-        case 'u': millisats = amount * 100_000; break;
-        case 'n': millisats = amount * 100; break;
-        case 'p': millisats = amount * 0.1; break;
-        default: millisats = amount * 100_000_000_000; break;
-      }
-
-      return Math.floor(millisats / 1000);
-    } catch (error) {
-      return 0;
-    }
-  }
-
-  /**
    * Format number with comma thousands separator (US format)
    */
-  private formatNumber(num: number): string {
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  }
-
   /**
    * Update ISL stats in the DOM after fetching detailed analytics
    * Finds the ISL element by note ID and updates the counts
@@ -431,7 +402,7 @@ export class AnalyticsModal {
     stats.zapEvents.forEach(event => {
       const bolt11Tag = event.tags.find((tag: string[]) => tag[0] === 'bolt11');
       if (bolt11Tag?.[1]) {
-        totalZapSats += this.parseBolt11Amount(bolt11Tag[1]);
+        totalZapSats += parseBolt11Amount(bolt11Tag[1]);
       }
     });
 

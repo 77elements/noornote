@@ -1818,7 +1818,7 @@ export class MuteListManager {
       muteItemDiv.innerHTML = `
         <div class="mute-item__content-wrapper">
           <div class="mute-item__avatar">
-            <img class="profile-pic profile-pic--medium" src="${avatarUrl}" alt="${username}" />
+            <img class="profile-pic profile-pic--medium" src="${escapeHtmlAttr(avatarUrl)}" alt="${escapeHtmlAttr(username)}" />
           </div>
           <div class="mute-item__info">
             <div class="mute-item__username">

@@ -12,7 +12,7 @@
  */
 
 import { EmojiService, type PersonalEmoji } from './EmojiService';
-import { escapeHtml } from '../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 
 export interface CustomEmojiAutocompleteOptions {
   textareaSelector: string;
@@ -168,7 +168,7 @@ export class CustomEmojiAutocomplete {
       const item = document.createElement('div');
       item.className = `custom-emojis__autocomplete-item ${index === this.selectedIndex ? 'selected' : ''}`;
       item.dataset.index = String(index);
-      const safeUrl = emoji.url.replace(/"/g, '&quot;');
+      const safeUrl = escapeHtmlAttr(emoji.url);
       item.innerHTML = `
         <img class="custom-emoji" src="${safeUrl}" alt=":${escapeHtml(emoji.shortcode)}:" loading="lazy" />
         <span class="custom-emojis__autocomplete-code">:${escapeHtml(emoji.shortcode)}:</span>

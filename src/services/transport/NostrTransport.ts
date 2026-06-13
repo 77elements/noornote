@@ -476,7 +476,8 @@ export class NostrTransport {
     filters: NDKFilter[],
     timeout: number = 5000,
     caller: string = '',
-    perRelayUntil?: Record<string, number>
+    perRelayUntil?: Record<string, number>,
+    waitForAll: boolean = false
   ): Promise<{ events: NostrEvent[]; perRelay: Record<string, { oldest: number | null; count: number; eosed: boolean }> }> {
     relays = secureRelays(relays);
     // PV-DBG: temporary instrumentation to root-cause the empty-on-first-visit bug.
@@ -559,7 +560,11 @@ export class NostrTransport {
           finish(); // every relay answered — no reason to wait
           return;
         }
-        if (settledRelays >= QUORUM && events.size > 0 && !graceTimer) {
+        // waitForAll callers (e.g. profile carousels fetching a few addressable
+        // events) need completeness over speed: skip the quorum early-exit so a
+        // slow-but-complete relay isn't cut off by fast-but-partial ones. Still
+        // bounded by all-settled (above) and the hard timeout.
+        if (!waitForAll && settledRelays >= QUORUM && events.size > 0 && !graceTimer) {
           graceTimer = setTimeout(finish, GRACE_MS);
         }
       };
@@ -610,9 +615,10 @@ export class NostrTransport {
     relays: string[],
     filters: NDKFilter[],
     timeout: number = 5000,
-    caller: string = ''
+    caller: string = '',
+    waitForAll: boolean = false
   ): Promise<NostrEvent[]> {
-    return (await this.directFetch(relays, filters, timeout, caller)).events;
+    return (await this.directFetch(relays, filters, timeout, caller, undefined, waitForAll)).events;
   }
 
   /**
@@ -873,7 +879,10 @@ export class NostrTransport {
   }
 
   /**
-   * Get the underlying NDK instance (for advanced usage)
+   * Get the underlying NDK instance.
+   * @internal Only for signer/encryption managers (NIP-46/Bunker/NostrConnect,
+   * DM encryption). Do NOT use for relay queries; use NostrTransport.fetch /
+   * subscribe / publish so relay selection, pool caps and health policy apply.
    */
   public getNDK(): NDK {
     return this.ndk;

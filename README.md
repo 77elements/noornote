@@ -46,11 +46,14 @@ It focuses not just on the social media side but also heavily on the other stuff
 - **Hijri calendar** - Islamic date display alongside Gregorian dates
 - **Relay browsing** - Filter timeline to show content from specific relays
 - **Time Machine** - Jump to any date range in your timeline with the built-in date picker
-- **Broadcast delete** - Notes are deleted across 159+ relays for thorough removal
+- **Broadcast delete** - Deletion requests are broadcast across 1400+ relays through a persistent, resumable queue (survives reloads and restarts) for thorough removal
 - **Article mentions** - Nostr references and note embeds render inside longform articles
 - **Custom Emojis & animated GIFs** - Render NIP-30 custom emojis from any author out of the box. Optional Custom Emojis add-on lets you upload your own pack and use them as reactions or in posts
 - **Opt-in client tag** - Choose whether your posts identify NoorNote as the publishing client
 - **Silent Zaps** - Send anonymous zaps signed with a throwaway ephemeral key — your npub never appears on the kind:9734 request, recipient and onlookers see "Someone silently zapped"
+- **EXIF stripping** - Strip GPS location, timestamps and camera fingerprints from photos before upload, in three selectable privacy levels — so a shared picture never leaks where or how it was taken
+- **Multi-account** - Keep several identities and switch with one tap (full in-app on Desktop and Android; NIP-46 bunker accounts on every platform), with strict per-account isolation of settings and data
+- **Bulk delete** - Remove many of your own posts at once by time range, with the same wide relay broadcast
 
 ### Add-Ons
 
@@ -65,12 +68,17 @@ NoorNote ships with optional features that you enable on demand under **Settings
 | **Profile Recognition** | Visual cues (blinking profile pictures) when people you follow change their name or avatar |
 | **Marketplace** | Browse and publish NIP-99 classified listings, tag filters, image carousel, listings from people you follow injected into your timeline |
 | **Follow Packs** | Discover and share curated lists of Nostr users to follow |
+| **Follower Notification** | Get notified when someone new follows you — new-followers-only, with verification that keeps it free of false positives |
 | **Hashtag Subscriptions** | Subscribe to any hashtag or word and get notified when someone posts a note containing it |
 | **List Sync Mode** | Switch between Easy Mode (automatic sync) and Manual Mode (action buttons + Danger Zone for resetting corrupted list data) |
 | **Word Filter** | Hide notes containing specific words from all timelines |
 | **Custom Emojis** | Upload your own NIP-30 emoji pack (incl. animated GIFs) and use them as reactions and in posts |
 | **Live Streams Player** | Watch NIP-53 live streams (e.g. zap.stream) inline in the timeline via HLS, and zap the stream directly so your sats appear in the stream's overlay |
 | **Scheduled Posts** | Schedule notes and long-form articles to be published at a later date and time — via a NoorNote-operated hold-and-forward service, no private keys leave your device |
+| **Badges** | Create NIP-58 reputation badges, award them to users, and accept or decline badges awarded to you |
+| **Note taking** | A private, end-to-end-encrypted Markdown notebook (checklists, labels, colors, pins, reminders, archive) synced across your devices via Nostr |
+| **Bulk delete** | Delete many of your own posts at once — list by time range, select, and batch-delete (NIP-09) with live progress |
+| **Nostr-Majlis** | Islamic companion: prayer times (official Diyanet source or local calculation), prayer and holiday reminders, and community dhikr |
 
 ...and many more to come.
 

@@ -9,7 +9,7 @@
 import { decodeNip19 } from '../services/NostrToolsAdapter';
 import { NostrTransport } from '../services/transport/NostrTransport';
 import { UserProfileService } from '../services/UserProfileService';
-import { escapeHtml } from './escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from './escapeHtml';
 import { getTag } from './tagUtils';
 
 export async function renderQuotePreview(nostrRef: string): Promise<HTMLElement> {
@@ -108,7 +108,7 @@ async function renderNaddrPreview(container: HTMLElement, data: NaddrData): Prom
     container.innerHTML = `
       ${firstImage ? `
         <div class="timeline-listing-card__image">
-          <img src="${escapeHtml(firstImage)}" alt="" loading="lazy" />
+          <img src="${escapeHtmlAttr(firstImage)}" alt="" loading="lazy" />
         </div>
       ` : ''}
       <div class="timeline-listing-card__body">

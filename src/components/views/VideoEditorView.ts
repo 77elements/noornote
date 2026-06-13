@@ -16,6 +16,9 @@ import { Router } from '../../services/Router';
 import type { VideoOptions } from '../../modules/media/contracts';
 import { RelayConfig } from '../../services/RelayConfig';
 import { AuthGuard } from '../../services/AuthGuard';
+import { loadEditorRelayConfig } from '../../helpers/editorRelayConfig';
+import { insertTextAtCursor } from '../../helpers/insertTextAtCursor';
+import { ProfileCarouselOrchestrator } from '../../services/orchestration/ProfileCarouselOrchestrator';
 import { SystemLogger } from '../../services/SystemLogger';
 import { RelaySelector } from '../post/RelaySelector';
 import { PostEditorToolbar } from '../post/PostEditorToolbar';
@@ -23,7 +26,7 @@ import { setupPasteUpload } from '../../helpers/pasteUpload';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { MediaModuleApi } from '../../modules/media/contracts';
 import { ToastService } from '../../services/ToastService';
-import { escapeHtml } from '../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 
 type DetectedKind = 21 | 22;
 
@@ -71,20 +74,10 @@ export class VideoEditorView extends View {
   }
 
   private loadRelayConfiguration(): void {
-    const localRelaySettings = this.relayConfig.loadLocalRelaySettings();
-
-    if (localRelaySettings.enabled) {
-      this.isTestMode = true;
-      this.availableRelays = [localRelaySettings.url];
-      this.selectedRelays = new Set([localRelaySettings.url]);
-    } else {
-      this.isTestMode = false;
-      const allRelays = this.relayConfig.getAllRelays();
-      const uniqueRelayUrls = [...new Set(allRelays.filter(r => r.isActive).map(r => r.url))];
-      this.availableRelays = uniqueRelayUrls;
-      const writeRelays = [...new Set(this.relayConfig.getWriteRelays())];
-      this.selectedRelays = new Set(writeRelays);
-    }
+    const cfg = loadEditorRelayConfig(this.relayConfig);
+    this.isTestMode = cfg.isTestMode;
+    this.availableRelays = cfg.availableRelays;
+    this.selectedRelays = cfg.selectedRelays;
   }
 
 
@@ -218,7 +211,7 @@ export class VideoEditorView extends View {
         <div class="video-editor__preview">
           <video
             class="video-editor__video"
-            src="${escapeHtml(this.videoUrl)}"
+            src="${escapeHtmlAttr(this.videoUrl)}"
             controls
             preload="metadata"
           ></video>
@@ -516,17 +509,7 @@ export class VideoEditorView extends View {
   private insertAtCursor(text: string): void {
     const textarea = this.container.querySelector('.video-editor-description') as HTMLTextAreaElement;
     if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const before = this.content.slice(0, start);
-    const after = this.content.slice(textarea.selectionEnd);
-
-    this.content = before + text + after;
-    textarea.value = this.content;
-
-    const newPos = start + text.length;
-    textarea.setSelectionRange(newPos, newPos);
-    textarea.focus();
+    this.content = insertTextAtCursor(textarea, this.content, text);
   }
 
   private updateButtonStates(): void {
@@ -572,6 +555,7 @@ export class VideoEditorView extends View {
       const nevent = await this.mediaApi?.publishVideo(videoData) ?? null;
 
       if (nevent) {
+        ProfileCarouselOrchestrator.getInstance().invalidateForCurrentUser();
         this.router.navigate('/');
       }
     } finally {

@@ -28,6 +28,12 @@ import { isDataSaverEnabled } from '../DataSaverService';
 import { isHideSelfRepostsEnabled, getSelfRepostGapSeconds } from '../../helpers/selfRepostSetting';
 import type { TimelineConfig } from '../../components/timeline/TimelineConfig';
 
+/**
+ * Event kinds requested by the home/tribe feed. Single source of truth; this
+ * was previously duplicated verbatim across 7 filter sites in this file.
+ */
+const FEED_KINDS: number[] = [1, 6, 16, 20, 21, 22, 1063, 1068, 1617, 1618, 1619, 1621, 1630, 1631, 1632, 1633, 9802, 30617, 39089, 30030];
+
 export interface FeedLoadRequest {
   followingPubkeys: string[];
   includeReplies: boolean;
@@ -178,13 +184,13 @@ export class FeedOrchestrator extends Orchestrator {
       if (params.pagination === 'until') {
         filters = [{
           authors: followingPubkeys,
-          kinds: [1, 6, 16, 20, 21, 22, 1063, 1068, 1617, 1618, 1619, 1621, 1630, 1631, 1632, 1633, 9802, 30617, 39089, 30030],
+          kinds: FEED_KINDS,
           limit: params.pageSize
         }];
       } else if (isTimeRangeMode) {
         const filterObj: NDKFilter<number> = {
           authors: followingPubkeys,
-          kinds: [1, 6, 16, 20, 21, 22, 1063, 1068, 1617, 1618, 1619, 1621, 1630, 1631, 1632, 1633, 9802, 30617, 39089, 30030],
+          kinds: FEED_KINDS,
           limit: this.fetchLimit,
           since: explicitSince
         };
@@ -195,7 +201,7 @@ export class FeedOrchestrator extends Orchestrator {
       } else {
         filters = [{
           authors: followingPubkeys,
-          kinds: [1, 6, 16, 20, 21, 22, 1063, 1068, 1617, 1618, 1619, 1621, 1630, 1631, 1632, 1633, 9802, 30617, 39089, 30030],
+          kinds: FEED_KINDS,
           limit: params.pageSize,
           since: Math.floor(Date.now() / 1000) - (timeWindowHours * 3600)
         }];
@@ -338,7 +344,7 @@ export class FeedOrchestrator extends Orchestrator {
       const pureUntil = params.pagination === 'until' && !isTimeRangeMode;
       const filterObj: NDKFilter<number> = {
         authors: followingPubkeys,
-        kinds: [1, 6, 16, 20, 21, 22, 1063, 1068, 1617, 1618, 1619, 1621, 1630, 1631, 1632, 1633, 9802, 30617, 39089, 30030],
+        kinds: FEED_KINDS,
         until: until - 1,
         limit: pureUntil ? params.pageSize : 50
       };
@@ -470,7 +476,7 @@ export class FeedOrchestrator extends Orchestrator {
     const pageSize = this.resolveFetchParams(request).pageSize;
     const baseFilter: NDKFilter<number> = {
       authors: pubkeys,
-      kinds: [1, 6, 16, 20, 21, 22, 1063, 1068, 1617, 1618, 1619, 1621, 1630, 1631, 1632, 1633, 9802, 30617, 39089, 30030],
+      kinds: FEED_KINDS,
       limit: pageSize
     };
 
@@ -936,7 +942,7 @@ export class FeedOrchestrator extends Orchestrator {
 
       // Query for new notes since last check
       const filters = [{
-        kinds: [1, 6, 16, 20, 21, 22, 1063, 1068, 1617, 1618, 1619, 1621, 1630, 1631, 1632, 1633, 9802, 30617, 39089, 30030], // Text notes + reposts + polls (NIP-88)
+        kinds: FEED_KINDS, // Text notes + reposts + polls (NIP-88)
         authors: this.pollingFollowingPubkeys,
         since: this.lastCheckedTimestamp + 1,
         until: now,
@@ -1096,7 +1102,7 @@ export class FeedOrchestrator extends Orchestrator {
 
       const now = Math.floor(Date.now() / 1000);
       const filters = [{
-        kinds: [1, 6, 16, 20, 21, 22, 1063, 1068, 1617, 1618, 1619, 1621, 1630, 1631, 1632, 1633, 9802, 30617, 39089, 30030],
+        kinds: FEED_KINDS,
         authors: followingPubkeys,
         since: newestTimestamp + 1,
         until: now,

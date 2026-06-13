@@ -14,7 +14,7 @@ import { AuthService } from '../../../services/AuthService';
 import { SystemLogger } from '../../../services/SystemLogger';
 import { TypedEventBus } from '../../../core/TypedEventBus';
 import { RelayConfig } from '../../../services/RelayConfig';
-import { escapeHtml } from '../../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../../../helpers/escapeHtml';
 import { isImageUrl } from '../../../helpers/extractMedia';
 
 // Store pollData by eventId for cross-view updates
@@ -311,7 +311,7 @@ export class NIP88PollRenderer {
    */
   private static renderOptionLabel(label: string): string {
     if (isImageUrl(label)) {
-      return `<img src="${escapeHtml(label)}" alt="Poll option" class="nip88-poll__option-image" loading="lazy">`;
+      return `<img src="${escapeHtmlAttr(label)}" alt="Poll option" class="nip88-poll__option-image" loading="lazy">`;
     }
     return escapeHtml(label);
   }

@@ -436,7 +436,7 @@ export class QuotedNoteRenderer {
       optionBtn.disabled = true;
       optionBtn.dataset.optionIndex = option.id;
       optionBtn.innerHTML = `
-        <span class="poll-option-text">${option.label}</span>
+        <span class="poll-option-text">${escapeHtml(option.label)}</span>
         <span class="poll-option-stats">
           <span class="poll-option-count">Loading...</span>
         </span>

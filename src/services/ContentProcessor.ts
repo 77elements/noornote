@@ -52,7 +52,13 @@ export class ContentProcessor {
   // runtime; we look them up fresh via AddonLoader at use time. Blinker
   // instances themselves are still tracked here because they are tied to
   // the DOM nodes this processor updates.
-  private mentionBlinkers: Map<string, { avatar: ProfileBlinkerT; name: TextBlinkerT }> = new Map();
+  private mentionBlinkers: Map<string, { avatar: ProfileBlinkerT; name: TextBlinkerT; el: HTMLElement }> = new Map();
+  // Periodic sweep that destroys blinkers whose mention element has left the DOM
+  // (feed trimming / view teardown). Without it the map + the blinkers' 2s
+  // intervals grow unbounded and pin detached DOM nodes. Lazily started on the
+  // first blinker, stopped when the map empties.
+  private blinkerSweepInterval: ReturnType<typeof setInterval> | null = null;
+  private static readonly BLINKER_SWEEP_MS = 20000;
 
   private constructor() {
     this.userProfileService = UserProfileService.getInstance();
@@ -265,9 +271,11 @@ export class ContentProcessor {
         if (!blinkers) {
           blinkers = {
             avatar: new recognitionRuntime.ProfileBlinker(img),
-            name: new recognitionRuntime.TextBlinker(nameSpan)
+            name: new recognitionRuntime.TextBlinker(nameSpan),
+            el: linkElement
           };
           this.mentionBlinkers.set(mentionId, blinkers);
+          this.ensureBlinkerSweep();
         }
 
         // Start blinking
@@ -301,5 +309,47 @@ export class ContentProcessor {
       // Remove loading indicator
       linkElement.removeAttribute('data-loading');
     });
+  }
+
+  /** Start the detached-blinker sweep once (lazy, on the first blinker). */
+  private ensureBlinkerSweep(): void {
+    if (this.blinkerSweepInterval) return;
+    this.blinkerSweepInterval = setInterval(() => this.pruneDetachedBlinkers(), ContentProcessor.BLINKER_SWEEP_MS);
+  }
+
+  /**
+   * Destroy + drop blinkers whose mention element is no longer in the DOM
+   * (clears their 2s intervals and releases the pinned DOM nodes). Stops the
+   * sweep timer once nothing is left to track.
+   */
+  private pruneDetachedBlinkers(): void {
+    for (const [id, b] of this.mentionBlinkers) {
+      if (!b.el.isConnected) {
+        b.avatar.destroy();
+        b.name.destroy();
+        this.mentionBlinkers.delete(id);
+      }
+    }
+    if (this.mentionBlinkers.size === 0 && this.blinkerSweepInterval) {
+      clearInterval(this.blinkerSweepInterval);
+      this.blinkerSweepInterval = null;
+    }
+  }
+
+  /**
+   * Stop + destroy ALL mention blinkers and the sweep timer. Called when the
+   * Profile Recognition addon is torn down (toggle off / account switch) so its
+   * blink intervals don't keep firing against stale DOM after the addon is gone.
+   */
+  public clearAllBlinkers(): void {
+    for (const b of this.mentionBlinkers.values()) {
+      b.avatar.destroy();
+      b.name.destroy();
+    }
+    this.mentionBlinkers.clear();
+    if (this.blinkerSweepInterval) {
+      clearInterval(this.blinkerSweepInterval);
+      this.blinkerSweepInterval = null;
+    }
   }
 }

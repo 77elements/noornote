@@ -13,6 +13,7 @@
 
 import { renderPostPreview } from '../../helpers/renderPostPreview';
 import { ContentValidationManager } from './ContentValidationManager';
+import { insertTextAtCursor } from '../../helpers/insertTextAtCursor';
 
 export interface EditorCallbacks {
   onContentChange: (newContent: string) => void;
@@ -75,18 +76,7 @@ export class EditorStateManager {
   ): void {
     const textarea = document.querySelector(textareaSelector) as HTMLTextAreaElement;
     if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const text = textarea.value;
-
-    const newText = text.substring(0, start) + emoji + text.substring(end);
-    textarea.value = newText;
-    callbacks.onContentChange(newText);
-
-    const newPosition = start + emoji.length;
-    textarea.setSelectionRange(newPosition, newPosition);
-    textarea.focus();
+    callbacks.onContentChange(insertTextAtCursor(textarea, textarea.value, emoji));
   }
 
   /**

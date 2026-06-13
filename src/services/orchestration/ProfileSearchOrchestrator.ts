@@ -59,6 +59,9 @@ export class ProfileSearchOrchestrator extends Orchestrator {
   /** Fetched notes cache (per pubkey, LRU-bounded) */
   private notesCache = new LRUCache<NostrEvent[]>(getCacheSize(10, 8, 5), this.CACHE_TTL);
 
+  /** In-flight note fetches per pubkey; coalesces concurrent searches before the cache fills */
+  private notesFetchInProgress = new Map<string, Promise<NostrEvent[]>>();
+
   private constructor() {
     super('ProfileSearchOrchestrator');
     this.transport = NostrTransport.getInstance();
@@ -167,6 +170,31 @@ export class ProfileSearchOrchestrator extends Orchestrator {
       return cached;
     }
 
+    // Coalesce concurrent fetches for the same author so rapid searches on the
+    // same profile don't each open their own relay queries before the cache fills.
+    const inFlight = this.notesFetchInProgress.get(pubkeyHex);
+    if (inFlight) {
+      this.systemLogger.info('ProfileSearch', '⏳ Joining in-flight note fetch');
+      return inFlight;
+    }
+
+    const fetchPromise = this.doFetchAllUserNotes(pubkeyHex, onProgress);
+    this.notesFetchInProgress.set(pubkeyHex, fetchPromise);
+    try {
+      return await fetchPromise;
+    } finally {
+      this.notesFetchInProgress.delete(pubkeyHex);
+    }
+  }
+
+  /**
+   * Actual relay fetch (2-stage: read relays chunked → outbound relays single fetch).
+   * Wrapped by fetchAllUserNotes for caching + concurrent-fetch coalescing.
+   */
+  private async doFetchAllUserNotes(
+    pubkeyHex: string,
+    onProgress?: (message: string) => void
+  ): Promise<NostrEvent[]> {
     const allEvents = new Map<string, NostrEvent>();
     const startDate = new Date('2023-01-01');
     const endDate = new Date();

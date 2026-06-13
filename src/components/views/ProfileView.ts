@@ -49,7 +49,8 @@ import { ToastService } from '../../services/ToastService';
 import { isTribesEnabled } from '../../addons/tribes/index';
 import { HIJRI_MONTHS } from '../../helpers/formatTimestamp';
 import { diagLog } from '../../services/DiagnosticLogger';
-import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr, escapeCssUrl } from '../../helpers/escapeHtml';
+import { extractDisplayName } from '../../helpers/extractDisplayName';
 import { getTag } from '../../helpers/tagUtils';
 
 // Initialize dayjs calendar system
@@ -100,6 +101,7 @@ export class ProfileView extends View {
 
   // Videos carousel component
   private videosCarousel: ProfileVideosCarousel | null = null;
+  private carouselObservers: IntersectionObserver[] = [];
 
   // Lightning address (for profile zap buttons)
   private lud16: string = '';
@@ -334,7 +336,9 @@ export class ProfileView extends View {
       // Load joined date (async, non-blocking)
       this.loadJoinedDate();
 
-      // Subscribe to profile updates for live avatar/name updates
+      // Subscribe to profile updates for live avatar/name updates.
+      // Guard against stacking subscriptions if render() runs more than once.
+      this.profileUnsubscribe?.();
       this.profileUnsubscribe = this.userProfileService.subscribeToProfile(this.pubkey, (updatedProfile) => {
         this.renderProfileHeader(updatedProfile);
       });
@@ -506,7 +510,7 @@ export class ProfileView extends View {
    * Render profile header section
    */
   private renderProfileHeader(profile: UserProfile): void {
-    const displayName = profile.display_name || profile.name || 'Anonymous';
+    const displayName = extractDisplayName(profile) || 'Anonymous';
     const about = profile.about || '';
     const website = profile.website || '';
     const banner = profile.banner || '';
@@ -527,7 +531,7 @@ export class ProfileView extends View {
     const headerHTML = `
       <div class="profile-nip01">
         ${banner ? `
-          <div class="profile-banner" style="background-image: url('${escapeHtml(banner)}')"></div>
+          <div class="profile-banner" style="background-image: url('${escapeCssUrl(banner)}')"></div>
         ` : `
           <div class="profile-banner profile-banner-fallback"></div>
         `}
@@ -535,7 +539,7 @@ export class ProfileView extends View {
 
         <div class="profile-info">
           <div class="profile-avatar-wrapper">
-            <img src="${escapeHtml(picture)}" alt="${escapeHtml(displayName)}" class="profile-pic profile-pic--big" />
+            <img src="${escapeHtmlAttr(picture)}" alt="${escapeHtml(displayName)}" class="profile-pic profile-pic--big" />
             ${this.followsYou ? '<span class="badge badge--green">Follows you</span>' : ''}
           </div>
 
@@ -583,7 +587,7 @@ export class ProfileView extends View {
             <div class="profile-joined-date" id="profile-joined-date"></div>
 
             ${processedAbout ? `<p class="profile-about section">${processedAbout}</p>` : ''}
-            ${website ? `<p class="profile-website section"><a href="${escapeHtml(website)}" rel="noopener noreferrer">${escapeHtml(website)}</a></p>` : ''}
+            ${website ? `<p class="profile-website section"><a href="${escapeHtmlAttr(website)}" rel="noopener noreferrer">${escapeHtml(website)}</a></p>` : ''}
 
             <div class="profile-stats">
               ${this.renderEditButton()}
@@ -624,21 +628,15 @@ export class ProfileView extends View {
       // Load profile lists (mounted bookmark folders)
       this.loadProfileLists();
 
-      // Load accepted badges carousel
-      this.loadBadgesCarousel();
-
-      // Load articles carousel
-      this.loadArticlesCarousel();
-
-      // Load videos carousel
-      this.loadVideosCarousel();
-
-      // Load NIP-99 listings carousel (gated by profile owner's NIP-78
-      // visibility event — see loadListingsCarousel for details)
-      this.loadListingsCarousel();
-
-      // Load Zapstore apps
-      this.loadZapstoreApps();
+      // Below-the-fold carousels: lazy-load each when its mount scrolls near
+      // the viewport, so opening a profile doesn't fire every carousel's relay
+      // fetch at once (staggers the initial relay burst). Each loader still
+      // self-gates (mount/preference checks).
+      this.observeOnce('.profile-badges-mount', () => void this.loadBadgesCarousel());
+      this.observeOnce('.profile-articles-mount', () => void this.loadArticlesCarousel());
+      this.observeOnce('.profile-videos-mount', () => void this.loadVideosCarousel());
+      this.observeOnce('.profile-listings-mount', () => void this.loadListingsCarousel());
+      this.observeOnce('.profile-zapstore-mount', () => void this.loadZapstoreApps());
 
       // Setup QR code button handler
       this.setupQRButton();
@@ -698,7 +696,7 @@ export class ProfileView extends View {
       // Update banner
       const bannerEl = this.container.querySelector('.profile-banner') as HTMLElement;
       if (bannerEl && banner) {
-        bannerEl.style.backgroundImage = `url('${banner}')`;
+        bannerEl.style.backgroundImage = `url('${escapeCssUrl(banner)}')`;
         bannerEl.classList.remove('profile-banner-fallback');
       }
     }
@@ -1390,6 +1388,25 @@ export class ProfileView extends View {
     await this.profileListsComponent.render(anchor);
   }
 
+  /**
+   * Defer a below-the-fold carousel loader until its mount scrolls near the
+   * viewport. Runs the loader at most once, then disconnects. Falls back to
+   * running immediately if the mount element is absent.
+   */
+  private observeOnce(mountSelector: string, loader: () => void): void {
+    const mount = this.container.querySelector(mountSelector);
+    if (!mount) { loader(); return; }
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some(e => e.isIntersecting)) {
+        observer.disconnect();
+        this.carouselObservers = this.carouselObservers.filter(o => o !== observer);
+        loader();
+      }
+    }, { rootMargin: '400px' });
+    observer.observe(mount);
+    this.carouselObservers.push(observer);
+  }
+
   private async loadBadgesCarousel(): Promise<void> {
     const badgesMount = this.container.querySelector('.profile-badges-mount');
     if (!badgesMount) return;
@@ -1449,8 +1466,10 @@ export class ProfileView extends View {
     badgesMount.appendChild(section);
 
     const list = section.querySelector('.profile-badges-carousel__list')!;
-    for (const pair of pairs.slice(0, 8)) {
-      const def = await orch.fetchBadgeDefinition(pair.coordinate);
+    const shown = pairs.slice(0, 8);
+    const defsMap = await orch.fetchBadgeDefinitions(shown.map(p => p.coordinate));
+    for (const pair of shown) {
+      const def = defsMap.get(pair.coordinate);
       if (!def) continue;
 
       const thumb = document.createElement('div');
@@ -1458,7 +1477,7 @@ export class ProfileView extends View {
       thumb.title = def.name;
 
       if (def.thumb || def.image) {
-        thumb.innerHTML = `<img src="${def.thumb || def.image}" alt="${def.name}" loading="lazy" />`;
+        thumb.innerHTML = `<img src="${escapeHtmlAttr(def.thumb || def.image || '')}" alt="${escapeHtmlAttr(def.name)}" loading="lazy" />`;
       } else {
         thumb.textContent = '🏅';
         thumb.classList.add('profile-badges-carousel__thumb--emoji');
@@ -1495,13 +1514,23 @@ export class ProfileView extends View {
   /**
    * Load articles carousel (user's long-form articles)
    */
+  /** Carousel-styled "Loading …" placeholder shown while the (now wait-for-all) fetch runs. */
+  private appendCarouselLoading(mount: Element, title: string, label: string): HTMLElement {
+    const el = document.createElement('div');
+    el.className = 'nn-scroll-carousel';
+    el.innerHTML = `<div class="nn-scroll-carousel__header"><h2 class="nn-scroll-carousel__title">${title}</h2></div><div class="nn-scroll-carousel__loading pulsate">${label}</div>`;
+    mount.appendChild(el);
+    return el;
+  }
+
   private async loadArticlesCarousel(): Promise<void> {
     const articlesMount = this.container.querySelector('.profile-articles-mount');
     if (!articlesMount) return;
 
-    // Create and render articles carousel
+    const loading = this.appendCarouselLoading(articlesMount, 'Articles', 'Loading articles…');
     this.articlesCarousel = new ProfileArticlesCarousel(this.pubkey);
     const element = await this.articlesCarousel.render();
+    loading.remove();
     articlesMount.appendChild(element);
   }
 
@@ -1512,8 +1541,10 @@ export class ProfileView extends View {
     const videosMount = this.container.querySelector('.profile-videos-mount');
     if (!videosMount) return;
 
+    const loading = this.appendCarouselLoading(videosMount, 'Videos', 'Loading videos…');
     this.videosCarousel = new ProfileVideosCarousel(this.pubkey);
     const element = await this.videosCarousel.render();
+    loading.remove();
     videosMount.appendChild(element);
   }
 
@@ -1759,6 +1790,8 @@ export class ProfileView extends View {
       this.listingsCarousel.destroy();
       this.listingsCarousel = null;
     }
+    for (const observer of this.carouselObservers) observer.disconnect();
+    this.carouselObservers = [];
     this.container.remove();
   }
 }

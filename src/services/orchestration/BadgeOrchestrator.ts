@@ -68,6 +68,69 @@ export class BadgeOrchestrator {
     }
   }
 
+  /**
+   * Batch-fetch multiple badge definitions in ONE relay round-trip (stage 1)
+   * instead of N sequential per-coordinate fetches. Cached coordinates resolve
+   * instantly; anything still missing after the batch falls back to the
+   * per-coordinate path (which adds stage-2 outbound discovery). Returns a
+   * coordinate -> definition map (missing coordinates are simply absent).
+   */
+  public async fetchBadgeDefinitions(coordinates: string[]): Promise<Map<string, BadgeDefinition>> {
+    const result = new Map<string, BadgeDefinition>();
+    const uncached: string[] = [];
+    for (const coord of new Set(coordinates)) {
+      const cached = this.cache.get(coord);
+      if (cached) result.set(coord, cached);
+      else uncached.push(coord);
+    }
+    if (uncached.length === 0) return result;
+
+    const parts = uncached
+      .map(coord => {
+        const p = coord.split(':');
+        return { coord, issuer: p[1], slug: p.slice(2).join(':') };
+      })
+      .filter((x): x is { coord: string; issuer: string; slug: string } => !!x.issuer && !!x.slug);
+
+    const requested = new Set(uncached);
+    const issuers = [...new Set(parts.map(p => p.issuer))];
+    const slugs = [...new Set(parts.map(p => p.slug))];
+
+    // One batched stage-1 fetch (aggregators + own read relays). The
+    // authors x slugs filter is a superset; each result is matched back by its
+    // own `30009:<pubkey>:<d>` coordinate, so cross-matches are discarded.
+    if (issuers.length > 0 && slugs.length > 0) {
+      const baseRelays: string[] = [
+        ...this.relayConfig.getReadRelays(),
+        ...this.relayConfig.getAggregatorRelays(),
+      ];
+      const filters: NDKFilter[] = [{ kinds: [30009 as number], authors: issuers, '#d': slugs }];
+      try {
+        const events = await this.transport.fetch(baseRelays, filters, 5000, false, 'BadgeOrch-batch');
+        for (const ev of events) {
+          const d = ev.tags.find(t => t[0] === 'd')?.[1];
+          if (!d) continue;
+          const coord = `30009:${ev.pubkey}:${d}`;
+          if (!requested.has(coord) || this.cache.get(coord)) continue;
+          const def = BadgeOrchestrator.parseDefinition(ev, ev.pubkey, d);
+          this.cache.set(coord, def);
+          result.set(coord, def);
+        }
+      } catch { /* batch failed — fall through to per-coordinate */ }
+    }
+
+    // Per-coordinate fallback (adds stage-2 outbound) for anything unresolved.
+    const missing = uncached.filter(c => !result.has(c));
+    if (missing.length > 0) {
+      const defs = await Promise.all(missing.map(c => this.fetchBadgeDefinition(c)));
+      missing.forEach((c, i) => {
+        const d = defs[i];
+        if (d) result.set(c, d);
+      });
+    }
+    return result;
+  }
+
   private async fetchFromRelays(coordinate: string): Promise<BadgeDefinition | null> {
     const parts = coordinate.split(':');
     if (parts.length < 3) return null;

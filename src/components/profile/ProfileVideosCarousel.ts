@@ -7,12 +7,12 @@
  * @used-by ProfileView
  */
 
-import { NostrTransport } from '../../services/transport/NostrTransport';
+import { ProfileCarouselOrchestrator } from '../../services/orchestration/ProfileCarouselOrchestrator';
 import { Router } from '../../services/Router';
 import { VideoNoteProcessor } from '../ui/note-processing/VideoNoteProcessor';
 import { createScrollCarousel, type ScrollCarouselInstance } from '../../helpers/CarouselHelper';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { escapeHtml } from '../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { getTag } from '../../helpers/tagUtils';
 
 interface VideoCardData {
@@ -26,12 +26,10 @@ export class ProfileVideosCarousel {
   private element: HTMLElement;
   private pubkey: string;
   private videos: VideoCardData[] = [];
-  private transport: NostrTransport;
   private carousel: ScrollCarouselInstance | null = null;
 
   constructor(pubkey: string) {
     this.pubkey = pubkey;
-    this.transport = NostrTransport.getInstance();
     this.element = document.createElement('div');
     this.element.className = 'profile-videos-carousel';
   }
@@ -52,14 +50,11 @@ export class ProfileVideosCarousel {
   }
 
   private async fetchVideos(): Promise<void> {
-    const relays = this.transport.getReadRelays();
-
     try {
-      const events = await this.transport.fetch(relays, [{
-        kinds: [21, 22],
-        authors: [this.pubkey],
-        limit: 20
-      }], 8000, false, 'VideosCarousel');
+      // Shared fetch (read + outbound relays) via the carousel orchestrator;
+      // reuses the same cached round-trip as the articles/listings carousels.
+      const content = await ProfileCarouselOrchestrator.getInstance().fetchProfileContent(this.pubkey);
+      const events = [...content.videos];
 
       events.sort((a, b) => b.created_at - a.created_at);
 
@@ -93,12 +88,12 @@ export class ProfileVideosCarousel {
   private renderCarousel(): void {
     const cards = this.videos.map(video => {
       const eventId = video.event.id || '';
-      const posterAttr = video.thumbnail ? ` poster="${escapeHtml(video.thumbnail)}"` : '';
+      const posterAttr = video.thumbnail ? ` poster="${escapeHtmlAttr(video.thumbnail)}"` : '';
 
       return {
         html: `
           <div class="nn-card__media">
-            <video src="${escapeHtml(video.videoUrl)}"${posterAttr} preload="none" muted></video>
+            <video src="${escapeHtmlAttr(video.videoUrl)}"${posterAttr} preload="none" muted></video>
             <div class="play-icon">
               <svg width="24" height="24"><use href="#icon-play"/></svg>
             </div>

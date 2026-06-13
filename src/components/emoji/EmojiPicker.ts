@@ -6,6 +6,7 @@
 
 import emojilibData from 'emojilib';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import { escapeHtmlAttr } from '../../helpers/escapeHtml';
 
 // Handle both default and named export patterns
 const emojilib: Record<string, string[]> = (emojilibData as any).default || emojilibData;
@@ -241,7 +242,7 @@ export class EmojiPicker {
       customTab.className = `tab ${this.currentCategory === 'custom' ? 'tab--active' : ''}`;
       customTab.title = 'Custom';
       customTab.dataset.category = 'custom';
-      customTab.innerHTML = `<img class="custom-emoji" src="${firstCustom.url.replace(/"/g, '&quot;')}" alt="Custom" loading="lazy" />`;
+      customTab.innerHTML = `<img class="custom-emoji" src="${escapeHtmlAttr(firstCustom.url)}" alt="Custom" loading="lazy" />`;
       customTab.addEventListener('click', () => this.switchCategory('custom'));
       tabs.appendChild(customTab);
     }
@@ -323,7 +324,7 @@ export class EmojiPicker {
       const btn = document.createElement('button');
       btn.className = 'emoji-picker-emoji emoji-picker-emoji--custom';
       btn.title = `:${entry.shortcode}:`;
-      btn.innerHTML = `<img class="custom-emoji" src="${entry.url.replace(/"/g, '&quot;')}" alt=":${entry.shortcode}:" loading="lazy" />`;
+      btn.innerHTML = `<img class="custom-emoji" src="${escapeHtmlAttr(entry.url)}" alt=":${escapeHtmlAttr(entry.shortcode)}:" loading="lazy" />`;
       btn.addEventListener('click', () => {
         if (this.options.onCustomSelect) {
           this.options.onCustomSelect(entry);

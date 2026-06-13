@@ -30,7 +30,7 @@ import type { PostsModuleApi } from '../../modules/posts/contracts';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { marked } from 'marked';
 import { sanitizeArticleHtml } from '../../helpers/sanitizeUserHtml';
-import { escapeHtml } from '../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { processFootnotes } from '../../helpers/processFootnotes';
 import { unwrapSolitaryParagraph } from '../../helpers/unwrapSolitaryParagraph';
 
@@ -108,7 +108,7 @@ export class ArticleView extends View {
     this.container.innerHTML = `
       <div class="article-view-content" data-event-id="${event.id}">
         <div class="article-header">
-          ${metadata.image ? `<img src="${metadata.image}" alt="${escapeHtml(metadata.title)}" class="article-banner" />` : ''}
+          ${metadata.image ? `<img src="${escapeHtmlAttr(metadata.image)}" alt="${escapeHtml(metadata.title)}" class="article-banner" />` : ''}
           <div class="article-title-row">
             <h1 class="article-title">${escapeHtml(metadata.title)}</h1>
             ${isOwnArticle ? `

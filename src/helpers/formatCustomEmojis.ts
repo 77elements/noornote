@@ -3,6 +3,8 @@
  * Replaces :shortcode: with <img> tags based on emoji tags from event
  */
 
+import { escapeHtmlAttr } from './escapeHtml';
+
 export interface CustomEmoji {
   shortcode: string;
   url: string;
@@ -39,8 +41,8 @@ export function formatCustomEmojis(html: string, emojis: CustomEmoji[]): string 
   return html.replace(regex, (match, shortcode) => {
     const url = emojiMap.get(shortcode);
     if (url) {
-      // Escape URL for safety
-      const safeUrl = url.replace(/"/g, '&quot;');
+      // Escape URL for safety (attribute-context: covers & " ' < >)
+      const safeUrl = escapeHtmlAttr(url);
       return `<img class="custom-emoji" src="${safeUrl}" alt=":${shortcode}:" title=":${shortcode}:" loading="lazy" />`;
     }
     // No matching emoji, keep original text
@@ -62,7 +64,7 @@ export function resolveReactionEmoji(event: { content: string; tags: string[][] 
     const shortcode = match[1];
     const emojiTag = event.tags.find(t => t[0] === 'emoji' && t[1] === shortcode);
     if (emojiTag && emojiTag[2]) {
-      const safeUrl = emojiTag[2].replace(/"/g, '&quot;');
+      const safeUrl = escapeHtmlAttr(emojiTag[2]);
       return `<img class="custom-emoji" src="${safeUrl}" alt=":${shortcode}:" title=":${shortcode}:" loading="lazy" />`;
     }
   }

@@ -77,7 +77,7 @@ const logger = SystemLogger.getInstance();
 // SHARED UTILITIES
 // =============================================================================
 
-import { escapeHtml } from '../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../helpers/escapeHtml';
 import { ICON_TRASH_16 } from '../helpers/svgIcons';
 import { getTag } from '../helpers/tagUtils';
 
@@ -2467,7 +2467,7 @@ export class BookmarkCard {
         <div class="nn-card__content">
           <div class="author">
             ${profilePic
-              ? `<img class="author-pic" src="${escapeHtml(profilePic)}" alt="" loading="lazy" />`
+              ? `<img class="author-pic" src="${escapeHtmlAttr(profilePic)}" alt="" loading="lazy" />`
               : '<div class="author-pic"></div>'
             }
             <span class="author-name">${escapeHtml(username)}</span>
@@ -2500,7 +2500,7 @@ export class BookmarkCard {
         } catch {
           displayUrl = value.slice(0, 40);
         }
-        displayContent = `<a href="${escapeHtml(value)}" class="external-link">${escapeHtml(displayUrl)}</a>`;
+        displayContent = `<a href="${escapeHtmlAttr(value)}" class="external-link">${escapeHtml(displayUrl)}</a>`;
         if (description) {
           const descText = description.length > 60 ? description.slice(0, 60) + '...' : description;
           displayContent += `<span class="description">${escapeHtml(descText)}</span>`;

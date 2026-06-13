@@ -8,6 +8,7 @@
  */
 
 import { NostrTransport } from '../../services/transport/NostrTransport';
+import { ProfileCarouselOrchestrator } from '../../services/orchestration/ProfileCarouselOrchestrator';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { ArticlesModuleApi, ArticleMetadata } from '../../modules/articles/contracts';
 import { UserProfileService } from '../../services/UserProfileService';
@@ -16,7 +17,8 @@ import { Router } from '../../services/Router';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
 import { createScrollCarousel, type ScrollCarouselInstance } from '../../helpers/CarouselHelper';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { escapeHtml } from '../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { extractDisplayName } from '../../helpers/extractDisplayName';
 
 interface ArticleCardData {
   event: NostrEvent;
@@ -68,23 +70,14 @@ export class ProfileArticlesCarousel {
       // Fetch published articles (+ drafts for own profile)
       const kinds = this.isOwnProfile ? [30023, 30024] : [30023];
 
-      // Parallel: article events + the author's NIP-09 deletion requests.
-      // Without the kind:5 leg, a deleted draft that some relays haven't
-      // tombstoned still gets re-served from other relays and re-appears
-      // here — even after the user explicitly hit Delete. Pattern mirrors
-      // `bookmarks.ts:1695-1758` for kind:30003 lists.
-      const [rawEvents, deletionEvents] = await Promise.all([
-        this.transport.fetch(relays, [{
-          kinds,
-          authors: [this.pubkey],
-          limit: 20
-        }], 8000, false, 'ArticlesCarousel'),
-        this.transport.fetch(relays, [{
-          kinds: [5],
-          authors: [this.pubkey],
-          limit: 50
-        }], 8000, false, 'ArticlesCarousel:deletions'),
-      ]);
+      // Single shared fetch (read + aggregator + outbound relays) via the
+      // carousel orchestrator. Read-relays-only previously hid articles that
+      // live only on the author's NIP-65 write relays; the orchestrator also
+      // returns the author's kind:5 deletions (for the tombstone filter below)
+      // and is reused by the videos/listings carousels from one cached fetch.
+      const content = await ProfileCarouselOrchestrator.getInstance().fetchProfileContent(this.pubkey);
+      const rawEvents = content.articles;
+      const deletionEvents = content.deletions;
 
       // Index NIP-09 `a`-tag deletions targeting our addressable kinds
       // (30023 / 30024) for this pubkey. Map value = most recent
@@ -188,7 +181,7 @@ export class ProfileArticlesCarousel {
         : '';
 
       const mediaHtml = metadata.image
-        ? `<div class="nn-card__media">${draftBadge}<img src="${escapeHtml(metadata.image)}" alt="" loading="lazy" /></div>`
+        ? `<div class="nn-card__media">${draftBadge}<img src="${escapeHtmlAttr(metadata.image)}" alt="" loading="lazy" /></div>`
         : `<div class="nn-card__media nn-card__media--empty">${draftBadge}</div>`;
 
       return {
@@ -228,7 +221,7 @@ export class ProfileArticlesCarousel {
     if (this.authorName) return;
     try {
       const profile = await this.userProfileService.getUserProfile(this.pubkey);
-      this.authorName = profile.display_name || profile.name || 'Anonymous';
+      this.authorName = extractDisplayName(profile) || 'Anonymous';
     } catch {
       this.authorName = 'Anonymous';
     }

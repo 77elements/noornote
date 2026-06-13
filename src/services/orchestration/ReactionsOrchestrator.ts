@@ -17,6 +17,7 @@ import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
 import { RelayConfig } from '../RelayConfig';
+import { parseBolt11Amount } from '../../helpers/zapUtils';
 import { SystemLogger } from '../SystemLogger';
 import { UserProfileService } from '../UserProfileService';
 import { isUserMuted } from '../../lists/mutes';
@@ -290,7 +291,7 @@ export class ReactionsOrchestrator extends Orchestrator {
   private calculateTotalZaps(zapEvents: NostrEvent[]): number {
     return zapEvents.reduce((total, event) => {
       const bolt11Tag = event.tags.find(tag => tag[0] === 'bolt11');
-      return bolt11Tag?.[1] ? total + this.parseBolt11Amount(bolt11Tag[1]) : total;
+      return bolt11Tag?.[1] ? total + parseBolt11Amount(bolt11Tag[1]) : total;
     }, 0);
   }
 
@@ -362,39 +363,6 @@ export class ReactionsOrchestrator extends Orchestrator {
     return detailedStats;
   }
 
-
-  /**
-   * Parse amount from bolt11 invoice
-   * Returns amount in sats (millisats / 1000)
-   */
-  private parseBolt11Amount(invoice: string): number {
-    try {
-      // Bolt11 format: lnbc[amount][multiplier]...
-      // Example: lnbc1500n... = 1500 nano-bitcoin = 150 sats
-      // Multipliers: m=milli, u=micro, n=nano, p=pico
-
-      const match = invoice.match(/^ln(bc|tb)(\d+)([munp]?)/i);
-      if (!match) return 0;
-
-      const amount = parseInt(match[2]!);
-      const multiplier = match[3]?.toLowerCase();
-
-      // Convert to millisats
-      let millisats = 0;
-      switch (multiplier) {
-        case 'm': millisats = amount * 100_000_000; break; // milli-bitcoin
-        case 'u': millisats = amount * 100_000; break;     // micro-bitcoin
-        case 'n': millisats = amount * 100; break;         // nano-bitcoin
-        case 'p': millisats = amount * 0.1; break;         // pico-bitcoin
-        default: millisats = amount * 100_000_000_000; break; // bitcoin
-      }
-
-      // Convert to sats (millisats / 1000)
-      return Math.floor(millisats / 1000);
-    } catch (error) {
-      return 0;
-    }
-  }
 
   /**
    * Build NDK filters for fetching interaction events

@@ -12,6 +12,9 @@ import { Router } from '../../services/Router';
 import { ListingService } from './ListingService';
 import { RelayConfig } from '../../services/RelayConfig';
 import { AuthGuard } from '../../services/AuthGuard';
+import { loadEditorRelayConfig } from '../../helpers/editorRelayConfig';
+import { insertTextAtCursor } from '../../helpers/insertTextAtCursor';
+import { ProfileCarouselOrchestrator } from '../../services/orchestration/ProfileCarouselOrchestrator';
 import { SystemLogger } from '../../services/SystemLogger';
 import { RelaySelector } from '../../components/post/RelaySelector';
 import { PostEditorToolbar } from '../../components/post/PostEditorToolbar';
@@ -23,7 +26,7 @@ import type { ArticlesModuleApi } from '../../modules/articles/contracts';
 import { parseListingMetadata } from './marketplace-helpers';
 import { marked } from 'marked';
 import { setupTabClickHandlers, switchTab } from '../../helpers/TabsHelper';
-import { escapeHtml } from '../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { CustomDropdown } from '../../components/ui/CustomDropdown';
 
 const CURRENCY_OPTIONS = ['USD', 'EUR', 'GBP', 'BTC', 'SAT'].map(c => ({ value: c, label: c }));
@@ -98,17 +101,10 @@ export class ListingEditorView extends View {
   }
 
   private loadRelayConfiguration(): void {
-    const localRelaySettings = this.relayConfig.loadLocalRelaySettings();
-    if (localRelaySettings.enabled) {
-      this.isTestMode = true;
-      this.availableRelays = [localRelaySettings.url];
-      this.selectedRelays = new Set([localRelaySettings.url]);
-    } else {
-      this.isTestMode = false;
-      const allRelays = this.relayConfig.getAllRelays();
-      this.availableRelays = [...new Set(allRelays.filter(r => r.isActive).map(r => r.url))];
-      this.selectedRelays = new Set([...new Set(this.relayConfig.getWriteRelays())]);
-    }
+    const cfg = loadEditorRelayConfig(this.relayConfig);
+    this.isTestMode = cfg.isTestMode;
+    this.availableRelays = cfg.availableRelays;
+    this.selectedRelays = cfg.selectedRelays;
   }
 
 
@@ -223,7 +219,7 @@ export class ListingEditorView extends View {
             <div class="listing-editor__image-list">
               ${this.images.map((url, i) => `
                 <div class="listing-editor__image-item" data-index="${i}">
-                  <img src="${escapeHtml(url)}" alt="" />
+                  <img src="${escapeHtmlAttr(url)}" alt="" />
                   <button type="button" class="btn-icon listing-editor__image-remove" data-remove-image="${i}" title="Remove">
                     <svg width="14" height="14"><use href="#icon-close"/></svg>
                   </button>
@@ -309,7 +305,7 @@ export class ListingEditorView extends View {
 
     return `
       <div class="article-editor__preview">
-        ${this.images.length > 0 && this.images[0] ? `<img src="${escapeHtml(this.images[0])}" alt="${escapeHtml(this.title)}" class="article-editor__preview-image" />` : ''}
+        ${this.images.length > 0 && this.images[0] ? `<img src="${escapeHtmlAttr(this.images[0])}" alt="${escapeHtml(this.title)}" class="article-editor__preview-image" />` : ''}
         <h1 class="article-editor__preview-title">${escapeHtml(this.title) || 'Untitled'}</h1>
         ${priceDisplay ? `<div class="listing-card__price" style="font-size: 1.25rem; margin-bottom: 1rem;">${escapeHtml(priceDisplay)}</div>` : ''}
         ${this.location ? `<div class="listing-card__location">${escapeHtml(this.location)}</div>` : ''}
@@ -514,7 +510,7 @@ export class ListingEditorView extends View {
 
     listEl.innerHTML = this.images.map((url, i) => `
       <div class="listing-editor__image-item" data-index="${i}">
-        <img src="${escapeHtml(url)}" alt="" />
+        <img src="${escapeHtmlAttr(url)}" alt="" />
         <button type="button" class="btn-icon listing-editor__image-remove" data-remove-image="${i}" title="Remove">
           <svg width="14" height="14"><use href="#icon-close"/></svg>
         </button>
@@ -569,17 +565,7 @@ export class ListingEditorView extends View {
   private insertAtCursor(text: string): void {
     const textarea = this.container.querySelector('.listing-editor-content') as HTMLTextAreaElement;
     if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const before = this.content.slice(0, start);
-    const after = this.content.slice(textarea.selectionEnd);
-
-    this.content = before + text + after;
-    textarea.value = this.content;
-
-    const newPos = start + text.length;
-    textarea.setSelectionRange(newPos, newPos);
-    textarea.focus();
+    this.content = insertTextAtCursor(textarea, this.content, text);
     this.updateButtonStates();
   }
 
@@ -621,6 +607,7 @@ export class ListingEditorView extends View {
       const naddr = await this.listingService.publishListing(options);
 
       if (naddr) {
+        ProfileCarouselOrchestrator.getInstance().invalidateForCurrentUser();
         this.router.navigate(`/listing/${naddr}`);
       }
     } finally {

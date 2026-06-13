@@ -6,6 +6,7 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { ProcessedNote, ZapReceiptData } from '../types/NoteTypes';
 import { ContentProcessor } from '../../../services/ContentProcessor';
+import { parseBolt11Amount } from '../../../helpers/zapUtils';
 
 export class ZapReceiptProcessor {
   private static contentProcessor = ContentProcessor.getInstance();
@@ -129,7 +130,7 @@ export class ZapReceiptProcessor {
 
     // Fallback: try to extract amount from bolt11 invoice
     if (amountSats === 0 && bolt11) {
-      amountSats = ZapReceiptProcessor.extractAmountFromBolt11(bolt11);
+      amountSats = parseBolt11Amount(bolt11);
     }
 
     const result: ZapReceiptData = {
@@ -143,40 +144,4 @@ export class ZapReceiptProcessor {
     return result;
   }
 
-  /**
-   * Extract amount from bolt11 invoice
-   * Format: lnbc{amount}{multiplier}...
-   */
-  private static extractAmountFromBolt11(bolt11: string): number {
-    try {
-      // Remove lnbc prefix and find amount
-      const match = bolt11.toLowerCase().match(/^lnbc(\d+)([munp])?/);
-      if (!match || !match[1]) return 0;
-
-      let amount = parseInt(match[1], 10);
-      const multiplier = match[2];
-
-      // Convert to sats based on multiplier
-      switch (multiplier) {
-        case 'm': // milli-bitcoin = 100,000 sats
-          amount = amount * 100000;
-          break;
-        case 'u': // micro-bitcoin = 100 sats
-          amount = amount * 100;
-          break;
-        case 'n': // nano-bitcoin = 0.1 sats
-          amount = Math.floor(amount / 10);
-          break;
-        case 'p': // pico-bitcoin = 0.0001 sats
-          amount = Math.floor(amount / 10000);
-          break;
-        default: // No multiplier = bitcoin
-          amount = amount * 100000000;
-      }
-
-      return amount;
-    } catch {
-      return 0;
-    }
-  }
 }

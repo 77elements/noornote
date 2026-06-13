@@ -21,6 +21,7 @@ import { TypedEventBus } from '../../core/TypedEventBus';
 import { SystemLogger } from '../../services/SystemLogger';
 import { FollowStorageAdapter } from '../../lists/follows';
 import { UserProfileService } from '../../services/UserProfileService';
+import { ContentProcessor } from '../../services/ContentProcessor';
 import { ProfileRecognitionOrchestrator } from './ProfileRecognitionOrchestrator';
 import { AuthService } from '../../services/AuthService';
 import { PlatformService } from '../../services/PlatformService';
@@ -173,6 +174,9 @@ export class ProfileRecognitionService {
       this.eventBus.off(this.followUpdatedSubId);
       this.followUpdatedSubId = null;
     }
+    // Stop + drop all mention blinkers this addon spawned (their 2s intervals
+    // live in ContentProcessor) so they don't keep firing after teardown.
+    ContentProcessor.getInstance().clearAllBlinkers();
     this.initialized = false;
     // Release the singleton so account switches get a fresh instance.
     if (ProfileRecognitionService.instance === this) {

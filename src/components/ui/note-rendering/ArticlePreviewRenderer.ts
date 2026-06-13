@@ -9,7 +9,7 @@ import { ModuleLoader } from '../../../core/ModuleLoader';
 import type { ArticlesModuleApi } from '../../../modules/articles/contracts';
 import { Router } from '../../../services/Router';
 import { getViewNavigationController } from '../../../services/ViewNavigationController';
-import { escapeHtml, escapeHtmlAttr } from '../../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr, escapeCssUrl } from '../../../helpers/escapeHtml';
 import { isLiveStreamsPlayerEnabled } from '../../../addons/live-streams-player/index';
 import { getAddressableIdentifier } from '../../../helpers/getAddressableIdentifier';
 import { getLiveStreamHost } from '../../../helpers/getLiveStreamHost';
@@ -378,7 +378,7 @@ export class ArticlePreviewRenderer {
 
     if (metadata.image) {
       const imgDiv = card.querySelector('.article-preview-image') as HTMLElement | null;
-      if (imgDiv) imgDiv.style.backgroundImage = `url(${JSON.stringify(metadata.image)})`;
+      if (imgDiv) imgDiv.style.backgroundImage = `url('${escapeCssUrl(metadata.image)}')`;
     }
 
     return card;
