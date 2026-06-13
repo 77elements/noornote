@@ -115,7 +115,7 @@
 
   &__loading {
     padding: calc($gap / 2) 0;
-    color: $text-alpha-medium;
+    color: color-mix(in srgb, var(--color-5) 60%, transparent);
     font-size: 0.9rem;
   }
 

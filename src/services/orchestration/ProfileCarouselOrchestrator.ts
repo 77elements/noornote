@@ -14,6 +14,7 @@ import { NostrTransport } from '../transport/NostrTransport';
 import { OutboundRelaysOrchestrator } from './OutboundRelaysOrchestrator';
 import { RelayConfig } from '../RelayConfig';
 import { AuthService } from '../AuthService';
+import { diagLog } from '../DiagnosticLogger';
 import { LRUCache, getCacheSize } from '../../helpers/LRUCache';
 
 export interface ProfileCarouselContent {
@@ -138,6 +139,15 @@ export class ProfileCarouselOrchestrator extends Orchestrator {
         case 5: content.deletions.push(ev); break;
       }
     }
+
+    diagLog('relays', 'ProfileCarousel: fetched', {
+      pubkey: pubkey.slice(0, 8),
+      relays: relays.length,
+      articles: content.articles.length,
+      videos: content.videos.length,
+      listings: content.listings.length,
+      deletions: content.deletions.length,
+    });
     return content;
   }
 
