@@ -225,22 +225,24 @@ export class RelayConfig {
     // reduction, so its coverage isn't silently halved on mobile.
     if (isDataSaverEnabled() && !forceFull) {
       return [
-        'wss://nostr.mom',
+        // 'wss://nostr.mom', // disabled: near-duplicate dataset of relay.mostr.pub
         'wss://nos.lol',
-        'wss://relay.ditto.pub',
+        // 'wss://relay.ditto.pub', // disabled: +2 exclusive followers and never sends EOSE (times out every fetch)
         'wss://relay.primal.net',
+        'wss://nostr.oxtr.dev',
         'wss://noornode.nostr1.com/'
       ];
     }
     return [
-      'wss://nostr.mom',
+      // 'wss://nostr.mom', // disabled: near-duplicate dataset of relay.mostr.pub
       'wss://relay.snort.social',
       'wss://nos.lol',
-      'wss://relay.ditto.pub',
+      // 'wss://relay.ditto.pub', // disabled: +2 exclusive followers and never sends EOSE (times out every fetch)
       'wss://relay.primal.net',
       'wss://purplepag.es',
       'wss://relay.mostr.pub',
       'wss://relay.zapstore.dev',
+      'wss://nostr.oxtr.dev',
       'wss://noornode.nostr1.com/'
     ];
   }
