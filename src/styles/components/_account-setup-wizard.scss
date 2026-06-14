@@ -376,6 +376,34 @@
 
 // Pack Grid
 // ===========================================
+// Two-column layout for the follow packs in the wizard. nn-card-grid is
+// container-query driven and stays single-column here (no container context),
+// so drive the columns explicitly. Mobile-first: 1 column on phones, 2 from
+// tablet up.
+.wizard-follow-packs {
+  .follow-packs__grid {
+    @include tablet {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+}
+
+// Faith self-identification checkboxes below the bio textarea.
+.wizard-faith-group {
+  margin-top: $gap;
+}
+
+// Duplicated navigation rendered above a long pack list: drop the top border/
+// padding of the regular nav and separate it from the content below instead.
+.wizard-nav--top {
+  padding-top: 0;
+  border-top: none;
+  padding-bottom: $gap;
+  margin-bottom: $gap * 1.5;
+  border-bottom: 1px solid var(--color-2);
+}
+
+// ===========================================
 // LIGHTNING STEP
 // ===========================================
 

@@ -71,6 +71,13 @@ interface WizardStep {
   render: () => HTMLElement;
   validate: () => boolean;
   collect: () => void;
+  /**
+   * Optional skip-with-confirmation for a step that is technically required
+   * but may be skipped after the user confirms an informational dialog.
+   * Returns true to proceed (skip), false to stay. When present, the ">"
+   * button stays enabled even while validate() is false.
+   */
+  confirmSkip?: () => Promise<boolean>;
 }
 
 import { type FollowPack, parseFollowPackEvent, filterFollowPacks } from '../../helpers/parseFollowPack';
@@ -314,22 +321,38 @@ function generateRandomAvatars(count: number): string[] {
 //     conduct). Users may still add it manually in Settings.
 //
 // Source: stats.andotherstuff.org 2026 + cross-checked against nostr.watch
-// reliability metrics. nostr.mom + relay.ditto.pub are large, high-uptime
-// general relays (verified to serve reads + accept writes for new accounts).
+// reliability metrics. nos.lol, relay.primal.net and nostr.oxtr.dev are large,
+// high-uptime general relays (verified to serve reads + accept writes for new
+// accounts).
 const DEFAULT_CONTENT_RELAYS: string[] = [
-  'wss://nostr.mom',
   'wss://nos.lol',
-  'wss://relay.ditto.pub',
   'wss://relay.primal.net',
-  'wss://offchain.pub',
+  'wss://nostr.oxtr.dev',
 ];
 
-// NIP-17 DM inbox relays (AUTH-capable, private inbox). Seeded for the user —
-// the inbox-relay wizard step was removed; advanced users change them in Settings.
+// Generic NIP-17 DM inbox relay (AUTH-capable, private inbox), kept for users
+// with no faith selection and used as the single generic inbox relay for
+// Christians alongside their faith relay.
+const GENERIC_INBOX_RELAY = 'wss://relay.0xchat.com';
+
+// Inbox set for users with no faith selection. Muslims and Christians get
+// faith-specific inbox sets instead (see applyFaithRelays). The inbox-relay
+// wizard step was removed; advanced users change these in Settings.
 const DEFAULT_INBOX_RELAYS: string[] = [
-  'wss://noornode.nostr1.com',
-  'wss://relay.0xchat.com',
+  GENERIC_INBOX_RELAY,
   'wss://auth.nostr1.com',
+];
+
+// Thematic community relays seeded when a user self-identifies in the bio step.
+// Only members of the respective faith post to these relays. They are added to
+// the read/write (kind 10002) set; their inbox (kind 10050) handling differs
+// per faith and lives in applyFaithRelays().
+const MUSLIM_RELAYS: string[] = [
+  'wss://noornode.nostr1.com',
+  'wss://bitcoinmajlis.nostr1.com',
+];
+const CHRISTIAN_RELAYS: string[] = [
+  'wss://theforest.nostr1.com',
 ];
 
 function generateRandomUsername(): string {
@@ -356,6 +379,8 @@ export class AccountSetupWizard {
   private avatarChoices: string[] = [];
   private selectedRelays: WizardRelay[] = [];
   private inboxRelays: WizardInboxRelay[] = [];
+  private isMuslim = false;
+  private isChristian = false;
   private followPacks: FollowPack[] = [];
   private followPacksLoaded: boolean = false;
   private followPackView: 'grid' | 'detail' = 'grid';
@@ -428,7 +453,8 @@ export class AccountSetupWizard {
 
     // Relays are no longer a wizard step — most beginners can't judge which
     // relay does what. Seed sensible defaults (changeable later in Settings):
-    // the 4 mainstream content relays as read/write + 3 NIP-17 DM inbox relays.
+    // mainstream content relays as read/write + NIP-17 DM inbox relays. Faith
+    // self-identification in the bio step may amend these via applyFaithRelays.
     this.selectedRelays = DEFAULT_CONTENT_RELAYS.map(url => ({ url, read: true, write: true }));
     this.inboxRelays = DEFAULT_INBOX_RELAYS.map(url => ({ url, selected: true }));
   }
@@ -590,17 +616,25 @@ export class AccountSetupWizard {
     nextBtn.className = 'btn btn--square-elg';
     nextBtn.textContent = '>';
     // Set initial state based on validation (after a microtask to let render complete)
-    if (isRequired) {
+    if (isRequired && !step.confirmSkip) {
       nextBtn.disabled = true;
       setTimeout(() => {
         nextBtn.disabled = !step.validate();
       }, 0);
     }
     nextBtn.setAttribute('data-wizard-action', 'next');
-    nextBtn.addEventListener('click', () => {
+    nextBtn.addEventListener('click', async () => {
       if (step.validate()) {
         step.collect();
         this.goToNextStep();
+      } else if (step.confirmSkip) {
+        // Step is technically required but skippable after an informational
+        // confirmation (the Lightning wallet step on every platform).
+        const proceed = await step.confirmSkip();
+        if (proceed) {
+          step.collect();
+          this.goToNextStep();
+        }
       }
     });
     navRight.appendChild(nextBtn);
@@ -643,6 +677,8 @@ export class AccountSetupWizard {
       selectedRelays: this.selectedRelays,
       inboxRelays: this.inboxRelays,
       followedPubkeys: [...this.followedPubkeys],
+      isMuslim: this.isMuslim,
+      isChristian: this.isChristian,
     });
   }
 
@@ -654,6 +690,8 @@ export class AccountSetupWizard {
       selectedRelays?: WizardRelay[];
       inboxRelays?: WizardInboxRelay[];
       followedPubkeys?: string[];
+      isMuslim?: boolean;
+      isChristian?: boolean;
     } | null>(StorageKeys.WIZARD_PROGRESS, null);
 
     if (saved) {
@@ -671,6 +709,8 @@ export class AccountSetupWizard {
       if (saved.followedPubkeys?.length) {
         this.followedPubkeys = new Set(saved.followedPubkeys);
       }
+      this.isMuslim = saved.isMuslim ?? false;
+      this.isChristian = saved.isChristian ?? false;
     } else {
       this.currentStepIndex = 0;
       this.profileData = {};
@@ -679,6 +719,22 @@ export class AccountSetupWizard {
 
   private clearProgress(): void {
     this.storage.remove(StorageKeys.WIZARD_PROGRESS);
+  }
+
+  /**
+   * Informational confirmation shown when the user tries to advance past the
+   * Lightning wallet step without having connected a wallet. Returns true to
+   * skip the step, false to stay. Used on all platforms (Rizful step on Web,
+   * Lightning step on Desktop/Android).
+   */
+  private async confirmSkipWallet(): Promise<boolean> {
+    const { ModalService } = await import('../../services/ModalService');
+    return ModalService.getInstance().confirm({
+      title: 'Set Up Wallet Later?',
+      message: 'A Lightning wallet lets you send and receive Zaps. You can set one up anytime later in Settings, but we recommend starting with a working wallet so you can zap right away.',
+      confirmText: 'Skip for now',
+      cancelText: 'Go back',
+    });
   }
 
   private async cancelWizard(): Promise<void> {
@@ -880,7 +936,8 @@ export class AccountSetupWizard {
         if (this.walletCredentials) {
           this.profileData.lud16 = this.walletCredentials.lightningAddress;
         }
-      }
+      },
+      confirmSkip: () => this.confirmSkipWallet(),
     };
   }
 
@@ -1678,12 +1735,44 @@ IMPORTANT:
         const bioField = renderBioField(this.profileData.about || '');
         el.appendChild(bioField);
 
+        // Optional faith self-identification. When checked, thematic community
+        // relays are seeded into the user's relay sets via applyFaithRelays().
+        const faith = document.createElement('div');
+        faith.className = 'nn-checkbox-group wizard-faith-group';
+        faith.innerHTML = `
+          <label class="nn-checkbox">
+            <input type="checkbox" id="wizard-faith-muslim" ${this.isMuslim ? 'checked' : ''} />
+            <span>I am Muslim</span>
+          </label>
+          <label class="nn-checkbox">
+            <input type="checkbox" id="wizard-faith-christian" ${this.isChristian ? 'checked' : ''} />
+            <span>I am Christian</span>
+          </label>
+        `;
+        el.appendChild(faith);
+
+        // Mutually exclusive: Muslim OR Christian OR neither, never both.
+        const muslimCb = faith.querySelector('#wizard-faith-muslim') as HTMLInputElement;
+        const christianCb = faith.querySelector('#wizard-faith-christian') as HTMLInputElement;
+        muslimCb.addEventListener('change', () => {
+          if (muslimCb.checked) christianCb.checked = false;
+        });
+        christianCb.addEventListener('change', () => {
+          if (christianCb.checked) muslimCb.checked = false;
+        });
+
         return el;
       },
       validate: () => true,
       collect: () => {
         const textarea = this.container?.querySelector('#about') as HTMLTextAreaElement;
         if (textarea) this.profileData.about = textarea.value.trim();
+
+        const muslimInput = this.container?.querySelector('#wizard-faith-muslim') as HTMLInputElement | null;
+        const christianInput = this.container?.querySelector('#wizard-faith-christian') as HTMLInputElement | null;
+        if (muslimInput) this.isMuslim = muslimInput.checked;
+        if (christianInput) this.isChristian = christianInput.checked;
+        this.applyFaithRelays();
       }
     };
   }
@@ -1726,6 +1815,12 @@ IMPORTANT:
     subIntro.className = 'wizard-intro';
     subIntro.innerHTML = '<em>This is just a start, you\'ll discover more accounts over time.</em>';
     el.appendChild(subIntro);
+
+    // Duplicate the wizard navigation above the (potentially long) pack list
+    // so users can continue without scrolling all the way to the bottom.
+    const topNav = this.renderNavigation(this.steps[this.currentStepIndex]!);
+    topNav.classList.add('wizard-nav--top');
+    el.appendChild(topNav);
 
     if (this.followedPubkeys.size > 0) {
       const badge = document.createElement('p');
@@ -1943,7 +2038,7 @@ IMPORTANT:
     return {
       id: 'lightning',
       title: 'Wallet',
-      required: false,
+      required: true,
       render: () => {
         const el = document.createElement('div');
         this.renderStepHeader(el, 'Lightning Wallet', 'Set up a Lightning wallet to send and receive Bitcoin tips (Zaps) on Nostr. This is optional, you can set it up later in Settings.');
@@ -2068,8 +2163,9 @@ IMPORTANT:
 
         return el;
       },
-      validate: () => true,
-      collect: () => {}
+      validate: () => !!this.profileData.lud16,
+      collect: () => {},
+      confirmSkip: () => this.confirmSkipWallet(),
     };
   }
 
@@ -2182,6 +2278,41 @@ IMPORTANT:
 
   private updateFinishStatus(spinner: HTMLElement | null, text: string): void {
     if (spinner) spinner.textContent = text;
+  }
+
+  /**
+   * Rebuild the seeded relay sets from the platform defaults plus any
+   * faith-specific community relays the user opted into in the bio step.
+   * Idempotent: unchecking removes the extra relays again. Faith relays are
+   * seeded as read/write (content, kind 10002) AND inbox (kind 10050). There
+   * is no relay-customization step in the wizard, so rebuilding from defaults
+   * is safe.
+   */
+  private applyFaithRelays(): void {
+    // Muslim and Christian are mutually exclusive. Faith relays are appended to
+    // the shared content defaults as read/write.
+    const faithRelays = this.isMuslim ? MUSLIM_RELAYS
+      : this.isChristian ? CHRISTIAN_RELAYS
+      : [];
+
+    const contentUrls = [...DEFAULT_CONTENT_RELAYS];
+    for (const url of faithRelays) {
+      if (!contentUrls.includes(url)) contentUrls.push(url);
+    }
+    this.selectedRelays = contentUrls.map(url => ({ url, read: true, write: true }));
+
+    // Inbox (NIP-17 DM): every user ends up with two inbox relays. Muslims get
+    // only their faith relays; Christians get one generic relay + theforest;
+    // everyone else gets the generic inbox defaults.
+    let inboxUrls: string[];
+    if (this.isMuslim) {
+      inboxUrls = [...MUSLIM_RELAYS];
+    } else if (this.isChristian) {
+      inboxUrls = [GENERIC_INBOX_RELAY, ...CHRISTIAN_RELAYS];
+    } else {
+      inboxUrls = [...DEFAULT_INBOX_RELAYS];
+    }
+    this.inboxRelays = inboxUrls.map(url => ({ url, selected: true }));
   }
 
   private async publishRelayList(): Promise<void> {
