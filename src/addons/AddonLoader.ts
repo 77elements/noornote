@@ -49,6 +49,7 @@
 
 import { TypedEventBus } from '../core/TypedEventBus';
 import { diagLog } from '../services/DiagnosticLogger';
+import { resetGlobalAddonEnabledFlags } from './addonEnabledStorage';
 
 export interface AddonContext {
   /** Hex pubkey of the currently logged-in user, or null for read-only/anonymous. */
@@ -142,6 +143,12 @@ export class AddonLoader {
   public bootstrap(current?: { pubkey: string | null; npub: string | null }): void {
     if (this.initialized) return;
     this.initialized = true;
+
+    // Force every global addon-enabled fallback key OFF. The per-account value
+    // is the authoritative state; a new account has none and therefore reads
+    // OFF, so every addon starts disabled for a new user no matter what an
+    // older build (or another account) left in the global key.
+    resetGlobalAddonEnabledFlags();
 
     this.eventBus.on('user:login', (data?: { pubkey?: string; npub?: string }) => {
       const pubkey = data?.pubkey ?? null;

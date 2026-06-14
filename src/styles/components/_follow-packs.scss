@@ -16,6 +16,19 @@
   }
 }
 
+// Addon list view: two-column pack grid. nn-card-grid is container-query
+// driven and stays single-column without a container context here, so drive
+// the columns explicitly. Single column only on the phone layout.
+.view-content--addon-follow-packs {
+  .follow-packs__grid {
+    grid-template-columns: repeat(2, 1fr);
+
+    .layout--phone & {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
 .follow-packs {
   overflow: hidden;
   max-width: 100%;

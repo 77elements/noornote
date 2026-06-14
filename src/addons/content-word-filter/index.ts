@@ -13,7 +13,7 @@ export function isContentWordFilterEnabled(): boolean {
 
 export function setContentWordFilterEnabled(enabled: boolean): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.CONTENT_WORD_FILTER_ENABLED, enabled);
-  localStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
+  localStorage.setItem(STORAGE_KEY, 'false');
 }
 
 export function getFilterWords(): string[] {

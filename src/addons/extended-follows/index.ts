@@ -12,5 +12,5 @@ export function isExtendedFollowsEnabled(): boolean {
 
 export function setExtendedFollowsEnabled(enabled: boolean): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.EXTENDED_FOLLOWS_ADDON_ENABLED, enabled);
-  localStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
+  localStorage.setItem(STORAGE_KEY, 'false');
 }

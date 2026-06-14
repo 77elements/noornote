@@ -12,5 +12,5 @@ export function isHashtagSubscriptionsEnabled(): boolean {
 
 export function setHashtagSubscriptionsEnabled(enabled: boolean): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.HASHTAG_SUBSCRIPTIONS_ENABLED, enabled);
-  localStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
+  localStorage.setItem(STORAGE_KEY, 'false');
 }

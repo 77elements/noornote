@@ -23,5 +23,5 @@ export function isCustomEmojisEnabled(): boolean {
 
 export function setCustomEmojisEnabled(enabled: boolean): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.CUSTOM_EMOJIS_ENABLED, enabled);
-  localStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
+  localStorage.setItem(STORAGE_KEY, 'false');
 }

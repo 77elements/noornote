@@ -12,5 +12,5 @@ export function isScheduledPostsEnabled(): boolean {
 
 export function setScheduledPostsEnabled(enabled: boolean): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.SCHEDULED_POSTS_ENABLED, enabled);
-  localStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
+  localStorage.setItem(STORAGE_KEY, 'false');
 }

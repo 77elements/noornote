@@ -16,12 +16,12 @@ export function isProfileRecognitionEnabled(): boolean {
   if (perAccount !== null) return perAccount !== 0;
   const raw = localStorage.getItem(STORAGE_KEY);
   if (raw !== null) return raw === 'true';
-  // Default: enabled (matches previous default of window=90)
-  return true;
+  // Default OFF: every addon starts disabled for a new user.
+  return false;
 }
 
 /** Set the recognition window (0 = disabled) */
 export function setProfileRecognitionWindow(value: number): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.PROFILE_RECOGNITION_WINDOW, value);
-  localStorage.setItem(STORAGE_KEY, value !== 0 ? 'true' : 'false');
+  localStorage.setItem(STORAGE_KEY, 'false');
 }

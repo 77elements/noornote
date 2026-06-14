@@ -12,5 +12,5 @@ export function isListSettingsEnabled(): boolean {
 
 export function setListSettingsEnabled(enabled: boolean): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.LIST_SETTINGS_ENABLED, enabled);
-  localStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
+  localStorage.setItem(STORAGE_KEY, 'false');
 }

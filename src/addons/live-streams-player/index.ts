@@ -12,5 +12,5 @@ export function isLiveStreamsPlayerEnabled(): boolean {
 
 export function setLiveStreamsPlayerEnabled(enabled: boolean): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.LIVE_STREAMS_PLAYER_ENABLED, enabled);
-  localStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
+  localStorage.setItem(STORAGE_KEY, 'false');
 }

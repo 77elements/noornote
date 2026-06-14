@@ -12,5 +12,5 @@ export function isBadgesEnabled(): boolean {
 
 export function setBadgesEnabled(enabled: boolean): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.BADGES_ENABLED, enabled);
-  localStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
+  localStorage.setItem(STORAGE_KEY, 'false');
 }

@@ -12,5 +12,5 @@ export function isWalletBalanceEnabled(): boolean {
 
 export function setWalletBalanceEnabled(enabled: boolean): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.WALLET_BALANCE_ADDON_ENABLED, enabled);
-  localStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
+  localStorage.setItem(STORAGE_KEY, 'false');
 }

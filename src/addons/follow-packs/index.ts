@@ -12,5 +12,5 @@ export function isFollowPacksEnabled(): boolean {
 
 export function setFollowPacksEnabled(enabled: boolean): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.FOLLOW_PACKS_ENABLED, enabled);
-  localStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
+  localStorage.setItem(STORAGE_KEY, 'false');
 }

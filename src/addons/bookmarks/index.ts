@@ -12,5 +12,5 @@ export function isBookmarksEnabled(): boolean {
 
 export function setBookmarksEnabled(enabled: boolean): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.BOOKMARKS_ADDON_ENABLED, enabled);
-  localStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
+  localStorage.setItem(STORAGE_KEY, 'false');
 }
