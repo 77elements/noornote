@@ -8,8 +8,8 @@ android {
         applicationId "com.noornote.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1300
-        versionName "0.13.0"
+        versionCode 1301
+        versionName "0.13.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

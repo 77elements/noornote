@@ -1,12 +1,13 @@
-# NoorNote 0.13.0
+# NoorNote 0.13.1
 
 **New**
-- Bulk delete: a new opt-in addon to delete many of your own posts at once. It lists your recent posts (or a chosen time range), you tick the ones to remove and delete them in one go, with live progress.
-- Reliable deletions: deletion requests are now broadcast to 1400+ relays in the background and keep going across reloads and restarts until delivered.
-- Paste-to-upload: paste an image from your clipboard straight into any editor and it uploads automatically.
+- Onboarding: the Lightning wallet step is now skippable, with a reminder that you can set one up later.
+- Onboarding: optionally tell us if you're Muslim or Christian to start out connected to the matching community relays.
+- Follow packs now display in two columns (one column on phones).
 
 **Changed**
-- Optimized internal relays.
+- Every addon now starts off for a new account.
+- Refreshed relays and improved follower-count coverage.
 
 **Fixes**
-- Restored the green upload-progress ring that fills while images upload.
+- Security, memory and performance improvements.
