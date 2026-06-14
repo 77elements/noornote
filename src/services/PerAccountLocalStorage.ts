@@ -158,6 +158,10 @@ export const StorageKeys = {
   // The API only serves a rolling ~30 days; the "Fetch Prayer Times" button appends
   // the next window so the times survive reloads and work offline until they run out.
   NOSTR_MAJLIS_DIYANET_CACHE: 'noornote_nostr_majlis_diyanet_cache_map',
+  // Acknowledged holiday reminders — string[] of `${holidayDate}:${key}` dedup
+  // keys. Set when the user clicks "Ok" on a holiday alert bar so it never
+  // re-shows for that occurrence across reloads/restarts. Pruned of past dates.
+  NOSTR_MAJLIS_HOLIDAYS_ACK: 'noornote_nostr_majlis_holidays_ack_map',
   PETNAMES: 'noornote_petnames_map',
   DATA_SAVER_ENABLED: 'noornote_data_saver_enabled_map',
 

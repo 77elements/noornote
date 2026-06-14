@@ -20,6 +20,7 @@
 import { AlertBarService } from '../../services/AlertBarService';
 import { Router } from '../../services/Router';
 import { diagLog } from '../../services/DiagnosticLogger';
+import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { isNostrMajlisEnabled, getNostrMajlisSettings, type ReminderPrayers } from './index';
 import { getActiveTimes, parseHHMM } from './activeTimes';
 import { getHolidayReminders } from './holidays';
@@ -102,6 +103,7 @@ export class NostrMajlisReminderService {
   /** Fire the holiday reminder due today (09:00, N days before), once per holiday occurrence. */
   private scanHolidays(s: ReturnType<typeof getNostrMajlisSettings>, now: Date): void {
     const days = s.holidayReminder.daysBefore;
+    const acked = this.loadAckedHolidays();
     for (const rem of getHolidayReminders(days)) {
       // Due = fire time reached AND still the reminder day (don't replay a day we missed).
       if (rem.fireAt.getTime() > now.getTime()) continue;
@@ -109,6 +111,9 @@ export class NostrMajlisReminderService {
 
       const dedup = `${rem.date.toDateString()}:${rem.key}`;
       if (this.shownHolidays.has(dedup)) continue;
+      // Persisted acknowledgement: once the user clicked "Ok", never re-show this
+      // occurrence — survives reload / restart / account-switch.
+      if (acked.has(dedup)) continue;
       this.shownHolidays.add(dedup);
 
       const text = `${rem.name} in ${days} day${days === 1 ? '' : 's'} (${formatDateByCalendar(rem.date)})`;
@@ -116,13 +121,35 @@ export class NostrMajlisReminderService {
       AlertBarService.getInstance().show({
         text,
         onTextClick: () => Router.getInstance().navigate('/addons/nostr-majlis'),
-        onOk: () => { /* acknowledge + dismiss */ },
+        onOk: () => this.ackHoliday(dedup),
       });
       if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && !document.hasFocus()) {
         const n = new Notification(rem.name, { body: text, tag: `nostr-majlis-holiday-${rem.key}` });
         n.onclick = () => { window.focus(); Router.getInstance().navigate('/addons/nostr-majlis'); };
       }
     }
+  }
+
+  /** Acknowledged holiday dedup keys, persisted per account so "Ok" sticks across restarts. */
+  private loadAckedHolidays(): Set<string> {
+    const arr = PerAccountLocalStorage.getInstance().get<string[]>(StorageKeys.NOSTR_MAJLIS_HOLIDAYS_ACK, []);
+    return new Set(arr);
+  }
+
+  /** Persist an acknowledged holiday and prune entries whose holiday date has passed. */
+  private ackHoliday(dedup: string): void {
+    const set = this.loadAckedHolidays();
+    set.add(dedup);
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const pruned = [...set].filter(k => {
+      const d = new Date(k.split(':')[0]!); // `${holidayDate.toDateString()}:${key}`
+      return isNaN(d.getTime()) || d.getTime() >= todayStart.getTime();
+    });
+
+    PerAccountLocalStorage.getInstance().set(StorageKeys.NOSTR_MAJLIS_HOLIDAYS_ACK, pruned);
+    diagLog('addons', 'nostr-majlis: holiday reminder acknowledged', { dedup });
   }
 
   /** Background OS notification — only when the window isn't focused (else the AlertBar is enough). */
