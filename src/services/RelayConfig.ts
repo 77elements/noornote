@@ -230,6 +230,7 @@ export class RelayConfig {
         // 'wss://relay.ditto.pub', // disabled: +2 exclusive followers and never sends EOSE (times out every fetch)
         'wss://relay.primal.net',
         'wss://nostr.oxtr.dev',
+        'wss://nostr21.com',
         'wss://noornode.nostr1.com/'
       ];
     }
@@ -243,6 +244,7 @@ export class RelayConfig {
       'wss://relay.mostr.pub',
       'wss://relay.zapstore.dev',
       'wss://nostr.oxtr.dev',
+      'wss://nostr21.com',
       'wss://noornode.nostr1.com/'
     ];
   }
