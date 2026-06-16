@@ -330,9 +330,9 @@ const DEFAULT_CONTENT_RELAYS: string[] = [
   'wss://nostr.oxtr.dev',
 ];
 
-// Generic NIP-17 DM inbox relay (AUTH-capable, private inbox), kept for users
-// with no faith selection and used as the single generic inbox relay for
-// Christians alongside their faith relay.
+// Generic NIP-17 DM inbox relay (AUTH-capable, private inbox), used only for
+// users with no faith selection. Muslims and Christians get their faith relays
+// as inbox instead (see applyFaithRelays).
 const GENERIC_INBOX_RELAY = 'wss://relay.0xchat.com';
 
 // Inbox set for users with no faith selection. Muslims and Christians get
@@ -353,6 +353,7 @@ const MUSLIM_RELAYS: string[] = [
 ];
 const CHRISTIAN_RELAYS: string[] = [
   'wss://theforest.nostr1.com',
+  'wss://christpill.nostr1.com',
 ];
 
 function generateRandomUsername(): string {
@@ -2301,14 +2302,14 @@ IMPORTANT:
     }
     this.selectedRelays = contentUrls.map(url => ({ url, read: true, write: true }));
 
-    // Inbox (NIP-17 DM): every user ends up with two inbox relays. Muslims get
-    // only their faith relays; Christians get one generic relay + theforest;
+    // Inbox (NIP-17 DM): Muslims and Christians get only their faith relays
+    // (Muslims: noornode + bitcoinmajlis; Christians: theforest + christpill);
     // everyone else gets the generic inbox defaults.
     let inboxUrls: string[];
     if (this.isMuslim) {
       inboxUrls = [...MUSLIM_RELAYS];
     } else if (this.isChristian) {
-      inboxUrls = [GENERIC_INBOX_RELAY, ...CHRISTIAN_RELAYS];
+      inboxUrls = [...CHRISTIAN_RELAYS];
     } else {
       inboxUrls = [...DEFAULT_INBOX_RELAYS];
     }
