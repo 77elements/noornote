@@ -38,6 +38,7 @@ import {
 } from '../../helpers/profile-field-helpers';
 import { setupCarouselNavigation } from '../../helpers/CarouselHelper';
 import { getImageViewer } from '../ui/ImageViewer';
+import { Tooltip } from '../ui/Tooltip';
 
 const platform = PlatformService.getInstance();
 
@@ -356,6 +357,17 @@ const CHRISTIAN_RELAYS: string[] = [
   'wss://christpill.nostr1.com',
 ];
 
+// Tooltip copy for the faith checkboxes. The only effect of ticking a box is
+// relay seeding: the thematic relays below are added to the user's setup.
+// Built from the relay lists so the names stay in sync with the actual seeds.
+function faithRelayTooltip(relays: string[]): string {
+  const names = relays.map(url => url.replace(/^wss:\/\//, '')).join(' and ');
+  return `No other effect, except the ${relays.length} thematic relays ${names} that are added initially `
+    + 'and which you can browse individually later.';
+}
+const FAITH_TOOLTIP_MUSLIM = faithRelayTooltip(MUSLIM_RELAYS);
+const FAITH_TOOLTIP_CHRISTIAN = faithRelayTooltip(CHRISTIAN_RELAYS);
+
 function generateRandomUsername(): string {
   const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
   const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
@@ -397,6 +409,7 @@ export class AccountSetupWizard {
 
   /** The fullscreen container we inject into #app */
   private container: HTMLElement | null = null;
+  private tooltipDisposers: Array<() => void> = [];
   /** The original #app content (MainLayout), hidden during wizard */
   private originalAppContent: HTMLElement[] = [];
 
@@ -484,6 +497,7 @@ export class AccountSetupWizard {
    * Remove wizard and restore main app layout
    */
   private destroy(): void {
+    this.disposeTooltips();
     this.avatarUploader?.cleanup();
     this.avatarUploader = null;
 
@@ -500,12 +514,20 @@ export class AccountSetupWizard {
     this.originalAppContent = [];
   }
 
+  private disposeTooltips(): void {
+    this.tooltipDisposers.forEach(dispose => dispose());
+    this.tooltipDisposers = [];
+  }
+
   private renderCurrentStep(): void {
     if (!this.container) return;
 
     // Cleanup previous avatar uploader
     this.avatarUploader?.cleanup();
     this.avatarUploader = null;
+
+    // Detach tooltips from the outgoing step's DOM before it is replaced.
+    this.disposeTooltips();
 
     const step = this.steps[this.currentStepIndex]!;
 
@@ -1761,6 +1783,12 @@ IMPORTANT:
         christianCb.addEventListener('change', () => {
           if (christianCb.checked) muslimCb.checked = false;
         });
+
+        // Explain the (relay-only) effect of each choice on hover.
+        const muslimLabel = muslimCb.closest('.nn-checkbox') as HTMLElement | null;
+        const christianLabel = christianCb.closest('.nn-checkbox') as HTMLElement | null;
+        if (muslimLabel) this.tooltipDisposers.push(Tooltip.attach(muslimLabel, FAITH_TOOLTIP_MUSLIM));
+        if (christianLabel) this.tooltipDisposers.push(Tooltip.attach(christianLabel, FAITH_TOOLTIP_CHRISTIAN));
 
         return el;
       },

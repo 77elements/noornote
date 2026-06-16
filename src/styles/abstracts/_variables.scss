@@ -251,3 +251,4 @@ $z-modal:              10000;  // generic ModalService backdrop + content
 $z-modal-top:          10001;  // elements above a modal's content (close button, popups inside modal)
 $z-toast:              10000;  // toasts (top-right — no visual overlap with modal content)
 $z-upload-chip:        10500;  // persistent upload-progress chip — MUST remain visible above any modal
+$z-tooltip:            10600;  // transient hover tooltips (nn-tooltip) — top-most, must never be occluded

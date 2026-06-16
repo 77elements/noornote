@@ -1,0 +1,30 @@
+/**
+ * Tooltip (nn-tooltip)
+ * Reusable hover popup — see components/ui/Tooltip.ts.
+ * Modal-like surface without a header: rounded corners, color-2 background,
+ * color-3 border, color-5 text. Portalled to <body>, positioned via JS.
+ */
+
+@use '../abstracts/variables' as *;
+@use '../base/typography' as *;
+
+.nn-tooltip {
+  position: fixed;
+  z-index: $z-tooltip;
+  max-width: 18rem;
+  padding: calc($gap / 2) $gap;
+  background: var(--color-2);
+  border: 1px solid var(--color-3);
+  border-radius: $radius-xl;
+  color: var(--color-5);
+  @extend %small;
+  line-height: 1.4;
+  // Must not eat pointer events: the popup sits over the page but the target
+  // owns the hover, so leaving the target always hides it.
+  pointer-events: none;
+  visibility: hidden;
+
+  &--visible {
+    visibility: visible;
+  }
+}
