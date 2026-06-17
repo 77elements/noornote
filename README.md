@@ -172,6 +172,7 @@ If the app crashes, check the log files:
 | [NIP-55](https://github.com/nostr-protocol/nips/blob/master/55.md) | Android signer application (Amber) | - |
 | [NIP-56](https://github.com/nostr-protocol/nips/blob/master/56.md) | Reporting | 1984 |
 | [NIP-57](https://github.com/nostr-protocol/nips/blob/master/57.md) | Zaps | 9734, 9735 |
+| [NIP-59](https://github.com/nostr-protocol/nips/blob/master/59.md) | Gift Wrap (used by NIP-17 DMs) | 1059 |
 | [NIP-65](https://github.com/nostr-protocol/nips/blob/master/65.md) | Relay list metadata | 10002 |
 | [NIP-68](https://github.com/nostr-protocol/nips/blob/master/68.md) | Picture events | 20 |
 | [NIP-58](https://github.com/nostr-protocol/nips/blob/master/58.md) | Badges | 8, 30009, 10008, 30008 |
