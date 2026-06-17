@@ -513,6 +513,27 @@
   }
 }
 
+.wizard-faith-note {
+  &[hidden] {
+    display: none;
+  }
+
+  strong {
+    display: block;
+    margin-bottom: calc($gap / 2);
+    color: var(--color-5);
+  }
+
+  p {
+    margin: 0;
+    color: var(--color-3);
+  }
+
+  &__actions {
+    margin-top: $gap;
+  }
+}
+
 .wizard-code-input {
   margin: $gap * 2 0;
 

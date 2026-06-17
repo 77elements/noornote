@@ -21,6 +21,7 @@ import { TypedEventBus } from '../../core/TypedEventBus';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { ImageUploader } from '../profile/ImageUploader';
 import { ToastService } from '../../services/ToastService';
+import { ClipboardActionsService } from '../../services/ClipboardActionsService';
 import { UserProfileService } from '../../services/UserProfileService';
 import type { SettingsModuleApi } from '../../modules/settings/contracts';
 import type { RelayInfo, RelayType } from '../../services/RelayConfig';
@@ -331,23 +332,25 @@ const DEFAULT_CONTENT_RELAYS: string[] = [
   'wss://nostr.oxtr.dev',
 ];
 
-// Generic NIP-17 DM inbox relay (AUTH-capable, private inbox), used only for
-// users with no faith selection. Muslims and Christians get their faith relays
-// as inbox instead (see applyFaithRelays).
+// Generic NIP-17 DM inbox relay (AUTH-capable, private inbox). Used for users
+// with no faith selection and for Muslims (whose faith relays are paid-write,
+// so they can't serve as a DM inbox until the user is whitelisted) — see
+// applyFaithRelays.
 const GENERIC_INBOX_RELAY = 'wss://relay.0xchat.com';
 
-// Inbox set for users with no faith selection. Muslims and Christians get
-// faith-specific inbox sets instead (see applyFaithRelays). The inbox-relay
-// wizard step was removed; advanced users change these in Settings.
+// Default DM inbox set. Christians get a faith-only inbox; Muslims and everyone
+// else get exactly this set (Muslims add their paid faith relays later, once
+// whitelisted). The inbox-relay wizard step was removed; advanced users change
+// these in Settings.
 const DEFAULT_INBOX_RELAYS: string[] = [
   GENERIC_INBOX_RELAY,
   'wss://auth.nostr1.com',
 ];
 
 // Thematic community relays seeded when a user self-identifies in the bio step.
-// Only members of the respective faith post to these relays. They are added to
-// the read/write (kind 10002) set; their inbox (kind 10050) handling differs
-// per faith and lives in applyFaithRelays().
+// Only members of the respective faith post to these relays. Christian relays
+// are seeded read/write; the Muslim relays are paid-write (spam protection), so
+// they are seeded read-only and a generic inbox is kept (see applyFaithRelays).
 const MUSLIM_RELAYS: string[] = [
   'wss://noornode.nostr1.com',
   'wss://bitcoinmajlis.nostr1.com',
@@ -356,6 +359,11 @@ const CHRISTIAN_RELAYS: string[] = [
   'wss://theforest.nostr1.com',
   'wss://christpill.nostr1.com',
 ];
+
+// Operator of the Muslim community relays. The relays are paid-write as spam
+// protection; users get whitelisted by sending a few sats or by contacting the
+// operator directly. Surfaced in the bio step's faith note.
+const MUSLIM_RELAY_OPERATOR_NPUB = 'npub17veg2gt7ja4dnjhs23jyttvpqlde3ajevlxuumxwghnqmgqwuv4q78cc5z';
 
 // Tooltip copy for the faith checkboxes. The only effect of ticking a box is
 // relay seeding: the thematic relays below are added to the user's setup.
@@ -1774,14 +1782,38 @@ IMPORTANT:
         `;
         el.appendChild(faith);
 
-        // Mutually exclusive: Muslim OR Christian OR neither, never both.
         const muslimCb = faith.querySelector('#wizard-faith-muslim') as HTMLInputElement;
         const christianCb = faith.querySelector('#wizard-faith-christian') as HTMLInputElement;
+
+        // Whitelist note for the Muslim community relays (paid-write spam
+        // protection). Shown only while "I am Muslim" is selected.
+        const faithNote = document.createElement('div');
+        faithNote.className = 'wizard-info-box wizard-faith-note';
+        faithNote.hidden = !this.isMuslim;
+        faithNote.innerHTML = `
+          <strong>About the Muslim community relays</strong>
+          <p>They use a small Lightning payment as spam protection, not to make money. You can read the posts written to that relay, but to post and to receive direct messages there, the operator has to whitelist you: send a few sats to the relay, or contact the operator directly.</p>
+          <div class="wizard-faith-note__actions">
+            <button type="button" class="btn btn--passive btn--mini" data-action="copy-operator-npub">Copy operator's npub</button>
+          </div>
+        `;
+        el.appendChild(faithNote);
+
+        const updateFaithNote = () => { faithNote.hidden = !muslimCb.checked; };
+
+        // Mutually exclusive: Muslim OR Christian OR neither, never both.
         muslimCb.addEventListener('change', () => {
           if (muslimCb.checked) christianCb.checked = false;
+          updateFaithNote();
         });
         christianCb.addEventListener('change', () => {
           if (christianCb.checked) muslimCb.checked = false;
+          updateFaithNote();
+        });
+
+        // Copy the operator npub so the user can reach out for whitelisting.
+        faithNote.querySelector('[data-action="copy-operator-npub"]')?.addEventListener('click', () => {
+          void ClipboardActionsService.getInstance().copyText(MUSLIM_RELAY_OPERATOR_NPUB, "Operator's npub");
         });
 
         // Explain the (relay-only) effect of each choice on hover.
@@ -2312,36 +2344,45 @@ IMPORTANT:
   /**
    * Rebuild the seeded relay sets from the platform defaults plus any
    * faith-specific community relays the user opted into in the bio step.
-   * Idempotent: unchecking removes the extra relays again. Faith relays are
-   * seeded as read/write (content, kind 10002) AND inbox (kind 10050). There
-   * is no relay-customization step in the wizard, so rebuilding from defaults
-   * is safe.
+   * Idempotent: unchecking removes the extra relays again. Christian relays are
+   * seeded read/write (kind 10002) and as the DM inbox (kind 10050); the Muslim
+   * relays are paid-write, so they are seeded read-only and the generic inbox
+   * is kept. There is no relay-customization step in the wizard, so rebuilding
+   * from defaults is safe.
    */
   private applyFaithRelays(): void {
-    // Muslim and Christian are mutually exclusive. Faith relays are appended to
-    // the shared content defaults as read/write.
-    const faithRelays = this.isMuslim ? MUSLIM_RELAYS
-      : this.isChristian ? CHRISTIAN_RELAYS
-      : [];
-
+    // Muslim and Christian are mutually exclusive.
     const contentUrls = [...DEFAULT_CONTENT_RELAYS];
-    for (const url of faithRelays) {
-      if (!contentUrls.includes(url)) contentUrls.push(url);
-    }
-    this.selectedRelays = contentUrls.map(url => ({ url, read: true, write: true }));
 
-    // Inbox (NIP-17 DM): Muslims and Christians get only their faith relays
-    // (Muslims: noornode + bitcoinmajlis; Christians: theforest + christpill);
-    // everyone else gets the generic inbox defaults.
-    let inboxUrls: string[];
     if (this.isMuslim) {
-      inboxUrls = [...MUSLIM_RELAYS];
-    } else if (this.isChristian) {
-      inboxUrls = [...CHRISTIAN_RELAYS];
-    } else {
-      inboxUrls = [...DEFAULT_INBOX_RELAYS];
+      // The Muslim community relays are paid-write (spam protection): a new,
+      // un-whitelisted user can read but neither post there nor receive DMs
+      // there (outsiders can't write the gift-wrap). So seed them READ-only for
+      // content and use the generic inbox set (identical to the no-faith case),
+      // so DMs work right away. Once whitelisted, the user adds the faith relays
+      // as write/inbox themselves. The bio step shows how to get whitelisted.
+      this.selectedRelays = [
+        ...contentUrls.map(url => ({ url, read: true, write: true })),
+        ...MUSLIM_RELAYS.map(url => ({ url, read: true, write: false })),
+      ];
+      this.inboxRelays = DEFAULT_INBOX_RELAYS.map(url => ({ url, selected: true }));
+      return;
     }
-    this.inboxRelays = inboxUrls.map(url => ({ url, selected: true }));
+
+    if (this.isChristian) {
+      // Christian community relays accept writes freely → read/write content
+      // and use them directly as the NIP-17 DM inbox.
+      for (const url of CHRISTIAN_RELAYS) {
+        if (!contentUrls.includes(url)) contentUrls.push(url);
+      }
+      this.selectedRelays = contentUrls.map(url => ({ url, read: true, write: true }));
+      this.inboxRelays = CHRISTIAN_RELAYS.map(url => ({ url, selected: true }));
+      return;
+    }
+
+    // No faith selection: mainstream content defaults + generic DM inbox.
+    this.selectedRelays = contentUrls.map(url => ({ url, read: true, write: true }));
+    this.inboxRelays = DEFAULT_INBOX_RELAYS.map(url => ({ url, selected: true }));
   }
 
   private async publishRelayList(): Promise<void> {
