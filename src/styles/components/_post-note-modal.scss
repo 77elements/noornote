@@ -79,6 +79,7 @@
   overflow-y: auto;
   padding: $gap;
   line-height: 1.5;
+  cursor: text; // click the rendered text to jump back to the Edit tab
   @include custom-scrollbar;
 
   // Style content processed by ContentProcessor

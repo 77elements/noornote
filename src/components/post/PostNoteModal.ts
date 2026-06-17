@@ -44,6 +44,7 @@ import { ToastService } from '../../services/ToastService';
 import { SignerTimeoutError } from '../../services/SignerTimeoutError';
 import { renderDraftsList, setupDraftsList } from './DraftsListUI';
 import { openDraftInComposer } from '../../helpers/draftRouter';
+import { attachPreviewClickToEdit } from '../../helpers/previewClickToEdit';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 export interface HighlightSource {
@@ -485,7 +486,10 @@ export class PostNoteModal {
         if (pollPreviewHtml) html += pollPreviewHtml;
         return html;
       },
-      onPreviewRendered: (previewContainer) => this.renderQuotedNotesInPreview(previewContainer),
+      onPreviewRendered: (previewContainer) => {
+        this.renderQuotedNotesInPreview(previewContainer);
+        attachPreviewClickToEdit(previewContainer, () => this.switchTab('edit'));
+      },
       renderDraftsHtml: () => renderDraftsList(),
       onDraftsRendered: (draftsContainer) => setupDraftsList(draftsContainer, {
         onOpen: (draft) => {

@@ -52,6 +52,7 @@ import { ToastService } from '../../services/ToastService';
 import { SignerTimeoutError } from '../../services/SignerTimeoutError';
 import { renderDraftsList, setupDraftsList } from '../post/DraftsListUI';
 import { openDraftInComposer } from '../../helpers/draftRouter';
+import { attachPreviewClickToEdit } from '../../helpers/previewClickToEdit';
 
 export class ReplyModal {
   private static instance: ReplyModal;
@@ -479,7 +480,10 @@ export class ReplyModal {
           ...(extraTags.length > 0 ? { extraTags } : {})
         });
       },
-      onPreviewRendered: (previewContainer) => this.renderQuotedNotesInPreview(previewContainer),
+      onPreviewRendered: (previewContainer) => {
+        this.renderQuotedNotesInPreview(previewContainer);
+        attachPreviewClickToEdit(previewContainer, () => this.switchTab('edit'));
+      },
       renderDraftsHtml: () => renderDraftsList(),
       onDraftsRendered: (draftsContainer) => setupDraftsList(draftsContainer, {
         onOpen: (draft) => {
