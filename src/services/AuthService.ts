@@ -385,6 +385,21 @@ export class AuthService {
     }
   }
 
+  /**
+   * Sign an event but reject with a SignerTimeoutError if the active signer
+   * (NIP-07 extension, NIP-46 bunker, Amber, …) does not respond in time.
+   * Prevents the publish flow from hanging forever on a dead/hung signer.
+   */
+  public async signEventWithTimeout(event: any, timeoutMs: number = 30000): Promise<any> {
+    const { SignerTimeoutError } = await import('./SignerTimeoutError');
+    return Promise.race([
+      this.signEvent(event),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new SignerTimeoutError()), timeoutMs)
+      ),
+    ]);
+  }
+
   public async nip44Encrypt(plaintext: string, recipientPubkey: string): Promise<string> {
     return this.performCryptoOperation('nip44', 'encrypt', plaintext, recipientPubkey);
   }

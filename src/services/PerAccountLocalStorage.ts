@@ -198,6 +198,10 @@ export const StorageKeys = {
   // SCC default content preference (per-account)
   SCC_DEFAULT_CONTENT: 'noornote_scc_default_content_map',
 
+  // Composer drafts (per-account) — manual "Save draft" entries + failed posts.
+  // One NoteDraft[] list shared by the New Note and Reply composers.
+  NOTE_DRAFTS: 'noornote_note_drafts_map',
+
   // Follow Pack snapshots (per-account) — for diffing 39089 updates in TV/PV
   FOLLOW_PACK_SNAPSHOTS: 'noornote_follow_pack_snapshots_map',
 

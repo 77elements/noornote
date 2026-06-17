@@ -47,6 +47,11 @@ import { EditorStateManager } from '../post/EditorStateManager';
 import { MentionAutocomplete } from '../mentions/MentionAutocomplete';
 import { isCustomEmojisEnabled } from '../../addons/custom-emojis/index';
 import { ModalEventHandlerManager, type TabMode } from '../modals/ModalEventHandlerManager';
+import { NoteDraftService } from '../../services/NoteDraftService';
+import { ToastService } from '../../services/ToastService';
+import { SignerTimeoutError } from '../../services/SignerTimeoutError';
+import { renderDraftsList, setupDraftsList } from '../post/DraftsListUI';
+import { openDraftInComposer } from '../../helpers/draftRouter';
 
 export class ReplyModal {
   private static instance: ReplyModal;
@@ -113,7 +118,7 @@ export class ReplyModal {
    * @param parentNoteId - ID of the note being replied to
    * @param parentEvent - Optional: Parent event (avoids cache lookup/fetch)
    */
-  public async show(parentNoteId: string, parentEvent?: NostrEvent): Promise<void> {
+  public async show(parentNoteId: string, parentEvent?: NostrEvent, initialContent?: string): Promise<void> {
     // If parent event not provided, fetch from relays
     if (!parentEvent) {
       this.systemLogger.info('ReplyModal', `Fetching parent event from relays...`);
@@ -128,7 +133,7 @@ export class ReplyModal {
 
     this.parentEvent = parentEvent;
     this.currentTab = 'edit';
-    this.content = '';
+    this.content = initialContent ?? '';
     // Default: Reply (kind:1) for kind:1 parents, Comment (kind:1111) for everything else
     this.isComment = !this.parentIsKind1;
     this.loadRelayConfiguration();
@@ -264,9 +269,39 @@ export class ReplyModal {
           >
             Preview
           </button>
+          <button
+            class="tab ${this.currentTab === 'drafts' ? 'tab--active' : ''}"
+            data-tab="drafts"
+          >${this.renderDraftsTabLabel()}</button>
         </div>
       </div>
     `;
+  }
+
+  /**
+   * Tab label for the Drafts tab, with a count badge when drafts exist.
+   */
+  private renderDraftsTabLabel(): string {
+    const count = NoteDraftService.getInstance().count();
+    return `Drafts${count > 0 ? ` <span class="badge badge--accent">${count}</span>` : ''}`;
+  }
+
+  /**
+   * Refresh the Drafts tab count badge in place.
+   */
+  private updateDraftsTabBadge(): void {
+    const btn = document.querySelector('.reply-modal [data-tab="drafts"]') as HTMLElement | null;
+    if (btn) btn.innerHTML = this.renderDraftsTabLabel();
+  }
+
+  /**
+   * Toggle the tab--active class across the composer tabs.
+   */
+  private setActiveTab(tab: TabMode): void {
+    document.querySelectorAll('.reply-modal [data-tab]').forEach(el => {
+      const tabEl = el as HTMLElement;
+      tabEl.classList.toggle('tab--active', tabEl.dataset.tab === tab);
+    });
   }
 
   /**
@@ -323,6 +358,7 @@ export class ReplyModal {
           <div class="post-note-options" id="reply-note-options-container"></div>
         </div>
         <div>
+          <button class="btn btn--passive" data-action="save-draft">Save draft</button>
           <button class="btn btn--passive" data-action="cancel">Cancel</button>
           <button class="btn" data-action="post" ${isPostDisabled ? 'disabled' : ''}>${buttonLabel}</button>
         </div>
@@ -388,7 +424,8 @@ export class ReplyModal {
         this.updatePostButton();
       },
       onCancel: () => this.handleCancel(),
-      onSubmit: () => this.handlePost()
+      onSubmit: () => this.handlePost(),
+      onSaveDraft: () => this.handleSaveDraft()
     });
     this.eventHandlerManager.setupEventListeners();
   }
@@ -424,6 +461,7 @@ export class ReplyModal {
    */
   private switchTab(tab: TabMode): void {
     this.currentTab = tab;
+    this.setActiveTab(tab);
 
     switchComposerTab({
       modalSelector: '.reply-modal',
@@ -442,6 +480,15 @@ export class ReplyModal {
         });
       },
       onPreviewRendered: (previewContainer) => this.renderQuotedNotesInPreview(previewContainer),
+      renderDraftsHtml: () => renderDraftsList(),
+      onDraftsRendered: (draftsContainer) => setupDraftsList(draftsContainer, {
+        onOpen: (draft) => {
+          this.cleanup();
+          this.modalService.hide();
+          openDraftInComposer(draft);
+        },
+        onChanged: () => this.updateDraftsTabBadge(),
+      }),
     });
   }
 
@@ -576,6 +623,7 @@ export class ReplyModal {
       modalContainer.style.display = 'none';
     }
 
+    const loadingId = ToastService.loading('Waiting for signer approval…');
     try {
       this.systemLogger.info('ReplyModal', `Calling PostService.createReply...`);
 
@@ -588,6 +636,8 @@ export class ReplyModal {
       });
 
       this.systemLogger.info('ReplyModal', `Received reply event: ${replyEvent ? replyEvent.id?.slice(0, 8) : 'NULL'}`);
+
+      ToastService.dismiss(loadingId);
 
       if (replyEvent && replyEvent.id) {
         // Update parent note's reply count (cache invalidation + optimistic UI update)
@@ -603,12 +653,64 @@ export class ReplyModal {
         this.modalService.hide();
         this.systemLogger.success('PostService', 'Reply posted successfully');
       } else {
-        ModalEventHandlerManager.restoreAfterError(modalContainer, originalDisplay, 'Reply');
+        this.handlePostFailure(modalContainer, originalDisplay);
       }
     } catch (error) {
-      console.error('Reply error:', error);
-      ModalEventHandlerManager.restoreAfterError(modalContainer, originalDisplay, 'Reply');
+      ToastService.dismiss(loadingId);
+      this.handlePostFailure(modalContainer, originalDisplay, error);
     }
+  }
+
+  /**
+   * Save the current reply text as a manual draft tied to its parent.
+   */
+  private handleSaveDraft(): void {
+    const textarea = document.querySelector('.reply-modal [data-textarea]') as HTMLTextAreaElement | null;
+    const content = (textarea ? textarea.value : this.content).trim();
+    if (!content) {
+      ToastService.show('Nothing to save', 'info');
+      return;
+    }
+    NoteDraftService.getInstance().add({
+      type: 'reply',
+      content,
+      failed: false,
+      ...(this.parentEvent?.id ? { parentEventId: this.parentEvent.id } : {}),
+      contextLabel: 'Reply',
+    });
+    ToastService.show('Draft saved', 'success');
+    this.updateDraftsTabBadge();
+  }
+
+  /**
+   * A reply could not be signed/published: save it as a failed draft, restore
+   * the composer, and offer a one-tap path into the Drafts tab.
+   */
+  private handlePostFailure(
+    modalContainer: HTMLElement | null,
+    originalDisplay: string,
+    error?: unknown
+  ): void {
+    const reason = error instanceof SignerTimeoutError
+      ? 'Signer did not respond in time'
+      : (error instanceof Error && error.message ? error.message : 'Reply could not be published');
+
+    NoteDraftService.getInstance().add({
+      type: 'reply',
+      content: this.content,
+      failed: true,
+      failureReason: reason,
+      ...(this.parentEvent?.id ? { parentEventId: this.parentEvent.id } : {}),
+      contextLabel: 'Reply',
+    });
+
+    ModalEventHandlerManager.restoreAfterError(modalContainer, originalDisplay, 'Reply');
+    this.updateDraftsTabBadge();
+
+    ToastService.showWithAction(`Failed to post: ${reason}`, 'error', {
+      label: 'Open drafts',
+      onClick: () => this.switchTab('drafts'),
+    });
   }
 
   /**

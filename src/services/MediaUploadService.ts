@@ -292,12 +292,7 @@ export class MediaUploadService {
   }
 
   private async signEventWithTimeout(event: any): Promise<any> {
-    return Promise.race([
-      this.authService.signEvent(event),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Signing timeout - please check your browser extension')), this.SIGN_TIMEOUT_MS)
-      )
-    ]);
+    return this.authService.signEventWithTimeout(event, this.SIGN_TIMEOUT_MS);
   }
 
   private async createBlossomAuth(sha256: string): Promise<string> {

@@ -6,7 +6,7 @@
  * Used by: PostNoteModal, ReplyModal
  */
 
-export type TabMode = 'edit' | 'preview';
+export type TabMode = 'edit' | 'preview' | 'drafts';
 
 export interface ModalEventHandlerConfig {
   /** Modal container selector (e.g., '.post-note-modal') */
@@ -25,6 +25,8 @@ export interface ModalEventHandlerConfig {
   onCancel: () => void;
   /** Callback when submit button is clicked */
   onSubmit: () => void;
+  /** Callback when the "Save draft" button is clicked (optional) */
+  onSaveDraft?: () => void;
 }
 
 export class ModalEventHandlerManager {
@@ -85,6 +87,7 @@ export class ModalEventHandlerManager {
 
     const cancelBtn = this.modal.querySelector('[data-action="cancel"]');
     const submitBtn = this.modal.querySelector('[data-action="post"]');
+    const saveDraftBtn = this.modal.querySelector('[data-action="save-draft"]');
 
     if (cancelBtn) {
       cancelBtn.addEventListener('click', () => this.config.onCancel());
@@ -92,6 +95,10 @@ export class ModalEventHandlerManager {
 
     if (submitBtn) {
       submitBtn.addEventListener('click', () => this.config.onSubmit());
+    }
+
+    if (saveDraftBtn && this.config.onSaveDraft) {
+      saveDraftBtn.addEventListener('click', () => this.config.onSaveDraft!());
     }
   }
 
@@ -101,8 +108,9 @@ export class ModalEventHandlerManager {
   private switchTab(tab: TabMode): void {
     this.config.currentTab = tab;
 
-    // Save content if switching from edit
-    if (tab === 'preview') {
+    // Save content when leaving the edit tab (preview or drafts) so the text
+    // is preserved when switching back.
+    if (tab !== 'edit') {
       const textarea = document.querySelector(this.config.textareaSelector) as HTMLTextAreaElement;
       if (textarea) {
         this.config.onTextInput(textarea.value);

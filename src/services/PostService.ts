@@ -15,7 +15,6 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { AuthService } from './AuthService';
 import { NostrTransport } from './transport/NostrTransport';
 import { SystemLogger } from './SystemLogger';
-import { ErrorService } from './ErrorService';
 import { ToastService } from './ToastService';
 import type { PollData } from '../components/poll/PollCreator';
 import { RelayConfig } from './RelayConfig';
@@ -213,7 +212,7 @@ export class PostService {
       };
 
       // Sign event using browser extension
-      const signedEvent = await this.authService.signEvent(unsignedEvent);
+      const signedEvent = await this.authService.signEventWithTimeout(unsignedEvent);
 
       if (!signedEvent) {
         this.systemLogger.error('PostService', 'Failed to sign post event');
@@ -236,14 +235,10 @@ export class PostService {
 
       return true;
     } catch (error) {
-      // Centralized error handling with user notification
-      ErrorService.handle(
-        error,
-        'PostService.createPost',
-        true,
-        'Failed to post note. Please try again.'
-      );
-      return false;
+      // Surface signer/publish failures to the composer so it can save a
+      // failed draft and show the "Open drafts" recovery toast.
+      this.systemLogger.error('PostService', `Post failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
     }
   }
 
@@ -317,7 +312,7 @@ export class PostService {
         pubkey: currentUser.pubkey
       };
 
-      const signedEvent = await this.authService.signEvent(unsignedEvent);
+      const signedEvent = await this.authService.signEventWithTimeout(unsignedEvent);
 
       if (!signedEvent) {
         this.systemLogger.error('PostService', 'Failed to sign highlight event');
@@ -335,13 +330,8 @@ export class PostService {
 
       return true;
     } catch (error) {
-      ErrorService.handle(
-        error,
-        'PostService.createHighlight',
-        true,
-        'Failed to post highlight. Please try again.'
-      );
-      return false;
+      this.systemLogger.error('PostService', `Highlight failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
     }
   }
 
@@ -415,7 +405,7 @@ export class PostService {
       };
 
       // Sign event using browser extension
-      const signedEvent = await this.authService.signEvent(unsignedEvent);
+      const signedEvent = await this.authService.signEventWithTimeout(unsignedEvent);
 
       if (!signedEvent) {
         this.systemLogger.error('PostService', `Failed to sign ${label.toLowerCase()} event`);
@@ -437,14 +427,8 @@ export class PostService {
 
       return signedEvent;
     } catch (error) {
-      // Centralized error handling with user notification
-      ErrorService.handle(
-        error,
-        'PostService.createReply',
-        true,
-        `Failed to post ${label.toLowerCase()}. Please try again.`
-      );
-      return null;
+      this.systemLogger.error('PostService', `${label} failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
     }
   }
 

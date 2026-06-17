@@ -162,6 +162,67 @@ svg.upload-progress {
   align-items: center;
 }
 
+// Drafts tab (shared by the note + reply composers)
+.post-note-drafts {
+  min-height: 200px;
+  max-height: 400px;
+  overflow-y: auto;
+  @include custom-scrollbar;
+}
+
+.note-drafts__empty {
+  padding: $gap;
+  text-align: center;
+  color: var(--color-3);
+  font-style: italic;
+}
+
+.note-draft {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: calc($gap / 2);
+
+  &__meta {
+    display: grid;
+    grid-auto-flow: column;
+    justify-content: start;
+    align-items: center;
+    gap: calc($gap / 2);
+    margin-bottom: calc($gap / 4);
+    @extend %small;
+  }
+
+  &__time {
+    color: var(--color-3);
+  }
+
+  &__context {
+    color: var(--color-3);
+    @include text-truncate;
+  }
+
+  &__text {
+    color: var(--color-5);
+    line-height: 1.4;
+    @include text-truncate-lines(2);
+  }
+
+  &__reason {
+    margin-top: calc($gap / 4);
+    color: $color-red;
+    @extend %small;
+  }
+
+  &__delete {
+    color: var(--color-3);
+
+    &:hover {
+      color: $color-red;
+    }
+  }
+}
+
 .datetime-picker-popover {
   position: fixed;
   z-index: 10000;

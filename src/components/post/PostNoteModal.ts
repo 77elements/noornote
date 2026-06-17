@@ -39,6 +39,11 @@ import { isCustomEmojisEnabled } from '../../addons/custom-emojis/index';
 import { isScheduledPostsEnabled } from '../../addons/scheduled-posts/index';
 import { ModalEventHandlerManager, type TabMode } from '../modals/ModalEventHandlerManager';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { NoteDraftService } from '../../services/NoteDraftService';
+import { ToastService } from '../../services/ToastService';
+import { SignerTimeoutError } from '../../services/SignerTimeoutError';
+import { renderDraftsList, setupDraftsList } from './DraftsListUI';
+import { openDraftInComposer } from '../../helpers/draftRouter';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 export interface HighlightSource {
@@ -219,9 +224,39 @@ export class PostNoteModal {
           >
             Preview
           </button>
+          <button
+            class="tab ${this.currentTab === 'drafts' ? 'tab--active' : ''}"
+            data-tab="drafts"
+          >${this.renderDraftsTabLabel()}</button>
         </div>
       </div>
     `;
+  }
+
+  /**
+   * Tab label for the Drafts tab, with a count badge when drafts exist.
+   */
+  private renderDraftsTabLabel(): string {
+    const count = NoteDraftService.getInstance().count();
+    return `Drafts${count > 0 ? ` <span class="badge badge--accent">${count}</span>` : ''}`;
+  }
+
+  /**
+   * Refresh the Drafts tab count badge in place.
+   */
+  private updateDraftsTabBadge(): void {
+    const btn = document.querySelector('.post-note-modal [data-tab="drafts"]') as HTMLElement | null;
+    if (btn) btn.innerHTML = this.renderDraftsTabLabel();
+  }
+
+  /**
+   * Toggle the tab--active class across the composer tabs.
+   */
+  private setActiveTab(tab: TabMode): void {
+    document.querySelectorAll('.post-note-modal [data-tab]').forEach(el => {
+      const tabEl = el as HTMLElement;
+      tabEl.classList.toggle('tab--active', tabEl.dataset.tab === tab);
+    });
   }
 
   /**
@@ -289,6 +324,7 @@ export class PostNoteModal {
           <div class="post-note-schedule-hint" id="post-note-schedule-hint">${this.renderScheduleHintHtml()}</div>
         </div>
         <div>
+          ${this.highlightSource ? '' : '<button class="btn btn--passive" data-action="save-draft">Save draft</button>'}
           <button class="btn btn--passive" data-action="cancel">Cancel</button>
           <button class="btn" data-action="post" ${isValid ? '' : 'disabled'}>${postButtonLabel}</button>
         </div>
@@ -415,7 +451,8 @@ export class PostNoteModal {
         this.updatePostButton();
       },
       onCancel: () => this.handleCancel(),
-      onSubmit: () => this.handlePost()
+      onSubmit: () => this.handlePost(),
+      onSaveDraft: () => this.handleSaveDraft()
     });
     this.eventHandlerManager.setupEventListeners();
 
@@ -429,6 +466,7 @@ export class PostNoteModal {
    */
   private switchTab(tab: TabMode): void {
     this.currentTab = tab;
+    this.setActiveTab(tab);
 
     const rendered = switchComposerTab({
       modalSelector: '.post-note-modal',
@@ -448,6 +486,15 @@ export class PostNoteModal {
         return html;
       },
       onPreviewRendered: (previewContainer) => this.renderQuotedNotesInPreview(previewContainer),
+      renderDraftsHtml: () => renderDraftsList(),
+      onDraftsRendered: (draftsContainer) => setupDraftsList(draftsContainer, {
+        onOpen: (draft) => {
+          this.cleanup();
+          this.modalService.hide();
+          openDraftInComposer(draft);
+        },
+        onChanged: () => this.updateDraftsTabBadge(),
+      }),
     });
 
     if (rendered) {
@@ -621,6 +668,8 @@ export class PostNoteModal {
       modalContainer.style.display = 'none';
     }
 
+    const postLabel = this.scheduledAt !== null ? 'Schedule' : 'Post';
+    const loadingId = ToastService.loading('Waiting for signer approval…');
     try {
       const quotedRefs = extractQuotedReferences(this.content);
       let quotedEvent: { eventId: string; authorPubkey: string; relayHint?: string } | undefined;
@@ -679,6 +728,8 @@ export class PostNoteModal {
         }) ?? false;
       }
 
+      ToastService.dismiss(loadingId);
+
       if (success) {
         if (quotedEvent?.eventId) {
           ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions')?.clearCacheOnly(quotedEvent.eventId);
@@ -692,12 +743,57 @@ export class PostNoteModal {
         this.modalService.hide();
         this.systemLogger.success('PostService', 'Note posted successfully');
       } else {
-        ModalEventHandlerManager.restoreAfterError(modalContainer, originalDisplay, 'Post');
+        this.handlePostFailure(modalContainer, originalDisplay, postLabel);
       }
     } catch (error) {
-      console.error('Post error:', error);
-      ModalEventHandlerManager.restoreAfterError(modalContainer, originalDisplay, 'Post');
+      ToastService.dismiss(loadingId);
+      this.handlePostFailure(modalContainer, originalDisplay, postLabel, error);
     }
+  }
+
+  /**
+   * Save the current composer content as a manual draft.
+   */
+  private handleSaveDraft(): void {
+    const textarea = document.querySelector('.post-note-modal [data-textarea]') as HTMLTextAreaElement | null;
+    const content = (textarea ? textarea.value : this.content).trim();
+    if (!content) {
+      ToastService.show('Nothing to save', 'info');
+      return;
+    }
+    NoteDraftService.getInstance().add({ type: 'note', content, failed: false });
+    ToastService.show('Draft saved', 'success');
+    this.updateDraftsTabBadge();
+  }
+
+  /**
+   * A post could not be signed/published: save it as a failed draft, restore
+   * the composer, and offer a one-tap path into the Drafts tab.
+   */
+  private handlePostFailure(
+    modalContainer: HTMLElement | null,
+    originalDisplay: string,
+    label: string,
+    error?: unknown
+  ): void {
+    const reason = error instanceof SignerTimeoutError
+      ? 'Signer did not respond in time'
+      : (error instanceof Error && error.message ? error.message : 'Note could not be published');
+
+    NoteDraftService.getInstance().add({
+      type: 'note',
+      content: this.content,
+      failed: true,
+      failureReason: reason,
+    });
+
+    ModalEventHandlerManager.restoreAfterError(modalContainer, originalDisplay, label);
+    this.updateDraftsTabBadge();
+
+    ToastService.showWithAction(`Failed to post: ${reason}`, 'error', {
+      label: 'Open drafts',
+      onClick: () => this.switchTab('drafts'),
+    });
   }
 
   /**

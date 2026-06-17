@@ -130,6 +130,18 @@
   }
 }
 
+// Inline action button (e.g. "Open drafts") — reuses .btn.btn--passive.btn--mini
+.toast__action {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+// Loading spinner icon (paired with .pulsate on the message)
+.toast__spinner {
+  flex-shrink: 0;
+  color: var(--color-4);
+}
+
 // Mobile responsive
 @media (max-width: 768px) {
   .toast-container {
