@@ -4,6 +4,7 @@
  */
 
 import { UserProfileService, UserProfile } from '../../services/UserProfileService';
+import { extractDisplayName } from '../../helpers/extractDisplayName';
 
 export interface UserStatusOptions {
   npub: string;
@@ -81,7 +82,7 @@ export class UserStatus {
 
     const userDisplay = this.element.querySelector('.user-display');
     if (userDisplay) {
-      const displayName = this.profile.name || this.profile.display_name || this.profile.pubkey;
+      const displayName = extractDisplayName(this.profile) || 'Anonymous';
       userDisplay.textContent = displayName;
     }
   }
@@ -92,8 +93,8 @@ export class UserStatus {
   private showFallback(): void {
     const userDisplay = this.element.querySelector('.user-display');
     if (userDisplay) {
-      // Show shortened npub as fallback
-      userDisplay.textContent = `${this.options.npub.slice(0, 16)}...`;
+      // Never show raw npub/hex (User-Display-Rule) — fall back to a neutral label
+      userDisplay.textContent = 'Anonymous';
     }
   }
 
