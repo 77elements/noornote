@@ -1,13 +1,12 @@
-# NoorNote 0.13.1
+# NoorNote 0.13.2
 
 **New**
-- Onboarding: the Lightning wallet step is now skippable, with a reminder that you can set one up later.
-- Onboarding: optionally tell us if you're Muslim or Christian to start out connected to the matching community relays.
-- Follow packs now display in two columns (one column on phones).
+- Composer: a new Drafts tab keeps unfinished posts so you can continue them later.
+- Composer: more robust posting when the signer is slow, with recovery for failed posts.
+- Composer: click the text in Preview to jump back to Edit.
 
 **Changed**
-- Every addon now starts off for a new account.
-- Refreshed relays and improved follower-count coverage.
+- Onboarding: refined faith community relays (Muslim relays read-only, new christpill relay for Christians) and added explanatory tooltips.
 
 **Fixes**
-- Security, memory and performance improvements.
+- The Nostr-Majlis holiday reminder no longer reappears after you've acknowledged it.
