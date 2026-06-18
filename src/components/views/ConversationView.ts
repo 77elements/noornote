@@ -471,9 +471,15 @@ export class ConversationView extends View {
         this.systemLogger.info('ConversationView', 'Message sent');
       } else {
         this.systemLogger.error('ConversationView', 'Failed to send message');
+        ToastService.show('Could not send message — please try again', 'error');
       }
     } catch (_error) {
       this.systemLogger.error('ConversationView', 'Error sending message:', _error);
+      const timedOut = _error instanceof Error && _error.name === 'SignerTimeoutError';
+      ToastService.show(
+        timedOut ? 'Signer did not respond — message not sent' : 'Could not send message — please try again',
+        'error'
+      );
     } finally {
       this.isSending = false;
       sendBtn.disabled = !textarea.value.trim();

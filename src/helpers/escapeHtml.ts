@@ -30,6 +30,24 @@ export function escapeHtmlAttr(text: string): string {
 }
 
 /**
+ * Validate a foreign (relay-controlled) URL before putting it in an href/src.
+ * Only http(s) is allowed; `javascript:`, `data:`, `vbscript:` and any other
+ * scheme are rejected and return '' so the attribute becomes inert. Always
+ * pair with escapeHtmlAttr when interpolating into an attribute.
+ */
+export function safeHttpUrl(url: string): string {
+  if (typeof url !== 'string') return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  try {
+    const parsed = new URL(trimmed, window.location.href);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? trimmed : '';
+  } catch {
+    return '';
+  }
+}
+
+/**
  * Escape a URL for a CSS `url('...')` inside an HTML `style="..."` attribute.
  * HTML-entity escaping doesn't work in CSS, so strip `"`/newlines and
  * backslash-escape `\` and the CSS `'` delimiter.

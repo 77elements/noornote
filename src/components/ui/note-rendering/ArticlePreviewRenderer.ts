@@ -9,7 +9,7 @@ import { ModuleLoader } from '../../../core/ModuleLoader';
 import type { ArticlesModuleApi } from '../../../modules/articles/contracts';
 import { Router } from '../../../services/Router';
 import { getViewNavigationController } from '../../../services/ViewNavigationController';
-import { escapeHtml, escapeHtmlAttr, escapeCssUrl } from '../../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr, escapeCssUrl, safeHttpUrl } from '../../../helpers/escapeHtml';
 import { isLiveStreamsPlayerEnabled } from '../../../addons/live-streams-player/index';
 import { getAddressableIdentifier } from '../../../helpers/getAddressableIdentifier';
 import { getLiveStreamHost } from '../../../helpers/getLiveStreamHost';
@@ -89,9 +89,10 @@ export class ArticlePreviewRenderer {
     // via naddr so zap.stream resolves it from relays. When status=ended and a
     // recording tag is present, link directly to the recording.
     const cleanNaddr = naddrRef.replace(/^nostr:/, '');
+    const fallbackUrl = `https://zap.stream/${cleanNaddr}`;
     const watchUrl = status === 'ended' && recording
-      ? recording
-      : `https://zap.stream/${cleanNaddr}`;
+      ? (safeHttpUrl(recording) || fallbackUrl)
+      : fallbackUrl;
 
     const statusLabel = status === 'live' ? 'LIVE'
       : status === 'ended' ? 'ENDED'
@@ -117,7 +118,7 @@ export class ArticlePreviewRenderer {
       <div class="live-stream-card__content">
         <h3 class="live-stream-card__title">${escapeHtml(title)}</h3>
         ${summary ? `<p class="live-stream-card__summary">${escapeHtml(summary)}</p>` : ''}
-        <a class="btn live-stream-card__watch" href="${escapeHtml(watchUrl)}" target="_blank" rel="noopener noreferrer">${watchLabel}</a>
+        <a class="btn live-stream-card__watch" href="${escapeHtmlAttr(watchUrl)}" target="_blank" rel="noopener noreferrer">${watchLabel}</a>
       </div>
     `;
 

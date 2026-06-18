@@ -49,7 +49,7 @@ import { ToastService } from '../../services/ToastService';
 import { isTribesEnabled } from '../../addons/tribes/index';
 import { HIJRI_MONTHS } from '../../helpers/formatTimestamp';
 import { diagLog } from '../../services/DiagnosticLogger';
-import { escapeHtml, escapeHtmlAttr, escapeCssUrl } from '../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr, escapeCssUrl, safeHttpUrl } from '../../helpers/escapeHtml';
 import { extractDisplayName } from '../../helpers/extractDisplayName';
 import { getTag } from '../../helpers/tagUtils';
 
@@ -587,7 +587,7 @@ export class ProfileView extends View {
             <div class="profile-joined-date" id="profile-joined-date"></div>
 
             ${processedAbout ? `<p class="profile-about section">${processedAbout}</p>` : ''}
-            ${website ? `<p class="profile-website section"><a href="${escapeHtmlAttr(website)}" rel="noopener noreferrer">${escapeHtml(website)}</a></p>` : ''}
+            ${website && safeHttpUrl(website) ? `<p class="profile-website section"><a href="${escapeHtmlAttr(safeHttpUrl(website))}" rel="noopener noreferrer">${escapeHtml(website)}</a></p>` : ''}
 
             <div class="profile-stats">
               ${this.renderEditButton()}

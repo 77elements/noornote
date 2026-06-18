@@ -8,6 +8,7 @@
 
 import { TypedEventBus } from '../core/TypedEventBus';
 import { ToastService } from './ToastService';
+import { RelayHealthMonitor } from './RelayHealthMonitor';
 
 export class ConnectivityService {
   private static instance: ConnectivityService;
@@ -61,8 +62,8 @@ export class ConnectivityService {
         return false;
       }
 
-      // Verify with actual network request (browser onLine can be unreliable)
-      const isReachable = await this.verifyNetworkReachability();
+      // Verify without any third-party request (browser onLine can be unreliable)
+      const isReachable = this.verifyNetworkReachability();
       this.setOnlineStatus(isReachable);
       return isReachable;
     } finally {
@@ -71,39 +72,23 @@ export class ConnectivityService {
   }
 
   /**
-   * Verify network reachability with actual request
-   * Uses multiple endpoints for reliability
+   * Verify reachability WITHOUT any third-party request.
+   *
+   * Privacy: we never ping Google/Cloudflare/etc — that would leak the user's
+   * IP and online-timing to a passive observer on every check. A live relay
+   * WebSocket is proof enough that we are online.
+   *
+   * If no relay is currently connected we cannot positively confirm, so we
+   * fall back to the browser's navigator.onLine rather than falsely claiming
+   * the user is offline — all relays being down is NOT the same as the
+   * internet being down.
    */
-  private async verifyNetworkReachability(): Promise<boolean> {
-    const testEndpoints = [
-      'https://www.google.com/generate_204',
-      'https://connectivity-check.ubuntu.com/',
-      'https://1.1.1.1/cdn-cgi/trace'
-    ];
+  private verifyNetworkReachability(): boolean {
+    const anyRelayConnected = RelayHealthMonitor.getInstance()
+      .getAllMetrics()
+      .some((m) => m.isConnected);
 
-    for (const endpoint of testEndpoints) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
-
-        await fetch(endpoint, {
-          method: 'HEAD',
-          mode: 'no-cors',
-          cache: 'no-store',
-          signal: controller.signal
-        });
-
-        clearTimeout(timeoutId);
-
-        // no-cors mode returns opaque response, but if we get here without error, we're online
-        return true;
-      } catch {
-        // Try next endpoint
-        continue;
-      }
-    }
-
-    return false;
+    return anyRelayConnected || navigator.onLine;
   }
 
   /**

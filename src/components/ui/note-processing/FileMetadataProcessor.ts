@@ -7,7 +7,7 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { ProcessedNote } from '../types/NoteTypes';
 import type { MediaContent } from '../../../helpers/renderMediaContent';
 import { ContentProcessor } from '../../../services/ContentProcessor';
-import { escapeHtml } from '../../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr, safeHttpUrl } from '../../../helpers/escapeHtml';
 import { getTag } from '../../../helpers/tagUtils';
 
 export class FileMetadataProcessor {
@@ -90,7 +90,10 @@ export class FileMetadataProcessor {
       // Non-media file: render as download link
       const fileName = FileMetadataProcessor.extractFileName(url);
       const sizeStr = size ? ` (${FileMetadataProcessor.formatFileSize(parseInt(size))})` : '';
-      html += `<div class="file-metadata-download"><a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="btn">&#x1F4CE; ${escapeHtml(fileName)}${sizeStr}</a></div>`;
+      const safeUrl = safeHttpUrl(url);
+      html += safeUrl
+        ? `<div class="file-metadata-download"><a href="${escapeHtmlAttr(safeUrl)}" target="_blank" rel="noopener noreferrer" class="btn">&#x1F4CE; ${escapeHtml(fileName)}${sizeStr}</a></div>`
+        : `<div class="file-metadata-download"><span class="btn btn--disabled">&#x1F4CE; ${escapeHtml(fileName)}${sizeStr}</span></div>`;
     }
 
     processedContent.html = html + processedContent.html;

@@ -337,7 +337,9 @@ export class AuthService {
 
     try {
       if (this.authMethod === 'extension' && this.extensionManager?.isSignerAvailable()) {
-        return await this.extensionManager.signEvent(event);
+        return await this.withSignerTimeout(
+          this.extensionManager.signEvent(event), AuthService.SIGN_TIMEOUT_MS, 'extension sign'
+        );
 
       } else if (this.authMethod === 'key-signer' && this.keySignerManager) {
         const keySigner = this.keySignerManager.getClient();
@@ -364,7 +366,9 @@ export class AuthService {
       } else if (this.authMethod === 'amber' && this.amberManager) {
         event.pubkey = this.currentUser!.pubkey;
         event.created_at = event.created_at || Math.floor(Date.now() / 1000);
-        const signedEventJson = await this.amberManager.signEvent(event);
+        const signedEventJson = await this.withSignerTimeout(
+          this.amberManager.signEvent(event), AuthService.SIGN_TIMEOUT_MS, 'amber sign'
+        );
         const signedEvent = JSON.parse(signedEventJson);
         return signedEvent;
 
@@ -390,7 +394,7 @@ export class AuthService {
    * (NIP-07 extension, NIP-46 bunker, Amber, …) does not respond in time.
    * Prevents the publish flow from hanging forever on a dead/hung signer.
    */
-  public async signEventWithTimeout(event: any, timeoutMs: number = 30000): Promise<any> {
+  public async signEventWithTimeout(event: any, timeoutMs: number = AuthService.SIGN_TIMEOUT_MS): Promise<any> {
     const { SignerTimeoutError } = await import('./SignerTimeoutError');
     return Promise.race([
       this.signEvent(event),
@@ -398,6 +402,31 @@ export class AuthService {
         setTimeout(() => reject(new SignerTimeoutError()), timeoutMs)
       ),
     ]);
+  }
+
+  /**
+   * Wrap a signer/crypto promise so a dead or hung NIP-07 extension / Amber
+   * signer rejects with SignerTimeoutError instead of hanging the flow forever.
+   * NIP-46 (own RPC timeout + circuit breaker) and KeySigner (daemon health
+   * polling) already protect themselves, so only those two branches use this.
+   */
+  private static readonly SIGN_TIMEOUT_MS = 30000;
+  private static readonly CRYPTO_TIMEOUT_MS = 20000;
+
+  private async withSignerTimeout<T>(promise: Promise<T>, timeoutMs: number, operation: string): Promise<T> {
+    const { SignerTimeoutError } = await import('./SignerTimeoutError');
+    let timer: ReturnType<typeof setTimeout>;
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(
+        () => reject(new SignerTimeoutError(`Signer did not respond in time (${operation})`)),
+        timeoutMs
+      );
+    });
+    try {
+      return await Promise.race([promise, timeout]);
+    } finally {
+      clearTimeout(timer!);
+    }
   }
 
   public async nip44Encrypt(plaintext: string, recipientPubkey: string): Promise<string> {
@@ -429,7 +458,9 @@ export class AuthService {
 
     try {
       if (this.authMethod === 'extension' && this.extensionManager?.isSignerAvailable()) {
-        return await this.extensionManager[methodName](data, pubkey);
+        return await this.withSignerTimeout(
+          this.extensionManager[methodName](data, pubkey), AuthService.CRYPTO_TIMEOUT_MS, `extension ${methodName}`
+        );
       }
 
       if (this.authMethod === 'key-signer' && this.keySignerManager) {
@@ -443,7 +474,9 @@ export class AuthService {
       }
 
       if (this.authMethod === 'amber' && this.amberManager) {
-        return await this.amberManager[methodName](data, pubkey);
+        return await this.withSignerTimeout(
+          this.amberManager[methodName](data, pubkey), AuthService.CRYPTO_TIMEOUT_MS, `amber ${methodName}`
+        );
       }
 
       throw new Error(`No ${operation}ion method available`);
