@@ -108,3 +108,20 @@
   --bg-section-inner: rgba(49, 60, 49, 0.35);
   --bg-section-outer: rgba(13, 26, 13, 0.35);
 }
+
+[data-theme="yeni-noor"] {
+  --color-1: #100d18;
+  --color-2: #271f3b;
+  --color-3: #9b6dde;
+  --color-4: #e0218a;
+  --color-5: #ece9f5;
+  --color-6: #3ddc84;
+  --text-alpha-light: rgba(236, 233, 245, 0.4);
+  --text-alpha-medium: rgba(236, 233, 245, 0.6);
+  --text-alpha-heavy: rgba(236, 233, 245, 0.8);
+  --surface-tint: rgba(255, 255, 255, 0.06);
+  --color-logo-start: #7b2ff7;
+  --color-logo-end: #e0218a;
+  --bg-section-inner: rgba(39, 31, 59, 0.35);
+  --bg-section-outer: rgba(16, 13, 24, 0.35);
+}
