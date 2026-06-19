@@ -86,7 +86,7 @@ html.content-visibility-auto .note-card {
     display: flex;
     flex-direction: column;
     gap: calc($gap / 4);
-    margin-bottom: calc($gap / 2);
+    margin-bottom: calc($gap * 0.75);
 
     .thread-context-loading,
     .thread-context-error {
@@ -111,25 +111,33 @@ html.content-visibility-auto .note-card {
 // Thread context item (standalone - no specificity)
 // Reusable thread context content styling
 .thread-context-content {
+  @extend %small;
   flex: 1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: $color-3;
+  color: var(--text-alpha-medium);
+}
+
+// Author name leading the snippet — slightly brighter than the muted snippet.
+.thread-context-author {
+  font-weight: 600;
+  color: var(--text-alpha-heavy);
 }
 
 .thread-context-item {
   display: flex;
   align-items: center;
   gap: calc($gap / 2);
-  padding: 0 calc($gap / 4);
-  background: color-mix(in srgb, var(--color-3) 30%, transparent);
-  border-radius: $radius-xl;
+  // Thin band with a dim left accent line (no background pill) — the Yeni Noor
+  // thread-context language, reused across TV, SNV and notifications.
+  padding: calc($gap / 8) 0 calc($gap / 8) calc($gap * 0.75);
+  border-left: 2px solid var(--color-2);
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: color-mix(in srgb, var(--color-3) 50%, transparent);
+    border-left-color: var(--color-3);
 
     .thread-context-content {
       color: var(--text-alpha-heavy);

@@ -228,7 +228,7 @@ export class ThreadContextIndicator {
 
     item.innerHTML = `
       <img class="profile-pic profile-pic--mini" src="${escapeHtmlAttr(avatarUrl)}" alt="${escapeHtmlAttr(displayName)}" />
-      <span class="thread-context-content">${previewHtml}</span>
+      <span class="thread-context-content"><b class="thread-context-author">${escapeHtml(displayName)}</b> ${previewHtml}</span>
     `;
 
     item.style.cursor = 'pointer';
