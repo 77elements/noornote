@@ -610,12 +610,21 @@ export class ProfileView extends View {
 
       </div>
 
-      <div class="profile-badges-mount"></div>
-      <div class="profile-articles-mount"></div>
-      <div class="profile-videos-mount"></div>
-      <div class="profile-listings-mount"></div>
-      <div class="profile-zapstore-mount"></div>
-      <div class="profile-timeline">
+      <div class="profile-tabs tabs tabs--scrollable">
+        <button class="tab tab--active" data-tab="notes" type="button">Notes</button>
+        <button class="tab" data-tab="articles" type="button">Articles</button>
+        <button class="tab" data-tab="videos" type="button">Videos</button>
+        <button class="tab" data-tab="products" type="button">Products</button>
+        <button class="tab" data-tab="zapstore" type="button">Zapstore</button>
+        <button class="tab" data-tab="badges" type="button">Badges</button>
+      </div>
+
+      <div class="profile-badges-mount profile-section" data-section="badges" hidden></div>
+      <div class="profile-articles-mount profile-section" data-section="articles" hidden></div>
+      <div class="profile-videos-mount profile-section" data-section="videos" hidden></div>
+      <div class="profile-listings-mount profile-section" data-section="products" hidden></div>
+      <div class="profile-zapstore-mount profile-section" data-section="zapstore" hidden></div>
+      <div class="profile-timeline profile-section" data-section="notes">
         <h2 class="profile-timeline-heading">Notes</h2>
       </div>
     `;
@@ -635,11 +644,9 @@ export class ProfileView extends View {
       // the viewport, so opening a profile doesn't fire every carousel's relay
       // fetch at once (staggers the initial relay burst). Each loader still
       // self-gates (mount/preference checks).
-      this.observeOnce('.profile-badges-mount', () => void this.loadBadgesCarousel());
-      this.observeOnce('.profile-articles-mount', () => void this.loadArticlesCarousel());
-      this.observeOnce('.profile-videos-mount', () => void this.loadVideosCarousel());
-      this.observeOnce('.profile-listings-mount', () => void this.loadListingsCarousel());
-      this.observeOnce('.profile-zapstore-mount', () => void this.loadZapstoreApps());
+      // Profile content tabs: Notes is the default; the other sections load the
+      // first time their tab is opened (replaces the old scroll-lazy carousels).
+      this.setupProfileTabs();
 
       // Setup QR code button handler
       this.setupQRButton();
@@ -1421,22 +1428,42 @@ export class ProfileView extends View {
   }
 
   /**
-   * Defer a below-the-fold carousel loader until its mount scrolls near the
-   * viewport. Runs the loader at most once, then disconnects. Falls back to
-   * running immediately if the mount element is absent.
+   * Wire the profile content tabs: switch the visible section on click and load
+   * each section's content the first time its tab is opened. Notes is the
+   * default and loads via the timeline; the others load on demand.
    */
-  private observeOnce(mountSelector: string, loader: () => void): void {
-    const mount = this.container.querySelector(mountSelector);
-    if (!mount) { loader(); return; }
-    const observer = new IntersectionObserver((entries) => {
-      if (entries.some(e => e.isIntersecting)) {
-        observer.disconnect();
-        this.carouselObservers = this.carouselObservers.filter(o => o !== observer);
-        loader();
+  private setupProfileTabs(): void {
+    const tabRow = this.container.querySelector('.profile-tabs');
+    if (!tabRow) return;
+
+    const loaders: Record<string, (() => Promise<void>) | undefined> = {
+      articles: () => this.loadArticlesCarousel(),
+      videos: () => this.loadVideosCarousel(),
+      products: () => this.loadListingsCarousel(),
+      zapstore: () => this.loadZapstoreApps(),
+      badges: () => this.loadBadgesCarousel(),
+    };
+    const loaded = new Set<string>(['notes']);
+
+    const activate = (tab: string): void => {
+      tabRow.querySelectorAll('.tab').forEach(btn => {
+        btn.classList.toggle('tab--active', (btn as HTMLElement).dataset.tab === tab);
+      });
+      this.container.querySelectorAll('.profile-section').forEach(sec => {
+        (sec as HTMLElement).hidden = (sec as HTMLElement).dataset.section !== tab;
+      });
+      if (!loaded.has(tab)) {
+        loaded.add(tab);
+        void loaders[tab]?.();
       }
-    }, { rootMargin: '400px' });
-    observer.observe(mount);
-    this.carouselObservers.push(observer);
+    };
+
+    tabRow.querySelectorAll('.tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = (btn as HTMLElement).dataset.tab;
+        if (tab) activate(tab);
+      });
+    });
   }
 
   private async loadBadgesCarousel(): Promise<void> {
