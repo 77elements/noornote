@@ -52,6 +52,7 @@ import { diagLog } from '../../services/DiagnosticLogger';
 import { escapeHtml, escapeHtmlAttr, escapeCssUrl, safeHttpUrl } from '../../helpers/escapeHtml';
 import { extractDisplayName } from '../../helpers/extractDisplayName';
 import { getTag } from '../../helpers/tagUtils';
+import { Tooltip } from '../ui/Tooltip';
 
 // Initialize dayjs calendar system
 dayjs.extend(calendarSystems);
@@ -124,6 +125,9 @@ export class ProfileView extends View {
 
   // TypedEventBus subscription IDs for cleanup
   private eventBusSubscriptions: string[] = [];
+
+  // nn-tooltip disposers for the header icon row
+  private tooltipDisposers: Array<() => void> = [];
 
   constructor(npub: string) {
     super(); // Call View base class constructor
@@ -666,6 +670,9 @@ export class ProfileView extends View {
 
       // Setup profile blinking (initial render)
       this.setupProfileBlinking(displayName, picture);
+
+      // Replace the icon row's native title tooltips with nn-tooltips
+      this.attachIconTooltips();
     } else {
       // On subsequent renders (profile updates), only update dynamic parts without destroying timeline
 
@@ -891,6 +898,23 @@ export class ProfileView extends View {
           }
         }
       });
+    });
+  }
+
+  /**
+   * Convert the header icon row's native `title` tooltips into nn-tooltips:
+   * read each icon's title, drop it, and attach the shared Tooltip popup. The
+   * title text stays the single source of the label.
+   */
+  private attachIconTooltips(): void {
+    // Search link is handled in initializeSearchComponent() — it mounts later.
+    const selectors = ['.copy-btn', '.qr-btn', '.tribe-btn', '.profile-badge-btn', '.profile-dm-btn', '.lightning-qr-btn', '.profile-zap-btn'];
+    selectors.forEach(sel => {
+      const el = this.container.querySelector(sel) as HTMLElement | null;
+      const label = el?.getAttribute('title');
+      if (!el || !label) return;
+      el.removeAttribute('title');
+      this.tooltipDisposers.push(Tooltip.attach(el, label));
     });
   }
 
@@ -1358,6 +1382,15 @@ export class ProfileView extends View {
     const searchMount = this.container.querySelector('.profile-search-mount');
     if (searchMount && this.searchComponent) {
       searchMount.appendChild(this.searchComponent.getElement());
+
+      // The search trigger mounts after attachIconTooltips() ran, so give it its
+      // nn-tooltip here (drop the native title, attach the shared popup).
+      const searchLink = searchMount.querySelector('.profile-search__link') as HTMLElement | null;
+      const label = searchLink?.getAttribute('title');
+      if (searchLink && label) {
+        searchLink.removeAttribute('title');
+        this.tooltipDisposers.push(Tooltip.attach(searchLink, label));
+      }
     }
   }
 
@@ -1753,6 +1786,10 @@ export class ProfileView extends View {
    * Cleanup resources (implements View base class)
    */
   public destroy(): void {
+    // Detach header icon tooltips
+    this.tooltipDisposers.forEach(dispose => dispose());
+    this.tooltipDisposers = [];
+
     // Cleanup profile subscription
     this.profileUnsubscribe?.();
     this.profileUnsubscribe = null;

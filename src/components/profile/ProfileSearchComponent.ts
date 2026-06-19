@@ -31,7 +31,7 @@ export class ProfileSearchComponent {
 
     container.innerHTML = `
       <div class="profile-search__trigger">
-        <a href="#" class="profile-search__link" title="Search in this npub"><svg width="18" height="18"><use href="#icon-search"/></svg></a>
+        <a href="#" class="profile-search__link" title="Search in this user's timeline"><svg width="18" height="18"><use href="#icon-search"/></svg></a>
       </div>
       <div class="profile-search__overlay is-hidden">
         <div class="profile-search__form">
