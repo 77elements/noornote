@@ -480,12 +480,7 @@ export class NostrTransport {
     waitForAll: boolean = false
   ): Promise<{ events: NostrEvent[]; perRelay: Record<string, { oldest: number | null; count: number; eosed: boolean }> }> {
     relays = secureRelays(relays);
-    // PV-DBG: temporary instrumentation to root-cause the empty-on-first-visit bug.
-    console.log(`[PV-DBG] ${caller}: direct fetch over ${relays.length} relays: ${relays.join(', ')}`);
     const dbgStart = Date.now();
-    // PV-DBG: per-relay outcome so one console line fully explains an empty fetch:
-    // recv = raw EVENTs received, ver = kept after signature check, drop = dropped by
-    // verification; state = open/eosed/error/timeout; ms = time to EOSE.
     // Per-relay outcome: oldest created_at (this relay's next loadMore cursor),
     // count (to detect exhaustion), eosed, plus state/ms for diagnostics. Each
     // relay pages its own history independently — a single global cursor let
@@ -525,7 +520,6 @@ export class NostrTransport {
         subs.forEach(s => { try { s.stop(); } catch { /* ignore */ } });
         diagLog('relays', 'Direct fetch OK', { caller, relayCount: relays.length, eventCount: events.size });
         const breakdown = relays.map(u => { const r = perRelay[u]!; return `${label(u)}=${r.state}(${r.count}${r.ms ? ',' + r.ms + 'ms' : ''})`; });
-        console.log(`[PV-DBG] ${caller}: done ${Date.now() - dbgStart}ms total=${events.size} quorum=${QUORUM}/${relays.length} | ${breakdown.join('  ')}`);
         // Persist to the web ring buffer so a cold empty-PV is recoverable later
         // (see WebDiag). poolSize captures socket bloat; per-relay state shows
         // "all relays errored" — the #2 signature.

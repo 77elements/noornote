@@ -199,13 +199,9 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
       new Set(relayLists.flatMap((l) => l.writeRelays).filter((r) => this.isValidRelay(r)))
     ).slice(0, 8);
 
-    // PV-DBG: temporary — shows the resolved relay set (and whether we fell back).
-    console.log(`[PV-DBG] getProfileRelays ${pubkey.slice(0, 8)}: ${relayLists.length} lists, ${writeRelays.length} write relays: ${writeRelays.join(', ')}`);
-
     if (writeRelays.length === 0) {
       const fallback = this.relayConfig.getReadRelays();
       this.systemLogger.info(this.LOG_TAG, `Profile relays: none discovered, falling back to ${fallback.length} read relays`);
-      console.log(`[PV-DBG] getProfileRelays ${pubkey.slice(0, 8)}: FALLBACK to ${fallback.length} read relays: ${fallback.join(', ')}`);
       return fallback;
     }
 
