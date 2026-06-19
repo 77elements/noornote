@@ -19,6 +19,7 @@ export interface NoteHeaderOptions {
   showTimestamp?: boolean;
   showMenu?: boolean;
   showHandle?: boolean;
+  relayHints?: string[]; // Relays to try first for the author's profile (e.g. the reposter's write relays)
   onClick?: (pubkey: string) => void;
 }
 
@@ -41,6 +42,7 @@ export class NoteHeader {
       showTimestamp: true,
       showMenu: true,
       showHandle: true,
+      relayHints: [],
       ...options
     };
 
@@ -51,6 +53,7 @@ export class NoteHeader {
       showUsername: true,
       showHandle: this.options.showHandle,
       inline: true,
+      relayHints: this.options.relayHints,
       enableHoverCard: true,
       clickable: true
     };

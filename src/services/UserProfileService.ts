@@ -38,14 +38,14 @@ export class UserProfileService {
   private profileCache = new LRUCache<UserProfile>(getCacheSize(2000, 1000, 500));
 
   private orchestrator: ProfileOrchestrator;
-  private fetchingProfiles: Map<string, Promise<UserProfile>> = new Map();
+  private fetchingProfiles: Map<string, Promise<UserProfile | null>> = new Map();
   private profileUpdateCallbacks: Map<string, Set<(profile: UserProfile) => void>> = new Map();
   /** Listeners that want to be notified for EVERY profile update (any pubkey). */
   private anyProfileUpdateCallbacks: Set<(pubkey: string, profile: UserProfile) => void> = new Set();
 
   /** Track failed fetches to prevent rapid retry storms (pubkey → timestamp) */
   private failedFetches: Map<string, number> = new Map();
-  private readonly FAILED_FETCH_COOLDOWN = 2000; // 2 seconds
+  private readonly FAILED_FETCH_COOLDOWN = 30000; // 30s — throttle retries for a missing profile without poisoning the cache
 
   private constructor() {
     this.orchestrator = ProfileOrchestrator.getInstance();
@@ -136,7 +136,7 @@ export class UserProfileService {
    * Get full user profile
    * Returns cached profile or fetches from relays
    */
-  public async getUserProfile(pubkey: string): Promise<UserProfile> {
+  public async getUserProfile(pubkey: string, relayHints?: string[]): Promise<UserProfile> {
     // Check cache first (LRU touch handled by LRUCache.get())
     const cached = this.profileCache.get(pubkey);
     if (cached) {
@@ -145,31 +145,43 @@ export class UserProfileService {
 
     // Deduplication: if already fetching, wait for that request
     if (this.fetchingProfiles.has(pubkey)) {
-      return await this.fetchingProfiles.get(pubkey)!;
+      return (await this.fetchingProfiles.get(pubkey)!) ?? this.getDefaultProfile(pubkey);
     }
 
-    // Check if recently failed - return default profile during cooldown
+    // Check if recently failed - return default profile during cooldown. A
+    // caller-provided relay hint is a fresh source we may not have tried yet, so
+    // it bypasses the cooldown (without a hint the cooldown behaves as before).
     const lastFailed = this.failedFetches.get(pubkey);
-    if (lastFailed && Date.now() - lastFailed < this.FAILED_FETCH_COOLDOWN) {
+    if (!relayHints?.length && lastFailed && Date.now() - lastFailed < this.FAILED_FETCH_COOLDOWN) {
       return this.getDefaultProfile(pubkey);
     }
 
     // Start new fetch
-    const fetchPromise = this.fetchProfileFromRelays(pubkey);
+    const fetchPromise = this.fetchProfileFromRelays(pubkey, relayHints);
     this.fetchingProfiles.set(pubkey, fetchPromise);
 
     try {
       const profile = await fetchPromise;
 
-      // Clear any previous failure on success
-      this.failedFetches.delete(pubkey);
+      if (profile) {
+        // Real profile found — cache it and clear any prior failure.
+        this.failedFetches.delete(pubkey);
+        this.profileCache.set(pubkey, profile);
+        this.notifyProfileUpdate(pubkey, profile);
+        return profile;
+      }
 
-      // Add to cache
-      this.profileCache.set(pubkey, profile);
-
-      // Notify subscribers
-      this.notifyProfileUpdate(pubkey, profile);
-      return profile;
+      // Miss (both relay stages came back empty). Do NOT cache an empty
+      // placeholder — a cached default is a permanent cache-hit with no name
+      // and no retry, which is exactly what leaves "@npub…" stuck in headers
+      // while the real profile resolves fine elsewhere (e.g. the PV). Instead
+      // record a cooldown so renders are throttled, and let the profile recover
+      // on a later fetch once the cooldown passes. Subscribers get the @npub
+      // fallback in the meantime.
+      this.failedFetches.set(pubkey, Date.now());
+      const fallback = this.getDefaultProfile(pubkey);
+      this.notifyProfileUpdate(pubkey, fallback);
+      return fallback;
     } catch (error) {
       console.warn(`Failed to fetch profile for ${pubkey}:`, error);
       // Record failure timestamp to prevent rapid retries
@@ -263,15 +275,12 @@ export class UserProfileService {
   /**
    * Fetch single profile from relays (via ProfileOrchestrator)
    */
-  private async fetchProfileFromRelays(pubkey: string): Promise<UserProfile> {
-    const profile = await this.orchestrator.fetchProfile(pubkey);
-
-    if (profile) {
-      return profile as UserProfile;
-    }
-
-    // Return default profile if fetch failed
-    return this.getDefaultProfile(pubkey);
+  private async fetchProfileFromRelays(pubkey: string, relayHints?: string[]): Promise<UserProfile | null> {
+    // null = orchestrator found nothing on any relay (miss/timeout). The caller
+    // (getUserProfile) turns that into a throttled, NON-cached fallback so a
+    // transient miss never permanently poisons the cache with an empty profile.
+    const profile = await this.orchestrator.fetchProfile(pubkey, relayHints);
+    return profile ? (profile as UserProfile) : null;
   }
 
   /**
@@ -308,7 +317,7 @@ export class UserProfileService {
   /**
    * Subscribe to profile updates (like nostr-react useProfile pattern)
    */
-  public subscribeToProfile(pubkey: string, callback: (profile: UserProfile) => void): () => void {
+  public subscribeToProfile(pubkey: string, callback: (profile: UserProfile) => void, relayHints?: string[]): () => void {
     if (!this.profileUpdateCallbacks.has(pubkey)) {
       this.profileUpdateCallbacks.set(pubkey, new Set());
     }
@@ -321,8 +330,8 @@ export class UserProfileService {
       // Immediate callback with cached data
       callback(cached);
     } else {
-      // Fetch from relays
-      this.getUserProfile(pubkey).then(callback).catch(() => {
+      // Fetch from relays (relayHints, when provided, are tried first)
+      this.getUserProfile(pubkey, relayHints).then(callback).catch(() => {
         // Silent fail
       });
     }

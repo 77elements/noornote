@@ -32,6 +32,7 @@ export interface UserIdentityConfig {
   showUsername?: boolean; // Default: true
   showHandle?: boolean; // Default: false - show NIP-05 handle
   inline?: boolean; // Default: false - lay avatar + name/handle on one baseline row (note headers)
+  relayHints?: string[]; // Default: [] - relays to try first for this profile (e.g. the reposter's write relays)
   enableHoverCard?: boolean; // Default: true - show user hover card on hover
   clickable?: boolean; // Default: false - click navigates to profile
   onClick?: (pubkey: string) => void; // Custom click handler (overrides default navigation)
@@ -57,6 +58,7 @@ export class UserIdentity {
       showUsername: true,
       showHandle: false,
       inline: false,
+      relayHints: [],
       enableHoverCard: true,
       clickable: false,
       ...config
@@ -158,7 +160,8 @@ export class UserIdentity {
         // Show element and update UI
         this.element.style.display = '';
         this.updateUI(username, picture, handle);
-      }
+      },
+      this.config.relayHints
     );
   }
 

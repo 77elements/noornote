@@ -68,14 +68,14 @@ export class ProfileOrchestrator extends Orchestrator {
   /**
    * Fetch single profile (no caching - handled by UserProfileService)
    */
-  public async fetchProfile(pubkey: string): Promise<Profile | null> {
+  public async fetchProfile(pubkey: string, relayHints?: string[]): Promise<Profile | null> {
     // If already fetching, wait for that request
     if (this.fetchingProfiles.has(pubkey)) {
       return await this.fetchingProfiles.get(pubkey)!;
     }
 
     // Start new fetch
-    const fetchPromise = this.fetchProfileFromRelays(pubkey);
+    const fetchPromise = this.fetchProfileFromRelays(pubkey, relayHints);
     this.fetchingProfiles.set(pubkey, fetchPromise);
 
     try {
@@ -88,12 +88,29 @@ export class ProfileOrchestrator extends Orchestrator {
   /**
    * Fetch single profile from relays (2-stage: aggregator → outbound)
    */
-  private async fetchProfileFromRelays(pubkey: string): Promise<Profile | null> {
+  private async fetchProfileFromRelays(pubkey: string, relayHints?: string[]): Promise<Profile | null> {
     const filters: NDKFilter[] = [{
       authors: [pubkey],
       kinds: [0],
       limit: 1
     }];
+
+    // Stage 0: caller-provided relay hints — e.g. the write relays of the user
+    // who reposted this note. An unfollowed author's kind:0 is reliably on the
+    // relays the note reached us through, so we look there FIRST. Purely additive:
+    // with no hints this block is skipped and the existing aggregator→outbound
+    // path runs unchanged; on a hint miss we fall through to it too, so behaviour
+    // is never worse than before.
+    if (relayHints && relayHints.length > 0) {
+      try {
+        const hintEvents = await this.transport.fetch(relayHints, filters, 4000, true, 'ProfileOrch');
+        if (hintEvents[0]) {
+          return this.parseProfileEvent(pubkey, hintEvents[0]);
+        }
+      } catch {
+        // Hint fetch failed — continue to the standard stages below.
+      }
+    }
 
     // Stage 1: Aggregator relays (big, fast relays — have ~99% of profiles)
     const relays = this.relayConfig.getAggregatorRelays();

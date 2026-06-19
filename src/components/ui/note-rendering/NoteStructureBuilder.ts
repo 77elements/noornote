@@ -18,6 +18,7 @@ import { UserHoverCard } from '../UserHoverCard';
 import { getViewNavigationController } from '../../../services/ViewNavigationController';
 import { PerAccountLocalStorage, StorageKeys } from '../../../services/PerAccountLocalStorage';
 import { ModuleLoader } from '../../../core/ModuleLoader';
+import { OutboundRelaysOrchestrator } from '../../../services/orchestration/OutboundRelaysOrchestrator';
 import type { PostsModuleApi } from '../../../modules/posts/contracts';
 
 // Component lifecycle is tied to the DOM node, never the note id: a card is
@@ -156,6 +157,16 @@ export class NoteStructureBuilder {
     ModuleLoader.getInstance().getApi<PostsModuleApi>('posts')?.registerNote(note.rawEvent);
 
     // Create note header component
+    // For a reposted note the author is often someone you don't follow, so their
+    // kind:0 may not be on the aggregators. The note reached us via the reposter
+    // (whom you do follow), so look up the author's profile on the reposter's
+    // already-discovered write relays first. Non-blocking cached lookup; [] when
+    // unavailable, in which case the profile fetch behaves exactly as before.
+    let authorRelayHints: string[] = [];
+    if (note.type === 'repost' && note.reposter?.pubkey && note.reposter.pubkey !== note.author.pubkey) {
+      authorRelayHints = OutboundRelaysOrchestrator.getInstance().getCachedWriteRelays(note.reposter.pubkey);
+    }
+
     const noteHeader = new NoteHeader({
       pubkey: note.author.pubkey,
       eventId: note.id,
@@ -163,7 +174,8 @@ export class NoteStructureBuilder {
       rawEvent: note.rawEvent,
       showVerification: true,
       showTimestamp: true,
-      showMenu: true
+      showMenu: true,
+      relayHints: authorRelayHints
     });
 
     // Check if this is a reply and extract parent event ID + relay hint

@@ -273,6 +273,17 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
     return this.relayListCache.get(pubkey) ?? null;
   }
 
+  /**
+   * Synchronously read a user's cached NIP-65 write relays (no fetch). Returns
+   * [] when nothing is cached. Used as a non-blocking relay hint for profile
+   * lookups — e.g. fetching a reposted author's kind:0 from the reposter's
+   * already-discovered write relays.
+   */
+  public getCachedWriteRelays(pubkey: string): string[] {
+    const cached = this.getCachedRelayList(pubkey);
+    return cached ? cached.writeRelays.filter(r => this.isValidRelay(r)) : [];
+  }
+
   private cacheRelayList(relayList: UserRelayList): void {
     this.relayListCache.set(relayList.pubkey, relayList);
     // Write-through to IndexedDB. Best-effort: persistence failure does not
