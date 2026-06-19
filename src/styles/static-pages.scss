@@ -30,15 +30,27 @@
   --color-bitcoin-orange: #{$color-bitcoin-orange};
   --color-warning: #{$color-warning};
 
+  // Noor jadīd palette (the 1.0 default theme). Static pages don't use the app's
+  // data-theme system, so the palette is pinned here to match the default theme,
+  // overriding the Deep Purple :root inherited from base/base.
+  --color-1: #100d18;
+  --color-2: #271f3b;
+  --color-3: #9b6dde;
+  --color-4: #e0218a;
+  --color-5: #ece9f5;
+  --color-6: #3ddc84;
+  --color-logo-start: #7b2ff7;
+  --color-logo-end: #e0218a;
+
   // RGB triplets for rgba() usage in static pages
-  --color-1-rgb: 15, 13, 35;
-  --color-2-rgb: 37, 35, 67;
-  --color-3-rgb: 155, 121, 185;
-  --color-4-rgb: 220, 133, 173;
-  --color-5-rgb: 237, 226, 218;
-  --color-6-rgb: 125, 216, 125;
+  --color-1-rgb: 16, 13, 24;
+  --color-2-rgb: 39, 31, 59;
+  --color-3-rgb: 155, 109, 222;
+  --color-4-rgb: 224, 33, 138;
+  --color-5-rgb: 236, 233, 245;
+  --color-6-rgb: 61, 220, 132;
   --color-red-rgb: 239, 68, 68;
-  --color-logo-start-rgb: 180, 95, 217;
-  --color-logo-end-rgb: 94, 247, 94;
+  --color-logo-start-rgb: 123, 47, 247;
+  --color-logo-end-rgb: 224, 33, 138;
   --color-bitcoin-orange-rgb: 247, 147, 26;
 }
