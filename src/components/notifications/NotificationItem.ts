@@ -445,7 +445,9 @@ export class NotificationItem {
       case 'zap': {
         const amount = this.getZapAmount();
         const verb = this.isAnonymousZap() ? 'silently zapped' : 'zapped';
-        return amount ? `${verb} your ${target} ${amount.toLocaleString()} sats` : `${verb} your ${target}`;
+        return amount
+          ? `${verb} your ${target} <span class="notification-item__zap-amount">${amount.toLocaleString()} sats</span>`
+          : `${verb} your ${target}`;
       }
       case 'poll_vote': return 'voted on your poll';
       case 'article': return 'posted a new article';
