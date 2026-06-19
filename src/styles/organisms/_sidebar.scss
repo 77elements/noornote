@@ -41,10 +41,11 @@
 
 // Sidebar header (logo + collapse toggle)
 .sidebar-header {
+  position: relative;
   margin-bottom: $gap;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: calc($gap / 2);
 
   // Hide in phone mode (logo shown in mobile header)
@@ -54,6 +55,15 @@
 
   .nn-logo {
     @extend %h1;
+  }
+
+  // Logo sits centered; the collapse toggle floats out of flow on the right so
+  // it never pushes the logo off-center.
+  .sidebar-collapse-toggle {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
   }
 }
 
@@ -145,9 +155,14 @@ html.sidebar-collapsed:not(.layout--phone) {
     z-index: $z-dropdown;
   }
 
-  // Header keeps just the toggle, centered.
+  // Header keeps just the toggle, centered — back in flow so it centers.
   .sidebar-header {
     justify-content: center;
+
+    .sidebar-collapse-toggle {
+      position: static;
+      transform: none;
+    }
   }
 
   // New Post button → just the plus icon.
