@@ -9,13 +9,11 @@
 @use 'sass:color';
 
 .isl {
-  // Each button takes only the space it needs (icon + counter). Flex with
-  // space-between distributes the 5 buttons + Analytics evenly across the
-  // available width — the gap between them emerges from the leftover space,
-  // not from an explicit gap. Fully responsive: shrinks/expands with the row.
+  // Pills clustered to the left with a fixed gap; Analytics is pushed to the
+  // right edge via margin-left:auto (see .isl-analytics).
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: calc($gap / 2);
   padding: calc($gap / 2) 0;
 }
 
@@ -25,17 +23,20 @@
   grid-template-columns: 20px auto;
   align-items: center;
   gap: calc($gap / 4);
-  padding: 0;
-  background: transparent;
+  // Pill: rounded background on every action (Yeni Noor).
+  padding: calc($gap / 2) calc($gap * 0.75);
+  background: var(--color-2);
   border: none;
-  border-radius: $radius-xl;
-  color: var(--color-3);
+  border-radius: $radius-full;
+  color: var(--text-alpha-medium);
   cursor: pointer;
   transition: all 0.2s ease;
 
+  // One accent: magenta text + a faint magenta wash = "hovered or already
+  // interacted", nothing else.
   &:hover {
-    background: var(--color-2);
-    color: var(--color-5);
+    color: var(--color-4);
+    background: var(--bg-accent);
   }
 
   &:active {
@@ -49,8 +50,7 @@
     pointer-events: none;
 
     &:hover {
-      background: transparent;
-      color: var(--color-3);
+      color: var(--text-alpha-medium);
     }
   }
 }
@@ -79,77 +79,50 @@
 
 .isl-count {
   font-weight: 500;
-  min-width: 20px;
   text-align: left;
 }
 
-// Specific action colors on hover
-.isl-reply:hover {
-  color: $color-info; // Blue
-}
+// Like: swap to a filled heart on hover (the accent colour comes from
+// .isl-action:hover above — one accent for every action).
+.isl-like:hover .isl-icon {
+  font-size: 0; // Hide original heart
 
-.isl-zap:hover {
-  color: $color-warning; // Orange/Yellow
-}
-
-.isl-repost:hover {
-  color: $color-success; // Green
-}
-
-// (Removed justify-self: center — was needed for the old 1fr grid cells. With
-// flex space-between each button is content-snug, no centering needed.)
-
-.isl-quote:hover {
-  color: var(--color-3); // Purple
-}
-
-.isl-like:hover {
-  color: $color-red; // Red
-
-  .isl-icon {
-    font-size: 0; // Hide original heart
-
-    &::before {
-      content: '♥';
-      @extend %icon-sm; // Show filled heart
-    }
+  &::before {
+    content: '♥';
+    @extend %icon-sm; // Show filled heart
   }
 }
 
-.isl-analytics {
-  display: block;
+// Analytics + Bookmark: round icon buttons pushed to the right edge. The first
+// of the two absorbs the free space (margin-left:auto); the second then has no
+// free space left, so they sit together at the right with the row's gap.
+.isl-analytics,
+.isl-bookmark {
   grid-template-columns: none;
-  justify-self: end;
-  padding: calc($gap / 4) calc($gap / 2);
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  margin-left: auto;
 
   &:hover {
     color: var(--color-4);
   }
 }
 
-// Active states (when user has interacted)
+// When the bookmark follows analytics, only analytics absorbs the free space
+// (margin-left:auto). The bookmark then hugs it at the right with the row gap,
+// instead of flexbox splitting the free space across both auto margins.
+.isl-analytics + .isl-bookmark {
+  margin-left: 0;
+}
+
+// Active state (user has already interacted) — same single magenta accent.
 .isl-action.active {
-  color: var(--color-5);
-
-  &.isl-reply {
-    color: $color-info;
-  }
-
-  &.isl-zap {
-    color: $color-warning;
-  }
-
-  &.isl-repost {
-    color: $color-success;
-  }
-
-  &.isl-quote {
-    color: var(--color-3);
-  }
+  color: var(--color-4);
+  background: var(--bg-accent);
 
   &.isl-like {
-    color: $color-red;
-
     .isl-icon {
       font-size: 0;
 
@@ -159,21 +132,21 @@
       }
     }
 
-    // Keep red color when disabled (already liked)
+    // Keep the accent when disabled (already liked)
     &:disabled {
       opacity: 1;
-      color: $color-red;
+      color: var(--color-4);
     }
   }
 }
 
-// Zapped state (yellow filled icon + amount badge)
+// Zapped state (filled icon + amount badge) — the single magenta accent.
 .isl-zap.zapped {
-  color: $color-warning !important;
+  color: var(--color-4) !important;
 
   .isl-icon svg,
   .isl-icon svg use {
-    fill: $color-warning;
+    fill: var(--color-4);
     stroke: none;
   }
 

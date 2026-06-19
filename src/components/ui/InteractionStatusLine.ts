@@ -7,6 +7,10 @@
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
 import { AuthGuard } from '../../services/AuthGuard';
+import { AuthService } from '../../services/AuthService';
+import { ToastService } from '../../services/ToastService';
+import { TypedEventBus } from '../../core/TypedEventBus';
+import { isBookmarksEnabled } from '../../addons/bookmarks/index';
 import { formatCount } from '../../helpers/formatCount';
 import { ZapManager } from './interaction-managers/ZapManager';
 import { LikeManager } from './interaction-managers/LikeManager';
@@ -50,6 +54,7 @@ export class InteractionStatusLine {
     return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
   }
   private initialFetchPromise?: Promise<void>;
+  private bookmarkSubId?: string;
   private zapManager: ZapManager | null = null;
   private likeManager: LikeManager | null = null;
   private repostManager: RepostManager | null = null;
@@ -83,6 +88,15 @@ export class InteractionStatusLine {
 
     // Check interaction states after DOM is ready
     this.checkInteractionStates();
+
+    // Bookmark state (addon-gated): reflect the current public-bookmark status
+    // on the icon and keep it in sync when toggled elsewhere (e.g. the note menu).
+    if (isBookmarksEnabled()) {
+      void this.checkBookmarkState();
+      this.bookmarkSubId = TypedEventBus.getInstance().on('bookmark:updated', () => {
+        void this.checkBookmarkState();
+      });
+    }
 
     // Fetch stats in background if requested (SNV only)
     if (config.fetchStats) {
@@ -189,8 +203,15 @@ export class InteractionStatusLine {
     container.dataset.noteId = this.config.noteId;
 
     const analyticsHtml = this.config.onAnalytics
-      ? `<button class="isl-action isl-analytics" type="button" data-action="analytics">
-           Analytics
+      ? `<button class="isl-action isl-analytics" type="button" data-action="analytics" title="Analytics">
+           <span class="isl-icon"><svg width="18" height="18"><use href="#icon-trending-up"/></svg></span>
+         </button>`
+      : '';
+
+    // Public bookmark toggle (addon-gated). Private bookmarks stay in the note menu.
+    const bookmarkHtml = isBookmarksEnabled()
+      ? `<button class="isl-action isl-bookmark" type="button" data-action="bookmark" title="Bookmark">
+           <span class="isl-icon"><svg width="18" height="18"><use href="#icon-bookmark-24"/></svg></span>
          </button>`
       : '';
 
@@ -221,6 +242,7 @@ export class InteractionStatusLine {
       </button>
 
       ${analyticsHtml}
+      ${bookmarkHtml}
     `;
 
     this.attachEventListeners(container);
@@ -238,6 +260,7 @@ export class InteractionStatusLine {
     const likeBtn = container.querySelector('[data-action="like"]');
     const zapBtn = container.querySelector('[data-action="zap"]');
     const analyticsBtn = container.querySelector('[data-action="analytics"]');
+    const bookmarkBtn = container.querySelector('[data-action="bookmark"]');
 
     if (replyBtn) {
       replyBtn.addEventListener('click', (e) => {
@@ -266,6 +289,13 @@ export class InteractionStatusLine {
       analyticsBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         this.handleAnalytics();
+      });
+    }
+
+    if (bookmarkBtn) {
+      bookmarkBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        void this.handleBookmark();
       });
     }
   }
@@ -305,6 +335,58 @@ export class InteractionStatusLine {
       this.config.onAnalytics();
     } else {
       console.log('📊 View analytics for note:', this.config.noteId);
+    }
+  }
+
+  /**
+   * Toggle a PUBLIC bookmark for this note. Private bookmarks remain in the note
+   * menu — the ISL icon is the quick public toggle only. noteId is already the
+   * original note id (reposts resolved upstream), so no re-resolution is needed.
+   */
+  private async handleBookmark(): Promise<void> {
+    if (!AuthGuard.requireAuth('bookmark note')) {
+      return;
+    }
+    const currentUser = AuthService.getInstance().getCurrentUser();
+    if (!currentUser) return;
+
+    try {
+      const { BookmarkOrchestrator } = await import('../../lists/bookmarks');
+      const orch = BookmarkOrchestrator.getInstance();
+      const status = await orch.isBookmarked(this.config.noteId, currentUser.pubkey);
+
+      if (status.public) {
+        await orch.removeBookmark(this.config.noteId, false);
+        ToastService.show('Removed from bookmarks', 'success');
+      } else {
+        await orch.addBookmark(this.config.noteId, false);
+        ToastService.show('Added to bookmarks', 'success');
+      }
+
+      // Notify the bookmarks list + every other ISL/menu showing this note.
+      TypedEventBus.getInstance().emit('bookmark:updated');
+    } catch (error) {
+      console.error('Failed to toggle bookmark:', error);
+      ToastService.show('Failed to update bookmark', 'error');
+    }
+  }
+
+  /**
+   * Reflect the current public-bookmark status on the icon (filled vs outline).
+   */
+  private async checkBookmarkState(): Promise<void> {
+    try {
+      const { BookmarkOrchestrator } = await import('../../lists/bookmarks');
+      const status = await BookmarkOrchestrator.getInstance().isBookmarked(this.config.noteId);
+      const btn = this.element.querySelector('.isl-bookmark');
+      if (!btn) return;
+      btn.classList.toggle('active', status.public);
+      const use = btn.querySelector('use');
+      if (use) {
+        use.setAttribute('href', status.public ? '#icon-bookmark-24-filled' : '#icon-bookmark-24');
+      }
+    } catch {
+      // Bookmarks module unavailable — leave the icon in its default state.
     }
   }
 
@@ -365,6 +447,10 @@ export class InteractionStatusLine {
    * Destroy component
    */
   public destroy(): void {
+    // Unsubscribe the bookmark-sync listener
+    if (this.bookmarkSubId) {
+      TypedEventBus.getInstance().off(this.bookmarkSubId);
+    }
     // Cleanup managers
     if (this.likeManager) {
       this.likeManager.destroy();

@@ -659,4 +659,10 @@
       <circle cx="12" cy="8" r="6" />
       <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" />
   </symbol>
+  <symbol id="icon-trending-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Lucide `trending-up` — line rising to the right with an arrowhead.
+         Used for the ISL analytics button. -->
+    <path d="M16 7h6v6" />
+    <path d="m22 7-8.5 8.5-5-5L2 17" />
+  </symbol>
 </svg>
