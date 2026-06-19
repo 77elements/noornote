@@ -85,4 +85,5 @@ export interface NoteUIOptions {
   isLoggedIn?: boolean;
   headerSize?: 'small' | 'medium' | 'large';
   depth?: number;
+  replyContext?: boolean; // SNV reply thread: render the thread-context band with a leading ↳
 }

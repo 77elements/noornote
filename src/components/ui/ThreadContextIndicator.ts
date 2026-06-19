@@ -23,6 +23,7 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 export interface ThreadContextIndicatorOptions {
   noteId: string; // The current note (reply) we're showing context for
+  replyContext?: boolean; // SNV reply thread: prefix each band with a ↳ ("in reply to")
 }
 
 export class ThreadContextIndicator {
@@ -226,7 +227,13 @@ export class ThreadContextIndicator {
       };
     }
 
+    // SNV reply threads lead with a ↳ ("in reply to"); the TV band omits it.
+    const arrow = this.options.replyContext
+      ? '<span class="thread-context-arrow">↳</span>'
+      : '';
+
     item.innerHTML = `
+      ${arrow}
       <img class="profile-pic profile-pic--mini" src="${escapeHtmlAttr(avatarUrl)}" alt="${escapeHtmlAttr(displayName)}" />
       <span class="thread-context-content"><b class="thread-context-author">${escapeHtml(displayName)}</b> ${previewHtml}</span>
     `;

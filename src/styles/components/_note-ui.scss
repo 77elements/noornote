@@ -125,6 +125,12 @@ html.content-visibility-auto .note-card {
   color: var(--text-alpha-heavy);
 }
 
+// ↳ "in reply to" marker (SNV reply threads only) — muted like the band.
+.thread-context-arrow {
+  color: var(--text-alpha-medium);
+  flex-shrink: 0;
+}
+
 .thread-context-item {
   display: flex;
   align-items: center;

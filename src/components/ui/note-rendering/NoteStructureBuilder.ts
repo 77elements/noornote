@@ -246,7 +246,8 @@ export class NoteStructureBuilder {
           : note.id;
 
         const threadContextIndicator = new ThreadContextIndicator({
-          noteId: contextNoteId
+          noteId: contextNoteId,
+          replyContext: renderOptions.replyContext === true
         });
         replyIndicatorContainer.appendChild(threadContextIndicator.getElement());
       }

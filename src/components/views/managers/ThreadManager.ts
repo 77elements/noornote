@@ -16,6 +16,7 @@ import { SystemLogger } from '../../../services/SystemLogger';
 import { UserProfileService } from '../../../services/UserProfileService';
 import { RelayConfig } from '../../../services/RelayConfig';
 import { Router } from '../../../services/Router';
+import { LayoutService } from '../../../services/LayoutService';
 import { encodeNevent } from '../../../services/NostrToolsAdapter';
 import { escapeHtml } from '../../../helpers/escapeHtml';
 import { fetchNostrEvents } from '../../../helpers/fetchNostrEvents';
@@ -233,7 +234,8 @@ export class ThreadManager {
       islFetchStats: true,
       isLoggedIn: isUserLoggedIn,
       headerSize: 'small',
-      depth: 0
+      depth: 0,
+      replyContext: true
     });
 
     const replyId = reply.id;
@@ -242,7 +244,11 @@ export class ThreadManager {
     }
 
     if (depth > 0) {
-      const cappedDepth = Math.min(depth, 7);
+      // Cap the visual indentation: 7 levels on desktop, 4 on the phone layout
+      // (narrow column). Deeper replies keep their real depth + ↳ context band,
+      // they just stop indenting so the thread never runs off the right edge.
+      const maxIndentDepth = LayoutService.getInstance().isPhone() ? 4 : 7;
+      const cappedDepth = Math.min(depth, maxIndentDepth);
       noteElement.style.marginLeft = `${cappedDepth * 1.5}rem`;
       noteElement.classList.add(`reply-depth-${Math.min(depth, 5)}`);
     }
