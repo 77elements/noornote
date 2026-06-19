@@ -15,7 +15,7 @@ import { UserProfileService } from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
 import { Router } from '../../services/Router';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
-import { createScrollCarousel, type ScrollCarouselInstance } from '../../helpers/CarouselHelper';
+import { createCardGrid, type ScrollCarouselInstance } from '../../helpers/CarouselHelper';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { extractDisplayName } from '../../helpers/extractDisplayName';
@@ -200,8 +200,7 @@ export class ProfileArticlesCarousel {
       };
     });
 
-    this.carousel = createScrollCarousel({
-      title: 'Articles',
+    this.carousel = createCardGrid({
       cards,
       onCardClick: (_index, data) => {
         if (!data.naddr) return;

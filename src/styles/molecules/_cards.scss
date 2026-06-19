@@ -37,26 +37,34 @@
 // Default grid is responsive via container queries.
 // ========================================
 
+// Establishes the container context so the grid below can size its columns to
+// the available width (not the viewport) — works in any column/pane.
+.nn-card-grid-wrap {
+  container-type: inline-size;
+}
+
 .nn-card-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  // minmax(0, 1fr) lets columns shrink below the cards' min-content width so the
+  // grid never blows out past its container (the cards shrink to fit instead).
+  grid-template-columns: minmax(0, 1fr);
   gap: $gap;
 
   @container (min-width: 420px) {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   @container (min-width: 720px) {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   @container (min-width: 1000px) {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   // Force single column regardless of width (e.g. articles)
   &--nonresponsive {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
 
     @container (min-width: 420px) { grid-template-columns: 1fr; }
     @container (min-width: 720px) { grid-template-columns: 1fr; }

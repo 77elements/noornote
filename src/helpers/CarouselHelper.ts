@@ -19,6 +19,8 @@
  * container.appendChild(carousel.element);
  */
 
+import { escapeHtmlAttr } from './escapeHtml';
+
 export interface CarouselSlide {
   /** Plain text only — rendered via textContent. Never pass HTML from untrusted sources. */
   text: string;
@@ -405,6 +407,61 @@ export function createScrollCarousel(options: ScrollCarouselOptions): ScrollCaro
 
   // Initial nav state
   requestAnimationFrame(updateNavButtons);
+
+  return {
+    element: wrapper,
+    destroy: () => wrapper.remove()
+  };
+}
+
+// ========================================
+// Card Grid (responsive grid, all items visible)
+// ========================================
+
+export interface CardGridOptions {
+  cards: ScrollCarouselCard[];
+  onCardClick?: (index: number, data: Record<string, string>) => void;
+}
+
+/**
+ * Render the same card data as createScrollCarousel, but as a responsive
+ * .nn-card-grid (1→2→3→4 columns by container width) instead of a horizontal
+ * scroller. Used for profile tab sections (products, articles, …). Shares the
+ * .nn-card markup + click contract so callers can swap one for the other.
+ */
+export function createCardGrid(options: CardGridOptions): ScrollCarouselInstance {
+  const { cards, onCardClick } = options;
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'nn-card-grid-wrap';
+
+  wrapper.innerHTML = `
+    <div class="nn-card-grid">
+      ${cards.map((card, i) => {
+        const dataAttrs = card.data
+          ? Object.entries(card.data)
+              .filter(([k]) => /^[a-z0-9-]+$/i.test(k))
+              .map(([k, v]) => `data-${k}="${escapeHtmlAttr(v)}"`)
+              .join(' ')
+          : '';
+        return `<div class="nn-card" data-index="${i}" ${dataAttrs}>${card.html}</div>`;
+      }).join('')}
+    </div>
+  `;
+
+  if (onCardClick) {
+    wrapper.querySelectorAll('[data-index]').forEach(card => {
+      card.addEventListener('click', () => {
+        const el = card as HTMLElement;
+        const index = parseInt(el.dataset.index || '0');
+        const data: Record<string, string> = {};
+        for (const [key, value] of Object.entries(el.dataset)) {
+          if (key !== 'index') data[key] = value!;
+        }
+        onCardClick(index, data);
+      });
+    });
+  }
 
   return {
     element: wrapper,

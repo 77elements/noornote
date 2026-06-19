@@ -9,26 +9,8 @@
 @use '../base/typography' as *;
 
 .profile-listings-carousel {
-  .nn-card {
-    // Mirrors ProfileArticlesCarousel sizing — container queries on the
-    // scroll-carousel viewport so cards adapt to the carousel's width
-    // (not the page's), keeping the same look in Columns cells.
-    width: 85cqw;
-    max-width: 280px;
-
-    @container nn-scroll-carousel (min-width: 360px) {
-      width: 220px;
-    }
-
-    @container nn-scroll-carousel (min-width: 600px) {
-      width: 260px;
-    }
-
-    @container nn-scroll-carousel (min-width: 900px) {
-      width: 280px;
-    }
-  }
-
+  // Listings now render in a responsive .nn-card-grid, so cards fill their grid
+  // column — no fixed carousel widths.
   .nn-card__media {
     height: 120px;
   }

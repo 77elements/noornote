@@ -16,7 +16,7 @@ import { NostrTransport } from '../../services/transport/NostrTransport';
 import { ProfileCarouselOrchestrator } from '../../services/orchestration/ProfileCarouselOrchestrator';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
-import { createScrollCarousel, type ScrollCarouselInstance } from '../../helpers/CarouselHelper';
+import { createCardGrid, type ScrollCarouselInstance } from '../../helpers/CarouselHelper';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { parseListingMetadata, formatPrice, type ListingMetadata } from '../../addons/marketplace/marketplace-helpers';
@@ -145,8 +145,7 @@ export class ProfileListingsCarousel {
       };
     });
 
-    this.carousel = createScrollCarousel({
-      title: 'Products',
+    this.carousel = createCardGrid({
       cards,
       onCardClick: (_index, data) => {
         if (!data.naddr) return;

@@ -37,7 +37,7 @@ export class SccMediaFeed {
     this.router = Router.getInstance();
 
     this.gridEl = document.createElement('div');
-    this.gridEl.className = 'scc-media-feed';
+    this.gridEl.className = 'media-feed';
     this.container.appendChild(this.gridEl);
 
     this.infiniteScroll = new InfiniteScroll(
@@ -51,7 +51,7 @@ export class SccMediaFeed {
   private async loadInitial(): Promise<void> {
     const follows = getAllFollowedPubkeys();
     if (follows.length === 0) {
-      this.gridEl.innerHTML = '<p class="scc-media-feed__empty">Follow users to see their media here.</p>';
+      this.gridEl.innerHTML = '<p class="media-feed__empty">Follow users to see their media here.</p>';
       return;
     }
 
@@ -61,12 +61,12 @@ export class SccMediaFeed {
     this.gridEl.innerHTML = '';
 
     if (items.length === 0) {
-      this.gridEl.innerHTML = '<p class="scc-media-feed__empty">No media from your follows yet.</p>';
+      this.gridEl.innerHTML = '<p class="media-feed__empty">No media from your follows yet.</p>';
       return;
     }
 
     const masonryContainer = document.createElement('div');
-    masonryContainer.className = 'scc-media-feed__masonry';
+    masonryContainer.className = 'media-feed__masonry';
     this.gridEl.appendChild(masonryContainer);
 
     this.renderItems(masonryContainer, items);
@@ -91,7 +91,7 @@ export class SccMediaFeed {
         this.hasMore = false;
         this.infiniteScroll.disconnect();
       } else {
-        const masonry = this.gridEl.querySelector('.scc-media-feed__masonry');
+        const masonry = this.gridEl.querySelector('.media-feed__masonry');
         if (masonry) this.renderItems(masonry as HTMLElement, items);
 
         if (items.length < BATCH_SIZE) {
@@ -167,7 +167,7 @@ export class SccMediaFeed {
 
   private createTile(item: MediaItem): HTMLElement {
     const tile = document.createElement('div');
-    tile.className = 'scc-media-feed__tile';
+    tile.className = 'media-feed__tile';
 
     const isVideo = item.media.type === 'video';
 
@@ -176,20 +176,20 @@ export class SccMediaFeed {
       const posterAttr = item.media.thumbnail ? ` poster="${escapeHtmlAttr(item.media.thumbnail)}"` : '';
       mediaHtml = `
         <video src="${escapeHtmlAttr(item.media.url)}"${posterAttr} preload="none" muted></video>
-        <div class="scc-media-feed__play-icon"><svg width="24" height="24"><use href="#icon-play"/></svg></div>
+        <div class="media-feed__play-icon"><svg width="24" height="24"><use href="#icon-play"/></svg></div>
       `;
     } else {
       mediaHtml = `<img src="${escapeHtmlAttr(item.media.url)}" alt="${escapeHtmlAttr(item.media.alt || '')}" loading="lazy" />`;
     }
 
     tile.innerHTML = `
-      <div class="scc-media-feed__tile-media">
+      <div class="media-feed__tile-media">
         ${mediaHtml}
       </div>
-      <div class="scc-media-feed__tile-info">
-        ${item.title ? `<span class="scc-media-feed__tile-title">${escapeHtml(item.title)}</span>` : ''}
-        <span class="scc-media-feed__tile-author" data-pubkey="${item.event.pubkey}">...</span>
-        <span class="scc-media-feed__tile-time">${formatTimestamp(item.event.created_at || 0)}</span>
+      <div class="media-feed__tile-info">
+        ${item.title ? `<span class="media-feed__tile-title">${escapeHtml(item.title)}</span>` : ''}
+        <span class="media-feed__tile-author" data-pubkey="${item.event.pubkey}">...</span>
+        <span class="media-feed__tile-time">${formatTimestamp(item.event.created_at || 0)}</span>
       </div>
     `;
 
@@ -203,7 +203,7 @@ export class SccMediaFeed {
   }
 
   private async loadAuthor(tile: HTMLElement, pubkey: string): Promise<void> {
-    const el = tile.querySelector('.scc-media-feed__tile-author');
+    const el = tile.querySelector('.media-feed__tile-author');
     if (!el) return;
 
     try {

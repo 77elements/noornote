@@ -10,7 +10,7 @@
 import { ProfileCarouselOrchestrator } from '../../services/orchestration/ProfileCarouselOrchestrator';
 import { Router } from '../../services/Router';
 import { VideoNoteProcessor } from '../ui/note-processing/VideoNoteProcessor';
-import { createScrollCarousel, type ScrollCarouselInstance } from '../../helpers/CarouselHelper';
+import { type ScrollCarouselInstance } from '../../helpers/CarouselHelper';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { getTag } from '../../helpers/tagUtils';
@@ -86,35 +86,33 @@ export class ProfileVideosCarousel {
   }
 
   private renderCarousel(): void {
-    const cards = this.videos.map(video => {
+    // Videos render as a 2-column masonry (shared .media-feed layout with the
+    // scc Media feed), not a horizontal carousel.
+    const masonry = document.createElement('div');
+    masonry.className = 'media-feed__masonry';
+
+    masonry.innerHTML = this.videos.map(video => {
       const eventId = video.event.id || '';
       const posterAttr = video.thumbnail ? ` poster="${escapeHtmlAttr(video.thumbnail)}"` : '';
-
-      return {
-        html: `
-          <div class="nn-card__media">
+      return `
+        <div class="media-feed__tile" data-noteid="${escapeHtmlAttr(eventId)}">
+          <div class="media-feed__tile-media">
             <video src="${escapeHtmlAttr(video.videoUrl)}"${posterAttr} preload="none" muted></video>
-            <div class="play-icon">
-              <svg width="24" height="24"><use href="#icon-play"/></svg>
-            </div>
+            <div class="media-feed__play-icon"><svg width="24" height="24"><use href="#icon-play"/></svg></div>
           </div>
-          ${video.title ? `<div class="nn-card__content"><h3>${escapeHtml(video.title)}</h3></div>` : ''}
-        `,
-        data: { noteid: eventId }
-      };
+          ${video.title ? `<div class="media-feed__tile-info"><span class="media-feed__tile-title">${escapeHtml(video.title)}</span></div>` : ''}
+        </div>
+      `;
+    }).join('');
+
+    masonry.querySelectorAll('.media-feed__tile').forEach(tile => {
+      tile.addEventListener('click', () => {
+        const id = (tile as HTMLElement).dataset.noteid;
+        if (id) Router.getInstance().navigate(`/note/${id}`);
+      });
     });
 
-    this.carousel = createScrollCarousel({
-      title: 'Videos',
-      cards,
-      onCardClick: (_index, data) => {
-        if (data.noteid) {
-          Router.getInstance().navigate(`/note/${data.noteid}`);
-        }
-      }
-    });
-
-    this.element.appendChild(this.carousel.element);
+    this.element.appendChild(masonry);
     // Video thumbnail seek handled by global MutationObserver (startVideoThumbnailObserver)
   }
 

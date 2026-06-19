@@ -7,31 +7,8 @@
 @use '../base/typography' as *;
 
 .profile-articles-carousel {
-  .nn-card {
-    // Cards adapt to the carousel viewport's width (container query on
-    // `.nn-scroll-carousel__viewport`) instead of the global viewport,
-    // so the same component looks right whether it sits in a wide page
-    // or a narrow Columns cell. Below ~360px → one card fills the
-    // visible width minus a peek of the next; widens up through normal
-    // breakpoints.
-    width: 85cqw;
-    max-width: 280px;
-
-    @container nn-scroll-carousel (min-width: 360px) {
-      width: 220px;
-    }
-
-    @container nn-scroll-carousel (min-width: 600px) {
-      width: 260px;
-    }
-
-    @container nn-scroll-carousel (min-width: 900px) {
-      width: 280px;
-    }
-  }
-
-  // Carousel media is shorter than the default 180px so the cards stay
-  // compact next to each other in the horizontal track.
+  // Articles now render in a responsive .nn-card-grid, so cards fill their grid
+  // column — no fixed carousel widths.
   .nn-card__media {
     height: 120px;
   }
