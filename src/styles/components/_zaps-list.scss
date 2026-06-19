@@ -8,7 +8,7 @@
 
 .zaps-list {
   width: 100%;
-  margin-top: $gap;
+  margin: calc($gap * 0.75) 0;
 
   &__scroll {
     display: flex;
@@ -32,8 +32,7 @@
     align-items: center;
     gap: calc($gap / 4);
     padding: calc($gap / 4) calc($gap / 2);
-    background-color: color-mix(in srgb, var(--color-6) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--color-6) 20%, transparent);
+    background-color: var(--color-2);
     border-radius: $radius-full;
     white-space: nowrap;
     flex-shrink: 0;
@@ -44,8 +43,7 @@
     cursor: pointer;
 
     &:hover {
-      background-color: color-mix(in srgb, var(--color-6) 18%, transparent);
-      border-color: color-mix(in srgb, var(--color-6) 35%, transparent);
+      background-color: var(--bg-accent);
     }
   }
 
@@ -86,7 +84,7 @@
   }
 
   &__amount {
-    font-weight: 600;
+    font-weight: 700;
     color: var(--color-6);
   }
 

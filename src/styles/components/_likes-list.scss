@@ -9,7 +9,7 @@
 
 .likes-list {
   width: 100%;
-  margin-top: $gap;
+  margin: calc($gap * 0.75) 0;
 
   &__scroll {
     display: flex;
@@ -33,31 +33,24 @@
     align-items: center;
     gap: calc($gap / 4);
     padding: calc($gap / 4) calc($gap / 2);
-    background-color: color-mix(in srgb, var(--color-6) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--color-6) 20%, transparent);
+    background-color: var(--color-2);
     border-radius: $radius-full;
     white-space: nowrap;
     flex-shrink: 0;
     cursor: pointer;
     transition: all 0.2s ease;
 
-    // Interactive state (pink on hover)
+    // Interactive: faint magenta wash on hover (single accent).
     &:hover {
-      background-color: color-mix(in srgb, var(--color-4) 10%, transparent);
-      border-color: color-mix(in srgb, var(--color-4) 30%, transparent);
+      background-color: var(--bg-accent);
     }
 
-    // Active state (user has reacted with this emoji)
+    // Active state (user has reacted with this emoji) — magenta accent.
     &--active {
-      background-color: color-mix(in srgb, var(--color-4) 15%, transparent);
-      border-color: var(--color-4);
+      background-color: var(--bg-accent);
 
       .likes-list__count {
         color: var(--color-4);
-      }
-
-      &:hover {
-        background-color: color-mix(in srgb, var(--color-4) 20%, transparent);
       }
     }
 
@@ -82,6 +75,6 @@
 
   &__count {
     font-weight: 600;
-    color: var(--color-6);
+    color: var(--text-alpha-heavy);
   }
 }

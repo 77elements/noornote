@@ -57,11 +57,11 @@ a {
 .mention-link--bg {
   background-color: color-mix(in srgb, var(--color-2) 80%, white);
   border-radius: 1rem;
-  padding: 2px 4px;
+  padding: 0 0.25rem;
 
   &:hover,
   &:active,
   &:focus {
-    background-color: color-mix(in srgb, var(--color-2) 60%, white);
+    background-color: var(--bg-accent);
   }
 }
