@@ -348,7 +348,7 @@ export class ThreadManager {
 
     const quoteHeader = document.createElement('div');
     quoteHeader.className = 'snv-quoted-repost__header';
-    quoteHeader.innerHTML = `<a href="/note/${nevent}" class="snv-quoted-repost__link"><strong>${escapeHtml(username)}</strong> quoted this note:</a>`;
+    quoteHeader.innerHTML = `<a href="/note/${nevent}" class="snv-quoted-repost__link"><svg class="snv-quoted-repost__icon" width="14" height="14"><use href="#icon-repost"/></svg><span><strong>${escapeHtml(username)}</strong> quoted this in a repost · open original →</span></a>`;
 
     const link = quoteHeader.querySelector('.snv-quoted-repost__link') as HTMLAnchorElement;
     link?.addEventListener('click', (e) => {

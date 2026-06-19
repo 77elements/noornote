@@ -176,13 +176,16 @@
 // ========================================
 .snv-quoted-repost {
   &__header {
-    margin-bottom: calc($gap / 2);
-    padding-left: calc($gap / 2);
-    color: var(--text-alpha-heavy);
+    margin-bottom: calc($gap * 0.75);
   }
 
+  // Link to the original quote-repost: magenta, led by a repost icon.
   &__link {
-    // Inherits global link styles from atoms/_links.scss
+    display: inline-flex;
+    align-items: center;
+    gap: calc($gap / 4);
+    @extend %small;
+    color: var(--color-4);
     font-weight: 600;
 
     strong {
@@ -191,8 +194,24 @@
     }
   }
 
-  // NoteUI .note-card is rendered inside, inherits all NoteUI styles
-  // Hide ISL for quoted reposts (they shouldn't have interaction buttons)
+  &__icon {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+  }
+
+  // The embedded preview is a self-contained framed card, not a feed row:
+  // full border + radius, and no hover highlight.
+  .note-card {
+    border: 1px solid var(--color-2);
+    border-radius: $radius-xl;
+
+    &:hover {
+      background: transparent;
+    }
+  }
+
+  // Hide the ISL: quoted reposts interact on the original, not here.
   .isl {
     display: none;
   }
