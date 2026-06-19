@@ -1675,12 +1675,18 @@ export class ProfileView extends View {
       if (events.length === 0) return;
 
       const { encodeNaddr } = await import('../../services/NostrToolsAdapter');
-      const { escapeHtml } = await import('../../helpers/escapeHtml');
+      const { escapeHtml, escapeHtmlAttr } = await import('../../helpers/escapeHtml');
 
-      const links = events.map(event => {
+      // Each app renders as a Note-Card-style card: icon + name + summary header,
+      // description, and a row of screenshots. No interactions / replies (those
+      // live on the app's detail page, opened by clicking the card).
+      const cards = events.map(event => {
         const tags = event.tags || [];
         const name = getTag(tags, 'name', 'Untitled');
         const summary = getTag(tags, 'summary');
+        const icon = getTag(tags, 'icon');
+        const description = event.content || '';
+        const images = tags.filter(t => t[0] === 'image').map(t => t[1] || '').filter(Boolean);
         const identifier = getTag(tags, 'd');
         const naddr = encodeNaddr({
           kind: 32267,
@@ -1688,23 +1694,36 @@ export class ProfileView extends View {
           identifier,
           relays: ['wss://relay.zapstore.dev'],
         });
-        const truncatedSummary = summary.length > 60 ? summary.slice(0, 60) + '...' : summary;
-        return `<p><a href="/zapstore/${naddr}" class="zapstore-profile-link" data-route="/zapstore/${naddr}">${escapeHtml(name)}</a>${truncatedSummary ? ` - ${escapeHtml(truncatedSummary)}` : ''}</p>`;
+
+        const iconHtml = icon
+          ? `<img class="profile-zapstore-app__icon" src="${escapeHtmlAttr(icon)}" alt="" loading="lazy" />`
+          : '';
+        const shotsHtml = images.length
+          ? `<div class="profile-zapstore-app__shots">${images.map(img => `<img src="${escapeHtmlAttr(img)}" alt="" loading="lazy" />`).join('')}</div>`
+          : '';
+
+        return `
+          <div class="profile-zapstore-app" data-route="/zapstore/${escapeHtmlAttr(naddr)}">
+            <div class="profile-zapstore-app__header">
+              ${iconHtml}
+              <div class="profile-zapstore-app__id">
+                <span class="profile-zapstore-app__name">${escapeHtml(name)}</span>
+                ${summary ? `<span class="profile-zapstore-app__summary">${escapeHtml(summary)}</span>` : ''}
+              </div>
+            </div>
+            ${description ? `<p class="profile-zapstore-app__desc">${escapeHtml(description)}</p>` : ''}
+            ${shotsHtml}
+          </div>
+        `;
       });
 
-      mount.innerHTML = `
-        <div class="profile-zapstore-apps">
-          <h2>Apps on Zapstore</h2>
-          ${links.join('')}
-        </div>
-      `;
+      mount.innerHTML = `<div class="profile-zapstore-apps">${cards.join('')}</div>`;
 
       // Click handlers for internal navigation
       const { Router } = await import('../../services/Router');
-      mount.querySelectorAll('.zapstore-profile-link').forEach(link => {
-        link.addEventListener('click', (e) => {
-          e.preventDefault();
-          const route = (link as HTMLElement).dataset.route;
+      mount.querySelectorAll('.profile-zapstore-app').forEach(card => {
+        card.addEventListener('click', () => {
+          const route = (card as HTMLElement).dataset.route;
           if (route) Router.getInstance().navigate(route);
         });
       });
