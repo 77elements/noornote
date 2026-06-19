@@ -72,7 +72,7 @@ $note-media-max-width: 560px;
   }
 
   // Grid layouts for multiple images: one unified rounded block — outer corners
-  // clipped, square inner corners, thin gaps between cells (Yeni Noor).
+  // clipped, square inner corners, thin gaps between cells (Noor jadÄ«d).
   &[class*="note-media--grid"] {
     display: grid;
     gap: calc($gap / 4);

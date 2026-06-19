@@ -4,7 +4,7 @@
  * Sets data-theme attribute on <html> for CSS custom property overrides.
  */
 
-export type ThemeId = 'default' | 'bright-superman' | 'code-bunker' | 'soft-lilac' | 'dark-symbiote' | 'neon-harley' | 'wake-up-neo' | 'yeni-noor';
+export type ThemeId = 'default' | 'bright-superman' | 'code-bunker' | 'soft-lilac' | 'dark-symbiote' | 'neon-harley' | 'wake-up-neo' | 'noor-jadid';
 
 export interface ThemeOption {
   id: ThemeId;
@@ -12,6 +12,7 @@ export interface ThemeOption {
 }
 
 export const THEMES: ThemeOption[] = [
+  { id: 'noor-jadid', label: 'Noor jadīd' },
   { id: 'default', label: 'Deep Purple' },
   { id: 'bright-superman', label: 'Bright Superman' },
   { id: 'code-bunker', label: 'Code Bunker' },
@@ -19,14 +20,16 @@ export const THEMES: ThemeOption[] = [
   { id: 'dark-symbiote', label: 'Dark Symbiote' },
   { id: 'neon-harley', label: 'Neon Harley' },
   { id: 'wake-up-neo', label: 'Wake up Neo' },
-  { id: 'yeni-noor', label: 'Yeni Noor' },
 ];
+
+// Shipped default for 1.0. Used when the user has never picked a theme.
+export const DEFAULT_THEME: ThemeId = 'noor-jadid';
 
 const STORAGE_KEY = 'noornote_theme';
 
 export class ThemeService {
   private static instance: ThemeService;
-  private currentTheme: ThemeId = 'default';
+  private currentTheme: ThemeId = DEFAULT_THEME;
 
   private constructor() {
     const stored = localStorage.getItem(STORAGE_KEY) as ThemeId | null;
@@ -49,11 +52,9 @@ export class ThemeService {
 
   public setTheme(themeId: ThemeId): void {
     this.currentTheme = themeId;
-    if (themeId === 'default') {
-      localStorage.removeItem(STORAGE_KEY);
-    } else {
-      localStorage.setItem(STORAGE_KEY, themeId);
-    }
+    // Persist every choice. Noor jadīd is the shipped default, so picking any
+    // other theme (Deep Purple included) must be stored to override it.
+    localStorage.setItem(STORAGE_KEY, themeId);
     this.applyTheme();
   }
 
