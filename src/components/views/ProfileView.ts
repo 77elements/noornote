@@ -1436,14 +1436,12 @@ export class ProfileView extends View {
     const tabRow = this.container.querySelector('.profile-tabs');
     if (!tabRow) return;
 
-    const loaders: Record<string, (() => Promise<void>) | undefined> = {
-      articles: () => this.loadArticlesCarousel(),
-      videos: () => this.loadVideosCarousel(),
-      products: () => this.loadListingsCarousel(),
-      zapstore: () => this.loadZapstoreApps(),
-      badges: () => this.loadBadgesCarousel(),
-    };
-    const loaded = new Set<string>(['notes']);
+    // Every non-notes tab starts hidden; it appears once its section loads with
+    // at least one item. Notes is always present and is the default.
+    tabRow.querySelectorAll('.tab').forEach(btn => {
+      const t = (btn as HTMLElement).dataset.tab;
+      if (t && t !== 'notes') (btn as HTMLElement).hidden = true;
+    });
 
     const activate = (tab: string): void => {
       tabRow.querySelectorAll('.tab').forEach(btn => {
@@ -1452,10 +1450,6 @@ export class ProfileView extends View {
       this.container.querySelectorAll('.profile-section').forEach(sec => {
         (sec as HTMLElement).hidden = (sec as HTMLElement).dataset.section !== tab;
       });
-      if (!loaded.has(tab)) {
-        loaded.add(tab);
-        void loaders[tab]?.();
-      }
     };
 
     tabRow.querySelectorAll('.tab').forEach(btn => {
@@ -1464,6 +1458,33 @@ export class ProfileView extends View {
         if (tab) activate(tab);
       });
     });
+
+    // Load each content section into its (hidden) mount up front, then reveal
+    // its tab if it ended up with at least one item.
+    const sections: Array<{ tab: string; loader: () => Promise<void> }> = [
+      { tab: 'articles', loader: () => this.loadArticlesCarousel() },
+      { tab: 'videos', loader: () => this.loadVideosCarousel() },
+      { tab: 'products', loader: () => this.loadListingsCarousel() },
+      { tab: 'zapstore', loader: () => this.loadZapstoreApps() },
+      { tab: 'badges', loader: () => this.loadBadgesCarousel() },
+    ];
+    sections.forEach(({ tab, loader }) => {
+      void loader().then(() => this.revealTabIfHasItems(tab)).catch(() => {});
+    });
+  }
+
+  /**
+   * Reveal a content tab if its section rendered at least one item. Articles /
+   * videos / listings self-gate by setting display:none on an empty carousel;
+   * badges / zapstore render nothing into the mount when empty — so a section
+   * "has items" iff it holds a child that isn't display:none.
+   */
+  private revealTabIfHasItems(tab: string): void {
+    const section = this.container.querySelector(`.profile-section[data-section="${tab}"]`);
+    const hasItems = !!section && [...section.children].some(c => (c as HTMLElement).style.display !== 'none');
+    if (!hasItems) return;
+    const tabBtn = this.container.querySelector(`.profile-tabs .tab[data-tab="${tab}"]`) as HTMLElement | null;
+    if (tabBtn) tabBtn.hidden = false;
   }
 
   private async loadBadgesCarousel(): Promise<void> {
