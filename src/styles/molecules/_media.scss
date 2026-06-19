@@ -13,7 +13,7 @@ $note-media-max-width: 560px;
 
 // Base media container
 .note-media {
-  margin: 1rem 0;
+  margin: calc($gap * 0.75) 0;
 
   img, video {
     max-width: 100%;
@@ -71,53 +71,30 @@ $note-media-max-width: 560px;
     }
   }
 
-  // Grid layouts for multiple images
-  &.note-media--grid-2 {
+  // Grid layouts for multiple images: one unified rounded block — outer corners
+  // clipped, square inner corners, thin gaps between cells (Yeni Noor).
+  &[class*="note-media--grid"] {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: calc($gap / 2);
+    gap: calc($gap / 4);
+    border-radius: $radius-xl;
+    overflow: hidden;
 
     .note-image {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      border-radius: 0;
     }
   }
 
-  &.note-media--grid-3 {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: calc($gap / 2);
-
-    .note-image {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-  }
-
+  &.note-media--grid-2,
   &.note-media--grid-2x2 {
-    display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: calc($gap / 2);
-
-    .note-image {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
   }
 
+  &.note-media--grid-3,
   &.note-media--grid-3-cols {
-    display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    gap: calc($gap / 2);
-
-    .note-image {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
   }
 }
 
