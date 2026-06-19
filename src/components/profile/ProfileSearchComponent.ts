@@ -31,7 +31,7 @@ export class ProfileSearchComponent {
 
     container.innerHTML = `
       <div class="profile-search__trigger">
-        <a href="#" class="profile-search__link">Search in this npub</a>
+        <a href="#" class="profile-search__link" title="Search in this npub"><svg width="18" height="18"><use href="#icon-search"/></svg></a>
       </div>
       <div class="profile-search__overlay is-hidden">
         <div class="profile-search__form">
@@ -84,10 +84,9 @@ export class ProfileSearchComponent {
   private expandSearch(): void {
     if (this.isExpanded) return;
 
-    const trigger = this.container.querySelector('.profile-search__trigger') as HTMLElement;
     const overlay = this.container.querySelector('.profile-search__overlay') as HTMLElement;
 
-    trigger.classList.add('is-hidden');
+    // Keep the search icon visible — the overlay opens below it, the icon stays.
     overlay.classList.remove('is-hidden');
     this.isExpanded = true;
 
@@ -121,12 +120,10 @@ export class ProfileSearchComponent {
   public collapseSearch(): void {
     if (!this.isExpanded) return;
 
-    const trigger = this.container.querySelector('.profile-search__trigger') as HTMLElement;
     const overlay = this.container.querySelector('.profile-search__overlay') as HTMLElement;
     const input = this.container.querySelector('.input') as HTMLInputElement;
 
     overlay.classList.add('is-hidden');
-    trigger.classList.remove('is-hidden');
     this.isExpanded = false;
 
     // Clear input

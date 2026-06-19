@@ -535,8 +535,6 @@ export class ProfileView extends View {
         ` : `
           <div class="profile-banner profile-banner-fallback"></div>
         `}
-        <div class="profile-search-mount"></div>
-
         <div class="profile-info">
           <div class="profile-avatar-wrapper">
             <img src="${escapeHtmlAttr(picture)}" alt="${escapeHtml(displayName)}" class="profile-pic profile-pic--big" />
@@ -547,51 +545,14 @@ export class ProfileView extends View {
             <h1 class="profile-name">${escapeHtml(displayName)}<span class="profile-petname" data-role="petname"></span><span class="profile-petname-note" data-role="petname-note"></span></h1>
             ${nip05s.length > 0 ? `<p class="profile-nip05">${nip05s.map(n => escapeHtml(n)).join(', ')}</p>` : ''}
 
-            <div class="profile-identifiers">
-              ${lud16 ? `
-                <div class="profile-lightning">
-                  <svg class="lightning-icon"><use href="#icon-lightning-filled"/></svg>
-                  <span>${escapeHtml(lud16)}</span>
-                </div>
-              ` : ''}
-
-              <div class="profile-npub">
-                <button class="copy-btn" data-copy="${escapeHtml(this.npub)}" title="Copy npub">
-                  <svg width="16" height="16"><use href="#icon-copy-24"/></svg>
-                </button>
-                <button class="qr-btn" title="npub QR Code">
-                  <svg width="16" height="16"><use href="#icon-qr-code"/></svg>
-                </button>
-                ${this.renderTribeButton()}
-                <button class="profile-badge-btn" title="Award Badge" style="display:none">
-                  <svg width="16" height="16"><use href="#icon-badge"/></svg>
-                </button>
-                ${!isOwnProfile ? `
-                <button class="profile-dm-btn"${isBunker ? ' disabled' : ''} title="${isBunker ? 'Switch to NoorSigner or browser extension to send messages' : 'Send message'}">
-                  <svg width="16" height="16"><use href="#icon-message"/></svg>
-                </button>
-                ` : ''}
-                ${lud16 && !isOwnProfile ? `
-                <span class="profile-npub__separator" aria-hidden="true">|</span>
-                <button class="lightning-qr-btn" title="Lightning QR Code">
-                  <svg width="16" height="16"><use href="#icon-lightning-qr"/></svg>
-                </button>
-                <button class="profile-zap-btn" title="Zap this user">
-                  <svg width="16" height="16"><use href="#icon-lightning-filled"/></svg>
-                </button>
-                ` : ''}
-                <span class="copy-feedback">Copied!</span>
+            ${lud16 ? `
+              <div class="profile-lightning">
+                <svg class="lightning-icon"><use href="#icon-lightning-filled"/></svg>
+                <span>${escapeHtml(lud16)}</span>
               </div>
-            </div>
-
-            <div class="profile-joined-date" id="profile-joined-date"></div>
-
-            ${processedAbout ? `<p class="profile-about section">${processedAbout}</p>` : ''}
-            ${website && safeHttpUrl(website) ? `<p class="profile-website section"><a href="${escapeHtmlAttr(safeHttpUrl(website))}" rel="noopener noreferrer">${escapeHtml(website)}</a></p>` : ''}
+            ` : ''}
 
             <div class="profile-stats">
-              ${this.renderEditButton()}
-              ${this.renderFollowButton()}
               <div class="stat-item stat-item--clickable" id="following-count-link">
                 <strong>${this.followingCount.toLocaleString('en-US')}</strong>
                 <span>Following</span>
@@ -600,8 +561,46 @@ export class ProfileView extends View {
                 <strong id="followers-count">${this.followerCount ? this.followerCount.toLocaleString('en-US') : '...'}</strong>
                 <span>Followers</span>
               </div>
+            </div>
+
+            <div class="profile-joined-date" id="profile-joined-date"></div>
+
+            <div class="profile-npub">
+              <button class="copy-btn" data-copy="${escapeHtml(this.npub)}" title="Copy npub">
+                <svg width="18" height="18"><use href="#icon-copy-24"/></svg>
+              </button>
+              <button class="qr-btn" title="npub QR Code">
+                <svg width="18" height="18"><use href="#icon-qr-code"/></svg>
+              </button>
+              ${this.renderTribeButton()}
+              <button class="profile-badge-btn" title="Award Badge" style="display:none">
+                <svg width="18" height="18"><use href="#icon-badge"/></svg>
+              </button>
+              ${!isOwnProfile ? `
+              <button class="profile-dm-btn"${isBunker ? ' disabled' : ''} title="${isBunker ? 'Switch to NoorSigner or browser extension to send messages' : 'Send message'}">
+                <svg width="18" height="18"><use href="#icon-message"/></svg>
+              </button>
+              ` : ''}
+              ${lud16 && !isOwnProfile ? `
+              <button class="lightning-qr-btn" title="Lightning QR Code">
+                <svg width="18" height="18"><use href="#icon-lightning-qr"/></svg>
+              </button>
+              <button class="profile-zap-btn" title="Zap this user">
+                <svg width="18" height="18"><use href="#icon-lightning-filled"/></svg>
+              </button>
+              ` : ''}
+              <div class="profile-search-mount"></div>
+              <span class="copy-feedback">Copied!</span>
+            </div>
+
+            <div class="profile-actions">
+              ${this.renderEditButton()}
+              ${this.renderFollowButton()}
               ${this.renderMuteButton()}
             </div>
+
+            ${processedAbout ? `<p class="profile-about section">${processedAbout}</p>` : ''}
+            ${website && safeHttpUrl(website) ? `<p class="profile-website section"><a href="${escapeHtmlAttr(safeHttpUrl(website))}" rel="noopener noreferrer">${escapeHtml(website)}</a></p>` : ''}
           </div>
         </div>
 

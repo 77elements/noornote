@@ -43,20 +43,19 @@
   }
 }
 
+// Search trigger now lives inline as the 8th icon in the .profile-npub row.
 .profile-search-mount {
-  position: absolute;
-  top: 200px; // Below banner (banner height)
-  right: 0;
-  z-index: 100;
-  transform: translateY(calc(-100% - 0.5rem)); // Position above the banner bottom edge
+  display: inline-flex;
+}
 
-  @include tablet-down {
-    top: 150px;
-  }
-
-  @include mobile-down {
-    top: 120px;
-  }
+// Follow / Mute / Edit action row (centered).
+.profile-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: calc($gap / 2);
+  margin: $gap 0;
 }
 
 .profile-banner-fallback {
@@ -79,8 +78,9 @@
 .profile-avatar-wrapper {
   margin-bottom: $gap;
   display: flex;
-  align-items: flex-start;
-  gap: $gap;
+  flex-direction: column;
+  align-items: center;
+  gap: calc($gap / 2);
   position: relative;
 
   .badge {
@@ -93,7 +93,8 @@
 }
 
 .profile-meta {
-  padding: 0;
+  padding: 0 $gap;
+  text-align: center;
 }
 
 .profile-name {
@@ -125,7 +126,9 @@
 .profile-lightning {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: calc($gap / 2);
+  margin-top: calc($gap / 2);
   color: var(--color-5);
 }
 
@@ -142,16 +145,61 @@
   word-break: break-all;
 }
 
+// Centered icon row (Copy, QR, Tribe, Badge, DM, Lightning-QR, Zap, Search).
 .profile-npub {
   display: flex;
   align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
   gap: calc($gap / 2);
-  color: var(--color-5);
-  font-family: monospace;
+  margin: $gap 0 calc($gap / 2);
   position: relative;
 
-  > button {
-    border-radius: 50%;
+  // The search trigger's wrapper chain collapses so its link sits inline as an
+  // icon — and drops the wrapper's own pill background.
+  .profile-search-mount,
+  .profile-search,
+  .profile-search__trigger {
+    display: inline-flex;
+    padding: 0;
+    background: transparent;
+    position: static; // so the overlay anchors to .profile-npub, not the icon
+  }
+
+  // Search field opens as a popup below the icon row, so the icon never wraps.
+  .profile-search__overlay {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: calc($gap / 2);
+    z-index: 50;
+  }
+
+  // Unified round icon buttons (38px, bordered, no fill) — Yeni Noor.
+  > button,
+  .tribe-btn,
+  .profile-search__link {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid var(--color-2);
+    border-radius: $radius-full;
+    color: var(--color-5);
+    display: grid;
+    place-items: center;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    &:hover {
+      background: var(--bg-accent);
+      border-color: var(--color-2);
+    }
   }
 
   &__separator {
@@ -350,16 +398,17 @@
 // Profile Stats (Following, Relays, Muted)
 .profile-stats {
   display: flex;
+  justify-content: center;
   flex-wrap: wrap;
-  gap: $gap;
-  margin: 0;
+  gap: calc($gap * 2);
+  margin: $gap 0;
 }
 
 // Stat item (standalone)
 .stat-item {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
 
   &--clickable {
     cursor: pointer;
@@ -460,7 +509,7 @@
 }
 
 .profile-joined-date {
-  text-align: right;
+  text-align: center;
   @extend %small;
   margin: calc($gap / 2) 0 $gap 0;
   opacity: 0.8;
