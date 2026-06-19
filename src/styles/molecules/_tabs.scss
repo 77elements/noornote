@@ -32,14 +32,15 @@
 // Tab Button
 // ========================================
 .tab {
+  // Flat underline tab (Yeni Noor): muted by default, magenta underline + lighter
+  // text when active. No rounded corners, no active background fill.
   padding: calc($gap / 2) $gap;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
-  border-radius: $radius-xl $radius-xl 0 0;
-  color: var(--color-4);
+  color: var(--text-alpha-medium);
   cursor: pointer;
-  font-weight: 500;
+  font-weight: 600;
   transition: all 0.2s ease;
 
   &:hover {
@@ -48,8 +49,7 @@
 
   &.tab--active {
     color: var(--color-5);
-    border-bottom-color: var(--color-5);
-    @extend %bg-section;
+    border-bottom-color: var(--color-4);
     cursor: default;
   }
 
