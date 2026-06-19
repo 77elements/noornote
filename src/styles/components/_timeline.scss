@@ -179,19 +179,33 @@
 
 /* Quote Box - styled exactly like normal notes */
 .quote-box {
-  padding: 0 0 0 1.5rem;
-  margin: 1.5rem 0;
-  border-left: 1px solid var(--color-3);
+  // Self-contained preview box (Yeni Noor): thin border, rounded, inset padding.
+  border: 1px solid var(--color-2);
+  border-radius: $radius-xl;
+  padding: calc($gap * 0.75);
+  margin: calc($gap * 0.75) 0;
 
-  // No special styling - quoted notes look exactly like normal notes
-  .note-card {
-    // Keep all default note-card styling
+  // Compact header: reuse the mini (18px) avatar, no avatar border, smaller name.
+  .profile-pic--medium {
+    width: 18px;
+    height: 18px;
+    border: none;
   }
 
-  // Max nesting depth: 7 levels
-  // After level 7, stop indenting to preserve readability
+  .user-identity--inline .user-identity__username {
+    @include small;
+  }
+
+  // Quoted body reads as a secondary preview: slightly smaller and dimmed.
+  .event-content {
+    @include compact;
+    color: var(--text-alpha-heavy);
+  }
+
+  // Max nesting depth: after 7 levels, drop the box padding so deeply nested
+  // quotes don't compound into an unreadable sliver.
   .quote-box .quote-box .quote-box .quote-box .quote-box .quote-box .quote-box {
-    padding-left: 0;
+    padding: 0;
   }
 }
 
