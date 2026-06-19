@@ -11,7 +11,7 @@
 
 .note-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: calc($gap / 2);
   width: 100%;
@@ -44,8 +44,17 @@
 // Client tag (e.g. "via NoorNote")
 .note-header__client {
   @extend %small;
-  color: var(--color-3);
+  color: var(--text-alpha-light);
   white-space: nowrap;
+}
+
+// Dot separators before the timestamp and via-client in the inline id-row.
+// The dot hugs its own element; the id-row gap handles the space before it.
+.note-header__timestamp::before,
+.note-header__client::before {
+  content: '·';
+  margin-right: calc($gap / 4);
+  color: var(--text-alpha-light);
 }
 
 // Meta section (verification, timestamp, menu)
@@ -56,23 +65,11 @@
   flex-shrink: 0;
 }
 
-// Verification badge
+// Verification badge — plain magenta checkmark hugging the name (inline id-row)
 .note-header__verification {
-  width: 16px;
-  height: 16px;
   @extend %small;
   color: var(--color-4);
-  background: color-mix(in srgb, var(--color-4) 20%, transparent);
-  border-radius: $radius-full;
-  display: grid;
-  place-items: center;
   font-weight: bold;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: color-mix(in srgb, var(--color-4) 30%, transparent);
-    transform: scale(1.1);
-  }
 }
 
 // Timestamp

@@ -45,6 +45,31 @@
   }
 }
 
+// Inline variant — avatar + a single baseline id-row (name ✓ @handle · time · via).
+// Used by note headers (TV, PV, SNV, quotes). Stacked consumers (DMs,
+// notifications) keep the default column layout until their own redesign.
+.user-identity--inline {
+  align-items: center;
+  gap: calc($gap * 0.75); // avatar ↔ id-row
+
+  .user-identity__info {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: calc($gap / 4);
+  }
+
+  .user-identity__username {
+    @include compact;
+    font-weight: 700;
+    margin-right: calc($gap / 2);
+  }
+
+  .user-identity__handle {
+    color: var(--text-alpha-medium);
+  }
+}
+
 // Clickable state
 .user-identity--clickable {
   cursor: pointer;

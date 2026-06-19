@@ -31,6 +31,7 @@ export interface UserIdentityConfig {
   showAvatar?: boolean; // Default: true
   showUsername?: boolean; // Default: true
   showHandle?: boolean; // Default: false - show NIP-05 handle
+  inline?: boolean; // Default: false - lay avatar + name/handle on one baseline row (note headers)
   enableHoverCard?: boolean; // Default: true - show user hover card on hover
   clickable?: boolean; // Default: false - click navigates to profile
   onClick?: (pubkey: string) => void; // Custom click handler (overrides default navigation)
@@ -55,6 +56,7 @@ export class UserIdentity {
       showAvatar: true,
       showUsername: true,
       showHandle: false,
+      inline: false,
       enableHoverCard: true,
       clickable: false,
       ...config
@@ -91,6 +93,9 @@ export class UserIdentity {
   private createElement(): HTMLElement {
     const container = document.createElement('div');
     const classes = [`user-identity`, `user-identity--${this.config.size}`];
+    if (this.config.inline) {
+      classes.push('user-identity--inline');
+    }
     if (this.config.clickable) {
       classes.push('user-identity--clickable');
     }

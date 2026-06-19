@@ -50,6 +50,7 @@ export class NoteHeader {
       showAvatar: true,
       showUsername: true,
       showHandle: this.options.showHandle,
+      inline: true,
       enableHoverCard: true,
       clickable: true
     };
@@ -69,57 +70,63 @@ export class NoteHeader {
     const header = document.createElement('div');
     header.className = 'note-header';
 
-    // User identity section (avatar + name + handle + client)
+    // User identity section (avatar + the inline id-row built by UserIdentity)
     const userSection = document.createElement('div');
     userSection.className = 'note-header__user';
     const identityEl = this.userIdentity.getElement();
     userSection.appendChild(identityEl);
 
-    const clientTag = this.options.rawEvent?.tags?.find((tag: string[]) => tag[0] === 'client');
-    if (clientTag?.[1]) {
-      const handleEl = identityEl.querySelector('.user-identity__handle');
-      const infoEl = identityEl.querySelector('.user-identity__info');
-      if (handleEl && infoEl) {
-        const handleRow = document.createElement('div');
-        handleRow.className = 'note-header__handle-row';
-        infoEl.insertBefore(handleRow, handleEl);
-        handleRow.appendChild(handleEl);
+    // Inject the note-specific bits straight into UserIdentity's __info row so
+    // name ✓ @handle · time · via all sit on one baseline (mockup order). The
+    // verification/timestamp classes are unchanged, so their subscriptions and
+    // queries keep working — only their position in the DOM moves.
+    const infoEl = identityEl.querySelector('.user-identity__info');
+    if (infoEl) {
+      const usernameEl = infoEl.querySelector('.user-identity__username');
+      const handleEl = infoEl.querySelector('.user-identity__handle');
 
+      // Verification ✓ — directly after the name
+      if (this.options.showVerification) {
+        const verification = document.createElement('span');
+        verification.className = 'note-header__verification';
+        verification.style.display = 'none';
+        verification.textContent = '✓';
+        if (usernameEl) usernameEl.after(verification);
+        else infoEl.prepend(verification);
+      }
+
+      // NIP-22 comment marker — after the handle
+      if (this.options.rawEvent?.kind === 1111) {
+        const commentMarker = document.createElement('span');
+        commentMarker.className = 'note-header__nip22-marker';
+        commentMarker.textContent = 'Kind:1111';
+        if (handleEl) handleEl.after(commentMarker);
+        else infoEl.appendChild(commentMarker);
+      }
+
+      // Timestamp — after the handle (separator dot via CSS ::before)
+      if (this.options.showTimestamp) {
+        const timestamp = document.createElement('time');
+        timestamp.className = 'note-header__timestamp';
+        timestamp.innerHTML = formatTimestamp(this.options.timestamp);
+        infoEl.appendChild(timestamp);
+      }
+
+      // via-client — after the timestamp (separator dot via CSS ::before)
+      const clientTag = this.options.rawEvent?.tags?.find((tag: string[]) => tag[0] === 'client');
+      if (clientTag?.[1]) {
         const clientEl = document.createElement('span');
         clientEl.className = 'note-header__client';
         clientEl.textContent = `via ${clientTag[1]}`;
-        handleRow.appendChild(clientEl);
+        infoEl.appendChild(clientEl);
       }
     }
 
     header.appendChild(userSection);
 
-    // Note meta section (timestamp + verification + menu)
+    // Note meta section — the menu only (pushed to the right edge)
     const metaSection = document.createElement('div');
     metaSection.className = 'note-header__meta';
-
-    if (this.options.showVerification) {
-      const verification = document.createElement('span');
-      verification.className = 'note-header__verification';
-      verification.style.display = 'none';
-      verification.textContent = '✓';
-      metaSection.appendChild(verification);
-    }
-
-    // NIP-22 comment marker (before timestamp)
-    if (this.options.rawEvent?.kind === 1111) {
-      const commentMarker = document.createElement('span');
-      commentMarker.className = 'note-header__nip22-marker';
-      commentMarker.textContent = 'Kind:1111';
-      metaSection.appendChild(commentMarker);
-    }
-
-    if (this.options.showTimestamp) {
-      const timestamp = document.createElement('time');
-      timestamp.className = 'note-header__timestamp';
-      timestamp.innerHTML = formatTimestamp(this.options.timestamp);
-      metaSection.appendChild(timestamp);
-    }
 
     if (this.options.showMenu) {
       const menuContainer = document.createElement('span');

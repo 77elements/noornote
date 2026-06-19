@@ -63,6 +63,7 @@ temp/
 screenshots/
 docs/
 diagnose/
+mockups/
 CLAUDE.md
 sync-protected.sh
 protected-files.zip

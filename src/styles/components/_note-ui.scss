@@ -21,7 +21,7 @@ html.content-visibility-auto .note-card {
 // quote boxes, single-note view, etc.) so the gap below the header is consistent
 // regardless of the surrounding container.
 .note-header {
-  margin-bottom: calc($gap / 2);
+  margin-bottom: calc($gap * 0.75);
 }
 
 // Event content baseline — readable line-height wherever .event-content
@@ -32,9 +32,10 @@ html.content-visibility-auto .note-card {
 
 // Base note card (used in all views)
 .note-card {
-  margin: 0 0 calc($gap / 2) 0;
-  padding: calc($gap / 2) calc($gap / 2) 0 calc($gap / 2);
-  border-radius: $radius-pill;
+  margin: 0;
+  padding: $gap;
+  border-bottom: 1px solid var(--color-2);
+  border-radius: $radius-xl;
   transition: background 0.2s ease;
 
   // Smooth scrolling optimizations (containment for better rendering performance)
@@ -42,6 +43,13 @@ html.content-visibility-auto .note-card {
 
   &:hover {
     background: var(--color-2);
+    border-bottom-color: transparent;
+  }
+
+  // Hide the divider directly above a hovered card so the straight line
+  // doesn't ride up against the hovered panel's rounded corner.
+  &:has(+ .note-card:hover) {
+    border-bottom-color: transparent;
   }
 
   // Reply indicator (shows parent author) - DEPRECATED, use thread-context-indicator
@@ -133,7 +141,7 @@ html.content-visibility-auto .note-card {
   .event-content {
     color: var(--color-5);
     line-height: 1.5;
-    margin-bottom: calc($gap / 2);
+    margin-bottom: calc($gap * 0.75);
 
     word-wrap: break-word;
     word-break: break-word;
@@ -278,8 +286,10 @@ html.content-visibility-auto .note-card {
       margin-top: calc($gap / 2);
     }
 
-    // Nested note-card (original note) should not have bottom border/margin
+    // Nested note-card (original note): the outer repost card already
+    // provides the 16px frame + divider, so the inner one carries none.
     > .note-card {
+      padding: 0;
       border-bottom: none;
       margin-bottom: 0;
 
@@ -297,7 +307,8 @@ html.content-visibility-auto .note-card {
   align-items: center;
   gap: calc($gap / 2);
   color: var(--color-3);
-  margin: calc($gap * 0.75) 0;
+  // Bottom-only: the outer repost card's 16px padding provides the top inset.
+  margin: 0 0 calc($gap * 0.75);
 }
 
 // Repost icon (standalone)
