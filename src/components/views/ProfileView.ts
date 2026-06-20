@@ -625,7 +625,7 @@ export class ProfileView extends View {
       <div class="profile-listings-mount profile-section" data-section="products" hidden></div>
       <div class="profile-zapstore-mount profile-section" data-section="zapstore" hidden></div>
       <div class="profile-timeline profile-section" data-section="notes">
-        <h2 class="profile-timeline-heading">Notes</h2>
+        <h2 class="profile-timeline-heading visually-hidden">Notes</h2>
       </div>
     `;
 
