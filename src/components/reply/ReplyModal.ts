@@ -223,8 +223,26 @@ export class ReplyModal {
   private renderParentNote(): string {
     if (!this.parentEvent) return '';
 
-    // Render parent note using NoteUI (with header, without ISL)
-    // Setting islFetchStats=false and isLoggedIn=false hides the ISL
+    // Empty mount container; the live note node is appended in setupEventHandlers().
+    // Serializing to outerHTML would detach the async quote/media upgrades from the
+    // visible DOM, leaving embedded quotes stuck as skeletons.
+    return `
+      <div class="reply-modal-parent">
+        <div class="reply-modal-parent-note" data-parent-mount></div>
+      </div>
+    `;
+  }
+
+  /**
+   * Mount the live parent note node (with header, without ISL) into its container.
+   * Must use the live HTMLElement so NoteUI's async quote/media upgrades resolve
+   * in the visible modal DOM.
+   */
+  private mountParentNote(modal: Element): void {
+    if (!this.parentEvent) return;
+    const mount = modal.querySelector('[data-parent-mount]');
+    if (!mount) return;
+
     const noteElement = NoteUI.createNoteElement(this.parentEvent, {
       collapsible: false,
       islFetchStats: false,
@@ -232,12 +250,7 @@ export class ReplyModal {
       headerSize: 'medium',
       depth: 0
     });
-
-    return `
-      <div class="reply-modal-parent">
-        <div class="reply-modal-parent-note">${noteElement.outerHTML}</div>
-      </div>
-    `;
+    mount.appendChild(noteElement);
   }
 
   /**
@@ -373,6 +386,9 @@ export class ReplyModal {
   private setupEventHandlers(): void {
     const modal = document.querySelector('.reply-modal');
     if (!modal) return;
+
+    // Mount the live parent note node (resolves embedded quotes/media in place)
+    this.mountParentNote(modal);
 
     // Mount relay selector into modal__header (outside overflow container)
     const modalHeader = modal.closest('.modal__body')?.previousElementSibling as HTMLElement;
