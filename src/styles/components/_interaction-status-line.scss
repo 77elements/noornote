@@ -181,4 +181,71 @@
   }
 }
 
+// Mobile only: Repost + Quote merged into one .custom-dropdown to save space.
+// The trigger mirrors an icon-only .isl-action pill; the counts sit next to the
+// two menu items instead of on the trigger.
+.isl-repost-menu {
+  &.custom-dropdown {
+    display: inline-block;
+    width: auto;
+  }
+
+  .custom-dropdown__trigger {
+    width: auto;
+    justify-content: center;
+    gap: 0;
+    padding: calc($gap / 2) calc($gap * 0.75);
+    background: var(--color-2);
+    border-radius: $radius-full;
+    color: var(--text-alpha-medium);
+
+    &:hover {
+      color: var(--color-4);
+      background: var(--bg-accent);
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+
+  // No chevron — the repost icon is the affordance.
+  .custom-dropdown__arrow {
+    display: none;
+  }
+
+  // Open to the bottom-right of the icon (left-anchored so it extends rightward).
+  .custom-dropdown__menu {
+    left: 0;
+    right: auto;
+  }
+
+  // Flip to top-right when there isn't enough room below (toggled in JS).
+  &.isl-repost-menu--up .custom-dropdown__menu {
+    top: auto;
+    bottom: calc(100% + 4px);
+  }
+
+  // "(n)" reads as a secondary count beside each item label.
+  .custom-dropdown__item .isl-count {
+    font-weight: 400;
+    color: var(--text-alpha-medium);
+  }
+}
+
+// Reposted state on the merged mobile trigger (RepostManager adds .active).
+.isl-repost-menu .custom-dropdown__trigger.active {
+  color: var(--color-4);
+  background: var(--bg-accent);
+}
+
+// .note-card uses `contain: layout`, making every card its own stacking
+// context — so the menu's own z-index is trapped inside the card and the next
+// card paints (and hit-tests) on top of it. Lift the card holding the open
+// menu above its siblings so the menu is both visible and clickable.
+.note-card:has(.isl-repost-menu.custom-dropdown--open) {
+  position: relative;
+  z-index: $z-dropdown;
+}
+
 // Mobile keeps the same flex space-between layout — already responsive.

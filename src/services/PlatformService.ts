@@ -52,6 +52,9 @@ export class PlatformService {
   /** True if running on Android */
   readonly isAndroid: boolean;
 
+  /** True if running on a mobile device (Capacitor or Android browser) */
+  readonly isMobile: boolean;
+
   /** True if Amber (NIP-55) signer can be used (Android native only) */
   readonly supportsAmber: boolean;
 
@@ -79,6 +82,10 @@ export class PlatformService {
     // Android detection (Capacitor or userAgent)
     this.isAndroid = this.isCapacitor ||
       userAgent.includes('android');
+
+    // Mobile = any Android runtime (Capacitor native or Android browser).
+    // Mirrors the platform--mobile CSS class added below.
+    this.isMobile = this.isAndroid;
 
     // Desktop = Electron
     this.isDesktop = this.isElectron;

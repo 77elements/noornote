@@ -305,7 +305,8 @@ export class NoteStructureBuilder {
         target.closest('.article-preview-card') ||
         target.closest('.timeline-listing-card') ||
         target.closest('.reply-indicator') ||
-        target.closest('.thread-context-indicator')
+        target.closest('.thread-context-indicator') ||
+        target.closest('.custom-dropdown')
       ) {
         return;
       }

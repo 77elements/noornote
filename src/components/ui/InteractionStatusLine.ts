@@ -12,6 +12,8 @@ import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { isBookmarksEnabled } from '../../addons/bookmarks/index';
 import { formatCount } from '../../helpers/formatCount';
+import { PlatformService } from '../../services/PlatformService';
+import { CustomDropdown } from './CustomDropdown';
 import { ZapManager } from './interaction-managers/ZapManager';
 import { LikeManager } from './interaction-managers/LikeManager';
 import { RepostManager } from './interaction-managers/RepostManager';
@@ -58,6 +60,8 @@ export class InteractionStatusLine {
   private zapManager: ZapManager | null = null;
   private likeManager: LikeManager | null = null;
   private repostManager: RepostManager | null = null;
+  // Mobile only: merged Repost+Quote action menu (saves ISL horizontal space).
+  private repostMenu: CustomDropdown | null = null;
 
   constructor(config: ISLConfig) {
     this.config = config;
@@ -215,6 +219,23 @@ export class InteractionStatusLine {
          </button>`
       : '';
 
+    // Mobile: Repost + Quote are merged into one icon that opens a dropdown
+    // (see attachRepostMenu). Desktop keeps the two separate pill buttons.
+    const isMobile = PlatformService.getInstance().isMobile;
+    const repostQuoteHtml = isMobile
+      ? ''
+      : `
+      <button class="isl-action isl-repost" type="button" data-action="repost" title="Repost">
+        <span class="isl-icon"><svg width="18" height="18"><use href="#icon-repost"/></svg></span>
+        <span class="isl-count">${formatCount(this.stats.reposts)}</span>
+      </button>
+
+      <button class="isl-action isl-quote" type="button" data-action="quote" title="Quoted Repost">
+        <span class="isl-icon">❝</span>
+        <span class="isl-count">${formatCount(this.stats.quotedReposts)}</span>
+      </button>
+    `;
+
     container.innerHTML = `
       <button class="isl-action isl-reply" type="button" data-action="reply" title="Reply">
         <span class="isl-icon"><svg width="18" height="18"><use href="#icon-thread-bubble"/></svg></span>
@@ -226,15 +247,7 @@ export class InteractionStatusLine {
         <span class="isl-count">${formatCount(this.stats.zaps)}</span>
       </button>
 
-      <button class="isl-action isl-repost" type="button" data-action="repost" title="Repost">
-        <span class="isl-icon"><svg width="18" height="18"><use href="#icon-repost"/></svg></span>
-        <span class="isl-count">${formatCount(this.stats.reposts)}</span>
-      </button>
-
-      <button class="isl-action isl-quote" type="button" data-action="quote" title="Quoted Repost">
-        <span class="isl-icon">❝</span>
-        <span class="isl-count">${formatCount(this.stats.quotedReposts)}</span>
-      </button>
+      ${repostQuoteHtml}
 
       <button class="isl-action isl-like" type="button" data-action="like" title="Like">
         <span class="isl-icon">♡</span>
@@ -245,9 +258,68 @@ export class InteractionStatusLine {
       ${bookmarkHtml}
     `;
 
+    if (isMobile) {
+      this.attachRepostMenu(container);
+    }
+
     this.attachEventListeners(container);
 
     return container;
+  }
+
+  /**
+   * Count shown next to a Repost/Quote menu item: " (n)" when there are any,
+   * empty otherwise — so items read "Repost" or "Repost (2)".
+   */
+  private formatMenuCount(count: number): string {
+    return count > 0 ? ` (${formatCount(count)})` : '';
+  }
+
+  /**
+   * Mobile only: build the merged Repost/Quote dropdown and insert it where the
+   * separate repost+quote buttons would otherwise sit (before the Like button).
+   * The trigger shows just the repost icon; the counts live next to the two
+   * menu items ("Repost (n)" / "Quote (n)").
+   */
+  private attachRepostMenu(container: HTMLElement): void {
+    if (!this.repostManager) return;
+
+    this.repostMenu = new CustomDropdown({
+      options: [
+        { value: 'repost', label: `Repost<span class="isl-count">${this.formatMenuCount(this.stats.reposts)}</span>` },
+        { value: 'quote', label: `Quote<span class="isl-count">${this.formatMenuCount(this.stats.quotedReposts)}</span>` },
+      ],
+      selectedValue: '',
+      onChange: (value) => {
+        if (!this.repostManager) return;
+        if (value === 'repost') {
+          void this.repostManager.handleRepost();
+        } else if (value === 'quote') {
+          void this.repostManager.handleQuote();
+        }
+      },
+      className: 'isl-repost-menu',
+    });
+
+    const menuEl = this.repostMenu.getElement();
+    const trigger = menuEl.querySelector('.custom-dropdown__trigger');
+    if (trigger) {
+      trigger.setAttribute('title', 'Repost');
+      trigger.innerHTML = '<span class="isl-icon"><svg width="18" height="18"><use href="#icon-repost"/></svg></span>';
+      // Lets the RepostManager reflect the "already reposted" state on the icon.
+      this.repostManager.setButtonElement(trigger as HTMLElement);
+
+      // Open downward by default, upward when near the bottom of the screen.
+      // Capture phase runs before CustomDropdown's own toggle handler.
+      trigger.addEventListener('click', () => {
+        const rect = (trigger as HTMLElement).getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        menuEl.classList.toggle('isl-repost-menu--up', spaceBelow < 140);
+      }, true);
+    }
+
+    const likeBtn = container.querySelector('.isl-like');
+    container.insertBefore(menuEl, likeBtn);
   }
 
   /**
@@ -418,6 +490,18 @@ export class InteractionStatusLine {
     if (quotedRepostsCount && stats.quotedReposts !== undefined) {
       quotedRepostsCount.textContent = formatCount(stats.quotedReposts);
     }
+    // Mobile: counts live inside the merged Repost/Quote dropdown items.
+    if (this.repostMenu) {
+      const menuEl = this.repostMenu.getElement();
+      const menuRepostCount = menuEl.querySelector('[data-value="repost"] .isl-count');
+      const menuQuoteCount = menuEl.querySelector('[data-value="quote"] .isl-count');
+      if (menuRepostCount && stats.reposts !== undefined) {
+        menuRepostCount.textContent = this.formatMenuCount(stats.reposts);
+      }
+      if (menuQuoteCount && stats.quotedReposts !== undefined) {
+        menuQuoteCount.textContent = this.formatMenuCount(stats.quotedReposts);
+      }
+    }
     if (likesCount && stats.likes !== undefined) {
       likesCount.textContent = formatCount(stats.likes);
     }
@@ -461,6 +545,10 @@ export class InteractionStatusLine {
     }
     if (this.repostManager) {
       this.repostManager = null;
+    }
+    if (this.repostMenu) {
+      this.repostMenu.destroy();
+      this.repostMenu = null;
     }
     this.element.remove();
   }

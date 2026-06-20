@@ -55,6 +55,19 @@ export class CustomDropdown {
   private searchable: boolean;
   private isOpen = false;
 
+  // Stored so destroy() can detach them — the ISL creates one dropdown per note,
+  // so anonymous document listeners would leak on every timeline card recycle.
+  private readonly onDocumentClick = (e: MouseEvent): void => {
+    if (this.isOpen && !this.element.contains(e.target as Node)) {
+      this.close();
+    }
+  };
+  private readonly onDocumentKeydown = (e: KeyboardEvent): void => {
+    if (e.key === 'Escape' && this.isOpen) {
+      this.close();
+    }
+  };
+
   constructor(config: CustomDropdownOptions) {
     this.options = config.options;
     this.selectedValue = config.selectedValue;
@@ -149,18 +162,10 @@ export class CustomDropdown {
     }
 
     // Close on click outside
-    document.addEventListener('click', (e) => {
-      if (this.isOpen && !this.element.contains(e.target as Node)) {
-        this.close();
-      }
-    });
+    document.addEventListener('click', this.onDocumentClick);
 
     // Close on ESC key
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.isOpen) {
-        this.close();
-      }
-    });
+    document.addEventListener('keydown', this.onDocumentKeydown);
   }
 
   /** Show only items whose label contains the query (case-insensitive). */
@@ -306,6 +311,8 @@ export class CustomDropdown {
    * Cleanup
    */
   public destroy(): void {
+    document.removeEventListener('click', this.onDocumentClick);
+    document.removeEventListener('keydown', this.onDocumentKeydown);
     this.element.remove();
   }
 }
