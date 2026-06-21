@@ -56,10 +56,10 @@
 .reply-modal-timeline-switch {
   padding-block: calc($gap / 2); // half a gap more breathing room above/below the row
 
-  // Group the label next to the switch instead of pushing them to opposite edges
+  // Group the label next to the switch, pushed to the right edge
   .switch-label {
     grid-template-columns: auto auto;
-    justify-content: start;
+    justify-content: end;
   }
 }
 
