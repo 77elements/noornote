@@ -190,6 +190,32 @@ export class Router {
   }
 
   /**
+   * Replace the current URL in place (no new history entry, no re-render).
+   * Used to canonicalize a URL that already maps to the current view — e.g. a note
+   * reached as /note/<hex> or /note/<nevent-with-relay-hints> is normalised to its
+   * one canonical /note/<nevent> form, so the same note never piles up as multiple
+   * history entries the Back button has to step through.
+   */
+  public replaceUrl(path: string): void {
+    if (path === this.currentPath) return;
+
+    // Preserve the secondary-pane state (?scc=) just like navigate() does.
+    const scc = new URLSearchParams(window.location.search).get('scc');
+    const targetUrl = scc ? `${path}?scc=${encodeURIComponent(scc)}` : path;
+    window.history.replaceState({}, '', targetUrl);
+
+    // Keep the custom history stack consistent: rewrite the current top entry.
+    if (this.historyIndex >= 0 && this.history[this.historyIndex] !== undefined) {
+      this.history[this.historyIndex] = path;
+      this.saveHistory();
+    }
+
+    this.currentPath = path;
+    sessionStorage.setItem(this.SESSION_STORAGE_KEY, path);
+    this.persistRoute(path);
+  }
+
+  /**
    * Go back in history
    */
   public back(): void {

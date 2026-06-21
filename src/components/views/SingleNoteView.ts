@@ -23,7 +23,7 @@ import { SystemLogger } from '../../services/SystemLogger';
 import { AppState } from '../../services/AppState';
 import { Router } from '../../services/Router';
 import { TypedEventBus } from '../../core/TypedEventBus';
-import { decodeNip19, encodeNpub } from '../../services/NostrToolsAdapter';
+import { decodeNip19, encodeNpub, encodeNevent } from '../../services/NostrToolsAdapter';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 export class SingleNoteView extends View {
@@ -83,6 +83,10 @@ export class SingleNoteView extends View {
         ? await this.fetchAddressable(this.noteId)
         : await this.fetchNote(this.decodeNoteId(this.noteId));
 
+      if (event && !this.noteId.startsWith('naddr1')) {
+        this.canonicalizeUrl(this.decodeNoteId(this.noteId));
+      }
+
       if (!event) {
         this.showError('Note not found');
         return;
@@ -108,6 +112,25 @@ export class SingleNoteView extends View {
       }
     }
     return noteId;
+  }
+
+  /**
+   * Normalise the address-bar URL to the one canonical /note/<nevent> form for this
+   * note. Whether it was opened as /note/<hex> (notifications) or a relay-hinted
+   * nevent (threads, search, bookmarks), the URL collapses to a single deterministic
+   * entry — so Back leaves the note instead of stepping through duplicate encodings.
+   * Only touches the primary (pathname) view; scc note tabs manage their own URL.
+   */
+  private canonicalizeUrl(hexId: string): void {
+    if (!window.location.pathname.startsWith('/note/')) return;
+    try {
+      const canonical = `/note/${encodeNevent(hexId)}`;
+      if (this.router.getCurrentPath() !== canonical) {
+        this.router.replaceUrl(canonical);
+      }
+    } catch {
+      // Encoding failed — leave the URL untouched.
+    }
   }
 
   private async fetchAddressable(naddrRef: string): Promise<NostrEvent | null> {

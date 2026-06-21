@@ -11,6 +11,8 @@ import { getViewNavigationController } from '../../services/ViewNavigationContro
 import { hexToNpub, npubToHex } from '../../helpers/nip19';
 import type { UserProfile } from '../../services/UserProfileService';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { npubToUsername } from '../../helpers/npubToUsername';
+import { ContentProcessor } from '../../services/ContentProcessor';
 
 export class UserHoverCard {
   private static instance: UserHoverCard | null = null;
@@ -135,7 +137,7 @@ export class UserHoverCard {
           <div class="user-hover-card__username">${escapeHtml(handle)}</div>
         </div>
       </div>
-      ${truncatedAbout ? `<div class="user-hover-card__bio">${escapeHtml(truncatedAbout)}</div>` : ''}
+      ${truncatedAbout ? `<div class="user-hover-card__bio">${npubToUsername(escapeHtml(truncatedAbout), 'html-multi', (hex: string) => ContentProcessor.getInstance().getNonBlockingProfile(hex))}</div>` : ''}
       ${!isOwnProfile ? `<div class="user-hover-card__actions" data-pubkey="${pubkey}"></div>` : ''}
     `;
   }
