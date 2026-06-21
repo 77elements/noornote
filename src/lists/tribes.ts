@@ -28,6 +28,7 @@ import { SystemLogger } from '../services/SystemLogger';
 import { TypedEventBus } from '../core/TypedEventBus';
 import { DeletionService } from '../services/DeletionService';
 import { diagLog } from '../services/DiagnosticLogger';
+import { type DeletionRecordConfig, publishDeletionChange, syncDeletionsIntoLocal } from './listDeletionRecord';
 import { AuthService } from '../services/AuthService';
 import { ToastService } from '../services/ToastService';
 import { ModalService } from '../services/ModalService';
@@ -1292,6 +1293,11 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
       return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
     }
 
+    // Pull the shared cross-device deletion record into the local tombstone map
+    // BEFORE filtering, so deletions made on the user's other devices suppress here
+    // too (mirrors fetchBookmarksFromRelays). Cross-device "deleted stays deleted".
+    await syncTribeDeletionsIntoLocal(pubkey);
+
     // Deduplicate by d-tag (keep newest per tribe)
     const eventsByDTag = new Map<string, NostrEvent>();
     const tombstonedSkipped: string[] = [];
@@ -1499,6 +1505,9 @@ export function addTribeTombstone(tribeName: string): void {
   map[tribeName] = Math.floor(Date.now() / 1000);
   setTribeTombstones(map);
   diagLog('lists', 'addTribeTombstone', { tribeName, total: Object.keys(map).length });
+  // Mirror into the shared, durable deletion record so the delete propagates
+  // to the user's other devices (best-effort, never blocks the local mutation).
+  publishTribeDeletionChange(tribeName, true);
 }
 
 export function removeTribeTombstone(tribeName: string): void {
@@ -1508,6 +1517,30 @@ export function removeTribeTombstone(tribeName: string): void {
   delete map[tribeName];
   setTribeTombstones(map);
   diagLog('lists', 'removeTribeTombstone', { tribeName, remaining: Object.keys(map).length });
+  // Mirror the revival (explicit re-creation) so it overrides the deletion on
+  // every device. Only fires when an actual tombstone was cleared (guard above).
+  publishTribeDeletionChange(tribeName, false);
+}
+
+// Shared cross-device deletion record (NIP-78 kind:30078) — see src/lists/listDeletionRecord.ts.
+// Binds the shared implementation to the tribe tombstone map, identical to the bookmark
+// binding so both lists behave the same. The thin wrappers keep call-site names local.
+const TRIBE_DELETION_CONFIG: DeletionRecordConfig = {
+  dTag: 'noornote:tribe-deletions',
+  alt: 'NoorNote deleted tribes',
+  logLabel: 'tribe-deletions',
+  getLocalTombstones: getTribeTombstones,
+  setLocalTombstones: setTribeTombstones,
+};
+
+/** Fire-and-forget mirror of a local tombstone add/remove into the shared record. */
+function publishTribeDeletionChange(tribeName: string, deleted: boolean): void {
+  publishDeletionChange(TRIBE_DELETION_CONFIG, tribeName, deleted);
+}
+
+/** Pull the shared deletion record into the local tombstone map (before the fetch filter). */
+function syncTribeDeletionsIntoLocal(pubkey: string): Promise<void> {
+  return syncDeletionsIntoLocal(TRIBE_DELETION_CONFIG, pubkey);
 }
 
 /**

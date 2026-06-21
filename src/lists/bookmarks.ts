@@ -67,6 +67,7 @@ import {
   encryptContent,
   decryptContent
 } from './relays';
+import { type DeletionRecordConfig, publishDeletionChange, syncDeletionsIntoLocal } from './listDeletionRecord';
 
 // Re-export for backward compatibility
 export { StorageKeys };
@@ -1494,127 +1495,25 @@ export function removeBookmarkFolderTombstone(folderName: string): void {
   publishBookmarkDeletionChange(folderName, false);
 }
 
-// ============================================================
-// Shared cross-device deletion record (NIP-78 kind:30078)
-// ------------------------------------------------------------
-// The local BOOKMARK_TOMBSTONES map is per-device and lost on reinstall. To make
-// "deleted stays deleted" work across all of the user's devices WITHOUT relying on
-// NIP-09 kind:5 (which relays garbage-collect — the root cause of resurrection), we
-// keep a single durable replaceable event that records, per folder name, the latest
-// intent: deleted (d:true) or revived (d:false) plus a timestamp. It is ordinary
-// app-data, not a deletion marker, so relays keep it like any replaceable event.
-//
-// Format is plaintext JSON (consistent with the existing folder-order event, which
-// already exposes active folder names): { v:1, entries: { "<name>": { t:<sec>, d:<bool> } } }.
-// Resolution is last-write-wins per name (max t). The local map mirrors this on every
-// fetch (syncBookmarkDeletionsIntoLocal); all existing tombstone filters then work
-// cross-device unchanged. See docs/features/lists.md "Resurrection-Comeback ... (2026-06-04)".
-// ============================================================
+// Shared cross-device deletion record (NIP-78 kind:30078) — see src/lists/listDeletionRecord.ts.
+// Bookmarks and tribes share one implementation; this just binds it to the bookmark
+// tombstone map. The thin wrappers keep the original call-site names unchanged.
+const BOOKMARK_DELETION_CONFIG: DeletionRecordConfig = {
+  dTag: 'noornote:bookmark-deletions',
+  alt: 'NoorNote deleted bookmark folders',
+  logLabel: 'bookmark-deletions',
+  getLocalTombstones: getBookmarkTombstones,
+  setLocalTombstones: setBookmarkTombstones,
+};
 
-const BOOKMARK_DELETIONS_DTAG = 'noornote:bookmark-deletions';
-const DELETION_MAX_AGE_SEC = 365 * 24 * 60 * 60; // prune entries older than 1 year
-
-interface SharedDeletionEntry { t: number; d: boolean; }
-
-async function fetchBookmarkDeletionEntries(pubkey: string): Promise<Record<string, SharedDeletionEntry>> {
-  const events = await fetchEvents([{
-    authors: [pubkey],
-    kinds: [30078],
-    '#d': [BOOKMARK_DELETIONS_DTAG]
-  }], 5000, true);
-  if (events.length === 0) return {};
-  const newest = events.sort((a, b) => b.created_at - a.created_at)[0];
-  if (!newest?.content) return {};
-  try {
-    const parsed = JSON.parse(newest.content) as { entries?: Record<string, unknown> };
-    if (!parsed.entries || typeof parsed.entries !== 'object') return {};
-    const out: Record<string, SharedDeletionEntry> = {};
-    for (const [name, raw] of Object.entries(parsed.entries)) {
-      const entry = raw as { t?: unknown; d?: unknown };
-      if (typeof entry?.t === 'number') out[name] = { t: entry.t, d: entry.d === true };
-    }
-    return out;
-  } catch {
-    return {};
-  }
-}
-
-/**
- * Publish the shared deletion record. Union-on-publish: merges the relay's current
- * entries with every locally-tombstoned name (as a deletion) so a stale device never
- * drops another device's deletion. The explicit `change` (delete/revive) wins with a
- * fresh timestamp. Does NOT mutate the local map — callers already did that.
- */
-async function publishBookmarkDeletions(pubkey: string, change?: { name: string; deleted: boolean }): Promise<void> {
-  const nowSec = now();
-  const relayEntries = await fetchBookmarkDeletionEntries(pubkey);
-  const merged: Record<string, SharedDeletionEntry> = { ...relayEntries };
-
-  const localTombstones = getBookmarkTombstones();
-  for (const [name, ts] of Object.entries(localTombstones)) {
-    // Don't override a newer revival the relay already knows about.
-    if (!merged[name] || merged[name].t <= ts) merged[name] = { t: ts, d: true };
-  }
-
-  if (change?.name) merged[change.name] = { t: nowSec, d: change.deleted };
-
-  for (const [name, entry] of Object.entries(merged)) {
-    if (nowSec - entry.t > DELETION_MAX_AGE_SEC) delete merged[name];
-  }
-
-  const signed = await signEvent({
-    kind: 30078,
-    created_at: nowSec,
-    tags: [['d', BOOKMARK_DELETIONS_DTAG], ['alt', 'NoorNote deleted bookmark folders']],
-    content: JSON.stringify({ v: 1, entries: merged }),
-    pubkey
-  });
-  if (signed) {
-    await publishEvent(signed);
-    diagLog('lists', 'bookmark-deletions: published', { change, entryCount: Object.keys(merged).length });
-  }
-}
-
-/** Fire-and-forget wrapper used from the local tombstone add/remove hooks. */
+/** Fire-and-forget mirror of a local tombstone add/remove into the shared record. */
 function publishBookmarkDeletionChange(folderName: string, deleted: boolean): void {
-  const pubkey = getCurrentUserPubkey();
-  if (!pubkey) return;
-  void publishBookmarkDeletions(pubkey, { name: folderName, deleted }).catch(err => {
-    diagLog('lists', 'bookmark-deletions: publish change FAILED', { folderName, deleted, error: String(err) });
-  });
+  publishDeletionChange(BOOKMARK_DELETION_CONFIG, folderName, deleted);
 }
 
-/**
- * Pull the shared deletion record into the local tombstone map. Deletions from any
- * device add a local tombstone; revivals newer than our local deletion clear it.
- * Runs inside fetchBookmarksFromRelays before the tombstone filter, so every relay-read
- * path honours cross-device deletions. Prunes entries older than DELETION_MAX_AGE_SEC.
- */
-async function syncBookmarkDeletionsIntoLocal(pubkey: string): Promise<void> {
-  const relayEntries = await fetchBookmarkDeletionEntries(pubkey);
-  const local = getBookmarkTombstones();
-  const nowSec = now();
-  let changed = false;
-
-  for (const [name, entry] of Object.entries(relayEntries)) {
-    if (entry.d) {
-      if (local[name] === undefined || local[name] < entry.t) { local[name] = entry.t; changed = true; }
-    } else {
-      if (local[name] !== undefined && entry.t >= local[name]) { delete local[name]; changed = true; }
-    }
-  }
-
-  for (const [name, ts] of Object.entries(local)) {
-    if (nowSec - ts > DELETION_MAX_AGE_SEC) { delete local[name]; changed = true; }
-  }
-
-  if (changed) {
-    setBookmarkTombstones(local);
-    diagLog('lists', 'bookmark-deletions: synced into local', {
-      relayEntryCount: Object.keys(relayEntries).length,
-      localTombstoneCount: Object.keys(local).length
-    });
-  }
+/** Pull the shared deletion record into the local tombstone map (before the fetch filter). */
+function syncBookmarkDeletionsIntoLocal(pubkey: string): Promise<void> {
+  return syncDeletionsIntoLocal(BOOKMARK_DELETION_CONFIG, pubkey);
 }
 
 /**
