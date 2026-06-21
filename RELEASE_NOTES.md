@@ -1,5 +1,5 @@
-# NoorNote 1.0.2
+# NoorNote 1.0.3
 
-**Reply editor:** quotes inside replies now render correctly, the modal sizing is cleaner, and the input is a bit taller.
+**Lists:** deleted Tribe folders now stay deleted across your devices, and the Bookmark/Tribe lists reliably show up in the sidebar after launch.
 
-**Navigation:** the Back button — including your mouse's back button and Android's back gesture — now closes an open dialog instead of moving the page behind it. In Right-Pane layout, the mouse wheel switches between open tabs.
+**Notes & Profiles:** the Back button no longer gets stuck reopening the same note, and npub mentions in a profile bio now render as clickable chips.
