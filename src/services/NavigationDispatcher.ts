@@ -67,7 +67,7 @@ export class NavigationDispatcher {
         }
       });
     } catch (error) {
-      console.warn('Failed to wire Capacitor hardware back button:', error);
+      console.debug('Failed to wire Capacitor hardware back button:', error);
     }
   }
 }
