@@ -20,6 +20,8 @@ import { QRCodeModal } from '../qrcode/QRCodeModal';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
 import { linkifyUrls } from '../../helpers/linkifyUrls';
 import { convertLineBreaks } from '../../helpers/convertLineBreaks';
+import { npubToUsername } from '../../helpers/npubToUsername';
+import { ContentProcessor } from '../../services/ContentProcessor';
 import { ClipboardActionsService } from '../../services/ClipboardActionsService';
 import { Router } from '../../services/Router';
 import { TypedEventBus } from '../../core/TypedEventBus';
@@ -529,8 +531,16 @@ export class ProfileView extends View {
     const isBunker = this.authService.isBunkerAuth();
 
 
-    // Process about text: escape HTML, convert line breaks, linkify URLs
-    const processedAbout = about ? linkifyUrls(convertLineBreaks(escapeHtml(about))) : '';
+    // Process about text: escape HTML, convert line breaks, linkify URLs, and turn
+    // npub/nprofile mentions into clickable chips (same resolver as note content, so
+    // the loading chips get upgraded in place once the profile loads).
+    const processedAbout = about
+      ? npubToUsername(
+          linkifyUrls(convertLineBreaks(escapeHtml(about))),
+          'html-multi',
+          (hex: string) => ContentProcessor.getInstance().getNonBlockingProfile(hex)
+        )
+      : '';
 
     const headerHTML = `
       <div class="profile-nip01">
