@@ -1,10 +1,5 @@
-# NoorNote 1.0.1
+# NoorNote 1.0.2
 
-**Small polish on top of the 1.0 redesign.**
+**Reply editor:** quotes inside replies now render correctly, the modal sizing is cleaner, and the input is a bit taller.
 
-**Changed**
-- On phones, Repost and Quote now share one button — tap it to pick Repost or Quote, freeing up space in the interaction bar.
-
-**Fixes**
-- Tidied the spacing above quoted reposts in the thread view.
-- Removed a duplicate heading above the profile timeline.
+**Navigation:** the Back button — including your mouse's back button and Android's back gesture — now closes an open dialog instead of moving the page behind it. In Right-Pane layout, the mouse wheel switches between open tabs.
