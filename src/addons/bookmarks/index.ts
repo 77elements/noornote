@@ -12,5 +12,7 @@ export function isBookmarksEnabled(): boolean {
 
 export function setBookmarksEnabled(enabled: boolean): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.BOOKMARKS_ADDON_ENABLED, enabled);
-  localStorage.setItem(STORAGE_KEY, 'false');
+  // Global fallback used before login (per-account storage has no pubkey yet) — must
+  // reflect the actual state, otherwise the sidebar entry stays hidden on next launch.
+  localStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
 }

@@ -570,23 +570,34 @@ export class MainLayout {
    * causing PerAccountLocalStorage to return defaults (disabled).
    */
   private async initializeAddonsAfterAuth(): Promise<void> {
-    // Bookmarks: load if enabled and not already loaded
-    if (!this.bookmarkManager) {
-      const { isBookmarksEnabled } = await import('../../addons/bookmarks/index');
-      if (isBookmarksEnabled()) {
-        const { BookmarkManager } = await import('../../lists/bookmarks');
-        this.bookmarkManager = new BookmarkManager(this.element);
-      }
+    // The sidebar entries are rendered (with a hardcoded visibility) before login,
+    // when per-account storage has no pubkey yet. Now that the user is known, re-sync
+    // each list entry's visibility from its real per-account enabled flag — otherwise
+    // an enabled list stays hidden until the addon is toggled off and on again.
+
+    // Bookmarks: sync sidebar visibility + load manager if enabled
+    const { isBookmarksEnabled } = await import('../../addons/bookmarks/index');
+    const bookmarksEnabled = isBookmarksEnabled();
+    this.setListAddonVisibility('.bookmarks-item', bookmarksEnabled);
+    if (bookmarksEnabled && !this.bookmarkManager) {
+      const { BookmarkManager } = await import('../../lists/bookmarks');
+      this.bookmarkManager = new BookmarkManager(this.element);
     }
 
-    // Tribes: load if enabled and not already loaded
-    if (!this.tribeManager) {
-      const { isTribesEnabled } = await import('../../addons/tribes/index');
-      if (isTribesEnabled()) {
-        const { TribeManager } = await import('../../lists/tribes');
-        this.tribeManager = new TribeManager(this.element);
-      }
+    // Tribes: sync sidebar visibility + load manager if enabled
+    const { isTribesEnabled } = await import('../../addons/tribes/index');
+    const tribesEnabled = isTribesEnabled();
+    this.setListAddonVisibility('.tribes-item', tribesEnabled);
+    if (tribesEnabled && !this.tribeManager) {
+      const { TribeManager } = await import('../../lists/tribes');
+      this.tribeManager = new TribeManager(this.element);
     }
+  }
+
+  /** Show/hide a Lists submenu entry (.bookmarks-item / .tribes-item). */
+  private setListAddonVisibility(selector: string, visible: boolean): void {
+    const item = this.element.querySelector(selector) as HTMLElement | null;
+    if (item) item.style.display = visible ? '' : 'none';
   }
 
   /**
