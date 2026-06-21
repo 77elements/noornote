@@ -94,6 +94,7 @@ export class MainLayout {
   private externalUserList: { mode: 'follows' | 'followers'; pubkey: string } | null = null;
   private viewTabManager: ViewTabManager | null = null;
   private viewTabEventSubscriptions: string[] = [];
+  private sidebarTabsWheelCleanup: (() => void) | null = null;
   private layoutService: LayoutService;
   private pullToRefresh: PullToRefresh | null = null;
   private sccDefaultDropdown: CustomDropdown | null = null;
@@ -342,10 +343,11 @@ export class MainLayout {
     // Initialize ViewTabManager
     this.viewTabManager = ViewTabManager.getInstance();
 
-    // Apply scrollable class to sidebar tabs
+    // Apply scrollable class to sidebar tabs + let the mouse wheel cycle the active tab
     const sidebarTabs = this.element.querySelector('#sidebar-tabs');
     if (sidebarTabs) {
       sidebarTabs.classList.add('tabs--scrollable');
+      this.sidebarTabsWheelCleanup = this.setupTabWheelSwitch(sidebarTabs as HTMLElement);
     }
 
     // Subscribe to view-tab events
@@ -374,6 +376,35 @@ export class MainLayout {
   }
 
   /**
+   * Mouse wheel over the tab strip cycles the active view tab (next on scroll down,
+   * previous on scroll up). Throttled so one wheel notch advances exactly one tab.
+   * Returns a cleanup function.
+   */
+  private setupTabWheelSwitch(strip: HTMLElement): () => void {
+    let lastSwitch = 0;
+    const onWheel = (e: WheelEvent): void => {
+      if (e.deltaY === 0) return;
+      const tabs = this.viewTabManager?.getOpenTabs() ?? [];
+      if (tabs.length < 2) return;
+      e.preventDefault();
+      const now = e.timeStamp;
+      if (now - lastSwitch < 120) return; // one notch = one tab
+      lastSwitch = now;
+
+      const activeId = this.viewTabManager?.getActiveTab()?.id;
+      let idx = tabs.findIndex(t => t.id === activeId);
+      if (idx === -1) idx = 0;
+      const nextIdx = e.deltaY > 0
+        ? Math.min(idx + 1, tabs.length - 1)
+        : Math.max(idx - 1, 0);
+      const next = tabs[nextIdx];
+      if (next && next.id !== activeId) this.viewTabManager?.switchTab(next.id);
+    };
+    strip.addEventListener('wheel', onWheel, { passive: false });
+    return () => strip.removeEventListener('wheel', onWheel);
+  }
+
+  /**
    * Disable ViewTabManager and cleanup
    */
   private disableViewTabManager(): void {
@@ -382,11 +413,13 @@ export class MainLayout {
     this.viewTabManager.closeAllTabs();
     this.viewTabManager = null;
 
-    // Remove scrollable class
+    // Remove scrollable class + detach the wheel handler
     const sidebarTabs = this.element.querySelector('#sidebar-tabs');
     if (sidebarTabs) {
       sidebarTabs.classList.remove('tabs--scrollable');
     }
+    this.sidebarTabsWheelCleanup?.();
+    this.sidebarTabsWheelCleanup = null;
 
     // Note: We keep the event subscriptions because they check if viewTabManager exists
     // Only the main subscriptions (settings change, logout) persist
@@ -405,11 +438,13 @@ export class MainLayout {
     this.viewTabEventSubscriptions.forEach(subId => this.eventBus.off(subId));
     this.viewTabEventSubscriptions = [];
 
-    // Remove scrollable class
+    // Remove scrollable class + detach the wheel handler
     const sidebarTabs = this.element.querySelector('#sidebar-tabs');
     if (sidebarTabs) {
       sidebarTabs.classList.remove('tabs--scrollable');
     }
+    this.sidebarTabsWheelCleanup?.();
+    this.sidebarTabsWheelCleanup = null;
   }
 
   /**

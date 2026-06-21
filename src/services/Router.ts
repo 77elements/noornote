@@ -5,6 +5,7 @@
 
 import { AuthStateManager } from './AuthStateManager';
 import { PlatformService } from './PlatformService';
+import { OverlayStack } from './OverlayStack';
 
 export interface Route {
   pattern: RegExp;
@@ -41,6 +42,9 @@ export class Router {
 
     // Listen for browser back/forward.
     window.addEventListener('popstate', () => {
+      // A Back press must first dismiss any open overlay and be consumed there,
+      // instead of navigating the view underneath it.
+      if (OverlayStack.consumeBackPopstate()) return;
       this.handleRoute(window.location.pathname);
     });
 

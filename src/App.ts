@@ -6,6 +6,7 @@
 
 import { MainLayout } from './components/layout/MainLayout';
 import { Router } from './services/Router';
+import { NavigationDispatcher } from './services/NavigationDispatcher';
 import { AppState } from './services/AppState';
 import { AuthService } from './services/AuthService';
 import { SystemLogger } from './services/SystemLogger';
@@ -69,6 +70,9 @@ export class App {
     this.setupUI();
 
     this.setupEventListeners();
+
+    // Central back/forward routing for mouse thumb buttons + Android hardware back.
+    NavigationDispatcher.init();
 
     // Bootstrap AddonLoader BEFORE any await, so its user:login listener
     // is registered before loadSession() (started in AuthService constructor)

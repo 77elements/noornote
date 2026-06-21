@@ -5,6 +5,7 @@
  */
 
 import { escapeHtml } from '../helpers/escapeHtml';
+import { OverlayStack, type OverlayHandle } from './OverlayStack';
 
 export interface ModalConfig {
   title: string;
@@ -42,6 +43,7 @@ export class ModalService {
   private escapeHandler: ((e: KeyboardEvent) => void) | null = null;
   private isVisible: boolean = false;
   private currentConfig: ModalConfig | null = null;
+  private overlayHandle: OverlayHandle | null = null;
 
   private constructor() {
     // Private constructor for singleton
@@ -115,6 +117,10 @@ export class ModalService {
 
     // Setup event handlers
     this.setupEventHandlers(showCloseButton, closeOnOverlay, closeOnEsc);
+
+    // Register as an overlay so Back (mouse/hardware/browser) closes it instead
+    // of navigating the view underneath.
+    this.overlayHandle = OverlayStack.push(() => this.hide());
   }
 
   /**
@@ -126,6 +132,10 @@ export class ModalService {
     this.isVisible = false;
     this.container.style.display = 'none';
     this.container.innerHTML = '';
+
+    // Unregister from the overlay stack (consumes the history sentinel if needed).
+    OverlayStack.remove(this.overlayHandle);
+    this.overlayHandle = null;
 
     // Remove ESC handler
     if (this.escapeHandler) {
