@@ -145,7 +145,7 @@ export class ReplyModal {
       title: 'Reply',
       content: modalContent,
       width: '700px',
-      height: '580px',
+      height: 'auto',
       showCloseButton: true,
       closeOnOverlay: false,
       closeOnEsc: true
@@ -467,6 +467,7 @@ export class ReplyModal {
 
     const switchContainer = document.createElement('div');
     switchContainer.id = 'timeline-switch-container';
+    switchContainer.className = 'reply-modal-timeline-switch';
     switchContainer.innerHTML = this.commentSwitch.render();
     editor.parentNode?.insertBefore(switchContainer, editor);
     this.commentSwitch.setupEventListeners(switchContainer);

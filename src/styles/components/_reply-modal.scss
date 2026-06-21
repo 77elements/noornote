@@ -2,26 +2,23 @@
 @use '../abstracts/mixins' as *;
 @use '../base/typography' as *;
 
-// Override modal body to prevent scrolling
-.modal__body:has(.reply-modal) {
-  overflow: hidden; // No scroll on modal body
-  display: flex;
-  flex-direction: column;
+// Modal grows with its content; cap to the viewport so it never overflows the screen
+.modal__content:has(.reply-modal) {
+  max-height: 90vh;
 }
 
 .reply-modal {
   display: flex;
   flex-direction: column;
-  flex: 1; // Fill available space
-  overflow: hidden; // Prevent scrolling on container
 }
 
-// Parent note context (shown above reply editor) - SCROLLABLE
+// Parent note context (the original note being replied to) — compact, fixed cap, scrolls.
+// The user has already seen it; this is just a reference while replying.
 .reply-modal-parent {
-  flex: 1; // Take available space
-  overflow-y: auto; // Scroll if content is long
-  min-height: 0; // Important for flex overflow
-  padding-bottom: $gap; // Spacing before editor
+  max-height: 200px;
+  overflow-y: auto;
+  min-height: 0;
+  padding-bottom: $gap;
   @include custom-scrollbar;
 }
 
@@ -48,30 +45,34 @@
   }
 }
 
-// Editor section (tabs + textarea + buttons) - FIXED at bottom
+// Editor section (tabs + switch + textarea/preview + buttons)
 .reply-modal-editor {
-  flex-shrink: 0; // Don't shrink
   display: flex;
   flex-direction: column;
   gap: calc($gap / 2);
 }
 
-// Reply textarea (smaller than post textarea)
-.reply-modal .textarea {
-  min-height: 120px; // Smaller to fit fixed layout
+// Timeline toggle row (kind:1 reply vs. kind:1111 comment)
+.reply-modal-timeline-switch {
+  padding-block: calc($gap / 2); // half a gap more breathing room above/below the row
+
+  // Group the label next to the switch instead of pushing them to opposite edges
+  .switch-label {
+    grid-template-columns: auto auto;
+    justify-content: start;
+  }
 }
 
+// Reply textarea — a couple of lines taller than the default
+.reply-modal .textarea {
+  min-height: 160px;
+  margin-bottom: calc($gap / 2);
+}
 
 // Mobile responsive
 @media (max-width: 600px) {
-  // Override fixed modal height on small screens
-  .modal__content:has(.reply-modal) {
-    height: auto !important;
-    max-height: 90vh;
-  }
-
   .reply-modal .textarea {
-    min-height: 100px;
+    min-height: 130px;
   }
 
   // Hide hint text on very small screens to save space
