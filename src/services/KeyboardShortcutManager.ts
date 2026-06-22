@@ -4,17 +4,15 @@
  * Uses Electron IPC for reliable cross-platform support
  */
 
-import { Router } from './Router';
 import { ModalService } from './ModalService';
 import { PlatformService } from './PlatformService';
+import { NavigationDispatcher } from './NavigationDispatcher';
 
 export class KeyboardShortcutManager {
   private static instance: KeyboardShortcutManager;
-  private router: Router;
   private searchModalCallback: (() => void) | null = null;
 
   private constructor() {
-    this.router = Router.getInstance();
     this.setupGlobalShortcuts();
   }
 
@@ -36,12 +34,16 @@ export class KeyboardShortcutManager {
    * Check if shortcuts should be blocked (modal open or focus in input)
    */
   private shouldBlockShortcuts(): boolean {
-    if (ModalService.getInstance().isOpen()) return true;
+    return ModalService.getInstance().isOpen() || this.isTextInputFocused();
+  }
 
-    // Block if focus is in input/textarea/contenteditable
+  /**
+   * True when focus sits in a text field, where keys like Cmd/Ctrl+Arrow carry a
+   * native caret meaning and must not be hijacked as app shortcuts.
+   */
+  private isTextInputFocused(): boolean {
     const active = document.activeElement;
     if (!active) return false;
-
     const tag = active.tagName.toLowerCase();
     return tag === 'input' || tag === 'textarea' || active.getAttribute('contenteditable') === 'true';
   }
@@ -58,18 +60,22 @@ export class KeyboardShortcutManager {
 
     try {
       const handleShortcut = (action: string) => {
-        if (this.shouldBlockShortcuts()) return;
-
         switch (action) {
           case 'search':
           case 'search-alt':
+            if (this.shouldBlockShortcuts()) return;
             if (this.searchModalCallback) this.searchModalCallback();
             break;
           case 'navigate-back':
-            if (this.router.canGoBack()) this.router.back();
+            // Overlay-aware Back: dismisses the topmost overlay (image viewer, or
+            // a modal → its close guard, e.g. the note composer's draft prompt)
+            // before navigating. Skipped while typing in a text field.
+            if (this.isTextInputFocused()) return;
+            NavigationDispatcher.goBack();
             break;
           case 'navigate-forward':
-            if (this.router.canGoForward()) this.router.forward();
+            if (this.isTextInputFocused()) return;
+            NavigationDispatcher.goForward();
             break;
         }
       };
@@ -102,6 +108,21 @@ export class KeyboardShortcutManager {
         return;
       }
 
+      // Cmd/Ctrl+ArrowLeft / ArrowRight = overlay-aware Back / Forward. Handled
+      // before the modal/input gate so it can also dismiss overlays (image viewer,
+      // or a dirty note composer → "Save as draft?"). Skipped while a text field
+      // is focused so the native caret line-navigation keeps working.
+      if (isMod && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+        if (this.isTextInputFocused()) return;
+        e.preventDefault();
+        if (e.key === 'ArrowLeft') {
+          NavigationDispatcher.goBack();
+        } else {
+          NavigationDispatcher.goForward();
+        }
+        return;
+      }
+
       // Block all other shortcuts if modal is open or focus is in input
       if (this.shouldBlockShortcuts()) {
         return;
@@ -112,22 +133,6 @@ export class KeyboardShortcutManager {
         e.preventDefault();
         if (this.searchModalCallback) {
           this.searchModalCallback();
-        }
-        return;
-      }
-
-      if (isMod && e.key === 'ArrowLeft') {
-        e.preventDefault();
-        if (this.router.canGoBack()) {
-          this.router.back();
-        }
-        return;
-      }
-
-      if (isMod && e.key === 'ArrowRight') {
-        e.preventDefault();
-        if (this.router.canGoForward()) {
-          this.router.forward();
         }
         return;
       }
