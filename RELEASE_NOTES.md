@@ -1,5 +1,9 @@
-# NoorNote 1.0.3
+# NoorNote 1.0.4
 
-**Lists:** deleted Tribe folders now stay deleted across your devices, and the Bookmark/Tribe lists reliably show up in the sidebar after launch.
+**Navigation:** the fullscreen image viewer and modals now close on Back (mouse, Android hardware, keyboard), and closing the composer with unsent text asks to save a draft.
 
-**Notes & Profiles:** the Back button no longer gets stuck reopening the same note, and npub mentions in a profile bio now render as clickable chips.
+**Images:** swipe between images in the fullscreen viewer on mobile.
+
+**Timeline:** loading older posts no longer jumps to the top, and the next batch starts loading a bit before you hit the end.
+
+**Performance:** signature checks and photo compression moved to background workers for a smoother UI.
