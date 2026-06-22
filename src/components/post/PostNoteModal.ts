@@ -82,7 +82,6 @@ export class PostNoteModal {
   private selectedRelays: Set<string> = new Set();
   private availableRelays: string[] = [];
   private isTestMode: boolean = false;
-  private draftContent: string = '';
   private isNSFW: boolean = false;
   private pollData: PollData | null = null;
   private scheduledAt: number | null = null;
@@ -119,10 +118,10 @@ export class PostNoteModal {
     }
 
     this.currentTab = 'edit';
-    // In Highlight mode the textarea is the comment (start empty, no draft reuse).
-    this.content = this.highlightSource
-      ? (initialContent ?? '')
-      : (initialContent ?? this.draftContent);
+    // Composer always starts from the explicit initial content (quoted repost,
+    // shared image, opened draft) or empty — unsent text is only ever kept via
+    // the explicit "Save as draft?" prompt, never silently restored.
+    this.content = initialContent ?? '';
     this.loadRelayConfiguration();
 
     const modalContent = this.renderContent();
@@ -134,7 +133,8 @@ export class PostNoteModal {
       height: 'auto',
       showCloseButton: true,
       closeOnOverlay: false,
-      closeOnEsc: true
+      closeOnEsc: true,
+      onBeforeClose: () => this.confirmDiscardOrSave()
     });
 
     setTimeout(() => {
@@ -634,15 +634,48 @@ export class PostNoteModal {
    * Handle cancel button click
    */
   private handleCancel(): void {
-    // Don't carry an unfinished highlight comment over into the next regular
-    // note's draft — that text was meant for a specific source.
-    if (!this.highlightSource) {
-      const textarea = document.querySelector('[data-textarea]') as HTMLTextAreaElement;
-      this.draftContent = textarea ? textarea.value : this.content;
+    // Route through the same unsaved-content guard as ESC / Back / the close
+    // button so every dismiss path behaves identically. When the guard defers
+    // (dirty note), askSaveDraftThenClose() owns the cleanup + hide.
+    if (this.confirmDiscardOrSave()) {
+      this.cleanup();
+      this.modalService.hide();
     }
+  }
 
+  /**
+   * Guard for every user-initiated dismiss (Cancel / ESC / Back / close button).
+   * Returns true to allow an immediate close (highlight mode or an empty composer
+   * have nothing to save). For a dirty regular note it vetoes the immediate close
+   * and asks "Save as draft?" on the next microtask, so the composer tears down
+   * first and frees the shared ModalService container for the confirm dialog.
+   */
+  private confirmDiscardOrSave(): boolean {
+    if (this.highlightSource) return true;
+    const textarea = document.querySelector('.post-note-modal [data-textarea]') as HTMLTextAreaElement | null;
+    const content = (textarea ? textarea.value : this.content).trim();
+    if (!content) return true;
+    queueMicrotask(() => void this.askSaveDraftThenClose(content));
+    return false;
+  }
+
+  /**
+   * Close the composer, then ask whether to keep the unsent note as a draft.
+   * Yes → persist via NoteDraftService; No (incl. ESC on the dialog) → discard.
+   */
+  private async askSaveDraftThenClose(content: string): Promise<void> {
     this.cleanup();
     this.modalService.hide();
+    const save = await this.modalService.confirm({
+      title: 'Save as draft?',
+      message: 'Keep this unsent note in your drafts?',
+      confirmText: 'Yes',
+      cancelText: 'No',
+    });
+    if (save) {
+      NoteDraftService.getInstance().add({ type: 'note', content, failed: false });
+      ToastService.show('Draft saved', 'success');
+    }
   }
 
   /**
@@ -742,7 +775,6 @@ export class PostNoteModal {
           ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions')?.clearCacheOnly(quotedArticle.addressableId);
         }
 
-        this.draftContent = '';
         this.cleanup();
         this.modalService.hide();
         this.systemLogger.success('PostService', 'Note posted successfully');
@@ -827,7 +859,6 @@ export class PostNoteModal {
       });
 
       if (success) {
-        this.draftContent = '';
         this.highlightSource = null;
         this.cleanup();
         this.modalService.hide();

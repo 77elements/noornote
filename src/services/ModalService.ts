@@ -16,6 +16,12 @@ export interface ModalConfig {
   closeOnOverlay?: boolean;    // default: true
   closeOnEsc?: boolean;        // default: true
   onClose?: () => void;
+  /**
+   * Consulted only on a USER-initiated dismiss (ESC, close button, overlay
+   * click, Back). Return false to veto/defer the close; the modal stays open.
+   * Programmatic hide() calls bypass this guard.
+   */
+  onBeforeClose?: () => boolean;
 }
 
 export interface ConfirmConfig {
@@ -120,7 +126,17 @@ export class ModalService {
 
     // Register as an overlay so Back (mouse/hardware/browser) closes it instead
     // of navigating the view underneath.
-    this.overlayHandle = OverlayStack.push(() => this.hide());
+    this.overlayHandle = OverlayStack.push(() => this.requestClose());
+  }
+
+  /**
+   * Handle a USER-initiated dismiss (ESC, close button, overlay click, Back).
+   * Lets the current modal veto/defer via onBeforeClose; otherwise hides.
+   * Programmatic callers use hide() directly to bypass this guard.
+   */
+  private requestClose(): void {
+    if (this.currentConfig?.onBeforeClose && !this.currentConfig.onBeforeClose()) return;
+    this.hide();
   }
 
   /**
@@ -298,20 +314,20 @@ export class ModalService {
     // Close button handler
     if (showCloseButton) {
       const closeBtn = this.container.querySelector('.modal__close');
-      closeBtn?.addEventListener('click', () => this.hide());
+      closeBtn?.addEventListener('click', () => this.requestClose());
     }
 
     // Overlay click handler
     if (closeOnOverlay) {
       const overlay = this.container.querySelector('.modal__overlay');
-      overlay?.addEventListener('click', () => this.hide());
+      overlay?.addEventListener('click', () => this.requestClose());
     }
 
     // ESC key handler
     if (closeOnEsc) {
       this.escapeHandler = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
-          this.hide();
+          this.requestClose();
         }
       };
       document.addEventListener('keydown', this.escapeHandler);

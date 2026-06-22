@@ -13,6 +13,7 @@
 
 import { ToastService } from '../../services/ToastService';
 import { downloadMedia } from '../../helpers/downloadMedia';
+import { OverlayStack, type OverlayHandle } from '../../services/OverlayStack';
 
 export interface ImageViewerOptions {
   images: string[]; // Array of image URLs
@@ -38,6 +39,10 @@ export class ImageViewer {
   private boundMouseMove: ((e: MouseEvent) => void) | null = null;
   private boundMouseUp: (() => void) | null = null;
 
+  // Overlay registration so Back (mouse/hardware/browser) closes the viewer
+  // instead of navigating the view underneath it.
+  private overlayHandle: OverlayHandle | null = null;
+
   constructor() {
     this.handleKeyDown = this.handleKeyDown.bind(this);
   }
@@ -54,6 +59,10 @@ export class ImageViewer {
 
     this.render();
     this.attachEventListeners();
+
+    // Register as an overlay so a Back press closes the viewer instead of
+    // navigating the timeline/view behind it.
+    this.overlayHandle = OverlayStack.push(() => this.close());
   }
 
   /**
@@ -65,6 +74,10 @@ export class ImageViewer {
       this.container.remove();
       this.container = null;
     }
+
+    // Unregister from the overlay stack (consumes the history sentinel if needed).
+    OverlayStack.remove(this.overlayHandle);
+    this.overlayHandle = null;
   }
 
   /**
