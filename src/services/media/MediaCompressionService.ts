@@ -26,6 +26,9 @@ import {
   getEncodableAudioCodecs,
 } from 'mediabunny';
 
+// OffscreenCanvas resize+encode worker. ?worker&inline base64-embeds it so it
+// also loads under file:// (Electron/Capacitor).
+import ImageResizeWorker from './imageResize.worker?worker&inline';
 import { PlatformService } from '../PlatformService';
 import {
   AUDIO_BITRATE_KBPS,
@@ -148,60 +151,29 @@ export class MediaCompressionService {
   ): Promise<File> {
     onProgress(5);
 
-    // Decode the source so we can read its dimensions.
-    const sourceUrl = URL.createObjectURL(file);
-    const img = new Image();
-    try {
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve();
-        img.onerror = () => reject(new Error('Image decode failed'));
-        img.src = sourceUrl;
-      });
-    } finally {
-      URL.revokeObjectURL(sourceUrl);
-    }
-
-    onProgress(25);
-
-    // Compute the target dimensions while preserving aspect ratio.
-    const maxDim = settings.maxResolution > 0 ? settings.maxResolution : Math.max(img.width, img.height);
-    let targetW = img.width;
-    let targetH = img.height;
-    if (img.width > maxDim || img.height > maxDim) {
-      if (img.width >= img.height) {
-        targetW = maxDim;
-        targetH = Math.round(img.height * (maxDim / img.width));
-      } else {
-        targetH = maxDim;
-        targetW = Math.round(img.width * (maxDim / img.height));
-      }
-    }
-
-    // Draw to canvas. PNG sources keep their alpha channel; JPEG/other are
-    // composited onto whatever the canvas defaults to (transparent → black
-    // when JPEG-encoded), which is fine for opaque sources.
-    const canvas = document.createElement('canvas');
-    canvas.width = targetW;
-    canvas.height = targetH;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Canvas 2D context unavailable');
-    ctx.drawImage(img, 0, 0, targetW, targetH);
-    onProgress(60);
-
     const isPng = file.type === 'image/png';
     const isJpeg = file.type === 'image/jpeg';
     const outputMime = isPng ? 'image/png' : 'image/jpeg';
     const outputExt = isPng ? '.png' : '.jpg';
-    const quality = IMAGE_JPEG_QUALITY[settings.quality] ?? IMAGE_JPEG_QUALITY.high;
+    // PNG ignores quality; JPEG/WebP honor it.
+    const quality = isPng ? undefined : (IMAGE_JPEG_QUALITY[settings.quality] ?? IMAGE_JPEG_QUALITY.high);
 
-    let blob: Blob = await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob(
-        (b) => (b ? resolve(b) : reject(new Error('Canvas toBlob failed'))),
-        outputMime,
-        // PNG ignores the quality arg; JPEG honors it.
-        isPng ? undefined : quality,
-      );
-    });
+    // Resize + re-encode off the main thread (OffscreenCanvas worker) so a large
+    // photo doesn't freeze the UI. Fall back to the main-thread canvas path when
+    // the worker / OffscreenCanvas is unavailable or fails.
+    let blob: Blob | null = null;
+    if (canUseImageWorker()) {
+      try {
+        blob = await resizeEncodeInWorker(file, settings.maxResolution, outputMime, quality);
+        onProgress(60);
+      } catch (err) {
+        console.debug('Image resize worker failed, using main thread:', err);
+        blob = null;
+      }
+    }
+    if (!blob) {
+      blob = await resizeEncodeMainThread(file, settings.maxResolution, outputMime, quality, onProgress);
+    }
     onProgress(80);
 
     // Restore EXIF for JPEG sources, optionally stripping privacy categories.
@@ -414,6 +386,92 @@ function applyExifStrip(exifObj: ExifObj, opts: ExifStripOptions): void {
     deleteFromIfd(exifObj['0th'] as ExifIfd, STRIP_WEAK_0TH);
     deleteFromIfd(exifObj.Exif as ExifIfd, STRIP_WEAK_EXIF);
   }
+}
+
+/** Whether the OffscreenCanvas image worker can run in this runtime. */
+function canUseImageWorker(): boolean {
+  return typeof Worker !== 'undefined'
+    && typeof OffscreenCanvas !== 'undefined'
+    && typeof createImageBitmap === 'function';
+}
+
+/** Resize + re-encode an image off the main thread via the OffscreenCanvas
+ *  worker. Spins up a one-shot worker, transfers the bytes in and out, then
+ *  terminates it. Rejects on any worker error so the caller can fall back. */
+async function resizeEncodeInWorker(
+  file: File,
+  maxResolution: number,
+  outputMime: string,
+  quality: number | undefined,
+): Promise<Blob> {
+  const buf = await file.arrayBuffer();
+  return new Promise<Blob>((resolve, reject) => {
+    const worker = new ImageResizeWorker();
+    worker.onmessage = (e: MessageEvent) => {
+      const data = e.data as { ok: boolean; buf?: ArrayBuffer; error?: string };
+      worker.terminate();
+      if (data.ok && data.buf) resolve(new Blob([data.buf], { type: outputMime }));
+      else reject(new Error(data.error || 'Image worker resize failed'));
+    };
+    worker.onerror = (err: ErrorEvent) => {
+      worker.terminate();
+      reject(new Error(err.message || 'Image worker error'));
+    };
+    worker.postMessage({ buf, type: file.type, maxResolution, outputMime, quality }, [buf]);
+  });
+}
+
+/** Main-thread fallback: decode via <img>, resize on a <canvas>, encode via
+ *  canvas.toBlob. Used when the OffscreenCanvas worker is unavailable or fails. */
+async function resizeEncodeMainThread(
+  file: File,
+  maxResolution: number,
+  outputMime: string,
+  quality: number | undefined,
+  onProgress: ProgressCallback,
+): Promise<Blob> {
+  const sourceUrl = URL.createObjectURL(file);
+  const img = new Image();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error('Image decode failed'));
+      img.src = sourceUrl;
+    });
+  } finally {
+    URL.revokeObjectURL(sourceUrl);
+  }
+  onProgress(25);
+
+  // Target dimensions preserving aspect ratio.
+  const maxDim = maxResolution > 0 ? maxResolution : Math.max(img.width, img.height);
+  let targetW = img.width;
+  let targetH = img.height;
+  if (img.width > maxDim || img.height > maxDim) {
+    if (img.width >= img.height) {
+      targetW = maxDim;
+      targetH = Math.round(img.height * (maxDim / img.width));
+    } else {
+      targetH = maxDim;
+      targetW = Math.round(img.width * (maxDim / img.height));
+    }
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = targetW;
+  canvas.height = targetH;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas 2D context unavailable');
+  ctx.drawImage(img, 0, 0, targetW, targetH);
+  onProgress(60);
+
+  return await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (b) => (b ? resolve(b) : reject(new Error('Canvas toBlob failed'))),
+      outputMime,
+      quality,
+    );
+  });
 }
 
 /** Copy EXIF from a JPEG source onto a (canvas-encoded) JPEG blob, optionally

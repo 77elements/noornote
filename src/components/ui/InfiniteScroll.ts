@@ -34,9 +34,15 @@ export class InfiniteScroll {
   }
 
   /**
-   * Start observing a container by creating and monitoring a sentinel element
+   * Start observing a container by creating and monitoring a sentinel element.
+   *
+   * @param root  The scroll container the sentinel lives inside. IMPORTANT when
+   *   the content scrolls in an inner overflow element (not the page): with the
+   *   default viewport root the inner container clips the sentinel, so rootMargin
+   *   prefetch has no effect and load only fires at the very last item. Passing
+   *   the scroll container makes rootMargin trigger the configured distance early.
    */
-  observe(containerElement: HTMLElement): void {
+  observe(containerElement: HTMLElement, root: Element | null = null): void {
     this.containerElement = containerElement;
 
     if (this.observer) {
@@ -70,6 +76,7 @@ export class InfiniteScroll {
         });
       },
       {
+        root,
         rootMargin: this.config.rootMargin,
         threshold: this.config.threshold
       }

@@ -7,6 +7,10 @@
  */
 
 import NDK, { NDKEvent, NDKRelaySet, NDKSubscription, NDKSubscriptionCacheUsage, normalizeRelayUrl } from '@nostr-dev-kit/ndk';
+// NDK ships a ready signature-verification worker. ?worker&inline base64-embeds
+// it into the bundle so it also loads under file:// (Electron/Capacitor), where
+// a separate worker chunk URL would break.
+import SigVerificationWorker from '@nostr-dev-kit/ndk/workers/sig-verification?worker&inline';
 import NDKCacheDexie from '@nostr-dev-kit/ndk-cache-dexie';
 import type { NDKCacheAdapter, NDKFilter, NDKRelay } from '@nostr-dev-kit/ndk';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -129,6 +133,23 @@ export class NostrTransport {
       enableOutboxModel: false, // Disable for now, can enable later for performance
       autoConnectUserRelays: false // We manage relays explicitly via RelayConfig
     });
+
+    // Offload schnorr signature verification to a Web Worker so it never blocks
+    // the main thread (NDK verifies every incoming event). Setting the worker
+    // flips NDK to async verification; invalid sigs surface via 'event:invalid-sig'
+    // instead of a sync return. If the worker can't start, NDK falls back to
+    // main-thread verification on its own.
+    try {
+      this.ndk.signatureVerificationWorker = new SigVerificationWorker();
+      this.ndk.on('event:invalid-sig', (event: NDKEvent, relay?: NDKRelay) => {
+        // NDK already drops the event and adjusts that relay's trust ratio; we
+        // only record it for diagnostics.
+        console.debug('[NostrTransport] invalid signature', event.id, relay?.url);
+        diagLog('relays', 'invalid_signature', { eventId: event.id, relay: relay?.url });
+      });
+    } catch (err) {
+      console.debug('[NostrTransport] sig-verification worker unavailable, using main thread', err);
+    }
 
     this.systemLogger.info('NostrTransport', 'Transport ready');
   }

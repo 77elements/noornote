@@ -78,9 +78,10 @@ export class TimelineLifecycleManager {
       );
     }
 
-    // Restart infinite scroll observer
+    // Restart infinite scroll observer. Root = the actual scroll container so the
+    // rootMargin prefetch fires a few posts before the end (not only at the last).
     if (loadTrigger) {
-      this.infiniteScroll.observe(loadTrigger);
+      this.infiniteScroll.observe(loadTrigger, loadTrigger.closest('.timeline-view__timeline'));
     }
   }
 

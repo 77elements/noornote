@@ -149,19 +149,26 @@ export class TimelineRenderer {
     const scrollContainer = this.element.parentElement;
     if (!scrollContainer) return;
 
-    // Measure total height of cards to remove (for scroll compensation)
-    let removedHeight = 0;
+    // Snapshot scroll BEFORE removing so we can keep the viewport anchored.
+    // The removed cards sit above the viewport, so the content below shifts up by
+    // exactly the amount the container shrinks — shift scrollTop up by the same.
+    const prevScrollTop = scrollContainer.scrollTop;
+    const prevScrollHeight = scrollContainer.scrollHeight;
+
     for (let i = 0; i < excess; i++) {
       const card = topLevelCards[i]!;
-      removedHeight += card.getBoundingClientRect().height;
-
       // Cleanup NoteUI internals (ISL, headers, etc.)
       NoteUI.cleanupElement(card);
       card.remove();
     }
 
-    // Compensate scroll position so viewport doesn't jump
-    scrollContainer.scrollTop = Math.max(0, scrollContainer.scrollTop - removedHeight);
+    // Reading scrollHeight forces a synchronous reflow, so this delta reflects
+    // the actual removed height (reflow-accurate — unlike summing each card's
+    // getBoundingClientRect, which is wrong while images are still loading).
+    // overflow-anchor:none on the container stops the browser from also adjusting
+    // scrollTop, which would double-correct and yank the viewport to the top.
+    const removedHeight = prevScrollHeight - scrollContainer.scrollHeight;
+    scrollContainer.scrollTop = Math.max(0, prevScrollTop - removedHeight);
 
     // Trim StateManager events to match DOM ceiling (prevent unbounded growth)
     this.stateManager.trimEvents(MAX_DOM_CARDS);

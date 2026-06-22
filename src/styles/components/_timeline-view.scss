@@ -41,6 +41,12 @@
 .timeline-view__timeline {
   flex: 1;
   overflow-y: auto;
+  // The timeline manages its own scroll compensation when it trims off-screen
+  // cards during LoadMore (see TimelineRenderer.trimExcessCards). The browser's
+  // default scroll anchoring would adjust scrollTop on top of that — a double
+  // correction that yanks the viewport to the top. Disable it so our manual
+  // anchoring is the single source of truth.
+  overflow-anchor: none;
   @include custom-scrollbar;
 }
 

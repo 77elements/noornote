@@ -79,7 +79,12 @@ export class Timeline extends View {
     this.eventBus = TypedEventBus.getInstance();
     this.element = this.createElement();
     this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
-      loadingMessage: 'Loading more notes...'
+      loadingMessage: 'Loading more notes...',
+      // Prefetch the next page ~3-4 posts before the user hits the very last
+      // loaded note, so new posts are already there instead of forcing a stop at
+      // the end. The default 200px is < half a card and effectively only fires at
+      // the last note.
+      rootMargin: '0px 0px 1500px 0px'
     });
 
     // Initialize managers
@@ -324,7 +329,8 @@ export class Timeline extends View {
   private setupInfiniteScroll(): void {
     const loadTrigger = this.element.querySelector('.timeline-load-trigger') as HTMLElement;
     if (loadTrigger) {
-      this.infiniteScroll.observe(loadTrigger);
+      // Root = the actual scroll container, so rootMargin prefetch fires early.
+      this.infiniteScroll.observe(loadTrigger, loadTrigger.closest('.timeline-view__timeline'));
     }
   }
 
