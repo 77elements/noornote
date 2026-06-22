@@ -14,6 +14,8 @@
 import { ToastService } from '../../services/ToastService';
 import { downloadMedia } from '../../helpers/downloadMedia';
 import { OverlayStack, type OverlayHandle } from '../../services/OverlayStack';
+import { PlatformService } from '../../services/PlatformService';
+import { addSwipeSupport } from '../../helpers/addSwipeSupport';
 
 export interface ImageViewerOptions {
   images: string[]; // Array of image URLs
@@ -368,6 +370,19 @@ export class ImageViewer {
         this.close();
       }
     });
+
+    // Mobile: horizontal swipe navigates between images (mirrors the prev/next
+    // buttons). Only when unzoomed, so a pan gesture on a zoomed image is free.
+    if (PlatformService.getInstance().isMobile && this.images.length > 1) {
+      const imageContainer = this.container?.querySelector('.image-viewer__image-container') as HTMLElement | null;
+      if (imageContainer) {
+        addSwipeSupport(
+          imageContainer,
+          () => { if (this.zoomLevel === 1) this.next(); },
+          () => { if (this.zoomLevel === 1) this.previous(); }
+        );
+      }
+    }
   }
 
   /**
