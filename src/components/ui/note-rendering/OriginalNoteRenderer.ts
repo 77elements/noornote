@@ -10,6 +10,7 @@ import { PollRenderer } from '../note-features/PollRenderer';
 import { NIP88PollRenderer } from '../note-features/NIP88PollRenderer';
 import { QuotedNoteRenderer } from './QuotedNoteRenderer';
 import { ArticlePreviewRenderer } from './ArticlePreviewRenderer';
+import { renderPodcastCard } from './PodcastCard';
 import { decodeNip19 } from '../../../services/NostrToolsAdapter';
 
 export class OriginalNoteRenderer {
@@ -77,6 +78,14 @@ export class OriginalNoteRenderer {
       NIP88PollRenderer.render(element, note.pollData, effectiveEvent).catch(error => {
         console.error('Failed to render NIP-88 poll:', error);
       });
+    }
+
+    // NIP-73 podcast reference (e.g. Fountain boosts) → inline podcast card,
+    // appended to the note body. For reposts the tags live on the inner event.
+    const podcastSource = note.repostedEvent || note.rawEvent;
+    const podcastCard = renderPodcastCard(podcastSource);
+    if (podcastCard) {
+      (element.querySelector('.event-content') || element).appendChild(podcastCard);
     }
 
     // Setup collapsible for long notes (only for top-level notes with collapsible enabled)

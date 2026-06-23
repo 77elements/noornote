@@ -225,9 +225,15 @@ export class QuotedNoteRenderer {
 
         const quoteBox = await this.createQuoteBox(result.event, enableCollapsible);
         skeleton.replaceWith(quoteBox);
+      } else if (this.isUnresolvableByDesign(ref)) {
+        // Zap receipts (kind 9735) are routinely unreachable by id alone: they
+        // live on the recipient's / zap-request's relays, not derivable from a
+        // hint-less nevent or any outbox (see QuoteOrchestrator). Silently drop
+        // the dead quote instead of showing a "not found" box for something we
+        // can never resolve anyway.
+        skeleton.remove();
       } else {
-        const errorElement = this.createQuoteError(result.error);
-        skeleton.replaceWith(errorElement);
+        skeleton.replaceWith(this.createQuoteError(result.error));
       }
     } catch (error) {
       console.error(`❌ Quote fetch failed:`, error);
@@ -403,6 +409,25 @@ export class QuotedNoteRenderer {
   /**
    * Create error element for failed quote fetch
    */
+  /**
+   * Whether a quote we failed to fetch is one we should silently drop rather
+   * than show a "not found" box for. The nevent reference still carries the
+   * kind even when the event is unfetchable; zap receipts (kind 9735) can't be
+   * resolved by id alone (see QuoteOrchestrator), so there is no point showing
+   * an error the user can do nothing about.
+   */
+  private isUnresolvableByDesign(ref: QuotedReference): boolean {
+    try {
+      const decoded = decodeNip19(ref.fullMatch.replace(/^nostr:/, ''));
+      if (decoded.type === 'nevent') {
+        return (decoded.data as { kind?: number }).kind === 9735;
+      }
+    } catch {
+      // Not decodable → no kind hint, keep the normal error path.
+    }
+    return false;
+  }
+
   private createQuoteError(error: any): HTMLElement {
     const errorDiv = document.createElement('div');
     errorDiv.className = 'quote-error';

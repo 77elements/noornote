@@ -1,0 +1,94 @@
+/**
+ * Podcast Card (NIP-73 podcast:guid / podcast:item:guid)
+ * Inline card appended to a note that references a podcast show or episode
+ * (e.g. Fountain boosts). The basic state is built from tags only; the rich
+ * state (cover, title, show, play) is fetched lazily from fountain.fm.
+ */
+
+@use '../abstracts/variables' as *;
+
+.podcast-card {
+  display: flex;
+  align-items: stretch;
+  gap: $gap;
+  margin: $gap 0;
+  padding: calc($gap / 2);
+  border-radius: $radius-xl;
+  background: var(--color-2);
+  text-align: left;
+}
+
+.podcast-card__media {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  border-radius: $radius-xl;
+  overflow: hidden;
+  background: var(--color-1);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  &--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    line-height: 1;
+  }
+}
+
+.podcast-card__content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: calc($gap / 4);
+  flex: 1;
+  min-width: 0;
+}
+
+.podcast-card__kicker {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-3);
+}
+
+.podcast-card__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-5);
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.podcast-card__show {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.podcast-card__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc($gap / 2);
+  margin-top: calc($gap / 4);
+}
+
+.podcast-card__audio {
+  width: 100%;
+  height: 40px;
+}

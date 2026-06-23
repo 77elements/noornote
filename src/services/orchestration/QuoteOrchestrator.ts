@@ -20,6 +20,7 @@ import { NostrTransport } from '../transport/NostrTransport';
 import { OutboundRelaysOrchestrator } from './OutboundRelaysOrchestrator';
 import { LongFormOrchestrator } from './LongFormOrchestrator';
 import { NoteService } from '../NoteService';
+import { RelayConfig } from '../RelayConfig';
 import { SystemLogger } from '../SystemLogger';
 import { diagLog } from '../DiagnosticLogger';
 
@@ -29,6 +30,7 @@ export class QuoteOrchestrator extends Orchestrator {
   private relayDiscovery: OutboundRelaysOrchestrator;
   private longFormOrch: LongFormOrchestrator;
   private noteService: NoteService;
+  private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
 
   /** In-flight fetches to prevent duplicate requests */
@@ -40,6 +42,7 @@ export class QuoteOrchestrator extends Orchestrator {
     this.relayDiscovery = OutboundRelaysOrchestrator.getInstance();
     this.longFormOrch = LongFormOrchestrator.getInstance();
     this.noteService = NoteService.getInstance();
+    this.relayConfig = RelayConfig.getInstance();
     this.systemLogger = SystemLogger.getInstance();
   }
 
@@ -179,6 +182,8 @@ export class QuoteOrchestrator extends Orchestrator {
    * Stage 0: Check NoteService cache first
    * Stage 1: Try relay hints (from nevent)
    * Stage 2: Try standard relays
+   * Stage 2.5: Try metadata / indexer relays (broadly-replicated events, e.g.
+   *         zap receipts that don't live on the user's read relays)
    * Stage 3: If not found, try outbound relays of EVERY known relevant pubkey
    *         (quoted event's author + the parent-note author / reposter that
    *         pulled it onto our radar in the first place).
@@ -221,6 +226,25 @@ export class QuoteOrchestrator extends Orchestrator {
       }
     } catch (error) {
       diagLog('relays', 'QuoteOrchestrator: stage 2 (standard) failed', { eventId: shortId, error: String(error) });
+    }
+
+    // Stage 2.5: Try metadata / indexer relays (nostr.band & co). These index
+    // widely-replicated events the user's own read relays often don't carry —
+    // notably zap receipts (kind 9735), whose home is the recipient's / zap
+    // request's relays, not ours. skipCache=true forces a relay-only fetch.
+    try {
+      const standardSet = new Set(this.transport.getReadRelays());
+      const indexerRelays = this.relayConfig.getMetadataRelays().filter(r => !standardSet.has(r));
+      if (indexerRelays.length > 0) {
+        const events = await this.transport.fetch(indexerRelays, [filter], 6000, true, 'QuoteOrch');
+        if (events[0]) {
+          diagLog('relays', 'QuoteOrchestrator: indexer fallback found quote', { eventId: shortId });
+          this.noteService.registerNote(events[0]);
+          return events[0];
+        }
+      }
+    } catch (error) {
+      diagLog('relays', 'QuoteOrchestrator: stage 2.5 (indexer) failed', { eventId: shortId, error: String(error) });
     }
 
     // Stage 3: Not found on standard relays, try with outbound relays
