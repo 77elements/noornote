@@ -48,7 +48,15 @@ export function renderPodcastCard(event: NostrEvent): HTMLElement | null {
 
   // Keep clicks inside the card (play button, open link) from bubbling up to
   // the note-card, which would otherwise navigate to the single-note view.
-  card.addEventListener('click', e => e.stopPropagation());
+  // Never swallow clicks on note media — the global lightbox / video handlers
+  // must keep owning those (inviolable media-click rule).
+  card.addEventListener('click', e => {
+    const target = e.target as HTMLElement;
+    if (target.closest('.note-image--clickable') || target.closest('.note-media') || target.closest('video')) {
+      return;
+    }
+    e.stopPropagation();
+  });
 
   // Lazy rich upgrade — only for fountain.fm hints, only once visible.
   if (url && isFountainUrl(url)) {

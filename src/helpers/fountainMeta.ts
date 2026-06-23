@@ -13,6 +13,8 @@
  * non-fountain hosts. Requests omit credentials so no cookies are sent.
  */
 
+import { diagLog } from '../services/DiagnosticLogger';
+
 export interface FountainMeta {
   /** Episode title (show name stripped off). */
   title?: string | undefined;
@@ -84,9 +86,13 @@ export async function fetchFountainMeta(url: string): Promise<FountainMeta | nul
 
     const meta: FountainMeta = { title, show, image, audio, description };
     cache.set(url, meta);
+    diagLog('system', 'Podcast episode metadata fetched from fountain.fm', {
+      hasTitle: !!title, hasImage: !!image, hasAudio: !!audio,
+    });
     return meta;
   } catch {
     cache.set(url, null);
+    diagLog('system', 'Podcast episode metadata fetch failed', { url });
     return null;
   }
 }
