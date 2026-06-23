@@ -1,9 +1,7 @@
-# NoorNote 1.0.4
+# NoorNote 1.0.5
 
-**Navigation:** the fullscreen image viewer and modals now close on Back (mouse, Android hardware, keyboard), and closing the composer with unsent text asks to save a draft.
+**Podcasts:** podcast episodes and shows (e.g. Fountain) now show a rich card with cover, title, show name and an inline player.
 
-**Images:** swipe between images in the fullscreen viewer on mobile.
+**Notes:** custom emojis display at full size inside notes, and unresolvable quoted zap receipts no longer show a "Note not found" box.
 
-**Timeline:** loading older posts no longer jumps to the top, and the next batch starts loading a bit before you hit the end.
-
-**Performance:** signature checks and photo compression moved to background workers for a smoother UI.
+**Direct Messages:** fixed a message briefly showing twice, and the composer now clears immediately when you send.
