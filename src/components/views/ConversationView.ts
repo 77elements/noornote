@@ -67,7 +67,16 @@ export class ConversationView extends View {
     // Listen for new messages in this conversation
     this.subscriptionId = this.eventBus.on('dm:new-message', (data: { message: DMMessage; conversationWith: string }) => {
       if (data.conversationWith === this.partnerPubkey) {
-        this.messages.push(data.message);
+        // A sent message can be emitted twice in a race: once optimistically and
+        // once when its own gift-wrap echoes back from the relay. Both carry the
+        // same rumor id (and wrapId), so ignore one we've already rendered.
+        const incoming = data.message;
+        const isDuplicate = this.messages.some(m =>
+          m.id === incoming.id || (!!incoming.wrapId && m.wrapId === incoming.wrapId)
+        );
+        if (isDuplicate) return;
+
+        this.messages.push(incoming);
         const container = this.messagesContainer;
         if (container) {
           const emptyState = container.querySelector('.conversation-view__empty');
@@ -460,20 +469,24 @@ export class ConversationView extends View {
     this.isSending = true;
     sendBtn.disabled = true;
 
+    // Clear the composer immediately so the message doesn't linger in the input
+    // while the send round-trips (gift-wrap + relay publish can take 1-2s).
+    // Restore the text if the send fails.
+    textarea.value = '';
+    textarea.style.height = 'auto';
+
     try {
       const success = await this.dmsApi?.sendMessage(this.partnerPubkey, content) ?? false;
 
       if (success) {
-        // Clear input
-        textarea.value = '';
-        textarea.style.height = 'auto';
-
         this.systemLogger.info('ConversationView', 'Message sent');
       } else {
+        textarea.value = content;
         this.systemLogger.error('ConversationView', 'Failed to send message');
         ToastService.show('Could not send message — please try again', 'error');
       }
     } catch (_error) {
+      textarea.value = content;
       this.systemLogger.error('ConversationView', 'Error sending message:', _error);
       const timedOut = _error instanceof Error && _error.name === 'SignerTimeoutError';
       ToastService.show(

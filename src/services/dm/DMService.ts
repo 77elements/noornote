@@ -900,10 +900,13 @@ export class DMService {
 
       // Step 6: Store message locally with selfWrap.id as wrapId
       // This ensures that when the self-copy comes back from the relay,
-      // hasMessage(selfWrap.id) returns true and it's skipped as duplicate
+      // hasMessage(selfWrap.id) returns true and it's skipped as duplicate.
+      // Use the deterministic rumor id (not a temp id) so the optimistic copy
+      // and the echoed/decrypted copy share the SAME id — the open conversation
+      // dedups on it, and reply references resolve to a real event id.
       const wrapId = selfWrap?.id ?? recipientWrap.id ?? `local-${Date.now()}`;
       const message: DMMessage = {
-        id: `local-${Date.now()}`,
+        id: rumorId,
         pubkey: currentUser.pubkey,
         content,
         createdAt: now,
