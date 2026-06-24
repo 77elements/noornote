@@ -454,17 +454,33 @@ export class PostService {
     if (!parentId || !parentPubkey) return tags;
 
     if (parentKind === 1111) {
-      // Replying to another comment — inherit root scope from parent
+      // Replying to another comment — inherit root scope from parent.
+      // `I` is the NIP-73 external-content root (e.g. a web page, k:web); without
+      // carrying it forward a reply to a web comment detaches from the page thread.
       const rootETag = parentEvent.tags.find(t => t[0] === 'E');
       const rootATag = parentEvent.tags.find(t => t[0] === 'A');
+      const rootITag = parentEvent.tags.find(t => t[0] === 'I');
       const rootKTag = parentEvent.tags.find(t => t[0] === 'K');
       const rootPTag = parentEvent.tags.find(t => t[0] === 'P');
 
       // Carry forward root scope tags
       if (rootETag) tags.push([...rootETag]);
       if (rootATag) tags.push([...rootATag]);
+      if (rootITag) tags.push([...rootITag]);
       if (rootKTag) tags.push([...rootKTag]);
       if (rootPTag) tags.push([...rootPTag]);
+
+      // If the parent is itself the thread root (a top-level comment) it may carry
+      // only the lowercase `i`/`k` scope and no uppercase root. For a web comment,
+      // promote that scope to the root so the reply stays anchored to the page.
+      if (!rootETag && !rootATag && !rootITag) {
+        const parentI = parentEvent.tags.find(t => t[0] === 'i');
+        const parentKWeb = parentEvent.tags.find(t => t[0] === 'k' && t[1] === 'web');
+        if (parentI && parentKWeb) {
+          tags.push(['I', ...parentI.slice(1)]);
+          tags.push(['K', 'web']);
+        }
+      }
 
       // Parent = this comment
       tags.push(['e', parentId, relayHint, parentPubkey]);
