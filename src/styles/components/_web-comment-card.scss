@@ -1,0 +1,68 @@
+/**
+ * Web Comment Card (NIP-22 comment on a NIP-73 `k:web` external URL)
+ * Inline card appended to a note that comments on a web page. Link-only, built
+ * from tags. Mirrors the podcast-card layout (the sibling inline-in-note card).
+ */
+
+@use '../abstracts/variables' as *;
+
+.web-comment-card {
+  display: flex;
+  align-items: stretch;
+  gap: $gap;
+  margin: $gap 0;
+  padding: calc($gap / 2);
+  border-radius: $radius-xl;
+  background: var(--color-2);
+  text-align: left;
+}
+
+.web-comment-card__media {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  border-radius: $radius-xl;
+  overflow: hidden;
+  background: var(--color-1);
+
+  &--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    line-height: 1;
+  }
+}
+
+.web-comment-card__content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: calc($gap / 4);
+  flex: 1;
+  min-width: 0;
+}
+
+.web-comment-card__kicker {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-3);
+}
+
+.web-comment-card__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-5);
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.web-comment-card__open {
+  align-self: flex-start;
+  margin-top: calc($gap / 4);
+}

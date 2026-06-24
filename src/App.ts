@@ -345,6 +345,7 @@ export class App {
     this.registerRoute('/addons/custom-emojis',         'addon-custom-emojis',         'addon-custom-emojis',         'adv', true);
     this.registerRoute('/addons/wordfilter',            'addon-wordfilter',            'addon-wordfilter',            'adv', true);
     this.registerRoute('/addons/live-streams-player',   'addon-live-streams-player',   'addon-live-streams-player',   'adv', true);
+    this.registerRoute('/addons/web-comments',          'addon-web-comments',          'addon-web-comments',          'adv', true);
     this.registerRoute('/addons/scheduled-posts',       'addon-scheduled-posts',       'addon-scheduled-posts',       'adv', true);
     this.registerRoute('/addons/badges',               'addon-badges',                'addon-badges',                'adv', true);
     this.registerRoute('/addons/note-taking',           'addon-note-taking',           'addon-note-taking',           'adv', true);

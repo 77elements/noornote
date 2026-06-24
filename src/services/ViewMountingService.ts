@@ -506,6 +506,15 @@ export class ViewMountingService {
           }
         };
 
+      case 'addon-web-comments':
+        return {
+          factory: async () => {
+            const { WebCommentsAddonView } = await import('../addons/web-comments/WebCommentsAddonView');
+            const view = new WebCommentsAddonView();
+            return { element: view.getElement(), view };
+          }
+        };
+
       case 'addon-scheduled-posts':
         return {
           factory: async () => {
