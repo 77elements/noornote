@@ -244,7 +244,7 @@
 
   &--critical {
     border-color: var(--color-4);
-    background: color-mix(in srgb, var(--color-4) 5%, transparent);
+    background: var(--bg-accent);
   }
 }
 
@@ -265,7 +265,7 @@
 
 .backup-warning {
   padding: $gap * 1.5;
-  background: color-mix(in srgb, var(--color-4) 10%, transparent);
+  background: var(--bg-accent);
   border: 1px solid var(--color-4);
   border-radius: $radius-xl;
   color: var(--color-5);
@@ -345,7 +345,7 @@
 
   &__error {
     color: var(--color-4);
-    background: color-mix(in srgb, var(--color-4) 10%, transparent);
+    background: var(--bg-accent);
     padding: calc($gap / 2) $gap;
     border-radius: $radius-xl;
     margin: 0;
@@ -378,7 +378,7 @@
   font-weight: 500;
 
   &--completed {
-    background: color-mix(in srgb, var(--color-4) 20%, transparent);
+    background: var(--bg-accent);
     color: var(--color-4);
   }
 

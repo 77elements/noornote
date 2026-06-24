@@ -104,7 +104,7 @@
   }
 
   &:hover {
-    background-color: color-mix(in srgb, var(--color-4) 10%, transparent);
+    background-color: var(--bg-accent);
   }
 }
 

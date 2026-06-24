@@ -249,7 +249,7 @@ html.sidebar-collapsed:not(.layout--phone) {
     }
 
     &:hover {
-      background: color-mix(in srgb, var(--color-4) 10%, transparent);
+      background: var(--bg-accent);
       color: var(--color-4);
     }
 

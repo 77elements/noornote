@@ -42,7 +42,7 @@
     }
 
     &:hover {
-      background: color-mix(in srgb, var(--color-4) 10%, transparent);
+      background: var(--bg-accent);
       color: var(--color-4);
       border-color: var(--color-4);
     }
@@ -248,7 +248,7 @@
 
   &__preview-tag {
     padding: calc($gap / 4) calc($gap / 2);
-    background: color-mix(in srgb, var(--color-4) 10%, transparent);
+    background: var(--bg-accent);
     color: var(--color-4);
     border-radius: $radius-xl;
     @extend %small;
@@ -276,7 +276,7 @@
     transition: $transition-colors;
 
     &:hover:not(:disabled) {
-      background: color-mix(in srgb, var(--color-4) 10%, transparent);
+      background: var(--bg-accent);
       color: var(--color-4);
       border-color: var(--color-4);
     }

@@ -26,9 +26,10 @@
   // Surface tint (change per theme: lighten on dark, darken on light)
   --surface-tint: #{$surface-tint};
 
-  // Accent tint — magenta at low alpha for interacted/hover backgrounds.
+  // Accent tint — the single accent-on-transparent background used for all
+  // interacted / hover / active backgrounds (e.g. .primary-nav__link.is-active).
   // Built from the live --color-4 so it tracks the active theme automatically.
-  --bg-accent: color-mix(in srgb, var(--color-4) 12%, transparent);
+  --bg-accent: color-mix(in srgb, var(--color-4) 10%, transparent);
 
   // Logo gradient (change per theme, derived from color-3/color-6 with more saturation)
   --color-logo-start: #{$color-logo-start};

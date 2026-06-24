@@ -738,7 +738,7 @@
     transition: background 0.2s ease;
 
     &--drag-over {
-      background: color-mix(in srgb, var(--color-4) 10%, transparent);
+      background: var(--bg-accent);
     }
   }
 }
@@ -759,7 +759,7 @@
 
   &:hover {
     border-color: var(--color-4);
-    background: color-mix(in srgb, var(--color-4) 5%, transparent);
+    background: var(--bg-accent);
   }
 
   &:active {
@@ -772,7 +772,7 @@
   }
 
   &--clone {
-    background: color-mix(in srgb, var(--color-4) 20%, transparent);
+    background: var(--bg-accent);
     border-color: var(--color-4);
     box-shadow: $box-shadow;
     width: 140px;

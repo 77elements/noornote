@@ -608,7 +608,7 @@
 
   &--critical {
     border-color: var(--color-4);
-    background: color-mix(in srgb, var(--color-4) 5%, transparent);
+    background: var(--bg-accent);
   }
 }
 
@@ -620,7 +620,7 @@
 
 .wizard-backup-warning {
   padding: $gap * 1.5;
-  background: color-mix(in srgb, var(--color-4) 10%, transparent);
+  background: var(--bg-accent);
   border: 1px solid var(--color-4);
   border-radius: $radius-pill;
   color: var(--color-5);

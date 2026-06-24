@@ -82,7 +82,7 @@
 
     .toast__icon {
       color: var(--color-4);
-      background: color-mix(in srgb, var(--color-4) 10%, transparent);
+      background: var(--bg-accent);
     }
   }
 }

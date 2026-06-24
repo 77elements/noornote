@@ -80,7 +80,7 @@
     border-radius: $radius-xl;
 
     &--info {
-      background: color-mix(in srgb, var(--color-4) 20%, transparent);
+      background: var(--bg-accent);
       color: var(--color-4);
     }
 
@@ -152,7 +152,7 @@
     word-wrap: break-word;
 
     mark {
-      background: color-mix(in srgb, var(--color-4) 30%, transparent);
+      background: var(--bg-accent);
       color: var(--color-5);
       padding: 1px 2px;
       border-radius: $radius-xl;

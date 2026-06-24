@@ -264,7 +264,7 @@
     color: var(--color-4);
 
     &:hover {
-      background: color-mix(in srgb, var(--color-4) 15%, transparent);
+      background: var(--bg-accent);
     }
   }
 
@@ -323,7 +323,7 @@
   &.drag-over {
     border-style: solid;
     border-color: var(--color-4);
-    background: color-mix(in srgb, var(--color-4) 10%, transparent);
+    background: var(--bg-accent);
   }
 }
 
@@ -379,7 +379,7 @@
   // Drop target highlight (override the base drag-over)
   &.drag-over {
     border-color: var(--color-4);
-    background: color-mix(in srgb, var(--color-4) 10%, transparent);
+    background: var(--bg-accent);
 
     .label,
     .icon {

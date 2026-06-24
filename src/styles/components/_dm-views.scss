@@ -33,7 +33,7 @@
   gap: calc($gap / 2);
   padding: $gap;
   margin-bottom: $gap;
-  background: color-mix(in srgb, var(--color-4) 10%, transparent);
+  background: var(--bg-accent);
   border: 1px solid var(--color-4);
   border-radius: $radius-xl;
   color: var(--color-6);

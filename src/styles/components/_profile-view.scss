@@ -239,7 +239,7 @@
   }
 
   &.copied {
-    background: color-mix(in srgb, var(--color-4) 20%, transparent);
+    background: var(--bg-accent);
     border-color: var(--color-4);
 
     svg {
@@ -595,7 +595,7 @@
 
   &:hover {
     color: var(--color-4);
-    background: color-mix(in srgb, var(--color-4) 10%, transparent);
+    background: var(--bg-accent);
   }
 
   &:active {
@@ -624,7 +624,7 @@
   transition: background 0.15s ease;
 
   &:hover {
-    background: color-mix(in srgb, var(--color-4) 10%, transparent);
+    background: var(--bg-accent);
   }
 
   &__icon {

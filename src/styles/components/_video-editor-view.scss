@@ -38,7 +38,7 @@
     }
 
     &:hover {
-      background: color-mix(in srgb, var(--color-4) 10%, transparent);
+      background: var(--bg-accent);
       color: var(--color-4);
       border-color: var(--color-4);
     }
@@ -115,7 +115,7 @@
 
     &--dragover {
       border-color: var(--color-4);
-      background: color-mix(in srgb, var(--color-4) 5%, transparent);
+      background: var(--bg-accent);
       color: var(--color-4);
     }
 
@@ -154,7 +154,7 @@
     padding: calc($gap / 4) calc($gap / 2);
     border-radius: $radius-xl;
     font-weight: 500;
-    background: color-mix(in srgb, var(--color-4) 15%, transparent);
+    background: var(--bg-accent);
     color: var(--color-4);
   }
 
@@ -179,7 +179,7 @@
     transition: $transition-colors;
 
     &:hover {
-      background: color-mix(in srgb, var(--color-4) 10%, transparent);
+      background: var(--bg-accent);
       color: var(--color-4);
     }
   }
@@ -215,7 +215,7 @@
     transition: $transition-colors;
 
     &:hover:not(:disabled) {
-      background: color-mix(in srgb, var(--color-4) 10%, transparent);
+      background: var(--bg-accent);
       color: var(--color-4);
       border-color: var(--color-4);
     }

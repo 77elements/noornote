@@ -27,7 +27,7 @@
 
   // Syncing state (blue/info)
   &--syncing {
-    background-color: color-mix(in srgb, var(--color-4) 10%, transparent);
+    background-color: var(--bg-accent);
     color: var(--color-4);
   }
 
