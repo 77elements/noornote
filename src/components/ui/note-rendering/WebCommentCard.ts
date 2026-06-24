@@ -3,6 +3,9 @@
  * (kind:1111, `k:web`) as a small inline card appended to the note body, mirroring
  * PodcastCard. Additive: the rest of the note (text, quotes, media) renders as usual.
  *
+ * Core, not opt-in: a web comment is a public event on the relays, so any client that
+ * supports the kind shows it. The extension posts; NoorNote reads.
+ *
  * Link-only, ZERO outbound: the card is built purely from the event's tags (icon +
  * "Commenting on" + domain + open link). It deliberately does NOT fetch Open Graph
  * metadata from the target URL — auto-fetching arbitrary user-supplied hosts would be
@@ -10,8 +13,8 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { extractWebRef } from './webContentTags';
-import { escapeHtml, escapeHtmlAttr, safeHttpUrl } from '../../helpers/escapeHtml';
+import { extractWebRef } from '../../../helpers/webContentTags';
+import { escapeHtml, escapeHtmlAttr, safeHttpUrl } from '../../../helpers/escapeHtml';
 
 function hostLabel(url: string): string {
   try {

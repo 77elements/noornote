@@ -11,8 +11,8 @@ import { NIP88PollRenderer } from '../note-features/NIP88PollRenderer';
 import { QuotedNoteRenderer } from './QuotedNoteRenderer';
 import { ArticlePreviewRenderer } from './ArticlePreviewRenderer';
 import { renderPodcastCard } from './PodcastCard';
+import { renderWebCommentCard } from './WebCommentCard';
 import { decodeNip19 } from '../../../services/NostrToolsAdapter';
-import { isWebCommentsEnabled } from '../../../addons/web-comments/index';
 
 export class OriginalNoteRenderer {
 
@@ -89,18 +89,12 @@ export class OriginalNoteRenderer {
       (element.querySelector('.event-content') || element).appendChild(podcastCard);
     }
 
-    // Web Comments addon: a NIP-22 comment whose root scope is a web URL
-    // (NIP-73 `k:web`) → inline "Commenting on <site>" card, appended to the
-    // note body. Cheap inline scope-scan first so the addon chunk is only
-    // imported for events that are actually web comments.
+    // Web comment (NIP-22 comment whose root is a web page, NIP-73 `k:web`) → inline
+    // "Commenting on <site>" card. Core: the client reads these like any other note.
     const webSource = note.repostedEvent || note.rawEvent;
-    if (isWebCommentsEnabled() && webSource.tags.some(t => (t[0] === 'k' || t[0] === 'K') && t[1] === 'web')) {
-      void import('../../../addons/web-comments/WebCommentCard').then(({ renderWebCommentCard }) => {
-        const webCard = renderWebCommentCard(webSource);
-        if (webCard && document.contains(element)) {
-          (element.querySelector('.event-content') || element).appendChild(webCard);
-        }
-      });
+    const webCard = renderWebCommentCard(webSource);
+    if (webCard) {
+      (element.querySelector('.event-content') || element).appendChild(webCard);
     }
 
     // Setup collapsible for long notes (only for top-level notes with collapsible enabled)

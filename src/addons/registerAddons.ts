@@ -15,7 +15,6 @@ import { AddonLoader } from './AddonLoader';
 import { isWalletBalanceEnabled } from './wallet-balance/index';
 import { isProfileRecognitionEnabled } from './profile-recognition/index';
 import { isLiveStreamsPlayerEnabled } from './live-streams-player/index';
-import { isWebCommentsEnabled } from './web-comments/index';
 import { isHashtagSubscriptionsEnabled } from './hashtag-subscriptions/index';
 import { isContentWordFilterEnabled } from './content-word-filter/index';
 import { isCustomEmojisEnabled } from './custom-emojis/index';
@@ -47,12 +46,6 @@ export function registerCoreAddons(): void {
     id: 'live-streams-player',
     isEnabled: isLiveStreamsPlayerEnabled,
     load: () => import('./live-streams-player/runtime').then(m => m.default),
-  });
-
-  loader.register({
-    id: 'web-comments',
-    isEnabled: isWebCommentsEnabled,
-    load: () => import('./web-comments/runtime').then(m => m.default),
   });
 
   loader.register({
