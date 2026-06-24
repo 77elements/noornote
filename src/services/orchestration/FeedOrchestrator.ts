@@ -26,6 +26,7 @@ import { diagLog } from '../DiagnosticLogger';
 import { webDiag } from '../WebDiag';
 import { isDataSaverEnabled } from '../DataSaverService';
 import { isHideSelfRepostsEnabled, getSelfRepostGapSeconds } from '../../helpers/selfRepostSetting';
+import { isWebCommentsEnabled } from '../../addons/web-comments/index';
 import type { TimelineConfig } from '../../components/timeline/TimelineConfig';
 
 /**
@@ -187,6 +188,8 @@ export class FeedOrchestrator extends Orchestrator {
           kinds: FEED_KINDS,
           limit: params.pageSize
         }];
+        const wc = this.webCommentFilter(followingPubkeys, { limit: params.pageSize }, false);
+        if (wc) filters.push(wc);
       } else if (isTimeRangeMode) {
         const filterObj: NDKFilter<number> = {
           authors: followingPubkeys,
@@ -198,13 +201,20 @@ export class FeedOrchestrator extends Orchestrator {
           filterObj.until = explicitUntil;
         }
         filters = [filterObj];
+        const wcBounds: { since?: number; until?: number; limit: number } = { since: explicitSince, limit: this.fetchLimit };
+        if (explicitUntil !== undefined) wcBounds.until = explicitUntil;
+        const wc = this.webCommentFilter(followingPubkeys, wcBounds);
+        if (wc) filters.push(wc);
       } else {
+        const windowSince = Math.floor(Date.now() / 1000) - (timeWindowHours * 3600);
         filters = [{
           authors: followingPubkeys,
           kinds: FEED_KINDS,
           limit: params.pageSize,
-          since: Math.floor(Date.now() / 1000) - (timeWindowHours * 3600)
+          since: windowSince
         }];
+        const wc = this.webCommentFilter(followingPubkeys, { since: windowSince, limit: params.pageSize });
+        if (wc) filters.push(wc);
       }
 
       const events = await this.fetchEvents(relays, filters, params.fetchMode, !!specificRelay);
@@ -352,6 +362,13 @@ export class FeedOrchestrator extends Orchestrator {
         filterObj.since = since;
       }
       const filters: NDKFilter<number>[] = [filterObj];
+      if (pureUntil) {
+        const wc = this.webCommentFilter(followingPubkeys, { until: until - 1, limit: params.pageSize }, false);
+        if (wc) filters.push(wc);
+      } else {
+        const wc = this.webCommentFilter(followingPubkeys, { since, until: until - 1, limit: 50 });
+        if (wc) filters.push(wc);
+      }
 
       const events = await this.fetchEvents(relays, filters, params.fetchMode, !!specificRelay);
       const applyWordFilter = request.config ? request.config.applyWordFilter : !exemptFromMuteFilter;
@@ -464,6 +481,31 @@ export class FeedOrchestrator extends Orchestrator {
     emitted: Set<string>;               // ids already handed to the timeline
   } | null = null;
 
+  /**
+   * Web Comments addon: when enabled, the home feed additionally pulls top-level
+   * NIP-22 comments anchored to a web page (NIP-73, lowercase `k:web`) from the same
+   * authors, so the user's and their follows' web comments surface inline. `k` is a
+   * single-letter tag, so this is a relay-indexed filter, and `#k:["web"]` matches only
+   * top-level web comments (replies to them carry `k:1111`), so no extra filtering is
+   * needed. Returns null when the addon is off, leaving FEED_KINDS untouched for everyone.
+   */
+  private webCommentFilter(
+    authors: string[],
+    bounds: { since?: number; until?: number; limit: number },
+    includeSelf: boolean = true
+  ): NDKFilter<number> | null {
+    if (!isWebCommentsEnabled()) return null;
+    // Home feed: add the current user so their own web comments surface even if they
+    // don't follow themselves. Profile feed: scope strictly to the viewed author (never
+    // leak the viewer's own web comments into someone else's profile).
+    const self = includeSelf ? AuthService.getInstance().getCurrentUser()?.pubkey : undefined;
+    const scopedAuthors = self && !authors.includes(self) ? [...authors, self] : authors;
+    const filter: NDKFilter<number> = { authors: scopedAuthors, kinds: [1111], '#k': ['web'], limit: bounds.limit };
+    if (bounds.since !== undefined) filter.since = bounds.since;
+    if (bounds.until !== undefined) filter.until = bounds.until;
+    return filter;
+  }
+
   private async loadProfileDirect(
     pubkeys: string[],
     relays: string[],
@@ -479,6 +521,9 @@ export class FeedOrchestrator extends Orchestrator {
       kinds: FEED_KINDS,
       limit: pageSize
     };
+    const pvFilters: NDKFilter<number>[] = [baseFilter];
+    const wcPv = this.webCommentFilter(pubkeys, { limit: pageSize }, false);
+    if (wcPv) pvFilters.push(wcPv);
 
     if (isInitial || !this.profilePager || this.profilePager.pubkey !== pubkey) {
       this.profilePager = {
@@ -504,7 +549,7 @@ export class FeedOrchestrator extends Orchestrator {
         for (const r of active) perRelayUntil[r] = pager.frontier;
       }
 
-      const { events, perRelay } = await this.transport.fetchDirectPaged(active, [baseFilter], perRelayUntil, 15000, 'FeedOrch-PV');
+      const { events, perRelay } = await this.transport.fetchDirectPaged(active, pvFilters, perRelayUntil, 15000, 'FeedOrch-PV');
       for (const e of events) { if (e.id) pager.fetched.set(e.id, e); }
 
       // Update exhaustion and collect the frontier candidates (oldest of each
@@ -941,13 +986,15 @@ export class FeedOrchestrator extends Orchestrator {
       const now = Math.floor(Date.now() / 1000);
 
       // Query for new notes since last check
-      const filters = [{
+      const filters: NDKFilter<number>[] = [{
         kinds: FEED_KINDS, // Text notes + reposts + polls (NIP-88)
         authors: this.pollingFollowingPubkeys,
         since: this.lastCheckedTimestamp + 1,
         until: now,
         limit: this.pollLimit
       }];
+      const wc = this.webCommentFilter(this.pollingFollowingPubkeys, { since: this.lastCheckedTimestamp + 1, until: now, limit: this.pollLimit });
+      if (wc) filters.push(wc);
 
       const events = await this.transport.fetch(relays, filters, 5000, true, 'FeedOrch'); // Skip cache for polling
       const filteredEvents = await this.processEvents(events, this.pollingIncludeReplies, this.pollingExemptFromMuteFilter, this.pollingApplyWordFilter);
@@ -1101,13 +1148,15 @@ export class FeedOrchestrator extends Orchestrator {
       if (relays.length === 0) return [];
 
       const now = Math.floor(Date.now() / 1000);
-      const filters = [{
+      const filters: NDKFilter<number>[] = [{
         kinds: FEED_KINDS,
         authors: followingPubkeys,
         since: newestTimestamp + 1,
         until: now,
         limit: this.pollLimit
       }];
+      const wc = this.webCommentFilter(followingPubkeys, { since: newestTimestamp + 1, until: now, limit: this.pollLimit });
+      if (wc) filters.push(wc);
 
       const events = await this.transport.fetch(relays, filters, 5000, true, 'FeedOrch');
       return await this.processEvents(events, includeReplies, exemptFromMuteFilter, applyWordFilter);
