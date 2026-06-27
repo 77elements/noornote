@@ -903,6 +903,12 @@ export class FeedOrchestrator extends Orchestrator {
 
     this.registerNotes(result);
     this.systemLogger.info('FeedOrchestrator', `Last notes per follow: ${result.length} authors`);
+    diagLog('system', 'Last notes per follow built', {
+      follows: pubkeys.length,
+      authors: result.length,
+      fetched: collected.length,
+      includeReplies,
+    });
     return result;
   }
 

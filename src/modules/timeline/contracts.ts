@@ -8,6 +8,8 @@ export type NewNotesCallback = (info: NewNotesInfo) => void;
 export interface TimelineModuleApi {
   loadInitialFeed(request: FeedLoadRequest): Promise<FeedLoadResult>;
   loadMore(request: FeedLoadRequest & { until: number }): Promise<FeedLoadResult>;
+  /** "Last notes per follow": the newest qualifying kind-1 note of each author, newest-author-first. */
+  loadLatestPerAuthor(pubkeys: string[], includeReplies: boolean, applyWordFilter: boolean): Promise<NostrEvent[]>;
   getLoadedNote(eventId: string): NostrEvent | null;
   hasLoadedNote(eventId: string): boolean;
   registerNotes(events: NostrEvent[]): void;

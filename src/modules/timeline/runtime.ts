@@ -19,6 +19,8 @@ export class TimelineRuntime implements ModuleRuntime<TimelineModuleApi> {
     return {
       loadInitialFeed: (request) => orch?.loadInitialFeed(request) ?? Promise.resolve(emptyResult as any),
       loadMore: (request) => orch?.loadMore(request) ?? Promise.resolve(emptyResult as any),
+      loadLatestPerAuthor: (pubkeys, includeReplies, applyWordFilter) =>
+        orch?.loadLatestPerAuthor(pubkeys, includeReplies, applyWordFilter) ?? Promise.resolve([]),
       getLoadedNote: (eventId) => orch?.getLoadedNote(eventId) ?? null,
       hasLoadedNote: (eventId) => orch?.hasLoadedNote(eventId) ?? false,
       registerNotes: (events) => orch?.registerNotes(events),

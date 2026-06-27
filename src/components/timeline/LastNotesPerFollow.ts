@@ -17,7 +17,7 @@
  */
 
 import { View } from '../views/View';
-import { FeedOrchestrator } from '../../services/orchestration/FeedOrchestrator';
+import { ModuleLoader } from '../../core/ModuleLoader';
 import { UserService } from '../../services/UserService';
 import { AuthService } from '../../services/AuthService';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
@@ -30,6 +30,7 @@ import { ISLStatsUpdater } from './timeline-features/ISLStatsUpdater';
 import { ScrollPositionManager } from './timeline-features/ScrollPositionManager';
 import { NoteUI } from '../ui/NoteUI';
 import { SystemLogger } from '../../services/SystemLogger';
+import type { TimelineModuleApi } from '../../modules/timeline/contracts';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 /** How many author-cards to reveal per display page. */
@@ -39,7 +40,6 @@ export class LastNotesPerFollow extends View {
   private element: HTMLElement;
   private userPubkey: string;
 
-  private feedOrchestrator: FeedOrchestrator;
   private userService: UserService;
   private authService: AuthService;
 
@@ -60,7 +60,6 @@ export class LastNotesPerFollow extends View {
   constructor(userPubkey: string) {
     super();
     this.userPubkey = userPubkey;
-    this.feedOrchestrator = FeedOrchestrator.getInstance();
     this.userService = UserService.getInstance();
     this.authService = AuthService.getInstance();
 
@@ -107,6 +106,11 @@ export class LastNotesPerFollow extends View {
     });
     const mount = this.element.querySelector('.timeline-view-selector');
     if (mount) mount.appendChild(this.viewDropdown.getElement());
+  }
+
+  /** Lazy getter (never cache getApi in the constructor — avoids null-forever timing bugs). */
+  private get timelineApi(): TimelineModuleApi | null {
+    return ModuleLoader.getInstance().getApi<TimelineModuleApi>('timeline');
   }
 
   private createElement(): HTMLElement {
@@ -161,7 +165,14 @@ export class LastNotesPerFollow extends View {
         return;
       }
 
-      this.allEvents = await this.feedOrchestrator.loadLatestPerAuthor(
+      const api = this.timelineApi;
+      if (!api) {
+        this.uiStateHandler.hideSkeletonLoaders();
+        this.uiStateHandler.showError('Timeline not ready. Please try again.');
+        return;
+      }
+
+      this.allEvents = await api.loadLatestPerAuthor(
         followingPubkeys,
         getSavedFeedMode() === 'latest-replies', // same Latest / Latest+Replies preference as the main timeline
         true                                     // apply Word Filter addon when enabled (processEvents checks internally)
