@@ -1,7 +1,9 @@
-# NoorNote 1.0.5
+# NoorNote 1.1.0
 
-**Podcasts:** podcast episodes and shows (e.g. Fountain) now show a rich card with cover, title, show name and an inline player.
+**Web Comments:** comments left on web pages and articles (NIP-22/NIP-73) now appear as inline cards in your feeds, and you can reply to them — available for everyone, no addon needed.
 
-**Notes:** custom emojis display at full size inside notes, and unresolvable quoted zap receipts no longer show a "Note not found" box.
+**Timeline:** a new "Last notes per follow" tab shows the latest note from each person you follow, freshest first — so people who only post occasionally don't get buried.
 
-**Direct Messages:** fixed a message briefly showing twice, and the composer now clears immediately when you send.
+**Bulk delete:** search your own posts by keyword across your whole history before deleting, not just by date.
+
+**Mobile:** fixed horizontal scrolling of the tab row — swipe anywhere to scroll, tap to select.
