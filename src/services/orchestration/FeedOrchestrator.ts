@@ -835,6 +835,78 @@ export class FeedOrchestrator extends Orchestrator {
   }
 
   /**
+   * "Last notes per follow": the newest qualifying kind-1 note of EACH author.
+   *
+   * Uses the per-pubkey-limit trick (one filter per author with a small limit — a
+   * REQ's `limit` applies per filter, NIP-01), so we get a handful of recent notes
+   * per author instead of N total. We fetch a few (not just 1) so that when replies
+   * are filtered out (Latest mode), the author's latest ROOT note still surfaces
+   * instead of dropping the author whose very latest happened to be a reply.
+   *
+   * Filters are batched to stay under relays' per-REQ filter caps, fetched with
+   * bounded concurrency. The result runs through the central pipeline
+   * (dedup/reply/mute/self-repost/word/sort) — exactly the main timeline's filters —
+   * then is reduced to one newest note per author and sorted newest-author-first.
+   * The CALLER paginates the display.
+   *
+   * Read-only, derived from the follow list — no polling, no storage, no sync.
+   */
+  public async loadLatestPerAuthor(
+    pubkeys: string[],
+    includeReplies: boolean,
+    applyWordFilter: boolean
+  ): Promise<NostrEvent[]> {
+    if (pubkeys.length === 0) return [];
+
+    const relays = await this.getRelaysForRequest(pubkeys, undefined, 'auto');
+
+    /** Notes fetched per author — a few so reply-filtering still leaves a root note. */
+    const PER_AUTHOR_LIMIT = 5;
+    // Batch so a single REQ stays under the per-REQ filter cap most relays enforce (~10-20).
+    const BATCH_SIZE = 15;
+    const batches: string[][] = [];
+    for (let i = 0; i < pubkeys.length; i += BATCH_SIZE) {
+      batches.push(pubkeys.slice(i, i + BATCH_SIZE));
+    }
+
+    // Bounded concurrency so hundreds of follows don't open every batch at once.
+    const CONCURRENCY = 6;
+    const collected: NostrEvent[] = [];
+    let cursor = 0;
+    const worker = async (): Promise<void> => {
+      while (cursor < batches.length) {
+        const batch = batches[cursor++]!;
+        const filters: NDKFilter<number>[] = batch.map(pk => ({ authors: [pk], kinds: [1], limit: PER_AUTHOR_LIMIT }));
+        try {
+          const events = await this.fetchEvents(relays, filters, 'cache-first', false);
+          collected.push(...events);
+        } catch (err) {
+          this.systemLogger.warn('FeedOrchestrator', `Last-notes batch failed: ${err}`);
+        }
+      }
+    };
+    await Promise.all(
+      Array.from({ length: Math.min(CONCURRENCY, batches.length) }, () => worker())
+    );
+
+    // Central pipeline (dedup → reply → mute → self-repost → word → sort). No mute
+    // exemption: this is the user's follows, not their own profile.
+    const processed = await this.processEvents(collected, includeReplies, undefined, applyWordFilter);
+
+    // Reduce to ONE newest note per author. `processed` is already newest-first,
+    // so the first occurrence of a pubkey is that author's latest note.
+    const latestByAuthor = new Map<string, NostrEvent>();
+    for (const ev of processed) {
+      if (!latestByAuthor.has(ev.pubkey)) latestByAuthor.set(ev.pubkey, ev);
+    }
+    const result = Array.from(latestByAuthor.values()).sort((a, b) => b.created_at - a.created_at);
+
+    this.registerNotes(result);
+    this.systemLogger.info('FeedOrchestrator', `Last notes per follow: ${result.length} authors`);
+    return result;
+  }
+
+  /**
    * Clear cache (for refresh)
    * Note: Only clears NoteService cache, not other caches
    */

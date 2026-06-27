@@ -13,23 +13,24 @@
 
 import { View } from './View';
 import { Timeline } from '../timeline/Timeline';
+import { LastNotesPerFollow } from '../timeline/LastNotesPerFollow';
 import { followingTimelineConfig, tribeTimelineConfig } from '../timeline/TimelineConfig';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { AuthService } from '../../services/AuthService';
 import { SystemLogger } from '../../services/SystemLogger';
 import { isTribesEnabled } from '../../addons/tribes/index';
 
-type TabType = 'timeline' | 'tribe';
+type TabType = 'timeline' | 'last-notes' | 'tribe';
 
 interface TabInfo {
   type: TabType;
-  id: string;      // 'timeline' or tribe folder ID
+  id: string;      // 'timeline', 'last-notes', or tribe folder ID
   name: string;    // Display name
 }
 
 export class TimelineView extends View {
   private container: HTMLElement;
-  private timeline: Timeline | null = null;
+  private timeline: Timeline | LastNotesPerFollow | null = null;
   private eventBus: TypedEventBus;
   private authService: AuthService;
   private currentTabId: string = 'timeline';
@@ -127,11 +128,10 @@ export class TimelineView extends View {
     // Build tabs: Timeline first, then tribes (async for addon lazy-loading)
     await this.buildTabs();
 
-    // Check if user has tribes defined
-    const hasTribes = this.tabs.length > 1;
+    // The tab bar always carries at least Timeline + Last notes per follow.
+    const showTabBar = this.tabs.length > 1;
 
-    // Only show header with tabs if user has at least one tribe
-    if (hasTribes) {
+    if (showTabBar) {
       // Build header with tabs and edit link
       const header = document.createElement('div');
       header.className = 'timeline-view__header';
@@ -145,22 +145,24 @@ export class TimelineView extends View {
       tabsWrapper.className = 'tabs tabs--scrollable';
 
       // Create all tabs
-      this.tabs.forEach((tab, index) => {
-        const isActive = index === 0;
+      this.tabs.forEach((tab) => {
+        const isActive = tab.id === this.currentTabId;
         const tabEl = this.createTab(tab, isActive);
         tabsWrapper.appendChild(tabEl);
       });
 
       tabsContainer.appendChild(tabsWrapper);
 
-      // Edit link
-      const editLink = document.createElement('button');
-      editLink.className = 'timeline-view__edit-link btn btn--mini btn--passive';
-      editLink.textContent = 'Edit tribes';
-      editLink.addEventListener('click', () => {
-        this.eventBus.emit('list:open', { listType: 'tribes' });
-      });
-      tabsContainer.appendChild(editLink);
+      // Edit link — only meaningful when the Tribes addon is on.
+      if (isTribesEnabled()) {
+        const editLink = document.createElement('button');
+        editLink.className = 'timeline-view__edit-link btn btn--mini btn--passive';
+        editLink.textContent = 'Edit tribes';
+        editLink.addEventListener('click', () => {
+          this.eventBus.emit('list:open', { listType: 'tribes' });
+        });
+        tabsContainer.appendChild(editLink);
+      }
 
       header.appendChild(tabsContainer);
       this.container.appendChild(header);
@@ -196,6 +198,14 @@ export class TimelineView extends View {
       type: 'timeline',
       id: 'timeline',
       name: 'Timeline'
+    });
+
+    // Fixed second tab: newest note from each followed user, freshest author first.
+    // Core, always present (derived from the follow list) — sits before the tribes.
+    this.tabs.push({
+      type: 'last-notes',
+      id: 'last-notes',
+      name: 'Last notes per follow'
     });
 
     // Add tribe tabs (only if addon enabled)
@@ -243,24 +253,27 @@ export class TimelineView extends View {
    * Update timeline based on selected tab
    */
   private async updateTimeline(): Promise<void> {
-    // Determine filter pubkeys (undefined = all follows, array = specific tribe members)
-    let filterPubkeys: string[] | undefined;
-    if (this.currentTabId !== 'timeline' && isTribesEnabled()) {
-      const tribes = await import('../../lists/tribes');
-      filterPubkeys = tribes.getMemberPubkeysInFolder(this.currentTabId);
-    }
-
     // Destroy existing timeline
     if (this.timeline) {
       this.timeline.destroy();
       this.timeline = null;
     }
 
-    // Create new timeline: a tribe tab (explicit members) or the main following feed
-    this.timeline = new Timeline(
-      this.userPubkey,
-      filterPubkeys ? tribeTimelineConfig(filterPubkeys) : followingTimelineConfig()
-    );
+    if (this.currentTabId === 'last-notes') {
+      // Dedicated view: newest note per followed user (does not touch the main feed).
+      this.timeline = new LastNotesPerFollow(this.userPubkey);
+    } else {
+      // Tribe tab (explicit members) or the main following feed.
+      let filterPubkeys: string[] | undefined;
+      if (this.currentTabId !== 'timeline' && isTribesEnabled()) {
+        const tribes = await import('../../lists/tribes');
+        filterPubkeys = tribes.getMemberPubkeysInFolder(this.currentTabId);
+      }
+      this.timeline = new Timeline(
+        this.userPubkey,
+        filterPubkeys ? tribeTimelineConfig(filterPubkeys) : followingTimelineConfig()
+      );
+    }
 
     // Mount timeline
     const timelineContainer = this.container.querySelector('.timeline-view__timeline');
