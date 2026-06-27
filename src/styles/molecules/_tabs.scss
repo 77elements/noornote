@@ -19,6 +19,12 @@
     overflow-x: auto;
     overflow-y: hidden;
     scroll-behavior: smooth;
+    // `pan-x` tells the browser the whole strip is for horizontal panning, so a
+    // touch-drag scrolls the tabs even when it starts ON a tab button (not just in
+    // the gaps between them). A clean tap still selects the tab. Same fix as the
+    // scroll-carousel. Without this, a drag on a button is read as a tap attempt
+    // and the strip never scrolls on mobile.
+    touch-action: pan-x;
     @include custom-scrollbar;
 
     .tab {
