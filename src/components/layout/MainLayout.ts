@@ -20,7 +20,7 @@ import { ModalService } from '../../services/ModalService';
 import { AuthStateManager } from '../../services/AuthStateManager';
 import { AuthService } from '../../services/AuthService';
 import { TypedEventBus } from '../../core/TypedEventBus';
-import { getOrderedAddons } from '../../addons/addonOrder';
+import { getOrderedAddons, getOrderedAddonsForPubkey } from '../../addons/addonOrder';
 import { wireAddonReorder } from './AddonNavReorder';
 // WalletBalanceDisplay is owned by src/addons/wallet-balance/runtime.ts and
 // managed by the AddonLoader. MainLayout only provides the mount point
@@ -879,7 +879,25 @@ export class MainLayout {
       if (profileLink) {
         profileLink.href = `/profile/${data.npub}`;
       }
+
+      // The addon submenu is built once at construction; re-apply THIS account's saved order on
+      // switch, otherwise the list keeps whatever order the previous account left it in.
+      this.applyAddonOrder(data.pubkey);
     });
+  }
+
+  /** Reorder the existing addon submenu nodes to match the saved order for `pubkey` (no rebuild). */
+  private applyAddonOrder(pubkey: string): void {
+    const submenu = this.element.querySelector('.primary-nav__link--addons .primary-nav__submenu') as HTMLElement | null;
+    if (!submenu) return;
+    const byId = new Map<string, HTMLElement>();
+    submenu.querySelectorAll<HTMLElement>(':scope > li[data-addon-id]').forEach(li => byId.set(li.dataset.addonId || '', li));
+    // Re-append each row in saved order; appendChild moves the existing node, preserving its
+    // wired listeners (wireAddonReorder delegates on the submenu, so it survives the moves).
+    for (const entry of getOrderedAddonsForPubkey(pubkey)) {
+      const li = byId.get(entry.id);
+      if (li) submenu.appendChild(li);
+    }
   }
 
   /**

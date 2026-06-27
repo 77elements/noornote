@@ -12,6 +12,20 @@ import { ADDON_REGISTRY, type AddonRegistryEntry } from './registry';
 
 export function getOrderedAddons(): AddonRegistryEntry[] {
   const saved = PerAccountLocalStorage.getInstance().get<string[]>(StorageKeys.ADDON_ORDER, []);
+  return orderBy(saved);
+}
+
+/**
+ * Same as getOrderedAddons() but for an explicit pubkey. Used on account switch, where the active
+ * account in AuthService may not have settled yet — the login event carries the pubkey, so read it
+ * directly to avoid any race.
+ */
+export function getOrderedAddonsForPubkey(pubkey: string): AddonRegistryEntry[] {
+  const saved = PerAccountLocalStorage.getInstance().getForPubkey<string[]>(StorageKeys.ADDON_ORDER, pubkey, []);
+  return orderBy(saved);
+}
+
+function orderBy(saved: string[]): AddonRegistryEntry[] {
   const byId = new Map(ADDON_REGISTRY.map(a => [a.id, a]));
 
   const ordered: AddonRegistryEntry[] = [];
