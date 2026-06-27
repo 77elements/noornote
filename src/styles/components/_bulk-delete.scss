@@ -19,6 +19,19 @@
   font-weight: 500;
 }
 
+// Inline "reset filters" affordance shown next to any active filter label.
+.bulk-delete__reset {
+  margin-left: calc($gap / 2);
+  color: var(--color-4);
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    color: var(--color-5);
+    text-decoration: underline;
+  }
+}
+
 .bulk-delete__empty {
   padding: $gap;
   text-align: center;

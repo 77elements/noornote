@@ -1,11 +1,17 @@
 /**
  * BulkDeleteView — addon page for `/addons/bulk-delete`.
  *
- * Lists the user's own posts in a chosen time range (one-line, chronological,
- * loadMore), lets them tick the ones to delete and fire one NIP-09 deletion per
- * ~100 selected (chunked → low relay load). Deletion runs through the posts
- * module + the resumable delete-broadcast in SILENT mode: no System Log output,
- * progress is shown on this page instead.
+ * Lists the user's own posts (one-line, chronological, loadMore), lets them tick
+ * the ones to delete and fire one NIP-09 deletion per ~100 selected (chunked →
+ * low relay load). Deletion runs through the posts module + the resumable
+ * delete-broadcast in SILENT mode: no System Log output, progress is shown on
+ * this page instead.
+ *
+ * Two ways to scope the list, applied as orthogonal filters:
+ *   - "Select time range" → windowed FeedOrchestrator fetch (all post kinds).
+ *   - "Select by search term" → reuses the profile module's whole-history note
+ *     search (kind 1 only) as the base set; a time range then narrows those
+ *     loaded results client-side (no re-fetch).
  *
  * Row click opens the original note via ViewNavigationController.openView, i.e.
  * the standard app behavior (scc tab in right-pane mode, main column otherwise).
@@ -30,6 +36,7 @@ import type { TimelineConfig } from '../../components/timeline/TimelineConfig';
 import { isBulkDeleteEnabled, setBulkDeleteEnabled } from './index';
 import type { TimelineModuleApi } from '../../modules/timeline/contracts';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
+import type { ProfileModuleApi } from '../../modules/profile/contracts';
 import type { SingleNoteModuleApi } from '../../modules/single-note/contracts';
 import type { BroadcastProgress } from '../../services/BroadcastDeleteService';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -42,7 +49,7 @@ const CACHE_TTL_MS = 30 * 60 * 1000;
 /** sessionStorage key — survives reloads, clears when the tab is closed. */
 const SESSION_KEY = 'noornote_bulk_delete_session';
 /** Bump to invalidate caches written by an older (e.g. mis-ordered) version. */
-const CACHE_VERSION = 2;
+const CACHE_VERSION = 3;
 
 /** Slim, JSON-safe event (NDK events carry circular relay refs that can't be stringified). */
 interface SlimEvent {
@@ -58,7 +65,9 @@ interface BulkDeleteCache {
   version: number;
   pubkey: string;
   range: DateRangeResult | null; // null = the default "recent posts" view
-  notes: SlimEvent[];
+  searchTerms: string | null; // non-null = search mode (searchBase holds the whole-history results)
+  searchBase: SlimEvent[]; // full kind-1 search result; only populated in search mode
+  notes: SlimEvent[]; // the date-mode list; empty in search mode (re-derived from searchBase)
   selected: string[];
   hasMore: boolean;
   savedAt: number;
@@ -76,6 +85,13 @@ export class BulkDeleteView extends View {
   private loading = false;
   private hasMore = false;
   private infiniteScroll: InfiniteScroll | null = null;
+
+  // Search mode: null = date mode; set = whole-history kind-1 search active.
+  private searchTerms: string | null = null;
+  // Full search result; `notes` is this list optionally narrowed by `range`.
+  private searchBase: NostrEvent[] = [];
+  // Bumped by every load/search so a slow, superseded fetch can't clobber newer results.
+  private loadSeq = 0;
 
   // Deletion progress state (aggregate from BroadcastDeleteService + live host events)
   private dispatching = false; // the deleteEvents() loop is running
@@ -112,7 +128,7 @@ export class BulkDeleteView extends View {
         <div class="setting">
           <span class="setting__label">Enable Bulk delete</span>
           <div class="setting__control"></div>
-          <p class="setting__desc">Pick a time range, then select your own posts and delete them in bulk. Each deletion is a NIP-09 request broadcast to relays in the background — relays may honor it or not. Deletion is not guaranteed and cannot be undone.</p>
+          <p class="setting__desc">Pick a time range or search your own posts, then select them and delete in bulk. Each deletion is a NIP-09 request broadcast to relays in the background — relays may honor it or not. Deletion is not guaranteed and cannot be undone.</p>
         </div>
       </section>
       <div data-addon-content="bulk-delete"></div>
@@ -158,6 +174,7 @@ export class BulkDeleteView extends View {
     if (!this.contentEl) return;
     this.contentEl.innerHTML = `
       <div class="l-row--right bulk-delete__bar">
+        <button class="btn" data-action="pick-search">Select by search term</button>
         <button class="btn" data-action="pick-range">Select time range</button>
       </div>
       <div class="l-row--split bulk-delete__range-row">
@@ -171,6 +188,9 @@ export class BulkDeleteView extends View {
       </div>
     `;
 
+    this.contentEl.querySelector('[data-action="pick-search"]')
+      ?.addEventListener('click', () => void this.handlePickSearch());
+
     this.contentEl.querySelector('[data-action="pick-range"]')
       ?.addEventListener('click', () => void this.handlePickRange());
 
@@ -179,6 +199,15 @@ export class BulkDeleteView extends View {
 
     this.contentEl.querySelector('[data-action="select-all"]')
       ?.addEventListener('click', (e) => { e.preventDefault(); this.toggleSelectAll(); });
+
+    // The reset link lives inside the (re-rendered) range label; delegate from the
+    // persistent span so it survives label re-renders.
+    this.contentEl.querySelector('[data-range]')?.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('[data-action="reset-filters"]')) {
+        e.preventDefault();
+        this.resetFilters();
+      }
+    });
 
     // Delegated row interactions (survive re-render of the list's children).
     const list = this.contentEl.querySelector('[data-list]') as HTMLElement | null;
@@ -208,9 +237,9 @@ export class BulkDeleteView extends View {
       this.saveCache();
     });
 
-    // Restore a recent search (range + notes + selection) so re-opening the addon
-    // doesn't force a re-search. If there's nothing to restore (fresh enable or new
-    // session), load the user's recent posts by default — the time range is optional.
+    // Restore a recent search (range/search + notes + selection) so re-opening the
+    // addon doesn't force a re-search. If there's nothing to restore (fresh enable
+    // or new session), load the user's recent posts by default.
     if (!this.restoreFromCache()) {
       void this.loadInitial();
     }
@@ -222,16 +251,20 @@ export class BulkDeleteView extends View {
   /** Persist the current list to sessionStorage so a reload/re-open skips the re-search. */
   private saveCache(): void {
     const pubkey = this.pubkey;
-    if (!pubkey || (!this.range && this.notes.length === 0)) return;
+    if (!pubkey || (!this.range && this.searchTerms === null && this.notes.length === 0)) return;
+    const slim = (n: NostrEvent): SlimEvent => ({
+      id: n.id ?? '', pubkey: n.pubkey, created_at: n.created_at,
+      kind: n.kind ?? 1, content: n.content ?? '', tags: n.tags ?? [],
+    });
     try {
+      const searching = this.searchTerms !== null;
       const cache: BulkDeleteCache = {
         version: CACHE_VERSION,
         pubkey,
         range: this.range,
-        notes: this.notes.map(n => ({
-          id: n.id ?? '', pubkey: n.pubkey, created_at: n.created_at,
-          kind: n.kind ?? 1, content: n.content ?? '', tags: n.tags ?? [],
-        })),
+        searchTerms: this.searchTerms,
+        searchBase: searching ? this.searchBase.map(slim) : [],
+        notes: searching ? [] : this.notes.map(slim), // search mode re-derives notes from searchBase
         selected: [...this.selected],
         hasMore: this.hasMore,
         savedAt: Date.now(),
@@ -254,10 +287,24 @@ export class BulkDeleteView extends View {
       }
       if (c.pubkey !== pubkey || Date.now() - c.savedAt > CACHE_TTL_MS) return false;
       this.range = c.range;
+      this.searchTerms = c.searchTerms ?? null;
+      this.selected = new Set(c.selected);
+
       // Slim events are valid for preview / open / cache-seed (sig isn't needed to display).
       // Defensive re-sort newest-first so a once-mis-ordered cache can't resurface.
-      this.notes = (c.notes as unknown as NostrEvent[]).slice().sort((a, b) => b.created_at - a.created_at);
-      this.selected = new Set(c.selected);
+      const sortDesc = (evs: SlimEvent[]) =>
+        (evs as unknown as NostrEvent[]).slice().sort((a, b) => b.created_at - a.created_at);
+
+      if (this.searchTerms !== null) {
+        this.searchBase = sortDesc(c.searchBase ?? []);
+        this.notes = this.filteredSearchNotes();
+        this.hasMore = false;
+        this.renderRangeLabel();
+        this.renderList();
+        return true; // search mode has no infinite scroll
+      }
+
+      this.notes = sortDesc(c.notes);
       this.hasMore = c.hasMore;
       this.renderRangeLabel();
       this.renderList();
@@ -273,14 +320,12 @@ export class BulkDeleteView extends View {
     this.infiniteScroll = null;
     if (this.contentEl) this.contentEl.innerHTML = '';
     this.range = null;
+    this.searchTerms = null;
+    this.searchBase = [];
     this.notes = [];
     this.selected.clear();
     this.loading = false;
     this.hasMore = false;
-    if (this.pollTimer) { clearTimeout(this.pollTimer); this.pollTimer = 0; }
-    this.dispatching = false;
-    this.summary = null;
-    this.lastHost = null;
   }
 
   private get pubkey(): string | null {
@@ -330,9 +375,102 @@ export class BulkDeleteView extends View {
     if (!result) return;
     this.range = result;
     this.selected.clear();
+    // Search active: narrow the already-loaded results client-side, no re-fetch.
+    if (this.searchTerms !== null) {
+      this.applySearchView();
+      this.saveCache();
+      return;
+    }
     this.notes = [];
     this.updateDeleteButton();
     await this.loadInitial();
+  }
+
+  /** Open the search prompt, then run the search (or clear it when left empty). */
+  private async handlePickSearch(): Promise<void> {
+    const terms = await this.promptSearchTerms(this.searchTerms ?? '');
+    if (terms === null) return; // cancelled
+    const trimmed = terms.trim();
+    if (!trimmed) { this.clearSearch(); return; } // empty = leave search mode
+    await this.runSearch(trimmed);
+  }
+
+  /**
+   * Search the user's whole history (kind 1) by reusing the profile module's note
+   * search, then keep the full result as the base set. A picked time range narrows
+   * it client-side. Only kind-1 text notes are searchable — reposts/articles have
+   * no searchable body and are out of scope for the search view.
+   */
+  private async runSearch(terms: string): Promise<void> {
+    const pubkey = this.pubkey;
+    const profileApi = ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
+    if (!pubkey || !profileApi) {
+      ToastService.show('Search is not available right now', 'error');
+      return;
+    }
+
+    const seq = ++this.loadSeq;
+    this.searchTerms = terms;
+    this.selected.clear();
+    this.infiniteScroll?.destroy();
+    this.infiniteScroll = null;
+    this.hasMore = false;
+    this.loading = true;
+    // Clear the list now so the loading state shows instead of the stale posts —
+    // the whole-history search takes a few seconds and would otherwise look frozen.
+    this.notes = [];
+    this.searchBase = [];
+    this.renderRangeLabel();
+    this.renderList(); // shows the "Searching your posts…" placeholder
+
+    try {
+      const result = await profileApi.searchUserNotes({ pubkeyHex: pubkey, searchTerms: terms });
+      if (seq !== this.loadSeq) return; // a newer load/search superseded this one
+      this.searchBase = result.events;
+    } catch (err) {
+      if (seq !== this.loadSeq) return;
+      SystemLogger.getInstance().warn('BulkDeleteView', `Search failed: ${err}`);
+      ToastService.show('Search failed', 'error');
+      this.searchBase = [];
+    }
+
+    this.loading = false;
+    this.applySearchView();
+    this.saveCache();
+  }
+
+  /** Leave search mode and fall back to the date/recent feed (keeping any picked range). */
+  private clearSearch(): void {
+    if (this.searchTerms === null) return;
+    this.searchTerms = null;
+    this.searchBase = [];
+    this.selected.clear();
+    this.notes = [];
+    void this.loadInitial();
+  }
+
+  /** Drop every filter (search + time range) and return to the default recent view. */
+  private resetFilters(): void {
+    this.searchTerms = null;
+    this.searchBase = [];
+    this.range = null;
+    this.selected.clear();
+    this.notes = [];
+    void this.loadInitial();
+  }
+
+  /** The search results narrowed by the active time range (if any). */
+  private filteredSearchNotes(): NostrEvent[] {
+    if (!this.range) return this.searchBase;
+    const { since, until } = this.range;
+    return this.searchBase.filter(n => n.created_at >= since && n.created_at <= until);
+  }
+
+  /** Re-derive the visible list from the search base + range, then render. */
+  private applySearchView(): void {
+    this.notes = this.filteredSearchNotes();
+    this.renderRangeLabel();
+    this.renderList();
   }
 
   private async loadInitial(): Promise<void> {
@@ -342,6 +480,7 @@ export class BulkDeleteView extends View {
       this.renderList();
       return;
     }
+    const seq = ++this.loadSeq;
     this.loading = true;
     this.renderRangeLabel();
     this.renderList();
@@ -360,11 +499,13 @@ export class BulkDeleteView extends View {
           until: r.until,
           config: this.buildFeedConfig(pubkey),
         });
+        if (seq !== this.loadSeq) return; // superseded by a newer load/search — don't clobber
         this.notes = result.events;
         // We drive paging ourselves (see handleLoadMore).
         this.hasMore = result.events.length > 0;
         if (this.notes.length > 0 || this.range || i === attempts - 1) break;
       } catch (err) {
+        if (seq !== this.loadSeq) return;
         SystemLogger.getInstance().warn('BulkDeleteView', `Failed to load notes: ${err}`);
         ToastService.show('Failed to load your notes', 'error');
         this.notes = [];
@@ -372,6 +513,7 @@ export class BulkDeleteView extends View {
         break;
       }
       await new Promise(r => setTimeout(r, 1200));
+      if (seq !== this.loadSeq) return; // a search started during the retry backoff
     }
 
     this.loading = false;
@@ -425,7 +567,8 @@ export class BulkDeleteView extends View {
     const list = this.contentEl?.querySelector('[data-list]') as HTMLElement | null;
     if (!list) return;
     this.infiniteScroll?.destroy();
-    if (this.notes.length === 0) { this.infiniteScroll = null; return; }
+    // Search mode loads the whole result set up front — nothing to page.
+    if (this.searchTerms !== null || this.notes.length === 0) { this.infiniteScroll = null; return; }
     this.infiniteScroll = new InfiniteScroll(() => void this.handleLoadMore(), {
       loadingMessage: 'Loading more notes...',
     });
@@ -436,9 +579,24 @@ export class BulkDeleteView extends View {
   private renderRangeLabel(): void {
     const el = this.contentEl?.querySelector('[data-range]') as HTMLElement | null;
     if (!el) return;
-    if (!this.range) { el.textContent = 'Your recent posts'; return; }
     const fmt = (s: number) => new Date(s * 1000).toLocaleDateString();
-    el.textContent = `Your posts from ${fmt(this.range.since)} to ${fmt(this.range.until)}`;
+
+    // No filter active → default view, nothing to reset.
+    if (this.searchTerms === null && !this.range) {
+      el.textContent = 'Your recent posts';
+      return;
+    }
+
+    // Active filter (search and/or range): show it, plus one reset back to default.
+    let label: string;
+    if (this.searchTerms !== null) {
+      const rangePart = this.range ? ` · ${fmt(this.range.since)} to ${fmt(this.range.until)}` : '';
+      label = `Search “${this.searchTerms}”${rangePart}`;
+    } else {
+      label = `Your posts from ${fmt(this.range!.since)} to ${fmt(this.range!.until)}`;
+    }
+    el.innerHTML = `${escapeHtml(label)} `
+      + `<a href="#" data-action="reset-filters" class="bulk-delete__reset" title="Reset filters">Reset</a>`;
   }
 
   private renderList(): void {
@@ -447,12 +605,16 @@ export class BulkDeleteView extends View {
     if (!list) return;
 
     if (this.loading && this.notes.length === 0) {
-      list.innerHTML = `<div class="bulk-delete__empty pulsate">Loading your notes...</div>`;
+      const msg = this.searchTerms !== null ? 'Searching your posts…' : 'Loading your notes...';
+      list.innerHTML = `<div class="bulk-delete__empty pulsate">${msg}</div>`;
       if (footer) footer.hidden = true;
       return;
     }
     if (this.notes.length === 0) {
-      list.innerHTML = `<div class="bulk-delete__empty">${this.range ? 'No posts found in this range.' : 'No posts found.'}</div>`;
+      const msg = this.searchTerms !== null
+        ? 'No posts match your search.'
+        : (this.range ? 'No posts found in this range.' : 'No posts found.');
+      list.innerHTML = `<div class="bulk-delete__empty">${msg}</div>`;
       if (footer) footer.hidden = true;
       return;
     }
@@ -537,6 +699,55 @@ export class BulkDeleteView extends View {
     if (link) link.textContent = this.allSelected ? 'Unselect all visible' : 'Select all visible';
   }
 
+  /**
+   * Modal text prompt for search terms (mirrors the date-range modal). Resolves
+   * with the entered string, or `null` if cancelled.
+   */
+  private promptSearchTerms(initial: string): Promise<string | null> {
+    const modalService = ModalService.getInstance();
+    return new Promise((resolve) => {
+      let resolved = false;
+      const container = document.createElement('div');
+      container.className = 'date-range-selector';
+      container.innerHTML = `
+        <div class="form__row">
+          <input type="text" class="input" data-search-input placeholder="Search terms..." value="${escapeHtml(initial)}" />
+        </div>
+        <div class="date-range-selector__actions">
+          <button class="btn btn--secondary" data-search-cancel>Cancel</button>
+          <button class="btn" data-search-confirm>Search</button>
+        </div>
+      `;
+
+      modalService.show({
+        title: 'Search your posts',
+        content: container,
+        width: '380px',
+        height: 'auto',
+        showCloseButton: true,
+        closeOnOverlay: true,
+        closeOnEsc: true,
+        onClose: () => { if (!resolved) { resolved = true; resolve(null); } },
+      });
+
+      setTimeout(() => {
+        const input = container.querySelector('[data-search-input]') as HTMLInputElement;
+        const done = (val: string | null): void => {
+          if (resolved) return;
+          resolved = true;
+          modalService.hide();
+          resolve(val);
+        };
+        container.querySelector('[data-search-cancel]')?.addEventListener('click', () => done(null));
+        container.querySelector('[data-search-confirm]')?.addEventListener('click', () => done(input?.value ?? ''));
+        input?.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); done(input.value); }
+        });
+        input?.focus();
+      }, 0);
+    });
+  }
+
   private updateDeleteButton(): void {
     const btn = this.contentEl?.querySelector('[data-action="delete-selected"]') as HTMLButtonElement | null;
     if (!btn) return;
@@ -589,12 +800,14 @@ export class BulkDeleteView extends View {
     this.dispatching = false;
     void this.pollSummary();
 
-    // Optimistically remove the deleted notes from the list.
+    // Optimistically remove the deleted notes from the list (and the search base,
+    // so a later range change can't resurface them).
     const deleted = new Set(ids);
     this.notes = this.notes.filter(n => !(n.id && deleted.has(n.id)));
+    this.searchBase = this.searchBase.filter(n => !(n.id && deleted.has(n.id)));
     this.selected.clear();
     this.renderList();
-    this.setupInfiniteScroll();
+    if (this.searchTerms === null) this.setupInfiniteScroll();
     this.saveCache();
   }
 
