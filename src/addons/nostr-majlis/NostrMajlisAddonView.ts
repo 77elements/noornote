@@ -23,6 +23,10 @@ import { formatDateByCalendar } from '../../helpers/formatTimestamp';
 import { setupTabClickHandlers, switchTabWithContent } from '../../helpers/TabsHelper';
 import { getHolidaysForGregorianYear } from './holidays';
 import { DhikrModal } from './DhikrModal';
+import { UserProfileService } from '../../services/UserProfileService';
+import { ModalService } from '../../services/ModalService';
+import type { DhikrService } from './DhikrService';
+import type { DhikrRound } from './dhikr';
 import {
   isNostrMajlisEnabled, setNostrMajlisEnabled,
   getNostrMajlisSettings, setNostrMajlisSettings,
@@ -79,6 +83,8 @@ export class NostrMajlisAddonView extends View {
 
   // Community Dhikr tab: live-data event subscription.
   private dhikrBusSub: string | null = null;
+  // Author pubkeys we've already kicked a profile fetch for (avoids refetch loops on re-render).
+  private requestedAuthors = new Set<string>();
 
   // Diyanet cascade state
   private dCountries: DiyanetPlace[] = [];
@@ -292,7 +298,8 @@ export class NostrMajlisAddonView extends View {
     const host = this.container.querySelector('[data-el="dhikr-list"]') as HTMLElement | null;
     if (!host) return;
     const svc = this.dhikrService();
-    const rounds = svc ? svc.getRounds() : [];
+    const isAdmin = !!svc && svc.isAdmin();
+    const rounds = svc ? svc.getRounds(isAdmin) : []; // admin sees moderated rounds too, to reverse them
 
     if (rounds.length === 0) {
       host.innerHTML = (svc && svc.isLoaded())
@@ -301,37 +308,116 @@ export class NostrMajlisAddonView extends View {
       return;
     }
 
+    const profiles = UserProfileService.getInstance();
+    this.ensureAuthorNames([...new Set(rounds.map(r => r.author))]);
+
     const rows = rounds.map(r => {
       const total = svc!.getTotal(r.addr);
       const complete = total >= r.goal;
+      const hidden = svc!.isHidden(r.addr);
+      const banned = svc!.isAuthorBanned(r.author);
       const date = escapeHtml(shortDate(new Date(r.createdAt * 1000)));
+      const author = escapeHtml(profiles.getDisplayName(r.author));
       const phrase = `${escapeHtml(r.phrase)}${complete ? ' 🎉' : ''}${r.description ? `<span class="nm-dhikr__desc">${escapeHtml(r.description)}</span>` : ''}`;
       const action = complete
         ? '✅'
         : `<button class="btn btn--passive btn--mini" data-action="commit" data-addr="${escapeHtml(r.addr)}">Commit</button>`;
-      return `<tr>
+      const flags = `${hidden ? '<span class="nm-dhikr__flag">hidden</span>' : ''}${banned ? '<span class="nm-dhikr__flag">excluded</span>' : ''}`;
+      return `<tr class="${hidden || banned ? 'is-moderated' : ''}">
         <td>${phrase}</td>
+        <td>${author}${flags}</td>
         <td>${r.goal}</td>
         <td>${date}</td>
         <td>${total} / ${r.goal}</td>
         <td>${action}</td>
+        ${isAdmin ? `<td class="nm-dhikr__admin">${this.adminActions(r, hidden, banned)}</td>` : ''}
       </tr>`;
     }).join('');
 
     host.innerHTML = `
       <table class="nm-dhikr">
-        <thead><tr><th>Dhikr</th><th>Count</th><th>Date</th><th>Progress</th><th></th></tr></thead>
+        <thead><tr><th>Dhikr</th><th>Author</th><th>Count</th><th>Date</th><th>Progress</th><th></th>${isAdmin ? '<th>Moderation</th>' : ''}</tr></thead>
         <tbody>${rows}</tbody>
       </table>
     `;
 
-    host.querySelectorAll('[data-action="commit"]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const addr = (btn as HTMLElement).dataset.addr ?? '';
-        const round = svc?.getRounds().find(r => r.addr === addr);
-        if (round) new DhikrModal('commit', round).open();
-      });
+    if (svc) this.bindDhikrActions(host, svc, isAdmin);
+  }
+
+  /** The admin-only moderation buttons for one round (Edit / Delete-Un-hide / Exclude-Re-include). */
+  private adminActions(r: DhikrRound, hidden: boolean, banned: boolean): string {
+    const addr = escapeHtml(r.addr);
+    const pk = escapeHtml(r.author);
+    const edit = `<button class="btn btn--passive btn--mini" data-action="edit" data-addr="${addr}">Edit</button>`;
+    const hide = hidden
+      ? `<button class="btn btn--passive btn--mini" data-action="unhide" data-addr="${addr}">Un-hide</button>`
+      : `<button class="btn btn--passive btn--mini" data-action="hide" data-addr="${addr}">Delete</button>`;
+    const ban = banned
+      ? `<button class="btn btn--passive btn--mini" data-action="unban" data-pubkey="${pk}">Re-include</button>`
+      : `<button class="btn btn--passive btn--mini" data-action="ban" data-pubkey="${pk}">Exclude author</button>`;
+    return `<div class="nm-dhikr__actions">${edit}${hide}${ban}</div>`;
+  }
+
+  /** Wire up the per-row buttons (commit for everyone; edit/hide/ban for the admin). */
+  private bindDhikrActions(host: HTMLElement, svc: DhikrService, isAdmin: boolean): void {
+    const roundFor = (btn: Element) => svc.getRounds(isAdmin).find(r => r.addr === (btn as HTMLElement).dataset.addr);
+    host.querySelectorAll('[data-action="commit"]').forEach(btn => btn.addEventListener('click', () => {
+      const round = roundFor(btn); if (round) new DhikrModal('commit', round).open();
+    }));
+    host.querySelectorAll('[data-action="edit"]').forEach(btn => btn.addEventListener('click', () => {
+      const round = roundFor(btn); if (round) new DhikrModal('edit', round).open();
+    }));
+    host.querySelectorAll('[data-action="hide"]').forEach(btn => btn.addEventListener('click', () =>
+      void this.confirmHide(svc, (btn as HTMLElement).dataset.addr ?? '')));
+    host.querySelectorAll('[data-action="unhide"]').forEach(btn => btn.addEventListener('click', () =>
+      void this.runModeration(() => svc.unhideRound((btn as HTMLElement).dataset.addr ?? ''))));
+    host.querySelectorAll('[data-action="ban"]').forEach(btn => btn.addEventListener('click', () =>
+      void this.confirmBan(svc, (btn as HTMLElement).dataset.pubkey ?? '')));
+    host.querySelectorAll('[data-action="unban"]').forEach(btn => btn.addEventListener('click', () =>
+      void this.runModeration(() => svc.unbanAuthor((btn as HTMLElement).dataset.pubkey ?? ''))));
+  }
+
+  private async confirmHide(svc: DhikrService, addr: string): Promise<void> {
+    if (!addr) return;
+    const ok = await ModalService.getInstance().confirm({
+      title: 'Delete dhikr',
+      message: 'Hide this dhikr from everyone? You can un-hide it later.',
+      confirmText: 'Delete',
+      confirmDestructive: true,
     });
+    if (ok) await this.runModeration(() => svc.hideRound(addr), 'Dhikr hidden');
+  }
+
+  private async confirmBan(svc: DhikrService, pubkey: string): Promise<void> {
+    if (!pubkey) return;
+    const name = UserProfileService.getInstance().getDisplayName(pubkey);
+    const ok = await ModalService.getInstance().confirm({
+      title: 'Exclude author',
+      message: `Exclude ${name}? Their dhikrs disappear and all their submissions stop counting.`,
+      confirmText: 'Exclude',
+      confirmDestructive: true,
+    });
+    if (ok) await this.runModeration(() => svc.banAuthor(pubkey), 'Author excluded');
+  }
+
+  /** Run a moderation write with a uniform success/error toast (the list re-renders via the bus). */
+  private async runModeration(action: () => Promise<void>, successMsg?: string): Promise<void> {
+    try {
+      await action();
+      if (successMsg) ToastService.show(successMsg, 'success');
+    } catch {
+      ToastService.show('Could not update moderation', 'error');
+    }
+  }
+
+  /** Fetch any missing author profiles once, then re-render so real names replace placeholders. */
+  private ensureAuthorNames(pubkeys: string[]): void {
+    const profiles = UserProfileService.getInstance();
+    const missing = pubkeys.filter(pk => !profiles.hasProfile(pk) && !this.requestedAuthors.has(pk));
+    if (missing.length === 0) return;
+    for (const pk of missing) this.requestedAuthors.add(pk);
+    void Promise.all(missing.map(pk => profiles.getUserProfile(pk).catch(() => null)))
+      .then(() => { if (!this.disposed) this.renderDhikrList(); });
   }
 
   /** Fill the year heading + table for the current `holidayYear` and clamp the nav buttons. */

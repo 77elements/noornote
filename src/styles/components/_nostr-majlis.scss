@@ -86,6 +86,30 @@
   white-space: normal;
 }
 
+// Admin moderation: action buttons, moderated-row marker and inline status flags.
+.nm-dhikr {
+  tr.is-moderated td {
+    color: var(--color-3); // dim a hidden / excluded-author row without using opacity
+  }
+
+  &__admin .nm-dhikr__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc($gap / 3);
+  }
+
+  &__flag {
+    display: inline-block;
+    margin-left: calc($gap / 3);
+    padding: 0 calc($gap / 2);
+    border: 1px solid var(--surface-tint);
+    border-radius: $radius-pill;
+    color: var(--color-3);
+    font-size: 0.75em;
+    vertical-align: middle;
+  }
+}
+
 // Sidebar widget: current prayer / time-left / next prayer (2 rows, 3 columns)
 .nm-sidebar-widget-container {
   margin-bottom: $gap;
