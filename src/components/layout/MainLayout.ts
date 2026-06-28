@@ -1021,6 +1021,28 @@ export class MainLayout {
       });
     }
 
+    // Mobile-only logout: the secondary column (which holds "Sign out" via the
+    // AccountSwitcher) is dropped in phone layout, so surface logout here.
+    const logoutBtn = this.element.querySelector('.sidebar [data-action="sidebar-logout"]');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.handleLogout();
+      });
+    }
+
+    // Logged-out twin: after logout the primary-content already shows the login
+    // screen — it just sits behind the open drawer, so "Sign in" only needs to
+    // close the drawer to reveal the signer options underneath.
+    const loginBtn = this.element.querySelector('.sidebar [data-action="sidebar-login"]');
+    if (loginBtn) {
+      loginBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.element.querySelector('.sidebar')?.classList.remove('sidebar--open');
+        this.element.querySelector('.sidebar-overlay')?.classList.remove('sidebar-overlay--visible');
+      });
+    }
+
     const aboutLink = this.element.querySelector('.sidebar a[href="/about"]');
     if (aboutLink) {
       aboutLink.addEventListener('click', (e) => {
@@ -1427,6 +1449,16 @@ export class MainLayout {
           </ul>
             <div class="nm-sidebar-widget-container"></div>
             <div class="data-saver-toggle"></div>
+            <div class="l-row--right sidebar-logout">
+              <button type="button" class="btn btn--passive btn--mini sidebar-logout__signout" data-action="sidebar-logout">
+                <svg class="primary-nav__item-icon"><use href="#icon-logout"/></svg>
+                Sign out
+              </button>
+              <button type="button" class="btn btn--passive btn--mini sidebar-logout__signin" data-action="sidebar-login">
+                <svg class="primary-nav__item-icon sidebar-logout__signin-icon"><use href="#icon-logout"/></svg>
+                Sign in
+              </button>
+            </div>
             <div class="current-datetime-display">--</div>
           </div>
           <div class="new-post-dropup">

@@ -262,6 +262,40 @@ html.sidebar-collapsed:not(.layout--phone) {
 .sidebar-footer {
 }
 
+// Mobile-only auth pill — the secondary column (with the AccountSwitcher's
+// "Sign out") is dropped in phone layout, so this provides logout there, and
+// flips to "Sign in" when logged out (login screen sits behind the drawer).
+.sidebar-logout {
+  display: none;
+  margin-top: $gap;
+  margin-bottom: $gap;
+
+  .layout--phone & {
+    display: block;
+  }
+}
+
+// Show "Sign out" when logged in, "Sign in" when logged out — driven by the
+// same .sidebar--logged-out toggle as .sidebar-welcome-link.
+.sidebar-logout__signin {
+  display: none;
+}
+
+.sidebar--logged-out {
+  .sidebar-logout__signout {
+    display: none;
+  }
+
+  .sidebar-logout__signin {
+    display: inline-flex;
+  }
+}
+
+// Mirror the logout arrow so it points inward — the "entering" sign-in cue.
+.sidebar-logout__signin-icon {
+  transform: scaleX(-1);
+}
+
 // ===========================================
 // LOGGED-OUT STATE
 // ===========================================
