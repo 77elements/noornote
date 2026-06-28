@@ -146,8 +146,6 @@ export const StorageKeys = {
   EXTENDED_FOLLOWS_ADDON_ENABLED: 'noornote_extended_follows_addon_enabled_map',
   WALLET_BALANCE_ADDON_ENABLED: 'noornote_wallet_balance_addon_enabled_map',
   LIVE_STREAMS_PLAYER_ENABLED: 'noornote_live_streams_player_enabled_map',
-  WAVLAKE_PLAYER_ENABLED: 'noornote_wavlake_player_enabled_map',
-  WAVLAKE_PLAYER_KEEP_OP3: 'noornote_wavlake_player_keep_op3_map',
   BADGES_ENABLED: 'noornote_badges_enabled_map',
   BULK_DELETE_ENABLED: 'noornote_bulk_delete_enabled_map',
   NOTE_TAKING_ENABLED: 'noornote_note_taking_enabled_map',

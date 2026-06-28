@@ -506,15 +506,6 @@ export class ViewMountingService {
           }
         };
 
-      case 'addon-wavlake-player':
-        return {
-          factory: async () => {
-            const { WavlakePlayerAddonView } = await import('../addons/wavlake-player/WavlakePlayerAddonView');
-            const view = new WavlakePlayerAddonView();
-            return { element: view.getElement(), view };
-          }
-        };
-
       case 'addon-scheduled-posts':
         return {
           factory: async () => {

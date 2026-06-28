@@ -348,7 +348,6 @@ export interface AppEvents {
   'follower-notification:addon-toggle': AddonTogglePayload;
   'hashtag-subscriptions:addon-toggle': AddonTogglePayload;
   'live-streams-player:addon-toggle': AddonTogglePayload;
-  'wavlake-player:addon-toggle': AddonTogglePayload;
   'marketplace:addon-toggle': AddonTogglePayload;
   'note-taking:addon-toggle': AddonTogglePayload;
   'nostr-majlis:addon-toggle': AddonTogglePayload;

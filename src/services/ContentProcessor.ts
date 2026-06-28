@@ -23,7 +23,6 @@ import { UserProfileService } from './UserProfileService';
 import type { MediaContent } from '../helpers/renderMediaContent';
 import { AddonLoader } from '../addons/AddonLoader';
 import type { ProfileRecognitionRuntime } from '../addons/profile-recognition/runtime';
-import type { WavlakePlayerRuntime } from '../addons/wavlake-player/runtime';
 import type { ProfileBlinker as ProfileBlinkerT, TextBlinker as TextBlinkerT } from '../addons/profile-recognition/profileBlinking';
 import { LRUCache, getCacheSize } from '../helpers/LRUCache';
 
@@ -41,8 +40,6 @@ export interface ProcessedContent {
   hashtags: string[];
   quotedReferences: QuotedReference[];
   bolt11Invoices: Bolt11Match[];
-  /** wavlake.com/track ids, populated only when the Wavlake Player addon is ON. */
-  wavlakeTrackIds: string[];
 }
 
 export class ContentProcessor {
@@ -110,12 +107,6 @@ export class ContentProcessor {
     const quotedRefs = extractQuotedReferences(text);
     const bolt11Invoices = extractBolt11(text);
 
-    // Wavlake track links → inline player (addon). The runtime is only present
-    // when the Wavlake Player addon is ON; null-safe so OFF leaves links intact.
-    const wavlakeRuntime = AddonLoader.getInstance().getRuntime<WavlakePlayerRuntime>('wavlake-player');
-    const wavlakeTracks = wavlakeRuntime ? wavlakeRuntime.extractTracks(text) : [];
-    const wavlakeTrackIds = wavlakeTracks.map(t => t.id);
-
     const quotedReferences: QuotedReference[] = quotedRefs.map(ref => ({
       type: ref.type as 'event' | 'note' | 'addr',
       id: ref.id,
@@ -156,11 +147,6 @@ export class ContentProcessor {
     bolt11Invoices.forEach((item, index) => {
       cleanedText = cleanedText.replace(item.fullMatch, `__BOLT11_${index}__`);
     });
-    // Remove wavlake track URLs entirely — the player card is appended at the
-    // end of the note body (no inline placeholder, like the podcast card).
-    wavlakeTracks.forEach(t => {
-      cleanedText = cleanedText.replace(t.fullMatch, '');
-    });
     // Don't remove quoted references - they stay at their original position
     cleanedText = cleanedText.replace(/\n{3,}/g, '\n\n').trim();
 
@@ -188,8 +174,7 @@ export class ContentProcessor {
       links,
       hashtags,
       quotedReferences,
-      bolt11Invoices,
-      wavlakeTrackIds
+      bolt11Invoices
     };
   }
 
