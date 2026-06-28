@@ -364,6 +364,11 @@ export class ZapManager {
 
     zapButton.addEventListener('touchend', (e) => {
       e.stopPropagation();
+      // Suppress the synthetic mouse/click events the browser fires after a
+      // touch — without this, handleRelease runs twice on mobile (touch + the
+      // compat mouseup), opening two zap modals and leaving the visible one's
+      // send button unwired from the loading state.
+      e.preventDefault();
       handleRelease();
     });
 
