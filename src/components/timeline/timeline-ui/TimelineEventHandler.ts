@@ -13,6 +13,8 @@ import { CustomDropdown } from '../../ui/CustomDropdown';
 import { AppState } from '../../../services/AppState';
 import { NoteUI } from '../../ui/NoteUI';
 import { type TimelineConfig, relayFilterUrl, timeRangeOf, saveFeedMode } from '../TimelineConfig';
+import { diagLog } from '../../../services/DiagnosticLogger';
+import { AuthService } from '../../../services/AuthService';
 
 export class TimelineEventHandler {
   private timelineApi: TimelineModuleApi;
@@ -189,6 +191,28 @@ export class TimelineEventHandler {
   public async handleRefresh(): Promise<void> {
     // Get cached polled events (cleared after retrieval)
     const newEvents = this.timelineApi.getPolledEvents() ?? [];
+
+    // DIAG (temporary): catch the rare poll-buffer author leak — a non-followed
+    // author's note/repost surfacing in the TV after a profile visit. If any
+    // consumed event's author is outside THIS timeline's expected author set
+    // (+ self), the shared FeedOrchestrator.polledEventsCache leaked across
+    // use-cases. Logged to 'crashes' so it flushes immediately and is exported.
+    if (newEvents.length > 0) {
+      const expected = new Set(this.stateManager.getFollowingPubkeys());
+      const self = AuthService.getInstance().getCurrentUser()?.pubkey;
+      if (self) expected.add(self);
+      const leaked = newEvents.filter(e => !expected.has(e.pubkey));
+      if (leaked.length > 0) {
+        diagLog('crashes', 'Timeline poll-buffer author leak', {
+          view: this.appState.getState('view').currentView,
+          sourceKind: this.config.source?.kind,
+          expectedAuthorCount: expected.size,
+          consumedCount: newEvents.length,
+          leakedCount: leaked.length,
+          leaked: leaked.slice(0, 10).map(e => ({ id: e.id, kind: e.kind, author: e.pubkey })),
+        });
+      }
+    }
 
     if (newEvents.length > 0) {
       // Prepend new events to existing timeline
