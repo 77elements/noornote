@@ -34,6 +34,7 @@ export interface ProcessedNote {
     hashtags: string[];
     quotedReferences: QuotedReference[];
     bolt11Invoices: import('../../../helpers/extractBolt11').Bolt11Match[];
+    wavlakeTrackIds?: string[];
   };
   rawEvent: NostrEvent;
   quotedEvent?: ProcessedNote;

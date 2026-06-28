@@ -13,6 +13,8 @@ import { ArticlePreviewRenderer } from './ArticlePreviewRenderer';
 import { renderPodcastCard } from './PodcastCard';
 import { renderWebCommentCard } from './WebCommentCard';
 import { decodeNip19 } from '../../../services/NostrToolsAdapter';
+import { AddonLoader } from '../../../addons/AddonLoader';
+import type { WavlakePlayerRuntime } from '../../../addons/wavlake-player/runtime';
 
 export class OriginalNoteRenderer {
 
@@ -95,6 +97,15 @@ export class OriginalNoteRenderer {
     const webCard = renderWebCommentCard(webSource);
     if (webCard) {
       (element.querySelector('.event-content') || element).appendChild(webCard);
+    }
+
+    // Wavlake track links → inline player card, appended to the note body.
+    // Only present when the Wavlake Player addon is ON (runtime null otherwise);
+    // ids were collected + the raw URLs stripped from the text by ContentProcessor.
+    const wavlakeRuntime = AddonLoader.getInstance().getRuntime<WavlakePlayerRuntime>('wavlake-player');
+    if (wavlakeRuntime && note.content.wavlakeTrackIds?.length) {
+      const host = element.querySelector('.event-content') || element;
+      note.content.wavlakeTrackIds.forEach(id => host.appendChild(wavlakeRuntime.renderCard(id)));
     }
 
     // Setup collapsible for long notes (only for top-level notes with collapsible enabled)
