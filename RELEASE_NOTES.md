@@ -1,9 +1,7 @@
-# NoorNote 1.1.0
+# NoorNote 1.1.1
 
-**Web Comments:** comments left on web pages and articles (NIP-22/NIP-73) now appear as inline cards in your feeds, and you can reply to them — available for everyone, no addon needed.
+**Mobile:** you can now log out — and log back in — straight from the sidebar menu, without needing the desktop side column.
 
-**Timeline:** a new "Last notes per follow" tab shows the latest note from each person you follow, freshest first — so people who only post occasionally don't get buried.
+**Mobile:** the Zap button now shows "Sending…" and disables while a zap is in flight, just like on desktop — no more accidental double-zaps when there was no feedback.
 
-**Bulk delete:** search your own posts by keyword across your whole history before deleting, not just by date.
-
-**Mobile:** fixed horizontal scrolling of the tab row — swipe anywhere to scroll, tap to select.
+**Community Dhikr:** admins can now moderate entries — hide, edit, or exclude an author.
