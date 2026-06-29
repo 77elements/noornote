@@ -63,12 +63,67 @@
   gap: calc($gap / 2);
   white-space: nowrap;
   min-width: 0;
-  margin-left: auto;
+  // The client-tag control (to its left) owns the margin-left:auto that pushes
+  // this group to the right; here we only need a small gap from that icon.
+  margin-left: $gap;
 }
 
 .relay-selector-label {
   font-weight: 500;
   white-space: nowrap;
+}
+
+// Per-post custom client tag control (lives in modal__header, left of relay selector).
+// The field unfolds to the LEFT of the icon on click; empty = global UI setting applies.
+.post-note-client-tag {
+  white-space: nowrap;
+  // Push to the right so the icon sits just left of the relay selector.
+  // The relay selector keeps its own margin-left:auto, so the two stay adjacent
+  // and the field unfolds leftward into the free space toward the title.
+  margin-left: auto;
+
+  &__input {
+    // Collapsed by default: takes no space, only the icon shows.
+    width: 0;
+    padding: 0;
+    border: 1px solid transparent;
+    opacity: 0;
+    overflow: hidden;
+    vertical-align: middle;
+    background: var(--color-1);
+    color: var(--color-5);
+    border-radius: $radius-pill;
+    font-family: inherit;
+    transition: width $transition-all, opacity $transition-all, padding $transition-all, border-color $transition-all;
+
+    &::placeholder {
+      color: var(--text-alpha-light);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-4);
+    }
+  }
+
+  &__toggle {
+    vertical-align: middle;
+    color: var(--color-5);
+  }
+
+  // Open: field slides out to the left of the icon.
+  &--open &__input {
+    width: min(180px, 45vw);
+    padding: calc($gap / 4) calc($gap / 2);
+    border-color: var(--color-3);
+    opacity: 1;
+    margin-right: calc($gap / 4);
+  }
+
+  // A value is set → highlight the icon so the user sees the override is active.
+  &--active &__toggle {
+    color: var(--color-4);
+  }
 }
 
 

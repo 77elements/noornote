@@ -45,6 +45,12 @@ export interface PostOptions {
     authorPubkey: string;
     relayHint?: string;
   };
+  /**
+   * Per-post custom client tag (NIP-89). When set, it is written as
+   * `['client', value]` and OVERRIDES the global "via NoorNote" UI setting for
+   * this event. When omitted/empty, AuthService.signEvent applies the UI setting.
+   */
+  clientTag?: string;
 }
 
 export interface HighlightOptions {
@@ -97,7 +103,7 @@ export class PostService {
    * @returns Promise<boolean> - Success status
    */
   public async createPost(options: PostOptions): Promise<boolean> {
-    const { relays, contentWarning, pollData, quotedEvent, quotedArticle } = options;
+    const { relays, contentWarning, pollData, quotedEvent, quotedArticle, clientTag } = options;
     const { stripTrackingParams } = await import('../helpers/stripTrackingParams');
     const content = stripTrackingParams(options.content);
 
@@ -197,6 +203,13 @@ export class PostService {
             tags.push(['relay', relayUrl]);
           });
         }
+      }
+
+      // Per-post custom client tag (NIP-89). Pushed here so AuthService.signEvent's
+      // guard (skip if a `client` tag already exists) leaves it untouched, i.e. it
+      // overrides the global "via NoorNote" UI setting for this one event.
+      if (clientTag && clientTag.trim().length > 0) {
+        tags.push(['client', clientTag.trim()]);
       }
 
       // Custom emoji tags (NIP-30) — only when the addon is enabled

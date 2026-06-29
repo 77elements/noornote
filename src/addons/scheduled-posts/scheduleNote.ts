@@ -26,6 +26,8 @@ export interface ScheduleNoteOptions {
   pollData?: PollData;
   quotedEvent?: { eventId: string; authorPubkey: string; relayHint?: string };
   quotedArticle?: { addressableId: string; authorPubkey: string; relayHint?: string };
+  /** Per-post custom client tag (NIP-89); overrides the global "via NoorNote" UI setting. */
+  clientTag?: string;
   /** Unix timestamp when the scheduler should publish the event. */
   scheduledAt: number;
 }
@@ -36,7 +38,7 @@ const MAX_DELAY_S = 30 * 24 * 60 * 60;
 export async function scheduleNote(options: ScheduleNoteOptions): Promise<boolean> {
   const logger = SystemLogger.getInstance();
   const auth = AuthService.getInstance();
-  const { relays, contentWarning, pollData, quotedEvent, quotedArticle, scheduledAt } = options;
+  const { relays, contentWarning, pollData, quotedEvent, quotedArticle, clientTag, scheduledAt } = options;
 
   const { stripTrackingParams } = await import('../../helpers/stripTrackingParams');
   const content = stripTrackingParams(options.content);
@@ -102,6 +104,12 @@ export async function scheduleNote(options: ScheduleNoteOptions): Promise<boolea
       if (pollData.relayUrls && pollData.relayUrls.length > 0) {
         pollData.relayUrls.forEach(url => tags.push(['relay', url]));
       }
+    }
+
+    // Per-post custom client tag (NIP-89) — overrides the global UI setting.
+    // AuthService.signEvent skips its own client tag when one is already present.
+    if (clientTag && clientTag.trim().length > 0) {
+      tags.push(['client', clientTag.trim()]);
     }
 
     // Custom emoji tags — only when that addon is also enabled

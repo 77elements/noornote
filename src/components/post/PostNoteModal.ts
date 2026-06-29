@@ -21,6 +21,7 @@ import { SystemLogger } from '../../services/SystemLogger';
 import { AuthService } from '../../services/AuthService';
 import { AuthGuard } from '../../services/AuthGuard';
 import { RelaySelector } from './RelaySelector';
+import { ClientTagControl } from './ClientTagControl';
 import { PostEditorToolbar } from './PostEditorToolbar';
 import { renderPostPreview } from '../../helpers/renderPostPreview';
 import { setupPasteUpload } from '../../helpers/pasteUpload';
@@ -68,6 +69,7 @@ export class PostNoteModal {
 
   // Sub-components
   private relaySelector: RelaySelector | null = null;
+  private clientTagControl: ClientTagControl | null = null;
   private toolbar: PostEditorToolbar | null = null;
   private nsfwSwitch: Switch | null = null;
   private pollCreator: PollCreator | null = null;
@@ -86,6 +88,9 @@ export class PostNoteModal {
   private pollData: PollData | null = null;
   private scheduledAt: number | null = null;
   private highlightSource: HighlightSource | null = null;
+  // Per-post custom client tag — overrides the global "via NoorNote" UI setting
+  // for this one note. Empty = fall back to the UI setting (see AuthService.signEvent).
+  private customClientTag: string = '';
 
   private constructor() {
     this.modalService = ModalService.getInstance();
@@ -122,6 +127,7 @@ export class PostNoteModal {
     // shared image, opened draft) or empty — unsent text is only ever kept via
     // the explicit "Save as draft?" prompt, never silently restored.
     this.content = initialContent ?? '';
+    this.customClientTag = '';
     this.loadRelayConfiguration();
 
     const modalContent = this.renderContent();
@@ -207,6 +213,14 @@ export class PostNoteModal {
       onChange: (selectedRelays) => {
         this.selectedRelays = selectedRelays;
         this.updatePostButton();
+      }
+    });
+
+    // Per-post custom client tag control (mounted into modal__header, see setupEventHandlers)
+    this.clientTagControl = new ClientTagControl({
+      initialValue: this.customClientTag,
+      onChange: (value) => {
+        this.customClientTag = value;
       }
     });
 
@@ -420,6 +434,16 @@ export class PostNoteModal {
       const relaySelectorEl = relaySelectorDiv.firstElementChild as HTMLElement;
       modalHeader.insertBefore(relaySelectorEl, modalHeader.querySelector('.modal__close'));
       this.relaySelector.setupEventListeners(relaySelectorEl);
+
+      // Mount the client-tag control just before the relay selector
+      // → header order: <h1>New Note</h1> | [tag icon+field] | Post to: | ×
+      if (this.clientTagControl) {
+        const clientTagDiv = document.createElement('div');
+        clientTagDiv.innerHTML = this.clientTagControl.render();
+        const clientTagEl = clientTagDiv.firstElementChild as HTMLElement;
+        modalHeader.insertBefore(clientTagEl, relaySelectorEl);
+        this.clientTagControl.setupEventListeners(clientTagEl);
+      }
     }
 
     // Setup toolbar
@@ -742,6 +766,8 @@ export class PostNoteModal {
         }
       }
 
+      const clientTag = this.customClientTag.trim();
+
       let success: boolean;
       if (this.scheduledAt !== null && isScheduledPostsEnabled()) {
         const { scheduleNote } = await import('../../addons/scheduled-posts/scheduleNote');
@@ -752,6 +778,7 @@ export class PostNoteModal {
           ...(this.pollData ? { pollData: this.pollData } : {}),
           ...(quotedEvent ? { quotedEvent } : {}),
           ...(quotedArticle ? { quotedArticle } : {}),
+          ...(clientTag ? { clientTag } : {}),
           scheduledAt: this.scheduledAt,
         });
       } else {
@@ -761,7 +788,8 @@ export class PostNoteModal {
           contentWarning: this.isNSFW,
           ...(this.pollData ? { pollData: this.pollData } : {}),
           ...(quotedEvent ? { quotedEvent } : {}),
-          ...(quotedArticle ? { quotedArticle } : {})
+          ...(quotedArticle ? { quotedArticle } : {}),
+          ...(clientTag ? { clientTag } : {})
         }) ?? false;
       }
 
@@ -944,6 +972,9 @@ export class PostNoteModal {
   private cleanup(): void {
     this.relaySelector?.destroy();
     this.relaySelector = null;
+
+    this.clientTagControl?.destroy();
+    this.clientTagControl = null;
 
     this.toolbar?.destroy();
     this.toolbar = null;
