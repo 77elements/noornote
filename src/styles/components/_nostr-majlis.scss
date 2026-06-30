@@ -147,4 +147,17 @@
     color: var(--color-3);
     text-align: center;
   }
+
+  &__refetch {
+    display: block;
+    margin: calc($gap / 4) auto 0;
+    padding: 0;
+    background: none;
+    border: none;
+    color: var(--color-5);
+    cursor: pointer;
+    text-decoration: underline;
+
+    &:hover { color: var(--color-3); }
+  }
 }

@@ -48,6 +48,16 @@ export function getActiveTimes(): DayPrayerTimes | null {
 }
 
 /**
+ * The active source's Diyanet district id, or null when the source is a calc method or no
+ * location is set. Calc sources need no fetch (computed on-device); only Diyanet can run out
+ * (rolling ~30-day window) and is re-fetchable. Used by the widget's "Fetch times again" link.
+ */
+export function activeDiyanetIlceId(): string | null {
+  const s = getNostrMajlisSettings();
+  return s.source === 'diyanet' && s.diyanetLocation ? s.diyanetLocation.ilceId : null;
+}
+
+/**
  * The next `days` calendar days (starting today) with their prayer times. Diyanet entries are
  * drawn from the persistent cache (only days actually cached are included); calculation sources
  * compute each day locally. Times are device-local (city = where the user is, the normal case).

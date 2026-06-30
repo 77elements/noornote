@@ -1,35 +1,47 @@
 /**
- * Publish (or update) NoorNote's public capability profile as a kind 30817 event
- * ("community-authored NIP" / NUD, as defined by the Alex Gleason / NostrHub spec).
+ * Publish NoorNote's presence on Nostr. Two events, selected by flag:
  *
- * kind 30817 is an addressable/replaceable event: there is exactly ONE such event
- * per (pubkey, d-tag). Re-running this script with the same signer REPLACES the
- * previous version, so directories always read the latest capability list.
+ *   (default)  kind 30817 — community-authored "NIP" / capability profile
+ *              (Alex Gleason / NostrHub spec). Lists supported kinds via k-tags.
  *
- * The capability data (title, summary, list of supported kinds) lives in
- * scripts/noornote-capabilities.json — that file is the single source to edit
- * whenever NoorNote starts supporting a new kind (see /kinds skill, point 13).
+ *   --app      kind 31990 — NIP-89 application handler. THIS is what lists NoorNote
+ *              in app directories like nostrhub.io/apps (name, logo, website,
+ *              platforms, handled kinds).
  *
- * Signing uses a NIP-46 REMOTE SIGNER (bunker). The private key never leaves the
- * bunker; this script only sends an unsigned event and receives it back signed.
+ * Both are addressable/replaceable (one per pubkey + d-tag): re-running replaces
+ * the previous version. Data lives in scripts/noornote-capabilities.json.
+ *
+ * Signing uses a NIP-46 remote signer (bunker); the key never leaves the bunker.
+ * A local nsec via NOSTR_NSEC is supported as a fast path.
  *
  * Usage:
- *   bun scripts/publish-noornote-nip.ts --dry-run          # build + print event, no signer, no publish
- *   bun scripts/publish-noornote-nip.ts "bunker://..."     # connect, sign, broadcast
- *   NOSTR_BUNKER="bunker://..." bun scripts/publish-noornote-nip.ts   # same, via env var
- *
- * The bunker connection string can be passed as the argument or via the
- * NOSTR_BUNKER env var. The env var keeps it out of shell history / process args;
- * the argument is more convenient but is visible in `ps`/history. Either way the
- * private key never leaves the bunker — this script only gets a signed event back.
+ *   bun scripts/publish-noornote-nip.ts --dry-run            # preview kind 30817
+ *   bun scripts/publish-noornote-nip.ts --app --dry-run      # preview kind 31990 (app handler)
+ *   NOSTR_BUNKER="bunker://..." bun scripts/publish-noornote-nip.ts --app   # publish app handler
+ *   bun scripts/publish-noornote-nip.ts --app "bunker://..."                # same, bunker as arg
  */
 
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { homedir } from "node:os";
 import { finalizeEvent, generateSecretKey, nip19, SimplePool } from "nostr-tools";
+import { bytesToHex, hexToBytes } from "@noble/hashes/utils";
 import { BunkerSigner, parseBunkerInput } from "nostr-tools/nip46";
 
-// Broad, well-read relays incl. the Ditto/NostrHub ecosystem that indexes kind 30817.
+// Persisted NIP-46 client key: authorize the bunker once, reuse it for later
+// publishes so a fresh bunker URL isn't needed every time. Local-only, gitignored.
+const CLIENT_KEY_FILE = join(homedir(), ".noornote-nip-client.key");
+
+function loadOrCreateClientKey(): Uint8Array {
+  if (existsSync(CLIENT_KEY_FILE)) {
+    return hexToBytes(readFileSync(CLIENT_KEY_FILE, "utf8").trim());
+  }
+  const sk = generateSecretKey();
+  writeFileSync(CLIENT_KEY_FILE, bytesToHex(sk), { mode: 0o600 });
+  return sk;
+}
+
+// Broad, well-read relays incl. the Ditto/NostrHub ecosystem that indexes these kinds.
 const RELAYS = [
   "wss://relay.ditto.pub",
   "wss://relay.nostr.band",
@@ -41,11 +53,22 @@ const RELAYS = [
   "wss://nostr.wine",
 ];
 
+interface AppMeta {
+  name: string;
+  about: string;
+  picture: string;
+  website: string;
+  handlers: Record<string, string>;
+  topics: string[];
+  nips: string[];
+}
+
 interface Capabilities {
   d: string;
   title: string;
   summary: string;
   homepage: string;
+  app: AppMeta;
   kinds: [string, string][];
 }
 
@@ -54,130 +77,135 @@ function loadCapabilities(): Capabilities {
   return JSON.parse(raw) as Capabilities;
 }
 
-/** Build the human-readable Markdown body from the capability list. */
-function buildContent(cap: Capabilities): string {
-  const lines: string[] = [];
-  lines.push(`# ${cap.title}`);
-  lines.push("");
-  lines.push(cap.summary);
-  lines.push("");
-  lines.push(`Homepage: ${cap.homepage}`);
-  lines.push("");
-  lines.push("## Supported event kinds");
-  lines.push("");
-  for (const [num, name] of cap.kinds) {
-    lines.push(`- **kind:${num}** — ${name}`);
-  }
-  lines.push("");
-  return lines.join("\n");
-}
-
-function buildEventTemplate(cap: Capabilities) {
+/** kind 30817 — capability profile (Markdown body + k-tags). */
+function build30817(cap: Capabilities) {
   const tags: string[][] = [
     ["d", cap.d],
     ["title", cap.title],
     ["summary", cap.summary],
     ["r", cap.homepage],
   ];
-  for (const [num, name] of cap.kinds) {
-    tags.push(["k", num, name]);
-  }
-  return {
-    kind: 30817,
-    created_at: Math.floor(Date.now() / 1000),
-    tags,
-    content: buildContent(cap),
-  };
+  for (const [num, name] of cap.kinds) tags.push(["k", num, name]);
+
+  const body = [
+    `# ${cap.title}`,
+    "",
+    cap.summary,
+    "",
+    `Homepage: ${cap.homepage}`,
+    "",
+    "## Supported event kinds",
+    "",
+    ...cap.kinds.map(([num, name]) => `- **kind:${num}** — ${name}`),
+    "",
+  ].join("\n");
+
+  return { kind: 30817, created_at: Math.floor(Date.now() / 1000), tags, content: body };
+}
+
+/** kind 31990 — NIP-89 application handler (lists the app in directories). */
+function build31990(cap: Capabilities) {
+  const a = cap.app;
+  const tags: string[][] = [
+    ["d", cap.d],
+    ["alt", `NIP-89 handler: ${a.name}`],
+  ];
+  // Platform handler URLs → drive the platform badges (Web/Android/Desktop/Linux/macOS).
+  for (const [platform, url] of Object.entries(a.handlers)) tags.push([platform, url]);
+  // Topic tags.
+  for (const t of a.topics) tags.push(["t", t]);
+  // Implemented NIPs → drive the directory's NIP-coverage rating.
+  for (const n of a.nips) tags.push(["i", `https://github.com/nostr-protocol/nips/blob/master/${n}.md`]);
+  // Handled event kinds.
+  for (const [num] of cap.kinds) tags.push(["k", num]);
+
+  const content = JSON.stringify({
+    name: a.name,
+    display_name: a.name,
+    about: a.about,
+    picture: a.picture,
+    website: a.website,
+  });
+
+  return { kind: 31990, created_at: Math.floor(Date.now() / 1000), tags, content };
+}
+
+async function signAndPublish(signed: any, kind: number, identifier: string, pubkey: string) {
+  console.log(`Broadcasting to ${RELAYS.length} relays...\n`);
+  const pool = new SimplePool();
+  const results = await Promise.allSettled(pool.publish(RELAYS, signed));
+  results.forEach((res, i) =>
+    console.log(`  ${res.status === "fulfilled" ? "OK  " : "FAIL"} ${RELAYS[i]}${res.status === "rejected" ? " — " + res.reason : ""}`),
+  );
+  const ok = results.filter((r) => r.status === "fulfilled").length;
+  console.log(`\nDone. Accepted by ${ok}/${RELAYS.length} relays.`);
+  console.log(`Event id: ${signed.id}`);
+  console.log(`naddr: ${nip19.naddrEncode({ kind, pubkey, identifier, relays: [] })}`);
+  pool.close(RELAYS);
 }
 
 async function main() {
-  const arg = process.argv[2];
-  const cap = loadCapabilities();
-  const template = buildEventTemplate(cap);
+  const flags = process.argv.slice(2);
+  const isApp = flags.includes("--app");
+  const isDry = flags.includes("--dry-run") || flags.includes("-n");
+  const bunkerArg = flags.find((a) => !a.startsWith("-"));
 
-  if (arg === "--dry-run" || arg === "-n") {
-    console.log("DRY RUN — event that WOULD be published (kind 30817):\n");
+  const cap = loadCapabilities();
+  const template = isApp ? build31990(cap) : build30817(cap);
+  const label = isApp ? "kind 31990 (NIP-89 app handler)" : "kind 30817 (capability profile)";
+
+  if (isDry) {
+    console.log(`DRY RUN — ${label}:\n`);
     console.log(JSON.stringify(template, null, 2));
-    console.log(`\nk-tags: ${cap.kinds.length} kinds declared.`);
-    console.log("No signer used, nothing published.");
+    console.log(`\nk-tags: ${cap.kinds.length}. No signer used, nothing published.`);
     return;
   }
 
-  // Fast path: local nsec via env var (no bunker handshake).
+  console.log(`Publishing ${label}...`);
+
+  // Fast path: local nsec via env var.
   const nsec = process.env.NOSTR_NSEC;
   if (nsec) {
     const sk = nip19.decode(nsec.trim()).data as Uint8Array;
     const signed = finalizeEvent(template, sk);
-    console.log(`Signed as ${nip19.npubEncode(signed.pubkey)}, broadcasting to ${RELAYS.length} relays...\n`);
-    const pool = new SimplePool();
-    const results = await Promise.allSettled(pool.publish(RELAYS, signed));
-    results.forEach((res, i) =>
-      console.log(`  ${res.status === "fulfilled" ? "OK  " : "FAIL"} ${RELAYS[i]}${res.status === "rejected" ? " — " + res.reason : ""}`),
-    );
-    const ok = results.filter((r) => r.status === "fulfilled").length;
-    console.log(`\nDone. Accepted by ${ok}/${RELAYS.length} relays.`);
-    console.log(`naddr: ${nip19.naddrEncode({ kind: 30817, pubkey: signed.pubkey, identifier: cap.d, relays: [] })}`);
-    pool.close(RELAYS);
+    console.log(`Signed as ${nip19.npubEncode(signed.pubkey)}`);
+    await signAndPublish(signed, template.kind, cap.d, signed.pubkey);
     return;
   }
 
-  const bunkerInput = arg || process.env.NOSTR_BUNKER;
+  const bunkerInput = bunkerArg || process.env.NOSTR_BUNKER;
   if (!bunkerInput) {
     console.error("No bunker connection string found.");
-    console.error('Run: bun scripts/publish-noornote-nip.ts "bunker://..."');
-    console.error('Or:  NOSTR_BUNKER="bunker://..." bun scripts/publish-noornote-nip.ts');
-    console.error("Or preview without signing: bun scripts/publish-noornote-nip.ts --dry-run");
+    console.error('Run: bun scripts/publish-noornote-nip.ts --app "bunker://..."');
+    console.error('Or:  NOSTR_BUNKER="bunker://..." bun scripts/publish-noornote-nip.ts --app');
+    console.error("Or preview: bun scripts/publish-noornote-nip.ts --app --dry-run");
     process.exit(1);
   }
 
   const bp = await parseBunkerInput(bunkerInput);
   if (!bp) {
-    console.error("Could not parse NOSTR_BUNKER as a bunker:// URL or NIP-05 bunker identifier.");
+    console.error("Could not parse the bunker connection string.");
     process.exit(1);
   }
 
-  // Ephemeral local key for the client side of the NIP-46 channel (not the signing key).
-  const clientSecretKey = generateSecretKey();
+  const clientSecretKey = loadOrCreateClientKey();
   const signer = BunkerSigner.fromBunker(clientSecretKey, bp, {
-    onauth: (url) => {
-      console.log(`\nAuth required — approve in your signer:\n  ${url}\n`);
-    },
+    onauth: (url) => console.log(`\nAuth required — approve in your signer:\n  ${url}\n`),
   });
 
   console.log("Connecting to remote signer (approve the request in your signer app)...");
   try {
-    // Request sign_event permission up front so the signer prompts for approval.
     await signer.sendRequest("connect", [bp.pubkey, bp.secret || "", "sign_event"]);
   } catch (e) {
-    // Some bunkers reply "already connected" when the session is already live.
     if (!String(e).toLowerCase().includes("already connected")) throw e;
   }
-  console.log(`Declaring ${cap.kinds.length} supported kinds, signing...\n`);
+  console.log("Signing...\n");
 
   const signed = await signer.signEvent(template);
-  const npub = nip19.npubEncode(signed.pubkey);
-  console.log(`Signed as ${npub}`);
+  console.log(`Signed as ${nip19.npubEncode(signed.pubkey)}`);
   await signer.close();
 
-  console.log(`Broadcasting to ${RELAYS.length} relays...\n`);
-  const pool = new SimplePool();
-  const results = await Promise.allSettled(pool.publish(RELAYS, signed));
-
-  results.forEach((res, i) => {
-    const relay = RELAYS[i];
-    if (res.status === "fulfilled") {
-      console.log(`  OK    ${relay}`);
-    } else {
-      console.log(`  FAIL  ${relay} — ${res.reason}`);
-    }
-  });
-
-  const ok = results.filter((r) => r.status === "fulfilled").length;
-  console.log(`\nDone. Accepted by ${ok}/${RELAYS.length} relays.`);
-  console.log(`Event id: ${signed.id}`);
-  console.log(`Address:  ${nip19.naddrEncode({ kind: 30817, pubkey: signed.pubkey, identifier: cap.d, relays: [] })}`);
-
-  pool.close(RELAYS);
+  await signAndPublish(signed, template.kind, cap.d, signed.pubkey);
 }
 
 main().catch((err) => {
