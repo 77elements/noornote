@@ -8,6 +8,7 @@
     "dev": "vite",
     "desc:sync": "bun scripts/sync-descriptions.ts",
     "desc:check": "bun scripts/sync-descriptions.ts --check",
+    "nip:check": "bun scripts/publish-noornote-nip.ts --dry-run",
     "build": "tsc --noEmit && vite build && bun run build:static-css",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
