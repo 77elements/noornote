@@ -59,6 +59,10 @@ temp/
 # Claude Code
 .claude/
 
+# OpenCode (GLM-5.2) — custom commands + config, protected like .claude/
+.opencode/
+opencode.json
+
 # Protected local-only directories
 screenshots/
 docs/
