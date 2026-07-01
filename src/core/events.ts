@@ -173,6 +173,13 @@ export interface FollowerNotificationNewPayload {
   type: 'follower_new';
 }
 
+// ── Community Dhikr (nostr-majlis) ────────────────────────────
+
+export interface DhikrNotificationNewPayload {
+  event: NostrEvent;
+  type: 'dhikr_round' | 'dhikr_commit' | 'dhikr_complete';
+}
+
 // ── Hashtag ──────────────────────────────────────────────────
 
 export interface HashtagSubscriptionUpdatedPayload {
@@ -317,6 +324,7 @@ export interface AppEvents {
   'follower-changes:detected': FollowerChangesDetectedPayload;
   'follower-changes:seen': void;
   'follower-notification:new': FollowerNotificationNewPayload;
+  'dhikr-notification:new': DhikrNotificationNewPayload;
 
   // ── Hashtag Subscriptions ──────────────────
   'hashtag-subscription:updated': HashtagSubscriptionUpdatedPayload;

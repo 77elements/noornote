@@ -39,6 +39,7 @@ import {
 import { CALC_METHODS, computeTimes, type ComputedTimes } from './SalahService';
 
 const PICK = '__pick__';
+const MAJLIS_TABS: string[] = ['salah', 'holidays', 'dhikr'];
 const ZERO: ComputedTimes = { fajr: '00:00', sunrise: '00:00', dhuhr: '00:00', asr: '00:00', maghrib: '00:00', isha: '00:00' };
 const PRAYERS: [keyof ComputedTimes, string][] = [
   ['fajr', 'Fajr'], ['sunrise', 'Sunrise'], ['dhuhr', 'Dhuhr'],
@@ -83,6 +84,9 @@ export class NostrMajlisAddonView extends View {
 
   // Community Dhikr tab: live-data event subscription.
   private dhikrBusSub: string | null = null;
+  private notifySwitch: Switch | null = null;
+  // Which tab to open on mount (deep-link support, e.g. from a dhikr notification).
+  private initialTab: string;
   // Author pubkeys we've already kicked a profile fetch for (avoids refetch loops on re-render).
   private requestedAuthors = new Set<string>();
 
@@ -99,10 +103,11 @@ export class NostrMajlisAddonView extends View {
   private renderToken = 0;
   private disposed = false;
 
-  constructor() {
+  constructor(initialTab?: string) {
     super();
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--addon view-content--addon-nostr-majlis';
+    this.initialTab = initialTab ?? 'salah';
     this.render();
   }
 
@@ -143,6 +148,12 @@ export class NostrMajlisAddonView extends View {
     void this.renderSalah();
     this.renderHolidays();
     this.renderDhikr();
+
+    // Deep-link: open the requested tab (e.g. from a dhikr notification → /addons/nostr-majlis/dhikr).
+    // Whitelist the id so a malformed URL falls back to the default (salah) instead of a blank pane.
+    if (this.initialTab !== 'salah' && MAJLIS_TABS.includes(this.initialTab)) {
+      switchTabWithContent(this.container, this.initialTab);
+    }
 
     // Holiday dates follow the user's Date Format setting; re-render the table when it changes.
     this.calendarSubId = TypedEventBus.getInstance().on('settings:calendar-system-changed', () => this.renderHolidaysTable());
@@ -281,14 +292,25 @@ export class NostrMajlisAddonView extends View {
   private renderDhikr(): void {
     const slot = this.container.querySelector('[data-addon-content="dhikr"]') as HTMLElement | null;
     if (!slot) return;
+    this.notifySwitch?.destroy(); this.notifySwitch = null;
     if (!isNostrMajlisEnabled()) { slot.innerHTML = ''; return; }
+
+    this.notifySwitch = new Switch({
+      label: 'Notify on activity',
+      checked: getNostrMajlisSettings().dhikrNotifications,
+      onChange: (checked) => setNostrMajlisSettings({ ...getNostrMajlisSettings(), dhikrNotifications: checked }),
+    });
 
     slot.innerHTML = `
       <section class="section">
-        <div class="l-row--right"><button class="btn btn--primary" data-action="create-dhikr">Create new dhikr</button></div>
+        <div class="l-row--split">
+          <div>${this.notifySwitch.render()}</div>
+          <div><button class="btn btn--primary" data-action="create-dhikr">Create new dhikr</button></div>
+        </div>
         <div class="nm-dhikr-list" data-el="dhikr-list"></div>
       </section>
     `;
+    this.notifySwitch.setupEventListeners(slot);
     slot.querySelector('[data-action="create-dhikr"]')?.addEventListener('click', () => new DhikrModal('create').open());
     this.renderDhikrList();
   }
@@ -815,6 +837,7 @@ export class NostrMajlisAddonView extends View {
     this.widgetSwitch?.destroy(); this.widgetSwitch = null;
     this.sourceDD?.destroy(); this.sourceDD = null;
     this.enableSwitch?.destroy(); this.enableSwitch = null;
+    this.notifySwitch?.destroy(); this.notifySwitch = null;
     this.container.innerHTML = '';
   }
 }

@@ -31,7 +31,7 @@ import { USER_CONTENT_KINDS } from '../../types/nostr';
 import { getCacheSize } from '../../helpers/LRUCache';
 import { isDataSaverEnabled } from '../DataSaverService';
 
-export type NotificationType = 'mention' | 'reply' | 'thread-reply' | 'quote' | 'repost' | 'reaction' | 'zap' | 'zap-reply' | 'article' | 'mutual_unfollow' | 'mutual_new' | 'follower_new' | 'hashtag' | 'poll_vote' | 'highlight' | 'badge-award';
+export type NotificationType = 'mention' | 'reply' | 'thread-reply' | 'quote' | 'repost' | 'reaction' | 'zap' | 'zap-reply' | 'article' | 'mutual_unfollow' | 'mutual_new' | 'follower_new' | 'hashtag' | 'poll_vote' | 'highlight' | 'badge-award' | 'dhikr_round' | 'dhikr_commit' | 'dhikr_complete';
 
 export interface NotificationEvent {
   event: NostrEvent;
@@ -176,6 +176,11 @@ export class NotificationsOrchestrator extends Orchestrator {
     // Listen for follower change notification events (follower-notification addon)
     this.eventBus.on('follower-notification:new', (data: { event: NostrEvent; type: 'follower_new' }) => {
       this.handleFollowerNotification(data);
+    });
+
+    // Listen for community-dhikr notification events (nostr-majlis addon)
+    this.eventBus.on('dhikr-notification:new', (data: { event: NostrEvent; type: 'dhikr_round' | 'dhikr_commit' | 'dhikr_complete' }) => {
+      this.handleDhikrNotification(data);
     });
 
     // Listen for hashtag notification events
@@ -429,7 +434,8 @@ export class NotificationsOrchestrator extends Orchestrator {
     // Caching them loses the type info (kind 99001 falls back to 'mention').
     return this.notifications
       .filter(n => n.type !== 'hashtag' && n.type !== 'mutual_new' && n.type !== 'mutual_unfollow'
-        && n.type !== 'follower_new')
+        && n.type !== 'follower_new'
+        && n.type !== 'dhikr_round' && n.type !== 'dhikr_commit' && n.type !== 'dhikr_complete')
       .map(n => n.event);
   }
 
@@ -746,6 +752,9 @@ export class NotificationsOrchestrator extends Orchestrator {
       'follower_new': 2,
       'thread-reply': 3,
       'hashtag': 3,
+      'dhikr_round': 3,
+      'dhikr_commit': 3,
+      'dhikr_complete': 3,
     };
 
     // Load user's priority settings (or use defaults)
@@ -1169,6 +1178,26 @@ export class NotificationsOrchestrator extends Orchestrator {
     if (!this.addNotification(notification)) return;
 
     this.systemLogger.info('NotificationsOrchestrator', '🔔 Follower notification: new follower');
+
+    this.eventBus.emit('notifications:badge-update');
+    this.eventBus.emit('notifications:new', { notification });
+  }
+
+  /**
+   * Handle a community-dhikr notification from the nostr-majlis addon.
+   * Anonymous by design: the synthetic event carries no real author, so there is
+   * no identity to render or mute — just the action text + the Community Dhikr link.
+   */
+  private handleDhikrNotification(data: { event: NostrEvent; type: 'dhikr_round' | 'dhikr_commit' | 'dhikr_complete' }): void {
+    const notification: NotificationEvent = {
+      event: data.event,
+      type: data.type,
+      timestamp: data.event.created_at
+    };
+
+    if (!this.addNotification(notification)) return;
+
+    this.systemLogger.info('NotificationsOrchestrator', `📿 Dhikr notification: ${data.type}`);
 
     this.eventBus.emit('notifications:badge-update');
     this.eventBus.emit('notifications:new', { notification });

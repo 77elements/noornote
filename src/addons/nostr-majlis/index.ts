@@ -73,6 +73,8 @@ export interface NostrMajlisSettings {
   holidayReminder: HolidayReminderSettings;
   /** Show the current-prayer / countdown widget in the sidebar. */
   sidebarWidget: boolean;
+  /** In-app notifications on community-dhikr activity (new rounds, big commits, completion). */
+  dhikrNotifications: boolean;
 }
 
 const DEFAULT_SETTINGS: NostrMajlisSettings = {
@@ -87,6 +89,7 @@ const DEFAULT_SETTINGS: NostrMajlisSettings = {
   },
   holidayReminder: { enabled: false, daysBefore: 3 },
   sidebarWidget: false,
+  dhikrNotifications: true,
 };
 
 export function isNostrMajlisEnabled(): boolean {

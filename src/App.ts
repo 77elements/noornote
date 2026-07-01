@@ -350,6 +350,9 @@ export class App {
     this.registerRoute('/addons/note-taking',           'addon-note-taking',           'addon-note-taking',           'adv', true);
     this.registerRoute('/addons/bulk-delete',           'addon-bulk-delete',           'addon-bulk-delete',           'adv', true);
     this.registerRoute('/addons/nostr-majlis',          'addon-nostr-majlis',          'addon-nostr-majlis',          'adv', true);
+    // Tab-addressable variant so a dhikr notification can deep-link straight to the Community Dhikr tab.
+    this.registerRoute('/addons/nostr-majlis/:tab',     'addon-nostr-majlis',          'addon-nostr-majlis',          'adv', true,
+      (params) => params.tab);
     // /addons (no slug) → redirect to first addon
     this.router.register('/addons', () => this.router.navigate('/addons/bookmarks'));
     this.registerMarketplaceRoutes();

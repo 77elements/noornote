@@ -11,6 +11,7 @@ import { PerAccountLocalStorage, StorageKeys, type NotificationPriority, type No
 import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { MoveDropdown, type MoveTarget } from '../ui/MoveDropdown';
+import { isNostrMajlisEnabled } from '../../addons/nostr-majlis/index';
 
 interface NotificationTypeInfo {
   type: string;
@@ -31,6 +32,9 @@ const NOTIFICATION_TYPES: NotificationTypeInfo[] = [
   { type: 'mutual_unfollow', label: 'Mutual Unfollows' },
   { type: 'follower_new', label: 'New Followers' },
   { type: 'hashtag', label: 'Hashtags' },
+  { type: 'dhikr_round', label: 'Dhikr Round' },
+  { type: 'dhikr_commit', label: 'Dhikr Committed' },
+  { type: 'dhikr_complete', label: 'Dhikr Complete' },
 ];
 
 const DEFAULT_PRIORITIES: NotificationPriorityMap = {
@@ -47,6 +51,9 @@ const DEFAULT_PRIORITIES: NotificationPriorityMap = {
   'follower_new': 2,
   'thread-reply': 3,
   'hashtag': 3,
+  'dhikr_round': 3,
+  'dhikr_commit': 3,
+  'dhikr_complete': 3,
 };
 
 const PRIORITY_LABELS: Record<NotificationPriority, { title: string; description: string }> = {
@@ -166,7 +173,12 @@ export class NotificationPrioritySection extends SettingsSection {
    * Get notification types for a priority level
    */
   private getItemsForPriority(priority: NotificationPriority): NotificationTypeInfo[] {
-    return NOTIFICATION_TYPES.filter(item => this.priorities[item.type] === priority);
+    // Dhikr types only surface here while the nostr-majlis addon is enabled (they can't fire otherwise).
+    const dhikrEnabled = isNostrMajlisEnabled();
+    return NOTIFICATION_TYPES.filter(item => {
+      if (item.type.startsWith('dhikr_') && !dhikrEnabled) return false;
+      return this.priorities[item.type] === priority;
+    });
   }
 
   /**

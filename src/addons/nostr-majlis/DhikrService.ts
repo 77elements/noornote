@@ -25,10 +25,20 @@ import {
   DHIKR_ADMIN_PUBKEY, MODERATION_LABEL, EMPTY_MODERATION,
   parseModeration, buildModerationDraft, type DhikrModeration,
 } from './dhikrModeration';
+import { getNostrMajlisSettings } from './index';
 
 const ROUND_SUB_ID = 'nostr-majlis-dhikr-rounds';
 const COMMIT_SUB_ID = 'nostr-majlis-dhikr-commits';
 const MOD_SUB_ID = 'nostr-majlis-dhikr-moderation';
+
+/** What an ingested commit changed, so the live path can decide whether to notify. */
+interface DhikrCommitChange {
+  commit: DhikrCommit;
+  round: DhikrRound | null;
+  delta: number;        // this commit's added amount (new cumulative − previous cumulative)
+  oldAggregate: number; // round total before this commit
+  newAggregate: number; // round total after this commit
+}
 
 export class DhikrService {
   private transport = NostrTransport.getInstance();
@@ -39,6 +49,9 @@ export class DhikrService {
   private moderation: DhikrModeration = EMPTY_MODERATION;
   private emitTimer: number | null = null;
   private loaded = false; // false until the initial fetch has returned
+  // Notifications only fire for activity newer than this (set once the initial backfill is in), so a
+  // failed/partial fetch or any reconnect/restart replay of historical events can never flood the feed.
+  private notifyFloor = 0;
 
   /** True once the initial fetch finished (so an empty list means "none" rather than "still loading"). */
   isLoaded(): boolean {
@@ -60,15 +73,18 @@ export class DhikrService {
       for (const ev of events) { this.ingestRound(ev); this.ingestCommit(ev); this.ingestModeration(ev); }
     } catch { /* live subscription will still fill in */ }
     this.loaded = true;
+    this.notifyFloor = Math.floor(Date.now() / 1000);
     this.emit();
 
     // Live updates via subscribeLive: it registers in the transport's subscription map, so the
     // pool-pruner keeps these two relays alive (a plain subscribe() would let them be pruned).
     await this.transport.subscribeLive(DHIKR_RELAYS, roundFilter, ROUND_SUB_ID, (ev) => {
-      this.ingestRound(ev); this.scheduleEmit();
+      const round = this.ingestRound(ev); if (round) this.maybeNotifyRound(round);
+      this.scheduleEmit();
     });
     await this.transport.subscribeLive(DHIKR_RELAYS, commitFilter, COMMIT_SUB_ID, (ev) => {
-      this.ingestCommit(ev); this.scheduleEmit();
+      const change = this.ingestCommit(ev); if (change) this.maybeNotifyCommit(change);
+      this.scheduleEmit();
     });
     await this.transport.subscribeLive(DHIKR_RELAYS, moderationFilter, MOD_SUB_ID, (ev) => {
       this.ingestModeration(ev); this.scheduleEmit();
@@ -78,18 +94,31 @@ export class DhikrService {
 
   // ---------- ingestion (state only; callers decide when to emit) ----------
 
-  private ingestRound(ev: NostrEvent): void {
+  private ingestRound(ev: NostrEvent): DhikrRound | null {
     const round = parseRound(ev);
-    if (!round) return;
+    if (!round) return null;
     const existing = this.rounds.get(round.addr);
-    if (existing && existing.createdAt >= round.createdAt) return; // keep the latest (replaceable)
+    if (existing && existing.createdAt >= round.createdAt) return null; // keep the latest (replaceable)
     this.rounds.set(round.addr, round);
+    return existing ? null : round; // only a brand-new round is notification-worthy (edits aren't "new")
   }
 
-  private ingestCommit(ev: NostrEvent): void {
+  private ingestCommit(ev: NostrEvent): DhikrCommitChange | null {
     const commit = parseCommit(ev);
-    if (!commit) return;
+    if (!commit) return null;
+    const key = `${commit.author}:${commit.dtag}`;
+    const existing = this.commits.get(commit.roundAddr)?.get(key);
+    if (existing && existing.createdAt >= commit.createdAt) return null; // replaceable → newest wins (dedup/echo)
+    const oldUserCount = existing?.count ?? 0;
+    const oldAggregate = this.getTotal(commit.roundAddr);
     this.addCommit(commit);
+    return {
+      commit,
+      round: this.rounds.get(commit.roundAddr) ?? null,
+      delta: commit.count - oldUserCount,
+      oldAggregate,
+      newAggregate: this.getTotal(commit.roundAddr),
+    };
   }
 
   private ingestModeration(ev: NostrEvent): void {
@@ -176,7 +205,8 @@ export class DhikrService {
     await this.ensureRelays();
     const event = await AuthService.getInstance().signEvent(buildRoundDraft(phrase, goal, description)) as NostrEvent;
     await this.transport.publish(DHIKR_RELAYS, event);
-    this.ingestRound(event); this.emit(); // optimistic: show it to the author immediately
+    const round = this.ingestRound(event); if (round) this.maybeNotifyRound(round);
+    this.emit(); // optimistic: show it to the author immediately (they get the anonymous ping too)
     diagLog('addons', 'nostr-majlis: dhikr round published');
   }
 
@@ -186,7 +216,8 @@ export class DhikrService {
     const total = this.myCount(round) + amount;
     const event = await AuthService.getInstance().signEvent(buildCommitDraft(round, total)) as NostrEvent;
     await this.transport.publish(DHIKR_RELAYS, event);
-    this.ingestCommit(event); this.emit();
+    const change = this.ingestCommit(event); if (change) this.maybeNotifyCommit(change);
+    this.emit();
     diagLog('addons', 'nostr-majlis: dhikr commit published', { amount });
   }
 
@@ -247,6 +278,50 @@ export class DhikrService {
   private scheduleEmit(): void {
     if (this.emitTimer !== null) return;
     this.emitTimer = window.setTimeout(() => { this.emitTimer = null; this.emit(); }, 200);
+  }
+
+  // ---------- activity notifications (synthetic kind 99003, never published; in-app feed only) ----------
+  //
+  // Called both from the live subscriptions (others' events) and from the user's own publish/commit
+  // path, so the committer sees the SAME anonymous notification as everyone else — no author is ever
+  // singled out, so a missing notification can't hint at who committed. Only fires when an ingest
+  // actually changed state, so the initial backfill and reconnect/restart replays stay silent.
+  // Setting gate + moderation checks are applied here.
+
+  /** A genuinely-new round → one anonymous "new dhikr" notification (creator included). */
+  private maybeNotifyRound(round: DhikrRound): void {
+    if (round.createdAt < this.notifyFloor) return;                      // historical / replayed → not new activity
+    if (this.isHidden(round.addr) || this.isAuthorBanned(round.author)) return;
+    this.notify('dhikr_round', `round-${round.uuid}`);
+  }
+
+  /** A significant commit (>0.5% of the goal), or the one commit that reaches the goal. */
+  private maybeNotifyCommit(change: DhikrCommitChange): void {
+    const { round, commit, delta, oldAggregate, newAggregate } = change;
+    if (!round) return;                                                  // round not loaded yet → can't judge
+    if (commit.createdAt < this.notifyFloor) return;                     // historical / replayed → not new activity
+    if (this.isHidden(round.addr) || this.isAuthorBanned(commit.author)) return;
+    if (oldAggregate < round.goal && newAggregate >= round.goal) {
+      this.notify('dhikr_complete', `complete-${round.uuid}`);
+    } else if (delta > round.goal * 0.005) {
+      // uuid + resulting count: stable for dedup, but carries no committer pubkey (keeps it anonymous).
+      this.notify('dhikr_commit', `commit-${round.uuid}-${commit.count}`);
+    }
+  }
+
+  /** Build the synthetic (never-published) notification event and hand it to the orchestrator. */
+  private notify(type: 'dhikr_round' | 'dhikr_commit' | 'dhikr_complete', idSuffix: string): void {
+    if (!getNostrMajlisSettings().dhikrNotifications) return;
+    const event: NostrEvent = {
+      id: `dhikr-${idSuffix}`,
+      pubkey: '',
+      kind: 99003,
+      created_at: Math.floor(Date.now() / 1000),
+      tags: [['type', type]],
+      content: '',
+      sig: '',
+    };
+    this.bus.emit('dhikr-notification:new', { event, type });
   }
 
   destroy(): void {

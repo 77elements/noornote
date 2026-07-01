@@ -544,9 +544,9 @@ export class ViewMountingService {
 
       case 'addon-nostr-majlis':
         return {
-          factory: async () => {
+          factory: async (param) => {
             const { NostrMajlisAddonView } = await import('../addons/nostr-majlis/NostrMajlisAddonView');
-            const view = new NostrMajlisAddonView();
+            const view = new NostrMajlisAddonView(param);
             return { element: view.getElement(), view };
           }
         };

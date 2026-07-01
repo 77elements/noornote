@@ -113,7 +113,12 @@ export class NotificationItem {
     // Insert UserIdentity component (anonymized for poll votes + anonymous zaps)
     const identityContainer = item.querySelector('.notification-item__user-identity');
     if (identityContainer) {
-      if (this.options.type === 'poll_vote') {
+      if (this.options.type === 'dhikr_round' || this.options.type === 'dhikr_commit'
+          || this.options.type === 'dhikr_complete') {
+        // Community dhikr notifications are anonymous by design — no author at all.
+        // The action text is self-contained ("Somebody …"), so drop the identity slot.
+        identityContainer.remove();
+      } else if (this.options.type === 'poll_vote') {
         // NIP-88 votes: don't expose the voter — show neutral "Someone" instead.
         identityContainer.innerHTML = '<span class="notification-item__anonymous">Someone</span>';
       } else if (this.isAnonymousZap()) {
@@ -377,6 +382,13 @@ export class NotificationItem {
       case 'badge-award':
         return `<svg width="18" height="18"><use href="#icon-badge"/></svg>`;
 
+      case 'dhikr_complete':
+        return '🎉';
+
+      case 'dhikr_round':
+      case 'dhikr_commit':
+        return '📿';
+
       default:
         return '🔔';
     }
@@ -463,6 +475,9 @@ export class NotificationItem {
       case 'follower_new': return 'is now following you';
       case 'highlight': return `highlighted your ${target}`;
       case 'badge-award': return 'awarded you a badge';
+      case 'dhikr_round': return 'Somebody started a new dhikr';
+      case 'dhikr_commit': return 'Somebody committed to a dhikr';
+      case 'dhikr_complete': return 'A dhikr reached its goal';
       default: return `interacted with your ${target}`;
     }
   }
@@ -565,7 +580,9 @@ export class NotificationItem {
   private getPreviewSync(): string {
     // For mutual / follower notifications, no preview needed
     if (this.options.type === 'mutual_unfollow' || this.options.type === 'mutual_new'
-        || this.options.type === 'follower_new') {
+        || this.options.type === 'follower_new'
+        || this.options.type === 'dhikr_round' || this.options.type === 'dhikr_commit'
+        || this.options.type === 'dhikr_complete') {
       return '';
     }
 
@@ -964,6 +981,12 @@ export class NotificationItem {
       if (npub) {
         getViewNavigationController().openView('profile', npub, e);
       }
+      return;
+    }
+
+    // For community-dhikr notifications, open the addon's Community Dhikr tab
+    if (type === 'dhikr_round' || type === 'dhikr_commit' || type === 'dhikr_complete') {
+      router.navigate('/addons/nostr-majlis/dhikr');
       return;
     }
 
