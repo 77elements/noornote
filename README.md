@@ -181,6 +181,7 @@ If the app crashes, check the log files:
 | [NIP-78](https://github.com/nostr-protocol/nips/blob/master/78.md) | Application-specific data (incl. private encrypted petnames) | 30078 |
 | [NIP-84](https://github.com/nostr-protocol/nips/blob/master/84.md) | Highlights | 9802 |
 | [NIP-88](https://github.com/nostr-protocol/nips/blob/master/88.md) | Polls | 1068, 1018 |
+| [NIP-89](https://github.com/nostr-protocol/nips/blob/master/89.md) | App handlers (per-post `client` tag pointing to a kind 31990 handler, published via `/publish-nip --app`) | 31990 |
 | [NIP-92](https://github.com/nostr-protocol/nips/blob/master/92.md) | Media attachments (`imeta` tags) | - |
 | [NIP-94](https://github.com/nostr-protocol/nips/blob/master/94.md) | File metadata events in the timeline | 1063 |
 | [NIP-96](https://github.com/nostr-protocol/nips/blob/master/96.md) | HTTP file storage | - |
@@ -190,6 +191,7 @@ If the app crashes, check the log files:
 **Other event kinds** (not tied to a numbered NIP — community specs, third-party APIs, NoorNote-internal):
 
 - **Blossom upload auth** — kind `24242`, signed-event upload authorization for [Blossom](https://github.com/hzrd149/blossom)-style media servers
+- **Capability profile** — kind `30817`, community-authored "NIP"-style capability profile, published via `/publish-nip` (Markdown body + `k`-tags listing supported kinds)
 - **Follow Packs** — kind `39089`, used by the Follow Packs add-on and [calle's Follow Packs](https://github.com/callebtc/following.space)
 - **Zapstore Apps** — kind `32267`, app metadata for [Zapstore](https://zapstore.dev/) listings
 - **Zapstore Release Artifacts** — kind `30063`, release artifact metadata for Zapstore apps
