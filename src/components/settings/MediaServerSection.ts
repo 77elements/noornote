@@ -35,7 +35,7 @@ export class MediaServerSection extends SettingsSection {
 
 
   private static readonly POPULAR_SERVERS = [
-    { url: 'https://nostr.build', name: 'nostr.build (Most popular, NIP-96, free: 25 MiB)', protocol: 'nip96' as const, maxFileSize: 25 * 1024 * 1024 },
+    { url: 'https://nostr.build', name: 'nostr.build (Most popular, NIP-96, free: 20 MiB)', protocol: 'nip96' as const, maxFileSize: 20 * 1024 * 1024 },
     { url: 'https://blossom.nostr.build', name: 'blossom.nostr.build (Blossom, free: 20 MiB)', protocol: 'blossom' as const, maxFileSize: 20 * 1024 * 1024 },
     { url: 'https://blossom.band', name: 'blossom.band (Blossom, free: 20 MiB)', protocol: 'blossom' as const, maxFileSize: 20 * 1024 * 1024 },
     { url: 'https://blossom.primal.net', name: 'blossom.primal.net (Blossom, free: 20 MiB)', protocol: 'blossom' as const, maxFileSize: 20 * 1024 * 1024 }
@@ -69,10 +69,21 @@ export class MediaServerSection extends SettingsSection {
    * Load media server settings from storage
    */
   private loadMediaServerSettings(): MediaServerSettings {
-    return PerAccountLocalStorage.getInstance().get<MediaServerSettings>(
+    const stored = PerAccountLocalStorage.getInstance().get<MediaServerSettings>(
       StorageKeys.MEDIA_SERVER,
       { url: 'https://nostr.build', protocol: 'nip96' }
     );
+    // Presets are the source of truth for their free-tier size limits. Re-derive
+    // maxFileSize from the matching preset so accounts that stored an outdated
+    // value (or none) pick up corrected limits without re-selecting the server.
+    // Persist the correction so the upload service (which reads the same storage
+    // key) enforces the right limit on its pre-upload size check.
+    const preset = MediaServerSection.POPULAR_SERVERS.find(s => s.url === stored.url);
+    if (preset && stored.maxFileSize !== preset.maxFileSize) {
+      stored.maxFileSize = preset.maxFileSize;
+      PerAccountLocalStorage.getInstance().set(StorageKeys.MEDIA_SERVER, stored);
+    }
+    return stored;
   }
 
   /**

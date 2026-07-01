@@ -68,6 +68,19 @@ export class MediaUploadService {
     return { success: false, error };
   }
 
+  /**
+   * Turn a failed upload HTTP status into a message the user can act on.
+   * 413 (Payload Too Large) is the common case: the file exceeds the media
+   * server's plan limit. Otherwise surface the server's own response text.
+   */
+  private describeUploadFailure(status: number, statusText: string, responseText?: string): string {
+    if (status === 413) {
+      return 'File too large for this media server. Try a smaller file, or choose a media server with a higher limit in Settings.';
+    }
+    const detail = (responseText || '').trim().slice(0, 200);
+    return `Upload failed: ${status} ${detail || statusText}`.trim();
+  }
+
   private mapUploadProgress(adapterPercent: number): number {
     return 20 + Math.round(adapterPercent * 0.7);
   }
@@ -372,7 +385,7 @@ export class MediaUploadService {
         return { success: true, url: descriptor.url };
       }
 
-      return this.errorResult(`Upload failed: ${response.status} ${response.statusText}`);
+      return this.errorResult(this.describeUploadFailure(response.status, response.statusText));
     } catch (error) {
       console.error('Blossom upload error:', error);
       return this.errorResult(`Upload error: ${error instanceof Error ? error.message : error}`);
@@ -412,7 +425,7 @@ export class MediaUploadService {
       }
 
       const errorText = await response.text();
-      return this.errorResult(`Upload failed: ${response.status} ${errorText || response.statusText}`);
+      return this.errorResult(this.describeUploadFailure(response.status, response.statusText, errorText));
     } catch (error) {
       console.error('Blossom browser upload error:', error);
       return this.errorResult(`Upload error: ${error instanceof Error ? error.message : 'Network error - server may not support CORS'}`);
@@ -542,7 +555,7 @@ export class MediaUploadService {
         return this.errorResult('No URL in upload response');
       }
 
-      return this.errorResult(`Upload failed: ${response.status} ${response.statusText}`);
+      return this.errorResult(this.describeUploadFailure(response.status, response.statusText));
     } catch (error) {
       console.error('NIP-96 upload error:', error);
       return this.errorResult(`Upload error: ${error instanceof Error ? error.message : error}`);
@@ -589,7 +602,7 @@ export class MediaUploadService {
             resolve(this.errorResult('Failed to parse upload response'));
           }
         } else {
-          resolve(this.errorResult(`Upload failed: ${xhr.status} ${xhr.statusText}`));
+          resolve(this.errorResult(this.describeUploadFailure(xhr.status, xhr.statusText, xhr.responseText)));
         }
       };
 
