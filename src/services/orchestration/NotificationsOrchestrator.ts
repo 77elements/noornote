@@ -1197,7 +1197,7 @@ export class NotificationsOrchestrator extends Orchestrator {
 
     if (!this.addNotification(notification)) return;
 
-    this.systemLogger.info('NotificationsOrchestrator', `📿 Dhikr notification: ${data.type}`);
+    this.systemLogger.info('NotificationsOrchestrator', 'New community dhikr activity');
 
     this.eventBus.emit('notifications:badge-update');
     this.eventBus.emit('notifications:new', { notification });

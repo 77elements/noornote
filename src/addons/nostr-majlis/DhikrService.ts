@@ -312,6 +312,7 @@ export class DhikrService {
   /** Build the synthetic (never-published) notification event and hand it to the orchestrator. */
   private notify(type: 'dhikr_round' | 'dhikr_commit' | 'dhikr_complete', idSuffix: string): void {
     if (!getNostrMajlisSettings().dhikrNotifications) return;
+    diagLog('addons', 'nostr-majlis: dhikr activity notification', { type });
     const event: NostrEvent = {
       id: `dhikr-${idSuffix}`,
       pubkey: '',
