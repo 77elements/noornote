@@ -546,14 +546,6 @@ export class NotificationsOrchestrator extends Orchestrator {
     // Zaps (9735) are NOT filtered here — their p-tag is set by the LNURL server,
     // so the #p subscription filter is authoritative.
     if (event.kind === 7 && this.userPubkey) {
-      // Reaction-on-reaction (our k=7 marker) lives only in the ISL / analytics
-      // reaction tree — never a notification (product decision). Without this it
-      // would slip through via the last-p-tag rule and render as a broken
-      // "reacted to your note".
-      if (event.tags.some(t => t[0] === 'k' && t[1] === '7')) {
-        return false;
-      }
-
       const pTags = event.tags.filter(t => t[0] === 'p');
       const eTags = event.tags.filter(t => t[0] === 'e');
       const eTagId = eTags[eTags.length - 1]?.[1];

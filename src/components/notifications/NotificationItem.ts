@@ -423,6 +423,7 @@ export class NotificationItem {
     const kTag = this.options.event.tags.find((t: string[]) => t[0] === 'k');
     if (kTag?.[1]) {
       const kind = parseInt(kTag[1]);
+      if (kind === 7) return 'reaction';
       if (kind === 9735) return 'zap';
       if (kind === 1063) return 'file';
       if (kind === 20) return 'picture';
