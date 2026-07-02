@@ -56,6 +56,9 @@ marketing/
 tmp/
 temp/
 
+# Local backups (protected-file zips from /finalize)
+.backups/
+
 # Claude Code
 .claude/
 
