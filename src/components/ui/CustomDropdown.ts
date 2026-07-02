@@ -222,21 +222,47 @@ export class CustomDropdown {
     this.element.classList.remove('custom-dropdown--align-left', 'custom-dropdown--drop-up');
 
     const t = trigger.getBoundingClientRect();
+    const clip = this.getClipRect();
     const menuW = menu.offsetWidth;
     const menuH = menu.offsetHeight;
-    const margin = 8;
+    const m = 8;
 
-    // Horizontal: right-anchored by default (extends left from the trigger's
-    // right edge). If the left edge would clip, anchor left (extend right).
-    if (t.right - menuW < margin) {
+    // Horizontal: right-anchored by default (menu spans [t.right - menuW, t.right],
+    // extending left). If that overflows the LEFT boundary but left-anchoring
+    // fits, flip to open rightward. The boundary is the nearest clipping ancestor
+    // (e.g. the scrollable `.primary-content` column with overflow-x: hidden), NOT
+    // the raw viewport — a menu inside a content column is cut at the column edge,
+    // which sits well inside the window (behind the sidebar).
+    const rightAnchorFits = t.right - menuW >= clip.left + m;
+    const leftAnchorFits = t.left + menuW <= clip.right - m;
+    if (!rightAnchorFits && leftAnchorFits) {
       this.element.classList.add('custom-dropdown--align-left');
     }
 
     // Vertical: drops down by default. If it would clip the bottom and there's
     // room above, drop up instead.
-    if (t.bottom + menuH > window.innerHeight - margin && t.top - menuH > margin) {
+    if (t.bottom + menuH > clip.bottom - m && t.top - menuH > clip.top + m) {
       this.element.classList.add('custom-dropdown--drop-up');
     }
+  }
+
+  /**
+   * The rectangle the menu must stay inside: the nearest ancestor that actually
+   * clips (any non-visible overflow, or paint containment), else the viewport.
+   * A dropdown inside a scrollable content column is cut at that column's edge,
+   * not the window edge, so collision must be measured against it.
+   */
+  private getClipRect(): { left: number; right: number; top: number; bottom: number } {
+    let node = this.element.parentElement;
+    while (node && node !== document.body && node !== document.documentElement) {
+      const s = getComputedStyle(node);
+      if (s.overflowX !== 'visible' || s.overflowY !== 'visible' || s.contain.includes('paint')) {
+        const r = node.getBoundingClientRect();
+        return { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
+      }
+      node = node.parentElement;
+    }
+    return { left: 0, right: window.innerWidth, top: 0, bottom: window.innerHeight };
   }
 
   /**
