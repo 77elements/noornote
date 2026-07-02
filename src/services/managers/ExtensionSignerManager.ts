@@ -27,6 +27,7 @@ export class ExtensionSignerManager {
   public getExtensionName(): string {
     if (!this.isAvailable()) return 'none';
     const ua = navigator.userAgent.toLowerCase();
+    if (ua.includes('sidecar')) return 'Sidecar';
     if (ua.includes('alby')) return 'Alby';
     return 'Browser Extension';
   }
@@ -37,7 +38,7 @@ export class ExtensionSignerManager {
    */
   public async authenticate(): Promise<{ success: boolean; npub?: string; pubkey?: string; error?: string }> {
     if (!this.isAvailable()) {
-      return { success: false, error: 'No Nostr extension found. Please install Alby, nos2x, or another Nostr browser extension.' };
+      return { success: false, error: 'No Nostr extension found. Please install Sidecar or another Nostr browser extension.' };
     }
 
     try {

@@ -50,11 +50,6 @@ interface GeneratedKeypair {
   publicKeyHex: string;
 }
 
-interface WalletCredentials {
-  nwcUri: string;
-  lightningAddress: string;
-}
-
 interface WizardRelay {
   url: string;
   read: boolean;
@@ -410,8 +405,6 @@ export class AccountSetupWizard {
 
   /** Generated keypair (before login) */
   private currentKeypair: GeneratedKeypair | null = null;
-  /** Wallet credentials from Rizful (Web only) */
-  private walletCredentials: WalletCredentials | null = null;
   /** Whether backup was confirmed */
   private backupConfirmed: boolean = false;
 
@@ -457,18 +450,19 @@ export class AccountSetupWizard {
         this.createDoneStep(),
       ];
     } else {
-      // Web: Extension → Rizful → Keypair → Backup → Import → Login → Profile Setup → Done
+      // Web: Keypair → Backup → Sidecar → Login → Profile Setup → Lightning → Done
+      // Same order as Desktop (signer step right after the backup), with the
+      // Lightning wallet at the end where it's optional.
       this.steps = [
-        this.createExtensionStep(),
-        this.createRizfulStep(),
         this.createKeypairStep(),
         this.createBackupStep(),
-        this.createExtensionImportStep(),
+        this.createSidecarStep(),
         this.createLoginStep(),
         this.createUsernameStep(),
         this.createAvatarStep(),
         this.createBioStep(),
         this.createFollowPacksStep(),
+        this.createLightningStep(),
         this.createDoneStep(),
       ];
     }
@@ -858,206 +852,6 @@ export class AccountSetupWizard {
   // ─── Account Creation Steps ────────────────────────────────────
 
   /**
-   * Step: Install browser extension (Web only)
-   */
-  private createExtensionStep(): WizardStep {
-    return {
-      id: 'extension',
-      title: 'Extension',
-      required: true,
-      render: () => {
-        const el = document.createElement('div');
-        this.renderStepHeader(el, 'Install a Browser Extension',
-          'To use Nostr in your browser, you need a signing extension. We recommend Alby because it securely stores your keys.');
-
-        el.innerHTML += `
-          <div class="wizard-extension-action">
-            <a href="https://getalby.com/alby-extension" target="_blank" rel="noopener noreferrer" class="btn btn--large">
-              Install Alby Extension
-            </a>
-            <p class="wizard-hint">Opens in a new tab</p>
-          </div>
-
-          <div class="wizard-info-box">
-            <p><strong>After installing:</strong></p>
-            <ol>
-              <li>Set an unlock passcode for Alby</li>
-              <li>When asked to connect a wallet, <strong>stop and come back here</strong></li>
-              <li>We'll give you the wallet connection in the next step</li>
-            </ol>
-          </div>
-        `;
-        return el;
-      },
-      validate: () => true, // Can't verify, trust user
-      collect: () => {}
-    };
-  }
-
-  /**
-   * Step: Rizful wallet setup (Web only)
-   */
-  private createRizfulStep(): WizardStep {
-    return {
-      id: 'rizful',
-      title: 'Wallet',
-      required: true,
-      render: () => {
-        const el = document.createElement('div');
-        this.renderStepHeader(el, 'Set Up Lightning Wallet',
-          'A Lightning wallet lets you send and receive Bitcoin tips (Zaps) on Nostr. We use Rizful to create a free wallet for you.');
-
-        const hasWallet = !!this.walletCredentials;
-
-        el.innerHTML += `
-          <div class="wizard-info-box">
-            <p><strong>On Rizful:</strong></p>
-            <ol>
-              <li>Open <a href="https://rizful.com" target="_blank" rel="noopener">rizful.com</a></li>
-              <li>Create an account at <a href="https://rizful.com/create-account" target="_blank" rel="noopener">rizful.com/create-account</a></li>
-              <li>Wait for the confirmation email and click "Verify your account" in it</li>
-              <li>On the Rizful verification page, click "Verify Account" to confirm</li>
-              <li>Come back here and click the "Open Rizful" button below</li>
-            </ol>
-          </div>
-
-          <div class="wizard-extension-action">
-            <button class="btn btn--large" data-action="open-rizful">
-              Open Rizful
-            </button>
-          </div>
-
-          <div class="wizard-code-input">
-            <label for="rizful-code">Enter your Rizful code:</label>
-            <div class="wizard-input-row">
-              <input type="text" id="rizful-code" class="input" placeholder="Paste one-time code here" ${hasWallet ? 'disabled' : ''} />
-              <button class="btn" data-action="redeem-code" ${hasWallet ? 'disabled' : ''}>
-                ${hasWallet ? 'Connected!' : 'Connect'}
-              </button>
-            </div>
-            <div class="wizard-status" data-status></div>
-          </div>
-
-          ${hasWallet ? `
-            <div class="wizard-success-box">
-              <p><strong>Wallet connected!</strong></p>
-              <p>Lightning Address: <code>${this.walletCredentials!.lightningAddress}</code></p>
-            </div>
-
-            <div class="wizard-credentials-box">
-              <p><strong>Your NWC String (save this in your backup!):</strong></p>
-              <div class="wizard-keypair-item">
-                <div class="wizard-input-row">
-                  <input type="text" class="input input--monospace" value="${this.walletCredentials!.nwcUri}" readonly data-nwc />
-                  <button class="btn btn--mini" data-action="copy-nwc">Copy</button>
-                </div>
-              </div>
-            </div>
-          ` : ''}
-        `;
-
-        // Setup listeners after render
-        setTimeout(() => this.setupRizfulListeners(), 0);
-
-        return el;
-      },
-      validate: () => !!this.walletCredentials,
-      collect: () => {
-        // Store lightning address in profile data
-        if (this.walletCredentials) {
-          this.profileData.lud16 = this.walletCredentials.lightningAddress;
-        }
-      },
-      confirmSkip: () => this.confirmSkipWallet(),
-    };
-  }
-
-  /**
-   * Setup listeners for Rizful step
-   */
-  private setupRizfulListeners(): void {
-    const container = this.container;
-    if (!container) return;
-
-    // Open Rizful button
-    const openBtn = container.querySelector('[data-action="open-rizful"]');
-    if (openBtn) {
-      openBtn.addEventListener('click', () => {
-        window.open('https://rizful.com/nostr_onboarding_auth_token/get_token', '_blank', 'noopener,noreferrer');
-      });
-    }
-
-    // Copy NWC button (if wallet already connected)
-    container.querySelector('[data-action="copy-nwc"]')?.addEventListener('click', async () => {
-      if (this.walletCredentials) {
-        try {
-          await navigator.clipboard.writeText(this.walletCredentials.nwcUri);
-          ToastService.show('NWC copied to clipboard', 'success');
-        } catch {
-          ToastService.show('Failed to copy', 'error');
-        }
-      }
-    });
-
-    // Redeem code button
-    const redeemBtn = container.querySelector('[data-action="redeem-code"]') as HTMLButtonElement;
-    const codeInput = container.querySelector('#rizful-code') as HTMLInputElement;
-    const statusEl = container.querySelector('[data-status]') as HTMLElement;
-
-    if (redeemBtn && codeInput && !this.walletCredentials) {
-      redeemBtn.addEventListener('click', async () => {
-        const code = codeInput.value.trim();
-        if (!code) {
-          ToastService.show('Please enter a code', 'error');
-          return;
-        }
-
-        redeemBtn.disabled = true;
-        redeemBtn.textContent = 'Connecting...';
-        if (statusEl) statusEl.textContent = '';
-
-        try {
-          const response = await fetch('https://rizful.com/nostr_onboarding_auth_token/post_for_secrets', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              secret_code: code,
-              nostr_public_key: '0000000000000000000000000000000000000000000000000000000000000000',
-            }),
-          });
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error('[Rizful API Error]', response.status, errorText);
-            throw new Error(`Request failed (${response.status}): ${errorText}`);
-          }
-
-          const data = await response.json() as {
-            nwc_uri: string;
-            lightning_address: string;
-          };
-
-          this.walletCredentials = {
-            nwcUri: data.nwc_uri,
-            lightningAddress: data.lightning_address,
-          };
-
-          ToastService.show('Wallet connected!', 'success');
-          this.updateNextButtonState(true);
-          this.renderCurrentStep(); // Re-render to show success
-        } catch (error) {
-          if (statusEl) {
-            statusEl.textContent = `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
-            statusEl.classList.add('error');
-          }
-          redeemBtn.disabled = false;
-          redeemBtn.textContent = 'Connect';
-        }
-      });
-    }
-  }
-
-  /**
    * Step: Generate keypair (Both platforms)
    */
   private createKeypairStep(): WizardStep {
@@ -1186,12 +980,9 @@ export class AccountSetupWizard {
       required: true,
       render: () => {
         const el = document.createElement('div');
-        const isWeb = platform.isBrowser;
 
         this.renderStepHeader(el, 'Save Your Backup',
-          isWeb
-            ? 'Your backup includes your keypair AND wallet connection. Download it now!'
-            : 'Download a backup of your keypair. If you lose this, you lose access forever.');
+          'Download a backup of your keypair. If you lose this, you lose access forever. You will paste this nsec into Sidecar in the next step.');
 
         el.innerHTML += `
           <div class="wizard-backup-warning">
@@ -1261,17 +1052,6 @@ ${this.currentKeypair.nsec}
 PUBLIC KEY (npub) - Your username
 ${this.currentKeypair.npub}
 `;
-
-    // Add wallet credentials on Web
-    if (platform.isBrowser && this.walletCredentials) {
-      content += `
-LIGHTNING WALLET (NWC) - For sending/receiving zaps
-${this.walletCredentials.nwcUri}
-
-LIGHTNING ADDRESS - Share this to receive payments
-${this.walletCredentials.lightningAddress}
-`;
-    }
 
     content += `
 IMPORTANT:
@@ -1413,59 +1193,63 @@ IMPORTANT:
   }
 
   /**
-   * Step: Import to browser extension (Web only)
+   * Step: Install Sidecar and import the nsec (Web only)
    */
-  private createExtensionImportStep(): WizardStep {
+  private createSidecarStep(): WizardStep {
     return {
-      id: 'import',
-      title: 'Set up Alby',
+      id: 'sidecar',
+      title: 'Sidecar',
       required: true,
       render: () => {
         const el = document.createElement('div');
-        this.renderStepHeader(el, 'Set up Alby', '');
+        this.renderStepHeader(el, 'Set up Sidecar',
+          'Sidecar is a browser extension that keeps your key encrypted on this device and signs events for you, so no website ever sees your nsec.');
 
         el.innerHTML += `
-          <div class="nn-carousel nn-carousel--alby">
+          <div class="wizard-extension-action">
+            <a href="https://chromewebstore.google.com/detail/sidecar-a-classy-nostr-si/moimlikilhheabdafocpmneehpblhiln" target="_blank" rel="noopener noreferrer" class="btn btn--large">
+              Install Sidecar
+            </a>
+            <p class="wizard-hint">Opens the Chrome Web Store in a new tab</p>
+          </div>
+
+          <div class="nn-carousel nn-carousel--sidecar">
             <div class="nn-carousel-slides">
               <div class="nn-carousel-slide active" data-slide="0">
-                <img src="/images/alby/alby-06-return-to-alby-tab.png" alt="Find Your Wallet" class="nn-carousel-image" />
-                <p class="nn-carousel-caption">Click <strong>"Find Your Wallet"</strong> under "Bring Your Own Wallet"</p>
+                <img src="/images/sidecar/sidecar-01.png" alt="Add Sidecar to Chrome" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">Click <strong>"Add to Chrome"</strong> to install Sidecar</p>
               </div>
               <div class="nn-carousel-slide" data-slide="1">
-                <img src="/images/alby/alby-07-choose-nwc.png" alt="Choose NWC" class="nn-carousel-image" />
-                <p class="nn-carousel-caption">Select <strong>"NWC (Nostr Wallet Connect)"</strong></p>
+                <img src="/images/sidecar/sidecar-02.png" alt="Sidecar installed" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">Installed, your Nostr signer is ready</p>
               </div>
               <div class="nn-carousel-slide" data-slide="2">
-                <img src="/images/alby/alby-08-copy-nwc-from-bakcup-file.png" alt="Paste NWC" class="nn-carousel-image" />
-                <p class="nn-carousel-caption">Paste your <strong>NWC string</strong> from the backup file</p>
+                <img src="/images/sidecar/sidecar-03.png" alt="Pin Sidecar" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">Open the <strong>puzzle-piece menu</strong> and pin Sidecar</p>
               </div>
               <div class="nn-carousel-slide" data-slide="3">
-                <img src="/images/alby/alby-09.png" alt="Alby ready" class="nn-carousel-image" />
-                <p class="nn-carousel-caption">Alby is ready! Pin it to your browser toolbar</p>
+                <img src="/images/sidecar/sidecar-04.png" alt="Sidecar pinned" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">Sidecar now stays in your toolbar</p>
               </div>
               <div class="nn-carousel-slide" data-slide="4">
-                <img src="/images/alby/alby-10.png" alt="Open settings" class="nn-carousel-image" />
-                <p class="nn-carousel-caption">Click the Alby icon, then click the <strong>settings icon</strong></p>
+                <img src="/images/sidecar/sidecar-05.png" alt="Set a PIN" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">Click it, set a <strong>PIN or passphrase</strong> (min. 4 characters), then <strong>"Create keystore"</strong></p>
               </div>
               <div class="nn-carousel-slide" data-slide="5">
-                <img src="/images/alby/alby-11.png" alt="Select wallet" class="nn-carousel-image" />
-                <p class="nn-carousel-caption">Select your <strong>NWC wallet</strong></p>
+                <img src="/images/sidecar/sidecar-06.png" alt="Import nsec" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">Click <strong>"Import nsec"</strong></p>
               </div>
               <div class="nn-carousel-slide" data-slide="6">
-                <img src="/images/alby/alby-12.png" alt="Nostr Settings" class="nn-carousel-image" />
-                <p class="nn-carousel-caption">Click <strong>"Nostr Settings"</strong></p>
+                <img src="/images/sidecar/sidecar-07.png" alt="Paste nsec" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">Paste your <strong>nsec</strong>, copied in step 1 or from your backup file</p>
               </div>
               <div class="nn-carousel-slide" data-slide="7">
-                <img src="/images/alby/alby-13-copy-nsec-from-backup-file.png" alt="Paste nsec" class="nn-carousel-image" />
-                <p class="nn-carousel-caption">Paste your <strong>nsec</strong> from the backup file</p>
+                <img src="/images/sidecar/sidecar-08.png" alt="Import account" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">Sidecar loads your profile, click <strong>"Import account"</strong></p>
               </div>
               <div class="nn-carousel-slide" data-slide="8">
-                <img src="/images/alby/alby-14.png" alt="Save" class="nn-carousel-image" />
-                <p class="nn-carousel-caption">Your npub will appear. Click <strong>"Save"</strong></p>
-              </div>
-              <div class="nn-carousel-slide" data-slide="9">
-                <img src="/images/alby/alby-15-save.png" alt="Done" class="nn-carousel-image" />
-                <p class="nn-carousel-caption">Done! Your Nostr Public Key shows <strong>"IMPORTED"</strong></p>
+                <img src="/images/sidecar/sidecar-09.png" alt="Sidecar ready" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">Done. Your identity is in Sidecar, now log in to NoorNote</p>
               </div>
             </div>
             <div class="nn-carousel-nav">
@@ -1477,7 +1261,7 @@ IMPORTANT:
         `;
 
         // Setup carousel after render
-        setTimeout(() => this.setupAlbyCarousel(), 0);
+        setTimeout(() => this.setupSidecarCarousel(), 0);
 
         return el;
       },
@@ -1487,13 +1271,13 @@ IMPORTANT:
   }
 
   /**
-   * Setup Alby carousel navigation and image click handlers
+   * Setup Sidecar carousel navigation and image click handlers
    */
-  private setupAlbyCarousel(): void {
+  private setupSidecarCarousel(): void {
     const container = this.container;
     if (!container) return;
 
-    const carousel = container.querySelector('.nn-carousel--alby') as HTMLElement;
+    const carousel = container.querySelector('.nn-carousel--sidecar') as HTMLElement;
     if (carousel) {
       setupCarouselNavigation(carousel);
 
@@ -1528,7 +1312,7 @@ IMPORTANT:
             <button class="btn btn--large" data-action="login-extension">
               Login with Extension
             </button>
-            <p class="wizard-hint">Alby will ask you to confirm</p>
+            <p class="wizard-hint">Sidecar will ask you to confirm</p>
           </div>
 
           <div class="wizard-status" data-status></div>
@@ -1565,19 +1349,6 @@ IMPORTANT:
           if (result.success && result.pubkey) {
             // Set NEEDS_PROFILE_SETUP flag
             this.storage.setForPubkey(StorageKeys.NEEDS_PROFILE_SETUP, result.pubkey, true);
-
-            // Save NWC connection if we have wallet credentials from Rizful
-            if (this.walletCredentials) {
-              try {
-                const { NWCService } = await import('../../services/NWCService');
-                const nwcService = NWCService.getInstance();
-                await nwcService.connect(this.walletCredentials.nwcUri);
-                // Set lud16 in profile data
-                this.profileData.lud16 = this.walletCredentials.lightningAddress;
-              } catch (nwcError) {
-                console.warn('Failed to save NWC connection:', nwcError);
-              }
-            }
 
             localStorage.setItem('noornote_has_key', 'true');
             ToastService.show('Logged in!', 'success');

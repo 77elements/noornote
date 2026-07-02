@@ -192,7 +192,7 @@ export class AboutView extends View {
           NoorNote is a web application. All data stays in your browser:
         </p>
         <ul>
-          <li><strong>Key Storage:</strong> Your private key is managed by your browser extension (e.g. Alby) and never shared with NoorNote or our server.</li>
+          <li><strong>Key Storage:</strong> Your private key is managed by your browser extension (e.g. Sidecar) and never shared with NoorNote or our server.</li>
           <li><strong>Cache:</strong> Temporary data is stored in your browser's IndexedDB and localStorage.</li>
           <li><strong>No User-Data Storage on Our Server:</strong> Our web host serves the static application bundle. We do not store, process, or have access to any user data on the server itself.</li>
         </ul>

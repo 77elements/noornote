@@ -84,7 +84,7 @@ NoorNote ships with optional features that you enable on demand under **Settings
 
 ## Get Started
 
-**Web:** [noornote.app](https://noornote.app) — no install needed, use with a browser extension like [Alby](https://getalby.com)
+**Web:** [noornote.app](https://noornote.app) — no install needed, use with a browser extension like [Sidecar](https://chromewebstore.google.com/detail/sidecar-a-classy-nostr-si/moimlikilhheabdafocpmneehpblhiln)
 
 **Desktop:** macOS and Linux downloads on [Releases](https://github.com/77elements/noornote/releases)
 
@@ -133,11 +133,11 @@ If the app crashes, check the log files:
 | Method | Platform | Security | Convenience |
 |--------|----------|----------|-------------|
 | [NoorSigner](https://github.com/77elements/noorsigner) | Desktop | High | High |
-| NIP-07 Browser Extension (e.g. Alby) | Web | High | High |
+| NIP-07 Browser Extension (e.g. Sidecar) | Web | High | High |
 | NIP-46 Remote Signer | All | High | Medium |
 
 **Desktop:** Use NoorSigner for best security and convenience.
-**Web:** Use a NIP-07 browser extension like Alby.
+**Web:** Use a NIP-07 browser extension like Sidecar.
 
 ## NIPs Supported
 
