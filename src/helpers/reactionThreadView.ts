@@ -152,7 +152,7 @@ async function reactToReaction(
       void service.refreshFromRelays();
       customEmojis = service.getEmojis();
     } catch (err) {
-      console.warn('[reactionThreadView] Custom emoji load failed:', err);
+      console.debug('[reactionThreadView] Custom emoji load failed:', err);
     }
   }
 
@@ -218,7 +218,7 @@ export function buildEmojiMenu(
   // the affordance, exactly like the repost menu shows just its icon. Emoji and
   // the optional count each get their own element so they align cleanly.
   // (Off-screen flipping is handled centrally by CustomDropdown.positionMenu.)
-  if (trigger) trigger.innerHTML = `<span class="reaction-menu__emoji">${emojiHtml}</span>${extraHtml ?? ''}`;
+  if (trigger) trigger.innerHTML = `<span class="reaction-menu__emoji">${emojiHtml}</span>${extraHtml ?? ''}`; // security-ok: emojiHtml escaped via reactionDisplayEmoji, extraHtml is a numeric count span
   return el;
 }
 
@@ -286,7 +286,7 @@ function buildNodeRow(
   const profile = ctx.profiles.get(reaction.pubkey) || { username: 'Anonymous', avatarUrl: '' };
   const user = document.createElement('span');
   user.className = 'reaction-node__user';
-  user.innerHTML = `(${renderUserMention(reaction.pubkey, profile)})`;
+  user.innerHTML = `(${renderUserMention(reaction.pubkey, profile)})`; // security-ok: renderUserMention returns escaped, trusted markup
   row.appendChild(user);
 
   node.appendChild(row);
