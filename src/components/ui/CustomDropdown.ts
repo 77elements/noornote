@@ -200,10 +200,42 @@ export class CustomDropdown {
   private open(): void {
     this.isOpen = true;
     this.element.classList.add('custom-dropdown--open');
+    this.positionMenu();
     if (this.searchable) {
       const input = this.element.querySelector('.custom-dropdown__search-input') as HTMLInputElement | null;
       // Focus after the menu becomes visible.
       setTimeout(() => input?.focus(), 0);
+    }
+  }
+
+  /**
+   * Flip the menu toward whichever side/vertical has room. The menu anchors to
+   * the trigger's right edge and drops down by default (see SCSS); when that
+   * would overflow the viewport we re-anchor left / drop up. Measured after
+   * opening, so it adapts to any menu width without hardcoded guesses.
+   */
+  private positionMenu(): void {
+    const menu = this.element.querySelector('.custom-dropdown__menu') as HTMLElement | null;
+    const trigger = this.element.querySelector('.custom-dropdown__trigger') as HTMLElement | null;
+    if (!menu || !trigger) return;
+
+    this.element.classList.remove('custom-dropdown--align-left', 'custom-dropdown--drop-up');
+
+    const t = trigger.getBoundingClientRect();
+    const menuW = menu.offsetWidth;
+    const menuH = menu.offsetHeight;
+    const margin = 8;
+
+    // Horizontal: right-anchored by default (extends left from the trigger's
+    // right edge). If the left edge would clip, anchor left (extend right).
+    if (t.right - menuW < margin) {
+      this.element.classList.add('custom-dropdown--align-left');
+    }
+
+    // Vertical: drops down by default. If it would clip the bottom and there's
+    // room above, drop up instead.
+    if (t.bottom + menuH > window.innerHeight - margin && t.top - menuH > margin) {
+      this.element.classList.add('custom-dropdown--drop-up');
     }
   }
 

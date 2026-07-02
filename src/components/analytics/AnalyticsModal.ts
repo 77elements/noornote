@@ -15,7 +15,15 @@ import { AuthGuard } from '../../services/AuthGuard';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { parseBolt11Amount, formatNumberWithCommas } from '../../helpers/zapUtils';
 import { renderUserMention, setupUserMentionHandlers, type UserMentionProfile } from '../../helpers/UserMentionHelper';
-import { resolveReactionEmoji } from '../../helpers/formatCustomEmojis';
+import type { CustomDropdown } from '../ui/CustomDropdown';
+import {
+  buildEmojiMenu,
+  buildChildrenContainer,
+  collectTreePubkeys,
+  reactionDisplayEmoji,
+  attachThreadLongPress,
+  type ReactionThreadContext,
+} from '../../helpers/reactionThreadView';
 
 // Shared modal dimensions for consistent sizing
 const MODAL_CONFIG = {
@@ -33,6 +41,9 @@ export class AnalyticsModal {
   private userProfileService: UserProfileService;
   private router: Router;
   private modalService: ModalService;
+  /** Reaction-thread pulldowns from the last render — destroyed on the next
+   *  open so their document listeners don't accumulate across modal opens. */
+  private activeDropdowns: CustomDropdown[] = [];
 
   private constructor() {
     this.userProfileService = UserProfileService.getInstance();
@@ -59,6 +70,9 @@ export class AnalyticsModal {
       return;
     }
 
+    // Tear down pulldowns from a previous open before building fresh ones.
+    this.destroyDropdowns();
+
     // Show loading state first
     this.modalService.show({ ...MODAL_CONFIG, content: this.renderLoadingContent() });
 
@@ -69,7 +83,7 @@ export class AnalyticsModal {
         this.modalService.show({ ...MODAL_CONFIG, content: this.renderErrorContent('Reactions module not available') });
         return;
       }
-      const statsContent = await this.renderStatsContent(stats, rawEvent);
+      const statsContent = await this.renderStatsContent(stats, noteId, rawEvent);
       this.modalService.show({ ...MODAL_CONFIG, content: statsContent });
       this.updateISLInDOM(noteId, stats);
     } catch (error) {
@@ -178,14 +192,19 @@ export class AnalyticsModal {
   /**
    * Render stats content
    */
-  private async renderStatsContent(stats: DetailedStats, rawEvent?: NostrEvent): Promise<HTMLElement> {
-    // Collect all pubkeys for profile fetching
+  private async renderStatsContent(stats: DetailedStats, noteId: string, rawEvent?: NostrEvent): Promise<HTMLElement> {
+    // Fetch the reaction-on-reaction tree so we can render the nested thread.
+    const rootIds = stats.reactionEvents.map(e => e.id).filter((id): id is string => !!id);
+    const reactionTree = await this.reactionsApi?.fetchReactionTree(rootIds) ?? new Map<string, NostrEvent[]>();
+
+    // Collect all pubkeys for profile fetching (top-level + nested reactors)
     const allPubkeys = new Set<string>();
     stats.replyEvents.forEach(e => allPubkeys.add(e.pubkey));
     stats.repostEvents.forEach(e => allPubkeys.add(e.pubkey));
     stats.quotedEvents.forEach(e => allPubkeys.add(e.pubkey));
     stats.reactionEvents.forEach(e => allPubkeys.add(e.pubkey));
     stats.zapEvents.forEach(e => allPubkeys.add(this.extractZapperPubkey(e)));
+    collectTreePubkeys(reactionTree).forEach(pk => allPubkeys.add(pk));
 
     // Fetch all profiles and build profile map
     const profileMap = new Map<string, UserMentionProfile>();
@@ -203,7 +222,7 @@ export class AnalyticsModal {
     const zapsSection = this.renderZapsSection(stats.zapEvents, profileMap);
     const repostsSection = this.renderRepostsSection(stats.repostEvents, profileMap);
     const quotedSection = this.renderQuotedRepostsSection(stats.quotedEvents, profileMap);
-    const likesSection = this.renderLikesSection(stats.reactionEvents, profileMap);
+    const likesSection = this.renderLikesSection(stats.reactionEvents);
 
     // Extract client tag if available
     const clientTag = rawEvent?.tags?.find((tag: string[]) => tag[0] === 'client');
@@ -222,8 +241,22 @@ export class AnalyticsModal {
       ${clientSection}
     `;
 
-    // Setup handlers
+    // Setup handlers (profile links in string-built sections)
     this.setupHandlers(container);
+
+    // Fill the likes body with the interactive reaction tree (needs real DOM
+    // for the pulldowns, so it can't live in the innerHTML string above).
+    const likesBody = container.querySelector('[data-likes-body]');
+    if (likesBody && stats.reactionEvents.length > 0) {
+      const ctx: ReactionThreadContext = {
+        reactionsApi: this.reactionsApi,
+        tree: reactionTree,
+        profiles: profileMap,
+        dropdowns: this.activeDropdowns,
+      };
+      this.buildLikesTree(likesBody as HTMLElement, stats.reactionEvents, noteId, rawEvent, ctx);
+      setupUserMentionHandlers(likesBody as HTMLElement);
+    }
 
     return container;
   }
@@ -307,52 +340,96 @@ export class AnalyticsModal {
   }
 
   /**
-   * Render Likes section (grouped by emoji, uses UserMentionHelper)
+   * Render the Likes section shell. The body is a placeholder that
+   * renderStatsContent fills with the interactive reaction tree afterwards
+   * (pulldowns need real DOM, not an innerHTML string).
    */
-  private renderLikesSection(reactionEvents: NostrEvent[], profileMap: Map<string, UserMentionProfile>): string {
+  private renderLikesSection(reactionEvents: NostrEvent[]): string {
     if (reactionEvents.length === 0) {
       return this.renderEmptySection('Likes (0)', 'No likes yet');
     }
-
-    // Group by emoji + resolve custom emoji display
-    const emojiGroups = new Map<string, NostrEvent[]>();
-    const emojiDisplayMap = new Map<string, string>();
-    reactionEvents.forEach(event => {
-      const emoji = (event.content === '+' || !event.content) ? '\u2764\uFE0F' : event.content;
-      const group = emojiGroups.get(emoji) || [];
-      group.push(event);
-      emojiGroups.set(emoji, group);
-
-      // Resolve custom emoji :shortcode: to <img> tag (NIP-30)
-      if (!emojiDisplayMap.has(emoji) && emoji.startsWith(':') && emoji.endsWith(':')) {
-        emojiDisplayMap.set(emoji, resolveReactionEmoji(event));
-      }
-    });
-
-    // Render each emoji group
-    const groupsHtml = Array.from(emojiGroups.entries()).map(([emoji, events]) => {
-      const userLinks = events.map(event => {
-        const profile = this.getProfile(event.pubkey, profileMap);
-        return renderUserMention(event.pubkey, profile);
-      }).join(' ');
-
-      const emojiDisplay = emojiDisplayMap.get(emoji) || emoji;
-
-      return `
-        <div class="analytics-modal__emoji-group">
-          <span class="analytics-modal__emoji">${emojiDisplay}:</span>
-          <span class="analytics-modal__list">${userLinks}</span>
-        </div>
-      `;
-    }).join('');
-
     return `
       <div class="analytics-modal__section">
         <h2>Likes (${reactionEvents.length})</h2>
         <div class="analytics-modal__separator"></div>
-        ${groupsHtml}
+        <div class="analytics-modal__likes-tree" data-likes-body></div>
       </div>
     `;
+  }
+
+  /**
+   * Build the interactive likes tree into the placeholder body. One row per
+   * top-level reaction (each individually addressable so "React to the emoji"
+   * is unambiguous here), with the nested reaction thread under each ">".
+   */
+  private buildLikesTree(
+    body: HTMLElement,
+    reactionEvents: NostrEvent[],
+    noteId: string,
+    rawEvent: NostrEvent | undefined,
+    ctx: ReactionThreadContext,
+  ): void {
+    for (const reaction of reactionEvents) {
+      if ((reaction.content || '').trim() === '-') continue; // skip downvotes
+      body.appendChild(this.buildTopLevelReactionRow(reaction, noteId, rawEvent, ctx));
+    }
+  }
+
+  /**
+   * A top-level reaction row: [ ">" toggle | spacer ] [ emoji pulldown ] (user).
+   * Its "React with the same emoji" target is the note itself.
+   */
+  private buildTopLevelReactionRow(
+    reaction: NostrEvent,
+    noteId: string,
+    rawEvent: NostrEvent | undefined,
+    ctx: ReactionThreadContext,
+  ): HTMLElement {
+    const node = document.createElement('div');
+    node.className = 'reaction-node';
+
+    const row = document.createElement('div');
+    row.className = 'reaction-node__row';
+
+    const children = buildChildrenContainer(reaction, ctx);
+    if (children) {
+      const toggle = document.createElement('button');
+      toggle.className = 'reaction-node__toggle';
+      toggle.type = 'button';
+      toggle.textContent = '>';
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.setAttribute('title', 'Show reactions to this reaction');
+      const toggleThread = () => {
+        const open = node.classList.toggle('reaction-node--open');
+        toggle.setAttribute('aria-expanded', String(open));
+      };
+      toggle.addEventListener('click', toggleThread);
+      attachThreadLongPress(row, toggleThread);
+      row.appendChild(toggle);
+    } else {
+      const spacer = document.createElement('span');
+      spacer.className = 'reaction-node__toggle reaction-node__toggle--spacer';
+      row.appendChild(spacer);
+    }
+
+    const noteAuthor = rawEvent?.pubkey || reaction.tags.find(t => t[0] === 'p')?.[1] || '';
+    row.appendChild(buildEmojiMenu(reaction, noteId, noteAuthor, rawEvent, reactionDisplayEmoji(reaction), ctx));
+
+    const profile = this.getProfile(reaction.pubkey, ctx.profiles);
+    const user = document.createElement('span');
+    user.className = 'reaction-node__user';
+    user.innerHTML = `(${renderUserMention(reaction.pubkey, profile)})`;
+    row.appendChild(user);
+
+    node.appendChild(row);
+    if (children) node.appendChild(children);
+    return node;
+  }
+
+  /** Destroy tracked reaction pulldowns (their document listeners). */
+  private destroyDropdowns(): void {
+    this.activeDropdowns.forEach(dd => dd.destroy());
+    this.activeDropdowns = [];
   }
 
   /**

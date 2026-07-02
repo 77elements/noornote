@@ -83,6 +83,18 @@
     transform: translateY(0);
   }
 
+  // Collision flips — set on open by positionMenu() when the default
+  // right-anchored / drop-down placement would overflow the viewport.
+  &--align-left &__menu {
+    left: 0;
+    right: auto;
+  }
+
+  &--drop-up &__menu {
+    top: auto;
+    bottom: calc(100% + 4px);
+  }
+
   // Menu items
   &__item {
     padding: calc($gap / 2) calc($gap * 0.75);

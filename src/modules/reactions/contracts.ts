@@ -1,3 +1,4 @@
+import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { InteractionStats, DetailedStats } from '../../services/orchestration/ReactionsOrchestrator';
 import type { InteractionStatusLine } from '../../components/ui/InteractionStatusLine';
 import type { StatsUpdateType } from '../../services/StatsUpdateService';
@@ -16,7 +17,11 @@ export interface ReactionsModuleApi {
   resetFetchCounter(): void;
   hasUserLiked(noteId: string): Promise<boolean>;
   hasUserLikedWithEmoji(noteId: string, emoji: string): Promise<boolean>;
-  publishReaction(options: { noteId: string; authorPubkey: string; emoji?: string; eventId?: string }): Promise<{ success: boolean; alreadyLiked?: boolean; error?: string }>;
+  publishReaction(options: { noteId: string; authorPubkey: string; emoji?: string; eventId?: string; targetEvent?: NostrEvent; emojiTag?: [string, string, string] }): Promise<{ success: boolean; alreadyLiked?: boolean; error?: string }>;
+  /** Fetch the full reaction-on-reaction tree rooted at the given kind:7 event
+   *  ids. Returns a map from a parent event-id to the kind:7 events that react
+   *  to it (one hop per map entry; traverse recursively for the full tree). */
+  fetchReactionTree(rootEventIds: string[]): Promise<Map<string, NostrEvent[]>>;
 
   // StatsUpdateService
   updateAfterInteraction(noteId: string, type: StatsUpdateType, islComponent?: InteractionStatusLine): void;

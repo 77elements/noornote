@@ -168,6 +168,14 @@ export class ReactionService {
         if (addressableId) tags.push(['a', addressableId]);
         tags.push(['k', String(targetEvent.kind)]);
         tags.push(['p', authorPubkey]);
+      } else if (targetEvent?.kind === 7 && targetEvent.id) {
+        // Reaction-on-reaction (kind:7 → kind:7). The `k`=7 marker lets readers
+        // recognize this as a reply within a reaction thread and build the tree
+        // without resolving the parent event first. `p` points at the author of
+        // the reaction being reacted to, so the loop reaches the right person.
+        tags.push(['e', targetEvent.id]);
+        tags.push(['k', '7']);
+        tags.push(['p', authorPubkey]);
       } else {
         tags.push(['e', noteId]);
         tags.push(['p', authorPubkey]);

@@ -1,0 +1,104 @@
+/**
+ * Reaction-on-reaction tree
+ * Shared by LikesList (SingleNoteView) and the Analytics modal.
+ * A reaction that has reactions gets a ">" toggle; expanding indents the
+ * nested thread, recursively.
+ */
+
+@use '../abstracts/variables' as *;
+
+.reaction-node {
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 4);
+    // Keep a long-press from firing the native text/link callout on mobile.
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  &__children {
+    display: none;
+    margin-left: $gap;
+    padding-left: calc($gap / 2);
+    border-left: 1px solid var(--color-3);
+  }
+
+  &--open > &__children {
+    display: block;
+  }
+
+  &__toggle {
+    appearance: none;
+    background: none;
+    border: none;
+    padding: 0;
+    width: 1em;
+    height: 22px;
+    line-height: 22px;
+    margin-right: calc($gap / -2); // -0.5rem
+    color: var(--color-4);
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+
+    &--spacer {
+      visibility: hidden;
+      cursor: default;
+    }
+  }
+
+  &--open > &__row > &__toggle {
+    transform: rotate(90deg);
+  }
+
+  &__user {
+    color: var(--text-alpha-heavy);
+    font-size: 0.9em;
+
+    a {
+      color: inherit;
+    }
+  }
+}
+
+/**
+ * Emoji pulldown (CustomDropdown variant) used both as the LikesList badge and
+ * inside every reaction row. The emoji itself is the trigger (no arrow).
+ */
+.reaction-menu {
+  display: inline-block;
+
+  // Lift the whole control (not just the absolute menu) above later siblings
+  // while open. The ISL sits after the LikesList in the DOM and already claims
+  // $z-dropdown, so at an equal value it would win — go one layer higher.
+  &.custom-dropdown--open {
+    position: relative;
+    z-index: $z-sticky;
+  }
+
+  .custom-dropdown__trigger {
+    display: inline-block; // plain box — override the base flex, none needed here
+    padding: 0 calc($gap / 4); // 0 0.25rem
+    background: none;
+    border: none;
+    cursor: pointer;
+
+    // Emoji and count sit side by side as simple inline-block boxes.
+    > * {
+      display: inline-block;
+    }
+  }
+
+  &__emoji {
+    height: 22px;
+    line-height: 22px;
+
+    // Custom (NIP-30) and native emojis must share one height in this row.
+    .custom-emoji {
+      display: inline-block;
+      height: 22px;
+      vertical-align: middle;
+    }
+  }
+}

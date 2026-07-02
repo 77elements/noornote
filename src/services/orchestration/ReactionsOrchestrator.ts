@@ -459,6 +459,71 @@ export class ReactionsOrchestrator extends Orchestrator {
   }
 
   /**
+   * Fetch the reaction-on-reaction tree rooted at the given kind:7 event ids.
+   * Walks the tree breadth-first: each round fetches the kind:7 events whose
+   * `e`-tag points at a node discovered in the previous round. Returns a map
+   * from a parent event-id to its direct child reactions. Cycle- and
+   * depth-guarded so a malicious relay can't loop us forever.
+   */
+  public async fetchReactionTree(rootEventIds: string[]): Promise<Map<string, NostrEvent[]>> {
+    const tree = new Map<string, NostrEvent[]>();
+    const roots = [...new Set(rootEventIds)].filter(Boolean);
+    if (roots.length === 0) return tree;
+
+    const relays = await this.getReactionFetchRelays();
+    const seenEventIds = new Set<string>();
+    let frontier = roots;
+    const MAX_DEPTH = 20;
+
+    for (let depth = 0; depth < MAX_DEPTH && frontier.length > 0; depth++) {
+      const frontierSet = new Set(frontier);
+      const children = await this.fetchChildReactions(relays, frontier);
+      const nextFrontier: string[] = [];
+
+      for (const event of children) {
+        if (!event.id || seenEventIds.has(event.id)) continue;
+        // The parent is the e-tag pointing at a node from the current frontier.
+        // Every frontier id is a kind:7 event, so any kind:7 tagging it is by
+        // definition a reaction-on-reaction — no false positives from note-likes.
+        const parentId = event.tags.find(t => t[0] === 'e' && !!t[1] && frontierSet.has(t[1]))?.[1];
+        if (!parentId) continue;
+        seenEventIds.add(event.id);
+        const bucket = tree.get(parentId) ?? [];
+        bucket.push(event);
+        tree.set(parentId, bucket);
+        nextFrontier.push(event.id);
+      }
+      frontier = nextFrontier;
+    }
+    return tree;
+  }
+
+  /**
+   * One breadth-first hop: fetch every kind:7 whose `e`-tag references any of
+   * the given event ids. Deduplicated by event-id (a relay may echo an event).
+   */
+  private fetchChildReactions(relays: string[], eventIds: string[]): Promise<NostrEvent[]> {
+    const results: NostrEvent[] = [];
+    const seen = new Set<string>();
+    const filters: NDKFilter[] = [{ kinds: [7], '#e': eventIds }];
+
+    return new Promise((resolve) => {
+      let timeout: ReturnType<typeof setTimeout>;
+      this.transport.subscribe(relays, filters, {
+        onEvent: (event: NostrEvent) => {
+          if (event.id && !seen.has(event.id)) {
+            seen.add(event.id);
+            results.push(event);
+          }
+        },
+        onEose: () => { clearTimeout(timeout); resolve(results); }
+      }).then(sub => {
+        timeout = setTimeout(() => { sub.close(); resolve(results); }, 5000);
+      });
+    });
+  }
+
+  /**
    * Fetch repost events - returns separate arrays for regular/quoted
    * Regular reposts: kind:6 with #e or #a tag
    * Quoted reposts: kind:1 with #q tag

@@ -242,10 +242,21 @@
 // .note-card uses `contain: layout`, making every card its own stacking
 // context — so the menu's own z-index is trapped inside the card and the next
 // card paints (and hit-tests) on top of it. Lift the card holding the open
-// menu above its siblings so the menu is both visible and clickable.
-.note-card:has(.isl-repost-menu.custom-dropdown--open) {
+// menu above its siblings so the menu is both visible and clickable. Same
+// applies to the reaction pulldowns in the LikesList (SingleNoteView), which
+// otherwise open behind the reply cards below the note.
+.note-card:has(.isl-repost-menu.custom-dropdown--open),
+.note-card:has(.reaction-menu.custom-dropdown--open) {
   position: relative;
   z-index: $z-dropdown;
+
+  // Drop the `paint` containment (and content-visibility) while a menu is open
+  // so the dropdown can overflow the card box instead of being clipped to it.
+  // The memory-optimization mode (html.content-visibility-auto) applies
+  // `contain: layout style paint`, which otherwise cuts the menu off at the
+  // card's bottom edge. Keep layout/style containment for scroll performance.
+  contain: layout style;
+  content-visibility: visible;
 }
 
 // Mobile keeps the same flex space-between layout — already responsive.

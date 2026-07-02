@@ -13,19 +13,47 @@
 
   &__scroll {
     display: flex;
+    flex-wrap: wrap;
     gap: calc($gap / 2);
-    overflow-x: auto;
     padding-bottom: calc($gap / 4);
+  }
 
-    @include custom-scrollbar;
+  // One top-level emoji badge (a pulldown), optionally with a ">" toggle and,
+  // when expanded, the nested reaction thread below it (breaks to full width).
+  &__badge-row {
+    display: inline-flex;
+    align-items: center;
+    gap: calc($gap / 4);
+    padding: calc($gap / 4) calc($gap / 2);
+    background-color: var(--color-2);
+    // Transparent baseline so the hover border doesn't shift the layout.
+    border: 1px solid transparent;
+    border-radius: $radius-full;
+    flex-wrap: wrap;
+    // Keep a long-press from firing the native text callout on mobile.
+    user-select: none;
+    -webkit-touch-callout: none;
 
-    // Hide scrollbar on mobile (swipe instead)
-    @include mobile-down {
-      scrollbar-width: none;
-      &::-webkit-scrollbar {
-        display: none;
-      }
+    &:hover {
+      border-color: var(--color-4);
     }
+
+    &--open {
+      flex-basis: 100%;
+      border-radius: $radius-xl;
+      background-color: var(--bg-accent);
+    }
+  }
+
+  &__children {
+    display: none;
+    flex-basis: 100%;
+    width: 100%;
+    margin-top: calc($gap / 2);
+  }
+
+  &__badge-row--open &__children {
+    display: block;
   }
 
   &__badge {
@@ -74,6 +102,10 @@
   }
 
   &__count {
+    display: inline-block;
+    height: 22px;
+    line-height: 22px;
+    margin-left: calc($gap / 4); // 0.25rem
     font-weight: 600;
     color: var(--text-alpha-heavy);
   }
