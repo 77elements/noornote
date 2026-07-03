@@ -10,6 +10,7 @@ import { UserProfileService, type UserProfile } from '../../services/UserProfile
 import { AuthService } from '../../services/AuthService';
 import { UserService } from '../../services/UserService';
 import { FollowVerificationService } from '../../services/FollowVerificationService';
+import { RemoteMuteCheckService } from '../../services/RemoteMuteCheckService';
 import { Timeline } from '../timeline/Timeline';
 import { profileTimelineConfig } from '../timeline/TimelineConfig';
 import { ProfileSearchComponent } from '../profile/ProfileSearchComponent';
@@ -65,6 +66,7 @@ type ProfileLoadResult = {
   profile: UserProfile;
   following: string[];
   followsYou: boolean;
+  mutedYou: boolean;
 };
 const loadingProfiles: Map<string, Promise<ProfileLoadResult>> = new Map();
 
@@ -76,6 +78,7 @@ export class ProfileView extends View {
   private authService: AuthService;
   private userService: UserService;
   private followVerification: FollowVerificationService;
+  private remoteMuteCheck: RemoteMuteCheckService;
   private eventBus: TypedEventBus;
   private timeline: Timeline | null = null;
   private followingCount: number = 0;
@@ -84,6 +87,7 @@ export class ProfileView extends View {
   private joinedDate: string | null = null;
   private isLoadingJoinedDate: boolean = false;
   private followsYou: boolean = false;
+  private mutedYou: boolean = false; // Target has PUBLICLY muted the current user
   private isInitialRender: boolean = true; // Track if this is first render
   private lastKnownMuteStatus: boolean = false; // Track mute status for change detection
   private lastKnownFollowStatus: boolean = false; // Track follow status for change detection
@@ -140,6 +144,7 @@ export class ProfileView extends View {
     this.authService = AuthService.getInstance();
     this.userService = UserService.getInstance();
     this.followVerification = FollowVerificationService.getInstance();
+    this.remoteMuteCheck = RemoteMuteCheckService.getInstance();
     this.eventBus = TypedEventBus.getInstance();
     // Decode npub or nprofile to pubkey
     try {
@@ -322,13 +327,14 @@ export class ProfileView extends View {
       }
 
       // Fetch profile data (uses shared promise to prevent duplicate requests)
-      const { profile, following, followsYou } = await this.getProfileData();
+      const { profile, following, followsYou, mutedYou } = await this.getProfileData();
 
       this.followingCount = following.length;
 
       // Check follow relationships (only for other profiles when logged in)
       if (currentUser && this.pubkey !== currentUser.pubkey) {
         this.followsYou = followsYou;
+        this.mutedYou = mutedYou;
         const isFollowing = await this.followManager.checkFollowStatus();
         this.lastKnownFollowStatus = isFollowing;
       }
@@ -484,16 +490,20 @@ export class ProfileView extends View {
   private async fetchProfileData(): Promise<ProfileLoadResult> {
     try {
       const isSelf = this.authService.isCurrentUser(this.pubkey);
-      const [profile, following, followsYouVerdict] = await Promise.all([
+      const [profile, following, followsYouVerdict, mutedYouVerdict] = await Promise.all([
         this.userProfileService.getUserProfile(this.pubkey),
         this.userService.getUserFollowing(this.pubkey),
         isSelf
           ? Promise.resolve(null)
-          : this.followVerification.verifyFollowsBack(this.pubkey)
+          : this.followVerification.verifyFollowsBack(this.pubkey),
+        isSelf
+          ? Promise.resolve(null)
+          : this.remoteMuteCheck.verifyMutedByThem(this.pubkey)
       ]);
 
       const followsYou = followsYouVerdict?.status === 'follows';
-      return { profile, following, followsYou };
+      const mutedYou = mutedYouVerdict?.status === 'muted';
+      return { profile, following, followsYou, mutedYou };
     } finally {
       // Remove from loading map after completion (success or error)
       loadingProfiles.delete(this.pubkey);
@@ -553,6 +563,7 @@ export class ProfileView extends View {
           <div class="profile-avatar-wrapper">
             <img src="${escapeHtmlAttr(picture)}" alt="${escapeHtml(displayName)}" class="profile-pic profile-pic--big" />
             ${this.followsYou ? '<span class="badge badge--green">Follows you</span>' : ''}
+            ${this.mutedYou ? '<span class="badge badge--red">Has muted you</span>' : ''}
           </div>
 
           <div class="profile-meta">

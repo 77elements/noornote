@@ -87,8 +87,24 @@
     align-self: center;
   }
 
-  &:has(.badge) .profile-pic--big {
+  // Relationship badges (Follows you / Has muted you) and their avatar ring must
+  // look identical on every theme, so they use FIXED SASS colors here instead of
+  // the theme-tracking CSS palette vars ($color-6 not var(--color-6)). This
+  // profile-scoped override leaves the shared .badge--green atom (DM counter,
+  // version tag) theme-tracked as before.
+  .badge--green {
+    background: $color-6;
+    color: $color-1;
+  }
+
+  // Avatar ring tracks the relationship badge below it: green for "Follows you",
+  // red for "Has muted you". Red is declared last so it wins if both are present.
+  &:has(.badge--green) .profile-pic--big {
     border-color: $color-6;
+  }
+
+  &:has(.badge--red) .profile-pic--big {
+    border-color: $color-red;
   }
 }
 

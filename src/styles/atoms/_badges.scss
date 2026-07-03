@@ -39,6 +39,17 @@
   color: var(--color-1);
 }
 
+// Red (solid pill, status "bad" — e.g. "Has muted you"). Mirrors badge--green
+// geometry so it reads as its red counterpart next to the avatar.
+.badge--red {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 calc($gap / 4);
+  border-radius: $radius-full;
+  background: $color-red;
+  color: $color-white;
+}
+
 // Warning (zap amounts, health warning, drafts)
 .badge--warning {
   background: $bg-warning;
