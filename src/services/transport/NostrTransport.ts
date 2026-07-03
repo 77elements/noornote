@@ -89,17 +89,71 @@ function getNDKCacheConfig(): NDKCacheAdapterDexieOptions {
   }
 }
 
+function relayHost(url: string): string | null {
+  try {
+    // URL.hostname drops the [] around IPv6 literals
+    return new URL(url).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
 /**
- * On an HTTPS page the browser blocks insecure ws:// WebSockets (mixed-content),
- * and `new WebSocket('ws://…')` throws a SecurityError SYNCHRONOUSLY. Inside NDK's
- * fetchEvents Promise.all that abort aborts the whole fetch, so a single ws:// relay
- * in an author's kind:10002 outbox left the timeline empty on the web — never locally,
- * where file://-served Electron has no mixed-content rule. Strip ws:// when on HTTPS.
+ * True for hostnames pointing at loopback, LAN, link-local or IPv6 ULA space.
+ * A public page must never open a WebSocket to these on the strength of an
+ * untrusted event (a relay URL from another user's kind:10002 / kind:10050),
+ * because it would make the visitor's browser probe their own local network.
+ */
+function isPrivateHost(hostname: string): boolean {
+  const h = hostname.replace(/^\[|\]$/g, '');
+  if (h === 'localhost' || h.endsWith('.local') || h.endsWith('.localhost')) return true;
+  if (h.includes(':')) {
+    // IPv6 literal: loopback, unique-local (fc00::/7), link-local (fe80::/10)
+    return h === '::1' || h.startsWith('fc') || h.startsWith('fd') || h.startsWith('fe80');
+  }
+  return (
+    h.startsWith('127.') ||
+    h === '0.0.0.0' ||
+    h.startsWith('192.168.') ||
+    h.startsWith('10.') ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(h) ||
+    h.startsWith('169.254.')
+  );
+}
+
+/**
+ * Two guards, applied to every relay set before it reaches NDK:
+ *
+ * 1. Mixed-content: on an HTTPS page `new WebSocket('ws://…')` throws a
+ *    SecurityError SYNCHRONOUSLY. Inside NDK's fetchEvents Promise.all that abort
+ *    aborts the whole fetch, so a single ws:// relay in an author's kind:10002
+ *    outbox left the timeline empty on the web (never locally, where file://-served
+ *    Electron has no mixed-content rule). Strip ws:// when on HTTPS.
+ *
+ * 2. Local-network probe: relay URLs sourced from other users' relay-list events
+ *    (kind:10002 / DM inbox kind:10050) can point at private space, e.g.
+ *    `wss://192.168.0.104`. Opening a socket there makes the visitor's browser hit
+ *    a device on THEIR own LAN. Block private/loopback/link-local hosts — except
+ *    the user's OWN configured relays (the local TEST relay must keep working).
  */
 function secureRelays(relays: string[]): string[] {
   const onHttps = typeof location !== 'undefined' && location.protocol === 'https:';
-  if (!onHttps) return relays;
-  return relays.filter(url => !url.toLowerCase().startsWith('ws://'));
+
+  let allowed: Set<string>;
+  try {
+    const cfg = RelayConfig.getInstance();
+    const own = [...cfg.getAllRelays().map(r => r.url), cfg.loadLocalRelaySettings().url];
+    allowed = new Set(own.map(relayHost).filter((h): h is string => !!h));
+  } catch {
+    allowed = new Set();
+  }
+
+  return relays.filter(url => {
+    if (onHttps && url.toLowerCase().startsWith('ws://')) return false;
+    const host = relayHost(url);
+    if (host && isPrivateHost(host) && !allowed.has(host)) return false;
+    return true;
+  });
 }
 
 // Bound the NDK relay pool. Per-author outbound discovery (stats, reactions,
