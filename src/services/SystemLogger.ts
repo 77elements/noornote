@@ -157,8 +157,20 @@ export class SystemLogger {
     const originalError = console.error;
 
     console.error = (...args) => {
-      originalError(...args);
       const message = args.join(' ');
+
+      // Malformed external events (e.g. numeric tag values from other clients) make NDK's
+      // verifySignature throw during serialization. Such events are junk and NDK correctly
+      // drops them — downgrade the noise to debug so it never surfaces as an error.
+      if (
+        message.includes('signature verification error') ||
+        message.includes("Can't serialize event with invalid properties")
+      ) {
+        console.debug(...args);
+        return;
+      }
+
+      originalError(...args);
 
       // Relay connection issues → friendly warning
       if (message.includes('bad response') || message.includes('WebSocket connection')) {
