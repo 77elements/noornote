@@ -9,6 +9,20 @@
 @use '../base/typography' as *;
 @use '../base/icons' as *;
 
+// Reply-thread author relationship ring (set by ThreadManager): red = the author
+// has publicly muted you, green = they follow you. Fixed SASS colors so it stays
+// identical across themes. 2px border on the --medium avatar (which already
+// carries a 1px border, so the extra 1px is the only layout change).
+.profile-pic--medium.author-rel--muted,
+.profile-pic--mini.author-rel--muted {
+  border: 2px solid $color-red;
+}
+
+.profile-pic--medium.author-rel--follows,
+.profile-pic--mini.author-rel--follows {
+  border: 2px solid $color-6;
+}
+
 // Memory optimization: skip rendering of off-screen notes
 // Toggled via UI Settings → applied as class on <html>
 html.content-visibility-auto .note-card {

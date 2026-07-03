@@ -12,6 +12,7 @@ import { ModuleLoader } from '../../../core/ModuleLoader';
 import type { SingleNoteModuleApi } from '../../../modules/single-note/contracts';
 import type { ReactionsModuleApi } from '../../../modules/reactions/contracts';
 import { AuthService } from '../../../services/AuthService';
+import { applyAuthorRelationshipRing } from '../../../helpers/applyAuthorRelationshipRing';
 import { SystemLogger } from '../../../services/SystemLogger';
 import { UserProfileService } from '../../../services/UserProfileService';
 import { RelayConfig } from '../../../services/RelayConfig';
@@ -252,6 +253,13 @@ export class ThreadManager {
       noteElement.style.marginLeft = `${cappedDepth * 1.5}rem`;
       noteElement.classList.add(`reply-depth-${Math.min(depth, 5)}`);
     }
+
+    // Ring the reply author avatar (the ↳ parent avatars are ringed by
+    // ThreadContextIndicator). The main header avatar renders synchronously.
+    applyAuthorRelationshipRing(
+      noteElement.querySelector('.note-header__user .profile-pic--medium'),
+      reply.pubkey
+    );
 
     return noteElement;
   }

@@ -19,6 +19,7 @@ import { encodeNevent } from '../../services/NostrToolsAdapter';
 import { npubToUsername } from '../../helpers/npubToUsername';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { extractZapperPubkey, getZapAmountSats, extractZapMessage, formatNumberWithCommas } from '../../helpers/zapUtils';
+import { applyAuthorRelationshipRing } from '../../helpers/applyAuthorRelationshipRing';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 export interface ThreadContextIndicatorOptions {
@@ -237,6 +238,13 @@ export class ThreadContextIndicator {
       <img class="profile-pic profile-pic--mini" src="${escapeHtmlAttr(avatarUrl)}" alt="${escapeHtmlAttr(displayName)}" />
       <span class="thread-context-content"><b class="thread-context-author">${escapeHtml(displayName)}</b> ${previewHtml}</span>
     `;
+
+    // In an SNV reply thread, ring the parent author's avatar with their relationship
+    // to the current user (red = they muted you, green = they follow you) — same cue
+    // as the reply author's avatar, so you can see who upthread won't get your reply.
+    if (this.options.replyContext) {
+      applyAuthorRelationshipRing(item.querySelector('.profile-pic--mini'), avatarPubkey);
+    }
 
     item.style.cursor = 'pointer';
     item.addEventListener('click', (e) => {
