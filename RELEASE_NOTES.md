@@ -1,5 +1,5 @@
-# NoorNote 1.2.1
+# NoorNote 1.2.2
 
-**Fix:** the reaction-emoji menu now always opens in the right direction, even for reactions at the far left or right edge.
-
-**Fix:** cleaner console and a corrected web app icon reference.
+- **Privacy fix:** blocked relay connections to local/private network addresses from other users' relay lists, so the app can't be tricked into probing your local network.
+- **Profiles:** a "Has muted you" indicator now shows when someone has publicly muted you (next to "Follows you").
+- **Reply threads:** author avatars are now ringed green if they follow you, red if they've publicly muted you — so you can see who won't get your reply.
