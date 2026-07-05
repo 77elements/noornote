@@ -25,6 +25,7 @@ import { ViewMountingService } from './services/ViewMountingService';
 import { PostLoginService } from './services/PostLoginService';
 import { AddonLoader } from './addons/AddonLoader';
 import { registerCoreAddons } from './addons/registerAddons';
+import { ensurePersistentStorage } from './helpers/ensurePersistentStorage';
 import { ModuleLoader } from './core/ModuleLoader';
 import { registerCoreModules } from './core/registerModules';
 import { decodeNip19 } from './services/NostrToolsAdapter';
@@ -65,6 +66,9 @@ export class App {
   }
 
   async initialize(): Promise<void> {
+    // Mark origin storage persistent so the WebView can't evict IndexedDB (NWC DB loss). Non-blocking.
+    void ensurePersistentStorage();
+
     this.setupRoutes();
 
     this.setupUI();
