@@ -1,5 +1,3 @@
-# NoorNote 1.2.2
+# NoorNote 1.2.3
 
-- **Privacy fix:** blocked relay connections to local/private network addresses from other users' relay lists, so the app can't be tricked into probing your local network.
-- **Profiles:** a "Has muted you" indicator now shows when someone has publicly muted you (next to "Follows you").
-- **Reply threads:** author avatars are now ringed green if they follow you, red if they've publicly muted you — so you can see who won't get your reply.
+- **New addon — Nostrord:** get a heads-up when your Nostrord (NIP-29) group chats come alive. Enable it, pick how often to check (5–180 min), and get one low-priority notification per group that had new activity. Quiet groups stay quiet.
