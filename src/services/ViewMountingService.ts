@@ -470,6 +470,15 @@ export class ViewMountingService {
           }
         };
 
+      case 'addon-nostrord':
+        return {
+          factory: async () => {
+            const { NostrordAddonView } = await import('../addons/nostrord/NostrordAddonView');
+            const view = new NostrordAddonView();
+            return { element: view.getElement(), view };
+          }
+        };
+
       case 'addon-list-settings':
         return {
           factory: async () => {

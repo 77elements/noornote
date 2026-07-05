@@ -180,6 +180,13 @@ export interface DhikrNotificationNewPayload {
   type: 'dhikr_round' | 'dhikr_commit' | 'dhikr_complete';
 }
 
+// ── Nostrord (NIP-29 group activity) ─────────────────────────
+
+export interface NostrordNotificationNewPayload {
+  event: NostrEvent;
+  groupName: string;
+}
+
 // ── Hashtag ──────────────────────────────────────────────────
 
 export interface HashtagSubscriptionUpdatedPayload {
@@ -325,6 +332,7 @@ export interface AppEvents {
   'follower-changes:seen': void;
   'follower-notification:new': FollowerNotificationNewPayload;
   'dhikr-notification:new': DhikrNotificationNewPayload;
+  'nostrord-notification:new': NostrordNotificationNewPayload;
 
   // ── Hashtag Subscriptions ──────────────────
   'hashtag-subscription:updated': HashtagSubscriptionUpdatedPayload;
@@ -359,6 +367,7 @@ export interface AppEvents {
   'marketplace:addon-toggle': AddonTogglePayload;
   'note-taking:addon-toggle': AddonTogglePayload;
   'nostr-majlis:addon-toggle': AddonTogglePayload;
+  'nostrord:addon-toggle': AddonTogglePayload;
   'profile-recognition:addon-toggle': AddonTogglePayload;
   'scheduled-posts:addon-toggle': AddonTogglePayload;
   'tribes:addon-toggle': AddonTogglePayload;

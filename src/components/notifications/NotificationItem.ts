@@ -31,7 +31,7 @@ export interface NotificationItemOptions {
   event: NostrEvent;
   type: NotificationType;
   timestamp: number;
-  meta?: { hashtag?: string; count?: number };
+  meta?: { hashtag?: string; count?: number; groupName?: string };
 }
 
 export class NotificationItem {
@@ -114,9 +114,9 @@ export class NotificationItem {
     const identityContainer = item.querySelector('.notification-item__user-identity');
     if (identityContainer) {
       if (this.options.type === 'dhikr_round' || this.options.type === 'dhikr_commit'
-          || this.options.type === 'dhikr_complete') {
-        // Community dhikr notifications are anonymous by design — no author at all.
-        // The action text is self-contained ("Somebody …"), so drop the identity slot.
+          || this.options.type === 'dhikr_complete' || this.options.type === 'nostrord') {
+        // Community dhikr + Nostrord notifications are anonymous by design — no author at all.
+        // The action text is self-contained ("Someone posted to …"), so drop the identity slot.
         identityContainer.remove();
       } else if (this.options.type === 'poll_vote') {
         // NIP-88 votes: don't expose the voter — show neutral "Someone" instead.
@@ -389,6 +389,9 @@ export class NotificationItem {
       case 'dhikr_commit':
         return '📿';
 
+      case 'nostrord':
+        return '💬';
+
       default:
         return '🔔';
     }
@@ -474,6 +477,7 @@ export class NotificationItem {
       case 'mutual_unfollow': return 'stopped following you back';
       case 'mutual_new': return 'started following you back!';
       case 'follower_new': return 'is now following you';
+      case 'nostrord': return `Someone posted to ${this.options.meta?.groupName || 'a group'}`;
       case 'highlight': return `highlighted your ${target}`;
       case 'badge-award': return 'awarded you a badge';
       case 'dhikr_round': return 'Somebody started a new dhikr';
@@ -583,7 +587,7 @@ export class NotificationItem {
     if (this.options.type === 'mutual_unfollow' || this.options.type === 'mutual_new'
         || this.options.type === 'follower_new'
         || this.options.type === 'dhikr_round' || this.options.type === 'dhikr_commit'
-        || this.options.type === 'dhikr_complete') {
+        || this.options.type === 'dhikr_complete' || this.options.type === 'nostrord') {
       return '';
     }
 
@@ -988,6 +992,11 @@ export class NotificationItem {
     // For community-dhikr notifications, open the addon's Community Dhikr tab
     if (type === 'dhikr_round' || type === 'dhikr_commit' || type === 'dhikr_complete') {
       router.navigate('/addons/nostr-majlis/dhikr');
+      return;
+    }
+
+    // Nostrord notifications are informational only — NoorNote has no NIP-29 group view to open.
+    if (type === 'nostrord') {
       return;
     }
 

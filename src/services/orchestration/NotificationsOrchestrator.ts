@@ -31,13 +31,13 @@ import { USER_CONTENT_KINDS } from '../../types/nostr';
 import { getCacheSize } from '../../helpers/LRUCache';
 import { isDataSaverEnabled } from '../DataSaverService';
 
-export type NotificationType = 'mention' | 'reply' | 'thread-reply' | 'quote' | 'repost' | 'reaction' | 'zap' | 'zap-reply' | 'article' | 'mutual_unfollow' | 'mutual_new' | 'follower_new' | 'hashtag' | 'poll_vote' | 'highlight' | 'badge-award' | 'dhikr_round' | 'dhikr_commit' | 'dhikr_complete';
+export type NotificationType = 'mention' | 'reply' | 'thread-reply' | 'quote' | 'repost' | 'reaction' | 'zap' | 'zap-reply' | 'article' | 'mutual_unfollow' | 'mutual_new' | 'follower_new' | 'hashtag' | 'poll_vote' | 'highlight' | 'badge-award' | 'dhikr_round' | 'dhikr_commit' | 'dhikr_complete' | 'nostrord';
 
 export interface NotificationEvent {
   event: NostrEvent;
   type: NotificationType;
   timestamp: number;
-  meta?: { hashtag?: string; count?: number }; // For hashtag notifications
+  meta?: { hashtag?: string; count?: number; groupName?: string }; // hashtag + nostrord notifications
 }
 
 export class NotificationsOrchestrator extends Orchestrator {
@@ -181,6 +181,11 @@ export class NotificationsOrchestrator extends Orchestrator {
     // Listen for community-dhikr notification events (nostr-majlis addon)
     this.eventBus.on('dhikr-notification:new', (data: { event: NostrEvent; type: 'dhikr_round' | 'dhikr_commit' | 'dhikr_complete' }) => {
       this.handleDhikrNotification(data);
+    });
+
+    // Listen for Nostrord NIP-29 group activity notifications (nostrord addon)
+    this.eventBus.on('nostrord-notification:new', (data: { event: NostrEvent; groupName: string }) => {
+      this.handleNostrordNotification(data);
     });
 
     // Listen for hashtag notification events
@@ -435,7 +440,8 @@ export class NotificationsOrchestrator extends Orchestrator {
     return this.notifications
       .filter(n => n.type !== 'hashtag' && n.type !== 'mutual_new' && n.type !== 'mutual_unfollow'
         && n.type !== 'follower_new'
-        && n.type !== 'dhikr_round' && n.type !== 'dhikr_commit' && n.type !== 'dhikr_complete')
+        && n.type !== 'dhikr_round' && n.type !== 'dhikr_commit' && n.type !== 'dhikr_complete'
+        && n.type !== 'nostrord')
       .map(n => n.event);
   }
 
@@ -755,6 +761,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       'dhikr_round': 3,
       'dhikr_commit': 3,
       'dhikr_complete': 3,
+      'nostrord': 3,
     };
 
     // Load user's priority settings (or use defaults)
@@ -1198,6 +1205,27 @@ export class NotificationsOrchestrator extends Orchestrator {
     if (!this.addNotification(notification)) return;
 
     this.systemLogger.info('NotificationsOrchestrator', 'New community dhikr activity');
+
+    this.eventBus.emit('notifications:badge-update');
+    this.eventBus.emit('notifications:new', { notification });
+  }
+
+  /**
+   * Handle a Nostrord NIP-29 group activity notification from the nostrord addon.
+   * The synthetic event carries no real author (activity is summarized, not attributed), so the
+   * item renders anonymously; the group name travels in meta for the action text.
+   */
+  private handleNostrordNotification(data: { event: NostrEvent; groupName: string }): void {
+    const notification: NotificationEvent = {
+      event: data.event,
+      type: 'nostrord',
+      timestamp: data.event.created_at,
+      meta: { groupName: data.groupName }
+    };
+
+    if (!this.addNotification(notification)) return;
+
+    this.systemLogger.info('NotificationsOrchestrator', 'New activity in a Nostrord group');
 
     this.eventBus.emit('notifications:badge-update');
     this.eventBus.emit('notifications:new', { notification });

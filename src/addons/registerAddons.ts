@@ -26,6 +26,7 @@ import { isBadgesEnabled } from './badges/index';
 import { isNoteTakingEnabled } from './note-taking/index';
 import { isBulkDeleteEnabled } from './bulk-delete/index';
 import { isNostrMajlisEnabled } from './nostr-majlis/index';
+import { isNostrordEnabled } from './nostrord/index';
 
 export function registerCoreAddons(): void {
   const loader = AddonLoader.getInstance();
@@ -113,6 +114,12 @@ export function registerCoreAddons(): void {
     id: 'nostr-majlis',
     isEnabled: isNostrMajlisEnabled,
     load: () => import('./nostr-majlis/runtime').then(m => m.default),
+  });
+
+  loader.register({
+    id: 'nostrord',
+    isEnabled: isNostrordEnabled,
+    load: () => import('./nostrord/runtime').then(m => m.default),
   });
 
   // Out of scope (list-adjacent, deferred — separate decision):

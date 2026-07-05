@@ -12,6 +12,7 @@ import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { MoveDropdown, type MoveTarget } from '../ui/MoveDropdown';
 import { isNostrMajlisEnabled } from '../../addons/nostr-majlis/index';
+import { isNostrordEnabled } from '../../addons/nostrord/index';
 
 interface NotificationTypeInfo {
   type: string;
@@ -35,6 +36,7 @@ const NOTIFICATION_TYPES: NotificationTypeInfo[] = [
   { type: 'dhikr_round', label: 'Dhikr Round' },
   { type: 'dhikr_commit', label: 'Dhikr Committed' },
   { type: 'dhikr_complete', label: 'Dhikr Complete' },
+  { type: 'nostrord', label: 'Nostrord' },
 ];
 
 const DEFAULT_PRIORITIES: NotificationPriorityMap = {
@@ -54,6 +56,7 @@ const DEFAULT_PRIORITIES: NotificationPriorityMap = {
   'dhikr_round': 3,
   'dhikr_commit': 3,
   'dhikr_complete': 3,
+  'nostrord': 3,
 };
 
 const PRIORITY_LABELS: Record<NotificationPriority, { title: string; description: string }> = {
@@ -173,10 +176,12 @@ export class NotificationPrioritySection extends SettingsSection {
    * Get notification types for a priority level
    */
   private getItemsForPriority(priority: NotificationPriority): NotificationTypeInfo[] {
-    // Dhikr types only surface here while the nostr-majlis addon is enabled (they can't fire otherwise).
+    // Dhikr / Nostrord types only surface here while their addon is enabled (they can't fire otherwise).
     const dhikrEnabled = isNostrMajlisEnabled();
+    const nostrordEnabled = isNostrordEnabled();
     return NOTIFICATION_TYPES.filter(item => {
       if (item.type.startsWith('dhikr_') && !dhikrEnabled) return false;
+      if (item.type === 'nostrord' && !nostrordEnabled) return false;
       return this.priorities[item.type] === priority;
     });
   }

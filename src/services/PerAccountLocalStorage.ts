@@ -123,6 +123,13 @@ export const StorageKeys = {
   FOLLOWER_RECENCY_DAYS: 'noornote_follower_recency_days_map',
   FOLLOWER_LAST_SWEEP_AT: 'noornote_follower_last_sweep_at_map',
 
+  // Nostrord — NIP-29 group activity notifications (per-account)
+  // NOTE: the `_map` suffix is required (see the FOLLOWER_NOTIFICATION_ENABLED note above) — the
+  // raw global fallback key in nostrord/index.ts must never collide with this per-account map.
+  NOSTRORD_ENABLED: 'noornote_nostrord_enabled_map',
+  NOSTRORD_POLL_INTERVAL: 'noornote_nostrord_poll_interval_map',
+  NOSTRORD_LAST_CHECK: 'noornote_nostrord_last_check_map',
+
   // Quick Zap toggle (per-account)
   QUICK_ZAP_ENABLED: 'noornote_quick_zap_enabled_map',
 
