@@ -125,7 +125,7 @@ export class KeychainStorage {
     const key = this.getNwcKeyForUser(userPubkey);
     const encrypted = await NWCCryptoService.getInstance().encrypt(connectionString);
     await this.setInIndexedDB(key, encrypted);
-    diagLog('system', 'nwc_save_v2_ok', { storage: 'indexeddb', length: encrypted.length });
+    diagLog('wallet', 'nwc_save_v2_ok', { storage: 'indexeddb', length: encrypted.length });
   }
 
   /**
@@ -142,7 +142,7 @@ export class KeychainStorage {
     const key = this.getNwcKeyForUser(userPubkey);
     const raw = await this.getFromIndexedDB(key);
     if (!raw) {
-      diagLog('system', 'nwc_load_empty', { storage: 'indexeddb' });
+      diagLog('wallet', 'nwc_load_empty', { storage: 'indexeddb' });
       return null;
     }
 
@@ -150,11 +150,11 @@ export class KeychainStorage {
     if (NWCCryptoService.isEncryptedFormat(raw)) {
       try {
         const plaintext = await NWCCryptoService.getInstance().decrypt(raw);
-        diagLog('system', 'nwc_load_v2_ok', { storage: 'indexeddb', length: raw.length });
+        diagLog('wallet', 'nwc_load_v2_ok', { storage: 'indexeddb', length: raw.length });
         return plaintext;
       } catch (err) {
         console.error('[KeychainStorage] Failed to decrypt NWC blob:', err);
-        diagLog('system', 'nwc_load_v2_fail', {
+        diagLog('wallet', 'nwc_load_v2_fail', {
           storage: 'indexeddb',
           error: String(err && (err as Error).message ? (err as Error).message : err),
         });
@@ -164,12 +164,12 @@ export class KeychainStorage {
 
     // Legacy plaintext format (pre-v2): silently migrate to encrypted v2.
     // Any string that doesn't start with "v2:" is treated as legacy plaintext.
-    diagLog('system', 'nwc_load_legacy_plaintext', { storage: 'indexeddb', length: raw.length });
+    diagLog('wallet', 'nwc_load_legacy_plaintext', { storage: 'indexeddb', length: raw.length });
     try {
       const reencrypted = await NWCCryptoService.getInstance().encrypt(raw);
       await this.setInIndexedDB(key, reencrypted);
       console.info('[KeychainStorage] Migrated legacy plaintext NWC blob to v2 (AES-GCM)');
-      diagLog('system', 'nwc_migrate_ok', {
+      diagLog('wallet', 'nwc_migrate_ok', {
         storage: 'indexeddb',
         from: 'plaintext',
         to: 'v2',
@@ -179,7 +179,7 @@ export class KeychainStorage {
       // Migration failure is non-fatal — we still return the plaintext so the
       // user stays connected. Next load will retry migration.
       console.warn('[KeychainStorage] Legacy migration re-encrypt failed:', migrationErr);
-      diagLog('system', 'nwc_migrate_fail', {
+      diagLog('wallet', 'nwc_migrate_fail', {
         storage: 'indexeddb',
         from: 'plaintext',
         error: String(migrationErr && (migrationErr as Error).message ? (migrationErr as Error).message : migrationErr),

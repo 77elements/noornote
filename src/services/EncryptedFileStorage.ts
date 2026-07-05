@@ -86,7 +86,7 @@ export class EncryptedFileStorage {
       const filePath = await this.getNwcFilePath(pubkey);
 
       await writeTextFile(filePath, encrypted);
-      diagLog('system', 'nwc_save_v2_ok', { storage: 'file', length: encrypted.length });
+      diagLog('wallet', 'nwc_save_v2_ok', { storage: 'file', length: encrypted.length });
     } catch (error) {
       console.error('[EncryptedFileStorage] Failed to save NWC:', error);
       throw new Error('Failed to save NWC to encrypted file');
@@ -99,7 +99,7 @@ export class EncryptedFileStorage {
       const fileExists = await fsExists(filePath);
 
       if (!fileExists) {
-        diagLog('system', 'nwc_load_empty', { storage: 'file' });
+        diagLog('wallet', 'nwc_load_empty', { storage: 'file' });
         return null;
       }
 
@@ -109,11 +109,11 @@ export class EncryptedFileStorage {
       if (NWCCryptoService.isEncryptedFormat(raw)) {
         try {
           const plaintext = await NWCCryptoService.getInstance().decrypt(raw);
-          diagLog('system', 'nwc_load_v2_ok', { storage: 'file', length: raw.length });
+          diagLog('wallet', 'nwc_load_v2_ok', { storage: 'file', length: raw.length });
           return plaintext;
         } catch (decryptErr) {
           console.error('[EncryptedFileStorage] Failed to decrypt v2 NWC blob:', decryptErr);
-          diagLog('system', 'nwc_load_v2_fail', {
+          diagLog('wallet', 'nwc_load_v2_fail', {
             storage: 'file',
             error: String(decryptErr && (decryptErr as Error).message ? (decryptErr as Error).message : decryptErr),
           });
@@ -123,13 +123,13 @@ export class EncryptedFileStorage {
 
       // Legacy XOR format: decrypt with pubkey, then transparently migrate
       // to the new v2 format so the next load doesn't hit this path again.
-      diagLog('system', 'nwc_load_legacy_xor', { storage: 'file', length: raw.length });
+      diagLog('wallet', 'nwc_load_legacy_xor', { storage: 'file', length: raw.length });
       const legacyPlaintext = this.decryptLegacyXor(raw, pubkey);
       try {
         const reencrypted = await NWCCryptoService.getInstance().encrypt(legacyPlaintext);
         await writeTextFile(filePath, reencrypted);
         console.info('[EncryptedFileStorage] Migrated legacy XOR NWC blob to v2 (AES-GCM)');
-        diagLog('system', 'nwc_migrate_ok', {
+        diagLog('wallet', 'nwc_migrate_ok', {
           storage: 'file',
           from: 'xor',
           to: 'v2',
@@ -139,7 +139,7 @@ export class EncryptedFileStorage {
         // Migration failure is non-fatal — we still return the plaintext so the
         // user stays connected. Next load will retry migration.
         console.warn('[EncryptedFileStorage] Legacy migration re-encrypt failed:', migrationErr);
-        diagLog('system', 'nwc_migrate_fail', {
+        diagLog('wallet', 'nwc_migrate_fail', {
           storage: 'file',
           from: 'xor',
           error: String(migrationErr && (migrationErr as Error).message ? (migrationErr as Error).message : migrationErr),

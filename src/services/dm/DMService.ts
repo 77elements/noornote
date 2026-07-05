@@ -391,6 +391,10 @@ export class DMService {
     const syncStartedAt = Math.floor(Date.now() / 1000);
     const lastSyncedAt = store.get<number>(StorageKeys.DM_LAST_SYNCED_AT, 0);
     const isIncremental = lastSyncedAt > 0;
+    // Cold-start diagnostic: after an app update, a lost checkpoint (lastSyncedAt=0 despite
+    // prior DM history) forces a seed fetch that re-notifies already-read messages. This log
+    // makes that case observable instead of guessed.
+    diagLog('dms', 'DM cold-start checkpoint', { lastSyncedAt, isIncremental });
 
     try {
       // NIP-17 uses inbox relays
@@ -765,6 +769,9 @@ export class DMService {
     if (this.isFetchingHistorical) {
       this.pendingBadgeUpdate = true;
     } else {
+      if (!message.isMine) {
+        diagLog('dms', 'DM live notification emitted', { createdAt: message.createdAt });
+      }
       this.eventBus.emit('dm:new-message', { message, conversationWith });
       this.eventBus.emit('dm:badge-update');
     }

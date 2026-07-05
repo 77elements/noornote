@@ -8,6 +8,7 @@
  */
 
 import { SystemLogger } from '../SystemLogger';
+import { diagLog } from '../DiagnosticLogger';
 
 export type DMFormat = 'nip17' | 'legacy';
 
@@ -204,6 +205,17 @@ export class DMStore {
           // 3. The conversation isn't staying soft-deleted
           const lastReadAt = existing?.lastReadAt || 0;
           const shouldIncrementUnread = !message.isMine && message.createdAt > lastReadAt && !staysDeleted;
+
+          // Diagnostic: unread bumped for a conversation we have no record of (lastReadAt fell back
+          // to 0). One case is a genuine first-contact DM; a BURST of these on startup means the
+          // conversation store was lost (e.g. after an app update) and already-read messages are
+          // being re-counted as unread — the false-notification bug. Makes it observable, not guessed.
+          if (shouldIncrementUnread && !existing) {
+            diagLog('dms', 'DM unread for unknown conversation', {
+              createdAt: message.createdAt,
+              lastReadAt,
+            });
+          }
 
           const subject = message.subject || existing?.subject;
           const conversation: DMConversation = {

@@ -146,7 +146,7 @@ export class NWCCryptoService {
       : platform.isCapacitor
         ? 'capacitor'
         : 'web';
-    diagLog('system', wasCreated ? 'nwc_device_key_created' : 'nwc_device_key_loaded', {
+    diagLog('wallet', wasCreated ? 'nwc_device_key_created' : 'nwc_device_key_loaded', {
       platform: platformName,
       storage,
     });
