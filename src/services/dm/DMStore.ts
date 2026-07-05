@@ -206,14 +206,17 @@ export class DMStore {
           const lastReadAt = existing?.lastReadAt || 0;
           const shouldIncrementUnread = !message.isMine && message.createdAt > lastReadAt && !staysDeleted;
 
-          // Diagnostic: unread bumped for a conversation we have no record of (lastReadAt fell back
-          // to 0). One case is a genuine first-contact DM; a BURST of these on startup means the
-          // conversation store was lost (e.g. after an app update) and already-read messages are
-          // being re-counted as unread — the false-notification bug. Makes it observable, not guessed.
-          if (shouldIncrementUnread && !existing) {
-            diagLog('dms', 'DM unread for unknown conversation', {
+          // Diagnostic: any time unread is bumped, record whether we knew the conversation and what
+          // its read-anchor was. The false-"unread" bug shows up here as a burst with hadConversation
+          // true but lastReadAt 0 (known chat that was never marked read → re-counted every re-sync),
+          // or hadConversation false (conversation record lost). Live new DMs also log here, but with
+          // a real lastReadAt. Makes the mechanism observable instead of guessed.
+          if (shouldIncrementUnread) {
+            diagLog('dms', 'DM unread bumped', {
+              hadConversation: !!existing,
               createdAt: message.createdAt,
               lastReadAt,
+              prevUnread: existing?.unreadCount || 0,
             });
           }
 
