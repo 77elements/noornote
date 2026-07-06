@@ -1,3 +1,3 @@
-# NoorNote 1.2.3
+# NoorNote 1.2.4
 
-- **New addon — Nostrord:** get a heads-up when your Nostrord (NIP-29) group chats come alive. Enable it, pick how often to check (5–180 min), and get one low-priority notification per group that had new activity. Quiet groups stay quiet.
+- **Wallet fix (Android):** your Lightning wallet (NWC) connection should no longer get dropped after an app update — no more re-linking the wallet every time.

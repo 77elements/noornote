@@ -1,6 +1,6 @@
 {
   "name": "noornote",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "A slim yet feature rich Nostr client for Web, Desktop and Android — no Google services, open source",
   "type": "module",
   "main": "electron/main/index.js",
