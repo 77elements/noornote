@@ -9,6 +9,7 @@ import { encodeNevent, decodeNip19 } from '../../../services/NostrToolsAdapter';
 import { NoteHeader } from '../../../components/ui/NoteHeader';
 import { CollapsibleManager } from '../../../components/ui/note-features/CollapsibleManager';
 import { QuoteNoteFetcher } from '../../../services/QuoteNoteFetcher';
+import type { QuoteFetchError } from '../../../services/QuoteNoteFetcher';
 import { ArticlePreviewRenderer } from './ArticlePreviewRenderer';
 import { ContentProcessor, type QuotedReference } from '../../../services/ContentProcessor';
 import { replaceMediaPlaceholders } from '../../../helpers/renderMediaContent';
@@ -21,6 +22,7 @@ import { MuteOrchestrator } from '../../../lists/mutes';
 import { AuthService } from '../../../services/AuthService';
 import { escapeHtml } from '../../../helpers/escapeHtml';
 import { getTag } from '../../../helpers/tagUtils';
+import { TypedEventBus } from '../../../core/TypedEventBus';
 import { DittoFeatureRenderer, DITTO_GEOCACHE_KIND } from '../../../components/ui/note-rendering/DittoFeatureRenderer';
 
 export class QuotedNoteRenderer {
@@ -96,14 +98,25 @@ export class QuotedNoteRenderer {
   /**
    * Fetch single quote and update DOM when ready (background task)
    * Made public for use by QuoteRenderer and internal nested quote rendering
+   *
+   * @param isRetry - Internal flag set by {@link scheduleQuoteRetry}: when true,
+   *     a failed fetch falls straight through to the error UI without scheduling
+   *     another retry (one retry per quote — see the recovery design).
    */
   async fetchAndRenderQuote(
     ref: QuotedReference,
     skeleton: HTMLElement,
     enableCollapsible: boolean,
     parentAuthorPubkey?: string,
+    isRetry: boolean = false,
   ): Promise<void> {
     try {
+      // Always fetch the normal path here. The retry-vs-not distinction lives
+      // ONLY in the error branch below — `isRetry` decides whether a failure
+      // schedules another recovery attempt (first failure) or shows the final
+      // error UI (recovery already happened). The outboundOnly flag is set
+      // inside scheduleQuoteRecovery's 8 s timer, NOT here, so a successful
+      // recovery re-render still walks the full cache-first pipeline.
       const result = await this.quoteFetcher.fetchQuotedEventWithError(ref.fullMatch, parentAuthorPubkey);
 
       if (result.success) {
@@ -232,12 +245,134 @@ export class QuotedNoteRenderer {
         // the dead quote instead of showing a "not found" box for something we
         // can never resolve anyway.
         skeleton.remove();
-      } else {
+      } else if (isRetry) {
+        // The retry attempt failed too — the note really isn't reachable right
+        // now. Show the final error UI. Without this branch the second failure
+        // would schedule a third attempt and we'd never converge.
         skeleton.replaceWith(this.createQuoteError(result.error));
+      } else {
+        // First failure: instead of freezing on a "not found" box, leave the
+        // skeleton in place and try to recover via (a) the global note:cached
+        // event — fired by NoteService whenever any path lands the note in the
+        // LRU — and (b) a single outboundOnly retry against the now-warm
+        // outbound relays. The error UI is shown only if neither path delivers
+        // within the recovery window.
+        this.scheduleQuoteRecovery(ref, skeleton, enableCollapsible, parentAuthorPubkey, result.error);
       }
     } catch (error) {
       console.error(`❌ Quote fetch failed:`, error);
       skeleton.remove();
+    }
+  }
+
+  /**
+   * Wait for a previously-unresolved quote to arrive via any of:
+   *   1. A `note:cached` event from NoteService (background feed subscription,
+   *      a parallel fetch, an NDK subscription that resolved late, …).
+   *   2. A single outboundOnly retry after 8 s — by then the outbound relays
+   *      (notably a bridge relay like mostr.pub the quoter used) have usually
+   *      finished their first TLS handshake of the session and EOSE properly.
+   *
+   * If neither delivers within 60 s, the final error UI replaces the skeleton.
+   * All three timers (listener, retry, fail) are de-registered on any
+   * resolution, on DOM detach, and on recursive re-entry — otherwise long
+   * feeds leak listeners.
+   */
+  private scheduleQuoteRecovery(
+    ref: QuotedReference,
+    skeleton: HTMLElement,
+    enableCollapsible: boolean,
+    parentAuthorPubkey: string | undefined,
+    error: QuoteFetchError,
+  ): void {
+    let resolved = false;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    let failTimer: ReturnType<typeof setTimeout> | undefined;
+    let noteCachedSubId: string | undefined;
+
+    const eventBus = TypedEventBus.getInstance();
+    const eventId = QuotedNoteRenderer.extractEventIdFromRef(ref);
+
+    const cleanup = (): void => {
+      resolved = true;
+      if (retryTimer) { clearTimeout(retryTimer); retryTimer = undefined; }
+      if (failTimer) { clearTimeout(failTimer); failTimer = undefined; }
+      if (noteCachedSubId) { eventBus.off(noteCachedSubId); noteCachedSubId = undefined; }
+    };
+
+    // Bail out silently if the skeleton is no longer in the DOM (timeline
+    // trimmed the card, view switched, etc.). Re-rendering into a detached
+    // node would do nothing visible and leak the new element.
+    const isAlive = (): boolean => !resolved && skeleton.isConnected;
+
+    // Path 1: subscribe to note:cached for this id. NoteService fires it
+    // whenever ANY code path adds the note to the LRU — feed subscriptions,
+    // parallel orchestrator fetches, even unrelated lookups. This is the
+    // "the note arrived via a different door" recovery.
+    if (eventId) {
+      noteCachedSubId = eventBus.on('note:cached', (data: { eventId: string }) => {
+        if (!isAlive()) { cleanup(); return; }
+        if (data.eventId === eventId) {
+          cleanup();
+          // Cache-first Stage 0 will resolve instantly.
+          void this.fetchAndRenderQuote(ref, skeleton, enableCollapsible, parentAuthorPubkey, true);
+        }
+      });
+    }
+
+    // Path 2: scheduled outboundOnly retry. The initial fetch already proved
+    // the user's read relays and the indexer set carry nothing (cold or
+    // EOSE-empty); re-running those stages only burns identical timeouts.
+    // Stage 3 with the now-warm outbound sockets is the one path whose result
+    // actually changes on a second attempt.
+    retryTimer = setTimeout(() => {
+      if (!isAlive()) { cleanup(); return; }
+      void this.quoteFetcher.fetchQuotedEventWithError(ref.fullMatch, parentAuthorPubkey, true)
+        .then((result) => {
+          if (!isAlive()) { cleanup(); return; }
+          if (result.success) {
+            cleanup();
+            void this.fetchAndRenderQuote(ref, skeleton, enableCollapsible, parentAuthorPubkey, true);
+          }
+          // else: failTimer still scheduled — leave skeleton in place.
+        })
+        .catch(() => { /* network errors during retry: rely on failTimer */ });
+    }, 8000);
+
+    // Path 3: final fallback after the recovery window. We've given both
+    // signals (background arrival + active retry) a fair chance; the note
+    // really isn't reachable right now.
+    failTimer = setTimeout(() => {
+      if (!isAlive()) { cleanup(); return; }
+      cleanup();
+      skeleton.replaceWith(this.createQuoteError(error));
+    }, 60000);
+  }
+
+  /**
+   * Pull the hex event id out of a QuotedReference (note1 / nevent1 / hex).
+   * Returns null for naddr (addressable refs have no single id — they live
+   * on a different fetch path and aren't relevant for note:cached recovery).
+   */
+  private static extractEventIdFromRef(ref: QuotedReference): string | null {
+    try {
+      const cleanRef = ref.fullMatch.replace(/^nostr:/, '');
+      // bech32 first (handles off-by-one checksum tolerance like the orchestrator)
+      for (const candidate of [cleanRef, cleanRef.slice(0, -1)]) {
+        try {
+          const decoded = decodeNip19(candidate);
+          if (decoded.type === 'note') return decoded.data as string;
+          if (decoded.type === 'nevent') {
+            const data = decoded.data as { id?: string };
+            if (data.id) return data.id;
+          }
+          break;
+        } catch { /* try next variant */ }
+      }
+      if (cleanRef.match(/^[a-f0-9]{64}$/)) return cleanRef;
+      return null;
+    } catch {
+      return null;
     }
   }
 

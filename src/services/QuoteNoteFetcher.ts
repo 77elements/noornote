@@ -40,25 +40,39 @@ export class QuoteNoteFetcher {
    *        outbound-fallback candidate so cross-relay quotes resolve via
    *        the quoter's relays when the quoted author's relays don't carry
    *        the original.
+   * @param outboundOnly - Skip stages 1, 2 and 2.5 (cache + outbound only).
+   *        Used by the renderer's retry path after the first attempt proved
+   *        the user's read set carries nothing.
    */
-  public async fetchQuotedEvent(nostrRef: string, parentAuthorPubkey?: string): Promise<NostrEvent | null> {
+  public async fetchQuotedEvent(
+    nostrRef: string,
+    parentAuthorPubkey?: string,
+    outboundOnly: boolean = false,
+  ): Promise<NostrEvent | null> {
     return await this.orchestrator.fetchQuotedEvent(
       nostrRef,
       undefined,
       parentAuthorPubkey ? [parentAuthorPubkey] : [],
+      outboundOnly,
     );
   }
 
   /**
    * Fetch event with detailed error result (delegates to QuoteOrchestrator).
    * `parentAuthorPubkey` see {@link fetchQuotedEvent}.
+   * `outboundOnly` see {@link fetchQuotedEvent}.
    */
-  public async fetchQuotedEventWithError(nostrRef: string, parentAuthorPubkey?: string): Promise<QuoteFetchResult> {
+  public async fetchQuotedEventWithError(
+    nostrRef: string,
+    parentAuthorPubkey?: string,
+    outboundOnly: boolean = false,
+  ): Promise<QuoteFetchResult> {
     try {
       const event = await this.orchestrator.fetchQuotedEvent(
         nostrRef,
         undefined,
         parentAuthorPubkey ? [parentAuthorPubkey] : [],
+        outboundOnly,
       );
 
       if (event) {

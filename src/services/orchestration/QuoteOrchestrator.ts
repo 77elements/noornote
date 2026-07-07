@@ -69,15 +69,28 @@ export class QuoteOrchestrator extends Orchestrator {
    *                    outbound. Without this hop, cross-relay quotes (the
    *                    quoter's read set vs. the quoted author's write set
    *                    don't intersect) collapse to "Note not found".
+   * @param outboundOnly - Skip stages 1, 2 and 2.5 and go straight to
+   *                    Stage 0 (cache) + Stage 3 (outbound, 15s timeout).
+   *                    Used by the QuotedNoteRenderer's retry path: the
+   *                    initial attempt already proved the user's read set
+   *                    and the indexer set don't carry the note (cold or
+   *                    EOSE-empty), so a retry should only spend time on
+   *                    the now-warm outbound relays where the note actually
+   *                    lives (e.g. a bridge relay the quoter used).
    * @returns Event or null if not found
    */
   public async fetchQuotedEvent(
     nostrRef: string,
     authorHint?: string,
     extraOutboundPubkeys: string[] = [],
+    outboundOnly: boolean = false,
   ): Promise<NostrEvent | null> {
-    // If already fetching, wait for that request (deduplication)
-    if (this.fetchingQuotes.has(nostrRef)) {
+    // If already fetching, wait for that request (deduplication).
+    // NOTE: outboundOnly retries intentionally bypass dedup — they must run
+    // even while an earlier normal fetch is in-flight, otherwise the retry
+    // would silently return the same (still-pending or already-null) promise
+    // and never reach Stage 3 with warm relays.
+    if (!outboundOnly && this.fetchingQuotes.has(nostrRef)) {
       return await this.fetchingQuotes.get(nostrRef)!;
     }
 
@@ -106,7 +119,7 @@ export class QuoteOrchestrator extends Orchestrator {
     const author = extractedAuthor || authorHint || null;
 
     // Start new fetch with relay hints and author for outbound relay discovery
-    const fetchPromise = this.fetchEventById(eventId, relayHints, author, extraOutboundPubkeys);
+    const fetchPromise = this.fetchEventById(eventId, relayHints, author, extraOutboundPubkeys, outboundOnly);
     this.fetchingQuotes.set(nostrRef, fetchPromise);
 
     try {
@@ -187,16 +200,22 @@ export class QuoteOrchestrator extends Orchestrator {
    * Stage 3: If not found, try outbound relays of EVERY known relevant pubkey
    *         (quoted event's author + the parent-note author / reposter that
    *         pulled it onto our radar in the first place).
+   *
+   * @param outboundOnly Skip stages 1, 2 and 2.5 — go straight from cache to
+   *        Stage 3 (outbound) with a longer timeout (15s). Used by retry path
+   *        where earlier stages already proved empty.
    */
   private async fetchEventById(
     eventId: string,
     relayHints: string[] = [],
     author: string | null = null,
     extraOutboundPubkeys: string[] = [],
+    outboundOnly: boolean = false,
   ): Promise<NostrEvent | null> {
     const shortId = eventId.slice(0, 8);
 
-    // Stage 0: Check NoteService cache first
+    // Stage 0: Check NoteService cache first (always — cache may have filled
+    // since the previous attempt via a feed subscription or a parallel fetch).
     const cached = this.noteService.getCachedNote(eventId);
     if (cached) {
       return cached;
@@ -204,47 +223,53 @@ export class QuoteOrchestrator extends Orchestrator {
 
     const filter: NDKFilter = { ids: [eventId], limit: 1 };
 
-    // Stage 1: Try relay hints first (highest priority)
-    if (relayHints.length > 0) {
+    // Stages 1, 2 and 2.5 are skipped on the retry path: they were just
+    // walked through with cold / EOSE-empty results, re-running them only
+    // burns the same timeouts again. Stage 3 (outbound) is the one whose
+    // relays are now warm — that's where the retry should spend its budget.
+    if (!outboundOnly) {
+      // Stage 1: Try relay hints first (highest priority)
+      if (relayHints.length > 0) {
+        try {
+          const events = await this.transport.fetch(relayHints, [filter], 5000, false, 'QuoteOrch');
+          if (events[0]) {
+            this.noteService.registerNote(events[0]);
+            return events[0];
+          }
+        } catch (error) {
+          diagLog('relays', 'QuoteOrchestrator: stage 1 (hints) failed', { eventId: shortId, error: String(error) });
+        }
+      }
+
+      // Stage 2: Try standard relays
       try {
-        const events = await this.transport.fetch(relayHints, [filter], 5000, false, 'QuoteOrch');
+        const events = await this.transport.fetch(this.transport.getReadRelays(), [filter], 5000, false, 'QuoteOrch');
         if (events[0]) {
           this.noteService.registerNote(events[0]);
           return events[0];
         }
       } catch (error) {
-        diagLog('relays', 'QuoteOrchestrator: stage 1 (hints) failed', { eventId: shortId, error: String(error) });
+        diagLog('relays', 'QuoteOrchestrator: stage 2 (standard) failed', { eventId: shortId, error: String(error) });
       }
-    }
 
-    // Stage 2: Try standard relays
-    try {
-      const events = await this.transport.fetch(this.transport.getReadRelays(), [filter], 5000, false, 'QuoteOrch');
-      if (events[0]) {
-        this.noteService.registerNote(events[0]);
-        return events[0];
-      }
-    } catch (error) {
-      diagLog('relays', 'QuoteOrchestrator: stage 2 (standard) failed', { eventId: shortId, error: String(error) });
-    }
-
-    // Stage 2.5: Try metadata / indexer relays (nostr.band & co). These index
-    // widely-replicated events the user's own read relays often don't carry —
-    // notably zap receipts (kind 9735), whose home is the recipient's / zap
-    // request's relays, not ours. skipCache=true forces a relay-only fetch.
-    try {
-      const standardSet = new Set(this.transport.getReadRelays());
-      const indexerRelays = this.relayConfig.getMetadataRelays().filter(r => !standardSet.has(r));
-      if (indexerRelays.length > 0) {
-        const events = await this.transport.fetch(indexerRelays, [filter], 6000, true, 'QuoteOrch');
-        if (events[0]) {
-          diagLog('relays', 'QuoteOrchestrator: indexer fallback found quote', { eventId: shortId });
-          this.noteService.registerNote(events[0]);
-          return events[0];
+      // Stage 2.5: Try metadata / indexer relays (nostr.band & co). These index
+      // widely-replicated events the user's own read relays often don't carry —
+      // notably zap receipts (kind 9735), whose home is the recipient's / zap
+      // request's relays, not ours. skipCache=true forces a relay-only fetch.
+      try {
+        const standardSet = new Set(this.transport.getReadRelays());
+        const indexerRelays = this.relayConfig.getMetadataRelays().filter(r => !standardSet.has(r));
+        if (indexerRelays.length > 0) {
+          const events = await this.transport.fetch(indexerRelays, [filter], 6000, true, 'QuoteOrch');
+          if (events[0]) {
+            diagLog('relays', 'QuoteOrchestrator: indexer fallback found quote', { eventId: shortId });
+            this.noteService.registerNote(events[0]);
+            return events[0];
+          }
         }
+      } catch (error) {
+        diagLog('relays', 'QuoteOrchestrator: stage 2.5 (indexer) failed', { eventId: shortId, error: String(error) });
       }
-    } catch (error) {
-      diagLog('relays', 'QuoteOrchestrator: stage 2.5 (indexer) failed', { eventId: shortId, error: String(error) });
     }
 
     // Stage 3: Not found on standard relays, try with outbound relays
@@ -260,31 +285,38 @@ export class QuoteOrchestrator extends Orchestrator {
         const outboundRelays = await this.relayDiscovery.getCombinedRelays(outboundPubkeys, true);
         const standardRelays = new Set(this.transport.getReadRelays());
         const newRelays = outboundRelays.filter(r => !standardRelays.has(r));
+        // Retry path: longer timeout — outbound relays (especially a bridge
+        // relay like mostr.pub the quoter used) often need extra seconds on
+        // their first connection of the session. 15s empirically covers the
+        // tail of the slow-EOSE distribution we see in the relays logs.
+        const stageTimeout = outboundOnly ? 15000 : 10000;
         diagLog('relays', 'QuoteOrchestrator: stage 3 trying outbound', {
           eventId: shortId,
           pubkeys: outboundPubkeys.map(p => p.slice(0, 8)),
           relayCount: outboundRelays.length,
-          newRelays: newRelays.slice(0, 5)
+          newRelays: newRelays.slice(0, 5),
+          outboundOnly,
         });
 
-        const events = await this.transport.fetch(outboundRelays, [filter], 10000, true, 'QuoteOrch');
+        const events = await this.transport.fetch(outboundRelays, [filter], stageTimeout, true, 'QuoteOrch');
         if (events[0]) {
-          diagLog('relays', 'QuoteOrchestrator: outbound fallback found quote', { eventId: shortId });
+          diagLog('relays', 'QuoteOrchestrator: outbound fallback found quote', { eventId: shortId, outboundOnly });
           this.noteService.registerNote(events[0]);
           return events[0];
         }
-        diagLog('relays', 'QuoteOrchestrator: stage 3 returned empty', { eventId: shortId, relayCount: outboundRelays.length });
+        diagLog('relays', 'QuoteOrchestrator: stage 3 returned empty', { eventId: shortId, relayCount: outboundRelays.length, outboundOnly });
       } catch (error) {
-        diagLog('relays', 'QuoteOrchestrator: stage 3 (outbound) failed', { eventId: shortId, error: String(error) });
+        diagLog('relays', 'QuoteOrchestrator: stage 3 (outbound) failed', { eventId: shortId, error: String(error), outboundOnly });
       }
     } else {
-      diagLog('relays', 'QuoteOrchestrator: no pubkeys for outbound fallback', { eventId: shortId });
+      diagLog('relays', 'QuoteOrchestrator: no pubkeys for outbound fallback', { eventId: shortId, outboundOnly });
     }
 
     diagLog('relays', 'QuoteOrchestrator: NOT FOUND after all stages', {
       eventId: shortId,
       outboundPubkeyCount: outboundPubkeys.length,
       hasHints: relayHints.length > 0,
+      outboundOnly,
     });
     return null;
   }

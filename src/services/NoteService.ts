@@ -17,6 +17,7 @@ import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { NostrTransport } from './transport/NostrTransport';
 import { RelayConfig } from './RelayConfig';
 import { LRUCache, getCacheSize } from '../helpers/LRUCache';
+import { TypedEventBus } from '../core/TypedEventBus';
 
 export interface CachedNote {
   event: NostrEvent;
@@ -70,10 +71,7 @@ export class NoteService {
     try {
       const event = await fetchPromise;
       if (event) {
-        this.cache.set(eventId, {
-          event,
-          fetchedAt: Date.now()
-        });
+        this.registerNote(event);
       }
       return event;
     } finally {
@@ -103,10 +101,7 @@ export class NoteService {
     if (toFetch.length > 0) {
       const fetched = await this.fetchMultipleFromRelays(toFetch);
       fetched.forEach((event, id) => {
-        this.cache.set(id, {
-          event,
-          fetchedAt: Date.now()
-        });
+        this.registerNote(event);
         result.set(id, event);
       });
     }
@@ -116,7 +111,13 @@ export class NoteService {
 
   /**
    * Register a note (e.g., from Timeline loading)
-   * Other components can then access it without fetching
+   * Other components can then access it without fetching.
+   *
+   * Emits 'note:cached' on the TypedEventBus so subscribers (e.g. a
+   * QuotedNoteRenderer that previously failed to resolve this id) can
+   * re-render from cache instead of freezing on a "Note not found" box.
+   * The emit fires only when the note is NEW to the cache — re-registering
+   * an already-cached id (a very common case during scroll) is silent.
    */
   public registerNote(event: NostrEvent): void {
     if (event.id && !this.cache.has(event.id)) {
@@ -124,6 +125,7 @@ export class NoteService {
         event,
         fetchedAt: Date.now()
       });
+      TypedEventBus.getInstance().emit('note:cached', { eventId: event.id });
     }
   }
 

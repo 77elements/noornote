@@ -44,6 +44,17 @@ export interface NoteDeletedPayload {
   eventId: string;
 }
 
+/**
+ * Fired by NoteService.registerNote() whenever ANY note enters the LRU cache —
+ * whether from a feed subscription, an orchestrator fetch, or a one-off lookup.
+ * Subscribers (e.g. QuotedNoteRenderer's failed-quote recovery) use this to
+ * re-render when a previously-missing note finally arrives via any path,
+ * instead of freezing on a "Note not found" box.
+ */
+export interface NoteCachedPayload {
+  eventId: string;
+}
+
 export interface ZapAddedPayload {
   noteId: string;
 }
@@ -275,6 +286,7 @@ export interface AppEvents {
 
   // ── Notes / Content ────────────────────────
   'note:deleted': NoteDeletedPayload;
+  'note:cached': NoteCachedPayload;
   'reply:created': NostrEvent;
   'poll:voted': PollVotedPayload;
 
