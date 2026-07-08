@@ -65,6 +65,11 @@ export const StorageKeys = {
 
   // NWC storage preference (per-account)
   NWC_USE_ENCRYPTED_FILE: 'noornote_nwc_use_encrypted_file_map', // boolean: true = encrypted file, false = keychain
+  // NWC encrypted-blob mirror (per-account). The AES-GCM ciphertext (never the
+  // plaintext) is mirrored out of the KeychainStorage IndexedDB so it survives
+  // WebView IndexedDB eviction; the device key lives in native Filesystem, so this
+  // mirror is ciphertext-only and useless without it. See docs/todos/indexeddb-eviction-nwc-dm.md.
+  NWC_BLOB_MIRROR: 'noornote_nwc_blob_mirror_map',
 
   // Relay list cache (per-account) - NIP-65 kind:10002 + NIP-17 kind:10050
   RELAY_LIST: 'noornote_relay_list_map',
@@ -83,6 +88,11 @@ export const StorageKeys = {
   // DM backward paging cursor (per-account) — oldest OUTER gift-wrap created_at
   // fetched so far. Used by "load older messages" to page history on demand.
   DM_BACKWARD_CURSOR: 'noornote_dm_backward_cursor_map',
+  // DM read anchors (per-account) — a { partnerPubkey → lastReadAt } map mirrored
+  // out of the DMStore IndexedDB. localStorage survives WebView IndexedDB eviction
+  // (see docs/todos/indexeddb-eviction-nwc-dm.md), so on a wiped/fresh DB the read
+  // anchors rehydrate from here instead of every conversation re-counting as unread.
+  DM_READ_ANCHORS: 'noornote_dm_read_anchors_map',
 
   // Notification priority settings (per-account)
   NOTIFICATION_PRIORITIES: 'noornote_notification_priorities_map',

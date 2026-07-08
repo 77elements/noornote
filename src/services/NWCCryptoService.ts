@@ -13,7 +13,11 @@
  *
  * Device-key storage (explicitly separate from the NWC blob):
  *   - Desktop (Electron): ~/.noornote/device.key  (NOT inside {npub}/ — device-bound, not user-bound)
- *   - Android (Capacitor) + Web: IndexedDB database "noornote_device", store "keychain", key "device_key"
+ *   - Android (Capacitor): native Filesystem file "wallet/device.key" in Directory.Data.
+ *     Native app storage survives WebView IndexedDB eviction (which was wiping the key +
+ *     the NWC blob together). A legacy key still in IndexedDB is migrated to the file on
+ *     first read. See docs/todos/indexeddb-eviction-nwc-dm.md.
+ *   - Web: IndexedDB database "noornote_device", store "keychain", key "device_key"
  *
  * Threat model (honest):
  *   Protects against trivial file-copy attacks (e.g. selective cloud backup of nwc.enc,
@@ -34,7 +38,12 @@ const IV_SIZE = 12;         // 96 bits (AES-GCM standard)
 const DESKTOP_NOORNOTE_DIR = '.noornote';
 const DESKTOP_DEVICE_KEY_FILENAME = 'device.key';
 
-// Mobile/Web storage — explicitly separate DB from `noornote_secure` (NWC blob)
+// Android (Capacitor) native device-key file. Directory.Data is app-private native
+// storage that the WebView cannot evict (unlike IndexedDB/localStorage).
+const CAP_KEY_DIR = 'wallet';
+const CAP_KEY_FILENAME = 'device.key';
+
+// Web storage (and legacy Capacitor pre-migration) — separate DB from `noornote_secure` (NWC blob)
 const IDB_DEVICE_DB_NAME = 'noornote_device';
 const IDB_DEVICE_STORE = 'keychain';
 const IDB_DEVICE_KEY = 'device_key';
@@ -140,7 +149,7 @@ export class NWCCryptoService {
       await this.writeStoredKeyBytes(keyBytes);
     }
     const platform = PlatformService.getInstance();
-    const storage = platform.isElectron ? 'file' : 'indexeddb';
+    const storage = platform.isElectron ? 'file' : platform.isCapacitor ? 'capacitor-fs' : 'indexeddb';
     const platformName = platform.isElectron
       ? 'electron'
       : platform.isCapacitor
@@ -164,6 +173,9 @@ export class NWCCryptoService {
     if (platform.isElectron) {
       return this.readDesktopKey();
     }
+    if (platform.isCapacitor) {
+      return this.readCapacitorKey();
+    }
     return this.readIndexedDBKey();
   }
 
@@ -171,6 +183,10 @@ export class NWCCryptoService {
     const platform = PlatformService.getInstance();
     if (platform.isElectron) {
       await this.writeDesktopKey(keyBytes);
+      return;
+    }
+    if (platform.isCapacitor) {
+      await this.writeCapacitorFsKey(keyBytes);
       return;
     }
     await this.writeIndexedDBKey(keyBytes);
@@ -207,7 +223,60 @@ export class NWCCryptoService {
     await window.electronAPI!.writeTextFile(path, bytesToBase64(keyBytes));
   }
 
-  // ----- Mobile (Capacitor) + Web (IndexedDB) -----
+  // ----- Android (Capacitor) — native Filesystem (survives WebView eviction) -----
+
+  /**
+   * Read the device key on Capacitor. Prefers the native Filesystem copy (which
+   * survives WebView IndexedDB eviction). If only a legacy IndexedDB key exists
+   * (from before this migration), it is moved to the Filesystem so the existing
+   * encrypted NWC blobs stay decryptable after the next eviction.
+   */
+  private async readCapacitorKey(): Promise<Uint8Array | null> {
+    const fromFs = await this.readCapacitorFsKey();
+    if (fromFs) return fromFs;
+
+    const legacy = await this.readIndexedDBKey();
+    if (legacy) {
+      try {
+        await this.writeCapacitorFsKey(legacy);
+        diagLog('wallet', 'nwc_device_key_migrated', { from: 'indexeddb', to: 'capacitor-fs' });
+      } catch (err) {
+        diagLog('wallet', 'nwc_device_key_migrate_failed', { error: String(err) });
+      }
+      return legacy;
+    }
+    return null;
+  }
+
+  private async readCapacitorFsKey(): Promise<Uint8Array | null> {
+    try {
+      const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
+      const result = await Filesystem.readFile({
+        path: `${CAP_KEY_DIR}/${CAP_KEY_FILENAME}`,
+        directory: Directory.Data,
+        encoding: Encoding.UTF8,
+      });
+      const b64 = typeof result.data === 'string' ? result.data.trim() : '';
+      if (!b64) return null;
+      return base64ToBytes(b64);
+    } catch {
+      // File not found / unreadable → treat as no key yet.
+      return null;
+    }
+  }
+
+  private async writeCapacitorFsKey(keyBytes: Uint8Array): Promise<void> {
+    const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
+    await Filesystem.writeFile({
+      path: `${CAP_KEY_DIR}/${CAP_KEY_FILENAME}`,
+      data: bytesToBase64(keyBytes),
+      directory: Directory.Data,
+      encoding: Encoding.UTF8,
+      recursive: true,
+    });
+  }
+
+  // ----- Web (IndexedDB); also legacy Capacitor key source pre-migration -----
 
   private async openDeviceDB(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {

@@ -125,7 +125,29 @@ export class KeychainStorage {
     const key = this.getNwcKeyForUser(userPubkey);
     const encrypted = await NWCCryptoService.getInstance().encrypt(connectionString);
     await this.setInIndexedDB(key, encrypted);
+    // Mirror the ciphertext to localStorage so it survives WebView IndexedDB
+    // eviction. Safe: it's AES-GCM ciphertext and the device key lives in native
+    // Filesystem, so the mirror is undecryptable on its own.
+    this.mirrorNwcBlob(userPubkey, encrypted);
     diagLog('wallet', 'nwc_save_v2_ok', { storage: 'indexeddb', length: encrypted.length });
+  }
+
+  /** Write the encrypted NWC blob to the per-account localStorage mirror. */
+  private static mirrorNwcBlob(userPubkey: string, encrypted: string): void {
+    try {
+      PerAccountLocalStorage.getInstance().setForPubkey(StorageKeys.NWC_BLOB_MIRROR, userPubkey, encrypted);
+    } catch (err) {
+      diagLog('wallet', 'nwc_mirror_save_failed', { error: String(err && (err as Error).message ? (err as Error).message : err) });
+    }
+  }
+
+  /** Read the encrypted NWC blob from the per-account localStorage mirror. */
+  private static readNwcMirror(userPubkey: string): string | null {
+    try {
+      return PerAccountLocalStorage.getInstance().getForPubkey<string | null>(StorageKeys.NWC_BLOB_MIRROR, userPubkey, null);
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -140,10 +162,20 @@ export class KeychainStorage {
     }
 
     const key = this.getNwcKeyForUser(userPubkey);
-    const raw = await this.getFromIndexedDB(key);
+    let raw = await this.getFromIndexedDB(key);
     if (!raw) {
-      diagLog('wallet', 'nwc_load_empty', { storage: 'indexeddb' });
-      return null;
+      // IndexedDB was empty (likely a WebView eviction). Recover from the
+      // localStorage ciphertext mirror and repopulate IndexedDB, so the wallet
+      // stays connected without the user reconnecting.
+      const mirrored = this.readNwcMirror(userPubkey);
+      if (mirrored) {
+        raw = mirrored;
+        try { await this.setInIndexedDB(key, mirrored); } catch { /* re-mirror is best-effort */ }
+        diagLog('wallet', 'nwc_load_from_mirror', { storage: 'localstorage', length: mirrored.length });
+      } else {
+        diagLog('wallet', 'nwc_load_empty', { storage: 'indexeddb' });
+        return null;
+      }
     }
 
     // New v2 format: decrypt via NWCCryptoService
@@ -201,6 +233,10 @@ export class KeychainStorage {
 
     const key = this.getNwcKeyForUser(userPubkey);
     await this.deleteFromIndexedDB(key);
+    // Also drop the localStorage mirror so a disconnect fully clears the NWC.
+    try {
+      PerAccountLocalStorage.getInstance().removeForPubkey(StorageKeys.NWC_BLOB_MIRROR, userPubkey);
+    } catch { /* best-effort */ }
   }
 
   /**

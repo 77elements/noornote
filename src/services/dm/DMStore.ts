@@ -9,6 +9,7 @@
 
 import { SystemLogger } from '../SystemLogger';
 import { diagLog } from '../DiagnosticLogger';
+import { PerAccountLocalStorage, StorageKeys } from '../PerAccountLocalStorage';
 
 export type DMFormat = 'nip17' | 'legacy';
 
@@ -65,6 +66,14 @@ export class DMStore {
   private systemLogger: SystemLogger;
   private initPromise: Promise<void> | null = null;
   private currentUserPubkey: string | null = null;
+  /**
+   * In-memory { partnerPubkey → lastReadAt } read-anchor map, mirrored to
+   * PerAccountLocalStorage (which survives WebView IndexedDB eviction). Loaded
+   * on init; consulted by saveMessage as a fallback when the conversation
+   * record is missing (wiped/fresh DB) so a re-synced history doesn't re-count
+   * already-read messages as unread. See docs/todos/indexeddb-eviction-nwc-dm.md.
+   */
+  private readAnchorMirror: Map<string, number> = new Map();
 
   private constructor() {
     this.systemLogger = SystemLogger.getInstance();
@@ -115,6 +124,11 @@ export class DMStore {
       request.onsuccess = () => {
         this.db = request.result;
         this.systemLogger.info('DMStore', `IndexedDB initialized for user ${pubkey.slice(0, 8)}...`);
+        // Load the read-anchor mirror from localStorage BEFORE any message is
+        // processed. If the IndexedDB was evicted, the conversation records are
+        // gone but this mirror survived — saveMessage falls back to it so reads
+        // stay read. Synchronous localStorage read, keyed by this exact pubkey.
+        this.loadReadAnchorMirror(pubkey);
         resolve();
       };
 
@@ -203,7 +217,12 @@ export class DMStore {
           // 1. Not my own message
           // 2. Message is newer than lastReadAt (or no lastReadAt exists = 0)
           // 3. The conversation isn't staying soft-deleted
-          const lastReadAt = existing?.lastReadAt || 0;
+          // Read anchor: prefer the live conversation record; if it's missing
+          // (evicted/fresh DB), fall back to the localStorage-mirrored anchor so
+          // re-synced history isn't re-counted as unread.
+          const lastReadAt = existing
+            ? existing.lastReadAt
+            : (this.readAnchorMirror.get(message.conversationWith) ?? 0);
           const shouldIncrementUnread = !message.isMine && message.createdAt > lastReadAt && !staysDeleted;
 
           // Diagnostic: any time unread is bumped, record whether we knew the conversation and what
@@ -374,12 +393,66 @@ export class DMStore {
           conversation.unreadCount = 0;
           conversation.lastReadAt = Math.floor(Date.now() / 1000);
           store.put(conversation);
+          // Mirror the new anchor so it survives an IndexedDB eviction.
+          this.readAnchorMirror.set(partnerPubkey, conversation.lastReadAt);
+          this.saveReadAnchorMirror();
         }
         resolve();
       };
 
       tx.onerror = () => reject(tx.error);
     });
+  }
+
+  /**
+   * Load the { partnerPubkey → lastReadAt } mirror from localStorage into memory
+   * for the given user. Called on init, before any message is processed.
+   */
+  private loadReadAnchorMirror(pubkey: string): void {
+    try {
+      const obj = PerAccountLocalStorage.getInstance()
+        .getForPubkey<Record<string, number>>(StorageKeys.DM_READ_ANCHORS, pubkey, {});
+      this.readAnchorMirror = new Map(Object.entries(obj));
+      diagLog('dms', 'read_anchor_mirror_loaded', { count: this.readAnchorMirror.size });
+    } catch (error) {
+      this.readAnchorMirror = new Map();
+      diagLog('dms', 'read_anchor_mirror_load_failed', { error: String(error) });
+    }
+  }
+
+  /**
+   * Persist the current in-memory read-anchor map to localStorage. Only non-zero
+   * anchors are stored (a 0 anchor means "unread", i.e. no recovery needed).
+   */
+  private saveReadAnchorMirror(): void {
+    if (!this.currentUserPubkey) return;
+    try {
+      const obj: Record<string, number> = {};
+      for (const [pk, ts] of this.readAnchorMirror) {
+        if (ts > 0) obj[pk] = ts;
+      }
+      PerAccountLocalStorage.getInstance()
+        .setForPubkey(StorageKeys.DM_READ_ANCHORS, this.currentUserPubkey, obj);
+    } catch (error) {
+      diagLog('dms', 'read_anchor_mirror_save_failed', { error: String(error) });
+    }
+  }
+
+  /**
+   * Rebuild the read-anchor mirror from the current conversation records and
+   * persist it. Used after bulk mark-all operations so the mirror stays in sync.
+   */
+  private async rebuildAnchorMirrorFromDB(): Promise<void> {
+    await this.init();
+    if (!this.db) return;
+    const all = await new Promise<DMConversation[]>((resolve, reject) => {
+      const tx = this.db!.transaction(CONVERSATIONS_STORE, 'readonly');
+      const req = tx.objectStore(CONVERSATIONS_STORE).getAll();
+      req.onsuccess = () => resolve((req.result as DMConversation[]) || []);
+      req.onerror = () => reject(req.error);
+    });
+    this.readAnchorMirror = new Map(all.map(c => [c.pubkey, c.lastReadAt] as const));
+    this.saveReadAnchorMirror();
   }
 
   /**
@@ -446,6 +519,7 @@ export class DMStore {
       (c) => c.unreadCount > 0,
       (c) => { c.unreadCount = 0; c.lastReadAt = now; }
     );
+    await this.rebuildAnchorMirrorFromDB();
   }
 
   /**
@@ -456,6 +530,7 @@ export class DMStore {
       (c) => c.unreadCount === 0,
       (c) => { c.unreadCount = 1; c.lastReadAt = 0; }
     );
+    await this.rebuildAnchorMirrorFromDB();
   }
 
   /**
@@ -565,6 +640,10 @@ export class DMStore {
       tx.objectStore(CONVERSATIONS_STORE).clear();
 
       tx.oncomplete = () => {
+        // Explicit data wipe also clears the anchor mirror, so a later re-sync
+        // starts genuinely fresh instead of resurrecting old read anchors.
+        this.readAnchorMirror = new Map();
+        this.saveReadAnchorMirror();
         this.systemLogger.info('DMStore', 'All DM data cleared');
         resolve();
       };
@@ -583,6 +662,9 @@ export class DMStore {
     }
     this.initPromise = null;
     this.currentUserPubkey = null;
+    // Drop the in-memory anchor mirror so it can't leak into another account.
+    // The localStorage copy stays (per-account) for the next login.
+    this.readAnchorMirror = new Map();
     this.systemLogger.info('DMStore', 'Database connection closed');
   }
 }
