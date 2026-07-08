@@ -20,6 +20,15 @@ export interface ListViewConfig {
   title: string; // e.g., "List: Bookmarks"
   onClose: () => void; // Callback when [x] button is clicked
   onRender: (container: HTMLElement) => void; // Callback to render list content
+  /**
+   * Override the derived tab id (`list-${type}`) used for BOTH the tab button's
+   * `data-tab` and the content's `data-tab-content`. Required when a list view
+   * must NOT collide with a manager that owns its own `list-${type}` slot —
+   * e.g. external (read-only) follows/followers lists must stay distinct from
+   * the editable own-follows list so `FollowListManager`'s `list-follows`
+   * queries cannot reach them.
+   */
+  tabContentId?: string;
 }
 
 export class ListViewPartial {
@@ -32,11 +41,19 @@ export class ListViewPartial {
   }
 
   /**
+   * Resolve the tab/content identifier. Honors an explicit `tabContentId`
+   * override, otherwise derives `list-${type}`.
+   */
+  private resolveTabId(): string {
+    return this.config.tabContentId ?? `list-${this.config.type}`;
+  }
+
+  /**
    * Create tab button with close [x] button using TabsHelper
    */
   public createTab(): HTMLElement {
     const tab = createClosableTab(
-      `list-${this.config.type}`,
+      this.resolveTabId(),
       this.config.title,
       () => this.config.onClose()
     );
@@ -51,7 +68,7 @@ export class ListViewPartial {
   public createContent(): HTMLElement {
     const content = document.createElement('div');
     content.className = 'tab-content';
-    content.dataset.tabContent = `list-${this.config.type}`;
+    content.dataset.tabContent = this.resolveTabId();
 
     this.contentElement = content;
     return content;

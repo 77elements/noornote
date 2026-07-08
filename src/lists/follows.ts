@@ -1149,7 +1149,7 @@ export class ProfileFollowManager {
       followUser(this.targetPubkey, type === 'private');
 
       this.isFollowingState = true;
-      eventBus.emit('follow:updated');
+      // No manual emit: followUser → setFollowItems already emits follow:updated.
       onStateChange();
 
       ToastService.show(`Followed ${type === 'public' ? 'publicly' : 'privately'} (local)`, 'success');
@@ -1187,7 +1187,7 @@ export class ProfileFollowManager {
       unfollowUser(this.targetPubkey);
 
       this.isFollowingState = false;
-      eventBus.emit('follow:updated');
+      // No manual emit: unfollowUser → setFollowItems already emits follow:updated.
       onStateChange();
 
       ToastService.show('Unfollowed successfully (local)', 'success');
@@ -2401,6 +2401,9 @@ export class ExternalFollowListManager {
   private isLoading: boolean = false;
   private loadComplete: boolean = false;
   private destroyed: boolean = false;
+  /** Subscription id for the follow:updated event, used to sync row buttons when
+   *  a follow/unfollow happens in another view (e.g. the PV). Off'd in destroy(). */
+  private followSubId: string | null = null;
   private batchChain: Promise<void> = Promise.resolve();
   private infiniteScroll: InfiniteScroll | null = null;
   private usernameFilter: string = '';
@@ -2482,6 +2485,12 @@ export class ExternalFollowListManager {
         this.reRenderList();
       });
 
+      // Keep row buttons in sync with follow/unfollow actions performed in
+      // other views (PV, another tab, extended-follows list).
+      if (!this.followSubId) {
+        this.followSubId = eventBus.on('follow:updated', () => this.syncItemButtons());
+      }
+
       // Stream pubkeys in. Chain the (async) batch handlers so profile
       // resolution and rendering stay serialized — concurrent batches would
       // race the isLoading guard and drop rows.
@@ -2509,6 +2518,13 @@ export class ExternalFollowListManager {
   /**
    * Handle one streamed chunk of pubkeys: dedupe, resolve profiles, append, and
    * render eagerly up to the initial cap (the rest is left to infinite scroll).
+   *
+   * Profiles are resolved in BATCH_SIZE slices and rendered progressively so the
+   * first INITIAL_RENDER_CAP rows appear after only a small number of profile
+   * fetches — instead of awaiting the whole relay batch (which can carry
+   * hundreds of pubkeys) before anything paints. Later slices keep resolving
+   * in the background to prefetch profiles for smooth scrolling; if the tab is
+   * closed mid-stream, the lifecycle destroy() short-circuits the loop.
    */
   private async onBatch(pubkeys: string[]): Promise<void> {
     if (this.destroyed) return;
@@ -2517,22 +2533,29 @@ export class ExternalFollowListManager {
     if (fresh.length === 0) return;
     fresh.forEach(pk => this.seen.add(pk));
 
-    const items: ExternalFollowItemWithProfile[] = await Promise.all(
-      fresh.map(async (pubkey) => ({
-        pubkey,
-        profile: await this.userProfileService.getUserProfile(pubkey),
-        isFollowedByMe: this.myFollows.has(pubkey)
-      }))
-    );
+    for (let i = 0; i < fresh.length; i += this.BATCH_SIZE) {
+      if (this.destroyed) return;
 
-    if (this.destroyed) return;
-    this.allItemsWithProfiles.push(...items);
+      const slice = fresh.slice(i, i + this.BATCH_SIZE);
+      const items: ExternalFollowItemWithProfile[] = await Promise.all(
+        slice.map(async (pubkey) => ({
+          pubkey,
+          profile: await this.userProfileService.getUserProfile(pubkey),
+          isFollowedByMe: this.myFollows.has(pubkey)
+        }))
+      );
 
-    // Live count in the header.
-    const stats = this.containerElement?.querySelector('.external-follows-stats');
-    if (stats) stats.innerHTML = this.source.describe(this.targetName, this.allItemsWithProfiles.length);
+      if (this.destroyed) return;
+      this.allItemsWithProfiles.push(...items);
 
-    await this.renderPending();
+      // Live count in the header.
+      const stats = this.containerElement?.querySelector('.external-follows-stats');
+      if (stats) stats.innerHTML = this.source.describe(this.targetName, this.allItemsWithProfiles.length);
+
+      // Render whatever fits the initial cap; once capped this is a cheap no-op
+      // and just keeps the infinite-scroll sentinel attached.
+      await this.renderPending();
+    }
   }
 
   /**
@@ -2666,20 +2689,6 @@ export class ExternalFollowListManager {
     itemDiv.className = 'ui-list__item follow-item external-follow-item';
     itemDiv.dataset.pubkey = item.pubkey;
 
-    // Determine button state
-    let buttonHtml = '';
-    if (!isMe && this.authService.getCurrentUser()) {
-      if (item.isFollowedByMe) {
-        buttonHtml = `<span class="external-follow-item__status">Following</span>`;
-      } else {
-        buttonHtml = `
-          <button class="external-follow-item__follow-btn btn btn--medium" data-pubkey="${item.pubkey}">
-            Follow
-          </button>
-        `;
-      }
-    }
-
     itemDiv.innerHTML = `
       <div class="follow-item__content-wrapper">
         <div class="follow-item__avatar">
@@ -2689,8 +2698,16 @@ export class ExternalFollowListManager {
           <div class="follow-item__username">${escapeHtml(username)}</div>
         </div>
       </div>
-      ${buttonHtml}
     `;
+
+    // Append the follow/unfollow control. Actionable in BOTH states (Follow ↔
+    // Unfollow) so the user can toggle without leaving the list, and consistent
+    // with the PV which also shows an Unfollow button. Skipped for self / logged-out.
+    if (!isMe && this.authService.getCurrentUser()) {
+      itemDiv.appendChild(
+        item.isFollowedByMe ? this.createUnfollowButton(item) : this.createFollowButton(item)
+      );
+    }
 
     // Navigate to profile on click
     const contentWrapper = itemDiv.querySelector('.follow-item__content-wrapper');
@@ -2698,57 +2715,125 @@ export class ExternalFollowListManager {
       this.router.navigate(`/profile/${npub}`);
     });
 
-    // Handle follow button
-    const followBtn = itemDiv.querySelector('.external-follow-item__follow-btn');
-    followBtn?.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      await this.handleFollow(item, itemDiv);
-    });
-
     return itemDiv;
   }
 
   /**
-   * Handle follow action
+   * Build the "Follow" action button with its click handler bound.
    */
-  private async handleFollow(item: ExternalFollowItemWithProfile, itemElement: HTMLElement): Promise<void> {
+  private createFollowButton(item: ExternalFollowItemWithProfile): HTMLButtonElement {
+    const btn = document.createElement('button');
+    btn.className = 'external-follow-item__follow-btn btn btn--medium';
+    btn.dataset.pubkey = item.pubkey;
+    btn.textContent = 'Follow';
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await this.handleFollow(item, btn);
+    });
+    return btn;
+  }
+
+  /**
+   * Build the "Unfollow" action button with its click handler bound. Shown when
+   * already following so the row stays actionable and consistent with the PV
+   * (which also shows an Unfollow button), instead of a static "Following" label.
+   */
+  private createUnfollowButton(item: ExternalFollowItemWithProfile): HTMLButtonElement {
+    const btn = document.createElement('button');
+    btn.className = 'external-follow-item__unfollow-btn btn btn--medium btn--passive';
+    btn.dataset.pubkey = item.pubkey;
+    btn.textContent = 'Unfollow';
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await this.handleUnfollow(item, btn);
+    });
+    return btn;
+  }
+
+  /**
+   * Handle follow action: follow locally, then swap the button to Unfollow.
+   * followUser → setFollowItems emits follow:updated, which syncItemButtons()
+   * uses to keep other open views (e.g. the PV) in lockstep.
+   */
+  private async handleFollow(item: ExternalFollowItemWithProfile, followBtn: HTMLButtonElement): Promise<void> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) return;
-
-    const followBtn = itemElement.querySelector('.external-follow-item__follow-btn') as HTMLButtonElement;
-    if (!followBtn) return;
 
     try {
       followBtn.disabled = true;
       followBtn.textContent = 'Following...';
 
-      // Add follow
+      // Set state BEFORE followUser: followUser → setFollowItems emits
+      // follow:updated synchronously, which runs syncItemButtons. With the state
+      // already updated, syncItemButtons sees this row as in-sync and skips it,
+      // leaving this handler to perform the single button swap below.
+      item.isFollowedByMe = true;
       followUser(item.pubkey, false);
 
-      // Update item state
-      item.isFollowedByMe = true;
-
-      // Replace button with status text
-      followBtn.replaceWith(this.createStatusElement());
+      followBtn.replaceWith(this.createUnfollowButton(item));
 
       ToastService.show('Followed (local)', 'success');
-      eventBus.emit('follow:updated');
     } catch (error) {
       console.error('Failed to follow:', error);
       ToastService.show('Failed to follow', 'error');
+      item.isFollowedByMe = false;
       followBtn.disabled = false;
       followBtn.textContent = 'Follow';
     }
   }
 
   /**
-   * Create "Following" status element
+   * Handle unfollow action: unfollow locally, then swap the button to Follow.
    */
-  private createStatusElement(): HTMLElement {
-    const span = document.createElement('span');
-    span.className = 'external-follow-item__status';
-    span.textContent = 'Following';
-    return span;
+  private async handleUnfollow(item: ExternalFollowItemWithProfile, unfollowBtn: HTMLButtonElement): Promise<void> {
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) return;
+
+    try {
+      unfollowBtn.disabled = true;
+      unfollowBtn.textContent = 'Unfollowing...';
+
+      // Set state BEFORE unfollowUser for the same reason as handleFollow:
+      // unfollowUser emits follow:updated synchronously; syncItemButtons must
+      // see this row already in-sync and skip, so this handler swaps once.
+      item.isFollowedByMe = false;
+      unfollowUser(item.pubkey);
+
+      unfollowBtn.replaceWith(this.createFollowButton(item));
+
+      ToastService.show('Unfollowed (local)', 'success');
+    } catch (error) {
+      console.error('Failed to unfollow:', error);
+      ToastService.show('Failed to unfollow', 'error');
+      item.isFollowedByMe = true;
+      unfollowBtn.disabled = false;
+      unfollowBtn.textContent = 'Unfollow';
+    }
+  }
+
+  /**
+   * Re-sync each rendered row's follow/unfollow button to the current follow
+   * state, so a follow/unfollow from ANOTHER view (e.g. the PV, another tab, or
+   * the extended-follows list) is reflected here immediately. Rebuilds the
+   * myFollows set from storage and only touches rows whose state actually
+   * changed; rows that already match (e.g. the row just toggled locally) are
+   * skipped, avoiding redundant DOM swaps.
+   */
+  private syncItemButtons(): void {
+    if (this.destroyed || !this.containerElement) return;
+    this.myFollows = new Set(getFollowItems().map(f => f.pubkey));
+    for (const item of this.allItemsWithProfiles) {
+      const nowFollowing = this.myFollows.has(item.pubkey);
+      if (nowFollowing === item.isFollowedByMe) continue;
+      item.isFollowedByMe = nowFollowing;
+      const row = this.containerElement.querySelector<HTMLElement>(
+        `.external-follow-item[data-pubkey="${item.pubkey}"]`
+      );
+      if (!row) continue;
+      const oldControl = row.querySelector('.external-follow-item__follow-btn, .external-follow-item__unfollow-btn, .external-follow-item__status');
+      if (!oldControl) continue;
+      oldControl.replaceWith(nowFollowing ? this.createUnfollowButton(item) : this.createFollowButton(item));
+    }
   }
 
   /**
@@ -2776,6 +2861,10 @@ export class ExternalFollowListManager {
    */
   public destroy(): void {
     this.destroyed = true;
+    if (this.followSubId) {
+      eventBus.off(this.followSubId);
+      this.followSubId = null;
+    }
     if (this.infiniteScroll) {
       this.infiniteScroll.destroy();
       this.infiniteScroll = null;

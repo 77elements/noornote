@@ -18,8 +18,12 @@ interface BatchResult {
   oldestTimestamp: number | null;
 }
 
-interface CachedCount {
+interface CachedFollowers {
   count: number;
+  /** Deduplicated follower pubkeys, kept alongside the count so the followers
+   *  LIST can paint instantly from cache (stale-while-revalidate) instead of
+   *  re-sweeping every relay from zero on each open. */
+  pubkeys: string[];
   timestamp: number;
 }
 
@@ -30,7 +34,7 @@ export class FollowerCountService {
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
   private transport: NostrTransport;
-  private cache: LRUCache<CachedCount> = new LRUCache<CachedCount>(getCacheSize(500, 200, 100));
+  private cache: LRUCache<CachedFollowers> = new LRUCache<CachedFollowers>(getCacheSize(500, 200, 100));
 
   private constructor() {
     this.relayConfig = RelayConfig.getInstance();
@@ -71,7 +75,7 @@ export class FollowerCountService {
     });
 
     const finalCount = followers.length;
-    this.cache.set(pubkey, { count: finalCount, timestamp: Date.now() });
+    this.cache.set(pubkey, { count: finalCount, pubkeys: followers, timestamp: Date.now() });
     this.systemLogger.success('FollowerCount', `✓ Follower count fetching completed: ${finalCount} followers`);
 
     return finalCount;
@@ -80,11 +84,19 @@ export class FollowerCountService {
   /**
    * Stream the deduplicated set of follower pubkeys.
    *
+   * Stale-while-revalidate: if the count sweep already cached a pubkey set for
+   * this pubkey, those pubkeys are delivered via `onBatch` IMMEDIATELY (so the
+   * followers list paints at once instead of re-sweeping from zero), and a
+   * fresh relay sweep only runs when the cache is stale (or `since` /
+   * `forceFullRelays` require it). The follow-back button state is unaffected —
+   * it comes from the user's own follow list, not this cached set — so a stale
+   * cached set only risks showing who is in the list, not whether they are
+   * followed back.
+   *
    * `onBatch` fires with the newly discovered pubkeys after each relay batch
    * completes, so callers (e.g. the followers list) can fill progressively
    * instead of waiting for the full sweep. Resolves with the complete
-   * deduplicated array. Always fetches fresh (the list itself isn't cached), but
-   * refreshes the count cache on completion so the displayed count stays in sync.
+   * deduplicated array and refreshes the cache on completion.
    *
    * @param pubkey - User's public key
    * @param onBatch - Called with each chunk of newly found follower pubkeys
@@ -95,6 +107,20 @@ export class FollowerCountService {
     onBatch: (newPubkeys: string[]) => void,
     opts?: { since?: number; forceFullRelays?: boolean }
   ): Promise<string[]> {
+    // SWR: paint cached pubkeys instantly. The manager dedupes via its `seen`
+    // set, so pubkeys re-discovered by the revalidation sweep won't double-render.
+    const cached = this.cache.get(pubkey);
+    if (cached && cached.pubkeys.length > 0) {
+      onBatch(cached.pubkeys.slice());
+    }
+
+    // A fresh cache with a full (non-incremental, non-forced) request needs no
+    // re-sweep — the cached set is good enough and we avoid the relay round-trips.
+    const fresh = cached !== undefined && (Date.now() - cached.timestamp) < CACHE_TTL_MS;
+    if (fresh && opts?.since === undefined && !opts?.forceFullRelays) {
+      return cached!.pubkeys;
+    }
+
     const followers = await this.collectFollowers(pubkey, (newPubkeys) => {
       if (newPubkeys.length > 0) onBatch(newPubkeys);
     }, opts?.since, opts?.forceFullRelays);
@@ -102,7 +128,7 @@ export class FollowerCountService {
     // Only a FULL sweep (no `since`) reflects the real follower count. An incremental
     // sweep returns just the lists updated since `since`, so it must not touch the count cache.
     if (opts?.since === undefined) {
-      this.cache.set(pubkey, { count: followers.length, timestamp: Date.now() });
+      this.cache.set(pubkey, { count: followers.length, pubkeys: followers, timestamp: Date.now() });
     }
     return followers;
   }

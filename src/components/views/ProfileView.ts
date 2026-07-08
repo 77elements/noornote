@@ -251,18 +251,23 @@ export class ProfileView extends View {
   }
 
   /**
-   * Setup listener for follow changes (re-render if this profile's follow status changed)
+   * Setup listener for follow changes. When this profile's follow status
+   * changed (because the follow/unfollow happened elsewhere — e.g. the
+   * followers list, another tab, or the extended-follows list), refresh the
+   * follow button INLINE instead of a full re-render, so the profile never
+   * blanks out ("Loading profile...") just to flip a button. A direct click on
+   * this PV's own button is already handled optimistically by handleFollow +
+   * refreshFollowButtonInline, so this listener becomes a no-op for it.
    */
   private setupFollowChangeListener(): void {
     const id = this.eventBus.on('follow:updated', async () => {
-      // Only re-render if this profile's follow status actually changed
+      // Only refresh if this profile's follow status actually changed
       const wasFollowing = this.lastKnownFollowStatus;
       const isFollowing = await this.followManager.checkFollowStatus();
 
       if (wasFollowing !== isFollowing) {
         this.lastKnownFollowStatus = isFollowing;
-        this.isInitialRender = true;
-        this.render();
+        this.refreshFollowButtonInline();
       }
     });
     this.eventBusSubscriptions.push(id);
@@ -871,20 +876,32 @@ export class ProfileView extends View {
    */
   private setupFollowButton(): void {
     this.followManager.setupFollowButton(this.container, () => {
-      // Re-render button section when follow state changes
-      const profileStats = this.container.querySelector('.profile-stats');
-      if (profileStats) {
-        const existingButton = profileStats.querySelector('[data-action="follow"], [data-action="unfollow"], .follow-dropdown-container');
-        if (existingButton) {
-          existingButton.remove();
-        }
-        const followingCountLink = profileStats.querySelector('#following-count-link');
-        if (followingCountLink) {
-          followingCountLink.insertAdjacentHTML('beforebegin', this.renderFollowButton());
-        }
-        this.setupFollowButton();
-      }
+      this.refreshFollowButtonInline();
     });
+  }
+
+  /**
+   * Swap the follow/unfollow button in place to reflect the current follow
+   * state, without a full profile re-render. Finds the existing follow control
+   * anywhere in the profile header and replaces it with a freshly rendered one,
+   * then re-attaches its handlers. Shared by the direct-click path
+   * (setupFollowButton's onStateChange) and the follow:updated listener so
+   * neither path blanks the profile. Querying the whole container (rather than
+   * a specific sub-section) keeps this robust regardless of where the button
+   * lives in the header markup.
+   */
+  private refreshFollowButtonInline(): void {
+    const existingButton = this.container.querySelector('[data-action="follow"], [data-action="unfollow"], .follow-dropdown-container') as HTMLElement | null;
+    if (!existingButton) return;
+    const html = this.renderFollowButton();
+    if (!html) return;
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = html.trim();
+    const newButton = wrapper.firstElementChild as HTMLElement | null;
+    if (newButton) {
+      existingButton.replaceWith(newButton);
+      this.setupFollowButton();
+    }
   }
 
   /**

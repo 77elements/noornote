@@ -92,6 +92,14 @@ export class MainLayout {
    * carries neither the target nor the follows/followers distinction.
    */
   private externalUserList: { mode: 'follows' | 'followers'; pubkey: string } | null = null;
+  /**
+   * The currently-active ExternalFollowListManager instance (if any). Tracked
+   * so its background follower-sweep can be torn down (destroy()) when the tab
+   * is closed or replaced — otherwise the streaming keeps running against a
+   * detached DOM node (memory leak + wasted relay queries). Typed structurally
+   * since the class is dynamically imported.
+   */
+  private externalFollowManager: { destroy(): void } | null = null;
   private viewTabManager: ViewTabManager | null = null;
   private viewTabEventSubscriptions: string[] = [];
   private sidebarTabsWheelCleanup: (() => void) | null = null;
@@ -313,6 +321,10 @@ export class MainLayout {
     // On logout, close all tabs
     const logoutSub = this.eventBus.on('user:logout', () => {
       this.viewTabManager?.closeAllTabs();
+      // Stop any active external follower/following sweep so it doesn't keep
+      // streaming (and hold account-specific relay subscriptions) after the
+      // account is gone.
+      this.destroyExternalFollowManager();
     });
     this.viewTabEventSubscriptions.push(logoutSub);
 
@@ -2186,6 +2198,9 @@ export class MainLayout {
       this.currentListView.destroy();
       this.currentListView = null;
     }
+    // Tear down any previously-open external manager so its background sweep
+    // does not keep streaming into a detached node.
+    this.destroyExternalFollowManager();
 
     // Clear active state on list sublinks
     this.clearActiveListSublinks();
@@ -2193,12 +2208,19 @@ export class MainLayout {
     // Track the open external list so syncScc can mirror it into ?scc=.
     this.externalUserList = { mode, pubkey };
 
-    // Create manager instance
+    // Create manager instance and track it for lifecycle management.
     const externalManager = ExternalFollowListManager.create(pubkey, mode);
+    this.externalFollowManager = externalManager;
 
     // Create new list view
+    // Distinct tabContentId keeps the external (read-only) list's tab id and
+    // content attribute (`list-external-follows`) separate from the editable
+    // own-follows list (`list-follows`), so FollowListManager's global
+    // `[data-tab-content="list-follows"]` queries (refreshListIfActive, zap
+    // badges, unfollow header) can never reach into this external list.
     this.currentListView = new ListViewPartial({
       type: 'follows',
+      tabContentId: 'list-external-follows',
       title: mode === 'followers' ? 'Followers' : 'Following',
       onClose: () => this.closeListTab(),
       onRender: (container) => {
@@ -2253,9 +2275,12 @@ export class MainLayout {
 
     // Primary (wide) mode has no scc tab; ensure no stale ?scc= state lingers.
     this.externalUserList = null;
+    // Tear down any previously-open external manager before starting a new one.
+    this.destroyExternalFollowManager();
 
-    // Create manager instance
+    // Create manager instance and track it for lifecycle management.
     const externalManager = ExternalFollowListManager.create(pubkey, mode);
+    this.externalFollowManager = externalManager;
 
     // Create container for list
     const listContainer = document.createElement('div');
@@ -2300,6 +2325,22 @@ export class MainLayout {
   }
 
   /**
+   * Tear down the active ExternalFollowListManager (if any) so its background
+   * follower/following relay sweep stops instead of streaming into a detached
+   * DOM node. Safe to call when none is active.
+   */
+  private destroyExternalFollowManager(): void {
+    if (this.externalFollowManager) {
+      try {
+        this.externalFollowManager.destroy();
+      } catch {
+        // Manager already gone — ignore.
+      }
+      this.externalFollowManager = null;
+    }
+  }
+
+  /**
    * Render list in secondary content (default/right-pane mode)
    */
   private renderListInSecondaryContent(listType: ListType, customRender?: (container: HTMLElement) => void): void {
@@ -2309,8 +2350,10 @@ export class MainLayout {
       this.currentListView = null;
     }
 
-    // Own list, not an external user-list — drop any tracked external state.
+    // Own list, not an external user-list — drop any tracked external state
+    // and stop its background sweep.
     this.externalUserList = null;
+    this.destroyExternalFollowManager();
 
     // Set active state on list sublink
     this.setActiveListSublink(listType);
@@ -2484,6 +2527,9 @@ export class MainLayout {
       this.currentListView = null;
       this.externalUserList = null;
 
+      // Stop the external follower/following background sweep.
+      this.destroyExternalFollowManager();
+
       // Clear active state on list sublinks
       this.setActiveListSublink(null);
 
@@ -2569,6 +2615,9 @@ export class MainLayout {
 
     // Cleanup ViewTabManager
     this.cleanupViewTabManager();
+
+    // Stop any active external follower/following sweep.
+    this.destroyExternalFollowManager();
 
     // Destroy managers
     if (this.bookmarkManager) {
