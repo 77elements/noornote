@@ -14,9 +14,12 @@
  */
 
 // Matches any URL whose last path segment starts with naddr1 / nevent1 / note1.
-// Negative lookahead on trailing chars to avoid capturing query strings / punctuation.
+// The capture group is JUST the NIP-19 id; the optional trailing `[#?]\S*` swallows
+// the URL's own query string / fragment (e.g. an invite key like `...naddr1…#BAAC…`)
+// so it isn't left dangling as cryptic text once the URL is replaced by `nostr:<id>`.
+// `\S*` stops at whitespace, so text after the URL is untouched.
 const STREAM_URL_REGEX =
-  /https?:\/\/[^\s/]+\/(?:[^\s/]+\/)*((?:naddr1|nevent1|note1)[02-9ac-hj-np-z]+)(?=[^02-9ac-hj-np-z]|$)/gi;
+  /https?:\/\/[^\s/]+\/(?:[^\s/]+\/)*((?:naddr1|nevent1|note1)[02-9ac-hj-np-z]+)(?:[#?]\S*)?/gi;
 
 export function unwrapStreamLinks(text: string): string {
   return text.replace(STREAM_URL_REGEX, (_match, ref) => `nostr:${ref}`);

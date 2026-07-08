@@ -4,7 +4,7 @@
  */
 
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
-import { encodeNevent } from '../../../services/NostrToolsAdapter';
+import { encodeNevent, encodeNaddr } from '../../../services/NostrToolsAdapter';
 import { DittoFeatureRenderer, DITTO_GEOCACHE_KIND } from './DittoFeatureRenderer';
 
 export class UnsupportedKindRenderer {
@@ -36,6 +36,39 @@ export class UnsupportedKindRenderer {
             ↗ Open in another client
           </a>
         ` : ''}
+      </div>
+    `;
+
+    return element;
+  }
+
+  /**
+   * Render the same fallback straight from a decoded naddr coordinate — used by
+   * the addressable-quote routing, which only has the coordinate (no fetched
+   * event). Keeps addressable events that aren't a supported kind (e.g. a
+   * proprietary community kind) out of the article renderer: same card, "open in
+   * another client" points at the naddr on njump. Ditto geocache keeps its own
+   * dedicated notice.
+   */
+  static renderFromCoordinate(kind: number, pubkey: string, identifier: string): HTMLElement {
+    if (kind === DITTO_GEOCACHE_KIND) {
+      return DittoFeatureRenderer.renderFromCoordinate(kind, pubkey, identifier);
+    }
+
+    const element = document.createElement('div');
+    element.className = 'note-card note-card--unsupported';
+
+    const naddr = encodeNaddr({ kind, pubkey, identifier, relays: [] });
+    const njumpUrl = `https://njump.me/${naddr}`;
+
+    element.innerHTML = `
+      <div class="unsupported-kind">
+        <div class="unsupported-kind__message">
+          Unsupported event kind ${kind}
+        </div>
+        <a href="${njumpUrl}" target="_blank" rel="noopener noreferrer" class="btn">
+          ↗ Open in another client
+        </a>
       </div>
     `;
 

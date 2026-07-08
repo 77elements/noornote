@@ -6,13 +6,10 @@
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { NoteStructureBuilder } from './NoteStructureBuilder';
 import { QuotedNoteRenderer } from './QuotedNoteRenderer';
-import { ArticlePreviewRenderer } from './ArticlePreviewRenderer';
-import { decodeNip19 } from '../../../services/NostrToolsAdapter';
 import { CollapsibleManager } from '../note-features/CollapsibleManager';
 
 export class QuoteRenderer {
   private static quotedNoteRenderer = QuotedNoteRenderer.getInstance();
-  private static articleRenderer = ArticlePreviewRenderer.getInstance();
 
   /**
    * Create quote element with embedded quoted notes (NON-BLOCKING)
@@ -30,19 +27,12 @@ export class QuoteRenderer {
       note.content.quotedReferences.forEach(ref => {
         const marker = element.querySelector(`.quote-marker[data-quote-ref="${ref.fullMatch}"]`);
         if (marker) {
-          // Route naddr references
+          // Route naddr references by kind (listing / article / Ditto /
+          // unsupported) — never blindly to the article renderer.
           if (ref.type === 'addr') {
-            try {
-              const decoded = decodeNip19(ref.fullMatch.replace(/^nostr:/, ''));
-              if (decoded.type === 'naddr' && decoded.data?.kind === 30402) {
-                const container = document.createElement('div');
-                marker.replaceWith(container);
-                QuoteRenderer.quotedNoteRenderer.renderListingPreview(ref.fullMatch, container);
-                return;
-              }
-            } catch { /* fall through */ }
-            QuoteRenderer.articleRenderer.renderArticlePreview(ref.fullMatch, marker.parentElement!);
-            marker.remove();
+            const container = document.createElement('div');
+            marker.replaceWith(container);
+            QuoteRenderer.quotedNoteRenderer.renderAddressableReference(ref.fullMatch, container);
           } else {
             // Regular note quote handling. Parent author = the quoting note
             // — fed to QuoteOrchestrator's outbound fallback so the quoter's

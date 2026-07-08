@@ -9,10 +9,8 @@ import { CollapsibleManager } from '../note-features/CollapsibleManager';
 import { PollRenderer } from '../note-features/PollRenderer';
 import { NIP88PollRenderer } from '../note-features/NIP88PollRenderer';
 import { QuotedNoteRenderer } from './QuotedNoteRenderer';
-import { ArticlePreviewRenderer } from './ArticlePreviewRenderer';
 import { renderPodcastCard } from './PodcastCard';
 import { renderWebCommentCard } from './WebCommentCard';
-import { decodeNip19 } from '../../../services/NostrToolsAdapter';
 
 export class OriginalNoteRenderer {
 
@@ -32,25 +30,16 @@ export class OriginalNoteRenderer {
     // Replace quote markers with actual quote boxes (inline at original position)
     if (hasQuotedNotes) {
       const quotedNoteRenderer = QuotedNoteRenderer.getInstance();
-      const articleRenderer = ArticlePreviewRenderer.getInstance();
 
       note.content.quotedReferences.forEach(ref => {
           const marker = element.querySelector(`.quote-marker[data-quote-ref="${ref.fullMatch}"]`);
           if (marker) {
-            // Route naddr references
+            // Route naddr references by kind (listing / article / Ditto /
+            // unsupported) — never blindly to the article renderer.
             if (ref.type === 'addr') {
-              // Kind 30402 listings → listing preview via QuotedNoteRenderer
-              try {
-                const decoded = decodeNip19(ref.fullMatch.replace(/^nostr:/, ''));
-                if (decoded.type === 'naddr' && decoded.data?.kind === 30402) {
-                  const container = document.createElement('div');
-                  marker.replaceWith(container);
-                  quotedNoteRenderer.renderListingPreview(ref.fullMatch, container);
-                  return;
-                }
-              } catch { /* fall through */ }
-              articleRenderer.renderArticlePreview(ref.fullMatch, marker.parentElement!);
-              marker.remove();
+              const container = document.createElement('div');
+              marker.replaceWith(container);
+              quotedNoteRenderer.renderAddressableReference(ref.fullMatch, container);
             } else {
               // Regular note quote handling. Parent author = the note that
               // CONTAINS this quote — passed through so QuoteOrchestrator can

@@ -24,6 +24,12 @@ import { escapeHtml } from '../../../helpers/escapeHtml';
 import { getTag } from '../../../helpers/tagUtils';
 import { TypedEventBus } from '../../../core/TypedEventBus';
 import { DittoFeatureRenderer, DITTO_GEOCACHE_KIND } from '../../../components/ui/note-rendering/DittoFeatureRenderer';
+import { UnsupportedKindRenderer } from './UnsupportedKindRenderer';
+
+/** Addressable kinds the article-preview renderer actually handles (article,
+ *  Zapstore app, live stream). Any other addressable kind must NOT fall into
+ *  the article renderer — it gets the shared unsupported fallback instead. */
+const ARTICLE_PREVIEW_KINDS = new Set<number>([30023, 32267, 30311]);
 
 export class QuotedNoteRenderer {
   private static instance: QuotedNoteRenderer;
@@ -61,27 +67,11 @@ export class QuotedNoteRenderer {
     parentAuthorPubkey?: string,
   ): void {
     quotedReferences.forEach((ref) => {
-      // Route naddr references
+      // Route naddr references by kind (listing / article / Ditto / unsupported).
       if (ref.type === 'addr') {
-        // Decode naddr to check kind — listings (30402) get their own renderer
-        try {
-          const decoded = decodeNip19(ref.fullMatch.replace(/^nostr:/, ''));
-          if (decoded.type === 'naddr' && decoded.data?.kind === 30402) {
-            const listingContainer = document.createElement('div');
-            container.appendChild(listingContainer);
-            void this.renderListingPreview(ref.fullMatch, listingContainer);
-            return;
-          }
-          // Ditto geocache (kind 37516): proprietary, no NIP — build the notice
-          // straight from the naddr coordinate, no fetch needed.
-          if (decoded.type === 'naddr' && decoded.data?.kind === DITTO_GEOCACHE_KIND) {
-            container.appendChild(DittoFeatureRenderer.renderFromCoordinate(
-              decoded.data.kind, decoded.data.pubkey, decoded.data.identifier,
-            ));
-            return;
-          }
-        } catch { /* fall through to article renderer */ }
-        this.articleRenderer.renderArticlePreview(ref.fullMatch, container);
+        const addrContainer = document.createElement('div');
+        container.appendChild(addrContainer);
+        this.renderAddressableReference(ref.fullMatch, addrContainer);
         return;
       }
 
@@ -93,6 +83,47 @@ export class QuotedNoteRenderer {
       // Fetch quote in background
       this.fetchAndRenderQuote(ref, skeleton, enableCollapsible, parentAuthorPubkey);
     });
+  }
+
+  /**
+   * Route an addressable (naddr) quote reference by kind, from the coordinate
+   * alone (no fetch). Known kinds get their dedicated card; everything else
+   * gets the shared "unsupported" fallback with an "open in another client"
+   * (njump) link — NEVER the article renderer. This is why a proprietary /
+   * community addressable event no longer shows a bogus "Failed to load
+   * article" card. Shared by OriginalNoteRenderer, QuoteRenderer and the
+   * conversation path so the rule lives in one place.
+   */
+  public renderAddressableReference(naddrRef: string, container: Element): void {
+    let kind: number | undefined;
+    let pubkey = '';
+    let identifier = '';
+    try {
+      const decoded = decodeNip19(naddrRef.replace(/^nostr:/, ''));
+      if (decoded.type === 'naddr') {
+        kind = decoded.data.kind;
+        pubkey = decoded.data.pubkey;
+        identifier = decoded.data.identifier;
+      }
+    } catch { /* fall through to the unsupported fallback below */ }
+
+    // Marketplace listings (kind 30402) → listing preview.
+    if (kind === 30402) {
+      void this.renderListingPreview(naddrRef, container);
+      return;
+    }
+    // Ditto geocache (kind 37516): proprietary, no NIP — dedicated notice.
+    if (kind === DITTO_GEOCACHE_KIND) {
+      container.appendChild(DittoFeatureRenderer.renderFromCoordinate(kind, pubkey, identifier));
+      return;
+    }
+    // Article / Zapstore app / live stream → article-preview renderer.
+    if (kind !== undefined && ARTICLE_PREVIEW_KINDS.has(kind)) {
+      this.articleRenderer.renderArticlePreview(naddrRef, container);
+      return;
+    }
+    // Any other addressable kind → shared unsupported fallback (no article card).
+    container.appendChild(UnsupportedKindRenderer.renderFromCoordinate(kind ?? 0, pubkey, identifier));
   }
 
   /**
@@ -183,19 +214,29 @@ export class QuotedNoteRenderer {
             skeleton.replaceWith(packElement);
             return;
           }
-          // Everything else → article preview
-          const { encodeNaddr } = await import('../../../services/NostrToolsAdapter');
-          const dTag = getTag(result.event.tags, 'd');
-          const naddrRef = 'nostr:' + encodeNaddr({
-            kind: result.event.kind,
-            pubkey: result.event.pubkey,
-            identifier: dTag,
-            relays: []
-          });
-          const container = document.createElement('div');
-          skeleton.replaceWith(container);
-          this.articleRenderer.renderArticlePreview(naddrRef, container);
-          return;
+          // Article / Zapstore app / live stream → article-preview renderer.
+          if (ARTICLE_PREVIEW_KINDS.has(result.event.kind)) {
+            const { encodeNaddr } = await import('../../../services/NostrToolsAdapter');
+            const dTag = getTag(result.event.tags, 'd');
+            const naddrRef = 'nostr:' + encodeNaddr({
+              kind: result.event.kind,
+              pubkey: result.event.pubkey,
+              identifier: dTag,
+              relays: []
+            });
+            const container = document.createElement('div');
+            skeleton.replaceWith(container);
+            this.articleRenderer.renderArticlePreview(naddrRef, container);
+            return;
+          }
+          // Any other addressable kind → shared unsupported fallback (never an
+          // article card). We have the fetched event, so render from it directly.
+          {
+            const { NoteProcessor } = await import('../../../components/ui/note-processing/NoteProcessor');
+            const processedNote = NoteProcessor.process(result.event);
+            skeleton.replaceWith(UnsupportedKindRenderer.render(processedNote, { collapsible: false }));
+            return;
+          }
         }
 
         // Route NIP-84 highlights (kind 9802) to HighlightRenderer
