@@ -17,6 +17,7 @@ import { Router } from '../../services/Router';
 import { hexToNpub } from '../../helpers/nip19';
 import { npubToUsername } from '../../helpers/npubToUsername';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { sortMemberRowsByActivity } from './memberActivitySort';
 
 export async function renderFollowPackMembers(
   pack: FollowPack,
@@ -52,6 +53,7 @@ export async function renderFollowPackMembers(
         </div>
         <div class="follow-packs__member-info">
           <div class="follow-packs__member-name">${escapeHtml(name)}</div>
+          <div class="follow-packs__member-activity" data-activity></div>
         </div>
       </div>
       <button class="follow-packs__member-action-btn btn ${isFollowing ? 'btn--passive ' : ''}btn--medium"
@@ -86,4 +88,9 @@ export async function renderFollowPackMembers(
   });
 
   container.appendChild(list);
+
+  // Progressive: list is shown in pack order first, then re-sorted so the most
+  // recently active members rise to the top. Non-blocking — a slow/failed
+  // activity fetch never holds up the list.
+  void sortMemberRowsByActivity(list, pack.userPubkeys).catch(() => { /* non-fatal */ });
 }

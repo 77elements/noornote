@@ -156,6 +156,9 @@
   }
 
   &__member-info {
+    display: flex;
+    align-items: baseline;
+    gap: calc($gap / 2);
     min-width: 0;
     flex: 1;
   }
@@ -164,6 +167,21 @@
     font-weight: 500;
     color: var(--color-5);
     @include text-truncate;
+    min-width: 0;
+    flex: 0 1 auto;
+  }
+
+  // "last active: 3m ago" beside the name; hugs the name (doesn't stretch to the
+  // row edge) and never shrinks, so the name truncates first.
+  &__member-activity {
+    @extend %small;
+    color: var(--color-3);
+    white-space: nowrap;
+    flex-shrink: 0;
+
+    &:empty {
+      display: none;
+    }
   }
 
   &__member-action-btn {
