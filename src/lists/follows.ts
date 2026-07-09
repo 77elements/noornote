@@ -1245,6 +1245,15 @@ export class FollowListManager {
   private isLoadingAll: boolean = false;
   private originalOrder: string[] = []; // Store original pubkey order for date sorting
   private usernameFilter: string = ''; // Filter by username
+  /**
+   * True only while an in-list mutation (e.g. handleRemoveItem) is writing to
+   * storage. setFollowItems emits follow:updated synchronously, which would
+   * otherwise re-enter refreshListIfActive and trigger a full re-render — but
+   * the in-list handler already updates the DOM and state optimistically, so the
+   * self-triggered refresh must be suppressed. External follow:updated events
+   * (flag false) still refresh normally.
+   */
+  private isLocalMutation: boolean = false;
 
   constructor(containerElement: HTMLElement) {
     this.containerElement = containerElement;
@@ -1334,9 +1343,14 @@ export class FollowListManager {
   }
 
   /**
-   * Refresh list if it's currently active (inlined from BaseListManager)
+   * Refresh list if it's currently active (inlined from BaseListManager).
+   * Skipped while an in-list mutation is in progress — that handler updates the
+   * DOM and state itself, so a full re-render (which resets state, flashes
+   * "Loading follows..." and re-fetches every profile) would be redundant and
+   * racey. External follow:updated events still trigger a refresh.
    */
   private refreshListIfActive(): void {
+    if (this.isLocalMutation) return;
     const listTab = this.containerElement.querySelector('[data-tab-content="list-follows"]');
     if (listTab?.classList.contains('tab-content--active')) {
       this.renderListTab(listTab as HTMLElement).catch(err => {
@@ -2124,10 +2138,18 @@ export class FollowListManager {
     try {
       const currentItems = this.adapter.getBrowserItems();
       const updatedItems = currentItems.filter((f: FollowItem) => f.pubkey !== item.pubkey);
+
+      // Suppress the self-triggered refresh while writing to storage: this
+      // handler updates the DOM and state optimistically below, so the
+      // follow:updated emitted by setBrowserItems must not cause a full
+      // re-render. The emit still propagates to other views (PV, external list).
+      this.isLocalMutation = true;
       this.adapter.setBrowserItems(updatedItems);
+      this.isLocalMutation = false;
 
       ToastService.show('Unfollowed user', 'success');
 
+      // Optimistic in-place removal — no list reload.
       itemElement.remove();
 
       if (item.isMutual && this.extended) {
@@ -2142,9 +2164,10 @@ export class FollowListManager {
           this.extended.updateStatsHeader(container, this.totalFollowing);
         }
       }
-
-      this.eventBus.emit('follow:updated');
+      // No manual emit: setBrowserItems → setFollowItems already emitted
+      // follow:updated (with the guard active), which synced the other views.
     } catch (error) {
+      this.isLocalMutation = false;
       console.error('Failed to unfollow user:', error);
       ToastService.show('Failed to unfollow user', 'error');
     }
