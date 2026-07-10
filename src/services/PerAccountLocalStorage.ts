@@ -179,6 +179,10 @@ export const StorageKeys = {
   // keys. Set when the user clicks "Ok" on a holiday alert bar so it never
   // re-shows for that occurrence across reloads/restarts. Pruned of past dates.
   NOSTR_MAJLIS_HOLIDAYS_ACK: 'noornote_nostr_majlis_holidays_ack_map',
+  // Acknowledged prayer reminders — string[] of `${yyyy-m-d}:${prayerKey}` dedup
+  // keys. Set when the user clicks "Ok" on a prayer alert bar so it never re-shows
+  // for that prayer today across reloads/restarts. Pruned to today's date only.
+  NOSTR_MAJLIS_PRAYERS_ACK: 'noornote_nostr_majlis_prayers_ack_map',
   PETNAMES: 'noornote_petnames_map',
   DATA_SAVER_ENABLED: 'noornote_data_saver_enabled_map',
 

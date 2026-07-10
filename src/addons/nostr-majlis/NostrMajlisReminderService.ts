@@ -78,6 +78,10 @@ export class NostrMajlisReminderService {
     // Drop yesterday's dedup keys.
     for (const k of this.shown) if (!k.startsWith(`${dateStr}:`)) this.shown.delete(k);
 
+    // Persisted acknowledgements survive reload/restart — without this the banner
+    // reappears on every reload while still inside the [prayer − offset, prayer) window.
+    const acked = this.loadAckedPrayers();
+
     for (const [key, name] of PRAYERS) {
       if (!s.reminders.prayers[key]) continue;
       const pm = parseHHMM(times[key]);
@@ -87,6 +91,8 @@ export class NostrMajlisReminderService {
 
       const dedup = `${dateStr}:${key}`;
       if (this.shown.has(dedup)) continue;
+      // Already acknowledged for this prayer today — never re-show across reloads.
+      if (acked.has(dedup)) continue;
       this.shown.add(dedup);
 
       const remaining = pm - nowMin;
@@ -94,10 +100,29 @@ export class NostrMajlisReminderService {
       AlertBarService.getInstance().show({
         text: `${name} prayer in ${remaining} min (${times[key]})`,
         onTextClick: () => Router.getInstance().navigate('/addons/nostr-majlis'),
-        onOk: () => { /* acknowledge + dismiss */ },
+        onOk: () => this.ackPrayer(dedup, dateStr),
       });
       this.notifyOs(name, times[key], remaining);
     }
+  }
+
+  /** Acknowledged prayer dedup keys, persisted per account so "Ok" sticks across restarts. */
+  private loadAckedPrayers(): Set<string> {
+    const arr = PerAccountLocalStorage.getInstance().get<string[]>(StorageKeys.NOSTR_MAJLIS_PRAYERS_ACK, []);
+    return new Set(arr);
+  }
+
+  /** Persist an acknowledged prayer and prune entries that aren't from today. */
+  private ackPrayer(dedup: string, dateStr: string): void {
+    const set = this.loadAckedPrayers();
+    set.add(dedup);
+
+    // Keys are `${yyyy-m-d}:${prayerKey}` — keep only today's, drop past days.
+    // Mirrors the in-memory `shown` prune (format-agnostic, no Date parsing).
+    const pruned = [...set].filter(k => k.startsWith(`${dateStr}:`));
+
+    PerAccountLocalStorage.getInstance().set(StorageKeys.NOSTR_MAJLIS_PRAYERS_ACK, pruned);
+    diagLog('addons', 'nostr-majlis: prayer reminder acknowledged', { dedup });
   }
 
   /** Fire the holiday reminder due today (09:00, N days before), once per holiday occurrence. */
