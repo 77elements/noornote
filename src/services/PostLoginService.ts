@@ -18,6 +18,14 @@ export class PostLoginService {
   private appState = AppState.getInstance();
   private viewMountingService = ViewMountingService.getInstance();
 
+  /**
+   * Pubkey of the account that handleLogin is currently running for (or has
+   * completed for). Set synchronously before any await so concurrent calls
+   * for the same pubkey are blocked immediately. Cleared by resetLoginState()
+   * on logout so a fresh login for the same account works.
+   */
+  private loggedInPubkey: string | null = null;
+
   private constructor() {}
 
   public static getInstance(): PostLoginService {
@@ -28,8 +36,18 @@ export class PostLoginService {
   }
 
   public async handleLogin(data: { npub: string; pubkey: string }): Promise<void> {
-    // Apply per-account UI prefs that need to be on <html> before any rendering
-    const { PerAccountLocalStorage: PALS, StorageKeys: SK } = await import('./PerAccountLocalStorage');
+    // Idempotency: block concurrent or sequential duplicate calls for the same
+    // pubkey. Two callers fire on session restore — the user:login event
+    // listener (App.ts:425) and the explicit boot-path fallback (App.ts:189,
+    // needed when auth initialization times out before user:login emits).
+    // Both call handleLogin within the same tick; without this guard every
+    // post-login service (DM, notifications, follow list) starts twice.
+    if (this.loggedInPubkey === data.pubkey) return;
+    this.loggedInPubkey = data.pubkey;
+
+    try {
+      // Apply per-account UI prefs that need to be on <html> before any rendering
+      const { PerAccountLocalStorage: PALS, StorageKeys: SK } = await import('./PerAccountLocalStorage');
     const cvEnabled = PALS.getInstance().getForPubkey<boolean>(SK.CONTENT_VISIBILITY_AUTO, data.pubkey, false);
     document.documentElement.classList.toggle('content-visibility-auto', cvEnabled);
 
@@ -97,6 +115,19 @@ export class PostLoginService {
     import('./PetnameService').then(({ PetnameService }) => {
       PetnameService.getInstance().syncFromRelays().catch(() => {});
     });
+    } catch (error) {
+      // Reset so a retry (e.g. manual re-login) is not blocked by the guard.
+      this.loggedInPubkey = null;
+      throw error;
+    }
+  }
+
+  /**
+   * Clear the idempotency guard so a fresh login for the same account works
+   * after logout. Called from the user:logout handler in App.ts.
+   */
+  public resetLoginState(): void {
+    this.loggedInPubkey = null;
   }
 
   /**

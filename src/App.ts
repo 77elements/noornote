@@ -437,6 +437,7 @@ export class App {
 
     this.eventBus.on('user:logout', () => {
       destroyDiagnosticLogger();
+      this.postLoginService.resetLoginState();
       this.viewMountingService.destroyAllCaches();
       const primaryContent = document.querySelector('.primary-content');
       if (primaryContent) {

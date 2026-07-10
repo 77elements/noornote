@@ -130,6 +130,14 @@ export class DMStore {
         // stay read. Synchronous localStorage read, keyed by this exact pubkey.
         this.loadReadAnchorMirror(pubkey);
         resolve();
+        // Self-heal: if the mirror is empty (fresh install, localStorage cleared,
+        // or this feature was added after data already existed), rebuild it from
+        // the IndexedDB conversation records so the first re-sync doesn't
+        // re-count every old DM as unread. Fire-and-forget — this.db is already
+        // set so rebuildAnchorMirrorFromDB's init() call returns immediately.
+        if (this.readAnchorMirror.size === 0) {
+          this.rebuildAnchorMirrorFromDB().catch(() => {});
+        }
       };
 
       request.onupgradeneeded = (event) => {
@@ -185,6 +193,8 @@ export class DMStore {
       const tx = this.db!.transaction([MESSAGES_STORE, CONVERSATIONS_STORE], 'readwrite');
       const messagesStore = tx.objectStore(MESSAGES_STORE);
       const conversationsStore = tx.objectStore(CONVERSATIONS_STORE);
+
+      let mirrorUpdated = false;
 
       // Check for duplicate by wrapId
       const wrapIndex = messagesStore.index('wrapId');
@@ -254,10 +264,21 @@ export class DMStore {
           };
 
           conversationsStore.put(conversation);
+
+          // Keep the read-anchor mirror warm: if this conversation has a
+          // lastReadAt higher than what's currently mirrored, update it so
+          // a future IndexedDB eviction doesn't lose the read state.
+          if (lastReadAt > 0 && lastReadAt > (this.readAnchorMirror.get(message.conversationWith) ?? 0)) {
+            this.readAnchorMirror.set(message.conversationWith, lastReadAt);
+            mirrorUpdated = true;
+          }
         };
       };
 
-      tx.oncomplete = () => resolve();
+      tx.oncomplete = () => {
+        if (mirrorUpdated) this.saveReadAnchorMirror();
+        resolve();
+      };
       tx.onerror = () => reject(tx.error);
     });
   }

@@ -51,6 +51,7 @@ export class DMService {
   private muteOrchestrator: ReturnType<typeof MuteOrchestrator.getInstance>;
   private subscriptionId: string | null = null;
   private userPubkey: string | null = null;
+  private isStarting: boolean = false;
 
   // Cache for muted pubkeys (refreshed on mute:updated event)
   private mutedPubkeys: Set<string> = new Set();
@@ -153,36 +154,50 @@ export class DMService {
         return;
       }
 
-      // Initialize per-user database (automatically switches if different user)
-      await this.dmStore.init(currentUser.pubkey);
-
-      // Set current user pubkey
-      this.userPubkey = currentUser.pubkey;
-
-      this.systemLogger.info('DMService', `Starting DM service for ${currentUser.npub.slice(0, 12)}...`);
-      diagLog('dms', 'DM service starting', { npub: currentUser.npub.slice(0, 12) });
-
-      // Fetch historical messages first (don't block on errors)
-      try {
-        await this.fetchHistoricalMessages();
-      } catch (fetchError) {
-        diagLog('dms', 'Historical fetch failed', { error: String(fetchError) });
-        this.systemLogger.warn('DMService', 'Error fetching historical messages:', fetchError);
+      // Prevent concurrent double-start. Two callers (user:login event +
+      // explicit boot fallback) can reach this point in the same tick before
+      // the first await sets userPubkey. This flag is set synchronously,
+      // before any await, so the second caller sees it and exits.
+      if (this.isStarting) {
+        this.systemLogger.info('DMService', 'Start already in progress, skipping duplicate');
+        return;
       }
+      this.isStarting = true;
 
-      // Start live subscription (don't block on errors)
       try {
-        await this.startSubscription();
-      } catch (subError) {
-        diagLog('dms', 'Subscription start failed', { error: String(subError) });
-        this.systemLogger.warn('DMService', 'Error starting subscription:', subError);
+        // Initialize per-user database (automatically switches if different user)
+        await this.dmStore.init(currentUser.pubkey);
+
+        // Set current user pubkey
+        this.userPubkey = currentUser.pubkey;
+
+        this.systemLogger.info('DMService', `Starting DM service for ${currentUser.npub.slice(0, 12)}...`);
+        diagLog('dms', 'DM service starting', { npub: currentUser.npub.slice(0, 12) });
+
+        // Fetch historical messages first (don't block on errors)
+        try {
+          await this.fetchHistoricalMessages();
+        } catch (fetchError) {
+          diagLog('dms', 'Historical fetch failed', { error: String(fetchError) });
+          this.systemLogger.warn('DMService', 'Error fetching historical messages:', fetchError);
+        }
+
+        // Start live subscription (don't block on errors)
+        try {
+          await this.startSubscription();
+        } catch (subError) {
+          diagLog('dms', 'Subscription start failed', { error: String(subError) });
+          this.systemLogger.warn('DMService', 'Error starting subscription:', subError);
+        }
+
+        // Start periodic refresh timer (browser WebSocket connections go stale)
+        this.startRefreshTimer();
+
+        diagLog('dms', 'DM service started');
+        this.systemLogger.info('DMService', 'DM service started');
+      } finally {
+        this.isStarting = false;
       }
-
-      // Start periodic refresh timer (browser WebSocket connections go stale)
-      this.startRefreshTimer();
-
-      diagLog('dms', 'DM service started');
-      this.systemLogger.info('DMService', 'DM service started');
     } catch (error) {
       this.systemLogger.error('DMService', 'Failed to start DM service:', error);
       throw error;
@@ -202,6 +217,7 @@ export class DMService {
     }
 
     this.userPubkey = null;
+    this.isStarting = false;
     this.activeInboxRelays = [];
     this.incomingBatch = [];
     diagLog('dms', 'DM service stopped');
