@@ -27,6 +27,7 @@ import { AuthService } from '../services/AuthService';
 import { diagLog } from '../services/DiagnosticLogger';
 import { ToastService } from '../services/ToastService';
 import { AppState } from '../services/AppState';
+import type { MutualState } from '../services/FollowVerificationService';
 import { SyncConfirmationModal } from '../components/modals/SyncConfirmationModal';
 import { switchTabWithContent } from '../helpers/TabsHelper';
 import { getSccDefaultTab } from '../helpers/sccDefaultTab';
@@ -179,7 +180,8 @@ interface FollowItemWithProfile {
   addedAt?: number;
   profile: UserProfile;
   isPrivate: boolean;
-  isMutual: boolean;
+  /** Canonical tri-state "does this user follow me back?" — see FollowVerificationService. */
+  mutualState: MutualState;
 }
 
 // ============================================================
@@ -1732,7 +1734,7 @@ export class FollowListManager {
           ...item,
           profile: await this.userProfileService.getUserProfile(item.pubkey),
           isPrivate,
-          isMutual: false // Will be updated per batch
+          mutualState: 'unknown' as MutualState // Resolved per batch (Extended Follows)
         };
       })
     );
@@ -1931,6 +1933,15 @@ export class FollowListManager {
       // Render batch
       this.renderBatch(listElement, batch);
 
+      // Re-verify any still-'unknown' mutual verdicts in the background so the
+      // list converges to the correct state within the session.
+      if (this.extended) {
+        this.extended.scheduleUnknownReverify(batch, listElement, () => {
+          const c = listElement.closest('[data-tab-content]');
+          if (c) this.updateStats(c as HTMLElement);
+        });
+      }
+
       // Update offset
       this.currentOffset += batch.length;
 
@@ -1961,7 +1972,7 @@ export class FollowListManager {
     const sentinel = listElement.querySelector('.infinite-scroll-sentinel');
 
     for (const item of batch) {
-      if (this.showOnlyNonMutuals && item.isMutual) {
+      if (this.showOnlyNonMutuals && item.mutualState === 'follows') {
         continue;
       }
 
@@ -1988,7 +1999,7 @@ export class FollowListManager {
     const notesEnabled = storage.get<boolean>(StorageKeys.PRIVATE_PETNAMES_ENABLED, false);
     const hasNote = !!(storage.get<Record<string, string>>(StorageKeys.PETNAMES, {}) ?? {})[item.pubkey];
 
-    const mutualBadgeHtml = this.extended?.renderMutualBadge(item.isMutual) ?? '';
+    const mutualBadgeHtml = this.extended?.renderMutualBadge(item.mutualState) ?? '';
     const zapBadgeHtml = this.extended?.renderZapBadge(item.pubkey) ?? '';
 
     const followItemDiv = document.createElement('div');
@@ -2092,7 +2103,7 @@ export class FollowListManager {
     }
 
     for (const item of this.allItemsWithProfiles.slice(0, this.currentOffset)) {
-      if (this.showOnlyNonMutuals && item.isMutual) {
+      if (this.showOnlyNonMutuals && item.mutualState === 'follows') {
         continue;
       }
 
@@ -2152,7 +2163,7 @@ export class FollowListManager {
       // Optimistic in-place removal — no list reload.
       itemElement.remove();
 
-      if (item.isMutual && this.extended) {
+      if (item.mutualState === 'follows' && this.extended) {
         this.extended.mutualCount--;
       }
       this.totalFollowing--;

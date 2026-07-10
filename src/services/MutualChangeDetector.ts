@@ -12,8 +12,8 @@
  * @used-by FollowListSecondaryManager (manual "Check for Changes")
  */
 
-import { MutualService } from './MutualService';
 import { FollowVerificationService } from './FollowVerificationService';
+import { FollowCheckService } from './FollowCheckService';
 import { MutualChangeStorage, type MutualChange } from '../lists/MutualChangeStorage';
 import { MutualCheckDebugLog } from '../lists/MutualCheckDebugLog';
 import { TypedEventBus } from '../core/TypedEventBus';
@@ -31,8 +31,8 @@ export interface DetectionResult {
 
 export class MutualChangeDetector {
   private static instance: MutualChangeDetector;
-  private mutualService: MutualService;
   private followVerification: FollowVerificationService;
+  private followCheckService: FollowCheckService;
   private storage: MutualChangeStorage;
   private debugLog: MutualCheckDebugLog;
   private eventBus: TypedEventBus;
@@ -40,8 +40,8 @@ export class MutualChangeDetector {
   private authService: AuthService;
 
   private constructor() {
-    this.mutualService = MutualService.getInstance();
     this.followVerification = FollowVerificationService.getInstance();
+    this.followCheckService = FollowCheckService.getInstance();
     this.storage = MutualChangeStorage.getInstance();
     this.debugLog = MutualCheckDebugLog.getInstance();
     this.eventBus = TypedEventBus.getInstance();
@@ -82,9 +82,14 @@ export class MutualChangeDetector {
       const previousMutualCount = previousSnapshot?.mutualPubkeys.length || 0;
       const previousMutualPubkeys = previousSnapshot?.mutualPubkeys || [];
 
-      // Step 2: Get current mutuals from MutualService
+      // Step 2: Get current mutuals via the canonical FollowVerificationService
+      // (throttled, tri-state). The follow list itself comes from
+      // FollowCheckService — refresh() first so we read live storage (the
+      // in-memory set is only rebuilt on init), matching the original semantics.
       const fetchStartTime = Date.now();
-      const follows = await this.mutualService.getFollowsForMutualCheck();
+      await this.followCheckService.refresh();
+      const followedSet = await this.followCheckService.getFollowedPubkeys();
+      const follows = [...followedSet];
 
       // Debug: Log check start with full snapshot details
       await this.debugLog.logCheckStart(
@@ -94,14 +99,19 @@ export class MutualChangeDetector {
         previousSnapshot?.timestamp
       );
 
-      const followsWithStatus = await this.mutualService.checkMutualStatusBatch(follows, onProgress);
+      const batchOpts: { onProgress?: (checked: number, total: number) => void; concurrency: number } = { concurrency: 5 };
+      if (onProgress) batchOpts.onProgress = onProgress;
+      const verdicts = await this.followVerification.verifyFollowsBackBatch(
+        follows,
+        batchOpts
+      );
       const fetchDurationMs = Date.now() - fetchStartTime;
 
-      const currentMutualPubkeys = followsWithStatus
-        .filter(f => f.isMutual)
-        .map(f => f.pubkey);
+      const currentMutualPubkeys = follows.filter(
+        pk => verdicts.get(pk)?.status === 'follows'
+      );
 
-      const nonMutualCount = followsWithStatus.filter(f => !f.isMutual).length;
+      const nonMutualCount = follows.length - currentMutualPubkeys.length;
 
       this.systemLogger.info('MutualChangeDetector', `Current mutuals: ${currentMutualPubkeys.length}`);
 

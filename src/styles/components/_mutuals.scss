@@ -26,6 +26,17 @@
     background: color-mix(in srgb, var(--color-3) 15%, transparent);
     color: var(--color-3);
   }
+
+  // Transient "verification unknown" state — neutral, italic, gently pulsing so
+  // it reads as "still checking" rather than a definitive "Not following back".
+  // Background-reverified in the session; flips to --yes/--no once resolved.
+  &--checking {
+    background: color-mix(in srgb, var(--color-3) 8%, transparent);
+    color: var(--color-3);
+    font-style: italic;
+    font-weight: 400;
+    animation: pulsate 2.5s ease-in-out infinite;
+  }
 }
 
 // Zap stats badge (orange theme)

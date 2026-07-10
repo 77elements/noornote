@@ -40,6 +40,16 @@ export type FollowVerdict =
   | { status: 'does-not-follow'; verifiedAt: number; viaRelays: string[]; theirFollowCount: number }
   | { status: 'unknown';         reason: 'no-write-relays' | 'no-event' | 'timeout' | 'error' | 'stale' };
 
+/**
+ * The mutual-relationship state of a followed user, derived from a
+ * {@link FollowVerdict}. This is the canonical tri-state the whole app should
+ * consume for "does this user follow me back?" rendering — see
+ * {@link FollowVerificationService.verifyFollowsBackBatch}. Kept distinct from
+ * a plain boolean so a transient `unknown` is never collapsed into a sticky
+ * false ("Not following back").
+ */
+export type MutualState = FollowVerdict['status'];
+
 const VERDICT_TTL_MS = 30 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 8000;
 const MAX_WRITE_RELAYS = 6;
@@ -117,6 +127,47 @@ export class FollowVerificationService {
   ): Promise<boolean> {
     const verdict = await this.verifyFollowsBack(theirPubkey, opts);
     return verdict.status === 'follows';
+  }
+
+  /**
+   * Verify "does each of these users follow me back?" for a batch, returning a
+   * tri-state {@link FollowVerdict} per pubkey.
+   *
+   * Throttled (default 5 concurrent) to avoid relay overload — firing a whole
+   * follow list in parallel causes timeouts, which inflate the count of
+   * 'unknown' verdicts (the false-negative source). Reuses the same per-user
+   * cache as {@link verifyFollowsBack} (30-min TTL; 'unknown' is never cached,
+   * so unknowns auto-retry on the next call).
+   *
+   * This is the single batch entry point for "who follows me back?" — consumed
+   * by the Extended Follows list badge and the "Check for changes" detector, so
+   * both share one canonical, self-expiring source instead of diverging.
+   *
+   * @returns Map<theirPubkey, FollowVerdict>
+   */
+  public async verifyFollowsBackBatch(
+    pubkeys: string[],
+    opts: { forceRefresh?: boolean; onProgress?: (checked: number, total: number) => void; concurrency?: number } = {}
+  ): Promise<Map<string, FollowVerdict>> {
+    const concurrency = Math.max(1, opts.concurrency ?? 5);
+    const results = new Map<string, FollowVerdict>();
+    const total = pubkeys.length;
+    let checked = 0;
+    for (let i = 0; i < pubkeys.length; i += concurrency) {
+      const chunk = pubkeys.slice(i, i + concurrency);
+      const settled = await Promise.all(
+        chunk.map(async (pk): Promise<[string, FollowVerdict]> => [
+          pk,
+          await this.verifyFollowsBack(pk, opts.forceRefresh ? { forceRefresh: true } : {})
+        ])
+      );
+      for (const [pk, verdict] of settled) {
+        results.set(pk, verdict);
+      }
+      checked += chunk.length;
+      opts.onProgress?.(checked, total);
+    }
+    return results;
   }
 
   public clearCache(): void {

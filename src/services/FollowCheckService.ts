@@ -3,7 +3,7 @@
  * Provides fast follow-status checks for pubkeys
  *
  * @purpose Check if a pubkey is in the user's follow list
- * @used-by MessagesView (Known/Unknown tabs), MutualService
+ * @used-by MessagesView (Known/Unknown tabs), DMService
  *
  * Uses browserItems (localStorage) for fast lookups.
  * Initializes from file storage on first access if browser is empty.

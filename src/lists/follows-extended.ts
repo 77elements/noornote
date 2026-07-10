@@ -11,7 +11,7 @@
 
 import type { UserProfile } from '../services/UserProfileService';
 import { UserProfileService } from '../services/UserProfileService';
-import { MutualService } from '../services/MutualService';
+import { FollowVerificationService, type MutualState } from '../services/FollowVerificationService';
 import { MutualChangeDetector } from '../services/MutualChangeDetector';
 import { MutualChangeStorage } from './MutualChangeStorage';
 import { ZapStatsService } from '../services/ZapStatsService';
@@ -24,12 +24,13 @@ import { formatTimeAgo } from '../helpers/formatTimeAgo';
 
 export interface FollowItemForExtended {
   pubkey: string;
-  isMutual: boolean;
+  /** Canonical tri-state "does this user follow me back?" — see FollowVerificationService. */
+  mutualState: MutualState;
   profile?: UserProfile;
 }
 
 export class FollowsExtendedFeatures {
-  private mutualService: MutualService;
+  private followVerification: FollowVerificationService;
   private mutualChangeDetector: MutualChangeDetector;
   private mutualChangeStorage: MutualChangeStorage;
   private zapStatsService: ZapStatsService;
@@ -41,7 +42,7 @@ export class FollowsExtendedFeatures {
   public zapStatsLoaded: boolean = false;
 
   constructor() {
-    this.mutualService = MutualService.getInstance();
+    this.followVerification = FollowVerificationService.getInstance();
     this.mutualChangeDetector = MutualChangeDetector.getInstance();
     this.mutualChangeStorage = MutualChangeStorage.getInstance();
     this.zapStatsService = ZapStatsService.getInstance();
@@ -83,31 +84,94 @@ export class FollowsExtendedFeatures {
   }
 
   /**
-   * Check mutual status for a batch of items.
-   * Updates isMutual on each item and increments mutualCount.
+   * Check mutual status for a batch of items via the canonical
+   * FollowVerificationService (throttled, tri-state). Sets `mutualState` on
+   * each item and counts the definitive mutuals. 'unknown' stays 'unknown' so
+   * it renders as a neutral "checking…" instead of a sticky false negative.
    */
   public async checkMutualStatusBatch(batch: FollowItemForExtended[]): Promise<void> {
-    const batchWithMutualStatus = await this.mutualService.checkMutualStatusBatch(
-      batch.map(item => ({ id: item.pubkey, pubkey: item.pubkey }))
-    );
-
-    batch.forEach((item, idx) => {
-      item.isMutual = batchWithMutualStatus[idx]?.isMutual ?? false;
-      if (item.isMutual) {
+    if (batch.length === 0) return;
+    const pubkeys = batch.map(item => item.pubkey);
+    const verdicts = await this.followVerification.verifyFollowsBackBatch(pubkeys, { concurrency: 5 });
+    for (const item of batch) {
+      const state = verdicts.get(item.pubkey)?.status ?? 'unknown';
+      item.mutualState = state;
+      if (state === 'follows') {
         this.mutualCount++;
       }
-    });
+    }
+  }
+
+  /**
+   * After a batch renders, re-verify any items still 'unknown' in the
+   * background (forceRefresh) and patch their badges + the mutual count once a
+   * definitive verdict arrives. Lets the list converge to the correct state
+   * within a session instead of waiting for a manual re-render. Safe to call on
+   * a detached/closed list: row lookups no-op and isConnected is checked.
+   *
+   * @param batch        The items that were just rendered.
+   * @param container    The list DOM root holding the rendered rows.
+   * @param onStatsDirty Called when mutualCount changes, so the caller can
+   *                     refresh the stats header.
+   */
+  public scheduleUnknownReverify(
+    batch: FollowItemForExtended[],
+    container: HTMLElement,
+    onStatsDirty: () => void
+  ): void {
+    const unknowns = batch.filter(item => item.mutualState === 'unknown');
+    if (unknowns.length === 0) return;
+    void this.reverifyUnknowns(unknowns, container, onStatsDirty);
+  }
+
+  private async reverifyUnknowns(
+    unknowns: FollowItemForExtended[],
+    container: HTMLElement,
+    onStatsDirty: () => void
+  ): Promise<void> {
+    const verdicts = await this.followVerification.verifyFollowsBackBatch(
+      unknowns.map(u => u.pubkey),
+      { forceRefresh: true, concurrency: 3 }
+    );
+    let countChanged = false;
+    for (const item of unknowns) {
+      const verdict = verdicts.get(item.pubkey);
+      // Still unknown — leave the "checking…" badge; it'll retry on next render.
+      if (!verdict || verdict.status === 'unknown') continue;
+      item.mutualState = verdict.status;
+      if (verdict.status === 'follows') {
+        this.mutualCount++;
+        countChanged = true;
+      }
+      if (!container.isConnected) return; // list closed mid-reverify
+      const row = container.querySelector(`.follow-item[data-pubkey="${item.pubkey}"]`);
+      const badge = row?.querySelector('.mutual-badge');
+      if (badge) {
+        badge.outerHTML = this.renderMutualBadge(verdict.status);
+      }
+    }
+    if (countChanged && container.isConnected) {
+      onStatsDirty();
+    }
   }
 
   // ========== Rendering Helpers ==========
 
   /**
-   * Render the mutual badge HTML for a follow item.
+   * Render the mutual badge HTML for a follow item, tri-state.
+   * - 'follows' → green "Mutual"
+   * - 'does-not-follow' → purple "Not following back"
+   * - 'unknown' → neutral "checking…" (no false negative; re-verified in background)
    */
-  public renderMutualBadge(isMutual: boolean): string {
-    const badgeClass = isMutual ? 'mutual-badge--yes' : 'mutual-badge--no';
-    const badgeText = isMutual ? 'Mutual' : 'Not following back';
-    return `<span class="mutual-badge ${badgeClass}">${badgeText}</span>`;
+  public renderMutualBadge(state: MutualState): string {
+    switch (state) {
+      case 'follows':
+        return `<span class="mutual-badge mutual-badge--yes">Mutual</span>`;
+      case 'does-not-follow':
+        return `<span class="mutual-badge mutual-badge--no">Not following back</span>`;
+      default:
+        return `<span class="mutual-badge mutual-badge--checking">checking…</span>`;
+    }
   }
 
   /**
