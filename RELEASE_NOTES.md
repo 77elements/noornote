@@ -1,5 +1,5 @@
-# NoorNote 1.2.5
+# NoorNote 1.2.6
 
-- **Wallet & messages survive restarts (Android):** your Lightning wallet (NWC) connection and your read/unread message state now stick after a restart — no more re-linking the wallet or seeing already-read chats pop back up as unread.
-- **Follower lists fixed:** Follower and Following lists stay stable when you follow someone, the buttons stay in sync with the profile, and the list opens instantly.
-- **Cleaner quotes:** a quoted post NoorNote can't display now shows a tidy "open in another client" card instead of a broken article box.
+- **Mutual status fixed:** the "Mutual" / "Not following back" label in your Follows list now always matches what a person's profile says — no more false "Not following back".
+- **Follows list stays put:** unfollowing from the list just removes that one row instead of reloading (and sometimes emptying) the whole list.
+- **Follow Packs:** members are now sorted by most recent activity, with a "last active" time next to each name.
