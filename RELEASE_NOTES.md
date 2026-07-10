@@ -1,5 +1,6 @@
-# NoorNote 1.2.6
+# NoorNote 1.2.7
 
-- **Mutual status fixed:** the "Mutual" / "Not following back" label in your Follows list now always matches what a person's profile says — no more false "Not following back".
-- **Follows list stays put:** unfollowing from the list just removes that one row instead of reloading (and sometimes emptying) the whole list.
-- **Follow Packs:** members are now sorted by most recent activity, with a "last active" time next to each name.
+- **Profiles always show a name and picture:** no more flipping to a bare "@npub…" placeholder, and the Profile Recognition add-on no longer blinks avatars as if someone rebranded when it was just a loading state.
+- **No more false unread DMs:** the message service no longer starts twice on launch, so conversations you already opened stay read.
+- **Prayer reminders stay dismissed (Nostr-Majlis):** clicking "Ok" on a prayer banner now sticks across reloads, until the next prayer time.
+- **Onboarding relay preview:** the "I am Muslim / Christian" choice now shows exactly which relays it will set up before you continue.
