@@ -180,13 +180,35 @@ export class ContentProcessor {
 
   /**
    * Get profile non-blocking with cache
+   *
+   * Single source of truth: UserProfileService.profileCache. The private
+   * profileCache here is only a secondary read-through cache — never a
+   * substitute for UPS. Previously this method checked ONLY its own cache
+   * and cached a {name:null} fallback permanently, which shadowed the real
+   * profile already in UPS and left mention chips stuck on npub/"…" even
+   * though the data was available.
    */
   getNonBlockingProfile(pubkey: string): any {
-    if (this.profileCache.has(pubkey)) {
-      return this.profileCache.get(pubkey);
+    // 1. Authoritative source first — UPS may already have the profile
+    //    (loaded by NoteHeader, UserHoverCard, RepostRenderer, etc.).
+    const upsProfile = this.userProfileService.getCachedProfile(pubkey);
+    if (upsProfile) {
+      this.profileCache.set(pubkey, upsProfile);
+      return upsProfile;
     }
 
-    const fallbackProfile = {
+    // 2. Secondary cache (may hold a profile populated by a prior batch fetch)
+    if (this.profileCache.has(pubkey)) {
+      const cached = this.profileCache.get(pubkey);
+      // Only return if it has real data — skip stale null fallbacks
+      if (cached && (cached.name || cached.display_name)) {
+        return cached;
+      }
+    }
+
+    // 3. No real data anywhere — return a temporary placeholder and fetch.
+    //    Do NOT cache the null fallback (it would shadow future UPS resolves).
+    const placeholderProfile = {
       pubkey,
       name: null,
       display_name: null,
@@ -194,21 +216,18 @@ export class ContentProcessor {
       about: null
     };
 
-    this.profileCache.set(pubkey, fallbackProfile);
-
     this.userProfileService.getUserProfile(pubkey)
       .then(realProfile => {
-        if (realProfile) {
+        if (realProfile && (realProfile.name || realProfile.display_name)) {
           this.profileCache.set(pubkey, realProfile);
-          // Update mentions in DOM after profile loads
           this.updateMentionsInDOM(pubkey, realProfile);
         }
       })
       .catch(_error => {
-        console.warn(`Profile load failed for ${pubkey.slice(0, 8)}:`, _error);
+        console.debug(`Profile load failed for ${pubkey.slice(0, 8)}:`, _error);
       });
 
-    return fallbackProfile;
+    return placeholderProfile;
   }
 
   /**

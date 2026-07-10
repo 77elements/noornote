@@ -81,6 +81,7 @@ export class ProfileRecognitionService {
     const localEncounters = this.getEncountersFromStorage();
 
     if (Object.keys(localEncounters).length > 0) {
+      this.cleanupPoisonedEncounters();
       this.systemLogger.info('ProfileRecognitionService', `Loaded ${Object.keys(localEncounters).length} encounters from localStorage`);
       this.initialized = true;
       this.setupEventListeners();
@@ -96,6 +97,7 @@ export class ProfileRecognitionService {
         if (Object.keys(fileData.encounters).length > 0) {
           this.systemLogger.info('ProfileRecognitionService', `Loaded ${Object.keys(fileData.encounters).length} encounters from file`);
           this.storage.set(StorageKeys.PROFILE_ENCOUNTERS, fileData.encounters);
+          this.cleanupPoisonedEncounters();
           this.initialized = true;
           this.setupEventListeners();
           return;
@@ -117,6 +119,7 @@ export class ProfileRecognitionService {
         if (relayData && Object.keys(relayData.encounters).length > 0) {
           this.systemLogger.info('ProfileRecognitionService', `Loaded ${Object.keys(relayData.encounters).length} encounters from relays`);
           this.storage.set(StorageKeys.PROFILE_ENCOUNTERS, relayData.encounters);
+          this.cleanupPoisonedEncounters();
           // Also save to file for future loads
           await this.fileStorage.write(relayData);
           this.initialized = true;
@@ -134,6 +137,40 @@ export class ProfileRecognitionService {
 
     // Initial sync: capture encounters for any current follows that don't have one yet
     this.handleFollowListChange();
+  }
+
+  /**
+   * One-time cleanup of encounter records corrupted by the now-fixed bugs
+   * (npub-fallback names, identicon pictures, and "Anon" first names from
+   * unresolved profile fetches at follow time). Deletes poisoned encounters
+   * so they get re-captured correctly on the next follow-sync cycle, rather
+   * than blinking for 90 days (or forever with "Always" window).
+   *
+   * Returns the number of encounters removed.
+   */
+  private cleanupPoisonedEncounters(): number {
+    const encounters = this.getEncountersFromStorage();
+    let removed = 0;
+
+    for (const [pubkey, enc] of Object.entries(encounters)) {
+      const nameIsNpub = enc.lastKnownName?.startsWith('@npub') ?? false;
+      const firstNameIsNpub = enc.firstName?.startsWith('@npub') ?? false;
+      const firstNameIsAnon = enc.firstName === 'Anon';
+      const pictureIsIdenticon = enc.lastKnownPictureUrl?.startsWith('data:image/svg+xml') ?? false;
+
+      if (nameIsNpub || firstNameIsNpub || firstNameIsAnon || pictureIsIdenticon) {
+        delete encounters[pubkey];
+        removed++;
+      }
+    }
+
+    if (removed > 0) {
+      this.storage.set(StorageKeys.PROFILE_ENCOUNTERS, encounters);
+      this.scheduleAutoSave();
+      this.systemLogger.info('ProfileRecognitionService', `Cleaned up ${removed} poisoned encounter records`);
+    }
+
+    return removed;
   }
 
   /**
@@ -212,14 +249,27 @@ export class ProfileRecognitionService {
   }
 
   /**
-   * Record encounter for a specific pubkey (internal - fetches profile)
+   * Record encounter for a specific pubkey (internal - fetches profile).
+   * Skips recording when the profile hasn't resolved yet (no real name or
+   * picture), so the next follow-sync cycle can try again with real data.
+   * Recording "Anon" as an immutable firstName would cause permanent false
+   * blinking once the real name arrives.
    */
   private async recordEncounterForPubkey(pubkey: string): Promise<void> {
     try {
       // Fetch current profile
       const profile = await this.userProfileService.getUserProfile(pubkey);
-      const name = profile.display_name || profile.name || profile.username || 'Anon';
+      const name = profile.display_name || profile.name || profile.username;
       const picture = profile.picture || '';
+
+      // Skip if the profile hasn't resolved — no real name. A missing
+      // picture is legitimate (user just didn't set one), so we don't
+      // require it. Recording an unresolved name would make firstName
+      // immutable and cause permanent blinking when the real name arrives.
+      if (!name) {
+        this.systemLogger.debug('ProfileRecognitionService', `Skipping encounter for ${pubkey.slice(0, 8)} — profile unresolved`);
+        return;
+      }
 
       this.recordEncounter(pubkey, name, picture);
       this.systemLogger.info('ProfileRecognitionService', `Recorded encounter for ${name.slice(0, 20)}`);
@@ -340,6 +390,13 @@ export class ProfileRecognitionService {
   /**
    * Combined check: update last known metadata and return whether to blink.
    * Skips own profile. Returns null if recognition is not active or shouldn't blink.
+   *
+   * Central guard: rejects unresolved profile fallbacks (npub-style names and
+   * identicon SVG data-URL pictures) so they are never treated as genuine
+   * name/picture changes. Without this, a transient cache miss feeds
+   * "@npub1xyz…" + an identicon into the comparison, which poisons the
+   * encounter record and triggers false blinking. Every call site is covered
+   * by this guard — no per-caller check needed.
    */
   public checkRecognition(pubkey: string, username: string, picture: string): ProfileEncounter | null {
     if (this.authService.isCurrentUser(pubkey)) return null;
@@ -347,11 +404,31 @@ export class ProfileRecognitionService {
     const encounter = this.getEncounter(pubkey);
     if (!encounter) return null;
 
+    // Reject unresolved profiles — these are render-layer fallbacks, not real
+    // identity data. Detecting them here (centrally) means call sites don't
+    // need their own guards.
+    if (ProfileRecognitionService.isUnresolvedFallback(username, picture)) {
+      return null;
+    }
+
     if (username !== encounter.lastKnownName || picture !== encounter.lastKnownPictureUrl) {
       this.updateLastKnown(pubkey, username, picture);
     }
 
     return this.hasChangedWithinWindow(pubkey) ? encounter : null;
+  }
+
+  /**
+   * Detect render-layer fallback values that are NOT real profile data.
+   * - Name fallback: "@npub1…" (from UserProfileService.displayNameOf when
+   *   no real name exists — always starts with "@npub" and ends with "…").
+   * - Picture fallback: "data:image/svg+xml…" (from getAvatarFallback —
+   *   a deterministic identicon, never a real hosted image).
+   */
+  private static isUnresolvedFallback(username: string, picture: string): boolean {
+    if (username.startsWith('@npub')) return true;
+    if (picture.startsWith('data:image/svg+xml')) return true;
+    return false;
   }
 
   /**

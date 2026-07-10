@@ -172,16 +172,15 @@ export class UserProfileService {
       }
 
       // Miss (both relay stages came back empty). Do NOT cache an empty
-      // placeholder — a cached default is a permanent cache-hit with no name
-      // and no retry, which is exactly what leaves "@npub…" stuck in headers
-      // while the real profile resolves fine elsewhere (e.g. the PV). Instead
-      // record a cooldown so renders are throttled, and let the profile recover
-      // on a later fetch once the cooldown passes. Subscribers get the @npub
-      // fallback in the meantime.
+      // placeholder and do NOT broadcast it to subscribers. Broadcasting a
+      // name-less fallback would downgrade already-resolved displays (note
+      // headers, mention chips, repost headers) back to "@npub…", causing
+      // the exact flicker the app must never show. Only record a cooldown so
+      // renders are throttled, and return the fallback to the direct caller
+      // (their own Promise chain) — subscribers that already have real data
+      // keep it untouched.
       this.failedFetches.set(pubkey, Date.now());
-      const fallback = this.getDefaultProfile(pubkey);
-      this.notifyProfileUpdate(pubkey, fallback);
-      return fallback;
+      return this.getDefaultProfile(pubkey);
     } catch (error) {
       console.warn(`Failed to fetch profile for ${pubkey}:`, error);
       // Record failure timestamp to prevent rapid retries
@@ -224,6 +223,12 @@ export class UserProfileService {
         fetchedProfiles.forEach((profile, pubkey) => {
           this.profileCache.set(pubkey, profile);
           result.set(pubkey, profile);
+          // Only notify subscribers for real profiles — fetchMultipleProfilesFromRelays
+          // fills getDefaultProfile() (name-less) for misses, and broadcasting those
+          // would reintroduce the exact downgrade-to-npub flicker Fix 1 eliminated.
+          if (profile.name || profile.display_name || profile.username || profile.picture) {
+            this.notifyProfileUpdate(pubkey, profile);
+          }
         });
       } catch (error) {
         console.warn('Failed to fetch user profiles (aggregator batch):', error);
@@ -252,6 +257,7 @@ export class UserProfileService {
                 const userProfile = profile as UserProfile;
                 this.profileCache.set(pubkey, userProfile);
                 result.set(pubkey, userProfile);
+                this.notifyProfileUpdate(pubkey, userProfile);
               }
             } catch {
               // Leave for the default-profile fill below.
