@@ -197,12 +197,19 @@ export class ViewTabManager {
   }
 
   /**
-   * Close all tabs (e.g., on logout)
+   * Close all tabs (e.g., on logout, or when the layout leaves right-pane)
    */
   public closeAllTabs(): void {
+    // Capture ids first, then strip each tab's DOM via the same 'view-tab:closed'
+    // path closeTab() uses. Without this the manager state resets but MainLayout
+    // keeps the now-empty tab buttons, so a layout round-trip (right-pane → wide →
+    // right-pane, e.g. a resize crossing the tablet breakpoint) leaves orphaned,
+    // unclosable "Note…" tabs stacked in the strip.
+    const tabIds = Array.from(this.tabs.keys());
     this.tabs.forEach(tab => tab.viewInstance.destroy());
     this.tabs.clear();
     this.activeTabId = getSccDefaultTab();
+    tabIds.forEach(tabId => this.eventBus.emit('view-tab:closed', { tabId }));
   }
 
   /**

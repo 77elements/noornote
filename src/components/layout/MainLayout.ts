@@ -425,6 +425,10 @@ export class MainLayout {
     this.viewTabManager.closeAllTabs();
     this.viewTabManager = null;
 
+    // closeAllTabs() removed the view tabs (incl. the active one), leaving no scc
+    // content active; restore the default so returning to right-pane isn't blank.
+    this.activateSccDefault(getSccDefaultTab());
+
     // Remove scrollable class + detach the wheel handler
     const sidebarTabs = this.element.querySelector('#sidebar-tabs');
     if (sidebarTabs) {
