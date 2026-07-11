@@ -90,6 +90,20 @@
     right: auto;
   }
 
+  // Portaled menu: lifted to <body> (position: fixed, inline top/left set by
+  // CustomDropdown.positionPortalMenu) so no scroll-overflow ancestor can clip
+  // it. Detached from `.custom-dropdown--open`, so it carries its own visible
+  // state. `min-width: 0` stops `min-width: 100%` from stretching to the
+  // viewport once the offset parent is the window.
+  &__menu--portaled {
+    position: fixed;
+    display: block;
+    opacity: 1;
+    transform: none;
+    right: auto;
+    min-width: 0;
+  }
+
   &--drop-up &__menu {
     top: auto;
     bottom: calc(100% + 4px);

@@ -1327,10 +1327,26 @@ export class MainLayout {
         setSccDefaultTab(sccValue);
         this.activateSccDefault(sccValue);
       },
-      className: 'scc-default-dropdown'
+      className: 'scc-default-dropdown',
+      // The scc tab strip scrolls horizontally (overflow clips vertically), so
+      // portal the menu to <body> or it gets cut off below the 37px strip.
+      menuPortal: true
     });
 
     dropdownMount.appendChild(this.sccDefaultDropdown.getElement());
+
+    // The scc-default selector doubles as a non-closable "home" tab: when a view
+    // or list tab is active, a click returns to the default content instead of
+    // opening the type menu. Only when the default content is already showing
+    // does a click fall through to the dropdown (to change the default type).
+    // Capture phase so we suppress CustomDropdown's own toggle before it runs.
+    dropdownMount.addEventListener('click', (e) => {
+      if (!(dropdownMount as HTMLElement).classList.contains('tab--active')) {
+        e.stopPropagation();
+        this.activateSccDefault(getSccDefaultTab());
+      }
+    }, true);
+
     this.activateSccDefault(savedDefault);
 
     this.eventBus.on('settings:scc-excerpt-limit-changed', () => {
@@ -1345,6 +1361,11 @@ export class MainLayout {
   private activateSccDefault(value: SccDefaultContent): void {
     const secondaryContent = this.element.querySelector('.secondary-content') as HTMLElement;
     if (!secondaryContent) return;
+
+    // Keep the default selector's tab identity in sync with the content it shows,
+    // so the shared tab helpers toggle its active underline like any other tab.
+    const dropdownMount = secondaryContent.querySelector('[data-role="scc-dropdown-mount"]') as HTMLElement | null;
+    if (dropdownMount) dropdownMount.dataset.tab = value;
 
     if (value === 'newest-articles' && !this.sccArticleFeed) {
       const contentDiv = secondaryContent.querySelector('[data-tab-content="newest-articles"]');
@@ -1515,7 +1536,7 @@ export class MainLayout {
           <!-- User status will be mounted here -->
         </div>
         <div id="sidebar-tabs" class="tabs">
-          <div data-role="scc-dropdown-mount"></div>
+          <div data-role="scc-dropdown-mount" class="tab tab--scc-default"></div>
           <!-- List tabs (Bookmarks/Follows/Mutes) will be inserted dynamically here -->
         </div>
         <div class="secondary-content-body">

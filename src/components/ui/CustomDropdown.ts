@@ -45,6 +45,13 @@ export interface CustomDropdownOptions {
   searchPlaceholder?: string;
   /** Optional data-* attributes as key-value pairs (e.g., { "note-id": "abc123" }) */
   dataAttributes?: Record<string, string>;
+  /**
+   * Lift the open menu to <body> (position: fixed, anchored to the trigger) so
+   * it is not clipped by a scroll-overflow ancestor. Use when the dropdown lives
+   * inside a horizontally-scrollable strip or any `overflow: hidden` container
+   * (e.g. the scc tab row). Closes on scroll/resize. Not for searchable menus.
+   */
+  menuPortal?: boolean;
 }
 
 export class CustomDropdown {
@@ -53,12 +60,19 @@ export class CustomDropdown {
   private selectedValue: string;
   private onChange: (value: string) => void;
   private searchable: boolean;
+  private menuPortal: boolean;
   private isOpen = false;
+
+  // Portal bookkeeping (only used when menuPortal is set).
+  private menuEl: HTMLElement | null = null;
+  private triggerEl: HTMLElement | null = null;
+  private menuHome: HTMLElement | null = null;
 
   // Stored so destroy() can detach them — the ISL creates one dropdown per note,
   // so anonymous document listeners would leak on every timeline card recycle.
   private readonly onDocumentClick = (e: MouseEvent): void => {
-    if (this.isOpen && !this.element.contains(e.target as Node)) {
+    const target = e.target as Node;
+    if (this.isOpen && !this.element.contains(target) && !(this.menuEl?.contains(target))) {
       this.close();
     }
   };
@@ -67,12 +81,19 @@ export class CustomDropdown {
       this.close();
     }
   };
+  // A portaled menu is anchored to the trigger's viewport position; re-anchor it
+  // on scroll/resize. (Closing instead would be killed by unrelated scrolls, e.g.
+  // the auto-scrolling system-log panel right next to the scc dropdown.)
+  private readonly onPortalReflow = (): void => {
+    if (this.isOpen && this.menuPortal) this.positionPortalMenu();
+  };
 
   constructor(config: CustomDropdownOptions) {
     this.options = config.options;
     this.selectedValue = config.selectedValue;
     this.onChange = config.onChange;
     this.searchable = config.searchable ?? false;
+    this.menuPortal = config.menuPortal ?? false;
     this.element = this.createElement(config);
     this.setupEventListeners();
   }
@@ -132,6 +153,8 @@ export class CustomDropdown {
   private setupEventListeners(): void {
     const trigger = this.element.querySelector('.custom-dropdown__trigger');
     const items = this.element.querySelectorAll('.custom-dropdown__item');
+    this.triggerEl = trigger as HTMLElement | null;
+    this.menuEl = this.element.querySelector('.custom-dropdown__menu');
 
     // Toggle dropdown
     trigger?.addEventListener('click', (e) => {
@@ -200,12 +223,55 @@ export class CustomDropdown {
   private open(): void {
     this.isOpen = true;
     this.element.classList.add('custom-dropdown--open');
-    this.positionMenu();
+
+    if (this.menuPortal && this.menuEl) {
+      // Lift the menu out to <body> so an ancestor's scroll-overflow clip (e.g.
+      // the horizontally-scrollable scc tab strip) can't hide it, then anchor it
+      // to the trigger with fixed positioning.
+      if (!this.menuHome) this.menuHome = this.menuEl.parentElement;
+      document.body.appendChild(this.menuEl);
+      this.menuEl.classList.add('custom-dropdown__menu--portaled');
+      this.positionPortalMenu();
+      window.addEventListener('scroll', this.onPortalReflow, true);
+      window.addEventListener('resize', this.onPortalReflow);
+    } else {
+      this.positionMenu();
+    }
+
     if (this.searchable) {
-      const input = this.element.querySelector('.custom-dropdown__search-input') as HTMLInputElement | null;
+      const input = (this.menuEl ?? this.element).querySelector('.custom-dropdown__search-input') as HTMLInputElement | null;
       // Focus after the menu becomes visible.
       setTimeout(() => input?.focus(), 0);
     }
+  }
+
+  /**
+   * Anchor a portaled (position: fixed) menu to the trigger's viewport rect.
+   * Drops down / left-aligned by default; flips to right-align or drop-up when
+   * that would overflow the viewport.
+   */
+  private positionPortalMenu(): void {
+    const menu = this.menuEl;
+    const trigger = this.triggerEl;
+    if (!menu || !trigger) return;
+
+    const t = trigger.getBoundingClientRect();
+    const m = 8;
+    const menuW = menu.offsetWidth;
+    const menuH = menu.offsetHeight;
+
+    let top = t.bottom + 4;
+    let left = t.left;
+
+    if (left + menuW > window.innerWidth - m) {
+      left = Math.max(m, t.right - menuW);
+    }
+    if (top + menuH > window.innerHeight - m && t.top - menuH - 4 > m) {
+      top = t.top - menuH - 4;
+    }
+
+    menu.style.top = `${Math.round(top)}px`;
+    menu.style.left = `${Math.round(left)}px`;
   }
 
   /**
@@ -271,6 +337,17 @@ export class CustomDropdown {
   private close(): void {
     this.isOpen = false;
     this.element.classList.remove('custom-dropdown--open');
+
+    if (this.menuPortal && this.menuEl) {
+      this.menuEl.classList.remove('custom-dropdown__menu--portaled');
+      this.menuEl.style.top = '';
+      this.menuEl.style.left = '';
+      // Return the menu to its home so the normal descendant CSS applies again.
+      if (this.menuHome) this.menuHome.appendChild(this.menuEl);
+      window.removeEventListener('scroll', this.onPortalReflow, true);
+      window.removeEventListener('resize', this.onPortalReflow);
+    }
+
     this.resetFilter();
   }
 
@@ -310,7 +387,18 @@ export class CustomDropdown {
   }
 
   /**
-   * Get current value
+   * Set a custom display label without changing the selected value
+   * Used for showing date ranges like "Mar 1 – Mar 3" while value stays "time-range"
+   */
+  public setCustomLabel(text: string): void {
+    const label = this.element.querySelector('.custom-dropdown__label');
+    if (label) {
+      label.textContent = text;
+    }
+  }
+
+  /**
+   * Get selected value
    */
   public getValue(): string {
     return this.selectedValue;
@@ -343,19 +431,6 @@ export class CustomDropdown {
         item.setAttribute('aria-selected', 'false');
       }
     });
-
-    this.close();
-  }
-
-  /**
-   * Set a custom display label without changing the selected value
-   * Used for showing date ranges like "Mar 1 – Mar 3" while value stays "time-range"
-   */
-  public setCustomLabel(text: string): void {
-    const label = this.element.querySelector('.custom-dropdown__label');
-    if (label) {
-      label.textContent = text;
-    }
   }
 
   /**
@@ -371,6 +446,12 @@ export class CustomDropdown {
   public destroy(): void {
     document.removeEventListener('click', this.onDocumentClick);
     document.removeEventListener('keydown', this.onDocumentKeydown);
+    window.removeEventListener('scroll', this.onPortalReflow, true);
+    window.removeEventListener('resize', this.onPortalReflow);
+    // A portaled menu lives under <body>; drop it so it doesn't outlive us.
+    if (this.menuEl && this.menuEl.parentElement === document.body) {
+      this.menuEl.remove();
+    }
     this.element.remove();
   }
 }

@@ -179,16 +179,24 @@ html.layout--phone {
   .tabs {
     border-bottom: 1px solid var(--color-2);
 
-    .scc-default-dropdown {
+    // The scc-default selector is a non-closable tab that wraps the type dropdown.
+    // Its active underline comes from the shared `.tab` / `.tab--active` rules, so
+    // it dims when a view/list tab is active and lights up when its content shows.
+    .tab--scc-default {
       flex-shrink: 0;
+      padding: 0;
+
+      .scc-default-dropdown {
+        display: flex;
+      }
 
       .custom-dropdown__trigger {
         background: none;
         border: none;
-        border-bottom: 2px solid var(--color-5);
         border-radius: $radius-xl $radius-xl 0 0;
         padding: calc($gap / 2) $gap;
-        color: var(--color-5);
+        color: inherit;
+        font-weight: 600;
       }
 
       .custom-dropdown__menu {
