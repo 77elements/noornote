@@ -159,6 +159,7 @@ If the app crashes, check the log files:
 | [NIP-24](https://github.com/nostr-protocol/nips/blob/master/24.md) | Extra metadata fields and tags (banner, website, lud16, etc.) | - |
 | [NIP-25](https://github.com/nostr-protocol/nips/blob/master/25.md) | Reactions | 7 |
 | [NIP-27](https://github.com/nostr-protocol/nips/blob/master/27.md) | Text note references | - |
+| [NIP-29](https://github.com/nostr-protocol/nips/blob/master/29.md) | Relay-based groups — read-only activity notifications (Nostrord add-on) | 9, 11, 39000, 10009 |
 | [NIP-30](https://github.com/nostr-protocol/nips/blob/master/30.md) | Custom emojis (incl. animated GIFs) | 30030 |
 | [NIP-34](https://github.com/nostr-protocol/nips/blob/master/34.md) | Git on Nostr (lightweight cards linking to gitworkshop.dev) | 1617, 1618, 1619, 1621, 1630, 1631, 1632, 1633, 30617 |
 | [NIP-36](https://github.com/nostr-protocol/nips/blob/master/36.md) | Content warnings (NSFW) | - |
