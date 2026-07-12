@@ -10,6 +10,7 @@ import type { NostrordRuntime } from './runtime';
 
 export class NostrordSettings extends SettingsSection {
   private enableSwitch: Switch | null = null;
+  private notifyOwnSwitch: Switch | null = null;
   private eventBus: TypedEventBus;
   private storage: PerAccountLocalStorage;
   private contentZone: HTMLElement | null = null;
@@ -59,8 +60,14 @@ export class NostrordSettings extends SettingsSection {
     return this.storage.get<number>(StorageKeys.NOSTRORD_POLL_INTERVAL, NOSTRORD_DEFAULT_INTERVAL_MS);
   }
 
+  private getNotifyOwn(): boolean {
+    return this.storage.get<boolean>(StorageKeys.NOSTRORD_NOTIFY_OWN_POSTS, true);
+  }
+
   private renderPanel(enabled: boolean): void {
     if (!this.contentZone) return;
+    this.notifyOwnSwitch?.destroy();
+    this.notifyOwnSwitch = null;
     if (!enabled) { this.contentZone.innerHTML = ''; return; }
 
     const current = this.getCurrentInterval();
@@ -76,6 +83,18 @@ export class NostrordSettings extends SettingsSection {
       </label>
     `).join('');
 
+    this.notifyOwnSwitch = new Switch({
+      label: '',
+      checked: this.getNotifyOwn(),
+      onChange: (checked) => {
+        this.storage.set(StorageKeys.NOSTRORD_NOTIFY_OWN_POSTS, checked);
+        ToastService.show(
+          checked ? 'Nostrord: your own posts included' : 'Nostrord: your own posts excluded',
+          'success'
+        );
+      }
+    });
+
     this.contentZone.innerHTML = `
       <section class="section nostrord-settings">
         <div class="setting">
@@ -85,6 +104,12 @@ export class NostrordSettings extends SettingsSection {
           <div class="mode-options">
             ${optionsHtml}
           </div>
+        </div>
+        <div class="setting">
+          <span class="setting__label">Notify me about my own posts</span>
+          <div class="setting__control">${this.notifyOwnSwitch.render()}</div>
+          <p class="setting__desc">Also get the heads-up when you post to a group yourself — a handy
+            cross-device confirmation that your message went through. Turn off to only hear about others.</p>
         </div>
       </section>
     `;
@@ -100,11 +125,15 @@ export class NostrordSettings extends SettingsSection {
         ToastService.show(`Nostrord: ${label.toLowerCase()}`, 'success');
       });
     });
+
+    this.notifyOwnSwitch.setupEventListeners(this.contentZone);
   }
 
   public unmount(): void {
     this.enableSwitch?.destroy();
     this.enableSwitch = null;
+    this.notifyOwnSwitch?.destroy();
+    this.notifyOwnSwitch = null;
     this.contentZone = null;
   }
 }

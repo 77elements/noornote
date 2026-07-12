@@ -196,6 +196,10 @@ export interface DhikrNotificationNewPayload {
 export interface NostrordNotificationNewPayload {
   event: NostrEvent;
   groupName: string;
+  /** True when the fresh activity was authored solely by the logged-in user (own-post heads-up). */
+  mine?: boolean;
+  /** Bare host of the group's relay (e.g. "groups.0xchat.com") for the Nostrord web-client link. */
+  groupRelay?: string;
 }
 
 // ── Hashtag ──────────────────────────────────────────────────

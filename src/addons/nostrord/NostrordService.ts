@@ -3,12 +3,17 @@
  * Polls the NIP-29 groups the user belongs to and raises ONE in-app notification per group that
  * saw new activity within a poll window. The poll interval IS the debounce window: each tick asks
  * "was there anything since the last tick?" — 1 post or 100 posts in that window produce a single
- * notification per group. The user's own posts never count.
+ * notification per group. By default the user's own posts also count (own-post heads-up); this can
+ * be turned off in settings.
  *
  * Group membership is read from the user's kind:10009 list (NIP-51 simple groups) on their normal
  * app relays; each group tag carries its host relay, so groups are polled per relay. Reading the
  * group events themselves (incl. private/closed groups via NIP-42 AUTH) goes through the isolated
  * NostrordGroupClient, never the main transport.
+ *
+ * Anchor discipline (the reason a slow group relay no longer swallows posts): a group's anchor is
+ * only ever advanced to a timestamp we ACTUALLY read — never to "now". An empty/failed fetch on an
+ * already-tracked group leaves its anchor untouched so the next tick retries the SAME window.
  *
  * Singleton with a nulled static instance on destroy so account switches return a fresh instance
  * (addon destroy contract).
@@ -79,6 +84,11 @@ export class NostrordService {
     return this.storage.get<number>(StorageKeys.NOSTRORD_POLL_INTERVAL, NOSTRORD_DEFAULT_INTERVAL_MS);
   }
 
+  /** Whether the user's own posts should also raise a notification. Default: yes. */
+  private loadNotifyOwn(): boolean {
+    return this.storage.get<boolean>(StorageKeys.NOSTRORD_NOTIFY_OWN_POSTS, true);
+  }
+
   /** Change the poll cadence and restart the timer immediately (no re-login needed). */
   public setPollingInterval(intervalMs: number): void {
     this.intervalMs = intervalMs;
@@ -113,8 +123,13 @@ export class NostrordService {
       if (!me) return;
 
       const groups = await this.loadUserGroups(me);
+      diagLog('addons', 'nostrord: groups loaded', {
+        groups: groups.length,
+        relays: [...new Set(groups.map(g => g.relayUrl))],
+      });
       if (this.destroyed || groups.length === 0) return;
 
+      const notifyOwn = this.loadNotifyOwn();
       const nowSeconds = Math.floor(Date.now() / 1000);
       const anchors = this.storage.get<Record<string, number>>(StorageKeys.NOSTRORD_LAST_CHECK, {});
 
@@ -132,23 +147,40 @@ export class NostrordService {
         // Fetch since the oldest anchor among this relay's groups; baseline groups contribute `now`.
         const since = Math.min(...relayGroups.map(g => anchors[g.groupId] ?? nowSeconds));
         const events = await this.client.fetchActivity(relayUrl, groupIds, since);
+        diagLog('addons', 'nostrord: relay fetch', { relay: relayUrl, groups: groupIds.length, events: events.length, since });
         await this.resolveNames(relayUrl, relayGroups, events);
 
         for (const g of relayGroups) {
           const hadAnchor = anchors[g.groupId] !== undefined;
           const anchor = anchors[g.groupId] ?? 0;
-          const fresh = events.filter(e =>
-            (e.tags.find(t => t[0] === 'h')?.[1]) === g.groupId &&
-            e.pubkey !== me &&
+          const groupEvents = events.filter(e => (e.tags.find(t => t[0] === 'h')?.[1]) === g.groupId);
+          const newestSeen = groupEvents.reduce((max, e) => Math.max(max, e.created_at), 0);
+
+          // First time we ever see this group: seed the baseline and never notify for pre-existing
+          // posts. Seed from the newest post we pulled, else from `now` — but ALWAYS seed (even on
+          // an empty fetch) so a brand-new group starts tracking instead of staying anchorless.
+          if (!hadAnchor) {
+            anchors[g.groupId] = newestSeen || nowSeconds;
+            continue;
+          }
+
+          // Already tracked but we pulled nothing this window (slow/failed relay read): leave the
+          // anchor untouched so the next tick retries the SAME window. Never advance past unread.
+          if (groupEvents.length === 0) continue;
+
+          const fresh = groupEvents.filter(e =>
+            (notifyOwn || e.pubkey !== me) &&
             e.created_at > anchor
           );
 
-          if (hadAnchor && fresh.length > 0) {
-            this.notify(g, nowSeconds);
+          if (fresh.length > 0) {
+            const mineOnly = fresh.every(e => e.pubkey === me);
+            this.notify(g, nowSeconds, mineOnly);
+            diagLog('addons', 'nostrord: fresh activity', { groupId: g.groupId, fresh: fresh.length, mineOnly });
+            // Advance only to what we actually read — never to `now`.
+            anchors[g.groupId] = Math.max(anchor, newestSeen);
           }
-          // Advance the anchor every tick so the window always equals the poll interval;
-          // the very first tick per group only seeds the baseline (no notification).
-          anchors[g.groupId] = nowSeconds;
+          // fresh empty (only old or own-filtered events) → anchor stays; nothing new to lose.
         }
       }
 
@@ -232,9 +264,14 @@ export class NostrordService {
     return this.nameCache[g.groupId] || g.tagName || 'a group';
   }
 
-  /** Emit one in-app notification for a group that saw activity in this window. */
-  private notify(g: GroupRef, nowSeconds: number): void {
+  /**
+   * Emit one in-app notification for a group that saw activity in this window.
+   * `mine` marks a window whose fresh posts were all authored by the user (own-post heads-up),
+   * so the UI can phrase it as "You posted to …" instead of "Someone posted to …".
+   */
+  private notify(g: GroupRef, nowSeconds: number, mine: boolean): void {
     const groupName = this.groupName(g);
+    const groupRelay = g.relayUrl.replace(/^wss?:\/\//, ''); // bare host for the web-client deep link
     const event: NostrEvent = {
       id: `nostrord-${g.groupId}-${nowSeconds}`,
       pubkey: '',
@@ -244,8 +281,8 @@ export class NostrordService {
       content: groupName,
       sig: '',
     };
-    diagLog('addons', 'nostrord: group activity notification', { groupId: g.groupId });
-    this.eventBus.emit('nostrord-notification:new', { event, groupName });
+    diagLog('addons', 'nostrord: group activity notification', { groupId: g.groupId, mine });
+    this.eventBus.emit('nostrord-notification:new', { event, groupName, mine, groupRelay });
   }
 
   public destroy(): void {

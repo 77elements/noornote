@@ -13,7 +13,7 @@
  */
 
 import NDK, { NDKEvent, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
-import type { NDKFilter, NDKRelay } from '@nostr-dev-kit/ndk';
+import type { NDKFilter, NDKRelay, NDKSubscription } from '@nostr-dev-kit/ndk';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { AuthService } from '../../services/AuthService';
 import { diagLog } from '../../services/DiagnosticLogger';
@@ -22,7 +22,8 @@ import { diagLog } from '../../services/DiagnosticLogger';
 const ACTIVITY_KINDS = [9, 11, 1111]; // 9 chat message, 11 forum thread root, 1111 NIP-22 reply
 const GROUP_METADATA_KIND = 39000;
 const NIP42_AUTH_KIND = 22242;
-const FETCH_TIMEOUT_MS = 8000;
+// Group relays (e.g. groups.0xchat.com) are slow to reach EOSE behind NIP-42 AUTH; give them room.
+const FETCH_TIMEOUT_MS = 12000;
 
 export class NostrordGroupClient {
   private ndk: NDK | null = null;
@@ -96,26 +97,52 @@ export class NostrordGroupClient {
   /**
    * Fetch group activity (kinds 9/11/1111) for the given group ids on ONE relay since `since`.
    * Returns raw events; the caller filters out its own posts and applies the per-group anchor.
+   *
+   * We stream into a buffer and resolve on EOSE OR timeout, keeping whatever was collected either
+   * way. A slow/never-EOSE group relay therefore still yields the posts it already delivered,
+   * instead of the old Promise.race that discarded the entire set on timeout — which, combined
+   * with the caller's anchor advance, silently swallowed unread posts forever.
    */
   public async fetchActivity(relayUrl: string, groupIds: string[], since: number): Promise<NostrEvent[]> {
     const ndk = await this.ensure([relayUrl]);
     if (!ndk || groupIds.length === 0) return [];
     const filter: NDKFilter = { kinds: ACTIVITY_KINDS, '#h': groupIds, since } as NDKFilter;
-    try {
-      const set = await this.race(
-        ndk.fetchEvents(filter, {
-          relayUrls: [relayUrl],
-          closeOnEose: true,
-          groupable: false,
-          cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
-        }),
-        new Set<NDKEvent>()
-      );
-      return Array.from(set).map(e => e.rawEvent());
-    } catch (error) {
-      diagLog('addons', 'nostrord: activity fetch failed', { relay: relayUrl, error: String(error) });
-      return [];
-    }
+
+    return await new Promise<NostrEvent[]>((resolve) => {
+      const buffer = new Map<string, NostrEvent>(); // dedup across relays/dups by event id
+      let settled = false;
+      let sub: NDKSubscription | null = null;
+
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        try { sub?.stop(); } catch { /* best-effort teardown */ }
+        resolve(Array.from(buffer.values()));
+      };
+
+      const timer = setTimeout(finish, FETCH_TIMEOUT_MS);
+
+      try {
+        sub = ndk.subscribe(
+          filter,
+          {
+            relayUrls: [relayUrl],
+            closeOnEose: true,
+            groupable: false,
+            cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
+            onEvent: (ev: NDKEvent) => {
+              const raw = ev.rawEvent();
+              if (raw?.id) buffer.set(raw.id, raw);
+            },
+            onEose: finish,
+          }
+        );
+      } catch (error) {
+        diagLog('addons', 'nostrord: activity fetch failed', { relay: relayUrl, error: String(error) });
+        finish();
+      }
+    });
   }
 
   /** Resolve display names for groups from their kind:39000 metadata. Returns groupId -> name. */

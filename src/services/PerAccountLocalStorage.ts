@@ -139,6 +139,7 @@ export const StorageKeys = {
   NOSTRORD_ENABLED: 'noornote_nostrord_enabled_map',
   NOSTRORD_POLL_INTERVAL: 'noornote_nostrord_poll_interval_map',
   NOSTRORD_LAST_CHECK: 'noornote_nostrord_last_check_map',
+  NOSTRORD_NOTIFY_OWN_POSTS: 'noornote_nostrord_notify_own_posts_map',
 
   // Quick Zap toggle (per-account)
   QUICK_ZAP_ENABLED: 'noornote_quick_zap_enabled_map',

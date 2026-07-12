@@ -37,7 +37,7 @@ export interface NotificationEvent {
   event: NostrEvent;
   type: NotificationType;
   timestamp: number;
-  meta?: { hashtag?: string; count?: number; groupName?: string }; // hashtag + nostrord notifications
+  meta?: { hashtag?: string; count?: number; groupName?: string; isOwn?: boolean; groupRelay?: string }; // hashtag + nostrord notifications
 }
 
 export class NotificationsOrchestrator extends Orchestrator {
@@ -184,7 +184,7 @@ export class NotificationsOrchestrator extends Orchestrator {
     });
 
     // Listen for Nostrord NIP-29 group activity notifications (nostrord addon)
-    this.eventBus.on('nostrord-notification:new', (data: { event: NostrEvent; groupName: string }) => {
+    this.eventBus.on('nostrord-notification:new', (data: { event: NostrEvent; groupName: string; mine?: boolean; groupRelay?: string }) => {
       this.handleNostrordNotification(data);
     });
 
@@ -1215,12 +1215,12 @@ export class NotificationsOrchestrator extends Orchestrator {
    * The synthetic event carries no real author (activity is summarized, not attributed), so the
    * item renders anonymously; the group name travels in meta for the action text.
    */
-  private handleNostrordNotification(data: { event: NostrEvent; groupName: string }): void {
+  private handleNostrordNotification(data: { event: NostrEvent; groupName: string; mine?: boolean; groupRelay?: string }): void {
     const notification: NotificationEvent = {
       event: data.event,
       type: 'nostrord',
       timestamp: data.event.created_at,
-      meta: { groupName: data.groupName }
+      meta: { groupName: data.groupName, isOwn: data.mine === true, ...(data.groupRelay ? { groupRelay: data.groupRelay } : {}) }
     };
 
     if (!this.addNotification(notification)) return;

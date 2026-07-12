@@ -31,7 +31,7 @@ export interface NotificationItemOptions {
   event: NostrEvent;
   type: NotificationType;
   timestamp: number;
-  meta?: { hashtag?: string; count?: number; groupName?: string };
+  meta?: { hashtag?: string; count?: number; groupName?: string; isOwn?: boolean; groupRelay?: string };
 }
 
 export class NotificationItem {
@@ -477,7 +477,11 @@ export class NotificationItem {
       case 'mutual_unfollow': return 'stopped following you back';
       case 'mutual_new': return 'started following you back!';
       case 'follower_new': return 'is now following you';
-      case 'nostrord': return `Someone posted to ${this.options.meta?.groupName || 'a group'}`;
+      case 'nostrord': {
+        const name = this.options.meta?.groupName;
+        const where = name ? `the Nostrord group "${name}"` : 'a Nostrord group';
+        return this.options.meta?.isOwn ? `You posted to ${where}` : `Someone posted to ${where}`;
+      }
       case 'highlight': return `highlighted your ${target}`;
       case 'badge-award': return 'awarded you a badge';
       case 'dhikr_round': return 'Somebody started a new dhikr';
@@ -995,8 +999,15 @@ export class NotificationItem {
       return;
     }
 
-    // Nostrord notifications are informational only — NoorNote has no NIP-29 group view to open.
+    // NoorNote has no NIP-29 group view; open the group in the Nostrord web client (external,
+    // user-initiated) in a new tab. Group id lives in the synthetic event's `h` tag, the relay
+    // host in meta.
     if (type === 'nostrord') {
+      const groupId = this.options.event.tags.find(t => t[0] === 'h')?.[1];
+      const relayHost = this.options.meta?.groupRelay;
+      if (groupId && relayHost) {
+        window.open(`https://web.nostrord.com/#/g/${relayHost}/${groupId}`, '_blank', 'noopener,noreferrer');
+      }
       return;
     }
 
