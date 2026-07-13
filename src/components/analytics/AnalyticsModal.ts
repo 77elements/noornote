@@ -8,6 +8,8 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { encodeNevent } from '../../services/NostrToolsAdapter';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { ReactionsModuleApi, DetailedStats } from '../../modules/reactions/contracts';
+import type { TimelineModuleApi } from '../../modules/timeline/contracts';
+import { formatRelayUrl } from '../../helpers/formatRelayUrl';
 import { UserProfileService } from '../../services/UserProfileService';
 import { Router } from '../../services/Router';
 import { ModalService } from '../../services/ModalService';
@@ -224,6 +226,15 @@ export class AnalyticsModal {
     const quotedSection = this.renderQuotedRepostsSection(stats.quotedEvents, profileMap);
     const likesSection = this.renderLikesSection(stats.reactionEvents);
 
+    // Relays this note was seen on / delivered to this session (empty for
+    // notes only loaded from the local cache). Honest wording: "seen on",
+    // not "posted to" — Nostr does not record original publish targets.
+    const timelineApi = ModuleLoader.getInstance().getApi<TimelineModuleApi>('timeline');
+    const seenOnRelays = timelineApi?.getEventRelays(noteId) ?? [];
+    const seenOnSection = seenOnRelays.length > 0
+      ? `<div class="analytics-modal__seen-on">Seen on ${escapeHtml(seenOnRelays.map(formatRelayUrl).join(', '))}</div>`
+      : '';
+
     // Extract client tag if available
     const clientTag = rawEvent?.tags?.find((tag: string[]) => tag[0] === 'client');
     const clientName = clientTag?.[1] || null;
@@ -238,6 +249,7 @@ export class AnalyticsModal {
       ${repostsSection}
       ${quotedSection}
       ${likesSection}
+      ${seenOnSection}
       ${clientSection}
     `;
 

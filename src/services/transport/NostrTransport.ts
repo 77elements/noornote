@@ -173,6 +173,11 @@ export class NostrTransport {
   private eventBus: TypedEventBus;
   private subscriptions: Map<string, { closer: SubCloser; relays: string[] }> = new Map();
   private poolPruneInterval: ReturnType<typeof setInterval> | null = null;
+  /** Relays each event was seen on (received from / published to) this session.
+   *  Bounded, insertion-ordered — oldest entry evicted past the cap to keep the
+   *  WebView's memory footprint fixed (IndexedDB eviction sensitivity). */
+  private seenOnRelays: Map<string, Set<string>> = new Map();
+  private static readonly SEEN_ON_MAX_ENTRIES = 5000;
 
   private constructor() {
     this.relayConfig = RelayConfig.getInstance();
@@ -503,12 +508,8 @@ export class NostrTransport {
       const events = Array.from(eventSet).map(ndkEvent => {
         const rawEvent = ndkEvent.rawEvent();
 
-        // Tag event with relay URLs for compatibility
-        Object.defineProperty(rawEvent, '_relays', {
-          value: Array.from(ndkEvent.onRelays || []),
-          enumerable: false,
-          writable: true
-        });
+        // Record which relays this event was received from (for "Seen on").
+        this.recordSeenOn(rawEvent.id, Array.from(ndkEvent.onRelays || []).map(r => r.url));
 
         return rawEvent;
       });
@@ -760,7 +761,10 @@ export class NostrTransport {
       }
 
       // Return relay URLs (convert NDKRelay objects to strings)
-      return new Set(Array.from(publishedRelays).map(relay => relay.url));
+      const publishedUrls = Array.from(publishedRelays).map(relay => relay.url);
+      // Record where our own event went (so "Seen on" works for fresh posts).
+      this.recordSeenOn(event.id, publishedUrls);
+      return new Set(publishedUrls);
     } catch (error) {
       // NDKPublishError carries per-relay errors in `.errors` (Map<NDKRelay, Error>).
       // Pull them into the diagnostic log so future "0 published" reports can be
@@ -783,6 +787,35 @@ export class NostrTransport {
       this.systemLogger.error('NostrTransport', 'Publish failed');
       throw error;
     }
+  }
+
+  /**
+   * Record which relays an event was seen on / delivered to. Merges into the
+   * existing set; evicts the oldest entry once the cap is reached.
+   */
+  private recordSeenOn(eventId: string | undefined, relayUrls: string[]): void {
+    const urls = relayUrls.filter(Boolean);
+    if (!eventId || urls.length === 0) return;
+
+    let set = this.seenOnRelays.get(eventId);
+    if (!set) {
+      if (this.seenOnRelays.size >= NostrTransport.SEEN_ON_MAX_ENTRIES) {
+        const oldest = this.seenOnRelays.keys().next().value;
+        if (oldest !== undefined) this.seenOnRelays.delete(oldest);
+      }
+      set = new Set();
+      this.seenOnRelays.set(eventId, set);
+    }
+    urls.forEach(url => set!.add(url));
+  }
+
+  /**
+   * Relays a given event was seen on (received from) or published to this
+   * session. Synchronous lookup by event id. Empty for events not seen this
+   * session (e.g. loaded purely from the local cache).
+   */
+  public getEventRelays(eventId: string): string[] {
+    return Array.from(this.seenOnRelays.get(eventId) ?? []);
   }
 
   // ──────────────────────────────────────────────────────────────────────
@@ -987,6 +1020,8 @@ export class NostrTransport {
       onEvent: (ndkEvent, relay) => {
         // NDK already verified signature - just forward the event
         const rawEvent = ndkEvent.rawEvent();
+        // Record which relay this live event arrived from (for "Seen on").
+        this.recordSeenOn(rawEvent.id, [relay?.url || '']);
         callback(rawEvent, relay?.url || '');
       }
     });

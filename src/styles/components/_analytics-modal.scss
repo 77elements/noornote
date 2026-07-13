@@ -105,6 +105,15 @@
   }
 }
 
+// Seen-on relays (single line, bottom)
+.analytics-modal__seen-on {
+  color: var(--color-3);
+  @extend %small;
+  margin-top: $gap;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
 // Client info (bottom right)
 .analytics-modal__client {
   text-align: right;

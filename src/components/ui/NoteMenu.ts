@@ -205,53 +205,10 @@ export class NoteMenu {
       </button>
     `;
 
-    // Add relay section
-    this.addRelaySection(menu);
-
     // Append menu to body for proper positioning
     document.body.appendChild(menu);
 
     return menu;
-  }
-
-  /**
-   * Add relay section to menu
-   */
-  private addRelaySection(menu: HTMLElement): void {
-    const timelineApi = ModuleLoader.getInstance().getApi<TimelineModuleApi>('timeline');
-    const relays = timelineApi?.getEventRelays(this.options.eventId) ?? [];
-
-    // Only show section if we have relay data
-    if (!relays || relays.length === 0) {
-      return;
-    }
-
-    // Create divider
-    const divider = document.createElement('div');
-    divider.className = 'note-menu-divider';
-    menu.appendChild(divider);
-
-    // Create header
-    const header = document.createElement('div');
-    header.className = 'note-menu-section-header';
-    header.textContent = 'Seen on';
-    menu.appendChild(header);
-
-    // Create relay list
-    relays.forEach((relay) => {
-      const relayItem = document.createElement('div');
-      relayItem.className = 'note-menu-relay-item';
-      relayItem.textContent = this.formatRelayUrl(relay);
-      menu.appendChild(relayItem);
-    });
-  }
-
-  /**
-   * Format relay URL for display
-   */
-  private formatRelayUrl(url: string): string {
-    // Remove wss:// or ws:// prefix for cleaner display
-    return url.replace(/^wss?:\/\//, '');
   }
 
   /**

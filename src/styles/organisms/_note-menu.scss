@@ -122,26 +122,6 @@
   background: color-mix(in srgb, var(--color-2) 80%, white);
 }
 
-// Section header (e.g. "Seen on")
-.note-menu-section-header {
-  padding: calc($gap / 2) $gap calc($gap / 4) $gap;
-  @extend %small;
-  font-weight: 600;
-  color: var(--text-alpha-light);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-// Relay item (non-clickable display item)
-.note-menu-relay-item {
-  padding: calc($gap / 2) $gap;
-  @extend %small;
-  color: $color-3;
-  font-family: monospace;
-  word-break: break-all;
-  line-height: 1.4;
-}
-
 // Menu container in note header
 .note-header__menu-container {
   display: inline-flex;

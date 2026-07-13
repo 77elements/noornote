@@ -618,10 +618,10 @@ export class FeedOrchestrator extends Orchestrator {
   }
 
   /**
-   * Get relay URLs for an event
+   * Get relay URLs an event was seen on / delivered to (for "Seen on").
    */
-  public getEventRelays(_eventId: string): string[] {
-    return [];
+  public getEventRelays(eventId: string): string[] {
+    return this.transport.getEventRelays(eventId);
   }
 
 
