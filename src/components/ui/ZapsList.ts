@@ -9,9 +9,13 @@ import { UserProfileService } from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { ZapsModuleApi } from '../../modules/zaps/contracts';
+import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
+import { NoteService } from '../../services/NoteService';
+import { getViewNavigationController } from '../../services/ViewNavigationController';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { extractZapperPubkey, extractZapMessage, getZapAmountSats, formatNumberWithCommas, isZapAnonymous } from '../../helpers/zapUtils';
 import { UserHoverCard } from './UserHoverCard';
+import { Tooltip } from './Tooltip';
 
 interface ZapData {
   zapperPubkey: string;
@@ -33,6 +37,10 @@ export class ZapsList {
   private _zapsApi?: ZapsModuleApi | null;
   private get zapsApi(): ZapsModuleApi | null {
     return this._zapsApi ??= ModuleLoader.getInstance().getApi<ZapsModuleApi>('zaps');
+  }
+  private _reactionsApi?: ReactionsModuleApi | null;
+  private get reactionsApi(): ReactionsModuleApi | null {
+    return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
   }
 
   constructor(zapEvents: NostrEvent[]) {
@@ -132,6 +140,9 @@ export class ZapsList {
 
     const userHoverCard = UserHoverCard.getInstance();
 
+    // Replyable zaps whose comment count we'll fetch to show a thread badge.
+    const replyables: { zap: ZapData; badge: HTMLElement }[] = [];
+
     for (const zap of zaps) {
       const badge = document.createElement('div');
       const badgeClasses = ['zaps-list__badge'];
@@ -192,12 +203,59 @@ export class ZapsList {
           const { ReplyModal } = await import('../reply/ReplyModal');
           await ReplyModal.getInstance().show(zap.event.id ?? '', zap.event);
         });
+        replyables.push({ zap, badge });
       }
 
       scrollContainer.appendChild(badge);
     }
 
     container.appendChild(scrollContainer);
+
+    // Show a thread badge ("T2") next to each zap that already has kind:1111
+    // comments, so anyone — not just the zapper via their notification — can
+    // open the zap's reply thread.
+    void this.injectThreadBadges(replyables, userHoverCard);
+  }
+
+  /**
+   * Fetch how many comments each replyable zap has (one batched request) and,
+   * for those with at least one, insert a sibling "T{n}" badge that opens the
+   * zap's thread (the zap as root note + its kind:1111 comments below).
+   */
+  private async injectThreadBadges(
+    replyables: { zap: ZapData; badge: HTMLElement }[],
+    userHoverCard: UserHoverCard
+  ): Promise<void> {
+    if (replyables.length === 0) return;
+
+    const zapIds = replyables
+      .map(r => r.zap.event.id)
+      .filter((id): id is string => !!id);
+    const counts = await this.reactionsApi?.getZapReplyCounts(zapIds);
+    if (!counts || counts.size === 0) return;
+
+    for (const { zap, badge } of replyables) {
+      const zapId = zap.event.id;
+      const count = zapId ? counts.get(zapId) ?? 0 : 0;
+      if (count <= 0 || !zapId) continue;
+
+      const threadBadge = document.createElement('div');
+      threadBadge.className = 'zaps-list__badge zaps-list__badge--thread';
+      threadBadge.textContent = `T${count}`;
+      Tooltip.attach(threadBadge, 'See zap comment thread');
+      threadBadge.addEventListener('click', (e) => {
+        e.stopPropagation();
+        userHoverCard.hide();
+        // Prime the cache so the zap-rooted SNV resolves instantly — zap
+        // receipts are often unfetchable by id from relays alone.
+        NoteService.getInstance().registerNote(zap.event);
+        // No click event passed on purpose: in right-pane this opens the zap
+        // thread as a NEW tab so the original note tab stays reachable.
+        getViewNavigationController().openView('single-note', zapId);
+      });
+
+      badge.insertAdjacentElement('afterend', threadBadge);
+    }
   }
 
   public getElement(): HTMLElement {

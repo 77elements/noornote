@@ -258,6 +258,7 @@ export class SingleNoteView extends View {
       noteId,
       noteAuthor,
       container: this.container,
+      rootKind: this.currentEvent?.kind,
       onStatsUpdate: (replies, quotedReposts) => {
         const isl = NoteUI.getInteractionStatusLine(noteId);
         isl?.waitForInitialFetch().then(() => {

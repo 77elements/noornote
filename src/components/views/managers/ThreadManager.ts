@@ -34,6 +34,9 @@ export interface ThreadManagerConfig {
   noteId: string;
   noteAuthor: string;
   container: HTMLElement;
+  /** Kind of the root note the thread hangs off. When it's a zap receipt
+   *  (9735) the replies header reads "Zap Replies & Quotes". */
+  rootKind?: number | undefined;
   onStatsUpdate?: (replies: number, quotedReposts: number) => void;
   onLoadZapsList?: (replyId: string, authorPubkey: string, element: HTMLElement) => void;
 }
@@ -55,6 +58,12 @@ export class ThreadManager {
     this.systemLogger = SystemLogger.getInstance();
     this.profileService = UserProfileService.getInstance();
     this.relayConfig = RelayConfig.getInstance();
+  }
+
+  /** "Zap Replies & Quotes" when the root note is a zap receipt, else the
+   *  regular "Replies & Quotes". */
+  private get repliesHeaderLabel(): string {
+    return this.config.rootKind === 9735 ? 'Zap Replies & Quotes' : 'Replies & Quotes';
   }
 
   private getRepliesContainer(): Element | null {
@@ -145,7 +154,7 @@ export class ThreadManager {
 
       repliesContainer.innerHTML = `
         <div class="snv-replies__header">
-          <h2 class="h3">Replies & Quotes (${totalComments})</h2>
+          <h2 class="h3">${this.repliesHeaderLabel} (${totalComments})</h2>
         </div>
         <div class="snv-replies__list"></div>
       `;
@@ -301,7 +310,7 @@ export class ThreadManager {
     if (!repliesList) {
       repliesContainer.innerHTML = `
         <div class="snv-replies__header">
-          <h2 class="h3">Replies & Quotes (1)</h2>
+          <h2 class="h3">${this.repliesHeaderLabel} (1)</h2>
         </div>
         <div class="snv-replies__list"></div>
       `;
@@ -313,7 +322,7 @@ export class ThreadManager {
         const matchedCount = match?.[1];
         if (matchedCount) {
           const currentCount = parseInt(matchedCount, 10);
-          header.textContent = `Replies & Quotes (${currentCount + 1})`;
+          header.textContent = `${this.repliesHeaderLabel} (${currentCount + 1})`;
         }
       }
     }

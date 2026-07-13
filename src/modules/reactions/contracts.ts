@@ -22,6 +22,9 @@ export interface ReactionsModuleApi {
    *  ids. Returns a map from a parent event-id to the kind:7 events that react
    *  to it (one hop per map entry; traverse recursively for the full tree). */
   fetchReactionTree(rootEventIds: string[]): Promise<Map<string, NostrEvent[]>>;
+  /** Count kind:1111 comments replying to each given zap (kind:9735) event id,
+   *  in one batched fetch. Returns zapId → count; zaps with no comments absent. */
+  getZapReplyCounts(zapIds: string[]): Promise<Map<string, number>>;
 
   // StatsUpdateService
   updateAfterInteraction(noteId: string, type: StatsUpdateType, islComponent?: InteractionStatusLine): void;

@@ -12,7 +12,7 @@
 
   &__scroll {
     display: flex;
-    gap: calc($gap / 2);
+    gap: calc($gap / 4);
     overflow-x: auto;
     padding-bottom: calc($gap / 4);
 
@@ -41,6 +41,17 @@
   // Identifiable zaps are clickable to reply (NIP-22 comment on the kind:9735).
   &__badge--replyable {
     cursor: pointer;
+
+    &:hover {
+      background-color: var(--bg-accent);
+    }
+  }
+
+  // Thread badge ("T2") sits beside a zap and opens its reply thread.
+  &__badge--thread {
+    cursor: pointer;
+    color: var(--color-6);
+    font-weight: 600;
 
     &:hover {
       background-color: var(--bg-accent);

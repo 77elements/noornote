@@ -42,6 +42,7 @@ export class ReactionsRuntime implements ModuleRuntime<ReactionsModuleApi> {
       hasUserLikedWithEmoji: (noteId, emoji) => svc?.hasUserLikedWithEmoji(noteId, emoji) ?? Promise.resolve(false),
       publishReaction: (options) => svc?.publishReaction(options) ?? Promise.resolve({ success: false, error: 'Module not loaded' }),
       fetchReactionTree: (rootEventIds) => orch?.fetchReactionTree(rootEventIds) ?? Promise.resolve(new Map()),
+      getZapReplyCounts: (zapIds) => orch?.getZapReplyCounts(zapIds) ?? Promise.resolve(new Map()),
       updateAfterInteraction: (noteId, type, islComponent) => sus?.updateAfterInteraction(noteId, type, islComponent),
       clearCacheOnly: (noteId) => sus?.clearCacheOnly(noteId),
     };

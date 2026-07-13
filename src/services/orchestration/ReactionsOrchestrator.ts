@@ -365,6 +365,42 @@ export class ReactionsOrchestrator extends Orchestrator {
 
 
   /**
+   * Count kind:1111 comments replying to each of the given zap (kind:9735)
+   * event ids. One batched fetch across all zap ids (a single relay round-trip),
+   * grouped by which zap each comment references. Muted authors are excluded,
+   * mirroring the thread render. Returns a Map zapId → comment count; zaps with
+   * no comments are simply absent.
+   */
+  public async getZapReplyCounts(zapIds: string[]): Promise<Map<string, number>> {
+    const counts = new Map<string, number>();
+    const ids = zapIds.filter(Boolean);
+    if (ids.length === 0) return counts;
+
+    const idSet = new Set(ids);
+    const relays = await this.getReactionFetchRelays();
+    // Reply-to-zap comments carry the zap id in a lowercase e (parent) and an
+    // uppercase E (root) tag — fetch both so the count is complete.
+    const filters: NDKFilter[] = [
+      { kinds: [1111], '#e': ids },
+      { kinds: [1111], '#E': ids },
+    ];
+
+    const events = await this.transport.fetch(relays, filters, 5000, false, 'ZapReplyCounts');
+
+    const seen = new Set<string>();
+    for (const event of events) {
+      if (!event.id || seen.has(event.id)) continue;
+      if (isUserMuted(event.pubkey).any) continue;
+      const zapId = event.tags.find(t => (t[0] === 'e' || t[0] === 'E') && !!t[1] && idSet.has(t[1]))?.[1];
+      if (!zapId) continue;
+      seen.add(event.id);
+      counts.set(zapId, (counts.get(zapId) ?? 0) + 1);
+    }
+
+    return counts;
+  }
+
+  /**
    * Build NDK filters for fetching interaction events
    * Handles both normal notes (#e tag) and long-form articles (#a and #e tags)
    */
