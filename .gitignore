@@ -59,10 +59,7 @@ temp/
 # Local backups (protected-file zips from /finalize)
 .backups/
 
-# Claude Code
-.claude/
-
-# OpenCode (GLM-5.2) — custom commands + config, protected like .claude/
+# OpenCode (GLM-5.2) — custom skills, commands + config
 .opencode/
 opencode.json
 
@@ -71,7 +68,7 @@ screenshots/
 docs/
 diagnose/
 mockups/
-CLAUDE.md
+AGENTS.md
 sync-protected.sh
 protected-files.zip
 
@@ -80,5 +77,6 @@ public/download/noornote-release.apk
 
 # Optional relay (local data only)
 relay/strfry-db/
-relay/*.log.claude-comm.md
+relay/*.log
+.glm-comm.md
 .playwright-mcp/
