@@ -12,5 +12,7 @@ export function isExtendedFollowsEnabled(): boolean {
 
 export function setExtendedFollowsEnabled(enabled: boolean): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.EXTENDED_FOLLOWS_ADDON_ENABLED, enabled);
-  localStorage.setItem(STORAGE_KEY, 'false');
+  // Global fallback used before login (per-account storage has no pubkey yet) — must
+  // reflect the actual state, otherwise the follow list renders without extended features on next launch.
+  localStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
 }
