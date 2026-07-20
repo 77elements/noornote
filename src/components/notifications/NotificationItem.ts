@@ -485,6 +485,7 @@ export class NotificationItem {
         return this.options.meta?.isOwn ? `You posted to ${where}` : `Someone posted to ${where}`;
       }
       case 'highlight': return `highlighted your ${target}`;
+      case 'image-tag': return 'tagged you in an image';
       case 'badge-award': return 'awarded you a badge';
       case 'dhikr_round': return 'Somebody started a new dhikr';
       case 'dhikr_commit': return 'Somebody committed to a dhikr';

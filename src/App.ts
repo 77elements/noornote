@@ -100,6 +100,7 @@ export class App {
     import('./helpers/renderMediaContent').then(m => {
       m.startVideoThumbnailObserver();
       m.initMediaPlaceholderHandler();
+      m.initImageTaglineTooltips();
     });
 
     // Global delegated click for .note-image--clickable (lightbox) +

@@ -36,6 +36,7 @@ import { AppState } from '../../services/AppState';
 import { ContentValidationManager } from './ContentValidationManager';
 import { EditorStateManager } from './EditorStateManager';
 import { MentionAutocomplete } from '../mentions/MentionAutocomplete';
+import { ProfileSearchComponent } from '../profile/ProfileSearchComponent';
 import { isCustomEmojisEnabled } from '../../addons/custom-emojis/index';
 import { isScheduledPostsEnabled } from '../../addons/scheduled-posts/index';
 import { ModalEventHandlerManager, type TabMode } from '../modals/ModalEventHandlerManager';
@@ -46,6 +47,8 @@ import { SignerTimeoutError } from '../../services/SignerTimeoutError';
 import { renderDraftsList, setupDraftsList } from './DraftsListUI';
 import { openDraftInComposer } from '../../helpers/draftRouter';
 import { attachPreviewClickToEdit } from '../../helpers/previewClickToEdit';
+import { isImageUrl } from '../../helpers/extractMedia';
+import { UserProfileService } from '../../services/UserProfileService';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 export interface HighlightSource {
@@ -53,6 +56,17 @@ export interface HighlightSource {
   selectedText: string;
   /** The source event being highlighted */
   event: NostrEvent;
+}
+
+/**
+ * One tagged user inside an image (NIP-68).
+ * `pubkey` is the canonical hex; `npub` and `username` are cached for
+ * re-rendering the chips without an extra profile round-trip.
+ */
+export interface ImageTagEntry {
+  pubkey: string;
+  npub: string;
+  username: string;
 }
 
 export class PostNoteModal {
@@ -91,6 +105,18 @@ export class PostNoteModal {
   // Per-post custom client tag — overrides the global "via NoorNote" UI setting
   // for this one note. Empty = fall back to the UI setting (see AuthService.signEvent).
   private customClientTag: string = '';
+
+  // NIP-68 image tagging state — one entry per uploaded image URL.
+  // Map preserves insertion order (ES2015 guarantee), so thumbnails and the
+  // underlying text URLs stay in lockstep.
+  private imageTags: Map<string, ImageTagEntry[]> = new Map();
+  // Per-thumbnail ProfileSearchComponent instances (lazily created on first
+  // tag-button click). Reused across reopens so chip state survives.
+  private tagOverlays: Map<string, ProfileSearchComponent> = new Map();
+  // Mention autocomplete instances, keyed the same way.
+  private tagMentionAutocompletes: Map<string, MentionAutocomplete> = new Map();
+  // Hard cap per image (NIP-68 has no protocol limit; we enforce a UI one).
+  private static readonly MAX_TAGS_PER_IMAGE = 50;
 
   private constructor() {
     this.modalService = ModalService.getInstance();
@@ -288,6 +314,7 @@ export class PostNoteModal {
           placeholder="${escapeHtml(placeholder)}"
           data-textarea
         >${this.content}</textarea>
+        <div class="post-note-modal__media-strip" id="post-note-media-strip"></div>
       `;
     } else {
       const currentUser = this.authService.getCurrentUser();
@@ -574,6 +601,212 @@ export class PostNoteModal {
       },
       onShowNSFWSwitch: () => this.showNSFWSwitch()
     });
+    // NIP-68 image tagging — register URL in state + render thumbnail.
+    // Skip non-image URLs (videos, audio) — NIP-68 is image-only.
+    if (isImageUrl(url)) {
+      this.imageTags.set(url, []);
+      this.appendToMediaStrip(url);
+    }
+  }
+
+  /**
+   * Append a thumbnail + tag-button to the media-strip.
+   */
+  private appendToMediaStrip(url: string): void {
+    const strip = document.querySelector('#post-note-media-strip');
+    if (!strip) return;
+
+    const thumb = document.createElement('div');
+    thumb.className = 'post-note-modal__media-thumb';
+    thumb.dataset.imageUrl = url;
+    thumb.innerHTML = `
+      <img class="post-note-modal__media-thumb-img" src="${escapeHtml(url)}" alt="" loading="lazy">
+      <button type="button" class="post-note-modal__tag-btn" data-tag-url="${escapeHtml(url)}" title="Tag users in this image" aria-label="Tag users">
+        <svg width="14" height="14"><use href="#icon-tag"/></svg>
+        <span class="post-note-modal__tag-badge is-hidden" data-tag-badge>0</span>
+      </button>
+    `;
+    strip.appendChild(thumb);
+
+    // Wire tag-button click
+    const tagBtn = thumb.querySelector('.post-note-modal__tag-btn') as HTMLElement;
+    tagBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.openTagOverlay(url, tagBtn);
+    });
+  }
+
+  /**
+   * Open the tagging overlay for a specific image.
+   *
+   * Toggle behaviour: if an overlay is already open for this URL, the click
+   * closes it (and removes the host). Otherwise a fresh overlay is created
+   * and pre-filled with the chips currently stored in `this.imageTags`.
+   *
+   * State survives close/reopen because chips are live-synced to
+   * `this.imageTags` via `onChipsChange`. The component itself is destroyed
+   * on close so outside-click / ESC / Apply all clean up identically.
+   */
+  private openTagOverlay(url: string, _anchorBtn: HTMLElement): void {
+    // If already open for this URL, the click toggles closed.
+    const existing = this.tagOverlays.get(url);
+    if (existing) {
+      existing.collapseSearch(); // triggers onClose → closeTagOverlay cleanup
+      return;
+    }
+
+    const component = new ProfileSearchComponent({
+      sizeVariant: 'compact-modal',
+      triggerIconId: 'icon-tag',
+      triggerTitle: 'Tag users',
+      placeholder: 'Tag different users, separate by comma',
+      buttonText: 'Apply',
+      buttonLoadingText: 'Applying...',
+      buttonClass: 'btn-small btn-passive',
+      statusEnabled: false,
+      privacyHint: 'Tagged users will be publicly visible',
+      chipMode: true,
+      initialChips: (this.imageTags.get(url) ?? []).map(e => ({ ...e })),
+      onChipsChange: (chips) => {
+        // Hard cap (UI guard before publish — also enforced in PostService).
+        if (chips.length > PostNoteModal.MAX_TAGS_PER_IMAGE) {
+          ToastService.show('Only 50 tags permitted', 'error');
+          // Trim back to the cap so the user sees the limit enforced.
+          const trimmed = chips.slice(0, PostNoteModal.MAX_TAGS_PER_IMAGE);
+          this.imageTags.set(url, trimmed);
+        } else {
+          this.imageTags.set(url, chips.map(c => ({ ...c })));
+        }
+        this.updateTagBadge(url);
+
+        // Async username enrichment — when a chip was added from raw npub
+        // text (no MentionAutocomplete selection), its username is the
+        // truncated npub. Resolve the real username in the background.
+        // (No-op for chips that already have a real username.)
+        void this.enrichChipUsernames(url);
+      },
+      onClose: () => {
+        this.closeTagOverlay(url);
+      },
+      onSubmit: async (_value, helpers) => {
+        // Chips are already synced via onChipsChange — Apply just closes.
+        if ((this.imageTags.get(url) ?? []).length > PostNoteModal.MAX_TAGS_PER_IMAGE) {
+          ToastService.show('Only 50 tags permitted', 'error');
+          return;
+        }
+        helpers.collapse();
+      },
+    });
+
+    // Mount next to the thumbnail
+    const allThumbs = Array.from(document.querySelectorAll('.post-note-modal__media-thumb')) as HTMLElement[];
+    const thumb = allThumbs.find(t => t.dataset.imageUrl === url);
+    if (!thumb) return;
+    const host = document.createElement('div');
+    host.className = 'post-note-modal__tag-overlay-host';
+    host.appendChild(component.getElement());
+    thumb.appendChild(host);
+    component.expandSearch();
+
+    // Wire MentionAutocomplete to the component's input. When the user
+    // picks a suggestion, cache the username so the chip created from
+    // Enter/comma later shows the proper name instead of a truncated npub.
+    const inputEl = component.getElement().querySelector('.textinput-overlay__input') as HTMLInputElement | null;
+    if (inputEl) {
+      inputEl.setAttribute('data-image-tags', url);
+      const autocomplete = new MentionAutocomplete({
+        textareaSelector: `[data-image-tags]`,
+        onMentionInserted: (npub, username) => {
+          // Convert the mention directly into a chip — the user never sees
+          // the raw `nostr:npub1...` text in the input.
+          component.addChipFromMention(npub, username);
+        },
+      });
+      autocomplete.init();
+      this.tagMentionAutocompletes.set(url, autocomplete);
+    }
+
+    this.tagOverlays.set(url, component);
+  }
+
+  /**
+   * Teardown for a single image-tag overlay — destroys the component, drops
+   * it from the maps, removes the host element. Triggered by the component's
+   * onClose callback (fires on ESC, outside-click, Apply via helpers.collapse,
+   * and the toggle branch of openTagOverlay).
+   */
+  private closeTagOverlay(url: string): void {
+    const component = this.tagOverlays.get(url);
+    if (component) {
+      component.destroy();
+      this.tagOverlays.delete(url);
+    }
+    const autocomplete = this.tagMentionAutocompletes.get(url);
+    if (autocomplete) {
+      autocomplete.destroy();
+      this.tagMentionAutocompletes.delete(url);
+    }
+    // Remove the host (and its DOM subtree) from the thumbnail.
+    const allThumbs = Array.from(document.querySelectorAll('.post-note-modal__media-thumb')) as HTMLElement[];
+    const thumb = allThumbs.find(t => t.dataset.imageUrl === url);
+    thumb?.querySelector('.post-note-modal__tag-overlay-host')?.remove();
+  }
+
+  /**
+   * Background-pass: resolve real usernames for chips whose `username` is
+   * still the truncated-npub fallback. Mutates `this.imageTags` in place
+   * and updates chip DOM if the overlay is still open.
+   */
+  private async enrichChipUsernames(url: string): Promise<void> {
+    const entries = this.imageTags.get(url);
+    if (!entries || entries.length === 0) return;
+
+    await Promise.all(entries.map(async (entry) => {
+      // Only enrich chips that still show the truncated-npub fallback.
+      if (!entry.username.endsWith('…')) return;
+      const real = await this.usernameFromPubkey(entry.pubkey);
+      if (real) entry.username = real;
+    }));
+
+    // Update chip DOM if the overlay is still open.
+    const component = this.tagOverlays.get(url);
+    if (component) {
+      const chipNames = component.getElement().querySelectorAll('.textinput-overlay__chip-name');
+      chipNames.forEach((el, i) => {
+        if (entries[i]) el.textContent = entries[i].username;
+      });
+    }
+  }
+
+  /**
+   * Update the count badge on a thumbnail after tag changes.
+   */
+  private updateTagBadge(url: string): void {
+    const allBtns = Array.from(document.querySelectorAll('.post-note-modal__tag-btn')) as HTMLElement[];
+    const btn = allBtns.find(b => b.dataset.tagUrl === url);
+    if (!btn) return;
+    const badge = btn.querySelector('[data-tag-badge]') as HTMLElement;
+    if (!badge) return;
+    const count = this.imageTags.get(url)?.length ?? 0;
+    if (count > 0) {
+      badge.textContent = String(count);
+      badge.classList.remove('is-hidden');
+    } else {
+      badge.classList.add('is-hidden');
+    }
+  }
+
+  /**
+   * Async username lookup via UserProfileService.
+   */
+  private async usernameFromPubkey(hex: string): Promise<string | null> {
+    try {
+      const profile = await UserProfileService.getInstance().getUserProfile(hex);
+      return profile?.name || profile?.display_name || null;
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -782,6 +1015,16 @@ export class PostNoteModal {
           scheduledAt: this.scheduledAt,
         });
       } else {
+        // Build optional imageTags payload from the per-URL state. Skip empty
+        // entries and the whole field when nothing is tagged (keeps legacy
+        // notes byte-identical to before NIP-68 support).
+        const imageTagsPayload = Array.from(this.imageTags.entries())
+          .filter(([, tags]) => tags.length > 0)
+          .map(([imageUrl, tags]) => ({
+            imageUrl,
+            taggedPubkeys: tags.map(t => t.pubkey),
+          }));
+
         success = await this.postsApi?.createPost({
           content: this.content,
           relays: Array.from(this.selectedRelays),
@@ -789,7 +1032,8 @@ export class PostNoteModal {
           ...(this.pollData ? { pollData: this.pollData } : {}),
           ...(quotedEvent ? { quotedEvent } : {}),
           ...(quotedArticle ? { quotedArticle } : {}),
-          ...(clientTag ? { clientTag } : {})
+          ...(clientTag ? { clientTag } : {}),
+          ...(imageTagsPayload.length > 0 ? { imageTags: imageTagsPayload } : {}),
         }) ?? false;
       }
 
@@ -987,6 +1231,13 @@ export class PostNoteModal {
 
     this.mentionAutocomplete?.destroy();
     this.mentionAutocomplete = null;
+
+    // NIP-68 image-tagging state
+    this.tagOverlays.forEach(c => c.destroy());
+    this.tagOverlays.clear();
+    this.tagMentionAutocompletes.forEach(a => a.destroy());
+    this.tagMentionAutocompletes.clear();
+    this.imageTags.clear();
 
     this.customEmojiAutocomplete?.destroy();
     this.customEmojiAutocomplete = null;

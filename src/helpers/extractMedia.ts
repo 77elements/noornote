@@ -10,14 +10,9 @@
  * // => [{ type: 'image', url: 'https://example.com/image.jpg' }]
  */
 
-export interface MediaContent {
-  type: 'image' | 'video' | 'audio';
-  url: string;
-  originalUrl?: string; // Original URL from text (with tracking params), used for text replacement
-  alt?: string;
-  thumbnail?: string;
-  dimensions?: { width: number; height: number };
-}
+// Re-export canonical MediaContent definition (single source of truth in NoteTypes.ts)
+export type { MediaContent } from '../components/ui/types/NoteTypes';
+import type { MediaContent } from '../components/ui/types/NoteTypes';
 
 /**
  * Extract the clean media URL from a full URL that may contain query/tracking params.
@@ -103,6 +98,59 @@ export function extractMedia(text: string): MediaContent[] {
       originalUrl: match[0],
       thumbnail: `https://img.youtube.com/vi/${match[1]}/maxresdefault.jpg`
     });
+  }
+
+  return media;
+}
+
+/**
+ * Like extractMedia, but additionally parses NIP-92 `imeta` tags for the
+ * NIP-68 `annotate-user` sub-tag and merges tagged pubkeys into the matching
+ * media item. Used for kind 1 notes (kind 20 uses PictureNoteProcessor).
+ *
+ * Per NIP-92, the URL declared in an `imeta` tag MUST also appear in the
+ * event content. If no match is found in the URL-derived media list, the
+ * imeta entry is silently skipped (spec violation by the event author).
+ *
+ * Only `annotate-user` is parsed here — `dim`, `alt`, `blurhash`, etc. are
+ * left untouched for kind 1 (no regression on existing rendering).
+ */
+export function extractMediaWithImeta(text: string, tags: string[][]): MediaContent[] {
+  const media = extractMedia(text);
+  const imetaTags = tags.filter(tag => tag[0] === 'imeta');
+  if (imetaTags.length === 0) return media;
+
+  for (const tag of imetaTags) {
+    let url = '';
+    const taggedPubkeys: string[] = [];
+
+    for (let i = 1; i < tag.length; i++) {
+      const prop = tag[i];
+      if (!prop) continue;
+      const spaceIndex = prop.indexOf(' ');
+      if (spaceIndex === -1) continue;
+      const key = prop.substring(0, spaceIndex);
+      const value = prop.substring(spaceIndex + 1);
+
+      if (key === 'url') {
+        url = value;
+      } else if (key === 'annotate-user') {
+        // NIP-68: "<pubkey_hex>:<x>:<y>"
+        const annotMatch = value.match(/^([0-9a-f]{64}):\d+:\d+$/);
+        if (annotMatch) {
+          const pubkey = annotMatch[1]!;
+          if (!taggedPubkeys.includes(pubkey)) taggedPubkeys.push(pubkey);
+        }
+      }
+    }
+
+    if (!url || taggedPubkeys.length === 0) continue;
+
+    // Match against both the cleaned URL and the original URL (with tracking params)
+    const match = media.find(m => m.url === url || m.originalUrl === url);
+    if (match) {
+      match.taggedPubkeys = [...(match.taggedPubkeys ?? []), ...taggedPubkeys];
+    }
   }
 
   return media;

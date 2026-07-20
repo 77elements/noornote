@@ -1,0 +1,270 @@
+/**
+ * Profile Search Components
+ * Search UI overlay, results view, and tabs for profile pages
+ */
+
+@use 'sass:color';
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
+@use '../base/icons' as *;
+
+// Shared hide utility for textinput-overlay elements
+.textinput-overlay .is-hidden {
+  display: none;
+}
+
+// ProfileSearchComponent - Search overlay
+.textinput-overlay {
+  // Position is handled by .textinput-overlay-mount container
+  position: relative;
+
+  // Border-radius is variant-configurable via this custom property.
+  // Defaults to $radius-3xl (40px) for the inline-icon-row variant; the
+  // compact-modal variant overrides it to $radius-pill (20px).
+  --textinput-overlay-radius: #{$radius-3xl};
+
+  // Trigger link (initial state)
+  &__trigger {
+    text-align: right;
+    background: $alpha-heavy;
+    padding: 4px 8px;
+    border-radius: $radius-xl;
+    margin-right: 10px;
+  }
+
+  &__link {
+    color: var(--color-4);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  // Compact-modal variant — used in tight contexts (e.g. New Note Modal
+  // image-tagging overlay). Smaller paddings, smaller font-size, smaller
+  // border-radius.
+  &--compact-modal {
+    --textinput-overlay-radius: #{$radius-pill};
+
+    // When the panel is open, hide the trigger icon — the panel replaces it
+    // visually. Scoped to compact-modal because the inline-icon-row variant
+    // (PV) keeps the search icon visible by design.
+    &:has(.textinput-overlay__panel:not(.is-hidden)) .textinput-overlay__trigger {
+      display: none;
+    }
+
+    .textinput-overlay__panel {
+      padding: calc($gap * 0.6);
+      min-width: 240px;
+      gap: calc($gap / 3);
+    }
+
+    .textinput-overlay__input {
+      font-size: 13px;
+      padding: 6px 10px;
+    }
+
+    .textinput-overlay__btn {
+      font-size: 13px;
+      padding: 6px 12px;
+    }
+
+    .textinput-overlay__privacy-hint {
+      @extend %small;
+      font-size: 11px;
+      color: var(--color-3);
+      margin-top: calc($gap / 4);
+      line-height: 1.4;
+    }
+
+    .textinput-overlay__chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+
+      &:not(.is-populated) {
+        display: none;
+      }
+    }
+
+    .textinput-overlay__chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 4px 2px 8px;
+      font-size: 12px;
+      max-width: 100%;
+    }
+
+    .textinput-overlay__chip-name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 120px;
+    }
+
+    .textinput-overlay__chip-remove {
+      border: none;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      padding: 0 4px;
+      font-size: 14px;
+      line-height: 1;
+      opacity: 0.7;
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+
+    @include mobile-down {
+      .textinput-overlay__panel {
+        min-width: 200px;
+        padding: calc($gap * 0.5);
+      }
+    }
+  }
+}
+
+// Popup panel — the actual overlay that shows/hides below the trigger.
+// Rendered as a child of .textinput-overlay (the component root) and can
+// also be reused standalone in other contexts.
+.textinput-overlay__panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+
+  &.is-hidden {
+    display: none;
+  }
+  gap: calc($gap / 2);
+  background: $alpha-heavy;
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--color-3);
+  border-radius: var(--textinput-overlay-radius, #{$radius-3xl});
+  padding: $gap;
+  min-width: 310px;
+  box-shadow: $box-shadow;
+  margin-right: 10px;
+
+  @include mobile-down {
+    min-width: 260px;
+    padding: calc($gap * 0.75);
+  }
+
+  .textinput-overlay__form {
+    display: flex;
+    gap: calc($gap / 2);
+  }
+
+  .input {
+    flex: 1;
+  }
+
+  .textinput-overlay__status {
+    @extend %small;
+    padding: calc($gap / 4) calc($gap / 2);
+    border-radius: $radius-xl;
+
+    &--info {
+      background: var(--bg-accent);
+      color: var(--color-4);
+    }
+
+    &--error {
+      background: $bg-error;
+      color: $color-red;
+    }
+  }
+}
+
+// ProfileTabs - Tab navigation
+.profile-tabs {
+  margin-bottom: $gap;
+  border-bottom: 2px solid var(--color-2);
+
+  .tab {
+    margin-bottom: -2px;
+
+    @include mobile-down {
+      padding: calc($gap / 4) calc($gap / 2);
+    }
+  }
+}
+
+// SearchResultsView - Results display
+.search-results {
+  padding: 0; // No padding on phone
+
+  @include tablet {
+    padding: $gap;
+  }
+
+  &__header {
+    margin-bottom: $gap;
+  }
+
+  &__header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: $gap;
+  }
+
+  &__meta {
+    margin: 0;
+  }
+
+  &__empty {
+    padding: $gap * 2;
+    text-align: center;
+    font-style: italic;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  // Item extends .ui-list__item - styles inherited
+
+  &__date {
+    @extend %small;
+    margin-bottom: calc($gap / 4);
+  }
+
+  &__excerpt {
+    color: var(--color-5);
+    line-height: 1.5;
+    word-wrap: break-word;
+
+    mark {
+      background: var(--bg-accent);
+      color: var(--color-5);
+      padding: 1px 2px;
+      border-radius: $radius-xl;
+    }
+  }
+
+  &__back {
+    margin-bottom: $gap;
+    padding-bottom: $gap;
+    border-bottom: 1px solid var(--color-2);
+  }
+
+  &__back-link {
+    color: var(--color-4);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}

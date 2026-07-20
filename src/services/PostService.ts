@@ -51,6 +51,16 @@ export interface PostOptions {
    * this event. When omitted/empty, AuthService.signEvent applies the UI setting.
    */
   clientTag?: string;
+  /**
+   * NIP-68 image tagging — per-image lists of tagged pubkeys. Each entry
+   * produces one `imeta` tag on the published event with one
+   * `annotate-user <pubkey>:<cx>:<cy>` line per tagged user (center
+   * coordinates computed from the image's natural dimensions). A top-level
+   * `["p", <pubkey>]` is added per unique tagged user so the recipient's
+   * `#p`-subscription fires and NotificationsOrchestrator can classify the
+   * event as an image-tag.
+   */
+  imageTags?: { imageUrl: string; taggedPubkeys: string[] }[];
 }
 
 export interface HighlightOptions {
@@ -103,7 +113,7 @@ export class PostService {
    * @returns Promise<boolean> - Success status
    */
   public async createPost(options: PostOptions): Promise<boolean> {
-    const { relays, contentWarning, pollData, quotedEvent, quotedArticle, clientTag } = options;
+    const { relays, contentWarning, pollData, quotedEvent, quotedArticle, clientTag, imageTags } = options;
     const { stripTrackingParams } = await import('../helpers/stripTrackingParams');
     const content = stripTrackingParams(options.content);
 
@@ -210,6 +220,42 @@ export class PostService {
       // overrides the global "via NoorNote" UI setting for this one event.
       if (clientTag && clientTag.trim().length > 0) {
         tags.push(['client', clientTag.trim()]);
+      }
+
+      // NIP-68 image tagging — attach `imeta` blocks with `annotate-user` lines
+      // (center coordinates) per tagged user. Top-level `p` tags ensure the
+      // recipient's `#p`-subscription fires and the NotificationsOrchestrator
+      // can classify the event as an image-tag.
+      if (imageTags && imageTags.length > 0) {
+        const { getImageDimensions } = await import('../helpers/getImageDimensions');
+        const taggedPubkeySet = new Set<string>(); // dedup across all images
+
+        for (const entry of imageTags) {
+          if (!entry.imageUrl || entry.taggedPubkeys.length === 0) continue;
+
+          // Resolve center coordinates from natural dimensions. Falls back to
+          // 0,0 if the image can't be probed (rare; e.g. CORS-blocked). The
+          // `annotate-user` value is still emitted — the spec requires the
+          // `pubkey:x:y` shape.
+          const dim = await getImageDimensions(entry.imageUrl);
+          const cx = dim ? Math.round(dim.width / 2) : 0;
+          const cy = dim ? Math.round(dim.height / 2) : 0;
+
+          const imetaParts: string[] = [`url ${entry.imageUrl}`];
+          for (const pubkey of entry.taggedPubkeys) {
+            imetaParts.push(`annotate-user ${pubkey}:${cx}:${cy}`);
+            taggedPubkeySet.add(pubkey);
+          }
+          tags.push(['imeta', ...imetaParts]);
+        }
+
+        // Top-level `p` tags — only for pubkeys NOT already mentioned in content
+        // (avoids duplicate `p` tags).
+        taggedPubkeySet.forEach(pubkey => {
+          if (!mentionedPubkeys.has(pubkey)) {
+            tags.push(['p', pubkey]);
+          }
+        });
       }
 
       // Custom emoji tags (NIP-30) — only when the addon is enabled

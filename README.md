@@ -176,7 +176,7 @@ If the app crashes, check the log files:
 | [NIP-57](https://github.com/nostr-protocol/nips/blob/master/57.md) | Zaps | 9734, 9735 |
 | [NIP-59](https://github.com/nostr-protocol/nips/blob/master/59.md) | Gift Wrap (used by NIP-17 DMs) | 1059 |
 | [NIP-65](https://github.com/nostr-protocol/nips/blob/master/65.md) | Relay list metadata | 10002 |
-| [NIP-68](https://github.com/nostr-protocol/nips/blob/master/68.md) | Picture events | 20 |
+| [NIP-68](https://github.com/nostr-protocol/nips/blob/master/68.md) | Picture events; user annotations in images (`annotate-user` in `imeta`) | 20 |
 | [NIP-58](https://github.com/nostr-protocol/nips/blob/master/58.md) | Badges | 8, 30009, 10008, 30008 |
 | [NIP-71](https://github.com/nostr-protocol/nips/blob/master/71.md) | Video events | 21, 22 |
 | [NIP-73](https://github.com/nostr-protocol/nips/blob/master/73.md) | External content IDs (podcast shows & episodes, web pages) | - |

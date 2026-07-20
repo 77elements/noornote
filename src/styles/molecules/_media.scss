@@ -96,6 +96,29 @@ $note-media-max-width: 560px;
   &.note-media--grid-3-cols {
     grid-template-columns: 1fr 1fr 1fr;
   }
+
+  // NIP-68 image tagging — per-image cell wrapper. Only emitted when at least
+  // one user is tagged in that image, so untagged notes keep the legacy
+  // layout (raw <img>/<picture> as direct grid children) byte-identical.
+  // Grid rules above work unchanged because .note-media__cell is itself a
+  // valid grid item.
+  .note-media__cell {
+    display: flex;
+    flex-direction: column;
+    min-width: 0; // lets long tagline truncate inside grid track
+  }
+
+  .note-media__tagline {
+    font-size: 11px;
+    color: var(--color-3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    margin-top: calc($gap / 2);
+    line-height: 1.4;
+    user-select: none;
+  }
 }
 
 // Video wrapper: reserves the video's height and shows the imeta poster; the real

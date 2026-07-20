@@ -44,7 +44,7 @@
 }
 
 // Search trigger now lives inline as the 8th icon in the .profile-npub row.
-.profile-search-mount {
+.textinput-overlay-mount {
   display: inline-flex;
 }
 
@@ -173,9 +173,9 @@
 
   // The search trigger's wrapper chain collapses so its link sits inline as an
   // icon — and drops the wrapper's own pill background.
-  .profile-search-mount,
-  .profile-search,
-  .profile-search__trigger {
+  .textinput-overlay-mount,
+  .textinput-overlay,
+  .textinput-overlay__trigger {
     display: inline-flex;
     padding: 0;
     background: transparent;
@@ -183,7 +183,7 @@
   }
 
   // Search field opens as a popup below the icon row, so the icon never wraps.
-  .profile-search__overlay {
+  .textinput-overlay__panel {
     position: absolute;
     top: 100%;
     left: 0;
@@ -195,7 +195,7 @@
   // Unified round icon buttons (38px, bordered, no fill) — Noor jadÄ«d.
   > button,
   .tribe-btn,
-  .profile-search__link {
+  .textinput-overlay__link {
     width: 38px;
     height: 38px;
     min-width: 38px;

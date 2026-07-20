@@ -77,6 +77,7 @@ export class PictureNoteProcessor {
   /**
    * Extract image MediaContent from imeta tags (NIP-92)
    * Format: ["imeta", "url https://...", "m image/jpeg", "dim 1024x768", "alt description", ...]
+   * NIP-68: ["imeta", "url https://...", "annotate-user <pubkey_hex>:<x>:<y>", ...]
    */
   static extractImagesFromTags(tags: string[][]): MediaContent[] {
     const media: MediaContent[] = [];
@@ -87,6 +88,7 @@ export class PictureNoteProcessor {
       let url = '';
       let alt = '';
       let dimensions: { width: number; height: number } | undefined;
+      const taggedPubkeys: string[] = [];
 
       for (let i = 1; i < tag.length; i++) {
         const prop = tag[i];
@@ -112,6 +114,15 @@ export class PictureNoteProcessor {
             }
             break;
           }
+          case 'annotate-user': {
+            // NIP-68: "<pubkey_hex>:<x>:<y>"
+            const annotMatch = value.match(/^([0-9a-f]{64}):\d+:\d+$/);
+            if (annotMatch) {
+              const pubkey = annotMatch[1]!;
+              if (!taggedPubkeys.includes(pubkey)) taggedPubkeys.push(pubkey);
+            }
+            break;
+          }
         }
       }
 
@@ -119,6 +130,7 @@ export class PictureNoteProcessor {
         const item: MediaContent = { type: 'image', url };
         if (alt) item.alt = alt;
         if (dimensions) item.dimensions = dimensions;
+        if (taggedPubkeys.length > 0) item.taggedPubkeys = taggedPubkeys;
         media.push(item);
       }
     }

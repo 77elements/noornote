@@ -49,10 +49,15 @@ export class MentionAutocomplete {
   }
 
   /**
-   * Initialize autocomplete on textarea
+   * Initialize autocomplete on a textarea or single-line input.
+   *
+   * Note: HTMLInputElement is structurally compatible with HTMLTextAreaElement
+   * for our needs (value / selectionStart / setSelectionRange), so we cast
+   * either to HTMLTextAreaElement here. Callers pass any selector that
+   * matches a textarea OR an <input type="text">.
    */
   public init(): void {
-    this.textarea = document.querySelector(this.options.textareaSelector);
+    this.textarea = document.querySelector(this.options.textareaSelector) as HTMLTextAreaElement | null;
     if (!this.textarea) return;
 
     this.textarea.addEventListener('input', (e) => this.handleInput(e));

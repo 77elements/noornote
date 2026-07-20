@@ -17,10 +17,18 @@
  */
 
 export type TooltipPlacement = 'top' | 'bottom';
+export type TooltipAlign = 'center' | 'start' | 'end';
 
 export interface TooltipOptions {
   /** Preferred placement relative to the target. Default: 'top'. */
   placement?: TooltipPlacement;
+  /**
+   * Horizontal alignment of the popup relative to the target.
+   * - 'center' (default): popup centered on the target.
+   * - 'start': popup's left edge aligns with the target's left edge.
+   * - 'end': popup's right edge aligns with the target's right edge.
+   */
+  align?: TooltipAlign;
 }
 
 export class Tooltip {
@@ -33,6 +41,7 @@ export class Tooltip {
    */
   static attach(target: HTMLElement, content: string, options: TooltipOptions = {}): () => void {
     const placement = options.placement ?? 'top';
+    const align = options.align ?? 'center';
 
     // Hide on scroll so the popup never strands mid-air while open. The scroll
     // listener only exists while visible, so attach() leaks no global handler.
@@ -43,7 +52,7 @@ export class Tooltip {
       const popup = Tooltip.ensurePopup();
       popup.textContent = content;
       popup.classList.add('nn-tooltip--visible');
-      Tooltip.position(target, popup, placement);
+      Tooltip.position(target, popup, placement, align);
       window.addEventListener('scroll', onScroll, true);
     };
 
@@ -79,13 +88,20 @@ export class Tooltip {
     return Tooltip.popup;
   }
 
-  private static position(target: HTMLElement, popup: HTMLElement, placement: TooltipPlacement): void {
+  private static position(target: HTMLElement, popup: HTMLElement, placement: TooltipPlacement, align: TooltipAlign): void {
     const rect = target.getBoundingClientRect();
     const pw = popup.offsetWidth;
     const ph = popup.offsetHeight;
     const margin = 8;
 
-    let left = rect.left + rect.width / 2 - pw / 2;
+    let left: number;
+    if (align === 'start') {
+      left = rect.left;
+    } else if (align === 'end') {
+      left = rect.left + rect.width - pw;
+    } else {
+      left = rect.left + rect.width / 2 - pw / 2;
+    }
     left = Math.max(margin, Math.min(left, window.innerWidth - pw - margin));
 
     let top = placement === 'top' ? rect.top - ph - margin : rect.bottom + margin;

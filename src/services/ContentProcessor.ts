@@ -4,7 +4,7 @@
  * Handles: media extraction, link extraction, hashtags, quoted refs, HTML formatting
  */
 
-import { extractMedia } from '../helpers/extractMedia';
+import { extractMediaWithImeta } from '../helpers/extractMedia';
 import { extractBolt11, type Bolt11Match } from '../helpers/extractBolt11';
 import { unwrapStreamLinks } from '../helpers/unwrapStreamLinks';
 import { unwrapGitLinks } from '../helpers/unwrapGitLinks';
@@ -101,7 +101,7 @@ export class ContentProcessor {
     text = unwrapStreamLinks(text);
     text = unwrapGitLinks(text);
 
-    const media = extractMedia(text);
+    const media = extractMediaWithImeta(text, tags);
     const links = extractLinks(text);
     const hashtags = extractHashtags(text);
     const quotedRefs = extractQuotedReferences(text);

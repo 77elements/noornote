@@ -620,7 +620,7 @@ export class ProfileView extends View {
                 <svg width="18" height="18"><use href="#icon-lightning-filled"/></svg>
               </button>
               ` : ''}
-              <div class="profile-search-mount"></div>
+              <div class="textinput-overlay-mount"></div>
               <span class="copy-feedback">Copied!</span>
             </div>
 
@@ -1450,17 +1450,50 @@ export class ProfileView extends View {
    * Initialize search component
    */
   private initializeSearchComponent(): void {
-    // Create search component (emits globalSearch:start event)
-    this.searchComponent = new ProfileSearchComponent(this.pubkey);
+    // Create search component with the existing search behaviour moved into
+    // the onSubmit closure — the component itself is now behaviour-agnostic.
+    this.searchComponent = new ProfileSearchComponent({
+      onSubmit: async (searchTerms, helpers) => {
+        if (!searchTerms) return;
+        const profileApi = this.profileModuleApi;
+        if (!profileApi) {
+          helpers.showStatus('Profile module not available', 'error');
+          return;
+        }
+
+        helpers.setButtonState('loading');
+        try {
+          const result = await profileApi.searchUserNotes({
+            pubkeyHex: this.pubkey,
+            searchTerms,
+            onProgress: (message) => helpers.showStatus(message, 'info'),
+          });
+
+          this.eventBus.emit('profileSearch:complete', {
+            query: searchTerms,
+            results: result.events,
+            meta: `${result.matchCount} match${result.matchCount !== 1 ? 'es' : ''} found (searched ${result.totalNotes} note${result.totalNotes !== 1 ? 's' : ''} from ${result.dateRange.start} to ${result.dateRange.end})`,
+          });
+
+          helpers.hideStatus();
+          helpers.setButtonState('idle');
+          helpers.collapse();
+        } catch (error) {
+          console.error('[ProfileSearch] Search failed:', error);
+          helpers.showStatus(`Search failed: ${error}`, 'error');
+          helpers.setButtonState('idle');
+        }
+      },
+    });
 
     // Mount search component in header
-    const searchMount = this.container.querySelector('.profile-search-mount');
+    const searchMount = this.container.querySelector('.textinput-overlay-mount');
     if (searchMount && this.searchComponent) {
       searchMount.appendChild(this.searchComponent.getElement());
 
       // The search trigger mounts after attachIconTooltips() ran, so give it its
       // nn-tooltip here (drop the native title, attach the shared popup).
-      const searchLink = searchMount.querySelector('.profile-search__link') as HTMLElement | null;
+      const searchLink = searchMount.querySelector('.textinput-overlay__link') as HTMLElement | null;
       const label = searchLink?.getAttribute('title');
       if (searchLink && label) {
         searchLink.removeAttribute('title');

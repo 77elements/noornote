@@ -62,6 +62,7 @@ export interface MediaContent {
   alt?: string;
   thumbnail?: string;
   dimensions?: { width: number; height: number };
+  taggedPubkeys?: string[];
 }
 
 export interface LinkPreview {

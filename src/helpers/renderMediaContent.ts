@@ -11,8 +11,11 @@
  */
 
 import { escapeHtmlAttr } from './escapeHtml';
+import { escapeHtml } from './escapeHtml';
 import { lightboxImageHtml, lightboxContainerDataUrlsAttr } from './lightboxImages';
 import { isDataSaverEnabled } from '../services/DataSaverService';
+import { Tooltip } from '../components/ui/Tooltip';
+import { UserProfileService } from '../services/UserProfileService';
 
 /**
  * Render a tap-to-load placeholder (Data Saver mode).
@@ -48,14 +51,11 @@ function renderVideo(item: MediaContent, index: number): string {
   return `<div class="note-video-wrap" data-video-src="${src}" data-index="${index}"${posterData}${dimAttr}${styleAttr}>${posterImg}<span class="note-video-wrap__play" aria-hidden="true">▶</span></div>`;
 }
 
-export interface MediaContent {
-  type: 'image' | 'video' | 'audio';
-  url: string;
-  originalUrl?: string;
-  alt?: string;
-  thumbnail?: string;
-  dimensions?: { width: number; height: number };
-}
+// Re-export canonical MediaContent definition (single source of truth in NoteTypes.ts)
+export type { MediaContent } from '../components/ui/types/NoteTypes';
+import type { MediaContent } from '../components/ui/types/NoteTypes';
+import { hexToNpub } from './nip19';
+import { npubToUsername } from './npubToUsername';
 
 /**
  * Extract YouTube video ID from URL
@@ -109,6 +109,51 @@ export interface RenderMediaOptions {
   authorPubkey?: string;
 }
 
+/**
+ * NIP-68 image tagging: render a single-line tagline under an image with the
+ * comma-separated usernames of all tagged pubkeys. Returns empty string when
+ * the media has no tagged pubkeys.
+ *
+ * Uses `npubToUsername` (simple mode) for synchronous rendering from cache;
+ * misses trigger a fire-and-forget profile fetch so the next render is fresh.
+ *
+ * Hex pubkeys are mirrored into `data-tagged-pubkeys` so
+ * `initImageTaglineTooltips()` can re-resolve usernames asynchronously
+ * when profiles arrive (same pattern as ContentProcessor's mention patcher).
+ *
+ * `data-full-list` + `tabindex` + `role=button` drive the shared Tooltip
+ * popup that shows the complete, non-truncated user list.
+ */
+function renderImageTagline(item: MediaContent): string {
+  if (!item.taggedPubkeys || item.taggedPubkeys.length === 0) return '';
+
+  const names: string[] = [];
+  for (const hex of item.taggedPubkeys) {
+    const npub = hexToNpub(hex);
+    if (!npub) continue;
+    names.push(npubToUsername(npub));
+  }
+  if (names.length === 0) return '';
+
+  const visible = names.join(', ');
+  const escapedFull = escapeHtmlAttr(visible);
+  const pubkeysAttr = escapeHtmlAttr(item.taggedPubkeys.join(','));
+  return `<div class="note-media__tagline" data-full-list="${escapedFull}" data-tagged-pubkeys="${pubkeysAttr}" tabindex="0" role="button" aria-label="Tagged users: ${escapedFull}">${escapeHtml(visible)}</div>`;
+}
+
+/**
+ * Wrap a single image element in a `.note-media__cell` together with its
+ * tagline (if any). Returns either the wrapped cell or, when no tagline is
+ * needed, the raw image HTML unchanged (zero-regression path for untagged
+ * notes — the existing grid CSS keeps working because raw `<img>`/`<picture>`
+ * elements remain direct grid children).
+ */
+function wrapImageCell(imageHtml: string, item: MediaContent): string {
+  const tagline = renderImageTagline(item);
+  if (!tagline) return imageHtml;
+  return `<div class="note-media__cell">${imageHtml}${tagline}</div>`;
+}
+
 export function renderMediaContent(media: MediaContent[] | RenderMediaOptions): string {
   // Support both old signature (array) and new signature (options object)
   const mediaArray = Array.isArray(media) ? media : media.media;
@@ -124,8 +169,10 @@ export function renderMediaContent(media: MediaContent[] | RenderMediaOptions): 
     if (dataSaver) return renderPlaceholder(item.type, item.url, index, item.alt, item.thumbnail);
 
     switch (item.type) {
-      case 'image':
-        return lightboxImageHtml(item.url, index, item.alt ? { alt: item.alt } : undefined);
+      case 'image': {
+        const img = lightboxImageHtml(item.url, index, item.alt ? { alt: item.alt } : undefined);
+        return wrapImageCell(img, item);
+      }
       case 'video':
         const ytId = getYouTubeVideoId(item.url);
         if (ytId) {
@@ -423,7 +470,8 @@ export function replaceMediaPlaceholders(
       const mediaItem = media[index];
       if (!mediaItem) return;
       const placeholder = `__MEDIA_${index}__`;
-      const mediaHtml = renderSingleMedia(mediaItem, index, isNSFW);
+      const rawMedia = renderSingleMedia(mediaItem, index, isNSFW);
+      const mediaHtml = mediaItem.type === 'image' ? wrapImageCell(rawMedia, mediaItem) : rawMedia;
       const wrappedMedia = `<div class="note-media"${dataAttr}>${mediaHtml}</div>`;
       result = result.replace(placeholder, wrappedMedia);
     } else {
@@ -443,9 +491,10 @@ export function replaceMediaPlaceholders(
         gridModifier = ' note-media--grid-3-cols';
       }
 
-      const mediaHtml = groupMedia.map((item, idx) =>
-        renderSingleMedia(item, group[idx] ?? idx, isNSFW)
-      ).join('');
+      const mediaHtml = groupMedia.map((item, idx) => {
+        const raw = renderSingleMedia(item, group[idx] ?? idx, isNSFW);
+        return item.type === 'image' ? wrapImageCell(raw, item) : raw;
+      }).join('');
 
       const wrapper = isNSFW ? `note-media nsfw-media${gridModifier}` : `note-media${gridModifier}`;
       const gridHtml = `<div class="${wrapper}"${dataAttr}>${mediaHtml}</div>`;
@@ -464,4 +513,109 @@ export function replaceMediaPlaceholders(
   result = result.replace(/(?:<br\s*\/?>\s*){2,}(<div class="note-media)/gi, '<br>$1');
 
   return result;
+}
+
+/**
+ * Lazily attach the shared Tooltip popup to NIP-68 image-taglines on first
+ * hover. Notes are rendered + torn down constantly in the feed, so per-
+ * element wiring at render time would leak. This delegated handler attaches
+ * at most once per tagline element (tracked via `data-tagline-tooltip`),
+ * reads the full user list from `data-full-list`, and lets Tooltip own the
+ * show/hide on hover/focus.
+ *
+ * Click also toggles focus so touch devices (no real hover) can surface the
+ * full list.
+ *
+ * Also subscribes to UserProfileService profile updates so the tagline's
+ * visible text (and `data-full-list`) get re-resolved when profiles arrive
+ * asynchronously — `npubToUsername` is sync-from-cache and falls back to the
+ * raw npub when the profile is cold. Without this, taglines would forever
+ * show npubs for users not yet cached at first render.
+ *
+ * Call once at app startup.
+ */
+export function initImageTaglineTooltips(): void {
+  const profileService = UserProfileService.getInstance();
+
+  /** Re-resolve a single tagline's visible text + full-list from cache. */
+  const reRenderTagline = (tagline: HTMLElement): void => {
+    const pubkeysCsv = tagline.dataset.taggedPubkeys;
+    if (!pubkeysCsv) return;
+    const pubkeys = pubkeysCsv.split(',').filter(Boolean);
+    const npubs = pubkeys.map(hexToNpub).filter(Boolean) as string[];
+    if (npubs.length === 0) return;
+    const names = npubs.map(npubToUsername);
+    const visible = names.join(', ');
+    const escapedFull = escapeHtmlAttr(visible);
+    // Only mutate if anything actually changed — avoids resetting the DOM
+    // (and the Tooltip's position) on every unrelated profile update.
+    if (tagline.textContent !== visible) {
+      tagline.textContent = visible;
+      tagline.setAttribute('data-full-list', escapedFull);
+      tagline.setAttribute('aria-label', `Tagged users: ${visible}`);
+    }
+  };
+
+  /** Re-resolve every tagline that references the given pubkey. */
+  const refreshTaglinesForPubkey = (pubkey: string): void => {
+    const taglines = document.querySelectorAll<HTMLElement>('.note-media__tagline');
+    taglines.forEach(tagline => {
+      const pubkeysCsv = tagline.dataset.taggedPubkeys;
+      if (!pubkeysCsv) return;
+      if (!pubkeysCsv.split(',').includes(pubkey)) return;
+      reRenderTagline(tagline);
+    });
+  };
+
+  const attachIfNeeded = (tagline: HTMLElement): void => {
+    if (tagline.dataset.taglineTooltip === '1') return;
+    const fullList = tagline.dataset.fullList;
+    if (!fullList) return;
+    tagline.dataset.taglineTooltip = '1';
+    void Tooltip.attach(tagline, fullList, { placement: 'bottom', align: 'start' });
+  };
+
+  // Hover (desktop) — fire on first pointer entry.
+  document.body.addEventListener('mouseover', (e) => {
+    const tagline = (e.target as HTMLElement).closest('.note-media__tagline') as HTMLElement | null;
+    if (tagline) attachIfNeeded(tagline);
+  });
+
+  // Click / tap (mobile + desktop) — focus the tagline so Tooltip's focus
+  // handler fires. Without this, touch devices never see the popup since
+  // they don't emit a real mouseover.
+  document.body.addEventListener('click', (e) => {
+    const tagline = (e.target as HTMLElement).closest('.note-media__tagline') as HTMLElement | null;
+    if (!tagline) return;
+    attachIfNeeded(tagline);
+    tagline.focus();
+  });
+
+  // Subscribe to profile updates — re-resolve taglines when profiles arrive.
+  profileService.subscribeToAnyProfileUpdate((pubkey) => {
+    refreshTaglinesForPubkey(pubkey);
+  });
+
+  // Kick off background fetches for pubkeys seen in any tagline currently in
+  // the DOM. The subscription above updates them when profiles arrive; this
+  // primes the cache so the arrival actually happens.
+  const primeFetchesForVisibleTaglines = (): void => {
+    const taglines = document.querySelectorAll<HTMLElement>('.note-media__tagline');
+    taglines.forEach(tagline => {
+      const pubkeysCsv = tagline.dataset.taggedPubkeys;
+      if (!pubkeysCsv) return;
+      for (const hex of pubkeysCsv.split(',')) {
+        if (!hex) continue;
+        // Fire-and-forget — actual DOM update happens via subscription.
+        profileService.getUserProfile(hex).catch(() => {});
+      }
+    });
+  };
+  primeFetchesForVisibleTaglines();
+
+  // Also prime for dynamically-added taglines (feed scroll, new notes).
+  // A MutationObserver is cheap insurance for the gap between initial render
+  // and the next profile-cache event.
+  const observer = new MutationObserver(() => primeFetchesForVisibleTaglines());
+  observer.observe(document.body, { childList: true, subtree: true });
 }

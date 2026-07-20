@@ -32,7 +32,7 @@ import { USER_CONTENT_KINDS } from '../../types/nostr';
 import { getCacheSize } from '../../helpers/LRUCache';
 import { isDataSaverEnabled } from '../DataSaverService';
 
-export type NotificationType = 'mention' | 'reply' | 'thread-reply' | 'quote' | 'repost' | 'reaction' | 'zap' | 'zap-reply' | 'article' | 'mutual_unfollow' | 'mutual_new' | 'follower_new' | 'hashtag' | 'poll_vote' | 'highlight' | 'badge-award' | 'dhikr_round' | 'dhikr_commit' | 'dhikr_complete' | 'nostrord';
+export type NotificationType = 'mention' | 'reply' | 'thread-reply' | 'quote' | 'repost' | 'reaction' | 'zap' | 'zap-reply' | 'article' | 'mutual_unfollow' | 'mutual_new' | 'follower_new' | 'hashtag' | 'poll_vote' | 'highlight' | 'badge-award' | 'dhikr_round' | 'dhikr_commit' | 'dhikr_complete' | 'nostrord' | 'image-tag';
 
 export interface NotificationEvent {
   event: NostrEvent;
@@ -923,6 +923,27 @@ export class NotificationsOrchestrator extends Orchestrator {
   }
 
   /**
+   * NIP-68 image-tag detection: returns true when the event carries at least
+   * one `imeta` tag whose `annotate-user <pubkey>:<x>:<y>` line references the
+   * given user. Used to classify an incoming tagged-post notification as
+   * 'image-tag' rather than the generic 'mention'.
+   */
+  private hasImageTagForUser(event: NostrEvent, userPubkey: string): boolean {
+    const imetaTags = event.tags.filter(t => t[0] === 'imeta');
+    for (const tag of imetaTags) {
+      for (let i = 1; i < tag.length; i++) {
+        const prop = tag[i];
+        if (!prop || !prop.startsWith('annotate-user ')) continue;
+        const value = prop.substring('annotate-user '.length);
+        // Format: "<pubkey_hex>:<x>:<y>"
+        const match = value.match(/^([0-9a-f]{64}):\d+:\d+$/);
+        if (match && match[1] === userPubkey) return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Detect notification type from event
    */
   private getNotificationType(event: NostrEvent): NotificationType {
@@ -935,6 +956,13 @@ export class NotificationsOrchestrator extends Orchestrator {
       const hasUserPtag = event.tags.some(t => t[0] === 'p' && t[1] === currentUser.pubkey);
       const hasAnyEtag = event.tags.some(t => t[0] === 'e');
       const userMentionedInContent = this.isUserMentionedInContent(event.content, currentUser.pubkey);
+
+      // NIP-68 image-tag: event has imeta with `annotate-user <myPubkey>:x:y`.
+      // Takes precedence over plain mention classification so the action text
+      // reads "tagged you in an image" rather than the generic "mentioned you".
+      if (hasUserPtag && this.hasImageTagForUser(event, currentUser.pubkey)) {
+        return 'image-tag';
+      }
 
       // Check for quoted repost (q-tag pointing to user's event)
       const qTag = event.tags.find(t => t[0] === 'q');
