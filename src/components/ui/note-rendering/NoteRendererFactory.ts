@@ -16,6 +16,7 @@ import { GitEventRenderer } from './GitEventRenderer';
 import { HighlightRenderer } from './HighlightRenderer';
 import { BadgeAwardRenderer } from './BadgeAwardRenderer';
 import { EmojiPackRenderer } from './EmojiPackRenderer';
+import { LiveStreamRenderer } from './LiveStreamRenderer';
 
 export class NoteRendererFactory {
   /**
@@ -42,6 +43,8 @@ export class NoteRendererFactory {
         return BadgeAwardRenderer.render(note, options);
       case 'emoji-pack':
         return EmojiPackRenderer.render(note, options);
+      case 'live-stream':
+        return LiveStreamRenderer.render(note, options);
       default:
         return OriginalNoteRenderer.render(note, options);
     }

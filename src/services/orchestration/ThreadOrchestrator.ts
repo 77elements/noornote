@@ -463,12 +463,16 @@ export class ThreadOrchestrator extends Orchestrator {
 
     const relays = this.transport.getReadRelays();
     const subId = `live-replies-${noteId}`;
+    const isAddressable = noteId.includes(':');
 
-    const filters: NDKFilter[] = [{
-      kinds: [1, 1111],
-      '#e': [noteId],
-      since: Math.floor(Date.now() / 1000)
-    }];
+    // Addressable events (NIP-33, kinds 30000–39999) are referenced via #a /
+    // #A tags by NIP-22 comments and legacy replies; hex ids use #e.
+    const filters: NDKFilter[] = isAddressable
+      ? [
+          { kinds: [1, 1111], '#a': [noteId], since: Math.floor(Date.now() / 1000) },
+          { kinds: [1, 1111], '#A': [noteId], since: Math.floor(Date.now() / 1000) },
+        ]
+      : [{ kinds: [1, 1111], '#e': [noteId], since: Math.floor(Date.now() / 1000) }];
 
     this.transport.subscribeLive(relays, filters, subId, (event) => {
       if (this.isActualReply(event, noteId)) {

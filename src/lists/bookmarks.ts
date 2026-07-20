@@ -2410,19 +2410,28 @@ export class BookmarkCard {
         displayContent = `#${value}`;
       } else if (type === 'a' && value) {
         const isListing = value.startsWith('30402:');
-        displayLabel = isListing ? 'Listing' : 'Address';
+        const isLiveStream = value.startsWith('30311:');
+        displayLabel = isListing ? 'Listing' : isLiveStream ? 'Live Stream' : 'Address';
         if (description) {
           displayContent = description.length > 60 ? description.slice(0, 60) + '...' : description;
         } else {
           displayContent = value.slice(0, 40) + '...';
         }
+      } else if ((type === 'e' || !type) && id) {
+        // type='e' without a loaded event: don't cry "Note not found" — we may
+        // simply not have fetched it yet. Show a neutral "Note" label and the
+        // truncated id; the async load below replaces it with the real snippet
+        // (title, content, picture, time) once the event resolves. The SNV
+        // reverse-lookup does the same thing when the user clicks through.
+        displayLabel = 'Note';
+        displayContent = id.slice(0, 12) + '…';
       } else {
         displayLabel = 'Note not found';
         displayContent = id.slice(0, 8) + '...';
       }
 
       card.dataset.bookmarkType = type || 'e';
-      const snippetMode = type === 'e' || !type ? 'not-found' : 'external';
+      const snippetMode = (type === 'e' || !type) ? 'not-found' : 'external';
       card.innerHTML = `
         ${isPrivate ? '<span class="private-badge">🔒</span>' : ''}
         <div class="nn-card__content">
@@ -2453,7 +2462,87 @@ export class BookmarkCard {
 
     this.bindEvents(card);
     this.element = card;
+
+    // For type='e' bookmarks without a loaded event, try to resolve the event
+    // asynchronously so the card can show the real author/title/snippet instead
+    // of the neutral "Note" placeholder. Tries NoteService (LRU cache + relay
+    // fetch by hex id) first, then falls back to the addressable reverse-lookup
+    // for replaceable kinds (live streams, articles) whose original hex id is
+    // no longer on any relay because the author published a newer version.
+    // Read-only — never writes to localStorage; the lists-sync logic stays
+    // untouched.
+    if (!this.data.event && (this.data.type === 'e' || !this.data.type) && this.data.id) {
+      void this.loadEventForPlaceholder(card);
+    }
+
     return card;
+  }
+
+  /**
+   * Asynchronously load a type='e' bookmark's event and repaint the card so it
+   * shows the real author / snippet / timestamp instead of the placeholder.
+   * Swallows errors silently — the placeholder is already a graceful state.
+   *
+   * Read-only: mutates `this.data.event` (in-memory) and DOM only. Never
+   * touches localStorage or the relays.
+   */
+  private async loadEventForPlaceholder(card: HTMLElement): Promise<void> {
+    try {
+      const id = this.data.id;
+      if (!id) return;
+
+      // Stage 1: NoteService (LRU cache + hex-id relay fetch)
+      let event: NostrEvent | null = await NoteService.getInstance().getNote(id);
+
+      // Stage 2: Reverse-lookup for replaceable kinds. If the hex id no longer
+      // resolves (older version of a 30311/30023/... replaced by the author),
+      // look for any repost referencing this id and extract the coordinate.
+      if (!event) {
+        const { resolveAddressableFromReferences } = await import('../helpers/resolveAddressableFromReferences');
+        event = await resolveAddressableFromReferences(id);
+      }
+
+      if (!event) return;
+      // Card may have been detached from the DOM (folder switch, view
+      // teardown) by the time the fetch resolves.
+      if (!card.isConnected) return;
+
+      this.data.event = event;
+      const profile = await this.userProfileService.getUserProfile(event.pubkey);
+      const username = profile?.name || 'Anonymous';
+      const profilePic = profile?.picture || '';
+      const snippet = this.getEventSnippet(event);
+      const timeAgo = formatBookmarkTimestamp(event.created_at);
+
+      const authorNameEl = card.querySelector('.author-name') as HTMLElement | null;
+      const authorPicEl = card.querySelector('.author-pic') as HTMLElement | null;
+      const snippetEl = card.querySelector('.snippet') as HTMLElement | null;
+      const timestampEl = card.querySelector('.timestamp') as HTMLElement | null;
+
+      if (authorNameEl) authorNameEl.textContent = username;
+      if (snippetEl) {
+        snippetEl.textContent = snippet;
+        snippetEl.removeAttribute('data-snippet-mode');
+      }
+      // formatBookmarkTimestamp returns an HTML string (dual gregorian/hijri
+      // span), so it must be innerHTML — textContent would render the tags
+      // as literal text.
+      if (timestampEl) timestampEl.innerHTML = timeAgo;
+      if (authorPicEl) {
+        authorPicEl.innerHTML = '';
+        authorPicEl.removeAttribute('data-pic-type');
+        if (profilePic) {
+          const img = document.createElement('img');
+          img.className = 'author-pic';
+          img.src = profilePic;
+          img.alt = '';
+          img.loading = 'lazy';
+          authorPicEl.replaceWith(img);
+        }
+      }
+    } catch {
+      // Leave the placeholder in place.
+    }
   }
 
   private bindEvents(card: HTMLElement): void {
@@ -2494,8 +2583,32 @@ export class BookmarkCard {
         return;
       }
 
-      if (event?.id) {
-        const nevent = encodeNevent(event.id);
+      // Navigate to SNV for any other 'a' tag bookmark (e.g. kind:30311 live
+      // stream). SNV's renderNote path routes addressable events through the
+      // standard NoteProcessor → NoteRendererFactory pipeline, so a 30311
+      // bookmark opens as a Live Stream card.
+      if (this.data.type === 'a' && this.data.value) {
+        const parts = this.data.value.split(':');
+        if (parts.length >= 3) {
+          const kindNum = Number(parts[0]);
+          const pubkey = parts[1]!;
+          const identifier = parts.slice(2).join(':');
+          if (Number.isFinite(kindNum) && pubkey && identifier) {
+            const { encodeNaddr } = await import('../services/NostrToolsAdapter');
+            const naddr = encodeNaddr({ kind: kindNum, pubkey, identifier });
+            this.router.navigate(`/note/${naddr}`);
+          }
+        }
+        return;
+      }
+
+      // 'e' tag bookmark: prefer the loaded event id, fall back to the stored
+      // value (hex event id) so the card is still clickable when the event
+      // isn't in memory (e.g. older replaceable events whose original id is
+      // no longer carried by any relay).
+      const eventIdForNav = event?.id || this.data.value;
+      if (eventIdForNav) {
+        const nevent = encodeNevent(eventIdForNav);
         this.router.navigate(`/note/${nevent}`);
       }
     });
@@ -2560,6 +2673,10 @@ export class BookmarkCard {
                  || event.tags.find(t => t[0] === 'name')?.[1]
                  || 'Untitled';
       return `Emoji Pack: ${title}`;
+    }
+    if (event.kind === 30311) {
+      const title = event.tags.find(t => t[0] === 'title')?.[1] || 'Untitled';
+      return `Live Stream: ${title}`;
     }
     if (event.kind === 20) {
       const s = this.getTextSnippet(event.content, 100);

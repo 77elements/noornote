@@ -79,13 +79,25 @@ export class ThreadManager {
 
     this.systemLogger.info('ThreadManager', `Fetching quoted reposts for note ${this.config.noteId.slice(0, 8)}`);
 
+    // Addressable events (NIP-33 kinds 30000–39999) are referenced via #a /
+    // #q tags, not #e. Without this branch, the #e filter would carry the
+    // coordinate string and NDK would reject it as "not a valid 64-char hex".
+    const isAddressable = this.config.noteId.includes(':');
+
     try {
       // Two relay queries in parallel: NIP-18 q-tag AND legacy e-tag-with-mention
       // (Primal-iOS pre-NIP-18 pattern). Tag-OR can't be expressed in one filter.
-      const [qTagResult, eTagResult] = await Promise.all([
+      const fetches: Array<Promise<{ events: NostrEvent[] }>> = [
         fetchNostrEvents({ relays, kinds: [1, 6], tags: { 'q': [this.config.noteId] }, limit: 100 }),
-        fetchNostrEvents({ relays, kinds: [1], tags: { 'e': [this.config.noteId] }, limit: 100 })
-      ]);
+      ];
+      if (isAddressable) {
+        fetches.push(fetchNostrEvents({ relays, kinds: [1, 6], tags: { 'a': [this.config.noteId] }, limit: 100 }));
+      } else {
+        fetches.push(fetchNostrEvents({ relays, kinds: [1], tags: { 'e': [this.config.noteId] }, limit: 100 }));
+      }
+      const results = await Promise.all(fetches);
+      const qTagResult = results[0]!;
+      const eTagResult = results[1]!;
 
       const byId = new Map<string, NostrEvent>();
       for (const ev of [...qTagResult.events, ...eTagResult.events]) {
@@ -97,6 +109,11 @@ export class ThreadManager {
         if (!hasContent) return false;
 
         if (event.tags.some(tag => tag[0] === 'q' && tag[1] === this.config.noteId)) return true;
+
+        if (isAddressable) {
+          // Addressable: match via #a tag
+          return event.tags.some(tag => tag[0] === 'a' && tag[1] === this.config.noteId);
+        }
 
         const eTags = event.tags.filter(tag => tag[0] === 'e' && tag[1] === this.config.noteId);
         return eTags.some(tag => tag[3] === 'mention')

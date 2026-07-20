@@ -243,12 +243,24 @@ export class RepliesRenderer {
     this.systemLogger.info('RepliesRenderer', `🔍 Fetching quoted reposts for ${noteId.slice(0, 8)}...`);
 
     try {
+      // Addressable events (NIP-33 kinds 30000–39999) are referenced via #a,
+      // not #e — passing a coordinate through the #e filter is rejected by NDK
+      // as "not a valid 64-char hex string".
+      const isAddressable = noteId.includes(':');
+
       // Two relay queries in parallel: NIP-18 q-tag AND legacy e-tag-with-mention
       // (Primal-iOS pre-NIP-18 pattern). Tag-OR can't be expressed in one filter.
-      const [qTagResult, eTagResult] = await Promise.all([
+      const fetches: Array<Promise<{ events: NostrEvent[] }>> = [
         fetchNostrEvents({ relays, kinds: [1, 6], tags: { 'q': [noteId] }, limit: 100 }),
-        fetchNostrEvents({ relays, kinds: [1], tags: { 'e': [noteId] }, limit: 100 })
-      ]);
+      ];
+      if (isAddressable) {
+        fetches.push(fetchNostrEvents({ relays, kinds: [1, 6], tags: { 'a': [noteId] }, limit: 100 }));
+      } else {
+        fetches.push(fetchNostrEvents({ relays, kinds: [1], tags: { 'e': [noteId] }, limit: 100 }));
+      }
+      const results = await Promise.all(fetches);
+      const qTagResult = results[0]!;
+      const eTagResult = results[1]!;
 
       const byId = new Map<string, NostrEvent>();
       for (const ev of [...qTagResult.events, ...eTagResult.events]) {
@@ -259,8 +271,12 @@ export class RepliesRenderer {
         const hasContent = event.content.trim().length > 0;
         if (!hasContent) return false;
 
-        const qTags = event.tags.filter(tag => tag[0] === 'q');
-        if (qTags.some(tag => tag[1] === noteId)) return true;
+        if (event.tags.some(tag => tag[0] === 'q' && tag[1] === noteId)) return true;
+
+        if (isAddressable) {
+          // Addressable: match via #a tag
+          return event.tags.some(tag => tag[0] === 'a' && tag[1] === noteId);
+        }
 
         const eTags = event.tags.filter(tag => tag[0] === 'e' && tag[1] === noteId);
         return eTags.some(tag => tag[3] === 'mention')

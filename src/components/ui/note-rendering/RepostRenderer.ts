@@ -1,20 +1,23 @@
 /**
- * RepostRenderer - Renders repost notes (kind:6)
- * Handles both standard reposts and NIP-18 reposts
- * Extracts from: NoteUI.createRepostElement()
+ * RepostRenderer - Renders repost notes (kind:6 / kind:16)
+ *
+ * Amethyst-pattern: the inner event is dispatched through the standard
+ * {@link NoteProcessor} + {@link NoteRendererFactory} pipeline — the same path
+ * top-level events take. Special-case branches are kept only for the bespoke
+ * "preview card" kinds (Follow-Pack, Ditto geocache) and the addressable
+ * kinds routed through ArticlePreviewRenderer (article, Zapstore app, live
+ * stream). Any future content kind that grows a Processor/Renderer pair starts
+ * working in reposts automatically without touching this file.
  */
 
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
+import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { UserProfileService } from '../../../services/UserProfileService';
 import { NoteProcessor } from '../note-processing/NoteProcessor';
-import { OriginalNoteRenderer } from './OriginalNoteRenderer';
-import { GitEventRenderer } from './GitEventRenderer';
-import { HighlightRenderer } from './HighlightRenderer';
-import { EmojiPackRenderer } from './EmojiPackRenderer';
+import { NoteRendererFactory } from './NoteRendererFactory';
 import { DittoFeatureRenderer, DITTO_GEOCACHE_KIND } from './DittoFeatureRenderer';
-import { GIT_EVENT_KINDS } from '../../../types/nostr';
+import { ARTICLE_PREVIEW_KINDS } from '../../../helpers/addressableKinds';
 import { ArticlePreviewRenderer } from './ArticlePreviewRenderer';
-import { QuotedNoteRenderer } from './QuotedNoteRenderer';
 import { CollapsibleManager } from '../note-features/CollapsibleManager';
 import { ModuleLoader } from '../../../core/ModuleLoader';
 import type { SingleNoteModuleApi } from '../../../modules/single-note/contracts';
@@ -24,7 +27,6 @@ import { escapeHtml, escapeHtmlAttr } from '../../../helpers/escapeHtml';
 import { hexToNpub } from '../../../helpers/nip19';
 import { encodeNaddr, encodeNevent } from '../../../services/NostrToolsAdapter';
 import { UserHoverCard } from '../UserHoverCard';
-import { Router } from '../../../services/Router';
 import { getViewNavigationController } from '../../../services/ViewNavigationController';
 import { AddonLoader } from '../../../addons/AddonLoader';
 import type { ProfileRecognitionRuntime } from '../../../addons/profile-recognition/runtime';
@@ -54,7 +56,7 @@ export class RepostRenderer {
   }
 
   /**
-   * Create repost element with "User reposted" display
+   * Create repost element with "User reposted" display.
    */
   static render(note: ProcessedNote, opts: NoteUIOptions): HTMLElement {
     const repostDiv = document.createElement('div');
@@ -62,10 +64,26 @@ export class RepostRenderer {
     repostDiv.dataset.eventId = note.id;
     repostDiv.dataset.noteType = 'repost';
 
-    // Repost header showing who reposted. Pull render-ready values from the
-    // profile cache: it always returns either real data or a deterministic
-    // fallback (identicon / shortened npub). When the real profile arrives
-    // the subscription below repaints both.
+    RepostRenderer.buildRepostHeader(repostDiv, note);
+
+    if (!note.repostedEvent) {
+      // NIP-18 repost: content is empty, need to fetch original event
+      RepostRenderer.handleNip18Fetch(repostDiv, note, opts);
+    } else {
+      // Embedded repost: dispatch the inner event through the standard pipeline.
+      // Mute check fires async; on positive mute the entire repost is removed.
+      RepostRenderer.attachMuteCheck(repostDiv, note.repostedEvent.pubkey);
+      RepostRenderer.dispatchInnerEvent(repostDiv, note.repostedEvent, opts);
+    }
+
+    return repostDiv;
+  }
+
+  /**
+   * Build the "user reposted" header (avatar + name + "reposted" label),
+   * wire profile-recognition blinkers + hover card.
+   */
+  private static buildRepostHeader(repostDiv: HTMLElement, note: ProcessedNote): void {
     const reposterPubkey = note.reposter?.pubkey || '';
     const reposterNpub = reposterPubkey ? hexToNpub(reposterPubkey) || '' : '';
     const reposterName = reposterPubkey
@@ -84,7 +102,6 @@ export class RepostRenderer {
           <img src="${escapeHtmlAttr(reposterPicture)}" alt="" data-pubkey="${reposterPubkey}" class="profile-pic profile-pic--mini" /><span class="reposter-username"></span></a></span><span class="repost-label">reposted</span>
     `;
 
-    // Set initial username (may be npub if not cached)
     const usernameSpan = repostHeader.querySelector('.reposter-username') as HTMLElement;
     if (usernameSpan) {
       usernameSpan.textContent = reposterName;
@@ -94,9 +111,6 @@ export class RepostRenderer {
     let avatarBlinker: ProfileBlinkerType | null = null;
     let nameBlinker: TextBlinkerType | null = null;
 
-    // Subscribe to profile updates. Profile-recognition runtime is looked up
-    // fresh via AddonLoader each callback — no caching, so toggle OFF / account
-    // switches are transparent (new runtime picked up automatically).
     if (reposterPubkey) {
       RepostRenderer.userProfileService.subscribeToProfile(reposterPubkey, (profile) => {
         const newUsername = UserProfileService.displayNameOf(profile, reposterPubkey);
@@ -104,11 +118,9 @@ export class RepostRenderer {
         const usernameEl = repostHeader.querySelector('.reposter-username') as HTMLElement;
         const avatarElement = repostHeader.querySelector('.profile-pic--mini') as HTMLImageElement;
 
-        // Profile Recognition: check if name/picture changed and should blink
         const rt = RepostRenderer.getRecognitionRuntime();
         const shouldBlink = rt?.service?.checkRecognition(reposterPubkey, newUsername, newPicture);
 
-        // Update username with blinking
         if (usernameEl) {
           if (shouldBlink) {
             if (!nameBlinker && rt?.TextBlinker) {
@@ -126,7 +138,6 @@ export class RepostRenderer {
           }
         }
 
-        // Update avatar with blinking
         if (avatarElement) {
           if (shouldBlink) {
             if (!avatarBlinker && rt?.ProfileBlinker) {
@@ -145,7 +156,6 @@ export class RepostRenderer {
         }
       });
 
-      // Setup UserHoverCard for the user-mention container
       const userHoverCard = UserHoverCard.getInstance();
       const userMention = repostHeader.querySelector('.user-mention') as HTMLElement;
 
@@ -160,278 +170,181 @@ export class RepostRenderer {
     }
 
     repostDiv.appendChild(repostHeader);
+  }
 
-    // Check if we have the reposted event (standard repost) or need to fetch (NIP-18)
-    if (!note.repostedEvent) {
-      // NIP-18 repost: content is empty, need to fetch original event
-      const originalRef = RepostRenderer.extractOriginalEventRef(note);
-
-      if (originalRef) {
-        // Show placeholder while fetching
-        const placeholderDiv = document.createElement('div');
-        placeholderDiv.className = 'repost-loading-placeholder';
-        placeholderDiv.innerHTML = `
-          <div class="loading-content">
-            <span class="loading-spinner">⏳</span>
-            <span class="loading-text">Loading reposted note...</span>
-          </div>
-        `;
-        repostDiv.appendChild(placeholderDiv);
-
-        // Wrap (id + e-tag relay hint + author p-tag) into an nevent so QuoteOrchestrator's
-        // stage-1 hint fetch fires — bare hex id would skip straight to our read relays.
-        const authorPubkey = note.author?.pubkey;
-        const reposterPubkey = note.rawEvent.pubkey;
-        const neventRef = encodeNevent(
-          originalRef.id,
-          originalRef.relayHint ? [originalRef.relayHint] : [],
-          authorPubkey
-        );
-
-        // Stage-3 outbound includes BOTH the original author AND the reposter
-        // — the reposter visibly saw the note on their relays before reposting,
-        // so when the original author's NIP-65 is incomplete / stale, the
-        // reposter's outbound is the next-best guess.
-        const singleNoteApi = ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
-        (singleNoteApi?.fetchQuotedEvent(`nostr:${neventRef}`, authorPubkey, [reposterPubkey]) ?? Promise.resolve(null)).then(async originalEvent => {
-            if (originalEvent) {
-              // Check if original author is muted
-              const authService = AuthService.getInstance();
-              const currentUser = authService.getCurrentUser();
-              if (currentUser) {
-                const muteOrchestrator = MuteOrchestrator.getInstance();
-                const muteStatus = await muteOrchestrator.isMuted(originalEvent.pubkey, currentUser.pubkey);
-                if (muteStatus.public || muteStatus.private) {
-                  // Remove entire repost (muted users = invisible)
-                  repostDiv.remove();
-                  return;
-                }
-              }
-
-              // Ditto geocache (kind 37516): proprietary, no NIP — show notice
-              if (originalEvent.kind === DITTO_GEOCACHE_KIND) {
-                placeholderDiv.replaceWith(DittoFeatureRenderer.render(originalEvent));
-                return;
-              }
-
-              // Process the fetched event as a note
-              const processedNote = NoteProcessor.process(originalEvent);
-
-              // Create the original note element
-              const originalNoteElement = OriginalNoteRenderer.render(processedNote, {
-                ...opts,
-                depth: opts.depth! + 1
-              });
-
-              // Replace placeholder with actual content
-              placeholderDiv.replaceWith(originalNoteElement);
-
-              // Setup collapsible if needed
-              if (opts.depth === 0 && opts.collapsible) {
-                CollapsibleManager.setup(repostDiv, { maxHeight: '40vh', contentSelector: '.note-card--original' });
-              }
-            } else {
-              // Failed to fetch - show error
-              placeholderDiv.innerHTML = `
-                <div class="repost-error">
-                  <span class="error-icon">⚠️</span>
-                  <span class="error-text">Could not load reposted note</span>
-                </div>
-              `;
-            }
-        });
-      } else {
-        // No event ID in tags - show error
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'repost-error';
-        errorDiv.innerHTML = `
-          <span class="error-icon">⚠️</span>
-          <span class="error-text">Invalid repost (no event reference)</span>
-        `;
-        repostDiv.appendChild(errorDiv);
+  /**
+   * Fire-and-forget mute check. Removes the repost from the DOM if the inner
+   * event's author is muted. Mirrors the previous behaviour where mute checks
+   * were scattered across the various kind branches; consolidated here so every
+   * kind benefits uniformly.
+   */
+  private static attachMuteCheck(repostDiv: HTMLElement, authorPubkey: string): void {
+    const authService = AuthService.getInstance();
+    const currentUser = authService.getCurrentUser();
+    if (!currentUser) return;
+    MuteOrchestrator.getInstance().isMuted(authorPubkey, currentUser.pubkey).then(muteStatus => {
+      if (muteStatus.public || muteStatus.private) {
+        repostDiv.remove();
       }
-    } else if (note.repostedEvent.kind === 30402) {
-      // Reposted event is a marketplace listing (kind:30402)
-      const listingContainer = document.createElement('div');
-      listingContainer.className = 'repost-article-container';
-      const quotedNoteRenderer = QuotedNoteRenderer.getInstance();
-      const dTag = getTag(note.repostedEvent.tags, 'd');
-      const naddr = encodeNaddr({
-        kind: 30402,
-        pubkey: note.repostedEvent.pubkey,
-        identifier: dTag,
-        relays: []
-      });
-      quotedNoteRenderer.renderListingPreview(`nostr:${naddr}`, listingContainer);
-      repostDiv.appendChild(listingContainer);
-    } else if (note.repostedEvent.kind === 30023) {
-      // Reposted event is a long-form article (kind:30023)
-      const articleContainer = document.createElement('div');
-      articleContainer.className = 'repost-article-container';
+    }).catch(() => { /* leave the repost visible on mute-check failure */ });
+  }
 
-      // Generate naddr for the article
-      const dTag = getTag(note.repostedEvent.tags, 'd');
-      const naddr = encodeNaddr({
-        kind: note.repostedEvent.kind,
-        pubkey: note.repostedEvent.pubkey,
-        identifier: dTag,
-        relays: []
-      });
+  /**
+   * NIP-18 repost: the inner event isn't embedded in the content, so fetch it
+   * via QuoteOrchestrator (hint + read set + outbox of author and reposter).
+   * On success, dispatch through the same pipeline as embedded reposts.
+   */
+  private static handleNip18Fetch(repostDiv: HTMLElement, note: ProcessedNote, opts: NoteUIOptions): void {
+    const originalRef = RepostRenderer.extractOriginalEventRef(note);
 
-      // Render article preview
-      RepostRenderer.articlePreviewRenderer.renderArticlePreview(`nostr:${naddr}`, articleContainer);
-
-      repostDiv.appendChild(articleContainer);
-    } else if (note.repostedEvent.kind === 39089) {
-      // Reposted event is a follow pack (kind:39089)
-      const packContainer = document.createElement('div');
-      packContainer.className = 'repost-article-container';
-
-      const tags = note.repostedEvent.tags;
-      const getTag = (name: string) => tags.find(t => t[0] === name)?.[1] || '';
-      const title = getTag('title') || getTag('n') || 'Untitled';
-      const image = getTag('image');
-      const memberCount = tags.filter(t => t[0] === 'p').length;
-
-      const dTag = getTag('d');
-      const naddr = encodeNaddr({
-        kind: 39089,
-        pubkey: note.repostedEvent.pubkey,
-        identifier: dTag,
-        relays: []
-      });
-
-      packContainer.innerHTML = `
-        <a href="/follow-pack/${naddr}" class="repost-pack-preview" data-route="/follow-pack/${naddr}">
-          ${image ? `<img src="${escapeHtmlAttr(image)}" alt="" class="repost-pack-preview__image" loading="lazy" />` : ''}
-          <div class="repost-pack-preview__info">
-            <strong>${escapeHtml(title)}</strong>
-            <span>${memberCount} people</span>
-          </div>
-        </a>
+    if (!originalRef) {
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'repost-error';
+      errorDiv.innerHTML = `
+        <span class="error-icon">⚠️</span>
+        <span class="error-text">Invalid repost (no event reference)</span>
       `;
-
-      packContainer.querySelector('.repost-pack-preview')?.addEventListener('click', (e) => {
-        if ((e.target as HTMLElement).closest('.note-image--clickable, .note-media, video')) return;
-        e.preventDefault();
-        // Right-pane mode opens the pack in the secondary pane (scc) via the controller.
-        getViewNavigationController().openView('follow-pack', naddr, e as MouseEvent);
-      });
-
-      repostDiv.appendChild(packContainer);
-    } else if (note.repostedEvent.kind === 32267) {
-      // Reposted event is a Zapstore app (kind:32267)
-      const appContainer = document.createElement('div');
-      appContainer.className = 'repost-article-container';
-
-      const tags = note.repostedEvent.tags;
-      const getTag = (name: string) => tags.find(t => t[0] === name)?.[1] || '';
-      const name = getTag('name') || 'Untitled App';
-      const summary = getTag('summary');
-      const icon = getTag('icon');
-
-      const dTag = getTag('d');
-      const naddr = encodeNaddr({
-        kind: 32267,
-        pubkey: note.repostedEvent.pubkey,
-        identifier: dTag,
-        relays: ['wss://relay.zapstore.dev']
-      });
-
-      appContainer.innerHTML = `
-        <a href="/zapstore/${naddr}" class="repost-pack-preview" data-route="/zapstore/${naddr}">
-          ${icon ? `<img src="${escapeHtmlAttr(icon)}" alt="" class="repost-pack-preview__image" loading="lazy" style="border-radius: 8px;" />` : ''}
-          <div class="repost-pack-preview__info">
-            <strong>${escapeHtml(name)}</strong>
-            ${summary ? `<span>${escapeHtml(summary)}</span>` : ''}
-          </div>
-        </a>
-      `;
-
-      appContainer.querySelector('.repost-pack-preview')?.addEventListener('click', (e) => {
-        if ((e.target as HTMLElement).closest('.note-image--clickable, .note-media, video')) return;
-        e.preventDefault();
-        Router.getInstance().navigate(`/zapstore/${naddr}`);
-      });
-
-      repostDiv.appendChild(appContainer);
-    } else if (note.repostedEvent.kind === DITTO_GEOCACHE_KIND) {
-      // Reposted event is a Ditto geocache (kind:37516) — proprietary, no NIP
-      const dittoContainer = document.createElement('div');
-      dittoContainer.className = 'repost-article-container';
-      dittoContainer.appendChild(DittoFeatureRenderer.render(note.repostedEvent));
-      repostDiv.appendChild(dittoContainer);
-    } else if (note.repostedEvent.kind === 30030) {
-      // Reposted event is a NIP-30 emoji pack (kind:30030)
-      const emojiContainer = document.createElement('div');
-      emojiContainer.className = 'repost-article-container';
-      const processedPack = NoteProcessor.process(note.repostedEvent);
-      const packElement = EmojiPackRenderer.render(processedPack, { collapsible: false, depth: (opts.depth ?? 0) + 1 });
-      emojiContainer.appendChild(packElement);
-      repostDiv.appendChild(emojiContainer);
-    } else if (note.repostedEvent.kind === 9802) {
-      // Reposted event is a NIP-84 highlight (kind:9802)
-      const highlightContainer = document.createElement('div');
-      highlightContainer.className = 'repost-article-container';
-      const processedHighlight = NoteProcessor.process(note.repostedEvent);
-      const highlightElement = HighlightRenderer.render(processedHighlight, { collapsible: false, depth: (opts.depth ?? 0) + 1 });
-      highlightContainer.appendChild(highlightElement);
-      repostDiv.appendChild(highlightContainer);
-    } else if (note.repostedEvent.kind !== undefined && GIT_EVENT_KINDS.includes(note.repostedEvent.kind)) {
-      // Reposted event is a NIP-34 git event (Patch / PR / Issue / Status / Repo)
-      const gitContainer = document.createElement('div');
-      gitContainer.className = 'repost-article-container';
-      const processedGit = NoteProcessor.process(note.repostedEvent);
-      const gitElement = GitEventRenderer.render(processedGit, { collapsible: false, depth: (opts.depth ?? 0) + 1 });
-      gitContainer.appendChild(gitElement);
-      repostDiv.appendChild(gitContainer);
-    } else {
-      // Standard repost: Original note content with original author (depth > 0 to prevent double collapsible)
-      // Check if original author is muted (async check)
-      const authService = AuthService.getInstance();
-      const currentUser = authService.getCurrentUser();
-
-      // Create placeholder first
-      const contentPlaceholder = document.createElement('div');
-      contentPlaceholder.className = 'repost-content-loading';
-      repostDiv.appendChild(contentPlaceholder);
-
-      // Async mute check
-      if (currentUser && note.repostedEvent) {
-        const muteOrchestrator = MuteOrchestrator.getInstance();
-        muteOrchestrator.isMuted(note.repostedEvent.pubkey, currentUser.pubkey).then(muteStatus => {
-          if (muteStatus.public || muteStatus.private) {
-            // Remove entire repost (muted users = invisible)
-            repostDiv.remove();
-          } else {
-            // Render original note
-            const originalNoteElement = OriginalNoteRenderer.render(note, {
-              ...opts,
-              depth: opts.depth! + 1
-            });
-            contentPlaceholder.replaceWith(originalNoteElement);
-
-            // Setup collapsible for long reposts (only for top-level reposts)
-            if (opts.depth === 0 && opts.collapsible) {
-              CollapsibleManager.setup(repostDiv, { maxHeight: '40vh', contentSelector: '.note-card--original' });
-            }
-          }
-        });
-      } else {
-        // No current user, render normally
-        const originalNoteElement = OriginalNoteRenderer.render(note, {
-          ...opts,
-          depth: opts.depth! + 1
-        });
-        contentPlaceholder.replaceWith(originalNoteElement);
-
-        // Setup collapsible for long reposts (only for top-level reposts)
-        if (opts.depth === 0 && opts.collapsible) {
-          CollapsibleManager.setup(repostDiv, { maxHeight: '40vh', contentSelector: '.note-card--original' });
-        }
-      }
+      repostDiv.appendChild(errorDiv);
+      return;
     }
 
-    return repostDiv;
+    const placeholderDiv = document.createElement('div');
+    placeholderDiv.className = 'repost-loading-placeholder';
+    placeholderDiv.innerHTML = `
+      <div class="loading-content">
+        <span class="loading-spinner">⏳</span>
+        <span class="loading-text">Loading reposted note...</span>
+      </div>
+    `;
+    repostDiv.appendChild(placeholderDiv);
+
+    // Wrap (id + e-tag relay hint + author p-tag) into an nevent so QuoteOrchestrator's
+    // stage-1 hint fetch fires — bare hex id would skip straight to our read relays.
+    const authorPubkey = note.author?.pubkey;
+    const reposterPubkey = note.rawEvent.pubkey;
+    const neventRef = encodeNevent(
+      originalRef.id,
+      originalRef.relayHint ? [originalRef.relayHint] : [],
+      authorPubkey
+    );
+
+    // Stage-3 outbound includes BOTH the original author AND the reposter.
+    const singleNoteApi = ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
+    (singleNoteApi?.fetchQuotedEvent(`nostr:${neventRef}`, authorPubkey, [reposterPubkey]) ?? Promise.resolve(null))
+      .then(originalEvent => {
+        if (!originalEvent) {
+          placeholderDiv.innerHTML = `
+            <div class="repost-error">
+              <span class="error-icon">⚠️</span>
+              <span class="error-text">Could not load reposted note</span>
+            </div>
+          `;
+          return;
+        }
+        placeholderDiv.remove();
+        RepostRenderer.attachMuteCheck(repostDiv, originalEvent.pubkey);
+        RepostRenderer.dispatchInnerEvent(repostDiv, originalEvent, opts);
+      });
+  }
+
+  /**
+   * Dispatch an embedded (or just-fetched) inner event through the rendering
+   * pipeline. Three branches:
+   *
+   *  1. Bespoke preview-card kinds (Follow-Pack, Ditto geocache) — kept inline
+   *     because they don't have a Processor/Renderer pair.
+   *  2. Addressable article-preview kinds (article / Zapstore app / live stream)
+   *     — routed through {@link ArticlePreviewRenderer.renderFromEvent}.
+   *  3. Everything else — processed through the standard
+   *     {@link NoteProcessor} + {@link NoteRendererFactory} pipeline, so any
+   *     future content kind works in reposts automatically.
+   */
+  private static dispatchInnerEvent(
+    repostDiv: HTMLElement,
+    innerEvent: NostrEvent,
+    opts: NoteUIOptions
+  ): void {
+    // (1) Ditto geocache (kind 37516): proprietary, no NIP. No Processor/Renderer pair.
+    if (innerEvent.kind === DITTO_GEOCACHE_KIND) {
+      const dittoContainer = document.createElement('div');
+      dittoContainer.className = 'repost-article-container';
+      dittoContainer.appendChild(DittoFeatureRenderer.render(innerEvent));
+      repostDiv.appendChild(dittoContainer);
+      return;
+    }
+
+    // (1) Follow pack (kind 39089): bespoke preview card, no Processor/Renderer pair.
+    if (innerEvent.kind === 39089) {
+      RepostRenderer.renderFollowPackPreview(repostDiv, innerEvent);
+      return;
+    }
+
+    // (2) Addressable article-preview kinds (30023 article, 32267 Zapstore
+    //     app, 30311 live stream). All share the ArticlePreviewRenderer pipeline
+    //     and are listed in ARTICLE_PREVIEW_KINDS as the single source of truth.
+    if (innerEvent.kind != null && ARTICLE_PREVIEW_KINDS.has(innerEvent.kind)) {
+      const container = document.createElement('div');
+      container.className = 'repost-article-container';
+      RepostRenderer.articlePreviewRenderer.renderFromEvent(innerEvent, container);
+      repostDiv.appendChild(container);
+      return;
+    }
+
+    // (3) Generic dispatch through the standard pipeline.
+    const processedInner = NoteProcessor.process(innerEvent);
+    const innerElement = NoteRendererFactory.render(processedInner, {
+      ...opts,
+      depth: (opts.depth ?? 0) + 1
+    });
+
+    const innerContainer = document.createElement('div');
+    innerContainer.className = 'repost-content-container';
+    innerContainer.appendChild(innerElement);
+    repostDiv.appendChild(innerContainer);
+
+    if (opts.depth === 0 && opts.collapsible) {
+      CollapsibleManager.setup(repostDiv, { maxHeight: '40vh', contentSelector: '.note-card--original' });
+    }
+  }
+
+  /**
+   * Bespoke preview card for NIP-??? community "follow packs" (kind 39089).
+   * Kept inline because the card markup has no Processor/Renderer equivalent
+   * (the FollowPackRenderer renders the full feed view, not the preview).
+   */
+  private static renderFollowPackPreview(repostDiv: HTMLElement, event: NostrEvent): void {
+    const packContainer = document.createElement('div');
+    packContainer.className = 'repost-article-container';
+
+    const tags = event.tags;
+    const title = getTag(tags, 'title') || getTag(tags, 'n') || 'Untitled';
+    const image = getTag(tags, 'image');
+    const memberCount = tags.filter(t => t[0] === 'p').length;
+
+    const dTag = getTag(tags, 'd');
+    const naddr = encodeNaddr({
+      kind: 39089,
+      pubkey: event.pubkey,
+      identifier: dTag,
+      relays: []
+    });
+
+    packContainer.innerHTML = `
+      <a href="/follow-pack/${naddr}" class="repost-pack-preview" data-route="/follow-pack/${naddr}">
+        ${image ? `<img src="${escapeHtmlAttr(image)}" alt="" class="repost-pack-preview__image" loading="lazy" />` : ''}
+        <div class="repost-pack-preview__info">
+          <strong>${escapeHtml(title)}</strong>
+          <span>${memberCount} people</span>
+        </div>
+      </a>
+    `;
+
+    packContainer.querySelector('.repost-pack-preview')?.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('.note-image--clickable, .note-media, video')) return;
+      e.preventDefault();
+      getViewNavigationController().openView('follow-pack', naddr, e as MouseEvent);
+    });
+
+    repostDiv.appendChild(packContainer);
   }
 }

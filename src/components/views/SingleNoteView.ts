@@ -18,6 +18,8 @@ import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
 import type { ArticlesModuleApi } from '../../modules/articles/contracts';
 import { UserProfileService } from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
+import { getRepostsOriginalEvent } from '../../helpers/getRepostsOriginalEvent';
+import { resolveAddressableFromReferences } from '../../helpers/resolveAddressableFromReferences';
 import { extractOriginalNoteId } from '../../helpers/extractOriginalNoteId';
 import { SystemLogger } from '../../services/SystemLogger';
 import { AppState } from '../../services/AppState';
@@ -163,6 +165,17 @@ export class SingleNoteView extends View {
       event = result.events[0] ?? null;
     }
 
+    // Fallback for replaceable events (NIP-33, kinds 30000–39999): the original
+    // event id often no longer exists on relays because the author published an
+    // updated version under the same coordinate. Look up any repost (kind 6/16)
+    // that references this id, extract the `a`-tag coordinate, and fetch the
+    // current version through the addressable pipeline. Without this, SNV links
+    // from old bookmarks / old repost references show "Note not found".
+    if (!event) {
+      this.systemLogger.info('SNV', `Looking up newer version of this post…`);
+      event = await resolveAddressableFromReferences(noteId);
+    }
+
     if (!event) {
       this.systemLogger.warn('SNV', `Note not found (${noteId.slice(0, 8)})`);
       return null;
@@ -186,20 +199,22 @@ export class SingleNoteView extends View {
   }
 
   private async renderNote(event: NostrEvent): Promise<void> {
+    // Repost unwrap: use the universal helper so the inner event is resolved
+    // through (1) embedded JSON, (2) e-tag fetch via QuoteOrchestrator with
+    // relay hint + outbound fallback, (3) for addressable inner kinds (30311
+    // live stream, 30023 article, …) the a-tag fallback. The previous hex-id
+    // fetch via fetchNote failed for replaceable events whose original id is
+    // no longer carried by relays after the author published a newer version
+    // under the same coordinate.
     if (event.kind === 6 || event.kind === 16) {
-      const originalNoteId = extractOriginalNoteId(event);
-      if (!originalNoteId) {
-        this.showError('Could not extract original note ID from repost');
-        return;
-      }
-      const originalEvent = await this.fetchNote(originalNoteId);
-
-      if (!originalEvent) {
+      const original = await getRepostsOriginalEvent(event);
+      if (original === event) {
+        // No source found at all — surface as "Original note not found"
+        // rather than rendering the empty repost shell.
         this.showError('Original note not found');
         return;
       }
-
-      event = originalEvent;
+      event = original;
     }
 
     this.container.innerHTML = '';
@@ -236,11 +251,18 @@ export class SingleNoteView extends View {
     const eventPubkey = event.pubkey;
     if (!eventId || !eventPubkey) return;
 
-    this.currentNoteId = eventId;
+    // For addressable events (NIP-33 kinds 30000–39999) the ISL, replies,
+    // reactions and zap pipelines key off the coordinate (`kind:pubkey:d-tag`)
+    // rather than the hex event id — see extractOriginalNoteId. ThreadManager
+    // and LiveUpdatesManager therefore need the same identifier or they look
+    // up the wrong slot.
+    const effectiveNoteId = extractOriginalNoteId(event) ?? eventId;
+
+    this.currentNoteId = effectiveNoteId;
     this.currentEvent = event;
 
-    this.initializeManagers(eventId, eventPubkey, repliesContainer);
-    this.loadZapsList(eventId, eventPubkey, noteElement);
+    this.initializeManagers(effectiveNoteId, eventPubkey, repliesContainer);
+    this.loadZapsList(effectiveNoteId, eventPubkey, noteElement);
 
     if (this.threadManager) {
       const quotedReposts = await this.threadManager.fetchQuotedReposts();

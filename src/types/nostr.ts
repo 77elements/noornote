@@ -161,6 +161,7 @@ export enum EventKind {
   ZAP_RECEIPT = 9735,
   HIGHLIGHT = 9802,
   LONG_FORM_CONTENT = 30023,
+  LIVE_ACTIVITY = 30311,
 }
 
 /**
@@ -188,6 +189,7 @@ export const RENDERABLE_KINDS: number[] = [
   EventKind.REPOST,
   EventKind.ZAP_RECEIPT,
   EventKind.BADGE_AWARD,
+  EventKind.LIVE_ACTIVITY,
 ];
 
 /**

@@ -6,12 +6,13 @@
  *
  * Rules:
  * - Regular notes (kind !== 6): Return as-is
- * - Reposts (kind 6): Extract original note from content (JSON) or fetch via e-tag
- *
- * Outbound resolution: when fetching by e-tag, the p-tag in a NIP-18 repost
- * identifies the original author. We route the fetch through QuoteOrchestrator
- * with that pubkey so it can fall back to the author's outbound relays if the
- * original isn't on our read relays.
+ * - Reposts (kind 6 / 16):
+ *   1. Try embedded JSON in content
+ *   2. Try e-tag fetch via QuoteOrchestrator (relay-hint + read set + outbound
+ *      of original author and reposter)
+ *   3. For addressable inner kinds (30000–39999), try a-tag fetch via the
+ *      Articles module — many relays only carry the *current* version of a
+ *      replaceable event under its coordinate, not the original id.
  *
  * @param event - Nostr event (potentially a repost)
  * @returns Original event (unwrapped if repost, same if not)
@@ -38,6 +39,12 @@ export async function getRepostsOriginalEvent(event: NostrEvent): Promise<NostrE
       // Not JSON or invalid - continue to e-tag method
     }
   }
+
+  // Determine the inner kind from the optional `k` tag (NIP-18) so we know
+  // whether an addressable a-tag fallback is meaningful.
+  const kTag = event.tags.find(t => t[0] === 'k');
+  const innerKind = kTag?.[1] ? Number(kTag[1]) : NaN;
+  const isAddressable = Number.isInteger(innerKind) && innerKind >= 30000 && innerKind < 40000;
 
   // Try 2: Fetch via e-tag (modern format - NIP-18)
   const eTag = event.tags.find(t => t[0] === 'e');
@@ -76,11 +83,48 @@ export async function getRepostsOriginalEvent(event: NostrEvent): Promise<NostrE
         return originalEvent;
       }
     } catch (error) {
-      console.warn('[getRepostsOriginalEvent] Failed to fetch original note via e-tag:', error);
+      console.debug('[getRepostsOriginalEvent] Failed to fetch original note via e-tag:', error);
+    }
+  }
+
+  // Try 3: Addressable a-tag fallback. Critical for replaceable kinds (30311
+  // live streams, 30023 articles, …): the original event id often no longer
+  // exists on relays because the author published an updated version under
+  // the same coordinate — only the coordinate query returns the current
+  // version. Without this branch, SNV shows "Original note not found" for
+  // any repost of a replaceable event older than the latest revision.
+  if (isAddressable) {
+    const aTag = event.tags.find(t => t[0] === 'a');
+    if (aTag?.[1]) {
+      try {
+        const { ModuleLoader } = await import('../core/ModuleLoader');
+        const { encodeNaddr } = await import('../services/NostrToolsAdapter');
+        const [kindStr, pubkey, identifier] = aTag[1].split(':');
+        const kindNum = Number(kindStr);
+        if (!Number.isFinite(kindNum) || !pubkey || identifier === undefined) {
+          // Malformed a-tag — give up.
+        } else {
+          const relayHint = aTag[2] || undefined;
+          const naddr = encodeNaddr({
+            kind: kindNum,
+            pubkey,
+            identifier,
+            relays: relayHint ? [relayHint] : [],
+          });
+          type ArticlesApi = import('../modules/articles/contracts').ArticlesModuleApi;
+          const api = await ModuleLoader.getInstance().ensure<ArticlesApi>('articles');
+          const addressableEvent = await api?.fetchAddressableEvent(naddr);
+          if (addressableEvent) {
+            return addressableEvent;
+          }
+        }
+      } catch (error) {
+        console.debug('[getRepostsOriginalEvent] Failed to fetch original via a-tag:', error);
+      }
     }
   }
 
   // Fallback: Return repost itself (shouldn't happen in practice)
-  console.warn('[getRepostsOriginalEvent] Could not extract original event, returning repost itself');
+  console.debug('[getRepostsOriginalEvent] Could not extract original event, returning repost itself');
   return event;
 }

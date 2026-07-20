@@ -13,6 +13,8 @@ import { escapeHtml, escapeHtmlAttr, escapeCssUrl, safeHttpUrl } from '../../../
 import { isLiveStreamsPlayerEnabled } from '../../../addons/live-streams-player/index';
 import { getAddressableIdentifier } from '../../../helpers/getAddressableIdentifier';
 import { getLiveStreamHost } from '../../../helpers/getLiveStreamHost';
+import { getLiveStreamStatus } from '../../../helpers/getLiveStreamStatus';
+import { encodeNaddr } from '../../../services/NostrToolsAdapter';
 import { ZapManager } from '../../../components/ui/interaction-managers/ZapManager';
 import { LiveChatService } from '../../../services/LiveChatService';
 import { RelayConfig } from '../../../services/RelayConfig';
@@ -39,6 +41,33 @@ export class ArticlePreviewRenderer {
     container.appendChild(skeleton);
 
     this.fetchAndRender(naddrRef, skeleton);
+  }
+
+  /**
+   * Render an addressable preview card directly from an already-loaded event.
+   *
+   * Bypasses the naddr-fetch path used by {@link renderArticlePreview} — useful
+   * for reposts, SNV and any caller that already holds the event in memory
+   * (avoids redundant relay round-trip).
+   *
+   * Only kinds inside {@link ARTICLE_PREVIEW_KINDS} are rendered (30023 / 32267
+   * / 30311); anything else is a programming error and is silently dropped.
+   */
+  public renderFromEvent(event: NostrEvent, container: Element): void {
+    const dTag = event.tags.find(t => t[0] === 'd')?.[1];
+    if (!dTag || event.kind == null) {
+      // Without a d-tag/kind there is no valid naddr — silently bail.
+      return;
+    }
+    const naddr = encodeNaddr({
+      kind: event.kind,
+      pubkey: event.pubkey,
+      identifier: dTag,
+      relays: [],
+    });
+    const naddrRef = `nostr:${naddr}`;
+    const previewCard = this.createPreviewCard(event, naddrRef);
+    container.appendChild(previewCard);
   }
 
   private async fetchAndRender(naddrRef: string, skeleton: HTMLElement): Promise<void> {
@@ -81,7 +110,7 @@ export class ArticlePreviewRenderer {
     const title = getTag('title') || 'Untitled Stream';
     const summary = getTag('summary');
     const image = getTag('image');
-    const status = (getTag('status') || 'planned').toLowerCase(); // 'live' | 'planned' | 'ended'
+    const status = getLiveStreamStatus(event); // 'live' | 'planned' | 'ended' (with NIP-53 staleness guard)
     const recording = getTag('recording');
     const streaming = getTag('streaming'); // HLS URL for the inline player
 

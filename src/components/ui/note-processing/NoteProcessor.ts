@@ -19,6 +19,7 @@ import { EmojiPackProcessor } from './EmojiPackProcessor';
 import { GitEventProcessor } from './GitEventProcessor';
 import { HighlightProcessor } from './HighlightProcessor';
 import { BadgeAwardProcessor } from './BadgeAwardProcessor';
+import { LiveStreamProcessor } from './LiveStreamProcessor';
 
 export class NoteProcessor {
   /**
@@ -52,6 +53,8 @@ export class NoteProcessor {
           return HighlightProcessor.process(event);
         case 30023:
           return ArticleProcessor.process(event);
+        case 30311:
+          return LiveStreamProcessor.process(event);
         case 39089:
           return FollowPackProcessor.process(event);
         case 30030:

@@ -16,6 +16,28 @@
   &--live {
     border: 1px solid var(--color-6);
   }
+
+  // Compact hint card shown when the Live Streams Player addon is off —
+  // the live-stream content is hidden but the note shell (header, ISL)
+  // stays visible so the user can still act on the event.
+  &--addon-disabled {
+    background: var(--color-1);
+    border: 1px dashed var(--color-2);
+    border-radius: $radius-xl;
+  }
+}
+
+.live-stream-card__hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-alpha-medium);
+  text-align: center;
+}
+
+.live-stream-card__hint-link {
+  color: var(--color-6);
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .live-stream-card__image {

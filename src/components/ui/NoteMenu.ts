@@ -529,10 +529,16 @@ export class NoteMenu {
     const bookmarkOrch = BookmarkOrchestrator.getInstance();
 
     try {
-      // For Reposts (Kind 6), bookmark the reposted note, not the repost itself
+      // For Reposts (Kind 6/16), bookmark the reposted note, not the repost
+      // itself. The e-tag carries the inner event id. This works for all
+      // kinds — the bookmark is uniformly a hex event id (type='e'), keeping
+      // the list's sync semantics intact (sets are compared by event-id, see
+      // docs/features/lists.md). Display resolution for replaceable kinds
+      // whose hex id has aged out of relays is handled by the BookmarkCard's
+      // async load + SNV's reverse-lookup, not by storing a different id
+      // scheme here.
       let eventIdToBookmark = this.options.eventId;
       if (this.options.rawEvent && (this.options.rawEvent.kind === 6 || this.options.rawEvent.kind === 16)) {
-        // Extract reposted event ID from 'e' tag
         const eTag = this.options.rawEvent.tags.find(tag => tag[0] === 'e');
         if (eTag && eTag[1]) {
           eventIdToBookmark = eTag[1];

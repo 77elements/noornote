@@ -328,6 +328,19 @@ html.content-visibility-auto .note-card {
       }
     }
   }
+
+  // Live stream modifier (NIP-53 kind 30311 top-level note). The body is a
+  // single .live-stream-card, which already carries its own padding — strip
+  // the default event-content margins so the card fills the note frame.
+  &.note-card--live-stream {
+    > .event-content--live-stream-host {
+      // The .live-stream-card has margin: $gap 0; cancel it inside the note
+      // shell where the surrounding .note-card padding already frames it.
+      > .live-stream-card {
+        margin: 0;
+      }
+    }
+  }
 }
 
 // Repost header (standalone)

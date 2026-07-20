@@ -31,8 +31,16 @@ import type { TimelineConfig } from '../../components/timeline/TimelineConfig';
 /**
  * Event kinds requested by the home/tribe feed. Single source of truth; this
  * was previously duplicated verbatim across 7 filter sites in this file.
+ *
+ * Includes 30311 (NIP-53 live activity) so stream events from followed users
+ * show up in the timeline. The LiveStreamRenderer is addon-gated: with the
+ * Live Streams Player addon ON a full preview card + inline HLS player is
+ * rendered; with the addon OFF a compact hint card with a link to enable the
+ * addon is shown instead. Either way the staleness rule in
+ * getLiveStreamStatus() ensures long-ended streams render as 'ended' rather
+ * than as a perpetual 'live' badge.
  */
-const FEED_KINDS: number[] = [1, 6, 16, 20, 21, 22, 1063, 1068, 1617, 1618, 1619, 1621, 1630, 1631, 1632, 1633, 9802, 30617, 39089, 30030];
+const FEED_KINDS: number[] = [1, 6, 16, 20, 21, 22, 1063, 1068, 1617, 1618, 1619, 1621, 1630, 1631, 1632, 1633, 9802, 30617, 39089, 30030, 30311];
 
 export interface FeedLoadRequest {
   followingPubkeys: string[];

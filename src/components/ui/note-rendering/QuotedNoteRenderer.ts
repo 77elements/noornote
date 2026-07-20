@@ -25,11 +25,7 @@ import { getTag } from '../../../helpers/tagUtils';
 import { TypedEventBus } from '../../../core/TypedEventBus';
 import { DittoFeatureRenderer, DITTO_GEOCACHE_KIND } from '../../../components/ui/note-rendering/DittoFeatureRenderer';
 import { UnsupportedKindRenderer } from './UnsupportedKindRenderer';
-
-/** Addressable kinds the article-preview renderer actually handles (article,
- *  Zapstore app, live stream). Any other addressable kind must NOT fall into
- *  the article renderer — it gets the shared unsupported fallback instead. */
-const ARTICLE_PREVIEW_KINDS = new Set<number>([30023, 32267, 30311]);
+import { ARTICLE_PREVIEW_KINDS } from '../../../helpers/addressableKinds';
 
 export class QuotedNoteRenderer {
   private static instance: QuotedNoteRenderer;
