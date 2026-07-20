@@ -69,9 +69,20 @@ export default defineConfig({
           // IndexedDB (Dexie)
           dexie: ['dexie'],
           // Crypto primitives (@noble, @scure) used by nostr-tools + NDK
-          crypto: ['@noble/hashes', '@noble/curves', '@noble/ciphers', '@scure/base', '@scure/bip32', '@scure/bip39'],
+          crypto: ['@noble/hashes', '@noble/ciphers', '@scure/base', '@scure/bip32', '@scure/bip39'],
+          // Note: @noble/curves is huge and only needed for NIP-44 decrypt on login.
+          // Splitting it out keeps the main `crypto` chunk (used early) leaner —
+          // the curve math loads in parallel instead of blocking initial decrypt.
+          'noble-curves': ['@noble/curves'],
           // Calendar / date (dayjs + Hijri)
           calendar: ['dayjs', '@calidy/dayjs-calendarsystems', '@calidy/dayjs-calendarsystems/calendarSystems/HijriCalendarSystem'],
+          // Markdown rendering — pulled out of main so ArticleView / ArticleEditorView /
+          // ListingEditorView / ZapstoreAppView / helpers/processFootnotes load these
+          // in parallel instead of bloating the App-Shell chunk.
+          markdown: ['marked', 'dompurify'],
+          // QR code generation — only used in AuthComponent (login) + QRCodeModal,
+          // both relatively rare paths. Isolating keeps main leaner.
+          qrcode: ['qrcode'],
         },
         // Asset naming for caching
         chunkFileNames: 'assets/js/[name]-[hash].js',
@@ -95,8 +106,19 @@ export default defineConfig({
       },
     },
 
-    // Performance budgets (500KB gzipped target)
-    chunkSizeWarningLimit: 600, // KB uncompressed
+    // Performance budgets — calibrated for this app's actual chunk profile.
+    // The four largest chunks are all expected shapes:
+    //   • prayer-cities (~2 MB)    — bundled GeoNames JSON, dynamic-imported by the
+    //                                nostr-majlis addon only. Pure data, can't shrink
+    //                                without splitting the dataset (low ROI).
+    //   • main (~1.1 MB)           — App-Shell: 276 app-code files (own components +
+    //                                services). Not third-party — vendor splitting won't help.
+    //   • MediaCompressionService  — mediabunny lib, already dynamic-imported.
+    //   • hls                      — hls.js, already dynamic-imported (live-stream addon).
+    // Three of four are lazy. 2200 kB is the threshold at which only a true regression
+    // (e.g. accidentally importing prayer-cities statically, or pulling in a new 2 MB+
+    // dependency) would re-trigger the warning — that's the signal we actually care about.
+    chunkSizeWarningLimit: 2200, // KB uncompressed
 
     // Minification
     minify: 'esbuild',
