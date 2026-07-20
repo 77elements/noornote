@@ -27,6 +27,7 @@ import { TypedEventBus } from '../../core/TypedEventBus';
 import { decodeNip19 } from '../NostrToolsAdapter';
 import { PerAccountLocalStorage, StorageKeys } from '../PerAccountLocalStorage';
 import { NoteService } from '../NoteService';
+import { SoftMuteService } from '../SoftMuteService';
 import { USER_CONTENT_KINDS } from '../../types/nostr';
 import { getCacheSize } from '../../helpers/LRUCache';
 import { isDataSaverEnabled } from '../DataSaverService';
@@ -48,6 +49,8 @@ export class NotificationsOrchestrator extends Orchestrator {
   private authService: AuthService;
   private eventBus: TypedEventBus;
   private mutedPubkeys: Set<string> = new Set();
+  // Soft-muted pubkeys — notification-only suppression (still appear in feeds/threads/PV).
+  private softMutedPubkeys: Set<string> = new Set();
   private mutedEventIds: Set<string> = new Set(); // Thread muting (Hell Thread protection)
 
   /** Active subscription ID for #p filter */
@@ -137,6 +140,9 @@ export class NotificationsOrchestrator extends Orchestrator {
     // Step 0: Load muted users
     await this.loadMutedUsers(currentUser.pubkey);
 
+    // Step 0.1: Load soft-muted pubkeys (notification-only suppression)
+    this.loadSoftMutedUsers();
+
     // Step 0.5: Load user event ancestry from localStorage (for muted thread checking)
     this.loadUserEventAncestry();
 
@@ -200,6 +206,11 @@ export class NotificationsOrchestrator extends Orchestrator {
 
     // Listen for thread mute changes (Hell Thread protection)
     this.eventBus.on('mute:thread:updated', () => {
+      this.refreshMutedUsers();
+    });
+
+    // Listen for soft-mute changes (notification-only suppression)
+    this.eventBus.on('soft-mute:updated', () => {
       this.refreshMutedUsers();
     });
   }
@@ -514,8 +525,8 @@ export class NotificationsOrchestrator extends Orchestrator {
       return false;
     }
 
-    // Skip events from muted users
-    if (this.mutedPubkeys.has(event.pubkey)) {
+    // Skip events from muted users (full mute OR soft mute — both suppress notifications)
+    if (this.isAuthorMutedOrSoftMuted(event.pubkey)) {
       return false;
     }
 
@@ -1065,6 +1076,30 @@ export class NotificationsOrchestrator extends Orchestrator {
   }
 
   /**
+   * Load soft-muted pubkeys from SoftMuteService into the in-memory filter set.
+   * Soft mute is notification-only: posts still appear in feeds/threads/PV.
+   */
+  private loadSoftMutedUsers(): void {
+    try {
+      const map = SoftMuteService.getInstance().getAll();
+      this.softMutedPubkeys = new Set(Object.keys(map));
+      if (this.softMutedPubkeys.size > 0) {
+        this.systemLogger.info('NotificationsOrchestrator', `Loaded ${this.softMutedPubkeys.size} soft-muted users`);
+      }
+    } catch (error) {
+      this.systemLogger.error('NotificationsOrchestrator', `Failed to load soft-muted users: ${error}`);
+    }
+  }
+
+  /**
+   * Combined mute check for notification filtering. Returns true if the pubkey
+   * is either fully muted OR soft-muted (both suppress notifications).
+   */
+  private isAuthorMutedOrSoftMuted(pubkey: string): boolean {
+    return this.mutedPubkeys.has(pubkey) || this.softMutedPubkeys.has(pubkey);
+  }
+
+  /**
    * Check if event is part of a muted thread (synchronous check)
    * Checks: event ID, parent ID, root ID
    */
@@ -1102,7 +1137,7 @@ export class NotificationsOrchestrator extends Orchestrator {
 
       // Filter existing notifications (users, threads, and notifications about user's posts in muted threads)
       this.notifications = this.notifications.filter(n =>
-        !this.mutedPubkeys.has(n.event.pubkey) &&
+        !this.isAuthorMutedOrSoftMuted(n.event.pubkey) &&
         !this.isEventInMutedThread(n.event) &&
         !this.isNotificationTargetInMutedThread(n.event)
       );
@@ -1116,8 +1151,8 @@ export class NotificationsOrchestrator extends Orchestrator {
    * Handle new article notification from ArticleNotificationService
    */
   private async handleNewArticleNotification(data: { pubkey: string; articleId: string; naddr: string; title: string; createdAt: number }): Promise<void> {
-    // Skip if from muted user
-    if (this.mutedPubkeys.has(data.pubkey)) {
+    // Skip if from muted user (full mute OR soft mute)
+    if (this.isAuthorMutedOrSoftMuted(data.pubkey)) {
       return;
     }
 
@@ -1148,8 +1183,8 @@ export class NotificationsOrchestrator extends Orchestrator {
    * Handle mutual change notification from MutualChangeDetector
    */
   private handleMutualNotification(data: { event: NostrEvent; type: 'mutual_unfollow' | 'mutual_new' }): void {
-    // Skip if from muted user
-    if (this.mutedPubkeys.has(data.event.pubkey)) {
+    // Skip if from muted user (full mute OR soft mute)
+    if (this.isAuthorMutedOrSoftMuted(data.event.pubkey)) {
       return;
     }
 
@@ -1172,7 +1207,7 @@ export class NotificationsOrchestrator extends Orchestrator {
    * Handle follower change notification from the follower-notification addon's detector.
    */
   private handleFollowerNotification(data: { event: NostrEvent; type: 'follower_new' }): void {
-    if (this.mutedPubkeys.has(data.event.pubkey)) {
+    if (this.isAuthorMutedOrSoftMuted(data.event.pubkey)) {
       return;
     }
 
@@ -1276,8 +1311,8 @@ export class NotificationsOrchestrator extends Orchestrator {
       const type: NotificationType = change.type === 'unfollow' ? 'mutual_unfollow' : 'mutual_new';
       const eventId = `mutual-${type}-${change.pubkey}-${change.detectedAt}`;
 
-      // Skip if from muted user
-      if (this.mutedPubkeys.has(change.pubkey)) {
+      // Skip if from muted user (full mute OR soft mute)
+      if (this.isAuthorMutedOrSoftMuted(change.pubkey)) {
         continue;
       }
 
@@ -1324,7 +1359,7 @@ export class NotificationsOrchestrator extends Orchestrator {
     for (const change of changes) {
       const type: NotificationType = 'follower_new';
 
-      if (this.mutedPubkeys.has(change.pubkey)) {
+      if (this.isAuthorMutedOrSoftMuted(change.pubkey)) {
         continue;
       }
 

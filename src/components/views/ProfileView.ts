@@ -16,6 +16,7 @@ import { profileTimelineConfig } from '../timeline/TimelineConfig';
 import { ProfileSearchComponent } from '../profile/ProfileSearchComponent';
 import { ProfileFollowManager } from '../../lists/follows';
 import { ProfileMuteManager } from '../../lists/mutes';
+import { SoftMuteService } from '../../services/SoftMuteService';
 import { ProfileEditModal } from '../profile/ProfileEditModal';
 import { QRCodeModal } from '../qrcode/QRCodeModal';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
@@ -841,6 +842,8 @@ export class ProfileView extends View {
       return muteButton;
     }
 
+    const softMuteButton = this.renderSoftMuteButton();
+
     const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
     const isSubscribed = articlesApi?.isSubscribedToArticleNotifications(this.pubkey) ?? false;
 
@@ -851,7 +854,18 @@ export class ProfileView extends View {
       </label>
     `;
 
-    return muteButton + articleNotifCheckbox;
+    return muteButton + softMuteButton + articleNotifCheckbox;
+  }
+
+  /**
+   * Render the Soft Mute button — suppresses only notifications from this user's
+   * interactions with your notes. Their posts / replies / PV stay fully visible.
+   * Text swaps in place between "Soft mute" and "Soft muted"; no class change.
+   */
+  private renderSoftMuteButton(): string {
+    const isSoftMuted = SoftMuteService.getInstance().isSoftMuted(this.pubkey);
+    const label = isSoftMuted ? 'Soft muted' : 'Soft mute';
+    return `<button class="btn btn--passive soft-mute-btn" data-action="soft-mute" title="Only suppresses notifications from this user's interactions with your notes">${label}</button>`;
   }
 
   /**
@@ -914,6 +928,9 @@ export class ProfileView extends View {
       this.render();
     });
 
+    // Setup soft-mute button handler
+    this.setupSoftMuteButton();
+
     // Setup article notification checkbox handler
     const articleNotifCheckbox = this.container.querySelector('#article-notif-toggle') as HTMLInputElement;
     if (articleNotifCheckbox) {
@@ -922,6 +939,19 @@ export class ProfileView extends View {
         articlesApi?.toggleArticleNotifications(this.pubkey);
       });
     }
+  }
+
+  /**
+   * Bind the Soft Mute button — toggles SoftMuteService and swaps the label
+   * in place (no class change, no full re-render).
+   */
+  private setupSoftMuteButton(): void {
+    const btn = this.container.querySelector('.soft-mute-btn') as HTMLButtonElement | null;
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      SoftMuteService.getInstance().toggleSoftMute(this.pubkey);
+      btn.textContent = SoftMuteService.getInstance().isSoftMuted(this.pubkey) ? 'Soft muted' : 'Soft mute';
+    });
   }
 
 
@@ -953,7 +983,7 @@ export class ProfileView extends View {
    */
   private attachIconTooltips(): void {
     // Search link is handled in initializeSearchComponent() — it mounts later.
-    const selectors = ['.copy-btn', '.qr-btn', '.tribe-btn', '.profile-badge-btn', '.profile-dm-btn', '.lightning-qr-btn', '.profile-zap-btn'];
+    const selectors = ['.copy-btn', '.qr-btn', '.tribe-btn', '.profile-badge-btn', '.profile-dm-btn', '.lightning-qr-btn', '.profile-zap-btn', '.soft-mute-btn'];
     selectors.forEach(sel => {
       const el = this.container.querySelector(sel) as HTMLElement | null;
       const label = el?.getAttribute('title');

@@ -115,6 +115,12 @@ export class PostLoginService {
     import('./PetnameService').then(({ PetnameService }) => {
       PetnameService.getInstance().syncFromRelays().catch(() => {});
     });
+
+    // Sync soft-mutes from relays (NIP-78 encrypted, non-blocking).
+    // Notification-only suppression — consumed by NotificationsOrchestrator.
+    import('./SoftMuteService').then(({ SoftMuteService }) => {
+      SoftMuteService.getInstance().syncFromRelays().catch(() => {});
+    });
     } catch (error) {
       // Reset so a retry (e.g. manual re-login) is not blocked by the guard.
       this.loggedInPubkey = null;

@@ -34,6 +34,11 @@ export const StorageKeys = {
   BOOKMARK_TOMBSTONES: 'noornote_bookmark_tombstones_map',
   FOLLOWS: 'noornote_follows_map',
   MUTES: 'noornote_mutes_map',
+  // Soft mutes — notification-only suppression. Record<pubkey, { addedAt }>.
+  // Local-only preference (no NIP-51 mute list) persisted via kind:30078
+  // NIP-44-encrypted blob (see SoftMuteService). Distinct from full Mutes so
+  // the two systems never entangle in list-sync logic.
+  SOFT_MUTED_PUBKEYS: 'noornote_soft_muted_pubkeys_map',
   TRIBES: 'noornote_tribes_map',
   TRIBE_FOLDERS: 'noornote_tribe_folders_map',
   TRIBE_MEMBER_ASSIGNMENTS: 'noornote_tribe_member_assignments_map',

@@ -267,6 +267,10 @@ export interface AppEvents {
   'follow:updated': void;
   'mute:updated': void;
   'mute:thread:updated': MuteThreadUpdatedPayload;
+  // Soft mute = notification-only suppression (does NOT hide posts).
+  // Emitted on every local mutation; listeners: NotificationsOrchestrator
+  // (re-filters notification cache), ProfileView (refreshes button label).
+  'soft-mute:updated': void;
   'bookmark:updated': void;
   'bookmark:order-changed': void;
   'tribe:updated': void;
