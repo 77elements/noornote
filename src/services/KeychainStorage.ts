@@ -30,6 +30,12 @@ export class KeychainStorage {
 
   /**
    * Get IndexedDB database (lazy initialization)
+   *
+   * If the open fails once, the rejected promise is dropped (not cached) so
+   * the next call can retry. The WebView can evict `noornote_secure` between
+   * sessions — keeping a stale rejected promise cached forever would put the
+   * service in degraded mode for the whole session and bypass the mirror
+   * recovery in `loadNWC`.
    */
   private static getDB(): Promise<IDBDatabase> {
     if (!this.dbPromise) {
@@ -38,6 +44,10 @@ export class KeychainStorage {
 
         request.onerror = () => {
           console.error('Failed to open IndexedDB:', request.error);
+          // Drop the cached rejected promise so a later call can retry —
+          // otherwise a single transient IDB failure permanently degrades
+          // the service for the session.
+          this.dbPromise = null;
           reject(request.error);
         };
 
@@ -162,11 +172,23 @@ export class KeychainStorage {
     }
 
     const key = this.getNwcKeyForUser(userPubkey);
-    let raw = await this.getFromIndexedDB(key);
+    // IDB reads can reject (open failure, transaction abort, quota, eviction).
+    // Without a try/catch the rejection would propagate to NWCService and
+    // bypass the localStorage mirror recovery below. Treat any IDB error as
+    // "blob unavailable" and fall through to the mirror.
+    let raw: string | null = null;
+    try {
+      raw = await this.getFromIndexedDB(key);
+    } catch (err) {
+      console.warn('[KeychainStorage] IDB read failed, trying mirror:', err);
+      diagLog('wallet', 'nwc_load_idb_error', {
+        error: String(err && (err as Error).message ? (err as Error).message : err),
+      });
+    }
     if (!raw) {
-      // IndexedDB was empty (likely a WebView eviction). Recover from the
-      // localStorage ciphertext mirror and repopulate IndexedDB, so the wallet
-      // stays connected without the user reconnecting.
+      // IndexedDB was empty or errored (likely a WebView eviction). Recover
+      // from the localStorage ciphertext mirror and repopulate IndexedDB,
+      // so the wallet stays connected without the user reconnecting.
       const mirrored = this.readNwcMirror(userPubkey);
       if (mirrored) {
         raw = mirrored;
@@ -176,6 +198,14 @@ export class KeychainStorage {
         diagLog('wallet', 'nwc_load_empty', { storage: 'indexeddb' });
         return null;
       }
+    } else if (!this.readNwcMirror(userPubkey)) {
+      // Backfill migration: IDB has the blob but the localStorage mirror was
+      // never written. This happens for users who saved NWC before the mirror
+      // shipped (or whose mirror was wiped by a separate cause). Writing it
+      // now protects the next eviction. The mirror is ciphertext-only and
+      // useless without the Filesystem device key.
+      this.mirrorNwcBlob(userPubkey, raw);
+      diagLog('wallet', 'nwc_backfilled_mirror', { storage: 'indexeddb', length: raw.length });
     }
 
     // New v2 format: decrypt via NWCCryptoService
