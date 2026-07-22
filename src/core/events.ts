@@ -291,6 +291,8 @@ export interface AppEvents {
   'dm:fetch-progress': DMFetchProgressPayload;
   'dm:fetch-complete': void;
   'dm:unsupported': void;
+  'dm:read': { partnerPubkey: string };
+  'dm:all-read': void;
 
   // ── Notes / Content ────────────────────────
   'note:deleted': NoteDeletedPayload;

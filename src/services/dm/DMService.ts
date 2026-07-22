@@ -1205,6 +1205,7 @@ export class DMService {
   public async markAsRead(partnerPubkey: string) {
     await this.dmStore.markAsRead(partnerPubkey);
     this.eventBus.emit('dm:badge-update');
+    this.eventBus.emit('dm:read', { partnerPubkey });
   }
 
   /**
@@ -1213,6 +1214,7 @@ export class DMService {
   public async markAllAsRead(): Promise<void> {
     await this.dmStore.markAllAsRead();
     this.eventBus.emit('dm:badge-update');
+    this.eventBus.emit('dm:all-read');
   }
 
   /**
