@@ -6,6 +6,7 @@
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { encodeNevent, encodeNaddr } from '../../../services/NostrToolsAdapter';
 import { DittoFeatureRenderer, DITTO_GEOCACHE_KIND } from './DittoFeatureRenderer';
+import { SatelliteSiteRenderer, SATELLITE_SITE_KIND } from './SatelliteSiteRenderer';
 
 export class UnsupportedKindRenderer {
   /**
@@ -16,6 +17,11 @@ export class UnsupportedKindRenderer {
     // instead of a generic "unsupported kind" + njump link.
     if (note.rawEvent.kind === DITTO_GEOCACHE_KIND) {
       return DittoFeatureRenderer.render(note.rawEvent);
+    }
+    // Satellite Earth personal-site page (kind 35129): dedicated "open on
+    // Satellite Earth" notice with the page title from the title tag.
+    if (note.rawEvent.kind === SATELLITE_SITE_KIND) {
+      return SatelliteSiteRenderer.render(note.rawEvent);
     }
 
     const element = document.createElement('div');
@@ -47,12 +53,15 @@ export class UnsupportedKindRenderer {
    * the addressable-quote routing, which only has the coordinate (no fetched
    * event). Keeps addressable events that aren't a supported kind (e.g. a
    * proprietary community kind) out of the article renderer: same card, "open in
-   * another client" points at the naddr on njump. Ditto geocache keeps its own
-   * dedicated notice.
+   * another client" points at the naddr on njump. Ditto geocache and Satellite
+   * Earth site pages keep their own dedicated notice.
    */
   static renderFromCoordinate(kind: number, pubkey: string, identifier: string): HTMLElement {
     if (kind === DITTO_GEOCACHE_KIND) {
       return DittoFeatureRenderer.renderFromCoordinate(kind, pubkey, identifier);
+    }
+    if (kind === SATELLITE_SITE_KIND) {
+      return SatelliteSiteRenderer.renderFromCoordinate(kind, pubkey, identifier);
     }
 
     const element = document.createElement('div');

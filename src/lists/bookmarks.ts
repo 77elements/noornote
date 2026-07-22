@@ -2710,6 +2710,12 @@ export class BookmarkCard {
                    : 'Draft';
       return `Git Status: ${status}`;
     }
+    if (event.kind === 35129) {
+      const title = event.tags.find(t => t[0] === 'title')?.[1]
+                 || event.tags.find(t => t[0] === 'd')?.[1]
+                 || 'Untitled';
+      return `Satellite Earth: ${title}`;
+    }
     return this.getTextSnippet(event.content, 100);
   }
 

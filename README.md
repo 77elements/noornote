@@ -204,6 +204,7 @@ If the app crashes, check the log files:
 - **Community dhikr activity (NoorNote-internal)** — kind `99003`, synthesized for the Nostr-Majlis addon to notify about new dhikr rounds, significant commits and reached goals. Not published to relays.
 - **Bookmark list (legacy)** — kind `10003`, NIP-51 legacy bookmark list (read for migration; new bookmarks go in kind `30003`)
 - **Ditto geocache** — kind `37516`, proprietary [Ditto](https://ditto.pub) feature with no NIP; rendered as a notice with an "open in Ditto" link instead of broken output
+- **Satellite Earth site page** — kind `35129`, proprietary [Satellite Earth](https://satellite.earth) page event (NAP-4 archetype, one page of a Nostr-native personal site); rendered as a notice card linking to the naddr on njump
 
 ## Build from Source
 

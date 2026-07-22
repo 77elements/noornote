@@ -16,6 +16,7 @@ import { UserProfileService } from '../../../services/UserProfileService';
 import { NoteProcessor } from '../note-processing/NoteProcessor';
 import { NoteRendererFactory } from './NoteRendererFactory';
 import { DittoFeatureRenderer, DITTO_GEOCACHE_KIND } from './DittoFeatureRenderer';
+import { SatelliteSiteRenderer, SATELLITE_SITE_KIND } from './SatelliteSiteRenderer';
 import { ARTICLE_PREVIEW_KINDS } from '../../../helpers/addressableKinds';
 import { ArticlePreviewRenderer } from './ArticlePreviewRenderer';
 import { CollapsibleManager } from '../note-features/CollapsibleManager';
@@ -270,6 +271,15 @@ export class RepostRenderer {
       dittoContainer.className = 'repost-article-container';
       dittoContainer.appendChild(DittoFeatureRenderer.render(innerEvent));
       repostDiv.appendChild(dittoContainer);
+      return;
+    }
+
+    // (1) Satellite Earth site page (kind 35129): proprietary, no NIP. Same shape.
+    if (innerEvent.kind === SATELLITE_SITE_KIND) {
+      const satelliteContainer = document.createElement('div');
+      satelliteContainer.className = 'repost-article-container';
+      satelliteContainer.appendChild(SatelliteSiteRenderer.render(innerEvent));
+      repostDiv.appendChild(satelliteContainer);
       return;
     }
 

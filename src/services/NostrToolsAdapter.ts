@@ -80,6 +80,13 @@ export function encodeNevent(eventId: string, relays?: string[], author?: string
 }
 
 /**
+ * Encode event ID to note1 (raw NIP-19 event id, no relay/author metadata).
+ */
+export function noteEncode(eventId: string): string {
+  return nip19.noteEncode(eventId);
+}
+
+/**
  * Encode long-form content address to naddr
  */
 export function encodeNaddr(params: {

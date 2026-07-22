@@ -24,6 +24,7 @@ import { escapeHtml } from '../../../helpers/escapeHtml';
 import { getTag } from '../../../helpers/tagUtils';
 import { TypedEventBus } from '../../../core/TypedEventBus';
 import { DittoFeatureRenderer, DITTO_GEOCACHE_KIND } from '../../../components/ui/note-rendering/DittoFeatureRenderer';
+import { SatelliteSiteRenderer, SATELLITE_SITE_KIND } from '../../../components/ui/note-rendering/SatelliteSiteRenderer';
 import { UnsupportedKindRenderer } from './UnsupportedKindRenderer';
 import { ARTICLE_PREVIEW_KINDS } from '../../../helpers/addressableKinds';
 
@@ -113,6 +114,11 @@ export class QuotedNoteRenderer {
       container.appendChild(DittoFeatureRenderer.renderFromCoordinate(kind, pubkey, identifier));
       return;
     }
+    // Satellite Earth site page (kind 35129): proprietary, no NIP — dedicated notice.
+    if (kind === SATELLITE_SITE_KIND) {
+      container.appendChild(SatelliteSiteRenderer.renderFromCoordinate(kind, pubkey, identifier));
+      return;
+    }
     // Article / Zapstore app / live stream → article-preview renderer.
     if (kind !== undefined && ARTICLE_PREVIEW_KINDS.has(kind)) {
       this.articleRenderer.renderArticlePreview(naddrRef, container);
@@ -179,6 +185,13 @@ export class QuotedNoteRenderer {
         // article-preview renderer and produce garbage.
         if (result.event.kind === DITTO_GEOCACHE_KIND) {
           skeleton.replaceWith(DittoFeatureRenderer.render(result.event));
+          return;
+        }
+
+        // Satellite Earth site page (kind 35129): proprietary, no NIP — same
+        // reason as the Ditto branch above.
+        if (result.event.kind === SATELLITE_SITE_KIND) {
+          skeleton.replaceWith(SatelliteSiteRenderer.render(result.event));
           return;
         }
 
