@@ -119,6 +119,11 @@ export class QuotedNoteRenderer {
       container.appendChild(SatelliteSiteRenderer.renderFromCoordinate(kind, pubkey, identifier));
       return;
     }
+    // Follow pack (kind 39089) → fetch + render via FollowPackRenderer (.nn-card).
+    if (kind === 39089) {
+      void this.renderFollowPackPreview(naddrRef, container);
+      return;
+    }
     // Article / Zapstore app / live stream → article-preview renderer.
     if (kind !== undefined && ARTICLE_PREVIEW_KINDS.has(kind)) {
       this.articleRenderer.renderArticlePreview(naddrRef, container);
@@ -220,6 +225,12 @@ export class QuotedNoteRenderer {
             const { EmojiPackProcessor } = await import('../../../components/ui/note-processing/EmojiPackProcessor');
             const processedNote = EmojiPackProcessor.process(result.event);
             const packElement = EmojiPackRenderer.render(processedNote, { collapsible: false, depth: 1 });
+            skeleton.replaceWith(packElement);
+            return;
+          }
+          // Follow packs (kind 39089) → .nn-card via FollowPackRenderer.
+          if (result.event.kind === 39089) {
+            const packElement = await this.buildFollowPackElement(result.event);
             skeleton.replaceWith(packElement);
             return;
           }
@@ -722,6 +733,34 @@ export class QuotedNoteRenderer {
         this.renderListingPreviewFromEvent(result.event, container);
       }
     } catch { /* silent — container stays empty */ }
+  }
+
+  /**
+   * Render a follow pack preview (.nn-card) from an naddr reference.
+   * Fetches the event, then dispatches it through the standard
+   * FollowPackProcessor + FollowPackRenderer pipeline so the inline quote box
+   * shows the same card as the timeline. Mirrors {@link renderListingPreview}.
+   */
+  public async renderFollowPackPreview(naddrRef: string, container: Element): Promise<void> {
+    try {
+      const result = await this.quoteFetcher.fetchQuotedEventWithError(naddrRef);
+      if (result.success && result.event.kind === 39089) {
+        const el = await this.buildFollowPackElement(result.event);
+        container.appendChild(el);
+      }
+    } catch { /* silent — container stays empty */ }
+  }
+
+  /**
+   * Build the follow-pack element via the standard Processor + Renderer pair.
+   * Shared by the naddr quote path ({@link renderFollowPackPreview}) and the
+   * fetched-quote addressable branch in {@link fetchAndRenderQuote}.
+   */
+  private async buildFollowPackElement(event: NostrEvent): Promise<HTMLElement> {
+    const { FollowPackProcessor } = await import('../../../components/ui/note-processing/FollowPackProcessor');
+    const { FollowPackRenderer } = await import('../../../components/ui/note-rendering/FollowPackRenderer');
+    const processedNote = FollowPackProcessor.process(event);
+    return FollowPackRenderer.render(processedNote, { collapsible: false, depth: 1 });
   }
 
   /**

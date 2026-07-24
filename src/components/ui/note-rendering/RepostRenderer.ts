@@ -24,14 +24,12 @@ import { ModuleLoader } from '../../../core/ModuleLoader';
 import type { SingleNoteModuleApi } from '../../../modules/single-note/contracts';
 import { MuteOrchestrator } from '../../../lists/mutes';
 import { AuthService } from '../../../services/AuthService';
-import { escapeHtml, escapeHtmlAttr } from '../../../helpers/escapeHtml';
+import { escapeHtmlAttr } from '../../../helpers/escapeHtml';
 import { hexToNpub } from '../../../helpers/nip19';
-import { encodeNaddr, encodeNevent } from '../../../services/NostrToolsAdapter';
+import { encodeNevent } from '../../../services/NostrToolsAdapter';
 import { UserHoverCard } from '../UserHoverCard';
-import { getViewNavigationController } from '../../../services/ViewNavigationController';
 import { AddonLoader } from '../../../addons/AddonLoader';
 import type { ProfileRecognitionRuntime } from '../../../addons/profile-recognition/runtime';
-import { getTag } from '../../../helpers/tagUtils';
 
 // Types only (erased at build time) — live runtime accessed via AddonLoader
 type ProfileBlinkerType = import('../../../addons/profile-recognition/profileBlinking').ProfileBlinker;
@@ -252,11 +250,11 @@ export class RepostRenderer {
    * Dispatch an embedded (or just-fetched) inner event through the rendering
    * pipeline. Three branches:
    *
-   *  1. Bespoke preview-card kinds (Follow-Pack, Ditto geocache) — kept inline
-   *     because they don't have a Processor/Renderer pair.
+   *  1. Bespoke preview-card kinds (Ditto geocache, Satellite site) — kept
+   *     inline because they don't have a Processor/Renderer pair.
    *  2. Addressable article-preview kinds (article / Zapstore app / live stream)
    *     — routed through {@link ArticlePreviewRenderer.renderFromEvent}.
-   *  3. Everything else — processed through the standard
+   *  3. Everything else (incl. Follow Packs) — processed through the standard
    *     {@link NoteProcessor} + {@link NoteRendererFactory} pipeline, so any
    *     future content kind works in reposts automatically.
    */
@@ -280,12 +278,6 @@ export class RepostRenderer {
       satelliteContainer.className = 'repost-article-container';
       satelliteContainer.appendChild(SatelliteSiteRenderer.render(innerEvent));
       repostDiv.appendChild(satelliteContainer);
-      return;
-    }
-
-    // (1) Follow pack (kind 39089): bespoke preview card, no Processor/Renderer pair.
-    if (innerEvent.kind === 39089) {
-      RepostRenderer.renderFollowPackPreview(repostDiv, innerEvent);
       return;
     }
 
@@ -315,46 +307,5 @@ export class RepostRenderer {
     if (opts.depth === 0 && opts.collapsible) {
       CollapsibleManager.setup(repostDiv, { maxHeight: '40vh', contentSelector: '.note-card--original' });
     }
-  }
-
-  /**
-   * Bespoke preview card for NIP-??? community "follow packs" (kind 39089).
-   * Kept inline because the card markup has no Processor/Renderer equivalent
-   * (the FollowPackRenderer renders the full feed view, not the preview).
-   */
-  private static renderFollowPackPreview(repostDiv: HTMLElement, event: NostrEvent): void {
-    const packContainer = document.createElement('div');
-    packContainer.className = 'repost-article-container';
-
-    const tags = event.tags;
-    const title = getTag(tags, 'title') || getTag(tags, 'n') || 'Untitled';
-    const image = getTag(tags, 'image');
-    const memberCount = tags.filter(t => t[0] === 'p').length;
-
-    const dTag = getTag(tags, 'd');
-    const naddr = encodeNaddr({
-      kind: 39089,
-      pubkey: event.pubkey,
-      identifier: dTag,
-      relays: []
-    });
-
-    packContainer.innerHTML = `
-      <a href="/follow-pack/${naddr}" class="repost-pack-preview" data-route="/follow-pack/${naddr}">
-        ${image ? `<img src="${escapeHtmlAttr(image)}" alt="" class="repost-pack-preview__image" loading="lazy" />` : ''}
-        <div class="repost-pack-preview__info">
-          <strong>${escapeHtml(title)}</strong>
-          <span>${memberCount} people</span>
-        </div>
-      </a>
-    `;
-
-    packContainer.querySelector('.repost-pack-preview')?.addEventListener('click', (e) => {
-      if ((e.target as HTMLElement).closest('.note-image--clickable, .note-media, video')) return;
-      e.preventDefault();
-      getViewNavigationController().openView('follow-pack', naddr, e as MouseEvent);
-    });
-
-    repostDiv.appendChild(packContainer);
   }
 }
