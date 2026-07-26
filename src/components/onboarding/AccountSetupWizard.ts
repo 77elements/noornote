@@ -21,7 +21,6 @@ import { TypedEventBus } from '../../core/TypedEventBus';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { ImageUploader } from '../profile/ImageUploader';
 import { ToastService } from '../../services/ToastService';
-import { ClipboardActionsService } from '../../services/ClipboardActionsService';
 import { UserProfileService } from '../../services/UserProfileService';
 import type { SettingsModuleApi } from '../../modules/settings/contracts';
 import type { RelayInfo, RelayType } from '../../services/RelayConfig';
@@ -39,7 +38,6 @@ import {
 } from '../../helpers/profile-field-helpers';
 import { setupCarouselNavigation } from '../../helpers/CarouselHelper';
 import { getImageViewer } from '../ui/ImageViewer';
-import { Tooltip } from '../ui/Tooltip';
 
 const platform = PlatformService.getInstance();
 
@@ -327,95 +325,13 @@ const DEFAULT_CONTENT_RELAYS: string[] = [
   'wss://nostr.oxtr.dev',
 ];
 
-// Generic NIP-17 DM inbox relay (AUTH-capable, private inbox). Used for users
-// with no faith selection and for Muslims (whose faith relays are paid-write,
-// so they can't serve as a DM inbox until the user is whitelisted) — see
-// applyFaithRelays.
-const GENERIC_INBOX_RELAY = 'wss://relay.0xchat.com';
-
-// Default DM inbox set. Christians get a faith-only inbox; Muslims and everyone
-// else get exactly this set (Muslims add their paid faith relays later, once
-// whitelisted). The inbox-relay wizard step was removed; advanced users change
-// these in Settings.
-const DEFAULT_INBOX_RELAYS: string[] = [
-  GENERIC_INBOX_RELAY,
+// NIP-17 DM inbox relays, hard-coded for every new account. Both relays
+// support NIP-40 (expiration) so disappearing-DMs work out of the box. Users
+// can change these later under Settings → Relays.
+const INBOX_RELAYS: string[] = [
+  'wss://relay.0xchat.com',
   'wss://auth.nostr1.com',
 ];
-
-// Thematic community relays seeded when a user self-identifies in the bio step.
-// Only members of the respective faith post to these relays. Christian relays
-// are seeded read/write; the Muslim relays are paid-write (spam protection), so
-// they are seeded read-only and a generic inbox is kept (see applyFaithRelays).
-const MUSLIM_RELAYS: string[] = [
-  'wss://noornode.nostr1.com',
-  'wss://bitcoinmajlis.nostr1.com',
-];
-const CHRISTIAN_RELAYS: string[] = [
-  'wss://theforest.nostr1.com',
-  'wss://christpill.nostr1.com',
-];
-
-// Operator of the Muslim community relays. The relays are paid-write as spam
-// protection; users get whitelisted by sending a few sats or by contacting the
-// operator directly. Surfaced in the bio step's faith note.
-const MUSLIM_RELAY_OPERATOR_NPUB = 'npub17veg2gt7ja4dnjhs23jyttvpqlde3ajevlxuumxwghnqmgqwuv4q78cc5z';
-
-// Tooltip copy for the faith checkboxes. The only effect of ticking a box is
-// relay seeding: the thematic relays below are added to the user's setup.
-// Built from the relay lists so the names stay in sync with the actual seeds.
-function faithRelayTooltip(relays: string[]): string {
-  const names = relays.map(url => url.replace(/^wss:\/\//, '')).join(' and ');
-  return `No other effect, except the ${relays.length} thematic relays ${names} that are added initially `
-    + 'and which you can browse individually later.';
-}
-const FAITH_TOOLTIP_MUSLIM = faithRelayTooltip(MUSLIM_RELAYS);
-const FAITH_TOOLTIP_CHRISTIAN = faithRelayTooltip(CHRISTIAN_RELAYS);
-
-/**
- * Single source of truth for which relay sets each faith choice seeds. Both the
- * bio-step preview (what the user sees) and applyFaithRelays() (what actually
- * gets configured) consume this, so the preview can never drift from reality.
- */
-function computeFaithRelays(isMuslim: boolean, isChristian: boolean): {
-  selectedRelays: WizardRelay[];
-  inboxRelays: WizardInboxRelay[];
-} {
-  const contentUrls = [...DEFAULT_CONTENT_RELAYS];
-
-  if (isMuslim) {
-    // The Muslim community relays are paid-write (spam protection): a new,
-    // un-whitelisted user can read but neither post there nor receive DMs
-    // there (outsiders can't write the gift-wrap). So seed them READ-only for
-    // content and use the generic inbox set (identical to the no-faith case),
-    // so DMs work right away. Once whitelisted, the user adds the faith relays
-    // as write/inbox themselves. The bio step shows how to get whitelisted.
-    return {
-      selectedRelays: [
-        ...contentUrls.map(url => ({ url, read: true, write: true })),
-        ...MUSLIM_RELAYS.map(url => ({ url, read: true, write: false })),
-      ],
-      inboxRelays: DEFAULT_INBOX_RELAYS.map(url => ({ url, selected: true })),
-    };
-  }
-
-  if (isChristian) {
-    // Christian community relays accept writes freely → read/write content
-    // and use them directly as the NIP-17 DM inbox.
-    for (const url of CHRISTIAN_RELAYS) {
-      if (!contentUrls.includes(url)) contentUrls.push(url);
-    }
-    return {
-      selectedRelays: contentUrls.map(url => ({ url, read: true, write: true })),
-      inboxRelays: CHRISTIAN_RELAYS.map(url => ({ url, selected: true })),
-    };
-  }
-
-  // No faith selection: mainstream content defaults + generic DM inbox.
-  return {
-    selectedRelays: contentUrls.map(url => ({ url, read: true, write: true })),
-    inboxRelays: DEFAULT_INBOX_RELAYS.map(url => ({ url, selected: true })),
-  };
-}
 
 function generateRandomUsername(): string {
   const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
@@ -441,8 +357,6 @@ export class AccountSetupWizard {
   private avatarChoices: string[] = [];
   private selectedRelays: WizardRelay[] = [];
   private inboxRelays: WizardInboxRelay[] = [];
-  private isMuslim = false;
-  private isChristian = false;
   private followPacks: FollowPack[] = [];
   private followPacksLoaded: boolean = false;
   private followPackView: 'grid' | 'detail' = 'grid';
@@ -456,7 +370,6 @@ export class AccountSetupWizard {
 
   /** The fullscreen container we inject into #app */
   private container: HTMLElement | null = null;
-  private tooltipDisposers: Array<() => void> = [];
   /** The original #app content (MainLayout), hidden during wizard */
   private originalAppContent: HTMLElement[] = [];
 
@@ -515,10 +428,10 @@ export class AccountSetupWizard {
 
     // Relays are no longer a wizard step — most beginners can't judge which
     // relay does what. Seed sensible defaults (changeable later in Settings):
-    // mainstream content relays as read/write + NIP-17 DM inbox relays. Faith
-    // self-identification in the bio step may amend these via applyFaithRelays.
+    // mainstream content relays as read/write + the hard-coded NIP-17 DM
+    // inbox relays (INBOX_RELAYS).
     this.selectedRelays = DEFAULT_CONTENT_RELAYS.map(url => ({ url, read: true, write: true }));
-    this.inboxRelays = DEFAULT_INBOX_RELAYS.map(url => ({ url, selected: true }));
+    this.inboxRelays = INBOX_RELAYS.map(url => ({ url, selected: true }));
   }
 
   /**
@@ -545,7 +458,6 @@ export class AccountSetupWizard {
    * Remove wizard and restore main app layout
    */
   private destroy(): void {
-    this.disposeTooltips();
     this.avatarUploader?.cleanup();
     this.avatarUploader = null;
 
@@ -562,20 +474,12 @@ export class AccountSetupWizard {
     this.originalAppContent = [];
   }
 
-  private disposeTooltips(): void {
-    this.tooltipDisposers.forEach(dispose => dispose());
-    this.tooltipDisposers = [];
-  }
-
   private renderCurrentStep(): void {
     if (!this.container) return;
 
     // Cleanup previous avatar uploader
     this.avatarUploader?.cleanup();
     this.avatarUploader = null;
-
-    // Detach tooltips from the outgoing step's DOM before it is replaced.
-    this.disposeTooltips();
 
     const step = this.steps[this.currentStepIndex]!;
 
@@ -748,8 +652,6 @@ export class AccountSetupWizard {
       selectedRelays: this.selectedRelays,
       inboxRelays: this.inboxRelays,
       followedPubkeys: [...this.followedPubkeys],
-      isMuslim: this.isMuslim,
-      isChristian: this.isChristian,
     });
   }
 
@@ -761,8 +663,6 @@ export class AccountSetupWizard {
       selectedRelays?: WizardRelay[];
       inboxRelays?: WizardInboxRelay[];
       followedPubkeys?: string[];
-      isMuslim?: boolean;
-      isChristian?: boolean;
     } | null>(StorageKeys.WIZARD_PROGRESS, null);
 
     if (saved) {
@@ -780,8 +680,6 @@ export class AccountSetupWizard {
       if (saved.followedPubkeys?.length) {
         this.followedPubkeys = new Set(saved.followedPubkeys);
       }
-      this.isMuslim = saved.isMuslim ?? false;
-      this.isChristian = saved.isChristian ?? false;
     } else {
       this.currentStepIndex = 0;
       this.profileData = {};
@@ -1583,97 +1481,20 @@ IMPORTANT:
         const bioField = renderBioField(this.profileData.about || '');
         el.appendChild(bioField);
 
-        // Optional faith self-identification. When checked, thematic community
-        // relays are seeded into the user's relay sets via applyFaithRelays().
-        const faith = document.createElement('div');
-        faith.className = 'nn-checkbox-group wizard-faith-group';
-        faith.innerHTML = `
-          <label class="nn-checkbox">
-            <input type="checkbox" id="wizard-faith-muslim" ${this.isMuslim ? 'checked' : ''} />
-            <span>I am Muslim</span>
-          </label>
-          <label class="nn-checkbox">
-            <input type="checkbox" id="wizard-faith-christian" ${this.isChristian ? 'checked' : ''} />
-            <span>I am Christian</span>
-          </label>
+        // Static info box: tells the user which DM inbox relays they start
+        // with, and that these are changeable later. Replaces the previous
+        // dynamic faith-based relay preview.
+        const inboxInfo = document.createElement('div');
+        inboxInfo.className = 'wizard-info-box wizard-inbox-info';
+        inboxInfo.innerHTML = `
+          <strong>Your DM inbox relays</strong>
+          <p>
+            <span class="wizard-inbox-info__relay">relay.0xchat.com</span>
+            <span class="wizard-inbox-info__relay">auth.nostr1.com</span>
+          </p>
+          <p class="wizard-inbox-info__note">Changeable anytime under Settings &rarr; Relays.</p>
         `;
-        el.appendChild(faith);
-
-        const muslimCb = faith.querySelector('#wizard-faith-muslim') as HTMLInputElement;
-        const christianCb = faith.querySelector('#wizard-faith-christian') as HTMLInputElement;
-
-        // Whitelist note for the Muslim community relays (paid-write spam
-        // protection). Shown only while "I am Muslim" is selected.
-        const faithNote = document.createElement('div');
-        faithNote.className = 'wizard-info-box wizard-faith-note';
-        faithNote.hidden = !this.isMuslim;
-        faithNote.innerHTML = `
-          <strong>About the Muslim community relays</strong>
-          <p>They use a small Lightning payment as spam protection, not to make money. You can read the posts written to that relay, but to post and to receive direct messages there, the operator has to whitelist you: send a few sats to the relay, or contact the operator directly.</p>
-          <div class="wizard-faith-note__actions">
-            <button type="button" class="btn btn--passive btn--mini" data-action="copy-operator-npub">Copy operator's npub</button>
-          </div>
-        `;
-        el.appendChild(faithNote);
-
-        // Live relay preview: shows exactly which relays this choice will seed,
-        // so the user sees the concrete effect of the faith option before
-        // committing. Built from computeFaithRelays() — the same source the
-        // actual seeding uses — so it can never drift from what gets configured.
-        const relayPreview = document.createElement('div');
-        relayPreview.className = 'wizard-info-box wizard-relay-preview';
-        el.appendChild(relayPreview);
-
-        const renderRelayPreview = () => {
-          const { selectedRelays, inboxRelays } = computeFaithRelays(muslimCb.checked, christianCb.checked);
-          const rwList = selectedRelays.map(r => {
-            const name = escapeHtml(r.url.replace(/^wss:\/\//, ''));
-            const tag = r.write ? '' : ' <span class="wizard-relay-preview__tag">read-only</span>';
-            return `<li>${name}${tag}</li>`;
-          }).join('');
-          const inboxList = inboxRelays
-            .map(r => `<li>${escapeHtml(r.url.replace(/^wss:\/\//, ''))}</li>`)
-            .join('');
-          const html = `
-            <strong>Your starting relays</strong>
-            <div class="wizard-relay-preview__section">
-              <span class="wizard-relay-preview__label">Read / Write Relays</span>
-              <ul>${rwList}</ul>
-            </div>
-            <div class="wizard-relay-preview__section">
-              <span class="wizard-relay-preview__label">DM Outbox Relays</span>
-              <ul>${inboxList}</ul>
-            </div>
-            <p class="wizard-relay-preview__note">This only affects your initial relay configuration. You can change it anytime later under Settings &rarr; Relays.</p>
-          `;
-          relayPreview.innerHTML = html; // security-ok: static template + escapeHtml'd relay names (hardcoded constants)
-        };
-        renderRelayPreview();
-
-        const updateFaithNote = () => { faithNote.hidden = !muslimCb.checked; };
-
-        // Mutually exclusive: Muslim OR Christian OR neither, never both.
-        muslimCb.addEventListener('change', () => {
-          if (muslimCb.checked) christianCb.checked = false;
-          updateFaithNote();
-          renderRelayPreview();
-        });
-        christianCb.addEventListener('change', () => {
-          if (christianCb.checked) muslimCb.checked = false;
-          updateFaithNote();
-          renderRelayPreview();
-        });
-
-        // Copy the operator npub so the user can reach out for whitelisting.
-        faithNote.querySelector('[data-action="copy-operator-npub"]')?.addEventListener('click', () => {
-          void ClipboardActionsService.getInstance().copyText(MUSLIM_RELAY_OPERATOR_NPUB, "Operator's npub");
-        });
-
-        // Explain the (relay-only) effect of each choice on hover.
-        const muslimLabel = muslimCb.closest('.nn-checkbox') as HTMLElement | null;
-        const christianLabel = christianCb.closest('.nn-checkbox') as HTMLElement | null;
-        if (muslimLabel) this.tooltipDisposers.push(Tooltip.attach(muslimLabel, FAITH_TOOLTIP_MUSLIM));
-        if (christianLabel) this.tooltipDisposers.push(Tooltip.attach(christianLabel, FAITH_TOOLTIP_CHRISTIAN));
+        el.appendChild(inboxInfo);
 
         return el;
       },
@@ -1681,12 +1502,6 @@ IMPORTANT:
       collect: () => {
         const textarea = this.container?.querySelector('#about') as HTMLTextAreaElement;
         if (textarea) this.profileData.about = textarea.value.trim();
-
-        const muslimInput = this.container?.querySelector('#wizard-faith-muslim') as HTMLInputElement | null;
-        const christianInput = this.container?.querySelector('#wizard-faith-christian') as HTMLInputElement | null;
-        if (muslimInput) this.isMuslim = muslimInput.checked;
-        if (christianInput) this.isChristian = christianInput.checked;
-        this.applyFaithRelays();
       }
     };
   }
@@ -2192,23 +2007,6 @@ IMPORTANT:
 
   private updateFinishStatus(spinner: HTMLElement | null, text: string): void {
     if (spinner) spinner.textContent = text;
-  }
-
-  /**
-   * Rebuild the seeded relay sets from the platform defaults plus any
-   * faith-specific community relays the user opted into in the bio step.
-   * Idempotent: unchecking removes the extra relays again. Christian relays are
-   * seeded read/write (kind 10002) and as the DM inbox (kind 10050); the Muslim
-   * relays are paid-write, so they are seeded read-only and the generic inbox
-   * is kept. There is no relay-customization step in the wizard, so rebuilding
-   * from defaults is safe.
-   */
-  private applyFaithRelays(): void {
-    // Muslim and Christian are mutually exclusive. Delegates to the shared pure
-    // function so the seeded sets always match the bio-step preview.
-    const { selectedRelays, inboxRelays } = computeFaithRelays(this.isMuslim, this.isChristian);
-    this.selectedRelays = selectedRelays;
-    this.inboxRelays = inboxRelays;
   }
 
   private async publishRelayList(): Promise<void> {

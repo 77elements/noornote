@@ -388,11 +388,6 @@
   }
 }
 
-// Faith self-identification checkboxes below the bio textarea.
-.wizard-faith-group {
-  margin-top: $gap;
-}
-
 // Duplicated navigation rendered above a long pack list: drop the top border/
 // padding of the regular nav and separate it from the content below instead.
 .wizard-nav--top {
@@ -514,11 +509,10 @@
   }
 }
 
-.wizard-faith-note {
-  &[hidden] {
-    display: none;
-  }
-
+// Static "Your DM inbox relays" info box in the bio step. Replaces the
+// previous faith-driven live preview with a fixed hint about the two
+// hard-coded inbox relays and points users to Settings for changes.
+.wizard-inbox-info {
   strong {
     display: block;
     margin-bottom: calc($gap / 2);
@@ -526,54 +520,24 @@
   }
 
   p {
-    margin: 0;
+    margin: 0 0 calc($gap / 2);
     color: var(--color-3);
   }
 
-  &__actions {
-    margin-top: $gap;
-  }
-}
-
-.wizard-relay-preview {
-  strong {
-    display: block;
-    margin-bottom: $gap;
+  &__relay {
+    display: inline-block;
+    margin: calc($gap / 4) calc($gap / 2) calc($gap / 4) 0;
+    padding: calc($gap / 8) calc($gap / 2);
+    background: var(--color-2);
+    border-radius: $radius-pill;
     color: var(--color-5);
-  }
-
-  &__section {
-    margin-bottom: $gap;
-  }
-
-  &__label {
-    display: block;
-    margin-bottom: calc($gap / 2);
-    color: var(--color-4);
-    font-weight: 500;
-    font-size: 0.85em;
-  }
-
-  ul {
-    margin: 0;
-    padding-left: $gap * 1.5;
-  }
-
-  li {
-    color: var(--color-3);
+    font-size: 0.9em;
     word-break: break-all;
   }
 
-  &__tag {
-    color: var(--color-4);
-    font-size: 0.8em;
-    font-style: italic;
-  }
-
   &__note {
-    margin: $gap 0 0;
+    margin-top: $gap;
     color: var(--color-3);
-    font-size: 0.85em;
     font-style: italic;
   }
 }

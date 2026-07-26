@@ -1026,11 +1026,12 @@ export class DMService {
     return timestamp - randomOffset;
   }
 
-  /** Default fallback DM inbox relays (NIP-17 + NIP-42 AUTH capable) */
+  /** Default fallback DM inbox relays (NIP-17 + NIP-42 AUTH capable).
+   *  Mirrors the onboarding INBOX_RELAYS so DM routing for users without a
+   *  published kind:10050 lands on the same set the wizard seeds. */
   private readonly FALLBACK_INBOX_RELAYS = [
+    'wss://relay.0xchat.com',
     'wss://auth.nostr1.com',
-    'wss://noornode.nostr1.com',
-    'wss://bitcoinmajlis.nostr1.com'
   ];
 
   /**
