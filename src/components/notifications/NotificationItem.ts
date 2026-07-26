@@ -911,6 +911,43 @@ export class NotificationItem {
   }
 
   /**
+   * If the notification event references an addressable target (kind 30000+) via an
+   * `a`-tag, route to the matching view (ArticleView, FollowPackDetailView, …).
+   * Returns true when it handled navigation; false when no `a`-tag was present.
+   * Shared by zap/reaction/poll_vote and repost click branches so e.g. a repost of
+   * a kind 30023 article lands in ArticleView, not SingleNoteView.
+   */
+  private async navigateToAddressableTarget(e: MouseEvent): Promise<boolean> {
+    const aTag = this.options.event.tags.find((t: string[]) => t[0] === 'a');
+    if (!aTag?.[1]) return false;
+    const parts = aTag[1].split(':');
+    if (parts.length < 3) return false;
+    const { encodeNaddr } = await import('../../services/NostrToolsAdapter');
+    const kind = parseInt(parts[0]!);
+    const naddr = encodeNaddr({
+      kind,
+      pubkey: parts[1]!,
+      identifier: parts[2]!,
+      relays: []
+    });
+    const { App } = await import('../../App');
+    const route = App.getRouteForAddressableEvent(kind, naddr);
+    // Articles have a secondary-pane view; route them through the controller so
+    // right-pane mode opens them in the scc. Other addressable kinds (zapstore,
+    // follow-pack, ...) have no scc tab view yet and keep full Router navigation.
+    if (route.startsWith('/article/')) {
+      getViewNavigationController().openView('article', naddr, e);
+    } else if (route.startsWith('/follow-pack/')) {
+      getViewNavigationController().openView('follow-pack', naddr, e);
+    } else if (route.startsWith('/listing/')) {
+      getViewNavigationController().openView('listing', naddr, e);
+    } else {
+      Router.getInstance().navigate(route);
+    }
+    return true;
+  }
+
+  /**
    * Handle notification click (navigate to note)
    */
   private async handleClick(e: MouseEvent): Promise<void> {
@@ -920,41 +957,11 @@ export class NotificationItem {
       return;
     }
 
-    const router = Router.getInstance();
     const type = this.options.type;
 
     // For zaps, reactions, and poll votes, navigate to referenced event
     if (type === 'zap' || type === 'reaction' || type === 'poll_vote') {
-      // Check for addressable event reference (a-tag) — articles, follow packs, etc.
-      const aTag = this.options.event.tags.find((t: string[]) => t[0] === 'a');
-      if (aTag?.[1]) {
-        const parts = aTag[1].split(':');
-        if (parts.length >= 3) {
-          const { encodeNaddr } = await import('../../services/NostrToolsAdapter');
-          const kind = parseInt(parts[0]!);
-          const naddr = encodeNaddr({
-            kind,
-            pubkey: parts[1]!,
-            identifier: parts[2]!,
-            relays: []
-          });
-          const { App } = await import('../../App');
-          const route = App.getRouteForAddressableEvent(kind, naddr);
-          // Articles have a secondary-pane view; route them through the controller so
-          // right-pane mode opens them in the scc. Other addressable kinds (zapstore,
-          // follow-pack, ...) have no scc tab view yet and keep full Router navigation.
-          if (route.startsWith('/article/')) {
-            getViewNavigationController().openView('article', naddr, e);
-          } else if (route.startsWith('/follow-pack/')) {
-            getViewNavigationController().openView('follow-pack', naddr, e);
-          } else if (route.startsWith('/listing/')) {
-            getViewNavigationController().openView('listing', naddr, e);
-          } else {
-            router.navigate(route);
-          }
-          return;
-        }
-      }
+      if (await this.navigateToAddressableTarget(e)) return;
       const noteId = this.getReferencedNoteId();
       if (noteId) {
         getViewNavigationController().openView('single-note', noteId, e);
@@ -962,8 +969,10 @@ export class NotificationItem {
       return;
     }
 
-    // For reposts, navigate to original note
+    // For reposts, navigate to original note. Addressable targets (e.g. kind 30023
+    // articles) carry an `a`-tag per NIP-18 and must land in ArticleView, not SNV.
     if (type === 'repost') {
+      if (await this.navigateToAddressableTarget(e)) return;
       const originalNoteId = extractOriginalNoteId(this.options.event);
       if (originalNoteId) {
         getViewNavigationController().openView('single-note', originalNoteId, e);
@@ -998,7 +1007,7 @@ export class NotificationItem {
 
     // For community-dhikr notifications, open the addon's Community Dhikr tab
     if (type === 'dhikr_round' || type === 'dhikr_commit' || type === 'dhikr_complete') {
-      router.navigate('/addons/nostr-majlis/dhikr');
+      Router.getInstance().navigate('/addons/nostr-majlis/dhikr');
       return;
     }
 
