@@ -115,6 +115,17 @@ export class MessagesView extends View {
         }
       })
     );
+
+    // Listen for expired-message sweeps — the preview/lastMessageAt of the
+    // affected conversation is recomputed in DMStore, so we need to re-fetch
+    // the conversation list to show the updated (or cleared) preview.
+    this.subscriptionIds.push(
+      this.eventBus.on('dm:messages-expired', () => {
+        if (!this.isFetchingDMs) {
+          this.refreshConversationsQuiet();
+        }
+      })
+    );
   }
 
   /**

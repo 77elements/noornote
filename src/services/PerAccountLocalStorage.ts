@@ -98,6 +98,12 @@ export const StorageKeys = {
   // (see docs/todos/indexeddb-eviction-nwc-dm.md), so on a wiped/fresh DB the read
   // anchors rehydrate from here instead of every conversation re-counting as unread.
   DM_READ_ANCHORS: 'noornote_dm_read_anchors_map',
+  // DM disappearing-messages setting (per-account) — a { partnerPubkey → seconds }
+  // map mirrored out of the DMStore IndexedDB. Same eviction-survival rationale
+  // as DM_READ_ANCHORS: if the IndexedDB is wiped, the per-conversation setting
+  // (off / 7d / 30d / 1y) rehydrates and outgoing messages stay correctly tagged.
+  // Value semantics: undefined/missing = undecided, 0 = off, >0 = seconds.
+  DM_DISAPPEARING_SETTINGS: 'noornote_dm_disappearing_settings_map',
 
   // Notification priority settings (per-account)
   NOTIFICATION_PRIORITIES: 'noornote_notification_priorities_map',

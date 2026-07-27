@@ -396,6 +396,110 @@
   &__time {
     @extend %small;
   }
+
+  // Per-bubble countdown for disappearing messages. Rendered next to the
+  // timestamp in `.message__meta`. Subtle color so it doesn't compete with
+  // the time but stays readable when the user looks for it.
+  &__expires-in {
+    @extend %small;
+    color: var(--color-4);
+    font-style: italic;
+    opacity: 0.85;
+  }
+}
+
+/* ================================
+   Disappearing messages: chip + request banner
+   ================================ */
+
+// Chip above the composer — REMOVED. The disappearing zone above the
+// composer now renders a single `.conversation-view__disappearing-banner`
+// element whose content adapts to the state (info chip when active, request
+// banner with actions when undecided, empty otherwise). See the banner
+// block below for the unified styling.
+
+// Inline banner shown when the peer sent a disappearing message and our local
+// setting is still undecided. Same base as the info variant below; modifier
+// only swaps the visual emphasis (warning vs neutral info).
+.conversation-view__disappearing-banner {
+  margin: calc($gap / 2) 0;
+  padding: calc($gap * 0.75) $gap;
+  border-radius: $radius-xl;
+  color: var(--color-5);
+  text-align: center;
+
+  // .l-row--center in the markup handles the action-button layout.
+
+  &-text {
+    @extend %compact;
+    line-height: 1.4;
+    margin-bottom: calc($gap / 2);
+  }
+
+  // Secondary line under the main banner text (e.g. "Do you accept the
+  // time limitation?" below the duration). Same compact size, lighter.
+  &-sub {
+    color: var(--color-3);
+    font-size: 0.95em;
+  }
+
+  // Request variant: warning styling, calls for action.
+  &--request {
+    background: $bg-warning;
+    border: 1px solid $color-warning;
+  }
+
+  // Active-state info variant: neutral, no actions, just shows the countdown.
+  &--info {
+    background: $bg-warning;
+    border: 1px solid transparent;
+    color: $color-warning;
+    font-weight: 500;
+  }
+}
+
+// Spacer in menu items so the disappearing presets align with the icons used
+// by other entries (mute, delete). Keeps the visual rhythm consistent.
+.note-menu-item__icon-spacer {
+  display: inline-block;
+  width: 16px;
+  flex-shrink: 0;
+}
+
+.note-menu-item__check {
+  margin-left: auto;
+  color: var(--color-6);
+}
+
+/* ================================
+   Custom disappearing-duration modal
+   ================================ */
+
+.modal-disappearing {
+  &__row {
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: center;
+    gap: calc($gap / 2);
+  }
+
+  &__value {
+    width: 80px;
+    text-align: right;
+  }
+
+  // Segmented unit toggle: three .btn .btn--mini buttons in a grid row.
+  // Active state is a class swap (drop .btn--passive) — no custom button CSS.
+  &__units {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    gap: calc($gap / 4);
+  }
+
+  &__error {
+    color: $color-red;
+    @extend %compact;
+  }
 }
 
 /* ================================

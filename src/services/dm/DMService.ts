@@ -19,6 +19,7 @@ import { NostrTransport } from '../transport/NostrTransport';
 import { AuthService } from '../AuthService';
 import { RelayConfig } from '../RelayConfig';
 import { DMStore, type DMMessage, type DMConversation } from './DMStore';
+import { computeExpiresAt, isActive } from './DMExpiration';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { SystemLogger } from '../SystemLogger';
 import { diagLog } from '../DiagnosticLogger';
@@ -69,6 +70,12 @@ export class DMService {
   private isRefreshing: boolean = false;
   private static readonly REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
 
+  // Periodic sweep of locally-expired DMs (NIP-40 expiration tag). 60s cadence
+  // matches Nostur's "x ago" ticker piggy-back. Cheap: IDBKeyRange.upperBound
+  // on the new expiresAt index, O(log n + k) where k = expired-today count.
+  private expirySweepTimer: number | null = null;
+  private static readonly EXPIRY_SWEEP_INTERVAL = 60 * 1000; // 60 seconds
+
   // Track active inbox relays to detect changes from relay sync
   private activeInboxRelays: string[] = [];
 
@@ -117,6 +124,20 @@ export class DMService {
     this.eventBus.on('user:logout', () => {
       this.stop();
       this.dmStore.close();
+    });
+
+    // Defensive: also start on user:login directly, not just via PostLoginService.
+    // PostLoginService.handleLogin has a guard (`loggedInPubkey === pubkey`)
+    // that can prevent DMService.start() from running after a rapid
+    // logout → re-login cycle (account switch). This listener ensures DMService
+    // always starts for the new account regardless of that path. Idempotent —
+    // start() exits early if already running for the same pubkey.
+    this.eventBus.on('user:login', (data: { npub: string; pubkey: string }) => {
+      if (this.userPubkey !== data.pubkey && !this.isStarting) {
+        this.start().catch(err => {
+          diagLog('dms', 'auto_start_failed', { error: String(err) });
+        });
+      }
     });
   }
 
@@ -192,6 +213,8 @@ export class DMService {
 
         // Start periodic refresh timer (browser WebSocket connections go stale)
         this.startRefreshTimer();
+        // Start the periodic sweep of locally-expired DMs (disappearing msgs).
+        this.startExpirySweepTimer();
 
         diagLog('dms', 'DM service started');
         this.systemLogger.info('DMService', 'DM service started');
@@ -209,6 +232,7 @@ export class DMService {
    */
   public stop(): void {
     this.clearRefreshTimer();
+    this.clearExpirySweepTimer();
     this.clearIncomingBatchTimer();
 
     if (this.subscriptionId) {
@@ -374,6 +398,42 @@ export class DMService {
     if (this.refreshTimer !== null) {
       clearInterval(this.refreshTimer);
       this.refreshTimer = null;
+    }
+  }
+
+  /**
+   * Start the periodic sweep of locally-expired DMs. Removes messages whose
+   * `expiresAt` (computed from the rumor's `expiration` tag) is in the past
+   * and emits `dm:messages-expired` per affected conversation so the open
+   * ConversationView can drop the bubbles without a full reload.
+   */
+  private startExpirySweepTimer(): void {
+    this.clearExpirySweepTimer();
+    // Run once immediately so a relaunched app purges anything that expired
+    // while it was closed, then on the 60s cadence.
+    void this.sweepExpiredMessages();
+    this.expirySweepTimer = window.setInterval(() => {
+      void this.sweepExpiredMessages();
+    }, DMService.EXPIRY_SWEEP_INTERVAL);
+  }
+
+  private clearExpirySweepTimer(): void {
+    if (this.expirySweepTimer !== null) {
+      clearInterval(this.expirySweepTimer);
+      this.expirySweepTimer = null;
+    }
+  }
+
+  private async sweepExpiredMessages(): Promise<void> {
+    try {
+      const now = Math.floor(Date.now() / 1000);
+      const { partnerPubkeys, count } = await this.dmStore.deleteExpiredBefore(now);
+      if (count === 0) return;
+      for (const partnerPubkey of partnerPubkeys) {
+        this.eventBus.emit('dm:messages-expired', { partnerPubkey, count });
+      }
+    } catch (error) {
+      diagLog('dms', 'expiry_sweep_failed', { error: String(error) });
     }
   }
 
@@ -669,6 +729,19 @@ export class DMService {
         return;
       }
 
+      // NIP-40 (expiration): if the wrap itself is already expired, drop it
+      // before spending cycles on decryption. Some relays honor NIP-40 and
+      // stop serving expired events, but many don't — so the client MUST
+      // enforce this locally. Otherwise an expired disappearing-DM gets
+      // re-saved on every historical re-fetch, only to be re-deleted by the
+      // next sweep — a tight infinite loop.
+      const now = Math.floor(Date.now() / 1000);
+      const wrapExpiration = this.getTagValue(wrapEvent.tags, 'expiration');
+      if (wrapExpiration && Number(wrapExpiration) <= now) {
+        diagLog('dms', 'expired_wrap_dropped', { wrapId: wrapId.slice(0, 8), expiredAgo: now - Number(wrapExpiration) });
+        return;
+      }
+
       // Unwrap: GiftWrap -> Seal -> Rumor
       const rumor = await this.unwrapGiftWrap(wrapEvent);
 
@@ -692,6 +765,21 @@ export class DMService {
       // Extract metadata from tags
       const replyTo = this.getTagValue(rumor.tags, 'e', 'reply');
       const subject = this.getTagValue(rumor.tags, 'subject');
+      // NIP-40 expiration tag (disappearing DMs). The tag value is the
+      // absolute unix timestamp at which the message expires (NIP-40 spec),
+      // so we use it directly as `expiresAt`. The gift wrap carries its own
+      // copy for relay-side deletion; the rumor's tag (inside the encrypted
+      // seal) is what we use for local cleanup.
+      const expirationTag = this.getTagValue(rumor.tags, 'expiration');
+      const expiresAt = expirationTag ? Number(expirationTag) : undefined;
+
+      // If the rumor is already expired, drop it. Same rationale as the
+      // wrap-level check above: prevents re-saving already-expired messages
+      // that arrive via historical fetches or non-NIP-40-honoring relays.
+      if (typeof expiresAt === 'number' && expiresAt <= now) {
+        diagLog('dms', 'expired_rumor_dropped', { rumorId: (rumor.id || '').slice(0, 8), expiredAgo: now - expiresAt });
+        return;
+      }
 
       // Create message record
       const message: DMMessage = {
@@ -706,8 +794,45 @@ export class DMService {
       };
       if (replyTo) message.replyTo = replyTo;
       if (subject) message.subject = subject;
+      if (typeof expiresAt === 'number') message.expiresAt = expiresAt;
+
+      // Peer-duration acceptance gate (incoming tagged messages only):
+      //   - If our `disappearingSeconds` matches the message's duration → accept
+      //   - If `lastPromptedPeerDuration` matches but `disappearingSeconds` doesn't
+      //     → user already said No to this duration, silently drop
+      //   - Otherwise → store + show banner (re-prompt)
+      // Own messages (isMine) bypass the gate.
+      if (typeof expiresAt === 'number' && !message.isMine) {
+        const peerDuration = expiresAt - rumor.created_at;
+        const acceptedDuration = await this.dmStore.getDisappearing(conversationWith);
+        const lastPrompted = await this.dmStore.getLastPromptedPeerDuration(conversationWith);
+        // Already accepted this exact duration → store normally, no prompt.
+        if (acceptedDuration === peerDuration) {
+          // ok, fall through
+        } else if (lastPrompted === peerDuration) {
+          // Previously rejected this duration — silently drop.
+          diagLog('dms', 'rejected_duration_dropped', {
+            partner: conversationWith.slice(0, 8),
+            peerDuration,
+          });
+          return;
+        }
+        // else: store + emit request below so the banner prompts the user.
+      }
 
       await this.storeAndEmit(message, conversationWith);
+
+      // If the peer sent a message with a duration we haven't yet accepted
+      // AND haven't yet been prompted about, fire a request event so the
+      // open ConversationView can show the banner.
+      if (typeof expiresAt === 'number' && message.pubkey !== currentUser.pubkey) {
+        const peerDuration = expiresAt - rumor.created_at;
+        const acceptedDuration = await this.dmStore.getDisappearing(conversationWith);
+        const lastPrompted = await this.dmStore.getLastPromptedPeerDuration(conversationWith);
+        if (acceptedDuration !== peerDuration && lastPrompted !== peerDuration) {
+          this.eventBus.emit('dm:disappearing-request', { partnerPubkey: conversationWith });
+        }
+      }
     } catch (error) {
       this.systemLogger.error('DMService', 'Error processing gift wrap:', error);
     }
@@ -858,12 +983,25 @@ export class DMService {
       diagLog('dms', 'Sending DM', { to: recipientPubkey.slice(0, 8) });
       this.systemLogger.info('DMService', `Sending DM to ${recipientPubkey.slice(0, 8)}...`);
 
+      // Look up the per-conversation disappearing setting. If active (>0) the
+      // outgoing rumor gets an `expiration` tag and the wrap event too — see
+      // createGiftWrap. The tag value is the absolute unix timestamp at which
+      // the message should expire (NIP-40), computed from the real send time.
+      const disappearingSeconds = await this.dmStore.getDisappearing(recipientPubkey);
+      const useDisappearing = isActive(disappearingSeconds);
+
       // Step 1: Create rumor (kind:14, UNSIGNED but with calculated id)
       const now = Math.floor(Date.now() / 1000);
+      const expiresAt = useDisappearing
+        ? computeExpiresAt(now, disappearingSeconds as number)
+        : undefined;
       const tags: string[][] = [['p', recipientPubkey]];
 
       if (replyTo) {
         tags.push(['e', replyTo, '', 'reply']);
+      }
+      if (useDisappearing && typeof expiresAt === 'number') {
+        tags.push(['expiration', String(expiresAt)]);
       }
 
       const rumorBase = {
@@ -884,10 +1022,11 @@ export class DMService {
 
       // Step 2-4: Build both gift wraps + fetch recipient's inbox relays in parallel.
       // Self-copy creation is allowed to fail silently (recipient delivery is what matters).
+      // Pass expiresAt so the wrap also carries the NIP-40 tag for relay-side deletion.
       const myRelays = this.getMyInboxRelays();
       const [recipientWrap, selfWrap, recipientRelays] = await Promise.all([
-        this.createGiftWrap(rumor, recipientPubkey),
-        this.createGiftWrap(rumor, currentUser.pubkey).catch(() => null),
+        this.createGiftWrap(rumor, recipientPubkey, expiresAt),
+        this.createGiftWrap(rumor, currentUser.pubkey, expiresAt).catch(() => null),
         this.getUserInboxRelays(recipientPubkey),
       ]);
 
@@ -939,6 +1078,7 @@ export class DMService {
         format: 'nip17' // We always send NIP-17
       };
       if (replyTo) message.replyTo = replyTo;
+      if (typeof expiresAt === 'number') message.expiresAt = expiresAt;
 
       await this.dmStore.saveMessage(message);
 
@@ -957,7 +1097,20 @@ export class DMService {
    * Create a gift-wrapped event
    * Rumor -> Seal -> Gift Wrap
    */
-  private async createGiftWrap(rumor: NostrEvent, recipientPubkey: string): Promise<NostrEvent | null> {
+  /**
+   * Create a gift-wrapped event
+   * Rumor -> Seal -> Gift Wrap
+   *
+   * If `expiresAt` is provided, an `expiration` tag is attached to the gift
+   * wrap (NIP-40) so relays delete the wrap when it expires. The seal is left
+   * tagless (NIP-59 says seal tags MUST be empty, which contradicts NIP-17's
+   * "SHOULD" — see docs/todos/disappearing-dms.md).
+   */
+  private async createGiftWrap(
+    rumor: NostrEvent,
+    recipientPubkey: string,
+    expiresAt?: number
+  ): Promise<NostrEvent | null> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) return null;
 
@@ -996,12 +1149,16 @@ export class DMService {
       const encryptedSeal = await ephemeralSigner.encrypt(recipientUser, sealJson, 'nip44');
 
       const wrapTimestamp = this.randomizeTimestamp(Math.floor(Date.now() / 1000));
+      const wrapTags: string[][] = [['p', recipientPubkey]];
+      if (typeof expiresAt === 'number') {
+        wrapTags.push(['expiration', String(expiresAt)]);
+      }
       const unsignedWrap = {
         kind: KIND_GIFT_WRAP,
         pubkey: ephemeralPubkey,
         created_at: wrapTimestamp,
         content: encryptedSeal,
-        tags: [['p', recipientPubkey]]
+        tags: wrapTags
       };
 
       // Sign with ephemeral key
@@ -1224,6 +1381,57 @@ export class DMService {
   public async markAllAsUnread(): Promise<void> {
     await this.dmStore.markAllAsUnread();
     this.eventBus.emit('dm:badge-update');
+  }
+
+  /**
+   * Get the per-conversation disappearing-messages setting.
+   * Returns:
+   *   undefined → undecided
+   *   0         → off
+   *   >0        → seconds (active)
+   */
+  public async getDisappearing(partnerPubkey: string): Promise<number | undefined> {
+    return this.dmStore.getDisappearing(partnerPubkey);
+  }
+
+  /**
+   * Update the per-conversation disappearing-messages setting and notify
+   * listeners. Pass `undefined` to reset to undecided, 0 for off, >0 for a
+   * preset duration in seconds. Setting this does NOT retroactively delete
+   * or tag existing messages — it only applies to future outgoing messages.
+   */
+  public async setDisappearing(partnerPubkey: string, seconds: number | undefined): Promise<void> {
+    await this.dmStore.setDisappearing(partnerPubkey, seconds);
+    this.eventBus.emit('dm:disappearing-changed', { partnerPubkey, seconds });
+    diagLog('dms', 'disappearing_setting_changed', { partner: partnerPubkey.slice(0, 8), seconds });
+  }
+
+  /** Read the peer duration we last prompted about (Yes or No). */
+  public async getLastPromptedPeerDuration(partnerPubkey: string): Promise<number | undefined> {
+    return this.dmStore.getLastPromptedPeerDuration(partnerPubkey);
+  }
+
+  /**
+   * Record that we've prompted the user about `seconds` so the same duration
+   * doesn't re-prompt until the peer changes again. Used by the No handler —
+   * keeps our outgoing setting untouched but silences future prompts for
+   * this duration.
+   */
+  public async setLastPromptedPeerDuration(partnerPubkey: string, seconds: number): Promise<void> {
+    await this.dmStore.setLastPromptedPeerDuration(partnerPubkey, seconds);
+  }
+
+  /**
+   * Delete every pending incoming message with the given peer-duration.
+   * Called from the No handler — recipient explicitly rejected this
+   * duration, so all un-accepted messages with it are dropped locally.
+   */
+  public async deletePendingMessagesByDuration(partnerPubkey: string, duration: number): Promise<number> {
+    const deleted = await this.dmStore.deletePendingMessagesByDuration(partnerPubkey, duration);
+    if (deleted > 0) {
+      this.eventBus.emit('dm:messages-expired', { partnerPubkey, count: deleted });
+    }
+    return deleted;
   }
 
   /**
