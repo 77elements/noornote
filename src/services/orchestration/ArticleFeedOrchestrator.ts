@@ -14,6 +14,7 @@ import { SystemLogger } from '../SystemLogger';
 import { LongFormOrchestrator } from './LongFormOrchestrator';
 import { getTag } from '../../helpers/tagUtils';
 import { LRUCache, getCacheSize } from '../../helpers/LRUCache';
+import { diagLog } from '../DiagnosticLogger';
 
 export interface ArticleFeedResult {
   articles: NostrEvent[];
@@ -106,8 +107,17 @@ export class ArticleFeedOrchestrator extends Orchestrator {
 
       const events = await this.transport.fetch(relays, [filter], 8000, false, 'ArticleFeedOrch');
 
+      // Drop articles without a cover image — spam articles are almost always image-less,
+      // while real long-form content carries an `image` tag, `imeta`, or a markdown/html <img>.
+      const withCover = events.filter(e => this.hasCoverImage(e));
+      const removed = events.length - withCover.length;
+      if (removed > 0) {
+        diagLog('system', `Cover filter: removed ${removed} of ${events.length} articles (no cover image)`, {});
+        this.systemLogger.info('Articles', `Filtered ${removed} articles without cover image`);
+      }
+
       // Deduplicate by addressable identifier (pubkey + d-tag)
-      const uniqueArticles = this.deduplicateArticles(events);
+      const uniqueArticles = this.deduplicateArticles(withCover);
 
       // Sort by created_at descending
       uniqueArticles.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
@@ -168,6 +178,16 @@ export class ArticleFeedOrchestrator extends Orchestrator {
   private getArticleKey(event: NostrEvent): string {
     const dTag = getTag(event.tags, 'd');
     return `${event.pubkey}:${dTag}`;
+  }
+
+  /**
+   * Check if article has a cover image (NIP-23 `image` tag only — the canonical cover).
+   * Inline `imeta` attachments and markdown images in content do NOT count:
+   * spammers use those for embeds without setting a proper cover, and the article
+   * card renderer doesn't surface them as a cover either.
+   */
+  private hasCoverImage(event: NostrEvent): boolean {
+    return !!getTag(event.tags, 'image')?.trim();
   }
 
   /**
