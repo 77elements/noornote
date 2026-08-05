@@ -14,12 +14,11 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { ArticleFeedOrchestrator } from '../../services/orchestration/ArticleFeedOrchestrator';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { ArticlesModuleApi, ArticleFeedFetchOptions } from '../../modules/articles/contracts';
 import { FoafService } from '../../services/foaf';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import type { ArticleFoafDegreeChangedPayload } from '../../core/events';
-import { ModuleLoader } from '../../core/ModuleLoader';
-import type { ArticlesModuleApi } from '../../modules/articles/contracts';
 import { UserProfileService } from '../../services/UserProfileService';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
@@ -115,6 +114,11 @@ export class ArticleTimeline {
     );
 
     this.loadInitial();
+  }
+
+  /** Lazy getter (never cache getApi in the constructor — avoids null-forever timing bugs). */
+  private get articlesApi(): ArticlesModuleApi | null {
+    return ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
   }
 
   /**
@@ -336,15 +340,19 @@ export class ArticleTimeline {
     const follows = await this.resolveAuthors();
     if (follows.length === 0) return [];
 
-    const result = await ArticleFeedOrchestrator.fetchFollowingArticles({
+    const api = this.articlesApi;
+    if (!api) return [];
+
+    const opts: ArticleFeedFetchOptions = {
       authors: follows,
       until: this.oldestTimestamp,
       limit: this.pageSize,
       excludeIds: this.seenIds,
-    });
+    };
+    const result = await api.fetchFollowingArticles(opts);
 
     for (const article of result.articles) {
-      this.seenIds.add(ArticleFeedOrchestrator.getAddressableId(article));
+      this.seenIds.add(api.getArticleAddressableId(article));
       this.articles.push(article);
     }
 
@@ -376,7 +384,8 @@ export class ArticleTimeline {
   }
 
   private createCard(event: NostrEvent): HTMLElement {
-    const metadata = ArticleFeedOrchestrator.extractMetadata(event);
+    const api = this.articlesApi;
+    const metadata = api?.extractArticleFeedMetadata(event) ?? { title: '', summary: '', image: '', identifier: '', publishedAt: 0, topics: [] };
     const naddr = encodeNaddr({
       kind: 30023,
       pubkey: event.pubkey,

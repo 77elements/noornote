@@ -7,7 +7,6 @@ export class ArticlesRuntime implements ModuleRuntime<ArticlesModuleApi> {
   private orchestrator: import('../../services/orchestration/LongFormOrchestrator').LongFormOrchestrator | null = null;
   private OrchestratorClass: typeof import('../../services/orchestration/LongFormOrchestrator').LongFormOrchestrator | null = null;
   private articleNotifService: import('../../services/ArticleNotificationService').ArticleNotificationService | null = null;
-  private feedOrchestrator: import('../../services/orchestration/ArticleFeedOrchestrator').ArticleFeedOrchestrator | null = null;
   private FeedOrchestratorClass: typeof import('../../services/orchestration/ArticleFeedOrchestrator').ArticleFeedOrchestrator | null = null;
 
   async init(_ctx: ModuleContext): Promise<void> {
@@ -23,7 +22,6 @@ export class ArticlesRuntime implements ModuleRuntime<ArticlesModuleApi> {
     this.orchestrator = orchMod.LongFormOrchestrator.getInstance();
     this.articleNotifService = notifMod.ArticleNotificationService.getInstance();
     this.FeedOrchestratorClass = feedMod.ArticleFeedOrchestrator;
-    this.feedOrchestrator = feedMod.ArticleFeedOrchestrator.getInstance();
   }
 
   async destroy(): Promise<void> {
@@ -32,7 +30,6 @@ export class ArticlesRuntime implements ModuleRuntime<ArticlesModuleApi> {
     this.orchestrator = null;
     this.OrchestratorClass = null;
     this.articleNotifService = null;
-    this.feedOrchestrator = null;
     this.FeedOrchestratorClass = null;
   }
 
@@ -42,7 +39,6 @@ export class ArticlesRuntime implements ModuleRuntime<ArticlesModuleApi> {
     const orch = this.orchestrator;
     const OrchCls = this.OrchestratorClass;
     const ans = this.articleNotifService;
-    const fo = this.feedOrchestrator;
     const FoCls = this.FeedOrchestratorClass;
     return {
       publishArticle: (options) => svc?.publishArticle(options) ?? Promise.resolve(null),
@@ -54,8 +50,8 @@ export class ArticlesRuntime implements ModuleRuntime<ArticlesModuleApi> {
       isSubscribedToArticleNotifications: (pubkey) => ans?.isSubscribed(pubkey) ?? false,
       toggleArticleNotifications: (pubkey) => ans?.toggle(pubkey) ?? false,
       getSubscribedArticlePubkeys: () => ans?.getSubscribedPubkeys() ?? [],
-      loadInitialArticleFeed: () => fo?.loadInitial() ?? Promise.resolve({ articles: [], hasMore: false }),
-      loadMoreArticleFeed: () => fo?.loadMore() ?? Promise.resolve({ articles: [], hasMore: false }),
+      fetchFollowingArticles: (opts) => FoCls?.fetchFollowingArticles(opts) ?? Promise.resolve({ articles: [], oldestTimestamp: opts.until }),
+      getArticleAddressableId: (event) => FoCls?.getAddressableId(event) ?? `${event.pubkey}:`,
       extractArticleFeedMetadata: (event) => FoCls?.extractMetadata(event) ?? { title: '', image: '', summary: '', publishedAt: 0, identifier: '', topics: [] },
     };
   }
