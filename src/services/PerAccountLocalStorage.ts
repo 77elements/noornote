@@ -62,6 +62,10 @@ export const StorageKeys = {
   HIDE_SELF_REPOSTS: 'noornote_hide_self_reposts_map', // boolean: drop kind:6/16 reposts where the reposter is the original author
   HIDE_SELF_REPOSTS_GAP: 'noornote_hide_self_reposts_gap_map', // SelfRepostGap: hide a self-repost when repost↔original gap is below this ('all' = always)
   SCC_ARTICLE_EXCERPT_LIMIT: 'noornote_scc_article_excerpt_limit_map',
+  // FOAF degree (1, 2, or 3) used to source each article feed surface.
+  // 1 = direct follows only; 2 = friends-of-friends; 3 = friends-of-friends-of-friends.
+  ARTICLE_FEED_FOAF_DEGREE_MAIN: 'noornote_article_feed_foaf_degree_main_map',
+  ARTICLE_FEED_FOAF_DEGREE_SCC: 'noornote_article_feed_foaf_degree_scc_map',
   CONTENT_VISIBILITY_AUTO: 'noornote_content_visibility_auto_map', // boolean: enable CSS content-visibility:auto on note cards (memory optimization)
   LAYOUT_MODE: 'noornote_layout_mode_map', // 'default' | 'right-pane' | 'wide'
 

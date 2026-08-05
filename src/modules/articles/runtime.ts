@@ -53,6 +53,7 @@ export class ArticlesRuntime implements ModuleRuntime<ArticlesModuleApi> {
       extractArticleMetadata: (event) => OrchCls?.extractArticleMetadata(event) ?? { title: '', image: '', summary: '', publishedAt: 0, identifier: '', topics: [] },
       isSubscribedToArticleNotifications: (pubkey) => ans?.isSubscribed(pubkey) ?? false,
       toggleArticleNotifications: (pubkey) => ans?.toggle(pubkey) ?? false,
+      getSubscribedArticlePubkeys: () => ans?.getSubscribedPubkeys() ?? [],
       loadInitialArticleFeed: () => fo?.loadInitial() ?? Promise.resolve({ articles: [], hasMore: false }),
       loadMoreArticleFeed: () => fo?.loadMore() ?? Promise.resolve({ articles: [], hasMore: false }),
       extractArticleFeedMetadata: (event) => FoCls?.extractMetadata(event) ?? { title: '', image: '', summary: '', publishedAt: 0, identifier: '', topics: [] },

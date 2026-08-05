@@ -40,7 +40,7 @@ import { DMBadgeManager } from './managers/DMBadgeManager';
 import { UnknownDMNotifier } from '../../services/dm/UnknownDMNotifier';
 import { HamburgerBadgeManager } from './managers/HamburgerBadgeManager';
 import { ListViewPartial, type ListType } from './partials/ListViewPartial';
-import { SccArticleFeed } from './partials/SccArticleFeed';
+import { ArticleTimeline } from '../article/ArticleTimeline';
 import { SccMediaFeed } from './partials/SccMediaFeed';
 import { ListsMenuPartial } from './partials/ListsMenuPartial';
 import { deactivateAllTabs, switchTabWithContent, createClosableTab } from '../../helpers/TabsHelper';
@@ -107,7 +107,7 @@ export class MainLayout {
   private layoutService: LayoutService;
   private pullToRefresh: PullToRefresh | null = null;
   private sccDefaultDropdown: CustomDropdown | null = null;
-  private sccArticleFeed: SccArticleFeed | null = null;
+  private sccArticleFeed: ArticleTimeline | null = null;
   private sccMediaFeed: SccMediaFeed | null = null;
   private _dayjs: any = null;
 
@@ -1103,13 +1103,21 @@ export class MainLayout {
       });
     }
 
-    const articlesLink = this.element.querySelector('.sidebar a[href="/articles"]');
+    const articlesLink = this.element.querySelector('.sidebar a[href="/articles"]') as HTMLElement | null;
     if (articlesLink) {
-      articlesLink.addEventListener('click', (e) => {
+      const handleArticles = (e: MouseEvent) => {
+        // Modifier-key / middle-click → let the browser handle (open in new tab etc.)
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
         e.preventDefault();
-        const router = Router.getInstance();
-        router.navigate('/articles');
-      });
+        // Already on /articles → scroll to top (mirrors Timeline + Profile menu items)
+        if (Router.getInstance().getCurrentPath() === '/articles') {
+          this.scrollToTop();
+          return;
+        }
+        Router.getInstance().navigate('/articles');
+      };
+      articlesLink.addEventListener('click', handleArticles);
+      articlesLink.addEventListener('auxclick', handleArticles as EventListener); // Middle-click
     }
 
     const profileLink = this.element.querySelector('.sidebar .primary-nav__link--profile') as HTMLElement | null;
@@ -1258,6 +1266,7 @@ export class MainLayout {
   /**
    * Scroll timeline to top
    * Handles both TimelineView (with tabs) and fallback to primary-content
+   * or window (default layout — page itself scrolls, not primary-content).
    */
   private scrollToTop(): void {
     // TimelineView has its own scrollable container
@@ -1267,16 +1276,22 @@ export class MainLayout {
       return;
     }
 
-    // Fallback to primary-content for other views
+    // Fallback to primary-content for layouts where it's the scroll container
     const primaryContent = this.element.querySelector('.primary-content');
-    if (primaryContent) {
+    if (primaryContent && primaryContent.scrollHeight > primaryContent.clientHeight) {
       primaryContent.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
     }
+
+    // Default layout — the page itself scrolls via window
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   /**
    * Setup scroll listener for scroll-to-top button visibility
    * Handles both TimelineView (with tabs) and fallback to primary-content
+   * or window scroll (default layout — primary-content has no overflow when
+   * the page itself scrolls, so window scroll is the actual signal there).
    */
   private setupScrollListener(): void {
     // Wait for element to be mounted
@@ -1286,27 +1301,33 @@ export class MainLayout {
 
       // Each scroll-to-top button is scoped to a view via data-scroll-view.
       // Show the one matching the current view once scrolled down (> 100px).
-      const handleScroll = (scrollContainer: Element) => {
+      const handleScroll = (scrollTop: number) => {
         const currentView = this.appState.getState('view').currentView;
-        const scrolled = scrollContainer.scrollTop > 100;
+        const scrolled = scrollTop > 100;
         scrollButtons.forEach((btn) => {
           const forView = (btn as HTMLElement).dataset.scrollView;
           (btn as HTMLElement).style.display = forView === currentView && scrolled ? 'inline-block' : 'none';
         });
       };
 
-      // Listen to primary-content scroll (covers most cases)
+      // Listen to primary-content scroll (used in layouts where it's the
+      // scroll container, e.g. right-pane / wide modes).
       const primaryContent = this.element.querySelector('.primary-content');
       if (primaryContent) {
-        primaryContent.addEventListener('scroll', () => handleScroll(primaryContent));
+        primaryContent.addEventListener('scroll', () => handleScroll(primaryContent.scrollTop));
       }
+
+      // Window scroll — default layout scrolls the document, not primary-content.
+      // Without this, the scroll-to-top buttons never appear on /articles and
+      // other views whose content makes the body overflow.
+      window.addEventListener('scroll', () => handleScroll(window.scrollY), { passive: true });
 
       // Use MutationObserver to attach listener when TimelineView is rendered
       const observer = new MutationObserver(() => {
         const timelineViewScroll = this.element.querySelector('.timeline-view__timeline');
         if (timelineViewScroll && !(timelineViewScroll as HTMLElement).dataset.scrollListenerAttached) {
           (timelineViewScroll as HTMLElement).dataset.scrollListenerAttached = 'true';
-          timelineViewScroll.addEventListener('scroll', () => handleScroll(timelineViewScroll));
+          timelineViewScroll.addEventListener('scroll', () => handleScroll(timelineViewScroll.scrollTop));
         }
       });
 
@@ -1365,8 +1386,22 @@ export class MainLayout {
       const contentDiv = this.element.querySelector('[data-tab-content="newest-articles"]') as HTMLElement | null;
       if (!contentDiv) return;
       this.sccArticleFeed.destroy();
-      this.sccArticleFeed = new SccArticleFeed(contentDiv);
+      contentDiv.innerHTML = '';
+      this.sccArticleFeed = this.mountSccArticleFeed(contentDiv);
     });
+  }
+
+  /**
+   * Build the unified ArticleTimeline in SCC variant and mount it into the
+   * given container. Returns the instance for lifecycle tracking.
+   */
+  private mountSccArticleFeed(container: HTMLElement): ArticleTimeline {
+    const timeline = new ArticleTimeline({
+      variant: 'scc',
+      onNavigate: (naddr) => Router.getInstance().navigate(`/article/${naddr}`),
+    });
+    container.appendChild(timeline.getElement());
+    return timeline;
   }
 
   private activateSccDefault(value: SccDefaultContent): void {
@@ -1381,7 +1416,7 @@ export class MainLayout {
     if (value === 'newest-articles' && !this.sccArticleFeed) {
       const contentDiv = secondaryContent.querySelector('[data-tab-content="newest-articles"]');
       if (contentDiv) {
-        this.sccArticleFeed = new SccArticleFeed(contentDiv as HTMLElement);
+        this.sccArticleFeed = this.mountSccArticleFeed(contentDiv as HTMLElement);
       }
     }
 
@@ -1460,9 +1495,10 @@ export class MainLayout {
               </a>
             </li>
             <li>
-              <a href="/articles" class="primary-nav__link primary-nav__link--articles">
+              <a href="/articles" class="primary-nav__link primary-nav__link--articles" title="Scroll to top">
                 <svg class="primary-nav__item-icon"><use href="#icon-articles"/></svg>
                 <span class="primary-nav__item-desc">Articles</span>
+                <svg class="scroll-to-top-btn" data-scroll-view="articles" style="display: none;" role="button" aria-label="Scroll to top" tabindex="0"><use href="#icon-scroll-to-top"/></svg>
               </a>
             </li>
             <li>

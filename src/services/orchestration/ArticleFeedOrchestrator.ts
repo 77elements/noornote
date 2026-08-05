@@ -1,45 +1,99 @@
 /**
  * ArticleFeedOrchestrator - Long-form Article Feed Management
- * Handles fetching and pagination of kind 30023 (NIP-23) articles
+ * Handles fetching and pagination of kind 30023 (NIP-23) articles.
  *
- * Separate, self-contained orchestrator for article timeline feature.
- * Can be easily disabled by removing route and sidebar entry.
+ * Single source of truth for "fetch + dedup + sort" of follows' articles.
+ * Two consumer surfaces share this orchestrator:
+ *   • `ArticleTimeline` (main /articles view) → instance API (loadInitial/loadMore)
+ *   • `SccArticleFeed` (SCC "Newest Articles" tab) → static `fetchFollowingArticles`
+ *
+ * Both surfaces own their own pagination cursor + seen-set; the orchestrator
+ * owns the relay-fetch + dedup-by-addressable-id + sort-desc pipeline. This
+ * eliminates the duplicated fetch logic that previously lived inside
+ * `SccArticleFeed` (MainLayout secondary column).
+ *
+ * Feed source: only articles authored by the current user's follows
+ * (`{kinds:[30023], authors: followingPubkeys}`). The previous global
+ * firehose mode was the root cause of the spam problem and has been removed.
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { Orchestrator } from './Orchestrator';
-import { NostrTransport } from '../transport/NostrTransport';
-import { RelayConfig } from '../RelayConfig';
 import { SystemLogger } from '../SystemLogger';
 import { LongFormOrchestrator } from './LongFormOrchestrator';
 import { getTag } from '../../helpers/tagUtils';
 import { LRUCache, getCacheSize } from '../../helpers/LRUCache';
-import { diagLog } from '../DiagnosticLogger';
+import { getAllFollowedPubkeys } from '../../lists/follows';
+import { fetchEvents } from '../../lists/relays';
+
+/**
+ * Authors per kind:30023 fetch. Some relays cap `authors` list length;
+ * batching keeps us well under any reasonable cap and matches the proven
+ * SccArticleFeed behaviour.
+ */
+const AUTHOR_FETCH_BATCH = 150;
+
+/**
+ * How many author-batches to fire concurrently. Bounded to be polite to
+ * relays — high concurrency on large FOAF sets (hundreds of batches) is
+ * exactly the kind of burst that gets a client rate-limited or blocked.
+ * 3 concurrent × 150 authors = 450 authors in flight at once, well below
+ * typical relay tolerance thresholds.
+ */
+const AUTHOR_FETCH_CONCURRENCY = 3;
+
+/**
+ * Per-batch relay fetch timeout. SccArticleFeed used 8000; keep it.
+ */
+const FETCH_TIMEOUT_MS = 8000;
 
 export interface ArticleFeedResult {
   articles: NostrEvent[];
   hasMore: boolean;
 }
 
+/**
+ * Options for the stateless fetch+dedup+sort pipeline.
+ * Callers own their own `until` cursor and `excludeIds` set; the orchestrator
+ * does not retain any per-caller state across calls.
+ */
+export interface ArticleFeedFetchOptions {
+  /** Pubkeys whose kind:30023 articles to fetch. */
+  authors: string[];
+  /** Pagination cursor: only return articles with `created_at < until`. */
+  until: number;
+  /** Target page size (the pipeline fetches a few extra for hasMore detection). */
+  limit: number;
+  /** Addressable IDs (pubkey:d-tag) the caller has already rendered.
+   *  Used to dedupe across pages — pass the same set you update with each batch. */
+  excludeIds?: Set<string>;
+}
+
+/**
+ * Result of the stateless pipeline. Callers update their cursor + seen-set
+ * from `articles` before the next call.
+ */
+export interface ArticleFeedFetchResult {
+  articles: NostrEvent[];
+  /** Next `until` cursor — oldest article's `created_at` minus 1, or unchanged
+   *  if no articles were returned. */
+  oldestTimestamp: number;
+}
+
 export class ArticleFeedOrchestrator extends Orchestrator {
   private static instance: ArticleFeedOrchestrator;
-  private transport: NostrTransport;
-  private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
 
-  /** Cache of fetched articles (LRU-bounded) */
+  /** Cache of fetched articles (LRU-bounded). Shared across consumer surfaces. */
   private articleCache = new LRUCache<NostrEvent>(getCacheSize(200, 100, 50));
 
-  /** Oldest timestamp for pagination */
+  // ── Singleton instance state (used by ArticleTimeline main view) ─────────
   private oldestTimestamp: number = Math.floor(Date.now() / 1000);
-
-  /** Page size for loading */
+  private readonly seenIds = new Set<string>();
   private readonly PAGE_SIZE = 20;
 
   private constructor() {
     super('ArticleFeedOrchestrator');
-    this.transport = NostrTransport.getInstance();
-    this.relayConfig = RelayConfig.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.systemLogger.info('ArticleFeedOrchestrator', 'Article Feed Orchestrator initialized');
   }
@@ -58,140 +112,190 @@ export class ArticleFeedOrchestrator extends Orchestrator {
   public onerror(_relay: string, _error: Error): void {}
   public onclose(_relay: string): void {}
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // Instance API (used by ArticleTimeline main view)
+  // ─────────────────────────────────────────────────────────────────────────
+
   /**
-   * Load initial articles
+   * Load initial articles. Resets pagination cursor and seen-set.
    */
   public async loadInitial(): Promise<ArticleFeedResult> {
-    this.reset();
-    return this.fetchArticles();
+    this.oldestTimestamp = Math.floor(Date.now() / 1000);
+    this.seenIds.clear();
+    return this.loadMore();
   }
 
   /**
-   * Load more articles (pagination)
+   * Load the next page of articles.
    */
   public async loadMore(): Promise<ArticleFeedResult> {
-    return this.fetchArticles();
+    const authors = getAllFollowedPubkeys();
+    if (authors.length === 0) {
+      this.systemLogger.info('ArticleFeedOrchestrator', 'No follows — feed empty');
+      return { articles: [], hasMore: false };
+    }
+
+    const result = await ArticleFeedOrchestrator.fetchFollowingArticles({
+      authors,
+      until: this.oldestTimestamp,
+      limit: this.PAGE_SIZE,
+      excludeIds: this.seenIds,
+    });
+
+    for (const article of result.articles) {
+      this.seenIds.add(ArticleFeedOrchestrator.getAddressableId(article));
+      this.articleCache.set(ArticleFeedOrchestrator.getAddressableId(article), article);
+    }
+    this.oldestTimestamp = result.oldestTimestamp;
+
+    this.systemLogger.info(
+      'ArticleFeedOrchestrator',
+      `Fetched ${result.articles.length} articles, hasMore: ${result.articles.length >= this.PAGE_SIZE}`
+    );
+
+    return {
+      articles: result.articles,
+      hasMore: result.articles.length >= this.PAGE_SIZE,
+    };
   }
 
   /**
-   * Reset state for fresh load
+   * Reset instance state. Called when the consumer view is torn down and wants
+   * a fresh feed on next mount.
    */
   public reset(): void {
     this.oldestTimestamp = Math.floor(Date.now() / 1000);
-    this.articleCache.clear();
+    this.seenIds.clear();
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // Stateless pipeline (shared with SccArticleFeed and any future consumer)
+  // ─────────────────────────────────────────────────────────────────────────
+
   /**
-   * Fetch articles from relays
+   * Fetch one page of articles authored by `opts.authors`.
+   *
+   * Pipeline:
+   *   1. Batch `authors` into chunks of ${AUTHOR_FETCH_BATCH} and query
+   *      `{kinds:[30023], authors: batch, until, limit}` per batch in
+   *      sequence. Batching avoids relay-side author-list caps.
+   *   2. Deduplicate by addressable id (`pubkey:d-tag`), keeping the newest
+   *      version per id (handles replaceable article updates).
+   *   3. Exclude any id in `opts.excludeIds` (already shown to the caller).
+   *   4. Sort by `created_at` descending.
+   *   5. Return the first `opts.limit` items plus the new pagination cursor.
+   *
+   * Pure function — no orchestrator state is read or written.
    */
-  private async fetchArticles(): Promise<ArticleFeedResult> {
-    try {
-      const relays = this.relayConfig.getReadRelays();
+  public static async fetchFollowingArticles(
+    opts: ArticleFeedFetchOptions
+  ): Promise<ArticleFeedFetchResult> {
+    const { authors, until, limit, excludeIds } = opts;
 
-      if (relays.length === 0) {
-        this.systemLogger.warn('ArticleFeedOrchestrator', 'No read relays configured');
-        return { articles: [], hasMore: false };
-      }
-
-      // Fetch kind 30023 (long-form articles)
-      const filter = {
-        kinds: [30023],
-        until: this.oldestTimestamp,
-        limit: this.PAGE_SIZE + 5 // Fetch a few extra to check hasMore
-      };
-
-      this.systemLogger.info(
-        'ArticleFeedOrchestrator',
-        `Fetching articles until ${new Date(this.oldestTimestamp * 1000).toISOString()}`
-      );
-
-      const events = await this.transport.fetch(relays, [filter], 8000, false, 'ArticleFeedOrch');
-
-      // Drop articles without a cover image — spam articles are almost always image-less,
-      // while real long-form content carries an `image` tag, `imeta`, or a markdown/html <img>.
-      const withCover = events.filter(e => this.hasCoverImage(e));
-      const removed = events.length - withCover.length;
-      if (removed > 0) {
-        diagLog('system', `Cover filter: removed ${removed} of ${events.length} articles (no cover image)`, {});
-        this.systemLogger.info('Articles', `Filtered ${removed} articles without cover image`);
-      }
-
-      // Deduplicate by addressable identifier (pubkey + d-tag)
-      const uniqueArticles = this.deduplicateArticles(withCover);
-
-      // Sort by created_at descending
-      uniqueArticles.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
-
-      // Check if we have more
-      const hasMore = uniqueArticles.length > this.PAGE_SIZE;
-      const articlesToReturn = uniqueArticles.slice(0, this.PAGE_SIZE);
-
-      // Update oldest timestamp for next page
-      const oldest = articlesToReturn[articlesToReturn.length - 1];
-      if (oldest) {
-        this.oldestTimestamp = (oldest.created_at || 0) - 1;
-      }
-
-      // Cache articles
-      articlesToReturn.forEach(article => {
-        const key = this.getArticleKey(article);
-        this.articleCache.set(key, article);
-      });
-
-      this.systemLogger.info(
-        'ArticleFeedOrchestrator',
-        `Fetched ${articlesToReturn.length} articles, hasMore: ${hasMore}`
-      );
-
-      return {
-        articles: articlesToReturn,
-        hasMore
-      };
-    } catch (error) {
-      this.systemLogger.error('ArticleFeedOrchestrator', 'Failed to fetch articles:', error);
-      return { articles: [], hasMore: false };
+    if (authors.length === 0 || limit <= 0) {
+      return { articles: [], oldestTimestamp: until };
     }
-  }
 
-  /**
-   * Deduplicate articles by addressable identifier
-   * For addressable events, keep the most recent version
-   */
-  private deduplicateArticles(events: NostrEvent[]): NostrEvent[] {
-    const articleMap = new Map<string, NostrEvent>();
+    // Fetch a few extra to detect hasMore without an extra round-trip.
+    const fetchLimit = limit + 5;
+    const allEvents: NostrEvent[] = [];
 
-    for (const event of events) {
-      const key = this.getArticleKey(event);
-      const existing = articleMap.get(key);
+    // Slice authors into batches and run them with bounded concurrency.
+    // Sequential iteration would be O(N batches × round-trip); with 28k
+    // FOAF degree-2 pubkeys that's ~190 batches and several minutes wait.
+    const batches: string[][] = [];
+    for (let i = 0; i < authors.length; i += AUTHOR_FETCH_BATCH) {
+      batches.push(authors.slice(i, i + AUTHOR_FETCH_BATCH));
+    }
 
-      if (!existing || (event.created_at || 0) > (existing.created_at || 0)) {
-        articleMap.set(key, event);
+    for (let i = 0; i < batches.length; i += AUTHOR_FETCH_CONCURRENCY) {
+      const window = batches.slice(i, i + AUTHOR_FETCH_CONCURRENCY);
+      const results = await Promise.allSettled(
+        window.map(async (batch) => {
+          try {
+            return await fetchEvents(
+              [{ kinds: [30023], authors: batch, until, limit: fetchLimit }],
+              FETCH_TIMEOUT_MS
+            );
+          } catch (err) {
+            // One failed batch must not poison the whole page — relay hiccups
+            // are common. Subsequent batches still deliver what they can.
+            SystemLogger.getInstance().warn(
+              'ArticleFeedOrchestrator',
+              `Batch fetch failed (${batch.length} authors): ${err}`
+            );
+            return [] as NostrEvent[];
+          }
+        })
+      );
+      for (const r of results) {
+        if (r.status === 'fulfilled') allEvents.push(...r.value);
       }
     }
 
-    return Array.from(articleMap.values());
+    if (allEvents.length === 0) {
+      return { articles: [], oldestTimestamp: until };
+    }
+
+    // Dedup by addressable id, keeping newest version per id.
+    const deduped = ArticleFeedOrchestrator.dedupeByAddressableId(allEvents);
+
+    // Drop already-seen (caller-owned seen-set).
+    const fresh = excludeIds && excludeIds.size > 0
+      ? deduped.filter(e => !excludeIds.has(ArticleFeedOrchestrator.getAddressableId(e)))
+      : deduped;
+
+    if (fresh.length === 0) {
+      return { articles: [], oldestTimestamp: until };
+    }
+
+    // Sort descending by created_at.
+    fresh.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+
+    // Page slice.
+    const page = fresh.slice(0, limit);
+    const oldest = page[page.length - 1];
+    const oldestTimestamp = oldest
+      ? (oldest.created_at || until) - 1
+      : until;
+
+    return { articles: page, oldestTimestamp };
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // Addressable-id helpers (also used by callers building their seen-set)
+  // ─────────────────────────────────────────────────────────────────────────
+
   /**
-   * Get unique key for article (pubkey + d-tag)
+   * Stable identifier for a kind:30023 article (`pubkey:d-tag`).
+   * Use this as the key for seen-sets, dedup maps, and LRU caches.
    */
-  private getArticleKey(event: NostrEvent): string {
+  public static getAddressableId(event: NostrEvent): string {
     const dTag = getTag(event.tags, 'd');
     return `${event.pubkey}:${dTag}`;
   }
 
   /**
-   * Check if article has a cover image (NIP-23 `image` tag only — the canonical cover).
-   * Inline `imeta` attachments and markdown images in content do NOT count:
-   * spammers use those for embeds without setting a proper cover, and the article
-   * card renderer doesn't surface them as a cover either.
+   * Deduplicate by addressable id, keeping the newest version per id.
    */
-  private hasCoverImage(event: NostrEvent): boolean {
-    return !!getTag(event.tags, 'image')?.trim();
+  private static dedupeByAddressableId(events: NostrEvent[]): NostrEvent[] {
+    const best = new Map<string, NostrEvent>();
+    for (const e of events) {
+      const id = ArticleFeedOrchestrator.getAddressableId(e);
+      const existing = best.get(id);
+      if (!existing || (e.created_at || 0) > (existing.created_at || 0)) {
+        best.set(id, e);
+      }
+    }
+    return [...best.values()];
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // Metadata extraction (UI consumers)
+  // ─────────────────────────────────────────────────────────────────────────
+
   /**
-   * Extract metadata from article event
+   * Extract metadata from article event.
    */
   public static extractMetadata(event: NostrEvent): {
     title: string;

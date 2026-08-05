@@ -16,6 +16,10 @@ export interface ArticlesModuleApi {
   // ArticleNotificationService
   isSubscribedToArticleNotifications(pubkey: string): boolean;
   toggleArticleNotifications(pubkey: string): boolean;
+  /** Pubkeys the user has explicitly subscribed to article alerts for,
+   *  regardless of whether they're followed. Used by the article feed to
+   *  surface articles from these authors at every FOAF degree. */
+  getSubscribedArticlePubkeys(): string[];
 
   // ArticleFeedOrchestrator
   loadInitialArticleFeed(): Promise<ArticleFeedResult>;

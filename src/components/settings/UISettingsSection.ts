@@ -34,6 +34,8 @@ export class UISettingsSection extends SettingsSection {
   private clientTagSwitch: Switch | null = null;
   private calendarDropdown: CustomDropdown | null = null;
   private autoUpdateSwitch: Switch | null = null;
+  private articleFeedFoafMainDropdown: CustomDropdown | null = null;
+  private articleFeedFoafSccDropdown: CustomDropdown | null = null;
   private themeSwitcher: ThemeSwitcher | null = null;
   private fontSizeSwitcher: FontSizeSwitcher | null = null;
 
@@ -149,6 +151,27 @@ export class UISettingsSection extends SettingsSection {
             </div>
             <p class="setting__desc">
               Maximum number of characters for article excerpts in the side column. Default: 200.
+            </p>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="setting">
+            <span class="setting__label">Article feed source — main view</span>
+            <div class="setting__control article-foaf-main-dropdown-container"></div>
+            <p class="setting__desc">
+              Whose articles appear in <strong>/articles</strong>. Higher degrees broaden the
+              feed beyond your direct follows but take longer to build and include authors you
+              may not know.
+            </p>
+          </div>
+          <div class="setting">
+            <span class="setting__label">Article feed source — secondary column</span>
+            <div class="setting__control article-foaf-scc-dropdown-container"></div>
+            <p class="setting__desc">
+              Whose articles appear in the side column's "Newest Articles" tab. Same degree
+              meaning as above; you can pick a narrower degree here to keep the side panel
+              focused on closer contacts.
             </p>
           </div>
         </section>
@@ -347,6 +370,52 @@ export class UISettingsSection extends SettingsSection {
       });
     }
 
+    // Article feed FOAF-degree dropdowns (main + scc)
+    const foafOptions = [
+      { value: '1', label: 'Degree 1 — Direct follows' },
+      { value: '2', label: 'Degree 2 — Friends of friends' },
+      { value: '3', label: 'Degree 3 — Friends of friends of friends (slow to build)' },
+    ];
+    const foafLabels: Record<string, string> = {
+      '1': 'Degree 1 (direct follows)',
+      '2': 'Degree 2 (friends of friends)',
+      '3': 'Degree 3 (friends of friends of friends)',
+    };
+
+    const mainFoafContainer = contentContainer.querySelector('.article-foaf-main-dropdown-container');
+    if (mainFoafContainer) {
+      const current = String(this.storage.get<number>(StorageKeys.ARTICLE_FEED_FOAF_DEGREE_MAIN, 1));
+      this.articleFeedFoafMainDropdown = new CustomDropdown({
+        options: foafOptions,
+        selectedValue: current,
+        onChange: (value) => {
+          const degree = Number(value);
+          this.storage.set(StorageKeys.ARTICLE_FEED_FOAF_DEGREE_MAIN, degree);
+          this.eventBus.emit('settings:article-foaf-degree-changed', { variant: 'main', degree });
+          ToastService.show(`Main article feed: ${foafLabels[value] ?? value}`, 'success');
+        },
+        className: 'article-foaf-dropdown',
+      });
+      mainFoafContainer.appendChild(this.articleFeedFoafMainDropdown.getElement());
+    }
+
+    const sccFoafContainer = contentContainer.querySelector('.article-foaf-scc-dropdown-container');
+    if (sccFoafContainer) {
+      const current = String(this.storage.get<number>(StorageKeys.ARTICLE_FEED_FOAF_DEGREE_SCC, 1));
+      this.articleFeedFoafSccDropdown = new CustomDropdown({
+        options: foafOptions,
+        selectedValue: current,
+        onChange: (value) => {
+          const degree = Number(value);
+          this.storage.set(StorageKeys.ARTICLE_FEED_FOAF_DEGREE_SCC, degree);
+          this.eventBus.emit('settings:article-foaf-degree-changed', { variant: 'scc', degree });
+          ToastService.show(`Side column articles: ${foafLabels[value] ?? value}`, 'success');
+        },
+        className: 'article-foaf-dropdown',
+      });
+      sccFoafContainer.appendChild(this.articleFeedFoafSccDropdown.getElement());
+    }
+
     // Initialize Content Visibility switch
     const contentVisibilityContainer = contentContainer.querySelector('#content-visibility-switch-container');
     if (contentVisibilityContainer) {
@@ -432,6 +501,16 @@ export class UISettingsSection extends SettingsSection {
     if (this.calendarDropdown) {
       this.calendarDropdown.destroy();
       this.calendarDropdown = null;
+    }
+
+    if (this.articleFeedFoafMainDropdown) {
+      this.articleFeedFoafMainDropdown.destroy();
+      this.articleFeedFoafMainDropdown = null;
+    }
+
+    if (this.articleFeedFoafSccDropdown) {
+      this.articleFeedFoafSccDropdown.destroy();
+      this.articleFeedFoafSccDropdown = null;
     }
 
     if (this.layoutModeDropdown) {

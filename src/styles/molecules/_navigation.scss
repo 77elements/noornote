@@ -59,9 +59,10 @@
       text-decoration: none;
     }
 
-    // Links with a scroll-to-top button (Timeline, Profile) have 3 columns
-    // (icon, text, scroll-to-top)
-    &--timeline {
+    // Links with a scroll-to-top button (Timeline, Profile, Articles) have
+    // 3 columns (icon, text, scroll-to-top)
+    &--timeline,
+    &--articles {
       grid-template-columns: 20px 1fr 20px;
     }
 

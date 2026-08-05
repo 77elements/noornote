@@ -249,6 +249,13 @@ export interface SccExcerptLimitChangedPayload {
   limit: number;
 }
 
+export interface ArticleFoafDegreeChangedPayload {
+  /** Which surface the changed setting applies to. */
+  variant: 'main' | 'scc';
+  /** New FOAF degree (1, 2, or 3). */
+  degree: number;
+}
+
 export interface HideSelfRepostsChangedPayload {
   hidden: boolean;
 }
@@ -331,6 +338,7 @@ export interface AppEvents {
   'settings:calendar-system-changed': CalendarSystemChangedPayload;
   'settings:post-truncation-changed': PostTruncationChangedPayload;
   'settings:scc-excerpt-limit-changed': SccExcerptLimitChangedPayload;
+  'settings:article-foaf-degree-changed': ArticleFoafDegreeChangedPayload;
   'settings:hide-self-reposts-changed': HideSelfRepostsChangedPayload;
 
   // ── View Tabs ──────────────────────────────
