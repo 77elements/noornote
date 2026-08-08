@@ -92,19 +92,24 @@ export async function exportDiagnosticLogs(): Promise<boolean> {
     diagLog('crashes', 'Log export triggered');
 
     // 2. Collect all log files
-    const { files, debugInfo } = await collectLogFiles();
-    if (Object.keys(files).length === 0) {
-      (exportDiagnosticLogs as any).lastDebugInfo = debugInfo;
-      logger.warn('DiagLogExport', `No logs: ${debugInfo}`);
+    const collected = await collectLogFiles();
+    if (Object.keys(collected.files).length === 0) {
+      (exportDiagnosticLogs as any).lastDebugInfo = collected.debugInfo;
+      logger.warn('DiagLogExport', `No logs: ${collected.debugInfo}`);
       return false;
     }
 
     // 3. Create ZIP
-    const zipData = zipSync(files, { level: 6 });
+    const zipData = zipSync(collected.files, { level: 6 });
+    // Release the raw log bytes now that the zip is built. The chunked save
+    // below is async and long-running; without this the ~raw-log-sized files
+    // map stays alive in the closure and stacks on top of zipData, which has
+    // OOM'd the 256MB WebView heap on large log sets.
+    collected.files = {};
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
     const filename = `noornote-logs-${timestamp}.zip`;
 
-    logger.info('DiagLogExport', `ZIP ready — ${(zipData.length / 1024).toFixed(1)} KB, ${Object.keys(files).length} files`);
+    logger.info('DiagLogExport', `ZIP ready — ${(zipData.length / 1024).toFixed(1)} KB`);
 
     // 4. Save (platform-specific)
     if (platform.isAndroid) {
@@ -171,22 +176,48 @@ async function getLogsDir(): Promise<string | null> {
 }
 
 /**
- * Android (Capacitor): Save to Downloads via MediaSave plugin.
+ * Android (Capacitor): chunk-write the zip to a Cache file (small base64 blocks,
+ * never one giant string), then ask the native MediaSave plugin to copy that
+ * file into Downloads by path. The previous approach built one ~log-sized
+ * binary string and btoa()'d it — a single 65MB+ allocation that OOM'd the
+ * 256MB WebView heap. Streaming through a Cache file keeps peak JS heap at
+ * roughly zipData + one small chunk.
  */
 async function saveToDownloads(zipData: Uint8Array, filename: string): Promise<boolean> {
-  const CHUNK = 8192;
-  let binary = '';
+  const { Filesystem, Directory } = await getCapFs();
+
+  // Multiple of 3 so each chunk base64-encodes cleanly with no padding glue.
+  // 24KB keeps String.fromCharCode's argument count far under the engine limit.
+  const CHUNK = 24576;
+  const tempPath = `nn-export/${filename}`;
+  let first = true;
   for (let i = 0; i < zipData.length; i += CHUNK) {
-    binary += String.fromCharCode(...zipData.subarray(i, i + CHUNK));
+    const slice = zipData.subarray(i, i + CHUNK);
+    const b64 = btoa(String.fromCharCode(...slice));
+    if (first) {
+      await Filesystem.writeFile({ path: tempPath, data: b64, directory: Directory.Cache, recursive: true });
+      first = false;
+    } else {
+      await Filesystem.appendFile({ path: tempPath, data: b64, directory: Directory.Cache });
+    }
   }
-  const base64 = btoa(binary);
+  if (first) {
+    // Empty zip — create the file so the native copy has a source.
+    await Filesystem.writeFile({ path: tempPath, data: '', directory: Directory.Cache, recursive: true });
+  }
 
-  const { registerPlugin } = await import('@capacitor/core');
-  const MediaSave = registerPlugin('MediaSave');
-  await (MediaSave as any).saveToDownloads({ filename, data: base64, mimeType: 'application/zip' });
+  try {
+    const { uri } = await Filesystem.getUri({ path: tempPath, directory: Directory.Cache });
+    const { registerPlugin } = await import('@capacitor/core');
+    const MediaSave = registerPlugin('MediaSave');
+    await (MediaSave as any).saveFileToDownloads({ fileUri: uri, filename, mimeType: 'application/zip' });
 
-  logger.success('DiagLogExport', `Logs exported to Downloads — ${filename}`);
-  return true;
+    logger.success('DiagLogExport', `Logs exported to Downloads — ${filename}`);
+    return true;
+  } finally {
+    // Remove the temp cache file whether the copy succeeded or failed.
+    await Filesystem.deleteFile({ path: tempPath, directory: Directory.Cache }).catch(() => {});
+  }
 }
 
 /**

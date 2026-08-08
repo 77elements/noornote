@@ -1001,7 +1001,8 @@ export class NostrTransport {
     relays: string[],
     filters: NDKFilter[],
     subId: string,
-    callback: (event: NostrEvent, relay: string) => void
+    callback: (event: NostrEvent, relay: string) => void,
+    onEose?: () => void
   ): Promise<void> {
     await this.ensureConnected();
 
@@ -1013,10 +1014,7 @@ export class NostrTransport {
     this.systemLogger.info('NostrTransport', `Listening on ${relays.length} relays`);
 
     // Subscribe using NDK (persistent connection)
-    const ndkSub = this.ndk.subscribe(filters, {
-      relayUrls: relays,
-      closeOnEose: false // Keep subscription open for live updates
-    }, {
+    const ndkCallbacks: { onEvent: (event: NDKEvent, relay?: NDKRelay) => void; onEose?: () => void } = {
       onEvent: (ndkEvent, relay) => {
         // NDK already verified signature - just forward the event
         const rawEvent = ndkEvent.rawEvent();
@@ -1024,7 +1022,16 @@ export class NostrTransport {
         this.recordSeenOn(rawEvent.id, [relay?.url || '']);
         callback(rawEvent, relay?.url || '');
       }
-    });
+    };
+    // onEose lets callers (e.g. DMService) distinguish the relay's replayed
+    // initial backlog from the genuinely-live post-EOSE stream. NDK fires it
+    // once per relay; callers guard on their side so only the first matters.
+    if (onEose) ndkCallbacks.onEose = () => onEose();
+
+    const ndkSub = this.ndk.subscribe(filters, {
+      relayUrls: relays,
+      closeOnEose: false // Keep subscription open for live updates
+    }, ndkCallbacks);
 
     this.subscriptions.set(subId, { closer: { close: () => ndkSub.stop() }, relays });
   }

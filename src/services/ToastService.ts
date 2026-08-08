@@ -36,6 +36,9 @@ export class ToastService {
   private static instance: ToastService;
   private container: HTMLElement | null = null;
   private activeToasts: Map<string, HTMLElement> = new Map();
+  /** Auto-dismiss timers (and their original duration), so updateMessage can
+   *  reset the lifetime of an existing toast. */
+  private dismissTimers: Map<string, { timer: number; duration: number }> = new Map();
   private counter = 0;
 
   private constructor() {
@@ -89,6 +92,16 @@ export class ToastService {
   }
 
   /**
+   * Update the message text of an existing toast and reset its auto-dismiss
+   * timer. Returns false if the toast no longer exists (already dismissed), so
+   * callers can fall back to showing a fresh toast. Used by aggregating callers
+   * (e.g. UnknownDMNotifier) that collapse a burst into a single rolling toast.
+   */
+  public static updateMessage(id: string, message: string): boolean {
+    return ToastService.getInstance().updateToastMessage(id, message);
+  }
+
+  /**
    * Clear all active toasts
    */
   public static clear(): void {
@@ -125,9 +138,9 @@ export class ToastService {
 
     // Auto-remove after duration (unless loading/persistent)
     if (!options.loading && !options.persistent) {
-      setTimeout(() => {
-        this.hideToast(toastId);
-      }, options.duration || 4000);
+      const duration = options.duration || 4000;
+      const timer = window.setTimeout(() => this.hideToast(toastId), duration);
+      this.dismissTimers.set(toastId, { timer, duration });
     }
 
     return toastId;
@@ -152,7 +165,7 @@ export class ToastService {
 
     toast.innerHTML = `
       <div class="toast__icon">${iconHtml}</div>
-      <div class="${messageClass}">${escapeHtml(options.message)}</div>
+      <div class="${messageClass}" data-toast-message>${escapeHtml(options.message)}</div>
       ${actionHtml}
       <button class="toast__close" aria-label="Close">×</button>
     `;
@@ -180,6 +193,12 @@ export class ToastService {
     const toast = this.activeToasts.get(toastId);
     if (!toast) return;
 
+    const timerMeta = this.dismissTimers.get(toastId);
+    if (timerMeta) {
+      clearTimeout(timerMeta.timer);
+      this.dismissTimers.delete(toastId);
+    }
+
     toast.classList.remove('toast--visible');
     toast.classList.add('toast--hiding');
 
@@ -187,6 +206,24 @@ export class ToastService {
       toast.remove();
       this.activeToasts.delete(toastId);
     }, 300); // Match CSS transition duration
+  }
+
+  /**
+   * In-place message update for an existing toast. Selects the message node by
+   * data attribute (never by CSS class — see SCSS rules) and resets the dismiss
+   * timer so the updated toast stays for a full duration.
+   */
+  private updateToastMessage(id: string, message: string): boolean {
+    const toast = this.activeToasts.get(id);
+    if (!toast) return false;
+    const msgEl = toast.querySelector('[data-toast-message]');
+    if (msgEl) msgEl.textContent = message;
+    const meta = this.dismissTimers.get(id);
+    if (meta) {
+      clearTimeout(meta.timer);
+      meta.timer = window.setTimeout(() => this.hideToast(id), meta.duration);
+    }
+    return true;
   }
 
   /**

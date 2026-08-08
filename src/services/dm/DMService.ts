@@ -62,6 +62,17 @@ export class DMService {
   private isFetchingHistorical: boolean = false;
   private pendingBadgeUpdate: boolean = false;
 
+  // Live-subscription backlog boundary. False while a live subscription is
+  // replaying its initial `limit`-bounded backlog burst (every relay replays
+  // recent events on (re)connect); flipped true on first EOSE or a safety
+  // timeout. storeAndEmit suppresses dm:new-message while false, so a replayed
+  // backlog — esp. after an IndexedDB eviction where hasMessage() can no longer
+  // dedup — cannot flood toasts. Default true = emit, the safe no-op when no
+  // live sub is active. See docs/todos/indexeddb-eviction-nwc-dm.md.
+  private liveSubBacklogDone: boolean = true;
+  private liveBacklogTimeout: number | null = null;
+  private static readonly LIVE_BACKLOG_TIMEOUT_MS = 5000;
+
   // Progress tracking for UI
   private fetchProgress: { current: number; total: number } = { current: 0, total: 0 };
 
@@ -235,6 +246,12 @@ export class DMService {
     this.clearExpirySweepTimer();
     this.clearIncomingBatchTimer();
 
+    if (this.liveBacklogTimeout !== null) {
+      clearTimeout(this.liveBacklogTimeout);
+      this.liveBacklogTimeout = null;
+    }
+    this.liveSubBacklogDone = true;
+
     if (this.subscriptionId) {
       this.transport.unsubscribeLive(this.subscriptionId);
       this.subscriptionId = null;
@@ -253,6 +270,39 @@ export class DMService {
       clearTimeout(this.incomingBatchTimer);
       this.incomingBatchTimer = null;
     }
+  }
+
+  /**
+   * Begin a live-sub backlog burst window: suppress live emits until EOSE or
+   * LIVE_BACKLOG_TIMEOUT_MS. The timeout is a safety net for relays that never
+   * send EOSE, so genuine live DMs are never permanently suppressed.
+   */
+  private beginLiveBacklog(): void {
+    this.liveSubBacklogDone = false;
+    if (this.liveBacklogTimeout !== null) clearTimeout(this.liveBacklogTimeout);
+    this.liveBacklogTimeout = window.setTimeout(
+      () => this.onLiveBacklogDone(),
+      DMService.LIVE_BACKLOG_TIMEOUT_MS
+    );
+  }
+
+  /**
+   * End the backlog burst (first EOSE wins; subsequent EOSEs / the timeout are
+   * no-ops). Flush any badge updates accumulated during the suppressed burst so
+   * the sidebar reflects re-ingested unread DMs even though no toast fired.
+   */
+  private onLiveBacklogDone(): void {
+    if (this.liveSubBacklogDone) return; // idempotent against EOSE + timeout race
+    this.liveSubBacklogDone = true;
+    if (this.liveBacklogTimeout !== null) {
+      clearTimeout(this.liveBacklogTimeout);
+      this.liveBacklogTimeout = null;
+    }
+    if (this.pendingBadgeUpdate) {
+      this.eventBus.emit('dm:badge-update');
+      this.pendingBadgeUpdate = false;
+    }
+    diagLog('dms', 'DM live backlog done — live emits enabled');
   }
 
   /**
@@ -699,6 +749,11 @@ export class DMService {
 
     this.subscriptionId = 'dm-subscription';
 
+    // Mark the live sub as "in backlog burst" until EOSE (or safety timeout).
+    // Events arriving before EOSE are the relay's replayed backlog and must not
+    // emit dm:new-message — see storeAndEmit().
+    this.beginLiveBacklog();
+
     await this.transport.subscribeLive(
       relays,
       filters,
@@ -711,7 +766,8 @@ export class DMService {
             DMService.INCOMING_BATCH_WINDOW_MS
           );
         }
-      }
+      },
+      () => this.onLiveBacklogDone()
     );
 
     diagLog('dms', 'Live subscription active', { relayCount: relays.length, relays: relays.slice(0, 3) });
@@ -907,7 +963,13 @@ export class DMService {
   private async storeAndEmit(message: DMMessage, conversationWith: string): Promise<void> {
     await this.dmStore.saveMessage(message);
 
-    if (this.isFetchingHistorical) {
+    // Only emit the live notification for genuinely-live arrivals: not during
+    // an explicit historical fetch (isFetchingHistorical) and not during the
+    // live sub's pre-EOSE backlog replay (liveSubBacklogDone). Without this,
+    // a relay-replayed or post-eviction re-ingested backlog emits one
+    // dm:new-message per message → a toast wall from UnknownDMNotifier.
+    const isLive = !this.isFetchingHistorical && this.liveSubBacklogDone;
+    if (!isLive) {
       this.pendingBadgeUpdate = true;
     } else {
       if (!message.isMine) {
