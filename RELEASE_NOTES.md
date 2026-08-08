@@ -1,9 +1,7 @@
-# What's new in NoorNote v1.3.1
+# What's new in NoorNote v1.3.2
 
-🖼️ **Less spam in Articles** — the global article feed now filters out articles without a cover image.
+📰 **Smarter Articles** — your article feed now pulls from your friend-of-a-friend network instead of a flat global list.
 
-💬 **Disappearing DMs** — set a self-destruct timer on a conversation.
+🔕 **No more toast spam** — a replayed message backlog no longer stacks a wall of "unknown sender" toasts.
 
-✨ **Smoother onboarding** — new accounts get working DM relays out of the box.
-
-🔔 **Better repost notifications** — reposted articles now open in the article reader.
+📱 **Android log export fixed** — exporting logs from Settings no longer crashes the app.
