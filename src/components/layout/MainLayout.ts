@@ -1389,6 +1389,16 @@ export class MainLayout {
       contentDiv.innerHTML = '';
       this.sccArticleFeed = this.mountSccArticleFeed(contentDiv);
     });
+
+    // DiagLog export button in the SCC tab strip. The button is rendered
+    // unconditionally; CSS hides it whenever the SCC itself is hidden
+    // (layout--phone, layout--wide, Capacitor). The click handler is cheap
+    // and inert when the button is not visible.
+    const diagExportBtn = this.element.querySelector<HTMLButtonElement>('#scc-diag-export-btn');
+    diagExportBtn?.addEventListener('click', async () => {
+      const { runDiagLogExportFromButton } = await import('../../services/DiagLogExportService');
+      await runDiagLogExportFromButton(diagExportBtn, 'Export DiagLogs');
+    });
   }
 
   /**
@@ -1582,9 +1592,15 @@ export class MainLayout {
         <div class="user-login-bar">
           <!-- User status will be mounted here -->
         </div>
-        <div id="sidebar-tabs" class="tabs">
-          <div data-role="scc-dropdown-mount" class="tab tab--scc-default"></div>
-          <!-- List tabs (Bookmarks/Follows/Mutes) will be inserted dynamically here -->
+        <div class="scc-tab-strip">
+          <div id="sidebar-tabs" class="tabs">
+            <div data-role="scc-dropdown-mount" class="tab tab--scc-default"></div>
+            <!-- List tabs (Bookmarks/Follows/Mutes) will be inserted dynamically here -->
+          </div>
+          <div class="scc-tab-strip__action">
+            <!-- DiagLog export button: visible only when SCC itself is visible (CSS hides on phone/wide) -->
+            <button class="btn btn--mini btn--passive" id="scc-diag-export-btn" type="button" aria-label="Export DiagLogs">Export DiagLogs</button>
+          </div>
         </div>
         <div class="secondary-content-body">
           <div class="tab-content tab-content--active" data-tab-content="system-log">

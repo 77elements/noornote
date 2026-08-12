@@ -23,7 +23,6 @@ import { SystemLogger } from '../SystemLogger';
 import { AppState } from '../AppState';
 import { AuthService } from '../AuthService';
 import { diagLog } from '../DiagnosticLogger';
-import { webDiag } from '../WebDiag';
 import { isDataSaverEnabled } from '../DataSaverService';
 import { isHideSelfRepostsEnabled, getSelfRepostGapSeconds } from '../../helpers/selfRepostSetting';
 import type { TimelineConfig } from '../../components/timeline/TimelineConfig';
@@ -607,10 +606,10 @@ export class FeedOrchestrator extends Orchestrator {
     this.registerNotes(filtered);
 
     const hasMore = relays.some(r => !pager.done.has(r));
-    // Persist the PV-level outcome to the web ring buffer (see WebDiag). An empty
-    // page here (notes:0) next to the matching direct-fetch entry tells the whole
-    // #2 story after the fact, even when hit cold with no console open.
-    webDiag('pv-page', {
+    // Persist the PV-level outcome (diagLog — on web this lands in the IndexedDB
+    // ring buffer). An empty page here (notes:0) next to the matching direct-fetch
+    // entry tells the whole #2 story after the fact, even when hit cold.
+    diagLog('system', 'pv-page', {
       pubkey: pubkey.slice(0, 8),
       kind: isInitial ? 'initial' : 'more',
       notes: filtered.length,
