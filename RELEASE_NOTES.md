@@ -1,7 +1,5 @@
-# What's new in NoorNote v1.3.2
+# What's new in NoorNote v1.3.3
 
-📰 **Smarter Articles** — your article feed now pulls from your friend-of-a-friend network instead of a flat global list.
+🐞 **Diagnostics for everyone** — diagnostic logs now work on Web too. Crash capture, list sync traces, relay pool snapshots — all recorded and exportable from Settings or the new SCC button.
 
-🔕 **No more toast spam** — a replayed message backlog no longer stacks a wall of "unknown sender" toasts.
-
-📱 **Android log export fixed** — exporting logs from Settings no longer crashes the app.
+📊 **One-tap log export on Desktop & Web** — a small "Export DiagLogs" button in the secondary-content tab strip, right next to the System Log. APK users keep the existing Settings button.
