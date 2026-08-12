@@ -176,9 +176,28 @@ html.layout--phone {
   contain: layout style paint;
   -webkit-overflow-scrolling: touch;
 
-  .tabs {
+  // Tab strip wrapper: holds the SCC tab row (#sidebar-tabs) on the left and
+  // a right-aligned action slot (e.g. the DiagLog export button). The bottom
+  // border lives here so it spans the full strip width including the action.
+  .scc-tab-strip {
+    display: flex;
+    align-items: stretch;
     border-bottom: 1px solid var(--color-2);
 
+    #sidebar-tabs {
+      flex: 1;
+      min-width: 0;
+    }
+
+    &__action {
+      display: flex;
+      align-items: center;
+      padding: 0 0 calc($gap / 2);
+      flex-shrink: 0;
+    }
+  }
+
+  .tabs {
     // The scc-default selector is a non-closable tab that wraps the type dropdown.
     // Its active underline comes from the shared `.tab` / `.tab--active` rules, so
     // it dims when a view/list tab is active and lights up when its content shows.

@@ -25,6 +25,7 @@
 
 import { PlatformService } from './PlatformService';
 import { AuthService } from './AuthService';
+import { diagWebStore } from './DiagWebStore';
 
 // ===== Types =====
 
@@ -70,6 +71,11 @@ function daysBetween(dateStr: string, referenceStr: string): number {
 /** Whether this platform supports file-based diagnostic logging */
 function supportsFileLogs(): boolean {
   return platform.isDesktop || platform.isCapacitor;
+}
+
+/** Whether this platform uses the IndexedDB web diagnostic backend (browser only). */
+function supportsWebLogs(): boolean {
+  return platform.isBrowser && typeof indexedDB !== 'undefined';
 }
 
 // ===== Platform FS wrappers =====
@@ -202,7 +208,7 @@ export class DiagnosticLogger {
   private rotationTimer: ReturnType<typeof setInterval> | null = null;
 
   private constructor() {
-    if (supportsFileLogs()) {
+    if (supportsFileLogs() || supportsWebLogs()) {
       this.flushTimer = setInterval(() => {
         // Auto-init: if not initialized yet, try with current user
         if (!this.initialized && !this.initializing) {
@@ -224,13 +230,35 @@ export class DiagnosticLogger {
   /** Diagnostic status for export UI */
   getStatus() {
     const bufferSize = Array.from(this.buffers.values()).reduce((sum, b) => sum + b.length, 0);
-    return { initialized: this.initialized, logsDir: this.logsDir, error: this.initError, flushErrors: this.flushErrors, lastFlushError: this.lastFlushError, hasFs: platform.isElectron || platform.isCapacitor, bufferSize };
+    return { initialized: this.initialized, logsDir: this.logsDir, error: this.initError, flushErrors: this.flushErrors, lastFlushError: this.lastFlushError, hasFs: platform.isElectron || platform.isCapacitor, hasWeb: supportsWebLogs(), bufferSize };
   }
 
   // ===== Initialization =====
 
   async init(npub?: string): Promise<void> {
-    if (this.initialized || this.initializing || !supportsFileLogs()) return;
+    if (this.initialized || this.initializing) return;
+
+    // Web backend: IndexedDB ring buffer (no filesystem). Per-account DB.
+    if (supportsWebLogs()) {
+      if (!npub) return; // web DB is keyed per npub
+      this.initializing = true;
+      try {
+        await diagWebStore.init(npub);
+        this.initialized = true;
+        // One-time cleanup: the legacy WebDiag localStorage ring buffer is
+        // superseded by this IndexedDB backend. Clear it so it doesn't linger.
+        try { localStorage.removeItem('noornote_webdiag'); } catch { /* ignore */ }
+        // Flush anything buffered before init completed.
+        this.flushAll();
+      } catch (error) {
+        this.initError = String(error);
+      } finally {
+        this.initializing = false;
+      }
+      return;
+    }
+
+    if (!supportsFileLogs()) return;
 
     // Desktop requires npub for path; Android doesn't
     if (!platform.isAndroid && !npub) return;
@@ -283,7 +311,7 @@ export class DiagnosticLogger {
   private logging = false;
 
   log(area: DiagArea, msg: string, data?: unknown): void {
-    if (!supportsFileLogs() || this.logging) return;
+    if ((!supportsFileLogs() && !supportsWebLogs()) || this.logging) return;
     this.logging = true;
     try {
       this._log(area, msg, data);
@@ -330,9 +358,17 @@ export class DiagnosticLogger {
   private async flush(area: DiagArea): Promise<void> {
     const buffer = this.buffers.get(area);
     if (!buffer || buffer.length === 0) return;
-    if (!this.initialized || !this.logsDir) return;
+    if (!this.initialized) return;
 
     const lines = buffer.splice(0, buffer.length);
+
+    // Web backend: flush to the IndexedDB ring buffer (fire-and-forget).
+    if (supportsWebLogs()) {
+      diagWebStore.append(area, lines);
+      return;
+    }
+
+    if (!this.logsDir) return;
     const filePath = `${this.logsDir}/${this.currentFilename(area)}`;
     const payload = lines.join('\n') + '\n';
 
@@ -574,6 +610,8 @@ export class DiagnosticLogger {
     this.logsDir = null;
     this.initialized = false;
     this.initializing = false;
+    // Web backend: close the IDB connection (keeps data on disk for next session).
+    if (supportsWebLogs()) diagWebStore.close();
   }
 }
 

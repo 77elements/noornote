@@ -20,7 +20,6 @@ import { SystemLogger } from '../SystemLogger';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { PlatformService } from '../PlatformService';
 import { diagLog } from '../DiagnosticLogger';
-import { webDiag } from '../WebDiag';
 
 export interface SubscriptionCallbacks {
   onEvent: (event: NostrEvent, relay: string) => void;
@@ -596,10 +595,11 @@ export class NostrTransport {
         subs.forEach(s => { try { s.stop(); } catch { /* ignore */ } });
         diagLog('relays', 'Direct fetch OK', { caller, relayCount: relays.length, eventCount: events.size });
         const breakdown = relays.map(u => { const r = perRelay[u]!; return `${label(u)}=${r.state}(${r.count}${r.ms ? ',' + r.ms + 'ms' : ''})`; });
-        // Persist to the web ring buffer so a cold empty-PV is recoverable later
-        // (see WebDiag). poolSize captures socket bloat; per-relay state shows
-        // "all relays errored" — the #2 signature.
-        webDiag('direct-fetch', {
+        // Persist the fetch outcome so a cold empty-PV is recoverable later
+        // (diagLog — on web this lands in the IndexedDB ring buffer). poolSize
+        // captures socket bloat; per-relay state shows "all relays errored" —
+        // the #2 signature.
+        diagLog('relays', 'direct-fetch', {
           caller,
           ms: Date.now() - dbgStart,
           total: events.size,

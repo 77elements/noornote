@@ -80,6 +80,54 @@ async function platformWriteFile(filePath: string, data: Uint8Array): Promise<vo
 }
 
 /**
+ * Drive an "Export DiagLogs" button through the full export UX:
+ * disable + relabel to 'Exporting...', run exportDiagnosticLogs(),
+ * toast success/error, restore the resting label in finally.
+ *
+ * Single source for every place that mounts an export button
+ * (SettingsView, MainLayout SCC) — keeps the click UX identical.
+ */
+export async function runDiagLogExportFromButton(
+  btn: HTMLButtonElement,
+  restingLabel: string
+): Promise<void> {
+  btn.disabled = true;
+  btn.textContent = 'Exporting...';
+  try {
+    const { DiagnosticLogger } = await import('./DiagnosticLogger');
+    const { ToastService } = await import('./ToastService');
+    const status = DiagnosticLogger.getInstance().getStatus();
+
+    if (!status.initialized && !platform.isCapacitor && !platform.isBrowser) {
+      const reason = status.error || 'Logger not initialized';
+      ToastService.show(`DiagLog: ${reason}`, 'error', 8000);
+      return;
+    }
+
+    let exportError: string | null = null;
+    let success = false;
+    try {
+      success = await exportDiagnosticLogs();
+    } catch (e) {
+      exportError = String(e);
+    }
+
+    if (success) {
+      ToastService.show('Logs exported', 'success');
+    } else {
+      const debugInfo = (exportDiagnosticLogs as any).lastDebugInfo || '';
+      ToastService.show(exportError || debugInfo || 'export returned false', 'error', 15000);
+    }
+  } catch (error) {
+    const { ToastService } = await import('./ToastService');
+    ToastService.show(`Import error: ${error}`, 'error', 15000);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = restingLabel;
+  }
+}
+
+/**
  * Export all diagnostic logs as a ZIP file and share/save it.
  * Call from Settings UI.
  */
@@ -91,8 +139,9 @@ export async function exportDiagnosticLogs(): Promise<boolean> {
     const { diagLog } = await import('./DiagnosticLogger');
     diagLog('crashes', 'Log export triggered');
 
-    // 2. Collect all log files
-    const collected = await collectLogFiles();
+    // 2. Collect log data (web: IndexedDB ring, native: filesystem)
+    const isWeb = platform.isBrowser;
+    const collected = isWeb ? await collectWebLogFiles() : await collectLogFiles();
     if (Object.keys(collected.files).length === 0) {
       (exportDiagnosticLogs as any).lastDebugInfo = collected.debugInfo;
       logger.warn('DiagLogExport', `No logs: ${collected.debugInfo}`);
@@ -112,11 +161,15 @@ export async function exportDiagnosticLogs(): Promise<boolean> {
     logger.info('DiagLogExport', `ZIP ready — ${(zipData.length / 1024).toFixed(1)} KB`);
 
     // 4. Save (platform-specific)
+    if (isWeb) {
+      const ok = downloadBlob(zipData, filename);
+      if (ok) logger.success('DiagLogExport', `Logs downloaded — ${filename}`);
+      return ok;
+    }
     if (platform.isAndroid) {
       return await saveToDownloads(zipData, filename);
-    } else {
-      return await saveViaDialog(zipData, filename);
     }
+    return await saveViaDialog(zipData, filename);
   } catch (error) {
     (exportDiagnosticLogs as any).lastDebugInfo = `THROW: ${error}`;
     logger.error('DiagLogExport', `Export failed: ${error}`);
@@ -173,6 +226,67 @@ async function getLogsDir(): Promise<string | null> {
 
   const home = await platformHomeDir();
   return `${home}/.noornote/${user.npub}/logs`;
+}
+
+/**
+ * Web: collect logs from the IndexedDB ring buffer (DiagWebStore). Lines are
+ * grouped by date (parsed from each entry's ISO `ts`) to synthesize
+ * `{area}-{date}.jsonl` filenames identical to Desktop's daily files, so the
+ * diagnose/*.py tooling consumes web exports unchanged.
+ */
+async function collectWebLogFiles(): Promise<{ files: Record<string, Uint8Array>; debugInfo: string }> {
+  const { diagWebStore } = await import('./DiagWebStore');
+  const all = await diagWebStore.readAll();
+  const files: Record<string, Uint8Array> = {};
+  const debug: string[] = [];
+  const encoder = new TextEncoder();
+
+  for (const [area, lines] of Object.entries(all)) {
+    if (!lines || lines.length === 0) continue;
+
+    // Bucket lines by date so each day becomes its own .jsonl, like Desktop.
+    const byDate = new Map<string, string[]>();
+    for (const line of lines) {
+      let date = 'unknown';
+      try {
+        const parsed = JSON.parse(line);
+        if (parsed?.ts) date = String(parsed.ts).slice(0, 10);
+      } catch {
+        /* unparsable line → 'unknown' bucket */
+      }
+      const bucket = byDate.get(date) || [];
+      bucket.push(line);
+      byDate.set(date, bucket);
+    }
+
+    let areaCount = 0;
+    for (const [date, dateLines] of byDate) {
+      const name = date === 'unknown' ? `${area}.jsonl` : `${area}-${date}.jsonl`;
+      files[name] = encoder.encode(dateLines.join('\n') + '\n');
+      areaCount += dateLines.length;
+    }
+    debug.push(`${area}:${areaCount}`);
+  }
+
+  return { files, debugInfo: debug.join(' | ') || 'empty' };
+}
+
+/**
+ * Web: browser download via Blob URL + a hidden <a download>. The simplest of
+ * the three platform paths — no base64 bridge, no native plugin, no OOM risk.
+ */
+function downloadBlob(data: Uint8Array, filename: string): boolean {
+  const blob = new Blob([data as BlobPart], { type: 'application/zip' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  // Defer revoke so the browser can start the download from the URL.
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return true;
 }
 
 /**
