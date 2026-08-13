@@ -96,6 +96,10 @@ export async function resolveInvitePreview(input: string): Promise<ResolveResult
     addedAt: Date.now(),
   };
   if (preview.icon) community.iconPointer = preview.icon;
+  if (preview.communityRoot) community.communityRoot = preview.communityRoot;
+  if (typeof preview.rootEpoch === 'number') community.rootEpoch = preview.rootEpoch;
+  if (preview.communityId) community.communityId = preview.communityId;
+  if (preview.channels) community.channels = preview.channels;
   if (preview.expired) {
     return { kind: 'error', reason: 'This invite has expired. Ask for a fresh link.' };
   }

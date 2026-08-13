@@ -34,4 +34,12 @@ export interface TrackedCommunity {
   addedAt: number;
   /** Unix timestamp (seconds) of the last successful poll. Undefined until first poll. */
   lastCheckedAt?: number;
+  /** Community root key (64-char hex) from the bundle — needed for GroupKey derivation. */
+  communityRoot?: string;
+  /** Root epoch for public channels. */
+  rootEpoch?: number;
+  /** Community ID (64-char hex) — self-certifying identity from bundle. */
+  communityId?: string;
+  /** Channel identities (id + epoch per channel). */
+  channels?: Array<{ id: string; epoch: number; name?: string }>;
 }

@@ -219,3 +219,12 @@ export function nip44Decrypt(ciphertext: string, senderPubkey: string, privateKe
 export function nip44DecryptWithKey(ciphertext: string, conversationKey: Uint8Array): string {
   return nip44.decrypt(ciphertext, conversationKey);
 }
+
+/**
+ * NIP-44 conversation key from a private key + public key (hex strings).
+ * Used by Concord V2 stream keys: `getConversationKey(streamSk, streamPk)`
+ * produces the self-ECDH key that encrypts a channel's gift wraps.
+ */
+export function nip44ConversationKey(privateKey: string, publicKey: string): Uint8Array {
+  return nip44.getConversationKey(hexToBytes(privateKey), publicKey);
+}

@@ -38,6 +38,16 @@ export interface ArmadaImagePointer {
   hash: string;
 }
 
+/** A channel's on-wire identity as carried by the invite bundle. */
+export interface ArmadaChannel {
+  /** 64-char hex channel id — input to channelGroupKey derivation. */
+  id: string;
+  /** Channel name (display only). */
+  name?: string;
+  /** Channel epoch — input to channelGroupKey derivation. */
+  epoch: number;
+}
+
 /** The decrypted invite bundle's public preview fields (CORD-05 §1). */
 export interface ArmadaInvitePreview {
   name: string;
@@ -47,4 +57,12 @@ export interface ArmadaInvitePreview {
   relays: string[];
   /** True once past the bundle's optional `expires_at`. */
   expired: boolean;
+  /** Community root key (64-char hex) — needed for GroupKey derivation. */
+  communityRoot?: string;
+  /** Root epoch for public channels. */
+  rootEpoch?: number;
+  /** Community ID (64-char hex) — self-certifying identity from bundle. */
+  communityId?: string;
+  /** Channel identities (id + epoch per channel, needed for GroupKey derivation). */
+  channels?: ArmadaChannel[];
 }

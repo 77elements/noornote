@@ -25,18 +25,18 @@
 
 import { SystemLogger } from '../../../services/SystemLogger';
 import { AuthService } from '../../../services/AuthService';
-import { NostrTransport } from '../../../services/transport/NostrTransport';
 import { TypedEventBus } from '../../../core/TypedEventBus';
 import { PerAccountLocalStorage, StorageKeys } from '../../../services/PerAccountLocalStorage';
 import { diagLog } from '../../../services/DiagnosticLogger';
+import { nip44DecryptWithKey } from '../../../services/NostrToolsAdapter';
 import { ArmadaCommunityRegistry } from './ArmadaCommunityRegistry';
+import { channelGroupKey, controlGroupKey, type GroupKey } from './concordGroupKey';
+import { ArmadaRelayClient } from './ArmadaRelayClient';
 import { GROUP_CHATS_DEFAULT_INTERVAL_MS, GROUP_CHATS_INTERVAL_OPTIONS } from '../GroupChatsService';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { TrackedCommunity } from './types';
 
-const KIND_GIFT_WRAP = 1059;
 const KIND_SEAL = 13;
-const FETCH_TIMEOUT_MS = 15000;
 const INITIAL_DELAY_MS = 60 * 1000; // let login fetches settle before the first poll
 
 export { GROUP_CHATS_INTERVAL_OPTIONS as ARMADA_INTERVAL_OPTIONS };
@@ -50,6 +50,7 @@ export class ArmadaService {
   private storage: PerAccountLocalStorage;
   private authService: AuthService;
   private registry: ArmadaCommunityRegistry;
+  private relayClient: ArmadaRelayClient;
 
   private initialTimer: number | null = null;
   private interval: number | null = null;
@@ -63,6 +64,7 @@ export class ArmadaService {
     this.storage = PerAccountLocalStorage.getInstance();
     this.authService = AuthService.getInstance();
     this.registry = ArmadaCommunityRegistry.getInstance();
+    this.relayClient = new ArmadaRelayClient();
     this.intervalMs = this.loadInterval();
   }
 
@@ -177,6 +179,13 @@ export class ArmadaService {
 
   /**
    * Fetch + decrypt gift wraps for one community since its anchor.
+   *
+   * Concord V2 routing: gift wraps are authored by per-channel Stream Keys
+   * (derived from the community root + channel id + epoch). We subscribe by
+   * `authors: [streamPubkeys]` (NOT by `#p: [userPubkey]` — wraps are not
+   * addressed to recipients, they're addressed to streams). Decryption uses
+   * each channel's self-ECDH conversation key.
+   *
    * Returns the count of fresh, successfully-decrypted, non-duplicate wraps.
    */
   private async pollCommunity(
@@ -186,33 +195,77 @@ export class ArmadaService {
     notifyOwn: boolean,
     seenWrapIds: Set<string>,
   ): Promise<{ count: number; mineOnly: boolean }> {
+    if (!community.communityRoot) {
+      diagLog('addons', 'armada: community has no root, skipping', { community: community.name });
+      return { count: 0, mineOnly: false };
+    }
+
+    // Build the list of GroupKeys to poll:
+    // 1. Control plane (always — catches ALL community activity: new channels,
+    //    roster updates, rekeys). Derived from communityRoot + communityId.
+    // 2. Channel planes (if the bundle disclosed channel IDs).
+    const groupKeys: GroupKey[] = [];
+    const rootEpoch = community.rootEpoch ?? 0;
+
+    if (community.communityId) {
+      try {
+        groupKeys.push(controlGroupKey(community.communityRoot, community.communityId, rootEpoch));
+      } catch (error) {
+        diagLog('addons', 'armada: control key derivation failed', {
+          community: community.name, error: String(error),
+        });
+      }
+    }
+
+    for (const ch of community.channels ?? []) {
+      try {
+        const epoch = ch.epoch ?? rootEpoch;
+        groupKeys.push(channelGroupKey(community.communityRoot, ch.id, epoch));
+      } catch (error) {
+        diagLog('addons', 'armada: channel key derivation failed', {
+          community: community.name, channelId: ch.id.slice(0, 12), error: String(error),
+        });
+      }
+    }
+
+    if (groupKeys.length === 0) {
+      diagLog('addons', 'armada: no derivable keys (need communityId or channels)', { community: community.name });
+      return { count: 0, mineOnly: false };
+    }
+
+    const streamPubkeys = groupKeys.map(gk => gk.pk);
+
+    // Register stream keys for NIP-42 auth (Concord relays require this)
+    this.relayClient.setStreamKeys(groupKeys);
+
     let events: NostrEvent[] = [];
     try {
-      events = await NostrTransport.getInstance().fetchDirect(
+      events = await this.relayClient.fetchWraps(
         community.bootstrapRelays,
-        [{ kinds: [KIND_GIFT_WRAP], '#p': [me], since: anchor, limit: 50 }],
-        FETCH_TIMEOUT_MS,
-        'ArmadaPoll',
+        streamPubkeys,
+        anchor,
       );
     } catch (error) {
       diagLog('addons', 'armada: community fetch failed', {
-        community: community.name,
-        error: String(error),
+        community: community.name, error: String(error),
       });
     }
 
     if (events.length === 0) return { count: 0, mineOnly: false };
 
+    diagLog('addons', 'armada: wraps found', {
+      community: community.name, wraps: events.length, keys: groupKeys.length,
+    });
+
     let freshCount = 0;
     let ownCount = 0;
 
     for (const wrap of events) {
-      // Dedup across communities / relays.
       const wrapId = wrap.id ?? '';
       if (!wrapId || seenWrapIds.has(wrapId)) continue;
       seenWrapIds.add(wrapId);
 
-      const rumor = await this.unwrapGiftWrap(wrap);
+      const rumor = this.unwrapStreamWrap(wrap, groupKeys);
       if (!rumor) continue;
 
       const isOwn = rumor.pubkey === me;
@@ -227,27 +280,35 @@ export class ArmadaService {
   }
 
   /**
-   * Standard NIP-59 unwrap (same pipeline as DMService.unwrapGiftWrap).
-   * Uses AuthService for decryption — works with all signer types.
+   * Decrypt a Concord V2 stream gift wrap (kind 1059) using channel GroupKeys.
+   *
+   * Tries each GroupKey's convKey (self-ECDH NIP-44 conversation key) until
+   * one successfully decrypts the wrap → seal → rumor chain. Both layers
+   * (wrap and seal) use the SAME convKey (the stream is a single-key channel).
+   *
+   * Returns the rumor on success, or null if no key worked.
    */
-  private async unwrapGiftWrap(wrapEvent: NostrEvent): Promise<NostrEvent | null> {
-    try {
-      // Step 1: Decrypt gift wrap content → seal (kind 13)
-      const sealJson = await this.authService.nip44Decrypt(wrapEvent.content, wrapEvent.pubkey);
-      const seal = JSON.parse(sealJson) as NostrEvent;
-      if (seal.kind !== KIND_SEAL) return null;
+  private unwrapStreamWrap(wrapEvent: NostrEvent, groupKeys: GroupKey[]): NostrEvent | null {
+    for (const gk of groupKeys) {
+      try {
+        // Step 1: Decrypt wrap content → seal (kind 13)
+        const sealJson = nip44DecryptWithKey(wrapEvent.content, gk.convKey);
+        const seal = JSON.parse(sealJson) as NostrEvent;
+        if (seal.kind !== KIND_SEAL) continue;
 
-      // Step 2: Decrypt seal content → rumor (unsigned)
-      const rumorJson = await this.authService.nip44Decrypt(seal.content, seal.pubkey);
-      const rumor = JSON.parse(rumorJson) as NostrEvent;
+        // Step 2: Decrypt seal content → rumor (unsigned, any kind)
+        const rumorJson = nip44DecryptWithKey(seal.content, gk.convKey);
+        const rumor = JSON.parse(rumorJson) as NostrEvent;
 
-      // Anti-spoofing: rumor.pubkey === seal.pubkey
-      if (rumor.pubkey !== seal.pubkey) return null;
+        // Anti-spoofing: rumor.pubkey === seal.pubkey
+        if (rumor.pubkey !== seal.pubkey) continue;
 
-      return rumor;
-    } catch {
-      return null;
+        return rumor;
+      } catch {
+        // Wrong key or corrupt content — try next GroupKey
+      }
     }
+    return null;
   }
 
   /** Emit one in-app notification for a community that saw activity. */
@@ -279,6 +340,7 @@ export class ArmadaService {
     this.destroyed = true;
     if (this.initialTimer !== null) { clearTimeout(this.initialTimer); this.initialTimer = null; }
     if (this.interval !== null) { clearInterval(this.interval); this.interval = null; }
+    this.relayClient.destroy();
     ArmadaService.instance = null;
   }
 }

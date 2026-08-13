@@ -20,7 +20,7 @@ import { sha256 } from '@noble/hashes/sha256';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { nip44DecryptWithKey, verifyEventSignature } from '../../services/NostrToolsAdapter';
 import { getTag } from '../tagUtils';
-import { INVITE_BUNDLE_KIND, type ArmadaImagePointer, type ArmadaInvitePreview } from './types';
+import { INVITE_BUNDLE_KIND, type ArmadaChannel, type ArmadaImagePointer, type ArmadaInvitePreview } from './types';
 
 const MAX_BOOTSTRAP_RELAYS = 3;
 const VSK_INVITE_LIVE = '6';
@@ -80,19 +80,37 @@ export function decodeInviteBundle(
   if (!bundle || typeof bundle !== 'object') return undefined;
 
   const name = typeof bundle.name === 'string' ? bundle.name : '';
-  const channels = Array.isArray(bundle.channels) ? bundle.channels : [];
+  const channelsRaw = Array.isArray(bundle.channels) ? bundle.channels : [];
   const relays = Array.isArray(bundle.relays)
     ? bundle.relays.filter((r): r is string => typeof r === 'string')
     : [];
   const expiresAt = typeof bundle.expires_at === 'number' ? bundle.expires_at : undefined;
   const icon = isImagePointer(bundle.icon) ? bundle.icon : undefined;
+  const communityRoot = typeof bundle.community_root === 'string' ? bundle.community_root : undefined;
+  const rootEpoch = typeof bundle.root_epoch === 'number' ? bundle.root_epoch : undefined;
+  const communityId = typeof bundle.community_id === 'string' ? bundle.community_id : undefined;
+
+  // Extract channel identities (id + epoch) for GroupKey derivation.
+  const channels: ArmadaChannel[] = channelsRaw
+    .filter((c): c is Record<string, unknown> => !!c && typeof c === 'object')
+    .map(c => {
+      const id = typeof c.id === 'string' ? c.id : '';
+      const epoch = typeof c.epoch === 'number' ? c.epoch : 0;
+      const chName = typeof c.name === 'string' ? c.name : undefined;
+      return { id, epoch, ...(chName ? { name: chName } : {}) };
+    })
+    .filter(c => c.id);
 
   const preview: ArmadaInvitePreview = {
     name,
-    channelCount: channels.length,
+    channelCount: channelsRaw.length,
     relays: relays.slice(0, MAX_BOOTSTRAP_RELAYS),
     expired: typeof expiresAt === 'number' && Date.now() > expiresAt,
   };
   if (icon) preview.icon = icon;
+  if (communityRoot) preview.communityRoot = communityRoot;
+  if (typeof rootEpoch === 'number') preview.rootEpoch = rootEpoch;
+  if (communityId) preview.communityId = communityId;
+  if (channels.length > 0) preview.channels = channels;
   return preview;
 }
