@@ -8,6 +8,7 @@ import { extractMediaWithImeta } from '../helpers/extractMedia';
 import { extractBolt11, type Bolt11Match } from '../helpers/extractBolt11';
 import { unwrapStreamLinks } from '../helpers/unwrapStreamLinks';
 import { unwrapGitLinks } from '../helpers/unwrapGitLinks';
+import { unwrapArmadaInviteLinks } from '../helpers/unwrapArmadaInviteLinks';
 import { extractLinks } from '../helpers/extractLinks';
 import { extractHashtags } from '../helpers/extractHashtags';
 import { extractQuotedReferences } from '../helpers/extractQuotedReferences';
@@ -30,6 +31,12 @@ export interface QuotedReference {
   type: 'event' | 'note' | 'addr';
   id: string;
   fullMatch: string;
+  /**
+   * Armada invite unlock fragment (without leading `#`). Present only for
+   * kind 33301 naddr refs whose URL carried a `#fragment` through
+   * unwrapArmadaInviteLinks — see extractQuotedReferences.
+   */
+  fragment?: string;
 }
 
 export interface ProcessedContent {
@@ -98,6 +105,12 @@ export class ContentProcessor {
     // extractQuotedReferences below. Streams (zap.stream/...) are
     // provider-agnostic; git (gitworkshop.dev) is host-whitelisted to avoid
     // false positives on arbitrary URLs that happen to end in NIP-19.
+    //
+    // Armada invites run FIRST: unwrapStreamLinks would otherwise eat the
+    // `#fragment` (the unlock secret needed to NIP-44-decrypt the bundle's
+    // public preview). Preserving it lets the renderer produce a real
+    // invite card instead of the bare "unsupported kind" fallback.
+    text = unwrapArmadaInviteLinks(text);
     text = unwrapStreamLinks(text);
     text = unwrapGitLinks(text);
 
@@ -110,7 +123,8 @@ export class ContentProcessor {
     const quotedReferences: QuotedReference[] = quotedRefs.map(ref => ({
       type: ref.type as 'event' | 'note' | 'addr',
       id: ref.id,
-      fullMatch: ref.fullMatch
+      fullMatch: ref.fullMatch,
+      ...(ref.fragment ? { fragment: ref.fragment } : {}),
     }));
 
     // NON-BLOCKING: Trigger profile fetch for ALL p-tags in background

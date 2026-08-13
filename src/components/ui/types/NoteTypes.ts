@@ -78,6 +78,8 @@ export interface QuotedReference {
   id: string;
   fullMatch: string;
   quotedNote?: ProcessedNote;
+  /** Armada invite unlock fragment (without leading `#`). See ContentProcessor.QuotedReference. */
+  fragment?: string;
 }
 
 export interface NoteUIOptions {

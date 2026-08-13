@@ -25,6 +25,7 @@ import { getTag } from '../../../helpers/tagUtils';
 import { TypedEventBus } from '../../../core/TypedEventBus';
 import { DittoFeatureRenderer, DITTO_GEOCACHE_KIND } from '../../../components/ui/note-rendering/DittoFeatureRenderer';
 import { SatelliteSiteRenderer, SATELLITE_SITE_KIND } from '../../../components/ui/note-rendering/SatelliteSiteRenderer';
+import { ArmadaInviteRenderer } from '../../../components/ui/note-rendering/ArmadaInviteRenderer';
 import { UnsupportedKindRenderer } from './UnsupportedKindRenderer';
 import { ARTICLE_PREVIEW_KINDS } from '../../../helpers/addressableKinds';
 
@@ -68,7 +69,7 @@ export class QuotedNoteRenderer {
       if (ref.type === 'addr') {
         const addrContainer = document.createElement('div');
         container.appendChild(addrContainer);
-        this.renderAddressableReference(ref.fullMatch, addrContainer);
+        this.renderAddressableReference(ref.fullMatch, addrContainer, ref.fragment);
         return;
       }
 
@@ -90,13 +91,24 @@ export class QuotedNoteRenderer {
    * community addressable event no longer shows a bogus "Failed to load
    * article" card. Shared by OriginalNoteRenderer, QuoteRenderer and the
    * conversation path so the rule lives in one place.
+   *
+   * `fragment` is the Armada invite unlock secret (without leading `#`),
+   * preserved through extractQuotedReferences → ContentProcessor → here
+   * when the original note text carried an `armada.buzz/invite/<naddr>#<frag>`
+   * URL. Without it the renderer falls back to the static "Encrypted community"
+   * card; with it, the bundle is decrypted for a real preview.
    */
-  public renderAddressableReference(naddrRef: string, container: Element): void {
+  public renderAddressableReference(naddrRef: string, container: Element, fragment?: string): void {
     let kind: number | undefined;
     let pubkey = '';
     let identifier = '';
     try {
-      const decoded = decodeNip19(naddrRef.replace(/^nostr:/, ''));
+      // Strip the `nostr:` prefix AND any `#fragment` (armada invite unlock
+      // secret, preserved through extractQuotedReferences) — decodeNip19
+      // rejects bech32 strings with a trailing `#…` since `#` is not a
+      // bech32 character. The fragment travels separately via the parameter.
+      const bare = naddrRef.replace(/^nostr:/, '').split('#')[0] ?? naddrRef;
+      const decoded = decodeNip19(bare);
       if (decoded.type === 'naddr') {
         kind = decoded.data.kind;
         pubkey = decoded.data.pubkey;
@@ -117,6 +129,19 @@ export class QuotedNoteRenderer {
     // Satellite Earth site page (kind 35129): proprietary, no NIP — dedicated notice.
     if (kind === SATELLITE_SITE_KIND) {
       container.appendChild(SatelliteSiteRenderer.renderFromCoordinate(kind, pubkey, identifier));
+      return;
+    }
+    // Armada / Concord encrypted community invite (kind 33301, CORD-05):
+    // NIP-44-encrypted bundle. With the URL fragment we can decrypt the
+    // public preview (name, icon, channels); without it we still show the
+    // "Open in Armada" card. naddrRef is the full `nostr:naddr1…` (with
+    // optional `#fragment` already stripped by extractQuotedReferences);
+    // we pass the bare naddr + fragment to the renderer.
+    if (kind === 33301) {
+      // `bare` already has the nostr: prefix and #fragment stripped above;
+      // pass it directly with the separately-travelled fragment.
+      const bare = naddrRef.replace(/^nostr:/, '').split('#')[0] ?? naddrRef;
+      container.appendChild(ArmadaInviteRenderer.renderFromCoordinate(bare, fragment));
       return;
     }
     // Follow pack (kind 39089) → fetch + render via FollowPackRenderer (.nn-card).

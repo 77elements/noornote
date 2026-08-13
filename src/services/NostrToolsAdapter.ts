@@ -203,3 +203,19 @@ export function nip44Decrypt(ciphertext: string, senderPubkey: string, privateKe
   const conversationKey = nip44.getConversationKey(hexToBytes(privateKey), senderPubkey);
   return nip44.decrypt(ciphertext, conversationKey);
 }
+
+/**
+ * NIP-44 decrypt with a pre-derived conversation key (symmetric usage).
+ *
+ * Concord's CORD-05 invite bundles (kind 33301) reuse the NIP-44 ciphertext
+ * format but skip the DH step: both sides already share a 32-byte symmetric
+ * key derived via HKDF from the invite's unlock token. This wrapper takes
+ * that key directly as the conversation key.
+ *
+ * @param ciphertext - Encrypted payload (NIP-44 v2 format)
+ * @param conversationKey - 32-byte pre-derived symmetric key (Uint8Array)
+ * @returns Decrypted plaintext
+ */
+export function nip44DecryptWithKey(ciphertext: string, conversationKey: Uint8Array): string {
+  return nip44.decrypt(ciphertext, conversationKey);
+}

@@ -7,6 +7,10 @@ import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { encodeNevent, encodeNaddr } from '../../../services/NostrToolsAdapter';
 import { DittoFeatureRenderer, DITTO_GEOCACHE_KIND } from './DittoFeatureRenderer';
 import { SatelliteSiteRenderer, SATELLITE_SITE_KIND } from './SatelliteSiteRenderer';
+import { ArmadaInviteRenderer } from './ArmadaInviteRenderer';
+
+/** Armada / Concord encrypted community invite bundle (CORD-05). */
+const ARMADA_INVITE_KIND = 33301;
 
 export class UnsupportedKindRenderer {
   /**
@@ -22,6 +26,13 @@ export class UnsupportedKindRenderer {
     // Satellite Earth" notice with the page title from the title tag.
     if (note.rawEvent.kind === SATELLITE_SITE_KIND) {
       return SatelliteSiteRenderer.render(note.rawEvent);
+    }
+    // Armada invite bundle reached as a raw event (rare — normally the
+    // addressable-quote path intercepts it via QuotedNoteRenderer's
+    // kind-33301 branch before we land here). No URL fragment is available
+    // on the raw event, so this is the static "Encrypted community" card.
+    if (note.rawEvent.kind === ARMADA_INVITE_KIND) {
+      return ArmadaInviteRenderer.renderFromEvent(note.rawEvent);
     }
 
     const element = document.createElement('div');
@@ -62,6 +73,14 @@ export class UnsupportedKindRenderer {
     }
     if (kind === SATELLITE_SITE_KIND) {
       return SatelliteSiteRenderer.renderFromCoordinate(kind, pubkey, identifier);
+    }
+    // Armada invite bundle as a coordinate fallback (no fragment available —
+    // static card). QuotedNoteRenderer normally intercepts kind 33301 before
+    // we reach this branch.
+    if (kind === ARMADA_INVITE_KIND) {
+      // Reconstruct the naddr; ArmadaInviteRenderer.renderFromCoordinate handles it.
+      const naddr = encodeNaddr({ kind, pubkey, identifier, relays: [] });
+      return ArmadaInviteRenderer.renderFromCoordinate(naddr, undefined);
     }
 
     const element = document.createElement('div');

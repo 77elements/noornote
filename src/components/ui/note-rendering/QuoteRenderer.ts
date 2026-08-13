@@ -32,7 +32,7 @@ export class QuoteRenderer {
           if (ref.type === 'addr') {
             const container = document.createElement('div');
             marker.replaceWith(container);
-            QuoteRenderer.quotedNoteRenderer.renderAddressableReference(ref.fullMatch, container);
+            QuoteRenderer.quotedNoteRenderer.renderAddressableReference(ref.fullMatch, container, ref.fragment);
           } else {
             // Regular note quote handling. Parent author = the quoting note
             // — fed to QuoteOrchestrator's outbound fallback so the quoter's

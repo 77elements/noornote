@@ -1,0 +1,207 @@
+// Armada invite card — Concord encrypted community invite (kind 33301, CORD-05).
+// Rendered inline in note content by ArmadaInviteRenderer when an
+// `armada.buzz/invite/<naddr>#<fragment>` URL (or a bare kind-33301 naddr quote)
+// appears in a kind 1 note, and as the inner card for reposts of kind 33301.
+
+@use '../abstracts/variables' as *;
+@use '../base/typography' as *;
+
+.armada-invite {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 28rem;
+  margin: calc($gap / 2) 0;
+  padding: $gap;
+  overflow: hidden;
+  background: var(--color-2);
+  border: 1px solid color-mix(in srgb, var(--color-4) 25%, transparent);
+  border-radius: $radius-pill;
+  color: var(--color-5);
+
+  &__glow {
+    position: absolute;
+    top: calc(-1 * $gap);
+    right: calc(-1 * $gap);
+    width: $gap * 4;
+    height: $gap * 4;
+    pointer-events: none;
+    background: radial-gradient(circle, color-mix(in srgb, var(--color-4) 22%, transparent) 0%, transparent 70%);
+    filter: blur(calc($gap * 1.5));
+  }
+
+  &__body {
+    position: relative;
+  }
+
+  &__eyebrow {
+    @extend %small;
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 4);
+    margin-bottom: calc($gap / 2);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  &__brand {
+    font-weight: 600;
+    color: var(--color-4);
+  }
+
+  &__sep {
+    color: $text-alpha-medium;
+  }
+
+  &__kind {
+    color: $text-alpha-heavy;
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: $gap;
+    align-items: center;
+    margin-bottom: $gap;
+  }
+
+  &__icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--color-4) 15%, transparent);
+    border-radius: $radius-xl;
+    color: var(--color-4);
+  }
+
+  &__crest {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  &__icon-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+
+    &--hidden {
+      opacity: 0;
+    }
+
+    // Loaded state — JS sets data-armada-icon-loaded="true" on the <img>.
+    &[data-armada-icon-loaded='true'] {
+      opacity: 1;
+    }
+  }
+
+  &__info {
+    min-width: 0;
+  }
+
+  &__name {
+    display: block;
+    font-weight: 600;
+    color: var(--color-5);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__meta {
+    @extend %small;
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc($gap / 2);
+    margin-top: calc($gap / 4);
+    color: $text-alpha-heavy;
+  }
+
+  &__meta-bit {
+    display: inline-flex;
+    align-items: center;
+    gap: calc($gap / 4);
+
+    svg {
+      flex-shrink: 0;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: calc($gap / 2);
+    align-items: center;
+  }
+
+  &__open {
+    flex: 1;
+    justify-content: center;
+
+    svg {
+      flex-shrink: 0;
+    }
+  }
+
+  &__copy {
+    position: relative;
+    flex-shrink: 0;
+
+    // Default state shows the copy icon; the check shows on `[data-armada-copied]`.
+    .armada-invite__copy-check {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      color: var(--color-6);
+    }
+
+    .armada-invite__copy-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    &[data-armada-copied] {
+      .armada-invite__copy-icon {
+        opacity: 0;
+      }
+      .armada-invite__copy-check {
+        opacity: 1;
+      }
+    }
+  }
+
+  // State modifiers — eyebrow tone + extra context line.
+
+  &--missing-secret,
+  &--incomplete {
+    .armada-invite__brand {
+      color: $text-alpha-heavy;
+    }
+  }
+
+  &--fetch-failed {
+    .armada-invite__icon {
+      color: $text-alpha-heavy;
+    }
+  }
+
+  &--expired {
+    .armada-invite__name {
+      color: $color-warning;
+    }
+  }
+}
+
+// Repost wrapper — gives the inline card the same vertical breathing room
+// the Ditto / Satellite notice cards get inside a repost frame.
+.repost-article-container .armada-invite {
+  margin: 0;
+}

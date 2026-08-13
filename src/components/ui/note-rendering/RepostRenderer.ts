@@ -4,10 +4,11 @@
  * Amethyst-pattern: the inner event is dispatched through the standard
  * {@link NoteProcessor} + {@link NoteRendererFactory} pipeline — the same path
  * top-level events take. Special-case branches are kept only for the bespoke
- * "preview card" kinds (Follow-Pack, Ditto geocache) and the addressable
- * kinds routed through ArticlePreviewRenderer (article, Zapstore app, live
- * stream). Any future content kind that grows a Processor/Renderer pair starts
- * working in reposts automatically without touching this file.
+ * "preview card" kinds (Follow-Pack, Ditto geocache, Satellite site, Armada
+ * invite bundle) and the addressable kinds routed through
+ * ArticlePreviewRenderer (article, Zapstore app, live stream). Any future
+ * content kind that grows a Processor/Renderer pair starts working in
+ * reposts automatically without touching this file.
  */
 
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
@@ -17,6 +18,7 @@ import { NoteProcessor } from '../note-processing/NoteProcessor';
 import { NoteRendererFactory } from './NoteRendererFactory';
 import { DittoFeatureRenderer, DITTO_GEOCACHE_KIND } from './DittoFeatureRenderer';
 import { SatelliteSiteRenderer, SATELLITE_SITE_KIND } from './SatelliteSiteRenderer';
+import { ArmadaInviteRenderer } from './ArmadaInviteRenderer';
 import { ARTICLE_PREVIEW_KINDS } from '../../../helpers/addressableKinds';
 import { ArticlePreviewRenderer } from './ArticlePreviewRenderer';
 import { CollapsibleManager } from '../note-features/CollapsibleManager';
@@ -250,8 +252,8 @@ export class RepostRenderer {
    * Dispatch an embedded (or just-fetched) inner event through the rendering
    * pipeline. Three branches:
    *
-   *  1. Bespoke preview-card kinds (Ditto geocache, Satellite site) — kept
-   *     inline because they don't have a Processor/Renderer pair.
+   *  1. Bespoke preview-card kinds (Ditto geocache, Satellite site, Armada
+   *     invite bundle) — kept inline because they don't have a Processor/Renderer pair.
    *  2. Addressable article-preview kinds (article / Zapstore app / live stream)
    *     — routed through {@link ArticlePreviewRenderer.renderFromEvent}.
    *  3. Everything else (incl. Follow Packs) — processed through the standard
@@ -278,6 +280,18 @@ export class RepostRenderer {
       satelliteContainer.className = 'repost-article-container';
       satelliteContainer.appendChild(SatelliteSiteRenderer.render(innerEvent));
       repostDiv.appendChild(satelliteContainer);
+      return;
+    }
+
+    // (1) Armada encrypted community invite bundle (kind 33301, CORD-05):
+    //     content is NIP-44-encrypted. A repost carries only the bundle event,
+    //     not the armada.buzz URL with its `#fragment`, so we render the
+    //     static "Encrypted community" card with an open-in-Armada action.
+    if (innerEvent.kind === 33301) {
+      const armadaContainer = document.createElement('div');
+      armadaContainer.className = 'repost-article-container';
+      armadaContainer.appendChild(ArmadaInviteRenderer.renderFromEvent(innerEvent));
+      repostDiv.appendChild(armadaContainer);
       return;
     }
 

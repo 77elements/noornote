@@ -669,4 +669,18 @@
     <path d="M16 7h6v6" />
     <path d="m22 7-8.5 8.5-5-5L2 17" />
   </symbol>
+  <symbol id="icon-armada" viewBox="0 0 256 256" fill="none">
+    <!-- Armada crest (Concord's flagship client): a cut-corner vessel silhouette
+         with an advancing-"A" blade. Single-color, uses currentColor so it tints
+         to the active theme. Mirrors public/logo-mark.svg. Used as the fallback
+         icon for encrypted community invite cards when no decrypted icon is
+         available. Path data from Ditto's lib/components/ArmadaInviteEmbed.tsx. -->
+    <path d="M64 16 H232 a8 8 0 0 1 8 8 V192 L192 240 H24 a8 8 0 0 1 -8 -8 V64 Z"
+          fill="none" stroke="currentColor" stroke-width="12" stroke-linejoin="round" />
+    <path d="M128 56 L180 162 H158 L128 100 L98 162 H76 Z" fill="currentColor" />
+    <g stroke="currentColor" stroke-linecap="round" opacity="0.55">
+      <path d="M88 184 H168" stroke-width="7" />
+      <path d="M104 200 H152" stroke-width="5" opacity="0.7" />
+    </g>
+  </symbol>
 </svg>

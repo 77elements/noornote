@@ -39,7 +39,7 @@ export class OriginalNoteRenderer {
             if (ref.type === 'addr') {
               const container = document.createElement('div');
               marker.replaceWith(container);
-              quotedNoteRenderer.renderAddressableReference(ref.fullMatch, container);
+              quotedNoteRenderer.renderAddressableReference(ref.fullMatch, container, ref.fragment);
             } else {
               // Regular note quote handling. Parent author = the note that
               // CONTAINS this quote — passed through so QuoteOrchestrator can
