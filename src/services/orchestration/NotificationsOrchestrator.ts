@@ -32,13 +32,13 @@ import { USER_CONTENT_KINDS } from '../../types/nostr';
 import { getCacheSize } from '../../helpers/LRUCache';
 import { isDataSaverEnabled } from '../DataSaverService';
 
-export type NotificationType = 'mention' | 'reply' | 'thread-reply' | 'quote' | 'repost' | 'reaction' | 'zap' | 'zap-reply' | 'article' | 'mutual_unfollow' | 'mutual_new' | 'follower_new' | 'hashtag' | 'poll_vote' | 'highlight' | 'badge-award' | 'dhikr_round' | 'dhikr_commit' | 'dhikr_complete' | 'nostrord' | 'image-tag';
+  export type NotificationType = 'mention' | 'reply' | 'thread-reply' | 'quote' | 'repost' | 'reaction' | 'zap' | 'zap-reply' | 'article' | 'mutual_unfollow' | 'mutual_new' | 'follower_new' | 'hashtag' | 'poll_vote' | 'highlight' | 'badge-award' | 'dhikr_round' | 'dhikr_commit' | 'dhikr_complete' | 'nostrord' | 'armada' | 'image-tag';
 
 export interface NotificationEvent {
   event: NostrEvent;
   type: NotificationType;
   timestamp: number;
-  meta?: { hashtag?: string; count?: number; groupName?: string; isOwn?: boolean; groupRelay?: string }; // hashtag + nostrord notifications
+  meta?: { hashtag?: string; count?: number; groupName?: string; isOwn?: boolean; groupRelay?: string; naddr?: string }; // hashtag + nostrord + armada notifications
 }
 
 export class NotificationsOrchestrator extends Orchestrator {
@@ -192,6 +192,15 @@ export class NotificationsOrchestrator extends Orchestrator {
     // Listen for Nostrord NIP-29 group activity notifications (nostrord addon)
     this.eventBus.on('nostrord-notification:new', (data: { event: NostrEvent; groupName: string; mine?: boolean; groupRelay?: string }) => {
       this.handleNostrordNotification(data);
+    });
+
+    // Listen for Armada (Concord) encrypted-community activity notifications
+    // (nostrord addon — Armada runs alongside NIP-29 under the same addon's
+    // "Group Chats" umbrella). Sprint 4 emits these once the gift-wrap
+    // polling pipeline is live; the handler exists now so the pipeline just
+    // needs to fire the event.
+    this.eventBus.on('armada-notification:new', (data: { event: NostrEvent; groupName: string; mine?: boolean; naddr?: string; count?: number }) => {
+      this.handleArmadaNotification(data);
     });
 
     // Listen for hashtag notification events
@@ -1289,6 +1298,35 @@ export class NotificationsOrchestrator extends Orchestrator {
     if (!this.addNotification(notification)) return;
 
     this.systemLogger.info('NotificationsOrchestrator', 'New activity in a Nostrord group');
+
+    this.eventBus.emit('notifications:badge-update');
+    this.eventBus.emit('notifications:new', { notification });
+  }
+
+  /**
+   * Handle Armada (Concord) encrypted-community activity notifications.
+   *
+   * Mirrors `handleNostrordNotification` but with the `'armada'` type and an
+   * naddr-based deep link (instead of the Nostrord relay-host + groupId
+   * scheme). The notification count travels in meta for the body phrasing
+   * ("3 new messages" vs. "Someone posted").
+   */
+  private handleArmadaNotification(data: { event: NostrEvent; groupName: string; mine?: boolean; naddr?: string; count?: number }): void {
+    const notification: NotificationEvent = {
+      event: data.event,
+      type: 'armada',
+      timestamp: data.event.created_at,
+      meta: {
+        groupName: data.groupName,
+        isOwn: data.mine === true,
+        ...(data.naddr ? { naddr: data.naddr } : {}),
+        ...(typeof data.count === 'number' ? { count: data.count } : {}),
+      }
+    };
+
+    if (!this.addNotification(notification)) return;
+
+    this.systemLogger.info('NotificationsOrchestrator', 'New activity in an Armada community');
 
     this.eventBus.emit('notifications:badge-update');
     this.eventBus.emit('notifications:new', { notification });

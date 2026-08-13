@@ -40,5 +40,5 @@ export const ADDON_REGISTRY: AddonRegistryEntry[] = [
   { id: 'note-taking',           name: 'Note taking',            route: '/addons/note-taking',           viewId: 'addon-note-taking' },
   { id: 'bulk-delete',           name: 'Bulk delete',            route: '/addons/bulk-delete',           viewId: 'addon-bulk-delete' },
   { id: 'nostr-majlis',          name: 'Nostr-Majlis',           route: '/addons/nostr-majlis',          viewId: 'addon-nostr-majlis' },
-  { id: 'nostrord',              name: 'Nostrord',               route: '/addons/nostrord',              viewId: 'addon-nostrord' },
+  { id: 'nostrord',              name: 'Group Chats',             route: '/addons/nostrord',              viewId: 'addon-nostrord' },
 ];

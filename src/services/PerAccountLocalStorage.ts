@@ -156,6 +156,13 @@ export const StorageKeys = {
   NOSTRORD_LAST_CHECK: 'noornote_nostrord_last_check_map',
   NOSTRORD_NOTIFY_OWN_POSTS: 'noornote_nostrord_notify_own_posts_map',
 
+  // Armada — Concord encrypted-community activity notifications (per-account)
+  // Same `_map` suffix convention as NOSTRORD_* above. Sprint 1 only stores
+  // the master toggle; Sprint 2 will add an IndexedDB-backed community
+  // registry (`noornote_armada_<npub>`) for tracked invites.
+  ARMADA_ENABLED: 'noornote_armada_enabled_map',
+  ARMADA_LAST_CHECK: 'noornote_armada_last_check_map',
+
   // Quick Zap toggle (per-account)
   QUICK_ZAP_ENABLED: 'noornote_quick_zap_enabled_map',
 

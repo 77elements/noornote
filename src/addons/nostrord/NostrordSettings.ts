@@ -4,12 +4,13 @@ import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { AddonLoader } from '../AddonLoader';
-import { isNostrordEnabled, setNostrordEnabled } from './index';
+import { isNostrordEnabled, setNostrordEnabled, isArmadaEnabled, setArmadaEnabled } from './index';
 import { NOSTRORD_INTERVAL_OPTIONS, NOSTRORD_DEFAULT_INTERVAL_MS } from './NostrordService';
 import type { NostrordRuntime } from './runtime';
 
 export class NostrordSettings extends SettingsSection {
   private enableSwitch: Switch | null = null;
+  private armadaSwitch: Switch | null = null;
   private notifyOwnSwitch: Switch | null = null;
   private eventBus: TypedEventBus;
   private storage: PerAccountLocalStorage;
@@ -27,12 +28,19 @@ export class NostrordSettings extends SettingsSection {
 
     this.contentZone = parentContainer.querySelector('[data-addon-content="nostrord"]');
 
-    const enabled = isNostrordEnabled();
+    const nostrordEnabled = isNostrordEnabled();
+    const armadaEnabled = isArmadaEnabled();
 
     this.enableSwitch = new Switch({
       label: '',
-      checked: enabled,
+      checked: nostrordEnabled,
       onChange: (checked) => { void this.handleToggle(checked); }
+    });
+
+    this.armadaSwitch = new Switch({
+      label: '',
+      checked: armadaEnabled,
+      onChange: (checked) => { void this.handleArmadaToggle(checked); }
     });
 
     contentContainer.innerHTML = `
@@ -43,17 +51,36 @@ export class NostrordSettings extends SettingsSection {
           NoorNote checks your groups on a schedule and, if anything was posted in that window, drops a
           single low-priority notification per group. A quiet group stays quiet.</p>
       </div>
+      <div class="setting">
+        <span class="setting__label">Enable Armada <span class="form__note">(beta)</span></span>
+        <div class="setting__control">${this.armadaSwitch.render()}</div>
+        <p class="setting__desc">Same idea, for Armada (Concord) end-to-end encrypted communities.
+          Toggle this on to opt in to future activity notifications from your tracked Armada communities.
+          NoorNote already shows Armada invite cards inline in your feed; community-message polling is in
+          active development.</p>
+      </div>
     `;
     this.enableSwitch.setupEventListeners(contentContainer);
+    this.armadaSwitch.setupEventListeners(contentContainer);
 
-    this.renderPanel(enabled);
+    // The check-frequency + notify-own settings below are shared across all
+    // enabled providers (today: Nostrord + Armada; tomorrow: Meshcat etc.).
+    // Render them if at least one provider is on.
+    this.renderPanel(nostrordEnabled || armadaEnabled);
   }
 
   private async handleToggle(checked: boolean): Promise<void> {
     setNostrordEnabled(checked);
     this.eventBus.emit('nostrord:addon-toggle', { enabled: checked });
     ToastService.show(checked ? 'Nostrord enabled' : 'Nostrord disabled', 'success');
-    this.renderPanel(checked);
+    this.renderPanel(isNostrordEnabled() || isArmadaEnabled());
+  }
+
+  private async handleArmadaToggle(checked: boolean): Promise<void> {
+    setArmadaEnabled(checked);
+    this.eventBus.emit('armada:addon-toggle', { enabled: checked });
+    ToastService.show(checked ? 'Armada enabled (polling coming soon)' : 'Armada disabled', 'success');
+    this.renderPanel(isNostrordEnabled() || isArmadaEnabled());
   }
 
   private getCurrentInterval(): number {
@@ -99,8 +126,9 @@ export class NostrordSettings extends SettingsSection {
       <section class="section nostrord-settings">
         <div class="setting">
           <label class="setting__label">Check frequency</label>
-          <p class="setting__desc">How often to look for new activity in your groups. This window is also
-            the quiet period: after one notification, the same group won't notify again until the next check.</p>
+          <p class="setting__desc">How often to look for new activity across all your enabled group chat
+            providers (Nostrord, Armada, and future ones). This window is also the quiet period: after one
+            notification, the same group won't notify again until the next check.</p>
           <div class="mode-options">
             ${optionsHtml}
           </div>
@@ -109,7 +137,8 @@ export class NostrordSettings extends SettingsSection {
           <span class="setting__label">Notify me about my own posts</span>
           <div class="setting__control">${this.notifyOwnSwitch.render()}</div>
           <p class="setting__desc">Also get the heads-up when you post to a group yourself — a handy
-            cross-device confirmation that your message went through. Turn off to only hear about others.</p>
+            cross-device confirmation that your message went through. Turn off to only hear about others.
+            Applies to every enabled provider.</p>
         </div>
       </section>
     `;
@@ -132,6 +161,8 @@ export class NostrordSettings extends SettingsSection {
   public unmount(): void {
     this.enableSwitch?.destroy();
     this.enableSwitch = null;
+    this.armadaSwitch?.destroy();
+    this.armadaSwitch = null;
     this.notifyOwnSwitch?.destroy();
     this.notifyOwnSwitch = null;
     this.contentZone = null;

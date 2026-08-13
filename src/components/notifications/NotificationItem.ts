@@ -31,7 +31,7 @@ export interface NotificationItemOptions {
   event: NostrEvent;
   type: NotificationType;
   timestamp: number;
-  meta?: { hashtag?: string; count?: number; groupName?: string; isOwn?: boolean; groupRelay?: string };
+  meta?: { hashtag?: string; count?: number; groupName?: string; isOwn?: boolean; groupRelay?: string; naddr?: string };
 }
 
 export class NotificationItem {
@@ -114,8 +114,9 @@ export class NotificationItem {
     const identityContainer = item.querySelector('.notification-item__user-identity');
     if (identityContainer) {
       if (this.options.type === 'dhikr_round' || this.options.type === 'dhikr_commit'
-          || this.options.type === 'dhikr_complete' || this.options.type === 'nostrord') {
-        // Community dhikr + Nostrord notifications are anonymous by design — no author at all.
+          || this.options.type === 'dhikr_complete' || this.options.type === 'nostrord'
+          || this.options.type === 'armada') {
+        // Community dhikr + Nostrord + Armada notifications are anonymous by design — no author at all.
         // The action text is self-contained ("Someone posted to …"), so drop the identity slot.
         identityContainer.remove();
       } else if (this.options.type === 'poll_vote') {
@@ -392,6 +393,12 @@ export class NotificationItem {
       case 'nostrord':
         return '💬';
 
+      case 'armada':
+        // Armada crest (single-color, inherits currentColor) — same icon the
+        // 33301 invite card uses as a fallback. Visually distinguishes Armada
+        // notifications from Nostrord's speech-bubble.
+        return '🛡️';
+
       default:
         return '🔔';
     }
@@ -483,6 +490,14 @@ export class NotificationItem {
         const name = this.options.meta?.groupName;
         const where = name ? `the Nostrord group "${name}"` : 'a Nostrord group';
         return this.options.meta?.isOwn ? `You posted to ${where}` : `Someone posted to ${where}`;
+      }
+      case 'armada': {
+        const name = this.options.meta?.groupName;
+        const count = this.options.meta?.count;
+        const where = name ? `the Armada community "${name}"` : 'an Armada community';
+        if (this.options.meta?.isOwn) return `You posted to ${where}`;
+        if (typeof count === 'number' && count > 1) return `${count} new messages in ${where}`;
+        return `New activity in ${where}`;
       }
       case 'highlight': return `highlighted your ${target}`;
       case 'image-tag': return 'tagged you in an image';
@@ -594,7 +609,8 @@ export class NotificationItem {
     if (this.options.type === 'mutual_unfollow' || this.options.type === 'mutual_new'
         || this.options.type === 'follower_new'
         || this.options.type === 'dhikr_round' || this.options.type === 'dhikr_commit'
-        || this.options.type === 'dhikr_complete' || this.options.type === 'nostrord') {
+        || this.options.type === 'dhikr_complete' || this.options.type === 'nostrord'
+        || this.options.type === 'armada') {
       return '';
     }
 
@@ -1019,6 +1035,20 @@ export class NotificationItem {
       const relayHost = this.options.meta?.groupRelay;
       if (groupId && relayHost) {
         window.open(`https://web.nostrord.com/#/g/${relayHost}/${groupId}`, '_blank', 'noopener,noreferrer');
+      }
+      return;
+    }
+
+    // Armada: open the invite-bundle naddr on armada.buzz (external). NoorNote
+    // currently has no in-app Armada community reader; until Sprint 2 of the
+    // Armada addon ships, the only action is to deep-link into Armada itself.
+    // The naddr lives in meta (set by handleArmadaNotification); the synthetic
+    // event's `h` tag carries it too as a fallback.
+    if (type === 'armada') {
+      const naddr = this.options.meta?.naddr
+        ?? this.options.event.tags.find(t => t[0] === 'h')?.[1];
+      if (naddr) {
+        window.open(`https://armada.buzz/invite/${naddr}`, '_blank', 'noopener,noreferrer');
       }
       return;
     }

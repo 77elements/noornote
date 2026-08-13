@@ -202,6 +202,19 @@ export interface NostrordNotificationNewPayload {
   groupRelay?: string;
 }
 
+// ── Armada (Concord encrypted-community activity) ────────────
+
+export interface ArmadaNotificationNewPayload {
+  event: NostrEvent;
+  groupName: string;
+  /** True when the fresh activity was authored solely by the logged-in user. */
+  mine?: boolean;
+  /** Bare invite-bundle naddr (kind 33301) for the "Open in Armada" deep link. */
+  naddr?: string;
+  /** How many fresh gift wraps were observed in this poll window. */
+  count?: number;
+}
+
 // ── Hashtag ──────────────────────────────────────────────────
 
 export interface HashtagSubscriptionUpdatedPayload {
@@ -369,6 +382,8 @@ export interface AppEvents {
   'follower-notification:new': FollowerNotificationNewPayload;
   'dhikr-notification:new': DhikrNotificationNewPayload;
   'nostrord-notification:new': NostrordNotificationNewPayload;
+  'armada-notification:new': ArmadaNotificationNewPayload;
+  'armada:addon-toggle': { enabled: boolean };
 
   // ── Hashtag Subscriptions ──────────────────
   'hashtag-subscription:updated': HashtagSubscriptionUpdatedPayload;
