@@ -20,8 +20,8 @@ export class GroupChatsAddonView extends View {
         Currently supports Nostrord (NIP-29) and Armada (Concord).
       </p>
       <section class="section" id="group-chats-settings-content"></section>
-      <div data-addon-content="group-chats"></div>
       <div data-addon-content="armada-communities"></div>
+      <div data-addon-content="group-chats"></div>
     `;
     this.settings = new GroupChatsSettings();
     this.settings.mount(this.container);

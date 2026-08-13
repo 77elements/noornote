@@ -60,10 +60,9 @@ export class GroupChatsSettings extends SettingsSection {
       <div class="setting">
         <span class="setting__label">Enable Armada <span class="form__note">(beta)</span></span>
         <div class="setting__control">${this.armadaSwitch.render()}</div>
-        <p class="setting__desc">Same idea, for Armada (Concord) end-to-end encrypted communities.
-          Toggle this on to opt in to future activity notifications from your tracked Armada communities.
-          NoorNote already shows Armada invite cards inline in your feed; community-message polling is in
-          active development.</p>
+        <p class="setting__desc">Armada communities are end-to-end encrypted (Concord protocol).
+          Unlike Nostrord, there is no public membership list — you need to add each community
+          manually by pasting its invite link below.</p>
       </div>
     `;
     this.enableSwitch.setupEventListeners(contentContainer);
@@ -87,7 +86,7 @@ export class GroupChatsSettings extends SettingsSection {
   private async handleArmadaToggle(checked: boolean): Promise<void> {
     setArmadaEnabled(checked);
     this.eventBus.emit('armada:addon-toggle', { enabled: checked });
-    ToastService.show(checked ? 'Armada enabled' : 'Armada disabled', 'success');
+    ToastService.show(checked ? 'Armada enabled — add communities below' : 'Armada disabled', 'success');
     this.renderPanel(isGroupChatsEnabled() || isArmadaEnabled());
     this.renderArmadaCommunities(checked);
   }
@@ -134,7 +133,7 @@ export class GroupChatsSettings extends SettingsSection {
     this.contentZone.innerHTML = `
       <section class="section group-chats-settings">
         <div class="setting">
-          <label class="setting__label">Check frequency</label>
+          <label class="setting__label">Check frequency for all supported group clients</label>
           <p class="setting__desc">How often to look for new activity across all your enabled group chat
             providers (GroupChats, Armada, and future ones). This window is also the quiet period: after one
             notification, the same group won't notify again until the next check.</p>
@@ -179,7 +178,7 @@ export class GroupChatsSettings extends SettingsSection {
 
     const listHtml = communities.length === 0
       ? `<p class="form__note">No tracked communities yet. Paste an Armada invite link below to start tracking activity.</p>`
-      : `<ul class="ui-list">${
+      : `<ul class="ui-list tracked-armada-communities">${
           communities.map(c => `
             <li class="ui-list__item" data-armada-community="${escapeHtmlAttr(c.naddr)}">
               <div class="armada-community-row">
@@ -257,6 +256,11 @@ export class GroupChatsSettings extends SettingsSection {
       const result = await resolveInvitePreview(trimmed);
       if (result.kind === 'error') {
         ToastService.show(result.reason, 'error');
+        return;
+      }
+      const existing = ArmadaCommunityRegistry.getInstance().get(result.community.naddr);
+      if (existing) {
+        ToastService.show(`"${existing.name}" is already being tracked.`, 'success');
         return;
       }
       ArmadaCommunityRegistry.getInstance().add(result.community);

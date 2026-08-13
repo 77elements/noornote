@@ -4,12 +4,23 @@
 @use '../abstracts/variables' as *;
 @use '../base/typography' as *;
 
+.tracked-armada-communities {
+  list-style-type: none;
+  padding: calc(2 * $gap) 0;
+  margin: 0;
+}
+
+.tracked-armada-communities .ui-list__item {
+  padding: 0;
+}
+
 .armada-community-row {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: $gap;
   width: 100%;
+  padding: 0.5rem 0 0.5rem 0.5rem;
 
   &__icon {
     display: flex;
