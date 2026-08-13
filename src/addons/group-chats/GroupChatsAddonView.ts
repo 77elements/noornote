@@ -21,6 +21,7 @@ export class GroupChatsAddonView extends View {
       </p>
       <section class="section" id="group-chats-settings-content"></section>
       <div data-addon-content="group-chats"></div>
+      <div data-addon-content="armada-communities"></div>
     `;
     this.settings = new GroupChatsSettings();
     this.settings.mount(this.container);

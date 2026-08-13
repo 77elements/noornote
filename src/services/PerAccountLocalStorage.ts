@@ -158,10 +158,10 @@ export const StorageKeys = {
 
   // Armada — Concord encrypted-community activity notifications (per-account)
   // Same `_map` suffix convention as GROUP_CHATS_* above. Sprint 1 only stores
-  // the master toggle; Sprint 2 will add an IndexedDB-backed community
-  // registry (`noornote_armada_<npub>`) for tracked invites.
+  // the master toggle; Sprint 2 adds the community registry (tracked invites).
   ARMADA_ENABLED: 'noornote_armada_enabled_map',
   ARMADA_LAST_CHECK: 'noornote_armada_last_check_map',
+  ARMADA_COMMUNITIES: 'noornote_armada_communities_map',
 
   // Quick Zap toggle (per-account)
   QUICK_ZAP_ENABLED: 'noornote_quick_zap_enabled_map',

@@ -1,0 +1,62 @@
+// Armada community registry — settings page list rows + add input.
+// Rendered inside GroupChatsSettings when the Armada toggle is on (Sprint 2).
+
+@use '../abstracts/variables' as *;
+@use '../base/typography' as *;
+
+.armada-community-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: $gap;
+  width: 100%;
+
+  &__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--color-4) 15%, transparent);
+    border-radius: $radius-xl;
+    color: var(--color-4);
+    flex-shrink: 0;
+
+    svg { width: 1.25rem; height: 1.25rem; }
+
+    &--loaded svg { display: none; }
+  }
+
+  &__info {
+    min-width: 0;
+  }
+
+  &__name {
+    display: block;
+    font-weight: 600;
+    color: var(--color-5);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__meta {
+    @extend %small;
+    display: block;
+    font-weight: 400;
+    color: $text-alpha-heavy;
+    margin-top: calc($gap / 8);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__remove {
+    flex-shrink: 0;
+    opacity: 0.5;
+    transition: opacity $transition-fast;
+
+    &:hover { opacity: 1; }
+  }
+}
