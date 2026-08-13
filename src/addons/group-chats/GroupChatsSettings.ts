@@ -159,6 +159,7 @@ export class GroupChatsSettings extends SettingsSection {
         this.storage.set(StorageKeys.GROUP_CHATS_POLL_INTERVAL, intervalMs);
         const rt = AddonLoader.getInstance().getRuntime<GroupChatsRuntime>('group-chats');
         rt?.service?.setPollingInterval(intervalMs);
+        rt?.armadaService?.setPollingInterval(intervalMs);
         const label = GROUP_CHATS_INTERVAL_OPTIONS.find(o => o.value === intervalMs)?.label ?? 'updated';
         ToastService.show(`Group Chats: ${label.toLowerCase()}`, 'success');
       });
