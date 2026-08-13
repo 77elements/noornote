@@ -28,13 +28,15 @@ const VSK_INVITE_LIVE = '6';
 /**
  * The public-invite bundle decrypt key, derived from the link's unlock token
  * (Concord derive.ts §A): `HKDF-SHA256(token, info="concord/invite-key"‖0x00‖ZERO32)`.
+ *
+ * Exported so the Armada addon's gift-wrap decryptor can reuse the SAME key
+ * (Concord shares one key across bundle + gift wraps + seals — "key
+ * possession = membership").
  */
-function inviteBundleKey(token: Uint8Array): Uint8Array {
+export function inviteBundleKey(token: Uint8Array): Uint8Array {
   const label = new TextEncoder().encode('concord/invite-key');
   const info = new Uint8Array(label.length + 1 + 32); // label ‖ 0x00 ‖ 32-byte zero id
   info.set(label, 0);
-  // info[label.length] = 0x00 (separator) — already zero-filled
-  // the trailing 32 bytes are the ZERO32 scope id — already zero-filled
   return hkdf(sha256, token, new Uint8Array(0), info, 32);
 }
 
