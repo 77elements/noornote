@@ -1,18 +1,18 @@
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 
-const STORAGE_KEY = 'noornote_nostrord_enabled';
+const STORAGE_KEY = 'noornote_group_chats_enabled';
 const ARMADA_STORAGE_KEY = 'noornote_armada_enabled';
 
-export function isNostrordEnabled(): boolean {
+export function isGroupChatsEnabled(): boolean {
   const perAccount = PerAccountLocalStorage.getInstance().get<boolean | null>(
-    StorageKeys.NOSTRORD_ENABLED, null
+    StorageKeys.GROUP_CHATS_ENABLED, null
   );
   if (perAccount !== null) return perAccount;
   return localStorage.getItem(STORAGE_KEY) === 'true';
 }
 
-export function setNostrordEnabled(enabled: boolean): void {
-  PerAccountLocalStorage.getInstance().set(StorageKeys.NOSTRORD_ENABLED, enabled);
+export function setGroupChatsEnabled(enabled: boolean): void {
+  PerAccountLocalStorage.getInstance().set(StorageKeys.GROUP_CHATS_ENABLED, enabled);
   localStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
 }
 

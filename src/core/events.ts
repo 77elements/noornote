@@ -418,7 +418,7 @@ export interface AppEvents {
   'marketplace:addon-toggle': AddonTogglePayload;
   'note-taking:addon-toggle': AddonTogglePayload;
   'nostr-majlis:addon-toggle': AddonTogglePayload;
-  'nostrord:addon-toggle': AddonTogglePayload;
+  'group-chats:addon-toggle': AddonTogglePayload;
   'profile-recognition:addon-toggle': AddonTogglePayload;
   'scheduled-posts:addon-toggle': AddonTogglePayload;
   'tribes:addon-toggle': AddonTogglePayload;

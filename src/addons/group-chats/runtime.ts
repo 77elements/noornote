@@ -1,5 +1,5 @@
 /**
- * Nostrord addon runtime — also hosts the Armada (Concord) notifier.
+ * GroupChats addon runtime — also hosts the Armada (Concord) notifier.
  *
  * Watches the NIP-29 groups the user belongs to (their kind:10009 list) and
  * raises a single in-app notification per group whenever there was new
@@ -12,23 +12,23 @@
  * toggle is ON, this runtime logs the opt-in via diagLog so we can see in
  * diagnostics that a user is waiting for the polling pipeline (Sprints 2–4)
  * to land. No `ArmadaService` exists yet — adding it later is a drop-in:
- * gate the import + start on `isArmadaEnabled()` (mirroring the Nostrord
+ * gate the import + start on `isArmadaEnabled()` (mirroring the GroupChats
  * branch below) and the existing `'armada-notification:new'` event handlers
  * in NotificationsOrchestrator pick up the emits with zero UI changes.
  */
 
 import type { AddonContext, AddonRuntime } from '../AddonLoader';
-import type { NostrordService as Service } from './NostrordService';
+import type { GroupChatsService as Service } from './GroupChatsService';
 import { isArmadaEnabled } from './index';
 import { diagLog } from '../../services/DiagnosticLogger';
 
-export class NostrordRuntime implements AddonRuntime {
+export class GroupChatsRuntime implements AddonRuntime {
   public service: Service | null = null;
 
   async init(_ctx: AddonContext): Promise<void> {
     if (this.service) return; // idempotent
-    const { NostrordService } = await import('./NostrordService');
-    this.service = NostrordService.getInstance();
+    const { GroupChatsService } = await import('./GroupChatsService');
+    this.service = GroupChatsService.getInstance();
     await this.service.start();
 
     // Armada opt-in beacon. Sprint 1 status: UI toggle is live, polling is
@@ -47,4 +47,4 @@ export class NostrordRuntime implements AddonRuntime {
   }
 }
 
-export default new NostrordRuntime();
+export default new GroupChatsRuntime();

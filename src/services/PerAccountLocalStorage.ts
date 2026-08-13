@@ -148,16 +148,16 @@ export const StorageKeys = {
   FOLLOWER_RECENCY_DAYS: 'noornote_follower_recency_days_map',
   FOLLOWER_LAST_SWEEP_AT: 'noornote_follower_last_sweep_at_map',
 
-  // Nostrord — NIP-29 group activity notifications (per-account)
+  // GroupChats — NIP-29 group activity notifications (per-account)
   // NOTE: the `_map` suffix is required (see the FOLLOWER_NOTIFICATION_ENABLED note above) — the
-  // raw global fallback key in nostrord/index.ts must never collide with this per-account map.
-  NOSTRORD_ENABLED: 'noornote_nostrord_enabled_map',
-  NOSTRORD_POLL_INTERVAL: 'noornote_nostrord_poll_interval_map',
-  NOSTRORD_LAST_CHECK: 'noornote_nostrord_last_check_map',
-  NOSTRORD_NOTIFY_OWN_POSTS: 'noornote_nostrord_notify_own_posts_map',
+  // raw global fallback key in group-chats/index.ts must never collide with this per-account map.
+  GROUP_CHATS_ENABLED: 'noornote_group_chats_enabled_map',
+  GROUP_CHATS_POLL_INTERVAL: 'noornote_group_chats_poll_interval_map',
+  GROUP_CHATS_LAST_CHECK: 'noornote_group_chats_last_check_map',
+  GROUP_CHATS_NOTIFY_OWN_POSTS: 'noornote_group_chats_notify_own_posts_map',
 
   // Armada — Concord encrypted-community activity notifications (per-account)
-  // Same `_map` suffix convention as NOSTRORD_* above. Sprint 1 only stores
+  // Same `_map` suffix convention as GROUP_CHATS_* above. Sprint 1 only stores
   // the master toggle; Sprint 2 will add an IndexedDB-backed community
   // registry (`noornote_armada_<npub>`) for tracked invites.
   ARMADA_ENABLED: 'noornote_armada_enabled_map',

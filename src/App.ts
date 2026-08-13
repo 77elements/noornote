@@ -358,7 +358,7 @@ export class App {
     // Tab-addressable variant so a dhikr notification can deep-link straight to the Community Dhikr tab.
     this.registerRoute('/addons/nostr-majlis/:tab',     'addon-nostr-majlis',          'addon-nostr-majlis',          'adv', true,
       (params) => params.tab);
-    this.registerRoute('/addons/nostrord',              'addon-nostrord',              'addon-nostrord',              'adv', true);
+    this.registerRoute('/addons/group-chats',           'addon-group-chats',           'addon-group-chats',           'adv', true);
     // /addons (no slug) → redirect to first addon
     this.router.register('/addons', () => this.router.navigate('/addons/bookmarks'));
     this.registerMarketplaceRoutes();

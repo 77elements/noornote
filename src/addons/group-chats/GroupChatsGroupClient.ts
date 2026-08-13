@@ -1,5 +1,5 @@
 /**
- * NostrordGroupClient — an ISOLATED NDK instance dedicated to NIP-29 group relays.
+ * GroupChatsGroupClient — an ISOLATED NDK instance dedicated to NIP-29 group relays.
  *
  * ARCHITECTURE EXCEPTION (user-approved): the project rule is "never import NDK directly, go
  * through NostrTransport". Here we deliberately spin up a second, self-contained NDK instance
@@ -25,7 +25,7 @@ const NIP42_AUTH_KIND = 22242;
 // Group relays (e.g. groups.0xchat.com) are slow to reach EOSE behind NIP-42 AUTH; give them room.
 const FETCH_TIMEOUT_MS = 12000;
 
-export class NostrordGroupClient {
+export class GroupChatsGroupClient {
   private ndk: NDK | null = null;
   private connectedRelays = new Set<string>();
   private destroyed = false;
@@ -76,10 +76,10 @@ export class NostrordGroupClient {
         pubkey,
       };
       const signed = await auth.signEvent(draft) as NostrEvent;
-      diagLog('addons', 'nostrord: signed relay AUTH', { relay: relay.url });
+      diagLog('addons', 'group-chats: signed relay AUTH', { relay: relay.url });
       return new NDKEvent(this.ndk, signed);
     } catch (error) {
-      diagLog('addons', 'nostrord: relay AUTH failed', { relay: relay.url, error: String(error) });
+      diagLog('addons', 'group-chats: relay AUTH failed', { relay: relay.url, error: String(error) });
       return false;
     }
   }
@@ -139,7 +139,7 @@ export class NostrordGroupClient {
           }
         );
       } catch (error) {
-        diagLog('addons', 'nostrord: activity fetch failed', { relay: relayUrl, error: String(error) });
+        diagLog('addons', 'group-chats: activity fetch failed', { relay: relayUrl, error: String(error) });
         finish();
       }
     });
@@ -168,7 +168,7 @@ export class NostrordGroupClient {
         if (id && name) names[id] = name;
       }
     } catch (error) {
-      diagLog('addons', 'nostrord: metadata fetch failed', { relay: relayUrl, error: String(error) });
+      diagLog('addons', 'group-chats: metadata fetch failed', { relay: relayUrl, error: String(error) });
     }
     return names;
   }

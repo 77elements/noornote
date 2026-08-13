@@ -1,5 +1,5 @@
 /**
- * NostrordService
+ * GroupChatsService
  * Polls the NIP-29 groups the user belongs to and raises ONE in-app notification per group that
  * saw new activity within a poll window. The poll interval IS the debounce window: each tick asks
  * "was there anything since the last tick?" — 1 post or 100 posts in that window produce a single
@@ -9,7 +9,7 @@
  * Group membership is read from the user's kind:10009 list (NIP-51 simple groups) on their normal
  * app relays; each group tag carries its host relay, so groups are polled per relay. Reading the
  * group events themselves (incl. private/closed groups via NIP-42 AUTH) goes through the isolated
- * NostrordGroupClient, never the main transport.
+ * GroupChatsGroupClient, never the main transport.
  *
  * Anchor discipline (the reason a slow group relay no longer swallows posts): a group's anchor is
  * only ever advanced to a timestamp we ACTUALLY read — never to "now". An empty/failed fetch on an
@@ -26,7 +26,7 @@ import { NostrTransport } from '../../services/transport/NostrTransport';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { diagLog } from '../../services/DiagnosticLogger';
-import { NostrordGroupClient } from './NostrordGroupClient';
+import { GroupChatsGroupClient } from './GroupChatsGroupClient';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 interface GroupRef {
@@ -37,21 +37,21 @@ interface GroupRef {
 }
 
 /** Poll interval options offered in settings (milliseconds). 30 min is the default. */
-export const NOSTRORD_INTERVAL_OPTIONS = [
+export const GROUP_CHATS_INTERVAL_OPTIONS = [
   { value: 5 * 60 * 1000, label: 'Every 5 minutes' },
   { value: 15 * 60 * 1000, label: 'Every 15 minutes' },
   { value: 30 * 60 * 1000, label: 'Every 30 minutes' },
   { value: 60 * 60 * 1000, label: 'Every 60 minutes' },
   { value: 180 * 60 * 1000, label: 'Every 180 minutes' },
 ];
-export const NOSTRORD_DEFAULT_INTERVAL_MS = 30 * 60 * 1000;
+export const GROUP_CHATS_DEFAULT_INTERVAL_MS = 30 * 60 * 1000;
 
 const INITIAL_DELAY_MS = 45 * 1000; // let login fetches settle before the first poll
 
-export class NostrordService {
-  private static instance: NostrordService | null = null;
+export class GroupChatsService {
+  private static instance: GroupChatsService | null = null;
 
-  private client: NostrordGroupClient;
+  private client: GroupChatsGroupClient;
   private systemLogger: SystemLogger;
   private eventBus: TypedEventBus;
   private storage: PerAccountLocalStorage;
@@ -66,33 +66,33 @@ export class NostrordService {
   private nameCache: Record<string, string> = {};
 
   private constructor() {
-    this.client = new NostrordGroupClient();
+    this.client = new GroupChatsGroupClient();
     this.systemLogger = SystemLogger.getInstance();
     this.eventBus = TypedEventBus.getInstance();
     this.storage = PerAccountLocalStorage.getInstance();
     this.intervalMs = this.loadInterval();
   }
 
-  public static getInstance(): NostrordService {
-    if (!NostrordService.instance) {
-      NostrordService.instance = new NostrordService();
+  public static getInstance(): GroupChatsService {
+    if (!GroupChatsService.instance) {
+      GroupChatsService.instance = new GroupChatsService();
     }
-    return NostrordService.instance;
+    return GroupChatsService.instance;
   }
 
   public loadInterval(): number {
-    return this.storage.get<number>(StorageKeys.NOSTRORD_POLL_INTERVAL, NOSTRORD_DEFAULT_INTERVAL_MS);
+    return this.storage.get<number>(StorageKeys.GROUP_CHATS_POLL_INTERVAL, GROUP_CHATS_DEFAULT_INTERVAL_MS);
   }
 
   /** Whether the user's own posts should also raise a notification. Default: yes. */
   private loadNotifyOwn(): boolean {
-    return this.storage.get<boolean>(StorageKeys.NOSTRORD_NOTIFY_OWN_POSTS, true);
+    return this.storage.get<boolean>(StorageKeys.GROUP_CHATS_NOTIFY_OWN_POSTS, true);
   }
 
   /** Change the poll cadence and restart the timer immediately (no re-login needed). */
   public setPollingInterval(intervalMs: number): void {
     this.intervalMs = intervalMs;
-    this.storage.set(StorageKeys.NOSTRORD_POLL_INTERVAL, intervalMs);
+    this.storage.set(StorageKeys.GROUP_CHATS_POLL_INTERVAL, intervalMs);
     if (this.interval !== null) {
       clearInterval(this.interval);
       this.interval = window.setInterval(() => void this.tick(), this.intervalMs);
@@ -104,8 +104,8 @@ export class NostrordService {
     this.destroyed = false;
     this.intervalMs = this.loadInterval();
 
-    this.systemLogger.info('Nostrord', 'Watching your groups for new activity');
-    diagLog('addons', 'nostrord: scheduler started', { intervalMs: this.intervalMs });
+    this.systemLogger.info('Group Chats', 'Watching your groups for new activity');
+    diagLog('addons', 'group-chats: scheduler started', { intervalMs: this.intervalMs });
 
     this.initialTimer = window.setTimeout(() => {
       this.initialTimer = null;
@@ -123,7 +123,7 @@ export class NostrordService {
       if (!me) return;
 
       const groups = await this.loadUserGroups(me);
-      diagLog('addons', 'nostrord: groups loaded', {
+      diagLog('addons', 'group-chats: groups loaded', {
         groups: groups.length,
         relays: [...new Set(groups.map(g => g.relayUrl))],
       });
@@ -131,7 +131,7 @@ export class NostrordService {
 
       const notifyOwn = this.loadNotifyOwn();
       const nowSeconds = Math.floor(Date.now() / 1000);
-      const anchors = this.storage.get<Record<string, number>>(StorageKeys.NOSTRORD_LAST_CHECK, {});
+      const anchors = this.storage.get<Record<string, number>>(StorageKeys.GROUP_CHATS_LAST_CHECK, {});
 
       // Group by relay so each relay is polled once for all its groups.
       const byRelay = new Map<string, GroupRef[]>();
@@ -147,7 +147,7 @@ export class NostrordService {
         // Fetch since the oldest anchor among this relay's groups; baseline groups contribute `now`.
         const since = Math.min(...relayGroups.map(g => anchors[g.groupId] ?? nowSeconds));
         const events = await this.client.fetchActivity(relayUrl, groupIds, since);
-        diagLog('addons', 'nostrord: relay fetch', { relay: relayUrl, groups: groupIds.length, events: events.length, since });
+        diagLog('addons', 'group-chats: relay fetch', { relay: relayUrl, groups: groupIds.length, events: events.length, since });
         await this.resolveNames(relayUrl, relayGroups, events);
 
         for (const g of relayGroups) {
@@ -176,7 +176,7 @@ export class NostrordService {
           if (fresh.length > 0) {
             const mineOnly = fresh.every(e => e.pubkey === me);
             this.notify(g, nowSeconds, mineOnly);
-            diagLog('addons', 'nostrord: fresh activity', { groupId: g.groupId, fresh: fresh.length, mineOnly });
+            diagLog('addons', 'group-chats: fresh activity', { groupId: g.groupId, fresh: fresh.length, mineOnly });
             // Advance only to what we actually read — never to `now`.
             anchors[g.groupId] = Math.max(anchor, newestSeen);
           }
@@ -189,10 +189,10 @@ export class NostrordService {
       for (const id of Object.keys(anchors)) {
         if (!live.has(id)) delete anchors[id];
       }
-      this.storage.set(StorageKeys.NOSTRORD_LAST_CHECK, anchors);
+      this.storage.set(StorageKeys.GROUP_CHATS_LAST_CHECK, anchors);
     } catch (error) {
-      this.systemLogger.error('Nostrord', 'Could not check your groups this time');
-      diagLog('addons', 'nostrord: tick failed', { error: String(error) });
+      this.systemLogger.error('Group Chats', 'Could not check your groups this time');
+      diagLog('addons', 'group-chats: tick failed', { error: String(error) });
     } finally {
       this.running = false;
     }
@@ -206,7 +206,7 @@ export class NostrordService {
       [{ authors: [me], kinds: [10009 as number], limit: 1 }],
       6000,
       true,
-      'nostrord:group-list'
+      'group-chats:group-list'
     );
     if (events.length === 0) return [];
     // Replaceable event: newest wins.
@@ -273,7 +273,7 @@ export class NostrordService {
     const groupName = this.groupName(g);
     const groupRelay = g.relayUrl.replace(/^wss?:\/\//, ''); // bare host for the web-client deep link
     const event: NostrEvent = {
-      id: `nostrord-${g.groupId}-${nowSeconds}`,
+      id: `group-chats-${g.groupId}-${nowSeconds}`,
       pubkey: '',
       kind: 9,
       created_at: nowSeconds,
@@ -291,6 +291,6 @@ export class NostrordService {
     if (this.interval !== null) { clearInterval(this.interval); this.interval = null; }
     this.client.destroy();
     this.nameCache = {};
-    NostrordService.instance = null;
+    GroupChatsService.instance = null;
   }
 }

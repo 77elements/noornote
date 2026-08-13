@@ -12,7 +12,7 @@ import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { MoveDropdown, type MoveTarget } from '../ui/MoveDropdown';
 import { isNostrMajlisEnabled } from '../../addons/nostr-majlis/index';
-import { isNostrordEnabled } from '../../addons/nostrord/index';
+import { isGroupChatsEnabled } from '../../addons/group-chats/index';
 
 interface NotificationTypeInfo {
   type: string;
@@ -37,7 +37,7 @@ const NOTIFICATION_TYPES: NotificationTypeInfo[] = [
   { type: 'dhikr_round', label: 'Dhikr Round' },
   { type: 'dhikr_commit', label: 'Dhikr Committed' },
   { type: 'dhikr_complete', label: 'Dhikr Complete' },
-  { type: 'nostrord', label: 'Nostrord' },
+  { type: 'group-chats', label: 'GroupChats' },
 ];
 
 const DEFAULT_PRIORITIES: NotificationPriorityMap = {
@@ -58,7 +58,7 @@ const DEFAULT_PRIORITIES: NotificationPriorityMap = {
   'dhikr_round': 3,
   'dhikr_commit': 3,
   'dhikr_complete': 3,
-  'nostrord': 3,
+  'group-chats': 3,
 };
 
 const PRIORITY_LABELS: Record<NotificationPriority, { title: string; description: string }> = {
@@ -178,12 +178,12 @@ export class NotificationPrioritySection extends SettingsSection {
    * Get notification types for a priority level
    */
   private getItemsForPriority(priority: NotificationPriority): NotificationTypeInfo[] {
-    // Dhikr / Nostrord types only surface here while their addon is enabled (they can't fire otherwise).
+    // Dhikr / GroupChats types only surface here while their addon is enabled (they can't fire otherwise).
     const dhikrEnabled = isNostrMajlisEnabled();
-    const nostrordEnabled = isNostrordEnabled();
+    const groupChatsEnabled = isGroupChatsEnabled();
     return NOTIFICATION_TYPES.filter(item => {
       if (item.type.startsWith('dhikr_') && !dhikrEnabled) return false;
-      if (item.type === 'nostrord' && !nostrordEnabled) return false;
+      if (item.type === 'nostrord' && !groupChatsEnabled) return false;
       return this.priorities[item.type] === priority;
     });
   }

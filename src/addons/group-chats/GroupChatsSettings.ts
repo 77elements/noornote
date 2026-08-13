@@ -4,11 +4,11 @@ import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { AddonLoader } from '../AddonLoader';
-import { isNostrordEnabled, setNostrordEnabled, isArmadaEnabled, setArmadaEnabled } from './index';
-import { NOSTRORD_INTERVAL_OPTIONS, NOSTRORD_DEFAULT_INTERVAL_MS } from './NostrordService';
-import type { NostrordRuntime } from './runtime';
+import { isGroupChatsEnabled, setGroupChatsEnabled, isArmadaEnabled, setArmadaEnabled } from './index';
+import { GROUP_CHATS_INTERVAL_OPTIONS, GROUP_CHATS_DEFAULT_INTERVAL_MS } from './GroupChatsService';
+import type { GroupChatsRuntime } from './runtime';
 
-export class NostrordSettings extends SettingsSection {
+export class GroupChatsSettings extends SettingsSection {
   private enableSwitch: Switch | null = null;
   private armadaSwitch: Switch | null = null;
   private notifyOwnSwitch: Switch | null = null;
@@ -17,7 +17,7 @@ export class NostrordSettings extends SettingsSection {
   private contentZone: HTMLElement | null = null;
 
   constructor() {
-    super('nostrord-settings');
+    super('group-chats-settings');
     this.eventBus = TypedEventBus.getInstance();
     this.storage = PerAccountLocalStorage.getInstance();
   }
@@ -26,14 +26,14 @@ export class NostrordSettings extends SettingsSection {
     const contentContainer = this.getContentContainer(parentContainer);
     if (!contentContainer) return;
 
-    this.contentZone = parentContainer.querySelector('[data-addon-content="nostrord"]');
+    this.contentZone = parentContainer.querySelector('[data-addon-content="group-chats"]');
 
-    const nostrordEnabled = isNostrordEnabled();
+    const groupChatsEnabled = isGroupChatsEnabled();
     const armadaEnabled = isArmadaEnabled();
 
     this.enableSwitch = new Switch({
       label: '',
-      checked: nostrordEnabled,
+      checked: groupChatsEnabled,
       onChange: (checked) => { void this.handleToggle(checked); }
     });
 
@@ -64,31 +64,31 @@ export class NostrordSettings extends SettingsSection {
     this.armadaSwitch.setupEventListeners(contentContainer);
 
     // The check-frequency + notify-own settings below are shared across all
-    // enabled providers (today: Nostrord + Armada; tomorrow: Meshcat etc.).
+    // enabled providers (today: GroupChats + Armada; tomorrow: Meshcat etc.).
     // Render them if at least one provider is on.
-    this.renderPanel(nostrordEnabled || armadaEnabled);
+    this.renderPanel(groupChatsEnabled || armadaEnabled);
   }
 
   private async handleToggle(checked: boolean): Promise<void> {
-    setNostrordEnabled(checked);
-    this.eventBus.emit('nostrord:addon-toggle', { enabled: checked });
+    setGroupChatsEnabled(checked);
+    this.eventBus.emit('group-chats:addon-toggle', { enabled: checked });
     ToastService.show(checked ? 'Nostrord enabled' : 'Nostrord disabled', 'success');
-    this.renderPanel(isNostrordEnabled() || isArmadaEnabled());
+    this.renderPanel(isGroupChatsEnabled() || isArmadaEnabled());
   }
 
   private async handleArmadaToggle(checked: boolean): Promise<void> {
     setArmadaEnabled(checked);
     this.eventBus.emit('armada:addon-toggle', { enabled: checked });
     ToastService.show(checked ? 'Armada enabled (polling coming soon)' : 'Armada disabled', 'success');
-    this.renderPanel(isNostrordEnabled() || isArmadaEnabled());
+    this.renderPanel(isGroupChatsEnabled() || isArmadaEnabled());
   }
 
   private getCurrentInterval(): number {
-    return this.storage.get<number>(StorageKeys.NOSTRORD_POLL_INTERVAL, NOSTRORD_DEFAULT_INTERVAL_MS);
+    return this.storage.get<number>(StorageKeys.GROUP_CHATS_POLL_INTERVAL, GROUP_CHATS_DEFAULT_INTERVAL_MS);
   }
 
   private getNotifyOwn(): boolean {
-    return this.storage.get<boolean>(StorageKeys.NOSTRORD_NOTIFY_OWN_POSTS, true);
+    return this.storage.get<boolean>(StorageKeys.GROUP_CHATS_NOTIFY_OWN_POSTS, true);
   }
 
   private renderPanel(enabled: boolean): void {
@@ -98,12 +98,12 @@ export class NostrordSettings extends SettingsSection {
     if (!enabled) { this.contentZone.innerHTML = ''; return; }
 
     const current = this.getCurrentInterval();
-    const optionsHtml = NOSTRORD_INTERVAL_OPTIONS.map(option => `
+    const optionsHtml = GROUP_CHATS_INTERVAL_OPTIONS.map(option => `
       <label class="nn-checkbox nn-checkbox--label-left">
         <span class="setting__label">${option.label}</span>
         <input
           type="radio"
-          name="nostrord-interval"
+          name="group-chats-interval"
           value="${option.value}"
           ${option.value === current ? 'checked' : ''}
         />
@@ -114,20 +114,20 @@ export class NostrordSettings extends SettingsSection {
       label: '',
       checked: this.getNotifyOwn(),
       onChange: (checked) => {
-        this.storage.set(StorageKeys.NOSTRORD_NOTIFY_OWN_POSTS, checked);
+        this.storage.set(StorageKeys.GROUP_CHATS_NOTIFY_OWN_POSTS, checked);
         ToastService.show(
-          checked ? 'Nostrord: your own posts included' : 'Nostrord: your own posts excluded',
+          checked ? 'GroupChats: your own posts included' : 'GroupChats: your own posts excluded',
           'success'
         );
       }
     });
 
     this.contentZone.innerHTML = `
-      <section class="section nostrord-settings">
+      <section class="section group-chats-settings">
         <div class="setting">
           <label class="setting__label">Check frequency</label>
           <p class="setting__desc">How often to look for new activity across all your enabled group chat
-            providers (Nostrord, Armada, and future ones). This window is also the quiet period: after one
+            providers (GroupChats, Armada, and future ones). This window is also the quiet period: after one
             notification, the same group won't notify again until the next check.</p>
           <div class="mode-options">
             ${optionsHtml}
@@ -143,15 +143,15 @@ export class NostrordSettings extends SettingsSection {
       </section>
     `;
 
-    this.contentZone.querySelectorAll<HTMLInputElement>('input[name="nostrord-interval"]').forEach(input => {
+    this.contentZone.querySelectorAll<HTMLInputElement>('input[name="group-chats-interval"]').forEach(input => {
       input.addEventListener('change', () => {
         if (!input.checked) return;
         const intervalMs = Number(input.value);
-        this.storage.set(StorageKeys.NOSTRORD_POLL_INTERVAL, intervalMs);
-        const rt = AddonLoader.getInstance().getRuntime<NostrordRuntime>('nostrord');
+        this.storage.set(StorageKeys.GROUP_CHATS_POLL_INTERVAL, intervalMs);
+        const rt = AddonLoader.getInstance().getRuntime<GroupChatsRuntime>('group-chats');
         rt?.service?.setPollingInterval(intervalMs);
-        const label = NOSTRORD_INTERVAL_OPTIONS.find(o => o.value === intervalMs)?.label ?? 'updated';
-        ToastService.show(`Nostrord: ${label.toLowerCase()}`, 'success');
+        const label = GROUP_CHATS_INTERVAL_OPTIONS.find(o => o.value === intervalMs)?.label ?? 'updated';
+        ToastService.show(`Group Chats: ${label.toLowerCase()}`, 'success');
       });
     });
 

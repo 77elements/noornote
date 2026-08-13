@@ -116,7 +116,7 @@ export class NotificationItem {
       if (this.options.type === 'dhikr_round' || this.options.type === 'dhikr_commit'
           || this.options.type === 'dhikr_complete' || this.options.type === 'nostrord'
           || this.options.type === 'armada') {
-        // Community dhikr + Nostrord + Armada notifications are anonymous by design — no author at all.
+        // Community dhikr + GroupChats + Armada notifications are anonymous by design — no author at all.
         // The action text is self-contained ("Someone posted to …"), so drop the identity slot.
         identityContainer.remove();
       } else if (this.options.type === 'poll_vote') {
@@ -396,7 +396,7 @@ export class NotificationItem {
       case 'armada':
         // Armada crest (single-color, inherits currentColor) — same icon the
         // 33301 invite card uses as a fallback. Visually distinguishes Armada
-        // notifications from Nostrord's speech-bubble.
+        // notifications from GroupChats's speech-bubble.
         return '🛡️';
 
       default:

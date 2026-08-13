@@ -470,11 +470,11 @@ export class ViewMountingService {
           }
         };
 
-      case 'addon-nostrord':
+      case 'addon-group-chats':
         return {
           factory: async () => {
-            const { NostrordAddonView } = await import('../addons/nostrord/NostrordAddonView');
-            const view = new NostrordAddonView();
+            const { GroupChatsAddonView } = await import('../addons/group-chats/GroupChatsAddonView');
+            const view = new GroupChatsAddonView();
             return { element: view.getElement(), view };
           }
         };

@@ -38,7 +38,7 @@ export interface NotificationEvent {
   event: NostrEvent;
   type: NotificationType;
   timestamp: number;
-  meta?: { hashtag?: string; count?: number; groupName?: string; isOwn?: boolean; groupRelay?: string; naddr?: string }; // hashtag + nostrord + armada notifications
+  meta?: { hashtag?: string; count?: number; groupName?: string; isOwn?: boolean; groupRelay?: string; naddr?: string }; // hashtag + group-chats + armada notifications
 }
 
 export class NotificationsOrchestrator extends Orchestrator {
@@ -189,13 +189,13 @@ export class NotificationsOrchestrator extends Orchestrator {
       this.handleDhikrNotification(data);
     });
 
-    // Listen for Nostrord NIP-29 group activity notifications (nostrord addon)
+    // Listen for Nostrord NIP-29 group activity notifications (group-chats addon)
     this.eventBus.on('nostrord-notification:new', (data: { event: NostrEvent; groupName: string; mine?: boolean; groupRelay?: string }) => {
       this.handleNostrordNotification(data);
     });
 
     // Listen for Armada (Concord) encrypted-community activity notifications
-    // (nostrord addon — Armada runs alongside NIP-29 under the same addon's
+    // (group-chats addon — Armada runs alongside NIP-29 under the same addon's
     // "Group Chats" umbrella). Sprint 4 emits these once the gift-wrap
     // polling pipeline is live; the handler exists now so the pipeline just
     // needs to fire the event.
@@ -1283,7 +1283,7 @@ export class NotificationsOrchestrator extends Orchestrator {
   }
 
   /**
-   * Handle a Nostrord NIP-29 group activity notification from the nostrord addon.
+   * Handle a Nostrord NIP-29 group activity notification from the group-chats addon.
    * The synthetic event carries no real author (activity is summarized, not attributed), so the
    * item renders anonymously; the group name travels in meta for the action text.
    */
@@ -1307,7 +1307,7 @@ export class NotificationsOrchestrator extends Orchestrator {
    * Handle Armada (Concord) encrypted-community activity notifications.
    *
    * Mirrors `handleNostrordNotification` but with the `'armada'` type and an
-   * naddr-based deep link (instead of the Nostrord relay-host + groupId
+   * naddr-based deep link (instead of the GroupChats relay-host + groupId
    * scheme). The notification count travels in meta for the body phrasing
    * ("3 new messages" vs. "Someone posted").
    */
