@@ -23,6 +23,7 @@ import { decodeInviteFragment } from '../../../helpers/armada/decodeInviteFragme
 import { decodeInviteBundle } from '../../../helpers/armada/decodeInviteBundle';
 import { diagLog } from '../../../services/DiagnosticLogger';
 import { NostrTransport } from '../../../services/transport/NostrTransport';
+import { discoverChannelsFromControlPlane } from './discoverChannels';
 import type { TrackedCommunity } from './types';
 
 const FETCH_TIMEOUT_MS = 15000;
@@ -32,10 +33,38 @@ export type ResolveResult =
   | { kind: 'error'; reason: string };
 
 /**
+ * Parse a community URL (`armada.buzz/c/<communityId>/<channelId>/...`) to
+ * extract channel IDs. Returns the array of channel IDs found, or empty.
+ */
+export function parseChannelIdsFromUrl(url: string): string[] {
+  try {
+    const u = new URL(url.trim());
+    // Path format: /c/<communityId>/<channelId>/...
+    const parts = u.pathname.split('/').filter(Boolean);
+    if (parts[0] !== 'c' || parts.length < 3) return [];
+    // parts[1] = communityId, parts[2] = channelId (64-char hex)
+    const channelId = parts[2];
+    if (channelId && /^[0-9a-f]{64}$/i.test(channelId)) return [channelId];
+    // Multiple channels: check all path segments after communityId
+    return parts.slice(2).filter(p => /^[0-9a-f]{64}$/i.test(p));
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Resolve an Armada invite link (URL or bare naddr#fragment) into a fully
  * decrypted TrackedCommunity, ready to store in the registry.
+ *
+ * Channel discovery is automatic: the invite bundle carries the
+ * `community_root`, `community_id` and `control_pk`; from these the Control
+ * Plane's read key derives (CORD-02 §5) and the full channel list falls out
+ * of the plane's ChannelMetadata editions (CORD-03 §2, vsk "2"). One paste,
+ * one paste only — no second URL.
  */
-export async function resolveInvitePreview(input: string): Promise<ResolveResult> {
+export async function resolveInvitePreview(
+  input: string,
+): Promise<ResolveResult> {
   const trimmed = input.trim();
   const parsed = parseArmadaInvite(trimmed);
   if (!parsed) {
@@ -91,7 +120,11 @@ export async function resolveInvitePreview(input: string): Promise<ResolveResult
     fragment: parsed.fragment,
     name: preview.name || 'Encrypted community',
     channelCount: preview.channelCount,
-    bootstrapRelays: decoded.relays,
+    // Prefer bundle relays (the community's actual relays) over fragment
+    // bootstrap relays. The fragment carries the stock dictionary used to
+    // locate the bundle; the bundle carries the community's own relay list
+    // where messages actually live.
+    bootstrapRelays: (preview.relays.length > 0 ? preview.relays : decoded.relays),
     openUrl: parsed.openUrl,
     addedAt: Date.now(),
   };
@@ -99,7 +132,41 @@ export async function resolveInvitePreview(input: string): Promise<ResolveResult
   if (preview.communityRoot) community.communityRoot = preview.communityRoot;
   if (typeof preview.rootEpoch === 'number') community.rootEpoch = preview.rootEpoch;
   if (preview.communityId) community.communityId = preview.communityId;
-  if (preview.channels) community.channels = preview.channels;
+  if (preview.controlPk) community.controlPk = preview.controlPk;
+  // Channel IDs: bundle-decoded first (private channels granted to this link)
+  if (preview.channels && preview.channels.length > 0) {
+    community.channels = preview.channels;
+  } else if (community.communityRoot && community.communityId && community.controlPk) {
+    // Public channels: discover from the Control Plane (CORD-02 §5 read key).
+    // Best-effort — on failure the community is still tracked, polling then
+    // covers only control-plane activity until channels arrive via re-add.
+    try {
+      const discovered = await discoverChannelsFromControlPlane(
+        community.communityRoot,
+        community.communityId,
+        community.controlPk,
+        community.rootEpoch ?? 0,
+        community.bootstrapRelays,
+      );
+      if (discovered.length > 0) {
+        // Public channels only: a private channel's stream key derives from
+        // an independent secret (CORD-03 §1) delivered per grant — we hold
+        // no such key, so polling it can never fire and it must not occupy
+        // the notification deep-link's channels[0] slot.
+        const publicChannels = discovered.filter(ch => !ch.isPrivate);
+        if (publicChannels.length > 0) {
+          community.channels = publicChannels.map(ch => ({
+            id: ch.id,
+            epoch: community.rootEpoch ?? 0,
+            ...(ch.name ? { name: ch.name } : {}),
+          }));
+          community.channelCount = publicChannels.length;
+        }
+      }
+    } catch (error) {
+      diagLog('addons', 'armada: control-plane discovery failed', { error: String(error) });
+    }
+  }
   if (preview.expired) {
     return { kind: 'error', reason: 'This invite has expired. Ask for a fresh link.' };
   }

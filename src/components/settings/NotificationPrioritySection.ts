@@ -12,7 +12,7 @@ import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { MoveDropdown, type MoveTarget } from '../ui/MoveDropdown';
 import { isNostrMajlisEnabled } from '../../addons/nostr-majlis/index';
-import { isGroupChatsEnabled } from '../../addons/group-chats/index';
+import { isGroupChatsEnabled, isArmadaEnabled } from '../../addons/group-chats/index';
 
 interface NotificationTypeInfo {
   type: string;
@@ -37,7 +37,8 @@ const NOTIFICATION_TYPES: NotificationTypeInfo[] = [
   { type: 'dhikr_round', label: 'Dhikr Round' },
   { type: 'dhikr_commit', label: 'Dhikr Committed' },
   { type: 'dhikr_complete', label: 'Dhikr Complete' },
-  { type: 'group-chats', label: 'GroupChats' },
+  { type: 'group-chats', label: 'Nostrord' },
+  { type: 'armada', label: 'Armada' },
 ];
 
 const DEFAULT_PRIORITIES: NotificationPriorityMap = {
@@ -58,7 +59,8 @@ const DEFAULT_PRIORITIES: NotificationPriorityMap = {
   'dhikr_round': 3,
   'dhikr_commit': 3,
   'dhikr_complete': 3,
-  'group-chats': 3,
+  'group-chats': 2,
+  'armada': 2,
 };
 
 const PRIORITY_LABELS: Record<NotificationPriority, { title: string; description: string }> = {
@@ -178,12 +180,14 @@ export class NotificationPrioritySection extends SettingsSection {
    * Get notification types for a priority level
    */
   private getItemsForPriority(priority: NotificationPriority): NotificationTypeInfo[] {
-    // Dhikr / GroupChats types only surface here while their addon is enabled (they can't fire otherwise).
+    // Dhikr / group-chat types only surface here while their addon/toggle is enabled (they can't fire otherwise).
     const dhikrEnabled = isNostrMajlisEnabled();
     const groupChatsEnabled = isGroupChatsEnabled();
+    const armadaEnabled = isArmadaEnabled();
     return NOTIFICATION_TYPES.filter(item => {
       if (item.type.startsWith('dhikr_') && !dhikrEnabled) return false;
-      if (item.type === 'nostrord' && !groupChatsEnabled) return false;
+      if (item.type === 'group-chats' && !groupChatsEnabled) return false;
+      if (item.type === 'armada' && !armadaEnabled) return false;
       return this.priorities[item.type] === priority;
     });
   }

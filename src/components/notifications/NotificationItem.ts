@@ -31,7 +31,7 @@ export interface NotificationItemOptions {
   event: NostrEvent;
   type: NotificationType;
   timestamp: number;
-  meta?: { hashtag?: string; count?: number; groupName?: string; isOwn?: boolean; groupRelay?: string; naddr?: string };
+  meta?: { hashtag?: string; count?: number; groupName?: string; isOwn?: boolean; groupRelay?: string; communityUrl?: string };
 }
 
 export class NotificationItem {
@@ -1039,16 +1039,14 @@ export class NotificationItem {
       return;
     }
 
-    // Armada: open the invite-bundle naddr on armada.buzz (external). NoorNote
-    // currently has no in-app Armada community reader; until Sprint 2 of the
-    // Armada addon ships, the only action is to deep-link into Armada itself.
-    // The naddr lives in meta (set by handleArmadaNotification); the synthetic
-    // event's `h` tag carries it too as a fallback.
+    // Armada: open the armada.buzz community page (external). NoorNote
+    // currently has no in-app Armada community reader. The click-through
+    // uses the group URL (/c/<communityId>/<channelId>) — NOT the invite
+    // link, which expires once the invite is revoked/refreshed.
     if (type === 'armada') {
-      const naddr = this.options.meta?.naddr
-        ?? this.options.event.tags.find(t => t[0] === 'h')?.[1];
-      if (naddr) {
-        window.open(`https://armada.buzz/invite/${naddr}`, '_blank', 'noopener,noreferrer');
+      const communityUrl = this.options.meta?.communityUrl;
+      if (communityUrl) {
+        window.open(communityUrl, '_blank', 'noopener,noreferrer');
       }
       return;
     }

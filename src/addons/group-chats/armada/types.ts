@@ -40,6 +40,8 @@ export interface TrackedCommunity {
   rootEpoch?: number;
   /** Community ID (64-char hex) — self-certifying identity from bundle. */
   communityId?: string;
+  /** Control plane stream pubkey (from bundle's `control_pk`). Used for activity detection when channels are unknown. */
+  controlPk?: string;
   /** Channel identities (id + epoch per channel). */
   channels?: Array<{ id: string; epoch: number; name?: string }>;
 }

@@ -89,6 +89,7 @@ export function decodeInviteBundle(
   const communityRoot = typeof bundle.community_root === 'string' ? bundle.community_root : undefined;
   const rootEpoch = typeof bundle.root_epoch === 'number' ? bundle.root_epoch : undefined;
   const communityId = typeof bundle.community_id === 'string' ? bundle.community_id : undefined;
+  const controlPk = typeof bundle.control_pk === 'string' ? bundle.control_pk : undefined;
 
   // Extract channel identities (id + epoch) for GroupKey derivation.
   const channels: ArmadaChannel[] = channelsRaw
@@ -111,6 +112,7 @@ export function decodeInviteBundle(
   if (communityRoot) preview.communityRoot = communityRoot;
   if (typeof rootEpoch === 'number') preview.rootEpoch = rootEpoch;
   if (communityId) preview.communityId = communityId;
+  if (controlPk) preview.controlPk = controlPk;
   if (channels.length > 0) preview.channels = channels;
   return preview;
 }

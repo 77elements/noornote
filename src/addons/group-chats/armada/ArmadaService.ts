@@ -30,14 +30,17 @@ import { PerAccountLocalStorage, StorageKeys } from '../../../services/PerAccoun
 import { diagLog } from '../../../services/DiagnosticLogger';
 import { nip44DecryptWithKey } from '../../../services/NostrToolsAdapter';
 import { ArmadaCommunityRegistry } from './ArmadaCommunityRegistry';
-import { channelGroupKey, controlGroupKey, type GroupKey } from './concordGroupKey';
+import { channelGroupKey, type GroupKey } from './concordGroupKey';
 import { ArmadaRelayClient } from './ArmadaRelayClient';
 import { GROUP_CHATS_DEFAULT_INTERVAL_MS, GROUP_CHATS_INTERVAL_OPTIONS } from '../GroupChatsService';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { TrackedCommunity } from './types';
 
-const KIND_SEAL = 13;
 const INITIAL_DELAY_MS = 60 * 1000; // let login fetches settle before the first poll
+const KIND_SEAL_ENCRYPTED = 20013;
+const KIND_SEAL_PLAINTEXT = 20014;
+/** Rumor kinds that count as "someone wrote something" — mirrors Nostrord (9/11/1111). */
+const MESSAGE_KINDS = new Set<number>([9, 1111]);
 
 export { GROUP_CHATS_INTERVAL_OPTIONS as ARMADA_INTERVAL_OPTIONS };
 export { GROUP_CHATS_DEFAULT_INTERVAL_MS as ARMADA_DEFAULT_INTERVAL_MS };
@@ -113,7 +116,10 @@ export class ArmadaService {
 
   /** One poll window: check every tracked community for new gift-wrap activity. */
   public async tick(): Promise<void> {
-    if (this.destroyed || this.running) return;
+    if (this.destroyed || this.running) {
+      diagLog('addons', 'armada: tick skipped', { destroyed: this.destroyed, running: this.running });
+      return;
+    }
     this.running = true;
     try {
       const me = this.authService.getCurrentUser()?.pubkey;
@@ -150,6 +156,7 @@ export class ArmadaService {
 
         if (fresh.count > 0) {
           this.notify(community, nowSeconds, fresh.mineOnly, fresh.count);
+          this.systemLogger.info('Armada', `${fresh.count} new in "${community.name}"`);
           diagLog('addons', 'armada: fresh activity', {
             community: community.name,
             fresh: fresh.count,
@@ -180,13 +187,20 @@ export class ArmadaService {
   /**
    * Fetch + decrypt gift wraps for one community since its anchor.
    *
-   * Concord V2 routing: gift wraps are authored by per-channel Stream Keys
-   * (derived from the community root + channel id + epoch). We subscribe by
-   * `authors: [streamPubkeys]` (NOT by `#p: [userPubkey]` — wraps are not
-   * addressed to recipients, they're addressed to streams). Decryption uses
-   * each channel's self-ECDH conversation key.
+   * Polls only the CHANNEL stream addresses (derived from communityRoot +
+   * channelId per CORD-03). The control plane is NOT polled: its wraps are
+   * config events (roster/metadata editions, kind 3308) which must not
+   * raise notifications.
    *
-   * Returns the count of fresh, successfully-decrypted, non-duplicate wraps.
+   * Each fetched wrap is decrypted (wrap → seal 20013/20014 → rumor) and
+   * only MESSAGE-kind rumors (9 chat / 1111 thread-reply — the Concord
+   * pendant of Nostrord's 9/11/1111) count toward the notification.
+   * Reactions (7), edits, deletes, and control editions fall silent —
+   * including reactions on OLD posts, which are new wraps but kind-7 rumors.
+   *
+   * Own-post filtering works again with decryption: the rumor's pubkey is
+   * the real author, so the shared "Notify me about my own posts" toggle
+   * applies exactly as it does for Nostrord.
    */
   private async pollCommunity(
     community: TrackedCommunity,
@@ -195,78 +209,54 @@ export class ArmadaService {
     notifyOwn: boolean,
     seenWrapIds: Set<string>,
   ): Promise<{ count: number; mineOnly: boolean }> {
-    if (!community.communityRoot) {
-      diagLog('addons', 'armada: community has no root, skipping', { community: community.name });
-      return { count: 0, mineOnly: false };
-    }
-
-    // Build the list of GroupKeys to poll:
-    // 1. Control plane (always — catches ALL community activity: new channels,
-    //    roster updates, rekeys). Derived from communityRoot + communityId.
-    // 2. Channel planes (if the bundle disclosed channel IDs).
+    // Channel stream pubkeys — derived from communityRoot + channelId.
     const groupKeys: GroupKey[] = [];
-    const rootEpoch = community.rootEpoch ?? 0;
-
-    if (community.communityId) {
-      try {
-        groupKeys.push(controlGroupKey(community.communityRoot, community.communityId, rootEpoch));
-      } catch (error) {
-        diagLog('addons', 'armada: control key derivation failed', {
-          community: community.name, error: String(error),
-        });
-      }
-    }
-
-    for (const ch of community.channels ?? []) {
-      try {
-        const epoch = ch.epoch ?? rootEpoch;
-        groupKeys.push(channelGroupKey(community.communityRoot, ch.id, epoch));
-      } catch (error) {
-        diagLog('addons', 'armada: channel key derivation failed', {
-          community: community.name, channelId: ch.id.slice(0, 12), error: String(error),
-        });
+    if (community.communityRoot && community.channels) {
+      const rootEpoch = community.rootEpoch ?? 0;
+      for (const ch of community.channels) {
+        try {
+          groupKeys.push(channelGroupKey(community.communityRoot, ch.id, ch.epoch ?? rootEpoch));
+        } catch { /* derivation failed for this channel — skip */ }
       }
     }
 
     if (groupKeys.length === 0) {
-      diagLog('addons', 'armada: no derivable keys (need communityId or channels)', { community: community.name });
+      diagLog('addons', 'armada: no channels to poll', { community: community.name });
       return { count: 0, mineOnly: false };
     }
 
-    const streamPubkeys = groupKeys.map(gk => gk.pk);
+    const authors = groupKeys.map(gk => gk.pk);
 
-    // Register stream keys for NIP-42 auth (Concord relays require this)
-    this.relayClient.setStreamKeys(groupKeys);
-
+    // Fetch wraps by the channel stream addresses
+    this.relayClient.setStreamKeys(groupKeys); // for NIP-42 auth if needed
     let events: NostrEvent[] = [];
     try {
       events = await this.relayClient.fetchWraps(
         community.bootstrapRelays,
-        streamPubkeys,
+        authors,
         anchor,
       );
     } catch (error) {
-      diagLog('addons', 'armada: community fetch failed', {
-        community: community.name, error: String(error),
-      });
+      diagLog('addons', 'armada: fetch failed', { community: community.name, error: String(error) });
     }
 
     if (events.length === 0) return { count: 0, mineOnly: false };
 
     diagLog('addons', 'armada: wraps found', {
-      community: community.name, wraps: events.length, keys: groupKeys.length,
+      community: community.name, wraps: events.length, channels: groupKeys.length,
     });
 
+    // Decrypt each wrap and count only message-kind rumors.
     let freshCount = 0;
     let ownCount = 0;
-
     for (const wrap of events) {
       const wrapId = wrap.id ?? '';
       if (!wrapId || seenWrapIds.has(wrapId)) continue;
       seenWrapIds.add(wrapId);
 
       const rumor = this.unwrapStreamWrap(wrap, groupKeys);
-      if (!rumor) continue;
+      if (!rumor) continue; // wrong key or malformed — not ours to count
+      if (rumor.kind === undefined || !MESSAGE_KINDS.has(rumor.kind)) continue; // reaction/edit/delete → silent
 
       const isOwn = rumor.pubkey === me;
       if (isOwn) ownCount++;
@@ -283,24 +273,27 @@ export class ArmadaService {
    * Decrypt a Concord V2 stream gift wrap (kind 1059) using channel GroupKeys.
    *
    * Tries each GroupKey's convKey (self-ECDH NIP-44 conversation key) until
-   * one successfully decrypts the wrap → seal → rumor chain. Both layers
-   * (wrap and seal) use the SAME convKey (the stream is a single-key channel).
+   * one successfully decrypts the wrap → seal → rumor chain.
    *
-   * Returns the rumor on success, or null if no key worked.
+   * Seal forms (CORD-01/02): 20013 (encrypted — the rumor is NIP-44-encrypted
+   * again with the same convKey) or 20014 (plaintext — the seal's content IS
+   * the rumor JSON, byte-verbatim; control-plane compaction form).
    */
   private unwrapStreamWrap(wrapEvent: NostrEvent, groupKeys: GroupKey[]): NostrEvent | null {
     for (const gk of groupKeys) {
       try {
-        // Step 1: Decrypt wrap content → seal (kind 13)
         const sealJson = nip44DecryptWithKey(wrapEvent.content, gk.convKey);
         const seal = JSON.parse(sealJson) as NostrEvent;
-        if (seal.kind !== KIND_SEAL) continue;
+        if (seal.kind !== KIND_SEAL_ENCRYPTED && seal.kind !== KIND_SEAL_PLAINTEXT) continue;
 
-        // Step 2: Decrypt seal content → rumor (unsigned, any kind)
-        const rumorJson = nip44DecryptWithKey(seal.content, gk.convKey);
-        const rumor = JSON.parse(rumorJson) as NostrEvent;
+        let rumor: NostrEvent;
+        if (seal.kind === KIND_SEAL_ENCRYPTED) {
+          rumor = JSON.parse(nip44DecryptWithKey(seal.content, gk.convKey)) as NostrEvent;
+        } else {
+          rumor = JSON.parse(seal.content) as NostrEvent;
+        }
 
-        // Anti-spoofing: rumor.pubkey === seal.pubkey
+        // Anti-spoofing: rumor.pubkey === seal.pubkey (CORD-01)
         if (rumor.pubkey !== seal.pubkey) continue;
 
         return rumor;
@@ -322,6 +315,14 @@ export class ArmadaService {
       content: community.name,
       sig: '',
     };
+    // Click-through target: the armada.buzz group page, not the invite link
+    // (invites expire / get revoked; the community page is stable).
+    // Built from communityId + the first tracked channel id.
+    let communityUrl: string | undefined;
+    const firstChannel = community.channels?.[0];
+    if (community.communityId && firstChannel) {
+      communityUrl = `https://armada.buzz/c/${community.communityId}/${firstChannel.id}`;
+    }
     diagLog('addons', 'armada: community activity notification', {
       community: community.name,
       count,
@@ -331,7 +332,7 @@ export class ArmadaService {
       event,
       groupName: community.name,
       mine,
-      naddr: community.naddr,
+      ...(communityUrl ? { communityUrl } : {}),
       count,
     });
   }

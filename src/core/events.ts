@@ -209,8 +209,13 @@ export interface ArmadaNotificationNewPayload {
   groupName: string;
   /** True when the fresh activity was authored solely by the logged-in user. */
   mine?: boolean;
-  /** Bare invite-bundle naddr (kind 33301) for the "Open in Armada" deep link. */
-  naddr?: string;
+  /**
+   * armada.buzz community URL (`/c/<communityId>/<channelId>/…`) for the
+   * notification click-through. Opens the group directly in Armada — the
+   * invite link only works while the invite is still live, so it is NOT
+   * used for deep links.
+   */
+  communityUrl?: string;
   /** How many fresh gift wraps were observed in this poll window. */
   count?: number;
 }

@@ -179,7 +179,14 @@ export class GroupChatsSettings extends SettingsSection {
     const listHtml = communities.length === 0
       ? `<p class="form__note">No tracked communities yet. Paste an Armada invite link below to start tracking activity.</p>`
       : `<ul class="ui-list tracked-armada-communities">${
-          communities.map(c => `
+          communities.map(c => {
+            const channelCount = c.channels?.length ?? 0;
+            const status = channelCount > 0
+              ? `${channelCount} ${channelCount === 1 ? 'channel' : 'channels'} tracked`
+              : c.controlPk
+                ? 'active (control plane only)'
+                : 'inactive';
+            return `
             <li class="ui-list__item" data-armada-community="${escapeHtmlAttr(c.naddr)}">
               <div class="armada-community-row">
                 <div class="armada-community-row__icon" data-armada-icon-slot>
@@ -187,14 +194,14 @@ export class GroupChatsSettings extends SettingsSection {
                 </div>
                 <div class="armada-community-row__info">
                   <span class="armada-community-row__name">${escapeHtml(c.name)}</span>
-                  <span class="armada-community-row__meta">${c.channelCount} ${c.channelCount === 1 ? 'channel' : 'channels'}</span>
+                  <span class="armada-community-row__meta">${status}</span>
                 </div>
                 <button class="btn-icon armada-community-row__remove" data-armada-remove aria-label="Remove community">
                   <svg width="16" height="16"><use href="#icon-close"/></svg>
                 </button>
               </div>
-            </li>
-          `).join('')
+            </li>`;
+          }).join('')
         }</ul>`;
 
     this.armadaZone.innerHTML = `
@@ -202,13 +209,14 @@ export class GroupChatsSettings extends SettingsSection {
         <div class="setting">
           <label class="setting__label">Tracked Armada communities</label>
           <p class="setting__desc">Communities you track for activity notifications. NoorNote decrypts the public
-            preview locally; your fragment never leaves your device.</p>
+            preview locally and discovers your channels automatically — your invite fragment never leaves your device.</p>
           ${listHtml}
         </div>
         <div class="setting">
           <label class="setting__label">Add community</label>
-          <p class="setting__desc">Paste an Armada invite link (the full <code>armada.buzz/invite/…#…</code> URL).</p>
-          <div class="form__row form__row--oneline">
+          <p class="setting__desc">Paste your Armada invite link (the full <code>armada.buzz/invite/…#…</code> URL).
+            NoorNote decrypts the community, reads its channel list from the control plane, and starts tracking.</p>
+          <div class="form__row">
             <input type="text" class="input armada-add-input" placeholder="https://armada.buzz/invite/naddr1…#…" data-armada-add-input />
             <button class="btn armada-add-btn" data-armada-add>Add</button>
           </div>
@@ -216,11 +224,13 @@ export class GroupChatsSettings extends SettingsSection {
       </section>
     `;
 
-    // Wire add button
+    // Wire add button — single invite-link input
     const addBtn = this.armadaZone.querySelector<HTMLButtonElement>('[data-armada-add]');
     const addInput = this.armadaZone.querySelector<HTMLInputElement>('[data-armada-add-input]');
     if (addBtn && addInput) {
-      addBtn.addEventListener('click', () => { void this.handleAddCommunity(addInput.value, addBtn); });
+      addBtn.addEventListener('click', () => {
+        void this.handleAddCommunity(addInput.value, addBtn);
+      });
       addInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') { e.preventDefault(); void this.handleAddCommunity(addInput.value, addBtn); }
       });
@@ -247,12 +257,16 @@ export class GroupChatsSettings extends SettingsSection {
     }
   }
 
-  private async handleAddCommunity(link: string, btn: HTMLButtonElement): Promise<void> {
-    const trimmed = link.trim();
-    if (!trimmed) return;
+  private async handleAddCommunity(rawInput: string, btn: HTMLButtonElement): Promise<void> {
+    const trimmed = rawInput.trim();
+    if (!trimmed || !trimmed.includes('/invite/')) {
+      ToastService.show('Paste the armada.buzz invite link (must contain /invite/).', 'error');
+      return;
+    }
     btn.disabled = true;
     btn.textContent = 'Resolving…';
     try {
+      // Resolve invite → bundle decrypt → control-plane channel discovery
       const result = await resolveInvitePreview(trimmed);
       if (result.kind === 'error') {
         ToastService.show(result.reason, 'error');
@@ -263,9 +277,13 @@ export class GroupChatsSettings extends SettingsSection {
         ToastService.show(`"${existing.name}" is already being tracked.`, 'success');
         return;
       }
-      ArmadaCommunityRegistry.getInstance().add(result.community);
-      ToastService.show(`Tracking "${result.community.name}"`, 'success');
-      // Re-render the list
+
+      const community = result.community;
+      ArmadaCommunityRegistry.getInstance().add(community);
+      const note = community.channels?.length
+        ? ` — ${community.channels.length} ${community.channels.length === 1 ? 'channel' : 'channels'} discovered`
+        : '';
+      ToastService.show(`Tracking "${community.name}"${note}`, 'success');
       this.renderArmadaCommunities(true);
     } catch {
       ToastService.show('Could not resolve the invite link.', 'error');

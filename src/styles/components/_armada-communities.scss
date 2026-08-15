@@ -71,3 +71,13 @@
     &:hover { opacity: 1; }
   }
 }
+
+// One-time channel-URL import shown inside a community row that has no
+// channels yet. Becomes hidden once a channel is tracked (re-render drops it).
+.armada-channel-import {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: calc($gap / 2);
+  margin-top: calc($gap / 4);
+  padding-left: calc(2.5rem + #{$gap});
+}

@@ -59,6 +59,9 @@ temp/
 # Local backups (protected-file zips from /finalize)
 .backups/
 
+# Web deploy credentials + script (synced via /sync-prot, never committed)
+.deploy/
+
 # OpenCode (GLM-5.2) — custom skills, commands + config
 .opencode/
 opencode.json

@@ -63,6 +63,8 @@ export interface ArmadaInvitePreview {
   rootEpoch?: number;
   /** Community ID (64-char hex) — self-certifying identity from bundle. */
   communityId?: string;
+  /** Control plane stream pubkey (from bundle's `control_pk` field). Used for activity detection. */
+  controlPk?: string;
   /** Channel identities (id + epoch per channel, needed for GroupKey derivation). */
   channels?: ArmadaChannel[];
 }

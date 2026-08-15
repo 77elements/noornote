@@ -38,7 +38,7 @@ export interface NotificationEvent {
   event: NostrEvent;
   type: NotificationType;
   timestamp: number;
-  meta?: { hashtag?: string; count?: number; groupName?: string; isOwn?: boolean; groupRelay?: string; naddr?: string }; // hashtag + group-chats + armada notifications
+  meta?: { hashtag?: string; count?: number; groupName?: string; isOwn?: boolean; groupRelay?: string; communityUrl?: string }; // hashtag + group-chats + armada notifications
 }
 
 export class NotificationsOrchestrator extends Orchestrator {
@@ -199,7 +199,7 @@ export class NotificationsOrchestrator extends Orchestrator {
     // "Group Chats" umbrella). Sprint 4 emits these once the gift-wrap
     // polling pipeline is live; the handler exists now so the pipeline just
     // needs to fire the event.
-    this.eventBus.on('armada-notification:new', (data: { event: NostrEvent; groupName: string; mine?: boolean; naddr?: string; count?: number }) => {
+    this.eventBus.on('armada-notification:new', (data: { event: NostrEvent; groupName: string; mine?: boolean; communityUrl?: string; count?: number }) => {
       this.handleArmadaNotification(data);
     });
 
@@ -781,7 +781,9 @@ export class NotificationsOrchestrator extends Orchestrator {
       'dhikr_round': 3,
       'dhikr_commit': 3,
       'dhikr_complete': 3,
-      'nostrord': 3,
+      'nostrord': 2,
+      'group-chats': 2,
+      'armada': 2,
     };
 
     // Load user's priority settings (or use defaults)
@@ -1306,12 +1308,12 @@ export class NotificationsOrchestrator extends Orchestrator {
   /**
    * Handle Armada (Concord) encrypted-community activity notifications.
    *
-   * Mirrors `handleNostrordNotification` but with the `'armada'` type and an
-   * naddr-based deep link (instead of the GroupChats relay-host + groupId
-   * scheme). The notification count travels in meta for the body phrasing
+   * Mirrors `handleNostrordNotification` but with the `'armada'` type and a
+   * community-URL deep link (armada.buzz/c/… — not the expiring invite link).
+   * The notification count travels in meta for the body phrasing
    * ("3 new messages" vs. "Someone posted").
    */
-  private handleArmadaNotification(data: { event: NostrEvent; groupName: string; mine?: boolean; naddr?: string; count?: number }): void {
+  private handleArmadaNotification(data: { event: NostrEvent; groupName: string; mine?: boolean; communityUrl?: string; count?: number }): void {
     const notification: NotificationEvent = {
       event: data.event,
       type: 'armada',
@@ -1319,7 +1321,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       meta: {
         groupName: data.groupName,
         isOwn: data.mine === true,
-        ...(data.naddr ? { naddr: data.naddr } : {}),
+        ...(data.communityUrl ? { communityUrl: data.communityUrl } : {}),
         ...(typeof data.count === 'number' ? { count: data.count } : {}),
       }
     };
