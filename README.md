@@ -164,6 +164,7 @@ If the app crashes, check the log files:
 | [NIP-33](https://github.com/nostr-protocol/nips/blob/master/33.md) | Parameterized replaceable events (addressable coordinates for articles, live streams, badges, follow packs, Zapstore apps, …) | 30023, 30030, 30311, 30009, 39089, 32267, 30617, 30402 |
 | [NIP-34](https://github.com/nostr-protocol/nips/blob/master/34.md) | Git on Nostr (lightweight cards linking to gitworkshop.dev) | 1617, 1618, 1619, 1621, 1630, 1631, 1632, 1633, 30617 |
 | [NIP-36](https://github.com/nostr-protocol/nips/blob/master/36.md) | Content warnings (NSFW) | - |
+| [NIP-40](https://github.com/nostr-protocol/nips/blob/master/40.md) | Expiration timestamps (disappearing DMs) | - |
 | [NIP-42](https://github.com/nostr-protocol/nips/blob/master/42.md) | Authentication of clients to relays | 22242 |
 | [NIP-44](https://github.com/nostr-protocol/nips/blob/master/44.md) | Encrypted payloads (modern encryption) | - |
 | [NIP-46](https://github.com/nostr-protocol/nips/blob/master/46.md) | Remote signing (bunker://) | 24133 |
