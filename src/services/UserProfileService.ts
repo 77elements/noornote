@@ -223,9 +223,9 @@ export class UserProfileService {
         fetchedProfiles.forEach((profile, pubkey) => {
           this.profileCache.set(pubkey, profile);
           result.set(pubkey, profile);
-          // Only notify subscribers for real profiles — fetchMultipleProfilesFromRelays
-          // fills getDefaultProfile() (name-less) for misses, and broadcasting those
-          // would reintroduce the exact downgrade-to-npub flicker Fix 1 eliminated.
+          // Only notify subscribers for profiles carrying display data —
+          // broadcasting a name-less entry (e.g. an empty kind:0) would
+          // downgrade already-resolved displays back to the npub fallback.
           if (profile.name || profile.display_name || profile.username || profile.picture) {
             this.notifyProfileUpdate(pubkey, profile);
           }
@@ -258,16 +258,26 @@ export class UserProfileService {
                 this.profileCache.set(pubkey, userProfile);
                 result.set(pubkey, userProfile);
                 this.notifyProfileUpdate(pubkey, userProfile);
+              } else {
+                // Full 2-stage attempt (aggregator + outbound) came back
+                // empty — record the retry cooldown exactly like the
+                // single-fetch path, so repeat renders don't re-hammer
+                // the relays for a profile that is genuinely unfindable.
+                this.failedFetches.set(pubkey, Date.now());
               }
             } catch {
-              // Leave for the default-profile fill below.
+              // Transport-level failure — also a spent attempt, cooldown applies.
+              this.failedFetches.set(pubkey, Date.now());
             }
           }));
         }
       }
 
       // Fill remaining misses with a default profile so callers always
-      // get a non-null entry per requested pubkey.
+      // get a non-null entry per requested pubkey. These placeholders are
+      // returned to the caller ONLY — they never enter the cache, and
+      // misses beyond the recovery cap stay cooldown-free so per-identity
+      // fetches (UserIdentity, mention chips) can still resolve them.
       toFetch.forEach(pubkey => {
         if (!result.has(pubkey)) {
           result.set(pubkey, this.getDefaultProfile(pubkey));
@@ -291,20 +301,17 @@ export class UserProfileService {
 
   /**
    * Fetch multiple profiles efficiently (via ProfileOrchestrator)
+   * Returns ONLY real relay hits — misses are deliberately absent so the
+   * caller can run its stage-2 recovery and cooldown bookkeeping. Filling
+   * misses with fabricated name-less defaults here would poison the LRU
+   * cache for the whole session (the "@npub1…" / "Anonymous" bug).
    */
   private async fetchMultipleProfilesFromRelays(pubkeys: string[]): Promise<Map<string, UserProfile>> {
     const profiles = await this.orchestrator.fetchMultipleProfiles(pubkeys);
 
-    // Convert to UserProfile format and add defaults for missing
     const result = new Map<string, UserProfile>();
-
-    pubkeys.forEach(pubkey => {
-      const profile = profiles.get(pubkey);
-      if (profile) {
-        result.set(pubkey, profile as UserProfile);
-      } else {
-        result.set(pubkey, this.getDefaultProfile(pubkey));
-      }
+    profiles.forEach((profile, pubkey) => {
+      result.set(pubkey, profile as UserProfile);
     });
 
     return result;

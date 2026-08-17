@@ -1,0 +1,704 @@
+- generic [ref=f4e3]:
+  - complementary "Navigation" [ref=f4e4]:
+    - generic [ref=f4e5]:
+      - generic [ref=f4e6]:
+        - generic [ref=f4e7]:
+          - generic [ref=f4e8]: NoorNote
+          - button "Collapse sidebar" [ref=f4e9] [cursor=pointer]
+        - generic [ref=f4e14]:
+          - text: ••••
+          - generic [ref=f4e15]: 丰
+          - text: ••••
+          - button "Toggle balance visibility" [ref=f4e18] [cursor=pointer]
+        - list [ref=f4e21]:
+          - listitem [ref=f4e22]:
+            - link "Timeline" [ref=f4e23] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=f4e27]:
+            - link "Profile" [ref=f4e28] [cursor=pointer]:
+              - /url: /profile/npub175nul9cvufswwsnpy99lvyhg7ad9nkccxhkhusznxfkr7e0zxthql9g6w0
+          - listitem [ref=f4e32]:
+            - link "Notifications" [ref=f4e33] [cursor=pointer]:
+              - /url: /notifications
+          - listitem [ref=f4e37]:
+            - link "Articles" [ref=f4e38] [cursor=pointer]:
+              - /url: /articles
+          - listitem [ref=f4e42]:
+            - link "Messages" [ref=f4e43] [cursor=pointer]:
+              - /url: /messages
+          - listitem [ref=f4e47]:
+            - link "Settings" [ref=f4e48] [cursor=pointer]:
+              - /url: /settings
+          - listitem [ref=f4e52]:
+            - link "Search" [ref=f4e53] [cursor=pointer]:
+              - /url: "#"
+          - listitem [ref=f4e57]:
+            - button "Lists" [ref=f4e58] [cursor=pointer]
+          - listitem [ref=f4e61]:
+            - button "Addons" [ref=f4e62] [cursor=pointer]
+          - listitem [ref=f4e65]:
+            - link "Download" [ref=f4e66] [cursor=pointer]:
+              - /url: /download/
+        - generic [ref=f4e71]:
+          - generic [ref=f4e72]:
+            - generic [ref=f4e73]: Isha
+            - generic [ref=f4e74]: time left
+            - generic [ref=f4e75]: Fajr
+          - generic [ref=f4e76]:
+            - generic [ref=f4e77]: 00:35
+            - generic [ref=f4e78]: 3:38
+            - generic [ref=f4e79]: 04:13
+        - generic [ref=f4e80]:
+          - generic [ref=f4e81]: 16. Aug. 2026
+          - generic [ref=f4e82]: 3. Rabi' al-Awwal 1448
+          - generic [ref=f4e83]: v1.3.3
+          - link "About" [ref=f4e84] [cursor=pointer]:
+            - /url: /about
+      - button "New Post" [ref=f4e86] [cursor=pointer]:
+        - text: New Post
+        - generic [ref=f4e89]: ›
+  - main [ref=f4e90]:
+    - generic [ref=f4e91]:
+      - heading "Notifications" [level=1] [ref=f4e93]
+      - generic [ref=f4e94]:
+        - button "All" [ref=f4e95]
+        - button "Mentions" [ref=f4e96] [cursor=pointer]
+        - button "Reactions" [ref=f4e97] [cursor=pointer]
+        - button "Zaps" [ref=f4e98] [cursor=pointer]
+        - button "Replies" [ref=f4e99] [cursor=pointer]
+      - generic [ref=f4e101]:
+        - generic [ref=f4e102] [cursor=pointer]:
+          - generic [ref=f4e103]: ♥
+          - generic [ref=f4e104]:
+            - generic [ref=f4e105]:
+              - generic [ref=f4e107]:
+                - img "exactly21" [ref=f4e108]
+                - heading "exactly21" [level=2] [ref=f4e110]
+              - generic [ref=f4e111]: reacted to your note
+              - generic [ref=f4e113]: 15. Aug, 23:06 (2. Rabi' al-Awwal)
+            - generic [ref=f4e114]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards ...
+        - generic [ref=f4e119] [cursor=pointer]:
+          - generic [ref=f4e120]:
+            - generic [ref=f4e122]:
+              - img "John" [ref=f4e123]
+              - heading "John" [level=2] [ref=f4e125]
+            - generic [ref=f4e126]: zapped your note 21 sats
+            - generic [ref=f4e128]: 15. Aug, 20:54 (2. Rabi' al-Awwal)
+          - generic [ref=f4e129]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards ...
+        - generic [ref=f4e130] [cursor=pointer]:
+          - generic [ref=f4e131]: ♥
+          - generic [ref=f4e132]:
+            - generic [ref=f4e133]:
+              - generic [ref=f4e135]:
+                - img "John" [ref=f4e136]
+                - heading "John" [level=2] [ref=f4e138]
+              - generic [ref=f4e139]: reacted to your note
+              - generic [ref=f4e141]: 15. Aug, 20:54 (2. Rabi' al-Awwal)
+            - generic [ref=f4e142]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards ...
+        - generic [ref=f4e143] [cursor=pointer]:
+          - generic [ref=f4e144]: ♥
+          - generic [ref=f4e145]:
+            - generic [ref=f4e146]:
+              - generic [ref=f4e148]:
+                - img "Evelin" [ref=f4e149]
+                - heading "Evelin" [level=2] [ref=f4e151]
+              - generic [ref=f4e152]: reacted to your note
+              - generic [ref=f4e154]: 15. Aug, 20:13 (2. Rabi' al-Awwal)
+            - generic [ref=f4e155]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards ...
+        - generic [ref=f4e160] [cursor=pointer]:
+          - generic [ref=f4e161]:
+            - generic [ref=f4e163]:
+              - img "Showtime" [ref=f4e164]
+              - heading "Showtime" [level=2] [ref=f4e166]
+            - generic [ref=f4e167]: replied to a note that mentioned you
+            - generic [ref=f4e169]: 15. Aug, 17:19 (2. Rabi' al-Awwal)
+          - generic [ref=f4e170]: Personally, before installing openclaw on my ai-specific machine, I carefully set up firewalls on my router to deny this machine (on its own VLAN) any...
+          - generic [ref=f4e172]: « Personnellement, avant d’installer Openclaw sur ma machine dédiée à l’IA, j’ai soigneusement confi...
+          - generic [ref=f4e173]:
+            - button "Reply" [ref=f4e174]
+            - button "Zap" [ref=f4e178]
+            - button "Repost" [ref=f4e182]
+            - button "❝" [ref=f4e186]
+            - button "♡" [ref=f4e188]
+            - button "Bookmark" [ref=f4e190]
+        - generic [ref=f4e194] [cursor=pointer]:
+          - generic [ref=f4e195]: 👀
+          - generic [ref=f4e196]:
+            - generic [ref=f4e197]:
+              - generic [ref=f4e199]:
+                - img "Aaro" [ref=f4e200]
+                - heading "Aaro" [level=2] [ref=f4e202]
+              - generic [ref=f4e203]: reacted to your event
+              - generic [ref=f4e205]: 15. Aug, 16:31 (2. Rabi' al-Awwal)
+            - generic [ref=f4e206]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards ...
+        - generic [ref=f4e207] [cursor=pointer]:
+          - generic [ref=f4e208]: ♥
+          - generic [ref=f4e209]:
+            - generic [ref=f4e210]:
+              - generic [ref=f4e212]:
+                - img "Radivis" [ref=f4e213]
+                - heading "Radivis" [level=2] [ref=f4e215]
+              - generic [ref=f4e216]: reacted to your note
+              - generic [ref=f4e218]: 15. Aug, 10:16 (2. Rabi' al-Awwal)
+            - generic [ref=f4e219]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards ...
+        - generic [ref=f4e220] [cursor=pointer]:
+          - generic [ref=f4e221]: ♥
+          - generic [ref=f4e222]:
+            - generic [ref=f4e223]:
+              - generic [ref=f4e225]:
+                - img "Dynamic" [ref=f4e226]
+                - heading "Dynamic" [level=2] [ref=f4e228]
+              - generic [ref=f4e229]: reacted to your event
+              - generic [ref=f4e231]: 15. Aug, 10:04 (2. Rabi' al-Awwal)
+            - generic [ref=f4e232]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards ...
+        - generic [ref=f4e237] [cursor=pointer]:
+          - generic [ref=f4e238]:
+            - generic [ref=f4e240]:
+              - img "zaytun" [ref=f4e241]
+              - heading "zaytun" [level=2] [ref=f4e243]
+            - generic [ref=f4e244]: zapped your note 100 sats
+            - generic [ref=f4e246]: 15. Aug, 09:32 (2. Rabi' al-Awwal)
+          - generic [ref=f4e247]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards ...
+        - generic [ref=f4e252] [cursor=pointer]:
+          - generic [ref=f4e253]:
+            - generic [ref=f4e255]:
+              - img "zaytun" [ref=f4e256]
+              - heading "zaytun" [level=2] [ref=f4e258]
+            - generic [ref=f4e259]: replied to your note
+            - generic [ref=f4e261]: 15. Aug, 09:31 (2. Rabi' al-Awwal)
+          - generic [ref=f4e262]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards installed so it has no access outside the project ...
+          - generic [ref=f4e264]: Personally, before installing openclaw on my ai-specific machine, I carefully set up firewalls on my...
+          - generic "Reply to John's zap" [ref=f4e268]:
+            - img "John" [ref=f4e269]
+            - generic [ref=f4e270]: ⚡
+            - generic [ref=f4e271]: "21"
+            - generic [ref=f4e272]: 👍🏼
+          - generic [ref=f4e273]:
+            - button "1" [ref=f4e274]
+            - button "21" [ref=f4e279]
+            - button "Repost" [ref=f4e284]
+            - button "❝" [ref=f4e288]
+            - button "♥ ♡ 2" [disabled]:
+              - generic: ♥ ♡
+              - generic: "2"
+            - button "Bookmark" [ref=f4e290]
+        - generic [ref=f4e298] [cursor=pointer]:
+          - generic [ref=f4e299]:
+            - generic [ref=f4e301]:
+              - img "Harambe's Last Bitcoin" [ref=f4e302]
+              - heading "Harambe's Last Bitcoin" [level=2] [ref=f4e304]
+            - generic [ref=f4e305]: replied to a note that mentioned you
+            - generic [ref=f4e307]: 15. Aug, 07:34 (2. Rabi' al-Awwal)
+          - generic [ref=f4e308]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards installed so it has no access outside the project ...
+          - generic [ref=f4e310]: Bitcoin is opensource!
+          - generic [ref=f4e311]:
+            - button "Reply" [ref=f4e312]
+            - button "Zap" [ref=f4e316]
+            - button "Repost" [ref=f4e320]
+            - button "❝" [ref=f4e324]
+            - button "♡ 1" [ref=f4e326]:
+              - generic [ref=f4e327]: ♡
+              - generic [ref=f4e328]: "1"
+            - button "Bookmark" [ref=f4e329]
+        - generic [ref=f4e337] [cursor=pointer]:
+          - generic [ref=f4e338]:
+            - generic [ref=f4e340]:
+              - img "nomadshiba⚡⚡" [ref=f4e341]
+              - heading "nomadshiba⚡⚡" [level=2] [ref=f4e343]
+            - generic [ref=f4e344]: replied to your note
+            - generic [ref=f4e346]: 15. Aug, 05:26 (2. Rabi' al-Awwal)
+          - generic [ref=f4e347]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards installed so it has no access outside the project ...
+          - generic [ref=f4e349]: put it inside a pod or container. tell it to escape
+          - generic [ref=f4e350]:
+            - button "Reply" [ref=f4e351]
+            - button "Zap" [ref=f4e355]
+            - button "Repost" [ref=f4e359]
+            - button "❝" [ref=f4e363]
+            - button "♥ ♡ 1" [disabled]:
+              - generic: ♥ ♡
+              - generic: "1"
+            - button "Bookmark" [ref=f4e365]
+        - generic [ref=f4e369] [cursor=pointer]:
+          - generic [ref=f4e370]: 🤔
+          - generic [ref=f4e371]:
+            - generic [ref=f4e372]:
+              - generic [ref=f4e374]:
+                - img "exist270" [ref=f4e375]
+                - heading "exist270" [level=2] [ref=f4e377]
+              - generic [ref=f4e378]: reacted to your event
+              - generic [ref=f4e380]: 15. Aug, 05:24 (2. Rabi' al-Awwal)
+            - generic [ref=f4e381]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards ...
+        - generic [ref=f4e386] [cursor=pointer]:
+          - generic [ref=f4e387]:
+            - generic [ref=f4e389]:
+              - img "mleku" [ref=f4e390]
+              - heading "mleku" [level=2] [ref=f4e392]
+            - generic [ref=f4e393]: replied to your note
+            - generic [ref=f4e395]: 15. Aug, 05:22 (2. Rabi' al-Awwal)
+          - generic [ref=f4e396]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards installed so it has no access outside the project ...
+          - generic [ref=f4e398]: it is a physical security vulnerability. Plaintext attack is possible because, at least when i found...
+          - generic [ref=f4e399]:
+            - button "Reply" [ref=f4e400]
+            - button "Zap" [ref=f4e404]
+            - button "Repost" [ref=f4e408]
+            - button "❝" [ref=f4e412]
+            - button "♡" [ref=f4e414]
+            - button "Bookmark" [ref=f4e416]
+        - generic [ref=f4e424] [cursor=pointer]:
+          - generic [ref=f4e425]:
+            - generic [ref=f4e427]:
+              - img "Islamic Audiobooks Central" [ref=f4e428]
+              - heading "Islamic Audiobooks Central" [level=2] [ref=f4e430]
+            - generic [ref=f4e431]: replied to your note
+            - generic [ref=f4e433]: 15. Aug, 04:08 (2. Rabi' al-Awwal)
+          - generic [ref=f4e434]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards installed so it has no access outside the project ...
+          - generic [ref=f4e436]: Give the monster its own machine
+          - generic [ref=f4e437]:
+            - button "Reply" [ref=f4e438]
+            - button "Zap" [ref=f4e442]
+            - button "Repost" [ref=f4e446]
+            - button "❝" [ref=f4e450]
+            - button "♥ ♡ 1" [disabled]:
+              - generic: ♥ ♡
+              - generic: "1"
+            - button "Bookmark" [ref=f4e452]
+        - generic [ref=f4e456] [cursor=pointer]:
+          - generic [ref=f4e457]: ♥
+          - generic [ref=f4e458]:
+            - generic [ref=f4e459]:
+              - generic [ref=f4e461]:
+                - img "Islamic Audiobooks Central" [ref=f4e462]
+                - heading "Islamic Audiobooks Central" [level=2] [ref=f4e464]
+              - generic [ref=f4e465]: reacted to your note
+              - generic [ref=f4e467]: 15. Aug, 04:06 (2. Rabi' al-Awwal)
+            - generic [ref=f4e468]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards ...
+        - generic [ref=f4e469] [cursor=pointer]:
+          - generic [ref=f4e470]: ♥
+          - generic [ref=f4e471]:
+            - generic [ref=f4e472]:
+              - generic [ref=f4e474]:
+                - img "Islamic Audiobooks Central" [ref=f4e475]
+                - heading "Islamic Audiobooks Central" [level=2] [ref=f4e477]
+              - generic [ref=f4e478]: reacted to your note
+              - generic [ref=f4e480]: 15. Aug, 04:04 (2. Rabi' al-Awwal)
+            - generic [ref=f4e481]: Alhamdulillah for being free of debt.
+        - generic [ref=f4e482] [cursor=pointer]:
+          - generic [ref=f4e483]:
+            - img ":evillaugh_sm:"
+          - generic [ref=f4e484]:
+            - generic [ref=f4e485]:
+              - generic [ref=f4e487]:
+                - img "DeAllen Young" [ref=f4e488]
+                - heading "DeAllen Young" [level=2] [ref=f4e490]
+              - generic [ref=f4e491]: reacted to your event
+              - generic [ref=f4e493]: 15. Aug, 03:25 (2. Rabi' al-Awwal)
+            - generic [ref=f4e494]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards ...
+        - generic [ref=f4e499] [cursor=pointer]:
+          - generic [ref=f4e500]:
+            - generic [ref=f4e502]:
+              - img "mleku" [ref=f4e503]
+              - heading "mleku" [level=2] [ref=f4e505]
+            - generic [ref=f4e506]: replied to your note
+            - generic [ref=f4e508]: 15. Aug, 03:25 (2. Rabi' al-Awwal)
+          - generic [ref=f4e509]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards installed so it has no access outside the project ...
+          - generic [ref=f4e511]: hah. Ask it to tell you about your signal desktop database. Claud told me disturbing things about th...
+          - generic [ref=f4e512]:
+            - button "1" [ref=f4e513]
+            - button "Zap" [ref=f4e518]
+            - button "Repost" [ref=f4e522]
+            - button "❝" [ref=f4e526]
+            - button "♡" [ref=f4e528]
+            - button "Bookmark" [ref=f4e530]
+        - generic [ref=f4e538] [cursor=pointer]:
+          - generic [ref=f4e539]:
+            - generic [ref=f4e541]:
+              - img "lemon" [ref=f4e542]
+              - heading "lemon" [level=2] [ref=f4e544]
+            - generic [ref=f4e545]: reposted your note
+            - generic [ref=f4e547]: 15. Aug, 03:17 (2. Rabi' al-Awwal)
+          - generic [ref=f4e548]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards ...
+        - generic [ref=f4e549] [cursor=pointer]:
+          - generic [ref=f4e550]: 😂
+          - generic [ref=f4e551]:
+            - generic [ref=f4e552]:
+              - generic [ref=f4e554]:
+                - img "lemon" [ref=f4e555]
+                - heading "lemon" [level=2] [ref=f4e557]
+              - generic [ref=f4e558]: reacted to your event
+              - generic [ref=f4e560]: 15. Aug, 03:17 (2. Rabi' al-Awwal)
+            - generic [ref=f4e561]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards ...
+        - generic [ref=f4e562] [cursor=pointer]:
+          - generic [ref=f4e563]: 💜
+          - generic [ref=f4e564]:
+            - generic [ref=f4e565]:
+              - generic [ref=f4e567]:
+                - img "." [ref=f4e568]
+                - heading "." [level=2] [ref=f4e570]
+              - generic [ref=f4e571]: reacted to your event
+              - generic [ref=f4e573]: 15. Aug, 02:50 (2. Rabi' al-Awwal)
+            - generic [ref=f4e574]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards ...
+        - generic [ref=f4e579] [cursor=pointer]:
+          - generic [ref=f4e580]:
+            - generic [ref=f4e582]:
+              - img "." [ref=f4e583]
+              - heading "." [level=2] [ref=f4e585]
+            - generic [ref=f4e586]: replied to your note
+            - generic [ref=f4e588]: 15. Aug, 02:50 (2. Rabi' al-Awwal)
+          - generic [ref=f4e589]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards installed so it has no access outside the project ...
+          - generic [ref=f4e591]: https://image.nostr.build/9524c746711f92763b4945aede60d86e04317d427e9b599e072af2339e4c1f90.png
+          - generic [ref=f4e592]:
+            - button "Reply" [ref=f4e593]
+            - button "Zap" [ref=f4e597]
+            - button "Repost" [ref=f4e601]
+            - button "❝" [ref=f4e605]
+            - button "♥ ♡ 1" [disabled]:
+              - generic: ♥ ♡
+              - generic: "1"
+            - button "Bookmark" [ref=f4e607]
+        - generic [ref=f4e611] [cursor=pointer]:
+          - generic [ref=f4e612]: ♥
+          - generic [ref=f4e613]:
+            - generic [ref=f4e614]:
+              - generic [ref=f4e616]:
+                - img "NotBiebs and 69 others" [ref=f4e617]
+                - heading "NotBiebs and 69 others" [level=2] [ref=f4e619]
+              - generic [ref=f4e620]: reacted to your note
+              - generic [ref=f4e622]: 15. Aug, 02:50 (2. Rabi' al-Awwal)
+            - generic [ref=f4e623]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards ...
+        - generic [ref=f4e628] [cursor=pointer]:
+          - generic [ref=f4e629]:
+            - generic [ref=f4e631]:
+              - img "NotBiebs and 69 others" [ref=f4e632]
+              - heading "NotBiebs and 69 others" [level=2] [ref=f4e634]
+            - generic [ref=f4e635]: replied to your note
+            - generic [ref=f4e637]: 15. Aug, 02:49 (2. Rabi' al-Awwal)
+          - generic [ref=f4e638]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards installed so it has no access outside the project ...
+          - generic [ref=f4e640]: https://media1.tenor.com/m/uhMybfTMsmMAAAAC/wargames-war-games.gif
+          - generic [ref=f4e641]:
+            - button "1" [ref=f4e642]
+            - button "Zap" [ref=f4e647]
+            - button "Repost" [ref=f4e651]
+            - button "❝" [ref=f4e655]
+            - button "♡" [ref=f4e657]
+            - button "Bookmark" [ref=f4e659]
+        - generic [ref=f4e667] [cursor=pointer]:
+          - generic [ref=f4e668]:
+            - generic [ref=f4e670]:
+              - img "Muslim Bitcoiner" [ref=f4e671]
+              - heading "Muslim Bitcoiner" [level=2] [ref=f4e673]
+            - generic [ref=f4e674]: zapped your note 21 sats
+            - generic [ref=f4e676]: 15. Aug, 02:20 (2. Rabi' al-Awwal)
+          - generic [ref=f4e677]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards ...
+        - generic [ref=f4e678] [cursor=pointer]:
+          - generic [ref=f4e679]: 👀
+          - generic [ref=f4e680]:
+            - generic [ref=f4e681]:
+              - generic [ref=f4e683]:
+                - img "Muslim Bitcoiner" [ref=f4e684]
+                - heading "Muslim Bitcoiner" [level=2] [ref=f4e686]
+              - generic [ref=f4e687]: reacted to your note
+              - generic [ref=f4e689]: 15. Aug, 02:20 (2. Rabi' al-Awwal)
+            - generic [ref=f4e690]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards ...
+        - generic [ref=f4e695] [cursor=pointer]:
+          - generic [ref=f4e696]:
+            - generic [ref=f4e698]:
+              - img "Muslim Bitcoiner" [ref=f4e699]
+              - heading "Muslim Bitcoiner" [level=2] [ref=f4e701]
+            - generic [ref=f4e702]: reposted your note
+            - generic [ref=f4e704]: 15. Aug, 02:20 (2. Rabi' al-Awwal)
+          - generic [ref=f4e705]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards ...
+        - generic [ref=f4e706] [cursor=pointer]:
+          - generic [ref=f4e707]: 👀
+          - generic [ref=f4e708]:
+            - generic [ref=f4e709]:
+              - generic [ref=f4e711]:
+                - img "ابو مريم" [ref=f4e712]
+                - heading "ابو مريم" [level=2] [ref=f4e714]
+              - generic [ref=f4e715]: reacted to your note
+              - generic [ref=f4e717]: 15. Aug, 02:19 (2. Rabi' al-Awwal)
+            - generic [ref=f4e718]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards ...
+        - generic [ref=f4e723] [cursor=pointer]:
+          - generic [ref=f4e724]:
+            - generic [ref=f4e726]:
+              - img "Apiarium" [ref=f4e727]
+              - heading "Apiarium" [level=2] [ref=f4e729]
+            - generic [ref=f4e730]: reposted your note
+            - generic [ref=f4e732]: 15. Aug, 02:12 (2. Rabi' al-Awwal)
+          - generic [ref=f4e733]: GLM 5.3 is a monster. You know what it just did on my machine? Even though I had stable safeguards ...
+  - complementary "Details" [ref=f4e734]:
+    - generic [ref=f4e735]:
+      - button "Noor jadīd" [ref=f4e737] [cursor=pointer]:
+        - generic [ref=f4e739]: ‹ ›
+      - generic [ref=f4e740]:
+        - generic [ref=f4e741]: Font Size
+        - button "−" [ref=f4e742] [cursor=pointer]
+        - button "+" [ref=f4e743] [cursor=pointer]
+      - button "alp" [ref=f4e745] [cursor=pointer]:
+        - generic [ref=f4e748]: ‹ ›
+    - generic [ref=f4e749]:
+      - button "System Logs" [ref=f4e753] [cursor=pointer]:
+        - generic [ref=f4e755]: ‹ ›
+      - button "Export DiagLogs" [ref=f4e757] [cursor=pointer]
+    - generic [ref=f4e760]:
+      - generic [ref=f4e761]:
+        - heading "Global" [level=3] [ref=f4e762]
+        - log "Global logs" [ref=f4e763]:
+          - table [ref=f4e765]:
+            - rowgroup [ref=f4e766]:
+              - row [ref=f4e767]:
+                - cell "00:31:03" [ref=f4e768]
+                - cell "[NostrTrnsp.]" [ref=f4e769]
+                - cell "Transport ready" [ref=f4e770]
+              - row [ref=f4e771]:
+                - cell "00:31:03" [ref=f4e772]
+                - cell "[NostrTrnsp.]" [ref=f4e773]
+                - cell "Connecting to relays..." [ref=f4e774]
+              - row [ref=f4e775]:
+                - cell "00:31:03" [ref=f4e776]
+                - cell "[Auth]" [ref=f4e777]
+                - cell "Found existing session, attempting to restore" [ref=f4e778]
+              - row [ref=f4e779]:
+                - cell "00:31:03" [ref=f4e780]
+                - cell "[EventBus]" [ref=f4e781]
+                - cell "👤 User logged in → notifying 9 components" [ref=f4e782]
+              - row [ref=f4e783]:
+                - cell "00:31:03" [ref=f4e784]
+                - cell "[RelayConfig]" [ref=f4e785]
+                - cell "Loaded 6 relays from cache" [ref=f4e786]
+              - row [ref=f4e787]:
+                - cell "00:31:03" [ref=f4e788]
+                - cell "[EventBus]" [ref=f4e789]
+                - cell "Event 'relays:loaded' → notifying 0 components" [ref=f4e790]
+              - row [ref=f4e791]:
+                - cell "00:31:03" [ref=f4e792]
+                - cell "[RelayListOrch.]" [ref=f4e793]
+                - cell "Initialized" [ref=f4e794]
+              - row [ref=f4e795]:
+                - cell "00:31:03" [ref=f4e796]
+                - cell "[RelayConfig]" [ref=f4e797]
+                - cell "Syncing f527cf97...'s relay list" [ref=f4e798]
+              - row [ref=f4e799]:
+                - cell "00:31:03" [ref=f4e800]
+                - cell "[EventBus]" [ref=f4e801]
+                - cell "Event 'font-size:changed' → notifying 1 component" [ref=f4e802]
+              - row [ref=f4e803]:
+                - cell "00:31:03" [ref=f4e804]
+                - cell "[Auth]" [ref=f4e805]
+                - cell "Signer connection restored" [ref=f4e806]
+              - row [ref=f4e807]:
+                - cell "00:31:03" [ref=f4e808]
+                - cell "[Router]" [ref=f4e809]
+                - cell "🧹 Local logs cleared (switched to /notifications)" [ref=f4e810]
+              - row [ref=f4e811]:
+                - cell "00:31:03" [ref=f4e812]
+                - cell "[AppState]" [ref=f4e813]
+                - cell "Switched to notifications" [ref=f4e814]
+              - row [ref=f4e815]:
+                - cell "00:31:03" [ref=f4e816]
+                - cell "[EventBus]" [ref=f4e817]
+                - cell "🔔 Notifications badge update → notifying 3 components" [ref=f4e818]
+              - row [ref=f4e819]:
+                - cell "00:31:06" [ref=f4e820]
+                - cell "[EventBus]" [ref=f4e821]
+                - cell "🔔 Notifications badge update → notifying 4 components (2)" [ref=f4e822]
+              - row [ref=f4e823]:
+                - cell "00:31:03" [ref=f4e824]
+                - cell "[NWCService]" [ref=f4e825]
+                - cell "Found stored connection, attempting to reconnect..." [ref=f4e826]
+              - row [ref=f4e827]:
+                - cell "00:31:04" [ref=f4e828]
+                - cell "[NostrTrnsp.]" [ref=f4e829]
+                - cell "Connected to 9 of 9 relays" [ref=f4e830]
+              - row [ref=f4e831]:
+                - cell "00:32:44" [ref=f4e832]
+                - cell "[EventBus]" [ref=f4e833]
+                - cell "Event 'relay:error' → notifying 2 components (47)" [ref=f4e834]
+              - row [ref=f4e835]:
+                - cell "00:32:44" [ref=f4e836]
+                - cell "[EventBus]" [ref=f4e837]
+                - cell "Event 'relay:health:updated' → notifying 0 components (109)" [ref=f4e838]
+              - row [ref=f4e839]:
+                - cell "00:31:04" [ref=f4e840]
+                - cell "[RelayConfig]" [ref=f4e841]
+                - cell "Relay list is up to date" [ref=f4e842]
+              - row [ref=f4e843]:
+                - cell "00:31:04" [ref=f4e844]
+                - cell "[NWCService]" [ref=f4e845]
+                - cell "Auto-reconnected to NWC wallet" [ref=f4e846]
+              - row [ref=f4e847]:
+                - cell "00:32:04" [ref=f4e848]
+                - cell "[EventBus]" [ref=f4e849]
+                - cell "Event 'relay:connected' → notifying 2 components (56)" [ref=f4e850]
+              - row [ref=f4e851]:
+                - cell "00:31:05" [ref=f4e852]
+                - cell "[EventBus]" [ref=f4e853]
+                - cell "Event 'nostr-majlis:dhikr-changed' → notifying 0 components (2)" [ref=f4e854]
+              - row [ref=f4e855]:
+                - cell "00:31:05" [ref=f4e856]
+                - cell "[NostrTrnsp.]" [ref=f4e857]
+                - cell "Listening on 2 relays (3)" [ref=f4e858]
+              - row [ref=f4e859]:
+                - cell "00:31:05" [ref=f4e860]
+                - cell "[EventBus]" [ref=f4e861]
+                - cell "Event 'dm:fetch-progress' → notifying 0 components (2)" [ref=f4e862]
+              - row [ref=f4e863]:
+                - cell "00:31:05" [ref=f4e864]
+                - cell "[EventBus]" [ref=f4e865]
+                - cell "Event 'dm:fetch-complete' → notifying 3 components" [ref=f4e866]
+              - row [ref=f4e867]:
+                - cell "00:31:06" [ref=f4e868]
+                - cell "[NostrTrnsp.]" [ref=f4e869]
+                - cell "Listening on 12 relays (3)" [ref=f4e870]
+              - row [ref=f4e871]:
+                - cell "00:32:19" [ref=f4e872]
+                - cell "[EventBus]" [ref=f4e873]
+                - cell "Event 'note:cached' → notifying 0 components (226)" [ref=f4e874]
+              - row [ref=f4e875]:
+                - cell "00:31:06" [ref=f4e876]
+                - cell "[ListAutoSync]" [ref=f4e877]
+                - cell "initialized" [ref=f4e878]
+              - row [ref=f4e879]:
+                - cell "00:31:06" [ref=f4e880]
+                - cell "[ListAutoSync]" [ref=f4e881]
+                - cell "User already logged in, starting sync" [ref=f4e882]
+              - row [ref=f4e883]:
+                - cell "00:31:06" [ref=f4e884]
+                - cell "[ListAutoSync]" [ref=f4e885]
+                - cell "Startup sync scheduled in 10 seconds" [ref=f4e886]
+              - row [ref=f4e887]:
+                - cell "00:31:16" [ref=f4e888]
+                - cell "[ListAutoSync]" [ref=f4e889]
+                - cell "Running startup sync" [ref=f4e890]
+              - row [ref=f4e891]:
+                - cell "00:31:16" [ref=f4e892]
+                - cell "[ListAutoSync]" [ref=f4e893]
+                - cell "Lists in Easy Mode. AutoSync triggered from relays." [ref=f4e894]
+              - row [ref=f4e895]:
+                - cell "00:31:16" [ref=f4e896]
+                - cell "[ListAutoSync]" [ref=f4e897]
+                - 'cell "follows: fetching from relays..." [ref=f4e898]'
+              - row [ref=f4e899]:
+                - cell "00:31:16" [ref=f4e900]
+                - cell "[ListAutoSync]" [ref=f4e901]
+                - 'cell "follows: diff - added: 0, removed: 0" [ref=f4e902]'
+              - row [ref=f4e903]:
+                - cell "00:31:16" [ref=f4e904]
+                - cell "[ListAutoSync]" [ref=f4e905]
+                - 'cell "mutes: fetching from relays..." [ref=f4e906]'
+              - row [ref=f4e907]:
+                - cell "00:31:17" [ref=f4e908]
+                - cell "[ListAutoSync]" [ref=f4e909]
+                - 'cell "mutes: diff - added: 0, removed: 0" [ref=f4e910]'
+              - row [ref=f4e911]:
+                - cell "00:31:17" [ref=f4e912]
+                - cell "[ListAutoSync]" [ref=f4e913]
+                - 'cell "bookmarks: fetching from relays..." [ref=f4e914]'
+              - row [ref=f4e915]:
+                - cell "00:31:18" [ref=f4e916]
+                - cell "[ListAutoSync]" [ref=f4e917]
+                - 'cell "bookmarks: diff - added: 0, removed: 0" [ref=f4e918]'
+              - row [ref=f4e919]:
+                - cell "00:31:18" [ref=f4e920]
+                - cell "[ListAutoSync]" [ref=f4e921]
+                - 'cell "tribes: fetching from relays..." [ref=f4e922]'
+              - row [ref=f4e923]:
+                - cell "00:31:19" [ref=f4e924]
+                - cell "[ListAutoSync]" [ref=f4e925]
+                - 'cell "tribes: diff - added: 0, removed: 0" [ref=f4e926]'
+              - row [ref=f4e927]:
+                - cell "00:31:19" [ref=f4e928]
+                - cell "[ListAutoSync]" [ref=f4e929]
+                - cell "Starting periodic sync (every 5 minutes)" [ref=f4e930]
+              - row [ref=f4e931]:
+                - cell "00:31:20" [ref=f4e932]
+                - cell "[EventBus]" [ref=f4e933]
+                - cell "Event 'profileMounts:changed' → notifying 0 components" [ref=f4e934]
+      - generic [ref=f4e935]:
+        - heading "Local" [level=3] [ref=f4e936]
+        - log "Local logs" [ref=f4e937]:
+          - table [ref=f4e939]:
+            - rowgroup [ref=f4e940]:
+              - row [ref=f4e941]:
+                - cell "00:31:03" [ref=f4e942]
+                - cell "[Notification..]" [ref=f4e943]
+                - cell "🔔 Notifications Orchestrator initialized" [ref=f4e944]
+              - row [ref=f4e945]:
+                - cell "00:31:03" [ref=f4e946]
+                - cell "[Notification..]" [ref=f4e947]
+                - cell "🚀 Starting notifications for npub175nul9c..." [ref=f4e948]
+              - row [ref=f4e949]:
+                - cell "00:31:03" [ref=f4e950]
+                - cell "[Notification..]" [ref=f4e951]
+                - cell "Loaded 87 muted users, 3 muted threads" [ref=f4e952]
+              - row [ref=f4e953]:
+                - cell "00:31:06" [ref=f4e954]
+                - cell "[Notification..]" [ref=f4e955]
+                - cell "⏳ Loading notifications... (2)" [ref=f4e956]
+              - row [ref=f4e957]:
+                - cell "00:31:03" [ref=f4e958]
+                - cell "[ReactionsOrch.]" [ref=f4e959]
+                - cell "Reactions Orchestrator at your service" [ref=f4e960]
+              - row [ref=f4e961]:
+                - cell "00:31:05" [ref=f4e962]
+                - cell "[Notification..]" [ref=f4e963]
+                - cell "📋 Stored 192 user event IDs with ancestry" [ref=f4e964]
+              - row [ref=f4e965]:
+                - cell "00:31:05" [ref=f4e966]
+                - cell "[Notification..]" [ref=f4e967]
+                - cell "📥 Fetching last 100 notifications from relays" [ref=f4e968]
+              - row [ref=f4e969]:
+                - cell "00:31:05" [ref=f4e970]
+                - cell "[Notification..]" [ref=f4e971]
+                - 'cell "✅ Fetched 376 #p notifications" [ref=f4e972]'
+              - row [ref=f4e973]:
+                - cell "00:31:06" [ref=f4e974]
+                - cell "[Notification..]" [ref=f4e975]
+                - 'cell "✅ Fetched 380 #e notifications" [ref=f4e976]'
+              - row [ref=f4e977]:
+                - cell "00:31:06" [ref=f4e978]
+                - cell "[Notification..]" [ref=f4e979]
+                - 'cell "📋 Total notifications loaded: 300" [ref=f4e980]'
+              - row [ref=f4e981]:
+                - cell "00:31:06" [ref=f4e982]
+                - cell "[Notification..]" [ref=f4e983]
+                - cell "Restoring 22 mutual change notifications" [ref=f4e984]
+              - row [ref=f4e985]:
+                - cell "00:31:06" [ref=f4e986]
+                - cell "[Notification..]" [ref=f4e987]
+                - cell "Restored 22 mutual change notifications" [ref=f4e988]
+              - row [ref=f4e989]:
+                - cell "00:31:06" [ref=f4e990]
+                - cell "[Notification..]" [ref=f4e991]
+                - cell "Restoring 118 follower change notifications" [ref=f4e992]
+              - row [ref=f4e993]:
+                - cell "00:31:06" [ref=f4e994]
+                - cell "[Notification..]" [ref=f4e995]
+                - cell "Restored 118 follower change notifications" [ref=f4e996]
+              - row [ref=f4e997]:
+                - cell "00:31:06" [ref=f4e998]
+                - cell "[Notification..]" [ref=f4e999]
+                - 'cell "✅ #p subscription active (notifications-ptag)" [ref=f4e1000]'
+              - row [ref=f4e1001]:
+                - cell "00:31:06" [ref=f4e1002]
+                - cell "[Notification..]" [ref=f4e1003]
+                - 'cell "✅ #e subscription active (notifications-etag) - tracking 192 events" [ref=f4e1004]'
+              - row [ref=f4e1005]:
+                - cell "00:31:06" [ref=f4e1006]
+                - cell "[ReactionsOrch]" [ref=f4e1007]
+                - cell "📊 Fetching interaction stats from relays for this note..." [ref=f4e1008]
+              - row [ref=f4e1009]:
+                - cell "00:31:06" [ref=f4e1010]
+                - cell "[ReactionsOrch]" [ref=f4e1011]
+                - cell "⏳ Detailed stats loading... (27)" [ref=f4e1012]
+              - row [ref=f4e1013]:
+                - cell "00:31:06" [ref=f4e1014]
+                - cell "[ReactionsOrch]" [ref=f4e1015]
+                - 'cell "📊 Fetching interaction stats from relays for reply #1 (8)" [ref=f4e1016]'
+              - row [ref=f4e1017]:
+                - cell "00:31:06" [ref=f4e1018]
+                - cell "[ReactionsOrch]" [ref=f4e1019]
+                - cell "📊 Interaction stats ready for this note" [ref=f4e1020]
+              - row [ref=f4e1021]:
+                - cell "00:31:06" [ref=f4e1022]
+                - cell "[ReactionsOrch]" [ref=f4e1023]
+                - 'cell "Interaction stats for reply #1: Loaded ✅ (8)" [ref=f4e1024]'

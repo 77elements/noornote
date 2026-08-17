@@ -43,6 +43,11 @@ export function npubToHex(npub: string): string | null {
  * // => "npub1..."
  */
 export function hexToNpub(hex: string): string | null {
+  // A valid npub encodes exactly 32 bytes (64 hex chars). Reject anything else —
+  // especially the empty string, which nostr-tools happily encodes into a short
+  // but valid-looking phantom npub (rendered as "@npub…" for author-less
+  // synthetic events, e.g. cached Armada activity notifications).
+  if (!/^[0-9a-f]{64}$/i.test(hex)) return null;
   try {
     return encodeNpub(hex);
   } catch {

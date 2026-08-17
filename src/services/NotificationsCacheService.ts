@@ -23,7 +23,9 @@ export class NotificationsCacheService {
   private defaultLimit = 100;
   private perAccountStorage: PerAccountLocalStorage;
   // Bump this version to force cache clear (e.g., after fixing hashtag notification caching bug)
-  private static readonly CACHE_VERSION = 2;
+  // v3: clears entries poisoned by synthetic Armada events (pubkey '') that
+  // re-classified as 'mention' on restore and showed a phantom "@npub…" author.
+  private static readonly CACHE_VERSION = 3;
 
   private constructor() {
     this.perAccountStorage = PerAccountLocalStorage.getInstance();
