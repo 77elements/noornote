@@ -980,9 +980,21 @@ export class ProfileView extends View {
   private setupSoftMuteButton(): void {
     const btn = this.container.querySelector('.soft-mute-btn') as HTMLButtonElement | null;
     if (!btn) return;
+    // Idempotent: renderProfileHeader() runs again on profile updates and
+    // would otherwise stack another click listener on the same node each
+    // pass — the toggles then cancel each other out and the button appears
+    // dead. A data flag (not cloning — that would drop the attached
+    // nn-tooltip) keeps exactly one listener for the node's lifetime.
+    if (btn.dataset.softMuteBound === '1') return;
+    btn.dataset.softMuteBound = '1';
     btn.addEventListener('click', () => {
       SoftMuteService.getInstance().toggleSoftMute(this.pubkey);
-      btn.textContent = SoftMuteService.getInstance().isSoftMuted(this.pubkey) ? 'Soft muted' : 'Soft mute';
+      const muted = SoftMuteService.getInstance().isSoftMuted(this.pubkey);
+      btn.textContent = muted ? 'Soft muted' : 'Soft mute';
+      ToastService.show(
+        muted ? 'Soft muted — their interactions no longer notify you' : 'Soft mute lifted',
+        'success'
+      );
     });
   }
 
