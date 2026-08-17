@@ -11,9 +11,12 @@
  *  - Global switch (Settings → UI): hides everyone's external quote highlights
  *  - Per-user override (ProfileView checkbox): hides that one author's
  *
+ * Pure reposts (kind 6/16) of an external quote highlight count as the same
+ * content and are hidden by FeedOrchestrator under the same conditions.
+ *
  * The user's own highlights are always visible. Highlights whose source is a
  * Nostr note or article (e/a tags) are never external and never hidden here —
- * do not confuse with quoted reposts (kind 6/16).
+ * do not confuse with quoted reposts (kind 1 + q-tag).
  */
 
 import { PerAccountLocalStorage, StorageKeys } from '../services/PerAccountLocalStorage';

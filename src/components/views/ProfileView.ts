@@ -856,7 +856,7 @@ export class ProfileView extends View {
     `;
 
     const extQuoteCheckbox = `
-      <label class="nn-checkbox" title="Hide this user's external article quote posts from your timelines">
+      <label class="nn-checkbox" title="Hide this user's external article quote posts and reposts of them from your timelines">
         <input type="checkbox" id="ext-quotes-toggle" ${isExtQuoteHiddenFor(this.pubkey) ? 'checked' : ''} />
         <span>Turn off ext. Quotes</span>
       </label>

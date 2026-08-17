@@ -719,10 +719,13 @@ export class FeedOrchestrator extends Orchestrator {
   /**
    * Drop external quote highlights (kind 9802 whose NIP-84 source is an
    * external web URL — the browser-extension "quote every paragraph"
-   * pattern). Hidden when the global switch is on OR the author is on the
-   * per-user hide list. The user's own highlights always stay visible;
-   * highlights whose source is a Nostr note/article are never affected
-   * (not to be confused with quoted reposts, kind 6/16).
+   * pattern) AND pure reposts (kind 6/16) of such highlights. Hidden when
+   * the global switch is on OR the highlight author (or the reposter) is on
+   * the per-user hide list. The user's own highlights always stay visible,
+   * reposted or not; highlights whose source is a Nostr note/article are
+   * never affected. Quoted reposts (kind 1 + q-tag) are a different thing
+   * and untouched. Reposts whose inner event is not embedded/parsable are
+   * kept — never over-hide on incomplete data.
    */
   private filterExternalQuoteHighlights(events: NostrEvent[]): NostrEvent[] {
     const globalHide = isHideExtQuotesEnabled();
@@ -732,6 +735,27 @@ export class FeedOrchestrator extends Orchestrator {
     const me = AuthService.getInstance().getCurrentUser()?.pubkey;
     let removed = 0;
     const filtered = events.filter(event => {
+      // Pure repost of an external quote highlight: inspect the embedded
+      // inner event (NIP-18 reposts carry the full original in content).
+      if (event.kind === 6 || event.kind === 16) {
+        let inner: { kind?: number; pubkey?: string; tags?: string[][] } | null = null;
+        try {
+          const parsed = JSON.parse(event.content);
+          if (parsed && typeof parsed === 'object' && typeof parsed.kind === 'number') {
+            inner = parsed;
+          }
+        } catch {
+          // No embedded event (empty-content repost variant) — keep.
+        }
+        if (!inner || !isExternalQuoteHighlight(inner)) return true;
+        if (inner.pubkey === me) return true; // repost of my own highlight stays
+        if (globalHide || hiddenUsers[inner.pubkey ?? ''] === true || hiddenUsers[event.pubkey] === true) {
+          removed++;
+          return false;
+        }
+        return true;
+      }
+
       if (event.kind !== 9802 || !isExternalQuoteHighlight(event)) return true;
       if (event.pubkey === me) return true;
       if (globalHide || hiddenUsers[event.pubkey] === true) {

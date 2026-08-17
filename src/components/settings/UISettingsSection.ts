@@ -140,7 +140,7 @@ export class UISettingsSection extends SettingsSection {
             <span class="setting__label">Hide external quote posts</span>
             <div class="setting__control" id="hide-ext-quotes-switch-container"></div>
             <p class="setting__desc">
-              When enabled, highlight posts by others that quote an external website (kind 9802 with a web source) are hidden from your timelines. Your own highlights stay visible. Individual users can be hidden from their profile.
+              When enabled, highlight posts by others that quote an external website (kind 9802 with a web source) are hidden from your timelines, including pure reposts of them. Your own highlights stay visible. Individual users can be hidden from their profile.
             </p>
           </div>
         </section>
