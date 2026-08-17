@@ -61,6 +61,8 @@ export const StorageKeys = {
   DISABLE_POST_TRUNCATION: 'noornote_disable_post_truncation_map',
   HIDE_SELF_REPOSTS: 'noornote_hide_self_reposts_map', // boolean: drop kind:6/16 reposts where the reposter is the original author
   HIDE_SELF_REPOSTS_GAP: 'noornote_hide_self_reposts_gap_map', // SelfRepostGap: hide a self-repost when repost↔original gap is below this ('all' = always)
+  HIDE_EXT_QUOTES: 'noornote_hide_ext_quotes_map', // boolean: drop kind:9802 highlights whose source is an external web URL (others' posts only)
+  HIDE_EXT_QUOTES_USERS: 'noornote_hide_ext_quotes_users_map', // Record<authorPubkey, true>: per-user override — hide that author's external quote highlights
   SCC_ARTICLE_EXCERPT_LIMIT: 'noornote_scc_article_excerpt_limit_map',
   // FOAF degree (1, 2, or 3) used to source each article feed surface.
   // 1 = direct follows only; 2 = friends-of-friends; 3 = friends-of-friends-of-friends.

@@ -25,6 +25,7 @@ import { AuthService } from '../AuthService';
 import { diagLog } from '../DiagnosticLogger';
 import { isDataSaverEnabled } from '../DataSaverService';
 import { isHideSelfRepostsEnabled, getSelfRepostGapSeconds } from '../../helpers/selfRepostSetting';
+import { isHideExtQuotesEnabled, getHiddenExtQuoteAuthors, isExternalQuoteHighlight } from '../../helpers/extQuoteSetting';
 import type { TimelineConfig } from '../../components/timeline/TimelineConfig';
 
 /**
@@ -690,6 +691,11 @@ export class FeedOrchestrator extends Orchestrator {
       filteredEvents = this.filterSelfReposts(filteredEvents);
     }
 
+    // Filter external quote highlights (global switch OR per-user override).
+    // Same pipeline position as the mute/word filters, so all timeline
+    // surfaces (TV, PV, tribes, relay-filter, time-machine) are covered.
+    filteredEvents = this.filterExternalQuoteHighlights(filteredEvents);
+
     // Content word filter (addon) — gated by the config's explicit applyWordFilter
     // flag (false for ProfileView). No longer inferred from the mute exemption.
     if (applyWordFilter) {
@@ -708,6 +714,36 @@ export class FeedOrchestrator extends Orchestrator {
     filteredEvents.sort((a, b) => b.created_at - a.created_at);
 
     return filteredEvents;
+  }
+
+  /**
+   * Drop external quote highlights (kind 9802 whose NIP-84 source is an
+   * external web URL — the browser-extension "quote every paragraph"
+   * pattern). Hidden when the global switch is on OR the author is on the
+   * per-user hide list. The user's own highlights always stay visible;
+   * highlights whose source is a Nostr note/article are never affected
+   * (not to be confused with quoted reposts, kind 6/16).
+   */
+  private filterExternalQuoteHighlights(events: NostrEvent[]): NostrEvent[] {
+    const globalHide = isHideExtQuotesEnabled();
+    const hiddenUsers = getHiddenExtQuoteAuthors();
+    if (!globalHide && Object.keys(hiddenUsers).length === 0) return events;
+
+    const me = AuthService.getInstance().getCurrentUser()?.pubkey;
+    let removed = 0;
+    const filtered = events.filter(event => {
+      if (event.kind !== 9802 || !isExternalQuoteHighlight(event)) return true;
+      if (event.pubkey === me) return true;
+      if (globalHide || hiddenUsers[event.pubkey] === true) {
+        removed++;
+        return false;
+      }
+      return true;
+    });
+    if (removed > 0) {
+      diagLog('system', `Hid ${removed} external quote highlight(s) from timeline`, {});
+    }
+    return filtered;
   }
 
   /**

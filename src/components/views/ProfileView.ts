@@ -17,6 +17,7 @@ import { ProfileSearchComponent } from '../profile/ProfileSearchComponent';
 import { ProfileFollowManager } from '../../lists/follows';
 import { ProfileMuteManager } from '../../lists/mutes';
 import { SoftMuteService } from '../../services/SoftMuteService';
+import { isExtQuoteHiddenFor, setExtQuoteHiddenFor } from '../../helpers/extQuoteSetting';
 import { ProfileEditModal } from '../profile/ProfileEditModal';
 import { QRCodeModal } from '../qrcode/QRCodeModal';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
@@ -854,7 +855,14 @@ export class ProfileView extends View {
       </label>
     `;
 
-    return muteButton + softMuteButton + articleNotifCheckbox;
+    const extQuoteCheckbox = `
+      <label class="nn-checkbox" title="Hide this user's external article quote posts from your timelines">
+        <input type="checkbox" id="ext-quotes-toggle" ${isExtQuoteHiddenFor(this.pubkey) ? 'checked' : ''} />
+        <span>Turn off ext. Quotes</span>
+      </label>
+    `;
+
+    return muteButton + softMuteButton + articleNotifCheckbox + extQuoteCheckbox;
   }
 
   /**
@@ -931,12 +939,36 @@ export class ProfileView extends View {
     // Setup soft-mute button handler
     this.setupSoftMuteButton();
 
-    // Setup article notification checkbox handler
+    // Setup article notification checkbox handler.
+    // Clone the node first to drop any listeners attached by earlier
+    // renderProfileHeader() passes — setupMuteButton() runs on every
+    // re-render while the element is only recreated on the first.
     const articleNotifCheckbox = this.container.querySelector('#article-notif-toggle') as HTMLInputElement;
     if (articleNotifCheckbox) {
-      articleNotifCheckbox.addEventListener('change', () => {
+      const freshArticleNotif = articleNotifCheckbox.cloneNode(true) as HTMLInputElement;
+      articleNotifCheckbox.parentNode?.replaceChild(freshArticleNotif, articleNotifCheckbox);
+      freshArticleNotif.addEventListener('change', () => {
         const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
         articlesApi?.toggleArticleNotifications(this.pubkey);
+      });
+    }
+
+    // Setup external-quotes toggle handler — hides this user's external
+    // quote highlights (kind 9802 with web source) from all timelines.
+    // Same clone-to-dedup pattern as the article checkbox above.
+    const extQuotesCheckbox = this.container.querySelector('#ext-quotes-toggle') as HTMLInputElement;
+    if (extQuotesCheckbox) {
+      const freshExtQuotes = extQuotesCheckbox.cloneNode(true) as HTMLInputElement;
+      extQuotesCheckbox.parentNode?.replaceChild(freshExtQuotes, extQuotesCheckbox);
+      freshExtQuotes.addEventListener('change', () => {
+        setExtQuoteHiddenFor(this.pubkey, freshExtQuotes.checked);
+        this.eventBus.emit('settings:hide-ext-quotes-changed', { hidden: freshExtQuotes.checked });
+        ToastService.show(
+          freshExtQuotes.checked
+            ? "This user's external quote posts are now hidden"
+            : "This user's external quote posts are shown again",
+          'success'
+        );
       });
     }
   }

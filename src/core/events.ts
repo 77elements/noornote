@@ -278,6 +278,10 @@ export interface HideSelfRepostsChangedPayload {
   hidden: boolean;
 }
 
+export interface HideExtQuotesChangedPayload {
+  hidden: boolean;
+}
+
 // ═════════════════════════════════════════════════════════════
 //  Central Event Registry — ALL EventBus events in one place.
 //  New events MUST be added here. build-validate enforces this.
@@ -358,6 +362,7 @@ export interface AppEvents {
   'settings:scc-excerpt-limit-changed': SccExcerptLimitChangedPayload;
   'settings:article-foaf-degree-changed': ArticleFoafDegreeChangedPayload;
   'settings:hide-self-reposts-changed': HideSelfRepostsChangedPayload;
+  'settings:hide-ext-quotes-changed': HideExtQuotesChangedPayload;
 
   // ── View Tabs ──────────────────────────────
   'view-tab:opened': ViewTabOpenedPayload;

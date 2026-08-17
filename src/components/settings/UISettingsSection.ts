@@ -20,6 +20,7 @@ import {
   isHideSelfRepostsEnabled, setHideSelfRepostsEnabled,
   getSelfRepostGap, setSelfRepostGap, type SelfRepostGap,
 } from '../../helpers/selfRepostSetting';
+import { isHideExtQuotesEnabled, setHideExtQuotesEnabled } from '../../helpers/extQuoteSetting';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { SettingsModuleApi } from '../../modules/settings/contracts';
 
@@ -30,6 +31,7 @@ export class UISettingsSection extends SettingsSection {
   private layoutModeDropdown: CustomDropdown | null = null;
   private postTruncationSwitch: Switch | null = null;
   private hideSelfRepostsSwitch: Switch | null = null;
+  private hideExtQuotesSwitch: Switch | null = null;
   private contentVisibilitySwitch: Switch | null = null;
   private clientTagSwitch: Switch | null = null;
   private calendarDropdown: CustomDropdown | null = null;
@@ -130,6 +132,16 @@ export class UISettingsSection extends SettingsSection {
                 </label>
               `).join('')}
             </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="setting">
+            <span class="setting__label">Hide external quote posts</span>
+            <div class="setting__control" id="hide-ext-quotes-switch-container"></div>
+            <p class="setting__desc">
+              When enabled, highlight posts by others that quote an external website (kind 9802 with a web source) are hidden from your timelines. Your own highlights stay visible. Individual users can be hidden from their profile.
+            </p>
           </div>
         </section>
 
@@ -354,6 +366,25 @@ export class UISettingsSection extends SettingsSection {
           );
         });
       });
+    }
+
+    // Initialize Hide External Quotes switch
+    const hideExtQuotesContainer = contentContainer.querySelector('#hide-ext-quotes-switch-container');
+    if (hideExtQuotesContainer) {
+      this.hideExtQuotesSwitch = new Switch({
+        label: '',
+        checked: isHideExtQuotesEnabled(),
+        onChange: (checked) => {
+          setHideExtQuotesEnabled(checked);
+          this.eventBus.emit('settings:hide-ext-quotes-changed', { hidden: checked });
+          ToastService.show(
+            checked ? "Others' external quote posts hidden" : 'External quote posts shown again',
+            'success'
+          );
+        }
+      });
+      hideExtQuotesContainer.innerHTML = this.hideExtQuotesSwitch.render();
+      this.hideExtQuotesSwitch.setupEventListeners(hideExtQuotesContainer as HTMLElement);
     }
 
     // Initialize SCC Article Excerpt Limit input
