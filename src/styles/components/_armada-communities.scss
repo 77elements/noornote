@@ -72,6 +72,25 @@
   }
 }
 
+// The Armada settings rows are stacked label/desc/list blocks (no
+// label+switch pairs), so the shared .setting grid is lifted here.
+.section.armada-communities .setting {
+  display: block;
+
+  .setting__label,
+  .setting__desc {
+    display: block;
+    margin-bottom: $gap;
+  }
+}
+
+// Invite-link input fills the row, Add button stays pinned right
+// (.l-row--split: first child left, last child right).
+.armada-add-input {
+  flex: 1;
+  min-width: 0;
+}
+
 // One-time channel-URL import shown inside a community row that has no
 // channels yet. Becomes hidden once a channel is tracked (re-render drops it).
 .armada-channel-import {

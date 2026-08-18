@@ -216,7 +216,7 @@ export class GroupChatsSettings extends SettingsSection {
           <label class="setting__label">Add community</label>
           <p class="setting__desc">Paste your Armada invite link (the full <code>armada.buzz/invite/…#…</code> URL).
             NoorNote decrypts the community, reads its channel list from the control plane, and starts tracking.</p>
-          <div class="form__row">
+          <div class="l-row--split">
             <input type="text" class="input armada-add-input" placeholder="https://armada.buzz/invite/naddr1…#…" data-armada-add-input />
             <button class="btn armada-add-btn" data-armada-add>Add</button>
           </div>
