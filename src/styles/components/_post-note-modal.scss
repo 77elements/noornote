@@ -239,6 +239,12 @@ svg.upload-progress {
   align-items: start;
   gap: calc($gap / 2);
 
+  // Let the 1fr track shrink below an unbreakable string (e.g. nostr:nevent…)
+  // so the delete button keeps its place; the text scrolls horizontally instead.
+  &__main {
+    min-width: 0;
+  }
+
   &__meta {
     display: grid;
     grid-auto-flow: column;
@@ -262,6 +268,10 @@ svg.upload-progress {
     color: var(--color-5);
     line-height: 1.4;
     @include text-truncate-lines(2);
+    // Long unbreakable strings must scroll inside instead of pushing the
+    // delete button out of reach. Overrides the mixin's overflow on the x axis.
+    overflow-x: auto;
+    @include custom-scrollbar;
   }
 
   &__reason {
