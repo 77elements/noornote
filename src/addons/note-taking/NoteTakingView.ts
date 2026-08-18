@@ -221,6 +221,19 @@ export class NoteTakingView extends View {
         this.openEditor(note);
       });
     });
+
+    // "See more" expands a clamped card to its full content (scrollable).
+    board.querySelectorAll('.note-taking-card__more').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const content = (btn as HTMLElement).parentElement?.querySelector('.note-taking-card__content');
+        if (!content) return;
+        const expanded = content.classList.toggle('note-taking-card__content--open');
+        content.classList.toggle('note-taking-card__content--clamp', !expanded);
+        btn.textContent = expanded ? 'Show less' : 'See more';
+      });
+    });
   }
 
   /** If we arrived from a reminder, pulse + scroll the target note's card. */
@@ -260,21 +273,28 @@ export class NoteTakingView extends View {
   }
 
   private cardHtml(note: NoteRecord, searching = false): string {
-    const preview = note.body.length > 280 ? `${note.body.slice(0, 280)}…` : note.body;
-    const MAX_ITEMS = 8;
+    // Long content is fully rendered but CSS-clamped; the "See more" button
+    // expands the card (scrollable) so e.g. a long shopping list is readable.
+    const isLong = note.body.length > 280 || note.checklist.length > 8;
     const checklist = note.checklist.length > 0 ? `
         <div class="note-taking-card__checklist">
-          ${note.checklist.slice(0, MAX_ITEMS).map((item, i) => `
+          ${note.checklist.map((item, i) => `
             <label class="nn-checkbox nn-checkbox--label-left note-taking-checklist-item${item.checked ? ' is-checked' : ''}" data-check-index="${i}">
               <span class="setting__label">${escapeHtml(item.text)}</span>
               <input type="checkbox"${item.checked ? ' checked' : ''} />
             </label>`).join('')}
-          ${note.checklist.length > MAX_ITEMS ? `<div class="note-taking-card__checklist-more">+${note.checklist.length - MAX_ITEMS} more</div>` : ''}
         </div>` : '';
     const labels = note.labels.length > 0 ? `
         <div class="note-taking-card__labels">
           ${note.labels.map((l) => `<span class="note-taking-label">${escapeHtml(l)}</span>`).join('')}
         </div>` : '';
+    const hasContent = note.body.length > 0 || note.checklist.length > 0;
+    const content = hasContent ? `
+        <div class="note-taking-card__content${isLong ? ' note-taking-card__content--clamp' : ''}">
+          ${note.body ? `<div class="note-taking-card__body">${escapeHtml(note.body)}</div>` : ''}
+          ${checklist}
+        </div>
+        ${isLong ? '<button type="button" class="btn btn--mini note-taking-card__more">See more</button>' : ''}` : '';
     const colored = isAccentColor(note.color);
     const colorClass = colored ? ` note-taking-color-${note.color}` : '';
     // In global search the result set spans both views, so flag archived hits.
@@ -287,8 +307,7 @@ export class NoteTakingView extends View {
         ${note.pinned ? '<svg class="note-taking-card__pin" width="14" height="14"><use href="#icon-bookmark"/></svg>' : ''}
         ${archivedBadge}
         ${note.title ? `<h2 class="note-taking-card__title h4">${escapeHtml(note.title)}</h2>` : ''}
-        ${preview ? `<div class="note-taking-card__body">${escapeHtml(preview)}</div>` : ''}
-        ${checklist}
+        ${content}
         ${labels}
       </div>
     `;

@@ -376,6 +376,16 @@ $note-taking-colors: (
   color: var(--color-3);
 }
 
-.note-taking-card__checklist-more {
-  color: var(--color-3);
+/* Long-content clamp + expand. Collapsed: fade-out mask hides the tail.
+   Expanded: the clamp is lifted entirely — the card grows to full height
+   and the page/board itself scrolls (mobile-friendly for long lists). */
+.note-taking-card__content--clamp {
+  max-height: 16rem;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, $color-black calc(100% - #{$gap}), transparent);
+  mask-image: linear-gradient(to bottom, $color-black calc(100% - #{$gap}), transparent);
+}
+
+.note-taking-card__more {
+  margin-top: $gap;
 }
