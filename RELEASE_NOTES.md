@@ -1,7 +1,5 @@
-# NoorNote 1.3.4
+# NoorNote 1.3.5
 
-**New: Armada communities (Group Chats addon)** — join encrypted Armada/Concord communities via invite links, see them listed in settings, and get notified about new activity.
+**Improved** — long notes (shopping lists, checklists) now show a "See more" button on the card that expands them to full length — no more cut-off content.
 
-**New: Hide external quote posts** — turn off those "quote every paragraph of a web article" highlight posts globally (Settings → UI) or per user (profile → "Turn off ext. Quotes"). Reposts of them are hidden too; your own highlights stay visible.
-
-**Improved** — profiles now resolve reliably (no more "@npub…" placeholders or "Anonymous" profiles), and the Soft Mute button in profiles works again.
+**Fixed** — the Armada invite-link input and Add button sit properly on one row again.
