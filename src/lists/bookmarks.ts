@@ -2678,6 +2678,10 @@ export class BookmarkCard {
       const title = event.tags.find(t => t[0] === 'title')?.[1] || 'Untitled';
       return `Live Stream: ${title}`;
     }
+    if (event.kind === 30402) {
+      const title = event.tags.find(t => t[0] === 'title')?.[1] || 'Untitled Listing';
+      return `Listing: ${title}`;
+    }
     if (event.kind === 20) {
       const s = this.getTextSnippet(event.content, 100);
       return s === '(No text content)' ? 'Picture' : s;

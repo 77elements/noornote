@@ -17,6 +17,7 @@ import { HighlightRenderer } from './HighlightRenderer';
 import { BadgeAwardRenderer } from './BadgeAwardRenderer';
 import { EmojiPackRenderer } from './EmojiPackRenderer';
 import { LiveStreamRenderer } from './LiveStreamRenderer';
+import { ListingRenderer } from './ListingRenderer';
 
 export class NoteRendererFactory {
   /**
@@ -45,6 +46,8 @@ export class NoteRendererFactory {
         return EmojiPackRenderer.render(note, options);
       case 'live-stream':
         return LiveStreamRenderer.render(note, options);
+      case 'listing':
+        return ListingRenderer.render(note, options);
       default:
         return OriginalNoteRenderer.render(note, options);
     }

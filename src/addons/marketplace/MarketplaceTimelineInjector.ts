@@ -181,6 +181,9 @@ export class MarketplaceTimelineInjector {
 
     const card = document.createElement('div');
     card.className = 'timeline-listing-card';
+    // Marker so Timeline.stopMarketplaceInjector() removes ONLY injected
+    // cards — listing cards rendered inside reposts share the class.
+    card.dataset.marketplaceInjected = 'true';
 
     card.innerHTML = `
       ${firstImage ? `

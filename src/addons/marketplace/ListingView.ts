@@ -137,6 +137,8 @@ export class ListingView extends View {
           <div class="listing-view__reviews" data-listing-reviews>
             <p class="pulsate">Loading reviews…</p>
           </div>
+
+          <div class="listing-view__comments" data-listing-comments></div>
         </div>
       `;
 
@@ -144,6 +146,7 @@ export class ListingView extends View {
       this.setupEventHandlers(event);
       this.loadSellerProfile(event.pubkey);
       void this.loadReviews(event);
+      void this.mountComments(event);
 
     } catch {
       this.showError();
@@ -407,6 +410,28 @@ export class ListingView extends View {
     } catch (err) {
       reviewsContainer.innerHTML = '';
     }
+  }
+
+  /**
+   * Mount the shared RepliesRenderer (kind 1111 comments) under the listing —
+   * same pattern as ZapstoreAppView/FollowPackDetailView. Uses the addressable
+   * coordinate ("30402:pubkey:d") as noteId so NIP-22 comment threads resolve.
+   */
+  private async mountComments(event: NostrEvent): Promise<void> {
+    const container = this.container.querySelector('[data-listing-comments]') as HTMLElement | null;
+    if (!container || !event.id) return;
+
+    const { getAddressableIdentifier } = await import('../../helpers/getAddressableIdentifier');
+    const addressableId = getAddressableIdentifier(event);
+    const noteId = addressableId || event.id;
+
+    const { RepliesRenderer } = await import('../../components/replies/RepliesRenderer');
+    const repliesRenderer = new RepliesRenderer({
+      container,
+      noteId,
+      noteAuthor: event.pubkey,
+    });
+    repliesRenderer.loadAndRender();
   }
 
   public destroy(): void {

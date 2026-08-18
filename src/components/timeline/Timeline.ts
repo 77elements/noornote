@@ -659,8 +659,9 @@ export class Timeline extends View {
       this.marketplaceInjector.destroy();
       this.marketplaceInjector = null;
     }
-    // Remove any already-injected listing cards
-    this.element.querySelectorAll('.timeline-listing-card').forEach(card => card.remove());
+    // Remove any already-injected listing cards (marked via data attribute —
+    // listing cards rendered inside reposts must survive this cleanup)
+    this.element.querySelectorAll('[data-marketplace-injected]').forEach(card => card.remove());
   }
 
   /**

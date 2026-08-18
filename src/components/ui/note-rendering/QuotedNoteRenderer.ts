@@ -28,6 +28,7 @@ import { SatelliteSiteRenderer, SATELLITE_SITE_KIND } from '../../../components/
 import { ArmadaInviteRenderer } from '../../../components/ui/note-rendering/ArmadaInviteRenderer';
 import { UnsupportedKindRenderer } from './UnsupportedKindRenderer';
 import { ARTICLE_PREVIEW_KINDS } from '../../../helpers/addressableKinds';
+import { parseListingMetadata, formatPrice } from '../../../helpers/listingMetadata';
 
 export class QuotedNoteRenderer {
   private static instance: QuotedNoteRenderer;
@@ -790,10 +791,9 @@ export class QuotedNoteRenderer {
 
   /**
    * Render a compact listing card from a Kind 30402 event.
-   * Reuses marketplace-helpers for metadata parsing.
+   * Reuses the core listing metadata helper (helpers/listingMetadata).
    */
   private async renderListingPreviewFromEvent(event: NostrEvent, container: Element): Promise<void> {
-    const { parseListingMetadata, formatPrice } = await import('../../../addons/marketplace/marketplace-helpers');
     const { encodeNaddr } = await import('../../../services/NostrToolsAdapter');
     const { UserProfileService } = await import('../../../services/UserProfileService');
     const { hexToNpub } = await import('../../../helpers/nip19');

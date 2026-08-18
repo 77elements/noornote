@@ -428,6 +428,7 @@ export class NotificationItem {
       if (kind === 39089) return 'follow pack';
       if (kind === 30030) return 'emoji pack';
       if (kind === 30311) return 'live stream';
+      if (kind === 30402) return 'listing';
       if (kind === 30617) return 'git repository';
       if (!isNaN(kind)) return 'event';
     }
@@ -445,6 +446,7 @@ export class NotificationItem {
       if (kind === 39089) return 'follow pack';
       if (kind === 30030) return 'emoji pack';
       if (kind === 30311) return 'live stream';
+      if (kind === 30402) return 'listing';
       if (kind === 1617) return 'git patch';
       if (kind === 1618 || kind === 1619) return 'pull request';
       if (kind === 1621) return 'git issue';
@@ -582,6 +584,7 @@ export class NotificationItem {
       if (aKind === 32267) return 'App';
       if (aKind === 39089) return 'Follow Pack';
       if (aKind === 30030) return 'Emoji Pack';
+      if (aKind === 30402) return 'Listing';
       if (!isNaN(aKind)) return `Event (kind ${aKind})`;
       if (dTag) return `Event ${dTag}`;
     }
@@ -592,6 +595,7 @@ export class NotificationItem {
       if (kKind === 32267) return 'App';
       if (kKind === 39089) return 'Follow Pack';
       if (kKind === 30030) return 'Emoji Pack';
+      if (kKind === 30402) return 'Listing';
       if (!isNaN(kKind)) return `Event (kind ${kKind})`;
     }
     const eTags = this.options.event.tags.filter((t: string[]) => t[0] === 'e');
@@ -823,6 +827,9 @@ export class NotificationItem {
             const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
             const metadata = articlesApi?.extractArticleMetadata(refEvent);
             setPreview(`Article: ${metadata?.title ?? 'Untitled'}`);
+          } else if (aKind === 30402) {
+            const { parseListingMetadata } = await import('../../helpers/listingMetadata');
+            setPreview(`Listing: ${parseListingMetadata(refEvent).title}`);
           } else {
             const dTag = refEvent.tags.find((t: string[]) => t[0] === 'd')?.[1];
             setPreview(dTag ? `Event (kind ${aKind}): ${dTag}` : `Event (kind ${aKind})`);
@@ -869,6 +876,11 @@ export class NotificationItem {
         if (originalEvent.kind === 32267) {
           const name = originalEvent.tags.find((t: string[]) => t[0] === 'name')?.[1] || 'App';
           setPreview(`App: ${name}`);
+          return;
+        }
+        if (originalEvent.kind === 30402) {
+          const { parseListingMetadata } = await import('../../helpers/listingMetadata');
+          setPreview(`Listing: ${parseListingMetadata(originalEvent).title}`);
           return;
         }
         if (originalEvent.kind === 1068) {

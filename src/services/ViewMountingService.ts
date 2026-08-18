@@ -579,12 +579,15 @@ export class ViewMountingService {
           requiresParam: true,
           factory: async (param) => {
             const { isMarketplaceEnabled } = await import('../addons/marketplace/index');
-            if (!isMarketplaceEnabled()) {
-              Router.getInstance().navigate('/');
-              return null;
+            if (isMarketplaceEnabled()) {
+              const { ListingView } = await import('../addons/marketplace/ListingView');
+              const view = new ListingView(param!);
+              return { element: view.getElement() };
             }
-            const { ListingView } = await import('../addons/marketplace/ListingView');
-            const view = new ListingView(param!);
+            // Listings stay readable with the addon OFF (reposts/notifications/
+            // bookmarks link here) — core read-only view instead of a redirect.
+            const { ListingReadView } = await import('../components/views/ListingReadView');
+            const view = new ListingReadView(param!);
             return { element: view.getElement() };
           }
         };

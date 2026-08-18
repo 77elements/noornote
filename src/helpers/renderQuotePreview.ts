@@ -98,7 +98,7 @@ async function renderNaddrPreview(container: HTMLElement, data: NaddrData): Prom
 
   // Marketplace listings (Kind 30402) → compact listing card preview
   if (data.kind === 30402) {
-    const { parseListingMetadata, formatPrice } = await import('../addons/marketplace/marketplace-helpers');
+    const { parseListingMetadata, formatPrice } = await import('./listingMetadata');
     const meta = parseListingMetadata(event);
     const priceDisplay = formatPrice(meta.price, meta.priceCurrency, meta.priceFrequency);
     const authorName = await getAuthorName(event.pubkey);

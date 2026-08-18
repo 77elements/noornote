@@ -1,0 +1,82 @@
+// ListingReadView — core read-only listing detail (kind 30402), shown when
+// the marketplace addon is OFF. The full addon detail view (.listing-view)
+// lives in addons/marketplace/marketplace.scss.
+
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
+
+.listing-read {
+  &__loading,
+  &__error {
+    padding: $gap;
+    text-align: center;
+    color: var(--color-3);
+  }
+
+  &__error {
+    color: $color-red;
+  }
+
+  // Grid images ride on the global .note-media molecule — only spacing here.
+  .note-media {
+    margin-bottom: $gap;
+  }
+
+  &__header {
+    margin-bottom: calc($gap / 2);
+  }
+
+  &__title {
+    margin: 0 0 calc($gap / 4);
+    color: var(--color-5);
+    font-size: 1.4rem;
+  }
+
+  &__price {
+    margin-bottom: calc($gap / 4);
+    color: var(--color-4);
+    font-weight: 600;
+  }
+
+  .badge {
+    margin-bottom: calc($gap / 4);
+  }
+
+  &__location {
+    display: block;
+    margin-bottom: calc($gap / 4);
+    color: var(--color-3);
+    @extend %small;
+
+    svg {
+      vertical-align: -0.2em;
+      margin-right: calc($gap / 4);
+    }
+  }
+
+  &__seller {
+    margin-bottom: $gap;
+
+    .listing-read__date {
+      margin-left: calc($gap / 2);
+      color: var(--color-3);
+      @extend %small;
+    }
+  }
+
+  &__description {
+    margin-bottom: $gap;
+    color: var(--color-5);
+    line-height: 1.6;
+  }
+
+  &__tags {
+    margin-bottom: $gap;
+    color: var(--color-3);
+  }
+
+  &__isl {
+    margin-bottom: $gap;
+  }
+}

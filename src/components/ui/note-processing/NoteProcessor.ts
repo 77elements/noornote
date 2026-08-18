@@ -20,6 +20,7 @@ import { GitEventProcessor } from './GitEventProcessor';
 import { HighlightProcessor } from './HighlightProcessor';
 import { BadgeAwardProcessor } from './BadgeAwardProcessor';
 import { LiveStreamProcessor } from './LiveStreamProcessor';
+import { ListingProcessor } from './ListingProcessor';
 
 export class NoteProcessor {
   /**
@@ -53,6 +54,8 @@ export class NoteProcessor {
           return HighlightProcessor.process(event);
         case 30023:
           return ArticleProcessor.process(event);
+        case 30402:
+          return ListingProcessor.process(event);
         case 30311:
           return LiveStreamProcessor.process(event);
         case 39089:

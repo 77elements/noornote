@@ -397,6 +397,8 @@ export class App {
         return `/zapstore/${naddr}`;
       case 39089:
         return `/follow-pack/${naddr}`;
+      case 30402:
+        return `/listing/${naddr}`;
       case 30030:
         return `/note/${naddr}`;
       default:
