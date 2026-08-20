@@ -209,6 +209,17 @@ export class NostrTransport {
       console.debug('[NostrTransport] sig-verification worker unavailable, using main thread', err);
     }
 
+    // NIP-42 relay AUTH, scoped to the user's OWN relays. Without a policy NDK
+    // silently ignores AUTH challenges, which made every auth-gated relay
+    // (paid relays, private relays) refuse reads AND writes with
+    // "auth-required" while showing up as generic relay errors. We only ever
+    // authenticate against relays from the user's own read/write list (checked
+    // at challenge time, so per-author outbound discovery relays never receive
+    // the user's npub). Signing goes exclusively through AuthService — the
+    // main NDK instance never gets a signer.
+    this.ndk.relayAuthDefaultPolicy = (relay: NDKRelay, challenge: string) =>
+      this.handleRelayAuth(relay, challenge);
+
     this.systemLogger.info('NostrTransport', 'Transport ready');
   }
 
@@ -971,6 +982,56 @@ export class NostrTransport {
    */
   public getReadRelays(): string[] {
     return this.relayConfig.getReadRelays();
+  }
+
+  /**
+   * NIP-42 relay AUTH handler (wired as ndk.relayAuthDefaultPolicy).
+   *
+   * Privacy scope: authenticating reveals the user's npub to the relay, so it
+   * happens ONLY for relays from the user's own read/write list — never for
+   * aggregators, other users' NIP-65 outbound relays, or publish hint-relays.
+   * The membership check runs at challenge time (relays can join the pool
+   * after construction). Returns the signed kind:22242 event for NDK to send,
+   * or false to decline. Dynamic import keeps AuthService (which pulls the
+   * signer stack) out of the transport's module graph.
+   */
+  private async handleRelayAuth(relay: NDKRelay, challenge: string): Promise<NDKEvent | false> {
+    try {
+      const url = normalizeRelayUrl(relay.url);
+      const own = new Set([
+        ...this.relayConfig.getReadRelays(),
+        ...this.relayConfig.getWriteRelays(),
+      ].map(r => normalizeRelayUrl(r)));
+
+      if (!own.has(url)) {
+        diagLog('relays', 'Declined relay AUTH (not an own relay)', { url: relay.url });
+        return false;
+      }
+
+      const { AuthService } = await import('../AuthService');
+      const auth = AuthService.getInstance();
+      const pubkey = auth.getCurrentUser()?.pubkey;
+      if (!pubkey) return false;
+
+      const signed = await auth.signEvent({
+        kind: 22242,
+        created_at: Math.floor(Date.now() / 1000),
+        content: '',
+        tags: [['relay', relay.url], ['challenge', challenge]],
+        pubkey,
+      }) as NostrEvent;
+
+      if (!signed) {
+        diagLog('relays', 'Relay AUTH signing failed', { url: relay.url });
+        return false;
+      }
+
+      diagLog('relays', 'Signed relay AUTH', { url: relay.url });
+      return new NDKEvent(this.ndk, signed);
+    } catch (error) {
+      diagLog('relays', 'Relay AUTH handler failed', { url: relay.url, error: String(error) });
+      return false;
+    }
   }
 
   /**

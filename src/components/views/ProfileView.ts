@@ -576,6 +576,7 @@ export class ProfileView extends View {
           <div class="profile-meta">
             <h1 class="profile-name">${escapeHtml(displayName)}<span class="profile-petname" data-role="petname"></span><span class="profile-petname-note" data-role="petname-note"></span></h1>
             ${nip05s.length > 0 ? `<p class="profile-nip05">${nip05s.map(n => escapeHtml(n)).join(', ')}</p>` : ''}
+            <p class="profile-status${isOwnProfile ? ' profile-status--editable' : ''}" data-role="status" ${isOwnProfile ? '' : 'hidden'}></p>
 
             ${lud16 ? `
               <div class="profile-lightning">
@@ -693,6 +694,9 @@ export class ProfileView extends View {
 
       // Setup petname display + click-to-edit
       this.setupPetname();
+
+      // Setup NIP-38 status line (display for others, inplace edit for own)
+      this.setupStatus();
 
       // Setup edit button handler
       this.setupEditButton();
@@ -1244,6 +1248,91 @@ export class ProfileView extends View {
         if (result === null) return;
         await service.setPetname(this.pubkey, result.trim());
         render();
+      });
+    });
+  }
+
+  /**
+   * NIP-38 general status (kind 30315, d=general). One line under the NIP-05.
+   * Foreign profiles: read-only, hidden while empty. Own profile: click to
+   * edit in place (Enter/blur saves, Esc cancels, saving empty clears).
+   * Saves are optimistic: the new text renders immediately, the relay publish
+   * runs in the background and reverts the UI on failure.
+   */
+  private setupStatus(): void {
+    const statusEl = this.container.querySelector('[data-role="status"]') as HTMLElement | null;
+    if (!statusEl) return;
+
+    import('../../services/UserStatusService').then(({ UserStatusService }) => {
+      const service = UserStatusService.getInstance();
+      const editable = statusEl.classList.contains('profile-status--editable');
+      let current = '';
+      // Set once the initial relay fetch resolves. A late fetch must not
+      // overwrite an optimistic edit made before it arrived.
+      let fetched = false;
+
+      const render = (): void => {
+        const hasText = !!current;
+        statusEl.classList.toggle('profile-status--empty', !hasText);
+        statusEl.textContent = hasText ? current : '';
+        if (!editable) statusEl.hidden = !hasText;
+      };
+
+      service.getStatus(this.pubkey).then((text) => {
+        if (fetched) return; // optimistic edit already won
+        current = text ?? '';
+        render();
+        fetched = true;
+      });
+
+      if (!editable) return;
+
+      statusEl.addEventListener('click', () => {
+        if (statusEl.querySelector('input')) return; // already editing
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'input profile-status__input';
+        input.placeholder = 'Set status…';
+        input.maxLength = 140;
+
+        let done = false;
+        const finish = (save: boolean): void => {
+          if (done) return;
+          done = true;
+          const value = input.value.trim();
+          input.remove();
+          if (!save || value === current) { render(); return; }
+
+          // Optimistic: show the new status immediately, publish in the
+          // background. Revert if the publish fails (Toast/diagLog come from
+          // the service). Concurrent edits are safe: kind 30315 is
+          // replaceable, the relay keeps the latest created_at.
+          const previous = current;
+          current = value;
+          fetched = true;
+          render();
+          void service.setStatus(value).then((ok) => {
+            if (!ok) {
+              current = previous;
+              render();
+            }
+          });
+        };
+
+        input.addEventListener('keydown', (e) => {
+          e.stopPropagation();
+          if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+          else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+        });
+        input.addEventListener('blur', () => finish(true));
+
+        statusEl.classList.remove('profile-status--empty');
+        statusEl.textContent = '';
+        statusEl.appendChild(input);
+        input.value = current;
+        input.focus();
+        input.select();
       });
     });
   }

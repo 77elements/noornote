@@ -124,6 +124,35 @@
   word-break: break-all;
 }
 
+// NIP-38 user status (kind 30315, d=general) — one line under the NIP-05.
+// Foreign profiles: read-only, single truncated line. Own profile: click to
+// edit in place; the placeholder is shown via ::after when empty.
+.profile-status {
+  @include text-truncate;
+  margin: 0 0 $gap 0;
+  color: $text-alpha-medium;
+  font-style: italic;
+
+  &--editable {
+    cursor: pointer;
+  }
+
+  &--editable:hover {
+    color: var(--color-4);
+  }
+
+  &--empty::after {
+    content: 'Set status…';
+    color: var(--text-alpha-light);
+  }
+
+  .profile-status__input {
+    height: auto;
+    padding: calc($gap / 2) $gap;
+    font-style: normal;
+  }
+}
+
 // Profile Identifiers (Lightning + npub)
 .profile-identifiers {
   display: flex;
