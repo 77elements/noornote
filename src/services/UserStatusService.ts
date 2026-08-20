@@ -18,6 +18,7 @@ import { RelayConfig } from './RelayConfig';
 import { AuthService } from './AuthService';
 import { AuthGuard } from './AuthGuard';
 import { ToastService } from './ToastService';
+import { SystemLogger } from './SystemLogger';
 import { diagLog } from './DiagnosticLogger';
 import { LRUCache, getCacheSize } from '../helpers/LRUCache';
 
@@ -111,6 +112,10 @@ export class UserStatusService {
 
       await this.transport.publishContent(signed);
       diagLog('system', 'UserStatusService published status', { cleared: !content });
+      SystemLogger.getInstance().success(
+        'UserStatus',
+        content ? `Status set: ${content}` : 'Status cleared'
+      );
       return true;
     } catch (error) {
       this.cache.set(user.pubkey, previous);
