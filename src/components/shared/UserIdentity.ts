@@ -20,6 +20,7 @@ import { AddonLoader } from '../../addons/AddonLoader';
 import type { ProfileRecognitionRuntime } from '../../addons/profile-recognition/runtime';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
 import { hexToNpub } from '../../helpers/nip19';
+import { PetnameService } from '../../services/PetnameService';
 
 // Types only (erased at build time) — live runtime accessed via AddonLoader
 type ProfileBlinkerType = import('../../addons/profile-recognition/profileBlinking').ProfileBlinker;
@@ -202,6 +203,14 @@ export class UserIdentity {
     if (this.config.showAvatar) {
       const avatarEl = this.element.querySelector('img.profile-pic') as HTMLImageElement;
       if (avatarEl) {
+        // Private petname ring (warning orange) — this pubkey has a private
+        // note (NIP-78) and the feature is enabled. Rule order in _note-ui.scss
+        // keeps red (muted) > orange > green (follows) on collision.
+        avatarEl.classList.toggle(
+          'author-rel--private-note',
+          PetnameService.getInstance().hasPrivateNote(this.config.pubkey)
+        );
+
         if (shouldBlink) {
           // Initialize blinker if needed
           if (!this.blinker && rt?.ProfileBlinker) {

@@ -22,6 +22,12 @@ export class PetnameService {
   private transport: NostrTransport;
   private pals: PerAccountLocalStorage;
 
+  // In-memory mirror of the PETNAMES map so per-note lookups (avatar rings)
+  // never trigger a JSON.parse per call. Keyed to the owning pubkey so an
+  // account switch can never serve another account's petnames.
+  private cachedMap: Record<string, string> | null = null;
+  private cachedOwnerPubkey: string | null = null;
+
   private constructor() {
     this.auth = AuthService.getInstance();
     this.transport = NostrTransport.getInstance();
@@ -36,6 +42,8 @@ export class PetnameService {
   }
 
   public destroy(): void {
+    this.cachedMap = null;
+    this.cachedOwnerPubkey = null;
     PetnameService.instance = null;
   }
 
@@ -53,12 +61,19 @@ export class PetnameService {
   }
 
   public getPetname(pubkey: string): string | null {
-    const map = this.pals.get<Record<string, string>>(StorageKeys.PETNAMES, {});
-    return map?.[pubkey] ?? null;
+    return this.getMap()[pubkey] ?? null;
+  }
+
+  /**
+   * True when the feature is enabled AND this pubkey has a private note.
+   * Drives the warning-orange avatar ring in UserIdentity.
+   */
+  public hasPrivateNote(pubkey: string): boolean {
+    return this.isPrivateNotesEnabled() && this.getMap()[pubkey] !== undefined;
   }
 
   public async setPetname(pubkey: string, petname: string): Promise<void> {
-    const map = this.pals.get<Record<string, string>>(StorageKeys.PETNAMES, {}) ?? {};
+    const map = this.getMap();
     if (petname) {
       map[pubkey] = petname;
     } else {
@@ -96,11 +111,27 @@ export class PetnameService {
       const map = JSON.parse(plaintext);
       if (typeof map === 'object' && map !== null) {
         this.pals.set(StorageKeys.PETNAMES, map);
+        this.cachedMap = map;
+        this.cachedOwnerPubkey = user.pubkey;
         diagLog('system', 'PetnameService synced from relays', { count: Object.keys(map).length });
       }
     } catch (error) {
       diagLog('system', 'PetnameService sync failed', { error: String(error) });
     }
+  }
+
+  /**
+   * Load the petname map (once per account) and keep it cached. Mutations go
+   * through setPetname, which mutates this same object and persists it, so
+   * the cache never goes stale between reads.
+   */
+  private getMap(): Record<string, string> {
+    const owner = this.auth.getCurrentUser()?.pubkey ?? null;
+    if (this.cachedMap === null || this.cachedOwnerPubkey !== owner) {
+      this.cachedMap = this.pals.get<Record<string, string>>(StorageKeys.PETNAMES, {}) ?? {};
+      this.cachedOwnerPubkey = owner;
+    }
+    return this.cachedMap;
   }
 
   private async publishToRelays(map: Record<string, string>): Promise<void> {

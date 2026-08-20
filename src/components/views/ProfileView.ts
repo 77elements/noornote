@@ -1206,7 +1206,7 @@ export class ProfileView extends View {
 
   /**
    * Private encrypted note (NIP-78, NIP-44 self-encrypted). Gated behind the
-   * "Private petnames" Privacy setting. Empty = peach icon, filled = mint green.
+   * "Private petnames" Privacy setting. Empty = peach icon, filled = warning orange.
    */
   private setupPrivateNote(): void {
     const noteEl = this.container.querySelector('[data-role="petname-note"]') as HTMLElement | null;
