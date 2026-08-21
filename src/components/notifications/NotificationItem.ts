@@ -11,6 +11,7 @@ import { Router } from '../../services/Router';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { hexToNpub } from '../../helpers/nip19';
+import { formatGroupChatContent } from '../../helpers/formatGroupChatContent';
 import { InteractionStatusLine } from '../ui/InteractionStatusLine';
 import { ZapsList } from '../ui/ZapsList';
 import { AuthService } from '../../services/AuthService';
@@ -441,6 +442,7 @@ export class NotificationItem {
       if (kind === 20) return 'picture';
       if (kind === 21 || kind === 22) return 'video';
       if (kind === 1068) return 'poll';
+      if (kind === 9) return 'group chat message';
       if (kind === 30023) return 'article';
       if (kind === 32267) return 'app on Zapstore';
       if (kind === 39089) return 'follow pack';
@@ -588,16 +590,17 @@ export class NotificationItem {
       if (!isNaN(aKind)) return `Event (kind ${aKind})`;
       if (dTag) return `Event ${dTag}`;
     }
-    const kTag = this.options.event.tags.find((t: string[]) => t[0] === 'k');
-    if (kTag?.[1]) {
-      const kKind = parseInt(kTag[1]);
-      if (kKind === 30023) return 'Article';
-      if (kKind === 32267) return 'App';
-      if (kKind === 39089) return 'Follow Pack';
-      if (kKind === 30030) return 'Emoji Pack';
-      if (kKind === 30402) return 'Listing';
-      if (!isNaN(kKind)) return `Event (kind ${kKind})`;
-    }
+      const kTag = this.options.event.tags.find((t: string[]) => t[0] === 'k');
+      if (kTag?.[1]) {
+        const kKind = parseInt(kTag[1]);
+        if (kKind === 30023) return 'Article';
+        if (kKind === 32267) return 'App';
+        if (kKind === 39089) return 'Follow Pack';
+        if (kKind === 30030) return 'Emoji Pack';
+        if (kKind === 30402) return 'Listing';
+        if (kKind === 9) return 'Group chat message';
+        if (!isNaN(kKind)) return `Event (kind ${kKind})`;
+      }
     const eTags = this.options.event.tags.filter((t: string[]) => t[0] === 'e');
     const eTag = eTags[eTags.length - 1];
     const eTagId = eTag?.[1];
@@ -857,6 +860,21 @@ export class NotificationItem {
       const kHint = kTag?.[1] ? parseInt(kTag[1]) : NaN;
       const originalEvent = await this.fetchOriginalNote(eTag[1], isNaN(kHint) ? undefined : kHint);
       if (originalEvent) {
+        if (originalEvent.kind === 9) {
+          const content = formatGroupChatContent(originalEvent.content || '');
+          const maxLength = 100;
+          setPreview(content
+            ? `Group chat: ${content.length > maxLength ? content.slice(0, maxLength) + '...' : content}`
+            : 'Group chat message');
+          // Reactions/reposts without a k-tag were labelled "…your note" — the
+          // resolved kind 9 is more specific, so upgrade the action text too.
+          const actionElement = this.element.querySelector('.notification-item__action');
+          if (actionElement && (this.options.type === 'reaction' || this.options.type === 'repost')) {
+            const verb = this.options.type === 'reaction' ? 'reacted' : 'reposted';
+            actionElement.textContent = `${verb} to your group chat message`;
+          }
+          return;
+        }
         if (originalEvent.kind === 39089) {
           const { parseFollowPackEvent } = await import('../../helpers/parseFollowPack');
           const pack = parseFollowPackEvent(originalEvent);
@@ -1081,9 +1099,11 @@ export class NotificationItem {
 
       // Include the hinted kind (from k-tag) so we can resolve addressable
       // events — e.g. Follow Packs — that are referenced only via e-tag.
+      // Kind 9 (NIP-29 group chat message) is always included: reactions to
+      // group messages reference it via e-tag, often without a k-tag hint.
       const kinds = (typeof kindHint === 'number' && !isNaN(kindHint))
         ? Array.from(new Set([...USER_CONTENT_KINDS, kindHint]))
-        : USER_CONTENT_KINDS;
+        : [...USER_CONTENT_KINDS, 9];
 
       const events = await transport.fetch(
         readRelays,

@@ -5,12 +5,16 @@
 
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { encodeNevent, encodeNaddr } from '../../../services/NostrToolsAdapter';
+import { escapeHtml } from '../../../helpers/escapeHtml';
+import { formatGroupChatContent } from '../../../helpers/formatGroupChatContent';
 import { DittoFeatureRenderer, DITTO_GEOCACHE_KIND } from './DittoFeatureRenderer';
 import { SatelliteSiteRenderer, SATELLITE_SITE_KIND } from './SatelliteSiteRenderer';
 import { ArmadaInviteRenderer } from './ArmadaInviteRenderer';
 
 /** Armada / Concord encrypted community invite bundle (CORD-05). */
 const ARMADA_INVITE_KIND = 33301;
+/** NIP-29 group chat message — rendered as readable text, not "unsupported". */
+const GROUP_CHAT_KIND = 9;
 
 export class UnsupportedKindRenderer {
   /**
@@ -33,6 +37,26 @@ export class UnsupportedKindRenderer {
     // on the raw event, so this is the static "Encrypted community" card.
     if (note.rawEvent.kind === ARMADA_INVITE_KIND) {
       return ArmadaInviteRenderer.renderFromEvent(note.rawEvent);
+    }
+    // NIP-29 group chat message (lives on group relays, not renderable here):
+    // show the message text with a "Group chat" prefix instead of a bare
+    // "unsupported kind" card. No "open in another client" button — jump
+    // clients don't render kind 9 either.
+    if (note.rawEvent.kind === GROUP_CHAT_KIND) {
+      const content = formatGroupChatContent(note.rawEvent.content || '');
+      const maxLength = 280;
+      const snippet = content.length > maxLength ? content.slice(0, maxLength) + '…' : content;
+      const element = document.createElement('div');
+      element.className = 'note-card note-card--unsupported';
+      if (note.id) element.dataset.eventId = note.id;
+      element.innerHTML = `
+        <div class="unsupported-kind">
+          <div class="unsupported-kind__message">
+            ${snippet ? `Group chat: ${escapeHtml(snippet)}` : 'Group chat'}
+          </div>
+        </div>
+      `;
+      return element;
     }
 
     const element = document.createElement('div');
