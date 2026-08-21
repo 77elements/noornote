@@ -25,7 +25,7 @@ import { AuthService } from '../AuthService';
 import { diagLog } from '../DiagnosticLogger';
 import { isDataSaverEnabled } from '../DataSaverService';
 import { isHideSelfRepostsEnabled, getSelfRepostGapSeconds } from '../../helpers/selfRepostSetting';
-import { isHideExtQuotesEnabled, getHiddenExtQuoteAuthors, isExternalQuoteHighlight } from '../../helpers/extQuoteSetting';
+import { isHideHighlightsEnabled, getHiddenHighlightAuthors, isExternalHighlight } from '../../helpers/highlightSetting';
 import type { TimelineConfig } from '../../components/timeline/TimelineConfig';
 
 /**
@@ -696,10 +696,10 @@ export class FeedOrchestrator extends Orchestrator {
       filteredEvents = this.filterSelfReposts(filteredEvents);
     }
 
-    // Filter external quote highlights (global switch OR per-user override).
+    // Filter highlights (global switch OR per-user override).
     // Same pipeline position as the mute/word filters, so all timeline
     // surfaces (TV, PV, tribes, relay-filter, time-machine) are covered.
-    filteredEvents = this.filterExternalQuoteHighlights(filteredEvents);
+    filteredEvents = this.filterHiddenHighlights(filteredEvents);
 
     // Content word filter (addon) — gated by the config's explicit applyWordFilter
     // flag (false for ProfileView). No longer inferred from the mute exemption.
@@ -722,7 +722,7 @@ export class FeedOrchestrator extends Orchestrator {
   }
 
   /**
-   * Drop external quote highlights (kind 9802 whose NIP-84 source is an
+   * Drop highlights (kind 9802 whose NIP-84 source is an
    * external web URL — the browser-extension "quote every paragraph"
    * pattern) AND pure reposts (kind 6/16) of such highlights. Hidden when
    * the global switch is on OR the highlight author (or the reposter) is on
@@ -732,15 +732,15 @@ export class FeedOrchestrator extends Orchestrator {
    * and untouched. Reposts whose inner event is not embedded/parsable are
    * kept — never over-hide on incomplete data.
    */
-  private filterExternalQuoteHighlights(events: NostrEvent[]): NostrEvent[] {
-    const globalHide = isHideExtQuotesEnabled();
-    const hiddenUsers = getHiddenExtQuoteAuthors();
+  private filterHiddenHighlights(events: NostrEvent[]): NostrEvent[] {
+    const globalHide = isHideHighlightsEnabled();
+    const hiddenUsers = getHiddenHighlightAuthors();
     if (!globalHide && Object.keys(hiddenUsers).length === 0) return events;
 
     const me = AuthService.getInstance().getCurrentUser()?.pubkey;
     let removed = 0;
     const filtered = events.filter(event => {
-      // Pure repost of an external quote highlight: inspect the embedded
+      // Pure repost of a highlight: inspect the embedded
       // inner event (NIP-18 reposts carry the full original in content).
       if (event.kind === 6 || event.kind === 16) {
         let inner: { kind?: number; pubkey?: string; tags?: string[][] } | null = null;
@@ -752,7 +752,7 @@ export class FeedOrchestrator extends Orchestrator {
         } catch {
           // No embedded event (empty-content repost variant) — keep.
         }
-        if (!inner || !isExternalQuoteHighlight(inner)) return true;
+        if (!inner || !isExternalHighlight(inner)) return true;
         if (inner.pubkey === me) return true; // repost of my own highlight stays
         if (globalHide || hiddenUsers[inner.pubkey ?? ''] === true || hiddenUsers[event.pubkey] === true) {
           removed++;
@@ -761,7 +761,7 @@ export class FeedOrchestrator extends Orchestrator {
         return true;
       }
 
-      if (event.kind !== 9802 || !isExternalQuoteHighlight(event)) return true;
+      if (event.kind !== 9802 || !isExternalHighlight(event)) return true;
       if (event.pubkey === me) return true;
       if (globalHide || hiddenUsers[event.pubkey] === true) {
         removed++;
@@ -770,7 +770,7 @@ export class FeedOrchestrator extends Orchestrator {
       return true;
     });
     if (removed > 0) {
-      diagLog('system', `Hid ${removed} external quote highlight(s) from timeline`, {});
+      diagLog('system', `Hid ${removed} highlight(s) from timeline`, {});
     }
     return filtered;
   }

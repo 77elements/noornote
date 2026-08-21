@@ -278,7 +278,7 @@ export interface HideSelfRepostsChangedPayload {
   hidden: boolean;
 }
 
-export interface HideExtQuotesChangedPayload {
+export interface HideHighlightsChangedPayload {
   hidden: boolean;
 }
 
@@ -362,7 +362,7 @@ export interface AppEvents {
   'settings:scc-excerpt-limit-changed': SccExcerptLimitChangedPayload;
   'settings:article-foaf-degree-changed': ArticleFoafDegreeChangedPayload;
   'settings:hide-self-reposts-changed': HideSelfRepostsChangedPayload;
-  'settings:hide-ext-quotes-changed': HideExtQuotesChangedPayload;
+  'settings:hide-highlights-changed': HideHighlightsChangedPayload;
 
   // ── View Tabs ──────────────────────────────
   'view-tab:opened': ViewTabOpenedPayload;

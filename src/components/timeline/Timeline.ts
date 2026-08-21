@@ -58,7 +58,7 @@ export class Timeline extends View {
   private muteUpdatedSubscriptionId?: string;
   private hideSelfRepostsSubscriptionId?: string;
 
-  private hideExtQuotesSubscriptionId?: string;
+  private hideHighlightsSubscriptionId?: string;
   private noteDeletedSubscriptionId?: string;
   private pullRefreshSubscriptionId?: string;
   private marketplaceToggleSubId?: string;
@@ -198,9 +198,9 @@ export class Timeline extends View {
       await this.eventHandler.handleRefreshClick();
     });
 
-    // Re-fetch when the external-quote visibility setting is toggled
+    // Re-fetch when the highlights visibility setting is toggled
     // (global switch in Settings → UI, or per-user checkbox in ProfileView)
-    this.hideExtQuotesSubscriptionId = this.eventBus.on('settings:hide-ext-quotes-changed', async () => {
+    this.hideHighlightsSubscriptionId = this.eventBus.on('settings:hide-highlights-changed', async () => {
       await this.eventHandler.handleRefreshClick();
     });
   }
@@ -737,8 +737,8 @@ export class Timeline extends View {
     if (this.hideSelfRepostsSubscriptionId) {
       this.eventBus.off(this.hideSelfRepostsSubscriptionId);
     }
-    if (this.hideExtQuotesSubscriptionId) {
-      this.eventBus.off(this.hideExtQuotesSubscriptionId);
+    if (this.hideHighlightsSubscriptionId) {
+      this.eventBus.off(this.hideHighlightsSubscriptionId);
     }
     if (this.noteDeletedSubscriptionId) {
       this.eventBus.off(this.noteDeletedSubscriptionId);

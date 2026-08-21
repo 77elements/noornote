@@ -17,7 +17,7 @@ import { ProfileSearchComponent } from '../profile/ProfileSearchComponent';
 import { ProfileFollowManager } from '../../lists/follows';
 import { ProfileMuteManager } from '../../lists/mutes';
 import { SoftMuteService } from '../../services/SoftMuteService';
-import { isExtQuoteHiddenFor, setExtQuoteHiddenFor } from '../../helpers/extQuoteSetting';
+import { isHighlightHiddenFor, setHighlightHiddenFor } from '../../helpers/highlightSetting';
 import { ProfileEditModal } from '../profile/ProfileEditModal';
 import { QRCodeModal } from '../qrcode/QRCodeModal';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
@@ -859,14 +859,14 @@ export class ProfileView extends View {
       </label>
     `;
 
-    const extQuoteCheckbox = `
-      <label class="nn-checkbox" title="Hide this user's external article quote posts and reposts of them from your timelines">
-        <input type="checkbox" id="ext-quotes-toggle" ${isExtQuoteHiddenFor(this.pubkey) ? 'checked' : ''} />
-        <span>Turn off ext. Quotes</span>
+    const highlightsCheckbox = `
+      <label class="nn-checkbox" title="Hide this user's website highlights and reposts of them from your timelines">
+        <input type="checkbox" id="highlights-toggle" ${isHighlightHiddenFor(this.pubkey) ? 'checked' : ''} />
+        <span>Turn off Highlights</span>
       </label>
     `;
 
-    return muteButton + softMuteButton + articleNotifCheckbox + extQuoteCheckbox;
+    return muteButton + softMuteButton + articleNotifCheckbox + highlightsCheckbox;
   }
 
   /**
@@ -957,20 +957,20 @@ export class ProfileView extends View {
       });
     }
 
-    // Setup external-quotes toggle handler — hides this user's external
-    // quote highlights (kind 9802 with web source) from all timelines.
+    // Setup highlights toggle handler — hides this user's highlights
+    // (kind 9802 with web source) from all timelines.
     // Same clone-to-dedup pattern as the article checkbox above.
-    const extQuotesCheckbox = this.container.querySelector('#ext-quotes-toggle') as HTMLInputElement;
-    if (extQuotesCheckbox) {
-      const freshExtQuotes = extQuotesCheckbox.cloneNode(true) as HTMLInputElement;
-      extQuotesCheckbox.parentNode?.replaceChild(freshExtQuotes, extQuotesCheckbox);
-      freshExtQuotes.addEventListener('change', () => {
-        setExtQuoteHiddenFor(this.pubkey, freshExtQuotes.checked);
-        this.eventBus.emit('settings:hide-ext-quotes-changed', { hidden: freshExtQuotes.checked });
+    const highlightsCheckbox = this.container.querySelector('#highlights-toggle') as HTMLInputElement;
+    if (highlightsCheckbox) {
+      const freshHighlights = highlightsCheckbox.cloneNode(true) as HTMLInputElement;
+      highlightsCheckbox.parentNode?.replaceChild(freshHighlights, highlightsCheckbox);
+      freshHighlights.addEventListener('change', () => {
+        setHighlightHiddenFor(this.pubkey, freshHighlights.checked);
+        this.eventBus.emit('settings:hide-highlights-changed', { hidden: freshHighlights.checked });
         ToastService.show(
-          freshExtQuotes.checked
-            ? "This user's external quote posts are now hidden"
-            : "This user's external quote posts are shown again",
+          freshHighlights.checked
+            ? "This user's highlights are now hidden"
+            : "This user's highlights are shown again",
           'success'
         );
       });
