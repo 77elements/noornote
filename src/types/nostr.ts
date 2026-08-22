@@ -79,9 +79,9 @@ export interface SubscriptionConfig {
 export interface CacheEntry {
   event: ExtendedEvent;
   timestamp: number;
-  cachedAt: number;  // Timestamp when cached (for TTL expiration)
+  cachedAt: number; // Timestamp when cached (for TTL expiration)
   source: string;
-  ttl: number;       // TTL in milliseconds
+  ttl: number; // TTL in milliseconds
 }
 
 /**
@@ -197,7 +197,9 @@ export const RENDERABLE_KINDS: number[] = [
  * linking to gitworkshop.dev. Patch, PR, PR-Update, Issue, Status (Open/
  * Applied/Closed/Draft), Repository Announcement.
  */
-export const GIT_EVENT_KINDS: number[] = [1617, 1618, 1619, 1621, 1630, 1631, 1632, 1633, 30617];
+export const GIT_EVENT_KINDS: number[] = [
+  1617, 1618, 1619, 1621, 1630, 1631, 1632, 1633, 30617,
+];
 
 /**
  * Error types for better error handling
@@ -214,14 +216,21 @@ export class NostrError extends Error {
 }
 
 export class RelayError extends NostrError {
-  constructor(message: string, relay: string, public reason?: string) {
+  constructor(
+    message: string,
+    relay: string,
+    public reason?: string
+  ) {
     super(message, 'RELAY_ERROR', relay);
     this.name = 'RelayError';
   }
 }
 
 export class ValidationError extends NostrError {
-  constructor(message: string, public eventId?: string) {
+  constructor(
+    message: string,
+    public eventId?: string
+  ) {
     super(message, 'VALIDATION_ERROR');
     this.name = 'ValidationError';
   }

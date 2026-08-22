@@ -36,9 +36,18 @@ export class ExtensionSignerManager {
    * Authenticate via NIP-07 browser extension.
    * Calls getPublicKey() and stores the extension reference.
    */
-  public async authenticate(): Promise<{ success: boolean; npub?: string; pubkey?: string; error?: string }> {
+  public async authenticate(): Promise<{
+    success: boolean;
+    npub?: string;
+    pubkey?: string;
+    error?: string;
+  }> {
     if (!this.isAvailable()) {
-      return { success: false, error: 'No Nostr extension found. Please install Sidecar or another Nostr browser extension.' };
+      return {
+        success: false,
+        error:
+          'No Nostr extension found. Please install Sidecar or another Nostr browser extension.',
+      };
     }
 
     try {
@@ -46,21 +55,29 @@ export class ExtensionSignerManager {
       const pubkey = await this.extension.getPublicKey();
 
       if (!pubkey) {
-        return { success: false, error: 'Failed to get public key from extension' };
+        return {
+          success: false,
+          error: 'Failed to get public key from extension',
+        };
       }
 
       const { hexToNpub } = await import('../../helpers/nip19');
       const npub = hexToNpub(pubkey);
 
       if (!npub) {
-        throw new Error(`${this.getExtensionName()} extension provided invalid hex pubkey`);
+        throw new Error(
+          `${this.getExtensionName()} extension provided invalid hex pubkey`
+        );
       }
 
       return { success: true, npub, pubkey };
     } catch (error) {
       console.error('Extension authentication failed:', error);
       this.extension = null;
-      return { success: false, error: error instanceof Error ? error.message : 'Authentication failed' };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Authentication failed',
+      };
     }
   }
 
@@ -96,23 +113,39 @@ export class ExtensionSignerManager {
     return this.extension.signEvent(event);
   }
 
-  public async nip44Encrypt(plaintext: string, pubkey: string): Promise<string> {
-    if (!this.extension?.nip44) throw new Error('Extension NIP-44 not available');
+  public async nip44Encrypt(
+    plaintext: string,
+    pubkey: string
+  ): Promise<string> {
+    if (!this.extension?.nip44)
+      throw new Error('Extension NIP-44 not available');
     return this.extension.nip44.encrypt(pubkey, plaintext);
   }
 
-  public async nip44Decrypt(ciphertext: string, pubkey: string): Promise<string> {
-    if (!this.extension?.nip44) throw new Error('Extension NIP-44 not available');
+  public async nip44Decrypt(
+    ciphertext: string,
+    pubkey: string
+  ): Promise<string> {
+    if (!this.extension?.nip44)
+      throw new Error('Extension NIP-44 not available');
     return this.extension.nip44.decrypt(pubkey, ciphertext);
   }
 
-  public async nip04Encrypt(plaintext: string, pubkey: string): Promise<string> {
-    if (!this.extension?.nip04) throw new Error('Extension NIP-04 not available');
+  public async nip04Encrypt(
+    plaintext: string,
+    pubkey: string
+  ): Promise<string> {
+    if (!this.extension?.nip04)
+      throw new Error('Extension NIP-04 not available');
     return this.extension.nip04.encrypt(pubkey, plaintext);
   }
 
-  public async nip04Decrypt(ciphertext: string, pubkey: string): Promise<string> {
-    if (!this.extension?.nip04) throw new Error('Extension NIP-04 not available');
+  public async nip04Decrypt(
+    ciphertext: string,
+    pubkey: string
+  ): Promise<string> {
+    if (!this.extension?.nip04)
+      throw new Error('Extension NIP-04 not available');
     return this.extension.nip04.decrypt(pubkey, ciphertext);
   }
 

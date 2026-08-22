@@ -72,24 +72,27 @@ export class MarkdownToolbar {
   /** Wire listeners. Pass the specific `.md-toolbar` element to scope to it. */
   public attach(root: HTMLElement): void {
     this.root = root;
-    root.querySelectorAll('[data-md-action]').forEach((btn) =>
-      btn.addEventListener('click', this.onButtonClick)
-    );
+    root
+      .querySelectorAll('[data-md-action]')
+      .forEach(btn => btn.addEventListener('click', this.onButtonClick));
     this.getFileInput()?.addEventListener('change', this.onFileChange);
   }
 
   /** Remove all listeners and drop references. */
   public destroy(): void {
     if (!this.root) return;
-    this.root.querySelectorAll('[data-md-action]').forEach((btn) =>
-      btn.removeEventListener('click', this.onButtonClick)
-    );
+    this.root
+      .querySelectorAll('[data-md-action]')
+      .forEach(btn => btn.removeEventListener('click', this.onButtonClick));
     this.getFileInput()?.removeEventListener('change', this.onFileChange);
     this.root = null;
   }
 
   private getFileInput(): HTMLInputElement | null {
-    return (this.root?.querySelector('[data-md-file-input]') as HTMLInputElement) ?? null;
+    return (
+      (this.root?.querySelector('[data-md-file-input]') as HTMLInputElement) ??
+      null
+    );
   }
 
   private applyAction(action: string): void {
@@ -152,7 +155,8 @@ export class MarkdownToolbar {
     const value = textarea.value;
     const start = textarea.selectionStart;
     const insertion = `![](${url})\n`;
-    textarea.value = value.slice(0, start) + insertion + value.slice(textarea.selectionEnd);
+    textarea.value =
+      value.slice(0, start) + insertion + value.slice(textarea.selectionEnd);
 
     const newPos = start + insertion.length;
     textarea.setSelectionRange(newPos, newPos);

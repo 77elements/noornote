@@ -39,7 +39,8 @@ export class WalletTransactionList {
 
     this.element = document.createElement('div');
     this.element.className = 'wallet-tx-list';
-    this.element.innerHTML = '<p class="wallet-tx-list__placeholder pulsate">Loading transactions…</p>';
+    this.element.innerHTML =
+      '<p class="wallet-tx-list__placeholder pulsate">Loading transactions…</p>';
 
     this.onNwcRestored = () => {
       this.offset = 0;
@@ -60,14 +61,17 @@ export class WalletTransactionList {
     try {
       const c = await KeychainStorage.loadFiatCurrency();
       if (c) this.selectedCurrency = c;
-    } catch { /* keep default */ }
+    } catch {
+      /* keep default */
+    }
   }
 
   private async loadInitial(): Promise<void> {
     if (this.destroyed) return;
 
     if (!this.nwcService.isConnected()) {
-      this.element.innerHTML = '<p class="wallet-tx-list__placeholder">Wallet not connected</p>';
+      this.element.innerHTML =
+        '<p class="wallet-tx-list__placeholder">Wallet not connected</p>';
       return;
     }
 
@@ -85,13 +89,18 @@ export class WalletTransactionList {
     } catch (err) {
       this.systemLogger.error('WalletTransactionList', 'Failed to load:', err);
       if (!this.destroyed) {
-        this.element.innerHTML = '<p class="wallet-tx-list__placeholder">Failed to load transactions</p>';
+        this.element.innerHTML =
+          '<p class="wallet-tx-list__placeholder">Failed to load transactions</p>';
       }
     }
   }
 
-  private renderInitial(balanceMsats: number | null, transactions: NWCTransaction[]): void {
-    const balanceSats = balanceMsats !== null ? Math.floor(balanceMsats / 1000) : null;
+  private renderInitial(
+    balanceMsats: number | null,
+    transactions: NWCTransaction[]
+  ): void {
+    const balanceSats =
+      balanceMsats !== null ? Math.floor(balanceMsats / 1000) : null;
 
     // Balance summary
     let html = `<div class="wallet-tx-balance">`;
@@ -123,7 +132,9 @@ export class WalletTransactionList {
     // InfiniteScroll
     if (!this.allLoaded && this.listEl) {
       this.infiniteScroll = new InfiniteScroll(
-        () => { void this.loadMore(); },
+        () => {
+          void this.loadMore();
+        },
         { loadingMessage: 'Loading more transactions…' }
       );
       this.infiniteScroll.observe(this.listEl);
@@ -155,7 +166,11 @@ export class WalletTransactionList {
         this.infiniteScroll?.pause();
       }
     } catch (err) {
-      this.systemLogger.error('WalletTransactionList', 'Failed to load more:', err);
+      this.systemLogger.error(
+        'WalletTransactionList',
+        'Failed to load more:',
+        err
+      );
       this.infiniteScroll?.hideLoading();
     } finally {
       this.loading = false;
@@ -188,9 +203,15 @@ export class WalletTransactionList {
 
     // Extract zap sender info from metadata.nostr (kind 9734 zap request)
     const zapRequest = (tx as any).metadata?.nostr;
-    const isAnon = zapRequest?.tags?.some((t: string[]) => t[0] === 'anon') ?? false;
-    const senderPubkey = (!isAnon && isIncoming && zapRequest?.pubkey) ? zapRequest.pubkey as string : null;
-    const zapMessage = zapRequest?.content ? escapeHtml(zapRequest.content as string) : null;
+    const isAnon =
+      zapRequest?.tags?.some((t: string[]) => t[0] === 'anon') ?? false;
+    const senderPubkey =
+      !isAnon && isIncoming && zapRequest?.pubkey
+        ? (zapRequest.pubkey as string)
+        : null;
+    const zapMessage = zapRequest?.content
+      ? escapeHtml(zapRequest.content as string)
+      : null;
 
     // Icon: profile pic placeholder for zaps, arrow for regular
     let iconHtml: string;
@@ -205,9 +226,15 @@ export class WalletTransactionList {
     let desc: string;
     if (senderPubkey) {
       const name = `<span class="wallet-tx__sender" data-zap-pubkey-name="${senderPubkey}">…</span>`;
-      desc = zapMessage ? `${name}<br><span class="wallet-tx__zap-msg">"${zapMessage}"</span>` : name;
+      desc = zapMessage
+        ? `${name}<br><span class="wallet-tx__zap-msg">"${zapMessage}"</span>`
+        : name;
     } else {
-      desc = tx.description ? escapeHtml(tx.description) : (isIncoming ? 'Received' : 'Sent');
+      desc = tx.description
+        ? escapeHtml(tx.description)
+        : isIncoming
+          ? 'Received'
+          : 'Sent';
     }
 
     return `
@@ -230,7 +257,9 @@ export class WalletTransactionList {
     const profileService = UserProfileService.getInstance();
 
     // Collect unique pubkeys from data attributes
-    const avatarEls = this.element.querySelectorAll<HTMLImageElement>('img[data-zap-pubkey]');
+    const avatarEls = this.element.querySelectorAll<HTMLImageElement>(
+      'img[data-zap-pubkey]'
+    );
     const pubkeys = new Set<string>();
     for (const el of avatarEls) {
       pubkeys.add(el.getAttribute('data-zap-pubkey')!);
@@ -244,7 +273,9 @@ export class WalletTransactionList {
         if (this.destroyed) return;
 
         // Fill avatars
-        const imgs = this.element.querySelectorAll<HTMLImageElement>(`[data-zap-pubkey="${pubkey}"]`);
+        const imgs = this.element.querySelectorAll<HTMLImageElement>(
+          `[data-zap-pubkey="${pubkey}"]`
+        );
         for (const img of imgs) {
           if (profile.picture) {
             img.src = profile.picture;
@@ -258,21 +289,34 @@ export class WalletTransactionList {
         }
 
         // Fill names
-        const nameEls = this.element.querySelectorAll(`[data-zap-pubkey-name="${pubkey}"]`);
-        const displayName = profile.display_name || profile.name || pubkey.substring(0, 8) + '…';
+        const nameEls = this.element.querySelectorAll(
+          `[data-zap-pubkey-name="${pubkey}"]`
+        );
+        const displayName =
+          profile.display_name || profile.name || `${pubkey.substring(0, 8)}…`;
         for (const el of nameEls) {
           el.textContent = displayName;
         }
-      } catch { /* profile fetch failed, keep placeholder */ }
+      } catch {
+        /* profile fetch failed, keep placeholder */
+      }
     }
   }
 
   private async fillFiatBalance(sats: number): Promise<void> {
     if (this.destroyed) return;
-    const fiat = await this.exchangeRateService.convertSatsToFiat(sats, this.selectedCurrency);
+    const fiat = await this.exchangeRateService.convertSatsToFiat(
+      sats,
+      this.selectedCurrency
+    );
     if (this.destroyed) return;
-    const symbol = this.exchangeRateService.getCurrencySymbol(this.selectedCurrency);
-    const formatted = this.exchangeRateService.formatAmount(fiat, this.selectedCurrency);
+    const symbol = this.exchangeRateService.getCurrencySymbol(
+      this.selectedCurrency
+    );
+    const formatted = this.exchangeRateService.formatAmount(
+      fiat,
+      this.selectedCurrency
+    );
     const el = this.element.querySelector('.wallet-tx-balance');
     if (el) {
       const fiatSpan = document.createElement('span');
@@ -282,12 +326,19 @@ export class WalletTransactionList {
     }
   }
 
-  private async fillFiatAmountsForNew(transactions: NWCTransaction[]): Promise<void> {
+  private async fillFiatAmountsForNew(
+    transactions: NWCTransaction[]
+  ): Promise<void> {
     if (this.destroyed || transactions.length === 0) return;
 
-    const ratePerSat = await this.exchangeRateService.convertSatsToFiat(1, this.selectedCurrency);
+    const ratePerSat = await this.exchangeRateService.convertSatsToFiat(
+      1,
+      this.selectedCurrency
+    );
     if (this.destroyed) return;
-    const symbol = this.exchangeRateService.getCurrencySymbol(this.selectedCurrency);
+    const symbol = this.exchangeRateService.getCurrencySymbol(
+      this.selectedCurrency
+    );
 
     // Only fill elements that still show "…"
     const fiatEls = this.element.querySelectorAll('[data-tx-msats]');
@@ -298,7 +349,10 @@ export class WalletTransactionList {
       const sats = Math.floor(msats / 1000);
       const fiat = sats * ratePerSat;
       const sign = type === 'incoming' ? '' : '-';
-      const formatted = this.exchangeRateService.formatAmount(fiat, this.selectedCurrency);
+      const formatted = this.exchangeRateService.formatAmount(
+        fiat,
+        this.selectedCurrency
+      );
       el.textContent = `${sign}${formatted} ${symbol}`;
     }
   }

@@ -325,7 +325,10 @@ export interface AppEvents {
   /** One or more messages in a conversation expired and were locally deleted. */
   'dm:messages-expired': { partnerPubkey: string; count: number };
   /** Per-conversation disappearing setting changed (off / 7d / 30d / 1y / undecided). */
-  'dm:disappearing-changed': { partnerPubkey: string; seconds: number | undefined };
+  'dm:disappearing-changed': {
+    partnerPubkey: string;
+    seconds: number | undefined;
+  };
   /** Incoming message carried an `expiration` tag while our setting was still undecided. */
   'dm:disappearing-request': { partnerPubkey: string };
 

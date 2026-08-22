@@ -55,11 +55,15 @@ export class ListingService {
    * @returns naddr on success, null on failure
    */
   public async publishListing(options: ListingOptions): Promise<string | null> {
-    const { title, content, identifier, price, priceCurrency, relays } = options;
+    const { title, content, identifier, price, priceCurrency, relays } =
+      options;
 
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      this.systemLogger.error('ListingService', 'Cannot publish: User not authenticated');
+      this.systemLogger.error(
+        'ListingService',
+        'Cannot publish: User not authenticated'
+      );
       return null;
     }
 
@@ -90,7 +94,7 @@ export class ListingService {
         ['d', identifier.trim()],
         ['title', title.trim()],
         ['published_at', String(options.publishedAt || now)],
-        ['status', options.status || 'active']
+        ['status', options.status || 'active'],
       ];
 
       // Price tag: ["price", "50", "USD"] or ["price", "15", "EUR", "month"]
@@ -126,12 +130,15 @@ export class ListingService {
         created_at: now,
         tags,
         content: content.trim(),
-        pubkey: currentUser.pubkey
+        pubkey: currentUser.pubkey,
       };
 
       const signedEvent = await this.authService.signEvent(unsignedEvent);
       if (!signedEvent) {
-        this.systemLogger.error('ListingService', 'Failed to sign listing event');
+        this.systemLogger.error(
+          'ListingService',
+          'Failed to sign listing event'
+        );
         return null;
       }
 
@@ -148,10 +155,15 @@ export class ListingService {
         kind: 30402,
         pubkey: currentUser.pubkey,
         identifier: identifier.trim(),
-        relays: relays.slice(0, 2)
+        relays: relays.slice(0, 2),
       });
     } catch (error) {
-      ErrorService.handle(error, 'ListingService.publishListing', true, 'Failed to publish listing. Please try again.');
+      ErrorService.handle(
+        error,
+        'ListingService.publishListing',
+        true,
+        'Failed to publish listing. Please try again.'
+      );
       return null;
     }
   }

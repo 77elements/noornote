@@ -59,9 +59,12 @@ export function unwrapArmadaInviteLinks(text: string): string {
       if (!parseArmadaInvite(full)) return full;
       return `nostr:${naddr}${fragment ?? ''}`;
     })
-    .replace(BARE_NADDR_WITH_FRAGMENT_REGEX, (full, naddr: string, fragment: string) => {
-      // Not an invite-bundle naddr — leave for the generic pipeline.
-      if (!parseArmadaInvite(`${naddr}${fragment}`)) return full;
-      return `nostr:${naddr}${fragment}`;
-    });
+    .replace(
+      BARE_NADDR_WITH_FRAGMENT_REGEX,
+      (full, naddr: string, fragment: string) => {
+        // Not an invite-bundle naddr — leave for the generic pipeline.
+        if (!parseArmadaInvite(`${naddr}${fragment}`)) return full;
+        return `nostr:${naddr}${fragment}`;
+      }
+    );
 }

@@ -35,7 +35,10 @@ export async function parsePrivateFollowListEvent(
   }
 
   try {
-    const privateFollows = await decryptPrivateFollows(event.content, authorPubkey);
+    const privateFollows = await decryptPrivateFollows(
+      event.content,
+      authorPubkey
+    );
     return privateFollows;
   } catch (error) {
     console.error('Failed to parse private follow list event:', error);

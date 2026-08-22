@@ -18,7 +18,12 @@ import { truncateNoteContent } from '../../helpers/truncateNoteContent';
 import { encodeNevent } from '../../services/NostrToolsAdapter';
 import { npubToUsername } from '../../helpers/npubToUsername';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
-import { extractZapperPubkey, getZapAmountSats, extractZapMessage, formatNumberWithCommas } from '../../helpers/zapUtils';
+import {
+  extractZapperPubkey,
+  getZapAmountSats,
+  extractZapMessage,
+  formatNumberWithCommas,
+} from '../../helpers/zapUtils';
 import { applyAuthorRelationshipRing } from '../../helpers/applyAuthorRelationshipRing';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
@@ -32,7 +37,8 @@ export class ThreadContextIndicator {
   private options: ThreadContextIndicatorOptions;
   private _singleNoteApi?: SingleNoteModuleApi | null;
   private get singleNoteApi(): SingleNoteModuleApi | null {
-    return this._singleNoteApi ??= ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
+    return (this._singleNoteApi ??=
+      ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note'));
   }
   private userProfileService: UserProfileService;
   private router: Router;
@@ -62,7 +68,9 @@ export class ThreadContextIndicator {
    */
   private async loadThreadContext(): Promise<void> {
     try {
-      const context = await this.singleNoteApi?.fetchParentChain(this.options.noteId);
+      const context = await this.singleNoteApi?.fetchParentChain(
+        this.options.noteId
+      );
 
       if (!context) {
         this.element.style.display = 'none';
@@ -76,7 +84,6 @@ export class ThreadContextIndicator {
       }
 
       await this.renderThreadContext(context);
-
     } catch (_error) {
       console.error('Failed to load thread context:', _error);
       this.element.innerHTML = `
@@ -145,7 +152,9 @@ export class ThreadContextIndicator {
     // For a zap receipt (kind:9735) the event author is the wallet/LNURL server, which has no
     // profile picture — so resolve the avatar + name to the actual ZAPPER instead.
     const isZap = kind === 9735;
-    const avatarPubkey = isZap ? extractZapperPubkey({ pubkey, tags, kind } as NostrEvent) : pubkey;
+    const avatarPubkey = isZap
+      ? extractZapperPubkey({ pubkey, tags, kind } as NostrEvent)
+      : pubkey;
     const profile = await this.userProfileService.getUserProfile(avatarPubkey);
     const displayName = profile.display_name || profile.name || 'Anonymous';
     const avatarUrl = profile.picture || '';
@@ -160,26 +169,45 @@ export class ThreadContextIndicator {
       // Zap receipt has no body — show "⚡ N sats" + optional zap comment; click opens its thread.
       const synth = { pubkey, tags, kind } as NostrEvent;
       const msg = extractZapMessage(synth);
-      const msgText = msg ? ` "${msg.length > 80 ? msg.slice(0, 80) + '…' : msg}"` : '';
+      const msgText = msg
+        ? ` "${msg.length > 80 ? `${msg.slice(0, 80)}…` : msg}"`
+        : '';
       previewHtml = `⚡ ${formatNumberWithCommas(getZapAmountSats(synth))} sats${escapeHtml(msgText)}`;
       onClick = (e?: MouseEvent) => {
-        getViewNavigationController().openView('single-note', encodeNevent(eventId), e);
+        getViewNavigationController().openView(
+          'single-note',
+          encodeNevent(eventId),
+          e
+        );
       };
     } else if (isAddressable) {
-      const titleTag = tags.find(t => t[0] === 'title')?.[1]
-                    || tags.find(t => t[0] === 'name')?.[1]
-                    || '(untitled)';
-      const label = kind === 30023 ? 'Article'
-                  : kind === 30402 ? 'Listing'
-                  : kind === 32267 ? 'App'
-                  : kind === 39089 ? 'Follow Pack'
-                  : `Kind ${kind}`;
+      const titleTag =
+        tags.find(t => t[0] === 'title')?.[1] ||
+        tags.find(t => t[0] === 'name')?.[1] ||
+        '(untitled)';
+      const label =
+        kind === 30023
+          ? 'Article'
+          : kind === 30402
+            ? 'Listing'
+            : kind === 32267
+              ? 'App'
+              : kind === 39089
+                ? 'Follow Pack'
+                : `Kind ${kind}`;
       previewHtml = `<strong>${escapeHtmlAttr(label)}:</strong> ${escapeHtmlAttr(titleTag)}`;
 
       const dtag = tags.find(t => t[0] === 'd')?.[1] || '';
       onClick = async (e?: MouseEvent) => {
-        const { encodeNaddr } = await import('../../services/NostrToolsAdapter');
-        const naddr = encodeNaddr({ kind, pubkey, identifier: dtag, relays: [] });
+        const { encodeNaddr } = await import(
+          '../../services/NostrToolsAdapter'
+        );
+        const naddr = encodeNaddr({
+          kind,
+          pubkey,
+          identifier: dtag,
+          relays: [],
+        });
         // Articles have a secondary-pane view; route them through the controller so
         // right-pane mode opens them in the scc. Other addressable kinds have no scc
         // tab view yet, so they keep full Router navigation.
@@ -196,30 +224,44 @@ export class ThreadContextIndicator {
           return;
         }
         // Remaining addressable kinds (e.g. zapstore apps) have no scc view yet.
-        const route = kind === 32267 ? `/zapstore/${naddr}`
-                    : `/note/${encodeNevent(eventId)}`;
+        const route =
+          kind === 32267
+            ? `/zapstore/${naddr}`
+            : `/note/${encodeNevent(eventId)}`;
         this.router.navigate(route);
       };
     } else {
       // Regular note: resolve mentions, truncate body
       const mentionedProfiles = new Map<string, any>();
-      const npubMatches = content.match(/nostr:npub1[023456789acdefghjklmnpqrstuvwxyz]{58}/gi);
+      const npubMatches = content.match(
+        /nostr:npub1[023456789acdefghjklmnpqrstuvwxyz]{58}/gi
+      );
       if (npubMatches) {
-        await Promise.all(npubMatches.map(async (match) => {
-          try {
-            const npub = match.replace('nostr:', '');
-            const { decodeNip19 } = await import('../../services/NostrToolsAdapter');
-            const decoded = decodeNip19(npub);
-            if (decoded.type === 'npub') {
-              const mentionProfile = await this.userProfileService.getUserProfile(decoded.data);
-              mentionedProfiles.set(decoded.data, mentionProfile);
-            }
-          } catch (_err) {}
-        }));
+        await Promise.all(
+          npubMatches.map(async match => {
+            try {
+              const npub = match.replace('nostr:', '');
+              const { decodeNip19 } = await import(
+                '../../services/NostrToolsAdapter'
+              );
+              const decoded = decodeNip19(npub);
+              if (decoded.type === 'npub') {
+                const mentionProfile =
+                  await this.userProfileService.getUserProfile(decoded.data);
+                mentionedProfiles.set(decoded.data, mentionProfile);
+              }
+            } catch (_err) {}
+          })
+        );
       }
 
-      const profileResolver = (hexPubkey: string) => mentionedProfiles.get(hexPubkey) || null;
-      const contentWithMentions = npubToUsername(content, 'html-multi', profileResolver);
+      const profileResolver = (hexPubkey: string) =>
+        mentionedProfiles.get(hexPubkey) || null;
+      const contentWithMentions = npubToUsername(
+        content,
+        'html-multi',
+        profileResolver
+      );
       previewHtml = truncateNoteContent(contentWithMentions, 100);
 
       onClick = (e?: MouseEvent) => {
@@ -243,11 +285,14 @@ export class ThreadContextIndicator {
     // to the current user (red = they muted you, green = they follow you) — same cue
     // as the reply author's avatar, so you can see who upthread won't get your reply.
     if (this.options.replyContext) {
-      applyAuthorRelationshipRing(item.querySelector('.profile-pic--mini'), avatarPubkey);
+      applyAuthorRelationshipRing(
+        item.querySelector('.profile-pic--mini'),
+        avatarPubkey
+      );
     }
 
     item.style.cursor = 'pointer';
-    item.addEventListener('click', (e) => {
+    item.addEventListener('click', e => {
       e.stopPropagation();
       onClick(e);
     });

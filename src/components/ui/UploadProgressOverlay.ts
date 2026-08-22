@@ -61,9 +61,12 @@ export class UploadProgressOverlay {
     document.body.appendChild(el);
     this.root = el;
 
-    this.subscriptionId = TypedEventBus.getInstance().on(UPLOAD_STATUS_EVENT, (status: UploadStatus) => {
-      this.handleStatus(status);
-    });
+    this.subscriptionId = TypedEventBus.getInstance().on(
+      UPLOAD_STATUS_EVENT,
+      (status: UploadStatus) => {
+        this.handleStatus(status);
+      }
+    );
   }
 
   public unmount(): void {
@@ -95,9 +98,10 @@ export class UploadProgressOverlay {
     const iconEl = this.root.querySelector('[data-icon]') as HTMLElement;
 
     this.root.classList.remove('upload-progress-overlay--hidden');
-    const batchSuffix = status.totalFiles && status.totalFiles > 1
-      ? ` (${(status.fileIndex ?? 0) + 1} of ${status.totalFiles})`
-      : '';
+    const batchSuffix =
+      status.totalFiles && status.totalFiles > 1
+        ? ` (${(status.fileIndex ?? 0) + 1} of ${status.totalFiles})`
+        : '';
 
     switch (status.phase) {
       case 'compressing': {
@@ -160,7 +164,10 @@ function formatBytes(bytes: number): string {
   if (bytes <= 0) return '0 B';
   const k = 1024;
   const units = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.min(units.length - 1, Math.floor(Math.log(bytes) / Math.log(k)));
+  const i = Math.min(
+    units.length - 1,
+    Math.floor(Math.log(bytes) / Math.log(k))
+  );
   const value = bytes / Math.pow(k, i);
   return `${value >= 10 ? value.toFixed(0) : value.toFixed(1)} ${units[i]}`;
 }

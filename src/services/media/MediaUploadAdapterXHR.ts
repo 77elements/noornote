@@ -5,7 +5,11 @@
  * Windows WebView2 has CORS issues with XHR to external domains.
  */
 
-import type { MediaUploadAdapter, UploadOptions, UploadResponse } from './MediaUploadAdapter';
+import type {
+  MediaUploadAdapter,
+  UploadOptions,
+  UploadResponse,
+} from './MediaUploadAdapter';
 
 export class MediaUploadAdapterXHR implements MediaUploadAdapter {
   private xhr: XMLHttpRequest | null = null;
@@ -24,7 +28,7 @@ export class MediaUploadAdapterXHR implements MediaUploadAdapter {
       }, 60000);
 
       // Track upload progress
-      this.xhr.upload.onprogress = (event) => {
+      this.xhr.upload.onprogress = event => {
         if (event.lengthComputable && onProgress) {
           const percent = Math.round((event.loaded / event.total) * 100);
           onProgress(percent);
@@ -40,7 +44,7 @@ export class MediaUploadAdapterXHR implements MediaUploadAdapter {
           status: this.xhr!.status,
           statusText: this.xhr!.statusText,
           text: async () => responseText,
-          json: async () => JSON.parse(responseText)
+          json: async () => JSON.parse(responseText),
         });
 
         this.xhr = null;
@@ -66,7 +70,8 @@ export class MediaUploadAdapterXHR implements MediaUploadAdapter {
       }
 
       // Use Uint8Array instead of ArrayBuffer (ArrayBuffer is deprecated in XHR.send())
-      const bodyToSend = body instanceof ArrayBuffer ? new Uint8Array(body) : body;
+      const bodyToSend =
+        body instanceof ArrayBuffer ? new Uint8Array(body) : body;
       this.xhr.send(bodyToSend);
     });
   }

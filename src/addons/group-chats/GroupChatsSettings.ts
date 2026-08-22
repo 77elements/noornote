@@ -2,10 +2,21 @@ import { SettingsSection } from '../../components/settings/SettingsSection';
 import { Switch } from '../../components/ui/Switch';
 import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../services/PerAccountLocalStorage';
 import { AddonLoader } from '../AddonLoader';
-import { isGroupChatsEnabled, setGroupChatsEnabled, isArmadaEnabled, setArmadaEnabled } from './index';
-import { GROUP_CHATS_INTERVAL_OPTIONS, GROUP_CHATS_DEFAULT_INTERVAL_MS } from './GroupChatsService';
+import {
+  isGroupChatsEnabled,
+  setGroupChatsEnabled,
+  isArmadaEnabled,
+  setArmadaEnabled,
+} from './index';
+import {
+  GROUP_CHATS_INTERVAL_OPTIONS,
+  GROUP_CHATS_DEFAULT_INTERVAL_MS,
+} from './GroupChatsService';
 import type { GroupChatsRuntime } from './runtime';
 import { ArmadaCommunityRegistry } from './armada/ArmadaCommunityRegistry';
 import { resolveInvitePreview } from './armada/resolveInvitePreview';
@@ -31,8 +42,12 @@ export class GroupChatsSettings extends SettingsSection {
     const contentContainer = this.getContentContainer(parentContainer);
     if (!contentContainer) return;
 
-    this.contentZone = parentContainer.querySelector('[data-addon-content="group-chats"]');
-    this.armadaZone = parentContainer.querySelector('[data-addon-content="armada-communities"]');
+    this.contentZone = parentContainer.querySelector(
+      '[data-addon-content="group-chats"]'
+    );
+    this.armadaZone = parentContainer.querySelector(
+      '[data-addon-content="armada-communities"]'
+    );
 
     const groupChatsEnabled = isGroupChatsEnabled();
     const armadaEnabled = isArmadaEnabled();
@@ -40,13 +55,17 @@ export class GroupChatsSettings extends SettingsSection {
     this.enableSwitch = new Switch({
       label: '',
       checked: groupChatsEnabled,
-      onChange: (checked) => { void this.handleToggle(checked); }
+      onChange: checked => {
+        void this.handleToggle(checked);
+      },
     });
 
     this.armadaSwitch = new Switch({
       label: '',
       checked: armadaEnabled,
-      onChange: (checked) => { void this.handleArmadaToggle(checked); }
+      onChange: checked => {
+        void this.handleArmadaToggle(checked);
+      },
     });
 
     contentContainer.innerHTML = `
@@ -78,7 +97,10 @@ export class GroupChatsSettings extends SettingsSection {
   private async handleToggle(checked: boolean): Promise<void> {
     setGroupChatsEnabled(checked);
     this.eventBus.emit('group-chats:addon-toggle', { enabled: checked });
-    ToastService.show(checked ? 'Nostrord enabled' : 'Nostrord disabled', 'success');
+    ToastService.show(
+      checked ? 'Nostrord enabled' : 'Nostrord disabled',
+      'success'
+    );
     this.renderPanel(isGroupChatsEnabled() || isArmadaEnabled());
     this.renderArmadaCommunities(isArmadaEnabled());
   }
@@ -86,27 +108,40 @@ export class GroupChatsSettings extends SettingsSection {
   private async handleArmadaToggle(checked: boolean): Promise<void> {
     setArmadaEnabled(checked);
     this.eventBus.emit('armada:addon-toggle', { enabled: checked });
-    ToastService.show(checked ? 'Armada enabled — add communities below' : 'Armada disabled', 'success');
+    ToastService.show(
+      checked ? 'Armada enabled — add communities below' : 'Armada disabled',
+      'success'
+    );
     this.renderPanel(isGroupChatsEnabled() || isArmadaEnabled());
     this.renderArmadaCommunities(checked);
   }
 
   private getCurrentInterval(): number {
-    return this.storage.get<number>(StorageKeys.GROUP_CHATS_POLL_INTERVAL, GROUP_CHATS_DEFAULT_INTERVAL_MS);
+    return this.storage.get<number>(
+      StorageKeys.GROUP_CHATS_POLL_INTERVAL,
+      GROUP_CHATS_DEFAULT_INTERVAL_MS
+    );
   }
 
   private getNotifyOwn(): boolean {
-    return this.storage.get<boolean>(StorageKeys.GROUP_CHATS_NOTIFY_OWN_POSTS, true);
+    return this.storage.get<boolean>(
+      StorageKeys.GROUP_CHATS_NOTIFY_OWN_POSTS,
+      true
+    );
   }
 
   private renderPanel(enabled: boolean): void {
     if (!this.contentZone) return;
     this.notifyOwnSwitch?.destroy();
     this.notifyOwnSwitch = null;
-    if (!enabled) { this.contentZone.innerHTML = ''; return; }
+    if (!enabled) {
+      this.contentZone.innerHTML = '';
+      return;
+    }
 
     const current = this.getCurrentInterval();
-    const optionsHtml = GROUP_CHATS_INTERVAL_OPTIONS.map(option => `
+    const optionsHtml = GROUP_CHATS_INTERVAL_OPTIONS.map(
+      option => `
       <label class="nn-checkbox nn-checkbox--label-left">
         <span class="setting__label">${option.label}</span>
         <input
@@ -116,18 +151,21 @@ export class GroupChatsSettings extends SettingsSection {
           ${option.value === current ? 'checked' : ''}
         />
       </label>
-    `).join('');
+    `
+    ).join('');
 
     this.notifyOwnSwitch = new Switch({
       label: '',
       checked: this.getNotifyOwn(),
-      onChange: (checked) => {
+      onChange: checked => {
         this.storage.set(StorageKeys.GROUP_CHATS_NOTIFY_OWN_POSTS, checked);
         ToastService.show(
-          checked ? 'GroupChats: your own posts included' : 'GroupChats: your own posts excluded',
+          checked
+            ? 'GroupChats: your own posts included'
+            : 'GroupChats: your own posts excluded',
           'success'
         );
-      }
+      },
     });
 
     this.contentZone.innerHTML = `
@@ -151,18 +189,25 @@ export class GroupChatsSettings extends SettingsSection {
       </section>
     `;
 
-    this.contentZone.querySelectorAll<HTMLInputElement>('input[name="group-chats-interval"]').forEach(input => {
-      input.addEventListener('change', () => {
-        if (!input.checked) return;
-        const intervalMs = Number(input.value);
-        this.storage.set(StorageKeys.GROUP_CHATS_POLL_INTERVAL, intervalMs);
-        const rt = AddonLoader.getInstance().getRuntime<GroupChatsRuntime>('group-chats');
-        rt?.service?.setPollingInterval(intervalMs);
-        rt?.armadaService?.setPollingInterval(intervalMs);
-        const label = GROUP_CHATS_INTERVAL_OPTIONS.find(o => o.value === intervalMs)?.label ?? 'updated';
-        ToastService.show(`Group Chats: ${label.toLowerCase()}`, 'success');
+    this.contentZone
+      .querySelectorAll<HTMLInputElement>('input[name="group-chats-interval"]')
+      .forEach(input => {
+        input.addEventListener('change', () => {
+          if (!input.checked) return;
+          const intervalMs = Number(input.value);
+          this.storage.set(StorageKeys.GROUP_CHATS_POLL_INTERVAL, intervalMs);
+          const rt =
+            AddonLoader.getInstance().getRuntime<GroupChatsRuntime>(
+              'group-chats'
+            );
+          rt?.service?.setPollingInterval(intervalMs);
+          rt?.armadaService?.setPollingInterval(intervalMs);
+          const label =
+            GROUP_CHATS_INTERVAL_OPTIONS.find(o => o.value === intervalMs)
+              ?.label ?? 'updated';
+          ToastService.show(`Group Chats: ${label.toLowerCase()}`, 'success');
+        });
       });
-    });
 
     this.notifyOwnSwitch.setupEventListeners(this.contentZone);
   }
@@ -171,22 +216,27 @@ export class GroupChatsSettings extends SettingsSection {
 
   private renderArmadaCommunities(enabled: boolean): void {
     if (!this.armadaZone) return;
-    if (!enabled) { this.armadaZone.innerHTML = ''; return; }
+    if (!enabled) {
+      this.armadaZone.innerHTML = '';
+      return;
+    }
 
     const registry = ArmadaCommunityRegistry.getInstance();
     const communities = registry.list();
 
-    const listHtml = communities.length === 0
-      ? `<p class="form__note">No tracked communities yet. Paste an Armada invite link below to start tracking activity.</p>`
-      : `<ul class="ui-list tracked-armada-communities">${
-          communities.map(c => {
-            const channelCount = c.channels?.length ?? 0;
-            const status = channelCount > 0
-              ? `${channelCount} ${channelCount === 1 ? 'channel' : 'channels'} tracked`
-              : c.controlPk
-                ? 'active (control plane only)'
-                : 'inactive';
-            return `
+    const listHtml =
+      communities.length === 0
+        ? `<p class="form__note">No tracked communities yet. Paste an Armada invite link below to start tracking activity.</p>`
+        : `<ul class="ui-list tracked-armada-communities">${communities
+            .map(c => {
+              const channelCount = c.channels?.length ?? 0;
+              const status =
+                channelCount > 0
+                  ? `${channelCount} ${channelCount === 1 ? 'channel' : 'channels'} tracked`
+                  : c.controlPk
+                    ? 'active (control plane only)'
+                    : 'inactive';
+              return `
             <li class="ui-list__item" data-armada-community="${escapeHtmlAttr(c.naddr)}">
               <div class="armada-community-row">
                 <div class="armada-community-row__icon" data-armada-icon-slot>
@@ -201,8 +251,8 @@ export class GroupChatsSettings extends SettingsSection {
                 </button>
               </div>
             </li>`;
-          }).join('')
-        }</ul>`;
+            })
+            .join('')}</ul>`;
 
     this.armadaZone.innerHTML = `
       <section class="section armada-communities">
@@ -225,30 +275,40 @@ export class GroupChatsSettings extends SettingsSection {
     `;
 
     // Wire add button — single invite-link input
-    const addBtn = this.armadaZone.querySelector<HTMLButtonElement>('[data-armada-add]');
-    const addInput = this.armadaZone.querySelector<HTMLInputElement>('[data-armada-add-input]');
+    const addBtn =
+      this.armadaZone.querySelector<HTMLButtonElement>('[data-armada-add]');
+    const addInput = this.armadaZone.querySelector<HTMLInputElement>(
+      '[data-armada-add-input]'
+    );
     if (addBtn && addInput) {
       addBtn.addEventListener('click', () => {
         void this.handleAddCommunity(addInput.value, addBtn);
       });
-      addInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); void this.handleAddCommunity(addInput.value, addBtn); }
+      addInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          void this.handleAddCommunity(addInput.value, addBtn);
+        }
       });
     }
 
     // Wire remove buttons
-    this.armadaZone.querySelectorAll<HTMLButtonElement>('[data-armada-remove]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const item = btn.closest('[data-armada-community]');
-        const naddr = item?.getAttribute('data-armada-community');
-        if (naddr) this.handleRemoveCommunity(naddr);
+    this.armadaZone
+      .querySelectorAll<HTMLButtonElement>('[data-armada-remove]')
+      .forEach(btn => {
+        btn.addEventListener('click', () => {
+          const item = btn.closest('[data-armada-community]');
+          const naddr = item?.getAttribute('data-armada-community');
+          if (naddr) this.handleRemoveCommunity(naddr);
+        });
       });
-    });
 
     // Async icon loading (reuses decryptArmadaImage from the 33301 invite card)
     for (const c of communities) {
       if (!c.iconPointer) continue;
-      const slot = this.armadaZone.querySelector(`[data-armada-community="${CSS.escape(c.naddr)}"] [data-armada-icon-slot]`);
+      const slot = this.armadaZone.querySelector(
+        `[data-armada-community="${CSS.escape(c.naddr)}"] [data-armada-icon-slot]`
+      );
       if (!slot) continue;
       void decryptArmadaImage(c.iconPointer).then(url => {
         if (!url || !slot.isConnected) return;
@@ -257,10 +317,16 @@ export class GroupChatsSettings extends SettingsSection {
     }
   }
 
-  private async handleAddCommunity(rawInput: string, btn: HTMLButtonElement): Promise<void> {
+  private async handleAddCommunity(
+    rawInput: string,
+    btn: HTMLButtonElement
+  ): Promise<void> {
     const trimmed = rawInput.trim();
     if (!trimmed || !trimmed.includes('/invite/')) {
-      ToastService.show('Paste the armada.buzz invite link (must contain /invite/).', 'error');
+      ToastService.show(
+        'Paste the armada.buzz invite link (must contain /invite/).',
+        'error'
+      );
       return;
     }
     btn.disabled = true;
@@ -272,9 +338,14 @@ export class GroupChatsSettings extends SettingsSection {
         ToastService.show(result.reason, 'error');
         return;
       }
-      const existing = ArmadaCommunityRegistry.getInstance().get(result.community.naddr);
+      const existing = ArmadaCommunityRegistry.getInstance().get(
+        result.community.naddr
+      );
       if (existing) {
-        ToastService.show(`"${existing.name}" is already being tracked.`, 'success');
+        ToastService.show(
+          `"${existing.name}" is already being tracked.`,
+          'success'
+        );
         return;
       }
 

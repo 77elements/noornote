@@ -49,10 +49,12 @@ export class DMBadgeManager {
 
     try {
       const dmsApi = ModuleLoader.getInstance().getApi<DMsModuleApi>('dms');
-      const unreadCount = await (dmsApi?.getUnreadCount() ?? Promise.resolve(0));
+      const unreadCount = await (dmsApi?.getUnreadCount() ??
+        Promise.resolve(0));
 
       if (unreadCount > 0) {
-        this.badgeElement.textContent = unreadCount > 99 ? '99+' : unreadCount.toString();
+        this.badgeElement.textContent =
+          unreadCount > 99 ? '99+' : unreadCount.toString();
         this.badgeElement.style.display = 'inline-flex';
       } else {
         this.badgeElement.style.display = 'none';

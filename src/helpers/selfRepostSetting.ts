@@ -12,7 +12,10 @@
  * regardless of the gap.
  */
 
-import { PerAccountLocalStorage, StorageKeys } from '../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../services/PerAccountLocalStorage';
 
 export type SelfRepostGap = '3d' | '1w' | '3mo' | '1y' | 'all';
 
@@ -21,24 +24,36 @@ const GAP_SECONDS: Record<SelfRepostGap, number> = {
   '1w': 7 * 24 * 60 * 60,
   '3mo': 90 * 24 * 60 * 60,
   '1y': 365 * 24 * 60 * 60,
-  'all': Infinity,
+  all: Infinity,
 };
 
 export function isHideSelfRepostsEnabled(): boolean {
-  return PerAccountLocalStorage.getInstance().get<boolean>(StorageKeys.HIDE_SELF_REPOSTS, false);
+  return PerAccountLocalStorage.getInstance().get<boolean>(
+    StorageKeys.HIDE_SELF_REPOSTS,
+    false
+  );
 }
 
 export function setHideSelfRepostsEnabled(enabled: boolean): void {
-  PerAccountLocalStorage.getInstance().set(StorageKeys.HIDE_SELF_REPOSTS, enabled);
+  PerAccountLocalStorage.getInstance().set(
+    StorageKeys.HIDE_SELF_REPOSTS,
+    enabled
+  );
 }
 
 export function getSelfRepostGap(): SelfRepostGap {
-  const v = PerAccountLocalStorage.getInstance().get<SelfRepostGap>(StorageKeys.HIDE_SELF_REPOSTS_GAP, 'all');
+  const v = PerAccountLocalStorage.getInstance().get<SelfRepostGap>(
+    StorageKeys.HIDE_SELF_REPOSTS_GAP,
+    'all'
+  );
   return v in GAP_SECONDS ? v : 'all';
 }
 
 export function setSelfRepostGap(gap: SelfRepostGap): void {
-  PerAccountLocalStorage.getInstance().set(StorageKeys.HIDE_SELF_REPOSTS_GAP, gap);
+  PerAccountLocalStorage.getInstance().set(
+    StorageKeys.HIDE_SELF_REPOSTS_GAP,
+    gap
+  );
 }
 
 /** Threshold in seconds (Infinity for 'all'). */

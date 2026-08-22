@@ -5,7 +5,10 @@
 
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { UserProfileService } from '../../../services/UserProfileService';
-import { renderUserMention, setupUserMentionHandlers } from '../../../helpers/UserMentionHelper';
+import {
+  renderUserMention,
+  setupUserMentionHandlers,
+} from '../../../helpers/UserMentionHelper';
 import { escapeHtml } from '../../../helpers/escapeHtml';
 
 export class ZapReceiptRenderer {
@@ -30,23 +33,37 @@ export class ZapReceiptRenderer {
     // Get sender profile and render mention
     let senderMention = '<span class="zap-receipt__anonymous">Anonymous</span>';
     if (zapData.senderPubkey) {
-      const senderProfile = ZapReceiptRenderer.profileService.getCachedProfile(zapData.senderPubkey);
-      const senderName = senderProfile?.display_name || senderProfile?.name || 'Unknown';
+      const senderProfile = ZapReceiptRenderer.profileService.getCachedProfile(
+        zapData.senderPubkey
+      );
+      const senderName =
+        senderProfile?.display_name || senderProfile?.name || 'Unknown';
       const senderAvatar = senderProfile?.picture || '';
-      senderMention = renderUserMention(zapData.senderPubkey, {
-        username: senderName,
-        avatarUrl: senderAvatar
-      }, { withBackground: false });
+      senderMention = renderUserMention(
+        zapData.senderPubkey,
+        {
+          username: senderName,
+          avatarUrl: senderAvatar,
+        },
+        { withBackground: false }
+      );
     }
 
     // Get recipient profile and render mention
-    const recipientProfile = ZapReceiptRenderer.profileService.getCachedProfile(zapData.recipientPubkey);
-    const recipientName = recipientProfile?.display_name || recipientProfile?.name || 'Unknown';
+    const recipientProfile = ZapReceiptRenderer.profileService.getCachedProfile(
+      zapData.recipientPubkey
+    );
+    const recipientName =
+      recipientProfile?.display_name || recipientProfile?.name || 'Unknown';
     const recipientAvatar = recipientProfile?.picture || '';
-    const recipientMention = renderUserMention(zapData.recipientPubkey, {
-      username: recipientName,
-      avatarUrl: recipientAvatar
-    }, { withBackground: false });
+    const recipientMention = renderUserMention(
+      zapData.recipientPubkey,
+      {
+        username: recipientName,
+        avatarUrl: recipientAvatar,
+      },
+      { withBackground: false }
+    );
 
     // Build HTML
     element.innerHTML = `

@@ -13,7 +13,13 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { decodeNip19, nip04, finalizeEvent, getPublicKeyFromPrivate, hexToBytes } from './NostrToolsAdapter';
+import {
+  decodeNip19,
+  nip04,
+  finalizeEvent,
+  getPublicKeyFromPrivate,
+  hexToBytes,
+} from './NostrToolsAdapter';
 import { SystemLogger } from './SystemLogger';
 import { ErrorService } from './ErrorService';
 import { ToastService } from './ToastService';
@@ -22,7 +28,11 @@ import { AuthService } from './AuthService';
 import { TypedEventBus } from '../core/TypedEventBus';
 import { SignatureVerificationService } from './security/SignatureVerificationService';
 
-export type NWCConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
+export type NWCConnectionState =
+  | 'disconnected'
+  | 'connecting'
+  | 'connected'
+  | 'error';
 
 export interface NWCConnection {
   walletPubkey: string;
@@ -166,7 +176,9 @@ export class NWCService {
       const lud16 = url.searchParams.get('lud16'); // Optional Lightning Address
 
       if (!walletPubkey || !relay || !secret) {
-        throw new Error('Missing required parameters (pubkey, relay, or secret)');
+        throw new Error(
+          'Missing required parameters (pubkey, relay, or secret)'
+        );
       }
 
       const connection: NWCConnection = { walletPubkey, relay, secret };
@@ -175,7 +187,11 @@ export class NWCService {
       }
       return connection;
     } catch (_error) {
-      this.systemLogger.error('NWCService', 'Failed to parse connection string:', _error);
+      this.systemLogger.error(
+        'NWCService',
+        'Failed to parse connection string:',
+        _error
+      );
       throw new Error('Invalid NWC connection string format');
     }
   }
@@ -184,7 +200,10 @@ export class NWCService {
    * Connect to NWC relay via direct WebSocket (bypasses NDK relay pool)
    * This avoids issues when switching between accounts using the same relay
    */
-  private connectToNwcRelay(url: string, timeoutMs: number = 5000): Promise<WebSocket> {
+  private connectToNwcRelay(
+    url: string,
+    timeoutMs: number = 5000
+  ): Promise<WebSocket> {
     return new Promise((resolve, reject) => {
       const ws = new WebSocket(url);
 
@@ -198,7 +217,7 @@ export class NWCService {
         resolve(ws);
       };
 
-      ws.onerror = (error) => {
+      ws.onerror = error => {
         clearTimeout(timeout);
         reject(new Error(`WebSocket connection error: ${error}`));
       };
@@ -240,10 +259,15 @@ export class NWCService {
             if (
               responseEvent.kind === 23195 &&
               responseEvent.pubkey === expectedAuthor &&
-              responseEvent.tags.some((t: string[]) => t[0] === 'p' && t[1] === expectedPTag)
+              responseEvent.tags.some(
+                (t: string[]) => t[0] === 'p' && t[1] === expectedPTag
+              )
             ) {
               // Verify signature before trusting NWC response (external WebSocket event)
-              const verification = SignatureVerificationService.getInstance().verifyEvent(responseEvent);
+              const verification =
+                SignatureVerificationService.getInstance().verifyEvent(
+                  responseEvent
+                );
               if (!verification.valid) {
                 clearTimeout(timeout);
                 ws.removeEventListener('message', handleMessage);
@@ -281,7 +305,7 @@ export class NWCService {
         authors: [expectedAuthor],
         '#p': [expectedPTag],
         '#e': [event.id],
-        since: Math.floor(Date.now() / 1000) - 5 // 5 seconds buffer
+        since: Math.floor(Date.now() / 1000) - 5, // 5 seconds buffer
       };
       ws.send(JSON.stringify(['REQ', subId, filter]));
 
@@ -316,7 +340,11 @@ export class NWCService {
       // Persist to KeychainStorage (secure, per-user)
       await this.saveConnection(connectionString);
 
-      this.systemLogger.info('NWCService', 'Connected to NWC wallet:', connection.walletPubkey.slice(0, 8));
+      this.systemLogger.info(
+        'NWCService',
+        'Connected to NWC wallet:',
+        connection.walletPubkey.slice(0, 8)
+      );
       ToastService.show('Lightning Wallet connected', 'success');
 
       return true;
@@ -350,17 +378,34 @@ export class NWCService {
       const content = JSON.stringify({ method, params });
       const appSecretKey = hexToBytes(connection.secret);
       const appPubkey = getPublicKeyFromPrivate(connection.secret);
-      const encryptedContent = await nip04.encrypt(connection.secret, connection.walletPubkey, content);
+      const encryptedContent = await nip04.encrypt(
+        connection.secret,
+        connection.walletPubkey,
+        content
+      );
 
-      const event = finalizeEvent({
-        kind: 23194,
-        created_at: Math.floor(Date.now() / 1000),
-        tags: [['p', connection.walletPubkey]],
-        content: encryptedContent
-      }, appSecretKey);
+      const event = finalizeEvent(
+        {
+          kind: 23194,
+          created_at: Math.floor(Date.now() / 1000),
+          tags: [['p', connection.walletPubkey]],
+          content: encryptedContent,
+        },
+        appSecretKey
+      );
 
-      const response = await this.sendNwcRequest(ws, event, connection.walletPubkey, appPubkey, timeoutMs);
-      const decrypted = await nip04.decrypt(connection.secret, connection.walletPubkey, response.content);
+      const response = await this.sendNwcRequest(
+        ws,
+        event,
+        connection.walletPubkey,
+        appPubkey,
+        timeoutMs
+      );
+      const decrypted = await nip04.decrypt(
+        connection.secret,
+        connection.walletPubkey,
+        response.content
+      );
 
       return JSON.parse(decrypted);
     } finally {
@@ -373,7 +418,12 @@ export class NWCService {
    */
   private async testConnection(connection: NWCConnection): Promise<boolean> {
     try {
-      const response = await this.executeNwcRequest(connection, 'get_info', {}, 5000);
+      const response = await this.executeNwcRequest(
+        connection,
+        'get_info',
+        {},
+        5000
+      );
       return !!response.result;
     } catch (error) {
       this.systemLogger.error('NWCService', 'Test connection failed:', error);
@@ -386,7 +436,10 @@ export class NWCService {
    * CRITICAL: This is the ONLY method that may delete the stored connection
    */
   public async disconnect(): Promise<void> {
-    this.systemLogger.warn('NWCService', '⚠️ DISCONNECT called - removing stored NWC connection');
+    this.systemLogger.warn(
+      'NWCService',
+      '⚠️ DISCONNECT called - removing stored NWC connection'
+    );
 
     this.setConnectionForCurrentUser(null);
     this.setStateForCurrentUser('disconnected');
@@ -398,7 +451,9 @@ export class NWCService {
         // Try encrypted file (Desktop only)
         const { PlatformService } = await import('./PlatformService');
         if (PlatformService.getInstance().isDesktop) {
-          const { EncryptedFileStorage } = await import('./EncryptedFileStorage');
+          const { EncryptedFileStorage } = await import(
+            './EncryptedFileStorage'
+          );
           await EncryptedFileStorage.deleteNWC(pubkey);
         }
       }
@@ -406,9 +461,16 @@ export class NWCService {
       // Try keychain (always)
       await KeychainStorage.deleteNWC();
 
-      this.systemLogger.info('NWCService', '✓ Stored NWC connection removed from secure storage');
+      this.systemLogger.info(
+        'NWCService',
+        '✓ Stored NWC connection removed from secure storage'
+      );
     } catch (_error) {
-      this.systemLogger.error('NWCService', 'Failed to remove stored connection:', _error);
+      this.systemLogger.error(
+        'NWCService',
+        'Failed to remove stored connection:',
+        _error
+      );
     }
 
     this.systemLogger.info('NWCService', 'Disconnected from NWC wallet');
@@ -451,7 +513,10 @@ export class NWCService {
     const connection = this.getConnectionForCurrentUser();
     if (!connection) return null;
     try {
-      const response = await this.executeNwcRequest<Record<string, unknown>>(connection, 'get_info');
+      const response = await this.executeNwcRequest<Record<string, unknown>>(
+        connection,
+        'get_info'
+      );
       return response.result ?? null;
     } catch {
       return null;
@@ -461,16 +526,27 @@ export class NWCService {
   /**
    * List wallet transactions (NIP-47 list_transactions)
    */
-  public async listTransactions(params: ListTransactionsParams = {}): Promise<NWCTransaction[]> {
+  public async listTransactions(
+    params: ListTransactionsParams = {}
+  ): Promise<NWCTransaction[]> {
     const connection = this.getConnectionForCurrentUser();
     if (!connection) return [];
 
     try {
-      const response = await this.executeNwcRequest<{ transactions: NWCTransaction[] }>(
-        connection, 'list_transactions', params as Record<string, unknown>, 15000
+      const response = await this.executeNwcRequest<{
+        transactions: NWCTransaction[];
+      }>(
+        connection,
+        'list_transactions',
+        params as Record<string, unknown>,
+        15000
       );
       if (response.error) {
-        this.systemLogger.error('NWCService', 'List transactions failed:', response.error.message);
+        this.systemLogger.error(
+          'NWCService',
+          'List transactions failed:',
+          response.error.message
+        );
         return [];
       }
 
@@ -489,10 +565,17 @@ export class NWCService {
     if (!connection) return null;
 
     try {
-      const response = await this.executeNwcRequest<{ balance: number }>(connection, 'get_balance');
+      const response = await this.executeNwcRequest<{ balance: number }>(
+        connection,
+        'get_balance'
+      );
 
       if (response.error) {
-        this.systemLogger.error('NWCService', 'Get balance failed:', response.error.message);
+        this.systemLogger.error(
+          'NWCService',
+          'Get balance failed:',
+          response.error.message
+        );
         return null;
       }
 
@@ -515,7 +598,11 @@ export class NWCService {
     try {
       this.systemLogger.info('NWCService', 'Sending pay_invoice request...');
 
-      const response = await this.executeNwcRequest<{ preimage: string; amount?: number; fees_paid?: number }>(
+      const response = await this.executeNwcRequest<{
+        preimage: string;
+        amount?: number;
+        fees_paid?: number;
+      }>(
         connection,
         'pay_invoice',
         { invoice },
@@ -523,14 +610,28 @@ export class NWCService {
       );
 
       if (response.error) {
-        this.systemLogger.error('NWCService', 'Payment failed:', response.error.message);
-        return { success: false, error: response.error.message || 'Payment failed' };
+        this.systemLogger.error(
+          'NWCService',
+          'Payment failed:',
+          response.error.message
+        );
+        return {
+          success: false,
+          error: response.error.message || 'Payment failed',
+        };
       }
 
       if (response.result) {
-        const amount = response.result.amount ? Math.floor(response.result.amount / 1000) : 0;
-        const fees = response.result.fees_paid ? Math.floor(response.result.fees_paid / 1000) : 0;
-        this.systemLogger.info('NWCService', `${amount} Sats sent, ${fees} Sats fees paid`);
+        const amount = response.result.amount
+          ? Math.floor(response.result.amount / 1000)
+          : 0;
+        const fees = response.result.fees_paid
+          ? Math.floor(response.result.fees_paid / 1000)
+          : 0;
+        this.systemLogger.info(
+          'NWCService',
+          `${amount} Sats sent, ${fees} Sats fees paid`
+        );
 
         return { success: true, preimage: response.result.preimage };
       }
@@ -538,7 +639,10 @@ export class NWCService {
       return { success: false, error: 'Invalid response' };
     } catch (error) {
       this.systemLogger.error('NWCService', 'Payment failed:', error);
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   }
 
@@ -560,14 +664,24 @@ export class NWCService {
         const pubkey = this.getCurrentUserPubkey();
         if (pubkey) {
           await EncryptedFileStorage.saveNWC(connectionString, pubkey);
-          this.systemLogger.info('NWCService', 'NWC connection saved to encrypted file');
+          this.systemLogger.info(
+            'NWCService',
+            'NWC connection saved to encrypted file'
+          );
         }
       } else {
         await KeychainStorage.saveNWC(connectionString);
-        this.systemLogger.info('NWCService', 'NWC connection saved to secure storage');
+        this.systemLogger.info(
+          'NWCService',
+          'NWC connection saved to secure storage'
+        );
       }
     } catch (error) {
-      this.systemLogger.error('NWCService', 'Failed to save connection:', error);
+      this.systemLogger.error(
+        'NWCService',
+        'Failed to save connection:',
+        error
+      );
       throw error;
     }
   }
@@ -595,7 +709,10 @@ export class NWCService {
 
       if (!stored) return;
 
-      this.systemLogger.info('NWCService', 'Found stored connection, attempting to reconnect...');
+      this.systemLogger.info(
+        'NWCService',
+        'Found stored connection, attempting to reconnect...'
+      );
 
       const connection = this.parseConnectionString(stored);
       this.connections.set(pubkey, connection);
@@ -608,11 +725,17 @@ export class NWCService {
         window.dispatchEvent(new CustomEvent('nwc-connection-restored'));
       } else {
         this.states.set(pubkey, 'error');
-        this.systemLogger.warn('NWCService', 'Failed to auto-reconnect (relay offline?), but connection kept.');
+        this.systemLogger.warn(
+          'NWCService',
+          'Failed to auto-reconnect (relay offline?), but connection kept.'
+        );
       }
     } catch (error) {
-      this.systemLogger.error('NWCService', 'Failed to restore connection:', error);
+      this.systemLogger.error(
+        'NWCService',
+        'Failed to restore connection:',
+        error
+      );
     }
   }
-
 }

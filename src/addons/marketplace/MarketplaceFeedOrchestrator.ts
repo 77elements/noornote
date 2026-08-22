@@ -68,14 +68,17 @@ export class MarketplaceFeedOrchestrator extends Orchestrator {
       const relays = this.relayConfig.getReadRelays();
 
       if (relays.length === 0) {
-        this.systemLogger.warn('MarketplaceFeedOrchestrator', 'No read relays configured');
+        this.systemLogger.warn(
+          'MarketplaceFeedOrchestrator',
+          'No read relays configured'
+        );
         return { listings: [], hasMore: false };
       }
 
       const filter = {
         kinds: [30402 as number],
         until: this.oldestTimestamp,
-        limit: this.PAGE_SIZE + 5
+        limit: this.PAGE_SIZE + 5,
       };
 
       this.systemLogger.info(
@@ -83,9 +86,16 @@ export class MarketplaceFeedOrchestrator extends Orchestrator {
         `Fetching listings until ${new Date(this.oldestTimestamp * 1000).toISOString()}`
       );
 
-      const events = await this.transport.fetch(relays, [filter], 8000, false, 'MarketplaceFeedOrch');
-      const uniqueListings = this.deduplicateListings(events)
-        .filter(e => this.isValidListing(e));
+      const events = await this.transport.fetch(
+        relays,
+        [filter],
+        8000,
+        false,
+        'MarketplaceFeedOrch'
+      );
+      const uniqueListings = this.deduplicateListings(events).filter(e =>
+        this.isValidListing(e)
+      );
 
       uniqueListings.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
 
@@ -109,7 +119,11 @@ export class MarketplaceFeedOrchestrator extends Orchestrator {
 
       return { listings: listingsToReturn, hasMore };
     } catch (error) {
-      this.systemLogger.error('MarketplaceFeedOrchestrator', 'Failed to fetch listings:', error);
+      this.systemLogger.error(
+        'MarketplaceFeedOrchestrator',
+        'Failed to fetch listings:',
+        error
+      );
       return { listings: [], hasMore: false };
     }
   }
@@ -162,69 +176,185 @@ export class MarketplaceFeedOrchestrator extends Orchestrator {
  */
 const NSFW_KEYWORDS: string[] = [
   // Sexual content / pornography
-  'nude', 'nudes', 'naked', 'porn', 'pornography', 'xxx',
-  'sex', 'sexual', 'sexy', 'erotic', 'erotica',
-  'fetish', 'bdsm', 'bondage', 'dominatrix',
-  'escort', 'camgirl', 'camboy', 'onlyfans',
-  'pantyhouse', 'pantyhose', 'lingerie',
-  'stripper', 'striptease',
-  'dildo', 'vibrator', 'fleshlight', 'butt plug',
-  'hentai', 'ahegao', 'waifu',
-  'nsfw', 'adult content', 'adult only',
-  'sex toy', 'sex doll', 'blowup doll',
-  'peep show', 'lap dance', 'pole dance',
-  'playboy', 'hustler', 'brazzers', 'pornhub',
-  'cam show', 'live cam', 'webcam model',
-  'sugar daddy', 'sugar baby', 'hookup',
-  'swinger', 'orgy', 'threesome',
-  'anal', 'oral sex', 'blow job', 'handjob',
-  'milf', 'gilf', 'barely legal',
-  'upskirt', 'voyeur', 'creepshot',
-  'deepfake porn', 'revenge porn',
+  'nude',
+  'nudes',
+  'naked',
+  'porn',
+  'pornography',
+  'xxx',
+  'sex',
+  'sexual',
+  'sexy',
+  'erotic',
+  'erotica',
+  'fetish',
+  'bdsm',
+  'bondage',
+  'dominatrix',
+  'escort',
+  'camgirl',
+  'camboy',
+  'onlyfans',
+  'pantyhouse',
+  'pantyhose',
+  'lingerie',
+  'stripper',
+  'striptease',
+  'dildo',
+  'vibrator',
+  'fleshlight',
+  'butt plug',
+  'hentai',
+  'ahegao',
+  'waifu',
+  'nsfw',
+  'adult content',
+  'adult only',
+  'sex toy',
+  'sex doll',
+  'blowup doll',
+  'peep show',
+  'lap dance',
+  'pole dance',
+  'playboy',
+  'hustler',
+  'brazzers',
+  'pornhub',
+  'cam show',
+  'live cam',
+  'webcam model',
+  'sugar daddy',
+  'sugar baby',
+  'hookup',
+  'swinger',
+  'orgy',
+  'threesome',
+  'anal',
+  'oral sex',
+  'blow job',
+  'handjob',
+  'milf',
+  'gilf',
+  'barely legal',
+  'upskirt',
+  'voyeur',
+  'creepshot',
+  'deepfake porn',
+  'revenge porn',
   // Drugs
-  'cocaine', 'heroin', 'meth', 'methamphetamine',
-  'mdma', 'ecstasy', 'lsd', 'fentanyl',
-  'drug dealer', 'narcotic',
+  'cocaine',
+  'heroin',
+  'meth',
+  'methamphetamine',
+  'mdma',
+  'ecstasy',
+  'lsd',
+  'fentanyl',
+  'drug dealer',
+  'narcotic',
   // Weapons
-  'ghost gun', 'untraceable firearm',
-  'firearm', 'handgun', 'pistol', 'rifle', 'shotgun',
-  'assault rifle', 'ammunition', 'ammo',
-  'ar-15', 'ak-47', 'concealed carry',
+  'ghost gun',
+  'untraceable firearm',
+  'firearm',
+  'handgun',
+  'pistol',
+  'rifle',
+  'shotgun',
+  'assault rifle',
+  'ammunition',
+  'ammo',
+  'ar-15',
+  'ak-47',
+  'concealed carry',
   // Fraud
-  'fake id', 'counterfeit', 'stolen credit',
-  'carding', 'fullz', 'bank drop',
+  'fake id',
+  'counterfeit',
+  'stolen credit',
+  'carding',
+  'fullz',
+  'bank drop',
   // Credit & lending
-  'payday loan', 'cash advance', 'credit card offer',
-  'money lending', 'microloan', 'debt consolidation',
-  'refinance', 'mortgage broker', 'installment loan',
-  'loan shark', 'buy now pay later',
+  'payday loan',
+  'cash advance',
+  'credit card offer',
+  'money lending',
+  'microloan',
+  'debt consolidation',
+  'refinance',
+  'mortgage broker',
+  'installment loan',
+  'loan shark',
+  'buy now pay later',
   // Securities & financial speculation
-  'stock trading', 'forex', 'day trading',
-  'options trading', 'futures trading', 'margin trading',
-  'short selling', 'penny stocks', 'hedge fund',
-  'securities trading', 'derivatives', 'mutual fund',
-  'commodity trading', 'investment fund',
+  'stock trading',
+  'forex',
+  'day trading',
+  'options trading',
+  'futures trading',
+  'margin trading',
+  'short selling',
+  'penny stocks',
+  'hedge fund',
+  'securities trading',
+  'derivatives',
+  'mutual fund',
+  'commodity trading',
+  'investment fund',
   // Crypto trading
-  'crypto trading', 'altcoin',
-  'token sale', 'crypto exchange', 'defi trading',
-  'shitcoin', 'memecoin', 'pump and dump',
-  'presale token', 'ico launch',
+  'crypto trading',
+  'altcoin',
+  'token sale',
+  'crypto exchange',
+  'defi trading',
+  'shitcoin',
+  'memecoin',
+  'pump and dump',
+  'presale token',
+  'ico launch',
   // Insurance
-  'insurance policy', 'insurance premium',
-  'life insurance', 'health insurance',
-  'car insurance', 'home insurance',
-  'insurance broker', 'insurance agent',
+  'insurance policy',
+  'insurance premium',
+  'life insurance',
+  'health insurance',
+  'car insurance',
+  'home insurance',
+  'insurance broker',
+  'insurance agent',
   // Alcohol
-  'alcohol', 'alcoholic', 'liquor', 'spirits',
-  'whiskey', 'whisky', 'vodka', 'tequila', 'bourbon',
-  'brandy', 'champagne', 'moonshine',
-  'beer', 'wine', 'cocktail',
+  'alcohol',
+  'alcoholic',
+  'liquor',
+  'spirits',
+  'whiskey',
+  'whisky',
+  'vodka',
+  'tequila',
+  'bourbon',
+  'brandy',
+  'champagne',
+  'moonshine',
+  'beer',
+  'wine',
+  'cocktail',
   // Pork
-  'pork', 'bacon', 'prosciutto', 'pork belly',
-  'pork chop', 'pulled pork', 'carnitas',
+  'pork',
+  'bacon',
+  'prosciutto',
+  'pork belly',
+  'pork chop',
+  'pulled pork',
+  'carnitas',
   // Gambling & betting
-  'gambling', 'betting', 'casino', 'poker',
-  'blackjack', 'roulette', 'slot machine',
-  'sports betting', 'lottery', 'bookmaker',
-  'bookie', 'wager',
+  'gambling',
+  'betting',
+  'casino',
+  'poker',
+  'blackjack',
+  'roulette',
+  'slot machine',
+  'sports betting',
+  'lottery',
+  'bookmaker',
+  'bookie',
+  'wager',
 ];

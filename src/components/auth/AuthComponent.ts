@@ -77,9 +77,13 @@ export class AuthComponent {
    * Setup event listeners for authentication actions
    */
   private setupEventListeners(): void {
-    const showLoginBtn = this.element.querySelector('[data-action="show-login"]');
+    const showLoginBtn = this.element.querySelector(
+      '[data-action="show-login"]'
+    );
     if (showLoginBtn) {
-      showLoginBtn.addEventListener('click', () => this.router.navigate('/login'));
+      showLoginBtn.addEventListener('click', () =>
+        this.router.navigate('/login')
+      );
     }
   }
 
@@ -102,8 +106,9 @@ export class AuthComponent {
     // desktop browser whose viewport sits below the phone breakpoint
     // (responsive devtools). The login UI then collapses the QR section
     // and offers a deep-link Amber button instead.
-    const isMobileLayout = platform.isAndroid
-      || LayoutService.getInstance().getCurrentMode() === 'phone';
+    const isMobileLayout =
+      platform.isAndroid ||
+      LayoutService.getInstance().getCurrentMode() === 'phone';
     // Single Amber button — same label everywhere. Handler branches on
     // platform: Capacitor APK uses the NIP-55 plugin (direct intent),
     // mobile-web uses the nostrconnect:// deep-link (Amber registered as
@@ -120,7 +125,8 @@ export class AuthComponent {
     const showBrowserExtSmall = isWeb && isMobileLayout;
 
     // Check if adding account (from AccountSwitcher)
-    const isAddingAccount = sessionStorage.getItem('noornote_add_account') === 'true';
+    const isAddingAccount =
+      sessionStorage.getItem('noornote_add_account') === 'true';
     const pageTitle = isAddingAccount ? 'Add Account' : 'Welcome to NoorNote';
 
     primaryContent.innerHTML = `
@@ -215,14 +221,20 @@ export class AuthComponent {
    * Generates URI, renders QR, and waits for remote signer connection
    */
   private async initNostrConnect(): Promise<void> {
-    const qrContainer = document.querySelector('[data-container="nostrconnect-qr"]');
+    const qrContainer = document.querySelector(
+      '[data-container="nostrconnect-qr"]'
+    );
     const statusEl = document.querySelector('[data-status="nostrconnect"]');
-    const statusElMobile = document.querySelector('[data-status="nostrconnect-mobile"]');
+    const statusElMobile = document.querySelector(
+      '[data-status="nostrconnect-mobile"]'
+    );
     // The mobile-web Amber button starts disabled (rendered as such)
     // because its click needs the nostrconnect URI. We enable it as soon
     // as the URI is in hand. Capacitor users never hit this branch — the
     // function is only invoked on `!isCapacitor`.
-    const amberBtn = document.querySelector('[data-action="use-amber"]') as HTMLButtonElement | null;
+    const amberBtn = document.querySelector(
+      '[data-action="use-amber"]'
+    ) as HTMLButtonElement | null;
 
     try {
       const session = await this.authService.startNostrConnect();
@@ -237,8 +249,8 @@ export class AuthComponent {
           margin: 2,
           color: {
             dark: '#000000',
-            light: '#FFFFFF'
-          }
+            light: '#FFFFFF',
+          },
         });
         qrContainer.innerHTML = `<img src="${qrDataUrl}" alt="Scan to connect" style="border-radius: 8px; padding: 40px; background: #FFFFFF;" />`;
       }
@@ -252,14 +264,20 @@ export class AuthComponent {
       if (result.success && result.npub && result.pubkey) {
         this.handleLoginSuccess(result.npub, result.pubkey, 'nostrconnect');
       } else if (result.error !== 'Cancelled') {
-        if (statusEl) statusEl.textContent = 'Connection failed. Reload to try again.';
-        if (statusElMobile) statusElMobile.textContent = 'Connection failed. Reload to try again.';
+        if (statusEl)
+          statusEl.textContent = 'Connection failed. Reload to try again.';
+        if (statusElMobile)
+          statusElMobile.textContent =
+            'Connection failed. Reload to try again.';
       }
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       this.systemLogger.warn('Auth', `NostrConnect init failed: ${msg}`);
-      if (qrContainer) qrContainer.innerHTML = '<p class="auth-hint">QR code unavailable</p>';
-      if (statusElMobile) statusElMobile.textContent = 'Connection unavailable. Reload to try again.';
+      if (qrContainer)
+        qrContainer.innerHTML = '<p class="auth-hint">QR code unavailable</p>';
+      if (statusElMobile)
+        statusElMobile.textContent =
+          'Connection unavailable. Reload to try again.';
     }
   }
 
@@ -281,9 +299,14 @@ export class AuthComponent {
     if (!primaryContent) return;
 
     // NoorSigner button (desktop)
-    const keySignerBtn = primaryContent.querySelector('[data-action="use-key-signer"]');
+    const keySignerBtn = primaryContent.querySelector(
+      '[data-action="use-key-signer"]'
+    );
     if (keySignerBtn) {
-      keySignerBtn.addEventListener('click', this.handleKeySignerLogin.bind(this));
+      keySignerBtn.addEventListener(
+        'click',
+        this.handleKeySignerLogin.bind(this)
+      );
     }
 
     // Amber button (Capacitor APK — NIP-55 plugin path)
@@ -296,16 +319,20 @@ export class AuthComponent {
     // and the inline mobile-layout link (Alby on mobile Firefox) carry
     // this data-action, so a single querySelectorAll wires whichever
     // variant the current layout rendered.
-    const browserExtTriggers = primaryContent.querySelectorAll('[data-action="use-browser-ext-signer"]');
+    const browserExtTriggers = primaryContent.querySelectorAll(
+      '[data-action="use-browser-ext-signer"]'
+    );
     browserExtTriggers.forEach(el => {
-      el.addEventListener('click', (e) => {
+      el.addEventListener('click', e => {
         if ((e.target as HTMLElement).tagName === 'A') e.preventDefault();
         this.handleBrowserExtLogin();
       });
     });
 
     // Bunker connect button
-    const bunkerBtn = primaryContent.querySelector('[data-action="connect-bunker"]');
+    const bunkerBtn = primaryContent.querySelector(
+      '[data-action="connect-bunker"]'
+    );
     if (bunkerBtn) {
       bunkerBtn.addEventListener('click', this.handleBunkerLogin.bind(this));
     }
@@ -313,7 +340,7 @@ export class AuthComponent {
     // Enter key support for bunker input
     const bunkerInput = primaryContent.querySelector('[data-input="bunker"]');
     if (bunkerInput) {
-      bunkerInput.addEventListener('keypress', (e) => {
+      bunkerInput.addEventListener('keypress', e => {
         if ((e as KeyboardEvent).key === 'Enter') {
           this.handleBunkerLogin();
         }
@@ -321,9 +348,11 @@ export class AuthComponent {
     }
 
     // Create account link - clears localStorage and goes to welcome
-    const createAccountLink = primaryContent.querySelector('[data-action="create-account"]');
+    const createAccountLink = primaryContent.querySelector(
+      '[data-action="create-account"]'
+    );
     if (createAccountLink) {
-      createAccountLink.addEventListener('click', (e) => {
+      createAccountLink.addEventListener('click', e => {
         e.preventDefault();
         localStorage.removeItem('noornote_has_key');
         this.router.navigate('/welcome');
@@ -331,9 +360,11 @@ export class AuthComponent {
     }
 
     // Import key to NoorSigner link (desktop only)
-    const importLink = primaryContent.querySelector('[data-action="import-to-noorsigner"]');
+    const importLink = primaryContent.querySelector(
+      '[data-action="import-to-noorsigner"]'
+    );
     if (importLink) {
-      importLink.addEventListener('click', (e) => {
+      importLink.addEventListener('click', e => {
         e.preventDefault();
         this.showImportModal();
       });
@@ -343,7 +374,11 @@ export class AuthComponent {
   /**
    * Handle successful login - common flow for all auth methods
    */
-  private handleLoginSuccess(npub: string, pubkey: string, method: string): void {
+  private handleLoginSuccess(
+    npub: string,
+    pubkey: string,
+    method: string
+  ): void {
     this.cancelNostrConnect();
     this.currentUser = { npub, pubkey };
     this.systemLogger.info('Auth', `Logged in successfully via ${method}`);
@@ -371,41 +406,59 @@ export class AuthComponent {
    * Show unlock modal when trust session expired (silent mode)
    */
   private showUnlockModal(): void {
-    import('../modals/UnlockNoorSignerModal').then(({ UnlockNoorSignerModal }) => {
-      const modal = new UnlockNoorSignerModal({
-        onSuccess: async () => {
-          const retryResult = await this.authService.authenticateWithKeySigner();
-          if (retryResult.success && retryResult.npub && retryResult.pubkey) {
-            this.handleLoginSuccess(retryResult.npub, retryResult.pubkey, 'NoorSigner');
-          } else {
-            this.showError(retryResult.error || 'Authentication failed after unlock');
-          }
-        }
-      });
-      modal.show();
-    });
+    import('../modals/UnlockNoorSignerModal').then(
+      ({ UnlockNoorSignerModal }) => {
+        const modal = new UnlockNoorSignerModal({
+          onSuccess: async () => {
+            const retryResult =
+              await this.authService.authenticateWithKeySigner();
+            if (retryResult.success && retryResult.npub && retryResult.pubkey) {
+              this.handleLoginSuccess(
+                retryResult.npub,
+                retryResult.pubkey,
+                'NoorSigner'
+              );
+            } else {
+              this.showError(
+                retryResult.error || 'Authentication failed after unlock'
+              );
+            }
+          },
+        });
+        modal.show();
+      }
+    );
   }
 
   /**
    * Show import modal when no NoorSigner accounts exist (silent mode)
    */
   private showImportModal(): void {
-    import('../modals/ImportToNoorSignerModal').then(({ ImportToNoorSignerModal }) => {
-      const modal = new ImportToNoorSignerModal({
-        nsec: '',
-        npub: '',
-        showNsecInput: true,
-        onSuccess: async () => {
-          const retryResult = await this.authService.authenticateWithKeySigner();
-          if (retryResult.success && retryResult.npub && retryResult.pubkey) {
-            this.handleLoginSuccess(retryResult.npub, retryResult.pubkey, 'NoorSigner');
-          } else {
-            this.showError(retryResult.error || 'Authentication failed after import');
-          }
-        }
-      });
-      modal.show();
-    });
+    import('../modals/ImportToNoorSignerModal').then(
+      ({ ImportToNoorSignerModal }) => {
+        const modal = new ImportToNoorSignerModal({
+          nsec: '',
+          npub: '',
+          showNsecInput: true,
+          onSuccess: async () => {
+            const retryResult =
+              await this.authService.authenticateWithKeySigner();
+            if (retryResult.success && retryResult.npub && retryResult.pubkey) {
+              this.handleLoginSuccess(
+                retryResult.npub,
+                retryResult.pubkey,
+                'NoorSigner'
+              );
+            } else {
+              this.showError(
+                retryResult.error || 'Authentication failed after import'
+              );
+            }
+          },
+        });
+        modal.show();
+      }
+    );
   }
 
   /**
@@ -413,7 +466,9 @@ export class AuthComponent {
    */
   private async handleKeySignerLogin(): Promise<void> {
     const primaryContent = document.querySelector('.primary-content');
-    const keySignerBtn = primaryContent?.querySelector('[data-action="use-key-signer"]') as HTMLButtonElement;
+    const keySignerBtn = primaryContent?.querySelector(
+      '[data-action="use-key-signer"]'
+    ) as HTMLButtonElement;
     if (!keySignerBtn) return;
 
     const originalText = '🔑 Use NoorSigner';
@@ -443,7 +498,10 @@ export class AuthComponent {
 
     try {
       setTimeout(() => {
-        if (keySignerBtn.textContent === 'Launching daemon...' && !userCancelled) {
+        if (
+          keySignerBtn.textContent === 'Launching daemon...' &&
+          !userCancelled
+        ) {
           keySignerBtn.textContent = '⏳ Waiting for password...';
         }
       }, 2000);
@@ -490,7 +548,9 @@ export class AuthComponent {
    */
   private async handleAmberLogin(): Promise<void> {
     const primaryContent = document.querySelector('.primary-content');
-    const amberBtn = primaryContent?.querySelector('[data-action="use-amber"]') as HTMLButtonElement;
+    const amberBtn = primaryContent?.querySelector(
+      '[data-action="use-amber"]'
+    ) as HTMLButtonElement;
     if (!amberBtn) return;
 
     // Mobile-web branch — deep-link hand-off. No button reset; the page
@@ -501,8 +561,12 @@ export class AuthComponent {
         this.showError('Connection not ready yet — try again in a moment.');
         return;
       }
-      const statusElMobile = document.querySelector('[data-status="nostrconnect-mobile"]');
-      if (statusElMobile) statusElMobile.textContent = 'Opening Amber… approve there, then come back.';
+      const statusElMobile = document.querySelector(
+        '[data-status="nostrconnect-mobile"]'
+      );
+      if (statusElMobile)
+        statusElMobile.textContent =
+          'Opening Amber… approve there, then come back.';
       window.location.href = this.nostrConnectUri;
       return;
     }
@@ -535,7 +599,9 @@ export class AuthComponent {
    */
   private async handleBrowserExtLogin(): Promise<void> {
     const primaryContent = document.querySelector('.primary-content');
-    const browserExtBtn = primaryContent?.querySelector('[data-action="use-browser-ext-signer"]') as HTMLButtonElement;
+    const browserExtBtn = primaryContent?.querySelector(
+      '[data-action="use-browser-ext-signer"]'
+    ) as HTMLButtonElement;
     if (!browserExtBtn) return;
 
     const originalText = '🔑 Use Browser extension';
@@ -550,7 +616,9 @@ export class AuthComponent {
       }
     } catch (error) {
       console.error('Browser extension login error:', error);
-      this.showError(`${this.authService.getExtensionName()} ${this.authService.getAuthMethod()} error`);
+      this.showError(
+        `${this.authService.getExtensionName()} ${this.authService.getAuthMethod()} error`
+      );
       this.resetButton(browserExtBtn, originalText);
     }
   }
@@ -563,8 +631,12 @@ export class AuthComponent {
     this.cancelNostrConnect();
 
     const primaryContent = document.querySelector('.primary-content');
-    const bunkerInput = primaryContent?.querySelector('[data-input="bunker"]') as HTMLInputElement;
-    const bunkerBtn = primaryContent?.querySelector('[data-action="connect-bunker"]') as HTMLButtonElement;
+    const bunkerInput = primaryContent?.querySelector(
+      '[data-input="bunker"]'
+    ) as HTMLInputElement;
+    const bunkerBtn = primaryContent?.querySelector(
+      '[data-action="connect-bunker"]'
+    ) as HTMLButtonElement;
     if (!bunkerInput || !bunkerBtn) return;
 
     const bunkerUri = bunkerInput.value.trim();
@@ -663,7 +735,10 @@ export class AuthComponent {
     if (this.authService.hasValidSession()) {
       const currentUser = this.authService.getCurrentUser();
       if (currentUser) {
-        this.systemLogger.info('Auth', 'Found existing session, attempting to restore');
+        this.systemLogger.info(
+          'Auth',
+          'Found existing session, attempting to restore'
+        );
 
         // Set user status immediately
         this.currentUser = currentUser;

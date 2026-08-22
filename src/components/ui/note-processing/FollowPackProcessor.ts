@@ -26,9 +26,9 @@ export class FollowPackProcessor {
         links: [],
         hashtags: [],
         quotedReferences: [],
-        bolt11Invoices: []
+        bolt11Invoices: [],
       },
-      rawEvent: event
+      rawEvent: event,
     };
   }
 }

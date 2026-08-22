@@ -58,12 +58,16 @@ export class MyListingsView extends View {
     `;
 
     // Wire up header buttons
-    this.container.querySelector('[data-action="back-to-marketplace"]')?.addEventListener('click', () => {
-      this.router.navigate('/marketplace');
-    });
-    this.container.querySelector('[data-action="add-product"]')?.addEventListener('click', () => {
-      this.router.navigate('/write-listing');
-    });
+    this.container
+      .querySelector('[data-action="back-to-marketplace"]')
+      ?.addEventListener('click', () => {
+        this.router.navigate('/marketplace');
+      });
+    this.container
+      .querySelector('[data-action="add-product"]')
+      ?.addEventListener('click', () => {
+        this.router.navigate('/write-listing');
+      });
   }
 
   private async loadListings(): Promise<void> {
@@ -77,10 +81,18 @@ export class MyListingsView extends View {
       const transport = NostrTransport.getInstance();
       const relays = RelayConfig.getInstance().getReadRelays();
 
-      const events = await transport.fetch(relays, [{
-        kinds: [30402 as number],
-        authors: [currentUser.pubkey]
-      }], 10000, false, 'MyListings');
+      const events = await transport.fetch(
+        relays,
+        [
+          {
+            kinds: [30402 as number],
+            authors: [currentUser.pubkey],
+          },
+        ],
+        10000,
+        false,
+        'MyListings'
+      );
 
       // Deduplicate by d-tag (keep newest)
       const deduped = new Map<string, NostrEvent>();
@@ -93,13 +105,19 @@ export class MyListingsView extends View {
         }
       }
 
-      this.listings = Array.from(deduped.values())
-        .sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+      this.listings = Array.from(deduped.values()).sort(
+        (a, b) => (b.created_at || 0) - (a.created_at || 0)
+      );
 
       this.renderListings(listContainer as HTMLElement);
     } catch (error) {
-      this.systemLogger.error('MyListingsView', 'Failed to load listings:', error);
-      listContainer.innerHTML = '<div class="marketplace-timeline__error"><p>Failed to load listings</p></div>';
+      this.systemLogger.error(
+        'MyListingsView',
+        'Failed to load listings:',
+        error
+      );
+      listContainer.innerHTML =
+        '<div class="marketplace-timeline__error"><p>Failed to load listings</p></div>';
       listContainer.classList.remove('pulsate');
     }
   }
@@ -130,27 +148,38 @@ export class MyListingsView extends View {
       kind: 30402,
       pubkey: event.pubkey,
       identifier: meta.identifier,
-      relays: []
+      relays: [],
     });
 
-    const priceDisplay = formatPrice(meta.price, meta.priceCurrency, meta.priceFrequency);
+    const priceDisplay = formatPrice(
+      meta.price,
+      meta.priceCurrency,
+      meta.priceFrequency
+    );
     const firstImage = meta.images[0] || '';
 
     const row = document.createElement('div');
     row.className = 'post-item my-listings__row';
     row.dataset.identifier = meta.identifier;
 
-    const statusClass = meta.status === 'sold' ? 'listing-card__sold-badge'
-      : meta.status === 'inactive' ? 'listing-card__sold-badge my-listings__badge--inactive'
-      : 'listing-card__sold-badge my-listings__badge--active';
+    const statusClass =
+      meta.status === 'sold'
+        ? 'listing-card__sold-badge'
+        : meta.status === 'inactive'
+          ? 'listing-card__sold-badge my-listings__badge--inactive'
+          : 'listing-card__sold-badge my-listings__badge--active';
 
     row.innerHTML = `
       <div class="my-listings__row-content">
-        ${firstImage ? `<img class="my-listings__thumb" src="${escapeHtmlAttr(firstImage)}" alt="" />` : `
+        ${
+          firstImage
+            ? `<img class="my-listings__thumb" src="${escapeHtmlAttr(firstImage)}" alt="" />`
+            : `
           <div class="my-listings__thumb my-listings__thumb--empty">
             <svg width="20" height="20"><use href="#icon-image"/></svg>
           </div>
-        `}
+        `
+        }
         <div class="my-listings__info">
           <span class="my-listings__title">${escapeHtml(meta.title)}</span>
           <span class="my-listings__price">${escapeHtml(priceDisplay)}</span>
@@ -168,48 +197,65 @@ export class MyListingsView extends View {
     `;
 
     // Click on row content → view listing (right-pane opens it in the scc)
-    row.querySelector('.my-listings__row-content')?.addEventListener('click', (e) => {
-      getViewNavigationController().openView('listing', naddr, e as MouseEvent);
-    });
+    row
+      .querySelector('.my-listings__row-content')
+      ?.addEventListener('click', e => {
+        getViewNavigationController().openView(
+          'listing',
+          naddr,
+          e as MouseEvent
+        );
+      });
 
     // Edit
-    row.querySelector('[data-action="edit"]')?.addEventListener('click', (e) => {
+    row.querySelector('[data-action="edit"]')?.addEventListener('click', e => {
       e.stopPropagation();
       this.router.navigate(`/write-listing/${naddr}`);
     });
 
     // Delete
-    row.querySelector('[data-action="delete"]')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.confirmDelete(event, meta.identifier, row);
-    });
+    row
+      .querySelector('[data-action="delete"]')
+      ?.addEventListener('click', e => {
+        e.stopPropagation();
+        this.confirmDelete(event, meta.identifier, row);
+      });
 
     return row;
   }
 
-  private async confirmDelete(event: NostrEvent, identifier: string, rowEl: HTMLElement): Promise<void> {
+  private async confirmDelete(
+    event: NostrEvent,
+    identifier: string,
+    rowEl: HTMLElement
+  ): Promise<void> {
     const { ModalService } = await import('../../services/ModalService');
 
     const confirmed = await ModalService.getInstance().confirm({
       title: 'Delete Listing',
-      message: 'This will send a deletion request to relays. Deletion is not guaranteed — relays may choose to ignore deletion requests.',
+      message:
+        'This will send a deletion request to relays. Deletion is not guaranteed — relays may choose to ignore deletion requests.',
       confirmText: 'Delete',
       confirmDestructive: true,
-      cancelText: 'Cancel'
+      cancelText: 'Cancel',
     });
 
     if (!confirmed) return;
 
     try {
       const coordinate = `30402:${event.pubkey}:${identifier}`;
-      const success = await (ModuleLoader.getInstance().getApi<PostsModuleApi>('posts')?.deleteByCoordinates([coordinate], 'listing removed') ?? Promise.resolve(false));
+      const success = await (ModuleLoader.getInstance()
+        .getApi<PostsModuleApi>('posts')
+        ?.deleteByCoordinates([coordinate], 'listing removed') ??
+        Promise.resolve(false));
 
       if (success) {
         rowEl.remove();
         ToastService.show('Listing deletion requested', 'success');
 
         // If no more listings, show empty state
-        const listContainer = this.container.querySelector('.my-listings__list');
+        const listContainer =
+          this.container.querySelector('.my-listings__list');
         if (listContainer && listContainer.children.length === 0) {
           this.listings = [];
           this.renderListings(listContainer as HTMLElement);

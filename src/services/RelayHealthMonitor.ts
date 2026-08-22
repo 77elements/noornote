@@ -36,7 +36,9 @@ export class RelayHealthMonitor {
   private eventBus: TypedEventBus;
   private connectionChecks: Map<string, number> = new Map(); // url -> timestamp of last check
   private healthCheckInterval: number | null = null;
-  private readonly HEALTH_CHECK_INTERVAL = isDataSaverEnabled() ? 30 * 60 * 1000 : 10 * 60 * 1000;
+  private readonly HEALTH_CHECK_INTERVAL = isDataSaverEnabled()
+    ? 30 * 60 * 1000
+    : 10 * 60 * 1000;
 
   /** Track consecutive healthy checks per relay for backoff */
   private healthyStreaks: Map<string, number> = new Map();
@@ -65,9 +67,12 @@ export class RelayHealthMonitor {
    */
   private setupEventListeners(): void {
     // Listen to relay connection events from NostrTransport
-    this.eventBus.on('relay:connected', (data: { url: string; latency?: number }) => {
-      this.handleRelayConnected(data.url, data.latency);
-    });
+    this.eventBus.on(
+      'relay:connected',
+      (data: { url: string; latency?: number }) => {
+        this.handleRelayConnected(data.url, data.latency);
+      }
+    );
 
     this.eventBus.on('relay:error', (data: { url: string }) => {
       this.handleRelayError(data.url);
@@ -86,7 +91,7 @@ export class RelayHealthMonitor {
         lastConnected: null,
         lastDisconnected: null,
         errorCount: 0,
-        uptimePercentage: 0
+        uptimePercentage: 0,
       });
     }
     return this.metrics.get(url)!;
@@ -111,8 +116,6 @@ export class RelayHealthMonitor {
     this.updateUptimePercentage(url);
     this.eventBus.emit('relay:health:updated', { url, metrics });
   }
-
-
 
   /**
    * Handle relay error event
@@ -140,8 +143,9 @@ export class RelayHealthMonitor {
     if (metrics.isConnected) {
       metrics.uptimePercentage = 100;
     } else if (metrics.lastDisconnected) {
-      const hoursOffline = (Date.now() - metrics.lastDisconnected.getTime()) / (1000 * 60 * 60);
-      metrics.uptimePercentage = Math.max(0, 100 - (hoursOffline * 10));
+      const hoursOffline =
+        (Date.now() - metrics.lastDisconnected.getTime()) / (1000 * 60 * 60);
+      metrics.uptimePercentage = Math.max(0, 100 - hoursOffline * 10);
     }
   }
 
@@ -172,7 +176,11 @@ export class RelayHealthMonitor {
    * Get health summary (for UI display)
    * Uses configured relays as source of truth, not just metrics
    */
-  public async getHealthSummary(): Promise<{ healthy: number; total: number; warnings: string[] }> {
+  public async getHealthSummary(): Promise<{
+    healthy: number;
+    total: number;
+    warnings: string[];
+  }> {
     // Get all configured relays from RelayConfig
     const { RelayConfig } = await import('./RelayConfig');
     const relayConfig = RelayConfig.getInstance();
@@ -183,7 +191,7 @@ export class RelayHealthMonitor {
     const warnings: string[] = [];
 
     // Check each configured relay's health status
-    const threeHoursAgo = Date.now() - (3 * 60 * 60 * 1000);
+    const threeHoursAgo = Date.now() - 3 * 60 * 60 * 1000;
 
     configuredRelays.forEach(relay => {
       const metrics = this.getMetrics(relay.url);
@@ -194,8 +202,12 @@ export class RelayHealthMonitor {
         // Relay has metrics but is disconnected
         const offlineTime = metrics.lastDisconnected.getTime();
         if (offlineTime < threeHoursAgo) {
-          const hoursOffline = Math.floor((Date.now() - offlineTime) / (1000 * 60 * 60));
-          warnings.push(`${relay.url} unreachable for ${hoursOffline}h - consider replacing`);
+          const hoursOffline = Math.floor(
+            (Date.now() - offlineTime) / (1000 * 60 * 60)
+          );
+          warnings.push(
+            `${relay.url} unreachable for ${hoursOffline}h - consider replacing`
+          );
         }
       }
       // If no metrics exist yet, relay is counted as unhealthy (not connected yet)
@@ -290,12 +302,16 @@ export class RelayHealthMonitor {
     const batch: { url: string }[] = [];
 
     // First: unhealthy relays (streak 0)
-    const unhealthy = needsChecking.filter(r => (this.healthyStreaks.get(r.url) || 0) === 0);
+    const unhealthy = needsChecking.filter(
+      r => (this.healthyStreaks.get(r.url) || 0) === 0
+    );
     batch.push(...unhealthy.slice(0, BATCH_SIZE));
 
     // Fill remaining slots with healthy relays that need checking
     if (batch.length < BATCH_SIZE) {
-      const healthy = needsChecking.filter(r => (this.healthyStreaks.get(r.url) || 0) > 0);
+      const healthy = needsChecking.filter(
+        r => (this.healthyStreaks.get(r.url) || 0) > 0
+      );
       const remaining = BATCH_SIZE - batch.length;
       // Round-robin through healthy relays
       const startIdx = this.batchIndex % Math.max(1, healthy.length);
@@ -341,7 +357,7 @@ export class RelayHealthMonitor {
               this.eventBus.emit('relay:connected', { url: relayUrl, latency });
               sub.close();
             }
-          }
+          },
         }
       );
 

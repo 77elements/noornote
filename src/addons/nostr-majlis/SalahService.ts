@@ -7,11 +7,23 @@
  * Pure calc cannot reproduce authority-published times at high latitudes — see docs.
  */
 
-import { CalculationMethod, type CalculationParameters, Coordinates, HighLatitudeRule, Madhab, PrayerTimes } from 'adhan';
+import {
+  CalculationMethod,
+  type CalculationParameters,
+  Coordinates,
+  HighLatitudeRule,
+  Madhab,
+  PrayerTimes,
+} from 'adhan';
 import type { CalcCity } from './index';
 
 export interface ComputedTimes {
-  fajr: string; sunrise: string; dhuhr: string; asr: string; maghrib: string; isha: string;
+  fajr: string;
+  sunrise: string;
+  dhuhr: string;
+  asr: string;
+  maghrib: string;
+  isha: string;
 }
 
 /** Calculation-method source keys (Fajr/Isha twilight angles differ). */
@@ -47,8 +59,14 @@ export function isCalcMethod(source: string): boolean {
   return source in FACTORIES;
 }
 
-export function computeTimes(city: CalcCity, method: string, madhab: 'shafi' | 'hanafi', date: Date = new Date()): ComputedTimes {
-  const factory = FACTORIES[method] ?? (() => CalculationMethod.MuslimWorldLeague());
+export function computeTimes(
+  city: CalcCity,
+  method: string,
+  madhab: 'shafi' | 'hanafi',
+  date: Date = new Date()
+): ComputedTimes {
+  const factory =
+    FACTORIES[method] ?? (() => CalculationMethod.MuslimWorldLeague());
   const params = factory();
   params.madhab = madhab === 'hanafi' ? Madhab.Hanafi : Madhab.Shafi;
   const coords = new Coordinates(city.lat, city.lng);
@@ -56,7 +74,11 @@ export function computeTimes(city: CalcCity, method: string, madhab: 'shafi' | '
   params.highLatitudeRule = HighLatitudeRule.recommended(coords);
 
   const pt = new PrayerTimes(coords, date, params);
-  const fmt = new Intl.DateTimeFormat([], { hour: '2-digit', minute: '2-digit', timeZone: city.tz });
+  const fmt = new Intl.DateTimeFormat([], {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: city.tz,
+  });
   return {
     fajr: fmt.format(pt.fajr),
     sunrise: fmt.format(pt.sunrise),

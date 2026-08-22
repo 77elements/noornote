@@ -11,7 +11,10 @@ import { CollapsibleManager } from '../../../components/ui/note-features/Collaps
 import { QuoteNoteFetcher } from '../../../services/QuoteNoteFetcher';
 import type { QuoteFetchError } from '../../../services/QuoteNoteFetcher';
 import { ArticlePreviewRenderer } from './ArticlePreviewRenderer';
-import { ContentProcessor, type QuotedReference } from '../../../services/ContentProcessor';
+import {
+  ContentProcessor,
+  type QuotedReference,
+} from '../../../services/ContentProcessor';
 import { replaceMediaPlaceholders } from '../../../helpers/renderMediaContent';
 import { replaceBolt11Placeholders } from '../../../helpers/renderBolt11';
 import { Router } from '../../../services/Router';
@@ -23,12 +26,21 @@ import { AuthService } from '../../../services/AuthService';
 import { escapeHtml } from '../../../helpers/escapeHtml';
 import { getTag } from '../../../helpers/tagUtils';
 import { TypedEventBus } from '../../../core/TypedEventBus';
-import { DittoFeatureRenderer, DITTO_GEOCACHE_KIND } from '../../../components/ui/note-rendering/DittoFeatureRenderer';
-import { SatelliteSiteRenderer, SATELLITE_SITE_KIND } from '../../../components/ui/note-rendering/SatelliteSiteRenderer';
+import {
+  DittoFeatureRenderer,
+  DITTO_GEOCACHE_KIND,
+} from '../../../components/ui/note-rendering/DittoFeatureRenderer';
+import {
+  SatelliteSiteRenderer,
+  SATELLITE_SITE_KIND,
+} from '../../../components/ui/note-rendering/SatelliteSiteRenderer';
 import { ArmadaInviteRenderer } from '../../../components/ui/note-rendering/ArmadaInviteRenderer';
 import { UnsupportedKindRenderer } from './UnsupportedKindRenderer';
 import { ARTICLE_PREVIEW_KINDS } from '../../../helpers/addressableKinds';
-import { parseListingMetadata, formatPrice } from '../../../helpers/listingMetadata';
+import {
+  parseListingMetadata,
+  formatPrice,
+} from '../../../helpers/listingMetadata';
 
 export class QuotedNoteRenderer {
   private static instance: QuotedNoteRenderer;
@@ -63,14 +75,18 @@ export class QuotedNoteRenderer {
     quotedReferences: QuotedReference[],
     container: Element,
     enableCollapsible: boolean = true,
-    parentAuthorPubkey?: string,
+    parentAuthorPubkey?: string
   ): void {
-    quotedReferences.forEach((ref) => {
+    quotedReferences.forEach(ref => {
       // Route naddr references by kind (listing / article / Ditto / unsupported).
       if (ref.type === 'addr') {
         const addrContainer = document.createElement('div');
         container.appendChild(addrContainer);
-        this.renderAddressableReference(ref.fullMatch, addrContainer, ref.fragment);
+        this.renderAddressableReference(
+          ref.fullMatch,
+          addrContainer,
+          ref.fragment
+        );
         return;
       }
 
@@ -80,7 +96,12 @@ export class QuotedNoteRenderer {
       container.appendChild(skeleton);
 
       // Fetch quote in background
-      this.fetchAndRenderQuote(ref, skeleton, enableCollapsible, parentAuthorPubkey);
+      this.fetchAndRenderQuote(
+        ref,
+        skeleton,
+        enableCollapsible,
+        parentAuthorPubkey
+      );
     });
   }
 
@@ -99,7 +120,11 @@ export class QuotedNoteRenderer {
    * URL. Without it the renderer falls back to the static "Encrypted community"
    * card; with it, the bundle is decrypted for a real preview.
    */
-  public renderAddressableReference(naddrRef: string, container: Element, fragment?: string): void {
+  public renderAddressableReference(
+    naddrRef: string,
+    container: Element,
+    fragment?: string
+  ): void {
     let kind: number | undefined;
     let pubkey = '';
     let identifier = '';
@@ -115,7 +140,9 @@ export class QuotedNoteRenderer {
         pubkey = decoded.data.pubkey;
         identifier = decoded.data.identifier;
       }
-    } catch { /* fall through to the unsupported fallback below */ }
+    } catch {
+      /* fall through to the unsupported fallback below */
+    }
 
     // Marketplace listings (kind 30402) → listing preview.
     if (kind === 30402) {
@@ -124,12 +151,16 @@ export class QuotedNoteRenderer {
     }
     // Ditto geocache (kind 37516): proprietary, no NIP — dedicated notice.
     if (kind === DITTO_GEOCACHE_KIND) {
-      container.appendChild(DittoFeatureRenderer.renderFromCoordinate(kind, pubkey, identifier));
+      container.appendChild(
+        DittoFeatureRenderer.renderFromCoordinate(kind, pubkey, identifier)
+      );
       return;
     }
     // Satellite Earth site page (kind 35129): proprietary, no NIP — dedicated notice.
     if (kind === SATELLITE_SITE_KIND) {
-      container.appendChild(SatelliteSiteRenderer.renderFromCoordinate(kind, pubkey, identifier));
+      container.appendChild(
+        SatelliteSiteRenderer.renderFromCoordinate(kind, pubkey, identifier)
+      );
       return;
     }
     // Armada / Concord encrypted community invite (kind 33301, CORD-05):
@@ -142,7 +173,9 @@ export class QuotedNoteRenderer {
       // `bare` already has the nostr: prefix and #fragment stripped above;
       // pass it directly with the separately-travelled fragment.
       const bare = naddrRef.replace(/^nostr:/, '').split('#')[0] ?? naddrRef;
-      container.appendChild(ArmadaInviteRenderer.renderFromCoordinate(bare, fragment));
+      container.appendChild(
+        ArmadaInviteRenderer.renderFromCoordinate(bare, fragment)
+      );
       return;
     }
     // Follow pack (kind 39089) → fetch + render via FollowPackRenderer (.nn-card).
@@ -156,7 +189,13 @@ export class QuotedNoteRenderer {
       return;
     }
     // Any other addressable kind → shared unsupported fallback (no article card).
-    container.appendChild(UnsupportedKindRenderer.renderFromCoordinate(kind ?? 0, pubkey, identifier));
+    container.appendChild(
+      UnsupportedKindRenderer.renderFromCoordinate(
+        kind ?? 0,
+        pubkey,
+        identifier
+      )
+    );
   }
 
   /**
@@ -172,7 +211,7 @@ export class QuotedNoteRenderer {
     skeleton: HTMLElement,
     enableCollapsible: boolean,
     parentAuthorPubkey?: string,
-    isRetry: boolean = false,
+    isRetry: boolean = false
   ): Promise<void> {
     try {
       // Always fetch the normal path here. The retry-vs-not distinction lives
@@ -181,16 +220,28 @@ export class QuotedNoteRenderer {
       // error UI (recovery already happened). The outboundOnly flag is set
       // inside scheduleQuoteRecovery's 8 s timer, NOT here, so a successful
       // recovery re-render still walks the full cache-first pipeline.
-      const result = await this.quoteFetcher.fetchQuotedEventWithError(ref.fullMatch, parentAuthorPubkey);
+      const result = await this.quoteFetcher.fetchQuotedEventWithError(
+        ref.fullMatch,
+        parentAuthorPubkey
+      );
 
       if (result.success) {
         // Unwrap kind:6 / kind:16 reposts: their content field holds the
         // JSON-stringified inner event. Without this, the quote box would
         // process that JSON as plain text and dump it on the page.
-        if ((result.event.kind === 6 || result.event.kind === 16) && result.event.content) {
+        if (
+          (result.event.kind === 6 || result.event.kind === 16) &&
+          result.event.content
+        ) {
           try {
             const inner = JSON.parse(result.event.content);
-            if (inner && typeof inner === 'object' && typeof inner.kind === 'number' && inner.pubkey && inner.id) {
+            if (
+              inner &&
+              typeof inner === 'object' &&
+              typeof inner.kind === 'number' &&
+              inner.pubkey &&
+              inner.id
+            ) {
               result.event = inner as NostrEvent;
             }
           } catch {
@@ -202,7 +253,10 @@ export class QuotedNoteRenderer {
         // Check if author is muted
         const currentUser = this.authService.getCurrentUser();
         if (currentUser) {
-          const muteStatus = await this.muteOrchestrator.isMuted(result.event.pubkey, currentUser.pubkey);
+          const muteStatus = await this.muteOrchestrator.isMuted(
+            result.event.pubkey,
+            currentUser.pubkey
+          );
           if (muteStatus.public || muteStatus.private) {
             // Show muted placeholder instead of quote box
             const mutedPlaceholder = this.createMutedPlaceholder(result.event);
@@ -227,17 +281,31 @@ export class QuotedNoteRenderer {
         }
 
         // Route NIP-34 git events (must precede addressable check so 30617 doesn't fall into article preview)
-        if (result.event.kind !== undefined && GIT_EVENT_KINDS.includes(result.event.kind)) {
-          const { GitEventRenderer } = await import('../../../components/ui/note-rendering/GitEventRenderer');
-          const { GitEventProcessor } = await import('../../../components/ui/note-processing/GitEventProcessor');
+        if (
+          result.event.kind !== undefined &&
+          GIT_EVENT_KINDS.includes(result.event.kind)
+        ) {
+          const { GitEventRenderer } = await import(
+            '../../../components/ui/note-rendering/GitEventRenderer'
+          );
+          const { GitEventProcessor } = await import(
+            '../../../components/ui/note-processing/GitEventProcessor'
+          );
           const processedNote = GitEventProcessor.process(result.event);
-          const gitElement = GitEventRenderer.render(processedNote, { collapsible: false, depth: 1 });
+          const gitElement = GitEventRenderer.render(processedNote, {
+            collapsible: false,
+            depth: 1,
+          });
           skeleton.replaceWith(gitElement);
           return;
         }
 
         // Route addressable events (kind 30000-39999)
-        if (result.event.kind !== undefined && result.event.kind >= 30000 && result.event.kind < 40000) {
+        if (
+          result.event.kind !== undefined &&
+          result.event.kind >= 30000 &&
+          result.event.kind < 40000
+        ) {
           // Listings (kind 30402) → listing preview
           if (result.event.kind === 30402) {
             const container = document.createElement('div');
@@ -247,10 +315,17 @@ export class QuotedNoteRenderer {
           }
           // NIP-30 emoji packs (kind 30030) → emoji-pack card
           if (result.event.kind === 30030) {
-            const { EmojiPackRenderer } = await import('../../../components/ui/note-rendering/EmojiPackRenderer');
-            const { EmojiPackProcessor } = await import('../../../components/ui/note-processing/EmojiPackProcessor');
+            const { EmojiPackRenderer } = await import(
+              '../../../components/ui/note-rendering/EmojiPackRenderer'
+            );
+            const { EmojiPackProcessor } = await import(
+              '../../../components/ui/note-processing/EmojiPackProcessor'
+            );
             const processedNote = EmojiPackProcessor.process(result.event);
-            const packElement = EmojiPackRenderer.render(processedNote, { collapsible: false, depth: 1 });
+            const packElement = EmojiPackRenderer.render(processedNote, {
+              collapsible: false,
+              depth: 1,
+            });
             skeleton.replaceWith(packElement);
             return;
           }
@@ -262,14 +337,16 @@ export class QuotedNoteRenderer {
           }
           // Article / Zapstore app / live stream → article-preview renderer.
           if (ARTICLE_PREVIEW_KINDS.has(result.event.kind)) {
-            const { encodeNaddr } = await import('../../../services/NostrToolsAdapter');
+            const { encodeNaddr } = await import(
+              '../../../services/NostrToolsAdapter'
+            );
             const dTag = getTag(result.event.tags, 'd');
-            const naddrRef = 'nostr:' + encodeNaddr({
+            const naddrRef = `nostr:${encodeNaddr({
               kind: result.event.kind,
               pubkey: result.event.pubkey,
               identifier: dTag,
-              relays: []
-            });
+              relays: [],
+            })}`;
             const container = document.createElement('div');
             skeleton.replaceWith(container);
             this.articleRenderer.renderArticlePreview(naddrRef, container);
@@ -278,26 +355,41 @@ export class QuotedNoteRenderer {
           // Any other addressable kind → shared unsupported fallback (never an
           // article card). We have the fetched event, so render from it directly.
           {
-            const { NoteProcessor } = await import('../../../components/ui/note-processing/NoteProcessor');
+            const { NoteProcessor } = await import(
+              '../../../components/ui/note-processing/NoteProcessor'
+            );
             const processedNote = NoteProcessor.process(result.event);
-            skeleton.replaceWith(UnsupportedKindRenderer.render(processedNote, { collapsible: false }));
+            skeleton.replaceWith(
+              UnsupportedKindRenderer.render(processedNote, {
+                collapsible: false,
+              })
+            );
             return;
           }
         }
 
         // Route NIP-84 highlights (kind 9802) to HighlightRenderer
         if (result.event.kind === 9802) {
-          const { HighlightRenderer } = await import('../../../components/ui/note-rendering/HighlightRenderer');
-          const { HighlightProcessor } = await import('../../../components/ui/note-processing/HighlightProcessor');
+          const { HighlightRenderer } = await import(
+            '../../../components/ui/note-rendering/HighlightRenderer'
+          );
+          const { HighlightProcessor } = await import(
+            '../../../components/ui/note-processing/HighlightProcessor'
+          );
           const processedNote = HighlightProcessor.process(result.event);
-          const highlightElement = HighlightRenderer.render(processedNote, { collapsible: false, depth: 1 });
+          const highlightElement = HighlightRenderer.render(processedNote, {
+            collapsible: false,
+            depth: 1,
+          });
           skeleton.replaceWith(highlightElement);
           return;
         }
 
         // Route NIP-58 badge awards (kind 8) to inline badge card
         if (result.event.kind === 8) {
-          const { BadgeAwardRenderer } = await import('../../../components/ui/note-rendering/BadgeAwardRenderer');
+          const { BadgeAwardRenderer } = await import(
+            '../../../components/ui/note-rendering/BadgeAwardRenderer'
+          );
           const card = BadgeAwardRenderer.renderInlineCard(result.event);
           skeleton.replaceWith(card);
           return;
@@ -305,25 +397,44 @@ export class QuotedNoteRenderer {
 
         // Route zap receipts (kind 9735) to ZapReceiptRenderer
         if (result.event.kind === 9735) {
-          const { ZapReceiptRenderer } = await import('../../../components/ui/note-rendering/ZapReceiptRenderer');
-          const { ZapReceiptProcessor } = await import('../../../components/ui/note-processing/ZapReceiptProcessor');
+          const { ZapReceiptRenderer } = await import(
+            '../../../components/ui/note-rendering/ZapReceiptRenderer'
+          );
+          const { ZapReceiptProcessor } = await import(
+            '../../../components/ui/note-processing/ZapReceiptProcessor'
+          );
           const processedNote = ZapReceiptProcessor.process(result.event);
-          const zapElement = ZapReceiptRenderer.render(processedNote, { collapsible: false });
+          const zapElement = ZapReceiptRenderer.render(processedNote, {
+            collapsible: false,
+          });
           skeleton.replaceWith(zapElement);
           return;
         }
 
         // Route unsupported kinds to UnsupportedKindRenderer
-        if (result.event.kind !== undefined && !RENDERABLE_KINDS.includes(result.event.kind)) {
-          const { UnsupportedKindRenderer } = await import('../../../components/ui/note-rendering/UnsupportedKindRenderer');
-          const { NoteProcessor } = await import('../../../components/ui/note-processing/NoteProcessor');
+        if (
+          result.event.kind !== undefined &&
+          !RENDERABLE_KINDS.includes(result.event.kind)
+        ) {
+          const { UnsupportedKindRenderer } = await import(
+            '../../../components/ui/note-rendering/UnsupportedKindRenderer'
+          );
+          const { NoteProcessor } = await import(
+            '../../../components/ui/note-processing/NoteProcessor'
+          );
           const processedNote = NoteProcessor.process(result.event);
-          const unsupportedElement = UnsupportedKindRenderer.render(processedNote, { collapsible: false });
+          const unsupportedElement = UnsupportedKindRenderer.render(
+            processedNote,
+            { collapsible: false }
+          );
           skeleton.replaceWith(unsupportedElement);
           return;
         }
 
-        const quoteBox = await this.createQuoteBox(result.event, enableCollapsible);
+        const quoteBox = await this.createQuoteBox(
+          result.event,
+          enableCollapsible
+        );
         skeleton.replaceWith(quoteBox);
       } else if (this.isUnresolvableByDesign(ref)) {
         // Zap receipts (kind 9735) are routinely unreachable by id alone: they
@@ -344,7 +455,13 @@ export class QuotedNoteRenderer {
         // LRU — and (b) a single outboundOnly retry against the now-warm
         // outbound relays. The error UI is shown only if neither path delivers
         // within the recovery window.
-        this.scheduleQuoteRecovery(ref, skeleton, enableCollapsible, parentAuthorPubkey, result.error);
+        this.scheduleQuoteRecovery(
+          ref,
+          skeleton,
+          enableCollapsible,
+          parentAuthorPubkey,
+          result.error
+        );
       }
     } catch (error) {
       console.error(`❌ Quote fetch failed:`, error);
@@ -370,7 +487,7 @@ export class QuotedNoteRenderer {
     skeleton: HTMLElement,
     enableCollapsible: boolean,
     parentAuthorPubkey: string | undefined,
-    error: QuoteFetchError,
+    error: QuoteFetchError
   ): void {
     let resolved = false;
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
@@ -382,9 +499,18 @@ export class QuotedNoteRenderer {
 
     const cleanup = (): void => {
       resolved = true;
-      if (retryTimer) { clearTimeout(retryTimer); retryTimer = undefined; }
-      if (failTimer) { clearTimeout(failTimer); failTimer = undefined; }
-      if (noteCachedSubId) { eventBus.off(noteCachedSubId); noteCachedSubId = undefined; }
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+        retryTimer = undefined;
+      }
+      if (failTimer) {
+        clearTimeout(failTimer);
+        failTimer = undefined;
+      }
+      if (noteCachedSubId) {
+        eventBus.off(noteCachedSubId);
+        noteCachedSubId = undefined;
+      }
     };
 
     // Bail out silently if the skeleton is no longer in the DOM (timeline
@@ -397,14 +523,26 @@ export class QuotedNoteRenderer {
     // parallel orchestrator fetches, even unrelated lookups. This is the
     // "the note arrived via a different door" recovery.
     if (eventId) {
-      noteCachedSubId = eventBus.on('note:cached', (data: { eventId: string }) => {
-        if (!isAlive()) { cleanup(); return; }
-        if (data.eventId === eventId) {
-          cleanup();
-          // Cache-first Stage 0 will resolve instantly.
-          void this.fetchAndRenderQuote(ref, skeleton, enableCollapsible, parentAuthorPubkey, true);
+      noteCachedSubId = eventBus.on(
+        'note:cached',
+        (data: { eventId: string }) => {
+          if (!isAlive()) {
+            cleanup();
+            return;
+          }
+          if (data.eventId === eventId) {
+            cleanup();
+            // Cache-first Stage 0 will resolve instantly.
+            void this.fetchAndRenderQuote(
+              ref,
+              skeleton,
+              enableCollapsible,
+              parentAuthorPubkey,
+              true
+            );
+          }
         }
-      });
+      );
     }
 
     // Path 2: scheduled outboundOnly retry. The initial fetch already proved
@@ -413,24 +551,42 @@ export class QuotedNoteRenderer {
     // Stage 3 with the now-warm outbound sockets is the one path whose result
     // actually changes on a second attempt.
     retryTimer = setTimeout(() => {
-      if (!isAlive()) { cleanup(); return; }
-      void this.quoteFetcher.fetchQuotedEventWithError(ref.fullMatch, parentAuthorPubkey, true)
-        .then((result) => {
-          if (!isAlive()) { cleanup(); return; }
+      if (!isAlive()) {
+        cleanup();
+        return;
+      }
+      void this.quoteFetcher
+        .fetchQuotedEventWithError(ref.fullMatch, parentAuthorPubkey, true)
+        .then(result => {
+          if (!isAlive()) {
+            cleanup();
+            return;
+          }
           if (result.success) {
             cleanup();
-            void this.fetchAndRenderQuote(ref, skeleton, enableCollapsible, parentAuthorPubkey, true);
+            void this.fetchAndRenderQuote(
+              ref,
+              skeleton,
+              enableCollapsible,
+              parentAuthorPubkey,
+              true
+            );
           }
           // else: failTimer still scheduled — leave skeleton in place.
         })
-        .catch(() => { /* network errors during retry: rely on failTimer */ });
+        .catch(() => {
+          /* network errors during retry: rely on failTimer */
+        });
     }, 8000);
 
     // Path 3: final fallback after the recovery window. We've given both
     // signals (background arrival + active retry) a fair chance; the note
     // really isn't reachable right now.
     failTimer = setTimeout(() => {
-      if (!isAlive()) { cleanup(); return; }
+      if (!isAlive()) {
+        cleanup();
+        return;
+      }
       cleanup();
       skeleton.replaceWith(this.createQuoteError(error));
     }, 60000);
@@ -454,7 +610,9 @@ export class QuotedNoteRenderer {
             if (data.id) return data.id;
           }
           break;
-        } catch { /* try next variant */ }
+        } catch {
+          /* try next variant */
+        }
       }
       if (cleanRef.match(/^[a-f0-9]{64}$/)) return cleanRef;
       return null;
@@ -467,7 +625,10 @@ export class QuotedNoteRenderer {
    * Create quote box element from event
    * Uses same structure as NoteStructureBuilder for consistent styling
    */
-  private async createQuoteBox(event: NostrEvent, enableCollapsible: boolean): Promise<HTMLElement> {
+  private async createQuoteBox(
+    event: NostrEvent,
+    enableCollapsible: boolean
+  ): Promise<HTMLElement> {
     const quoteBox = document.createElement('div');
     quoteBox.className = 'quote-box';
 
@@ -478,19 +639,25 @@ export class QuotedNoteRenderer {
 
     // For picture events (Kind 20), extract images from imeta tags and prepend title
     if (event.kind === 20) {
-      const { PictureNoteProcessor } = await import('../../../components/ui/note-processing/PictureNoteProcessor');
+      const { PictureNoteProcessor } = await import(
+        '../../../components/ui/note-processing/PictureNoteProcessor'
+      );
       PictureNoteProcessor.prependPictureContent(processedContent, event.tags);
     }
 
     // For video events (Kind 21/22), extract video from imeta tags and prepend title
     if (event.kind === 21 || event.kind === 22) {
-      const { VideoNoteProcessor } = await import('../../../components/ui/note-processing/VideoNoteProcessor');
+      const { VideoNoteProcessor } = await import(
+        '../../../components/ui/note-processing/VideoNoteProcessor'
+      );
       VideoNoteProcessor.prependVideoContent(processedContent, event.tags);
     }
 
     // For file metadata events (Kind 1063), extract file from NIP-94 tags
     if (event.kind === 1063) {
-      const { FileMetadataProcessor } = await import('../../../components/ui/note-processing/FileMetadataProcessor');
+      const { FileMetadataProcessor } = await import(
+        '../../../components/ui/note-processing/FileMetadataProcessor'
+      );
       FileMetadataProcessor.prependFileContent(processedContent, event.tags);
     }
 
@@ -507,7 +674,7 @@ export class QuotedNoteRenderer {
       rawEvent: event,
       showVerification: false,
       showTimestamp: true,
-      showMenu: true
+      showMenu: true,
     });
 
     // Replace media placeholders in HTML with actual media elements
@@ -519,7 +686,10 @@ export class QuotedNoteRenderer {
       eventId,
       event.pubkey
     );
-    htmlWithMedia = replaceBolt11Placeholders(htmlWithMedia, processedContent.bolt11Invoices);
+    htmlWithMedia = replaceBolt11Placeholders(
+      htmlWithMedia,
+      processedContent.bolt11Invoices
+    );
 
     quoteBox.innerHTML = `<div class="event-content">${htmlWithMedia}</div>`;
 
@@ -531,7 +701,9 @@ export class QuotedNoteRenderer {
     // best guess for resolving whatever it itself quotes.
     if (processedContent.quotedReferences.length > 0) {
       processedContent.quotedReferences.forEach(ref => {
-        const marker = quoteBox.querySelector(`.quote-marker[data-quote-ref="${ref.fullMatch}"]`);
+        const marker = quoteBox.querySelector(
+          `.quote-marker[data-quote-ref="${ref.fullMatch}"]`
+        );
         if (marker) {
           const skeleton = this.createQuoteSkeleton();
           marker.replaceWith(skeleton);
@@ -547,10 +719,14 @@ export class QuotedNoteRenderer {
 
     // Render NIP-88 poll (kind 1068)
     if (event.kind === 1068) {
-      const { PollProcessor } = await import('../../../components/ui/note-processing/PollProcessor');
+      const { PollProcessor } = await import(
+        '../../../components/ui/note-processing/PollProcessor'
+      );
       const pollData = PollProcessor.extractPollData(event.tags);
       if (pollData.options.length > 0) {
-        const { NIP88PollRenderer } = await import('../../../components/ui/note-features/NIP88PollRenderer');
+        const { NIP88PollRenderer } = await import(
+          '../../../components/ui/note-features/NIP88PollRenderer'
+        );
         NIP88PollRenderer.render(quoteBox, pollData, event).catch(() => {});
       }
     }
@@ -558,11 +734,14 @@ export class QuotedNoteRenderer {
     // Setup collapsible for long quoted content (only if enabled).
     // contentSelector keeps the header outside the clamped area.
     if (enableCollapsible) {
-      CollapsibleManager.setup(quoteBox, { maxHeight: '40vh', contentSelector: '.event-content' });
+      CollapsibleManager.setup(quoteBox, {
+        maxHeight: '40vh',
+        contentSelector: '.event-content',
+      });
     }
 
     // Add click handler to navigate to SNV (exclude interactive elements)
-    quoteBox.addEventListener('click', (e) => {
+    quoteBox.addEventListener('click', e => {
       const target = e.target as HTMLElement;
 
       // Don't navigate if clicking on interactive elements
@@ -617,7 +796,7 @@ export class QuotedNoteRenderer {
     // Add click handler for "Show temporarily" button
     const showBtn = placeholder.querySelector('.quote-muted__show-btn');
     if (showBtn) {
-      showBtn.addEventListener('click', async (e) => {
+      showBtn.addEventListener('click', async e => {
         e.stopPropagation();
         // Replace placeholder with actual quote box
         const quoteBox = await this.createQuoteBox(event, true);
@@ -669,7 +848,11 @@ export class QuotedNoteRenderer {
     // Parse poll options from tags, filtering out invalid entries
     const pollOptions = event.tags
       .filter(tag => tag[0] === 'poll_option' && tag[1] && tag[2])
-      .map(tag => ({ id: tag[1] as string, label: tag[2] as string, voteCount: 0 }))
+      .map(tag => ({
+        id: tag[1] as string,
+        label: tag[2] as string,
+        voteCount: 0,
+      }))
       .sort((a, b) => parseInt(a.id) - parseInt(b.id));
 
     if (pollOptions.length === 0) return;
@@ -699,19 +882,24 @@ export class QuotedNoteRenderer {
 
     // Fetch poll results asynchronously
     const pollOrchestrator = PollOrchestrator.getInstance();
-    pollOrchestrator.fetchPollResults(eventId, pollOptions).then(results => {
+    pollOrchestrator
+      .fetchPollResults(eventId, pollOptions)
+      .then(results => {
         // Update UI with vote counts
         results.options.forEach(option => {
-          const optionBtn = pollContainer.querySelector(`[data-option-index="${option.id}"]`) as HTMLElement | null;
+          const optionBtn = pollContainer.querySelector(
+            `[data-option-index="${option.id}"]`
+          ) as HTMLElement | null;
           if (!optionBtn) return;
 
           const countSpan = optionBtn.querySelector('.poll-option-count');
           if (!countSpan) return;
 
           // Calculate percentage
-          const percentage = results.totalVotes > 0
-            ? Math.round((option.voteCount / results.totalVotes) * 100)
-            : 0;
+          const percentage =
+            results.totalVotes > 0
+              ? Math.round((option.voteCount / results.totalVotes) * 100)
+              : 0;
 
           // Update text
           countSpan.textContent = `${percentage}% (${option.voteCount} ${option.voteCount === 1 ? 'vote' : 'votes'})`;
@@ -720,11 +908,14 @@ export class QuotedNoteRenderer {
           optionBtn.style.setProperty('--vote-percentage', `${percentage}%`);
           optionBtn.classList.add('has-votes');
         });
-    }).catch(error => {
+      })
+      .catch(error => {
         console.warn('Failed to fetch poll results:', error);
         // Show error state
         pollOptions.forEach(option => {
-          const optionBtn = pollContainer.querySelector(`[data-option-index="${option.id}"]`);
+          const optionBtn = pollContainer.querySelector(
+            `[data-option-index="${option.id}"]`
+          );
           if (!optionBtn) return;
 
           const countSpan = optionBtn.querySelector('.poll-option-count');
@@ -732,7 +923,7 @@ export class QuotedNoteRenderer {
             countSpan.textContent = 'Failed to load votes';
           }
         });
-    });
+      });
   }
 
   /**
@@ -752,13 +943,19 @@ export class QuotedNoteRenderer {
    * Render a marketplace listing preview from an naddr reference.
    * Fetches the event first, then delegates to renderListingPreviewFromEvent.
    */
-  public async renderListingPreview(naddrRef: string, container: Element): Promise<void> {
+  public async renderListingPreview(
+    naddrRef: string,
+    container: Element
+  ): Promise<void> {
     try {
-      const result = await this.quoteFetcher.fetchQuotedEventWithError(naddrRef);
+      const result =
+        await this.quoteFetcher.fetchQuotedEventWithError(naddrRef);
       if (result.success && result.event.kind === 30402) {
         this.renderListingPreviewFromEvent(result.event, container);
       }
-    } catch { /* silent — container stays empty */ }
+    } catch {
+      /* silent — container stays empty */
+    }
   }
 
   /**
@@ -767,14 +964,20 @@ export class QuotedNoteRenderer {
    * FollowPackProcessor + FollowPackRenderer pipeline so the inline quote box
    * shows the same card as the timeline. Mirrors {@link renderListingPreview}.
    */
-  public async renderFollowPackPreview(naddrRef: string, container: Element): Promise<void> {
+  public async renderFollowPackPreview(
+    naddrRef: string,
+    container: Element
+  ): Promise<void> {
     try {
-      const result = await this.quoteFetcher.fetchQuotedEventWithError(naddrRef);
+      const result =
+        await this.quoteFetcher.fetchQuotedEventWithError(naddrRef);
       if (result.success && result.event.kind === 39089) {
         const el = await this.buildFollowPackElement(result.event);
         container.appendChild(el);
       }
-    } catch { /* silent — container stays empty */ }
+    } catch {
+      /* silent — container stays empty */
+    }
   }
 
   /**
@@ -782,20 +985,34 @@ export class QuotedNoteRenderer {
    * Shared by the naddr quote path ({@link renderFollowPackPreview}) and the
    * fetched-quote addressable branch in {@link fetchAndRenderQuote}.
    */
-  private async buildFollowPackElement(event: NostrEvent): Promise<HTMLElement> {
-    const { FollowPackProcessor } = await import('../../../components/ui/note-processing/FollowPackProcessor');
-    const { FollowPackRenderer } = await import('../../../components/ui/note-rendering/FollowPackRenderer');
+  private async buildFollowPackElement(
+    event: NostrEvent
+  ): Promise<HTMLElement> {
+    const { FollowPackProcessor } = await import(
+      '../../../components/ui/note-processing/FollowPackProcessor'
+    );
+    const { FollowPackRenderer } = await import(
+      '../../../components/ui/note-rendering/FollowPackRenderer'
+    );
     const processedNote = FollowPackProcessor.process(event);
-    return FollowPackRenderer.render(processedNote, { collapsible: false, depth: 1 });
+    return FollowPackRenderer.render(processedNote, {
+      collapsible: false,
+      depth: 1,
+    });
   }
 
   /**
    * Render a compact listing card from a Kind 30402 event.
    * Reuses the core listing metadata helper (helpers/listingMetadata).
    */
-  private async renderListingPreviewFromEvent(event: NostrEvent, container: Element): Promise<void> {
+  private async renderListingPreviewFromEvent(
+    event: NostrEvent,
+    container: Element
+  ): Promise<void> {
     const { encodeNaddr } = await import('../../../services/NostrToolsAdapter');
-    const { UserProfileService } = await import('../../../services/UserProfileService');
+    const { UserProfileService } = await import(
+      '../../../services/UserProfileService'
+    );
     const { hexToNpub } = await import('../../../helpers/nip19');
     const { escapeHtmlAttr } = await import('../../../helpers/escapeHtml');
 
@@ -804,20 +1021,28 @@ export class QuotedNoteRenderer {
       kind: 30402,
       pubkey: event.pubkey,
       identifier: meta.identifier,
-      relays: []
+      relays: [],
     });
-    const priceDisplay = formatPrice(meta.price, meta.priceCurrency, meta.priceFrequency);
+    const priceDisplay = formatPrice(
+      meta.price,
+      meta.priceCurrency,
+      meta.priceFrequency
+    );
     const firstImage = meta.images[0] || '';
 
     const card = document.createElement('div');
     card.className = 'timeline-listing-card timeline-listing-card--quoted';
     card.style.cursor = 'pointer';
     card.innerHTML = `
-      ${firstImage ? `
+      ${
+        firstImage
+          ? `
         <div class="timeline-listing-card__image">
           <img src="${escapeHtmlAttr(firstImage)}" alt="" loading="lazy" />
         </div>
-      ` : ''}
+      `
+          : ''
+      }
       <div class="timeline-listing-card__body">
         <div class="timeline-listing-card__seller" data-pubkey="${event.pubkey}">
           <a href="#" class="mention-link" data-profile-pubkey="${event.pubkey}">…</a>
@@ -829,12 +1054,19 @@ export class QuotedNoteRenderer {
       </div>
     `;
 
-    card.addEventListener('click', (e) => {
-      if ((e.target as HTMLElement).closest('.note-image--clickable, .note-media, video')) return;
+    card.addEventListener('click', e => {
+      if (
+        (e.target as HTMLElement).closest(
+          '.note-image--clickable, .note-media, video'
+        )
+      )
+        return;
       e.stopPropagation(); // Prevent parent note-card from navigating to SNV
       if ((e.target as HTMLElement).closest('.mention-link')) {
         e.preventDefault();
-        const pubkey = (e.target as HTMLElement).closest('[data-profile-pubkey]')?.getAttribute('data-profile-pubkey');
+        const pubkey = (e.target as HTMLElement)
+          .closest('[data-profile-pubkey]')
+          ?.getAttribute('data-profile-pubkey');
         if (pubkey) {
           const npub = hexToNpub(pubkey);
           if (npub) Router.getInstance().navigate(`/profile/${npub}`);
@@ -849,11 +1081,19 @@ export class QuotedNoteRenderer {
 
     // Async: load seller name
     try {
-      const profile = await UserProfileService.getInstance().getUserProfile(event.pubkey);
+      const profile = await UserProfileService.getInstance().getUserProfile(
+        event.pubkey
+      );
       const linkEl = card.querySelector('.mention-link');
       if (linkEl) {
-        linkEl.textContent = profile?.name || profile?.display_name || hexToNpub(event.pubkey)?.slice(0, 12) + '...' || '…';
+        linkEl.textContent =
+          profile?.name ||
+          profile?.display_name ||
+          `${hexToNpub(event.pubkey)?.slice(0, 12)}...` ||
+          '…';
       }
-    } catch { /* keep placeholder */ }
+    } catch {
+      /* keep placeholder */
+    }
   }
 }

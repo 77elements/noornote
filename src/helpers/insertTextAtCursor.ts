@@ -3,9 +3,14 @@
  * the caret after the insert, focus. Returns the new content. Shared by the
  * editors' insertAtCursor + the note/reply emoji path.
  */
-export function insertTextAtCursor(textarea: HTMLTextAreaElement, content: string, text: string): string {
+export function insertTextAtCursor(
+  textarea: HTMLTextAreaElement,
+  content: string,
+  text: string
+): string {
   const start = textarea.selectionStart;
-  const newContent = content.slice(0, start) + text + content.slice(textarea.selectionEnd);
+  const newContent =
+    content.slice(0, start) + text + content.slice(textarea.selectionEnd);
   textarea.value = newContent;
 
   const caret = start + text.length;

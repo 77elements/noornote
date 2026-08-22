@@ -26,7 +26,11 @@ import { diagLog } from '../DiagnosticLogger';
 import { FollowCheckService } from '../FollowCheckService';
 import { MuteOrchestrator, muteUser } from '../../lists/mutes';
 import { PerAccountLocalStorage, StorageKeys } from '../PerAccountLocalStorage';
-import { generateSecretKey, getPublicKey, calculateEventHash } from '../../services/NostrToolsAdapter';
+import {
+  generateSecretKey,
+  getPublicKey,
+  calculateEventHash,
+} from '../../services/NostrToolsAdapter';
 
 type InboxRelayCacheEntry = { relays: string[]; fetchedAt: number };
 type InboxRelayCache = Record<string, InboxRelayCacheEntry>;
@@ -74,7 +78,10 @@ export class DMService {
   private static readonly LIVE_BACKLOG_TIMEOUT_MS = 5000;
 
   // Progress tracking for UI
-  private fetchProgress: { current: number; total: number } = { current: 0, total: 0 };
+  private fetchProgress: { current: number; total: number } = {
+    current: 0,
+    total: 0,
+  };
 
   // Periodic subscription refresh (browser WebSocket connections go stale)
   private refreshTimer: number | null = null;
@@ -191,7 +198,10 @@ export class DMService {
       // the first await sets userPubkey. This flag is set synchronously,
       // before any await, so the second caller sees it and exits.
       if (this.isStarting) {
-        this.systemLogger.info('DMService', 'Start already in progress, skipping duplicate');
+        this.systemLogger.info(
+          'DMService',
+          'Start already in progress, skipping duplicate'
+        );
         return;
       }
       this.isStarting = true;
@@ -203,23 +213,40 @@ export class DMService {
         // Set current user pubkey
         this.userPubkey = currentUser.pubkey;
 
-        this.systemLogger.info('DMService', `Starting DM service for ${currentUser.npub.slice(0, 12)}...`);
-        diagLog('dms', 'DM service starting', { npub: currentUser.npub.slice(0, 12) });
+        this.systemLogger.info(
+          'DMService',
+          `Starting DM service for ${currentUser.npub.slice(0, 12)}...`
+        );
+        diagLog('dms', 'DM service starting', {
+          npub: currentUser.npub.slice(0, 12),
+        });
 
         // Fetch historical messages first (don't block on errors)
         try {
           await this.fetchHistoricalMessages();
         } catch (fetchError) {
-          diagLog('dms', 'Historical fetch failed', { error: String(fetchError) });
-          this.systemLogger.warn('DMService', 'Error fetching historical messages:', fetchError);
+          diagLog('dms', 'Historical fetch failed', {
+            error: String(fetchError),
+          });
+          this.systemLogger.warn(
+            'DMService',
+            'Error fetching historical messages:',
+            fetchError
+          );
         }
 
         // Start live subscription (don't block on errors)
         try {
           await this.startSubscription();
         } catch (subError) {
-          diagLog('dms', 'Subscription start failed', { error: String(subError) });
-          this.systemLogger.warn('DMService', 'Error starting subscription:', subError);
+          diagLog('dms', 'Subscription start failed', {
+            error: String(subError),
+          });
+          this.systemLogger.warn(
+            'DMService',
+            'Error starting subscription:',
+            subError
+          );
         }
 
         // Start periodic refresh timer (browser WebSocket connections go stale)
@@ -233,7 +260,11 @@ export class DMService {
         this.isStarting = false;
       }
     } catch (error) {
-      this.systemLogger.error('DMService', 'Failed to start DM service:', error);
+      this.systemLogger.error(
+        'DMService',
+        'Failed to start DM service:',
+        error
+      );
       throw error;
     }
   }
@@ -322,7 +353,7 @@ export class DMService {
     }
 
     await Promise.all(
-      batch.map((event) => {
+      batch.map(event => {
         if (event.kind === KIND_GIFT_WRAP) return this.processGiftWrap(event);
         if (event.kind === KIND_LEGACY_DM) return this.processLegacyDM(event);
         return Promise.resolve();
@@ -338,12 +369,19 @@ export class DMService {
     if (!this.userPubkey || !this.subscriptionId) return;
 
     const currentRelays = this.getMyInboxRelays().sort();
-    const relaysUnchanged = currentRelays.length === this.activeInboxRelays.length &&
-                            currentRelays.every((url, i) => url === this.activeInboxRelays[i]);
+    const relaysUnchanged =
+      currentRelays.length === this.activeInboxRelays.length &&
+      currentRelays.every((url, i) => url === this.activeInboxRelays[i]);
     if (relaysUnchanged) return;
 
-    diagLog('dms', 'Inbox relays changed, refreshing subscription', { old: this.activeInboxRelays.length, new: currentRelays.length });
-    this.systemLogger.info('DMService', 'Inbox relays changed, refreshing DM subscription');
+    diagLog('dms', 'Inbox relays changed, refreshing subscription', {
+      old: this.activeInboxRelays.length,
+      new: currentRelays.length,
+    });
+    this.systemLogger.info(
+      'DMService',
+      'Inbox relays changed, refreshing DM subscription'
+    );
     this.refreshSubscriptions();
   }
 
@@ -390,25 +428,41 @@ export class DMService {
     // Capture before fetch so the cold-start checkpoint keeps advancing through
     // a long-running session (otherwise a restart re-fetches the whole session).
     const missedStartedAt = Math.floor(Date.now() / 1000);
-    const since = missedStartedAt - (35 * 60); // last 35 minutes
+    const since = missedStartedAt - 35 * 60; // last 35 minutes
 
     try {
       const inboxRelays = await this.getMyInboxRelays();
 
       // NIP-17 Gift Wraps
-      const nip17Events = await this.transport.fetch(inboxRelays, [{
-        kinds: [KIND_GIFT_WRAP],
-        '#p': [this.userPubkey],
-        since
-      }], 10000, false, 'DMService');
+      const nip17Events = await this.transport.fetch(
+        inboxRelays,
+        [
+          {
+            kinds: [KIND_GIFT_WRAP],
+            '#p': [this.userPubkey],
+            since,
+          },
+        ],
+        10000,
+        false,
+        'DMService'
+      );
 
       // Legacy NIP-04
       const readRelays = this.relayConfig.getReadRelays();
-      const legacyEvents = await this.transport.fetch(readRelays, [{
-        kinds: [KIND_LEGACY_DM],
-        '#p': [this.userPubkey],
-        since
-      }], 10000, false, 'DMService');
+      const legacyEvents = await this.transport.fetch(
+        readRelays,
+        [
+          {
+            kinds: [KIND_LEGACY_DM],
+            '#p': [this.userPubkey],
+            since,
+          },
+        ],
+        10000,
+        false,
+        'DMService'
+      );
 
       for (const event of nip17Events) {
         await this.processGiftWrap(event);
@@ -418,8 +472,14 @@ export class DMService {
       }
 
       if (nip17Events.length > 0 || legacyEvents.length > 0) {
-        diagLog('dms', 'Catch-up complete', { nip17: nip17Events.length, legacy: legacyEvents.length });
-        this.systemLogger.info('DMService', `Caught up: ${nip17Events.length} NIP-17, ${legacyEvents.length} legacy events`);
+        diagLog('dms', 'Catch-up complete', {
+          nip17: nip17Events.length,
+          legacy: legacyEvents.length,
+        });
+        this.systemLogger.info(
+          'DMService',
+          `Caught up: ${nip17Events.length} NIP-17, ${legacyEvents.length} legacy events`
+        );
         this.eventBus.emit('dm:badge-update');
       }
 
@@ -431,7 +491,11 @@ export class DMService {
       }
     } catch (error) {
       diagLog('dms', 'Catch-up fetch failed', { error: String(error) });
-      this.systemLogger.error('DMService', 'Failed to fetch missed messages:', error);
+      this.systemLogger.error(
+        'DMService',
+        'Failed to fetch missed messages:',
+        error
+      );
     }
   }
 
@@ -477,7 +541,8 @@ export class DMService {
   private async sweepExpiredMessages(): Promise<void> {
     try {
       const now = Math.floor(Date.now() / 1000);
-      const { partnerPubkeys, count } = await this.dmStore.deleteExpiredBefore(now);
+      const { partnerPubkeys, count } =
+        await this.dmStore.deleteExpiredBefore(now);
       if (count === 0) return;
       for (const partnerPubkey of partnerPubkeys) {
         this.eventBus.emit('dm:messages-expired', { partnerPubkey, count });
@@ -490,10 +555,14 @@ export class DMService {
   /**
    * Get current fetch progress (for UI progress bar)
    */
-  public getFetchProgress(): { current: number; total: number; isLoading: boolean } {
+  public getFetchProgress(): {
+    current: number;
+    total: number;
+    isLoading: boolean;
+  } {
     return {
       ...this.fetchProgress,
-      isLoading: this.isFetchingHistorical
+      isLoading: this.isFetchingHistorical,
     };
   }
 
@@ -531,19 +600,46 @@ export class DMService {
       // margin), no limit — the delta is small. Seed (first run): newest 500.
       const nip17Since = lastSyncedAt - DMService.DM_BACKDATE_MARGIN_SECONDS;
       const nip17Filter: NDKFilter = isIncremental
-        ? { kinds: [KIND_GIFT_WRAP], '#p': [this.userPubkey], since: nip17Since }
+        ? {
+            kinds: [KIND_GIFT_WRAP],
+            '#p': [this.userPubkey],
+            since: nip17Since,
+          }
         : { kinds: [KIND_GIFT_WRAP], '#p': [this.userPubkey], limit: 500 };
 
-      diagLog('dms', isIncremental ? 'Fetching NIP-17 DMs (incremental)' : 'Fetching NIP-17 DMs (seed)', { relayCount: inboxRelays.length, since: isIncremental ? nip17Since : undefined });
-      this.systemLogger.info('DMService', `Fetching NIP-17 DMs from ${inboxRelays.length} inbox relays: ${inboxRelays.slice(0, 3).join(', ')}${inboxRelays.length > 3 ? '...' : ''}`);
-      const nip17Events = await this.transport.fetch(inboxRelays, [nip17Filter], 15000, false, 'DMService');
+      diagLog(
+        'dms',
+        isIncremental
+          ? 'Fetching NIP-17 DMs (incremental)'
+          : 'Fetching NIP-17 DMs (seed)',
+        {
+          relayCount: inboxRelays.length,
+          since: isIncremental ? nip17Since : undefined,
+        }
+      );
+      this.systemLogger.info(
+        'DMService',
+        `Fetching NIP-17 DMs from ${inboxRelays.length} inbox relays: ${inboxRelays.slice(0, 3).join(', ')}${inboxRelays.length > 3 ? '...' : ''}`
+      );
+      const nip17Events = await this.transport.fetch(
+        inboxRelays,
+        [nip17Filter],
+        15000,
+        false,
+        'DMService'
+      );
       diagLog('dms', 'NIP-17 fetch complete', { count: nip17Events.length });
-      this.systemLogger.info('DMService', `Fetched ${nip17Events.length} NIP-17 events`);
+      this.systemLogger.info(
+        'DMService',
+        `Fetched ${nip17Events.length} NIP-17 events`
+      );
 
       // Legacy NIP-04 uses READ relays (normal relays, not specialized inbox).
       // Not backdated → small clock-skew margin only when incremental.
       const readRelays = this.relayConfig.getReadRelays();
-      const legacySince = isIncremental ? lastSyncedAt - DMService.DM_LEGACY_SKEW_SECONDS : undefined;
+      const legacySince = isIncremental
+        ? lastSyncedAt - DMService.DM_LEGACY_SKEW_SECONDS
+        : undefined;
 
       const legacyFilters: NDKFilter[] = [
         // Received DMs
@@ -551,34 +647,54 @@ export class DMService {
           kinds: [KIND_LEGACY_DM],
           '#p': [this.userPubkey],
           limit: 500,
-          ...(legacySince !== undefined ? { since: legacySince } : {})
+          ...(legacySince !== undefined ? { since: legacySince } : {}),
         },
         // Sent DMs (our own messages)
         {
           kinds: [KIND_LEGACY_DM],
           authors: [this.userPubkey],
           limit: 500,
-          ...(legacySince !== undefined ? { since: legacySince } : {})
-        }
+          ...(legacySince !== undefined ? { since: legacySince } : {}),
+        },
       ];
 
-      diagLog('dms', 'Fetching legacy NIP-04 DMs', { relayCount: readRelays.length, incremental: isIncremental });
-      this.systemLogger.info('DMService', `Fetching legacy NIP-04 DMs from ${readRelays.length} read relays: ${readRelays.slice(0, 3).join(', ')}${readRelays.length > 3 ? '...' : ''}`);
-      const legacyEvents = await this.transport.fetch(readRelays, legacyFilters, 15000, false, 'DMService');
-      diagLog('dms', 'Legacy NIP-04 fetch complete', { count: legacyEvents.length });
-      this.systemLogger.info('DMService', `Fetched ${legacyEvents.length} legacy DM events`);
+      diagLog('dms', 'Fetching legacy NIP-04 DMs', {
+        relayCount: readRelays.length,
+        incremental: isIncremental,
+      });
+      this.systemLogger.info(
+        'DMService',
+        `Fetching legacy NIP-04 DMs from ${readRelays.length} read relays: ${readRelays.slice(0, 3).join(', ')}${readRelays.length > 3 ? '...' : ''}`
+      );
+      const legacyEvents = await this.transport.fetch(
+        readRelays,
+        legacyFilters,
+        15000,
+        false,
+        'DMService'
+      );
+      diagLog('dms', 'Legacy NIP-04 fetch complete', {
+        count: legacyEvents.length,
+      });
+      this.systemLogger.info(
+        'DMService',
+        `Fetched ${legacyEvents.length} legacy DM events`
+      );
 
       // Set total for progress tracking
       const totalEvents = nip17Events.length + legacyEvents.length;
       this.fetchProgress.total = totalEvents;
 
       // Emit initial progress
-      this.eventBus.emit('dm:fetch-progress', { current: 0, total: totalEvents });
+      this.eventBus.emit('dm:fetch-progress', {
+        current: 0,
+        total: totalEvents,
+      });
 
       // Process all events with unified progress tracking
       const allEvents: Array<{ event: NostrEvent; isNip17: boolean }> = [
         ...nip17Events.map(event => ({ event, isNip17: true })),
-        ...legacyEvents.map(event => ({ event, isNip17: false }))
+        ...legacyEvents.map(event => ({ event, isNip17: false })),
       ];
 
       for (const { event, isNip17 } of allEvents) {
@@ -609,15 +725,21 @@ export class DMService {
           store.set(StorageKeys.DM_BACKWARD_CURSOR, oldest);
         }
       }
-
     } catch (error) {
-      this.systemLogger.error('DMService', 'Failed to fetch historical messages:', error);
+      this.systemLogger.error(
+        'DMService',
+        'Failed to fetch historical messages:',
+        error
+      );
     } finally {
       // Exit batch mode - emit single consolidated event
       this.isFetchingHistorical = false;
 
       // Emit completion
-      this.eventBus.emit('dm:fetch-progress', { current: this.fetchProgress.total, total: this.fetchProgress.total });
+      this.eventBus.emit('dm:fetch-progress', {
+        current: this.fetchProgress.total,
+        total: this.fetchProgress.total,
+      });
       this.eventBus.emit('dm:fetch-complete');
 
       // If any messages were processed, emit a single badge update
@@ -650,7 +772,10 @@ export class DMService {
    * persisted cursor (oldest outer wrap created_at fetched so far). On-demand,
    * so cold-start cost stays bounded. Returns whether the bottom was reached.
    */
-  public async loadOlderMessages(): Promise<{ fetched: number; reachedEnd: boolean }> {
+  public async loadOlderMessages(): Promise<{
+    fetched: number;
+    reachedEnd: boolean;
+  }> {
     if (!this.userPubkey) return { fetched: 0, reachedEnd: true };
 
     const store = PerAccountLocalStorage.getInstance();
@@ -667,21 +792,45 @@ export class DMService {
       const readRelays = this.relayConfig.getReadRelays();
 
       // `until` is inclusive — the boundary event is re-fetched (deduped on write).
-      const nip17Events = await this.transport.fetch(inboxRelays, [{
-        kinds: [KIND_GIFT_WRAP],
-        '#p': [this.userPubkey],
-        until: cursor,
-        limit: PAGE_LIMIT
-      }], 15000, false, 'DMService');
+      const nip17Events = await this.transport.fetch(
+        inboxRelays,
+        [
+          {
+            kinds: [KIND_GIFT_WRAP],
+            '#p': [this.userPubkey],
+            until: cursor,
+            limit: PAGE_LIMIT,
+          },
+        ],
+        15000,
+        false,
+        'DMService'
+      );
 
-      const legacyEvents = await this.transport.fetch(readRelays, [
-        { kinds: [KIND_LEGACY_DM], '#p': [this.userPubkey], until: cursor, limit: PAGE_LIMIT },
-        { kinds: [KIND_LEGACY_DM], authors: [this.userPubkey], until: cursor, limit: PAGE_LIMIT }
-      ], 15000, false, 'DMService');
+      const legacyEvents = await this.transport.fetch(
+        readRelays,
+        [
+          {
+            kinds: [KIND_LEGACY_DM],
+            '#p': [this.userPubkey],
+            until: cursor,
+            limit: PAGE_LIMIT,
+          },
+          {
+            kinds: [KIND_LEGACY_DM],
+            authors: [this.userPubkey],
+            until: cursor,
+            limit: PAGE_LIMIT,
+          },
+        ],
+        15000,
+        false,
+        'DMService'
+      );
 
       const allEvents: Array<{ event: NostrEvent; isNip17: boolean }> = [
         ...nip17Events.map(event => ({ event, isNip17: true })),
-        ...legacyEvents.map(event => ({ event, isNip17: false }))
+        ...legacyEvents.map(event => ({ event, isNip17: false })),
       ];
 
       for (const { event, isNip17 } of allEvents) {
@@ -702,7 +851,11 @@ export class DMService {
         }
       }
 
-      diagLog('dms', 'Loaded older DMs', { nip17: nip17Events.length, legacy: legacyEvents.length, reachedEnd });
+      diagLog('dms', 'Loaded older DMs', {
+        nip17: nip17Events.length,
+        legacy: legacyEvents.length,
+        reachedEnd,
+      });
       return { fetched: allEvents.length, reachedEnd };
     } finally {
       this.isFetchingHistorical = false;
@@ -737,14 +890,14 @@ export class DMService {
       {
         kinds: [KIND_GIFT_WRAP],
         '#p': [this.userPubkey],
-        limit: DMService.LIVE_BACKLOG_LIMIT
+        limit: DMService.LIVE_BACKLOG_LIMIT,
       },
       // Legacy NIP-04 received
       {
         kinds: [KIND_LEGACY_DM],
         '#p': [this.userPubkey],
-        limit: DMService.LIVE_BACKLOG_LIMIT
-      }
+        limit: DMService.LIVE_BACKLOG_LIMIT,
+      },
     ];
 
     this.subscriptionId = 'dm-subscription';
@@ -770,8 +923,14 @@ export class DMService {
       () => this.onLiveBacklogDone()
     );
 
-    diagLog('dms', 'Live subscription active', { relayCount: relays.length, relays: relays.slice(0, 3) });
-    this.systemLogger.info('DMService', `Live subscription active on ${relays.length} relays`);
+    diagLog('dms', 'Live subscription active', {
+      relayCount: relays.length,
+      relays: relays.slice(0, 3),
+    });
+    this.systemLogger.info(
+      'DMService',
+      `Live subscription active on ${relays.length} relays`
+    );
   }
 
   /**
@@ -781,7 +940,7 @@ export class DMService {
     try {
       // Check if already processed
       const wrapId = wrapEvent.id;
-      if (!wrapId || await this.dmStore.hasMessage(wrapId)) {
+      if (!wrapId || (await this.dmStore.hasMessage(wrapId))) {
         return;
       }
 
@@ -794,7 +953,10 @@ export class DMService {
       const now = Math.floor(Date.now() / 1000);
       const wrapExpiration = this.getTagValue(wrapEvent.tags, 'expiration');
       if (wrapExpiration && Number(wrapExpiration) <= now) {
-        diagLog('dms', 'expired_wrap_dropped', { wrapId: wrapId.slice(0, 8), expiredAgo: now - Number(wrapExpiration) });
+        diagLog('dms', 'expired_wrap_dropped', {
+          wrapId: wrapId.slice(0, 8),
+          expiredAgo: now - Number(wrapExpiration),
+        });
         return;
       }
 
@@ -809,12 +971,16 @@ export class DMService {
       const currentUser = this.authService.getCurrentUser();
       if (!currentUser) return;
 
-      const conversationWith = rumor.pubkey === currentUser.pubkey
-        ? this.getRecipientFromTags(rumor.tags) || ''
-        : rumor.pubkey;
+      const conversationWith =
+        rumor.pubkey === currentUser.pubkey
+          ? this.getRecipientFromTags(rumor.tags) || ''
+          : rumor.pubkey;
 
       if (!conversationWith) {
-        this.systemLogger.warn('DMService', 'Could not determine conversation partner');
+        this.systemLogger.warn(
+          'DMService',
+          'Could not determine conversation partner'
+        );
         return;
       }
 
@@ -833,7 +999,10 @@ export class DMService {
       // wrap-level check above: prevents re-saving already-expired messages
       // that arrive via historical fetches or non-NIP-40-honoring relays.
       if (typeof expiresAt === 'number' && expiresAt <= now) {
-        diagLog('dms', 'expired_rumor_dropped', { rumorId: (rumor.id || '').slice(0, 8), expiredAgo: now - expiresAt });
+        diagLog('dms', 'expired_rumor_dropped', {
+          rumorId: (rumor.id || '').slice(0, 8),
+          expiredAgo: now - expiresAt,
+        });
         return;
       }
 
@@ -846,7 +1015,7 @@ export class DMService {
         conversationWith,
         isMine: rumor.pubkey === currentUser.pubkey,
         wrapId,
-        format: 'nip17'
+        format: 'nip17',
       };
       if (replyTo) message.replyTo = replyTo;
       if (subject) message.subject = subject;
@@ -860,8 +1029,10 @@ export class DMService {
       // Own messages (isMine) bypass the gate.
       if (typeof expiresAt === 'number' && !message.isMine) {
         const peerDuration = expiresAt - rumor.created_at;
-        const acceptedDuration = await this.dmStore.getDisappearing(conversationWith);
-        const lastPrompted = await this.dmStore.getLastPromptedPeerDuration(conversationWith);
+        const acceptedDuration =
+          await this.dmStore.getDisappearing(conversationWith);
+        const lastPrompted =
+          await this.dmStore.getLastPromptedPeerDuration(conversationWith);
         // Already accepted this exact duration → store normally, no prompt.
         if (acceptedDuration === peerDuration) {
           // ok, fall through
@@ -881,16 +1052,30 @@ export class DMService {
       // If the peer sent a message with a duration we haven't yet accepted
       // AND haven't yet been prompted about, fire a request event so the
       // open ConversationView can show the banner.
-      if (typeof expiresAt === 'number' && message.pubkey !== currentUser.pubkey) {
+      if (
+        typeof expiresAt === 'number' &&
+        message.pubkey !== currentUser.pubkey
+      ) {
         const peerDuration = expiresAt - rumor.created_at;
-        const acceptedDuration = await this.dmStore.getDisappearing(conversationWith);
-        const lastPrompted = await this.dmStore.getLastPromptedPeerDuration(conversationWith);
-        if (acceptedDuration !== peerDuration && lastPrompted !== peerDuration) {
-          this.eventBus.emit('dm:disappearing-request', { partnerPubkey: conversationWith });
+        const acceptedDuration =
+          await this.dmStore.getDisappearing(conversationWith);
+        const lastPrompted =
+          await this.dmStore.getLastPromptedPeerDuration(conversationWith);
+        if (
+          acceptedDuration !== peerDuration &&
+          lastPrompted !== peerDuration
+        ) {
+          this.eventBus.emit('dm:disappearing-request', {
+            partnerPubkey: conversationWith,
+          });
         }
       }
     } catch (error) {
-      this.systemLogger.error('DMService', 'Error processing gift wrap:', error);
+      this.systemLogger.error(
+        'DMService',
+        'Error processing gift wrap:',
+        error
+      );
     }
   }
 
@@ -901,7 +1086,7 @@ export class DMService {
     try {
       // Check if already processed
       const eventId = event.id;
-      if (!eventId || await this.dmStore.hasMessage(eventId)) {
+      if (!eventId || (await this.dmStore.hasMessage(eventId))) {
         return;
       }
 
@@ -927,13 +1112,21 @@ export class DMService {
         // For received messages, decrypt with sender's pubkey
         // For sent messages, decrypt with recipient's pubkey
         const decryptPubkey = isMine ? recipientPubkey : event.pubkey;
-        decryptedContent = await this.authService.nip04Decrypt(event.content, decryptPubkey);
+        decryptedContent = await this.authService.nip04Decrypt(
+          event.content,
+          decryptPubkey
+        );
       } catch (decryptError) {
         // Decryption failed - could be corrupted or not meant for us
-        diagLog('dms', 'Legacy DM decrypt failed', { eventId: eventId.slice(0, 8) });
+        diagLog('dms', 'Legacy DM decrypt failed', {
+          eventId: eventId.slice(0, 8),
+        });
         // Only log during live subscription, not during batch fetch
         if (!this.isFetchingHistorical) {
-          this.systemLogger.warn('DMService', `Failed to decrypt legacy DM ${eventId.slice(0, 8)}`);
+          this.systemLogger.warn(
+            'DMService',
+            `Failed to decrypt legacy DM ${eventId.slice(0, 8)}`
+          );
         }
         return;
       }
@@ -947,12 +1140,16 @@ export class DMService {
         conversationWith,
         isMine,
         wrapId: eventId, // Use event ID as wrapId for dedup
-        format: 'legacy'
+        format: 'legacy',
       };
 
       await this.storeAndEmit(message, conversationWith);
     } catch (error) {
-      this.systemLogger.error('DMService', 'Error processing legacy DM:', error);
+      this.systemLogger.error(
+        'DMService',
+        'Error processing legacy DM:',
+        error
+      );
     }
   }
 
@@ -960,7 +1157,10 @@ export class DMService {
    * Store a message and emit appropriate events.
    * Batches events during historical fetch, emits immediately for live messages.
    */
-  private async storeAndEmit(message: DMMessage, conversationWith: string): Promise<void> {
+  private async storeAndEmit(
+    message: DMMessage,
+    conversationWith: string
+  ): Promise<void> {
     await this.dmStore.saveMessage(message);
 
     // Only emit the live notification for genuinely-live arrivals: not during
@@ -973,7 +1173,9 @@ export class DMService {
       this.pendingBadgeUpdate = true;
     } else {
       if (!message.isMine) {
-        diagLog('dms', 'DM live notification emitted', { createdAt: message.createdAt });
+        diagLog('dms', 'DM live notification emitted', {
+          createdAt: message.createdAt,
+        });
       }
       this.eventBus.emit('dm:new-message', { message, conversationWith });
       this.eventBus.emit('dm:badge-update');
@@ -984,11 +1186,16 @@ export class DMService {
    * Unwrap a gift-wrapped event to get the rumor
    * Uses AuthService for decryption (works with all signer types)
    */
-  private async unwrapGiftWrap(wrapEvent: NostrEvent): Promise<NostrEvent | null> {
+  private async unwrapGiftWrap(
+    wrapEvent: NostrEvent
+  ): Promise<NostrEvent | null> {
     try {
       // Step 1: Decrypt gift wrap content to get seal (kind:13)
       // The wrapper is signed by ephemeral key, content encrypted to recipient
-      const sealJson = await this.authService.nip44Decrypt(wrapEvent.content, wrapEvent.pubkey);
+      const sealJson = await this.authService.nip44Decrypt(
+        wrapEvent.content,
+        wrapEvent.pubkey
+      );
 
       if (!sealJson) {
         return null;
@@ -998,13 +1205,19 @@ export class DMService {
 
       // Verify seal is kind:13
       if (seal.kind !== KIND_SEAL) {
-        diagLog('dms', 'Unexpected seal kind', { expected: KIND_SEAL, got: seal.kind });
+        diagLog('dms', 'Unexpected seal kind', {
+          expected: KIND_SEAL,
+          got: seal.kind,
+        });
         return null;
       }
 
       // Step 2: Decrypt seal content to get rumor (kind:14)
       // The seal is signed by the actual sender
-      const rumorJson = await this.authService.nip44Decrypt(seal.content, seal.pubkey);
+      const rumorJson = await this.authService.nip44Decrypt(
+        seal.content,
+        seal.pubkey
+      );
 
       if (!rumorJson) {
         return null;
@@ -1019,14 +1232,22 @@ export class DMService {
 
       // Anti-spoofing: verify rumor.pubkey === seal.pubkey
       if (rumor.pubkey !== seal.pubkey) {
-        diagLog('dms', 'Spoofing detected: rumor.pubkey !== seal.pubkey', { rumor: rumor.pubkey.slice(0, 8), seal: seal.pubkey.slice(0, 8) });
-        this.systemLogger.warn('DMService', 'Spoofing detected: rumor.pubkey !== seal.pubkey');
+        diagLog('dms', 'Spoofing detected: rumor.pubkey !== seal.pubkey', {
+          rumor: rumor.pubkey.slice(0, 8),
+          seal: seal.pubkey.slice(0, 8),
+        });
+        this.systemLogger.warn(
+          'DMService',
+          'Spoofing detected: rumor.pubkey !== seal.pubkey'
+        );
         return null;
       }
 
       return rumor;
     } catch (error) {
-      diagLog('dms', 'Gift wrap unwrap failed', { error: error instanceof Error ? error.message : String(error) });
+      diagLog('dms', 'Gift wrap unwrap failed', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       return null;
     }
   }
@@ -1034,7 +1255,11 @@ export class DMService {
   /**
    * Send a DM to a recipient
    */
-  public async sendMessage(recipientPubkey: string, content: string, replyTo?: string): Promise<boolean> {
+  public async sendMessage(
+    recipientPubkey: string,
+    content: string,
+    replyTo?: string
+  ): Promise<boolean> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
       this.systemLogger.error('DMService', 'Cannot send - no user logged in');
@@ -1043,13 +1268,17 @@ export class DMService {
 
     try {
       diagLog('dms', 'Sending DM', { to: recipientPubkey.slice(0, 8) });
-      this.systemLogger.info('DMService', `Sending DM to ${recipientPubkey.slice(0, 8)}...`);
+      this.systemLogger.info(
+        'DMService',
+        `Sending DM to ${recipientPubkey.slice(0, 8)}...`
+      );
 
       // Look up the per-conversation disappearing setting. If active (>0) the
       // outgoing rumor gets an `expiration` tag and the wrap event too — see
       // createGiftWrap. The tag value is the absolute unix timestamp at which
       // the message should expire (NIP-40), computed from the real send time.
-      const disappearingSeconds = await this.dmStore.getDisappearing(recipientPubkey);
+      const disappearingSeconds =
+        await this.dmStore.getDisappearing(recipientPubkey);
       const useDisappearing = isActive(disappearingSeconds);
 
       // Step 1: Create rumor (kind:14, UNSIGNED but with calculated id)
@@ -1071,7 +1300,7 @@ export class DMService {
         pubkey: currentUser.pubkey,
         created_at: now,
         content,
-        tags
+        tags,
       };
 
       // Calculate id for rumor (NIP-17 requires id but no signature)
@@ -1079,7 +1308,7 @@ export class DMService {
       const rumor: NostrEvent = {
         ...rumorBase,
         id: rumorId,
-        sig: '' // No signature for rumor
+        sig: '', // No signature for rumor
       };
 
       // Step 2-4: Build both gift wraps + fetch recipient's inbox relays in parallel.
@@ -1088,7 +1317,9 @@ export class DMService {
       const myRelays = this.getMyInboxRelays();
       const [recipientWrap, selfWrap, recipientRelays] = await Promise.all([
         this.createGiftWrap(rumor, recipientPubkey, expiresAt),
-        this.createGiftWrap(rumor, currentUser.pubkey, expiresAt).catch(() => null),
+        this.createGiftWrap(rumor, currentUser.pubkey, expiresAt).catch(
+          () => null
+        ),
         this.getUserInboxRelays(recipientPubkey),
       ]);
 
@@ -1103,23 +1334,35 @@ export class DMService {
       // relays continue in the background — full redundancy preserved.
       const publishResults = await Promise.allSettled([
         this.transport.publishToInbox(recipientWrap, recipientRelays, 1),
-        selfWrap ? this.transport.publishToInbox(selfWrap, myRelays, 1) : Promise.resolve(),
+        selfWrap
+          ? this.transport.publishToInbox(selfWrap, myRelays, 1)
+          : Promise.resolve(),
       ]);
 
       if (publishResults[0].status === 'rejected') {
         // Purge cached relays — recipient may have changed their kind:10050.
         // Next send attempt re-fetches and may succeed.
         this.invalidateInboxRelayCache(recipientPubkey);
-        throw new Error(`Recipient publish failed: ${publishResults[0].reason}`);
+        throw new Error(
+          `Recipient publish failed: ${publishResults[0].reason}`
+        );
       }
 
-      diagLog('dms', 'DM published to recipient', { relayCount: recipientRelays.length });
-      this.systemLogger.info('DMService', `Sent to recipient on ${recipientRelays.length} relays`);
+      diagLog('dms', 'DM published to recipient', {
+        relayCount: recipientRelays.length,
+      });
+      this.systemLogger.info(
+        'DMService',
+        `Sent to recipient on ${recipientRelays.length} relays`
+      );
 
       if (selfWrap && publishResults[1].status === 'fulfilled') {
         this.systemLogger.info('DMService', 'Self-copy published');
       } else if (selfWrap && publishResults[1].status === 'rejected') {
-        this.systemLogger.warn('DMService', `Self-copy publish failed: ${publishResults[1].reason} (recipient delivery OK)`);
+        this.systemLogger.warn(
+          'DMService',
+          `Self-copy publish failed: ${publishResults[1].reason} (recipient delivery OK)`
+        );
       }
 
       // Step 6: Store message locally with selfWrap.id as wrapId
@@ -1137,7 +1380,7 @@ export class DMService {
         conversationWith: recipientPubkey,
         isMine: true,
         wrapId,
-        format: 'nip17' // We always send NIP-17
+        format: 'nip17', // We always send NIP-17
       };
       if (replyTo) message.replyTo = replyTo;
       if (typeof expiresAt === 'number') message.expiresAt = expiresAt;
@@ -1145,11 +1388,17 @@ export class DMService {
       await this.dmStore.saveMessage(message);
 
       // Emit dm:new-message so ConversationView updates
-      this.eventBus.emit('dm:new-message', { message, conversationWith: recipientPubkey });
+      this.eventBus.emit('dm:new-message', {
+        message,
+        conversationWith: recipientPubkey,
+      });
 
       return true;
     } catch (error) {
-      diagLog('dms', 'Send message failed', { to: recipientPubkey.slice(0, 8), error: String(error) });
+      diagLog('dms', 'Send message failed', {
+        to: recipientPubkey.slice(0, 8),
+        error: String(error),
+      });
       this.systemLogger.error('DMService', 'Failed to send message:', error);
       return false;
     }
@@ -1179,15 +1428,20 @@ export class DMService {
     try {
       // Step 1: Create seal (encrypt rumor, sign with sender's key)
       const rumorJson = JSON.stringify(rumor);
-      const encryptedRumor = await this.authService.nip44Encrypt(rumorJson, recipientPubkey);
+      const encryptedRumor = await this.authService.nip44Encrypt(
+        rumorJson,
+        recipientPubkey
+      );
 
-      const sealTimestamp = this.randomizeTimestamp(Math.floor(Date.now() / 1000));
+      const sealTimestamp = this.randomizeTimestamp(
+        Math.floor(Date.now() / 1000)
+      );
       const unsignedSeal = {
         kind: KIND_SEAL,
         pubkey: currentUser.pubkey,
         created_at: sealTimestamp,
         content: encryptedRumor,
-        tags: [] as string[][] // MUST be empty per NIP-17
+        tags: [] as string[][], // MUST be empty per NIP-17
       };
 
       const signedSeal = await this.authService.signEvent(unsignedSeal);
@@ -1208,9 +1462,15 @@ export class DMService {
       const recipientUser = ndk.getUser({ pubkey: recipientPubkey });
 
       // Encrypt seal with ephemeral key -> recipient
-      const encryptedSeal = await ephemeralSigner.encrypt(recipientUser, sealJson, 'nip44');
+      const encryptedSeal = await ephemeralSigner.encrypt(
+        recipientUser,
+        sealJson,
+        'nip44'
+      );
 
-      const wrapTimestamp = this.randomizeTimestamp(Math.floor(Date.now() / 1000));
+      const wrapTimestamp = this.randomizeTimestamp(
+        Math.floor(Date.now() / 1000)
+      );
       const wrapTags: string[][] = [['p', recipientPubkey]];
       if (typeof expiresAt === 'number') {
         wrapTags.push(['expiration', String(expiresAt)]);
@@ -1220,7 +1480,7 @@ export class DMService {
         pubkey: ephemeralPubkey,
         created_at: wrapTimestamp,
         content: encryptedSeal,
-        tags: wrapTags
+        tags: wrapTags,
       };
 
       // Sign with ephemeral key
@@ -1231,7 +1491,10 @@ export class DMService {
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       diagLog('dms', 'Gift wrap creation failed', { error: errorMsg });
-      this.systemLogger.error('DMService', `Failed to create gift wrap: ${errorMsg}`);
+      this.systemLogger.error(
+        'DMService',
+        `Failed to create gift wrap: ${errorMsg}`
+      );
       return null;
     }
   }
@@ -1259,10 +1522,12 @@ export class DMService {
   private getMyInboxRelays(): string[] {
     const inbox = this.relayConfig.getInboxRelays();
     const readRelays = this.relayConfig.getReadRelays();
-    const combined = [...new Set([
-      ...(inbox.length > 0 ? inbox : this.FALLBACK_INBOX_RELAYS),
-      ...readRelays
-    ])];
+    const combined = [
+      ...new Set([
+        ...(inbox.length > 0 ? inbox : this.FALLBACK_INBOX_RELAYS),
+        ...readRelays,
+      ]),
+    ];
     return combined;
   }
 
@@ -1289,24 +1554,42 @@ export class DMService {
       // write relays (outbound). kind:10050 is replaceable metadata and SHOULD
       // be on metadata aggregators (purplepag.es) and the user's own outbox —
       // querying only our read relays misses recipients who don't overlap.
-      const { OutboundRelaysOrchestrator } = await import('../orchestration/OutboundRelaysOrchestrator');
-      const relays = await OutboundRelaysOrchestrator.getInstance().getCombinedRelays([pubkey], true);
+      const { OutboundRelaysOrchestrator } = await import(
+        '../orchestration/OutboundRelaysOrchestrator'
+      );
+      const relays =
+        await OutboundRelaysOrchestrator.getInstance().getCombinedRelays(
+          [pubkey],
+          true
+        );
       const filter: NDKFilter = {
         kinds: [KIND_DM_RELAY_LIST],
         authors: [pubkey],
-        limit: 1
+        limit: 1,
       };
 
-      const events = await this.transport.fetch(relays, [filter], 5000, false, 'DMService');
+      const events = await this.transport.fetch(
+        relays,
+        [filter],
+        5000,
+        false,
+        'DMService'
+      );
 
       const event = events[0];
       if (event) {
         const dmRelays = event.tags
-          .filter((t): t is [string, string, ...string[]] => t[0] === 'relay' && typeof t[1] === 'string')
+          .filter(
+            (t): t is [string, string, ...string[]] =>
+              t[0] === 'relay' && typeof t[1] === 'string'
+          )
           .map(t => t[1]);
 
         if (dmRelays.length > 0) {
-          this.systemLogger.info('DMService', `Found kind:10050 for ${pubkey.slice(0, 8)} with ${dmRelays.length} DM relays`);
+          this.systemLogger.info(
+            'DMService',
+            `Found kind:10050 for ${pubkey.slice(0, 8)} with ${dmRelays.length} DM relays`
+          );
           const aggregators = this.relayConfig.getAggregatorRelays();
           const merged = [...new Set([...dmRelays, ...aggregators])];
 
@@ -1322,19 +1605,26 @@ export class DMService {
       // (so a later publish by the user is picked up on next send).
       return this.relayConfig.getAggregatorRelays();
     } catch {
-      this.systemLogger.warn('DMService', `Failed to fetch inbox relays for ${pubkey.slice(0, 8)}`);
+      this.systemLogger.warn(
+        'DMService',
+        `Failed to fetch inbox relays for ${pubkey.slice(0, 8)}`
+      );
       return this.relayConfig.getAggregatorRelays();
     }
   }
 
   private getInboxRelayCache(): InboxRelayCache {
     return PerAccountLocalStorage.getInstance().get<InboxRelayCache>(
-      StorageKeys.DM_INBOX_RELAYS_CACHE, {}
+      StorageKeys.DM_INBOX_RELAYS_CACHE,
+      {}
     );
   }
 
   private setInboxRelayCache(cache: InboxRelayCache): void {
-    PerAccountLocalStorage.getInstance().set(StorageKeys.DM_INBOX_RELAYS_CACHE, cache);
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.DM_INBOX_RELAYS_CACHE,
+      cache
+    );
   }
 
   /**
@@ -1346,7 +1636,9 @@ export class DMService {
     if (cache[pubkey]) {
       delete cache[pubkey];
       this.setInboxRelayCache(cache);
-      diagLog('dms', 'Inbox relay cache invalidated', { pubkey: pubkey.slice(0, 8) });
+      diagLog('dms', 'Inbox relay cache invalidated', {
+        pubkey: pubkey.slice(0, 8),
+      });
     }
   }
 
@@ -1370,7 +1662,11 @@ export class DMService {
   /**
    * Get tag value by name and optional marker
    */
-  private getTagValue(tags: string[][], name: string, marker?: string): string | undefined {
+  private getTagValue(
+    tags: string[][],
+    name: string,
+    marker?: string
+  ): string | undefined {
     for (const tag of tags) {
       if (tag[0] === name) {
         if (marker) {
@@ -1415,7 +1711,11 @@ export class DMService {
   /**
    * Get messages for a conversation
    */
-  public async getMessages(partnerPubkey: string, limit?: number, before?: number) {
+  public async getMessages(
+    partnerPubkey: string,
+    limit?: number,
+    before?: number
+  ) {
     return this.dmStore.getMessages(partnerPubkey, limit, before);
   }
 
@@ -1452,7 +1752,9 @@ export class DMService {
    *   0         → off
    *   >0        → seconds (active)
    */
-  public async getDisappearing(partnerPubkey: string): Promise<number | undefined> {
+  public async getDisappearing(
+    partnerPubkey: string
+  ): Promise<number | undefined> {
     return this.dmStore.getDisappearing(partnerPubkey);
   }
 
@@ -1462,14 +1764,22 @@ export class DMService {
    * preset duration in seconds. Setting this does NOT retroactively delete
    * or tag existing messages — it only applies to future outgoing messages.
    */
-  public async setDisappearing(partnerPubkey: string, seconds: number | undefined): Promise<void> {
+  public async setDisappearing(
+    partnerPubkey: string,
+    seconds: number | undefined
+  ): Promise<void> {
     await this.dmStore.setDisappearing(partnerPubkey, seconds);
     this.eventBus.emit('dm:disappearing-changed', { partnerPubkey, seconds });
-    diagLog('dms', 'disappearing_setting_changed', { partner: partnerPubkey.slice(0, 8), seconds });
+    diagLog('dms', 'disappearing_setting_changed', {
+      partner: partnerPubkey.slice(0, 8),
+      seconds,
+    });
   }
 
   /** Read the peer duration we last prompted about (Yes or No). */
-  public async getLastPromptedPeerDuration(partnerPubkey: string): Promise<number | undefined> {
+  public async getLastPromptedPeerDuration(
+    partnerPubkey: string
+  ): Promise<number | undefined> {
     return this.dmStore.getLastPromptedPeerDuration(partnerPubkey);
   }
 
@@ -1479,7 +1789,10 @@ export class DMService {
    * keeps our outgoing setting untouched but silences future prompts for
    * this duration.
    */
-  public async setLastPromptedPeerDuration(partnerPubkey: string, seconds: number): Promise<void> {
+  public async setLastPromptedPeerDuration(
+    partnerPubkey: string,
+    seconds: number
+  ): Promise<void> {
     await this.dmStore.setLastPromptedPeerDuration(partnerPubkey, seconds);
   }
 
@@ -1488,10 +1801,19 @@ export class DMService {
    * Called from the No handler — recipient explicitly rejected this
    * duration, so all un-accepted messages with it are dropped locally.
    */
-  public async deletePendingMessagesByDuration(partnerPubkey: string, duration: number): Promise<number> {
-    const deleted = await this.dmStore.deletePendingMessagesByDuration(partnerPubkey, duration);
+  public async deletePendingMessagesByDuration(
+    partnerPubkey: string,
+    duration: number
+  ): Promise<number> {
+    const deleted = await this.dmStore.deletePendingMessagesByDuration(
+      partnerPubkey,
+      duration
+    );
     if (deleted > 0) {
-      this.eventBus.emit('dm:messages-expired', { partnerPubkey, count: deleted });
+      this.eventBus.emit('dm:messages-expired', {
+        partnerPubkey,
+        count: deleted,
+      });
     }
     return deleted;
   }
@@ -1521,7 +1843,11 @@ export class DMService {
    * Get unread counts split by known (followed) and unknown users
    * Excludes muted users from counts
    */
-  public async getUnreadCountsSplit(): Promise<{ known: number; unknown: number; total: number }> {
+  public async getUnreadCountsSplit(): Promise<{
+    known: number;
+    unknown: number;
+    total: number;
+  }> {
     await this.followCheckService.init();
     await this.loadMutedPubkeys();
 
@@ -1568,12 +1894,16 @@ export class DMService {
     if (filter === 'all') {
       filtered = allConversations.filter(c => !this.isMutedSync(c.pubkey));
     } else if (filter === 'known') {
-      filtered = allConversations.filter(c =>
-        !this.isMutedSync(c.pubkey) && this.followCheckService.isFollowingSync(c.pubkey)
+      filtered = allConversations.filter(
+        c =>
+          !this.isMutedSync(c.pubkey) &&
+          this.followCheckService.isFollowingSync(c.pubkey)
       );
     } else {
-      filtered = allConversations.filter(c =>
-        !this.isMutedSync(c.pubkey) && !this.followCheckService.isFollowingSync(c.pubkey)
+      filtered = allConversations.filter(
+        c =>
+          !this.isMutedSync(c.pubkey) &&
+          !this.followCheckService.isFollowingSync(c.pubkey)
       );
     }
 
@@ -1625,7 +1955,11 @@ export class DMService {
 
       this.mutedPubkeysLoaded = true;
     } catch (error) {
-      this.systemLogger.error('DMService', 'Failed to load muted pubkeys:', error);
+      this.systemLogger.error(
+        'DMService',
+        'Failed to load muted pubkeys:',
+        error
+      );
     }
   }
 

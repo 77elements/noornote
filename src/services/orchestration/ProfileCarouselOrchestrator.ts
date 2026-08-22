@@ -36,7 +36,10 @@ export class ProfileCarouselOrchestrator extends Orchestrator {
 
   /** Cache TTL: 2 minutes (a profile's showcase content changes rarely) */
   private readonly CACHE_TTL = 2 * 60 * 1000;
-  private cache = new LRUCache<ProfileCarouselContent>(getCacheSize(20, 15, 10), this.CACHE_TTL);
+  private cache = new LRUCache<ProfileCarouselContent>(
+    getCacheSize(20, 15, 10),
+    this.CACHE_TTL
+  );
   private inFlight = new Map<string, Promise<ProfileCarouselContent>>();
 
   private constructor() {
@@ -59,7 +62,9 @@ export class ProfileCarouselOrchestrator extends Orchestrator {
    * profile. Keyed by pubkey alone (own-vs-foreign is derived here), so all
    * carousels of the same profile hit the same cache entry.
    */
-  public async fetchProfileContent(pubkey: string): Promise<ProfileCarouselContent> {
+  public async fetchProfileContent(
+    pubkey: string
+  ): Promise<ProfileCarouselContent> {
     const cached = this.cache.get(pubkey);
     if (cached) return cached;
 
@@ -102,9 +107,14 @@ export class ProfileCarouselOrchestrator extends Orchestrator {
     // lives on their write relays still surfaces. Falls back to base relays.
     let relays = baseRelays;
     try {
-      const outbound = await this.relayDiscovery.getCombinedRelays([pubkey], true);
+      const outbound = await this.relayDiscovery.getCombinedRelays(
+        [pubkey],
+        true
+      );
       relays = [...new Set([...baseRelays, ...outbound])];
-    } catch { /* base relays only */ }
+    } catch {
+      /* base relays only */
+    }
 
     const includeDrafts = AuthService.getInstance().isCurrentUser(pubkey);
     const articleKinds = includeDrafts ? [30023, 30024] : [30023];
@@ -116,7 +126,12 @@ export class ProfileCarouselOrchestrator extends Orchestrator {
       { kinds: [5], authors: [pubkey], limit: 100 },
     ];
 
-    const content: ProfileCarouselContent = { articles: [], videos: [], listings: [], deletions: [] };
+    const content: ProfileCarouselContent = {
+      articles: [],
+      videos: [],
+      listings: [],
+      deletions: [],
+    };
 
     // Use fetchDirect (raw WS, no NDK cache/outbox layer). NDK's fetchEvents
     // pollutes/over-dedupes single-author addressable feeds and was silently
@@ -124,7 +139,13 @@ export class ProfileCarouselOrchestrator extends Orchestrator {
     // (same reason ProfileView itself uses fetchDirect for the profile timeline).
     let events: NostrEvent[];
     try {
-      events = await this.transport.fetchDirect(relays, filters, 8000, 'ProfileCarousel', /* waitForAll */ true);
+      events = await this.transport.fetchDirect(
+        relays,
+        filters,
+        8000,
+        'ProfileCarousel',
+        /* waitForAll */ true
+      );
     } catch {
       return content;
     }
@@ -132,11 +153,19 @@ export class ProfileCarouselOrchestrator extends Orchestrator {
     for (const ev of events) {
       switch (ev.kind) {
         case 30023:
-        case 30024: content.articles.push(ev); break;
+        case 30024:
+          content.articles.push(ev);
+          break;
         case 21:
-        case 22: content.videos.push(ev); break;
-        case 30402: content.listings.push(ev); break;
-        case 5: content.deletions.push(ev); break;
+        case 22:
+          content.videos.push(ev);
+          break;
+        case 30402:
+          content.listings.push(ev);
+          break;
+        case 5:
+          content.deletions.push(ev);
+          break;
       }
     }
 
@@ -152,11 +181,21 @@ export class ProfileCarouselOrchestrator extends Orchestrator {
   }
 
   // Fetch-only orchestrator — no live subscription handlers needed.
-  public onui(_data: any): void { /* unused */ }
-  public onopen(_relay: string): void { /* unused */ }
-  public onmessage(_relay: string, _event: NostrEvent): void { /* unused */ }
-  public onerror(_relay: string, _error: Error): void { /* unused */ }
-  public onclose(_relay: string): void { /* unused */ }
+  public onui(_data: any): void {
+    /* unused */
+  }
+  public onopen(_relay: string): void {
+    /* unused */
+  }
+  public onmessage(_relay: string, _event: NostrEvent): void {
+    /* unused */
+  }
+  public onerror(_relay: string, _error: Error): void {
+    /* unused */
+  }
+  public onclose(_relay: string): void {
+    /* unused */
+  }
 
   public override destroy(): void {
     this.cache.clear();

@@ -23,11 +23,15 @@ import { Router } from '../../../services/Router';
 
 export class LiveStreamRenderer {
   static render(note: ProcessedNote, opts: NoteUIOptions): HTMLElement {
-    const { element } = NoteStructureBuilder.build(note, {
-      cssClass: 'note-card--live-stream',
-      footerLabel: '',
-      renderQuotedNotes: false
-    }, opts);
+    const { element } = NoteStructureBuilder.build(
+      note,
+      {
+        cssClass: 'note-card--live-stream',
+        footerLabel: '',
+        renderQuotedNotes: false,
+      },
+      opts
+    );
 
     const host = element.querySelector('.event-content');
     if (!host) return element;
@@ -64,7 +68,7 @@ export class LiveStreamRenderer {
     `;
     const link = card.querySelector('.live-stream-card__hint-link');
     if (link) {
-      link.addEventListener('click', (e) => {
+      link.addEventListener('click', e => {
         e.preventDefault();
         e.stopPropagation();
         Router.getInstance().navigate('/addons/live-streams-player');

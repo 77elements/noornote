@@ -50,7 +50,7 @@ export interface DetailedStats {
 }
 
 export interface LiveReactionsOptions {
-  interval?: number;  // Polling interval in ms (default: 30000 = 30s)
+  interval?: number; // Polling interval in ms (default: 30000 = 30s)
 }
 
 export class ReactionsOrchestrator extends Orchestrator {
@@ -60,7 +60,8 @@ export class ReactionsOrchestrator extends Orchestrator {
 
   /** Single source of truth: Detailed stats cache (5min TTL, max 200 entries) */
   private detailedStatsCache: Map<string, DetailedStats> = new Map();
-  private fetchingDetailedStats: Map<string, Promise<DetailedStats>> = new Map();
+  private fetchingDetailedStats: Map<string, Promise<DetailedStats>> =
+    new Map();
 
   private cacheDuration = 5 * 60 * 1000; // 5 minutes
   private readonly MAX_STATS_CACHE_SIZE = 200;
@@ -91,10 +92,16 @@ export class ReactionsOrchestrator extends Orchestrator {
     super('ReactionsOrchestrator');
     this.transport = NostrTransport.getInstance();
     this.systemLogger = SystemLogger.getInstance();
-    this.systemLogger.info('ReactionsOrchestrator', 'Reactions Orchestrator at your service');
+    this.systemLogger.info(
+      'ReactionsOrchestrator',
+      'Reactions Orchestrator at your service'
+    );
 
     // Start periodic eviction sweep
-    this.evictionTimer = window.setInterval(() => this.evictExpiredEntries(), ReactionsOrchestrator.EVICTION_INTERVAL);
+    this.evictionTimer = window.setInterval(
+      () => this.evictExpiredEntries(),
+      ReactionsOrchestrator.EVICTION_INTERVAL
+    );
   }
 
   public static getInstance(): ReactionsOrchestrator {
@@ -119,8 +126,9 @@ export class ReactionsOrchestrator extends Orchestrator {
 
     // Enforce max size on detailedStatsCache (evict oldest)
     if (this.detailedStatsCache.size > this.MAX_STATS_CACHE_SIZE) {
-      const entries = [...this.detailedStatsCache.entries()]
-        .sort((a, b) => a[1].lastUpdated - b[1].lastUpdated);
+      const entries = [...this.detailedStatsCache.entries()].sort(
+        (a, b) => a[1].lastUpdated - b[1].lastUpdated
+      );
       const toRemove = entries.length - this.MAX_STATS_CACHE_SIZE;
       for (let i = 0; i < toRemove; i++) {
         this.detailedStatsCache.delete(entries[i]![0]);
@@ -164,7 +172,11 @@ export class ReactionsOrchestrator extends Orchestrator {
    * IMPLEMENTATION: Fetches DetailedStats and extracts counts
    * Single source of truth - no duplicate fetch logic
    */
-  public async getStats(noteId: string, authorPubkey?: string, eventId?: string): Promise<InteractionStats> {
+  public async getStats(
+    noteId: string,
+    authorPubkey?: string,
+    eventId?: string
+  ): Promise<InteractionStats> {
     // Validate noteId early - skip synthetic IDs
     if (!this.isValidNoteId(noteId)) {
       return {
@@ -173,7 +185,7 @@ export class ReactionsOrchestrator extends Orchestrator {
         quotedReposts: 0,
         likes: 0,
         zaps: 0,
-        lastUpdated: Date.now()
+        lastUpdated: Date.now(),
       };
     }
 
@@ -197,7 +209,7 @@ export class ReactionsOrchestrator extends Orchestrator {
       quotedReposts: detailedStats.quotedEvents.length,
       likes: detailedStats.reactionEvents.length,
       zaps: this.calculateTotalZaps(detailedStats.zapEvents),
-      lastUpdated: detailedStats.lastUpdated
+      lastUpdated: detailedStats.lastUpdated,
     };
   }
 
@@ -209,14 +221,17 @@ export class ReactionsOrchestrator extends Orchestrator {
   public getCachedStats(noteId: string): InteractionStats | null {
     const cached = this.detailedStatsCache.get(noteId);
     if (cached && Date.now() - cached.lastUpdated < this.cacheDuration) {
-      this.systemLogger.info('ReactionsOrch', '💾 ISL stats loaded from Single Note View');
+      this.systemLogger.info(
+        'ReactionsOrch',
+        '💾 ISL stats loaded from Single Note View'
+      );
       return {
         replies: countVisibleReplies(cached.replyEvents),
         reposts: cached.repostEvents.length,
         quotedReposts: cached.quotedEvents.length,
         likes: cached.reactionEvents.length,
         zaps: this.calculateTotalZaps(cached.zapEvents),
-        lastUpdated: cached.lastUpdated
+        lastUpdated: cached.lastUpdated,
       };
     }
     return null;
@@ -228,7 +243,10 @@ export class ReactionsOrchestrator extends Orchestrator {
    * @param noteId - The note ID (addressable identifier or event ID)
    * @param eventId - Optional event ID for long-form articles (to search both #a and #e)
    */
-  public async getDetailedStats(noteId: string, eventId?: string): Promise<DetailedStats> {
+  public async getDetailedStats(
+    noteId: string,
+    eventId?: string
+  ): Promise<DetailedStats> {
     // Validate noteId - must be 64-char hex OR naddr (long-form)
     // Skip synthetic IDs like "mutual-mutual_unfollow-..."
     if (!this.isValidNoteId(noteId)) {
@@ -238,7 +256,7 @@ export class ReactionsOrchestrator extends Orchestrator {
         quotedEvents: [],
         reactionEvents: [],
         zapEvents: [],
-        lastUpdated: Date.now()
+        lastUpdated: Date.now(),
       };
     }
 
@@ -250,7 +268,10 @@ export class ReactionsOrchestrator extends Orchestrator {
     // Check cache first
     const cached = this.detailedStatsCache.get(noteId);
     if (cached && Date.now() - cached.lastUpdated < this.cacheDuration) {
-      this.systemLogger.info('ReactionsOrch', '💾 Detailed stats loaded from cache');
+      this.systemLogger.info(
+        'ReactionsOrch',
+        '💾 Detailed stats loaded from cache'
+      );
       return cached;
     }
 
@@ -262,11 +283,14 @@ export class ReactionsOrchestrator extends Orchestrator {
 
     // For long-form articles: get cached eventId if not provided
     const articleEventId = this.isLongFormArticle(noteId)
-      ? (eventId || this.articleEventIdCache.get(noteId))
+      ? eventId || this.articleEventIdCache.get(noteId)
       : undefined;
 
     // Start new fetch
-    const fetchPromise = this.fetchDetailedStatsFromRelays(noteId, articleEventId);
+    const fetchPromise = this.fetchDetailedStatsFromRelays(
+      noteId,
+      articleEventId
+    );
     this.fetchingDetailedStats.set(noteId, fetchPromise);
 
     try {
@@ -301,7 +325,10 @@ export class ReactionsOrchestrator extends Orchestrator {
    * @param noteId - The note ID (addressable identifier or event ID)
    * @param articleEventId - For long-form articles only: event ID to search both #a and #e
    */
-  private async fetchDetailedStatsFromRelays(noteId: string, articleEventId?: string): Promise<DetailedStats> {
+  private async fetchDetailedStatsFromRelays(
+    noteId: string,
+    articleEventId?: string
+  ): Promise<DetailedStats> {
     // Increment counter and determine context
     this.fetchCounter++;
     const isOriginalNote = this.fetchCounter === 1;
@@ -316,15 +343,18 @@ export class ReactionsOrchestrator extends Orchestrator {
         const profileService = UserProfileService.getInstance();
         const username = profileService.getUsername(authorPubkey);
         if (username) {
-          const displayName = username.length > 10 ? username.substring(0, 10) + '..' : username;
+          const displayName =
+            username.length > 10 ? `${username.substring(0, 10)}..` : username;
           fetchingMessage = `📊 Fetching interaction stats from relays for ${displayName}'s note...`;
           readyMessage = `📊 Interaction stats ready for ${displayName}'s note`;
         } else {
-          fetchingMessage = '📊 Fetching interaction stats from relays for this note...';
+          fetchingMessage =
+            '📊 Fetching interaction stats from relays for this note...';
           readyMessage = '📊 Interaction stats ready for this note';
         }
       } else {
-        fetchingMessage = '📊 Fetching interaction stats from relays for this note...';
+        fetchingMessage =
+          '📊 Fetching interaction stats from relays for this note...';
         readyMessage = '📊 Interaction stats ready for this note';
       }
     } else {
@@ -341,7 +371,7 @@ export class ReactionsOrchestrator extends Orchestrator {
       quotedEvents: [],
       reactionEvents: [],
       zapEvents: [],
-      lastUpdated: Date.now()
+      lastUpdated: Date.now(),
     };
 
     // Fetch all interaction types in parallel
@@ -349,7 +379,7 @@ export class ReactionsOrchestrator extends Orchestrator {
       this.fetchReactionEvents(noteId, articleEventId),
       this.fetchRepostEvents(noteId, articleEventId),
       this.fetchReplyEvents(noteId, articleEventId),
-      this.fetchZapEvents(noteId, articleEventId)
+      this.fetchZapEvents(noteId, articleEventId),
     ]);
 
     detailedStats.reactionEvents = reactions;
@@ -363,7 +393,6 @@ export class ReactionsOrchestrator extends Orchestrator {
     return detailedStats;
   }
 
-
   /**
    * Count kind:1111 comments replying to each of the given zap (kind:9735)
    * event ids. One batched fetch across all zap ids (a single relay round-trip),
@@ -371,7 +400,9 @@ export class ReactionsOrchestrator extends Orchestrator {
    * mirroring the thread render. Returns a Map zapId → comment count; zaps with
    * no comments are simply absent.
    */
-  public async getZapReplyCounts(zapIds: string[]): Promise<Map<string, number>> {
+  public async getZapReplyCounts(
+    zapIds: string[]
+  ): Promise<Map<string, number>> {
     const counts = new Map<string, number>();
     const ids = zapIds.filter(Boolean);
     if (ids.length === 0) return counts;
@@ -385,13 +416,21 @@ export class ReactionsOrchestrator extends Orchestrator {
       { kinds: [1111], '#E': ids },
     ];
 
-    const events = await this.transport.fetch(relays, filters, 5000, false, 'ZapReplyCounts');
+    const events = await this.transport.fetch(
+      relays,
+      filters,
+      5000,
+      false,
+      'ZapReplyCounts'
+    );
 
     const seen = new Set<string>();
     for (const event of events) {
       if (!event.id || seen.has(event.id)) continue;
       if (isUserMuted(event.pubkey).any) continue;
-      const zapId = event.tags.find(t => (t[0] === 'e' || t[0] === 'E') && !!t[1] && idSet.has(t[1]))?.[1];
+      const zapId = event.tags.find(
+        t => (t[0] === 'e' || t[0] === 'E') && !!t[1] && idSet.has(t[1])
+      )?.[1];
       if (!zapId) continue;
       seen.add(event.id);
       counts.set(zapId, (counts.get(zapId) ?? 0) + 1);
@@ -404,7 +443,11 @@ export class ReactionsOrchestrator extends Orchestrator {
    * Build NDK filters for fetching interaction events
    * Handles both normal notes (#e tag) and long-form articles (#a and #e tags)
    */
-  private buildFilters(kinds: number[], noteId: string, articleEventId?: string): NDKFilter[] {
+  private buildFilters(
+    kinds: number[],
+    noteId: string,
+    articleEventId?: string
+  ): NDKFilter[] {
     const filters: NDKFilter[] = [];
     const isArticle = this.isLongFormArticle(noteId);
 
@@ -426,8 +469,16 @@ export class ReactionsOrchestrator extends Orchestrator {
    * so that nested NIP-22 replies (which reference the root via uppercase tags) count
    * toward the original note's total — not just direct replies.
    */
-  private buildReplyFilters(kinds: number[], noteId: string, articleEventId?: string): NDKFilter[] {
-    const filters: NDKFilter[] = this.buildFilters(kinds, noteId, articleEventId);
+  private buildReplyFilters(
+    kinds: number[],
+    noteId: string,
+    articleEventId?: string
+  ): NDKFilter[] {
+    const filters: NDKFilter[] = this.buildFilters(
+      kinds,
+      noteId,
+      articleEventId
+    );
     const isArticle = this.isLongFormArticle(noteId);
 
     if (isArticle) {
@@ -467,30 +518,38 @@ export class ReactionsOrchestrator extends Orchestrator {
    * NORMAL NOTES: Search #e tag only (unchanged behavior)
    * LONG-FORM ARTICLES: Search BOTH #a and #e tags (some clients use event ID)
    */
-  private async fetchReactionEvents(noteId: string, articleEventId?: string): Promise<NostrEvent[]> {
+  private async fetchReactionEvents(
+    noteId: string,
+    articleEventId?: string
+  ): Promise<NostrEvent[]> {
     const reactions: NostrEvent[] = [];
     const seenAuthors = new Set<string>();
     const relays = await this.getReactionFetchRelays();
     const filters = this.buildFilters([7], noteId, articleEventId);
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       let timeout: ReturnType<typeof setTimeout>;
-      this.transport.subscribe(relays, filters, {
-        onEvent: (event: NostrEvent) => {
-          // Only store one reaction per author (latest one)
-          // Accept ALL reactions per NIP-25 (any emoji or content value)
-          if (!seenAuthors.has(event.pubkey)) {
-            reactions.push(event);
-            seenAuthors.add(event.pubkey);
-          }
-        },
-        onEose: () => {
-          clearTimeout(timeout);
-          resolve(reactions);
-        }
-      }).then(sub => {
-        timeout = setTimeout(() => { sub.close(); resolve(reactions); }, 5000);
-      });
+      this.transport
+        .subscribe(relays, filters, {
+          onEvent: (event: NostrEvent) => {
+            // Only store one reaction per author (latest one)
+            // Accept ALL reactions per NIP-25 (any emoji or content value)
+            if (!seenAuthors.has(event.pubkey)) {
+              reactions.push(event);
+              seenAuthors.add(event.pubkey);
+            }
+          },
+          onEose: () => {
+            clearTimeout(timeout);
+            resolve(reactions);
+          },
+        })
+        .then(sub => {
+          timeout = setTimeout(() => {
+            sub.close();
+            resolve(reactions);
+          }, 5000);
+        });
     });
   }
 
@@ -501,7 +560,9 @@ export class ReactionsOrchestrator extends Orchestrator {
    * from a parent event-id to its direct child reactions. Cycle- and
    * depth-guarded so a malicious relay can't loop us forever.
    */
-  public async fetchReactionTree(rootEventIds: string[]): Promise<Map<string, NostrEvent[]>> {
+  public async fetchReactionTree(
+    rootEventIds: string[]
+  ): Promise<Map<string, NostrEvent[]>> {
     const tree = new Map<string, NostrEvent[]>();
     const roots = [...new Set(rootEventIds)].filter(Boolean);
     if (roots.length === 0) return tree;
@@ -521,7 +582,9 @@ export class ReactionsOrchestrator extends Orchestrator {
         // The parent is the e-tag pointing at a node from the current frontier.
         // Every frontier id is a kind:7 event, so any kind:7 tagging it is by
         // definition a reaction-on-reaction — no false positives from note-likes.
-        const parentId = event.tags.find(t => t[0] === 'e' && !!t[1] && frontierSet.has(t[1]))?.[1];
+        const parentId = event.tags.find(
+          t => t[0] === 'e' && !!t[1] && frontierSet.has(t[1])
+        )?.[1];
         if (!parentId) continue;
         seenEventIds.add(event.id);
         const bucket = tree.get(parentId) ?? [];
@@ -538,24 +601,35 @@ export class ReactionsOrchestrator extends Orchestrator {
    * One breadth-first hop: fetch every kind:7 whose `e`-tag references any of
    * the given event ids. Deduplicated by event-id (a relay may echo an event).
    */
-  private fetchChildReactions(relays: string[], eventIds: string[]): Promise<NostrEvent[]> {
+  private fetchChildReactions(
+    relays: string[],
+    eventIds: string[]
+  ): Promise<NostrEvent[]> {
     const results: NostrEvent[] = [];
     const seen = new Set<string>();
     const filters: NDKFilter[] = [{ kinds: [7], '#e': eventIds }];
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       let timeout: ReturnType<typeof setTimeout>;
-      this.transport.subscribe(relays, filters, {
-        onEvent: (event: NostrEvent) => {
-          if (event.id && !seen.has(event.id)) {
-            seen.add(event.id);
-            results.push(event);
-          }
-        },
-        onEose: () => { clearTimeout(timeout); resolve(results); }
-      }).then(sub => {
-        timeout = setTimeout(() => { sub.close(); resolve(results); }, 5000);
-      });
+      this.transport
+        .subscribe(relays, filters, {
+          onEvent: (event: NostrEvent) => {
+            if (event.id && !seen.has(event.id)) {
+              seen.add(event.id);
+              results.push(event);
+            }
+          },
+          onEose: () => {
+            clearTimeout(timeout);
+            resolve(results);
+          },
+        })
+        .then(sub => {
+          timeout = setTimeout(() => {
+            sub.close();
+            resolve(results);
+          }, 5000);
+        });
     });
   }
 
@@ -567,7 +641,10 @@ export class ReactionsOrchestrator extends Orchestrator {
    * NORMAL NOTES: Search #e and #q tags only (unchanged behavior)
    * LONG-FORM ARTICLES: Search BOTH #a and #e tags, #q uses event ID
    */
-  private async fetchRepostEvents(noteId: string, articleEventId?: string): Promise<{ regular: NostrEvent[]; quoted: NostrEvent[] }> {
+  private async fetchRepostEvents(
+    noteId: string,
+    articleEventId?: string
+  ): Promise<{ regular: NostrEvent[]; quoted: NostrEvent[] }> {
     const regular: NostrEvent[] = [];
     const quoted: NostrEvent[] = [];
     const regularAuthors = new Set<string>();
@@ -577,7 +654,11 @@ export class ReactionsOrchestrator extends Orchestrator {
     const isArticle = this.isLongFormArticle(noteId);
 
     // Build filters - reposts need special handling for #q tag
-    const filters: NDKFilter[] = this.buildFilters([6, 16], noteId, articleEventId);
+    const filters: NDKFilter[] = this.buildFilters(
+      [6, 16],
+      noteId,
+      articleEventId
+    );
 
     // Add quoted repost filters (#q tag)
     if (isArticle) {
@@ -588,29 +669,34 @@ export class ReactionsOrchestrator extends Orchestrator {
       filters.push({ kinds: [1], '#q': [noteId] });
     }
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       let timeout: ReturnType<typeof setTimeout>;
-      this.transport.subscribe(relays, filters, {
-        onEvent: (event: NostrEvent) => {
-          if (event.kind === 6 || event.kind === 16) {
-            if (!regularAuthors.has(event.pubkey)) {
-              regularAuthors.add(event.pubkey);
-              regular.push(event);
+      this.transport
+        .subscribe(relays, filters, {
+          onEvent: (event: NostrEvent) => {
+            if (event.kind === 6 || event.kind === 16) {
+              if (!regularAuthors.has(event.pubkey)) {
+                regularAuthors.add(event.pubkey);
+                regular.push(event);
+              }
+            } else if (event.kind === 1) {
+              if (!quotedAuthors.has(event.pubkey)) {
+                quotedAuthors.add(event.pubkey);
+                quoted.push(event);
+              }
             }
-          } else if (event.kind === 1) {
-            if (!quotedAuthors.has(event.pubkey)) {
-              quotedAuthors.add(event.pubkey);
-              quoted.push(event);
-            }
-          }
-        },
-        onEose: () => {
-          clearTimeout(timeout);
-          resolve({ regular, quoted });
-        }
-      }).then(sub => {
-        timeout = setTimeout(() => { sub.close(); resolve({ regular, quoted }); }, 5000);
-      });
+          },
+          onEose: () => {
+            clearTimeout(timeout);
+            resolve({ regular, quoted });
+          },
+        })
+        .then(sub => {
+          timeout = setTimeout(() => {
+            sub.close();
+            resolve({ regular, quoted });
+          }, 5000);
+        });
     });
   }
 
@@ -622,7 +708,10 @@ export class ReactionsOrchestrator extends Orchestrator {
    * NORMAL NOTES: Search #e tag only (unchanged behavior)
    * LONG-FORM ARTICLES: Search BOTH #a and #e tags
    */
-  private async fetchReplyEvents(noteId: string, articleEventId?: string): Promise<NostrEvent[]> {
+  private async fetchReplyEvents(
+    noteId: string,
+    articleEventId?: string
+  ): Promise<NostrEvent[]> {
     const replies: NostrEvent[] = [];
     const seenReplyIds = new Set<string>();
     const relays = await this.getReactionFetchRelays();
@@ -637,33 +726,43 @@ export class ReactionsOrchestrator extends Orchestrator {
     // would only show direct replies.
     const filters = this.buildReplyFilters([1, 1111], noteId, articleEventId);
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       let timeout: ReturnType<typeof setTimeout>;
-      this.transport.subscribe(relays, filters, {
-        onEvent: (event: NostrEvent) => {
-          if (!event.id || seenReplyIds.has(event.id)) return;
+      this.transport
+        .subscribe(relays, filters, {
+          onEvent: (event: NostrEvent) => {
+            if (!event.id || seenReplyIds.has(event.id)) return;
 
-          // Verify the event actually references our note. Accept both lowercase
-          // (parent — direct reply) and uppercase (root — nested NIP-22 reply) tags.
-          const referencesNote = isArticle
-            ? event.tags.some(tag =>
-                ((tag[0] === 'a' || tag[0] === 'A') && tag[1] === noteId) ||
-                (articleEventId && (tag[0] === 'e' || tag[0] === 'E') && tag[1] === articleEventId)
-              )
-            : event.tags.some(tag => (tag[0] === 'e' || tag[0] === 'E') && tag[1] === noteId);
+            // Verify the event actually references our note. Accept both lowercase
+            // (parent — direct reply) and uppercase (root — nested NIP-22 reply) tags.
+            const referencesNote = isArticle
+              ? event.tags.some(
+                  tag =>
+                    ((tag[0] === 'a' || tag[0] === 'A') && tag[1] === noteId) ||
+                    (articleEventId &&
+                      (tag[0] === 'e' || tag[0] === 'E') &&
+                      tag[1] === articleEventId)
+                )
+              : event.tags.some(
+                  tag => (tag[0] === 'e' || tag[0] === 'E') && tag[1] === noteId
+                );
 
-          if (referencesNote) {
-            replies.push(event);
-            seenReplyIds.add(event.id);
-          }
-        },
-        onEose: () => {
-          clearTimeout(timeout);
-          resolve(replies);
-        }
-      }).then(sub => {
-        timeout = setTimeout(() => { sub.close(); resolve(replies); }, 5000);
-      });
+            if (referencesNote) {
+              replies.push(event);
+              seenReplyIds.add(event.id);
+            }
+          },
+          onEose: () => {
+            clearTimeout(timeout);
+            resolve(replies);
+          },
+        })
+        .then(sub => {
+          timeout = setTimeout(() => {
+            sub.close();
+            resolve(replies);
+          }, 5000);
+        });
     });
   }
 
@@ -673,31 +772,39 @@ export class ReactionsOrchestrator extends Orchestrator {
    * NORMAL NOTES: Search #e tag only (unchanged behavior)
    * LONG-FORM ARTICLES: Search BOTH #a and #e tags
    */
-  private async fetchZapEvents(noteId: string, articleEventId?: string): Promise<NostrEvent[]> {
+  private async fetchZapEvents(
+    noteId: string,
+    articleEventId?: string
+  ): Promise<NostrEvent[]> {
     const zaps: NostrEvent[] = [];
     const seenZapIds = new Set<string>();
     const relays = await this.getReactionFetchRelays();
     const filters = this.buildFilters([9735], noteId, articleEventId);
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       let timeout: ReturnType<typeof setTimeout>;
-      this.transport.subscribe(relays, filters, {
-        onEvent: (event: NostrEvent) => {
-          if (!event.id || seenZapIds.has(event.id)) return;
+      this.transport
+        .subscribe(relays, filters, {
+          onEvent: (event: NostrEvent) => {
+            if (!event.id || seenZapIds.has(event.id)) return;
 
-          const bolt11Tag = event.tags.find(tag => tag[0] === 'bolt11');
-          if (bolt11Tag?.[1]) {
-            zaps.push(event);
-            seenZapIds.add(event.id);
-          }
-        },
-        onEose: () => {
-          clearTimeout(timeout);
-          resolve(zaps);
-        }
-      }).then(sub => {
-        timeout = setTimeout(() => { sub.close(); resolve(zaps); }, 8000);
-      });
+            const bolt11Tag = event.tags.find(tag => tag[0] === 'bolt11');
+            if (bolt11Tag?.[1]) {
+              zaps.push(event);
+              seenZapIds.add(event.id);
+            }
+          },
+          onEose: () => {
+            clearTimeout(timeout);
+            resolve(zaps);
+          },
+        })
+        .then(sub => {
+          timeout = setTimeout(() => {
+            sub.close();
+            resolve(zaps);
+          }, 8000);
+        });
     });
   }
 
@@ -706,7 +813,10 @@ export class ReactionsOrchestrator extends Orchestrator {
    * SNV counts all replies including nested, ReactionsOrchestrator only counts direct replies
    * NOTE: Only updates count-based fields, not the event arrays
    */
-  public updateCachedStats(noteId: string, _updates: Partial<InteractionStats>): void {
+  public updateCachedStats(
+    noteId: string,
+    _updates: Partial<InteractionStats>
+  ): void {
     const cached = this.detailedStatsCache.get(noteId);
     if (cached) {
       // Update lastUpdated timestamp when modifying stats
@@ -721,13 +831,18 @@ export class ReactionsOrchestrator extends Orchestrator {
    * Skips already-cached and invalid IDs. Articles (addressable events) are excluded
    * because they need #a-tag filters that can't be batched with normal #e-tag notes.
    */
-  public async batchFetchStats(noteIds: string[]): Promise<Map<string, InteractionStats>> {
+  public async batchFetchStats(
+    noteIds: string[]
+  ): Promise<Map<string, InteractionStats>> {
     const result = new Map<string, InteractionStats>();
 
     const uncachedIds = noteIds.filter(id => {
       if (!this.isValidNoteId(id) || this.isLongFormArticle(id)) return false;
       const cached = this.getCachedStats(id);
-      if (cached) { result.set(id, cached); return false; }
+      if (cached) {
+        result.set(id, cached);
+        return false;
+      }
       return true;
     });
 
@@ -737,8 +852,12 @@ export class ReactionsOrchestrator extends Orchestrator {
     const collectors = new Map<string, DetailedStats>();
     for (const id of uncachedIds) {
       collectors.set(id, {
-        replyEvents: [], repostEvents: [], quotedEvents: [],
-        reactionEvents: [], zapEvents: [], lastUpdated: Date.now()
+        replyEvents: [],
+        repostEvents: [],
+        quotedEvents: [],
+        reactionEvents: [],
+        zapEvents: [],
+        lastUpdated: Date.now(),
       });
     }
 
@@ -750,24 +869,33 @@ export class ReactionsOrchestrator extends Orchestrator {
       { kinds: [9735], '#e': uncachedIds },
     ];
 
-    await new Promise<void>((resolve) => {
+    await new Promise<void>(resolve => {
       const timeout = setTimeout(resolve, 8000);
       this.transport.subscribe(relays, filters, {
         onEvent: (event: NostrEvent) => {
-          const qTag = event.tags.find(tag => tag[0] === 'q' && collectors.has(tag[1]!));
+          const qTag = event.tags.find(
+            tag => tag[0] === 'q' && collectors.has(tag[1]!)
+          );
           if (qTag) {
             collectors.get(qTag[1]!)!.quotedEvents.push(event);
             return;
           }
-          const eTag = event.tags.find(tag => tag[0] === 'e' && collectors.has(tag[1]!));
+          const eTag = event.tags.find(
+            tag => tag[0] === 'e' && collectors.has(tag[1]!)
+          );
           if (!eTag) return;
           const stats = collectors.get(eTag[1]!)!;
           if (event.kind === 7) stats.reactionEvents.push(event);
-          else if (event.kind === 6 || event.kind === 16) stats.repostEvents.push(event);
-          else if (event.kind === 1 || event.kind === 1111) stats.replyEvents.push(event);
+          else if (event.kind === 6 || event.kind === 16)
+            stats.repostEvents.push(event);
+          else if (event.kind === 1 || event.kind === 1111)
+            stats.replyEvents.push(event);
           else if (event.kind === 9735) stats.zapEvents.push(event);
         },
-        onEose: () => { clearTimeout(timeout); resolve(); }
+        onEose: () => {
+          clearTimeout(timeout);
+          resolve();
+        },
       });
     });
 
@@ -779,11 +907,14 @@ export class ReactionsOrchestrator extends Orchestrator {
         quotedReposts: stats.quotedEvents.length,
         likes: stats.reactionEvents.length,
         zaps: this.calculateTotalZaps(stats.zapEvents),
-        lastUpdated: stats.lastUpdated
+        lastUpdated: stats.lastUpdated,
       });
     }
 
-    this.systemLogger.info('ReactionsOrch', `📊 Batch stats loaded for ${collectors.size} notes`);
+    this.systemLogger.info(
+      'ReactionsOrch',
+      `📊 Batch stats loaded for ${collectors.size} notes`
+    );
     return result;
   }
 
@@ -835,7 +966,10 @@ export class ReactionsOrchestrator extends Orchestrator {
 
     // Check if already polling
     if (this.reactionIntervals.has(noteId)) {
-      this.systemLogger.warn('ReactionsOrchestrator', `Already polling reactions for ${noteId}`);
+      this.systemLogger.warn(
+        'ReactionsOrchestrator',
+        `Already polling reactions for ${noteId}`
+      );
       return;
     }
 
@@ -860,10 +994,16 @@ export class ReactionsOrchestrator extends Orchestrator {
    * NORMAL NOTES: Poll #e tag only (unchanged)
    * LONG-FORM ARTICLES: Poll both #a and #e tags
    */
-  private async pollReactions(noteId: string, callback: (stats: InteractionStats) => void): Promise<void> {
+  private async pollReactions(
+    noteId: string,
+    callback: (stats: InteractionStats) => void
+  ): Promise<void> {
     const lastFetch = this.lastReactionFetch.get(noteId);
     if (!lastFetch) {
-      this.systemLogger.warn('ReactionsOrchestrator', `No last fetch timestamp for ${noteId}`);
+      this.systemLogger.warn(
+        'ReactionsOrchestrator',
+        `No last fetch timestamp for ${noteId}`
+      );
       return;
     }
 
@@ -871,24 +1011,47 @@ export class ReactionsOrchestrator extends Orchestrator {
     const relays = await this.getReactionFetchRelays();
 
     const isArticle = this.isLongFormArticle(noteId);
-    const articleEventId = isArticle ? this.articleEventIdCache.get(noteId) : undefined;
+    const articleEventId = isArticle
+      ? this.articleEventIdCache.get(noteId)
+      : undefined;
 
     // Build filters based on note type
     const filters: NDKFilter[] = [];
 
     if (isArticle) {
       // LONG-FORM ARTICLE: Poll both #a and #e
-      filters.push({ kinds: [7], '#a': [noteId], since: lastFetch, until: now });
+      filters.push({
+        kinds: [7],
+        '#a': [noteId],
+        since: lastFetch,
+        until: now,
+      });
       if (articleEventId) {
-        filters.push({ kinds: [7], '#e': [articleEventId], since: lastFetch, until: now });
+        filters.push({
+          kinds: [7],
+          '#e': [articleEventId],
+          since: lastFetch,
+          until: now,
+        });
       }
     } else {
       // NORMAL NOTE: Poll #e only (unchanged)
-      filters.push({ kinds: [7], '#e': [noteId], since: lastFetch, until: now });
+      filters.push({
+        kinds: [7],
+        '#e': [noteId],
+        since: lastFetch,
+        until: now,
+      });
     }
 
     try {
-      const newReactions = await this.transport.fetch(relays, filters, 5000, false, 'ReactionsOrch');
+      const newReactions = await this.transport.fetch(
+        relays,
+        filters,
+        5000,
+        false,
+        'ReactionsOrch'
+      );
 
       if (newReactions.length > 0) {
         this.systemLogger.info(
@@ -917,7 +1080,7 @@ export class ReactionsOrchestrator extends Orchestrator {
             quotedReposts: cached.quotedEvents.length,
             likes: cached.reactionEvents.length,
             zaps: this.calculateTotalZaps(cached.zapEvents),
-            lastUpdated: cached.lastUpdated
+            lastUpdated: cached.lastUpdated,
           };
 
           callback(stats);
@@ -927,7 +1090,10 @@ export class ReactionsOrchestrator extends Orchestrator {
       // Update timestamp
       this.lastReactionFetch.set(noteId, now);
     } catch (error) {
-      this.systemLogger.error('ReactionsOrchestrator', `Polling failed: ${error}`);
+      this.systemLogger.error(
+        'ReactionsOrchestrator',
+        `Polling failed: ${error}`
+      );
     }
   }
 
@@ -938,7 +1104,10 @@ export class ReactionsOrchestrator extends Orchestrator {
   public stopLiveReactions(noteId: string): void {
     const intervalId = this.reactionIntervals.get(noteId);
     if (!intervalId) {
-      this.systemLogger.warn('ReactionsOrchestrator', `No polling interval found for ${noteId}`);
+      this.systemLogger.warn(
+        'ReactionsOrchestrator',
+        `No polling interval found for ${noteId}`
+      );
       return;
     }
 
@@ -946,7 +1115,10 @@ export class ReactionsOrchestrator extends Orchestrator {
     this.reactionIntervals.delete(noteId);
     this.lastReactionFetch.delete(noteId);
 
-    this.systemLogger.info('ReactionsOrchestrator', `Live reactions stopped for ${noteId}`);
+    this.systemLogger.info(
+      'ReactionsOrchestrator',
+      `Live reactions stopped for ${noteId}`
+    );
   }
 
   // Orchestrator interface implementations (unused for now, required by base class)
@@ -964,7 +1136,10 @@ export class ReactionsOrchestrator extends Orchestrator {
   }
 
   public onerror(relay: string, error: Error): void {
-    this.systemLogger.error('ReactionsOrchestrator', `Relay error (${relay}): ${error.message}`);
+    this.systemLogger.error(
+      'ReactionsOrchestrator',
+      `Relay error (${relay}): ${error.message}`
+    );
   }
 
   public onclose(_relay: string): void {
@@ -981,7 +1156,10 @@ export class ReactionsOrchestrator extends Orchestrator {
     // Stop all polling intervals before cleanup
     this.reactionIntervals.forEach((intervalId, noteId) => {
       clearInterval(intervalId);
-      this.systemLogger.info('ReactionsOrchestrator', `Stopped polling for ${noteId}`);
+      this.systemLogger.info(
+        'ReactionsOrchestrator',
+        `Stopped polling for ${noteId}`
+      );
     });
     this.reactionIntervals.clear();
     this.lastReactionFetch.clear();

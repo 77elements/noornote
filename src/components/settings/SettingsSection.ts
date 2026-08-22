@@ -64,7 +64,9 @@ export abstract class SettingsSection {
   /**
    * Get the content container element where section content is mounted
    */
-  protected getContentContainer(parentContainer: HTMLElement): HTMLElement | null {
+  protected getContentContainer(
+    parentContainer: HTMLElement
+  ): HTMLElement | null {
     return parentContainer.querySelector(`#${this.sectionId}-content`);
   }
 }

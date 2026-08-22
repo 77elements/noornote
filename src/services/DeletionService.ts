@@ -77,13 +77,22 @@ export class DeletionService {
     // Validate authentication (redundant check for safety, but AuthGuard already handled UI)
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      this.systemLogger.error('DeletionService', 'Cannot delete events: User not authenticated');
+      this.systemLogger.error(
+        'DeletionService',
+        'Cannot delete events: User not authenticated'
+      );
       return false;
     }
 
     // Validate that at least one deletion target is provided
-    if ((!eventIds || eventIds.length === 0) && (!coordinates || coordinates.length === 0)) {
-      this.systemLogger.error('DeletionService', 'No event IDs or coordinates provided for deletion');
+    if (
+      (!eventIds || eventIds.length === 0) &&
+      (!coordinates || coordinates.length === 0)
+    ) {
+      this.systemLogger.error(
+        'DeletionService',
+        'No event IDs or coordinates provided for deletion'
+      );
       return false;
     }
 
@@ -111,14 +120,17 @@ export class DeletionService {
         created_at: Math.floor(Date.now() / 1000),
         tags,
         content: reason || '',
-        pubkey: currentUser.pubkey
+        pubkey: currentUser.pubkey,
       };
 
       // Sign event using browser extension
       const signedEvent = await this.authService.signEvent(unsignedEvent);
 
       if (!signedEvent) {
-        this.systemLogger.error('DeletionService', 'Failed to sign deletion event');
+        this.systemLogger.error(
+          'DeletionService',
+          'Failed to sign deletion event'
+        );
         return false;
       }
 
@@ -126,7 +138,10 @@ export class DeletionService {
       const targetRelays = this.getTargetRelays(silent);
 
       if (targetRelays.length === 0) {
-        this.systemLogger.error('DeletionService', 'No relays available for deletion');
+        this.systemLogger.error(
+          'DeletionService',
+          'No relays available for deletion'
+        );
         return false;
       }
 
@@ -144,10 +159,14 @@ export class DeletionService {
       // Broadcast deletion to 1000+ relays in background (fire-and-forget).
       // Silent mode (Bulk Delete) suppresses the System Log; progress is delivered
       // to BroadcastDeleteService progress subscribers instead.
-      BroadcastDeleteService.getInstance().broadcastInBackground(signedEvent, silent ? { silent: true } : {});
+      BroadcastDeleteService.getInstance().broadcastInBackground(
+        signedEvent,
+        silent ? { silent: true } : {}
+      );
 
       // Show success toast to user (suppressed in silent mode — caller shows its own status)
-      if (!silent) ToastService.show('Deletion request sent successfully', 'success');
+      if (!silent)
+        ToastService.show('Deletion request sent successfully', 'success');
 
       return true;
     } catch (error) {
@@ -185,7 +204,8 @@ export class DeletionService {
     }
 
     // Otherwise, use ALL relays from RelayConfig (ignoring read/write designation)
-    const allRelays = this.relayConfig.getAllRelays()
+    const allRelays = this.relayConfig
+      .getAllRelays()
       .filter(r => r.isActive)
       .map(r => r.url);
 
@@ -198,7 +218,6 @@ export class DeletionService {
 
     return allRelays;
   }
-
 
   /**
    * Delete a single event (convenience method)
@@ -213,7 +232,10 @@ export class DeletionService {
    * Delete parameterized replaceable events by coordinates (convenience method)
    * @param coordinates - Array of coordinates in format "kind:pubkey:d-tag"
    */
-  public async deleteByCoordinates(coordinates: string[], reason?: string): Promise<boolean> {
+  public async deleteByCoordinates(
+    coordinates: string[],
+    reason?: string
+  ): Promise<boolean> {
     const options: DeletionOptions = { coordinates };
     if (reason !== undefined) options.reason = reason;
     return this.deleteEvents(options);

@@ -13,7 +13,11 @@
  */
 
 import { TypedEventBus } from '../core/TypedEventBus';
-import { getListLastModified, setListLastModified, type ListType as StorageListType } from '../lists/storage';
+import {
+  getListLastModified,
+  setListLastModified,
+  type ListType as StorageListType,
+} from '../lists/storage';
 import { AuthService } from './AuthService';
 import { ConnectivityService } from './ConnectivityService';
 import { PlatformService } from './PlatformService';
@@ -25,7 +29,7 @@ import {
   saveToFile as saveFollowsToFile,
   publishToRelays as publishFollowsToRelays,
   FollowStorageAdapter,
-  type FollowItem
+  type FollowItem,
 } from '../lists/follows';
 
 import {
@@ -33,7 +37,7 @@ import {
   publishBookmarksToRelays,
   BookmarkStorageAdapter,
   applyRelayFetchResult as applyBookmarkRelayResult,
-  type BookmarkItem
+  type BookmarkItem,
 } from '../lists/bookmarks';
 import { isBookmarksEnabled } from '../addons/bookmarks/index';
 import { isTribesEnabled } from '../addons/tribes/index';
@@ -42,7 +46,7 @@ import { isDataSaverEnabled } from './DataSaverService';
 import {
   saveToFile as saveMutesToFile,
   publishToRelays as publishMutesToRelays,
-  MuteStorageAdapter
+  MuteStorageAdapter,
 } from '../lists/mutes';
 
 import {
@@ -50,7 +54,7 @@ import {
   publishToRelays as publishTribesToRelays,
   TribeStorageAdapter,
   applyRelayFetchResult as applyTribeRelayResult,
-  type TribeMember
+  type TribeMember,
 } from '../lists/tribes';
 
 type ListType = 'follows' | 'bookmarks' | 'mutes' | 'tribes';
@@ -71,12 +75,15 @@ export class AutoSyncService {
   private tribeAdapter: TribeStorageAdapter;
 
   // Debounce timers for relay sync
-  private relaySyncTimers: Map<ListType, ReturnType<typeof setTimeout>> = new Map();
+  private relaySyncTimers: Map<ListType, ReturnType<typeof setTimeout>> =
+    new Map();
   private readonly RELAY_SYNC_DELAY = 2500; // 2.5 seconds
 
   // Periodic sync interval (5 minutes)
   private periodicSyncInterval: ReturnType<typeof setInterval> | null = null;
-  private readonly PERIODIC_SYNC_INTERVAL = isDataSaverEnabled() ? 15 * 60 * 1000 : 5 * 60 * 1000;
+  private readonly PERIODIC_SYNC_INTERVAL = isDataSaverEnabled()
+    ? 15 * 60 * 1000
+    : 5 * 60 * 1000;
 
   // Startup sync delay (10 seconds after login)
   private startupSyncTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -103,7 +110,10 @@ export class AutoSyncService {
 
     // Direct check: if user already logged in and easy mode, start immediately
     if (this.authService.getCurrentUser() && isEasyMode()) {
-      this.systemLogger.info('ListAutoSync', 'User already logged in, starting sync');
+      this.systemLogger.info(
+        'ListAutoSync',
+        'User already logged in, starting sync'
+      );
       this.scheduleStartupSync();
     }
   }
@@ -131,7 +141,10 @@ export class AutoSyncService {
     });
 
     this.eventBus.on('bookmark:order-changed', () => {
-      this.systemLogger.info('ListAutoSync', 'bookmark:order-changed triggered');
+      this.systemLogger.info(
+        'ListAutoSync',
+        'bookmark:order-changed triggered'
+      );
       this.handleListChange('bookmarks');
     });
 
@@ -176,19 +189,31 @@ export class AutoSyncService {
     });
 
     // Listen for connectivity changes
-    this.eventBus.on('connectivity:status', ({ online }: { online: boolean }) => {
-      if (online) {
-        this.handleBackOnline();
-      } else {
-        this.handleWentOffline();
+    this.eventBus.on(
+      'connectivity:status',
+      ({ online }: { online: boolean }) => {
+        if (online) {
+          this.handleBackOnline();
+        } else {
+          this.handleWentOffline();
+        }
       }
-    });
+    );
 
     // Start sync if already logged in and in Easy Mode
     // Use delayed check because user:login may have fired before this service initialized
     setTimeout(() => {
-      if (this.authService.getCurrentUser() && isEasyMode() && !this.authService.isBunkerAuth() && !this.startupSyncTimeout && !this.periodicSyncInterval) {
-        this.systemLogger.info('ListAutoSync', 'Delayed init: user is logged in, scheduling startup sync');
+      if (
+        this.authService.getCurrentUser() &&
+        isEasyMode() &&
+        !this.authService.isBunkerAuth() &&
+        !this.startupSyncTimeout &&
+        !this.periodicSyncInterval
+      ) {
+        this.systemLogger.info(
+          'ListAutoSync',
+          'Delayed init: user is logged in, scheduling startup sync'
+        );
         this.scheduleStartupSync();
       }
     }, 2000);
@@ -200,7 +225,10 @@ export class AutoSyncService {
   private scheduleStartupSync(): void {
     if (this.authService.isBunkerAuth()) return;
     this.cancelStartupSync();
-    this.systemLogger.info('ListAutoSync', 'Startup sync scheduled in 10 seconds');
+    this.systemLogger.info(
+      'ListAutoSync',
+      'Startup sync scheduled in 10 seconds'
+    );
 
     this.startupSyncTimeout = setTimeout(async () => {
       this.systemLogger.info('ListAutoSync', 'Running startup sync');
@@ -209,12 +237,13 @@ export class AutoSyncService {
 
       // ProfileMounts sync.
       try {
-        const { ProfileMountsOrchestrator } = await import('./orchestration/ProfileMountsOrchestrator');
+        const { ProfileMountsOrchestrator } = await import(
+          './orchestration/ProfileMountsOrchestrator'
+        );
         await ProfileMountsOrchestrator.getInstance().syncFromRelays();
       } catch {
         // ProfileMounts sync failed silently
       }
-
     }, this.STARTUP_SYNC_DELAY);
   }
 
@@ -233,7 +262,10 @@ export class AutoSyncService {
    */
   private handleWentOffline(): void {
     this.stopPeriodicSync();
-    this.systemLogger.info('ListAutoSync', 'Offline detected - periodic relay sync paused');
+    this.systemLogger.info(
+      'ListAutoSync',
+      'Offline detected - periodic relay sync paused'
+    );
   }
 
   /**
@@ -242,7 +274,10 @@ export class AutoSyncService {
   private handleBackOnline(): void {
     if (isEasyMode() && this.authService.getCurrentUser()) {
       this.startPeriodicSync();
-      this.systemLogger.info('ListAutoSync', 'Back online - resuming periodic sync and catching up');
+      this.systemLogger.info(
+        'ListAutoSync',
+        'Back online - resuming periodic sync and catching up'
+      );
       this.syncFromRelaysAll();
     }
   }
@@ -258,10 +293,14 @@ export class AutoSyncService {
     if (listType === 'bookmarks' && !isBookmarksEnabled()) return;
     if (listType === 'tribes' && !isTribesEnabled()) return;
     if (this.isSyncing.has(listType)) {
-      diagLog('lists', `handleListChange(${listType}): BLOCKED by isSyncing`, { currentlySyncing: [...this.isSyncing] });
+      diagLog('lists', `handleListChange(${listType}): BLOCKED by isSyncing`, {
+        currentlySyncing: [...this.isSyncing],
+      });
       return;
     }
-    diagLog('lists', `handleListChange(${listType}): proceeding`, { isSyncingSet: [...this.isSyncing] });
+    diagLog('lists', `handleListChange(${listType}): proceeding`, {
+      isSyncingSet: [...this.isSyncing],
+    });
 
     try {
       this.isSyncing.add(listType);
@@ -308,7 +347,10 @@ export class AutoSyncService {
       }
       this.systemLogger.info('ListAutoSync', `${listType}: saved to file`);
     } catch (error) {
-      this.systemLogger.error('ListAutoSync', `${listType}: save to file failed: ${error}`);
+      this.systemLogger.error(
+        'ListAutoSync',
+        `${listType}: save to file failed: ${error}`
+      );
     }
   }
 
@@ -316,10 +358,15 @@ export class AutoSyncService {
    * Schedule relay sync with debouncing
    */
   private scheduleRelaySync(listType: ListType): void {
-    diagLog('lists', `scheduleRelaySync(${listType}): scheduling`, { delayMs: this.RELAY_SYNC_DELAY });
+    diagLog('lists', `scheduleRelaySync(${listType}): scheduling`, {
+      delayMs: this.RELAY_SYNC_DELAY,
+    });
     const existingTimer = this.relaySyncTimers.get(listType);
     if (existingTimer) {
-      diagLog('lists', `scheduleRelaySync(${listType}): clearing existing timer`);
+      diagLog(
+        'lists',
+        `scheduleRelaySync(${listType}): clearing existing timer`
+      );
       clearTimeout(existingTimer);
     }
 
@@ -339,11 +386,17 @@ export class AutoSyncService {
     if (!this.authService.getCurrentUser()) return;
 
     if (!this.connectivityService.isOnline()) {
-      this.systemLogger.info('ListAutoSync', `${listType}: relay sync skipped (offline)`);
+      this.systemLogger.info(
+        'ListAutoSync',
+        `${listType}: relay sync skipped (offline)`
+      );
       return;
     }
 
-    this.systemLogger.info('ListAutoSync', 'Lists in Easy Mode. AutoSync triggered to relays.');
+    this.systemLogger.info(
+      'ListAutoSync',
+      'Lists in Easy Mode. AutoSync triggered to relays.'
+    );
 
     try {
       diagLog('lists', `syncToRelays(${listType}): BEFORE publish`);
@@ -364,7 +417,10 @@ export class AutoSyncService {
       diagLog('lists', `syncToRelays(${listType}): AFTER publish — success`);
       this.systemLogger.info('ListAutoSync', `${listType}: synced to relays`);
     } catch (error) {
-      this.systemLogger.error('ListAutoSync', `${listType}: relay sync failed: ${error}`);
+      this.systemLogger.error(
+        'ListAutoSync',
+        `${listType}: relay sync failed: ${error}`
+      );
     }
   }
 
@@ -385,7 +441,10 @@ export class AutoSyncService {
     if (!isEasyMode()) return;
     if (this.periodicSyncInterval) return; // Already running
 
-    this.systemLogger.info('ListAutoSync', 'Starting periodic sync (every 5 minutes)');
+    this.systemLogger.info(
+      'ListAutoSync',
+      'Starting periodic sync (every 5 minutes)'
+    );
 
     this.periodicSyncInterval = setInterval(() => {
       this.syncFromRelaysAll();
@@ -411,7 +470,10 @@ export class AutoSyncService {
     if (!isEasyMode()) return;
     if (!this.authService.getCurrentUser()) return;
 
-    this.systemLogger.info('ListAutoSync', `${listType}: addon activated, scheduling sync in 10s`);
+    this.systemLogger.info(
+      'ListAutoSync',
+      `${listType}: addon activated, scheduling sync in 10s`
+    );
     setTimeout(() => {
       this.syncFromRelays(listType);
     }, 10000);
@@ -425,11 +487,17 @@ export class AutoSyncService {
     if (!this.authService.getCurrentUser()) return;
 
     if (!this.connectivityService.isOnline()) {
-      this.systemLogger.info('ListAutoSync', 'Skipping periodic relay sync - offline');
+      this.systemLogger.info(
+        'ListAutoSync',
+        'Skipping periodic relay sync - offline'
+      );
       return;
     }
 
-    this.systemLogger.info('ListAutoSync', 'Lists in Easy Mode. AutoSync triggered from relays.');
+    this.systemLogger.info(
+      'ListAutoSync',
+      'Lists in Easy Mode. AutoSync triggered from relays.'
+    );
     diagLog('lists', 'syncFromRelaysAll(): starting sync for all list types');
 
     const listsToSync: ListType[] = ['follows', 'mutes'];
@@ -450,12 +518,21 @@ export class AutoSyncService {
 
     try {
       this.isSyncing.add(listType);
-      this.systemLogger.info('ListAutoSync', `${listType}: fetching from relays...`);
+      this.systemLogger.info(
+        'ListAutoSync',
+        `${listType}: fetching from relays...`
+      );
 
       const result = await this.fetchAndCompare(listType);
       if (!result) {
-        diagLog('lists', `syncFromRelays(${listType}): fetchAndCompare returned null — aborting`);
-        this.systemLogger.warn('ListAutoSync', `${listType}: fetch returned null`);
+        diagLog(
+          'lists',
+          `syncFromRelays(${listType}): fetchAndCompare returned null — aborting`
+        );
+        this.systemLogger.warn(
+          'ListAutoSync',
+          `${listType}: fetch returned null`
+        );
         return;
       }
 
@@ -467,25 +544,45 @@ export class AutoSyncService {
         relayContentWasEmpty: result.relayContentWasEmpty,
         requiresConfirmation: result.requiresConfirmation,
         hasCategoryAssignments: !!result.categoryAssignments,
-        categories: result.categories
+        categories: result.categories,
       });
-      diagLog('lists', `syncFromRelays(${listType}): diff.added`, { items: result.diff.added });
-      diagLog('lists', `syncFromRelays(${listType}): diff.removed`, { items: result.diff.removed });
+      diagLog('lists', `syncFromRelays(${listType}): diff.added`, {
+        items: result.diff.added,
+      });
+      diagLog('lists', `syncFromRelays(${listType}): diff.removed`, {
+        items: result.diff.removed,
+      });
       if (result.diff.moved?.length) {
-        diagLog('lists', `syncFromRelays(${listType}): diff.moved`, { items: result.diff.moved });
+        diagLog('lists', `syncFromRelays(${listType}): diff.moved`, {
+          items: result.diff.moved,
+        });
       }
 
-      this.systemLogger.info('ListAutoSync', `${listType}: diff - added: ${result.diff.added.length}, removed: ${result.diff.removed.length}`);
+      this.systemLogger.info(
+        'ListAutoSync',
+        `${listType}: diff - added: ${result.diff.added.length}, removed: ${result.diff.removed.length}`
+      );
 
       // Safety: relay returned empty but we have local items — skip
       if (result.relayContentWasEmpty && result.diff.removed.length > 0) {
-        diagLog('lists', `syncFromRelays(${listType}): relay empty safety — skipping`);
-        this.systemLogger.warn('ListAutoSync', `${listType}: relay returned empty, skipping`);
+        diagLog(
+          'lists',
+          `syncFromRelays(${listType}): relay empty safety — skipping`
+        );
+        this.systemLogger.warn(
+          'ListAutoSync',
+          `${listType}: relay returned empty, skipping`
+        );
         return;
       }
 
       // No differences at all
-      if (!result.requiresConfirmation && result.diff.added.length === 0 && result.diff.removed.length === 0 && (result.diff.moved?.length || 0) === 0) {
+      if (
+        !result.requiresConfirmation &&
+        result.diff.added.length === 0 &&
+        result.diff.removed.length === 0 &&
+        (result.diff.moved?.length || 0) === 0
+      ) {
         diagLog('lists', `syncFromRelays(${listType}): no changes`);
         return;
       }
@@ -494,12 +591,23 @@ export class AutoSyncService {
       const localTs = getListLastModified(listType as StorageListType);
       const relayTs = this.getRelayTimestamp(result);
 
-      diagLog('lists', `syncFromRelays(${listType}): timestamp compare`, { localTs, relayTs, localISO: new Date(localTs * 1000).toISOString(), relayISO: new Date(relayTs * 1000).toISOString() });
+      diagLog('lists', `syncFromRelays(${listType}): timestamp compare`, {
+        localTs,
+        relayTs,
+        localISO: new Date(localTs * 1000).toISOString(),
+        relayISO: new Date(relayTs * 1000).toISOString(),
+      });
 
       if (relayTs > localTs) {
         // Relay is newer → apply relay version
-        diagLog('lists', `syncFromRelays(${listType}): relay is newer — applying`);
-        this.systemLogger.info('ListAutoSync', `${listType}: relay is newer, applying`);
+        diagLog(
+          'lists',
+          `syncFromRelays(${listType}): relay is newer — applying`
+        );
+        this.systemLogger.info(
+          'ListAutoSync',
+          `${listType}: relay is newer, applying`
+        );
 
         // RESURRECTION DETECTION (logging only, no behavior change) — see docs/features/lists.md "Folder-Resurrection"
         // Capture browser folder names BEFORE the destructive apply, then warn if relay introduces new ones
@@ -508,8 +616,12 @@ export class AutoSyncService {
           const { getFolders } = await import('../lists/tribes');
           browserFoldersBefore = getFolders().map(f => f.name);
         } else if (listType === 'bookmarks') {
-          const { getBookmarkFolderService } = await import('../lists/bookmarks');
-          browserFoldersBefore = getBookmarkFolderService().getFolders().map(f => f.name);
+          const { getBookmarkFolderService } = await import(
+            '../lists/bookmarks'
+          );
+          browserFoldersBefore = getBookmarkFolderService()
+            .getFolders()
+            .map(f => f.name);
         }
 
         // SANITY-CHECK (Schritt 1.5, 2026-04-30 — see docs/features/lists.md "Mass-Deletion Incident"):
@@ -519,33 +631,59 @@ export class AutoSyncService {
         // legitimate folder delete is accompanied by an eager kind:5 — its absence here means
         // the fetch is incomplete, not that the user deleted. Skip and let the next sync retry
         // with a (hopefully) complete fetch.
-        if (listType === 'bookmarks' && result.diff.removed.length > 0 && result.categories && result.deletedCoordinates) {
+        if (
+          listType === 'bookmarks' &&
+          result.diff.removed.length > 0 &&
+          result.categories &&
+          result.deletedCoordinates
+        ) {
           const relayFolderSet = new Set(result.categories);
-          const removedFolders = browserFoldersBefore.filter(f => !relayFolderSet.has(f));
+          const removedFolders = browserFoldersBefore.filter(
+            f => !relayFolderSet.has(f)
+          );
           if (removedFolders.length > 0) {
             // Extract folder names from coordinate keys "30003:<pubkey>:<folderName>"
             const deletedFolderNames = new Set(
-              Array.from(result.deletedCoordinates.keys())
-                .map(c => c.split(':').slice(2).join(':'))
+              Array.from(result.deletedCoordinates.keys()).map(c =>
+                c.split(':').slice(2).join(':')
+              )
             );
-            const unmarkedRemovals = removedFolders.filter(f => !deletedFolderNames.has(f));
+            const unmarkedRemovals = removedFolders.filter(
+              f => !deletedFolderNames.has(f)
+            );
             if (unmarkedRemovals.length > 0) {
-              diagLog('lists', `applyOverwrite(${listType}): refused — silent removal without deletion proof`, {
-                removedFolders,
-                unmarkedRemovals,
-                relayCategories: result.categories,
-                deletedCoordinates: Array.from(result.deletedCoordinates.keys()),
-                relayTs,
-                localTs
-              });
-              this.systemLogger.warn('ListAutoSync', `${listType}: refusing applyOverwrite — ${unmarkedRemovals.length} folder(s) would be silently removed without kind:5 evidence (likely incomplete fetch). Will retry on next sync.`);
+              diagLog(
+                'lists',
+                `applyOverwrite(${listType}): refused — silent removal without deletion proof`,
+                {
+                  removedFolders,
+                  unmarkedRemovals,
+                  relayCategories: result.categories,
+                  deletedCoordinates: Array.from(
+                    result.deletedCoordinates.keys()
+                  ),
+                  relayTs,
+                  localTs,
+                }
+              );
+              this.systemLogger.warn(
+                'ListAutoSync',
+                `${listType}: refusing applyOverwrite — ${unmarkedRemovals.length} folder(s) would be silently removed without kind:5 evidence (likely incomplete fetch). Will retry on next sync.`
+              );
               return;
             }
           }
         }
 
-        this.applyOverwrite(listType, result.relayItems, result.relayContentWasEmpty);
-        if ((listType === 'bookmarks' || listType === 'tribes') && result.categoryAssignments) {
+        this.applyOverwrite(
+          listType,
+          result.relayItems,
+          result.relayContentWasEmpty
+        );
+        if (
+          (listType === 'bookmarks' || listType === 'tribes') &&
+          result.categoryAssignments
+        ) {
           await this.applyFolderAssignments(listType, result);
         }
         if (listType === 'bookmarks' && result.categories) {
@@ -555,42 +693,67 @@ export class AutoSyncService {
         setListLastModified(listType as StorageListType, relayTs);
 
         // Compare browser folder state AFTER apply — anything new = potential resurrection
-        if (browserFoldersBefore.length > 0 && (listType === 'tribes' || listType === 'bookmarks')) {
+        if (
+          browserFoldersBefore.length > 0 &&
+          (listType === 'tribes' || listType === 'bookmarks')
+        ) {
           let browserFoldersAfter: string[] = [];
           if (listType === 'tribes') {
             const { getFolders } = await import('../lists/tribes');
             browserFoldersAfter = getFolders().map(f => f.name);
           } else {
-            const { getBookmarkFolderService } = await import('../lists/bookmarks');
-            browserFoldersAfter = getBookmarkFolderService().getFolders().map(f => f.name);
+            const { getBookmarkFolderService } = await import(
+              '../lists/bookmarks'
+            );
+            browserFoldersAfter = getBookmarkFolderService()
+              .getFolders()
+              .map(f => f.name);
           }
           const beforeSet = new Set(browserFoldersBefore);
-          const newlyAppearedFolders = browserFoldersAfter.filter(f => !beforeSet.has(f));
+          const newlyAppearedFolders = browserFoldersAfter.filter(
+            f => !beforeSet.has(f)
+          );
           if (newlyAppearedFolders.length > 0) {
-            console.debug(`[Lists] Possible folder resurrection in ${listType} — folders appeared after applyOverwrite that did not exist before`, {
-              newlyAppearedFolders,
-              browserFoldersBefore,
-              browserFoldersAfter,
-              relayTs,
-              localTs
-            });
-            diagLog('lists', `${listType} RESURRECTION CANDIDATE in applyOverwrite/applyFolderAssignments`, {
-              newlyAppearedFolders,
-              browserFoldersBefore,
-              browserFoldersAfter,
-              relayTs,
-              localTs
-            });
+            console.debug(
+              `[Lists] Possible folder resurrection in ${listType} — folders appeared after applyOverwrite that did not exist before`,
+              {
+                newlyAppearedFolders,
+                browserFoldersBefore,
+                browserFoldersAfter,
+                relayTs,
+                localTs,
+              }
+            );
+            diagLog(
+              'lists',
+              `${listType} RESURRECTION CANDIDATE in applyOverwrite/applyFolderAssignments`,
+              {
+                newlyAppearedFolders,
+                browserFoldersBefore,
+                browserFoldersAfter,
+                relayTs,
+                localTs,
+              }
+            );
           }
         }
       } else {
         // Local is newer or equal → push local to relay
-        diagLog('lists', `syncFromRelays(${listType}): local is newer — pushing`);
-        this.systemLogger.info('ListAutoSync', `${listType}: local is newer, pushing to relay`);
+        diagLog(
+          'lists',
+          `syncFromRelays(${listType}): local is newer — pushing`
+        );
+        this.systemLogger.info(
+          'ListAutoSync',
+          `${listType}: local is newer, pushing to relay`
+        );
         await this.syncToRelays(listType);
       }
     } catch (error) {
-      this.systemLogger.error('ListAutoSync', `Periodic sync failed for ${listType}: ${error}`);
+      this.systemLogger.error(
+        'ListAutoSync',
+        `Periodic sync failed for ${listType}: ${error}`
+      );
     } finally {
       this.isSyncing.delete(listType);
     }
@@ -599,12 +762,20 @@ export class AutoSyncService {
   /**
    * Fetch from relays and compare with browser items
    */
-  private async fetchAndCompare(listType: ListType): Promise<SyncResult | null> {
+  private async fetchAndCompare(
+    listType: ListType
+  ): Promise<SyncResult | null> {
     try {
       switch (listType) {
         case 'follows': {
           const result = await this.followAdapter.syncFromRelays();
-          diagLog('lists', 'fetchAndCompare(follows): raw adapter result', { diffAdded: result.diff.added.length, diffRemoved: result.diff.removed.length, relayItems: result.relayItems.length, relayContentWasEmpty: result.relayContentWasEmpty, requiresConfirmation: result.requiresConfirmation });
+          diagLog('lists', 'fetchAndCompare(follows): raw adapter result', {
+            diffAdded: result.diff.added.length,
+            diffRemoved: result.diff.removed.length,
+            relayItems: result.relayItems.length,
+            relayContentWasEmpty: result.relayContentWasEmpty,
+            requiresConfirmation: result.requiresConfirmation,
+          });
           return {
             diff: { added: result.diff.added, removed: result.diff.removed },
             relayItems: result.relayItems,
@@ -612,15 +783,28 @@ export class AutoSyncService {
             requiresConfirmation: result.requiresConfirmation,
             relayTimestamp: result.relayTimestamp,
             categoryAssignments: undefined,
-            categories: undefined
+            categories: undefined,
           };
         }
 
         case 'bookmarks': {
           const result = await this.bookmarkAdapter.syncFromRelays();
-          diagLog('lists', 'fetchAndCompare(bookmarks): raw adapter result', { diffAdded: result.diff.added.length, diffRemoved: result.diff.removed.length, diffMoved: result.diff.moved?.length || 0, relayItems: result.relayItems.length, relayContentWasEmpty: result.relayContentWasEmpty, requiresConfirmation: result.requiresConfirmation, snapshotDiffInfo: result.snapshotDiffInfo, categories: result.categories });
+          diagLog('lists', 'fetchAndCompare(bookmarks): raw adapter result', {
+            diffAdded: result.diff.added.length,
+            diffRemoved: result.diff.removed.length,
+            diffMoved: result.diff.moved?.length || 0,
+            relayItems: result.relayItems.length,
+            relayContentWasEmpty: result.relayContentWasEmpty,
+            requiresConfirmation: result.requiresConfirmation,
+            snapshotDiffInfo: result.snapshotDiffInfo,
+            categories: result.categories,
+          });
           return {
-            diff: { added: result.diff.added, removed: result.diff.removed, moved: result.diff.moved },
+            diff: {
+              added: result.diff.added,
+              removed: result.diff.removed,
+              moved: result.diff.moved,
+            },
             relayItems: result.relayItems,
             relayContentWasEmpty: result.relayContentWasEmpty,
             requiresConfirmation: result.requiresConfirmation,
@@ -628,13 +812,21 @@ export class AutoSyncService {
             snapshotDiffInfo: result.snapshotDiffInfo,
             categoryAssignments: result.categoryAssignments,
             categories: result.categories,
-            ...(result.deletedCoordinates ? { deletedCoordinates: result.deletedCoordinates } : {})
+            ...(result.deletedCoordinates
+              ? { deletedCoordinates: result.deletedCoordinates }
+              : {}),
           };
         }
 
         case 'mutes': {
           const result = await this.muteAdapter.syncFromRelays();
-          diagLog('lists', 'fetchAndCompare(mutes): raw adapter result', { diffAdded: result.diff.added.length, diffRemoved: result.diff.removed.length, relayItems: result.relayItems.length, relayContentWasEmpty: result.relayContentWasEmpty, requiresConfirmation: result.requiresConfirmation });
+          diagLog('lists', 'fetchAndCompare(mutes): raw adapter result', {
+            diffAdded: result.diff.added.length,
+            diffRemoved: result.diff.removed.length,
+            relayItems: result.relayItems.length,
+            relayContentWasEmpty: result.relayContentWasEmpty,
+            requiresConfirmation: result.requiresConfirmation,
+          });
           return {
             diff: { added: result.diff.added, removed: result.diff.removed },
             relayItems: result.relayItems,
@@ -642,26 +834,41 @@ export class AutoSyncService {
             requiresConfirmation: result.requiresConfirmation,
             relayTimestamp: result.relayTimestamp,
             categoryAssignments: undefined,
-            categories: undefined
+            categories: undefined,
           };
         }
 
         case 'tribes': {
           const result = await this.tribeAdapter.syncFromRelays();
-          diagLog('lists', 'fetchAndCompare(tribes): raw adapter result', { diffAdded: result.diff.added.length, diffRemoved: result.diff.removed.length, diffMoved: result.diff.moved?.length || 0, relayItems: result.relayItems.length, relayContentWasEmpty: result.relayContentWasEmpty, requiresConfirmation: result.requiresConfirmation, categories: result.categories });
+          diagLog('lists', 'fetchAndCompare(tribes): raw adapter result', {
+            diffAdded: result.diff.added.length,
+            diffRemoved: result.diff.removed.length,
+            diffMoved: result.diff.moved?.length || 0,
+            relayItems: result.relayItems.length,
+            relayContentWasEmpty: result.relayContentWasEmpty,
+            requiresConfirmation: result.requiresConfirmation,
+            categories: result.categories,
+          });
           return {
-            diff: { added: result.diff.added, removed: result.diff.removed, moved: result.diff.moved },
+            diff: {
+              added: result.diff.added,
+              removed: result.diff.removed,
+              moved: result.diff.moved,
+            },
             relayItems: result.relayItems,
             relayContentWasEmpty: result.relayContentWasEmpty,
             requiresConfirmation: result.requiresConfirmation,
             relayTimestamp: result.relayTimestamp,
             categoryAssignments: result.categoryAssignments,
-            categories: result.categories
+            categories: result.categories,
           };
         }
       }
     } catch (error) {
-      this.systemLogger.error('ListAutoSync', `Failed to fetch ${listType} from relays: ${error}`);
+      this.systemLogger.error(
+        'ListAutoSync',
+        `Failed to fetch ${listType} from relays: ${error}`
+      );
       return null;
     }
   }
@@ -672,20 +879,40 @@ export class AutoSyncService {
   /**
    * Apply overwrite strategy (replace browser with relay)
    */
-  private applyOverwrite(listType: ListType, relayItems: unknown[], relayContentWasEmpty: boolean): void {
-    diagLog('lists', `applyOverwrite(${listType})`, { relayItemsCount: relayItems.length, relayContentWasEmpty });
+  private applyOverwrite(
+    listType: ListType,
+    relayItems: unknown[],
+    relayContentWasEmpty: boolean
+  ): void {
+    diagLog('lists', `applyOverwrite(${listType})`, {
+      relayItemsCount: relayItems.length,
+      relayContentWasEmpty,
+    });
     switch (listType) {
       case 'follows':
-        this.followAdapter.applySyncFromRelays('overwrite', relayItems as FollowItem[], relayContentWasEmpty);
+        this.followAdapter.applySyncFromRelays(
+          'overwrite',
+          relayItems as FollowItem[],
+          relayContentWasEmpty
+        );
         break;
       case 'bookmarks':
-        this.bookmarkAdapter.applySyncFromRelays('overwrite', relayItems as BookmarkItem[]);
+        this.bookmarkAdapter.applySyncFromRelays(
+          'overwrite',
+          relayItems as BookmarkItem[]
+        );
         break;
       case 'mutes':
-        this.muteAdapter.applySyncFromRelays('overwrite', relayItems as string[]);
+        this.muteAdapter.applySyncFromRelays(
+          'overwrite',
+          relayItems as string[]
+        );
         break;
       case 'tribes':
-        this.tribeAdapter.applySyncFromRelays('overwrite', relayItems as TribeMember[]);
+        this.tribeAdapter.applySyncFromRelays(
+          'overwrite',
+          relayItems as TribeMember[]
+        );
         break;
     }
   }
@@ -693,8 +920,15 @@ export class AutoSyncService {
   /**
    * Apply folder assignments for bookmarks/tribes
    */
-  private async applyFolderAssignments(listType: ListType, result: SyncResult): Promise<void> {
-    diagLog('lists', `applyFolderAssignments(${listType})`, { relayItemsCount: result.relayItems.length, categories: result.categories, categoryAssignmentsSize: result.categoryAssignments?.size || 0 });
+  private async applyFolderAssignments(
+    listType: ListType,
+    result: SyncResult
+  ): Promise<void> {
+    diagLog('lists', `applyFolderAssignments(${listType})`, {
+      relayItemsCount: result.relayItems.length,
+      categories: result.categories,
+      categoryAssignmentsSize: result.categoryAssignments?.size || 0,
+    });
     if (listType === 'bookmarks' && result.categoryAssignments) {
       applyBookmarkRelayResult(
         result.relayItems as BookmarkItem[],
@@ -712,13 +946,13 @@ export class AutoSyncService {
     }
   }
 
-
   /**
    * Get the newest timestamp from relay items (max addedAt) or from SyncResult.relayTimestamp
    */
   private getRelayTimestamp(result: SyncResult): number {
     // Use explicit relayTimestamp if available (set by adapters from event.created_at)
-    if (result.relayTimestamp && result.relayTimestamp > 0) return result.relayTimestamp;
+    if (result.relayTimestamp && result.relayTimestamp > 0)
+      return result.relayTimestamp;
     // Fallback: extract from items
     let max = 0;
     for (const item of result.relayItems) {
@@ -737,7 +971,11 @@ interface SyncResult {
   relayContentWasEmpty: boolean;
   relayTimestamp?: number;
   requiresConfirmation: boolean;
-  snapshotDiffInfo?: { isOrderOnly: boolean; hasFolderSetDiff: boolean; details: string[] };
+  snapshotDiffInfo?: {
+    isOrderOnly: boolean;
+    hasFolderSetDiff: boolean;
+    details: string[];
+  };
   categoryAssignments: Map<string, string> | undefined;
   categories: string[] | undefined;
   /** Bookmarks-only: kind:5 deletion coordinates from this fetch, used by the

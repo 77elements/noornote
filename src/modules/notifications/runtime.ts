@@ -11,9 +11,15 @@ import type { NotificationsModuleApi } from './contracts';
  *
  * Once PostLoginService is fully migrated away, start() moves here.
  */
-export class NotificationsRuntime implements ModuleRuntime<NotificationsModuleApi> {
-  private orchestrator: import('../../services/orchestration/NotificationsOrchestrator').NotificationsOrchestrator | null = null;
-  private cacheService: import('../../services/NotificationsCacheService').NotificationsCacheService | null = null;
+export class NotificationsRuntime
+  implements ModuleRuntime<NotificationsModuleApi>
+{
+  private orchestrator:
+    | import('../../services/orchestration/NotificationsOrchestrator').NotificationsOrchestrator
+    | null = null;
+  private cacheService:
+    | import('../../services/NotificationsCacheService').NotificationsCacheService
+    | null = null;
 
   async init(_ctx: ModuleContext): Promise<void> {
     const [orchMod, cacheMod] = await Promise.all([
@@ -35,17 +41,18 @@ export class NotificationsRuntime implements ModuleRuntime<NotificationsModuleAp
     return {
       getUnreadCount: () => orch?.getUnreadCount() ?? 0,
       getHighestUnreadPriority: () => orch?.getHighestUnreadPriority() ?? null,
-      refreshSubscriptions: () => orch?.refreshSubscriptions() ?? Promise.resolve(),
+      refreshSubscriptions: () =>
+        orch?.refreshSubscriptions() ?? Promise.resolve(),
       refreshMutedUsers: () => orch?.refreshMutedUsers() ?? Promise.resolve(),
       markAsRead: () => orch?.markAsRead(),
       start: () => orch?.start() ?? Promise.resolve(),
       stop: () => orch?.stop(),
       getCacheLimit: () => cs?.getLimit() ?? 100,
-      setCacheLimit: (limit) => cs?.setLimit(limit),
+      setCacheLimit: limit => cs?.setLimit(limit),
       updateLastSeen: () => cs?.updateLastSeen(),
       getCachedNotifications: () => cs?.getCachedNotifications() ?? [],
       getLastFetch: () => cs?.getLastFetch() ?? 0,
-      addNotifications: (events) => cs?.addNotifications(events),
+      addNotifications: events => cs?.addNotifications(events),
     };
   }
 }

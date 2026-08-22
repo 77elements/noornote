@@ -25,24 +25,40 @@ class MutualChangeServiceImpl {
     this.storage = MutualChangeStorage.getInstance();
     this.systemLogger = SystemLogger.getInstance();
 
-    this.eventBus.on('user:login', () => { void this.handleLogin(); });
-    this.eventBus.on('user:logout', () => { this.handleLogout(); });
-    this.systemLogger.info('MutualChangeService', 'Service initialized, waiting for login...');
+    this.eventBus.on('user:login', () => {
+      void this.handleLogin();
+    });
+    this.eventBus.on('user:logout', () => {
+      this.handleLogout();
+    });
+    this.systemLogger.info(
+      'MutualChangeService',
+      'Service initialized, waiting for login...'
+    );
   }
 
   /** Load the persisted snapshot so the manual "Check for Changes" can diff against it. */
   private async handleLogin(): Promise<void> {
     try {
       await this.storage.initFromFile();
-      this.systemLogger.info('MutualChangeService', 'Storage initialized from file');
+      this.systemLogger.info(
+        'MutualChangeService',
+        'Storage initialized from file'
+      );
     } catch (error) {
-      this.systemLogger.error('MutualChangeService', `Failed to init storage: ${error}`);
+      this.systemLogger.error(
+        'MutualChangeService',
+        `Failed to init storage: ${error}`
+      );
     }
   }
 
   private handleLogout(): void {
     this.storage.clearLocalStorage();
-    this.systemLogger.info('MutualChangeService', 'Storage cache cleared on logout');
+    this.systemLogger.info(
+      'MutualChangeService',
+      'Storage cache cleared on logout'
+    );
   }
 }
 

@@ -24,12 +24,14 @@ export class VideoNoteProcessor {
       throw new Error('Event ID is required');
     }
 
-    const authorProfile = VideoNoteProcessor.contentProcessor.getNonBlockingProfile(event.pubkey);
+    const authorProfile =
+      VideoNoteProcessor.contentProcessor.getNonBlockingProfile(event.pubkey);
 
-    const processedContent = VideoNoteProcessor.contentProcessor.processContentWithTags(
-      event.content,
-      event.tags
-    );
+    const processedContent =
+      VideoNoteProcessor.contentProcessor.processContentWithTags(
+        event.content,
+        event.tags
+      );
 
     VideoNoteProcessor.prependVideoContent(processedContent, event.tags);
 
@@ -38,17 +40,17 @@ export class VideoNoteProcessor {
       type: 'original',
       timestamp: event.created_at,
       author: {
-        pubkey: event.pubkey
+        pubkey: event.pubkey,
       },
       content: processedContent,
-      rawEvent: event
+      rawEvent: event,
     };
 
     if (authorProfile) {
       result.author.profile = {
         name: authorProfile.name,
         display_name: authorProfile.display_name,
-        picture: authorProfile.picture
+        picture: authorProfile.picture,
       };
     }
 
@@ -60,7 +62,10 @@ export class VideoNoteProcessor {
    * Shared by VideoNoteProcessor.process() and QuotedNoteRenderer.createQuoteBox()
    * Mutates processedContent in place: prepends HTML, pushes video media
    */
-  static prependVideoContent(processedContent: ProcessedContent, tags: string[][]): void {
+  static prependVideoContent(
+    processedContent: ProcessedContent,
+    tags: string[][]
+  ): void {
     const videoMedia = VideoNoteProcessor.extractVideoFromTags(tags);
     const title = getTag(tags, 'title');
 
@@ -118,7 +123,10 @@ export class VideoNoteProcessor {
           case 'dim': {
             const dimMatch = value.match(/^(\d+)x(\d+)$/);
             if (dimMatch) {
-              dimensions = { width: parseInt(dimMatch[1]!), height: parseInt(dimMatch[2]!) };
+              dimensions = {
+                width: parseInt(dimMatch[1]!),
+                height: parseInt(dimMatch[2]!),
+              };
             }
             break;
           }
@@ -138,7 +146,9 @@ export class VideoNoteProcessor {
     if (media.length === 0) {
       const urlTag = tags.find(tag => tag[0] === 'url');
       if (urlTag?.[1]) {
-        const thumbTag = tags.find(tag => tag[0] === 'thumb' || tag[0] === 'image');
+        const thumbTag = tags.find(
+          tag => tag[0] === 'thumb' || tag[0] === 'image'
+        );
         const item: MediaContent = { type: 'video', url: urlTag[1] };
         if (thumbTag?.[1]) item.thumbnail = thumbTag[1];
         media.push(item);

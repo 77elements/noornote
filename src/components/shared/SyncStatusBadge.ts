@@ -78,7 +78,8 @@ export class SyncStatusBadge {
 
       case 'synced':
         const timeAgo = data.timestamp ? formatTimeAgo(data.timestamp) : '';
-        const countText = data.count !== undefined ? ` (${data.count} follows)` : '';
+        const countText =
+          data.count !== undefined ? ` (${data.count} follows)` : '';
         return `
           <div class="sync-status-badge sync-status-badge--synced">
             <svg class="sync-status-badge__icon" width="14" height="14"><use href="#icon-synced"/></svg>
@@ -100,15 +101,18 @@ export class SyncStatusBadge {
     }
   }
 
-
   /**
    * Subscribe to AppState for automatic updates
    */
-  public subscribeToSyncStatus(callback?: (data: SyncStatusData) => void): void {
+  public subscribeToSyncStatus(
+    callback?: (data: SyncStatusData) => void
+  ): void {
     // Subscribe to followlist sync state in AppState
-    this.unsubscribe = this.appState.subscribe('user', (userState) => {
+    this.unsubscribe = this.appState.subscribe('user', userState => {
       // We'll add syncStatus to UserState in next step
-      const syncData = (userState as any).syncStatus as SyncStatusData | undefined;
+      const syncData = (userState as any).syncStatus as
+        | SyncStatusData
+        | undefined;
 
       if (syncData) {
         this.render(syncData);

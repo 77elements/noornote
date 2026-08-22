@@ -9,7 +9,10 @@
 import { TypedEventBus } from '../core/TypedEventBus';
 import { ToastService } from '../services/ToastService';
 import { PlatformService } from '../services/PlatformService';
-import { PerAccountLocalStorage, StorageKeys } from '../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../services/PerAccountLocalStorage';
 
 export type ListSyncMode = 'manual' | 'easy';
 
@@ -19,7 +22,10 @@ const MODE_CHANGED_EVENT = 'list-sync-mode:changed';
  * Get current sync mode
  */
 export function getListSyncMode(): ListSyncMode {
-  const stored = PerAccountLocalStorage.getInstance().get<string>(StorageKeys.LIST_SYNC_MODE, 'easy');
+  const stored = PerAccountLocalStorage.getInstance().get<string>(
+    StorageKeys.LIST_SYNC_MODE,
+    'easy'
+  );
   if (stored === 'manual') return 'manual';
   return 'easy';
 }
@@ -65,9 +71,12 @@ export function switchSyncMode(): ListSyncMode {
  * @param container - Container element to search for links
  * @param onSwitch - Callback after mode is switched (for re-rendering)
  */
-export function bindSwitchSyncModeLink(container: HTMLElement, onSwitch: () => void): void {
+export function bindSwitchSyncModeLink(
+  container: HTMLElement,
+  onSwitch: () => void
+): void {
   container.querySelectorAll('.switch-sync-mode-link').forEach(link => {
-    link.addEventListener('click', (e) => {
+    link.addEventListener('click', e => {
       e.preventDefault();
       const newMode = switchSyncMode();
       const modeLabel = newMode === 'easy' ? 'Easy Mode' : 'Manual Mode';
@@ -92,7 +101,9 @@ export function bindListSyncButtons(
   }
 ): void {
   const bind = (cls: string, handler: () => void) => {
-    container.querySelectorAll(`.${cls}`).forEach(btn => btn.addEventListener('click', handler));
+    container
+      .querySelectorAll(`.${cls}`)
+      .forEach(btn => btn.addEventListener('click', handler));
   };
   bind('sync-from-relays-btn', handlers.onSyncFromRelays);
   bind('sync-to-relays-btn', handlers.onSyncToRelays);

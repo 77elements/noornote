@@ -26,7 +26,8 @@ export class MarketplaceAddonView extends View {
   constructor() {
     super();
     this.container = document.createElement('div');
-    this.container.className = 'view-content view-content--addon view-content--addon-marketplace';
+    this.container.className =
+      'view-content view-content--addon view-content--addon-marketplace';
     this.container.innerHTML = `
       <h1>Marketplace</h1>
       <section class="section" id="marketplace-settings-content"></section>
@@ -35,16 +36,21 @@ export class MarketplaceAddonView extends View {
     this.settings = new MarketplaceSettingsSection();
     this.settings.mount(this.container);
 
-    this.contentEl = this.container.querySelector('[data-addon-content="marketplace"]') as HTMLElement;
+    this.contentEl = this.container.querySelector(
+      '[data-addon-content="marketplace"]'
+    ) as HTMLElement;
 
     if (isMarketplaceEnabled()) {
       this.mountTimeline();
     }
 
-    this.toggleSubId = TypedEventBus.getInstance().on('marketplace:toggle', (payload: { enabled: boolean }) => {
-      if (payload.enabled) this.mountTimeline();
-      else this.unmountTimeline();
-    });
+    this.toggleSubId = TypedEventBus.getInstance().on(
+      'marketplace:toggle',
+      (payload: { enabled: boolean }) => {
+        if (payload.enabled) this.mountTimeline();
+        else this.unmountTimeline();
+      }
+    );
   }
 
   private mountTimeline(): void {

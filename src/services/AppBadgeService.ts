@@ -25,7 +25,6 @@ export class AppBadgeService {
   private originalTitle: string;
   private badgeApi: any = null;
 
-
   private constructor() {
     this.eventBus = TypedEventBus.getInstance();
     this.authService = AuthService.getInstance();
@@ -49,7 +48,6 @@ export class AppBadgeService {
     return AppBadgeService.instance;
   }
 
-
   /**
    * Initialize badge API (Electron only)
    */
@@ -58,7 +56,8 @@ export class AppBadgeService {
 
     if (this.platform.isElectron) {
       this.badgeApi = {
-        setBadgeCount: (count: number | null) => window.electronAPI!.setBadgeCount(count ?? 0)
+        setBadgeCount: (count: number | null) =>
+          window.electronAPI!.setBadgeCount(count ?? 0),
       };
     }
   }
@@ -79,7 +78,6 @@ export class AppBadgeService {
     this.subscriptionIds.push(
       this.eventBus.on('dm:fetch-complete', () => this.updateBadge())
     );
-
   }
 
   /**

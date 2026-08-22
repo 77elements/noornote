@@ -58,22 +58,41 @@ export class VideoService {
    * @returns nevent on success, null on failure
    */
   public async publishVideo(options: VideoOptions): Promise<string | null> {
-    const { videoUrl, mimeType, dimensions, thumbnailUrl, title, content, topics, relays, kindOverride } = options;
+    const {
+      videoUrl,
+      mimeType,
+      dimensions,
+      thumbnailUrl,
+      title,
+      content,
+      topics,
+      relays,
+      kindOverride,
+    } = options;
 
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      this.systemLogger.error('VideoService', 'Cannot publish video: User not authenticated');
+      this.systemLogger.error(
+        'VideoService',
+        'Cannot publish video: User not authenticated'
+      );
       return null;
     }
 
     if (!videoUrl?.trim()) {
-      this.systemLogger.error('VideoService', 'Cannot publish video: No video URL');
+      this.systemLogger.error(
+        'VideoService',
+        'Cannot publish video: No video URL'
+      );
       ToastService.show('Please upload a video first', 'error');
       return null;
     }
 
     if (!relays?.length) {
-      this.systemLogger.error('VideoService', 'Cannot publish video: No relays specified');
+      this.systemLogger.error(
+        'VideoService',
+        'Cannot publish video: No relays specified'
+      );
       ToastService.show('Please select at least one relay', 'error');
       return null;
     }
@@ -93,19 +112,17 @@ export class VideoService {
 
       // Build imeta tag (NIP-92)
       const imetaParts: string[] = [
-        'url ' + videoUrl.trim(),
-        'm ' + mimeType.trim()
+        `url ${videoUrl.trim()}`,
+        `m ${mimeType.trim()}`,
       ];
       if (dimensions) {
-        imetaParts.push('dim ' + dimensions.width + 'x' + dimensions.height);
+        imetaParts.push(`dim ${dimensions.width}x${dimensions.height}`);
       }
       if (thumbnailUrl?.trim()) {
-        imetaParts.push('image ' + thumbnailUrl.trim());
+        imetaParts.push(`image ${thumbnailUrl.trim()}`);
       }
 
-      const tags: string[][] = [
-        ['imeta', ...imetaParts]
-      ];
+      const tags: string[][] = [['imeta', ...imetaParts]];
 
       if (title?.trim()) {
         tags.push(['title', title.trim()]);
@@ -125,7 +142,7 @@ export class VideoService {
         created_at: now,
         tags,
         content: content.trim(),
-        pubkey: currentUser.pubkey
+        pubkey: currentUser.pubkey,
       };
 
       const signedEvent = await this.authService.signEvent(unsignedEvent);
@@ -144,7 +161,11 @@ export class VideoService {
 
       ToastService.show('Video published successfully!', 'success');
 
-      return encodeNevent(signedEvent.id!, relays.slice(0, 2), currentUser.pubkey);
+      return encodeNevent(
+        signedEvent.id!,
+        relays.slice(0, 2),
+        currentUser.pubkey
+      );
     } catch (error) {
       ErrorService.handle(
         error,

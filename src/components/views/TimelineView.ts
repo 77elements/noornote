@@ -14,7 +14,10 @@
 import { View } from './View';
 import { Timeline } from '../timeline/Timeline';
 import { LastNotesPerFollow } from '../timeline/LastNotesPerFollow';
-import { followingTimelineConfig, tribeTimelineConfig } from '../timeline/TimelineConfig';
+import {
+  followingTimelineConfig,
+  tribeTimelineConfig,
+} from '../timeline/TimelineConfig';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { AuthService } from '../../services/AuthService';
 import { SystemLogger } from '../../services/SystemLogger';
@@ -24,8 +27,8 @@ type TabType = 'timeline' | 'last-notes' | 'tribe';
 
 interface TabInfo {
   type: TabType;
-  id: string;      // 'timeline', 'last-notes', or tribe folder ID
-  name: string;    // Display name
+  id: string; // 'timeline', 'last-notes', or tribe folder ID
+  name: string; // Display name
 }
 
 export class TimelineView extends View {
@@ -55,14 +58,17 @@ export class TimelineView extends View {
    * When user switches accounts, re-render entire view with new user's tribes
    */
   private setupUserLoginListener(): void {
-    this.userLoginSubscriptionId = this.eventBus.on('user:login', (data: { pubkey: string }) => {
-      // Only re-render if pubkey actually changed
-      if (data.pubkey !== this.userPubkey) {
-        this.userPubkey = data.pubkey;
-        this.currentTabId = 'timeline'; // Reset to Timeline tab
-        this.rerender();
+    this.userLoginSubscriptionId = this.eventBus.on(
+      'user:login',
+      (data: { pubkey: string }) => {
+        // Only re-render if pubkey actually changed
+        if (data.pubkey !== this.userPubkey) {
+          this.userPubkey = data.pubkey;
+          this.currentTabId = 'timeline'; // Reset to Timeline tab
+          this.rerender();
+        }
       }
-    });
+    );
 
     // Re-render when Tribes addon is toggled (adds/removes tribe tabs)
     this.eventBus.on('tribes:addon-toggle', () => {
@@ -112,7 +118,8 @@ export class TimelineView extends View {
 
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      this.container.innerHTML = '<div class="timeline-view__error">Please login to view timeline</div>';
+      this.container.innerHTML =
+        '<div class="timeline-view__error">Please login to view timeline</div>';
       this.isRendering = false;
       return;
     }
@@ -145,7 +152,7 @@ export class TimelineView extends View {
       tabsWrapper.className = 'tabs tabs--scrollable';
 
       // Create all tabs
-      this.tabs.forEach((tab) => {
+      this.tabs.forEach(tab => {
         const isActive = tab.id === this.currentTabId;
         const tabEl = this.createTab(tab, isActive);
         tabsWrapper.appendChild(tabEl);
@@ -156,7 +163,8 @@ export class TimelineView extends View {
       // Edit link — only meaningful when the Tribes addon is on.
       if (isTribesEnabled()) {
         const editLink = document.createElement('button');
-        editLink.className = 'timeline-view__edit-link btn btn--mini btn--passive';
+        editLink.className =
+          'timeline-view__edit-link btn btn--mini btn--passive';
         editLink.textContent = 'Edit tribes';
         editLink.addEventListener('click', () => {
           this.eventBus.emit('list:open', { listType: 'tribes' });
@@ -197,7 +205,7 @@ export class TimelineView extends View {
     this.tabs.push({
       type: 'timeline',
       id: 'timeline',
-      name: 'Timeline'
+      name: 'Timeline',
     });
 
     // Fixed second tab: newest note from each followed user, freshest author first.
@@ -205,7 +213,7 @@ export class TimelineView extends View {
     this.tabs.push({
       type: 'last-notes',
       id: 'last-notes',
-      name: 'Last notes per follow'
+      name: 'Last notes per follow',
     });
 
     // Add tribe tabs (only if addon enabled)
@@ -217,7 +225,7 @@ export class TimelineView extends View {
         this.tabs.push({
           type: 'tribe',
           id: folder.id,
-          name: folder.name
+          name: folder.name,
         });
       });
     }
@@ -271,12 +279,16 @@ export class TimelineView extends View {
       }
       this.timeline = new Timeline(
         this.userPubkey,
-        filterPubkeys ? tribeTimelineConfig(filterPubkeys) : followingTimelineConfig()
+        filterPubkeys
+          ? tribeTimelineConfig(filterPubkeys)
+          : followingTimelineConfig()
       );
     }
 
     // Mount timeline
-    const timelineContainer = this.container.querySelector('.timeline-view__timeline');
+    const timelineContainer = this.container.querySelector(
+      '.timeline-view__timeline'
+    );
     if (timelineContainer) {
       timelineContainer.innerHTML = '';
       timelineContainer.appendChild(this.timeline.getElement());

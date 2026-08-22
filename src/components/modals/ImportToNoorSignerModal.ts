@@ -36,7 +36,7 @@ export class ImportToNoorSignerModal {
       width: '450px',
       showCloseButton: true,
       closeOnOverlay: false,
-      closeOnEsc: true
+      closeOnEsc: true,
     });
 
     setTimeout(() => {
@@ -59,7 +59,9 @@ export class ImportToNoorSignerModal {
           You'll use this password to unlock your account.
         </p>
 
-        ${this.options.showNsecInput ? `
+        ${
+          this.options.showNsecInput
+            ? `
         <div class="import-noorsigner-modal__field">
           <label for="import-nsec-input">Private Key (nsec)</label>
           <input
@@ -70,7 +72,9 @@ export class ImportToNoorSignerModal {
             autocomplete="off"
           />
         </div>
-        ` : ''}
+        `
+            : ''
+        }
 
         <div class="import-noorsigner-modal__field">
           <label for="import-password-input">Password (min. 8 characters)</label>
@@ -111,20 +115,29 @@ export class ImportToNoorSignerModal {
   }
 
   private setupEventHandlers(): void {
-    const nsecInput = document.getElementById('import-nsec-input') as HTMLInputElement | null;
-    const passwordInput = document.getElementById('import-password-input') as HTMLInputElement;
-    const confirmInput = document.getElementById('import-password-confirm') as HTMLInputElement;
+    const nsecInput = document.getElementById(
+      'import-nsec-input'
+    ) as HTMLInputElement | null;
+    const passwordInput = document.getElementById(
+      'import-password-input'
+    ) as HTMLInputElement;
+    const confirmInput = document.getElementById(
+      'import-password-confirm'
+    ) as HTMLInputElement;
     const cancelBtn = document.getElementById('import-password-cancel-btn');
     const submitBtn = document.getElementById('import-password-submit-btn');
     const errorEl = document.getElementById('import-password-error');
 
-    if (!passwordInput || !confirmInput || !cancelBtn || !submitBtn || !errorEl) return;
+    if (!passwordInput || !confirmInput || !cancelBtn || !submitBtn || !errorEl)
+      return;
 
     const handleSubmit = async () => {
       if (this.isSubmitting) return;
 
       // Get nsec: from input field or from options
-      const nsec = this.options.showNsecInput ? nsecInput?.value?.trim() || '' : this.options.nsec;
+      const nsec = this.options.showNsecInput
+        ? nsecInput?.value?.trim() || ''
+        : this.options.nsec;
       const password = passwordInput.value;
       const confirm = confirmInput.value;
 
@@ -182,10 +195,7 @@ export class ImportToNoorSignerModal {
           await this.keySignerClient.switchAccount(result.npub, password);
         } else {
           // Daemon not running - use CLI
-          result = await this.keySignerClient.addAccountViaCli(
-            nsec,
-            password
-          );
+          result = await this.keySignerClient.addAccountViaCli(nsec, password);
 
           // Start daemon silently after adding account
           try {
@@ -199,13 +209,14 @@ export class ImportToNoorSignerModal {
         ToastService.show('Key successfully imported to NoorSigner', 'success');
         this.options.onSuccess(result);
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         console.error('Import failed:', errorMessage);
 
         if (errorMessage.includes('account already exists')) {
           this.showError('This account already exists in NoorSigner');
         } else {
-          this.showError('Import failed: ' + errorMessage);
+          this.showError(`Import failed: ${errorMessage}`);
         }
       } finally {
         this.isSubmitting = false;
@@ -224,7 +235,7 @@ export class ImportToNoorSignerModal {
     cancelBtn.addEventListener('click', handleCancel);
     submitBtn.addEventListener('click', handleSubmit);
 
-    confirmInput.addEventListener('keydown', (e) => {
+    confirmInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
         handleSubmit();
       } else if (e.key === 'Escape') {
@@ -232,7 +243,7 @@ export class ImportToNoorSignerModal {
       }
     });
 
-    passwordInput.addEventListener('keydown', (e) => {
+    passwordInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
         confirmInput.focus();
       } else if (e.key === 'Escape') {
@@ -241,7 +252,7 @@ export class ImportToNoorSignerModal {
     });
 
     if (nsecInput) {
-      nsecInput.addEventListener('keydown', (e) => {
+      nsecInput.addEventListener('keydown', e => {
         if (e.key === 'Enter') {
           passwordInput.focus();
         } else if (e.key === 'Escape') {

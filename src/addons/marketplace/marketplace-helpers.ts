@@ -8,5 +8,8 @@
  * call sites keep working unchanged.
  */
 
-export { parseListingMetadata, formatPrice } from '../../helpers/listingMetadata';
+export {
+  parseListingMetadata,
+  formatPrice,
+} from '../../helpers/listingMetadata';
 export type { ListingMetadata } from '../../helpers/listingMetadata';

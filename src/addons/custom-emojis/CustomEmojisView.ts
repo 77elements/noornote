@@ -17,7 +17,8 @@ export class CustomEmojisView extends View {
   constructor() {
     super();
     this.container = document.createElement('div');
-    this.container.className = 'view-content view-content--addon view-content--addon-custom-emojis';
+    this.container.className =
+      'view-content view-content--addon view-content--addon-custom-emojis';
     this.container.innerHTML = `
       <h1>Custom Emojis</h1>
       <section class="section" id="custom-emojis-settings-content"></section>

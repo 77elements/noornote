@@ -10,7 +10,10 @@ import { SettingsSection } from './SettingsSection';
 import { Switch } from '../ui/Switch';
 import { CustomDropdown } from '../ui/CustomDropdown';
 import { ToastService } from '../../services/ToastService';
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../services/PerAccountLocalStorage';
 import {
   DEFAULT_MEDIA_COMPRESSION_SETTINGS,
   type CompressionQuality,
@@ -33,12 +36,31 @@ export class MediaServerSection extends SettingsSection {
   private sensitiveMediaSettings: SensitiveMediaSettings;
   private compressionSettings: MediaCompressionSettings;
 
-
   private static readonly POPULAR_SERVERS = [
-    { url: 'https://nostr.build', name: 'nostr.build (Most popular, NIP-96, free: 20 MiB)', protocol: 'nip96' as const, maxFileSize: 20 * 1024 * 1024 },
-    { url: 'https://blossom.nostr.build', name: 'blossom.nostr.build (Blossom, free: 20 MiB)', protocol: 'blossom' as const, maxFileSize: 20 * 1024 * 1024 },
-    { url: 'https://blossom.band', name: 'blossom.band (Blossom, free: 20 MiB)', protocol: 'blossom' as const, maxFileSize: 20 * 1024 * 1024 },
-    { url: 'https://blossom.primal.net', name: 'blossom.primal.net (Blossom, free: 20 MiB)', protocol: 'blossom' as const, maxFileSize: 20 * 1024 * 1024 }
+    {
+      url: 'https://nostr.build',
+      name: 'nostr.build (Most popular, NIP-96, free: 20 MiB)',
+      protocol: 'nip96' as const,
+      maxFileSize: 20 * 1024 * 1024,
+    },
+    {
+      url: 'https://blossom.nostr.build',
+      name: 'blossom.nostr.build (Blossom, free: 20 MiB)',
+      protocol: 'blossom' as const,
+      maxFileSize: 20 * 1024 * 1024,
+    },
+    {
+      url: 'https://blossom.band',
+      name: 'blossom.band (Blossom, free: 20 MiB)',
+      protocol: 'blossom' as const,
+      maxFileSize: 20 * 1024 * 1024,
+    },
+    {
+      url: 'https://blossom.primal.net',
+      name: 'blossom.primal.net (Blossom, free: 20 MiB)',
+      protocol: 'blossom' as const,
+      maxFileSize: 20 * 1024 * 1024,
+    },
   ];
 
   constructor() {
@@ -49,10 +71,11 @@ export class MediaServerSection extends SettingsSection {
   }
 
   private loadCompressionSettings(): MediaCompressionSettings {
-    const stored = PerAccountLocalStorage.getInstance().get<MediaCompressionSettings>(
-      StorageKeys.MEDIA_COMPRESSION,
-      DEFAULT_MEDIA_COMPRESSION_SETTINGS,
-    );
+    const stored =
+      PerAccountLocalStorage.getInstance().get<MediaCompressionSettings>(
+        StorageKeys.MEDIA_COMPRESSION,
+        DEFAULT_MEDIA_COMPRESSION_SETTINGS
+      );
     // Merge with defaults so newer fields backfill on existing accounts.
     return {
       image: { ...DEFAULT_MEDIA_COMPRESSION_SETTINGS.image, ...stored.image },
@@ -62,26 +85,35 @@ export class MediaServerSection extends SettingsSection {
   }
 
   private saveCompressionSettings(): void {
-    PerAccountLocalStorage.getInstance().set(StorageKeys.MEDIA_COMPRESSION, this.compressionSettings);
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.MEDIA_COMPRESSION,
+      this.compressionSettings
+    );
   }
 
   /**
    * Load media server settings from storage
    */
   private loadMediaServerSettings(): MediaServerSettings {
-    const stored = PerAccountLocalStorage.getInstance().get<MediaServerSettings>(
-      StorageKeys.MEDIA_SERVER,
-      { url: 'https://nostr.build', protocol: 'nip96' }
-    );
+    const stored =
+      PerAccountLocalStorage.getInstance().get<MediaServerSettings>(
+        StorageKeys.MEDIA_SERVER,
+        { url: 'https://nostr.build', protocol: 'nip96' }
+      );
     // Presets are the source of truth for their free-tier size limits. Re-derive
     // maxFileSize from the matching preset so accounts that stored an outdated
     // value (or none) pick up corrected limits without re-selecting the server.
     // Persist the correction so the upload service (which reads the same storage
     // key) enforces the right limit on its pre-upload size check.
-    const preset = MediaServerSection.POPULAR_SERVERS.find(s => s.url === stored.url);
+    const preset = MediaServerSection.POPULAR_SERVERS.find(
+      s => s.url === stored.url
+    );
     if (preset && stored.maxFileSize !== preset.maxFileSize) {
       stored.maxFileSize = preset.maxFileSize;
-      PerAccountLocalStorage.getInstance().set(StorageKeys.MEDIA_SERVER, stored);
+      PerAccountLocalStorage.getInstance().set(
+        StorageKeys.MEDIA_SERVER,
+        stored
+      );
     }
     return stored;
   }
@@ -90,21 +122,30 @@ export class MediaServerSection extends SettingsSection {
    * Save media server settings to storage
    */
   private saveMediaServerSettings(): void {
-    PerAccountLocalStorage.getInstance().set(StorageKeys.MEDIA_SERVER, this.mediaServerSettings);
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.MEDIA_SERVER,
+      this.mediaServerSettings
+    );
   }
 
   /**
    * Load sensitive media settings from storage
    */
   private loadSensitiveMediaSettings(): SensitiveMediaSettings {
-    return PerAccountLocalStorage.getInstance().get<SensitiveMediaSettings>(StorageKeys.SENSITIVE_MEDIA, { displayNSFW: false });
+    return PerAccountLocalStorage.getInstance().get<SensitiveMediaSettings>(
+      StorageKeys.SENSITIVE_MEDIA,
+      { displayNSFW: false }
+    );
   }
 
   /**
    * Save sensitive media settings to storage
    */
   private saveSensitiveMediaSettings(): void {
-    PerAccountLocalStorage.getInstance().set(StorageKeys.SENSITIVE_MEDIA, this.sensitiveMediaSettings);
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.SENSITIVE_MEDIA,
+      this.sensitiveMediaSettings
+    );
   }
 
   /**
@@ -114,13 +155,10 @@ export class MediaServerSection extends SettingsSection {
     const blossomServers = [
       'blossom.nostr.build',
       'blossom.band',
-      'blossom.primal.net'
+      'blossom.primal.net',
     ];
 
-    const nip96Servers = [
-      'nostr.build',
-      'image.nostr.build'
-    ];
+    const nip96Servers = ['nostr.build', 'image.nostr.build'];
 
     if (blossomServers.some(server => url.includes(server))) {
       return 'blossom';
@@ -227,7 +265,9 @@ export class MediaServerSection extends SettingsSection {
   }
 
   private renderImageCompression(): string {
-    const minKb = Math.round(this.compressionSettings.image.minSizeBytes / 1024);
+    const minKb = Math.round(
+      this.compressionSettings.image.minSizeBytes / 1024
+    );
     return `
         <div class="setting">
           <span class="setting__label">Image Compression</span>
@@ -262,7 +302,9 @@ export class MediaServerSection extends SettingsSection {
   }
 
   private renderVideoCompression(): string {
-    const minMb = Math.round(this.compressionSettings.video.minSizeBytes / (1024 * 1024));
+    const minMb = Math.round(
+      this.compressionSettings.video.minSizeBytes / (1024 * 1024)
+    );
     return `
         <div class="setting">
           <span class="setting__label">Video Compression</span>
@@ -296,7 +338,9 @@ export class MediaServerSection extends SettingsSection {
   }
 
   private renderAudioCompression(): string {
-    const minMb = Math.round(this.compressionSettings.audio.minSizeBytes / (1024 * 1024));
+    const minMb = Math.round(
+      this.compressionSettings.audio.minSizeBytes / (1024 * 1024)
+    );
     return `
         <div class="setting">
           <span class="setting__label">Audio Compression</span>
@@ -365,23 +409,29 @@ export class MediaServerSection extends SettingsSection {
    * Setup media server dropdown
    */
   private setupMediaServerDropdown(contentContainer: HTMLElement): void {
-    const mount = contentContainer.querySelector('#media-server-dropdown-mount');
+    const mount = contentContainer.querySelector(
+      '#media-server-dropdown-mount'
+    );
     if (!mount) return;
 
     const popularServers = MediaServerSection.POPULAR_SERVERS;
     const options = [
       ...popularServers.map(s => ({ value: s.url, label: s.name })),
-      { value: 'custom', label: 'Custom...' }
+      { value: 'custom', label: 'Custom...' },
     ];
 
-    const isCustom = !popularServers.some(s => s.url === this.mediaServerSettings.url);
+    const isCustom = !popularServers.some(
+      s => s.url === this.mediaServerSettings.url
+    );
     const selectedValue = isCustom ? 'custom' : this.mediaServerSettings.url;
 
     const dropdown = new CustomDropdown({
       options,
       selectedValue,
-      onChange: (value) => {
-        const customSection = contentContainer.querySelector('#custom-server-section');
+      onChange: value => {
+        const customSection = contentContainer.querySelector(
+          '#custom-server-section'
+        );
         if (value === 'custom') {
           customSection?.classList.remove('hidden');
         } else {
@@ -389,14 +439,15 @@ export class MediaServerSection extends SettingsSection {
           this.mediaServerSettings.url = value;
 
           const selectedServer = popularServers.find(s => s.url === value);
-          const detectedProtocol = selectedServer?.protocol || this.getProtocolForServer(value);
+          const detectedProtocol =
+            selectedServer?.protocol || this.getProtocolForServer(value);
           this.mediaServerSettings.protocol = detectedProtocol;
           this.mediaServerSettings.maxFileSize = selectedServer?.maxFileSize;
 
           this.saveMediaServerSettings();
           ToastService.show('Media server saved', 'success');
         }
-      }
+      },
     });
 
     mount.appendChild(dropdown.getElement());
@@ -433,27 +484,44 @@ export class MediaServerSection extends SettingsSection {
     ];
 
     // ---- Video toggle + detail rows
-    const videoSwitchMount = contentContainer.querySelector('#compress-video-switch-mount') as HTMLElement | null;
+    const videoSwitchMount = contentContainer.querySelector(
+      '#compress-video-switch-mount'
+    ) as HTMLElement | null;
     const videoDetailRows = [
-      contentContainer.querySelector('#compress-video-quality-row') as HTMLElement | null,
-      contentContainer.querySelector('#compress-video-resolution-row') as HTMLElement | null,
-      contentContainer.querySelector('#compress-video-min-size-row') as HTMLElement | null,
+      contentContainer.querySelector(
+        '#compress-video-quality-row'
+      ) as HTMLElement | null,
+      contentContainer.querySelector(
+        '#compress-video-resolution-row'
+      ) as HTMLElement | null,
+      contentContainer.querySelector(
+        '#compress-video-min-size-row'
+      ) as HTMLElement | null,
     ];
     const setVideoDetailVisible = (show: boolean) => {
       videoDetailRows.forEach(row => row?.classList.toggle('hidden', !show));
     };
-    const videoQualityMount = contentContainer.querySelector('#compress-video-quality-mount') as HTMLElement | null;
-    const videoResolutionMount = contentContainer.querySelector('#compress-video-resolution-mount') as HTMLElement | null;
+    const videoQualityMount = contentContainer.querySelector(
+      '#compress-video-quality-mount'
+    ) as HTMLElement | null;
+    const videoResolutionMount = contentContainer.querySelector(
+      '#compress-video-resolution-mount'
+    ) as HTMLElement | null;
 
     if (videoSwitchMount) {
       const sw = new Switch({
         label: '',
         checked: this.compressionSettings.video.enabled,
-        onChange: (checked) => {
+        onChange: checked => {
           this.compressionSettings.video.enabled = checked;
           this.saveCompressionSettings();
           setVideoDetailVisible(checked);
-          ToastService.show(checked ? 'Video compression enabled' : 'Video compression disabled', 'success');
+          ToastService.show(
+            checked
+              ? 'Video compression enabled'
+              : 'Video compression disabled',
+            'success'
+          );
         },
       });
       videoSwitchMount.innerHTML = sw.render();
@@ -465,7 +533,7 @@ export class MediaServerSection extends SettingsSection {
       const dropdown = new CustomDropdown({
         options: qualityOptions,
         selectedValue: this.compressionSettings.video.quality,
-        onChange: (value) => {
+        onChange: value => {
           this.compressionSettings.video.quality = value as CompressionQuality;
           this.saveCompressionSettings();
         },
@@ -476,8 +544,10 @@ export class MediaServerSection extends SettingsSection {
       const dropdown = new CustomDropdown({
         options: resolutionOptions,
         selectedValue: String(this.compressionSettings.video.maxResolution),
-        onChange: (value) => {
-          this.compressionSettings.video.maxResolution = Number(value) as MaxResolution;
+        onChange: value => {
+          this.compressionSettings.video.maxResolution = Number(
+            value
+          ) as MaxResolution;
           this.saveCompressionSettings();
         },
       });
@@ -485,25 +555,38 @@ export class MediaServerSection extends SettingsSection {
     }
 
     // ---- Audio toggle + detail rows
-    const audioSwitchMount = contentContainer.querySelector('#compress-audio-switch-mount') as HTMLElement | null;
+    const audioSwitchMount = contentContainer.querySelector(
+      '#compress-audio-switch-mount'
+    ) as HTMLElement | null;
     const audioDetailRows = [
-      contentContainer.querySelector('#compress-audio-quality-row') as HTMLElement | null,
-      contentContainer.querySelector('#compress-audio-min-size-row') as HTMLElement | null,
+      contentContainer.querySelector(
+        '#compress-audio-quality-row'
+      ) as HTMLElement | null,
+      contentContainer.querySelector(
+        '#compress-audio-min-size-row'
+      ) as HTMLElement | null,
     ];
     const setAudioDetailVisible = (show: boolean) => {
       audioDetailRows.forEach(row => row?.classList.toggle('hidden', !show));
     };
-    const audioQualityMount = contentContainer.querySelector('#compress-audio-quality-mount') as HTMLElement | null;
+    const audioQualityMount = contentContainer.querySelector(
+      '#compress-audio-quality-mount'
+    ) as HTMLElement | null;
 
     if (audioSwitchMount) {
       const sw = new Switch({
         label: '',
         checked: this.compressionSettings.audio.enabled,
-        onChange: (checked) => {
+        onChange: checked => {
           this.compressionSettings.audio.enabled = checked;
           this.saveCompressionSettings();
           setAudioDetailVisible(checked);
-          ToastService.show(checked ? 'Audio compression enabled' : 'Audio compression disabled', 'success');
+          ToastService.show(
+            checked
+              ? 'Audio compression enabled'
+              : 'Audio compression disabled',
+            'success'
+          );
         },
       });
       audioSwitchMount.innerHTML = sw.render();
@@ -515,7 +598,7 @@ export class MediaServerSection extends SettingsSection {
       const dropdown = new CustomDropdown({
         options: qualityOptions,
         selectedValue: this.compressionSettings.audio.quality,
-        onChange: (value) => {
+        onChange: value => {
           this.compressionSettings.audio.quality = value as CompressionQuality;
           this.saveCompressionSettings();
         },
@@ -524,27 +607,44 @@ export class MediaServerSection extends SettingsSection {
     }
 
     // ---- Image toggle + detail rows
-    const imageSwitchMount = contentContainer.querySelector('#compress-image-switch-mount') as HTMLElement | null;
+    const imageSwitchMount = contentContainer.querySelector(
+      '#compress-image-switch-mount'
+    ) as HTMLElement | null;
     const imageDetailRows = [
-      contentContainer.querySelector('#compress-image-quality-row') as HTMLElement | null,
-      contentContainer.querySelector('#compress-image-resolution-row') as HTMLElement | null,
-      contentContainer.querySelector('#compress-image-min-size-row') as HTMLElement | null,
+      contentContainer.querySelector(
+        '#compress-image-quality-row'
+      ) as HTMLElement | null,
+      contentContainer.querySelector(
+        '#compress-image-resolution-row'
+      ) as HTMLElement | null,
+      contentContainer.querySelector(
+        '#compress-image-min-size-row'
+      ) as HTMLElement | null,
     ];
     const setImageDetailVisible = (show: boolean) => {
       imageDetailRows.forEach(row => row?.classList.toggle('hidden', !show));
     };
-    const imageQualityMount = contentContainer.querySelector('#compress-image-quality-mount') as HTMLElement | null;
-    const imageResolutionMount = contentContainer.querySelector('#compress-image-resolution-mount') as HTMLElement | null;
+    const imageQualityMount = contentContainer.querySelector(
+      '#compress-image-quality-mount'
+    ) as HTMLElement | null;
+    const imageResolutionMount = contentContainer.querySelector(
+      '#compress-image-resolution-mount'
+    ) as HTMLElement | null;
 
     if (imageSwitchMount) {
       const sw = new Switch({
         label: '',
         checked: this.compressionSettings.image.enabled,
-        onChange: (checked) => {
+        onChange: checked => {
           this.compressionSettings.image.enabled = checked;
           this.saveCompressionSettings();
           setImageDetailVisible(checked);
-          ToastService.show(checked ? 'Image compression enabled' : 'Image compression disabled', 'success');
+          ToastService.show(
+            checked
+              ? 'Image compression enabled'
+              : 'Image compression disabled',
+            'success'
+          );
         },
       });
       imageSwitchMount.innerHTML = sw.render();
@@ -556,7 +656,7 @@ export class MediaServerSection extends SettingsSection {
       const dropdown = new CustomDropdown({
         options: qualityOptions,
         selectedValue: this.compressionSettings.image.quality,
-        onChange: (value) => {
+        onChange: value => {
           this.compressionSettings.image.quality = value as CompressionQuality;
           this.saveCompressionSettings();
         },
@@ -567,8 +667,10 @@ export class MediaServerSection extends SettingsSection {
       const dropdown = new CustomDropdown({
         options: imageResolutionOptions,
         selectedValue: String(this.compressionSettings.image.maxResolution),
-        onChange: (value) => {
-          this.compressionSettings.image.maxResolution = Number(value) as MaxResolution;
+        onChange: value => {
+          this.compressionSettings.image.maxResolution = Number(
+            value
+          ) as MaxResolution;
           this.saveCompressionSettings();
         },
       });
@@ -576,33 +678,49 @@ export class MediaServerSection extends SettingsSection {
     }
 
     // ---- Per-kind min-size thresholds
-    const imageMinInput = contentContainer.querySelector('#compression-image-min-size-input') as HTMLInputElement | null;
+    const imageMinInput = contentContainer.querySelector(
+      '#compression-image-min-size-input'
+    ) as HTMLInputElement | null;
     imageMinInput?.addEventListener('change', () => {
       const kb = parseInt(imageMinInput.value, 10);
       if (!Number.isFinite(kb) || kb < 1) {
-        imageMinInput.value = String(Math.round(this.compressionSettings.image.minSizeBytes / 1024));
+        imageMinInput.value = String(
+          Math.round(this.compressionSettings.image.minSizeBytes / 1024)
+        );
         return;
       }
       this.compressionSettings.image.minSizeBytes = kb * 1024;
       this.saveCompressionSettings();
     });
 
-    const videoMinInput = contentContainer.querySelector('#compression-video-min-size-input') as HTMLInputElement | null;
+    const videoMinInput = contentContainer.querySelector(
+      '#compression-video-min-size-input'
+    ) as HTMLInputElement | null;
     videoMinInput?.addEventListener('change', () => {
       const mb = parseInt(videoMinInput.value, 10);
       if (!Number.isFinite(mb) || mb < 1) {
-        videoMinInput.value = String(Math.round(this.compressionSettings.video.minSizeBytes / (1024 * 1024)));
+        videoMinInput.value = String(
+          Math.round(
+            this.compressionSettings.video.minSizeBytes / (1024 * 1024)
+          )
+        );
         return;
       }
       this.compressionSettings.video.minSizeBytes = mb * 1024 * 1024;
       this.saveCompressionSettings();
     });
 
-    const audioMinInput = contentContainer.querySelector('#compression-audio-min-size-input') as HTMLInputElement | null;
+    const audioMinInput = contentContainer.querySelector(
+      '#compression-audio-min-size-input'
+    ) as HTMLInputElement | null;
     audioMinInput?.addEventListener('change', () => {
       const mb = parseInt(audioMinInput.value, 10);
       if (!Number.isFinite(mb) || mb < 1) {
-        audioMinInput.value = String(Math.round(this.compressionSettings.audio.minSizeBytes / (1024 * 1024)));
+        audioMinInput.value = String(
+          Math.round(
+            this.compressionSettings.audio.minSizeBytes / (1024 * 1024)
+          )
+        );
         return;
       }
       this.compressionSettings.audio.minSizeBytes = mb * 1024 * 1024;
@@ -610,45 +728,60 @@ export class MediaServerSection extends SettingsSection {
     });
 
     // ---- EXIF stripping switches (privacy)
-    const stripCriticalMount = contentContainer.querySelector('#strip-exif-critical-mount') as HTMLElement | null;
+    const stripCriticalMount = contentContainer.querySelector(
+      '#strip-exif-critical-mount'
+    ) as HTMLElement | null;
     if (stripCriticalMount) {
       const sw = new Switch({
         label: '',
         checked: this.compressionSettings.image.stripExifCritical,
-        onChange: (checked) => {
+        onChange: checked => {
           this.compressionSettings.image.stripExifCritical = checked;
           this.saveCompressionSettings();
-          ToastService.show(`Location & identity stripping ${checked ? 'enabled' : 'disabled'}`, 'success');
+          ToastService.show(
+            `Location & identity stripping ${checked ? 'enabled' : 'disabled'}`,
+            'success'
+          );
         },
       });
       stripCriticalMount.innerHTML = sw.render();
       sw.setupEventListeners(stripCriticalMount);
     }
 
-    const stripMediumMount = contentContainer.querySelector('#strip-exif-medium-mount') as HTMLElement | null;
+    const stripMediumMount = contentContainer.querySelector(
+      '#strip-exif-medium-mount'
+    ) as HTMLElement | null;
     if (stripMediumMount) {
       const sw = new Switch({
         label: '',
         checked: this.compressionSettings.image.stripExifMedium,
-        onChange: (checked) => {
+        onChange: checked => {
           this.compressionSettings.image.stripExifMedium = checked;
           this.saveCompressionSettings();
-          ToastService.show(`Timestamps & maker blob stripping ${checked ? 'enabled' : 'disabled'}`, 'success');
+          ToastService.show(
+            `Timestamps & maker blob stripping ${checked ? 'enabled' : 'disabled'}`,
+            'success'
+          );
         },
       });
       stripMediumMount.innerHTML = sw.render();
       sw.setupEventListeners(stripMediumMount);
     }
 
-    const stripWeakMount = contentContainer.querySelector('#strip-exif-weak-mount') as HTMLElement | null;
+    const stripWeakMount = contentContainer.querySelector(
+      '#strip-exif-weak-mount'
+    ) as HTMLElement | null;
     if (stripWeakMount) {
       const sw = new Switch({
         label: '',
         checked: this.compressionSettings.image.stripExifWeak,
-        onChange: (checked) => {
+        onChange: checked => {
           this.compressionSettings.image.stripExifWeak = checked;
           this.saveCompressionSettings();
-          ToastService.show(`Device info stripping ${checked ? 'enabled' : 'disabled'}`, 'success');
+          ToastService.show(
+            `Device info stripping ${checked ? 'enabled' : 'disabled'}`,
+            'success'
+          );
         },
       });
       stripWeakMount.innerHTML = sw.render();
@@ -660,7 +793,9 @@ export class MediaServerSection extends SettingsSection {
    * Bind media server event listeners
    */
   private bindMediaServerListeners(contentContainer: HTMLElement): void {
-    const customInput = contentContainer.querySelector('#custom-media-server-url') as HTMLInputElement;
+    const customInput = contentContainer.querySelector(
+      '#custom-media-server-url'
+    ) as HTMLInputElement;
 
     const saveCustomUrl = () => {
       const url = customInput?.value.trim();
@@ -675,32 +810,40 @@ export class MediaServerSection extends SettingsSection {
     };
 
     customInput?.addEventListener('blur', saveCustomUrl);
-    customInput?.addEventListener('keydown', (e) => {
+    customInput?.addEventListener('keydown', e => {
       if (e.key === 'Enter') saveCustomUrl();
     });
-
   }
 
   /**
    * Bind sensitive media event listeners
    */
   private bindSensitiveMediaListeners(contentContainer: HTMLElement): void {
-    const switchContainer = contentContainer.querySelector('#sensitive-media-switch-container');
+    const switchContainer = contentContainer.querySelector(
+      '#sensitive-media-switch-container'
+    );
     if (!switchContainer) return;
 
     const nsfwSwitch = new Switch({
       label: 'Display sensitive media',
       checked: this.sensitiveMediaSettings.displayNSFW,
-      onChange: (checked) => {
+      onChange: checked => {
         this.sensitiveMediaSettings.displayNSFW = checked;
         this.saveSensitiveMediaSettings();
 
-        window.dispatchEvent(new CustomEvent('nsfw-preference-changed', {
-          detail: { displayNSFW: checked }
-        }));
+        window.dispatchEvent(
+          new CustomEvent('nsfw-preference-changed', {
+            detail: { displayNSFW: checked },
+          })
+        );
 
-        ToastService.show(checked ? 'Sensitive media will be shown' : 'Sensitive media will be blurred', 'success');
-      }
+        ToastService.show(
+          checked
+            ? 'Sensitive media will be shown'
+            : 'Sensitive media will be blurred',
+          'success'
+        );
+      },
     });
 
     switchContainer.innerHTML = nsfwSwitch.render();

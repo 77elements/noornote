@@ -16,11 +16,20 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { StorageKeys, now, mergeStringArrays } from './storage';
-import { readJsonFile, writeJsonFile, uploadJsonFile, downloadAsJson } from './file';
 import {
-  fetchEvents, publishEvent, signEvent,
-  encryptContent, decryptContent,
-  requireAuth, getCurrentUserPubkey
+  readJsonFile,
+  writeJsonFile,
+  uploadJsonFile,
+  downloadAsJson,
+} from './file';
+import {
+  fetchEvents,
+  publishEvent,
+  signEvent,
+  encryptContent,
+  decryptContent,
+  requireAuth,
+  getCurrentUserPubkey,
 } from './relays';
 import { PerAccountLocalStorage } from '../services/PerAccountLocalStorage';
 import { SystemLogger } from '../services/SystemLogger';
@@ -30,8 +39,14 @@ import { diagLog } from '../services/DiagnosticLogger';
 import { View } from '../components/views/View';
 import { switchTabWithContent } from '../helpers/TabsHelper';
 import { getSccDefaultTab } from '../helpers/sccDefaultTab';
-import { renderListSyncButtons, bindListSyncButtons } from '../helpers/ListSyncMode';
-import { UserProfileService, type UserProfile } from '../services/UserProfileService';
+import {
+  renderListSyncButtons,
+  bindListSyncButtons,
+} from '../helpers/ListSyncMode';
+import {
+  UserProfileService,
+  type UserProfile,
+} from '../services/UserProfileService';
 import { NoteService } from '../services/NoteService';
 import { AuthService } from '../services/AuthService';
 import { ToastService } from '../services/ToastService';
@@ -55,7 +70,7 @@ const eventBus = TypedEventBus.getInstance();
  */
 export interface MuteItem {
   type: 'user' | 'thread';
-  id: string;           // pubkey for users, event ID for threads
+  id: string; // pubkey for users, event ID for threads
   isPrivate: boolean;
   addedAt: number;
 }
@@ -73,8 +88,8 @@ export interface MuteStatus {
  * File storage format (separate files for public/private)
  */
 export interface MuteListData {
-  items: string[];      // pubkeys or event IDs
-  eventIds: string[];   // thread event IDs (legacy field, kept for compatibility)
+  items: string[]; // pubkeys or event IDs
+  eventIds: string[]; // thread event IDs (legacy field, kept for compatibility)
   lastModified: number;
 }
 
@@ -106,8 +121,16 @@ interface SyncDiff {
  * Compares: same pubkeys exist (set comparison)
  * Does NOT compare order (user can't reorder, displayed by date)
  */
-function hasMuteDifference(browserItems: string[], sourceItems: string[]): boolean {
-  diagLog('lists', 'hasMuteDifference', { browserCount: browserItems.length, sourceCount: sourceItems.length, browserItems, sourceItems });
+function hasMuteDifference(
+  browserItems: string[],
+  sourceItems: string[]
+): boolean {
+  diagLog('lists', 'hasMuteDifference', {
+    browserCount: browserItems.length,
+    sourceCount: sourceItems.length,
+    browserItems,
+    sourceItems,
+  });
   // Different count = different
   if (browserItems.length !== sourceItems.length) return true;
 
@@ -224,7 +247,7 @@ export function getAllMutedUsersWithStatus(): Map<string, MuteStatus> {
       statusMap.set(item.id, {
         public: !item.isPrivate,
         private: item.isPrivate,
-        any: true
+        any: true,
       });
     }
   }
@@ -247,7 +270,7 @@ export function isUserMuted(pubkey: string): MuteStatus {
   return {
     public: items.some(item => !item.isPrivate),
     private: items.some(item => item.isPrivate),
-    any: true
+    any: true,
   };
 }
 
@@ -259,7 +282,8 @@ export function muteUser(pubkey: string, isPrivate: boolean = false): void {
 
   const items = getMuteItems();
   const alreadyMuted = items.some(
-    item => item.type === 'user' && item.id === pubkey && item.isPrivate === isPrivate
+    item =>
+      item.type === 'user' && item.id === pubkey && item.isPrivate === isPrivate
   );
 
   if (alreadyMuted) return;
@@ -268,11 +292,14 @@ export function muteUser(pubkey: string, isPrivate: boolean = false): void {
     type: 'user',
     id: pubkey,
     isPrivate,
-    addedAt: now()
+    addedAt: now(),
   });
 
   setMuteItems(items);
-  logger.info('mutes.ts', `Muted user ${pubkey.slice(0, 8)}... (${isPrivate ? 'private' : 'public'})`);
+  logger.info(
+    'mutes.ts',
+    `Muted user ${pubkey.slice(0, 8)}... (${isPrivate ? 'private' : 'public'})`
+  );
 }
 
 /**
@@ -283,12 +310,20 @@ export function unmuteUser(pubkey: string, isPrivate: boolean): void {
 
   const items = getMuteItems();
   const filtered = items.filter(
-    item => !(item.type === 'user' && item.id === pubkey && item.isPrivate === isPrivate)
+    item =>
+      !(
+        item.type === 'user' &&
+        item.id === pubkey &&
+        item.isPrivate === isPrivate
+      )
   );
 
   if (filtered.length !== items.length) {
     setMuteItems(filtered);
-    logger.info('mutes.ts', `Unmuted user ${pubkey.slice(0, 8)}... from ${isPrivate ? 'private' : 'public'} list`);
+    logger.info(
+      'mutes.ts',
+      `Unmuted user ${pubkey.slice(0, 8)}... from ${isPrivate ? 'private' : 'public'} list`
+    );
   }
 }
 
@@ -331,7 +366,7 @@ export function getAllMutedThreadsWithStatus(): Map<string, MuteStatus> {
     statusMap.set(item.id, {
       public: !item.isPrivate,
       private: item.isPrivate,
-      any: true
+      any: true,
     });
   }
 
@@ -354,7 +389,9 @@ export function muteThread(eventId: string, isPrivate: boolean = true): void {
   requireAuth();
 
   const items = getMuteItems();
-  const alreadyMuted = items.some(item => item.type === 'thread' && item.id === eventId);
+  const alreadyMuted = items.some(
+    item => item.type === 'thread' && item.id === eventId
+  );
 
   if (alreadyMuted) return;
 
@@ -362,7 +399,7 @@ export function muteThread(eventId: string, isPrivate: boolean = true): void {
     type: 'thread',
     id: eventId,
     isPrivate,
-    addedAt: now()
+    addedAt: now(),
   });
 
   setMuteItems(items);
@@ -435,7 +472,10 @@ export function setPrivateMutesEnabled(enabled: boolean): void {
  * Get encryption method preference (NIP-44 or NIP-04)
  */
 export function getEncryptionMethod(): 'nip44' | 'nip04' {
-  const method = storage.get<string>(StorageKeys.MUTE_ENCRYPTION_METHOD, 'nip44');
+  const method = storage.get<string>(
+    StorageKeys.MUTE_ENCRYPTION_METHOD,
+    'nip44'
+  );
   return method === 'nip04' ? 'nip04' : 'nip44';
 }
 
@@ -548,11 +588,17 @@ function createEmptyMuteListData(): MuteListData {
 }
 
 export async function readPublicMutesFile(): Promise<MuteListData> {
-  return await readJsonFile<MuteListData>(PUBLIC_MUTES_FILE, createEmptyMuteListData());
+  return await readJsonFile<MuteListData>(
+    PUBLIC_MUTES_FILE,
+    createEmptyMuteListData()
+  );
 }
 
 export async function readPrivateMutesFile(): Promise<MuteListData> {
-  return await readJsonFile<MuteListData>(PRIVATE_MUTES_FILE, createEmptyMuteListData());
+  return await readJsonFile<MuteListData>(
+    PRIVATE_MUTES_FILE,
+    createEmptyMuteListData()
+  );
 }
 
 export async function writePublicMutesFile(data: MuteListData): Promise<void> {
@@ -572,7 +618,9 @@ export async function saveToFile(): Promise<void> {
   const items = getMuteItems();
 
   const filterIds = (type: 'user' | 'thread', isPrivate: boolean): string[] =>
-    items.filter(i => i.type === type && i.isPrivate === isPrivate).map(i => i.id);
+    items
+      .filter(i => i.type === type && i.isPrivate === isPrivate)
+      .map(i => i.id);
 
   const publicUsers = filterIds('user', false);
   const privateUsers = filterIds('user', true);
@@ -580,36 +628,62 @@ export async function saveToFile(): Promise<void> {
   await writePublicMutesFile({
     items: publicUsers,
     eventIds: filterIds('thread', false),
-    lastModified: now()
+    lastModified: now(),
   });
 
   await writePrivateMutesFile({
     items: privateUsers,
     eventIds: filterIds('thread', true),
-    lastModified: now()
+    lastModified: now(),
   });
 
-  logger.info('mutes.ts', `Saved to files: ${publicUsers.length} public, ${privateUsers.length} private users`);
+  logger.info(
+    'mutes.ts',
+    `Saved to files: ${publicUsers.length} public, ${privateUsers.length} private users`
+  );
 }
 
 /**
  * Convert file data to MuteItems
  */
-function convertFileDataToMuteItems(publicData: MuteListData, privateData: MuteListData): MuteItem[] {
+function convertFileDataToMuteItems(
+  publicData: MuteListData,
+  privateData: MuteListData
+): MuteItem[] {
   const items: MuteItem[] = [];
   const timestamp = now();
 
   for (const pubkey of publicData.items) {
-    items.push({ type: 'user', id: pubkey, isPrivate: false, addedAt: timestamp });
+    items.push({
+      type: 'user',
+      id: pubkey,
+      isPrivate: false,
+      addedAt: timestamp,
+    });
   }
   for (const pubkey of privateData.items) {
-    items.push({ type: 'user', id: pubkey, isPrivate: true, addedAt: timestamp });
+    items.push({
+      type: 'user',
+      id: pubkey,
+      isPrivate: true,
+      addedAt: timestamp,
+    });
   }
   for (const eventId of publicData.eventIds) {
-    items.push({ type: 'thread', id: eventId, isPrivate: false, addedAt: timestamp });
+    items.push({
+      type: 'thread',
+      id: eventId,
+      isPrivate: false,
+      addedAt: timestamp,
+    });
   }
   for (const eventId of privateData.eventIds) {
-    items.push({ type: 'thread', id: eventId, isPrivate: true, addedAt: timestamp });
+    items.push({
+      type: 'thread',
+      id: eventId,
+      isPrivate: true,
+      addedAt: timestamp,
+    });
   }
 
   return items;
@@ -625,8 +699,13 @@ export async function restoreFromFile(): Promise<void> {
   const items = convertFileDataToMuteItems(publicData, privateData);
 
   if (items.length === 0 && getMuteItems().length > 0) {
-    logger.warn('mutes.ts', 'Restore aborted: file empty but browser has items');
-    throw new Error('File is empty. Use "Sync from Relays" to restore your mutes.');
+    logger.warn(
+      'mutes.ts',
+      'Restore aborted: file empty but browser has items'
+    );
+    throw new Error(
+      'File is empty. Use "Sync from Relays" to restore your mutes.'
+    );
   }
 
   setMuteItems(items);
@@ -657,11 +736,17 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
 
   try {
     // skipCache=true for sync operations
-    const events = await fetchEvents([{
-      authors: [pubkey],
-      kinds: [10000],
-      limit: 10
-    }], 10000, true);
+    const events = await fetchEvents(
+      [
+        {
+          authors: [pubkey],
+          kinds: [10000],
+          limit: 10,
+        },
+      ],
+      10000,
+      true
+    );
 
     if (events.length === 0) {
       logger.info('mutes.ts', 'No mute list found on relays');
@@ -679,22 +764,49 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
     // Extract public mutes from p-tags (users) and e-tags (threads)
     for (const tag of muteEvent.tags) {
       if (tag[0] === 'p' && tag[1]) {
-        items.push({ type: 'user', id: tag[1], isPrivate: false, addedAt: timestamp });
+        items.push({
+          type: 'user',
+          id: tag[1],
+          isPrivate: false,
+          addedAt: timestamp,
+        });
       } else if (tag[0] === 'e' && tag[1]) {
-        items.push({ type: 'thread', id: tag[1], isPrivate: false, addedAt: timestamp });
+        items.push({
+          type: 'thread',
+          id: tag[1],
+          isPrivate: false,
+          addedAt: timestamp,
+        });
       }
     }
 
     // Decrypt private mutes from content
     if (muteEvent.content?.trim()) {
-      diagLog('lists', 'mutes fetchFromRelays: event has encrypted content, decrypting', { contentLength: muteEvent.content.length });
+      diagLog(
+        'lists',
+        'mutes fetchFromRelays: event has encrypted content, decrypting',
+        { contentLength: muteEvent.content.length }
+      );
       try {
-        const privateTags = await decryptPrivateMutes(muteEvent.content, pubkey);
+        const privateTags = await decryptPrivateMutes(
+          muteEvent.content,
+          pubkey
+        );
         for (const tag of privateTags) {
           if (tag[0] === 'p' && tag[1]) {
-            items.push({ type: 'user', id: tag[1], isPrivate: true, addedAt: timestamp });
+            items.push({
+              type: 'user',
+              id: tag[1],
+              isPrivate: true,
+              addedAt: timestamp,
+            });
           } else if (tag[0] === 'e' && tag[1]) {
-            items.push({ type: 'thread', id: tag[1], isPrivate: true, addedAt: timestamp });
+            items.push({
+              type: 'thread',
+              id: tag[1],
+              isPrivate: true,
+              addedAt: timestamp,
+            });
           }
         }
       } catch (error) {
@@ -706,15 +818,27 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
     diagLog('lists', 'mutes fetchFromRelays result', {
       totalBeforeDedup: items.length,
       afterDedup: deduped.length,
-      publicUsers: deduped.filter(i => i.type === 'user' && !i.isPrivate).length,
-      privateUsers: deduped.filter(i => i.type === 'user' && i.isPrivate).length,
-      publicThreads: deduped.filter(i => i.type === 'thread' && !i.isPrivate).length,
-      privateThreads: deduped.filter(i => i.type === 'thread' && i.isPrivate).length,
-      items: deduped.map(i => ({ type: i.type, id: i.id.slice(0, 8), isPrivate: i.isPrivate }))
+      publicUsers: deduped.filter(i => i.type === 'user' && !i.isPrivate)
+        .length,
+      privateUsers: deduped.filter(i => i.type === 'user' && i.isPrivate)
+        .length,
+      publicThreads: deduped.filter(i => i.type === 'thread' && !i.isPrivate)
+        .length,
+      privateThreads: deduped.filter(i => i.type === 'thread' && i.isPrivate)
+        .length,
+      items: deduped.map(i => ({
+        type: i.type,
+        id: i.id.slice(0, 8),
+        isPrivate: i.isPrivate,
+      })),
     });
     logger.info('mutes.ts', `Fetched from relays: ${deduped.length} items`);
 
-    return { items: deduped, relayContentWasEmpty: items.length === 0, relayTimestamp: timestamp };
+    return {
+      items: deduped,
+      relayContentWasEmpty: items.length === 0,
+      relayTimestamp: timestamp,
+    };
   } catch (error) {
     logger.error('mutes.ts', `Failed to fetch from relays: ${error}`);
     return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
@@ -729,7 +853,11 @@ export async function publishToRelays(): Promise<void> {
   const items = getMuteItems();
   diagLog('lists', 'mutes publishToRelays', {
     totalItems: items.length,
-    items: items.map(i => ({ type: i.type, id: i.id.slice(0, 8), isPrivate: i.isPrivate }))
+    items: items.map(i => ({
+      type: i.type,
+      id: i.id.slice(0, 8),
+      isPrivate: i.isPrivate,
+    })),
   });
 
   const publicTags: string[][] = [];
@@ -743,9 +871,13 @@ export async function publishToRelays(): Promise<void> {
 
   let content = '';
   if (privateTags.length > 0) {
-    diagLog('lists', 'mutes publishToRelays: encrypting private tags', { count: privateTags.length });
+    diagLog('lists', 'mutes publishToRelays: encrypting private tags', {
+      count: privateTags.length,
+    });
     content = await encryptContent(JSON.stringify(privateTags), user.pubkey);
-    diagLog('lists', 'mutes publishToRelays: encrypted content', { contentLength: content.length });
+    diagLog('lists', 'mutes publishToRelays: encrypted content', {
+      contentLength: content.length,
+    });
   }
 
   const event = {
@@ -753,7 +885,7 @@ export async function publishToRelays(): Promise<void> {
     created_at: now(),
     tags: publicTags,
     content,
-    pubkey: user.pubkey
+    pubkey: user.pubkey,
   };
 
   const signed = await signEvent(event);
@@ -762,27 +894,43 @@ export async function publishToRelays(): Promise<void> {
   }
 
   await publishEvent(signed);
-  logger.info('mutes.ts', `Published to relays: ${publicTags.length} public, ${privateTags.length} private`);
+  logger.info(
+    'mutes.ts',
+    `Published to relays: ${publicTags.length} public, ${privateTags.length} private`
+  );
 }
 
 // ============================================================
 // HELPER FUNCTIONS
 // ============================================================
 
-async function decryptPrivateMutes(ciphertext: string, pubkey: string): Promise<string[][]> {
-  diagLog('lists', 'decryptPrivateMutes: attempting decryption', { ciphertextLength: ciphertext.length });
+async function decryptPrivateMutes(
+  ciphertext: string,
+  pubkey: string
+): Promise<string[][]> {
+  diagLog('lists', 'decryptPrivateMutes: attempting decryption', {
+    ciphertextLength: ciphertext.length,
+  });
   const plaintext = await decryptContent(ciphertext, pubkey);
   if (!plaintext) {
-    diagLog('lists', 'decryptPrivateMutes: decryption returned null — private mutes LOST');
+    diagLog(
+      'lists',
+      'decryptPrivateMutes: decryption returned null — private mutes LOST'
+    );
     return [];
   }
 
   try {
     const tags = JSON.parse(plaintext);
-    diagLog('lists', 'decryptPrivateMutes: SUCCESS', { decryptedTags: tags.length });
+    diagLog('lists', 'decryptPrivateMutes: SUCCESS', {
+      decryptedTags: tags.length,
+    });
     return tags;
   } catch (error) {
-    diagLog('lists', 'decryptPrivateMutes: FAILED to parse decrypted content', { error: String(error), rawPreview: plaintext.slice(0, 200) });
+    diagLog('lists', 'decryptPrivateMutes: FAILED to parse decrypted content', {
+      error: String(error),
+      rawPreview: plaintext.slice(0, 200),
+    });
     return [];
   }
 }
@@ -804,7 +952,10 @@ function deduplicateMuteItems(items: MuteItem[]): MuteItem[] {
 // SHARED SYNC HELPERS (used by MuteListView and MuteListManager)
 // ============================================================
 
-function calculateSyncDiff(browserItems: string[], sourceItems: string[]): SyncDiff {
+function calculateSyncDiff(
+  browserItems: string[],
+  sourceItems: string[]
+): SyncDiff {
   const browserSet = new Set(browserItems);
   const sourceSet = new Set(sourceItems);
 
@@ -819,7 +970,7 @@ function calculateSyncDiff(browserItems: string[], sourceItems: string[]): SyncD
     removed: removed.length,
     unchanged: unchanged.length,
     addedItems: added,
-    removedItems: removed
+    removedItems: removed,
   });
 
   return { added, removed, unchanged };
@@ -841,13 +992,17 @@ const THREAD_PREFIX = 'e:';
  * Encode a MuteItem to a prefixed string for sync operations
  */
 function encodeMuteItem(item: MuteItem): string {
-  return item.type === 'user' ? `${USER_PREFIX}${item.id}` : `${THREAD_PREFIX}${item.id}`;
+  return item.type === 'user'
+    ? `${USER_PREFIX}${item.id}`
+    : `${THREAD_PREFIX}${item.id}`;
 }
 
 /**
  * Decode a prefixed string back to type and id
  */
-function decodeMuteItem(encoded: string): { type: 'user' | 'thread'; id: string } | null {
+function decodeMuteItem(
+  encoded: string
+): { type: 'user' | 'thread'; id: string } | null {
   if (encoded.startsWith(USER_PREFIX)) {
     return { type: 'user', id: encoded.slice(USER_PREFIX.length) };
   }
@@ -881,21 +1036,23 @@ export class MuteStorageAdapter {
       existingItems.map(i => [encodeMuteItem(i), i])
     );
 
-    const newItems: MuteItem[] = items.map(encoded => {
-      // Preserve existing item properties (isPrivate, addedAt) if available
-      const existing = existingMap.get(encoded);
-      if (existing) return existing;
+    const newItems: MuteItem[] = items
+      .map(encoded => {
+        // Preserve existing item properties (isPrivate, addedAt) if available
+        const existing = existingMap.get(encoded);
+        if (existing) return existing;
 
-      const decoded = decodeMuteItem(encoded);
-      if (!decoded) return null;
+        const decoded = decodeMuteItem(encoded);
+        if (!decoded) return null;
 
-      return {
-        type: decoded.type,
-        id: decoded.id,
-        isPrivate: false,
-        addedAt: now()
-      };
-    }).filter((item): item is MuteItem => item !== null);
+        return {
+          type: decoded.type,
+          id: decoded.id,
+          isPrivate: false,
+          addedAt: now(),
+        };
+      })
+      .filter((item): item is MuteItem => item !== null);
 
     setMuteItems(newItems);
   }
@@ -937,7 +1094,11 @@ export class MuteStorageAdapter {
     }
   }
 
-  async fetchFromRelays(): Promise<{ items: string[]; relayContentWasEmpty: boolean; relayTimestamp: number }> {
+  async fetchFromRelays(): Promise<{
+    items: string[];
+    relayContentWasEmpty: boolean;
+    relayTimestamp: number;
+  }> {
     try {
       const result = await fetchFromRelays();
       // Encode all items (users AND threads) with prefixes
@@ -946,12 +1107,19 @@ export class MuteStorageAdapter {
         rawItemCount: result.items.length,
         encodedCount: encodedItems.length,
         relayContentWasEmpty: result.relayContentWasEmpty,
-        encodedItems
+        encodedItems,
       });
 
-      return { items: encodedItems, relayContentWasEmpty: result.relayContentWasEmpty, relayTimestamp: result.relayTimestamp };
+      return {
+        items: encodedItems,
+        relayContentWasEmpty: result.relayContentWasEmpty,
+        relayTimestamp: result.relayTimestamp,
+      };
     } catch (error) {
-      logger.error('MuteStorageAdapter', `Failed to fetch from relays: ${error}`);
+      logger.error(
+        'MuteStorageAdapter',
+        `Failed to fetch from relays: ${error}`
+      );
       throw error;
     }
   }
@@ -960,7 +1128,10 @@ export class MuteStorageAdapter {
     try {
       await publishToRelays();
     } catch (error) {
-      logger.error('MuteStorageAdapter', `Failed to publish to relays: ${error}`);
+      logger.error(
+        'MuteStorageAdapter',
+        `Failed to publish to relays: ${error}`
+      );
       throw error;
     }
   }
@@ -971,23 +1142,26 @@ export class MuteStorageAdapter {
     const browserItems = this.getBrowserItems();
     diagLog('lists', 'MuteStorageAdapter.syncFromRelays: browserItems', {
       count: browserItems.length,
-      items: browserItems
+      items: browserItems,
     });
     const fetchResult = await this.fetchFromRelays();
     diagLog('lists', 'MuteStorageAdapter.syncFromRelays: fetchResult', {
       itemCount: fetchResult.items.length,
       relayContentWasEmpty: fetchResult.relayContentWasEmpty,
-      items: fetchResult.items
+      items: fetchResult.items,
     });
     const diff = calculateSyncDiff(browserItems, fetchResult.items);
 
     // Use full state comparison (now includes threads)
-    const requiresConfirmation = hasMuteDifference(browserItems, fetchResult.items);
+    const requiresConfirmation = hasMuteDifference(
+      browserItems,
+      fetchResult.items
+    );
     diagLog('lists', 'MuteStorageAdapter.syncFromRelays: result', {
       requiresConfirmation,
       added: diff.added.length,
       removed: diff.removed.length,
-      unchanged: diff.unchanged.length
+      unchanged: diff.unchanged.length,
     });
 
     return {
@@ -995,11 +1169,14 @@ export class MuteStorageAdapter {
       diff,
       relayItems: fetchResult.items,
       relayContentWasEmpty: fetchResult.relayContentWasEmpty,
-      relayTimestamp: fetchResult.relayTimestamp
+      relayTimestamp: fetchResult.relayTimestamp,
     };
   }
 
-  applySyncFromRelays(strategy: 'merge' | 'overwrite', relayItems: string[]): void {
+  applySyncFromRelays(
+    strategy: 'merge' | 'overwrite',
+    relayItems: string[]
+  ): void {
     if (strategy === 'overwrite') {
       this.setBrowserItems(relayItems);
     } else {
@@ -1013,10 +1190,17 @@ export class MuteStorageAdapter {
     const diff = calculateSyncDiff(browserItems, fileItems);
 
     // Use full state comparison (now includes threads)
-    return { requiresConfirmation: hasMuteDifference(browserItems, fileItems), diff, fileItems };
+    return {
+      requiresConfirmation: hasMuteDifference(browserItems, fileItems),
+      diff,
+      fileItems,
+    };
   }
 
-  applySyncFromFile(strategy: 'merge' | 'overwrite', fileItems: string[]): void {
+  applySyncFromFile(
+    strategy: 'merge' | 'overwrite',
+    fileItems: string[]
+  ): void {
     if (strategy === 'overwrite') {
       this.setBrowserItems(fileItems);
     } else {
@@ -1043,11 +1227,16 @@ export const MuteOrchestrator = {
 
     // User mutes (second param is unused, kept for backward compatibility)
     getAllMutedUsers: (_pubkey?: string) => getAllMutedUsers(),
-    getAllMutedUsersWithStatus: async (_pubkey?: string) => getAllMutedUsersWithStatus(),
-    isMuted: async (pubkey: string, _userPubkey?: string) => isUserMuted(pubkey),
-    muteUser: async (pubkey: string, isPrivate?: boolean) => muteUser(pubkey, isPrivate),
-    unmuteUser: async (pubkey: string, isPrivate: boolean) => unmuteUser(pubkey, isPrivate),
-    unmuteUserCompletely: async (pubkey: string) => unmuteUserCompletely(pubkey),
+    getAllMutedUsersWithStatus: async (_pubkey?: string) =>
+      getAllMutedUsersWithStatus(),
+    isMuted: async (pubkey: string, _userPubkey?: string) =>
+      isUserMuted(pubkey),
+    muteUser: async (pubkey: string, isPrivate?: boolean) =>
+      muteUser(pubkey, isPrivate),
+    unmuteUser: async (pubkey: string, isPrivate: boolean) =>
+      unmuteUser(pubkey, isPrivate),
+    unmuteUserCompletely: async (pubkey: string) =>
+      unmuteUserCompletely(pubkey),
 
     // Thread mutes
     getAllMutedThreads,
@@ -1055,7 +1244,8 @@ export const MuteOrchestrator = {
     getAllMutedEventIds: () => getAllMutedThreads(),
     isThreadMuted,
     isEventMuted: async (eventId: string) => isThreadMuted(eventId),
-    muteThread: async (eventId: string, isPrivate?: boolean) => muteThread(eventId, isPrivate),
+    muteThread: async (eventId: string, isPrivate?: boolean) =>
+      muteThread(eventId, isPrivate),
     unmuteThread: async (eventId: string) => unmuteThread(eventId),
     isInMutedThread,
 
@@ -1078,8 +1268,8 @@ export const MuteOrchestrator = {
 
     // File operations
     saveToFile,
-    restoreFromFile
-  })
+    restoreFromFile,
+  }),
 };
 
 // ============================================================
@@ -1153,7 +1343,9 @@ export class MuteListView extends View {
 
   private bindButtons(): void {
     const bindClick = (id: string, handler: () => Promise<void>): void => {
-      this.container.querySelector(`#${id}`)?.addEventListener('click', handler);
+      this.container
+        .querySelector(`#${id}`)
+        ?.addEventListener('click', handler);
     };
 
     bindClick('sync-from-relays-btn', () => this.handleSyncFromRelays());
@@ -1175,15 +1367,18 @@ export class MuteListView extends View {
         Array.from(mutedUsersMap.entries()).map(async ([pubkey, status]) => ({
           pubkey,
           profile: await this.userProfileService.getUserProfile(pubkey),
-          status
+          status,
         }))
       );
 
-      const mutedThreadsMap = await this.muteOrch.getAllMutedThreadsWithStatus();
-      this.mutedThreads = Array.from(mutedThreadsMap.entries()).map(([eventId, status]) => ({
-        eventId,
-        status
-      }));
+      const mutedThreadsMap =
+        await this.muteOrch.getAllMutedThreadsWithStatus();
+      this.mutedThreads = Array.from(mutedThreadsMap.entries()).map(
+        ([eventId, status]) => ({
+          eventId,
+          status,
+        })
+      );
 
       this.renderMuteList();
     } catch {
@@ -1220,13 +1415,16 @@ export class MuteListView extends View {
   }
 
   private renderUsersSection(): string {
-    const userItems = this.mutedUsers.map(({ pubkey, profile, status }) => {
-      const username = extractDisplayName(profile);
-      const npub = hexToNpub(pubkey);
-      const avatarUrl = profile.picture || '';
-      const lockIcon = status.private ? '<span class="mute-list-item__badge mute-list-item__badge--private">🔒</span>' : '';
+    const userItems = this.mutedUsers
+      .map(({ pubkey, profile, status }) => {
+        const username = extractDisplayName(profile);
+        const npub = hexToNpub(pubkey);
+        const avatarUrl = profile.picture || '';
+        const lockIcon = status.private
+          ? '<span class="mute-list-item__badge mute-list-item__badge--private">🔒</span>'
+          : '';
 
-      return `
+        return `
         <div class="mute-list-item" data-pubkey="${pubkey}">
           <div class="mute-list-item__info">
             <span class="user-mention" data-pubkey="${pubkey}">
@@ -1238,7 +1436,8 @@ export class MuteListView extends View {
           </button>
         </div>
       `;
-    }).join('');
+      })
+      .join('');
 
     return `
       <div class="mute-list-section">
@@ -1257,11 +1456,14 @@ export class MuteListView extends View {
   }
 
   private renderThreadsSection(): string {
-    const threadItems = this.mutedThreads.map(({ eventId, status }) => {
-      const lockIcon = status.private ? '<span class="mute-list-item__badge mute-list-item__badge--private">🔒</span>' : '';
-      const shortId = eventId.slice(0, 8) + '...' + eventId.slice(-8);
+    const threadItems = this.mutedThreads
+      .map(({ eventId, status }) => {
+        const lockIcon = status.private
+          ? '<span class="mute-list-item__badge mute-list-item__badge--private">🔒</span>'
+          : '';
+        const shortId = `${eventId.slice(0, 8)}...${eventId.slice(-8)}`;
 
-      return `
+        return `
         <div class="mute-list-item mute-list-item--thread" data-event-id="${eventId}">
           <div class="mute-list-item__info">
             <div class="mute-list-item__thread-icon">
@@ -1274,7 +1476,8 @@ export class MuteListView extends View {
           </button>
         </div>
       `;
-    }).join('');
+      })
+      .join('');
 
     return `
       <div class="mute-list-section">
@@ -1306,7 +1509,7 @@ export class MuteListView extends View {
 
   private bindUnmuteListeners(): void {
     this.container.querySelectorAll('.unmute-user-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
+      btn.addEventListener('click', async e => {
         e.preventDefault();
         const pubkey = (e.currentTarget as HTMLElement).dataset.pubkey;
         if (pubkey) await this.handleUnmuteUser(pubkey);
@@ -1314,7 +1517,7 @@ export class MuteListView extends View {
     });
 
     this.container.querySelectorAll('.unmute-thread-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
+      btn.addEventListener('click', async e => {
         e.preventDefault();
         const eventId = (e.currentTarget as HTMLElement).dataset.eventId;
         if (eventId) await this.handleUnmuteThread(eventId);
@@ -1334,29 +1537,40 @@ export class MuteListView extends View {
           removed: result.diff.removed,
           getDisplayName: (pubkey: string) => {
             const user = this.mutedUsers.find(u => u.pubkey === pubkey);
-            return user ? extractDisplayName(user.profile) : pubkey.slice(0, 8) + '...';
+            return user
+              ? extractDisplayName(user.profile)
+              : `${pubkey.slice(0, 8)}...`;
           },
           onKeep: async () => {
             this.adapter.applySyncFromRelays('merge', result.relayItems);
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-            ToastService.show(`Merged ${result.diff.added.length} new mutes and synced to relays`, 'success');
+            ToastService.show(
+              `Merged ${result.diff.added.length} new mutes and synced to relays`,
+              'success'
+            );
             await this.loadMuteList();
           },
           onRelay: async () => {
             this.adapter.applySyncFromRelays('overwrite', result.relayItems);
-            ToastService.show(`Synced from relays (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            ToastService.show(
+              `Synced from relays (added ${result.diff.added.length}, removed ${result.diff.removed.length})`,
+              'success'
+            );
             await this.loadMuteList();
           },
           onLocal: async () => {
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
             ToastService.show('Local mutes pushed to relays', 'success');
             await this.loadMuteList();
-          }
+          },
         });
         modal.show();
       } else {
         this.adapter.applySyncFromRelays('merge', result.relayItems);
-        ToastService.show(`Synced ${result.diff.added.length} new mute${result.diff.added.length !== 1 ? 's' : ''} from relays`, 'success');
+        ToastService.show(
+          `Synced ${result.diff.added.length} new mute${result.diff.added.length !== 1 ? 's' : ''} from relays`,
+          'success'
+        );
         await this.loadMuteList();
       }
     } catch {
@@ -1402,7 +1616,11 @@ export class MuteListView extends View {
         const browserItems = this.adapter.getBrowserItems();
         const diff = calculateSyncDiff(browserItems, uploadedItems);
         // Use full state comparison
-        result = { requiresConfirmation: hasMuteDifference(browserItems, uploadedItems), diff, fileItems: uploadedItems };
+        result = {
+          requiresConfirmation: hasMuteDifference(browserItems, uploadedItems),
+          diff,
+          fileItems: uploadedItems,
+        };
       } else {
         // Desktop: Read from local file
         ToastService.show('Reading from file...', 'info');
@@ -1416,29 +1634,40 @@ export class MuteListView extends View {
           removed: result.diff.removed,
           getDisplayName: (pubkey: string) => {
             const user = this.mutedUsers.find(u => u.pubkey === pubkey);
-            return user ? extractDisplayName(user.profile) : pubkey.slice(0, 8) + '...';
+            return user
+              ? extractDisplayName(user.profile)
+              : `${pubkey.slice(0, 8)}...`;
           },
           onKeep: async () => {
             this.adapter.applySyncFromFile('merge', result.fileItems);
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-            ToastService.show(`Merged ${result.diff.added.length} from file and synced to relays`, 'success');
+            ToastService.show(
+              `Merged ${result.diff.added.length} from file and synced to relays`,
+              'success'
+            );
             await this.loadMuteList();
           },
           onRelay: async () => {
             this.adapter.applySyncFromFile('overwrite', result.fileItems);
-            ToastService.show(`Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            ToastService.show(
+              `Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`,
+              'success'
+            );
             await this.loadMuteList();
           },
           onLocal: async () => {
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
             ToastService.show('Local mutes pushed to relays', 'success');
             await this.loadMuteList();
-          }
+          },
         });
         modal.show();
       } else if (result.diff.added.length > 0) {
         this.adapter.applySyncFromFile('overwrite', result.fileItems);
-        ToastService.show(`Restored ${result.diff.added.length} mute${result.diff.added.length !== 1 ? 's' : ''} from file`, 'success');
+        ToastService.show(
+          `Restored ${result.diff.added.length} mute${result.diff.added.length !== 1 ? 's' : ''} from file`,
+          'success'
+        );
         await this.loadMuteList();
       } else {
         ToastService.show('File is identical to current list', 'info');
@@ -1456,12 +1685,16 @@ export class MuteListView extends View {
       this.mutedUsers = this.mutedUsers.filter(u => u.pubkey !== pubkey);
       this.renderMuteList();
 
-      const { FeedOrchestrator } = await import('../services/orchestration/FeedOrchestrator');
-      const { NotificationsOrchestrator } = await import('../services/orchestration/NotificationsOrchestrator');
+      const { FeedOrchestrator } = await import(
+        '../services/orchestration/FeedOrchestrator'
+      );
+      const { NotificationsOrchestrator } = await import(
+        '../services/orchestration/NotificationsOrchestrator'
+      );
 
       await Promise.all([
         FeedOrchestrator.getInstance().refreshMutedUsers(),
-        NotificationsOrchestrator.getInstance().refreshMutedUsers()
+        NotificationsOrchestrator.getInstance().refreshMutedUsers(),
       ]);
 
       TypedEventBus.getInstance().emit('mute:updated');
@@ -1532,11 +1765,15 @@ export class MuteListManager {
       this.mutedThreads = [];
       this.refreshListIfActive();
     });
-    this.eventBus.on('list-sync-mode:changed', () => this.refreshListIfActive());
+    this.eventBus.on('list-sync-mode:changed', () =>
+      this.refreshListIfActive()
+    );
   }
 
   private refreshListIfActive(): void {
-    const listTab = this.containerElement.querySelector('[data-tab-content="list-mutes"]');
+    const listTab = this.containerElement.querySelector(
+      '[data-tab-content="list-mutes"]'
+    );
     if (listTab?.classList.contains('tab-content--active')) {
       this.renderListTab(listTab as HTMLElement).catch(err => {
         console.error('Failed to refresh Mute List:', err);
@@ -1560,12 +1797,12 @@ export class MuteListManager {
     const muteStatus = await this.muteOrch.getAllMutedUsersWithStatus();
 
     const mutesWithProfiles: MutedUserWithProfile[] = await Promise.all(
-      allMutedPubkeys.map(async (pubkey) => {
+      allMutedPubkeys.map(async pubkey => {
         const status = muteStatus.get(pubkey);
         return {
           pubkey,
           status: status || { public: true, private: false, any: true },
-          profile: await this.userProfileService.getUserProfile(pubkey)
+          profile: await this.userProfileService.getUserProfile(pubkey),
         };
       })
     );
@@ -1587,7 +1824,10 @@ export class MuteListManager {
           return thread;
         });
       } catch {
-        this.mutedThreads = threadEntries.map(([eventId, status]) => ({ eventId, status }));
+        this.mutedThreads = threadEntries.map(([eventId, status]) => ({
+          eventId,
+          status,
+        }));
       }
     } else {
       this.mutedThreads = [];
@@ -1608,7 +1848,7 @@ export class MuteListManager {
       const hasThreads = this.mutedThreads.length > 0;
 
       if (!hasUsers && !hasThreads) {
-        content.innerHTML = renderListSyncButtons() + `
+        content.innerHTML = `${renderListSyncButtons()}
           <div class="list-empty">
             <p>No muted users or threads</p>
           </div>
@@ -1648,14 +1888,21 @@ export class MuteListManager {
 
       if (hasUsers) {
         const usersContainer = content.querySelector('.mutes-list--users');
-        if (usersContainer) this.renderUsersBatch(usersContainer as HTMLElement, this.allItemsWithProfiles);
+        if (usersContainer)
+          this.renderUsersBatch(
+            usersContainer as HTMLElement,
+            this.allItemsWithProfiles
+          );
       }
 
       if (hasThreads) {
         const threadsContainer = content.querySelector('.mutes-list--threads');
-        if (threadsContainer) this.renderThreadsBatch(threadsContainer as HTMLElement, this.mutedThreads);
+        if (threadsContainer)
+          this.renderThreadsBatch(
+            threadsContainer as HTMLElement,
+            this.mutedThreads
+          );
       }
-
     } catch (error) {
       console.error('Failed to load mute list:', error);
       content.innerHTML = `
@@ -1687,30 +1934,40 @@ export class MuteListManager {
           added: result.diff.added,
           removed: result.diff.removed,
           getDisplayName: async (pubkey: string) => {
-            const profile = await this.userProfileService.getUserProfile(pubkey);
+            const profile =
+              await this.userProfileService.getUserProfile(pubkey);
             return extractDisplayName(profile);
           },
           onKeep: async () => {
             this.adapter.applySyncFromRelays('merge', result.relayItems);
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-            ToastService.show(`Merged ${result.diff.added.length} new mutes and synced to relays`, 'success');
+            ToastService.show(
+              `Merged ${result.diff.added.length} new mutes and synced to relays`,
+              'success'
+            );
             await this.renderListTab(container);
           },
           onRelay: async () => {
             this.adapter.applySyncFromRelays('overwrite', result.relayItems);
-            ToastService.show(`Synced from relays (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            ToastService.show(
+              `Synced from relays (added ${result.diff.added.length}, removed ${result.diff.removed.length})`,
+              'success'
+            );
             await this.renderListTab(container);
           },
           onLocal: async () => {
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
             ToastService.show('Local mutes pushed to relays', 'success');
             await this.renderListTab(container);
-          }
+          },
         });
         await modal.show();
       } else {
         this.adapter.applySyncFromRelays('merge', result.relayItems);
-        ToastService.show(`Synced ${result.diff.added.length} new mute${result.diff.added.length !== 1 ? 's' : ''} from relays`, 'success');
+        ToastService.show(
+          `Synced ${result.diff.added.length} new mute${result.diff.added.length !== 1 ? 's' : ''} from relays`,
+          'success'
+        );
         await this.renderListTab(container);
       }
     } catch (error) {
@@ -1759,7 +2016,11 @@ export class MuteListManager {
         const browserItems = this.adapter.getBrowserItems();
         const diff = calculateSyncDiff(browserItems, uploadedItems);
         // Use full state comparison
-        result = { requiresConfirmation: hasMuteDifference(browserItems, uploadedItems), diff, fileItems: uploadedItems };
+        result = {
+          requiresConfirmation: hasMuteDifference(browserItems, uploadedItems),
+          diff,
+          fileItems: uploadedItems,
+        };
       } else {
         // Desktop: Read from local file
         ToastService.show('Reading from file...', 'info');
@@ -1772,30 +2033,40 @@ export class MuteListManager {
           added: result.diff.added,
           removed: result.diff.removed,
           getDisplayName: async (pubkey: string) => {
-            const profile = await this.userProfileService.getUserProfile(pubkey);
+            const profile =
+              await this.userProfileService.getUserProfile(pubkey);
             return extractDisplayName(profile);
           },
           onKeep: async () => {
             this.adapter.applySyncFromFile('merge', result.fileItems);
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-            ToastService.show(`Merged ${result.diff.added.length} from file and synced to relays`, 'success');
+            ToastService.show(
+              `Merged ${result.diff.added.length} from file and synced to relays`,
+              'success'
+            );
             await this.renderListTab(container);
           },
           onRelay: async () => {
             this.adapter.applySyncFromFile('overwrite', result.fileItems);
-            ToastService.show(`Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            ToastService.show(
+              `Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`,
+              'success'
+            );
             await this.renderListTab(container);
           },
           onLocal: async () => {
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
             ToastService.show('Local mutes pushed to relays', 'success');
             await this.renderListTab(container);
-          }
+          },
         });
         modal.show();
       } else if (result.diff.added.length > 0) {
         this.adapter.applySyncFromFile('overwrite', result.fileItems);
-        ToastService.show(`Restored ${result.diff.added.length} item${result.diff.added.length !== 1 ? 's' : ''} from file`, 'success');
+        ToastService.show(
+          `Restored ${result.diff.added.length} item${result.diff.added.length !== 1 ? 's' : ''} from file`,
+          'success'
+        );
         await this.renderListTab(container);
       } else {
         ToastService.show('File is identical to current list', 'info');
@@ -1806,7 +2077,10 @@ export class MuteListManager {
     }
   }
 
-  private renderUsersBatch(listElement: HTMLElement, batch: MutedUserWithProfile[]): void {
+  private renderUsersBatch(
+    listElement: HTMLElement,
+    batch: MutedUserWithProfile[]
+  ): void {
     for (const item of batch) {
       const username = extractDisplayName(item.profile);
       const npub = hexToNpub(item.pubkey);
@@ -1832,23 +2106,32 @@ export class MuteListManager {
         </button>
       `;
 
-      muteItemDiv.querySelector('.mute-item__content-wrapper')?.addEventListener('click', () => {
-        this.router.navigate(`/profile/${npub}`);
-      });
+      muteItemDiv
+        .querySelector('.mute-item__content-wrapper')
+        ?.addEventListener('click', () => {
+          this.router.navigate(`/profile/${npub}`);
+        });
 
-      muteItemDiv.querySelector('.mute-item__unmute-btn')?.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        await this.handleRemoveUser(item, muteItemDiv);
-      });
+      muteItemDiv
+        .querySelector('.mute-item__unmute-btn')
+        ?.addEventListener('click', async e => {
+          e.stopPropagation();
+          await this.handleRemoveUser(item, muteItemDiv);
+        });
 
       listElement.appendChild(muteItemDiv);
     }
   }
 
-  private renderThreadsBatch(listElement: HTMLElement, threads: MutedThreadItem[]): void {
+  private renderThreadsBatch(
+    listElement: HTMLElement,
+    threads: MutedThreadItem[]
+  ): void {
     for (const thread of threads) {
       const truncatedContent = thread.content
-        ? (thread.content.length > 80 ? thread.content.slice(0, 80) + '...' : thread.content)
+        ? thread.content.length > 80
+          ? `${thread.content.slice(0, 80)}...`
+          : thread.content
         : 'Content unavailable';
 
       const threadDiv = document.createElement('div');
@@ -1871,20 +2154,27 @@ export class MuteListManager {
         </button>
       `;
 
-      threadDiv.querySelector('.mute-item__content-wrapper')?.addEventListener('click', () => {
-        this.router.navigate(`/note/${thread.eventId}`);
-      });
+      threadDiv
+        .querySelector('.mute-item__content-wrapper')
+        ?.addEventListener('click', () => {
+          this.router.navigate(`/note/${thread.eventId}`);
+        });
 
-      threadDiv.querySelector('.mute-item__unmute-btn')?.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        await this.handleUnmuteThread(thread.eventId, threadDiv);
-      });
+      threadDiv
+        .querySelector('.mute-item__unmute-btn')
+        ?.addEventListener('click', async e => {
+          e.stopPropagation();
+          await this.handleUnmuteThread(thread.eventId, threadDiv);
+        });
 
       listElement.appendChild(threadDiv);
     }
   }
 
-  private async handleRemoveUser(item: MutedUserWithProfile, itemElement: HTMLElement): Promise<void> {
+  private async handleRemoveUser(
+    item: MutedUserWithProfile,
+    itemElement: HTMLElement
+  ): Promise<void> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) return;
 
@@ -1893,14 +2183,20 @@ export class MuteListManager {
       ToastService.show('User unmuted', 'success');
 
       itemElement.remove();
-      this.allItemsWithProfiles = this.allItemsWithProfiles.filter(m => m.pubkey !== item.pubkey);
+      this.allItemsWithProfiles = this.allItemsWithProfiles.filter(
+        m => m.pubkey !== item.pubkey
+      );
 
-      const { FeedOrchestrator } = await import('../services/orchestration/FeedOrchestrator');
-      const { NotificationsOrchestrator } = await import('../services/orchestration/NotificationsOrchestrator');
+      const { FeedOrchestrator } = await import(
+        '../services/orchestration/FeedOrchestrator'
+      );
+      const { NotificationsOrchestrator } = await import(
+        '../services/orchestration/NotificationsOrchestrator'
+      );
 
       await Promise.all([
         FeedOrchestrator.getInstance().refreshMutedUsers(),
-        NotificationsOrchestrator.getInstance().refreshMutedUsers()
+        NotificationsOrchestrator.getInstance().refreshMutedUsers(),
       ]);
 
       this.eventBus.emit('mute:updated');
@@ -1910,7 +2206,10 @@ export class MuteListManager {
     }
   }
 
-  private async handleUnmuteThread(eventId: string, itemElement: HTMLElement): Promise<void> {
+  private async handleUnmuteThread(
+    eventId: string,
+    itemElement: HTMLElement
+  ): Promise<void> {
     try {
       await this.muteOrch.unmuteThread(eventId);
       ToastService.show('Thread unmuted', 'success');
@@ -1953,7 +2252,10 @@ export class ProfileMuteManager {
     this.userProfileService = UserProfileService.getInstance();
   }
 
-  public async checkMuteStatus(): Promise<{ public: boolean; private: boolean }> {
+  public async checkMuteStatus(): Promise<{
+    public: boolean;
+    private: boolean;
+  }> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
       return { public: false, private: false };
@@ -2001,7 +2303,9 @@ export class ProfileMuteManager {
     if (this.eventListenersAttached) return;
     this.eventListenersAttached = true;
 
-    const simpleMuteBtn = container.querySelector('.mute-btn[data-action="mute"]');
+    const simpleMuteBtn = container.querySelector(
+      '.mute-btn[data-action="mute"]'
+    );
     if (simpleMuteBtn) {
       simpleMuteBtn.addEventListener('click', async () => {
         await this.handleMute('public', onMuted);
@@ -2014,7 +2318,7 @@ export class ProfileMuteManager {
 
     if (!dropdownBtn || !dropdownMenu) return;
 
-    dropdownBtn.addEventListener('click', (e) => {
+    dropdownBtn.addEventListener('click', e => {
       e.stopPropagation();
       dropdownMenu.classList.toggle('show');
     });
@@ -2024,7 +2328,7 @@ export class ProfileMuteManager {
     });
 
     container.querySelectorAll('.mute-dropdown-item').forEach(item => {
-      item.addEventListener('click', async (e) => {
+      item.addEventListener('click', async e => {
         e.stopPropagation();
         const action = (item as HTMLElement).dataset.action;
         dropdownMenu.classList.remove('show');
@@ -2038,13 +2342,19 @@ export class ProfileMuteManager {
     });
   }
 
-  private async handleMute(type: 'public' | 'private', onMuted: () => void): Promise<void> {
+  private async handleMute(
+    type: 'public' | 'private',
+    onMuted: () => void
+  ): Promise<void> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) return;
 
     try {
       await this.muteOrch.muteUser(this.targetPubkey, type === 'private');
-      ToastService.show(`User muted ${type === 'private' ? 'privately' : 'publicly'}`, 'success');
+      ToastService.show(
+        `User muted ${type === 'private' ? 'privately' : 'publicly'}`,
+        'success'
+      );
       onMuted();
     } catch (error) {
       console.error('Failed to mute user:', error);
@@ -2052,9 +2362,17 @@ export class ProfileMuteManager {
     }
   }
 
-  public async renderMutedProfile(escapeHtmlFn: (text: string) => string): Promise<string> {
-    const profile = await this.userProfileService.getUserProfile(this.targetPubkey);
-    const username = profile.display_name || profile.name || profile.username || this.targetPubkey.slice(0, 8);
+  public async renderMutedProfile(
+    escapeHtmlFn: (text: string) => string
+  ): Promise<string> {
+    const profile = await this.userProfileService.getUserProfile(
+      this.targetPubkey
+    );
+    const username =
+      profile.display_name ||
+      profile.name ||
+      profile.username ||
+      this.targetPubkey.slice(0, 8);
 
     return `
       <div class="profile-muted">
@@ -2072,7 +2390,10 @@ export class ProfileMuteManager {
     `;
   }
 
-  public setupUnmuteButton(container: HTMLElement, onUnmuted: () => void): void {
+  public setupUnmuteButton(
+    container: HTMLElement,
+    onUnmuted: () => void
+  ): void {
     const unmuteBtn = container.querySelector('.profile-muted__unmute');
 
     if (unmuteBtn) {

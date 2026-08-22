@@ -22,25 +22,37 @@ import { npubToHex } from '../../helpers/nip19';
 import { DHIKR_KIND, type DraftEvent } from './dhikr';
 
 // The only npub allowed to moderate. Hex is derived once at load (null-safe).
-export const DHIKR_ADMIN_NPUB = 'npub175nul9cvufswwsnpy99lvyhg7ad9nkccxhkhusznxfkr7e0zxthql9g6w0';
+export const DHIKR_ADMIN_NPUB =
+  'npub175nul9cvufswwsnpy99lvyhg7ad9nkccxhkhusznxfkr7e0zxthql9g6w0';
 export const DHIKR_ADMIN_PUBKEY = npubToHex(DHIKR_ADMIN_NPUB) ?? '';
 
 export const MODERATION_LABEL = 'noornote-dhikr-moderation';
 const MODERATION_DTAG = 'noornote/dhikr/moderation';
 
-export interface DhikrOverride { phrase?: string; goal?: number; description?: string; }
-
-export interface DhikrModeration {
-  hiddenRounds: string[];                     // round addrs to suppress
-  bannedAuthors: string[];                    // pubkeys whose entries are invalidated
-  overrides: Record<string, DhikrOverride>;   // round addr -> field override
-  createdAt: number;                          // event created_at (newest record wins)
+export interface DhikrOverride {
+  phrase?: string;
+  goal?: number;
+  description?: string;
 }
 
-export const EMPTY_MODERATION: DhikrModeration = { hiddenRounds: [], bannedAuthors: [], overrides: {}, createdAt: 0 };
+export interface DhikrModeration {
+  hiddenRounds: string[]; // round addrs to suppress
+  bannedAuthors: string[]; // pubkeys whose entries are invalidated
+  overrides: Record<string, DhikrOverride>; // round addr -> field override
+  createdAt: number; // event created_at (newest record wins)
+}
+
+export const EMPTY_MODERATION: DhikrModeration = {
+  hiddenRounds: [],
+  bannedAuthors: [],
+  overrides: {},
+  createdAt: 0,
+};
 
 function strArray(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((x): x is string => typeof x === 'string') : [];
+  return Array.isArray(value)
+    ? value.filter((x): x is string => typeof x === 'string')
+    : [];
 }
 
 /** Parse the admin moderation record, or null if it isn't one signed by the admin. */
@@ -51,7 +63,9 @@ export function parseModeration(ev: NostrEvent): DhikrModeration | null {
   try {
     const body = JSON.parse(ev.content || '{}');
     const overrides: Record<string, DhikrOverride> =
-      body.overrides && typeof body.overrides === 'object' ? body.overrides : {};
+      body.overrides && typeof body.overrides === 'object'
+        ? body.overrides
+        : {};
     return {
       hiddenRounds: strArray(body.hiddenRounds),
       bannedAuthors: strArray(body.bannedAuthors),
@@ -68,7 +82,10 @@ export function buildModerationDraft(m: DhikrModeration): DraftEvent {
   return {
     kind: DHIKR_KIND,
     created_at: Math.floor(Date.now() / 1000),
-    tags: [['d', MODERATION_DTAG], ['t', MODERATION_LABEL]],
+    tags: [
+      ['d', MODERATION_DTAG],
+      ['t', MODERATION_LABEL],
+    ],
     content: JSON.stringify({
       hiddenRounds: m.hiddenRounds,
       bannedAuthors: m.bannedAuthors,

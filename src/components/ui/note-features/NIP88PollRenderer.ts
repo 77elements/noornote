@@ -31,15 +31,21 @@ export class NIP88PollRenderer {
     if (this.listenerSetup) return;
     this.listenerSetup = true;
 
-    this.eventBus.on('poll:voted', (data: { pollEventId: string; results: any }) => {
-      this.updateAllPollContainers(data.pollEventId, data.results);
-    });
+    this.eventBus.on(
+      'poll:voted',
+      (data: { pollEventId: string; results: any }) => {
+        this.updateAllPollContainers(data.pollEventId, data.results);
+      }
+    );
   }
 
   /**
    * Update all poll containers with matching pollEventId across all views
    */
-  private static updateAllPollContainers(pollEventId: string, results: any): void {
+  private static updateAllPollContainers(
+    pollEventId: string,
+    results: any
+  ): void {
     const pollData = pollDataCache.get(pollEventId);
     if (!pollData) return;
 
@@ -58,7 +64,11 @@ export class NIP88PollRenderer {
    * Takes pollData extracted by PollProcessor
    * Fetches and displays vote counts from kind:1018 responses
    */
-  static async render(noteElement: HTMLElement, pollData: PollData, event: NostrEvent): Promise<void> {
+  static async render(
+    noteElement: HTMLElement,
+    pollData: PollData,
+    event: NostrEvent
+  ): Promise<void> {
     if (!pollData || pollData.options.length === 0) return;
     if (!event.id) return; // Skip if event has no ID
 
@@ -72,7 +82,8 @@ export class NIP88PollRenderer {
     pollDataCache.set(eventId, pollData);
 
     // Get services
-    const singleNoteApi = ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
+    const singleNoteApi =
+      ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
     const authService = AuthService.getInstance();
     const systemLogger = SystemLogger.getInstance();
 
@@ -81,7 +92,7 @@ export class NIP88PollRenderer {
 
     // Check if poll is expired
     const now = Date.now();
-    const isExpired = pollData.endDate ? (pollData.endDate * 1000) < now : false;
+    const isExpired = pollData.endDate ? pollData.endDate * 1000 < now : false;
 
     // Create poll container
     const pollContainer = document.createElement('div');
@@ -143,12 +154,7 @@ export class NIP88PollRenderer {
       } else {
         // Add vote handler
         optionBtn.addEventListener('click', async () => {
-          await this.handleVote(
-            eventId,
-            option.id,
-            pollData,
-            pollContainer
-          );
+          await this.handleVote(eventId, option.id, pollData, pollContainer);
         });
       }
 
@@ -200,7 +206,10 @@ export class NIP88PollRenderer {
 
       if (results) this.updatePollResults(pollContainer, results, pollData);
     } catch (error) {
-      systemLogger.error('NIP88PollRenderer', `Failed to fetch poll results: ${error}`);
+      systemLogger.error(
+        'NIP88PollRenderer',
+        `Failed to fetch poll results: ${error}`
+      );
     }
   }
 
@@ -213,7 +222,8 @@ export class NIP88PollRenderer {
     pollData: PollData,
     _pollContainer: HTMLElement
   ): Promise<void> {
-    const singleNoteApi = ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
+    const singleNoteApi =
+      ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
     const authService = AuthService.getInstance();
     const systemLogger = SystemLogger.getInstance();
 
@@ -230,7 +240,7 @@ export class NIP88PollRenderer {
     const success = await (singleNoteApi?.castVote({
       pollEventId,
       optionIds: [optionId], // For now, single choice only
-      relays
+      relays,
     }) ?? Promise.resolve(false));
 
     if (success) {
@@ -247,7 +257,10 @@ export class NIP88PollRenderer {
         // Emit event to update ALL poll containers across all views
         if (results) this.eventBus.emit('poll:voted', { pollEventId, results });
       } catch (error) {
-        systemLogger.error('NIP88PollRenderer', `Failed to refresh poll results: ${error}`);
+        systemLogger.error(
+          'NIP88PollRenderer',
+          `Failed to refresh poll results: ${error}`
+        );
       }
     }
   }
@@ -271,12 +284,17 @@ export class NIP88PollRenderer {
 
       const resultOption = results.options.find((o: any) => o.id === option.id);
       const voteCount = resultOption?.voteCount || 0;
-      const percentage = totalVoters > 0 ? Math.round((voteCount / totalVoters) * 100) : 0;
+      const percentage =
+        totalVoters > 0 ? Math.round((voteCount / totalVoters) * 100) : 0;
 
       // Update stats
       const countSpan = optionBtn.querySelector('.nip88-poll__option-count');
-      const percentageSpan = optionBtn.querySelector('.nip88-poll__option-percentage');
-      const barSpan = optionBtn.querySelector('.nip88-poll__option-bar') as HTMLElement;
+      const percentageSpan = optionBtn.querySelector(
+        '.nip88-poll__option-percentage'
+      );
+      const barSpan = optionBtn.querySelector(
+        '.nip88-poll__option-bar'
+      ) as HTMLElement;
 
       if (countSpan) {
         countSpan.textContent = `${voteCount} vote${voteCount !== 1 ? 's' : ''}`;
@@ -304,7 +322,6 @@ export class NIP88PollRenderer {
       footer.textContent = `${totalVoters} voter${totalVoters !== 1 ? 's' : ''}`;
     }
   }
-
 
   /**
    * Render option label - as image if it's an image URL, otherwise as text

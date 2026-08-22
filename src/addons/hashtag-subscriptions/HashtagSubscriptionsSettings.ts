@@ -10,10 +10,14 @@ import { SettingsSection } from '../../components/settings/SettingsSection';
 import { Switch } from '../../components/ui/Switch';
 import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
-import { isHashtagSubscriptionsEnabled, setHashtagSubscriptionsEnabled } from './index';
+import {
+  isHashtagSubscriptionsEnabled,
+  setHashtagSubscriptionsEnabled,
+} from './index';
 
 // Lazy-loaded types
-type HashtagNotificationServiceType = import('./HashtagNotificationService').HashtagNotificationService;
+type HashtagNotificationServiceType =
+  import('./HashtagNotificationService').HashtagNotificationService;
 
 export class HashtagSubscriptionsSettings extends SettingsSection {
   private enableSwitch: Switch | null = null;
@@ -30,20 +34,24 @@ export class HashtagSubscriptionsSettings extends SettingsSection {
     const contentContainer = this.getContentContainer(parentContainer);
     if (!contentContainer) return;
 
-    const contentZone = parentContainer.querySelector('[data-addon-content="hashtag-subscriptions"]') as HTMLElement | null;
+    const contentZone = parentContainer.querySelector(
+      '[data-addon-content="hashtag-subscriptions"]'
+    ) as HTMLElement | null;
 
     const enabled = isHashtagSubscriptionsEnabled();
 
     this.enableSwitch = new Switch({
       label: '',
       checked: enabled,
-      onChange: async (checked) => {
+      onChange: async checked => {
         setHashtagSubscriptionsEnabled(checked);
         // Notify the AddonLoader — it owns the polling lifecycle via the
         // addon runtime. On toggle ON it will load the runtime and start
         // polling; on toggle OFF it will call service.destroy() which
         // stopsPolling and releases the singleton.
-        this.eventBus.emit('hashtag-subscriptions:addon-toggle', { enabled: checked });
+        this.eventBus.emit('hashtag-subscriptions:addon-toggle', {
+          enabled: checked,
+        });
         if (checked) {
           await this.loadService();
           ToastService.show('Hashtag Subscriptions enabled', 'success');
@@ -51,7 +59,7 @@ export class HashtagSubscriptionsSettings extends SettingsSection {
           ToastService.show('Hashtag Subscriptions disabled', 'success');
         }
         if (contentZone) this.renderContent(contentZone, checked);
-      }
+      },
     });
 
     contentContainer.innerHTML = `
@@ -68,22 +76,29 @@ export class HashtagSubscriptionsSettings extends SettingsSection {
     }
 
     // Listen for subscription updates
-    this.subscriptionEventId = this.eventBus.on('hashtag-subscription:updated', () => {
-      if (isHashtagSubscriptionsEnabled() && contentZone) {
-        this.renderSubscriptionsList(contentZone);
+    this.subscriptionEventId = this.eventBus.on(
+      'hashtag-subscription:updated',
+      () => {
+        if (isHashtagSubscriptionsEnabled() && contentZone) {
+          this.renderSubscriptionsList(contentZone);
+        }
       }
-    });
+    );
   }
 
   private async loadService(): Promise<void> {
     if (this.hashtagService) return;
-    const { HashtagNotificationService } = await import('./HashtagNotificationService');
+    const { HashtagNotificationService } = await import(
+      './HashtagNotificationService'
+    );
     this.hashtagService = HashtagNotificationService.getInstance();
   }
 
   private renderContent(contentContainer: HTMLElement, enabled: boolean): void {
     // Remove existing content
-    const existing = contentContainer.querySelector('.hashtag-subscriptions__content');
+    const existing = contentContainer.querySelector(
+      '.hashtag-subscriptions__content'
+    );
     if (existing) existing.remove();
 
     if (!enabled) return;
@@ -110,7 +125,9 @@ export class HashtagSubscriptionsSettings extends SettingsSection {
 
   private bindSearchHandler(wrapper: HTMLElement): void {
     const searchBtn = wrapper.querySelector('.hashtag-search-btn');
-    const searchInput = wrapper.querySelector('[data-subscription-input]') as HTMLInputElement;
+    const searchInput = wrapper.querySelector(
+      '[data-subscription-input]'
+    ) as HTMLInputElement;
     if (!searchBtn || !searchInput) return;
 
     const handleSearch = () => {
@@ -122,23 +139,28 @@ export class HashtagSubscriptionsSettings extends SettingsSection {
     };
 
     searchBtn.addEventListener('click', handleSearch);
-    searchInput.addEventListener('keypress', (e) => {
+    searchInput.addEventListener('keypress', e => {
       if (e.key === 'Enter') handleSearch();
     });
   }
 
   private renderSubscriptionsList(contentContainer: HTMLElement): void {
-    const listContainer = contentContainer.querySelector('.hashtag-subscriptions-list');
+    const listContainer = contentContainer.querySelector(
+      '.hashtag-subscriptions-list'
+    );
     if (!listContainer || !this.hashtagService) return;
 
     const subscriptions = this.hashtagService.getAllSubscriptions();
 
     if (subscriptions.length === 0) {
-      listContainer.innerHTML = '<p class="muted">No hashtag subscriptions yet</p>';
+      listContainer.innerHTML =
+        '<p class="muted">No hashtag subscriptions yet</p>';
       return;
     }
 
-    listContainer.innerHTML = subscriptions.map(({ hashtag, subscription }) => `
+    listContainer.innerHTML = subscriptions
+      .map(
+        ({ hashtag, subscription }) => `
       <div class="ui-list__item subscription-row">
         <span class="subscription-hashtag">#${hashtag}</span>
         <div class="subscription-actions">
@@ -162,30 +184,36 @@ export class HashtagSubscriptionsSettings extends SettingsSection {
           </button>
         </div>
       </div>
-    `).join('');
+    `
+      )
+      .join('');
 
     // Attach unsubscribe handlers
-    listContainer.querySelectorAll('[data-action="unsubscribe-hashtag"]').forEach(button => {
-      button.addEventListener('click', () => {
-        const hashtag = (button as HTMLElement).dataset.hashtag;
-        if (hashtag) this.hashtagService?.unsubscribe(hashtag);
+    listContainer
+      .querySelectorAll('[data-action="unsubscribe-hashtag"]')
+      .forEach(button => {
+        button.addEventListener('click', () => {
+          const hashtag = (button as HTMLElement).dataset.hashtag;
+          if (hashtag) this.hashtagService?.unsubscribe(hashtag);
+        });
       });
-    });
 
     // Attach toggle handlers
-    listContainer.querySelectorAll('[data-action="toggle-include-without-hash"]').forEach(input => {
-      input.addEventListener('change', (e) => {
-        const target = e.target as HTMLInputElement;
-        const hashtag = target.dataset.hashtag;
-        if (hashtag) {
-          this.hashtagService?.setIncludeWithoutHash(hashtag, target.checked);
-          const msg = target.checked
-            ? `Now also searching for "${hashtag}" without #`
-            : `Only searching for #${hashtag}`;
-          ToastService.show(msg, 'success');
-        }
+    listContainer
+      .querySelectorAll('[data-action="toggle-include-without-hash"]')
+      .forEach(input => {
+        input.addEventListener('change', e => {
+          const target = e.target as HTMLInputElement;
+          const hashtag = target.dataset.hashtag;
+          if (hashtag) {
+            this.hashtagService?.setIncludeWithoutHash(hashtag, target.checked);
+            const msg = target.checked
+              ? `Now also searching for "${hashtag}" without #`
+              : `Only searching for #${hashtag}`;
+            ToastService.show(msg, 'success');
+          }
+        });
       });
-    });
   }
 
   public unmount(): void {

@@ -32,13 +32,42 @@ import { USER_CONTENT_KINDS } from '../../types/nostr';
 import { getCacheSize } from '../../helpers/LRUCache';
 import { isDataSaverEnabled } from '../DataSaverService';
 
-  export type NotificationType = 'mention' | 'reply' | 'thread-reply' | 'quote' | 'repost' | 'reaction' | 'zap' | 'zap-reply' | 'article' | 'mutual_unfollow' | 'mutual_new' | 'follower_new' | 'hashtag' | 'poll_vote' | 'highlight' | 'badge-award' | 'dhikr_round' | 'dhikr_commit' | 'dhikr_complete' | 'nostrord' | 'armada' | 'image-tag';
+export type NotificationType =
+  | 'mention'
+  | 'reply'
+  | 'thread-reply'
+  | 'quote'
+  | 'repost'
+  | 'reaction'
+  | 'zap'
+  | 'zap-reply'
+  | 'article'
+  | 'mutual_unfollow'
+  | 'mutual_new'
+  | 'follower_new'
+  | 'hashtag'
+  | 'poll_vote'
+  | 'highlight'
+  | 'badge-award'
+  | 'dhikr_round'
+  | 'dhikr_commit'
+  | 'dhikr_complete'
+  | 'nostrord'
+  | 'armada'
+  | 'image-tag';
 
 export interface NotificationEvent {
   event: NostrEvent;
   type: NotificationType;
   timestamp: number;
-  meta?: { hashtag?: string; count?: number; groupName?: string; isOwn?: boolean; groupRelay?: string; communityUrl?: string }; // hashtag + group-chats + armada notifications
+  meta?: {
+    hashtag?: string;
+    count?: number;
+    groupName?: string;
+    isOwn?: boolean;
+    groupRelay?: string;
+    communityUrl?: string;
+  }; // hashtag + group-chats + armada notifications
 }
 
 export class NotificationsOrchestrator extends Orchestrator {
@@ -66,13 +95,18 @@ export class NotificationsOrchestrator extends Orchestrator {
   private notifications: NotificationEvent[] = [];
 
   /** Callback for real-time updates */
-  private onNewNotificationCallback: ((notification: NotificationEvent) => void) | null = null;
+  private onNewNotificationCallback:
+    | ((notification: NotificationEvent) => void)
+    | null = null;
 
   /** Per-account storage instance */
   private perAccountStorage: PerAccountLocalStorage;
 
   /** Map of user event ID -> ancestry (root/parent IDs) for muted thread checking */
-  private userEventAncestry: Map<string, { rootId: string | null; parentId: string | null }> = new Map();
+  private userEventAncestry: Map<
+    string,
+    { rootId: string | null; parentId: string | null }
+  > = new Map();
 
   /** Cached RelayConfig instance (lazy-loaded) */
   private relayConfig: any = null;
@@ -83,7 +117,9 @@ export class NotificationsOrchestrator extends Orchestrator {
   /** Refresh timer for periodic re-subscription (browser WebSocket connections go stale) */
   private refreshTimer: number | null = null;
   private isRefreshing: boolean = false;
-  private static readonly REFRESH_INTERVAL = isDataSaverEnabled() ? 60 * 60 * 1000 : 30 * 60 * 1000;
+  private static readonly REFRESH_INTERVAL = isDataSaverEnabled()
+    ? 60 * 60 * 1000
+    : 30 * 60 * 1000;
   private readonly MAX_NOTIFICATIONS = getCacheSize(500, 300, 200);
 
   private constructor() {
@@ -96,7 +132,10 @@ export class NotificationsOrchestrator extends Orchestrator {
     this.perAccountStorage = PerAccountLocalStorage.getInstance();
     this.noteService = NoteService.getInstance();
 
-    this.systemLogger.info('NotificationsOrchestrator', '🔔 Notifications Orchestrator initialized');
+    this.systemLogger.info(
+      'NotificationsOrchestrator',
+      '🔔 Notifications Orchestrator initialized'
+    );
   }
 
   public static getInstance(): NotificationsOrchestrator {
@@ -116,26 +155,38 @@ export class NotificationsOrchestrator extends Orchestrator {
     const currentUser = this.authService.getCurrentUser();
 
     if (!currentUser) {
-      this.systemLogger.warn('NotificationsOrchestrator', 'Cannot start - no user logged in');
+      this.systemLogger.warn(
+        'NotificationsOrchestrator',
+        'Cannot start - no user logged in'
+      );
       return;
     }
 
     // Idempotency: If already started for this user, skip
     if (this.userPubkey === currentUser.pubkey && this.ptagSubId) {
-      this.systemLogger.info('NotificationsOrchestrator', 'Already started for this user, skipping');
+      this.systemLogger.info(
+        'NotificationsOrchestrator',
+        'Already started for this user, skipping'
+      );
       return;
     }
 
     // If user changed, stop old subscriptions first
     if (this.userPubkey && this.userPubkey !== currentUser.pubkey) {
-      this.systemLogger.info('NotificationsOrchestrator', 'User changed, stopping old subscriptions');
+      this.systemLogger.info(
+        'NotificationsOrchestrator',
+        'User changed, stopping old subscriptions'
+      );
       this.stop();
     }
 
     // Set userPubkey for self-notification filtering
     this.userPubkey = currentUser.pubkey;
 
-    this.systemLogger.info('NotificationsOrchestrator', `🚀 Starting notifications for ${currentUser.npub.slice(0, 12)}...`);
+    this.systemLogger.info(
+      'NotificationsOrchestrator',
+      `🚀 Starting notifications for ${currentUser.npub.slice(0, 12)}...`
+    );
 
     // Step 0: Load muted users
     await this.loadMutedUsers(currentUser.pubkey);
@@ -170,43 +221,84 @@ export class NotificationsOrchestrator extends Orchestrator {
     this.startRefreshTimer();
 
     // Listen for article notification events
-    this.eventBus.on('article-notification:new', (data: { pubkey: string; articleId: string; naddr: string; title: string; createdAt: number }) => {
-      this.handleNewArticleNotification(data);
-    });
+    this.eventBus.on(
+      'article-notification:new',
+      (data: {
+        pubkey: string;
+        articleId: string;
+        naddr: string;
+        title: string;
+        createdAt: number;
+      }) => {
+        this.handleNewArticleNotification(data);
+      }
+    );
 
     // Listen for mutual change notification events
-    this.eventBus.on('mutual-notification:new', (data: { event: NostrEvent; type: 'mutual_unfollow' | 'mutual_new' }) => {
-      this.handleMutualNotification(data);
-    });
+    this.eventBus.on(
+      'mutual-notification:new',
+      (data: { event: NostrEvent; type: 'mutual_unfollow' | 'mutual_new' }) => {
+        this.handleMutualNotification(data);
+      }
+    );
 
     // Listen for follower change notification events (follower-notification addon)
-    this.eventBus.on('follower-notification:new', (data: { event: NostrEvent; type: 'follower_new' }) => {
-      this.handleFollowerNotification(data);
-    });
+    this.eventBus.on(
+      'follower-notification:new',
+      (data: { event: NostrEvent; type: 'follower_new' }) => {
+        this.handleFollowerNotification(data);
+      }
+    );
 
     // Listen for community-dhikr notification events (nostr-majlis addon)
-    this.eventBus.on('dhikr-notification:new', (data: { event: NostrEvent; type: 'dhikr_round' | 'dhikr_commit' | 'dhikr_complete' }) => {
-      this.handleDhikrNotification(data);
-    });
+    this.eventBus.on(
+      'dhikr-notification:new',
+      (data: {
+        event: NostrEvent;
+        type: 'dhikr_round' | 'dhikr_commit' | 'dhikr_complete';
+      }) => {
+        this.handleDhikrNotification(data);
+      }
+    );
 
     // Listen for Nostrord NIP-29 group activity notifications (group-chats addon)
-    this.eventBus.on('nostrord-notification:new', (data: { event: NostrEvent; groupName: string; mine?: boolean; groupRelay?: string }) => {
-      this.handleNostrordNotification(data);
-    });
+    this.eventBus.on(
+      'nostrord-notification:new',
+      (data: {
+        event: NostrEvent;
+        groupName: string;
+        mine?: boolean;
+        groupRelay?: string;
+      }) => {
+        this.handleNostrordNotification(data);
+      }
+    );
 
     // Listen for Armada (Concord) encrypted-community activity notifications
     // (group-chats addon — Armada runs alongside NIP-29 under the same addon's
     // "Group Chats" umbrella). Sprint 4 emits these once the gift-wrap
     // polling pipeline is live; the handler exists now so the pipeline just
     // needs to fire the event.
-    this.eventBus.on('armada-notification:new', (data: { event: NostrEvent; groupName: string; mine?: boolean; communityUrl?: string; count?: number }) => {
-      this.handleArmadaNotification(data);
-    });
+    this.eventBus.on(
+      'armada-notification:new',
+      (data: {
+        event: NostrEvent;
+        groupName: string;
+        mine?: boolean;
+        communityUrl?: string;
+        count?: number;
+      }) => {
+        this.handleArmadaNotification(data);
+      }
+    );
 
     // Listen for hashtag notification events
-    this.eventBus.on('hashtag:new-posts', (data: { hashtag: string; count: number; latestEvent: NostrEvent }) => {
-      this.handleHashtagNotification(data);
-    });
+    this.eventBus.on(
+      'hashtag:new-posts',
+      (data: { hashtag: string; count: number; latestEvent: NostrEvent }) => {
+        this.handleHashtagNotification(data);
+      }
+    );
 
     // Listen for user mute changes (refresh filter when user is muted/unmuted)
     this.eventBus.on('mute:updated', () => {
@@ -238,7 +330,7 @@ export class NotificationsOrchestrator extends Orchestrator {
     const ptagFilter: NDKFilter = {
       '#p': [this.userPubkey],
       kinds: [1, 6, 7, 8, 16, 20, 21, 22, 1111, 9735, 9802] as any,
-      since: now
+      since: now,
     };
 
     this.ptagSubId = 'notifications-ptag';
@@ -251,7 +343,10 @@ export class NotificationsOrchestrator extends Orchestrator {
       }
     );
 
-    this.systemLogger.info('NotificationsOrchestrator', `✅ #p subscription active (${this.ptagSubId})`);
+    this.systemLogger.info(
+      'NotificationsOrchestrator',
+      `✅ #p subscription active (${this.ptagSubId})`
+    );
 
     // Filter 2: Replies to user's events (#e filter)
     const userEventIds = this.getUserEventIds();
@@ -259,7 +354,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       const etagFilter: NDKFilter = {
         '#e': userEventIds,
         kinds: [1, 7, 20, 21, 22, 1018, 1111, 9735, 9802] as any,
-        since: now
+        since: now,
       };
 
       this.etagSubId = 'notifications-etag';
@@ -272,9 +367,15 @@ export class NotificationsOrchestrator extends Orchestrator {
         }
       );
 
-      this.systemLogger.info('NotificationsOrchestrator', `✅ #e subscription active (${this.etagSubId}) - tracking ${userEventIds.length} events`);
+      this.systemLogger.info(
+        'NotificationsOrchestrator',
+        `✅ #e subscription active (${this.etagSubId}) - tracking ${userEventIds.length} events`
+      );
     } else {
-      this.systemLogger.warn('NotificationsOrchestrator', '⚠️ No user event IDs found - #e filter skipped');
+      this.systemLogger.warn(
+        'NotificationsOrchestrator',
+        '⚠️ No user event IDs found - #e filter skipped'
+      );
     }
   }
 
@@ -288,7 +389,10 @@ export class NotificationsOrchestrator extends Orchestrator {
 
     this.isRefreshing = true;
     try {
-      this.systemLogger.info('NotificationsOrchestrator', '🔄 Refreshing subscriptions...');
+      this.systemLogger.info(
+        'NotificationsOrchestrator',
+        '🔄 Refreshing subscriptions...'
+      );
 
       // 1. Close existing subscriptions
       if (this.ptagSubId) {
@@ -301,8 +405,9 @@ export class NotificationsOrchestrator extends Orchestrator {
       }
 
       // 2. Fetch missed notifications since latest known
-      const latestTimestamp = this.notifications[0]?.timestamp
-        ?? Math.floor(Date.now() / 1000) - 1800;
+      const latestTimestamp =
+        this.notifications[0]?.timestamp ??
+        Math.floor(Date.now() / 1000) - 1800;
       await this.fetchNewNotifications(latestTimestamp);
 
       // 3. Re-subscribe to live events
@@ -311,7 +416,10 @@ export class NotificationsOrchestrator extends Orchestrator {
       // 4. Reset timer so it counts from now (avoids redundant refresh after visibility change)
       this.startRefreshTimer();
 
-      this.systemLogger.info('NotificationsOrchestrator', '✅ Subscriptions refreshed');
+      this.systemLogger.info(
+        'NotificationsOrchestrator',
+        '✅ Subscriptions refreshed'
+      );
     } finally {
       this.isRefreshing = false;
     }
@@ -340,19 +448,31 @@ export class NotificationsOrchestrator extends Orchestrator {
   private async fetchInitialNotifications(userPubkey: string): Promise<void> {
     try {
       const relays = await this.getReadRelays();
-      this.systemLogger.info('NotificationsOrchestrator', '📥 Fetching last 100 notifications from relays');
+      this.systemLogger.info(
+        'NotificationsOrchestrator',
+        '📥 Fetching last 100 notifications from relays'
+      );
 
       // Build filter for last 100 notifications
       const ptagFilter: NDKFilter = {
         '#p': [userPubkey],
         kinds: [1, 6, 7, 8, 16, 20, 21, 22, 1111, 9735, 9802] as any,
-        limit: 100
+        limit: 100,
       };
 
       // skipCache: true — bypass NDK Dexie cache to always get fresh relay data
-      const ptagNotifications = await this.transport.fetch(relays, [ptagFilter], 5000, true, 'NotifOrch');
+      const ptagNotifications = await this.transport.fetch(
+        relays,
+        [ptagFilter],
+        5000,
+        true,
+        'NotifOrch'
+      );
 
-      this.systemLogger.info('NotificationsOrchestrator', `✅ Fetched ${ptagNotifications.length} #p notifications`);
+      this.systemLogger.info(
+        'NotificationsOrchestrator',
+        `✅ Fetched ${ptagNotifications.length} #p notifications`
+      );
 
       // Fetch #e notifications
       const userEventIds = this.getUserEventIds();
@@ -361,12 +481,21 @@ export class NotificationsOrchestrator extends Orchestrator {
         const etagFilter: NDKFilter = {
           '#e': userEventIds,
           kinds: [1, 7, 20, 21, 22, 1018, 1111, 9735, 9802] as any,
-          limit: 100
+          limit: 100,
         };
 
-        etagNotifications = await this.transport.fetch(relays, [etagFilter], 5000, true, 'NotifOrch');
+        etagNotifications = await this.transport.fetch(
+          relays,
+          [etagFilter],
+          5000,
+          true,
+          'NotifOrch'
+        );
 
-        this.systemLogger.info('NotificationsOrchestrator', `✅ Fetched ${etagNotifications.length} #e notifications`);
+        this.systemLogger.info(
+          'NotificationsOrchestrator',
+          `✅ Fetched ${etagNotifications.length} #e notifications`
+        );
       }
 
       // Process all fetched notifications
@@ -376,11 +505,18 @@ export class NotificationsOrchestrator extends Orchestrator {
         this.processNotificationEvent(event);
       });
 
-      this.systemLogger.info('NotificationsOrchestrator', `📋 Total notifications loaded: ${this.notifications.length}`);
+      this.systemLogger.info(
+        'NotificationsOrchestrator',
+        `📋 Total notifications loaded: ${this.notifications.length}`
+      );
 
       this.eventBus.emit('notifications:badge-update');
     } catch (error) {
-      this.systemLogger.error('NotificationsOrchestrator', 'Failed to fetch initial notifications:', error);
+      this.systemLogger.error(
+        'NotificationsOrchestrator',
+        'Failed to fetch initial notifications:',
+        error
+      );
     }
   }
 
@@ -389,13 +525,19 @@ export class NotificationsOrchestrator extends Orchestrator {
    * @param events Array of NostrEvents from cache
    */
   public addCachedNotifications(events: NostrEvent[]): void {
-    this.systemLogger.info('NotificationsOrchestrator', `📥 Loading ${events.length} cached notifications`);
+    this.systemLogger.info(
+      'NotificationsOrchestrator',
+      `📥 Loading ${events.length} cached notifications`
+    );
 
     events.forEach(event => {
       this.processNotificationEvent(event);
     });
 
-    this.systemLogger.info('NotificationsOrchestrator', `✅ Loaded ${this.notifications.length} total notifications (including cache)`);
+    this.systemLogger.info(
+      'NotificationsOrchestrator',
+      `✅ Loaded ${this.notifications.length} total notifications (including cache)`
+    );
   }
 
   /**
@@ -409,17 +551,26 @@ export class NotificationsOrchestrator extends Orchestrator {
       if (!currentUser) return;
 
       const relays = await this.getReadRelays();
-      this.systemLogger.info('NotificationsOrchestrator', `📥 Fetching new notifications (since: ${since})`);
+      this.systemLogger.info(
+        'NotificationsOrchestrator',
+        `📥 Fetching new notifications (since: ${since})`
+      );
 
       // Build filter for new notifications
       const ptagFilter: NDKFilter = {
         '#p': [currentUser.pubkey],
         kinds: [1, 6, 7, 8, 16, 20, 21, 22, 1111, 9735, 9802] as any,
-        since: since
+        since,
       };
 
       // Fetch #p notifications (skipCache for fresh data)
-      const ptagNotifications = await this.transport.fetch(relays, [ptagFilter], 5000, true, 'NotifOrch');
+      const ptagNotifications = await this.transport.fetch(
+        relays,
+        [ptagFilter],
+        5000,
+        true,
+        'NotifOrch'
+      );
 
       // Fetch #e notifications (skipCache for fresh data)
       const userEventIds = this.getUserEventIds();
@@ -428,10 +579,16 @@ export class NotificationsOrchestrator extends Orchestrator {
         const etagFilter: NDKFilter = {
           '#e': userEventIds,
           kinds: [1, 7, 20, 21, 22, 1018, 1111, 9735, 9802] as any,
-          since: since
+          since,
         };
 
-        etagNotifications = await this.transport.fetch(relays, [etagFilter], 5000, true, 'NotifOrch');
+        etagNotifications = await this.transport.fetch(
+          relays,
+          [etagFilter],
+          5000,
+          true,
+          'NotifOrch'
+        );
       }
 
       // Process all fetched notifications
@@ -441,11 +598,18 @@ export class NotificationsOrchestrator extends Orchestrator {
         this.processNotificationEvent(event);
       });
 
-      this.systemLogger.info('NotificationsOrchestrator', `✅ Loaded ${allNotifications.length} new notifications`);
+      this.systemLogger.info(
+        'NotificationsOrchestrator',
+        `✅ Loaded ${allNotifications.length} new notifications`
+      );
 
       this.eventBus.emit('notifications:badge-update');
     } catch (error) {
-      this.systemLogger.error('NotificationsOrchestrator', 'Failed to fetch new notifications:', error);
+      this.systemLogger.error(
+        'NotificationsOrchestrator',
+        'Failed to fetch new notifications:',
+        error
+      );
     }
   }
 
@@ -461,10 +625,18 @@ export class NotificationsOrchestrator extends Orchestrator {
     // re-classify as 'mention' on cache restore and render a phantom
     // "@npub…" author (hexToNpub of an empty pubkey).
     return this.notifications
-      .filter(n => n.type !== 'hashtag' && n.type !== 'mutual_new' && n.type !== 'mutual_unfollow'
-        && n.type !== 'follower_new'
-        && n.type !== 'dhikr_round' && n.type !== 'dhikr_commit' && n.type !== 'dhikr_complete'
-        && n.type !== 'nostrord' && n.type !== 'armada')
+      .filter(
+        n =>
+          n.type !== 'hashtag' &&
+          n.type !== 'mutual_new' &&
+          n.type !== 'mutual_unfollow' &&
+          n.type !== 'follower_new' &&
+          n.type !== 'dhikr_round' &&
+          n.type !== 'dhikr_commit' &&
+          n.type !== 'dhikr_complete' &&
+          n.type !== 'nostrord' &&
+          n.type !== 'armada'
+      )
       .map(n => n.event);
   }
 
@@ -474,24 +646,36 @@ export class NotificationsOrchestrator extends Orchestrator {
    * @param limit Number of notifications to fetch (default: 50)
    * @returns Array of newly fetched notifications
    */
-  public async fetchOlderNotifications(until: number, limit: number = 50): Promise<NotificationEvent[]> {
+  public async fetchOlderNotifications(
+    until: number,
+    limit: number = 50
+  ): Promise<NotificationEvent[]> {
     try {
       const currentUser = this.authService.getCurrentUser();
       if (!currentUser) return [];
 
       const relays = await this.getReadRelays();
-      this.systemLogger.info('NotificationsOrchestrator', `📥 Fetching ${limit} older notifications (until: ${until})`);
+      this.systemLogger.info(
+        'NotificationsOrchestrator',
+        `📥 Fetching ${limit} older notifications (until: ${until})`
+      );
 
       // Build filter for older notifications
       const ptagFilter: NDKFilter = {
         '#p': [currentUser.pubkey],
         kinds: [1, 6, 7, 8, 16, 20, 21, 22, 1111, 9735, 9802] as any,
-        until: until,
-        limit: limit
+        until,
+        limit,
       };
 
       // Fetch #p notifications
-      const ptagNotifications = await this.transport.fetch(relays, [ptagFilter], 5000, false, 'NotifOrch');
+      const ptagNotifications = await this.transport.fetch(
+        relays,
+        [ptagFilter],
+        5000,
+        false,
+        'NotifOrch'
+      );
 
       // Fetch #e notifications
       const userEventIds = this.getUserEventIds();
@@ -500,11 +684,17 @@ export class NotificationsOrchestrator extends Orchestrator {
         const etagFilter: NDKFilter = {
           '#e': userEventIds,
           kinds: [1, 7, 20, 21, 22, 1018, 1111, 9735, 9802] as any,
-          until: until,
-          limit: limit
+          until,
+          limit,
         };
 
-        etagNotifications = await this.transport.fetch(relays, [etagFilter], 5000, false, 'NotifOrch');
+        etagNotifications = await this.transport.fetch(
+          relays,
+          [etagFilter],
+          5000,
+          false,
+          'NotifOrch'
+        );
       }
 
       // Process all fetched notifications
@@ -513,17 +703,26 @@ export class NotificationsOrchestrator extends Orchestrator {
 
       allNotifications.forEach(event => {
         if (this.processNotificationEvent(event)) {
-          const notification = this.notifications.find(n => n.event.id === event.id);
+          const notification = this.notifications.find(
+            n => n.event.id === event.id
+          );
           if (notification) {
             newNotifications.push(notification);
           }
         }
       });
 
-      this.systemLogger.info('NotificationsOrchestrator', `✅ Loaded ${newNotifications.length} older notifications`);
+      this.systemLogger.info(
+        'NotificationsOrchestrator',
+        `✅ Loaded ${newNotifications.length} older notifications`
+      );
       return newNotifications;
     } catch (error) {
-      this.systemLogger.error('NotificationsOrchestrator', 'Failed to fetch older notifications:', error);
+      this.systemLogger.error(
+        'NotificationsOrchestrator',
+        'Failed to fetch older notifications:',
+        error
+      );
       return [];
     }
   }
@@ -563,7 +762,11 @@ export class NotificationsOrchestrator extends Orchestrator {
         const parts = aTag[1].split(':');
         const targetKind = parseInt(parts[0] || '');
         const targetAuthor = parts[1];
-        if (targetKind === 39089 && targetAuthor && targetAuthor !== this.userPubkey) {
+        if (
+          targetKind === 39089 &&
+          targetAuthor &&
+          targetAuthor !== this.userPubkey
+        ) {
           return false;
         }
       }
@@ -595,7 +798,7 @@ export class NotificationsOrchestrator extends Orchestrator {
     const notification: NotificationEvent = {
       event,
       type,
-      timestamp: event.created_at
+      timestamp: event.created_at,
     };
 
     // Add to notifications (dedup + sort + trim handled by addNotification)
@@ -612,7 +815,10 @@ export class NotificationsOrchestrator extends Orchestrator {
    * Central method: add a notification with dedup, sort, and size limit.
    * Returns true if notification was added (not a duplicate).
    */
-  private addNotification(notification: NotificationEvent, dedupKey?: string): boolean {
+  private addNotification(
+    notification: NotificationEvent,
+    dedupKey?: string
+  ): boolean {
     const key = dedupKey ?? notification.event.id;
     const exists = this.notifications.some(n => n.event.id === key);
     if (exists) return false;
@@ -634,17 +840,28 @@ export class NotificationsOrchestrator extends Orchestrator {
   private async fetchAndStoreUserEvents(userPubkey: string): Promise<void> {
     try {
       const relays = await this.getReadRelays();
-      const userEvents = await this.transport.fetch(relays, [{
-        authors: [userPubkey],
-        kinds: USER_CONTENT_KINDS,
-        limit: 50
-      }], 5000, false, 'NotifOrch');
+      const userEvents = await this.transport.fetch(
+        relays,
+        [
+          {
+            authors: [userPubkey],
+            kinds: USER_CONTENT_KINDS,
+            limit: 50,
+          },
+        ],
+        5000,
+        false,
+        'NotifOrch'
+      );
 
       const eventIds = userEvents.map(e => e.id);
       this.perAccountStorage.set(StorageKeys.USER_EVENT_IDS, eventIds);
 
       // Store ancestry (root/parent) for each user event (for muted thread checking)
-      const ancestryMap: Record<string, { rootId: string | null; parentId: string | null }> = {};
+      const ancestryMap: Record<
+        string,
+        { rootId: string | null; parentId: string | null }
+      > = {};
       for (const event of userEvents) {
         if (!event.id) continue;
 
@@ -653,21 +870,34 @@ export class NotificationsOrchestrator extends Orchestrator {
         // Extract root ID (NIP-10: "root" marker or first e-tag if multiple)
         const rootTag = eTags.find(t => t[3] === 'root');
         const firstETag = eTags[0];
-        const rootId = rootTag?.[1] ?? (eTags.length > 1 && firstETag ? firstETag[1] : null) ?? null;
+        const rootId =
+          rootTag?.[1] ??
+          (eTags.length > 1 && firstETag ? firstETag[1] : null) ??
+          null;
 
         // Extract parent ID (NIP-10: "reply" marker or last e-tag)
         const replyTag = eTags.find(t => t[3] === 'reply');
         const lastETag = eTags[eTags.length - 1];
-        const parentId = replyTag?.[1] ?? (eTags.length > 0 && lastETag ? lastETag[1] : null) ?? null;
+        const parentId =
+          replyTag?.[1] ??
+          (eTags.length > 0 && lastETag ? lastETag[1] : null) ??
+          null;
 
         ancestryMap[event.id] = { rootId, parentId };
         this.userEventAncestry.set(event.id, { rootId, parentId });
       }
       this.perAccountStorage.set(StorageKeys.USER_EVENT_ANCESTRY, ancestryMap);
 
-      this.systemLogger.info('NotificationsOrchestrator', `📋 Stored ${eventIds.length} user event IDs with ancestry`);
+      this.systemLogger.info(
+        'NotificationsOrchestrator',
+        `📋 Stored ${eventIds.length} user event IDs with ancestry`
+      );
     } catch (error) {
-      this.systemLogger.error('NotificationsOrchestrator', 'Failed to fetch user events:', error);
+      this.systemLogger.error(
+        'NotificationsOrchestrator',
+        'Failed to fetch user events:',
+        error
+      );
     }
   }
 
@@ -691,7 +921,10 @@ export class NotificationsOrchestrator extends Orchestrator {
     this.notifications = [];
     this.onNewNotificationCallback = null;
 
-    this.systemLogger.info('NotificationsOrchestrator', '🛑 Notifications stopped');
+    this.systemLogger.info(
+      'NotificationsOrchestrator',
+      '🛑 Notifications stopped'
+    );
   }
 
   /**
@@ -700,7 +933,11 @@ export class NotificationsOrchestrator extends Orchestrator {
    * @param offset Offset for pagination (default: 0)
    * @param limit Limit for pagination (default: all)
    */
-  public getNotifications(type?: NotificationType, offset: number = 0, limit?: number): NotificationEvent[] {
+  public getNotifications(
+    type?: NotificationType,
+    offset: number = 0,
+    limit?: number
+  ): NotificationEvent[] {
     let filtered = type
       ? this.notifications.filter(n => n.type === type)
       : this.notifications;
@@ -768,32 +1005,31 @@ export class NotificationsOrchestrator extends Orchestrator {
 
     // Default priorities
     const defaultPriorities: Record<string, 1 | 2 | 3> = {
-      'reply': 1,
-      'quote': 1,
-      'zap': 1,
-      'mention': 2,
-      'repost': 2,
-      'reaction': 2,
-      'poll_vote': 2,
-      'article': 2,
-      'mutual_new': 2,
-      'mutual_unfollow': 2,
-      'follower_new': 2,
+      reply: 1,
+      quote: 1,
+      zap: 1,
+      mention: 2,
+      repost: 2,
+      reaction: 2,
+      poll_vote: 2,
+      article: 2,
+      mutual_new: 2,
+      mutual_unfollow: 2,
+      follower_new: 2,
       'thread-reply': 3,
-      'hashtag': 3,
-      'dhikr_round': 3,
-      'dhikr_commit': 3,
-      'dhikr_complete': 3,
-      'nostrord': 2,
+      hashtag: 3,
+      dhikr_round: 3,
+      dhikr_commit: 3,
+      dhikr_complete: 3,
+      nostrord: 2,
       'group-chats': 2,
-      'armada': 2,
+      armada: 2,
     };
 
     // Load user's priority settings (or use defaults)
-    const effectivePriorities = this.perAccountStorage.get<Record<string, 1 | 2 | 3>>(
-      StorageKeys.NOTIFICATION_PRIORITIES,
-      defaultPriorities
-    );
+    const effectivePriorities = this.perAccountStorage.get<
+      Record<string, 1 | 2 | 3>
+    >(StorageKeys.NOTIFICATION_PRIORITIES, defaultPriorities);
 
     // Find highest priority (lowest number) among unread
     let highestPriority: 1 | 2 | 3 = 3;
@@ -815,13 +1051,18 @@ export class NotificationsOrchestrator extends Orchestrator {
   public markAsRead(): void {
     const now = Math.floor(Date.now() / 1000);
     this.perAccountStorage.set(StorageKeys.NOTIFICATIONS_LAST_SEEN, now);
-    this.systemLogger.info('NotificationsOrchestrator', `✅ Marked as read (${now})`);
+    this.systemLogger.info(
+      'NotificationsOrchestrator',
+      `✅ Marked as read (${now})`
+    );
   }
 
   /**
    * Set callback for real-time notification updates
    */
-  public onNewNotification(callback: (notification: NotificationEvent) => void): void {
+  public onNewNotification(
+    callback: (notification: NotificationEvent) => void
+  ): void {
     this.onNewNotificationCallback = callback;
   }
 
@@ -862,10 +1103,9 @@ export class NotificationsOrchestrator extends Orchestrator {
    * Load user event ancestry from per-account storage into memory
    */
   private loadUserEventAncestry(): void {
-    const ancestryMap = this.perAccountStorage.get<Record<string, { rootId: string | null; parentId: string | null }>>(
-      StorageKeys.USER_EVENT_ANCESTRY,
-      {}
-    );
+    const ancestryMap = this.perAccountStorage.get<
+      Record<string, { rootId: string | null; parentId: string | null }>
+    >(StorageKeys.USER_EVENT_ANCESTRY, {});
 
     this.userEventAncestry.clear();
     for (const [eventId, ancestry] of Object.entries(ancestryMap)) {
@@ -891,8 +1131,10 @@ export class NotificationsOrchestrator extends Orchestrator {
     // Check if target event's ancestry is muted
     const ancestry = this.userEventAncestry.get(targetEventId);
     if (ancestry) {
-      if (ancestry.rootId && this.mutedEventIds.has(ancestry.rootId)) return true;
-      if (ancestry.parentId && this.mutedEventIds.has(ancestry.parentId)) return true;
+      if (ancestry.rootId && this.mutedEventIds.has(ancestry.rootId))
+        return true;
+      if (ancestry.parentId && this.mutedEventIds.has(ancestry.parentId))
+        return true;
     }
 
     return false;
@@ -902,14 +1144,21 @@ export class NotificationsOrchestrator extends Orchestrator {
    * Get last seen timestamp from per-account storage
    */
   private getLastSeenTimestamp(): number | null {
-    return this.perAccountStorage.get<number | null>(StorageKeys.NOTIFICATIONS_LAST_SEEN, null);
+    return this.perAccountStorage.get<number | null>(
+      StorageKeys.NOTIFICATIONS_LAST_SEEN,
+      null
+    );
   }
 
   /**
    * Check if user is mentioned in event content (nostr:npub... or nostr:nprofile...)
    */
-  private isUserMentionedInContent(content: string, userPubkey: string): boolean {
-    const mentionRegex = /nostr:(npub1[023456789acdefghjklmnpqrstuvwxyz]{58}|nprofile1[023456789acdefghjklmnpqrstuvwxyz]{58,})/g;
+  private isUserMentionedInContent(
+    content: string,
+    userPubkey: string
+  ): boolean {
+    const mentionRegex =
+      /nostr:(npub1[023456789acdefghjklmnpqrstuvwxyz]{58}|nprofile1[023456789acdefghjklmnpqrstuvwxyz]{58,})/g;
     const mentions = content.matchAll(mentionRegex);
 
     for (const match of mentions) {
@@ -924,7 +1173,10 @@ export class NotificationsOrchestrator extends Orchestrator {
           }
         } else if (nip19.startsWith('nprofile')) {
           const decoded = decodeNip19(nip19);
-          if (decoded.type === 'nprofile' && decoded.data.pubkey === userPubkey) {
+          if (
+            decoded.type === 'nprofile' &&
+            decoded.data.pubkey === userPubkey
+          ) {
             return true;
           }
         }
@@ -967,9 +1219,14 @@ export class NotificationsOrchestrator extends Orchestrator {
     const userEventIds = this.getUserEventIds();
 
     if (event.kind === 1 || event.kind === 20) {
-      const hasUserPtag = event.tags.some(t => t[0] === 'p' && t[1] === currentUser.pubkey);
+      const hasUserPtag = event.tags.some(
+        t => t[0] === 'p' && t[1] === currentUser.pubkey
+      );
       const hasAnyEtag = event.tags.some(t => t[0] === 'e');
-      const userMentionedInContent = this.isUserMentionedInContent(event.content, currentUser.pubkey);
+      const userMentionedInContent = this.isUserMentionedInContent(
+        event.content,
+        currentUser.pubkey
+      );
 
       // NIP-68 image-tag: event has imeta with `annotate-user <myPubkey>:x:y`.
       // Takes precedence over plain mention classification so the action text
@@ -995,9 +1252,12 @@ export class NotificationsOrchestrator extends Orchestrator {
       const eTags = event.tags.filter(t => t[0] === 'e');
       const markedReplyId = eTags.find(t => t[3] === 'reply')?.[1];
       const markedRootId = eTags.find(t => t[3] === 'root')?.[1];
-      const directTargetId = markedReplyId ?? markedRootId ?? eTags[eTags.length - 1]?.[1];
+      const directTargetId =
+        markedReplyId ?? markedRootId ?? eTags[eTags.length - 1]?.[1];
 
-      const isDirectReplyToUser = !!(directTargetId && userEventIds.includes(directTargetId));
+      const isDirectReplyToUser = !!(
+        directTargetId && userEventIds.includes(directTargetId)
+      );
 
       // Priority 1: Direct reply to user's own event
       if (isDirectReplyToUser) return 'reply';
@@ -1008,7 +1268,8 @@ export class NotificationsOrchestrator extends Orchestrator {
       // Priority 3: Reply in a thread where user was mentioned (thread-reply)
       // This happens when someone replies in a thread that contains user's event as 'root'
       // but the direct 'reply' marker points to someone else's event
-      if (hasUserPtag && hasAnyEtag && !userMentionedInContent) return 'thread-reply';
+      if (hasUserPtag && hasAnyEtag && !userMentionedInContent)
+        return 'thread-reply';
 
       // Edge case: User has p-tag but no e-tag and not in content
       if (hasUserPtag) return 'mention';
@@ -1022,13 +1283,20 @@ export class NotificationsOrchestrator extends Orchestrator {
     if (event.kind === 1111) {
       // A comment whose NIP-22 root/parent is a zap receipt (K/k = 9735) is a reply within a zap
       // thread — its own priority category so users can tune "Zap Reply" notifications separately.
-      if (event.tags.some(t => (t[0] === 'K' || t[0] === 'k') && t[1] === '9735')) {
+      if (
+        event.tags.some(t => (t[0] === 'K' || t[0] === 'k') && t[1] === '9735')
+      ) {
         return 'zap-reply';
       }
 
-      const hasUserPtag = event.tags.some(t => (t[0] === 'p' || t[0] === 'P') && t[1] === currentUser.pubkey);
+      const hasUserPtag = event.tags.some(
+        t => (t[0] === 'p' || t[0] === 'P') && t[1] === currentUser.pubkey
+      );
       const hasAnyEtag = event.tags.some(t => t[0] === 'e' || t[0] === 'E');
-      const userMentionedInContent = this.isUserMentionedInContent(event.content, currentUser.pubkey);
+      const userMentionedInContent = this.isUserMentionedInContent(
+        event.content,
+        currentUser.pubkey
+      );
 
       const qTag = event.tags.find(t => t[0] === 'q');
       const quotedEventId = qTag?.[1];
@@ -1039,12 +1307,16 @@ export class NotificationsOrchestrator extends Orchestrator {
       const parentTargetId = event.tags.find(t => t[0] === 'e')?.[1];
       const rootTargetId = event.tags.find(t => t[0] === 'E')?.[1];
 
-      const isDirectReplyToUser = (parentTargetId && userEventIds.includes(parentTargetId)) ||
-                                  (rootTargetId && userEventIds.includes(rootTargetId) && !parentTargetId);
+      const isDirectReplyToUser =
+        (parentTargetId && userEventIds.includes(parentTargetId)) ||
+        (rootTargetId &&
+          userEventIds.includes(rootTargetId) &&
+          !parentTargetId);
 
       if (isDirectReplyToUser) return 'reply';
       if (hasUserPtag && userMentionedInContent) return 'mention';
-      if (hasUserPtag && hasAnyEtag && !userMentionedInContent) return 'thread-reply';
+      if (hasUserPtag && hasAnyEtag && !userMentionedInContent)
+        return 'thread-reply';
       if (hasUserPtag) return 'mention';
     }
 
@@ -1065,7 +1337,10 @@ export class NotificationsOrchestrator extends Orchestrator {
   }
 
   public onopen(relay: string): void {
-    this.systemLogger.info('NotificationsOrchestrator', `📡 Connected to ${relay}`);
+    this.systemLogger.info(
+      'NotificationsOrchestrator',
+      `📡 Connected to ${relay}`
+    );
   }
 
   public onmessage(_relay: string, event: NostrEvent): void {
@@ -1074,9 +1349,14 @@ export class NotificationsOrchestrator extends Orchestrator {
     const wasAdded = this.processNotificationEvent(event);
 
     if (wasAdded) {
-      const notification = this.notifications.find(n => n.event.id === event.id);
+      const notification = this.notifications.find(
+        n => n.event.id === event.id
+      );
       if (notification) {
-        this.systemLogger.info('NotificationsOrchestrator', `🔔 New ${notification.type}: ${event.id?.slice(0, 8) ?? 'unknown'}...`);
+        this.systemLogger.info(
+          'NotificationsOrchestrator',
+          `🔔 New ${notification.type}: ${event.id?.slice(0, 8) ?? 'unknown'}...`
+        );
 
         // Trigger callback for real-time updates
         if (this.onNewNotificationCallback) {
@@ -1089,11 +1369,18 @@ export class NotificationsOrchestrator extends Orchestrator {
   }
 
   public onerror(relay: string, error: Error): void {
-    this.systemLogger.error('NotificationsOrchestrator', `❌ Error from ${relay}:`, error);
+    this.systemLogger.error(
+      'NotificationsOrchestrator',
+      `❌ Error from ${relay}:`,
+      error
+    );
   }
 
   public onclose(relay: string): void {
-    this.systemLogger.info('NotificationsOrchestrator', `📡 Disconnected from ${relay}`);
+    this.systemLogger.info(
+      'NotificationsOrchestrator',
+      `📡 Disconnected from ${relay}`
+    );
   }
 
   /**
@@ -1102,7 +1389,8 @@ export class NotificationsOrchestrator extends Orchestrator {
   private async loadMutedUsers(userPubkey: string): Promise<void> {
     try {
       // Load muted users
-      const mutedPubkeys = await this.muteOrchestrator.getAllMutedUsers(userPubkey);
+      const mutedPubkeys =
+        await this.muteOrchestrator.getAllMutedUsers(userPubkey);
       this.mutedPubkeys = new Set(mutedPubkeys);
 
       // Load muted threads (Hell Thread protection)
@@ -1110,10 +1398,16 @@ export class NotificationsOrchestrator extends Orchestrator {
       this.mutedEventIds = new Set(mutedEventIds);
 
       if (mutedPubkeys.length > 0 || mutedEventIds.length > 0) {
-        this.systemLogger.info('NotificationsOrchestrator', `Loaded ${mutedPubkeys.length} muted users, ${mutedEventIds.length} muted threads`);
+        this.systemLogger.info(
+          'NotificationsOrchestrator',
+          `Loaded ${mutedPubkeys.length} muted users, ${mutedEventIds.length} muted threads`
+        );
       }
     } catch (error) {
-      this.systemLogger.error('NotificationsOrchestrator', `Failed to load muted users: ${error}`);
+      this.systemLogger.error(
+        'NotificationsOrchestrator',
+        `Failed to load muted users: ${error}`
+      );
     }
   }
 
@@ -1126,10 +1420,16 @@ export class NotificationsOrchestrator extends Orchestrator {
       const map = SoftMuteService.getInstance().getAll();
       this.softMutedPubkeys = new Set(Object.keys(map));
       if (this.softMutedPubkeys.size > 0) {
-        this.systemLogger.info('NotificationsOrchestrator', `Loaded ${this.softMutedPubkeys.size} soft-muted users`);
+        this.systemLogger.info(
+          'NotificationsOrchestrator',
+          `Loaded ${this.softMutedPubkeys.size} soft-muted users`
+        );
       }
     } catch (error) {
-      this.systemLogger.error('NotificationsOrchestrator', `Failed to load soft-muted users: ${error}`);
+      this.systemLogger.error(
+        'NotificationsOrchestrator',
+        `Failed to load soft-muted users: ${error}`
+      );
     }
   }
 
@@ -1158,7 +1458,8 @@ export class NotificationsOrchestrator extends Orchestrator {
     // Check 2: Root is muted (NIP-10: "root" marker or first e-tag)
     const rootTag = eTags.find(tag => tag[3] === 'root');
     const firstETag = eTags[0];
-    const rootId = rootTag?.[1] ?? (eTags.length > 1 && firstETag ? firstETag[1] : null);
+    const rootId =
+      rootTag?.[1] ?? (eTags.length > 1 && firstETag ? firstETag[1] : null);
     if (rootId && this.mutedEventIds.has(rootId)) return true;
 
     // Check 3: Parent is muted (NIP-10: "reply" marker or last e-tag)
@@ -1178,10 +1479,11 @@ export class NotificationsOrchestrator extends Orchestrator {
       await this.loadMutedUsers(this.userPubkey);
 
       // Filter existing notifications (users, threads, and notifications about user's posts in muted threads)
-      this.notifications = this.notifications.filter(n =>
-        !this.isAuthorMutedOrSoftMuted(n.event.pubkey) &&
-        !this.isEventInMutedThread(n.event) &&
-        !this.isNotificationTargetInMutedThread(n.event)
+      this.notifications = this.notifications.filter(
+        n =>
+          !this.isAuthorMutedOrSoftMuted(n.event.pubkey) &&
+          !this.isEventInMutedThread(n.event) &&
+          !this.isNotificationTargetInMutedThread(n.event)
       );
 
       // Notify UI to refresh (NotificationsView listens for this)
@@ -1192,7 +1494,13 @@ export class NotificationsOrchestrator extends Orchestrator {
   /**
    * Handle new article notification from ArticleNotificationService
    */
-  private async handleNewArticleNotification(data: { pubkey: string; articleId: string; naddr: string; title: string; createdAt: number }): Promise<void> {
+  private async handleNewArticleNotification(data: {
+    pubkey: string;
+    articleId: string;
+    naddr: string;
+    title: string;
+    createdAt: number;
+  }): Promise<void> {
     // Skip if from muted user (full mute OR soft mute)
     if (this.isAuthorMutedOrSoftMuted(data.pubkey)) {
       return;
@@ -1206,16 +1514,22 @@ export class NotificationsOrchestrator extends Orchestrator {
         pubkey: data.pubkey,
         kind: 30023,
         created_at: data.createdAt,
-        tags: [['d', data.naddr], ['title', data.title]],
+        tags: [
+          ['d', data.naddr],
+          ['title', data.title],
+        ],
         content: data.title,
-        sig: ''
+        sig: '',
       } as NostrEvent,
-      timestamp: data.createdAt
+      timestamp: data.createdAt,
     };
 
     if (!this.addNotification(notification)) return;
 
-    this.systemLogger.info('NotificationsOrchestrator', `📰 New article notification: ${data.title.slice(0, 30)}...`);
+    this.systemLogger.info(
+      'NotificationsOrchestrator',
+      `📰 New article notification: ${data.title.slice(0, 30)}...`
+    );
 
     this.eventBus.emit('notifications:badge-update');
     this.eventBus.emit('notifications:new', { notification });
@@ -1224,7 +1538,10 @@ export class NotificationsOrchestrator extends Orchestrator {
   /**
    * Handle mutual change notification from MutualChangeDetector
    */
-  private handleMutualNotification(data: { event: NostrEvent; type: 'mutual_unfollow' | 'mutual_new' }): void {
+  private handleMutualNotification(data: {
+    event: NostrEvent;
+    type: 'mutual_unfollow' | 'mutual_new';
+  }): void {
     // Skip if from muted user (full mute OR soft mute)
     if (this.isAuthorMutedOrSoftMuted(data.event.pubkey)) {
       return;
@@ -1233,13 +1550,17 @@ export class NotificationsOrchestrator extends Orchestrator {
     const notification: NotificationEvent = {
       event: data.event,
       type: data.type,
-      timestamp: data.event.created_at
+      timestamp: data.event.created_at,
     };
 
     if (!this.addNotification(notification)) return;
 
-    const typeLabel = data.type === 'mutual_unfollow' ? 'unfollowed' : 'new mutual';
-    this.systemLogger.info('NotificationsOrchestrator', `🔔 Mutual notification: ${typeLabel}`);
+    const typeLabel =
+      data.type === 'mutual_unfollow' ? 'unfollowed' : 'new mutual';
+    this.systemLogger.info(
+      'NotificationsOrchestrator',
+      `🔔 Mutual notification: ${typeLabel}`
+    );
 
     this.eventBus.emit('notifications:badge-update');
     this.eventBus.emit('notifications:new', { notification });
@@ -1248,7 +1569,10 @@ export class NotificationsOrchestrator extends Orchestrator {
   /**
    * Handle follower change notification from the follower-notification addon's detector.
    */
-  private handleFollowerNotification(data: { event: NostrEvent; type: 'follower_new' }): void {
+  private handleFollowerNotification(data: {
+    event: NostrEvent;
+    type: 'follower_new';
+  }): void {
     if (this.isAuthorMutedOrSoftMuted(data.event.pubkey)) {
       return;
     }
@@ -1256,12 +1580,15 @@ export class NotificationsOrchestrator extends Orchestrator {
     const notification: NotificationEvent = {
       event: data.event,
       type: data.type,
-      timestamp: data.event.created_at
+      timestamp: data.event.created_at,
     };
 
     if (!this.addNotification(notification)) return;
 
-    this.systemLogger.info('NotificationsOrchestrator', '🔔 Follower notification: new follower');
+    this.systemLogger.info(
+      'NotificationsOrchestrator',
+      '🔔 Follower notification: new follower'
+    );
 
     this.eventBus.emit('notifications:badge-update');
     this.eventBus.emit('notifications:new', { notification });
@@ -1272,16 +1599,22 @@ export class NotificationsOrchestrator extends Orchestrator {
    * Anonymous by design: the synthetic event carries no real author, so there is
    * no identity to render or mute — just the action text + the Community Dhikr link.
    */
-  private handleDhikrNotification(data: { event: NostrEvent; type: 'dhikr_round' | 'dhikr_commit' | 'dhikr_complete' }): void {
+  private handleDhikrNotification(data: {
+    event: NostrEvent;
+    type: 'dhikr_round' | 'dhikr_commit' | 'dhikr_complete';
+  }): void {
     const notification: NotificationEvent = {
       event: data.event,
       type: data.type,
-      timestamp: data.event.created_at
+      timestamp: data.event.created_at,
     };
 
     if (!this.addNotification(notification)) return;
 
-    this.systemLogger.info('NotificationsOrchestrator', 'New community dhikr activity');
+    this.systemLogger.info(
+      'NotificationsOrchestrator',
+      'New community dhikr activity'
+    );
 
     this.eventBus.emit('notifications:badge-update');
     this.eventBus.emit('notifications:new', { notification });
@@ -1292,17 +1625,29 @@ export class NotificationsOrchestrator extends Orchestrator {
    * The synthetic event carries no real author (activity is summarized, not attributed), so the
    * item renders anonymously; the group name travels in meta for the action text.
    */
-  private handleNostrordNotification(data: { event: NostrEvent; groupName: string; mine?: boolean; groupRelay?: string }): void {
+  private handleNostrordNotification(data: {
+    event: NostrEvent;
+    groupName: string;
+    mine?: boolean;
+    groupRelay?: string;
+  }): void {
     const notification: NotificationEvent = {
       event: data.event,
       type: 'nostrord',
       timestamp: data.event.created_at,
-      meta: { groupName: data.groupName, isOwn: data.mine === true, ...(data.groupRelay ? { groupRelay: data.groupRelay } : {}) }
+      meta: {
+        groupName: data.groupName,
+        isOwn: data.mine === true,
+        ...(data.groupRelay ? { groupRelay: data.groupRelay } : {}),
+      },
     };
 
     if (!this.addNotification(notification)) return;
 
-    this.systemLogger.info('NotificationsOrchestrator', 'New activity in a Nostrord group');
+    this.systemLogger.info(
+      'NotificationsOrchestrator',
+      'New activity in a Nostrord group'
+    );
 
     this.eventBus.emit('notifications:badge-update');
     this.eventBus.emit('notifications:new', { notification });
@@ -1316,7 +1661,13 @@ export class NotificationsOrchestrator extends Orchestrator {
    * The notification count travels in meta for the body phrasing
    * ("3 new messages" vs. "Someone posted").
    */
-  private handleArmadaNotification(data: { event: NostrEvent; groupName: string; mine?: boolean; communityUrl?: string; count?: number }): void {
+  private handleArmadaNotification(data: {
+    event: NostrEvent;
+    groupName: string;
+    mine?: boolean;
+    communityUrl?: string;
+    count?: number;
+  }): void {
     const notification: NotificationEvent = {
       event: data.event,
       type: 'armada',
@@ -1326,12 +1677,15 @@ export class NotificationsOrchestrator extends Orchestrator {
         isOwn: data.mine === true,
         ...(data.communityUrl ? { communityUrl: data.communityUrl } : {}),
         ...(typeof data.count === 'number' ? { count: data.count } : {}),
-      }
+      },
     };
 
     if (!this.addNotification(notification)) return;
 
-    this.systemLogger.info('NotificationsOrchestrator', 'New activity in an Armada community');
+    this.systemLogger.info(
+      'NotificationsOrchestrator',
+      'New activity in an Armada community'
+    );
 
     this.eventBus.emit('notifications:badge-update');
     this.eventBus.emit('notifications:new', { notification });
@@ -1340,7 +1694,11 @@ export class NotificationsOrchestrator extends Orchestrator {
   /**
    * Handle hashtag notification from HashtagNotificationService
    */
-  private handleHashtagNotification(data: { hashtag: string; count: number; latestEvent: NostrEvent }): void {
+  private handleHashtagNotification(data: {
+    hashtag: string;
+    count: number;
+    latestEvent: NostrEvent;
+  }): void {
     // Create a notification with meta info
     // Use current time for timestamp (not event.created_at) so hashtag notifications
     // are always considered "new" when received, regardless of when the post was made
@@ -1348,12 +1706,15 @@ export class NotificationsOrchestrator extends Orchestrator {
       event: data.latestEvent,
       type: 'hashtag',
       timestamp: Math.floor(Date.now() / 1000),
-      meta: { hashtag: data.hashtag, count: data.count }
+      meta: { hashtag: data.hashtag, count: data.count },
     };
 
     if (!this.addNotification(notification)) return;
 
-    this.systemLogger.info('NotificationsOrchestrator', `🏷️ Hashtag notification: ${data.count} new posts for #${data.hashtag}`);
+    this.systemLogger.info(
+      'NotificationsOrchestrator',
+      `🏷️ Hashtag notification: ${data.count} new posts for #${data.hashtag}`
+    );
 
     // Trigger callback for real-time updates (if NotificationsView is active)
     if (this.onNewNotificationCallback) {
@@ -1372,14 +1733,21 @@ export class NotificationsOrchestrator extends Orchestrator {
     const changes = storage.getChanges();
 
     if (changes.length === 0) {
-      this.systemLogger.info('NotificationsOrchestrator', 'No stored mutual changes to restore');
+      this.systemLogger.info(
+        'NotificationsOrchestrator',
+        'No stored mutual changes to restore'
+      );
       return;
     }
 
-    this.systemLogger.info('NotificationsOrchestrator', `Restoring ${changes.length} mutual change notifications`);
+    this.systemLogger.info(
+      'NotificationsOrchestrator',
+      `Restoring ${changes.length} mutual change notifications`
+    );
 
     for (const change of changes) {
-      const type: NotificationType = change.type === 'unfollow' ? 'mutual_unfollow' : 'mutual_new';
+      const type: NotificationType =
+        change.type === 'unfollow' ? 'mutual_unfollow' : 'mutual_new';
       const eventId = `mutual-${type}-${change.pubkey}-${change.detectedAt}`;
 
       // Skip if from muted user (full mute OR soft mute)
@@ -1395,22 +1763,25 @@ export class NotificationsOrchestrator extends Orchestrator {
         created_at: Math.floor(change.detectedAt / 1000),
         tags: [
           ['type', type],
-          ['p', currentUserPubkey]
+          ['p', currentUserPubkey],
         ],
         content: '',
-        sig: ''
+        sig: '',
       };
 
       const notification: NotificationEvent = {
         event: syntheticEvent,
         type,
-        timestamp: syntheticEvent.created_at
+        timestamp: syntheticEvent.created_at,
       };
 
       this.addNotification(notification);
     }
 
-    this.systemLogger.info('NotificationsOrchestrator', `Restored ${changes.length} mutual change notifications`);
+    this.systemLogger.info(
+      'NotificationsOrchestrator',
+      `Restored ${changes.length} mutual change notifications`
+    );
   }
 
   /**
@@ -1421,11 +1792,17 @@ export class NotificationsOrchestrator extends Orchestrator {
     const changes = storage.getChanges();
 
     if (changes.length === 0) {
-      this.systemLogger.info('NotificationsOrchestrator', 'No stored follower changes to restore');
+      this.systemLogger.info(
+        'NotificationsOrchestrator',
+        'No stored follower changes to restore'
+      );
       return;
     }
 
-    this.systemLogger.info('NotificationsOrchestrator', `Restoring ${changes.length} follower change notifications`);
+    this.systemLogger.info(
+      'NotificationsOrchestrator',
+      `Restoring ${changes.length} follower change notifications`
+    );
 
     for (const change of changes) {
       const type: NotificationType = 'follower_new';
@@ -1441,25 +1818,31 @@ export class NotificationsOrchestrator extends Orchestrator {
         created_at: Math.floor(change.detectedAt / 1000),
         tags: [
           ['type', type],
-          ['p', currentUserPubkey]
+          ['p', currentUserPubkey],
         ],
         content: '',
-        sig: ''
+        sig: '',
       };
 
       this.addNotification({
         event: syntheticEvent,
         type,
-        timestamp: syntheticEvent.created_at
+        timestamp: syntheticEvent.created_at,
       });
     }
 
-    this.systemLogger.info('NotificationsOrchestrator', `Restored ${changes.length} follower change notifications`);
+    this.systemLogger.info(
+      'NotificationsOrchestrator',
+      `Restored ${changes.length} follower change notifications`
+    );
   }
 
   public override destroy(): void {
     this.stop();
     super.destroy();
-    this.systemLogger.info('NotificationsOrchestrator', '💀 Notifications Orchestrator destroyed');
+    this.systemLogger.info(
+      'NotificationsOrchestrator',
+      '💀 Notifications Orchestrator destroyed'
+    );
   }
 }

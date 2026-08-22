@@ -29,7 +29,10 @@ import { escapeHtml } from '../../helpers/escapeHtml';
 import { encodeNevent } from '../../helpers/encodeNevent';
 import { truncateNoteContent } from '../../helpers/truncateNoteContent';
 import { extractMedia } from '../../helpers/extractMedia';
-import { pickDateRange, type DateRangeResult } from '../../helpers/datePickerModal';
+import {
+  pickDateRange,
+  type DateRangeResult,
+} from '../../helpers/datePickerModal';
 import { InfiniteScroll } from '../../components/ui/InfiniteScroll';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
 import type { TimelineConfig } from '../../components/timeline/TimelineConfig';
@@ -97,7 +100,8 @@ export class BulkDeleteView extends View {
   private dispatching = false; // the deleteEvents() loop is running
   private deleteNoteCount = 0; // 0 = unknown (reconnected to a job from a prior view)
   private justCompleted = false;
-  private summary: { total: number; contacted: number; sent: number } | null = null;
+  private summary: { total: number; contacted: number; sent: number } | null =
+    null;
   private lastHost: { host: string; ok: boolean } | null = null;
   private progressRaf = 0;
   private pollTimer = 0;
@@ -106,17 +110,23 @@ export class BulkDeleteView extends View {
   constructor() {
     super();
     this.container = document.createElement('div');
-    this.container.className = 'view-content view-content--addon view-content--addon-bulk-delete';
+    this.container.className =
+      'view-content view-content--addon view-content--addon-bulk-delete';
 
     const enabled = isBulkDeleteEnabled();
 
     this.enableSwitch = new Switch({
       label: '',
       checked: enabled,
-      onChange: (checked) => {
+      onChange: checked => {
         setBulkDeleteEnabled(checked);
-        TypedEventBus.getInstance().emit('bulk-delete:addon-toggle', { enabled: checked });
-        ToastService.show(checked ? 'Bulk delete enabled' : 'Bulk delete disabled', 'success');
+        TypedEventBus.getInstance().emit('bulk-delete:addon-toggle', {
+          enabled: checked,
+        });
+        ToastService.show(
+          checked ? 'Bulk delete enabled' : 'Bulk delete disabled',
+          'success'
+        );
         if (checked) this.mountContent();
         else this.unmountContent();
       },
@@ -138,14 +148,19 @@ export class BulkDeleteView extends View {
     if (controlEl) controlEl.innerHTML = this.enableSwitch.render();
     this.enableSwitch.setupEventListeners(this.container);
 
-    this.contentEl = this.container.querySelector('[data-addon-content="bulk-delete"]');
+    this.contentEl = this.container.querySelector(
+      '[data-addon-content="bulk-delete"]'
+    );
 
     if (enabled) this.mountContent();
 
-    this.toggleSubId = TypedEventBus.getInstance().on('bulk-delete:addon-toggle', (p: { enabled: boolean }) => {
-      if (p.enabled) this.mountContent();
-      else this.unmountContent();
-    });
+    this.toggleSubId = TypedEventBus.getInstance().on(
+      'bulk-delete:addon-toggle',
+      (p: { enabled: boolean }) => {
+        if (p.enabled) this.mountContent();
+        else this.unmountContent();
+      }
+    );
   }
 
   public getElement(): HTMLElement {
@@ -188,30 +203,43 @@ export class BulkDeleteView extends View {
       </div>
     `;
 
-    this.contentEl.querySelector('[data-action="pick-search"]')
+    this.contentEl
+      .querySelector('[data-action="pick-search"]')
       ?.addEventListener('click', () => void this.handlePickSearch());
 
-    this.contentEl.querySelector('[data-action="pick-range"]')
+    this.contentEl
+      .querySelector('[data-action="pick-range"]')
       ?.addEventListener('click', () => void this.handlePickRange());
 
-    this.contentEl.querySelector('[data-action="delete-selected"]')
+    this.contentEl
+      .querySelector('[data-action="delete-selected"]')
       ?.addEventListener('click', () => void this.handleDeleteSelected());
 
-    this.contentEl.querySelector('[data-action="select-all"]')
-      ?.addEventListener('click', (e) => { e.preventDefault(); this.toggleSelectAll(); });
+    this.contentEl
+      .querySelector('[data-action="select-all"]')
+      ?.addEventListener('click', e => {
+        e.preventDefault();
+        this.toggleSelectAll();
+      });
 
     // The reset link lives inside the (re-rendered) range label; delegate from the
     // persistent span so it survives label re-renders.
-    this.contentEl.querySelector('[data-range]')?.addEventListener('click', (e) => {
-      if ((e.target as HTMLElement).closest('[data-action="reset-filters"]')) {
-        e.preventDefault();
-        this.resetFilters();
-      }
-    });
+    this.contentEl
+      .querySelector('[data-range]')
+      ?.addEventListener('click', e => {
+        if (
+          (e.target as HTMLElement).closest('[data-action="reset-filters"]')
+        ) {
+          e.preventDefault();
+          this.resetFilters();
+        }
+      });
 
     // Delegated row interactions (survive re-render of the list's children).
-    const list = this.contentEl.querySelector('[data-list]') as HTMLElement | null;
-    list?.addEventListener('click', (e) => {
+    const list = this.contentEl.querySelector(
+      '[data-list]'
+    ) as HTMLElement | null;
+    list?.addEventListener('click', e => {
       const target = e.target as HTMLElement;
       if (target.closest('[data-select]')) return; // checkbox handles itself
       const opener = target.closest('[data-open]') as HTMLElement | null;
@@ -224,9 +252,13 @@ export class BulkDeleteView extends View {
       // often aren't on the read relays anymore ("Note not found").
       const ev = this.notes.find(n => n.id === id);
       if (ev) this.singleNoteApi?.cacheNote(ev);
-      getViewNavigationController().openView('single-note', nevent, e as MouseEvent);
+      getViewNavigationController().openView(
+        'single-note',
+        nevent,
+        e as MouseEvent
+      );
     });
-    list?.addEventListener('change', (e) => {
+    list?.addEventListener('change', e => {
       const cb = e.target as HTMLInputElement;
       if (!cb.matches('[data-select]')) return;
       const id = cb.dataset.id;
@@ -251,10 +283,18 @@ export class BulkDeleteView extends View {
   /** Persist the current list to sessionStorage so a reload/re-open skips the re-search. */
   private saveCache(): void {
     const pubkey = this.pubkey;
-    if (!pubkey || (!this.range && this.searchTerms === null && this.notes.length === 0)) return;
+    if (
+      !pubkey ||
+      (!this.range && this.searchTerms === null && this.notes.length === 0)
+    )
+      return;
     const slim = (n: NostrEvent): SlimEvent => ({
-      id: n.id ?? '', pubkey: n.pubkey, created_at: n.created_at,
-      kind: n.kind ?? 1, content: n.content ?? '', tags: n.tags ?? [],
+      id: n.id ?? '',
+      pubkey: n.pubkey,
+      created_at: n.created_at,
+      kind: n.kind ?? 1,
+      content: n.content ?? '',
+      tags: n.tags ?? [],
     });
     try {
       const searching = this.searchTerms !== null;
@@ -270,7 +310,9 @@ export class BulkDeleteView extends View {
         savedAt: Date.now(),
       };
       sessionStorage.setItem(SESSION_KEY, JSON.stringify(cache));
-    } catch { /* quota / serialization — non-fatal, list just won't persist */ }
+    } catch {
+      /* quota / serialization — non-fatal, list just won't persist */
+    }
   }
 
   /** Restore a recent, same-account list from sessionStorage. Returns true if restored. */
@@ -285,7 +327,8 @@ export class BulkDeleteView extends View {
         sessionStorage.removeItem(SESSION_KEY); // purge a cache from an older, possibly broken version
         return false;
       }
-      if (c.pubkey !== pubkey || Date.now() - c.savedAt > CACHE_TTL_MS) return false;
+      if (c.pubkey !== pubkey || Date.now() - c.savedAt > CACHE_TTL_MS)
+        return false;
       this.range = c.range;
       this.searchTerms = c.searchTerms ?? null;
       this.selected = new Set(c.selected);
@@ -293,7 +336,9 @@ export class BulkDeleteView extends View {
       // Slim events are valid for preview / open / cache-seed (sig isn't needed to display).
       // Defensive re-sort newest-first so a once-mis-ordered cache can't resurface.
       const sortDesc = (evs: SlimEvent[]) =>
-        (evs as unknown as NostrEvent[]).slice().sort((a, b) => b.created_at - a.created_at);
+        (evs as unknown as NostrEvent[])
+          .slice()
+          .sort((a, b) => b.created_at - a.created_at);
 
       if (this.searchTerms !== null) {
         this.searchBase = sortDesc(c.searchBase ?? []);
@@ -310,7 +355,9 @@ export class BulkDeleteView extends View {
       this.renderList();
       this.setupInfiniteScroll();
       return true;
-    } catch { return false; }
+    } catch {
+      return false;
+    }
   }
 
   private unmountContent(): void {
@@ -337,7 +384,9 @@ export class BulkDeleteView extends View {
   }
 
   private get singleNoteApi(): SingleNoteModuleApi | null {
-    return ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
+    return ModuleLoader.getInstance().getApi<SingleNoteModuleApi>(
+      'single-note'
+    );
   }
 
   /** The effective [since, until]. Default "recent" view = everything up to now. */
@@ -371,7 +420,10 @@ export class BulkDeleteView extends View {
   }
 
   private async handlePickRange(): Promise<void> {
-    const result = await pickDateRange({ title: 'Select Time Range', confirmLabel: 'Show Notes' });
+    const result = await pickDateRange({
+      title: 'Select Time Range',
+      confirmLabel: 'Show Notes',
+    });
     if (!result) return;
     this.range = result;
     this.selected.clear();
@@ -391,7 +443,10 @@ export class BulkDeleteView extends View {
     const terms = await this.promptSearchTerms(this.searchTerms ?? '');
     if (terms === null) return; // cancelled
     const trimmed = terms.trim();
-    if (!trimmed) { this.clearSearch(); return; } // empty = leave search mode
+    if (!trimmed) {
+      this.clearSearch();
+      return;
+    } // empty = leave search mode
     await this.runSearch(trimmed);
   }
 
@@ -403,7 +458,8 @@ export class BulkDeleteView extends View {
    */
   private async runSearch(terms: string): Promise<void> {
     const pubkey = this.pubkey;
-    const profileApi = ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
+    const profileApi =
+      ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
     if (!pubkey || !profileApi) {
       ToastService.show('Search is not available right now', 'error');
       return;
@@ -424,12 +480,18 @@ export class BulkDeleteView extends View {
     this.renderList(); // shows the "Searching your posts…" placeholder
 
     try {
-      const result = await profileApi.searchUserNotes({ pubkeyHex: pubkey, searchTerms: terms });
+      const result = await profileApi.searchUserNotes({
+        pubkeyHex: pubkey,
+        searchTerms: terms,
+      });
       if (seq !== this.loadSeq) return; // a newer load/search superseded this one
       this.searchBase = result.events;
     } catch (err) {
       if (seq !== this.loadSeq) return;
-      SystemLogger.getInstance().warn('BulkDeleteView', `Search failed: ${err}`);
+      SystemLogger.getInstance().warn(
+        'BulkDeleteView',
+        `Search failed: ${err}`
+      );
       ToastService.show('Search failed', 'error');
       this.searchBase = [];
     }
@@ -463,7 +525,9 @@ export class BulkDeleteView extends View {
   private filteredSearchNotes(): NostrEvent[] {
     if (!this.range) return this.searchBase;
     const { since, until } = this.range;
-    return this.searchBase.filter(n => n.created_at >= since && n.created_at <= until);
+    return this.searchBase.filter(
+      n => n.created_at >= since && n.created_at <= until
+    );
   }
 
   /** Re-derive the visible list from the search base + range, then render. */
@@ -506,7 +570,10 @@ export class BulkDeleteView extends View {
         if (this.notes.length > 0 || this.range || i === attempts - 1) break;
       } catch (err) {
         if (seq !== this.loadSeq) return;
-        SystemLogger.getInstance().warn('BulkDeleteView', `Failed to load notes: ${err}`);
+        SystemLogger.getInstance().warn(
+          'BulkDeleteView',
+          `Failed to load notes: ${err}`
+        );
         ToastService.show('Failed to load your notes', 'error');
         this.notes = [];
         this.hasMore = false;
@@ -546,14 +613,19 @@ export class BulkDeleteView extends View {
         config: this.buildFeedConfig(pubkey),
       });
       // Drop duplicates (paging overlap) before appending.
-      const known = new Set(this.notes.map(n => n.id).filter((x): x is string => !!x));
+      const known = new Set(
+        this.notes.map(n => n.id).filter((x): x is string => !!x)
+      );
       const fresh = result.events.filter(n => n.id && !known.has(n.id));
       this.notes.push(...fresh);
       // Drive paging ourselves: stop when a page yields nothing new (range exhausted).
       this.hasMore = fresh.length > 0;
       this.appendRows(fresh);
     } catch (err) {
-      SystemLogger.getInstance().warn('BulkDeleteView', `Load more failed: ${err}`);
+      SystemLogger.getInstance().warn(
+        'BulkDeleteView',
+        `Load more failed: ${err}`
+      );
       this.hasMore = false;
     } finally {
       this.loading = false;
@@ -564,11 +636,16 @@ export class BulkDeleteView extends View {
   }
 
   private setupInfiniteScroll(): void {
-    const list = this.contentEl?.querySelector('[data-list]') as HTMLElement | null;
+    const list = this.contentEl?.querySelector(
+      '[data-list]'
+    ) as HTMLElement | null;
     if (!list) return;
     this.infiniteScroll?.destroy();
     // Search mode loads the whole result set up front — nothing to page.
-    if (this.searchTerms !== null || this.notes.length === 0) { this.infiniteScroll = null; return; }
+    if (this.searchTerms !== null || this.notes.length === 0) {
+      this.infiniteScroll = null;
+      return;
+    }
     this.infiniteScroll = new InfiniteScroll(() => void this.handleLoadMore(), {
       loadingMessage: 'Loading more notes...',
     });
@@ -577,7 +654,9 @@ export class BulkDeleteView extends View {
   }
 
   private renderRangeLabel(): void {
-    const el = this.contentEl?.querySelector('[data-range]') as HTMLElement | null;
+    const el = this.contentEl?.querySelector(
+      '[data-range]'
+    ) as HTMLElement | null;
     if (!el) return;
     const fmt = (s: number) => new Date(s * 1000).toLocaleDateString();
 
@@ -590,30 +669,43 @@ export class BulkDeleteView extends View {
     // Active filter (search and/or range): show it, plus one reset back to default.
     let label: string;
     if (this.searchTerms !== null) {
-      const rangePart = this.range ? ` · ${fmt(this.range.since)} to ${fmt(this.range.until)}` : '';
+      const rangePart = this.range
+        ? ` · ${fmt(this.range.since)} to ${fmt(this.range.until)}`
+        : '';
       label = `Search “${this.searchTerms}”${rangePart}`;
     } else {
       label = `Your posts from ${fmt(this.range!.since)} to ${fmt(this.range!.until)}`;
     }
-    el.innerHTML = `${escapeHtml(label)} `
-      + `<a href="#" data-action="reset-filters" class="bulk-delete__reset" title="Reset filters">Reset</a>`;
+    el.innerHTML =
+      `${escapeHtml(label)} ` +
+      `<a href="#" data-action="reset-filters" class="bulk-delete__reset" title="Reset filters">Reset</a>`;
   }
 
   private renderList(): void {
-    const list = this.contentEl?.querySelector('[data-list]') as HTMLElement | null;
-    const footer = this.contentEl?.querySelector('[data-footer]') as HTMLElement | null;
+    const list = this.contentEl?.querySelector(
+      '[data-list]'
+    ) as HTMLElement | null;
+    const footer = this.contentEl?.querySelector(
+      '[data-footer]'
+    ) as HTMLElement | null;
     if (!list) return;
 
     if (this.loading && this.notes.length === 0) {
-      const msg = this.searchTerms !== null ? 'Searching your posts…' : 'Loading your notes...';
+      const msg =
+        this.searchTerms !== null
+          ? 'Searching your posts…'
+          : 'Loading your notes...';
       list.innerHTML = `<div class="bulk-delete__empty pulsate">${msg}</div>`;
       if (footer) footer.hidden = true;
       return;
     }
     if (this.notes.length === 0) {
-      const msg = this.searchTerms !== null
-        ? 'No posts match your search.'
-        : (this.range ? 'No posts found in this range.' : 'No posts found.');
+      const msg =
+        this.searchTerms !== null
+          ? 'No posts match your search.'
+          : this.range
+            ? 'No posts found in this range.'
+            : 'No posts found.';
       list.innerHTML = `<div class="bulk-delete__empty">${msg}</div>`;
       if (footer) footer.hidden = true;
       return;
@@ -625,9 +717,14 @@ export class BulkDeleteView extends View {
   }
 
   private appendRows(events: NostrEvent[]): void {
-    const list = this.contentEl?.querySelector('[data-list]') as HTMLElement | null;
+    const list = this.contentEl?.querySelector(
+      '[data-list]'
+    ) as HTMLElement | null;
     if (!list || events.length === 0) return;
-    list.insertAdjacentHTML('beforeend', events.map(n => this.renderRow(n)).join(''));
+    list.insertAdjacentHTML(
+      'beforeend',
+      events.map(n => this.renderRow(n)).join('')
+    );
     this.infiniteScroll?.refresh(); // keep sentinel after the new rows
     this.updateSelectAllLabel(); // new unselected rows → may flip "Unselect all" back
   }
@@ -678,7 +775,10 @@ export class BulkDeleteView extends View {
   }
 
   private get allSelected(): boolean {
-    return this.notes.length > 0 && this.notes.every(n => !!n.id && this.selected.has(n.id));
+    return (
+      this.notes.length > 0 &&
+      this.notes.every(n => !!n.id && this.selected.has(n.id))
+    );
   }
 
   /** Toggle between selecting all currently-loaded notes and clearing the selection. */
@@ -687,7 +787,9 @@ export class BulkDeleteView extends View {
     this.selected = checked
       ? new Set(this.notes.map(n => n.id).filter((x): x is string => !!x))
       : new Set();
-    this.contentEl?.querySelectorAll('input[data-select]').forEach(cb => { (cb as HTMLInputElement).checked = checked; });
+    this.contentEl?.querySelectorAll('input[data-select]').forEach(cb => {
+      (cb as HTMLInputElement).checked = checked;
+    });
     this.updateDeleteButton();
     this.updateSelectAllLabel();
     this.saveCache();
@@ -696,7 +798,10 @@ export class BulkDeleteView extends View {
   /** "Select all" when not everything is selected, "Unselect all" when it is. */
   private updateSelectAllLabel(): void {
     const link = this.contentEl?.querySelector('[data-action="select-all"]');
-    if (link) link.textContent = this.allSelected ? 'Unselect all visible' : 'Select all visible';
+    if (link)
+      link.textContent = this.allSelected
+        ? 'Unselect all visible'
+        : 'Select all visible';
   }
 
   /**
@@ -705,7 +810,7 @@ export class BulkDeleteView extends View {
    */
   private promptSearchTerms(initial: string): Promise<string | null> {
     const modalService = ModalService.getInstance();
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       let resolved = false;
       const container = document.createElement('div');
       container.className = 'date-range-selector';
@@ -727,21 +832,35 @@ export class BulkDeleteView extends View {
         showCloseButton: true,
         closeOnOverlay: true,
         closeOnEsc: true,
-        onClose: () => { if (!resolved) { resolved = true; resolve(null); } },
+        onClose: () => {
+          if (!resolved) {
+            resolved = true;
+            resolve(null);
+          }
+        },
       });
 
       setTimeout(() => {
-        const input = container.querySelector('[data-search-input]') as HTMLInputElement;
+        const input = container.querySelector(
+          '[data-search-input]'
+        ) as HTMLInputElement;
         const done = (val: string | null): void => {
           if (resolved) return;
           resolved = true;
           modalService.hide();
           resolve(val);
         };
-        container.querySelector('[data-search-cancel]')?.addEventListener('click', () => done(null));
-        container.querySelector('[data-search-confirm]')?.addEventListener('click', () => done(input?.value ?? ''));
-        input?.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') { e.preventDefault(); done(input.value); }
+        container
+          .querySelector('[data-search-cancel]')
+          ?.addEventListener('click', () => done(null));
+        container
+          .querySelector('[data-search-confirm]')
+          ?.addEventListener('click', () => done(input?.value ?? ''));
+        input?.addEventListener('keydown', e => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            done(input.value);
+          }
         });
         input?.focus();
       }, 0);
@@ -749,7 +868,9 @@ export class BulkDeleteView extends View {
   }
 
   private updateDeleteButton(): void {
-    const btn = this.contentEl?.querySelector('[data-action="delete-selected"]') as HTMLButtonElement | null;
+    const btn = this.contentEl?.querySelector(
+      '[data-action="delete-selected"]'
+    ) as HTMLButtonElement | null;
     if (!btn) return;
     const n = this.selected.size;
     btn.textContent = `Delete selected (${n})`;
@@ -777,7 +898,8 @@ export class BulkDeleteView extends View {
 
     // Chunk into <=100 e-tags per kind:5 to keep events relay-friendly.
     const chunks: string[][] = [];
-    for (let i = 0; i < ids.length; i += CHUNK_SIZE) chunks.push(ids.slice(i, i + CHUNK_SIZE));
+    for (let i = 0; i < ids.length; i += CHUNK_SIZE)
+      chunks.push(ids.slice(i, i + CHUNK_SIZE));
 
     this.dispatching = true;
     this.justCompleted = false;
@@ -793,7 +915,10 @@ export class BulkDeleteView extends View {
       try {
         await postsApi.deleteEvents({ eventIds: chunk, silent: true });
       } catch (err) {
-        SystemLogger.getInstance().warn('BulkDeleteView', `Delete chunk failed: ${err}`);
+        SystemLogger.getInstance().warn(
+          'BulkDeleteView',
+          `Delete chunk failed: ${err}`
+        );
       }
     }
 
@@ -816,7 +941,9 @@ export class BulkDeleteView extends View {
     const postsApi = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
     if (!postsApi) return;
     this.progressUnsub?.();
-    this.progressUnsub = postsApi.subscribeDeleteProgress(p => this.onBroadcastProgress(p));
+    this.progressUnsub = postsApi.subscribeDeleteProgress(p =>
+      this.onBroadcastProgress(p)
+    );
     void this.pollSummary(); // reconnect to a broadcast still running from a prior view
   }
 
@@ -829,12 +956,16 @@ export class BulkDeleteView extends View {
   /** Refresh the aggregate delivery state (throttled — there are many relay events/sec). */
   private schedulePoll(): void {
     if (this.pollTimer) return;
-    this.pollTimer = window.setTimeout(() => { this.pollTimer = 0; void this.pollSummary(); }, 600);
+    this.pollTimer = window.setTimeout(() => {
+      this.pollTimer = 0;
+      void this.pollSummary();
+    }, 600);
   }
 
   private async pollSummary(): Promise<void> {
     const postsApi = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
-    const next = await (postsApi?.getDeleteProgressSummary() ?? Promise.resolve(null));
+    const next = await (postsApi?.getDeleteProgressSummary() ??
+      Promise.resolve(null));
     if (this.summary !== null && next === null) this.justCompleted = true;
     this.summary = next;
     this.scheduleProgressRender();
@@ -842,29 +973,40 @@ export class BulkDeleteView extends View {
 
   private scheduleProgressRender(): void {
     if (this.progressRaf) return;
-    this.progressRaf = requestAnimationFrame(() => { this.progressRaf = 0; this.renderProgress(); });
+    this.progressRaf = requestAnimationFrame(() => {
+      this.progressRaf = 0;
+      this.renderProgress();
+    });
   }
 
   /** Scroll the progress anchor into view so a running broadcast isn't missed. */
   private scrollToProgress(): void {
-    const el = this.contentEl?.querySelector('[data-progress]') as HTMLElement | null;
+    const el = this.contentEl?.querySelector(
+      '[data-progress]'
+    ) as HTMLElement | null;
     el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   private renderProgress(): void {
-    const el = this.contentEl?.querySelector('[data-progress]') as HTMLElement | null;
+    const el = this.contentEl?.querySelector(
+      '[data-progress]'
+    ) as HTMLElement | null;
     if (!el) return;
     const s = this.summary;
 
     // First pass running: relays still being contacted for the first time.
-    const firstPassRunning = (!!s && s.contacted < s.total) || (this.dispatching && !s);
+    const firstPassRunning =
+      (!!s && s.contacted < s.total) || (this.dispatching && !s);
     if (firstPassRunning) {
-      const head = this.deleteNoteCount > 0
-        ? `<p class="bulk-delete__progress-head pulsate">Deleting ${this.deleteNoteCount} post${this.deleteNoteCount === 1 ? '' : 's'}…</p>`
-        : `<p class="bulk-delete__progress-head pulsate">Broadcasting deletion in the background…</p>`;
+      const head =
+        this.deleteNoteCount > 0
+          ? `<p class="bulk-delete__progress-head pulsate">Deleting ${this.deleteNoteCount} post${this.deleteNoteCount === 1 ? '' : 's'}…</p>`
+          : `<p class="bulk-delete__progress-head pulsate">Broadcasting deletion in the background…</p>`;
       let relayLine = '';
       if (this.lastHost && s) {
-        const dotClass = this.lastHost.ok ? 'bulk-delete__dot--success' : 'bulk-delete__dot--error';
+        const dotClass = this.lastHost.ok
+          ? 'bulk-delete__dot--success'
+          : 'bulk-delete__dot--error';
         relayLine = `<p class="bulk-delete__progress-relay">Sending request to ${escapeHtml(this.lastHost.host)} (${s.contacted}/${s.total})<span class="bulk-delete__dot ${dotClass}"></span></p>`;
       }
       el.innerHTML = head + relayLine;
@@ -877,6 +1019,8 @@ export class BulkDeleteView extends View {
       return;
     }
 
-    el.innerHTML = this.justCompleted ? `<p class="bulk-delete__progress-head">Deletion broadcast complete.</p>` : '';
+    el.innerHTML = this.justCompleted
+      ? `<p class="bulk-delete__progress-head">Deletion broadcast complete.</p>`
+      : '';
   }
 }

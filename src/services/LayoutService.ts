@@ -16,7 +16,10 @@
  * @purpose Centralize layout mode logic, reduce scattered getLayoutMode() calls
  */
 
-import { PerAccountLocalStorage, type LayoutMode } from './PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  type LayoutMode,
+} from './PerAccountLocalStorage';
 import { TypedEventBus } from '../core/TypedEventBus';
 import { PlatformService } from './PlatformService';
 
@@ -74,7 +77,10 @@ export class LayoutService {
    * Check if user preference is being overridden by platform
    */
   public isForced(): boolean {
-    const normalizedPref = this.userPreference === 'right-pane-rss' ? 'right-pane' : this.userPreference;
+    const normalizedPref =
+      this.userPreference === 'right-pane-rss'
+        ? 'right-pane'
+        : this.userPreference;
     return normalizedPref !== this.effectiveMode;
   }
 
@@ -102,9 +108,10 @@ export class LayoutService {
     }
 
     // Emit event for components that need to react
-    this.eventBus.emit('layout:changed', { mode: this.effectiveMode, previousMode });
-
-
+    this.eventBus.emit('layout:changed', {
+      mode: this.effectiveMode,
+      previousMode,
+    });
   }
 
   /**
@@ -167,7 +174,10 @@ export class LayoutService {
    */
   private detectScreenSize(): ScreenSize {
     try {
-      const content = getComputedStyle(document.documentElement, '::after').content;
+      const content = getComputedStyle(
+        document.documentElement,
+        '::after'
+      ).content;
       // CSS content comes with quotes: '"desktop"' or "'desktop'"
       const size = content.replace(/['"]/g, '') as ScreenSize;
       if (size === 'desktop' || size === 'tablet' || size === 'phone') {
@@ -194,7 +204,9 @@ export class LayoutService {
       case 'desktop':
       default:
         // RSS mode behaves exactly like right-pane; the compact timeline is a CSS-only marker.
-        return this.userPreference === 'right-pane-rss' ? 'right-pane' : this.userPreference;
+        return this.userPreference === 'right-pane-rss'
+          ? 'right-pane'
+          : this.userPreference;
     }
   }
 
@@ -204,7 +216,13 @@ export class LayoutService {
    */
   private applyLayoutClass(): void {
     const html = document.documentElement;
-    const layoutClasses = ['layout--default', 'layout--right-pane', 'layout--wide', 'layout--phone', 'layout--rss'];
+    const layoutClasses = [
+      'layout--default',
+      'layout--right-pane',
+      'layout--wide',
+      'layout--phone',
+      'layout--rss',
+    ];
 
     // Remove all layout classes
     layoutClasses.forEach(cls => html.classList.remove(cls));
@@ -213,7 +231,10 @@ export class LayoutService {
     html.classList.add(`layout--${this.effectiveMode}`);
 
     // RSS variant behaves as right-pane; this marker only drives the compact timeline CSS.
-    if (this.userPreference === 'right-pane-rss' && this.effectiveMode === 'right-pane') {
+    if (
+      this.userPreference === 'right-pane-rss' &&
+      this.effectiveMode === 'right-pane'
+    ) {
       html.classList.add('layout--rss');
     }
   }
@@ -252,7 +273,7 @@ export class LayoutService {
         mode: this.effectiveMode,
         previousMode,
         screenSize: this.currentScreenSize,
-        forced: this.isForced()
+        forced: this.isForced(),
       });
     }
   }
@@ -260,7 +281,10 @@ export class LayoutService {
   /**
    * Handle window resize when switching to/from phone mode
    */
-  private async handleWindowResize(previousMode: LayoutMode, newMode: LayoutMode): Promise<void> {
+  private async handleWindowResize(
+    previousMode: LayoutMode,
+    newMode: LayoutMode
+  ): Promise<void> {
     try {
       const platform = PlatformService.getInstance();
 

@@ -26,7 +26,10 @@ export class ProfileRecognitionOrchestrator {
   private systemLogger: SystemLogger;
 
   // Cache for fetched encounters (pubkey -> encounters)
-  private cache: Map<string, { data: ProfileEncounterData; fetchedAt: number }> = new Map();
+  private cache: Map<
+    string,
+    { data: ProfileEncounterData; fetchedAt: number }
+  > = new Map();
   private readonly CACHE_TTL = 60000; // 1 minute cache
 
   private constructor() {
@@ -37,7 +40,8 @@ export class ProfileRecognitionOrchestrator {
 
   public static getInstance(): ProfileRecognitionOrchestrator {
     if (!ProfileRecognitionOrchestrator.instance) {
-      ProfileRecognitionOrchestrator.instance = new ProfileRecognitionOrchestrator();
+      ProfileRecognitionOrchestrator.instance =
+        new ProfileRecognitionOrchestrator();
     }
     return ProfileRecognitionOrchestrator.instance;
   }
@@ -46,7 +50,9 @@ export class ProfileRecognitionOrchestrator {
    * Publish current user's profile encounters to relays
    * Called automatically via debounced auto-save
    */
-  public async publishToRelays(encounterData: ProfileEncounterData): Promise<void> {
+  public async publishToRelays(
+    encounterData: ProfileEncounterData
+  ): Promise<void> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
       throw new Error('User not authenticated');
@@ -60,18 +66,16 @@ export class ProfileRecognitionOrchestrator {
     // Build content (encounters map)
     const content = JSON.stringify({
       version: 1,
-      encounters: encounterData.encounters
+      encounters: encounterData.encounters,
     });
 
     // Create kind:30078 event
     const event = {
       kind: NIP78_KIND,
       created_at: Math.floor(Date.now() / 1000),
-      tags: [
-        ['d', D_TAG]
-      ],
-      content: content,
-      pubkey: currentUser.pubkey
+      tags: [['d', D_TAG]],
+      content,
+      pubkey: currentUser.pubkey,
     };
 
     const signed = await this.authService.signEvent(event);
@@ -85,10 +89,11 @@ export class ProfileRecognitionOrchestrator {
     // Update cache for own profile
     this.cache.set(currentUser.pubkey, {
       data: encounterData,
-      fetchedAt: Date.now()
+      fetchedAt: Date.now(),
     });
 
-    this.systemLogger.info('ProfileRecognitionOrchestrator',
+    this.systemLogger.info(
+      'ProfileRecognitionOrchestrator',
       `Published encounters: ${Object.keys(encounterData.encounters).length} profiles`
     );
   }
@@ -98,11 +103,14 @@ export class ProfileRecognitionOrchestrator {
    * @param pubkey - The user's pubkey to fetch encounters for
    * @param forceRefresh - Skip cache and fetch fresh data
    */
-  public async fetchFromRelays(pubkey: string, forceRefresh: boolean = false): Promise<ProfileEncounterData | null> {
+  public async fetchFromRelays(
+    pubkey: string,
+    forceRefresh: boolean = false
+  ): Promise<ProfileEncounterData | null> {
     // Check cache first (unless force refresh)
     if (!forceRefresh) {
       const cached = this.cache.get(pubkey);
-      if (cached && (Date.now() - cached.fetchedAt) < this.CACHE_TTL) {
+      if (cached && Date.now() - cached.fetchedAt < this.CACHE_TTL) {
         return cached.data;
       }
     }
@@ -113,18 +121,26 @@ export class ProfileRecognitionOrchestrator {
     }
 
     try {
-      const events = await this.transport.fetch(readRelays, [{
-        kinds: [NIP78_KIND],
-        authors: [pubkey],
-        '#d': [D_TAG],
-        limit: 1
-      }], 5000, false, 'ProfileRecogOrch');
+      const events = await this.transport.fetch(
+        readRelays,
+        [
+          {
+            kinds: [NIP78_KIND],
+            authors: [pubkey],
+            '#d': [D_TAG],
+            limit: 1,
+          },
+        ],
+        5000,
+        false,
+        'ProfileRecogOrch'
+      );
 
       if (events.length === 0) {
         // No profile encounters found - cache empty result
         const emptyData: ProfileEncounterData = {
           encounters: {},
-          lastModified: Math.floor(Date.now() / 1000)
+          lastModified: Math.floor(Date.now() / 1000),
         };
         this.cache.set(pubkey, { data: emptyData, fetchedAt: Date.now() });
         return null;
@@ -142,7 +158,8 @@ export class ProfileRecognitionOrchestrator {
 
       return encounterData;
     } catch (error) {
-      this.systemLogger.error('ProfileRecognitionOrchestrator',
+      this.systemLogger.error(
+        'ProfileRecognitionOrchestrator',
         `Failed to fetch encounters for ${pubkey}: ${error}`
       );
       return null;
@@ -161,14 +178,18 @@ export class ProfileRecognitionOrchestrator {
     const encounterData = await this.fetchFromRelays(currentUser.pubkey, true);
 
     if (!encounterData || Object.keys(encounterData.encounters).length === 0) {
-      this.systemLogger.info('ProfileRecognitionOrchestrator', 'No encounters found on relays');
+      this.systemLogger.info(
+        'ProfileRecognitionOrchestrator',
+        'No encounters found on relays'
+      );
       return;
     }
 
     // Import encounters into service (this will trigger auto-save back to file)
     // Note: We'll need to add an import method to ProfileRecognitionService
     // For now, log the intent
-    this.systemLogger.info('ProfileRecognitionOrchestrator',
+    this.systemLogger.info(
+      'ProfileRecognitionOrchestrator',
       `Synced from relays: ${Object.keys(encounterData.encounters).length} profiles`
     );
 
@@ -194,7 +215,7 @@ export class ProfileRecognitionOrchestrator {
     if (!content) {
       return {
         encounters: {},
-        lastModified: Math.floor(Date.now() / 1000)
+        lastModified: Math.floor(Date.now() / 1000),
       };
     }
 
@@ -203,17 +224,17 @@ export class ProfileRecognitionOrchestrator {
       if (parsed.version === 1 && parsed.encounters) {
         return {
           encounters: parsed.encounters,
-          lastModified: Math.floor(Date.now() / 1000)
+          lastModified: Math.floor(Date.now() / 1000),
         };
       }
       return {
         encounters: {},
-        lastModified: Math.floor(Date.now() / 1000)
+        lastModified: Math.floor(Date.now() / 1000),
       };
     } catch {
       return {
         encounters: {},
-        lastModified: Math.floor(Date.now() / 1000)
+        lastModified: Math.floor(Date.now() / 1000),
       };
     }
   }

@@ -22,7 +22,7 @@ const D_TAG = 'noornote/profile-mounts';
 
 interface ProfileMountsContent {
   version: 1;
-  mounts: string[];  // Array of folder names (= d-tags of kind:30003 sets)
+  mounts: string[]; // Array of folder names (= d-tags of kind:30003 sets)
 }
 
 export class ProfileMountsOrchestrator {
@@ -70,18 +70,16 @@ export class ProfileMountsOrchestrator {
     // Build content
     const content: ProfileMountsContent = {
       version: 1,
-      mounts: mounts
+      mounts,
     };
 
     // Create kind:30078 event
     const event = {
       kind: NIP78_KIND,
       created_at: Math.floor(Date.now() / 1000),
-      tags: [
-        ['d', D_TAG]
-      ],
+      tags: [['d', D_TAG]],
       content: JSON.stringify(content),
-      pubkey: currentUser.pubkey
+      pubkey: currentUser.pubkey,
     };
 
     const signed = await this.authService.signEvent(event);
@@ -95,7 +93,8 @@ export class ProfileMountsOrchestrator {
     // Update cache for own profile
     this.cache.set(currentUser.pubkey, mounts);
 
-    this.systemLogger.info('ProfileMountsOrchestrator',
+    this.systemLogger.info(
+      'ProfileMountsOrchestrator',
       `Published profile mounts: ${mounts.length} folders`
     );
   }
@@ -105,7 +104,10 @@ export class ProfileMountsOrchestrator {
    * @param pubkey - The user's pubkey to fetch mounts for
    * @param forceRefresh - Skip cache and fetch fresh data
    */
-  public async fetchFromRelays(pubkey: string, forceRefresh: boolean = false): Promise<string[]> {
+  public async fetchFromRelays(
+    pubkey: string,
+    forceRefresh: boolean = false
+  ): Promise<string[]> {
     // Check cache first (unless force refresh)
     if (!forceRefresh) {
       const cached = this.cache.get(pubkey);
@@ -120,12 +122,20 @@ export class ProfileMountsOrchestrator {
     }
 
     try {
-      const events = await this.transport.fetch(readRelays, [{
-        kinds: [NIP78_KIND],
-        authors: [pubkey],
-        '#d': [D_TAG],
-        limit: 1
-      }], 5000, false, 'ProfileMountsOrch');
+      const events = await this.transport.fetch(
+        readRelays,
+        [
+          {
+            kinds: [NIP78_KIND],
+            authors: [pubkey],
+            '#d': [D_TAG],
+            limit: 1,
+          },
+        ],
+        5000,
+        false,
+        'ProfileMountsOrch'
+      );
 
       if (events.length === 0) {
         // No profile mounts found - cache empty result
@@ -145,7 +155,8 @@ export class ProfileMountsOrchestrator {
 
       return mounts;
     } catch (error) {
-      this.systemLogger.error('ProfileMountsOrchestrator',
+      this.systemLogger.error(
+        'ProfileMountsOrchestrator',
         `Failed to fetch profile mounts for ${pubkey}: ${error}`
       );
       return [];
@@ -164,7 +175,8 @@ export class ProfileMountsOrchestrator {
     const mounts = await this.fetchFromRelays(currentUser.pubkey, true);
     this.profileMountsService.setMountsFromRelay(mounts);
 
-    this.systemLogger.info('ProfileMountsOrchestrator',
+    this.systemLogger.info(
+      'ProfileMountsOrchestrator',
       `Synced from relays: ${mounts.length} folders`
     );
   }

@@ -33,12 +33,12 @@ import { NostrTransport } from '../../../services/transport/NostrTransport';
 
 /** Render states (used as CSS modifier on the root). */
 type ArmadaCardState =
-  | 'missing-secret'      // URL has no fragment → can't decrypt
-  | 'loading'             // fragment decoded, fetching bundle
-  | 'ready'               // bundle decrypted, preview shown
-  | 'expired'             // bundle decrypted but past expires_at
-  | 'fetch-failed'        // bundle fetch or decrypt failed
-  | 'incomplete';         // bare naddr quote, no fragment (Path B)
+  | 'missing-secret' // URL has no fragment → can't decrypt
+  | 'loading' // fragment decoded, fetching bundle
+  | 'ready' // bundle decrypted, preview shown
+  | 'expired' // bundle decrypted but past expires_at
+  | 'fetch-failed' // bundle fetch or decrypt failed
+  | 'incomplete'; // bare naddr quote, no fragment (Path B)
 
 const ARMADA_FETCH_TIMEOUT_MS = 15000;
 const COPY_FEEDBACK_MS = 2000;
@@ -53,7 +53,7 @@ export class ArmadaInviteRenderer {
    */
   static renderFromCoordinate(
     naddr: string,
-    fragment: string | undefined,
+    fragment: string | undefined
   ): HTMLElement {
     const parsed = parseArmadaInvite(fragment ? `${naddr}#${fragment}` : naddr);
     if (!parsed) {
@@ -75,7 +75,7 @@ export class ArmadaInviteRenderer {
       // No fragment → static "Encrypted" card; the open-in-armada link uses
       // the bare naddr (Armada itself will prompt for the fragment).
       '',
-      event,
+      event
     );
     return element;
   }
@@ -95,7 +95,9 @@ export class ArmadaInviteRenderer {
     return root;
   }
 
-  private static renderCard(invite: NonNullable<ReturnType<typeof parseArmadaInvite>>): HTMLElement {
+  private static renderCard(
+    invite: NonNullable<ReturnType<typeof parseArmadaInvite>>
+  ): HTMLElement {
     const root = document.createElement('div');
     root.className = 'armada-invite';
 
@@ -138,8 +140,14 @@ export class ArmadaInviteRenderer {
     });
     ArmadaInviteRenderer.wireActions(root, invite.openUrl);
 
-    void ArmadaInviteRenderer.loadPreview(root, invite, decoded.token, decoded.relays)
-      .catch(() => { /* loadPreview already downgrades to fetch-failed */ });
+    void ArmadaInviteRenderer.loadPreview(
+      root,
+      invite,
+      decoded.token,
+      decoded.relays
+    ).catch(() => {
+      /* loadPreview already downgrades to fetch-failed */
+    });
 
     return root;
   }
@@ -154,19 +162,21 @@ export class ArmadaInviteRenderer {
     root: HTMLElement,
     invite: NonNullable<ReturnType<typeof parseArmadaInvite>>,
     token: Uint8Array,
-    bootstrapRelays: string[],
+    bootstrapRelays: string[]
   ): Promise<void> {
     // NOTE: do NOT check `root.isConnected` here — the element hasn't been
     // attached to the DOM yet (the caller appends it AFTER renderCard returns).
     // The isConnected checks after each await catch a later teardown.
 
-    const filter = [{
-      kinds: [INVITE_BUNDLE_KIND],
-      authors: [invite.linkSigner],
-      // d="" for invite bundles — use #d tag filter for precision.
-      '#d': [''],
-      limit: 1,
-    }];
+    const filter = [
+      {
+        kinds: [INVITE_BUNDLE_KIND],
+        authors: [invite.linkSigner],
+        // d="" for invite bundles — use #d tag filter for precision.
+        '#d': [''],
+        limit: 1,
+      },
+    ];
 
     let events: NostrEvent[] = [];
     try {
@@ -175,7 +185,7 @@ export class ArmadaInviteRenderer {
         bootstrapRelays,
         filter,
         ARMADA_FETCH_TIMEOUT_MS,
-        'ArmadaInvite',
+        'ArmadaInvite'
       );
     } catch (error) {
       diagLog('system', 'Armada invite: bundle fetch threw', {
@@ -196,7 +206,9 @@ export class ArmadaInviteRenderer {
     }
 
     // Newest at the coordinate wins (a refresh replaces the bundle).
-    const newest = events.slice().sort((a, b) => b.created_at - a.created_at)[0];
+    const newest = events
+      .slice()
+      .sort((a, b) => b.created_at - a.created_at)[0];
     if (!newest) {
       ArmadaInviteRenderer.downgrade(root, invite, 'fetch-failed');
       return;
@@ -235,7 +247,10 @@ export class ArmadaInviteRenderer {
    * Async icon decrypt. Replaces the crest placeholder with the decrypted
    * image once it arrives. On any failure, leaves the crest in place.
    */
-  private static async loadIcon(root: HTMLElement, preview: ArmadaInvitePreview): Promise<void> {
+  private static async loadIcon(
+    root: HTMLElement,
+    preview: ArmadaInvitePreview
+  ): Promise<void> {
     if (!preview.icon) return;
     const iconImg = root.querySelector<HTMLImageElement>('[data-armada-icon]');
     if (!iconImg) return;
@@ -260,8 +275,12 @@ export class ArmadaInviteRenderer {
       iconImg.src = url;
       iconImg.dataset.armadaIconLoaded = 'true';
       // Revoke once the browser has decoded the blob (frees memory).
-      iconImg.addEventListener('load', () => URL.revokeObjectURL(url), { once: true });
-      iconImg.addEventListener('error', () => URL.revokeObjectURL(url), { once: true });
+      iconImg.addEventListener('load', () => URL.revokeObjectURL(url), {
+        once: true,
+      });
+      iconImg.addEventListener('error', () => URL.revokeObjectURL(url), {
+        once: true,
+      });
     }
     // Failure → leave the crest fallback in place (already rendered).
   }
@@ -270,7 +289,7 @@ export class ArmadaInviteRenderer {
   private static downgrade(
     root: HTMLElement,
     invite: NonNullable<ReturnType<typeof parseArmadaInvite>>,
-    state: 'fetch-failed' | 'missing-secret',
+    state: 'fetch-failed' | 'missing-secret'
   ): void {
     if (!root.isConnected) return;
     root.className = `armada-invite armada-invite--${state}`;
@@ -286,7 +305,7 @@ export class ArmadaInviteRenderer {
   private static wireActions(root: HTMLElement, openUrl: string): void {
     const copyBtn = root.querySelector<HTMLButtonElement>('[data-armada-copy]');
     if (copyBtn) {
-      copyBtn.addEventListener('click', (e) => {
+      copyBtn.addEventListener('click', e => {
         // Inviolable media-click rule (see /build-validate Step 15): never
         // pre-empt a click on media. The copy button itself contains only
         // SVG icons, but be defensive — if the click bubbled here from an
@@ -303,10 +322,17 @@ export class ArmadaInviteRenderer {
         }
         e.preventDefault();
         e.stopPropagation();
-        navigator.clipboard.writeText(openUrl).then(() => {
-          copyBtn.dataset.armadaCopied = 'true';
-          window.setTimeout(() => { delete copyBtn.dataset.armadaCopied; }, COPY_FEEDBACK_MS);
-        }).catch(() => { /* clipboard blocked — silent */ });
+        navigator.clipboard
+          .writeText(openUrl)
+          .then(() => {
+            copyBtn.dataset.armadaCopied = 'true';
+            window.setTimeout(() => {
+              delete copyBtn.dataset.armadaCopied;
+            }, COPY_FEEDBACK_MS);
+          })
+          .catch(() => {
+            /* clipboard blocked — silent */
+          });
       });
     }
   }
@@ -327,11 +353,13 @@ export class ArmadaInviteRenderer {
     metaBits.push(`
       <span class="armada-invite__meta-bit">
         <svg width="12" height="12"><use href="#icon-lock"/></svg>
-        <span>${state === 'missing-secret' || state === 'incomplete'
-          ? 'Missing secret'
-          : state === 'expired'
-            ? 'Expired'
-            : 'Encrypted'}</span>
+        <span>${
+          state === 'missing-secret' || state === 'incomplete'
+            ? 'Missing secret'
+            : state === 'expired'
+              ? 'Expired'
+              : 'Encrypted'
+        }</span>
       </span>
     `);
     if (preview && preview.channelCount > 0) {
@@ -343,9 +371,10 @@ export class ArmadaInviteRenderer {
       `);
     }
 
-    const nameBlock = state === 'loading'
-      ? `<span class="armada-invite__name pulsate">Decrypting…</span>`
-      : `<span class="armada-invite__name">${safeName}</span>`;
+    const nameBlock =
+      state === 'loading'
+        ? `<span class="armada-invite__name pulsate">Decrypting…</span>`
+        : `<span class="armada-invite__name">${safeName}</span>`;
 
     const iconBlock = preview?.icon
       ? `<img data-armada-icon alt="" class="armada-invite__icon-img armada-invite__icon-img--hidden" />`
@@ -370,7 +399,9 @@ export class ArmadaInviteRenderer {
           </div>
         </div>
         <div class="armada-invite__actions">
-          ${safeUrl ? `
+          ${
+            safeUrl
+              ? `
             <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="btn armada-invite__open">
               <svg width="14" height="14"><use href="#icon-share-link"/></svg>
               <span>Open in Armada</span>
@@ -379,7 +410,9 @@ export class ArmadaInviteRenderer {
               <svg class="armada-invite__copy-icon" width="16" height="16"><use href="#icon-copy"/></svg>
               <svg class="armada-invite__copy-check" width="16" height="16"><use href="#icon-checkmark"/></svg>
             </button>
-          ` : ''}
+          `
+              : ''
+          }
         </div>
       </div>
     `;

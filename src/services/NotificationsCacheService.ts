@@ -14,8 +14,8 @@ import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 
 interface NotificationsCache {
   events: NostrEvent[];
-  lastSeen: number;      // Unix timestamp (last time user opened NV)
-  lastFetch: number;     // Unix timestamp (last fetch time)
+  lastSeen: number; // Unix timestamp (last time user opened NV)
+  lastFetch: number; // Unix timestamp (last fetch time)
 }
 
 export class NotificationsCacheService {
@@ -36,11 +36,17 @@ export class NotificationsCacheService {
    * Run one-time migrations (e.g., clear cache after bug fixes)
    */
   private runMigrations(): void {
-    const storedVersion = this.perAccountStorage.get<number>(StorageKeys.NOTIFICATIONS_CACHE_VERSION, 0);
+    const storedVersion = this.perAccountStorage.get<number>(
+      StorageKeys.NOTIFICATIONS_CACHE_VERSION,
+      0
+    );
 
     if (storedVersion < NotificationsCacheService.CACHE_VERSION) {
       this.perAccountStorage.remove(StorageKeys.NOTIFICATIONS_CACHE);
-      this.perAccountStorage.set(StorageKeys.NOTIFICATIONS_CACHE_VERSION, NotificationsCacheService.CACHE_VERSION);
+      this.perAccountStorage.set(
+        StorageKeys.NOTIFICATIONS_CACHE_VERSION,
+        NotificationsCacheService.CACHE_VERSION
+      );
     }
   }
 
@@ -55,7 +61,10 @@ export class NotificationsCacheService {
    * Get cache limit (user-configurable in Settings) - global, not per-user
    */
   public getLimit(): number {
-    const limit = this.perAccountStorage.get<number>(StorageKeys.NOTIFICATIONS_CACHE_LIMIT, this.defaultLimit);
+    const limit = this.perAccountStorage.get<number>(
+      StorageKeys.NOTIFICATIONS_CACHE_LIMIT,
+      this.defaultLimit
+    );
     return limit > 0 ? limit : this.defaultLimit;
   }
 
@@ -70,7 +79,10 @@ export class NotificationsCacheService {
    * Load cache from per-account storage
    */
   public loadCache(): NotificationsCache | null {
-    return this.perAccountStorage.get<NotificationsCache | null>(StorageKeys.NOTIFICATIONS_CACHE, null);
+    return this.perAccountStorage.get<NotificationsCache | null>(
+      StorageKeys.NOTIFICATIONS_CACHE,
+      null
+    );
   }
 
   /**
@@ -86,12 +98,17 @@ export class NotificationsCacheService {
         if (e instanceof DOMException && e.name === 'QuotaExceededError') {
           if (cache.events.length === 0) {
             // Cache is empty but still can't save - localStorage completely full
-            console.error('localStorage quota exceeded, cannot save even empty cache');
+            console.error(
+              'localStorage quota exceeded, cannot save even empty cache'
+            );
             return;
           }
           // Remove oldest 50% of events (they're sorted newest-first)
           const halfLength = Math.max(1, Math.floor(cache.events.length / 2));
-          cache.events = cache.events.slice(0, cache.events.length - halfLength);
+          cache.events = cache.events.slice(
+            0,
+            cache.events.length - halfLength
+          );
         } else {
           throw e; // Re-throw non-quota errors
         }
@@ -113,7 +130,7 @@ export class NotificationsCacheService {
       this.saveCache({
         events: [],
         lastSeen: now,
-        lastFetch: 0
+        lastFetch: 0,
       });
     }
 
@@ -150,7 +167,7 @@ export class NotificationsCacheService {
     const cache = this.loadCache() || {
       events: [],
       lastSeen: Math.floor(Date.now() / 1000),
-      lastFetch: 0
+      lastFetch: 0,
     };
 
     // Merge new events with existing (deduplicate by id)
@@ -167,8 +184,9 @@ export class NotificationsCacheService {
     });
 
     // Convert to array and sort by created_at DESC (newest first)
-    const allEvents = Array.from(eventMap.values())
-      .sort((a, b) => b.created_at - a.created_at);
+    const allEvents = Array.from(eventMap.values()).sort(
+      (a, b) => b.created_at - a.created_at
+    );
 
     // Keep only newest X events (FIFO)
     const limit = this.getLimit();
@@ -195,7 +213,8 @@ export class NotificationsCacheService {
     const cache = this.loadCache();
     if (!cache) return 0;
 
-    return cache.events.filter(event => event.created_at > cache.lastSeen).length;
+    return cache.events.filter(event => event.created_at > cache.lastSeen)
+      .length;
   }
 
   /**
@@ -214,7 +233,7 @@ export class NotificationsCacheService {
       this.saveCache({
         events: [],
         lastSeen: Math.floor(Date.now() / 1000),
-        lastFetch: 0
+        lastFetch: 0,
       });
     }
   }

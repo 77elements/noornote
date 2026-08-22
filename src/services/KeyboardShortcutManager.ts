@@ -45,7 +45,11 @@ export class KeyboardShortcutManager {
     const active = document.activeElement;
     if (!active) return false;
     const tag = active.tagName.toLowerCase();
-    return tag === 'input' || tag === 'textarea' || active.getAttribute('contenteditable') === 'true';
+    return (
+      tag === 'input' ||
+      tag === 'textarea' ||
+      active.getAttribute('contenteditable') === 'true'
+    );
   }
 
   /**
@@ -81,7 +85,9 @@ export class KeyboardShortcutManager {
       };
 
       if (_p.isElectron) {
-        window.electronAPI!.onGlobalShortcut((action: string) => handleShortcut(action));
+        window.electronAPI!.onGlobalShortcut((action: string) =>
+          handleShortcut(action)
+        );
       }
     } catch {
       // Global shortcut API unavailable
@@ -98,9 +104,13 @@ export class KeyboardShortcutManager {
       // Cmd+W: Close active closable tab (always allow, even in modals)
       if (isMod && e.key === 'w') {
         e.preventDefault(); // Always prevent default (don't close app window)
-        const activeClosableTab = document.querySelector('.tab--closable.tab--active');
+        const activeClosableTab = document.querySelector(
+          '.tab--closable.tab--active'
+        );
         if (activeClosableTab) {
-          const closeButton = activeClosableTab.querySelector('.tab__close') as HTMLElement;
+          const closeButton = activeClosableTab.querySelector(
+            '.tab__close'
+          ) as HTMLElement;
           if (closeButton) {
             closeButton.click();
           }

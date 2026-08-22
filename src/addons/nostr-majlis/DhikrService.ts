@@ -17,13 +17,25 @@ import { TypedEventBus } from '../../core/TypedEventBus';
 import { AuthService } from '../../services/AuthService';
 import { diagLog } from '../../services/DiagnosticLogger';
 import {
-  DHIKR_RELAYS, DHIKR_KIND, ROUND_LABEL, COMMIT_LABEL,
-  parseRound, parseCommit, buildRoundDraft, buildCommitDraft, stableCommitDtag,
-  type DhikrRound, type DhikrCommit,
+  DHIKR_RELAYS,
+  DHIKR_KIND,
+  ROUND_LABEL,
+  COMMIT_LABEL,
+  parseRound,
+  parseCommit,
+  buildRoundDraft,
+  buildCommitDraft,
+  stableCommitDtag,
+  type DhikrRound,
+  type DhikrCommit,
 } from './dhikr';
 import {
-  DHIKR_ADMIN_PUBKEY, MODERATION_LABEL, EMPTY_MODERATION,
-  parseModeration, buildModerationDraft, type DhikrModeration,
+  DHIKR_ADMIN_PUBKEY,
+  MODERATION_LABEL,
+  EMPTY_MODERATION,
+  parseModeration,
+  buildModerationDraft,
+  type DhikrModeration,
 } from './dhikrModeration';
 import { getNostrMajlisSettings } from './index';
 
@@ -35,7 +47,7 @@ const MOD_SUB_ID = 'nostr-majlis-dhikr-moderation';
 interface DhikrCommitChange {
   commit: DhikrCommit;
   round: DhikrRound | null;
-  delta: number;        // this commit's added amount (new cumulative − previous cumulative)
+  delta: number; // this commit's added amount (new cumulative − previous cumulative)
   oldAggregate: number; // round total before this commit
   newAggregate: number; // round total after this commit
 }
@@ -44,8 +56,8 @@ export class DhikrService {
   private transport = NostrTransport.getInstance();
   private bus = TypedEventBus.getInstance();
 
-  private rounds = new Map<string, DhikrRound>();                 // addr -> latest round
-  private commits = new Map<string, Map<string, DhikrCommit>>();  // addr -> (author:dtag -> latest commit)
+  private rounds = new Map<string, DhikrRound>(); // addr -> latest round
+  private commits = new Map<string, Map<string, DhikrCommit>>(); // addr -> (author:dtag -> latest commit)
   private moderation: DhikrModeration = EMPTY_MODERATION;
   private emitTimer: number | null = null;
   private loaded = false; // false until the initial fetch has returned
@@ -63,33 +75,75 @@ export class DhikrService {
     // NDK won't reach them via relayUrls (subscribe) or pool.getRelay (publish).
     await this.ensureRelays();
 
-    const roundFilter: NDKFilter[] = [{ kinds: [DHIKR_KIND], '#t': [ROUND_LABEL] }];
-    const commitFilter: NDKFilter[] = [{ kinds: [DHIKR_KIND], '#t': [COMMIT_LABEL] }];
-    const moderationFilter: NDKFilter[] = [{ kinds: [DHIKR_KIND], authors: [DHIKR_ADMIN_PUBKEY], '#t': [MODERATION_LABEL] }];
+    const roundFilter: NDKFilter[] = [
+      { kinds: [DHIKR_KIND], '#t': [ROUND_LABEL] },
+    ];
+    const commitFilter: NDKFilter[] = [
+      { kinds: [DHIKR_KIND], '#t': [COMMIT_LABEL] },
+    ];
+    const moderationFilter: NDKFilter[] = [
+      {
+        kinds: [DHIKR_KIND],
+        authors: [DHIKR_ADMIN_PUBKEY],
+        '#t': [MODERATION_LABEL],
+      },
+    ];
 
     // Initial load: fetch() force-pools the relays and returns stored events reliably.
     try {
-      const events = await this.transport.fetch(DHIKR_RELAYS, [...roundFilter, ...commitFilter, ...moderationFilter], 6000, true, 'dhikr');
-      for (const ev of events) { this.ingestRound(ev); this.ingestCommit(ev); this.ingestModeration(ev); }
-    } catch { /* live subscription will still fill in */ }
+      const events = await this.transport.fetch(
+        DHIKR_RELAYS,
+        [...roundFilter, ...commitFilter, ...moderationFilter],
+        6000,
+        true,
+        'dhikr'
+      );
+      for (const ev of events) {
+        this.ingestRound(ev);
+        this.ingestCommit(ev);
+        this.ingestModeration(ev);
+      }
+    } catch {
+      /* live subscription will still fill in */
+    }
     this.loaded = true;
     this.notifyFloor = Math.floor(Date.now() / 1000);
     this.emit();
 
     // Live updates via subscribeLive: it registers in the transport's subscription map, so the
     // pool-pruner keeps these two relays alive (a plain subscribe() would let them be pruned).
-    await this.transport.subscribeLive(DHIKR_RELAYS, roundFilter, ROUND_SUB_ID, (ev) => {
-      const round = this.ingestRound(ev); if (round) this.maybeNotifyRound(round);
-      this.scheduleEmit();
+    await this.transport.subscribeLive(
+      DHIKR_RELAYS,
+      roundFilter,
+      ROUND_SUB_ID,
+      ev => {
+        const round = this.ingestRound(ev);
+        if (round) this.maybeNotifyRound(round);
+        this.scheduleEmit();
+      }
+    );
+    await this.transport.subscribeLive(
+      DHIKR_RELAYS,
+      commitFilter,
+      COMMIT_SUB_ID,
+      ev => {
+        const change = this.ingestCommit(ev);
+        if (change) this.maybeNotifyCommit(change);
+        this.scheduleEmit();
+      }
+    );
+    await this.transport.subscribeLive(
+      DHIKR_RELAYS,
+      moderationFilter,
+      MOD_SUB_ID,
+      ev => {
+        this.ingestModeration(ev);
+        this.scheduleEmit();
+      }
+    );
+    diagLog('addons', 'nostr-majlis: dhikr service started', {
+      rounds: this.rounds.size,
     });
-    await this.transport.subscribeLive(DHIKR_RELAYS, commitFilter, COMMIT_SUB_ID, (ev) => {
-      const change = this.ingestCommit(ev); if (change) this.maybeNotifyCommit(change);
-      this.scheduleEmit();
-    });
-    await this.transport.subscribeLive(DHIKR_RELAYS, moderationFilter, MOD_SUB_ID, (ev) => {
-      this.ingestModeration(ev); this.scheduleEmit();
-    });
-    diagLog('addons', 'nostr-majlis: dhikr service started', { rounds: this.rounds.size });
   }
 
   // ---------- ingestion (state only; callers decide when to emit) ----------
@@ -130,7 +184,10 @@ export class DhikrService {
 
   private addCommit(commit: DhikrCommit): void {
     let bucket = this.commits.get(commit.roundAddr);
-    if (!bucket) { bucket = new Map(); this.commits.set(commit.roundAddr, bucket); }
+    if (!bucket) {
+      bucket = new Map();
+      this.commits.set(commit.roundAddr, bucket);
+    }
     const key = `${commit.author}:${commit.dtag}`;
     const existing = bucket.get(key);
     if (existing && existing.createdAt >= commit.createdAt) return; // replaceable → newest wins
@@ -148,7 +205,9 @@ export class DhikrService {
     const hidden = new Set(this.moderation.hiddenRounds);
     const banned = new Set(this.moderation.bannedAuthors);
     return [...this.rounds.values()]
-      .filter(r => includeModerated || (!hidden.has(r.addr) && !banned.has(r.author)))
+      .filter(
+        r => includeModerated || (!hidden.has(r.addr) && !banned.has(r.author))
+      )
       .map(r => this.applyOverride(r))
       .sort((a, b) => b.createdAt - a.createdAt);
   }
@@ -195,17 +254,27 @@ export class DhikrService {
   private myCount(round: DhikrRound): number {
     const me = AuthService.getInstance().getCurrentUser()?.pubkey;
     if (!me) return 0;
-    return this.commits.get(round.addr)?.get(`${me}:${stableCommitDtag(round)}`)?.count ?? 0;
+    return (
+      this.commits.get(round.addr)?.get(`${me}:${stableCommitDtag(round)}`)
+        ?.count ?? 0
+    );
   }
 
   // ---------- writes ----------
 
   /** Create a new dhikr action. */
-  async publishRound(phrase: string, goal: number, description: string): Promise<void> {
+  async publishRound(
+    phrase: string,
+    goal: number,
+    description: string
+  ): Promise<void> {
     await this.ensureRelays();
-    const event = await AuthService.getInstance().signEvent(buildRoundDraft(phrase, goal, description)) as NostrEvent;
+    const event = (await AuthService.getInstance().signEvent(
+      buildRoundDraft(phrase, goal, description)
+    )) as NostrEvent;
     await this.transport.publish(DHIKR_RELAYS, event);
-    const round = this.ingestRound(event); if (round) this.maybeNotifyRound(round);
+    const round = this.ingestRound(event);
+    if (round) this.maybeNotifyRound(round);
     this.emit(); // optimistic: show it to the author immediately (they get the anonymous ping too)
     diagLog('addons', 'nostr-majlis: dhikr round published');
   }
@@ -214,9 +283,12 @@ export class DhikrService {
   async commit(round: DhikrRound, amount: number): Promise<void> {
     await this.ensureRelays();
     const total = this.myCount(round) + amount;
-    const event = await AuthService.getInstance().signEvent(buildCommitDraft(round, total)) as NostrEvent;
+    const event = (await AuthService.getInstance().signEvent(
+      buildCommitDraft(round, total)
+    )) as NostrEvent;
     await this.transport.publish(DHIKR_RELAYS, event);
-    const change = this.ingestCommit(event); if (change) this.maybeNotifyCommit(change);
+    const change = this.ingestCommit(event);
+    if (change) this.maybeNotifyCommit(change);
     this.emit();
     diagLog('addons', 'nostr-majlis: dhikr commit published', { amount });
   }
@@ -226,45 +298,76 @@ export class DhikrService {
   /** Hide a round from the list for everyone (reversible). */
   async hideRound(addr: string): Promise<void> {
     if (this.moderation.hiddenRounds.includes(addr)) return;
-    await this.publishModeration({ ...this.moderation, hiddenRounds: [...this.moderation.hiddenRounds, addr] });
+    await this.publishModeration({
+      ...this.moderation,
+      hiddenRounds: [...this.moderation.hiddenRounds, addr],
+    });
   }
 
   /** Un-hide a previously hidden round. */
   async unhideRound(addr: string): Promise<void> {
-    await this.publishModeration({ ...this.moderation, hiddenRounds: this.moderation.hiddenRounds.filter(a => a !== addr) });
+    await this.publishModeration({
+      ...this.moderation,
+      hiddenRounds: this.moderation.hiddenRounds.filter(a => a !== addr),
+    });
   }
 
   /** Exclude an author: their rounds disappear and their commit counts stop counting everywhere. */
   async banAuthor(pubkey: string): Promise<void> {
     if (this.moderation.bannedAuthors.includes(pubkey)) return;
-    await this.publishModeration({ ...this.moderation, bannedAuthors: [...this.moderation.bannedAuthors, pubkey] });
+    await this.publishModeration({
+      ...this.moderation,
+      bannedAuthors: [...this.moderation.bannedAuthors, pubkey],
+    });
   }
 
   /** Re-include a previously excluded author. */
   async unbanAuthor(pubkey: string): Promise<void> {
-    await this.publishModeration({ ...this.moderation, bannedAuthors: this.moderation.bannedAuthors.filter(p => p !== pubkey) });
+    await this.publishModeration({
+      ...this.moderation,
+      bannedAuthors: this.moderation.bannedAuthors.filter(p => p !== pubkey),
+    });
   }
 
   /** Override a round's displayed phrase/goal/description (the underlying event is left untouched). */
-  async editRound(round: DhikrRound, fields: { phrase: string; goal: number; description: string }): Promise<void> {
-    const overrides = { ...this.moderation.overrides, [round.addr]: { phrase: fields.phrase, goal: fields.goal, description: fields.description } };
+  async editRound(
+    round: DhikrRound,
+    fields: { phrase: string; goal: number; description: string }
+  ): Promise<void> {
+    const overrides = {
+      ...this.moderation.overrides,
+      [round.addr]: {
+        phrase: fields.phrase,
+        goal: fields.goal,
+        description: fields.description,
+      },
+    };
     await this.publishModeration({ ...this.moderation, overrides });
   }
 
   /** Sign + publish the replaceable moderation record, then ingest it optimistically. */
   private async publishModeration(next: DhikrModeration): Promise<void> {
     await this.ensureRelays();
-    const event = await AuthService.getInstance().signEvent(buildModerationDraft(next)) as NostrEvent;
+    const event = (await AuthService.getInstance().signEvent(
+      buildModerationDraft(next)
+    )) as NostrEvent;
     await this.transport.publish(DHIKR_RELAYS, event);
-    this.ingestModeration(event); this.emit();
+    this.ingestModeration(event);
+    this.emit();
     diagLog('addons', 'nostr-majlis: dhikr moderation updated', {
-      hidden: next.hiddenRounds.length, banned: next.bannedAuthors.length, overrides: Object.keys(next.overrides).length,
+      hidden: next.hiddenRounds.length,
+      banned: next.bannedAuthors.length,
+      overrides: Object.keys(next.overrides).length,
     });
   }
 
   /** Pool + connect the two dhikr relays (idempotent); they're not in the user's relay list. */
   private async ensureRelays(): Promise<void> {
-    await Promise.all(DHIKR_RELAYS.map(url => this.transport.connectToRelay(url).catch(() => false)));
+    await Promise.all(
+      DHIKR_RELAYS.map(url =>
+        this.transport.connectToRelay(url).catch(() => false)
+      )
+    );
   }
 
   // ---------- change notification (via EventBus, so the view never depends on the
@@ -277,7 +380,10 @@ export class DhikrService {
   /** Coalesce bursts of incoming live events into a single notification. */
   private scheduleEmit(): void {
     if (this.emitTimer !== null) return;
-    this.emitTimer = window.setTimeout(() => { this.emitTimer = null; this.emit(); }, 200);
+    this.emitTimer = window.setTimeout(() => {
+      this.emitTimer = null;
+      this.emit();
+    }, 200);
   }
 
   // ---------- activity notifications (synthetic kind 99003, never published; in-app feed only) ----------
@@ -290,7 +396,7 @@ export class DhikrService {
 
   /** A genuinely-new round → one anonymous "new dhikr" notification (creator included). */
   private maybeNotifyRound(round: DhikrRound): void {
-    if (round.createdAt < this.notifyFloor) return;                      // historical / replayed → not new activity
+    if (round.createdAt < this.notifyFloor) return; // historical / replayed → not new activity
     if (this.isHidden(round.addr) || this.isAuthorBanned(round.author)) return;
     this.notify('dhikr_round', `round-${round.uuid}`);
   }
@@ -298,8 +404,8 @@ export class DhikrService {
   /** A significant commit (>0.5% of the goal), or the one commit that reaches the goal. */
   private maybeNotifyCommit(change: DhikrCommitChange): void {
     const { round, commit, delta, oldAggregate, newAggregate } = change;
-    if (!round) return;                                                  // round not loaded yet → can't judge
-    if (commit.createdAt < this.notifyFloor) return;                     // historical / replayed → not new activity
+    if (!round) return; // round not loaded yet → can't judge
+    if (commit.createdAt < this.notifyFloor) return; // historical / replayed → not new activity
     if (this.isHidden(round.addr) || this.isAuthorBanned(commit.author)) return;
     if (oldAggregate < round.goal && newAggregate >= round.goal) {
       this.notify('dhikr_complete', `complete-${round.uuid}`);
@@ -310,7 +416,10 @@ export class DhikrService {
   }
 
   /** Build the synthetic (never-published) notification event and hand it to the orchestrator. */
-  private notify(type: 'dhikr_round' | 'dhikr_commit' | 'dhikr_complete', idSuffix: string): void {
+  private notify(
+    type: 'dhikr_round' | 'dhikr_commit' | 'dhikr_complete',
+    idSuffix: string
+  ): void {
     if (!getNostrMajlisSettings().dhikrNotifications) return;
     diagLog('addons', 'nostr-majlis: dhikr activity notification', { type });
     const event: NostrEvent = {
@@ -326,7 +435,10 @@ export class DhikrService {
   }
 
   destroy(): void {
-    if (this.emitTimer !== null) { clearTimeout(this.emitTimer); this.emitTimer = null; }
+    if (this.emitTimer !== null) {
+      clearTimeout(this.emitTimer);
+      this.emitTimer = null;
+    }
     this.transport.unsubscribeLive(ROUND_SUB_ID);
     this.transport.unsubscribeLive(COMMIT_SUB_ID);
     this.transport.unsubscribeLive(MOD_SUB_ID);

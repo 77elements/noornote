@@ -31,15 +31,26 @@ export interface SingleNoteModuleApi {
   clearCache(noteId: string): void;
 
   // ParentNoteFetcher
-  fetchParentAuthor(parentEventId: string, relayHint: string | null): Promise<ParentAuthorInfo | null>;
+  fetchParentAuthor(
+    parentEventId: string,
+    relayHint: string | null
+  ): Promise<ParentAuthorInfo | null>;
 
   // PollVoteService
   castVote(options: VoteOptions): Promise<boolean>;
 
   // QuoteOrchestrator
-  fetchQuotedEvent(nostrRef: string, authorHint?: string, extraOutboundPubkeys?: string[]): Promise<NostrEvent | null>;
+  fetchQuotedEvent(
+    nostrRef: string,
+    authorHint?: string,
+    extraOutboundPubkeys?: string[]
+  ): Promise<NostrEvent | null>;
 
   // PollOrchestrator
-  fetchPollResults(pollEventId: string, pollOptions: PollOptionInput[], currentUserPubkey?: string): Promise<any>;
+  fetchPollResults(
+    pollEventId: string,
+    pollOptions: PollOptionInput[],
+    currentUserPubkey?: string
+  ): Promise<any>;
   clearPollCache(pollEventId: string): void;
 }

@@ -81,8 +81,10 @@ export class Router {
     const regex = new RegExp(`^${regexPattern}$`);
 
     // Handle backward compatibility: if requiresAuth is a function, it's the legacy unauthenticatedHandler
-    const isAuthRequired = typeof requiresAuth === 'boolean' ? requiresAuth : false;
-    const legacyUnauthHandler = typeof requiresAuth === 'function' ? requiresAuth : undefined;
+    const isAuthRequired =
+      typeof requiresAuth === 'boolean' ? requiresAuth : false;
+    const legacyUnauthHandler =
+      typeof requiresAuth === 'function' ? requiresAuth : undefined;
 
     // Build route object with conditional optional properties (exactOptionalPropertyTypes)
     const route: Route = {
@@ -98,7 +100,7 @@ export class Router {
           }
         });
         handler(params);
-      }
+      },
     };
 
     // Only add optional properties if they have values
@@ -138,9 +140,11 @@ export class Router {
 
     // Emit event for SystemLogger to clear page logs (avoid circular dependency)
     if (path !== this.currentPath) {
-      window.dispatchEvent(new CustomEvent('router:navigate', {
-        detail: { path, previousPath: this.currentPath }
-      }));
+      window.dispatchEvent(
+        new CustomEvent('router:navigate', {
+          detail: { path, previousPath: this.currentPath },
+        })
+      );
     }
 
     // Update navigation history (only if not navigating via back/forward)
@@ -205,7 +209,10 @@ export class Router {
     window.history.replaceState({}, '', targetUrl);
 
     // Keep the custom history stack consistent: rewrite the current top entry.
-    if (this.historyIndex >= 0 && this.history[this.historyIndex] !== undefined) {
+    if (
+      this.historyIndex >= 0 &&
+      this.history[this.historyIndex] !== undefined
+    ) {
       this.history[this.historyIndex] = path;
       this.saveHistory();
     }
@@ -312,7 +319,10 @@ export class Router {
   private persistRoute(path: string): void {
     if (!PlatformService.getInstance().isCapacitor) return;
     try {
-      localStorage.setItem(this.PERSISTENT_STORAGE_KEY, JSON.stringify({ path, ts: Date.now() }));
+      localStorage.setItem(
+        this.PERSISTENT_STORAGE_KEY,
+        JSON.stringify({ path, ts: Date.now() })
+      );
     } catch (error) {
       console.debug('Failed to persist route for cold-start restore:', error);
     }
@@ -323,10 +333,13 @@ export class Router {
    */
   private saveHistory(): void {
     try {
-      sessionStorage.setItem(this.HISTORY_STORAGE_KEY, JSON.stringify({
-        history: this.history,
-        index: this.historyIndex
-      }));
+      sessionStorage.setItem(
+        this.HISTORY_STORAGE_KEY,
+        JSON.stringify({
+          history: this.history,
+          index: this.historyIndex,
+        })
+      );
     } catch (error) {
       console.warn('Failed to save navigation history:', error);
     }
@@ -423,8 +436,10 @@ export class Router {
     }
 
     // Dispatch custom event for view change (for SystemLogger filtering)
-    window.dispatchEvent(new CustomEvent('router:view-changed', {
-      detail: { view: this.currentViewClass }
-    }));
+    window.dispatchEvent(
+      new CustomEvent('router:view-changed', {
+        detail: { view: this.currentViewClass },
+      })
+    );
   }
 }

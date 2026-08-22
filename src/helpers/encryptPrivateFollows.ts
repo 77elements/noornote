@@ -31,7 +31,10 @@ export async function encryptPrivateFollows(
 
   // Serialize to JSON
   const plaintext = JSON.stringify(privateTags);
-  diagLog('lists', 'encryptPrivateFollows: encrypting', { count: pubkeys.length, plaintextLength: plaintext.length });
+  diagLog('lists', 'encryptPrivateFollows: encrypting', {
+    count: pubkeys.length,
+    plaintextLength: plaintext.length,
+  });
 
   // Detect auth method and encrypt accordingly
   const { AuthService } = await import('../services/AuthService');
@@ -54,7 +57,9 @@ export async function encryptPrivateFollows(
         const encrypted = await keySigner.nip04Encrypt(plaintext, authorPubkey);
         return encrypted;
       } catch (nip04Error) {
-        throw new Error(`Encryption failed: NIP-44 (${nip44Error}), NIP-04 (${nip04Error})`);
+        throw new Error(
+          `Encryption failed: NIP-44 (${nip44Error}), NIP-04 (${nip04Error})`
+        );
       }
     }
   } else if (authMethod === 'extension') {
@@ -62,20 +67,30 @@ export async function encryptPrivateFollows(
     try {
       // Try NIP-44 first
       if (window.nostr?.nip44?.encrypt) {
-        const encrypted = await window.nostr.nip44.encrypt(authorPubkey, plaintext);
+        const encrypted = await window.nostr.nip44.encrypt(
+          authorPubkey,
+          plaintext
+        );
         return encrypted;
       }
       throw new Error('NIP-44 not available');
     } catch (nip44Error) {
       // Fallback to NIP-04
       if (!window.nostr?.nip04?.encrypt) {
-        throw new Error('Browser extension does not support NIP-44 or NIP-04 encryption');
+        throw new Error(
+          'Browser extension does not support NIP-44 or NIP-04 encryption'
+        );
       }
       try {
-        const encrypted = await window.nostr.nip04.encrypt(authorPubkey, plaintext);
+        const encrypted = await window.nostr.nip04.encrypt(
+          authorPubkey,
+          plaintext
+        );
         return encrypted;
       } catch (nip04Error) {
-        throw new Error(`Encryption failed: NIP-44 (${nip44Error}), NIP-04 (${nip04Error})`);
+        throw new Error(
+          `Encryption failed: NIP-44 (${nip44Error}), NIP-04 (${nip04Error})`
+        );
       }
     }
   } else if (authMethod === 'nip46') {
@@ -89,15 +104,23 @@ export async function encryptPrivateFollows(
 
     try {
       // Try NIP-44 first
-      const encrypted = await nip46Manager.nip44Encrypt(plaintext, authorPubkey);
+      const encrypted = await nip46Manager.nip44Encrypt(
+        plaintext,
+        authorPubkey
+      );
       return encrypted;
     } catch (nip44Error) {
       // Fallback to NIP-04
       try {
-        const encrypted = await nip46Manager.nip04Encrypt(plaintext, authorPubkey);
+        const encrypted = await nip46Manager.nip04Encrypt(
+          plaintext,
+          authorPubkey
+        );
         return encrypted;
       } catch (nip04Error) {
-        throw new Error(`Encryption failed: NIP-44 (${nip44Error}), NIP-04 (${nip04Error})`);
+        throw new Error(
+          `Encryption failed: NIP-44 (${nip44Error}), NIP-04 (${nip04Error})`
+        );
       }
     }
   } else {

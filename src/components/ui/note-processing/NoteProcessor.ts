@@ -84,7 +84,10 @@ export class NoteProcessor {
   /**
    * Create unsupported note for unknown event kinds
    */
-  private static createUnsupportedNote(event: NostrEvent, eventId: string): ProcessedNote {
+  private static createUnsupportedNote(
+    event: NostrEvent,
+    eventId: string
+  ): ProcessedNote {
     return {
       id: eventId,
       type: 'unsupported',
@@ -97,9 +100,9 @@ export class NoteProcessor {
         links: [],
         hashtags: [],
         quotedReferences: [],
-        bolt11Invoices: []
+        bolt11Invoices: [],
       },
-      rawEvent: event
+      rawEvent: event,
     };
   }
 }

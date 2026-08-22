@@ -25,7 +25,11 @@ import { SystemLogger } from '../../services/SystemLogger';
 import { AppState } from '../../services/AppState';
 import { Router } from '../../services/Router';
 import { TypedEventBus } from '../../core/TypedEventBus';
-import { decodeNip19, encodeNpub, encodeNevent } from '../../services/NostrToolsAdapter';
+import {
+  decodeNip19,
+  encodeNpub,
+  encodeNevent,
+} from '../../services/NostrToolsAdapter';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 export class SingleNoteView extends View {
@@ -34,11 +38,13 @@ export class SingleNoteView extends View {
   private relayConfig: RelayConfig;
   private _singleNoteApi?: SingleNoteModuleApi | null;
   private get singleNoteApi(): SingleNoteModuleApi | null {
-    return this._singleNoteApi ??= ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
+    return (this._singleNoteApi ??=
+      ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note'));
   }
   private _reactionsApi?: ReactionsModuleApi | null;
   private get reactionsApi(): ReactionsModuleApi | null {
-    return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
+    return (this._reactionsApi ??=
+      ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
   }
   private authService: AuthService;
   private systemLogger: SystemLogger;
@@ -136,17 +142,26 @@ export class SingleNoteView extends View {
   }
 
   private async fetchAddressable(naddrRef: string): Promise<NostrEvent | null> {
-    const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
-    const event = await articlesApi?.fetchAddressableEvent(naddrRef) ?? null;
+    const articlesApi =
+      ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+    const event = (await articlesApi?.fetchAddressableEvent(naddrRef)) ?? null;
     if (!event) {
-      this.systemLogger.warn('SNV', `Note not found (${naddrRef.slice(0, 16)}…)`);
+      this.systemLogger.warn(
+        'SNV',
+        `Note not found (${naddrRef.slice(0, 16)}…)`
+      );
       return null;
     }
     const username = UserProfileService.getInstance().getUsername(event.pubkey);
     const displayName = username
-      ? (username.length > 10 ? username.substring(0, 10) + '..' : username)
+      ? username.length > 10
+        ? `${username.substring(0, 10)}..`
+        : username
       : 'User';
-    this.systemLogger.info('SNV', `Fetching ${displayName}'s note (${naddrRef.slice(0, 16)}…)...`);
+    this.systemLogger.info(
+      'SNV',
+      `Fetching ${displayName}'s note (${naddrRef.slice(0, 16)}…)...`
+    );
     return event;
   }
 
@@ -154,13 +169,14 @@ export class SingleNoteView extends View {
     // Cache-first: a note already loaded by a feed (e.g. the Bulk Delete list, or
     // the timeline) resolves instantly from the NoteService LRU and doesn't depend
     // on the read relays still carrying it — old notes often aren't there anymore.
-    let event: NostrEvent | null = this.singleNoteApi?.getCachedNote(noteId) ?? null;
+    let event: NostrEvent | null =
+      this.singleNoteApi?.getCachedNote(noteId) ?? null;
 
     if (!event) {
       const result = await fetchNostrEvents({
         relays: this.relayConfig.getReadRelays(),
         ids: [noteId],
-        limit: 1
+        limit: 1,
       });
       event = result.events[0] ?? null;
     }
@@ -190,10 +206,15 @@ export class SingleNoteView extends View {
     const profileService = UserProfileService.getInstance();
     const username = profileService.getUsername(authorPubkey);
     const displayName = username
-      ? (username.length > 10 ? username.substring(0, 10) + '..' : username)
+      ? username.length > 10
+        ? `${username.substring(0, 10)}..`
+        : username
       : 'User';
 
-    this.systemLogger.info('SNV', `Fetching ${displayName}'s note (${noteId.slice(0, 8)})...`);
+    this.systemLogger.info(
+      'SNV',
+      `Fetching ${displayName}'s note (${noteId.slice(0, 8)})...`
+    );
 
     return event;
   }
@@ -232,7 +253,7 @@ export class SingleNoteView extends View {
       islFetchStats: true,
       isLoggedIn: isUserLoggedIn,
       headerSize: 'large',
-      depth: 0
+      depth: 0,
     });
 
     const snvWrapper = document.createElement('div');
@@ -272,7 +293,11 @@ export class SingleNoteView extends View {
     this.liveUpdatesManager?.startLiveUpdates();
   }
 
-  private initializeManagers(noteId: string, noteAuthor: string, _repliesContainer: HTMLElement): void {
+  private initializeManagers(
+    noteId: string,
+    noteAuthor: string,
+    _repliesContainer: HTMLElement
+  ): void {
     // Cleanup existing manager before creating new one (prevents listener leaks on re-render)
     this.liveUpdatesManager?.destroy();
 
@@ -285,20 +310,26 @@ export class SingleNoteView extends View {
         const isl = NoteUI.getInteractionStatusLine(noteId);
         isl?.waitForInitialFetch().then(() => {
           isl.updateStats({ replies, quotedReposts });
-          this.reactionsApi?.updateCachedStats(noteId, { replies, quotedReposts });
+          this.reactionsApi?.updateCachedStats(noteId, {
+            replies,
+            quotedReposts,
+          });
         });
       },
       onLoadZapsList: (replyId, authorPubkey, element) => {
         this.loadZapsList(replyId, authorPubkey, element);
-      }
+      },
     });
 
     this.liveUpdatesManager = new LiveUpdatesManager({
       noteId,
-      onLiveReply: (reply) => this.threadManager?.appendLiveReply(reply),
-      onStatsUpdate: (stats) => NoteUI.getInteractionStatusLine(noteId)?.updateStats(stats),
-      onZapAdded: (targetNoteId) => {
-        const noteElement = this.container.querySelector(`[data-note-id="${targetNoteId}"]`);
+      onLiveReply: reply => this.threadManager?.appendLiveReply(reply),
+      onStatsUpdate: stats =>
+        NoteUI.getInteractionStatusLine(noteId)?.updateStats(stats),
+      onZapAdded: targetNoteId => {
+        const noteElement = this.container.querySelector(
+          `[data-note-id="${targetNoteId}"]`
+        );
         if (noteElement instanceof HTMLElement) {
           const authorPubkey = noteElement.getAttribute('data-author-pubkey');
           if (authorPubkey) {
@@ -307,14 +338,21 @@ export class SingleNoteView extends View {
         }
       },
       onMuteUpdated: () => this.render(),
-      onNoteDeleted: () => this.router.navigate('/timeline')
+      onNoteDeleted: () => this.router.navigate('/timeline'),
     });
   }
 
-  private async loadZapsList(noteId: string, authorPubkey: string, noteElement: HTMLElement): Promise<void> {
+  private async loadZapsList(
+    noteId: string,
+    authorPubkey: string,
+    noteElement: HTMLElement
+  ): Promise<void> {
     try {
       // ensure() so the zaps/likes lists load on public, logged-out note views.
-      const reactionsApi = await ModuleLoader.getInstance().ensure<ReactionsModuleApi>('reactions');
+      const reactionsApi =
+        await ModuleLoader.getInstance().ensure<ReactionsModuleApi>(
+          'reactions'
+        );
       const stats = await reactionsApi?.getDetailedStats(noteId);
       if (!stats) return;
 
@@ -326,20 +364,33 @@ export class SingleNoteView extends View {
 
       if (stats.zapEvents.length > 0) {
         const zapsList = new ZapsList(stats.zapEvents);
-        islContainer.parentNode.insertBefore(zapsList.getElement(), islContainer);
+        islContainer.parentNode.insertBefore(
+          zapsList.getElement(),
+          islContainer
+        );
       }
 
       if (stats.reactionEvents.length > 0) {
-        const likesList = new LikesList(stats.reactionEvents, noteId, authorPubkey);
+        const likesList = new LikesList(
+          stats.reactionEvents,
+          noteId,
+          authorPubkey
+        );
         await likesList.init();
-        islContainer.parentNode.insertBefore(likesList.getElement(), islContainer);
+        islContainer.parentNode.insertBefore(
+          likesList.getElement(),
+          islContainer
+        );
       }
     } catch (error) {
       console.warn('Failed to load zaps/likes list:', error);
     }
   }
 
-  private createBackButton(text: string, onClick: () => void): HTMLButtonElement {
+  private createBackButton(
+    text: string,
+    onClick: () => void
+  ): HTMLButtonElement {
     const btn = document.createElement('button');
     btn.className = 'btn btn--medium btn--passive';
     btn.textContent = text;
@@ -356,11 +407,13 @@ export class SingleNoteView extends View {
 
     const pubkeyHex = searchState.pubkeyHex;
     if (cameFromSearch && pubkeyHex) {
-      footer.appendChild(this.createBackButton('← Back to Search Results', () => {
-        this.appState.setState('profileSearch', { navigatedToSNV: false });
-        const npub = encodeNpub(pubkeyHex);
-        this.router.navigate(`/profile/${npub}`);
-      }));
+      footer.appendChild(
+        this.createBackButton('← Back to Search Results', () => {
+          this.appState.setState('profileSearch', { navigatedToSNV: false });
+          const npub = encodeNpub(pubkeyHex);
+          this.router.navigate(`/profile/${npub}`);
+        })
+      );
     } else {
       footer.appendChild(this.createBackButton('← Back', () => history.back()));
     }
@@ -383,11 +436,14 @@ export class SingleNoteView extends View {
   }
 
   private setupMuteListener(): void {
-    this.muteUpdatedSubscriptionId = this.eventBus.on('mute:updated', (data?: { pubkey?: string }) => {
-      if (data?.pubkey && this.currentEvent?.pubkey === data.pubkey) {
-        this.router.navigate('/');
+    this.muteUpdatedSubscriptionId = this.eventBus.on(
+      'mute:updated',
+      (data?: { pubkey?: string }) => {
+        if (data?.pubkey && this.currentEvent?.pubkey === data.pubkey) {
+          this.router.navigate('/');
+        }
       }
-    });
+    );
   }
 
   public destroy(): void {
@@ -398,7 +454,10 @@ export class SingleNoteView extends View {
     this.liveUpdatesManager?.destroy();
 
     if (this.currentNoteId) {
-      this.systemLogger.info('SNV', `Stopping live updates for note ${this.currentNoteId.slice(0, 8)}`);
+      this.systemLogger.info(
+        'SNV',
+        `Stopping live updates for note ${this.currentNoteId.slice(0, 8)}`
+      );
       this.singleNoteApi?.stopLiveReplies(this.currentNoteId);
       this.reactionsApi?.stopLiveReactions(this.currentNoteId);
     }

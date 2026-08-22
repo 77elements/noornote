@@ -48,7 +48,9 @@ export class RefreshButton {
       this.hide(); // Hide after click
     });
 
-    this.avatarsContainer = button.querySelector('.btn--refresh-new-notes__avatars');
+    this.avatarsContainer = button.querySelector(
+      '.btn--refresh-new-notes__avatars'
+    );
     this.textSpan = button.querySelector('.btn--refresh-new-notes__text');
 
     return button;
@@ -57,7 +59,10 @@ export class RefreshButton {
   /**
    * Update button content with new notes info
    */
-  public async update(newNotesCount: number, authorPubkeys: string[]): Promise<void> {
+  public async update(
+    newNotesCount: number,
+    authorPubkeys: string[]
+  ): Promise<void> {
     this.newNotesCount = newNotesCount;
     this.authorPubkeys = authorPubkeys.slice(0, 4); // Max 4 avatars
     await this.updateContent();
@@ -78,7 +83,9 @@ export class RefreshButton {
       this.avatarsContainer.innerHTML = ''; // Clear existing
 
       // Fetch and render avatars (max 4)
-      const avatarPromises = this.authorPubkeys.map(pubkey => this.createAvatarElement(pubkey));
+      const avatarPromises = this.authorPubkeys.map(pubkey =>
+        this.createAvatarElement(pubkey)
+      );
       const avatars = await Promise.all(avatarPromises);
 
       avatars.forEach(avatar => {

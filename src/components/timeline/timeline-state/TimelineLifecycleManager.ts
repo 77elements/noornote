@@ -4,7 +4,10 @@
  * Extracts from: TimelineUI.pause(), resume(), destroy()
  */
 
-import type { TimelineModuleApi, NewNotesInfo } from '../../../modules/timeline/contracts';
+import type {
+  TimelineModuleApi,
+  NewNotesInfo,
+} from '../../../modules/timeline/contracts';
 import { InfiniteScroll } from '../../ui/InfiniteScroll';
 import { RefreshButton } from '../../ui/RefreshButton';
 import { CustomDropdown } from '../../ui/CustomDropdown';
@@ -81,7 +84,10 @@ export class TimelineLifecycleManager {
     // Restart infinite scroll observer. Root = the actual scroll container so the
     // rootMargin prefetch fires a few posts before the end (not only at the last).
     if (loadTrigger) {
-      this.infiniteScroll.observe(loadTrigger, loadTrigger.closest('.timeline-view__timeline'));
+      this.infiniteScroll.observe(
+        loadTrigger,
+        loadTrigger.closest('.timeline-view__timeline')
+      );
     }
   }
 

@@ -23,12 +23,13 @@
  */
 export function upgradeArticleImages(container: HTMLElement): void {
   const imgs = Array.from(container.querySelectorAll<HTMLImageElement>('img'));
-  const candidates = imgs.filter(img =>
-    img.getAttribute('src') &&
-    !img.classList.contains('note-image--clickable') &&
-    !img.closest('.note-media') &&
-    !img.closest('a') &&
-    !img.closest('.user-mention')
+  const candidates = imgs.filter(
+    img =>
+      img.getAttribute('src') &&
+      !img.classList.contains('note-image--clickable') &&
+      !img.closest('.note-media') &&
+      !img.closest('a') &&
+      !img.closest('.user-mention')
   );
   if (candidates.length === 0) return;
 

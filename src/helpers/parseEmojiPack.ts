@@ -12,7 +12,7 @@ export interface EmojiPackEmoji {
 }
 
 export interface EmojiPack {
-  id: string;        // d-tag
+  id: string; // d-tag
   eventId: string;
   title: string;
   authorPubkey: string;
@@ -22,7 +22,8 @@ export interface EmojiPack {
 
 export function parseEmojiPackEvent(event: NostrEvent): EmojiPack {
   const tags = event.tags || [];
-  const getTag = (name: string) => tags.find((t: string[]) => t[0] === name)?.[1] || '';
+  const getTag = (name: string) =>
+    tags.find((t: string[]) => t[0] === name)?.[1] || '';
 
   return {
     id: getTag('d'),
@@ -31,7 +32,9 @@ export function parseEmojiPackEvent(event: NostrEvent): EmojiPack {
     authorPubkey: event.pubkey || '',
     createdAt: (event as { created_at?: number }).created_at ?? 0,
     emojis: tags
-      .filter((t: string[]) => t[0] === 'emoji' && t.length >= 3 && t[1] && t[2])
+      .filter(
+        (t: string[]) => t[0] === 'emoji' && t.length >= 3 && t[1] && t[2]
+      )
       .map((t: string[]) => ({ shortcode: t[1]!, url: t[2]! })),
   };
 }

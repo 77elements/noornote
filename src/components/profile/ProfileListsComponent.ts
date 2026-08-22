@@ -20,7 +20,7 @@ import { encodeNaddr, encodeNevent } from '../../services/NostrToolsAdapter';
 import {
   BookmarkOrchestrator,
   getBookmarkFolderService,
-  type BookmarkItem
+  type BookmarkItem,
 } from '../../lists/bookmarks';
 import { AuthService } from '../../services/AuthService';
 import { Router } from '../../services/Router';
@@ -57,21 +57,26 @@ export class ProfileListsComponent {
   private lists: ProfileListData[] = [];
   private elements: HTMLElement[] = [];
   private insertAfterEl: Element | null = null;
-  private resolvedDisplay: Map<string, string> = new Map();  // item.id (events) or item.value (a-tags) → display text
+  private resolvedDisplay: Map<string, string> = new Map(); // item.id (events) or item.value (a-tags) → display text
   private destroyed: boolean = false;
 
   constructor(pubkey: string) {
     this.pubkey = pubkey;
 
-    const profileApi = ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
+    const profileApi =
+      ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
     this.mountsService = {
       getMounts: () => profileApi?.getProfileMounts() ?? [],
-      setMountsFromRelay: () => { /* handled by module */ },
-      reorderMounts: (newOrder) => profileApi?.reorderProfileMounts(newOrder),
+      setMountsFromRelay: () => {
+        /* handled by module */
+      },
+      reorderMounts: newOrder => profileApi?.reorderProfileMounts(newOrder),
     };
     this.mountsOrch = {
-      fetchFromRelays: (pk, force) => profileApi?.fetchMountsFromRelays(pk, force) ?? Promise.resolve([]),
-      publishToRelays: () => profileApi?.publishMountsToRelays() ?? Promise.resolve(),
+      fetchFromRelays: (pk, force) =>
+        profileApi?.fetchMountsFromRelays(pk, force) ?? Promise.resolve([]),
+      publishToRelays: () =>
+        profileApi?.publishMountsToRelays() ?? Promise.resolve(),
     };
     this.bookmarkOrch = BookmarkOrchestrator.getInstance();
     this.folderService = getBookmarkFolderService();
@@ -99,7 +104,10 @@ export class ProfileListsComponent {
         // publishToRelays from a just-toggled checkbox and revert the change.
         mountedFolders = this.mountsService.getMounts();
       } else {
-        mountedFolders = await this.mountsOrch.fetchFromRelays(this.pubkey, true);
+        mountedFolders = await this.mountsOrch.fetchFromRelays(
+          this.pubkey,
+          true
+        );
       }
 
       if (mountedFolders.length === 0) return;
@@ -131,25 +139,39 @@ export class ProfileListsComponent {
           const orderedIds = this.folderService.getBookmarksInFolder(folder.id);
           const folderItems = orderedIds
             .map(id => allItems.find(item => item.id === id))
-            .filter((item): item is BookmarkItem => item !== undefined && !item.isPrivate);
+            .filter(
+              (item): item is BookmarkItem =>
+                item !== undefined && !item.isPrivate
+            );
 
           if (folderItems.length > 0) {
-            this.lists.push({ folderName, items: folderItems, isExpanded: false });
+            this.lists.push({
+              folderName,
+              items: folderItems,
+              isExpanded: false,
+            });
           }
         }
       }
     } else {
       try {
-        const fetchResult = await this.bookmarkOrch.fetchBookmarksFromRelays(this.pubkey);
+        const fetchResult = await this.bookmarkOrch.fetchBookmarksFromRelays(
+          this.pubkey
+        );
 
         for (const folderName of folderNames) {
           const folderItems = fetchResult.items.filter(item => {
-            const itemCategory = fetchResult.categoryAssignments?.get(item.id) || '';
+            const itemCategory =
+              fetchResult.categoryAssignments?.get(item.id) || '';
             return itemCategory === folderName && !item.isPrivate;
           });
 
           if (folderItems.length > 0) {
-            this.lists.push({ folderName, items: folderItems, isExpanded: false });
+            this.lists.push({
+              folderName,
+              items: folderItems,
+              isExpanded: false,
+            });
           }
         }
       } catch (error) {
@@ -189,28 +211,38 @@ export class ProfileListsComponent {
    */
   private renderListInner(list: ProfileListData, index: number): string {
     const { folderName, items, isExpanded } = list;
-    const visibleItems = isExpanded ? items : items.slice(0, MAX_ITEMS_COLLAPSED);
+    const visibleItems = isExpanded
+      ? items
+      : items.slice(0, MAX_ITEMS_COLLAPSED);
     const hasMore = items.length > MAX_ITEMS_COLLAPSED;
 
     return `
       <div class="profile-list-header">
         <h2 class="profile-list-title">${escapeHtml(folderName)}</h2>
-        ${this.isOwnProfile ? `
+        ${
+          this.isOwnProfile
+            ? `
           <button class="profile-list-drag-handle" title="Drag to reorder">
             <svg width="12" height="12"><use href="#icon-grid-dots"/></svg>
           </button>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
       <div class="profile-list-items">
         ${visibleItems.map(item => this.renderItem(item)).join('')}
       </div>
-      ${hasMore ? `
+      ${
+        hasMore
+          ? `
         <div class="l-row l-row--center">
           <button class="btn btn--passive btn--medium" data-list-index="${index}">
             ${isExpanded ? 'Show less' : `Show more (${items.length - MAX_ITEMS_COLLAPSED})`}
           </button>
         </div>
-      ` : ''}
+      `
+          : ''
+      }
     `;
   }
 
@@ -225,7 +257,8 @@ export class ProfileListsComponent {
       let displayUrl = url;
       try {
         const parsed = new URL(url.startsWith('http') ? url : `https://${url}`);
-        displayUrl = parsed.hostname + (parsed.pathname !== '/' ? parsed.pathname : '');
+        displayUrl =
+          parsed.hostname + (parsed.pathname !== '/' ? parsed.pathname : '');
       } catch {
         // Keep original
       }
@@ -244,7 +277,8 @@ export class ProfileListsComponent {
         </div>
       `;
     } else if (item.type === 'e') {
-      const display = this.resolvedDisplay.get(item.id) || `Note ${item.id.slice(0, 8)}…`;
+      const display =
+        this.resolvedDisplay.get(item.id) || `Note ${item.id.slice(0, 8)}…`;
       const navigateTo = `/note/${encodeNevent(item.id)}`;
       return `
         <div class="profile-list-item profile-list-item--note" data-navigate="${navigateTo}" role="link" tabindex="0">
@@ -257,7 +291,8 @@ export class ProfileListsComponent {
         </div>
       `;
     } else if (item.type === 'a' && item.value?.startsWith('30402:')) {
-      const display = this.resolvedDisplay.get(item.value) || 'Untitled listing';
+      const display =
+        this.resolvedDisplay.get(item.value) || 'Untitled listing';
       const parts = item.value.split(':');
       let navigateTo = '';
       if (parts.length >= 3) {
@@ -315,47 +350,67 @@ export class ProfileListsComponent {
     const work: Promise<void>[] = [];
 
     if (noteIds.size > 0) {
-      work.push((async () => {
-        try {
-          const postsApi = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
-          const notes = await postsApi?.getNotes(Array.from(noteIds)) ?? new Map<string, import('@nostr-dev-kit/ndk').NostrEvent>();
-          for (const [id, event] of notes.entries()) {
-            const firstLine = (event.content || '').split('\n').map(l => l.trim()).find(l => l.length > 0) || '';
-            this.resolvedDisplay.set(id, firstLine || `Note ${id.slice(0, 8)}…`);
+      work.push(
+        (async () => {
+          try {
+            const postsApi =
+              ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
+            const notes =
+              (await postsApi?.getNotes(Array.from(noteIds))) ??
+              new Map<string, import('@nostr-dev-kit/ndk').NostrEvent>();
+            for (const [id, event] of notes.entries()) {
+              const firstLine =
+                (event.content || '')
+                  .split('\n')
+                  .map(l => l.trim())
+                  .find(l => l.length > 0) || '';
+              this.resolvedDisplay.set(
+                id,
+                firstLine || `Note ${id.slice(0, 8)}…`
+              );
+            }
+          } catch {
+            // Leave fallback display
           }
-        } catch {
-          // Leave fallback display
-        }
-      })());
+        })()
+      );
     }
 
     if (listingAddrs.size > 0) {
-      work.push((async () => {
-        try {
-          const transport = NostrTransport.getInstance();
-          const readRelays = transport.getReadRelays();
-          if (readRelays.length === 0) return;
+      work.push(
+        (async () => {
+          try {
+            const transport = NostrTransport.getInstance();
+            const readRelays = transport.getReadRelays();
+            if (readRelays.length === 0) return;
 
-          const filters = Array.from(listingAddrs).map(addr => {
-            const parts = addr.split(':');
-            return {
-              kinds: [parseInt(parts[0]!)],
-              authors: [parts[1]!],
-              '#d': [parts.slice(2).join(':')],
-            };
-          });
+            const filters = Array.from(listingAddrs).map(addr => {
+              const parts = addr.split(':');
+              return {
+                kinds: [parseInt(parts[0]!)],
+                authors: [parts[1]!],
+                '#d': [parts.slice(2).join(':')],
+              };
+            });
 
-          const events = await transport.fetch(readRelays, filters, 5000, false, 'PLC-Listings');
-          for (const event of events) {
-            const dTag = event.tags.find(t => t[0] === 'd')?.[1] || '';
-            const titleTag = event.tags.find(t => t[0] === 'title')?.[1];
-            const addr = `${event.kind}:${event.pubkey}:${dTag}`;
-            this.resolvedDisplay.set(addr, titleTag || 'Untitled listing');
+            const events = await transport.fetch(
+              readRelays,
+              filters,
+              5000,
+              false,
+              'PLC-Listings'
+            );
+            for (const event of events) {
+              const dTag = event.tags.find(t => t[0] === 'd')?.[1] || '';
+              const titleTag = event.tags.find(t => t[0] === 'title')?.[1];
+              const addr = `${event.kind}:${event.pubkey}:${dTag}`;
+              this.resolvedDisplay.set(addr, titleTag || 'Untitled listing');
+            }
+          } catch {
+            // Leave fallback display
           }
-        } catch {
-          // Leave fallback display
-        }
-      })());
+        })()
+      );
     }
 
     await Promise.all(work);
@@ -367,21 +422,28 @@ export class ProfileListsComponent {
   private bindEvents(): void {
     for (const el of this.elements) {
       el.querySelectorAll('[data-list-index]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const index = parseInt((e.target as HTMLElement).dataset.listIndex || '0');
+        btn.addEventListener('click', e => {
+          const index = parseInt(
+            (e.target as HTMLElement).dataset.listIndex || '0'
+          );
           this.toggleListExpansion(index);
         });
       });
 
       // Note + product items navigate to detail view on click
-      el.querySelectorAll<HTMLElement>('.profile-list-item[data-navigate]').forEach(itemEl => {
+      el.querySelectorAll<HTMLElement>(
+        '.profile-list-item[data-navigate]'
+      ).forEach(itemEl => {
         const handler = () => {
           const target = itemEl.dataset.navigate;
           if (target) Router.getInstance().navigate(target);
         };
         itemEl.addEventListener('click', handler);
-        itemEl.addEventListener('keydown', (e) => {
-          if ((e as KeyboardEvent).key === 'Enter' || (e as KeyboardEvent).key === ' ') {
+        itemEl.addEventListener('keydown', e => {
+          if (
+            (e as KeyboardEvent).key === 'Enter' ||
+            (e as KeyboardEvent).key === ' '
+          ) {
             e.preventDefault();
             handler();
           }
@@ -494,7 +556,6 @@ export class ProfileListsComponent {
 
     this.renderLists();
   }
-
 
   /**
    * Cleanup

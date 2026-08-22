@@ -63,7 +63,11 @@ export class ViewTabManager {
    * @param param - View parameter (noteId, npub, etc.)
    * @param replaceActive - Replace active tab instead of creating new
    */
-  public async openTab(type: ViewType, param?: string, replaceActive = false): Promise<void> {
+  public async openTab(
+    type: ViewType,
+    param?: string,
+    replaceActive = false
+  ): Promise<void> {
     const tabId = this.generateTabId(type, param);
 
     // Duplicate prevention - switch to existing tab
@@ -73,7 +77,11 @@ export class ViewTabManager {
     }
 
     // Replace active tab (if requested and not System Log)
-    if (replaceActive && this.activeTabId && this.activeTabId !== getSccDefaultTab()) {
+    if (
+      replaceActive &&
+      this.activeTabId &&
+      this.activeTabId !== getSccDefaultTab()
+    ) {
       this.closeTab(this.activeTabId);
     }
 
@@ -90,7 +98,7 @@ export class ViewTabManager {
       ...(param !== undefined && { param }),
       label,
       viewInstance,
-      isActive: true
+      isActive: true,
     };
 
     this.tabs.set(tabId, tab);
@@ -237,10 +245,15 @@ export class ViewTabManager {
   /**
    * Create view instance based on type
    */
-  private async createViewInstance(type: ViewType, param?: string): Promise<View> {
+  private async createViewInstance(
+    type: ViewType,
+    param?: string
+  ): Promise<View> {
     switch (type) {
       case 'single-note': {
-        const { SingleNoteView } = await import('../components/views/SingleNoteView');
+        const { SingleNoteView } = await import(
+          '../components/views/SingleNoteView'
+        );
         return new SingleNoteView(param!);
       }
       case 'article': {
@@ -248,11 +261,15 @@ export class ViewTabManager {
         return new ArticleView(param!);
       }
       case 'follow-pack': {
-        const { FollowPackDetailView } = await import('../components/views/FollowPackDetailView');
+        const { FollowPackDetailView } = await import(
+          '../components/views/FollowPackDetailView'
+        );
         return new FollowPackDetailView(param!);
       }
       case 'listing': {
-        const { ListingView } = await import('../addons/marketplace/ListingView');
+        const { ListingView } = await import(
+          '../addons/marketplace/ListingView'
+        );
         return new ListingView(param!);
       }
       case 'profile': {
@@ -260,11 +277,15 @@ export class ViewTabManager {
         return new ProfileView(param!);
       }
       case 'notifications': {
-        const { NotificationsView } = await import('../components/views/NotificationsView');
+        const { NotificationsView } = await import(
+          '../components/views/NotificationsView'
+        );
         return new NotificationsView();
       }
       case 'messages': {
-        const { MessagesView } = await import('../components/views/MessagesView');
+        const { MessagesView } = await import(
+          '../components/views/MessagesView'
+        );
         return new MessagesView();
       }
     }
@@ -300,7 +321,9 @@ export class ViewTabManager {
     const viewElement = tab.viewInstance.getElement();
 
     // Extract profile pic from rendered NoteHeader
-    const profilePic = viewElement.querySelector('.profile-pic--medium, .profile-pic--big') as HTMLImageElement;
+    const profilePic = viewElement.querySelector(
+      '.profile-pic--medium, .profile-pic--big'
+    ) as HTMLImageElement;
     if (profilePic && profilePic.src) {
       tab.profilePicUrl = profilePic.src;
 
@@ -308,7 +331,7 @@ export class ViewTabManager {
       this.eventBus.emit('view-tab:label-updated', {
         tabId: tab.id,
         label: tab.label,
-        profilePicUrl: profilePic.src
+        profilePicUrl: profilePic.src,
       });
     }
   }
@@ -330,9 +353,14 @@ export class ViewTabManager {
         const noteEvent = await this.fetchNoteEvent(tab.param!);
         if (noteEvent) {
           pubkey = noteEvent.pubkey;
-          const profile = await this.userProfileService.getUserProfile(noteEvent.pubkey);
+          const profile = await this.userProfileService.getUserProfile(
+            noteEvent.pubkey
+          );
           profilePicUrl = profile.picture;
-          const preview = (noteEvent.content.split('\n')[0] ?? '').substring(0, 30);
+          const preview = (noteEvent.content.split('\n')[0] ?? '').substring(
+            0,
+            30
+          );
           finalLabel = `@${profile.username || 'unknown'}: ${preview}...`;
         }
       } else if (tab.type === 'profile') {
@@ -340,12 +368,16 @@ export class ViewTabManager {
         const decoded = decodeNip19(tab.param!);
         if (decoded.type === 'npub') {
           pubkey = decoded.data;
-          const profile = await this.userProfileService.getUserProfile(decoded.data);
+          const profile = await this.userProfileService.getUserProfile(
+            decoded.data
+          );
           profilePicUrl = profile.picture;
           finalLabel = `@${profile.username || 'unknown'}`;
         } else if (decoded.type === 'nprofile') {
           pubkey = decoded.data.pubkey;
-          const profile = await this.userProfileService.getUserProfile(decoded.data.pubkey);
+          const profile = await this.userProfileService.getUserProfile(
+            decoded.data.pubkey
+          );
           profilePicUrl = profile.picture;
           finalLabel = `@${profile.username || 'unknown'}`;
         }
@@ -361,7 +393,7 @@ export class ViewTabManager {
         tabId: tab.id,
         label: finalLabel,
         ...(pubkey != null && { pubkey }),
-        ...(profilePicUrl != null && { profilePicUrl })
+        ...(profilePicUrl != null && { profilePicUrl }),
       });
     } catch (error) {
       console.warn('Failed to fetch tab label:', error);

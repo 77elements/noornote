@@ -29,9 +29,12 @@ import { diagLog } from './DiagnosticLogger';
 import { LRUCache, getCacheSize } from '../helpers/LRUCache';
 
 export type MuteVerdict =
-  | { status: 'muted';     verifiedAt: number; viaRelays: string[] }
+  | { status: 'muted'; verifiedAt: number; viaRelays: string[] }
   | { status: 'not-muted'; verifiedAt: number; viaRelays: string[] }
-  | { status: 'unknown';   reason: 'no-write-relays' | 'no-event' | 'timeout' | 'error' };
+  | {
+      status: 'unknown';
+      reason: 'no-write-relays' | 'no-event' | 'timeout' | 'error';
+    };
 
 const KIND_MUTE_LIST = 10000;
 const VERDICT_TTL_MS = 30 * 60 * 1000;
@@ -133,20 +136,21 @@ export class RemoteMuteCheckService {
     // kind:10000 may live on relays outside their current kind:10002.
     const metadataRelays = this.relayConfig.getMetadataRelays();
 
-    const queryRelays = Array.from(new Set([
-      ...writeRelays.slice(0, MAX_WRITE_RELAYS),
-      ...metadataRelays
-    ]));
+    const queryRelays = Array.from(
+      new Set([...writeRelays.slice(0, MAX_WRITE_RELAYS), ...metadataRelays])
+    );
 
     if (queryRelays.length === 0) {
       return { status: 'unknown', reason: 'no-write-relays' };
     }
 
-    const filters: NDKFilter[] = [{
-      authors: [theirPubkey],
-      kinds: [KIND_MUTE_LIST],
-      limit: 1
-    }];
+    const filters: NDKFilter[] = [
+      {
+        authors: [theirPubkey],
+        kinds: [KIND_MUTE_LIST],
+        limit: 1,
+      },
+    ];
 
     let events: NostrEvent[];
     try {
@@ -159,7 +163,9 @@ export class RemoteMuteCheckService {
       );
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      const reason: 'timeout' | 'error' = msg.toLowerCase().includes('timeout') ? 'timeout' : 'error';
+      const reason: 'timeout' | 'error' = msg.toLowerCase().includes('timeout')
+        ? 'timeout'
+        : 'error';
       this.systemLogger.warn(
         'RemoteMuteCheck',
         `Fetch failed for ${theirPubkey.slice(0, 8)} (${reason}): ${msg}`
@@ -185,20 +191,29 @@ export class RemoteMuteCheckService {
     if (mutesMe) {
       diagLog('system', 'Remote public mute detected', {
         target: theirPubkey.slice(0, 8),
-        viaRelays: queryRelays.length
+        viaRelays: queryRelays.length,
       });
-      return { status: 'muted', verifiedAt: Date.now(), viaRelays: queryRelays };
+      return {
+        status: 'muted',
+        verifiedAt: Date.now(),
+        viaRelays: queryRelays,
+      };
     }
 
-    return { status: 'not-muted', verifiedAt: Date.now(), viaRelays: queryRelays };
+    return {
+      status: 'not-muted',
+      verifiedAt: Date.now(),
+      viaRelays: queryRelays,
+    };
   }
 
   private async getTheirWriteRelays(theirPubkey: string): Promise<string[]> {
     const bootstrap = this.relayConfig.getAggregatorRelays();
-    const result = await this.relayListOrch.fetchRelayList(theirPubkey, bootstrap);
+    const result = await this.relayListOrch.fetchRelayList(
+      theirPubkey,
+      bootstrap
+    );
     if (!result || !result.relays.length) return [];
-    return result.relays
-      .filter(r => r.types.includes('write'))
-      .map(r => r.url);
+    return result.relays.filter(r => r.types.includes('write')).map(r => r.url);
   }
 }

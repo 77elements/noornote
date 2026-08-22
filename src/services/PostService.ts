@@ -41,7 +41,7 @@ export interface PostOptions {
    * Uses a-tag with addressable identifier instead of q-tag
    */
   quotedArticle?: {
-    addressableId: string;  // Format: "kind:pubkey:d-tag"
+    addressableId: string; // Format: "kind:pubkey:d-tag"
     authorPubkey: string;
     relayHint?: string;
   };
@@ -113,26 +113,45 @@ export class PostService {
    * @returns Promise<boolean> - Success status
    */
   public async createPost(options: PostOptions): Promise<boolean> {
-    const { relays, contentWarning, pollData, quotedEvent, quotedArticle, clientTag, imageTags } = options;
-    const { stripTrackingParams } = await import('../helpers/stripTrackingParams');
+    const {
+      relays,
+      contentWarning,
+      pollData,
+      quotedEvent,
+      quotedArticle,
+      clientTag,
+      imageTags,
+    } = options;
+    const { stripTrackingParams } = await import(
+      '../helpers/stripTrackingParams'
+    );
     const content = stripTrackingParams(options.content);
 
     // Validate authentication
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      this.systemLogger.error('PostService', 'Cannot create post: User not authenticated');
+      this.systemLogger.error(
+        'PostService',
+        'Cannot create post: User not authenticated'
+      );
       return false;
     }
 
     // Validate content (polls can be posted without content)
     if (!pollData && (!content || content.trim().length === 0)) {
-      this.systemLogger.error('PostService', 'Cannot create post: Content is empty');
+      this.systemLogger.error(
+        'PostService',
+        'Cannot create post: Content is empty'
+      );
       return false;
     }
 
     // Validate relays
     if (!relays || relays.length === 0) {
-      this.systemLogger.error('PostService', 'Cannot create post: No relays specified');
+      this.systemLogger.error(
+        'PostService',
+        'Cannot create post: No relays specified'
+      );
       return false;
     }
 
@@ -173,7 +192,10 @@ export class PostService {
         tags.push(qTag);
 
         // Add p-tag for quoted author if known and not already mentioned
-        if (quotedEvent.authorPubkey && !mentionedPubkeys.has(quotedEvent.authorPubkey)) {
+        if (
+          quotedEvent.authorPubkey &&
+          !mentionedPubkeys.has(quotedEvent.authorPubkey)
+        ) {
           tags.push(['p', quotedEvent.authorPubkey]);
         }
       }
@@ -187,7 +209,10 @@ export class PostService {
         tags.push(aTag);
 
         // Add p-tag for quoted author if known and not already mentioned
-        if (quotedArticle.authorPubkey && !mentionedPubkeys.has(quotedArticle.authorPubkey)) {
+        if (
+          quotedArticle.authorPubkey &&
+          !mentionedPubkeys.has(quotedArticle.authorPubkey)
+        ) {
           tags.push(['p', quotedArticle.authorPubkey]);
         }
       }
@@ -195,12 +220,15 @@ export class PostService {
       // Add poll tags if this is a poll (NIP-88)
       if (pollData) {
         // Add option tags (id, label)
-        pollData.options.forEach((option) => {
+        pollData.options.forEach(option => {
           tags.push(['option', option.id, option.label]);
         });
 
         // Add polltype tag (NIP-88: "singlechoice" or "multiplechoice")
-        tags.push(['polltype', pollData.multipleChoice ? 'multiplechoice' : 'singlechoice']);
+        tags.push([
+          'polltype',
+          pollData.multipleChoice ? 'multiplechoice' : 'singlechoice',
+        ]);
 
         // Add endsAt tag if specified (NIP-88)
         if (pollData.endDate) {
@@ -209,7 +237,7 @@ export class PostService {
 
         // Add relay tags if specified (NIP-88)
         if (pollData.relayUrls && pollData.relayUrls.length > 0) {
-          pollData.relayUrls.forEach((relayUrl) => {
+          pollData.relayUrls.forEach(relayUrl => {
             tags.push(['relay', relayUrl]);
           });
         }
@@ -227,7 +255,9 @@ export class PostService {
       // recipient's `#p`-subscription fires and the NotificationsOrchestrator
       // can classify the event as an image-tag.
       if (imageTags && imageTags.length > 0) {
-        const { getImageDimensions } = await import('../helpers/getImageDimensions');
+        const { getImageDimensions } = await import(
+          '../helpers/getImageDimensions'
+        );
         const taggedPubkeySet = new Set<string>(); // dedup across all images
 
         for (const entry of imageTags) {
@@ -267,11 +297,12 @@ export class PostService {
         created_at: Math.floor(Date.now() / 1000),
         tags: finalTags,
         content: content.trim(),
-        pubkey: currentUser.pubkey
+        pubkey: currentUser.pubkey,
       };
 
       // Sign event using browser extension
-      const signedEvent = await this.authService.signEventWithTimeout(unsignedEvent);
+      const signedEvent =
+        await this.authService.signEventWithTimeout(unsignedEvent);
 
       if (!signedEvent) {
         this.systemLogger.error('PostService', 'Failed to sign post event');
@@ -288,7 +319,9 @@ export class PostService {
 
       // Show success toast to user
       ToastService.show(
-        kind === 1068 ? 'Poll posted successfully!' : 'Note posted successfully!',
+        kind === 1068
+          ? 'Poll posted successfully!'
+          : 'Note posted successfully!',
         'success'
       );
 
@@ -296,7 +329,10 @@ export class PostService {
     } catch (error) {
       // Surface signer/publish failures to the composer so it can save a
       // failed draft and show the "Open drafts" recovery toast.
-      this.systemLogger.error('PostService', `Post failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.systemLogger.error(
+        'PostService',
+        `Post failed: ${error instanceof Error ? error.message : String(error)}`
+      );
       throw error;
     }
   }
@@ -316,15 +352,24 @@ export class PostService {
 
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      this.systemLogger.error('PostService', 'Cannot create highlight: User not authenticated');
+      this.systemLogger.error(
+        'PostService',
+        'Cannot create highlight: User not authenticated'
+      );
       return false;
     }
     if (!highlightedText || highlightedText.trim().length === 0) {
-      this.systemLogger.error('PostService', 'Cannot create highlight: Highlighted text is empty');
+      this.systemLogger.error(
+        'PostService',
+        'Cannot create highlight: Highlighted text is empty'
+      );
       return false;
     }
     if (!relays || relays.length === 0) {
-      this.systemLogger.error('PostService', 'Cannot create highlight: No relays specified');
+      this.systemLogger.error(
+        'PostService',
+        'Cannot create highlight: No relays specified'
+      );
       return false;
     }
 
@@ -334,13 +379,19 @@ export class PostService {
       // Source reference (NIP-84): addressable → a-tag, otherwise e-tag.
       // The "source" marker at index 3 mirrors Jumble's convention so other
       // clients can prioritize it when multiple references exist.
-      const isAddressable = sourceEvent.kind !== undefined
-        && sourceEvent.kind >= 30000
-        && sourceEvent.kind < 40000;
+      const isAddressable =
+        sourceEvent.kind !== undefined &&
+        sourceEvent.kind >= 30000 &&
+        sourceEvent.kind < 40000;
 
       if (isAddressable) {
         const dTag = getTag(sourceEvent.tags, 'd');
-        tags.push(['a', `${sourceEvent.kind}:${sourceEvent.pubkey}:${dTag}`, '', 'source']);
+        tags.push([
+          'a',
+          `${sourceEvent.kind}:${sourceEvent.pubkey}:${dTag}`,
+          '',
+          'source',
+        ]);
       } else if (sourceEvent.id) {
         tags.push(['e', sourceEvent.id, '', 'source']);
       }
@@ -368,13 +419,17 @@ export class PostService {
         created_at: Math.floor(Date.now() / 1000),
         tags: finalTags,
         content: highlightedText,
-        pubkey: currentUser.pubkey
+        pubkey: currentUser.pubkey,
       };
 
-      const signedEvent = await this.authService.signEventWithTimeout(unsignedEvent);
+      const signedEvent =
+        await this.authService.signEventWithTimeout(unsignedEvent);
 
       if (!signedEvent) {
-        this.systemLogger.error('PostService', 'Failed to sign highlight event');
+        this.systemLogger.error(
+          'PostService',
+          'Failed to sign highlight event'
+        );
         return false;
       }
 
@@ -389,7 +444,10 @@ export class PostService {
 
       return true;
     } catch (error) {
-      this.systemLogger.error('PostService', `Highlight failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.systemLogger.error(
+        'PostService',
+        `Highlight failed: ${error instanceof Error ? error.message : String(error)}`
+      );
       throw error;
     }
   }
@@ -405,25 +463,36 @@ export class PostService {
    */
   public async createReply(options: ReplyOptions): Promise<NostrEvent | null> {
     const { parentEvent, relays, contentWarning, asComment } = options;
-    const { stripTrackingParams } = await import('../helpers/stripTrackingParams');
+    const { stripTrackingParams } = await import(
+      '../helpers/stripTrackingParams'
+    );
     const content = stripTrackingParams(options.content);
 
     // Validate authentication
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      this.systemLogger.error('PostService', 'Cannot create reply: User not authenticated');
+      this.systemLogger.error(
+        'PostService',
+        'Cannot create reply: User not authenticated'
+      );
       return null;
     }
 
     // Validate content
     if (!content || content.trim().length === 0) {
-      this.systemLogger.error('PostService', 'Cannot create reply: Content is empty');
+      this.systemLogger.error(
+        'PostService',
+        'Cannot create reply: Content is empty'
+      );
       return null;
     }
 
     // Validate relays
     if (!relays || relays.length === 0) {
-      this.systemLogger.error('PostService', 'Cannot create reply: No relays specified');
+      this.systemLogger.error(
+        'PostService',
+        'Cannot create reply: No relays specified'
+      );
       return null;
     }
 
@@ -460,18 +529,25 @@ export class PostService {
         created_at: Math.floor(Date.now() / 1000),
         tags: finalTags,
         content: content.trim(),
-        pubkey: currentUser.pubkey
+        pubkey: currentUser.pubkey,
       };
 
       // Sign event using browser extension
-      const signedEvent = await this.authService.signEventWithTimeout(unsignedEvent);
+      const signedEvent =
+        await this.authService.signEventWithTimeout(unsignedEvent);
 
       if (!signedEvent) {
-        this.systemLogger.error('PostService', `Failed to sign ${label.toLowerCase()} event`);
+        this.systemLogger.error(
+          'PostService',
+          `Failed to sign ${label.toLowerCase()} event`
+        );
         return null;
       }
 
-      this.systemLogger.info('PostService', `${label} event signed: ${signedEvent.id?.slice(0, 8)}`);
+      this.systemLogger.info(
+        'PostService',
+        `${label} event signed: ${signedEvent.id?.slice(0, 8)}`
+      );
 
       // Publish to specified relays
       await this.transport.publish(relays, signedEvent);
@@ -486,7 +562,10 @@ export class PostService {
 
       return signedEvent;
     } catch (error) {
-      this.systemLogger.error('PostService', `${label} failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.systemLogger.error(
+        'PostService',
+        `${label} failed: ${error instanceof Error ? error.message : String(error)}`
+      );
       throw error;
     }
   }
@@ -534,7 +613,9 @@ export class PostService {
       // promote that scope to the root so the reply stays anchored to the page.
       if (!rootETag && !rootATag && !rootITag) {
         const parentI = parentEvent.tags.find(t => t[0] === 'i');
-        const parentKWeb = parentEvent.tags.find(t => t[0] === 'k' && t[1] === 'web');
+        const parentKWeb = parentEvent.tags.find(
+          t => t[0] === 'k' && t[1] === 'web'
+        );
         if (parentI && parentKWeb) {
           tags.push(['I', ...parentI.slice(1)]);
           tags.push(['K', 'web']);
@@ -566,7 +647,8 @@ export class PostService {
       // A zap receipt (kind:9735) is signed by the wallet/LNURL server, not the human zapper, so the
       // P/p notification tag must point to the ZAPPER (extracted from the receipt), otherwise the
       // "thank you" reaches a bot. E/e still anchor the thread to the 9735 (whose author is the server).
-      const notifyPubkey = parentKind === 9735 ? extractZapperPubkey(parentEvent) : parentPubkey;
+      const notifyPubkey =
+        parentKind === 9735 ? extractZapperPubkey(parentEvent) : parentPubkey;
 
       // Root scope
       tags.push(['E', parentId, relayHint, parentPubkey]);
@@ -600,7 +682,10 @@ export class PostService {
    * @param parentEvent - The event being replied to
    * @returns { eTags, pTags } - Arrays of e-tags and p-tags
    */
-  private buildReplyTags(parentEvent: NostrEvent): { eTags: string[][]; pTags: string[][] } {
+  private buildReplyTags(parentEvent: NostrEvent): {
+    eTags: string[][];
+    pTags: string[][];
+  } {
     const eTags: string[][] = [];
     const pTags: string[][] = [];
     const relayConfig = RelayConfig.getInstance();
@@ -663,9 +748,14 @@ export class PostService {
    * `content`. Only runs when the Custom Emojis addon is enabled — otherwise
    * the original tags array is returned untouched and no addon code loads.
    */
-  private async maybeAttachEmojiTags(content: string, tags: string[][]): Promise<string[][]> {
+  private async maybeAttachEmojiTags(
+    content: string,
+    tags: string[][]
+  ): Promise<string[][]> {
     try {
-      const { isCustomEmojisEnabled } = await import('../addons/custom-emojis/index');
+      const { isCustomEmojisEnabled } = await import(
+        '../addons/custom-emojis/index'
+      );
       if (!isCustomEmojisEnabled()) return tags;
 
       const [{ EmojiService }, { attachEmojiTags }] = await Promise.all([
@@ -673,11 +763,17 @@ export class PostService {
         import('../addons/custom-emojis/attachEmojiTags'),
       ]);
 
-      return attachEmojiTags(content, tags, EmojiService.getInstance().getEmojis());
+      return attachEmojiTags(
+        content,
+        tags,
+        EmojiService.getInstance().getEmojis()
+      );
     } catch (err) {
-      this.systemLogger.warn('PostService', `Custom emoji tag enrichment skipped: ${err}`);
+      this.systemLogger.warn(
+        'PostService',
+        `Custom emoji tag enrichment skipped: ${err}`
+      );
       return tags;
     }
   }
-
 }

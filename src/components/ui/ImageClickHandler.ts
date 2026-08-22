@@ -13,7 +13,10 @@
  */
 
 import { getImageViewer } from './ImageViewer';
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../services/PerAccountLocalStorage';
 
 export class ImageClickHandler {
   private static instance: ImageClickHandler | null = null;
@@ -52,10 +55,9 @@ export class ImageClickHandler {
 
     // NSFW gate
     if (mediaContainer.classList.contains('nsfw-media')) {
-      const sensitiveSettings = PerAccountLocalStorage.getInstance().get<{ displayNSFW: boolean }>(
-        StorageKeys.SENSITIVE_MEDIA,
-        { displayNSFW: false }
-      );
+      const sensitiveSettings = PerAccountLocalStorage.getInstance().get<{
+        displayNSFW: boolean;
+      }>(StorageKeys.SENSITIVE_MEDIA, { displayNSFW: false });
       if (!sensitiveSettings.displayNSFW) return;
     }
 
@@ -66,11 +68,17 @@ export class ImageClickHandler {
     try {
       imageUrls = JSON.parse(decodeURIComponent(imageUrlsJson));
     } catch (error) {
-      console.debug('ImageClickHandler: failed to parse data-image-urls', error);
+      console.debug(
+        'ImageClickHandler: failed to parse data-image-urls',
+        error
+      );
       return;
     }
 
-    const imageIndex = parseInt(img.getAttribute('data-image-index') || '0', 10);
+    const imageIndex = parseInt(
+      img.getAttribute('data-image-index') || '0',
+      10
+    );
     const eventId = mediaContainer.getAttribute('data-event-id');
     const authorPubkey = mediaContainer.getAttribute('data-author-pubkey');
     const isNSFWAttr = mediaContainer.getAttribute('data-is-nsfw');
@@ -82,13 +90,13 @@ export class ImageClickHandler {
     const viewer = getImageViewer();
     const options: Parameters<typeof viewer.open>[0] = {
       images: imageUrls,
-      initialIndex: imageIndex
+      initialIndex: imageIndex,
     };
     if (eventId && authorPubkey) {
       options.sourceEvent = {
         eventId,
         authorPubkey,
-        isNSFW: isNSFWAttr === 'true'
+        isNSFW: isNSFWAttr === 'true',
       };
     }
     viewer.open(options);

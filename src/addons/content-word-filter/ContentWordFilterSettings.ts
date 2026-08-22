@@ -33,7 +33,7 @@ export class ContentWordFilterSettings extends SettingsSection {
     this.enableSwitch = new Switch({
       label: '',
       checked: enabled,
-      onChange: (checked) => {
+      onChange: checked => {
         setContentWordFilterEnabled(checked);
         // Emit the uniform AddonLoader toggle event (id matches ADDON_REGISTRY).
         // Also emit the legacy event so existing listeners (WordFilterAddonView)
@@ -42,7 +42,9 @@ export class ContentWordFilterSettings extends SettingsSection {
         bus.emit('wordfilter:addon-toggle', { enabled: checked });
         bus.emit('content-word-filter:toggle', { enabled: checked });
         ToastService.show(
-          checked ? 'Content Word Filter enabled' : 'Content Word Filter disabled',
+          checked
+            ? 'Content Word Filter enabled'
+            : 'Content Word Filter disabled',
           'success'
         );
       },
@@ -82,16 +84,24 @@ function renderWordList(contentEl: HTMLElement): void {
       <input type="text" class="input" placeholder="Enter word to filter" data-action="word-input" />
       <button class="btn btn--medium" data-action="add-word">Add</button>
     </div>
-    ${words.length > 0 ? `
+    ${
+      words.length > 0
+        ? `
       <div class="ui-list">
-        ${words.map(word => `
+        ${words
+          .map(
+            word => `
           <div class="ui-list__item" style="display: flex; justify-content: space-between; align-items: center;">
             <span>${escapeHtml(word)}</span>
             <button class="btn btn--mini btn--danger" data-action="remove-word" data-word="${escapeAttr(word)}">Remove</button>
           </div>
-        `).join('')}
+        `
+          )
+          .join('')}
       </div>
-    ` : '<p class="muted">No filter words yet.</p>'}
+    `
+        : '<p class="muted">No filter words yet.</p>'
+    }
   `;
 
   // Bind remove handlers
@@ -109,7 +119,9 @@ function renderWordList(contentEl: HTMLElement): void {
 }
 
 function bindInputHandler(contentEl: HTMLElement): void {
-  const input = contentEl.querySelector('[data-action="word-input"]') as HTMLInputElement;
+  const input = contentEl.querySelector(
+    '[data-action="word-input"]'
+  ) as HTMLInputElement;
   const addBtn = contentEl.querySelector('[data-action="add-word"]');
   if (!input || !addBtn) return;
 
@@ -132,7 +144,7 @@ function bindInputHandler(contentEl: HTMLElement): void {
   };
 
   addBtn.addEventListener('click', addWord);
-  input.addEventListener('keypress', (e) => {
+  input.addEventListener('keypress', e => {
     if (e.key === 'Enter') addWord();
   });
 }

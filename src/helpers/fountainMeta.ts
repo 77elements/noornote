@@ -45,7 +45,9 @@ export function isFountainUrl(url: string): boolean {
  * Fetch and parse Fountain episode metadata. Returns null on any failure
  * (non-fountain host, network/CORS error, missing tags). Results are cached.
  */
-export async function fetchFountainMeta(url: string): Promise<FountainMeta | null> {
+export async function fetchFountainMeta(
+  url: string
+): Promise<FountainMeta | null> {
   if (cache.has(url)) return cache.get(url)!;
   if (!isFountainUrl(url)) {
     cache.set(url, null);
@@ -61,7 +63,10 @@ export async function fetchFountainMeta(url: string): Promise<FountainMeta | nul
     const html = await res.text();
     const doc = new DOMParser().parseFromString(html, 'text/html');
     const og = (prop: string) =>
-      doc.querySelector(`meta[property="${prop}"]`)?.getAttribute('content')?.trim() || undefined;
+      doc
+        .querySelector(`meta[property="${prop}"]`)
+        ?.getAttribute('content')
+        ?.trim() || undefined;
 
     const rawTitle = og('og:title');
     const image = og('og:image');
@@ -87,7 +92,9 @@ export async function fetchFountainMeta(url: string): Promise<FountainMeta | nul
     const meta: FountainMeta = { title, show, image, audio, description };
     cache.set(url, meta);
     diagLog('system', 'Podcast episode metadata fetched from fountain.fm', {
-      hasTitle: !!title, hasImage: !!image, hasAudio: !!audio,
+      hasTitle: !!title,
+      hasImage: !!image,
+      hasAudio: !!audio,
     });
     return meta;
   } catch {

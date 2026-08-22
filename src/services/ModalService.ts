@@ -10,11 +10,11 @@ import { OverlayStack, type OverlayHandle } from './OverlayStack';
 export interface ModalConfig {
   title: string;
   content: HTMLElement | string;
-  width?: string;              // default: '50%'
-  height?: string;             // default: '50%'
-  showCloseButton?: boolean;   // default: true
-  closeOnOverlay?: boolean;    // default: true
-  closeOnEsc?: boolean;        // default: true
+  width?: string; // default: '50%'
+  height?: string; // default: '50%'
+  showCloseButton?: boolean; // default: true
+  closeOnOverlay?: boolean; // default: true
+  closeOnEsc?: boolean; // default: true
   onClose?: () => void;
   /**
    * Consulted only on a USER-initiated dismiss (ESC, close button, overlay
@@ -27,8 +27,8 @@ export interface ModalConfig {
 export interface ConfirmConfig {
   title: string;
   message: string;
-  confirmText?: string;        // default: 'Confirm'
-  cancelText?: string;         // default: 'Cancel'
+  confirmText?: string; // default: 'Confirm'
+  cancelText?: string; // default: 'Cancel'
   confirmDestructive?: boolean; // default: false - if true, confirm button styled as destructive
 }
 
@@ -37,10 +37,10 @@ export interface PromptConfig {
   message: string;
   placeholder?: string;
   defaultValue?: string;
-  confirmText?: string;        // default: 'OK'
-  cancelText?: string;         // default: 'Cancel'
-  allowEmpty?: boolean;        // default: false. When true, confirming with an empty input resolves '' instead of null (lets callers distinguish "clear" from "cancel").
-  multiline?: boolean;         // default: false. When true, renders a <textarea> instead of a single-line input (Enter inserts a newline, does not submit).
+  confirmText?: string; // default: 'OK'
+  cancelText?: string; // default: 'Cancel'
+  allowEmpty?: boolean; // default: false. When true, confirming with an empty input resolves '' instead of null (lets callers distinguish "clear" from "cancel").
+  multiline?: boolean; // default: false. When true, renders a <textarea> instead of a single-line input (Enter inserts a newline, does not submit).
 }
 
 export class ModalService {
@@ -135,7 +135,11 @@ export class ModalService {
    * Programmatic callers use hide() directly to bypass this guard.
    */
   private requestClose(): void {
-    if (this.currentConfig?.onBeforeClose && !this.currentConfig.onBeforeClose()) return;
+    if (
+      this.currentConfig?.onBeforeClose &&
+      !this.currentConfig.onBeforeClose()
+    )
+      return;
     this.hide();
   }
 
@@ -178,10 +182,12 @@ export class ModalService {
    * Show a confirmation dialog and return a promise that resolves to true/false
    */
   public confirm(config: ConfirmConfig): Promise<boolean> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const confirmText = config.confirmText || 'Confirm';
       const cancelText = config.cancelText || 'Cancel';
-      const confirmClass = config.confirmDestructive ? 'btn-danger' : 'btn-primary';
+      const confirmClass = config.confirmDestructive
+        ? 'btn-danger'
+        : 'btn-primary';
 
       const content = document.createElement('div');
       content.className = 'modal-confirm';
@@ -232,7 +238,7 @@ export class ModalService {
    * overlay click. Modal-helper replacement for `window.prompt()`.
    */
   public prompt(config: PromptConfig): Promise<string | null> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const confirmText = config.confirmText || 'OK';
       const cancelText = config.cancelText || 'Cancel';
 
@@ -253,7 +259,10 @@ export class ModalService {
         </div>
       `;
 
-      const input = content.querySelector('.modal-prompt__input') as HTMLInputElement | HTMLTextAreaElement | null;
+      const input = content.querySelector('.modal-prompt__input') as
+        | HTMLInputElement
+        | HTMLTextAreaElement
+        | null;
       const cancelBtn = content.querySelector('.modal-prompt__cancel');
       const confirmBtn = content.querySelector('.modal-prompt__confirm');
 
@@ -277,7 +286,7 @@ export class ModalService {
       confirmBtn?.addEventListener('click', submit);
       // Single-line: Enter submits. Multiline textarea: Enter inserts a newline.
       if (!config.multiline) {
-        input?.addEventListener('keydown', (e) => {
+        input?.addEventListener('keydown', e => {
           if ((e as KeyboardEvent).key === 'Enter') {
             e.preventDefault();
             submit();
@@ -333,7 +342,6 @@ export class ModalService {
       document.addEventListener('keydown', this.escapeHandler);
     }
   }
-
 
   /**
    * Destroy modal service (cleanup)

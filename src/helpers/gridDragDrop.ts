@@ -18,10 +18,17 @@ export interface GridDragDropConfig {
   /** Extract the item's ID from its HTMLElement (data attributes) */
   getItemId: (el: HTMLElement) => string | null;
   /** Called when a dragged item is dropped onto a target */
-  onDrop: (draggedId: string, draggedEl: HTMLElement, dropTarget: HTMLElement) => void;
+  onDrop: (
+    draggedId: string,
+    draggedEl: HTMLElement,
+    dropTarget: HTMLElement
+  ) => void;
 }
 
-export function setupGridDragDrop(grid: HTMLElement, config: GridDragDropConfig): void {
+export function setupGridDragDrop(
+  grid: HTMLElement,
+  config: GridDragDropConfig
+): void {
   let draggedCard: HTMLElement | null = null;
   let draggedId: string | null = null;
   let placeholder: HTMLElement | null = null;
@@ -32,7 +39,9 @@ export function setupGridDragDrop(grid: HTMLElement, config: GridDragDropConfig)
   let offsetY = 0;
 
   // Build the :not(.dragging) selector for finding cards below cursor
-  const itemParts = config.itemSelector.split(',').map(s => s.trim() + ':not(.dragging)');
+  const itemParts = config.itemSelector
+    .split(',')
+    .map(s => `${s.trim()}:not(.dragging)`);
   const belowSelector = [...itemParts, '[data-up-nav]'].join(', ');
 
   const onMouseDown = (e: MouseEvent) => {
@@ -69,24 +78,26 @@ export function setupGridDragDrop(grid: HTMLElement, config: GridDragDropConfig)
 
       placeholder = document.createElement('div');
       placeholder.className = config.placeholderClass;
-      placeholder.style.width = draggedCard.offsetWidth + 'px';
-      placeholder.style.height = draggedCard.offsetHeight + 'px';
+      placeholder.style.width = `${draggedCard.offsetWidth}px`;
+      placeholder.style.height = `${draggedCard.offsetHeight}px`;
       draggedCard.parentNode?.insertBefore(placeholder, draggedCard);
 
       draggedCard.style.position = 'fixed';
       draggedCard.style.zIndex = '1000';
-      draggedCard.style.width = draggedCard.offsetWidth + 'px';
+      draggedCard.style.width = `${draggedCard.offsetWidth}px`;
       draggedCard.style.pointerEvents = 'none';
     }
 
     if (isDragging) {
-      draggedCard.style.left = (e.clientX - offsetX) + 'px';
-      draggedCard.style.top = (e.clientY - offsetY) + 'px';
+      draggedCard.style.left = `${e.clientX - offsetX}px`;
+      draggedCard.style.top = `${e.clientY - offsetY}px`;
 
       const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
       const cardBelow = elemBelow?.closest(belowSelector) as HTMLElement;
 
-      grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+      grid
+        .querySelectorAll('.drag-over')
+        .forEach(c => c.classList.remove('drag-over'));
 
       if (cardBelow && cardBelow !== placeholder) {
         cardBelow.classList.add('drag-over');
@@ -108,7 +119,9 @@ export function setupGridDragDrop(grid: HTMLElement, config: GridDragDropConfig)
     draggedCard.style.display = 'none';
     const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
     draggedCard.style.display = savedDisplay;
-    const dropTarget = elemBelow?.closest(config.itemSelector + ', [data-up-nav]') as HTMLElement;
+    const dropTarget = elemBelow?.closest(
+      `${config.itemSelector}, [data-up-nav]`
+    ) as HTMLElement;
 
     draggedCard.classList.remove('dragging');
     draggedCard.style.position = '';
@@ -118,7 +131,9 @@ export function setupGridDragDrop(grid: HTMLElement, config: GridDragDropConfig)
     draggedCard.style.top = '';
     draggedCard.style.pointerEvents = '';
 
-    grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+    grid
+      .querySelectorAll('.drag-over')
+      .forEach(c => c.classList.remove('drag-over'));
 
     placeholder?.remove();
     placeholder = null;

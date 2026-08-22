@@ -11,7 +11,10 @@ import { PlatformService } from '../../services/PlatformService';
 import { UserProfileService } from '../../services/UserProfileService';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { SettingsModuleApi } from '../../modules/settings/contracts';
-import { renderUserMention, setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
+import {
+  renderUserMention,
+  setupUserMentionHandlers,
+} from '../../helpers/UserMentionHelper';
 import { extractDisplayName } from '../../helpers/extractDisplayName';
 import { npubToHex } from '../../helpers/nip19';
 
@@ -261,28 +264,37 @@ export class AboutView extends View {
   }
 
   private bindListeners(): void {
-    const checkUpdateBtn = this.container.querySelector('#about-check-update-btn');
+    const checkUpdateBtn = this.container.querySelector(
+      '#about-check-update-btn'
+    );
     checkUpdateBtn?.addEventListener('click', async () => {
-      const settingsApi = ModuleLoader.getInstance().getApi<SettingsModuleApi>('settings');
-      await settingsApi?.checkUpdateManually(checkUpdateBtn as HTMLButtonElement);
+      const settingsApi =
+        ModuleLoader.getInstance().getApi<SettingsModuleApi>('settings');
+      await settingsApi?.checkUpdateManually(
+        checkUpdateBtn as HTMLButtonElement
+      );
     });
   }
 
   private async populateCredits(): Promise<void> {
-    const placeholders = this.container.querySelectorAll<HTMLElement>('[data-credit-mention][data-pubkey]');
+    const placeholders = this.container.querySelectorAll<HTMLElement>(
+      '[data-credit-mention][data-pubkey]'
+    );
     if (placeholders.length === 0) return;
 
     const profileService = UserProfileService.getInstance();
-    await Promise.all(Array.from(placeholders).map(async (el) => {
-      const pubkey = el.dataset.pubkey;
-      if (!pubkey) return;
-      const profile = await profileService.getUserProfile(pubkey);
-      const username = extractDisplayName(profile) || pubkey.slice(0, 8);
-      el.outerHTML = renderUserMention(pubkey, {
-        username,
-        avatarUrl: profile.picture ?? '',
-      });
-    }));
+    await Promise.all(
+      Array.from(placeholders).map(async el => {
+        const pubkey = el.dataset.pubkey;
+        if (!pubkey) return;
+        const profile = await profileService.getUserProfile(pubkey);
+        const username = extractDisplayName(profile) || pubkey.slice(0, 8);
+        el.outerHTML = renderUserMention(pubkey, {
+          username,
+          avatarUrl: profile.picture ?? '',
+        });
+      })
+    );
 
     setupUserMentionHandlers(this.container);
   }

@@ -68,7 +68,11 @@ export class RepostService {
 
       return !!userRepost;
     } catch (error) {
-      this.systemLogger.warn('RepostService', 'Failed to check if user reposted note:', error);
+      this.systemLogger.warn(
+        'RepostService',
+        'Failed to check if user reposted note:',
+        error
+      );
       return false;
     }
   }
@@ -79,26 +83,37 @@ export class RepostService {
    * @param options - Repost configuration
    * @returns Promise<{ success: boolean; alreadyReposted?: boolean; error?: string }> - Result status
    */
-  public async publishRepost(options: RepostOptions): Promise<{ success: boolean; alreadyReposted?: boolean; error?: string }> {
+  public async publishRepost(
+    options: RepostOptions
+  ): Promise<{ success: boolean; alreadyReposted?: boolean; error?: string }> {
     const { originalEvent, relayHints = [] } = options;
 
     // Validate authentication
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      this.systemLogger.error('RepostService', 'Cannot publish repost: User not authenticated');
+      this.systemLogger.error(
+        'RepostService',
+        'Cannot publish repost: User not authenticated'
+      );
       ToastService.show('Du musst eingeloggt sein, um zu reposten', 'error');
       return { success: false, error: 'Not authenticated' };
     }
 
     // Validate inputs
     if (!originalEvent || !originalEvent.id) {
-      this.systemLogger.error('RepostService', 'Cannot publish repost: Missing original event');
+      this.systemLogger.error(
+        'RepostService',
+        'Cannot publish repost: Missing original event'
+      );
       ToastService.show('Invalid note data', 'error');
       return { success: false, error: 'Invalid note data' };
     }
 
     if (this.transport.getWriteRelays().length === 0) {
-      this.systemLogger.error('RepostService', 'Cannot publish repost: No write-relays configured');
+      this.systemLogger.error(
+        'RepostService',
+        'Cannot publish repost: No write-relays configured'
+      );
       ToastService.show('Keine Relays konfiguriert', 'error');
       return { success: false, error: 'No relays configured' };
     }
@@ -106,7 +121,10 @@ export class RepostService {
     // Check if user has already reposted this note
     const alreadyReposted = await this.hasUserReposted(originalEvent.id);
     if (alreadyReposted) {
-      this.systemLogger.info('RepostService', `User has already reposted note ${originalEvent.id.slice(0, 8)}...`);
+      this.systemLogger.info(
+        'RepostService',
+        `User has already reposted note ${originalEvent.id.slice(0, 8)}...`
+      );
       ToastService.show('Du hast diesen Note schon reposted', 'info');
       return { success: false, alreadyReposted: true };
     }
@@ -114,8 +132,8 @@ export class RepostService {
     try {
       // Build tags array (NIP-18)
       const tags: string[][] = [
-        ['e', originalEvent.id],        // Event being reposted
-        ['p', originalEvent.pubkey]     // Author of the event being reposted
+        ['e', originalEvent.id], // Event being reposted
+        ['p', originalEvent.pubkey], // Author of the event being reposted
       ];
 
       // Build unsigned event
@@ -125,11 +143,14 @@ export class RepostService {
         kind: 6,
         created_at: Math.floor(Date.now() / 1000),
         tags,
-        content: JSON.stringify(toPlainNostrEvent(originalEvent)),  // Stringified original event
-        pubkey: currentUser.pubkey
+        content: JSON.stringify(toPlainNostrEvent(originalEvent)), // Stringified original event
+        pubkey: currentUser.pubkey,
       };
 
-      this.systemLogger.info('RepostService', `Publishing repost to note ${originalEvent.id.slice(0, 8)}...`);
+      this.systemLogger.info(
+        'RepostService',
+        `Publishing repost to note ${originalEvent.id.slice(0, 8)}...`
+      );
 
       // Sign event using browser extension
       const signedEvent = await this.authService.signEvent(unsignedEvent);
@@ -149,12 +170,19 @@ export class RepostService {
       let authorOutbox: string[] = [];
       try {
         const orch = OutboundRelaysOrchestrator.getInstance();
-        const relayLists = await orch.discoverUserRelays([originalEvent.pubkey]);
+        const relayLists = await orch.discoverUserRelays([
+          originalEvent.pubkey,
+        ]);
         authorOutbox = orch.getOutboundRelays(relayLists);
-      } catch { /* fall back to relayHints + own write-relays only */ }
+      } catch {
+        /* fall back to relayHints + own write-relays only */
+      }
       const hints = [...new Set([...relayHints, ...authorOutbox])];
 
-      const acceptedRelays = await this.transport.publishWithHints(signedEvent, hints);
+      const acceptedRelays = await this.transport.publishWithHints(
+        signedEvent,
+        hints
+      );
 
       this.systemLogger.info(
         'RepostService',
@@ -181,7 +209,9 @@ export class RepostService {
    * Create and publish a Kind 16 generic repost (NIP-18)
    * Used for non-Kind-1 events (e.g. Kind 30402 marketplace listings).
    */
-  public async publishGenericRepost(options: RepostOptions): Promise<{ success: boolean; error?: string }> {
+  public async publishGenericRepost(
+    options: RepostOptions
+  ): Promise<{ success: boolean; error?: string }> {
     const { originalEvent, relayHints = [] } = options;
 
     const currentUser = this.authService.getCurrentUser();
@@ -209,7 +239,10 @@ export class RepostService {
       if (eventKind >= 30000 && eventKind < 40000) {
         const dTag = getTag(originalEvent.tags, 'd');
         if (dTag) {
-          tags.push(['a', `${originalEvent.kind}:${originalEvent.pubkey}:${dTag}`]);
+          tags.push([
+            'a',
+            `${originalEvent.kind}:${originalEvent.pubkey}:${dTag}`,
+          ]);
         }
       }
 
@@ -218,7 +251,7 @@ export class RepostService {
         created_at: Math.floor(Date.now() / 1000),
         tags,
         content: JSON.stringify(toPlainNostrEvent(originalEvent)),
-        pubkey: currentUser.pubkey
+        pubkey: currentUser.pubkey,
       };
 
       const signedEvent = await this.authService.signEvent(unsignedEvent);
@@ -233,17 +266,29 @@ export class RepostService {
       let authorOutbox: string[] = [];
       try {
         const orch = OutboundRelaysOrchestrator.getInstance();
-        const relayLists = await orch.discoverUserRelays([originalEvent.pubkey]);
+        const relayLists = await orch.discoverUserRelays([
+          originalEvent.pubkey,
+        ]);
         authorOutbox = orch.getOutboundRelays(relayLists);
-      } catch { /* fall back to relayHints + own write-relays only */ }
+      } catch {
+        /* fall back to relayHints + own write-relays only */
+      }
       const hints = [...new Set([...relayHints, ...authorOutbox])];
 
       await this.transport.publishWithHints(signedEvent, hints);
-      this.systemLogger.info('RepostService', `Generic repost (kind ${originalEvent.kind}) published`);
+      this.systemLogger.info(
+        'RepostService',
+        `Generic repost (kind ${originalEvent.kind}) published`
+      );
       ToastService.show('Repost published', 'success');
       return { success: true };
     } catch (error) {
-      ErrorService.handle(error, 'RepostService.publishGenericRepost', true, 'Repost failed');
+      ErrorService.handle(
+        error,
+        'RepostService.publishGenericRepost',
+        true,
+        'Repost failed'
+      );
       return { success: false, error: 'Publish failed' };
     }
   }

@@ -24,7 +24,10 @@ export class ExchangeRateService {
   public async getRate(currency: string): Promise<number | null> {
     // Check cache
     const now = Date.now();
-    if (this.rates.has(currency) && now - this.lastFetch < this.CACHE_DURATION) {
+    if (
+      this.rates.has(currency) &&
+      now - this.lastFetch < this.CACHE_DURATION
+    ) {
       return this.rates.get(currency) || null;
     }
 
@@ -91,7 +94,10 @@ export class ExchangeRateService {
   /**
    * Convert sats to fiat currency
    */
-  public async convertSatsToFiat(sats: number, currency: string): Promise<number> {
+  public async convertSatsToFiat(
+    sats: number,
+    currency: string
+  ): Promise<number> {
     const rate = await this.getRate(currency);
     if (!rate) return 0;
 
@@ -116,7 +122,7 @@ export class ExchangeRateService {
       CAD: 'C$',
       NZD: 'NZ$',
       AED: 'AED',
-      ZAR: 'R'
+      ZAR: 'R',
     };
     return symbols[currency] || currency;
   }
@@ -126,18 +132,18 @@ export class ExchangeRateService {
    */
   private getLocale(currency: string): string {
     const locales: { [key: string]: string } = {
-      EUR: 'de-DE',  // Komma
-      USD: 'en-US',  // Punkt
-      GBP: 'en-GB',  // Punkt
-      JPY: 'ja-JP',  // keine Dezimalstellen
-      CNY: 'zh-CN',  // Punkt
-      AUD: 'en-AU',  // Punkt
-      CHF: 'de-CH',  // Komma
-      SAR: 'ar-SA',  // Punkt
-      CAD: 'en-CA',  // Punkt
-      NZD: 'en-NZ',  // Punkt
-      AED: 'ar-AE',  // Punkt
-      ZAR: 'en-ZA'   // Punkt
+      EUR: 'de-DE', // Komma
+      USD: 'en-US', // Punkt
+      GBP: 'en-GB', // Punkt
+      JPY: 'ja-JP', // keine Dezimalstellen
+      CNY: 'zh-CN', // Punkt
+      AUD: 'en-AU', // Punkt
+      CHF: 'de-CH', // Komma
+      SAR: 'ar-SA', // Punkt
+      CAD: 'en-CA', // Punkt
+      NZD: 'en-NZ', // Punkt
+      AED: 'ar-AE', // Punkt
+      ZAR: 'en-ZA', // Punkt
     };
     return locales[currency] || 'en-US';
   }
@@ -145,16 +151,27 @@ export class ExchangeRateService {
   /**
    * Format amount with locale-specific decimal separator
    */
-  public formatAmount(amount: number, currency: string, decimals?: number): string {
+  public formatAmount(
+    amount: number,
+    currency: string,
+    decimals?: number
+  ): string {
     const locale = this.getLocale(currency);
     const d = decimals ?? (currency === 'JPY' ? 0 : 2);
-    return amount.toLocaleString(locale, { minimumFractionDigits: d, maximumFractionDigits: d });
+    return amount.toLocaleString(locale, {
+      minimumFractionDigits: d,
+      maximumFractionDigits: d,
+    });
   }
 
   /**
    * Get all available currencies
    */
-  public getAvailableCurrencies(): Array<{ code: string; name: string; symbol: string }> {
+  public getAvailableCurrencies(): Array<{
+    code: string;
+    name: string;
+    symbol: string;
+  }> {
     return [
       { code: 'EUR', name: 'Euro', symbol: '€' },
       { code: 'USD', name: 'US Dollar', symbol: '$' },
@@ -167,7 +184,7 @@ export class ExchangeRateService {
       { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$' },
       { code: 'NZD', name: 'New Zealand Dollar', symbol: 'NZ$' },
       { code: 'AED', name: 'UAE Dirham', symbol: 'AED' },
-      { code: 'ZAR', name: 'South African Rand', symbol: 'R' }
+      { code: 'ZAR', name: 'South African Rand', symbol: 'R' },
     ];
   }
 }

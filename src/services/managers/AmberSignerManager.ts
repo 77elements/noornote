@@ -55,17 +55,23 @@ export class AmberSignerManager {
       }
 
       if (pubkey.length !== 64) {
-        return { success: false, error: `Invalid pubkey from Amber (length ${pubkey.length})` };
+        return {
+          success: false,
+          error: `Invalid pubkey from Amber (length ${pubkey.length})`,
+        };
       }
 
       this.pubkey = pubkey;
 
       // Save package name + npub for session restore
-      localStorage.setItem(AMBER_SESSION_KEY, JSON.stringify({
-        packageName: result.packageName,
-        pubkey,
-        npub
-      }));
+      localStorage.setItem(
+        AMBER_SESSION_KEY,
+        JSON.stringify({
+          packageName: result.packageName,
+          pubkey,
+          npub,
+        })
+      );
 
       return { success: true, npub, pubkey };
     } catch (error) {
@@ -106,27 +112,55 @@ export class AmberSignerManager {
       content: event.content,
       tags: event.tags,
       created_at: event.created_at,
-      pubkey: event.pubkey
+      pubkey: event.pubkey,
     });
 
     const result = await this.amberService.signEvent(eventJson, this.pubkey);
     return result.event;
   }
 
-  async nip04Encrypt(plaintext: string, recipientPubkey: string): Promise<string> {
-    return this.amberService.nip04Encrypt(plaintext, recipientPubkey, this.pubkey);
+  async nip04Encrypt(
+    plaintext: string,
+    recipientPubkey: string
+  ): Promise<string> {
+    return this.amberService.nip04Encrypt(
+      plaintext,
+      recipientPubkey,
+      this.pubkey
+    );
   }
 
-  async nip04Decrypt(ciphertext: string, senderPubkey: string): Promise<string> {
-    return this.amberService.nip04Decrypt(ciphertext, senderPubkey, this.pubkey);
+  async nip04Decrypt(
+    ciphertext: string,
+    senderPubkey: string
+  ): Promise<string> {
+    return this.amberService.nip04Decrypt(
+      ciphertext,
+      senderPubkey,
+      this.pubkey
+    );
   }
 
-  async nip44Encrypt(plaintext: string, recipientPubkey: string): Promise<string> {
-    return this.amberService.nip44Encrypt(plaintext, recipientPubkey, this.pubkey);
+  async nip44Encrypt(
+    plaintext: string,
+    recipientPubkey: string
+  ): Promise<string> {
+    return this.amberService.nip44Encrypt(
+      plaintext,
+      recipientPubkey,
+      this.pubkey
+    );
   }
 
-  async nip44Decrypt(ciphertext: string, senderPubkey: string): Promise<string> {
-    return this.amberService.nip44Decrypt(ciphertext, senderPubkey, this.pubkey);
+  async nip44Decrypt(
+    ciphertext: string,
+    senderPubkey: string
+  ): Promise<string> {
+    return this.amberService.nip44Decrypt(
+      ciphertext,
+      senderPubkey,
+      this.pubkey
+    );
   }
 
   cleanup(): void {

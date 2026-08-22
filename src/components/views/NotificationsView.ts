@@ -4,8 +4,15 @@
  */
 
 import { View } from './View';
-import { NotificationsOrchestrator, type NotificationType, type NotificationEvent } from '../../services/orchestration/NotificationsOrchestrator';
-import { NotificationItem, type NotificationItemOptions } from '../notifications/NotificationItem';
+import {
+  NotificationsOrchestrator,
+  type NotificationType,
+  type NotificationEvent,
+} from '../../services/orchestration/NotificationsOrchestrator';
+import {
+  NotificationItem,
+  type NotificationItemOptions,
+} from '../notifications/NotificationItem';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
 import { UserProfileService } from '../../services/UserProfileService';
@@ -24,7 +31,10 @@ export class NotificationsView extends View {
   private systemLogger: SystemLogger;
   private _notificationsApi?: NotificationsModuleApi | null;
   private get notificationsApi(): NotificationsModuleApi | null {
-    return this._notificationsApi ??= ModuleLoader.getInstance().getApi<NotificationsModuleApi>('notifications');
+    return (this._notificationsApi ??=
+      ModuleLoader.getInstance().getApi<NotificationsModuleApi>(
+        'notifications'
+      ));
   }
   private activeTab: TabType = 'all';
   private notificationItems: NotificationItem[] = [];
@@ -46,7 +56,7 @@ export class NotificationsView extends View {
     this.eventBus = TypedEventBus.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
-      loadingMessage: 'Loading more notifications...'
+      loadingMessage: 'Loading more notifications...',
     });
 
     this.render();
@@ -62,7 +72,7 @@ export class NotificationsView extends View {
     this.loadFromCacheAndFetch();
 
     // Listen for real-time updates (includes hashtag notifications via NotificationsOrchestrator)
-    this.notificationsOrch.onNewNotification((notification) => {
+    this.notificationsOrch.onNewNotification(notification => {
       this.handleNewNotification(notification);
     });
 
@@ -76,13 +86,23 @@ export class NotificationsView extends View {
     // by the un-awaited handleLogin) has landed — so it shows "No notifications yet" while
     // the badge later correctly shows the count. Repaint when the fetch lands (badge-update)
     // if we're still showing the empty state but data is now available.
-    this.badgeUpdateSubId = this.eventBus.on('notifications:badge-update', () => {
-      const list = this.container.querySelector('.notifications-view__list');
-      const showingEmpty = !!list?.querySelector('.notifications-view__empty');
-      if (showingEmpty && this.notificationsOrch.getNotificationCount(this.getNotificationTypeFromTab()) > 0) {
-        this.resetAndReload();
+    this.badgeUpdateSubId = this.eventBus.on(
+      'notifications:badge-update',
+      () => {
+        const list = this.container.querySelector('.notifications-view__list');
+        const showingEmpty = !!list?.querySelector(
+          '.notifications-view__empty'
+        );
+        if (
+          showingEmpty &&
+          this.notificationsOrch.getNotificationCount(
+            this.getNotificationTypeFromTab()
+          ) > 0
+        ) {
+          this.resetAndReload();
+        }
       }
-    });
+    );
   }
 
   /**
@@ -106,7 +126,9 @@ export class NotificationsView extends View {
     `;
 
     // Setup tab click handlers
-    setupTabClickHandlers(this.container, (tabId) => this.switchTab(tabId as TabType));
+    setupTabClickHandlers(this.container, tabId =>
+      this.switchTab(tabId as TabType)
+    );
   }
 
   /**
@@ -127,7 +149,10 @@ export class NotificationsView extends View {
 
     // Log to SystemLogger when InfiniteScroll triggers (not initial load)
     if (!this.isInitialLoad()) {
-      this.systemLogger.info('NotificationsView', '⏳ Loading older notifications...');
+      this.systemLogger.info(
+        'NotificationsView',
+        '⏳ Loading older notifications...'
+      );
     }
 
     await this.loadNotificationsBatch();
@@ -138,7 +163,8 @@ export class NotificationsView extends View {
    */
   private async loadFromCacheAndFetch(): Promise<void> {
     // Step 1: Load cached notifications (instant display)
-    const cachedNotifications = this.notificationsApi?.getCachedNotifications() ?? [];
+    const cachedNotifications =
+      this.notificationsApi?.getCachedNotifications() ?? [];
 
     if (cachedNotifications.length > 0) {
       // Feed cached events into NotificationsOrchestrator
@@ -147,7 +173,10 @@ export class NotificationsView extends View {
       // Render first batch from cache
       await this.loadNotificationsBatch();
 
-      this.systemLogger.info('NotificationsView', `✓ Loaded ${cachedNotifications.length} cached notifications`);
+      this.systemLogger.info(
+        'NotificationsView',
+        `✓ Loaded ${cachedNotifications.length} cached notifications`
+      );
     } else {
       // No cache - do initial fetch
       await this.loadNotificationsBatch();
@@ -160,17 +189,24 @@ export class NotificationsView extends View {
       await this.notificationsOrch.fetchNewNotifications(lastFetch);
 
       // Get all current notifications and update cache
-      const allNotifications = this.notificationsOrch.getAllNotificationEvents();
+      const allNotifications =
+        this.notificationsOrch.getAllNotificationEvents();
       this.notificationsApi?.addNotifications(allNotifications);
 
       // Log if new notifications arrived (but don't re-render - they're already in orchestrator)
-      const newCount = allNotifications.filter(e => e.created_at > lastFetch).length;
+      const newCount = allNotifications.filter(
+        e => e.created_at > lastFetch
+      ).length;
       if (newCount > 0) {
-        this.systemLogger.info('NotificationsView', `✓ Fetched ${newCount} new notifications (already visible)`);
+        this.systemLogger.info(
+          'NotificationsView',
+          `✓ Fetched ${newCount} new notifications (already visible)`
+        );
       }
     } else {
       // First time - cache what we just fetched
-      const allNotifications = this.notificationsOrch.getAllNotificationEvents();
+      const allNotifications =
+        this.notificationsOrch.getAllNotificationEvents();
       this.notificationsApi?.addNotifications(allNotifications);
     }
 
@@ -193,7 +229,10 @@ export class NotificationsView extends View {
 
     // Show loading indicator + log based on whether this is initial load
     if (this.isInitialLoad()) {
-      this.systemLogger.info('NotificationsView', '⏳ Loading notifications...');
+      this.systemLogger.info(
+        'NotificationsView',
+        '⏳ Loading notifications...'
+      );
     }
     this.showLoadingIndicator();
 
@@ -208,7 +247,10 @@ export class NotificationsView extends View {
     // If no notifications in memory AND we haven't loaded everything, fetch older from relays
     if (notifications.length === 0 && this.hasMoreNotifications) {
       if (!this.isInitialLoad()) {
-        this.systemLogger.info('NotificationsView', '⏳ Fetching older notifications...');
+        this.systemLogger.info(
+          'NotificationsView',
+          '⏳ Fetching older notifications...'
+        );
       }
 
       // Get oldest timestamp from current notifications
@@ -218,7 +260,10 @@ export class NotificationsView extends View {
         const oldestTimestamp = oldestNotification.timestamp;
 
         // Fetch older notifications from relays
-        await this.notificationsOrch.fetchOlderNotifications(oldestTimestamp, this.BATCH_SIZE);
+        await this.notificationsOrch.fetchOlderNotifications(
+          oldestTimestamp,
+          this.BATCH_SIZE
+        );
 
         // Now try getting from memory again
         notifications = this.notificationsOrch.getNotifications(
@@ -233,12 +278,15 @@ export class NotificationsView extends View {
     }
 
     // Check if we have more notifications
-    const totalCount = this.notificationsOrch.getNotificationCount(notificationType);
-    this.hasMoreNotifications = (this.currentOffset + notifications.length) < totalCount;
+    const totalCount =
+      this.notificationsOrch.getNotificationCount(notificationType);
+    this.hasMoreNotifications =
+      this.currentOffset + notifications.length < totalCount;
 
     // Show empty state if first batch and no notifications
     if (notifications.length === 0 && this.isInitialLoad()) {
-      list.innerHTML = '<div class="notifications-view__empty">No notifications yet</div>';
+      list.innerHTML =
+        '<div class="notifications-view__empty">No notifications yet</div>';
       this.isLoading = false;
       return;
     }
@@ -271,7 +319,7 @@ export class NotificationsView extends View {
       const itemOptions: NotificationItemOptions = {
         event: notification.event,
         type: notification.type,
-        timestamp: notification.timestamp
+        timestamp: notification.timestamp,
       };
       if (notification.meta) {
         itemOptions.meta = notification.meta;
@@ -356,10 +404,10 @@ export class NotificationsView extends View {
 
     // Map tab type to notification type
     const typeMap: Record<Exclude<TabType, 'all'>, NotificationType> = {
-      'mentions': 'mention',
-      'reactions': 'reaction',
-      'zaps': 'zap',
-      'replies': 'reply'
+      mentions: 'mention',
+      reactions: 'reaction',
+      zaps: 'zap',
+      replies: 'reply',
     };
 
     return typeMap[this.activeTab as Exclude<TabType, 'all'>];
@@ -403,7 +451,9 @@ export class NotificationsView extends View {
   /**
    * Handle new notification (real-time)
    */
-  private async handleNewNotification(notification: NotificationEvent): Promise<void> {
+  private async handleNewNotification(
+    notification: NotificationEvent
+  ): Promise<void> {
     // Update cache with new notification
     const allNotifications = this.notificationsOrch.getAllNotificationEvents();
     this.notificationsApi?.addNotifications(allNotifications);
@@ -429,7 +479,7 @@ export class NotificationsView extends View {
     const itemOptions: NotificationItemOptions = {
       event: notification.event,
       type: notification.type,
-      timestamp: notification.timestamp
+      timestamp: notification.timestamp,
     };
     if (notification.meta) {
       itemOptions.meta = notification.meta;

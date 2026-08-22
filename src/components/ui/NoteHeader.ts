@@ -24,7 +24,10 @@ export interface NoteHeaderOptions {
 }
 
 /** Internal options type with defaults applied */
-type ResolvedNoteHeaderOptions = Required<Omit<NoteHeaderOptions, 'rawEvent' | 'onClick'>> & Pick<NoteHeaderOptions, 'rawEvent' | 'onClick'>;
+type ResolvedNoteHeaderOptions = Required<
+  Omit<NoteHeaderOptions, 'rawEvent' | 'onClick'>
+> &
+  Pick<NoteHeaderOptions, 'rawEvent' | 'onClick'>;
 
 export class NoteHeader {
   private element: HTMLElement;
@@ -43,7 +46,7 @@ export class NoteHeader {
       showMenu: true,
       showHandle: true,
       relayHints: [],
-      ...options
+      ...options,
     };
 
     const identityConfig: UserIdentityConfig = {
@@ -55,7 +58,7 @@ export class NoteHeader {
       inline: true,
       relayHints: this.options.relayHints,
       enableHoverCard: true,
-      clickable: true
+      clickable: true,
     };
     if (this.options.onClick) {
       identityConfig.onClick = this.options.onClick;
@@ -116,7 +119,9 @@ export class NoteHeader {
       }
 
       // via-client — after the timestamp (separator dot via CSS ::before)
-      const clientTag = this.options.rawEvent?.tags?.find((tag: string[]) => tag[0] === 'client');
+      const clientTag = this.options.rawEvent?.tags?.find(
+        (tag: string[]) => tag[0] === 'client'
+      );
       if (clientTag?.[1]) {
         const clientEl = document.createElement('span');
         clientEl.className = 'note-header__client';
@@ -135,9 +140,13 @@ export class NoteHeader {
       const menuContainer = document.createElement('span');
       menuContainer.className = 'note-header__menu-container';
 
-      const menuOptions: { eventId: string; authorPubkey: string; rawEvent?: NostrEvent } = {
+      const menuOptions: {
+        eventId: string;
+        authorPubkey: string;
+        rawEvent?: NostrEvent;
+      } = {
         eventId: this.options.eventId,
-        authorPubkey: this.options.pubkey
+        authorPubkey: this.options.pubkey,
       };
       if (this.options.rawEvent) {
         menuOptions.rawEvent = this.options.rawEvent;
@@ -161,14 +170,19 @@ export class NoteHeader {
 
     this.unsubscribeProfile = this.userProfileService.subscribeToProfile(
       this.options.pubkey,
-      (profile) => {
-        const verification = this.element.querySelector('.note-header__verification') as HTMLElement;
+      profile => {
+        const verification = this.element.querySelector(
+          '.note-header__verification'
+        ) as HTMLElement;
         if (!verification) return;
 
         if (this.userProfileService.isVerified(profile)) {
-          const nip05s = profile.nip05s && profile.nip05s.length > 0
-            ? profile.nip05s
-            : (profile.nip05 ? [profile.nip05] : []);
+          const nip05s =
+            profile.nip05s && profile.nip05s.length > 0
+              ? profile.nip05s
+              : profile.nip05
+                ? [profile.nip05]
+                : [];
           verification.style.display = 'inline-flex';
           verification.setAttribute('title', `Verified: ${nip05s.join(', ')}`);
         } else {
@@ -246,7 +260,9 @@ export class NoteHeader {
     const timestamp = element.dataset.timestamp;
 
     if (!pubkey || !timestamp) {
-      console.warn('NoteHeader requires data-pubkey and data-timestamp attributes');
+      console.warn(
+        'NoteHeader requires data-pubkey and data-timestamp attributes'
+      );
       return null;
     }
 
@@ -255,7 +271,7 @@ export class NoteHeader {
       eventId: element.dataset.eventId || '',
       timestamp: parseInt(timestamp, 10),
       showVerification: element.dataset.showVerification !== 'false',
-      showTimestamp: element.dataset.showTimestamp !== 'false'
+      showTimestamp: element.dataset.showTimestamp !== 'false',
     };
 
     const noteHeader = new NoteHeader(options);
@@ -267,7 +283,9 @@ export class NoteHeader {
   /**
    * Initialize all note headers in a container
    */
-  public static initializeAll(container: HTMLElement = document.body): NoteHeader[] {
+  public static initializeAll(
+    container: HTMLElement = document.body
+  ): NoteHeader[] {
     const elements = container.querySelectorAll('[data-note-header]');
     const headers: NoteHeader[] = [];
 

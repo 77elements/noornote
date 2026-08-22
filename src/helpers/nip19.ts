@@ -109,7 +109,8 @@ export function nprofileToNpub(nprofile: string): string {
  */
 export function extractPubkeysFromText(text: string): string[] {
   // Match npub and nprofile with or without "nostr:" prefix
-  const nip19Regex = /(?:nostr:)?(npub1[023456789acdefghjklmnpqrstuvwxyz]{58}|nprofile1[023456789acdefghjklmnpqrstuvwxyz]{58,})/g;
+  const nip19Regex =
+    /(?:nostr:)?(npub1[023456789acdefghjklmnpqrstuvwxyz]{58}|nprofile1[023456789acdefghjklmnpqrstuvwxyz]{58,})/g;
   const matches = text.matchAll(nip19Regex);
   const pubkeys = new Set<string>();
 

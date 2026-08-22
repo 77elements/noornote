@@ -9,7 +9,12 @@ import { ModuleLoader } from '../../../core/ModuleLoader';
 import type { ArticlesModuleApi } from '../../../modules/articles/contracts';
 import { Router } from '../../../services/Router';
 import { getViewNavigationController } from '../../../services/ViewNavigationController';
-import { escapeHtml, escapeHtmlAttr, escapeCssUrl, safeHttpUrl } from '../../../helpers/escapeHtml';
+import {
+  escapeHtml,
+  escapeHtmlAttr,
+  escapeCssUrl,
+  safeHttpUrl,
+} from '../../../helpers/escapeHtml';
 import { isLiveStreamsPlayerEnabled } from '../../../addons/live-streams-player/index';
 import { getAddressableIdentifier } from '../../../helpers/getAddressableIdentifier';
 import { getLiveStreamHost } from '../../../helpers/getLiveStreamHost';
@@ -70,11 +75,15 @@ export class ArticlePreviewRenderer {
     container.appendChild(previewCard);
   }
 
-  private async fetchAndRender(naddrRef: string, skeleton: HTMLElement): Promise<void> {
+  private async fetchAndRender(
+    naddrRef: string,
+    skeleton: HTMLElement
+  ): Promise<void> {
     try {
       // The article (long-form) module is lazy-loaded; ensure it on demand so
       // previews work on the minimal public-page boot too (see ProfileArticlesCarousel).
-      const api = await ModuleLoader.getInstance().ensure<ArticlesModuleApi>('articles');
+      const api =
+        await ModuleLoader.getInstance().ensure<ArticlesModuleApi>('articles');
       const event = (await api?.fetchAddressableEvent(naddrRef)) ?? null;
 
       if (event) {
@@ -104,7 +113,10 @@ export class ArticlePreviewRenderer {
    * Live Activity / Live Stream card (NIP-53 kind 30311)
    * Tags: title, summary, image, streaming, status, starts, ends, p (host)
    */
-  private createLiveStreamCard(event: NostrEvent, naddrRef: string): HTMLElement {
+  private createLiveStreamCard(
+    event: NostrEvent,
+    naddrRef: string
+  ): HTMLElement {
     const tags = event.tags;
     const getTag = (name: string) => tags.find(t => t[0] === name)?.[1] || '';
     const title = getTag('title') || 'Untitled Stream';
@@ -119,31 +131,40 @@ export class ArticlePreviewRenderer {
     // recording tag is present, link directly to the recording.
     const cleanNaddr = naddrRef.replace(/^nostr:/, '');
     const fallbackUrl = `https://zap.stream/${cleanNaddr}`;
-    const watchUrl = status === 'ended' && recording
-      ? (safeHttpUrl(recording) || fallbackUrl)
-      : fallbackUrl;
+    const watchUrl =
+      status === 'ended' && recording
+        ? safeHttpUrl(recording) || fallbackUrl
+        : fallbackUrl;
 
-    const statusLabel = status === 'live' ? 'LIVE'
-      : status === 'ended' ? 'ENDED'
-      : 'PLANNED';
-    const watchLabel = status === 'live' ? 'Watch live'
-      : status === 'ended' ? (recording ? 'Watch recording' : 'View on zap.stream')
-      : 'View details';
+    const statusLabel =
+      status === 'live' ? 'LIVE' : status === 'ended' ? 'ENDED' : 'PLANNED';
+    const watchLabel =
+      status === 'live'
+        ? 'Watch live'
+        : status === 'ended'
+          ? recording
+            ? 'Watch recording'
+            : 'View on zap.stream'
+          : 'View details';
 
     const card = document.createElement('div');
     card.className = `live-stream-card live-stream-card--${status}`;
 
     card.innerHTML = `
-      ${image ? `
+      ${
+        image
+          ? `
         <div class="live-stream-card__image">
           <img src="${escapeHtmlAttr(image)}" alt="${escapeHtmlAttr(title)}" loading="lazy" />
           <span class="live-stream-card__badge">${statusLabel}</span>
         </div>
-      ` : `
+      `
+          : `
         <div class="live-stream-card__image live-stream-card__image--placeholder">
           <span class="live-stream-card__badge">${statusLabel}</span>
         </div>
-      `}
+      `
+      }
       <div class="live-stream-card__content">
         <h3 class="live-stream-card__title">${escapeHtml(title)}</h3>
         ${summary ? `<p class="live-stream-card__summary">${escapeHtml(summary)}</p>` : ''}
@@ -165,8 +186,12 @@ export class ArticlePreviewRenderer {
       // "host"; event.pubkey is the provider service.
       const hostPubkey = getLiveStreamHost(event);
       if (addressableId && event.id) {
-        const streamRelays = (event.tags.find(t => t[0] === 'relays')?.slice(1) || [])
-          .filter((url): url is string => typeof url === 'string' && url.startsWith('ws'));
+        const streamRelays = (
+          event.tags.find(t => t[0] === 'relays')?.slice(1) || []
+        ).filter(
+          (url): url is string =>
+            typeof url === 'string' && url.startsWith('ws')
+        );
         if (isLiveStreamsPlayerEnabled()) {
           this.attachStreamChatInput(card, addressableId, streamRelays);
         }
@@ -183,12 +208,17 @@ export class ArticlePreviewRenderer {
    * transitions away from "live", remove chat input + zap wrapper immediately
    * so users can't send late messages/zaps after the stream ends.
    */
-  private watchStreamStatus(card: HTMLElement, event: NostrEvent, streamRelays: string[]): void {
+  private watchStreamStatus(
+    card: HTMLElement,
+    event: NostrEvent,
+    streamRelays: string[]
+  ): void {
     const dTag = event.tags.find(t => t[0] === 'd')?.[1];
     if (!dTag) return;
 
     const transport = NostrTransport.getInstance();
-    const relays = streamRelays.length > 0 ? streamRelays : transport.getReadRelays();
+    const relays =
+      streamRelays.length > 0 ? streamRelays : transport.getReadRelays();
     const subId = `live-stream-status-${event.id}`;
     const baseCreatedAt = event.created_at;
 
@@ -209,25 +239,24 @@ export class ArticlePreviewRenderer {
     });
     observer.observe(document.body, { childList: true, subtree: true });
 
-    const filters: NDKFilter[] = [{
-      kinds: [30311 as NDKKind],
-      authors: [event.pubkey],
-      '#d': [dTag],
-    }];
+    const filters: NDKFilter[] = [
+      {
+        kinds: [30311 as NDKKind],
+        authors: [event.pubkey],
+        '#d': [dTag],
+      },
+    ];
 
-    void transport.subscribeLive(
-      relays,
-      filters,
-      subId,
-      (incoming) => {
-        if (incoming.created_at < baseCreatedAt) return;
-        const newStatus = (incoming.tags.find(t => t[0] === 'status')?.[1] || '').toLowerCase();
-        if (newStatus && newStatus !== 'live') {
-          removeInteractiveElements();
-          cleanup();
-        }
+    void transport.subscribeLive(relays, filters, subId, incoming => {
+      if (incoming.created_at < baseCreatedAt) return;
+      const newStatus = (
+        incoming.tags.find(t => t[0] === 'status')?.[1] || ''
+      ).toLowerCase();
+      if (newStatus && newStatus !== 'live') {
+        removeInteractiveElements();
+        cleanup();
       }
-    );
+    });
   }
 
   /**
@@ -235,7 +264,11 @@ export class ArticlePreviewRenderer {
    * Messages are tagged with the stream's addressable `a` tag so they appear
    * in the provider's overlay (e.g. zap.stream).
    */
-  private attachStreamChatInput(card: HTMLElement, addressableId: string, streamRelays: string[]): void {
+  private attachStreamChatInput(
+    card: HTMLElement,
+    addressableId: string,
+    streamRelays: string[]
+  ): void {
     const contentEl = card.querySelector('.live-stream-card__content');
     if (!contentEl) return;
 
@@ -266,7 +299,9 @@ export class ArticlePreviewRenderer {
 
       try {
         const writeRelays = await RelayConfig.getInstance().getWriteRelays();
-        const mergedRelays = Array.from(new Set([...writeRelays, ...streamRelays]));
+        const mergedRelays = Array.from(
+          new Set([...writeRelays, ...streamRelays])
+        );
         const result = await LiveChatService.getInstance().publishMessage({
           addressableId,
           content,
@@ -282,12 +317,12 @@ export class ArticlePreviewRenderer {
       }
     };
 
-    sendBtn.addEventListener('click', (e) => {
+    sendBtn.addEventListener('click', e => {
       e.stopPropagation();
       void send();
     });
 
-    input.addEventListener('keydown', (e) => {
+    input.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         e.stopPropagation();
@@ -307,20 +342,28 @@ export class ArticlePreviewRenderer {
     poster: string
   ): Promise<void> {
     try {
-      const imageEl = card.querySelector('.live-stream-card__image') as HTMLElement | null;
+      const imageEl = card.querySelector(
+        '.live-stream-card__image'
+      ) as HTMLElement | null;
       if (!imageEl) return;
 
-      const badgeHtml = imageEl.querySelector('.live-stream-card__badge')?.outerHTML || '';
+      const badgeHtml =
+        imageEl.querySelector('.live-stream-card__badge')?.outerHTML || '';
       const playerEl = document.createElement('div');
-      playerEl.className = 'live-stream-card__image live-stream-card__image--player';
+      playerEl.className =
+        'live-stream-card__image live-stream-card__image--player';
       playerEl.innerHTML = badgeHtml;
       imageEl.replaceWith(playerEl);
 
       // Hide the Watch button when the inline player is active.
-      const watchBtn = card.querySelector('.live-stream-card__watch') as HTMLElement | null;
+      const watchBtn = card.querySelector(
+        '.live-stream-card__watch'
+      ) as HTMLElement | null;
       if (watchBtn) watchBtn.style.display = 'none';
 
-      const { mountPlayer } = await import('../../../addons/live-streams-player/player');
+      const { mountPlayer } = await import(
+        '../../../addons/live-streams-player/player'
+      );
       await mountPlayer(playerEl, { streamUrl, poster });
     } catch (err) {
       console.warn('[LiveStreamsPlayer] Failed to mount inline player:', err);
@@ -374,7 +417,10 @@ export class ArticlePreviewRenderer {
         observer.disconnect();
       }
     });
-    observer.observe(zapBtn, { attributes: true, attributeFilter: ['disabled'] });
+    observer.observe(zapBtn, {
+      attributes: true,
+      attributeFilter: ['disabled'],
+    });
 
     zapManager.checkRecipientCanReceiveZaps();
   }
@@ -382,15 +428,31 @@ export class ArticlePreviewRenderer {
   /**
    * Article preview card (kind 30023)
    */
-  private createArticlePreviewCard(event: NostrEvent, naddrRef: string): HTMLElement {
-    const metadata = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles')?.extractArticleMetadata(event)
-      ?? { title: '', image: '', summary: '', publishedAt: 0, identifier: '', topics: [] };
+  private createArticlePreviewCard(
+    event: NostrEvent,
+    naddrRef: string
+  ): HTMLElement {
+    const metadata = ModuleLoader.getInstance()
+      .getApi<ArticlesModuleApi>('articles')
+      ?.extractArticleMetadata(event) ?? {
+      title: '',
+      image: '',
+      summary: '',
+      publishedAt: 0,
+      identifier: '',
+      topics: [],
+    };
 
     const card = document.createElement('div');
     card.className = 'article-preview-card';
     card.style.cursor = 'pointer';
-    card.addEventListener('click', (e) => {
-      if ((e.target as HTMLElement).closest('.note-image--clickable, .note-media, video')) return;
+    card.addEventListener('click', e => {
+      if (
+        (e.target as HTMLElement).closest(
+          '.note-image--clickable, .note-media, video'
+        )
+      )
+        return;
       e.stopPropagation();
       const cleanNaddr = naddrRef.replace(/^nostr:/, '');
       // Route through the central controller so right-pane mode opens the article
@@ -407,8 +469,11 @@ export class ArticlePreviewRenderer {
     `;
 
     if (metadata.image) {
-      const imgDiv = card.querySelector('.article-preview-image') as HTMLElement | null;
-      if (imgDiv) imgDiv.style.backgroundImage = `url('${escapeCssUrl(metadata.image)}')`;
+      const imgDiv = card.querySelector(
+        '.article-preview-image'
+      ) as HTMLElement | null;
+      if (imgDiv)
+        imgDiv.style.backgroundImage = `url('${escapeCssUrl(metadata.image)}')`;
     }
 
     return card;
@@ -417,7 +482,10 @@ export class ArticlePreviewRenderer {
   /**
    * Zapstore app preview card (kind 32267)
    */
-  private createZapstorePreviewCard(event: NostrEvent, naddrRef: string): HTMLElement {
+  private createZapstorePreviewCard(
+    event: NostrEvent,
+    naddrRef: string
+  ): HTMLElement {
     const tags = event.tags;
     const getTag = (name: string) => tags.find(t => t[0] === name)?.[1] || '';
     const name = getTag('name') || 'Untitled App';
@@ -427,19 +495,28 @@ export class ArticlePreviewRenderer {
     const card = document.createElement('div');
     card.className = 'article-preview-card';
     card.style.cursor = 'pointer';
-    card.addEventListener('click', (e) => {
-      if ((e.target as HTMLElement).closest('.note-image--clickable, .note-media, video')) return;
+    card.addEventListener('click', e => {
+      if (
+        (e.target as HTMLElement).closest(
+          '.note-image--clickable, .note-media, video'
+        )
+      )
+        return;
       e.stopPropagation();
       const cleanNaddr = naddrRef.replace(/^nostr:/, '');
       Router.getInstance().navigate(`/zapstore/${cleanNaddr}`);
     });
 
     card.innerHTML = `
-      ${icon ? `
+      ${
+        icon
+          ? `
         <div class="article-preview-image" style="display: flex; align-items: center; justify-content: center; padding: calc(var(--gap, 1rem) / 2); background: transparent;">
           <img src="${escapeHtmlAttr(icon)}" alt="${escapeHtmlAttr(name)}" loading="lazy" style="width: 64px; height: 64px; border-radius: 8px; object-fit: contain;" />
         </div>
-      ` : ''}
+      `
+          : ''
+      }
       <div class="article-preview-content">
         <h3 class="article-preview-title">${escapeHtml(name)}</h3>
         ${summary ? `<p class="article-preview-summary">${escapeHtml(summary)}</p>` : ''}
@@ -474,5 +551,4 @@ export class ArticlePreviewRenderer {
     `;
     return skeleton;
   }
-
 }

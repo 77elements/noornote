@@ -6,7 +6,13 @@
  * Used by: OrchestrationsRouter exclusively (no direct Component access)
  */
 
-import NDK, { NDKEvent, NDKRelaySet, NDKSubscription, NDKSubscriptionCacheUsage, normalizeRelayUrl } from '@nostr-dev-kit/ndk';
+import NDK, {
+  NDKEvent,
+  NDKRelaySet,
+  NDKSubscription,
+  NDKSubscriptionCacheUsage,
+  normalizeRelayUrl,
+} from '@nostr-dev-kit/ndk';
 // NDK ships a ready signature-verification worker. ?worker&inline base64-embeds
 // it into the bundle so it also loads under file:// (Electron/Capacitor), where
 // a separate worker chunk URL would break.
@@ -40,7 +46,9 @@ interface SubCloser {
 const NDK_CACHE_VERSION_KEY = 'ndk_cache_version';
 const NDK_CACHE_VERSION = 3;
 if (typeof indexedDB !== 'undefined') {
-  const currentVersion = parseInt(localStorage.getItem(NDK_CACHE_VERSION_KEY) || '0');
+  const currentVersion = parseInt(
+    localStorage.getItem(NDK_CACHE_VERSION_KEY) || '0'
+  );
   if (currentVersion < NDK_CACHE_VERSION) {
     indexedDB.deleteDatabase('noornote');
     localStorage.setItem(NDK_CACHE_VERSION_KEY, String(NDK_CACHE_VERSION));
@@ -54,21 +62,23 @@ function getNDKCacheConfig(): NDKCacheAdapterDexieOptions {
 
   // Desktop: Large caches for performance
   // Web/Phone: Smaller caches for memory efficiency
-  const DEFAULT_CONFIG = isDesktop ? {
-    profileCacheSize: 10000,
-    zapperCacheSize: 200,
-    nip05CacheSize: 500,
-    eventCacheSize: 10000,
-    eventTagsCacheSize: 20000,
-    saveSig: false
-  } : {
-    profileCacheSize: 5000,
-    zapperCacheSize: 100,
-    nip05CacheSize: 500,
-    eventCacheSize: 5000,
-    eventTagsCacheSize: 10000,
-    saveSig: false
-  };
+  const DEFAULT_CONFIG = isDesktop
+    ? {
+        profileCacheSize: 10000,
+        zapperCacheSize: 200,
+        nip05CacheSize: 500,
+        eventCacheSize: 10000,
+        eventTagsCacheSize: 20000,
+        saveSig: false,
+      }
+    : {
+        profileCacheSize: 5000,
+        zapperCacheSize: 100,
+        nip05CacheSize: 500,
+        eventCacheSize: 5000,
+        eventTagsCacheSize: 10000,
+        saveSig: false,
+      };
 
   // Only read custom config on Desktop (Web/Phone don't have settings UI)
   if (!isDesktop) {
@@ -105,10 +115,16 @@ function relayHost(url: string): string | null {
  */
 function isPrivateHost(hostname: string): boolean {
   const h = hostname.replace(/^\[|\]$/g, '');
-  if (h === 'localhost' || h.endsWith('.local') || h.endsWith('.localhost')) return true;
+  if (h === 'localhost' || h.endsWith('.local') || h.endsWith('.localhost'))
+    return true;
   if (h.includes(':')) {
     // IPv6 literal: loopback, unique-local (fc00::/7), link-local (fe80::/10)
-    return h === '::1' || h.startsWith('fc') || h.startsWith('fd') || h.startsWith('fe80');
+    return (
+      h === '::1' ||
+      h.startsWith('fc') ||
+      h.startsWith('fd') ||
+      h.startsWith('fe80')
+    );
   }
   return (
     h.startsWith('127.') ||
@@ -136,12 +152,16 @@ function isPrivateHost(hostname: string): boolean {
  *    the user's OWN configured relays (the local TEST relay must keep working).
  */
 function secureRelays(relays: string[]): string[] {
-  const onHttps = typeof location !== 'undefined' && location.protocol === 'https:';
+  const onHttps =
+    typeof location !== 'undefined' && location.protocol === 'https:';
 
   let allowed: Set<string>;
   try {
     const cfg = RelayConfig.getInstance();
-    const own = [...cfg.getAllRelays().map(r => r.url), cfg.loadLocalRelaySettings().url];
+    const own = [
+      ...cfg.getAllRelays().map(r => r.url),
+      cfg.loadLocalRelaySettings().url,
+    ];
     allowed = new Set(own.map(relayHost).filter((h): h is string => !!h));
   } catch {
     allowed = new Set();
@@ -170,7 +190,8 @@ export class NostrTransport {
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
   private eventBus: TypedEventBus;
-  private subscriptions: Map<string, { closer: SubCloser; relays: string[] }> = new Map();
+  private subscriptions: Map<string, { closer: SubCloser; relays: string[] }> =
+    new Map();
   private poolPruneInterval: ReturnType<typeof setInterval> | null = null;
   /** Relays each event was seen on (received from / published to) this session.
    *  Bounded, insertion-ordered — oldest entry evicted past the cap to keep the
@@ -187,9 +208,11 @@ export class NostrTransport {
     const cacheConfig = getNDKCacheConfig();
     this.ndk = new NDK({
       explicitRelayUrls: secureRelays(this.relayConfig.getReadRelays()),
-      cacheAdapter: new NDKCacheDexie(cacheConfig) as unknown as NDKCacheAdapter,
+      cacheAdapter: new NDKCacheDexie(
+        cacheConfig
+      ) as unknown as NDKCacheAdapter,
       enableOutboxModel: false, // Disable for now, can enable later for performance
-      autoConnectUserRelays: false // We manage relays explicitly via RelayConfig
+      autoConnectUserRelays: false, // We manage relays explicitly via RelayConfig
     });
 
     // Offload schnorr signature verification to a Web Worker so it never blocks
@@ -202,11 +225,21 @@ export class NostrTransport {
       this.ndk.on('event:invalid-sig', (event: NDKEvent, relay?: NDKRelay) => {
         // NDK already drops the event and adjusts that relay's trust ratio; we
         // only record it for diagnostics.
-        console.debug('[NostrTransport] invalid signature', event.id, relay?.url);
-        diagLog('relays', 'invalid_signature', { eventId: event.id, relay: relay?.url });
+        console.debug(
+          '[NostrTransport] invalid signature',
+          event.id,
+          relay?.url
+        );
+        diagLog('relays', 'invalid_signature', {
+          eventId: event.id,
+          relay: relay?.url,
+        });
       });
     } catch (err) {
-      console.debug('[NostrTransport] sig-verification worker unavailable, using main thread', err);
+      console.debug(
+        '[NostrTransport] sig-verification worker unavailable, using main thread',
+        err
+      );
     }
 
     // NIP-42 relay AUTH, scoped to the user's OWN relays. Without a policy NDK
@@ -250,8 +283,9 @@ export class NostrTransport {
 
     await this.ndk.connect(3000);
 
-    const connectedRelays = Array.from(this.ndk.pool.relays.values())
-      .filter(relay => relay.status >= 5);
+    const connectedRelays = Array.from(this.ndk.pool.relays.values()).filter(
+      relay => relay.status >= 5
+    );
 
     this.ndkConnected = true;
 
@@ -264,7 +298,10 @@ export class NostrTransport {
       this.poolPruneInterval = setInterval(() => this.pruneRelayPool(), 12000);
     }
 
-    diagLog('relays', 'NDK connected', { connected: connectedRelays.length, total: this.ndk.pool.relays.size });
+    diagLog('relays', 'NDK connected', {
+      connected: connectedRelays.length,
+      total: this.ndk.pool.relays.size,
+    });
 
     if (connectedRelays.length > 0) {
       this.systemLogger.success(
@@ -272,7 +309,10 @@ export class NostrTransport {
         `Connected to ${connectedRelays.length} of ${this.ndk.pool.relays.size} relays`
       );
     } else {
-      this.systemLogger.info('NostrTransport', 'Relays connecting in background...');
+      this.systemLogger.info(
+        'NostrTransport',
+        'Relays connecting in background...'
+      );
     }
   }
 
@@ -290,10 +330,14 @@ export class NostrTransport {
 
       const norm = (u: string) => u.replace(/\/+$/, '').toLowerCase();
       const keep = new Set<string>();
-      [...this.relayConfig.getReadRelays(), ...this.relayConfig.getAggregatorRelays()]
-        .forEach(u => keep.add(norm(u)));
+      [
+        ...this.relayConfig.getReadRelays(),
+        ...this.relayConfig.getAggregatorRelays(),
+      ].forEach(u => keep.add(norm(u)));
       // Never prune a relay an active subscription is using.
-      this.subscriptions.forEach(sub => sub.relays.forEach(u => keep.add(norm(u))));
+      this.subscriptions.forEach(sub =>
+        sub.relays.forEach(u => keep.add(norm(u)))
+      );
 
       const prunable = [...relays.keys()].filter(url => !keep.has(norm(url)));
       let toClose = relays.size - MAX_POOL_RELAYS;
@@ -306,7 +350,10 @@ export class NostrTransport {
         closed++;
       }
       if (closed > 0) {
-        diagLog('relays', 'Pruned outbound relays from pool', { closed, poolSize: relays.size });
+        diagLog('relays', 'Pruned outbound relays from pool', {
+          closed,
+          poolSize: relays.size,
+        });
       }
     } catch {
       // best-effort
@@ -354,7 +401,10 @@ export class NostrTransport {
    * Connect to a specific relay and wait until connected
    * Use this for external relays (like NWC) before publishing
    */
-  public async connectToRelay(url: string, timeoutMs: number = 5000): Promise<boolean> {
+  public async connectToRelay(
+    url: string,
+    timeoutMs: number = 5000
+  ): Promise<boolean> {
     await this.ensureConnected();
 
     // Check if relay is already connected
@@ -377,7 +427,7 @@ export class NostrTransport {
     }
 
     // Wait for connection with timeout
-    return new Promise<boolean>((resolve) => {
+    return new Promise<boolean>(resolve => {
       const timeout = setTimeout(() => {
         this.systemLogger.warn('NostrTransport', `Relay timeout: ${url}`);
         resolve(false);
@@ -392,7 +442,8 @@ export class NostrTransport {
       relay.on('connect', onConnect);
 
       // Trigger connection if not already connecting
-      if (relay.status === 0) { // 0 = DISCONNECTED
+      if (relay.status === 0) {
+        // 0 = DISCONNECTED
         relay.connect();
       }
     });
@@ -420,35 +471,45 @@ export class NostrTransport {
     let hasReceivedEvent = false;
 
     // Subscribe using NDK
-    const ndkSub = this.ndk.subscribe(filters, {
-      relayUrls: relays,
-      closeOnEose: false // Keep subscription open for streaming
-    }, {
-      onEvent: (ndkEvent, relay) => {
-        // Track successful connection and latency on first event
-        if (!hasReceivedEvent) {
-          hasReceivedEvent = true;
-          const latency = Date.now() - startTime;
-          this.eventBus.emit('relay:connected', { url: relay?.url || '', latency });
-        }
-
-        // NDK already verified signature - just forward the event
-        const rawEvent = ndkEvent.rawEvent();
-        callbacks.onEvent(rawEvent, relay?.url || '');
+    const ndkSub = this.ndk.subscribe(
+      filters,
+      {
+        relayUrls: relays,
+        closeOnEose: false, // Keep subscription open for streaming
       },
-      onEose: () => {
-        // EOSE indicates successful connection
-        if (!hasReceivedEvent) {
-          const latency = Date.now() - startTime;
-          this.eventBus.emit('relay:connected', { url: relays[0] || '', latency });
-        }
-        callbacks.onEose?.();
+      {
+        onEvent: (ndkEvent, relay) => {
+          // Track successful connection and latency on first event
+          if (!hasReceivedEvent) {
+            hasReceivedEvent = true;
+            const latency = Date.now() - startTime;
+            this.eventBus.emit('relay:connected', {
+              url: relay?.url || '',
+              latency,
+            });
+          }
+
+          // NDK already verified signature - just forward the event
+          const rawEvent = ndkEvent.rawEvent();
+          callbacks.onEvent(rawEvent, relay?.url || '');
+        },
+        onEose: () => {
+          // EOSE indicates successful connection
+          if (!hasReceivedEvent) {
+            const latency = Date.now() - startTime;
+            this.eventBus.emit('relay:connected', {
+              url: relays[0] || '',
+              latency,
+            });
+          }
+          callbacks.onEose?.();
+        },
       }
-    });
+    );
 
     // Return wrapper that implements SubCloser interface
     return {
-      close: () => ndkSub.stop()
+      close: () => ndkSub.stop(),
     };
   }
 
@@ -504,7 +565,9 @@ export class NostrTransport {
         relayUrls: relays,
         closeOnEose: true,
         groupable: false,
-        cacheUsage: skipCache ? NDKSubscriptionCacheUsage.ONLY_RELAY : NDKSubscriptionCacheUsage.CACHE_FIRST
+        cacheUsage: skipCache
+          ? NDKSubscriptionCacheUsage.ONLY_RELAY
+          : NDKSubscriptionCacheUsage.CACHE_FIRST,
       });
 
       // Apply timeout to prevent indefinite hangs on disconnected relays
@@ -519,16 +582,36 @@ export class NostrTransport {
         const rawEvent = ndkEvent.rawEvent();
 
         // Record which relays this event was received from (for "Seen on").
-        this.recordSeenOn(rawEvent.id, Array.from(ndkEvent.onRelays || []).map(r => r.url));
+        this.recordSeenOn(
+          rawEvent.id,
+          Array.from(ndkEvent.onRelays || []).map(r => r.url)
+        );
 
         return rawEvent;
       });
 
-      diagLog('relays', 'Fetch OK', { caller, relayCount: relays.length, kinds: filters.map(f => f.kinds || f.ids?.map(() => 'id-lookup') || ['unknown']).flat(), eventCount: events.length });
+      diagLog('relays', 'Fetch OK', {
+        caller,
+        relayCount: relays.length,
+        kinds: filters
+          .map(f => f.kinds || f.ids?.map(() => 'id-lookup') || ['unknown'])
+          .flat(),
+        eventCount: events.length,
+      });
       return events;
     } catch (error) {
-      diagLog('relays', 'Fetch failed', { caller, relayCount: relays.length, kinds: filters.map(f => f.kinds || f.ids?.map(() => 'id-lookup') || ['unknown']).flat(), error: String(error) });
-      this.systemLogger.error('NostrTransport', 'Failed to fetch events from relays');
+      diagLog('relays', 'Fetch failed', {
+        caller,
+        relayCount: relays.length,
+        kinds: filters
+          .map(f => f.kinds || f.ids?.map(() => 'id-lookup') || ['unknown'])
+          .flat(),
+        error: String(error),
+      });
+      this.systemLogger.error(
+        'NostrTransport',
+        'Failed to fetch events from relays'
+      );
       return [];
     }
   }
@@ -564,26 +647,50 @@ export class NostrTransport {
     caller: string = '',
     perRelayUntil?: Record<string, number>,
     waitForAll: boolean = false
-  ): Promise<{ events: NostrEvent[]; perRelay: Record<string, { oldest: number | null; count: number; eosed: boolean }> }> {
+  ): Promise<{
+    events: NostrEvent[];
+    perRelay: Record<
+      string,
+      { oldest: number | null; count: number; eosed: boolean }
+    >;
+  }> {
     relays = secureRelays(relays);
     const dbgStart = Date.now();
     // Per-relay outcome: oldest created_at (this relay's next loadMore cursor),
     // count (to detect exhaustion), eosed, plus state/ms for diagnostics. Each
     // relay pages its own history independently — a single global cursor let
     // sparse relays drag pagination back years and skip the dense middle.
-    const perRelay: Record<string, { oldest: number | null; count: number; eosed: boolean; state: string; ms: number }> = {};
-    relays.forEach(u => { perRelay[u] = { oldest: null, count: 0, eosed: false, state: 'pending', ms: 0 }; });
+    const perRelay: Record<
+      string,
+      {
+        oldest: number | null;
+        count: number;
+        eosed: boolean;
+        state: string;
+        ms: number;
+      }
+    > = {};
+    relays.forEach(u => {
+      perRelay[u] = {
+        oldest: null,
+        count: 0,
+        eosed: false,
+        state: 'pending',
+        ms: 0,
+      };
+    });
 
     // Pre-add each relay to NDK's pool so the single-relay subscriptions below
     // REUSE the shared per-relay socket instead of opening a new one.
     for (const url of relays) {
       // temporary=true: transient relays (PV outbound, search) auto-remove after
       // 30s idle instead of accumulating in the pool and being reconnect-stormed.
-      if (!this.ndk.pool.relays.get(url)) this.ndk.pool.getRelay(url, true, true);
+      if (!this.ndk.pool.relays.get(url))
+        this.ndk.pool.getRelay(url, true, true);
     }
 
     const label = (u: string) => u.replace('wss://', '').replace(/\/$/, '');
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const events = new Map<string, NostrEvent>();
       const subs: NDKSubscription[] = [];
       let settledRelays = 0;
@@ -603,9 +710,22 @@ export class NostrTransport {
         done = true;
         if (graceTimer) clearTimeout(graceTimer);
         if (hardTimeoutId) clearTimeout(hardTimeoutId);
-        subs.forEach(s => { try { s.stop(); } catch { /* ignore */ } });
-        diagLog('relays', 'Direct fetch OK', { caller, relayCount: relays.length, eventCount: events.size });
-        const breakdown = relays.map(u => { const r = perRelay[u]!; return `${label(u)}=${r.state}(${r.count}${r.ms ? ',' + r.ms + 'ms' : ''})`; });
+        subs.forEach(s => {
+          try {
+            s.stop();
+          } catch {
+            /* ignore */
+          }
+        });
+        diagLog('relays', 'Direct fetch OK', {
+          caller,
+          relayCount: relays.length,
+          eventCount: events.size,
+        });
+        const breakdown = relays.map(u => {
+          const r = perRelay[u]!;
+          return `${label(u)}=${r.state}(${r.count}${r.ms ? `,${r.ms}ms` : ''})`;
+        });
         // Persist the fetch outcome so a cold empty-PV is recoverable later
         // (diagLog — on web this lands in the IndexedDB ring buffer). poolSize
         // captures socket bloat; per-relay state shows "all relays errored" —
@@ -616,7 +736,7 @@ export class NostrTransport {
           total: events.size,
           quorum: `${QUORUM}/${relays.length}`,
           poolSize: this.ndk?.pool?.relays?.size ?? -1,
-          relays: breakdown
+          relays: breakdown,
         });
         resolve({ events: Array.from(events.values()), perRelay });
       };
@@ -627,7 +747,10 @@ export class NostrTransport {
       }
 
       hardTimeoutId = setTimeout(() => {
-        relays.forEach(u => { const r = perRelay[u]!; if (r.state === 'pending') r.state = 'timeout'; });
+        relays.forEach(u => {
+          const r = perRelay[u]!;
+          if (r.state === 'pending') r.state = 'timeout';
+        });
         finish();
       }, timeout);
 
@@ -645,7 +768,12 @@ export class NostrTransport {
         // events) need completeness over speed: skip the quorum early-exit so a
         // slow-but-complete relay isn't cut off by fast-but-partial ones. Still
         // bounded by all-settled (above) and the hard timeout.
-        if (!waitForAll && settledRelays >= QUORUM && events.size > 0 && !graceTimer) {
+        if (
+          !waitForAll &&
+          settledRelays >= QUORUM &&
+          events.size > 0 &&
+          !graceTimer
+        ) {
           graceTimer = setTimeout(finish, GRACE_MS);
         }
       };
@@ -655,18 +783,24 @@ export class NostrTransport {
         // Per-relay pagination: ask THIS relay for events older than its own
         // cursor; omit (initial load) → newest. -1 so the cursor note isn't refetched.
         const relayUntil = perRelayUntil ? perRelayUntil[relayUrl] : undefined;
-        const relayFilters = relayUntil !== undefined
-          ? filters.map(f => ({ ...f, until: relayUntil - 1 }))
-          : filters;
+        const relayFilters =
+          relayUntil !== undefined
+            ? filters.map(f => ({ ...f, until: relayUntil - 1 }))
+            : filters;
         try {
           const sub = this.ndk.subscribe(relayFilters, {
-            relayUrls: [relayUrl],          // pin this relay → bypass outbox + reuse pooled socket
+            relayUrls: [relayUrl], // pin this relay → bypass outbox + reuse pooled socket
             cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
-            groupable: false,               // no filter-merge with other subscriptions
-            exclusiveRelay: true,           // drop events not from this relay (kills cross-sub bleed)
+            groupable: false, // no filter-merge with other subscriptions
+            exclusiveRelay: true, // drop events not from this relay (kills cross-sub bleed)
             closeOnEose: true,
             subId: `direct-${caller}-${i}`,
-            onEvent: (ev: NDKEvent, _relay?: unknown, _sub?: unknown, fromCache?: boolean) => {
+            onEvent: (
+              ev: NDKEvent,
+              _relay?: unknown,
+              _sub?: unknown,
+              fromCache?: boolean
+            ) => {
               // Count ONLY fresh relay events. NDK's global dispatch also replays
               // cached events (from other subs' cache reads) whose seenOn includes
               // this relay; those would pollute the per-relay oldest/count that the
@@ -676,9 +810,16 @@ export class NostrTransport {
               if (!ev.id) return;
               events.set(ev.id, ev as unknown as NostrEvent);
               pr.count++;
-              if (ev.created_at !== undefined && (pr.oldest === null || ev.created_at < pr.oldest)) pr.oldest = ev.created_at;
+              if (
+                ev.created_at !== undefined &&
+                (pr.oldest === null || ev.created_at < pr.oldest)
+              )
+                pr.oldest = ev.created_at;
             },
-            onEose: () => { pr.eosed = true; markSettled(relayUrl, 'eosed'); },
+            onEose: () => {
+              pr.eosed = true;
+              markSettled(relayUrl, 'eosed');
+            },
           });
           subs.push(sub);
         } catch (_e) {
@@ -699,7 +840,16 @@ export class NostrTransport {
     caller: string = '',
     waitForAll: boolean = false
   ): Promise<NostrEvent[]> {
-    return (await this.directFetch(relays, filters, timeout, caller, undefined, waitForAll)).events;
+    return (
+      await this.directFetch(
+        relays,
+        filters,
+        timeout,
+        caller,
+        undefined,
+        waitForAll
+      )
+    ).events;
   }
 
   /**
@@ -715,7 +865,13 @@ export class NostrTransport {
     perRelayUntil: Record<string, number>,
     timeout: number = 5000,
     caller: string = ''
-  ): Promise<{ events: NostrEvent[]; perRelay: Record<string, { oldest: number | null; count: number; eosed: boolean }> }> {
+  ): Promise<{
+    events: NostrEvent[];
+    perRelay: Record<
+      string,
+      { oldest: number | null; count: number; eosed: boolean }
+    >;
+  }> {
     return this.directFetch(relays, filters, timeout, caller, perRelayUntil);
   }
 
@@ -728,12 +884,19 @@ export class NostrTransport {
    *   DMs where a single relay-ACK already guarantees deliverability while we
    *   still want maximum redundancy.
    */
-  public async publish(relays: string[], event: NostrEvent, requiredRelayCount?: number): Promise<Set<string>> {
+  public async publish(
+    relays: string[],
+    event: NostrEvent,
+    requiredRelayCount?: number
+  ): Promise<Set<string>> {
     await this.ensureConnected();
 
     relays = secureRelays(relays);
 
-    this.systemLogger.info('NostrTransport', `Sending to ${relays.length} relays`);
+    this.systemLogger.info(
+      'NostrTransport',
+      `Sending to ${relays.length} relays`
+    );
 
     const ndkEvent = new NDKEvent(this.ndk, event);
 
@@ -743,7 +906,11 @@ export class NostrTransport {
         new Set(relays.map(url => this.ndk.pool.getRelay(url)).filter(Boolean)),
         this.ndk
       );
-      const publishPromise = ndkEvent.publish(relaySet, 10000, requiredRelayCount);
+      const publishPromise = ndkEvent.publish(
+        relaySet,
+        10000,
+        requiredRelayCount
+      );
 
       const publishedRelays = await publishPromise;
 
@@ -755,19 +922,33 @@ export class NostrTransport {
         this.eventBus.emit('relay:connected', { url: relay.url });
       });
 
-      diagLog('relays', 'Publish result', { successful, failed, total: relays.length, kind: event.kind });
+      diagLog('relays', 'Publish result', {
+        successful,
+        failed,
+        total: relays.length,
+        kind: event.kind,
+      });
 
       if (successful > 0) {
-        this.systemLogger.success('NostrTransport', `Delivered to ${successful} of ${relays.length} relays`);
+        this.systemLogger.success(
+          'NostrTransport',
+          `Delivered to ${successful} of ${relays.length} relays`
+        );
       }
 
       if (failed > 0 && successful > 0) {
-        this.systemLogger.warn('NostrTransport', `${failed} relay${failed > 1 ? 's' : ''} didn't respond`);
+        this.systemLogger.warn(
+          'NostrTransport',
+          `${failed} relay${failed > 1 ? 's' : ''} didn't respond`
+        );
       }
 
       // Only throw if ALL relays failed
       if (successful === 0) {
-        this.systemLogger.error('NostrTransport', 'Delivery failed — no relays responded');
+        this.systemLogger.error(
+          'NostrTransport',
+          'Delivery failed — no relays responded'
+        );
         throw new Error(`Failed to publish to any relay`);
       }
 
@@ -864,7 +1045,10 @@ export class NostrTransport {
    * No aggregators, no indexers — content discoverability flows through
    * the user's kind:10002.
    */
-  public async publishContent(event: NostrEvent, requiredRelayCount?: number): Promise<Set<string>> {
+  public async publishContent(
+    event: NostrEvent,
+    requiredRelayCount?: number
+  ): Promise<Set<string>> {
     return this.publish(this.getWriteRelays(), event, requiredRelayCount);
   }
 
@@ -875,7 +1059,10 @@ export class NostrTransport {
    * the new kind:10002 has to be findable on the relays other clients
    * already query, otherwise the switch is invisible to the network.
    */
-  public async publishEverywhere(event: NostrEvent, requiredRelayCount?: number): Promise<Set<string>> {
+  public async publishEverywhere(
+    event: NostrEvent,
+    requiredRelayCount?: number
+  ): Promise<Set<string>> {
     const set = new Set<string>([
       ...this.relayConfig.getWriteRelays(),
       ...this.relayConfig.getReadRelays(),
@@ -894,7 +1081,11 @@ export class NostrTransport {
    * Sanitises hints to wss:// / ws:// URLs only so a malformed hint
    * can't poison the relay set.
    */
-  public async publishWithHints(event: NostrEvent, hintRelays: string[], requiredRelayCount?: number): Promise<Set<string>> {
+  public async publishWithHints(
+    event: NostrEvent,
+    hintRelays: string[],
+    requiredRelayCount?: number
+  ): Promise<Set<string>> {
     // Split into two independent publishes so a dead hint-relay (the
     // common case — author has a stale NIP-65 listing relays that went
     // offline) cannot drag down the user's own primary publish.
@@ -959,7 +1150,11 @@ export class NostrTransport {
    * semantic alias around `publish()` so the call site reads "publish to
    * recipient inbox" instead of "publish to a bag of strings".
    */
-  public async publishToInbox(event: NostrEvent, inboxRelays: string[], requiredRelayCount?: number): Promise<Set<string>> {
+  public async publishToInbox(
+    event: NostrEvent,
+    inboxRelays: string[],
+    requiredRelayCount?: number
+  ): Promise<Set<string>> {
     return this.publish(inboxRelays, event, requiredRelayCount);
   }
 
@@ -967,7 +1162,10 @@ export class NostrTransport {
    * Close connections to specific relays
    */
   public close(relays: string[]): void {
-    this.systemLogger.info('NostrTransport', `Disconnecting ${relays.length} relays`);
+    this.systemLogger.info(
+      'NostrTransport',
+      `Disconnecting ${relays.length} relays`
+    );
 
     relays.forEach(url => {
       const relay = this.ndk.pool.getRelay(url);
@@ -995,16 +1193,23 @@ export class NostrTransport {
    * or false to decline. Dynamic import keeps AuthService (which pulls the
    * signer stack) out of the transport's module graph.
    */
-  private async handleRelayAuth(relay: NDKRelay, challenge: string): Promise<NDKEvent | false> {
+  private async handleRelayAuth(
+    relay: NDKRelay,
+    challenge: string
+  ): Promise<NDKEvent | false> {
     try {
       const url = normalizeRelayUrl(relay.url);
-      const own = new Set([
-        ...this.relayConfig.getReadRelays(),
-        ...this.relayConfig.getWriteRelays(),
-      ].map(r => normalizeRelayUrl(r)));
+      const own = new Set(
+        [
+          ...this.relayConfig.getReadRelays(),
+          ...this.relayConfig.getWriteRelays(),
+        ].map(r => normalizeRelayUrl(r))
+      );
 
       if (!own.has(url)) {
-        diagLog('relays', 'Declined relay AUTH (not an own relay)', { url: relay.url });
+        diagLog('relays', 'Declined relay AUTH (not an own relay)', {
+          url: relay.url,
+        });
         return false;
       }
 
@@ -1013,13 +1218,16 @@ export class NostrTransport {
       const pubkey = auth.getCurrentUser()?.pubkey;
       if (!pubkey) return false;
 
-      const signed = await auth.signEvent({
+      const signed = (await auth.signEvent({
         kind: 22242,
         created_at: Math.floor(Date.now() / 1000),
         content: '',
-        tags: [['relay', relay.url], ['challenge', challenge]],
+        tags: [
+          ['relay', relay.url],
+          ['challenge', challenge],
+        ],
         pubkey,
-      }) as NostrEvent;
+      })) as NostrEvent;
 
       if (!signed) {
         diagLog('relays', 'Relay AUTH signing failed', { url: relay.url });
@@ -1029,7 +1237,10 @@ export class NostrTransport {
       diagLog('relays', 'Signed relay AUTH', { url: relay.url });
       return new NDKEvent(this.ndk, signed);
     } catch (error) {
-      diagLog('relays', 'Relay AUTH handler failed', { url: relay.url, error: String(error) });
+      diagLog('relays', 'Relay AUTH handler failed', {
+        url: relay.url,
+        error: String(error),
+      });
       return false;
     }
   }
@@ -1072,29 +1283,42 @@ export class NostrTransport {
       return;
     }
 
-    this.systemLogger.info('NostrTransport', `Listening on ${relays.length} relays`);
+    this.systemLogger.info(
+      'NostrTransport',
+      `Listening on ${relays.length} relays`
+    );
 
     // Subscribe using NDK (persistent connection)
-    const ndkCallbacks: { onEvent: (event: NDKEvent, relay?: NDKRelay) => void; onEose?: () => void } = {
+    const ndkCallbacks: {
+      onEvent: (event: NDKEvent, relay?: NDKRelay) => void;
+      onEose?: () => void;
+    } = {
       onEvent: (ndkEvent, relay) => {
         // NDK already verified signature - just forward the event
         const rawEvent = ndkEvent.rawEvent();
         // Record which relay this live event arrived from (for "Seen on").
         this.recordSeenOn(rawEvent.id, [relay?.url || '']);
         callback(rawEvent, relay?.url || '');
-      }
+      },
     };
     // onEose lets callers (e.g. DMService) distinguish the relay's replayed
     // initial backlog from the genuinely-live post-EOSE stream. NDK fires it
     // once per relay; callers guard on their side so only the first matters.
     if (onEose) ndkCallbacks.onEose = () => onEose();
 
-    const ndkSub = this.ndk.subscribe(filters, {
-      relayUrls: relays,
-      closeOnEose: false // Keep subscription open for live updates
-    }, ndkCallbacks);
+    const ndkSub = this.ndk.subscribe(
+      filters,
+      {
+        relayUrls: relays,
+        closeOnEose: false, // Keep subscription open for live updates
+      },
+      ndkCallbacks
+    );
 
-    this.subscriptions.set(subId, { closer: { close: () => ndkSub.stop() }, relays });
+    this.subscriptions.set(subId, {
+      closer: { close: () => ndkSub.stop() },
+      relays,
+    });
   }
 
   /**
@@ -1114,8 +1338,11 @@ export class NostrTransport {
    */
   public unsubscribeAll(): void {
     const count = this.subscriptions.size;
-    this.subscriptions.forEach((subscription) => subscription.closer.close());
+    this.subscriptions.forEach(subscription => subscription.closer.close());
     this.subscriptions.clear();
-    this.systemLogger.info('NostrTransport', `All ${count} subscriptions closed`);
+    this.systemLogger.info(
+      'NostrTransport',
+      `All ${count} subscriptions closed`
+    );
   }
 }

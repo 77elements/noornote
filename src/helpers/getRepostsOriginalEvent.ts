@@ -20,7 +20,9 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
-export async function getRepostsOriginalEvent(event: NostrEvent): Promise<NostrEvent> {
+export async function getRepostsOriginalEvent(
+  event: NostrEvent
+): Promise<NostrEvent> {
   // Not a repost - return as-is
   if (event.kind !== 6 && event.kind !== 16) {
     return event;
@@ -44,13 +46,16 @@ export async function getRepostsOriginalEvent(event: NostrEvent): Promise<NostrE
   // whether an addressable a-tag fallback is meaningful.
   const kTag = event.tags.find(t => t[0] === 'k');
   const innerKind = kTag?.[1] ? Number(kTag[1]) : NaN;
-  const isAddressable = Number.isInteger(innerKind) && innerKind >= 30000 && innerKind < 40000;
+  const isAddressable =
+    Number.isInteger(innerKind) && innerKind >= 30000 && innerKind < 40000;
 
   // Try 2: Fetch via e-tag (modern format - NIP-18)
   const eTag = event.tags.find(t => t[0] === 'e');
   if (eTag && eTag[1]) {
     try {
-      const { QuoteOrchestrator } = await import('../services/orchestration/QuoteOrchestrator');
+      const { QuoteOrchestrator } = await import(
+        '../services/orchestration/QuoteOrchestrator'
+      );
       const { encodeNevent } = await import('../services/NostrToolsAdapter');
       // NIP-18: p-tag carries the original author pubkey, e-tag[2] is the
       // relay hint where the reposter saw the original.
@@ -65,7 +70,7 @@ export async function getRepostsOriginalEvent(event: NostrEvent): Promise<NostrE
       const neventRef = encodeNevent(
         eTag[1],
         relayHint ? [relayHint] : [],
-        originalAuthor,
+        originalAuthor
       );
 
       // Pass the REPOSTER's own pubkey (event.pubkey) as an extra outbound
@@ -74,16 +79,20 @@ export async function getRepostsOriginalEvent(event: NostrEvent): Promise<NostrE
       // Without this, cross-relay reposts (reposter's read set vs. original
       // author's write set don't overlap, and the original author's NIP-65
       // is incomplete or stale) hit the "Note not found" error.
-      const originalEvent = await QuoteOrchestrator.getInstance().fetchQuotedEvent(
-        `nostr:${neventRef}`,
-        originalAuthor,
-        [event.pubkey],
-      );
+      const originalEvent =
+        await QuoteOrchestrator.getInstance().fetchQuotedEvent(
+          `nostr:${neventRef}`,
+          originalAuthor,
+          [event.pubkey]
+        );
       if (originalEvent) {
         return originalEvent;
       }
     } catch (error) {
-      console.debug('[getRepostsOriginalEvent] Failed to fetch original note via e-tag:', error);
+      console.debug(
+        '[getRepostsOriginalEvent] Failed to fetch original note via e-tag:',
+        error
+      );
     }
   }
 
@@ -111,20 +120,27 @@ export async function getRepostsOriginalEvent(event: NostrEvent): Promise<NostrE
             identifier,
             relays: relayHint ? [relayHint] : [],
           });
-          type ArticlesApi = import('../modules/articles/contracts').ArticlesModuleApi;
-          const api = await ModuleLoader.getInstance().ensure<ArticlesApi>('articles');
+          type ArticlesApi =
+            import('../modules/articles/contracts').ArticlesModuleApi;
+          const api =
+            await ModuleLoader.getInstance().ensure<ArticlesApi>('articles');
           const addressableEvent = await api?.fetchAddressableEvent(naddr);
           if (addressableEvent) {
             return addressableEvent;
           }
         }
       } catch (error) {
-        console.debug('[getRepostsOriginalEvent] Failed to fetch original via a-tag:', error);
+        console.debug(
+          '[getRepostsOriginalEvent] Failed to fetch original via a-tag:',
+          error
+        );
       }
     }
   }
 
   // Fallback: Return repost itself (shouldn't happen in practice)
-  console.debug('[getRepostsOriginalEvent] Could not extract original event, returning repost itself');
+  console.debug(
+    '[getRepostsOriginalEvent] Could not extract original event, returning repost itself'
+  );
   return event;
 }

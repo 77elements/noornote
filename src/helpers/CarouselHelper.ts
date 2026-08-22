@@ -131,7 +131,7 @@ export function createCarousel(
   // State
   let currentIndex = 0;
   const totalSlides = slides.length;
-  let dots: HTMLElement[] = [];
+  const dots: HTMLElement[] = [];
 
   const updateSlide = (newIndex: number) => {
     const slideEls = slidesContainer.querySelectorAll('.nn-carousel-slide');
@@ -175,8 +175,12 @@ export function createCarousel(
     // Touch swipe
     addSwipeSupport(
       slidesContainer,
-      () => { if (currentIndex < totalSlides - 1) updateSlide(currentIndex + 1); },
-      () => { if (currentIndex > 0) updateSlide(currentIndex - 1); }
+      () => {
+        if (currentIndex < totalSlides - 1) updateSlide(currentIndex + 1);
+      },
+      () => {
+        if (currentIndex > 0) updateSlide(currentIndex - 1);
+      }
     );
   };
 
@@ -208,8 +212,12 @@ export function setupCarouselNavigation(
   onSlideChange?: (index: number) => void
 ): { goTo: (index: number) => void; getCurrentIndex: () => number } {
   const slides = container.querySelectorAll('.nn-carousel-slide');
-  const prevBtn = container.querySelector('[data-action="prev-slide"]') as HTMLButtonElement | null;
-  const nextBtn = container.querySelector('[data-action="next-slide"]') as HTMLButtonElement | null;
+  const prevBtn = container.querySelector(
+    '[data-action="prev-slide"]'
+  ) as HTMLButtonElement | null;
+  const nextBtn = container.querySelector(
+    '[data-action="next-slide"]'
+  ) as HTMLButtonElement | null;
   const dotsContainer = container.querySelector('.nn-carousel-dots');
 
   let currentIndex = 0;
@@ -252,15 +260,21 @@ export function setupCarouselNavigation(
   });
 
   // Touch swipe
-  const slidesEl = container.querySelector('.nn-carousel-slides') as HTMLElement || container;
+  const slidesEl =
+    (container.querySelector('.nn-carousel-slides') as HTMLElement) ||
+    container;
   addSwipeSupport(
     slidesEl,
-    () => { if (currentIndex < totalSlides - 1) updateSlide(currentIndex + 1); },
-    () => { if (currentIndex > 0) updateSlide(currentIndex - 1); }
+    () => {
+      if (currentIndex < totalSlides - 1) updateSlide(currentIndex + 1);
+    },
+    () => {
+      if (currentIndex > 0) updateSlide(currentIndex - 1);
+    }
   );
 
   // Dot listeners
-  dots.forEach((dot) => {
+  dots.forEach(dot => {
     dot.addEventListener('click', () => {
       const index = parseInt((dot as HTMLElement).dataset.slide || '0', 10);
       updateSlide(index);
@@ -299,7 +313,9 @@ export interface ScrollCarouselInstance {
  * Create a horizontal scroll carousel with cards
  * Used for profile articles, videos, etc.
  */
-export function createScrollCarousel(options: ScrollCarouselOptions): ScrollCarouselInstance {
+export function createScrollCarousel(
+  options: ScrollCarouselOptions
+): ScrollCarouselInstance {
   const { title, cards, navThreshold = 2, onCardClick } = options;
   const showNav = cards.length > navThreshold;
 
@@ -309,7 +325,9 @@ export function createScrollCarousel(options: ScrollCarouselOptions): ScrollCaro
   wrapper.innerHTML = `
     <div class="nn-scroll-carousel__header">
       <h2 class="nn-scroll-carousel__title">${title}</h2>
-      ${showNav ? `
+      ${
+        showNav
+          ? `
         <div class="nn-scroll-carousel__nav">
           <button class="btn btn--square-sm nn-scroll-carousel__nav-btn nn-scroll-carousel__nav-btn--prev" aria-label="Previous">
             <span class="carousel-chevron-left" aria-hidden="true"></span>
@@ -318,45 +336,75 @@ export function createScrollCarousel(options: ScrollCarouselOptions): ScrollCaro
             <span class="carousel-chevron-right" aria-hidden="true"></span>
           </button>
         </div>
-      ` : ''}
+      `
+          : ''
+      }
     </div>
     <div class="nn-scroll-carousel__viewport">
       <div class="nn-scroll-carousel__track">
-        ${cards.map((card, i) => {
-          const dataAttrs = card.data
-            ? Object.entries(card.data).map(([k, v]) => `data-${k}="${v}"`).join(' ')
-            : '';
-          return `<div class="nn-card" data-index="${i}" ${dataAttrs}>${card.html}</div>`;
-        }).join('')}
+        ${cards
+          .map((card, i) => {
+            const dataAttrs = card.data
+              ? Object.entries(card.data)
+                  .map(([k, v]) => `data-${k}="${v}"`)
+                  .join(' ')
+              : '';
+            return `<div class="nn-card" data-index="${i}" ${dataAttrs}>${card.html}</div>`;
+          })
+          .join('')}
       </div>
     </div>
   `;
 
   // Nav button state
   const updateNavButtons = () => {
-    const viewport = wrapper.querySelector('.nn-scroll-carousel__viewport') as HTMLElement;
-    const prevBtn = wrapper.querySelector('.nn-scroll-carousel__nav-btn--prev') as HTMLElement;
-    const nextBtn = wrapper.querySelector('.nn-scroll-carousel__nav-btn--next') as HTMLElement;
+    const viewport = wrapper.querySelector(
+      '.nn-scroll-carousel__viewport'
+    ) as HTMLElement;
+    const prevBtn = wrapper.querySelector(
+      '.nn-scroll-carousel__nav-btn--prev'
+    ) as HTMLElement;
+    const nextBtn = wrapper.querySelector(
+      '.nn-scroll-carousel__nav-btn--next'
+    ) as HTMLElement;
     if (!viewport || !prevBtn || !nextBtn) return;
 
-    prevBtn.classList.toggle('nn-scroll-carousel__nav-btn--disabled', viewport.scrollLeft <= 0);
-    const remaining = viewport.scrollWidth - (viewport.scrollLeft + viewport.clientWidth);
-    nextBtn.classList.toggle('nn-scroll-carousel__nav-btn--disabled', remaining < 50);
+    prevBtn.classList.toggle(
+      'nn-scroll-carousel__nav-btn--disabled',
+      viewport.scrollLeft <= 0
+    );
+    const remaining =
+      viewport.scrollWidth - (viewport.scrollLeft + viewport.clientWidth);
+    nextBtn.classList.toggle(
+      'nn-scroll-carousel__nav-btn--disabled',
+      remaining < 50
+    );
   };
 
   // Scroll by one card width
   const scroll = (direction: number) => {
-    const viewport = wrapper.querySelector('.nn-scroll-carousel__viewport') as HTMLElement;
+    const viewport = wrapper.querySelector(
+      '.nn-scroll-carousel__viewport'
+    ) as HTMLElement;
     const card = wrapper.querySelector('[data-index]') as HTMLElement;
     if (!viewport || !card) return;
-    viewport.scrollBy({ left: (card.offsetWidth + 16) * direction, behavior: 'smooth' });
+    viewport.scrollBy({
+      left: (card.offsetWidth + 16) * direction,
+      behavior: 'smooth',
+    });
   };
 
   // Event listeners
   const prevBtn = wrapper.querySelector('.nn-scroll-carousel__nav-btn--prev');
   const nextBtn = wrapper.querySelector('.nn-scroll-carousel__nav-btn--next');
-  prevBtn?.addEventListener('click', (e) => { e.stopPropagation(); scroll(-1); });
-  nextBtn?.addEventListener('click', (e) => { e.stopPropagation(); scroll(1); });
+  prevBtn?.addEventListener('click', e => {
+    e.stopPropagation();
+    scroll(-1);
+  });
+  nextBtn?.addEventListener('click', e => {
+    e.stopPropagation();
+    scroll(1);
+  });
 
   const viewport = wrapper.querySelector('.nn-scroll-carousel__viewport');
   viewport?.addEventListener('scroll', updateNavButtons);
@@ -381,7 +429,7 @@ export function createScrollCarousel(options: ScrollCarouselOptions): ScrollCaro
 
   return {
     element: wrapper,
-    destroy: () => wrapper.remove()
+    destroy: () => wrapper.remove(),
   };
 }
 
@@ -400,7 +448,9 @@ export interface CardGridOptions {
  * scroller. Used for profile tab sections (products, articles, …). Shares the
  * .nn-card markup + click contract so callers can swap one for the other.
  */
-export function createCardGrid(options: CardGridOptions): ScrollCarouselInstance {
+export function createCardGrid(
+  options: CardGridOptions
+): ScrollCarouselInstance {
   const { cards, onCardClick } = options;
 
   const wrapper = document.createElement('div');
@@ -408,15 +458,17 @@ export function createCardGrid(options: CardGridOptions): ScrollCarouselInstance
 
   wrapper.innerHTML = `
     <div class="nn-card-grid">
-      ${cards.map((card, i) => {
-        const dataAttrs = card.data
-          ? Object.entries(card.data)
-              .filter(([k]) => /^[a-z0-9-]+$/i.test(k))
-              .map(([k, v]) => `data-${k}="${escapeHtmlAttr(v)}"`)
-              .join(' ')
-          : '';
-        return `<div class="nn-card" data-index="${i}" ${dataAttrs}>${card.html}</div>`;
-      }).join('')}
+      ${cards
+        .map((card, i) => {
+          const dataAttrs = card.data
+            ? Object.entries(card.data)
+                .filter(([k]) => /^[a-z0-9-]+$/i.test(k))
+                .map(([k, v]) => `data-${k}="${escapeHtmlAttr(v)}"`)
+                .join(' ')
+            : '';
+          return `<div class="nn-card" data-index="${i}" ${dataAttrs}>${card.html}</div>`;
+        })
+        .join('')}
     </div>
   `;
 
@@ -436,6 +488,6 @@ export function createCardGrid(options: CardGridOptions): ScrollCarouselInstance
 
   return {
     element: wrapper,
-    destroy: () => wrapper.remove()
+    destroy: () => wrapper.remove(),
   };
 }

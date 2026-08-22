@@ -8,7 +8,10 @@
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { NoteHeader } from '../NoteHeader';
 import { InteractionStatusLine } from '../InteractionStatusLine';
-import { parseListingMetadata, formatPrice } from '../../../helpers/listingMetadata';
+import {
+  parseListingMetadata,
+  formatPrice,
+} from '../../../helpers/listingMetadata';
 import { getAddressableIdentifier } from '../../../helpers/getAddressableIdentifier';
 import { encodeNaddr } from '../../../services/NostrToolsAdapter';
 import { getViewNavigationController } from '../../../services/ViewNavigationController';
@@ -18,7 +21,11 @@ export class ListingRenderer {
   static render(note: ProcessedNote, opts: NoteUIOptions): HTMLElement {
     const event = note.rawEvent;
     const meta = parseListingMetadata(event);
-    const priceDisplay = formatPrice(meta.price, meta.priceCurrency, meta.priceFrequency);
+    const priceDisplay = formatPrice(
+      meta.price,
+      meta.priceCurrency,
+      meta.priceFrequency
+    );
     const firstImage = meta.images[0] || '';
 
     const element = document.createElement('div');
@@ -32,7 +39,7 @@ export class ListingRenderer {
       rawEvent: event,
       showVerification: true,
       showTimestamp: true,
-      showMenu: true
+      showMenu: true,
     });
     element.appendChild(noteHeader.getElement());
 
@@ -40,11 +47,15 @@ export class ListingRenderer {
     card.className = 'timeline-listing-card';
     card.style.cursor = 'pointer';
     card.innerHTML = `
-      ${firstImage ? `
+      ${
+        firstImage
+          ? `
         <div class="timeline-listing-card__image">
           <img src="${escapeHtmlAttr(firstImage)}" alt="" loading="lazy" />
         </div>
-      ` : ''}
+      `
+          : ''
+      }
       <div class="timeline-listing-card__body">
         <div class="timeline-listing-card__seller">
           <span class="timeline-listing-card__badge">Marketplace</span>
@@ -60,10 +71,10 @@ export class ListingRenderer {
       kind: 30402,
       pubkey: event.pubkey,
       identifier: meta.identifier,
-      relays: []
+      relays: [],
     });
 
-    card.addEventListener('click', (e) => {
+    card.addEventListener('click', e => {
       const target = e.target as HTMLElement;
       // Inviolable media-click rule: never pre-empt image/video handlers.
       if (target.closest('.note-image--clickable, .note-media, video')) return;

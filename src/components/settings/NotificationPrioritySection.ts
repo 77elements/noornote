@@ -7,12 +7,20 @@
  */
 
 import { SettingsSection } from './SettingsSection';
-import { PerAccountLocalStorage, StorageKeys, type NotificationPriority, type NotificationPriorityMap } from '../../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+  type NotificationPriority,
+  type NotificationPriorityMap,
+} from '../../services/PerAccountLocalStorage';
 import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { MoveDropdown, type MoveTarget } from '../ui/MoveDropdown';
 import { isNostrMajlisEnabled } from '../../addons/nostr-majlis/index';
-import { isGroupChatsEnabled, isArmadaEnabled } from '../../addons/group-chats/index';
+import {
+  isGroupChatsEnabled,
+  isArmadaEnabled,
+} from '../../addons/group-chats/index';
 
 interface NotificationTypeInfo {
   type: string;
@@ -42,31 +50,43 @@ const NOTIFICATION_TYPES: NotificationTypeInfo[] = [
 ];
 
 const DEFAULT_PRIORITIES: NotificationPriorityMap = {
-  'reply': 1,
-  'quote': 1,
-  'zap': 1,
+  reply: 1,
+  quote: 1,
+  zap: 1,
   'image-tag': 1,
   'zap-reply': 2,
-  'mention': 2,
-  'repost': 2,
-  'reaction': 2,
-  'article': 2,
-  'mutual_new': 2,
-  'mutual_unfollow': 2,
-  'follower_new': 2,
+  mention: 2,
+  repost: 2,
+  reaction: 2,
+  article: 2,
+  mutual_new: 2,
+  mutual_unfollow: 2,
+  follower_new: 2,
   'thread-reply': 3,
-  'hashtag': 3,
-  'dhikr_round': 3,
-  'dhikr_commit': 3,
-  'dhikr_complete': 3,
+  hashtag: 3,
+  dhikr_round: 3,
+  dhikr_commit: 3,
+  dhikr_complete: 3,
   'group-chats': 2,
-  'armada': 2,
+  armada: 2,
 };
 
-const PRIORITY_LABELS: Record<NotificationPriority, { title: string; description: string }> = {
-  1: { title: 'High Priority', description: 'Pulsing badge - important notifications' },
-  2: { title: 'Normal Priority', description: 'Solid badge - regular notifications' },
-  3: { title: 'Low Priority', description: 'Hollow badge - background notifications' },
+const PRIORITY_LABELS: Record<
+  NotificationPriority,
+  { title: string; description: string }
+> = {
+  1: {
+    title: 'High Priority',
+    description: 'Pulsing badge - important notifications',
+  },
+  2: {
+    title: 'Normal Priority',
+    description: 'Solid badge - regular notifications',
+  },
+  3: {
+    title: 'Low Priority',
+    description: 'Hollow badge - background notifications',
+  },
 };
 
 export class NotificationPrioritySection extends SettingsSection {
@@ -104,7 +124,10 @@ export class NotificationPrioritySection extends SettingsSection {
   private loadPriorities(): NotificationPriorityMap {
     // Merge stored over defaults so newly added types (e.g. zap-reply, follower_new) always appear
     // at their default priority for existing users, instead of vanishing from the UI.
-    const saved = this.storage.get<NotificationPriorityMap>(StorageKeys.NOTIFICATION_PRIORITIES, {});
+    const saved = this.storage.get<NotificationPriorityMap>(
+      StorageKeys.NOTIFICATION_PRIORITIES,
+      {}
+    );
     return { ...DEFAULT_PRIORITIES, ...saved };
   }
 
@@ -179,7 +202,9 @@ export class NotificationPrioritySection extends SettingsSection {
   /**
    * Get notification types for a priority level
    */
-  private getItemsForPriority(priority: NotificationPriority): NotificationTypeInfo[] {
+  private getItemsForPriority(
+    priority: NotificationPriority
+  ): NotificationTypeInfo[] {
     // Dhikr / group-chat types only surface here while their addon/toggle is enabled (they can't fire otherwise).
     const dhikrEnabled = isNostrMajlisEnabled();
     const groupChatsEnabled = isGroupChatsEnabled();
@@ -211,13 +236,17 @@ export class NotificationPrioritySection extends SettingsSection {
     if (!this.contentContainer) return;
 
     // Reset button
-    const resetBtn = this.contentContainer.querySelector('[data-action="reset-priorities"]');
+    const resetBtn = this.contentContainer.querySelector(
+      '[data-action="reset-priorities"]'
+    );
     if (resetBtn) {
       resetBtn.addEventListener('click', () => this.resetToDefaults());
     }
 
     // Save button
-    const saveBtn = this.contentContainer.querySelector('[data-action="save-priorities"]');
+    const saveBtn = this.contentContainer.querySelector(
+      '[data-action="save-priorities"]'
+    );
     if (saveBtn) {
       saveBtn.addEventListener('click', () => this.saveChanges());
     }
@@ -238,7 +267,9 @@ export class NotificationPrioritySection extends SettingsSection {
   private mountMoveDropdowns(): void {
     if (!this.contentContainer || !MoveDropdown.shouldShow()) return;
 
-    const mountPoints = this.contentContainer.querySelectorAll<HTMLElement>('.priority-item__move');
+    const mountPoints = this.contentContainer.querySelectorAll<HTMLElement>(
+      '.priority-item__move'
+    );
     mountPoints.forEach(mount => {
       const type = mount.dataset.type;
       if (!type) return;
@@ -251,8 +282,11 @@ export class NotificationPrioritySection extends SettingsSection {
       const dropdown = new MoveDropdown({
         targets,
         ariaLabel: `Move ${type}`,
-        onSelect: (targetId) => {
-          this.priorities[type] = parseInt(targetId, 10) as NotificationPriority;
+        onSelect: targetId => {
+          this.priorities[type] = parseInt(
+            targetId,
+            10
+          ) as NotificationPriority;
           this.markAsUnsaved();
           this.rerender();
         },
@@ -268,10 +302,14 @@ export class NotificationPrioritySection extends SettingsSection {
   private setupMouseDragAndDrop(): void {
     if (!this.contentContainer) return;
 
-    const settingsContainer = this.contentContainer.querySelector('.notification-priority-settings');
+    const settingsContainer = this.contentContainer.querySelector(
+      '.notification-priority-settings'
+    );
     if (!settingsContainer) return;
 
-    settingsContainer.addEventListener('mousedown', (e: Event) => this.onMouseDown(e as MouseEvent));
+    settingsContainer.addEventListener('mousedown', (e: Event) =>
+      this.onMouseDown(e as MouseEvent)
+    );
   }
 
   private onMouseDown(e: MouseEvent): void {
@@ -308,21 +346,25 @@ export class NotificationPrioritySection extends SettingsSection {
       this.draggedItem.classList.add('priority-item--dragging');
       this.draggedItem.style.position = 'fixed';
       this.draggedItem.style.zIndex = '1000';
-      this.draggedItem.style.width = this.draggedItem.offsetWidth + 'px';
+      this.draggedItem.style.width = `${this.draggedItem.offsetWidth}px`;
       this.draggedItem.style.pointerEvents = 'none';
     }
 
     if (this.isDragging) {
-      this.draggedItem.style.left = (e.clientX - this.offsetX) + 'px';
-      this.draggedItem.style.top = (e.clientY - this.offsetY) + 'px';
+      this.draggedItem.style.left = `${e.clientX - this.offsetX}px`;
+      this.draggedItem.style.top = `${e.clientY - this.offsetY}px`;
 
       // Highlight drop zone under cursor
       const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
-      const zoneBelow = elemBelow?.closest('.priority-zone__items') as HTMLElement;
+      const zoneBelow = elemBelow?.closest(
+        '.priority-zone__items'
+      ) as HTMLElement;
 
-      this.contentContainer?.querySelectorAll('.priority-zone__items').forEach(z => {
-        z.classList.remove('priority-zone__items--drag-over');
-      });
+      this.contentContainer
+        ?.querySelectorAll('.priority-zone__items')
+        .forEach(z => {
+          z.classList.remove('priority-zone__items--drag-over');
+        });
 
       if (zoneBelow) {
         zoneBelow.classList.add('priority-zone__items--drag-over');
@@ -352,12 +394,17 @@ export class NotificationPrioritySection extends SettingsSection {
     const dropZone = elemBelow?.closest('.priority-zone__items') as HTMLElement;
 
     // Clear drag-over states
-    this.contentContainer?.querySelectorAll('.priority-zone__items').forEach(z => {
-      z.classList.remove('priority-zone__items--drag-over');
-    });
+    this.contentContainer
+      ?.querySelectorAll('.priority-zone__items')
+      .forEach(z => {
+        z.classList.remove('priority-zone__items--drag-over');
+      });
 
     if (dropZone && this.draggedType) {
-      const newPriority = parseInt(dropZone.dataset.priority || '2', 10) as NotificationPriority;
+      const newPriority = parseInt(
+        dropZone.dataset.priority || '2',
+        10
+      ) as NotificationPriority;
 
       if (this.priorities[this.draggedType] !== newPriority) {
         this.priorities[this.draggedType] = newPriority;
@@ -385,10 +432,16 @@ export class NotificationPrioritySection extends SettingsSection {
   private setupTouchDragAndDrop(): void {
     if (!this.contentContainer) return;
 
-    const settingsContainer = this.contentContainer.querySelector('.notification-priority-settings');
+    const settingsContainer = this.contentContainer.querySelector(
+      '.notification-priority-settings'
+    );
     if (!settingsContainer) return;
 
-    settingsContainer.addEventListener('touchstart', (e: Event) => this.onTouchStart(e as TouchEvent), { passive: false });
+    settingsContainer.addEventListener(
+      'touchstart',
+      (e: Event) => this.onTouchStart(e as TouchEvent),
+      { passive: false }
+    );
   }
 
   private onTouchStart(e: TouchEvent): void {
@@ -412,7 +465,9 @@ export class NotificationPrioritySection extends SettingsSection {
     this.boundTouchMove = (ev: TouchEvent) => this.onTouchMove(ev);
     this.boundTouchEnd = (ev: TouchEvent) => this.onTouchEnd(ev);
 
-    document.addEventListener('touchmove', this.boundTouchMove, { passive: false });
+    document.addEventListener('touchmove', this.boundTouchMove, {
+      passive: false,
+    });
     document.addEventListener('touchend', this.boundTouchEnd);
   }
 
@@ -433,21 +488,25 @@ export class NotificationPrioritySection extends SettingsSection {
       this.draggedItem.classList.add('priority-item--dragging');
       this.draggedItem.style.position = 'fixed';
       this.draggedItem.style.zIndex = '1000';
-      this.draggedItem.style.width = this.draggedItem.offsetWidth + 'px';
+      this.draggedItem.style.width = `${this.draggedItem.offsetWidth}px`;
       this.draggedItem.style.pointerEvents = 'none';
     }
 
     if (this.isDragging) {
-      this.draggedItem.style.left = (touch.clientX - this.offsetX) + 'px';
-      this.draggedItem.style.top = (touch.clientY - this.offsetY) + 'px';
+      this.draggedItem.style.left = `${touch.clientX - this.offsetX}px`;
+      this.draggedItem.style.top = `${touch.clientY - this.offsetY}px`;
 
       // Highlight drop zone under finger
       const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-      const zoneBelow = elemBelow?.closest('.priority-zone__items') as HTMLElement;
+      const zoneBelow = elemBelow?.closest(
+        '.priority-zone__items'
+      ) as HTMLElement;
 
-      this.contentContainer?.querySelectorAll('.priority-zone__items').forEach(z => {
-        z.classList.remove('priority-zone__items--drag-over');
-      });
+      this.contentContainer
+        ?.querySelectorAll('.priority-zone__items')
+        .forEach(z => {
+          z.classList.remove('priority-zone__items--drag-over');
+        });
 
       if (zoneBelow) {
         zoneBelow.classList.add('priority-zone__items--drag-over');
@@ -483,12 +542,17 @@ export class NotificationPrioritySection extends SettingsSection {
     const dropZone = elemBelow?.closest('.priority-zone__items') as HTMLElement;
 
     // Clear drag-over states
-    this.contentContainer?.querySelectorAll('.priority-zone__items').forEach(z => {
-      z.classList.remove('priority-zone__items--drag-over');
-    });
+    this.contentContainer
+      ?.querySelectorAll('.priority-zone__items')
+      .forEach(z => {
+        z.classList.remove('priority-zone__items--drag-over');
+      });
 
     if (dropZone && this.draggedType) {
-      const newPriority = parseInt(dropZone.dataset.priority || '2', 10) as NotificationPriority;
+      const newPriority = parseInt(
+        dropZone.dataset.priority || '2',
+        10
+      ) as NotificationPriority;
 
       if (this.priorities[this.draggedType] !== newPriority) {
         this.priorities[this.draggedType] = newPriority;
@@ -579,7 +643,10 @@ export class NotificationPrioritySection extends SettingsSection {
  */
 export function getNotificationPriorities(): NotificationPriorityMap {
   const storage = PerAccountLocalStorage.getInstance();
-  const saved = storage.get<NotificationPriorityMap>(StorageKeys.NOTIFICATION_PRIORITIES, {});
+  const saved = storage.get<NotificationPriorityMap>(
+    StorageKeys.NOTIFICATION_PRIORITIES,
+    {}
+  );
   return { ...DEFAULT_PRIORITIES, ...saved };
 }
 

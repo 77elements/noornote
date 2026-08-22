@@ -18,9 +18,17 @@
 import { hkdf } from '@noble/hashes/hkdf';
 import { sha256 } from '@noble/hashes/sha256';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { nip44DecryptWithKey, verifyEventSignature } from '../../services/NostrToolsAdapter';
+import {
+  nip44DecryptWithKey,
+  verifyEventSignature,
+} from '../../services/NostrToolsAdapter';
 import { getTag } from '../tagUtils';
-import { INVITE_BUNDLE_KIND, type ArmadaChannel, type ArmadaImagePointer, type ArmadaInvitePreview } from './types';
+import {
+  INVITE_BUNDLE_KIND,
+  type ArmadaChannel,
+  type ArmadaImagePointer,
+  type ArmadaInvitePreview,
+} from './types';
 
 const MAX_BOOTSTRAP_RELAYS = 3;
 const VSK_INVITE_LIVE = '6';
@@ -63,17 +71,22 @@ function isImagePointer(v: unknown): v is ArmadaImagePointer {
 export function decodeInviteBundle(
   event: NostrEvent,
   expectedSigner: string,
-  token: Uint8Array,
+  token: Uint8Array
 ): ArmadaInvitePreview | undefined {
   if (event.kind !== INVITE_BUNDLE_KIND) return undefined;
   if (event.pubkey !== expectedSigner) return undefined;
   const vsk = getTag(event.tags, 'vsk');
   if (vsk !== VSK_INVITE_LIVE) return undefined; // revoked or unknown marker
-  if (!verifyEventSignature(event as Parameters<typeof verifyEventSignature>[0])) return undefined;
+  if (
+    !verifyEventSignature(event as Parameters<typeof verifyEventSignature>[0])
+  )
+    return undefined;
 
   let bundle: Record<string, unknown>;
   try {
-    bundle = JSON.parse(nip44DecryptWithKey(event.content, inviteBundleKey(token)));
+    bundle = JSON.parse(
+      nip44DecryptWithKey(event.content, inviteBundleKey(token))
+    );
   } catch {
     return undefined;
   }
@@ -84,12 +97,19 @@ export function decodeInviteBundle(
   const relays = Array.isArray(bundle.relays)
     ? bundle.relays.filter((r): r is string => typeof r === 'string')
     : [];
-  const expiresAt = typeof bundle.expires_at === 'number' ? bundle.expires_at : undefined;
+  const expiresAt =
+    typeof bundle.expires_at === 'number' ? bundle.expires_at : undefined;
   const icon = isImagePointer(bundle.icon) ? bundle.icon : undefined;
-  const communityRoot = typeof bundle.community_root === 'string' ? bundle.community_root : undefined;
-  const rootEpoch = typeof bundle.root_epoch === 'number' ? bundle.root_epoch : undefined;
-  const communityId = typeof bundle.community_id === 'string' ? bundle.community_id : undefined;
-  const controlPk = typeof bundle.control_pk === 'string' ? bundle.control_pk : undefined;
+  const communityRoot =
+    typeof bundle.community_root === 'string'
+      ? bundle.community_root
+      : undefined;
+  const rootEpoch =
+    typeof bundle.root_epoch === 'number' ? bundle.root_epoch : undefined;
+  const communityId =
+    typeof bundle.community_id === 'string' ? bundle.community_id : undefined;
+  const controlPk =
+    typeof bundle.control_pk === 'string' ? bundle.control_pk : undefined;
 
   // Extract channel identities (id + epoch) for GroupKey derivation.
   const channels: ArmadaChannel[] = channelsRaw

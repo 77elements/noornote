@@ -13,13 +13,13 @@ import { showLoggedOutReactionModal } from '../helpers/LoggedOutModals';
 
 /** Map action description keywords to reaction types for humorous modals */
 const ACTION_TO_REACTION: Record<string, string> = {
-  'like': 'like',
-  'react': 'like',
-  'zap': 'zap',
-  'repost': 'repost',
-  'quote': 'repost',
-  'reply': 'reply',
-  'bookmark': 'bookmark',
+  like: 'like',
+  react: 'like',
+  zap: 'zap',
+  repost: 'repost',
+  quote: 'repost',
+  reply: 'reply',
+  bookmark: 'bookmark',
 };
 
 export class AuthGuard {

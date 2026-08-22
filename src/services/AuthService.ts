@@ -12,10 +12,17 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { calculateEventHash, decodeNip19, type UnsignedEvent } from './NostrToolsAdapter';
+import {
+  calculateEventHash,
+  decodeNip19,
+  type UnsignedEvent,
+} from './NostrToolsAdapter';
 import { KeychainStorage } from './KeychainStorage';
 import { TypedEventBus } from '../core/TypedEventBus';
-import { AccountStorageService, type StoredAccount } from './AccountStorageService';
+import {
+  AccountStorageService,
+  type StoredAccount,
+} from './AccountStorageService';
 import { PlatformService } from './PlatformService';
 import { PerAccountListStorageMigration } from './PerAccountListStorageMigration';
 
@@ -25,9 +32,17 @@ import { BunkerSignerManager } from './managers/BunkerSignerManager';
 import { NostrConnectSignerManager } from './managers/NostrConnectSignerManager';
 import { KeySignerConnectionManager } from './managers/KeySignerConnectionManager';
 import { AmberSignerManager } from './managers/AmberSignerManager';
-import type { Nip46BaseManager, NostrConnectSession } from './managers/Nip46BaseManager';
+import type {
+  Nip46BaseManager,
+  NostrConnectSession,
+} from './managers/Nip46BaseManager';
 
-export type AuthMethod = 'npub' | 'extension' | 'nip46' | 'key-signer' | 'amber';
+export type AuthMethod =
+  | 'npub'
+  | 'extension'
+  | 'nip46'
+  | 'key-signer'
+  | 'amber';
 export type InputType = 'npub' | 'bunker' | 'nip05' | 'unknown';
 
 export class AuthService {
@@ -88,7 +103,8 @@ export class AuthService {
 
   private get activeNip46Manager(): Nip46BaseManager | null {
     if (this.bunkerManager?.isAvailable()) return this.bunkerManager;
-    if (this.nostrConnectManager?.isAvailable()) return this.nostrConnectManager;
+    if (this.nostrConnectManager?.isAvailable())
+      return this.nostrConnectManager;
     return null;
   }
 
@@ -137,30 +153,51 @@ export class AuthService {
     return 'unknown';
   }
 
-  public async authenticateWithInput(input: string): Promise<{ success: boolean; npub?: string; pubkey?: string; error?: string; readOnly?: boolean }> {
+  public async authenticateWithInput(input: string): Promise<{
+    success: boolean;
+    npub?: string;
+    pubkey?: string;
+    error?: string;
+    readOnly?: boolean;
+  }> {
     const inputType = this.detectInputType(input);
     switch (inputType) {
-      case 'npub': return this.authenticateWithNpub(input);
-      case 'bunker': return this.authenticateWithBunker(input);
-      case 'nip05': return { success: false, error: 'NIP-05 lookup support coming soon' };
-      default: return { success: false, error: 'Invalid input. Please enter npub or bunker:// URI' };
+      case 'npub':
+        return this.authenticateWithNpub(input);
+      case 'bunker':
+        return this.authenticateWithBunker(input);
+      case 'nip05':
+        return { success: false, error: 'NIP-05 lookup support coming soon' };
+      default:
+        return {
+          success: false,
+          error: 'Invalid input. Please enter npub or bunker:// URI',
+        };
     }
   }
 
   // ── Extension (NIP-07) ────────────────────────────────────────────
 
   public isExtensionAvailable(): boolean {
-    if (!this.extensionManager) this.extensionManager = new ExtensionSignerManager();
+    if (!this.extensionManager)
+      this.extensionManager = new ExtensionSignerManager();
     return this.extensionManager.isAvailable();
   }
 
   public getExtensionName(): string {
-    if (!this.extensionManager) this.extensionManager = new ExtensionSignerManager();
+    if (!this.extensionManager)
+      this.extensionManager = new ExtensionSignerManager();
     return this.extensionManager.getExtensionName();
   }
 
-  public async authenticate(): Promise<{ success: boolean; npub?: string; pubkey?: string; error?: string }> {
-    if (!this.extensionManager) this.extensionManager = new ExtensionSignerManager();
+  public async authenticate(): Promise<{
+    success: boolean;
+    npub?: string;
+    pubkey?: string;
+    error?: string;
+  }> {
+    if (!this.extensionManager)
+      this.extensionManager = new ExtensionSignerManager();
 
     const result = await this.extensionManager.authenticate();
     if (result.success && result.npub && result.pubkey) {
@@ -171,13 +208,19 @@ export class AuthService {
 
   public async restoreExtensionConnection(): Promise<boolean> {
     if (!this.currentUser) return false;
-    if (!this.extensionManager) this.extensionManager = new ExtensionSignerManager();
+    if (!this.extensionManager)
+      this.extensionManager = new ExtensionSignerManager();
     return this.extensionManager.restoreConnection();
   }
 
   // ── Bunker (NIP-46) ──────────────────────────────────────────────
 
-  public async authenticateWithBunker(bunkerUri: string): Promise<{ success: boolean; npub?: string; pubkey?: string; error?: string }> {
+  public async authenticateWithBunker(bunkerUri: string): Promise<{
+    success: boolean;
+    npub?: string;
+    pubkey?: string;
+    error?: string;
+  }> {
     // Cancel any active nostrconnect flow first
     if (this.nostrConnectManager) {
       this.nostrConnectManager.stop();
@@ -193,7 +236,10 @@ export class AuthService {
 
       const { SystemLogger } = await import('./SystemLogger');
       const { ToastService } = await import('./ToastService');
-      SystemLogger.getInstance().info('Auth', 'Login with Remote Signer: successful');
+      SystemLogger.getInstance().info(
+        'Auth',
+        'Login with Remote Signer: successful'
+      );
       ToastService.show('Login with Remote Signer: successful', 'success');
     }
     return result;
@@ -202,7 +248,8 @@ export class AuthService {
   // ── NostrConnect QR (NIP-46) ──────────────────────────────────────
 
   public async startNostrConnect(): Promise<NostrConnectSession> {
-    if (!this.nostrConnectManager) this.nostrConnectManager = new NostrConnectSignerManager();
+    if (!this.nostrConnectManager)
+      this.nostrConnectManager = new NostrConnectSignerManager();
 
     const session = await this.nostrConnectManager.startNostrConnect();
 
@@ -215,23 +262,37 @@ export class AuthService {
 
         const { SystemLogger } = await import('./SystemLogger');
         const { ToastService } = await import('./ToastService');
-        SystemLogger.getInstance().info('Auth', 'Login with Remote Signer (QR): successful');
+        SystemLogger.getInstance().info(
+          'Auth',
+          'Login with Remote Signer (QR): successful'
+        );
         ToastService.show('Connected to remote signer', 'success');
       }
       return result;
     };
 
-    return { uri: session.uri, waitForConnection: wrappedWait, cancel: session.cancel };
+    return {
+      uri: session.uri,
+      waitForConnection: wrappedWait,
+      cancel: session.cancel,
+    };
   }
 
   // ── KeySigner (NoorSigner) ────────────────────────────────────────
 
   public async authenticateWithKeySigner(): Promise<{
-    success: boolean; npub?: string; pubkey?: string; error?: string;
-    needsPassword?: boolean; needsImport?: boolean;
+    success: boolean;
+    npub?: string;
+    pubkey?: string;
+    error?: string;
+    needsPassword?: boolean;
+    needsImport?: boolean;
   }> {
     if (!this.keySignerManager) {
-      return { success: false, error: 'KeySigner is only available in desktop app' };
+      return {
+        success: false,
+        error: 'KeySigner is only available in desktop app',
+      };
     }
 
     try {
@@ -244,14 +305,23 @@ export class AuthService {
         this.authMethod = 'key-signer';
         // NO saveSession() — daemon is single source of truth
         this.saveToAccountStorage();
-        this.eventBus.emit('user:login', { npub: result.npub, pubkey: result.pubkey });
+        this.eventBus.emit('user:login', {
+          npub: result.npub,
+          pubkey: result.pubkey,
+        });
         return { success: true, npub: result.npub, pubkey: result.pubkey };
       }
 
       return result;
     } catch (error) {
       console.error('[AuthService] KeySigner authentication failed:', error);
-      return { success: false, error: error instanceof Error ? error.message : 'KeySigner authentication failed' };
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : 'KeySigner authentication failed',
+      };
     }
   }
 
@@ -268,7 +338,10 @@ export class AuthService {
         this.currentUser = { npub: result.npub, pubkey: result.pubkey };
         this.authMethod = 'key-signer';
         this.saveToAccountStorage();
-        this.eventBus.emit('user:login', { npub: result.npub, pubkey: result.pubkey });
+        this.eventBus.emit('user:login', {
+          npub: result.npub,
+          pubkey: result.pubkey,
+        });
       }
     } catch {
       // Silent fail — user can manually login
@@ -282,7 +355,12 @@ export class AuthService {
     return this.amberManager.isAvailable();
   }
 
-  public async authenticateWithAmber(): Promise<{ success: boolean; npub?: string; pubkey?: string; error?: string }> {
+  public async authenticateWithAmber(): Promise<{
+    success: boolean;
+    npub?: string;
+    pubkey?: string;
+    error?: string;
+  }> {
     if (!this.amberManager) this.amberManager = new AmberSignerManager();
 
     const result = await this.amberManager.authenticate();
@@ -294,10 +372,19 @@ export class AuthService {
 
   // ── npub (read-only) ─────────────────────────────────────────────
 
-  public async authenticateWithNpub(npub: string): Promise<{ success: boolean; npub?: string; pubkey?: string; error?: string; readOnly?: boolean }> {
+  public async authenticateWithNpub(npub: string): Promise<{
+    success: boolean;
+    npub?: string;
+    pubkey?: string;
+    error?: string;
+    readOnly?: boolean;
+  }> {
     try {
       if (!npub.startsWith('npub1')) {
-        return { success: false, error: 'Invalid npub format. Must start with npub1' };
+        return {
+          success: false,
+          error: 'Invalid npub format. Must start with npub1',
+        };
       }
 
       const decoded = decodeNip19(npub);
@@ -315,7 +402,10 @@ export class AuthService {
       return { success: true, npub, pubkey, readOnly: true };
     } catch (error) {
       console.error('npub authentication failed:', error);
-      return { success: false, error: error instanceof Error ? error.message : 'Invalid npub key' };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Invalid npub key',
+      };
     }
   }
 
@@ -325,22 +415,31 @@ export class AuthService {
 
   public async signEvent(event: any): Promise<any> {
     if (this.isReadOnly) {
-      throw new Error('Cannot sign events in read-only mode (npub login). Please use KeySigner or browser extension for write access.');
+      throw new Error(
+        'Cannot sign events in read-only mode (npub login). Please use KeySigner or browser extension for write access.'
+      );
     }
 
     // Add client tag (opt-in via UI setting)
     const { isClientTagEnabled } = await import('../helpers/clientTagSetting');
-    if (isClientTagEnabled() && !event.tags?.some((tag: string[]) => tag[0] === 'client')) {
+    if (
+      isClientTagEnabled() &&
+      !event.tags?.some((tag: string[]) => tag[0] === 'client')
+    ) {
       if (!event.tags) event.tags = [];
       event.tags.push(['client', 'NoorNote']);
     }
 
     try {
-      if (this.authMethod === 'extension' && this.extensionManager?.isSignerAvailable()) {
+      if (
+        this.authMethod === 'extension' &&
+        this.extensionManager?.isSignerAvailable()
+      ) {
         return await this.withSignerTimeout(
-          this.extensionManager.signEvent(event), AuthService.SIGN_TIMEOUT_MS, 'extension sign'
+          this.extensionManager.signEvent(event),
+          AuthService.SIGN_TIMEOUT_MS,
+          'extension sign'
         );
-
       } else if (this.authMethod === 'key-signer' && this.keySignerManager) {
         const keySigner = this.keySignerManager.getClient();
         if (!keySigner) throw new Error('KeySigner client not available');
@@ -352,35 +451,40 @@ export class AuthService {
 
         const { verifyEventSignature } = await import('./NostrToolsAdapter');
         if (!verifyEventSignature(event as NostrEvent)) {
-          throw new Error('KeySigner returned invalid signature - hash mismatch');
+          throw new Error(
+            'KeySigner returned invalid signature - hash mismatch'
+          );
         }
         return event;
-
-      } else if (this.authMethod === 'nip46' && this.activeNip46Manager?.isAvailable()) {
+      } else if (
+        this.authMethod === 'nip46' &&
+        this.activeNip46Manager?.isAvailable()
+      ) {
         event.pubkey = this.currentUser!.pubkey;
         const signature = await this.activeNip46Manager.signEvent(event);
         event.id = calculateEventHash(event as UnsignedEvent);
         event.sig = signature;
         return event;
-
       } else if (this.authMethod === 'amber' && this.amberManager) {
         event.pubkey = this.currentUser!.pubkey;
         event.created_at = event.created_at || Math.floor(Date.now() / 1000);
         const signedEventJson = await this.withSignerTimeout(
-          this.amberManager.signEvent(event), AuthService.SIGN_TIMEOUT_MS, 'amber sign'
+          this.amberManager.signEvent(event),
+          AuthService.SIGN_TIMEOUT_MS,
+          'amber sign'
         );
         const signedEvent = JSON.parse(signedEventJson);
         return signedEvent;
-
       } else {
         const disconnectErrors: Record<string, string> = {
-          'extension': 'Browser extension disconnected — please reload the page',
-          'nip46': 'Remote signer disconnected — please reconnect',
+          extension: 'Browser extension disconnected — please reload the page',
+          nip46: 'Remote signer disconnected — please reconnect',
           'key-signer': 'Key signer not running — please restart NoorSigner',
-          'amber': 'Amber signer disconnected — please reopen Amber',
+          amber: 'Amber signer disconnected — please reopen Amber',
         };
         throw new Error(
-          (this.authMethod && disconnectErrors[this.authMethod]) || 'No signing method available'
+          (this.authMethod && disconnectErrors[this.authMethod]) ||
+            'No signing method available'
         );
       }
     } catch (error) {
@@ -394,7 +498,10 @@ export class AuthService {
    * (NIP-07 extension, NIP-46 bunker, Amber, …) does not respond in time.
    * Prevents the publish flow from hanging forever on a dead/hung signer.
    */
-  public async signEventWithTimeout(event: any, timeoutMs: number = AuthService.SIGN_TIMEOUT_MS): Promise<any> {
+  public async signEventWithTimeout(
+    event: any,
+    timeoutMs: number = AuthService.SIGN_TIMEOUT_MS
+  ): Promise<any> {
     const { SignerTimeoutError } = await import('./SignerTimeoutError');
     return Promise.race([
       this.signEvent(event),
@@ -413,12 +520,21 @@ export class AuthService {
   private static readonly SIGN_TIMEOUT_MS = 30000;
   private static readonly CRYPTO_TIMEOUT_MS = 20000;
 
-  private async withSignerTimeout<T>(promise: Promise<T>, timeoutMs: number, operation: string): Promise<T> {
+  private async withSignerTimeout<T>(
+    promise: Promise<T>,
+    timeoutMs: number,
+    operation: string
+  ): Promise<T> {
     const { SignerTimeoutError } = await import('./SignerTimeoutError');
     let timer: ReturnType<typeof setTimeout>;
     const timeout = new Promise<never>((_, reject) => {
       timer = setTimeout(
-        () => reject(new SignerTimeoutError(`Signer did not respond in time (${operation})`)),
+        () =>
+          reject(
+            new SignerTimeoutError(
+              `Signer did not respond in time (${operation})`
+            )
+          ),
         timeoutMs
       );
     });
@@ -429,20 +545,52 @@ export class AuthService {
     }
   }
 
-  public async nip44Encrypt(plaintext: string, recipientPubkey: string): Promise<string> {
-    return this.performCryptoOperation('nip44', 'encrypt', plaintext, recipientPubkey);
+  public async nip44Encrypt(
+    plaintext: string,
+    recipientPubkey: string
+  ): Promise<string> {
+    return this.performCryptoOperation(
+      'nip44',
+      'encrypt',
+      plaintext,
+      recipientPubkey
+    );
   }
 
-  public async nip44Decrypt(ciphertext: string, senderPubkey: string): Promise<string> {
-    return this.performCryptoOperation('nip44', 'decrypt', ciphertext, senderPubkey);
+  public async nip44Decrypt(
+    ciphertext: string,
+    senderPubkey: string
+  ): Promise<string> {
+    return this.performCryptoOperation(
+      'nip44',
+      'decrypt',
+      ciphertext,
+      senderPubkey
+    );
   }
 
-  public async nip04Encrypt(plaintext: string, recipientPubkey: string): Promise<string> {
-    return this.performCryptoOperation('nip04', 'encrypt', plaintext, recipientPubkey);
+  public async nip04Encrypt(
+    plaintext: string,
+    recipientPubkey: string
+  ): Promise<string> {
+    return this.performCryptoOperation(
+      'nip04',
+      'encrypt',
+      plaintext,
+      recipientPubkey
+    );
   }
 
-  public async nip04Decrypt(ciphertext: string, senderPubkey: string): Promise<string> {
-    return this.performCryptoOperation('nip04', 'decrypt', ciphertext, senderPubkey);
+  public async nip04Decrypt(
+    ciphertext: string,
+    senderPubkey: string
+  ): Promise<string> {
+    return this.performCryptoOperation(
+      'nip04',
+      'decrypt',
+      ciphertext,
+      senderPubkey
+    );
   }
 
   private async performCryptoOperation(
@@ -451,15 +599,25 @@ export class AuthService {
     data: string,
     pubkey: string
   ): Promise<string> {
-    if (this.isReadOnly) throw new Error(`Cannot ${operation} in read-only mode (npub login)`);
+    if (this.isReadOnly)
+      throw new Error(`Cannot ${operation} in read-only mode (npub login)`);
 
-    const methodName = `${nip}${operation.charAt(0).toUpperCase()}${operation.slice(1)}` as
-      'nip44Encrypt' | 'nip44Decrypt' | 'nip04Encrypt' | 'nip04Decrypt';
+    const methodName =
+      `${nip}${operation.charAt(0).toUpperCase()}${operation.slice(1)}` as
+        | 'nip44Encrypt'
+        | 'nip44Decrypt'
+        | 'nip04Encrypt'
+        | 'nip04Decrypt';
 
     try {
-      if (this.authMethod === 'extension' && this.extensionManager?.isSignerAvailable()) {
+      if (
+        this.authMethod === 'extension' &&
+        this.extensionManager?.isSignerAvailable()
+      ) {
         return await this.withSignerTimeout(
-          this.extensionManager[methodName](data, pubkey), AuthService.CRYPTO_TIMEOUT_MS, `extension ${methodName}`
+          this.extensionManager[methodName](data, pubkey),
+          AuthService.CRYPTO_TIMEOUT_MS,
+          `extension ${methodName}`
         );
       }
 
@@ -475,7 +633,9 @@ export class AuthService {
 
       if (this.authMethod === 'amber' && this.amberManager) {
         return await this.withSignerTimeout(
-          this.amberManager[methodName](data, pubkey), AuthService.CRYPTO_TIMEOUT_MS, `amber ${methodName}`
+          this.amberManager[methodName](data, pubkey),
+          AuthService.CRYPTO_TIMEOUT_MS,
+          `amber ${methodName}`
         );
       }
 
@@ -520,7 +680,12 @@ export class AuthService {
   /**
    * Common helper: set session state after successful auth
    */
-  private setSession(npub: string, pubkey: string, method: AuthMethod, bunkerUri?: string): void {
+  private setSession(
+    npub: string,
+    pubkey: string,
+    method: AuthMethod,
+    bunkerUri?: string
+  ): void {
     this.currentUser = { npub, pubkey };
     this.authMethod = method;
     this.isReadOnly = false;
@@ -594,7 +759,7 @@ export class AuthService {
       return localStorage.getItem(STORAGE_KEY) === 'true';
     }
 
-    return new Promise(async (resolve) => {
+    return new Promise(async resolve => {
       const { ModalService } = await import('./ModalService');
       const modalService = ModalService.getInstance();
 
@@ -623,10 +788,18 @@ export class AuthService {
         </div>
       `;
 
-      const quitSignerCheckbox = content.querySelector('#quit-signer-checkbox') as HTMLInputElement;
-      const rememberCheckbox = content.querySelector('#remember-checkbox') as HTMLInputElement;
-      const quitBtn = content.querySelector('[data-action="quit"]') as HTMLButtonElement;
-      const cancelBtn = content.querySelector('[data-action="cancel"]') as HTMLButtonElement;
+      const quitSignerCheckbox = content.querySelector(
+        '#quit-signer-checkbox'
+      ) as HTMLInputElement;
+      const rememberCheckbox = content.querySelector(
+        '#remember-checkbox'
+      ) as HTMLInputElement;
+      const quitBtn = content.querySelector(
+        '[data-action="quit"]'
+      ) as HTMLButtonElement;
+      const cancelBtn = content.querySelector(
+        '[data-action="cancel"]'
+      ) as HTMLButtonElement;
 
       const updateButtonText = () => {
         quitBtn.textContent = quitSignerCheckbox.checked
@@ -660,7 +833,7 @@ export class AuthService {
         height: 'auto',
         closeOnOverlay: true,
         closeOnEsc: true,
-        showCloseButton: true
+        showCloseButton: true,
       });
     });
   }
@@ -687,13 +860,15 @@ export class AuthService {
     }
 
     if (this.authMethod === 'nip46' && this.nip46SubType === 'nostrconnect') {
-      if (!this.nostrConnectManager) this.nostrConnectManager = new NostrConnectSignerManager();
+      if (!this.nostrConnectManager)
+        this.nostrConnectManager = new NostrConnectSignerManager();
       await this.nostrConnectManager.restoreSession();
       return this.nostrConnectManager.isAvailable();
     }
 
     if (this.authMethod === 'extension') {
-      if (!this.extensionManager) this.extensionManager = new ExtensionSignerManager();
+      if (!this.extensionManager)
+        this.extensionManager = new ExtensionSignerManager();
       return this.extensionManager.restoreConnection();
     }
 
@@ -711,7 +886,13 @@ export class AuthService {
       if (!stored) return;
 
       const sessionData = JSON.parse(stored);
-      if (!sessionData.npub || !sessionData.pubkey || !sessionData.timestamp || !sessionData.authMethod) return;
+      if (
+        !sessionData.npub ||
+        !sessionData.pubkey ||
+        !sessionData.timestamp ||
+        !sessionData.authMethod
+      )
+        return;
 
       // key-signer sessions are IGNORED — daemon is single source of truth
       if (sessionData.authMethod === 'key-signer') {
@@ -734,7 +915,9 @@ export class AuthService {
 
       // Legacy guard: old sessions (≤0.4.7) lack nip46SubType — clear and re-login
       if (this.authMethod === 'nip46' && !this.nip46SubType) {
-        console.warn('[AuthService] Legacy NIP-46 session without subType — clearing');
+        console.warn(
+          '[AuthService] Legacy NIP-46 session without subType — clearing'
+        );
         this.clearSession();
         return;
       }
@@ -749,7 +932,10 @@ export class AuthService {
         return;
       }
 
-      this.eventBus.emit('user:login', { npub: sessionData.npub, pubkey: sessionData.pubkey });
+      this.eventBus.emit('user:login', {
+        npub: sessionData.npub,
+        pubkey: sessionData.pubkey,
+      });
     } catch (error) {
       console.warn('Failed to load session:', error);
       this.clearSession();
@@ -761,21 +947,26 @@ export class AuthService {
     if (this.authMethod === 'key-signer') return;
 
     try {
-      localStorage.setItem(this.storageKey, JSON.stringify({
-        npub: this.currentUser.npub,
-        pubkey: this.currentUser.pubkey,
-        authMethod: this.authMethod,
-        isReadOnly: this.isReadOnly,
-        nip46SubType: this.nip46SubType,
-        timestamp: Date.now()
-      }));
+      localStorage.setItem(
+        this.storageKey,
+        JSON.stringify({
+          npub: this.currentUser.npub,
+          pubkey: this.currentUser.pubkey,
+          authMethod: this.authMethod,
+          isReadOnly: this.isReadOnly,
+          nip46SubType: this.nip46SubType,
+          timestamp: Date.now(),
+        })
+      );
     } catch (error) {
       console.warn('Failed to save session:', error);
     }
   }
 
   private clearSession(): void {
-    try { localStorage.removeItem(this.storageKey); } catch {}
+    try {
+      localStorage.removeItem(this.storageKey);
+    } catch {}
     this.currentUser = null;
     this.authMethod = null;
     this.isReadOnly = false;
@@ -791,7 +982,9 @@ export class AuthService {
     return this.accountStorage.getAccounts();
   }
 
-  public async switchAccount(pubkey: string): Promise<{ success: boolean; error?: string }> {
+  public async switchAccount(
+    pubkey: string
+  ): Promise<{ success: boolean; error?: string }> {
     const account = this.accountStorage.getAccount(pubkey);
     if (!account) return { success: false, error: 'Account not found' };
 
@@ -803,7 +996,11 @@ export class AuthService {
         result = await this.authenticate();
         break;
       case 'nip46':
-        if (!account.bunkerUri) return { success: false, error: 'No bunker URI stored for this account' };
+        if (!account.bunkerUri)
+          return {
+            success: false,
+            error: 'No bunker URI stored for this account',
+          };
         result = await this.authenticateWithBunker(account.bunkerUri);
         break;
       case 'key-signer':
@@ -813,7 +1010,10 @@ export class AuthService {
         result = await this.authenticateWithAmber();
         break;
       default:
-        return { success: false, error: `Unsupported auth method: ${account.authMethod}` };
+        return {
+          success: false,
+          error: `Unsupported auth method: ${account.authMethod}`,
+        };
     }
 
     if (result.success) this.accountStorage.touchAccount(pubkey);
@@ -851,7 +1051,7 @@ export class AuthService {
       npub: this.currentUser.npub,
       authMethod: this.authMethod,
       addedAt: Date.now(),
-      lastUsedAt: Date.now()
+      lastUsedAt: Date.now(),
     };
 
     if (bunkerUri) account.bunkerUri = bunkerUri;

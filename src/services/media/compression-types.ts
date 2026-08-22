@@ -69,10 +69,10 @@ export const DEFAULT_MEDIA_COMPRESSION_SETTINGS: MediaCompressionSettings = {
 
 /** JPEG quality factor (0..1) per preset. */
 export const IMAGE_JPEG_QUALITY: Record<CompressionQuality, number> = {
-  low:    0.5,
+  low: 0.5,
   medium: 0.7,
-  high:   0.85,
-  ultra:  0.95,
+  high: 0.85,
+  ultra: 0.95,
 };
 
 // Bitrate per audio quality preset, in kbps.
@@ -83,7 +83,11 @@ export const AUDIO_BITRATE_KBPS: Record<CompressionQuality, number> = {
   ultra: 256,
 };
 
-export type UploadPhase = 'compressing' | 'compressed' | 'uploading' | 'uploaded';
+export type UploadPhase =
+  | 'compressing'
+  | 'compressed'
+  | 'uploading'
+  | 'uploaded';
 
 export type MediaKind = 'video' | 'audio' | 'image' | 'other';
 

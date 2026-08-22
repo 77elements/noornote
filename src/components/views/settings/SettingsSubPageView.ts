@@ -25,9 +25,11 @@ export class SettingsSubPageView extends View {
       <div id="${section.getSectionId()}-content" class="settings-sub-page__content"></div>
     `;
 
-    this.container.querySelector('.settings-sub-page__back')?.addEventListener('click', () => {
-      Router.getInstance().navigate('/settings');
-    });
+    this.container
+      .querySelector('.settings-sub-page__back')
+      ?.addEventListener('click', () => {
+        Router.getInstance().navigate('/settings');
+      });
 
     this.section.mount(this.container);
   }

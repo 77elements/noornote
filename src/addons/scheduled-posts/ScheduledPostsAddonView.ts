@@ -15,7 +15,10 @@ import { AuthService } from '../../services/AuthService';
 import { SystemLogger } from '../../services/SystemLogger';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { isScheduledPostsEnabled, setScheduledPostsEnabled } from './index';
-import { ScheduledPostService, type ScheduledPost } from './ScheduledPostService';
+import {
+  ScheduledPostService,
+  type ScheduledPost,
+} from './ScheduledPostService';
 
 export class ScheduledPostsAddonView extends View {
   private container: HTMLElement;
@@ -29,16 +32,19 @@ export class ScheduledPostsAddonView extends View {
   constructor() {
     super();
     this.container = document.createElement('div');
-    this.container.className = 'view-content view-content--addon view-content--addon-scheduled-posts';
+    this.container.className =
+      'view-content view-content--addon view-content--addon-scheduled-posts';
 
     const enabled = isScheduledPostsEnabled();
 
     this.enableSwitch = new Switch({
       label: '',
       checked: enabled,
-      onChange: (checked) => {
+      onChange: checked => {
         setScheduledPostsEnabled(checked);
-        TypedEventBus.getInstance().emit('scheduled-posts:addon-toggle', { enabled: checked });
+        TypedEventBus.getInstance().emit('scheduled-posts:addon-toggle', {
+          enabled: checked,
+        });
         ToastService.show(
           checked ? 'Scheduled Posts enabled' : 'Scheduled Posts disabled',
           'success'
@@ -64,23 +70,31 @@ export class ScheduledPostsAddonView extends View {
     if (controlEl) controlEl.innerHTML = this.enableSwitch.render();
     this.enableSwitch.setupEventListeners(this.container);
 
-    this.contentEl = this.container.querySelector('[data-addon-content="scheduled-posts"]');
+    this.contentEl = this.container.querySelector(
+      '[data-addon-content="scheduled-posts"]'
+    );
 
     if (enabled) {
       this.mountList();
     }
 
-    this.toggleSubId = TypedEventBus.getInstance().on('scheduled-posts:addon-toggle', (payload: { enabled: boolean }) => {
-      if (payload.enabled) this.mountList();
-      else this.unmountList();
-    });
+    this.toggleSubId = TypedEventBus.getInstance().on(
+      'scheduled-posts:addon-toggle',
+      (payload: { enabled: boolean }) => {
+        if (payload.enabled) this.mountList();
+        else this.unmountList();
+      }
+    );
 
     // Refresh the list whenever a post is scheduled or cancelled elsewhere.
-    this.changedSubId = TypedEventBus.getInstance().on('scheduled-posts:changed', () => {
-      if (isScheduledPostsEnabled()) {
-        void this.loadAndRenderList();
+    this.changedSubId = TypedEventBus.getInstance().on(
+      'scheduled-posts:changed',
+      () => {
+        if (isScheduledPostsEnabled()) {
+          void this.loadAndRenderList();
+        }
       }
-    });
+    );
   }
 
   public getElement(): HTMLElement {
@@ -128,10 +142,15 @@ export class ScheduledPostsAddonView extends View {
     this.loading = true;
     this.renderList();
     try {
-      this.posts = await ScheduledPostService.getInstance().getScheduled(user.pubkey);
+      this.posts = await ScheduledPostService.getInstance().getScheduled(
+        user.pubkey
+      );
       this.posts.sort((a, b) => a.publishAt - b.publishAt);
     } catch (err) {
-      SystemLogger.getInstance().warn('ScheduledPostsAddonView', `Failed to load list: ${err}`);
+      SystemLogger.getInstance().warn(
+        'ScheduledPostsAddonView',
+        `Failed to load list: ${err}`
+      );
       this.posts = [];
       ToastService.show('Failed to load scheduled posts', 'error');
     } finally {
@@ -141,7 +160,9 @@ export class ScheduledPostsAddonView extends View {
   }
 
   private renderList(): void {
-    const list = this.container.querySelector('[data-list]') as HTMLElement | null;
+    const list = this.container.querySelector(
+      '[data-list]'
+    ) as HTMLElement | null;
     if (!list) return;
 
     if (this.loading) {
@@ -154,13 +175,14 @@ export class ScheduledPostsAddonView extends View {
       return;
     }
 
-    list.innerHTML = this.posts.map((p) => this.renderRow(p)).join('');
+    list.innerHTML = this.posts.map(p => this.renderRow(p)).join('');
     this.attachRowListeners();
   }
 
   private renderRow(p: ScheduledPost): string {
     const when = new Date(p.publishAt * 1000).toLocaleString();
-    const kindLabel = p.kind === 30023 ? 'Article' : p.kind === 1068 ? 'Poll' : 'Note';
+    const kindLabel =
+      p.kind === 30023 ? 'Article' : p.kind === 1068 ? 'Poll' : 'Note';
     const preview = p.content.length >= 100 ? `${p.content}…` : p.content;
     return `
       <div class="ui-list__item scheduled-post" data-id="${escapeHtml(p.id)}">
@@ -179,9 +201,11 @@ export class ScheduledPostsAddonView extends View {
   private attachRowListeners(): void {
     const list = this.container.querySelector('[data-list]');
     if (!list) return;
-    list.querySelectorAll('[data-action="cancel"]').forEach((btn) => {
-      btn.addEventListener('click', async (e) => {
-        const row = (e.currentTarget as HTMLElement).closest('[data-id]') as HTMLElement;
+    list.querySelectorAll('[data-action="cancel"]').forEach(btn => {
+      btn.addEventListener('click', async e => {
+        const row = (e.currentTarget as HTMLElement).closest(
+          '[data-id]'
+        ) as HTMLElement;
         const id = row?.dataset.id;
         if (!id) return;
         await this.handleCancel(id);
@@ -192,7 +216,8 @@ export class ScheduledPostsAddonView extends View {
   private async handleCancel(id: string): Promise<void> {
     const confirmed = await ModalService.getInstance().confirm({
       title: 'Cancel Scheduled Post',
-      message: 'This will permanently remove the scheduled post. The event will not be published.',
+      message:
+        'This will permanently remove the scheduled post. The event will not be published.',
       confirmText: 'Cancel Post',
       cancelText: 'Keep',
       confirmDestructive: true,
@@ -218,15 +243,22 @@ export class ScheduledPostsAddonView extends View {
         ToastService.show('Failed to sign cancel challenge', 'error');
         return;
       }
-      await ScheduledPostService.getInstance().cancel(user.pubkey, id, challenge);
+      await ScheduledPostService.getInstance().cancel(
+        user.pubkey,
+        id,
+        challenge
+      );
       const { diagLog } = await import('../../services/DiagnosticLogger');
       diagLog('system', 'scheduled_post_cancelled', { id });
-      this.posts = this.posts.filter((p) => p.id !== id);
+      this.posts = this.posts.filter(p => p.id !== id);
       this.renderList();
       TypedEventBus.getInstance().emit('scheduled-posts:changed');
       ToastService.show('Scheduled post cancelled', 'success');
     } catch (err) {
-      SystemLogger.getInstance().warn('ScheduledPostsAddonView', `Cancel failed: ${err}`);
+      SystemLogger.getInstance().warn(
+        'ScheduledPostsAddonView',
+        `Cancel failed: ${err}`
+      );
       ToastService.show(`Cancel failed: ${err}`, 'error');
     }
   }

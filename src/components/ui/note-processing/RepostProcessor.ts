@@ -18,12 +18,17 @@ export class RepostProcessor {
    * SYNCHRONOUS - no blocking calls
    */
   static process(event: NostrEvent): ProcessedNote {
-    const reposterProfile = RepostProcessor.contentProcessor.getNonBlockingProfile(event.pubkey);
-    const originalAuthorPubkey = RepostProcessor.extractOriginalAuthorPubkey(event);
+    const reposterProfile =
+      RepostProcessor.contentProcessor.getNonBlockingProfile(event.pubkey);
+    const originalAuthorPubkey =
+      RepostProcessor.extractOriginalAuthorPubkey(event);
 
     let originalAuthorProfile;
     if (originalAuthorPubkey) {
-      originalAuthorProfile = RepostProcessor.contentProcessor.getNonBlockingProfile(originalAuthorPubkey);
+      originalAuthorProfile =
+        RepostProcessor.contentProcessor.getNonBlockingProfile(
+          originalAuthorPubkey
+        );
     }
 
     let originalContent = 'Reposted content';
@@ -44,29 +49,58 @@ export class RepostProcessor {
     // so imeta tags are extracted and media is rendered properly.
     let processedContent;
     if (originalEvent && originalEvent.kind === 20) {
-      processedContent = RepostProcessor.contentProcessor.processContentWithTags(originalContent, originalEvent.tags);
-      PictureNoteProcessor.prependPictureContent(processedContent, originalEvent.tags);
-    } else if (originalEvent && (originalEvent.kind === 21 || originalEvent.kind === 22)) {
-      processedContent = RepostProcessor.contentProcessor.processContentWithTags(originalContent, originalEvent.tags);
-      VideoNoteProcessor.prependVideoContent(processedContent, originalEvent.tags);
+      processedContent =
+        RepostProcessor.contentProcessor.processContentWithTags(
+          originalContent,
+          originalEvent.tags
+        );
+      PictureNoteProcessor.prependPictureContent(
+        processedContent,
+        originalEvent.tags
+      );
+    } else if (
+      originalEvent &&
+      (originalEvent.kind === 21 || originalEvent.kind === 22)
+    ) {
+      processedContent =
+        RepostProcessor.contentProcessor.processContentWithTags(
+          originalContent,
+          originalEvent.tags
+        );
+      VideoNoteProcessor.prependVideoContent(
+        processedContent,
+        originalEvent.tags
+      );
     } else {
       processedContent = originalEvent
-        ? RepostProcessor.contentProcessor.processContentWithTags(originalContent, originalEvent.tags)
+        ? RepostProcessor.contentProcessor.processContentWithTags(
+            originalContent,
+            originalEvent.tags
+          )
         : RepostProcessor.contentProcessor.processContent(originalContent);
     }
 
     // Build profile objects with explicit undefined handling for exactOptionalPropertyTypes
-    const buildProfile = (profile: { name?: string; display_name?: string; picture?: string } | null): { name?: string; display_name?: string; picture?: string } | undefined => {
+    const buildProfile = (
+      profile: { name?: string; display_name?: string; picture?: string } | null
+    ):
+      | { name?: string; display_name?: string; picture?: string }
+      | undefined => {
       if (!profile) return undefined;
-      const result: { name?: string; display_name?: string; picture?: string } = {};
+      const result: { name?: string; display_name?: string; picture?: string } =
+        {};
       if (profile.name !== undefined) result.name = profile.name;
-      if (profile.display_name !== undefined) result.display_name = profile.display_name;
+      if (profile.display_name !== undefined)
+        result.display_name = profile.display_name;
       if (profile.picture !== undefined) result.picture = profile.picture;
       return Object.keys(result).length > 0 ? result : undefined;
     };
 
     // Build author/reposter with conditional profile property for exactOptionalPropertyTypes
-    const buildAuthorObject = (pubkey: string, profile: ReturnType<typeof buildProfile>): ProcessedNote['author'] => {
+    const buildAuthorObject = (
+      pubkey: string,
+      profile: ReturnType<typeof buildProfile>
+    ): ProcessedNote['author'] => {
       if (profile) {
         return { pubkey, profile };
       }
@@ -74,12 +108,18 @@ export class RepostProcessor {
     };
 
     // Priority: embedded event pubkey (authoritative) > p-tag > reposter
-    const authorPubkey = originalEvent?.pubkey ?? originalAuthorPubkey ?? event.pubkey;
-    const authorProfile = (authorPubkey !== event.pubkey)
-      ? buildProfile(authorPubkey === originalAuthorPubkey
-          ? (originalAuthorProfile ?? null)
-          : RepostProcessor.contentProcessor.getNonBlockingProfile(authorPubkey) ?? null)
-      : buildProfile(reposterProfile);
+    const authorPubkey =
+      originalEvent?.pubkey ?? originalAuthorPubkey ?? event.pubkey;
+    const authorProfile =
+      authorPubkey !== event.pubkey
+        ? buildProfile(
+            authorPubkey === originalAuthorPubkey
+              ? (originalAuthorProfile ?? null)
+              : (RepostProcessor.contentProcessor.getNonBlockingProfile(
+                  authorPubkey
+                ) ?? null)
+          )
+        : buildProfile(reposterProfile);
 
     const reposterProfileObj = buildProfile(reposterProfile);
 
@@ -90,7 +130,7 @@ export class RepostProcessor {
       author: buildAuthorObject(authorPubkey, authorProfile),
       reposter: buildAuthorObject(event.pubkey, reposterProfileObj),
       content: processedContent,
-      rawEvent: event
+      rawEvent: event,
     };
 
     if (originalEvent) {
@@ -103,7 +143,6 @@ export class RepostProcessor {
 
     return result;
   }
-
 
   /**
    * Extract original author pubkey from repost tags

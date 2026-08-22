@@ -8,7 +8,10 @@
  * the renderer. Mirrors src/helpers/followPackDiff.ts.
  */
 
-import { PerAccountLocalStorage, StorageKeys } from '../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../services/PerAccountLocalStorage';
 import type { EmojiPack, EmojiPackEmoji } from './parseEmojiPack';
 
 export interface EmojiPackSnapshot {
@@ -28,12 +31,22 @@ function emojiKey(e: EmojiPackEmoji): string {
   return `${e.shortcode}|${e.url}`;
 }
 
-export function getEmojiPackSnapshot(authorPubkey: string, dTag: string): EmojiPackSnapshot | null {
-  const map = PerAccountLocalStorage.getInstance().get<SnapshotMap>(StorageKeys.EMOJI_PACK_SNAPSHOTS, {});
+export function getEmojiPackSnapshot(
+  authorPubkey: string,
+  dTag: string
+): EmojiPackSnapshot | null {
+  const map = PerAccountLocalStorage.getInstance().get<SnapshotMap>(
+    StorageKeys.EMOJI_PACK_SNAPSHOTS,
+    {}
+  );
   return map[packKey(authorPubkey, dTag)] ?? null;
 }
 
-export function setEmojiPackSnapshot(authorPubkey: string, dTag: string, snapshot: EmojiPackSnapshot): void {
+export function setEmojiPackSnapshot(
+  authorPubkey: string,
+  dTag: string,
+  snapshot: EmojiPackSnapshot
+): void {
   const store = PerAccountLocalStorage.getInstance();
   const map = store.get<SnapshotMap>(StorageKeys.EMOJI_PACK_SNAPSHOTS, {});
   map[packKey(authorPubkey, dTag)] = snapshot;
@@ -48,7 +61,10 @@ export function snapshotFromEmojiPack(pack: EmojiPack): EmojiPackSnapshot {
   };
 }
 
-export function computeEmojiPackDiffLines(prev: EmojiPackSnapshot, current: EmojiPack): string[] {
+export function computeEmojiPackDiffLines(
+  prev: EmojiPackSnapshot,
+  current: EmojiPack
+): string[] {
   const lines: string[] = [];
 
   const prevSet = new Set(prev.emojis);
@@ -59,10 +75,12 @@ export function computeEmojiPackDiffLines(prev: EmojiPackSnapshot, current: Emoj
   const removed = prev.emojis.filter(k => !currSet.has(k)).length;
 
   if (added === 1) lines.push('1 new emoji gif was added to this set');
-  else if (added > 1) lines.push(`${added} new emoji gifs were added to this set`);
+  else if (added > 1)
+    lines.push(`${added} new emoji gifs were added to this set`);
 
   if (removed === 1) lines.push('1 emoji gif was removed from this set');
-  else if (removed > 1) lines.push(`${removed} emoji gifs were removed from this set`);
+  else if (removed > 1)
+    lines.push(`${removed} emoji gifs were removed from this set`);
 
   if (prev.title !== current.title) lines.push('Title was changed');
 

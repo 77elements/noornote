@@ -20,26 +20,42 @@
 import { AlertBarService } from '../../services/AlertBarService';
 import { Router } from '../../services/Router';
 import { diagLog } from '../../services/DiagnosticLogger';
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
-import { isNostrMajlisEnabled, getNostrMajlisSettings, type ReminderPrayers } from './index';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../services/PerAccountLocalStorage';
+import {
+  isNostrMajlisEnabled,
+  getNostrMajlisSettings,
+  type ReminderPrayers,
+} from './index';
 import { getActiveTimes, parseHHMM } from './activeTimes';
 import { getHolidayReminders } from './holidays';
 import { formatDateByCalendar } from '../../helpers/formatTimestamp';
 
 const POLL_MS = 30_000;
 const PRAYERS: [keyof ReminderPrayers, string][] = [
-  ['fajr', 'Fajr'], ['dhuhr', 'Dhuhr'], ['asr', 'Asr'], ['maghrib', 'Maghrib'], ['isha', 'Isha'],
+  ['fajr', 'Fajr'],
+  ['dhuhr', 'Dhuhr'],
+  ['asr', 'Asr'],
+  ['maghrib', 'Maghrib'],
+  ['isha', 'Isha'],
 ];
 
 function sameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }
 
 export class NostrMajlisReminderService {
   private static instance: NostrMajlisReminderService | null = null;
 
   static getInstance(): NostrMajlisReminderService {
-    if (!NostrMajlisReminderService.instance) NostrMajlisReminderService.instance = new NostrMajlisReminderService();
+    if (!NostrMajlisReminderService.instance)
+      NostrMajlisReminderService.instance = new NostrMajlisReminderService();
     return NostrMajlisReminderService.instance;
   }
 
@@ -57,7 +73,8 @@ export class NostrMajlisReminderService {
   /** Ask once for OS-notification permission so background reminders can show. */
   private ensureOsPermission(): void {
     if (typeof Notification === 'undefined') return;
-    if (Notification.permission === 'default') void Notification.requestPermission();
+    if (Notification.permission === 'default')
+      void Notification.requestPermission();
   }
 
   private scan(): void {
@@ -68,7 +85,10 @@ export class NostrMajlisReminderService {
     if (s.holidayReminder?.enabled) this.scanHolidays(s, now);
   }
 
-  private scanPrayers(s: ReturnType<typeof getNostrMajlisSettings>, now: Date): void {
+  private scanPrayers(
+    s: ReturnType<typeof getNostrMajlisSettings>,
+    now: Date
+  ): void {
     const times = getActiveTimes();
     if (!times) return;
 
@@ -76,7 +96,8 @@ export class NostrMajlisReminderService {
     const nowMin = now.getHours() * 60 + now.getMinutes();
 
     // Drop yesterday's dedup keys.
-    for (const k of this.shown) if (!k.startsWith(`${dateStr}:`)) this.shown.delete(k);
+    for (const k of this.shown)
+      if (!k.startsWith(`${dateStr}:`)) this.shown.delete(k);
 
     // Persisted acknowledgements survive reload/restart — without this the banner
     // reappears on every reload while still inside the [prayer − offset, prayer) window.
@@ -96,10 +117,15 @@ export class NostrMajlisReminderService {
       this.shown.add(dedup);
 
       const remaining = pm - nowMin;
-      diagLog('addons', 'nostr-majlis: reminder fired', { prayer: key, at: times[key], remaining });
+      diagLog('addons', 'nostr-majlis: reminder fired', {
+        prayer: key,
+        at: times[key],
+        remaining,
+      });
       AlertBarService.getInstance().show({
         text: `${name} prayer in ${remaining} min (${times[key]})`,
-        onTextClick: () => Router.getInstance().navigate('/addons/nostr-majlis'),
+        onTextClick: () =>
+          Router.getInstance().navigate('/addons/nostr-majlis'),
         onOk: () => this.ackPrayer(dedup, dateStr),
       });
       this.notifyOs(name, times[key], remaining);
@@ -108,7 +134,10 @@ export class NostrMajlisReminderService {
 
   /** Acknowledged prayer dedup keys, persisted per account so "Ok" sticks across restarts. */
   private loadAckedPrayers(): Set<string> {
-    const arr = PerAccountLocalStorage.getInstance().get<string[]>(StorageKeys.NOSTR_MAJLIS_PRAYERS_ACK, []);
+    const arr = PerAccountLocalStorage.getInstance().get<string[]>(
+      StorageKeys.NOSTR_MAJLIS_PRAYERS_ACK,
+      []
+    );
     return new Set(arr);
   }
 
@@ -121,12 +150,18 @@ export class NostrMajlisReminderService {
     // Mirrors the in-memory `shown` prune (format-agnostic, no Date parsing).
     const pruned = [...set].filter(k => k.startsWith(`${dateStr}:`));
 
-    PerAccountLocalStorage.getInstance().set(StorageKeys.NOSTR_MAJLIS_PRAYERS_ACK, pruned);
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.NOSTR_MAJLIS_PRAYERS_ACK,
+      pruned
+    );
     diagLog('addons', 'nostr-majlis: prayer reminder acknowledged', { dedup });
   }
 
   /** Fire the holiday reminder due today (09:00, N days before), once per holiday occurrence. */
-  private scanHolidays(s: ReturnType<typeof getNostrMajlisSettings>, now: Date): void {
+  private scanHolidays(
+    s: ReturnType<typeof getNostrMajlisSettings>,
+    now: Date
+  ): void {
     const days = s.holidayReminder.daysBefore;
     const acked = this.loadAckedHolidays();
     for (const rem of getHolidayReminders(days)) {
@@ -142,22 +177,39 @@ export class NostrMajlisReminderService {
       this.shownHolidays.add(dedup);
 
       const text = `${rem.name} in ${days} day${days === 1 ? '' : 's'} (${formatDateByCalendar(rem.date)})`;
-      diagLog('addons', 'nostr-majlis: holiday reminder fired', { holiday: rem.key, daysBefore: days });
+      diagLog('addons', 'nostr-majlis: holiday reminder fired', {
+        holiday: rem.key,
+        daysBefore: days,
+      });
       AlertBarService.getInstance().show({
         text,
-        onTextClick: () => Router.getInstance().navigate('/addons/nostr-majlis'),
+        onTextClick: () =>
+          Router.getInstance().navigate('/addons/nostr-majlis'),
         onOk: () => this.ackHoliday(dedup),
       });
-      if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && !document.hasFocus()) {
-        const n = new Notification(rem.name, { body: text, tag: `nostr-majlis-holiday-${rem.key}` });
-        n.onclick = () => { window.focus(); Router.getInstance().navigate('/addons/nostr-majlis'); };
+      if (
+        typeof Notification !== 'undefined' &&
+        Notification.permission === 'granted' &&
+        !document.hasFocus()
+      ) {
+        const n = new Notification(rem.name, {
+          body: text,
+          tag: `nostr-majlis-holiday-${rem.key}`,
+        });
+        n.onclick = () => {
+          window.focus();
+          Router.getInstance().navigate('/addons/nostr-majlis');
+        };
       }
     }
   }
 
   /** Acknowledged holiday dedup keys, persisted per account so "Ok" sticks across restarts. */
   private loadAckedHolidays(): Set<string> {
-    const arr = PerAccountLocalStorage.getInstance().get<string[]>(StorageKeys.NOSTR_MAJLIS_HOLIDAYS_ACK, []);
+    const arr = PerAccountLocalStorage.getInstance().get<string[]>(
+      StorageKeys.NOSTR_MAJLIS_HOLIDAYS_ACK,
+      []
+    );
     return new Set(arr);
   }
 
@@ -173,19 +225,29 @@ export class NostrMajlisReminderService {
       return isNaN(d.getTime()) || d.getTime() >= todayStart.getTime();
     });
 
-    PerAccountLocalStorage.getInstance().set(StorageKeys.NOSTR_MAJLIS_HOLIDAYS_ACK, pruned);
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.NOSTR_MAJLIS_HOLIDAYS_ACK,
+      pruned
+    );
     diagLog('addons', 'nostr-majlis: holiday reminder acknowledged', { dedup });
   }
 
   /** Background OS notification — only when the window isn't focused (else the AlertBar is enough). */
   private notifyOs(name: string, time: string, remaining: number): void {
-    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    if (
+      typeof Notification === 'undefined' ||
+      Notification.permission !== 'granted'
+    )
+      return;
     if (document.hasFocus()) return;
     const n = new Notification(`${name} prayer`, {
       body: `In ${remaining} min (${time})`,
       tag: `nostr-majlis-${name}`,
     });
-    n.onclick = () => { window.focus(); Router.getInstance().navigate('/addons/nostr-majlis'); };
+    n.onclick = () => {
+      window.focus();
+      Router.getInstance().navigate('/addons/nostr-majlis');
+    };
   }
 
   destroy(): void {

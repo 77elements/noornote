@@ -178,7 +178,8 @@ export const StorageKeys = {
   MARKETPLACE_ENABLED: 'noornote_marketplace_enabled_map',
   MARKETPLACE_TIMELINE_ENABLED: 'noornote_marketplace_timeline_enabled_map',
   MARKETPLACE_TIMELINE_FREQUENCY: 'noornote_marketplace_timeline_frequency_map',
-  MARKETPLACE_PROFILE_LISTINGS_ENABLED: 'noornote_marketplace_profile_listings_enabled_map',
+  MARKETPLACE_PROFILE_LISTINGS_ENABLED:
+    'noornote_marketplace_profile_listings_enabled_map',
   HASHTAG_SUBSCRIPTIONS_ENABLED: 'noornote_hashtag_subscriptions_enabled_map',
   PROFILE_RECOGNITION_WINDOW: 'noornote_profile_recognition_window_map',
   LIST_SETTINGS_ENABLED: 'noornote_list_settings_enabled_map',
@@ -263,9 +264,14 @@ export const StorageKeys = {
   LIST_LAST_MODIFIED_TRIBES: 'noornote_list_lm_tribes_map',
 } as const;
 
-export type StorageKey = typeof StorageKeys[keyof typeof StorageKeys];
+export type StorageKey = (typeof StorageKeys)[keyof typeof StorageKeys];
 
-export type LayoutMode = 'default' | 'right-pane' | 'right-pane-rss' | 'wide' | 'phone';
+export type LayoutMode =
+  | 'default'
+  | 'right-pane'
+  | 'right-pane-rss'
+  | 'wide'
+  | 'phone';
 export type FontSizeScale = 'small' | 'default' | 'large' | 'x-large';
 
 // Notification priority: 1 = highest (pulsing), 2 = medium (solid), 3 = lowest (hollow)
@@ -313,7 +319,11 @@ export class PerAccountLocalStorage {
     if (!pubkey) return 'default';
 
     // Check if LAYOUT_MODE already exists
-    const layoutMode = this.getForPubkey<string>(StorageKeys.LAYOUT_MODE, pubkey, 'default');
+    const layoutMode = this.getForPubkey<string>(
+      StorageKeys.LAYOUT_MODE,
+      pubkey,
+      'default'
+    );
 
     // Migration: 'mobile' was renamed to 'phone' in v0.3.8
     if (layoutMode === 'mobile') {
@@ -327,7 +337,11 @@ export class PerAccountLocalStorage {
     }
 
     // Migration: Check old VIEW_TABS_RIGHT_PANE setting
-    const legacyRightPaneEnabled = this.getForPubkey<boolean>(StorageKeys.VIEW_TABS_RIGHT_PANE, pubkey, false);
+    const legacyRightPaneEnabled = this.getForPubkey<boolean>(
+      StorageKeys.VIEW_TABS_RIGHT_PANE,
+      pubkey,
+      false
+    );
 
     if (legacyRightPaneEnabled) {
       // Migrate: true → 'right-pane'
@@ -378,7 +392,7 @@ export class PerAccountLocalStorage {
    */
   public setForPubkey<T>(key: StorageKey, pubkey: string, value: T): void {
     const mapStr = localStorage.getItem(key);
-    const map = mapStr ? JSON.parse(mapStr) as Record<string, T> : {};
+    const map = mapStr ? (JSON.parse(mapStr) as Record<string, T>) : {};
     map[pubkey] = value;
     localStorage.setItem(key, JSON.stringify(map));
   }

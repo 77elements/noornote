@@ -52,7 +52,8 @@ export class AmberSignerService {
   }
 
   async login(): Promise<AmberLoginResult> {
-    if (!platform.isCapacitor) throw new Error('Amber is only available on Capacitor (Android)');
+    if (!platform.isCapacitor)
+      throw new Error('Amber is only available on Capacitor (Android)');
 
     const signer = await getSignerPlugin();
     // Discover Amber's package name first
@@ -74,44 +75,97 @@ export class AmberSignerService {
     return { pubkey: result.npub, packageName: this.packageName };
   }
 
-  async signEvent(eventJson: string, _pubkey: string): Promise<AmberSignResult> {
-    if (!platform.isCapacitor) throw new Error('Amber is only available on Capacitor (Android)');
+  async signEvent(
+    eventJson: string,
+    _pubkey: string
+  ): Promise<AmberSignResult> {
+    if (!platform.isCapacitor)
+      throw new Error('Amber is only available on Capacitor (Android)');
 
     const signer = await getSignerPlugin();
     const id = `sign-${Date.now()}`;
-    const result = await signer.signEvent(this.packageName, eventJson, id, this.npub);
+    const result = await signer.signEvent(
+      this.packageName,
+      eventJson,
+      id,
+      this.npub
+    );
     return { signature: result.signature, event: result.event };
   }
 
-  async nip04Encrypt(plaintext: string, recipientPubkey: string, _currentUser: string): Promise<string> {
-    if (!platform.isCapacitor) throw new Error('Amber is only available on Capacitor (Android)');
+  async nip04Encrypt(
+    plaintext: string,
+    recipientPubkey: string,
+    _currentUser: string
+  ): Promise<string> {
+    if (!platform.isCapacitor)
+      throw new Error('Amber is only available on Capacitor (Android)');
 
     const signer = await getSignerPlugin();
-    const result = await signer.nip04Encrypt(this.packageName, plaintext, `enc-${Date.now()}`, recipientPubkey, this.npub);
+    const result = await signer.nip04Encrypt(
+      this.packageName,
+      plaintext,
+      `enc-${Date.now()}`,
+      recipientPubkey,
+      this.npub
+    );
     return result.result;
   }
 
-  async nip04Decrypt(ciphertext: string, senderPubkey: string, _currentUser: string): Promise<string> {
-    if (!platform.isCapacitor) throw new Error('Amber is only available on Capacitor (Android)');
+  async nip04Decrypt(
+    ciphertext: string,
+    senderPubkey: string,
+    _currentUser: string
+  ): Promise<string> {
+    if (!platform.isCapacitor)
+      throw new Error('Amber is only available on Capacitor (Android)');
 
     const signer = await getSignerPlugin();
-    const result = await signer.nip04Decrypt(this.packageName, ciphertext, `dec-${Date.now()}`, senderPubkey, this.npub);
+    const result = await signer.nip04Decrypt(
+      this.packageName,
+      ciphertext,
+      `dec-${Date.now()}`,
+      senderPubkey,
+      this.npub
+    );
     return result.result;
   }
 
-  async nip44Encrypt(plaintext: string, recipientPubkey: string, _currentUser: string): Promise<string> {
-    if (!platform.isCapacitor) throw new Error('Amber is only available on Capacitor (Android)');
+  async nip44Encrypt(
+    plaintext: string,
+    recipientPubkey: string,
+    _currentUser: string
+  ): Promise<string> {
+    if (!platform.isCapacitor)
+      throw new Error('Amber is only available on Capacitor (Android)');
 
     const signer = await getSignerPlugin();
-    const result = await signer.nip44Encrypt(this.packageName, plaintext, `enc-${Date.now()}`, recipientPubkey, this.npub);
+    const result = await signer.nip44Encrypt(
+      this.packageName,
+      plaintext,
+      `enc-${Date.now()}`,
+      recipientPubkey,
+      this.npub
+    );
     return result.result;
   }
 
-  async nip44Decrypt(ciphertext: string, senderPubkey: string, _currentUser: string): Promise<string> {
-    if (!platform.isCapacitor) throw new Error('Amber is only available on Capacitor (Android)');
+  async nip44Decrypt(
+    ciphertext: string,
+    senderPubkey: string,
+    _currentUser: string
+  ): Promise<string> {
+    if (!platform.isCapacitor)
+      throw new Error('Amber is only available on Capacitor (Android)');
 
     const signer = await getSignerPlugin();
-    const result = await signer.nip44Decrypt(this.packageName, ciphertext, `dec-${Date.now()}`, senderPubkey, this.npub);
+    const result = await signer.nip44Decrypt(
+      this.packageName,
+      ciphertext,
+      `dec-${Date.now()}`,
+      senderPubkey,
+      this.npub
+    );
     return result.result;
   }
 

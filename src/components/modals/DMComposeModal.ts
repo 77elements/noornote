@@ -18,7 +18,8 @@ export class DMComposeModal {
   private modalService: ModalService;
   private _dmsApi?: DMsModuleApi | null;
   private get dmsApi(): DMsModuleApi | null {
-    return this._dmsApi ??= ModuleLoader.getInstance().getApi<DMsModuleApi>('dms');
+    return (this._dmsApi ??=
+      ModuleLoader.getInstance().getApi<DMsModuleApi>('dms'));
   }
   private userSearchInput: UserSearchInput | null = null;
   private isSending: boolean = false;
@@ -45,7 +46,7 @@ export class DMComposeModal {
       showCloseButton: true,
       closeOnOverlay: true,
       closeOnEsc: true,
-      onClose: () => this.cleanup()
+      onClose: () => this.cleanup(),
     });
 
     // Focus recipient input after modal renders
@@ -66,9 +67,11 @@ export class DMComposeModal {
       placeholder: 'Search by name or paste npub...',
       onUserSelected: () => {
         // Focus textarea when user is selected
-        const textarea = container.querySelector('.dm-compose-modal__textarea') as HTMLTextAreaElement;
+        const textarea = container.querySelector(
+          '.dm-compose-modal__textarea'
+        ) as HTMLTextAreaElement;
         textarea?.focus();
-      }
+      },
     });
 
     container.innerHTML = `
@@ -98,7 +101,9 @@ export class DMComposeModal {
     `;
 
     // Insert UserSearchInput
-    const recipientContainer = container.querySelector('.dm-compose-modal__recipient');
+    const recipientContainer = container.querySelector(
+      '.dm-compose-modal__recipient'
+    );
     if (recipientContainer) {
       recipientContainer.appendChild(this.userSearchInput.getElement());
     }
@@ -113,9 +118,13 @@ export class DMComposeModal {
    * Setup event handlers
    */
   private setupEventHandlers(container: HTMLElement): void {
-    const textarea = container.querySelector('.dm-compose-modal__textarea') as HTMLTextAreaElement;
+    const textarea = container.querySelector(
+      '.dm-compose-modal__textarea'
+    ) as HTMLTextAreaElement;
     const cancelBtn = container.querySelector('.dm-compose-modal__cancel');
-    const sendBtn = container.querySelector('.dm-compose-modal__send') as HTMLButtonElement;
+    const sendBtn = container.querySelector(
+      '.dm-compose-modal__send'
+    ) as HTMLButtonElement;
 
     // Cancel button
     cancelBtn?.addEventListener('click', () => {
@@ -146,7 +155,7 @@ export class DMComposeModal {
     }
 
     // Ctrl/Cmd + Enter to send
-    textarea?.addEventListener('keydown', (e) => {
+    textarea?.addEventListener('keydown', e => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault();
         if (!sendBtn.disabled) {
@@ -159,7 +168,10 @@ export class DMComposeModal {
   /**
    * Update send button enabled state
    */
-  private updateSendButtonState(textarea: HTMLTextAreaElement, sendBtn: HTMLButtonElement): void {
+  private updateSendButtonState(
+    textarea: HTMLTextAreaElement,
+    sendBtn: HTMLButtonElement
+  ): void {
     const hasRecipient = !!this.userSearchInput?.getSelectedPubkey();
     const hasMessage = textarea.value.trim().length > 0;
     sendBtn.disabled = !hasRecipient || !hasMessage || this.isSending;
@@ -168,7 +180,10 @@ export class DMComposeModal {
   /**
    * Handle send action
    */
-  private async handleSend(textarea: HTMLTextAreaElement, sendBtn: HTMLButtonElement): Promise<void> {
+  private async handleSend(
+    textarea: HTMLTextAreaElement,
+    sendBtn: HTMLButtonElement
+  ): Promise<void> {
     const recipientPubkey = this.userSearchInput?.getSelectedPubkey();
     const content = textarea.value.trim();
 
@@ -184,7 +199,8 @@ export class DMComposeModal {
     this.setLoadingState(sendBtn, true);
 
     try {
-      const success = await this.dmsApi?.sendMessage(recipientPubkey, content) ?? false;
+      const success =
+        (await this.dmsApi?.sendMessage(recipientPubkey, content)) ?? false;
 
       if (success) {
         ToastService.show('Message sent', 'success');

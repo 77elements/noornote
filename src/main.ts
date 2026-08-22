@@ -7,25 +7,36 @@
 import spriteContent from '/icons.svg?raw';
 const spriteDiv = document.createElement('div');
 spriteDiv.innerHTML = spriteContent;
-document.body.insertBefore(spriteDiv.firstElementChild!, document.body.firstChild);
+document.body.insertBefore(
+  spriteDiv.firstElementChild!,
+  document.body.firstChild
+);
 
 // Capture ?scc= secondary-pane state immediately (before the ?r= branch below can
 // strip the query). Restored after login in App.ts; otherwise left in the URL.
-const __capturedSccParam = new URLSearchParams(window.location.search).get('scc');
+const __capturedSccParam = new URLSearchParams(window.location.search).get(
+  'scc'
+);
 if (__capturedSccParam) {
   (window as any).__noornote_scc_param = __capturedSccParam;
 }
 
 // Capture ?r= relay browser parameter immediately (before any module side-effects or HMR)
-const __capturedRelayParam = new URLSearchParams(window.location.search).get('r');
+const __capturedRelayParam = new URLSearchParams(window.location.search).get(
+  'r'
+);
 if (__capturedRelayParam) {
   window.history.replaceState({}, '', window.location.pathname);
   (window as any).__noornote_relay_param = __capturedRelayParam;
 }
 
 // Suppress NDK v3 serialization errors for malformed events from other clients
-window.addEventListener('unhandledrejection', (event) => {
-  if (String(event.reason).includes("Can't serialize event with invalid properties")) {
+window.addEventListener('unhandledrejection', event => {
+  if (
+    String(event.reason).includes(
+      "Can't serialize event with invalid properties"
+    )
+  ) {
     event.preventDefault();
   }
 });
@@ -49,41 +60,54 @@ const failedImageLogs = new Map<string, string>();
 
 // Global error handler for resource loading failures (images, videos, etc.)
 // Downgrades console.error to console.warn for non-critical resource failures
-window.addEventListener('error', (event) => {
-  // Only handle resource loading errors (404, CORS, etc.)
-  const target = event.target as HTMLElement;
-  if (target instanceof HTMLImageElement || target instanceof HTMLVideoElement) {
-    // Prevent default error logging (red in console)
-    event.preventDefault();
+window.addEventListener(
+  'error',
+  event => {
+    // Only handle resource loading errors (404, CORS, etc.)
+    const target = event.target as HTMLElement;
+    if (
+      target instanceof HTMLImageElement ||
+      target instanceof HTMLVideoElement
+    ) {
+      // Prevent default error logging (red in console)
+      event.preventDefault();
 
-    const src = target instanceof HTMLImageElement ? target.src : (target as HTMLVideoElement).src;
-    const systemLogger = SystemLogger.getInstance();
+      const src =
+        target instanceof HTMLImageElement
+          ? target.src
+          : (target as HTMLVideoElement).src;
+      const systemLogger = SystemLogger.getInstance();
 
-    // Log to "ImageLoader" category (falls under "Local" in SystemLogger)
-    const message = `Failed to load ${target.tagName.toLowerCase()}: ${src} (Resource unavailable)`;
-    systemLogger.warn('ImageLoader', message);
+      // Log to "ImageLoader" category (falls under "Local" in SystemLogger)
+      const message = `Failed to load ${target.tagName.toLowerCase()}: ${src} (Resource unavailable)`;
+      systemLogger.warn('ImageLoader', message);
 
-    // Track this failure so we can remove it on successful retry
-    failedImageLogs.set(src, message);
+      // Track this failure so we can remove it on successful retry
+      failedImageLogs.set(src, message);
 
-    // Setup retry listener: if image loads successfully later, remove the error log
-    if (target instanceof HTMLImageElement) {
-      const onLoad = () => {
-        if (failedImageLogs.has(src)) {
-          // Remove the error message from System Log (extra points!)
-          systemLogger.removeLog('ImageLoader', message);
-          failedImageLogs.delete(src);
-        }
-        target.removeEventListener('load', onLoad);
-      };
-      target.addEventListener('load', onLoad);
+      // Setup retry listener: if image loads successfully later, remove the error log
+      if (target instanceof HTMLImageElement) {
+        const onLoad = () => {
+          if (failedImageLogs.has(src)) {
+            // Remove the error message from System Log (extra points!)
+            systemLogger.removeLog('ImageLoader', message);
+            failedImageLogs.delete(src);
+          }
+          target.removeEventListener('load', onLoad);
+        };
+        target.addEventListener('load', onLoad);
+      }
     }
-  }
-}, true); // Use capture phase to intercept before default handler
+  },
+  true
+); // Use capture phase to intercept before default handler
 
 // Patch HTMLImageElement.src setter to prevent empty/null/undefined URLs
 // This prevents localhost:3000 errors when profile pictures are missing
-const originalSrcDescriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+const originalSrcDescriptor = Object.getOwnPropertyDescriptor(
+  HTMLImageElement.prototype,
+  'src'
+);
 if (originalSrcDescriptor && originalSrcDescriptor.set) {
   Object.defineProperty(HTMLImageElement.prototype, 'src', {
     set(value: string) {
@@ -94,7 +118,7 @@ if (originalSrcDescriptor && originalSrcDescriptor.set) {
       // Silently ignore empty/null/undefined values
     },
     ...(originalSrcDescriptor.get && { get: originalSrcDescriptor.get }),
-    configurable: true
+    configurable: true,
   });
 }
 

@@ -36,18 +36,23 @@ function isAddressableKind(kind: number): boolean {
   return kind >= ADDRESSABLE_KIND_MIN && kind <= ADDRESSABLE_KIND_MAX;
 }
 
-function parseCoordinate(coord: string): { kind: number; pubkey: string; identifier: string } | null {
+function parseCoordinate(
+  coord: string
+): { kind: number; pubkey: string; identifier: string } | null {
   const parts = coord.split(':');
   if (parts.length < 3) return null;
   const kind = Number(parts[0]);
   const pubkey = parts[1];
   const identifier = parts.slice(2).join(':');
-  if (!Number.isFinite(kind) || !pubkey || identifier === undefined) return null;
+  if (!Number.isFinite(kind) || !pubkey || identifier === undefined)
+    return null;
   if (!isAddressableKind(kind)) return null;
   return { kind, pubkey, identifier };
 }
 
-export async function resolveAddressableFromReferences(hexId: string): Promise<NostrEvent | null> {
+export async function resolveAddressableFromReferences(
+  hexId: string
+): Promise<NostrEvent | null> {
   const relays = RelayConfig.getInstance().getReadRelays();
   if (relays.length === 0) return null;
 
@@ -90,6 +95,7 @@ export async function resolveAddressableFromReferences(hexId: string): Promise<N
     relays: [],
   });
 
-  const articlesApi = await ModuleLoader.getInstance().ensure<ArticlesModuleApi>('articles');
+  const articlesApi =
+    await ModuleLoader.getInstance().ensure<ArticlesModuleApi>('articles');
   return (await articlesApi?.fetchAddressableEvent(naddr)) ?? null;
 }

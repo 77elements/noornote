@@ -41,7 +41,9 @@ export class LiveChatService {
     return LiveChatService.instance;
   }
 
-  public async publishMessage(options: LiveChatMessageOptions): Promise<{ success: boolean; error?: string }> {
+  public async publishMessage(
+    options: LiveChatMessageOptions
+  ): Promise<{ success: boolean; error?: string }> {
     const { addressableId, content, relays } = options;
 
     const currentUser = this.authService.getCurrentUser();
@@ -69,14 +71,15 @@ export class LiveChatService {
       const unsignedEvent = {
         kind: 1311,
         created_at: Math.floor(Date.now() / 1000),
-        tags: [
-          ['a', addressableId, '', 'root']
-        ],
+        tags: [['a', addressableId, '', 'root']],
         content: trimmed,
-        pubkey: currentUser.pubkey
+        pubkey: currentUser.pubkey,
       };
 
-      this.systemLogger.info('LiveChatService', `Publishing chat message to ${addressableId}`);
+      this.systemLogger.info(
+        'LiveChatService',
+        `Publishing chat message to ${addressableId}`
+      );
 
       const signedEvent = await this.authService.signEvent(unsignedEvent);
 
@@ -94,9 +97,15 @@ export class LiveChatService {
         'LiveChatService',
         `Chat message accepted by ${acceptedUrls.length}/${relays.length} relay(s)`
       );
-      this.systemLogger.info('LiveChatService', `Accepted: ${acceptedUrls.join(', ') || '(none)'}`);
+      this.systemLogger.info(
+        'LiveChatService',
+        `Accepted: ${acceptedUrls.join(', ') || '(none)'}`
+      );
       if (missed.length > 0) {
-        this.systemLogger.warn('LiveChatService', `Missed: ${missed.join(', ')}`);
+        this.systemLogger.warn(
+          'LiveChatService',
+          `Missed: ${missed.join(', ')}`
+        );
       }
 
       console.log('[LiveChatService] Publish result', {

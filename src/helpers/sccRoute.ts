@@ -47,7 +47,10 @@ export type ParsedScc =
  * Encode an external user-list (a target's follows or followers) for `?scc=`.
  * Target-specific, so it carries the pubkey — unlike the own `list-<type>` tabs.
  */
-export function userListToScc(mode: 'follows' | 'followers', pubkey: string): string {
+export function userListToScc(
+  mode: 'follows' | 'followers',
+  pubkey: string
+): string {
   return `${mode === 'followers' ? 'followers-of' : 'follows-of'}:${pubkey}`;
 }
 
@@ -56,7 +59,11 @@ export function parseSccParam(value: string): ParsedScc | null {
   if (value.startsWith('/')) {
     const view = pathToView(value);
     if (!view) return null;
-    return { kind: 'view', viewType: view.viewType, ...(view.param !== undefined && { param: view.param }) };
+    return {
+      kind: 'view',
+      viewType: view.viewType,
+      ...(view.param !== undefined && { param: view.param }),
+    };
   }
   if (value.startsWith('followers-of:')) {
     const pubkey = value.slice('followers-of:'.length);
@@ -99,15 +106,21 @@ export function writeSccParam(value: string | null): void {
 }
 
 /** Route path → view type + param, or null if the path is not a restorable scc view. */
-export function pathToView(path: string): { viewType: ViewType; param?: string } | null {
+export function pathToView(
+  path: string
+): { viewType: ViewType; param?: string } | null {
   const segments = path.replace(/^\//, '').split('/');
   switch (segments[0]) {
     case 'note':
-      return segments[1] ? { viewType: 'single-note', param: segments[1] } : null;
+      return segments[1]
+        ? { viewType: 'single-note', param: segments[1] }
+        : null;
     case 'article':
       return segments[1] ? { viewType: 'article', param: segments[1] } : null;
     case 'follow-pack':
-      return segments[1] ? { viewType: 'follow-pack', param: segments[1] } : null;
+      return segments[1]
+        ? { viewType: 'follow-pack', param: segments[1] }
+        : null;
     case 'listing':
       return segments[1] ? { viewType: 'listing', param: segments[1] } : null;
     case 'profile':

@@ -41,13 +41,17 @@ async function getLastActivityMap(
 
   if (missing.length > 0) {
     try {
-      const events = await fetchEvents([{ authors: missing, kinds: ACTIVITY_KINDS, limit: ACTIVITY_LIMIT }]);
+      const events = await fetchEvents([
+        { authors: missing, kinds: ACTIVITY_KINDS, limit: ACTIVITY_LIMIT },
+      ]);
       for (const ev of events) {
         const at = ev.created_at ?? 0;
-        if (at > (activityCache.get(ev.pubkey) ?? 0)) activityCache.set(ev.pubkey, at);
+        if (at > (activityCache.get(ev.pubkey) ?? 0))
+          activityCache.set(ev.pubkey, at);
       }
       // Mark queried-but-silent authors so they aren't re-queried this session.
-      for (const pk of missing) if (!activityCache.has(pk)) activityCache.set(pk, 0);
+      for (const pk of missing)
+        if (!activityCache.has(pk)) activityCache.set(pk, 0);
     } catch {
       // Leave them uncached → treated as 0 below; a later open retries.
     }
@@ -63,13 +67,18 @@ async function getLastActivityMap(
  * Fire-and-forget from the renderer. Shows a one-off toast when it had to fetch
  * activity data (i.e. not on a warm-cache re-open, to avoid toast spam).
  */
-export async function sortMemberRowsByActivity(list: HTMLElement, pubkeys: string[]): Promise<void> {
+export async function sortMemberRowsByActivity(
+  list: HTMLElement,
+  pubkeys: string[]
+): Promise<void> {
   if (pubkeys.length < 2) return;
 
   const { map: activity, fetched } = await getLastActivityMap(pubkeys);
   if (![...activity.values()].some(ts => ts > 0)) return; // nothing to sort by
 
-  const items = Array.from(list.querySelectorAll('.follow-packs__member-item')) as HTMLElement[];
+  const items = Array.from(
+    list.querySelectorAll('.follow-packs__member-item')
+  ) as HTMLElement[];
   if (items.length < 2) return;
 
   // Stamp each row with "last active: …" next to the name. created_at is unix
@@ -77,16 +86,20 @@ export async function sortMemberRowsByActivity(list: HTMLElement, pubkeys: strin
   for (const el of items) {
     const ts = activity.get(el.dataset.pubkey || '') ?? 0;
     const slot = el.querySelector('[data-activity]');
-    if (slot) slot.textContent = ts > 0 ? `last active: ${formatTimeAgo(ts * 1000)}` : '';
+    if (slot)
+      slot.textContent =
+        ts > 0 ? `last active: ${formatTimeAgo(ts * 1000)}` : '';
   }
 
   const byActivity = (a: HTMLElement, b: HTMLElement) =>
-    (activity.get(b.dataset.pubkey || '') ?? 0) - (activity.get(a.dataset.pubkey || '') ?? 0);
+    (activity.get(b.dataset.pubkey || '') ?? 0) -
+    (activity.get(a.dataset.pubkey || '') ?? 0);
 
   const sorted = [...items].sort(byActivity);
   // Reorder only when the order actually changes (warm-cache re-open may match).
   if (!items.every((el, i) => el === sorted[i])) {
-    if (fetched) ToastService.show('Sorting members by recent activity…', 'info');
+    if (fetched)
+      ToastService.show('Sorting members by recent activity…', 'info');
     for (const el of sorted) list.appendChild(el);
   }
 

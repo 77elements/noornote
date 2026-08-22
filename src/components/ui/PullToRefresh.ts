@@ -42,9 +42,15 @@ export class PullToRefresh {
     this.boundTouchMove = this.onTouchMove.bind(this);
     this.boundTouchEnd = this.onTouchEnd.bind(this);
 
-    this.container.addEventListener('touchstart', this.boundTouchStart, { passive: true });
-    this.container.addEventListener('touchmove', this.boundTouchMove, { passive: false });
-    this.container.addEventListener('touchend', this.boundTouchEnd, { passive: true });
+    this.container.addEventListener('touchstart', this.boundTouchStart, {
+      passive: true,
+    });
+    this.container.addEventListener('touchmove', this.boundTouchMove, {
+      passive: false,
+    });
+    this.container.addEventListener('touchend', this.boundTouchEnd, {
+      passive: true,
+    });
   }
 
   /**
@@ -106,7 +112,9 @@ export class PullToRefresh {
     this.indicator.style.height = `${this.currentY}px`;
     this.indicator.style.opacity = `${progress}`;
 
-    const spinner = this.indicator.querySelector('.pull-to-refresh__spinner') as HTMLElement;
+    const spinner = this.indicator.querySelector(
+      '.pull-to-refresh__spinner'
+    ) as HTMLElement;
     if (spinner) {
       spinner.style.transform = `rotate(${progress * 360}deg)`;
       spinner.style.opacity = progress > 0.2 ? '1' : `${progress / 0.2}`;
@@ -146,7 +154,10 @@ export class PullToRefresh {
   private resetIndicator(): void {
     this.indicator.style.height = '0';
     this.indicator.style.opacity = '0';
-    this.indicator.classList.remove('pull-to-refresh--ready', 'pull-to-refresh--refreshing');
+    this.indicator.classList.remove(
+      'pull-to-refresh--ready',
+      'pull-to-refresh--refreshing'
+    );
   }
 
   public destroy(): void {

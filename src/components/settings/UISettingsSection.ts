@@ -11,16 +11,26 @@ import { Switch } from '../ui/Switch';
 import { CustomDropdown } from '../ui/CustomDropdown';
 import { ThemeSwitcher } from '../ui/ThemeSwitcher';
 import { FontSizeSwitcher } from '../ui/FontSizeSwitcher';
-import { PerAccountLocalStorage, StorageKeys, type LayoutMode } from '../../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+  type LayoutMode,
+} from '../../services/PerAccountLocalStorage';
 import { LayoutService } from '../../services/LayoutService';
 import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { PlatformService } from '../../services/PlatformService';
 import {
-  isHideSelfRepostsEnabled, setHideSelfRepostsEnabled,
-  getSelfRepostGap, setSelfRepostGap, type SelfRepostGap,
+  isHideSelfRepostsEnabled,
+  setHideSelfRepostsEnabled,
+  getSelfRepostGap,
+  setSelfRepostGap,
+  type SelfRepostGap,
 } from '../../helpers/selfRepostSetting';
-import { isHideHighlightsEnabled, setHideHighlightsEnabled } from '../../helpers/highlightSetting';
+import {
+  isHideHighlightsEnabled,
+  setHideHighlightsEnabled,
+} from '../../helpers/highlightSetting';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { SettingsModuleApi } from '../../modules/settings/contracts';
 
@@ -125,12 +135,16 @@ export class UISettingsSection extends SettingsSection {
             </p>
             <div class="self-repost-gap${hideSelfReposts ? '' : ' is-hidden'}" id="self-repost-gap-selector">
               <span class="setting__label">Disable self-reposts younger than:</span>
-              ${gapOptions.map(([value, label]) => `
+              ${gapOptions
+                .map(
+                  ([value, label]) => `
                 <label class="nn-checkbox nn-checkbox--label-left">
                   <span class="setting__label">${label}</span>
                   <input type="radio" name="self-repost-gap" value="${value}" ${currentGap === value ? 'checked' : ''} />
                 </label>
-              `).join('')}
+              `
+                )
+                .join('')}
             </div>
           </div>
         </section>
@@ -210,7 +224,9 @@ export class UISettingsSection extends SettingsSection {
           </div>
         </section>
 
-        ${isDesktop ? `
+        ${
+          isDesktop
+            ? `
         <section class="section">
           <div class="setting">
             <span class="setting__label">Automatically check for updates</span>
@@ -220,7 +236,9 @@ export class UISettingsSection extends SettingsSection {
             <button class="btn btn--mini" id="check-update-now-btn">Check now</button>
           </div>
         </section>
-        ` : ''}
+        `
+            : ''
+        }
     `;
   }
 
@@ -236,16 +254,23 @@ export class UISettingsSection extends SettingsSection {
     }
 
     // Font size switcher
-    const fontSizeMount = contentContainer.querySelector('#font-size-switcher-mount');
+    const fontSizeMount = contentContainer.querySelector(
+      '#font-size-switcher-mount'
+    );
     if (fontSizeMount) {
       this.fontSizeSwitcher = new FontSizeSwitcher();
       fontSizeMount.appendChild(this.fontSizeSwitcher.getElement());
     }
 
     // Calendar system dropdown
-    const calendarDropdownContainer = contentContainer.querySelector('.calendar-system-dropdown-container');
+    const calendarDropdownContainer = contentContainer.querySelector(
+      '.calendar-system-dropdown-container'
+    );
     if (calendarDropdownContainer) {
-      const calendarSystem = this.storage.get<string>(StorageKeys.CALENDAR_SYSTEM, 'gregorian');
+      const calendarSystem = this.storage.get<string>(
+        StorageKeys.CALENDAR_SYSTEM,
+        'gregorian'
+      );
 
       this.calendarDropdown = new CustomDropdown({
         options: [
@@ -254,11 +279,13 @@ export class UISettingsSection extends SettingsSection {
           { value: 'both', label: 'Gregorian + Hijri' },
         ],
         selectedValue: calendarSystem,
-        onChange: (value) => {
+        onChange: value => {
           this.storage.set(StorageKeys.CALENDAR_SYSTEM, value);
 
           // Emit event for immediate effect (triggers re-render of timestamps)
-          this.eventBus.emit('settings:calendar-system-changed', { system: value });
+          this.eventBus.emit('settings:calendar-system-changed', {
+            system: value,
+          });
 
           const labels = {
             gregorian: 'Gregorian calendar',
@@ -266,7 +293,10 @@ export class UISettingsSection extends SettingsSection {
             both: 'Gregorian + Hijri calendars',
           };
 
-          ToastService.show(`Switched to ${labels[value as keyof typeof labels]}`, 'success');
+          ToastService.show(
+            `Switched to ${labels[value as keyof typeof labels]}`,
+            'success'
+          );
         },
         className: 'calendar-system-dropdown',
       });
@@ -275,7 +305,9 @@ export class UISettingsSection extends SettingsSection {
     }
 
     // Layout mode dropdown
-    const layoutModeDropdownContainer = contentContainer.querySelector('.layout-mode-dropdown-container');
+    const layoutModeDropdownContainer = contentContainer.querySelector(
+      '.layout-mode-dropdown-container'
+    );
     if (layoutModeDropdownContainer) {
       const currentMode = this.layoutService.getUserPreference();
 
@@ -288,16 +320,16 @@ export class UISettingsSection extends SettingsSection {
           { value: 'phone', label: 'Phone' },
         ],
         selectedValue: currentMode,
-        onChange: async (value) => {
+        onChange: async value => {
           const mode = value as LayoutMode;
           await this.layoutService.setMode(mode);
 
           const labels: Record<LayoutMode, string> = {
-            'default': 'Default layout mode',
+            default: 'Default layout mode',
             'right-pane': 'Right pane mode (views as tabs)',
             'right-pane-rss': 'Right pane RSS mode (compact timeline)',
-            'wide': 'Wide mode (hide right pane)',
-            'phone': 'Phone layout (390px width)',
+            wide: 'Wide mode (hide right pane)',
+            phone: 'Phone layout (390px width)',
           };
 
           ToastService.show(`Switched to ${labels[mode]}`, 'success');
@@ -305,99 +337,151 @@ export class UISettingsSection extends SettingsSection {
         className: 'layout-mode-dropdown',
       });
 
-      layoutModeDropdownContainer.appendChild(this.layoutModeDropdown.getElement());
+      layoutModeDropdownContainer.appendChild(
+        this.layoutModeDropdown.getElement()
+      );
     }
 
     // Initialize Post Truncation switch
-    const postTruncationContainer = contentContainer.querySelector('#post-truncation-switch-container');
+    const postTruncationContainer = contentContainer.querySelector(
+      '#post-truncation-switch-container'
+    );
     if (postTruncationContainer) {
-      const isDisabled = this.storage.get<boolean>(StorageKeys.DISABLE_POST_TRUNCATION, false);
+      const isDisabled = this.storage.get<boolean>(
+        StorageKeys.DISABLE_POST_TRUNCATION,
+        false
+      );
 
       this.postTruncationSwitch = new Switch({
         label: '',
         checked: isDisabled,
-        onChange: (checked) => {
+        onChange: checked => {
           this.storage.set(StorageKeys.DISABLE_POST_TRUNCATION, checked);
 
           // Emit event for immediate effect
-          this.eventBus.emit('settings:post-truncation-changed', { disabled: checked });
+          this.eventBus.emit('settings:post-truncation-changed', {
+            disabled: checked,
+          });
 
           ToastService.show(
-            checked ? 'Post truncation disabled - all posts will be shown in full' : 'Post truncation enabled',
+            checked
+              ? 'Post truncation disabled - all posts will be shown in full'
+              : 'Post truncation enabled',
             'success'
           );
-        }
+        },
       });
 
       postTruncationContainer.innerHTML = this.postTruncationSwitch.render();
-      this.postTruncationSwitch.setupEventListeners(postTruncationContainer as HTMLElement);
+      this.postTruncationSwitch.setupEventListeners(
+        postTruncationContainer as HTMLElement
+      );
     }
 
     // Initialize Hide Self-Reposts switch + gap selector
-    const hideSelfRepostsContainer = contentContainer.querySelector('#hide-self-reposts-switch-container');
+    const hideSelfRepostsContainer = contentContainer.querySelector(
+      '#hide-self-reposts-switch-container'
+    );
     if (hideSelfRepostsContainer) {
       this.hideSelfRepostsSwitch = new Switch({
         label: '',
         checked: isHideSelfRepostsEnabled(),
-        onChange: (checked) => {
+        onChange: checked => {
           setHideSelfRepostsEnabled(checked);
-          contentContainer.querySelector('#self-repost-gap-selector')?.classList.toggle('is-hidden', !checked);
-          this.eventBus.emit('settings:hide-self-reposts-changed', { hidden: checked });
+          contentContainer
+            .querySelector('#self-repost-gap-selector')
+            ?.classList.toggle('is-hidden', !checked);
+          this.eventBus.emit('settings:hide-self-reposts-changed', {
+            hidden: checked,
+          });
           ToastService.show(
-            checked ? 'Self-reposts hidden from timeline' : 'Self-reposts shown again',
+            checked
+              ? 'Self-reposts hidden from timeline'
+              : 'Self-reposts shown again',
             'success'
           );
-        }
+        },
       });
       hideSelfRepostsContainer.innerHTML = this.hideSelfRepostsSwitch.render();
-      this.hideSelfRepostsSwitch.setupEventListeners(hideSelfRepostsContainer as HTMLElement);
+      this.hideSelfRepostsSwitch.setupEventListeners(
+        hideSelfRepostsContainer as HTMLElement
+      );
 
       const gapLabels: Record<SelfRepostGap, string> = {
-        '3d': '3 days', '1w': '1 week', '3mo': '3 months', '1y': '1 year', 'all': 'all',
+        '3d': '3 days',
+        '1w': '1 week',
+        '3mo': '3 months',
+        '1y': '1 year',
+        all: 'all',
       };
-      contentContainer.querySelectorAll('input[name="self-repost-gap"]').forEach(radio => {
-        radio.addEventListener('change', (e) => {
-          const value = (e.target as HTMLInputElement).value as SelfRepostGap;
-          setSelfRepostGap(value);
-          this.eventBus.emit('settings:hide-self-reposts-changed', { hidden: true });
-          ToastService.show(
-            value === 'all' ? 'Hiding all self-reposts' : `Hiding self-reposts younger than ${gapLabels[value]}`,
-            'success'
-          );
+      contentContainer
+        .querySelectorAll('input[name="self-repost-gap"]')
+        .forEach(radio => {
+          radio.addEventListener('change', e => {
+            const value = (e.target as HTMLInputElement).value as SelfRepostGap;
+            setSelfRepostGap(value);
+            this.eventBus.emit('settings:hide-self-reposts-changed', {
+              hidden: true,
+            });
+            ToastService.show(
+              value === 'all'
+                ? 'Hiding all self-reposts'
+                : `Hiding self-reposts younger than ${gapLabels[value]}`,
+              'success'
+            );
+          });
         });
-      });
     }
 
     // Initialize Hide Highlights switch
-    const hideHighlightsContainer = contentContainer.querySelector('#hide-highlights-switch-container');
+    const hideHighlightsContainer = contentContainer.querySelector(
+      '#hide-highlights-switch-container'
+    );
     if (hideHighlightsContainer) {
       this.hideHighlightsSwitch = new Switch({
         label: '',
         checked: isHideHighlightsEnabled(),
-        onChange: (checked) => {
+        onChange: checked => {
           setHideHighlightsEnabled(checked);
-          this.eventBus.emit('settings:hide-highlights-changed', { hidden: checked });
+          this.eventBus.emit('settings:hide-highlights-changed', {
+            hidden: checked,
+          });
           ToastService.show(
             checked ? "Others' highlights hidden" : 'Highlights shown again',
             'success'
           );
-        }
+        },
       });
       hideHighlightsContainer.innerHTML = this.hideHighlightsSwitch.render();
-      this.hideHighlightsSwitch.setupEventListeners(hideHighlightsContainer as HTMLElement);
+      this.hideHighlightsSwitch.setupEventListeners(
+        hideHighlightsContainer as HTMLElement
+      );
     }
 
     // Initialize SCC Article Excerpt Limit input
-    const excerptInput = contentContainer.querySelector('#scc-excerpt-limit-input') as HTMLInputElement | null;
+    const excerptInput = contentContainer.querySelector(
+      '#scc-excerpt-limit-input'
+    ) as HTMLInputElement | null;
     if (excerptInput) {
-      const saved = this.storage.get<number>(StorageKeys.SCC_ARTICLE_EXCERPT_LIMIT, 200);
+      const saved = this.storage.get<number>(
+        StorageKeys.SCC_ARTICLE_EXCERPT_LIMIT,
+        200
+      );
       excerptInput.value = String(saved);
       excerptInput.addEventListener('change', () => {
-        const val = Math.max(50, Math.min(1000, parseInt(excerptInput.value, 10) || 200));
+        const val = Math.max(
+          50,
+          Math.min(1000, parseInt(excerptInput.value, 10) || 200)
+        );
         excerptInput.value = String(val);
         this.storage.set(StorageKeys.SCC_ARTICLE_EXCERPT_LIMIT, val);
-        this.eventBus.emit('settings:scc-excerpt-limit-changed', { limit: val });
-        ToastService.show(`Article excerpt limit set to ${val} characters`, 'success');
+        this.eventBus.emit('settings:scc-excerpt-limit-changed', {
+          limit: val,
+        });
+        ToastService.show(
+          `Article excerpt limit set to ${val} characters`,
+          'success'
+        );
       });
     }
 
@@ -405,7 +489,10 @@ export class UISettingsSection extends SettingsSection {
     const foafOptions = [
       { value: '1', label: 'Degree 1 — Direct follows' },
       { value: '2', label: 'Degree 2 — Friends of friends' },
-      { value: '3', label: 'Degree 3 — Friends of friends of friends (slow to build)' },
+      {
+        value: '3',
+        label: 'Degree 3 — Friends of friends of friends (slow to build)',
+      },
     ];
     const foafLabels: Record<string, string> = {
       '1': 'Degree 1 (direct follows)',
@@ -413,80 +500,125 @@ export class UISettingsSection extends SettingsSection {
       '3': 'Degree 3 (friends of friends of friends)',
     };
 
-    const mainFoafContainer = contentContainer.querySelector('.article-foaf-main-dropdown-container');
+    const mainFoafContainer = contentContainer.querySelector(
+      '.article-foaf-main-dropdown-container'
+    );
     if (mainFoafContainer) {
-      const current = String(this.storage.get<number>(StorageKeys.ARTICLE_FEED_FOAF_DEGREE_MAIN, 1));
+      const current = String(
+        this.storage.get<number>(StorageKeys.ARTICLE_FEED_FOAF_DEGREE_MAIN, 1)
+      );
       this.articleFeedFoafMainDropdown = new CustomDropdown({
         options: foafOptions,
         selectedValue: current,
-        onChange: (value) => {
+        onChange: value => {
           const degree = Number(value);
           this.storage.set(StorageKeys.ARTICLE_FEED_FOAF_DEGREE_MAIN, degree);
-          this.eventBus.emit('settings:article-foaf-degree-changed', { variant: 'main', degree });
-          ToastService.show(`Main article feed: ${foafLabels[value] ?? value}`, 'success');
+          this.eventBus.emit('settings:article-foaf-degree-changed', {
+            variant: 'main',
+            degree,
+          });
+          ToastService.show(
+            `Main article feed: ${foafLabels[value] ?? value}`,
+            'success'
+          );
         },
         className: 'article-foaf-dropdown',
       });
-      mainFoafContainer.appendChild(this.articleFeedFoafMainDropdown.getElement());
+      mainFoafContainer.appendChild(
+        this.articleFeedFoafMainDropdown.getElement()
+      );
     }
 
-    const sccFoafContainer = contentContainer.querySelector('.article-foaf-scc-dropdown-container');
+    const sccFoafContainer = contentContainer.querySelector(
+      '.article-foaf-scc-dropdown-container'
+    );
     if (sccFoafContainer) {
-      const current = String(this.storage.get<number>(StorageKeys.ARTICLE_FEED_FOAF_DEGREE_SCC, 1));
+      const current = String(
+        this.storage.get<number>(StorageKeys.ARTICLE_FEED_FOAF_DEGREE_SCC, 1)
+      );
       this.articleFeedFoafSccDropdown = new CustomDropdown({
         options: foafOptions,
         selectedValue: current,
-        onChange: (value) => {
+        onChange: value => {
           const degree = Number(value);
           this.storage.set(StorageKeys.ARTICLE_FEED_FOAF_DEGREE_SCC, degree);
-          this.eventBus.emit('settings:article-foaf-degree-changed', { variant: 'scc', degree });
-          ToastService.show(`Side column articles: ${foafLabels[value] ?? value}`, 'success');
+          this.eventBus.emit('settings:article-foaf-degree-changed', {
+            variant: 'scc',
+            degree,
+          });
+          ToastService.show(
+            `Side column articles: ${foafLabels[value] ?? value}`,
+            'success'
+          );
         },
         className: 'article-foaf-dropdown',
       });
-      sccFoafContainer.appendChild(this.articleFeedFoafSccDropdown.getElement());
+      sccFoafContainer.appendChild(
+        this.articleFeedFoafSccDropdown.getElement()
+      );
     }
 
     // Initialize Content Visibility switch
-    const contentVisibilityContainer = contentContainer.querySelector('#content-visibility-switch-container');
+    const contentVisibilityContainer = contentContainer.querySelector(
+      '#content-visibility-switch-container'
+    );
     if (contentVisibilityContainer) {
-      const enabled = this.storage.get<boolean>(StorageKeys.CONTENT_VISIBILITY_AUTO, false);
+      const enabled = this.storage.get<boolean>(
+        StorageKeys.CONTENT_VISIBILITY_AUTO,
+        false
+      );
 
       this.contentVisibilitySwitch = new Switch({
         label: '',
         checked: enabled,
-        onChange: (checked) => {
+        onChange: checked => {
           this.storage.set(StorageKeys.CONTENT_VISIBILITY_AUTO, checked);
-          document.documentElement.classList.toggle('content-visibility-auto', checked);
+          document.documentElement.classList.toggle(
+            'content-visibility-auto',
+            checked
+          );
           ToastService.show(
-            checked ? 'Memory optimization enabled' : 'Memory optimization disabled',
+            checked
+              ? 'Memory optimization enabled'
+              : 'Memory optimization disabled',
             'success'
           );
-        }
+        },
       });
 
-      contentVisibilityContainer.innerHTML = this.contentVisibilitySwitch.render();
-      this.contentVisibilitySwitch.setupEventListeners(contentVisibilityContainer as HTMLElement);
+      contentVisibilityContainer.innerHTML =
+        this.contentVisibilitySwitch.render();
+      this.contentVisibilitySwitch.setupEventListeners(
+        contentVisibilityContainer as HTMLElement
+      );
     }
 
     // Initialize Client Tag switch
-    const clientTagContainer = contentContainer.querySelector('#client-tag-switch-container');
+    const clientTagContainer = contentContainer.querySelector(
+      '#client-tag-switch-container'
+    );
     if (clientTagContainer) {
-      import('../../helpers/clientTagSetting').then(({ isClientTagEnabled, setClientTagEnabled }) => {
-        this.clientTagSwitch = new Switch({
-          label: '',
-          checked: isClientTagEnabled(),
-          onChange: (checked) => {
-            setClientTagEnabled(checked);
-            ToastService.show(
-              checked ? 'Posts will be signed with "via NoorNote"' : 'Posts will be signed without client tag',
-              'success'
-            );
-          }
-        });
-        clientTagContainer.innerHTML = this.clientTagSwitch.render();
-        this.clientTagSwitch.setupEventListeners(clientTagContainer as HTMLElement);
-      });
+      import('../../helpers/clientTagSetting').then(
+        ({ isClientTagEnabled, setClientTagEnabled }) => {
+          this.clientTagSwitch = new Switch({
+            label: '',
+            checked: isClientTagEnabled(),
+            onChange: checked => {
+              setClientTagEnabled(checked);
+              ToastService.show(
+                checked
+                  ? 'Posts will be signed with "via NoorNote"'
+                  : 'Posts will be signed without client tag',
+                'success'
+              );
+            },
+          });
+          clientTagContainer.innerHTML = this.clientTagSwitch.render();
+          this.clientTagSwitch.setupEventListeners(
+            clientTagContainer as HTMLElement
+          );
+        }
+      );
     }
 
     // Initialize Auto-Update switch (Desktop only)
@@ -497,30 +629,38 @@ export class UISettingsSection extends SettingsSection {
    * Bind update settings (Desktop only)
    */
   private bindUpdateSettings(contentContainer: HTMLElement): void {
-    const autoUpdateContainer = contentContainer.querySelector('#auto-update-switch-container');
+    const autoUpdateContainer = contentContainer.querySelector(
+      '#auto-update-switch-container'
+    );
     if (!autoUpdateContainer) return;
 
-    const settingsApi = ModuleLoader.getInstance().getApi<SettingsModuleApi>('settings');
+    const settingsApi =
+      ModuleLoader.getInstance().getApi<SettingsModuleApi>('settings');
     if (settingsApi) {
       this.autoUpdateSwitch = new Switch({
         label: '',
         checked: settingsApi.isAutoCheckEnabled(),
-        onChange: (checked) => {
+        onChange: checked => {
           settingsApi.setAutoCheckEnabled(checked);
           ToastService.show(
-            checked ? 'Auto-update check enabled' : 'Auto-update check disabled',
+            checked
+              ? 'Auto-update check enabled'
+              : 'Auto-update check disabled',
             'success'
           );
-        }
+        },
       });
 
       autoUpdateContainer.innerHTML = this.autoUpdateSwitch.render();
-      this.autoUpdateSwitch.setupEventListeners(autoUpdateContainer as HTMLElement);
+      this.autoUpdateSwitch.setupEventListeners(
+        autoUpdateContainer as HTMLElement
+      );
     }
 
     const checkNowBtn = contentContainer.querySelector('#check-update-now-btn');
     checkNowBtn?.addEventListener('click', async () => {
-      const api = ModuleLoader.getInstance().getApi<SettingsModuleApi>('settings');
+      const api =
+        ModuleLoader.getInstance().getApi<SettingsModuleApi>('settings');
       await api?.checkUpdateManually(checkNowBtn as HTMLButtonElement);
     });
   }

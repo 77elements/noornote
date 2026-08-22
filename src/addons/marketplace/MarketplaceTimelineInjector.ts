@@ -81,7 +81,10 @@ export class MarketplaceTimelineInjector {
   }
 
   private getIntervalMs(): number {
-    return FREQUENCY_INTERVALS[getTimelineListingFrequency()] || FREQUENCY_INTERVALS.rare;
+    return (
+      FREQUENCY_INTERVALS[getTimelineListingFrequency()] ||
+      FREQUENCY_INTERVALS.rare
+    );
   }
 
   private scheduleNext(): void {
@@ -126,11 +129,19 @@ export class MarketplaceTimelineInjector {
       const relays = RelayConfig.getInstance().getReadRelays();
       if (relays.length === 0) return;
 
-      const events = await transport.fetch(relays, [{
-        kinds: [30402 as number],
-        authors: follows,
-        limit: 200
-      }], 10000, false, 'MarketplaceInjector');
+      const events = await transport.fetch(
+        relays,
+        [
+          {
+            kinds: [30402 as number],
+            authors: follows,
+            limit: 200,
+          },
+        ],
+        10000,
+        false,
+        'MarketplaceInjector'
+      );
 
       // Deduplicate by pubkey:d-tag, keep newest
       const deduped = new Map<string, NostrEvent>();
@@ -156,7 +167,10 @@ export class MarketplaceTimelineInjector {
       this.queueIndex = 0;
       this.listingsLoaded = true;
     } catch (error) {
-      console.error('[MarketplaceTimelineInjector] Failed to load listings:', error);
+      console.error(
+        '[MarketplaceTimelineInjector] Failed to load listings:',
+        error
+      );
     }
   }
 
@@ -173,10 +187,14 @@ export class MarketplaceTimelineInjector {
       kind: 30402,
       pubkey: event.pubkey,
       identifier: meta.identifier,
-      relays: []
+      relays: [],
     });
 
-    const priceDisplay = formatPrice(meta.price, meta.priceCurrency, meta.priceFrequency);
+    const priceDisplay = formatPrice(
+      meta.price,
+      meta.priceCurrency,
+      meta.priceFrequency
+    );
     const firstImage = meta.images[0] || '';
 
     const card = document.createElement('div');
@@ -186,11 +204,15 @@ export class MarketplaceTimelineInjector {
     card.dataset.marketplaceInjected = 'true';
 
     card.innerHTML = `
-      ${firstImage ? `
+      ${
+        firstImage
+          ? `
         <div class="timeline-listing-card__image">
           <img src="${escapeHtmlAttr(firstImage)}" alt="" loading="lazy" />
         </div>
-      ` : ''}
+      `
+          : ''
+      }
       <div class="timeline-listing-card__body">
         <div class="timeline-listing-card__seller" data-pubkey="${event.pubkey}">
           <a href="#" class="mention-link" data-profile-pubkey="${event.pubkey}">Loading...</a>
@@ -217,11 +239,13 @@ export class MarketplaceTimelineInjector {
     }
 
     card.style.cursor = 'pointer';
-    card.addEventListener('click', (e) => {
+    card.addEventListener('click', e => {
       const target = e.target as HTMLElement;
 
       // Repost/Quote buttons — stop propagation, handle async
-      const actionBtn = target.closest('[data-listing-action]') as HTMLElement | null;
+      const actionBtn = target.closest(
+        '[data-listing-action]'
+      ) as HTMLElement | null;
       if (actionBtn) {
         e.stopPropagation();
         void this.handleListingAction(actionBtn.dataset.listingAction!, event);
@@ -231,7 +255,9 @@ export class MarketplaceTimelineInjector {
       // Seller profile link
       if (target.closest('.mention-link')) {
         e.preventDefault();
-        const pubkey = target.closest('[data-profile-pubkey]')?.getAttribute('data-profile-pubkey');
+        const pubkey = target
+          .closest('[data-profile-pubkey]')
+          ?.getAttribute('data-profile-pubkey');
         if (pubkey) {
           const npub = hexToNpub(pubkey);
           if (npub) Router.getInstance().navigate(`/profile/${npub}`);
@@ -247,41 +273,53 @@ export class MarketplaceTimelineInjector {
     return card;
   }
 
-  private async handleListingAction(action: string, event: NostrEvent): Promise<void> {
+  private async handleListingAction(
+    action: string,
+    event: NostrEvent
+  ): Promise<void> {
     const { AuthGuard } = await import('../../services/AuthGuard');
     if (!AuthGuard.requireAuth('share this listing')) return;
 
     if (action === 'repost') {
       const { ModuleLoader } = await import('../../core/ModuleLoader');
-      await ModuleLoader.getInstance().getApi<import('../../modules/posts/contracts').PostsModuleApi>('posts')?.publishGenericRepost({
-        originalEvent: event,
-      });
+      await ModuleLoader.getInstance()
+        .getApi<import('../../modules/posts/contracts').PostsModuleApi>('posts')
+        ?.publishGenericRepost({
+          originalEvent: event,
+        });
     } else if (action === 'quote') {
       const dTag = getTag(event.tags, 'd');
       const writeRelays = await RelayConfig.getInstance().getWriteRelays();
-      const reference = 'nostr:' + encodeNaddr({
+      const reference = `nostr:${encodeNaddr({
         kind: 30402,
         pubkey: event.pubkey,
         identifier: dTag,
         relays: writeRelays.slice(0, 2),
-      });
-      const { PostNoteModal } = await import('../../components/post/PostNoteModal');
+      })}`;
+      const { PostNoteModal } = await import(
+        '../../components/post/PostNoteModal'
+      );
       PostNoteModal.getInstance().show(reference);
     }
   }
 
-  private async loadSellerName(card: HTMLElement, pubkey: string): Promise<void> {
+  private async loadSellerName(
+    card: HTMLElement,
+    pubkey: string
+  ): Promise<void> {
     const linkEl = card.querySelector('.mention-link');
     if (!linkEl) return;
 
     const npub = hexToNpub(pubkey) || pubkey;
 
     try {
-      const profile = await UserProfileService.getInstance().getUserProfile(pubkey);
-      const displayName = profile?.name || profile?.display_name || npub.slice(0, 12) + '...';
+      const profile =
+        await UserProfileService.getInstance().getUserProfile(pubkey);
+      const displayName =
+        profile?.name || profile?.display_name || `${npub.slice(0, 12)}...`;
       linkEl.textContent = displayName;
     } catch {
-      linkEl.textContent = npub.slice(0, 12) + '...';
+      linkEl.textContent = `${npub.slice(0, 12)}...`;
     }
   }
 }

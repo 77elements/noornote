@@ -66,7 +66,12 @@ export class KeySignerConnectionManager {
   /**
    * Try auto-login with KeySigner
    */
-  public async tryAutoLogin(): Promise<{ success: boolean; npub?: string; pubkey?: string; error?: string }> {
+  public async tryAutoLogin(): Promise<{
+    success: boolean;
+    npub?: string;
+    pubkey?: string;
+    error?: string;
+  }> {
     if (!PlatformService.getInstance().isDesktop) {
       return { success: false, error: 'Not running on desktop' };
     }
@@ -156,7 +161,8 @@ export class KeySignerConnectionManager {
           this.keySigner = null;
           return {
             success: false,
-            error: 'Daemon did not start. Please complete the setup in the terminal window and try again.'
+            error:
+              'Daemon did not start. Please complete the setup in the terminal window and try again.',
           };
         }
       }
@@ -193,12 +199,18 @@ export class KeySignerConnectionManager {
 
     const hasTrust = await this.keySigner!.checkTrustSession();
     if (!hasTrust) {
-      this.logger.info('KeySigner', 'Trust session expired — starting daemon, then password needed');
+      this.logger.info(
+        'KeySigner',
+        'Trust session expired — starting daemon, then password needed'
+      );
       // Start daemon process FIRST (waits for password on stdin)
       // so it's already running when the password modal appears
       try {
         await this.keySigner!.prepareDaemonForUnlock();
-        this.logger.info('KeySigner', 'Daemon process started, waiting for password');
+        this.logger.info(
+          'KeySigner',
+          'Daemon process started, waiting for password'
+        );
       } catch (_error) {
         this.logger.warn('KeySigner', `Failed to prepare daemon: ${_error}`);
       }
@@ -207,7 +219,10 @@ export class KeySignerConnectionManager {
     }
 
     // Trust session valid — launch daemon silently
-    this.logger.info('KeySigner', 'Trust session valid, launching daemon silently...');
+    this.logger.info(
+      'KeySigner',
+      'Trust session valid, launching daemon silently...'
+    );
     try {
       if (PlatformService.getInstance().isElectron) {
         await window.electronAPI!.launchDaemonSilent();
@@ -231,7 +246,10 @@ export class KeySignerConnectionManager {
     }
 
     // Fallback: trust session seemed valid but daemon didn't start
-    this.logger.warn('KeySigner', 'Daemon did not start despite valid trust session');
+    this.logger.warn(
+      'KeySigner',
+      'Daemon did not start despite valid trust session'
+    );
     this.keySigner = null;
     return { success: false, needsPassword: true };
   }
@@ -298,10 +316,16 @@ export class KeySignerConnectionManager {
 
         if (!isRunning) {
           this.daemonFailureCount++;
-          this.logger.warn('KeySigner', `Daemon check failed (${this.daemonFailureCount}/${this.MAX_DAEMON_FAILURES})`);
+          this.logger.warn(
+            'KeySigner',
+            `Daemon check failed (${this.daemonFailureCount}/${this.MAX_DAEMON_FAILURES})`
+          );
 
           if (this.daemonFailureCount >= this.MAX_DAEMON_FAILURES) {
-            this.logger.error('KeySigner', 'Daemon connection lost - logging out');
+            this.logger.error(
+              'KeySigner',
+              'Daemon connection lost - logging out'
+            );
             this.stopDaemonPolling();
             this.onDaemonLost?.();
 
@@ -315,20 +339,30 @@ export class KeySignerConnectionManager {
           }
         }
       } catch (_error: any) {
-        const isTransientError = _error.message?.includes('Broken pipe') ||
-                                  _error.message?.includes('os error 32');
+        const isTransientError =
+          _error.message?.includes('Broken pipe') ||
+          _error.message?.includes('os error 32');
 
         if (isTransientError) {
           this.daemonFailureCount++;
-          this.logger.warn('KeySigner', `Transient error (${this.daemonFailureCount}/${this.MAX_DAEMON_FAILURES}): ${_error.message}`);
+          this.logger.warn(
+            'KeySigner',
+            `Transient error (${this.daemonFailureCount}/${this.MAX_DAEMON_FAILURES}): ${_error.message}`
+          );
 
           if (this.daemonFailureCount >= this.MAX_DAEMON_FAILURES) {
-            this.logger.error('KeySigner', 'Too many transient errors - logging out');
+            this.logger.error(
+              'KeySigner',
+              'Too many transient errors - logging out'
+            );
             this.stopDaemonPolling();
             this.onDaemonLost?.();
 
             const { ToastService } = await import('../ToastService');
-            ToastService.show('KeySigner connection unstable - logged out', 'error');
+            ToastService.show(
+              'KeySigner connection unstable - logged out',
+              'error'
+            );
           }
         } else {
           this.logger.error('KeySigner', `Daemon polling error: ${_error}`);
@@ -364,10 +398,11 @@ export class KeySignerConnectionManager {
 
       const confirmed = await modalService.confirm({
         title: 'Stop NoorSigner Daemon?',
-        message: 'Do you want to stop the NoorSigner daemon process? This will end all active signing sessions.',
+        message:
+          'Do you want to stop the NoorSigner daemon process? This will end all active signing sessions.',
         confirmText: 'Stop Daemon',
         cancelText: 'Keep Running',
-        confirmDestructive: true
+        confirmDestructive: true,
       });
 
       if (!confirmed) {

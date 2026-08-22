@@ -10,7 +10,10 @@
  * the check as late-loading content (images, videos) changes the height.
  */
 
-import { PerAccountLocalStorage, StorageKeys } from '../../../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../../services/PerAccountLocalStorage';
 import { TypedEventBus } from '../../../core/TypedEventBus';
 
 export interface CollapsibleOptions {
@@ -39,21 +42,24 @@ const pendingMeasurements: Map<Element, MeasurementTarget> = new Map();
 function getSharedObserver(): IntersectionObserver {
   if (sharedObserver) return sharedObserver;
 
-  sharedObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (!entry.isIntersecting) return;
-      const data = pendingMeasurements.get(entry.target);
-      if (!data) return;
+  sharedObserver = new IntersectionObserver(
+    entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        const data = pendingMeasurements.get(entry.target);
+        if (!data) return;
 
-      sharedObserver!.unobserve(entry.target);
-      pendingMeasurements.delete(entry.target);
-      setTimeout(() => {
-        requestAnimationFrame(() => {
-          CollapsibleManager.checkAndCollapse(data.wrapper, data.btn);
-        });
-      }, 100);
-    });
-  }, { threshold: 0.01, rootMargin: '50px' });
+        sharedObserver!.unobserve(entry.target);
+        pendingMeasurements.delete(entry.target);
+        setTimeout(() => {
+          requestAnimationFrame(() => {
+            CollapsibleManager.checkAndCollapse(data.wrapper, data.btn);
+          });
+        }, 100);
+      });
+    },
+    { threshold: 0.01, rootMargin: '50px' }
+  );
 
   return sharedObserver;
 }
@@ -71,10 +77,14 @@ export class CollapsibleManager {
     this.initialized = true;
 
     TypedEventBus.getInstance().on('settings:post-truncation-changed', () => {
-      document.querySelectorAll<HTMLElement>('.collapsible-wrapper').forEach(wrapper => {
-        const btn = wrapper.parentElement?.querySelector<HTMLElement>(':scope > .btn--show-more');
-        if (btn) CollapsibleManager.checkAndCollapse(wrapper, btn);
-      });
+      document
+        .querySelectorAll<HTMLElement>('.collapsible-wrapper')
+        .forEach(wrapper => {
+          const btn = wrapper.parentElement?.querySelector<HTMLElement>(
+            ':scope > .btn--show-more'
+          );
+          if (btn) CollapsibleManager.checkAndCollapse(wrapper, btn);
+        });
     });
   }
 
@@ -126,7 +136,7 @@ export class CollapsibleManager {
       contentRoot.appendChild(showMoreBtn);
     }
 
-    showMoreBtn.addEventListener('click', (e) => {
+    showMoreBtn.addEventListener('click', e => {
       e.stopPropagation();
       const collapsed = wrapper.classList.toggle('is-collapsed');
       wrapper.classList.toggle('is-expanded', !collapsed);
@@ -168,7 +178,8 @@ export class CollapsibleManager {
     );
     if (thresholdPx === null) return;
 
-    const minOverflowPx = window.innerHeight * CollapsibleManager.MIN_OVERFLOW_VH;
+    const minOverflowPx =
+      window.innerHeight * CollapsibleManager.MIN_OVERFLOW_VH;
     const overflowing = wrapperEl.scrollHeight > thresholdPx + minOverflowPx;
 
     if (overflowing) {
@@ -187,12 +198,18 @@ function parseCssLength(value: string): number | null {
   const match = /^(-?\d*\.?\d+)(vh|px|rem|em)$/.exec(value);
   if (!match) return null;
   const num = parseFloat(match[1]!);
-  const rootFontSize = () => parseFloat(getComputedStyle(document.documentElement).fontSize);
+  const rootFontSize = () =>
+    parseFloat(getComputedStyle(document.documentElement).fontSize);
   switch (match[2]) {
-    case 'vh': return window.innerHeight * num / 100;
-    case 'px': return num;
-    case 'rem': return num * rootFontSize();
-    case 'em': return num * rootFontSize();
-    default: return null;
+    case 'vh':
+      return (window.innerHeight * num) / 100;
+    case 'px':
+      return num;
+    case 'rem':
+      return num * rootFontSize();
+    case 'em':
+      return num * rootFontSize();
+    default:
+      return null;
   }
 }

@@ -9,7 +9,11 @@
  */
 
 import { SettingsSection } from './SettingsSection';
-import { RelayConfig, type RelayInfo, type RelayType } from '../../services/RelayConfig';
+import {
+  RelayConfig,
+  type RelayInfo,
+  type RelayType,
+} from '../../services/RelayConfig';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { SettingsModuleApi } from '../../modules/settings/contracts';
 import { AuthService } from '../../services/AuthService';
@@ -30,7 +34,8 @@ export class RelaySettingsSection extends SettingsSection {
   private _settingsApi: SettingsModuleApi | null = null;
   private get settingsApi(): SettingsModuleApi | null {
     if (!this._settingsApi) {
-      this._settingsApi = ModuleLoader.getInstance().getApi<SettingsModuleApi>('settings');
+      this._settingsApi =
+        ModuleLoader.getInstance().getApi<SettingsModuleApi>('settings');
     }
     return this._settingsApi;
   }
@@ -79,7 +84,9 @@ export class RelaySettingsSection extends SettingsSection {
       this.eventBus.on('relays:loaded', () => {
         this.tempRelays = this.loadRelaysFromConfig();
         // Re-render if section is currently mounted
-        const contentContainer = document.getElementById('relay-settings-content');
+        const contentContainer = document.getElementById(
+          'relay-settings-content'
+        );
         if (contentContainer) {
           contentContainer.innerHTML = this.renderContent();
           this.bindListeners(contentContainer as HTMLElement);
@@ -94,7 +101,7 @@ export class RelaySettingsSection extends SettingsSection {
    */
   private updateHealthIndicators(): void {
     const relayItems = document.querySelectorAll('.relay-item');
-    relayItems.forEach((item) => {
+    relayItems.forEach(item => {
       const url = (item as HTMLElement).dataset.url;
       if (!url) return;
 
@@ -116,7 +123,11 @@ export class RelaySettingsSection extends SettingsSection {
     const summaryContainer = document.querySelector('#relay-health-summary');
     if (!summaryContainer) return;
 
-    const summary = await this.settingsApi?.getHealthSummary() ?? { healthy: 0, total: 0, warnings: [] };
+    const summary = (await this.settingsApi?.getHealthSummary()) ?? {
+      healthy: 0,
+      total: 0,
+      warnings: [],
+    };
     summaryContainer.innerHTML = this.renderHealthSummary(summary);
   }
 
@@ -136,7 +147,7 @@ export class RelaySettingsSection extends SettingsSection {
     return {
       enabled: false,
       mode: 'test',
-      url: 'ws://localhost:4869'
+      url: 'ws://localhost:4869',
     };
   }
 
@@ -145,7 +156,10 @@ export class RelaySettingsSection extends SettingsSection {
    */
   private saveLocalRelaySettings(): void {
     try {
-      localStorage.setItem(this.localRelayStorageKey, JSON.stringify(this.localRelaySettings));
+      localStorage.setItem(
+        this.localRelayStorageKey,
+        JSON.stringify(this.localRelaySettings)
+      );
     } catch (error) {
       console.warn('Failed to save local relay settings:', error);
     }
@@ -156,7 +170,9 @@ export class RelaySettingsSection extends SettingsSection {
    * Excludes localhost relays (handled separately)
    */
   private loadRelaysFromConfig(): RelayInfo[] {
-    return this.relayConfig.getAllRelays().filter(r => !r.url.includes('localhost'));
+    return this.relayConfig
+      .getAllRelays()
+      .filter(r => !r.url.includes('localhost'));
   }
 
   /**
@@ -218,13 +234,24 @@ export class RelaySettingsSection extends SettingsSection {
   /**
    * Render health summary section
    */
-  private renderHealthSummary(summary: { healthy: number; total: number; warnings: string[] }): string {
+  private renderHealthSummary(summary: {
+    healthy: number;
+    total: number;
+    warnings: string[];
+  }): string {
     if (summary.total === 0) {
       return '<div class="health-summary-empty">No relays configured</div>';
     }
 
-    const healthPercentage = Math.round((summary.healthy / summary.total) * 100);
-    const healthClass = healthPercentage >= 80 ? 'good' : healthPercentage >= 50 ? 'warning' : 'critical';
+    const healthPercentage = Math.round(
+      (summary.healthy / summary.total) * 100
+    );
+    const healthClass =
+      healthPercentage >= 80
+        ? 'good'
+        : healthPercentage >= 50
+          ? 'warning'
+          : 'critical';
 
     return `
       <div class="health-summary-status">
@@ -232,13 +259,21 @@ export class RelaySettingsSection extends SettingsSection {
           ${summary.healthy}/${summary.total} relays healthy (${healthPercentage}%)
         </span>
       </div>
-      ${summary.warnings.length > 0 ? `
+      ${
+        summary.warnings.length > 0
+          ? `
         <div class="health-summary-warnings">
-          ${summary.warnings.map(warning => `
+          ${summary.warnings
+            .map(
+              warning => `
             <div class="health-warning">⚠️ ${warning}</div>
-          `).join('')}
+          `
+            )
+            .join('')}
         </div>
-      ` : ''}
+      `
+          : ''
+      }
     `;
   }
 
@@ -299,24 +334,31 @@ export class RelaySettingsSection extends SettingsSection {
   private bindListeners(contentContainer: HTMLElement): void {
     // Add relay button
     const addBtn = contentContainer.querySelector('#add-relay-btn');
-    addBtn?.addEventListener('click', () => this.handleAddRelay(contentContainer));
+    addBtn?.addEventListener('click', () =>
+      this.handleAddRelay(contentContainer)
+    );
 
     // Add relay on Enter key
-    const input = contentContainer.querySelector('#new-relay-url') as HTMLInputElement;
-    input?.addEventListener('keypress', (e) => {
+    const input = contentContainer.querySelector(
+      '#new-relay-url'
+    ) as HTMLInputElement;
+    input?.addEventListener('keypress', e => {
       if (e.key === 'Enter') this.handleAddRelay(contentContainer);
     });
 
     // Relay type toggle buttons
     const typeButtons = contentContainer.querySelectorAll('.relay-types .btn');
     typeButtons.forEach(btn => {
-      btn.addEventListener('click', (e) => this.handleToggleRelayType(e));
+      btn.addEventListener('click', e => this.handleToggleRelayType(e));
     });
 
     // Remove relay buttons
-    const removeButtons = contentContainer.querySelectorAll('.relay-remove-btn');
+    const removeButtons =
+      contentContainer.querySelectorAll('.relay-remove-btn');
     removeButtons.forEach(btn => {
-      btn.addEventListener('click', (e) => this.handleRemoveRelay(e, contentContainer));
+      btn.addEventListener('click', e =>
+        this.handleRemoveRelay(e, contentContainer)
+      );
     });
   }
 
@@ -324,7 +366,9 @@ export class RelaySettingsSection extends SettingsSection {
    * Handle add new relay
    */
   private async handleAddRelay(contentContainer: HTMLElement): Promise<void> {
-    const input = contentContainer.querySelector('#new-relay-url') as HTMLInputElement;
+    const input = contentContainer.querySelector(
+      '#new-relay-url'
+    ) as HTMLInputElement;
     let url = input?.value.trim();
 
     if (!url) return;
@@ -336,7 +380,9 @@ export class RelaySettingsSection extends SettingsSection {
 
     url = url.replace(/\/$/, '');
 
-    const normalizedExisting = this.tempRelays.map(r => r.url.replace(/\/$/, ''));
+    const normalizedExisting = this.tempRelays.map(r =>
+      r.url.replace(/\/$/, '')
+    );
     if (normalizedExisting.includes(url)) {
       ToastService.show('This relay is already in your list', 'error');
       return;
@@ -347,7 +393,7 @@ export class RelaySettingsSection extends SettingsSection {
       types: ['read', 'write'],
       isPaid: false,
       requiresAuth: false,
-      isActive: true
+      isActive: true,
     });
 
     input.value = '';
@@ -405,7 +451,7 @@ export class RelaySettingsSection extends SettingsSection {
       width: '500px',
       showCloseButton: true,
       closeOnOverlay: true,
-      closeOnEsc: true
+      closeOnEsc: true,
     });
 
     setTimeout(() => {
@@ -446,7 +492,10 @@ export class RelaySettingsSection extends SettingsSection {
       const hasRead = this.tempRelays.some(r => r.types.includes('read'));
       const hasWrite = this.tempRelays.some(r => r.types.includes('write'));
       if (!hasRead || !hasWrite) {
-        ToastService.show('You need at least one read-relay and one write-relay configured.', 'error');
+        ToastService.show(
+          'You need at least one read-relay and one write-relay configured.',
+          'error'
+        );
         return;
       }
     }
@@ -467,7 +516,9 @@ export class RelaySettingsSection extends SettingsSection {
     // point at the new — possibly single, possibly empty — relay set and
     // the fetch would find nothing. We hold the events in memory and
     // publish them post-save to the newly-added write-relays only.
-    const accountEssentialsPromise = this.fetchAccountEssentials(currentUser.pubkey);
+    const accountEssentialsPromise = this.fetchAccountEssentials(
+      currentUser.pubkey
+    );
 
     try {
       // Save local relay settings
@@ -485,7 +536,7 @@ export class RelaySettingsSection extends SettingsSection {
         this.tempRelays.forEach(relay => {
           this.relayConfig.addRelay({
             ...relay,
-            types: ['read']
+            types: ['read'],
           });
         });
 
@@ -495,7 +546,7 @@ export class RelaySettingsSection extends SettingsSection {
           types: ['write', 'inbox'],
           isPaid: false,
           requiresAuth: false,
-          isActive: true
+          isActive: true,
         });
       } else {
         // Direct mode: Use public relays normally
@@ -516,12 +567,17 @@ export class RelaySettingsSection extends SettingsSection {
       // soft warning, not a save-blocker. The events were fetched from
       // the PREVIOUS relay set above, so the source data exists even when
       // the user reduces to a single brand-new private relay.
-      const newlyAdded = this.relayConfig.getWriteRelays().filter(url => !previousWriteRelays.has(url));
+      const newlyAdded = this.relayConfig
+        .getWriteRelays()
+        .filter(url => !previousWriteRelays.has(url));
       if (newlyAdded.length > 0) {
         void accountEssentialsPromise
           .then(events => this.publishEventsTo(events, newlyAdded))
           .catch(err => {
-            console.warn('[RelaySettings] republish to new write-relays failed', err);
+            console.warn(
+              '[RelaySettings] republish to new write-relays failed',
+              err
+            );
           });
       }
 
@@ -535,7 +591,10 @@ export class RelaySettingsSection extends SettingsSection {
   /**
    * Get current user and write relays for publishing, or null if unavailable
    */
-  private getPublishContext(): { user: { npub: string; pubkey: string }; writeRelays: string[] } | null {
+  private getPublishContext(): {
+    user: { npub: string; pubkey: string };
+    writeRelays: string[];
+  } | null {
     const user = this.authService.getCurrentUser();
     if (!user) {
       console.warn('No user logged in, skipping publish');
@@ -559,13 +618,14 @@ export class RelaySettingsSection extends SettingsSection {
     if (!context) return;
 
     try {
-      const relayTags = this.settingsApi?.relayInfosToTags(this.tempRelays) ?? [];
+      const relayTags =
+        this.settingsApi?.relayInfosToTags(this.tempRelays) ?? [];
       const unsignedEvent = {
         kind: 10002,
         created_at: Math.floor(Date.now() / 1000),
         tags: relayTags,
         content: '',
-        pubkey: context.user.pubkey
+        pubkey: context.user.pubkey,
       };
 
       const signedEvent = await this.authService.signEvent(unsignedEvent);
@@ -573,10 +633,7 @@ export class RelaySettingsSection extends SettingsSection {
       // Orchestrator emits via `publishEverywhere` so the NIP-65 lands on
       // write + read + aggregator + indexer relays — required for the
       // bootstrap path when the user moves to a smaller write-set.
-      await this.settingsApi?.publishRelayList(
-        this.tempRelays,
-        signedEvent
-      );
+      await this.settingsApi?.publishRelayList(this.tempRelays, signedEvent);
 
       console.debug('[RelaySettings] Relay list published successfully');
     } catch (error) {
@@ -594,7 +651,9 @@ export class RelaySettingsSection extends SettingsSection {
 
     const inboxRelays = this.tempRelays.filter(r => r.types.includes('inbox'));
     if (inboxRelays.length === 0) {
-      console.debug('[RelaySettings] No DM inbox relays configured, skipping kind:10050 publish');
+      console.debug(
+        '[RelaySettings] No DM inbox relays configured, skipping kind:10050 publish'
+      );
       return;
     }
 
@@ -605,7 +664,7 @@ export class RelaySettingsSection extends SettingsSection {
         created_at: Math.floor(Date.now() / 1000),
         tags: relayTags,
         content: '',
-        pubkey: context.user.pubkey
+        pubkey: context.user.pubkey,
       };
 
       const signedEvent = await this.authService.signEvent(unsignedEvent);
@@ -616,7 +675,9 @@ export class RelaySettingsSection extends SettingsSection {
       const transport = NostrTransport.getInstance();
       await transport.publishEverywhere(signedEvent);
 
-      console.debug(`[RelaySettings] DM relay list published (${inboxRelays.length} relays)`);
+      console.debug(
+        `[RelaySettings] DM relay list published (${inboxRelays.length} relays)`
+      );
     } catch (error) {
       console.error('Failed to publish DM relay list:', error);
     }
@@ -636,17 +697,27 @@ export class RelaySettingsSection extends SettingsSection {
    */
   private async fetchAccountEssentials(pubkey: string): Promise<NostrEvent[]> {
     const transport = NostrTransport.getInstance();
-    const sourceRelays = [...new Set<string>([
-      ...this.relayConfig.getWriteRelays(),
-      ...this.relayConfig.getReadRelays(),
-    ])];
+    const sourceRelays = [
+      ...new Set<string>([
+        ...this.relayConfig.getWriteRelays(),
+        ...this.relayConfig.getReadRelays(),
+      ]),
+    ];
     if (sourceRelays.length === 0) return [];
     try {
-      return await transport.fetch(sourceRelays, [{
-        authors: [pubkey],
-        kinds: [0, 3],
-        limit: 2,
-      }], 5000, false, 'RelaySettingsRepublish');
+      return await transport.fetch(
+        sourceRelays,
+        [
+          {
+            authors: [pubkey],
+            kinds: [0, 3],
+            limit: 2,
+          },
+        ],
+        5000,
+        false,
+        'RelaySettingsRepublish'
+      );
     } catch (err) {
       console.warn('[RelaySettings] account-essentials fetch failed', err);
       return [];
@@ -658,17 +729,25 @@ export class RelaySettingsSection extends SettingsSection {
    * logged but don't abort the rest — partial republish is better than
    * none.
    */
-  private async publishEventsTo(events: NostrEvent[], targetRelays: string[]): Promise<void> {
+  private async publishEventsTo(
+    events: NostrEvent[],
+    targetRelays: string[]
+  ): Promise<void> {
     if (events.length === 0 || targetRelays.length === 0) return;
     const transport = NostrTransport.getInstance();
     for (const event of events) {
       try {
         await transport.publish(targetRelays, event);
       } catch (err) {
-        console.debug(`[RelaySettings] republish kind:${event.kind} failed`, err);
+        console.debug(
+          `[RelaySettings] republish kind:${event.kind} failed`,
+          err
+        );
       }
     }
-    console.debug(`[RelaySettings] republished ${events.length} account-essential events to ${targetRelays.length} new relay(s)`);
+    console.debug(
+      `[RelaySettings] republished ${events.length} account-essential events to ${targetRelays.length} new relay(s)`
+    );
   }
 
   /**

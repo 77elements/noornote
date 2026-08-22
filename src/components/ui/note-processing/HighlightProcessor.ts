@@ -35,11 +35,16 @@ export class HighlightProcessor {
     if (!eventId) throw new Error('Event ID is required');
 
     const sourceTag = HighlightProcessor.extractSourceTag(event.tags);
-    const sourceAuthorPubkey = HighlightProcessor.extractSourceAuthor(event.tags);
+    const sourceAuthorPubkey = HighlightProcessor.extractSourceAuthor(
+      event.tags
+    );
     const commentValue = event.tags.find(t => t[0] === 'comment')?.[1];
 
     const processedComment = commentValue
-      ? HighlightProcessor.contentProcessor.processContentWithTags(commentValue, event.tags)
+      ? HighlightProcessor.contentProcessor.processContentWithTags(
+          commentValue,
+          event.tags
+        )
       : null;
 
     const html = HighlightProcessor.buildHighlightHtml(
@@ -49,7 +54,8 @@ export class HighlightProcessor {
       sourceAuthorPubkey
     );
 
-    const authorProfile = HighlightProcessor.contentProcessor.getNonBlockingProfile(event.pubkey);
+    const authorProfile =
+      HighlightProcessor.contentProcessor.getNonBlockingProfile(event.pubkey);
 
     const result: ProcessedNote = {
       id: eventId,
@@ -63,16 +69,16 @@ export class HighlightProcessor {
         links: processedComment?.links ?? [],
         hashtags: processedComment?.hashtags ?? [],
         quotedReferences: processedComment?.quotedReferences ?? [],
-        bolt11Invoices: processedComment?.bolt11Invoices ?? []
+        bolt11Invoices: processedComment?.bolt11Invoices ?? [],
       },
-      rawEvent: event
+      rawEvent: event,
     };
 
     if (authorProfile) {
       result.author.profile = {
         name: authorProfile.name,
         display_name: authorProfile.display_name,
-        picture: authorProfile.picture
+        picture: authorProfile.picture,
       };
     }
 
@@ -97,14 +103,20 @@ export class HighlightProcessor {
     return firstP?.[1] ?? null;
   }
 
-  private static resolveSourceLink(sourceTag: string[] | null): SourceLink | null {
+  private static resolveSourceLink(
+    sourceTag: string[] | null
+  ): SourceLink | null {
     if (!sourceTag) return null;
 
     if (sourceTag[0] === 'r' && sourceTag[1]) {
       return { href: sourceTag[1], label: sourceTag[1], external: true };
     }
 
-    if ((sourceTag[0] === 'e' || sourceTag[2] === 'source') && sourceTag[1] && /^[0-9a-f]{64}$/i.test(sourceTag[1])) {
+    if (
+      (sourceTag[0] === 'e' || sourceTag[2] === 'source') &&
+      sourceTag[1] &&
+      /^[0-9a-f]{64}$/i.test(sourceTag[1])
+    ) {
       const nevent = encodeNevent(sourceTag[1]);
       return { href: `/note/${nevent}`, label: 'note', external: false };
     }
@@ -115,7 +127,11 @@ export class HighlightProcessor {
       if (!Number.isNaN(kind) && pubkey && identifier !== undefined) {
         if (kind === 30023) {
           const naddr = encodeNaddr({ kind, pubkey, identifier, relays: [] });
-          return { href: `/article/${naddr}`, label: 'article', external: false };
+          return {
+            href: `/article/${naddr}`,
+            label: 'article',
+            external: false,
+          };
         }
         return { href: '#', label: 'event', external: false };
       }
@@ -137,20 +153,27 @@ export class HighlightProcessor {
       parts.push(`<div class="highlight__comment">${commentHtml}</div>`);
     }
 
-    parts.push(`<blockquote class="highlight__quote">${escapeHtml(highlightedText)}</blockquote>`);
+    parts.push(
+      `<blockquote class="highlight__quote">${escapeHtml(highlightedText)}</blockquote>`
+    );
 
     const sourceLink = HighlightProcessor.resolveSourceLink(sourceTag);
-    const authorMarkup = HighlightProcessor.renderSourceAuthor(sourceAuthorPubkey);
+    const authorMarkup =
+      HighlightProcessor.renderSourceAuthor(sourceAuthorPubkey);
 
     if (sourceLink || authorMarkup) {
       const linkMarkup = sourceLink
         ? `<a href="${escapeHtmlAttr(sourceLink.href)}" class="highlight__source-link"${
-            sourceLink.external ? ' target="_blank" rel="noopener noreferrer"' : ''
+            sourceLink.external
+              ? ' target="_blank" rel="noopener noreferrer"'
+              : ''
           }>${escapeHtml(sourceLink.label)}</a>`
         : '';
 
       const sep = linkMarkup && authorMarkup ? ' by ' : '';
-      parts.push(`<div class="highlight__source">From ${linkMarkup}${sep}${authorMarkup}</div>`);
+      parts.push(
+        `<div class="highlight__source">From ${linkMarkup}${sep}${authorMarkup}</div>`
+      );
     }
 
     parts.push('</div>');

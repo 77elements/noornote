@@ -56,12 +56,15 @@ export function renderUserMention(
  * to the anchor. Call setupUserMentionHandlers afterwards.
  */
 export function upgradeInlineMentions(container: HTMLElement): void {
-  const anchors = container.querySelectorAll<HTMLAnchorElement>('a[data-mention]');
+  const anchors =
+    container.querySelectorAll<HTMLAnchorElement>('a[data-mention]');
   anchors.forEach(anchor => {
     if (anchor.parentElement?.classList.contains('user-mention')) return;
 
     const href = anchor.getAttribute('href') || '';
-    const npub = href.startsWith('/profile/') ? href.slice('/profile/'.length) : '';
+    const npub = href.startsWith('/profile/')
+      ? href.slice('/profile/'.length)
+      : '';
     const hex = npub ? npubToHex(npub) : null;
     if (!hex) return;
 
@@ -111,7 +114,7 @@ export function setupUserMentionHandlers(container: HTMLElement): void {
   const profileLinks = container.querySelectorAll('[data-profile-pubkey]');
 
   profileLinks.forEach(link => {
-    link.addEventListener('click', (e) => {
+    link.addEventListener('click', e => {
       e.preventDefault();
       const profilePubkey = (link as HTMLElement).dataset.profilePubkey;
 

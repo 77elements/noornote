@@ -17,7 +17,7 @@ export class ThemeSwitcher {
     this.dropdown = new CustomDropdown({
       options: THEMES.map(t => ({ value: t.id, label: t.label })),
       selectedValue: themeService.getTheme(),
-      onChange: (value) => themeService.setTheme(value as any),
+      onChange: value => themeService.setTheme(value as any),
       className: 'theme-switcher',
     });
 

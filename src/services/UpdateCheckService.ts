@@ -16,7 +16,8 @@ const STORAGE_KEYS = {
 } as const;
 
 const CHECK_INTERVAL = 5 * 60 * 60 * 1000; // 5 hours
-const GITHUB_API_URL = 'https://api.github.com/repos/77elements/noornote/releases/latest';
+const GITHUB_API_URL =
+  'https://api.github.com/repos/77elements/noornote/releases/latest';
 
 export interface UpdateInfo {
   version: string;
@@ -52,7 +53,9 @@ export class UpdateCheckService {
     if (!platform.isDesktop) return;
     if (!this.isAutoCheckEnabled()) return;
 
-    const lastCheck = Number(localStorage.getItem(STORAGE_KEYS.LAST_CHECK) || '0');
+    const lastCheck = Number(
+      localStorage.getItem(STORAGE_KEYS.LAST_CHECK) || '0'
+    );
     if (Date.now() - lastCheck < CHECK_INTERVAL) return;
 
     const update = await this.checkForUpdate();
@@ -99,7 +102,9 @@ export class UpdateCheckService {
       const update = await this.checkForUpdate();
 
       if (update) {
-        const { UpdateModal } = await import('../components/modals/UpdateModal');
+        const { UpdateModal } = await import(
+          '../components/modals/UpdateModal'
+        );
         new UpdateModal().show(update);
       } else {
         const { ToastService } = await import('./ToastService');
@@ -145,7 +150,12 @@ export class UpdateCheckService {
       const version = (release.tag_name || '').replace(/^v/, '');
       const update = this.buildUpdateInfo(release, version || '99.0.0');
 
-      console.log('Simulating update:', update.version, '(current:', __APP_VERSION__ + ')');
+      console.log(
+        'Simulating update:',
+        update.version,
+        '(current:',
+        `${__APP_VERSION__})`
+      );
 
       const { UpdateModal } = await import('../components/modals/UpdateModal');
       new UpdateModal().show(update);
@@ -159,7 +169,7 @@ export class UpdateCheckService {
    */
   private async fetchLatestRelease(): Promise<GitHubRelease | null> {
     const response = await fetch(GITHUB_API_URL, {
-      headers: { 'Accept': 'application/vnd.github.v3+json' },
+      headers: { Accept: 'application/vnd.github.v3+json' },
     });
 
     if (!response.ok) return null;
@@ -173,7 +183,9 @@ export class UpdateCheckService {
   private buildUpdateInfo(release: GitHubRelease, version: string): UpdateInfo {
     return {
       version,
-      downloadUrl: release.html_url || `https://github.com/77elements/noornote/releases/tag/${release.tag_name}`,
+      downloadUrl:
+        release.html_url ||
+        `https://github.com/77elements/noornote/releases/tag/${release.tag_name}`,
       releaseNotes: release.body || '',
       publishedAt: release.published_at || '',
     };

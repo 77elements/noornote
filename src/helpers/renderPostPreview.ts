@@ -49,7 +49,7 @@ export function renderPostPreview(options: PreviewOptions): string {
     kind: 1,
     tags: options.extraTags ?? [],
     content: options.content,
-    sig: ''
+    sig: '',
   };
 
   // Process note content (linkify, hashtags, media extraction, etc.)
@@ -62,7 +62,10 @@ export function renderPostPreview(options: PreviewOptions): string {
     processedNote.content.media,
     options.isNSFW || false
   );
-  htmlWithMedia = replaceBolt11Placeholders(htmlWithMedia, processedNote.content.bolt11Invoices);
+  htmlWithMedia = replaceBolt11Placeholders(
+    htmlWithMedia,
+    processedNote.content.bolt11Invoices
+  );
 
   return htmlWithMedia;
 }

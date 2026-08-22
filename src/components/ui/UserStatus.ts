@@ -3,7 +3,10 @@
  * Shows current user info with username instead of npub
  */
 
-import { UserProfileService, UserProfile } from '../../services/UserProfileService';
+import {
+  UserProfileService,
+  UserProfile,
+} from '../../services/UserProfileService';
 import { extractDisplayName } from '../../helpers/extractDisplayName';
 
 export interface UserStatusOptions {
@@ -66,7 +69,10 @@ export class UserStatus {
     try {
       await this.userProfileService.getUserProfile(this.options.pubkey);
     } catch (error) {
-      console.warn(`Failed to load profile for user status: ${this.options.pubkey}`, error);
+      console.warn(
+        `Failed to load profile for user status: ${this.options.pubkey}`,
+        error
+      );
       this.showFallback();
     }
   }

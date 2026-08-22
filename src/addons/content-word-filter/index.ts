@@ -1,27 +1,40 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../services/PerAccountLocalStorage';
 
 const STORAGE_KEY = 'noornote_content_word_filter_enabled';
 
 export function isContentWordFilterEnabled(): boolean {
   const perAccount = PerAccountLocalStorage.getInstance().get<boolean | null>(
-    StorageKeys.CONTENT_WORD_FILTER_ENABLED, null
+    StorageKeys.CONTENT_WORD_FILTER_ENABLED,
+    null
   );
   if (perAccount !== null) return perAccount;
   return localStorage.getItem(STORAGE_KEY) === 'true';
 }
 
 export function setContentWordFilterEnabled(enabled: boolean): void {
-  PerAccountLocalStorage.getInstance().set(StorageKeys.CONTENT_WORD_FILTER_ENABLED, enabled);
+  PerAccountLocalStorage.getInstance().set(
+    StorageKeys.CONTENT_WORD_FILTER_ENABLED,
+    enabled
+  );
   localStorage.setItem(STORAGE_KEY, 'false');
 }
 
 export function getFilterWords(): string[] {
-  return PerAccountLocalStorage.getInstance().get<string[]>(StorageKeys.CONTENT_WORD_FILTER_WORDS, []);
+  return PerAccountLocalStorage.getInstance().get<string[]>(
+    StorageKeys.CONTENT_WORD_FILTER_WORDS,
+    []
+  );
 }
 
 export function setFilterWords(words: string[]): void {
-  PerAccountLocalStorage.getInstance().set(StorageKeys.CONTENT_WORD_FILTER_WORDS, words);
+  PerAccountLocalStorage.getInstance().set(
+    StorageKeys.CONTENT_WORD_FILTER_WORDS,
+    words
+  );
 }
 
 /**

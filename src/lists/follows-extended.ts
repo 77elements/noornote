@@ -11,7 +11,10 @@
 
 import type { UserProfile } from '../services/UserProfileService';
 import { UserProfileService } from '../services/UserProfileService';
-import { FollowVerificationService, type MutualState } from '../services/FollowVerificationService';
+import {
+  FollowVerificationService,
+  type MutualState,
+} from '../services/FollowVerificationService';
 import { MutualChangeDetector } from '../services/MutualChangeDetector';
 import { MutualChangeStorage } from './MutualChangeStorage';
 import { ZapStatsService } from '../services/ZapStatsService';
@@ -19,7 +22,10 @@ import { TypedEventBus } from '../core/TypedEventBus';
 import { ToastService } from '../services/ToastService';
 import { ProgressBarHelper } from '../helpers/ProgressBarHelper';
 import { extractDisplayName } from '../helpers/extractDisplayName';
-import { renderUserMention, setupUserMentionHandlers } from '../helpers/UserMentionHelper';
+import {
+  renderUserMention,
+  setupUserMentionHandlers,
+} from '../helpers/UserMentionHelper';
 import { formatTimeAgo } from '../helpers/formatTimeAgo';
 
 export interface FollowItemForExtended {
@@ -60,18 +66,24 @@ export class FollowsExtendedFeatures {
   }): string[] {
     const ids: string[] = [];
 
-    ids.push(this.eventBus.on('zapstats:loaded', () => {
-      this.zapStatsLoaded = true;
-      callbacks.onZapStatsLoaded();
-    }));
+    ids.push(
+      this.eventBus.on('zapstats:loaded', () => {
+        this.zapStatsLoaded = true;
+        callbacks.onZapStatsLoaded();
+      })
+    );
 
-    ids.push(this.eventBus.on('mutual-changes:detected', () => {
-      callbacks.onMutualChangesUpdate();
-    }));
+    ids.push(
+      this.eventBus.on('mutual-changes:detected', () => {
+        callbacks.onMutualChangesUpdate();
+      })
+    );
 
-    ids.push(this.eventBus.on('mutual-changes:seen', () => {
-      callbacks.onMutualChangesUpdate();
-    }));
+    ids.push(
+      this.eventBus.on('mutual-changes:seen', () => {
+        callbacks.onMutualChangesUpdate();
+      })
+    );
 
     return ids;
   }
@@ -89,10 +101,15 @@ export class FollowsExtendedFeatures {
    * each item and counts the definitive mutuals. 'unknown' stays 'unknown' so
    * it renders as a neutral "checking…" instead of a sticky false negative.
    */
-  public async checkMutualStatusBatch(batch: FollowItemForExtended[]): Promise<void> {
+  public async checkMutualStatusBatch(
+    batch: FollowItemForExtended[]
+  ): Promise<void> {
     if (batch.length === 0) return;
     const pubkeys = batch.map(item => item.pubkey);
-    const verdicts = await this.followVerification.verifyFollowsBackBatch(pubkeys, { concurrency: 5 });
+    const verdicts = await this.followVerification.verifyFollowsBackBatch(
+      pubkeys,
+      { concurrency: 5 }
+    );
     for (const item of batch) {
       const state = verdicts.get(item.pubkey)?.status ?? 'unknown';
       item.mutualState = state;
@@ -144,7 +161,9 @@ export class FollowsExtendedFeatures {
         countChanged = true;
       }
       if (!container.isConnected) return; // list closed mid-reverify
-      const row = container.querySelector(`.follow-item[data-pubkey="${item.pubkey}"]`);
+      const row = container.querySelector(
+        `.follow-item[data-pubkey="${item.pubkey}"]`
+      );
       const badge = row?.querySelector('.mutual-badge');
       if (badge) {
         badge.outerHTML = this.renderMutualBadge(verdict.status);
@@ -221,7 +240,9 @@ export class FollowsExtendedFeatures {
    */
   public renderCheckForChangesHtml(): string {
     const lastCheckTimestamp = this.mutualChangeStorage.getLastCheckTimestamp();
-    const lastCheckText = lastCheckTimestamp ? formatTimeAgo(lastCheckTimestamp) : 'Never';
+    const lastCheckText = lastCheckTimestamp
+      ? formatTimeAgo(lastCheckTimestamp)
+      : 'Never';
 
     return `
       <div class="follows-check-changes">
@@ -235,14 +256,20 @@ export class FollowsExtendedFeatures {
    * Render the stats header HTML.
    */
   public renderStatsHtml(totalFollowing: number): string {
-    const percentage = totalFollowing === 0 ? 0 : Math.round((this.mutualCount / totalFollowing) * 100);
+    const percentage =
+      totalFollowing === 0
+        ? 0
+        : Math.round((this.mutualCount / totalFollowing) * 100);
     return `Following: ${totalFollowing} | Mutuals: <span class="mutual-count">${this.mutualCount}</span> (<span class="mutual-percentage">${percentage}</span>%)`;
   }
 
   /**
    * Update the stats header in the DOM.
    */
-  public updateStatsHeader(container: HTMLElement, totalFollowing: number): void {
+  public updateStatsHeader(
+    container: HTMLElement,
+    totalFollowing: number
+  ): void {
     const statsEl = container.querySelector('.follows-stats');
     if (statsEl) {
       statsEl.innerHTML = this.renderStatsHtml(totalFollowing);
@@ -256,7 +283,7 @@ export class FollowsExtendedFeatures {
    */
   public bindCheckForChanges(container: HTMLElement): void {
     const checkLink = container.querySelector('.follows-check-changes__link');
-    checkLink?.addEventListener('click', async (e) => {
+    checkLink?.addEventListener('click', async e => {
       e.preventDefault();
       await this.handleCheckForChanges(container);
     });
@@ -267,33 +294,44 @@ export class FollowsExtendedFeatures {
    */
   private async handleCheckForChanges(container: HTMLElement): Promise<void> {
     const checkLink = container.querySelector('.follows-check-changes__link');
-    const lastCheckSpan = container.querySelector('.follows-check-changes__last-check');
-    const followsHeader = container.querySelector('.follows-header') as HTMLElement;
+    const lastCheckSpan = container.querySelector(
+      '.follows-check-changes__last-check'
+    );
+    const followsHeader = container.querySelector(
+      '.follows-header'
+    ) as HTMLElement;
 
     if (checkLink) {
       checkLink.textContent = 'Checking...';
       (checkLink as HTMLElement).style.pointerEvents = 'none';
     }
 
-    const progressBar = followsHeader ? new ProgressBarHelper(followsHeader) : null;
+    const progressBar = followsHeader
+      ? new ProgressBarHelper(followsHeader)
+      : null;
     progressBar?.start();
 
     try {
-      const result = await this.mutualChangeDetector.detect((checked, total) => {
-        if (checkLink) {
-          checkLink.textContent = `Checking ${checked} of ${total} follows`;
+      const result = await this.mutualChangeDetector.detect(
+        (checked, total) => {
+          if (checkLink) {
+            checkLink.textContent = `Checking ${checked} of ${total} follows`;
+          }
+          if (progressBar) {
+            progressBar.update((checked / total) * 100);
+          }
         }
-        if (progressBar) {
-          progressBar.update((checked / total) * 100);
-        }
-      });
+      );
 
       if (lastCheckSpan) {
         lastCheckSpan.textContent = 'Last: Just now';
       }
 
       if (result.isFirstCheck) {
-        ToastService.show('Initial snapshot saved. Changes will be detected on next check.', 'info');
+        ToastService.show(
+          'Initial snapshot saved. Changes will be detected on next check.',
+          'info'
+        );
       } else if (result.totalChanges === 0) {
         ToastService.show('No changes detected', 'success');
       } else {
@@ -318,27 +356,29 @@ export class FollowsExtendedFeatures {
     container: HTMLElement,
     result: { unfollows: string[]; newMutuals: string[]; totalChanges: number }
   ): Promise<void> {
-    const modal = container.querySelector('.mutual-changes-modal') as HTMLElement;
+    const modal = container.querySelector(
+      '.mutual-changes-modal'
+    ) as HTMLElement;
     if (!modal) return;
 
     const unfollowData = await Promise.all(
-      result.unfollows.map(async (pubkey) => {
+      result.unfollows.map(async pubkey => {
         const profile = await this.userProfileService.getUserProfile(pubkey);
         return {
           pubkey,
           username: extractDisplayName(profile),
-          avatarUrl: profile?.picture || ''
+          avatarUrl: profile?.picture || '',
         };
       })
     );
 
     const newMutualData = await Promise.all(
-      result.newMutuals.map(async (pubkey) => {
+      result.newMutuals.map(async pubkey => {
         const profile = await this.userProfileService.getUserProfile(pubkey);
         return {
           pubkey,
           username: extractDisplayName(profile),
-          avatarUrl: profile?.picture || ''
+          avatarUrl: profile?.picture || '',
         };
       })
     );
@@ -351,31 +391,47 @@ export class FollowsExtendedFeatures {
           ${result.totalChanges} ${result.totalChanges === 1 ? 'change' : 'changes'} detected
         </p>
 
-        ${newMutualData.length > 0 ? `
+        ${
+          newMutualData.length > 0
+            ? `
           <div class="mutual-changes-modal__section mutual-changes-modal__section--positive">
             <h4>New Mutuals (${newMutualData.length})</h4>
             <ul class="mutual-changes-modal__list">
-              ${newMutualData.map(data => `
+              ${newMutualData
+                .map(
+                  data => `
                 <li class="mutual-changes-modal__item mutual-changes-modal__item--positive">
                   ${renderUserMention(data.pubkey, { username: data.username, avatarUrl: data.avatarUrl })} started following you back!
                 </li>
-              `).join('')}
+              `
+                )
+                .join('')}
             </ul>
           </div>
-        ` : ''}
+        `
+            : ''
+        }
 
-        ${unfollowData.length > 0 ? `
+        ${
+          unfollowData.length > 0
+            ? `
           <div class="mutual-changes-modal__section mutual-changes-modal__section--negative">
             <h4>Unfollows (${unfollowData.length})</h4>
             <ul class="mutual-changes-modal__list">
-              ${unfollowData.map(data => `
+              ${unfollowData
+                .map(
+                  data => `
                 <li class="mutual-changes-modal__item mutual-changes-modal__item--negative">
                   ${renderUserMention(data.pubkey, { username: data.username, avatarUrl: data.avatarUrl })} stopped following back
                 </li>
-              `).join('')}
+              `
+                )
+                .join('')}
             </ul>
           </div>
-        ` : ''}
+        `
+            : ''
+        }
 
         <div class="mutual-changes-modal__actions">
           <button class="btn btn--primary mutual-changes-modal__mark-seen">Mark as Seen</button>
@@ -392,14 +448,20 @@ export class FollowsExtendedFeatures {
       modal.style.display = 'none';
     };
 
-    modal.querySelector('.mutual-changes-modal__mark-seen')?.addEventListener('click', async () => {
-      await this.mutualChangeDetector.markAsSeen();
-      closeModal();
-      ToastService.show('Changes marked as seen', 'success');
-    });
+    modal
+      .querySelector('.mutual-changes-modal__mark-seen')
+      ?.addEventListener('click', async () => {
+        await this.mutualChangeDetector.markAsSeen();
+        closeModal();
+        ToastService.show('Changes marked as seen', 'success');
+      });
 
-    modal.querySelector('.mutual-changes-modal__close')?.addEventListener('click', closeModal);
-    modal.querySelector('.mutual-changes-modal__backdrop')?.addEventListener('click', closeModal);
+    modal
+      .querySelector('.mutual-changes-modal__close')
+      ?.addEventListener('click', closeModal);
+    modal
+      .querySelector('.mutual-changes-modal__backdrop')
+      ?.addEventListener('click', closeModal);
   }
 
   /**

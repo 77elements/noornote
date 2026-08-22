@@ -41,7 +41,7 @@ export class ArmadaRelayClient {
   public async fetchWraps(
     relayUrls: string[],
     authors: string[],
-    since: number,
+    since: number
   ): Promise<NostrEvent[]> {
     if (authors.length === 0 || this.destroyed) return [];
 
@@ -51,7 +51,10 @@ export class ArmadaRelayClient {
         const events = await this.fetchFromRelay(relayUrl, authors, since);
         if (events.length > 0) return events;
       } catch (error) {
-        diagLog('addons', 'armada: relay fetch failed', { relay: relayUrl, error: String(error) });
+        diagLog('addons', 'armada: relay fetch failed', {
+          relay: relayUrl,
+          error: String(error),
+        });
       }
     }
     return [];
@@ -64,7 +67,7 @@ export class ArmadaRelayClient {
   private fetchFromRelay(
     relayUrl: string,
     authors: string[],
-    since: number,
+    since: number
   ): Promise<NostrEvent[]> {
     return new Promise<NostrEvent[]>((resolve, reject) => {
       const buffer = new Map<string, NostrEvent>();
@@ -76,7 +79,11 @@ export class ArmadaRelayClient {
         if (settled) return;
         settled = true;
         clearTimeout(timer);
-        try { ws?.close(); } catch { /* best-effort */ }
+        try {
+          ws?.close();
+        } catch {
+          /* best-effort */
+        }
         resolve(Array.from(buffer.values()));
       };
 
@@ -94,12 +101,18 @@ export class ArmadaRelayClient {
       const sendReq = () => {
         if (!ws || ws.readyState !== WebSocket.OPEN || reqSent) return;
         reqSent = true;
-        ws.send(JSON.stringify(['REQ', 'armada-poll', {
-          kinds: [1059],
-          authors,
-          since,
-          limit: 100,
-        }]));
+        ws.send(
+          JSON.stringify([
+            'REQ',
+            'armada-poll',
+            {
+              kinds: [1059],
+              authors,
+              since,
+              limit: 100,
+            },
+          ])
+        );
       };
 
       try {
@@ -111,33 +124,46 @@ export class ArmadaRelayClient {
 
       ws.onopen = () => sendReq();
 
-      ws.onmessage = async (e) => {
+      ws.onmessage = async e => {
         try {
           const data = JSON.parse(e.data as string);
           if (data[0] === 'AUTH') {
             // NIP-42 challenge — sign with stream keys + user key, then resend REQ
             for (const gk of this.streamKeys) {
               try {
-                const signed = finalizeEvent({
-                  kind: KIND_AUTH,
-                  created_at: Math.floor(Date.now() / 1000),
-                  content: '',
-                  tags: [['relay', relayUrl], ['challenge', data[1]]],
-                }, gk.sk) as NostrEvent;
+                const signed = finalizeEvent(
+                  {
+                    kind: KIND_AUTH,
+                    created_at: Math.floor(Date.now() / 1000),
+                    content: '',
+                    tags: [
+                      ['relay', relayUrl],
+                      ['challenge', data[1]],
+                    ],
+                  },
+                  gk.sk
+                ) as NostrEvent;
                 ws?.send(JSON.stringify(['AUTH', signed]));
-              } catch { /* best-effort */ }
+              } catch {
+                /* best-effort */
+              }
             }
             const pubkey = this.authService.getCurrentUser()?.pubkey;
             if (pubkey) {
               try {
-                const userAuth = await this.authService.signEvent({
+                const userAuth = (await this.authService.signEvent({
                   kind: KIND_AUTH,
                   created_at: Math.floor(Date.now() / 1000),
                   content: '',
-                  tags: [['relay', relayUrl], ['challenge', data[1]]],
-                }) as NostrEvent;
+                  tags: [
+                    ['relay', relayUrl],
+                    ['challenge', data[1]],
+                  ],
+                })) as NostrEvent;
                 ws?.send(JSON.stringify(['AUTH', userAuth]));
-              } catch { /* best-effort */ }
+              } catch {
+                /* best-effort */
+              }
             }
             // Allow re-sending REQ after auth
             reqSent = false;
@@ -154,7 +180,9 @@ export class ArmadaRelayClient {
         }
       };
 
-      ws.onerror = () => { /* timeout handles failure */ };
+      ws.onerror = () => {
+        /* timeout handles failure */
+      };
       ws.onclose = () => finish();
     });
   }

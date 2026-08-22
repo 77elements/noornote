@@ -34,11 +34,21 @@ export interface ScheduleArticleOptions {
 const MIN_DELAY_S = 60;
 const MAX_DELAY_S = 30 * 24 * 60 * 60;
 
-export async function scheduleArticle(options: ScheduleArticleOptions): Promise<string | null> {
+export async function scheduleArticle(
+  options: ScheduleArticleOptions
+): Promise<string | null> {
   const logger = SystemLogger.getInstance();
   const auth = AuthService.getInstance();
   const {
-    title, content, identifier, summary, image, topics, publishedAt, relays, scheduledAt,
+    title,
+    content,
+    identifier,
+    summary,
+    image,
+    topics,
+    publishedAt,
+    relays,
+    scheduledAt,
   } = options;
 
   const currentUser = auth.getCurrentUser();
@@ -66,11 +76,17 @@ export async function scheduleArticle(options: ScheduleArticleOptions): Promise<
 
   const now = Math.floor(Date.now() / 1000);
   if (scheduledAt <= now + MIN_DELAY_S) {
-    ToastService.show('Scheduled time must be at least 1 minute in the future', 'error');
+    ToastService.show(
+      'Scheduled time must be at least 1 minute in the future',
+      'error'
+    );
     return null;
   }
   if (scheduledAt > now + MAX_DELAY_S) {
-    ToastService.show('Scheduled time cannot be more than 30 days in the future', 'error');
+    ToastService.show(
+      'Scheduled time cannot be more than 30 days in the future',
+      'error'
+    );
     return null;
   }
 
@@ -82,7 +98,8 @@ export async function scheduleArticle(options: ScheduleArticleOptions): Promise<
       ['title', title.trim()],
     ];
 
-    if (summary && summary.trim().length > 0) tags.push(['summary', summary.trim()]);
+    if (summary && summary.trim().length > 0)
+      tags.push(['summary', summary.trim()]);
     if (image && image.trim().length > 0) tags.push(['image', image.trim()]);
     tags.push(['published_at', String(publishedAt || scheduledAt)]);
 
@@ -107,7 +124,11 @@ export async function scheduleArticle(options: ScheduleArticleOptions): Promise<
       return null;
     }
 
-    await ScheduledPostService.getInstance().schedule(signedEvent, relays, scheduledAt);
+    await ScheduledPostService.getInstance().schedule(
+      signedEvent,
+      relays,
+      scheduledAt
+    );
     diagLog('system', 'scheduled_article_submitted', {
       scheduledAt,
       relayCount: relays.length,
@@ -125,7 +146,12 @@ export async function scheduleArticle(options: ScheduleArticleOptions): Promise<
       relays: relays.slice(0, 2),
     });
   } catch (error) {
-    ErrorService.handle(error, 'scheduleArticle', true, 'Failed to schedule article. Please try again.');
+    ErrorService.handle(
+      error,
+      'scheduleArticle',
+      true,
+      'Failed to schedule article. Please try again.'
+    );
     return null;
   }
 }

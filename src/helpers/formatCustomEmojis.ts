@@ -16,8 +16,9 @@ export interface CustomEmoji {
  */
 export function extractCustomEmojis(tags: string[][]): CustomEmoji[] {
   return tags
-    .filter((tag): tag is [string, string, string, ...string[]] =>
-      tag[0] === 'emoji' && tag.length >= 3 && !!tag[1] && !!tag[2]
+    .filter(
+      (tag): tag is [string, string, string, ...string[]] =>
+        tag[0] === 'emoji' && tag.length >= 3 && !!tag[1] && !!tag[2]
     )
     .map(tag => ({ shortcode: tag[1], url: tag[2] }));
 }
@@ -26,7 +27,10 @@ export function extractCustomEmojis(tags: string[][]): CustomEmoji[] {
  * Replace :shortcode: in HTML with <img> tags
  * Only replaces shortcodes that have a matching emoji definition
  */
-export function formatCustomEmojis(html: string, emojis: CustomEmoji[]): string {
+export function formatCustomEmojis(
+  html: string,
+  emojis: CustomEmoji[]
+): string {
   if (!emojis.length) return html;
 
   // Create a map for quick lookup
@@ -55,14 +59,19 @@ export function formatCustomEmojis(html: string, emojis: CustomEmoji[]): string 
  * For NIP-30 custom emojis (:shortcode: with emoji tags), returns an <img> tag
  * For standard emojis, returns the content as-is
  */
-export function resolveReactionEmoji(event: { content: string; tags: string[][] }): string {
+export function resolveReactionEmoji(event: {
+  content: string;
+  tags: string[][];
+}): string {
   const content = event.content.trim();
 
   // Check for :shortcode: pattern (NIP-30 custom emoji)
   const match = content.match(/^:([a-zA-Z0-9_-]+):$/);
   if (match) {
     const shortcode = match[1];
-    const emojiTag = event.tags.find(t => t[0] === 'emoji' && t[1] === shortcode);
+    const emojiTag = event.tags.find(
+      t => t[0] === 'emoji' && t[1] === shortcode
+    );
     if (emojiTag && emojiTag[2]) {
       const safeUrl = escapeHtmlAttr(emojiTag[2]);
       return `<img class="custom-emoji" src="${safeUrl}" alt=":${shortcode}:" title=":${shortcode}:" loading="lazy" />`;

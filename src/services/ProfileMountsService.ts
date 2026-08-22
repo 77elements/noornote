@@ -13,15 +13,14 @@ import { TypedEventBus } from '../core/TypedEventBus';
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 
 interface ProfileMountData {
-  folderName: string;  // Folder name (= d-tag of kind:30003)
-  mountedAt: number;   // Timestamp when mounted (for default ordering)
+  folderName: string; // Folder name (= d-tag of kind:30003)
+  mountedAt: number; // Timestamp when mounted (for default ordering)
 }
 
 interface ProfileMountsStorage {
   version: 1;
   mounts: ProfileMountData[];
 }
-
 
 const MAX_MOUNTS = 5;
 
@@ -84,7 +83,7 @@ export class ProfileMountsService {
     // Add with timestamp
     data.mounts.push({
       folderName,
-      mountedAt: Date.now()
+      mountedAt: Date.now(),
     });
 
     this.saveToStorage(data);
@@ -114,7 +113,8 @@ export class ProfileMountsService {
       if (this.getMounts().length >= MAX_MOUNTS) {
         return {
           mounted: false,
-          error: 'Maximale Anzahl mounts erreicht. Deselektiere, bevor du neue anhängen willst.'
+          error:
+            'Maximale Anzahl mounts erreicht. Deselektiere, bevor du neue anhängen willst.',
         };
       }
       this.addMount(folderName);
@@ -165,8 +165,8 @@ export class ProfileMountsService {
       version: 1,
       mounts: folderNames.map((name, index) => ({
         folderName: name,
-        mountedAt: Date.now() - (folderNames.length - index) // Preserve order
-      }))
+        mountedAt: Date.now() - (folderNames.length - index), // Preserve order
+      })),
     };
     this.saveToStorage(data);
     this.eventBus.emit('profileMounts:changed', { mounts: this.getMounts() });

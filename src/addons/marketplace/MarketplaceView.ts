@@ -23,7 +23,9 @@ export class MarketplaceView extends View {
     this.container.innerHTML = `<div class="marketplace-view__content"></div>`;
 
     this.timeline = new MarketplaceTimeline();
-    const contentArea = this.container.querySelector('.marketplace-view__content');
+    const contentArea = this.container.querySelector(
+      '.marketplace-view__content'
+    );
     contentArea?.appendChild(this.timeline.getElement());
   }
 

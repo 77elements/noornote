@@ -1,2 +1,5 @@
-export type { TimelineModuleApi, FeedLoadRequest, FeedLoadResult } from './contracts';
-
+export type {
+  TimelineModuleApi,
+  FeedLoadRequest,
+  FeedLoadResult,
+} from './contracts';

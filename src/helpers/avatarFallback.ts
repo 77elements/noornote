@@ -27,15 +27,21 @@ let imgErrorListenerInstalled = false;
 export function installImgErrorFallback(): void {
   if (imgErrorListenerInstalled) return;
   imgErrorListenerInstalled = true;
-  document.addEventListener('error', (e) => {
-    const target = e.target as HTMLElement | null;
-    if (!target || target.tagName !== 'IMG') return;
-    const img = target as HTMLImageElement;
-    if (!img.classList.contains('profile-pic')) return;
-    const pubkey = img.dataset.pubkey || img.closest<HTMLElement>('[data-pubkey]')?.dataset.pubkey;
-    if (!pubkey) return;
-    const fallback = getAvatarFallback(pubkey);
-    if (img.src === fallback) return; // already swapped
-    img.src = fallback;
-  }, true); // capture phase — `error` does not bubble from <img>
+  document.addEventListener(
+    'error',
+    e => {
+      const target = e.target as HTMLElement | null;
+      if (!target || target.tagName !== 'IMG') return;
+      const img = target as HTMLImageElement;
+      if (!img.classList.contains('profile-pic')) return;
+      const pubkey =
+        img.dataset.pubkey ||
+        img.closest<HTMLElement>('[data-pubkey]')?.dataset.pubkey;
+      if (!pubkey) return;
+      const fallback = getAvatarFallback(pubkey);
+      if (img.src === fallback) return; // already swapped
+      img.src = fallback;
+    },
+    true
+  ); // capture phase — `error` does not bubble from <img>
 }

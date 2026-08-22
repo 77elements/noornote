@@ -26,10 +26,16 @@ type DhikrMode = 'create' | 'commit' | 'edit';
 export class DhikrModal {
   private submitting = false;
 
-  constructor(private mode: DhikrMode, private round?: DhikrRound) {}
+  constructor(
+    private mode: DhikrMode,
+    private round?: DhikrRound
+  ) {}
 
   private service() {
-    return AddonLoader.getInstance().getRuntime<NostrMajlisRuntime>('nostr-majlis')?.dhikr ?? null;
+    return (
+      AddonLoader.getInstance().getRuntime<NostrMajlisRuntime>('nostr-majlis')
+        ?.dhikr ?? null
+    );
   }
 
   open(): void {
@@ -39,7 +45,8 @@ export class DhikrModal {
 
     if (this.mode === 'create' || this.mode === 'edit') {
       const r = this.round; // present in edit mode, absent in create mode
-      const submitLabel = this.mode === 'edit' ? 'Save changes' : 'Create new dhikr';
+      const submitLabel =
+        this.mode === 'edit' ? 'Save changes' : 'Create new dhikr';
       content.innerHTML = `
         <div class="form__row"><label class="setting__label" for="dk-phrase">Dhikr</label>
           <input id="dk-phrase" class="input" type="text" placeholder="e.g. Alhamdulillah" maxlength="100" value="${r ? escapeHtml(r.phrase) : ''}"></div>
@@ -57,8 +64,12 @@ export class DhikrModal {
           <input class="input" type="text" value="${escapeHtml(r.phrase)}" disabled></div>
         <div class="form__row"><label class="setting__label">Count</label>
           <input class="input" type="number" value="${r.goal}" disabled></div>
-        ${r.description ? `<div class="form__row"><label class="setting__label">Description</label>
-          <textarea class="input" rows="2" disabled>${escapeHtml(r.description)}</textarea></div>` : ''}
+        ${
+          r.description
+            ? `<div class="form__row"><label class="setting__label">Description</label>
+          <textarea class="input" rows="2" disabled>${escapeHtml(r.description)}</textarea></div>`
+            : ''
+        }
         <div class="form__row"><label class="setting__label" for="dk-amount">Your count</label>
           <input id="dk-amount" class="input" type="number" min="1" placeholder="e.g. 100"></div>
         ${hint}
@@ -70,7 +81,9 @@ export class DhikrModal {
       title: this.titleFor(),
       content,
     });
-    content.querySelector('[data-action="submit"]')?.addEventListener('click', () => void this.submit(content));
+    content
+      .querySelector('[data-action="submit"]')
+      ?.addEventListener('click', () => void this.submit(content));
   }
 
   private titleFor(): string {
@@ -88,10 +101,15 @@ export class DhikrModal {
   private async submit(content: HTMLElement): Promise<void> {
     if (this.submitting) return;
     const svc = this.service();
-    if (!svc) { ToastService.show('Community Dhikr is not available', 'error'); return; }
+    if (!svc) {
+      ToastService.show('Community Dhikr is not available', 'error');
+      return;
+    }
     if (!AuthGuard.requireAuth(this.authGuardLabel())) return;
 
-    const btn = content.querySelector('[data-action="submit"]') as HTMLButtonElement | null;
+    const btn = content.querySelector(
+      '[data-action="submit"]'
+    ) as HTMLButtonElement | null;
     const label = btn?.textContent ?? '';
     const setBusy = (busy: boolean) => {
       if (!btn) return;
@@ -103,11 +121,24 @@ export class DhikrModal {
 
     try {
       if (this.mode === 'create' || this.mode === 'edit') {
-        const phrase = (content.querySelector('#dk-phrase') as HTMLInputElement).value.trim();
-        const goal = parseInt((content.querySelector('#dk-goal') as HTMLInputElement).value, 10);
-        const description = (content.querySelector('#dk-desc') as HTMLTextAreaElement).value.trim();
-        if (!phrase) { ToastService.show('Enter a dhikr', 'error'); return; }
-        if (!Number.isFinite(goal) || goal <= 0) { ToastService.show('Enter a valid count', 'error'); return; }
+        const phrase = (
+          content.querySelector('#dk-phrase') as HTMLInputElement
+        ).value.trim();
+        const goal = parseInt(
+          (content.querySelector('#dk-goal') as HTMLInputElement).value,
+          10
+        );
+        const description = (
+          content.querySelector('#dk-desc') as HTMLTextAreaElement
+        ).value.trim();
+        if (!phrase) {
+          ToastService.show('Enter a dhikr', 'error');
+          return;
+        }
+        if (!Number.isFinite(goal) || goal <= 0) {
+          ToastService.show('Enter a valid count', 'error');
+          return;
+        }
         if (this.mode === 'edit') {
           await svc.editRound(this.round!, { phrase, goal, description });
           ToastService.show('Dhikr updated', 'success');
@@ -116,8 +147,14 @@ export class DhikrModal {
           ToastService.show('Dhikr created', 'success');
         }
       } else {
-        const amount = parseInt((content.querySelector('#dk-amount') as HTMLInputElement).value, 10);
-        if (!Number.isFinite(amount) || amount <= 0) { ToastService.show('Enter a valid count', 'error'); return; }
+        const amount = parseInt(
+          (content.querySelector('#dk-amount') as HTMLInputElement).value,
+          10
+        );
+        if (!Number.isFinite(amount) || amount <= 0) {
+          ToastService.show('Enter a valid count', 'error');
+          return;
+        }
         await svc.commit(this.round!, amount);
         ToastService.show('Your dhikr was submitted', 'success');
       }

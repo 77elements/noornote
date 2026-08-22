@@ -25,7 +25,11 @@ export interface ScheduleNoteOptions {
   contentWarning?: boolean;
   pollData?: PollData;
   quotedEvent?: { eventId: string; authorPubkey: string; relayHint?: string };
-  quotedArticle?: { addressableId: string; authorPubkey: string; relayHint?: string };
+  quotedArticle?: {
+    addressableId: string;
+    authorPubkey: string;
+    relayHint?: string;
+  };
   /** Per-post custom client tag (NIP-89); overrides the global "via NoorNote" UI setting. */
   clientTag?: string;
   /** Unix timestamp when the scheduler should publish the event. */
@@ -35,12 +39,24 @@ export interface ScheduleNoteOptions {
 const MIN_DELAY_S = 60;
 const MAX_DELAY_S = 30 * 24 * 60 * 60;
 
-export async function scheduleNote(options: ScheduleNoteOptions): Promise<boolean> {
+export async function scheduleNote(
+  options: ScheduleNoteOptions
+): Promise<boolean> {
   const logger = SystemLogger.getInstance();
   const auth = AuthService.getInstance();
-  const { relays, contentWarning, pollData, quotedEvent, quotedArticle, clientTag, scheduledAt } = options;
+  const {
+    relays,
+    contentWarning,
+    pollData,
+    quotedEvent,
+    quotedArticle,
+    clientTag,
+    scheduledAt,
+  } = options;
 
-  const { stripTrackingParams } = await import('../../helpers/stripTrackingParams');
+  const { stripTrackingParams } = await import(
+    '../../helpers/stripTrackingParams'
+  );
   const content = stripTrackingParams(options.content);
 
   const currentUser = auth.getCurrentUser();
@@ -60,11 +76,17 @@ export async function scheduleNote(options: ScheduleNoteOptions): Promise<boolea
 
   const now = Math.floor(Date.now() / 1000);
   if (scheduledAt <= now + MIN_DELAY_S) {
-    ToastService.show('Scheduled time must be at least 1 minute in the future', 'error');
+    ToastService.show(
+      'Scheduled time must be at least 1 minute in the future',
+      'error'
+    );
     return false;
   }
   if (scheduledAt > now + MAX_DELAY_S) {
-    ToastService.show('Scheduled time cannot be more than 30 days in the future', 'error');
+    ToastService.show(
+      'Scheduled time cannot be more than 30 days in the future',
+      'error'
+    );
     return false;
   }
 
@@ -83,7 +105,10 @@ export async function scheduleNote(options: ScheduleNoteOptions): Promise<boolea
       if (quotedEvent.relayHint) qTag.push(quotedEvent.relayHint);
       if (quotedEvent.authorPubkey) qTag.push(quotedEvent.authorPubkey);
       tags.push(qTag);
-      if (quotedEvent.authorPubkey && !mentionedPubkeys.has(quotedEvent.authorPubkey)) {
+      if (
+        quotedEvent.authorPubkey &&
+        !mentionedPubkeys.has(quotedEvent.authorPubkey)
+      ) {
         tags.push(['p', quotedEvent.authorPubkey]);
       }
     }
@@ -92,14 +117,22 @@ export async function scheduleNote(options: ScheduleNoteOptions): Promise<boolea
       const aTag = ['a', quotedArticle.addressableId];
       if (quotedArticle.relayHint) aTag.push(quotedArticle.relayHint);
       tags.push(aTag);
-      if (quotedArticle.authorPubkey && !mentionedPubkeys.has(quotedArticle.authorPubkey)) {
+      if (
+        quotedArticle.authorPubkey &&
+        !mentionedPubkeys.has(quotedArticle.authorPubkey)
+      ) {
         tags.push(['p', quotedArticle.authorPubkey]);
       }
     }
 
     if (pollData) {
-      pollData.options.forEach(option => tags.push(['option', option.id, option.label]));
-      tags.push(['polltype', pollData.multipleChoice ? 'multiplechoice' : 'singlechoice']);
+      pollData.options.forEach(option =>
+        tags.push(['option', option.id, option.label])
+      );
+      tags.push([
+        'polltype',
+        pollData.multipleChoice ? 'multiplechoice' : 'singlechoice',
+      ]);
       if (pollData.endDate) tags.push(['endsAt', pollData.endDate.toString()]);
       if (pollData.relayUrls && pollData.relayUrls.length > 0) {
         pollData.relayUrls.forEach(url => tags.push(['relay', url]));
@@ -121,7 +154,11 @@ export async function scheduleNote(options: ScheduleNoteOptions): Promise<boolea
           import('../custom-emojis/EmojiService'),
           import('../custom-emojis/attachEmojiTags'),
         ]);
-        finalTags = attachEmojiTags(content, tags, EmojiService.getInstance().getEmojis());
+        finalTags = attachEmojiTags(
+          content,
+          tags,
+          EmojiService.getInstance().getEmojis()
+        );
       }
     } catch (err) {
       logger.warn('scheduleNote', `Custom emoji enrichment skipped: ${err}`);
@@ -141,7 +178,11 @@ export async function scheduleNote(options: ScheduleNoteOptions): Promise<boolea
       return false;
     }
 
-    await ScheduledPostService.getInstance().schedule(signedEvent, relays, scheduledAt);
+    await ScheduledPostService.getInstance().schedule(
+      signedEvent,
+      relays,
+      scheduledAt
+    );
     diagLog('system', 'scheduled_post_submitted', {
       kind,
       scheduledAt,
@@ -154,7 +195,12 @@ export async function scheduleNote(options: ScheduleNoteOptions): Promise<boolea
     ToastService.show(`Scheduled for ${when}`, 'success');
     return true;
   } catch (error) {
-    ErrorService.handle(error, 'scheduleNote', true, 'Failed to schedule post. Please try again.');
+    ErrorService.handle(
+      error,
+      'scheduleNote',
+      true,
+      'Failed to schedule post. Please try again.'
+    );
     return false;
   }
 }

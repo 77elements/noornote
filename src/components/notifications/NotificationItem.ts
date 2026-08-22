@@ -26,13 +26,24 @@ import { npubToUsername } from '../../helpers/npubToUsername';
 import { formatTimestamp } from '../../helpers/formatTimestamp';
 import { resolveReactionEmoji } from '../../helpers/formatCustomEmojis';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
-import { getZapAmountSats, extractZapMessage, formatNumberWithCommas } from '../../helpers/zapUtils';
+import {
+  getZapAmountSats,
+  extractZapMessage,
+  formatNumberWithCommas,
+} from '../../helpers/zapUtils';
 
 export interface NotificationItemOptions {
   event: NostrEvent;
   type: NotificationType;
   timestamp: number;
-  meta?: { hashtag?: string; count?: number; groupName?: string; isOwn?: boolean; groupRelay?: string; communityUrl?: string };
+  meta?: {
+    hashtag?: string;
+    count?: number;
+    groupName?: string;
+    isOwn?: boolean;
+    groupRelay?: string;
+    communityUrl?: string;
+  };
 }
 
 export class NotificationItem {
@@ -41,7 +52,8 @@ export class NotificationItem {
   private authService: AuthService;
   private _reactionsApi?: ReactionsModuleApi | null;
   private get reactionsApi(): ReactionsModuleApi | null {
-    return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
+    return (this._reactionsApi ??=
+      ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
   }
   private options: NotificationItemOptions;
   private userIdentity: UserIdentity | null = null;
@@ -66,32 +78,40 @@ export class NotificationItem {
     const item = document.createElement('div');
     item.className = 'ui-list__item ui-list__item--clickable notification-item';
     item.dataset.type = this.options.type; // For CSS styling
-    item.addEventListener('click', (e) => this.handleClick(e));
+    item.addEventListener('click', e => this.handleClick(e));
 
     const icon = this.getIcon(this.options.type);
     const actionText = this.getActionText(this.options.type);
     const preview = this.getPreviewSync();
 
     // For replies/mentions/thread-replies, add context line for the replied-to note
-    const needsContext = this.options.type === 'reply' || this.options.type === 'mention' || this.options.type === 'thread-reply' || this.options.type === 'zap-reply';
-    const contextHtml = needsContext ? '<div class="thread-context-item"><span class="thread-context-content">Loading...</span></div>' : '';
+    const needsContext =
+      this.options.type === 'reply' ||
+      this.options.type === 'mention' ||
+      this.options.type === 'thread-reply' ||
+      this.options.type === 'zap-reply';
+    const contextHtml = needsContext
+      ? '<div class="thread-context-item"><span class="thread-context-content">Loading...</span></div>'
+      : '';
 
     // For badge-award notifications, add Accept/Decline buttons
-    const badgeFooterHtml = this.options.type === 'badge-award'
-      ? `<div class="notification-item__footer">
+    const badgeFooterHtml =
+      this.options.type === 'badge-award'
+        ? `<div class="notification-item__footer">
           <button class="btn btn--mini btn--success" data-action="accept-badge">Accept</button>
           <button class="btn btn--mini btn--secondary" data-action="decline-badge">Decline</button>
         </div>`
-      : '';
+        : '';
 
     // For hashtag notifications, add footer with search and unsubscribe links
     const hashtag = this.options.meta?.hashtag;
-    const hashtagFooterHtml = this.options.type === 'hashtag' && hashtag
-      ? `<div class="notification-item__footer">
+    const hashtagFooterHtml =
+      this.options.type === 'hashtag' && hashtag
+        ? `<div class="notification-item__footer">
           <a href="#" class="notification-item__footer-link notification-item__footer-link--search" data-hashtag="${escapeHtmlAttr(hashtag)}">Open notes tagged #${escapeHtml(hashtag)}</a>
           <a href="#" class="notification-item__footer-link notification-item__footer-link--unsubscribe" data-hashtag="${escapeHtmlAttr(hashtag)}">Unsubscribe from #${escapeHtml(hashtag)}</a>
         </div>`
-      : '';
+        : '';
 
     item.innerHTML = `
       <div class="notification-item__icon">${icon}</div>
@@ -112,17 +132,24 @@ export class NotificationItem {
     `;
 
     // Insert UserIdentity component (anonymized for poll votes + anonymous zaps)
-    const identityContainer = item.querySelector('.notification-item__user-identity');
+    const identityContainer = item.querySelector(
+      '.notification-item__user-identity'
+    );
     if (identityContainer) {
-      if (this.options.type === 'dhikr_round' || this.options.type === 'dhikr_commit'
-          || this.options.type === 'dhikr_complete' || this.options.type === 'nostrord'
-          || this.options.type === 'armada') {
+      if (
+        this.options.type === 'dhikr_round' ||
+        this.options.type === 'dhikr_commit' ||
+        this.options.type === 'dhikr_complete' ||
+        this.options.type === 'nostrord' ||
+        this.options.type === 'armada'
+      ) {
         // Community dhikr + GroupChats + Armada notifications are anonymous by design — no author at all.
         // The action text is self-contained ("Someone posted to …"), so drop the identity slot.
         identityContainer.remove();
       } else if (this.options.type === 'poll_vote') {
         // NIP-88 votes: don't expose the voter — show neutral "Someone" instead.
-        identityContainer.innerHTML = '<span class="notification-item__anonymous">Someone</span>';
+        identityContainer.innerHTML =
+          '<span class="notification-item__anonymous">Someone</span>';
       } else if (this.isAnonymousZap()) {
         // Anonymous zap: the embedded pubkey is an ephemeral throwaway, so we
         // don't render it. Lock icon + "Someone" makes the secret nature
@@ -138,7 +165,7 @@ export class NotificationItem {
           size: 'small',
           showAvatar: true,
           showUsername: true,
-          enableHoverCard: true // UserIdentity now handles hover card automatically
+          enableHoverCard: true, // UserIdentity now handles hover card automatically
         });
         identityContainer.appendChild(this.userIdentity.getElement());
       }
@@ -166,7 +193,7 @@ export class NotificationItem {
     const declineBtn = item.querySelector('[data-action="decline-badge"]');
     if (!acceptBtn && !declineBtn) return;
 
-    acceptBtn?.addEventListener('click', async (e) => {
+    acceptBtn?.addEventListener('click', async e => {
       e.stopPropagation();
       const { BadgeService } = await import('../../addons/badges/BadgeService');
       const service = BadgeService.getInstance();
@@ -175,35 +202,53 @@ export class NotificationItem {
       if (!aTag || !event.id) return;
       const success = await service.acceptBadge(aTag, event.id);
       if (success) {
-        const footer = (e.target as HTMLElement).closest('.notification-item__footer');
-        if (footer) footer.innerHTML = '<span style="color: var(--color-6)">Accepted</span>';
+        const footer = (e.target as HTMLElement).closest(
+          '.notification-item__footer'
+        );
+        if (footer)
+          footer.innerHTML =
+            '<span style="color: var(--color-6)">Accepted</span>';
       }
     });
 
-    declineBtn?.addEventListener('click', (e) => {
+    declineBtn?.addEventListener('click', e => {
       e.stopPropagation();
-      const footer = (e.target as HTMLElement).closest('.notification-item__footer');
-      if (footer) footer.innerHTML = '<span style="color: var(--color-3)">Declined</span>';
+      const footer = (e.target as HTMLElement).closest(
+        '.notification-item__footer'
+      );
+      if (footer)
+        footer.innerHTML =
+          '<span style="color: var(--color-3)">Declined</span>';
     });
   }
 
   private upgradeBadgeActionText(item: HTMLElement): void {
-    const aTag = this.options.event.tags.find((t: string[]) => t[0] === 'a')?.[1];
+    const aTag = this.options.event.tags.find(
+      (t: string[]) => t[0] === 'a'
+    )?.[1];
     if (!aTag) return;
-    import('../../services/orchestration/BadgeOrchestrator').then(({ BadgeOrchestrator }) => {
-      BadgeOrchestrator.getInstance().fetchBadgeDefinition(aTag).then(def => {
-        if (!def) return;
-        const actionEl = item.querySelector('.notification-item__action');
-        if (actionEl) actionEl.textContent = `awarded you a "${def.name}" badge`;
-      }).catch(() => {});
-    });
+    import('../../services/orchestration/BadgeOrchestrator').then(
+      ({ BadgeOrchestrator }) => {
+        BadgeOrchestrator.getInstance()
+          .fetchBadgeDefinition(aTag)
+          .then(def => {
+            if (!def) return;
+            const actionEl = item.querySelector('.notification-item__action');
+            if (actionEl)
+              actionEl.textContent = `awarded you a "${def.name}" badge`;
+          })
+          .catch(() => {});
+      }
+    );
   }
 
   private setupHashtagFooterLinks(item: HTMLElement): void {
     // Search link - opens hashtag search in scc
-    const searchLink = item.querySelector('.notification-item__footer-link--search');
+    const searchLink = item.querySelector(
+      '.notification-item__footer-link--search'
+    );
     if (searchLink) {
-      searchLink.addEventListener('click', (e) => {
+      searchLink.addEventListener('click', e => {
         e.preventDefault();
         e.stopPropagation();
         const hashtag = (searchLink as HTMLElement).dataset.hashtag;
@@ -215,14 +260,18 @@ export class NotificationItem {
     }
 
     // Subscribe/Unsubscribe toggle link
-    const toggleLink = item.querySelector('.notification-item__footer-link--unsubscribe') as HTMLElement;
+    const toggleLink = item.querySelector(
+      '.notification-item__footer-link--unsubscribe'
+    ) as HTMLElement;
     if (toggleLink) {
-      toggleLink.addEventListener('click', async (e) => {
+      toggleLink.addEventListener('click', async e => {
         e.preventDefault();
         e.stopPropagation();
         const hashtag = toggleLink.dataset.hashtag;
         if (hashtag) {
-          const { HashtagNotificationService } = await import('../../addons/hashtag-subscriptions/HashtagNotificationService');
+          const { HashtagNotificationService } = await import(
+            '../../addons/hashtag-subscriptions/HashtagNotificationService'
+          );
           const hashtagService = HashtagNotificationService.getInstance();
           const { ToastService } = await import('../../services/ToastService');
 
@@ -230,14 +279,22 @@ export class NotificationItem {
           if (isSubscribed) {
             hashtagService.unsubscribe(hashtag);
             toggleLink.textContent = `Subscribe to #${hashtag}`;
-            toggleLink.classList.remove('notification-item__footer-link--unsubscribe');
-            toggleLink.classList.add('notification-item__footer-link--subscribe');
+            toggleLink.classList.remove(
+              'notification-item__footer-link--unsubscribe'
+            );
+            toggleLink.classList.add(
+              'notification-item__footer-link--subscribe'
+            );
             ToastService.show(`Unsubscribed from #${hashtag}`, 'success');
           } else {
             hashtagService.subscribe(hashtag);
             toggleLink.textContent = `Unsubscribe from #${hashtag}`;
-            toggleLink.classList.remove('notification-item__footer-link--subscribe');
-            toggleLink.classList.add('notification-item__footer-link--unsubscribe');
+            toggleLink.classList.remove(
+              'notification-item__footer-link--subscribe'
+            );
+            toggleLink.classList.add(
+              'notification-item__footer-link--unsubscribe'
+            );
             ToastService.show(`Subscribed to #${hashtag}`, 'success');
           }
         }
@@ -251,7 +308,13 @@ export class NotificationItem {
    */
   private isTextNotification(): boolean {
     const type = this.options.type;
-    return type === 'mention' || type === 'reply' || type === 'thread-reply' || type === 'zap-reply' || type === 'highlight';
+    return (
+      type === 'mention' ||
+      type === 'reply' ||
+      type === 'thread-reply' ||
+      type === 'zap-reply' ||
+      type === 'highlight'
+    );
   }
 
   /**
@@ -260,7 +323,9 @@ export class NotificationItem {
   private async loadZapsList(): Promise<void> {
     if (!this.isTextNotification()) return;
 
-    const zapsContainer = this.element.querySelector('.notification-item__zaps');
+    const zapsContainer = this.element.querySelector(
+      '.notification-item__zaps'
+    );
     if (!zapsContainer) return;
 
     const eventId = this.options.event.id;
@@ -296,7 +361,7 @@ export class NotificationItem {
       authorPubkey: this.options.event.pubkey,
       fetchStats: true,
       isLoggedIn: true,
-      originalEvent: this.options.event
+      originalEvent: this.options.event,
     });
 
     const footer = content.querySelector('.notification-item__footer');
@@ -322,7 +387,6 @@ export class NotificationItem {
     // For all other types, use event.pubkey
     return this.options.event.pubkey;
   }
-
 
   /**
    * Get icon based on notification type (SVG icons matching ISL)
@@ -452,7 +516,8 @@ export class NotificationItem {
       if (kind === 1617) return 'git patch';
       if (kind === 1618 || kind === 1619) return 'pull request';
       if (kind === 1621) return 'git issue';
-      if (kind === 1630 || kind === 1631 || kind === 1632 || kind === 1633) return 'git status update';
+      if (kind === 1630 || kind === 1631 || kind === 1632 || kind === 1633)
+        return 'git status update';
       if (kind === 30617) return 'git repository';
       if (!isNaN(kind)) return 'event';
     }
@@ -465,12 +530,18 @@ export class NotificationItem {
   private getActionText(type: NotificationType): string {
     const target = this.getTargetLabel();
     switch (type) {
-      case 'mention': return `mentioned you in a ${target}`;
-      case 'reply': return `replied to your ${target}`;
-      case 'thread-reply': return `replied to a ${target} that mentioned you`;
-      case 'zap-reply': return 'replied to your zap';
-      case 'repost': return `reposted your ${target}`;
-      case 'reaction': return `reacted to your ${target}`;
+      case 'mention':
+        return `mentioned you in a ${target}`;
+      case 'reply':
+        return `replied to your ${target}`;
+      case 'thread-reply':
+        return `replied to a ${target} that mentioned you`;
+      case 'zap-reply':
+        return 'replied to your zap';
+      case 'repost':
+        return `reposted your ${target}`;
+      case 'reaction':
+        return `reacted to your ${target}`;
       case 'zap': {
         const amount = this.getZapAmount();
         const verb = this.isAnonymousZap() ? 'silently zapped' : 'zapped';
@@ -478,8 +549,10 @@ export class NotificationItem {
           ? `${verb} your ${target} <span class="notification-item__zap-amount">${amount.toLocaleString()} sats</span>`
           : `${verb} your ${target}`;
       }
-      case 'poll_vote': return 'voted on your poll';
-      case 'article': return 'posted a new article';
+      case 'poll_vote':
+        return 'voted on your poll';
+      case 'article':
+        return 'posted a new article';
       case 'hashtag': {
         const hashtag = this.options.meta?.hashtag || 'unknown';
         const count = this.options.meta?.count || 1;
@@ -487,29 +560,46 @@ export class NotificationItem {
           ? `New post tagged #${hashtag}`
           : `${count} new posts tagged #${hashtag}`;
       }
-      case 'mutual_unfollow': return 'stopped following you back';
-      case 'mutual_new': return 'started following you back!';
-      case 'follower_new': return 'is now following you';
+      case 'mutual_unfollow':
+        return 'stopped following you back';
+      case 'mutual_new':
+        return 'started following you back!';
+      case 'follower_new':
+        return 'is now following you';
       case 'nostrord': {
         const name = this.options.meta?.groupName;
-        const where = name ? `the Nostrord group "${name}"` : 'a Nostrord group';
-        return this.options.meta?.isOwn ? `You posted to ${where}` : `Someone posted to ${where}`;
+        const where = name
+          ? `the Nostrord group "${name}"`
+          : 'a Nostrord group';
+        return this.options.meta?.isOwn
+          ? `You posted to ${where}`
+          : `Someone posted to ${where}`;
       }
       case 'armada': {
         const name = this.options.meta?.groupName;
         const count = this.options.meta?.count;
-        const where = name ? `the Armada community "${name}"` : 'an Armada community';
+        const where = name
+          ? `the Armada community "${name}"`
+          : 'an Armada community';
         if (this.options.meta?.isOwn) return `You posted to ${where}`;
-        if (typeof count === 'number' && count > 1) return `${count} new messages in ${where}`;
+        if (typeof count === 'number' && count > 1)
+          return `${count} new messages in ${where}`;
         return `New activity in ${where}`;
       }
-      case 'highlight': return `highlighted your ${target}`;
-      case 'image-tag': return 'tagged you in an image';
-      case 'badge-award': return 'awarded you a badge';
-      case 'dhikr_round': return 'Somebody started a new dhikr';
-      case 'dhikr_commit': return 'Somebody committed to a dhikr';
-      case 'dhikr_complete': return 'A dhikr reached its goal';
-      default: return `interacted with your ${target}`;
+      case 'highlight':
+        return `highlighted your ${target}`;
+      case 'image-tag':
+        return 'tagged you in an image';
+      case 'badge-award':
+        return 'awarded you a badge';
+      case 'dhikr_round':
+        return 'Somebody started a new dhikr';
+      case 'dhikr_commit':
+        return 'Somebody committed to a dhikr';
+      case 'dhikr_complete':
+        return 'A dhikr reached its goal';
+      default:
+        return `interacted with your ${target}`;
     }
   }
 
@@ -521,12 +611,16 @@ export class NotificationItem {
    */
   private isAnonymousZap(): boolean {
     if (this.options.type !== 'zap') return false;
-    const descTag = this.options.event.tags.find((t: string[]) => t[0] === 'description');
+    const descTag = this.options.event.tags.find(
+      (t: string[]) => t[0] === 'description'
+    );
     if (!descTag?.[1]) return false;
     try {
       const zapRequest = JSON.parse(descTag[1]);
-      return Array.isArray(zapRequest.tags)
-        && zapRequest.tags.some((t: string[]) => t[0] === 'anon');
+      return (
+        Array.isArray(zapRequest.tags) &&
+        zapRequest.tags.some((t: string[]) => t[0] === 'anon')
+      );
     } catch {
       return false;
     }
@@ -539,7 +633,9 @@ export class NotificationItem {
     if (this.options.type !== 'zap') return null;
 
     // Get bolt11 invoice from tags
-    const bolt11Tag = this.options.event.tags.find((t: string[]) => t[0] === 'bolt11');
+    const bolt11Tag = this.options.event.tags.find(
+      (t: string[]) => t[0] === 'bolt11'
+    );
     if (!bolt11Tag || !bolt11Tag[1]) return null;
 
     const invoice = bolt11Tag[1];
@@ -556,10 +652,10 @@ export class NotificationItem {
     // Convert to sats
     const multipliers: Record<string, number> = {
       '': 100000000, // BTC
-      'm': 100000,   // milli-BTC
-      'u': 100,      // micro-BTC
-      'n': 0.1,      // nano-BTC
-      'p': 0.0001    // pico-BTC
+      m: 100000, // milli-BTC
+      u: 100, // micro-BTC
+      n: 0.1, // nano-BTC
+      p: 0.0001, // pico-BTC
     };
 
     return Math.floor(amount * (multipliers[multiplier] ?? 1));
@@ -590,17 +686,17 @@ export class NotificationItem {
       if (!isNaN(aKind)) return `Event (kind ${aKind})`;
       if (dTag) return `Event ${dTag}`;
     }
-      const kTag = this.options.event.tags.find((t: string[]) => t[0] === 'k');
-      if (kTag?.[1]) {
-        const kKind = parseInt(kTag[1]);
-        if (kKind === 30023) return 'Article';
-        if (kKind === 32267) return 'App';
-        if (kKind === 39089) return 'Follow Pack';
-        if (kKind === 30030) return 'Emoji Pack';
-        if (kKind === 30402) return 'Listing';
-        if (kKind === 9) return 'Group chat message';
-        if (!isNaN(kKind)) return `Event (kind ${kKind})`;
-      }
+    const kTag = this.options.event.tags.find((t: string[]) => t[0] === 'k');
+    if (kTag?.[1]) {
+      const kKind = parseInt(kTag[1]);
+      if (kKind === 30023) return 'Article';
+      if (kKind === 32267) return 'App';
+      if (kKind === 39089) return 'Follow Pack';
+      if (kKind === 30030) return 'Emoji Pack';
+      if (kKind === 30402) return 'Listing';
+      if (kKind === 9) return 'Group chat message';
+      if (!isNaN(kKind)) return `Event (kind ${kKind})`;
+    }
     const eTags = this.options.event.tags.filter((t: string[]) => t[0] === 'e');
     const eTag = eTags[eTags.length - 1];
     const eTagId = eTag?.[1];
@@ -613,11 +709,16 @@ export class NotificationItem {
    */
   private getPreviewSync(): string {
     // For mutual / follower notifications, no preview needed
-    if (this.options.type === 'mutual_unfollow' || this.options.type === 'mutual_new'
-        || this.options.type === 'follower_new'
-        || this.options.type === 'dhikr_round' || this.options.type === 'dhikr_commit'
-        || this.options.type === 'dhikr_complete' || this.options.type === 'nostrord'
-        || this.options.type === 'armada') {
+    if (
+      this.options.type === 'mutual_unfollow' ||
+      this.options.type === 'mutual_new' ||
+      this.options.type === 'follower_new' ||
+      this.options.type === 'dhikr_round' ||
+      this.options.type === 'dhikr_commit' ||
+      this.options.type === 'dhikr_complete' ||
+      this.options.type === 'nostrord' ||
+      this.options.type === 'armada'
+    ) {
       return '';
     }
 
@@ -644,7 +745,9 @@ export class NotificationItem {
         if (repostedEvent && repostedEvent.content) {
           const maxLength = 100;
           const content = repostedEvent.content;
-          return content.length > maxLength ? content.slice(0, maxLength) + '...' : content;
+          return content.length > maxLength
+            ? `${content.slice(0, maxLength)}...`
+            : content;
         }
       } catch {
         // Not embedded JSON - will be fetched async
@@ -657,7 +760,7 @@ export class NotificationItem {
 
     const maxLength = 100;
     if (content.length > maxLength) {
-      return content.slice(0, maxLength) + '...';
+      return `${content.slice(0, maxLength)}...`;
     }
 
     return content;
@@ -669,8 +772,15 @@ export class NotificationItem {
   private async loadResolvedPreview(): Promise<void> {
     // For replies/mentions/thread-replies, fetch the replied-to note for context line ONLY
     // The preview already shows the reply/mention text from getPreviewSync()
-    if (this.options.type === 'reply' || this.options.type === 'mention' || this.options.type === 'thread-reply' || this.options.type === 'zap-reply') {
-      const contextElement = this.element.querySelector('.thread-context-content');
+    if (
+      this.options.type === 'reply' ||
+      this.options.type === 'mention' ||
+      this.options.type === 'thread-reply' ||
+      this.options.type === 'zap-reply'
+    ) {
+      const contextElement = this.element.querySelector(
+        '.thread-context-content'
+      );
       // Resolve the "Loading…" placeholder in EVERY path — never leave it stuck (e.g. when the
       // parent event can't be fetched from our read relays, which is common for zap receipts).
       const hideContext = () => {
@@ -680,17 +790,26 @@ export class NotificationItem {
       try {
         // NIP-22: the reply's own K/k tag names the parent kind without us having to fetch it —
         // so we can label a zap thread even when the 9735 receipt isn't on our relays.
-        const parentIsZap = this.options.event.tags.some((t: string[]) => (t[0] === 'K' || t[0] === 'k') && t[1] === '9735');
+        const parentIsZap = this.options.event.tags.some(
+          (t: string[]) => (t[0] === 'K' || t[0] === 'k') && t[1] === '9735'
+        );
 
         // Find the e-tag referring to the replied-to note.
         // Priority: NIP-10 root marker → NIP-22 root (uppercase E) → NIP-10 reply marker →
         //           NIP-22 parent (lowercase e) / NIP-10 positional fallback.
-        const eTag = this.options.event.tags.find((t: string[]) => t[0] === 'e' && t[3] === 'root') ||
-                     this.options.event.tags.find((t: string[]) => t[0] === 'E') ||
-                     this.options.event.tags.find((t: string[]) => t[0] === 'e' && t[3] === 'reply') ||
-                     this.options.event.tags.find((t: string[]) => t[0] === 'e');
+        const eTag =
+          this.options.event.tags.find(
+            (t: string[]) => t[0] === 'e' && t[3] === 'root'
+          ) ||
+          this.options.event.tags.find((t: string[]) => t[0] === 'E') ||
+          this.options.event.tags.find(
+            (t: string[]) => t[0] === 'e' && t[3] === 'reply'
+          ) ||
+          this.options.event.tags.find((t: string[]) => t[0] === 'e');
 
-        const originalEvent = eTag?.[1] ? await this.fetchOriginalNote(eTag[1]) : null;
+        const originalEvent = eTag?.[1]
+          ? await this.fetchOriginalNote(eTag[1])
+          : null;
 
         if (parentIsZap || originalEvent?.kind === 9735) {
           // A zap receipt carries no content. Show "⚡ N sats" if we could fetch it, otherwise a
@@ -699,7 +818,9 @@ export class NotificationItem {
             if (originalEvent?.kind === 9735) {
               const amount = getZapAmountSats(originalEvent);
               const msg = extractZapMessage(originalEvent);
-              const msgPart = msg ? ` "${msg.length > 80 ? msg.slice(0, 80) + '…' : msg}"` : '';
+              const msgPart = msg
+                ? ` "${msg.length > 80 ? `${msg.slice(0, 80)}…` : msg}"`
+                : '';
               contextElement.textContent = `⚡ ${formatNumberWithCommas(amount)} sats${msgPart}`;
             } else {
               contextElement.textContent = '⚡ a zap';
@@ -710,19 +831,26 @@ export class NotificationItem {
 
           // Load profiles from 'p' tags
           const profiles = new Map();
-          const pTags = originalEvent.tags?.filter((t: string[]) => t[0] === 'p') || [];
+          const pTags =
+            originalEvent.tags?.filter((t: string[]) => t[0] === 'p') || [];
           for (const tag of pTags) {
             const tagPubkey = tag[1];
             if (!tagPubkey) continue;
             try {
-              const profile = await this.userProfileService.getUserProfile(tagPubkey);
+              const profile =
+                await this.userProfileService.getUserProfile(tagPubkey);
               profiles.set(tagPubkey, profile);
             } catch {}
           }
 
           // Truncate plain text FIRST, THEN resolve mentions with loaded profiles
-          const truncatedPlain = content.length > 150 ? content.slice(0, 150) + '...' : content;
-          const withMentions = npubToUsername(escapeHtml(truncatedPlain), 'html-multi', (hex) => profiles.get(hex) || null);
+          const truncatedPlain =
+            content.length > 150 ? `${content.slice(0, 150)}...` : content;
+          const withMentions = npubToUsername(
+            escapeHtml(truncatedPlain),
+            'html-multi',
+            hex => profiles.get(hex) || null
+          );
 
           if (contextElement) contextElement.innerHTML = withMentions;
         } else {
@@ -737,7 +865,11 @@ export class NotificationItem {
     }
 
     // For reactions, zaps, and poll votes, fetch the referenced note content
-    if (this.options.type === 'reaction' || this.options.type === 'zap' || this.options.type === 'poll_vote') {
+    if (
+      this.options.type === 'reaction' ||
+      this.options.type === 'zap' ||
+      this.options.type === 'poll_vote'
+    ) {
       await this.loadReferencedNotePreview();
       return;
     }
@@ -748,18 +880,28 @@ export class NotificationItem {
         const originalEvent = await getRepostsOriginalEvent(this.options.event);
         // Empty-content addressable events (e.g. emoji packs) need a kind-aware label.
         if (originalEvent.kind === 30030) {
-          const { parseEmojiPackEvent } = await import('../../helpers/parseEmojiPack');
-          const previewElement = this.element.querySelector('.notification-item__preview');
-          if (previewElement) previewElement.textContent = `Emoji Pack: ${parseEmojiPackEvent(originalEvent).title}`;
+          const { parseEmojiPackEvent } = await import(
+            '../../helpers/parseEmojiPack'
+          );
+          const previewElement = this.element.querySelector(
+            '.notification-item__preview'
+          );
+          if (previewElement)
+            previewElement.textContent = `Emoji Pack: ${parseEmojiPackEvent(originalEvent).title}`;
           return;
         }
         if (originalEvent.content) {
           const maxLength = 100;
           const content = originalEvent.content;
-          const truncated = content.length > maxLength ? content.slice(0, maxLength) + '...' : content;
+          const truncated =
+            content.length > maxLength
+              ? `${content.slice(0, maxLength)}...`
+              : content;
 
           // Update preview in DOM
-          const previewElement = this.element.querySelector('.notification-item__preview');
+          const previewElement = this.element.querySelector(
+            '.notification-item__preview'
+          );
           if (previewElement) {
             previewElement.textContent = truncated;
           }
@@ -779,12 +921,15 @@ export class NotificationItem {
 
       // Truncate the resolved content
       const maxLength = 100;
-      const truncated = resolvedContent.length > maxLength
-        ? resolvedContent.slice(0, maxLength) + '...'
-        : resolvedContent;
+      const truncated =
+        resolvedContent.length > maxLength
+          ? `${resolvedContent.slice(0, maxLength)}...`
+          : resolvedContent;
 
       // Update preview in DOM
-      const previewElement = this.element.querySelector('.notification-item__preview');
+      const previewElement = this.element.querySelector(
+        '.notification-item__preview'
+      );
       if (previewElement && truncated !== content) {
         previewElement.textContent = truncated;
       }
@@ -801,7 +946,9 @@ export class NotificationItem {
    * stays stuck on "Loading...".
    */
   private async loadReferencedNotePreview(): Promise<void> {
-    const previewElement = this.element.querySelector('.notification-item__preview');
+    const previewElement = this.element.querySelector(
+      '.notification-item__preview'
+    );
     if (!previewElement) return;
 
     const setPreview = (text: string) => {
@@ -817,25 +964,36 @@ export class NotificationItem {
         const refEvent = await this.fetchAddressableEvent(aTag[1]);
         if (refEvent) {
           if (aKind === 32267) {
-            const name = refEvent.tags.find((t: string[]) => t[0] === 'name')?.[1] || 'App';
+            const name =
+              refEvent.tags.find((t: string[]) => t[0] === 'name')?.[1] ||
+              'App';
             setPreview(`App: ${name}`);
           } else if (aKind === 39089) {
-            const { parseFollowPackEvent } = await import('../../helpers/parseFollowPack');
+            const { parseFollowPackEvent } = await import(
+              '../../helpers/parseFollowPack'
+            );
             const pack = parseFollowPackEvent(refEvent);
             setPreview(`Follow Pack: ${pack.title}`);
           } else if (aKind === 30030) {
-            const { parseEmojiPackEvent } = await import('../../helpers/parseEmojiPack');
+            const { parseEmojiPackEvent } = await import(
+              '../../helpers/parseEmojiPack'
+            );
             setPreview(`Emoji Pack: ${parseEmojiPackEvent(refEvent).title}`);
           } else if (aKind === 30023) {
-            const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+            const articlesApi =
+              ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
             const metadata = articlesApi?.extractArticleMetadata(refEvent);
             setPreview(`Article: ${metadata?.title ?? 'Untitled'}`);
           } else if (aKind === 30402) {
-            const { parseListingMetadata } = await import('../../helpers/listingMetadata');
+            const { parseListingMetadata } = await import(
+              '../../helpers/listingMetadata'
+            );
             setPreview(`Listing: ${parseListingMetadata(refEvent).title}`);
           } else {
             const dTag = refEvent.tags.find((t: string[]) => t[0] === 'd')?.[1];
-            setPreview(dTag ? `Event (kind ${aKind}): ${dTag}` : `Event (kind ${aKind})`);
+            setPreview(
+              dTag ? `Event (kind ${aKind}): ${dTag}` : `Event (kind ${aKind})`
+            );
           }
           return;
         }
@@ -846,7 +1004,9 @@ export class NotificationItem {
 
       // For reactions/zaps, use the LAST e-tag (NIP-25: direct reference to reacted note)
       // Some clients copy all e-tags from the thread, but the last one is always the direct target
-      const eTags = this.options.event.tags.filter((t: string[]) => t[0] === 'e');
+      const eTags = this.options.event.tags.filter(
+        (t: string[]) => t[0] === 'e'
+      );
       const eTag = eTags[eTags.length - 1];
       if (!eTag || !eTag[1]) {
         setPreview(fallbackPreview);
@@ -858,82 +1018,127 @@ export class NotificationItem {
       // include the non-default kind in the fetch filter so we can resolve the event.
       const kTag = this.options.event.tags.find((t: string[]) => t[0] === 'k');
       const kHint = kTag?.[1] ? parseInt(kTag[1]) : NaN;
-      const originalEvent = await this.fetchOriginalNote(eTag[1], isNaN(kHint) ? undefined : kHint);
+      const originalEvent = await this.fetchOriginalNote(
+        eTag[1],
+        isNaN(kHint) ? undefined : kHint
+      );
       if (originalEvent) {
         if (originalEvent.kind === 9) {
           const content = formatGroupChatContent(originalEvent.content || '');
           const maxLength = 100;
-          setPreview(content
-            ? `Group chat: ${content.length > maxLength ? content.slice(0, maxLength) + '...' : content}`
-            : 'Group chat message');
+          setPreview(
+            content
+              ? `Group chat: ${content.length > maxLength ? `${content.slice(0, maxLength)}...` : content}`
+              : 'Group chat message'
+          );
           // Reactions/reposts without a k-tag were labelled "…your note" — the
           // resolved kind 9 is more specific, so upgrade the action text too.
-          const actionElement = this.element.querySelector('.notification-item__action');
-          if (actionElement && (this.options.type === 'reaction' || this.options.type === 'repost')) {
-            const verb = this.options.type === 'reaction' ? 'reacted' : 'reposted';
+          const actionElement = this.element.querySelector(
+            '.notification-item__action'
+          );
+          if (
+            actionElement &&
+            (this.options.type === 'reaction' || this.options.type === 'repost')
+          ) {
+            const verb =
+              this.options.type === 'reaction' ? 'reacted' : 'reposted';
             actionElement.textContent = `${verb} to your group chat message`;
           }
           return;
         }
         if (originalEvent.kind === 39089) {
-          const { parseFollowPackEvent } = await import('../../helpers/parseFollowPack');
+          const { parseFollowPackEvent } = await import(
+            '../../helpers/parseFollowPack'
+          );
           const pack = parseFollowPackEvent(originalEvent);
           setPreview(`Follow Pack: ${pack.title}`);
           return;
         }
         if (originalEvent.kind === 30030) {
-          const { parseEmojiPackEvent } = await import('../../helpers/parseEmojiPack');
+          const { parseEmojiPackEvent } = await import(
+            '../../helpers/parseEmojiPack'
+          );
           setPreview(`Emoji Pack: ${parseEmojiPackEvent(originalEvent).title}`);
           return;
         }
         if (originalEvent.kind === 30023) {
-          const title = originalEvent.tags.find((t: string[]) => t[0] === 'title')?.[1] || 'Untitled';
+          const title =
+            originalEvent.tags.find((t: string[]) => t[0] === 'title')?.[1] ||
+            'Untitled';
           setPreview(`Article: ${title}`);
           return;
         }
         if (originalEvent.kind === 32267) {
-          const name = originalEvent.tags.find((t: string[]) => t[0] === 'name')?.[1] || 'App';
+          const name =
+            originalEvent.tags.find((t: string[]) => t[0] === 'name')?.[1] ||
+            'App';
           setPreview(`App: ${name}`);
           return;
         }
         if (originalEvent.kind === 30402) {
-          const { parseListingMetadata } = await import('../../helpers/listingMetadata');
+          const { parseListingMetadata } = await import(
+            '../../helpers/listingMetadata'
+          );
           setPreview(`Listing: ${parseListingMetadata(originalEvent).title}`);
           return;
         }
         if (originalEvent.kind === 1068) {
           const question = (originalEvent.content || '').trim();
-          const snippet = question.length > 80 ? question.slice(0, 80) + '...' : question;
+          const snippet =
+            question.length > 80 ? `${question.slice(0, 80)}...` : question;
           setPreview(snippet ? `Poll: ${snippet}` : 'Poll');
           return;
         }
         if (originalEvent.kind === 30617) {
-          const name = originalEvent.tags.find((t: string[]) => t[0] === 'name')?.[1] || 'Repo';
+          const name =
+            originalEvent.tags.find((t: string[]) => t[0] === 'name')?.[1] ||
+            'Repo';
           setPreview(`Git Repository: ${name}`);
           return;
         }
-        if (originalEvent.kind === 1617 || originalEvent.kind === 1618 || originalEvent.kind === 1619 || originalEvent.kind === 1621) {
-          const subject = originalEvent.tags.find((t: string[]) => t[0] === 'subject')?.[1];
-          const label = originalEvent.kind === 1617 ? 'Git Patch'
-                      : originalEvent.kind === 1621 ? 'Git Issue'
-                      : 'Pull Request';
+        if (
+          originalEvent.kind === 1617 ||
+          originalEvent.kind === 1618 ||
+          originalEvent.kind === 1619 ||
+          originalEvent.kind === 1621
+        ) {
+          const subject = originalEvent.tags.find(
+            (t: string[]) => t[0] === 'subject'
+          )?.[1];
+          const label =
+            originalEvent.kind === 1617
+              ? 'Git Patch'
+              : originalEvent.kind === 1621
+                ? 'Git Issue'
+                : 'Pull Request';
           setPreview(subject ? `${label}: ${subject}` : label);
           return;
         }
-        if (originalEvent.kind === 1630 || originalEvent.kind === 1631 || originalEvent.kind === 1632 || originalEvent.kind === 1633) {
-          const status = originalEvent.kind === 1630 ? 'Open'
-                       : originalEvent.kind === 1631 ? 'Applied/Merged'
-                       : originalEvent.kind === 1632 ? 'Closed'
-                       : 'Draft';
+        if (
+          originalEvent.kind === 1630 ||
+          originalEvent.kind === 1631 ||
+          originalEvent.kind === 1632 ||
+          originalEvent.kind === 1633
+        ) {
+          const status =
+            originalEvent.kind === 1630
+              ? 'Open'
+              : originalEvent.kind === 1631
+                ? 'Applied/Merged'
+                : originalEvent.kind === 1632
+                  ? 'Closed'
+                  : 'Draft';
           setPreview(`Git Status: ${status}`);
           return;
         }
         if (originalEvent.content) {
           const maxLength = 100;
           const content = originalEvent.content;
-          setPreview(content.length > maxLength
-            ? content.slice(0, maxLength) + '...'
-            : content);
+          setPreview(
+            content.length > maxLength
+              ? `${content.slice(0, maxLength)}...`
+              : content
+          );
           return;
         }
       }
@@ -974,7 +1179,7 @@ export class NotificationItem {
       kind,
       pubkey: parts[1]!,
       identifier: parts[2]!,
-      relays: []
+      relays: [],
     });
     const { App } = await import('../../App');
     const route = App.getRouteForAddressableEvent(kind, naddr);
@@ -1021,7 +1226,11 @@ export class NotificationItem {
       if (await this.navigateToAddressableTarget(e)) return;
       const originalNoteId = extractOriginalNoteId(this.options.event);
       if (originalNoteId) {
-        getViewNavigationController().openView('single-note', originalNoteId, e);
+        getViewNavigationController().openView(
+          'single-note',
+          originalNoteId,
+          e
+        );
       }
       return;
     }
@@ -1037,13 +1246,20 @@ export class NotificationItem {
 
     // For hashtag notifications, navigate directly to the post
     if (type === 'hashtag') {
-      getViewNavigationController().openView('single-note', this.options.event.id, e);
+      getViewNavigationController().openView(
+        'single-note',
+        this.options.event.id,
+        e
+      );
       return;
     }
 
     // For mutual / follower notifications, navigate to profile
-    if (type === 'mutual_unfollow' || type === 'mutual_new'
-        || type === 'follower_new') {
+    if (
+      type === 'mutual_unfollow' ||
+      type === 'mutual_new' ||
+      type === 'follower_new'
+    ) {
       const npub = hexToNpub(this.options.event.pubkey);
       if (npub) {
         getViewNavigationController().openView('profile', npub, e);
@@ -1052,7 +1268,11 @@ export class NotificationItem {
     }
 
     // For community-dhikr notifications, open the addon's Community Dhikr tab
-    if (type === 'dhikr_round' || type === 'dhikr_commit' || type === 'dhikr_complete') {
+    if (
+      type === 'dhikr_round' ||
+      type === 'dhikr_commit' ||
+      type === 'dhikr_complete'
+    ) {
       Router.getInstance().navigate('/addons/nostr-majlis/dhikr');
       return;
     }
@@ -1064,7 +1284,11 @@ export class NotificationItem {
       const groupId = this.options.event.tags.find(t => t[0] === 'h')?.[1];
       const relayHost = this.options.meta?.groupRelay;
       if (groupId && relayHost) {
-        window.open(`https://web.nostrord.com/#/g/${relayHost}/${groupId}`, '_blank', 'noopener,noreferrer');
+        window.open(
+          `https://web.nostrord.com/#/g/${relayHost}/${groupId}`,
+          '_blank',
+          'noopener,noreferrer'
+        );
       }
       return;
     }
@@ -1082,15 +1306,24 @@ export class NotificationItem {
     }
 
     // Default: navigate to the notification event itself
-    getViewNavigationController().openView('single-note', this.options.event.id, e);
+    getViewNavigationController().openView(
+      'single-note',
+      this.options.event.id,
+      e
+    );
   }
 
   /**
    * Fetch original note by ID
    * Uses configured read relays from NostrTransport
    */
-  private async fetchOriginalNote(noteId: string, kindHint?: number): Promise<NostrEvent | null> {
-    const { NostrTransport } = await import('../../services/transport/NostrTransport');
+  private async fetchOriginalNote(
+    noteId: string,
+    kindHint?: number
+  ): Promise<NostrEvent | null> {
+    const { NostrTransport } = await import(
+      '../../services/transport/NostrTransport'
+    );
     const transport = NostrTransport.getInstance();
 
     try {
@@ -1101,17 +1334,20 @@ export class NotificationItem {
       // events — e.g. Follow Packs — that are referenced only via e-tag.
       // Kind 9 (NIP-29 group chat message) is always included: reactions to
       // group messages reference it via e-tag, often without a k-tag hint.
-      const kinds = (typeof kindHint === 'number' && !isNaN(kindHint))
-        ? Array.from(new Set([...USER_CONTENT_KINDS, kindHint]))
-        : [...USER_CONTENT_KINDS, 9];
+      const kinds =
+        typeof kindHint === 'number' && !isNaN(kindHint)
+          ? Array.from(new Set([...USER_CONTENT_KINDS, kindHint]))
+          : [...USER_CONTENT_KINDS, 9];
 
       const events = await transport.fetch(
         readRelays,
-        [{
-          ids: [noteId],
-          kinds,
-          limit: 1
-        }],
+        [
+          {
+            ids: [noteId],
+            kinds,
+            limit: 1,
+          },
+        ],
         5000,
         false,
         'NotifItem'
@@ -1127,8 +1363,12 @@ export class NotificationItem {
   /**
    * Fetch addressable event by a-tag coordinate (e.g. "30023:pubkey:identifier")
    */
-  private async fetchAddressableEvent(coordinate: string): Promise<NostrEvent | null> {
-    const { NostrTransport } = await import('../../services/transport/NostrTransport');
+  private async fetchAddressableEvent(
+    coordinate: string
+  ): Promise<NostrEvent | null> {
+    const { NostrTransport } = await import(
+      '../../services/transport/NostrTransport'
+    );
     const transport = NostrTransport.getInstance();
 
     try {
@@ -1142,12 +1382,14 @@ export class NotificationItem {
       const readRelays = transport.getReadRelays();
       const events = await transport.fetch(
         readRelays,
-        [{
-          kinds: [kind],
-          authors: [pubkey],
-          '#d': [identifier],
-          limit: 1
-        }],
+        [
+          {
+            kinds: [kind],
+            authors: [pubkey],
+            '#d': [identifier],
+            limit: 1,
+          },
+        ],
         5000,
         false,
         'NotifItem'
@@ -1155,12 +1397,13 @@ export class NotificationItem {
 
       return events[0] || null;
     } catch (error) {
-      console.error('[NotificationItem] Failed to fetch addressable event:', error);
+      console.error(
+        '[NotificationItem] Failed to fetch addressable event:',
+        error
+      );
       return null;
     }
   }
-
-
 
   /**
    * Get the element

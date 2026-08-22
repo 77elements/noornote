@@ -50,7 +50,9 @@ export class NoteTakingSyncService {
   public async start(): Promise<void> {
     if (this.started) return;
     this.started = true;
-    this.service.onChange((record) => { void this.publishRecord(record); });
+    this.service.onChange(record => {
+      void this.publishRecord(record);
+    });
     await this.syncAll();
   }
 
@@ -66,7 +68,11 @@ export class NoteTakingSyncService {
     this.isSyncing = true;
     let changed = false;
     try {
-      const relays = await OutboundRelaysOrchestrator.getInstance().getCombinedRelays([user.pubkey], true);
+      const relays =
+        await OutboundRelaysOrchestrator.getInstance().getCombinedRelays(
+          [user.pubkey],
+          true
+        );
       if (relays.length > 0) {
         // Fetch all our kind:30078 (don't depend on relays indexing the `l` tag);
         // filter to note-taking notes client-side via the d-tag prefix.
@@ -80,7 +86,7 @@ export class NoteTakingSyncService {
         const newIds = new Set<string>();
         const legacyIds = new Set<string>();
         for (const ev of events) {
-          const dTag = ev?.tags?.find((t) => t[0] === 'd')?.[1];
+          const dTag = ev?.tags?.find(t => t[0] === 'd')?.[1];
           if (!dTag || !ev.content) continue;
           let id: string;
           if (dTag.startsWith(KEEP_DTAG_PREFIX)) {
@@ -107,7 +113,11 @@ export class NoteTakingSyncService {
             changed = true;
           }
         }
-        diagLog('system', 'note-taking: synced from relays', { total: events.length, new: newIds.size, legacy: legacyIds.size });
+        diagLog('system', 'note-taking: synced from relays', {
+          total: events.length,
+          new: newIds.size,
+          legacy: legacyIds.size,
+        });
       }
 
       // Push everything still pending.
@@ -116,7 +126,9 @@ export class NoteTakingSyncService {
         await this.publishRecord(record);
       }
     } catch (error) {
-      diagLog('system', 'note-taking: syncAll failed', { error: String(error) });
+      diagLog('system', 'note-taking: syncAll failed', {
+        error: String(error),
+      });
     } finally {
       this.isSyncing = false;
     }
@@ -129,7 +141,9 @@ export class NoteTakingSyncService {
     if (!user) return;
 
     try {
-      const content = await this.service.encryptPayload(this.service.toPayload(record));
+      const content = await this.service.encryptPayload(
+        this.service.toPayload(record)
+      );
       const unsigned = {
         kind: NIP78_KIND,
         created_at: Math.floor(Date.now() / 1000),
@@ -146,15 +160,22 @@ export class NoteTakingSyncService {
 
       await this.transport.publishContent(signed);
       await this.service.markPublished(record);
-      diagLog('system', 'note-taking: note published', { id: record.id.slice(0, 8), deleted: !!record.deleted });
+      diagLog('system', 'note-taking: note published', {
+        id: record.id.slice(0, 8),
+        deleted: !!record.deleted,
+      });
     } catch (error) {
-      diagLog('system', 'note-taking: publish failed (stays dirty)', { id: record.id.slice(0, 8), error: String(error) });
+      diagLog('system', 'note-taking: publish failed (stays dirty)', {
+        id: record.id.slice(0, 8),
+        error: String(error),
+      });
     }
   }
 
   public destroy(): void {
     this.service.onChange(null);
     this.started = false;
-    NoteTakingSyncService.instance = undefined as unknown as NoteTakingSyncService;
+    NoteTakingSyncService.instance =
+      undefined as unknown as NoteTakingSyncService;
   }
 }

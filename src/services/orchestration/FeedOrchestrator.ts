@@ -24,8 +24,15 @@ import { AppState } from '../AppState';
 import { AuthService } from '../AuthService';
 import { diagLog } from '../DiagnosticLogger';
 import { isDataSaverEnabled } from '../DataSaverService';
-import { isHideSelfRepostsEnabled, getSelfRepostGapSeconds } from '../../helpers/selfRepostSetting';
-import { isHideHighlightsEnabled, getHiddenHighlightAuthors, isExternalHighlight } from '../../helpers/highlightSetting';
+import {
+  isHideSelfRepostsEnabled,
+  getSelfRepostGapSeconds,
+} from '../../helpers/selfRepostSetting';
+import {
+  isHideHighlightsEnabled,
+  getHiddenHighlightAuthors,
+  isExternalHighlight,
+} from '../../helpers/highlightSetting';
 import type { TimelineConfig } from '../../components/timeline/TimelineConfig';
 
 /**
@@ -45,7 +52,10 @@ import type { TimelineConfig } from '../../components/timeline/TimelineConfig';
  * here would flood the feed. Listings still reach the timeline through kind 6/16
  * reposts, where RepostRenderer dispatches them via ListingProcessor/ListingRenderer.
  */
-const FEED_KINDS: number[] = [1, 6, 16, 20, 21, 22, 1063, 1068, 1617, 1618, 1619, 1621, 1630, 1631, 1632, 1633, 9802, 30617, 39089, 30030, 30311];
+const FEED_KINDS: number[] = [
+  1, 6, 16, 20, 21, 22, 1063, 1068, 1617, 1618, 1619, 1621, 1630, 1631, 1632,
+  1633, 9802, 30617, 39089, 30030, 30311,
+];
 
 export interface FeedLoadRequest {
   followingPubkeys: string[];
@@ -116,7 +126,10 @@ export class FeedOrchestrator extends Orchestrator {
     this.muteOrchestrator = MuteOrchestrator.getInstance();
     this.noteService = NoteService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
-    this.systemLogger.info('FeedOrchestrator', 'Feed Orchestrator at your service');
+    this.systemLogger.info(
+      'FeedOrchestrator',
+      'Feed Orchestrator at your service'
+    );
     this.loadMutedUsers();
   }
 
@@ -168,8 +181,18 @@ export class FeedOrchestrator extends Orchestrator {
   /**
    * Load initial timeline feed (Cache-First Pattern)
    */
-  public async loadInitialFeed(request: FeedLoadRequest): Promise<FeedLoadResult> {
-    const { followingPubkeys, includeReplies, timeWindowHours = 1, specificRelay, exemptFromMuteFilter, since: explicitSince, until: explicitUntil } = request;
+  public async loadInitialFeed(
+    request: FeedLoadRequest
+  ): Promise<FeedLoadResult> {
+    const {
+      followingPubkeys,
+      includeReplies,
+      timeWindowHours = 1,
+      specificRelay,
+      exemptFromMuteFilter,
+      since: explicitSince,
+      until: explicitUntil,
+    } = request;
     const params = this.resolveFetchParams(request);
     const isTimeRangeMode = explicitSince !== undefined;
 
@@ -183,11 +206,22 @@ export class FeedOrchestrator extends Orchestrator {
     );
 
     try {
-      const relays = await this.getRelaysForRequest(followingPubkeys, specificRelay, params.relayStrategy);
+      const relays = await this.getRelaysForRequest(
+        followingPubkeys,
+        specificRelay,
+        params.relayStrategy
+      );
 
       // ProfileView (single author): per-relay paginated fetch. See loadProfileDirect.
       if (params.pagination === 'until' && params.fetchMode === 'direct') {
-        return await this.loadProfileDirect(followingPubkeys, relays, includeReplies, exemptFromMuteFilter, request, true);
+        return await this.loadProfileDirect(
+          followingPubkeys,
+          relays,
+          includeReplies,
+          exemptFromMuteFilter,
+          request,
+          true
+        );
       }
 
       // 'until' pagination (ProfileView): direct fetch, limit only, no time window.
@@ -195,43 +229,70 @@ export class FeedOrchestrator extends Orchestrator {
       // 'window' pagination (TimelineView): time-windowed fetch (default 1h).
       let filters: NDKFilter<number>[];
       if (params.pagination === 'until') {
-        filters = [{
-          authors: followingPubkeys,
-          kinds: FEED_KINDS,
-          limit: params.pageSize
-        }];
-        const wc = this.webCommentFilter(followingPubkeys, { limit: params.pageSize }, false);
+        filters = [
+          {
+            authors: followingPubkeys,
+            kinds: FEED_KINDS,
+            limit: params.pageSize,
+          },
+        ];
+        const wc = this.webCommentFilter(
+          followingPubkeys,
+          { limit: params.pageSize },
+          false
+        );
         if (wc) filters.push(wc);
       } else if (isTimeRangeMode) {
         const filterObj: NDKFilter<number> = {
           authors: followingPubkeys,
           kinds: FEED_KINDS,
           limit: this.fetchLimit,
-          since: explicitSince
+          since: explicitSince,
         };
         if (explicitUntil !== undefined) {
           filterObj.until = explicitUntil;
         }
         filters = [filterObj];
-        const wcBounds: { since?: number; until?: number; limit: number } = { since: explicitSince, limit: this.fetchLimit };
+        const wcBounds: { since?: number; until?: number; limit: number } = {
+          since: explicitSince,
+          limit: this.fetchLimit,
+        };
         if (explicitUntil !== undefined) wcBounds.until = explicitUntil;
         const wc = this.webCommentFilter(followingPubkeys, wcBounds);
         if (wc) filters.push(wc);
       } else {
-        const windowSince = Math.floor(Date.now() / 1000) - (timeWindowHours * 3600);
-        filters = [{
-          authors: followingPubkeys,
-          kinds: FEED_KINDS,
+        const windowSince =
+          Math.floor(Date.now() / 1000) - timeWindowHours * 3600;
+        filters = [
+          {
+            authors: followingPubkeys,
+            kinds: FEED_KINDS,
+            limit: params.pageSize,
+            since: windowSince,
+          },
+        ];
+        const wc = this.webCommentFilter(followingPubkeys, {
+          since: windowSince,
           limit: params.pageSize,
-          since: windowSince
-        }];
-        const wc = this.webCommentFilter(followingPubkeys, { since: windowSince, limit: params.pageSize });
+        });
         if (wc) filters.push(wc);
       }
 
-      const events = await this.fetchEvents(relays, filters, params.fetchMode, !!specificRelay);
-      const applyWordFilter = request.config ? request.config.applyWordFilter : !exemptFromMuteFilter;
-      const filteredEvents = await this.processEvents(events, includeReplies, exemptFromMuteFilter, applyWordFilter);
+      const events = await this.fetchEvents(
+        relays,
+        filters,
+        params.fetchMode,
+        !!specificRelay
+      );
+      const applyWordFilter = request.config
+        ? request.config.applyWordFilter
+        : !exemptFromMuteFilter;
+      const filteredEvents = await this.processEvents(
+        events,
+        includeReplies,
+        exemptFromMuteFilter,
+        applyWordFilter
+      );
 
       this.systemLogger.info(
         'FeedOrchestrator',
@@ -244,13 +305,16 @@ export class FeedOrchestrator extends Orchestrator {
         this.registerNotes(resultEvents);
         return {
           events: resultEvents,
-          hasMore: true
+          hasMore: true,
         };
       }
 
       // Auto-load more if needed (windowed feeds only - 'until' feeds get all via direct fetch)
       const minimumNotes = 10;
-      if (params.pagination === 'window' && filteredEvents.length < minimumNotes) {
+      if (
+        params.pagination === 'window' &&
+        filteredEvents.length < minimumNotes
+      ) {
         const maxAttempts = 16; // Timeline: 16 attempts (48h)
         const now = Math.floor(Date.now() / 1000);
 
@@ -264,11 +328,17 @@ export class FeedOrchestrator extends Orchestrator {
         let attempt = 0;
         const nostrEpoch = Math.floor(new Date('2020-01-01').getTime() / 1000);
 
-        while (accumulatedEvents.length < minimumNotes && attempt < maxAttempts) {
+        while (
+          accumulatedEvents.length < minimumNotes &&
+          attempt < maxAttempts
+        ) {
           attempt++;
 
           if (currentUntil < nostrEpoch) {
-            this.systemLogger.info('FeedOrchestrator', '📭 No events found in past 48 hours');
+            this.systemLogger.info(
+              'FeedOrchestrator',
+              '📭 No events found in past 48 hours'
+            );
             break;
           }
 
@@ -277,7 +347,7 @@ export class FeedOrchestrator extends Orchestrator {
             includeReplies,
             until: currentUntil,
             timeWindowHours: 3, // Load More uses 3h chunks
-            ...(request.config ? { config: request.config } : {})
+            ...(request.config ? { config: request.config } : {}),
           };
           if (specificRelay !== undefined) {
             loadMoreRequest.specificRelay = specificRelay;
@@ -291,7 +361,9 @@ export class FeedOrchestrator extends Orchestrator {
           );
           // Re-sort after deduplication (newest first)
           accumulatedEvents.sort((a, b) => b.created_at - a.created_at);
-          currentUntil = loadMoreResult.events[loadMoreResult.events.length - 1]?.created_at || currentUntil - 3 * 3600;
+          currentUntil =
+            loadMoreResult.events[loadMoreResult.events.length - 1]
+              ?.created_at || currentUntil - 3 * 3600;
 
           if (accumulatedEvents.length >= minimumNotes) {
             const hoursSearched = Math.round((now - currentUntil) / 3600);
@@ -307,7 +379,7 @@ export class FeedOrchestrator extends Orchestrator {
         this.registerNotes(resultEvents);
         return {
           events: resultEvents,
-          hasMore: accumulatedEvents.length > 0
+          hasMore: accumulatedEvents.length > 0,
         };
       }
 
@@ -315,13 +387,16 @@ export class FeedOrchestrator extends Orchestrator {
       this.registerNotes(resultEvents);
       return {
         events: resultEvents,
-        hasMore: true
+        hasMore: true,
       };
     } catch (error) {
-      this.systemLogger.error('FeedOrchestrator', `Initial load failed: ${error}`);
+      this.systemLogger.error(
+        'FeedOrchestrator',
+        `Initial load failed: ${error}`
+      );
       return {
         events: [],
-        hasMore: false
+        hasMore: false,
       };
     }
   }
@@ -329,8 +404,19 @@ export class FeedOrchestrator extends Orchestrator {
   /**
    * Load more events (infinite scroll) - Cache-First Pattern
    */
-  public async loadMore(request: FeedLoadRequest & { until: number }): Promise<FeedLoadResult> {
-    const { followingPubkeys, includeReplies, until, timeWindowHours = 3, specificRelay, recursionDepth = 0, exemptFromMuteFilter, since: explicitSince } = request;
+  public async loadMore(
+    request: FeedLoadRequest & { until: number }
+  ): Promise<FeedLoadResult> {
+    const {
+      followingPubkeys,
+      includeReplies,
+      until,
+      timeWindowHours = 3,
+      specificRelay,
+      recursionDepth = 0,
+      exemptFromMuteFilter,
+      since: explicitSince,
+    } = request;
     const params = this.resolveFetchParams(request);
     const isTimeRangeMode = explicitSince !== undefined;
 
@@ -353,11 +439,26 @@ export class FeedOrchestrator extends Orchestrator {
         return { events: [], hasMore: false };
       }
 
-      const relays = await this.getRelaysForRequest(followingPubkeys, specificRelay, params.relayStrategy);
+      const relays = await this.getRelaysForRequest(
+        followingPubkeys,
+        specificRelay,
+        params.relayStrategy
+      );
 
       // ProfileView (single author): per-relay paginated fetch. See loadProfileDirect.
-      if (params.pagination === 'until' && params.fetchMode === 'direct' && !isTimeRangeMode) {
-        return await this.loadProfileDirect(followingPubkeys, relays, includeReplies, exemptFromMuteFilter, request, false);
+      if (
+        params.pagination === 'until' &&
+        params.fetchMode === 'direct' &&
+        !isTimeRangeMode
+      ) {
+        return await this.loadProfileDirect(
+          followingPubkeys,
+          relays,
+          includeReplies,
+          exemptFromMuteFilter,
+          request,
+          false
+        );
       }
 
       // 'until' pagination (single author): no `since` window, larger page. The
@@ -368,23 +469,43 @@ export class FeedOrchestrator extends Orchestrator {
         authors: followingPubkeys,
         kinds: FEED_KINDS,
         until: until - 1,
-        limit: pureUntil ? params.pageSize : 50
+        limit: pureUntil ? params.pageSize : 50,
       };
       if (!pureUntil) {
         filterObj.since = since;
       }
       const filters: NDKFilter<number>[] = [filterObj];
       if (pureUntil) {
-        const wc = this.webCommentFilter(followingPubkeys, { until: until - 1, limit: params.pageSize }, false);
+        const wc = this.webCommentFilter(
+          followingPubkeys,
+          { until: until - 1, limit: params.pageSize },
+          false
+        );
         if (wc) filters.push(wc);
       } else {
-        const wc = this.webCommentFilter(followingPubkeys, { since, until: until - 1, limit: 50 });
+        const wc = this.webCommentFilter(followingPubkeys, {
+          since,
+          until: until - 1,
+          limit: 50,
+        });
         if (wc) filters.push(wc);
       }
 
-      const events = await this.fetchEvents(relays, filters, params.fetchMode, !!specificRelay);
-      const applyWordFilter = request.config ? request.config.applyWordFilter : !exemptFromMuteFilter;
-      const filteredEvents = await this.processEvents(events, includeReplies, exemptFromMuteFilter, applyWordFilter);
+      const events = await this.fetchEvents(
+        relays,
+        filters,
+        params.fetchMode,
+        !!specificRelay
+      );
+      const applyWordFilter = request.config
+        ? request.config.applyWordFilter
+        : !exemptFromMuteFilter;
+      const filteredEvents = await this.processEvents(
+        events,
+        includeReplies,
+        exemptFromMuteFilter,
+        applyWordFilter
+      );
 
       this.systemLogger.info(
         'FeedOrchestrator',
@@ -412,7 +533,7 @@ export class FeedOrchestrator extends Orchestrator {
           );
           return {
             events: [],
-            hasMore: false
+            hasMore: false,
           };
         }
 
@@ -424,7 +545,7 @@ export class FeedOrchestrator extends Orchestrator {
           );
           return {
             events: [],
-            hasMore: false
+            hasMore: false,
           };
         }
 
@@ -440,7 +561,7 @@ export class FeedOrchestrator extends Orchestrator {
           until: until - timeWindowSeconds,
           timeWindowHours,
           recursionDepth: recursionDepth + 1,
-          ...(request.config ? { config: request.config } : {})
+          ...(request.config ? { config: request.config } : {}),
         };
         if (specificRelay !== undefined) {
           recursiveRequest.specificRelay = specificRelay;
@@ -452,19 +573,17 @@ export class FeedOrchestrator extends Orchestrator {
       this.registerNotes(resultEvents);
 
       // In time range mode, check if we've reached the lower boundary
-      const hasMore = isTimeRangeMode
-        ? since > explicitSince
-        : true; // Always more history on Nostr
+      const hasMore = isTimeRangeMode ? since > explicitSince : true; // Always more history on Nostr
 
       return {
         events: resultEvents,
-        hasMore
+        hasMore,
       };
     } catch (error) {
       this.systemLogger.error('FeedOrchestrator', `Load more failed: ${error}`);
       return {
         events: [],
-        hasMore: false
+        hasMore: false,
       };
     }
   }
@@ -486,11 +605,11 @@ export class FeedOrchestrator extends Orchestrator {
    */
   private profilePager: {
     pubkey: string;
-    frontier: number | null;            // shared `until` for next round; null = initial (newest)
-    done: Set<string>;                  // relays that have returned everything they hold
-    stalled: Map<string, number>;       // consecutive empty rounds per relay
-    fetched: Map<string, NostrEvent>;   // every event fetched this session (nothing discarded)
-    emitted: Set<string>;               // ids already handed to the timeline
+    frontier: number | null; // shared `until` for next round; null = initial (newest)
+    done: Set<string>; // relays that have returned everything they hold
+    stalled: Map<string, number>; // consecutive empty rounds per relay
+    fetched: Map<string, NostrEvent>; // every event fetched this session (nothing discarded)
+    emitted: Set<string>; // ids already handed to the timeline
   } | null = null;
 
   /**
@@ -509,9 +628,17 @@ export class FeedOrchestrator extends Orchestrator {
     // Home feed: add the current user so their own web comments surface even if they
     // don't follow themselves. Profile feed: scope strictly to the viewed author (never
     // leak the viewer's own web comments into someone else's profile).
-    const self = includeSelf ? AuthService.getInstance().getCurrentUser()?.pubkey : undefined;
-    const scopedAuthors = self && !authors.includes(self) ? [...authors, self] : authors;
-    const filter: NDKFilter<number> = { authors: scopedAuthors, kinds: [1111], '#k': ['web'], limit: bounds.limit };
+    const self = includeSelf
+      ? AuthService.getInstance().getCurrentUser()?.pubkey
+      : undefined;
+    const scopedAuthors =
+      self && !authors.includes(self) ? [...authors, self] : authors;
+    const filter: NDKFilter<number> = {
+      authors: scopedAuthors,
+      kinds: [1111],
+      '#k': ['web'],
+      limit: bounds.limit,
+    };
     if (bounds.since !== undefined) filter.since = bounds.since;
     if (bounds.until !== undefined) filter.until = bounds.until;
     return filter;
@@ -530,20 +657,24 @@ export class FeedOrchestrator extends Orchestrator {
     const baseFilter: NDKFilter<number> = {
       authors: pubkeys,
       kinds: FEED_KINDS,
-      limit: pageSize
+      limit: pageSize,
     };
     const pvFilters: NDKFilter<number>[] = [baseFilter];
     const wcPv = this.webCommentFilter(pubkeys, { limit: pageSize }, false);
     if (wcPv) pvFilters.push(wcPv);
 
-    if (isInitial || !this.profilePager || this.profilePager.pubkey !== pubkey) {
+    if (
+      isInitial ||
+      !this.profilePager ||
+      this.profilePager.pubkey !== pubkey
+    ) {
       this.profilePager = {
         pubkey,
         frontier: null,
         done: new Set(),
         stalled: new Map(),
         fetched: new Map(),
-        emitted: new Set()
+        emitted: new Set(),
       };
     }
     const pager = this.profilePager;
@@ -560,8 +691,16 @@ export class FeedOrchestrator extends Orchestrator {
         for (const r of active) perRelayUntil[r] = pager.frontier;
       }
 
-      const { events, perRelay } = await this.transport.fetchDirectPaged(active, pvFilters, perRelayUntil, 15000, 'FeedOrch-PV');
-      for (const e of events) { if (e.id) pager.fetched.set(e.id, e); }
+      const { events, perRelay } = await this.transport.fetchDirectPaged(
+        active,
+        pvFilters,
+        perRelayUntil,
+        15000,
+        'FeedOrch-PV'
+      );
+      for (const e of events) {
+        if (e.id) pager.fetched.set(e.id, e);
+      }
 
       // Update exhaustion and collect the frontier candidates (oldest of each
       // relay that still has more to give).
@@ -580,7 +719,7 @@ export class FeedOrchestrator extends Orchestrator {
         }
         pager.stalled.set(r, 0);
         if (info.eosed && info.count < pageSize) {
-          pager.done.add(r);           // got all it holds
+          pager.done.add(r); // got all it holds
         }
         if (!pager.done.has(r) && info.oldest !== null) {
           frontierCandidates.push(info.oldest);
@@ -590,8 +729,12 @@ export class FeedOrchestrator extends Orchestrator {
       const stillActive = relays.some(r => !pager.done.has(r));
       // Dense frontier: complete coverage reaches down to the deepest point every
       // still-active relay has fetched. With none left, reveal everything.
-      const newFrontier = frontierCandidates.length ? Math.max(...frontierCandidates) : null;
-      const floor = !stillActive ? Number.NEGATIVE_INFINITY : (newFrontier ?? Number.NEGATIVE_INFINITY);
+      const newFrontier = frontierCandidates.length
+        ? Math.max(...frontierCandidates)
+        : null;
+      const floor = !stillActive
+        ? Number.NEGATIVE_INFINITY
+        : (newFrontier ?? Number.NEGATIVE_INFINITY);
 
       for (const e of pager.fetched.values()) {
         if (!e.id || e.created_at === undefined) continue;
@@ -606,8 +749,15 @@ export class FeedOrchestrator extends Orchestrator {
       // Nothing new yet but relays still have history: loop to push the frontier deeper.
     }
 
-    const applyWordFilter = request.config ? request.config.applyWordFilter : !exemptFromMuteFilter;
-    const filtered = await this.processEvents(newlyEmitted, includeReplies, exemptFromMuteFilter, applyWordFilter);
+    const applyWordFilter = request.config
+      ? request.config.applyWordFilter
+      : !exemptFromMuteFilter;
+    const filtered = await this.processEvents(
+      newlyEmitted,
+      includeReplies,
+      exemptFromMuteFilter,
+      applyWordFilter
+    );
     filtered.sort((a, b) => b.created_at - a.created_at);
     this.registerNotes(filtered);
 
@@ -620,7 +770,7 @@ export class FeedOrchestrator extends Orchestrator {
       kind: isInitial ? 'initial' : 'more',
       notes: filtered.length,
       relays: relays.length,
-      hasMore
+      hasMore,
     });
     this.systemLogger.info(
       'FeedOrchestrator',
@@ -637,14 +787,21 @@ export class FeedOrchestrator extends Orchestrator {
     return this.transport.getEventRelays(eventId);
   }
 
-
   /**
    * Filter out replies
    */
   private filterReplies(events: NostrEvent[]): NostrEvent[] {
     return events.filter(event => {
       // Always allow reposts (kind 6), pictures (kind 20), videos (kind 21/22), polls (kind 1068)
-      if (event.kind === 6 || event.kind === 16 || event.kind === 20 || event.kind === 1068 || event.kind === 21 || event.kind === 22) return true;
+      if (
+        event.kind === 6 ||
+        event.kind === 16 ||
+        event.kind === 20 ||
+        event.kind === 1068 ||
+        event.kind === 21 ||
+        event.kind === 22
+      )
+        return true;
 
       const content = event.content.trim();
 
@@ -684,10 +841,15 @@ export class FeedOrchestrator extends Orchestrator {
     );
 
     // Filter replies if needed
-    let filteredEvents = includeReplies ? uniqueEvents : this.filterReplies(uniqueEvents);
+    let filteredEvents = includeReplies
+      ? uniqueEvents
+      : this.filterReplies(uniqueEvents);
 
     // Filter muted users
-    filteredEvents = await this.filterMutedUsers(filteredEvents, exemptFromMuteFilter);
+    filteredEvents = await this.filterMutedUsers(
+      filteredEvents,
+      exemptFromMuteFilter
+    );
 
     // Filter self-reposts (user boosting their own note) when enabled.
     // Applies in ProfileView too — unlike the mute/word filters, the profile
@@ -704,13 +866,18 @@ export class FeedOrchestrator extends Orchestrator {
     // Content word filter (addon) — gated by the config's explicit applyWordFilter
     // flag (false for ProfileView). No longer inferred from the mute exemption.
     if (applyWordFilter) {
-      const { isContentWordFilterEnabled, filterContentWords, getFilterWords } = await import('../../addons/content-word-filter/index');
+      const { isContentWordFilterEnabled, filterContentWords, getFilterWords } =
+        await import('../../addons/content-word-filter/index');
       if (isContentWordFilterEnabled()) {
         const before = filteredEvents.length;
         filteredEvents = filterContentWords(filteredEvents);
         const removed = before - filteredEvents.length;
         if (removed > 0) {
-          diagLog('system', `Word filter: removed ${removed} notes from timeline`, { words: getFilterWords() });
+          diagLog(
+            'system',
+            `Word filter: removed ${removed} notes from timeline`,
+            { words: getFilterWords() }
+          );
         }
       }
     }
@@ -743,10 +910,18 @@ export class FeedOrchestrator extends Orchestrator {
       // Pure repost of a highlight: inspect the embedded
       // inner event (NIP-18 reposts carry the full original in content).
       if (event.kind === 6 || event.kind === 16) {
-        let inner: { kind?: number; pubkey?: string; tags?: string[][] } | null = null;
+        let inner: {
+          kind?: number;
+          pubkey?: string;
+          tags?: string[][];
+        } | null = null;
         try {
           const parsed = JSON.parse(event.content);
-          if (parsed && typeof parsed === 'object' && typeof parsed.kind === 'number') {
+          if (
+            parsed &&
+            typeof parsed === 'object' &&
+            typeof parsed.kind === 'number'
+          ) {
             inner = parsed;
           }
         } catch {
@@ -754,7 +929,11 @@ export class FeedOrchestrator extends Orchestrator {
         }
         if (!inner || !isExternalHighlight(inner)) return true;
         if (inner.pubkey === me) return true; // repost of my own highlight stays
-        if (globalHide || hiddenUsers[inner.pubkey ?? ''] === true || hiddenUsers[event.pubkey] === true) {
+        if (
+          globalHide ||
+          hiddenUsers[inner.pubkey ?? ''] === true ||
+          hiddenUsers[event.pubkey] === true
+        ) {
           removed++;
           return false;
         }
@@ -789,7 +968,8 @@ export class FeedOrchestrator extends Orchestrator {
       if (event.kind !== 6 && event.kind !== 16) return true;
 
       const inner = this.getRepostedInner(event);
-      const originalAuthor = inner?.pubkey ?? event.tags.find(tag => tag[0] === 'p')?.[1] ?? null;
+      const originalAuthor =
+        inner?.pubkey ?? event.tags.find(tag => tag[0] === 'p')?.[1] ?? null;
       if (!originalAuthor || originalAuthor !== event.pubkey) return true; // not a self-repost
 
       // 'all' → hide every self-repost regardless of timing
@@ -819,14 +999,19 @@ export class FeedOrchestrator extends Orchestrator {
    * reposts embed the full original event). Returns its pubkey + created_at,
    * or null if content is not a parseable embedded event.
    */
-  private getRepostedInner(event: NostrEvent): { pubkey?: string; created_at?: number } | null {
+  private getRepostedInner(
+    event: NostrEvent
+  ): { pubkey?: string; created_at?: number } | null {
     if (event.content && event.content.trim()) {
       try {
         const inner = JSON.parse(event.content);
         if (inner && typeof inner === 'object') {
           return {
             pubkey: typeof inner.pubkey === 'string' ? inner.pubkey : undefined,
-            created_at: typeof inner.created_at === 'number' ? inner.created_at : undefined,
+            created_at:
+              typeof inner.created_at === 'number'
+                ? inner.created_at
+                : undefined,
           };
         }
       } catch {
@@ -852,7 +1037,8 @@ export class FeedOrchestrator extends Orchestrator {
     const cfg = request.config;
     if (cfg) {
       return {
-        relayStrategy: cfg.relays.kind === 'author-outbox' ? 'author-outbox' : 'auto',
+        relayStrategy:
+          cfg.relays.kind === 'author-outbox' ? 'author-outbox' : 'auto',
         fetchMode: cfg.fetchMode,
         pagination: cfg.pagination,
         pageSize: cfg.pageSize,
@@ -880,7 +1066,9 @@ export class FeedOrchestrator extends Orchestrator {
       return [specificRelay];
     }
     if (relayStrategy === 'author-outbox') {
-      return await this.relayDiscovery.getProfileRelays(followingPubkeys[0] as string);
+      return await this.relayDiscovery.getProfileRelays(
+        followingPubkeys[0] as string
+      );
     }
     return await this.relayDiscovery.getCombinedRelays(followingPubkeys, false);
   }
@@ -901,9 +1089,20 @@ export class FeedOrchestrator extends Orchestrator {
     skipCache: boolean
   ): Promise<NostrEvent[]> {
     if (fetchMode === 'direct') {
-      return await this.transport.fetchDirect(relays, filters, 15000, 'FeedOrch-PV');
+      return await this.transport.fetchDirect(
+        relays,
+        filters,
+        15000,
+        'FeedOrch-PV'
+      );
     }
-    return await this.transport.fetch(relays, filters, 5000, skipCache, 'FeedOrch');
+    return await this.transport.fetch(
+      relays,
+      filters,
+      5000,
+      skipCache,
+      'FeedOrch'
+    );
   }
 
   /**
@@ -948,22 +1147,41 @@ export class FeedOrchestrator extends Orchestrator {
     const worker = async (): Promise<void> => {
       while (cursor < batches.length) {
         const batch = batches[cursor++]!;
-        const filters: NDKFilter<number>[] = batch.map(pk => ({ authors: [pk], kinds: [1], limit: PER_AUTHOR_LIMIT }));
+        const filters: NDKFilter<number>[] = batch.map(pk => ({
+          authors: [pk],
+          kinds: [1],
+          limit: PER_AUTHOR_LIMIT,
+        }));
         try {
-          const events = await this.fetchEvents(relays, filters, 'cache-first', false);
+          const events = await this.fetchEvents(
+            relays,
+            filters,
+            'cache-first',
+            false
+          );
           collected.push(...events);
         } catch (err) {
-          this.systemLogger.warn('FeedOrchestrator', `Last-notes batch failed: ${err}`);
+          this.systemLogger.warn(
+            'FeedOrchestrator',
+            `Last-notes batch failed: ${err}`
+          );
         }
       }
     };
     await Promise.all(
-      Array.from({ length: Math.min(CONCURRENCY, batches.length) }, () => worker())
+      Array.from({ length: Math.min(CONCURRENCY, batches.length) }, () =>
+        worker()
+      )
     );
 
     // Central pipeline (dedup → reply → mute → self-repost → word → sort). No mute
     // exemption: this is the user's follows, not their own profile.
-    const processed = await this.processEvents(collected, includeReplies, undefined, applyWordFilter);
+    const processed = await this.processEvents(
+      collected,
+      includeReplies,
+      undefined,
+      applyWordFilter
+    );
 
     // Reduce to ONE newest note per author. `processed` is already newest-first,
     // so the first occurrence of a pubkey is that author's latest note.
@@ -971,10 +1189,15 @@ export class FeedOrchestrator extends Orchestrator {
     for (const ev of processed) {
       if (!latestByAuthor.has(ev.pubkey)) latestByAuthor.set(ev.pubkey, ev);
     }
-    const result = Array.from(latestByAuthor.values()).sort((a, b) => b.created_at - a.created_at);
+    const result = Array.from(latestByAuthor.values()).sort(
+      (a, b) => b.created_at - a.created_at
+    );
 
     this.registerNotes(result);
-    this.systemLogger.info('FeedOrchestrator', `Last notes per follow: ${result.length} authors`);
+    this.systemLogger.info(
+      'FeedOrchestrator',
+      `Last notes per follow: ${result.length} authors`
+    );
     diagLog('system', 'Last notes per follow built', {
       follows: pubkeys.length,
       authors: result.length,
@@ -1009,7 +1232,10 @@ export class FeedOrchestrator extends Orchestrator {
   }
 
   public onerror(relay: string, error: Error): void {
-    this.systemLogger.error('FeedOrchestrator', `Relay error (${relay}): ${error.message}`);
+    this.systemLogger.error(
+      'FeedOrchestrator',
+      `Relay error (${relay}): ${error.message}`
+    );
   }
 
   public onclose(relay: string): void {
@@ -1062,7 +1288,10 @@ export class FeedOrchestrator extends Orchestrator {
     this.pollingTimeoutId = window.setTimeout(() => {
       this.pollingTimeoutId = null; // Clear reference after firing
       this.poll(); // First poll immediately after delay
-      this.pollingIntervalId = window.setInterval(() => this.poll(), this.pollingInterval);
+      this.pollingIntervalId = window.setInterval(
+        () => this.poll(),
+        this.pollingInterval
+      );
     }, delayMs);
   }
 
@@ -1070,7 +1299,11 @@ export class FeedOrchestrator extends Orchestrator {
    * Check if polling is currently active or scheduled
    */
   public isPolling(): boolean {
-    return this.pollingScheduled || this.pollingTimeoutId !== null || this.pollingIntervalId !== null;
+    return (
+      this.pollingScheduled ||
+      this.pollingTimeoutId !== null ||
+      this.pollingIntervalId !== null
+    );
   }
 
   /**
@@ -1127,25 +1360,45 @@ export class FeedOrchestrator extends Orchestrator {
         : this.transport.getReadRelays();
 
       if (relays.length === 0) {
-        this.systemLogger.warn('FeedOrchestrator', 'No read relays configured for polling');
+        this.systemLogger.warn(
+          'FeedOrchestrator',
+          'No read relays configured for polling'
+        );
         return;
       }
 
       const now = Math.floor(Date.now() / 1000);
 
       // Query for new notes since last check
-      const filters: NDKFilter<number>[] = [{
-        kinds: FEED_KINDS, // Text notes + reposts + polls (NIP-88)
-        authors: this.pollingFollowingPubkeys,
+      const filters: NDKFilter<number>[] = [
+        {
+          kinds: FEED_KINDS, // Text notes + reposts + polls (NIP-88)
+          authors: this.pollingFollowingPubkeys,
+          since: this.lastCheckedTimestamp + 1,
+          until: now,
+          limit: this.pollLimit,
+        },
+      ];
+      const wc = this.webCommentFilter(this.pollingFollowingPubkeys, {
         since: this.lastCheckedTimestamp + 1,
         until: now,
-        limit: this.pollLimit
-      }];
-      const wc = this.webCommentFilter(this.pollingFollowingPubkeys, { since: this.lastCheckedTimestamp + 1, until: now, limit: this.pollLimit });
+        limit: this.pollLimit,
+      });
       if (wc) filters.push(wc);
 
-      const events = await this.transport.fetch(relays, filters, 5000, true, 'FeedOrch'); // Skip cache for polling
-      const filteredEvents = await this.processEvents(events, this.pollingIncludeReplies, this.pollingExemptFromMuteFilter, this.pollingApplyWordFilter);
+      const events = await this.transport.fetch(
+        relays,
+        filters,
+        5000,
+        true,
+        'FeedOrch'
+      ); // Skip cache for polling
+      const filteredEvents = await this.processEvents(
+        events,
+        this.pollingIncludeReplies,
+        this.pollingExemptFromMuteFilter,
+        this.pollingApplyWordFilter
+      );
 
       if (filteredEvents.length > 0) {
         // Cache polled events for later retrieval (already sorted by processEvents)
@@ -1180,7 +1433,7 @@ export class FeedOrchestrator extends Orchestrator {
 
         const info: NewNotesInfo = {
           count: filteredEvents.length,
-          authorPubkeys: uniqueAuthors
+          authorPubkeys: uniqueAuthors,
         };
 
         // Notify callback
@@ -1192,20 +1445,25 @@ export class FeedOrchestrator extends Orchestrator {
 
       // Log manual poll result
       if (this.isManualPoll) {
-        const relayInfo = this.pollingSpecificRelay ? ` from ${this.pollingSpecificRelay}` : '';
-        const message = filteredEvents.length > 0
-          ? `Looked for new notes. Found ${filteredEvents.length} new note${filteredEvents.length !== 1 ? 's' : ''}. Will look again in ${this.pollingInterval / 1000}s${relayInfo}`
-          : `Looked for new notes. Found no new notes. Will look again in ${this.pollingInterval / 1000}s${relayInfo}`;
+        const relayInfo = this.pollingSpecificRelay
+          ? ` from ${this.pollingSpecificRelay}`
+          : '';
+        const message =
+          filteredEvents.length > 0
+            ? `Looked for new notes. Found ${filteredEvents.length} new note${filteredEvents.length !== 1 ? 's' : ''}. Will look again in ${this.pollingInterval / 1000}s${relayInfo}`
+            : `Looked for new notes. Found no new notes. Will look again in ${this.pollingInterval / 1000}s${relayInfo}`;
         this.systemLogger.info('FeedOrchestrator', message);
         this.isManualPoll = false; // Reset flag
       }
-
     } catch (error) {
       this.systemLogger.error('FeedOrchestrator', `Polling error: ${error}`);
 
       // Log manual poll error
       if (this.isManualPoll) {
-        this.systemLogger.info('FeedOrchestrator', `Looked for new notes. Error occurred. Will look again in ${this.pollingInterval / 1000}s`);
+        this.systemLogger.info(
+          'FeedOrchestrator',
+          `Looked for new notes. Error occurred. Will look again in ${this.pollingInterval / 1000}s`
+        );
         this.isManualPoll = false; // Reset flag
       }
     }
@@ -1219,21 +1477,32 @@ export class FeedOrchestrator extends Orchestrator {
       const currentUser = AuthService.getInstance().getCurrentUser();
       if (!currentUser) return;
 
-      const mutedPubkeys = await this.muteOrchestrator.getAllMutedUsers(currentUser.pubkey);
+      const mutedPubkeys = await this.muteOrchestrator.getAllMutedUsers(
+        currentUser.pubkey
+      );
       this.mutedPubkeys = new Set(mutedPubkeys);
 
       if (mutedPubkeys.length > 0) {
-        this.systemLogger.info('FeedOrchestrator', `Loaded ${mutedPubkeys.length} muted users`);
+        this.systemLogger.info(
+          'FeedOrchestrator',
+          `Loaded ${mutedPubkeys.length} muted users`
+        );
       }
     } catch (error) {
-      this.systemLogger.error('FeedOrchestrator', `Failed to load muted users: ${error}`);
+      this.systemLogger.error(
+        'FeedOrchestrator',
+        `Failed to load muted users: ${error}`
+      );
     }
   }
 
   /**
    * Check if a pubkey is temporarily unmuted
    */
-  private isTemporarilyUnmuted(pubkey: string, muteOrch: ReturnType<typeof MuteOrchestrator.getInstance>): boolean {
+  private isTemporarilyUnmuted(
+    pubkey: string,
+    muteOrch: ReturnType<typeof MuteOrchestrator.getInstance>
+  ): boolean {
     const currentUser = AuthService.getInstance().getCurrentUser();
     if (!currentUser) return false;
     return (muteOrch as any).temporaryUnmutes?.has(pubkey) ?? false;
@@ -1245,7 +1514,10 @@ export class FeedOrchestrator extends Orchestrator {
    * Respects temporary unmutes
    * @param exemptPubkey - Optional pubkey to exempt from filtering (for ProfileView)
    */
-  private async filterMutedUsers(events: NostrEvent[], exemptPubkey?: string): Promise<NostrEvent[]> {
+  private async filterMutedUsers(
+    events: NostrEvent[],
+    exemptPubkey?: string
+  ): Promise<NostrEvent[]> {
     if (this.mutedPubkeys.size === 0) {
       return events;
     }
@@ -1267,7 +1539,10 @@ export class FeedOrchestrator extends Orchestrator {
       if (event.kind === 6 || event.kind === 16) {
         const repostedAuthorTag = event.tags.find(tag => tag[0] === 'p');
         const repostedAuthorPubkey = repostedAuthorTag?.[1];
-        if (repostedAuthorPubkey && this.mutedPubkeys.has(repostedAuthorPubkey)) {
+        if (
+          repostedAuthorPubkey &&
+          this.mutedPubkeys.has(repostedAuthorPubkey)
+        ) {
           return this.isTemporarilyUnmuted(repostedAuthorPubkey, muteOrch);
         }
       }
@@ -1296,18 +1571,35 @@ export class FeedOrchestrator extends Orchestrator {
       if (relays.length === 0) return [];
 
       const now = Math.floor(Date.now() / 1000);
-      const filters: NDKFilter<number>[] = [{
-        kinds: FEED_KINDS,
-        authors: followingPubkeys,
+      const filters: NDKFilter<number>[] = [
+        {
+          kinds: FEED_KINDS,
+          authors: followingPubkeys,
+          since: newestTimestamp + 1,
+          until: now,
+          limit: this.pollLimit,
+        },
+      ];
+      const wc = this.webCommentFilter(followingPubkeys, {
         since: newestTimestamp + 1,
         until: now,
-        limit: this.pollLimit
-      }];
-      const wc = this.webCommentFilter(followingPubkeys, { since: newestTimestamp + 1, until: now, limit: this.pollLimit });
+        limit: this.pollLimit,
+      });
       if (wc) filters.push(wc);
 
-      const events = await this.transport.fetch(relays, filters, 5000, true, 'FeedOrch');
-      return await this.processEvents(events, includeReplies, exemptFromMuteFilter, applyWordFilter);
+      const events = await this.transport.fetch(
+        relays,
+        filters,
+        5000,
+        true,
+        'FeedOrch'
+      );
+      return await this.processEvents(
+        events,
+        includeReplies,
+        exemptFromMuteFilter,
+        applyWordFilter
+      );
     } catch (error) {
       this.systemLogger.error('FeedOrchestrator', `pollOnce failed: ${error}`);
       return [];

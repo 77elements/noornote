@@ -87,7 +87,11 @@ export class DeleteBroadcastStore {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
       request.onerror = () => {
-        this.systemLogger.error('DeleteBroadcast', 'Failed to open IndexedDB:', request.error);
+        this.systemLogger.error(
+          'DeleteBroadcast',
+          'Failed to open IndexedDB:',
+          request.error
+        );
         reject(request.error);
       };
 
@@ -96,7 +100,7 @@ export class DeleteBroadcastStore {
         resolve();
       };
 
-      request.onupgradeneeded = (event) => {
+      request.onupgradeneeded = event => {
         const db = (event.target as IDBOpenDBRequest).result;
         if (!db.objectStoreNames.contains(JOBS_STORE)) {
           db.createObjectStore(JOBS_STORE, { keyPath: 'id' });

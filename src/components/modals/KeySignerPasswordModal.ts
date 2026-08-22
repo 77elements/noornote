@@ -34,12 +34,14 @@ export class KeySignerPasswordModal {
       width: '400px',
       showCloseButton: true,
       closeOnOverlay: false,
-      closeOnEsc: true
+      closeOnEsc: true,
     });
 
     setTimeout(() => {
       this.setupEventHandlers();
-      const input = document.getElementById('keysigner-password-input') as HTMLInputElement;
+      const input = document.getElementById(
+        'keysigner-password-input'
+      ) as HTMLInputElement;
       input?.focus();
     }, 0);
   }
@@ -48,7 +50,8 @@ export class KeySignerPasswordModal {
     const container = document.createElement('div');
     container.className = 'keysigner-password-modal';
 
-    const displayName = this.options.displayName || `${this.options.npub.slice(0, 20)}...`;
+    const displayName =
+      this.options.displayName || `${this.options.npub.slice(0, 20)}...`;
 
     container.innerHTML = `
       <div class="keysigner-password-modal__content">
@@ -78,7 +81,9 @@ export class KeySignerPasswordModal {
   }
 
   private setupEventHandlers(): void {
-    const input = document.getElementById('keysigner-password-input') as HTMLInputElement;
+    const input = document.getElementById(
+      'keysigner-password-input'
+    ) as HTMLInputElement;
     const cancelBtn = document.getElementById('keysigner-password-cancel-btn');
     const submitBtn = document.getElementById('keysigner-password-submit-btn');
     const errorEl = document.getElementById('keysigner-password-error');
@@ -100,15 +105,20 @@ export class KeySignerPasswordModal {
       errorEl.style.display = 'none';
 
       try {
-        const result = await this.keySignerClient.switchAccount(this.options.npub, password);
+        const result = await this.keySignerClient.switchAccount(
+          this.options.npub,
+          password
+        );
         this.modalService.hide();
         this.options.onSuccess(result);
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         // NoorSigner returns various error messages for wrong password
-        const isPasswordError = errorMessage.includes('invalid password') ||
-                                errorMessage.includes('corrupted') ||
-                                errorMessage.includes('decrypt');
+        const isPasswordError =
+          errorMessage.includes('invalid password') ||
+          errorMessage.includes('corrupted') ||
+          errorMessage.includes('decrypt');
         this.showError(isPasswordError ? 'Incorrect password' : errorMessage);
         input.value = '';
         input.focus();
@@ -129,7 +139,7 @@ export class KeySignerPasswordModal {
     cancelBtn.addEventListener('click', handleCancel);
     submitBtn.addEventListener('click', handleSubmit);
 
-    input.addEventListener('keydown', (e) => {
+    input.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
         handleSubmit();
       } else if (e.key === 'Escape') {

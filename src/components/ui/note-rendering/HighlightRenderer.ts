@@ -13,11 +13,15 @@ import { getTag } from '../../../helpers/tagUtils';
 
 export class HighlightRenderer {
   static render(note: ProcessedNote, opts: NoteUIOptions): HTMLElement {
-    const { element } = NoteStructureBuilder.build(note, {
-      cssClass: 'note-card--highlight',
-      footerLabel: '',
-      renderQuotedNotes: false
-    }, opts);
+    const { element } = NoteStructureBuilder.build(
+      note,
+      {
+        cssClass: 'note-card--highlight',
+        footerLabel: '',
+        renderQuotedNotes: false,
+      },
+      opts
+    );
 
     HighlightRenderer.upgradeArticleSourceLabel(element);
 
@@ -30,19 +34,25 @@ export class HighlightRenderer {
    * Falls back silently to "article" if the fetch fails.
    */
   private static upgradeArticleSourceLabel(root: HTMLElement): void {
-    const link = root.querySelector('a.highlight__source-link[href^="/article/"]') as HTMLAnchorElement | null;
+    const link = root.querySelector(
+      'a.highlight__source-link[href^="/article/"]'
+    ) as HTMLAnchorElement | null;
     if (!link) return;
 
     const naddr = link.getAttribute('href')?.replace('/article/', '');
     if (!naddr) return;
 
-    const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
-    articlesApi?.fetchAddressableEvent(naddr)
+    const articlesApi =
+      ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+    articlesApi
+      ?.fetchAddressableEvent(naddr)
       .then(article => {
         if (!article) return;
         const title = getTag(article.tags, 'title');
         if (title) link.textContent = title;
       })
-      .catch(() => { /* leave "article" fallback */ });
+      .catch(() => {
+        /* leave "article" fallback */
+      });
   }
 }

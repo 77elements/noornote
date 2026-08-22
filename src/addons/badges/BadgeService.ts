@@ -54,7 +54,9 @@ export class BadgeService {
     BadgeService.instance = null;
   }
 
-  public async createBadgeDefinition(input: BadgeDefinitionInput): Promise<boolean> {
+  public async createBadgeDefinition(
+    input: BadgeDefinitionInput
+  ): Promise<boolean> {
     if (!AuthGuard.requireAuth('create badge')) return false;
     const user = this.authService.getCurrentUser();
     if (!user) return false;
@@ -82,24 +84,33 @@ export class BadgeService {
         return false;
       }
       await this.transport.publishContent(signedEvent);
-      diagLog('system', 'Badge definition created', { slug: input.slug, name: input.name });
+      diagLog('system', 'Badge definition created', {
+        slug: input.slug,
+        name: input.name,
+      });
       ToastService.show('Badge created', 'success');
       void this.fetchOwnDefinitions();
       return true;
     } catch (error) {
-      ErrorService.handle(error, 'BadgeService.createBadgeDefinition', true, 'Failed to create badge');
+      ErrorService.handle(
+        error,
+        'BadgeService.createBadgeDefinition',
+        true,
+        'Failed to create badge'
+      );
       return false;
     }
   }
 
-  public async awardBadge(coordinate: string, recipientPubkeys: string[]): Promise<boolean> {
+  public async awardBadge(
+    coordinate: string,
+    recipientPubkeys: string[]
+  ): Promise<boolean> {
     if (!AuthGuard.requireAuth('award badge')) return false;
     const user = this.authService.getCurrentUser();
     if (!user) return false;
 
-    const tags: string[][] = [
-      ['a', coordinate],
-    ];
+    const tags: string[][] = [['a', coordinate]];
     for (const pk of recipientPubkeys) {
       tags.push(['p', pk]);
     }
@@ -119,11 +130,19 @@ export class BadgeService {
         return false;
       }
       await this.transport.publishContent(signedEvent);
-      diagLog('system', 'Badge awarded', { coordinate, recipients: recipientPubkeys.length });
+      diagLog('system', 'Badge awarded', {
+        coordinate,
+        recipients: recipientPubkeys.length,
+      });
       ToastService.show('Badge awarded', 'success');
       return true;
     } catch (error) {
-      ErrorService.handle(error, 'BadgeService.awardBadge', true, 'Failed to award badge');
+      ErrorService.handle(
+        error,
+        'BadgeService.awardBadge',
+        true,
+        'Failed to award badge'
+      );
       return false;
     }
   }
@@ -132,7 +151,10 @@ export class BadgeService {
    * Accept a badge by adding it to the user's kind:10008 Profile Badges event.
    * Fetches the current kind:10008, appends the new a+e pair, republishes.
    */
-  public async acceptBadge(badgeCoordinate: string, awardEventId: string): Promise<boolean> {
+  public async acceptBadge(
+    badgeCoordinate: string,
+    awardEventId: string
+  ): Promise<boolean> {
     if (!AuthGuard.requireAuth('accept badge')) return false;
     const user = this.authService.getCurrentUser();
     if (!user) return false;
@@ -142,7 +164,9 @@ export class BadgeService {
     const existing = await this.transport.fetch(
       relays,
       [{ kinds: [10008 as number], authors: [user.pubkey], limit: 1 }],
-      5000, false, 'BadgeSvc'
+      5000,
+      false,
+      'BadgeSvc'
     );
 
     // Build tags: existing pairs + new pair
@@ -174,7 +198,12 @@ export class BadgeService {
       ToastService.show('Badge accepted', 'success');
       return true;
     } catch (error) {
-      ErrorService.handle(error, 'BadgeService.acceptBadge', true, 'Failed to accept badge');
+      ErrorService.handle(
+        error,
+        'BadgeService.acceptBadge',
+        true,
+        'Failed to accept badge'
+      );
       return false;
     }
   }
@@ -190,7 +219,9 @@ export class BadgeService {
     const events = await this.transport.fetch(
       relays,
       [{ kinds: [8 as number], authors: [user.pubkey], '#a': [coordinate] }],
-      5000, false, 'BadgeSvc'
+      5000,
+      false,
+      'BadgeSvc'
     );
     return events;
   }
@@ -201,11 +232,18 @@ export class BadgeService {
   public async revokeAward(awardEventId: string): Promise<boolean> {
     try {
       const { ModuleLoader } = await import('../../core/ModuleLoader');
-      const success = await (ModuleLoader.getInstance().getApi<import('../../modules/posts/contracts').PostsModuleApi>('posts')?.deleteEvent(awardEventId) ?? Promise.resolve(false));
+      const success = await (ModuleLoader.getInstance()
+        .getApi<import('../../modules/posts/contracts').PostsModuleApi>('posts')
+        ?.deleteEvent(awardEventId) ?? Promise.resolve(false));
       if (success) ToastService.show('Badge revoked', 'success');
       return success;
     } catch (error) {
-      ErrorService.handle(error, 'BadgeService.revokeAward', true, 'Failed to revoke badge');
+      ErrorService.handle(
+        error,
+        'BadgeService.revokeAward',
+        true,
+        'Failed to revoke badge'
+      );
       return false;
     }
   }

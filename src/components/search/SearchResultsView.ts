@@ -38,7 +38,11 @@ export class SearchResultsView {
   private subscriptionUpdatedId?: string;
 
   private getHashtagService() {
-    return AddonLoader.getInstance().getRuntime<HashtagSubscriptionsRuntime>('hashtag-subscriptions')?.service ?? null;
+    return (
+      AddonLoader.getInstance().getRuntime<HashtagSubscriptionsRuntime>(
+        'hashtag-subscriptions'
+      )?.service ?? null
+    );
   }
 
   constructor(config: SearchResultsConfig, callbacks: SearchResultsCallbacks) {
@@ -71,7 +75,7 @@ export class SearchResultsView {
       backLink.innerHTML = `
         <a href="#" class="search-results__back-link">← Back to Search Results</a>
       `;
-      backLink.querySelector('a')?.addEventListener('click', (e) => {
+      backLink.querySelector('a')?.addEventListener('click', e => {
         e.preventDefault();
         this.config.onBackClick!();
       });
@@ -128,7 +132,7 @@ export class SearchResultsView {
       // Setup InfiniteScroll if callback provided
       if (this.callbacks.onLoadMore) {
         this.infiniteScroll = new InfiniteScroll(this.callbacks.onLoadMore, {
-          loadingMessage: 'Fetching more results from Relays...'
+          loadingMessage: 'Fetching more results from Relays...',
         });
         this.infiniteScroll.observe(this.listElement);
       }
@@ -155,11 +159,14 @@ export class SearchResultsView {
     headerRow.appendChild(this.subscribeButton);
 
     // Listen for subscription updates to update button state
-    this.subscriptionUpdatedId = this.eventBus.on('hashtag-subscription:updated', (data) => {
-      if (data.hashtag === this.config.hashtag) {
-        this.updateSubscribeButton();
+    this.subscriptionUpdatedId = this.eventBus.on(
+      'hashtag-subscription:updated',
+      data => {
+        if (data.hashtag === this.config.hashtag) {
+          this.updateSubscribeButton();
+        }
       }
-    });
+    );
   }
 
   /**
@@ -210,7 +217,8 @@ export class SearchResultsView {
    */
   private createResultItem(note: NostrEvent, searchTerms: string): HTMLElement {
     const item = document.createElement('div');
-    item.className = 'ui-list__item ui-list__item--clickable search-results__item';
+    item.className =
+      'ui-list__item ui-list__item--clickable search-results__item';
     item.dataset.noteId = note.id;
 
     const date = formatTimestamp(note.created_at);

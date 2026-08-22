@@ -26,7 +26,9 @@ export class NoteTakingRuntime implements AddonRuntime {
     void NoteTakingSyncService.getInstance().start();
     // Local reminder scheduler (fires the core AlertBar when a reminder is due).
     NoteTakingReminderService.getInstance().start();
-    diagLog('system', 'note-taking: runtime init', { npub: ctx.npub?.slice(0, 12) });
+    diagLog('system', 'note-taking: runtime init', {
+      npub: ctx.npub?.slice(0, 12),
+    });
   }
 
   async destroy(): Promise<void> {

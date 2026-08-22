@@ -1,4 +1,8 @@
-import type { PostOptions, ReplyOptions, HighlightOptions } from '../../services/PostService';
+import type {
+  PostOptions,
+  ReplyOptions,
+  HighlightOptions,
+} from '../../services/PostService';
 import type { RepostOptions } from '../../services/RepostService';
 import type { DeletionOptions } from '../../services/DeletionService';
 import type { BroadcastProgress } from '../../services/BroadcastDeleteService';
@@ -6,7 +10,17 @@ import type { ReportType, ReportOptions } from '../../services/ReportService';
 import type { MentionSuggestion } from '../../components/mentions/MentionAutocomplete';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
-export type { PostOptions, ReplyOptions, HighlightOptions, RepostOptions, DeletionOptions, BroadcastProgress, ReportType, ReportOptions, MentionSuggestion };
+export type {
+  PostOptions,
+  ReplyOptions,
+  HighlightOptions,
+  RepostOptions,
+  DeletionOptions,
+  BroadcastProgress,
+  ReportType,
+  ReportOptions,
+  MentionSuggestion,
+};
 
 export interface PostsModuleApi {
   createPost(options: PostOptions): Promise<boolean>;
@@ -23,8 +37,12 @@ export interface PostsModuleApi {
 
   // RepostService
   hasUserReposted(noteId: string): Promise<boolean>;
-  publishRepost(options: RepostOptions): Promise<{ success: boolean; alreadyReposted?: boolean; error?: string }>;
-  publishGenericRepost(options: RepostOptions): Promise<{ success: boolean; error?: string }>;
+  publishRepost(
+    options: RepostOptions
+  ): Promise<{ success: boolean; alreadyReposted?: boolean; error?: string }>;
+  publishGenericRepost(
+    options: RepostOptions
+  ): Promise<{ success: boolean; error?: string }>;
 
   // DeletionService
   deleteEvent(eventId: string, reason?: string): Promise<boolean>;
@@ -34,14 +52,22 @@ export interface PostsModuleApi {
   // BroadcastDeleteService — live progress of silent (Bulk Delete) broadcasts
   subscribeDeleteProgress(cb: (p: BroadcastProgress) => void): () => void;
   countActiveDeleteBroadcasts(): Promise<number>;
-  getDeleteProgressSummary(): Promise<{ total: number; contacted: number; sent: number } | null>;
+  getDeleteProgressSummary(): Promise<{
+    total: number;
+    contacted: number;
+    sent: number;
+  } | null>;
 
   // ReportService
-  createReport(options: ReportOptions): Promise<{ success: boolean; error?: string }>;
+  createReport(
+    options: ReportOptions
+  ): Promise<{ success: boolean; error?: string }>;
   getReportTypes(): ReportType[];
   getReportTypeLabel(type: ReportType): string;
   getReportTypeDescription(type: ReportType): string;
 
   // MentionProfileCache
-  getMentionSuggestions(followingPubkeys: string[]): Promise<MentionSuggestion[]>;
+  getMentionSuggestions(
+    followingPubkeys: string[]
+  ): Promise<MentionSuggestion[]>;
 }

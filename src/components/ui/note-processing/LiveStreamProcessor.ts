@@ -25,7 +25,8 @@ export class LiveStreamProcessor {
     const eventId = event.id;
     if (!eventId) throw new Error('Event ID is required');
 
-    const authorProfile = LiveStreamProcessor.contentProcessor.getNonBlockingProfile(event.pubkey);
+    const authorProfile =
+      LiveStreamProcessor.contentProcessor.getNonBlockingProfile(event.pubkey);
     const title = getTag(event.tags, 'title') || 'Untitled Stream';
 
     const result: ProcessedNote = {

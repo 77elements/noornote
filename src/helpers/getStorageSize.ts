@@ -17,7 +17,7 @@
 export function getStorageSize(storage: Storage): number {
   let size = 0;
   try {
-    for (let key in storage) {
+    for (const key in storage) {
       if (storage.hasOwnProperty(key)) {
         size += key.length + (storage[key]?.length || 0);
       }

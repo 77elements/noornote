@@ -30,7 +30,9 @@ export class GitEventRenderer {
     // Top-level cards inherit .note-card styling (margin-bottom, padding, hover).
     // Embedded cards drop .note-card so they don't add extra vertical space when
     // they replace an inline quote-marker between two text segments.
-    element.className = isEmbedded ? 'note-card--git' : 'note-card note-card--git';
+    element.className = isEmbedded
+      ? 'note-card--git'
+      : 'note-card note-card--git';
     element.dataset.eventId = note.id;
 
     // Top-level renders carry a NoteHeader so the user sees author + timestamp.
@@ -44,7 +46,7 @@ export class GitEventRenderer {
         rawEvent: event,
         showVerification: true,
         showTimestamp: true,
-        showMenu: true
+        showMenu: true,
       });
       element.appendChild(noteHeader.getElement());
     }
@@ -63,12 +65,15 @@ export class GitEventRenderer {
       </div>
     `;
 
-    card.querySelector('[data-action="open-external"]')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (externalUrl) window.open(externalUrl, '_blank', 'noopener,noreferrer');
-    });
+    card
+      .querySelector('[data-action="open-external"]')
+      ?.addEventListener('click', e => {
+        e.stopPropagation();
+        if (externalUrl)
+          window.open(externalUrl, '_blank', 'noopener,noreferrer');
+      });
 
-    card.addEventListener('click', (e) => {
+    card.addEventListener('click', e => {
       const target = e.target as HTMLElement;
       if (target.closest('.note-image--clickable, .note-media, video')) return;
       if (target.closest('button') || target.closest('a')) return;
@@ -87,7 +92,7 @@ export class GitEventRenderer {
         authorPubkey: event.pubkey,
         originalEvent: event,
         fetchStats: opts.islFetchStats || false,
-        isLoggedIn: opts.isLoggedIn || false
+        isLoggedIn: opts.isLoggedIn || false,
       });
       element.appendChild(isl.getElement());
     }
@@ -95,11 +100,19 @@ export class GitEventRenderer {
     return element;
   }
 
-  private static buildSnvRoute(event: { id?: string; kind?: number; pubkey: string; tags: string[][] }, fallbackId: string): string {
+  private static buildSnvRoute(
+    event: { id?: string; kind?: number; pubkey: string; tags: string[][] },
+    fallbackId: string
+  ): string {
     if (event.kind === 30617) {
       const dTag = event.tags.find(t => t[0] === 'd');
       if (dTag?.[1] && event.pubkey) {
-        const naddr = encodeNaddr({ kind: 30617, pubkey: event.pubkey, identifier: dTag[1], relays: [] });
+        const naddr = encodeNaddr({
+          kind: 30617,
+          pubkey: event.pubkey,
+          identifier: dTag[1],
+          relays: [],
+        });
         return `/note/${naddr}`;
       }
     }
@@ -109,7 +122,11 @@ export class GitEventRenderer {
     return `/note/${nevent}`;
   }
 
-  private static extractMeta(event: { kind?: number; content?: string; tags: string[][] }): GitEventMeta {
+  private static extractMeta(event: {
+    kind?: number;
+    content?: string;
+    tags: string[][];
+  }): GitEventMeta {
     const kind = event.kind;
     const subjectTag = event.tags.find(t => t[0] === 'subject');
     const nameTag = event.tags.find(t => t[0] === 'name');
@@ -119,32 +136,67 @@ export class GitEventRenderer {
       case 1617: {
         // NIP-34: patch title is in the content's Subject: header (git format-patch),
         // not a tag. Fall back to subject tag, then "(untitled patch)".
-        const title = GitEventRenderer.extractPatchSubject(event.content) || subjectTag?.[1] || '(untitled patch)';
+        const title =
+          GitEventRenderer.extractPatchSubject(event.content) ||
+          subjectTag?.[1] ||
+          '(untitled patch)';
         return { label: 'Git Patch', icon: '🩹', title };
       }
       case 1618:
-        return { label: 'Pull Request', icon: '🔀', title: subjectTag?.[1] || '(untitled PR)' };
+        return {
+          label: 'Pull Request',
+          icon: '🔀',
+          title: subjectTag?.[1] || '(untitled PR)',
+        };
       case 1619:
-        return { label: 'Pull Request Update', icon: '🔀', title: subjectTag?.[1] || '(PR update)' };
+        return {
+          label: 'Pull Request Update',
+          icon: '🔀',
+          title: subjectTag?.[1] || '(PR update)',
+        };
       case 1621:
-        return { label: 'Git Issue', icon: '🐛', title: subjectTag?.[1] || '(untitled issue)' };
+        return {
+          label: 'Git Issue',
+          icon: '🐛',
+          title: subjectTag?.[1] || '(untitled issue)',
+        };
       case 1630:
-        return { label: 'Status: Open', icon: '🟢', title: subjectTag?.[1] || 'Status update' };
+        return {
+          label: 'Status: Open',
+          icon: '🟢',
+          title: subjectTag?.[1] || 'Status update',
+        };
       case 1631:
-        return { label: 'Status: Applied/Merged', icon: '✅', title: subjectTag?.[1] || 'Status update' };
+        return {
+          label: 'Status: Applied/Merged',
+          icon: '✅',
+          title: subjectTag?.[1] || 'Status update',
+        };
       case 1632:
-        return { label: 'Status: Closed', icon: '⛔', title: subjectTag?.[1] || 'Status update' };
+        return {
+          label: 'Status: Closed',
+          icon: '⛔',
+          title: subjectTag?.[1] || 'Status update',
+        };
       case 1633:
-        return { label: 'Status: Draft', icon: '📝', title: subjectTag?.[1] || 'Status update' };
+        return {
+          label: 'Status: Draft',
+          icon: '📝',
+          title: subjectTag?.[1] || 'Status update',
+        };
       case 30617:
         return {
           label: 'Git Repository',
           icon: '📦',
           title: nameTag?.[1] || '(unnamed repo)',
-          ...(descTag?.[1] ? { subtitle: descTag[1] } : {})
+          ...(descTag?.[1] ? { subtitle: descTag[1] } : {}),
         };
       default:
-        return { label: `Git Event (kind ${kind})`, icon: '📦', title: subjectTag?.[1] || '' };
+        return {
+          label: `Git Event (kind ${kind})`,
+          icon: '📦',
+          title: subjectTag?.[1] || '',
+        };
     }
   }
 
@@ -159,11 +211,21 @@ export class GitEventRenderer {
     return match[1].replace(/^\[PATCH(?:\s+\d+\/\d+)?\]\s*/, '').trim();
   }
 
-  private static buildGitworkshopUrl(event: { id?: string; kind?: number; pubkey: string; tags: string[][] }): string {
+  private static buildGitworkshopUrl(event: {
+    id?: string;
+    kind?: number;
+    pubkey: string;
+    tags: string[][];
+  }): string {
     if (event.kind === 30617) {
       const dTag = event.tags.find(t => t[0] === 'd');
       if (dTag?.[1] && event.pubkey) {
-        const naddr = encodeNaddr({ kind: 30617, pubkey: event.pubkey, identifier: dTag[1], relays: [] });
+        const naddr = encodeNaddr({
+          kind: 30617,
+          pubkey: event.pubkey,
+          identifier: dTag[1],
+          relays: [],
+        });
         return `https://gitworkshop.dev/${naddr}`;
       }
     }
@@ -174,7 +236,10 @@ export class GitEventRenderer {
     return '';
   }
 
-  private static resolveIslId(event: { id?: string; kind?: number; pubkey: string; tags: string[][] }, fallback: string): string {
+  private static resolveIslId(
+    event: { id?: string; kind?: number; pubkey: string; tags: string[][] },
+    fallback: string
+  ): string {
     if (event.kind === 30617) {
       const dTag = event.tags.find(t => t[0] === 'd');
       if (dTag?.[1]) return `30617:${event.pubkey}:${dTag[1]}`;

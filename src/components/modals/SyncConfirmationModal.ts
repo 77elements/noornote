@@ -14,8 +14,8 @@ import { escapeHtml } from '../../helpers/escapeHtml';
  */
 export interface MovedItemInfo<T> {
   item: T;
-  browserFolder: string;  // Current folder name in browser
-  sourceFolder: string;   // Folder name in source (relay/file)
+  browserFolder: string; // Current folder name in browser
+  sourceFolder: string; // Folder name in source (relay/file)
 }
 
 export interface SyncConfirmationOptions<T> {
@@ -78,7 +78,7 @@ export class SyncConfirmationModal<T> {
       addedCount: this.options.added.length,
       removedCount: this.options.removed.length,
       movedCount: this.options.moved?.length || 0,
-      hasOnMerge: !!this.options.onMerge
+      hasOnMerge: !!this.options.onMerge,
     });
     // Resolve all display names first
     await this.resolveDisplayNames();
@@ -86,7 +86,7 @@ export class SyncConfirmationModal<T> {
     const content = this.renderContent();
 
     // Create a promise that will be resolved when user clicks a button
-    return new Promise<void>((resolve) => {
+    return new Promise<void>(resolve => {
       this.resolvePromise = resolve;
 
       this.modalService.show({
@@ -95,8 +95,8 @@ export class SyncConfirmationModal<T> {
         width: '550px',
         height: '600px',
         showCloseButton: true,
-        closeOnOverlay: false,  // Don't allow closing by overlay click
-        closeOnEsc: false       // Don't allow closing by Esc key
+        closeOnOverlay: false, // Don't allow closing by overlay click
+        closeOnEsc: false, // Don't allow closing by Esc key
       });
 
       // Setup event handlers
@@ -104,7 +104,9 @@ export class SyncConfirmationModal<T> {
         this.setupEventHandlers();
         // Setup mention handlers if HTML rendering is used
         if (this.options.renderItemHtml) {
-          const modalContent = document.querySelector('.sync-confirmation-modal');
+          const modalContent = document.querySelector(
+            '.sync-confirmation-modal'
+          );
           if (modalContent) {
             setupUserMentionHandlers(modalContent as HTMLElement);
           }
@@ -117,7 +119,8 @@ export class SyncConfirmationModal<T> {
    * Resolve display names for all items
    */
   private async resolveDisplayNames(): Promise<void> {
-    const { added, removed, moved, getDisplayName, renderItemHtml } = this.options;
+    const { added, removed, moved, getDisplayName, renderItemHtml } =
+      this.options;
 
     // Resolve added items
     this.resolvedAddedItems = await Promise.all(
@@ -151,7 +154,7 @@ export class SyncConfirmationModal<T> {
           const result: ResolvedMovedItem = {
             name,
             browserFolder: movedItem.browserFolder,
-            sourceFolder: movedItem.sourceFolder
+            sourceFolder: movedItem.sourceFolder,
           };
           if (renderItemHtml) {
             result.html = await Promise.resolve(renderItemHtml(movedItem.item));
@@ -182,7 +185,9 @@ export class SyncConfirmationModal<T> {
 
     container.innerHTML = `
       <div class="sync-confirmation-modal__content">
-        ${removed.length > 0 ? `
+        ${
+          removed.length > 0
+            ? `
           <div class="sync-confirmation-modal__section">
             <h2 class="sync-confirmation-modal__section-title">
               Locally: + ${removed.length} item${removed.length > 1 ? 's' : ''}, not in the ${sourceLabel}s
@@ -191,9 +196,13 @@ export class SyncConfirmationModal<T> {
               ${this.renderItems(this.resolvedRemovedItems)}
             </div>
           </div>
-        ` : ''}
+        `
+            : ''
+        }
 
-        ${movedCount > 0 ? `
+        ${
+          movedCount > 0
+            ? `
           <div class="sync-confirmation-modal__section">
             <h2 class="sync-confirmation-modal__section-title">
               ${movedCount} item${movedCount > 1 ? 's' : ''} in different folders
@@ -202,9 +211,13 @@ export class SyncConfirmationModal<T> {
               ${this.renderMovedItems(this.resolvedMovedItems, sourceLabel)}
             </div>
           </div>
-        ` : ''}
+        `
+            : ''
+        }
 
-        ${added.length > 0 ? `
+        ${
+          added.length > 0
+            ? `
           <div class="sync-confirmation-modal__section">
             <h2 class="sync-confirmation-modal__section-title">
               ${sourceUp}s: ${added.length} item${added.length > 1 ? 's' : ''}, not stored locally
@@ -213,9 +226,13 @@ export class SyncConfirmationModal<T> {
               ${this.renderItems(this.resolvedAddedItems)}
             </div>
           </div>
-        ` : ''}
+        `
+            : ''
+        }
 
-        ${hasSnapshotDetails ? `
+        ${
+          hasSnapshotDetails
+            ? `
           <div class="sync-confirmation-modal__section">
             <h2 class="sync-confirmation-modal__section-title">
               Other differences
@@ -224,7 +241,9 @@ export class SyncConfirmationModal<T> {
               ${snapshotDetails.map(d => `<div class="sync-confirmation-modal__item">${escapeHtml(d)}</div>`).join('')}
             </div>
           </div>
-        ` : ''}
+        `
+            : ''
+        }
 
         <div class="sync-confirmation-modal__actions">
           <button type="button" class="btn btn--success" id="sync-keep-btn">
@@ -269,7 +288,10 @@ export class SyncConfirmationModal<T> {
   /**
    * Render moved items with folder info
    */
-  private renderMovedItems(items: ResolvedMovedItem[], sourceLabel: string): string {
+  private renderMovedItems(
+    items: ResolvedMovedItem[],
+    sourceLabel: string
+  ): string {
     const maxShow = 10;
     const itemsToShow = items.slice(0, maxShow);
     const remaining = items.length - maxShow;
@@ -320,7 +342,9 @@ export class SyncConfirmationModal<T> {
     const handle = (name: string, callback: () => void | Promise<void>) => {
       return async () => {
         this.modalService.hide();
-        diagLog('lists', `SyncConfirmationModal ${name} clicked`, { listType: this.options.listType });
+        diagLog('lists', `SyncConfirmationModal ${name} clicked`, {
+          listType: this.options.listType,
+        });
         try {
           await callback();
         } catch (error) {
@@ -334,8 +358,13 @@ export class SyncConfirmationModal<T> {
     };
 
     keepBtn.addEventListener('click', handle('Keep all', this.options.onKeep));
-    relayBtn.addEventListener('click', handle('Keep relay', this.options.onRelay));
-    localBtn.addEventListener('click', handle('Keep local', this.options.onLocal));
+    relayBtn.addEventListener(
+      'click',
+      handle('Keep relay', this.options.onRelay)
+    );
+    localBtn.addEventListener(
+      'click',
+      handle('Keep local', this.options.onLocal)
+    );
   }
-
 }

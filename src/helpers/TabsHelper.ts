@@ -21,7 +21,7 @@ export function setupTabClickHandlers(
 ): void {
   const tabs = container.querySelectorAll(selector);
   tabs.forEach(tab => {
-    tab.addEventListener('click', (e) => {
+    tab.addEventListener('click', e => {
       const tabEl = e.currentTarget as HTMLElement;
       const tabId = tabEl.dataset.tab;
       if (tabId) {
@@ -93,8 +93,12 @@ export function switchTabWithContent(
  * @param container - Parent element containing tabs
  */
 export function deactivateAllTabs(container: HTMLElement): void {
-  container.querySelectorAll('.tab').forEach(t => t.classList.remove('tab--active'));
-  container.querySelectorAll('.tab-content').forEach(c => c.classList.remove('tab-content--active'));
+  container
+    .querySelectorAll('.tab')
+    .forEach(t => t.classList.remove('tab--active'));
+  container
+    .querySelectorAll('.tab-content')
+    .forEach(c => c.classList.remove('tab-content--active'));
 }
 
 /**
@@ -111,7 +115,9 @@ export function activateTabElement(tabElement: HTMLElement): void {
  * @returns The data-tab value of the active tab, or null if none
  */
 export function getActiveTabId(container: HTMLElement): string | null {
-  const activeTab = container.querySelector('.tab--active') as HTMLElement | null;
+  const activeTab = container.querySelector(
+    '.tab--active'
+  ) as HTMLElement | null;
   return activeTab?.dataset.tab ?? null;
 }
 
@@ -156,7 +162,7 @@ export function createClosableTab(
   closeBtn.innerHTML = `
     <svg width="14" height="14"><use href="#icon-tab-close"/></svg>
   `;
-  closeBtn.addEventListener('click', (e) => {
+  closeBtn.addEventListener('click', e => {
     e.stopPropagation();
     onClose();
   });

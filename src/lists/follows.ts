@@ -17,8 +17,19 @@
  */
 
 import { StorageKeys, now, deduplicateByPubkey, mergeByKey } from './storage';
-import { readJsonFile, writeJsonFile, uploadJsonFile, downloadAsJson } from './file';
-import { fetchEvents, publishEvent, signEvent, requireAuth, getCurrentUserPubkey } from './relays';
+import {
+  readJsonFile,
+  writeJsonFile,
+  uploadJsonFile,
+  downloadAsJson,
+} from './file';
+import {
+  fetchEvents,
+  publishEvent,
+  signEvent,
+  requireAuth,
+  getCurrentUserPubkey,
+} from './relays';
 import { escapeHtml, escapeHtmlAttr } from '../helpers/escapeHtml';
 import { PerAccountLocalStorage } from '../services/PerAccountLocalStorage';
 import { SystemLogger } from '../services/SystemLogger';
@@ -31,7 +42,10 @@ import type { MutualState } from '../services/FollowVerificationService';
 import { SyncConfirmationModal } from '../components/modals/SyncConfirmationModal';
 import { switchTabWithContent } from '../helpers/TabsHelper';
 import { getSccDefaultTab } from '../helpers/sccDefaultTab';
-import { renderListSyncButtons, bindListSyncButtons } from '../helpers/ListSyncMode';
+import {
+  renderListSyncButtons,
+  bindListSyncButtons,
+} from '../helpers/ListSyncMode';
 import { PlatformService } from '../services/PlatformService';
 import { UserProfileService } from '../services/UserProfileService';
 import { UserService } from '../services/UserService';
@@ -57,11 +71,11 @@ const eventBus = TypedEventBus.getInstance();
  * Follow item with NIP-02 metadata
  */
 export interface FollowItem {
-  id: string;          // Same as pubkey (for BaseListItem compatibility)
+  id: string; // Same as pubkey (for BaseListItem compatibility)
   pubkey: string;
-  relay?: string;      // NIP-02: Optional relay hint
-  petname?: string;    // NIP-02: Optional local nickname
-  addedAt?: number;    // Timestamp when added
+  relay?: string; // NIP-02: Optional relay hint
+  petname?: string; // NIP-02: Optional local nickname
+  addedAt?: number; // Timestamp when added
   isPrivate?: boolean; // True if this is a private follow
 }
 
@@ -102,12 +116,15 @@ interface SyncDiff {
  * Compares: same pubkeys exist, same properties per pubkey (petname, isPrivate)
  * Does NOT compare order (user can't reorder, displayed by date)
  */
-function hasFollowDifference(browserItems: FollowItem[], sourceItems: FollowItem[]): boolean {
+function hasFollowDifference(
+  browserItems: FollowItem[],
+  sourceItems: FollowItem[]
+): boolean {
   diagLog('lists', 'hasFollowDifference', {
     browserCount: browserItems.length,
     sourceCount: sourceItems.length,
     browserPubkeys: browserItems.map(i => i.pubkey.slice(0, 8)),
-    sourcePubkeys: sourceItems.map(i => i.pubkey.slice(0, 8))
+    sourcePubkeys: sourceItems.map(i => i.pubkey.slice(0, 8)),
   });
   // Different count = different
   if (browserItems.length !== sourceItems.length) return true;
@@ -222,7 +239,10 @@ export function getAllFollowedPubkeys(): string[] {
 /**
  * Get all follows with their public/private status
  */
-export function getAllFollowsWithStatus(): Map<string, { public: boolean; private: boolean }> {
+export function getAllFollowsWithStatus(): Map<
+  string,
+  { public: boolean; private: boolean }
+> {
   const items = getFollowItems();
   const statusMap = new Map<string, { public: boolean; private: boolean }>();
 
@@ -244,7 +264,10 @@ export function getAllFollowsWithStatus(): Map<string, { public: boolean; privat
 /**
  * Check if a user is followed
  */
-export function isFollowing(pubkey: string): { public: boolean; private: boolean } {
+export function isFollowing(pubkey: string): {
+  public: boolean;
+  private: boolean;
+} {
   const items = getFollowItems().filter(item => item.pubkey === pubkey);
 
   if (items.length === 0) {
@@ -253,7 +276,7 @@ export function isFollowing(pubkey: string): { public: boolean; private: boolean
 
   return {
     public: items.some(item => !item.isPrivate),
-    private: items.some(item => item.isPrivate === true)
+    private: items.some(item => item.isPrivate === true),
   };
 }
 
@@ -280,7 +303,10 @@ export function getFollowPetname(pubkey: string): string | null {
  *
  * @returns true if updated, false if the user isn't publicly followed.
  */
-export async function setFollowPetname(pubkey: string, petname: string): Promise<boolean> {
+export async function setFollowPetname(
+  pubkey: string,
+  petname: string
+): Promise<boolean> {
   requireAuth();
 
   const items = getFollowItems();
@@ -298,9 +324,14 @@ export async function setFollowPetname(pubkey: string, petname: string): Promise
 
   try {
     await publishToRelays();
-    diagLog('lists', 'setFollowPetname: published', { pubkey: pubkey.slice(0, 8), hasPetname: !!trimmed });
+    diagLog('lists', 'setFollowPetname: published', {
+      pubkey: pubkey.slice(0, 8),
+      hasPetname: !!trimmed,
+    });
   } catch (err) {
-    diagLog('lists', 'setFollowPetname: immediate publish failed', { error: String(err) });
+    diagLog('lists', 'setFollowPetname: immediate publish failed', {
+      error: String(err),
+    });
   }
   return true;
 }
@@ -308,7 +339,12 @@ export async function setFollowPetname(pubkey: string, petname: string): Promise
 /**
  * Follow a user
  */
-export function followUser(pubkey: string, isPrivate: boolean = false, relay?: string, petname?: string): void {
+export function followUser(
+  pubkey: string,
+  isPrivate: boolean = false,
+  relay?: string,
+  petname?: string
+): void {
   requireAuth();
 
   const items = getFollowItems();
@@ -330,7 +366,7 @@ export function followUser(pubkey: string, isPrivate: boolean = false, relay?: s
       id: pubkey,
       pubkey,
       isPrivate,
-      addedAt: now()
+      addedAt: now(),
     };
     if (relay) newItem.relay = relay;
     if (petname) newItem.petname = petname;
@@ -338,7 +374,10 @@ export function followUser(pubkey: string, isPrivate: boolean = false, relay?: s
   }
 
   setFollowItems(items);
-  logger.info('follows.ts', `Followed user ${pubkey.slice(0, 8)}... (${isPrivate ? 'private' : 'public'})`);
+  logger.info(
+    'follows.ts',
+    `Followed user ${pubkey.slice(0, 8)}... (${isPrivate ? 'private' : 'public'})`
+  );
 }
 
 /**
@@ -398,7 +437,7 @@ const PRIVATE_FOLLOWS_FILE = 'follows-private.json';
 function createEmptyFollowListData(): FollowListData {
   return {
     items: [],
-    lastModified: now()
+    lastModified: now(),
   };
 }
 
@@ -406,20 +445,28 @@ function createEmptyFollowListData(): FollowListData {
  * Read public follows from file
  */
 export async function readPublicFollowsFile(): Promise<FollowListData> {
-  return await readJsonFile<FollowListData>(PUBLIC_FOLLOWS_FILE, createEmptyFollowListData());
+  return await readJsonFile<FollowListData>(
+    PUBLIC_FOLLOWS_FILE,
+    createEmptyFollowListData()
+  );
 }
 
 /**
  * Read private follows from file
  */
 export async function readPrivateFollowsFile(): Promise<FollowListData> {
-  return await readJsonFile<FollowListData>(PRIVATE_FOLLOWS_FILE, createEmptyFollowListData());
+  return await readJsonFile<FollowListData>(
+    PRIVATE_FOLLOWS_FILE,
+    createEmptyFollowListData()
+  );
 }
 
 /**
  * Write public follows to file
  */
-export async function writePublicFollowsFile(data: FollowListData): Promise<void> {
+export async function writePublicFollowsFile(
+  data: FollowListData
+): Promise<void> {
   data.lastModified = now();
   await writeJsonFile(PUBLIC_FOLLOWS_FILE, data);
 }
@@ -427,7 +474,9 @@ export async function writePublicFollowsFile(data: FollowListData): Promise<void
 /**
  * Write private follows to file
  */
-export async function writePrivateFollowsFile(data: FollowListData): Promise<void> {
+export async function writePrivateFollowsFile(
+  data: FollowListData
+): Promise<void> {
   data.lastModified = now();
   await writeJsonFile(PRIVATE_FOLLOWS_FILE, data);
 }
@@ -443,15 +492,18 @@ export async function saveToFile(): Promise<void> {
 
   await writePublicFollowsFile({
     items: publicFollows,
-    lastModified: now()
+    lastModified: now(),
   });
 
   await writePrivateFollowsFile({
     items: privateFollows,
-    lastModified: now()
+    lastModified: now(),
   });
 
-  logger.info('follows.ts', `Saved to files: ${publicFollows.length} public, ${privateFollows.length} private`);
+  logger.info(
+    'follows.ts',
+    `Saved to files: ${publicFollows.length} public, ${privateFollows.length} private`
+  );
 }
 
 /**
@@ -464,7 +516,7 @@ export async function restoreFromFile(): Promise<void> {
   // Mark items with their privacy status and deduplicate
   const allItems = deduplicateByPubkey([
     ...publicData.items.map(item => ({ ...item, isPrivate: false })),
-    ...privateData.items.map(item => ({ ...item, isPrivate: true }))
+    ...privateData.items.map(item => ({ ...item, isPrivate: true })),
   ]);
 
   setFollowItems(allItems);
@@ -480,7 +532,7 @@ export async function getFileFollows(): Promise<FollowItem[]> {
 
   return deduplicateByPubkey([
     ...publicData.items.map(item => ({ ...item, isPrivate: false })),
-    ...privateData.items.map(item => ({ ...item, isPrivate: true }))
+    ...privateData.items.map(item => ({ ...item, isPrivate: true })),
   ]);
 }
 
@@ -503,27 +555,40 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
     // Fetch both kind:3 (public) and kind:30000 (private) events
     // skipCache=true for sync operations
     const [kind3Events, kind30000Events] = await Promise.all([
-      fetchEvents([{
-        authors: [pubkey],
-        kinds: [3],
-        limit: 1
-      }], 10000, true),
-      isPrivateFollowsEnabled()
-        ? fetchEvents([{
+      fetchEvents(
+        [
+          {
             authors: [pubkey],
-            kinds: [30000],
-            '#d': ['private-follows'],
-            limit: 1
-          }], 10000, true)
-        : Promise.resolve([])
+            kinds: [3],
+            limit: 1,
+          },
+        ],
+        10000,
+        true
+      ),
+      isPrivateFollowsEnabled()
+        ? fetchEvents(
+            [
+              {
+                authors: [pubkey],
+                kinds: [30000],
+                '#d': ['private-follows'],
+                limit: 1,
+              },
+            ],
+            10000,
+            true
+          )
+        : Promise.resolve([]),
     ]);
 
     const items: FollowItem[] = [];
     let decryptionFailed = false;
 
     // Extract public follows from kind:3 tags (most recent event)
-    const kind3Event = kind3Events.reduce<typeof kind3Events[0] | undefined>(
-      (latest, ev) => (!latest || ev.created_at > latest.created_at ? ev : latest),
+    const kind3Event = kind3Events.reduce<(typeof kind3Events)[0] | undefined>(
+      (latest, ev) =>
+        !latest || ev.created_at > latest.created_at ? ev : latest,
       undefined
     );
     if (kind3Event) {
@@ -535,7 +600,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
             addedAt: kind3Event.created_at,
             isPrivate: false,
             ...(tag[2] && { relay: tag[2] }),
-            ...(tag[3] && { petname: tag[3] })
+            ...(tag[3] && { petname: tag[3] }),
           });
         }
       }
@@ -543,15 +608,27 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
 
     // Extract private follows from kind:30000 content (most recent event)
     if (isPrivateFollowsEnabled()) {
-      const kind30000Event = kind30000Events.reduce<typeof kind30000Events[0] | undefined>(
-        (latest, ev) => (!latest || ev.created_at > latest.created_at ? ev : latest),
+      const kind30000Event = kind30000Events.reduce<
+        (typeof kind30000Events)[0] | undefined
+      >(
+        (latest, ev) =>
+          !latest || ev.created_at > latest.created_at ? ev : latest,
         undefined
       );
       if (kind30000Event?.content) {
-        diagLog('lists', 'follows fetchFromRelays: kind:30000 event has encrypted content, decrypting', { contentLength: kind30000Event.content.length });
+        diagLog(
+          'lists',
+          'follows fetchFromRelays: kind:30000 event has encrypted content, decrypting',
+          { contentLength: kind30000Event.content.length }
+        );
         try {
-          const { decryptPrivateFollows } = await import('../helpers/decryptPrivateFollows');
-          const privatePubkeys = await decryptPrivateFollows(kind30000Event.content, pubkey);
+          const { decryptPrivateFollows } = await import(
+            '../helpers/decryptPrivateFollows'
+          );
+          const privatePubkeys = await decryptPrivateFollows(
+            kind30000Event.content,
+            pubkey
+          );
           const timestamp = kind30000Event.created_at;
 
           for (const pk of privatePubkeys) {
@@ -559,17 +636,31 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
               id: pk,
               pubkey: pk,
               addedAt: timestamp,
-              isPrivate: true
+              isPrivate: true,
             });
           }
-          diagLog('lists', 'follows fetchFromRelays: decrypted private follows', { count: privatePubkeys.length });
+          diagLog(
+            'lists',
+            'follows fetchFromRelays: decrypted private follows',
+            { count: privatePubkeys.length }
+          );
         } catch (error) {
-          diagLog('lists', 'follows fetchFromRelays: DECRYPT FAILED for private follows', { error: String(error) });
-          logger.error('follows.ts', `Failed to decrypt private follows: ${error}`);
+          diagLog(
+            'lists',
+            'follows fetchFromRelays: DECRYPT FAILED for private follows',
+            { error: String(error) }
+          );
+          logger.error(
+            'follows.ts',
+            `Failed to decrypt private follows: ${error}`
+          );
           decryptionFailed = true;
         }
       } else {
-        diagLog('lists', 'follows fetchFromRelays: kind:30000 event has no content (no private follows)');
+        diagLog(
+          'lists',
+          'follows fetchFromRelays: kind:30000 event has no content (no private follows)'
+        );
       }
     }
 
@@ -582,18 +673,27 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
       publicCount: deduped.filter(i => !i.isPrivate).length,
       privateCount: deduped.filter(i => i.isPrivate).length,
       decryptionFailed,
-      pubkeys: deduped.map(i => i.pubkey.slice(0, 8))
+      pubkeys: deduped.map(i => i.pubkey.slice(0, 8)),
     });
     logger.info('follows.ts', `Fetched from relays: ${deduped.length} items`);
 
     // Compute relay timestamp from the event(s) created_at
-    const eventTimestamp = Math.max(kind3Event?.created_at || 0, kind30000Events.length > 0 ? (kind30000Events.reduce<typeof kind30000Events[0] | undefined>((latest, ev) => (!latest || ev.created_at > latest.created_at ? ev : latest), undefined)?.created_at || 0) : 0);
+    const eventTimestamp = Math.max(
+      kind3Event?.created_at || 0,
+      kind30000Events.length > 0
+        ? kind30000Events.reduce<(typeof kind30000Events)[0] | undefined>(
+            (latest, ev) =>
+              !latest || ev.created_at > latest.created_at ? ev : latest,
+            undefined
+          )?.created_at || 0
+        : 0
+    );
 
     return {
       items: deduped,
       relayContentWasEmpty: items.length === 0,
       decryptionFailed,
-      relayTimestamp: eventTimestamp
+      relayTimestamp: eventTimestamp,
     };
   } catch (error) {
     logger.error('follows.ts', `Failed to fetch from relays: ${error}`);
@@ -618,7 +718,7 @@ export async function publishToRelays(): Promise<void> {
     publicCount: publicItems.length,
     privateCount: privateItems.length,
     publicPubkeys: publicItems.map(i => i.pubkey.slice(0, 8)),
-    privatePubkeys: privateItems.map(i => i.pubkey.slice(0, 8))
+    privatePubkeys: privateItems.map(i => i.pubkey.slice(0, 8)),
   });
 
   // Build kind:3 tags: ['p', pubkey, relay, petname] per NIP-02.
@@ -642,7 +742,7 @@ export async function publishToRelays(): Promise<void> {
     created_at: now(),
     tags: publicTags,
     content: '', // Empty content for standard NIP-02
-    pubkey: user.pubkey
+    pubkey: user.pubkey,
   };
 
   const signedKind3 = await signEvent(kind3Event);
@@ -651,29 +751,46 @@ export async function publishToRelays(): Promise<void> {
   }
 
   await publishEvent(signedKind3);
-  logger.info('follows.ts', `Published kind:3 to relays: ${publicItems.length} public follows`);
+  logger.info(
+    'follows.ts',
+    `Published kind:3 to relays: ${publicItems.length} public follows`
+  );
 
   // Publish kind:30000 event for private follows (if feature enabled)
   if (isPrivateFollowsEnabled() && privateItems.length > 0) {
-    diagLog('lists', 'follows publishToRelays: encrypting private follows for kind:30000', { count: privateItems.length });
+    diagLog(
+      'lists',
+      'follows publishToRelays: encrypting private follows for kind:30000',
+      { count: privateItems.length }
+    );
     try {
-      const { encryptPrivateFollows } = await import('../helpers/encryptPrivateFollows');
+      const { encryptPrivateFollows } = await import(
+        '../helpers/encryptPrivateFollows'
+      );
       const privatePubkeys = privateItems.map(item => item.pubkey);
-      const encryptedContent = await encryptPrivateFollows(privatePubkeys, user.pubkey);
-      diagLog('lists', 'follows publishToRelays: encrypted content', { contentLength: encryptedContent.length });
+      const encryptedContent = await encryptPrivateFollows(
+        privatePubkeys,
+        user.pubkey
+      );
+      diagLog('lists', 'follows publishToRelays: encrypted content', {
+        contentLength: encryptedContent.length,
+      });
 
       const kind30000Event = {
         kind: 30000,
         created_at: now(),
         tags: [['d', 'private-follows']],
         content: encryptedContent,
-        pubkey: user.pubkey
+        pubkey: user.pubkey,
       };
 
       const signedKind30000 = await signEvent(kind30000Event);
       if (signedKind30000) {
         await publishEvent(signedKind30000);
-        logger.info('follows.ts', `Published kind:30000 to relays: ${privateItems.length} private follows`);
+        logger.info(
+          'follows.ts',
+          `Published kind:30000 to relays: ${privateItems.length} private follows`
+        );
       }
     } catch (error) {
       logger.error('follows.ts', `Failed to publish private follows: ${error}`);
@@ -686,7 +803,11 @@ export async function publishToRelays(): Promise<void> {
 // SYNC HELPERS (used by FollowStorageAdapter and FollowListManager)
 // ============================================================
 
-function calculateFollowSyncDiff(browserItems: FollowItem[], relayItems: FollowItem[], preservePrivateItems: boolean = false): SyncDiff {
+function calculateFollowSyncDiff(
+  browserItems: FollowItem[],
+  relayItems: FollowItem[],
+  preservePrivateItems: boolean = false
+): SyncDiff {
   const browserIds = new Set(browserItems.map(item => item.pubkey));
   const relayIds = new Set(relayItems.map(item => item.pubkey));
 
@@ -710,13 +831,16 @@ function calculateFollowSyncDiff(browserItems: FollowItem[], relayItems: FollowI
     removed: removed.length,
     unchanged: unchanged.length,
     addedPubkeys: added.map(i => i.pubkey.slice(0, 8)),
-    removedPubkeys: removed.map(i => i.pubkey.slice(0, 8))
+    removedPubkeys: removed.map(i => i.pubkey.slice(0, 8)),
   });
 
   return { added, removed, unchanged };
 }
 
-function mergeFollowItems(browserItems: FollowItem[], newItems: FollowItem[]): FollowItem[] {
+function mergeFollowItems(
+  browserItems: FollowItem[],
+  newItems: FollowItem[]
+): FollowItem[] {
   return mergeByKey(browserItems, newItems, 'pubkey');
 }
 
@@ -763,7 +887,7 @@ export class FollowStorageAdapter {
     const browserItems = this.getBrowserItems();
     diagLog('lists', 'FollowStorageAdapter.syncFromRelays: browserItems', {
       count: browserItems.length,
-      pubkeys: browserItems.map(i => i.pubkey.slice(0, 8))
+      pubkeys: browserItems.map(i => i.pubkey.slice(0, 8)),
     });
     const fetchResult = await this.fetchFromRelays();
     const relayItems = fetchResult.items;
@@ -772,11 +896,15 @@ export class FollowStorageAdapter {
     diagLog('lists', 'FollowStorageAdapter.syncFromRelays: fetchResult', {
       relayItemCount: relayItems.length,
       relayContentWasEmpty,
-      decryptionFailed
+      decryptionFailed,
     });
 
     const preservePrivateItems = relayContentWasEmpty || decryptionFailed;
-    const diff = calculateFollowSyncDiff(browserItems, relayItems, preservePrivateItems);
+    const diff = calculateFollowSyncDiff(
+      browserItems,
+      relayItems,
+      preservePrivateItems
+    );
 
     // Use full state comparison (checks ALL differences including order and properties)
     const requiresConfirmation = hasFollowDifference(browserItems, relayItems);
@@ -785,7 +913,7 @@ export class FollowStorageAdapter {
       added: diff.added.length,
       removed: diff.removed.length,
       unchanged: diff.unchanged.length,
-      preservePrivateItems
+      preservePrivateItems,
     });
 
     return {
@@ -793,16 +921,22 @@ export class FollowStorageAdapter {
       diff,
       relayItems,
       relayContentWasEmpty: preservePrivateItems,
-      relayTimestamp: fetchResult.relayTimestamp
+      relayTimestamp: fetchResult.relayTimestamp,
     };
   }
 
-  applySyncFromRelays(strategy: 'merge' | 'overwrite', relayItems: FollowItem[], relayContentWasEmpty: boolean = false): void {
+  applySyncFromRelays(
+    strategy: 'merge' | 'overwrite',
+    relayItems: FollowItem[],
+    relayContentWasEmpty: boolean = false
+  ): void {
     const browserItems = this.getBrowserItems();
 
     if (strategy === 'overwrite') {
       if (relayContentWasEmpty) {
-        const localPrivateItems = browserItems.filter(item => item.isPrivate === true);
+        const localPrivateItems = browserItems.filter(
+          item => item.isPrivate === true
+        );
         this.setBrowserItems([...relayItems, ...localPrivateItems]);
       } else {
         this.setBrowserItems(relayItems);
@@ -838,22 +972,31 @@ export const FollowOrchestrator = {
     getLastSyncTimestamp: () => lastSyncTimestamp,
 
     // Follow operations
-    addFollow: async (pubkey: string, isPrivate: boolean) => followUser(pubkey, isPrivate),
+    addFollow: async (pubkey: string, isPrivate: boolean) =>
+      followUser(pubkey, isPrivate),
     removeFollow: async (pubkey: string) => unfollowUser(pubkey),
     getAllFollowsWithStatus: async () => getAllFollowsWithStatus(),
 
     // Combined follow list
-    getCombinedFollowList: async (_pubkey: string, isInitialSync: boolean = false) => {
+    getCombinedFollowList: async (
+      _pubkey: string,
+      isInitialSync: boolean = false
+    ) => {
       if (isInitialSync) {
         isSyncing = true;
         logger.info('FollowOrchestrator', 'Starting initial sync...');
-        AppState.getInstance().setState('user', { syncStatus: { status: 'syncing' } });
+        AppState.getInstance().setState('user', {
+          syncStatus: { status: 'syncing' },
+        });
       }
 
       try {
         // Check if migration needed
         if (!isMigratedToFileStorage()) {
-          logger.info('FollowOrchestrator', 'First run - migrating from relay to file storage...');
+          logger.info(
+            'FollowOrchestrator',
+            'First run - migrating from relay to file storage...'
+          );
           const relayResult = await fetchFromRelays();
           if (relayResult.items.length > 0) {
             setFollowItems(relayResult.items);
@@ -869,9 +1012,16 @@ export const FollowOrchestrator = {
           isSyncing = false;
           lastSyncedFollowCount = allFollows.length;
           lastSyncTimestamp = Date.now();
-          logger.info('FollowOrchestrator', `Initial sync completed: ${allFollows.length} follows`);
+          logger.info(
+            'FollowOrchestrator',
+            `Initial sync completed: ${allFollows.length} follows`
+          );
           AppState.getInstance().setState('user', {
-            syncStatus: { status: 'synced', count: allFollows.length, timestamp: lastSyncTimestamp }
+            syncStatus: {
+              status: 'synced',
+              count: allFollows.length,
+              timestamp: lastSyncTimestamp,
+            },
           });
         }
 
@@ -880,14 +1030,20 @@ export const FollowOrchestrator = {
         if (isInitialSync) {
           isSyncing = false;
           logger.error('FollowOrchestrator', `Initial sync failed: ${error}`);
-          AppState.getInstance().setState('user', { syncStatus: { status: 'error', error: String(error) } });
+          AppState.getInstance().setState('user', {
+            syncStatus: { status: 'error', error: String(error) },
+          });
         }
         return [];
       }
     },
 
     // Publish
-    publishFollowList: async (publicFollows: FollowItem[], privateFollows: FollowItem[], skipValidation: boolean = false) => {
+    publishFollowList: async (
+      publicFollows: FollowItem[],
+      privateFollows: FollowItem[],
+      skipValidation: boolean = false
+    ) => {
       const currentUser = AuthService.getInstance().getCurrentUser();
       if (!currentUser) throw new Error('User not authenticated');
 
@@ -896,22 +1052,33 @@ export const FollowOrchestrator = {
       // Validate dramatic changes
       if (!skipValidation && lastSyncedFollowCount > 0) {
         const newTotal = publicFollows.length + privateFollows.length;
-        const percentageChange = ((newTotal - lastSyncedFollowCount) / lastSyncedFollowCount) * 100;
-        const isDramaticDrop = percentageChange < -50 || (lastSyncedFollowCount > 10 && newTotal <= 5);
+        const percentageChange =
+          ((newTotal - lastSyncedFollowCount) / lastSyncedFollowCount) * 100;
+        const isDramaticDrop =
+          percentageChange < -50 ||
+          (lastSyncedFollowCount > 10 && newTotal <= 5);
 
         if (isDramaticDrop) {
-          throw new Error(`Suspicious follow count change: ${lastSyncedFollowCount} → ${newTotal}`);
+          throw new Error(
+            `Suspicious follow count change: ${lastSyncedFollowCount} → ${newTotal}`
+          );
         }
       }
 
       // Write to files first
-      await writePublicFollowsFile({ items: publicFollows, lastModified: now() });
-      await writePrivateFollowsFile({ items: privateFollows, lastModified: now() });
+      await writePublicFollowsFile({
+        items: publicFollows,
+        lastModified: now(),
+      });
+      await writePrivateFollowsFile({
+        items: privateFollows,
+        lastModified: now(),
+      });
 
       // Update browser storage
       const allItems = [
         ...publicFollows.map(f => ({ ...f, isPrivate: false })),
-        ...privateFollows.map(f => ({ ...f, isPrivate: true }))
+        ...privateFollows.map(f => ({ ...f, isPrivate: true })),
       ];
       setFollowItems(allItems);
 
@@ -954,13 +1121,13 @@ export const FollowOrchestrator = {
       await saveToFile();
       await publishToRelays();
       return true;
-    }
-  })
+    },
+  }),
 };
 
 // Also export as FollowListOrchestrator for existing imports
 export const FollowListOrchestrator = {
-  getInstance: FollowOrchestrator.getInstance
+  getInstance: FollowOrchestrator.getInstance,
 };
 
 // ============================================================
@@ -1007,7 +1174,9 @@ export class ProfileFollowManager {
       }
     }
 
-    this.isFollowingState = browserItems.some(item => item.pubkey === this.targetPubkey);
+    this.isFollowingState = browserItems.some(
+      item => item.pubkey === this.targetPubkey
+    );
     return this.isFollowingState;
   }
 
@@ -1070,7 +1239,10 @@ export class ProfileFollowManager {
   /**
    * Setup follow button event handlers
    */
-  public setupFollowButton(container: HTMLElement, onStateChange: () => void): void {
+  public setupFollowButton(
+    container: HTMLElement,
+    onStateChange: () => void
+  ): void {
     if (!container || !container.isConnected) return;
 
     // Handle unfollow button
@@ -1097,7 +1269,7 @@ export class ProfileFollowManager {
 
     if (!dropdownBtn || !dropdownMenu) return;
 
-    dropdownBtn.addEventListener('click', (e) => {
+    dropdownBtn.addEventListener('click', e => {
       e.stopPropagation();
       dropdownMenu.classList.toggle('show');
     });
@@ -1108,7 +1280,7 @@ export class ProfileFollowManager {
 
     const dropdownItems = container.querySelectorAll('.follow-dropdown-item');
     dropdownItems.forEach(item => {
-      item.addEventListener('click', async (e) => {
+      item.addEventListener('click', async e => {
         e.stopPropagation();
         const action = (item as HTMLElement).dataset.action;
         dropdownMenu.classList.remove('show');
@@ -1125,7 +1297,11 @@ export class ProfileFollowManager {
   /**
    * Handle follow action
    */
-  private async handleFollow(container: HTMLElement, type: 'public' | 'private', onStateChange: () => void): Promise<void> {
+  private async handleFollow(
+    container: HTMLElement,
+    type: 'public' | 'private',
+    onStateChange: () => void
+  ): Promise<void> {
     if (!container || !container.isConnected) return;
 
     const currentUser = this.authService.getCurrentUser();
@@ -1136,8 +1312,12 @@ export class ProfileFollowManager {
       return;
     }
 
-    const dropdownBtn = container.querySelector('#follow-btn-dropdown') as HTMLButtonElement;
-    const simpleBtn = container.querySelector('[data-action="follow"]') as HTMLButtonElement;
+    const dropdownBtn = container.querySelector(
+      '#follow-btn-dropdown'
+    ) as HTMLButtonElement;
+    const simpleBtn = container.querySelector(
+      '[data-action="follow"]'
+    ) as HTMLButtonElement;
     const followBtn = dropdownBtn || simpleBtn;
 
     if (!followBtn) return;
@@ -1154,7 +1334,10 @@ export class ProfileFollowManager {
       // No manual emit: followUser → setFollowItems already emits follow:updated.
       onStateChange();
 
-      ToastService.show(`Followed ${type === 'public' ? 'publicly' : 'privately'} (local)`, 'success');
+      ToastService.show(
+        `Followed ${type === 'public' ? 'publicly' : 'privately'} (local)`,
+        'success'
+      );
     } catch (error) {
       console.error('Failed to follow:', error);
       ToastService.show('Failed to follow user', 'error');
@@ -1168,7 +1351,10 @@ export class ProfileFollowManager {
   /**
    * Handle unfollow action
    */
-  private async handleUnfollow(container: HTMLElement, onStateChange: () => void): Promise<void> {
+  private async handleUnfollow(
+    container: HTMLElement,
+    onStateChange: () => void
+  ): Promise<void> {
     if (!container || !container.isConnected) return;
 
     const currentUser = this.authService.getCurrentUser();
@@ -1179,7 +1365,9 @@ export class ProfileFollowManager {
       return;
     }
 
-    const followBtn = container.querySelector('[data-action="unfollow"]') as HTMLButtonElement;
+    const followBtn = container.querySelector(
+      '[data-action="unfollow"]'
+    ) as HTMLButtonElement;
     if (!followBtn) return;
 
     try {
@@ -1195,13 +1383,23 @@ export class ProfileFollowManager {
       ToastService.show('Unfollowed successfully (local)', 'success');
 
       // Reliable propagation: republish follow list IMMEDIATELY, bypassing debounce.
-      diagLog('lists', 'immediate publish after unfollow — start', { pubkey: this.targetPubkey.slice(0, 8) });
+      diagLog('lists', 'immediate publish after unfollow — start', {
+        pubkey: this.targetPubkey.slice(0, 8),
+      });
       try {
         await publishToRelays();
-        diagLog('lists', 'immediate publish after unfollow — done', { pubkey: this.targetPubkey.slice(0, 8) });
+        diagLog('lists', 'immediate publish after unfollow — done', {
+          pubkey: this.targetPubkey.slice(0, 8),
+        });
       } catch (pubErr) {
-        diagLog('lists', 'immediate publish after unfollow — FAILED', { pubkey: this.targetPubkey.slice(0, 8), error: String(pubErr) });
-        logger.warn('follows.ts', `Immediate publish after unfollow failed: ${pubErr}`);
+        diagLog('lists', 'immediate publish after unfollow — FAILED', {
+          pubkey: this.targetPubkey.slice(0, 8),
+          error: String(pubErr),
+        });
+        logger.warn(
+          'follows.ts',
+          `Immediate publish after unfollow failed: ${pubErr}`
+        );
       }
     } catch (error) {
       console.error('Failed to unfollow:', error);
@@ -1300,19 +1498,24 @@ export class FollowListManager {
       this.originalOrder = [];
       this.usernameFilter = '';
     });
-    this.eventBus.on('list-sync-mode:changed', () => this.refreshListIfActive());
+    this.eventBus.on('list-sync-mode:changed', () =>
+      this.refreshListIfActive()
+    );
 
     // Extended Follows addon toggle: load/unload extended features and refresh
-    this.eventBus.on('extended-follows:toggle', async (data: { enabled: boolean }) => {
-      if (data.enabled && !this.extended) {
-        this.extendedReady = this.initExtended();
-        await this.extendedReady;
-      } else if (!data.enabled && this.extended) {
-        this.extended = null;
-        this.extendedReady = null;
+    this.eventBus.on(
+      'extended-follows:toggle',
+      async (data: { enabled: boolean }) => {
+        if (data.enabled && !this.extended) {
+          this.extendedReady = this.initExtended();
+          await this.extendedReady;
+        } else if (!data.enabled && this.extended) {
+          this.extended = null;
+          this.extendedReady = null;
+        }
+        this.refreshListIfActive();
       }
-      this.refreshListIfActive();
-    });
+    );
   }
 
   /**
@@ -1323,14 +1526,16 @@ export class FollowListManager {
     this.extended.setupEventListeners({
       onZapStatsLoaded: () => {
         this.extended!.updateAllZapBadges(this.containerElement);
-        const container = this.containerElement.querySelector('[data-tab-content="list-follows"]') as HTMLElement;
+        const container = this.containerElement.querySelector(
+          '[data-tab-content="list-follows"]'
+        ) as HTMLElement;
         if (container) {
           this.updateSortControlsUI(container);
         }
       },
       onMutualChangesUpdate: () => {
         this.extended!.updateGreenDot();
-      }
+      },
     });
   }
 
@@ -1353,7 +1558,9 @@ export class FollowListManager {
    */
   private refreshListIfActive(): void {
     if (this.isLocalMutation) return;
-    const listTab = this.containerElement.querySelector('[data-tab-content="list-follows"]');
+    const listTab = this.containerElement.querySelector(
+      '[data-tab-content="list-follows"]'
+    );
     if (listTab?.classList.contains('tab-content--active')) {
       this.renderListTab(listTab as HTMLElement).catch(err => {
         console.error('Failed to refresh Follows:', err);
@@ -1402,7 +1609,11 @@ export class FollowListManager {
   /**
    * Calculate diff between browser and relay/file items
    */
-  private calculateDiff(browserItems: FollowItem[], relayItems: FollowItem[], preservePrivateItems: boolean = false): SyncDiff {
+  private calculateDiff(
+    browserItems: FollowItem[],
+    relayItems: FollowItem[],
+    preservePrivateItems: boolean = false
+  ): SyncDiff {
     const browserIds = new Set(browserItems.map(item => item.pubkey));
     const relayIds = new Set(relayItems.map(item => item.pubkey));
 
@@ -1424,7 +1635,10 @@ export class FollowListManager {
   /**
    * Merge browser items with relay/file items (union)
    */
-  private mergeFollowItems(browserItems: FollowItem[], newItems: FollowItem[]): FollowItem[] {
+  private mergeFollowItems(
+    browserItems: FollowItem[],
+    newItems: FollowItem[]
+  ): FollowItem[] {
     return mergeByKey(browserItems, newItems, 'pubkey');
   }
 
@@ -1436,7 +1650,7 @@ export class FollowListManager {
     const browserItems = this.adapter.getBrowserItems();
     diagLog('lists', 'FollowListManager.syncFromRelays: browserItems', {
       count: browserItems.length,
-      pubkeys: browserItems.map(i => i.pubkey.slice(0, 8))
+      pubkeys: browserItems.map(i => i.pubkey.slice(0, 8)),
     });
     const fetchResult = await this.adapter.fetchFromRelays();
     const relayItems = fetchResult.items;
@@ -1445,11 +1659,15 @@ export class FollowListManager {
     diagLog('lists', 'FollowListManager.syncFromRelays: fetchResult', {
       relayItemCount: relayItems.length,
       relayContentWasEmpty,
-      decryptionFailed
+      decryptionFailed,
     });
 
     const preservePrivateItems = relayContentWasEmpty || decryptionFailed;
-    const diff = this.calculateDiff(browserItems, relayItems, preservePrivateItems);
+    const diff = this.calculateDiff(
+      browserItems,
+      relayItems,
+      preservePrivateItems
+    );
 
     // Use full state comparison (checks ALL differences including order and properties)
     const requiresConfirmation = hasFollowDifference(browserItems, relayItems);
@@ -1458,7 +1676,7 @@ export class FollowListManager {
       added: diff.added.length,
       removed: diff.removed.length,
       unchanged: diff.unchanged.length,
-      preservePrivateItems
+      preservePrivateItems,
     });
 
     return {
@@ -1466,19 +1684,25 @@ export class FollowListManager {
       diff,
       relayItems,
       relayContentWasEmpty: preservePrivateItems,
-      relayTimestamp: fetchResult.relayTimestamp
+      relayTimestamp: fetchResult.relayTimestamp,
     };
   }
 
   /**
    * Sync from relays - Phase 2: Apply
    */
-  private applySyncFromRelays(strategy: 'merge' | 'overwrite', relayItems: FollowItem[], relayContentWasEmpty: boolean = false): void {
+  private applySyncFromRelays(
+    strategy: 'merge' | 'overwrite',
+    relayItems: FollowItem[],
+    relayContentWasEmpty: boolean = false
+  ): void {
     const browserItems = this.adapter.getBrowserItems();
 
     if (strategy === 'overwrite') {
       if (relayContentWasEmpty) {
-        const localPrivateItems = browserItems.filter(item => item.isPrivate === true);
+        const localPrivateItems = browserItems.filter(
+          item => item.isPrivate === true
+        );
         this.adapter.setBrowserItems([...relayItems, ...localPrivateItems]);
       } else {
         this.adapter.setBrowserItems(relayItems);
@@ -1506,7 +1730,10 @@ export class FollowListManager {
   /**
    * Sync from file - Phase 2: Apply
    */
-  private applySyncFromFile(strategy: 'merge' | 'overwrite', fileItems: FollowItem[]): void {
+  private applySyncFromFile(
+    strategy: 'merge' | 'overwrite',
+    fileItems: FollowItem[]
+  ): void {
     const browserItems = this.adapter.getBrowserItems();
 
     if (strategy === 'overwrite') {
@@ -1533,30 +1760,53 @@ export class FollowListManager {
           added: result.diff.added,
           removed: result.diff.removed,
           getDisplayName: async (item: FollowItem) => {
-            const profile = await this.userProfileService.getUserProfile(item.pubkey);
+            const profile = await this.userProfileService.getUserProfile(
+              item.pubkey
+            );
             return extractDisplayName(profile);
           },
           onKeep: async () => {
-            this.applySyncFromRelays('merge', result.relayItems, result.relayContentWasEmpty);
+            this.applySyncFromRelays(
+              'merge',
+              result.relayItems,
+              result.relayContentWasEmpty
+            );
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-            ToastService.show(`Merged ${result.diff.added.length} new follows and synced to relays`, 'success');
+            ToastService.show(
+              `Merged ${result.diff.added.length} new follows and synced to relays`,
+              'success'
+            );
             await this.renderListTab(container);
           },
           onRelay: async () => {
-            this.applySyncFromRelays('overwrite', result.relayItems, result.relayContentWasEmpty);
-            ToastService.show(`Synced from relays (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            this.applySyncFromRelays(
+              'overwrite',
+              result.relayItems,
+              result.relayContentWasEmpty
+            );
+            ToastService.show(
+              `Synced from relays (added ${result.diff.added.length}, removed ${result.diff.removed.length})`,
+              'success'
+            );
             await this.renderListTab(container);
           },
           onLocal: async () => {
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
             ToastService.show('Local follows pushed to relays', 'success');
             await this.renderListTab(container);
-          }
+          },
         });
         await modal.show();
       } else {
-        this.applySyncFromRelays('merge', result.relayItems, result.relayContentWasEmpty);
-        ToastService.show(`Synced ${result.diff.added.length} new follow${result.diff.added.length !== 1 ? 's' : ''} from relays`, 'success');
+        this.applySyncFromRelays(
+          'merge',
+          result.relayItems,
+          result.relayContentWasEmpty
+        );
+        ToastService.show(
+          `Synced ${result.diff.added.length} new follow${result.diff.added.length !== 1 ? 's' : ''} from relays`,
+          'success'
+        );
         await this.renderListTab(container);
       }
     } catch (error) {
@@ -1618,7 +1868,14 @@ export class FollowListManager {
         const browserItems = this.adapter.getBrowserItems();
         const diff = this.calculateDiff(browserItems, uploadedItems, false);
         // Use full state comparison
-        result = { requiresConfirmation: hasFollowDifference(browserItems, uploadedItems), diff, fileItems: uploadedItems };
+        result = {
+          requiresConfirmation: hasFollowDifference(
+            browserItems,
+            uploadedItems
+          ),
+          diff,
+          fileItems: uploadedItems,
+        };
       } else {
         // Desktop: Read from local file
         ToastService.show('Reading from file...', 'info');
@@ -1631,30 +1888,41 @@ export class FollowListManager {
           added: result.diff.added,
           removed: result.diff.removed,
           getDisplayName: async (item: FollowItem) => {
-            const profile = await this.userProfileService.getUserProfile(item.pubkey);
+            const profile = await this.userProfileService.getUserProfile(
+              item.pubkey
+            );
             return extractDisplayName(profile);
           },
           onKeep: async () => {
             this.applySyncFromFile('merge', result.fileItems);
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-            ToastService.show(`Merged ${result.diff.added.length} from file and synced to relays`, 'success');
+            ToastService.show(
+              `Merged ${result.diff.added.length} from file and synced to relays`,
+              'success'
+            );
             await this.renderListTab(container);
           },
           onRelay: async () => {
             this.applySyncFromFile('overwrite', result.fileItems);
-            ToastService.show(`Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            ToastService.show(
+              `Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`,
+              'success'
+            );
             await this.renderListTab(container);
           },
           onLocal: async () => {
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
             ToastService.show('Local follows pushed to relays', 'success');
             await this.renderListTab(container);
-          }
+          },
         });
         modal.show();
       } else if (result.diff.added.length > 0) {
         this.applySyncFromFile('overwrite', result.fileItems);
-        ToastService.show(`Restored ${result.diff.added.length} item${result.diff.added.length > 1 ? 's' : ''} from file`, 'success');
+        ToastService.show(
+          `Restored ${result.diff.added.length} item${result.diff.added.length > 1 ? 's' : ''} from file`,
+          'success'
+        );
         await this.renderListTab(container);
       } else {
         ToastService.show('File is identical to current list', 'info');
@@ -1723,18 +1991,19 @@ export class FollowListManager {
 
     // Fetch profiles for all followed users
     const followsWithProfiles: FollowItemWithProfile[] = await Promise.all(
-      allFollows.map(async (item) => {
+      allFollows.map(async item => {
         // Priority: browser item's isPrivate flag, then file status
         const fileStatus = followStatus.get(item.pubkey);
-        const isPrivate = item.isPrivate !== undefined
-          ? item.isPrivate
-          : (fileStatus?.private === true);
+        const isPrivate =
+          item.isPrivate !== undefined
+            ? item.isPrivate
+            : fileStatus?.private === true;
 
         return {
           ...item,
           profile: await this.userProfileService.getUserProfile(item.pubkey),
           isPrivate,
-          mutualState: 'unknown' as MutualState // Resolved per batch (Extended Follows)
+          mutualState: 'unknown' as MutualState, // Resolved per batch (Extended Follows)
         };
       })
     );
@@ -1800,7 +2069,7 @@ export class FollowListManager {
       const itemsWithProfiles = await this.getAllItemsWithProfiles();
 
       if (itemsWithProfiles.length === 0) {
-        container.innerHTML = this.renderControlButtons() + `
+        container.innerHTML = `${this.renderControlButtons()}
           <div class="follows-list-empty-state">
             <p>No follows yet</p>
           </div>
@@ -1826,24 +2095,32 @@ export class FollowListManager {
         </div>
         <div class="follows-sort-controls">
           <a href="#" class="follows-sort-controls__load-all">Load all</a>
-          ${this.extended ? `
+          ${
+            this.extended
+              ? `
           <span class="follows-sort-controls__sort">
             Sort by:
             <a href="#" class="follows-sort-controls__sort-date follows-sort-controls__link--disabled ${this.currentSort === 'date' ? 'active' : ''}">Date</a>
             /
             <a href="#" class="follows-sort-controls__sort-zaps follows-sort-controls__link--disabled ${this.currentSort !== 'date' ? 'active' : ''}">Zaps</a>
           </span>
-          ` : ''}
+          `
+              : ''
+          }
           <input type="text"
                  class="follows-sort-controls__search ${this.isFullyLoaded ? '' : 'follows-sort-controls__search--disabled'}"
                  placeholder="Filter by name..."
                  ${this.isFullyLoaded ? '' : 'disabled'} />
-          ${this.extended ? `
+          ${
+            this.extended
+              ? `
           <label class="nn-checkbox nn-checkbox--small" data-non-mutuals>
             <input type="checkbox" data-non-mutuals-toggle ${this.showOnlyNonMutuals ? 'checked' : ''} ${this.isFullyLoaded ? '' : 'disabled'}>
             Non-mutuals only
           </label>
-          ` : ''}
+          `
+              : ''
+          }
         </div>
         <div class="follows-list"></div>
         ${this.extended ? '<div class="mutual-changes-modal" style="display: none;"></div>' : ''}
@@ -1853,7 +2130,9 @@ export class FollowListManager {
       this.bindSyncButtons(container);
 
       // Bind filter toggle
-      const filterToggle = container.querySelector('[data-non-mutuals-toggle]') as HTMLInputElement;
+      const filterToggle = container.querySelector(
+        '[data-non-mutuals-toggle]'
+      ) as HTMLInputElement;
       filterToggle?.addEventListener('change', () => {
         this.showOnlyNonMutuals = filterToggle.checked;
         this.reRenderList(container);
@@ -1877,7 +2156,7 @@ export class FollowListManager {
       // Setup infinite scroll if there are more items
       if (this.hasMore) {
         this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
-          loadingMessage: 'Loading more follows...'
+          loadingMessage: 'Loading more follows...',
         });
         this.infiniteScroll.observe(list as HTMLElement);
       }
@@ -1951,7 +2230,9 @@ export class FollowListManager {
       }
 
       // Update stats
-      const container = listElement.closest('[data-tab-content]') as HTMLElement;
+      const container = listElement.closest(
+        '[data-tab-content]'
+      ) as HTMLElement;
       if (container) {
         this.updateStats(container);
       }
@@ -1968,7 +2249,10 @@ export class FollowListManager {
   /**
    * Render batch of follow items with mutual badge and zap stats
    */
-  private renderBatch(listElement: HTMLElement, batch: FollowItemWithProfile[]): void {
+  private renderBatch(
+    listElement: HTMLElement,
+    batch: FollowItemWithProfile[]
+  ): void {
     const sentinel = listElement.querySelector('.infinite-scroll-sentinel');
 
     for (const item of batch) {
@@ -1996,10 +2280,17 @@ export class FollowListManager {
 
     // Private encrypted note (NIP-78) — icon shown when the "Private petnames"
     // setting is on. Empty = peach (--color-5), filled = mint (--color-6).
-    const notesEnabled = storage.get<boolean>(StorageKeys.PRIVATE_PETNAMES_ENABLED, false);
-    const hasNote = !!(storage.get<Record<string, string>>(StorageKeys.PETNAMES, {}) ?? {})[item.pubkey];
+    const notesEnabled = storage.get<boolean>(
+      StorageKeys.PRIVATE_PETNAMES_ENABLED,
+      false
+    );
+    const hasNote = !!(storage.get<Record<string, string>>(
+      StorageKeys.PETNAMES,
+      {}
+    ) ?? {})[item.pubkey];
 
-    const mutualBadgeHtml = this.extended?.renderMutualBadge(item.mutualState) ?? '';
+    const mutualBadgeHtml =
+      this.extended?.renderMutualBadge(item.mutualState) ?? '';
     const zapBadgeHtml = this.extended?.renderZapBadge(item.pubkey) ?? '';
 
     const followItemDiv = document.createElement('div');
@@ -2029,26 +2320,33 @@ export class FollowListManager {
       </button>
     `;
 
-    const contentWrapper = followItemDiv.querySelector('.follow-item__content-wrapper');
+    const contentWrapper = followItemDiv.querySelector(
+      '.follow-item__content-wrapper'
+    );
     contentWrapper?.addEventListener('click', () => {
       this.router.navigate(`/profile/${npub}`);
     });
 
-    const unfollowBtn = followItemDiv.querySelector('.follow-item__unfollow-btn');
-    unfollowBtn?.addEventListener('click', async (e) => {
+    const unfollowBtn = followItemDiv.querySelector(
+      '.follow-item__unfollow-btn'
+    );
+    unfollowBtn?.addEventListener('click', async e => {
       e.stopPropagation();
       await this.handleRemoveItem(item, followItemDiv);
     });
 
     // Inline NIP-02 petname (public follows only) — click to set/edit/clear.
-    const petnameEdit = followItemDiv.querySelector('[data-role="petname-edit"]');
-    petnameEdit?.addEventListener('click', async (e) => {
+    const petnameEdit = followItemDiv.querySelector(
+      '[data-role="petname-edit"]'
+    );
+    petnameEdit?.addEventListener('click', async e => {
       e.stopPropagation(); // don't navigate to the profile
       const { ModalService } = await import('../services/ModalService');
       const current = getFollowPetname(item.pubkey) ?? '';
       const result = await ModalService.getInstance().prompt({
         title: 'Set Petname',
-        message: '⚠️ Public label, stored in your contact list (NIP-02). Anyone who reads your follow list can see it.',
+        message:
+          '⚠️ Public label, stored in your contact list (NIP-02). Anyone who reads your follow list can see it.',
         defaultValue: current,
         placeholder: 'e.g. Bob from work',
         allowEmpty: true,
@@ -2056,13 +2354,16 @@ export class FollowListManager {
       if (result === null) return;
       const trimmed = result.trim();
       await setFollowPetname(item.pubkey, trimmed);
-      if (trimmed) item.petname = trimmed; else delete item.petname;
-      (petnameEdit as HTMLElement).textContent = trimmed ? `(${trimmed})` : '(+)';
+      if (trimmed) item.petname = trimmed;
+      else delete item.petname;
+      (petnameEdit as HTMLElement).textContent = trimmed
+        ? `(${trimmed})`
+        : '(+)';
     });
 
     // Inline private note (NIP-78, encrypted) — click to write/edit/clear.
     const noteEdit = followItemDiv.querySelector('[data-role="petname-note"]');
-    noteEdit?.addEventListener('click', async (e) => {
+    noteEdit?.addEventListener('click', async e => {
       e.stopPropagation(); // don't navigate to the profile
       const [{ ModalService }, { PetnameService }] = await Promise.all([
         import('../services/ModalService'),
@@ -2072,7 +2373,8 @@ export class FollowListManager {
       const current = service.getPetname(item.pubkey) ?? '';
       const result = await ModalService.getInstance().prompt({
         title: 'Private Note',
-        message: '🔒 Encrypted note about this user. Only you can decrypt and read it.',
+        message:
+          '🔒 Encrypted note about this user. Only you can decrypt and read it.',
         defaultValue: current,
         placeholder: 'Write anything you want to remember about this user…',
         allowEmpty: true,
@@ -2129,7 +2431,10 @@ export class FollowListManager {
    */
   private updateStats(container: HTMLElement): void {
     const mutualCount = this.extended?.mutualCount ?? 0;
-    const percentage = this.totalFollowing === 0 ? 0 : Math.round((mutualCount / this.totalFollowing) * 100);
+    const percentage =
+      this.totalFollowing === 0
+        ? 0
+        : Math.round((mutualCount / this.totalFollowing) * 100);
 
     const countEl = container.querySelector('.mutual-count');
     const percentEl = container.querySelector('.mutual-percentage');
@@ -2142,13 +2447,18 @@ export class FollowListManager {
    * Handle unfollow (remove item)
    * Updates browser storage (localStorage) - use "Save to file" / "Sync to Relays" to persist
    */
-  private async handleRemoveItem(item: FollowItemWithProfile, itemElement: HTMLElement): Promise<void> {
+  private async handleRemoveItem(
+    item: FollowItemWithProfile,
+    itemElement: HTMLElement
+  ): Promise<void> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) return;
 
     try {
       const currentItems = this.adapter.getBrowserItems();
-      const updatedItems = currentItems.filter((f: FollowItem) => f.pubkey !== item.pubkey);
+      const updatedItems = currentItems.filter(
+        (f: FollowItem) => f.pubkey !== item.pubkey
+      );
 
       // Suppress the self-triggered refresh while writing to storage: this
       // handler updates the DOM and state optimistically below, so the
@@ -2167,9 +2477,13 @@ export class FollowListManager {
         this.extended.mutualCount--;
       }
       this.totalFollowing--;
-      this.allItemsWithProfiles = this.allItemsWithProfiles.filter(f => f.pubkey !== item.pubkey);
+      this.allItemsWithProfiles = this.allItemsWithProfiles.filter(
+        f => f.pubkey !== item.pubkey
+      );
 
-      const container = this.containerElement.querySelector('[data-tab-content="list-follows"]') as HTMLElement;
+      const container = this.containerElement.querySelector(
+        '[data-tab-content="list-follows"]'
+      ) as HTMLElement;
       if (container) {
         if (this.extended) {
           this.extended.updateStatsHeader(container, this.totalFollowing);
@@ -2200,15 +2514,19 @@ export class FollowListManager {
    */
   private bindSortControls(container: HTMLElement): void {
     // Load all link
-    const loadAllLink = container.querySelector('.follows-sort-controls__load-all');
-    loadAllLink?.addEventListener('click', (e) => {
+    const loadAllLink = container.querySelector(
+      '.follows-sort-controls__load-all'
+    );
+    loadAllLink?.addEventListener('click', e => {
       e.preventDefault();
       this.handleLoadAll(container);
     });
 
     // Sort by Date link
-    const sortDateLink = container.querySelector('.follows-sort-controls__sort-date');
-    sortDateLink?.addEventListener('click', (e) => {
+    const sortDateLink = container.querySelector(
+      '.follows-sort-controls__sort-date'
+    );
+    sortDateLink?.addEventListener('click', e => {
       e.preventDefault();
       if (this.isFullyLoaded && this.currentSort !== 'date') {
         this.currentSort = 'date';
@@ -2219,10 +2537,16 @@ export class FollowListManager {
     });
 
     // Sort by Zaps link (requires both fully loaded AND zap stats loaded)
-    const sortZapsLink = container.querySelector('.follows-sort-controls__sort-zaps');
-    sortZapsLink?.addEventListener('click', (e) => {
+    const sortZapsLink = container.querySelector(
+      '.follows-sort-controls__sort-zaps'
+    );
+    sortZapsLink?.addEventListener('click', e => {
       e.preventDefault();
-      if (this.isFullyLoaded && this.extended?.zapStatsLoaded && this.currentSort !== 'zaps') {
+      if (
+        this.isFullyLoaded &&
+        this.extended?.zapStatsLoaded &&
+        this.currentSort !== 'zaps'
+      ) {
         this.currentSort = 'zaps';
         this.extended.sortByZaps(this.allItemsWithProfiles);
         this.updateSortControlsUI(container);
@@ -2231,7 +2555,9 @@ export class FollowListManager {
     });
 
     // Username filter input
-    const searchInput = container.querySelector('.follows-sort-controls__search') as HTMLInputElement;
+    const searchInput = container.querySelector(
+      '.follows-sort-controls__search'
+    ) as HTMLInputElement;
     searchInput?.addEventListener('input', () => {
       this.usernameFilter = searchInput.value.toLowerCase();
       this.reRenderList(container);
@@ -2247,15 +2573,21 @@ export class FollowListManager {
     this.isLoadingAll = true;
 
     // Update link text to show loading
-    const loadAllLink = container.querySelector('.follows-sort-controls__load-all');
+    const loadAllLink = container.querySelector(
+      '.follows-sort-controls__load-all'
+    );
     if (loadAllLink) {
       loadAllLink.textContent = 'Loading...';
       loadAllLink.classList.add('follows-sort-controls__load-all--loading');
     }
 
     // Start progress bar
-    const sortControls = container.querySelector('.follows-sort-controls') as HTMLElement;
-    const progressBar = sortControls ? new ProgressBarHelper(sortControls) : null;
+    const sortControls = container.querySelector(
+      '.follows-sort-controls'
+    ) as HTMLElement;
+    const progressBar = sortControls
+      ? new ProgressBarHelper(sortControls)
+      : null;
     progressBar?.start();
 
     const list = container.querySelector('.follows-list') as HTMLElement;
@@ -2298,10 +2630,18 @@ export class FollowListManager {
    * Update sort controls UI state
    */
   private updateSortControlsUI(container: HTMLElement): void {
-    const sortDateLink = container.querySelector('.follows-sort-controls__sort-date') as HTMLElement;
-    const sortZapsLink = container.querySelector('.follows-sort-controls__sort-zaps') as HTMLElement;
-    const searchInput = container.querySelector('.follows-sort-controls__search') as HTMLInputElement;
-    const nonMutualsCheckbox = container.querySelector('[data-non-mutuals-toggle]') as HTMLInputElement | null;
+    const sortDateLink = container.querySelector(
+      '.follows-sort-controls__sort-date'
+    ) as HTMLElement;
+    const sortZapsLink = container.querySelector(
+      '.follows-sort-controls__sort-zaps'
+    ) as HTMLElement;
+    const searchInput = container.querySelector(
+      '.follows-sort-controls__search'
+    ) as HTMLInputElement;
+    const nonMutualsCheckbox = container.querySelector(
+      '[data-non-mutuals-toggle]'
+    ) as HTMLInputElement | null;
 
     // Enable Date sort when fully loaded
     if (this.isFullyLoaded) {
@@ -2336,8 +2676,6 @@ export class FollowListManager {
       return indexA - indexB;
     });
   }
-
-
 
   /**
    * Render article notification label if user is subscribed
@@ -2396,7 +2734,10 @@ interface UserListSource {
   /** Header sentence given the target's display name and the current count. */
   describe(targetName: string, count: number): string;
   /** Acquire pubkeys, streaming each new chunk via onBatch; resolves when done. */
-  load(targetPubkey: string, onBatch: (pubkeys: string[]) => void): Promise<void>;
+  load(
+    targetPubkey: string,
+    onBatch: (pubkeys: string[]) => void
+  ): Promise<void>;
 }
 
 const FOLLOWS_SOURCE: UserListSource = {
@@ -2405,7 +2746,8 @@ const FOLLOWS_SOURCE: UserListSource = {
   describe: (name, count) =>
     `<strong>${escapeHtml(name)}</strong> follows ${count} ${count === 1 ? 'user' : 'users'}`,
   load: async (targetPubkey, onBatch) => {
-    const pubkeys = await UserService.getInstance().getUserFollowing(targetPubkey);
+    const pubkeys =
+      await UserService.getInstance().getUserFollowing(targetPubkey);
     onBatch(pubkeys);
   },
 };
@@ -2416,7 +2758,9 @@ const FOLLOWERS_SOURCE: UserListSource = {
   describe: (name, count) =>
     `${count} ${count === 1 ? 'user follows' : 'users follow'} <strong>${escapeHtml(name)}</strong>`,
   load: (targetPubkey, onBatch) =>
-    FollowerCountService.getInstance().streamFollowerList(targetPubkey, onBatch).then(() => undefined),
+    FollowerCountService.getInstance()
+      .streamFollowerList(targetPubkey, onBatch)
+      .then(() => undefined),
 };
 
 export class ExternalFollowListManager {
@@ -2454,8 +2798,14 @@ export class ExternalFollowListManager {
   }
 
   /** Build a manager for a target's follows or followers list. */
-  static create(targetPubkey: string, mode: UserListMode): ExternalFollowListManager {
-    return new ExternalFollowListManager(targetPubkey, mode === 'followers' ? FOLLOWERS_SOURCE : FOLLOWS_SOURCE);
+  static create(
+    targetPubkey: string,
+    mode: UserListMode
+  ): ExternalFollowListManager {
+    return new ExternalFollowListManager(
+      targetPubkey,
+      mode === 'followers' ? FOLLOWERS_SOURCE : FOLLOWS_SOURCE
+    );
   }
 
   /**
@@ -2493,7 +2843,9 @@ export class ExternalFollowListManager {
 
     try {
       // Resolve target name + my follow set up front (header + follow-state).
-      const targetProfile = await this.userProfileService.getUserProfile(this.targetPubkey);
+      const targetProfile = await this.userProfileService.getUserProfile(
+        this.targetPubkey
+      );
       this.targetName = extractDisplayName(targetProfile);
       this.myFollows = new Set(getFollowItems().map(f => f.pubkey));
 
@@ -2513,7 +2865,9 @@ export class ExternalFollowListManager {
       `;
 
       // Bind filter input
-      const searchInput = container.querySelector('.external-follows-search') as HTMLInputElement;
+      const searchInput = container.querySelector(
+        '.external-follows-search'
+      ) as HTMLInputElement;
       searchInput?.addEventListener('input', () => {
         this.usernameFilter = searchInput.value.toLowerCase();
         this.reRenderList();
@@ -2522,16 +2876,20 @@ export class ExternalFollowListManager {
       // Keep row buttons in sync with follow/unfollow actions performed in
       // other views (PV, another tab, extended-follows list).
       if (!this.followSubId) {
-        this.followSubId = eventBus.on('follow:updated', () => this.syncItemButtons());
+        this.followSubId = eventBus.on('follow:updated', () =>
+          this.syncItemButtons()
+        );
       }
 
       // Stream pubkeys in. Chain the (async) batch handlers so profile
       // resolution and rendering stay serialized — concurrent batches would
       // race the isLoading guard and drop rows.
-      await this.source.load(this.targetPubkey, (pubkeys) => {
+      await this.source.load(this.targetPubkey, pubkeys => {
         this.batchChain = this.batchChain
           .then(() => this.onBatch(pubkeys))
-          .catch(error => console.error('Failed to render user-list batch:', error));
+          .catch(error =>
+            console.error('Failed to render user-list batch:', error)
+          );
       });
 
       // Drain in-flight batch handlers, then settle the final state.
@@ -2572,10 +2930,10 @@ export class ExternalFollowListManager {
 
       const slice = fresh.slice(i, i + this.BATCH_SIZE);
       const items: ExternalFollowItemWithProfile[] = await Promise.all(
-        slice.map(async (pubkey) => ({
+        slice.map(async pubkey => ({
           pubkey,
           profile: await this.userProfileService.getUserProfile(pubkey),
-          isFollowedByMe: this.myFollows.has(pubkey)
+          isFollowedByMe: this.myFollows.has(pubkey),
         }))
       );
 
@@ -2583,8 +2941,14 @@ export class ExternalFollowListManager {
       this.allItemsWithProfiles.push(...items);
 
       // Live count in the header.
-      const stats = this.containerElement?.querySelector('.external-follows-stats');
-      if (stats) stats.innerHTML = this.source.describe(this.targetName, this.allItemsWithProfiles.length);
+      const stats = this.containerElement?.querySelector(
+        '.external-follows-stats'
+      );
+      if (stats)
+        stats.innerHTML = this.source.describe(
+          this.targetName,
+          this.allItemsWithProfiles.length
+        );
 
       // Render whatever fits the initial cap; once capped this is a cheap no-op
       // and just keeps the infinite-scroll sentinel attached.
@@ -2597,16 +2961,21 @@ export class ExternalFollowListManager {
    * scroll (once) so the remainder loads on demand.
    */
   private async renderPending(): Promise<void> {
-    const list = this.containerElement?.querySelector('.follows-list') as HTMLElement | null;
+    const list = this.containerElement?.querySelector(
+      '.follows-list'
+    ) as HTMLElement | null;
     if (!list) return;
 
-    while (this.currentOffset < this.INITIAL_RENDER_CAP && this.currentOffset < this.filteredItems().length) {
+    while (
+      this.currentOffset < this.INITIAL_RENDER_CAP &&
+      this.currentOffset < this.filteredItems().length
+    ) {
       await this.loadBatch(list);
     }
 
     if (!this.infiniteScroll && this.currentOffset > 0) {
       this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
-        loadingMessage: 'Loading more...'
+        loadingMessage: 'Loading more...',
       });
       this.infiniteScroll.observe(list);
     }
@@ -2684,7 +3053,8 @@ export class ExternalFollowListManager {
       this.currentOffset += batch.length;
 
       // More to show if items remain, or more may still stream in.
-      this.hasMore = this.currentOffset < filteredItems.length || !this.loadComplete;
+      this.hasMore =
+        this.currentOffset < filteredItems.length || !this.loadComplete;
     } finally {
       this.isLoading = false;
       if (this.infiniteScroll) {
@@ -2696,7 +3066,10 @@ export class ExternalFollowListManager {
   /**
    * Render batch of items
    */
-  private renderBatch(listElement: HTMLElement, batch: ExternalFollowItemWithProfile[]): void {
+  private renderBatch(
+    listElement: HTMLElement,
+    batch: ExternalFollowItemWithProfile[]
+  ): void {
     const sentinel = listElement.querySelector('.infinite-scroll-sentinel');
 
     for (const item of batch) {
@@ -2713,7 +3086,9 @@ export class ExternalFollowListManager {
   /**
    * Create follow item DOM element
    */
-  private createFollowItemElement(item: ExternalFollowItemWithProfile): HTMLElement {
+  private createFollowItemElement(
+    item: ExternalFollowItemWithProfile
+  ): HTMLElement {
     const username = extractDisplayName(item.profile);
     const npub = hexToNpub(item.pubkey);
     const avatarUrl = item.profile?.picture || '';
@@ -2739,12 +3114,16 @@ export class ExternalFollowListManager {
     // with the PV which also shows an Unfollow button. Skipped for self / logged-out.
     if (!isMe && this.authService.getCurrentUser()) {
       itemDiv.appendChild(
-        item.isFollowedByMe ? this.createUnfollowButton(item) : this.createFollowButton(item)
+        item.isFollowedByMe
+          ? this.createUnfollowButton(item)
+          : this.createFollowButton(item)
       );
     }
 
     // Navigate to profile on click
-    const contentWrapper = itemDiv.querySelector('.follow-item__content-wrapper');
+    const contentWrapper = itemDiv.querySelector(
+      '.follow-item__content-wrapper'
+    );
     contentWrapper?.addEventListener('click', () => {
       this.router.navigate(`/profile/${npub}`);
     });
@@ -2755,12 +3134,14 @@ export class ExternalFollowListManager {
   /**
    * Build the "Follow" action button with its click handler bound.
    */
-  private createFollowButton(item: ExternalFollowItemWithProfile): HTMLButtonElement {
+  private createFollowButton(
+    item: ExternalFollowItemWithProfile
+  ): HTMLButtonElement {
     const btn = document.createElement('button');
     btn.className = 'external-follow-item__follow-btn btn btn--medium';
     btn.dataset.pubkey = item.pubkey;
     btn.textContent = 'Follow';
-    btn.addEventListener('click', async (e) => {
+    btn.addEventListener('click', async e => {
       e.stopPropagation();
       await this.handleFollow(item, btn);
     });
@@ -2772,12 +3153,15 @@ export class ExternalFollowListManager {
    * already following so the row stays actionable and consistent with the PV
    * (which also shows an Unfollow button), instead of a static "Following" label.
    */
-  private createUnfollowButton(item: ExternalFollowItemWithProfile): HTMLButtonElement {
+  private createUnfollowButton(
+    item: ExternalFollowItemWithProfile
+  ): HTMLButtonElement {
     const btn = document.createElement('button');
-    btn.className = 'external-follow-item__unfollow-btn btn btn--medium btn--passive';
+    btn.className =
+      'external-follow-item__unfollow-btn btn btn--medium btn--passive';
     btn.dataset.pubkey = item.pubkey;
     btn.textContent = 'Unfollow';
-    btn.addEventListener('click', async (e) => {
+    btn.addEventListener('click', async e => {
       e.stopPropagation();
       await this.handleUnfollow(item, btn);
     });
@@ -2789,7 +3173,10 @@ export class ExternalFollowListManager {
    * followUser → setFollowItems emits follow:updated, which syncItemButtons()
    * uses to keep other open views (e.g. the PV) in lockstep.
    */
-  private async handleFollow(item: ExternalFollowItemWithProfile, followBtn: HTMLButtonElement): Promise<void> {
+  private async handleFollow(
+    item: ExternalFollowItemWithProfile,
+    followBtn: HTMLButtonElement
+  ): Promise<void> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) return;
 
@@ -2819,7 +3206,10 @@ export class ExternalFollowListManager {
   /**
    * Handle unfollow action: unfollow locally, then swap the button to Follow.
    */
-  private async handleUnfollow(item: ExternalFollowItemWithProfile, unfollowBtn: HTMLButtonElement): Promise<void> {
+  private async handleUnfollow(
+    item: ExternalFollowItemWithProfile,
+    unfollowBtn: HTMLButtonElement
+  ): Promise<void> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) return;
 
@@ -2864,9 +3254,15 @@ export class ExternalFollowListManager {
         `.external-follow-item[data-pubkey="${item.pubkey}"]`
       );
       if (!row) continue;
-      const oldControl = row.querySelector('.external-follow-item__follow-btn, .external-follow-item__unfollow-btn, .external-follow-item__status');
+      const oldControl = row.querySelector(
+        '.external-follow-item__follow-btn, .external-follow-item__unfollow-btn, .external-follow-item__status'
+      );
       if (!oldControl) continue;
-      oldControl.replaceWith(nowFollowing ? this.createUnfollowButton(item) : this.createFollowButton(item));
+      oldControl.replaceWith(
+        nowFollowing
+          ? this.createUnfollowButton(item)
+          : this.createFollowButton(item)
+      );
     }
   }
 

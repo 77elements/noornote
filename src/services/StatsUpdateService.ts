@@ -48,10 +48,14 @@ export class StatsUpdateService {
           islComponent.updateStats({ likes: islComponent['stats'].likes + 1 });
           break;
         case 'repost':
-          islComponent.updateStats({ reposts: islComponent['stats'].reposts + 1 });
+          islComponent.updateStats({
+            reposts: islComponent['stats'].reposts + 1,
+          });
           break;
         case 'quotedRepost':
-          islComponent.updateStats({ quotedReposts: islComponent['stats'].quotedReposts + 1 });
+          islComponent.updateStats({
+            quotedReposts: islComponent['stats'].quotedReposts + 1,
+          });
           break;
       }
     }

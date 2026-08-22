@@ -13,8 +13,10 @@
  * const dim = await getImageDimensions('https://example.com/photo.jpg');
  * // => { width: 1024, height: 768 } | null
  */
-export function getImageDimensions(url: string): Promise<{ width: number; height: number } | null> {
-  return new Promise((resolve) => {
+export function getImageDimensions(
+  url: string
+): Promise<{ width: number; height: number } | null> {
+  return new Promise(resolve => {
     if (!url || typeof url !== 'string') {
       resolve(null);
       return;

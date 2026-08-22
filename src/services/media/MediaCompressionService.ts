@@ -51,7 +51,7 @@ type ProgressCallback = (percent: number) => void;
 const VIDEO_BPP_MAP: Record<CompressionQuality, number> = {
   low: 0.06,
   medium: 0.12,
-  high: 0.20,
+  high: 0.2,
   ultra: 0.35,
 };
 
@@ -96,23 +96,53 @@ async function pickAudioCodec(file: File): Promise<AudioCodecChoice | null> {
 
   // Prefer a codec/container similar to the input. Fall back to AAC for
   // formats that would not benefit from re-encoding to themselves (WAV/FLAC).
-  const wantsMp3 = mime.includes('mpeg') || mime.includes('mp3') || lcName.endsWith('.mp3');
-  const wantsOpus = mime.includes('opus') || mime.includes('ogg') || lcName.endsWith('.opus') || lcName.endsWith('.ogg');
+  const wantsMp3 =
+    mime.includes('mpeg') || mime.includes('mp3') || lcName.endsWith('.mp3');
+  const wantsOpus =
+    mime.includes('opus') ||
+    mime.includes('ogg') ||
+    lcName.endsWith('.opus') ||
+    lcName.endsWith('.ogg');
 
   if (wantsMp3 && codecs.includes('mp3')) {
-    return { codec: 'mp3', output: new Mp3OutputFormat(), mimeType: 'audio/mpeg', extension: 'mp3' };
+    return {
+      codec: 'mp3',
+      output: new Mp3OutputFormat(),
+      mimeType: 'audio/mpeg',
+      extension: 'mp3',
+    };
   }
   if (wantsOpus && codecs.includes('opus')) {
-    return { codec: 'opus', output: new OggOutputFormat(), mimeType: 'audio/ogg', extension: 'ogg' };
+    return {
+      codec: 'opus',
+      output: new OggOutputFormat(),
+      mimeType: 'audio/ogg',
+      extension: 'ogg',
+    };
   }
   if (codecs.includes('aac')) {
-    return { codec: 'aac', output: new Mp4OutputFormat(), mimeType: 'audio/mp4', extension: 'm4a' };
+    return {
+      codec: 'aac',
+      output: new Mp4OutputFormat(),
+      mimeType: 'audio/mp4',
+      extension: 'm4a',
+    };
   }
   if (codecs.includes('opus')) {
-    return { codec: 'opus', output: new OggOutputFormat(), mimeType: 'audio/ogg', extension: 'ogg' };
+    return {
+      codec: 'opus',
+      output: new OggOutputFormat(),
+      mimeType: 'audio/ogg',
+      extension: 'ogg',
+    };
   }
   if (codecs.includes('mp3')) {
-    return { codec: 'mp3', output: new Mp3OutputFormat(), mimeType: 'audio/mpeg', extension: 'mp3' };
+    return {
+      codec: 'mp3',
+      output: new Mp3OutputFormat(),
+      mimeType: 'audio/mpeg',
+      extension: 'mp3',
+    };
   }
   return null;
 }
@@ -135,7 +165,10 @@ export class MediaCompressionService {
   /** Image compression uses Canvas + `canvas.toBlob('image/jpeg')`, which
    *  is universally available in every supported runtime. */
   static async isImageSupported(): Promise<boolean> {
-    return typeof document !== 'undefined' && typeof HTMLCanvasElement !== 'undefined';
+    return (
+      typeof document !== 'undefined' &&
+      typeof HTMLCanvasElement !== 'undefined'
+    );
   }
 
   /**
@@ -147,7 +180,7 @@ export class MediaCompressionService {
   static async compressImage(
     file: File,
     settings: ImageCompressionSettings,
-    onProgress: ProgressCallback,
+    onProgress: ProgressCallback
   ): Promise<File> {
     onProgress(5);
 
@@ -156,7 +189,9 @@ export class MediaCompressionService {
     const outputMime = isPng ? 'image/png' : 'image/jpeg';
     const outputExt = isPng ? '.png' : '.jpg';
     // PNG ignores quality; JPEG/WebP honor it.
-    const quality = isPng ? undefined : (IMAGE_JPEG_QUALITY[settings.quality] ?? IMAGE_JPEG_QUALITY.high);
+    const quality = isPng
+      ? undefined
+      : (IMAGE_JPEG_QUALITY[settings.quality] ?? IMAGE_JPEG_QUALITY.high);
 
     // Resize + re-encode off the main thread (OffscreenCanvas worker) so a large
     // photo doesn't freeze the UI. Fall back to the main-thread canvas path when
@@ -164,7 +199,12 @@ export class MediaCompressionService {
     let blob: Blob | null = null;
     if (canUseImageWorker()) {
       try {
-        blob = await resizeEncodeInWorker(file, settings.maxResolution, outputMime, quality);
+        blob = await resizeEncodeInWorker(
+          file,
+          settings.maxResolution,
+          outputMime,
+          quality
+        );
         onProgress(60);
       } catch (err) {
         console.debug('Image resize worker failed, using main thread:', err);
@@ -172,7 +212,13 @@ export class MediaCompressionService {
       }
     }
     if (!blob) {
-      blob = await resizeEncodeMainThread(file, settings.maxResolution, outputMime, quality, onProgress);
+      blob = await resizeEncodeMainThread(
+        file,
+        settings.maxResolution,
+        outputMime,
+        quality,
+        onProgress
+      );
     }
     onProgress(80);
 
@@ -205,12 +251,16 @@ export class MediaCompressionService {
   static async compressVideo(
     file: File,
     settings: VideoCompressionSettings,
-    onProgress: ProgressCallback,
+    onProgress: ProgressCallback
   ): Promise<File> {
     const choice = await pickVideoCodec();
-    if (!choice) throw new Error('No encodable video codec available in this browser');
+    if (!choice)
+      throw new Error('No encodable video codec available in this browser');
 
-    const input = new Input({ formats: ALL_FORMATS, source: new BlobSource(file) });
+    const input = new Input({
+      formats: ALL_FORMATS,
+      source: new BlobSource(file),
+    });
 
     // Resolution: clamp to source if maxResolution=0 (original) or source is smaller.
     let targetWidth: number;
@@ -218,29 +268,46 @@ export class MediaCompressionService {
     try {
       const track = await input.getPrimaryVideoTrack();
       const sourceWidth = track ? await track.getDisplayWidth() : 1920;
-      const desired = settings.maxResolution === 0 ? sourceWidth : settings.maxResolution;
+      const desired =
+        settings.maxResolution === 0 ? sourceWidth : settings.maxResolution;
       // Map the desired height-bucket to an approximate width (assume 16:9).
-      const desiredWidth = settings.maxResolution === 0 ? sourceWidth : Math.round(desired * (16 / 9));
+      const desiredWidth =
+        settings.maxResolution === 0
+          ? sourceWidth
+          : Math.round(desired * (16 / 9));
       targetWidth = Math.min(sourceWidth, desiredWidth);
       // Best-effort read of source bitrate — used to cap target so we always
       // achieve real compression. Container may not expose it (returns null).
       if (track) {
-        sourceBitrate = (await track.getAverageBitrate()) ?? (await track.getBitrate());
+        sourceBitrate =
+          (await track.getAverageBitrate()) ?? (await track.getBitrate());
       }
     } catch {
-      targetWidth = settings.maxResolution === 0 ? 1920 : Math.round(settings.maxResolution * (16 / 9));
+      targetWidth =
+        settings.maxResolution === 0
+          ? 1920
+          : Math.round(settings.maxResolution * (16 / 9));
     }
     const targetHeight = Math.round(targetWidth * (9 / 16));
     const estimatedFps = 30;
-    const bppBitrate = Math.round(targetWidth * targetHeight * estimatedFps * VIDEO_BPP_MAP[settings.quality]);
+    const bppBitrate = Math.round(
+      targetWidth *
+        targetHeight *
+        estimatedFps *
+        VIDEO_BPP_MAP[settings.quality]
+    );
     // Cap to a fraction of source bitrate when known, so we always come out
     // smaller than the input even if it's already heavily compressed.
     const targetBitrate = sourceBitrate
       ? Math.min(bppBitrate, Math.round(sourceBitrate * SOURCE_BITRATE_CAP))
       : bppBitrate;
 
-    const outputFormat: OutputFormat = choice.format === 'webm' ? new WebMOutputFormat() : new Mp4OutputFormat();
-    const output = new Output({ format: outputFormat, target: new BufferTarget() });
+    const outputFormat: OutputFormat =
+      choice.format === 'webm' ? new WebMOutputFormat() : new Mp4OutputFormat();
+    const output = new Output({
+      format: outputFormat,
+      target: new BufferTarget(),
+    });
 
     const conversion = await Conversion.init({
       input,
@@ -256,7 +323,8 @@ export class MediaCompressionService {
         // have GPU, so hardware is preferred (much faster). Ultra always
         // prefers software for quality regardless of platform.
         hardwareAcceleration:
-          PlatformService.getInstance().isElectron || settings.quality === 'ultra'
+          PlatformService.getInstance().isElectron ||
+          settings.quality === 'ultra'
             ? 'prefer-software'
             : 'prefer-hardware',
         keyFrameInterval: 2,
@@ -271,7 +339,7 @@ export class MediaCompressionService {
       throw new Error('Video conversion is not valid for this file');
     }
 
-    conversion.onProgress = (p) => onProgress(p * 100);
+    conversion.onProgress = p => onProgress(p * 100);
     await conversion.execute();
 
     const buffer = (output.target as BufferTarget).buffer;
@@ -290,20 +358,31 @@ export class MediaCompressionService {
   static async compressAudio(
     file: File,
     settings: AudioCompressionSettings,
-    onProgress: ProgressCallback,
+    onProgress: ProgressCallback
   ): Promise<File> {
     const choice = await pickAudioCodec(file);
-    if (!choice) throw new Error('No encodable audio codec available in this browser');
+    if (!choice)
+      throw new Error('No encodable audio codec available in this browser');
 
-    const input = new Input({ formats: ALL_FORMATS, source: new BlobSource(file) });
-    const output = new Output({ format: choice.output, target: new BufferTarget() });
+    const input = new Input({
+      formats: ALL_FORMATS,
+      source: new BlobSource(file),
+    });
+    const output = new Output({
+      format: choice.output,
+      target: new BufferTarget(),
+    });
 
     // Read source bitrate to cap our target (same logic as video).
     let sourceBitrate: number | null = null;
     try {
       const track = await input.getPrimaryAudioTrack();
-      if (track) sourceBitrate = (await track.getAverageBitrate()) ?? (await track.getBitrate());
-    } catch { /* container may not expose bitrate */ }
+      if (track)
+        sourceBitrate =
+          (await track.getAverageBitrate()) ?? (await track.getBitrate());
+    } catch {
+      /* container may not expose bitrate */
+    }
 
     const presetBitrate = AUDIO_BITRATE_KBPS[settings.quality] * 1000;
     const targetBitrate = sourceBitrate
@@ -325,14 +404,16 @@ export class MediaCompressionService {
       throw new Error('Audio conversion is not valid for this file');
     }
 
-    conversion.onProgress = (p) => onProgress(p * 100);
+    conversion.onProgress = p => onProgress(p * 100);
     await conversion.execute();
 
     const buffer = (output.target as BufferTarget).buffer;
     if (!buffer) throw new Error('Audio compression produced empty output');
 
     const baseName = stripExtension(file.name);
-    return new File([buffer], `${baseName}.${choice.extension}`, { type: choice.mimeType });
+    return new File([buffer], `${baseName}.${choice.extension}`, {
+      type: choice.mimeType,
+    });
   }
 }
 
@@ -350,13 +431,18 @@ const STRIP_CRITICAL_EXIF = [42016, 42032, 42033, 42037];
 // ImageUniqueID, CameraOwnerName, BodySerialNumber, LensSerialNumber
 const STRIP_MEDIUM_0TH = [306]; // DateTime
 const STRIP_MEDIUM_EXIF = [
-  36867, 36868,         // DateTimeOriginal, DateTimeDigitized
-  36880, 36881, 36882,  // OffsetTime, OffsetTimeOriginal, OffsetTimeDigitized
-  37520, 37521, 37522,  // SubSecTime, SubSecTimeOriginal, SubSecTimeDigitized
-  37500,                // MakerNote
+  36867,
+  36868, // DateTimeOriginal, DateTimeDigitized
+  36880,
+  36881,
+  36882, // OffsetTime, OffsetTimeOriginal, OffsetTimeDigitized
+  37520,
+  37521,
+  37522, // SubSecTime, SubSecTimeOriginal, SubSecTimeDigitized
+  37500, // MakerNote
 ];
 const STRIP_WEAK_0TH = [271, 272, 305, 316]; // Make, Model, Software, HostComputer
-const STRIP_WEAK_EXIF = [42035, 42036];      // LensMake, LensModel
+const STRIP_WEAK_EXIF = [42035, 42036]; // LensMake, LensModel
 
 interface ExifStripOptions {
   critical: boolean;
@@ -390,9 +476,11 @@ function applyExifStrip(exifObj: ExifObj, opts: ExifStripOptions): void {
 
 /** Whether the OffscreenCanvas image worker can run in this runtime. */
 function canUseImageWorker(): boolean {
-  return typeof Worker !== 'undefined'
-    && typeof OffscreenCanvas !== 'undefined'
-    && typeof createImageBitmap === 'function';
+  return (
+    typeof Worker !== 'undefined' &&
+    typeof OffscreenCanvas !== 'undefined' &&
+    typeof createImageBitmap === 'function'
+  );
 }
 
 /** Resize + re-encode an image off the main thread via the OffscreenCanvas
@@ -402,7 +490,7 @@ async function resizeEncodeInWorker(
   file: File,
   maxResolution: number,
   outputMime: string,
-  quality: number | undefined,
+  quality: number | undefined
 ): Promise<Blob> {
   const buf = await file.arrayBuffer();
   return new Promise<Blob>((resolve, reject) => {
@@ -410,14 +498,18 @@ async function resizeEncodeInWorker(
     worker.onmessage = (e: MessageEvent) => {
       const data = e.data as { ok: boolean; buf?: ArrayBuffer; error?: string };
       worker.terminate();
-      if (data.ok && data.buf) resolve(new Blob([data.buf], { type: outputMime }));
+      if (data.ok && data.buf)
+        resolve(new Blob([data.buf], { type: outputMime }));
       else reject(new Error(data.error || 'Image worker resize failed'));
     };
     worker.onerror = (err: ErrorEvent) => {
       worker.terminate();
       reject(new Error(err.message || 'Image worker error'));
     };
-    worker.postMessage({ buf, type: file.type, maxResolution, outputMime, quality }, [buf]);
+    worker.postMessage(
+      { buf, type: file.type, maxResolution, outputMime, quality },
+      [buf]
+    );
   });
 }
 
@@ -428,7 +520,7 @@ async function resizeEncodeMainThread(
   maxResolution: number,
   outputMime: string,
   quality: number | undefined,
-  onProgress: ProgressCallback,
+  onProgress: ProgressCallback
 ): Promise<Blob> {
   const sourceUrl = URL.createObjectURL(file);
   const img = new Image();
@@ -444,7 +536,8 @@ async function resizeEncodeMainThread(
   onProgress(25);
 
   // Target dimensions preserving aspect ratio.
-  const maxDim = maxResolution > 0 ? maxResolution : Math.max(img.width, img.height);
+  const maxDim =
+    maxResolution > 0 ? maxResolution : Math.max(img.width, img.height);
   let targetW = img.width;
   let targetH = img.height;
   if (img.width > maxDim || img.height > maxDim) {
@@ -467,9 +560,9 @@ async function resizeEncodeMainThread(
 
   return await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
-      (b) => (b ? resolve(b) : reject(new Error('Canvas toBlob failed'))),
+      b => (b ? resolve(b) : reject(new Error('Canvas toBlob failed'))),
       outputMime,
-      quality,
+      quality
     );
   });
 }
@@ -481,7 +574,7 @@ async function resizeEncodeMainThread(
 async function transferExif(
   source: File,
   encoded: Blob,
-  strip: ExifStripOptions,
+  strip: ExifStripOptions
 ): Promise<Blob> {
   const piexif = (await import('piexifjs')) as typeof import('piexifjs');
   const sourceUrl = await blobToDataUrl(source);
@@ -499,7 +592,8 @@ function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(reader.error ?? new Error('FileReader failed'));
+    reader.onerror = () =>
+      reject(reader.error ?? new Error('FileReader failed'));
     reader.readAsDataURL(blob);
   });
 }

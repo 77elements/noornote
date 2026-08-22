@@ -51,9 +51,15 @@ export class ThreadOrchestrator extends Orchestrator {
   private systemLogger: SystemLogger;
 
   private readonly cacheDuration = 5 * 60 * 1000;
-  private repliesMetaCache = new LRUCache<{ replyIds: string[]; lastUpdated: number }>(getCacheSize(200, 100, 50), this.cacheDuration);
+  private repliesMetaCache = new LRUCache<{
+    replyIds: string[];
+    lastUpdated: number;
+  }>(getCacheSize(200, 100, 50), this.cacheDuration);
   private fetchingReplies: Map<string, Promise<NostrEvent[]>> = new Map();
-  private parentChainCache = new LRUCache<{ context: ThreadContext; lastUpdated: number }>(getCacheSize(200, 100, 50), this.cacheDuration);
+  private parentChainCache = new LRUCache<{
+    context: ThreadContext;
+    lastUpdated: number;
+  }>(getCacheSize(200, 100, 50), this.cacheDuration);
   private fetchingParentChain: Map<string, Promise<ThreadContext>> = new Map();
   private liveSubscriptions: Map<string, string> = new Map();
   private readonly LOG_TAG = 'ThreadOrchestrator';
@@ -77,10 +83,18 @@ export class ThreadOrchestrator extends Orchestrator {
   }
 
   private emptyThreadContext(): ThreadContext {
-    return { root: null, parents: [], directParent: null, hasSkippedReplies: false };
+    return {
+      root: null,
+      parents: [],
+      directParent: null,
+      hasSkippedReplies: false,
+    };
   }
 
-  public async fetchReplies(noteId: string, authorPubkey?: string): Promise<NostrEvent[]> {
+  public async fetchReplies(
+    noteId: string,
+    authorPubkey?: string
+  ): Promise<NostrEvent[]> {
     if (this.fetchingReplies.has(noteId)) {
       return await this.fetchingReplies.get(noteId)!;
     }
@@ -91,8 +105,10 @@ export class ThreadOrchestrator extends Orchestrator {
     try {
       const replies = await fetchPromise;
       this.repliesMetaCache.set(noteId, {
-        replyIds: replies.map(r => r.id).filter((id): id is string => id !== undefined),
-        lastUpdated: Date.now()
+        replyIds: replies
+          .map(r => r.id)
+          .filter((id): id is string => id !== undefined),
+        lastUpdated: Date.now(),
       });
       return replies;
     } finally {
@@ -106,7 +122,10 @@ export class ThreadOrchestrator extends Orchestrator {
    * runs even when the note isn't in NoteService cache — e.g. a public note opened cold
    * from an external link while logged out, where read relays are sparse.
    */
-  private async fetchRepliesFromRelays(noteId: string, hintedAuthorPubkey?: string): Promise<NostrEvent[]> {
+  private async fetchRepliesFromRelays(
+    noteId: string,
+    hintedAuthorPubkey?: string
+  ): Promise<NostrEvent[]> {
     const isAddressable = noteId.includes(':');
     const filterLowerA: NDKFilter[] = isAddressable
       ? [{ kinds: [1, 1111], '#a': [noteId] }]
@@ -122,12 +141,24 @@ export class ThreadOrchestrator extends Orchestrator {
     // Stage 1: Read relays
     const relays = this.transport.getReadRelays();
     try {
-      const fetches = [this.transport.fetch(relays, filterLowerA, 5000, false, 'ThreadOrch')];
+      const fetches = [
+        this.transport.fetch(relays, filterLowerA, 5000, false, 'ThreadOrch'),
+      ];
       if (filterUpperA.length > 0) {
-        fetches.push(this.transport.fetch(relays, filterUpperA, 5000, false, 'ThreadOrch-A'));
+        fetches.push(
+          this.transport.fetch(
+            relays,
+            filterUpperA,
+            5000,
+            false,
+            'ThreadOrch-A'
+          )
+        );
       }
       const results = await Promise.all(fetches);
-      results.flat().forEach(e => { if (e.id) allReplies.set(e.id, e); });
+      results.flat().forEach(e => {
+        if (e.id) allReplies.set(e.id, e);
+      });
     } catch (error) {
       this.systemLogger.error(this.LOG_TAG, `Stage 1 replies failed: ${error}`);
     }
@@ -139,21 +170,46 @@ export class ThreadOrchestrator extends Orchestrator {
       : (hintedAuthorPubkey ?? this.noteService.getCachedNote(noteId)?.pubkey);
     if (authorPubkey) {
       try {
-        const outboundRelays = await this.relayDiscovery.getCombinedRelays([authorPubkey], true);
+        const outboundRelays = await this.relayDiscovery.getCombinedRelays(
+          [authorPubkey],
+          true
+        );
 
-        const outFetches = [this.transport.fetch(outboundRelays, filterLowerA, 8000, true, 'ThreadOrch')];
+        const outFetches = [
+          this.transport.fetch(
+            outboundRelays,
+            filterLowerA,
+            8000,
+            true,
+            'ThreadOrch'
+          ),
+        ];
         if (filterUpperA.length > 0) {
-          outFetches.push(this.transport.fetch(outboundRelays, filterUpperA, 8000, true, 'ThreadOrch-A'));
+          outFetches.push(
+            this.transport.fetch(
+              outboundRelays,
+              filterUpperA,
+              8000,
+              true,
+              'ThreadOrch-A'
+            )
+          );
         }
         const outboundEvents = (await Promise.all(outFetches)).flat();
         const countBefore = allReplies.size;
-        outboundEvents.forEach(e => { if (e.id && !allReplies.has(e.id)) allReplies.set(e.id, e); });
+        outboundEvents.forEach(e => {
+          if (e.id && !allReplies.has(e.id)) allReplies.set(e.id, e);
+        });
         const newFromOutbound = allReplies.size - countBefore;
         if (newFromOutbound > 0) {
-          diagLog('relays', 'ThreadOrchestrator: outbound fallback found additional replies', {
-            noteId: noteId.slice(0, 8),
-            newReplies: newFromOutbound
-          });
+          diagLog(
+            'relays',
+            'ThreadOrchestrator: outbound fallback found additional replies',
+            {
+              noteId: noteId.slice(0, 8),
+              newReplies: newFromOutbound,
+            }
+          );
         }
       } catch {
         // Outbound fallback failed, continue with what we have
@@ -161,13 +217,19 @@ export class ThreadOrchestrator extends Orchestrator {
     }
 
     // Filter and sort
-    let actualReplies = Array.from(allReplies.values()).filter(event => this.isActualReply(event, noteId));
+    let actualReplies = Array.from(allReplies.values()).filter(event =>
+      this.isActualReply(event, noteId)
+    );
 
     const currentUser = this.authService.getCurrentUser();
     if (currentUser) {
-      const mutedPubkeys = await this.muteOrchestrator.getAllMutedUsers(currentUser.pubkey);
+      const mutedPubkeys = await this.muteOrchestrator.getAllMutedUsers(
+        currentUser.pubkey
+      );
       const mutedSet = new Set(mutedPubkeys);
-      actualReplies = actualReplies.filter(event => !mutedSet.has(event.pubkey));
+      actualReplies = actualReplies.filter(
+        event => !mutedSet.has(event.pubkey)
+      );
     }
 
     actualReplies.sort((a, b) => a.created_at - b.created_at);
@@ -182,7 +244,9 @@ export class ThreadOrchestrator extends Orchestrator {
     const isAddressable = noteId.includes(':');
     if (isAddressable) {
       // NIP-01 uses lowercase 'a', NIP-22 uses uppercase 'A' for root scope
-      const tags = event.tags.filter(tag => (tag[0] === 'a' || tag[0] === 'A') && tag[1] === noteId);
+      const tags = event.tags.filter(
+        tag => (tag[0] === 'a' || tag[0] === 'A') && tag[1] === noteId
+      );
       return tags.length > 0;
     }
     const tags = event.tags.filter(tag => tag[0] === 'e' && tag[1] === noteId);
@@ -217,7 +281,9 @@ export class ThreadOrchestrator extends Orchestrator {
    * 1. Relay hints from e-tag (NIP-10)
    * 2. Outbound relays of the child note's author
    */
-  private async fetchParentChainFromRelays(noteId: string): Promise<ThreadContext> {
+  private async fetchParentChainFromRelays(
+    noteId: string
+  ): Promise<ThreadContext> {
     try {
       // Try NoteService cache first, then fetch
       const firstEvent = await this.noteService.getNote(noteId);
@@ -240,12 +306,20 @@ export class ThreadOrchestrator extends Orchestrator {
 
         if (isAddressable) {
           // Addressable coordinate "kind:pubkey:dtag" — fetch via filter
-          parentNote = await this.fetchAddressableParent(parentRef.id, parentRef.relayHint, noteToProcess.pubkey);
+          parentNote = await this.fetchAddressableParent(
+            parentRef.id,
+            parentRef.relayHint,
+            noteToProcess.pubkey
+          );
         } else {
           // Hex event id — try NoteService cache first, then outbound fallback
           parentNote = await this.noteService.getNote(parentRef.id);
           if (!parentNote) {
-            parentNote = await this.fetchNoteWithOutbound(parentRef.id, parentRef.relayHint, noteToProcess.pubkey);
+            parentNote = await this.fetchNoteWithOutbound(
+              parentRef.id,
+              parentRef.relayHint,
+              noteToProcess.pubkey
+            );
           }
         }
 
@@ -257,7 +331,7 @@ export class ThreadOrchestrator extends Orchestrator {
           pubkey: parentNote.pubkey,
           createdAt: parentNote.created_at,
           tags: parentNote.tags,
-          kind: parentNote.kind ?? 1
+          kind: parentNote.kind ?? 1,
         });
 
         noteToProcess = parentNote;
@@ -275,10 +349,13 @@ export class ThreadOrchestrator extends Orchestrator {
         root: chain.length > 1 && root ? root : null,
         parents,
         directParent,
-        hasSkippedReplies: parents.length > 0
+        hasSkippedReplies: parents.length > 0,
       };
     } catch (error) {
-      this.systemLogger.error(this.LOG_TAG, `Fetch parent chain failed: ${error}`);
+      this.systemLogger.error(
+        this.LOG_TAG,
+        `Fetch parent chain failed: ${error}`
+      );
       return this.emptyThreadContext();
     }
   }
@@ -296,12 +373,22 @@ export class ThreadOrchestrator extends Orchestrator {
     // Try relay hint first (fastest, most targeted)
     if (relayHint) {
       try {
-        const events = await this.transport.fetch([relayHint], [filter], 5000, true, 'ThreadOrch');
+        const events = await this.transport.fetch(
+          [relayHint],
+          [filter],
+          5000,
+          true,
+          'ThreadOrch'
+        );
         if (events[0]) {
-          diagLog('relays', 'ThreadOrchestrator: relay hint found parent note', {
-            eventId: eventId.slice(0, 8),
-            relay: relayHint
-          });
+          diagLog(
+            'relays',
+            'ThreadOrchestrator: relay hint found parent note',
+            {
+              eventId: eventId.slice(0, 8),
+              relay: relayHint,
+            }
+          );
           this.noteService.registerNotes([events[0]]);
           return events[0];
         }
@@ -312,13 +399,26 @@ export class ThreadOrchestrator extends Orchestrator {
 
     // Try outbound relays of the child's author (they likely share relays with the parent)
     try {
-      const outboundRelays = await this.relayDiscovery.getCombinedRelays([knownAuthorPubkey], true);
-      const events = await this.transport.fetch(outboundRelays, [filter], 8000, true, 'ThreadOrch');
+      const outboundRelays = await this.relayDiscovery.getCombinedRelays(
+        [knownAuthorPubkey],
+        true
+      );
+      const events = await this.transport.fetch(
+        outboundRelays,
+        [filter],
+        8000,
+        true,
+        'ThreadOrch'
+      );
       if (events[0]) {
-        diagLog('relays', 'ThreadOrchestrator: outbound fallback found parent note', {
-          eventId: eventId.slice(0, 8),
-          childAuthor: knownAuthorPubkey.slice(0, 8)
-        });
+        diagLog(
+          'relays',
+          'ThreadOrchestrator: outbound fallback found parent note',
+          {
+            eventId: eventId.slice(0, 8),
+            childAuthor: knownAuthorPubkey.slice(0, 8),
+          }
+        );
         this.noteService.registerNotes([events[0]]);
         return events[0];
       }
@@ -353,12 +453,22 @@ export class ThreadOrchestrator extends Orchestrator {
 
     if (relayHint) {
       try {
-        const events = await this.transport.fetch([relayHint], [filter], 5000, true, 'ThreadOrch');
+        const events = await this.transport.fetch(
+          [relayHint],
+          [filter],
+          5000,
+          true,
+          'ThreadOrch'
+        );
         if (events[0]) {
-          diagLog('relays', 'ThreadOrchestrator: relay hint found addressable parent', {
-            coord: coordinate.slice(0, 30),
-            relay: relayHint
-          });
+          diagLog(
+            'relays',
+            'ThreadOrchestrator: relay hint found addressable parent',
+            {
+              coord: coordinate.slice(0, 30),
+              relay: relayHint,
+            }
+          );
           this.noteService.registerNotes([events[0]]);
           return events[0];
         }
@@ -368,13 +478,26 @@ export class ThreadOrchestrator extends Orchestrator {
     }
 
     try {
-      const outboundRelays = await this.relayDiscovery.getCombinedRelays([pubkey, knownAuthorPubkey], true);
-      const events = await this.transport.fetch(outboundRelays, [filter], 8000, true, 'ThreadOrch');
+      const outboundRelays = await this.relayDiscovery.getCombinedRelays(
+        [pubkey, knownAuthorPubkey],
+        true
+      );
+      const events = await this.transport.fetch(
+        outboundRelays,
+        [filter],
+        8000,
+        true,
+        'ThreadOrch'
+      );
       if (events[0]) {
-        diagLog('relays', 'ThreadOrchestrator: outbound fallback found addressable parent', {
-          coord: coordinate.slice(0, 30),
-          authorPubkey: pubkey.slice(0, 8)
-        });
+        diagLog(
+          'relays',
+          'ThreadOrchestrator: outbound fallback found addressable parent',
+          {
+            coord: coordinate.slice(0, 30),
+            authorPubkey: pubkey.slice(0, 8),
+          }
+        );
         this.noteService.registerNotes([events[0]]);
         return events[0];
       }
@@ -388,16 +511,21 @@ export class ThreadOrchestrator extends Orchestrator {
   /**
    * Extract parent event ID and optional relay hint from e-tags
    */
-  private extractParentRef(event: NostrEvent): { id: string; relayHint: string | null } | null {
+  private extractParentRef(
+    event: NostrEvent
+  ): { id: string; relayHint: string | null } | null {
     // NIP-22: kind:1111 uses lowercase 'e' for parent on regular notes,
     // or lowercase 'a' (fallback uppercase 'A' for top-level) on addressable parents.
     if (event.kind === 1111) {
       const parentETag = event.tags.find(t => t[0] === 'e');
-      if (parentETag?.[1]) return { id: parentETag[1], relayHint: parentETag[2] || null };
+      if (parentETag?.[1])
+        return { id: parentETag[1], relayHint: parentETag[2] || null };
 
-      const parentATag = event.tags.find(t => t[0] === 'a')
-                       ?? event.tags.find(t => t[0] === 'A');
-      if (parentATag?.[1]) return { id: parentATag[1], relayHint: parentATag[2] || null };
+      const parentATag =
+        event.tags.find(t => t[0] === 'a') ??
+        event.tags.find(t => t[0] === 'A');
+      if (parentATag?.[1])
+        return { id: parentATag[1], relayHint: parentATag[2] || null };
 
       return null;
     }
@@ -422,16 +550,19 @@ export class ThreadOrchestrator extends Orchestrator {
       // (which use bare 'a' tags for tagging purposes only and render the
       // parent inline in the body — indicator would duplicate).
       if (event.kind === 1) {
-        const parentATag = event.tags.find(t => t[0] === 'a' && t[3] === 'reply')
-                        ?? event.tags.find(t => t[0] === 'a' && t[3] === 'root');
-        if (parentATag?.[1]) return { id: parentATag[1], relayHint: parentATag[2] || null };
+        const parentATag =
+          event.tags.find(t => t[0] === 'a' && t[3] === 'reply') ??
+          event.tags.find(t => t[0] === 'a' && t[3] === 'root');
+        if (parentATag?.[1])
+          return { id: parentATag[1], relayHint: parentATag[2] || null };
       }
       return null;
     }
 
     // Prefer 'reply' marker
     const replyTag = eTags.find(tag => tag[3] === 'reply');
-    if (replyTag?.[1]) return { id: replyTag[1], relayHint: replyTag[2] || null };
+    if (replyTag?.[1])
+      return { id: replyTag[1], relayHint: replyTag[2] || null };
 
     // Single e-tag = parent
     if (eTags.length === 1 && eTags[0]?.[1]) {
@@ -455,9 +586,15 @@ export class ThreadOrchestrator extends Orchestrator {
     this.parentChainCache.clear();
   }
 
-  public startLiveReplies(noteId: string, callback: (event: NostrEvent) => void): void {
+  public startLiveReplies(
+    noteId: string,
+    callback: (event: NostrEvent) => void
+  ): void {
     if (this.liveSubscriptions.has(noteId)) {
-      this.systemLogger.warn(this.LOG_TAG, `Already subscribed to ${noteId}, restarting`);
+      this.systemLogger.warn(
+        this.LOG_TAG,
+        `Already subscribed to ${noteId}, restarting`
+      );
       this.stopLiveReplies(noteId);
     }
 
@@ -469,14 +606,31 @@ export class ThreadOrchestrator extends Orchestrator {
     // #A tags by NIP-22 comments and legacy replies; hex ids use #e.
     const filters: NDKFilter[] = isAddressable
       ? [
-          { kinds: [1, 1111], '#a': [noteId], since: Math.floor(Date.now() / 1000) },
-          { kinds: [1, 1111], '#A': [noteId], since: Math.floor(Date.now() / 1000) },
+          {
+            kinds: [1, 1111],
+            '#a': [noteId],
+            since: Math.floor(Date.now() / 1000),
+          },
+          {
+            kinds: [1, 1111],
+            '#A': [noteId],
+            since: Math.floor(Date.now() / 1000),
+          },
         ]
-      : [{ kinds: [1, 1111], '#e': [noteId], since: Math.floor(Date.now() / 1000) }];
+      : [
+          {
+            kinds: [1, 1111],
+            '#e': [noteId],
+            since: Math.floor(Date.now() / 1000),
+          },
+        ];
 
-    this.transport.subscribeLive(relays, filters, subId, (event) => {
+    this.transport.subscribeLive(relays, filters, subId, event => {
       if (this.isActualReply(event, noteId)) {
-        this.systemLogger.info(this.LOG_TAG, `New live reply for ${noteId}: ${event.id}`);
+        this.systemLogger.info(
+          this.LOG_TAG,
+          `New live reply for ${noteId}: ${event.id}`
+        );
 
         const cached = this.repliesMetaCache.get(noteId);
         if (cached && event.id) {
@@ -495,7 +649,10 @@ export class ThreadOrchestrator extends Orchestrator {
   public stopLiveReplies(noteId: string): void {
     const subId = this.liveSubscriptions.get(noteId);
     if (!subId) {
-      this.systemLogger.warn(this.LOG_TAG, `No live subscription for ${noteId}`);
+      this.systemLogger.warn(
+        this.LOG_TAG,
+        `No live subscription for ${noteId}`
+      );
       return;
     }
 
@@ -510,13 +667,19 @@ export class ThreadOrchestrator extends Orchestrator {
   public onclose(): void {}
 
   public onerror(relay: string, error: Error): void {
-    this.systemLogger.error(this.LOG_TAG, `Relay error (${relay}): ${error.message}`);
+    this.systemLogger.error(
+      this.LOG_TAG,
+      `Relay error (${relay}): ${error.message}`
+    );
   }
 
   public override destroy(): void {
     this.liveSubscriptions.forEach((subId, noteId) => {
       this.transport.unsubscribeLive(subId);
-      this.systemLogger.info(this.LOG_TAG, `Stopped live subscription for ${noteId}`);
+      this.systemLogger.info(
+        this.LOG_TAG,
+        `Stopped live subscription for ${noteId}`
+      );
     });
     this.liveSubscriptions.clear();
 

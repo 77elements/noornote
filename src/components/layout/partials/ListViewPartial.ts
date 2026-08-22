@@ -52,10 +52,8 @@ export class ListViewPartial {
    * Create tab button with close [x] button using TabsHelper
    */
   public createTab(): HTMLElement {
-    const tab = createClosableTab(
-      this.resolveTabId(),
-      this.config.title,
-      () => this.config.onClose()
+    const tab = createClosableTab(this.resolveTabId(), this.config.title, () =>
+      this.config.onClose()
     );
 
     this.tabElement = tab;

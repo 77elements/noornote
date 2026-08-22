@@ -8,7 +8,11 @@ import type { NoteDraft } from '../services/NoteDraftService';
 export function openDraftInComposer(draft: NoteDraft): void {
   if (draft.type === 'reply' && draft.parentEventId) {
     void import('../components/reply/ReplyModal').then(({ ReplyModal }) =>
-      ReplyModal.getInstance().show(draft.parentEventId!, undefined, draft.content)
+      ReplyModal.getInstance().show(
+        draft.parentEventId!,
+        undefined,
+        draft.content
+      )
     );
   } else {
     void import('../components/post/PostNoteModal').then(({ PostNoteModal }) =>

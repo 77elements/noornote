@@ -8,21 +8,25 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 export interface FollowPack {
-  id: string;           // d-tag
+  id: string; // d-tag
   eventId: string;
   title: string;
   description: string;
   coverImage: string;
   authorPubkey: string;
   authorName?: string;
-  createdAt: number;    // event.created_at (unix timestamp)
+  createdAt: number; // event.created_at (unix timestamp)
   userPubkeys: string[];
-  userProfiles?: Map<string, { name?: string; picture?: string; about?: string }>;
+  userProfiles?: Map<
+    string,
+    { name?: string; picture?: string; about?: string }
+  >;
 }
 
 export function parseFollowPackEvent(event: NostrEvent): FollowPack {
   const tags = event.tags || [];
-  const getTag = (name: string) => tags.find((t: string[]) => t[0] === name)?.[1] || '';
+  const getTag = (name: string) =>
+    tags.find((t: string[]) => t[0] === name)?.[1] || '';
 
   return {
     id: getTag('d'),
@@ -32,7 +36,9 @@ export function parseFollowPackEvent(event: NostrEvent): FollowPack {
     coverImage: getTag('image') || '',
     authorPubkey: event.pubkey || '',
     createdAt: (event as any).created_at ?? 0,
-    userPubkeys: tags.filter((t: string[]) => t[0] === 'p' && t[1]).map((t: string[]) => t[1]!),
+    userPubkeys: tags
+      .filter((t: string[]) => t[0] === 'p' && t[1])
+      .map((t: string[]) => t[1]!),
   };
 }
 
@@ -47,7 +53,12 @@ const BLACKLISTED_PACKS = new Set<string>([
 export function filterFollowPacks(packs: FollowPack[]): FollowPack[] {
   const filtered = packs.filter(pack => {
     const title = pack.title.toLowerCase();
-    if (title.includes('spam') || pack.userPubkeys.length === 0 || pack.title.length === 0) return false;
+    if (
+      title.includes('spam') ||
+      pack.userPubkeys.length === 0 ||
+      pack.title.length === 0
+    )
+      return false;
     if (BLACKLISTED_PACKS.has(`${pack.authorPubkey}:${pack.id}`)) return false;
     return true;
   });

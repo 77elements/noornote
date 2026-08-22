@@ -85,7 +85,10 @@ export class OrchestrationsRouter {
     if (orchestrator) {
       orchestrator.destroy();
       this.orchestrators.delete(name);
-      this.systemLogger.info('OrchestrationsRouter', `Unregistered orchestrator: ${name}`);
+      this.systemLogger.info(
+        'OrchestrationsRouter',
+        `Unregistered orchestrator: ${name}`
+      );
     }
   }
 
@@ -122,14 +125,15 @@ export class OrchestrationsRouter {
     } else {
       // Create new subscription
       const sub = await this.transport.subscribe(relayList, filters, {
-        onEvent: (event: NostrEvent, relay: string) => this.distributeEvent(event, relay, subscriptionId),
-        onEose: () => this.handleEose(subscriptionId)
+        onEvent: (event: NostrEvent, relay: string) =>
+          this.distributeEvent(event, relay, subscriptionId),
+        onEose: () => this.handleEose(subscriptionId),
       });
 
       subscription = {
         sub,
         filters,
-        orchestrators: new Set([orchestratorName])
+        orchestrators: new Set([orchestratorName]),
       };
 
       this.subscriptions.set(subscriptionId, subscription);
@@ -170,7 +174,11 @@ export class OrchestrationsRouter {
   /**
    * Distribute event to all interested Orchestrators
    */
-  private distributeEvent(event: NostrEvent, relay: string, subscriptionId: string): void {
+  private distributeEvent(
+    event: NostrEvent,
+    relay: string,
+    subscriptionId: string
+  ): void {
     const subscription = this.subscriptions.get(subscriptionId);
     if (!subscription) return;
 
@@ -187,13 +195,19 @@ export class OrchestrationsRouter {
    * Handle EOSE (End Of Stored Events)
    */
   private handleEose(subscriptionId: string): void {
-    this.systemLogger.info('OrchestrationsRouter', `EOSE for subscription '${subscriptionId}'`);
+    this.systemLogger.info(
+      'OrchestrationsRouter',
+      `EOSE for subscription '${subscriptionId}'`
+    );
   }
 
   /**
    * Generate unique subscription ID from filters and relays
    */
-  private generateSubscriptionId(filters: NDKFilter[], relays: string[]): string {
+  private generateSubscriptionId(
+    filters: NDKFilter[],
+    relays: string[]
+  ): string {
     const filterStr = JSON.stringify(filters);
     const relayStr = relays.join(',');
     return `sub_${this.simpleHash(filterStr + relayStr)}`;
@@ -206,7 +220,7 @@ export class OrchestrationsRouter {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }
     return Math.abs(hash).toString(36);

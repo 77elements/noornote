@@ -145,7 +145,10 @@ export class DMStore {
     // If no pubkey provided and we have a current one, use it
     const pubkey = userPubkey || this.currentUserPubkey;
     if (!pubkey) {
-      this.systemLogger.warn('DMStore', 'init() called without pubkey and no current user');
+      this.systemLogger.warn(
+        'DMStore',
+        'init() called without pubkey and no current user'
+      );
       return;
     }
 
@@ -158,7 +161,11 @@ export class DMStore {
       const request = indexedDB.open(dbName, DB_VERSION);
 
       request.onerror = () => {
-        this.systemLogger.error('DMStore', 'Failed to open IndexedDB:', request.error);
+        this.systemLogger.error(
+          'DMStore',
+          'Failed to open IndexedDB:',
+          request.error
+        );
         reject(request.error);
       };
 
@@ -178,7 +185,10 @@ export class DMStore {
 
       request.onsuccess = () => {
         this.db = request.result;
-        this.systemLogger.info('DMStore', `IndexedDB initialized for user ${pubkey.slice(0, 8)}...`);
+        this.systemLogger.info(
+          'DMStore',
+          `IndexedDB initialized for user ${pubkey.slice(0, 8)}...`
+        );
         // Load the read-anchor mirror from localStorage BEFORE any message is
         // processed. If the IndexedDB was evicted, the conversation records are
         // gone but this mirror survived — saveMessage falls back to it so reads
@@ -203,7 +213,7 @@ export class DMStore {
         }
       };
 
-      request.onupgradeneeded = (event) => {
+      request.onupgradeneeded = event => {
         const req = event.target as IDBOpenDBRequest;
         const db = req.result;
         const upgradeTx = req.transaction!; // set during upgrade
@@ -211,11 +221,19 @@ export class DMStore {
         // Messages store with indexes
         if (!db.objectStoreNames.contains(MESSAGES_STORE)) {
           // Fresh DB → create store with all indexes including expiresAt.
-          const messagesStore = db.createObjectStore(MESSAGES_STORE, { keyPath: 'id' });
-          messagesStore.createIndex('conversationWith', 'conversationWith', { unique: false });
-          messagesStore.createIndex('createdAt', 'createdAt', { unique: false });
+          const messagesStore = db.createObjectStore(MESSAGES_STORE, {
+            keyPath: 'id',
+          });
+          messagesStore.createIndex('conversationWith', 'conversationWith', {
+            unique: false,
+          });
+          messagesStore.createIndex('createdAt', 'createdAt', {
+            unique: false,
+          });
           messagesStore.createIndex('wrapId', 'wrapId', { unique: true });
-          messagesStore.createIndex('expiresAt', 'expiresAt', { unique: false });
+          messagesStore.createIndex('expiresAt', 'expiresAt', {
+            unique: false,
+          });
         } else {
           // Existing store (v4 or v5 upgrade path) → ensure expiresAt index.
           // Wrapped in try/catch because createIndex on an already-existing
@@ -223,18 +241,28 @@ export class DMStore {
           try {
             const messagesStore = upgradeTx.objectStore(MESSAGES_STORE);
             if (!messagesStore.indexNames.contains('expiresAt')) {
-              messagesStore.createIndex('expiresAt', 'expiresAt', { unique: false });
-              diagLog('dms', 'expiresAt_index_created_during_upgrade', { version: db.version });
+              messagesStore.createIndex('expiresAt', 'expiresAt', {
+                unique: false,
+              });
+              diagLog('dms', 'expiresAt_index_created_during_upgrade', {
+                version: db.version,
+              });
             }
           } catch (idxErr) {
-            diagLog('dms', 'expiresAt_index_create_failed', { error: String(idxErr) });
+            diagLog('dms', 'expiresAt_index_create_failed', {
+              error: String(idxErr),
+            });
           }
         }
 
         // Conversations store
         if (!db.objectStoreNames.contains(CONVERSATIONS_STORE)) {
-          const conversationsStore = db.createObjectStore(CONVERSATIONS_STORE, { keyPath: 'pubkey' });
-          conversationsStore.createIndex('lastMessageAt', 'lastMessageAt', { unique: false });
+          const conversationsStore = db.createObjectStore(CONVERSATIONS_STORE, {
+            keyPath: 'pubkey',
+          });
+          conversationsStore.createIndex('lastMessageAt', 'lastMessageAt', {
+            unique: false,
+          });
         }
         // Note: DMConversation.disappearingSeconds is additive — no index needed,
         // existing records just gain an undefined field which our helpers treat
@@ -274,7 +302,10 @@ export class DMStore {
     await this.init();
 
     return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction([MESSAGES_STORE, CONVERSATIONS_STORE], 'readwrite');
+      const tx = this.db!.transaction(
+        [MESSAGES_STORE, CONVERSATIONS_STORE],
+        'readwrite'
+      );
       const messagesStore = tx.objectStore(MESSAGES_STORE);
       const conversationsStore = tx.objectStore(CONVERSATIONS_STORE);
 
@@ -298,13 +329,15 @@ export class DMStore {
         const getConvRequest = conversationsStore.get(message.conversationWith);
         getConvRequest.onsuccess = () => {
           const existing = getConvRequest.result as DMConversation | undefined;
-          const isNewer = !existing || message.createdAt > existing.lastMessageAt;
+          const isNewer =
+            !existing || message.createdAt > existing.lastMessageAt;
 
           // Soft-delete handling: a message newer than the delete cutoff
           // resurrects the conversation; an older one (e.g. re-synced history)
           // keeps it hidden and does NOT bump unread.
           const wasDeleted = existing?.deleted === true;
-          const resurrect = wasDeleted && message.createdAt > (existing?.deletedAt || 0);
+          const resurrect =
+            wasDeleted && message.createdAt > (existing?.deletedAt || 0);
           const staysDeleted = wasDeleted && !resurrect;
 
           // Only count as unread if:
@@ -317,7 +350,8 @@ export class DMStore {
           const lastReadAt = existing
             ? existing.lastReadAt
             : (this.readAnchorMirror.get(message.conversationWith) ?? 0);
-          const shouldIncrementUnread = !message.isMine && message.createdAt > lastReadAt && !staysDeleted;
+          const shouldIncrementUnread =
+            !message.isMine && message.createdAt > lastReadAt && !staysDeleted;
 
           // Diagnostic: any time unread is bumped, record whether we knew the conversation and what
           // its read-anchor was. The false-"unread" bug shows up here as a burst with hadConversation
@@ -336,15 +370,22 @@ export class DMStore {
           const subject = message.subject || existing?.subject;
           const conversation: DMConversation = {
             pubkey: message.conversationWith,
-            lastMessageAt: isNewer ? message.createdAt : existing!.lastMessageAt,
-            lastMessagePreview: isNewer ? message.content.slice(0, 100) : existing!.lastMessagePreview,
+            lastMessageAt: isNewer
+              ? message.createdAt
+              : existing!.lastMessageAt,
+            lastMessagePreview: isNewer
+              ? message.content.slice(0, 100)
+              : existing!.lastMessagePreview,
             unreadCount: shouldIncrementUnread
               ? (existing?.unreadCount || 0) + 1
-              : (existing?.unreadCount || 0),
-            lastReadAt: lastReadAt,
+              : existing?.unreadCount || 0,
+            lastReadAt,
             ...(subject && { subject }),
             // Keep hidden only while staying deleted; resurrection/new convo clears it.
-            ...(staysDeleted && { deleted: true, deletedAt: existing!.deletedAt })
+            ...(staysDeleted && {
+              deleted: true,
+              deletedAt: existing!.deletedAt,
+            }),
           };
 
           conversationsStore.put(conversation);
@@ -352,7 +393,11 @@ export class DMStore {
           // Keep the read-anchor mirror warm: if this conversation has a
           // lastReadAt higher than what's currently mirrored, update it so
           // a future IndexedDB eviction doesn't lose the read state.
-          if (lastReadAt > 0 && lastReadAt > (this.readAnchorMirror.get(message.conversationWith) ?? 0)) {
+          if (
+            lastReadAt > 0 &&
+            lastReadAt >
+              (this.readAnchorMirror.get(message.conversationWith) ?? 0)
+          ) {
             this.readAnchorMirror.set(message.conversationWith, lastReadAt);
             mirrorUpdated = true;
           }
@@ -370,14 +415,23 @@ export class DMStore {
   /**
    * Get messages for a conversation (paginated)
    */
-  public async getMessages(partnerPubkey: string, limit: number = 50, before?: number): Promise<DMMessage[]> {
+  public async getMessages(
+    partnerPubkey: string,
+    limit: number = 50,
+    before?: number
+  ): Promise<DMMessage[]> {
     await this.init();
 
     return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction([MESSAGES_STORE, CONVERSATIONS_STORE], 'readonly');
+      const tx = this.db!.transaction(
+        [MESSAGES_STORE, CONVERSATIONS_STORE],
+        'readonly'
+      );
 
       // Look up the soft-delete cutoff first, so messages up to deletedAt stay hidden.
-      const convRequest = tx.objectStore(CONVERSATIONS_STORE).get(partnerPubkey);
+      const convRequest = tx
+        .objectStore(CONVERSATIONS_STORE)
+        .get(partnerPubkey);
       convRequest.onsuccess = () => {
         const conv = convRequest.result as DMConversation | undefined;
         const deletedAt = conv?.deletedAt || 0;
@@ -419,7 +473,10 @@ export class DMStore {
   /**
    * Get conversations with pagination (sorted by lastMessageAt desc)
    */
-  public async getConversations(limit?: number, offset: number = 0): Promise<DMConversation[]> {
+  public async getConversations(
+    limit?: number,
+    offset: number = 0
+  ): Promise<DMConversation[]> {
     await this.init();
 
     return new Promise((resolve, reject) => {
@@ -468,7 +525,9 @@ export class DMStore {
   /**
    * Get single conversation by partner pubkey
    */
-  public async getConversation(partnerPubkey: string): Promise<DMConversation | null> {
+  public async getConversation(
+    partnerPubkey: string
+  ): Promise<DMConversation | null> {
     await this.init();
 
     return new Promise((resolve, reject) => {
@@ -515,13 +574,18 @@ export class DMStore {
    */
   private loadReadAnchorMirror(pubkey: string): void {
     try {
-      const obj = PerAccountLocalStorage.getInstance()
-        .getForPubkey<Record<string, number>>(StorageKeys.DM_READ_ANCHORS, pubkey, {});
+      const obj = PerAccountLocalStorage.getInstance().getForPubkey<
+        Record<string, number>
+      >(StorageKeys.DM_READ_ANCHORS, pubkey, {});
       this.readAnchorMirror = new Map(Object.entries(obj));
-      diagLog('dms', 'read_anchor_mirror_loaded', { count: this.readAnchorMirror.size });
+      diagLog('dms', 'read_anchor_mirror_loaded', {
+        count: this.readAnchorMirror.size,
+      });
     } catch (error) {
       this.readAnchorMirror = new Map();
-      diagLog('dms', 'read_anchor_mirror_load_failed', { error: String(error) });
+      diagLog('dms', 'read_anchor_mirror_load_failed', {
+        error: String(error),
+      });
     }
   }
 
@@ -536,10 +600,15 @@ export class DMStore {
       for (const [pk, ts] of this.readAnchorMirror) {
         if (ts > 0) obj[pk] = ts;
       }
-      PerAccountLocalStorage.getInstance()
-        .setForPubkey(StorageKeys.DM_READ_ANCHORS, this.currentUserPubkey, obj);
+      PerAccountLocalStorage.getInstance().setForPubkey(
+        StorageKeys.DM_READ_ANCHORS,
+        this.currentUserPubkey,
+        obj
+      );
     } catch (error) {
-      diagLog('dms', 'read_anchor_mirror_save_failed', { error: String(error) });
+      diagLog('dms', 'read_anchor_mirror_save_failed', {
+        error: String(error),
+      });
     }
   }
 
@@ -556,7 +625,9 @@ export class DMStore {
       req.onsuccess = () => resolve((req.result as DMConversation[]) || []);
       req.onerror = () => reject(req.error);
     });
-    this.readAnchorMirror = new Map(all.map(c => [c.pubkey, c.lastReadAt] as const));
+    this.readAnchorMirror = new Map(
+      all.map(c => [c.pubkey, c.lastReadAt] as const)
+    );
     this.saveReadAnchorMirror();
   }
 
@@ -578,7 +649,9 @@ export class DMStore {
       const store = tx.objectStore(MESSAGES_STORE);
       indexMissing = !store.indexNames.contains('expiresAt');
     } catch (err) {
-      diagLog('dms', 'ensureExpiresAtIndex_probe_failed', { error: String(err) });
+      diagLog('dms', 'ensureExpiresAtIndex_probe_failed', {
+        error: String(err),
+      });
       return; // Don't risk a recursive reopen if the probe itself failed.
     }
 
@@ -598,7 +671,7 @@ export class DMStore {
     this.initPromise = null;
     // Bump the requested version. DB_VERSION stays constant in code; the
     // override here is just for this recovery path.
-    void this.initWithVersion(currentVersion + 1).catch((err) => {
+    void this.initWithVersion(currentVersion + 1).catch(err => {
       diagLog('dms', 'expiresAt_force_reopen_failed', { error: String(err) });
     });
   }
@@ -620,17 +693,23 @@ export class DMStore {
         this.db = request.result;
         resolve();
       };
-      request.onupgradeneeded = (event) => {
+      request.onupgradeneeded = event => {
         const req = event.target as IDBOpenDBRequest;
         const upgradeTx = req.transaction!;
         try {
           const messagesStore = upgradeTx.objectStore(MESSAGES_STORE);
           if (!messagesStore.indexNames.contains('expiresAt')) {
-            messagesStore.createIndex('expiresAt', 'expiresAt', { unique: false });
-            diagLog('dms', 'expiresAt_index_created_via_force_reopen', { version: targetVersion });
+            messagesStore.createIndex('expiresAt', 'expiresAt', {
+              unique: false,
+            });
+            diagLog('dms', 'expiresAt_index_created_via_force_reopen', {
+              version: targetVersion,
+            });
           }
         } catch (err) {
-          diagLog('dms', 'expiresAt_index_force_reopen_failed', { error: String(err) });
+          diagLog('dms', 'expiresAt_index_force_reopen_failed', {
+            error: String(err),
+          });
         }
       };
     });
@@ -673,7 +752,10 @@ export class DMStore {
     await this.init();
 
     return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction([MESSAGES_STORE, CONVERSATIONS_STORE], 'readwrite');
+      const tx = this.db!.transaction(
+        [MESSAGES_STORE, CONVERSATIONS_STORE],
+        'readwrite'
+      );
       tx.objectStore(CONVERSATIONS_STORE).delete(partnerPubkey);
 
       // Delete every message in this conversation via the conversationWith index
@@ -698,8 +780,11 @@ export class DMStore {
   public async markAllAsRead(): Promise<void> {
     const now = Math.floor(Date.now() / 1000);
     await this.updateAllConversations(
-      (c) => c.unreadCount > 0,
-      (c) => { c.unreadCount = 0; c.lastReadAt = now; }
+      c => c.unreadCount > 0,
+      c => {
+        c.unreadCount = 0;
+        c.lastReadAt = now;
+      }
     );
     await this.rebuildAnchorMirrorFromDB();
   }
@@ -709,8 +794,11 @@ export class DMStore {
    */
   public async markAllAsUnread(): Promise<void> {
     await this.updateAllConversations(
-      (c) => c.unreadCount === 0,
-      (c) => { c.unreadCount = 1; c.lastReadAt = 0; }
+      c => c.unreadCount === 0,
+      c => {
+        c.unreadCount = 1;
+        c.lastReadAt = 0;
+      }
     );
     await this.rebuildAnchorMirrorFromDB();
   }
@@ -816,16 +904,23 @@ export class DMStore {
    */
   private loadDisappearingMirror(pubkey: string): void {
     try {
-      const obj = PerAccountLocalStorage.getInstance()
-        .getForPubkey<Record<string, number | undefined>>(StorageKeys.DM_DISAPPEARING_SETTINGS, pubkey, {});
+      const obj = PerAccountLocalStorage.getInstance().getForPubkey<
+        Record<string, number | undefined>
+      >(StorageKeys.DM_DISAPPEARING_SETTINGS, pubkey, {});
       // Re-hydrate: drop keys whose value is undefined (treat as not present,
       // since JSON.stringify drops undefined values anyway).
-      const entries = Object.entries(obj).filter(([, v]) => v !== undefined) as Array<[string, number]>;
+      const entries = Object.entries(obj).filter(
+        ([, v]) => v !== undefined
+      ) as Array<[string, number]>;
       this.disappearingMirror = new Map(entries);
-      diagLog('dms', 'disappearing_mirror_loaded', { count: this.disappearingMirror.size });
+      diagLog('dms', 'disappearing_mirror_loaded', {
+        count: this.disappearingMirror.size,
+      });
     } catch (error) {
       this.disappearingMirror = new Map();
-      diagLog('dms', 'disappearing_mirror_load_failed', { error: String(error) });
+      diagLog('dms', 'disappearing_mirror_load_failed', {
+        error: String(error),
+      });
     }
   }
 
@@ -841,10 +936,15 @@ export class DMStore {
       for (const [pk, secs] of this.disappearingMirror) {
         if (typeof secs === 'number') obj[pk] = secs;
       }
-      PerAccountLocalStorage.getInstance()
-        .setForPubkey(StorageKeys.DM_DISAPPEARING_SETTINGS, this.currentUserPubkey, obj);
+      PerAccountLocalStorage.getInstance().setForPubkey(
+        StorageKeys.DM_DISAPPEARING_SETTINGS,
+        this.currentUserPubkey,
+        obj
+      );
     } catch (error) {
-      diagLog('dms', 'disappearing_mirror_save_failed', { error: String(error) });
+      diagLog('dms', 'disappearing_mirror_save_failed', {
+        error: String(error),
+      });
     }
   }
 
@@ -858,7 +958,9 @@ export class DMStore {
    * Falls back to the localStorage mirror if the conversation record is
    * missing (e.g. after IndexedDB eviction), so the setting survives.
    */
-  public async getDisappearing(partnerPubkey: string): Promise<number | undefined> {
+  public async getDisappearing(
+    partnerPubkey: string
+  ): Promise<number | undefined> {
     await this.init();
     // In-memory mirror is fastest and survives eviction.
     if (this.disappearingMirror.has(partnerPubkey)) {
@@ -882,7 +984,10 @@ export class DMStore {
    * preset seconds value to enable. The value is the source of truth for
    * whether outgoing messages get an `expiration` tag (DMService.sendMessage).
    */
-  public async setDisappearing(partnerPubkey: string, seconds: number | undefined): Promise<void> {
+  public async setDisappearing(
+    partnerPubkey: string,
+    seconds: number | undefined
+  ): Promise<void> {
     await this.init();
 
     return new Promise((resolve, reject) => {
@@ -909,7 +1014,10 @@ export class DMStore {
         store.put(conv);
         this.disappearingMirror.set(partnerPubkey, seconds);
         this.saveDisappearingMirror();
-        diagLog('dms', 'disappearing_set', { partner: partnerPubkey.slice(0, 8), seconds });
+        diagLog('dms', 'disappearing_set', {
+          partner: partnerPubkey.slice(0, 8),
+          seconds,
+        });
       };
 
       tx.oncomplete = () => resolve();
@@ -923,7 +1031,9 @@ export class DMStore {
    * a given duration needs a fresh prompt or should be silently rejected
    * (already said No) / silently shown (already said Yes).
    */
-  public async getLastPromptedPeerDuration(partnerPubkey: string): Promise<number | undefined> {
+  public async getLastPromptedPeerDuration(
+    partnerPubkey: string
+  ): Promise<number | undefined> {
     await this.init();
     const conv = await this.getConversation(partnerPubkey);
     return conv?.lastPromptedPeerDuration;
@@ -935,7 +1045,10 @@ export class DMStore {
    * rejected the new duration, so we record it to silently reject future
    * messages with the same duration until the peer changes again.
    */
-  public async setLastPromptedPeerDuration(partnerPubkey: string, seconds: number): Promise<void> {
+  public async setLastPromptedPeerDuration(
+    partnerPubkey: string,
+    seconds: number
+  ): Promise<void> {
     await this.init();
 
     return new Promise((resolve, reject) => {
@@ -966,7 +1079,10 @@ export class DMStore {
    * drop all pending messages with the rejected duration. Only considers
    * incoming messages with expiresAt set.
    */
-  public async deletePendingMessagesByDuration(partnerPubkey: string, duration: number): Promise<number> {
+  public async deletePendingMessagesByDuration(
+    partnerPubkey: string,
+    duration: number
+  ): Promise<number> {
     await this.init();
     let deleted = 0;
 
@@ -980,7 +1096,10 @@ export class DMStore {
         const cursor = cursorReq.result;
         if (cursor) {
           const m = cursor.value as DMMessage;
-          if (typeof m.expiresAt === 'number' && (m.expiresAt - m.createdAt) === duration) {
+          if (
+            typeof m.expiresAt === 'number' &&
+            m.expiresAt - m.createdAt === duration
+          ) {
             cursor.delete();
             deleted++;
           }
@@ -990,7 +1109,11 @@ export class DMStore {
 
       tx.oncomplete = () => {
         if (deleted > 0) {
-          diagLog('dms', 'pending_messages_deleted', { partner: partnerPubkey.slice(0, 8), duration, deleted });
+          diagLog('dms', 'pending_messages_deleted', {
+            partner: partnerPubkey.slice(0, 8),
+            duration,
+            deleted,
+          });
         }
         resolve(deleted);
       };
@@ -1010,7 +1133,9 @@ export class DMStore {
    * conversation — otherwise the messages-list overview shows stale previews
    * of messages that no longer exist.
    */
-  public async deleteExpiredBefore(now: number): Promise<{ partnerPubkeys: Set<string>; count: number }> {
+  public async deleteExpiredBefore(
+    now: number
+  ): Promise<{ partnerPubkeys: Set<string>; count: number }> {
     await this.init();
 
     const affected = new Set<string>();
@@ -1066,28 +1191,32 @@ export class DMStore {
    * approach tried to read/write the conversations store AFTER the messages
    * transaction had already completed — which silently failed in IDB.)
    */
-  private async recomputeConversationPreview(partnerPubkey: string): Promise<void> {
+  private async recomputeConversationPreview(
+    partnerPubkey: string
+  ): Promise<void> {
     await this.init();
 
     // Step 1: find the latest remaining message for this partner (read-only).
-    const latestMessage = await new Promise<DMMessage | null>((resolve, reject) => {
-      const tx = this.db!.transaction(MESSAGES_STORE, 'readonly');
-      const index = tx.objectStore(MESSAGES_STORE).index('conversationWith');
-      const cursorReq = index.openCursor(IDBKeyRange.only(partnerPubkey));
-      let latest: DMMessage | null = null;
+    const latestMessage = await new Promise<DMMessage | null>(
+      (resolve, reject) => {
+        const tx = this.db!.transaction(MESSAGES_STORE, 'readonly');
+        const index = tx.objectStore(MESSAGES_STORE).index('conversationWith');
+        const cursorReq = index.openCursor(IDBKeyRange.only(partnerPubkey));
+        let latest: DMMessage | null = null;
 
-      cursorReq.onsuccess = () => {
-        const cursor = cursorReq.result;
-        if (cursor) {
-          const m = cursor.value as DMMessage;
-          if (!latest || m.createdAt > latest.createdAt) latest = m;
-          cursor.continue();
-        } else {
-          resolve(latest);
-        }
-      };
-      cursorReq.onerror = () => reject(cursorReq.error);
-    });
+        cursorReq.onsuccess = () => {
+          const cursor = cursorReq.result;
+          if (cursor) {
+            const m = cursor.value as DMMessage;
+            if (!latest || m.createdAt > latest.createdAt) latest = m;
+            cursor.continue();
+          } else {
+            resolve(latest);
+          }
+        };
+        cursorReq.onerror = () => reject(cursorReq.error);
+      }
+    );
 
     // Step 2: update the conversation record (readwrite).
     await new Promise<void>((resolve, reject) => {
@@ -1097,7 +1226,10 @@ export class DMStore {
 
       req.onsuccess = () => {
         const conv = req.result as DMConversation | undefined;
-        if (!conv) { resolve(); return; }
+        if (!conv) {
+          resolve();
+          return;
+        }
         if (latestMessage) {
           conv.lastMessageAt = latestMessage.createdAt;
           conv.lastMessagePreview = (latestMessage.content || '').slice(0, 100);
@@ -1121,7 +1253,10 @@ export class DMStore {
     if (!this.db) return;
 
     return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction([MESSAGES_STORE, CONVERSATIONS_STORE], 'readwrite');
+      const tx = this.db!.transaction(
+        [MESSAGES_STORE, CONVERSATIONS_STORE],
+        'readwrite'
+      );
       tx.objectStore(MESSAGES_STORE).clear();
       tx.objectStore(CONVERSATIONS_STORE).clear();
 

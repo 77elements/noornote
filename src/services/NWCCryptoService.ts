@@ -32,7 +32,7 @@ import { diagLog } from './DiagnosticLogger';
 
 const FORMAT_PREFIX = 'v2:';
 const DEVICE_KEY_SIZE = 32; // 256 bits
-const IV_SIZE = 12;         // 96 bits (AES-GCM standard)
+const IV_SIZE = 12; // 96 bits (AES-GCM standard)
 
 // Desktop storage location (NOT inside {npub}/ — it's device-bound)
 const DESKTOP_NOORNOTE_DIR = '.noornote';
@@ -94,7 +94,10 @@ export class NWCCryptoService {
       throw new Error('NWCCryptoService.decrypt: missing v2 prefix');
     }
     const jsonString = atob(blob.slice(FORMAT_PREFIX.length));
-    const payload = JSON.parse(jsonString) as { iv: string; ciphertext: string };
+    const payload = JSON.parse(jsonString) as {
+      iv: string;
+      ciphertext: string;
+    };
     if (!payload.iv || !payload.ciphertext) {
       throw new Error('NWCCryptoService.decrypt: malformed payload');
     }
@@ -130,14 +133,16 @@ export class NWCCryptoService {
     if (this.cachedKey) return this.cachedKey;
     if (this.loadingPromise) return this.loadingPromise;
 
-    this.loadingPromise = this.loadOrCreateDeviceKey().then(key => {
-      this.cachedKey = key;
-      this.loadingPromise = null;
-      return key;
-    }).catch(err => {
-      this.loadingPromise = null;
-      throw err;
-    });
+    this.loadingPromise = this.loadOrCreateDeviceKey()
+      .then(key => {
+        this.cachedKey = key;
+        this.loadingPromise = null;
+        return key;
+      })
+      .catch(err => {
+        this.loadingPromise = null;
+        throw err;
+      });
     return this.loadingPromise;
   }
 
@@ -149,16 +154,24 @@ export class NWCCryptoService {
       await this.writeStoredKeyBytes(keyBytes);
     }
     const platform = PlatformService.getInstance();
-    const storage = platform.isElectron ? 'file' : platform.isCapacitor ? 'capacitor-fs' : 'indexeddb';
+    const storage = platform.isElectron
+      ? 'file'
+      : platform.isCapacitor
+        ? 'capacitor-fs'
+        : 'indexeddb';
     const platformName = platform.isElectron
       ? 'electron'
       : platform.isCapacitor
         ? 'capacitor'
         : 'web';
-    diagLog('wallet', wasCreated ? 'nwc_device_key_created' : 'nwc_device_key_loaded', {
-      platform: platformName,
-      storage,
-    });
+    diagLog(
+      'wallet',
+      wasCreated ? 'nwc_device_key_created' : 'nwc_device_key_loaded',
+      {
+        platform: platformName,
+        storage,
+      }
+    );
     return crypto.subtle.importKey(
       'raw',
       keyBytes as BufferSource,
@@ -239,9 +252,14 @@ export class NWCCryptoService {
     if (legacy) {
       try {
         await this.writeCapacitorFsKey(legacy);
-        diagLog('wallet', 'nwc_device_key_migrated', { from: 'indexeddb', to: 'capacitor-fs' });
+        diagLog('wallet', 'nwc_device_key_migrated', {
+          from: 'indexeddb',
+          to: 'capacitor-fs',
+        });
       } catch (err) {
-        diagLog('wallet', 'nwc_device_key_migrate_failed', { error: String(err) });
+        diagLog('wallet', 'nwc_device_key_migrate_failed', {
+          error: String(err),
+        });
       }
       return legacy;
     }
@@ -250,7 +268,9 @@ export class NWCCryptoService {
 
   private async readCapacitorFsKey(): Promise<Uint8Array | null> {
     try {
-      const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
+      const { Filesystem, Directory, Encoding } = await import(
+        '@capacitor/filesystem'
+      );
       const result = await Filesystem.readFile({
         path: `${CAP_KEY_DIR}/${CAP_KEY_FILENAME}`,
         directory: Directory.Data,
@@ -266,7 +286,9 @@ export class NWCCryptoService {
   }
 
   private async writeCapacitorFsKey(keyBytes: Uint8Array): Promise<void> {
-    const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
+    const { Filesystem, Directory, Encoding } = await import(
+      '@capacitor/filesystem'
+    );
     await Filesystem.writeFile({
       path: `${CAP_KEY_DIR}/${CAP_KEY_FILENAME}`,
       data: bytesToBase64(keyBytes),
@@ -283,7 +305,7 @@ export class NWCCryptoService {
       const req = indexedDB.open(IDB_DEVICE_DB_NAME, IDB_DEVICE_DB_VERSION);
       req.onerror = () => reject(req.error);
       req.onsuccess = () => resolve(req.result);
-      req.onupgradeneeded = (ev) => {
+      req.onupgradeneeded = ev => {
         const db = (ev.target as IDBOpenDBRequest).result;
         if (!db.objectStoreNames.contains(IDB_DEVICE_STORE)) {
           db.createObjectStore(IDB_DEVICE_STORE, { keyPath: 'key' });
@@ -301,7 +323,9 @@ export class NWCCryptoService {
         const req = store.get(IDB_DEVICE_KEY);
         req.onerror = () => reject(req.error);
         req.onsuccess = () => {
-          const record = req.result as { key: string; value: string } | undefined;
+          const record = req.result as
+            | { key: string; value: string }
+            | undefined;
           if (!record || typeof record.value !== 'string') {
             resolve(null);
             return;
@@ -324,7 +348,10 @@ export class NWCCryptoService {
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(IDB_DEVICE_STORE, 'readwrite');
       const store = tx.objectStore(IDB_DEVICE_STORE);
-      const req = store.put({ key: IDB_DEVICE_KEY, value: bytesToBase64(keyBytes) });
+      const req = store.put({
+        key: IDB_DEVICE_KEY,
+        value: bytesToBase64(keyBytes),
+      });
       req.onerror = () => reject(req.error);
       req.onsuccess = () => resolve();
     });

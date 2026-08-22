@@ -13,24 +13,47 @@
  */
 
 import { getNostrMajlisSettings, type ReminderPrayers } from './index';
-import { getActiveTimes, parseHHMM, activeDiyanetIlceId, type DayPrayerTimes } from './activeTimes';
+import {
+  getActiveTimes,
+  parseHHMM,
+  activeDiyanetIlceId,
+  type DayPrayerTimes,
+} from './activeTimes';
 import { DiyanetService } from './DiyanetService';
 import { escapeHtml } from '../../helpers/escapeHtml';
 
 // Sunrise IS a period boundary: Fajr lasts only until sunrise, then we are in the
 // "Sunrise" period until Dhuhr (no obligatory prayer, but the correct current label).
 const ORDER: [string, keyof DayPrayerTimes][] = [
-  ['Fajr', 'fajr'], ['Sunrise', 'sunrise'], ['Dhuhr', 'dhuhr'], ['Asr', 'asr'], ['Maghrib', 'maghrib'], ['Isha', 'isha'],
+  ['Fajr', 'fajr'],
+  ['Sunrise', 'sunrise'],
+  ['Dhuhr', 'dhuhr'],
+  ['Asr', 'asr'],
+  ['Maghrib', 'maghrib'],
+  ['Isha', 'isha'],
 ];
 
-function pad(n: number): string { return String(n).padStart(2, '0'); }
+function pad(n: number): string {
+  return String(n).padStart(2, '0');
+}
 
-interface WidgetData { currentName: string; nextName: string; nextKey: keyof DayPrayerTimes; nextTime: string; countdownMin: number; }
+interface WidgetData {
+  currentName: string;
+  nextName: string;
+  nextKey: keyof DayPrayerTimes;
+  nextTime: string;
+  countdownMin: number;
+}
 
 function compute(times: DayPrayerTimes, nowMin: number): WidgetData | null {
-  const ms = ORDER
-    .map(([name, key]) => ({ name, key, m: parseHHMM(times[key] ?? '') }))
-    .filter((x): x is { name: string; key: keyof DayPrayerTimes; m: number } => x.m !== null);
+  const ms = ORDER.map(([name, key]) => ({
+    name,
+    key,
+    m: parseHHMM(times[key] ?? ''),
+  })).filter(
+    (x): x is { name: string; key: keyof DayPrayerTimes; m: number } =>
+      x.m !== null
+  );
   if (ms.length === 0) return null;
   const last = ms.length - 1;
 
@@ -38,11 +61,29 @@ function compute(times: DayPrayerTimes, nowMin: number): WidgetData | null {
   for (let i = 0; i < ms.length; i++) if (ms[i]!.m <= nowMin) curIdx = i;
 
   let cur, next, countdown;
-  if (curIdx === -1) { cur = ms[last]!; next = ms[0]!; countdown = ms[0]!.m - nowMin; }                 // before the first → in the last period (Isha)
-  else if (curIdx === last) { cur = ms[last]!; next = ms[0]!; countdown = (1440 - nowMin) + ms[0]!.m; }  // in the last period → next is tomorrow's first
-  else { cur = ms[curIdx]!; next = ms[curIdx + 1]!; countdown = ms[curIdx + 1]!.m - nowMin; }
+  if (curIdx === -1) {
+    cur = ms[last]!;
+    next = ms[0]!;
+    countdown = ms[0]!.m - nowMin;
+  } // before the first → in the last period (Isha)
+  else if (curIdx === last) {
+    cur = ms[last]!;
+    next = ms[0]!;
+    countdown = 1440 - nowMin + ms[0]!.m;
+  } // in the last period → next is tomorrow's first
+  else {
+    cur = ms[curIdx]!;
+    next = ms[curIdx + 1]!;
+    countdown = ms[curIdx + 1]!.m - nowMin;
+  }
 
-  return { currentName: cur.name, nextName: next.name, nextKey: next.key, nextTime: times[next.key] ?? '--', countdownMin: countdown };
+  return {
+    currentName: cur.name,
+    nextName: next.name,
+    nextKey: next.key,
+    nextTime: times[next.key] ?? '--',
+    countdownMin: countdown,
+  };
 }
 
 export class NostrMajlisSidebarWidget {
@@ -53,7 +94,9 @@ export class NostrMajlisSidebarWidget {
 
   // Delegated so it survives the innerHTML rewrites in update(); removed in teardown().
   private onClick = (e: MouseEvent): void => {
-    if ((e.target as HTMLElement | null)?.closest('[data-action="nm-refetch"]')) {
+    if (
+      (e.target as HTMLElement | null)?.closest('[data-action="nm-refetch"]')
+    ) {
       e.preventDefault();
       void this.refetch();
     }
@@ -67,10 +110,14 @@ export class NostrMajlisSidebarWidget {
 
   /** Re-evaluate the setting: show + start ticking, or tear down. */
   refresh(): void {
-    if (!this.container) this.container = document.querySelector('.nm-sidebar-widget-container');
+    if (!this.container)
+      this.container = document.querySelector('.nm-sidebar-widget-container');
     if (!this.container) return;
 
-    if (!getNostrMajlisSettings().sidebarWidget) { this.teardown(); return; }
+    if (!getNostrMajlisSettings().sidebarWidget) {
+      this.teardown();
+      return;
+    }
 
     if (!this.el) {
       this.el = document.createElement('div');
@@ -79,20 +126,24 @@ export class NostrMajlisSidebarWidget {
       this.container.appendChild(this.el);
     }
     this.update();
-    if (this.timer === null) this.timer = window.setInterval(() => this.update(), 10_000);
+    if (this.timer === null)
+      this.timer = window.setInterval(() => this.update(), 10_000);
   }
 
   private update(): void {
     if (!this.el || this.fetching) return; // don't clobber the "Fetching…" state mid-fetch
     const times = getActiveTimes();
     const now = new Date();
-    const data = times ? compute(times, now.getHours() * 60 + now.getMinutes()) : null;
+    const data = times
+      ? compute(times, now.getHours() * 60 + now.getMinutes())
+      : null;
 
     if (!data) {
       // Diyanet can run out (rolling window); offer an in-place re-fetch. Calc sources can't.
-      const refetch = activeDiyanetIlceId() !== null
-        ? `<button type="button" class="nm-widget__refetch" data-action="nm-refetch">Fetch times again</button>`
-        : '';
+      const refetch =
+        activeDiyanetIlceId() !== null
+          ? `<button type="button" class="nm-widget__refetch" data-action="nm-refetch">Fetch times again</button>`
+          : '';
       this.el.innerHTML = `<div class="nm-widget__empty">Prayer times not set</div>${refetch}`;
       return;
     }
@@ -104,8 +155,12 @@ export class NostrMajlisSidebarWidget {
     // prayer (i.e. a reminder is about to / would fire). Uses the same .pulsate as "Loading…".
     const r = getNostrMajlisSettings().reminders;
     // Sunrise is a period but not a reminder prayer → never pulsates.
-    const pulsate = r.enabled && data.nextKey !== 'sunrise' && r.prayers[data.nextKey as keyof ReminderPrayers]
-      && data.countdownMin >= 0 && data.countdownMin <= r.offsetMin;
+    const pulsate =
+      r.enabled &&
+      data.nextKey !== 'sunrise' &&
+      r.prayers[data.nextKey as keyof ReminderPrayers] &&
+      data.countdownMin >= 0 &&
+      data.countdownMin <= r.offsetMin;
 
     this.el.innerHTML = `
       <div class="nm-widget__row nm-widget__head"><span>${escapeHtml(data.currentName)}</span><span>time left</span><span>${escapeHtml(data.nextName)}</span></div>
@@ -121,15 +176,19 @@ export class NostrMajlisSidebarWidget {
     this.el.innerHTML = `<div class="nm-widget__empty pulsate">Fetching times…</div>`;
     try {
       await DiyanetService.getInstance().fetchAndCacheTimes(ilceId);
-    } catch { /* update() re-renders the empty state + link so the user can retry */ }
-    finally {
+    } catch {
+      /* update() re-renders the empty state + link so the user can retry */
+    } finally {
       this.fetching = false;
       this.update();
     }
   }
 
   private teardown(): void {
-    if (this.timer !== null) { clearInterval(this.timer); this.timer = null; }
+    if (this.timer !== null) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
     this.el?.removeEventListener('click', this.onClick);
     this.el?.remove();
     this.el = null;

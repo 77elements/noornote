@@ -16,8 +16,14 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { UserProfileService } from '../../../services/UserProfileService';
 import { NoteProcessor } from '../note-processing/NoteProcessor';
 import { NoteRendererFactory } from './NoteRendererFactory';
-import { DittoFeatureRenderer, DITTO_GEOCACHE_KIND } from './DittoFeatureRenderer';
-import { SatelliteSiteRenderer, SATELLITE_SITE_KIND } from './SatelliteSiteRenderer';
+import {
+  DittoFeatureRenderer,
+  DITTO_GEOCACHE_KIND,
+} from './DittoFeatureRenderer';
+import {
+  SatelliteSiteRenderer,
+  SATELLITE_SITE_KIND,
+} from './SatelliteSiteRenderer';
 import { ArmadaInviteRenderer } from './ArmadaInviteRenderer';
 import { ARTICLE_PREVIEW_KINDS } from '../../../helpers/addressableKinds';
 import { ArticlePreviewRenderer } from './ArticlePreviewRenderer';
@@ -34,15 +40,19 @@ import { AddonLoader } from '../../../addons/AddonLoader';
 import type { ProfileRecognitionRuntime } from '../../../addons/profile-recognition/runtime';
 
 // Types only (erased at build time) — live runtime accessed via AddonLoader
-type ProfileBlinkerType = import('../../../addons/profile-recognition/profileBlinking').ProfileBlinker;
-type TextBlinkerType = import('../../../addons/profile-recognition/profileBlinking').TextBlinker;
+type ProfileBlinkerType =
+  import('../../../addons/profile-recognition/profileBlinking').ProfileBlinker;
+type TextBlinkerType =
+  import('../../../addons/profile-recognition/profileBlinking').TextBlinker;
 
 export class RepostRenderer {
   private static userProfileService = UserProfileService.getInstance();
   private static articlePreviewRenderer = ArticlePreviewRenderer.getInstance();
 
   private static getRecognitionRuntime(): ProfileRecognitionRuntime | null {
-    return AddonLoader.getInstance().getRuntime<ProfileRecognitionRuntime>('profile-recognition');
+    return AddonLoader.getInstance().getRuntime<ProfileRecognitionRuntime>(
+      'profile-recognition'
+    );
   }
 
   /**
@@ -50,7 +60,9 @@ export class RepostRenderer {
    * NIP-18 puts the relay where the original lives at position [2] — without it,
    * cross-relay reposts (e.g. ditto.pub originals shown via our read set) can't be resolved.
    */
-  private static extractOriginalEventRef(note: ProcessedNote): { id: string; relayHint: string } | null {
+  private static extractOriginalEventRef(
+    note: ProcessedNote
+  ): { id: string; relayHint: string } | null {
     const eTag = note.rawEvent.tags.find(tag => tag[0] === 'e');
     if (!eTag?.[1]) return null;
     return { id: eTag[1], relayHint: eTag[2] || '' };
@@ -84,7 +96,10 @@ export class RepostRenderer {
    * Build the "user reposted" header (avatar + name + "reposted" label),
    * wire profile-recognition blinkers + hover card.
    */
-  private static buildRepostHeader(repostDiv: HTMLElement, note: ProcessedNote): void {
+  private static buildRepostHeader(
+    repostDiv: HTMLElement,
+    note: ProcessedNote
+  ): void {
     const reposterPubkey = note.reposter?.pubkey || '';
     const reposterNpub = reposterPubkey ? hexToNpub(reposterPubkey) || '' : '';
     const reposterName = reposterPubkey
@@ -103,7 +118,9 @@ export class RepostRenderer {
           <img src="${escapeHtmlAttr(reposterPicture)}" alt="" data-pubkey="${reposterPubkey}" class="profile-pic profile-pic--mini" /><span class="reposter-username"></span></a></span><span class="repost-label">reposted</span>
     `;
 
-    const usernameSpan = repostHeader.querySelector('.reposter-username') as HTMLElement;
+    const usernameSpan = repostHeader.querySelector(
+      '.reposter-username'
+    ) as HTMLElement;
     if (usernameSpan) {
       usernameSpan.textContent = reposterName;
     }
@@ -113,52 +130,71 @@ export class RepostRenderer {
     let nameBlinker: TextBlinkerType | null = null;
 
     if (reposterPubkey) {
-      RepostRenderer.userProfileService.subscribeToProfile(reposterPubkey, (profile) => {
-        const newUsername = UserProfileService.displayNameOf(profile, reposterPubkey);
-        const newPicture = UserProfileService.displayPictureOf(profile, reposterPubkey);
-        const usernameEl = repostHeader.querySelector('.reposter-username') as HTMLElement;
-        const avatarElement = repostHeader.querySelector('.profile-pic--mini') as HTMLImageElement;
+      RepostRenderer.userProfileService.subscribeToProfile(
+        reposterPubkey,
+        profile => {
+          const newUsername = UserProfileService.displayNameOf(
+            profile,
+            reposterPubkey
+          );
+          const newPicture = UserProfileService.displayPictureOf(
+            profile,
+            reposterPubkey
+          );
+          const usernameEl = repostHeader.querySelector(
+            '.reposter-username'
+          ) as HTMLElement;
+          const avatarElement = repostHeader.querySelector(
+            '.profile-pic--mini'
+          ) as HTMLImageElement;
 
-        const rt = RepostRenderer.getRecognitionRuntime();
-        const shouldBlink = rt?.service?.checkRecognition(reposterPubkey, newUsername, newPicture);
+          const rt = RepostRenderer.getRecognitionRuntime();
+          const shouldBlink = rt?.service?.checkRecognition(
+            reposterPubkey,
+            newUsername,
+            newPicture
+          );
 
-        if (usernameEl) {
-          if (shouldBlink) {
-            if (!nameBlinker && rt?.TextBlinker) {
-              nameBlinker = new rt.TextBlinker(usernameEl);
-            }
-            if (nameBlinker && !nameBlinker.isBlinking()) {
-              nameBlinker.start(newUsername, shouldBlink.firstName);
-            }
-          } else {
-            if (nameBlinker && nameBlinker.isBlinking()) {
-              nameBlinker.stop(newUsername);
+          if (usernameEl) {
+            if (shouldBlink) {
+              if (!nameBlinker && rt?.TextBlinker) {
+                nameBlinker = new rt.TextBlinker(usernameEl);
+              }
+              if (nameBlinker && !nameBlinker.isBlinking()) {
+                nameBlinker.start(newUsername, shouldBlink.firstName);
+              }
             } else {
-              usernameEl.textContent = newUsername;
+              if (nameBlinker && nameBlinker.isBlinking()) {
+                nameBlinker.stop(newUsername);
+              } else {
+                usernameEl.textContent = newUsername;
+              }
+            }
+          }
+
+          if (avatarElement) {
+            if (shouldBlink) {
+              if (!avatarBlinker && rt?.ProfileBlinker) {
+                avatarBlinker = new rt.ProfileBlinker(avatarElement);
+              }
+              if (avatarBlinker && !avatarBlinker.isBlinking()) {
+                avatarBlinker.start(newPicture, shouldBlink.firstPictureUrl);
+              }
+            } else {
+              if (avatarBlinker && avatarBlinker.isBlinking()) {
+                avatarBlinker.stop(newPicture);
+              } else {
+                avatarElement.src = newPicture;
+              }
             }
           }
         }
-
-        if (avatarElement) {
-          if (shouldBlink) {
-            if (!avatarBlinker && rt?.ProfileBlinker) {
-              avatarBlinker = new rt.ProfileBlinker(avatarElement);
-            }
-            if (avatarBlinker && !avatarBlinker.isBlinking()) {
-              avatarBlinker.start(newPicture, shouldBlink.firstPictureUrl);
-            }
-          } else {
-            if (avatarBlinker && avatarBlinker.isBlinking()) {
-              avatarBlinker.stop(newPicture);
-            } else {
-              avatarElement.src = newPicture;
-            }
-          }
-        }
-      });
+      );
 
       const userHoverCard = UserHoverCard.getInstance();
-      const userMention = repostHeader.querySelector('.user-mention') as HTMLElement;
+      const userMention = repostHeader.querySelector(
+        '.user-mention'
+      ) as HTMLElement;
 
       if (userMention) {
         userMention.addEventListener('mouseenter', () => {
@@ -179,15 +215,23 @@ export class RepostRenderer {
    * were scattered across the various kind branches; consolidated here so every
    * kind benefits uniformly.
    */
-  private static attachMuteCheck(repostDiv: HTMLElement, authorPubkey: string): void {
+  private static attachMuteCheck(
+    repostDiv: HTMLElement,
+    authorPubkey: string
+  ): void {
     const authService = AuthService.getInstance();
     const currentUser = authService.getCurrentUser();
     if (!currentUser) return;
-    MuteOrchestrator.getInstance().isMuted(authorPubkey, currentUser.pubkey).then(muteStatus => {
-      if (muteStatus.public || muteStatus.private) {
-        repostDiv.remove();
-      }
-    }).catch(() => { /* leave the repost visible on mute-check failure */ });
+    MuteOrchestrator.getInstance()
+      .isMuted(authorPubkey, currentUser.pubkey)
+      .then(muteStatus => {
+        if (muteStatus.public || muteStatus.private) {
+          repostDiv.remove();
+        }
+      })
+      .catch(() => {
+        /* leave the repost visible on mute-check failure */
+      });
   }
 
   /**
@@ -195,7 +239,11 @@ export class RepostRenderer {
    * via QuoteOrchestrator (hint + read set + outbox of author and reposter).
    * On success, dispatch through the same pipeline as embedded reposts.
    */
-  private static handleNip18Fetch(repostDiv: HTMLElement, note: ProcessedNote, opts: NoteUIOptions): void {
+  private static handleNip18Fetch(
+    repostDiv: HTMLElement,
+    note: ProcessedNote,
+    opts: NoteUIOptions
+  ): void {
     const originalRef = RepostRenderer.extractOriginalEventRef(note);
 
     if (!originalRef) {
@@ -230,22 +278,26 @@ export class RepostRenderer {
     );
 
     // Stage-3 outbound includes BOTH the original author AND the reposter.
-    const singleNoteApi = ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
-    (singleNoteApi?.fetchQuotedEvent(`nostr:${neventRef}`, authorPubkey, [reposterPubkey]) ?? Promise.resolve(null))
-      .then(originalEvent => {
-        if (!originalEvent) {
-          placeholderDiv.innerHTML = `
+    const singleNoteApi =
+      ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
+    (
+      singleNoteApi?.fetchQuotedEvent(`nostr:${neventRef}`, authorPubkey, [
+        reposterPubkey,
+      ]) ?? Promise.resolve(null)
+    ).then(originalEvent => {
+      if (!originalEvent) {
+        placeholderDiv.innerHTML = `
             <div class="repost-error">
               <span class="error-icon">⚠️</span>
               <span class="error-text">Could not load reposted note</span>
             </div>
           `;
-          return;
-        }
-        placeholderDiv.remove();
-        RepostRenderer.attachMuteCheck(repostDiv, originalEvent.pubkey);
-        RepostRenderer.dispatchInnerEvent(repostDiv, originalEvent, opts);
-      });
+        return;
+      }
+      placeholderDiv.remove();
+      RepostRenderer.attachMuteCheck(repostDiv, originalEvent.pubkey);
+      RepostRenderer.dispatchInnerEvent(repostDiv, originalEvent, opts);
+    });
   }
 
   /**
@@ -290,7 +342,9 @@ export class RepostRenderer {
     if (innerEvent.kind === 33301) {
       const armadaContainer = document.createElement('div');
       armadaContainer.className = 'repost-article-container';
-      armadaContainer.appendChild(ArmadaInviteRenderer.renderFromEvent(innerEvent));
+      armadaContainer.appendChild(
+        ArmadaInviteRenderer.renderFromEvent(innerEvent)
+      );
       repostDiv.appendChild(armadaContainer);
       return;
     }
@@ -301,7 +355,10 @@ export class RepostRenderer {
     if (innerEvent.kind != null && ARTICLE_PREVIEW_KINDS.has(innerEvent.kind)) {
       const container = document.createElement('div');
       container.className = 'repost-article-container';
-      RepostRenderer.articlePreviewRenderer.renderFromEvent(innerEvent, container);
+      RepostRenderer.articlePreviewRenderer.renderFromEvent(
+        innerEvent,
+        container
+      );
       repostDiv.appendChild(container);
       return;
     }
@@ -310,7 +367,7 @@ export class RepostRenderer {
     const processedInner = NoteProcessor.process(innerEvent);
     const innerElement = NoteRendererFactory.render(processedInner, {
       ...opts,
-      depth: (opts.depth ?? 0) + 1
+      depth: (opts.depth ?? 0) + 1,
     });
 
     const innerContainer = document.createElement('div');
@@ -319,7 +376,10 @@ export class RepostRenderer {
     repostDiv.appendChild(innerContainer);
 
     if (opts.depth === 0 && opts.collapsible) {
-      CollapsibleManager.setup(repostDiv, { maxHeight: '40vh', contentSelector: '.note-card--original' });
+      CollapsibleManager.setup(repostDiv, {
+        maxHeight: '40vh',
+        contentSelector: '.note-card--original',
+      });
     }
   }
 }

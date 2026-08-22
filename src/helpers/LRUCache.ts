@@ -15,7 +15,11 @@ import { PlatformService } from '../services/PlatformService';
  * Returns platform-appropriate cache size.
  * Desktop (most RAM) > Web (shared browser RAM) > Mobile (least RAM)
  */
-export function getCacheSize(desktop: number, web: number, mobile: number): number {
+export function getCacheSize(
+  desktop: number,
+  web: number,
+  mobile: number
+): number {
   const platform = PlatformService.getInstance();
   if (platform.isAndroid) return mobile;
   if (platform.isBrowser) return web;
@@ -45,7 +49,7 @@ export class LRUCache<V> {
     if (!entry) return undefined;
 
     // TTL check
-    if (this.maxAge !== null && (Date.now() - entry.insertedAt) > this.maxAge) {
+    if (this.maxAge !== null && Date.now() - entry.insertedAt > this.maxAge) {
       this.map.delete(key);
       return undefined;
     }

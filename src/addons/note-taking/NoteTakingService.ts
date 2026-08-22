@@ -12,8 +12,15 @@
 
 import { AuthService } from '../../services/AuthService';
 import { diagLog } from '../../services/DiagnosticLogger';
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
-import { NoteTakingStore, type NotePayload, type NoteRecord } from './NoteTakingStore';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../services/PerAccountLocalStorage';
+import {
+  NoteTakingStore,
+  type NotePayload,
+  type NoteRecord,
+} from './NoteTakingStore';
 
 const PAYLOAD_VERSION = 1;
 
@@ -73,7 +80,9 @@ export class NoteTakingService {
     try {
       this.changeListener?.(record);
     } catch (error) {
-      diagLog('system', 'note-taking: change listener threw', { error: String(error) });
+      diagLog('system', 'note-taking: change listener threw', {
+        error: String(error),
+      });
     }
   }
 
@@ -82,7 +91,7 @@ export class NoteTakingService {
   /** Live notes for the board (excludes deleted + nostr-keep "trash"). */
   public async listNotes(): Promise<NoteRecord[]> {
     const all = await this.store.getAll();
-    return all.filter((n) => !n.deleted && !n.trash);
+    return all.filter(n => !n.deleted && !n.trash);
   }
 
   /** All dirty records (incl. pending tombstones) - for NoteTakingSyncService. */
@@ -99,7 +108,9 @@ export class NoteTakingService {
   }
 
   /** Create a new note from a partial payload; assigns id + timestamps. */
-  public async createNote(partial: Partial<NotePayload> = {}): Promise<NoteRecord> {
+  public async createNote(
+    partial: Partial<NotePayload> = {}
+  ): Promise<NoteRecord> {
     const now = Math.floor(Date.now() / 1000);
     const record: NoteRecord = {
       v: PAYLOAD_VERSION,
@@ -119,7 +130,9 @@ export class NoteTakingService {
       dirty: true,
     };
     await this.store.put(record);
-    diagLog('system', 'note-taking: note created', { id: record.id.slice(0, 8) });
+    diagLog('system', 'note-taking: note created', {
+      id: record.id.slice(0, 8),
+    });
     this.notifyChange(record);
     return record;
   }
@@ -174,20 +187,28 @@ export class NoteTakingService {
     };
     await this.store.put(tombstone);
     this.addTombstone(id, now);
-    diagLog('system', 'note-taking: note deleted (tombstoned)', { id: id.slice(0, 8) });
+    diagLog('system', 'note-taking: note deleted (tombstoned)', {
+      id: id.slice(0, 8),
+    });
     this.notifyChange(tombstone);
   }
 
   // ── Tombstone set (resurrection guard) ─────────────────────────────────────
 
   public getTombstones(): NoteTombstones {
-    return PerAccountLocalStorage.getInstance().get<NoteTombstones>(StorageKeys.NOTE_TAKING_TOMBSTONES, {});
+    return PerAccountLocalStorage.getInstance().get<NoteTombstones>(
+      StorageKeys.NOTE_TAKING_TOMBSTONES,
+      {}
+    );
   }
 
   public addTombstone(id: string, ts: number): void {
     const map = this.getTombstones();
     map[id] = ts;
-    PerAccountLocalStorage.getInstance().set(StorageKeys.NOTE_TAKING_TOMBSTONES, map);
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.NOTE_TAKING_TOMBSTONES,
+      map
+    );
   }
 
   /** Drop a tombstone so an explicit restore can bring a deleted note back. */
@@ -195,7 +216,10 @@ export class NoteTakingService {
     const map = this.getTombstones();
     if (map[id] === undefined) return;
     delete map[id];
-    PerAccountLocalStorage.getInstance().set(StorageKeys.NOTE_TAKING_TOMBSTONES, map);
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.NOTE_TAKING_TOMBSTONES,
+      map
+    );
   }
 
   public isTombstoned(id: string, updatedAt: number): boolean {
@@ -286,8 +310,12 @@ export class NoteTakingService {
       ciphertext.trimStart().startsWith('{') ||
       ciphertext.includes('"id":')
     ) {
-      diagLog('system', 'note-taking: encryption integrity check FAILED', { id: payload.id.slice(0, 8) });
-      throw new Error('Note taking: encryption integrity check failed (output looks like plaintext)');
+      diagLog('system', 'note-taking: encryption integrity check FAILED', {
+        id: payload.id.slice(0, 8),
+      });
+      throw new Error(
+        'Note taking: encryption integrity check failed (output looks like plaintext)'
+      );
     }
 
     return ciphertext;
@@ -298,7 +326,10 @@ export class NoteTakingService {
    * `id` comes from the event's d-tag suffix (nostr-keep convention: the id is
    * NOT in the payload), so the caller passes it in.
    */
-  public async decryptPayload(ciphertext: string, id: string): Promise<NotePayload | null> {
+  public async decryptPayload(
+    ciphertext: string,
+    id: string
+  ): Promise<NotePayload | null> {
     const user = this.auth.getCurrentUser();
     if (!user || !id) return null;
     try {
@@ -308,7 +339,9 @@ export class NoteTakingService {
       if (!raw || typeof raw !== 'object') return null;
       return this.fromWire(raw, id);
     } catch (error) {
-      diagLog('system', 'note-taking: decrypt failed', { error: String(error) });
+      diagLog('system', 'note-taking: decrypt failed', {
+        error: String(error),
+      });
       return null;
     }
   }
@@ -323,31 +356,44 @@ export class NoteTakingService {
    */
   private fromWire(raw: Record<string, unknown>, id: string): NotePayload {
     const str = (v: unknown, d = ''): string => (typeof v === 'string' ? v : d);
-    const num = (v: unknown, d = 0): number => (typeof v === 'number' && Number.isFinite(v) ? v : d);
+    const num = (v: unknown, d = 0): number =>
+      typeof v === 'number' && Number.isFinite(v) ? v : d;
     const checklist = Array.isArray(raw.checklist)
       ? raw.checklist
-          .filter((it): it is Record<string, unknown> => !!it && typeof it === 'object')
-          .map((it) => ({ text: str(it.text), checked: !!it.checked }))
-          .filter((it) => it.text.length > 0)
+          .filter(
+            (it): it is Record<string, unknown> =>
+              !!it && typeof it === 'object'
+          )
+          .map(it => ({ text: str(it.text), checked: !!it.checked }))
+          .filter(it => it.text.length > 0)
       : [];
     const labels = Array.isArray(raw.labels)
       ? raw.labels.filter((l): l is string => typeof l === 'string')
       : [];
     const attachments = Array.isArray(raw.attachments)
       ? raw.attachments
-          .filter((a): a is Record<string, unknown> => !!a && typeof a === 'object')
-          .map((a) => ({ url: str(a.url), sha256: str(a.sha256), dim: str(a.dim), blurhash: str(a.blurhash) }))
+          .filter(
+            (a): a is Record<string, unknown> => !!a && typeof a === 'object'
+          )
+          .map(a => ({
+            url: str(a.url),
+            sha256: str(a.sha256),
+            dim: str(a.dim),
+            blurhash: str(a.blurhash),
+          }))
       : [];
     // keep stores updated_at in ms; our legacy notes used updatedAt in sec.
-    const updatedAt = raw.updated_at !== undefined
-      ? Math.floor(num(raw.updated_at) / 1000)
-      : num(raw.updatedAt);
-    const createdAt = raw.createdAt !== undefined ? num(raw.createdAt) : updatedAt;
+    const updatedAt =
+      raw.updated_at !== undefined
+        ? Math.floor(num(raw.updated_at) / 1000)
+        : num(raw.updatedAt);
+    const createdAt =
+      raw.createdAt !== undefined ? num(raw.createdAt) : updatedAt;
     // keep's default note color is a hex; map it back to our palette 'default'.
     // Our own palette keys (red/teal/…) are valid CSS colors, so they round-trip
     // as-is; an unrecognised keep hex is kept verbatim (renders as no accent).
     const rawColor = str(raw.color, 'default');
-    const color = (!rawColor || rawColor === '#202124') ? 'default' : rawColor;
+    const color = !rawColor || rawColor === '#202124' ? 'default' : rawColor;
     return {
       v: num(raw.v, PAYLOAD_VERSION),
       id,

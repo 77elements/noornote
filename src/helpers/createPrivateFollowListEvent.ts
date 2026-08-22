@@ -31,18 +31,19 @@ export async function createPrivateFollowListEvent(
   pubkey: string;
 }> {
   // Encrypt the private follow list
-  const encryptedContent = privateFollows.length > 0
-    ? await encryptPrivateFollows(privateFollows, authorPubkey)
-    : '';
+  const encryptedContent =
+    privateFollows.length > 0
+      ? await encryptPrivateFollows(privateFollows, authorPubkey)
+      : '';
 
   // Build kind 30000 event
   return {
     kind: 30000,
     created_at: Math.floor(Date.now() / 1000),
     tags: [
-      ['d', 'private-follows'] // NIP-51 identifier for this list
+      ['d', 'private-follows'], // NIP-51 identifier for this list
     ],
     content: encryptedContent, // Encrypted private follows
-    pubkey: authorPubkey
+    pubkey: authorPubkey,
   };
 }

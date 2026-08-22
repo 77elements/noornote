@@ -20,12 +20,14 @@ export class PictureNoteProcessor {
       throw new Error('Event ID is required');
     }
 
-    const authorProfile = PictureNoteProcessor.contentProcessor.getNonBlockingProfile(event.pubkey);
+    const authorProfile =
+      PictureNoteProcessor.contentProcessor.getNonBlockingProfile(event.pubkey);
 
-    const processedContent = PictureNoteProcessor.contentProcessor.processContentWithTags(
-      event.content,
-      event.tags
-    );
+    const processedContent =
+      PictureNoteProcessor.contentProcessor.processContentWithTags(
+        event.content,
+        event.tags
+      );
 
     PictureNoteProcessor.prependPictureContent(processedContent, event.tags);
 
@@ -34,17 +36,17 @@ export class PictureNoteProcessor {
       type: 'original',
       timestamp: event.created_at,
       author: {
-        pubkey: event.pubkey
+        pubkey: event.pubkey,
       },
       content: processedContent,
-      rawEvent: event
+      rawEvent: event,
     };
 
     if (authorProfile) {
       result.author.profile = {
         name: authorProfile.name,
         display_name: authorProfile.display_name,
-        picture: authorProfile.picture
+        picture: authorProfile.picture,
       };
     }
 
@@ -55,7 +57,10 @@ export class PictureNoteProcessor {
    * Prepend title + imeta image placeholders to processed content
    * Mutates processedContent in place: prepends HTML, pushes image media
    */
-  static prependPictureContent(processedContent: ProcessedContent, tags: string[][]): void {
+  static prependPictureContent(
+    processedContent: ProcessedContent,
+    tags: string[][]
+  ): void {
     const imageMedia = PictureNoteProcessor.extractImagesFromTags(tags);
     const title = getTag(tags, 'title');
 
@@ -110,7 +115,10 @@ export class PictureNoteProcessor {
           case 'dim': {
             const dimMatch = value.match(/^(\d+)x(\d+)$/);
             if (dimMatch) {
-              dimensions = { width: parseInt(dimMatch[1]!), height: parseInt(dimMatch[2]!) };
+              dimensions = {
+                width: parseInt(dimMatch[1]!),
+                height: parseInt(dimMatch[2]!),
+              };
             }
             break;
           }

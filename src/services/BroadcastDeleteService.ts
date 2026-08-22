@@ -1488,7 +1488,7 @@ const BACKOFF_MS = [5 * 60_000, 60 * 60_000, 6 * 60 * 60_000, 12 * 60 * 60_000];
 /** System-log category + stable line keys for the 2-line live progress display */
 const LOG_CATEGORY = 'DeleteService';
 const LINE_HEADER = 'delete-broadcast:header'; // line 1 (constant): which event is being deleted
-const LINE_RELAY = 'delete-broadcast:relay';   // line 2 (swaps): current relay + status diode
+const LINE_RELAY = 'delete-broadcast:relay'; // line 2 (swaps): current relay + status diode
 
 /** Outcome of a single relay send */
 type SendOutcome = 'ok' | 'rejected' | 'failed';
@@ -1549,7 +1549,10 @@ export class BroadcastDeleteService {
    * persisted BEFORE the first send, so it survives a reload/crash/app-quit and
    * resumes on the next launch (see resumePending).
    */
-  broadcastInBackground(signedEvent: SignedNostrEvent, opts: BroadcastOptions = {}): void {
+  broadcastInBackground(
+    signedEvent: SignedNostrEvent,
+    opts: BroadcastOptions = {}
+  ): void {
     void this.enqueueAndDrain(signedEvent, opts).catch(error => {
       this.systemLogger.error('BroadcastDelete', `Unexpected error: ${error}`);
     });
@@ -1558,7 +1561,9 @@ export class BroadcastDeleteService {
   /** Subscribe to live progress of every silent job. Returns an unsubscribe fn. */
   subscribeProgress(cb: (p: BroadcastProgress) => void): () => void {
     this.silentProgressSubs.add(cb);
-    return () => { this.silentProgressSubs.delete(cb); };
+    return () => {
+      this.silentProgressSubs.delete(cb);
+    };
   }
 
   /** Count silent (addon-driven) jobs still persisted/in-flight. */
@@ -1573,15 +1578,23 @@ export class BroadcastDeleteService {
    * reaches `total` the deletion has been delivered to every reachable relay and
    * only dead-relay retries remain in the background.
    */
-  async getSilentProgress(): Promise<{ total: number; contacted: number; sent: number } | null> {
+  async getSilentProgress(): Promise<{
+    total: number;
+    contacted: number;
+    sent: number;
+  } | null> {
     const jobs = (await this.store.getAllJobs()).filter(j => j.silent);
     if (jobs.length === 0) return null;
-    let total = 0, contacted = 0, sent = 0;
+    let total = 0,
+      contacted = 0,
+      sent = 0;
     for (const job of jobs) {
       for (const s of Object.values(job.relays)) {
         total++;
-        if (s.status === 'sent') { sent++; contacted++; }
-        else if (s.status === 'rejected' || s.attempts > 0) contacted++;
+        if (s.status === 'sent') {
+          sent++;
+          contacted++;
+        } else if (s.status === 'rejected' || s.attempts > 0) contacted++;
       }
     }
     return { total, contacted, sent };
@@ -1589,7 +1602,11 @@ export class BroadcastDeleteService {
 
   private notifySilent(p: BroadcastProgress): void {
     for (const cb of this.silentProgressSubs) {
-      try { cb(p); } catch { /* a dead subscriber must not break the drain */ }
+      try {
+        cb(p);
+      } catch {
+        /* a dead subscriber must not break the drain */
+      }
     }
   }
 
@@ -1603,7 +1620,10 @@ export class BroadcastDeleteService {
   }
 
   /** Build the job's relay set and persist it, then kick off draining. */
-  private async enqueueAndDrain(signedEvent: SignedNostrEvent, opts: BroadcastOptions = {}): Promise<void> {
+  private async enqueueAndDrain(
+    signedEvent: SignedNostrEvent,
+    opts: BroadcastOptions = {}
+  ): Promise<void> {
     this.wireResumeTriggers();
 
     // Build full relay set: hardcoded + aggregator relays.
@@ -1617,12 +1637,21 @@ export class BroadcastDeleteService {
     // target since the note actually lives there. DeletionService already
     // published to them synchronously; including them here too (not excluding)
     // gives them the resumable retry guarantee, not just that one-shot publish.
-    const ownRelays = relayConfig.getAllRelays().filter(r => r.isActive).map(r => r.url);
+    const ownRelays = relayConfig
+      .getAllRelays()
+      .filter(r => r.isActive)
+      .map(r => r.url);
     const ownSet = new Set(ownRelays);
-    const broadcastRelays = [...ownRelays, ...[...fullRelaySet].filter(r => !ownSet.has(r))];
+    const broadcastRelays = [
+      ...ownRelays,
+      ...[...fullRelaySet].filter(r => !ownSet.has(r)),
+    ];
 
     if (broadcastRelays.length === 0) {
-      this.systemLogger.info('BroadcastDelete', 'No additional relays to broadcast to');
+      this.systemLogger.info(
+        'BroadcastDelete',
+        'No additional relays to broadcast to'
+      );
       return;
     }
 
@@ -1641,7 +1670,11 @@ export class BroadcastDeleteService {
     if (opts.silent) job.silent = true;
 
     await this.store.putJob(job);
-    diagLog('relays', 'Delete broadcast queued', { event: job.id, relays: broadcastRelays.length, silent: !!opts.silent });
+    diagLog('relays', 'Delete broadcast queued', {
+      event: job.id,
+      relays: broadcastRelays.length,
+      silent: !!opts.silent,
+    });
     // Constant header line (line 1) — shows immediately on click (System-Log jobs only).
     this.reportHeader(job);
 
@@ -1682,7 +1715,10 @@ export class BroadcastDeleteService {
 
     // Collect due relays (and prune expired jobs) — group into per-host lanes so
     // a single host is never hit by more than one connection at a time.
-    const lanesByHost = new Map<string, Array<{ job: BroadcastJob; url: string }>>();
+    const lanesByHost = new Map<
+      string,
+      Array<{ job: BroadcastJob; url: string }>
+    >();
     let earliestFuture = Infinity;
 
     for (const job of jobs) {
@@ -1693,7 +1729,8 @@ export class BroadcastDeleteService {
       for (const [url, state] of Object.entries(job.relays)) {
         if (state.status !== 'pending') continue;
         if (state.nextAttemptAt > now) {
-          if (state.nextAttemptAt < earliestFuture) earliestFuture = state.nextAttemptAt;
+          if (state.nextAttemptAt < earliestFuture)
+            earliestFuture = state.nextAttemptAt;
           continue;
         }
         const host = this.hostOf(url);
@@ -1740,7 +1777,10 @@ export class BroadcastDeleteService {
     earliestFuture = Infinity;
     for (const job of await this.store.getAllJobs()) {
       for (const state of Object.values(job.relays)) {
-        if (state.status === 'pending' && state.nextAttemptAt < earliestFuture) {
+        if (
+          state.status === 'pending' &&
+          state.nextAttemptAt < earliestFuture
+        ) {
           earliestFuture = state.nextAttemptAt;
         }
       }
@@ -1749,7 +1789,11 @@ export class BroadcastDeleteService {
   }
 
   /** Update a relay's state from a send outcome. */
-  private applyOutcome(job: BroadcastJob, url: string, outcome: SendOutcome): void {
+  private applyOutcome(
+    job: BroadcastJob,
+    url: string,
+    outcome: SendOutcome
+  ): void {
     const state = job.relays[url];
     if (!state) return;
     if (outcome === 'ok') {
@@ -1760,7 +1804,8 @@ export class BroadcastDeleteService {
     } else {
       // No response (timeout / connection error) — back off and retry later.
       state.attempts += 1;
-      const delay = BACKOFF_MS[Math.min(state.attempts - 1, BACKOFF_MS.length - 1)]!;
+      const delay =
+        BACKOFF_MS[Math.min(state.attempts - 1, BACKOFF_MS.length - 1)]!;
       state.nextAttemptAt = Date.now() + delay;
     }
   }
@@ -1777,19 +1822,35 @@ export class BroadcastDeleteService {
    * the job has expired. The 2-line System Log progress is left at its final
    * state (no extra closing line — the output stays at 2 lines by design).
    */
-  private async finalizeJob(job: BroadcastJob, expired: boolean): Promise<void> {
+  private async finalizeJob(
+    job: BroadcastJob,
+    expired: boolean
+  ): Promise<void> {
     const states = Object.values(job.relays);
     const allResolved = states.every(s => s.status !== 'pending');
     if (expired || allResolved) {
       await this.store.deleteJob(job.id);
       const sent = states.filter(s => s.status === 'sent').length;
-      diagLog('relays', expired && !allResolved ? 'Delete broadcast expired (48h)' : 'Delete broadcast complete', {
-        event: job.id,
-        sent,
-        total: states.length,
-      });
+      diagLog(
+        'relays',
+        expired && !allResolved
+          ? 'Delete broadcast expired (48h)'
+          : 'Delete broadcast complete',
+        {
+          event: job.id,
+          sent,
+          total: states.length,
+        }
+      );
       if (job.silent) {
-        this.notifySilent({ jobId: job.id, host: '', contacted: states.length, total: states.length, ok: true, done: true });
+        this.notifySilent({
+          jobId: job.id,
+          host: '',
+          contacted: states.length,
+          total: states.length,
+          ok: true,
+          done: true,
+        });
       }
     } else {
       await this.store.putJob(job);
@@ -1800,7 +1861,14 @@ export class BroadcastDeleteService {
   private reportHeader(job: BroadcastJob): void {
     if (job.silent) return;
     const shortId = job.id.length > 12 ? `${job.id.slice(0, 12)}…` : job.id;
-    this.systemLogger.setLine(LINE_HEADER, 'info', LOG_CATEGORY, `Deleting event ${shortId}`, undefined, false);
+    this.systemLogger.setLine(
+      LINE_HEADER,
+      'info',
+      LOG_CATEGORY,
+      `Deleting event ${shortId}`,
+      undefined,
+      false
+    );
   }
 
   /**
@@ -1809,14 +1877,27 @@ export class BroadcastDeleteService {
    * silent jobs (Bulk Delete): no System Log — fire the live progress callback
    * instead (only while one is registered; nothing on a resumed silent job).
    */
-  private reportRelay(job: BroadcastJob, url: string, outcome: SendOutcome): void {
+  private reportRelay(
+    job: BroadcastJob,
+    url: string,
+    outcome: SendOutcome
+  ): void {
     const ok = outcome === 'ok';
     const states = Object.values(job.relays);
     const total = states.length;
-    const contacted = states.filter(s => s.status !== 'pending' || s.attempts > 0).length;
+    const contacted = states.filter(
+      s => s.status !== 'pending' || s.attempts > 0
+    ).length;
 
     if (job.silent) {
-      this.notifySilent({ jobId: job.id, host: this.hostOf(url), contacted, total, ok, done: false });
+      this.notifySilent({
+        jobId: job.id,
+        host: this.hostOf(url),
+        contacted,
+        total,
+        ok,
+        done: false,
+      });
       return;
     }
 
@@ -1860,7 +1941,10 @@ export class BroadcastDeleteService {
         await worker(lane);
       }
     };
-    const workers = Array.from({ length: Math.min(concurrency, lanes.length) }, () => runNext());
+    const workers = Array.from(
+      { length: Math.min(concurrency, lanes.length) },
+      () => runNext()
+    );
     await Promise.all(workers);
   }
 
@@ -1883,10 +1967,15 @@ export class BroadcastDeleteService {
     this.resumeWired = true;
 
     try {
-      TypedEventBus.getInstance().on('connectivity:status', ({ online }: { online: boolean }) => {
-        if (online) void this.scheduleDrain();
-      });
-    } catch { /* event bus unavailable — ignore */ }
+      TypedEventBus.getInstance().on(
+        'connectivity:status',
+        ({ online }: { online: boolean }) => {
+          if (online) void this.scheduleDrain();
+        }
+      );
+    } catch {
+      /* event bus unavailable — ignore */
+    }
 
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', () => {
@@ -1896,8 +1985,14 @@ export class BroadcastDeleteService {
 
     // Capacitor native resume (Android) — best-effort, only if the plugin exists.
     import('@capacitor/app')
-      .then(({ App }) => App.addListener('resume', () => { void this.scheduleDrain(); }))
-      .catch(() => { /* not on Capacitor / no listener support — ignore */ });
+      .then(({ App }) =>
+        App.addListener('resume', () => {
+          void this.scheduleDrain();
+        })
+      )
+      .catch(() => {
+        /* not on Capacitor / no listener support — ignore */
+      });
   }
 
   /**
@@ -1905,7 +2000,10 @@ export class BroadcastDeleteService {
    * Resolves 'ok' (OK true), 'rejected' (OK false — final), or 'failed'
    * (timeout / connection error — retryable). Never throws.
    */
-  private publishToRelay(relayUrl: string, event: StoredSignedEvent): Promise<SendOutcome> {
+  private publishToRelay(
+    relayUrl: string,
+    event: StoredSignedEvent
+  ): Promise<SendOutcome> {
     return new Promise(resolve => {
       let settled = false;
 
@@ -1913,7 +2011,11 @@ export class BroadcastDeleteService {
         if (settled) return;
         settled = true;
         clearTimeout(timer);
-        try { ws.close(); } catch { /* ignore */ }
+        try {
+          ws.close();
+        } catch {
+          /* ignore */
+        }
         resolve(outcome);
       };
 
@@ -1935,7 +2037,7 @@ export class BroadcastDeleteService {
         }
       };
 
-      ws.onmessage = (msg) => {
+      ws.onmessage = msg => {
         try {
           const data = JSON.parse(msg.data);
           // NIP-01 OK message: ["OK", <event_id>, <true|false>, <message>]

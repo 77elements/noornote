@@ -44,7 +44,10 @@ export class ParentNoteFetcher {
   /**
    * Fetch parent note author info (queued)
    */
-  async fetchParentAuthor(parentEventId: string, relayHint: string | null): Promise<ParentAuthorInfo | null> {
+  async fetchParentAuthor(
+    parentEventId: string,
+    relayHint: string | null
+  ): Promise<ParentAuthorInfo | null> {
     return new Promise((resolve, reject) => {
       this.queue.push({ parentEventId, relayHint, resolve, reject });
 
@@ -67,7 +70,10 @@ export class ParentNoteFetcher {
       if (!task) continue;
 
       try {
-        const info = await this.fetchParentAuthorInternal(task.parentEventId, task.relayHint);
+        const info = await this.fetchParentAuthorInternal(
+          task.parentEventId,
+          task.relayHint
+        );
         task.resolve(info);
       } catch (error) {
         task.reject(error);
@@ -85,7 +91,10 @@ export class ParentNoteFetcher {
   /**
    * Internal fetch logic
    */
-  private async fetchParentAuthorInternal(parentEventId: string, relayHint: string | null): Promise<ParentAuthorInfo | null> {
+  private async fetchParentAuthorInternal(
+    parentEventId: string,
+    relayHint: string | null
+  ): Promise<ParentAuthorInfo | null> {
     try {
       // Build relay list: relay hint first, then configured relays
       const configuredRelays = this.relayConfig.getReadRelays();
@@ -97,7 +106,7 @@ export class ParentNoteFetcher {
       const result = await fetchNostrEvents({
         relays,
         ids: [parentEventId],
-        limit: 1
+        limit: 1,
       });
 
       if (result.events.length === 0) {
@@ -109,18 +118,22 @@ export class ParentNoteFetcher {
       const parentAuthorPubkey = parentEvent.pubkey;
 
       // Get parent author profile
-      const parentProfile = await this.userProfileService.getUserProfile(parentAuthorPubkey);
+      const parentProfile =
+        await this.userProfileService.getUserProfile(parentAuthorPubkey);
 
       // Extract display name and avatar
-      const displayName = parentProfile.display_name || parentProfile.name || 'Anonymous';
-      const avatarUrl = parentProfile.picture ?? this.userProfileService.getProfilePicture(parentAuthorPubkey) ?? '';
+      const displayName =
+        parentProfile.display_name || parentProfile.name || 'Anonymous';
+      const avatarUrl =
+        parentProfile.picture ??
+        this.userProfileService.getProfilePicture(parentAuthorPubkey) ??
+        '';
 
       return {
         displayName,
         avatarUrl,
-        pubkey: parentAuthorPubkey
+        pubkey: parentAuthorPubkey,
       };
-
     } catch (error) {
       console.error('Failed to fetch parent author:', error);
       return null;

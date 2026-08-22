@@ -12,12 +12,18 @@ import { Switch } from '../ui/Switch';
 import { ToastService } from '../../services/ToastService';
 import { ModalService } from '../../services/ModalService';
 import { TypedEventBus } from '../../core/TypedEventBus';
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
-import { isListSettingsEnabled, setListSettingsEnabled } from '../../addons/list-settings/index';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../services/PerAccountLocalStorage';
+import {
+  isListSettingsEnabled,
+  setListSettingsEnabled,
+} from '../../addons/list-settings/index';
 import {
   getListSyncMode,
   setListSyncMode,
-  type ListSyncMode
+  type ListSyncMode,
 } from '../../helpers/ListSyncMode';
 
 export class ListSettingsSection extends SettingsSection {
@@ -39,7 +45,9 @@ export class ListSettingsSection extends SettingsSection {
     const contentContainer = this.getContentContainer(parentContainer);
     if (!contentContainer) return;
 
-    const contentZone = parentContainer.querySelector('[data-addon-content="list-settings"]') as HTMLElement | null;
+    const contentZone = parentContainer.querySelector(
+      '[data-addon-content="list-settings"]'
+    ) as HTMLElement | null;
 
     const enabled = isListSettingsEnabled();
 
@@ -47,7 +55,7 @@ export class ListSettingsSection extends SettingsSection {
     this.enableSwitch = new Switch({
       label: '',
       checked: enabled,
-      onChange: (checked) => {
+      onChange: checked => {
         setListSettingsEnabled(checked);
         if (!checked) {
           // Force Easy Mode when disabling
@@ -55,9 +63,11 @@ export class ListSettingsSection extends SettingsSection {
           setListSyncMode('easy');
         }
         if (contentZone) this.renderAdvancedContent(contentZone, checked);
-        const label = checked ? 'Advanced List Management enabled' : 'Advanced List Management disabled (Easy Mode)';
+        const label = checked
+          ? 'Advanced List Management enabled'
+          : 'Advanced List Management disabled (Easy Mode)';
         ToastService.show(label, 'success');
-      }
+      },
     });
 
     contentContainer.innerHTML = `
@@ -86,7 +96,8 @@ export class ListSettingsSection extends SettingsSection {
           this.enableSwitch?.setChecked(false);
         }
 
-        if (contentZone) this.renderAdvancedContent(contentZone, isListSettingsEnabled());
+        if (contentZone)
+          this.renderAdvancedContent(contentZone, isListSettingsEnabled());
       }
     );
   }
@@ -94,7 +105,10 @@ export class ListSettingsSection extends SettingsSection {
   /**
    * Render or clear the advanced content (mode selector + danger zone)
    */
-  private renderAdvancedContent(contentContainer: HTMLElement, enabled: boolean): void {
+  private renderAdvancedContent(
+    contentContainer: HTMLElement,
+    enabled: boolean
+  ): void {
     // Remove existing advanced content
     const existing = contentContainer.querySelector('.list-settings__advanced');
     if (existing) existing.remove();
@@ -182,29 +196,36 @@ export class ListSettingsSection extends SettingsSection {
    */
   private bindListeners(contentContainer: HTMLElement): void {
     // Mode radio buttons
-    const radioButtons = contentContainer.querySelectorAll('input[name="list-sync-mode"]');
+    const radioButtons = contentContainer.querySelectorAll(
+      'input[name="list-sync-mode"]'
+    );
     radioButtons.forEach(radio => {
-      radio.addEventListener('change', (e) => {
+      radio.addEventListener('change', e => {
         const target = e.target as HTMLInputElement;
         this.currentMode = target.value as ListSyncMode;
 
         setListSyncMode(this.currentMode);
-        const modeLabel = this.currentMode === 'easy' ? 'Easy Mode' : 'Manual Mode';
+        const modeLabel =
+          this.currentMode === 'easy' ? 'Easy Mode' : 'Manual Mode';
         ToastService.show(`List sync: ${modeLabel} enabled`, 'success');
       });
     });
 
     // Danger Zone buttons
-    contentContainer.querySelector('[data-action="reset-tribes"]')
+    contentContainer
+      .querySelector('[data-action="reset-tribes"]')
       ?.addEventListener('click', () => this.confirmResetTribes());
 
-    contentContainer.querySelector('[data-action="reset-bookmarks"]')
+    contentContainer
+      .querySelector('[data-action="reset-bookmarks"]')
       ?.addEventListener('click', () => this.confirmResetBookmarks());
 
-    contentContainer.querySelector('[data-action="reset-mutes"]')
+    contentContainer
+      .querySelector('[data-action="reset-mutes"]')
       ?.addEventListener('click', () => this.confirmResetMutes());
 
-    contentContainer.querySelector('[data-action="reset-follows"]')
+    contentContainer
+      .querySelector('[data-action="reset-follows"]')
       ?.addEventListener('click', () => this.confirmResetFollows());
   }
 
@@ -227,7 +248,7 @@ export class ListSettingsSection extends SettingsSection {
           <li>Tribe timeline tabs</li>
         </ul>
       `,
-      onConfirm: () => this.resetTribes()
+      onConfirm: () => this.resetTribes(),
     });
   }
 
@@ -246,7 +267,7 @@ export class ListSettingsSection extends SettingsSection {
           <li>All bookmark folders</li>
         </ul>
       `,
-      onConfirm: () => this.resetBookmarks()
+      onConfirm: () => this.resetBookmarks(),
     });
   }
 
@@ -265,7 +286,7 @@ export class ListSettingsSection extends SettingsSection {
         </ul>
         <p style="margin-top: 0.5rem;">Muted users will appear in your timeline again.</p>
       `,
-      onConfirm: () => this.resetMutes()
+      onConfirm: () => this.resetMutes(),
     });
   }
 
@@ -308,7 +329,7 @@ export class ListSettingsSection extends SettingsSection {
       width: '500px',
       showCloseButton: true,
       closeOnOverlay: true,
-      closeOnEsc: true
+      closeOnEsc: true,
     });
 
     this.bindModalActions(() => this.resetFollows());
@@ -350,7 +371,7 @@ export class ListSettingsSection extends SettingsSection {
       width: '500px',
       showCloseButton: true,
       closeOnOverlay: true,
-      closeOnEsc: true
+      closeOnEsc: true,
     });
 
     this.bindModalActions(options.onConfirm);
@@ -361,10 +382,12 @@ export class ListSettingsSection extends SettingsSection {
    */
   private bindModalActions(onConfirm: () => void): void {
     setTimeout(() => {
-      document.querySelector('[data-action="cancel"]')
+      document
+        .querySelector('[data-action="cancel"]')
         ?.addEventListener('click', () => this.modalService.hide());
 
-      document.querySelector('[data-action="confirm"]')
+      document
+        .querySelector('[data-action="confirm"]')
         ?.addEventListener('click', () => {
           this.modalService.hide();
           onConfirm();

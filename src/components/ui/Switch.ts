@@ -65,7 +65,7 @@ export class Switch {
     const input = container.querySelector(`#${this.id}`) as HTMLInputElement;
     if (!input) return;
 
-    input.addEventListener('change', (e) => {
+    input.addEventListener('change', e => {
       const target = e.target as HTMLInputElement;
       this.checked = target.checked;
       this.config.onChange(this.checked);

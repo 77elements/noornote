@@ -42,7 +42,8 @@ export class SignatureVerificationService {
 
   public static getInstance(): SignatureVerificationService {
     if (!SignatureVerificationService.instance) {
-      SignatureVerificationService.instance = new SignatureVerificationService();
+      SignatureVerificationService.instance =
+        new SignatureVerificationService();
     }
     return SignatureVerificationService.instance;
   }
@@ -78,7 +79,7 @@ export class SignatureVerificationService {
           tags: event.tags,
           content: event.content,
           created_at: event.created_at,
-          pubkey: event.pubkey
+          pubkey: event.pubkey,
         });
         const isIdMismatch = calculatedId !== event.id;
         const eventIdPrefix = event.id?.slice(0, 8) ?? 'unknown';
@@ -90,8 +91,10 @@ export class SignatureVerificationService {
 
         return {
           valid: false,
-          error: isIdMismatch ? 'Event ID mismatch - possible forgery attempt' : 'Invalid cryptographic signature',
-          calculatedId
+          error: isIdMismatch
+            ? 'Event ID mismatch - possible forgery attempt'
+            : 'Invalid cryptographic signature',
+          calculatedId,
         };
       }
 
@@ -103,10 +106,13 @@ export class SignatureVerificationService {
       return result;
     } catch (error) {
       this.failureCount++;
-      this.systemLogger.error('SignatureVerificationService', `Verification error: ${error}`);
+      this.systemLogger.error(
+        'SignatureVerificationService',
+        `Verification error: ${error}`
+      );
       return {
         valid: false,
-        error: `Verification exception: ${error}`
+        error: `Verification exception: ${error}`,
       };
     }
   }
@@ -148,7 +154,7 @@ export class SignatureVerificationService {
     return {
       totalVerifications: this.verificationCount,
       failures: this.failureCount,
-      successRate: `${successRate}%`
+      successRate: `${successRate}%`,
     };
   }
 

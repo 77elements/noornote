@@ -7,9 +7,7 @@
  * when another Nostr-Git frontend ships.
  */
 
-const GIT_HOSTS = [
-  'gitworkshop.dev',
-];
+const GIT_HOSTS = ['gitworkshop.dev'];
 
 const GIT_URL_REGEX = new RegExp(
   `https?://(?:${GIT_HOSTS.join('|').replace(/\./g, '\\.')})/\\S*?((?:nevent1|naddr1|note1)[02-9ac-hj-np-z]+)(?=[^02-9ac-hj-np-z]|$)`,

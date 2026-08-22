@@ -23,7 +23,7 @@ function extractCleanMediaUrl(url: string, extensions: string[]): string {
   // Find the last position of any media extension in the URL
   let lastExtEnd = -1;
   for (const ext of extensions) {
-    const extPattern = '.' + ext;
+    const extPattern = `.${ext}`;
     const idx = url.toLowerCase().lastIndexOf(extPattern);
     if (idx !== -1) {
       const end = idx + extPattern.length;
@@ -34,11 +34,14 @@ function extractCleanMediaUrl(url: string, extensions: string[]): string {
 }
 
 /** Regex for matching image URLs in text (global, for extraction) */
-export const IMAGE_URL_REGEX = /https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg)(?:[?&][^\s]*)?/gi;
+export const IMAGE_URL_REGEX =
+  /https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg)(?:[?&][^\s]*)?/gi;
 
 /** Check if a string is an image URL */
 export function isImageUrl(text: string): boolean {
-  return /^https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg)(?:\?[^\s]*)?$/i.test(text.trim());
+  return /^https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg)(?:\?[^\s]*)?$/i.test(
+    text.trim()
+  );
 }
 
 export function extractMedia(text: string): MediaContent[] {
@@ -56,7 +59,7 @@ export function extractMedia(text: string): MediaContent[] {
     media.push({
       type: 'image',
       url: extractCleanMediaUrl(fullUrl, imageExts),
-      originalUrl: fullUrl
+      originalUrl: fullUrl,
     });
   });
 
@@ -68,19 +71,20 @@ export function extractMedia(text: string): MediaContent[] {
     media.push({
       type: 'video',
       url: extractCleanMediaUrl(fullUrl, videoExts),
-      originalUrl: fullUrl
+      originalUrl: fullUrl,
     });
   });
 
   // Audio patterns
-  const audioRegex = /https?:\/\/[^\s]+\.(?:mp3|wav|ogg|flac|m4a|aac)(?:[?&][^\s]*)?/gi;
+  const audioRegex =
+    /https?:\/\/[^\s]+\.(?:mp3|wav|ogg|flac|m4a|aac)(?:[?&][^\s]*)?/gi;
   const audios = text.match(audioRegex) || [];
 
   audios.forEach(fullUrl => {
     media.push({
       type: 'audio',
       url: extractCleanMediaUrl(fullUrl, audioExts),
-      originalUrl: fullUrl
+      originalUrl: fullUrl,
     });
   });
 
@@ -89,14 +93,15 @@ export function extractMedia(text: string): MediaContent[] {
   // non-whitespace chars so originalUrl covers the ENTIRE URL including
   // tracking params (&t=, &pp=, &ab_channel=, …). Otherwise leftover
   // fragments survive the text replacement and leak into the rendered note.
-  const youtubeRegex = /(?:https?:\/\/)?(?:[a-z0-9-]+\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)[^\s]*/gi;
+  const youtubeRegex =
+    /(?:https?:\/\/)?(?:[a-z0-9-]+\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)[^\s]*/gi;
   let match;
   while ((match = youtubeRegex.exec(text)) !== null) {
     media.push({
       type: 'video',
       url: match[0],
       originalUrl: match[0],
-      thumbnail: `https://img.youtube.com/vi/${match[1]}/maxresdefault.jpg`
+      thumbnail: `https://img.youtube.com/vi/${match[1]}/maxresdefault.jpg`,
     });
   }
 
@@ -115,7 +120,10 @@ export function extractMedia(text: string): MediaContent[] {
  * Only `annotate-user` is parsed here — `dim`, `alt`, `blurhash`, etc. are
  * left untouched for kind 1 (no regression on existing rendering).
  */
-export function extractMediaWithImeta(text: string, tags: string[][]): MediaContent[] {
+export function extractMediaWithImeta(
+  text: string,
+  tags: string[][]
+): MediaContent[] {
   const media = extractMedia(text);
   const imetaTags = tags.filter(tag => tag[0] === 'imeta');
   if (imetaTags.length === 0) return media;

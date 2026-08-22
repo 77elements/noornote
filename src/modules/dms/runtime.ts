@@ -8,7 +8,8 @@ import type { DMsModuleApi } from './contracts';
  * See notifications/runtime.ts for the race-condition rationale.
  */
 export class DMsRuntime implements ModuleRuntime<DMsModuleApi> {
-  private service: import('../../services/dm/DMService').DMService | null = null;
+  private service: import('../../services/dm/DMService').DMService | null =
+    null;
 
   async init(_ctx: ModuleContext): Promise<void> {
     const { DMService } = await import('../../services/dm/DMService');
@@ -23,25 +24,48 @@ export class DMsRuntime implements ModuleRuntime<DMsModuleApi> {
     const svc = this.service;
     return {
       getUnreadCount: () => svc?.getUnreadCount() ?? Promise.resolve(0),
-      getUnreadCountsSplit: () => svc?.getUnreadCountsSplit() ?? Promise.resolve({ known: 0, unknown: 0, total: 0 }),
-      refreshSubscriptions: () => svc?.refreshSubscriptions() ?? Promise.resolve(),
-      sendMessage: (recipientPubkey, content, replyTo) => svc?.sendMessage(recipientPubkey, content, replyTo) ?? Promise.resolve(false),
-      getConversations: (limit, offset) => svc?.getConversations(limit, offset) ?? Promise.resolve([]),
-      getConversationsFiltered: (filter, limit, offset) => svc?.getConversationsFiltered(filter, limit, offset) ?? Promise.resolve([]),
-      getMessages: (partnerPubkey, limit, before) => svc?.getMessages(partnerPubkey, limit, before) ?? Promise.resolve([]),
-      getFetchProgress: () => svc?.getFetchProgress() ?? { current: 0, total: 0, isLoading: false },
-      markAsRead: (partnerPubkey) => svc?.markAsRead(partnerPubkey) ?? Promise.resolve(),
+      getUnreadCountsSplit: () =>
+        svc?.getUnreadCountsSplit() ??
+        Promise.resolve({ known: 0, unknown: 0, total: 0 }),
+      refreshSubscriptions: () =>
+        svc?.refreshSubscriptions() ?? Promise.resolve(),
+      sendMessage: (recipientPubkey, content, replyTo) =>
+        svc?.sendMessage(recipientPubkey, content, replyTo) ??
+        Promise.resolve(false),
+      getConversations: (limit, offset) =>
+        svc?.getConversations(limit, offset) ?? Promise.resolve([]),
+      getConversationsFiltered: (filter, limit, offset) =>
+        svc?.getConversationsFiltered(filter, limit, offset) ??
+        Promise.resolve([]),
+      getMessages: (partnerPubkey, limit, before) =>
+        svc?.getMessages(partnerPubkey, limit, before) ?? Promise.resolve([]),
+      getFetchProgress: () =>
+        svc?.getFetchProgress() ?? { current: 0, total: 0, isLoading: false },
+      markAsRead: partnerPubkey =>
+        svc?.markAsRead(partnerPubkey) ?? Promise.resolve(),
       markAllAsRead: () => svc?.markAllAsRead() ?? Promise.resolve(),
       markAllAsUnread: () => svc?.markAllAsUnread() ?? Promise.resolve(),
-      getDisappearing: (partnerPubkey) => svc?.getDisappearing(partnerPubkey) ?? Promise.resolve(undefined),
-      setDisappearing: (partnerPubkey, seconds) => svc?.setDisappearing(partnerPubkey, seconds) ?? Promise.resolve(),
-      getLastPromptedPeerDuration: (partnerPubkey) => svc?.getLastPromptedPeerDuration(partnerPubkey) ?? Promise.resolve(undefined),
-      setLastPromptedPeerDuration: (partnerPubkey, seconds) => svc?.setLastPromptedPeerDuration(partnerPubkey, seconds) ?? Promise.resolve(),
-      deletePendingMessagesByDuration: (partnerPubkey, duration) => svc?.deletePendingMessagesByDuration(partnerPubkey, duration) ?? Promise.resolve(0),
-      deleteConversation: (partnerPubkey) => svc?.deleteConversation(partnerPubkey) ?? Promise.resolve(),
-      deleteAndMute: (partnerPubkey) => svc?.deleteAndMute(partnerPubkey) ?? Promise.resolve(),
+      getDisappearing: partnerPubkey =>
+        svc?.getDisappearing(partnerPubkey) ?? Promise.resolve(undefined),
+      setDisappearing: (partnerPubkey, seconds) =>
+        svc?.setDisappearing(partnerPubkey, seconds) ?? Promise.resolve(),
+      getLastPromptedPeerDuration: partnerPubkey =>
+        svc?.getLastPromptedPeerDuration(partnerPubkey) ??
+        Promise.resolve(undefined),
+      setLastPromptedPeerDuration: (partnerPubkey, seconds) =>
+        svc?.setLastPromptedPeerDuration(partnerPubkey, seconds) ??
+        Promise.resolve(),
+      deletePendingMessagesByDuration: (partnerPubkey, duration) =>
+        svc?.deletePendingMessagesByDuration(partnerPubkey, duration) ??
+        Promise.resolve(0),
+      deleteConversation: partnerPubkey =>
+        svc?.deleteConversation(partnerPubkey) ?? Promise.resolve(),
+      deleteAndMute: partnerPubkey =>
+        svc?.deleteAndMute(partnerPubkey) ?? Promise.resolve(),
       resyncAll: () => svc?.resyncAll() ?? Promise.resolve(),
-      loadOlderMessages: () => svc?.loadOlderMessages() ?? Promise.resolve({ fetched: 0, reachedEnd: true }),
+      loadOlderMessages: () =>
+        svc?.loadOlderMessages() ??
+        Promise.resolve({ fetched: 0, reachedEnd: true }),
       start: () => svc?.start() ?? Promise.resolve(),
       stop: () => svc?.stop(),
     };

@@ -24,9 +24,7 @@ export interface ZapStats {
 }
 
 // Additional zap-specific relays (beyond aggregators)
-const EXTRA_ZAP_RELAYS = [
-  'wss://purplepag.es',
-];
+const EXTRA_ZAP_RELAYS = ['wss://purplepag.es'];
 
 // Limit for zap queries (balanced for performance)
 const ZAP_QUERY_LIMIT = 800;
@@ -47,7 +45,9 @@ export class ZapStatsService {
   private relayConfig: RelayConfig;
   private eventBus: TypedEventBus;
 
-  private statsCache: LRUCache<ZapStats> = new LRUCache<ZapStats>(getCacheSize(500, 200, 100));
+  private statsCache: LRUCache<ZapStats> = new LRUCache<ZapStats>(
+    getCacheSize(500, 200, 100)
+  );
   private isLoading: boolean = false;
   private loadingPromise: Promise<void> | null = null;
 
@@ -113,7 +113,7 @@ export class ZapStatsService {
     const relaySet = new Set<string>([
       ...this.relayConfig.getAllRelays().map(r => r.url),
       ...this.relayConfig.getAggregatorRelays(),
-      ...EXTRA_ZAP_RELAYS
+      ...EXTRA_ZAP_RELAYS,
     ]);
     return Array.from(relaySet);
   }
@@ -128,7 +128,7 @@ export class ZapStatsService {
         outgoingCount: 0,
         outgoingSats: 0,
         incomingCount: 0,
-        incomingSats: 0
+        incomingSats: 0,
       });
     }
   }
@@ -152,9 +152,14 @@ export class ZapStatsService {
   /**
    * Fetch zap stats from combined relay list
    */
-  private async fetchZapStats(currentUserPubkey: string, followPubkeys: string[]): Promise<void> {
+  private async fetchZapStats(
+    currentUserPubkey: string,
+    followPubkeys: string[]
+  ): Promise<void> {
     const zapRelays = this.getZapRelays();
-    console.log(`[ZapStatsService] Fetching zap stats for ${followPubkeys.length} follows from ${zapRelays.length} relays...`);
+    console.log(
+      `[ZapStatsService] Fetching zap stats for ${followPubkeys.length} follows from ${zapRelays.length} relays...`
+    );
 
     this.initializeStatsCache(followPubkeys);
     const followSet = new Set(followPubkeys);
@@ -162,15 +167,25 @@ export class ZapStatsService {
 
     // Fetch incoming zaps (zaps TO current user)
     console.log('[ZapStatsService] Fetching incoming zaps...');
-    const incomingZaps = await this.transport.fetch(zapRelays, [{
-      kinds: [9735],
-      '#p': [currentUserPubkey],
-      limit: ZAP_QUERY_LIMIT
-    }], FETCH_TIMEOUT_MS, false, 'ZapStatsService');
+    const incomingZaps = await this.transport.fetch(
+      zapRelays,
+      [
+        {
+          kinds: [9735],
+          '#p': [currentUserPubkey],
+          limit: ZAP_QUERY_LIMIT,
+        },
+      ],
+      FETCH_TIMEOUT_MS,
+      false,
+      'ZapStatsService'
+    );
 
-    console.log(`[ZapStatsService] Received ${incomingZaps.length} incoming zap events`);
+    console.log(
+      `[ZapStatsService] Received ${incomingZaps.length} incoming zap events`
+    );
 
-    this.processZapEvents(incomingZaps, seenEventIds, (zap) => {
+    this.processZapEvents(incomingZaps, seenEventIds, zap => {
       const zapperPubkey = extractZapperPubkey(zap);
       if (!followSet.has(zapperPubkey)) return;
 
@@ -188,13 +203,21 @@ export class ZapStatsService {
     for (let i = 0; i < followPubkeys.length; i += BATCH_SIZE) {
       const batch = followPubkeys.slice(i, i + BATCH_SIZE);
 
-      const outgoingZaps = await this.transport.fetch(zapRelays, [{
-        kinds: [9735],
-        '#p': batch,
-        limit: ZAP_QUERY_LIMIT
-      }], FETCH_TIMEOUT_MS, false, 'ZapStatsService');
+      const outgoingZaps = await this.transport.fetch(
+        zapRelays,
+        [
+          {
+            kinds: [9735],
+            '#p': batch,
+            limit: ZAP_QUERY_LIMIT,
+          },
+        ],
+        FETCH_TIMEOUT_MS,
+        false,
+        'ZapStatsService'
+      );
 
-      this.processZapEvents(outgoingZaps, seenEventIds, (zap) => {
+      this.processZapEvents(outgoingZaps, seenEventIds, zap => {
         if (extractZapperPubkey(zap) !== currentUserPubkey) return;
 
         const recipientPubkey = zap.tags.find(t => t[0] === 'p')?.[1];
@@ -221,10 +244,10 @@ export class ZapStatsService {
    */
   public formatSats(sats: number): string {
     if (sats >= 1_000_000) {
-      return (sats / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+      return `${(sats / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
     }
     if (sats >= 1_000) {
-      return (sats / 1_000).toFixed(1).replace(/\.0$/, '') + 'k';
+      return `${(sats / 1_000).toFixed(1).replace(/\.0$/, '')}k`;
     }
     return sats.toString();
   }

@@ -101,7 +101,6 @@ export class TimelineRenderer {
 
       // Trim excess cards from the top of the timeline
       this.trimExcessCards();
-
     } catch (error) {
       console.error(`❌ APPEND FAILED:`, error);
     }
@@ -126,7 +125,6 @@ export class TimelineRenderer {
 
       // Insert right after timeline-header (at the top of notes)
       this.element.insertBefore(fragment, header.nextSibling);
-
     } catch (error) {
       console.error(`❌ PREPEND FAILED:`, error);
     }

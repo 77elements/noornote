@@ -72,7 +72,11 @@ export class CustomDropdown {
   // so anonymous document listeners would leak on every timeline card recycle.
   private readonly onDocumentClick = (e: MouseEvent): void => {
     const target = e.target as Node;
-    if (this.isOpen && !this.element.contains(target) && !(this.menuEl?.contains(target))) {
+    if (
+      this.isOpen &&
+      !this.element.contains(target) &&
+      !this.menuEl?.contains(target)
+    ) {
       this.close();
     }
   };
@@ -103,7 +107,10 @@ export class CustomDropdown {
    */
   private createElement(config: CustomDropdownOptions): HTMLElement {
     const container = document.createElement('div');
-    container.className = `custom-dropdown ${this.searchable ? 'custom-dropdown--searchable' : ''} ${config.className || ''}`.replace(/\s+/g, ' ').trim();
+    container.className =
+      `custom-dropdown ${this.searchable ? 'custom-dropdown--searchable' : ''} ${config.className || ''}`
+        .replace(/\s+/g, ' ')
+        .trim();
 
     // Apply custom width if provided
     if (config.width) {
@@ -117,7 +124,9 @@ export class CustomDropdown {
       });
     }
 
-    const selectedOption = this.options.find(opt => opt.value === this.selectedValue);
+    const selectedOption = this.options.find(
+      opt => opt.value === this.selectedValue
+    );
     const selectedLabel = selectedOption?.label ?? this.options[0]?.label ?? '';
 
     const searchHtml = this.searchable
@@ -131,7 +140,9 @@ export class CustomDropdown {
       </button>
       <ul class="custom-dropdown__menu" role="listbox">
         ${searchHtml}
-        ${this.options.map(option => `
+        ${this.options
+          .map(
+            option => `
           <li
             class="custom-dropdown__item ${option.value === this.selectedValue ? 'custom-dropdown__item--selected' : ''}"
             data-value="${option.value}"
@@ -140,7 +151,9 @@ export class CustomDropdown {
           >
             ${option.label}
           </li>
-        `).join('')}
+        `
+          )
+          .join('')}
       </ul>
     `;
 
@@ -157,14 +170,14 @@ export class CustomDropdown {
     this.menuEl = this.element.querySelector('.custom-dropdown__menu');
 
     // Toggle dropdown
-    trigger?.addEventListener('click', (e) => {
+    trigger?.addEventListener('click', e => {
       e.stopPropagation();
       this.toggle();
     });
 
     // Select option
     items.forEach(item => {
-      item.addEventListener('click', (e) => {
+      item.addEventListener('click', e => {
         e.stopPropagation();
         const value = (item as HTMLElement).dataset.value;
         // Truthy check rejected legitimate empty-string values used by
@@ -178,9 +191,11 @@ export class CustomDropdown {
 
     // Type-to-filter search (long lists)
     if (this.searchable) {
-      const input = this.element.querySelector('.custom-dropdown__search-input') as HTMLInputElement | null;
-      input?.addEventListener('click', (e) => e.stopPropagation());
-      input?.addEventListener('keydown', (e) => e.stopPropagation());
+      const input = this.element.querySelector(
+        '.custom-dropdown__search-input'
+      ) as HTMLInputElement | null;
+      input?.addEventListener('click', e => e.stopPropagation());
+      input?.addEventListener('keydown', e => e.stopPropagation());
       input?.addEventListener('input', () => this.filterItems(input.value));
     }
 
@@ -196,14 +211,17 @@ export class CustomDropdown {
     const q = query.trim().toLowerCase();
     this.element.querySelectorAll('.custom-dropdown__item').forEach(item => {
       const label = (item.textContent || '').trim().toLowerCase();
-      (item as HTMLElement).style.display = !q || label.includes(q) ? '' : 'none';
+      (item as HTMLElement).style.display =
+        !q || label.includes(q) ? '' : 'none';
     });
   }
 
   /** Clear the search box and unhide all items. */
   private resetFilter(): void {
     if (!this.searchable) return;
-    const input = this.element.querySelector('.custom-dropdown__search-input') as HTMLInputElement | null;
+    const input = this.element.querySelector(
+      '.custom-dropdown__search-input'
+    ) as HTMLInputElement | null;
     if (input) input.value = '';
     this.element.querySelectorAll('.custom-dropdown__item').forEach(item => {
       (item as HTMLElement).style.display = '';
@@ -239,7 +257,9 @@ export class CustomDropdown {
     }
 
     if (this.searchable) {
-      const input = (this.menuEl ?? this.element).querySelector('.custom-dropdown__search-input') as HTMLInputElement | null;
+      const input = (this.menuEl ?? this.element).querySelector(
+        '.custom-dropdown__search-input'
+      ) as HTMLInputElement | null;
       // Focus after the menu becomes visible.
       setTimeout(() => input?.focus(), 0);
     }
@@ -281,11 +301,18 @@ export class CustomDropdown {
    * opening, so it adapts to any menu width without hardcoded guesses.
    */
   private positionMenu(): void {
-    const menu = this.element.querySelector('.custom-dropdown__menu') as HTMLElement | null;
-    const trigger = this.element.querySelector('.custom-dropdown__trigger') as HTMLElement | null;
+    const menu = this.element.querySelector(
+      '.custom-dropdown__menu'
+    ) as HTMLElement | null;
+    const trigger = this.element.querySelector(
+      '.custom-dropdown__trigger'
+    ) as HTMLElement | null;
     if (!menu || !trigger) return;
 
-    this.element.classList.remove('custom-dropdown--align-left', 'custom-dropdown--drop-up');
+    this.element.classList.remove(
+      'custom-dropdown--align-left',
+      'custom-dropdown--drop-up'
+    );
 
     const t = trigger.getBoundingClientRect();
     const clip = this.getClipRect();
@@ -318,17 +345,35 @@ export class CustomDropdown {
    * A dropdown inside a scrollable content column is cut at that column's edge,
    * not the window edge, so collision must be measured against it.
    */
-  private getClipRect(): { left: number; right: number; top: number; bottom: number } {
+  private getClipRect(): {
+    left: number;
+    right: number;
+    top: number;
+    bottom: number;
+  } {
     let node = this.element.parentElement;
-    while (node && node !== document.body && node !== document.documentElement) {
+    while (
+      node &&
+      node !== document.body &&
+      node !== document.documentElement
+    ) {
       const s = getComputedStyle(node);
-      if (s.overflowX !== 'visible' || s.overflowY !== 'visible' || s.contain.includes('paint')) {
+      if (
+        s.overflowX !== 'visible' ||
+        s.overflowY !== 'visible' ||
+        s.contain.includes('paint')
+      ) {
         const r = node.getBoundingClientRect();
         return { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
       }
       node = node.parentElement;
     }
-    return { left: 0, right: window.innerWidth, top: 0, bottom: window.innerHeight };
+    return {
+      left: 0,
+      right: window.innerWidth,
+      top: 0,
+      bottom: window.innerHeight,
+    };
   }
 
   /**

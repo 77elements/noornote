@@ -90,7 +90,7 @@ export class FullscreenOverlay {
     overlay.appendChild(inner);
 
     if (this.closeOnEsc) {
-      this.keydownHandler = (e) => {
+      this.keydownHandler = e => {
         if (e.key === 'Escape') {
           e.preventDefault();
           this.unmount();

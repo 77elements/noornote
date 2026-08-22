@@ -48,21 +48,29 @@ export class RelayListOrchestrator extends Orchestrator {
     bootstrapRelays: string[],
     parseEvent: (event: NostrEvent) => RelayInfo[]
   ): Promise<{ relays: RelayInfo[]; timestamp: number } | null> {
-    const filters: NDKFilter[] = [{
-      authors: [pubkey],
-      kinds: [kind],
-      limit: 1
-    }];
+    const filters: NDKFilter[] = [
+      {
+        authors: [pubkey],
+        kinds: [kind],
+        limit: 1,
+      },
+    ];
 
     try {
-      const events = await this.transport.fetch(bootstrapRelays, filters, 5000, false, 'RelayListOrch');
+      const events = await this.transport.fetch(
+        bootstrapRelays,
+        filters,
+        5000,
+        false,
+        'RelayListOrch'
+      );
 
       const event = events[0];
       if (!event) return null;
 
       return {
         relays: parseEvent(event),
-        timestamp: event.created_at ?? 0
+        timestamp: event.created_at ?? 0,
       };
     } catch (error) {
       this.systemLogger.error(
@@ -80,7 +88,9 @@ export class RelayListOrchestrator extends Orchestrator {
     pubkey: string,
     bootstrapRelays: string[]
   ): Promise<{ relays: RelayInfo[]; timestamp: number } | null> {
-    return this.fetchRelayKind(pubkey, 10002, bootstrapRelays, event => this.parseRelayListEvent(event));
+    return this.fetchRelayKind(pubkey, 10002, bootstrapRelays, event =>
+      this.parseRelayListEvent(event)
+    );
   }
 
   /**
@@ -90,7 +100,9 @@ export class RelayListOrchestrator extends Orchestrator {
     pubkey: string,
     bootstrapRelays: string[]
   ): Promise<{ relays: RelayInfo[]; timestamp: number } | null> {
-    return this.fetchRelayKind(pubkey, 10050, bootstrapRelays, event => this.parseInboxRelayEvent(event));
+    return this.fetchRelayKind(pubkey, 10050, bootstrapRelays, event =>
+      this.parseInboxRelayEvent(event)
+    );
   }
 
   /**
@@ -133,7 +145,10 @@ export class RelayListOrchestrator extends Orchestrator {
    */
   private parseRelayListEvent(event: NostrEvent): RelayInfo[] {
     return event.tags
-      .filter((tag): tag is [string, string, ...string[]] => tag[0] === 'r' && !!tag[1])
+      .filter(
+        (tag): tag is [string, string, ...string[]] =>
+          tag[0] === 'r' && !!tag[1]
+      )
       .map(tag => {
         const marker = tag[2];
         let types: RelayType[];
@@ -150,7 +165,7 @@ export class RelayListOrchestrator extends Orchestrator {
           types,
           isPaid: false,
           requiresAuth: false,
-          isActive: true
+          isActive: true,
         };
       });
   }
@@ -161,13 +176,16 @@ export class RelayListOrchestrator extends Orchestrator {
    */
   private parseInboxRelayEvent(event: NostrEvent): RelayInfo[] {
     return event.tags
-      .filter((tag): tag is [string, string, ...string[]] => tag[0] === 'relay' && !!tag[1])
+      .filter(
+        (tag): tag is [string, string, ...string[]] =>
+          tag[0] === 'relay' && !!tag[1]
+      )
       .map(tag => ({
         url: tag[1],
         types: ['inbox'] as RelayType[],
         isPaid: false,
         requiresAuth: false,
-        isActive: true
+        isActive: true,
       }));
   }
 
@@ -177,7 +195,9 @@ export class RelayListOrchestrator extends Orchestrator {
    */
   public static relayInfosToTags(relays: RelayInfo[]): string[][] {
     return relays
-      .filter(relay => relay.types.includes('read') || relay.types.includes('write'))
+      .filter(
+        relay => relay.types.includes('read') || relay.types.includes('write')
+      )
       .map(relay => {
         const hasRead = relay.types.includes('read');
         const hasWrite = relay.types.includes('write');

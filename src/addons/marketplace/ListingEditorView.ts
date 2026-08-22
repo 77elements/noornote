@@ -29,7 +29,10 @@ import { setupTabClickHandlers, switchTab } from '../../helpers/TabsHelper';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { CustomDropdown } from '../../components/ui/CustomDropdown';
 
-const CURRENCY_OPTIONS = ['USD', 'EUR', 'GBP', 'BTC', 'SAT'].map(c => ({ value: c, label: c }));
+const CURRENCY_OPTIONS = ['USD', 'EUR', 'GBP', 'BTC', 'SAT'].map(c => ({
+  value: c,
+  label: c,
+}));
 const FREQUENCY_OPTIONS = [
   { value: '', label: 'One-time' },
   { value: 'hour', label: 'per hour' },
@@ -48,7 +51,8 @@ export class ListingEditorView extends View {
   private systemLogger: SystemLogger;
   private _mediaApi?: MediaModuleApi | null;
   private get mediaApi(): MediaModuleApi | null {
-    return this._mediaApi ??= ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
+    return (this._mediaApi ??=
+      ModuleLoader.getInstance().getApi<MediaModuleApi>('media'));
   }
 
   // Sub-components
@@ -107,19 +111,22 @@ export class ListingEditorView extends View {
     this.selectedRelays = cfg.selectedRelays;
   }
 
-
   /**
    * Load existing listing for edit mode
    */
   private async loadExistingListing(): Promise<void> {
-    this.container.innerHTML = '<div class="marketplace-timeline__empty pulsate"><p>Loading listing...</p></div>';
+    this.container.innerHTML =
+      '<div class="marketplace-timeline__empty pulsate"><p>Loading listing...</p></div>';
 
     try {
-      const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
-      const event = await articlesApi?.fetchAddressableEvent(this.editNaddr!) ?? null;
+      const articlesApi =
+        ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+      const event =
+        (await articlesApi?.fetchAddressableEvent(this.editNaddr!)) ?? null;
 
       if (!event) {
-        this.container.innerHTML = '<div class="marketplace-timeline__error"><p>Listing not found</p></div>';
+        this.container.innerHTML =
+          '<div class="marketplace-timeline__error"><p>Listing not found</p></div>';
         return;
       }
 
@@ -140,8 +147,13 @@ export class ListingEditorView extends View {
 
       this.render();
     } catch (error) {
-      this.systemLogger.error('ListingEditorView', 'Failed to load listing:', error);
-      this.container.innerHTML = '<div class="marketplace-timeline__error"><p>Failed to load listing</p></div>';
+      this.systemLogger.error(
+        'ListingEditorView',
+        'Failed to load listing:',
+        error
+      );
+      this.container.innerHTML =
+        '<div class="marketplace-timeline__error"><p>Failed to load listing</p></div>';
     }
   }
 
@@ -150,17 +162,17 @@ export class ListingEditorView extends View {
       availableRelays: this.availableRelays,
       selectedRelays: this.selectedRelays,
       isTestMode: this.isTestMode,
-      onChange: (selectedRelays) => {
+      onChange: selectedRelays => {
         this.selectedRelays = selectedRelays;
         this.updateButtonStates();
-      }
+      },
     });
 
     this.toolbar = new PostEditorToolbar({
-      onMediaUploaded: (url) => this.handleMediaUploaded(url),
-      onEmojiSelected: (emoji) => this.insertAtCursor(emoji),
+      onMediaUploaded: url => this.handleMediaUploaded(url),
+      onEmojiSelected: emoji => this.insertAtCursor(emoji),
       textareaSelector: '.listing-editor-content',
-      showPoll: false
+      showPoll: false,
     });
 
     this.container.innerHTML = `
@@ -217,14 +229,18 @@ export class ListingEditorView extends View {
           <label for="listing-image-url">Images</label>
           <div class="listing-editor__images">
             <div class="listing-editor__image-list">
-              ${this.images.map((url, i) => `
+              ${this.images
+                .map(
+                  (url, i) => `
                 <div class="listing-editor__image-item" data-index="${i}">
                   <img src="${escapeHtmlAttr(url)}" alt="" />
                   <button type="button" class="btn-icon listing-editor__image-remove" data-remove-image="${i}" title="Remove">
                     <svg width="14" height="14"><use href="#icon-close"/></svg>
                   </button>
                 </div>
-              `).join('')}
+              `
+                )
+                .join('')}
             </div>
             <div class="listing-editor__image-add">
               <input type="text" id="listing-image-url" class="input" placeholder="https://... or upload" data-field="image-url" />
@@ -269,14 +285,18 @@ export class ListingEditorView extends View {
               <input type="text" id="listing-tags" class="input" placeholder="electronics, vintage (comma separated)" value="${escapeHtml(this.tags)}" data-field="tags" />
             </div>
 
-            ${this.isEditMode ? `
+            ${
+              this.isEditMode
+                ? `
               <div class="form__row">
                 <label for="listing-status">Status</label>
                 <select id="listing-status" class="input" data-field="status">
                   ${statusOptions.map(s => `<option value="${s}" ${this.status === s ? 'selected' : ''}>${s.charAt(0).toUpperCase() + s.slice(1)}</option>`).join('')}
                 </select>
               </div>
-            ` : ''}
+            `
+                : ''
+            }
 
             <div class="form__row">
               <label for="listing-identifier">Slug / Identifier</label>
@@ -290,15 +310,18 @@ export class ListingEditorView extends View {
   }
 
   private renderPreviewMode(): string {
-    const priceDisplay = this.price && this.priceCurrency
-      ? `${this.price} ${this.priceCurrency}${this.priceFrequency ? '/' + this.priceFrequency : ''}`
-      : '';
+    const priceDisplay =
+      this.price && this.priceCurrency
+        ? `${this.price} ${this.priceCurrency}${this.priceFrequency ? `/${this.priceFrequency}` : ''}`
+        : '';
 
     let htmlContent = '';
     try {
       marked.setOptions({ breaks: true, gfm: true });
-      htmlContent = (marked.parse(this.content) as string)
-        .replace(/<a href=/g, '<a rel="noopener noreferrer" href=');
+      htmlContent = (marked.parse(this.content) as string).replace(
+        /<a href=/g,
+        '<a rel="noopener noreferrer" href='
+      );
     } catch {
       htmlContent = `<p>${escapeHtml(this.content)}</p>`;
     }
@@ -311,36 +334,56 @@ export class ListingEditorView extends View {
         ${this.location ? `<div class="listing-card__location">${escapeHtml(this.location)}</div>` : ''}
         ${this.summary ? `<p class="article-editor__preview-summary">${escapeHtml(this.summary)}</p>` : ''}
         <div class="article-editor__preview-content">${htmlContent}</div>
-        ${this.tags ? `
+        ${
+          this.tags
+            ? `
           <div class="article-editor__preview-tags">
-            ${this.tags.split(',').map(tag => `<span class="listing-card__tag">#${escapeHtml(tag.trim())}</span>`).join(' ')}
+            ${this.tags
+              .split(',')
+              .map(
+                tag =>
+                  `<span class="listing-card__tag">#${escapeHtml(tag.trim())}</span>`
+              )
+              .join(' ')}
           </div>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
     `;
   }
 
   private setupEventListeners(): void {
     // Back
-    this.container.querySelector('[data-action="back"]')?.addEventListener('click', () => {
-      this.router.navigate('/marketplace');
-    });
+    this.container
+      .querySelector('[data-action="back"]')
+      ?.addEventListener('click', () => {
+        this.router.navigate('/marketplace');
+      });
 
     // Tabs
-    setupTabClickHandlers(this.container, (tabId) => this.switchTab(tabId as TabMode));
+    setupTabClickHandlers(this.container, tabId =>
+      this.switchTab(tabId as TabMode)
+    );
 
     // Fields
     this.setupFieldListeners();
 
     // Accordion toggle
     this.container.querySelectorAll('.nn-ui-toggle__header').forEach(header => {
-      header.addEventListener('click', () => header.closest('.nn-ui-toggle')?.classList.toggle('open'));
+      header.addEventListener('click', () =>
+        header.closest('.nn-ui-toggle')?.classList.toggle('open')
+      );
     });
 
     // Relay selector
-    const relaySelectorContainer = this.container.querySelector('.post-note-relay-selector');
+    const relaySelectorContainer = this.container.querySelector(
+      '.post-note-relay-selector'
+    );
     if (this.relaySelector && relaySelectorContainer) {
-      this.relaySelector.setupEventListeners(relaySelectorContainer as HTMLElement);
+      this.relaySelector.setupEventListeners(
+        relaySelectorContainer as HTMLElement
+      );
     }
 
     // Footer toolbar
@@ -350,29 +393,41 @@ export class ListingEditorView extends View {
     }
 
     // Paste-to-upload into the listing description.
-    const pasteTarget = this.container.querySelector('.listing-editor-content') as HTMLElement | null;
-    if (pasteTarget) setupPasteUpload(pasteTarget, files => void this.toolbar?.handleFileUpload(files));
+    const pasteTarget = this.container.querySelector(
+      '.listing-editor-content'
+    ) as HTMLElement | null;
+    if (pasteTarget)
+      setupPasteUpload(
+        pasteTarget,
+        files => void this.toolbar?.handleFileUpload(files)
+      );
 
     // Mention autocomplete
     this.mentionAutocomplete = new MentionAutocomplete({
       textareaSelector: '.listing-editor-content',
-      onMentionInserted: () => {}
+      onMentionInserted: () => {},
     });
     this.mentionAutocomplete.init();
 
     // Publish
-    this.container.querySelector('[data-action="publish"]')?.addEventListener('click', () => this.handlePublish());
+    this.container
+      .querySelector('[data-action="publish"]')
+      ?.addEventListener('click', () => this.handlePublish());
 
     // Image management
     this.setupImageHandlers();
 
     // Auto-generate slug from title (only in create mode)
     if (!this.isEditMode) {
-      const titleInput = this.container.querySelector('[data-field="title"]') as HTMLInputElement;
+      const titleInput = this.container.querySelector(
+        '[data-field="title"]'
+      ) as HTMLInputElement;
       titleInput?.addEventListener('blur', () => {
         if (this.title && !this.identifier.includes('-')) {
           this.identifier = ListingService.generateIdentifier(this.title);
-          const identifierInput = this.container.querySelector('[data-field="identifier"]') as HTMLInputElement;
+          const identifierInput = this.container.querySelector(
+            '[data-field="identifier"]'
+          ) as HTMLInputElement;
           if (identifierInput) identifierInput.value = this.identifier;
         }
       });
@@ -383,19 +438,38 @@ export class ListingEditorView extends View {
     const fields = this.container.querySelectorAll('[data-field]');
     fields.forEach(field => {
       const eventType = field.tagName === 'SELECT' ? 'change' : 'input';
-      field.addEventListener(eventType, (e) => {
-        const target = e.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+      field.addEventListener(eventType, e => {
+        const target = e.target as
+          | HTMLInputElement
+          | HTMLTextAreaElement
+          | HTMLSelectElement;
         const fieldName = target.dataset.field;
 
         switch (fieldName) {
-          case 'title': this.title = target.value; break;
-          case 'content': this.content = target.value; break;
-          case 'summary': this.summary = target.value; break;
-          case 'price': this.price = target.value; break;
-          case 'location': this.location = target.value; break;
-          case 'tags': this.tags = target.value; break;
-          case 'identifier': this.identifier = target.value; break;
-          case 'status': this.status = target.value; break;
+          case 'title':
+            this.title = target.value;
+            break;
+          case 'content':
+            this.content = target.value;
+            break;
+          case 'summary':
+            this.summary = target.value;
+            break;
+          case 'price':
+            this.price = target.value;
+            break;
+          case 'location':
+            this.location = target.value;
+            break;
+          case 'tags':
+            this.tags = target.value;
+            break;
+          case 'identifier':
+            this.identifier = target.value;
+            break;
+          case 'status':
+            this.status = target.value;
+            break;
         }
 
         this.updateButtonStates();
@@ -414,12 +488,14 @@ export class ListingEditorView extends View {
     this.currencyDropdown?.destroy();
     this.frequencyDropdown?.destroy();
 
-    const currencyMount = this.container.querySelector<HTMLElement>('[data-currency-mount]');
+    const currencyMount = this.container.querySelector<HTMLElement>(
+      '[data-currency-mount]'
+    );
     if (currencyMount) {
       this.currencyDropdown = new CustomDropdown({
         options: CURRENCY_OPTIONS,
         selectedValue: this.priceCurrency,
-        onChange: (value) => {
+        onChange: value => {
           this.priceCurrency = value;
           this.updateButtonStates();
         },
@@ -427,12 +503,14 @@ export class ListingEditorView extends View {
       currencyMount.appendChild(this.currencyDropdown.getElement());
     }
 
-    const frequencyMount = this.container.querySelector<HTMLElement>('[data-frequency-mount]');
+    const frequencyMount = this.container.querySelector<HTMLElement>(
+      '[data-frequency-mount]'
+    );
     if (frequencyMount) {
       this.frequencyDropdown = new CustomDropdown({
         options: FREQUENCY_OPTIONS,
         selectedValue: this.priceFrequency,
-        onChange: (value) => {
+        onChange: value => {
           this.priceFrequency = value;
           this.updateButtonStates();
         },
@@ -444,34 +522,44 @@ export class ListingEditorView extends View {
   private setupImageHandlers(): void {
     // Remove image buttons
     this.container.querySelectorAll('[data-remove-image]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', e => {
         e.preventDefault();
-        const index = parseInt((e.currentTarget as HTMLElement).dataset.removeImage || '0');
+        const index = parseInt(
+          (e.currentTarget as HTMLElement).dataset.removeImage || '0'
+        );
         this.images.splice(index, 1);
         this.refreshImageList();
       });
     });
 
     // Add image from URL
-    this.container.querySelector('[data-action="add-image-url"]')?.addEventListener('click', () => {
-      const input = this.container.querySelector('[data-field="image-url"]') as HTMLInputElement;
-      const url = input?.value.trim();
-      if (url && url.startsWith('http')) {
-        this.images.push(url);
-        input.value = '';
-        this.refreshImageList();
-      }
-    });
+    this.container
+      .querySelector('[data-action="add-image-url"]')
+      ?.addEventListener('click', () => {
+        const input = this.container.querySelector(
+          '[data-field="image-url"]'
+        ) as HTMLInputElement;
+        const url = input?.value.trim();
+        if (url && url.startsWith('http')) {
+          this.images.push(url);
+          input.value = '';
+          this.refreshImageList();
+        }
+      });
 
     // Upload image
-    const uploadBtn = this.container.querySelector('[data-action="upload-image"]');
-    const fileInput = this.container.querySelector('[data-image-file]') as HTMLInputElement;
+    const uploadBtn = this.container.querySelector(
+      '[data-action="upload-image"]'
+    );
+    const fileInput = this.container.querySelector(
+      '[data-image-file]'
+    ) as HTMLInputElement;
 
     uploadBtn?.addEventListener('click', () => {
       if (!this.isImageUploading) fileInput?.click();
     });
 
-    fileInput?.addEventListener('change', async (e) => {
+    fileInput?.addEventListener('change', async e => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
         await this.handleImageUpload(file);
@@ -484,7 +572,9 @@ export class ListingEditorView extends View {
     if (!file.type.startsWith('image/') || this.isImageUploading) return;
 
     this.isImageUploading = true;
-    const uploadBtn = this.container.querySelector('[data-action="upload-image"]') as HTMLButtonElement;
+    const uploadBtn = this.container.querySelector(
+      '[data-action="upload-image"]'
+    ) as HTMLButtonElement;
     if (uploadBtn) uploadBtn.disabled = true;
 
     try {
@@ -497,7 +587,11 @@ export class ListingEditorView extends View {
         this.refreshImageList();
       }
     } catch (error) {
-      this.systemLogger.error('ListingEditorView', 'Image upload failed:', error);
+      this.systemLogger.error(
+        'ListingEditorView',
+        'Image upload failed:',
+        error
+      );
     } finally {
       this.isImageUploading = false;
       if (uploadBtn) uploadBtn.disabled = false;
@@ -508,20 +602,26 @@ export class ListingEditorView extends View {
     const listEl = this.container.querySelector('.listing-editor__image-list');
     if (!listEl) return;
 
-    listEl.innerHTML = this.images.map((url, i) => `
+    listEl.innerHTML = this.images
+      .map(
+        (url, i) => `
       <div class="listing-editor__image-item" data-index="${i}">
         <img src="${escapeHtmlAttr(url)}" alt="" />
         <button type="button" class="btn-icon listing-editor__image-remove" data-remove-image="${i}" title="Remove">
           <svg width="14" height="14"><use href="#icon-close"/></svg>
         </button>
       </div>
-    `).join('');
+    `
+      )
+      .join('');
 
     // Re-bind remove handlers
     listEl.querySelectorAll('[data-remove-image]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', e => {
         e.preventDefault();
-        const index = parseInt((e.currentTarget as HTMLElement).dataset.removeImage || '0');
+        const index = parseInt(
+          (e.currentTarget as HTMLElement).dataset.removeImage || '0'
+        );
         this.images.splice(index, 1);
         this.refreshImageList();
       });
@@ -543,7 +643,7 @@ export class ListingEditorView extends View {
         if (this.mentionAutocomplete) this.mentionAutocomplete.destroy();
         this.mentionAutocomplete = new MentionAutocomplete({
           textareaSelector: '.listing-editor-content',
-          onMentionInserted: () => {}
+          onMentionInserted: () => {},
         });
         this.mentionAutocomplete.init();
       } else {
@@ -553,17 +653,22 @@ export class ListingEditorView extends View {
   }
 
   private updateButtonStates(): void {
-    const isValid = this.title.trim().length > 0
-      && this.price.trim().length > 0
-      && this.priceCurrency.trim().length > 0
-      && this.selectedRelays.size > 0;
+    const isValid =
+      this.title.trim().length > 0 &&
+      this.price.trim().length > 0 &&
+      this.priceCurrency.trim().length > 0 &&
+      this.selectedRelays.size > 0;
 
-    const publishBtn = this.container.querySelector('[data-action="publish"]') as HTMLButtonElement;
+    const publishBtn = this.container.querySelector(
+      '[data-action="publish"]'
+    ) as HTMLButtonElement;
     if (publishBtn) publishBtn.disabled = !isValid || this.isPublishing;
   }
 
   private insertAtCursor(text: string): void {
-    const textarea = this.container.querySelector('.listing-editor-content') as HTMLTextAreaElement;
+    const textarea = this.container.querySelector(
+      '.listing-editor-content'
+    ) as HTMLTextAreaElement;
     if (!textarea) return;
     this.content = insertTextAtCursor(textarea, this.content, text);
     this.updateButtonStates();
@@ -581,21 +686,29 @@ export class ListingEditorView extends View {
     this.isPublishing = true;
     this.updateButtonStates();
 
-    const btn = this.container.querySelector('[data-action="publish"]') as HTMLButtonElement;
+    const btn = this.container.querySelector(
+      '[data-action="publish"]'
+    ) as HTMLButtonElement;
     const originalText = btn?.textContent || '';
-    if (btn) btn.textContent = this.isEditMode ? 'Updating...' : 'Publishing...';
+    if (btn)
+      btn.textContent = this.isEditMode ? 'Updating...' : 'Publishing...';
 
     try {
-      const topics = this.tags.split(',').map(t => t.trim()).filter(Boolean);
+      const topics = this.tags
+        .split(',')
+        .map(t => t.trim())
+        .filter(Boolean);
 
-      const options: Parameters<typeof this.listingService.publishListing>[0] = {
-        title: this.title,
-        content: this.content,
-        identifier: this.identifier || ListingService.generateIdentifier(this.title),
-        price: this.price,
-        priceCurrency: this.priceCurrency,
-        relays: Array.from(this.selectedRelays)
-      };
+      const options: Parameters<typeof this.listingService.publishListing>[0] =
+        {
+          title: this.title,
+          content: this.content,
+          identifier:
+            this.identifier || ListingService.generateIdentifier(this.title),
+          price: this.price,
+          priceCurrency: this.priceCurrency,
+          relays: Array.from(this.selectedRelays),
+        };
 
       if (this.summary) options.summary = this.summary;
       if (this.images.length > 0) options.images = this.images;
@@ -622,11 +735,26 @@ export class ListingEditorView extends View {
   }
 
   public destroy(): void {
-    if (this.relaySelector) { this.relaySelector.destroy(); this.relaySelector = null; }
-    if (this.toolbar) { this.toolbar.destroy(); this.toolbar = null; }
-    if (this.mentionAutocomplete) { this.mentionAutocomplete.destroy(); this.mentionAutocomplete = null; }
-    if (this.currencyDropdown) { this.currencyDropdown.destroy(); this.currencyDropdown = null; }
-    if (this.frequencyDropdown) { this.frequencyDropdown.destroy(); this.frequencyDropdown = null; }
+    if (this.relaySelector) {
+      this.relaySelector.destroy();
+      this.relaySelector = null;
+    }
+    if (this.toolbar) {
+      this.toolbar.destroy();
+      this.toolbar = null;
+    }
+    if (this.mentionAutocomplete) {
+      this.mentionAutocomplete.destroy();
+      this.mentionAutocomplete = null;
+    }
+    if (this.currencyDropdown) {
+      this.currencyDropdown.destroy();
+      this.currencyDropdown = null;
+    }
+    if (this.frequencyDropdown) {
+      this.frequencyDropdown.destroy();
+      this.frequencyDropdown = null;
+    }
     this.container.innerHTML = '';
   }
 }

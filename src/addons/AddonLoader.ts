@@ -124,15 +124,20 @@ export class AddonLoader {
     });
     // Subscribe to the per-addon toggle event. AddonToggleView emits
     // `<id>:addon-toggle` with { enabled: boolean }.
-    this.eventBus.on(`${entry.id}:addon-toggle` as any, (data?: { enabled?: boolean }) => {
-      const enabled = !!(data && data.enabled);
-      diagLog('addons', enabled ? 'addons_toggle_on' : 'addons_toggle_off', { id: entry.id });
-      if (enabled) {
-        void this.activate(entry.id);
-      } else {
-        void this.deactivate(entry.id);
+    this.eventBus.on(
+      `${entry.id}:addon-toggle` as any,
+      (data?: { enabled?: boolean }) => {
+        const enabled = !!(data && data.enabled);
+        diagLog('addons', enabled ? 'addons_toggle_on' : 'addons_toggle_off', {
+          id: entry.id,
+        });
+        if (enabled) {
+          void this.activate(entry.id);
+        } else {
+          void this.deactivate(entry.id);
+        }
       }
-    });
+    );
   }
 
   /**
@@ -140,7 +145,10 @@ export class AddonLoader {
    * that happens on `user:login` (or immediately, if the caller passes a
    * current pubkey for session-restore).
    */
-  public bootstrap(current?: { pubkey: string | null; npub: string | null }): void {
+  public bootstrap(current?: {
+    pubkey: string | null;
+    npub: string | null;
+  }): void {
     if (this.initialized) return;
     this.initialized = true;
 
@@ -150,12 +158,15 @@ export class AddonLoader {
     // older build (or another account) left in the global key.
     resetGlobalAddonEnabledFlags();
 
-    this.eventBus.on('user:login', (data?: { pubkey?: string; npub?: string }) => {
-      const pubkey = data?.pubkey ?? null;
-      const npub = data?.npub ?? null;
+    this.eventBus.on(
+      'user:login',
+      (data?: { pubkey?: string; npub?: string }) => {
+        const pubkey = data?.pubkey ?? null;
+        const npub = data?.npub ?? null;
 
-      void this.handleLogin(pubkey, npub);
-    });
+        void this.handleLogin(pubkey, npub);
+      }
+    );
     this.eventBus.on('user:logout', () => {
       void this.handleLogout();
     });
@@ -164,7 +175,11 @@ export class AddonLoader {
       registered: Array.from(this.entries.keys()),
       enabled: Array.from(this.entries.values())
         .filter(e => {
-          try { return e.isEnabled(); } catch { return false; }
+          try {
+            return e.isEnabled();
+          } catch {
+            return false;
+          }
         })
         .map(e => e.id),
     });
@@ -192,7 +207,9 @@ export class AddonLoader {
   }
 
   /** Access the live runtime instance, typed. Returns null if not loaded. */
-  public getRuntime<T extends AddonRuntime = AddonRuntime>(id: string): T | null {
+  public getRuntime<T extends AddonRuntime = AddonRuntime>(
+    id: string
+  ): T | null {
     const entry = this.entries.get(id);
     return entry && entry.instance ? (entry.instance as T) : null;
   }
@@ -207,12 +224,18 @@ export class AddonLoader {
     };
   }
 
-  private async handleLogin(pubkey: string | null, npub: string | null): Promise<void> {
+  private async handleLogin(
+    pubkey: string | null,
+    npub: string | null
+  ): Promise<void> {
     const prev = this.currentPubkey;
     this.currentPubkey = pubkey;
     this.currentNpub = npub;
     if (prev && pubkey && prev !== pubkey) {
-      diagLog('addons', 'addons_account_switch', { fromPubkey: prev, toPubkey: pubkey });
+      diagLog('addons', 'addons_account_switch', {
+        fromPubkey: prev,
+        toPubkey: pubkey,
+      });
     }
     // For every enabled addon, ensure it is loaded for the current pubkey.
     // For every loaded addon that was initialized for a different pubkey,
@@ -252,7 +275,10 @@ export class AddonLoader {
     const entry = this.entries.get(id);
     if (!entry) return;
     if (!this.safeIsEnabled(entry)) {
-      diagLog('addons', 'addons_skip_disabled', { id, reason: 'activate called but isEnabled() false' });
+      diagLog('addons', 'addons_skip_disabled', {
+        id,
+        reason: 'activate called but isEnabled() false',
+      });
       return;
     }
     if (entry.instance) return;
@@ -271,7 +297,9 @@ export class AddonLoader {
     entry.opChain = entry.opChain.then(op).catch(err => {
       diagLog('addons', 'addons_runtime_error', {
         id: entry.id,
-        error: String(err && (err as Error).message ? (err as Error).message : err),
+        error: String(
+          err && (err as Error).message ? (err as Error).message : err
+        ),
         stack: (err as Error)?.stack ?? null,
       });
     });
@@ -279,11 +307,13 @@ export class AddonLoader {
 
   private async runInit(entry: AddonLoaderEntry): Promise<void> {
     if (entry.instance) {
-
       return; // idempotent
     }
     const loadStart = performance.now();
-    diagLog('addons', 'addons_load_start', { id: entry.id, pubkey: this.currentPubkey });
+    diagLog('addons', 'addons_load_start', {
+      id: entry.id,
+      pubkey: this.currentPubkey,
+    });
     let runtime: AddonRuntime;
     try {
       runtime = await entry.load();
@@ -291,12 +321,18 @@ export class AddonLoader {
       diagLog('addons', 'addons_load_error', {
         id: entry.id,
         pubkey: this.currentPubkey,
-        error: String(err && (err as Error).message ? (err as Error).message : err),
+        error: String(
+          err && (err as Error).message ? (err as Error).message : err
+        ),
       });
       return;
     }
     const loadDur = Math.round(performance.now() - loadStart);
-    diagLog('addons', 'addons_load_ok', { id: entry.id, pubkey: this.currentPubkey, durationMs: loadDur });
+    diagLog('addons', 'addons_load_ok', {
+      id: entry.id,
+      pubkey: this.currentPubkey,
+      durationMs: loadDur,
+    });
 
     const initStart = performance.now();
     try {
@@ -305,7 +341,9 @@ export class AddonLoader {
       diagLog('addons', 'addons_runtime_error', {
         id: entry.id,
         phase: 'init',
-        error: String(err && (err as Error).message ? (err as Error).message : err),
+        error: String(
+          err && (err as Error).message ? (err as Error).message : err
+        ),
         stack: (err as Error)?.stack ?? null,
       });
       return;
@@ -313,7 +351,11 @@ export class AddonLoader {
     entry.instance = runtime;
     entry.loadedForPubkey = this.currentPubkey;
     const initDur = Math.round(performance.now() - initStart);
-    diagLog('addons', 'addons_init_ok', { id: entry.id, pubkey: this.currentPubkey, durationMs: initDur });
+    diagLog('addons', 'addons_init_ok', {
+      id: entry.id,
+      pubkey: this.currentPubkey,
+      durationMs: initDur,
+    });
   }
 
   private async runDestroy(entry: AddonLoaderEntry): Promise<void> {
@@ -329,7 +371,9 @@ export class AddonLoader {
       diagLog('addons', 'addons_runtime_error', {
         id: entry.id,
         phase: 'destroy',
-        error: String(err && (err as Error).message ? (err as Error).message : err),
+        error: String(
+          err && (err as Error).message ? (err as Error).message : err
+        ),
         stack: (err as Error)?.stack ?? null,
       });
       return;
@@ -345,7 +389,9 @@ export class AddonLoader {
       diagLog('addons', 'addons_runtime_error', {
         id: entry.id,
         phase: 'isEnabled',
-        error: String(err && (err as Error).message ? (err as Error).message : err),
+        error: String(
+          err && (err as Error).message ? (err as Error).message : err
+        ),
       });
       return false;
     }

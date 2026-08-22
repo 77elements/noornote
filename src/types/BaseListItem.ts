@@ -4,9 +4,9 @@
  */
 
 export interface BaseListItem {
-  id: string;           // Unique identifier (pubkey, eventId, etc.)
-  isPrivate?: boolean;  // Private status (for "Save to File" categorization)
-  addedAt?: number;     // Timestamp when added
+  id: string; // Unique identifier (pubkey, eventId, etc.)
+  isPrivate?: boolean; // Private status (for "Save to File" categorization)
+  addedAt?: number; // Timestamp when added
 }
 
 /**
@@ -14,7 +14,7 @@ export interface BaseListItem {
  * Replaces old string[] approach with structured data
  */
 export interface MuteItem extends BaseListItem {
-  id: string;           // pubkey OR eventId
+  id: string; // pubkey OR eventId
   type: 'user' | 'thread';
   isPrivate?: boolean;
   addedAt?: number;
@@ -38,10 +38,18 @@ export function migrateMuteStorage(): MuteItem[] {
 
   try {
     // Read old format
-    const publicUsers = JSON.parse(localStorage.getItem('noornote_mutes_browser') || '[]') as string[];
-    const privateUsers = JSON.parse(localStorage.getItem('noornote_mutes_private_browser') || '[]') as string[];
-    const publicThreads = JSON.parse(localStorage.getItem('noornote_muted_threads_browser') || '[]') as string[];
-    const privateThreads = JSON.parse(localStorage.getItem('noornote_muted_threads_private_browser') || '[]') as string[];
+    const publicUsers = JSON.parse(
+      localStorage.getItem('noornote_mutes_browser') || '[]'
+    ) as string[];
+    const privateUsers = JSON.parse(
+      localStorage.getItem('noornote_mutes_private_browser') || '[]'
+    ) as string[];
+    const publicThreads = JSON.parse(
+      localStorage.getItem('noornote_muted_threads_browser') || '[]'
+    ) as string[];
+    const privateThreads = JSON.parse(
+      localStorage.getItem('noornote_muted_threads_private_browser') || '[]'
+    ) as string[];
 
     // Convert to new format
     publicUsers.forEach(id => {
@@ -49,7 +57,7 @@ export function migrateMuteStorage(): MuteItem[] {
         id,
         type: 'user',
         isPrivate: false,
-        addedAt: now
+        addedAt: now,
       });
     });
 
@@ -58,7 +66,7 @@ export function migrateMuteStorage(): MuteItem[] {
         id,
         type: 'user',
         isPrivate: true,
-        addedAt: now
+        addedAt: now,
       });
     });
 
@@ -67,7 +75,7 @@ export function migrateMuteStorage(): MuteItem[] {
         id,
         type: 'thread',
         isPrivate: false,
-        addedAt: now
+        addedAt: now,
       });
     });
 
@@ -76,11 +84,13 @@ export function migrateMuteStorage(): MuteItem[] {
         id,
         type: 'thread',
         isPrivate: true,
-        addedAt: now
+        addedAt: now,
       });
     });
 
-    console.log(`[MuteStorage] Migrated ${migratedItems.length} items from old format`);
+    console.log(
+      `[MuteStorage] Migrated ${migratedItems.length} items from old format`
+    );
     return migratedItems;
   } catch (error) {
     console.error('[MuteStorage] Migration failed:', error);

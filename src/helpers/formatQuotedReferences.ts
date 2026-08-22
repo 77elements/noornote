@@ -21,7 +21,10 @@ export interface QuotedReference {
   fragment?: string;
 }
 
-export function formatQuotedReferences(html: string, quotedReferences: QuotedReference[]): string {
+export function formatQuotedReferences(
+  html: string,
+  quotedReferences: QuotedReference[]
+): string {
   // Dedupe by fullMatch and use replaceAll, because:
   //   1. replace(string, ...) replaces only the first occurrence → duplicate
   //      refs (same nevent quoted twice) would leave later copies raw.

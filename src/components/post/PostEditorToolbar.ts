@@ -29,7 +29,8 @@ export class PostEditorToolbar {
   private config: PostEditorToolbarConfig;
   private _mediaApi?: MediaModuleApi | null;
   private get mediaApi(): MediaModuleApi | null {
-    return this._mediaApi ??= ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
+    return (this._mediaApi ??=
+      ModuleLoader.getInstance().getApi<MediaModuleApi>('media'));
   }
   private systemLogger: SystemLogger;
   private modalService: ModalService;
@@ -79,14 +80,16 @@ export class PostEditorToolbar {
 
     // Upload button
     const uploadBtn = container.querySelector('[data-action="upload"]');
-    const fileInput = container.querySelector('[data-file-input]') as HTMLInputElement;
+    const fileInput = container.querySelector(
+      '[data-file-input]'
+    ) as HTMLInputElement;
 
     if (uploadBtn && fileInput) {
       uploadBtn.addEventListener('click', () => {
         fileInput.click();
       });
 
-      fileInput.addEventListener('change', (e) => {
+      fileInput.addEventListener('change', e => {
         const target = e.target as HTMLInputElement;
         if (target.files && target.files.length > 0) {
           this.handleFileUpload(Array.from(target.files));
@@ -127,7 +130,9 @@ export class PostEditorToolbar {
   public async handleFileUpload(files: File[]): Promise<void> {
     if (!this.container || files.length === 0) return;
 
-    const uploadBtn = this.container.querySelector('[data-action="upload"]') as HTMLButtonElement;
+    const uploadBtn = this.container.querySelector(
+      '[data-action="upload"]'
+    ) as HTMLButtonElement;
     if (!uploadBtn) return;
 
     // Show uploading state: a transparent ring whose green border fills as the
@@ -149,8 +154,9 @@ export class PostEditorToolbar {
         this.systemLogger.error('PostEditorToolbar', 'Media module not loaded');
         this.modalService.show({
           title: 'Upload Failed',
-          content: '<p>Media module is not available. Please try again later.</p>',
-          showCloseButton: true
+          content:
+            '<p>Media module is not available. Please try again later.</p>',
+          showCloseButton: true,
         });
         return;
       }
@@ -158,24 +164,30 @@ export class PostEditorToolbar {
       const firstFile = files[0];
       if (files.length === 1 && firstFile) {
         // Single file upload
-        const result = await api.uploadFile(firstFile, (progress) => {
+        const result = await api.uploadFile(firstFile, progress => {
           this.updateUploadProgress(progress);
         });
 
         if (result.success && result.url) {
           this.config.onMediaUploaded(result.url);
-          this.systemLogger.info('PostEditorToolbar', 'Media uploaded successfully');
+          this.systemLogger.info(
+            'PostEditorToolbar',
+            'Media uploaded successfully'
+          );
         } else {
-          this.systemLogger.error('PostEditorToolbar', `Upload failed: ${result.error}`);
+          this.systemLogger.error(
+            'PostEditorToolbar',
+            `Upload failed: ${result.error}`
+          );
           this.modalService.show({
             title: 'Upload Failed',
             content: `<p>${result.error || 'Unknown error occurred'}</p>`,
-            showCloseButton: true
+            showCloseButton: true,
           });
         }
       } else {
         // Multiple files upload
-        const results = await api.uploadFiles(files, (progress) => {
+        const results = await api.uploadFiles(files, progress => {
           this.updateUploadProgress(Math.min(progress, 99));
         });
 
@@ -184,7 +196,10 @@ export class PostEditorToolbar {
         if (successfulUploads.length > 0) {
           const urls = successfulUploads.map(r => r.url).join('\n\n');
           this.config.onMediaUploaded(urls);
-          this.systemLogger.info('PostEditorToolbar', `${successfulUploads.length}/${files.length} files uploaded successfully`);
+          this.systemLogger.info(
+            'PostEditorToolbar',
+            `${successfulUploads.length}/${files.length} files uploaded successfully`
+          );
         }
 
         // Show errors if any
@@ -194,7 +209,7 @@ export class PostEditorToolbar {
           this.modalService.show({
             title: 'Some Uploads Failed',
             content: `<p>${failures.length} file(s) failed:</p><p style="font-size: 0.9rem;">${errorMessages}</p>`,
-            showCloseButton: true
+            showCloseButton: true,
           });
         }
       }
@@ -204,7 +219,7 @@ export class PostEditorToolbar {
       this.modalService.show({
         title: 'Upload Failed',
         content: '<p>Upload failed. Please try again.</p>',
-        showCloseButton: true
+        showCloseButton: true,
       });
     } finally {
       // Restore button state
@@ -212,7 +227,9 @@ export class PostEditorToolbar {
       uploadBtn.innerHTML = originalHTML;
 
       // Reset file input
-      const fileInput = this.container?.querySelector('[data-file-input]') as HTMLInputElement;
+      const fileInput = this.container?.querySelector(
+        '[data-file-input]'
+      ) as HTMLInputElement;
       if (fileInput) {
         fileInput.value = '';
       }
@@ -225,7 +242,9 @@ export class PostEditorToolbar {
   private updateUploadProgress(progress: number): void {
     if (!this.container) return;
 
-    const progressBar = this.container.querySelector('.upload-progress-bar') as SVGCircleElement;
+    const progressBar = this.container.querySelector(
+      '.upload-progress-bar'
+    ) as SVGCircleElement;
     if (!progressBar) return;
 
     // Circle circumference: 2 * PI * radius = 2 * PI * 10 = 62.83
@@ -239,8 +258,12 @@ export class PostEditorToolbar {
    * Handle emoji picker
    */
   private async handleEmojiPicker(): Promise<void> {
-    const textarea = document.querySelector(this.config.textareaSelector) as HTMLTextAreaElement;
-    const emojiBtn = this.container?.querySelector('[data-action="emoji"]') as HTMLElement;
+    const textarea = document.querySelector(
+      this.config.textareaSelector
+    ) as HTMLTextAreaElement;
+    const emojiBtn = this.container?.querySelector(
+      '[data-action="emoji"]'
+    ) as HTMLElement;
     if (!textarea || !emojiBtn) return;
 
     // Always destroy old picker and create fresh one to ensure correct positioning
@@ -253,13 +276,18 @@ export class PostEditorToolbar {
     let customEmojis: CustomEmojiEntry[] | undefined;
     if (isCustomEmojisEnabled()) {
       try {
-        const { EmojiService } = await import('../../addons/custom-emojis/EmojiService');
+        const { EmojiService } = await import(
+          '../../addons/custom-emojis/EmojiService'
+        );
         const service = EmojiService.getInstance();
         // Fire-and-forget refresh in background — initial render uses cached pack
         void service.refreshFromRelays();
         customEmojis = service.getEmojis();
       } catch (err) {
-        this.systemLogger.warn('PostEditorToolbar', `Custom emoji load failed: ${err}`);
+        this.systemLogger.warn(
+          'PostEditorToolbar',
+          `Custom emoji load failed: ${err}`
+        );
       }
     }
 
@@ -270,7 +298,7 @@ export class PostEditorToolbar {
       onSelect: (emoji: string) => {
         this.config.onEmojiSelected(emoji);
         this.emojiPicker?.hide();
-      }
+      },
     });
 
     // Show picker

@@ -74,36 +74,60 @@ export class ArticleService {
     options: ArticleOptions,
     isDraft: boolean
   ): Promise<string | null> {
-    const { title, content, identifier, summary, image, topics, publishedAt, relays } = options;
+    const {
+      title,
+      content,
+      identifier,
+      summary,
+      image,
+      topics,
+      publishedAt,
+      relays,
+    } = options;
 
     // Validate authentication
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      this.systemLogger.error('ArticleService', 'Cannot create article: User not authenticated');
+      this.systemLogger.error(
+        'ArticleService',
+        'Cannot create article: User not authenticated'
+      );
       return null;
     }
 
     // Validate required fields
     if (!title || title.trim().length === 0) {
-      this.systemLogger.error('ArticleService', 'Cannot create article: Title is empty');
+      this.systemLogger.error(
+        'ArticleService',
+        'Cannot create article: Title is empty'
+      );
       ToastService.show('Title is required', 'error');
       return null;
     }
 
     if (!content || content.trim().length === 0) {
-      this.systemLogger.error('ArticleService', 'Cannot create article: Content is empty');
+      this.systemLogger.error(
+        'ArticleService',
+        'Cannot create article: Content is empty'
+      );
       ToastService.show('Content is required', 'error');
       return null;
     }
 
     if (!identifier || identifier.trim().length === 0) {
-      this.systemLogger.error('ArticleService', 'Cannot create article: Identifier is empty');
+      this.systemLogger.error(
+        'ArticleService',
+        'Cannot create article: Identifier is empty'
+      );
       ToastService.show('Identifier/slug is required', 'error');
       return null;
     }
 
     if (!relays || relays.length === 0) {
-      this.systemLogger.error('ArticleService', 'Cannot create article: No relays specified');
+      this.systemLogger.error(
+        'ArticleService',
+        'Cannot create article: No relays specified'
+      );
       ToastService.show('Please select at least one relay', 'error');
       return null;
     }
@@ -115,7 +139,7 @@ export class ArticleService {
       // Build tags array
       const tags: string[][] = [
         ['d', identifier.trim()],
-        ['title', title.trim()]
+        ['title', title.trim()],
       ];
 
       // Add optional tags
@@ -146,14 +170,17 @@ export class ArticleService {
         created_at: now,
         tags,
         content: content.trim(),
-        pubkey: currentUser.pubkey
+        pubkey: currentUser.pubkey,
       };
 
       // Sign event
       const signedEvent = await this.authService.signEvent(unsignedEvent);
 
       if (!signedEvent) {
-        this.systemLogger.error('ArticleService', 'Failed to sign article event');
+        this.systemLogger.error(
+          'ArticleService',
+          'Failed to sign article event'
+        );
         return null;
       }
 
@@ -168,7 +195,9 @@ export class ArticleService {
 
       // Show success toast
       ToastService.show(
-        isDraft ? 'Draft saved successfully!' : 'Article published successfully!',
+        isDraft
+          ? 'Draft saved successfully!'
+          : 'Article published successfully!',
         'success'
       );
 
@@ -177,7 +206,7 @@ export class ArticleService {
         kind,
         pubkey: currentUser.pubkey,
         identifier: identifier.trim(),
-        relays: relays.slice(0, 2) // Include up to 2 relay hints
+        relays: relays.slice(0, 2), // Include up to 2 relay hints
       });
 
       return naddr;
@@ -186,7 +215,9 @@ export class ArticleService {
         error,
         'ArticleService.createArticleEvent',
         true,
-        isDraft ? 'Failed to save draft. Please try again.' : 'Failed to publish article. Please try again.'
+        isDraft
+          ? 'Failed to save draft. Please try again.'
+          : 'Failed to publish article. Please try again.'
       );
       return null;
     }
@@ -200,9 +231,9 @@ export class ArticleService {
       .toLowerCase()
       .trim()
       .replace(/[^\w\s-]/g, '') // Remove special characters
-      .replace(/\s+/g, '-')     // Replace spaces with hyphens
-      .replace(/-+/g, '-')      // Replace multiple hyphens with single
-      .slice(0, 80);            // Limit length
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens with single
+      .slice(0, 80); // Limit length
   }
 
   /**

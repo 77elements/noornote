@@ -39,7 +39,8 @@ export class ConversationView extends View {
   private container: HTMLElement;
   private _dmsApi?: DMsModuleApi | null;
   private get dmsApi(): DMsModuleApi | null {
-    return this._dmsApi ??= ModuleLoader.getInstance().getApi<DMsModuleApi>('dms');
+    return (this._dmsApi ??=
+      ModuleLoader.getInstance().getApi<DMsModuleApi>('dms'));
   }
   private eventBus: TypedEventBus;
   private router: Router;
@@ -95,38 +96,45 @@ export class ConversationView extends View {
     this.loadConversation();
 
     // Listen for new messages in this conversation
-    this.subscriptionId = this.eventBus.on('dm:new-message', (data: { message: DMMessage; conversationWith: string }) => {
-      if (data.conversationWith === this.partnerPubkey) {
-        // A sent message can be emitted twice in a race: once optimistically and
-        // once when its own gift-wrap echoes back from the relay. Both carry the
-        // same rumor id (and wrapId), so ignore one we've already rendered.
-        const incoming = data.message;
-        const isDuplicate = this.messages.some(m =>
-          m.id === incoming.id || (!!incoming.wrapId && m.wrapId === incoming.wrapId)
-        );
-        if (isDuplicate) return;
+    this.subscriptionId = this.eventBus.on(
+      'dm:new-message',
+      (data: { message: DMMessage; conversationWith: string }) => {
+        if (data.conversationWith === this.partnerPubkey) {
+          // A sent message can be emitted twice in a race: once optimistically and
+          // once when its own gift-wrap echoes back from the relay. Both carry the
+          // same rumor id (and wrapId), so ignore one we've already rendered.
+          const incoming = data.message;
+          const isDuplicate = this.messages.some(
+            m =>
+              m.id === incoming.id ||
+              (!!incoming.wrapId && m.wrapId === incoming.wrapId)
+          );
+          if (isDuplicate) return;
 
-        this.messages.push(incoming);
+          this.messages.push(incoming);
 
-        // Re-render the disappearing banner regardless — a new incoming tagged
-        // message may change the pending peer duration (e.g. peer switched from
-        // 7d to 1h) and require a fresh prompt.
-        this.renderDisappearingZone();
+          // Re-render the disappearing banner regardless — a new incoming tagged
+          // message may change the pending peer duration (e.g. peer switched from
+          // 7d to 1h) and require a fresh prompt.
+          this.renderDisappearingZone();
 
-        // Only append the bubble if the message isn't pending acceptance.
-        // Pending messages (incoming tagged, duration not yet accepted) stay
-        // hidden in the store until the user clicks Yes on the banner.
-        if (!this.shouldRenderMessage(incoming)) return;
+          // Only append the bubble if the message isn't pending acceptance.
+          // Pending messages (incoming tagged, duration not yet accepted) stay
+          // hidden in the store until the user clicks Yes on the banner.
+          if (!this.shouldRenderMessage(incoming)) return;
 
-        const container = this.messagesContainer;
-        if (container) {
-          const emptyState = container.querySelector('.conversation-view__empty');
-          if (emptyState) emptyState.remove();
-          container.appendChild(this.renderMessage(incoming));
+          const container = this.messagesContainer;
+          if (container) {
+            const emptyState = container.querySelector(
+              '.conversation-view__empty'
+            );
+            if (emptyState) emptyState.remove();
+            container.appendChild(this.renderMessage(incoming));
+          }
+          this.scrollToBottom();
         }
-        this.scrollToBottom();
       }
-    });
+    );
 
     // On reload this view can mount before DMService has populated the store
     // (start() runs after routing), so the initial load reads an empty store and
@@ -141,42 +149,53 @@ export class ConversationView extends View {
 
     // Per-conversation disappearing setting changed (this device or peer side).
     // Reload the cached value and update the chip + menu checkmark.
-    this.disappearingChangedSubId = this.eventBus.on('dm:disappearing-changed', (data) => {
-      if (data.partnerPubkey !== this.partnerPubkey) return;
-      this.disappearingSeconds = data.seconds;
-      this.renderDisappearingChip();
-      this.refreshMenuCheckmark();
-    });
+    this.disappearingChangedSubId = this.eventBus.on(
+      'dm:disappearing-changed',
+      data => {
+        if (data.partnerPubkey !== this.partnerPubkey) return;
+        this.disappearingSeconds = data.seconds;
+        this.renderDisappearingChip();
+        this.refreshMenuCheckmark();
+      }
+    );
 
     // Peer sent a message carrying an `expiration` tag while our local setting
     // is still undecided. Show the request banner so the user can accept/decline
     // once. After any decision the banner never re-fires for this conversation.
-    this.disappearingRequestSubId = this.eventBus.on('dm:disappearing-request', (data) => {
-      if (data.partnerPubkey !== this.partnerPubkey) return;
-      this.renderDisappearingBanner();
-    });
+    this.disappearingRequestSubId = this.eventBus.on(
+      'dm:disappearing-request',
+      data => {
+        if (data.partnerPubkey !== this.partnerPubkey) return;
+        this.renderDisappearingBanner();
+      }
+    );
 
     // Sweep deleted one or more messages in this conversation. Drop them from
     // the local array and the DOM without a full reload.
-    this.messagesExpiredSubId = this.eventBus.on('dm:messages-expired', (data) => {
-      if (data.partnerPubkey !== this.partnerPubkey) return;
-      const now = Math.floor(Date.now() / 1000);
-      const before = this.messages.length;
-      this.messages = this.messages.filter(m => !m.expiresAt || m.expiresAt > now);
-      const removed = before - this.messages.length;
-      if (removed > 0) {
-        // Remove the expired bubbles from the DOM in place.
-        const container = this.messagesContainer;
-        if (container) {
-          container.querySelectorAll('[data-msg-id]').forEach(el => {
-            const msgId = (el as HTMLElement).dataset.msgId;
-            if (msgId && !this.messages.some(m => m.id === msgId)) {
-              el.remove();
-            }
-          });
+    this.messagesExpiredSubId = this.eventBus.on(
+      'dm:messages-expired',
+      data => {
+        if (data.partnerPubkey !== this.partnerPubkey) return;
+        const now = Math.floor(Date.now() / 1000);
+        const before = this.messages.length;
+        this.messages = this.messages.filter(
+          m => !m.expiresAt || m.expiresAt > now
+        );
+        const removed = before - this.messages.length;
+        if (removed > 0) {
+          // Remove the expired bubbles from the DOM in place.
+          const container = this.messagesContainer;
+          if (container) {
+            container.querySelectorAll('[data-msg-id]').forEach(el => {
+              const msgId = (el as HTMLElement).dataset.msgId;
+              if (msgId && !this.messages.some(m => m.id === msgId)) {
+                el.remove();
+              }
+            });
+          }
         }
       }
-    });
+    );
 
     // Per-minute countdown refresh: update all visible "X left" labels in place,
     // AND remove expired messages from the local array + DOM. The IDB sweep
@@ -246,10 +265,12 @@ export class ConversationView extends View {
       size: 'medium',
       showHandle: true,
       clickable: true,
-      enableHoverCard: true
+      enableHoverCard: true,
     });
 
-    const userContainer = this.container.querySelector('.conversation-view__user');
+    const userContainer = this.container.querySelector(
+      '.conversation-view__user'
+    );
     if (userContainer) {
       userContainer.appendChild(this.userIdentity.getElement());
     }
@@ -268,27 +289,33 @@ export class ConversationView extends View {
     });
 
     // Menu trigger
-    const menuTrigger = this.container.querySelector('.conversation-view__menu-trigger');
-    menuTrigger?.addEventListener('click', (e) => {
+    const menuTrigger = this.container.querySelector(
+      '.conversation-view__menu-trigger'
+    );
+    menuTrigger?.addEventListener('click', e => {
       e.stopPropagation();
       this.toggleMenu();
     });
 
     // Textarea auto-resize and send button enable
-    const textarea = this.container.querySelector('.conversation-view__textarea') as HTMLTextAreaElement;
-    const sendBtn = this.container.querySelector('.conversation-view__send-btn') as HTMLButtonElement;
+    const textarea = this.container.querySelector(
+      '.conversation-view__textarea'
+    ) as HTMLTextAreaElement;
+    const sendBtn = this.container.querySelector(
+      '.conversation-view__send-btn'
+    ) as HTMLButtonElement;
 
     textarea?.addEventListener('input', () => {
       // Auto-resize
       textarea.style.height = 'auto';
-      textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
 
       // Enable/disable send button
       sendBtn.disabled = !textarea.value.trim();
     });
 
     // Send on Enter (without Shift)
-    textarea?.addEventListener('keydown', (e) => {
+    textarea?.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         if (textarea.value.trim()) {
@@ -330,7 +357,9 @@ export class ConversationView extends View {
     }
 
     // Position menu
-    const trigger = this.container.querySelector('.conversation-view__menu-trigger');
+    const trigger = this.container.querySelector(
+      '.conversation-view__menu-trigger'
+    );
     if (trigger) {
       const rect = trigger.getBoundingClientRect();
       this.menuElement.style.top = `${rect.bottom + 4}px`;
@@ -365,13 +394,17 @@ export class ConversationView extends View {
    * the active disappearing preset's checkmark stays in sync with state.
    */
   private buildMenuHtml(): string {
-    const privateMutesEnabled = MuteOrchestrator.getInstance().isPrivateMutesEnabled();
+    const privateMutesEnabled =
+      MuteOrchestrator.getInstance().isPrivateMutesEnabled();
     const muteItems = privateMutesEnabled
       ? this.createMuteMenuItems(['mute-privately', 'mute-publicly'])
       : this.createMuteMenuItems(['mute-publicly']);
 
     const disappearingItems = DISAPPEARING_PRESETS.map(p => {
-      const checked = this.disappearingSeconds === p.seconds ? ConversationView.CHECK_ICON : '';
+      const checked =
+        this.disappearingSeconds === p.seconds
+          ? ConversationView.CHECK_ICON
+          : '';
       return `
         <button class="note-menu-item" data-action="disappear" data-seconds="${p.seconds}">
           <span class="note-menu-item__icon-spacer"></span>
@@ -383,15 +416,17 @@ export class ConversationView extends View {
 
     // Show a checkmark on "Custom…" if the current value is active and not
     // one of the fixed presets.
-    const isCustomActive = this.disappearingSeconds !== undefined
-      && this.disappearingSeconds > 0
-      && !DISAPPEARING_PRESETS.some(p => p.seconds === this.disappearingSeconds);
+    const isCustomActive =
+      this.disappearingSeconds !== undefined &&
+      this.disappearingSeconds > 0 &&
+      !DISAPPEARING_PRESETS.some(p => p.seconds === this.disappearingSeconds);
     const customChecked = isCustomActive ? ConversationView.CHECK_ICON : '';
-    const customLabel = isCustomActive && typeof this.disappearingSeconds === 'number'
-      ? `Custom (${labelForDuration(this.disappearingSeconds)})`
-      : 'Custom…';
+    const customLabel =
+      isCustomActive && typeof this.disappearingSeconds === 'number'
+        ? `Custom (${labelForDuration(this.disappearingSeconds)})`
+        : 'Custom…';
 
-    return muteItems + `
+    return `${muteItems}
       <button class="note-menu-item note-menu-item--danger" data-action="delete-conversation">
         <svg width="16" height="16"><use href="#icon-trash"/></svg>
         Delete conversation
@@ -416,9 +451,11 @@ export class ConversationView extends View {
     menu.style.display = 'none';
     menu.innerHTML = this.buildMenuHtml();
 
-    menu.addEventListener('click', (e) => {
+    menu.addEventListener('click', e => {
       e.stopPropagation();
-      const item = (e.target as HTMLElement).closest('.note-menu-item') as HTMLElement;
+      const item = (e.target as HTMLElement).closest(
+        '.note-menu-item'
+      ) as HTMLElement;
       if (!item) return;
 
       this.closeMenu();
@@ -448,11 +485,17 @@ export class ConversationView extends View {
       await this.dmsApi?.setDisappearing(this.partnerPubkey, seconds);
       this.removeDisappearingBanner();
       ToastService.show(
-        seconds === 0 ? 'Disappearing messages off' : 'Disappearing messages enabled',
+        seconds === 0
+          ? 'Disappearing messages off'
+          : 'Disappearing messages enabled',
         'success'
       );
     } catch (_error) {
-      this.systemLogger.error('ConversationView', 'Failed to set disappearing:', _error);
+      this.systemLogger.error(
+        'ConversationView',
+        'Failed to set disappearing:',
+        _error
+      );
       ToastService.show('Could not update setting', 'error');
     }
   }
@@ -473,7 +516,11 @@ export class ConversationView extends View {
       this.renderMessages();
       this.renderDisappearingZone();
     } catch (_error) {
-      this.systemLogger.error('ConversationView', 'Failed to accept peer duration:', _error);
+      this.systemLogger.error(
+        'ConversationView',
+        'Failed to accept peer duration:',
+        _error
+      );
       ToastService.show('Could not accept', 'error');
     }
   }
@@ -487,20 +534,31 @@ export class ConversationView extends View {
    */
   private async rejectPeerDuration(peerDuration: number): Promise<void> {
     try {
-      await this.dmsApi?.setLastPromptedPeerDuration(this.partnerPubkey, peerDuration);
-      const deleted = await this.dmsApi?.deletePendingMessagesByDuration(this.partnerPubkey, peerDuration) ?? 0;
+      await this.dmsApi?.setLastPromptedPeerDuration(
+        this.partnerPubkey,
+        peerDuration
+      );
+      const deleted =
+        (await this.dmsApi?.deletePendingMessagesByDuration(
+          this.partnerPubkey,
+          peerDuration
+        )) ?? 0;
       this.lastPromptedPeerDuration = peerDuration;
       // Drop the rejected messages from the in-memory list too.
       if (deleted > 0) {
         this.messages = this.messages.filter(m => {
           if (typeof m.expiresAt !== 'number') return true;
-          return (m.expiresAt - m.createdAt) !== peerDuration;
+          return m.expiresAt - m.createdAt !== peerDuration;
         });
       }
       this.renderMessages();
       this.renderDisappearingZone();
     } catch (_error) {
-      this.systemLogger.error('ConversationView', 'Failed to reject peer duration:', _error);
+      this.systemLogger.error(
+        'ConversationView',
+        'Failed to reject peer duration:',
+        _error
+      );
       ToastService.show('Could not reject', 'error');
     }
   }
@@ -517,9 +575,11 @@ export class ConversationView extends View {
     // Initial unit/value: pick a sensible default from the current setting.
     // 0/undefined → 1 day; otherwise decompose the active value into the
     // closest unit so the user sees their current value pre-filled.
-    const currentSec = typeof this.disappearingSeconds === 'number' && this.disappearingSeconds > 0
-      ? this.disappearingSeconds
-      : 7 * 86_400;
+    const currentSec =
+      typeof this.disappearingSeconds === 'number' &&
+      this.disappearingSeconds > 0
+        ? this.disappearingSeconds
+        : 7 * 86_400;
     let unit: 'minutes' | 'hours' | 'days' | 'weeks' = 'days';
     let value: number;
     if (currentSec % (7 * 86_400) === 0) {
@@ -570,11 +630,19 @@ export class ConversationView extends View {
     const MIN_SECONDS = MINUTE_SECONDS; // 1 minute floor (allows quick testing)
     const MAX_SECONDS = 365 * DAY_SECONDS; // 1 year ceiling
 
-    const input = content.querySelector<HTMLInputElement>('.modal-disappearing__value')!;
-    const unitButtons = content.querySelectorAll<HTMLButtonElement>('.modal-disappearing__units [data-unit]');
+    const input = content.querySelector<HTMLInputElement>(
+      '.modal-disappearing__value'
+    )!;
+    const unitButtons = content.querySelectorAll<HTMLButtonElement>(
+      '.modal-disappearing__units [data-unit]'
+    );
     const errorEl = content.querySelector<HTMLElement>('[data-zone="error"]')!;
-    const cancelBtn = content.querySelector<HTMLButtonElement>('.modal-disappearing__cancel')!;
-    const applyBtn = content.querySelector<HTMLButtonElement>('.modal-disappearing__apply')!;
+    const cancelBtn = content.querySelector<HTMLButtonElement>(
+      '.modal-disappearing__cancel'
+    )!;
+    const applyBtn = content.querySelector<HTMLButtonElement>(
+      '.modal-disappearing__apply'
+    )!;
 
     // Active unit button keeps the solid `.btn` look; inactive ones get
     // `.btn--passive` so the segmented-control state is visible at a glance.
@@ -586,10 +654,14 @@ export class ConversationView extends View {
       });
       // Adjust the number-input max based on the unit so the floor/ceiling
       // can't be trivially exceeded.
-      const maxForUnit = state.unit === 'minutes' ? Math.floor(MAX_SECONDS / MINUTE_SECONDS)
-        : state.unit === 'hours' ? Math.floor(MAX_SECONDS / HOUR_SECONDS)
-        : state.unit === 'days' ? Math.floor(MAX_SECONDS / DAY_SECONDS)
-        : Math.floor(MAX_SECONDS / WEEK_SECONDS);
+      const maxForUnit =
+        state.unit === 'minutes'
+          ? Math.floor(MAX_SECONDS / MINUTE_SECONDS)
+          : state.unit === 'hours'
+            ? Math.floor(MAX_SECONDS / HOUR_SECONDS)
+            : state.unit === 'days'
+              ? Math.floor(MAX_SECONDS / DAY_SECONDS)
+              : Math.floor(MAX_SECONDS / WEEK_SECONDS);
       input.max = String(maxForUnit);
     };
     refreshUnits();
@@ -600,13 +672,18 @@ export class ConversationView extends View {
     });
     unitButtons.forEach(btn => {
       btn.addEventListener('click', () => {
-        state.unit = (btn.dataset.unit as 'minutes' | 'hours' | 'days' | 'weeks');
+        state.unit = btn.dataset.unit as 'minutes' | 'hours' | 'days' | 'weeks';
         refreshUnits();
       });
     });
 
     let settled = false;
-    const close = (): void => { if (!settled) { settled = true; ModalService.getInstance().hide(); } };
+    const close = (): void => {
+      if (!settled) {
+        settled = true;
+        ModalService.getInstance().hide();
+      }
+    };
 
     const showError = (msg: string): void => {
       errorEl.textContent = msg;
@@ -614,10 +691,14 @@ export class ConversationView extends View {
     };
 
     const tryApply = (): void => {
-      const unitSeconds = state.unit === 'minutes' ? MINUTE_SECONDS
-        : state.unit === 'hours' ? HOUR_SECONDS
-        : state.unit === 'days' ? DAY_SECONDS
-        : WEEK_SECONDS;
+      const unitSeconds =
+        state.unit === 'minutes'
+          ? MINUTE_SECONDS
+          : state.unit === 'hours'
+            ? HOUR_SECONDS
+            : state.unit === 'days'
+              ? DAY_SECONDS
+              : WEEK_SECONDS;
       const seconds = Math.round(state.value * unitSeconds);
       if (seconds < MIN_SECONDS) {
         showError('Duration must be at least 1 minute.');
@@ -633,7 +714,7 @@ export class ConversationView extends View {
 
     cancelBtn.addEventListener('click', close);
     applyBtn.addEventListener('click', tryApply);
-    input.addEventListener('keydown', (e) => {
+    input.addEventListener('keydown', e => {
       if ((e as KeyboardEvent).key === 'Enter') {
         e.preventDefault();
         tryApply();
@@ -648,7 +729,9 @@ export class ConversationView extends View {
       showCloseButton: true,
       closeOnOverlay: true,
       closeOnEsc: true,
-      onClose: () => { settled = true; },
+      onClose: () => {
+        settled = true;
+      },
     });
 
     setTimeout(() => input.focus(), 0);
@@ -660,7 +743,9 @@ export class ConversationView extends View {
    * (or none) was shown.
    */
   private renderDisappearingZone(): void {
-    const zone = this.container.querySelector<HTMLElement>('[data-zone="disappearing"]');
+    const zone = this.container.querySelector<HTMLElement>(
+      '[data-zone="disappearing"]'
+    );
     if (!zone) return;
     zone.innerHTML = '';
 
@@ -687,7 +772,8 @@ export class ConversationView extends View {
     if (pendingDuration > 0) {
       const durationLabel = labelForDuration(pendingDuration).toLowerCase();
       const banner = document.createElement('div');
-      banner.className = 'conversation-view__disappearing-banner conversation-view__disappearing-banner--request';
+      banner.className =
+        'conversation-view__disappearing-banner conversation-view__disappearing-banner--request';
       banner.innerHTML = `
         <div class="conversation-view__disappearing-banner-text">
           ⏱ Disappears in ~${durationLabel}
@@ -699,19 +785,24 @@ export class ConversationView extends View {
           <button type="button" class="btn btn--passive btn--mini" data-action="decline-disappearing">No</button>
         </div>
       `;
-      banner.querySelector('[data-action="accept-disappearing"]')?.addEventListener('click', () => {
-        void this.acceptPeerDuration(pendingDuration);
-      });
-      banner.querySelector('[data-action="decline-disappearing"]')?.addEventListener('click', () => {
-        void this.rejectPeerDuration(pendingDuration);
-      });
+      banner
+        .querySelector('[data-action="accept-disappearing"]')
+        ?.addEventListener('click', () => {
+          void this.acceptPeerDuration(pendingDuration);
+        });
+      banner
+        .querySelector('[data-action="decline-disappearing"]')
+        ?.addEventListener('click', () => {
+          void this.rejectPeerDuration(pendingDuration);
+        });
       return banner;
     }
 
     // State 2: active — info chip with countdown.
     if (isActive(this.disappearingSeconds)) {
       const banner = document.createElement('div');
-      banner.className = 'conversation-view__disappearing-banner conversation-view__disappearing-banner--info';
+      banner.className =
+        'conversation-view__disappearing-banner conversation-view__disappearing-banner--info';
       banner.textContent = chipLabelForDuration(this.disappearingSeconds);
       return banner;
     }
@@ -766,10 +857,12 @@ export class ConversationView extends View {
    */
   private refreshCountdowns(): void {
     const now = Math.floor(Date.now() / 1000);
-    this.container.querySelectorAll<HTMLElement>('.message__expires-in').forEach(el => {
-      const expiresAt = Number(el.dataset.expiresAt);
-      el.textContent = formatRemaining(expiresAt, now);
-    });
+    this.container
+      .querySelectorAll<HTMLElement>('.message__expires-in')
+      .forEach(el => {
+        const expiresAt = Number(el.dataset.expiresAt);
+        el.textContent = formatRemaining(expiresAt, now);
+      });
   }
 
   /**
@@ -781,7 +874,9 @@ export class ConversationView extends View {
   private removeExpiredFromDom(): void {
     const now = Math.floor(Date.now() / 1000);
     const before = this.messages.length;
-    this.messages = this.messages.filter(m => !m.expiresAt || m.expiresAt > now);
+    this.messages = this.messages.filter(
+      m => !m.expiresAt || m.expiresAt > now
+    );
     const removed = before - this.messages.length;
     if (removed > 0) {
       const container = this.messagesContainer;
@@ -833,15 +928,19 @@ export class ConversationView extends View {
   private createMuteMenuItems(actions: string[]): string {
     const labels: Record<string, string> = {
       'mute-privately': 'Mute user privately',
-      'mute-publicly': actions.length > 1 ? 'Mute user publicly' : 'Mute user'
+      'mute-publicly': actions.length > 1 ? 'Mute user publicly' : 'Mute user',
     };
 
-    return actions.map(action => `
+    return actions
+      .map(
+        action => `
       <button class="note-menu-item note-menu-item--danger" data-action="${action}">
         ${ConversationView.MUTE_ICON}
         ${labels[action]}
       </button>
-    `).join('');
+    `
+      )
+      .join('');
   }
 
   /**
@@ -856,7 +955,10 @@ export class ConversationView extends View {
 
     try {
       await muteOrch.muteUser(this.partnerPubkey, isPrivate);
-      ToastService.show(`User muted ${isPrivate ? 'privately' : 'publicly'}`, 'success');
+      ToastService.show(
+        `User muted ${isPrivate ? 'privately' : 'publicly'}`,
+        'success'
+      );
 
       // Refresh muted users in orchestrators
       const loader = ModuleLoader.getInstance();
@@ -864,7 +966,7 @@ export class ConversationView extends View {
       const notifApi = loader.getApi<NotificationsModuleApi>('notifications');
       await Promise.all([
         timelineApi?.refreshMutedUsers() ?? Promise.resolve(),
-        notifApi?.refreshMutedUsers() ?? Promise.resolve()
+        notifApi?.refreshMutedUsers() ?? Promise.resolve(),
       ]);
 
       // Notify that mute list was updated
@@ -873,7 +975,10 @@ export class ConversationView extends View {
       // Navigate back to messages list
       this.router.navigate('/messages');
     } catch (_error) {
-      this.systemLogger.error('ConversationView', `Failed to mute user: ${_error}`);
+      this.systemLogger.error(
+        'ConversationView',
+        `Failed to mute user: ${_error}`
+      );
       ToastService.show('Failed to mute user', 'error');
     }
   }
@@ -888,11 +993,15 @@ export class ConversationView extends View {
 
       // Load the per-conversation disappearing setting (also recovers from
       // IndexedDB eviction via the localStorage mirror in DMStore).
-      this.disappearingSeconds = await this.dmsApi?.getDisappearing(this.partnerPubkey) ?? undefined;
-      this.lastPromptedPeerDuration = await this.dmsApi?.getLastPromptedPeerDuration(this.partnerPubkey) ?? undefined;
+      this.disappearingSeconds =
+        (await this.dmsApi?.getDisappearing(this.partnerPubkey)) ?? undefined;
+      this.lastPromptedPeerDuration =
+        (await this.dmsApi?.getLastPromptedPeerDuration(this.partnerPubkey)) ??
+        undefined;
 
       // Load messages and sort oldest first (newest at bottom)
-      this.messages = await this.dmsApi?.getMessages(this.partnerPubkey) ?? [];
+      this.messages =
+        (await this.dmsApi?.getMessages(this.partnerPubkey)) ?? [];
       this.messages.sort((a, b) => a.createdAt - b.createdAt);
 
       // Render messages and scroll to bottom
@@ -906,7 +1015,11 @@ export class ConversationView extends View {
       // list and falls through to State 2.
       this.renderDisappearingZone();
     } catch (_error) {
-      this.systemLogger.error('ConversationView', 'Failed to load conversation:', _error);
+      this.systemLogger.error(
+        'ConversationView',
+        'Failed to load conversation:',
+        _error
+      );
       this.renderError();
     }
   }
@@ -992,14 +1105,18 @@ export class ConversationView extends View {
       message.id,
       message.isMine ? 'self' : this.partnerPubkey
     );
-    htmlWithMedia = replaceBolt11Placeholders(htmlWithMedia, processed.bolt11Invoices);
+    htmlWithMedia = replaceBolt11Placeholders(
+      htmlWithMedia,
+      processed.bolt11Invoices
+    );
 
     // Optional per-bubble countdown for disappearing messages. Only rendered
     // when the bubble actually carries an expiresAt; updated in place every
     // 60s by refreshCountdowns().
-    const expiresIn = typeof message.expiresAt === 'number'
-      ? `<span class="message__expires-in" data-expires-at="${message.expiresAt}">${formatRemaining(message.expiresAt, Math.floor(Date.now() / 1000))}</span>`
-      : '';
+    const expiresIn =
+      typeof message.expiresAt === 'number'
+        ? `<span class="message__expires-in" data-expires-at="${message.expiresAt}">${formatRemaining(message.expiresAt, Math.floor(Date.now() / 1000))}</span>`
+        : '';
 
     messageEl.innerHTML = `
       <div class="message__content">${htmlWithMedia}</div>
@@ -1014,7 +1131,11 @@ export class ConversationView extends View {
     if (processed.quotedReferences.length > 0) {
       const quotesContainer = messageEl.querySelector('.message__quotes');
       if (quotesContainer) {
-        this.quotedNoteRenderer.renderQuotedNotes(processed.quotedReferences, quotesContainer, false);
+        this.quotedNoteRenderer.renderQuotedNotes(
+          processed.quotedReferences,
+          quotesContainer,
+          false
+        );
       }
     }
 
@@ -1028,8 +1149,12 @@ export class ConversationView extends View {
    * Send a message
    */
   private async sendMessage(): Promise<void> {
-    const textarea = this.container.querySelector('.conversation-view__textarea') as HTMLTextAreaElement;
-    const sendBtn = this.container.querySelector('.conversation-view__send-btn') as HTMLButtonElement;
+    const textarea = this.container.querySelector(
+      '.conversation-view__textarea'
+    ) as HTMLTextAreaElement;
+    const sendBtn = this.container.querySelector(
+      '.conversation-view__send-btn'
+    ) as HTMLButtonElement;
 
     const content = textarea.value.trim();
     if (!content || this.isSending) return;
@@ -1044,7 +1169,8 @@ export class ConversationView extends View {
     textarea.style.height = 'auto';
 
     try {
-      const success = await this.dmsApi?.sendMessage(this.partnerPubkey, content) ?? false;
+      const success =
+        (await this.dmsApi?.sendMessage(this.partnerPubkey, content)) ?? false;
 
       if (success) {
         this.systemLogger.info('ConversationView', 'Message sent');
@@ -1055,10 +1181,17 @@ export class ConversationView extends View {
       }
     } catch (_error) {
       textarea.value = content;
-      this.systemLogger.error('ConversationView', 'Error sending message:', _error);
-      const timedOut = _error instanceof Error && _error.name === 'SignerTimeoutError';
+      this.systemLogger.error(
+        'ConversationView',
+        'Error sending message:',
+        _error
+      );
+      const timedOut =
+        _error instanceof Error && _error.name === 'SignerTimeoutError';
       ToastService.show(
-        timedOut ? 'Signer did not respond — message not sent' : 'Could not send message — please try again',
+        timedOut
+          ? 'Signer did not respond — message not sent'
+          : 'Could not send message — please try again',
         'error'
       );
     } finally {
@@ -1090,7 +1223,10 @@ export class ConversationView extends View {
     const now = new Date();
     const isToday = date.toDateString() === now.toDateString();
 
-    const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const timeStr = date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
 
     if (isToday) {
       return timeStr;
@@ -1099,7 +1235,7 @@ export class ConversationView extends View {
     const dateStr = date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      year: 'numeric'
+      year: 'numeric',
     });
 
     return `${dateStr}<br>${timeStr}`;

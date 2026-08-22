@@ -10,7 +10,10 @@
  * truncateNoteContent("This is a very long note that should be truncated...", 20)
  * // Returns: "This is a very long..."
  */
-export function truncateNoteContent(content: string, maxLength: number = 80): string {
+export function truncateNoteContent(
+  content: string,
+  maxLength: number = 80
+): string {
   if (!content || content.trim() === '') {
     return '[Empty note]';
   }
@@ -39,8 +42,8 @@ export function truncateNoteContent(content: string, maxLength: number = 80): st
 
   if (lastSpace > maxLength * 0.6) {
     // Only use last space if it's not too far back (avoid very short truncation)
-    return truncated.slice(0, lastSpace) + '...';
+    return `${truncated.slice(0, lastSpace)}...`;
   }
 
-  return truncated + '...';
+  return `${truncated}...`;
 }

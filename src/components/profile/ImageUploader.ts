@@ -37,7 +37,8 @@ export class ImageUploader {
   private config: ImageUploaderConfig;
   private _mediaApi?: MediaModuleApi | null;
   private get mediaApi(): MediaModuleApi | null {
-    return this._mediaApi ??= ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
+    return (this._mediaApi ??=
+      ModuleLoader.getInstance().getApi<MediaModuleApi>('media'));
   }
   private systemLogger: SystemLogger;
   private container: HTMLElement | null = null;
@@ -56,7 +57,10 @@ export class ImageUploader {
   public render(): string {
     const { currentUrl, mediaType, className } = this.config;
     const extraClass = className || '';
-    const typeClass = mediaType === 'avatar' ? 'image-uploader-avatar' : 'image-uploader-banner';
+    const typeClass =
+      mediaType === 'avatar'
+        ? 'image-uploader-avatar'
+        : 'image-uploader-banner';
 
     const backgroundStyle = currentUrl
       ? `background-image: url('${escapeCssUrl(currentUrl)}')`
@@ -91,11 +95,18 @@ export class ImageUploader {
    */
   public setupEventListeners(container: HTMLElement): void {
     this.container = container;
-    this.fileInput = container.querySelector('[data-file-input]') as HTMLInputElement;
-    const uploadArea = container.querySelector('[data-uploader]') as HTMLElement;
+    this.fileInput = container.querySelector(
+      '[data-file-input]'
+    ) as HTMLInputElement;
+    const uploadArea = container.querySelector(
+      '[data-uploader]'
+    ) as HTMLElement;
 
     if (!this.fileInput || !uploadArea) {
-      this.systemLogger.error('ImageUploader', 'Failed to find file input or upload area');
+      this.systemLogger.error(
+        'ImageUploader',
+        'Failed to find file input or upload area'
+      );
       return;
     }
 
@@ -107,7 +118,7 @@ export class ImageUploader {
     });
 
     // Handle file selection
-    this.fileInput.addEventListener('change', (e) => {
+    this.fileInput.addEventListener('change', e => {
       const target = e.target as HTMLInputElement;
       const file = target.files?.[0];
       if (file) {
@@ -137,12 +148,15 @@ export class ImageUploader {
     try {
       const api = this.mediaApi;
       if (!api) {
-        ToastService.show('Media module is not available. Please try again later.', 'error');
+        ToastService.show(
+          'Media module is not available. Please try again later.',
+          'error'
+        );
         return;
       }
 
       // Upload via media module
-      const result = await api.uploadFile(file, (progress) => {
+      const result = await api.uploadFile(file, progress => {
         this.updateProgress(progress);
         this.config.onProgress?.(progress);
       });
@@ -153,9 +167,15 @@ export class ImageUploader {
 
         // Notify success
         this.config.onUploadSuccess(result.url);
-        this.systemLogger.info('ImageUploader', `${this.config.mediaType} uploaded successfully`);
+        this.systemLogger.info(
+          'ImageUploader',
+          `${this.config.mediaType} uploaded successfully`
+        );
       } else {
-        ToastService.show(result.error || 'Upload failed. Please try again.', 'error');
+        ToastService.show(
+          result.error || 'Upload failed. Please try again.',
+          'error'
+        );
       }
     } catch (error) {
       this.systemLogger.error('ImageUploader', 'Upload error:', error);
@@ -178,9 +198,15 @@ export class ImageUploader {
   private showProgressCircle(): void {
     if (!this.container) return;
 
-    const uploader = this.container.querySelector('[data-uploader]') as HTMLElement;
-    const overlay = this.container.querySelector('[data-overlay]') as HTMLElement;
-    const iconContainer = this.container.querySelector('[data-icon-container]') as HTMLElement;
+    const uploader = this.container.querySelector(
+      '[data-uploader]'
+    ) as HTMLElement;
+    const overlay = this.container.querySelector(
+      '[data-overlay]'
+    ) as HTMLElement;
+    const iconContainer = this.container.querySelector(
+      '[data-icon-container]'
+    ) as HTMLElement;
     if (!iconContainer) return;
 
     // Disable clicks during upload
@@ -211,9 +237,15 @@ export class ImageUploader {
   private restoreIcon(): void {
     if (!this.container) return;
 
-    const uploader = this.container.querySelector('[data-uploader]') as HTMLElement;
-    const overlay = this.container.querySelector('[data-overlay]') as HTMLElement;
-    const iconContainer = this.container.querySelector('[data-icon-container]') as HTMLElement;
+    const uploader = this.container.querySelector(
+      '[data-uploader]'
+    ) as HTMLElement;
+    const overlay = this.container.querySelector(
+      '[data-overlay]'
+    ) as HTMLElement;
+    const iconContainer = this.container.querySelector(
+      '[data-icon-container]'
+    ) as HTMLElement;
     if (!iconContainer) return;
 
     // Re-enable clicks
@@ -236,7 +268,9 @@ export class ImageUploader {
   private updateProgress(percent: number): void {
     if (!this.container) return;
 
-    const progressBar = this.container.querySelector('.upload-progress-bar') as SVGCircleElement;
+    const progressBar = this.container.querySelector(
+      '.upload-progress-bar'
+    ) as SVGCircleElement;
     if (!progressBar) return;
 
     // Circle circumference: 2 * PI * radius = 2 * PI * 10 = 62.83
@@ -252,7 +286,9 @@ export class ImageUploader {
   private updatePreview(url: string): void {
     if (!this.container) return;
 
-    const preview = this.container.querySelector('[data-preview]') as HTMLElement;
+    const preview = this.container.querySelector(
+      '[data-preview]'
+    ) as HTMLElement;
     if (preview) {
       preview.style.backgroundImage = `url('${escapeCssUrl(url)}')`;
     }

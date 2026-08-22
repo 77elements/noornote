@@ -57,12 +57,14 @@ export class MentionAutocomplete {
    * matches a textarea OR an <input type="text">.
    */
   public init(): void {
-    this.textarea = document.querySelector(this.options.textareaSelector) as HTMLTextAreaElement | null;
+    this.textarea = document.querySelector(
+      this.options.textareaSelector
+    ) as HTMLTextAreaElement | null;
     if (!this.textarea) return;
 
-    this.textarea.addEventListener('input', (e) => this.handleInput(e));
-    this.textarea.addEventListener('keydown', (e) => this.handleKeydown(e));
-    this.textarea.addEventListener('paste', (e) => this.handlePaste(e));
+    this.textarea.addEventListener('input', e => this.handleInput(e));
+    this.textarea.addEventListener('keydown', e => this.handleKeydown(e));
+    this.textarea.addEventListener('paste', e => this.handlePaste(e));
 
     // Close dropdown on blur (with delay to allow clicks)
     this.textarea.addEventListener('blur', () => {
@@ -88,7 +90,8 @@ export class MentionAutocomplete {
     }
 
     // Check if @ is at word boundary (start of line or after space/newline)
-    const charBeforeAt = lastAtIndex > 0 ? textBeforeCursor[lastAtIndex - 1] : ' ';
+    const charBeforeAt =
+      lastAtIndex > 0 ? textBeforeCursor[lastAtIndex - 1] : ' ';
     if (charBeforeAt !== ' ' && charBeforeAt !== '\n') {
       this.hide();
       return;
@@ -132,7 +135,9 @@ export class MentionAutocomplete {
 
       const cursorPos = this.textarea.selectionStart;
       const textBefore = this.textarea.value.substring(0, cursorPos);
-      const textAfter = this.textarea.value.substring(this.textarea.selectionEnd);
+      const textAfter = this.textarea.value.substring(
+        this.textarea.selectionEnd
+      );
 
       // Convert to nostr:npub format
       const convertedText = `nostr:${pastedText.trim()}`;
@@ -192,7 +197,8 @@ export class MentionAutocomplete {
 
     // Get suggestions from global cache (instant if preloaded at login)
     const postsApi = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
-    const allSuggestions = await postsApi?.getMentionSuggestions(followingPubkeys) ?? [];
+    const allSuggestions =
+      (await postsApi?.getMentionSuggestions(followingPubkeys)) ?? [];
 
     if (allSuggestions.length === 0) {
       this.hide();
@@ -208,9 +214,11 @@ export class MentionAutocomplete {
       const displayName = suggestion.displayName.toLowerCase();
       const nip05 = (suggestion.nip05 || '').toLowerCase();
 
-      return username.includes(query) ||
-             displayName.includes(query) ||
-             nip05.includes(query);
+      return (
+        username.includes(query) ||
+        displayName.includes(query) ||
+        nip05.includes(query)
+      );
     });
 
     if (this.suggestions.length === 0) {
@@ -288,7 +296,11 @@ export class MentionAutocomplete {
    * Get cursor coordinates relative to textarea
    * Uses mirror div technique for accurate positioning
    */
-  private getCursorCoordinates(): { left: number; top: number; height: number } {
+  private getCursorCoordinates(): {
+    left: number;
+    top: number;
+    height: number;
+  } {
     if (!this.textarea) return { left: 0, top: 0, height: 20 };
 
     // Create mirror div with same styling as textarea
@@ -297,10 +309,19 @@ export class MentionAutocomplete {
 
     // Copy all relevant styles
     [
-      'fontFamily', 'fontSize', 'fontWeight', 'fontStyle',
-      'letterSpacing', 'lineHeight', 'textTransform',
-      'wordSpacing', 'wordWrap', 'whiteSpace',
-      'padding', 'border', 'boxSizing'
+      'fontFamily',
+      'fontSize',
+      'fontWeight',
+      'fontStyle',
+      'letterSpacing',
+      'lineHeight',
+      'textTransform',
+      'wordSpacing',
+      'wordWrap',
+      'whiteSpace',
+      'padding',
+      'border',
+      'boxSizing',
     ].forEach(prop => {
       const value = computedStyle[prop as any];
       if (value !== undefined) {
@@ -354,7 +375,9 @@ export class MentionAutocomplete {
    */
   private selectPrevious(): void {
     if (this.suggestions.length === 0) return;
-    this.selectedIndex = (this.selectedIndex - 1 + this.suggestions.length) % this.suggestions.length;
+    this.selectedIndex =
+      (this.selectedIndex - 1 + this.suggestions.length) %
+      this.suggestions.length;
     this.updateSelection();
   }
 
@@ -382,11 +405,13 @@ export class MentionAutocomplete {
     if (!this.textarea) return;
 
     const textBefore = this.textarea.value.substring(0, this.mentionStartPos);
-    const textAfter = this.textarea.value.substring(this.textarea.selectionStart);
+    const textAfter = this.textarea.value.substring(
+      this.textarea.selectionStart
+    );
 
     // Insert nostr:npub format (will be converted to @username in preview/render)
     const mention = `nostr:${suggestion.npub}`;
-    const newText = textBefore + mention + ' ' + textAfter;
+    const newText = `${textBefore + mention} ${textAfter}`;
 
     this.textarea.value = newText;
 

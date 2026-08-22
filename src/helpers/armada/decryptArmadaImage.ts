@@ -19,12 +19,36 @@ import type { ArmadaImagePointer } from './types';
 
 /** Best-effort mime sniff from magic bytes (display only). */
 function sniffImageMime(bytes: Uint8Array): string {
-  if (bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) {
+  if (
+    bytes.length >= 8 &&
+    bytes[0] === 0x89 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x4e &&
+    bytes[3] === 0x47
+  ) {
     return 'image/png';
   }
-  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg';
-  if (bytes.length >= 6 && bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46) return 'image/gif';
-  if (bytes.length >= 12 && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) {
+  if (
+    bytes.length >= 3 &&
+    bytes[0] === 0xff &&
+    bytes[1] === 0xd8 &&
+    bytes[2] === 0xff
+  )
+    return 'image/jpeg';
+  if (
+    bytes.length >= 6 &&
+    bytes[0] === 0x47 &&
+    bytes[1] === 0x49 &&
+    bytes[2] === 0x46
+  )
+    return 'image/gif';
+  if (
+    bytes.length >= 12 &&
+    bytes[8] === 0x57 &&
+    bytes[9] === 0x45 &&
+    bytes[10] === 0x42 &&
+    bytes[11] === 0x50
+  ) {
     return 'image/webp';
   }
   if (bytes.length >= 5 && bytes[0] === 0x3c) return 'image/svg+xml'; // '<' — svg-ish
@@ -47,7 +71,7 @@ function sniffImageMime(bytes: Uint8Array): string {
  */
 export async function decryptArmadaImage(
   pointer: ArmadaImagePointer,
-  signal?: AbortSignal,
+  signal?: AbortSignal
 ): Promise<string | undefined> {
   // The blob URL comes from untrusted event data — only fetch well-formed HTTPS.
   // (Plain http would leak the path; non-http(s) schemes are nonsensical here.)
@@ -70,7 +94,10 @@ export async function decryptArmadaImage(
     const ciphertext = new Uint8Array(await res.arrayBuffer());
     let plaintext: Uint8Array;
     try {
-      plaintext = gcm(hexToBytes(pointer.key), hexToBytes(pointer.nonce)).decrypt(ciphertext);
+      plaintext = gcm(
+        hexToBytes(pointer.key),
+        hexToBytes(pointer.nonce)
+      ).decrypt(ciphertext);
     } catch {
       return undefined;
     }
@@ -83,7 +110,9 @@ export async function decryptArmadaImage(
     // underlying buffer to ArrayBufferLike (which includes SharedArrayBuffer),
     // but BlobPart requires a real ArrayBuffer. Our plaintext is allocated
     // locally and never shared, so this cast is sound.
-    return URL.createObjectURL(new Blob([plaintext.buffer as ArrayBuffer], { type: mime }));
+    return URL.createObjectURL(
+      new Blob([plaintext.buffer as ArrayBuffer], { type: mime })
+    );
   } catch {
     return undefined;
   }

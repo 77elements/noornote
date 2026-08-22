@@ -29,10 +29,10 @@ export interface ISLStats {
 
 export interface ISLConfig {
   noteId: string;
-  authorPubkey?: string;   // Optional author pubkey for Hollywood-style logging
+  authorPubkey?: string; // Optional author pubkey for Hollywood-style logging
   stats?: ISLStats;
   fetchStats?: boolean;
-  isLoggedIn?: boolean;    // User logged in - enables interactions (default: false)
+  isLoggedIn?: boolean; // User logged in - enables interactions (default: false)
   originalEvent?: NostrEvent; // Original event for reposting
   onReply?: () => void;
   onRepost?: () => void;
@@ -53,7 +53,8 @@ export class InteractionStatusLine {
   private stats: ISLStats;
   private _reactionsApi?: ReactionsModuleApi | null;
   private get reactionsApi(): ReactionsModuleApi | null {
-    return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
+    return (this._reactionsApi ??=
+      ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
   }
   private initialFetchPromise?: Promise<void>;
   private bookmarkSubId?: string;
@@ -70,7 +71,8 @@ export class InteractionStatusLine {
     if (config.stats) {
       this.stats = config.stats;
     } else {
-      const cachedStats = this.reactionsApi?.getCachedStats(config.noteId) ?? null;
+      const cachedStats =
+        this.reactionsApi?.getCachedStats(config.noteId) ?? null;
       if (cachedStats) {
         // Convert InteractionStats to ISLStats
         this.stats = {
@@ -78,10 +80,16 @@ export class InteractionStatusLine {
           reposts: cachedStats.reposts,
           quotedReposts: cachedStats.quotedReposts,
           likes: cachedStats.likes,
-          zaps: cachedStats.zaps
+          zaps: cachedStats.zaps,
         };
       } else {
-        this.stats = { replies: 0, reposts: 0, quotedReposts: 0, likes: 0, zaps: 0 };
+        this.stats = {
+          replies: 0,
+          reposts: 0,
+          quotedReposts: 0,
+          likes: 0,
+          zaps: 0,
+        };
       }
     }
 
@@ -97,9 +105,12 @@ export class InteractionStatusLine {
     // on the icon and keep it in sync when toggled elsewhere (e.g. the note menu).
     if (isBookmarksEnabled()) {
       void this.checkBookmarkState();
-      this.bookmarkSubId = TypedEventBus.getInstance().on('bookmark:updated', () => {
-        void this.checkBookmarkState();
-      });
+      this.bookmarkSubId = TypedEventBus.getInstance().on(
+        'bookmark:updated',
+        () => {
+          void this.checkBookmarkState();
+        }
+      );
     }
 
     // Fetch stats in background if requested (SNV only)
@@ -120,8 +131,10 @@ export class InteractionStatusLine {
         onStatsUpdate: (_amount: number) => {
           setTimeout(() => this.fetchStats(), 2000);
         },
-        ...(this.config.articleEventId && { articleEventId: this.config.articleEventId }),
-        ...(this.config.onZap && { onCustomZap: this.config.onZap })
+        ...(this.config.articleEventId && {
+          articleEventId: this.config.articleEventId,
+        }),
+        ...(this.config.onZap && { onCustomZap: this.config.onZap }),
       });
     }
 
@@ -136,7 +149,9 @@ export class InteractionStatusLine {
         ...(this.config.onLike && { onLike: this.config.onLike }),
         // Pass the original event so reactions on addressable kinds
         // (long-form articles etc.) get NIP-25-compliant e/a/k tags.
-        ...(this.config.originalEvent && { originalEvent: this.config.originalEvent }),
+        ...(this.config.originalEvent && {
+          originalEvent: this.config.originalEvent,
+        }),
       });
     }
 
@@ -148,9 +163,11 @@ export class InteractionStatusLine {
         onStatsUpdate: () => {
           this.updateStats({ reposts: this.stats.reposts + 1 });
         },
-        ...(this.config.originalEvent && { originalEvent: this.config.originalEvent }),
+        ...(this.config.originalEvent && {
+          originalEvent: this.config.originalEvent,
+        }),
         ...(this.config.onRepost && { onRepost: this.config.onRepost }),
-        ...(this.config.onReply && { onQuote: this.config.onReply })
+        ...(this.config.onReply && { onQuote: this.config.onReply }),
       });
     }
   }
@@ -171,7 +188,6 @@ export class InteractionStatusLine {
     }
   }
 
-
   /**
    * Fetch interaction stats from relays (background task)
    */
@@ -180,7 +196,10 @@ export class InteractionStatusLine {
       // ensure() (not the cached getApi) so stats load on public, logged-out
       // note views too — the reactions module activates on login, but reading
       // stats must work without auth. Write actions stay AuthGuard-gated.
-      const reactionsApi = await ModuleLoader.getInstance().ensure<ReactionsModuleApi>('reactions');
+      const reactionsApi =
+        await ModuleLoader.getInstance().ensure<ReactionsModuleApi>(
+          'reactions'
+        );
       const stats = await reactionsApi?.getStats(
         this.config.noteId,
         this.config.authorPubkey
@@ -191,7 +210,7 @@ export class InteractionStatusLine {
         reposts: stats.reposts,
         quotedReposts: stats.quotedReposts,
         likes: stats.likes,
-        zaps: stats.zaps
+        zaps: stats.zaps,
       });
     } catch (error) {
       console.warn('Failed to load interaction stats:', error);
@@ -286,11 +305,17 @@ export class InteractionStatusLine {
 
     this.repostMenu = new CustomDropdown({
       options: [
-        { value: 'repost', label: `Repost<span class="isl-count">${this.formatMenuCount(this.stats.reposts)}</span>` },
-        { value: 'quote', label: `Quote<span class="isl-count">${this.formatMenuCount(this.stats.quotedReposts)}</span>` },
+        {
+          value: 'repost',
+          label: `Repost<span class="isl-count">${this.formatMenuCount(this.stats.reposts)}</span>`,
+        },
+        {
+          value: 'quote',
+          label: `Quote<span class="isl-count">${this.formatMenuCount(this.stats.quotedReposts)}</span>`,
+        },
       ],
       selectedValue: '',
-      onChange: (value) => {
+      onChange: value => {
         if (!this.repostManager) return;
         if (value === 'repost') {
           void this.repostManager.handleRepost();
@@ -305,17 +330,22 @@ export class InteractionStatusLine {
     const trigger = menuEl.querySelector('.custom-dropdown__trigger');
     if (trigger) {
       trigger.setAttribute('title', 'Repost');
-      trigger.innerHTML = '<span class="isl-icon"><svg width="18" height="18"><use href="#icon-repost"/></svg></span>';
+      trigger.innerHTML =
+        '<span class="isl-icon"><svg width="18" height="18"><use href="#icon-repost"/></svg></span>';
       // Lets the RepostManager reflect the "already reposted" state on the icon.
       this.repostManager.setButtonElement(trigger as HTMLElement);
 
       // Open downward by default, upward when near the bottom of the screen.
       // Capture phase runs before CustomDropdown's own toggle handler.
-      trigger.addEventListener('click', () => {
-        const rect = (trigger as HTMLElement).getBoundingClientRect();
-        const spaceBelow = window.innerHeight - rect.bottom;
-        menuEl.classList.toggle('isl-repost-menu--up', spaceBelow < 140);
-      }, true);
+      trigger.addEventListener(
+        'click',
+        () => {
+          const rect = (trigger as HTMLElement).getBoundingClientRect();
+          const spaceBelow = window.innerHeight - rect.bottom;
+          menuEl.classList.toggle('isl-repost-menu--up', spaceBelow < 140);
+        },
+        true
+      );
     }
 
     const likeBtn = container.querySelector('.isl-like');
@@ -335,7 +365,7 @@ export class InteractionStatusLine {
     const bookmarkBtn = container.querySelector('[data-action="bookmark"]');
 
     if (replyBtn) {
-      replyBtn.addEventListener('click', (e) => {
+      replyBtn.addEventListener('click', e => {
         e.stopPropagation();
         this.handleReply();
       });
@@ -358,20 +388,19 @@ export class InteractionStatusLine {
     }
 
     if (analyticsBtn) {
-      analyticsBtn.addEventListener('click', (e) => {
+      analyticsBtn.addEventListener('click', e => {
         e.stopPropagation();
         this.handleAnalytics();
       });
     }
 
     if (bookmarkBtn) {
-      bookmarkBtn.addEventListener('click', (e) => {
+      bookmarkBtn.addEventListener('click', e => {
         e.stopPropagation();
         void this.handleBookmark();
       });
     }
   }
-
 
   /**
    * Handle reply action
@@ -396,7 +425,10 @@ export class InteractionStatusLine {
   private async openReplyModal(): Promise<void> {
     const { ReplyModal } = await import('../reply/ReplyModal');
     // Pass originalEvent if available (avoids cache lookup/relay fetch = instant!)
-    ReplyModal.getInstance().show(this.config.noteId, this.config.originalEvent);
+    ReplyModal.getInstance().show(
+      this.config.noteId,
+      this.config.originalEvent
+    );
   }
 
   /**
@@ -425,7 +457,10 @@ export class InteractionStatusLine {
     try {
       const { BookmarkOrchestrator } = await import('../../lists/bookmarks');
       const orch = BookmarkOrchestrator.getInstance();
-      const status = await orch.isBookmarked(this.config.noteId, currentUser.pubkey);
+      const status = await orch.isBookmarked(
+        this.config.noteId,
+        currentUser.pubkey
+      );
 
       if (status.public) {
         await orch.removeBookmark(this.config.noteId, false);
@@ -449,13 +484,18 @@ export class InteractionStatusLine {
   private async checkBookmarkState(): Promise<void> {
     try {
       const { BookmarkOrchestrator } = await import('../../lists/bookmarks');
-      const status = await BookmarkOrchestrator.getInstance().isBookmarked(this.config.noteId);
+      const status = await BookmarkOrchestrator.getInstance().isBookmarked(
+        this.config.noteId
+      );
       const btn = this.element.querySelector('.isl-bookmark');
       if (!btn) return;
       btn.classList.toggle('active', status.public);
       const use = btn.querySelector('use');
       if (use) {
-        use.setAttribute('href', status.public ? '#icon-bookmark-24-filled' : '#icon-bookmark-24');
+        use.setAttribute(
+          'href',
+          status.public ? '#icon-bookmark-24-filled' : '#icon-bookmark-24'
+        );
       }
     } catch {
       // Bookmarks module unavailable — leave the icon in its default state.
@@ -477,7 +517,9 @@ export class InteractionStatusLine {
 
     const repliesCount = this.element.querySelector('.isl-reply .isl-count');
     const repostsCount = this.element.querySelector('.isl-repost .isl-count');
-    const quotedRepostsCount = this.element.querySelector('.isl-quote .isl-count');
+    const quotedRepostsCount = this.element.querySelector(
+      '.isl-quote .isl-count'
+    );
     const likesCount = this.element.querySelector('.isl-like .isl-count');
     const zapsCount = this.element.querySelector('.isl-zap .isl-count');
 
@@ -493,8 +535,12 @@ export class InteractionStatusLine {
     // Mobile: counts live inside the merged Repost/Quote dropdown items.
     if (this.repostMenu) {
       const menuEl = this.repostMenu.getElement();
-      const menuRepostCount = menuEl.querySelector('[data-value="repost"] .isl-count');
-      const menuQuoteCount = menuEl.querySelector('[data-value="quote"] .isl-count');
+      const menuRepostCount = menuEl.querySelector(
+        '[data-value="repost"] .isl-count'
+      );
+      const menuQuoteCount = menuEl.querySelector(
+        '[data-value="quote"] .isl-count'
+      );
       if (menuRepostCount && stats.reposts !== undefined) {
         menuRepostCount.textContent = this.formatMenuCount(stats.reposts);
       }

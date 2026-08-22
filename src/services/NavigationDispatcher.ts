@@ -41,7 +41,7 @@ export class NavigationDispatcher {
   private static setupMouseButtons(): void {
     // Electron's file:// SPA has no meaningful WebContents history, so the native
     // thumb-button back/forward does nothing — route it to the app router instead.
-    window.addEventListener('mouseup', (e) => {
+    window.addEventListener('mouseup', e => {
       if (e.button === 3) {
         e.preventDefault();
         this.goBack();

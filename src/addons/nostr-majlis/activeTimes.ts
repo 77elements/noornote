@@ -54,7 +54,9 @@ export function getActiveTimes(): DayPrayerTimes | null {
  */
 export function activeDiyanetIlceId(): string | null {
   const s = getNostrMajlisSettings();
-  return s.source === 'diyanet' && s.diyanetLocation ? s.diyanetLocation.ilceId : null;
+  return s.source === 'diyanet' && s.diyanetLocation
+    ? s.diyanetLocation.ilceId
+    : null;
 }
 
 /**
@@ -69,22 +71,40 @@ export function getUpcomingDays(days: number): DatedPrayerTimes[] {
 
   if (s.source === 'diyanet') {
     if (!s.diyanetLocation) return out;
-    const rows = DiyanetService.getInstance().cachedRows(s.diyanetLocation.ilceId);
+    const rows = DiyanetService.getInstance().cachedRows(
+      s.diyanetLocation.ilceId
+    );
     const byDate = new Map(rows.map(r => [r.date, r]));
     for (let i = 0; i < days; i++) {
-      const dt = new Date(base.getFullYear(), base.getMonth(), base.getDate() + i);
+      const dt = new Date(
+        base.getFullYear(),
+        base.getMonth(),
+        base.getDate() + i
+      );
       const key = `${String(dt.getDate()).padStart(2, '0')}.${String(dt.getMonth() + 1).padStart(2, '0')}.${dt.getFullYear()}`;
       const row = byDate.get(key);
-      if (row) out.push({ year: dt.getFullYear(), month: dt.getMonth(), day: dt.getDate(), times: row });
+      if (row)
+        out.push({
+          year: dt.getFullYear(),
+          month: dt.getMonth(),
+          day: dt.getDate(),
+          times: row,
+        });
     }
     return out;
   }
 
   if (isCalcMethod(s.source) && s.calcCity) {
     for (let i = 0; i < days; i++) {
-      const dt = new Date(base.getFullYear(), base.getMonth(), base.getDate() + i);
+      const dt = new Date(
+        base.getFullYear(),
+        base.getMonth(),
+        base.getDate() + i
+      );
       out.push({
-        year: dt.getFullYear(), month: dt.getMonth(), day: dt.getDate(),
+        year: dt.getFullYear(),
+        month: dt.getMonth(),
+        day: dt.getDate(),
         times: computeTimes(s.calcCity, s.source, s.madhab, dt),
       });
     }

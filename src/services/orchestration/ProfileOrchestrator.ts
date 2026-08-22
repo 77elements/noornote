@@ -68,7 +68,10 @@ export class ProfileOrchestrator extends Orchestrator {
   /**
    * Fetch single profile (no caching - handled by UserProfileService)
    */
-  public async fetchProfile(pubkey: string, relayHints?: string[]): Promise<Profile | null> {
+  public async fetchProfile(
+    pubkey: string,
+    relayHints?: string[]
+  ): Promise<Profile | null> {
     // If already fetching, wait for that request
     if (this.fetchingProfiles.has(pubkey)) {
       return await this.fetchingProfiles.get(pubkey)!;
@@ -88,12 +91,17 @@ export class ProfileOrchestrator extends Orchestrator {
   /**
    * Fetch single profile from relays (2-stage: aggregator → outbound)
    */
-  private async fetchProfileFromRelays(pubkey: string, relayHints?: string[]): Promise<Profile | null> {
-    const filters: NDKFilter[] = [{
-      authors: [pubkey],
-      kinds: [0],
-      limit: 1
-    }];
+  private async fetchProfileFromRelays(
+    pubkey: string,
+    relayHints?: string[]
+  ): Promise<Profile | null> {
+    const filters: NDKFilter[] = [
+      {
+        authors: [pubkey],
+        kinds: [0],
+        limit: 1,
+      },
+    ];
 
     // Stage 0: caller-provided relay hints — e.g. the write relays of the user
     // who reposted this note. An unfollowed author's kind:0 is reliably on the
@@ -103,7 +111,13 @@ export class ProfileOrchestrator extends Orchestrator {
     // is never worse than before.
     if (relayHints && relayHints.length > 0) {
       try {
-        const hintEvents = await this.transport.fetch(relayHints, filters, 4000, true, 'ProfileOrch');
+        const hintEvents = await this.transport.fetch(
+          relayHints,
+          filters,
+          4000,
+          true,
+          'ProfileOrch'
+        );
         if (hintEvents[0]) {
           return this.parseProfileEvent(pubkey, hintEvents[0]);
         }
@@ -116,7 +130,13 @@ export class ProfileOrchestrator extends Orchestrator {
     const relays = this.relayConfig.getAggregatorRelays();
 
     try {
-      const events = await this.transport.fetch(relays, filters, 4000, false, 'ProfileOrch');
+      const events = await this.transport.fetch(
+        relays,
+        filters,
+        4000,
+        false,
+        'ProfileOrch'
+      );
       const event = events[0];
       if (event) {
         return this.parseProfileEvent(pubkey, event);
@@ -128,22 +148,40 @@ export class ProfileOrchestrator extends Orchestrator {
     // Stage 2: Outbound relays (NIP-65 write relays of the user)
     // skipCache=true forces relay-only fetch (bypasses NDK cache from stage 1)
     try {
-      const outboundRelays = await this.relayDiscovery.getCombinedRelays([pubkey], true);
+      const outboundRelays = await this.relayDiscovery.getCombinedRelays(
+        [pubkey],
+        true
+      );
       const newRelays = outboundRelays.filter(r => !relays.includes(r));
       diagLog('relays', 'ProfileOrchestrator: stage 2 trying outbound', {
         pubkey: pubkey.slice(0, 8),
         totalRelays: outboundRelays.length,
-        newRelays: newRelays.slice(0, 5)
+        newRelays: newRelays.slice(0, 5),
       });
 
-      const events = await this.transport.fetch(outboundRelays, filters, 8000, true, 'ProfileOrch');
+      const events = await this.transport.fetch(
+        outboundRelays,
+        filters,
+        8000,
+        true,
+        'ProfileOrch'
+      );
       if (events[0]) {
-        diagLog('relays', 'ProfileOrchestrator: outbound fallback found profile', { pubkey: pubkey.slice(0, 8) });
+        diagLog(
+          'relays',
+          'ProfileOrchestrator: outbound fallback found profile',
+          { pubkey: pubkey.slice(0, 8) }
+        );
         return this.parseProfileEvent(pubkey, events[0]);
       }
-      diagLog('relays', 'ProfileOrchestrator: stage 2 returned empty', { pubkey: pubkey.slice(0, 8) });
+      diagLog('relays', 'ProfileOrchestrator: stage 2 returned empty', {
+        pubkey: pubkey.slice(0, 8),
+      });
     } catch (error) {
-      diagLog('relays', 'ProfileOrchestrator: stage 2 failed', { pubkey: pubkey.slice(0, 8), error: String(error) });
+      diagLog('relays', 'ProfileOrchestrator: stage 2 failed', {
+        pubkey: pubkey.slice(0, 8),
+        error: String(error),
+      });
     }
 
     return null;
@@ -163,18 +201,28 @@ export class ProfileOrchestrator extends Orchestrator {
    * No outbound fallback here — batch fetches are for UI lists where
    * aggregator coverage is sufficient and latency matters more
    */
-  public async fetchMultipleProfiles(pubkeys: string[]): Promise<Map<string, Profile>> {
+  public async fetchMultipleProfiles(
+    pubkeys: string[]
+  ): Promise<Map<string, Profile>> {
     // Use aggregator relays (big, fast relays) for profile fetching
     const relays = this.relayConfig.getAggregatorRelays();
     const profiles = new Map<string, Profile>();
 
-    const filters: NDKFilter[] = [{
-      authors: pubkeys,
-      kinds: [0]
-    }];
+    const filters: NDKFilter[] = [
+      {
+        authors: pubkeys,
+        kinds: [0],
+      },
+    ];
 
     try {
-      const events = await this.transport.fetch(relays, filters, 5000, false, 'ProfileOrch');
+      const events = await this.transport.fetch(
+        relays,
+        filters,
+        5000,
+        false,
+        'ProfileOrch'
+      );
 
       // Group events by pubkey, keep most recent
       const latestEvents = new Map<string, NostrEvent>();
@@ -190,13 +238,19 @@ export class ProfileOrchestrator extends Orchestrator {
         try {
           profiles.set(pubkey, this.parseProfileEvent(pubkey, event));
         } catch (error) {
-          this.systemLogger.error('ProfileOrchestrator', `Parse error for ${pubkey.slice(0, 8)}: ${error}`);
+          this.systemLogger.error(
+            'ProfileOrchestrator',
+            `Parse error for ${pubkey.slice(0, 8)}: ${error}`
+          );
         }
       });
 
       return profiles;
     } catch (error) {
-      this.systemLogger.error('ProfileOrchestrator', `Batch fetch failed: ${error}`);
+      this.systemLogger.error(
+        'ProfileOrchestrator',
+        `Batch fetch failed: ${error}`
+      );
       return profiles;
     }
   }
@@ -217,15 +271,23 @@ export class ProfileOrchestrator extends Orchestrator {
 
     // Fallback: fetch from standard relays
     const relays = this.relayConfig.getReadRelays();
-    const filters: NDKFilter[] = [{
-      authors: [pubkey],
-      kinds: [1, 21, 22, 1063, 9802],
-      since: 0,
-      limit: 5000
-    }];
+    const filters: NDKFilter[] = [
+      {
+        authors: [pubkey],
+        kinds: [1, 21, 22, 1063, 9802],
+        since: 0,
+        limit: 5000,
+      },
+    ];
 
     try {
-      const events = await this.transport.fetch(relays, filters, 8000, false, 'ProfileOrch');
+      const events = await this.transport.fetch(
+        relays,
+        filters,
+        8000,
+        false,
+        'ProfileOrch'
+      );
       if (events.length === 0) return null;
 
       const oldest = events.reduce((min, event) =>
@@ -233,7 +295,10 @@ export class ProfileOrchestrator extends Orchestrator {
       );
       return oldest.created_at;
     } catch (error) {
-      this.systemLogger.error('ProfileOrchestrator', `Fetch oldest event failed for ${pubkey.slice(0, 8)}: ${error}`);
+      this.systemLogger.error(
+        'ProfileOrchestrator',
+        `Fetch oldest event failed for ${pubkey.slice(0, 8)}: ${error}`
+      );
       return null;
     }
   }
@@ -243,7 +308,7 @@ export class ProfileOrchestrator extends Orchestrator {
    * Returns the timestamp of the user's earliest known event.
    */
   private fetchTimeJoinedFromPrimal(pubkey: string): Promise<number | null> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const timeout = setTimeout(() => {
         ws.close();
         resolve(null);
@@ -259,10 +324,16 @@ export class ProfileOrchestrator extends Orchestrator {
       }
 
       ws.onopen = () => {
-        ws.send(JSON.stringify(['REQ', 'joined', { cache: ['user_profile', { pubkey }] }]));
+        ws.send(
+          JSON.stringify([
+            'REQ',
+            'joined',
+            { cache: ['user_profile', { pubkey }] },
+          ])
+        );
       };
 
-      ws.onmessage = (msg) => {
+      ws.onmessage = msg => {
         try {
           const data = JSON.parse(msg.data);
           // Look for kind 10000105 (USER_PROFILE_INFO) which contains time_joined
@@ -296,29 +367,40 @@ export class ProfileOrchestrator extends Orchestrator {
     if (!tags || !Array.isArray(tags)) return [];
 
     return tags
-      .filter((tag): tag is [string, string, ...string[]] => tag[0] === 'nip05' && typeof tag[1] === 'string')
+      .filter(
+        (tag): tag is [string, string, ...string[]] =>
+          tag[0] === 'nip05' && typeof tag[1] === 'string'
+      )
       .map(tag => tag[1]);
   }
 
   /**
    * Build a Profile object from metadata, ensuring proper types for exactOptionalPropertyTypes
    */
-  private buildProfile(pubkey: string, metadata: Record<string, unknown>, nip05s: string[]): Profile {
+  private buildProfile(
+    pubkey: string,
+    metadata: Record<string, unknown>,
+    nip05s: string[]
+  ): Profile {
     const profile: Profile = {
       pubkey,
-      lastUpdated: Date.now()
+      lastUpdated: Date.now(),
     };
 
     if (typeof metadata.name === 'string') profile.name = metadata.name;
-    if (typeof metadata.display_name === 'string') profile.display_name = metadata.display_name;
-    if (typeof metadata.username === 'string') profile.username = metadata.username;
-    if (typeof metadata.picture === 'string') profile.picture = metadata.picture;
+    if (typeof metadata.display_name === 'string')
+      profile.display_name = metadata.display_name;
+    if (typeof metadata.username === 'string')
+      profile.username = metadata.username;
+    if (typeof metadata.picture === 'string')
+      profile.picture = metadata.picture;
     if (typeof metadata.about === 'string') profile.about = metadata.about;
     if (typeof metadata.nip05 === 'string') profile.nip05 = metadata.nip05;
     if (nip05s.length > 0) profile.nip05s = nip05s;
     if (typeof metadata.lud06 === 'string') profile.lud06 = metadata.lud06;
     if (typeof metadata.lud16 === 'string') profile.lud16 = metadata.lud16;
-    if (typeof metadata.website === 'string') profile.website = metadata.website;
+    if (typeof metadata.website === 'string')
+      profile.website = metadata.website;
     if (typeof metadata.banner === 'string') profile.banner = metadata.banner;
 
     return profile;
@@ -339,7 +421,10 @@ export class ProfileOrchestrator extends Orchestrator {
   }
 
   public onerror(relay: string, error: Error): void {
-    this.systemLogger.error('ProfileOrchestrator', `Relay error (${relay}): ${error.message}`);
+    this.systemLogger.error(
+      'ProfileOrchestrator',
+      `Relay error (${relay}): ${error.message}`
+    );
   }
 
   public onclose(_relay: string): void {

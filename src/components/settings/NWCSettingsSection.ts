@@ -11,7 +11,10 @@ import { NWCService } from '../../services/NWCService';
 import { ExchangeRateService } from '../../services/ExchangeRateService';
 import { Switch } from '../ui/Switch';
 import { CustomDropdown } from '../ui/CustomDropdown';
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../services/PerAccountLocalStorage';
 import { KeychainStorage } from '../../services/KeychainStorage';
 import { ToastService } from '../../services/ToastService';
 
@@ -61,7 +64,10 @@ export class NWCSettingsSection extends SettingsSection {
    */
   private async saveZapDefaults(): Promise<void> {
     try {
-      await KeychainStorage.saveZapDefaults(this.zapDefaults.amount, this.zapDefaults.comment);
+      await KeychainStorage.saveZapDefaults(
+        this.zapDefaults.amount,
+        this.zapDefaults.comment
+      );
     } catch (error) {
       console.warn('Failed to save zap defaults:', error);
     }
@@ -88,11 +94,15 @@ export class NWCSettingsSection extends SettingsSection {
    */
   private async saveFiatCurrencySettings(): Promise<void> {
     try {
-      await KeychainStorage.saveFiatCurrency(this.fiatCurrencySettings.currency);
+      await KeychainStorage.saveFiatCurrency(
+        this.fiatCurrencySettings.currency
+      );
 
-      window.dispatchEvent(new CustomEvent('fiat-currency-changed', {
-        detail: { currency: this.fiatCurrencySettings.currency }
-      }));
+      window.dispatchEvent(
+        new CustomEvent('fiat-currency-changed', {
+          detail: { currency: this.fiatCurrencySettings.currency },
+        })
+      );
     } catch (error) {
       console.warn('Failed to save fiat currency settings:', error);
     }
@@ -217,10 +227,13 @@ export class NWCSettingsSection extends SettingsSection {
     this.quickZapSwitch = new Switch({
       label: '',
       checked: quickZapEnabled,
-      onChange: (checked) => {
+      onChange: checked => {
         storage.set(StorageKeys.QUICK_ZAP_ENABLED, checked);
-        ToastService.show(checked ? 'Quick zap enabled' : 'Quick zap disabled', 'success');
-      }
+        ToastService.show(
+          checked ? 'Quick zap enabled' : 'Quick zap disabled',
+          'success'
+        );
+      },
     });
 
     mount.innerHTML = this.quickZapSwitch.render();
@@ -231,20 +244,25 @@ export class NWCSettingsSection extends SettingsSection {
    * Setup fiat currency dropdown
    */
   private setupFiatCurrencyDropdown(contentContainer: HTMLElement): void {
-    const mount = contentContainer.querySelector('#fiat-currency-dropdown-mount');
+    const mount = contentContainer.querySelector(
+      '#fiat-currency-dropdown-mount'
+    );
     if (!mount) return;
 
     const currencies = this.exchangeRateService.getAvailableCurrencies();
-    const options = currencies.map(c => ({ value: c.code, label: `${c.symbol} ${c.name} (${c.code})` }));
+    const options = currencies.map(c => ({
+      value: c.code,
+      label: `${c.symbol} ${c.name} (${c.code})`,
+    }));
 
     const dropdown = new CustomDropdown({
       options,
       selectedValue: this.fiatCurrencySettings.currency,
-      onChange: async (value) => {
+      onChange: async value => {
         this.fiatCurrencySettings.currency = value;
         await this.saveFiatCurrencySettings();
         ToastService.show('Fiat currency saved', 'success');
-      }
+      },
     });
 
     mount.appendChild(dropdown.getElement());
@@ -265,7 +283,9 @@ export class NWCSettingsSection extends SettingsSection {
     if (!isConnected) {
       // Connect button
       const connectBtn = contentContainer.querySelector('#nwc-connect-btn');
-      const connectionInput = contentContainer.querySelector('#nwc-string') as HTMLInputElement;
+      const connectionInput = contentContainer.querySelector(
+        '#nwc-string'
+      ) as HTMLInputElement;
 
       connectBtn?.addEventListener('click', async () => {
         const connectionString = connectionInput?.value.trim();
@@ -283,7 +303,9 @@ export class NWCSettingsSection extends SettingsSection {
 
         if (success) {
           // Refresh zap settings panel to show connected state
-          const parentContainer = contentContainer.closest('.view-content--settings') as HTMLElement;
+          const parentContainer = contentContainer.closest(
+            '.view-content--settings'
+          ) as HTMLElement;
           if (parentContainer) {
             this.mount(parentContainer);
           }
@@ -295,11 +317,15 @@ export class NWCSettingsSection extends SettingsSection {
       });
     } else {
       // Disconnect button
-      const disconnectBtn = contentContainer.querySelector('#nwc-disconnect-btn');
+      const disconnectBtn = contentContainer.querySelector(
+        '#nwc-disconnect-btn'
+      );
       disconnectBtn?.addEventListener('click', async () => {
         await this.nwcService.disconnect();
         // Refresh zap settings panel to show disconnected state
-        const parentContainer = contentContainer.closest('.view-content--settings') as HTMLElement;
+        const parentContainer = contentContainer.closest(
+          '.view-content--settings'
+        ) as HTMLElement;
         if (parentContainer) {
           this.mount(parentContainer);
         }
@@ -307,7 +333,9 @@ export class NWCSettingsSection extends SettingsSection {
     }
 
     // Zap default amount: save on blur / Enter
-    const amountInput = contentContainer.querySelector('#zap-default-amount') as HTMLInputElement;
+    const amountInput = contentContainer.querySelector(
+      '#zap-default-amount'
+    ) as HTMLInputElement;
     const saveAmount = async () => {
       const amount = parseInt(amountInput?.value || '21', 10);
       if (amount < 1) {
@@ -319,17 +347,23 @@ export class NWCSettingsSection extends SettingsSection {
       ToastService.show('Zap defaults saved', 'success');
     };
     amountInput?.addEventListener('blur', saveAmount);
-    amountInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveAmount(); });
+    amountInput?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') saveAmount();
+    });
 
     // Zap default comment: save on blur / Enter
-    const commentInput = contentContainer.querySelector('#zap-default-comment') as HTMLInputElement;
+    const commentInput = contentContainer.querySelector(
+      '#zap-default-comment'
+    ) as HTMLInputElement;
     const saveComment = async () => {
       this.zapDefaults.comment = commentInput?.value || '';
       await this.saveZapDefaults();
       ToastService.show('Zap defaults saved', 'success');
     };
     commentInput?.addEventListener('blur', saveComment);
-    commentInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveComment(); });
+    commentInput?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') saveComment();
+    });
   }
 
   /**

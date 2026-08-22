@@ -61,7 +61,10 @@ export async function ensureDirectoryExists(filePath: string): Promise<void> {
  * Read JSON data from file
  * Returns defaultData if file doesn't exist or on error
  */
-export async function readJsonFile<T>(filename: string, defaultData: T): Promise<T> {
+export async function readJsonFile<T>(
+  filename: string,
+  defaultData: T
+): Promise<T> {
   try {
     const filePath = await getListFilePath(filename);
     requireFs();
@@ -84,14 +87,20 @@ export async function readJsonFile<T>(filename: string, defaultData: T): Promise
 /**
  * Write JSON data to file
  */
-export async function writeJsonFile<T>(filename: string, data: T): Promise<void> {
+export async function writeJsonFile<T>(
+  filename: string,
+  data: T
+): Promise<void> {
   try {
     const filePath = await getListFilePath(filename);
     requireFs();
 
     await ensureDirectoryExists(filePath);
 
-    await window.electronAPI!.writeTextFile(filePath, JSON.stringify(data, null, 2));
+    await window.electronAPI!.writeTextFile(
+      filePath,
+      JSON.stringify(data, null, 2)
+    );
 
     logger.info('file.ts', `Wrote: ${filename}`);
   } catch (error) {
@@ -138,7 +147,7 @@ export function downloadAsJson<T>(data: T, filename: string): void {
 }
 
 export function uploadJsonFile<T>(): Promise<T | null> {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json,application/json';

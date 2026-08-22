@@ -22,7 +22,9 @@ export class ScrollPositionManager {
    */
   private getScrollContainer(): Element | null {
     // TimelineView wraps Timeline in .timeline-view__timeline (the scrollable element)
-    const timelineViewContainer = this.container.closest('.timeline-view__timeline');
+    const timelineViewContainer = this.container.closest(
+      '.timeline-view__timeline'
+    );
     if (timelineViewContainer) {
       return timelineViewContainer;
     }

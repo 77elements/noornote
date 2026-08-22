@@ -19,7 +19,10 @@
  * do not confuse with quoted reposts (kind 1 + q-tag).
  */
 
-import { PerAccountLocalStorage, StorageKeys } from '../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../services/PerAccountLocalStorage';
 
 /** NIP-84 source resolution priority, shared shape with HighlightProcessor. */
 function resolveSourceTag(tags: string[][]): string[] | null {
@@ -38,7 +41,10 @@ function resolveSourceTag(tags: string[][]): string[] | null {
  * (resolved source is an http(s) URL). Nostr-internal highlights (source is
  * a note or article) return false.
  */
-export function isExternalHighlight(event: { kind?: number; tags?: string[][] }): boolean {
+export function isExternalHighlight(event: {
+  kind?: number;
+  tags?: string[][];
+}): boolean {
   if (event.kind !== 9802) return false;
   const source = resolveSourceTag(event.tags ?? []);
   if (!source) return false;
@@ -48,18 +54,27 @@ export function isExternalHighlight(event: { kind?: number; tags?: string[][] })
 // ── Global switch ─────────────────────────────────────────────
 
 export function isHideHighlightsEnabled(): boolean {
-  return PerAccountLocalStorage.getInstance().get<boolean>(StorageKeys.HIDE_HIGHLIGHTS, false);
+  return PerAccountLocalStorage.getInstance().get<boolean>(
+    StorageKeys.HIDE_HIGHLIGHTS,
+    false
+  );
 }
 
 export function setHideHighlightsEnabled(enabled: boolean): void {
-  PerAccountLocalStorage.getInstance().set(StorageKeys.HIDE_HIGHLIGHTS, enabled);
+  PerAccountLocalStorage.getInstance().set(
+    StorageKeys.HIDE_HIGHLIGHTS,
+    enabled
+  );
 }
 
 // ── Per-user overrides ────────────────────────────────────────
 
 /** Map of author pubkeys whose highlights are hidden. */
 export function getHiddenHighlightAuthors(): Record<string, boolean> {
-  return PerAccountLocalStorage.getInstance().get<Record<string, boolean>>(StorageKeys.HIDE_HIGHLIGHTS_USERS, {});
+  return PerAccountLocalStorage.getInstance().get<Record<string, boolean>>(
+    StorageKeys.HIDE_HIGHLIGHTS_USERS,
+    {}
+  );
 }
 
 export function isHighlightHiddenFor(pubkey: string): boolean {
@@ -68,7 +83,10 @@ export function isHighlightHiddenFor(pubkey: string): boolean {
 
 export function setHighlightHiddenFor(pubkey: string, hidden: boolean): void {
   const store = PerAccountLocalStorage.getInstance();
-  const map = store.get<Record<string, boolean>>(StorageKeys.HIDE_HIGHLIGHTS_USERS, {});
+  const map = store.get<Record<string, boolean>>(
+    StorageKeys.HIDE_HIGHLIGHTS_USERS,
+    {}
+  );
   if (hidden) {
     map[pubkey] = true;
   } else {

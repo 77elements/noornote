@@ -22,7 +22,10 @@ export class NotificationsBadgeManager {
 
   private _notificationsApi?: NotificationsModuleApi | null;
   private get notificationsApi(): NotificationsModuleApi | null {
-    return this._notificationsApi ??= ModuleLoader.getInstance().getApi<NotificationsModuleApi>('notifications');
+    return (this._notificationsApi ??=
+      ModuleLoader.getInstance().getApi<NotificationsModuleApi>(
+        'notifications'
+      ));
   }
 
   constructor(badgeElement: HTMLElement) {
@@ -34,19 +37,24 @@ export class NotificationsBadgeManager {
     this.updateBadgeCount();
   }
 
-
   /**
    * Setup event listeners for badge updates
    */
   private setupEventListeners(): void {
-    this.badgeUpdateSubscriptionId = this.eventBus.on('notifications:badge-update', () => {
-      this.updateBadgeCount();
-    });
+    this.badgeUpdateSubscriptionId = this.eventBus.on(
+      'notifications:badge-update',
+      () => {
+        this.updateBadgeCount();
+      }
+    );
 
     // Also update badge when user changes priority settings
-    this.prioritiesChangedSubscriptionId = this.eventBus.on('notifications:priorities-changed', () => {
-      this.updateBadgeCount();
-    });
+    this.prioritiesChangedSubscriptionId = this.eventBus.on(
+      'notifications:priorities-changed',
+      () => {
+        this.updateBadgeCount();
+      }
+    );
   }
 
   /**
@@ -75,7 +83,8 @@ export class NotificationsBadgeManager {
     );
 
     if (unreadCount > 0) {
-      this.badgeElement.textContent = unreadCount > 99 ? '99+' : unreadCount.toString();
+      this.badgeElement.textContent =
+        unreadCount > 99 ? '99+' : unreadCount.toString();
       this.badgeElement.style.display = 'inline-flex';
 
       const highestPriority = this.notificationsApi.getHighestUnreadPriority();

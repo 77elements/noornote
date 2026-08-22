@@ -15,8 +15,16 @@
  * is enabled. See `index.ts` for the lightweight feature flag.
  */
 
-import { fetchEvents, publishEvent, signEvent, getCurrentUserPubkey } from '../../lists/relays';
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import {
+  fetchEvents,
+  publishEvent,
+  signEvent,
+  getCurrentUserPubkey,
+} from '../../lists/relays';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../services/PerAccountLocalStorage';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { now } from '../../lists/storage';
 
@@ -91,19 +99,23 @@ export class EmojiService {
     if (!pubkey) return;
 
     try {
-      const events = await fetchEvents([{
-        kinds: [30030],
-        authors: [pubkey],
-        '#d': [PACK_D_TAG],
-        limit: 1,
-      } as any]);
+      const events = await fetchEvents([
+        {
+          kinds: [30030],
+          authors: [pubkey],
+          '#d': [PACK_D_TAG],
+          limit: 1,
+        } as any,
+      ]);
 
       if (events.length === 0) {
         return;
       }
 
       // Replaceable event — newest wins
-      const event = events.sort((a, b) => (b.created_at || 0) - (a.created_at || 0))[0]!;
+      const event = events.sort(
+        (a, b) => (b.created_at || 0) - (a.created_at || 0)
+      )[0]!;
       const cache = this.readCache();
       if (cache && (event.created_at || 0) <= cache.updatedAt) {
         // Cache is up-to-date or newer (e.g. local pending change)
@@ -122,7 +134,9 @@ export class EmojiService {
   public async addEmoji(shortcode: string, url: string): Promise<void> {
     const sanitized = shortcode.trim().replace(/^:|:$/g, '');
     if (!/^[a-zA-Z0-9_-]+$/.test(sanitized)) {
-      throw new Error('Shortcode may only contain letters, numbers, underscores, and hyphens');
+      throw new Error(
+        'Shortcode may only contain letters, numbers, underscores, and hyphens'
+      );
     }
     if (!/^https?:\/\//.test(url)) {
       throw new Error('URL must start with http:// or https://');
@@ -148,34 +162,43 @@ export class EmojiService {
    */
   public async fetchUserPacks(pubkey: string): Promise<RemoteEmojiPack[]> {
     try {
-      const events = await fetchEvents([{
-        kinds: [30030],
-        authors: [pubkey],
-        limit: 20,
-      } as any], 5000);
+      const events = await fetchEvents(
+        [
+          {
+            kinds: [30030],
+            authors: [pubkey],
+            limit: 20,
+          } as any,
+        ],
+        5000
+      );
 
-      const latestPerDTag = new Map<string, typeof events[number]>();
+      const latestPerDTag = new Map<string, (typeof events)[number]>();
       for (const event of events) {
-        const dTag = (event.tags || []).find((t: string[]) => t[0] === 'd')?.[1] ?? '';
+        const dTag =
+          (event.tags || []).find((t: string[]) => t[0] === 'd')?.[1] ?? '';
         const existing = latestPerDTag.get(dTag);
         if (!existing || (event.created_at || 0) > (existing.created_at || 0)) {
           latestPerDTag.set(dTag, event);
         }
       }
 
-      return Array.from(latestPerDTag.values()).map(event => {
-        const tags = event.tags || [];
-        const dTag = tags.find((t: string[]) => t[0] === 'd')?.[1] ?? '';
-        const name = tags.find((t: string[]) => t[0] === 'name')?.[1]
-          ?? tags.find((t: string[]) => t[0] === 'title')?.[1]
-          ?? 'Untitled pack';
-        return {
-          authorPubkey: event.pubkey,
-          dTag,
-          name,
-          emojis: parseEmojiTags(tags),
-        };
-      }).filter(pack => pack.emojis.length > 0);
+      return Array.from(latestPerDTag.values())
+        .map(event => {
+          const tags = event.tags || [];
+          const dTag = tags.find((t: string[]) => t[0] === 'd')?.[1] ?? '';
+          const name =
+            tags.find((t: string[]) => t[0] === 'name')?.[1] ??
+            tags.find((t: string[]) => t[0] === 'title')?.[1] ??
+            'Untitled pack';
+          return {
+            authorPubkey: event.pubkey,
+            dTag,
+            name,
+            emojis: parseEmojiTags(tags),
+          };
+        })
+        .filter(pack => pack.emojis.length > 0);
     } catch (err) {
       console.warn('[EmojiService] fetchUserPacks failed:', err);
       return [];
@@ -250,11 +273,17 @@ export class EmojiService {
   }
 
   private readCache(): CachedPack | null {
-    return this.storage.get<CachedPack | null>(StorageKeys.PERSONAL_EMOJI_PACK, null);
+    return this.storage.get<CachedPack | null>(
+      StorageKeys.PERSONAL_EMOJI_PACK,
+      null
+    );
   }
 
   private persistCache(updatedAt: number): void {
-    this.storage.set(StorageKeys.PERSONAL_EMOJI_PACK, { emojis: this.emojis, updatedAt });
+    this.storage.set(StorageKeys.PERSONAL_EMOJI_PACK, {
+      emojis: this.emojis,
+      updatedAt,
+    });
   }
 }
 

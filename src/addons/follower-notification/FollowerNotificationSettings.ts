@@ -8,8 +8,15 @@ import { AddonLoader } from '../AddonLoader';
 import { UserIdentity } from '../../components/shared/UserIdentity';
 import { formatTimeAgo } from '../../helpers/formatTimeAgo';
 import { escapeHtml } from '../../helpers/escapeHtml';
-import { FollowerSnapshotStorage, DEFAULT_RECENCY_DAYS, type FollowerChange } from '../../lists/FollowerSnapshotStorage';
-import { isFollowerNotificationEnabled, setFollowerNotificationEnabled } from './index';
+import {
+  FollowerSnapshotStorage,
+  DEFAULT_RECENCY_DAYS,
+  type FollowerChange,
+} from '../../lists/FollowerSnapshotStorage';
+import {
+  isFollowerNotificationEnabled,
+  setFollowerNotificationEnabled,
+} from './index';
 import type { FollowerNotificationRuntime } from './runtime';
 
 export class FollowerNotificationSettings extends SettingsSection {
@@ -30,14 +37,18 @@ export class FollowerNotificationSettings extends SettingsSection {
     const contentContainer = this.getContentContainer(parentContainer);
     if (!contentContainer) return;
 
-    this.contentZone = parentContainer.querySelector('[data-addon-content="follower-notification"]');
+    this.contentZone = parentContainer.querySelector(
+      '[data-addon-content="follower-notification"]'
+    );
 
     const enabled = isFollowerNotificationEnabled();
 
     this.enableSwitch = new Switch({
       label: '',
       checked: enabled,
-      onChange: (checked) => { void this.handleToggle(checked); }
+      onChange: checked => {
+        void this.handleToggle(checked);
+      },
     });
 
     contentContainer.innerHTML = `
@@ -51,8 +62,16 @@ export class FollowerNotificationSettings extends SettingsSection {
     this.enableSwitch.setupEventListeners(contentContainer);
 
     // Re-render the panel whenever a check finds changes or they're marked seen.
-    this.subIds.push(this.eventBus.on('follower-changes:detected', () => this.renderPanel(isFollowerNotificationEnabled())));
-    this.subIds.push(this.eventBus.on('follower-changes:seen', () => this.renderPanel(isFollowerNotificationEnabled())));
+    this.subIds.push(
+      this.eventBus.on('follower-changes:detected', () =>
+        this.renderPanel(isFollowerNotificationEnabled())
+      )
+    );
+    this.subIds.push(
+      this.eventBus.on('follower-changes:seen', () =>
+        this.renderPanel(isFollowerNotificationEnabled())
+      )
+    );
 
     this.renderPanel(enabled);
   }
@@ -66,11 +85,12 @@ export class FollowerNotificationSettings extends SettingsSection {
     if (checked && isDataSaverEnabled()) {
       const proceed = await ModalService.getInstance().confirm({
         title: 'Conflicts with Data Saver',
-        message: 'Data Saver is on. To find followers reliably this addon ignores it for its scan: a ' +
+        message:
+          'Data Saver is on. To find followers reliably this addon ignores it for its scan: a ' +
           'one-time pull of all your followers’ contact lists (a few MB), then small background ' +
           'checks every few hours. Enable anyway?',
         confirmText: 'Enable anyway',
-        cancelText: 'Keep off'
+        cancelText: 'Keep off',
       });
       if (!proceed) {
         this.enableSwitch?.setChecked(false);
@@ -79,16 +99,23 @@ export class FollowerNotificationSettings extends SettingsSection {
     }
 
     setFollowerNotificationEnabled(checked);
-    this.eventBus.emit('follower-notification:addon-toggle', { enabled: checked });
+    this.eventBus.emit('follower-notification:addon-toggle', {
+      enabled: checked,
+    });
     ToastService.show(
-      checked ? 'Follower Notification enabled' : 'Follower Notification disabled',
+      checked
+        ? 'Follower Notification enabled'
+        : 'Follower Notification disabled',
       'success'
     );
     this.renderPanel(checked);
   }
 
   private getService(): FollowerNotificationRuntime['service'] | null {
-    const rt = AddonLoader.getInstance().getRuntime<FollowerNotificationRuntime>('follower-notification');
+    const rt =
+      AddonLoader.getInstance().getRuntime<FollowerNotificationRuntime>(
+        'follower-notification'
+      );
     return rt?.service ?? null;
   }
 
@@ -107,13 +134,16 @@ export class FollowerNotificationSettings extends SettingsSection {
     const lastCheck = this.storage.getLastCheckTimestamp();
     const changes = this.storage.getChanges();
 
-    const statusText = followerCount === null
-      ? 'No baseline yet — the first check runs a few minutes after start.'
-      : warmingUp
-        ? `Calibrating baseline (${followerCount.toLocaleString('en-US')} followers)…`
-        : `Watching ${followerCount.toLocaleString('en-US')} followers for changes.`;
+    const statusText =
+      followerCount === null
+        ? 'No baseline yet — the first check runs a few minutes after start.'
+        : warmingUp
+          ? `Calibrating baseline (${followerCount.toLocaleString('en-US')} followers)…`
+          : `Watching ${followerCount.toLocaleString('en-US')} followers for changes.`;
 
-    const lastCheckText = lastCheck ? `Last checked ${formatTimeAgo(lastCheck)}.` : '';
+    const lastCheckText = lastCheck
+      ? `Last checked ${formatTimeAgo(lastCheck)}.`
+      : '';
     const recencyDays = this.storage.getRecencyDays();
 
     this.contentZone.innerHTML = `
@@ -134,34 +164,53 @@ export class FollowerNotificationSettings extends SettingsSection {
           </div>
           <p class="setting__desc">A follower whose contact list (including you) was last published longer ago than this is treated as a long-standing follower discovered late — added to the baseline silently, no notification.</p>
         </div>
-        ${changes.length > 0 ? `
+        ${
+          changes.length > 0
+            ? `
           <div class="l-spread follower-notification__changes-head">
             <strong>Recent changes (${changes.length})</strong>
             <button class="btn btn--passive btn--mini" data-action="mark-seen">Mark all seen</button>
           </div>
           <div class="ui-list follower-notification__list"></div>
-        ` : `<p class="form__note">No changes detected yet.</p>`}
+        `
+            : `<p class="form__note">No changes detected yet.</p>`
+        }
       </section>
     `;
 
-    const checkBtn = this.contentZone.querySelector('[data-action="check-now"]') as HTMLButtonElement | null;
+    const checkBtn = this.contentZone.querySelector(
+      '[data-action="check-now"]'
+    ) as HTMLButtonElement | null;
     checkBtn?.addEventListener('click', () => this.handleCheckNow(checkBtn));
 
     const markBtn = this.contentZone.querySelector('[data-action="mark-seen"]');
     markBtn?.addEventListener('click', () => this.handleMarkSeen());
 
-    const recencyInput = this.contentZone.querySelector('[data-action="recency"]') as HTMLInputElement | null;
+    const recencyInput = this.contentZone.querySelector(
+      '[data-action="recency"]'
+    ) as HTMLInputElement | null;
     recencyInput?.addEventListener('change', () => {
-      const days = Math.max(1, Math.min(365, Math.round(Number(recencyInput.value) || DEFAULT_RECENCY_DAYS)));
+      const days = Math.max(
+        1,
+        Math.min(
+          365,
+          Math.round(Number(recencyInput.value) || DEFAULT_RECENCY_DAYS)
+        )
+      );
       recencyInput.value = String(days);
       this.storage.setRecencyDays(days);
-      ToastService.show(`New-follower window: ${days} day${days === 1 ? '' : 's'}`, 'success');
+      ToastService.show(
+        `New-follower window: ${days} day${days === 1 ? '' : 's'}`,
+        'success'
+      );
     });
 
     const list = this.contentZone.querySelector('.follower-notification__list');
     if (list) {
       // Newest first.
-      [...changes].sort((a, b) => b.detectedAt - a.detectedAt).forEach(c => list.appendChild(this.renderChangeRow(c)));
+      [...changes]
+        .sort((a, b) => b.detectedAt - a.detectedAt)
+        .forEach(c => list.appendChild(this.renderChangeRow(c)));
     }
   }
 
@@ -169,12 +218,18 @@ export class FollowerNotificationSettings extends SettingsSection {
     const row = document.createElement('div');
     row.className = 'ui-list__item follower-notification__item';
 
-    const identity = new UserIdentity({ pubkey: change.pubkey, size: 'medium', showHandle: true, clickable: true });
+    const identity = new UserIdentity({
+      pubkey: change.pubkey,
+      size: 'medium',
+      showHandle: true,
+      clickable: true,
+    });
     this.identities.push(identity);
     row.appendChild(identity.getElement());
 
     const label = document.createElement('span');
-    label.className = 'follower-notification__tag follower-notification__tag--new';
+    label.className =
+      'follower-notification__tag follower-notification__tag--new';
     label.textContent = 'now follows you';
     row.appendChild(label);
 
@@ -184,7 +239,10 @@ export class FollowerNotificationSettings extends SettingsSection {
   private async handleCheckNow(btn: HTMLButtonElement): Promise<void> {
     const service = this.getService();
     if (!service) {
-      ToastService.show('Addon is still starting up — try again in a moment', 'info');
+      ToastService.show(
+        'Addon is still starting up — try again in a moment',
+        'info'
+      );
       return;
     }
     btn.disabled = true;

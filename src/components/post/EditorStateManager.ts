@@ -38,7 +38,9 @@ export class EditorStateManager {
     textareaSelector: string,
     callbacks: EditorCallbacks
   ): void {
-    const textarea = document.querySelector(textareaSelector) as HTMLTextAreaElement;
+    const textarea = document.querySelector(
+      textareaSelector
+    ) as HTMLTextAreaElement;
     if (!textarea) return;
 
     const existingText = textarea.value.trim();
@@ -47,7 +49,7 @@ export class EditorStateManager {
     if (existingText.length === 0) {
       newContent = url;
     } else {
-      newContent = existingText + '\n\n' + url;
+      newContent = `${existingText}\n\n${url}`;
     }
 
     textarea.value = newContent;
@@ -74,9 +76,13 @@ export class EditorStateManager {
     textareaSelector: string,
     callbacks: EditorCallbacks
   ): void {
-    const textarea = document.querySelector(textareaSelector) as HTMLTextAreaElement;
+    const textarea = document.querySelector(
+      textareaSelector
+    ) as HTMLTextAreaElement;
     if (!textarea) return;
-    callbacks.onContentChange(insertTextAtCursor(textarea, textarea.value, emoji));
+    callbacks.onContentChange(
+      insertTextAtCursor(textarea, textarea.value, emoji)
+    );
   }
 
   /**
@@ -98,7 +104,7 @@ export class EditorStateManager {
     const validation = ContentValidationManager.validate({
       content,
       selectedRelays,
-      pollData
+      pollData,
     });
     postBtn.disabled = !validation.isValid;
   }
@@ -118,7 +124,7 @@ export class EditorStateManager {
     previewContainer.innerHTML = renderPostPreview({
       content: options.content,
       pubkey: options.pubkey,
-      isNSFW: options.isNSFW
+      isNSFW: options.isNSFW,
     });
   }
 }

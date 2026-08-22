@@ -88,10 +88,16 @@ export class RelayBrowserOrchestrator extends Orchestrator {
       const filter = {
         kinds: [1, 6, 20, 21, 22, 1068],
         since: this.newestTimestamp + 1,
-        limit: 50
+        limit: 50,
       };
 
-      const events = await this.transport.fetch([this.relayUrl], [filter], 8000, true, 'RelayBrowserOrch');
+      const events = await this.transport.fetch(
+        [this.relayUrl],
+        [filter],
+        8000,
+        true,
+        'RelayBrowserOrch'
+      );
 
       // Deduplicate against already-seen events
       const newEvents = events.filter(e => {
@@ -115,12 +121,17 @@ export class RelayBrowserOrchestrator extends Orchestrator {
       }
 
       // Filter content words
-      const { isContentWordFilterEnabled, filterContentWords, getFilterWords } = await import('../../addons/content-word-filter/index');
+      const { isContentWordFilterEnabled, filterContentWords, getFilterWords } =
+        await import('../../addons/content-word-filter/index');
       if (isContentWordFilterEnabled()) {
         const filtered = filterContentWords(newEvents);
         const removed = newEvents.length - filtered.length;
         if (removed > 0) {
-          diagLog('system', `Word filter: removed ${removed} polled notes from relay browser (${this.relayUrl})`, { words: getFilterWords() });
+          diagLog(
+            'system',
+            `Word filter: removed ${removed} polled notes from relay browser (${this.relayUrl})`,
+            { words: getFilterWords() }
+          );
         }
         return filtered;
       }
@@ -144,10 +155,16 @@ export class RelayBrowserOrchestrator extends Orchestrator {
       const filter = {
         kinds: [1, 6, 20, 21, 22, 1068],
         until: this.oldestTimestamp,
-        limit: this.PAGE_SIZE + 5
+        limit: this.PAGE_SIZE + 5,
       };
 
-      const events = await this.transport.fetch([this.relayUrl], [filter], 8000, true, 'RelayBrowserOrch');
+      const events = await this.transport.fetch(
+        [this.relayUrl],
+        [filter],
+        8000,
+        true,
+        'RelayBrowserOrch'
+      );
 
       // Deduplicate
       const unique = events.filter(e => {
@@ -161,11 +178,18 @@ export class RelayBrowserOrchestrator extends Orchestrator {
       unique.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
 
       // Filter content words
-      const { isContentWordFilterEnabled, filterContentWords, getFilterWords } = await import('../../addons/content-word-filter/index');
-      const filtered = isContentWordFilterEnabled() ? filterContentWords(unique) : unique;
+      const { isContentWordFilterEnabled, filterContentWords, getFilterWords } =
+        await import('../../addons/content-word-filter/index');
+      const filtered = isContentWordFilterEnabled()
+        ? filterContentWords(unique)
+        : unique;
       const removedCount = unique.length - filtered.length;
       if (removedCount > 0) {
-        diagLog('system', `Word filter: removed ${removedCount} notes from relay browser (${this.relayUrl})`, { words: getFilterWords() });
+        diagLog(
+          'system',
+          `Word filter: removed ${removedCount} notes from relay browser (${this.relayUrl})`,
+          { words: getFilterWords() }
+        );
       }
 
       const hasMore = filtered.length > this.PAGE_SIZE;
@@ -184,7 +208,10 @@ export class RelayBrowserOrchestrator extends Orchestrator {
 
       return { events: toReturn, hasMore };
     } catch (error) {
-      this.systemLogger.error('RelayBrowser', `Failed to fetch from ${this.relayUrl}`);
+      this.systemLogger.error(
+        'RelayBrowser',
+        `Failed to fetch from ${this.relayUrl}`
+      );
       return { events: [], hasMore: false };
     }
   }

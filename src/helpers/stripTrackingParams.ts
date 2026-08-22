@@ -16,7 +16,8 @@ const YT_KEEP_PARAMS = new Set(['v', 't', 'list']);
  * on `/watch?v=` so we also catch `youtu.be/<id>?si=…`, `music.youtube.com`,
  * `m.youtube.com`, etc.
  */
-const YOUTUBE_URL_REGEX = /https?:\/\/(?:[a-z0-9-]+\.)?(?:youtube\.com|youtu\.be)\/[^\s]*/gi;
+const YOUTUBE_URL_REGEX =
+  /https?:\/\/(?:[a-z0-9-]+\.)?(?:youtube\.com|youtu\.be)\/[^\s]*/gi;
 
 function cleanYouTubeUrl(raw: string): string {
   try {
@@ -27,7 +28,7 @@ function cleanYouTubeUrl(raw: string): string {
     });
     // Rebuild query string preserving the order of kept params
     const search = kept.length
-      ? '?' + kept.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&')
+      ? `?${kept.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&')}`
       : '';
     // Drop hash too — YouTube doesn't use it meaningfully
     return `${url.origin}${url.pathname}${search}`;
@@ -38,5 +39,5 @@ function cleanYouTubeUrl(raw: string): string {
 
 export function stripTrackingParams(text: string): string {
   if (!text) return text;
-  return text.replace(YOUTUBE_URL_REGEX, (match) => cleanYouTubeUrl(match));
+  return text.replace(YOUTUBE_URL_REGEX, match => cleanYouTubeUrl(match));
 }

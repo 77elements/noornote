@@ -79,7 +79,10 @@ export class NoteDraftService {
 
   public remove(id: string): void {
     const all = this.store.get<NoteDraft[]>(StorageKeys.NOTE_DRAFTS, []);
-    this.store.set(StorageKeys.NOTE_DRAFTS, all.filter(d => d.id !== id));
+    this.store.set(
+      StorageKeys.NOTE_DRAFTS,
+      all.filter(d => d.id !== id)
+    );
   }
 
   private newId(): string {

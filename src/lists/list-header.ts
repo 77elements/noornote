@@ -7,21 +7,28 @@
 import { escapeHtml } from '../helpers/escapeHtml';
 
 export interface DropdownItem {
-  action: string;   // data-action value, e.g. 'new-folder'
-  icon: string;     // SVG string
-  label: string;    // display text, e.g. 'Folder'
+  action: string; // data-action value, e.g. 'new-folder'
+  icon: string; // SVG string
+  label: string; // display text, e.g. 'Folder'
 }
 
 /**
  * Render the list header with title and "New" dropdown button.
  */
-export function renderListHeader(title: string, dropdownItems: DropdownItem[]): string {
-  const itemsHtml = dropdownItems.map(item => `
+export function renderListHeader(
+  title: string,
+  dropdownItems: DropdownItem[]
+): string {
+  const itemsHtml = dropdownItems
+    .map(
+      item => `
     <li class="custom-dropdown__item" data-action="${item.action}">
       ${item.icon}
       ${escapeHtml(item.label)}
     </li>
-  `).join('');
+  `
+    )
+    .join('');
 
   return `
     <div class="l-spread">
@@ -42,7 +49,10 @@ export function renderListHeader(title: string, dropdownItems: DropdownItem[]): 
 /**
  * Render breadcrumb navigation for folder views.
  */
-export function renderListBreadcrumb(rootLabel: string, folderName: string): string {
+export function renderListBreadcrumb(
+  rootLabel: string,
+  folderName: string
+): string {
   return `
     <div class="bookmark-breadcrumb">
       <span class="bookmark-breadcrumb__item" data-navigate="root">${escapeHtml(rootLabel)}</span>
@@ -63,7 +73,7 @@ export function bindHeaderDropdown(
   const dropdown = container.querySelector('[data-list-header-dropdown]');
   const trigger = dropdown?.querySelector('.custom-dropdown__trigger');
 
-  trigger?.addEventListener('click', (e) => {
+  trigger?.addEventListener('click', e => {
     e.stopPropagation();
     dropdown?.classList.toggle('custom-dropdown--open');
   });

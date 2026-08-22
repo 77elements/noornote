@@ -25,20 +25,26 @@
 
 import type { AddonContext, AddonRuntime } from '../AddonLoader';
 import type { ProfileRecognitionService as Service } from './ProfileRecognitionService';
-import type { ProfileBlinker as ProfileBlinkerT, TextBlinker as TextBlinkerT } from './profileBlinking';
+import type {
+  ProfileBlinker as ProfileBlinkerT,
+  TextBlinker as TextBlinkerT,
+} from './profileBlinking';
 
 export class ProfileRecognitionRuntime implements AddonRuntime {
   public service: Service | null = null;
-  public ProfileBlinker: (new (el: HTMLImageElement) => ProfileBlinkerT) | null = null;
+  public ProfileBlinker:
+    | (new (el: HTMLImageElement) => ProfileBlinkerT)
+    | null = null;
   public TextBlinker: (new (el: HTMLElement) => TextBlinkerT) | null = null;
 
   async init(_ctx: AddonContext): Promise<void> {
     if (this.service) return; // idempotent
 
-    const [{ ProfileRecognitionService }, { ProfileBlinker, TextBlinker }] = await Promise.all([
-      import('./ProfileRecognitionService'),
-      import('./profileBlinking'),
-    ]);
+    const [{ ProfileRecognitionService }, { ProfileBlinker, TextBlinker }] =
+      await Promise.all([
+        import('./ProfileRecognitionService'),
+        import('./profileBlinking'),
+      ]);
 
     this.service = ProfileRecognitionService.getInstance();
     this.ProfileBlinker = ProfileBlinker;

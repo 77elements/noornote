@@ -5,7 +5,11 @@
  */
 
 import { View } from '../views/View';
-import { FeedOrchestrator, type NewNotesInfo, type FeedLoadRequest } from '../../services/orchestration/FeedOrchestrator';
+import {
+  FeedOrchestrator,
+  type NewNotesInfo,
+  type FeedLoadRequest,
+} from '../../services/orchestration/FeedOrchestrator';
 import { UserService } from '../../services/UserService';
 import { RelayConfig } from '../../services/RelayConfig';
 import { AuthService } from '../../services/AuthService';
@@ -19,11 +23,18 @@ import { TimelineEventHandler } from './timeline-ui/TimelineEventHandler';
 import { TimelineRenderer } from './timeline-ui/TimelineRenderer';
 import { ISLStatsUpdater } from './timeline-features/ISLStatsUpdater';
 import { ScrollPositionManager } from './timeline-features/ScrollPositionManager';
-import { type TimelineConfig, relayFilterUrl, timeRangeOf } from './TimelineConfig';
+import {
+  type TimelineConfig,
+  relayFilterUrl,
+  timeRangeOf,
+} from './TimelineConfig';
 import { NoteUI } from '../ui/NoteUI';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { CacheManager } from '../../services/CacheManager';
-import { isMarketplaceEnabled, isTimelineListingsEnabled } from '../../addons/marketplace/index';
+import {
+  isMarketplaceEnabled,
+  isTimelineListingsEnabled,
+} from '../../addons/marketplace/index';
 
 export class Timeline extends View {
   private element: HTMLElement;
@@ -66,7 +77,9 @@ export class Timeline extends View {
   private nsfwPreferenceHandler?: () => void;
 
   // Marketplace timeline injection (addon, lazy-loaded)
-  private marketplaceInjector: import('../../addons/marketplace/MarketplaceTimelineInjector').MarketplaceTimelineInjector | null = null;
+  private marketplaceInjector:
+    | import('../../addons/marketplace/MarketplaceTimelineInjector').MarketplaceTimelineInjector
+    | null = null;
 
   constructor(userPubkey: string, config: TimelineConfig) {
     super(); // Call View base class constructor
@@ -86,19 +99,27 @@ export class Timeline extends View {
       // loaded note, so new posts are already there instead of forcing a stop at
       // the end. The default 200px is < half a card and effectively only fires at
       // the last note.
-      rootMargin: '0px 0px 1500px 0px'
+      rootMargin: '0px 0px 1500px 0px',
     });
 
     // Initialize managers
     this.stateManager = new TimelineStateManager();
-    this.lifecycleManager = new TimelineLifecycleManager(this.feedOrchestrator, this.infiniteScroll);
+    this.lifecycleManager = new TimelineLifecycleManager(
+      this.feedOrchestrator,
+      this.infiniteScroll
+    );
     this.uiStateHandler = new TimelineUIStateHandler(this.element);
     this.islStatsUpdater = new ISLStatsUpdater(this.element);
     this.scrollPositionManager = new ScrollPositionManager(this.element);
 
     // Initialize renderer. `trimDom: false` (ProfileView) keeps the complete
     // author timeline — full history + preserved scroll on return.
-    this.renderer = new TimelineRenderer(this.element, this.stateManager, this.uiStateHandler, !this.config.trimDom);
+    this.renderer = new TimelineRenderer(
+      this.element,
+      this.stateManager,
+      this.uiStateHandler,
+      !this.config.trimDom
+    );
 
     this.setupViewDropdown();
     this.setupInfiniteScroll();
@@ -115,9 +136,15 @@ export class Timeline extends View {
       this.config,
       {
         onRenderEvents: () => this.renderer.renderEvents(),
-        onAppendEvents: (events) => { this.renderer.appendNewEvents(events); this.islStatsUpdater.fetchAndUpdateStats(events); },
-        onPrependEvents: (events) => { this.renderer.prependNewEvents(events); this.islStatsUpdater.fetchAndUpdateStats(events); },
-        onInitializeTimeline: () => this.initializeTimeline()
+        onAppendEvents: events => {
+          this.renderer.appendNewEvents(events);
+          this.islStatsUpdater.fetchAndUpdateStats(events);
+        },
+        onPrependEvents: events => {
+          this.renderer.prependNewEvents(events);
+          this.islStatsUpdater.fetchAndUpdateStats(events);
+        },
+        onInitializeTimeline: () => this.initializeTimeline(),
       }
     );
 
@@ -131,7 +158,10 @@ export class Timeline extends View {
     this.setupDeleteListener();
 
     // Listen for pull-to-refresh events
-    this.pullRefreshSubscriptionId = this.eventBus.on('timeline:pull-refresh', () => this.handlePullToRefresh());
+    this.pullRefreshSubscriptionId = this.eventBus.on(
+      'timeline:pull-refresh',
+      () => this.handlePullToRefresh()
+    );
 
     // Listen for user account switches (not for a single-author ProfileView)
     if (this.config.relays.kind !== 'author-outbox') {
@@ -140,20 +170,26 @@ export class Timeline extends View {
 
     // Listen for marketplace addon toggle (main timeline only)
     if (this.config.marketplaceInjection) {
-      this.marketplaceToggleSubId = this.eventBus.on('marketplace:toggle', (data: { enabled: boolean }) => {
-        if (!data.enabled) {
-          this.stopMarketplaceInjector();
-        } else if (isTimelineListingsEnabled()) {
-          this.startMarketplaceInjector();
+      this.marketplaceToggleSubId = this.eventBus.on(
+        'marketplace:toggle',
+        (data: { enabled: boolean }) => {
+          if (!data.enabled) {
+            this.stopMarketplaceInjector();
+          } else if (isTimelineListingsEnabled()) {
+            this.startMarketplaceInjector();
+          }
         }
-      });
-      this.marketplaceTimelineToggleSubId = this.eventBus.on('marketplace:timeline-toggle', (data: { enabled: boolean }) => {
-        if (!data.enabled) {
-          this.stopMarketplaceInjector();
-        } else if (isMarketplaceEnabled()) {
-          this.startMarketplaceInjector();
+      );
+      this.marketplaceTimelineToggleSubId = this.eventBus.on(
+        'marketplace:timeline-toggle',
+        (data: { enabled: boolean }) => {
+          if (!data.enabled) {
+            this.stopMarketplaceInjector();
+          } else if (isMarketplaceEnabled()) {
+            this.startMarketplaceInjector();
+          }
         }
-      });
+      );
     }
 
     this.initializeTimeline();
@@ -181,45 +217,62 @@ export class Timeline extends View {
     this.nsfwPreferenceHandler = () => {
       this.renderer.renderEvents();
     };
-    window.addEventListener('nsfw-preference-changed', this.nsfwPreferenceHandler);
+    window.addEventListener(
+      'nsfw-preference-changed',
+      this.nsfwPreferenceHandler
+    );
   }
 
   /**
    * Setup listener for mute list updates
    */
   private setupMuteListener(): void {
-    this.muteUpdatedSubscriptionId = this.eventBus.on('mute:updated', async () => {
-      // Re-fetch feed with updated mute list
-      await this.eventHandler.handleRefreshClick();
-    });
+    this.muteUpdatedSubscriptionId = this.eventBus.on(
+      'mute:updated',
+      async () => {
+        // Re-fetch feed with updated mute list
+        await this.eventHandler.handleRefreshClick();
+      }
+    );
 
     // Re-fetch when the self-repost visibility setting is toggled
-    this.hideSelfRepostsSubscriptionId = this.eventBus.on('settings:hide-self-reposts-changed', async () => {
-      await this.eventHandler.handleRefreshClick();
-    });
+    this.hideSelfRepostsSubscriptionId = this.eventBus.on(
+      'settings:hide-self-reposts-changed',
+      async () => {
+        await this.eventHandler.handleRefreshClick();
+      }
+    );
 
     // Re-fetch when the highlights visibility setting is toggled
     // (global switch in Settings → UI, or per-user checkbox in ProfileView)
-    this.hideHighlightsSubscriptionId = this.eventBus.on('settings:hide-highlights-changed', async () => {
-      await this.eventHandler.handleRefreshClick();
-    });
+    this.hideHighlightsSubscriptionId = this.eventBus.on(
+      'settings:hide-highlights-changed',
+      async () => {
+        await this.eventHandler.handleRefreshClick();
+      }
+    );
   }
 
   /**
    * Setup listener for note deletions
    */
   private setupDeleteListener(): void {
-    this.noteDeletedSubscriptionId = this.eventBus.on('note:deleted', (data: { eventId: string }) => {
-      // Remove note from state
-      this.stateManager.removeEvent(data.eventId);
+    this.noteDeletedSubscriptionId = this.eventBus.on(
+      'note:deleted',
+      (data: { eventId: string }) => {
+        // Remove note from state
+        this.stateManager.removeEvent(data.eventId);
 
-      // Remove single note-card from DOM (no full re-render)
-      const card = this.element.querySelector<HTMLElement>(`.note-card[data-event-id="${data.eventId}"]`);
-      if (card) {
-        NoteUI.cleanupElement(card);
-        card.remove();
+        // Remove single note-card from DOM (no full re-render)
+        const card = this.element.querySelector<HTMLElement>(
+          `.note-card[data-event-id="${data.eventId}"]`
+        );
+        if (card) {
+          NoteUI.cleanupElement(card);
+          card.remove();
+        }
       }
-    });
+    );
   }
 
   /**
@@ -227,17 +280,20 @@ export class Timeline extends View {
    * When user switches accounts, clear caches and reinitialize timeline
    */
   private setupUserLoginListener(): void {
-    this.userLoginSubscriptionId = this.eventBus.on('user:login', (data: { pubkey: string }) => {
-      // Only reinitialize if pubkey actually changed
-      if (data.pubkey !== this.userPubkey) {
-        // Clear user-specific caches
-        CacheManager.getInstance().clearUserSpecificCaches();
+    this.userLoginSubscriptionId = this.eventBus.on(
+      'user:login',
+      (data: { pubkey: string }) => {
+        // Only reinitialize if pubkey actually changed
+        if (data.pubkey !== this.userPubkey) {
+          // Clear user-specific caches
+          CacheManager.getInstance().clearUserSpecificCaches();
 
-        // Update pubkey and reinitialize
-        this.userPubkey = data.pubkey;
-        this.reinitialize();
+          // Update pubkey and reinitialize
+          this.userPubkey = data.pubkey;
+          this.reinitialize();
+        }
       }
-    });
+    );
   }
 
   /**
@@ -300,7 +356,7 @@ export class Timeline extends View {
     const baseOptions = [
       { value: 'latest', label: 'Latest' },
       { value: 'latest-replies', label: 'Latest + Replies' },
-      { value: 'time-range', label: 'Time Range' }
+      { value: 'time-range', label: 'Time Range' },
     ];
 
     // Get user-configured read relays (excludes aggregator relays)
@@ -318,7 +374,7 @@ export class Timeline extends View {
       // Reflect the actual config so the remembered feed mode (Latest / Latest + Replies) shows.
       selectedValue: this.config.includeReplies ? 'latest-replies' : 'latest',
       onChange: (value: string) => this.eventHandler.handleViewChange(value),
-      className: 'timeline-view-dropdown'
+      className: 'timeline-view-dropdown',
     });
 
     // Register with lifecycle manager for cleanup
@@ -335,10 +391,15 @@ export class Timeline extends View {
    * Setup infinite scroll component
    */
   private setupInfiniteScroll(): void {
-    const loadTrigger = this.element.querySelector('.timeline-load-trigger') as HTMLElement;
+    const loadTrigger = this.element.querySelector(
+      '.timeline-load-trigger'
+    ) as HTMLElement;
     if (loadTrigger) {
       // Root = the actual scroll container, so rootMargin prefetch fires early.
-      this.infiniteScroll.observe(loadTrigger, loadTrigger.closest('.timeline-view__timeline'));
+      this.infiniteScroll.observe(
+        loadTrigger,
+        loadTrigger.closest('.timeline-view__timeline')
+      );
     }
   }
 
@@ -349,7 +410,7 @@ export class Timeline extends View {
     this.refreshButton = new RefreshButton({
       newNotesCount: 0,
       authorPubkeys: [],
-      onClick: () => this.eventHandler.handleRefreshClick()
+      onClick: () => this.eventHandler.handleRefreshClick(),
     });
 
     // Register with lifecycle manager for cleanup
@@ -378,7 +439,7 @@ export class Timeline extends View {
     link.textContent = 'Look for new notes';
     link.style.display = 'none'; // Hidden by default
 
-    link.addEventListener('click', (e) => {
+    link.addEventListener('click', e => {
       e.preventDefault();
       this.restartPolling();
     });
@@ -392,8 +453,12 @@ export class Timeline extends View {
     }
 
     // Show link when refresh button is hidden, hide when it's shown
-    const originalShowMethod = this.refreshButton!.show.bind(this.refreshButton);
-    const originalHideMethod = this.refreshButton!.hide.bind(this.refreshButton);
+    const originalShowMethod = this.refreshButton!.show.bind(
+      this.refreshButton
+    );
+    const originalHideMethod = this.refreshButton!.hide.bind(
+      this.refreshButton
+    );
 
     this.refreshButton!.show = () => {
       originalShowMethod();
@@ -414,14 +479,15 @@ export class Timeline extends View {
     const newestTimestamp = this.stateManager.getNewestTimestamp();
     if (pubkeys.length === 0 || newestTimestamp === 0) return;
 
-    const newEvents = await this.feedOrchestrator.pollOnce(
-      pubkeys,
-      newestTimestamp,
-      this.config.includeReplies,
-      relayFilterUrl(this.config),
-      this.config.muteExemptPubkey,
-      this.config.applyWordFilter
-    ) ?? [];
+    const newEvents =
+      (await this.feedOrchestrator.pollOnce(
+        pubkeys,
+        newestTimestamp,
+        this.config.includeReplies,
+        relayFilterUrl(this.config),
+        this.config.muteExemptPubkey,
+        this.config.applyWordFilter
+      )) ?? [];
 
     if (newEvents.length > 0) {
       const unique = this.stateManager.prependEvents(newEvents);
@@ -470,7 +536,10 @@ export class Timeline extends View {
    */
   private doStartPolling(initialDelayMs: number): void {
     const newestTimestamp = this.stateManager.getNewestTimestamp();
-    if (newestTimestamp === 0 || this.stateManager.getFollowingPubkeys().length === 0) {
+    if (
+      newestTimestamp === 0 ||
+      this.stateManager.getFollowingPubkeys().length === 0
+    ) {
       return;
     }
 
@@ -512,7 +581,9 @@ export class Timeline extends View {
         this.stateManager.setFollowingPubkeys(this.config.source.pubkeys);
       } else {
         // TimelineView: show following list + current user's own posts
-        let followingPubkeys = await this.userService.getUserFollowing(this.userPubkey);
+        let followingPubkeys = await this.userService.getUserFollowing(
+          this.userPubkey
+        );
 
         // Add current user to the list (to see own posts in timeline)
         if (!followingPubkeys.includes(this.userPubkey)) {
@@ -527,13 +598,18 @@ export class Timeline extends View {
           // end; as soon as they follow one person, this branch is skipped and
           // the real feed loads. Other views keep the plain empty error.
           if (this.config.curatedFallbackWhenEmpty) {
-            const { StarterFeedOrchestrator } = await import('../../services/orchestration/StarterFeedOrchestrator');
-            const curated = StarterFeedOrchestrator.getInstance().getStarterPubkeys();
+            const { StarterFeedOrchestrator } = await import(
+              '../../services/orchestration/StarterFeedOrchestrator'
+            );
+            const curated =
+              StarterFeedOrchestrator.getInstance().getStarterPubkeys();
             this.stateManager.setFollowingPubkeys(curated);
             this.uiStateHandler.showCuratedFallbackBanner();
           } else {
             this.uiStateHandler.hideSkeletonLoaders();
-            this.uiStateHandler.showError('No following list found. Please follow some users first.');
+            this.uiStateHandler.showError(
+              'No following list found. Please follow some users first.'
+            );
             return;
           }
         }
@@ -545,7 +621,7 @@ export class Timeline extends View {
         followingPubkeys: this.stateManager.getFollowingPubkeys(),
         includeReplies: this.config.includeReplies,
         timeWindowHours: 1, // Both ProfileView and TimelineView start with 1h (auto-load extends if needed)
-        config: this.config
+        config: this.config,
       };
       // Time range mode: use explicit since/until boundaries
       if (dateRange) {
@@ -559,7 +635,9 @@ export class Timeline extends View {
       if (this.config.muteExemptPubkey) {
         feedRequest.exemptFromMuteFilter = this.config.muteExemptPubkey; // Don't filter profile user's notes in ProfileView
       }
-      const result = await this.feedOrchestrator.loadInitialFeed(feedRequest) ?? { events: [], hasMore: false };
+      const result = (await this.feedOrchestrator.loadInitialFeed(
+        feedRequest
+      )) ?? { events: [], hasMore: false };
 
       this.stateManager.setEvents(result.events);
 
@@ -581,11 +659,12 @@ export class Timeline extends View {
       if (this.config.marketplaceInjection) {
         this.startMarketplaceInjector();
       }
-
     } catch (error) {
       console.error('Failed to initialize timeline:', error);
       this.uiStateHandler.hideSkeletonLoaders();
-      this.uiStateHandler.showError('Failed to load timeline. Please check your connection.');
+      this.uiStateHandler.showError(
+        'Failed to load timeline. Please check your connection.'
+      );
     } finally {
       this.stateManager.setLoading(false);
     }
@@ -618,7 +697,8 @@ export class Timeline extends View {
     // Show link after 10s (if RefreshButton is still hidden)
     this.lookForNotesLinkTimeout = window.setTimeout(() => {
       if (this.lookForNotesLink && this.refreshButton) {
-        const refreshButtonVisible = this.refreshButton.getElement().style.display !== 'none';
+        const refreshButtonVisible =
+          this.refreshButton.getElement().style.display !== 'none';
         if (!refreshButtonVisible) {
           this.lookForNotesLink.style.display = 'block';
         }
@@ -641,9 +721,11 @@ export class Timeline extends View {
   private async startMarketplaceInjector(): Promise<void> {
     if (!isMarketplaceEnabled() || !isTimelineListingsEnabled()) return;
 
-    const { MarketplaceTimelineInjector } = await import('../../addons/marketplace/MarketplaceTimelineInjector');
+    const { MarketplaceTimelineInjector } = await import(
+      '../../addons/marketplace/MarketplaceTimelineInjector'
+    );
     this.marketplaceInjector = MarketplaceTimelineInjector.getInstance();
-    await this.marketplaceInjector.start((card) => {
+    await this.marketplaceInjector.start(card => {
       const header = this.element.querySelector('.timeline-header');
       if (header?.nextSibling) {
         this.element.insertBefore(card, header.nextSibling);
@@ -661,7 +743,9 @@ export class Timeline extends View {
     }
     // Remove any already-injected listing cards (marked via data attribute —
     // listing cards rendered inside reposts must survive this cleanup)
-    this.element.querySelectorAll('[data-marketplace-injected]').forEach(card => card.remove());
+    this.element
+      .querySelectorAll('[data-marketplace-injected]')
+      .forEach(card => card.remove());
   }
 
   /**
@@ -701,7 +785,9 @@ export class Timeline extends View {
    * Resume background tasks (implements View base class)
    */
   public override resume(): void {
-    const loadTrigger = this.element.querySelector('.timeline-load-trigger') as HTMLElement;
+    const loadTrigger = this.element.querySelector(
+      '.timeline-load-trigger'
+    ) as HTMLElement;
 
     // Always restart polling (startPolling internally calls stopPolling first to avoid duplicates)
     this.lifecycleManager.resume(
@@ -753,7 +839,10 @@ export class Timeline extends View {
       this.eventBus.off(this.marketplaceTimelineToggleSubId);
     }
     if (this.nsfwPreferenceHandler) {
-      window.removeEventListener('nsfw-preference-changed', this.nsfwPreferenceHandler);
+      window.removeEventListener(
+        'nsfw-preference-changed',
+        this.nsfwPreferenceHandler
+      );
     }
     this.clearLookForNotesTimeout();
     this.marketplaceInjector?.destroy();

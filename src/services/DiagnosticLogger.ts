@@ -29,7 +29,14 @@ import { diagWebStore } from './DiagWebStore';
 
 // ===== Types =====
 
-export type DiagArea = 'lists' | 'dms' | 'crashes' | 'relays' | 'system' | 'addons' | 'wallet';
+export type DiagArea =
+  | 'lists'
+  | 'dms'
+  | 'crashes'
+  | 'relays'
+  | 'system'
+  | 'addons'
+  | 'wallet';
 
 interface DiagLogEntry {
   ts: string;
@@ -63,8 +70,8 @@ function parseDateFromFilename(name: string): string | null {
 
 /** Days between two YYYY-MM-DD date strings */
 function daysBetween(dateStr: string, referenceStr: string): number {
-  const d = new Date(dateStr + 'T00:00:00Z');
-  const r = new Date(referenceStr + 'T00:00:00Z');
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  const r = new Date(`${referenceStr}T00:00:00Z`);
   return Math.floor((r.getTime() - d.getTime()) / (24 * 60 * 60 * 1000));
 }
 
@@ -95,16 +102,25 @@ async function platformMkdir(dirPath: string): Promise<void> {
   if (platform.isElectron) return window.electronAPI!.fsMkdir(dirPath);
   if (platform.isCapacitor) {
     const { Filesystem, Directory } = await getCapFs();
-    await Filesystem.mkdir({ path: dirPath, directory: Directory.Data, recursive: true });
+    await Filesystem.mkdir({
+      path: dirPath,
+      directory: Directory.Data,
+      recursive: true,
+    });
     return;
   }
 }
 
-async function platformReadDir(dirPath: string): Promise<Array<{ name: string; isFile: boolean }>> {
+async function platformReadDir(
+  dirPath: string
+): Promise<Array<{ name: string; isFile: boolean }>> {
   if (platform.isElectron) return window.electronAPI!.readDir(dirPath);
   if (platform.isCapacitor) {
     const { Filesystem, Directory } = await getCapFs();
-    const result = await Filesystem.readdir({ path: dirPath, directory: Directory.Data });
+    const result = await Filesystem.readdir({
+      path: dirPath,
+      directory: Directory.Data,
+    });
     return result.files.map(f => ({ name: f.name, isFile: f.type === 'file' }));
   }
   throw new Error('platformReadDir: not available');
@@ -114,7 +130,11 @@ async function platformReadTextFile(filePath: string): Promise<string> {
   if (platform.isElectron) return window.electronAPI!.readTextFile(filePath);
   if (platform.isCapacitor) {
     const { Filesystem, Directory, Encoding } = await getCapFs();
-    const result = await Filesystem.readFile({ path: filePath, directory: Directory.Data, encoding: Encoding.UTF8 });
+    const result = await Filesystem.readFile({
+      path: filePath,
+      directory: Directory.Data,
+      encoding: Encoding.UTF8,
+    });
     return result.data as string;
   }
   throw new Error('platformReadTextFile: not available');
@@ -127,7 +147,10 @@ async function platformReadFile(filePath: string): Promise<Uint8Array> {
   }
   if (platform.isCapacitor) {
     const { Filesystem, Directory } = await getCapFs();
-    const result = await Filesystem.readFile({ path: filePath, directory: Directory.Data });
+    const result = await Filesystem.readFile({
+      path: filePath,
+      directory: Directory.Data,
+    });
     const binary = atob(result.data as string);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
@@ -136,46 +159,83 @@ async function platformReadFile(filePath: string): Promise<Uint8Array> {
   throw new Error('platformReadFile: not available');
 }
 
-async function platformWriteFile(filePath: string, data: Uint8Array): Promise<void> {
+async function platformWriteFile(
+  filePath: string,
+  data: Uint8Array
+): Promise<void> {
   if (platform.isElectron) return window.electronAPI!.writeFile(filePath, data);
   if (platform.isCapacitor) {
     const { Filesystem, Directory } = await getCapFs();
     let binary = '';
-    for (let i = 0; i < data.length; i++) binary += String.fromCharCode(data[i]!);
-    await Filesystem.writeFile({ path: filePath, data: btoa(binary), directory: Directory.Data, recursive: true });
+    for (let i = 0; i < data.length; i++)
+      binary += String.fromCharCode(data[i]!);
+    await Filesystem.writeFile({
+      path: filePath,
+      data: btoa(binary),
+      directory: Directory.Data,
+      recursive: true,
+    });
     return;
   }
 }
 
-async function platformAppendFile(filePath: string, contents: string): Promise<void> {
-  if (platform.isElectron) return window.electronAPI!.fsAppendFile(filePath, contents);
+async function platformAppendFile(
+  filePath: string,
+  contents: string
+): Promise<void> {
+  if (platform.isElectron)
+    return window.electronAPI!.fsAppendFile(filePath, contents);
   if (platform.isCapacitor) {
     const { Filesystem, Directory, Encoding } = await getCapFs();
     // appendFile doesn't support recursive, so ensure parent dir exists
     try {
-      await Filesystem.appendFile({ path: filePath, data: contents, directory: Directory.Data, encoding: Encoding.UTF8 });
+      await Filesystem.appendFile({
+        path: filePath,
+        data: contents,
+        directory: Directory.Data,
+        encoding: Encoding.UTF8,
+      });
     } catch {
       // File might not exist yet — create with writeFile then append won't fail next time
-      await Filesystem.writeFile({ path: filePath, data: contents, directory: Directory.Data, encoding: Encoding.UTF8, recursive: true });
+      await Filesystem.writeFile({
+        path: filePath,
+        data: contents,
+        directory: Directory.Data,
+        encoding: Encoding.UTF8,
+        recursive: true,
+      });
     }
     return;
   }
 }
 
 async function platformTruncateFile(filePath: string): Promise<void> {
-  if (platform.isElectron) return window.electronAPI!.writeTextFile(filePath, '');
+  if (platform.isElectron)
+    return window.electronAPI!.writeTextFile(filePath, '');
   if (platform.isCapacitor) {
     const { Filesystem, Directory, Encoding } = await getCapFs();
-    await Filesystem.writeFile({ path: filePath, data: '', directory: Directory.Data, encoding: Encoding.UTF8, recursive: true });
+    await Filesystem.writeFile({
+      path: filePath,
+      data: '',
+      directory: Directory.Data,
+      encoding: Encoding.UTF8,
+      recursive: true,
+    });
     return;
   }
 }
 
 async function platformRename(oldPath: string, newPath: string): Promise<void> {
-  if (platform.isElectron) return window.electronAPI!.fsRename(oldPath, newPath);
+  if (platform.isElectron)
+    return window.electronAPI!.fsRename(oldPath, newPath);
   if (platform.isCapacitor) {
     const { Filesystem, Directory } = await getCapFs();
-    await Filesystem.rename({ from: oldPath, to: newPath, directory: Directory.Data, toDirectory: Directory.Data });
+    await Filesystem.rename({
+      from: oldPath,
+      to: newPath,
+      directory: Directory.Data,
+      toDirectory: Directory.Data,
+    });
     return;
   }
 }
@@ -229,8 +289,20 @@ export class DiagnosticLogger {
 
   /** Diagnostic status for export UI */
   getStatus() {
-    const bufferSize = Array.from(this.buffers.values()).reduce((sum, b) => sum + b.length, 0);
-    return { initialized: this.initialized, logsDir: this.logsDir, error: this.initError, flushErrors: this.flushErrors, lastFlushError: this.lastFlushError, hasFs: platform.isElectron || platform.isCapacitor, hasWeb: supportsWebLogs(), bufferSize };
+    const bufferSize = Array.from(this.buffers.values()).reduce(
+      (sum, b) => sum + b.length,
+      0
+    );
+    return {
+      initialized: this.initialized,
+      logsDir: this.logsDir,
+      error: this.initError,
+      flushErrors: this.flushErrors,
+      lastFlushError: this.lastFlushError,
+      hasFs: platform.isElectron || platform.isCapacitor,
+      hasWeb: supportsWebLogs(),
+      bufferSize,
+    };
   }
 
   // ===== Initialization =====
@@ -247,7 +319,11 @@ export class DiagnosticLogger {
         this.initialized = true;
         // One-time cleanup: the legacy WebDiag localStorage ring buffer is
         // superseded by this IndexedDB backend. Clear it so it doesn't linger.
-        try { localStorage.removeItem('noornote_webdiag'); } catch { /* ignore */ }
+        try {
+          localStorage.removeItem('noornote_webdiag');
+        } catch {
+          /* ignore */
+        }
         // Flush anything buffered before init completed.
         this.flushAll();
       } catch (error) {
@@ -292,7 +368,10 @@ export class DiagnosticLogger {
 
       // Run rotation on startup, then hourly
       this.rotate();
-      this.rotationTimer = setInterval(() => this.rotate(), ROTATION_INTERVAL_MS);
+      this.rotationTimer = setInterval(
+        () => this.rotate(),
+        ROTATION_INTERVAL_MS
+      );
 
       // Migrate legacy files (one-time: lists.jsonl → lists-{date}.jsonl)
       this.migrateLegacyFiles();
@@ -321,7 +400,6 @@ export class DiagnosticLogger {
   }
 
   private _log(area: DiagArea, msg: string, data?: unknown): void {
-
     // Check for date rollover
     const now = todayDate();
     if (now !== this.currentDate) {
@@ -330,7 +408,12 @@ export class DiagnosticLogger {
       this.rotate();
     }
 
-    const entry: DiagLogEntry = { ts: new Date().toISOString(), area, msg, data };
+    const entry: DiagLogEntry = {
+      ts: new Date().toISOString(),
+      area,
+      msg,
+      data,
+    };
     const line = JSON.stringify(entry);
 
     const buffer = this.buffers.get(area) || [];
@@ -370,7 +453,7 @@ export class DiagnosticLogger {
 
     if (!this.logsDir) return;
     const filePath = `${this.logsDir}/${this.currentFilename(area)}`;
-    const payload = lines.join('\n') + '\n';
+    const payload = `${lines.join('\n')}\n`;
 
     try {
       await platformAppendFile(filePath, payload);
@@ -464,10 +547,15 @@ export class DiagnosticLogger {
   /**
    * Compress a JSONL file to gzip using CompressionStream API
    */
-  private async compressToArchive(srcPath: string, destPath: string): Promise<void> {
+  private async compressToArchive(
+    srcPath: string,
+    destPath: string
+  ): Promise<void> {
     const rawData = await platformReadFile(srcPath);
     const inputStream = new Blob([rawData as BlobPart]).stream();
-    const compressedStream = inputStream.pipeThrough(new CompressionStream('gzip'));
+    const compressedStream = inputStream.pipeThrough(
+      new CompressionStream('gzip')
+    );
 
     const reader = compressedStream.getReader();
     const chunks: Uint8Array[] = [];
@@ -505,7 +593,12 @@ export class DiagnosticLogger {
         if (parseDateFromFilename(entry.name)) continue;
 
         const area = entry.name.replace('.jsonl', '') as DiagArea;
-        if (!['lists', 'dms', 'crashes', 'relays', 'addons', 'wallet'].includes(area)) continue;
+        if (
+          !['lists', 'dms', 'crashes', 'relays', 'addons', 'wallet'].includes(
+            area
+          )
+        )
+          continue;
 
         const newName = `${area}-${today}.jsonl`;
         await platformRename(
@@ -529,7 +622,9 @@ export class DiagnosticLogger {
     await this.flush(area);
 
     try {
-      const content = await platformReadTextFile(`${this.logsDir}/${this.currentFilename(area)}`);
+      const content = await platformReadTextFile(
+        `${this.logsDir}/${this.currentFilename(area)}`
+      );
       return this.parseJsonl(content);
     } catch {
       return [];
@@ -554,7 +649,9 @@ export class DiagnosticLogger {
     this.buffers.delete(area);
 
     try {
-      await platformTruncateFile(`${this.logsDir}/${this.currentFilename(area)}`);
+      await platformTruncateFile(
+        `${this.logsDir}/${this.currentFilename(area)}`
+      );
     } catch {
       // Silent
     }
@@ -575,7 +672,14 @@ export class DiagnosticLogger {
   }
 
   getAllPaths(): Record<DiagArea, string | null> {
-    const areas: DiagArea[] = ['lists', 'dms', 'crashes', 'relays', 'addons', 'wallet'];
+    const areas: DiagArea[] = [
+      'lists',
+      'dms',
+      'crashes',
+      'relays',
+      'addons',
+      'wallet',
+    ];
     const paths: Record<string, string | null> = {};
     for (const area of areas) {
       paths[area] = this.getLogPath(area);
@@ -591,7 +695,13 @@ export class DiagnosticLogger {
     return content
       .split('\n')
       .filter(line => line.trim())
-      .map(line => { try { return JSON.parse(line); } catch { return null; } })
+      .map(line => {
+        try {
+          return JSON.parse(line);
+        } catch {
+          return null;
+        }
+      })
       .filter((e): e is DiagLogEntry => e !== null);
   }
 
@@ -651,6 +761,6 @@ if (typeof window !== 'undefined') {
     },
     paths: () => DiagnosticLogger.getInstance().getAllPaths(),
     dir: () => DiagnosticLogger.getInstance().getLogsDir(),
-    areas: ['lists', 'dms', 'crashes', 'relays', 'addons', 'wallet']
+    areas: ['lists', 'dms', 'crashes', 'relays', 'addons', 'wallet'],
   };
 }

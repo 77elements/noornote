@@ -70,12 +70,14 @@ export function subscribeNostrEvents(
     referencedPubkey,
     onEvent,
     onEose,
-    autoCloseAfterMs
+    autoCloseAfterMs,
   } = params;
 
   // Validate
   if (!relays || relays.length === 0) {
-    throw new Error('subscribeNostrEvents: relays parameter is required and must not be empty');
+    throw new Error(
+      'subscribeNostrEvents: relays parameter is required and must not be empty'
+    );
   }
 
   if (!onEvent) {
@@ -111,15 +113,18 @@ export function subscribeNostrEvents(
   let autoCloseTimer: number | undefined;
 
   // Build callbacks object - only include onEose if defined
-  const callbacks: { onEvent: (event: NostrEvent, relay: string) => void; onEose?: () => void } = {
-    onEvent: (event: NostrEvent, _relay: string) => onEvent(event)
+  const callbacks: {
+    onEvent: (event: NostrEvent, relay: string) => void;
+    onEose?: () => void;
+  } = {
+    onEvent: (event: NostrEvent, _relay: string) => onEvent(event),
   };
   if (onEose !== undefined) {
     callbacks.onEose = onEose;
   }
 
   // Start subscription (async)
-  transport.subscribe(relays, [filter], callbacks).then((closer) => {
+  transport.subscribe(relays, [filter], callbacks).then(closer => {
     if (isUnsubscribed) {
       // Already unsubscribed before subscription started
       closer.close();

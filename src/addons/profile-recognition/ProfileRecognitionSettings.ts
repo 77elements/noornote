@@ -9,16 +9,39 @@
 import { SettingsSection } from '../../components/settings/SettingsSection';
 import { Switch } from '../../components/ui/Switch';
 import { ToastService } from '../../services/ToastService';
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../services/PerAccountLocalStorage';
 import { TypedEventBus } from '../../core/TypedEventBus';
 
 // Window values: 0 = disabled, -1 = always, or number of days
 const WINDOW_OPTIONS = [
-  { value: 1, label: '1 Day', description: 'Show for 1 day after profile changes' },
-  { value: 7, label: '7 Days', description: 'Show for 1 week after profile changes' },
-  { value: 30, label: '30 Days', description: 'Show for 1 month after profile changes' },
-  { value: 90, label: '90 Days (Default)', description: 'Show for 3 months after profile changes' },
-  { value: -1, label: 'Always', description: 'Always show profile change indicators' }
+  {
+    value: 1,
+    label: '1 Day',
+    description: 'Show for 1 day after profile changes',
+  },
+  {
+    value: 7,
+    label: '7 Days',
+    description: 'Show for 1 week after profile changes',
+  },
+  {
+    value: 30,
+    label: '30 Days',
+    description: 'Show for 1 month after profile changes',
+  },
+  {
+    value: 90,
+    label: '90 Days (Default)',
+    description: 'Show for 3 months after profile changes',
+  },
+  {
+    value: -1,
+    label: 'Always',
+    description: 'Always show profile change indicators',
+  },
 ];
 
 export class ProfileRecognitionSettings extends SettingsSection {
@@ -29,7 +52,10 @@ export class ProfileRecognitionSettings extends SettingsSection {
   }
 
   private getCurrentWindow(): number {
-    return PerAccountLocalStorage.getInstance().get<number>(StorageKeys.PROFILE_RECOGNITION_WINDOW, 90);
+    return PerAccountLocalStorage.getInstance().get<number>(
+      StorageKeys.PROFILE_RECOGNITION_WINDOW,
+      90
+    );
   }
 
   /**
@@ -41,9 +67,14 @@ export class ProfileRecognitionSettings extends SettingsSection {
     const prev = this.getCurrentWindow();
     const wasEnabled = prev !== 0;
     const nowEnabled = value !== 0;
-    PerAccountLocalStorage.getInstance().set(StorageKeys.PROFILE_RECOGNITION_WINDOW, value);
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.PROFILE_RECOGNITION_WINDOW,
+      value
+    );
     if (wasEnabled !== nowEnabled) {
-      TypedEventBus.getInstance().emit('profile-recognition:addon-toggle', { enabled: nowEnabled });
+      TypedEventBus.getInstance().emit('profile-recognition:addon-toggle', {
+        enabled: nowEnabled,
+      });
     }
   }
 
@@ -57,7 +88,7 @@ export class ProfileRecognitionSettings extends SettingsSection {
     this.enableSwitch = new Switch({
       label: '',
       checked: enabled,
-      onChange: (checked) => {
+      onChange: checked => {
         if (checked) {
           this.saveWindow(90);
           ToastService.show('Profile Recognition enabled (90 days)', 'success');
@@ -66,9 +97,11 @@ export class ProfileRecognitionSettings extends SettingsSection {
           ToastService.show('Profile Recognition disabled', 'success');
         }
         // Show/hide options in content zone
-        const options = parentContainer.querySelector('.profile-recognition-options') as HTMLElement | null;
+        const options = parentContainer.querySelector(
+          '.profile-recognition-options'
+        ) as HTMLElement | null;
         if (options) options.style.display = checked ? '' : 'none';
-      }
+      },
     });
 
     const optionsHtml = WINDOW_OPTIONS.map(option => {
@@ -97,7 +130,9 @@ export class ProfileRecognitionSettings extends SettingsSection {
     this.enableSwitch.setupEventListeners(contentContainer);
 
     // Mount the rest into the addon's content zone (below the settings section)
-    const contentZone = parentContainer.querySelector('[data-addon-content="profile-recognition"]') as HTMLElement | null;
+    const contentZone = parentContainer.querySelector(
+      '[data-addon-content="profile-recognition"]'
+    ) as HTMLElement | null;
     if (contentZone) {
       contentZone.innerHTML = `
         <div class="profile-recognition-options" style="${enabled ? '' : 'display: none'}">
@@ -121,21 +156,26 @@ export class ProfileRecognitionSettings extends SettingsSection {
   }
 
   private bindListeners(contentContainer: HTMLElement): void {
-    const radioInputs = contentContainer.querySelectorAll<HTMLInputElement>('input[name="profile-recognition-window"]');
+    const radioInputs = contentContainer.querySelectorAll<HTMLInputElement>(
+      'input[name="profile-recognition-window"]'
+    );
     const modeOptions = contentContainer.querySelectorAll('.mode-option');
 
     radioInputs.forEach(input => {
       input.addEventListener('change', () => {
         if (input.checked) {
-          modeOptions.forEach(opt => opt.classList.remove('mode-option--active'));
+          modeOptions.forEach(opt =>
+            opt.classList.remove('mode-option--active')
+          );
           input.closest('.mode-option')?.classList.add('mode-option--active');
 
           const value = parseInt(input.value, 10);
           this.saveWindow(value);
 
-          const message = value === -1
-            ? 'Profile Recognition set to Always'
-            : `Profile Recognition set to ${value} day${value > 1 ? 's' : ''}`;
+          const message =
+            value === -1
+              ? 'Profile Recognition set to Always'
+              : `Profile Recognition set to ${value} day${value > 1 ? 's' : ''}`;
           ToastService.show(message, 'success');
         }
       });

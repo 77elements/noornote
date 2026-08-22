@@ -26,8 +26,12 @@ async function platformReadTextFile(filePath: string): Promise<string> {
   throw new Error('Platform API not available for readTextFile');
 }
 
-async function platformWriteTextFile(filePath: string, contents: string): Promise<void> {
-  if (platform.isElectron) return window.electronAPI!.writeTextFile(filePath, contents);
+async function platformWriteTextFile(
+  filePath: string,
+  contents: string
+): Promise<void> {
+  if (platform.isElectron)
+    return window.electronAPI!.writeTextFile(filePath, contents);
   throw new Error('Platform API not available for writeTextFile');
 }
 
@@ -87,7 +91,10 @@ export abstract class BaseFileStorage<T extends BaseFileData> {
 
   public async initialize(): Promise<void> {
     if (this.fileInitialized && this.userContextChanged()) {
-      this.systemLogger.info(this.getLoggerName(), 'User context changed, reinitializing...');
+      this.systemLogger.info(
+        this.getLoggerName(),
+        'User context changed, reinitializing...'
+      );
       this.resetInitialization();
     }
 
@@ -109,18 +116,27 @@ export abstract class BaseFileStorage<T extends BaseFileData> {
       const dirExists = await platformExists(userDir);
       if (!dirExists) {
         await platformMkdir(userDir);
-        this.systemLogger.info(this.getLoggerName(), `Created user directory: ${userDir}`);
+        this.systemLogger.info(
+          this.getLoggerName(),
+          `Created user directory: ${userDir}`
+        );
       }
 
       this.filePath = `${userDir}/${this.getFileName()}`;
       this.currentUserNpub = userNpub;
       this.fileInitialized = true;
 
-      this.systemLogger.info(this.getLoggerName(), `Initialized: ${this.filePath}`);
+      this.systemLogger.info(
+        this.getLoggerName(),
+        `Initialized: ${this.filePath}`
+      );
 
       await this.ensureFileExists();
     } catch (error) {
-      this.systemLogger.error(this.getLoggerName(), `Failed to initialize: ${error}`);
+      this.systemLogger.error(
+        this.getLoggerName(),
+        `Failed to initialize: ${error}`
+      );
       throw error;
     }
   }
@@ -132,8 +148,14 @@ export abstract class BaseFileStorage<T extends BaseFileData> {
 
     const fileExists = await platformExists(this.filePath);
     if (!fileExists) {
-      this.systemLogger.info(this.getLoggerName(), `Creating ${this.getFileName()} with defaults`);
-      await platformWriteTextFile(this.filePath, JSON.stringify(this.getDefaultData(), null, 2));
+      this.systemLogger.info(
+        this.getLoggerName(),
+        `Creating ${this.getFileName()} with defaults`
+      );
+      await platformWriteTextFile(
+        this.filePath,
+        JSON.stringify(this.getDefaultData(), null, 2)
+      );
     }
   }
 
@@ -150,10 +172,16 @@ export abstract class BaseFileStorage<T extends BaseFileData> {
       const content = await platformReadTextFile(this.filePath);
       const rawData: T = JSON.parse(content);
       const data = this.migrateData(rawData);
-      this.systemLogger.info(this.getLoggerName(), `Read data from ${this.getFileName()}`);
+      this.systemLogger.info(
+        this.getLoggerName(),
+        `Read data from ${this.getFileName()}`
+      );
       return data;
     } catch (error) {
-      this.systemLogger.error(this.getLoggerName(), `Failed to read data: ${error}`);
+      this.systemLogger.error(
+        this.getLoggerName(),
+        `Failed to read data: ${error}`
+      );
       return this.getDefaultData();
     }
   }
@@ -170,9 +198,15 @@ export abstract class BaseFileStorage<T extends BaseFileData> {
     try {
       data.lastModified = Math.floor(Date.now() / 1000);
       await platformWriteTextFile(this.filePath, JSON.stringify(data, null, 2));
-      this.systemLogger.info(this.getLoggerName(), `Wrote data to ${this.getFileName()}`);
+      this.systemLogger.info(
+        this.getLoggerName(),
+        `Wrote data to ${this.getFileName()}`
+      );
     } catch (error) {
-      this.systemLogger.error(this.getLoggerName(), `Failed to write data: ${error}`);
+      this.systemLogger.error(
+        this.getLoggerName(),
+        `Failed to write data: ${error}`
+      );
       throw error;
     }
   }

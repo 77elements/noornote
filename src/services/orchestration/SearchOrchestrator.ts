@@ -17,7 +17,7 @@ const SEARCH_RELAYS = [
   'wss://relay.nostrcheck.me',
   'wss://antiprimal.net',
   'wss://nostr.wine',
-  'wss://relay.noswhere.com'
+  'wss://relay.noswhere.com',
 ];
 
 export interface SearchOptions {
@@ -77,7 +77,11 @@ export class SearchOrchestrator extends Orchestrator {
    * Handle relay error
    */
   public onerror(relay: string, error: Error): void {
-    this.systemLogger.error('SearchOrchestrator', `Relay error: ${relay}`, error.message);
+    this.systemLogger.error(
+      'SearchOrchestrator',
+      `Relay error: ${relay}`,
+      error.message
+    );
   }
 
   /**
@@ -96,7 +100,7 @@ export class SearchOrchestrator extends Orchestrator {
     // Build search filter (NIP-50)
     const filter: NDKFilter = {
       kinds: [1], // Only short text notes
-      limit
+      limit,
     };
 
     // Add authors filter if provided
@@ -132,13 +136,27 @@ export class SearchOrchestrator extends Orchestrator {
     const searchRelays = this.getSearchRelays();
 
     const firstAuthor = authors?.[0];
-    const authorInfo = firstAuthor ? ` (author: ${firstAuthor.slice(0, 8)}...)` : '';
-    this.systemLogger.info('SearchOrchestrator', `🔍 Searching for: "${query}"${authorInfo} on ${searchRelays.length} relays`);
+    const authorInfo = firstAuthor
+      ? ` (author: ${firstAuthor.slice(0, 8)}...)`
+      : '';
+    this.systemLogger.info(
+      'SearchOrchestrator',
+      `🔍 Searching for: "${query}"${authorInfo} on ${searchRelays.length} relays`
+    );
 
     // Fetch events from search relays
-    const events = await this.transport.fetch(searchRelays, [filter], 5000, false, 'SearchOrch');
+    const events = await this.transport.fetch(
+      searchRelays,
+      [filter],
+      5000,
+      false,
+      'SearchOrch'
+    );
 
-    this.systemLogger.info('SearchOrchestrator', `✓ Found ${events.length} results`);
+    this.systemLogger.info(
+      'SearchOrchestrator',
+      `✓ Found ${events.length} results`
+    );
 
     return events;
   }
@@ -160,7 +178,7 @@ export class SearchOrchestrator extends Orchestrator {
   ): Promise<NostrEvent[]> {
     const filter: NDKFilter = {
       kinds: [1],
-      limit: options.limit || 20
+      limit: options.limit || 20,
     };
 
     if (until) {
@@ -176,7 +194,8 @@ export class SearchOrchestrator extends Orchestrator {
     let searchString = options.query;
     if (options.extensions) {
       // Add extensions (same as above)
-      const { domain, language, sentiment, nsfw, includeSpam } = options.extensions;
+      const { domain, language, sentiment, nsfw, includeSpam } =
+        options.extensions;
       if (domain) searchString += ` domain:${domain}`;
       if (language) searchString += ` language:${language}`;
       if (sentiment) searchString += ` sentiment:${sentiment}`;
@@ -188,7 +207,13 @@ export class SearchOrchestrator extends Orchestrator {
     filter.search = searchString;
 
     const searchRelays = this.getSearchRelays();
-    const events = await this.transport.fetch(searchRelays, [filter], 5000, false, 'SearchOrch');
+    const events = await this.transport.fetch(
+      searchRelays,
+      [filter],
+      5000,
+      false,
+      'SearchOrch'
+    );
 
     return events;
   }
@@ -197,14 +222,17 @@ export class SearchOrchestrator extends Orchestrator {
    * Search for user profiles using NIP-50 (kind:0 metadata)
    * Returns parsed profile objects
    */
-  public async searchProfiles(query: string, limit: number = 10): Promise<ProfileSearchResult[]> {
+  public async searchProfiles(
+    query: string,
+    limit: number = 10
+  ): Promise<ProfileSearchResult[]> {
     if (!query || query.length < 2) {
       return [];
     }
 
     const filter: NDKFilter = {
       kinds: [0], // Profile metadata
-      limit
+      limit,
     };
 
     // @ts-ignore - NIP-50 search field
@@ -212,10 +240,19 @@ export class SearchOrchestrator extends Orchestrator {
 
     const searchRelays = this.getSearchRelays();
 
-    this.systemLogger.info('SearchOrchestrator', `🔍 Searching profiles for: "${query}"`);
+    this.systemLogger.info(
+      'SearchOrchestrator',
+      `🔍 Searching profiles for: "${query}"`
+    );
 
     try {
-      const events = await this.transport.fetch(searchRelays, [filter], 5000, false, 'SearchOrch');
+      const events = await this.transport.fetch(
+        searchRelays,
+        [filter],
+        5000,
+        false,
+        'SearchOrch'
+      );
 
       // Parse profile events
       const profiles: ProfileSearchResult[] = [];
@@ -228,17 +265,23 @@ export class SearchOrchestrator extends Orchestrator {
             display_name: metadata.display_name,
             picture: metadata.picture,
             nip05: metadata.nip05,
-            about: metadata.about
+            about: metadata.about,
           });
         } catch {
           // Skip invalid profile JSON
         }
       }
 
-      this.systemLogger.info('SearchOrchestrator', `✓ Found ${profiles.length} profiles`);
+      this.systemLogger.info(
+        'SearchOrchestrator',
+        `✓ Found ${profiles.length} profiles`
+      );
       return profiles;
     } catch (error) {
-      this.systemLogger.error('SearchOrchestrator', `Profile search failed: ${error}`);
+      this.systemLogger.error(
+        'SearchOrchestrator',
+        `Profile search failed: ${error}`
+      );
       return [];
     }
   }

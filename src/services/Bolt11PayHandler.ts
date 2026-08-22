@@ -17,9 +17,11 @@ export function initBolt11PayHandler(): void {
   if (initialized) return;
   initialized = true;
 
-  document.addEventListener('click', async (event) => {
+  document.addEventListener('click', async event => {
     const target = event.target as HTMLElement;
-    const btn = target.closest('.bolt11-invoice__pay') as HTMLButtonElement | null;
+    const btn = target.closest(
+      '.bolt11-invoice__pay'
+    ) as HTMLButtonElement | null;
     if (!btn) return;
 
     const card = btn.closest('.bolt11-invoice') as HTMLElement | null;
@@ -70,7 +72,9 @@ async function payInvoice(invoice: string): Promise<void> {
   // NWC fallback
   const nwc = NWCService.getInstance();
   if (!nwc.isConnected()) {
-    throw new Error('No Lightning wallet connected. Configure NWC in Settings → Zaps.');
+    throw new Error(
+      'No Lightning wallet connected. Configure NWC in Settings → Zaps.'
+    );
   }
   await nwc.payInvoice(invoice);
 }

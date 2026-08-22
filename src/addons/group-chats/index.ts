@@ -1,18 +1,25 @@
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../services/PerAccountLocalStorage';
 
 const STORAGE_KEY = 'noornote_group_chats_enabled';
 const ARMADA_STORAGE_KEY = 'noornote_armada_enabled';
 
 export function isGroupChatsEnabled(): boolean {
   const perAccount = PerAccountLocalStorage.getInstance().get<boolean | null>(
-    StorageKeys.GROUP_CHATS_ENABLED, null
+    StorageKeys.GROUP_CHATS_ENABLED,
+    null
   );
   if (perAccount !== null) return perAccount;
   return localStorage.getItem(STORAGE_KEY) === 'true';
 }
 
 export function setGroupChatsEnabled(enabled: boolean): void {
-  PerAccountLocalStorage.getInstance().set(StorageKeys.GROUP_CHATS_ENABLED, enabled);
+  PerAccountLocalStorage.getInstance().set(
+    StorageKeys.GROUP_CHATS_ENABLED,
+    enabled
+  );
   localStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
 }
 
@@ -27,7 +34,8 @@ export function setGroupChatsEnabled(enabled: boolean): void {
  */
 export function isArmadaEnabled(): boolean {
   const perAccount = PerAccountLocalStorage.getInstance().get<boolean | null>(
-    StorageKeys.ARMADA_ENABLED, null
+    StorageKeys.ARMADA_ENABLED,
+    null
   );
   if (perAccount !== null) return perAccount;
   return localStorage.getItem(ARMADA_STORAGE_KEY) === 'true';

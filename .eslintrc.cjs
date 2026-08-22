@@ -28,6 +28,10 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'error',
     '@typescript-eslint/prefer-const': 'error',
     '@typescript-eslint/no-inferrable-types': 'off',
+    // MISFIRING under @typescript-eslint v6 + TS 5.x type info: removes legit
+    // downcast assertions (Element → HTMLInputElement) as "unnecessary" —
+    // broke the build 178× on 2026-08-22. Assertions here are intentional.
+    '@typescript-eslint/no-unnecessary-type-assertion': 'off',
 
     // Performance and best practices
     'no-console': ['warn', { allow: ['warn', 'error'] }],

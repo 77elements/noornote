@@ -5,11 +5,15 @@
  */
 
 import emojilibData from 'emojilib';
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../services/PerAccountLocalStorage';
 import { escapeHtmlAttr } from '../../helpers/escapeHtml';
 
 // Handle both default and named export patterns
-const emojilib: Record<string, string[]> = (emojilibData as any).default || emojilibData;
+const emojilib: Record<string, string[]> =
+  (emojilibData as any).default || emojilibData;
 
 export interface CustomEmojiEntry {
   shortcode: string;
@@ -38,43 +42,171 @@ const CATEGORY_DEFINITIONS: EmojiCategory[] = [
   {
     name: 'Smileys & People',
     icon: '😀',
-    keywords: ['face', 'smile', 'happy', 'sad', 'angry', 'person', 'hand', 'gesture', 'body', 'emotion', 'people', 'human', 'man', 'woman', 'boy', 'girl', 'baby', 'family']
+    keywords: [
+      'face',
+      'smile',
+      'happy',
+      'sad',
+      'angry',
+      'person',
+      'hand',
+      'gesture',
+      'body',
+      'emotion',
+      'people',
+      'human',
+      'man',
+      'woman',
+      'boy',
+      'girl',
+      'baby',
+      'family',
+    ],
   },
   {
     name: 'Animals & Nature',
     icon: '🐶',
-    keywords: ['animal', 'nature', 'plant', 'flower', 'tree', 'dog', 'cat', 'bird', 'fish', 'bug', 'insect', 'mammal', 'wildlife', 'pet', 'leaf', 'weather', 'sun', 'moon', 'star', 'ocean', 'earth', 'world']
+    keywords: [
+      'animal',
+      'nature',
+      'plant',
+      'flower',
+      'tree',
+      'dog',
+      'cat',
+      'bird',
+      'fish',
+      'bug',
+      'insect',
+      'mammal',
+      'wildlife',
+      'pet',
+      'leaf',
+      'weather',
+      'sun',
+      'moon',
+      'star',
+      'ocean',
+      'earth',
+      'world',
+    ],
   },
   {
     name: 'Food & Drink',
     icon: '🍔',
-    keywords: ['food', 'drink', 'fruit', 'vegetable', 'meal', 'dessert', 'sweet', 'meat', 'bread', 'rice', 'wine', 'beer', 'coffee', 'tea', 'restaurant', 'eat', 'hungry']
+    keywords: [
+      'food',
+      'drink',
+      'fruit',
+      'vegetable',
+      'meal',
+      'dessert',
+      'sweet',
+      'meat',
+      'bread',
+      'rice',
+      'wine',
+      'beer',
+      'coffee',
+      'tea',
+      'restaurant',
+      'eat',
+      'hungry',
+    ],
   },
   {
     name: 'Activities',
     icon: '⚽️',
-    keywords: ['sport', 'game', 'activity', 'ball', 'medal', 'trophy', 'music', 'art', 'entertainment', 'hobby', 'play', 'win', 'team']
+    keywords: [
+      'sport',
+      'game',
+      'activity',
+      'ball',
+      'medal',
+      'trophy',
+      'music',
+      'art',
+      'entertainment',
+      'hobby',
+      'play',
+      'win',
+      'team',
+    ],
   },
   {
     name: 'Travel & Places',
     icon: '✈️',
-    keywords: ['travel', 'place', 'vehicle', 'car', 'train', 'plane', 'boat', 'building', 'house', 'city', 'country', 'map', 'transport', 'vacation', 'trip', 'hotel']
+    keywords: [
+      'travel',
+      'place',
+      'vehicle',
+      'car',
+      'train',
+      'plane',
+      'boat',
+      'building',
+      'house',
+      'city',
+      'country',
+      'map',
+      'transport',
+      'vacation',
+      'trip',
+      'hotel',
+    ],
   },
   {
     name: 'Objects',
     icon: '💡',
-    keywords: ['object', 'tool', 'device', 'phone', 'computer', 'office', 'money', 'mail', 'book', 'pen', 'clothing', 'bag', 'glasses', 'watch', 'key', 'lock', 'light', 'electric']
+    keywords: [
+      'object',
+      'tool',
+      'device',
+      'phone',
+      'computer',
+      'office',
+      'money',
+      'mail',
+      'book',
+      'pen',
+      'clothing',
+      'bag',
+      'glasses',
+      'watch',
+      'key',
+      'lock',
+      'light',
+      'electric',
+    ],
   },
   {
     name: 'Symbols',
     icon: '❤️',
-    keywords: ['symbol', 'heart', 'love', 'arrow', 'sign', 'warning', 'number', 'letter', 'word', 'math', 'zodiac', 'religion', 'peace', 'recycle', 'check', 'cross', 'button']
+    keywords: [
+      'symbol',
+      'heart',
+      'love',
+      'arrow',
+      'sign',
+      'warning',
+      'number',
+      'letter',
+      'word',
+      'math',
+      'zodiac',
+      'religion',
+      'peace',
+      'recycle',
+      'check',
+      'cross',
+      'button',
+    ],
   },
   {
     name: 'Flags',
     icon: '🏴',
-    keywords: ['flag', 'country', 'nation', 'banner']
-  }
+    keywords: ['flag', 'country', 'nation', 'banner'],
+  },
 ];
 
 // Cache for categorized emojis
@@ -108,7 +240,7 @@ function initializeEmojiData(): void {
 
     // Check if this is a flag emoji (Regional Indicator Symbols U+1F1E6 to U+1F1FF)
     const codePoints = [...emoji].map(c => c.codePointAt(0) || 0);
-    const isFlag = codePoints.some(cp => cp >= 0x1F1E6 && cp <= 0x1F1FF);
+    const isFlag = codePoints.some(cp => cp >= 0x1f1e6 && cp <= 0x1f1ff);
 
     if (isFlag) {
       categorizedEmojis.get('Flags')!.push(emoji);
@@ -185,7 +317,8 @@ export class EmojiPicker {
     this.loadFrequentlyUsed();
     initializeEmojiData(); // Pre-initialize emoji data
     // Default-tab: custom if any custom emojis are provided, otherwise first native category
-    this.currentCategory = (options.customEmojis && options.customEmojis.length > 0) ? 'custom' : 0;
+    this.currentCategory =
+      options.customEmojis && options.customEmojis.length > 0 ? 'custom' : 0;
     this.overlay = this.createOverlay();
     this.container = this.createElement();
     this.overlay.appendChild(this.container);
@@ -196,7 +329,10 @@ export class EmojiPicker {
    */
   private loadFrequentlyUsed(): void {
     try {
-      this.frequentlyUsed = PerAccountLocalStorage.getInstance().get<string[]>(StorageKeys.EMOJI_FREQUENTLY_USED, []);
+      this.frequentlyUsed = PerAccountLocalStorage.getInstance().get<string[]>(
+        StorageKeys.EMOJI_FREQUENTLY_USED,
+        []
+      );
     } catch (error) {
       console.warn('Failed to load frequently used emojis:', error);
     }
@@ -213,7 +349,10 @@ export class EmojiPicker {
     // Keep only last 24
     this.frequentlyUsed = this.frequentlyUsed.slice(0, 24);
 
-    PerAccountLocalStorage.getInstance().set(StorageKeys.EMOJI_FREQUENTLY_USED, this.frequentlyUsed);
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.EMOJI_FREQUENTLY_USED,
+      this.frequentlyUsed
+    );
   }
 
   /**
@@ -228,14 +367,18 @@ export class EmojiPicker {
     searchInput.type = 'text';
     searchInput.className = 'emoji-picker-search input';
     searchInput.placeholder = 'Search emoji...';
-    searchInput.addEventListener('input', (e) => this.handleSearch((e.target as HTMLInputElement).value));
+    searchInput.addEventListener('input', e =>
+      this.handleSearch((e.target as HTMLInputElement).value)
+    );
 
     // Category tabs
     const tabs = document.createElement('div');
     tabs.className = 'tabs';
 
     // Custom emojis tab — only when the picker is given a non-empty custom pack
-    const hasCustom = !!(this.options.customEmojis && this.options.customEmojis.length > 0);
+    const hasCustom = !!(
+      this.options.customEmojis && this.options.customEmojis.length > 0
+    );
     if (hasCustom) {
       const firstCustom = this.options.customEmojis![0]!;
       const customTab = document.createElement('button');
@@ -263,10 +406,14 @@ export class EmojiPicker {
 
     // Initial grid render based on current category
     if (this.currentCategory === 'custom' && hasCustom) {
-      gridContainer.appendChild(this.createCustomEmojiSection(this.options.customEmojis!));
+      gridContainer.appendChild(
+        this.createCustomEmojiSection(this.options.customEmojis!)
+      );
     } else if (typeof this.currentCategory === 'number') {
       if (this.frequentlyUsed.length > 0 && this.currentCategory === 0) {
-        gridContainer.appendChild(this.createEmojiSection('Frequently Used', this.frequentlyUsed));
+        gridContainer.appendChild(
+          this.createEmojiSection('Frequently Used', this.frequentlyUsed)
+        );
       }
       const cat = CATEGORY_DEFINITIONS[this.currentCategory];
       if (cat) {
@@ -308,7 +455,9 @@ export class EmojiPicker {
   /**
    * Create a section for NIP-30 custom emojis
    */
-  private createCustomEmojiSection(customEmojis: CustomEmojiEntry[]): HTMLElement {
+  private createCustomEmojiSection(
+    customEmojis: CustomEmojiEntry[]
+  ): HTMLElement {
     const section = document.createElement('div');
     section.className = 'emoji-picker-category';
 
@@ -367,31 +516,46 @@ export class EmojiPicker {
     // Update active tab — match by data-category attribute
     const tabs = this.container.querySelectorAll<HTMLElement>('.tab');
     tabs.forEach(tab => {
-      tab.classList.toggle('tab--active', tab.dataset.category === String(category));
+      tab.classList.toggle(
+        'tab--active',
+        tab.dataset.category === String(category)
+      );
     });
 
     // Auto-scroll active tab into view
-    const activeTab = this.container.querySelector<HTMLElement>(`.tab[data-category="${category}"]`);
+    const activeTab = this.container.querySelector<HTMLElement>(
+      `.tab[data-category="${category}"]`
+    );
     if (activeTab) {
-      activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      activeTab.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center',
+      });
     }
 
     // Re-render grid
-    const gridContainer = this.container.querySelector('.emoji-picker-grid-container');
+    const gridContainer = this.container.querySelector(
+      '.emoji-picker-grid-container'
+    );
     if (!gridContainer) return;
 
     gridContainer.innerHTML = '';
 
     if (category === 'custom') {
       if (this.options.customEmojis && this.options.customEmojis.length > 0) {
-        gridContainer.appendChild(this.createCustomEmojiSection(this.options.customEmojis));
+        gridContainer.appendChild(
+          this.createCustomEmojiSection(this.options.customEmojis)
+        );
       }
       return;
     }
 
     // Add frequently used if on first native category
     if (this.frequentlyUsed.length > 0 && category === 0) {
-      gridContainer.appendChild(this.createEmojiSection('Frequently Used', this.frequentlyUsed));
+      gridContainer.appendChild(
+        this.createEmojiSection('Frequently Used', this.frequentlyUsed)
+      );
     }
 
     const def = CATEGORY_DEFINITIONS[category];
@@ -405,7 +569,9 @@ export class EmojiPicker {
    * Handle search using emojilib keywords
    */
   private handleSearch(query: string): void {
-    const gridContainer = this.container.querySelector('.emoji-picker-grid-container');
+    const gridContainer = this.container.querySelector(
+      '.emoji-picker-grid-container'
+    );
     if (!gridContainer) return;
 
     const trimmed = query.trim();
@@ -416,8 +582,9 @@ export class EmojiPicker {
     }
 
     // Custom NIP-30 emojis: substring match against the shortcode
-    const customMatches: CustomEmojiEntry[] = (this.options.customEmojis ?? [])
-      .filter(e => e.shortcode.toLowerCase().includes(trimmed.toLowerCase()));
+    const customMatches: CustomEmojiEntry[] = (
+      this.options.customEmojis ?? []
+    ).filter(e => e.shortcode.toLowerCase().includes(trimmed.toLowerCase()));
 
     // Native emojilib search
     const nativeResults = searchEmojis(trimmed, 100);
@@ -428,9 +595,12 @@ export class EmojiPicker {
       gridContainer.appendChild(this.createCustomEmojiSection(customMatches));
     }
 
-    const title = nativeResults.length > 0
-      ? `Search results for "${trimmed}"`
-      : (customMatches.length > 0 ? '' : `No results for "${trimmed}"`);
+    const title =
+      nativeResults.length > 0
+        ? `Search results for "${trimmed}"`
+        : customMatches.length > 0
+          ? ''
+          : `No results for "${trimmed}"`;
 
     if (nativeResults.length > 0 || customMatches.length === 0) {
       gridContainer.appendChild(this.createEmojiSection(title, nativeResults));
@@ -480,7 +650,7 @@ export class EmojiPicker {
   private positionPicker(trigger: HTMLElement): void {
     const rect = trigger.getBoundingClientRect();
     const pickerHeight = 450; // From CSS
-    const pickerWidth = 300;  // From CSS
+    const pickerWidth = 300; // From CSS
     const margin = 10;
 
     // Try to position above trigger, if not enough space, position below

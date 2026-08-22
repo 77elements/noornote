@@ -1,1 +1,7 @@
-export type { SearchModuleApi, SearchOptions, ProfileSearchResult, UserSearchResult, UserSearchCallbacks } from './contracts';
+export type {
+  SearchModuleApi,
+  SearchOptions,
+  ProfileSearchResult,
+  UserSearchResult,
+  UserSearchCallbacks,
+} from './contracts';

@@ -10,7 +10,10 @@ import { View } from './View';
 import { ArticleTimeline } from '../article/ArticleTimeline';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
 import { TypedEventBus } from '../../core/TypedEventBus';
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../services/PerAccountLocalStorage';
 
 /**
  * Build the descriptive subtitle for the main article view, reflecting the
@@ -58,21 +61,26 @@ export class ArticleTimelineView extends View {
       <div class="article-timeline-view__content"></div>
     `;
 
-    this.subtitleEl = this.container.querySelector('.article-timeline-view__subtitle');
+    this.subtitleEl = this.container.querySelector(
+      '.article-timeline-view__subtitle'
+    );
 
     // Main variant: 20-per-page grid, click routes through ViewNavigationController
     // (right-pane aware, opens article in SCC if modifier key / right-pane mode).
     this.timeline = new ArticleTimeline({
       variant: 'main',
-      onNavigate: (naddr, e) => getViewNavigationController().openView('article', naddr, e),
+      onNavigate: (naddr, e) =>
+        getViewNavigationController().openView('article', naddr, e),
     });
-    const contentArea = this.container.querySelector('.article-timeline-view__content');
+    const contentArea = this.container.querySelector(
+      '.article-timeline-view__content'
+    );
     contentArea?.appendChild(this.timeline.getElement());
 
     // Live-update subtitle when the FOAF degree changes.
     this.settingsSubscription = TypedEventBus.getInstance().on(
       'settings:article-foaf-degree-changed',
-      (payload) => {
+      payload => {
         if (payload.variant !== 'main' || !this.subtitleEl) return;
         this.subtitleEl.textContent = articleFeedSubtitle(payload.degree);
       }

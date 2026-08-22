@@ -13,7 +13,9 @@ export class FollowerNotificationRuntime implements AddonRuntime {
 
   async init(_ctx: AddonContext): Promise<void> {
     if (this.service) return; // idempotent
-    const { FollowerNotificationService } = await import('./FollowerNotificationService');
+    const { FollowerNotificationService } = await import(
+      './FollowerNotificationService'
+    );
     this.service = FollowerNotificationService.getInstance();
     await this.service.start();
   }

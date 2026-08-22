@@ -40,10 +40,10 @@ export class SccMediaFeed {
     this.gridEl.className = 'media-feed';
     this.container.appendChild(this.gridEl);
 
-    this.infiniteScroll = new InfiniteScroll(
-      () => this.loadMore(),
-      { loadingMessage: 'Loading media...', rootMargin: '400px' }
-    );
+    this.infiniteScroll = new InfiniteScroll(() => this.loadMore(), {
+      loadingMessage: 'Loading media...',
+      rootMargin: '400px',
+    });
 
     this.loadInitial();
   }
@@ -51,7 +51,8 @@ export class SccMediaFeed {
   private async loadInitial(): Promise<void> {
     const follows = getAllFollowedPubkeys();
     if (follows.length === 0) {
-      this.gridEl.innerHTML = '<p class="media-feed__empty">Follow users to see their media here.</p>';
+      this.gridEl.innerHTML =
+        '<p class="media-feed__empty">Follow users to see their media here.</p>';
       return;
     }
 
@@ -61,7 +62,8 @@ export class SccMediaFeed {
     this.gridEl.innerHTML = '';
 
     if (items.length === 0) {
-      this.gridEl.innerHTML = '<p class="media-feed__empty">No media from your follows yet.</p>';
+      this.gridEl.innerHTML =
+        '<p class="media-feed__empty">No media from your follows yet.</p>';
       return;
     }
 
@@ -114,12 +116,17 @@ export class SccMediaFeed {
 
     for (let i = 0; i < authors.length; i += batchSize) {
       const batch = authors.slice(i, i + batchSize);
-      const events = await fetchEvents([{
-        kinds: [20, 21, 22],
-        authors: batch,
-        until: this.oldestTimestamp,
-        limit: BATCH_SIZE + 10
-      }], 8000);
+      const events = await fetchEvents(
+        [
+          {
+            kinds: [20, 21, 22],
+            authors: batch,
+            until: this.oldestTimestamp,
+            limit: BATCH_SIZE + 10,
+          },
+        ],
+        8000
+      );
       allEvents.push(...events);
     }
 
@@ -141,7 +148,8 @@ export class SccMediaFeed {
 
     if (items.length > 0) {
       const last = items[items.length - 1]!;
-      this.oldestTimestamp = (last.event.created_at ?? this.oldestTimestamp) - 1;
+      this.oldestTimestamp =
+        (last.event.created_at ?? this.oldestTimestamp) - 1;
     }
 
     return items;
@@ -173,7 +181,9 @@ export class SccMediaFeed {
 
     let mediaHtml: string;
     if (isVideo) {
-      const posterAttr = item.media.thumbnail ? ` poster="${escapeHtmlAttr(item.media.thumbnail)}"` : '';
+      const posterAttr = item.media.thumbnail
+        ? ` poster="${escapeHtmlAttr(item.media.thumbnail)}"`
+        : '';
       mediaHtml = `
         <video src="${escapeHtmlAttr(item.media.url)}"${posterAttr} preload="none" muted></video>
         <div class="media-feed__play-icon"><svg width="24" height="24"><use href="#icon-play"/></svg></div>
@@ -208,10 +218,10 @@ export class SccMediaFeed {
 
     try {
       const profile = await this.userProfileService.getUserProfile(pubkey);
-      const fallback = (hexToNpub(pubkey) ?? pubkey).slice(0, 12) + '...';
+      const fallback = `${(hexToNpub(pubkey) ?? pubkey).slice(0, 12)}...`;
       el.textContent = profile?.name || profile?.display_name || fallback;
     } catch {
-      el.textContent = (hexToNpub(pubkey) ?? pubkey).slice(0, 12) + '...';
+      el.textContent = `${(hexToNpub(pubkey) ?? pubkey).slice(0, 12)}...`;
     }
   }
 

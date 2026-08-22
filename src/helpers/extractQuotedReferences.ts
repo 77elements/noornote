@@ -61,7 +61,7 @@ export function extractQuotedReferences(text: string): QuotedReference[] {
     quotes.push({
       type,
       id: fullMatch, // Keep full reference for fetching
-      fullMatch: fullMatch,
+      fullMatch,
       ...(fragment ? { fragment } : {}),
     });
   });
@@ -75,7 +75,7 @@ export function extractQuotedReferences(text: string): QuotedReference[] {
     quotes.push({
       type: 'event',
       id: fullMatch,
-      fullMatch
+      fullMatch,
     });
   });
 

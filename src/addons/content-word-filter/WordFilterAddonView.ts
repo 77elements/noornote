@@ -1,5 +1,8 @@
 import { View } from '../../components/views/View';
-import { ContentWordFilterSettings, mountWordFilterContent } from './ContentWordFilterSettings';
+import {
+  ContentWordFilterSettings,
+  mountWordFilterContent,
+} from './ContentWordFilterSettings';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { isContentWordFilterEnabled } from './index';
 
@@ -12,7 +15,8 @@ export class WordFilterAddonView extends View {
   constructor() {
     super();
     this.container = document.createElement('div');
-    this.container.className = 'view-content view-content--addon view-content--addon-wordfilter';
+    this.container.className =
+      'view-content view-content--addon view-content--addon-wordfilter';
     this.container.innerHTML = `
       <h1>Word Filter</h1>
       <section class="section" id="content-word-filter-settings-content"></section>
@@ -21,16 +25,21 @@ export class WordFilterAddonView extends View {
     this.settings = new ContentWordFilterSettings();
     this.settings.mount(this.container);
 
-    this.contentEl = this.container.querySelector('[data-addon-content="wordfilter"]') as HTMLElement;
+    this.contentEl = this.container.querySelector(
+      '[data-addon-content="wordfilter"]'
+    ) as HTMLElement;
 
     if (isContentWordFilterEnabled()) {
       this.mountContent();
     }
 
-    this.toggleSubId = TypedEventBus.getInstance().on('content-word-filter:toggle', (payload: { enabled: boolean }) => {
-      if (payload.enabled) this.mountContent();
-      else this.unmountContent();
-    });
+    this.toggleSubId = TypedEventBus.getInstance().on(
+      'content-word-filter:toggle',
+      (payload: { enabled: boolean }) => {
+        if (payload.enabled) this.mountContent();
+        else this.unmountContent();
+      }
+    );
   }
 
   private mountContent(): void {

@@ -8,7 +8,8 @@ export class ProfileRecognitionView extends View {
   constructor() {
     super();
     this.container = document.createElement('div');
-    this.container.className = 'view-content view-content--addon view-content--addon-profile-recognition';
+    this.container.className =
+      'view-content view-content--addon view-content--addon-profile-recognition';
     this.container.innerHTML = `
       <h1>Profile Recognition</h1>
       <section class="section" id="profile-recognition-settings-content"></section>

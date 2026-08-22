@@ -29,13 +29,18 @@ export class MoveDropdown {
     this.onSelect = options.onSelect;
 
     this.button = document.createElement('button');
-    this.button.className = 'btn btn--mini btn--secondary move-dropdown__trigger';
+    this.button.className =
+      'btn btn--mini btn--secondary move-dropdown__trigger';
     this.button.setAttribute('aria-label', options.ariaLabel || 'Move to...');
     this.button.title = 'Move to...';
     this.button.innerHTML = `<svg width="14" height="14"><use href="#icon-move"/></svg>`;
 
     this.boundClose = (e: MouseEvent) => {
-      if (this.dropdown && !this.dropdown.contains(e.target as Node) && !this.button.contains(e.target as Node)) {
+      if (
+        this.dropdown &&
+        !this.dropdown.contains(e.target as Node) &&
+        !this.button.contains(e.target as Node)
+      ) {
         this.close();
       }
     };
@@ -43,7 +48,7 @@ export class MoveDropdown {
       if (e.key === 'Escape') this.close();
     };
 
-    this.button.addEventListener('click', (e) => {
+    this.button.addEventListener('click', e => {
       e.stopPropagation();
       this.dropdown ? this.close() : this.open();
     });
@@ -64,7 +69,7 @@ export class MoveDropdown {
       const item = document.createElement('div');
       item.className = 'move-dropdown__item';
       item.textContent = target.label;
-      item.addEventListener('click', (e) => {
+      item.addEventListener('click', e => {
         e.stopPropagation();
         this.onSelect(target.id);
         this.close();

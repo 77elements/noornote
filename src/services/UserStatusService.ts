@@ -34,7 +34,10 @@ export class UserStatusService {
 
   /** Cache TTL: 5 minutes (a status changes rarely; PV re-renders are frequent) */
   private readonly CACHE_TTL = 5 * 60 * 1000;
-  private cache = new LRUCache<string | null>(getCacheSize(50, 30, 20), this.CACHE_TTL);
+  private cache = new LRUCache<string | null>(
+    getCacheSize(50, 30, 20),
+    this.CACHE_TTL
+  );
   private inFlight = new Map<string, Promise<string | null>>();
 
   private constructor() {
@@ -111,7 +114,9 @@ export class UserStatusService {
       }
 
       await this.transport.publishContent(signed);
-      diagLog('system', 'UserStatusService published status', { cleared: !content });
+      diagLog('system', 'UserStatusService published status', {
+        cleared: !content,
+      });
       SystemLogger.getInstance().success(
         'UserStatus',
         content ? `Status set: ${content}` : 'Status cleared'
@@ -119,7 +124,9 @@ export class UserStatusService {
       return true;
     } catch (error) {
       this.cache.set(user.pubkey, previous);
-      diagLog('system', 'UserStatusService publish failed', { error: String(error) });
+      diagLog('system', 'UserStatusService publish failed', {
+        error: String(error),
+      });
       ToastService.show('Failed to save status', 'error');
       return false;
     }
@@ -132,24 +139,39 @@ export class UserStatusService {
     ];
     let relays = baseRelays;
     try {
-      const outbound = await this.relayDiscovery.getCombinedRelays([pubkey], true);
+      const outbound = await this.relayDiscovery.getCombinedRelays(
+        [pubkey],
+        true
+      );
       relays = [...new Set([...baseRelays, ...outbound])];
-    } catch { /* base relays only */ }
+    } catch {
+      /* base relays only */
+    }
 
     try {
-      const events = await this.transport.fetch(relays, [{
-        kinds: [NIP38_KIND as number],
-        authors: [pubkey],
-        '#d': [STATUS_TYPE],
-        limit: 2,
-      }], 5000, false, 'UserStatusSvc');
+      const events = await this.transport.fetch(
+        relays,
+        [
+          {
+            kinds: [NIP38_KIND as number],
+            authors: [pubkey],
+            '#d': [STATUS_TYPE],
+            limit: 2,
+          },
+        ],
+        5000,
+        false,
+        'UserStatusSvc'
+      );
 
       const latest = events.sort((a, b) => b.created_at - a.created_at)[0];
       if (!latest) return null;
 
       // NIP-40: an expired status must be treated as gone (relays MAY delete,
       // not MUST). Non-numeric / missing = no expiry.
-      const expiration = latest.tags?.find((tag: string[]) => tag[0] === 'expiration')?.[1];
+      const expiration = latest.tags?.find(
+        (tag: string[]) => tag[0] === 'expiration'
+      )?.[1];
       if (expiration && Number(expiration) * 1000 <= Date.now()) return null;
 
       const content = latest.content?.trim();

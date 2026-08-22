@@ -5,7 +5,11 @@
  * Per-account persistence via PerAccountLocalStorage.
  */
 
-import { PerAccountLocalStorage, StorageKeys, type FontSizeScale } from './PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+  type FontSizeScale,
+} from './PerAccountLocalStorage';
 import { TypedEventBus } from '../core/TypedEventBus';
 
 const SCALES: FontSizeScale[] = ['small', 'default', 'large', 'x-large'];
@@ -19,7 +23,10 @@ export class FontSizeService {
   private constructor() {
     this.storage = PerAccountLocalStorage.getInstance();
     this.eventBus = TypedEventBus.getInstance();
-    this.currentScale = this.storage.get<FontSizeScale>(StorageKeys.FONT_SIZE_SCALE, 'default');
+    this.currentScale = this.storage.get<FontSizeScale>(
+      StorageKeys.FONT_SIZE_SCALE,
+      'default'
+    );
     this.applyClass();
   }
 
@@ -55,14 +62,21 @@ export class FontSizeService {
 
   /** Reload preference after account switch */
   public refresh(): void {
-    this.currentScale = this.storage.get<FontSizeScale>(StorageKeys.FONT_SIZE_SCALE, 'default');
+    this.currentScale = this.storage.get<FontSizeScale>(
+      StorageKeys.FONT_SIZE_SCALE,
+      'default'
+    );
     this.applyClass();
     this.eventBus.emit('font-size:changed', { scale: this.currentScale });
   }
 
   private applyClass(): void {
     const html = document.documentElement;
-    html.classList.remove('font-size--small', 'font-size--large', 'font-size--x-large');
+    html.classList.remove(
+      'font-size--small',
+      'font-size--large',
+      'font-size--x-large'
+    );
     if (this.currentScale !== 'default') {
       html.classList.add(`font-size--${this.currentScale}`);
     }

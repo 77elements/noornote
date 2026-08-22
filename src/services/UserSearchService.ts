@@ -57,7 +57,10 @@ export class UserSearchService {
    * @param callbacks - Callbacks for streaming results
    * @returns AbortController to cancel the search
    */
-  public search(query: string, callbacks: UserSearchCallbacks): AbortController {
+  public search(
+    query: string,
+    callbacks: UserSearchCallbacks
+  ): AbortController {
     const abortController = new AbortController();
 
     // Minimum query length
@@ -72,19 +75,23 @@ export class UserSearchService {
     // Run local and remote searches in parallel. allSettled + finally guarantees
     // onComplete fires exactly once even if either branch throws — so the UI's
     // loading flag is always cleared, never sticky.
-    const localPromise = this.searchLocal(queryLower, abortController.signal)
-      .then(localResults => {
-        if (!abortController.signal.aborted) {
-          callbacks.onLocalResults(localResults);
-        }
-      });
+    const localPromise = this.searchLocal(
+      queryLower,
+      abortController.signal
+    ).then(localResults => {
+      if (!abortController.signal.aborted) {
+        callbacks.onLocalResults(localResults);
+      }
+    });
 
-    const remotePromise = this.searchRemote(queryLower, abortController.signal)
-      .then(remoteResults => {
-        if (!abortController.signal.aborted) {
-          callbacks.onRemoteResults(remoteResults);
-        }
-      });
+    const remotePromise = this.searchRemote(
+      queryLower,
+      abortController.signal
+    ).then(remoteResults => {
+      if (!abortController.signal.aborted) {
+        callbacks.onRemoteResults(remoteResults);
+      }
+    });
 
     Promise.allSettled([localPromise, remotePromise]).finally(() => {
       if (!abortController.signal.aborted) {
@@ -98,7 +105,10 @@ export class UserSearchService {
   /**
    * Search through followed users (local, fast)
    */
-  private async searchLocal(query: string, signal: AbortSignal): Promise<UserSearchResult[]> {
+  private async searchLocal(
+    query: string,
+    signal: AbortSignal
+  ): Promise<UserSearchResult[]> {
     const follows = this.followAdapter.getBrowserItems();
 
     // Update follow pubkeys cache
@@ -115,7 +125,8 @@ export class UserSearchService {
     for (const follow of follows) {
       if (signal.aborted) break;
 
-      const promise = this.userProfileService.getUserProfile(follow.pubkey)
+      const promise = this.userProfileService
+        .getUserProfile(follow.pubkey)
         .then(profile => {
           if (signal.aborted) return;
 
@@ -141,11 +152,17 @@ export class UserSearchService {
   /**
    * Search via NIP-50 relays (remote, slower)
    */
-  private async searchRemote(query: string, signal: AbortSignal): Promise<UserSearchResult[]> {
+  private async searchRemote(
+    query: string,
+    signal: AbortSignal
+  ): Promise<UserSearchResult[]> {
     if (signal.aborted) return [];
 
     try {
-      const remoteProfiles = await this.searchOrchestrator.searchProfiles(query, 15);
+      const remoteProfiles = await this.searchOrchestrator.searchProfiles(
+        query,
+        15
+      );
 
       if (signal.aborted) return [];
 
@@ -153,7 +170,10 @@ export class UserSearchService {
       const results: UserSearchResult[] = remoteProfiles
         .filter(p => !this.followPubkeys.has(p.pubkey)) // Exclude already-shown follows
         .map(p => {
-          const result: UserSearchResult = { pubkey: p.pubkey, isFollowing: false };
+          const result: UserSearchResult = {
+            pubkey: p.pubkey,
+            isFollowing: false,
+          };
           if (p.name) result.name = p.name;
           if (p.display_name) result.displayName = p.display_name;
           if (p.picture) result.picture = p.picture;
@@ -175,15 +195,20 @@ export class UserSearchService {
     const displayName = (profile.display_name || '').toLowerCase();
     const nip05 = (profile.nip05 || '').toLowerCase();
 
-    return name.includes(query) ||
-           displayName.includes(query) ||
-           nip05.includes(query);
+    return (
+      name.includes(query) ||
+      displayName.includes(query) ||
+      nip05.includes(query)
+    );
   }
 
   /**
    * Convert UserProfile to UserSearchResult
    */
-  private profileToSearchResult(profile: UserProfile, isFollowing: boolean): UserSearchResult {
+  private profileToSearchResult(
+    profile: UserProfile,
+    isFollowing: boolean
+  ): UserSearchResult {
     const result: UserSearchResult = { pubkey: profile.pubkey, isFollowing };
     if (profile.name) result.name = profile.name;
     if (profile.display_name) result.displayName = profile.display_name;
@@ -195,7 +220,10 @@ export class UserSearchService {
   /**
    * Sort results by relevance
    */
-  private sortResults(results: UserSearchResult[], query: string): UserSearchResult[] {
+  private sortResults(
+    results: UserSearchResult[],
+    query: string
+  ): UserSearchResult[] {
     return results.sort((a, b) => {
       const aName = extractDisplayName(a as any) || '';
       const bName = extractDisplayName(b as any) || '';
@@ -209,8 +237,12 @@ export class UserSearchService {
       if (bExact && !aExact) return 1;
 
       // Starts with query second
-      const aStarts = aLower.startsWith(query) || (a.name?.toLowerCase().startsWith(query) ?? false);
-      const bStarts = bLower.startsWith(query) || (b.name?.toLowerCase().startsWith(query) ?? false);
+      const aStarts =
+        aLower.startsWith(query) ||
+        (a.name?.toLowerCase().startsWith(query) ?? false);
+      const bStarts =
+        bLower.startsWith(query) ||
+        (b.name?.toLowerCase().startsWith(query) ?? false);
       if (aStarts && !bStarts) return -1;
       if (bStarts && !aStarts) return 1;
 

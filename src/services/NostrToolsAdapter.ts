@@ -26,7 +26,7 @@ import {
   getEventHash,
   generateSecretKey,
   type UnsignedEvent as NostrToolsUnsignedEvent,
-  type Event as NostrToolsEvent
+  type Event as NostrToolsEvent,
 } from 'nostr-tools';
 import type { DecodedResult } from 'nostr-tools/nip19';
 import * as nip44 from 'nostr-tools/nip44';
@@ -71,11 +71,15 @@ export function encodeNpub(pubkey: string): string {
 /**
  * Encode event ID to nevent (with optional relay hints and author)
  */
-export function encodeNevent(eventId: string, relays?: string[], author?: string): string {
+export function encodeNevent(
+  eventId: string,
+  relays?: string[],
+  author?: string
+): string {
   return nip19.neventEncode({
     id: eventId,
     relays: relays || [],
-    author
+    author,
   });
 }
 
@@ -99,7 +103,7 @@ export function encodeNaddr(params: {
     pubkey: params.pubkey,
     kind: params.kind,
     identifier: params.identifier,
-    relays: params.relays || []
+    relays: params.relays || [],
   });
 }
 
@@ -129,7 +133,10 @@ export function calculateEventHash(event: UnsignedEvent): string {
 /**
  * Sign event with private key
  */
-export function signEventWithKey(event: UnsignedEvent, privateKeyHex: string): string {
+export function signEventWithKey(
+  event: UnsignedEvent,
+  privateKeyHex: string
+): string {
   const signedEvent = finalizeEvent(event, hexToBytes(privateKeyHex));
   return signedEvent.sig;
 }
@@ -187,8 +194,15 @@ export { getPublicKey };
  * @param privateKey - Sender's private key (hex)
  * @returns Encrypted payload
  */
-export function nip44Encrypt(plaintext: string, recipientPubkey: string, privateKey: string): string {
-  const conversationKey = nip44.getConversationKey(hexToBytes(privateKey), recipientPubkey);
+export function nip44Encrypt(
+  plaintext: string,
+  recipientPubkey: string,
+  privateKey: string
+): string {
+  const conversationKey = nip44.getConversationKey(
+    hexToBytes(privateKey),
+    recipientPubkey
+  );
   return nip44.encrypt(plaintext, conversationKey);
 }
 
@@ -199,8 +213,15 @@ export function nip44Encrypt(plaintext: string, recipientPubkey: string, private
  * @param privateKey - Recipient's private key (hex)
  * @returns Decrypted plaintext
  */
-export function nip44Decrypt(ciphertext: string, senderPubkey: string, privateKey: string): string {
-  const conversationKey = nip44.getConversationKey(hexToBytes(privateKey), senderPubkey);
+export function nip44Decrypt(
+  ciphertext: string,
+  senderPubkey: string,
+  privateKey: string
+): string {
+  const conversationKey = nip44.getConversationKey(
+    hexToBytes(privateKey),
+    senderPubkey
+  );
   return nip44.decrypt(ciphertext, conversationKey);
 }
 
@@ -216,7 +237,10 @@ export function nip44Decrypt(ciphertext: string, senderPubkey: string, privateKe
  * @param conversationKey - 32-byte pre-derived symmetric key (Uint8Array)
  * @returns Decrypted plaintext
  */
-export function nip44DecryptWithKey(ciphertext: string, conversationKey: Uint8Array): string {
+export function nip44DecryptWithKey(
+  ciphertext: string,
+  conversationKey: Uint8Array
+): string {
   return nip44.decrypt(ciphertext, conversationKey);
 }
 
@@ -225,6 +249,9 @@ export function nip44DecryptWithKey(ciphertext: string, conversationKey: Uint8Ar
  * Used by Concord V2 stream keys: `getConversationKey(streamSk, streamPk)`
  * produces the self-ECDH key that encrypts a channel's gift wraps.
  */
-export function nip44ConversationKey(privateKey: string, publicKey: string): Uint8Array {
+export function nip44ConversationKey(
+  privateKey: string,
+  publicKey: string
+): Uint8Array {
   return nip44.getConversationKey(hexToBytes(privateKey), publicKey);
 }

@@ -76,7 +76,9 @@ export class OnboardingComponent {
     `;
 
     // Initialize public timeline
-    const timelineContainer = primaryContent.querySelector('.public-timeline__container') as HTMLElement;
+    const timelineContainer = primaryContent.querySelector(
+      '.public-timeline__container'
+    ) as HTMLElement;
     if (timelineContainer) {
       this.publicTimeline = new PublicTimelineComponent(timelineContainer);
     }
@@ -93,7 +95,9 @@ export class OnboardingComponent {
     if (!primaryContent) return;
 
     // "Create my account" button → Start wizard directly
-    const newToNostrBtn = primaryContent.querySelector('[data-action="new-to-nostr"]');
+    const newToNostrBtn = primaryContent.querySelector(
+      '[data-action="new-to-nostr"]'
+    );
     if (newToNostrBtn) {
       newToNostrBtn.addEventListener('click', async () => {
         const { AccountSetupWizard } = await import('./AccountSetupWizard');
@@ -122,7 +126,9 @@ export class OnboardingComponent {
     if (!sccBody || !sccTabs) return;
 
     // Save original SCC content for restoration
-    const systemLogTab = sccTabs.querySelector('[data-tab="system-log"]') as HTMLElement;
+    const systemLogTab = sccTabs.querySelector(
+      '[data-tab="system-log"]'
+    ) as HTMLElement;
     if (systemLogTab) {
       systemLogTab.style.display = 'none';
     }
@@ -135,14 +141,17 @@ export class OnboardingComponent {
     sccTabs.prepend(onboardingTab);
 
     // Deactivate system-log tab
-    const systemLogContent = sccBody.querySelector('[data-tab-content="system-log"]') as HTMLElement;
+    const systemLogContent = sccBody.querySelector(
+      '[data-tab-content="system-log"]'
+    ) as HTMLElement;
     if (systemLogContent) {
       systemLogContent.classList.remove('tab-content--active');
     }
 
     // Create onboarding content
     const onboardingContent = document.createElement('div');
-    onboardingContent.className = 'tab-content tab-content--active scc-onboarding';
+    onboardingContent.className =
+      'tab-content tab-content--active scc-onboarding';
     onboardingContent.dataset.tabContent = 'welcome-onboarding';
     onboardingContent.innerHTML = `
       <h3 class="scc-onboarding__title">What is Nostr?</h3>
@@ -190,13 +199,17 @@ export class OnboardingComponent {
     sccBody.prepend(onboardingContent);
 
     // Setup carousel navigation
-    const carousel = onboardingContent.querySelector('.nn-carousel') as HTMLElement;
+    const carousel = onboardingContent.querySelector(
+      '.nn-carousel'
+    ) as HTMLElement;
     if (carousel) {
       setupCarouselNavigation(carousel);
     }
 
     // Carousel image click to enlarge
-    const carouselImage = onboardingContent.querySelector('.nn-carousel-image') as HTMLImageElement;
+    const carouselImage = onboardingContent.querySelector(
+      '.nn-carousel-image'
+    ) as HTMLImageElement;
     if (carouselImage) {
       carouselImage.style.cursor = 'pointer';
       carouselImage.addEventListener('click', () => {
@@ -215,25 +228,33 @@ export class OnboardingComponent {
     if (!sccBody || !sccTabs) return;
 
     // Remove onboarding tab
-    const onboardingTab = sccTabs.querySelector('[data-tab="welcome-onboarding"]');
+    const onboardingTab = sccTabs.querySelector(
+      '[data-tab="welcome-onboarding"]'
+    );
     if (onboardingTab) {
       onboardingTab.remove();
     }
 
     // Remove onboarding content
-    const onboardingContent = sccBody.querySelector('[data-tab-content="welcome-onboarding"]');
+    const onboardingContent = sccBody.querySelector(
+      '[data-tab-content="welcome-onboarding"]'
+    );
     if (onboardingContent) {
       onboardingContent.remove();
     }
 
     // Restore system log tab visibility and active state
-    const systemLogTab = sccTabs.querySelector('[data-tab="system-log"]') as HTMLElement;
+    const systemLogTab = sccTabs.querySelector(
+      '[data-tab="system-log"]'
+    ) as HTMLElement;
     if (systemLogTab) {
       systemLogTab.style.display = '';
       systemLogTab.classList.add('tab--active');
     }
 
-    const systemLogContent = sccBody.querySelector('[data-tab-content="system-log"]') as HTMLElement;
+    const systemLogContent = sccBody.querySelector(
+      '[data-tab-content="system-log"]'
+    ) as HTMLElement;
     if (systemLogContent) {
       systemLogContent.classList.add('tab-content--active');
     }

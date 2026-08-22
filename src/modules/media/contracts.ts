@@ -9,8 +9,14 @@ export interface MediaUploadResult {
 }
 
 export interface MediaModuleApi {
-  uploadFile(file: File, onProgress?: (progress: number) => void): Promise<MediaUploadResult>;
-  uploadFiles(files: File[], onProgress?: (progress: number) => void): Promise<MediaUploadResult[]>;
+  uploadFile(
+    file: File,
+    onProgress?: (progress: number) => void
+  ): Promise<MediaUploadResult>;
+  uploadFiles(
+    files: File[],
+    onProgress?: (progress: number) => void
+  ): Promise<MediaUploadResult[]>;
   cancelUpload(): void;
 
   // VideoService

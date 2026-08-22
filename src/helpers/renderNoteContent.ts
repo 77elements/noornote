@@ -13,7 +13,10 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { renderMediaContent, type MediaContent } from './renderMediaContent';
-import { renderQuotedReferencesPlaceholder, type QuotedReference } from './renderQuotedReferencesPlaceholder';
+import {
+  renderQuotedReferencesPlaceholder,
+  type QuotedReference,
+} from './renderQuotedReferencesPlaceholder';
 
 export interface ProcessedNoteContent {
   html: string;
@@ -21,7 +24,10 @@ export interface ProcessedNoteContent {
   quotedReferences: QuotedReference[];
 }
 
-export function renderNoteContent(content: ProcessedNoteContent, event?: NostrEvent): string {
+export function renderNoteContent(
+  content: ProcessedNoteContent,
+  event?: NostrEvent
+): string {
   // Check for content-warning tag (NIP-36)
   const isNSFW = event?.tags.some(tag => tag[0] === 'content-warning') || false;
 
@@ -31,7 +37,7 @@ export function renderNoteContent(content: ProcessedNoteContent, event?: NostrEv
       media: content.media,
       isNSFW,
       ...(event?.id && { eventId: event.id }),
-      ...(event?.pubkey && { authorPubkey: event.pubkey })
+      ...(event?.pubkey && { authorPubkey: event.pubkey }),
     })}
     ${renderQuotedReferencesPlaceholder(content.quotedReferences)}
   `;

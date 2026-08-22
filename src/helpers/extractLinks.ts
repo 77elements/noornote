@@ -26,13 +26,13 @@ export function extractLinks(text: string): LinkPreview[] {
   urls.forEach(rawUrl => {
     // Clean trailing characters that are often part of markdown/html syntax
     // Remove trailing: > ) , . ! ? ; :
-    let url = rawUrl.replace(/[>),.\!?;:]+$/, '');
+    const url = rawUrl.replace(/[>),.\!?;:]+$/, '');
 
     try {
       const parsed = new URL(url);
       links.push({
-        url: url,
-        domain: parsed.hostname
+        url,
+        domain: parsed.hostname,
       });
     } catch (error) {
       console.warn('Invalid URL:', rawUrl);

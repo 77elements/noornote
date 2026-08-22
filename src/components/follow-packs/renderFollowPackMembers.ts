@@ -26,7 +26,7 @@ export async function renderFollowPackMembers(
   const profileService = UserProfileService.getInstance();
   const [profiles, { getFollowItems, setFollowItems }] = await Promise.all([
     profileService.getUserProfiles(pack.userPubkeys),
-    import('../../lists/follows')
+    import('../../lists/follows'),
   ]);
 
   const followedPubkeys = new Set(getFollowItems().map(f => f.pubkey));
@@ -39,7 +39,11 @@ export async function renderFollowPackMembers(
   pack.userPubkeys.forEach(pubkey => {
     const profile = profiles.get(pubkey);
     const npub = hexToNpub(pubkey) || '';
-    const name = profile?.display_name || profile?.name || npubToUsername(npub) || npub.slice(0, 12);
+    const name =
+      profile?.display_name ||
+      profile?.name ||
+      npubToUsername(npub) ||
+      npub.slice(0, 12);
     const picture = profile?.picture || '';
     const isFollowing = followedPubkeys.has(pubkey);
 
@@ -60,12 +64,16 @@ export async function renderFollowPackMembers(
               data-pubkey="${pubkey}">${isFollowing ? 'Unfollow' : 'Follow'}</button>
     `;
 
-    item.querySelector('.follow-packs__member-content')?.addEventListener('click', () => {
-      if (npub) Router.getInstance().navigate(`/profile/${npub}`);
-    });
+    item
+      .querySelector('.follow-packs__member-content')
+      ?.addEventListener('click', () => {
+        if (npub) Router.getInstance().navigate(`/profile/${npub}`);
+      });
 
-    const actionBtn = item.querySelector('.follow-packs__member-action-btn') as HTMLButtonElement;
-    actionBtn?.addEventListener('click', (e) => {
+    const actionBtn = item.querySelector(
+      '.follow-packs__member-action-btn'
+    ) as HTMLButtonElement;
+    actionBtn?.addEventListener('click', e => {
       e.stopPropagation();
       const currentFollows = getFollowItems();
       const alreadyFollowing = currentFollows.some(f => f.pubkey === pubkey);
@@ -77,7 +85,12 @@ export async function renderFollowPackMembers(
       } else {
         setFollowItems([
           ...currentFollows,
-          { id: pubkey, pubkey, relay: '', addedAt: Math.floor(Date.now() / 1000) }
+          {
+            id: pubkey,
+            pubkey,
+            relay: '',
+            addedAt: Math.floor(Date.now() / 1000),
+          },
         ]);
         actionBtn.textContent = 'Unfollow';
         actionBtn.classList.add('btn--passive');
@@ -92,5 +105,7 @@ export async function renderFollowPackMembers(
   // Progressive: list is shown in pack order first, then re-sorted so the most
   // recently active members rise to the top. Non-blocking — a slow/failed
   // activity fetch never holds up the list.
-  void sortMemberRowsByActivity(list, pack.userPubkeys).catch(() => { /* non-fatal */ });
+  void sortMemberRowsByActivity(list, pack.userPubkeys).catch(() => {
+    /* non-fatal */
+  });
 }

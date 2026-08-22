@@ -47,13 +47,13 @@ export class QuoteNoteFetcher {
   public async fetchQuotedEvent(
     nostrRef: string,
     parentAuthorPubkey?: string,
-    outboundOnly: boolean = false,
+    outboundOnly: boolean = false
   ): Promise<NostrEvent | null> {
     return await this.orchestrator.fetchQuotedEvent(
       nostrRef,
       undefined,
       parentAuthorPubkey ? [parentAuthorPubkey] : [],
-      outboundOnly,
+      outboundOnly
     );
   }
 
@@ -65,14 +65,14 @@ export class QuoteNoteFetcher {
   public async fetchQuotedEventWithError(
     nostrRef: string,
     parentAuthorPubkey?: string,
-    outboundOnly: boolean = false,
+    outboundOnly: boolean = false
   ): Promise<QuoteFetchResult> {
     try {
       const event = await this.orchestrator.fetchQuotedEvent(
         nostrRef,
         undefined,
         parentAuthorPubkey ? [parentAuthorPubkey] : [],
-        outboundOnly,
+        outboundOnly
       );
 
       if (event) {
@@ -85,18 +85,17 @@ export class QuoteNoteFetcher {
         error: {
           type: 'not_found',
           message: 'Note not found on any relays',
-          eventId: nostrRef.slice(0, 12)
-        }
+          eventId: nostrRef.slice(0, 12),
+        },
       };
-
     } catch (error) {
       return {
         success: false,
         error: {
           type: 'network',
           message: 'Failed to connect to relays',
-          canRetry: true
-        }
+          canRetry: true,
+        },
       };
     }
   }

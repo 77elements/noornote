@@ -19,7 +19,10 @@ import { AuthService } from '../services/AuthService';
 import { FollowVerificationService } from '../services/FollowVerificationService';
 import { RemoteMuteCheckService } from '../services/RemoteMuteCheckService';
 
-export function applyAuthorRelationshipRing(avatar: Element | null | undefined, pubkey: string): void {
+export function applyAuthorRelationshipRing(
+  avatar: Element | null | undefined,
+  pubkey: string
+): void {
   if (!avatar) return;
 
   const currentUser = AuthService.getInstance().getCurrentUser();
@@ -27,9 +30,13 @@ export function applyAuthorRelationshipRing(avatar: Element | null | undefined, 
 
   Promise.all([
     RemoteMuteCheckService.getInstance().mutedByThemSimple(pubkey),
-    FollowVerificationService.getInstance().followsBackSimple(pubkey)
-  ]).then(([muted, follows]) => {
-    if (muted) avatar.classList.add('author-rel--muted');
-    else if (follows) avatar.classList.add('author-rel--follows');
-  }).catch(() => { /* best-effort ring; ignore lookup failures */ });
+    FollowVerificationService.getInstance().followsBackSimple(pubkey),
+  ])
+    .then(([muted, follows]) => {
+      if (muted) avatar.classList.add('author-rel--muted');
+      else if (follows) avatar.classList.add('author-rel--follows');
+    })
+    .catch(() => {
+      /* best-effort ring; ignore lookup failures */
+    });
 }

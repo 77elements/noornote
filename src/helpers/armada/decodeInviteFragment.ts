@@ -31,7 +31,7 @@ const RELAY_DICTIONARY: Record<number, string> = {
 
 /** All stock relays in dictionary order — used when the fragment carries FLAG_STOCK_SET. */
 export const STOCK_RELAYS: string[] = [1, 2, 3, 4]
-  .map((i) => RELAY_DICTIONARY[i])
+  .map(i => RELAY_DICTIONARY[i])
   .filter((url): url is string => typeof url === 'string');
 
 export interface DecodedFragment {
@@ -51,7 +51,9 @@ function fromBase64Url(s: string): Uint8Array {
 }
 
 /** Decode an invite fragment into its unlock token + bootstrap relays, or undefined. */
-export function decodeInviteFragment(fragment: string): DecodedFragment | undefined {
+export function decodeInviteFragment(
+  fragment: string
+): DecodedFragment | undefined {
   let bytes: Uint8Array;
   try {
     bytes = fromBase64Url(fragment.trim());

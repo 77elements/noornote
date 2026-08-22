@@ -10,10 +10,10 @@ import { ICON_TRASH_14 } from '../../helpers/svgIcons';
 import { escapeHtml } from '../../helpers/escapeHtml';
 
 export interface FolderData {
-  id: string;                  // d-tag identifier
-  name: string;                // title tag or d-tag
-  itemCount: number;           // Number of bookmarks in folder
-  isMounted?: boolean;         // Mounted on PV inline (Profile-checkbox)
+  id: string; // d-tag identifier
+  name: string; // title tag or d-tag
+  itemCount: number; // Number of bookmarks in folder
+  isMounted?: boolean; // Mounted on PV inline (Profile-checkbox)
 }
 
 export interface FolderCardOptions {
@@ -24,7 +24,7 @@ export interface FolderCardOptions {
   onDragStart?: (folderId: string, element: HTMLElement) => void;
   onDragEnd?: () => void;
   onMountToggle?: (folderId: string, folderName: string) => void;
-  showMountCheckbox?: boolean;        // Profile-checkbox (PV inline mount)
+  showMountCheckbox?: boolean; // Profile-checkbox (PV inline mount)
 }
 
 export class FolderCard {
@@ -39,7 +39,8 @@ export class FolderCard {
 
   public render(): HTMLElement {
     const { id, name, itemCount, isMounted } = this.data;
-    const showMount = this.options.showMountCheckbox && this.options.onMountToggle;
+    const showMount =
+      this.options.showMountCheckbox && this.options.onMountToggle;
 
     const card = document.createElement('div');
     card.className = 'nn-card';
@@ -63,14 +64,18 @@ export class FolderCard {
         <h3>${escapeHtml(name)}</h3>
         <div class="count">${itemCount} ${itemCount === 1 ? 'item' : 'items'}</div>
       </div>
-      ${showMount ? `
+      ${
+        showMount
+          ? `
         <div class="mounts">
           <label class="mount" data-mount="profile" title="Show this folder inline on your Profile View">
             <span>Profile</span>
             <input type="checkbox" ${isMounted ? 'checked' : ''} />
           </label>
         </div>
-      ` : ''}
+      `
+          : ''
+      }
     `;
 
     this.bindEvents(card);
@@ -82,7 +87,7 @@ export class FolderCard {
     const { id, name } = this.data;
 
     // Click on folder (except actions and mount checkboxes) opens it
-    card.addEventListener('click', (e) => {
+    card.addEventListener('click', e => {
       const target = e.target as HTMLElement;
       if (target.closest('.actions')) return;
       if (target.closest('.mount')) return;
@@ -92,34 +97,38 @@ export class FolderCard {
 
     // Edit button
     const editBtn = card.querySelector('button.edit');
-    editBtn?.addEventListener('click', (e) => {
+    editBtn?.addEventListener('click', e => {
       e.stopPropagation();
       this.options.onEdit?.(id);
     });
 
     // Delete button
     const deleteBtn = card.querySelector('button.delete');
-    deleteBtn?.addEventListener('click', async (e) => {
+    deleteBtn?.addEventListener('click', async e => {
       e.stopPropagation();
       await this.options.onDelete(id);
       card.remove();
     });
 
     // Profile mount checkbox
-    const profileLabel = card.querySelector('.mount[data-mount="profile"]') as HTMLElement | null;
-    const profileCheckbox = profileLabel?.querySelector('input') as HTMLInputElement | null;
+    const profileLabel = card.querySelector(
+      '.mount[data-mount="profile"]'
+    ) as HTMLElement | null;
+    const profileCheckbox = profileLabel?.querySelector(
+      'input'
+    ) as HTMLInputElement | null;
     if (profileCheckbox && this.options.onMountToggle) {
-      profileCheckbox.addEventListener('change', (e) => {
+      profileCheckbox.addEventListener('change', e => {
         e.stopPropagation();
         this.options.onMountToggle!(id, name);
       });
-      profileLabel?.addEventListener('click', (e) => {
+      profileLabel?.addEventListener('click', e => {
         e.stopPropagation();
       });
     }
 
     // Drag & Drop - as draggable
-    card.addEventListener('dragstart', (e) => {
+    card.addEventListener('dragstart', e => {
       card.classList.add('dragging');
       e.dataTransfer?.setData('text/plain', id);
       e.dataTransfer?.setData('application/x-folder-id', id);
@@ -132,7 +141,7 @@ export class FolderCard {
     });
 
     // Drag & Drop - as drop target
-    card.addEventListener('dragover', (e) => {
+    card.addEventListener('dragover', e => {
       e.preventDefault();
       // Only accept bookmark drops, not folder drops
       if (e.dataTransfer?.types.includes('application/x-bookmark-id')) {
@@ -144,7 +153,7 @@ export class FolderCard {
       card.classList.remove('drag-over');
     });
 
-    card.addEventListener('drop', async (e) => {
+    card.addEventListener('drop', async e => {
       e.preventDefault();
       card.classList.remove('drag-over');
 
@@ -154,7 +163,6 @@ export class FolderCard {
       }
     });
   }
-
 
   public getElement(): HTMLElement | null {
     return this.element;
@@ -174,7 +182,9 @@ export class FolderCard {
 
   public updateMountStatus(isMounted: boolean): void {
     this.data.isMounted = isMounted;
-    const checkbox = this.element?.querySelector('.mount[data-mount="profile"] input') as HTMLInputElement;
+    const checkbox = this.element?.querySelector(
+      '.mount[data-mount="profile"] input'
+    ) as HTMLInputElement;
     if (checkbox) {
       checkbox.checked = isMounted;
     }

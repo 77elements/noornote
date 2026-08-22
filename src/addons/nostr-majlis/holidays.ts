@@ -52,7 +52,11 @@ export interface HolidayOccurrence {
 
 /** Convert one fixed Hijri date in a given Hijri year to its Gregorian Date (local midnight). */
 function toGregorian(hYear: number, hMonth: number, hDay: number): Date {
-  const g = hijriCalendar.convertToGregorian(hYear, hMonth, hDay) as { year: number; month: number; day: number };
+  const g = hijriCalendar.convertToGregorian(hYear, hMonth, hDay) as {
+    year: number;
+    month: number;
+    day: number;
+  };
   return new Date(g.year, g.month, g.day);
 }
 
@@ -62,15 +66,22 @@ function toGregorian(hYear: number, hMonth: number, hDay: number): Date {
  * years — we scan that range, which naturally yields the rare double (or zero) occurrence of a
  * holiday within one Gregorian year.
  */
-export function getHolidaysForGregorianYear(gYear: number): HolidayOccurrence[] {
-  const hStart = dayjs(new Date(gYear, 0, 1)).toCalendarSystem('hijri' as any).year();
-  const hEnd = dayjs(new Date(gYear, 11, 31)).toCalendarSystem('hijri' as any).year();
+export function getHolidaysForGregorianYear(
+  gYear: number
+): HolidayOccurrence[] {
+  const hStart = dayjs(new Date(gYear, 0, 1))
+    .toCalendarSystem('hijri' as any)
+    .year();
+  const hEnd = dayjs(new Date(gYear, 11, 31))
+    .toCalendarSystem('hijri' as any)
+    .year();
 
   const out: HolidayOccurrence[] = [];
   for (let hy = hStart - 1; hy <= hEnd + 1; hy++) {
     for (const h of HOLIDAYS) {
       const date = toGregorian(hy, h.hMonth, h.hDay);
-      if (date.getFullYear() === gYear) out.push({ key: h.key, name: h.name, date });
+      if (date.getFullYear() === gYear)
+        out.push({ key: h.key, name: h.name, date });
     }
   }
   out.sort((a, b) => a.date.getTime() - b.date.getTime());
@@ -95,7 +106,14 @@ export function getHolidayReminders(daysBefore: number): HolidayReminder[] {
   const out: HolidayReminder[] = [];
   for (let yr = y; yr <= y + 2; yr++) {
     for (const h of getHolidaysForGregorianYear(yr)) {
-      const fireAt = new Date(h.date.getFullYear(), h.date.getMonth(), h.date.getDate() - daysBefore, HOLIDAY_REMINDER_HOUR, 0, 0);
+      const fireAt = new Date(
+        h.date.getFullYear(),
+        h.date.getMonth(),
+        h.date.getDate() - daysBefore,
+        HOLIDAY_REMINDER_HOUR,
+        0,
+        0
+      );
       out.push({ ...h, fireAt });
     }
   }

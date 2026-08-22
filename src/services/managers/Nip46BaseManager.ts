@@ -24,9 +24,12 @@ const CIRCUIT_COOLDOWN_MS = 30_000;
 
 // Technical debug logger (DevTools console only)
 export const nip46Log = {
-  info: (msg: string, ...args: any[]) => console.debug(`[NIP-46] ${msg}`, ...args),
-  warn: (msg: string, ...args: any[]) => console.debug(`[NIP-46] ${msg}`, ...args),
-  error: (msg: string, ...args: any[]) => console.error(`[NIP-46] ${msg}`, ...args),
+  info: (msg: string, ...args: any[]) =>
+    console.debug(`[NIP-46] ${msg}`, ...args),
+  warn: (msg: string, ...args: any[]) =>
+    console.debug(`[NIP-46] ${msg}`, ...args),
+  error: (msg: string, ...args: any[]) =>
+    console.error(`[NIP-46] ${msg}`, ...args),
 };
 
 // User-facing System Log
@@ -62,12 +65,14 @@ export abstract class Nip46BaseManager {
    * that only support NIP-04 on the RPC layer. This lock prevents that.
    */
   protected lockEncryptionType(rpc: any): void {
-    let _encType: 'nip04' | 'nip44' = 'nip04';
+    const _encType: 'nip04' | 'nip44' = 'nip04';
     Object.defineProperty(rpc, 'encryptionType', {
       get: () => _encType,
       set: (val: string) => {
         if (val !== _encType) {
-          nip46Log.info(`Encryption locked to ${_encType} — rejected ${val} upgrade`);
+          nip46Log.info(
+            `Encryption locked to ${_encType} — rejected ${val} upgrade`
+          );
         }
       },
       configurable: true,
@@ -129,7 +134,9 @@ export abstract class Nip46BaseManager {
 
   private openCircuit(): void {
     if (!this.circuitOpen) {
-      nip46Log.warn(`Remote signer unreachable — suppressing further requests for ${CIRCUIT_COOLDOWN_MS / 1000}s`);
+      nip46Log.warn(
+        `Remote signer unreachable — suppressing further requests for ${CIRCUIT_COOLDOWN_MS / 1000}s`
+      );
       sysLog().warn('Auth', 'Remote signer unreachable — retrying shortly');
     }
     this.circuitOpen = true;
@@ -193,17 +200,30 @@ export abstract class Nip46BaseManager {
    * Wrap an RPC operation with a timeout.
    * NDK's sign/encrypt promises hang forever if no response arrives.
    */
-  private withTimeout<T>(promise: Promise<T>, ms: number, operation: string): Promise<T> {
+  private withTimeout<T>(
+    promise: Promise<T>,
+    ms: number,
+    operation: string
+  ): Promise<T> {
     return new Promise<T>((resolve, reject) => {
       const timeout = setTimeout(() => {
         this.openCircuit();
         nip46Log.error(`${operation} TIMEOUT after ${ms / 1000}s`);
-        reject(new Error(`Remote signer ${operation} timeout after ${ms / 1000}s`));
+        reject(
+          new Error(`Remote signer ${operation} timeout after ${ms / 1000}s`)
+        );
       }, ms);
 
       promise.then(
-        (result) => { clearTimeout(timeout); this.closeCircuit(); resolve(result); },
-        (err) => { clearTimeout(timeout); reject(err); }
+        result => {
+          clearTimeout(timeout);
+          this.closeCircuit();
+          resolve(result);
+        },
+        err => {
+          clearTimeout(timeout);
+          reject(err);
+        }
       );
     });
   }
@@ -222,14 +242,18 @@ export abstract class Nip46BaseManager {
     // Lazy connect: if the NIP-46 handshake wasn't completed at startup
     // (remote signer was offline), attempt it now before any sign/encrypt.
     if (!this.sessionEstablished) {
-      nip46Log.info('NIP-46 session not established, attempting connect handshake...');
+      nip46Log.info(
+        'NIP-46 session not established, attempting connect handshake...'
+      );
       try {
         await this.subscribeAndConnect(15000, 'Lazy connect');
         this.sessionEstablished = true;
         sysLog().success('Auth', 'Remote signer connected');
       } catch (err) {
         this.openCircuit();
-        throw new Error('Remote signer not responding — please check that it is running');
+        throw new Error(
+          'Remote signer not responding — please check that it is running'
+        );
       }
     }
 
@@ -240,12 +264,16 @@ export abstract class Nip46BaseManager {
     pubkey: string,
     text: string,
     method: 'encrypt' | 'decrypt',
-    scheme: 'nip04' | 'nip44',
+    scheme: 'nip04' | 'nip44'
   ): Promise<string> {
     const signer = await this.guardRpcReady();
     const user = new NDKUser({ pubkey });
     const operation = `${scheme}_${method}`;
-    return this.withTimeout(signer[method](user, text, scheme), 15000, operation);
+    return this.withTimeout(
+      signer[method](user, text, scheme),
+      15000,
+      operation
+    );
   }
 
   public async signEvent(event: any): Promise<string> {
@@ -253,19 +281,41 @@ export abstract class Nip46BaseManager {
     return this.withTimeout(signer.sign(event), 30000, 'sign_event');
   }
 
-  public async nip44Encrypt(plaintext: string, recipientPubkey: string): Promise<string> {
-    return this.encryptOrDecrypt(recipientPubkey, plaintext, 'encrypt', 'nip44');
+  public async nip44Encrypt(
+    plaintext: string,
+    recipientPubkey: string
+  ): Promise<string> {
+    return this.encryptOrDecrypt(
+      recipientPubkey,
+      plaintext,
+      'encrypt',
+      'nip44'
+    );
   }
 
-  public async nip44Decrypt(ciphertext: string, senderPubkey: string): Promise<string> {
+  public async nip44Decrypt(
+    ciphertext: string,
+    senderPubkey: string
+  ): Promise<string> {
     return this.encryptOrDecrypt(senderPubkey, ciphertext, 'decrypt', 'nip44');
   }
 
-  public async nip04Encrypt(plaintext: string, recipientPubkey: string): Promise<string> {
-    return this.encryptOrDecrypt(recipientPubkey, plaintext, 'encrypt', 'nip04');
+  public async nip04Encrypt(
+    plaintext: string,
+    recipientPubkey: string
+  ): Promise<string> {
+    return this.encryptOrDecrypt(
+      recipientPubkey,
+      plaintext,
+      'encrypt',
+      'nip04'
+    );
   }
 
-  public async nip04Decrypt(ciphertext: string, senderPubkey: string): Promise<string> {
+  public async nip04Decrypt(
+    ciphertext: string,
+    senderPubkey: string
+  ): Promise<string> {
     return this.encryptOrDecrypt(senderPubkey, ciphertext, 'decrypt', 'nip04');
   }
 
@@ -286,7 +336,10 @@ export abstract class Nip46BaseManager {
    * for the remote signer to confirm (result === secret or 'ack').
    * Shared by restoreSession() and BunkerSignerManager.authenticate().
    */
-  protected async subscribeAndConnect(timeoutMs: number, label: string): Promise<void> {
+  protected async subscribeAndConnect(
+    timeoutMs: number,
+    label: string
+  ): Promise<void> {
     const signer = this.signer!;
     const secret = signer.secret;
     const bunkerPubkey = signer.bunkerPubkey!;
@@ -319,14 +372,11 @@ export abstract class Nip46BaseManager {
         }
       });
 
-      signer.rpc.sendRequest(
-        bunkerPubkey,
-        'connect',
-        [bunkerPubkey, secret!],
-        24133
-      ).catch((err: any) => {
-        nip46Log.error(`${label} sendRequest error:`, err);
-      });
+      signer.rpc
+        .sendRequest(bunkerPubkey, 'connect', [bunkerPubkey, secret!], 24133)
+        .catch((err: any) => {
+          nip46Log.error(`${label} sendRequest error:`, err);
+        });
     });
   }
 
@@ -343,7 +393,10 @@ export abstract class Nip46BaseManager {
       this.signer = await NDKNip46Signer.fromPayload(storedPayload, ndk);
 
       const bunkerPubkey = this.signer.bunkerPubkey;
-      nip46Log.info('Restoring session, bunkerPubkey:', bunkerPubkey?.slice(0, 12) + '...');
+      nip46Log.info(
+        'Restoring session, bunkerPubkey:',
+        `${bunkerPubkey?.slice(0, 12)}...`
+      );
 
       if (!this.signer.userPubkey && bunkerPubkey) {
         this.signer.userPubkey = bunkerPubkey;
@@ -361,15 +414,24 @@ export abstract class Nip46BaseManager {
         sysLog().success('Auth', 'Remote signer session restored');
       } catch (connectErr) {
         // Signer stays alive, guardRpcReady() will retry the connect handshake on demand
-        nip46Log.warn('Remote signer offline at startup, will reconnect on demand:', connectErr);
-        sysLog().warn('Auth', 'Remote signer offline — will reconnect when needed');
+        nip46Log.warn(
+          'Remote signer offline at startup, will reconnect on demand:',
+          connectErr
+        );
+        sysLog().warn(
+          'Auth',
+          'Remote signer offline — will reconnect when needed'
+        );
       }
 
       return true;
     } catch (err) {
       // Signer creation failed (corrupted payload) — clean up
       nip46Log.error('Session restore failed:', err);
-      sysLog().error('Auth', 'Remote signer session expired — please reconnect');
+      sysLog().error(
+        'Auth',
+        'Remote signer session expired — please reconnect'
+      );
       localStorage.removeItem(NIP46_STORAGE_KEY);
       this.signer = null;
       return false;

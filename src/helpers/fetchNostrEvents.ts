@@ -86,12 +86,14 @@ export async function fetchNostrEvents(
     referencedPubkey,
     tags,
     timeWindowHours,
-    timeout = 5000
+    timeout = 5000,
   } = params;
 
   // Validate
   if (!relays || relays.length === 0) {
-    throw new Error('fetchNostrEvents: relays parameter is required and must not be empty');
+    throw new Error(
+      'fetchNostrEvents: relays parameter is required and must not be empty'
+    );
   }
 
   try {
@@ -132,7 +134,13 @@ export async function fetchNostrEvents(
 
     // Fetch via NostrTransport (NDK handles dedupe, verification, timeout)
     const transport = NostrTransport.getInstance();
-    const events = await transport.fetch(relays, [filter], timeout, false, 'fetchNostrEvents');
+    const events = await transport.fetch(
+      relays,
+      [filter],
+      timeout,
+      false,
+      'fetchNostrEvents'
+    );
 
     // Sort by created_at (newest first)
     events.sort((a, b) => b.created_at - a.created_at);
@@ -140,15 +148,14 @@ export async function fetchNostrEvents(
     return {
       events,
       relaysResponded: relays.length,
-      failedRelays: []
+      failedRelays: [],
     };
-
   } catch (error) {
     console.error('fetchNostrEvents error:', error);
     return {
       events: [],
       relaysResponded: 0,
-      failedRelays: relays
+      failedRelays: relays,
     };
   }
 }

@@ -26,9 +26,9 @@ export class GitEventProcessor {
         links: [],
         hashtags: [],
         quotedReferences: [],
-        bolt11Invoices: []
+        bolt11Invoices: [],
       },
-      rawEvent: event
+      rawEvent: event,
     };
   }
 }

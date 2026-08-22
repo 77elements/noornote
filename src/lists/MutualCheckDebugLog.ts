@@ -78,7 +78,10 @@ export class MutualCheckDebugLog {
     return this.currentCheckId;
   }
 
-  public async log(event: string, data: Record<string, unknown>): Promise<void> {
+  public async log(
+    event: string,
+    data: Record<string, unknown>
+  ): Promise<void> {
     await this.initialize();
 
     if (!this.filePath) return;
@@ -88,7 +91,7 @@ export class MutualCheckDebugLog {
       timestamp: new Date().toISOString(),
       checkId: this.currentCheckId || 'unknown',
       event,
-      data
+      data,
     };
 
     try {
@@ -106,7 +109,10 @@ export class MutualCheckDebugLog {
         logs = logs.slice(-MAX_LOG_ENTRIES);
       }
 
-      await window.electronAPI!.writeTextFile(this.filePath, JSON.stringify(logs, null, 2));
+      await window.electronAPI!.writeTextFile(
+        this.filePath,
+        JSON.stringify(logs, null, 2)
+      );
     } catch (error) {
       this.systemLogger.error('MutualCheckDebugLog', `Write failed: ${error}`);
     }
@@ -120,10 +126,12 @@ export class MutualCheckDebugLog {
   ): Promise<void> {
     await this.log('CHECK_START', {
       previousSnapshotMutualCount: snapshotCount,
-      previousSnapshotTimestamp: snapshotTimestamp ? new Date(snapshotTimestamp).toISOString() : null,
+      previousSnapshotTimestamp: snapshotTimestamp
+        ? new Date(snapshotTimestamp).toISOString()
+        : null,
       previousSnapshotPubkeys: snapshotPubkeys || [],
       currentFollowsCount: followsCount,
-      localTime: this.getLocalTime()
+      localTime: this.getLocalTime(),
     });
   }
 
@@ -139,7 +147,7 @@ export class MutualCheckDebugLog {
       mutualsFound,
       nonMutualsFound,
       fetchDurationMs,
-      currentMutualPubkeys
+      currentMutualPubkeys,
     });
   }
 
@@ -157,7 +165,7 @@ export class MutualCheckDebugLog {
       unfollowPubkeys,
       newMutualPubkeys,
       removedFromMutuals: unfollowPubkeys,
-      addedToMutuals: newMutualPubkeys
+      addedToMutuals: newMutualPubkeys,
     });
   }
 
@@ -175,16 +183,19 @@ export class MutualCheckDebugLog {
       totalChanges: unfollows.length + newMutuals.length,
       durationMs,
       currentMutualCount,
-      localTime: this.getLocalTime()
+      localTime: this.getLocalTime(),
     });
   }
 
-  public async logUnfollowDetected(pubkey: string, wasInSnapshot: boolean): Promise<void> {
+  public async logUnfollowDetected(
+    pubkey: string,
+    wasInSnapshot: boolean
+  ): Promise<void> {
     await this.log('UNFOLLOW_DETECTED', {
       pubkey,
       wasInPreviousSnapshot: wasInSnapshot,
       detectionTime: new Date().toISOString(),
-      localTime: this.getLocalTime()
+      localTime: this.getLocalTime(),
     });
   }
 
@@ -192,7 +203,7 @@ export class MutualCheckDebugLog {
     await this.log('NEW_MUTUAL_DETECTED', {
       pubkey,
       detectionTime: new Date().toISOString(),
-      localTime: this.getLocalTime()
+      localTime: this.getLocalTime(),
     });
   }
 
@@ -206,7 +217,7 @@ export class MutualCheckDebugLog {
       notificationType: type,
       syntheticEventId,
       injectionTime: new Date().toISOString(),
-      localTime: this.getLocalTime()
+      localTime: this.getLocalTime(),
     });
   }
 
@@ -222,20 +233,27 @@ export class MutualCheckDebugLog {
       delta: newCount - previousCount,
       addedPubkeys,
       removedPubkeys,
-      updateTime: new Date().toISOString()
+      updateTime: new Date().toISOString(),
     });
   }
 
-  public async logMutualStatusCheck(pubkey: string, isMutual: boolean, followsBack: boolean): Promise<void> {
+  public async logMutualStatusCheck(
+    pubkey: string,
+    isMutual: boolean,
+    followsBack: boolean
+  ): Promise<void> {
     await this.log('MUTUAL_STATUS_CHECK', { pubkey, isMutual, followsBack });
   }
 
-  public async logError(message: string, details?: Record<string, unknown>): Promise<void> {
+  public async logError(
+    message: string,
+    details?: Record<string, unknown>
+  ): Promise<void> {
     await this.log('ERROR', {
       message,
       errorTime: new Date().toISOString(),
       localTime: this.getLocalTime(),
-      ...details
+      ...details,
     });
   }
 
@@ -246,7 +264,7 @@ export class MutualCheckDebugLog {
     await this.log(event, {
       schedulerTime: new Date().toISOString(),
       localTime: this.getLocalTime(),
-      ...details
+      ...details,
     });
   }
 
@@ -273,7 +291,10 @@ export class MutualCheckDebugLog {
     if (!window.electronAPI) return;
 
     try {
-      await window.electronAPI.writeTextFile(this.filePath, JSON.stringify([], null, 2));
+      await window.electronAPI.writeTextFile(
+        this.filePath,
+        JSON.stringify([], null, 2)
+      );
       this.systemLogger.info('MutualCheckDebugLog', 'Logs cleared');
     } catch (error) {
       this.systemLogger.error('MutualCheckDebugLog', `Clear failed: ${error}`);
@@ -320,7 +341,9 @@ if (typeof window !== 'undefined') {
         return null;
       }
 
-      const lastComplete = [...logs].reverse().find(l => l.event === 'CHECK_COMPLETE');
+      const lastComplete = [...logs]
+        .reverse()
+        .find(l => l.event === 'CHECK_COMPLETE');
       if (lastComplete) {
         console.log('=== Last Check ===');
         console.log('CheckID:', lastComplete.checkId);
@@ -337,6 +360,6 @@ if (typeof window !== 'undefined') {
       }
 
       return null;
-    }
+    },
   };
 }

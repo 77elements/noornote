@@ -15,7 +15,10 @@ interface SettingsMenuItem {
 
 const SETTINGS_MENU: SettingsMenuItem[] = [
   { label: 'UI Settings', route: '/settings/ui' },
-  { label: 'Notification Priorities', route: '/settings/notification-priorities' },
+  {
+    label: 'Notification Priorities',
+    route: '/settings/notification-priorities',
+  },
   { label: 'Relays', route: '/settings/relays' },
   { label: 'Key Signer', route: '/settings/key-signer', platform: 'desktop' },
   { label: 'Media', route: '/settings/media' },
@@ -40,13 +43,17 @@ export class SettingsView extends View {
     const menuItems = SETTINGS_MENU.filter(item => {
       if (!item.platform) return true;
       if (item.platform === 'desktop') return platform.isDesktop;
-      if (item.platform === 'desktop-or-capacitor') return platform.isDesktop || platform.isCapacitor;
+      if (item.platform === 'desktop-or-capacitor')
+        return platform.isDesktop || platform.isCapacitor;
       return true;
     });
 
-    const menuHtml = menuItems.map(item =>
-      `<a href="${item.route}" class="nav-list__item">${item.label}<span class="nav-list__chevron" aria-hidden="true"></span></a>`
-    ).join('');
+    const menuHtml = menuItems
+      .map(
+        item =>
+          `<a href="${item.route}" class="nav-list__item">${item.label}<span class="nav-list__chevron" aria-hidden="true"></span></a>`
+      )
+      .join('');
 
     const showExportLogs = true;
 
@@ -55,36 +62,45 @@ export class SettingsView extends View {
       <nav class="section">
         ${menuHtml}
       </nav>
-      ${showExportLogs ? `
+      ${
+        showExportLogs
+          ? `
       <section class="settings-section diagnostic-export-section" style="text-align: center;">
         <button class="btn btn--medium btn--passive" id="export-diagnostic-logs-btn">
           Export DiagLogs
         </button>
       </section>
-      ` : ''}
+      `
+          : ''
+      }
     `;
 
     // Menu item click handling (use router navigation)
     this.container.querySelectorAll('.nav-list__item').forEach(link => {
-      link.addEventListener('click', (e) => {
+      link.addEventListener('click', e => {
         e.preventDefault();
-        const route = (e.currentTarget as HTMLAnchorElement).getAttribute('href');
+        const route = (e.currentTarget as HTMLAnchorElement).getAttribute(
+          'href'
+        );
         if (route) Router.getInstance().navigate(route);
       });
     });
 
     // Diagnostic logs export button
-    this.container.querySelector('#export-diagnostic-logs-btn')?.addEventListener('click', async (e) => {
-      const btn = e.target as HTMLButtonElement;
-      const { runDiagLogExportFromButton } = await import('../../services/DiagLogExportService');
-      await runDiagLogExportFromButton(btn, 'Export DiagLogs');
-    });
+    this.container
+      .querySelector('#export-diagnostic-logs-btn')
+      ?.addEventListener('click', async e => {
+        const btn = e.target as HTMLButtonElement;
+        const { runDiagLogExportFromButton } = await import(
+          '../../services/DiagLogExportService'
+        );
+        await runDiagLogExportFromButton(btn, 'Export DiagLogs');
+      });
   }
 
   public getElement(): HTMLElement {
     return this.container;
   }
 
-  public destroy(): void {
-  }
+  public destroy(): void {}
 }

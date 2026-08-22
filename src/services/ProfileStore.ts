@@ -65,11 +65,13 @@ class ProfileStore {
     if (this.initPromise && this.npub === npub) return this.initPromise;
 
     this.npub = npub;
-    this.initPromise = new Promise((resolve) => {
+    this.initPromise = new Promise(resolve => {
       const request = indexedDB.open(DB_NAME_PREFIX + npub, DB_VERSION);
       request.onerror = () => resolve(null);
-      request.onblocked = () => { /* stays pending; resolves when unblocked */ };
-      request.onupgradeneeded = (event) => {
+      request.onblocked = () => {
+        /* stays pending; resolves when unblocked */
+      };
+      request.onupgradeneeded = event => {
         const db = (event.target as IDBOpenDBRequest).result;
         if (!db.objectStoreNames.contains(STORE)) {
           db.createObjectStore(STORE);
@@ -95,7 +97,7 @@ class ProfileStore {
       const db = await this.ensureDb();
       if (!db) return;
       const savedAt = Date.now();
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         const tx = db.transaction(STORE, 'readwrite');
         const store = tx.objectStore(STORE);
         for (const [pubkey, profile] of entries) {
@@ -116,21 +118,23 @@ class ProfileStore {
     try {
       const db = await this.ensureDb();
       if (!db) return out;
-      const entries = await new Promise<Map<string, PersistedProfile>>((resolve) => {
-        const tx = db.transaction(STORE, 'readonly');
-        const req = tx.objectStore(STORE).openCursor();
-        const acc = new Map<string, PersistedProfile>();
-        req.onsuccess = () => {
-          const cursor = req.result;
-          if (cursor) {
-            acc.set(String(cursor.key), cursor.value as PersistedProfile);
-            cursor.continue();
-          } else {
-            resolve(acc);
-          }
-        };
-        req.onerror = () => resolve(acc);
-      });
+      const entries = await new Promise<Map<string, PersistedProfile>>(
+        resolve => {
+          const tx = db.transaction(STORE, 'readonly');
+          const req = tx.objectStore(STORE).openCursor();
+          const acc = new Map<string, PersistedProfile>();
+          req.onsuccess = () => {
+            const cursor = req.result;
+            if (cursor) {
+              acc.set(String(cursor.key), cursor.value as PersistedProfile);
+              cursor.continue();
+            } else {
+              resolve(acc);
+            }
+          };
+          req.onerror = () => resolve(acc);
+        }
+      );
 
       const now = Date.now();
       let expired = 0;
@@ -159,7 +163,7 @@ class ProfileStore {
     try {
       const db = await this.ensureDb();
       if (!db) return;
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         const tx = db.transaction(STORE, 'readwrite');
         tx.objectStore(STORE).delete(pubkey);
         tx.oncomplete = () => resolve();
@@ -178,7 +182,7 @@ class ProfileStore {
     try {
       const db = await this.ensureDb();
       if (!db) return;
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         const tx = db.transaction(STORE, 'readwrite');
         tx.objectStore(STORE).clear();
         tx.oncomplete = () => resolve();

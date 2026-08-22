@@ -13,7 +13,10 @@ import { ToastService } from '../../../services/ToastService';
 import { PostNoteModal } from '../../post/PostNoteModal';
 import { getRepostsOriginalEvent } from '../../../helpers/getRepostsOriginalEvent';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { BaseInteractionManager, BaseInteractionConfig } from './BaseInteractionManager';
+import {
+  BaseInteractionManager,
+  BaseInteractionConfig,
+} from './BaseInteractionManager';
 import { getTag } from '../../../helpers/tagUtils';
 
 export interface RepostManagerConfig extends BaseInteractionConfig {
@@ -25,7 +28,8 @@ export interface RepostManagerConfig extends BaseInteractionConfig {
 export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
   private _postsApi?: PostsModuleApi | null;
   private get postsApi(): PostsModuleApi | null {
-    return this._postsApi ??= ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
+    return (this._postsApi ??=
+      ModuleLoader.getInstance().getApi<PostsModuleApi>('posts'));
   }
 
   constructor(config: RepostManagerConfig) {
@@ -37,7 +41,9 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
    */
   public async checkInteractionStatus(): Promise<void> {
     try {
-      this.hasInteracted = await (this.postsApi?.hasUserReposted(this.config.noteId) ?? Promise.resolve(false));
+      this.hasInteracted = await (this.postsApi?.hasUserReposted(
+        this.config.noteId
+      ) ?? Promise.resolve(false));
       if (this.hasInteracted) {
         this.updateButtonState(true);
       }
@@ -128,8 +134,12 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
       // (Amethyst pattern) internally — no relays passed.
       const isStandardNote = unwrappedEvent.kind === 1;
       const result = isStandardNote
-        ? await (this.postsApi?.publishRepost({ originalEvent: unwrappedEvent }) ?? Promise.resolve({ success: false }))
-        : await (this.postsApi?.publishGenericRepost({ originalEvent: unwrappedEvent }) ?? Promise.resolve({ success: false }));
+        ? await (this.postsApi?.publishRepost({
+            originalEvent: unwrappedEvent,
+          }) ?? Promise.resolve({ success: false }))
+        : await (this.postsApi?.publishGenericRepost({
+            originalEvent: unwrappedEvent,
+          }) ?? Promise.resolve({ success: false }));
 
       if (result.success) {
         // Update stats (cache invalidation + optimistic UI update)
@@ -163,15 +173,21 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
       let reference: string;
 
       // For addressable events (kind 30000-39999: articles, listings, etc.), use naddr encoding
-      if (unwrappedEvent.kind && unwrappedEvent.kind >= 30000 && unwrappedEvent.kind < 40000) {
-        const { encodeNaddr } = await import('../../../services/NostrToolsAdapter');
+      if (
+        unwrappedEvent.kind &&
+        unwrappedEvent.kind >= 30000 &&
+        unwrappedEvent.kind < 40000
+      ) {
+        const { encodeNaddr } = await import(
+          '../../../services/NostrToolsAdapter'
+        );
         const dTag = getTag(unwrappedEvent.tags, 'd');
-        reference = 'nostr:' + encodeNaddr({
+        reference = `nostr:${encodeNaddr({
           kind: unwrappedEvent.kind,
           pubkey: unwrappedEvent.pubkey,
           identifier: dTag,
-          relays: writeRelays.slice(0, 2)
-        });
+          relays: writeRelays.slice(0, 2),
+        })}`;
       } else {
         // For regular notes, use nevent encoding
         const eventId = unwrappedEvent.id;
@@ -180,11 +196,7 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
           return;
         }
         const { encodeNevent } = await import('../../../helpers/encodeNevent');
-        reference = encodeNevent(
-          eventId,
-          writeRelays,
-          unwrappedEvent.pubkey
-        );
+        reference = encodeNevent(eventId, writeRelays, unwrappedEvent.pubkey);
       }
 
       // Open post modal with pre-filled content
@@ -214,7 +226,7 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
   public attachRepostListener(repostButton: HTMLElement): void {
     this.setButtonElement(repostButton);
 
-    repostButton.addEventListener('click', (e) => {
+    repostButton.addEventListener('click', e => {
       e.stopPropagation();
       this.handleRepost();
     });
@@ -224,7 +236,7 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
    * Attach event listener to quote button
    */
   public attachQuoteListener(quoteButton: HTMLElement): void {
-    quoteButton.addEventListener('click', (e) => {
+    quoteButton.addEventListener('click', e => {
       e.stopPropagation();
       this.handleQuote();
     });

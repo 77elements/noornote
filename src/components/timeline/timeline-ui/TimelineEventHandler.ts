@@ -4,15 +4,26 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import type { TimelineModuleApi, FeedLoadRequest } from '../../../modules/timeline/contracts';
+import type {
+  TimelineModuleApi,
+  FeedLoadRequest,
+} from '../../../modules/timeline/contracts';
 import { TimelineStateManager } from '../timeline-state/TimelineStateManager';
 import { TimelineUIStateHandler } from './TimelineUIStateHandler';
-import { pickDateRange, formatDateRangeLabel } from '../../../helpers/datePickerModal';
+import {
+  pickDateRange,
+  formatDateRangeLabel,
+} from '../../../helpers/datePickerModal';
 import { RefreshButton } from '../../ui/RefreshButton';
 import { CustomDropdown } from '../../ui/CustomDropdown';
 import { AppState } from '../../../services/AppState';
 import { NoteUI } from '../../ui/NoteUI';
-import { type TimelineConfig, relayFilterUrl, timeRangeOf, saveFeedMode } from '../TimelineConfig';
+import {
+  type TimelineConfig,
+  relayFilterUrl,
+  timeRangeOf,
+  saveFeedMode,
+} from '../TimelineConfig';
 import { diagLog } from '../../../services/DiagnosticLogger';
 import { AuthService } from '../../../services/AuthService';
 
@@ -66,7 +77,11 @@ export class TimelineEventHandler {
    * Handle load more request from infinite scroll component
    */
   public handleLoadMore(): void {
-    if (!this.stateManager.isLoading() && this.stateManager.getHasMore() && this.stateManager.getFollowingPubkeys().length > 0) {
+    if (
+      !this.stateManager.isLoading() &&
+      this.stateManager.getHasMore() &&
+      this.stateManager.getFollowingPubkeys().length > 0
+    ) {
       this.loadMoreEvents();
     }
   }
@@ -95,10 +110,13 @@ export class TimelineEventHandler {
     } else {
       // Standard filters (latest, latest-replies)
       this.config.relays = { kind: 'auto' }; // Clear relay filter
-      this.config.includeReplies = (selectedView === 'latest-replies');
+      this.config.includeReplies = selectedView === 'latest-replies';
 
       // Remember the main timeline's feed mode so it's restored on next start.
-      if (this.config.source.kind === 'following') saveFeedMode(selectedView === 'latest-replies' ? 'latest-replies' : 'latest');
+      if (this.config.source.kind === 'following')
+        saveFeedMode(
+          selectedView === 'latest-replies' ? 'latest-replies' : 'latest'
+        );
 
       // Update AppState
       this.appState.setState('timeline', { selectedRelay: null });
@@ -141,13 +159,19 @@ export class TimelineEventHandler {
     }
 
     // Store date range and update dropdown label
-    this.config.range = { kind: 'between', since: result.since, until: result.until };
+    this.config.range = {
+      kind: 'between',
+      since: result.since,
+      until: result.until,
+    };
     this.config.relays = { kind: 'auto' };
     this.config.includeReplies = false;
     this.appState.setState('timeline', { selectedRelay: null });
 
     if (this.viewDropdown) {
-      this.viewDropdown.setCustomLabel(formatDateRangeLabel(result.since, result.until));
+      this.viewDropdown.setCustomLabel(
+        formatDateRangeLabel(result.since, result.until)
+      );
     }
 
     this.previousView = 'time-range';
@@ -180,7 +204,10 @@ export class TimelineEventHandler {
     // Scroll to top so user sees the new notes
     // Timeline is inside .timeline-view__timeline (scrollable container)
     const scrollContainer = this.element.parentElement;
-    if (scrollContainer && scrollContainer.classList.contains('timeline-view__timeline')) {
+    if (
+      scrollContainer &&
+      scrollContainer.classList.contains('timeline-view__timeline')
+    ) {
       scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
@@ -209,7 +236,9 @@ export class TimelineEventHandler {
           expectedAuthorCount: expected.size,
           consumedCount: newEvents.length,
           leakedCount: leaked.length,
-          leaked: leaked.slice(0, 10).map(e => ({ id: e.id, kind: e.kind, author: e.pubkey })),
+          leaked: leaked
+            .slice(0, 10)
+            .map(e => ({ id: e.id, kind: e.kind, author: e.pubkey })),
         });
       }
     }
@@ -224,16 +253,19 @@ export class TimelineEventHandler {
       }
 
       // Update polling timestamp to latest event
-      const latestTimestamp = newEvents.reduce((max, e) => e.created_at > max ? e.created_at : max, 0);
+      const latestTimestamp = newEvents.reduce(
+        (max, e) => (e.created_at > max ? e.created_at : max),
+        0
+      );
       this.timelineApi.resetPollingTimestamp(latestTimestamp);
     } else {
       // Fallback: Full reload if no cached events
       this.timelineApi.stopPolling();
       this.stateManager.reset();
       this.element.querySelectorAll<HTMLElement>('.note-card').forEach(card => {
-      NoteUI.cleanupElement(card);
-      card.remove();
-    });
+        NoteUI.cleanupElement(card);
+        card.remove();
+      });
       await this.onInitializeTimeline();
     }
 
@@ -247,7 +279,11 @@ export class TimelineEventHandler {
    * Load more events for infinite scroll - pure UI orchestration
    */
   private async loadMoreEvents(): Promise<void> {
-    if (this.stateManager.isLoading() || !this.stateManager.getHasMore() || this.stateManager.getFollowingPubkeys().length === 0) {
+    if (
+      this.stateManager.isLoading() ||
+      !this.stateManager.getHasMore() ||
+      this.stateManager.getFollowingPubkeys().length === 0
+    ) {
       return;
     }
 
@@ -268,7 +304,7 @@ export class TimelineEventHandler {
         includeReplies: this.config.includeReplies,
         until: oldestEvent.created_at,
         timeWindowHours: this.config.relays.kind === 'author-outbox' ? 720 : 3, // ProfileView: 30 days, TimelineView: 3 hours
-        config: this.config
+        config: this.config,
       };
       const selectedRelay = relayFilterUrl(this.config);
       if (selectedRelay) {
@@ -282,7 +318,10 @@ export class TimelineEventHandler {
       if (dateRange) {
         loadMoreRequest.since = dateRange.since;
       }
-      const result = await this.timelineApi.loadMore(loadMoreRequest) ?? { events: [], hasMore: false };
+      const result = (await this.timelineApi.loadMore(loadMoreRequest)) ?? {
+        events: [],
+        hasMore: false,
+      };
 
       // Add events with deduplication
       const uniqueNewEvents = this.stateManager.addEvents(result.events);
@@ -292,7 +331,6 @@ export class TimelineEventHandler {
       }
 
       this.stateManager.setHasMore(result.hasMore);
-
     } catch {
       // Load-more failure is non-fatal; finally resets the loading state so
       // a later scroll can retry. State stays consistent (no events added).

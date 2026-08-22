@@ -13,7 +13,8 @@ export class FollowPacksView extends View {
   constructor() {
     super();
     this.container = document.createElement('div');
-    this.container.className = 'view-content view-content--addon view-content--addon-follow-packs';
+    this.container.className =
+      'view-content view-content--addon view-content--addon-follow-packs';
     this.container.innerHTML = `
       <h1>Follow Packs</h1>
       <section class="section" id="follow-packs-settings-content"></section>
@@ -22,16 +23,21 @@ export class FollowPacksView extends View {
     this.settings = new FollowPacksSettings();
     this.settings.mount(this.container);
 
-    this.contentEl = this.container.querySelector('[data-addon-content="follow-packs"]') as HTMLElement;
+    this.contentEl = this.container.querySelector(
+      '[data-addon-content="follow-packs"]'
+    ) as HTMLElement;
 
     if (isFollowPacksEnabled()) {
       this.mountContent();
     }
 
-    this.toggleSubId = TypedEventBus.getInstance().on('follow-packs:toggle', (payload: { enabled: boolean }) => {
-      if (payload.enabled) this.mountContent();
-      else this.unmountContent();
-    });
+    this.toggleSubId = TypedEventBus.getInstance().on(
+      'follow-packs:toggle',
+      (payload: { enabled: boolean }) => {
+        if (payload.enabled) this.mountContent();
+        else this.unmountContent();
+      }
+    );
   }
 
   private mountContent(): void {

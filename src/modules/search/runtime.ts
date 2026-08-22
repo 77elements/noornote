@@ -2,8 +2,12 @@ import type { ModuleRuntime, ModuleContext } from '../../core/ModuleLoader';
 import type { SearchModuleApi } from './contracts';
 
 export class SearchRuntime implements ModuleRuntime<SearchModuleApi> {
-  private orchestrator: import('../../services/orchestration/SearchOrchestrator').SearchOrchestrator | null = null;
-  private userSearchService: import('../../services/UserSearchService').UserSearchService | null = null;
+  private orchestrator:
+    | import('../../services/orchestration/SearchOrchestrator').SearchOrchestrator
+    | null = null;
+  private userSearchService:
+    | import('../../services/UserSearchService').UserSearchService
+    | null = null;
 
   async init(_ctx: ModuleContext): Promise<void> {
     const [orchMod, userSearchMod] = await Promise.all([
@@ -23,10 +27,13 @@ export class SearchRuntime implements ModuleRuntime<SearchModuleApi> {
     const orch = this.orchestrator;
     const uss = this.userSearchService;
     return {
-      search: (options) => orch?.search(options) ?? Promise.resolve([]),
-      searchPaginated: (options, until) => orch?.searchPaginated(options, until) ?? Promise.resolve([]),
-      searchProfiles: (query, limit) => orch?.searchProfiles(query, limit) ?? Promise.resolve([]),
-      searchUsers: (query, callbacks) => uss?.search(query, callbacks) ?? new AbortController(),
+      search: options => orch?.search(options) ?? Promise.resolve([]),
+      searchPaginated: (options, until) =>
+        orch?.searchPaginated(options, until) ?? Promise.resolve([]),
+      searchProfiles: (query, limit) =>
+        orch?.searchProfiles(query, limit) ?? Promise.resolve([]),
+      searchUsers: (query, callbacks) =>
+        uss?.search(query, callbacks) ?? new AbortController(),
     };
   }
 }

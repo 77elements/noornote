@@ -23,7 +23,7 @@ export type {
   MediaContent,
   LinkPreview,
   QuotedReference,
-  NoteUIOptions
+  NoteUIOptions,
 } from './types/NoteTypes';
 
 export class NoteUI {
@@ -37,7 +37,11 @@ export class NoteUI {
    * @param options - Rendering options (collapsible, islFetchStats, isLoggedIn, depth)
    * @param index - Optional index for tracking position (legacy compatibility)
    */
-  static createNoteElement(event: NostrEvent, options?: NoteUIOptions | number, index?: number): HTMLElement {
+  static createNoteElement(
+    event: NostrEvent,
+    options?: NoteUIOptions | number,
+    index?: number
+  ): HTMLElement {
     // Legacy compatibility: if options is a number, treat it as index and next param as depth
     let opts: NoteUIOptions;
     if (typeof options === 'number') {
@@ -47,7 +51,7 @@ export class NoteUI {
         islFetchStats: false,
         isLoggedIn: false,
         headerSize: 'medium',
-        depth: index || 0
+        depth: index || 0,
       };
     } else {
       // New call: createNoteElement(event, options)
@@ -57,7 +61,7 @@ export class NoteUI {
         isLoggedIn: false,
         headerSize: 'medium',
         depth: 0,
-        ...options
+        ...options,
       };
     }
 
@@ -81,7 +85,9 @@ export class NoteUI {
 
       // Check if we've exceeded maximum nesting depth
       if (opts.depth! > NoteUI.MAX_NESTING_DEPTH) {
-        console.warn(`⚠️ Max nesting depth (${NoteUI.MAX_NESTING_DEPTH}) reached for note ${event.id?.slice(0, 8) ?? 'unknown'}`);
+        console.warn(
+          `⚠️ Max nesting depth (${NoteUI.MAX_NESTING_DEPTH}) reached for note ${event.id?.slice(0, 8) ?? 'unknown'}`
+        );
         return FallbackElementFactory.createMaxDepthElement(event);
       }
 
@@ -95,7 +101,6 @@ export class NoteUI {
       return FallbackElementFactory.createErrorElement(event, error);
     }
   }
-
 
   /**
    * Cleanup the note headers and ISL for one card's DOM subtree before removing
@@ -118,8 +123,9 @@ export class NoteUI {
    * Get InteractionStatusLine instance for a note
    * Used by views to update stats after async operations (e.g., SNV reply count)
    */
-  static getInteractionStatusLine(noteId: string): InteractionStatusLine | undefined {
+  static getInteractionStatusLine(
+    noteId: string
+  ): InteractionStatusLine | undefined {
     return NoteStructureBuilder.getISLInstance(noteId);
   }
-
 }

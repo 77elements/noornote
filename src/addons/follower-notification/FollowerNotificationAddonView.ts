@@ -8,7 +8,8 @@ export class FollowerNotificationAddonView extends View {
   constructor() {
     super();
     this.container = document.createElement('div');
-    this.container.className = 'view-content view-content--addon view-content--addon-follower-notification';
+    this.container.className =
+      'view-content view-content--addon view-content--addon-follower-notification';
     this.container.innerHTML = `
       <h1>Follower Notification</h1>
       <section class="section" id="follower-notification-settings-content"></section>

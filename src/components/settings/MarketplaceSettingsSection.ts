@@ -11,11 +11,15 @@
 import { SettingsSection } from './SettingsSection';
 import { Switch } from '../ui/Switch';
 import {
-  isMarketplaceEnabled, setMarketplaceEnabled,
-  isTimelineListingsEnabled, setTimelineListingsEnabled,
-  getTimelineListingFrequency, setTimelineListingFrequency,
-  isProfileListingsEnabled, setProfileListingsEnabled,
-  type ListingFrequency
+  isMarketplaceEnabled,
+  setMarketplaceEnabled,
+  isTimelineListingsEnabled,
+  setTimelineListingsEnabled,
+  getTimelineListingFrequency,
+  setTimelineListingFrequency,
+  isProfileListingsEnabled,
+  setProfileListingsEnabled,
+  type ListingFrequency,
 } from '../../addons/marketplace/index';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
@@ -38,7 +42,7 @@ export class MarketplaceSettingsSection extends SettingsSection {
     this.marketplaceSwitch = new Switch({
       label: '',
       checked: marketplaceEnabled,
-      onChange: (checked) => {
+      onChange: checked => {
         setMarketplaceEnabled(checked);
         // Emit the uniform AddonLoader event + the legacy event so existing
         // listeners (Timeline, MainLayout sidebar, MarketplaceAddonView) keep
@@ -47,31 +51,41 @@ export class MarketplaceSettingsSection extends SettingsSection {
         bus.emit('marketplace:addon-toggle', { enabled: checked });
         bus.emit('marketplace:toggle', { enabled: checked });
         this.updateTimelineVisibility(contentContainer);
-        ToastService.show(checked ? 'Marketplace enabled' : 'Marketplace disabled', 'success');
-      }
+        ToastService.show(
+          checked ? 'Marketplace enabled' : 'Marketplace disabled',
+          'success'
+        );
+      },
     });
 
     this.profileListingsSwitch = new Switch({
       label: '',
       checked: isProfileListingsEnabled(),
-      onChange: (checked) => {
+      onChange: checked => {
         setProfileListingsEnabled(checked);
         ToastService.show(
-          checked ? 'Products carousel enabled on profiles' : 'Products carousel hidden on profiles',
+          checked
+            ? 'Products carousel enabled on profiles'
+            : 'Products carousel hidden on profiles',
           'success'
         );
-      }
+      },
     });
 
     this.timelineSwitch = new Switch({
       label: '',
       checked: isTimelineListingsEnabled(),
-      onChange: (checked) => {
+      onChange: checked => {
         setTimelineListingsEnabled(checked);
-        TypedEventBus.getInstance().emit('marketplace:timeline-toggle', { enabled: checked });
+        TypedEventBus.getInstance().emit('marketplace:timeline-toggle', {
+          enabled: checked,
+        });
         this.updateFrequencyVisibility(contentContainer);
-        ToastService.show(checked ? 'Timeline listings enabled' : 'Timeline listings disabled', 'success');
-      }
+        ToastService.show(
+          checked ? 'Timeline listings enabled' : 'Timeline listings disabled',
+          'success'
+        );
+      },
     });
 
     const currentFreq = getTimelineListingFrequency();
@@ -101,12 +115,16 @@ export class MarketplaceSettingsSection extends SettingsSection {
         </div>
 
         <div class="frequency-selector${isTimelineListingsEnabled() ? '' : ' is-hidden'}">
-          ${freqOptions.map(([value, label]) => `
+          ${freqOptions
+            .map(
+              ([value, label]) => `
             <label class="nn-checkbox nn-checkbox--label-left">
               <span class="setting__label">${label}</span>
               <input type="radio" name="listing-freq" value="${value}" ${currentFreq === value ? 'checked' : ''} />
             </label>
-          `).join('')}
+          `
+            )
+            .join('')}
         </div>
       </div>
     `;
@@ -116,24 +134,32 @@ export class MarketplaceSettingsSection extends SettingsSection {
     this.timelineSwitch.setupEventListeners(contentContainer);
 
     // Frequency radio buttons
-    contentContainer.querySelectorAll('input[name="listing-freq"]').forEach(radio => {
-      radio.addEventListener('change', (e) => {
-        const value = (e.target as HTMLInputElement).value as ListingFrequency;
-        setTimelineListingFrequency(value);
-        const labels: Record<ListingFrequency, string> = {
-          rare: 'Rare (60 min)',
-          moderate: 'Moderate (30 min)',
-          frequent: 'Frequent (15 min)',
-          'more-frequent': 'More Frequent (5 min)',
-          realtime: 'Every 60 seconds'
-        };
-        ToastService.show(`Listing frequency: ${labels[value] || value}`, 'success');
+    contentContainer
+      .querySelectorAll('input[name="listing-freq"]')
+      .forEach(radio => {
+        radio.addEventListener('change', e => {
+          const value = (e.target as HTMLInputElement)
+            .value as ListingFrequency;
+          setTimelineListingFrequency(value);
+          const labels: Record<ListingFrequency, string> = {
+            rare: 'Rare (60 min)',
+            moderate: 'Moderate (30 min)',
+            frequent: 'Frequent (15 min)',
+            'more-frequent': 'More Frequent (5 min)',
+            realtime: 'Every 60 seconds',
+          };
+          ToastService.show(
+            `Listing frequency: ${labels[value] || value}`,
+            'success'
+          );
+        });
       });
-    });
   }
 
   private updateTimelineVisibility(container: HTMLElement): void {
-    const timelineSettings = container.querySelector('.marketplace-timeline-settings');
+    const timelineSettings = container.querySelector(
+      '.marketplace-timeline-settings'
+    );
     if (timelineSettings) {
       timelineSettings.classList.toggle('is-hidden', !isMarketplaceEnabled());
     }

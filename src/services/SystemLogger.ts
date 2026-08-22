@@ -48,17 +48,25 @@ const GLOBAL_CATEGORIES = [
   'ListAutoSync',
   'DeletionService',
   'BroadcastDelete',
-  'DeleteService'
+  'DeleteService',
 ];
 
 // View-specific categories mapping (Router viewClass → allowed categories)
 // TV = Timeline View, SNV = Single Note View, PV = Profile View, NV = Notifications View, SV = Settings View
 const VIEW_CATEGORIES: Record<string, string[]> = {
-  'tv': ['FeedOrchestrator', 'TimelineUI', 'TimelineView'], // Timeline View
-  'snv': ['SNV', 'SingleNoteView', 'ThreadOrchestrator', 'ReactionsOrch'], // Single Note View
-  'pv': ['PV', 'ProfileView', 'ProfileOrchestrator', 'TimelineUI', 'FeedOrchestrator', 'FollowerCount', 'UserStatus'], // Profile View (includes TimelineUI for author filter)
-  'nv': ['NotificationsView', 'NotificationsOrch', 'ReactionsOrch'], // Notifications View
-  'sv': ['SettingsView', 'CacheManager'] // Settings View
+  tv: ['FeedOrchestrator', 'TimelineUI', 'TimelineView'], // Timeline View
+  snv: ['SNV', 'SingleNoteView', 'ThreadOrchestrator', 'ReactionsOrch'], // Single Note View
+  pv: [
+    'PV',
+    'ProfileView',
+    'ProfileOrchestrator',
+    'TimelineUI',
+    'FeedOrchestrator',
+    'FollowerCount',
+    'UserStatus',
+  ], // Profile View (includes TimelineUI for author filter)
+  nv: ['NotificationsView', 'NotificationsOrch', 'ReactionsOrch'], // Notifications View
+  sv: ['SettingsView', 'CacheManager'], // Settings View
 };
 
 export class SystemLogger {
@@ -72,7 +80,10 @@ export class SystemLogger {
   private globalAutoScroll = true;
   private pageAutoScroll = true;
   private renderScheduled = false;
-  private dirty: { global: boolean; page: boolean } = { global: false, page: false };
+  private dirty: { global: boolean; page: boolean } = {
+    global: false,
+    page: false,
+  };
   // On the native Android app (Capacitor) the live log panel is never reachable
   // (the secondary column is display:none) and everything is already captured by the
   // file-based DiagnosticLogger. So we skip the in-memory collection, dedup scan and
@@ -102,7 +113,10 @@ export class SystemLogger {
     // Clear page logs on navigation (avoid circular dependency with Router)
     window.addEventListener('router:navigate', (event: any) => {
       this.clearPageLogs();
-      this.info('Router', `🧹 Local logs cleared (switched to ${event.detail.path})`);
+      this.info(
+        'Router',
+        `🧹 Local logs cleared (switched to ${event.detail.path})`
+      );
     });
   }
 
@@ -135,9 +149,13 @@ export class SystemLogger {
     `;
 
     // Setup scroll detection for both sections
-    const globalContent = container.querySelector('.system-logger__global-content');
+    const globalContent = container.querySelector(
+      '.system-logger__global-content'
+    );
     if (globalContent) {
-      globalContent.addEventListener('scroll', () => this.handleScroll('global'));
+      globalContent.addEventListener('scroll', () =>
+        this.handleScroll('global')
+      );
     }
 
     const pageContent = container.querySelector('.system-logger__page-content');
@@ -173,7 +191,10 @@ export class SystemLogger {
       originalError(...args);
 
       // Relay connection issues → friendly warning
-      if (message.includes('bad response') || message.includes('WebSocket connection')) {
+      if (
+        message.includes('bad response') ||
+        message.includes('WebSocket connection')
+      ) {
         const relayMatch = message.match(/wss?:\/\/[^\s]+/);
         const relay = relayMatch ? relayMatch[0] : 'unknown relay';
         this.log('warn', 'NostrTransport', `Relay offline: ${relay}`);
@@ -198,22 +219,30 @@ export class SystemLogger {
    * Add log entry - automatically categorizes as global or page
    * Deduplicates repeated logs by incrementing count instead of creating new entries
    */
-  public log(level: LogLevel, category: string, message: string, data?: any): void {
+  public log(
+    level: LogLevel,
+    category: string,
+    message: string,
+    data?: any
+  ): void {
     // Mirror to DiagnosticLogger (writes to JSONL on mobile, no-op on web)
     diagLog('system', `[${level}] ${category}: ${message}`, data);
 
     // Native Android: file logging only, no in-memory panel (see suppressInMemory).
     if (this.suppressInMemory) return;
 
-    const logCategory: LogCategory = GLOBAL_CATEGORIES.includes(category) ? 'global' : 'page';
+    const logCategory: LogCategory = GLOBAL_CATEGORIES.includes(category)
+      ? 'global'
+      : 'page';
     const normalizedMessage = this.normalizeMessageForDeduplication(message);
     const logs = logCategory === 'global' ? this.globalLogs : this.pageLogs;
 
     // Check if similar log already exists (category + normalized message match)
-    const existingLog = logs.find(log =>
-      log.category === category &&
-      log.level === level &&
-      this.normalizeMessageForDeduplication(log.message) === normalizedMessage
+    const existingLog = logs.find(
+      log =>
+        log.category === category &&
+        log.level === level &&
+        this.normalizeMessageForDeduplication(log.message) === normalizedMessage
     );
 
     if (existingLog) {
@@ -231,7 +260,7 @@ export class SystemLogger {
       logCategory,
       message,
       data,
-      count: 1
+      count: 1,
     };
 
     // Add to appropriate log array and render
@@ -325,7 +354,9 @@ export class SystemLogger {
   ): void {
     if (this.suppressInMemory) return;
 
-    const logCategory: LogCategory = GLOBAL_CATEGORIES.includes(category) ? 'global' : 'page';
+    const logCategory: LogCategory = GLOBAL_CATEGORIES.includes(category)
+      ? 'global'
+      : 'page';
     const logs = logCategory === 'global' ? this.globalLogs : this.pageLogs;
     const existing = logs.find(l => l.id === key);
 
@@ -342,7 +373,13 @@ export class SystemLogger {
 
     this.addAndRenderLog(
       {
-        id: key, timestamp: Date.now(), level, category, logCategory, message, count: 1,
+        id: key,
+        timestamp: Date.now(),
+        level,
+        category,
+        logCategory,
+        message,
+        count: 1,
         ...(statusDot ? { statusDot } : {}),
       },
       logCategory
@@ -364,7 +401,9 @@ export class SystemLogger {
    * Render global logs to UI
    */
   private renderGlobalLogs(): boolean {
-    const logsContainer = this.element.querySelector('.system-logger__global-logs') as HTMLElement | null;
+    const logsContainer = this.element.querySelector(
+      '.system-logger__global-logs'
+    ) as HTMLElement | null;
     if (!logsContainer) return true;
     // Skip while not visible (inactive tab / phone display:none / detached); offsetParent
     // is null in all those cases. The caller keeps the category dirty so it renders later.
@@ -380,7 +419,9 @@ export class SystemLogger {
    * Render page logs to UI (filtered by current Router view)
    */
   private renderPageLogs(): boolean {
-    const logsContainer = this.element.querySelector('.system-logger__page-logs') as HTMLElement | null;
+    const logsContainer = this.element.querySelector(
+      '.system-logger__page-logs'
+    ) as HTMLElement | null;
     if (!logsContainer) return true;
     // Skip while not visible (see renderGlobalLogs); stays dirty until shown.
     if (logsContainer.offsetParent === null) return false;
@@ -419,7 +460,9 @@ export class SystemLogger {
     const timestamp = entry.timestamp || Date.now();
     const time = new Date(timestamp).toLocaleTimeString();
     const levelClass = `system-log-entry--${entry.level}`;
-    const dataHtml = entry.data ? `<pre class="system-log-entry__data">${JSON.stringify(entry.data, null, 2)}</pre>` : '';
+    const dataHtml = entry.data
+      ? `<pre class="system-log-entry__data">${JSON.stringify(entry.data, null, 2)}</pre>`
+      : '';
 
     // Abbreviate long category names
     let category = entry.category
@@ -428,11 +471,12 @@ export class SystemLogger {
 
     // Truncate if longer than 14 characters
     if (category.length > 14) {
-      category = category.substring(0, 12) + '..';
+      category = `${category.substring(0, 12)}..`;
     }
 
     // Add count suffix if log occurred more than once
-    const countSuffix = (entry.count && entry.count > 1) ? ` (${entry.count})` : '';
+    const countSuffix =
+      entry.count && entry.count > 1 ? ` (${entry.count})` : '';
 
     // Small round status diode (red/green), e.g. per-relay delete-broadcast result
     const dotHtml = entry.statusDot
@@ -452,7 +496,9 @@ export class SystemLogger {
    * Scroll a section to bottom by type
    */
   private scrollToBottom(section: 'global' | 'page'): void {
-    const content = this.element.querySelector(`.system-logger__${section}-content`);
+    const content = this.element.querySelector(
+      `.system-logger__${section}-content`
+    );
     if (content) {
       content.scrollTop = content.scrollHeight;
     }
@@ -462,11 +508,15 @@ export class SystemLogger {
    * Handle scroll events for a section - toggles auto-scroll based on position
    */
   private handleScroll(section: 'global' | 'page'): void {
-    const content = this.element.querySelector(`.system-logger__${section}-content`);
+    const content = this.element.querySelector(
+      `.system-logger__${section}-content`
+    );
     if (!content) return;
 
-    const isAtBottom = content.scrollTop + content.clientHeight >= content.scrollHeight - 10;
-    const autoScrollKey = section === 'global' ? 'globalAutoScroll' : 'pageAutoScroll';
+    const isAtBottom =
+      content.scrollTop + content.clientHeight >= content.scrollHeight - 10;
+    const autoScrollKey =
+      section === 'global' ? 'globalAutoScroll' : 'pageAutoScroll';
 
     if (isAtBottom !== this[autoScrollKey]) {
       this[autoScrollKey] = isAtBottom;
@@ -495,8 +545,11 @@ export class SystemLogger {
    * Remove specific log entry by message (for clearing resolved errors)
    */
   public removeLog(category: string, message: string): void {
-    const logCategory: LogCategory = GLOBAL_CATEGORIES.includes(category) ? 'global' : 'page';
-    const filterFn = (entry: LogEntry) => !(entry.category === category && entry.message === message);
+    const logCategory: LogCategory = GLOBAL_CATEGORIES.includes(category)
+      ? 'global'
+      : 'page';
+    const filterFn = (entry: LogEntry) =>
+      !(entry.category === category && entry.message === message);
 
     if (logCategory === 'global') {
       this.globalLogs = this.globalLogs.filter(filterFn);

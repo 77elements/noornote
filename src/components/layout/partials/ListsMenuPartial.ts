@@ -66,14 +66,18 @@ export class ListsMenuPartial {
     `;
 
     // Collapsed icon rail: the submenu opens as a floating panel next to the icon.
-    const trigger = li.querySelector('.primary-nav__accordion-trigger') as HTMLElement | null;
-    const submenu = li.querySelector('.primary-nav__submenu') as HTMLElement | null;
+    const trigger = li.querySelector(
+      '.primary-nav__accordion-trigger'
+    ) as HTMLElement | null;
+    const submenu = li.querySelector(
+      '.primary-nav__submenu'
+    ) as HTMLElement | null;
     if (trigger && submenu) {
       this.flyout = new RailFlyout(trigger, submenu);
     }
 
     // Accordion trigger handler
-    trigger?.addEventListener('click', (e) => {
+    trigger?.addEventListener('click', e => {
       e.preventDefault();
       if (this.flyout?.handleTriggerClick()) return;
       this.toggle();
@@ -82,7 +86,7 @@ export class ListsMenuPartial {
     // Sublink handlers
     const sublinks = li.querySelectorAll('.primary-nav__sublink');
     sublinks.forEach(link => {
-      link.addEventListener('click', (e) => {
+      link.addEventListener('click', e => {
         e.preventDefault();
         this.flyout?.close();
         const listType = (link as HTMLElement).dataset.listType as ListType;

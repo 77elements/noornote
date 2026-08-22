@@ -67,18 +67,26 @@ export class ProfileEditorService {
    * @param metadata - Profile fields to update
    * @returns Promise<NostrEvent | null> - Published event on success, null on failure
    */
-  public async updateProfile(metadata: ProfileMetadata): Promise<NostrEvent | null> {
+  public async updateProfile(
+    metadata: ProfileMetadata
+  ): Promise<NostrEvent | null> {
     // Validate authentication
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      this.systemLogger.error('ProfileEditorService', 'Cannot update profile: User not authenticated');
+      this.systemLogger.error(
+        'ProfileEditorService',
+        'Cannot update profile: User not authenticated'
+      );
       return null;
     }
 
     // Validate metadata fields
     const validationError = this.validateMetadata(metadata);
     if (validationError) {
-      this.systemLogger.error('ProfileEditorService', `Validation failed: ${validationError}`);
+      this.systemLogger.error(
+        'ProfileEditorService',
+        `Validation failed: ${validationError}`
+      );
       ToastService.show(validationError, 'error');
       return null;
     }
@@ -86,17 +94,26 @@ export class ProfileEditorService {
     // Get write relays
     const writeRelays = this.relayConfig.getWriteRelays();
     if (!writeRelays || writeRelays.length === 0) {
-      this.systemLogger.error('ProfileEditorService', 'Cannot update profile: No write relays configured');
-      ToastService.show('No write relays configured. Please check your settings.', 'error');
+      this.systemLogger.error(
+        'ProfileEditorService',
+        'Cannot update profile: No write relays configured'
+      );
+      ToastService.show(
+        'No write relays configured. Please check your settings.',
+        'error'
+      );
       return null;
     }
 
     try {
       // Handle multiple NIP-05 addresses (Animestr-style)
       // Store primary in content.nip05, all as tags for compatibility
-      const nip05s = metadata.nip05s && metadata.nip05s.length > 0
-        ? metadata.nip05s
-        : (metadata.nip05 ? [metadata.nip05] : []);
+      const nip05s =
+        metadata.nip05s && metadata.nip05s.length > 0
+          ? metadata.nip05s
+          : metadata.nip05
+            ? [metadata.nip05]
+            : [];
 
       // Clean metadata (remove undefined/null fields)
       // Remove nip05s from content (only goes in tags)
@@ -113,11 +130,14 @@ export class ProfileEditorService {
       const tags: string[][] = [];
 
       // Add all profile fields as tags (like Animestr does)
-      if (cleanedMetadata.displayName) tags.push(['displayName', cleanedMetadata.displayName]);
-      if (cleanedMetadata.display_name) tags.push(['display_name', cleanedMetadata.display_name]);
+      if (cleanedMetadata.displayName)
+        tags.push(['displayName', cleanedMetadata.displayName]);
+      if (cleanedMetadata.display_name)
+        tags.push(['display_name', cleanedMetadata.display_name]);
       if (cleanedMetadata.name) tags.push(['name', cleanedMetadata.name]);
       if (cleanedMetadata.about) tags.push(['about', cleanedMetadata.about]);
-      if (cleanedMetadata.picture) tags.push(['picture', cleanedMetadata.picture]);
+      if (cleanedMetadata.picture)
+        tags.push(['picture', cleanedMetadata.picture]);
       if (cleanedMetadata.banner) tags.push(['banner', cleanedMetadata.banner]);
 
       // Add all NIP-05 addresses as tags
@@ -135,14 +155,17 @@ export class ProfileEditorService {
         created_at: Math.floor(Date.now() / 1000),
         tags,
         content: JSON.stringify(cleanedMetadata),
-        pubkey: currentUser.pubkey
+        pubkey: currentUser.pubkey,
       };
 
       // Sign event
       const signedEvent = await this.authService.signEvent(unsignedEvent);
 
       if (!signedEvent) {
-        this.systemLogger.error('ProfileEditorService', 'Failed to sign profile event');
+        this.systemLogger.error(
+          'ProfileEditorService',
+          'Failed to sign profile event'
+        );
         return null;
       }
 
@@ -207,11 +230,17 @@ export class ProfileEditorService {
     }
 
     // Validate Lightning address
-    if (metadata.lud16 && !this.validateLightningAddress(metadata.lud16).valid) {
+    if (
+      metadata.lud16 &&
+      !this.validateLightningAddress(metadata.lud16).valid
+    ) {
       return 'Invalid Lightning address. Use email format or LNURL.';
     }
 
-    if (metadata.lud06 && !this.validateLightningAddress(metadata.lud06).valid) {
+    if (
+      metadata.lud06 &&
+      !this.validateLightningAddress(metadata.lud06).valid
+    ) {
       return 'Invalid LNURL format.';
     }
 
@@ -250,7 +279,10 @@ export class ProfileEditorService {
    * @param address - Lightning address (email format or LNURL)
    * @returns { valid: boolean; field: 'lud16' | 'lud06' }
    */
-  public validateLightningAddress(address: string): { valid: boolean; field: 'lud16' | 'lud06' } {
+  public validateLightningAddress(address: string): {
+    valid: boolean;
+    field: 'lud16' | 'lud06';
+  } {
     // Email format (lud16)
     if (/^[a-z0-9._-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(address)) {
       return { valid: true, field: 'lud16' };

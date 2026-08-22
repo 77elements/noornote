@@ -76,13 +76,21 @@ export class UserProfileService {
   private static instance: UserProfileService;
 
   /** LRU Cache for profiles (platform-aware size) */
-  private profileCache = new LRUCache<UserProfile>(getCacheSize(2000, 1000, 500));
+  private profileCache = new LRUCache<UserProfile>(
+    getCacheSize(2000, 1000, 500)
+  );
 
   private orchestrator: ProfileOrchestrator;
-  private fetchingProfiles: Map<string, Promise<UserProfile | null>> = new Map();
-  private profileUpdateCallbacks: Map<string, Set<(profile: UserProfile) => void>> = new Map();
+  private fetchingProfiles: Map<string, Promise<UserProfile | null>> =
+    new Map();
+  private profileUpdateCallbacks: Map<
+    string,
+    Set<(profile: UserProfile) => void>
+  > = new Map();
   /** Listeners that want to be notified for EVERY profile update (any pubkey). */
-  private anyProfileUpdateCallbacks: Set<(pubkey: string, profile: UserProfile) => void> = new Set();
+  private anyProfileUpdateCallbacks: Set<
+    (pubkey: string, profile: UserProfile) => void
+  > = new Set();
 
   /** Track failed fetches to prevent rapid retry storms (pubkey → timestamp) */
   private failedFetches: Map<string, number> = new Map();
@@ -134,7 +142,10 @@ export class UserProfileService {
    * on cache miss; subscribers will be updated when the real name arrives.
    */
   public getDisplayName(pubkey: string): string {
-    return UserProfileService.displayNameOf(this.profileCache.get(pubkey) ?? null, pubkey);
+    return UserProfileService.displayNameOf(
+      this.profileCache.get(pubkey) ?? null,
+      pubkey
+    );
   }
 
   /**
@@ -143,14 +154,20 @@ export class UserProfileService {
    * getDisplayName().
    */
   public getDisplayPicture(pubkey: string): string {
-    return UserProfileService.displayPictureOf(this.profileCache.get(pubkey) ?? null, pubkey);
+    return UserProfileService.displayPictureOf(
+      this.profileCache.get(pubkey) ?? null,
+      pubkey
+    );
   }
 
   /**
    * Extract render-ready name from a profile object (e.g. inside a
    * subscribeToProfile callback). Always returns a usable string.
    */
-  public static displayNameOf(profile: UserProfile | null, pubkey: string): string {
+  public static displayNameOf(
+    profile: UserProfile | null,
+    pubkey: string
+  ): string {
     const real = profile?.display_name || profile?.name || profile?.username;
     if (real) return real;
     const npub = hexToNpub(pubkey);
@@ -161,7 +178,10 @@ export class UserProfileService {
    * Extract render-ready picture from a profile object. Always returns a
    * usable URL (real or identicon).
    */
-  public static displayPictureOf(profile: UserProfile | null, pubkey: string): string {
+  public static displayPictureOf(
+    profile: UserProfile | null,
+    pubkey: string
+  ): string {
     return profile?.picture || getAvatarFallback(pubkey);
   }
 
@@ -183,7 +203,10 @@ export class UserProfileService {
    * Get full user profile
    * Returns cached profile or fetches from relays
    */
-  public async getUserProfile(pubkey: string, relayHints?: string[]): Promise<UserProfile> {
+  public async getUserProfile(
+    pubkey: string,
+    relayHints?: string[]
+  ): Promise<UserProfile> {
     // Check cache first (LRU touch handled by LRUCache.get())
     const cached = this.profileCache.get(pubkey);
     if (cached) {
@@ -192,14 +215,21 @@ export class UserProfileService {
 
     // Deduplication: if already fetching, wait for that request
     if (this.fetchingProfiles.has(pubkey)) {
-      return (await this.fetchingProfiles.get(pubkey)!) ?? this.getDefaultProfile(pubkey);
+      return (
+        (await this.fetchingProfiles.get(pubkey)!) ??
+        this.getDefaultProfile(pubkey)
+      );
     }
 
     // Check if recently failed - return default profile during cooldown. A
     // caller-provided relay hint is a fresh source we may not have tried yet, so
     // it bypasses the cooldown (without a hint the cooldown behaves as before).
     const lastFailed = this.failedFetches.get(pubkey);
-    if (!relayHints?.length && lastFailed && Date.now() - lastFailed < this.FAILED_FETCH_COOLDOWN) {
+    if (
+      !relayHints?.length &&
+      lastFailed &&
+      Date.now() - lastFailed < this.FAILED_FETCH_COOLDOWN
+    ) {
       return this.getDefaultProfile(pubkey);
     }
 
@@ -247,7 +277,9 @@ export class UserProfileService {
   /**
    * Fetch multiple user profiles efficiently
    */
-  public async getUserProfiles(pubkeys: string[]): Promise<Map<string, UserProfile>> {
+  public async getUserProfiles(
+    pubkeys: string[]
+  ): Promise<Map<string, UserProfile>> {
     const result = new Map<string, UserProfile>();
     const toFetch: string[] = [];
 
@@ -265,7 +297,8 @@ export class UserProfileService {
     if (toFetch.length > 0) {
       // Stage 1 — aggregator batch (fast, covers the vast majority).
       try {
-        const fetchedProfiles = await this.fetchMultipleProfilesFromRelays(toFetch);
+        const fetchedProfiles =
+          await this.fetchMultipleProfilesFromRelays(toFetch);
         fetchedProfiles.forEach((profile, pubkey) => {
           // 'display-only': broadcasting a name-less entry (e.g. an empty
           // kind:0) would downgrade already-resolved displays back to the
@@ -274,7 +307,10 @@ export class UserProfileService {
           result.set(pubkey, profile);
         });
       } catch (error) {
-        console.warn('Failed to fetch user profiles (aggregator batch):', error);
+        console.warn(
+          'Failed to fetch user profiles (aggregator batch):',
+          error
+        );
       }
 
       // Stage 2 — outbound recovery for the long tail. A user who
@@ -293,25 +329,27 @@ export class UserProfileService {
         const slice = stillMissing.slice(0, RECOVERY_CAP);
         for (let i = 0; i < slice.length; i += CONCURRENCY) {
           const batch = slice.slice(i, i + CONCURRENCY);
-          await Promise.all(batch.map(async pubkey => {
-            try {
-              const profile = await this.orchestrator.fetchProfile(pubkey);
-              if (profile) {
-                const userProfile = profile as UserProfile;
-                this.cacheProfile(pubkey, userProfile, { notify: true });
-                result.set(pubkey, userProfile);
-              } else {
-                // Full 2-stage attempt (aggregator + outbound) came back
-                // empty — record the retry cooldown exactly like the
-                // single-fetch path, so repeat renders don't re-hammer
-                // the relays for a profile that is genuinely unfindable.
+          await Promise.all(
+            batch.map(async pubkey => {
+              try {
+                const profile = await this.orchestrator.fetchProfile(pubkey);
+                if (profile) {
+                  const userProfile = profile as UserProfile;
+                  this.cacheProfile(pubkey, userProfile, { notify: true });
+                  result.set(pubkey, userProfile);
+                } else {
+                  // Full 2-stage attempt (aggregator + outbound) came back
+                  // empty — record the retry cooldown exactly like the
+                  // single-fetch path, so repeat renders don't re-hammer
+                  // the relays for a profile that is genuinely unfindable.
+                  this.failedFetches.set(pubkey, Date.now());
+                }
+              } catch {
+                // Transport-level failure — also a spent attempt, cooldown applies.
                 this.failedFetches.set(pubkey, Date.now());
               }
-            } catch {
-              // Transport-level failure — also a spent attempt, cooldown applies.
-              this.failedFetches.set(pubkey, Date.now());
-            }
-          }));
+            })
+          );
         }
       }
 
@@ -333,7 +371,10 @@ export class UserProfileService {
   /**
    * Fetch single profile from relays (via ProfileOrchestrator)
    */
-  private async fetchProfileFromRelays(pubkey: string, relayHints?: string[]): Promise<UserProfile | null> {
+  private async fetchProfileFromRelays(
+    pubkey: string,
+    relayHints?: string[]
+  ): Promise<UserProfile | null> {
     // null = orchestrator found nothing on any relay (miss/timeout). The caller
     // (getUserProfile) turns that into a throttled, NON-cached fallback so a
     // transient miss never permanently poisons the cache with an empty profile.
@@ -348,7 +389,9 @@ export class UserProfileService {
    * misses with fabricated name-less defaults here would poison the LRU
    * cache for the whole session (the "@npub1…" / "Anonymous" bug).
    */
-  private async fetchMultipleProfilesFromRelays(pubkeys: string[]): Promise<Map<string, UserProfile>> {
+  private async fetchMultipleProfilesFromRelays(
+    pubkeys: string[]
+  ): Promise<Map<string, UserProfile>> {
     const profiles = await this.orchestrator.fetchMultipleProfiles(pubkeys);
 
     const result = new Map<string, UserProfile>();
@@ -365,14 +408,18 @@ export class UserProfileService {
   private getDefaultProfile(pubkey: string): UserProfile {
     return {
       pubkey,
-      lastUpdated: Date.now()
+      lastUpdated: Date.now(),
     };
   }
 
   /**
    * Subscribe to profile updates (like nostr-react useProfile pattern)
    */
-  public subscribeToProfile(pubkey: string, callback: (profile: UserProfile) => void, relayHints?: string[]): () => void {
+  public subscribeToProfile(
+    pubkey: string,
+    callback: (profile: UserProfile) => void,
+    relayHints?: string[]
+  ): () => void {
     if (!this.profileUpdateCallbacks.has(pubkey)) {
       this.profileUpdateCallbacks.set(pubkey, new Set());
     }
@@ -386,9 +433,11 @@ export class UserProfileService {
       callback(cached);
     } else {
       // Fetch from relays (relayHints, when provided, are tried first)
-      this.getUserProfile(pubkey, relayHints).then(callback).catch(() => {
-        // Silent fail
-      });
+      this.getUserProfile(pubkey, relayHints)
+        .then(callback)
+        .catch(() => {
+          // Silent fail
+        });
     }
 
     // Return unsubscribe function
@@ -419,7 +468,9 @@ export class UserProfileService {
    * like mention-chip DOM patchers that don't know in advance which pubkeys will
    * appear. Returns an unsubscribe function.
    */
-  public subscribeToAnyProfileUpdate(callback: (pubkey: string, profile: UserProfile) => void): () => void {
+  public subscribeToAnyProfileUpdate(
+    callback: (pubkey: string, profile: UserProfile) => void
+  ): () => void {
     this.anyProfileUpdateCallbacks.add(callback);
     return () => {
       this.anyProfileUpdateCallbacks.delete(callback);
@@ -443,7 +494,11 @@ export class UserProfileService {
    *                         (batch path: a name-less broadcast downgrades
    *                         already-resolved displays — the npub-flicker bug)
    */
-  private cacheProfile(pubkey: string, profile: UserProfile, opts: { notify?: boolean | 'display-only' } = {}): void {
+  private cacheProfile(
+    pubkey: string,
+    profile: UserProfile,
+    opts: { notify?: boolean | 'display-only' } = {}
+  ): void {
     this.profileCache.set(pubkey, profile);
     if (opts.notify === true) {
       this.notifyProfileUpdate(pubkey, profile);
@@ -530,7 +585,7 @@ export class UserProfileService {
   public getCacheStats(): { size: number; maxSize: number } {
     return {
       size: this.profileCache.size,
-      maxSize: getCacheSize(2000, 1000, 500)
+      maxSize: getCacheSize(2000, 1000, 500),
     };
   }
 }

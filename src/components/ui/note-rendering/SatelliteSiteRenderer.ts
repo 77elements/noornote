@@ -45,7 +45,7 @@ export class SatelliteSiteRenderer {
       event.pubkey,
       dTag,
       title,
-      event.id,
+      event.id
     );
   }
 
@@ -59,21 +59,28 @@ export class SatelliteSiteRenderer {
    * direct Satellite Earth URL once it arrives. If the fetch fails or the
    * element has been detached by then, the njump fallback stays in place.
    */
-  static renderFromCoordinate(kind: number, pubkey: string, identifier: string): HTMLElement {
+  static renderFromCoordinate(
+    kind: number,
+    pubkey: string,
+    identifier: string
+  ): HTMLElement {
     const element = SatelliteSiteRenderer.renderCard(kind, pubkey, identifier);
     if (kind !== SATELLITE_SITE_KIND) return element;
 
     const naddr = encodeNaddr({ kind, pubkey, identifier, relays: [] });
     const link = element.querySelector('a[href]');
     if (link) {
-      void QuoteNoteFetcher.getInstance().fetchQuotedEventWithError(`nostr:${naddr}`)
-        .then((result) => {
+      void QuoteNoteFetcher.getInstance()
+        .fetchQuotedEventWithError(`nostr:${naddr}`)
+        .then(result => {
           if (!element.isConnected) return;
           if (result.success && result.event.id) {
             link.setAttribute('href', buildSatelliteThreadUrl(result.event.id));
           }
         })
-        .catch(() => { /* leave njump fallback in place */ });
+        .catch(() => {
+          /* leave njump fallback in place */
+        });
     }
     return element;
   }
@@ -83,7 +90,7 @@ export class SatelliteSiteRenderer {
     pubkey: string,
     identifier: string,
     title?: string,
-    eventId?: string,
+    eventId?: string
   ): HTMLElement {
     const element = document.createElement('div');
     element.className = 'note-card note-card--unsupported';

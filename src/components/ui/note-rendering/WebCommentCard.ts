@@ -14,7 +14,11 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { extractWebRef } from '../../../helpers/webContentTags';
-import { escapeHtml, escapeHtmlAttr, safeHttpUrl } from '../../../helpers/escapeHtml';
+import {
+  escapeHtml,
+  escapeHtmlAttr,
+  safeHttpUrl,
+} from '../../../helpers/escapeHtml';
 
 function hostLabel(url: string): string {
   try {
@@ -53,7 +57,11 @@ export function renderWebCommentCard(event: NostrEvent): HTMLElement | null {
   // note media — the global lightbox / video handlers must keep owning those.
   card.addEventListener('click', e => {
     const target = e.target as HTMLElement;
-    if (target.closest('.note-image--clickable') || target.closest('.note-media') || target.closest('video')) {
+    if (
+      target.closest('.note-image--clickable') ||
+      target.closest('.note-media') ||
+      target.closest('video')
+    ) {
       return;
     }
     e.stopPropagation();

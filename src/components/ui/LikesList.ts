@@ -40,7 +40,8 @@ export class LikesList {
   private authorPubkey: string;
   private _reactionsApi?: ReactionsModuleApi | null;
   private get reactionsApi(): ReactionsModuleApi | null {
-    return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
+    return (this._reactionsApi ??=
+      ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
   }
   /** Original reacted-to event — required for NIP-25-compliant reactions on
    *  addressable events (long-form articles etc.) and used as the "react with
@@ -50,7 +51,12 @@ export class LikesList {
   /** reaction-on-reaction tree + shared render context. */
   private ctx: ReactionThreadContext | null = null;
 
-  constructor(reactionEvents: NostrEvent[], noteId: string, authorPubkey: string, originalEvent?: NostrEvent) {
+  constructor(
+    reactionEvents: NostrEvent[],
+    noteId: string,
+    authorPubkey: string,
+    originalEvent?: NostrEvent
+  ) {
     this.reactionEvents = reactionEvents;
     this.noteId = noteId;
     this.authorPubkey = authorPubkey;
@@ -63,10 +69,19 @@ export class LikesList {
   public async init(): Promise<void> {
     // Fetch the reaction-on-reaction tree rooted at the top-level reactions,
     // then prefetch the reactors' profiles for the "(username)" links.
-    const rootIds = this.reactionEvents.map(e => e.id).filter((id): id is string => !!id);
-    const tree = await this.reactionsApi?.fetchReactionTree(rootIds) ?? new Map<string, NostrEvent[]>();
+    const rootIds = this.reactionEvents
+      .map(e => e.id)
+      .filter((id): id is string => !!id);
+    const tree =
+      (await this.reactionsApi?.fetchReactionTree(rootIds)) ??
+      new Map<string, NostrEvent[]>();
     const profiles = await buildReactionProfileMap(collectTreePubkeys(tree));
-    this.ctx = { reactionsApi: this.reactionsApi, tree, profiles, dropdowns: [] };
+    this.ctx = {
+      reactionsApi: this.reactionsApi,
+      tree,
+      profiles,
+      dropdowns: [],
+    };
     this.element = this.createElement();
   }
 
@@ -80,11 +95,15 @@ export class LikesList {
       const content = (event.content || '').trim();
       if (content === '-') continue; // Skip downvotes (not displayed)
 
-      const key = (content === '+' || content === '') ? '❤️' : content;
+      const key = content === '+' || content === '' ? '❤️' : content;
       let group = groups.get(key);
       if (!group) {
         const isCustom = key.startsWith(':') && key.endsWith(':');
-        group = { emojiHtml: isCustom ? resolveReactionEmoji(event) : escapeHtml(key), count: 0, events: [] };
+        group = {
+          emojiHtml: isCustom ? resolveReactionEmoji(event) : escapeHtml(key),
+          count: 0,
+          events: [],
+        };
         groups.set(key, group);
       }
       group.count += 1;
@@ -133,7 +152,8 @@ export class LikesList {
           // via .likes-list__children, so lift the individual node rows out of
           // that hidden wrapper into the badge's own children container.
           const sub = buildChildrenContainer(reaction, ctx);
-          if (sub) while (sub.firstChild) childrenWrap.appendChild(sub.firstChild);
+          if (sub)
+            while (sub.firstChild) childrenWrap.appendChild(sub.firstChild);
         }
 
         const toggle = document.createElement('button');
@@ -156,7 +176,15 @@ export class LikesList {
       // Emoji badge as a pulldown: same emoji → like the note; react to → the reaction.
       const countHtml = `<span class="likes-list__count">${group.count}</span>`;
       badgeRow.appendChild(
-        buildEmojiMenu(rep, this.noteId, this.authorPubkey, this.originalEvent, group.emojiHtml, ctx, countHtml)
+        buildEmojiMenu(
+          rep,
+          this.noteId,
+          this.authorPubkey,
+          this.originalEvent,
+          group.emojiHtml,
+          ctx,
+          countHtml
+        )
       );
 
       scrollContainer.appendChild(badgeRow);

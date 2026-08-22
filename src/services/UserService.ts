@@ -38,7 +38,10 @@ export class UserService {
    * - For other users: fetches from relays (NDK cached)
    * @param forceRefresh - Skip NDK cache and fetch fresh from relays
    */
-  public async getUserFollowing(pubkey: string, forceRefresh: boolean = false): Promise<string[]> {
+  public async getUserFollowing(
+    pubkey: string,
+    forceRefresh: boolean = false
+  ): Promise<string[]> {
     // For current user: read from browserItems (localStorage)
     if (AuthService.getInstance().isCurrentUser(pubkey)) {
       return this.getCurrentUserFollowing();
@@ -65,7 +68,9 @@ export class UserService {
       // If browserItems is empty, fetch from relays (not files - files are not per-user)
       const currentUser = AuthService.getInstance().getCurrentUser();
       if (currentUser?.pubkey) {
-        const relayFollows = await this.getOtherUserFollowing(currentUser.pubkey);
+        const relayFollows = await this.getOtherUserFollowing(
+          currentUser.pubkey
+        );
         if (relayFollows.length > 0) {
           // Cache in browserItems for future use
           const items = relayFollows.map(pubkey => ({ id: pubkey, pubkey }));
@@ -78,7 +83,10 @@ export class UserService {
       // Never inject placeholder accounts — that's their real count.
       return [];
     } catch (error) {
-      this.systemLogger.error('UserService', `Error fetching follow list: ${error}`);
+      this.systemLogger.error(
+        'UserService',
+        `Error fetching follow list: ${error}`
+      );
       return [];
     }
   }
@@ -87,17 +95,28 @@ export class UserService {
    * Get another user's following list from relays (NDK cached)
    * @param forceRefresh - Skip NDK cache and fetch fresh from relays
    */
-  private async getOtherUserFollowing(pubkey: string, forceRefresh: boolean = false): Promise<string[]> {
+  private async getOtherUserFollowing(
+    pubkey: string,
+    forceRefresh: boolean = false
+  ): Promise<string[]> {
     try {
       const relays = this.relayConfig.getAggregatorRelays();
 
       // Fetch kind:3 contact list from relays
       // If forceRefresh, skip NDK cache to get fresh data
-      const events = await this.transport.fetch(relays, [{
-        authors: [pubkey],
-        kinds: [3],
-        limit: 1
-      }], 5000, forceRefresh, 'UserService');
+      const events = await this.transport.fetch(
+        relays,
+        [
+          {
+            authors: [pubkey],
+            kinds: [3],
+            limit: 1,
+          },
+        ],
+        5000,
+        forceRefresh,
+        'UserService'
+      );
 
       if (events.length === 0) {
         return [];
@@ -109,12 +128,18 @@ export class UserService {
         return [];
       }
       const pubkeys = followEvent.tags
-        .filter((tag): tag is [string, string, ...string[]] => tag[0] === 'p' && typeof tag[1] === 'string')
+        .filter(
+          (tag): tag is [string, string, ...string[]] =>
+            tag[0] === 'p' && typeof tag[1] === 'string'
+        )
         .map(tag => tag[1]);
 
       return pubkeys;
     } catch (error) {
-      this.systemLogger.error('UserService', `Error fetching other user's follow list: ${error}`);
+      this.systemLogger.error(
+        'UserService',
+        `Error fetching other user's follow list: ${error}`
+      );
       return [];
     }
   }
@@ -139,7 +164,7 @@ export class UserService {
     if (filter.ids) ndkFilter.ids = filter.ids;
 
     const sub = await this.transport.subscribe(relays, [ndkFilter], {
-      onEvent: callback
+      onEvent: callback,
     });
 
     // Auto-close after 10 seconds

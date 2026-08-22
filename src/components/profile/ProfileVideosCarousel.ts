@@ -53,7 +53,10 @@ export class ProfileVideosCarousel {
     try {
       // Shared fetch (read + outbound relays) via the carousel orchestrator;
       // reuses the same cached round-trip as the articles/listings carousels.
-      const content = await ProfileCarouselOrchestrator.getInstance().fetchProfileContent(this.pubkey);
+      const content =
+        await ProfileCarouselOrchestrator.getInstance().fetchProfileContent(
+          this.pubkey
+        );
       const events = [...content.videos];
 
       events.sort((a, b) => b.created_at - a.created_at);
@@ -68,7 +71,7 @@ export class ProfileVideosCarousel {
             event,
             title: getTag(event.tags, 'title'),
             thumbnail: firstVideo.thumbnail || '',
-            videoUrl: firstVideo.url
+            videoUrl: firstVideo.url,
           };
         })
         .filter((v): v is VideoCardData => v !== null);
@@ -77,7 +80,11 @@ export class ProfileVideosCarousel {
       const { diagLog } = await import('../../services/DiagnosticLogger');
       diagLog('system', 'VideosCarousel: loaded', {
         count: this.videos.length,
-        videos: this.videos.map(v => ({ title: v.title?.slice(0, 30), thumbnail: v.thumbnail || 'none', videoUrl: v.videoUrl?.slice(0, 60) }))
+        videos: this.videos.map(v => ({
+          title: v.title?.slice(0, 30),
+          thumbnail: v.thumbnail || 'none',
+          videoUrl: v.videoUrl?.slice(0, 60),
+        })),
       });
     } catch (error) {
       console.error('[ProfileVideosCarousel] Failed to fetch videos:', error);
@@ -91,10 +98,13 @@ export class ProfileVideosCarousel {
     const masonry = document.createElement('div');
     masonry.className = 'media-feed__masonry';
 
-    masonry.innerHTML = this.videos.map(video => {
-      const eventId = video.event.id || '';
-      const posterAttr = video.thumbnail ? ` poster="${escapeHtmlAttr(video.thumbnail)}"` : '';
-      return `
+    masonry.innerHTML = this.videos
+      .map(video => {
+        const eventId = video.event.id || '';
+        const posterAttr = video.thumbnail
+          ? ` poster="${escapeHtmlAttr(video.thumbnail)}"`
+          : '';
+        return `
         <div class="media-feed__tile" data-noteid="${escapeHtmlAttr(eventId)}">
           <div class="media-feed__tile-media">
             <video src="${escapeHtmlAttr(video.videoUrl)}"${posterAttr} preload="none" muted></video>
@@ -103,7 +113,8 @@ export class ProfileVideosCarousel {
           ${video.title ? `<div class="media-feed__tile-info"><span class="media-feed__tile-title">${escapeHtml(video.title)}</span></div>` : ''}
         </div>
       `;
-    }).join('');
+      })
+      .join('');
 
     masonry.querySelectorAll('.media-feed__tile').forEach(tile => {
       tile.addEventListener('click', () => {
@@ -115,7 +126,6 @@ export class ProfileVideosCarousel {
     this.element.appendChild(masonry);
     // Video thumbnail seek handled by global MutationObserver (startVideoThumbnailObserver)
   }
-
 
   public getElement(): HTMLElement {
     return this.element;

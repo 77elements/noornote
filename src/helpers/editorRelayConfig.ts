@@ -12,7 +12,9 @@ export interface EditorRelayConfig {
   selectedRelays: Set<string>;
 }
 
-export function loadEditorRelayConfig(relayConfig: RelayConfig): EditorRelayConfig {
+export function loadEditorRelayConfig(
+  relayConfig: RelayConfig
+): EditorRelayConfig {
   const local = relayConfig.loadLocalRelaySettings();
   if (local.enabled) {
     return {
@@ -22,7 +24,14 @@ export function loadEditorRelayConfig(relayConfig: RelayConfig): EditorRelayConf
     };
   }
 
-  const availableRelays = [...new Set(relayConfig.getAllRelays().filter(r => r.isActive).map(r => r.url))];
+  const availableRelays = [
+    ...new Set(
+      relayConfig
+        .getAllRelays()
+        .filter(r => r.isActive)
+        .map(r => r.url)
+    ),
+  ];
   const selectedRelays = new Set(relayConfig.getWriteRelays());
   return { isTestMode: false, availableRelays, selectedRelays };
 }

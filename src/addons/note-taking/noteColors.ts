@@ -19,5 +19,7 @@ export type NoteColor = (typeof NOTE_COLORS)[number];
 
 /** True if `value` is a real accent color (a known, non-default key). */
 export function isAccentColor(value: string): boolean {
-  return value !== 'default' && (NOTE_COLORS as readonly string[]).includes(value);
+  return (
+    value !== 'default' && (NOTE_COLORS as readonly string[]).includes(value)
+  );
 }

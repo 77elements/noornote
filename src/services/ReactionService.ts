@@ -50,7 +50,7 @@ export interface ReactionOptions {
 /** Normalize emoji: treat "+" and empty string as ❤️ (NIP-25 convention) */
 function normalizeEmoji(emoji: string): string {
   const trimmed = emoji.trim();
-  return (trimmed === '+' || trimmed === '') ? '❤️' : trimmed;
+  return trimmed === '+' || trimmed === '' ? '❤️' : trimmed;
 }
 
 export class ReactionService {
@@ -86,9 +86,15 @@ export class ReactionService {
 
     try {
       const stats = await this.reactionsOrchestrator.getDetailedStats(noteId);
-      return stats.reactionEvents.some(event => event.pubkey === currentUser.pubkey);
+      return stats.reactionEvents.some(
+        event => event.pubkey === currentUser.pubkey
+      );
     } catch (_error) {
-      this.systemLogger.warn('ReactionService', 'Failed to check if user liked note:', _error);
+      this.systemLogger.warn(
+        'ReactionService',
+        'Failed to check if user liked note:',
+        _error
+      );
       return false;
     }
   }
@@ -100,7 +106,10 @@ export class ReactionService {
    * @param emoji - Emoji to check for (e.g. "❤️", "🔥", "👍")
    * @returns Promise<boolean> - True if user has already reacted with this emoji
    */
-  public async hasUserLikedWithEmoji(noteId: string, emoji: string): Promise<boolean> {
+  public async hasUserLikedWithEmoji(
+    noteId: string,
+    emoji: string
+  ): Promise<boolean> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) return false;
 
@@ -108,10 +117,16 @@ export class ReactionService {
       const stats = await this.reactionsOrchestrator.getDetailedStats(noteId);
       const target = normalizeEmoji(emoji);
       return stats.reactionEvents.some(
-        event => event.pubkey === currentUser.pubkey && normalizeEmoji(event.content) === target
+        event =>
+          event.pubkey === currentUser.pubkey &&
+          normalizeEmoji(event.content) === target
       );
     } catch (_error) {
-      this.systemLogger.warn('ReactionService', 'Failed to check if user liked note with emoji:', _error);
+      this.systemLogger.warn(
+        'ReactionService',
+        'Failed to check if user liked note with emoji:',
+        _error
+      );
       return false;
     }
   }
@@ -122,26 +137,44 @@ export class ReactionService {
    * @param options - Reaction configuration
    * @returns Promise<{ success: boolean; alreadyLiked?: boolean; error?: string }> - Result status
    */
-  public async publishReaction(options: ReactionOptions): Promise<{ success: boolean; alreadyLiked?: boolean; error?: string }> {
-    const { noteId, authorPubkey, emoji = '❤️', emojiTag, relayHints = [], targetEvent } = options;
+  public async publishReaction(
+    options: ReactionOptions
+  ): Promise<{ success: boolean; alreadyLiked?: boolean; error?: string }> {
+    const {
+      noteId,
+      authorPubkey,
+      emoji = '❤️',
+      emojiTag,
+      relayHints = [],
+      targetEvent,
+    } = options;
 
     // Validate authentication
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      this.systemLogger.error('ReactionService', 'Cannot publish reaction: User not authenticated');
+      this.systemLogger.error(
+        'ReactionService',
+        'Cannot publish reaction: User not authenticated'
+      );
       ToastService.show('You must be logged in to like', 'error');
       return { success: false, error: 'Not authenticated' };
     }
 
     // Validate inputs
     if (!noteId || !authorPubkey) {
-      this.systemLogger.error('ReactionService', 'Cannot publish reaction: Missing noteId or authorPubkey');
+      this.systemLogger.error(
+        'ReactionService',
+        'Cannot publish reaction: Missing noteId or authorPubkey'
+      );
       ToastService.show('Invalid note data', 'error');
       return { success: false, error: 'Invalid note data' };
     }
 
     if (this.transport.getWriteRelays().length === 0) {
-      this.systemLogger.error('ReactionService', 'Cannot publish reaction: No write-relays configured');
+      this.systemLogger.error(
+        'ReactionService',
+        'Cannot publish reaction: No write-relays configured'
+      );
       ToastService.show('No relays configured', 'error');
       return { success: false, error: 'No relays configured' };
     }
@@ -191,17 +224,23 @@ export class ReactionService {
         kind: 7,
         created_at: Math.floor(Date.now() / 1000),
         tags,
-        content: emoji,  // Emoji as content
-        pubkey: currentUser.pubkey
+        content: emoji, // Emoji as content
+        pubkey: currentUser.pubkey,
       };
 
-      this.systemLogger.info('ReactionService', `Publishing reaction ${emoji} to note ${noteId.slice(0, 8)}...`);
+      this.systemLogger.info(
+        'ReactionService',
+        `Publishing reaction ${emoji} to note ${noteId.slice(0, 8)}...`
+      );
 
       // Sign event using browser extension
       const signedEvent = await this.authService.signEvent(unsignedEvent);
 
       if (!signedEvent) {
-        this.systemLogger.error('ReactionService', 'Failed to sign reaction event');
+        this.systemLogger.error(
+          'ReactionService',
+          'Failed to sign reaction event'
+        );
         ToastService.show('Signing failed', 'error');
         return { success: false, error: 'Signing failed' };
       }
@@ -224,10 +263,15 @@ export class ReactionService {
         const orch = OutboundRelaysOrchestrator.getInstance();
         const relayLists = await orch.discoverUserRelays([authorPubkey]);
         authorOutbox = orch.getOutboundRelays(relayLists);
-      } catch { /* fall back to relayHints + own write-relays only */ }
+      } catch {
+        /* fall back to relayHints + own write-relays only */
+      }
       const hints = [...new Set([...relayHints, ...authorOutbox])];
 
-      const acceptedRelays = await this.transport.publishWithHints(signedEvent, hints);
+      const acceptedRelays = await this.transport.publishWithHints(
+        signedEvent,
+        hints
+      );
 
       this.systemLogger.info(
         'ReactionService',

@@ -22,7 +22,9 @@ export class HashtagSubscriptionsRuntime implements AddonRuntime {
 
   async init(_ctx: AddonContext): Promise<void> {
     if (this.service) return;
-    const { HashtagNotificationService } = await import('./HashtagNotificationService');
+    const { HashtagNotificationService } = await import(
+      './HashtagNotificationService'
+    );
     this.service = HashtagNotificationService.getInstance();
     this.service.startPolling();
   }

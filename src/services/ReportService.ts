@@ -48,7 +48,6 @@ export class ReportService {
   private transport: NostrTransport;
   private systemLogger: SystemLogger;
 
-
   private constructor() {
     this.authService = AuthService.getInstance();
     this.transport = NostrTransport.getInstance();
@@ -68,7 +67,9 @@ export class ReportService {
    * @param options - Report configuration
    * @returns Promise<{ success: boolean; error?: string }> - Result status
    */
-  public async createReport(options: ReportOptions): Promise<{ success: boolean; error?: string }> {
+  public async createReport(
+    options: ReportOptions
+  ): Promise<{ success: boolean; error?: string }> {
     const { type, reason, reportedPubkey, reportedEventId } = options;
 
     // Auth guard check
@@ -78,20 +79,29 @@ export class ReportService {
 
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      this.systemLogger.error('ReportService', 'Cannot create report: User not authenticated');
+      this.systemLogger.error(
+        'ReportService',
+        'Cannot create report: User not authenticated'
+      );
       return { success: false, error: 'Not authenticated' };
     }
 
     // Validate inputs
     if (!reportedPubkey) {
-      this.systemLogger.error('ReportService', 'Cannot create report: Missing reportedPubkey');
+      this.systemLogger.error(
+        'ReportService',
+        'Cannot create report: Missing reportedPubkey'
+      );
       ToastService.show('Invalid user data', 'error');
       return { success: false, error: 'Invalid user data' };
     }
 
     // Check for duplicate report
     if (this.hasReport(reportedPubkey, type, reportedEventId)) {
-      this.systemLogger.info('ReportService', 'Report already submitted (duplicate)');
+      this.systemLogger.info(
+        'ReportService',
+        'Report already submitted (duplicate)'
+      );
       ToastService.show('Du hast dies bereits gemeldet', 'info');
       return { success: false, error: 'Already reported' };
     }
@@ -116,10 +126,13 @@ export class ReportService {
         created_at: Math.floor(Date.now() / 1000),
         tags,
         content: reason || '',
-        pubkey: currentUser.pubkey
+        pubkey: currentUser.pubkey,
       };
 
-      this.systemLogger.info('ReportService', `Publishing report: ${type}${reportedEventId ? ` on note ${reportedEventId.slice(0, 8)}...` : ''}`);
+      this.systemLogger.info(
+        'ReportService',
+        `Publishing report: ${type}${reportedEventId ? ` on note ${reportedEventId.slice(0, 8)}...` : ''}`
+      );
 
       // Sign event using browser extension
       const signedEvent = await this.authService.signEvent(unsignedEvent);
@@ -176,7 +189,7 @@ export class ReportService {
       illegal: 'Illegal content',
       spam: 'Spam',
       impersonation: 'Impersonation',
-      other: 'Other'
+      other: 'Other',
     };
 
     return labels[type];
@@ -193,7 +206,7 @@ export class ReportService {
       illegal: 'Content that may be unlawful in your jurisdiction',
       spam: 'Unwanted or repetitive messaging',
       impersonation: 'Falsely representing another person or entity',
-      other: 'Other violations not covered by categories above'
+      other: 'Other violations not covered by categories above',
     };
 
     return descriptions[type];
@@ -203,14 +216,28 @@ export class ReportService {
    * Get all available report types
    */
   public static getReportTypes(): ReportType[] {
-    return ['nudity', 'malware', 'profanity', 'illegal', 'spam', 'impersonation', 'other'];
+    return [
+      'nudity',
+      'malware',
+      'profanity',
+      'illegal',
+      'spam',
+      'impersonation',
+      'other',
+    ];
   }
 
   /**
    * Check if a report already exists (localStorage-based)
    */
-  private hasReport(reportedPubkey: string, type: ReportType, reportedEventId?: string): boolean {
-    const reports = PerAccountLocalStorage.getInstance().get<Record<string, boolean>>(StorageKeys.SUBMITTED_REPORTS, {});
+  private hasReport(
+    reportedPubkey: string,
+    type: ReportType,
+    reportedEventId?: string
+  ): boolean {
+    const reports = PerAccountLocalStorage.getInstance().get<
+      Record<string, boolean>
+    >(StorageKeys.SUBMITTED_REPORTS, {});
     const key = this.generateReportKey(reportedPubkey, type, reportedEventId);
     return reports[key] === true;
   }
@@ -218,18 +245,31 @@ export class ReportService {
   /**
    * Store a submitted report
    */
-  private storeReport(reportedPubkey: string, type: ReportType, reportedEventId?: string): void {
-    const reports = PerAccountLocalStorage.getInstance().get<Record<string, boolean>>(StorageKeys.SUBMITTED_REPORTS, {});
+  private storeReport(
+    reportedPubkey: string,
+    type: ReportType,
+    reportedEventId?: string
+  ): void {
+    const reports = PerAccountLocalStorage.getInstance().get<
+      Record<string, boolean>
+    >(StorageKeys.SUBMITTED_REPORTS, {});
     const key = this.generateReportKey(reportedPubkey, type, reportedEventId);
     reports[key] = true;
-    PerAccountLocalStorage.getInstance().set(StorageKeys.SUBMITTED_REPORTS, reports);
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.SUBMITTED_REPORTS,
+      reports
+    );
   }
 
   /**
    * Generate unique cache key for report
    * Format: pubkey:type[:eventId]
    */
-  private generateReportKey(reportedPubkey: string, type: ReportType, reportedEventId?: string): string {
+  private generateReportKey(
+    reportedPubkey: string,
+    type: ReportType,
+    reportedEventId?: string
+  ): string {
     const base = `${reportedPubkey}:${type}`;
     return reportedEventId ? `${base}:${reportedEventId}` : base;
   }

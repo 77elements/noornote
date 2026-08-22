@@ -82,7 +82,9 @@ export class ProgressBarHelper {
    * Check if currently loading
    */
   isLoading(): boolean {
-    return this.element.classList.contains(`${this.options.classPrefix}--loading`);
+    return this.element.classList.contains(
+      `${this.options.classPrefix}--loading`
+    );
   }
 
   private clearFadeOutTimer(): void {

@@ -45,13 +45,16 @@ export class MarketplaceTimeline {
     this.userProfileService = UserProfileService.getInstance();
     this.router = Router.getInstance();
     this.element = this.createElement();
-    this.listingsContainer = this.element.querySelector('.marketplace-timeline__grid') as HTMLElement;
-    this.filterBar = this.element.querySelector('.marketplace-timeline__filters') as HTMLElement;
+    this.listingsContainer = this.element.querySelector(
+      '.marketplace-timeline__grid'
+    ) as HTMLElement;
+    this.filterBar = this.element.querySelector(
+      '.marketplace-timeline__filters'
+    ) as HTMLElement;
 
-    this.infiniteScroll = new InfiniteScroll(
-      () => this.handleLoadMore(),
-      { loadingMessage: 'Loading more listings...' }
-    );
+    this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
+      loadingMessage: 'Loading more listings...',
+    });
 
     this.initialize();
   }
@@ -77,16 +80,20 @@ export class MarketplaceTimeline {
   }
 
   private setupHeaderButtons(container: HTMLElement): void {
-    const addBtn = container.querySelector('.marketplace-view__add-btn') as HTMLElement;
-    const dashboardBtn = container.querySelector('.marketplace-view__dashboard-btn') as HTMLElement;
+    const addBtn = container.querySelector(
+      '.marketplace-view__add-btn'
+    ) as HTMLElement;
+    const dashboardBtn = container.querySelector(
+      '.marketplace-view__dashboard-btn'
+    ) as HTMLElement;
 
     // Prevent default link behavior, use router
-    addBtn?.addEventListener('click', (e) => {
+    addBtn?.addEventListener('click', e => {
       e.preventDefault();
       this.router.navigate('/write-listing');
     });
 
-    dashboardBtn?.addEventListener('click', (e) => {
+    dashboardBtn?.addEventListener('click', e => {
       e.preventDefault();
       this.router.navigate('/my-listings');
     });
@@ -99,20 +106,33 @@ export class MarketplaceTimeline {
     }
   }
 
-  private async checkUserHasListings(pubkey: string, dashboardBtn: HTMLElement | null): Promise<void> {
+  private async checkUserHasListings(
+    pubkey: string,
+    dashboardBtn: HTMLElement | null
+  ): Promise<void> {
     if (!dashboardBtn) return;
 
     try {
-      const { NostrTransport } = await import('../../services/transport/NostrTransport');
+      const { NostrTransport } = await import(
+        '../../services/transport/NostrTransport'
+      );
       const { RelayConfig } = await import('../../services/RelayConfig');
       const transport = NostrTransport.getInstance();
       const relays = RelayConfig.getInstance().getReadRelays();
 
-      const events = await transport.fetch(relays, [{
-        kinds: [30402 as number],
-        authors: [pubkey],
-        limit: 1
-      }], 5000, false, 'MarketplaceTimeline');
+      const events = await transport.fetch(
+        relays,
+        [
+          {
+            kinds: [30402 as number],
+            authors: [pubkey],
+            limit: 1,
+          },
+        ],
+        5000,
+        false,
+        'MarketplaceTimeline'
+      );
 
       if (events.length > 0) {
         dashboardBtn.style.display = '';
@@ -187,7 +207,9 @@ export class MarketplaceTimeline {
   private filterHiddenListings(listings: NostrEvent[]): NostrEvent[] {
     return listings.filter(event => {
       const meta = parseListingMetadata(event);
-      return !meta.tags.some(t => MarketplaceTimeline.HIDDEN_TAGS.has(t.toLowerCase()));
+      return !meta.tags.some(t =>
+        MarketplaceTimeline.HIDDEN_TAGS.has(t.toLowerCase())
+      );
     });
   }
 
@@ -215,17 +237,23 @@ export class MarketplaceTimeline {
 
     this.filterBar.innerHTML = `
       <button class="marketplace-filter__chip ${!this.activeTag ? 'marketplace-filter__chip--active' : ''}" data-filter-tag="">All</button>
-      ${sorted.map(([tag, count]) => `
+      ${sorted
+        .map(
+          ([tag, count]) => `
         <button class="marketplace-filter__chip ${this.activeTag === tag ? 'marketplace-filter__chip--active' : ''}" data-filter-tag="${escapeHtmlAttr(tag)}">#${escapeHtml(tag)} <span class="marketplace-filter__count">${count}</span></button>
-      `).join('')}
+      `
+        )
+        .join('')}
     `;
 
-    this.filterBar.querySelectorAll('.marketplace-filter__chip').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const tag = (e.currentTarget as HTMLElement).dataset.filterTag || '';
-        this.setActiveTag(tag || null);
+    this.filterBar
+      .querySelectorAll('.marketplace-filter__chip')
+      .forEach(btn => {
+        btn.addEventListener('click', e => {
+          const tag = (e.currentTarget as HTMLElement).dataset.filterTag || '';
+          this.setActiveTag(tag || null);
+        });
       });
-    });
   }
 
   private setActiveTag(tag: string | null): void {
@@ -259,7 +287,9 @@ export class MarketplaceTimeline {
   }
 
   private appendListings(listings: NostrEvent[]): void {
-    const sentinel = this.listingsContainer.querySelector('.infinite-scroll-sentinel');
+    const sentinel = this.listingsContainer.querySelector(
+      '.infinite-scroll-sentinel'
+    );
     listings.forEach(listing => {
       const card = this.createListingCard(listing);
       if (sentinel) {
@@ -287,25 +317,34 @@ export class MarketplaceTimeline {
       kind: 30402,
       pubkey: event.pubkey,
       identifier: meta.identifier,
-      relays: []
+      relays: [],
     });
 
-    const priceDisplay = formatPrice(meta.price, meta.priceCurrency, meta.priceFrequency);
+    const priceDisplay = formatPrice(
+      meta.price,
+      meta.priceCurrency,
+      meta.priceFrequency
+    );
     const firstImage = meta.images[0] || '';
 
-    const soldBadge = meta.status === 'sold' ? '<span class="sold-badge">Sold</span>' : '';
+    const soldBadge =
+      meta.status === 'sold' ? '<span class="sold-badge">Sold</span>' : '';
     card.innerHTML = `
-      ${firstImage ? `
+      ${
+        firstImage
+          ? `
         <div class="nn-card__media">
           <img src="${escapeHtmlAttr(firstImage)}" alt="" loading="lazy" />
           ${soldBadge}
         </div>
-      ` : `
+      `
+          : `
         <div class="nn-card__media nn-card__media--empty">
           <svg width="32" height="32"><use href="#icon-image"/></svg>
           ${soldBadge}
         </div>
-      `}
+      `
+      }
       <div class="nn-card__content">
         <h3>${escapeHtml(meta.title)}</h3>
         <div class="price">${escapeHtml(priceDisplay)}</div>
@@ -316,22 +355,31 @@ export class MarketplaceTimeline {
           </span>
           <span class="date">${formatTimestamp(meta.publishedAt)}</span>
         </div>
-        ${meta.tags.length > 0 ? `
+        ${
+          meta.tags.length > 0
+            ? `
           <div class="tags">
-            ${meta.tags.slice(0, 3).map(tag => `<span class="tag">#${escapeHtml(tag)}</span>`).join('')}
+            ${meta.tags
+              .slice(0, 3)
+              .map(tag => `<span class="tag">#${escapeHtml(tag)}</span>`)
+              .join('')}
           </div>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
     `;
 
     // Hide card if image fails to load
-    const img = card.querySelector('.nn-card__media img') as HTMLImageElement | null;
+    const img = card.querySelector(
+      '.nn-card__media img'
+    ) as HTMLImageElement | null;
     if (img) {
       img.addEventListener('error', () => card.remove());
     }
 
     card.style.cursor = 'pointer';
-    card.addEventListener('click', (e) => {
+    card.addEventListener('click', e => {
       // Right-pane mode opens the listing in the secondary pane (scc).
       getViewNavigationController().openView('listing', naddr, e);
     });
@@ -341,7 +389,10 @@ export class MarketplaceTimeline {
     return card;
   }
 
-  private async loadAuthorName(card: HTMLElement, pubkey: string): Promise<void> {
+  private async loadAuthorName(
+    card: HTMLElement,
+    pubkey: string
+  ): Promise<void> {
     const authorEl = card.querySelector('.author');
     if (!authorEl) return;
 
@@ -349,7 +400,8 @@ export class MarketplaceTimeline {
 
     try {
       const profile = await this.userProfileService.getUserProfile(pubkey);
-      const username = profile?.name || profile?.display_name || npub.slice(0, 12) + '...';
+      const username =
+        profile?.name || profile?.display_name || `${npub.slice(0, 12)}...`;
       const picture = profile?.picture || '';
 
       authorEl.innerHTML = `
@@ -369,7 +421,9 @@ export class MarketplaceTimeline {
   private showLoading(): void {
     this.listingsContainer.innerHTML = `
       <div class="marketplace-timeline__loading">
-        ${Array.from({ length: 6 }, () => `
+        ${Array.from(
+          { length: 6 },
+          () => `
           <div class="listing-card-skeleton">
             <div class="skeleton-image"></div>
             <div class="skeleton-content">
@@ -378,7 +432,8 @@ export class MarketplaceTimeline {
               <div class="skeleton-line skeleton-meta"></div>
             </div>
           </div>
-        `).join('')}
+        `
+        ).join('')}
       </div>
     `;
   }
@@ -401,7 +456,9 @@ export class MarketplaceTimeline {
       </div>
     `;
 
-    const retryBtn = this.listingsContainer.querySelector('[data-action="retry"]');
+    const retryBtn = this.listingsContainer.querySelector(
+      '[data-action="retry"]'
+    );
     retryBtn?.addEventListener('click', () => this.initialize());
   }
 

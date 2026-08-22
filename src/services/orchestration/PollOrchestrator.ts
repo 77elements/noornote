@@ -72,7 +72,11 @@ export class PollOrchestrator extends Orchestrator {
     const responses = await this.fetchPollResponses(pollEventId);
 
     // Aggregate votes (1 vote per pubkey, most recent counts)
-    const results = this.aggregateVotes(responses, pollOptions, currentUserPubkey);
+    const results = this.aggregateVotes(
+      responses,
+      pollOptions,
+      currentUserPubkey
+    );
     results.timestamp = Date.now();
 
     // Cache results
@@ -89,10 +93,16 @@ export class PollOrchestrator extends Orchestrator {
     const filter = {
       kinds: [1018],
       '#e': [pollEventId],
-      limit: 1000 // Fetch up to 1000 responses
+      limit: 1000, // Fetch up to 1000 responses
     };
 
-    const events = await this.transport.fetch(relays, [filter], 5000, false, 'PollOrch');
+    const events = await this.transport.fetch(
+      relays,
+      [filter],
+      5000,
+      false,
+      'PollOrch'
+    );
     return events;
   }
 
@@ -130,7 +140,9 @@ export class PollOrchestrator extends Orchestrator {
 
     for (const [pubkey, response] of latestResponsePerPubkey.entries()) {
       // Extract 'response' tags
-      const responseTags = response.tags.filter(t => t[0] === 'response' && t[1]);
+      const responseTags = response.tags.filter(
+        t => t[0] === 'response' && t[1]
+      );
 
       if (responseTags.length > 0) {
         // Increment vote count for each selected option
@@ -155,14 +167,14 @@ export class PollOrchestrator extends Orchestrator {
     const options = pollOptions.map(opt => ({
       id: opt.id,
       label: opt.label,
-      voteCount: voteCounts.get(opt.id) || 0
+      voteCount: voteCounts.get(opt.id) || 0,
     }));
 
     return {
       options,
       totalVotes: latestResponsePerPubkey.size, // Unique voters
       userVote,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
   }
 

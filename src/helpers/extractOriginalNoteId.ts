@@ -20,7 +20,11 @@ const ADDRESSABLE_KIND_MIN = 30000;
 const ADDRESSABLE_KIND_MAX = 39999;
 
 function isAddressableKind(kind: number | undefined): boolean {
-  return typeof kind === 'number' && kind >= ADDRESSABLE_KIND_MIN && kind <= ADDRESSABLE_KIND_MAX;
+  return (
+    typeof kind === 'number' &&
+    kind >= ADDRESSABLE_KIND_MIN &&
+    kind <= ADDRESSABLE_KIND_MAX
+  );
 }
 
 function addressableCoordinate(event: NostrEvent): string | undefined {

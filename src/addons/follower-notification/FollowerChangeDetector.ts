@@ -19,14 +19,20 @@
  * working set). New followers are added to the working set so they aren't re-alerted.
  */
 
-import { FollowVerificationService, type FollowVerdict } from '../../services/FollowVerificationService';
+import {
+  FollowVerificationService,
+  type FollowVerdict,
+} from '../../services/FollowVerificationService';
 import { AuthService } from '../../services/AuthService';
 import { PlatformService } from '../../services/PlatformService';
 import { SystemLogger } from '../../services/SystemLogger';
 import { diagLog } from '../../services/DiagnosticLogger';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { ModuleLoader } from '../../core/ModuleLoader';
-import { FollowerSnapshotStorage, type FollowerChange } from '../../lists/FollowerSnapshotStorage';
+import {
+  FollowerSnapshotStorage,
+  type FollowerChange,
+} from '../../lists/FollowerSnapshotStorage';
 import { MuteOrchestrator } from '../../lists/mutes';
 import type { ProfileModuleApi } from '../../modules/profile/contracts';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -94,13 +100,22 @@ export class FollowerChangeDetector {
     this.cancelled = true;
   }
 
-  private empty(durationMs: number, isFirstCheck: boolean): FollowerDetectionResult {
+  private empty(
+    durationMs: number,
+    isFirstCheck: boolean
+  ): FollowerDetectionResult {
     const warmupComplete = this.storage.isWarmupComplete();
     return {
-      newFollowers: [], sweepCount: 0, baselineCount: 0, durationMs, isFirstCheck,
-      deferredCandidates: 0, lateDiscoveries: 0,
-      phase: warmupComplete ? 'live' : 'warmup', warmupComplete,
-      mode: warmupComplete ? 'incremental' : 'full'
+      newFollowers: [],
+      sweepCount: 0,
+      baselineCount: 0,
+      durationMs,
+      isFirstCheck,
+      deferredCandidates: 0,
+      lateDiscoveries: 0,
+      phase: warmupComplete ? 'live' : 'warmup',
+      warmupComplete,
+      mode: warmupComplete ? 'incremental' : 'full',
     };
   }
 
@@ -110,7 +125,10 @@ export class FollowerChangeDetector {
    * - `mode: 'full' | 'incremental'`: force a sweep mode (testing / manual checks).
    */
   public async detect(
-    opts: { mode?: 'auto' | 'full' | 'incremental'; onProgress?: (checked: number, total: number) => void } = {}
+    opts: {
+      mode?: 'auto' | 'full' | 'incremental';
+      onProgress?: (checked: number, total: number) => void;
+    } = {}
   ): Promise<FollowerDetectionResult> {
     const startTime = Date.now();
     const sweepStartedS = Math.floor(startTime / 1000);
@@ -119,7 +137,10 @@ export class FollowerChangeDetector {
 
     const currentUser = this.auth.getCurrentUser();
     if (!currentUser) {
-      this.systemLogger.warn('FollowerChangeDetector', 'No user logged in, skipping');
+      this.systemLogger.warn(
+        'FollowerChangeDetector',
+        'No user logged in, skipping'
+      );
       return this.empty(0, true);
     }
 
@@ -130,42 +151,70 @@ export class FollowerChangeDetector {
     const requested = opts.mode ?? 'auto';
     const isLive = !!previousSnapshot;
     const sweepMode: 'full' | 'incremental' =
-      requested === 'incremental' ? 'incremental'
-      : requested === 'full' ? 'full'
-      : (isLive ? 'incremental' : 'full');
+      requested === 'incremental'
+        ? 'incremental'
+        : requested === 'full'
+          ? 'full'
+          : isLive
+            ? 'incremental'
+            : 'full';
 
     // #2 Mobile data: the FULL baseline sweep is ~hundreds of MB, so on mobile defer it until an
     // un-metered WiFi connection. Incremental checks are tiny and run on any connection; desktop/web
     // never defer. The scheduler retries, and the service also triggers a check when WiFi appears.
-    if (sweepMode === 'full' && await this.shouldDeferFullSweep()) {
+    if (sweepMode === 'full' && (await this.shouldDeferFullSweep())) {
       const durationMs = Date.now() - startTime;
-      this.systemLogger.info('FollowerChangeDetector', 'Baseline sweep deferred until WiFi (metered connection)');
-      diagLog('lists', 'follower-check: full sweep deferred (metered connection)', { durationMs });
-      return { ...this.empty(durationMs, !previousSnapshot), awaitingWifi: true };
+      this.systemLogger.info(
+        'FollowerChangeDetector',
+        'Baseline sweep deferred until WiFi (metered connection)'
+      );
+      diagLog(
+        'lists',
+        'follower-check: full sweep deferred (metered connection)',
+        { durationMs }
+      );
+      return {
+        ...this.empty(durationMs, !previousSnapshot),
+        awaitingWifi: true,
+      };
     }
 
     // ── 1. Sweep (candidates only) — via the profile module API (decoupled) ──
     let candidates: string[];
     try {
-      const profileApi = ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
+      const profileApi =
+        ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
       if (!profileApi) throw new Error('profile module API unavailable');
-      candidates = sweepMode === 'incremental'
-        ? await profileApi.streamFollowerList(currentUser.pubkey, () => {}, { since: this.computeIncrementalSince() })
-        // The baseline sweep (seed + warm-up) forces the full aggregator relay set: the user
-        // gave informed consent when enabling the addon, so Data Saver must not silently halve
-        // its coverage and make it miss followers. Incremental checks keep the reduced set.
-        : await profileApi.streamFollowerList(currentUser.pubkey, () => {}, { forceFullRelays: true });
+      candidates =
+        sweepMode === 'incremental'
+          ? await profileApi.streamFollowerList(currentUser.pubkey, () => {}, {
+              since: this.computeIncrementalSince(),
+            })
+          : // The baseline sweep (seed + warm-up) forces the full aggregator relay set: the user
+            // gave informed consent when enabling the addon, so Data Saver must not silently halve
+            // its coverage and make it miss followers. Incremental checks keep the reduced set.
+            await profileApi.streamFollowerList(currentUser.pubkey, () => {}, {
+              forceFullRelays: true,
+            });
     } catch (error) {
-      this.systemLogger.error('FollowerChangeDetector', `Sweep failed: ${error}`);
-      diagLog('lists', 'follower-check: sweep failed', { error: String(error) });
+      this.systemLogger.error(
+        'FollowerChangeDetector',
+        `Sweep failed: ${error}`
+      );
+      diagLog('lists', 'follower-check: sweep failed', {
+        error: String(error),
+      });
       return this.empty(Date.now() - startTime, !previousSnapshot);
     }
-    if (this.cancelled) return this.empty(Date.now() - startTime, !previousSnapshot);
+    if (this.cancelled)
+      return this.empty(Date.now() - startTime, !previousSnapshot);
 
     const sweepCount = new Set(candidates).size;
     diagLog('lists', 'follower-check: sweep complete', {
-      mode: sweepMode, sweepCount, baselineCount: previousSnapshot?.followerPubkeys.length ?? 0,
-      firstCheck: !previousSnapshot
+      mode: sweepMode,
+      sweepCount,
+      baselineCount: previousSnapshot?.followerPubkeys.length ?? 0,
+      firstCheck: !previousSnapshot,
     });
 
     // ── 2. Seed (first ever check): establish the baseline, never alert. This single full sweep
@@ -177,15 +226,22 @@ export class FollowerChangeDetector {
       this.storage.setLastSweepAt(sweepStartedS);
       await this.storage.saveToFile();
       const durationMs = Date.now() - startTime;
-      this.systemLogger.info('FollowerChangeDetector', `Seed — baseline of ${sweepCount} followers`);
-      diagLog('lists', 'follower-check: seeded initial snapshot', { sweepCount, durationMs });
+      this.systemLogger.info(
+        'FollowerChangeDetector',
+        `Seed — baseline of ${sweepCount} followers`
+      );
+      diagLog('lists', 'follower-check: seeded initial snapshot', {
+        sweepCount,
+        durationMs,
+      });
       return { ...this.empty(durationMs, true), sweepCount, mode: 'full' };
     }
 
     // Known set = latest working snapshot (pending preferred, else acknowledged). The incremental
     // `since` filter already prevents re-fetching already-known followers, but diffing against the
     // working set is the belt that makes a new follower flagged exactly once.
-    const known = this.storage.getPendingSnapshot() ?? previousSnapshot.followerPubkeys;
+    const known =
+      this.storage.getPendingSnapshot() ?? previousSnapshot.followerPubkeys;
     const knownSet = new Set(known);
     const baselineCount = previousSnapshot.followerPubkeys.length;
 
@@ -196,21 +252,34 @@ export class FollowerChangeDetector {
     if (this.storage.removeChanges(mutedSet)) {
       await this.storage.saveToFile();
       this.eventBus.emit('follower-changes:seen'); // re-render the addon panel
-      diagLog('lists', 'follower-check: pruned muted accounts from changes', { mutedCount: mutedSet.size });
+      diagLog('lists', 'follower-check: pruned muted accounts from changes', {
+        mutedCount: mutedSet.size,
+      });
     }
 
     // ── 3. New-follower candidates = sweep − known − muted (NO unfollow detection) ──
-    let newCandidates = candidates.filter(pk => !knownSet.has(pk) && !mutedSet.has(pk));
+    let newCandidates = candidates.filter(
+      pk => !knownSet.has(pk) && !mutedSet.has(pk)
+    );
     let deferred = 0;
     if (newCandidates.length > FollowerChangeDetector.CANDIDATE_CAP) {
       deferred = newCandidates.length - FollowerChangeDetector.CANDIDATE_CAP;
-      newCandidates = newCandidates.slice(0, FollowerChangeDetector.CANDIDATE_CAP);
-      diagLog('lists', 'follower-check: candidate cap hit', { cap: FollowerChangeDetector.CANDIDATE_CAP, deferred });
+      newCandidates = newCandidates.slice(
+        0,
+        FollowerChangeDetector.CANDIDATE_CAP
+      );
+      diagLog('lists', 'follower-check: candidate cap hit', {
+        cap: FollowerChangeDetector.CANDIDATE_CAP,
+        deferred,
+      });
     }
 
     // ── 4. Authoritative 3x confirmation (throttled) ──
     let verified = 0;
-    const tick = () => { verified++; onProgress?.(verified, newCandidates.length); };
+    const tick = () => {
+      verified++;
+      onProgress?.(verified, newCandidates.length);
+    };
     const confirmed = await this.confirmEach(newCandidates, tick);
     if (this.cancelled) return this.empty(Date.now() - startTime, false);
 
@@ -230,7 +299,10 @@ export class FollowerChangeDetector {
 
     const durationMs = Date.now() - startTime;
     await this.storage.addHistoryEntry({
-      timestamp: Date.now(), newFollowerCount: genuinelyNew.length, sweepCount, durationMs
+      timestamp: Date.now(),
+      newFollowerCount: genuinelyNew.length,
+      sweepCount,
+      durationMs,
     });
     this.storage.setLastSweepAt(sweepStartedS);
 
@@ -243,17 +315,31 @@ export class FollowerChangeDetector {
     this.processChanges(genuinelyNew, currentUser.pubkey);
     if (genuinelyNew.length > 0) await this.storage.saveToFile(); // persist changes so a reload restores them
 
-    this.systemLogger.info('FollowerChangeDetector',
-      `Live ${sweepMode}: +${genuinelyNew.length} new (${lateDiscoveries.length} late-absorbed, ${durationMs}ms)`);
+    this.systemLogger.info(
+      'FollowerChangeDetector',
+      `Live ${sweepMode}: +${genuinelyNew.length} new (${lateDiscoveries.length} late-absorbed, ${durationMs}ms)`
+    );
     diagLog('lists', 'follower-check: detection complete (live)', {
-      mode: sweepMode, newFollowers: genuinelyNew.length, lateDiscoveries: lateDiscoveries.length,
-      sweepCount, baselineCount, deferred, durationMs
+      mode: sweepMode,
+      newFollowers: genuinelyNew.length,
+      lateDiscoveries: lateDiscoveries.length,
+      sweepCount,
+      baselineCount,
+      deferred,
+      durationMs,
     });
 
     return {
-      newFollowers: genuinelyNew, sweepCount, baselineCount, durationMs, isFirstCheck: false,
-      deferredCandidates: deferred, lateDiscoveries: lateDiscoveries.length,
-      phase: 'live', warmupComplete: true, mode: sweepMode
+      newFollowers: genuinelyNew,
+      sweepCount,
+      baselineCount,
+      durationMs,
+      isFirstCheck: false,
+      deferredCandidates: deferred,
+      lateDiscoveries: lateDiscoveries.length,
+      phase: 'live',
+      warmupComplete: true,
+      mode: sweepMode,
     };
   }
 
@@ -263,9 +349,14 @@ export class FollowerChangeDetector {
    */
   private async loadMutedSet(myPubkey: string): Promise<Set<string>> {
     try {
-      return new Set(await MuteOrchestrator.getInstance().getAllMutedUsers(myPubkey));
+      return new Set(
+        await MuteOrchestrator.getInstance().getAllMutedUsers(myPubkey)
+      );
     } catch (error) {
-      this.systemLogger.warn('FollowerChangeDetector', `Mute list unavailable this round: ${error}`);
+      this.systemLogger.warn(
+        'FollowerChangeDetector',
+        `Mute list unavailable this round: ${error}`
+      );
       return new Set();
     }
   }
@@ -292,7 +383,10 @@ export class FollowerChangeDetector {
     const lastSweepAt = this.storage.getLastSweepAt();
     const recencyS = this.storage.getRecencyDays() * 24 * 60 * 60;
     const nowS = Math.floor(Date.now() / 1000);
-    return Math.max(lastSweepAt, nowS - recencyS) - FollowerChangeDetector.SINCE_SKEW_SECONDS;
+    return (
+      Math.max(lastSweepAt, nowS - recencyS) -
+      FollowerChangeDetector.SINCE_SKEW_SECONDS
+    );
   }
 
   /**
@@ -316,7 +410,9 @@ export class FollowerChangeDetector {
     };
 
     const workers = Array.from(
-      { length: Math.min(FollowerChangeDetector.CONCURRENCY, candidates.length) },
+      {
+        length: Math.min(FollowerChangeDetector.CONCURRENCY, candidates.length),
+      },
       () => worker()
     );
     await Promise.all(workers);
@@ -324,11 +420,15 @@ export class FollowerChangeDetector {
   }
 
   /** Returns the `follows` verdict only if all CONFIRM_PASSES checks confirm it; else null. */
-  private async verifyUnanimous(pubkey: string): Promise<FollowsVerdict | null> {
+  private async verifyUnanimous(
+    pubkey: string
+  ): Promise<FollowsVerdict | null> {
     let last: FollowsVerdict | null = null;
     for (let pass = 0; pass < FollowerChangeDetector.CONFIRM_PASSES; pass++) {
       if (this.cancelled) return null;
-      const verdict = await this.followVerification.verifyFollowsBack(pubkey, { forceRefresh: true });
+      const verdict = await this.followVerification.verifyFollowsBack(pubkey, {
+        forceRefresh: true,
+      });
       // Any non-`follows` verdict (including 'unknown') fails the gate → candidate carried over.
       if (verdict.status !== 'follows') return null;
       last = verdict;
@@ -345,29 +445,49 @@ export class FollowerChangeDetector {
 
   /** Store new-follower changes (deduped) and inject in-app notifications (badge + Notifications tab). */
   private processChanges(newFollowers: string[], myPubkey: string): void {
-    const alreadyNotified = new Set(this.storage.getChanges().map(c => c.pubkey));
+    const alreadyNotified = new Set(
+      this.storage.getChanges().map(c => c.pubkey)
+    );
     const fresh = newFollowers.filter(pk => !alreadyNotified.has(pk));
     if (fresh.length === 0) return;
 
     const now = Date.now();
-    this.storage.addChanges(fresh.map(pubkey => ({ pubkey, type: 'new_follower' as const, detectedAt: now })));
+    this.storage.addChanges(
+      fresh.map(pubkey => ({
+        pubkey,
+        type: 'new_follower' as const,
+        detectedAt: now,
+      }))
+    );
     for (const pubkey of fresh) this.injectNotification(pubkey, myPubkey, now);
 
-    this.eventBus.emit('follower-changes:detected', { newFollowerCount: fresh.length });
+    this.eventBus.emit('follower-changes:detected', {
+      newFollowerCount: fresh.length,
+    });
   }
 
   /** Emit a synthetic notification (not published) the NotificationsOrchestrator turns into a badge/tab entry. */
-  private injectNotification(pubkey: string, myPubkey: string, ts: number): void {
+  private injectNotification(
+    pubkey: string,
+    myPubkey: string,
+    ts: number
+  ): void {
     const syntheticEvent: NostrEvent = {
       id: `follower-new-${pubkey}-${ts}`,
       pubkey,
       kind: 99002, // synthetic kind for follower changes (mutual uses 99001)
       created_at: Math.floor(ts / 1000),
-      tags: [['type', 'follower_new'], ['p', myPubkey]],
+      tags: [
+        ['type', 'follower_new'],
+        ['p', myPubkey],
+      ],
       content: '',
       sig: '',
     };
-    this.eventBus.emit('follower-notification:new', { event: syntheticEvent, type: 'follower_new' });
+    this.eventBus.emit('follower-notification:new', {
+      event: syntheticEvent,
+      type: 'follower_new',
+    });
   }
 
   /** Promote the pending snapshot to the acknowledged baseline and clear changes. */
@@ -377,7 +497,10 @@ export class FollowerChangeDetector {
     this.storage.clearChanges();
     await this.storage.saveToFile();
     this.eventBus.emit('follower-changes:seen');
-    this.systemLogger.info('FollowerChangeDetector', 'Changes marked as seen, baseline advanced');
+    this.systemLogger.info(
+      'FollowerChangeDetector',
+      'Changes marked as seen, baseline advanced'
+    );
   }
 
   public getChanges(): FollowerChange[] {
@@ -392,19 +515,45 @@ export class FollowerChangeDetector {
 // ── Debug console helper (mirrors the mutual-change debug hooks). Force a check, inspect state,
 //    mark seen, or reset the baseline from DevTools. Loaded only with the addon. ──
 if (typeof window !== 'undefined') {
-  const prog = (c: number, t: number) => console.debug(`[follower-check] verified ${c}/${t}`);
+  const prog = (c: number, t: number) =>
+    console.debug(`[follower-check] verified ${c}/${t}`);
   (window as any).__FOLLOWER_CHANGE_DETECTOR__ = {
-    check: () => FollowerChangeDetector.getInstance().detect({ onProgress: prog }),
-    full: () => FollowerChangeDetector.getInstance().detect({ mode: 'full', onProgress: prog }),
-    incremental: () => FollowerChangeDetector.getInstance().detect({ mode: 'incremental', onProgress: prog }),
+    check: () =>
+      FollowerChangeDetector.getInstance().detect({ onProgress: prog }),
+    full: () =>
+      FollowerChangeDetector.getInstance().detect({
+        mode: 'full',
+        onProgress: prog,
+      }),
+    incremental: () =>
+      FollowerChangeDetector.getInstance().detect({
+        mode: 'incremental',
+        onProgress: prog,
+      }),
     state: () => {
       const s = FollowerSnapshotStorage.getInstance();
       console.debug('=== FollowerSnapshotStorage State ===');
-      console.debug('Acknowledged snapshot count:', s.getSnapshot()?.followerPubkeys.length ?? null);
-      console.debug('Pending snapshot count:', s.getPendingSnapshot()?.length ?? null);
+      console.debug(
+        'Acknowledged snapshot count:',
+        s.getSnapshot()?.followerPubkeys.length ?? null
+      );
+      console.debug(
+        'Pending snapshot count:',
+        s.getPendingSnapshot()?.length ?? null
+      );
       console.debug('Baseline seeded:', s.isWarmupComplete());
-      console.debug('Last sweep at:', s.getLastSweepAt(), '| recency days:', s.getRecencyDays());
-      console.debug('Unseen changes:', s.hasUnseenChanges(), '| changes:', s.getChanges());
+      console.debug(
+        'Last sweep at:',
+        s.getLastSweepAt(),
+        '| recency days:',
+        s.getRecencyDays()
+      );
+      console.debug(
+        'Unseen changes:',
+        s.hasUnseenChanges(),
+        '| changes:',
+        s.getChanges()
+      );
     },
     markSeen: () => FollowerChangeDetector.getInstance().markAsSeen(),
     reset: () => FollowerSnapshotStorage.getInstance().reset(),

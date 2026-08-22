@@ -36,9 +36,23 @@ import { SystemLogger } from './SystemLogger';
 import { LRUCache, getCacheSize } from '../helpers/LRUCache';
 
 export type FollowVerdict =
-  | { status: 'follows';         verifiedAt: number; viaRelays: string[]; theirFollowCount: number; followedAt: number }
-  | { status: 'does-not-follow'; verifiedAt: number; viaRelays: string[]; theirFollowCount: number }
-  | { status: 'unknown';         reason: 'no-write-relays' | 'no-event' | 'timeout' | 'error' | 'stale' };
+  | {
+      status: 'follows';
+      verifiedAt: number;
+      viaRelays: string[];
+      theirFollowCount: number;
+      followedAt: number;
+    }
+  | {
+      status: 'does-not-follow';
+      verifiedAt: number;
+      viaRelays: string[];
+      theirFollowCount: number;
+    }
+  | {
+      status: 'unknown';
+      reason: 'no-write-relays' | 'no-event' | 'timeout' | 'error' | 'stale';
+    };
 
 /**
  * The mutual-relationship state of a followed user, derived from a
@@ -147,7 +161,11 @@ export class FollowVerificationService {
    */
   public async verifyFollowsBackBatch(
     pubkeys: string[],
-    opts: { forceRefresh?: boolean; onProgress?: (checked: number, total: number) => void; concurrency?: number } = {}
+    opts: {
+      forceRefresh?: boolean;
+      onProgress?: (checked: number, total: number) => void;
+      concurrency?: number;
+    } = {}
   ): Promise<Map<string, FollowVerdict>> {
     const concurrency = Math.max(1, opts.concurrency ?? 5);
     const results = new Map<string, FollowVerdict>();
@@ -156,10 +174,15 @@ export class FollowVerificationService {
     for (let i = 0; i < pubkeys.length; i += concurrency) {
       const chunk = pubkeys.slice(i, i + concurrency);
       const settled = await Promise.all(
-        chunk.map(async (pk): Promise<[string, FollowVerdict]> => [
-          pk,
-          await this.verifyFollowsBack(pk, opts.forceRefresh ? { forceRefresh: true } : {})
-        ])
+        chunk.map(
+          async (pk): Promise<[string, FollowVerdict]> => [
+            pk,
+            await this.verifyFollowsBack(
+              pk,
+              opts.forceRefresh ? { forceRefresh: true } : {}
+            ),
+          ]
+        )
       );
       for (const [pk, verdict] of settled) {
         results.set(pk, verdict);
@@ -192,20 +215,21 @@ export class FollowVerificationService {
     // hold a more recent kind:3 than the relays listed in a stale kind:10002.
     const metadataRelays = this.relayConfig.getMetadataRelays();
 
-    const queryRelays = Array.from(new Set([
-      ...writeRelays.slice(0, MAX_WRITE_RELAYS),
-      ...metadataRelays
-    ]));
+    const queryRelays = Array.from(
+      new Set([...writeRelays.slice(0, MAX_WRITE_RELAYS), ...metadataRelays])
+    );
 
     if (queryRelays.length === 0) {
       return { status: 'unknown', reason: 'no-write-relays' };
     }
 
-    const filters: NDKFilter[] = [{
-      authors: [theirPubkey],
-      kinds: [3],
-      limit: 1
-    }];
+    const filters: NDKFilter[] = [
+      {
+        authors: [theirPubkey],
+        kinds: [3],
+        limit: 1,
+      },
+    ];
 
     let events: NostrEvent[];
     try {
@@ -218,7 +242,9 @@ export class FollowVerificationService {
       );
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      const reason: 'timeout' | 'error' = msg.toLowerCase().includes('timeout') ? 'timeout' : 'error';
+      const reason: 'timeout' | 'error' = msg.toLowerCase().includes('timeout')
+        ? 'timeout'
+        : 'error';
       this.systemLogger.warn(
         'FollowVerification',
         `Fetch failed for ${theirPubkey.slice(0, 8)} (${reason}): ${msg}`
@@ -252,7 +278,7 @@ export class FollowVerificationService {
         // contact list containing us. Used to suppress "new follower" alerts for long-standing
         // followers our sweep only just discovered (not actually new). Best-available signal:
         // it's "last list update", not "started following", which Nostr doesn't record.
-        followedAt: newest.created_at ?? 0
+        followedAt: newest.created_at ?? 0,
       };
     }
 
@@ -273,16 +299,17 @@ export class FollowVerificationService {
       status: 'does-not-follow',
       verifiedAt: Date.now(),
       viaRelays: queryRelays,
-      theirFollowCount: pTags.length
+      theirFollowCount: pTags.length,
     };
   }
 
   private async getTheirWriteRelays(theirPubkey: string): Promise<string[]> {
     const bootstrap = this.relayConfig.getAggregatorRelays();
-    const result = await this.relayListOrch.fetchRelayList(theirPubkey, bootstrap);
+    const result = await this.relayListOrch.fetchRelayList(
+      theirPubkey,
+      bootstrap
+    );
     if (!result || !result.relays.length) return [];
-    return result.relays
-      .filter(r => r.types.includes('write'))
-      .map(r => r.url);
+    return result.relays.filter(r => r.types.includes('write')).map(r => r.url);
   }
 }

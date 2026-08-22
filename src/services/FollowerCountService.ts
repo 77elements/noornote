@@ -34,7 +34,9 @@ export class FollowerCountService {
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
   private transport: NostrTransport;
-  private cache: LRUCache<CachedFollowers> = new LRUCache<CachedFollowers>(getCacheSize(500, 200, 100));
+  private cache: LRUCache<CachedFollowers> = new LRUCache<CachedFollowers>(
+    getCacheSize(500, 200, 100)
+  );
 
   private constructor() {
     this.relayConfig = RelayConfig.getInstance();
@@ -63,20 +65,30 @@ export class FollowerCountService {
   ): Promise<number> {
     // Check cache first
     const cached = this.cache.get(pubkey);
-    if (cached && (Date.now() - cached.timestamp) < CACHE_TTL_MS) {
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
       if (onUpdate) onUpdate(cached.count, 'cache');
       return cached.count;
     }
 
     this.systemLogger.success('FollowerCount', 'Fetching follower counts...');
 
-    const followers = await this.collectFollowers(pubkey, (_newPubkeys, total, lastRelay) => {
-      if (onUpdate && lastRelay) onUpdate(total, lastRelay);
-    });
+    const followers = await this.collectFollowers(
+      pubkey,
+      (_newPubkeys, total, lastRelay) => {
+        if (onUpdate && lastRelay) onUpdate(total, lastRelay);
+      }
+    );
 
     const finalCount = followers.length;
-    this.cache.set(pubkey, { count: finalCount, pubkeys: followers, timestamp: Date.now() });
-    this.systemLogger.success('FollowerCount', `✓ Follower count fetching completed: ${finalCount} followers`);
+    this.cache.set(pubkey, {
+      count: finalCount,
+      pubkeys: followers,
+      timestamp: Date.now(),
+    });
+    this.systemLogger.success(
+      'FollowerCount',
+      `✓ Follower count fetching completed: ${finalCount} followers`
+    );
 
     return finalCount;
   }
@@ -116,19 +128,29 @@ export class FollowerCountService {
 
     // A fresh cache with a full (non-incremental, non-forced) request needs no
     // re-sweep — the cached set is good enough and we avoid the relay round-trips.
-    const fresh = cached !== undefined && (Date.now() - cached.timestamp) < CACHE_TTL_MS;
+    const fresh =
+      cached !== undefined && Date.now() - cached.timestamp < CACHE_TTL_MS;
     if (fresh && opts?.since === undefined && !opts?.forceFullRelays) {
       return cached!.pubkeys;
     }
 
-    const followers = await this.collectFollowers(pubkey, (newPubkeys) => {
-      if (newPubkeys.length > 0) onBatch(newPubkeys);
-    }, opts?.since, opts?.forceFullRelays);
+    const followers = await this.collectFollowers(
+      pubkey,
+      newPubkeys => {
+        if (newPubkeys.length > 0) onBatch(newPubkeys);
+      },
+      opts?.since,
+      opts?.forceFullRelays
+    );
 
     // Only a FULL sweep (no `since`) reflects the real follower count. An incremental
     // sweep returns just the lists updated since `since`, so it must not touch the count cache.
     if (opts?.since === undefined) {
-      this.cache.set(pubkey, { count: followers.length, pubkeys: followers, timestamp: Date.now() });
+      this.cache.set(pubkey, {
+        count: followers.length,
+        pubkeys: followers,
+        timestamp: Date.now(),
+      });
     }
     return followers;
   }
@@ -140,7 +162,11 @@ export class FollowerCountService {
    */
   private async collectFollowers(
     pubkey: string,
-    onBatch?: (newPubkeys: string[], total: number, lastRelay: string | undefined) => void,
+    onBatch?: (
+      newPubkeys: string[],
+      total: number,
+      lastRelay: string | undefined
+    ) => void,
     since?: number,
     forceFullRelays?: boolean
   ): Promise<string[]> {
@@ -152,7 +178,10 @@ export class FollowerCountService {
     // De-duplicate relay URLs
     const uniqueRelays = [...new Set(relays)];
 
-    this.systemLogger.info('FollowerCount', `Querying ${uniqueRelays.length} relays in parallel batches`);
+    this.systemLogger.info(
+      'FollowerCount',
+      `Querying ${uniqueRelays.length} relays in parallel batches`
+    );
 
     // Global follower set (deduplicated across all relays)
     const followers = new Set<string>();
@@ -164,15 +193,25 @@ export class FollowerCountService {
       const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
       const totalBatches = Math.ceil(uniqueRelays.length / BATCH_SIZE);
 
-      this.systemLogger.info('FollowerCount', `Batch ${batchNumber}/${totalBatches}: Querying ${batch.join(', ')}...`);
+      this.systemLogger.info(
+        'FollowerCount',
+        `Batch ${batchNumber}/${totalBatches}: Querying ${batch.join(', ')}...`
+      );
 
       // Query all relays in batch in parallel
-      const batchPromises = batch.map(async (relay) => {
+      const batchPromises = batch.map(async relay => {
         try {
-          const relayFollowers = await this.queryRelayWithPagination(relay, pubkey, since);
+          const relayFollowers = await this.queryRelayWithPagination(
+            relay,
+            pubkey,
+            since
+          );
           return { relay, followers: relayFollowers, success: true };
         } catch (error) {
-          this.systemLogger.error('FollowerCount', `✗ ${relay} failed: ${error}`);
+          this.systemLogger.error(
+            'FollowerCount',
+            `✗ ${relay} failed: ${error}`
+          );
           return { relay, followers: [] as string[], success: false };
         }
       });
@@ -215,7 +254,11 @@ export class FollowerCountService {
    * Query a single relay with pagination (to overcome 500 event limit)
    * Keeps fetching batches until no more events
    */
-  private async queryRelayWithPagination(relayUrl: string, targetPubkey: string, since?: number): Promise<string[]> {
+  private async queryRelayWithPagination(
+    relayUrl: string,
+    targetPubkey: string,
+    since?: number
+  ): Promise<string[]> {
     const allFollowers: string[] = [];
     let until: number | undefined = undefined;
     let batchCount = 0;
@@ -223,7 +266,12 @@ export class FollowerCountService {
 
     while (batchCount < MAX_BATCHES) {
       try {
-        const batch = await this.queryRelayBatch(relayUrl, targetPubkey, until, since);
+        const batch = await this.queryRelayBatch(
+          relayUrl,
+          targetPubkey,
+          until,
+          since
+        );
 
         if (batch.followers.length === 0) {
           // No more events
@@ -259,9 +307,11 @@ export class FollowerCountService {
           // No timestamp found, can't paginate further
           break;
         }
-
       } catch (error) {
-        this.systemLogger.error('FollowerCount', `${relayUrl} batch ${batchCount + 1} failed: ${error}`);
+        this.systemLogger.error(
+          'FollowerCount',
+          `${relayUrl} batch ${batchCount + 1} failed: ${error}`
+        );
         break;
       }
     }
@@ -288,13 +338,20 @@ export class FollowerCountService {
       filter.since = since;
     }
 
-    const events = await this.transport.fetchDirect([relayUrl], [filter], 30000, 'FollowerCount');
-    const followers = events.map(e => e.pubkey).filter((p): p is string => typeof p === 'string');
+    const events = await this.transport.fetchDirect(
+      [relayUrl],
+      [filter],
+      30000,
+      'FollowerCount'
+    );
+    const followers = events
+      .map(e => e.pubkey)
+      .filter((p): p is string => typeof p === 'string');
     const timestamps = events
       .map(e => e.created_at)
       .filter((t): t is number => typeof t === 'number');
-    const oldestTimestamp = timestamps.length > 0 ? Math.min(...timestamps) : null;
+    const oldestTimestamp =
+      timestamps.length > 0 ? Math.min(...timestamps) : null;
     return { followers, oldestTimestamp };
   }
-
 }

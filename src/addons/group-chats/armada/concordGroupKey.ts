@@ -29,9 +29,12 @@ function buildInfo(label: string, id32: Uint8Array, epoch: bigint): Uint8Array {
   const labelBytes = new TextEncoder().encode(label);
   const out = new Uint8Array(labelBytes.length + 1 + 32 + 8);
   let o = 0;
-  out.set(labelBytes, o); o += labelBytes.length;
-  out[o] = 0x00; o += 1;
-  out.set(id32, o); o += 32;
+  out.set(labelBytes, o);
+  o += labelBytes.length;
+  out[o] = 0x00;
+  o += 1;
+  out.set(id32, o);
+  o += 32;
   new DataView(out.buffer).setBigUint64(o, epoch, false);
   return out;
 }
@@ -76,7 +79,11 @@ export interface GroupKey {
  * @param channelIdHex - 64-char hex channel id (from the invite bundle)
  * @param epoch - the channel's current epoch number
  */
-export function channelGroupKey(communityRootHex: string, channelIdHex: string, epoch: number): GroupKey {
+export function channelGroupKey(
+  communityRootHex: string,
+  channelIdHex: string,
+  epoch: number
+): GroupKey {
   return groupKeyDerive(communityRootHex, channelIdHex, epoch, LABEL_CHANNEL);
 }
 
@@ -86,11 +93,20 @@ export function channelGroupKey(communityRootHex: string, channelIdHex: string, 
  * has no explicit channels in the bundle preview, polling the control plane
  * is the only way to detect activity.
  */
-export function controlGroupKey(communityRootHex: string, communityIdHex: string, epoch: number): GroupKey {
+export function controlGroupKey(
+  communityRootHex: string,
+  communityIdHex: string,
+  epoch: number
+): GroupKey {
   return groupKeyDerive(communityRootHex, communityIdHex, epoch, LABEL_CONTROL);
 }
 
-function groupKeyDerive(rootHex: string, idHex: string, epoch: number, label: string): GroupKey {
+function groupKeyDerive(
+  rootHex: string,
+  idHex: string,
+  epoch: number,
+  label: string
+): GroupKey {
   const secret = hexToBytes(rootHex);
   const id = hexToBytes(idHex);
   const info = buildInfo(label, id, BigInt(epoch));

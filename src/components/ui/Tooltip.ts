@@ -39,7 +39,11 @@ export class Tooltip {
    * Attach a tooltip to a target element.
    * @returns a disposer that detaches all listeners and hides the popup.
    */
-  static attach(target: HTMLElement, content: string, options: TooltipOptions = {}): () => void {
+  static attach(
+    target: HTMLElement,
+    content: string,
+    options: TooltipOptions = {}
+  ): () => void {
     const placement = options.placement ?? 'top';
     const align = options.align ?? 'center';
 
@@ -88,7 +92,12 @@ export class Tooltip {
     return Tooltip.popup;
   }
 
-  private static position(target: HTMLElement, popup: HTMLElement, placement: TooltipPlacement, align: TooltipAlign): void {
+  private static position(
+    target: HTMLElement,
+    popup: HTMLElement,
+    placement: TooltipPlacement,
+    align: TooltipAlign
+  ): void {
     const rect = target.getBoundingClientRect();
     const pw = popup.offsetWidth;
     const ph = popup.offsetHeight;
@@ -104,10 +113,12 @@ export class Tooltip {
     }
     left = Math.max(margin, Math.min(left, window.innerWidth - pw - margin));
 
-    let top = placement === 'top' ? rect.top - ph - margin : rect.bottom + margin;
+    let top =
+      placement === 'top' ? rect.top - ph - margin : rect.bottom + margin;
     // Flip to the opposite side if the preferred edge has no room.
     if (placement === 'top' && top < margin) top = rect.bottom + margin;
-    if (placement === 'bottom' && top + ph > window.innerHeight - margin) top = rect.top - ph - margin;
+    if (placement === 'bottom' && top + ph > window.innerHeight - margin)
+      top = rect.top - ph - margin;
 
     popup.style.left = `${Math.round(left)}px`;
     popup.style.top = `${Math.round(top)}px`;

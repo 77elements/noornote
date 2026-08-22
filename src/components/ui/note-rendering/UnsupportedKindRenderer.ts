@@ -7,8 +7,14 @@ import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { encodeNevent, encodeNaddr } from '../../../services/NostrToolsAdapter';
 import { escapeHtml } from '../../../helpers/escapeHtml';
 import { formatGroupChatContent } from '../../../helpers/formatGroupChatContent';
-import { DittoFeatureRenderer, DITTO_GEOCACHE_KIND } from './DittoFeatureRenderer';
-import { SatelliteSiteRenderer, SATELLITE_SITE_KIND } from './SatelliteSiteRenderer';
+import {
+  DittoFeatureRenderer,
+  DITTO_GEOCACHE_KIND,
+} from './DittoFeatureRenderer';
+import {
+  SatelliteSiteRenderer,
+  SATELLITE_SITE_KIND,
+} from './SatelliteSiteRenderer';
 import { ArmadaInviteRenderer } from './ArmadaInviteRenderer';
 
 /** Armada / Concord encrypted community invite bundle (CORD-05). */
@@ -45,7 +51,10 @@ export class UnsupportedKindRenderer {
     if (note.rawEvent.kind === GROUP_CHAT_KIND) {
       const content = formatGroupChatContent(note.rawEvent.content || '');
       const maxLength = 280;
-      const snippet = content.length > maxLength ? content.slice(0, maxLength) + '…' : content;
+      const snippet =
+        content.length > maxLength
+          ? `${content.slice(0, maxLength)}…`
+          : content;
       const element = document.createElement('div');
       element.className = 'note-card note-card--unsupported';
       if (note.id) element.dataset.eventId = note.id;
@@ -72,11 +81,15 @@ export class UnsupportedKindRenderer {
         <div class="unsupported-kind__message">
           Unsupported event kind ${kind}
         </div>
-        ${njumpUrl ? `
+        ${
+          njumpUrl
+            ? `
           <a href="${njumpUrl}" target="_blank" rel="noopener noreferrer" class="btn">
             ↗ Open in another client
           </a>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
     `;
 
@@ -91,12 +104,24 @@ export class UnsupportedKindRenderer {
    * another client" points at the naddr on njump. Ditto geocache and Satellite
    * Earth site pages keep their own dedicated notice.
    */
-  static renderFromCoordinate(kind: number, pubkey: string, identifier: string): HTMLElement {
+  static renderFromCoordinate(
+    kind: number,
+    pubkey: string,
+    identifier: string
+  ): HTMLElement {
     if (kind === DITTO_GEOCACHE_KIND) {
-      return DittoFeatureRenderer.renderFromCoordinate(kind, pubkey, identifier);
+      return DittoFeatureRenderer.renderFromCoordinate(
+        kind,
+        pubkey,
+        identifier
+      );
     }
     if (kind === SATELLITE_SITE_KIND) {
-      return SatelliteSiteRenderer.renderFromCoordinate(kind, pubkey, identifier);
+      return SatelliteSiteRenderer.renderFromCoordinate(
+        kind,
+        pubkey,
+        identifier
+      );
     }
     // Armada invite bundle as a coordinate fallback (no fragment available —
     // static card). QuotedNoteRenderer normally intercepts kind 33301 before

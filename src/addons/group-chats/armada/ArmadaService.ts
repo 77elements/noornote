@@ -26,13 +26,19 @@
 import { SystemLogger } from '../../../services/SystemLogger';
 import { AuthService } from '../../../services/AuthService';
 import { TypedEventBus } from '../../../core/TypedEventBus';
-import { PerAccountLocalStorage, StorageKeys } from '../../../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../../services/PerAccountLocalStorage';
 import { diagLog } from '../../../services/DiagnosticLogger';
 import { nip44DecryptWithKey } from '../../../services/NostrToolsAdapter';
 import { ArmadaCommunityRegistry } from './ArmadaCommunityRegistry';
 import { channelGroupKey, type GroupKey } from './concordGroupKey';
 import { ArmadaRelayClient } from './ArmadaRelayClient';
-import { GROUP_CHATS_DEFAULT_INTERVAL_MS, GROUP_CHATS_INTERVAL_OPTIONS } from '../GroupChatsService';
+import {
+  GROUP_CHATS_DEFAULT_INTERVAL_MS,
+  GROUP_CHATS_INTERVAL_OPTIONS,
+} from '../GroupChatsService';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { TrackedCommunity } from './types';
 
@@ -79,12 +85,18 @@ export class ArmadaService {
   }
 
   private loadInterval(): number {
-    return this.storage.get<number>(StorageKeys.GROUP_CHATS_POLL_INTERVAL, GROUP_CHATS_DEFAULT_INTERVAL_MS);
+    return this.storage.get<number>(
+      StorageKeys.GROUP_CHATS_POLL_INTERVAL,
+      GROUP_CHATS_DEFAULT_INTERVAL_MS
+    );
   }
 
   /** Whether the user's own posts should also raise a notification. */
   private loadNotifyOwn(): boolean {
-    return this.storage.get<boolean>(StorageKeys.GROUP_CHATS_NOTIFY_OWN_POSTS, true);
+    return this.storage.get<boolean>(
+      StorageKeys.GROUP_CHATS_NOTIFY_OWN_POSTS,
+      true
+    );
   }
 
   /** Change the poll cadence and restart the timer immediately. */
@@ -92,7 +104,10 @@ export class ArmadaService {
     this.intervalMs = intervalMs;
     if (this.interval !== null) {
       clearInterval(this.interval);
-      this.interval = window.setInterval(() => void this.tick(), this.intervalMs);
+      this.interval = window.setInterval(
+        () => void this.tick(),
+        this.intervalMs
+      );
     }
   }
 
@@ -102,22 +117,34 @@ export class ArmadaService {
     this.intervalMs = this.loadInterval();
 
     const count = this.registry.count();
-    this.systemLogger.info('Armada', count > 0
-      ? `Watching ${count} tracked ${count === 1 ? 'community' : 'communities'}`
-      : 'Armada enabled — add communities in settings to start tracking');
-    diagLog('addons', 'armada: scheduler started', { intervalMs: this.intervalMs, communities: count });
+    this.systemLogger.info(
+      'Armada',
+      count > 0
+        ? `Watching ${count} tracked ${count === 1 ? 'community' : 'communities'}`
+        : 'Armada enabled — add communities in settings to start tracking'
+    );
+    diagLog('addons', 'armada: scheduler started', {
+      intervalMs: this.intervalMs,
+      communities: count,
+    });
 
     this.initialTimer = window.setTimeout(() => {
       this.initialTimer = null;
       void this.tick();
-      this.interval = window.setInterval(() => void this.tick(), this.intervalMs);
+      this.interval = window.setInterval(
+        () => void this.tick(),
+        this.intervalMs
+      );
     }, INITIAL_DELAY_MS);
   }
 
   /** One poll window: check every tracked community for new gift-wrap activity. */
   public async tick(): Promise<void> {
     if (this.destroyed || this.running) {
-      diagLog('addons', 'armada: tick skipped', { destroyed: this.destroyed, running: this.running });
+      diagLog('addons', 'armada: tick skipped', {
+        destroyed: this.destroyed,
+        running: this.running,
+      });
       return;
     }
     this.running = true;
@@ -130,13 +157,19 @@ export class ArmadaService {
 
       const notifyOwn = this.loadNotifyOwn();
       const nowSeconds = Math.floor(Date.now() / 1000);
-      const anchors = this.storage.get<Record<string, number>>(StorageKeys.ARMADA_LAST_CHECK, {}) ?? {};
+      const anchors =
+        this.storage.get<Record<string, number>>(
+          StorageKeys.ARMADA_LAST_CHECK,
+          {}
+        ) ?? {};
 
       // Per-tick dedup: the same wrap may arrive from multiple relays /
       // multiple communities that share stock relays.
       const seenWrapIds = new Set<string>();
 
-      diagLog('addons', 'armada: tick started', { communities: communities.length });
+      diagLog('addons', 'armada: tick started', {
+        communities: communities.length,
+      });
 
       for (const community of communities) {
         if (this.destroyed) return;
@@ -150,13 +183,22 @@ export class ArmadaService {
           continue;
         }
 
-        const fresh = await this.pollCommunity(community, me, anchor, notifyOwn, seenWrapIds);
+        const fresh = await this.pollCommunity(
+          community,
+          me,
+          anchor,
+          notifyOwn,
+          seenWrapIds
+        );
 
         if (this.destroyed) return;
 
         if (fresh.count > 0) {
           this.notify(community, nowSeconds, fresh.mineOnly, fresh.count);
-          this.systemLogger.info('Armada', `${fresh.count} new in "${community.name}"`);
+          this.systemLogger.info(
+            'Armada',
+            `${fresh.count} new in "${community.name}"`
+          );
           diagLog('addons', 'armada: fresh activity', {
             community: community.name,
             fresh: fresh.count,
@@ -177,7 +219,10 @@ export class ArmadaService {
       }
       this.storage.set(StorageKeys.ARMADA_LAST_CHECK, anchors);
     } catch (error) {
-      this.systemLogger.error('Armada', 'Could not check your communities this time');
+      this.systemLogger.error(
+        'Armada',
+        'Could not check your communities this time'
+      );
       diagLog('addons', 'armada: tick failed', { error: String(error) });
     } finally {
       this.running = false;
@@ -207,7 +252,7 @@ export class ArmadaService {
     me: string,
     anchor: number,
     notifyOwn: boolean,
-    seenWrapIds: Set<string>,
+    seenWrapIds: Set<string>
   ): Promise<{ count: number; mineOnly: boolean }> {
     // Channel stream pubkeys — derived from communityRoot + channelId.
     const groupKeys: GroupKey[] = [];
@@ -215,13 +260,23 @@ export class ArmadaService {
       const rootEpoch = community.rootEpoch ?? 0;
       for (const ch of community.channels) {
         try {
-          groupKeys.push(channelGroupKey(community.communityRoot, ch.id, ch.epoch ?? rootEpoch));
-        } catch { /* derivation failed for this channel — skip */ }
+          groupKeys.push(
+            channelGroupKey(
+              community.communityRoot,
+              ch.id,
+              ch.epoch ?? rootEpoch
+            )
+          );
+        } catch {
+          /* derivation failed for this channel — skip */
+        }
       }
     }
 
     if (groupKeys.length === 0) {
-      diagLog('addons', 'armada: no channels to poll', { community: community.name });
+      diagLog('addons', 'armada: no channels to poll', {
+        community: community.name,
+      });
       return { count: 0, mineOnly: false };
     }
 
@@ -234,16 +289,21 @@ export class ArmadaService {
       events = await this.relayClient.fetchWraps(
         community.bootstrapRelays,
         authors,
-        anchor,
+        anchor
       );
     } catch (error) {
-      diagLog('addons', 'armada: fetch failed', { community: community.name, error: String(error) });
+      diagLog('addons', 'armada: fetch failed', {
+        community: community.name,
+        error: String(error),
+      });
     }
 
     if (events.length === 0) return { count: 0, mineOnly: false };
 
     diagLog('addons', 'armada: wraps found', {
-      community: community.name, wraps: events.length, channels: groupKeys.length,
+      community: community.name,
+      wraps: events.length,
+      channels: groupKeys.length,
     });
 
     // Decrypt each wrap and count only message-kind rumors.
@@ -279,16 +339,25 @@ export class ArmadaService {
    * again with the same convKey) or 20014 (plaintext — the seal's content IS
    * the rumor JSON, byte-verbatim; control-plane compaction form).
    */
-  private unwrapStreamWrap(wrapEvent: NostrEvent, groupKeys: GroupKey[]): NostrEvent | null {
+  private unwrapStreamWrap(
+    wrapEvent: NostrEvent,
+    groupKeys: GroupKey[]
+  ): NostrEvent | null {
     for (const gk of groupKeys) {
       try {
         const sealJson = nip44DecryptWithKey(wrapEvent.content, gk.convKey);
         const seal = JSON.parse(sealJson) as NostrEvent;
-        if (seal.kind !== KIND_SEAL_ENCRYPTED && seal.kind !== KIND_SEAL_PLAINTEXT) continue;
+        if (
+          seal.kind !== KIND_SEAL_ENCRYPTED &&
+          seal.kind !== KIND_SEAL_PLAINTEXT
+        )
+          continue;
 
         let rumor: NostrEvent;
         if (seal.kind === KIND_SEAL_ENCRYPTED) {
-          rumor = JSON.parse(nip44DecryptWithKey(seal.content, gk.convKey)) as NostrEvent;
+          rumor = JSON.parse(
+            nip44DecryptWithKey(seal.content, gk.convKey)
+          ) as NostrEvent;
         } else {
           rumor = JSON.parse(seal.content) as NostrEvent;
         }
@@ -305,7 +374,12 @@ export class ArmadaService {
   }
 
   /** Emit one in-app notification for a community that saw activity. */
-  private notify(community: TrackedCommunity, nowSeconds: number, mine: boolean, count: number): void {
+  private notify(
+    community: TrackedCommunity,
+    nowSeconds: number,
+    mine: boolean,
+    count: number
+  ): void {
     const event: NostrEvent = {
       id: `armada-${community.naddr}-${nowSeconds}`,
       pubkey: '',
@@ -339,8 +413,14 @@ export class ArmadaService {
 
   public destroy(): void {
     this.destroyed = true;
-    if (this.initialTimer !== null) { clearTimeout(this.initialTimer); this.initialTimer = null; }
-    if (this.interval !== null) { clearInterval(this.interval); this.interval = null; }
+    if (this.initialTimer !== null) {
+      clearTimeout(this.initialTimer);
+      this.initialTimer = null;
+    }
+    if (this.interval !== null) {
+      clearInterval(this.interval);
+      this.interval = null;
+    }
     this.relayClient.destroy();
     ArmadaService.instance = null;
   }

@@ -15,7 +15,8 @@ export class ISLStatsUpdater {
   private container: HTMLElement;
   private _reactionsApi?: ReactionsModuleApi | null;
   private get reactionsApi(): ReactionsModuleApi | null {
-    return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
+    return (this._reactionsApi ??=
+      ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
   }
   private fetchedNoteIds = new Set<string>();
 
@@ -32,20 +33,35 @@ export class ISLStatsUpdater {
       const noteIdForStats = extractOriginalNoteId(event);
       if (!noteIdForStats) return;
 
-      const cachedStats = this.reactionsApi?.getCachedStats(noteIdForStats) ?? null;
+      const cachedStats =
+        this.reactionsApi?.getCachedStats(noteIdForStats) ?? null;
       if (cachedStats) {
-        const islElement = this.container.querySelector(`.isl[data-note-id="${noteIdForStats}"]`) as HTMLElement;
+        const islElement = this.container.querySelector(
+          `.isl[data-note-id="${noteIdForStats}"]`
+        ) as HTMLElement;
         if (islElement) {
-          const repliesCount = islElement.querySelector('.isl-reply .isl-count');
-          const repostsCount = islElement.querySelector('.isl-repost .isl-count');
-          const quotedRepostsCount = islElement.querySelector('.isl-quote .isl-count');
+          const repliesCount = islElement.querySelector(
+            '.isl-reply .isl-count'
+          );
+          const repostsCount = islElement.querySelector(
+            '.isl-repost .isl-count'
+          );
+          const quotedRepostsCount = islElement.querySelector(
+            '.isl-quote .isl-count'
+          );
           const likesCount = islElement.querySelector('.isl-like .isl-count');
           const zapsCount = islElement.querySelector('.isl-zap .isl-count');
 
-          if (repliesCount) repliesCount.textContent = formatCount(cachedStats.replies);
-          if (repostsCount) repostsCount.textContent = formatCount(cachedStats.reposts);
-          if (quotedRepostsCount) quotedRepostsCount.textContent = formatCount(cachedStats.quotedReposts);
-          if (likesCount) likesCount.textContent = formatCount(cachedStats.likes);
+          if (repliesCount)
+            repliesCount.textContent = formatCount(cachedStats.replies);
+          if (repostsCount)
+            repostsCount.textContent = formatCount(cachedStats.reposts);
+          if (quotedRepostsCount)
+            quotedRepostsCount.textContent = formatCount(
+              cachedStats.quotedReposts
+            );
+          if (likesCount)
+            likesCount.textContent = formatCount(cachedStats.likes);
           if (zapsCount) zapsCount.textContent = formatCount(cachedStats.zaps);
         }
       }
@@ -84,7 +100,7 @@ export class ISLStatsUpdater {
             reposts: stats.reposts,
             quotedReposts: stats.quotedReposts,
             likes: stats.likes,
-            zaps: stats.zaps
+            zaps: stats.zaps,
           });
         }
       }

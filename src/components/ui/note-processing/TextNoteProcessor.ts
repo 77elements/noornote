@@ -20,31 +20,33 @@ export class TextNoteProcessor {
       throw new Error('Event ID is required');
     }
 
-    const authorProfile = TextNoteProcessor.contentProcessor.getNonBlockingProfile(event.pubkey);
+    const authorProfile =
+      TextNoteProcessor.contentProcessor.getNonBlockingProfile(event.pubkey);
     const quoteTags = event.tags.filter(tag => tag[0] === 'q');
     const isQuote = quoteTags.length > 0;
 
-    const processedContent = TextNoteProcessor.contentProcessor.processContentWithTags(
-      event.content,
-      event.tags
-    );
+    const processedContent =
+      TextNoteProcessor.contentProcessor.processContentWithTags(
+        event.content,
+        event.tags
+      );
 
     const result: ProcessedNote = {
       id: eventId,
       type: isQuote ? 'quote' : 'original',
       timestamp: event.created_at,
       author: {
-        pubkey: event.pubkey
+        pubkey: event.pubkey,
       },
       content: processedContent,
-      rawEvent: event
+      rawEvent: event,
     };
 
     if (authorProfile) {
       result.author.profile = {
         name: authorProfile.name,
         display_name: authorProfile.display_name,
-        picture: authorProfile.picture
+        picture: authorProfile.picture,
       };
     }
 

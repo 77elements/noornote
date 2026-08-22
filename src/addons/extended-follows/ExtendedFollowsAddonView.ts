@@ -6,10 +6,11 @@ export class ExtendedFollowsAddonView extends AddonToggleView {
     super({
       id: 'extended-follows',
       name: 'Extended Follows',
-      description: 'Mutual badges, Zap In/Out stats, and mutual change detection for your follows list.',
+      description:
+        'Mutual badges, Zap In/Out stats, and mutual change detection for your follows list.',
       toggleEvent: 'extended-follows:toggle',
       isEnabled: () => isExtendedFollowsEnabled(),
-      setEnabled: (v) => setExtendedFollowsEnabled(v),
+      setEnabled: v => setExtendedFollowsEnabled(v),
     });
   }
 }

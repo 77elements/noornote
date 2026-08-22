@@ -14,7 +14,10 @@
  * container.appendChild(identity.getElement());
  */
 
-import { UserProfileService, UserProfile } from '../../services/UserProfileService';
+import {
+  UserProfileService,
+  UserProfile,
+} from '../../services/UserProfileService';
 import { UserHoverCard } from '../ui/UserHoverCard';
 import { AddonLoader } from '../../addons/AddonLoader';
 import type { ProfileRecognitionRuntime } from '../../addons/profile-recognition/runtime';
@@ -23,8 +26,10 @@ import { hexToNpub } from '../../helpers/nip19';
 import { PetnameService } from '../../services/PetnameService';
 
 // Types only (erased at build time) — live runtime accessed via AddonLoader
-type ProfileBlinkerType = import('../../addons/profile-recognition/profileBlinking').ProfileBlinker;
-type TextBlinkerType = import('../../addons/profile-recognition/profileBlinking').TextBlinker;
+type ProfileBlinkerType =
+  import('../../addons/profile-recognition/profileBlinking').ProfileBlinker;
+type TextBlinkerType =
+  import('../../addons/profile-recognition/profileBlinking').TextBlinker;
 
 export interface UserIdentityConfig {
   pubkey: string;
@@ -41,7 +46,8 @@ export interface UserIdentityConfig {
 
 export class UserIdentity {
   private element: HTMLElement;
-  private config: Required<Omit<UserIdentityConfig, 'onClick'>> & Pick<UserIdentityConfig, 'onClick'>;
+  private config: Required<Omit<UserIdentityConfig, 'onClick'>> &
+    Pick<UserIdentityConfig, 'onClick'>;
   private userProfileService: UserProfileService;
   private profile: UserProfile | null = null;
   private unsubscribe?: () => void;
@@ -62,7 +68,7 @@ export class UserIdentity {
       relayHints: [],
       enableHoverCard: true,
       clickable: false,
-      ...config
+      ...config,
     };
 
     this.userProfileService = UserProfileService.getInstance();
@@ -87,7 +93,9 @@ export class UserIdentity {
 
   /** Fetch the current profile-recognition runtime, or null if addon is OFF. */
   private getRecognitionRuntime(): ProfileRecognitionRuntime | null {
-    return AddonLoader.getInstance().getRuntime<ProfileRecognitionRuntime>('profile-recognition');
+    return AddonLoader.getInstance().getRuntime<ProfileRecognitionRuntime>(
+      'profile-recognition'
+    );
   }
 
   /**
@@ -144,18 +152,27 @@ export class UserIdentity {
   private subscribeToUpdates(): void {
     this.unsubscribe = this.userProfileService.subscribeToProfile(
       this.config.pubkey,
-      (profile) => {
+      profile => {
         this.profile = profile;
 
         // Render-ready values from the cache (single source of truth: real
         // data when known, deterministic fallback otherwise — see UserProfileService).
-        const username = UserProfileService.displayNameOf(profile, this.config.pubkey);
-        const picture = UserProfileService.displayPictureOf(profile, this.config.pubkey);
+        const username = UserProfileService.displayNameOf(
+          profile,
+          this.config.pubkey
+        );
+        const picture = UserProfileService.displayPictureOf(
+          profile,
+          this.config.pubkey
+        );
 
         // Get NIP-05 handle(s)
-        const nip05s = profile.nip05s && profile.nip05s.length > 0
-          ? profile.nip05s
-          : (profile.nip05 ? [profile.nip05] : []);
+        const nip05s =
+          profile.nip05s && profile.nip05s.length > 0
+            ? profile.nip05s
+            : profile.nip05
+              ? [profile.nip05]
+              : [];
         const handle = nip05s.length > 0 ? nip05s.join(', ') : '';
 
         // Show element and update UI
@@ -172,11 +189,17 @@ export class UserIdentity {
   private updateUI(username: string, picture: string, handle: string): void {
     // Profile Recognition: check if name/picture changed and should blink
     const rt = this.getRecognitionRuntime();
-    const shouldBlink = rt?.service?.checkRecognition(this.config.pubkey, username, picture);
+    const shouldBlink = rt?.service?.checkRecognition(
+      this.config.pubkey,
+      username,
+      picture
+    );
 
     // Update username with blinking
     if (this.config.showUsername) {
-      const usernameEl = this.element.querySelector('.user-identity__username') as HTMLElement;
+      const usernameEl = this.element.querySelector(
+        '.user-identity__username'
+      ) as HTMLElement;
       if (usernameEl) {
         if (shouldBlink) {
           // Initialize name blinker if needed
@@ -201,7 +224,9 @@ export class UserIdentity {
 
     // Update avatar with blinking
     if (this.config.showAvatar) {
-      const avatarEl = this.element.querySelector('img.profile-pic') as HTMLImageElement;
+      const avatarEl = this.element.querySelector(
+        'img.profile-pic'
+      ) as HTMLImageElement;
       if (avatarEl) {
         // Private petname ring (warning orange) — this pubkey has a private
         // note (NIP-78) and the feature is enabled. Rule order in _note-ui.scss
@@ -236,7 +261,9 @@ export class UserIdentity {
 
     // Update handle
     if (this.config.showHandle) {
-      const handleEl = this.element.querySelector('.user-identity__handle') as HTMLElement;
+      const handleEl = this.element.querySelector(
+        '.user-identity__handle'
+      ) as HTMLElement;
       if (handleEl) {
         if (handle) {
           handleEl.textContent = handle;
@@ -267,7 +294,7 @@ export class UserIdentity {
    * Setup click handler for navigation to profile
    */
   private setupClickHandler(): void {
-    this.element.addEventListener('click', (e) => {
+    this.element.addEventListener('click', e => {
       e.stopPropagation(); // Prevent parent click handlers
 
       if (this.config.onClick) {

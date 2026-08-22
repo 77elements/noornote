@@ -3,12 +3,15 @@ import { ToastService } from '../services/ToastService';
 
 const platform = PlatformService.getInstance();
 
-export async function downloadMedia(url: string, defaultFileName: string): Promise<void> {
+export async function downloadMedia(
+  url: string,
+  defaultFileName: string
+): Promise<void> {
   if (platform.isElectron) {
     // Electron Desktop: save dialog → writeFile
     const filePath = await window.electronAPI!.saveFileDialog({
       defaultPath: defaultFileName,
-      filters: [{ name: 'All Files', extensions: ['*'] }]
+      filters: [{ name: 'All Files', extensions: ['*'] }],
     });
     if (filePath) {
       const response = await fetch(url);
@@ -22,11 +25,16 @@ export async function downloadMedia(url: string, defaultFileName: string): Promi
     const response = await fetch(url);
     const blob = await response.blob();
     const reader = new FileReader();
-    const base64 = await new Promise<string>((resolve) => {
-      reader.onload = () => resolve((reader.result as string).split(',')[1] || '');
+    const base64 = await new Promise<string>(resolve => {
+      reader.onload = () =>
+        resolve((reader.result as string).split(',')[1] || '');
       reader.readAsDataURL(blob);
     });
-    await Filesystem.writeFile({ path: defaultFileName, data: base64, directory: Directory.Documents });
+    await Filesystem.writeFile({
+      path: defaultFileName,
+      data: base64,
+      directory: Directory.Documents,
+    });
     ToastService.show('Saved successfully', 'success');
   } else {
     // Web: blob download

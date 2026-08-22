@@ -83,7 +83,7 @@ export class QuoteOrchestrator extends Orchestrator {
     nostrRef: string,
     authorHint?: string,
     extraOutboundPubkeys: string[] = [],
-    outboundOnly: boolean = false,
+    outboundOnly: boolean = false
   ): Promise<NostrEvent | null> {
     // If already fetching, wait for that request (deduplication).
     // NOTE: outboundOnly retries intentionally bypass dedup — they must run
@@ -108,9 +108,16 @@ export class QuoteOrchestrator extends Orchestrator {
     }
 
     // Extract event ID, relay hints, and author from reference (note, nevent, hex)
-    const { eventId, relayHints, author: extractedAuthor } = this.extractEventIdAndHints(nostrRef);
+    const {
+      eventId,
+      relayHints,
+      author: extractedAuthor,
+    } = this.extractEventIdAndHints(nostrRef);
     if (!eventId) {
-      this.systemLogger.error('QuoteOrchestrator', `Invalid reference format: ${nostrRef.slice(0, 20)}...`);
+      this.systemLogger.error(
+        'QuoteOrchestrator',
+        `Invalid reference format: ${nostrRef.slice(0, 20)}...`
+      );
       return null;
     }
 
@@ -119,7 +126,13 @@ export class QuoteOrchestrator extends Orchestrator {
     const author = extractedAuthor || authorHint || null;
 
     // Start new fetch with relay hints and author for outbound relay discovery
-    const fetchPromise = this.fetchEventById(eventId, relayHints, author, extraOutboundPubkeys, outboundOnly);
+    const fetchPromise = this.fetchEventById(
+      eventId,
+      relayHints,
+      author,
+      extraOutboundPubkeys,
+      outboundOnly
+    );
     this.fetchingQuotes.set(nostrRef, fetchPromise);
 
     try {
@@ -147,7 +160,11 @@ export class QuoteOrchestrator extends Orchestrator {
    * Supports: note1, nevent1, hex event IDs
    * Returns relay hints from nevent for priority fetching
    */
-  private extractEventIdAndHints(nostrRef: string): { eventId: string | null; relayHints: string[]; author: string | null } {
+  private extractEventIdAndHints(nostrRef: string): {
+    eventId: string | null;
+    relayHints: string[];
+    author: string | null;
+  } {
     try {
       // Remove nostr: prefix if present
       const cleanRef = nostrRef.replace(/^nostr:/, '');
@@ -160,13 +177,21 @@ export class QuoteOrchestrator extends Orchestrator {
 
           switch (decoded.type) {
             case 'note':
-              return { eventId: decoded.data as string, relayHints: [], author: null };
+              return {
+                eventId: decoded.data as string,
+                relayHints: [],
+                author: null,
+              };
             case 'nevent': {
-              const neventData = decoded.data as { id: string; relays?: string[]; author?: string };
+              const neventData = decoded.data as {
+                id: string;
+                relays?: string[];
+                author?: string;
+              };
               return {
                 eventId: neventData.id,
                 relayHints: neventData.relays || [],
-                author: neventData.author || null
+                author: neventData.author || null,
               };
             }
             default:
@@ -183,9 +208,11 @@ export class QuoteOrchestrator extends Orchestrator {
       }
 
       return { eventId: null, relayHints: [], author: null };
-
     } catch (error) {
-      this.systemLogger.error('QuoteOrchestrator', `Extract ID error: ${error}`);
+      this.systemLogger.error(
+        'QuoteOrchestrator',
+        `Extract ID error: ${error}`
+      );
       return { eventId: null, relayHints: [], author: null };
     }
   }
@@ -210,7 +237,7 @@ export class QuoteOrchestrator extends Orchestrator {
     relayHints: string[] = [],
     author: string | null = null,
     extraOutboundPubkeys: string[] = [],
-    outboundOnly: boolean = false,
+    outboundOnly: boolean = false
   ): Promise<NostrEvent | null> {
     const shortId = eventId.slice(0, 8);
 
@@ -231,25 +258,43 @@ export class QuoteOrchestrator extends Orchestrator {
       // Stage 1: Try relay hints first (highest priority)
       if (relayHints.length > 0) {
         try {
-          const events = await this.transport.fetch(relayHints, [filter], 5000, false, 'QuoteOrch');
+          const events = await this.transport.fetch(
+            relayHints,
+            [filter],
+            5000,
+            false,
+            'QuoteOrch'
+          );
           if (events[0]) {
             this.noteService.registerNote(events[0]);
             return events[0];
           }
         } catch (error) {
-          diagLog('relays', 'QuoteOrchestrator: stage 1 (hints) failed', { eventId: shortId, error: String(error) });
+          diagLog('relays', 'QuoteOrchestrator: stage 1 (hints) failed', {
+            eventId: shortId,
+            error: String(error),
+          });
         }
       }
 
       // Stage 2: Try standard relays
       try {
-        const events = await this.transport.fetch(this.transport.getReadRelays(), [filter], 5000, false, 'QuoteOrch');
+        const events = await this.transport.fetch(
+          this.transport.getReadRelays(),
+          [filter],
+          5000,
+          false,
+          'QuoteOrch'
+        );
         if (events[0]) {
           this.noteService.registerNote(events[0]);
           return events[0];
         }
       } catch (error) {
-        diagLog('relays', 'QuoteOrchestrator: stage 2 (standard) failed', { eventId: shortId, error: String(error) });
+        diagLog('relays', 'QuoteOrchestrator: stage 2 (standard) failed', {
+          eventId: shortId,
+          error: String(error),
+        });
       }
 
       // Stage 2.5: Try metadata / indexer relays (nostr.band & co). These index
@@ -258,17 +303,32 @@ export class QuoteOrchestrator extends Orchestrator {
       // request's relays, not ours. skipCache=true forces a relay-only fetch.
       try {
         const standardSet = new Set(this.transport.getReadRelays());
-        const indexerRelays = this.relayConfig.getMetadataRelays().filter(r => !standardSet.has(r));
+        const indexerRelays = this.relayConfig
+          .getMetadataRelays()
+          .filter(r => !standardSet.has(r));
         if (indexerRelays.length > 0) {
-          const events = await this.transport.fetch(indexerRelays, [filter], 6000, true, 'QuoteOrch');
+          const events = await this.transport.fetch(
+            indexerRelays,
+            [filter],
+            6000,
+            true,
+            'QuoteOrch'
+          );
           if (events[0]) {
-            diagLog('relays', 'QuoteOrchestrator: indexer fallback found quote', { eventId: shortId });
+            diagLog(
+              'relays',
+              'QuoteOrchestrator: indexer fallback found quote',
+              { eventId: shortId }
+            );
             this.noteService.registerNote(events[0]);
             return events[0];
           }
         }
       } catch (error) {
-        diagLog('relays', 'QuoteOrchestrator: stage 2.5 (indexer) failed', { eventId: shortId, error: String(error) });
+        diagLog('relays', 'QuoteOrchestrator: stage 2.5 (indexer) failed', {
+          eventId: shortId,
+          error: String(error),
+        });
       }
     }
 
@@ -282,7 +342,10 @@ export class QuoteOrchestrator extends Orchestrator {
     );
     if (outboundPubkeys.length > 0) {
       try {
-        const outboundRelays = await this.relayDiscovery.getCombinedRelays(outboundPubkeys, true);
+        const outboundRelays = await this.relayDiscovery.getCombinedRelays(
+          outboundPubkeys,
+          true
+        );
         const standardRelays = new Set(this.transport.getReadRelays());
         const newRelays = outboundRelays.filter(r => !standardRelays.has(r));
         // Retry path: longer timeout — outbound relays (especially a bridge
@@ -298,18 +361,39 @@ export class QuoteOrchestrator extends Orchestrator {
           outboundOnly,
         });
 
-        const events = await this.transport.fetch(outboundRelays, [filter], stageTimeout, true, 'QuoteOrch');
+        const events = await this.transport.fetch(
+          outboundRelays,
+          [filter],
+          stageTimeout,
+          true,
+          'QuoteOrch'
+        );
         if (events[0]) {
-          diagLog('relays', 'QuoteOrchestrator: outbound fallback found quote', { eventId: shortId, outboundOnly });
+          diagLog(
+            'relays',
+            'QuoteOrchestrator: outbound fallback found quote',
+            { eventId: shortId, outboundOnly }
+          );
           this.noteService.registerNote(events[0]);
           return events[0];
         }
-        diagLog('relays', 'QuoteOrchestrator: stage 3 returned empty', { eventId: shortId, relayCount: outboundRelays.length, outboundOnly });
+        diagLog('relays', 'QuoteOrchestrator: stage 3 returned empty', {
+          eventId: shortId,
+          relayCount: outboundRelays.length,
+          outboundOnly,
+        });
       } catch (error) {
-        diagLog('relays', 'QuoteOrchestrator: stage 3 (outbound) failed', { eventId: shortId, error: String(error), outboundOnly });
+        diagLog('relays', 'QuoteOrchestrator: stage 3 (outbound) failed', {
+          eventId: shortId,
+          error: String(error),
+          outboundOnly,
+        });
       }
     } else {
-      diagLog('relays', 'QuoteOrchestrator: no pubkeys for outbound fallback', { eventId: shortId, outboundOnly });
+      diagLog('relays', 'QuoteOrchestrator: no pubkeys for outbound fallback', {
+        eventId: shortId,
+        outboundOnly,
+      });
     }
 
     diagLog('relays', 'QuoteOrchestrator: NOT FOUND after all stages', {
@@ -336,7 +420,10 @@ export class QuoteOrchestrator extends Orchestrator {
   }
 
   public onerror(relay: string, error: Error): void {
-    this.systemLogger.error('QuoteOrchestrator', `Relay error (${relay}): ${error.message}`);
+    this.systemLogger.error(
+      'QuoteOrchestrator',
+      `Relay error (${relay}): ${error.message}`
+    );
   }
 
   public onclose(_relay: string): void {

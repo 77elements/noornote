@@ -92,28 +92,45 @@ export class PetnameService {
     if (!user) return;
 
     try {
-      const relays = await OutboundRelaysOrchestrator.getInstance().getCombinedRelays([user.pubkey], true);
+      const relays =
+        await OutboundRelaysOrchestrator.getInstance().getCombinedRelays(
+          [user.pubkey],
+          true
+        );
       if (relays.length === 0) return;
 
-      const events = await this.transport.fetch(relays, [{
-        kinds: [NIP78_KIND as number],
-        authors: [user.pubkey],
-        '#d': [D_TAG],
-        limit: 1,
-      }], 5000, false, 'PetnameSvc');
+      const events = await this.transport.fetch(
+        relays,
+        [
+          {
+            kinds: [NIP78_KIND as number],
+            authors: [user.pubkey],
+            '#d': [D_TAG],
+            limit: 1,
+          },
+        ],
+        5000,
+        false,
+        'PetnameSvc'
+      );
 
       if (events.length === 0) return;
 
       const event = events.sort((a, b) => b.created_at - a.created_at)[0];
       if (!event?.content) return;
 
-      const plaintext = await this.auth.nip44Decrypt(event.content, user.pubkey);
+      const plaintext = await this.auth.nip44Decrypt(
+        event.content,
+        user.pubkey
+      );
       const map = JSON.parse(plaintext);
       if (typeof map === 'object' && map !== null) {
         this.pals.set(StorageKeys.PETNAMES, map);
         this.cachedMap = map;
         this.cachedOwnerPubkey = user.pubkey;
-        diagLog('system', 'PetnameService synced from relays', { count: Object.keys(map).length });
+        diagLog('system', 'PetnameService synced from relays', {
+          count: Object.keys(map).length,
+        });
       }
     } catch (error) {
       diagLog('system', 'PetnameService sync failed', { error: String(error) });
@@ -128,7 +145,8 @@ export class PetnameService {
   private getMap(): Record<string, string> {
     const owner = this.auth.getCurrentUser()?.pubkey ?? null;
     if (this.cachedMap === null || this.cachedOwnerPubkey !== owner) {
-      this.cachedMap = this.pals.get<Record<string, string>>(StorageKeys.PETNAMES, {}) ?? {};
+      this.cachedMap =
+        this.pals.get<Record<string, string>>(StorageKeys.PETNAMES, {}) ?? {};
       this.cachedOwnerPubkey = owner;
     }
     return this.cachedMap;
@@ -157,9 +175,13 @@ export class PetnameService {
       }
 
       await this.transport.publishContent(signed);
-      diagLog('system', 'PetnameService published to relays', { count: Object.keys(map).length });
+      diagLog('system', 'PetnameService published to relays', {
+        count: Object.keys(map).length,
+      });
     } catch (error) {
-      diagLog('system', 'PetnameService publish failed', { error: String(error) });
+      diagLog('system', 'PetnameService publish failed', {
+        error: String(error),
+      });
       ToastService.show('Failed to save petname', 'error');
     }
   }

@@ -22,7 +22,15 @@ const DB_NAME_PREFIX = 'noornote-diag-';
 const DB_VERSION = 1;
 // Every DiagArea gets its own store. Matches the file-per-area layout so
 // exports stay structurally identical to Desktop/Android.
-const AREAS: DiagArea[] = ['lists', 'dms', 'crashes', 'relays', 'addons', 'wallet', 'system'];
+const AREAS: DiagArea[] = [
+  'lists',
+  'dms',
+  'crashes',
+  'relays',
+  'addons',
+  'wallet',
+  'system',
+];
 /** Per-area entry cap. ~2000 entries ≈ 1–2 MB per area depending on payload. */
 const MAX_ENTRIES_PER_AREA = 2000;
 
@@ -76,7 +84,7 @@ class DiagWebStore {
         // Don't reject — resolve once it eventually opens.
       };
 
-      request.onupgradeneeded = (event) => {
+      request.onupgradeneeded = event => {
         const db = (event.target as IDBOpenDBRequest).result;
         for (const area of AREAS) {
           if (!db.objectStoreNames.contains(area)) {
@@ -171,8 +179,8 @@ class DiagWebStore {
       present.map(area =>
         this.readArea(area).then(lines => {
           if (lines.length) result[area] = lines;
-        }),
-      ),
+        })
+      )
     );
     return result;
   }

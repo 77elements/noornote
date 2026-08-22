@@ -33,7 +33,9 @@ export class HamburgerBadgeManager {
       this.eventBus.on('notifications:badge-update', () => this.updateDot())
     );
     this.subscriptionIds.push(
-      this.eventBus.on('notifications:priorities-changed', () => this.updateDot())
+      this.eventBus.on('notifications:priorities-changed', () =>
+        this.updateDot()
+      )
     );
     this.subscriptionIds.push(
       this.eventBus.on('dm:fetch-complete', () => this.updateDot())

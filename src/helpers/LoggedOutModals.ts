@@ -19,28 +19,28 @@ export interface LoggedOutModalOptions {
 const MODAL_MESSAGES: Record<string, { icon: string; text: string }> = {
   like: {
     icon: '💜',
-    text: 'You could shower this note with a thousand emojis, but you\'ll need an account first.'
+    text: "You could shower this note with a thousand emojis, but you'll need an account first.",
   },
   zap: {
     icon: '⚡',
-    text: 'Real money for real posts. Set up an account and a wallet, and you\'re in business.'
+    text: "Real money for real posts. Set up an account and a wallet, and you're in business.",
   },
   repost: {
     icon: '🔁',
-    text: 'Spreading the word? Love the energy. Just need you to log in first.'
+    text: 'Spreading the word? Love the energy. Just need you to log in first.',
   },
   reply: {
     icon: '💬',
-    text: 'Got something to say? We\'re all ears - right after you create an account.'
+    text: "Got something to say? We're all ears - right after you create an account.",
   },
   bookmark: {
     icon: '🔖',
-    text: 'Want to save this for later? Create an account and it\'s yours forever.'
+    text: "Want to save this for later? Create an account and it's yours forever.",
   },
   dm: {
     icon: '✉️',
-    text: 'Want to drop them a private message? Encrypted, peer-to-peer — but you\'ll need a key first.'
-  }
+    text: "Want to drop them a private message? Encrypted, peer-to-peer — but you'll need a key first.",
+  },
 };
 
 /**
@@ -72,22 +72,28 @@ export function showLoggedOutReactionModal(
     }
   };
 
-  content.querySelector('.logged-out-modal__create')?.addEventListener('click', async () => {
-    modalService.hide();
-    stashRedirect();
-    // The wizard is modal-based (mounted in document.body via ModalService) —
-    // it works fine in public-view too, no MainLayout required.
-    const { AccountSetupWizard } = await import('../components/onboarding/AccountSetupWizard');
-    const wizard = new AccountSetupWizard();
-    wizard.show();
-  });
+  content
+    .querySelector('.logged-out-modal__create')
+    ?.addEventListener('click', async () => {
+      modalService.hide();
+      stashRedirect();
+      // The wizard is modal-based (mounted in document.body via ModalService) —
+      // it works fine in public-view too, no MainLayout required.
+      const { AccountSetupWizard } = await import(
+        '../components/onboarding/AccountSetupWizard'
+      );
+      const wizard = new AccountSetupWizard();
+      wizard.show();
+    });
 
-  content.querySelector('.logged-out-modal__login')?.addEventListener('click', async () => {
-    modalService.hide();
-    stashRedirect();
+  content
+    .querySelector('.logged-out-modal__login')
+    ?.addEventListener('click', async () => {
+      modalService.hide();
+      stashRedirect();
 
-    router.navigate('/login');
-  });
+      router.navigate('/login');
+    });
 
   modalService.show({
     title: '',

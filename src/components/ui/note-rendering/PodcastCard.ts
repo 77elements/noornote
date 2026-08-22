@@ -13,8 +13,16 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { extractPodcastRef } from '../../../helpers/podcastTags';
-import { fetchFountainMeta, isFountainUrl, type FountainMeta } from '../../../helpers/fountainMeta';
-import { escapeHtml, escapeHtmlAttr, safeHttpUrl } from '../../../helpers/escapeHtml';
+import {
+  fetchFountainMeta,
+  isFountainUrl,
+  type FountainMeta,
+} from '../../../helpers/fountainMeta';
+import {
+  escapeHtml,
+  escapeHtmlAttr,
+  safeHttpUrl,
+} from '../../../helpers/escapeHtml';
 
 function hostLabel(url: string): string {
   try {
@@ -52,7 +60,11 @@ export function renderPodcastCard(event: NostrEvent): HTMLElement | null {
   // must keep owning those (inviolable media-click rule).
   card.addEventListener('click', e => {
     const target = e.target as HTMLElement;
-    if (target.closest('.note-image--clickable') || target.closest('.note-media') || target.closest('video')) {
+    if (
+      target.closest('.note-image--clickable') ||
+      target.closest('.note-media') ||
+      target.closest('video')
+    ) {
       return;
     }
     e.stopPropagation();
@@ -80,21 +92,33 @@ function basicMarkup(isEpisode: boolean, url: string | null): string {
   `;
 }
 
-function upgradeWhenVisible(card: HTMLElement, url: string, isEpisode: boolean): void {
-  const observer = new IntersectionObserver((entries, obs) => {
-    if (!entries.some(e => e.isIntersecting)) return;
-    obs.disconnect();
-    void fetchFountainMeta(url).then(meta => {
-      // Bail if nothing useful came back or the card left the DOM meanwhile.
-      if (!meta || !document.contains(card)) return;
-      if (!meta.title && !meta.image && !meta.audio) return;
-      renderRich(card, url, isEpisode, meta);
-    });
-  }, { rootMargin: '200px' });
+function upgradeWhenVisible(
+  card: HTMLElement,
+  url: string,
+  isEpisode: boolean
+): void {
+  const observer = new IntersectionObserver(
+    (entries, obs) => {
+      if (!entries.some(e => e.isIntersecting)) return;
+      obs.disconnect();
+      void fetchFountainMeta(url).then(meta => {
+        // Bail if nothing useful came back or the card left the DOM meanwhile.
+        if (!meta || !document.contains(card)) return;
+        if (!meta.title && !meta.image && !meta.audio) return;
+        renderRich(card, url, isEpisode, meta);
+      });
+    },
+    { rootMargin: '200px' }
+  );
   observer.observe(card);
 }
 
-function renderRich(card: HTMLElement, url: string, isEpisode: boolean, meta: FountainMeta): void {
+function renderRich(
+  card: HTMLElement,
+  url: string,
+  isEpisode: boolean,
+  meta: FountainMeta
+): void {
   card.classList.add('podcast-card--rich');
 
   const image = meta.image ? safeHttpUrl(meta.image) : '';
@@ -103,9 +127,11 @@ function renderRich(card: HTMLElement, url: string, isEpisode: boolean, meta: Fo
   const kicker = isEpisode ? 'Podcast Episode' : 'Podcast';
 
   card.innerHTML = `
-    ${image
-      ? `<div class="podcast-card__media"><img src="${escapeHtmlAttr(image)}" alt="${escapeHtmlAttr(title)}" loading="lazy" /></div>`
-      : `<div class="podcast-card__media podcast-card__media--empty">🎙️</div>`}
+    ${
+      image
+        ? `<div class="podcast-card__media"><img src="${escapeHtmlAttr(image)}" alt="${escapeHtmlAttr(title)}" loading="lazy" /></div>`
+        : `<div class="podcast-card__media podcast-card__media--empty">🎙️</div>`
+    }
     <div class="podcast-card__content">
       <span class="podcast-card__kicker">${kicker}</span>
       <h3 class="podcast-card__title">${escapeHtml(title)}</h3>

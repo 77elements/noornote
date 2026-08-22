@@ -7,7 +7,10 @@
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { NoteHeader } from '../NoteHeader';
 import { InteractionStatusLine } from '../InteractionStatusLine';
-import { parseEmojiPackEvent, type EmojiPack } from '../../../helpers/parseEmojiPack';
+import {
+  parseEmojiPackEvent,
+  type EmojiPack,
+} from '../../../helpers/parseEmojiPack';
 import {
   computeEmojiPackDiffLines,
   getEmojiPackSnapshot,
@@ -31,7 +34,12 @@ export class EmojiPackRenderer {
     element.className = 'note-card note-card--emoji-pack';
     element.dataset.eventId = note.id;
 
-    const naddr = encodeNaddr({ kind: 30030, pubkey: event.pubkey, identifier: pack.id, relays: [] });
+    const naddr = encodeNaddr({
+      kind: 30030,
+      pubkey: event.pubkey,
+      identifier: pack.id,
+      relays: [],
+    });
     const route = `/note/${naddr}`;
 
     const noteHeader = new NoteHeader({
@@ -41,7 +49,7 @@ export class EmojiPackRenderer {
       rawEvent: event,
       showVerification: true,
       showTimestamp: true,
-      showMenu: true
+      showMenu: true,
     });
     element.appendChild(noteHeader.getElement());
 
@@ -67,7 +75,10 @@ export class EmojiPackRenderer {
     const card = document.createElement('div');
     card.className = 'nn-card nn-card--emoji-pack';
     const grid = pack.emojis
-      .map(e => `<img class="emoji-pack__emoji" src="${escapeHtmlAttr(e.url)}" alt=":${escapeHtmlAttr(e.shortcode)}:" title=":${escapeHtmlAttr(e.shortcode)}:" loading="lazy" />`)
+      .map(
+        e =>
+          `<img class="emoji-pack__emoji" src="${escapeHtmlAttr(e.url)}" alt=":${escapeHtmlAttr(e.shortcode)}:" title=":${escapeHtmlAttr(e.shortcode)}:" loading="lazy" />`
+      )
       .join('');
     card.innerHTML = `
       <div class="nn-card__content">
@@ -79,14 +90,17 @@ export class EmojiPackRenderer {
 
     // Collection actions — only when the Custom Emojis addon is active.
     if (isCustomEmojisEnabled()) {
-      const actions = card.querySelector('[data-el="actions"]') as HTMLElement | null;
-      const isOwn = AuthService.getInstance().getCurrentUser()?.pubkey === event.pubkey;
+      const actions = card.querySelector(
+        '[data-el="actions"]'
+      ) as HTMLElement | null;
+      const isOwn =
+        AuthService.getInstance().getCurrentUser()?.pubkey === event.pubkey;
       if (actions && isOwn) {
         const btn = document.createElement('button');
         btn.className = 'btn btn--passive btn--mini';
         btn.type = 'button';
         btn.textContent = 'Edit';
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener('click', e => {
           e.stopPropagation();
           Router.getInstance().navigate('/addons/custom-emojis');
         });
@@ -96,13 +110,20 @@ export class EmojiPackRenderer {
         btn.className = 'btn btn--mini';
         btn.type = 'button';
         btn.textContent = 'Add to Collection';
-        btn.addEventListener('click', async (e) => {
+        btn.addEventListener('click', async e => {
           e.stopPropagation();
           btn.disabled = true;
           try {
-            const { EmojiService } = await import('../../../addons/custom-emojis/EmojiService');
-            const count = await EmojiService.getInstance().importPack(pack.emojis);
-            ToastService.show(`Added ${count} custom emoji${count === 1 ? '' : 's'} to your collection`, 'success');
+            const { EmojiService } = await import(
+              '../../../addons/custom-emojis/EmojiService'
+            );
+            const count = await EmojiService.getInstance().importPack(
+              pack.emojis
+            );
+            ToastService.show(
+              `Added ${count} custom emoji${count === 1 ? '' : 's'} to your collection`,
+              'success'
+            );
           } catch {
             ToastService.show('Could not add emojis', 'error');
             btn.disabled = false;
@@ -112,7 +133,7 @@ export class EmojiPackRenderer {
       }
     }
 
-    card.addEventListener('click', (e) => {
+    card.addEventListener('click', e => {
       const target = e.target as HTMLElement;
       if (target.closest('.note-image--clickable, .note-media, video')) return;
       if (target.closest('button') || target.closest('a')) return;
@@ -152,7 +173,11 @@ function buildHintLines(pack: EmojiPack): string[] {
   const fallback = ['Emoji set was updated'];
 
   if (!prev) {
-    setEmojiPackSnapshot(pack.authorPubkey, pack.id, snapshotFromEmojiPack(pack));
+    setEmojiPackSnapshot(
+      pack.authorPubkey,
+      pack.id,
+      snapshotFromEmojiPack(pack)
+    );
     return fallback;
   }
 

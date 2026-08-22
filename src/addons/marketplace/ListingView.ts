@@ -17,7 +17,10 @@ import { hexToNpub } from '../../helpers/nip19';
 import { formatTimestamp } from '../../helpers/formatTimestamp';
 import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
-import { createCarousel, type CarouselInstance } from '../../helpers/CarouselHelper';
+import {
+  createCarousel,
+  type CarouselInstance,
+} from '../../helpers/CarouselHelper';
 import { AuthService } from '../../services/AuthService';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
@@ -49,8 +52,10 @@ export class ListingView extends View {
     `;
 
     try {
-      const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
-      const event = await articlesApi?.fetchAddressableEvent(this.naddr) ?? null;
+      const articlesApi =
+        ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+      const event =
+        (await articlesApi?.fetchAddressableEvent(this.naddr)) ?? null;
 
       if (!event) {
         this.showNotFound();
@@ -58,17 +63,23 @@ export class ListingView extends View {
       }
 
       const meta = parseListingMetadata(event);
-      const priceDisplay = formatPrice(meta.price, meta.priceCurrency, meta.priceFrequency);
+      const priceDisplay = formatPrice(
+        meta.price,
+        meta.priceCurrency,
+        meta.priceFrequency
+      );
       const npub = hexToNpub(event.pubkey) || event.pubkey;
 
       // Render markdown content
       const contentProcessor = ContentProcessor.getInstance();
-      const renderedContent = contentProcessor.processContent(event.content || '').html;
+      const renderedContent = contentProcessor.processContent(
+        event.content || ''
+      ).html;
 
       // Build a-tag coordinate for bookmarking
       const dTag = getTag(event.tags, 'd');
       const aTagValue = `30402:${event.pubkey}:${dTag}`;
-      const bookmarkDescription = `${meta.title}${priceDisplay ? ' — ' + priceDisplay : ''}`;
+      const bookmarkDescription = `${meta.title}${priceDisplay ? ` — ${priceDisplay}` : ''}`;
 
       // Check if already bookmarked (only if bookmarks addon enabled)
       const { isBookmarksEnabled } = await import('../bookmarks/index');
@@ -91,12 +102,16 @@ export class ListingView extends View {
             ${meta.status === 'sold' ? '<span class="listing-view__sold-badge">Sold</span>' : ''}
           </div>
 
-          ${meta.location ? `
+          ${
+            meta.location
+              ? `
             <div class="listing-view__location">
               <svg width="16" height="16"><use href="#icon-location"/></svg>
               ${escapeHtml(meta.location)}
             </div>
-          ` : ''}
+          `
+              : ''
+          }
 
           <div class="listing-view__seller">
             <span class="listing-view__seller-label">Seller</span>
@@ -113,17 +128,25 @@ export class ListingView extends View {
             </button>
           </div>
 
-          ${event.content ? `
+          ${
+            event.content
+              ? `
             <div class="listing-view__description">
               ${renderedContent}
             </div>
-          ` : ''}
+          `
+              : ''
+          }
 
-          ${meta.tags.length > 0 ? `
+          ${
+            meta.tags.length > 0
+              ? `
             <div class="listing-view__tags">
               ${meta.tags.map(tag => `<span class="listing-view__tag">#${escapeHtml(tag)}</span>`).join('')}
             </div>
-          ` : ''}
+          `
+              : ''
+          }
 
           <div class="listing-view__share">
             <button class="btn-icon" data-listing-action="repost" title="Repost">
@@ -147,14 +170,15 @@ export class ListingView extends View {
       this.loadSellerProfile(event.pubkey);
       void this.loadReviews(event);
       void this.mountComments(event);
-
     } catch {
       this.showError();
     }
   }
 
   private mountImageCarousel(images: string[]): void {
-    const imagesContainer = this.container.querySelector('.listing-view__images');
+    const imagesContainer = this.container.querySelector(
+      '.listing-view__images'
+    );
     if (!imagesContainer || images.length === 0) {
       imagesContainer?.remove();
       return;
@@ -172,12 +196,12 @@ export class ListingView extends View {
     const slides = images.map(img => ({
       text: '',
       image: img,
-      imageAlt: ''
+      imageAlt: '',
     }));
 
     this.carousel = createCarousel(slides, {
       showNav: true,
-      showDots: true
+      showDots: true,
     });
 
     imagesContainer.classList.add('listing-view__images--carousel');
@@ -191,7 +215,9 @@ export class ListingView extends View {
     const backBtn = this.container.querySelector('[data-action="back"]');
     backBtn?.addEventListener('click', () => router.navigate('/marketplace'));
 
-    const contactBtn = this.container.querySelector('.listing-view__contact-btn');
+    const contactBtn = this.container.querySelector(
+      '.listing-view__contact-btn'
+    );
     contactBtn?.addEventListener('click', () => {
       const npub = hexToNpub(event.pubkey);
       if (npub) {
@@ -199,7 +225,9 @@ export class ListingView extends View {
       }
     });
 
-    const bookmarkBtn = this.container.querySelector('.listing-view__bookmark-btn');
+    const bookmarkBtn = this.container.querySelector(
+      '.listing-view__bookmark-btn'
+    );
     bookmarkBtn?.addEventListener('click', async () => {
       await this.toggleBookmark(bookmarkBtn as HTMLElement);
     });
@@ -212,18 +240,31 @@ export class ListingView extends View {
         if (!AuthGuard.requireAuth('share this listing')) return;
 
         const dTag = getTag(event.tags, 'd');
-        const { encodeNaddr } = await import('../../services/NostrToolsAdapter');
+        const { encodeNaddr } = await import(
+          '../../services/NostrToolsAdapter'
+        );
         const writeRelays = await RelayConfig.getInstance().getWriteRelays();
 
         if (action === 'repost') {
           const { ModuleLoader } = await import('../../core/ModuleLoader');
-          await ModuleLoader.getInstance().getApi<import('../../modules/posts/contracts').PostsModuleApi>('posts')?.publishGenericRepost({
-            originalEvent: event,
-          });
+          await ModuleLoader.getInstance()
+            .getApi<
+              import('../../modules/posts/contracts').PostsModuleApi
+            >('posts')
+            ?.publishGenericRepost({
+              originalEvent: event,
+            });
         } else if (action === 'quote') {
-          const naddr = encodeNaddr({ kind: 30402, pubkey: event.pubkey, identifier: dTag, relays: writeRelays.slice(0, 2) });
-          const { PostNoteModal } = await import('../../components/post/PostNoteModal');
-          PostNoteModal.getInstance().show('nostr:' + naddr);
+          const naddr = encodeNaddr({
+            kind: 30402,
+            pubkey: event.pubkey,
+            identifier: dTag,
+            relays: writeRelays.slice(0, 2),
+          });
+          const { PostNoteModal } = await import(
+            '../../components/post/PostNoteModal'
+          );
+          PostNoteModal.getInstance().show(`nostr:${naddr}`);
         }
       });
     });
@@ -239,10 +280,14 @@ export class ListingView extends View {
 
     const aTagValue = btn.dataset.aTag!;
     const description = btn.dataset.description || '';
-    const isActive = btn.classList.contains('listing-view__bookmark-btn--active');
+    const isActive = btn.classList.contains(
+      'listing-view__bookmark-btn--active'
+    );
 
     try {
-      const { addBookmark, removeBookmark, isNoteBookmarked } = await import('../../lists/bookmarks');
+      const { addBookmark, removeBookmark, isNoteBookmarked } = await import(
+        '../../lists/bookmarks'
+      );
 
       if (isActive) {
         await removeBookmark(aTagValue);
@@ -262,7 +307,9 @@ export class ListingView extends View {
       const status = isNoteBookmarked(aTagValue);
       const nowBookmarked = status.public || status.private;
       btn.classList.toggle('listing-view__bookmark-btn--active', nowBookmarked);
-      btn.innerHTML = nowBookmarked ? BOOKMARK_SVG_FILLED : BOOKMARK_SVG_OUTLINE;
+      btn.innerHTML = nowBookmarked
+        ? BOOKMARK_SVG_FILLED
+        : BOOKMARK_SVG_OUTLINE;
 
       TypedEventBus.getInstance().emit('bookmark:updated');
     } catch {
@@ -279,7 +326,8 @@ export class ListingView extends View {
 
     try {
       const profile = await userProfileService.getUserProfile(pubkey);
-      const username = profile?.name || profile?.display_name || npub.slice(0, 12) + '...';
+      const username =
+        profile?.name || profile?.display_name || `${npub.slice(0, 12)}...`;
       const picture = profile?.picture || '';
 
       sellerEl.innerHTML = `
@@ -304,7 +352,9 @@ export class ListingView extends View {
       </div>
     `;
     const backBtn = this.container.querySelector('[data-action="back"]');
-    backBtn?.addEventListener('click', () => Router.getInstance().navigate('/marketplace'));
+    backBtn?.addEventListener('click', () =>
+      Router.getInstance().navigate('/marketplace')
+    );
   }
 
   private showError(): void {
@@ -315,7 +365,9 @@ export class ListingView extends View {
       </div>
     `;
     const backBtn = this.container.querySelector('[data-action="back"]');
-    backBtn?.addEventListener('click', () => Router.getInstance().navigate('/marketplace'));
+    backBtn?.addEventListener('click', () =>
+      Router.getInstance().navigate('/marketplace')
+    );
   }
 
   public getElement(): HTMLElement {
@@ -327,14 +379,18 @@ export class ListingView extends View {
    * Queries for Kind 1 events with an `a` tag matching this listing's addressable ID.
    */
   private async loadReviews(event: NostrEvent): Promise<void> {
-    const reviewsContainer = this.container.querySelector('[data-listing-reviews]');
+    const reviewsContainer = this.container.querySelector(
+      '[data-listing-reviews]'
+    );
     if (!reviewsContainer) return;
 
     const dTag = getTag(event.tags, 'd');
     const aTagValue = `30402:${event.pubkey}:${dTag}`;
 
     try {
-      const { NostrTransport } = await import('../../services/transport/NostrTransport');
+      const { NostrTransport } = await import(
+        '../../services/transport/NostrTransport'
+      );
       const transport = NostrTransport.getInstance();
       const relays = transport.getReadRelays();
 
@@ -347,10 +403,14 @@ export class ListingView extends View {
       );
 
       // Only keep quotes that have actual content (not just the naddr reference)
-      const reviews = events.filter(e => {
-        const cleaned = e.content.replace(/nostr:(nevent|note|naddr|nprofile|npub)[a-z0-9]+/gi, '').trim();
-        return cleaned.length > 0;
-      }).sort((a, b) => a.created_at - b.created_at);
+      const reviews = events
+        .filter(e => {
+          const cleaned = e.content
+            .replace(/nostr:(nevent|note|naddr|nprofile|npub)[a-z0-9]+/gi, '')
+            .trim();
+          return cleaned.length > 0;
+        })
+        .sort((a, b) => a.created_at - b.created_at);
 
       if (reviews.length === 0) {
         reviewsContainer.innerHTML = '';
@@ -362,11 +422,15 @@ export class ListingView extends View {
         <div class="listing-view__reviews-list"></div>
       `;
 
-      const list = reviewsContainer.querySelector('.listing-view__reviews-list');
+      const list = reviewsContainer.querySelector(
+        '.listing-view__reviews-list'
+      );
       if (!list) return;
 
       const { NoteUI } = await import('../../components/ui/NoteUI');
-      const { UserProfileService } = await import('../../services/UserProfileService');
+      const { UserProfileService } = await import(
+        '../../services/UserProfileService'
+      );
       const { encodeNevent } = await import('../../services/NostrToolsAdapter');
       const profileService = UserProfileService.getInstance();
 
@@ -380,7 +444,9 @@ export class ListingView extends View {
         // Strip nostr references from content for cleaner display
         const cleanedReview = {
           ...review,
-          content: review.content.replace(/nostr:(nevent|note|naddr|nprofile|npub)[a-z0-9]+/gi, '').trim()
+          content: review.content
+            .replace(/nostr:(nevent|note|naddr|nprofile|npub)[a-z0-9]+/gi, '')
+            .trim(),
         };
 
         const wrapper = document.createElement('div');
@@ -389,7 +455,7 @@ export class ListingView extends View {
         const header = document.createElement('div');
         header.className = 'snv-quoted-repost__header';
         header.innerHTML = `<a href="/note/nostr:${escapeHtml(nevent)}" class="snv-quoted-repost__link"><strong>${escapeHtml(username)}</strong> quoted this listing:</a>`;
-        header.querySelector('a')?.addEventListener('click', (e) => {
+        header.querySelector('a')?.addEventListener('click', e => {
           e.preventDefault();
           e.stopPropagation();
           Router.getInstance().navigate(`/note/nostr:${nevent}`);
@@ -400,7 +466,7 @@ export class ListingView extends View {
           islFetchStats: false,
           isLoggedIn: false,
           headerSize: 'small',
-          depth: 0
+          depth: 0,
         });
 
         wrapper.appendChild(header);
@@ -418,14 +484,20 @@ export class ListingView extends View {
    * coordinate ("30402:pubkey:d") as noteId so NIP-22 comment threads resolve.
    */
   private async mountComments(event: NostrEvent): Promise<void> {
-    const container = this.container.querySelector('[data-listing-comments]') as HTMLElement | null;
+    const container = this.container.querySelector(
+      '[data-listing-comments]'
+    ) as HTMLElement | null;
     if (!container || !event.id) return;
 
-    const { getAddressableIdentifier } = await import('../../helpers/getAddressableIdentifier');
+    const { getAddressableIdentifier } = await import(
+      '../../helpers/getAddressableIdentifier'
+    );
     const addressableId = getAddressableIdentifier(event);
     const noteId = addressableId || event.id;
 
-    const { RepliesRenderer } = await import('../../components/replies/RepliesRenderer');
+    const { RepliesRenderer } = await import(
+      '../../components/replies/RepliesRenderer'
+    );
     const repliesRenderer = new RepliesRenderer({
       container,
       noteId,

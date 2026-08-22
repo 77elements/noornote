@@ -41,7 +41,9 @@ export function safeHttpUrl(url: string): string {
   if (!trimmed) return '';
   try {
     const parsed = new URL(trimmed, window.location.href);
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? trimmed : '';
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+      ? trimmed
+      : '';
   } catch {
     return '';
   }

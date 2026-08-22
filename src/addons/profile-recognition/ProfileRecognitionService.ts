@@ -15,8 +15,14 @@
  * - Relay storage: ProfileRecognitionOrchestrator (NIP-78)
  */
 
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
-import { ProfileEncounterFileStorage, type ProfileEncounter } from './ProfileEncounterFileStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../services/PerAccountLocalStorage';
+import {
+  ProfileEncounterFileStorage,
+  type ProfileEncounter,
+} from './ProfileEncounterFileStorage';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { SystemLogger } from '../../services/SystemLogger';
 import { FollowStorageAdapter } from '../../lists/follows';
@@ -82,7 +88,10 @@ export class ProfileRecognitionService {
 
     if (Object.keys(localEncounters).length > 0) {
       this.cleanupPoisonedEncounters();
-      this.systemLogger.info('ProfileRecognitionService', `Loaded ${Object.keys(localEncounters).length} encounters from localStorage`);
+      this.systemLogger.info(
+        'ProfileRecognitionService',
+        `Loaded ${Object.keys(localEncounters).length} encounters from localStorage`
+      );
       this.initialized = true;
       this.setupEventListeners();
       return;
@@ -95,7 +104,10 @@ export class ProfileRecognitionService {
         const fileData = await this.fileStorage.read();
 
         if (Object.keys(fileData.encounters).length > 0) {
-          this.systemLogger.info('ProfileRecognitionService', `Loaded ${Object.keys(fileData.encounters).length} encounters from file`);
+          this.systemLogger.info(
+            'ProfileRecognitionService',
+            `Loaded ${Object.keys(fileData.encounters).length} encounters from file`
+          );
           this.storage.set(StorageKeys.PROFILE_ENCOUNTERS, fileData.encounters);
           this.cleanupPoisonedEncounters();
           this.initialized = true;
@@ -103,7 +115,10 @@ export class ProfileRecognitionService {
           return;
         }
       } catch (error) {
-        this.systemLogger.error('ProfileRecognitionService', `Failed to load from file: ${error}`);
+        this.systemLogger.error(
+          'ProfileRecognitionService',
+          `Failed to load from file: ${error}`
+        );
       }
     }
 
@@ -117,8 +132,14 @@ export class ProfileRecognitionService {
         );
 
         if (relayData && Object.keys(relayData.encounters).length > 0) {
-          this.systemLogger.info('ProfileRecognitionService', `Loaded ${Object.keys(relayData.encounters).length} encounters from relays`);
-          this.storage.set(StorageKeys.PROFILE_ENCOUNTERS, relayData.encounters);
+          this.systemLogger.info(
+            'ProfileRecognitionService',
+            `Loaded ${Object.keys(relayData.encounters).length} encounters from relays`
+          );
+          this.storage.set(
+            StorageKeys.PROFILE_ENCOUNTERS,
+            relayData.encounters
+          );
           this.cleanupPoisonedEncounters();
           // Also save to file for future loads
           await this.fileStorage.write(relayData);
@@ -127,11 +148,17 @@ export class ProfileRecognitionService {
           return;
         }
       } catch (error) {
-        this.systemLogger.error('ProfileRecognitionService', `Failed to load from relays: ${error}`);
+        this.systemLogger.error(
+          'ProfileRecognitionService',
+          `Failed to load from relays: ${error}`
+        );
       }
     }
 
-    this.systemLogger.info('ProfileRecognitionService', 'No encounters found, starting fresh');
+    this.systemLogger.info(
+      'ProfileRecognitionService',
+      'No encounters found, starting fresh'
+    );
     this.initialized = true;
     this.setupEventListeners();
 
@@ -156,9 +183,15 @@ export class ProfileRecognitionService {
       const nameIsNpub = enc.lastKnownName?.startsWith('@npub') ?? false;
       const firstNameIsNpub = enc.firstName?.startsWith('@npub') ?? false;
       const firstNameIsAnon = enc.firstName === 'Anon';
-      const pictureIsIdenticon = enc.lastKnownPictureUrl?.startsWith('data:image/svg+xml') ?? false;
+      const pictureIsIdenticon =
+        enc.lastKnownPictureUrl?.startsWith('data:image/svg+xml') ?? false;
 
-      if (nameIsNpub || firstNameIsNpub || firstNameIsAnon || pictureIsIdenticon) {
+      if (
+        nameIsNpub ||
+        firstNameIsNpub ||
+        firstNameIsAnon ||
+        pictureIsIdenticon
+      ) {
         delete encounters[pubkey];
         removed++;
       }
@@ -167,7 +200,10 @@ export class ProfileRecognitionService {
     if (removed > 0) {
       this.storage.set(StorageKeys.PROFILE_ENCOUNTERS, encounters);
       this.scheduleAutoSave();
-      this.systemLogger.info('ProfileRecognitionService', `Cleaned up ${removed} poisoned encounter records`);
+      this.systemLogger.info(
+        'ProfileRecognitionService',
+        `Cleaned up ${removed} poisoned encounter records`
+      );
     }
 
     return removed;
@@ -267,21 +303,34 @@ export class ProfileRecognitionService {
       // require it. Recording an unresolved name would make firstName
       // immutable and cause permanent blinking when the real name arrives.
       if (!name) {
-        this.systemLogger.debug('ProfileRecognitionService', `Skipping encounter for ${pubkey.slice(0, 8)} — profile unresolved`);
+        this.systemLogger.debug(
+          'ProfileRecognitionService',
+          `Skipping encounter for ${pubkey.slice(0, 8)} — profile unresolved`
+        );
         return;
       }
 
       this.recordEncounter(pubkey, name, picture);
-      this.systemLogger.info('ProfileRecognitionService', `Recorded encounter for ${name.slice(0, 20)}`);
+      this.systemLogger.info(
+        'ProfileRecognitionService',
+        `Recorded encounter for ${name.slice(0, 20)}`
+      );
     } catch (error) {
-      this.systemLogger.error('ProfileRecognitionService', `Failed to record encounter for ${pubkey.slice(0, 8)}: ${error}`);
+      this.systemLogger.error(
+        'ProfileRecognitionService',
+        `Failed to record encounter for ${pubkey.slice(0, 8)}: ${error}`
+      );
     }
   }
 
   /**
    * Record first encounter for a followed user
    */
-  public recordEncounter(pubkey: string, name: string, pictureUrl: string): void {
+  public recordEncounter(
+    pubkey: string,
+    name: string,
+    pictureUrl: string
+  ): void {
     const encounters = this.getEncountersFromStorage();
 
     // Don't overwrite existing encounter (first encounter is immutable)
@@ -297,7 +346,7 @@ export class ProfileRecognitionService {
       firstSeenAt: now,
       lastKnownName: name,
       lastKnownPictureUrl: pictureUrl,
-      lastChangedAt: now
+      lastChangedAt: now,
     };
 
     this.storage.set(StorageKeys.PROFILE_ENCOUNTERS, encounters);
@@ -315,7 +364,11 @@ export class ProfileRecognitionService {
   /**
    * Update last known metadata (when profile changes detected)
    */
-  public updateLastKnown(pubkey: string, name: string, pictureUrl: string): void {
+  public updateLastKnown(
+    pubkey: string,
+    name: string,
+    pictureUrl: string
+  ): void {
     const encounters = this.getEncountersFromStorage();
     const encounter = encounters[pubkey];
 
@@ -325,7 +378,10 @@ export class ProfileRecognitionService {
     }
 
     // Update only if actually changed
-    if (encounter.lastKnownName === name && encounter.lastKnownPictureUrl === pictureUrl) {
+    if (
+      encounter.lastKnownName === name &&
+      encounter.lastKnownPictureUrl === pictureUrl
+    ) {
       return;
     }
 
@@ -350,7 +406,10 @@ export class ProfileRecognitionService {
     delete encounters[pubkey];
     this.storage.set(StorageKeys.PROFILE_ENCOUNTERS, encounters);
     this.scheduleAutoSave();
-    this.systemLogger.info('ProfileRecognitionService', `Deleted encounter for ${pubkey.slice(0, 8)}`);
+    this.systemLogger.info(
+      'ProfileRecognitionService',
+      `Deleted encounter for ${pubkey.slice(0, 8)}`
+    );
   }
 
   /**
@@ -382,7 +441,8 @@ export class ProfileRecognitionService {
 
     // Check if within window
     const windowSeconds = windowDays * 24 * 60 * 60;
-    const timeSinceChange = Math.floor(Date.now() / 1000) - encounter.lastChangedAt;
+    const timeSinceChange =
+      Math.floor(Date.now() / 1000) - encounter.lastChangedAt;
 
     return timeSinceChange < windowSeconds;
   }
@@ -398,7 +458,11 @@ export class ProfileRecognitionService {
    * encounter record and triggers false blinking. Every call site is covered
    * by this guard — no per-caller check needed.
    */
-  public checkRecognition(pubkey: string, username: string, picture: string): ProfileEncounter | null {
+  public checkRecognition(
+    pubkey: string,
+    username: string,
+    picture: string
+  ): ProfileEncounter | null {
     if (this.authService.isCurrentUser(pubkey)) return null;
 
     const encounter = this.getEncounter(pubkey);
@@ -411,7 +475,10 @@ export class ProfileRecognitionService {
       return null;
     }
 
-    if (username !== encounter.lastKnownName || picture !== encounter.lastKnownPictureUrl) {
+    if (
+      username !== encounter.lastKnownName ||
+      picture !== encounter.lastKnownPictureUrl
+    ) {
       this.updateLastKnown(pubkey, username, picture);
     }
 
@@ -425,7 +492,10 @@ export class ProfileRecognitionService {
    * - Picture fallback: "data:image/svg+xml…" (from getAvatarFallback —
    *   a deterministic identicon, never a real hosted image).
    */
-  private static isUnresolvedFallback(username: string, picture: string): boolean {
+  private static isUnresolvedFallback(
+    username: string,
+    picture: string
+  ): boolean {
     if (username.startsWith('@npub')) return true;
     if (picture.startsWith('data:image/svg+xml')) return true;
     return false;
@@ -437,7 +507,10 @@ export class ProfileRecognitionService {
    */
   private getRecognitionWindowDays(): number {
     try {
-      return PerAccountLocalStorage.getInstance().get<number>(StorageKeys.PROFILE_RECOGNITION_WINDOW, 90);
+      return PerAccountLocalStorage.getInstance().get<number>(
+        StorageKeys.PROFILE_RECOGNITION_WINDOW,
+        90
+      );
     } catch {
       return 90;
     }
@@ -474,11 +547,17 @@ export class ProfileRecognitionService {
       const encounters = this.getEncountersFromStorage();
       await this.fileStorage.write({
         encounters,
-        lastModified: Math.floor(Date.now() / 1000)
+        lastModified: Math.floor(Date.now() / 1000),
       });
-      this.systemLogger.info('ProfileRecognitionService', `Saved ${Object.keys(encounters).length} encounters to file`);
+      this.systemLogger.info(
+        'ProfileRecognitionService',
+        `Saved ${Object.keys(encounters).length} encounters to file`
+      );
     } catch (error) {
-      this.systemLogger.error('ProfileRecognitionService', `Failed to save to file: ${error}`);
+      this.systemLogger.error(
+        'ProfileRecognitionService',
+        `Failed to save to file: ${error}`
+      );
     }
   }
 
@@ -491,10 +570,13 @@ export class ProfileRecognitionService {
       const encounters = this.getEncountersFromStorage();
       await this.orchestrator.publishToRelays({
         encounters,
-        lastModified: Math.floor(Date.now() / 1000)
+        lastModified: Math.floor(Date.now() / 1000),
       });
     } catch (error) {
-      this.systemLogger.error('ProfileRecognitionService', `Failed to save to relays: ${error}`);
+      this.systemLogger.error(
+        'ProfileRecognitionService',
+        `Failed to save to relays: ${error}`
+      );
     }
   }
 
@@ -502,6 +584,9 @@ export class ProfileRecognitionService {
    * Get all encounters from localStorage
    */
   private getEncountersFromStorage(): Record<string, ProfileEncounter> {
-    return this.storage.get<Record<string, ProfileEncounter>>(StorageKeys.PROFILE_ENCOUNTERS, {});
+    return this.storage.get<Record<string, ProfileEncounter>>(
+      StorageKeys.PROFILE_ENCOUNTERS,
+      {}
+    );
   }
 }

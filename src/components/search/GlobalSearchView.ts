@@ -13,7 +13,11 @@ import { Router } from '../../services/Router';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { SystemLogger } from '../../services/SystemLogger';
 import { encodeNevent } from '../../services/NostrToolsAdapter';
-import { deactivateAllTabs, switchTabWithContent, createClosableTab } from '../../helpers/TabsHelper';
+import {
+  deactivateAllTabs,
+  switchTabWithContent,
+  createClosableTab,
+} from '../../helpers/TabsHelper';
 import { getSccDefaultTab } from '../../helpers/sccDefaultTab';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
@@ -23,7 +27,8 @@ export class GlobalSearchView {
   private _searchApi: SearchModuleApi | null = null;
   private get searchApi(): SearchModuleApi | null {
     if (!this._searchApi) {
-      this._searchApi = ModuleLoader.getInstance().getApi<SearchModuleApi>('search');
+      this._searchApi =
+        ModuleLoader.getInstance().getApi<SearchModuleApi>('search');
     }
     return this._searchApi;
   }
@@ -95,9 +100,12 @@ export class GlobalSearchView {
 
     // Listen for profile search complete (client-side filtered results)
     this.eventBusSubscriptions.push(
-      this.eventBus.on('profileSearch:complete', (data: { query: string; results: NostrEvent[]; meta: string }) => {
-        this.displayProfileSearchResults(data.query, data.results, data.meta);
-      })
+      this.eventBus.on(
+        'profileSearch:complete',
+        (data: { query: string; results: NostrEvent[]; meta: string }) => {
+          this.displayProfileSearchResults(data.query, data.results, data.meta);
+        }
+      )
     );
 
     // Listen for mute list updates - re-filter current results
@@ -137,10 +145,11 @@ export class GlobalSearchView {
     this.showLoading();
 
     try {
-      const results = await this.searchApi?.search({
-        query,
-        limit: 50
-      }) ?? [];
+      const results =
+        (await this.searchApi?.search({
+          query,
+          limit: 50,
+        })) ?? [];
 
       const filteredResults = await this.filterMutedUsers(results);
 
@@ -150,7 +159,9 @@ export class GlobalSearchView {
       this.hasMore = results.length >= 50;
 
       if (filteredResults.length > 0) {
-        this.oldestTimestamp = Math.min(...filteredResults.map(e => e.created_at));
+        this.oldestTimestamp = Math.min(
+          ...filteredResults.map(e => e.created_at)
+        );
       }
 
       this.renderResults();
@@ -178,7 +189,11 @@ export class GlobalSearchView {
   /**
    * Display profile search results (already filtered client-side)
    */
-  private displayProfileSearchResults(query: string, results: NostrEvent[], meta: string): void {
+  private displayProfileSearchResults(
+    query: string,
+    results: NostrEvent[],
+    meta: string
+  ): void {
     this.currentQuery = query;
     this.currentHashtag = '';
     this.currentResults = results;
@@ -192,11 +207,11 @@ export class GlobalSearchView {
       {
         title: `Profile Search: "${query}"`,
         searchTerms: query,
-        meta
+        meta,
       },
       {
-        onNoteClick: (noteId) => this.handleNoteClick(noteId),
-        onLoadMore: async () => {}
+        onNoteClick: noteId => this.handleNoteClick(noteId),
+        onLoadMore: async () => {},
       }
     );
 
@@ -209,20 +224,27 @@ export class GlobalSearchView {
    */
   private async loadMoreResults(): Promise<void> {
     // Don't paginate profile search results (already loaded all)
-    if (this.isProfileSearch || this.isSearching || !this.hasMore || !this.oldestTimestamp) return;
+    if (
+      this.isProfileSearch ||
+      this.isSearching ||
+      !this.hasMore ||
+      !this.oldestTimestamp
+    )
+      return;
 
     this.isSearching = true;
     this.searchResultsView?.showLoading();
 
     try {
       // Use oldestTimestamp - 1 to avoid duplicates (like Jumble does)
-      const moreResults = await this.searchApi?.searchPaginated(
-        {
-          query: this.currentQuery,
-          limit: 50
-        },
-        this.oldestTimestamp - 1
-      ) ?? [];
+      const moreResults =
+        (await this.searchApi?.searchPaginated(
+          {
+            query: this.currentQuery,
+            limit: 50,
+          },
+          this.oldestTimestamp - 1
+        )) ?? [];
 
       const filteredResults = await this.filterMutedUsers(moreResults);
 
@@ -251,7 +273,6 @@ export class GlobalSearchView {
       } else {
         this.hasMore = false;
       }
-
     } catch (error) {
       this.systemLogger.error('GlobalSearchView', 'Load more failed:', error);
     } finally {
@@ -299,19 +320,16 @@ export class GlobalSearchView {
     const config: SearchResultsConfig = {
       title,
       searchTerms: this.currentQuery,
-      meta: `${this.currentResults.length} result${this.currentResults.length !== 1 ? 's' : ''} found`
+      meta: `${this.currentResults.length} result${this.currentResults.length !== 1 ? 's' : ''} found`,
     };
     if (this.currentHashtag) {
       config.hashtag = this.currentHashtag;
     }
 
-    this.searchResultsView = new SearchResultsView(
-      config,
-      {
-        onNoteClick: (noteId) => this.handleNoteClick(noteId),
-        onLoadMore: () => this.loadMoreResults()
-      }
-    );
+    this.searchResultsView = new SearchResultsView(config, {
+      onNoteClick: noteId => this.handleNoteClick(noteId),
+      onLoadMore: () => this.loadMoreResults(),
+    });
 
     this.searchResultsView.render(this.currentResults);
     this.container.appendChild(this.searchResultsView.getElement());
@@ -431,7 +449,9 @@ export class GlobalSearchView {
 
     try {
       // Get all muted pubkeys
-      const mutedPubkeys = await this.muteOrchestrator.getAllMutedUsers(currentUser.pubkey);
+      const mutedPubkeys = await this.muteOrchestrator.getAllMutedUsers(
+        currentUser.pubkey
+      );
       const mutedSet = new Set(mutedPubkeys);
 
       if (mutedSet.size === 0) {
@@ -446,7 +466,9 @@ export class GlobalSearchView {
 
         // Filter reposts (Kind 6) where the original author is muted
         if (event.kind === 6 || event.kind === 16) {
-          const repostedAuthorPubkey = event.tags.find(tag => tag[0] === 'p')?.[1];
+          const repostedAuthorPubkey = event.tags.find(
+            tag => tag[0] === 'p'
+          )?.[1];
           if (repostedAuthorPubkey && mutedSet.has(repostedAuthorPubkey)) {
             return false;
           }
@@ -455,7 +477,11 @@ export class GlobalSearchView {
         return true;
       });
     } catch (error) {
-      this.systemLogger.error('GlobalSearchView', 'Failed to filter muted users:', error);
+      this.systemLogger.error(
+        'GlobalSearchView',
+        'Failed to filter muted users:',
+        error
+      );
       return events; // Return unfiltered on error
     }
   }

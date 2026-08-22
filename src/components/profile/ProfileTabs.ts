@@ -13,10 +13,7 @@ export class ProfileTabs {
   private onTabChange: (tab: TabType) => void;
   private onCloseSearch: () => void;
 
-  constructor(
-    onTabChange: (tab: TabType) => void,
-    onCloseSearch: () => void
-  ) {
+  constructor(onTabChange: (tab: TabType) => void, onCloseSearch: () => void) {
     this.onTabChange = onTabChange;
     this.onCloseSearch = onCloseSearch;
     this.container = this.createElement();
@@ -45,7 +42,7 @@ export class ProfileTabs {
    * Setup event listeners
    */
   private setupEventListeners(): void {
-    this.container.addEventListener('click', (e) => {
+    this.container.addEventListener('click', e => {
       const target = e.target as HTMLElement;
 
       // Handle tab click
@@ -68,17 +65,17 @@ export class ProfileTabs {
    */
   public showSearchTab(): void {
     // Check if search tab already exists
-    const existingSearchTab = this.container.querySelector('[data-tab="search"]');
+    const existingSearchTab = this.container.querySelector(
+      '[data-tab="search"]'
+    );
     if (existingSearchTab) return;
 
     // Add search tab using TabsHelper
     const tabsList = this.container.querySelector('.tabs');
     if (!tabsList) return;
 
-    const searchTab = createClosableTab(
-      'search',
-      'Search Results',
-      () => this.onCloseSearch()
+    const searchTab = createClosableTab('search', 'Search Results', () =>
+      this.onCloseSearch()
     );
 
     tabsList.appendChild(searchTab);

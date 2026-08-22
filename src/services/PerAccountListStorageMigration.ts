@@ -45,7 +45,8 @@ export class PerAccountListStorageMigration {
 
   public static getInstance(): PerAccountListStorageMigration {
     if (!PerAccountListStorageMigration.instance) {
-      PerAccountListStorageMigration.instance = new PerAccountListStorageMigration();
+      PerAccountListStorageMigration.instance =
+        new PerAccountListStorageMigration();
     }
     return PerAccountListStorageMigration.instance;
   }
@@ -55,32 +56,61 @@ export class PerAccountListStorageMigration {
    * Called after login when we know the user's pubkey
    */
   public migrateForUser(pubkey: string): void {
-    this.logger.info('PerAccountListStorageMigration', `Checking migration for ${pubkey.slice(0, 8)}...`);
+    this.logger.info(
+      'PerAccountListStorageMigration',
+      `Checking migration for ${pubkey.slice(0, 8)}...`
+    );
 
     let migrated = false;
 
     // Migrate bookmarks
-    if (this.migrateLegacyData(LEGACY_KEYS.BOOKMARKS, StorageKeys.BOOKMARKS, pubkey)) {
+    if (
+      this.migrateLegacyData(
+        LEGACY_KEYS.BOOKMARKS,
+        StorageKeys.BOOKMARKS,
+        pubkey
+      )
+    ) {
       migrated = true;
     }
 
     // Migrate bookmark folders
-    if (this.migrateLegacyData(LEGACY_KEYS.BOOKMARK_FOLDERS, StorageKeys.BOOKMARK_FOLDERS, pubkey)) {
+    if (
+      this.migrateLegacyData(
+        LEGACY_KEYS.BOOKMARK_FOLDERS,
+        StorageKeys.BOOKMARK_FOLDERS,
+        pubkey
+      )
+    ) {
       migrated = true;
     }
 
     // Migrate bookmark folder assignments
-    if (this.migrateLegacyData(LEGACY_KEYS.BOOKMARK_FOLDER_ASSIGNMENTS, StorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, pubkey)) {
+    if (
+      this.migrateLegacyData(
+        LEGACY_KEYS.BOOKMARK_FOLDER_ASSIGNMENTS,
+        StorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS,
+        pubkey
+      )
+    ) {
       migrated = true;
     }
 
     // Migrate bookmark root order
-    if (this.migrateLegacyData(LEGACY_KEYS.BOOKMARK_ROOT_ORDER, StorageKeys.BOOKMARK_ROOT_ORDER, pubkey)) {
+    if (
+      this.migrateLegacyData(
+        LEGACY_KEYS.BOOKMARK_ROOT_ORDER,
+        StorageKeys.BOOKMARK_ROOT_ORDER,
+        pubkey
+      )
+    ) {
       migrated = true;
     }
 
     // Migrate follows
-    if (this.migrateLegacyData(LEGACY_KEYS.FOLLOWS, StorageKeys.FOLLOWS, pubkey)) {
+    if (
+      this.migrateLegacyData(LEGACY_KEYS.FOLLOWS, StorageKeys.FOLLOWS, pubkey)
+    ) {
       migrated = true;
     }
 
@@ -90,14 +120,18 @@ export class PerAccountListStorageMigration {
     }
 
     if (migrated) {
-      this.logger.info('PerAccountListStorageMigration', `Migration completed for ${pubkey.slice(0, 8)}`);
+      this.logger.info(
+        'PerAccountListStorageMigration',
+        `Migration completed for ${pubkey.slice(0, 8)}`
+      );
     }
 
     // Clean up orphaned folder assignments (assignments referencing non-existent bookmarks)
     const folderService = getBookmarkFolderService();
     const removedOrphans = folderService.cleanupOrphanedAssignments();
     if (removedOrphans > 0) {
-      this.logger.info('PerAccountListStorageMigration',
+      this.logger.info(
+        'PerAccountListStorageMigration',
         `Cleaned up ${removedOrphans} orphaned folder assignments`
       );
     }
@@ -109,7 +143,7 @@ export class PerAccountListStorageMigration {
    */
   private migrateLegacyData(
     legacyKey: string,
-    newKey: typeof StorageKeys[keyof typeof StorageKeys],
+    newKey: (typeof StorageKeys)[keyof typeof StorageKeys],
     pubkey: string
   ): boolean {
     try {
@@ -134,7 +168,8 @@ export class PerAccountListStorageMigration {
       // Migrate to per-account storage
       this.storage.setForPubkey(newKey, pubkey, parsed);
 
-      this.logger.info('PerAccountListStorageMigration',
+      this.logger.info(
+        'PerAccountListStorageMigration',
         `Migrated ${legacyKey} to per-account storage for ${pubkey.slice(0, 8)}`
       );
 
@@ -143,7 +178,8 @@ export class PerAccountListStorageMigration {
 
       return true;
     } catch (error) {
-      this.logger.error('PerAccountListStorageMigration',
+      this.logger.error(
+        'PerAccountListStorageMigration',
         `Failed to migrate ${legacyKey}: ${error}`
       );
       return false;
@@ -157,11 +193,13 @@ export class PerAccountListStorageMigration {
   private cleanupLegacyKey(legacyKey: string): void {
     try {
       localStorage.removeItem(legacyKey);
-      this.logger.info('PerAccountListStorageMigration',
+      this.logger.info(
+        'PerAccountListStorageMigration',
         `Removed legacy key: ${legacyKey}`
       );
     } catch (error) {
-      this.logger.error('PerAccountListStorageMigration',
+      this.logger.error(
+        'PerAccountListStorageMigration',
         `Failed to remove legacy key ${legacyKey}: ${error}`
       );
     }
@@ -171,6 +209,8 @@ export class PerAccountListStorageMigration {
    * Check if any legacy data exists (for debugging)
    */
   public hasLegacyData(): boolean {
-    return Object.values(LEGACY_KEYS).some(key => localStorage.getItem(key) !== null);
+    return Object.values(LEGACY_KEYS).some(
+      key => localStorage.getItem(key) !== null
+    );
   }
 }

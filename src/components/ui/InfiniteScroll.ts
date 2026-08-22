@@ -29,7 +29,7 @@ export class InfiniteScroll {
       threshold: config.threshold || 0,
       debounceMs: config.debounceMs || 300,
       loadingMessage: config.loadingMessage || 'Loading more...',
-      showLoadingIndicator: config.showLoadingIndicator !== false // default true
+      showLoadingIndicator: config.showLoadingIndicator !== false, // default true
     };
   }
 
@@ -68,8 +68,8 @@ export class InfiniteScroll {
     }
 
     this.observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
+      entries => {
+        entries.forEach(entry => {
           if (entry.isIntersecting) {
             this.triggerLoadMore();
           }
@@ -78,7 +78,7 @@ export class InfiniteScroll {
       {
         root,
         rootMargin: this.config.rootMargin,
-        threshold: this.config.threshold
+        threshold: this.config.threshold,
       }
     );
 

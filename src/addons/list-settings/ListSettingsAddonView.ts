@@ -8,7 +8,8 @@ export class ListSettingsAddonView extends View {
   constructor() {
     super();
     this.container = document.createElement('div');
-    this.container.className = 'view-content view-content--addon view-content--addon-list-settings';
+    this.container.className =
+      'view-content view-content--addon view-content--addon-list-settings';
     this.container.innerHTML = `
       <h1>List Sync Mode</h1>
       <section class="section" id="list-settings-content"></section>

@@ -130,13 +130,15 @@ export class TimelineUIStateHandler {
 
     const text = document.createElement('p');
     text.className = 'timeline-curated-banner__text';
-    text.append('Here are some suggestions to get you started. Just hover your mouse over a profile pic (or tap on it) to follow a user. Find more under Addons → ');
+    text.append(
+      'Here are some suggestions to get you started. Just hover your mouse over a profile pic (or tap on it) to follow a user. Find more under Addons → '
+    );
 
     const link = document.createElement('a');
     link.href = '/addons/follow-packs';
     link.className = 'timeline-curated-banner__link';
     link.textContent = 'Follow Packs';
-    link.addEventListener('click', (e) => {
+    link.addEventListener('click', e => {
       e.preventDefault();
       Router.getInstance().navigate('/addons/follow-packs');
     });

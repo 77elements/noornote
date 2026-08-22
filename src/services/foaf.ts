@@ -153,14 +153,28 @@ export class FoafService {
     const currentFollowCount = await this.followCheckService.getFollowCount();
 
     const cached = this.cache.get(degree);
-    if (cached && isFoafEntryFresh(cached.followCountAtBuild, cached.builtAt, currentFollowCount)) {
+    if (
+      cached &&
+      isFoafEntryFresh(
+        cached.followCountAtBuild,
+        cached.builtAt,
+        currentFollowCount
+      )
+    ) {
       return cached.pubkeys;
     }
 
     // Cold start: restore the last persisted build (IndexedDB, per account)
     // under the same freshness rules before hitting any relay.
     const persisted = await foafStore.load(degree);
-    if (persisted && isFoafEntryFresh(persisted.followCountAtBuild, persisted.builtAt, currentFollowCount)) {
+    if (
+      persisted &&
+      isFoafEntryFresh(
+        persisted.followCountAtBuild,
+        persisted.builtAt,
+        currentFollowCount
+      )
+    ) {
       // Cache the restored graph with its ORIGINAL build count (not the
       // current one) so tolerance keeps measuring against the true build
       // snapshot and can't drift across sessions.
@@ -228,7 +242,10 @@ export class FoafService {
     // kind:3 fetches → relay rate-limits / blocks). Sample down to
     // FOAF_EXPANSION_SOURCE_CAP before expanding. The cap also bounds total
     // relay load for the whole build.
-    const degree2Sample = this.sampleSources([...degree2Set], FOAF_EXPANSION_SOURCE_CAP);
+    const degree2Sample = this.sampleSources(
+      [...degree2Set],
+      FOAF_EXPANSION_SOURCE_CAP
+    );
     const exclude3 = new Set<string>([...degree1Set, ...degree2Set, myPubkey]);
     const degree3Set = await this.collectFollowees(degree2Sample, exclude3);
     this.putCache(3, [...degree3Set], followCountAtBuild, t0);
@@ -288,13 +305,20 @@ export class FoafService {
       } catch (err) {
         // One failed batch should not poison the whole build — relay hiccups
         // are common and the graph is best-effort.
-        this.systemLogger.warn('Foaf', `Batch ${Math.floor(i / FOAF_FETCH_BATCH) + 1} failed: ${err}`);
+        this.systemLogger.warn(
+          'Foaf',
+          `Batch ${Math.floor(i / FOAF_FETCH_BATCH) + 1} failed: ${err}`
+        );
         continue;
       }
 
       for (const ev of events) {
         for (const tag of ev.tags) {
-          if (tag[0] === 'p' && typeof tag[1] === 'string' && !exclude.has(tag[1])) {
+          if (
+            tag[0] === 'p' &&
+            typeof tag[1] === 'string' &&
+            !exclude.has(tag[1])
+          ) {
             result.add(tag[1]);
           }
         }
@@ -304,7 +328,12 @@ export class FoafService {
     return result;
   }
 
-  private putCache(degree: FoafDegree, pubkeys: string[], followCount: number, t0: number): void {
+  private putCache(
+    degree: FoafDegree,
+    pubkeys: string[],
+    followCount: number,
+    t0: number
+  ): void {
     this.cache.set(degree, {
       pubkeys,
       followCountAtBuild: followCount,
@@ -312,12 +341,23 @@ export class FoafService {
     });
     // Mirror to IndexedDB (per account) so cold starts restore instead of
     // rebuilding. Fire-and-forget — see FoafStore.
-    void foafStore.save(degree, { pubkeys, followCountAtBuild: followCount, builtAt: t0 });
+    void foafStore.save(degree, {
+      pubkeys,
+      followCountAtBuild: followCount,
+      builtAt: t0,
+    });
   }
 
   private logBuild(degree: FoafDegree, count: number, t0: number): void {
     const dt = Date.now() - t0;
-    this.systemLogger.info('Foaf', `Degree ${degree} ready — ${count} pubkeys in ${dt}ms`);
-    diagLog('system', `Foaf degree ${degree} built: ${count} pubkeys in ${dt}ms`, {});
+    this.systemLogger.info(
+      'Foaf',
+      `Degree ${degree} ready — ${count} pubkeys in ${dt}ms`
+    );
+    diagLog(
+      'system',
+      `Foaf degree ${degree} built: ${count} pubkeys in ${dt}ms`,
+      {}
+    );
   }
 }

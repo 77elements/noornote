@@ -7,7 +7,10 @@ import { NWCService } from '../../services/NWCService';
 import { SystemLogger } from '../../services/SystemLogger';
 import { ExchangeRateService } from '../../services/ExchangeRateService';
 import { KeychainStorage } from '../../services/KeychainStorage';
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../services/PerAccountLocalStorage';
 
 export class WalletBalanceDisplay {
   private element: HTMLElement;
@@ -48,10 +51,16 @@ export class WalletBalanceDisplay {
     this.exchangeRateService = ExchangeRateService.getInstance();
 
     // Load visibility preference
-    this.balanceVisible = PerAccountLocalStorage.getInstance().get<boolean>(StorageKeys.WALLET_BALANCE_VISIBLE, false);
+    this.balanceVisible = PerAccountLocalStorage.getInstance().get<boolean>(
+      StorageKeys.WALLET_BALANCE_VISIBLE,
+      false
+    );
 
     // Load last known balance (shown while waiting for fresh fetch; kept on fetch failures)
-    const cachedMsats = PerAccountLocalStorage.getInstance().get<number>(StorageKeys.WALLET_BALANCE_LAST_MSATS, 0);
+    const cachedMsats = PerAccountLocalStorage.getInstance().get<number>(
+      StorageKeys.WALLET_BALANCE_LAST_MSATS,
+      0
+    );
     if (cachedMsats > 0) {
       this.balanceInMsats = cachedMsats;
       this.hasBalance = true;
@@ -77,7 +86,11 @@ export class WalletBalanceDisplay {
         this.selectedCurrency = currency;
       }
     } catch (error) {
-      this.systemLogger.error('WalletBalanceDisplay', 'Failed to load currency preference:', error);
+      this.systemLogger.error(
+        'WalletBalanceDisplay',
+        'Failed to load currency preference:',
+        error
+      );
     }
   }
 
@@ -113,7 +126,10 @@ export class WalletBalanceDisplay {
     window.addEventListener('zap-sent', this.onZapSent);
 
     // Listen for currency change events
-    window.addEventListener('fiat-currency-changed', this.onFiatCurrencyChanged);
+    window.addEventListener(
+      'fiat-currency-changed',
+      this.onFiatCurrencyChanged
+    );
   }
 
   private async loadBalance(): Promise<void> {
@@ -128,7 +144,10 @@ export class WalletBalanceDisplay {
       if (balanceMsats !== null) {
         this.balanceInMsats = balanceMsats;
         this.hasBalance = true;
-        PerAccountLocalStorage.getInstance().set(StorageKeys.WALLET_BALANCE_LAST_MSATS, balanceMsats);
+        PerAccountLocalStorage.getInstance().set(
+          StorageKeys.WALLET_BALANCE_LAST_MSATS,
+          balanceMsats
+        );
         this.updateDisplay(balanceMsats);
       } else if (!this.hasBalance) {
         // No cached value yet — show placeholder
@@ -136,7 +155,11 @@ export class WalletBalanceDisplay {
       }
       // On null with cached value: keep showing last known balance (don't reset)
     } catch (error) {
-      this.systemLogger.error('WalletBalanceDisplay', 'Failed to load balance:', error);
+      this.systemLogger.error(
+        'WalletBalanceDisplay',
+        'Failed to load balance:',
+        error
+      );
       if (!this.hasBalance) this.updateDisplay(null);
       // Keep showing last known balance on errors (rate limiting, network, etc.)
     }
@@ -144,7 +167,9 @@ export class WalletBalanceDisplay {
 
   private async updateDisplay(balanceMsats: number | null): Promise<void> {
     const amountEl = this.element.querySelector('.wallet-balance-amount');
-    const fiatAmountEl = this.element.querySelector('.wallet-balance-fiat-amount');
+    const fiatAmountEl = this.element.querySelector(
+      '.wallet-balance-fiat-amount'
+    );
 
     // Always visible when addon is ON — show placeholder until NWC connects.
     this.element.style.display = 'block';
@@ -171,15 +196,26 @@ export class WalletBalanceDisplay {
     if (amountEl) amountEl.textContent = formattedSats;
 
     // Convert to selected fiat currency
-    const fiatAmount = await this.exchangeRateService.convertSatsToFiat(sats, this.selectedCurrency);
-    const currencySymbol = this.exchangeRateService.getCurrencySymbol(this.selectedCurrency);
+    const fiatAmount = await this.exchangeRateService.convertSatsToFiat(
+      sats,
+      this.selectedCurrency
+    );
+    const currencySymbol = this.exchangeRateService.getCurrencySymbol(
+      this.selectedCurrency
+    );
 
     let formattedFiat: string;
     if (fiatAmount < 0.01) {
-      const minAmount = this.exchangeRateService.formatAmount(0.01, this.selectedCurrency);
+      const minAmount = this.exchangeRateService.formatAmount(
+        0.01,
+        this.selectedCurrency
+      );
       formattedFiat = `<${minAmount} ${currencySymbol}`;
     } else {
-      const formattedAmount = this.exchangeRateService.formatAmount(fiatAmount, this.selectedCurrency);
+      const formattedAmount = this.exchangeRateService.formatAmount(
+        fiatAmount,
+        this.selectedCurrency
+      );
       formattedFiat = `${formattedAmount} ${currencySymbol}`;
     }
 
@@ -189,11 +225,19 @@ export class WalletBalanceDisplay {
   private formatSats(sats: number, currency: string): string {
     if (sats >= 1000000) {
       const value = sats / 1000000;
-      const formatted = this.exchangeRateService.formatAmount(value, currency, 1);
+      const formatted = this.exchangeRateService.formatAmount(
+        value,
+        currency,
+        1
+      );
       return `${formatted}M`;
     } else if (sats >= 1000) {
       const value = sats / 1000;
-      const formatted = this.exchangeRateService.formatAmount(value, currency, 1);
+      const formatted = this.exchangeRateService.formatAmount(
+        value,
+        currency,
+        1
+      );
       return `${formatted}k`;
     }
     return sats.toLocaleString();
@@ -202,7 +246,10 @@ export class WalletBalanceDisplay {
   private toggleVisibility(): void {
     this.balanceVisible = !this.balanceVisible;
 
-    PerAccountLocalStorage.getInstance().set(StorageKeys.WALLET_BALANCE_VISIBLE, this.balanceVisible);
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.WALLET_BALANCE_VISIBLE,
+      this.balanceVisible
+    );
 
     this.updateEyeIcon();
     this.updateDisplay(this.balanceInMsats);
@@ -243,7 +290,10 @@ export class WalletBalanceDisplay {
     // Remove window listeners (root cause of post-long-runtime flicker).
     window.removeEventListener('nwc-connection-restored', this.onNwcRestored);
     window.removeEventListener('zap-sent', this.onZapSent);
-    window.removeEventListener('fiat-currency-changed', this.onFiatCurrencyChanged);
+    window.removeEventListener(
+      'fiat-currency-changed',
+      this.onFiatCurrencyChanged
+    );
 
     if (this.toggleBtnEl && this.toggleBtnHandler) {
       this.toggleBtnEl.removeEventListener('click', this.toggleBtnHandler);

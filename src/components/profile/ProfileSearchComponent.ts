@@ -44,7 +44,10 @@ export interface ProfileSearchChip {
 
 export interface ProfileSearchOptions {
   /** Submit handler — receives input value and helpers. Required. */
-  onSubmit: (value: string, helpers: ProfileSearchHelpers) => Promise<void> | void;
+  onSubmit: (
+    value: string,
+    helpers: ProfileSearchHelpers
+  ) => Promise<void> | void;
 
   /** Trigger icon (SVG symbol id from public/icons.svg). Default: 'icon-search'. */
   triggerIconId?: string;
@@ -84,11 +87,17 @@ export interface ProfileSearchOptions {
   onClose?: () => void;
 }
 
-const CHIP_NPUB_REGEX = /(?:nostr:)?(npub1[023456789acdefghjklmnpqrstuvwxyz]{58})/g;
+const CHIP_NPUB_REGEX =
+  /(?:nostr:)?(npub1[023456789acdefghjklmnpqrstuvwxyz]{58})/g;
 
 export class ProfileSearchComponent {
   private container: HTMLElement;
-  private options: Required<Omit<ProfileSearchOptions, 'onSubmit' | 'privacyHint' | 'initialChips' | 'onChipsChange' | 'onClose'>> & {
+  private options: Required<
+    Omit<
+      ProfileSearchOptions,
+      'onSubmit' | 'privacyHint' | 'initialChips' | 'onChipsChange' | 'onClose'
+    >
+  > & {
     onSubmit: ProfileSearchOptions['onSubmit'];
     privacyHint: string | undefined;
     initialChips: ProfileSearchChip[] | undefined;
@@ -180,17 +189,19 @@ export class ProfileSearchComponent {
    */
   private setupEventListeners(): void {
     const link = this.container.querySelector('.textinput-overlay__link');
-    const input = this.container.querySelector('.textinput-overlay__input') as HTMLInputElement | null;
+    const input = this.container.querySelector(
+      '.textinput-overlay__input'
+    ) as HTMLInputElement | null;
     const button = this.container.querySelector('.textinput-overlay__btn');
 
-    link?.addEventListener('click', (e) => {
+    link?.addEventListener('click', e => {
       e.preventDefault();
       this.expandSearch();
     });
 
     // Use keydown (not keypress) so we can intercept comma reliably across
     // locales and prevent the default Enter=form-submit early.
-    input?.addEventListener('keydown', (e) => {
+    input?.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
         e.preventDefault();
         if (this.options.chipMode) {
@@ -217,8 +228,10 @@ export class ProfileSearchComponent {
 
     // Chip remove buttons (event delegation — chips are re-rendered often)
     const chipsArea = this.container.querySelector('[data-chips]');
-    chipsArea?.addEventListener('click', (e) => {
-      const removeBtn = (e.target as HTMLElement).closest('[data-chip-remove]') as HTMLElement | null;
+    chipsArea?.addEventListener('click', e => {
+      const removeBtn = (e.target as HTMLElement).closest(
+        '[data-chip-remove]'
+      ) as HTMLElement | null;
       if (!removeBtn) return;
       // Stop propagation BEFORE removeChip rebuilds the chips DOM. Without
       // this, the click bubbles to the document-level outside-click handler
@@ -237,7 +250,9 @@ export class ProfileSearchComponent {
    * chip (deduped), then clear the input. Called on Enter, comma, and Apply.
    */
   private parseInputIntoChips(): void {
-    const input = this.container.querySelector('.textinput-overlay__input') as HTMLInputElement | null;
+    const input = this.container.querySelector(
+      '.textinput-overlay__input'
+    ) as HTMLInputElement | null;
     if (!input) return;
     const text = input.value;
     if (!text.trim()) return;
@@ -273,7 +288,9 @@ export class ProfileSearchComponent {
    * small (≤50) and the area is a leaf DOM node.
    */
   private renderChips(): void {
-    const area = this.container.querySelector('[data-chips]') as HTMLElement | null;
+    const area = this.container.querySelector(
+      '[data-chips]'
+    ) as HTMLElement | null;
     if (!area) return;
     if (this.chips.length === 0) {
       area.innerHTML = '';
@@ -281,12 +298,16 @@ export class ProfileSearchComponent {
       return;
     }
     area.classList.add('is-populated');
-    area.innerHTML = this.chips.map(chip => `
+    area.innerHTML = this.chips
+      .map(
+        chip => `
       <span class="textinput-overlay__chip mention-link mention-link--bg">
         <span class="textinput-overlay__chip-name">${escapeHtml(chip.username)}</span>
         <button type="button" class="textinput-overlay__chip-remove" data-chip-remove="${escapeHtmlAttr(chip.pubkey)}" aria-label="Remove ${escapeHtmlAttr(chip.username)}">×</button>
       </span>
-    `).join('');
+    `
+      )
+      .join('');
   }
 
   private notifyChipsChange(): void {
@@ -294,7 +315,7 @@ export class ProfileSearchComponent {
   }
 
   private truncateNpub(npub: string): string {
-    return npub.length > 16 ? npub.slice(0, 12) + '…' : npub;
+    return npub.length > 16 ? `${npub.slice(0, 12)}…` : npub;
   }
 
   /**
@@ -324,7 +345,9 @@ export class ProfileSearchComponent {
     this.chips.push({ pubkey, npub, username });
     // Clear the input — MentionAutocomplete already inserted `nostr:{npub} `;
     // we replace that text with the chip.
-    const input = this.container.querySelector('.textinput-overlay__input') as HTMLInputElement | null;
+    const input = this.container.querySelector(
+      '.textinput-overlay__input'
+    ) as HTMLInputElement | null;
     if (input) input.value = '';
     this.renderChips();
     this.notifyChipsChange();
@@ -337,11 +360,15 @@ export class ProfileSearchComponent {
   public expandSearch(): void {
     if (this.isExpanded) return;
 
-    const overlay = this.container.querySelector('.textinput-overlay__panel') as HTMLElement;
+    const overlay = this.container.querySelector(
+      '.textinput-overlay__panel'
+    ) as HTMLElement;
     overlay.classList.remove('is-hidden');
     this.isExpanded = true;
 
-    const input = this.container.querySelector('.textinput-overlay__input') as HTMLInputElement | null;
+    const input = this.container.querySelector(
+      '.textinput-overlay__input'
+    ) as HTMLInputElement | null;
     setTimeout(() => input?.focus(), 100);
 
     this.escapeHandler = (e: KeyboardEvent) => {
@@ -353,7 +380,9 @@ export class ProfileSearchComponent {
 
     setTimeout(() => {
       this.clickOutsideHandler = (e: MouseEvent) => {
-        const overlayEl = this.container.querySelector('.textinput-overlay__panel');
+        const overlayEl = this.container.querySelector(
+          '.textinput-overlay__panel'
+        );
         if (!this.isExpanded || !overlayEl) return;
         if (overlayEl.contains(e.target as Node)) return;
         // MentionAutocomplete appends its dropdown to <body>, so a click on
@@ -373,7 +402,9 @@ export class ProfileSearchComponent {
   public collapseSearch(): void {
     if (!this.isExpanded) return;
 
-    const overlay = this.container.querySelector('.textinput-overlay__panel') as HTMLElement;
+    const overlay = this.container.querySelector(
+      '.textinput-overlay__panel'
+    ) as HTMLElement;
     overlay.classList.add('is-hidden');
     this.isExpanded = false;
 
@@ -395,7 +426,9 @@ export class ProfileSearchComponent {
    * Drive the submit handler with helpers
    */
   private async handleSubmit(): Promise<void> {
-    const input = this.container.querySelector('.textinput-overlay__input') as HTMLInputElement | null;
+    const input = this.container.querySelector(
+      '.textinput-overlay__input'
+    ) as HTMLInputElement | null;
     if (!input) return;
     const value = input.value.trim();
 
@@ -407,7 +440,7 @@ export class ProfileSearchComponent {
     const helpers: ProfileSearchHelpers = {
       showStatus: (message, type) => this.showStatus(message, type),
       hideStatus: () => this.hideStatus(),
-      setButtonState: (state) => this.setButtonState(state),
+      setButtonState: state => this.setButtonState(state),
       collapse: () => this.collapseSearch(),
     };
 
@@ -415,7 +448,10 @@ export class ProfileSearchComponent {
       await this.options.onSubmit(value, helpers);
     } catch (error) {
       console.error('[ProfileSearchComponent] onSubmit threw:', error);
-      helpers.showStatus(`Error: ${error instanceof Error ? error.message : String(error)}`, 'error');
+      helpers.showStatus(
+        `Error: ${error instanceof Error ? error.message : String(error)}`,
+        'error'
+      );
       helpers.setButtonState('idle');
     }
   }
@@ -424,7 +460,9 @@ export class ProfileSearchComponent {
    * Set button state — idle / loading / disabled
    */
   private setButtonState(state: 'idle' | 'loading' | 'disabled'): void {
-    const button = this.container.querySelector('.textinput-overlay__btn') as HTMLButtonElement | null;
+    const button = this.container.querySelector(
+      '.textinput-overlay__btn'
+    ) as HTMLButtonElement | null;
     if (!button) return;
     if (state === 'loading') {
       button.disabled = true;
@@ -442,7 +480,9 @@ export class ProfileSearchComponent {
    */
   private showStatus(message: string, type: 'info' | 'error'): void {
     if (!this.options.statusEnabled) return;
-    const status = this.container.querySelector('.textinput-overlay__status') as HTMLElement | null;
+    const status = this.container.querySelector(
+      '.textinput-overlay__status'
+    ) as HTMLElement | null;
     if (status) {
       status.textContent = message;
       status.className = `textinput-overlay__status textinput-overlay__status--${type}`;
@@ -455,7 +495,9 @@ export class ProfileSearchComponent {
    */
   private hideStatus(): void {
     if (!this.options.statusEnabled) return;
-    const status = this.container.querySelector('.textinput-overlay__status') as HTMLElement | null;
+    const status = this.container.querySelector(
+      '.textinput-overlay__status'
+    ) as HTMLElement | null;
     if (status) {
       status.classList.add('is-hidden');
     }
@@ -465,7 +507,9 @@ export class ProfileSearchComponent {
    * Pre-fill the input (e.g. when reopening to edit existing tags)
    */
   public setValue(value: string): void {
-    const input = this.container.querySelector('.textinput-overlay__input') as HTMLInputElement | null;
+    const input = this.container.querySelector(
+      '.textinput-overlay__input'
+    ) as HTMLInputElement | null;
     if (input) input.value = value;
   }
 

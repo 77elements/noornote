@@ -18,7 +18,10 @@ import type { ArticlesModuleApi } from '../../modules/articles/contracts';
 import { InteractionStatusLine } from '../ui/InteractionStatusLine';
 import { RepliesRenderer } from '../replies/RepliesRenderer';
 import { getAddressableIdentifier } from '../../helpers/getAddressableIdentifier';
-import { parseListingMetadata, formatPrice } from '../../helpers/listingMetadata';
+import {
+  parseListingMetadata,
+  formatPrice,
+} from '../../helpers/listingMetadata';
 import { UserProfileService } from '../../services/UserProfileService';
 import { ContentProcessor } from '../../services/ContentProcessor';
 import { AuthService } from '../../services/AuthService';
@@ -47,23 +50,31 @@ export class ListingReadView extends View {
     `;
 
     try {
-      const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
-      const event = await articlesApi?.fetchAddressableEvent(this.naddr) ?? null;
+      const articlesApi =
+        ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+      const event =
+        (await articlesApi?.fetchAddressableEvent(this.naddr)) ?? null;
 
       if (!event) {
-        this.container.innerHTML = '<div class="listing-read__error"><p>Listing not found</p></div>';
+        this.container.innerHTML =
+          '<div class="listing-read__error"><p>Listing not found</p></div>';
         return;
       }
 
       this.renderListing(event);
     } catch {
-      this.container.innerHTML = '<div class="listing-read__error"><p>Failed to load listing</p></div>';
+      this.container.innerHTML =
+        '<div class="listing-read__error"><p>Failed to load listing</p></div>';
     }
   }
 
   private renderListing(event: NostrEvent): void {
     const meta = parseListingMetadata(event);
-    const priceDisplay = formatPrice(meta.price, meta.priceCurrency, meta.priceFrequency);
+    const priceDisplay = formatPrice(
+      meta.price,
+      meta.priceCurrency,
+      meta.priceFrequency
+    );
     const npub = hexToNpub(event.pubkey) || event.pubkey;
 
     // Description: same markdown pipeline as the addon detail view
@@ -74,14 +85,24 @@ export class ListingReadView extends View {
     // Images: standard note-media grid with clickable images (global
     // ImageClickHandler opens the lightbox — inviolable media-click rule)
     const gridImages = meta.images.slice(0, 4);
-    const gridModifier = gridImages.length === 1 ? '' : (gridImages.length === 3 ? ' note-media--grid-3' : ' note-media--grid-2');
-    const imagesHtml = gridImages.length > 0
-      ? `<div class="note-media${gridModifier}">${gridImages.map(url => `
+    const gridModifier =
+      gridImages.length === 1
+        ? ''
+        : gridImages.length === 3
+          ? ' note-media--grid-3'
+          : ' note-media--grid-2';
+    const imagesHtml =
+      gridImages.length > 0
+        ? `<div class="note-media${gridModifier}">${gridImages
+            .map(
+              url => `
           <div class="note-media__cell">
             <img class="note-image note-image--clickable" src="${escapeHtmlAttr(url)}" alt="" loading="lazy" />
           </div>
-        `).join('')}</div>`
-      : '';
+        `
+            )
+            .join('')}</div>`
+        : '';
 
     this.container.innerHTML = `
       <article class="listing-read">
@@ -91,12 +112,16 @@ export class ListingReadView extends View {
           <h1 class="listing-read__title">${escapeHtml(meta.title)}</h1>
           <div class="listing-read__price">${escapeHtml(priceDisplay)}</div>
           ${meta.status === 'sold' ? '<span class="badge badge--danger">Sold</span>' : ''}
-          ${meta.location ? `
+          ${
+            meta.location
+              ? `
             <div class="listing-read__location">
               <svg width="16" height="16"><use href="#icon-location"/></svg>
               ${escapeHtml(meta.location)}
             </div>
-          ` : ''}
+          `
+              : ''
+          }
         </header>
 
         <div class="listing-read__seller user-mention" data-pubkey="${event.pubkey}">
@@ -104,15 +129,23 @@ export class ListingReadView extends View {
           <span class="listing-read__date">${formatTimestamp(meta.publishedAt)}</span>
         </div>
 
-        ${renderedDescription ? `
+        ${
+          renderedDescription
+            ? `
           <div class="listing-read__description">${renderedDescription}</div>
-        ` : ''}
+        `
+            : ''
+        }
 
-        ${meta.tags.length > 0 ? `
+        ${
+          meta.tags.length > 0
+            ? `
           <div class="listing-read__tags">
             ${meta.tags.map(tag => `<span class="hashtag">#${escapeHtml(tag)}</span>`).join(' ')}
           </div>
-        ` : ''}
+        `
+            : ''
+        }
 
         <div class="listing-read__isl" data-listing-isl></div>
         <div class="listing-read__replies" data-listing-replies></div>
@@ -143,7 +176,9 @@ export class ListingReadView extends View {
   }
 
   private mountReplies(event: NostrEvent): void {
-    const container = this.container.querySelector('[data-listing-replies]') as HTMLElement | null;
+    const container = this.container.querySelector(
+      '[data-listing-replies]'
+    ) as HTMLElement | null;
     if (!container || !event.id) return;
 
     const addressableId = getAddressableIdentifier(event);
@@ -162,13 +197,15 @@ export class ListingReadView extends View {
 
     const npub = hexToNpub(pubkey) || pubkey;
     try {
-      const profile = await UserProfileService.getInstance().getUserProfile(pubkey);
-      const username = profile?.name || profile?.display_name || npub.slice(0, 12) + '...';
+      const profile =
+        await UserProfileService.getInstance().getUserProfile(pubkey);
+      const username =
+        profile?.name || profile?.display_name || `${npub.slice(0, 12)}...`;
       const link = sellerEl.querySelector('a');
       if (link) link.textContent = username;
     } catch {
       const link = sellerEl.querySelector('a');
-      if (link) link.textContent = npub.slice(0, 12) + '...';
+      if (link) link.textContent = `${npub.slice(0, 12)}...`;
     }
 
     setupUserMentionHandlers(this.container);

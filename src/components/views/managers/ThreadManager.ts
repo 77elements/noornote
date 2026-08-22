@@ -38,14 +38,19 @@ export interface ThreadManagerConfig {
    *  (9735) the replies header reads "Zap Replies & Quotes". */
   rootKind?: number | undefined;
   onStatsUpdate?: (replies: number, quotedReposts: number) => void;
-  onLoadZapsList?: (replyId: string, authorPubkey: string, element: HTMLElement) => void;
+  onLoadZapsList?: (
+    replyId: string,
+    authorPubkey: string,
+    element: HTMLElement
+  ) => void;
 }
 
 export class ThreadManager {
   private config: ThreadManagerConfig;
   private _reactionsApi?: ReactionsModuleApi | null;
   private get reactionsApi(): ReactionsModuleApi | null {
-    return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
+    return (this._reactionsApi ??=
+      ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
   }
   private authService: AuthService;
   private systemLogger: SystemLogger;
@@ -63,7 +68,9 @@ export class ThreadManager {
   /** "Zap Replies & Quotes" when the root note is a zap receipt, else the
    *  regular "Replies & Quotes". */
   private get repliesHeaderLabel(): string {
-    return this.config.rootKind === 9735 ? 'Zap Replies & Quotes' : 'Replies & Quotes';
+    return this.config.rootKind === 9735
+      ? 'Zap Replies & Quotes'
+      : 'Replies & Quotes';
   }
 
   private getRepliesContainer(): Element | null {
@@ -77,7 +84,10 @@ export class ThreadManager {
   public async fetchQuotedReposts(): Promise<NostrEvent[]> {
     const relays = this.relayConfig.getReadRelays();
 
-    this.systemLogger.info('ThreadManager', `Fetching quoted reposts for note ${this.config.noteId.slice(0, 8)}`);
+    this.systemLogger.info(
+      'ThreadManager',
+      `Fetching quoted reposts for note ${this.config.noteId.slice(0, 8)}`
+    );
 
     // Addressable events (NIP-33 kinds 30000–39999) are referenced via #a /
     // #q tags, not #e. Without this branch, the #e filter would carry the
@@ -88,12 +98,31 @@ export class ThreadManager {
       // Two relay queries in parallel: NIP-18 q-tag AND legacy e-tag-with-mention
       // (Primal-iOS pre-NIP-18 pattern). Tag-OR can't be expressed in one filter.
       const fetches: Array<Promise<{ events: NostrEvent[] }>> = [
-        fetchNostrEvents({ relays, kinds: [1, 6], tags: { 'q': [this.config.noteId] }, limit: 100 }),
+        fetchNostrEvents({
+          relays,
+          kinds: [1, 6],
+          tags: { q: [this.config.noteId] },
+          limit: 100,
+        }),
       ];
       if (isAddressable) {
-        fetches.push(fetchNostrEvents({ relays, kinds: [1, 6], tags: { 'a': [this.config.noteId] }, limit: 100 }));
+        fetches.push(
+          fetchNostrEvents({
+            relays,
+            kinds: [1, 6],
+            tags: { a: [this.config.noteId] },
+            limit: 100,
+          })
+        );
       } else {
-        fetches.push(fetchNostrEvents({ relays, kinds: [1], tags: { 'e': [this.config.noteId] }, limit: 100 }));
+        fetches.push(
+          fetchNostrEvents({
+            relays,
+            kinds: [1],
+            tags: { e: [this.config.noteId] },
+            limit: 100,
+          })
+        );
       }
       const results = await Promise.all(fetches);
       const qTagResult = results[0]!;
@@ -108,16 +137,27 @@ export class ThreadManager {
         const hasContent = event.content.trim().length > 0;
         if (!hasContent) return false;
 
-        if (event.tags.some(tag => tag[0] === 'q' && tag[1] === this.config.noteId)) return true;
+        if (
+          event.tags.some(
+            tag => tag[0] === 'q' && tag[1] === this.config.noteId
+          )
+        )
+          return true;
 
         if (isAddressable) {
           // Addressable: match via #a tag
-          return event.tags.some(tag => tag[0] === 'a' && tag[1] === this.config.noteId);
+          return event.tags.some(
+            tag => tag[0] === 'a' && tag[1] === this.config.noteId
+          );
         }
 
-        const eTags = event.tags.filter(tag => tag[0] === 'e' && tag[1] === this.config.noteId);
-        return eTags.some(tag => tag[3] === 'mention')
-          && /nostr:(nevent1|note1|naddr1)/.test(event.content);
+        const eTags = event.tags.filter(
+          tag => tag[0] === 'e' && tag[1] === this.config.noteId
+        );
+        return (
+          eTags.some(tag => tag[3] === 'mention') &&
+          /nostr:(nevent1|note1|naddr1)/.test(event.content)
+        );
       });
 
       // Drop QRs from muted authors at fetch time so the displayed count
@@ -126,10 +166,16 @@ export class ThreadManager {
       // counts honest.
       const visibleQuotedReposts = filterVisibleEvents(quotedReposts);
 
-      this.systemLogger.info('ThreadManager', `Fetched reposts: ${qTagResult.events.length + eTagResult.events.length}, quoted: ${quotedReposts.length}, visible: ${visibleQuotedReposts.length}`);
+      this.systemLogger.info(
+        'ThreadManager',
+        `Fetched reposts: ${qTagResult.events.length + eTagResult.events.length}, quoted: ${quotedReposts.length}, visible: ${visibleQuotedReposts.length}`
+      );
       return visibleQuotedReposts;
     } catch (error) {
-      this.systemLogger.error('ThreadManager', `Failed to fetch quoted reposts: ${error}`);
+      this.systemLogger.error(
+        'ThreadManager',
+        `Failed to fetch quoted reposts: ${error}`
+      );
       return [];
     }
   }
@@ -148,10 +194,19 @@ export class ThreadManager {
     try {
       // ensure() so replies load on public, logged-out note views (the
       // single-note module activates on login; reading replies needs no auth).
-      const singleNoteApi = await ModuleLoader.getInstance().ensure<SingleNoteModuleApi>('single-note');
-      const allReplies = await singleNoteApi?.fetchReplies(this.config.noteId, this.config.noteAuthor) ?? [];
+      const singleNoteApi =
+        await ModuleLoader.getInstance().ensure<SingleNoteModuleApi>(
+          'single-note'
+        );
+      const allReplies =
+        (await singleNoteApi?.fetchReplies(
+          this.config.noteId,
+          this.config.noteAuthor
+        )) ?? [];
 
-      const filteredQuotedReposts = quotedReposts.filter(q => q.pubkey !== this.config.noteAuthor);
+      const filteredQuotedReposts = quotedReposts.filter(
+        q => q.pubkey !== this.config.noteAuthor
+      );
       const quotedRepostIds = new Set(filteredQuotedReposts.map(q => q.id));
       const replies = allReplies.filter(r => !quotedRepostIds.has(r.id));
 
@@ -180,8 +235,16 @@ export class ThreadManager {
       if (!repliesList) return;
 
       const comments = [
-        ...threadTree.map(node => ({ type: 'reply' as const, node, timestamp: node.event.created_at })),
-        ...filteredQuotedReposts.map(event => ({ type: 'quote' as const, event, timestamp: event.created_at }))
+        ...threadTree.map(node => ({
+          type: 'reply' as const,
+          node,
+          timestamp: node.event.created_at,
+        })),
+        ...filteredQuotedReposts.map(event => ({
+          type: 'quote' as const,
+          event,
+          timestamp: event.created_at,
+        })),
       ].sort((a, b) => a.timestamp - b.timestamp);
 
       for (const comment of comments) {
@@ -192,7 +255,10 @@ export class ThreadManager {
         }
       }
     } catch (error) {
-      this.systemLogger.error('ThreadManager', `Failed to load replies: ${error}`);
+      this.systemLogger.error(
+        'ThreadManager',
+        `Failed to load replies: ${error}`
+      );
       repliesContainer.innerHTML = `
         <div class="snv-replies__error">
           <p>Failed to load replies</p>
@@ -201,7 +267,10 @@ export class ThreadManager {
     }
   }
 
-  private buildThreadTree(replies: NostrEvent[], rootNoteId: string): ThreadNode[] {
+  private buildThreadTree(
+    replies: NostrEvent[],
+    rootNoteId: string
+  ): ThreadNode[] {
     const nodes = new Map<string, ThreadNode>();
     const rootNodes: ThreadNode[] = [];
 
@@ -253,7 +322,10 @@ export class ThreadManager {
     });
   }
 
-  private createReplyElement(reply: NostrEvent, depth: number = 0): HTMLElement {
+  private createReplyElement(
+    reply: NostrEvent,
+    depth: number = 0
+  ): HTMLElement {
     const isUserLoggedIn = this.authService.getCurrentUser() !== null;
 
     const noteElement = NoteUI.createNoteElement(reply, {
@@ -262,7 +334,7 @@ export class ThreadManager {
       isLoggedIn: isUserLoggedIn,
       headerSize: 'small',
       depth: 0,
-      replyContext: true
+      replyContext: true,
     });
 
     const replyId = reply.id;
@@ -290,12 +362,18 @@ export class ThreadManager {
     return noteElement;
   }
 
-  private async updateStats(replies: number, quotedReposts: number): Promise<void> {
+  private async updateStats(
+    replies: number,
+    quotedReposts: number
+  ): Promise<void> {
     const isl = NoteUI.getInteractionStatusLine(this.config.noteId);
     if (isl) {
       await isl.waitForInitialFetch();
       isl.updateStats({ replies, quotedReposts });
-      this.reactionsApi?.updateCachedStats(this.config.noteId, { replies, quotedReposts });
+      this.reactionsApi?.updateCachedStats(this.config.noteId, {
+        replies,
+        quotedReposts,
+      });
     }
 
     this.config.onStatsUpdate?.(replies, quotedReposts);
@@ -307,7 +385,9 @@ export class ThreadManager {
     if (isl && currentStats) {
       const newReplies = currentStats.replies + 1;
       isl.updateStats({ replies: newReplies });
-      this.reactionsApi?.updateCachedStats(this.config.noteId, { replies: newReplies });
+      this.reactionsApi?.updateCachedStats(this.config.noteId, {
+        replies: newReplies,
+      });
     }
   }
 
@@ -355,20 +435,27 @@ export class ThreadManager {
   }
 
   public confirmReply(replyId: string): void {
-    const replyElement = this.getRepliesList()?.querySelector(`[data-reply-id="${replyId}"]`);
+    const replyElement = this.getRepliesList()?.querySelector(
+      `[data-reply-id="${replyId}"]`
+    );
     if (replyElement) {
       replyElement.classList.remove('reply-pending');
       replyElement.classList.add('reply-confirmed');
     }
   }
 
-  private async renderQuotedRepost(quoteEvent: NostrEvent, container: Element): Promise<void> {
+  private async renderQuotedRepost(
+    quoteEvent: NostrEvent,
+    container: Element
+  ): Promise<void> {
     const eventId = quoteEvent.id;
     if (!eventId) return;
 
     const cleanedEvent = {
       ...quoteEvent,
-      content: quoteEvent.content.replace(/nostr:(nevent|note|nprofile|npub)[a-z0-9]+/gi, '').trim()
+      content: quoteEvent.content
+        .replace(/nostr:(nevent|note|nprofile|npub)[a-z0-9]+/gi, '')
+        .trim(),
     };
 
     const quoteWrapper = document.createElement('div');
@@ -384,8 +471,10 @@ export class ThreadManager {
     quoteHeader.className = 'snv-quoted-repost__header';
     quoteHeader.innerHTML = `<a href="/note/${nevent}" class="snv-quoted-repost__link"><svg class="snv-quoted-repost__icon" width="14" height="14"><use href="#icon-repost"/></svg><span><strong>${escapeHtml(username)}</strong> quoted this in a repost · open original →</span></a>`;
 
-    const link = quoteHeader.querySelector('.snv-quoted-repost__link') as HTMLAnchorElement;
-    link?.addEventListener('click', (e) => {
+    const link = quoteHeader.querySelector(
+      '.snv-quoted-repost__link'
+    ) as HTMLAnchorElement;
+    link?.addEventListener('click', e => {
       e.preventDefault();
       Router.getInstance().navigate(`/note/${nevent}`);
     });
@@ -395,7 +484,7 @@ export class ThreadManager {
       islFetchStats: false,
       isLoggedIn: false,
       headerSize: 'small',
-      depth: 0
+      depth: 0,
     });
 
     quoteWrapper.appendChild(quoteHeader);

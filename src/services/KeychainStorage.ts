@@ -55,7 +55,7 @@ export class KeychainStorage {
           resolve(request.result);
         };
 
-        request.onupgradeneeded = (event) => {
+        request.onupgradeneeded = event => {
           const db = (event.target as IDBOpenDBRequest).result;
           if (!db.objectStoreNames.contains(STORE_NAME)) {
             db.createObjectStore(STORE_NAME, { keyPath: 'key' });
@@ -86,7 +86,10 @@ export class KeychainStorage {
   /**
    * Set value in IndexedDB
    */
-  private static async setInIndexedDB(key: string, value: string): Promise<void> {
+  private static async setInIndexedDB(
+    key: string,
+    value: string
+  ): Promise<void> {
     const db = await this.getDB();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(STORE_NAME, 'readwrite');
@@ -125,7 +128,10 @@ export class KeychainStorage {
    * @param connectionString The NWC connection string
    * @param pubkey The user's pubkey (required for per-user storage)
    */
-  static async saveNWC(connectionString: string, pubkey?: string): Promise<void> {
+  static async saveNWC(
+    connectionString: string,
+    pubkey?: string
+  ): Promise<void> {
     // Get pubkey from AuthService if not provided
     const userPubkey = pubkey || this.getCurrentUserPubkey();
     if (!userPubkey) {
@@ -133,28 +139,44 @@ export class KeychainStorage {
     }
 
     const key = this.getNwcKeyForUser(userPubkey);
-    const encrypted = await NWCCryptoService.getInstance().encrypt(connectionString);
+    const encrypted =
+      await NWCCryptoService.getInstance().encrypt(connectionString);
     await this.setInIndexedDB(key, encrypted);
     // Mirror the ciphertext to localStorage so it survives WebView IndexedDB
     // eviction. Safe: it's AES-GCM ciphertext and the device key lives in native
     // Filesystem, so the mirror is undecryptable on its own.
     this.mirrorNwcBlob(userPubkey, encrypted);
-    diagLog('wallet', 'nwc_save_v2_ok', { storage: 'indexeddb', length: encrypted.length });
+    diagLog('wallet', 'nwc_save_v2_ok', {
+      storage: 'indexeddb',
+      length: encrypted.length,
+    });
   }
 
   /** Write the encrypted NWC blob to the per-account localStorage mirror. */
   private static mirrorNwcBlob(userPubkey: string, encrypted: string): void {
     try {
-      PerAccountLocalStorage.getInstance().setForPubkey(StorageKeys.NWC_BLOB_MIRROR, userPubkey, encrypted);
+      PerAccountLocalStorage.getInstance().setForPubkey(
+        StorageKeys.NWC_BLOB_MIRROR,
+        userPubkey,
+        encrypted
+      );
     } catch (err) {
-      diagLog('wallet', 'nwc_mirror_save_failed', { error: String(err && (err as Error).message ? (err as Error).message : err) });
+      diagLog('wallet', 'nwc_mirror_save_failed', {
+        error: String(
+          err && (err as Error).message ? (err as Error).message : err
+        ),
+      });
     }
   }
 
   /** Read the encrypted NWC blob from the per-account localStorage mirror. */
   private static readNwcMirror(userPubkey: string): string | null {
     try {
-      return PerAccountLocalStorage.getInstance().getForPubkey<string | null>(StorageKeys.NWC_BLOB_MIRROR, userPubkey, null);
+      return PerAccountLocalStorage.getInstance().getForPubkey<string | null>(
+        StorageKeys.NWC_BLOB_MIRROR,
+        userPubkey,
+        null
+      );
     } catch {
       return null;
     }
@@ -182,7 +204,9 @@ export class KeychainStorage {
     } catch (err) {
       console.warn('[KeychainStorage] IDB read failed, trying mirror:', err);
       diagLog('wallet', 'nwc_load_idb_error', {
-        error: String(err && (err as Error).message ? (err as Error).message : err),
+        error: String(
+          err && (err as Error).message ? (err as Error).message : err
+        ),
       });
     }
     if (!raw) {
@@ -192,8 +216,15 @@ export class KeychainStorage {
       const mirrored = this.readNwcMirror(userPubkey);
       if (mirrored) {
         raw = mirrored;
-        try { await this.setInIndexedDB(key, mirrored); } catch { /* re-mirror is best-effort */ }
-        diagLog('wallet', 'nwc_load_from_mirror', { storage: 'localstorage', length: mirrored.length });
+        try {
+          await this.setInIndexedDB(key, mirrored);
+        } catch {
+          /* re-mirror is best-effort */
+        }
+        diagLog('wallet', 'nwc_load_from_mirror', {
+          storage: 'localstorage',
+          length: mirrored.length,
+        });
       } else {
         diagLog('wallet', 'nwc_load_empty', { storage: 'indexeddb' });
         return null;
@@ -205,20 +236,28 @@ export class KeychainStorage {
       // now protects the next eviction. The mirror is ciphertext-only and
       // useless without the Filesystem device key.
       this.mirrorNwcBlob(userPubkey, raw);
-      diagLog('wallet', 'nwc_backfilled_mirror', { storage: 'indexeddb', length: raw.length });
+      diagLog('wallet', 'nwc_backfilled_mirror', {
+        storage: 'indexeddb',
+        length: raw.length,
+      });
     }
 
     // New v2 format: decrypt via NWCCryptoService
     if (NWCCryptoService.isEncryptedFormat(raw)) {
       try {
         const plaintext = await NWCCryptoService.getInstance().decrypt(raw);
-        diagLog('wallet', 'nwc_load_v2_ok', { storage: 'indexeddb', length: raw.length });
+        diagLog('wallet', 'nwc_load_v2_ok', {
+          storage: 'indexeddb',
+          length: raw.length,
+        });
         return plaintext;
       } catch (err) {
         console.error('[KeychainStorage] Failed to decrypt NWC blob:', err);
         diagLog('wallet', 'nwc_load_v2_fail', {
           storage: 'indexeddb',
-          error: String(err && (err as Error).message ? (err as Error).message : err),
+          error: String(
+            err && (err as Error).message ? (err as Error).message : err
+          ),
         });
         return null;
       }
@@ -226,11 +265,16 @@ export class KeychainStorage {
 
     // Legacy plaintext format (pre-v2): silently migrate to encrypted v2.
     // Any string that doesn't start with "v2:" is treated as legacy plaintext.
-    diagLog('wallet', 'nwc_load_legacy_plaintext', { storage: 'indexeddb', length: raw.length });
+    diagLog('wallet', 'nwc_load_legacy_plaintext', {
+      storage: 'indexeddb',
+      length: raw.length,
+    });
     try {
       const reencrypted = await NWCCryptoService.getInstance().encrypt(raw);
       await this.setInIndexedDB(key, reencrypted);
-      console.info('[KeychainStorage] Migrated legacy plaintext NWC blob to v2 (AES-GCM)');
+      console.info(
+        '[KeychainStorage] Migrated legacy plaintext NWC blob to v2 (AES-GCM)'
+      );
       diagLog('wallet', 'nwc_migrate_ok', {
         storage: 'indexeddb',
         from: 'plaintext',
@@ -240,11 +284,18 @@ export class KeychainStorage {
     } catch (migrationErr) {
       // Migration failure is non-fatal — we still return the plaintext so the
       // user stays connected. Next load will retry migration.
-      console.warn('[KeychainStorage] Legacy migration re-encrypt failed:', migrationErr);
+      console.warn(
+        '[KeychainStorage] Legacy migration re-encrypt failed:',
+        migrationErr
+      );
       diagLog('wallet', 'nwc_migrate_fail', {
         storage: 'indexeddb',
         from: 'plaintext',
-        error: String(migrationErr && (migrationErr as Error).message ? (migrationErr as Error).message : migrationErr),
+        error: String(
+          migrationErr && (migrationErr as Error).message
+            ? (migrationErr as Error).message
+            : migrationErr
+        ),
       });
     }
     return raw;
@@ -265,8 +316,13 @@ export class KeychainStorage {
     await this.deleteFromIndexedDB(key);
     // Also drop the localStorage mirror so a disconnect fully clears the NWC.
     try {
-      PerAccountLocalStorage.getInstance().removeForPubkey(StorageKeys.NWC_BLOB_MIRROR, userPubkey);
-    } catch { /* best-effort */ }
+      PerAccountLocalStorage.getInstance().removeForPubkey(
+        StorageKeys.NWC_BLOB_MIRROR,
+        userPubkey
+      );
+    } catch {
+      /* best-effort */
+    }
   }
 
   /**
@@ -298,10 +354,16 @@ export class KeychainStorage {
   /**
    * Load zap defaults (amount + comment) from per-user localStorage
    */
-  static async loadZapDefaults(): Promise<{ amount: number; comment: string } | null> {
+  static async loadZapDefaults(): Promise<{
+    amount: number;
+    comment: string;
+  } | null> {
     try {
       const storage = PerAccountLocalStorage.getInstance();
-      return storage.get<{ amount: number; comment: string } | null>(StorageKeys.ZAP_DEFAULTS, null);
+      return storage.get<{ amount: number; comment: string } | null>(
+        StorageKeys.ZAP_DEFAULTS,
+        null
+      );
     } catch (_error) {
       console.error('Failed to load zap defaults from localStorage:', _error);
       return null;
@@ -325,16 +387,26 @@ export class KeychainStorage {
    * Non-sensitive data, localStorage is fine
    */
   static async saveFiatCurrency(currencyCode: string): Promise<void> {
-    const { PerAccountLocalStorage, StorageKeys } = await import('./PerAccountLocalStorage');
-    PerAccountLocalStorage.getInstance().set(StorageKeys.FIAT_CURRENCY, currencyCode);
+    const { PerAccountLocalStorage, StorageKeys } = await import(
+      './PerAccountLocalStorage'
+    );
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.FIAT_CURRENCY,
+      currencyCode
+    );
   }
 
   /**
    * Load fiat currency preference
    */
   static async loadFiatCurrency(): Promise<string | null> {
-    const { PerAccountLocalStorage, StorageKeys } = await import('./PerAccountLocalStorage');
-    return PerAccountLocalStorage.getInstance().get<string | null>(StorageKeys.FIAT_CURRENCY, null);
+    const { PerAccountLocalStorage, StorageKeys } = await import(
+      './PerAccountLocalStorage'
+    );
+    return PerAccountLocalStorage.getInstance().get<string | null>(
+      StorageKeys.FIAT_CURRENCY,
+      null
+    );
   }
 
   /**

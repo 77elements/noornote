@@ -27,14 +27,15 @@ export class ZapReceiptProcessor {
     // The "author" of a zap receipt is the LNURL provider, not the sender
     // We use the sender from zapReceiptData for display
     const displayPubkey = zapReceiptData.senderPubkey || event.pubkey;
-    const authorProfile = ZapReceiptProcessor.contentProcessor.getNonBlockingProfile(displayPubkey);
+    const authorProfile =
+      ZapReceiptProcessor.contentProcessor.getNonBlockingProfile(displayPubkey);
 
     const result: ProcessedNote = {
       id: eventId,
       type: 'zap-receipt',
       timestamp: event.created_at,
       author: {
-        pubkey: displayPubkey
+        pubkey: displayPubkey,
       },
       content: {
         text: zapReceiptData.message || '',
@@ -43,17 +44,17 @@ export class ZapReceiptProcessor {
         links: [],
         hashtags: [],
         quotedReferences: [],
-        bolt11Invoices: []
+        bolt11Invoices: [],
       },
       rawEvent: event,
-      zapReceiptData
+      zapReceiptData,
     };
 
     if (authorProfile) {
       result.author.profile = {
         name: authorProfile.name,
         display_name: authorProfile.display_name,
-        picture: authorProfile.picture
+        picture: authorProfile.picture,
       };
     }
 
@@ -104,8 +105,9 @@ export class ZapReceiptProcessor {
         // The pubkey on the embedded request is an ephemeral throwaway — not a
         // real user — so we drop senderPubkey and let the renderer's existing
         // "Anonymous" fallback take over.
-        isAnon = Array.isArray(zapRequest.tags)
-          && zapRequest.tags.some((t: string[]) => t[0] === 'anon');
+        isAnon =
+          Array.isArray(zapRequest.tags) &&
+          zapRequest.tags.some((t: string[]) => t[0] === 'anon');
 
         // Get sender from zap request if not in P tag (skip for anon zaps)
         if (!senderPubkey && zapRequest.pubkey && !isAnon) {
@@ -113,7 +115,9 @@ export class ZapReceiptProcessor {
         }
 
         // Get amount from zap request tags (in millisats)
-        const amountTag = zapRequest.tags?.find((t: string[]) => t[0] === 'amount');
+        const amountTag = zapRequest.tags?.find(
+          (t: string[]) => t[0] === 'amount'
+        );
         if (amountTag?.[1]) {
           amountSats = Math.floor(parseInt(amountTag[1], 10) / 1000);
         }
@@ -143,5 +147,4 @@ export class ZapReceiptProcessor {
 
     return result;
   }
-
 }

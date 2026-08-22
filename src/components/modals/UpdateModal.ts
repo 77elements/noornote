@@ -7,7 +7,10 @@
 import { ModalService } from '../../services/ModalService';
 import { PlatformService } from '../../services/PlatformService';
 import { ModuleLoader } from '../../core/ModuleLoader';
-import type { SettingsModuleApi, UpdateInfo } from '../../modules/settings/contracts';
+import type {
+  SettingsModuleApi,
+  UpdateInfo,
+} from '../../modules/settings/contracts';
 import { escapeHtml } from '../../helpers/escapeHtml';
 
 declare const __APP_VERSION__: string;
@@ -23,7 +26,10 @@ function renderMarkdown(text: string): string {
   let inList = false;
 
   function closeList(): void {
-    if (inList) { html += '</ul>'; inList = false; }
+    if (inList) {
+      html += '</ul>';
+      inList = false;
+    }
   }
 
   for (const line of lines) {
@@ -36,7 +42,10 @@ function renderMarkdown(text: string): string {
       closeList();
       html += `<h4 style="margin: 0.75rem 0 0.25rem; font-size: 13px; opacity: 0.8;">${escapeHtml(trimmed.slice(3))}</h4>`;
     } else if (trimmed.startsWith('- ')) {
-      if (!inList) { html += '<ul style="margin: 0.25rem 0; padding-left: 1.25rem;">'; inList = true; }
+      if (!inList) {
+        html += '<ul style="margin: 0.25rem 0; padding-left: 1.25rem;">';
+        inList = true;
+      }
       html += `<li style="font-size: 13px; line-height: 1.5;">${escapeHtml(trimmed.slice(2))}</li>`;
     } else if (trimmed === '') {
       closeList();
@@ -67,7 +76,7 @@ export class UpdateModal {
       height: 'auto',
       showCloseButton: true,
       closeOnOverlay: true,
-      closeOnEsc: true
+      closeOnEsc: true,
     });
 
     setTimeout(() => this.setupEventHandlers(update), 0);
@@ -90,11 +99,15 @@ export class UpdateModal {
           <span style="opacity: 0.6;">Current: v${__APP_VERSION__}</span>
         </p>
 
-        ${update.releaseNotes ? `
+        ${
+          update.releaseNotes
+            ? `
           <div style="max-height: 50vh; overflow-y: auto; padding: 0.75rem; border-radius: 6px; background: var(--surface-tint); margin-bottom: 1.5rem;">
             ${renderMarkdown(update.releaseNotes)}
           </div>
-        ` : ''}
+        `
+            : ''
+        }
 
         <div style="display: flex; gap: 0.75rem; justify-content: center;">
           <button class="btn btn--passive" id="update-skip-btn">Skip this version</button>
@@ -131,9 +144,10 @@ export class UpdateModal {
     });
 
     skipBtn?.addEventListener('click', () => {
-      ModuleLoader.getInstance().getApi<SettingsModuleApi>('settings')?.skipVersion(update.version);
+      ModuleLoader.getInstance()
+        .getApi<SettingsModuleApi>('settings')
+        ?.skipVersion(update.version);
       this.modalService.hide();
     });
   }
-
 }

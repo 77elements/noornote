@@ -20,7 +20,8 @@ export class DeleteNoteModal {
   private modalService: ModalService;
   private _postsApi?: PostsModuleApi | null;
   private get postsApi(): PostsModuleApi | null {
-    return this._postsApi ??= ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
+    return (this._postsApi ??=
+      ModuleLoader.getInstance().getApi<PostsModuleApi>('posts'));
   }
   private currentOptions: DeleteNoteModalOptions | null = null;
 
@@ -51,7 +52,7 @@ export class DeleteNoteModal {
       width: '500px',
       showCloseButton: true,
       closeOnOverlay: true,
-      closeOnEsc: true
+      closeOnEsc: true,
     });
 
     setTimeout(() => {
@@ -116,7 +117,9 @@ export class DeleteNoteModal {
     if (!this.currentOptions) return;
 
     try {
-      const success = await (this.postsApi?.deleteEvent(this.currentOptions.eventId) ?? Promise.resolve(false));
+      const success = await (this.postsApi?.deleteEvent(
+        this.currentOptions.eventId
+      ) ?? Promise.resolve(false));
 
       if (success) {
         // Close modal

@@ -30,7 +30,8 @@ export interface NoteMenuOptions {
 }
 
 // SVG sprite icon helper — references symbols from index.html sprite sheet
-const icon = (id: string, size = 16) => `<svg width="${size}" height="${size}"><use href="#icon-${id}"/></svg>`;
+const icon = (id: string, size = 16) =>
+  `<svg width="${size}" height="${size}"><use href="#icon-${id}"/></svg>`;
 
 const ICONS = {
   copy: icon('copy'),
@@ -95,12 +96,16 @@ export class NoteMenu {
       let isPublicBookmarked = false;
       let isPrivateBookmarked = false;
       if (currentUser) {
-        const status = await bookmarkOrch.isBookmarked(this.options.eventId, currentUser.pubkey);
+        const status = await bookmarkOrch.isBookmarked(
+          this.options.eventId,
+          currentUser.pubkey
+        );
         isPublicBookmarked = status.public;
         isPrivateBookmarked = status.private;
       }
 
-      bookmarkButtons = privateBookmarksEnabled ? `
+      bookmarkButtons = privateBookmarksEnabled
+        ? `
         <button class="note-menu-item" data-action="bookmark-public">
           ${ICONS.bookmark}
           ${isPublicBookmarked ? 'Remove Public Bookmark' : 'Public Bookmark'}
@@ -109,7 +114,8 @@ export class NoteMenu {
           ${ICONS.bookmark}
           ${isPrivateBookmarked ? 'Remove Private Bookmark' : 'Private Bookmark'}
         </button>
-      ` : `
+      `
+        : `
         <button class="note-menu-item" data-action="bookmark-public">
           ${ICONS.bookmark}
           ${isPublicBookmarked ? 'Remove Bookmark' : 'Bookmark'}
@@ -123,11 +129,16 @@ export class NoteMenu {
     const privateMutesEnabled = muteOrch.isPrivateMutesEnabled();
 
     // Check if subscribed to article notifications for this user
-    const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
-    const isSubscribedToArticles = articlesApi?.isSubscribedToArticleNotifications(this.options.authorPubkey) ?? false;
+    const articlesApi =
+      ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+    const isSubscribedToArticles =
+      articlesApi?.isSubscribedToArticleNotifications(
+        this.options.authorPubkey
+      ) ?? false;
 
     // Build mute user buttons based on private mutes setting
-    const muteUserButtons = privateMutesEnabled ? `
+    const muteUserButtons = privateMutesEnabled
+      ? `
       <button class="note-menu-item note-menu-item--danger" data-action="mute-user-privately">
         ${ICONS.mute}
         Mute user privately
@@ -136,7 +147,8 @@ export class NoteMenu {
         ${ICONS.mute}
         Mute user publicly
       </button>
-    ` : `
+    `
+      : `
       <button class="note-menu-item note-menu-item--danger" data-action="mute-user-publicly">
         ${ICONS.mute}
         Mute user
@@ -161,12 +173,16 @@ export class NoteMenu {
 
       ${bookmarkButtons}
 
-      ${!isOwnNote && isTribesEnabled() ? `
+      ${
+        !isOwnNote && isTribesEnabled()
+          ? `
         <button class="note-menu-item" data-action="add-author-to-tribe">
           ${ICONS.tribe}
           Add author to Tribe
         </button>
-      ` : ''}
+      `
+          : ''
+      }
 
       <button class="note-menu-item" data-action="view-raw-event">
         ${ICONS.code}
@@ -175,13 +191,17 @@ export class NoteMenu {
 
       <div class="note-menu-divider"></div>
 
-      ${isOwnNote ? `
+      ${
+        isOwnNote
+          ? `
         <button class="note-menu-item note-menu-item--danger" data-action="delete-note">
           ${ICONS.trash}
           Delete note
         </button>
         <div class="note-menu-divider"></div>
-      ` : ''}
+      `
+          : ''
+      }
 
       <button class="note-menu-item note-menu-item--danger" data-action="report">
         ${ICONS.report}
@@ -216,7 +236,7 @@ export class NoteMenu {
    */
   private setupEventListeners(): void {
     // Toggle menu on trigger click
-    this.triggerElement.addEventListener('click', async (e) => {
+    this.triggerElement.addEventListener('click', async e => {
       e.stopPropagation();
       await this.toggleMenu();
     });
@@ -240,7 +260,7 @@ export class NoteMenu {
    */
   private async openMenu(): Promise<void> {
     // Close any other open menus
-    document.querySelectorAll('.note-menu-dropdown').forEach((menu) => {
+    document.querySelectorAll('.note-menu-dropdown').forEach(menu => {
       if (menu !== this.menuElement) {
         (menu as HTMLElement).style.display = 'none';
       }
@@ -258,7 +278,7 @@ export class NoteMenu {
     }
 
     // Re-setup menu click listener for new menu element
-    this.menuElement.addEventListener('click', (e) => {
+    this.menuElement.addEventListener('click', e => {
       e.stopPropagation();
       const target = e.target as HTMLElement;
       const menuItem = target.closest('.note-menu-item') as HTMLElement;
@@ -377,7 +397,10 @@ export class NoteMenu {
    */
   private async copyEventId(): Promise<void> {
     const clipboardService = ClipboardActionsService.getInstance();
-    await clipboardService.copyEventId(this.options.eventId, this.options.authorPubkey);
+    await clipboardService.copyEventId(
+      this.options.eventId,
+      this.options.authorPubkey
+    );
   }
 
   /**
@@ -393,7 +416,10 @@ export class NoteMenu {
    */
   private async copyShareLink(): Promise<void> {
     const clipboardService = ClipboardActionsService.getInstance();
-    await clipboardService.copyShareLink(this.options.eventId, this.options.authorPubkey);
+    await clipboardService.copyShareLink(
+      this.options.eventId,
+      this.options.authorPubkey
+    );
   }
 
   /**
@@ -416,7 +442,7 @@ export class NoteMenu {
   private deleteNote(): void {
     const deleteModal = DeleteNoteModal.getInstance();
     deleteModal.show({
-      eventId: this.options.eventId
+      eventId: this.options.eventId,
     });
   }
 
@@ -427,7 +453,7 @@ export class NoteMenu {
     const reportModal = ReportModal.getInstance();
     reportModal.show({
       reportedPubkey: this.options.authorPubkey,
-      reportedEventId: this.options.eventId
+      reportedEventId: this.options.eventId,
     });
   }
 
@@ -444,7 +470,10 @@ export class NoteMenu {
 
     try {
       await muteOrch.muteUser(this.options.authorPubkey, isPrivate);
-      ToastService.show(isPrivate ? 'User muted privately' : 'User muted publicly', 'success');
+      ToastService.show(
+        isPrivate ? 'User muted privately' : 'User muted publicly',
+        'success'
+      );
 
       // Refresh muted users in orchestrators
       const loader = ModuleLoader.getInstance();
@@ -452,12 +481,15 @@ export class NoteMenu {
       const notifApi = loader.getApi<NotificationsModuleApi>('notifications');
       await Promise.all([
         timelineApi?.refreshMutedUsers() ?? Promise.resolve(),
-        notifApi?.refreshMutedUsers() ?? Promise.resolve()
+        notifApi?.refreshMutedUsers() ?? Promise.resolve(),
       ]);
 
       TypedEventBus.getInstance().emit('mute:updated');
     } catch (error) {
-      console.error(`Failed to mute user ${isPrivate ? 'privately' : 'publicly'}:`, error);
+      console.error(
+        `Failed to mute user ${isPrivate ? 'privately' : 'publicly'}:`,
+        error
+      );
       ToastService.show('Failed to mute user', 'error');
     }
   }
@@ -475,7 +507,9 @@ export class NoteMenu {
     const eventBus = TypedEventBus.getInstance();
 
     try {
-      const isCurrentlyMuted = await muteOrch.isEventMuted(this.options.eventId);
+      const isCurrentlyMuted = await muteOrch.isEventMuted(
+        this.options.eventId
+      );
 
       if (isCurrentlyMuted) {
         await muteOrch.unmuteThread(this.options.eventId);
@@ -502,8 +536,11 @@ export class NoteMenu {
       return;
     }
 
-    const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
-    const isNowSubscribed = articlesApi?.toggleArticleNotifications(this.options.authorPubkey) ?? false;
+    const articlesApi =
+      ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+    const isNowSubscribed =
+      articlesApi?.toggleArticleNotifications(this.options.authorPubkey) ??
+      false;
 
     if (isNowSubscribed) {
       ToastService.show('You will be notified about new articles', 'success');
@@ -538,7 +575,10 @@ export class NoteMenu {
       // async load + SNV's reverse-lookup, not by storing a different id
       // scheme here.
       let eventIdToBookmark = this.options.eventId;
-      if (this.options.rawEvent && (this.options.rawEvent.kind === 6 || this.options.rawEvent.kind === 16)) {
+      if (
+        this.options.rawEvent &&
+        (this.options.rawEvent.kind === 6 || this.options.rawEvent.kind === 16)
+      ) {
         const eTag = this.options.rawEvent.tags.find(tag => tag[0] === 'e');
         if (eTag && eTag[1]) {
           eventIdToBookmark = eTag[1];
@@ -546,14 +586,19 @@ export class NoteMenu {
       }
 
       // Check current bookmark status
-      const status = await bookmarkOrch.isBookmarked(eventIdToBookmark, currentUser.pubkey);
+      const status = await bookmarkOrch.isBookmarked(
+        eventIdToBookmark,
+        currentUser.pubkey
+      );
       const isCurrentlyBookmarked = isPrivate ? status.private : status.public;
 
       if (isCurrentlyBookmarked) {
         // Remove bookmark
         await bookmarkOrch.removeBookmark(eventIdToBookmark, isPrivate);
         ToastService.show(
-          isPrivate ? 'Removed from private bookmarks' : 'Removed from bookmarks',
+          isPrivate
+            ? 'Removed from private bookmarks'
+            : 'Removed from bookmarks',
           'success'
         );
       } else {
@@ -592,9 +637,12 @@ export class NoteMenu {
     }
 
     // Build tribe selection list HTML
-    const tribeListHtml = tribeFolders.map(folder =>
-      `<button class="btn btn--medium" data-tribe-id="${folder.id}" style="margin: 0.5rem 0; width: 100%;">${folder.name}</button>`
-    ).join('');
+    const tribeListHtml = tribeFolders
+      .map(
+        folder =>
+          `<button class="btn btn--medium" data-tribe-id="${folder.id}" style="margin: 0.5rem 0; width: 100%;">${folder.name}</button>`
+      )
+      .join('');
 
     const modalService = ModalService.getInstance();
     modalService.show({
@@ -610,7 +658,7 @@ export class NoteMenu {
       width: '400px',
       showCloseButton: true,
       closeOnOverlay: true,
-      closeOnEsc: true
+      closeOnEsc: true,
     });
 
     // Wait for modal to be in DOM
@@ -640,7 +688,12 @@ export class NoteMenu {
 
       // Add member to tribe as public (private tribes not supported via NoteMenu)
       // Note: addMember already emits 'tribe:updated', no need to emit again
-      await tribes.addMember(this.options.authorPubkey, false, tribeName, tribeFolderId);
+      await tribes.addMember(
+        this.options.authorPubkey,
+        false,
+        tribeName,
+        tribeFolderId
+      );
 
       ToastService.show(`Author added to ${tribeName}`, 'success');
     } catch (error) {

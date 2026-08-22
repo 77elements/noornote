@@ -37,7 +37,8 @@ export class VideoEditorView extends View {
   private systemLogger: SystemLogger;
   private _mediaApi?: MediaModuleApi | null;
   private get mediaApi(): MediaModuleApi | null {
-    return this._mediaApi ??= ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
+    return (this._mediaApi ??=
+      ModuleLoader.getInstance().getApi<MediaModuleApi>('media'));
   }
 
   // Sub-components
@@ -80,25 +81,24 @@ export class VideoEditorView extends View {
     this.selectedRelays = cfg.selectedRelays;
   }
 
-
   private render(): void {
     this.relaySelector = new RelaySelector({
       availableRelays: this.availableRelays,
       selectedRelays: this.selectedRelays,
       isTestMode: this.isTestMode,
-      onChange: (selectedRelays) => {
+      onChange: selectedRelays => {
         this.selectedRelays = selectedRelays;
         this.updateButtonStates();
-      }
+      },
     });
 
     this.toolbar = new PostEditorToolbar({
       // The video itself is uploaded separately; toolbar/paste media is inserted
       // into the description text (e.g. a thumbnail or extra image URL).
-      onMediaUploaded: (url) => this.insertAtCursor(url),
-      onEmojiSelected: (emoji) => this.insertAtCursor(emoji),
+      onMediaUploaded: url => this.insertAtCursor(url),
+      onEmojiSelected: emoji => this.insertAtCursor(emoji),
       textareaSelector: '.video-editor-description',
-      showPoll: false
+      showPoll: false,
     });
 
     this.container.innerHTML = `
@@ -259,13 +259,19 @@ export class VideoEditorView extends View {
 
     // Accordion toggle
     this.container.querySelectorAll('.nn-ui-toggle__header').forEach(header => {
-      header.addEventListener('click', () => header.closest('.nn-ui-toggle')?.classList.toggle('open'));
+      header.addEventListener('click', () =>
+        header.closest('.nn-ui-toggle')?.classList.toggle('open')
+      );
     });
 
     // Relay selector
-    const relaySelectorContainer = this.container.querySelector('.post-note-relay-selector');
+    const relaySelectorContainer = this.container.querySelector(
+      '.post-note-relay-selector'
+    );
     if (this.relaySelector && relaySelectorContainer) {
-      this.relaySelector.setupEventListeners(relaySelectorContainer as HTMLElement);
+      this.relaySelector.setupEventListeners(
+        relaySelectorContainer as HTMLElement
+      );
     }
 
     // Footer toolbar (emoji)
@@ -275,8 +281,14 @@ export class VideoEditorView extends View {
     }
 
     // Paste-to-upload into the video description.
-    const pasteTarget = this.container.querySelector('.video-editor-description') as HTMLElement | null;
-    if (pasteTarget) setupPasteUpload(pasteTarget, files => void this.toolbar?.handleFileUpload(files));
+    const pasteTarget = this.container.querySelector(
+      '.video-editor-description'
+    ) as HTMLElement | null;
+    if (pasteTarget)
+      setupPasteUpload(
+        pasteTarget,
+        files => void this.toolbar?.handleFileUpload(files)
+      );
 
     // Video upload zone
     this.setupVideoUpload();
@@ -289,9 +301,11 @@ export class VideoEditorView extends View {
     publishBtn?.addEventListener('click', () => this.handlePublish());
 
     // Kind toggle + remove video (delegated, since they appear after upload)
-    this.container.addEventListener('click', (e) => {
+    this.container.addEventListener('click', e => {
       const target = e.target as HTMLElement;
-      const action = target.closest('[data-action]')?.getAttribute('data-action');
+      const action = target
+        .closest('[data-action]')
+        ?.getAttribute('data-action');
       if (action === 'toggle-kind') this.handleToggleKind();
       if (action === 'remove-video') this.handleRemoveVideo();
     });
@@ -300,7 +314,7 @@ export class VideoEditorView extends View {
   private setupFieldListeners(): void {
     const fields = this.container.querySelectorAll('[data-field]');
     fields.forEach(field => {
-      field.addEventListener('input', (e) => {
+      field.addEventListener('input', e => {
         const target = e.target as HTMLInputElement | HTMLTextAreaElement;
         const fieldName = target.dataset.field;
 
@@ -316,14 +330,16 @@ export class VideoEditorView extends View {
 
   private setupVideoUpload(): void {
     const zone = this.container.querySelector('[data-action="upload-video"]');
-    const fileInput = this.container.querySelector('[data-video-file]') as HTMLInputElement;
+    const fileInput = this.container.querySelector(
+      '[data-video-file]'
+    ) as HTMLInputElement;
     if (!zone || !fileInput) return;
 
     // Click to upload
     zone.addEventListener('click', () => fileInput.click());
 
     // File selected
-    fileInput.addEventListener('change', async (e) => {
+    fileInput.addEventListener('change', async e => {
       const target = e.target as HTMLInputElement;
       const file = target.files?.[0];
       if (file) {
@@ -333,14 +349,14 @@ export class VideoEditorView extends View {
     });
 
     // Drag & drop
-    zone.addEventListener('dragover', (e) => {
+    zone.addEventListener('dragover', e => {
       e.preventDefault();
       zone.classList.add('video-editor__upload-zone--dragover');
     });
     zone.addEventListener('dragleave', () => {
       zone.classList.remove('video-editor__upload-zone--dragover');
     });
-    zone.addEventListener('drop', async (e) => {
+    zone.addEventListener('drop', async e => {
       e.preventDefault();
       zone.classList.remove('video-editor__upload-zone--dragover');
       const file = (e as DragEvent).dataTransfer?.files[0];
@@ -388,8 +404,10 @@ export class VideoEditorView extends View {
     }
   }
 
-  private detectVideoDimensions(file: File): Promise<{ width: number; height: number } | null> {
-    return new Promise((resolve) => {
+  private detectVideoDimensions(
+    file: File
+  ): Promise<{ width: number; height: number } | null> {
+    return new Promise(resolve => {
       const video = document.createElement('video');
       video.preload = 'metadata';
 
@@ -411,7 +429,9 @@ export class VideoEditorView extends View {
     if (!field) return;
 
     const label = field.querySelector('label');
-    const oldZone = field.querySelector('.video-editor__upload-zone, .video-editor__preview');
+    const oldZone = field.querySelector(
+      '.video-editor__upload-zone, .video-editor__preview'
+    );
     if (oldZone) {
       const temp = document.createElement('div');
       temp.innerHTML = this.renderUploadZone();
@@ -427,8 +447,12 @@ export class VideoEditorView extends View {
   }
 
   private setupThumbnailUpload(): void {
-    const uploadBtn = this.container.querySelector('[data-action="upload-thumbnail"]');
-    const fileInput = this.container.querySelector('[data-thumb-file]') as HTMLInputElement;
+    const uploadBtn = this.container.querySelector(
+      '[data-action="upload-thumbnail"]'
+    );
+    const fileInput = this.container.querySelector(
+      '[data-thumb-file]'
+    ) as HTMLInputElement;
 
     uploadBtn?.addEventListener('click', () => {
       if (!this.isThumbnailUploading) {
@@ -436,7 +460,7 @@ export class VideoEditorView extends View {
       }
     });
 
-    fileInput?.addEventListener('change', async (e) => {
+    fileInput?.addEventListener('change', async e => {
       const target = e.target as HTMLInputElement;
       const file = target.files?.[0];
       if (file) {
@@ -450,8 +474,12 @@ export class VideoEditorView extends View {
     if (!file.type.startsWith('image/') || this.isThumbnailUploading) return;
 
     this.isThumbnailUploading = true;
-    const uploadBtn = this.container.querySelector('[data-action="upload-thumbnail"]') as HTMLButtonElement;
-    const thumbInput = this.container.querySelector('[data-field="thumbnailUrl"]') as HTMLInputElement;
+    const uploadBtn = this.container.querySelector(
+      '[data-action="upload-thumbnail"]'
+    ) as HTMLButtonElement;
+    const thumbInput = this.container.querySelector(
+      '[data-field="thumbnailUrl"]'
+    ) as HTMLInputElement;
 
     if (uploadBtn) {
       uploadBtn.innerHTML = `
@@ -473,7 +501,11 @@ export class VideoEditorView extends View {
         this.systemLogger.info('VideoEditorView', 'Thumbnail uploaded');
       }
     } catch (error) {
-      this.systemLogger.error('VideoEditorView', 'Thumbnail upload failed:', error);
+      this.systemLogger.error(
+        'VideoEditorView',
+        'Thumbnail upload failed:',
+        error
+      );
     } finally {
       this.isThumbnailUploading = false;
       if (uploadBtn) {
@@ -507,7 +539,9 @@ export class VideoEditorView extends View {
   }
 
   private insertAtCursor(text: string): void {
-    const textarea = this.container.querySelector('.video-editor-description') as HTMLTextAreaElement;
+    const textarea = this.container.querySelector(
+      '.video-editor-description'
+    ) as HTMLTextAreaElement;
     if (!textarea) return;
     this.content = insertTextAtCursor(textarea, this.content, text);
   }
@@ -517,7 +551,9 @@ export class VideoEditorView extends View {
     const hasRelays = this.selectedRelays.size > 0;
     const isValid = hasVideo && hasRelays;
 
-    const publishBtn = this.container.querySelector('[data-action="publish"]') as HTMLButtonElement;
+    const publishBtn = this.container.querySelector(
+      '[data-action="publish"]'
+    ) as HTMLButtonElement;
     if (publishBtn) {
       publishBtn.disabled = !isValid || this.isPublishing;
     }
@@ -530,20 +566,25 @@ export class VideoEditorView extends View {
     this.isPublishing = true;
     this.updateButtonStates();
 
-    const btn = this.container.querySelector('[data-action="publish"]') as HTMLButtonElement;
+    const btn = this.container.querySelector(
+      '[data-action="publish"]'
+    ) as HTMLButtonElement;
     const originalText = btn?.textContent || '';
     if (btn) {
       btn.textContent = 'Publishing...';
     }
 
     try {
-      const topics = this.tags.split(',').map(t => t.trim()).filter(Boolean);
+      const topics = this.tags
+        .split(',')
+        .map(t => t.trim())
+        .filter(Boolean);
 
       const videoData: VideoOptions = {
         videoUrl: this.videoUrl,
         mimeType: this.videoMimeType || 'video/mp4',
         content: this.content,
-        relays: Array.from(this.selectedRelays)
+        relays: Array.from(this.selectedRelays),
       };
 
       if (this.videoDimensions) videoData.dimensions = this.videoDimensions;
@@ -552,7 +593,7 @@ export class VideoEditorView extends View {
       if (topics.length > 0) videoData.topics = topics;
       if (this.kindOverride) videoData.kindOverride = this.detectedKind;
 
-      const nevent = await this.mediaApi?.publishVideo(videoData) ?? null;
+      const nevent = (await this.mediaApi?.publishVideo(videoData)) ?? null;
 
       if (nevent) {
         ProfileCarouselOrchestrator.getInstance().invalidateForCurrentUser();

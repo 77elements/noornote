@@ -105,12 +105,14 @@ export class AccountStorageService {
       accounts[existingIndex] = {
         ...accounts[existingIndex],
         ...account,
-        lastUsedAt: Date.now()
+        lastUsedAt: Date.now(),
       };
     } else {
       // Check max accounts limit
       if (accounts.length >= this.MAX_ACCOUNTS) {
-        console.warn(`[AccountStorageService] Maximum accounts (${this.MAX_ACCOUNTS}) reached`);
+        console.warn(
+          `[AccountStorageService] Maximum accounts (${this.MAX_ACCOUNTS}) reached`
+        );
         // Remove oldest account (by lastUsedAt)
         accounts.sort((a, b) => a.lastUsedAt - b.lastUsedAt);
         accounts.shift();
@@ -120,7 +122,7 @@ export class AccountStorageService {
       accounts.push({
         ...account,
         addedAt: account.addedAt || Date.now(),
-        lastUsedAt: Date.now()
+        lastUsedAt: Date.now(),
       });
     }
 
@@ -142,7 +144,7 @@ export class AccountStorageService {
         authMethod: existing.authMethod,
         addedAt: existing.addedAt,
         lastUsedAt: existing.lastUsedAt,
-        ...updates
+        ...updates,
       };
       this.saveAccounts(accounts);
     }
@@ -233,9 +235,11 @@ export class AccountStorageService {
             npub: session.npub,
             authMethod: session.authMethod,
             addedAt: Date.now(),
-            lastUsedAt: Date.now()
+            lastUsedAt: Date.now(),
           });
-          console.log('[AccountStorageService] Migrated existing account to multi-account storage');
+          console.log(
+            '[AccountStorageService] Migrated existing account to multi-account storage'
+          );
         }
       }
 

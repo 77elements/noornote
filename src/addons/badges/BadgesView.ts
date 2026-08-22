@@ -13,7 +13,8 @@ export class BadgesView extends View {
   constructor() {
     super();
     this.container = document.createElement('div');
-    this.container.className = 'view-content view-content--addon view-content--addon-badges';
+    this.container.className =
+      'view-content view-content--addon view-content--addon-badges';
     this.render();
   }
 
@@ -31,7 +32,9 @@ export class BadgesView extends View {
     this.container.innerHTML = `
       <h1>Badges</h1>
       <section class="section" data-role="toggle-section"></section>
-      ${enabled ? `
+      ${
+        enabled
+          ? `
       <section class="section">
         <h2>Create Badge</h2>
         <div class="form__row">
@@ -63,16 +66,22 @@ export class BadgesView extends View {
         <h2>Your Badge Gallery</h2>
         <div data-role="gallery" class="pulsate">Loading…</div>
       </section>
-      ` : ''}
+      `
+          : ''
+      }
     `;
 
-    const toggleSection = this.container.querySelector('[data-role="toggle-section"]')!;
+    const toggleSection = this.container.querySelector(
+      '[data-role="toggle-section"]'
+    )!;
     const sw = new Switch({
       label: 'Enable Badges',
       checked: enabled,
-      onChange: (checked) => {
+      onChange: checked => {
         setBadgesEnabled(checked);
-        TypedEventBus.getInstance().emit('badges:addon-toggle', { enabled: checked });
+        TypedEventBus.getInstance().emit('badges:addon-toggle', {
+          enabled: checked,
+        });
         this.render();
       },
     });
@@ -86,8 +95,12 @@ export class BadgesView extends View {
   }
 
   private setupCreateForm(): void {
-    const uploadBtn = this.container.querySelector('[data-action="upload-image"]');
-    const fileInput = this.container.querySelector('[data-role="file-input"]') as HTMLInputElement | null;
+    const uploadBtn = this.container.querySelector(
+      '[data-action="upload-image"]'
+    );
+    const fileInput = this.container.querySelector(
+      '[data-role="file-input"]'
+    ) as HTMLInputElement | null;
     uploadBtn?.addEventListener('click', () => fileInput?.click());
     fileInput?.addEventListener('change', async () => {
       const file = fileInput.files?.[0];
@@ -96,16 +109,27 @@ export class BadgesView extends View {
         ToastService.show('Please select an image file', 'error');
         return;
       }
-      const status = this.container.querySelector('[data-role="upload-status"]') as HTMLElement | null;
-      if (status) { status.textContent = 'Uploading…'; status.classList.add('pulsate'); }
+      const status = this.container.querySelector(
+        '[data-role="upload-status"]'
+      ) as HTMLElement | null;
+      if (status) {
+        status.textContent = 'Uploading…';
+        status.classList.add('pulsate');
+      }
       try {
         const { ModuleLoader } = await import('../../core/ModuleLoader');
         type MediaApi = import('../../modules/media/contracts').MediaModuleApi;
-        const mediaApi = await ModuleLoader.getInstance().ensure<MediaApi>('media');
-        if (!mediaApi) { ToastService.show('Media module not available', 'error'); return; }
+        const mediaApi =
+          await ModuleLoader.getInstance().ensure<MediaApi>('media');
+        if (!mediaApi) {
+          ToastService.show('Media module not available', 'error');
+          return;
+        }
         const result = await mediaApi.uploadFile(file);
         if (result.success && result.url) {
-          const urlInput = this.container.querySelector('[data-field="imageUrl"]') as HTMLInputElement | null;
+          const urlInput = this.container.querySelector(
+            '[data-field="imageUrl"]'
+          ) as HTMLInputElement | null;
           if (urlInput) urlInput.value = result.url;
           ToastService.show('Image uploaded', 'success');
         } else {
@@ -114,7 +138,10 @@ export class BadgesView extends View {
       } catch (err) {
         ToastService.show((err as Error).message || 'Upload failed', 'error');
       } finally {
-        if (status) { status.textContent = ''; status.classList.remove('pulsate'); }
+        if (status) {
+          status.textContent = '';
+          status.classList.remove('pulsate');
+        }
       }
     });
 
@@ -122,10 +149,22 @@ export class BadgesView extends View {
     if (!btn) return;
 
     btn.addEventListener('click', async () => {
-      const slug = (this.container.querySelector('[data-field="slug"]') as HTMLInputElement)?.value.trim();
-      const name = (this.container.querySelector('[data-field="name"]') as HTMLInputElement)?.value.trim();
-      const description = (this.container.querySelector('[data-field="description"]') as HTMLTextAreaElement)?.value.trim();
-      const imageUrl = (this.container.querySelector('[data-field="imageUrl"]') as HTMLInputElement)?.value.trim();
+      const slug = (
+        this.container.querySelector('[data-field="slug"]') as HTMLInputElement
+      )?.value.trim();
+      const name = (
+        this.container.querySelector('[data-field="name"]') as HTMLInputElement
+      )?.value.trim();
+      const description = (
+        this.container.querySelector(
+          '[data-field="description"]'
+        ) as HTMLTextAreaElement
+      )?.value.trim();
+      const imageUrl = (
+        this.container.querySelector(
+          '[data-field="imageUrl"]'
+        ) as HTMLInputElement
+      )?.value.trim();
 
       if (!slug || !name) {
         ToastService.show('Slug and Name are required', 'error');
@@ -145,12 +184,26 @@ export class BadgesView extends View {
       });
 
       if (success) {
-        const slugInput = this.container.querySelector('[data-field="slug"]') as HTMLInputElement;
+        const slugInput = this.container.querySelector(
+          '[data-field="slug"]'
+        ) as HTMLInputElement;
         slugInput.value = '';
         slugInput.disabled = false;
-        (this.container.querySelector('[data-field="name"]') as HTMLInputElement).value = '';
-        (this.container.querySelector('[data-field="description"]') as HTMLTextAreaElement).value = '';
-        (this.container.querySelector('[data-field="imageUrl"]') as HTMLInputElement).value = '';
+        (
+          this.container.querySelector(
+            '[data-field="name"]'
+          ) as HTMLInputElement
+        ).value = '';
+        (
+          this.container.querySelector(
+            '[data-field="description"]'
+          ) as HTMLTextAreaElement
+        ).value = '';
+        (
+          this.container.querySelector(
+            '[data-field="imageUrl"]'
+          ) as HTMLInputElement
+        ).value = '';
         this.loadGallery();
       }
     });
@@ -167,7 +220,8 @@ export class BadgesView extends View {
 
     const defs = await this.badgeService.fetchOwnDefinitions();
     if (defs.length === 0) {
-      galleryEl.innerHTML = '<p style="color: var(--color-3)">No badges created yet.</p>';
+      galleryEl.innerHTML =
+        '<p style="color: var(--color-3)">No badges created yet.</p>';
       galleryEl.classList.remove('pulsate');
       return;
     }
@@ -179,9 +233,12 @@ export class BadgesView extends View {
     this.loadAwardeesForGallery(galleryEl as HTMLElement, defs);
   }
 
-  private setupGalleryActions(galleryEl: HTMLElement, defs: OwnBadgeDefinition[]): void {
+  private setupGalleryActions(
+    galleryEl: HTMLElement,
+    defs: OwnBadgeDefinition[]
+  ): void {
     galleryEl.querySelectorAll('[data-action="edit-badge"]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', e => {
         e.preventDefault();
         const slug = (btn as HTMLElement).dataset.slug;
         if (!slug) return;
@@ -192,15 +249,21 @@ export class BadgesView extends View {
     });
 
     galleryEl.querySelectorAll('[data-action="delete-badge"]').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
+      btn.addEventListener('click', async e => {
         e.preventDefault();
         const slug = (btn as HTMLElement).dataset.slug;
         if (!slug) return;
-        const user = (await import('../../services/AuthService')).AuthService.getInstance().getCurrentUser();
+        const user = (
+          await import('../../services/AuthService')
+        ).AuthService.getInstance().getCurrentUser();
         if (!user) return;
         const coordinate = `30009:${user.pubkey}:${slug}`;
         const { ModuleLoader } = await import('../../core/ModuleLoader');
-        const success = await (ModuleLoader.getInstance().getApi<import('../../modules/posts/contracts').PostsModuleApi>('posts')?.deleteByCoordinates([coordinate]) ?? Promise.resolve(false));
+        const success = await (ModuleLoader.getInstance()
+          .getApi<
+            import('../../modules/posts/contracts').PostsModuleApi
+          >('posts')
+          ?.deleteByCoordinates([coordinate]) ?? Promise.resolve(false));
         if (success) {
           ToastService.show('Badge deleted', 'success');
           this.loadGallery();
@@ -209,21 +272,31 @@ export class BadgesView extends View {
     });
   }
 
-  private async loadAwardeesForGallery(galleryEl: HTMLElement, defs: OwnBadgeDefinition[]): Promise<void> {
-    const { UserProfileService } = await import('../../services/UserProfileService');
+  private async loadAwardeesForGallery(
+    galleryEl: HTMLElement,
+    defs: OwnBadgeDefinition[]
+  ): Promise<void> {
+    const { UserProfileService } = await import(
+      '../../services/UserProfileService'
+    );
     const profileService = UserProfileService.getInstance();
-    const user = (await import('../../services/AuthService')).AuthService.getInstance().getCurrentUser();
+    const user = (
+      await import('../../services/AuthService')
+    ).AuthService.getInstance().getCurrentUser();
     if (!user || !this.badgeService) return;
 
     for (const def of defs) {
       const coordinate = `30009:${user.pubkey}:${def.slug}`;
       const awards = await this.badgeService.fetchAwardsForBadge(coordinate);
 
-      const awardeesMount = galleryEl.querySelector(`[data-awardees-slug="${def.slug}"]`);
+      const awardeesMount = galleryEl.querySelector(
+        `[data-awardees-slug="${def.slug}"]`
+      );
       if (!awardeesMount) continue;
 
       if (awards.length === 0) {
-        awardeesMount.innerHTML = '<span style="color:var(--color-3)">No recipients yet</span>';
+        awardeesMount.innerHTML =
+          '<span style="color:var(--color-3)">No recipients yet</span>';
         continue;
       }
 
@@ -242,7 +315,7 @@ export class BadgesView extends View {
       awardeesMount.innerHTML = entries.join('<br>');
 
       awardeesMount.querySelectorAll('.badge-revoke-link').forEach(link => {
-        link.addEventListener('click', async (e) => {
+        link.addEventListener('click', async e => {
           e.preventDefault();
           e.stopPropagation();
           const awardId = (link as HTMLElement).dataset.awardId;
@@ -258,12 +331,23 @@ export class BadgesView extends View {
   }
 
   private fillFormForEdit(def: OwnBadgeDefinition): void {
-    const slugInput = this.container.querySelector('[data-field="slug"]') as HTMLInputElement | null;
-    const nameInput = this.container.querySelector('[data-field="name"]') as HTMLInputElement | null;
-    const descInput = this.container.querySelector('[data-field="description"]') as HTMLTextAreaElement | null;
-    const imageInput = this.container.querySelector('[data-field="imageUrl"]') as HTMLInputElement | null;
+    const slugInput = this.container.querySelector(
+      '[data-field="slug"]'
+    ) as HTMLInputElement | null;
+    const nameInput = this.container.querySelector(
+      '[data-field="name"]'
+    ) as HTMLInputElement | null;
+    const descInput = this.container.querySelector(
+      '[data-field="description"]'
+    ) as HTMLTextAreaElement | null;
+    const imageInput = this.container.querySelector(
+      '[data-field="imageUrl"]'
+    ) as HTMLInputElement | null;
 
-    if (slugInput) { slugInput.value = def.slug; slugInput.disabled = true; }
+    if (slugInput) {
+      slugInput.value = def.slug;
+      slugInput.disabled = true;
+    }
     if (nameInput) nameInput.value = def.name;
     if (descInput) descInput.value = def.description;
     if (imageInput) imageInput.value = def.imageUrl ?? '';

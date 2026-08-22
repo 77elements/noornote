@@ -96,7 +96,10 @@ export class ZapService {
   /**
    * Fetch with timeout wrapper
    */
-  private async fetchWithTimeout(url: string, timeoutMs: number = 10000): Promise<Response> {
+  private async fetchWithTimeout(
+    url: string,
+    timeoutMs: number = 10000
+  ): Promise<Response> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -149,12 +152,18 @@ export class ZapService {
 
       // Standard WebLN returns { preimage: string }
       if (result && typeof result === 'object' && 'preimage' in result) {
-        return { success: true, preimage: (result as { preimage: string }).preimage };
+        return {
+          success: true,
+          preimage: (result as { preimage: string }).preimage,
+        };
       }
 
       return { success: false, error: 'Unexpected WebLN response' };
     } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : 'WebLN payment failed' };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'WebLN payment failed',
+      };
     }
   }
 
@@ -174,7 +183,11 @@ export class ZapService {
   /**
    * Send quick zap with default amount and comment from settings
    */
-  public async sendQuickZap(noteId: string, authorPubkey: string, articleEventId?: string): Promise<ZapResult> {
+  public async sendQuickZap(
+    noteId: string,
+    authorPubkey: string,
+    articleEventId?: string
+  ): Promise<ZapResult> {
     const connectionError = await this.checkPaymentAvailability();
     if (connectionError) return connectionError;
 
@@ -184,7 +197,7 @@ export class ZapService {
       noteId,
       authorPubkey,
       amount: defaults.amount,
-      comment: defaults.comment
+      comment: defaults.comment,
     };
     if (articleEventId) zapRequest.articleEventId = articleEventId;
 
@@ -233,14 +246,18 @@ export class ZapService {
       // Wrap entire zap flow in 45-second timeout (payment + 15s receipt verification)
       const zapPromise = this.executeZapFlow(request);
       const timeoutPromise = new Promise<ZapResult>((_, reject) => {
-        setTimeout(() => reject(new Error('Zap timeout after 45 seconds')), 45000);
+        setTimeout(
+          () => reject(new Error('Zap timeout after 45 seconds')),
+          45000
+        );
       });
 
       return await Promise.race([zapPromise, timeoutPromise]);
     } catch (error) {
       this.systemLogger.error('ZapService', 'Zap flow failed', error);
 
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       const isTimeout = errorMessage.includes('timeout');
 
       ToastService.show(
@@ -250,7 +267,7 @@ export class ZapService {
 
       return {
         success: false,
-        error: errorMessage
+        error: errorMessage,
       };
     }
   }
@@ -274,7 +291,11 @@ export class ZapService {
     }
 
     // Step 3: Fetch invoice from LNURL callback
-    const invoice = await this.fetchInvoice(lnurl, zapRequestEvent, request.amount);
+    const invoice = await this.fetchInvoice(
+      lnurl,
+      zapRequestEvent,
+      request.amount
+    );
     if (!invoice) {
       ToastService.show('Failed to fetch invoice', 'error');
       return { success: false, error: 'Failed to fetch invoice' };
@@ -301,11 +322,15 @@ export class ZapService {
     }
 
     if (!paymentResult.success) {
-      this.systemLogger.error('ZapService', 'Payment failed', paymentResult.error);
+      this.systemLogger.error(
+        'ZapService',
+        'Payment failed',
+        paymentResult.error
+      );
       ToastService.show('Payment failed', 'error');
       return {
         success: false,
-        error: paymentResult.error || 'Payment failed'
+        error: paymentResult.error || 'Payment failed',
       };
     }
 
@@ -320,18 +345,21 @@ export class ZapService {
     ToastService.show(`${request.amount} sats zapped`, 'success');
 
     // Step 5: Verify zap receipt in background (don't await - let stats update naturally)
-    this.waitForZapReceipt(invoice, request.authorPubkey).then((verified) => {
+    this.waitForZapReceipt(invoice, request.authorPubkey).then(verified => {
       if (verified) {
         this.systemLogger.info('ZapService', 'Zap receipt verified on relays');
       } else {
-        this.systemLogger.warn('ZapService', 'Zap receipt not found on relays (payment was successful though)');
+        this.systemLogger.warn(
+          'ZapService',
+          'Zap receipt not found on relays (payment was successful though)'
+        );
       }
     });
 
     const result: ZapResult = {
       success: true,
       invoice,
-      amount: request.amount
+      amount: request.amount,
     };
     if (paymentResult.preimage) result.preimage = paymentResult.preimage;
     return result;
@@ -345,35 +373,58 @@ export class ZapService {
   private async getLNURLFromProfile(pubkey: string): Promise<string | null> {
     try {
       // Step 1: Try to get profile from standard relays
-      let profile = await this.userProfileService.getUserProfile(pubkey);
+      const profile = await this.userProfileService.getUserProfile(pubkey);
 
       // Step 2: Check if profile exists AND has lud16/lud06 (nip05 as fallback)
       let lightningProfile: ProfileWithLightning | null = null;
       if (profile) {
         lightningProfile = { pubkey: profile.pubkey };
         if (profile.lud16) lightningProfile.lud16 = profile.lud16;
-        else if (!profile.lud06 && profile.nip05 && profile.nip05.includes('@')) {
+        else if (
+          !profile.lud06 &&
+          profile.nip05 &&
+          profile.nip05.includes('@')
+        ) {
           lightningProfile.lud16 = profile.nip05;
         }
         if (profile.lud06) lightningProfile.lud06 = profile.lud06;
         if (profile.name) lightningProfile.name = profile.name;
-        if (profile.display_name) lightningProfile.display_name = profile.display_name;
+        if (profile.display_name)
+          lightningProfile.display_name = profile.display_name;
       }
 
-      if (!lightningProfile || (!lightningProfile.lud16 && !lightningProfile.lud06)) {
-        this.systemLogger.info('ZapService', 'No profile or lud16/lud06 found in standard relays, trying user\'s outbound relays...');
+      if (
+        !lightningProfile ||
+        (!lightningProfile.lud16 && !lightningProfile.lud06)
+      ) {
+        this.systemLogger.info(
+          'ZapService',
+          "No profile or lud16/lud06 found in standard relays, trying user's outbound relays..."
+        );
 
         // FALLBACK: Fetch profile from user's outbound relays
         lightningProfile = await this.fetchProfileFromUserRelays(pubkey);
 
-        if (!lightningProfile || (!lightningProfile.lud16 && !lightningProfile.lud06)) {
-          this.systemLogger.warn('ZapService', 'No lud16/lud06 found in user\'s relays either');
+        if (
+          !lightningProfile ||
+          (!lightningProfile.lud16 && !lightningProfile.lud06)
+        ) {
+          this.systemLogger.warn(
+            'ZapService',
+            "No lud16/lud06 found in user's relays either"
+          );
           return null;
         }
 
-        this.systemLogger.info('ZapService', `Found lud16/lud06 in user's relays: ${lightningProfile.lud16 || lightningProfile.lud06}`);
+        this.systemLogger.info(
+          'ZapService',
+          `Found lud16/lud06 in user's relays: ${lightningProfile.lud16 || lightningProfile.lud06}`
+        );
       } else {
-        this.systemLogger.info('ZapService', `Profile found in standard relays: lud16=${lightningProfile.lud16}, lud06=${lightningProfile.lud06}`);
+        this.systemLogger.info(
+          'ZapService',
+          `Profile found in standard relays: lud16=${lightningProfile.lud16}, lud06=${lightningProfile.lud06}`
+        );
       }
 
       // Step 3: Get zap endpoint (callback + lnurl)
@@ -390,7 +441,11 @@ export class ZapService {
       // Return the callback URL
       return zapEndpoint.callback;
     } catch (error) {
-      this.systemLogger.error('ZapService', 'Failed to get LNURL from profile', error);
+      this.systemLogger.error(
+        'ZapService',
+        'Failed to get LNURL from profile',
+        error
+      );
       return null;
     }
   }
@@ -399,40 +454,67 @@ export class ZapService {
    * FALLBACK: Fetch profile from user's outbound relays (Kind 10002 → Kind 0)
    * Only called when lud16/lud06 is missing from standard relay profile
    */
-  private async fetchProfileFromUserRelays(pubkey: string): Promise<ProfileWithLightning | null> {
+  private async fetchProfileFromUserRelays(
+    pubkey: string
+  ): Promise<ProfileWithLightning | null> {
     try {
       // Step 1: Fetch user's outbound relays (Kind 10002)
-      const userRelays = await this.outboundRelaysFetcher.discoverUserRelays([pubkey]);
+      const userRelays = await this.outboundRelaysFetcher.discoverUserRelays([
+        pubkey,
+      ]);
       const firstRelay = userRelays[0];
 
       if (!firstRelay || firstRelay.writeRelays.length === 0) {
-        this.systemLogger.warn('ZapService', 'No outbound relays found for user');
+        this.systemLogger.warn(
+          'ZapService',
+          'No outbound relays found for user'
+        );
         return null;
       }
 
-      this.systemLogger.info('ZapService', `Found ${firstRelay.writeRelays.length} outbound relays`);
+      this.systemLogger.info(
+        'ZapService',
+        `Found ${firstRelay.writeRelays.length} outbound relays`
+      );
 
       // Step 2: Fetch kind:0 from the author's write relays via the sanctioned
       // orchestrator path (hints-first fetch; dedup + timeouts handled there).
       // This replaces a hand-rolled raw subscription whose 100ms polling
       // interval leaked on timeout and blocked the zap flow for a fixed 5s.
-      const profile = await ProfileOrchestrator.getInstance().fetchProfile(pubkey, firstRelay.writeRelays);
+      const profile = await ProfileOrchestrator.getInstance().fetchProfile(
+        pubkey,
+        firstRelay.writeRelays
+      );
       if (!profile) {
-        this.systemLogger.warn('ZapService', 'No profile found in user\'s relays');
+        this.systemLogger.warn(
+          'ZapService',
+          "No profile found in user's relays"
+        );
         return null;
       }
 
-      this.systemLogger.info('ZapService', `Profile fetched from user's relays`);
+      this.systemLogger.info(
+        'ZapService',
+        `Profile fetched from user's relays`
+      );
 
       const lightning: ProfileWithLightning = { pubkey };
-      const lud16 = profile.lud16 || (!profile.lud06 && profile.nip05?.includes('@') ? profile.nip05 : undefined);
+      const lud16 =
+        profile.lud16 ||
+        (!profile.lud06 && profile.nip05?.includes('@')
+          ? profile.nip05
+          : undefined);
       if (lud16) lightning.lud16 = lud16;
       if (profile.lud06) lightning.lud06 = profile.lud06;
       if (profile.name) lightning.name = profile.name;
       if (profile.display_name) lightning.display_name = profile.display_name;
       return lightning;
     } catch (error) {
-      this.systemLogger.error('ZapService', 'Failed to fetch profile from user relays', error);
+      this.systemLogger.error(
+        'ZapService',
+        'Failed to fetch profile from user relays',
+        error
+      );
       return null;
     }
   }
@@ -452,14 +534,24 @@ export class ZapService {
       if (profile.lud16 && profile.lud16.includes('@')) {
         const [name, domain] = profile.lud16.split('@');
         if (!name || !domain) {
-          this.systemLogger.warn('ZapService', 'Invalid lud16 format', profile.lud16);
+          this.systemLogger.warn(
+            'ZapService',
+            'Invalid lud16 format',
+            profile.lud16
+          );
           return null;
         }
-        lnurl = new URL(`/.well-known/lnurlp/${name}`, `https://${domain}`).toString();
+        lnurl = new URL(
+          `/.well-known/lnurlp/${name}`,
+          `https://${domain}`
+        ).toString();
       }
       // lud06 (legacy LNURL) not supported - modern wallets use lud16
       else if (profile.lud06) {
-        this.systemLogger.warn('ZapService', 'lud06 not supported, use lud16 (Lightning Address)');
+        this.systemLogger.warn(
+          'ZapService',
+          'lud06 not supported, use lud16 (Lightning Address)'
+        );
         return null;
       } else {
         this.systemLogger.warn('ZapService', 'No lud16 or lud06 in profile');
@@ -480,10 +572,17 @@ export class ZapService {
         return { callback: body.callback, lnurl };
       }
 
-      this.systemLogger.warn('ZapService', 'LNURL does not support Nostr zaps (allowsNostr or nostrPubkey missing)');
+      this.systemLogger.warn(
+        'ZapService',
+        'LNURL does not support Nostr zaps (allowsNostr or nostrPubkey missing)'
+      );
       return null;
     } catch (error) {
-      this.systemLogger.error('ZapService', 'Failed to get zap endpoint', error);
+      this.systemLogger.error(
+        'ZapService',
+        'Failed to get zap endpoint',
+        error
+      );
       return null;
     }
   }
@@ -494,7 +593,10 @@ export class ZapService {
    * NORMAL NOTES: Uses #e tag with event ID
    * LONG-FORM ARTICLES: Uses #a tag with addressable identifier AND #e tag with event ID
    */
-  private async createZapRequestEvent(request: ZapRequest, lnurl: string): Promise<NostrEvent | null> {
+  private async createZapRequestEvent(
+    request: ZapRequest,
+    lnurl: string
+  ): Promise<NostrEvent | null> {
     try {
       const currentUser = this.authService.getCurrentUser();
       if (!currentUser) {
@@ -524,7 +626,10 @@ export class ZapService {
           if (request.articleEventId) {
             tags.push(['e', request.articleEventId]);
           }
-          this.systemLogger.info('ZapService', `Creating zap request for article: #a=${request.noteId}, #e=${request.articleEventId || 'none'}`);
+          this.systemLogger.info(
+            'ZapService',
+            `Creating zap request for article: #a=${request.noteId}, #e=${request.articleEventId || 'none'}`
+          );
         } else {
           // NORMAL NOTE: Use #e tag with event ID
           tags.push(['e', request.noteId]);
@@ -543,12 +648,15 @@ export class ZapService {
         // finalizeEvent derives the pubkey internally from ephPriv — we just
         // need to keep ephPriv alive for that one call, then let it fall out
         // of scope so it's GC-eligible. Nothing else may reference it.
-        const anonEvent = finalizeEvent({
-          kind: 9734,
-          created_at: Math.floor(Date.now() / 1000),
-          tags,
-          content: request.comment || '',
-        }, ephPriv);
+        const anonEvent = finalizeEvent(
+          {
+            kind: 9734,
+            created_at: Math.floor(Date.now() / 1000),
+            tags,
+            content: request.comment || '',
+          },
+          ephPriv
+        );
 
         // Do NOT log the ephemeral pubkey or event id — that would give a
         // filesystem-access attacker a correlation path despite the anon signature.
@@ -562,13 +670,17 @@ export class ZapService {
         created_at: Math.floor(Date.now() / 1000),
         tags,
         content: request.comment || '',
-        pubkey: currentUser.pubkey
+        pubkey: currentUser.pubkey,
       };
 
       // Sign event
       return this.authService.signEvent(unsignedEvent);
     } catch (error) {
-      this.systemLogger.error('ZapService', 'Failed to create zap request event', error);
+      this.systemLogger.error(
+        'ZapService',
+        'Failed to create zap request event',
+        error
+      );
       ErrorService.handle(
         error,
         'ZapService.createZapRequestEvent',
@@ -620,25 +732,33 @@ export class ZapService {
    * Verifies that LNURL server published the zap receipt
    * Note: This is background verification - payment success is already confirmed
    */
-  private async waitForZapReceipt(invoice: string, recipientPubkey: string): Promise<boolean> {
-    return new Promise(async (resolve) => {
+  private async waitForZapReceipt(
+    invoice: string,
+    recipientPubkey: string
+  ): Promise<boolean> {
+    return new Promise(async resolve => {
       try {
         const relays = this.relayConfig.getReadRelays();
 
         // Subscribe to zap receipts (kind 9735) for recipient in last minute
         const oneMinuteAgo = Math.floor(Date.now() / 1000) - 60;
 
-        this.systemLogger.info('ZapService', `Subscribing to zap receipts for ${recipientPubkey.slice(0, 8)}...`);
+        this.systemLogger.info(
+          'ZapService',
+          `Subscribing to zap receipts for ${recipientPubkey.slice(0, 8)}...`
+        );
 
         const verificationService = SignatureVerificationService.getInstance();
 
         const sub = await this.nostrTransport.subscribe(
           relays,
-          [{
-            kinds: [9735], // Zap receipt
-            '#p': [recipientPubkey], // Recipient pubkey
-            since: oneMinuteAgo
-          }],
+          [
+            {
+              kinds: [9735], // Zap receipt
+              '#p': [recipientPubkey], // Recipient pubkey
+              since: oneMinuteAgo,
+            },
+          ],
           {
             onEvent: (event: NostrEvent) => {
               const eventId = event.id;
@@ -647,11 +767,17 @@ export class ZapService {
               // Security: Verify signature before processing (external source)
               const verification = verificationService.verifyEvent(event);
               if (!verification.valid) {
-                this.systemLogger.warn('ZapService', `Rejected invalid zap receipt ${eventId.slice(0, 8)}: ${verification.error}`);
+                this.systemLogger.warn(
+                  'ZapService',
+                  `Rejected invalid zap receipt ${eventId.slice(0, 8)}: ${verification.error}`
+                );
                 return;
               }
 
-              this.systemLogger.info('ZapService', `Received zap receipt event ${eventId.slice(0, 8)}`);
+              this.systemLogger.info(
+                'ZapService',
+                `Received zap receipt event ${eventId.slice(0, 8)}`
+              );
               // Extract bolt11 invoice from zap receipt
               const boltTag = event.tags.find(tag => tag[0] === 'bolt11');
               if (boltTag && boltTag[1] === invoice) {
@@ -661,8 +787,11 @@ export class ZapService {
               }
             },
             onEose: () => {
-              this.systemLogger.info('ZapService', 'EOSE received, zap receipts loaded');
-            }
+              this.systemLogger.info(
+                'ZapService',
+                'EOSE received, zap receipts loaded'
+              );
+            },
           }
         );
 
@@ -673,7 +802,11 @@ export class ZapService {
           resolve(false);
         }, 15000);
       } catch (error) {
-        this.systemLogger.error('ZapService', 'Failed to subscribe to zap receipts', error);
+        this.systemLogger.error(
+          'ZapService',
+          'Failed to subscribe to zap receipts',
+          error
+        );
         resolve(false);
       }
     });
@@ -690,13 +823,17 @@ export class ZapService {
         return stored;
       }
     } catch (error) {
-      this.systemLogger.warn('ZapService', 'Failed to load zap defaults', error);
+      this.systemLogger.warn(
+        'ZapService',
+        'Failed to load zap defaults',
+        error
+      );
     }
 
     // Default values
     return {
       amount: 21,
-      comment: ''
+      comment: '',
     };
   }
 
@@ -705,10 +842,15 @@ export class ZapService {
    * Format: zap_{userPubkey}_{noteId} = amount (in sats)
    */
   private storeUserZap(noteId: string, amount: number): void {
-    const zaps = PerAccountLocalStorage.getInstance().get<Record<string, number>>(StorageKeys.USER_ZAPS, {});
+    const zaps = PerAccountLocalStorage.getInstance().get<
+      Record<string, number>
+    >(StorageKeys.USER_ZAPS, {});
     zaps[noteId] = amount;
     PerAccountLocalStorage.getInstance().set(StorageKeys.USER_ZAPS, zaps);
-    this.systemLogger.info('ZapService', `Stored zap: ${amount} sats for note ${noteId.slice(0, 8)}`);
+    this.systemLogger.info(
+      'ZapService',
+      `Stored zap: ${amount} sats for note ${noteId.slice(0, 8)}`
+    );
   }
 
   /** Cap on the per-account ring buffer of own anonymous-zap invoices. */
@@ -735,8 +877,10 @@ export class ZapService {
    * leaking that information to other viewers.
    */
   public isOwnAnonZapInvoice(invoice: string): boolean {
-    const list = PerAccountLocalStorage.getInstance()
-      .get<string[]>(StorageKeys.OWN_ANON_ZAP_INVOICES, []);
+    const list = PerAccountLocalStorage.getInstance().get<string[]>(
+      StorageKeys.OWN_ANON_ZAP_INVOICES,
+      []
+    );
     return list.includes(invoice);
   }
 
@@ -745,7 +889,9 @@ export class ZapService {
    * Returns 0 if user has not zapped this note
    */
   public getUserZapAmount(noteId: string): number {
-    const zaps = PerAccountLocalStorage.getInstance().get<Record<string, number>>(StorageKeys.USER_ZAPS, {});
+    const zaps = PerAccountLocalStorage.getInstance().get<
+      Record<string, number>
+    >(StorageKeys.USER_ZAPS, {});
     return zaps[noteId] || 0;
   }
 

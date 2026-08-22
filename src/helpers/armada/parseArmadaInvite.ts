@@ -32,7 +32,11 @@ function naddrToSigner(naddr: string): string | undefined {
   try {
     const decoded = decodeNip19(naddr);
     if (decoded.type !== 'naddr') return undefined;
-    if (decoded.data.kind !== INVITE_BUNDLE_KIND || decoded.data.identifier !== '') return undefined;
+    if (
+      decoded.data.kind !== INVITE_BUNDLE_KIND ||
+      decoded.data.identifier !== ''
+    )
+      return undefined;
     return decoded.data.pubkey;
   } catch {
     return undefined;
@@ -63,7 +67,9 @@ export function parseArmadaInvite(input: string): ArmadaInvite | undefined {
       return undefined;
     }
     if (!url.pathname.startsWith(INVITE_PATH_PREFIX)) return undefined;
-    naddr = decodeURIComponent(url.pathname.slice(INVITE_PATH_PREFIX.length)).replace(/\/$/, '');
+    naddr = decodeURIComponent(
+      url.pathname.slice(INVITE_PATH_PREFIX.length)
+    ).replace(/\/$/, '');
     fragment = url.hash.replace(/^#/, '');
   }
 
@@ -73,7 +79,13 @@ export function parseArmadaInvite(input: string): ArmadaInvite | undefined {
 
   const openUrl = `${ARMADA_INVITE_BASE}${naddr}${fragment ? `#${fragment}` : ''}`;
 
-  return { naddr, linkSigner, fragment, openUrl, missingSecret: fragment.length === 0 };
+  return {
+    naddr,
+    linkSigner,
+    fragment,
+    openUrl,
+    missingSecret: fragment.length === 0,
+  };
 }
 
 /** Whether `input` is a community invite link (with or without its `#fragment`). */

@@ -7,7 +7,11 @@
  * CRITICAL: Lists from Account A must NEVER appear under Account B!
  */
 
-import { PerAccountLocalStorage, StorageKeys, type StorageKey } from '../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+  type StorageKey,
+} from '../services/PerAccountLocalStorage';
 import { diagLog } from '../services/DiagnosticLogger';
 
 export { StorageKeys };
@@ -64,14 +68,20 @@ export function deduplicateById<T extends { id: string }>(items: T[]): T[] {
 /**
  * Deduplicate items by pubkey
  */
-export function deduplicateByPubkey<T extends { pubkey: string }>(items: T[]): T[] {
+export function deduplicateByPubkey<T extends { pubkey: string }>(
+  items: T[]
+): T[] {
   return deduplicateByKey(items, 'pubkey');
 }
 
 /**
  * Merge two arrays by key (union, browser items take priority on duplicates)
  */
-export function mergeByKey<T, K extends keyof T>(browserItems: T[], newItems: T[], key: K): T[] {
+export function mergeByKey<T, K extends keyof T>(
+  browserItems: T[],
+  newItems: T[],
+  key: K
+): T[] {
   const map = new Map<T[K], T>();
   browserItems.forEach(item => map.set(item[key], item));
   newItems.forEach(item => {
@@ -85,7 +95,10 @@ export function mergeByKey<T, K extends keyof T>(browserItems: T[], newItems: T[
 /**
  * Merge two string arrays (union)
  */
-export function mergeStringArrays(browserItems: string[], newItems: string[]): string[] {
+export function mergeStringArrays(
+  browserItems: string[],
+  newItems: string[]
+): string[] {
   const set = new Set(browserItems);
   newItems.forEach(item => set.add(item));
   return Array.from(set);
@@ -115,9 +128,11 @@ export function getListLastModified(listType: ListType): number {
   return getStorage().get<number>(LIST_TIMESTAMP_KEYS[listType], 0);
 }
 
-export function setListLastModified(listType: ListType, timestamp?: number): void {
+export function setListLastModified(
+  listType: ListType,
+  timestamp?: number
+): void {
   const ts = timestamp ?? now();
   getStorage().set(LIST_TIMESTAMP_KEYS[listType], ts);
   diagLog('lists', `setListLastModified(${listType})`, { timestamp: ts });
 }
-

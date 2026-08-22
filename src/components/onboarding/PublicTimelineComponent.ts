@@ -13,7 +13,12 @@ import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { NoteUI } from '../ui/NoteUI';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
 import { RefreshButton } from '../ui/RefreshButton';
-import { createConfrontationInterstitial, createBoldMinimalInterstitial, createGetPaidInterstitial, createWakeUpInterstitial } from './WelcomeInterstitials';
+import {
+  createConfrontationInterstitial,
+  createBoldMinimalInterstitial,
+  createGetPaidInterstitial,
+  createWakeUpInterstitial,
+} from './WelcomeInterstitials';
 import { STARTER_ACCOUNTS } from '../../services/orchestration/configs/StarterAccountsConfig';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
 
@@ -65,7 +70,7 @@ export class PublicTimelineComponent {
     this.container.appendChild(this.noteContainer);
 
     this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
-      loadingMessage: 'Loading more notes...'
+      loadingMessage: 'Loading more notes...',
     });
 
     this.infiniteScroll.observe(this.noteContainer);
@@ -77,7 +82,8 @@ export class PublicTimelineComponent {
    */
   private async loadInitial(): Promise<void> {
     if (CURATED_PUBKEYS.length === 0) {
-      this.noteContainer.innerHTML = '<p class="public-timeline__empty">Timeline coming soon.</p>';
+      this.noteContainer.innerHTML =
+        '<p class="public-timeline__empty">Timeline coming soon.</p>';
       return;
     }
 
@@ -86,24 +92,35 @@ export class PublicTimelineComponent {
 
     try {
       const relays = this.relayConfig.getAggregatorRelays();
-      const filters: NDKFilter[] = [{
-        authors: CURATED_PUBKEYS,
-        kinds: [1],
-        limit: 30
-      }];
+      const filters: NDKFilter[] = [
+        {
+          authors: CURATED_PUBKEYS,
+          kinds: [1],
+          limit: 30,
+        },
+      ];
 
-      const events = await this.transport.fetch(relays, filters, 8000, false, 'PublicTimeline');
+      const events = await this.transport.fetch(
+        relays,
+        filters,
+        8000,
+        false,
+        'PublicTimeline'
+      );
       const filtered = this.filterAndSort(events);
 
       if (filtered.length > 0) {
         this.events = filtered;
-        ModuleLoader.getInstance().getApi<PostsModuleApi>('posts')?.registerNotes(filtered);
+        ModuleLoader.getInstance()
+          .getApi<PostsModuleApi>('posts')
+          ?.registerNotes(filtered);
         this.newestTimestamp = filtered[0]!.created_at;
         this.oldestTimestamp = filtered[filtered.length - 1]!.created_at;
         this.renderNotes(filtered);
         this.startPolling();
       } else {
-        this.noteContainer.innerHTML = '<p class="public-timeline__empty">No notes found yet.</p>';
+        this.noteContainer.innerHTML =
+          '<p class="public-timeline__empty">No notes found yet.</p>';
       }
     } catch (error) {
       console.error('[PublicTimeline] Initial load failed:', error);
@@ -127,21 +144,31 @@ export class PublicTimelineComponent {
     try {
       const relays = this.relayConfig.getAggregatorRelays();
       const timeWindowSeconds = 3 * 3600; // 3h chunks
-      const filters: NDKFilter[] = [{
-        authors: CURATED_PUBKEYS,
-        kinds: [1],
-        until: this.oldestTimestamp - 1,
-        since: this.oldestTimestamp - timeWindowSeconds,
-        limit: 30
-      }];
+      const filters: NDKFilter[] = [
+        {
+          authors: CURATED_PUBKEYS,
+          kinds: [1],
+          until: this.oldestTimestamp - 1,
+          since: this.oldestTimestamp - timeWindowSeconds,
+          limit: 30,
+        },
+      ];
 
-      const events = await this.transport.fetch(relays, filters, 8000, false, 'PublicTimeline');
+      const events = await this.transport.fetch(
+        relays,
+        filters,
+        8000,
+        false,
+        'PublicTimeline'
+      );
       const filtered = this.filterAndSort(events);
       const newEvents = this.deduplicateAgainstExisting(filtered);
 
       if (newEvents.length > 0) {
         this.events.push(...newEvents);
-        ModuleLoader.getInstance().getApi<PostsModuleApi>('posts')?.registerNotes(newEvents);
+        ModuleLoader.getInstance()
+          .getApi<PostsModuleApi>('posts')
+          ?.registerNotes(newEvents);
         this.oldestTimestamp = newEvents[newEvents.length - 1]!.created_at;
         this.renderNotes(newEvents);
       } else {
@@ -162,7 +189,9 @@ export class PublicTimelineComponent {
    * Render notes into the container, inserting interstitials every 15 notes
    */
   private renderNotes(events: NostrEvent[]): void {
-    const sentinel = this.noteContainer.querySelector('.infinite-scroll-sentinel');
+    const sentinel = this.noteContainer.querySelector(
+      '.infinite-scroll-sentinel'
+    );
 
     for (const event of events) {
       const noteEl = NoteUI.createNoteElement(event, {
@@ -170,7 +199,7 @@ export class PublicTimelineComponent {
         islFetchStats: false,
         isLoggedIn: false,
         headerSize: 'medium',
-        depth: 0
+        depth: 0,
       });
 
       if (sentinel) {
@@ -182,8 +211,10 @@ export class PublicTimelineComponent {
       this.totalRenderedNotes++;
 
       // Insert interstitial at every 15-note boundary
-      if (this.interstitialsShown < MAX_INTERSTITIALS &&
-          this.totalRenderedNotes % INTERSTITIAL_INTERVAL === 0) {
+      if (
+        this.interstitialsShown < MAX_INTERSTITIALS &&
+        this.totalRenderedNotes % INTERSTITIAL_INTERVAL === 0
+      ) {
         const interstitial = INTERSTITIAL_FACTORIES[this.interstitialsShown]!();
         if (sentinel) {
           this.noteContainer.insertBefore(interstitial, sentinel);
@@ -226,7 +257,10 @@ export class PublicTimelineComponent {
    * Start polling for new notes every 60 seconds
    */
   private startPolling(): void {
-    this.pollingIntervalId = window.setInterval(() => this.poll(), POLLING_INTERVAL);
+    this.pollingIntervalId = window.setInterval(
+      () => this.poll(),
+      POLLING_INTERVAL
+    );
   }
 
   /**
@@ -237,14 +271,22 @@ export class PublicTimelineComponent {
 
     try {
       const relays = this.relayConfig.getAggregatorRelays();
-      const filters: NDKFilter[] = [{
-        authors: CURATED_PUBKEYS,
-        kinds: [1],
-        since: this.newestTimestamp + 1,
-        limit: 50
-      }];
+      const filters: NDKFilter[] = [
+        {
+          authors: CURATED_PUBKEYS,
+          kinds: [1],
+          since: this.newestTimestamp + 1,
+          limit: 50,
+        },
+      ];
 
-      const events = await this.transport.fetch(relays, filters, 5000, false, 'PublicTimeline');
+      const events = await this.transport.fetch(
+        relays,
+        filters,
+        5000,
+        false,
+        'PublicTimeline'
+      );
       const filtered = this.filterAndSort(events);
       const newEvents = this.deduplicateAgainstExisting(filtered);
 
@@ -274,9 +316,11 @@ export class PublicTimelineComponent {
         this.refreshButton = new RefreshButton({
           newNotesCount: this.polledEvents.length,
           authorPubkeys,
-          onClick: () => this.handleRefreshClick()
+          onClick: () => this.handleRefreshClick(),
         });
-        const refreshSlot = this.container.closest('.public-timeline')?.querySelector('.public-timeline__refresh-slot');
+        const refreshSlot = this.container
+          .closest('.public-timeline')
+          ?.querySelector('.public-timeline__refresh-slot');
         if (refreshSlot) {
           refreshSlot.appendChild(this.refreshButton.getElement());
         } else {
@@ -302,18 +346,22 @@ export class PublicTimelineComponent {
     // Update timestamps and state
     this.newestTimestamp = this.polledEvents[0]!.created_at;
     this.events.unshift(...this.polledEvents);
-    ModuleLoader.getInstance().getApi<PostsModuleApi>('posts')?.registerNotes(this.polledEvents);
+    ModuleLoader.getInstance()
+      .getApi<PostsModuleApi>('posts')
+      ?.registerNotes(this.polledEvents);
 
     // Prepend to DOM using fragment (same pattern as TimelineRenderer)
     const fragment = document.createDocumentFragment();
     for (const event of this.polledEvents) {
-      fragment.appendChild(NoteUI.createNoteElement(event, {
-        collapsible: true,
-        islFetchStats: false,
-        isLoggedIn: false,
-        headerSize: 'medium',
-        depth: 0
-      }));
+      fragment.appendChild(
+        NoteUI.createNoteElement(event, {
+          collapsible: true,
+          islFetchStats: false,
+          isLoggedIn: false,
+          headerSize: 'medium',
+          depth: 0,
+        })
+      );
     }
     this.noteContainer.insertBefore(fragment, this.noteContainer.firstChild);
 

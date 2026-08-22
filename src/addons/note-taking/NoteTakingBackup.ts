@@ -11,7 +11,12 @@
 import { PlatformService } from '../../services/PlatformService';
 import { AuthService } from '../../services/AuthService';
 import { ToastService } from '../../services/ToastService';
-import { writeJsonFile, readJsonFile, downloadAsJson, uploadJsonFile } from '../../lists/file';
+import {
+  writeJsonFile,
+  readJsonFile,
+  downloadAsJson,
+  uploadJsonFile,
+} from '../../lists/file';
 import { NoteTakingService } from './NoteTakingService';
 import { NoteTakingSyncService } from './NoteTakingSyncService';
 import type { NotePayload } from './NoteTakingStore';
@@ -34,7 +39,7 @@ export async function backupNotes(): Promise<void> {
   }
 
   const service = NoteTakingService.getInstance();
-  const notes = (await service.listNotes()).map((n) => service.toPayload(n));
+  const notes = (await service.listNotes()).map(n => service.toPayload(n));
 
   const bundle: NoteBackup = {
     version: 1,
@@ -46,7 +51,10 @@ export async function backupNotes(): Promise<void> {
   try {
     if (PlatformService.getInstance().isDesktop) {
       await writeJsonFile(BACKUP_FILE, bundle);
-      ToastService.show(`Backed up ${notes.length} notes to ~/.noornote`, 'success');
+      ToastService.show(
+        `Backed up ${notes.length} notes to ~/.noornote`,
+        'success'
+      );
     } else {
       downloadAsJson(bundle, 'notes');
       ToastService.show(`Backed up ${notes.length} notes`, 'success');
@@ -99,13 +107,13 @@ export async function restoreNotes(): Promise<number> {
   for (const payload of bundle.notes) {
     if (!payload || !payload.id || payload.deleted) continue;
     const local = await store.get(payload.id);
-    if (local && local.updatedAt >= payload.updatedAt) continue;       // keep a newer/equal local copy
+    if (local && local.updatedAt >= payload.updatedAt) continue; // keep a newer/equal local copy
     // Explicit restore overrides a prior deletion: clear the tombstone and write
     // the note with a fresh timestamp so it beats the relay tombstone on sync.
     const wasTombstoned = tombstones[payload.id] !== undefined;
     if (wasTombstoned) service.clearTombstone(payload.id);
     const updatedAt = wasTombstoned ? now : payload.updatedAt;
-    await store.put({ ...payload, updatedAt, dirty: true });           // restore + re-sync
+    await store.put({ ...payload, updatedAt, dirty: true }); // restore + re-sync
     restored++;
   }
 

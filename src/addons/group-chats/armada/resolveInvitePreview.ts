@@ -63,7 +63,7 @@ export function parseChannelIdsFromUrl(url: string): string[] {
  * one paste only — no second URL.
  */
 export async function resolveInvitePreview(
-  input: string,
+  input: string
 ): Promise<ResolveResult> {
   const trimmed = input.trim();
   const parsed = parseArmadaInvite(trimmed);
@@ -71,21 +71,32 @@ export async function resolveInvitePreview(
     return { kind: 'error', reason: 'Not a recognized Armada invite link.' };
   }
   if (parsed.missingSecret) {
-    return { kind: 'error', reason: 'Invite link is missing its unlock secret (the #fragment). Copy the full URL from Armada.' };
+    return {
+      kind: 'error',
+      reason:
+        'Invite link is missing its unlock secret (the #fragment). Copy the full URL from Armada.',
+    };
   }
 
   const decoded = decodeInviteFragment(parsed.fragment);
   if (!decoded) {
-    diagLog('addons', 'armada: add-community fragment decode failed', { linkSigner: parsed.linkSigner.slice(0, 8) });
-    return { kind: 'error', reason: 'Could not decode the invite secret (unsupported format).' };
+    diagLog('addons', 'armada: add-community fragment decode failed', {
+      linkSigner: parsed.linkSigner.slice(0, 8),
+    });
+    return {
+      kind: 'error',
+      reason: 'Could not decode the invite secret (unsupported format).',
+    };
   }
 
-  const filter = [{
-    kinds: [33301],
-    authors: [parsed.linkSigner],
-    '#d': [''],
-    limit: 1,
-  }];
+  const filter = [
+    {
+      kinds: [33301],
+      authors: [parsed.linkSigner],
+      '#d': [''],
+      limit: 1,
+    },
+  ];
 
   let events: NostrEvent[] = [];
   try {
@@ -93,14 +104,20 @@ export async function resolveInvitePreview(
       decoded.relays,
       filter,
       FETCH_TIMEOUT_MS,
-      'ArmadaAddCommunity',
+      'ArmadaAddCommunity'
     );
   } catch (error) {
-    diagLog('addons', 'armada: add-community fetch threw', { error: String(error) });
+    diagLog('addons', 'armada: add-community fetch threw', {
+      error: String(error),
+    });
   }
 
   if (events.length === 0) {
-    return { kind: 'error', reason: 'Could not find the community on its bootstrap relays. Try again later.' };
+    return {
+      kind: 'error',
+      reason:
+        'Could not find the community on its bootstrap relays. Try again later.',
+    };
   }
 
   const newest = events.slice().sort((a, b) => b.created_at - a.created_at)[0];
@@ -110,8 +127,14 @@ export async function resolveInvitePreview(
 
   const preview = decodeInviteBundle(newest, parsed.linkSigner, decoded.token);
   if (!preview) {
-    diagLog('addons', 'armada: add-community bundle decrypt failed', { linkSigner: parsed.linkSigner.slice(0, 8) });
-    return { kind: 'error', reason: 'Could not decrypt the community preview. The invite link may be expired.' };
+    diagLog('addons', 'armada: add-community bundle decrypt failed', {
+      linkSigner: parsed.linkSigner.slice(0, 8),
+    });
+    return {
+      kind: 'error',
+      reason:
+        'Could not decrypt the community preview. The invite link may be expired.',
+    };
   }
 
   const community: TrackedCommunity = {
@@ -124,19 +147,25 @@ export async function resolveInvitePreview(
     // bootstrap relays. The fragment carries the stock dictionary used to
     // locate the bundle; the bundle carries the community's own relay list
     // where messages actually live.
-    bootstrapRelays: (preview.relays.length > 0 ? preview.relays : decoded.relays),
+    bootstrapRelays:
+      preview.relays.length > 0 ? preview.relays : decoded.relays,
     openUrl: parsed.openUrl,
     addedAt: Date.now(),
   };
   if (preview.icon) community.iconPointer = preview.icon;
   if (preview.communityRoot) community.communityRoot = preview.communityRoot;
-  if (typeof preview.rootEpoch === 'number') community.rootEpoch = preview.rootEpoch;
+  if (typeof preview.rootEpoch === 'number')
+    community.rootEpoch = preview.rootEpoch;
   if (preview.communityId) community.communityId = preview.communityId;
   if (preview.controlPk) community.controlPk = preview.controlPk;
   // Channel IDs: bundle-decoded first (private channels granted to this link)
   if (preview.channels && preview.channels.length > 0) {
     community.channels = preview.channels;
-  } else if (community.communityRoot && community.communityId && community.controlPk) {
+  } else if (
+    community.communityRoot &&
+    community.communityId &&
+    community.controlPk
+  ) {
     // Public channels: discover from the Control Plane (CORD-02 §5 read key).
     // Best-effort — on failure the community is still tracked, polling then
     // covers only control-plane activity until channels arrive via re-add.
@@ -146,7 +175,7 @@ export async function resolveInvitePreview(
         community.communityId,
         community.controlPk,
         community.rootEpoch ?? 0,
-        community.bootstrapRelays,
+        community.bootstrapRelays
       );
       if (discovered.length > 0) {
         // Public channels only: a private channel's stream key derives from
@@ -164,11 +193,16 @@ export async function resolveInvitePreview(
         }
       }
     } catch (error) {
-      diagLog('addons', 'armada: control-plane discovery failed', { error: String(error) });
+      diagLog('addons', 'armada: control-plane discovery failed', {
+        error: String(error),
+      });
     }
   }
   if (preview.expired) {
-    return { kind: 'error', reason: 'This invite has expired. Ask for a fresh link.' };
+    return {
+      kind: 'error',
+      reason: 'This invite has expired. Ask for a fresh link.',
+    };
   }
 
   diagLog('addons', 'armada: community resolved', {

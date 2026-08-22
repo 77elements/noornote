@@ -14,7 +14,10 @@ import { ToastService } from '../../../services/ToastService';
 import type { ReactionsModuleApi } from '../../../modules/reactions/contracts';
 import { TypedEventBus } from '../../../core/TypedEventBus';
 import { UserProfileService } from '../../../services/UserProfileService';
-import { PerAccountLocalStorage, StorageKeys } from '../../../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../../services/PerAccountLocalStorage';
 
 export interface ZapManagerConfig {
   noteId: string;
@@ -33,12 +36,14 @@ export class ZapManager {
   private config: ZapManagerConfig;
   private _zapsApi?: ZapsModuleApi | null;
   private get zapsApi(): ZapsModuleApi | null {
-    return this._zapsApi ??= ModuleLoader.getInstance().getApi<ZapsModuleApi>('zaps');
+    return (this._zapsApi ??=
+      ModuleLoader.getInstance().getApi<ZapsModuleApi>('zaps'));
   }
   private authService: AuthService;
   private _reactionsApi?: ReactionsModuleApi | null;
   private get reactionsApi(): ReactionsModuleApi | null {
-    return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
+    return (this._reactionsApi ??=
+      ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
   }
   private eventBus: TypedEventBus;
   private userProfileService: UserProfileService;
@@ -58,7 +63,10 @@ export class ZapManager {
    * Check if Quick Zap is enabled (opt-in setting, default OFF)
    */
   private isQuickZapEnabled(): boolean {
-    return PerAccountLocalStorage.getInstance().get(StorageKeys.QUICK_ZAP_ENABLED, false);
+    return PerAccountLocalStorage.getInstance().get(
+      StorageKeys.QUICK_ZAP_ENABLED,
+      false
+    );
   }
 
   /**
@@ -106,7 +114,9 @@ export class ZapManager {
     }
 
     try {
-      const profile = await this.userProfileService.getUserProfile(this.config.authorPubkey);
+      const profile = await this.userProfileService.getUserProfile(
+        this.config.authorPubkey
+      );
 
       if (!profile || (!profile.lud16 && !profile.lud06 && !profile.nip05)) {
         this.canReceiveZaps = false;
@@ -189,17 +199,18 @@ export class ZapManager {
     try {
       this.updateButtonLoading(true);
 
-      const result = await this.zapsApi?.sendQuickZap(
+      const result = (await this.zapsApi?.sendQuickZap(
         this.config.noteId,
         this.config.authorPubkey,
         this.config.articleEventId
-      ) ?? { success: false };
+      )) ?? { success: false };
 
       this.updateButtonLoading(false);
 
       if (result.success) {
         const zapAmount = result.amount ?? 0;
-        this.zappedAmount = this.zapsApi?.getUserZapAmount(this.config.noteId) ?? zapAmount;
+        this.zappedAmount =
+          this.zapsApi?.getUserZapAmount(this.config.noteId) ?? zapAmount;
         this.updateButtonState(true);
 
         // Clear stale cache before triggering stats refresh
@@ -228,7 +239,8 @@ export class ZapManager {
       noteId: this.config.noteId,
       authorPubkey: this.config.authorPubkey,
       onZapSent: (amount: number) => {
-        this.zappedAmount = this.zapsApi?.getUserZapAmount(this.config.noteId) ?? 0;
+        this.zappedAmount =
+          this.zapsApi?.getUserZapAmount(this.config.noteId) ?? 0;
         this.updateButtonState(true);
 
         // Clear stale cache before triggering stats refresh
@@ -240,12 +252,13 @@ export class ZapManager {
 
         // Emit event for ZapsList refresh
         this.eventBus.emit('zap:added', { noteId: this.config.noteId });
-      }
+      },
     };
 
     // Conditional property assignment for exactOptionalPropertyTypes
     if (this.config.articleEventId) {
-      (options as { articleEventId?: string }).articleEventId = this.config.articleEventId;
+      (options as { articleEventId?: string }).articleEventId =
+        this.config.articleEventId;
     }
 
     const zapModal = new ZapModal(options);
@@ -264,7 +277,9 @@ export class ZapManager {
       if (zapped && this.zappedAmount > 0) {
         this.zapButton.classList.add('active', 'zapped');
 
-        let amountBadge = this.zapButton.querySelector('.badge--warning') as HTMLElement;
+        let amountBadge = this.zapButton.querySelector(
+          '.badge--warning'
+        ) as HTMLElement;
         if (!amountBadge) {
           amountBadge = document.createElement('span');
           amountBadge.className = 'badge badge--warning';
@@ -342,12 +357,12 @@ export class ZapManager {
     };
 
     // Mouse events
-    zapButton.addEventListener('mousedown', (e) => {
+    zapButton.addEventListener('mousedown', e => {
       e.stopPropagation();
       startLongPress();
     });
 
-    zapButton.addEventListener('mouseup', (e) => {
+    zapButton.addEventListener('mouseup', e => {
       e.stopPropagation();
       handleRelease();
     });
@@ -357,12 +372,12 @@ export class ZapManager {
     });
 
     // Touch events
-    zapButton.addEventListener('touchstart', (e) => {
+    zapButton.addEventListener('touchstart', e => {
       e.stopPropagation();
       startLongPress();
     });
 
-    zapButton.addEventListener('touchend', (e) => {
+    zapButton.addEventListener('touchend', e => {
       e.stopPropagation();
       // Suppress the synthetic mouse/click events the browser fires after a
       // touch — without this, handleRelease runs twice on mobile (touch + the

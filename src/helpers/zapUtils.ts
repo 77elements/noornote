@@ -26,7 +26,7 @@ function parseZapRequest(zapEvent: NostrEvent): ZapRequestData | null {
     const zapRequest = JSON.parse(descTag[1]);
     return {
       pubkey: zapRequest.pubkey || '',
-      message: zapRequest.content || ''
+      message: zapRequest.content || '',
     };
   } catch {
     return null;
@@ -63,8 +63,10 @@ export function isZapAnonymous(zapEvent: NostrEvent): boolean {
   if (!descTag?.[1]) return false;
   try {
     const zapRequest = JSON.parse(descTag[1]);
-    return Array.isArray(zapRequest.tags)
-      && zapRequest.tags.some((t: string[]) => t[0] === 'anon');
+    return (
+      Array.isArray(zapRequest.tags) &&
+      zapRequest.tags.some((t: string[]) => t[0] === 'anon')
+    );
   } catch {
     return false;
   }
@@ -90,11 +92,21 @@ export function parseBolt11Amount(invoice: string): number {
 
   let millisats: number;
   switch (multiplier) {
-    case 'm': millisats = amount * 100_000_000; break;
-    case 'u': millisats = amount * 100_000; break;
-    case 'n': millisats = amount * 100; break;
-    case 'p': millisats = amount * 0.1; break;
-    default: millisats = amount * 100_000_000_000; break;
+    case 'm':
+      millisats = amount * 100_000_000;
+      break;
+    case 'u':
+      millisats = amount * 100_000;
+      break;
+    case 'n':
+      millisats = amount * 100;
+      break;
+    case 'p':
+      millisats = amount * 0.1;
+      break;
+    default:
+      millisats = amount * 100_000_000_000;
+      break;
   }
 
   return Math.floor(millisats / 1000);

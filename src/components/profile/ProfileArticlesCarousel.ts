@@ -10,12 +10,18 @@
 import { NostrTransport } from '../../services/transport/NostrTransport';
 import { ProfileCarouselOrchestrator } from '../../services/orchestration/ProfileCarouselOrchestrator';
 import { ModuleLoader } from '../../core/ModuleLoader';
-import type { ArticlesModuleApi, ArticleMetadata } from '../../modules/articles/contracts';
+import type {
+  ArticlesModuleApi,
+  ArticleMetadata,
+} from '../../modules/articles/contracts';
 import { UserProfileService } from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
 import { Router } from '../../services/Router';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
-import { createCardGrid, type ScrollCarouselInstance } from '../../helpers/CarouselHelper';
+import {
+  createCardGrid,
+  type ScrollCarouselInstance,
+} from '../../helpers/CarouselHelper';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { extractDisplayName } from '../../helpers/extractDisplayName';
@@ -75,7 +81,10 @@ export class ProfileArticlesCarousel {
       // live only on the author's NIP-65 write relays; the orchestrator also
       // returns the author's kind:5 deletions (for the tombstone filter below)
       // and is reused by the videos/listings carousels from one cached fetch.
-      const content = await ProfileCarouselOrchestrator.getInstance().fetchProfileContent(this.pubkey);
+      const content =
+        await ProfileCarouselOrchestrator.getInstance().fetchProfileContent(
+          this.pubkey
+        );
       const rawEvents = content.articles;
       const deletionEvents = content.deletions;
 
@@ -120,24 +129,36 @@ export class ProfileArticlesCarousel {
         .map(([, event]) => event);
 
       events.sort((a, b) => {
-        const aPublished = parseInt(a.tags.find(t => t[0] === 'published_at')?.[1] || String(a.created_at));
-        const bPublished = parseInt(b.tags.find(t => t[0] === 'published_at')?.[1] || String(b.created_at));
+        const aPublished = parseInt(
+          a.tags.find(t => t[0] === 'published_at')?.[1] || String(a.created_at)
+        );
+        const bPublished = parseInt(
+          b.tags.find(t => t[0] === 'published_at')?.[1] || String(b.created_at)
+        );
         return bPublished - aPublished;
       });
 
       // Ensure the articles module is loaded before extracting metadata —
       // ensure() loads it on demand in any boot context; in-app it is already
       // loaded and resolves instantly.
-      const articlesApi = await ModuleLoader.getInstance().ensure<ArticlesModuleApi>('articles');
+      const articlesApi =
+        await ModuleLoader.getInstance().ensure<ArticlesModuleApi>('articles');
 
       this.articles = events.map(event => {
         const isDraft = event.kind === 30024;
-        const metadata = articlesApi?.extractArticleMetadata(event) ?? { title: '', image: '', summary: '', publishedAt: 0, identifier: '', topics: [] };
+        const metadata = articlesApi?.extractArticleMetadata(event) ?? {
+          title: '',
+          image: '',
+          summary: '',
+          publishedAt: 0,
+          identifier: '',
+          topics: [],
+        };
         const naddr = encodeNaddr({
           kind: event.kind!,
           pubkey: event.pubkey,
           identifier: metadata.identifier,
-          relays: relays.slice(0, 2)
+          relays: relays.slice(0, 2),
         });
         return { event, metadata, naddr, isDraft };
       });
@@ -146,8 +167,14 @@ export class ProfileArticlesCarousel {
       if (this.isOwnProfile) {
         this.articles.sort((a, b) => {
           if (a.isDraft !== b.isDraft) return a.isDraft ? -1 : 1;
-          const aTime = parseInt(a.event.tags.find(t => t[0] === 'published_at')?.[1] || String(a.event.created_at));
-          const bTime = parseInt(b.event.tags.find(t => t[0] === 'published_at')?.[1] || String(b.event.created_at));
+          const aTime = parseInt(
+            a.event.tags.find(t => t[0] === 'published_at')?.[1] ||
+              String(a.event.created_at)
+          );
+          const bTime = parseInt(
+            b.event.tags.find(t => t[0] === 'published_at')?.[1] ||
+              String(b.event.created_at)
+          );
           return bTime - aTime;
         });
       }
@@ -157,10 +184,16 @@ export class ProfileArticlesCarousel {
       diagLog('system', 'ArticlesCarousel: loaded', {
         count: this.articles.length,
         drafts: this.articles.filter(a => a.isDraft).length,
-        images: this.articles.map(a => ({ title: a.metadata.title?.slice(0, 30), image: a.metadata.image || 'none' }))
+        images: this.articles.map(a => ({
+          title: a.metadata.title?.slice(0, 30),
+          image: a.metadata.image || 'none',
+        })),
       });
     } catch (error) {
-      console.error('[ProfileArticlesCarousel] Failed to fetch articles:', error);
+      console.error(
+        '[ProfileArticlesCarousel] Failed to fetch articles:',
+        error
+      );
       this.articles = [];
     }
   }
@@ -173,7 +206,9 @@ export class ProfileArticlesCarousel {
 
       const date = new Date(metadata.publishedAt * 1000);
       const formattedDate = date.toLocaleDateString('en-US', {
-        month: 'short', day: 'numeric', year: 'numeric'
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
       });
 
       const draftBadge = isDraft
@@ -196,7 +231,7 @@ export class ProfileArticlesCarousel {
             </div>
           </div>
         `,
-        data: { naddr, isDraft: isDraft ? 'true' : 'false' }
+        data: { naddr, isDraft: isDraft ? 'true' : 'false' },
       };
     });
 
@@ -204,11 +239,12 @@ export class ProfileArticlesCarousel {
       cards,
       onCardClick: (_index, data) => {
         if (!data.naddr) return;
-        const route = data.isDraft === 'true'
-          ? `/edit-article/${data.naddr}`
-          : `/article/${data.naddr}`;
+        const route =
+          data.isDraft === 'true'
+            ? `/edit-article/${data.naddr}`
+            : `/article/${data.naddr}`;
         Router.getInstance().navigate(route);
-      }
+      },
     });
 
     this.element.appendChild(this.carousel.element);
@@ -229,7 +265,6 @@ export class ProfileArticlesCarousel {
   private getAuthorDisplayName(): string {
     return this.authorName || 'Anonymous';
   }
-
 
   public getElement(): HTMLElement {
     return this.element;

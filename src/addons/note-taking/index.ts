@@ -6,12 +6,21 @@
  * Opt-in addon, disabled by default.
  */
 
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../services/PerAccountLocalStorage';
 
 export function isNoteTakingEnabled(): boolean {
-  return PerAccountLocalStorage.getInstance().get<boolean>(StorageKeys.NOTE_TAKING_ENABLED, false);
+  return PerAccountLocalStorage.getInstance().get<boolean>(
+    StorageKeys.NOTE_TAKING_ENABLED,
+    false
+  );
 }
 
 export function setNoteTakingEnabled(enabled: boolean): void {
-  PerAccountLocalStorage.getInstance().set(StorageKeys.NOTE_TAKING_ENABLED, enabled);
+  PerAccountLocalStorage.getInstance().set(
+    StorageKeys.NOTE_TAKING_ENABLED,
+    enabled
+  );
 }

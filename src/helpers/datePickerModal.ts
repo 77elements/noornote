@@ -50,7 +50,11 @@ function formatTimeForInput(date: Date): string {
 export function formatDateRangeLabel(since: number, until: number): string {
   const from = new Date(since * 1000);
   const to = new Date(until * 1000);
-  const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
+  const opts: Intl.DateTimeFormatOptions = {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  };
   const fromStr = from.toLocaleDateString('en-US', opts);
   const toStr = to.toLocaleDateString('en-US', opts);
   return fromStr === toStr ? fromStr : `${fromStr} – ${toStr}`;
@@ -65,9 +69,11 @@ export function pickDate(options: PickDateOptions = {}): Promise<Date | null> {
   const title = options.title ?? 'Pick a date';
   const confirmLabel = options.confirmLabel ?? 'Confirm';
   const initial = options.initial ?? new Date();
-  const maxAttr = options.max ? ` max="${formatDateForInput(options.max)}"` : '';
+  const maxAttr = options.max
+    ? ` max="${formatDateForInput(options.max)}"`
+    : '';
 
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     let resolved = false;
     const container = document.createElement('div');
     container.className = 'date-range-selector';
@@ -98,19 +104,23 @@ export function pickDate(options: PickDateOptions = {}): Promise<Date | null> {
           resolved = true;
           resolve(null);
         }
-      }
+      },
     });
 
     setTimeout(() => {
-      const input = container.querySelector('[data-pick-date]') as HTMLInputElement;
-      const errorEl = container.querySelector('[data-pick-error]') as HTMLElement;
+      const input = container.querySelector(
+        '[data-pick-date]'
+      ) as HTMLInputElement;
+      const errorEl = container.querySelector(
+        '[data-pick-error]'
+      ) as HTMLElement;
       const confirm = (): void => {
         if (!input.value) {
           errorEl.textContent = 'Please select a date.';
           errorEl.style.display = 'block';
           return;
         }
-        const picked = new Date(input.value + 'T12:00:00');
+        const picked = new Date(`${input.value}T12:00:00`);
         if (options.max && picked > options.max) {
           errorEl.textContent = 'Date is out of range.';
           errorEl.style.display = 'block';
@@ -120,13 +130,17 @@ export function pickDate(options: PickDateOptions = {}): Promise<Date | null> {
         modalService.hide();
         resolve(picked);
       };
-      container.querySelector('[data-pick-cancel]')?.addEventListener('click', () => {
-        resolved = true;
-        modalService.hide();
-        resolve(null);
-      });
-      container.querySelector('[data-pick-confirm]')?.addEventListener('click', confirm);
-      input?.addEventListener('keydown', (e) => {
+      container
+        .querySelector('[data-pick-cancel]')
+        ?.addEventListener('click', () => {
+          resolved = true;
+          modalService.hide();
+          resolve(null);
+        });
+      container
+        .querySelector('[data-pick-confirm]')
+        ?.addEventListener('click', confirm);
+      input?.addEventListener('keydown', e => {
         if (e.key === 'Enter') {
           e.preventDefault();
           confirm();
@@ -140,7 +154,9 @@ export function pickDate(options: PickDateOptions = {}): Promise<Date | null> {
  * Show a modal to pick a date range. Resolves with `{since, until}` as
  * Unix timestamps, or `null` if cancelled.
  */
-export function pickDateRange(options: PickDateRangeOptions = {}): Promise<DateRangeResult | null> {
+export function pickDateRange(
+  options: PickDateRangeOptions = {}
+): Promise<DateRangeResult | null> {
   const modalService = ModalService.getInstance();
   const title = options.title ?? 'Select Time Range';
   const confirmLabel = options.confirmLabel ?? 'Show Notes';
@@ -152,7 +168,7 @@ export function pickDateRange(options: PickDateRangeOptions = {}): Promise<DateR
   const toStr = formatDateForInput(options.initialTo ?? today);
   const todayStr = formatDateForInput(today);
 
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     let resolved = false;
     const container = document.createElement('div');
     container.className = 'date-range-selector';
@@ -187,13 +203,19 @@ export function pickDateRange(options: PickDateRangeOptions = {}): Promise<DateR
           resolved = true;
           resolve(null);
         }
-      }
+      },
     });
 
     setTimeout(() => {
-      const fromInput = container.querySelector('[data-range-from]') as HTMLInputElement;
-      const toInput = container.querySelector('[data-range-to]') as HTMLInputElement;
-      const errorEl = container.querySelector('[data-range-error]') as HTMLElement;
+      const fromInput = container.querySelector(
+        '[data-range-from]'
+      ) as HTMLInputElement;
+      const toInput = container.querySelector(
+        '[data-range-to]'
+      ) as HTMLInputElement;
+      const errorEl = container.querySelector(
+        '[data-range-error]'
+      ) as HTMLElement;
 
       const showError = (msg: string): void => {
         errorEl.textContent = msg;
@@ -207,8 +229,8 @@ export function pickDateRange(options: PickDateRangeOptions = {}): Promise<DateR
           showError('Please select both dates.');
           return;
         }
-        const fromDate = new Date(fromVal + 'T00:00:00');
-        const toDate = new Date(toVal + 'T23:59:59');
+        const fromDate = new Date(`${fromVal}T00:00:00`);
+        const toDate = new Date(`${toVal}T23:59:59`);
         const todayEnd = new Date();
         todayEnd.setHours(23, 59, 59, 999);
 
@@ -224,16 +246,20 @@ export function pickDateRange(options: PickDateRangeOptions = {}): Promise<DateR
         modalService.hide();
         resolve({
           since: Math.floor(fromDate.getTime() / 1000),
-          until: Math.floor(toDate.getTime() / 1000)
+          until: Math.floor(toDate.getTime() / 1000),
         });
       };
 
-      container.querySelector('[data-range-cancel]')?.addEventListener('click', () => {
-        resolved = true;
-        modalService.hide();
-        resolve(null);
-      });
-      container.querySelector('[data-range-confirm]')?.addEventListener('click', confirm);
+      container
+        .querySelector('[data-range-cancel]')
+        ?.addEventListener('click', () => {
+          resolved = true;
+          modalService.hide();
+          resolve(null);
+        });
+      container
+        .querySelector('[data-range-confirm]')
+        ?.addEventListener('click', confirm);
 
       const onEnter = (e: KeyboardEvent): void => {
         if (e.key === 'Enter') {
@@ -271,13 +297,19 @@ export interface PickDateTimeOptions {
  * modal without destroying the parent. Closes on outside click or Escape.
  * Resolves with the chosen Date (seconds zeroed) or `null` if cancelled.
  */
-export function pickDateTime(options: PickDateTimeOptions = {}): Promise<Date | null> {
+export function pickDateTime(
+  options: PickDateTimeOptions = {}
+): Promise<Date | null> {
   const confirmLabel = options.confirmLabel ?? 'Schedule';
   const initial = options.initial ?? new Date(Date.now() + 60 * 60 * 1000);
-  const minAttrDate = options.min ? ` min="${formatDateForInput(options.min)}"` : '';
-  const maxAttrDate = options.max ? ` max="${formatDateForInput(options.max)}"` : '';
+  const minAttrDate = options.min
+    ? ` min="${formatDateForInput(options.min)}"`
+    : '';
+  const maxAttrDate = options.max
+    ? ` max="${formatDateForInput(options.max)}"`
+    : '';
 
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     let resolved = false;
     const popover = document.createElement('div');
     popover.className = 'datetime-picker-popover';
@@ -350,10 +382,17 @@ export function pickDateTime(options: PickDateTimeOptions = {}): Promise<Date | 
     document.addEventListener('keydown', onEsc);
     // Delay outside-click handler to the next tick so the click that
     // opened the popover doesn't immediately close it.
-    setTimeout(() => document.addEventListener('mousedown', onOutside, true), 0);
+    setTimeout(
+      () => document.addEventListener('mousedown', onOutside, true),
+      0
+    );
 
-    const dateInput = popover.querySelector('[data-pick-date]') as HTMLInputElement;
-    const timeInput = popover.querySelector('[data-pick-time]') as HTMLInputElement;
+    const dateInput = popover.querySelector(
+      '[data-pick-date]'
+    ) as HTMLInputElement;
+    const timeInput = popover.querySelector(
+      '[data-pick-time]'
+    ) as HTMLInputElement;
     const errorEl = popover.querySelector('[data-pick-error]') as HTMLElement;
 
     const showError = (msg: string): void => {
@@ -385,8 +424,12 @@ export function pickDateTime(options: PickDateTimeOptions = {}): Promise<Date | 
       finish(picked);
     };
 
-    popover.querySelector('[data-pick-cancel]')?.addEventListener('click', () => finish(null));
-    popover.querySelector('[data-pick-confirm]')?.addEventListener('click', confirm);
+    popover
+      .querySelector('[data-pick-cancel]')
+      ?.addEventListener('click', () => finish(null));
+    popover
+      .querySelector('[data-pick-confirm]')
+      ?.addEventListener('click', confirm);
 
     const onEnter = (e: KeyboardEvent): void => {
       if (e.key === 'Enter') {

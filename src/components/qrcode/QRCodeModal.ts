@@ -46,8 +46,8 @@ export class QRCodeModal {
         margin: 2,
         color: {
           dark: '#000000',
-          light: '#FFFFFF'
-        }
+          light: '#FFFFFF',
+        },
       });
 
       const qrContent = this.renderQRContent(npub, qrCodeDataUrl);
@@ -61,7 +61,9 @@ export class QRCodeModal {
       });
     } catch (error) {
       console.error('❌ Failed to generate QR code:', error);
-      const errorContent = this.renderErrorContent('Failed to generate QR code');
+      const errorContent = this.renderErrorContent(
+        'Failed to generate QR code'
+      );
 
       // Update modal with error
       this.modalService.show({
@@ -134,8 +136,8 @@ export class QRCodeModal {
         margin: 2,
         color: {
           dark: '#000000',
-          light: '#FFFFFF'
-        }
+          light: '#FFFFFF',
+        },
       });
 
       const container = document.createElement('div');
@@ -164,7 +166,6 @@ export class QRCodeModal {
       });
     }
   }
-
 
   /**
    * Cleanup and destroy modal

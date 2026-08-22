@@ -10,7 +10,13 @@
 
 import { NDKNip46Signer } from '@nostr-dev-kit/ndk';
 import { hexToNpub } from '../../helpers/nip19';
-import { Nip46BaseManager, NIP46_STORAGE_KEY, nip46Log, type Nip46AuthResult, type NostrConnectSession } from './Nip46BaseManager';
+import {
+  Nip46BaseManager,
+  NIP46_STORAGE_KEY,
+  nip46Log,
+  type Nip46AuthResult,
+  type NostrConnectSession,
+} from './Nip46BaseManager';
 
 /** NIP-46 relays for the nostrconnect flow (parallel multi-relay). Reliable general relays that
  *  store the kind:24133 RPC events; one can fail and the handshake continues via the others. */
@@ -21,7 +27,6 @@ const NIP46_RELAYS = [
 ];
 
 export class NostrConnectSignerManager extends Nip46BaseManager {
-
   /**
    * Start a nostrconnect:// flow.
    * Generates URI for QR display and returns a listener
@@ -31,12 +36,15 @@ export class NostrConnectSignerManager extends Nip46BaseManager {
     const { NostrTransport } = await import('../transport/NostrTransport');
     const ndk = NostrTransport.getInstance().getNDK();
 
-    nip46Log.info('Starting nostrconnect flow, relays:', NIP46_RELAYS.join(', '));
+    nip46Log.info(
+      'Starting nostrconnect flow, relays:',
+      NIP46_RELAYS.join(', ')
+    );
 
     // Create signer with all relays (RPC pool connects to all)
     const signer = new NDKNip46Signer(ndk, undefined, undefined, NIP46_RELAYS, {
       name: 'NoorNote',
-      url: 'https://noornote.app'
+      url: 'https://noornote.app',
     });
     this.signer = signer;
 
@@ -57,7 +65,7 @@ export class NostrConnectSignerManager extends Nip46BaseManager {
           signer.blockUntilReady(),
           new Promise<never>((_, reject) => {
             cancelReject = () => reject(new Error('Cancelled'));
-          })
+          }),
         ]);
 
         if (cancelled) {

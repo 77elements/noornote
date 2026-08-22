@@ -49,7 +49,10 @@ export const DISAPPEARING_PRESETS: readonly DisappearingPreset[] = [
  * `created_at` and NOT `Date.now()`. Otherwise a relay-delayed wrap could
  * appear to expire before it arrived.
  */
-export function computeExpiresAt(rumorCreatedAt: number, durationSeconds: number): number {
+export function computeExpiresAt(
+  rumorCreatedAt: number,
+  durationSeconds: number
+): number {
   return rumorCreatedAt + durationSeconds;
 }
 
@@ -73,7 +76,10 @@ export function isActive(seconds: number | null | undefined): boolean {
  * Examples: "45m left", "12h left", "6d left", "1y left".
  * Returns empty string if `expiresAt` is missing or already in the past.
  */
-export function formatRemaining(expiresAt: number | undefined, now: number): string {
+export function formatRemaining(
+  expiresAt: number | undefined,
+  now: number
+): string {
   if (typeof expiresAt !== 'number') return '';
   const remaining = expiresAt - now;
   if (remaining <= 0) return '';
@@ -95,7 +101,9 @@ export function formatRemaining(expiresAt: number | undefined, now: number): str
  * if the duration is not active. Custom values get a "~" prefix to signal
  * that the displayed unit is rounded, not exact.
  */
-export function chipLabelForDuration(seconds: number | null | undefined): string {
+export function chipLabelForDuration(
+  seconds: number | null | undefined
+): string {
   if (!isActive(seconds)) return '';
   const preset = DISAPPEARING_PRESETS.find(p => p.seconds === seconds);
   if (preset) return `⏱ Disappears in ${preset.approxLabel}`;
@@ -120,10 +128,14 @@ export function labelForDuration(seconds: number | null | undefined): string {
   const days = Math.floor(secs / 86_400);
   const hours = Math.floor(secs / 3600);
   const minutes = Math.floor(secs / 60);
-  if (weeks >= 1 && secs % (7 * 86_400) === 0) return `${weeks} week${weeks === 1 ? '' : 's'}`;
-  if (days >= 1 && secs % 86_400 === 0) return `${days} day${days === 1 ? '' : 's'}`;
-  if (hours >= 1 && secs % 3600 === 0) return `${hours} hour${hours === 1 ? '' : 's'}`;
-  if (minutes >= 1 && secs % 60 === 0) return `${minutes} minute${minutes === 1 ? '' : 's'}`;
+  if (weeks >= 1 && secs % (7 * 86_400) === 0)
+    return `${weeks} week${weeks === 1 ? '' : 's'}`;
+  if (days >= 1 && secs % 86_400 === 0)
+    return `${days} day${days === 1 ? '' : 's'}`;
+  if (hours >= 1 && secs % 3600 === 0)
+    return `${hours} hour${hours === 1 ? '' : 's'}`;
+  if (minutes >= 1 && secs % 60 === 0)
+    return `${minutes} minute${minutes === 1 ? '' : 's'}`;
   // Fallback: non-clean number of seconds (rare).
   return `${secs}s`;
 }

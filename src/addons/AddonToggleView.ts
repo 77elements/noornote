@@ -69,10 +69,12 @@ export class AddonToggleView extends View {
     this.enableSwitch = new Switch({
       label: '',
       checked: enabled,
-      onChange: (checked) => {
+      onChange: checked => {
         this.opts.setEnabled(checked);
         if (this.opts.toggleEvent) {
-          TypedEventBus.getInstance().emit(this.opts.toggleEvent as any, { enabled: checked });
+          TypedEventBus.getInstance().emit(this.opts.toggleEvent as any, {
+            enabled: checked,
+          });
         }
         ToastService.show(
           checked ? `${this.opts.name} enabled` : `${this.opts.name} disabled`,

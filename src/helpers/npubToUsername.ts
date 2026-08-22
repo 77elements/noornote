@@ -24,8 +24,14 @@ export interface NpubToUsernameOptions {
 const SIMPLE_MENTION_THRESHOLD = 20;
 
 const BECH32_CHARS = '023456789acdefghjklmnpqrstuvwxyz';
-const NPROFILE_REGEX = new RegExp(`(nostr:)?(nprofile1[${BECH32_CHARS}]{58,})(?=[^${BECH32_CHARS}]|$)`, 'gi');
-const NPUB_REGEX = new RegExp(`(nostr:)?(npub1[${BECH32_CHARS}]{58})(?=[^${BECH32_CHARS}]|$)`, 'gi');
+const NPROFILE_REGEX = new RegExp(
+  `(nostr:)?(nprofile1[${BECH32_CHARS}]{58,})(?=[^${BECH32_CHARS}]|$)`,
+  'gi'
+);
+const NPUB_REGEX = new RegExp(
+  `(nostr:)?(npub1[${BECH32_CHARS}]{58})(?=[^${BECH32_CHARS}]|$)`,
+  'gi'
+);
 
 /**
  * MODE 1 (Simple): npub → username string
@@ -33,8 +39,17 @@ const NPUB_REGEX = new RegExp(`(nostr:)?(npub1[${BECH32_CHARS}]{58})(?=[^${BECH3
  * MODE 3 (HTML Multi): HTML text with multiple mentions → all replaced
  */
 export function npubToUsername(npub: string): string;
-export function npubToUsername(npub: string, mode: 'html-single', profileResolver: ProfileResolver): string;
-export function npubToUsername(htmlText: string, mode: 'html-multi', profileResolver: ProfileResolver, options?: NpubToUsernameOptions): string;
+export function npubToUsername(
+  npub: string,
+  mode: 'html-single',
+  profileResolver: ProfileResolver
+): string;
+export function npubToUsername(
+  htmlText: string,
+  mode: 'html-multi',
+  profileResolver: ProfileResolver,
+  options?: NpubToUsernameOptions
+): string;
 export function npubToUsername(
   input: string,
   mode?: 'html-single' | 'html-multi' | ProfileResolver,
@@ -89,7 +104,10 @@ function npubToUsernameSimple(npub: string): string {
 /**
  * HTML mode: single npub → HTML link with username
  */
-function npubToUsernameHTMLSingle(npub: string, profileResolver: ProfileResolver): string {
+function npubToUsernameHTMLSingle(
+  npub: string,
+  profileResolver: ProfileResolver
+): string {
   try {
     const hexPubkey = npubToHex(npub);
     if (!hexPubkey) return npub;
@@ -104,11 +122,16 @@ function npubToUsernameHTMLSingle(npub: string, profileResolver: ProfileResolver
   }
 }
 
-
 /**
  * Build mention HTML with profile picture (full mode)
  */
-function buildMentionHTML(npub: string, username: string, picture?: string, isLoading = false, hexPubkey?: string): string {
+function buildMentionHTML(
+  npub: string,
+  username: string,
+  picture?: string,
+  isLoading = false,
+  hexPubkey?: string
+): string {
   const fallback = hexPubkey ? getAvatarFallback(hexPubkey) : '';
   const avatarSrc = escapeHtmlAttr(picture || fallback);
   const pubkeyAttr = hexPubkey ? `data-pubkey="${hexPubkey}"` : '';
@@ -120,7 +143,11 @@ function buildMentionHTML(npub: string, username: string, picture?: string, isLo
 /**
  * Build simple mention HTML without profile picture (for threads with many mentions)
  */
-function buildSimpleMentionHTML(npub: string, username: string, isLoading = false): string {
+function buildSimpleMentionHTML(
+  npub: string,
+  username: string,
+  isLoading = false
+): string {
   const escapedUsername = escapeHtml(username);
   const attrs = isLoading ? 'data-mention data-loading' : 'data-mention';
   return `<a href="/profile/${npub}" ${attrs} class="mention-link">@${escapedUsername}</a>`;
@@ -148,7 +175,11 @@ function isInsideExistingHTML(text: string, offset: number): boolean {
 
   // Check if inside an already-created mention link from step 1
   const nearContext = text.substring(Math.max(0, offset - 60), offset);
-  if (nearContext.includes('href="/profile/') || nearContext.includes('data-mention')) return true;
+  if (
+    nearContext.includes('href="/profile/') ||
+    nearContext.includes('data-mention')
+  )
+    return true;
 
   return false;
 }
@@ -186,7 +217,9 @@ function npubToUsernameHTMLMulti(
   let text = htmlText;
 
   const mentionCount = countMentions(text);
-  const useSimpleMode = options?.forceFullMode ? false : mentionCount > SIMPLE_MENTION_THRESHOLD;
+  const useSimpleMode = options?.forceFullMode
+    ? false
+    : mentionCount > SIMPLE_MENTION_THRESHOLD;
 
   // Step 1: Replace nprofile mentions
   text = text.replace(NPROFILE_REGEX, (fullMatch, _prefix, nprofile) => {
@@ -194,24 +227,37 @@ function npubToUsernameHTMLMulti(
       const npub = nprofileToNpub(nprofile);
       const hexPubkey = npubToHex(npub);
       if (!hexPubkey) return fullMatch;
-      return resolveProfileToMentionHTML(npub, profileResolver(hexPubkey), useSimpleMode, hexPubkey);
+      return resolveProfileToMentionHTML(
+        npub,
+        profileResolver(hexPubkey),
+        useSimpleMode,
+        hexPubkey
+      );
     } catch {
       return fullMatch;
     }
   });
 
   // Step 2: Replace npub mentions, skipping those already inside HTML from step 1
-  text = text.replace(NPUB_REGEX, (fullMatch, _prefix, npub, offset, string) => {
-    if (isInsideExistingHTML(string, offset)) return fullMatch;
+  text = text.replace(
+    NPUB_REGEX,
+    (fullMatch, _prefix, npub, offset, string) => {
+      if (isInsideExistingHTML(string, offset)) return fullMatch;
 
-    try {
-      const hexPubkey = npubToHex(npub);
-      if (!hexPubkey) return fullMatch;
-      return resolveProfileToMentionHTML(npub, profileResolver(hexPubkey), useSimpleMode, hexPubkey);
-    } catch {
-      return fullMatch;
+      try {
+        const hexPubkey = npubToHex(npub);
+        if (!hexPubkey) return fullMatch;
+        return resolveProfileToMentionHTML(
+          npub,
+          profileResolver(hexPubkey),
+          useSimpleMode,
+          hexPubkey
+        );
+      } catch {
+        return fullMatch;
+      }
     }
-  });
+  );
 
   return text;
 }

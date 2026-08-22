@@ -8,7 +8,10 @@
 import { escapeHtmlAttr } from './escapeHtml';
 import type { Bolt11Match } from './extractBolt11';
 
-export function replaceBolt11Placeholders(html: string, invoices: Bolt11Match[]): string {
+export function replaceBolt11Placeholders(
+  html: string,
+  invoices: Bolt11Match[]
+): string {
   if (invoices.length === 0) return html;
 
   return html.replace(/__BOLT11_(\d+)__/g, (_m, idx) => {

@@ -9,9 +9,15 @@
  */
 
 import { ModuleLoader } from '../../core/ModuleLoader';
-import type { SearchModuleApi, UserSearchResult } from '../../modules/search/contracts';
+import type {
+  SearchModuleApi,
+  UserSearchResult,
+} from '../../modules/search/contracts';
 import { UserProfileService } from '../../services/UserProfileService';
-import { renderUserMention, setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
+import {
+  renderUserMention,
+  setupUserMentionHandlers,
+} from '../../helpers/UserMentionHelper';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 
@@ -31,7 +37,8 @@ export class UserSearchInput {
   private selectedUserElement: HTMLElement | null = null;
   private _searchApi?: SearchModuleApi | null;
   private get searchApi(): SearchModuleApi | null {
-    return this._searchApi ??= ModuleLoader.getInstance().getApi<SearchModuleApi>('search');
+    return (this._searchApi ??=
+      ModuleLoader.getInstance().getApi<SearchModuleApi>('search'));
   }
   private userProfileService: UserProfileService;
   private options: UserSearchInputOptions;
@@ -83,9 +90,15 @@ export class UserSearchInput {
    * Setup event listeners
    */
   private setupEventListeners(): void {
-    this.inputElement = this.container.querySelector('.user-search-input__input');
-    this.dropdownElement = this.container.querySelector('.user-search-input__dropdown');
-    this.selectedUserElement = this.container.querySelector('.user-search-input__selected');
+    this.inputElement = this.container.querySelector(
+      '.user-search-input__input'
+    );
+    this.dropdownElement = this.container.querySelector(
+      '.user-search-input__dropdown'
+    );
+    this.selectedUserElement = this.container.querySelector(
+      '.user-search-input__selected'
+    );
 
     if (!this.inputElement) return;
 
@@ -96,10 +109,10 @@ export class UserSearchInput {
     });
 
     // Keyboard navigation
-    this.inputElement.addEventListener('keydown', (e) => this.handleKeydown(e));
+    this.inputElement.addEventListener('keydown', e => this.handleKeydown(e));
 
     // Paste handler for npub detection
-    this.inputElement.addEventListener('paste', (e) => this.handlePaste(e));
+    this.inputElement.addEventListener('paste', e => this.handlePaste(e));
 
     // Hide dropdown on blur (with delay for click)
     this.inputElement.addEventListener('blur', () => {
@@ -146,7 +159,7 @@ export class UserSearchInput {
             ...(profile?.name && { name: profile.name }),
             ...(profile?.display_name && { displayName: profile.display_name }),
             ...(profile?.picture && { picture: profile.picture }),
-            ...(profile?.nip05 && { nip05: profile.nip05 })
+            ...(profile?.nip05 && { nip05: profile.nip05 }),
           };
 
           // Select this user
@@ -166,7 +179,10 @@ export class UserSearchInput {
    * Handle keyboard navigation
    */
   private handleKeydown(e: KeyboardEvent): void {
-    if (!this.dropdownElement || this.dropdownElement.style.display === 'none') {
+    if (
+      !this.dropdownElement ||
+      this.dropdownElement.style.display === 'none'
+    ) {
       return;
     }
 
@@ -237,23 +253,26 @@ export class UserSearchInput {
    * Perform user search
    */
   private performSearch(query: string): void {
-    this.currentSearchController = this.searchApi?.searchUsers(query, {
-      onLocalResults: (results) => {
-        this.userResults = results;
-        this.renderDropdown();
-      },
-      onRemoteResults: (results) => {
-        // Add remote results (deduplicated)
-        const existingPubkeys = new Set(this.userResults.map(r => r.pubkey));
-        const newResults = results.filter(r => !existingPubkeys.has(r.pubkey));
-        this.userResults = [...this.userResults, ...newResults];
-        this.renderDropdown();
-      },
-      onComplete: () => {
-        this.isSearching = false;
-        this.renderDropdown();
-      }
-    }) ?? null;
+    this.currentSearchController =
+      this.searchApi?.searchUsers(query, {
+        onLocalResults: results => {
+          this.userResults = results;
+          this.renderDropdown();
+        },
+        onRemoteResults: results => {
+          // Add remote results (deduplicated)
+          const existingPubkeys = new Set(this.userResults.map(r => r.pubkey));
+          const newResults = results.filter(
+            r => !existingPubkeys.has(r.pubkey)
+          );
+          this.userResults = [...this.userResults, ...newResults];
+          this.renderDropdown();
+        },
+        onComplete: () => {
+          this.isSearching = false;
+          this.renderDropdown();
+        },
+      }) ?? null;
   }
 
   /**
@@ -293,13 +312,20 @@ export class UserSearchInput {
     }
 
     // Render user results
-    const usersHtml = this.userResults.slice(0, 8).map((user, index) => {
-      const displayName = user.displayName || user.name || 'Anonymous';
-      const picture = user.picture || '';
-      const followBadge = user.isFollowing ? '<span class="badge badge--accent">Following</span>' : '';
-      const selectedClass = index === this.selectedIndex ? ' search-spotlight__suggestion--selected' : '';
+    const usersHtml = this.userResults
+      .slice(0, 8)
+      .map((user, index) => {
+        const displayName = user.displayName || user.name || 'Anonymous';
+        const picture = user.picture || '';
+        const followBadge = user.isFollowing
+          ? '<span class="badge badge--accent">Following</span>'
+          : '';
+        const selectedClass =
+          index === this.selectedIndex
+            ? ' search-spotlight__suggestion--selected'
+            : '';
 
-      return `
+        return `
         <div class="search-spotlight__user-item${selectedClass}" data-index="${index}">
           <div class="search-spotlight__user-avatar">
             ${picture ? `<img src="${escapeHtmlAttr(picture)}" alt="" loading="lazy" />` : '<div class="search-spotlight__user-avatar-placeholder"></div>'}
@@ -311,7 +337,8 @@ export class UserSearchInput {
           ${followBadge}
         </div>
       `;
-    }).join('');
+      })
+      .join('');
 
     this.dropdownElement.innerHTML = `
       <div class="search-spotlight__user-section">
@@ -321,14 +348,16 @@ export class UserSearchInput {
     `;
 
     // Add click handlers
-    this.dropdownElement.querySelectorAll('.search-spotlight__user-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const index = parseInt(item.getAttribute('data-index') || '0', 10);
-        if (this.userResults[index]) {
-          this.selectUser(this.userResults[index]);
-        }
+    this.dropdownElement
+      .querySelectorAll('.search-spotlight__user-item')
+      .forEach(item => {
+        item.addEventListener('click', () => {
+          const index = parseInt(item.getAttribute('data-index') || '0', 10);
+          if (this.userResults[index]) {
+            this.selectUser(this.userResults[index]);
+          }
+        });
       });
-    });
   }
 
   /**
@@ -337,9 +366,10 @@ export class UserSearchInput {
   private navigateSelection(direction: 'next' | 'previous'): void {
     if (this.userResults.length === 0) return;
     const maxIndex = this.userResults.length - 1;
-    this.selectedIndex = direction === 'next'
-      ? Math.min(this.selectedIndex + 1, maxIndex)
-      : Math.max(this.selectedIndex - 1, 0);
+    this.selectedIndex =
+      direction === 'next'
+        ? Math.min(this.selectedIndex + 1, maxIndex)
+        : Math.max(this.selectedIndex - 1, 0);
     this.renderDropdown();
   }
 
@@ -372,8 +402,10 @@ export class UserSearchInput {
       setupUserMentionHandlers(this.selectedUserElement);
 
       // Setup clear button
-      const clearBtn = this.selectedUserElement.querySelector('.user-search-input__clear');
-      clearBtn?.addEventListener('click', (e) => {
+      const clearBtn = this.selectedUserElement.querySelector(
+        '.user-search-input__clear'
+      );
+      clearBtn?.addEventListener('click', e => {
         e.preventDefault();
         e.stopPropagation();
         this.clearSelection();

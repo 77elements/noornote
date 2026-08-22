@@ -73,7 +73,11 @@ export class MediaUploadService {
    * 413 (Payload Too Large) is the common case: the file exceeds the media
    * server's plan limit. Otherwise surface the server's own response text.
    */
-  private describeUploadFailure(status: number, statusText: string, responseText?: string): string {
+  private describeUploadFailure(
+    status: number,
+    statusText: string,
+    responseText?: string
+  ): string {
     if (status === 413) {
       return 'File too large for this media server. Try a smaller file, or choose a media server with a higher limit in Settings.';
     }
@@ -123,10 +127,11 @@ export class MediaUploadService {
   }
 
   private loadCompressionSettings(): MediaCompressionSettings {
-    const stored = PerAccountLocalStorage.getInstance().get<MediaCompressionSettings>(
-      StorageKeys.MEDIA_COMPRESSION,
-      DEFAULT_MEDIA_COMPRESSION_SETTINGS,
-    );
+    const stored =
+      PerAccountLocalStorage.getInstance().get<MediaCompressionSettings>(
+        StorageKeys.MEDIA_COMPRESSION,
+        DEFAULT_MEDIA_COMPRESSION_SETTINGS
+      );
     return {
       image: { ...DEFAULT_MEDIA_COMPRESSION_SETTINGS.image, ...stored.image },
       video: { ...DEFAULT_MEDIA_COMPRESSION_SETTINGS.video, ...stored.video },
@@ -135,7 +140,12 @@ export class MediaUploadService {
   }
 
   private emitStatus(status: UploadStatus): void {
-    console.debug('[MediaUploadService] emit', status.phase, status.percent, status.mediaKind);
+    console.debug(
+      '[MediaUploadService] emit',
+      status.phase,
+      status.percent,
+      status.mediaKind
+    );
     TypedEventBus.getInstance().emit(UPLOAD_STATUS_EVENT, status);
   }
 
@@ -152,27 +162,42 @@ export class MediaUploadService {
     mediaKind: MediaKind,
     onStatus: (s: UploadStatus) => void,
     fileIndex?: number,
-    totalFiles?: number,
+    totalFiles?: number
   ): Promise<File> {
-    if (mediaKind !== 'video' && mediaKind !== 'audio' && mediaKind !== 'image') return file;
+    if (mediaKind !== 'video' && mediaKind !== 'audio' && mediaKind !== 'image')
+      return file;
 
     // GIFs must skip the image compressor — it draws frame 1 into a canvas and
     // re-encodes as JPEG, killing the animation. Upload the original instead.
     if (file.type === 'image/gif') {
-      diagLog('system', 'Media compression skipped', { kind: 'image', reason: 'gif-animation-preserved', filename: file.name });
+      diagLog('system', 'Media compression skipped', {
+        kind: 'image',
+        reason: 'gif-animation-preserved',
+        filename: file.name,
+      });
       return file;
     }
 
     const settings = this.loadCompressionSettings();
-    const kindSettings = mediaKind === 'video' ? settings.video
-      : mediaKind === 'audio' ? settings.audio
-      : settings.image;
+    const kindSettings =
+      mediaKind === 'video'
+        ? settings.video
+        : mediaKind === 'audio'
+          ? settings.audio
+          : settings.image;
     if (!kindSettings.enabled) {
-      diagLog('system', 'Media compression skipped', { kind: mediaKind, reason: 'disabled-in-settings' });
+      diagLog('system', 'Media compression skipped', {
+        kind: mediaKind,
+        reason: 'disabled-in-settings',
+      });
       return file;
     }
     if (file.size < kindSettings.minSizeBytes) {
-      diagLog('system', 'Media compression skipped', { kind: mediaKind, reason: 'below-min-size', size: file.size });
+      diagLog('system', 'Media compression skipped', {
+        kind: mediaKind,
+        reason: 'below-min-size',
+        size: file.size,
+      });
       return file;
     }
 
@@ -181,16 +206,26 @@ export class MediaUploadService {
       const mod = await import('./media/MediaCompressionService');
       service = mod.MediaCompressionService;
     } catch (err) {
-      diagLog('system', 'Media compression failed', { kind: mediaKind, reason: 'chunk-load-failed', error: String(err) });
+      diagLog('system', 'Media compression failed', {
+        kind: mediaKind,
+        reason: 'chunk-load-failed',
+        error: String(err),
+      });
       ToastService.show('Compression unavailable, uploading original.', 'info');
       return file;
     }
 
-    const supported = mediaKind === 'video' ? await service.isVideoSupported()
-      : mediaKind === 'audio' ? await service.isAudioSupported()
-      : await service.isImageSupported();
+    const supported =
+      mediaKind === 'video'
+        ? await service.isVideoSupported()
+        : mediaKind === 'audio'
+          ? await service.isAudioSupported()
+          : await service.isImageSupported();
     if (!supported) {
-      diagLog('system', 'Media compression skipped', { kind: mediaKind, reason: 'webcodecs-unsupported' });
+      diagLog('system', 'Media compression skipped', {
+        kind: mediaKind,
+        reason: 'webcodecs-unsupported',
+      });
       return file;
     }
 
@@ -198,9 +233,12 @@ export class MediaUploadService {
       kind: mediaKind,
       filename: file.name,
       originalBytes: file.size,
-      quality: mediaKind === 'video' ? settings.video.quality
-        : mediaKind === 'audio' ? settings.audio.quality
-        : settings.image.quality,
+      quality:
+        mediaKind === 'video'
+          ? settings.video.quality
+          : mediaKind === 'audio'
+            ? settings.audio.quality
+            : settings.image.quality,
     });
 
     const startedAt = performance.now();
@@ -219,23 +257,31 @@ export class MediaUploadService {
         onStatus(status);
         this.emitStatus(status);
       };
-      compressed = mediaKind === 'video'
-        ? await service.compressVideo(file, settings.video, onProgress)
-        : mediaKind === 'audio'
-        ? await service.compressAudio(file, settings.audio, onProgress)
-        : await service.compressImage(file, settings.image, onProgress);
+      compressed =
+        mediaKind === 'video'
+          ? await service.compressVideo(file, settings.video, onProgress)
+          : mediaKind === 'audio'
+            ? await service.compressAudio(file, settings.audio, onProgress)
+            : await service.compressImage(file, settings.image, onProgress);
     } catch (err) {
-      diagLog('system', 'Media compression failed', { kind: mediaKind, error: String(err) });
+      diagLog('system', 'Media compression failed', {
+        kind: mediaKind,
+        error: String(err),
+      });
       ToastService.show('Compression failed, uploading original.', 'info');
       return file;
     }
 
     if (compressed.size >= file.size) {
-      diagLog('system', 'Compressed file larger than original — using original', {
-        kind: mediaKind,
-        originalBytes: file.size,
-        compressedBytes: compressed.size,
-      });
+      diagLog(
+        'system',
+        'Compressed file larger than original — using original',
+        {
+          kind: mediaKind,
+          originalBytes: file.size,
+          compressedBytes: compressed.size,
+        }
+      );
       // Surface this in the overlay so the user sees the compression DID run
       // and we deliberately kept the original. Without this, the overlay would
       // jump straight from "Compressing…" to "Uploading…" with no closure.
@@ -280,19 +326,32 @@ export class MediaUploadService {
 
   private validateFileType(file: File): { valid: boolean; error?: string } {
     if (!/^(image|video|audio)\//.test(file.type)) {
-      return { valid: false, error: 'Unsupported file type. Only images, videos, and audio are allowed.' };
+      return {
+        valid: false,
+        error:
+          'Unsupported file type. Only images, videos, and audio are allowed.',
+      };
     }
     return { valid: true };
   }
 
-  private validateFileSize(file: File, settings: MediaServerSettings): { valid: boolean; error?: string } {
-    const maxSize = settings.maxFileSize
-      || (settings.protocol === 'blossom' ? this.DEFAULT_BLOSSOM_MAX_FILE_SIZE : this.DEFAULT_NIP96_MAX_FILE_SIZE);
+  private validateFileSize(
+    file: File,
+    settings: MediaServerSettings
+  ): { valid: boolean; error?: string } {
+    const maxSize =
+      settings.maxFileSize ||
+      (settings.protocol === 'blossom'
+        ? this.DEFAULT_BLOSSOM_MAX_FILE_SIZE
+        : this.DEFAULT_NIP96_MAX_FILE_SIZE);
 
     if (file.size > maxSize) {
       const fileSizeMB = (file.size / 1024 / 1024).toFixed(1);
       const maxSizeMB = Math.floor(maxSize / 1024 / 1024);
-      return { valid: false, error: `File too large (${fileSizeMB} MB). Maximum size: ${maxSizeMB} MB` };
+      return {
+        valid: false,
+        error: `File too large (${fileSizeMB} MB). Maximum size: ${maxSizeMB} MB`,
+      };
     }
     return { valid: true };
   }
@@ -320,16 +379,20 @@ export class MediaUploadService {
       tags: [
         ['t', 'upload'],
         ['x', sha256],
-        ['expiration', (now + 300).toString()]
+        ['expiration', (now + 300).toString()],
       ],
       content: 'Upload file',
-      pubkey: currentUser.pubkey
+      pubkey: currentUser.pubkey,
     });
 
     return `Nostr ${btoa(JSON.stringify(signedEvent))}`;
   }
 
-  private async createNIP98Auth(method: string, url: string, sha256: string): Promise<string> {
+  private async createNIP98Auth(
+    method: string,
+    url: string,
+    sha256: string
+  ): Promise<string> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) throw new Error('Not authenticated');
 
@@ -339,10 +402,10 @@ export class MediaUploadService {
       tags: [
         ['u', url],
         ['method', method],
-        ['payload', sha256]
+        ['payload', sha256],
       ],
       content: '',
-      pubkey: currentUser.pubkey
+      pubkey: currentUser.pubkey,
     });
 
     return `Nostr ${btoa(JSON.stringify(signedEvent))}`;
@@ -364,7 +427,12 @@ export class MediaUploadService {
 
       // Browser mode: Use fetch with proper CORS handling
       if (this.platform.isBrowser) {
-        return await this.uploadBlossomBrowser(file, serverUrl, authHeader, onProgress);
+        return await this.uploadBlossomBrowser(
+          file,
+          serverUrl,
+          authHeader,
+          onProgress
+        );
       }
 
       // Desktop mode: Use adapter (CORS bypassed)
@@ -372,11 +440,11 @@ export class MediaUploadService {
         url: `${serverUrl}/upload`,
         method: 'PUT',
         headers: {
-          'Authorization': authHeader,
-          'Content-Type': file.type || 'application/octet-stream'
+          Authorization: authHeader,
+          'Content-Type': file.type || 'application/octet-stream',
         },
         body: file,
-        onProgress: (percent) => onProgress?.(this.mapUploadProgress(percent))
+        onProgress: percent => onProgress?.(this.mapUploadProgress(percent)),
       });
 
       if (response.ok) {
@@ -385,10 +453,14 @@ export class MediaUploadService {
         return { success: true, url: descriptor.url };
       }
 
-      return this.errorResult(this.describeUploadFailure(response.status, response.statusText));
+      return this.errorResult(
+        this.describeUploadFailure(response.status, response.statusText)
+      );
     } catch (error) {
       console.error('Blossom upload error:', error);
-      return this.errorResult(`Upload error: ${error instanceof Error ? error.message : error}`);
+      return this.errorResult(
+        `Upload error: ${error instanceof Error ? error.message : error}`
+      );
     }
   }
 
@@ -411,9 +483,9 @@ export class MediaUploadService {
       const response = await fetch(uploadUrl, {
         method: 'PUT',
         headers: {
-          'Authorization': authHeader
+          Authorization: authHeader,
         },
-        body: file
+        body: file,
       });
 
       onProgress?.(90);
@@ -425,14 +497,24 @@ export class MediaUploadService {
       }
 
       const errorText = await response.text();
-      return this.errorResult(this.describeUploadFailure(response.status, response.statusText, errorText));
+      return this.errorResult(
+        this.describeUploadFailure(
+          response.status,
+          response.statusText,
+          errorText
+        )
+      );
     } catch (error) {
       console.error('Blossom browser upload error:', error);
-      return this.errorResult(`Upload error: ${error instanceof Error ? error.message : 'Network error - server may not support CORS'}`);
+      return this.errorResult(
+        `Upload error: ${error instanceof Error ? error.message : 'Network error - server may not support CORS'}`
+      );
     }
   }
 
-  private async fetchNIP96ConfigFromUrl(url: string): Promise<{ api_url: string } | null> {
+  private async fetchNIP96ConfigFromUrl(
+    url: string
+  ): Promise<{ api_url: string } | null> {
     try {
       const response = await fetch(url);
       if (!response.ok) return null;
@@ -468,16 +550,27 @@ export class MediaUploadService {
     }
   }
 
-  private async buildMultipartBody(file: File, fields: Record<string, string>): Promise<{ body: ArrayBuffer; boundary: string }> {
-    const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);
+  private async buildMultipartBody(
+    file: File,
+    fields: Record<string, string>
+  ): Promise<{ body: ArrayBuffer; boundary: string }> {
+    const boundary = `----WebKitFormBoundary${Math.random().toString(36).substring(2)}`;
     const encoder = new TextEncoder();
     const parts: Uint8Array[] = [];
 
     for (const [key, value] of Object.entries(fields)) {
-      parts.push(encoder.encode(`--${boundary}\r\nContent-Disposition: form-data; name="${key}"\r\n\r\n${value}\r\n`));
+      parts.push(
+        encoder.encode(
+          `--${boundary}\r\nContent-Disposition: form-data; name="${key}"\r\n\r\n${value}\r\n`
+        )
+      );
     }
 
-    parts.push(encoder.encode(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${file.name}"\r\nContent-Type: ${file.type || 'application/octet-stream'}\r\n\r\n`));
+    parts.push(
+      encoder.encode(
+        `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${file.name}"\r\nContent-Type: ${file.type || 'application/octet-stream'}\r\n\r\n`
+      )
+    );
     parts.push(new Uint8Array(await file.arrayBuffer()));
     parts.push(encoder.encode('\r\n'));
     parts.push(encoder.encode(`--${boundary}--\r\n`));
@@ -523,30 +616,37 @@ export class MediaUploadService {
       if (this.platform.isBrowser) {
         // Convert apiUrl to proxied URL for the actual request
         const proxiedApiUrl = this.getProxiedApiUrl(serverUrl, apiUrl);
-        return await this.uploadNIP96Browser(file, proxiedApiUrl, authHeader, onProgress);
+        return await this.uploadNIP96Browser(
+          file,
+          proxiedApiUrl,
+          authHeader,
+          onProgress
+        );
       }
 
       // Desktop mode: manual multipart (existing behavior)
       const { body, boundary } = await this.buildMultipartBody(file, {
         content_type: file.type,
-        size: file.size.toString()
+        size: file.size.toString(),
       });
 
       const response = await this.uploadAdapter.upload({
         url: apiUrl,
         method: 'POST',
         headers: {
-          'Authorization': authHeader,
-          'Content-Type': `multipart/form-data; boundary=${boundary}`
+          Authorization: authHeader,
+          'Content-Type': `multipart/form-data; boundary=${boundary}`,
         },
-        body: body,
-        onProgress: (percent) => onProgress?.(this.mapUploadProgress(percent))
+        body,
+        onProgress: percent => onProgress?.(this.mapUploadProgress(percent)),
       });
 
       if (response.ok) {
         const result = await response.json();
         if (result.status === 'success' && result.nip94_event) {
-          const urlTag = result.nip94_event.tags.find((t: string[]) => t[0] === 'url');
+          const urlTag = result.nip94_event.tags.find(
+            (t: string[]) => t[0] === 'url'
+          );
           if (urlTag) {
             onProgress?.(100);
             return { success: true, url: urlTag[1] };
@@ -555,10 +655,14 @@ export class MediaUploadService {
         return this.errorResult('No URL in upload response');
       }
 
-      return this.errorResult(this.describeUploadFailure(response.status, response.statusText));
+      return this.errorResult(
+        this.describeUploadFailure(response.status, response.statusText)
+      );
     } catch (error) {
       console.error('NIP-96 upload error:', error);
-      return this.errorResult(`Upload error: ${error instanceof Error ? error.message : error}`);
+      return this.errorResult(
+        `Upload error: ${error instanceof Error ? error.message : error}`
+      );
     }
   }
 
@@ -572,13 +676,13 @@ export class MediaUploadService {
     authHeader: string,
     onProgress?: ProgressCallback
   ): Promise<UploadResult> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const formData = new FormData();
       formData.append('file', file);
 
       const xhr = new XMLHttpRequest();
 
-      xhr.upload.onprogress = (event) => {
+      xhr.upload.onprogress = event => {
         if (event.lengthComputable) {
           const percent = Math.round((event.loaded / event.total) * 100);
           onProgress?.(this.mapUploadProgress(percent));
@@ -590,7 +694,9 @@ export class MediaUploadService {
           try {
             const result = JSON.parse(xhr.responseText);
             if (result.status === 'success' && result.nip94_event) {
-              const urlTag = result.nip94_event.tags.find((t: string[]) => t[0] === 'url');
+              const urlTag = result.nip94_event.tags.find(
+                (t: string[]) => t[0] === 'url'
+              );
               if (urlTag) {
                 onProgress?.(100);
                 resolve({ success: true, url: urlTag[1] });
@@ -602,12 +708,22 @@ export class MediaUploadService {
             resolve(this.errorResult('Failed to parse upload response'));
           }
         } else {
-          resolve(this.errorResult(this.describeUploadFailure(xhr.status, xhr.statusText, xhr.responseText)));
+          resolve(
+            this.errorResult(
+              this.describeUploadFailure(
+                xhr.status,
+                xhr.statusText,
+                xhr.responseText
+              )
+            )
+          );
         }
       };
 
       xhr.onerror = () => {
-        resolve(this.errorResult('Network error - server may not support CORS'));
+        resolve(
+          this.errorResult('Network error - server may not support CORS')
+        );
       };
 
       xhr.open('POST', apiUrl);
@@ -617,7 +733,10 @@ export class MediaUploadService {
     });
   }
 
-  public async uploadFile(file: File, onProgress?: ProgressCallback): Promise<UploadResult> {
+  public async uploadFile(
+    file: File,
+    onProgress?: ProgressCallback
+  ): Promise<UploadResult> {
     return this.uploadFileInternal(file, onProgress);
   }
 
@@ -630,7 +749,7 @@ export class MediaUploadService {
     file: File,
     onProgress?: ProgressCallback,
     fileIndex?: number,
-    totalFiles?: number,
+    totalFiles?: number
   ): Promise<UploadResult> {
     try {
       const currentUser = this.authService.getCurrentUser();
@@ -655,13 +774,15 @@ export class MediaUploadService {
 
       // Best-effort compression for video/audio. Falls back to the original
       // file on skip / failure, never blocks the upload.
-      const noopStatus = (_s: UploadStatus) => { /* events still go via emitStatus */ };
+      const noopStatus = (_s: UploadStatus) => {
+        /* events still go via emitStatus */
+      };
       const fileToUpload = await this.maybeCompressMedia(
         file,
         mediaKind,
         noopStatus,
         fileIndex,
-        totalFiles,
+        totalFiles
       );
 
       // Size validation runs AFTER compression so videos that exceed the
@@ -676,7 +797,7 @@ export class MediaUploadService {
       // Wrap the legacy progress callback so the global overlay also sees the
       // upload phase. Existing callers' button-replaced-with-circle UI keeps
       // working through onProgress unchanged.
-      const wrappedProgress: ProgressCallback = (percent) => {
+      const wrappedProgress: ProgressCallback = percent => {
         onProgress?.(percent);
         this.emitStatus({
           phase: 'uploading',
@@ -684,15 +805,21 @@ export class MediaUploadService {
           mediaKind,
           filename: file.name,
           originalBytes,
-          compressedBytes: fileToUpload.size !== originalBytes ? fileToUpload.size : undefined,
+          compressedBytes:
+            fileToUpload.size !== originalBytes ? fileToUpload.size : undefined,
           fileIndex,
           totalFiles,
         });
       };
 
-      const result = settings.protocol === 'blossom'
-        ? await this.uploadBlossom(fileToUpload, settings.url, wrappedProgress)
-        : await this.uploadNIP96(fileToUpload, settings.url, wrappedProgress);
+      const result =
+        settings.protocol === 'blossom'
+          ? await this.uploadBlossom(
+              fileToUpload,
+              settings.url,
+              wrappedProgress
+            )
+          : await this.uploadNIP96(fileToUpload, settings.url, wrappedProgress);
 
       if (result.success) {
         this.emitStatus({
@@ -701,36 +828,55 @@ export class MediaUploadService {
           mediaKind,
           filename: file.name,
           originalBytes,
-          compressedBytes: fileToUpload.size !== originalBytes ? fileToUpload.size : undefined,
+          compressedBytes:
+            fileToUpload.size !== originalBytes ? fileToUpload.size : undefined,
           fileIndex,
           totalFiles,
         });
       }
 
       ToastService.show(
-        result.success ? 'File uploaded successfully!' : (result.error || 'Upload failed'),
+        result.success
+          ? 'File uploaded successfully!'
+          : result.error || 'Upload failed',
         result.success ? 'success' : 'error'
       );
 
       return result;
     } catch (error) {
-      ErrorService.handle(error, 'MediaUploadService.uploadFile', true, 'Failed to upload file');
-      return this.errorResult(error instanceof Error ? error.message : 'Upload failed');
+      ErrorService.handle(
+        error,
+        'MediaUploadService.uploadFile',
+        true,
+        'Failed to upload file'
+      );
+      return this.errorResult(
+        error instanceof Error ? error.message : 'Upload failed'
+      );
     }
   }
 
   public async uploadFiles(
     files: File[],
-    onProgress?: (fileIndex: number, progress: number, totalFiles: number) => void
+    onProgress?: (
+      fileIndex: number,
+      progress: number,
+      totalFiles: number
+    ) => void
   ): Promise<UploadResult[]> {
     const results: UploadResult[] = [];
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       if (!file) continue;
-      const result = await this.uploadFileInternal(file, (progress) => {
-        onProgress?.(i, progress, files.length);
-      }, i, files.length);
+      const result = await this.uploadFileInternal(
+        file,
+        progress => {
+          onProgress?.(i, progress, files.length);
+        },
+        i,
+        files.length
+      );
       results.push(result);
 
       if (!result.success) break;

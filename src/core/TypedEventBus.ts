@@ -20,11 +20,17 @@ export class TypedEventBus {
     return TypedEventBus.instance;
   }
 
-  public on<K extends AppEventName>(event: K, callback: EventCallback<K>): string {
+  public on<K extends AppEventName>(
+    event: K,
+    callback: EventCallback<K>
+  ): string {
     return this.bus.on(event, callback as any);
   }
 
-  public once<K extends AppEventName>(event: K, callback: EventCallback<K>): string {
+  public once<K extends AppEventName>(
+    event: K,
+    callback: EventCallback<K>
+  ): string {
     return this.bus.once(event, callback as any);
   }
 

@@ -17,13 +17,19 @@
  */
 
 import { isDataSaverEnabled } from '../../services/DataSaverService';
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../services/PerAccountLocalStorage';
 
 export type FeedMode = 'latest' | 'latest-replies';
 
 /** The main timeline's remembered feed mode (Latest vs Latest + Replies), restored on startup. */
 export function getSavedFeedMode(): FeedMode {
-  const v = PerAccountLocalStorage.getInstance().get<string>(StorageKeys.TIMELINE_VIEW, 'latest');
+  const v = PerAccountLocalStorage.getInstance().get<string>(
+    StorageKeys.TIMELINE_VIEW,
+    'latest'
+  );
   return v === 'latest-replies' ? 'latest-replies' : 'latest';
 }
 
@@ -171,6 +177,10 @@ export function relayFilterUrl(c: TimelineConfig): string | null {
 }
 
 /** The selected time-machine window, or null when live. */
-export function timeRangeOf(c: TimelineConfig): { since: number; until: number } | null {
-  return c.range.kind === 'between' ? { since: c.range.since, until: c.range.until } : null;
+export function timeRangeOf(
+  c: TimelineConfig
+): { since: number; until: number } | null {
+  return c.range.kind === 'between'
+    ? { since: c.range.since, until: c.range.until }
+    : null;
 }

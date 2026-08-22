@@ -48,15 +48,15 @@ class CrashLoggerService {
    * Setup global error handlers for uncaught errors and promise rejections
    */
   private setupGlobalErrorHandlers(): void {
-    window.addEventListener('error', (event) => {
+    window.addEventListener('error', event => {
       this.logCrash('UncaughtError', event.error || event.message, {
         filename: event.filename,
         lineno: event.lineno,
-        colno: event.colno
+        colno: event.colno,
       });
     });
 
-    window.addEventListener('unhandledrejection', (event) => {
+    window.addEventListener('unhandledrejection', event => {
       // NDK v3 throws on events with invalid tags (e.g. number instead of string).
       // These are malformed events from other clients — not our bug, not a crash.
       const msg = String(event.reason);
@@ -72,7 +72,11 @@ class CrashLoggerService {
   /**
    * Log a crash with full context from SystemLogger
    */
-  public logCrash(type: string, error: unknown, extra?: Record<string, unknown>): void {
+  public logCrash(
+    type: string,
+    error: unknown,
+    extra?: Record<string, unknown>
+  ): void {
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorStack = error instanceof Error ? error.stack : undefined;
 
@@ -81,7 +85,7 @@ class CrashLoggerService {
       error: errorMessage,
       stack: errorStack,
       extra,
-      recentLogs: this.getRecentLogs()
+      recentLogs: this.getRecentLogs(),
     });
 
     console.error(`[CrashLogger] ${type}:`, errorMessage);
@@ -100,7 +104,7 @@ class CrashLoggerService {
         level: entry.level,
         category: entry.category,
         message: entry.message,
-        count: entry.count && entry.count > 1 ? entry.count : undefined
+        count: entry.count && entry.count > 1 ? entry.count : undefined,
       }));
     } catch {
       return [];
@@ -114,7 +118,9 @@ class CrashLoggerService {
     const logger = this.systemLogger as any;
     const globalLogs: LogEntry[] = logger.globalLogs || [];
     const pageLogs: LogEntry[] = logger.pageLogs || [];
-    return [...globalLogs, ...pageLogs].sort((a, b) => a.timestamp - b.timestamp);
+    return [...globalLogs, ...pageLogs].sort(
+      (a, b) => a.timestamp - b.timestamp
+    );
   }
 
   /**

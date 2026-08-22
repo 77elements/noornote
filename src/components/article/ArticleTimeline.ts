@@ -15,7 +15,10 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { ModuleLoader } from '../../core/ModuleLoader';
-import type { ArticlesModuleApi, ArticleFeedFetchOptions } from '../../modules/articles/contracts';
+import type {
+  ArticlesModuleApi,
+  ArticleFeedFetchOptions,
+} from '../../modules/articles/contracts';
 import { FoafService } from '../../services/foaf';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import type { ArticleFoafDegreeChangedPayload } from '../../core/events';
@@ -26,7 +29,11 @@ import { hexToNpub } from '../../helpers/nip19';
 import { formatTimestamp } from '../../helpers/formatTimestamp';
 import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
-import { PerAccountLocalStorage, StorageKeys, type StorageKey } from '../../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+  type StorageKey,
+} from '../../services/PerAccountLocalStorage';
 
 export type ArticleTimelineVariant = 'main' | 'scc';
 
@@ -98,10 +105,10 @@ export class ArticleTimeline {
         : '.scc-article-feed'
     ) as HTMLElement;
 
-    this.infiniteScroll = new InfiniteScroll(
-      () => this.handleLoadMore(),
-      { loadingMessage: 'Loading articles...', rootMargin: '300px' }
-    );
+    this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
+      loadingMessage: 'Loading articles...',
+      rootMargin: '300px',
+    });
 
     // Live-reload when the user picks a different FOAF degree for this surface.
     this.settingsSubscription = TypedEventBus.getInstance().on(
@@ -136,7 +143,8 @@ export class ArticleTimeline {
     let el = this.articlesContainer.parentElement;
     while (el && el !== document.body) {
       const style = getComputedStyle(el);
-      const canScroll = style.overflowY === 'auto' || style.overflowY === 'scroll';
+      const canScroll =
+        style.overflowY === 'auto' || style.overflowY === 'scroll';
       if (canScroll && el.scrollHeight > el.clientHeight) {
         return el;
       }
@@ -177,7 +185,10 @@ export class ArticleTimeline {
 
   private detachScrollRootListener(): void {
     if (this.scrollRootListener && this.scrollRootAttached) {
-      this.scrollRootAttached.removeEventListener('scroll', this.scrollRootListener);
+      this.scrollRootAttached.removeEventListener(
+        'scroll',
+        this.scrollRootListener
+      );
     }
     this.scrollRootListener = null;
     this.scrollRootAttached = null;
@@ -221,7 +232,10 @@ export class ArticleTimeline {
     if (this.sampledAuthors !== null) return this.sampledAuthors;
 
     const storageKey = STORAGE_KEY_BY_VARIANT[this.config.variant];
-    const degree = PerAccountLocalStorage.getInstance().get<number>(storageKey, 1);
+    const degree = PerAccountLocalStorage.getInstance().get<number>(
+      storageKey,
+      1
+    );
 
     let authors: string[];
     if (degree <= 1) {
@@ -238,7 +252,9 @@ export class ArticleTimeline {
     // author subscriptions that exist independently of the FOAF degree
     // setting (the user may have alerts on for someone they don't follow).
     const alertSubs =
-      ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles')?.getSubscribedArticlePubkeys() ?? [];
+      ModuleLoader.getInstance()
+        .getApi<ArticlesModuleApi>('articles')
+        ?.getSubscribedArticlePubkeys() ?? [];
     if (alertSubs.length > 0) {
       const seen = new Set(authors);
       for (const pk of alertSubs) {
@@ -372,7 +388,9 @@ export class ArticleTimeline {
   }
 
   private appendArticles(articles: NostrEvent[]): void {
-    const sentinel = this.articlesContainer.querySelector('.infinite-scroll-sentinel');
+    const sentinel = this.articlesContainer.querySelector(
+      '.infinite-scroll-sentinel'
+    );
     for (const article of articles) {
       const card = this.createCard(article);
       if (sentinel) {
@@ -385,7 +403,14 @@ export class ArticleTimeline {
 
   private createCard(event: NostrEvent): HTMLElement {
     const api = this.articlesApi;
-    const metadata = api?.extractArticleFeedMetadata(event) ?? { title: '', summary: '', image: '', identifier: '', publishedAt: 0, topics: [] };
+    const metadata = api?.extractArticleFeedMetadata(event) ?? {
+      title: '',
+      summary: '',
+      image: '',
+      identifier: '',
+      publishedAt: 0,
+      topics: [],
+    };
     const naddr = encodeNaddr({
       kind: 30023,
       pubkey: event.pubkey,
@@ -400,18 +425,28 @@ export class ArticleTimeline {
     const titleTag = isMain ? 'h2' : 'h3';
     const titleClass = isMain ? '' : 'nn-card__title';
     const summaryHtml = isMain
-      ? (metadata.summary ? `<p class="summary">${escapeHtml(metadata.summary)}</p>` : '')
+      ? metadata.summary
+        ? `<p class="summary">${escapeHtml(metadata.summary)}</p>`
+        : ''
       : this.renderExcerpt(event.content || '');
-    const topicsHtml = isMain && metadata.topics.length > 0
-      ? `<div class="tags">${metadata.topics.slice(0, 3).map(t => `<span class="tag">#${escapeHtml(t)}</span>`).join('')}</div>`
-      : '';
+    const topicsHtml =
+      isMain && metadata.topics.length > 0
+        ? `<div class="tags">${metadata.topics
+            .slice(0, 3)
+            .map(t => `<span class="tag">#${escapeHtml(t)}</span>`)
+            .join('')}</div>`
+        : '';
 
     card.innerHTML = `
-      ${metadata.image ? `
+      ${
+        metadata.image
+          ? `
         <div class="nn-card__media">
           <img src="${escapeHtmlAttr(metadata.image)}" alt="" loading="lazy" />
         </div>
-      ` : ''}
+      `
+          : ''
+      }
       <div class="nn-card__content">
         <${titleTag} class="${titleClass}">${escapeHtml(metadata.title || 'Untitled')}</${titleTag}>
         ${summaryHtml}
@@ -455,20 +490,27 @@ export class ArticleTimeline {
       .trim();
 
     const firstParagraph = stripped.split(/\n\s*\n/)[0]?.trim() || '';
-    const excerpt = firstParagraph.length <= limit
-      ? firstParagraph
-      : firstParagraph.slice(0, limit).replace(/\s+\S*$/, '') + '...';
-    return excerpt ? `<p class="scc-article-card__excerpt">${escapeHtml(excerpt)}</p>` : '';
+    const excerpt =
+      firstParagraph.length <= limit
+        ? firstParagraph
+        : `${firstParagraph.slice(0, limit).replace(/\s+\S*$/, '')}...`;
+    return excerpt
+      ? `<p class="scc-article-card__excerpt">${escapeHtml(excerpt)}</p>`
+      : '';
   }
 
-  private async loadAuthorInfo(card: HTMLElement, pubkey: string): Promise<void> {
+  private async loadAuthorInfo(
+    card: HTMLElement,
+    pubkey: string
+  ): Promise<void> {
     const authorEl = card.querySelector('.author');
     if (!authorEl) return;
 
     const npub = hexToNpub(pubkey) || pubkey;
     try {
       const profile = await this.userProfileService.getUserProfile(pubkey);
-      const username = profile?.name || profile?.display_name || npub.slice(0, 12) + '...';
+      const username =
+        profile?.name || profile?.display_name || `${npub.slice(0, 12)}...`;
       const picture = profile?.picture || '';
 
       authorEl.innerHTML = `
@@ -490,7 +532,8 @@ export class ArticleTimeline {
   // ─────────────────────────────────────────────────────────────────────────
 
   private showLoading(): void {
-    this.articlesContainer.innerHTML = '<p class="pulsate">Loading articles...</p>';
+    this.articlesContainer.innerHTML =
+      '<p class="pulsate">Loading articles...</p>';
   }
 
   private showEmpty(): void {

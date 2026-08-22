@@ -4,7 +4,10 @@
  * identically wherever it is shown.
  */
 
-import { NoteDraftService, type NoteDraft } from '../../services/NoteDraftService';
+import {
+  NoteDraftService,
+  type NoteDraft,
+} from '../../services/NoteDraftService';
 import { formatTimeAgo } from '../../helpers/formatTimeAgo';
 import { escapeHtml } from '../../helpers/escapeHtml';
 
@@ -27,9 +30,10 @@ export function renderDraftsList(): string {
     return `<div class="note-drafts__empty">No drafts yet</div>`;
   }
 
-  const items = drafts.map(d => {
-    const text = escapeHtml(truncate(d.content));
-    return `
+  const items = drafts
+    .map(d => {
+      const text = escapeHtml(truncate(d.content));
+      return `
       <div class="ui-list__item ui-list__item--clickable note-draft" data-draft-id="${escapeHtml(d.id)}">
         <div class="note-draft__main">
           <div class="note-draft__meta">
@@ -45,14 +49,18 @@ export function renderDraftsList(): string {
         </button>
       </div>
     `;
-  }).join('');
+    })
+    .join('');
 
   return `<div class="ui-list note-drafts__list">${items}</div>`;
 }
 
 /** Wire one delegated click handler for open + delete on the drafts container. */
-export function setupDraftsList(container: HTMLElement, cb: DraftsListCallbacks): void {
-  container.addEventListener('click', (e) => {
+export function setupDraftsList(
+  container: HTMLElement,
+  cb: DraftsListCallbacks
+): void {
+  container.addEventListener('click', e => {
     const targetEl = e.target as HTMLElement;
     const item = targetEl.closest('[data-draft-id]') as HTMLElement | null;
     if (!item) return;
@@ -68,7 +76,9 @@ export function setupDraftsList(container: HTMLElement, cb: DraftsListCallbacks)
       return;
     }
 
-    const draft = NoteDraftService.getInstance().list().find(d => d.id === id);
+    const draft = NoteDraftService.getInstance()
+      .list()
+      .find(d => d.id === id);
     if (draft) cb.onOpen(draft);
   });
 }

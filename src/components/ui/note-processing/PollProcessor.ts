@@ -21,10 +21,16 @@ export class PollProcessor {
    * SYNCHRONOUS - no blocking calls
    */
   static process(event: NostrEvent): ProcessedNote {
-    const authorProfile = PollProcessor.contentProcessor.getNonBlockingProfile(event.pubkey);
+    const authorProfile = PollProcessor.contentProcessor.getNonBlockingProfile(
+      event.pubkey
+    );
 
     // Process poll question text (event.content)
-    const processedContent = PollProcessor.contentProcessor.processContentWithTags(event.content, event.tags);
+    const processedContent =
+      PollProcessor.contentProcessor.processContentWithTags(
+        event.content,
+        event.tags
+      );
 
     // Extract poll data from tags
     const pollData = PollProcessor.extractPollData(event.tags);
@@ -34,8 +40,10 @@ export class PollProcessor {
     if (authorProfile) {
       const profile: NonNullable<ProcessedNote['author']['profile']> = {};
       if (authorProfile.name !== undefined) profile.name = authorProfile.name;
-      if (authorProfile.display_name !== undefined) profile.display_name = authorProfile.display_name;
-      if (authorProfile.picture !== undefined) profile.picture = authorProfile.picture;
+      if (authorProfile.display_name !== undefined)
+        profile.display_name = authorProfile.display_name;
+      if (authorProfile.picture !== undefined)
+        profile.picture = authorProfile.picture;
       if (Object.keys(profile).length > 0) {
         authorData.profile = profile;
       }
@@ -48,7 +56,7 @@ export class PollProcessor {
       author: authorData,
       content: processedContent,
       pollData,
-      rawEvent: event
+      rawEvent: event,
     };
   }
 
@@ -70,7 +78,7 @@ export class PollProcessor {
           if (values.length >= 2 && values[0] && values[1]) {
             options.push({
               id: values[0],
-              label: values[1]
+              label: values[1],
             });
           }
           break;
@@ -95,7 +103,7 @@ export class PollProcessor {
 
     const result: PollData = {
       options,
-      multipleChoice
+      multipleChoice,
     };
     if (endDate !== undefined) result.endDate = endDate;
     if (relayUrls.length > 0) result.relayUrls = relayUrls;

@@ -19,7 +19,10 @@ export interface PlayerHandle {
   destroy(): void;
 }
 
-const HLS_CONTENT_TYPES = ['application/vnd.apple.mpegurl', 'application/x-mpegURL'];
+const HLS_CONTENT_TYPES = [
+  'application/vnd.apple.mpegurl',
+  'application/x-mpegURL',
+];
 
 export async function mountPlayer(
   container: HTMLElement,
@@ -43,11 +46,13 @@ export async function mountPlayer(
     video.src = opts.streamUrl;
     return {
       destroy() {
-        try { video.pause(); } catch {}
+        try {
+          video.pause();
+        } catch {}
         video.removeAttribute('src');
         video.load();
         container.innerHTML = '';
-      }
+      },
     };
   }
 
@@ -59,11 +64,13 @@ export async function mountPlayer(
     video.src = opts.streamUrl;
     return {
       destroy() {
-        try { video.pause(); } catch {}
+        try {
+          video.pause();
+        } catch {}
         video.removeAttribute('src');
         video.load();
         container.innerHTML = '';
-      }
+      },
     };
   }
 
@@ -76,11 +83,15 @@ export async function mountPlayer(
 
   return {
     destroy() {
-      try { hls.destroy(); } catch {}
-      try { video.pause(); } catch {}
+      try {
+        hls.destroy();
+      } catch {}
+      try {
+        video.pause();
+      } catch {}
       video.removeAttribute('src');
       video.load();
       container.innerHTML = '';
-    }
+    },
   };
 }

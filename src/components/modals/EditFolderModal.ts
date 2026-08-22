@@ -29,12 +29,14 @@ export class EditFolderModal {
       width: '400px',
       showCloseButton: true,
       closeOnOverlay: true,
-      closeOnEsc: true
+      closeOnEsc: true,
     });
 
     setTimeout(() => {
       this.setupEventHandlers();
-      const input = document.getElementById('edit-folder-input') as HTMLInputElement;
+      const input = document.getElementById(
+        'edit-folder-input'
+      ) as HTMLInputElement;
       input?.focus();
       input?.select();
     }, 0);
@@ -70,7 +72,9 @@ export class EditFolderModal {
   }
 
   private setupEventHandlers(): void {
-    const input = document.getElementById('edit-folder-input') as HTMLInputElement;
+    const input = document.getElementById(
+      'edit-folder-input'
+    ) as HTMLInputElement;
     const cancelBtn = document.getElementById('edit-folder-cancel-btn');
     const saveBtn = document.getElementById('edit-folder-save-btn');
 
@@ -92,7 +96,7 @@ export class EditFolderModal {
 
     saveBtn.addEventListener('click', handleSave);
 
-    input.addEventListener('keydown', (e) => {
+    input.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
         handleSave();
       } else if (e.key === 'Escape') {
@@ -100,5 +104,4 @@ export class EditFolderModal {
       }
     });
   }
-
 }

@@ -36,7 +36,21 @@ export interface TimelineState {
 }
 
 export interface ViewState {
-  currentView: 'timeline' | 'single-note' | 'profile' | 'messages' | 'settings' | 'login' | 'article' | 'notifications' | 'about' | 'conversation' | 'write-article' | 'edit-article' | 'articles' | 'relay-browser';
+  currentView:
+    | 'timeline'
+    | 'single-note'
+    | 'profile'
+    | 'messages'
+    | 'settings'
+    | 'login'
+    | 'article'
+    | 'notifications'
+    | 'about'
+    | 'conversation'
+    | 'write-article'
+    | 'edit-article'
+    | 'articles'
+    | 'relay-browser';
   currentNoteId?: string;
   currentProfileNpub?: string;
   currentArticleNaddr?: string;
@@ -74,7 +88,7 @@ const USER_DEFAULTS: UserState = {
   isAuthenticated: false,
   npub: null,
   pubkey: null,
-  followingPubkeys: []
+  followingPubkeys: [],
 };
 
 const TIMELINE_DEFAULTS: TimelineState = {
@@ -84,12 +98,12 @@ const TIMELINE_DEFAULTS: TimelineState = {
   includeReplies: false,
   lastLoadedTimestamp: 0,
   scrollPosition: 0,
-  selectedRelay: null
+  selectedRelay: null,
 };
 
 const VIEW_DEFAULTS: ViewState = {
   currentView: 'timeline',
-  profileScrollPosition: 0
+  profileScrollPosition: 0,
 };
 
 const PROFILE_SEARCH_DEFAULTS: ProfileSearchState = {
@@ -101,7 +115,7 @@ const PROFILE_SEARCH_DEFAULTS: ProfileSearchState = {
   totalNotes: 0,
   scrollPosition: 0,
   dateRange: { start: 'N/A', end: 'N/A' },
-  navigatedToSNV: false
+  navigatedToSNV: false,
 };
 
 export class AppState {
@@ -140,12 +154,18 @@ export class AppState {
     };
   }
 
-  public setState<K extends StateKey>(key: K, updates: Partial<AppStateData[K]>): void {
+  public setState<K extends StateKey>(
+    key: K,
+    updates: Partial<AppStateData[K]>
+  ): void {
     (this.stores[key] as StateStore<any>).set(updates);
     this.logStateChange(key, updates);
   }
 
-  public subscribe<K extends StateKey>(key: K, callback: StateCallback<K>): () => void {
+  public subscribe<K extends StateKey>(
+    key: K,
+    callback: StateCallback<K>
+  ): () => void {
     return (this.stores[key] as StateStore<any>).subscribe(callback);
   }
 
@@ -161,18 +181,23 @@ export class AppState {
     this.systemLogger.info('AppState', '📊 Current state:', this.getAllState());
   }
 
-  private logStateChange<K extends StateKey>(key: K, updates: Partial<AppStateData[K]>): void {
+  private logStateChange<K extends StateKey>(
+    key: K,
+    updates: Partial<AppStateData[K]>
+  ): void {
     if (key === 'view') {
       const viewState = updates as Partial<ViewState>;
       if (viewState.currentView) {
         const viewMessages: { [key: string]: string } = {
-          'timeline': '📱 Switched to Timeline View',
+          timeline: '📱 Switched to Timeline View',
           'single-note': '📄 Switched to Single Note View',
-          'profile': '👤 Switched to Profile View',
-          'settings': '⚙️ Switched to Settings View',
-          'messages': '💬 Switched to Messages View'
+          profile: '👤 Switched to Profile View',
+          settings: '⚙️ Switched to Settings View',
+          messages: '💬 Switched to Messages View',
         };
-        const message = viewMessages[viewState.currentView] || `Switched to ${viewState.currentView}`;
+        const message =
+          viewMessages[viewState.currentView] ||
+          `Switched to ${viewState.currentView}`;
         this.systemLogger.info('AppState', message);
       }
     } else if (key === 'user') {
@@ -185,7 +210,10 @@ export class AppState {
     } else if (key === 'profileSearch') {
       const searchState = updates as Partial<ProfileSearchState>;
       if (searchState.isActive === true && searchState.searchTerms) {
-        this.systemLogger.info('AppState', `🔍 Search activated: "${searchState.searchTerms}"`);
+        this.systemLogger.info(
+          'AppState',
+          `🔍 Search activated: "${searchState.searchTerms}"`
+        );
       } else if (searchState.isActive === false) {
         this.systemLogger.info('AppState', '🔍 Search deactivated');
       }

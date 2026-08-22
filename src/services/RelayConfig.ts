@@ -64,7 +64,7 @@ export class RelayConfig {
           types: ['read', 'write'],
           isPaid: false,
           requiresAuth: false,
-          isActive: true
+          isActive: true,
         };
         this.relays.set(url, relay);
       });
@@ -87,8 +87,7 @@ export class RelayConfig {
    * Get read relays for timeline loading
    */
   public getReadRelays(): string[] {
-    const readRelays = this.getRelaysByType('read')
-      .map(relay => relay.url);
+    const readRelays = this.getRelaysByType('read').map(relay => relay.url);
 
     const localRelaySettings = this.loadLocalRelaySettings();
     if (localRelaySettings.enabled) {
@@ -110,7 +109,11 @@ export class RelayConfig {
   /**
    * Load local relay settings from localStorage
    */
-  public loadLocalRelaySettings(): { enabled: boolean; url: string; mode: string } {
+  public loadLocalRelaySettings(): {
+    enabled: boolean;
+    url: string;
+    mode: string;
+  } {
     try {
       const stored = localStorage.getItem('noornote_local_relay');
       if (stored) {
@@ -123,7 +126,7 @@ export class RelayConfig {
     return {
       enabled: false,
       mode: 'test',
-      url: 'ws://localhost:7777'
+      url: 'ws://localhost:7777',
     };
   }
 
@@ -131,26 +134,26 @@ export class RelayConfig {
    * Get write relays for publishing
    */
   public getWriteRelays(): string[] {
-    return this.getRelaysByType('write')
-      .map(relay => relay.url);
+    return this.getRelaysByType('write').map(relay => relay.url);
   }
 
   /**
    * Get inbox relays for DMs
    */
   public getInboxRelays(): string[] {
-    return this.getRelaysByType('inbox')
-      .map(relay => relay.url);
+    return this.getRelaysByType('inbox').map(relay => relay.url);
   }
 
   /**
    * Add or update a relay
    */
-  public addRelay(relayInfo: Omit<RelayInfo, 'errorCount' | 'lastConnected'>): void {
+  public addRelay(
+    relayInfo: Omit<RelayInfo, 'errorCount' | 'lastConnected'>
+  ): void {
     const existing = this.relays.get(relayInfo.url);
     const relay: RelayInfo = {
       ...relayInfo,
-      errorCount: existing?.errorCount || 0
+      errorCount: existing?.errorCount || 0,
     };
     if (existing?.lastConnected) {
       relay.lastConnected = existing.lastConnected;
@@ -171,7 +174,11 @@ export class RelayConfig {
   /**
    * Update relay connection status
    */
-  public updateRelayStatus(url: string, connected: boolean, error?: boolean): void {
+  public updateRelayStatus(
+    url: string,
+    connected: boolean,
+    error?: boolean
+  ): void {
     const relay = this.relays.get(url);
     if (relay) {
       if (connected) {
@@ -231,7 +238,7 @@ export class RelayConfig {
         'wss://relay.primal.net',
         'wss://nostr.oxtr.dev',
         'wss://nostr21.com',
-        'wss://noornode.nostr1.com/'
+        'wss://noornode.nostr1.com/',
       ];
     }
     return [
@@ -245,7 +252,7 @@ export class RelayConfig {
       'wss://relay.zapstore.dev',
       'wss://nostr.oxtr.dev',
       'wss://nostr21.com',
-      'wss://noornode.nostr1.com/'
+      'wss://noornode.nostr1.com/',
     ];
   }
 
@@ -257,16 +264,13 @@ export class RelayConfig {
    */
   public getMetadataRelays(): string[] {
     if (isDataSaverEnabled()) {
-      return [
-        ...this.getAggregatorRelays(),
-        'wss://purplepag.es'
-      ];
+      return [...this.getAggregatorRelays(), 'wss://purplepag.es'];
     }
     return [
       ...this.getAggregatorRelays(),
       'wss://index.hzrd149.com/',
       'wss://indexer.coracle.social/',
-      'wss://user.kindpag.es/'
+      'wss://user.kindpag.es/',
     ];
   }
 
@@ -274,11 +278,13 @@ export class RelayConfig {
    * Get user-configured read relays (excludes aggregator relays)
    */
   public getUserReadRelays(): string[] {
-    const readRelays = this.getRelaysByType('read')
-      .map(relay => relay.url);
+    const readRelays = this.getRelaysByType('read').map(relay => relay.url);
 
     const localRelaySettings = this.loadLocalRelaySettings();
-    if (localRelaySettings.enabled && !readRelays.includes(localRelaySettings.url)) {
+    if (
+      localRelaySettings.enabled &&
+      !readRelays.includes(localRelaySettings.url)
+    ) {
       readRelays.push(localRelaySettings.url);
     }
 
@@ -291,7 +297,10 @@ export class RelayConfig {
    */
   private loadFromCache(): boolean {
     try {
-      const cached = this.perAccountStorage.get<RelayInfo[]>(StorageKeys.RELAY_LIST, []);
+      const cached = this.perAccountStorage.get<RelayInfo[]>(
+        StorageKeys.RELAY_LIST,
+        []
+      );
       if (cached.length > 0) {
         this.relays.clear();
         cached.forEach(relay => {
@@ -325,14 +334,20 @@ export class RelayConfig {
    * Get cached relay list timestamp (created_at of last Kind 10002)
    */
   private getCacheTimestamp(): number {
-    return this.perAccountStorage.get<number>(StorageKeys.RELAY_LIST_TIMESTAMP, 0);
+    return this.perAccountStorage.get<number>(
+      StorageKeys.RELAY_LIST_TIMESTAMP,
+      0
+    );
   }
 
   /**
    * Get cached inbox relay list timestamp (created_at of last Kind 10050)
    */
   private getInboxCacheTimestamp(): number {
-    return this.perAccountStorage.get<number>(StorageKeys.INBOX_RELAY_LIST_TIMESTAMP, 0);
+    return this.perAccountStorage.get<number>(
+      StorageKeys.INBOX_RELAY_LIST_TIMESTAMP,
+      0
+    );
   }
 
   /**
@@ -354,12 +369,18 @@ export class RelayConfig {
    * Setup listener for user login/logout
    */
   private setupLoginListener(): void {
-    this.eventBus.on('user:login', async (data: { npub: string; pubkey: string }) => {
-      await this.loadRelayListForUser(data.pubkey);
-    });
+    this.eventBus.on(
+      'user:login',
+      async (data: { npub: string; pubkey: string }) => {
+        await this.loadRelayListForUser(data.pubkey);
+      }
+    );
 
     this.eventBus.on('user:logout', () => {
-      this.systemLogger.info('RelayConfig', 'User logged out, resetting to defaults');
+      this.systemLogger.info(
+        'RelayConfig',
+        'User logged out, resetting to defaults'
+      );
       this.resetToDefaults();
       this.eventBus.emit('relays:updated');
       this.eventBus.emit('relays:loaded');
@@ -375,7 +396,10 @@ export class RelayConfig {
     const hadCache = this.loadFromCache();
 
     if (hadCache) {
-      this.systemLogger.info('RelayConfig', `Loaded ${this.relays.size} relays from cache`);
+      this.systemLogger.info(
+        'RelayConfig',
+        `Loaded ${this.relays.size} relays from cache`
+      );
       this.eventBus.emit('relays:loaded');
 
       // Background-sync: check relays for newer list (don't block UI)
@@ -428,7 +452,8 @@ export class RelayConfig {
     }
 
     if (added > 0) parts.push(`${added} new ${label}${added > 1 ? 's' : ''}`);
-    if (removed > 0) parts.push(`${removed} ${label}${removed > 1 ? 's' : ''} removed`);
+    if (removed > 0)
+      parts.push(`${removed} ${label}${removed > 1 ? 's' : ''} removed`);
     return parts;
   }
 
@@ -439,7 +464,8 @@ export class RelayConfig {
   private async syncFromRelays(pubkey: string): Promise<void> {
     const orchestrator = RelayListOrchestrator.getInstance();
     const profileService = UserProfileService.getInstance();
-    const username = profileService.getUsername(pubkey) || pubkey.slice(0, 8) + '...';
+    const username =
+      profileService.getUsername(pubkey) || `${pubkey.slice(0, 8)}...`;
 
     this.systemLogger.info('RelayConfig', `Syncing ${username}'s relay list`);
 
@@ -449,7 +475,7 @@ export class RelayConfig {
       // Fetch Kind 10002 (read/write) and Kind 10050 (inbox) in parallel
       const [relayResult, inboxResult] = await Promise.all([
         orchestrator.fetchRelayList(pubkey, bootstrapRelays),
-        orchestrator.fetchDMRelayList(pubkey, bootstrapRelays)
+        orchestrator.fetchDMRelayList(pubkey, bootstrapRelays),
       ]);
 
       const parts: string[] = [];
@@ -457,37 +483,65 @@ export class RelayConfig {
       let newInboxTimestamp: number | undefined;
 
       // --- Kind 10002: read/write relays ---
-      if (relayResult && relayResult.relays.length > 0 && relayResult.timestamp > this.getCacheTimestamp()) {
-        parts.push(...this.mergeRelayKind(relayResult, ['read', 'write'], 'relay'));
+      if (
+        relayResult &&
+        relayResult.relays.length > 0 &&
+        relayResult.timestamp > this.getCacheTimestamp()
+      ) {
+        parts.push(
+          ...this.mergeRelayKind(relayResult, ['read', 'write'], 'relay')
+        );
         newRelayTimestamp = relayResult.timestamp;
       }
 
       // --- Kind 10050: inbox relays ---
-      if (inboxResult && inboxResult.relays.length > 0 && inboxResult.timestamp > this.getInboxCacheTimestamp()) {
-        parts.push(...this.mergeRelayKind(inboxResult, ['inbox'], 'inbox relay'));
+      if (
+        inboxResult &&
+        inboxResult.relays.length > 0 &&
+        inboxResult.timestamp > this.getInboxCacheTimestamp()
+      ) {
+        parts.push(
+          ...this.mergeRelayKind(inboxResult, ['inbox'], 'inbox relay')
+        );
         newInboxTimestamp = inboxResult.timestamp;
       }
 
-      const changed = newRelayTimestamp !== undefined || newInboxTimestamp !== undefined;
+      const changed =
+        newRelayTimestamp !== undefined || newInboxTimestamp !== undefined;
 
       if (changed) {
         try {
           const relayArray = Array.from(this.relays.values());
           this.perAccountStorage.set(StorageKeys.RELAY_LIST, relayArray);
-          if (newRelayTimestamp) this.perAccountStorage.set(StorageKeys.RELAY_LIST_TIMESTAMP, newRelayTimestamp);
-          if (newInboxTimestamp) this.perAccountStorage.set(StorageKeys.INBOX_RELAY_LIST_TIMESTAMP, newInboxTimestamp);
+          if (newRelayTimestamp)
+            this.perAccountStorage.set(
+              StorageKeys.RELAY_LIST_TIMESTAMP,
+              newRelayTimestamp
+            );
+          if (newInboxTimestamp)
+            this.perAccountStorage.set(
+              StorageKeys.INBOX_RELAY_LIST_TIMESTAMP,
+              newInboxTimestamp
+            );
         } catch {
           // Failed to save to cache
         }
 
         if (parts.length === 0) parts.push('relay settings updated');
-        this.systemLogger.success('RelayConfig', `Relay sync: ${parts.join(', ')}`);
+        this.systemLogger.success(
+          'RelayConfig',
+          `Relay sync: ${parts.join(', ')}`
+        );
         this.eventBus.emit('relays:updated');
       } else {
-        const noData = (!relayResult || relayResult.relays.length === 0) &&
-                       (!inboxResult || inboxResult.relays.length === 0);
+        const noData =
+          (!relayResult || relayResult.relays.length === 0) &&
+          (!inboxResult || inboxResult.relays.length === 0);
         if (noData) {
-          this.systemLogger.info('RelayConfig', 'No relay list found on relays, using defaults');
+          this.systemLogger.info(
+            'RelayConfig',
+            'No relay list found on relays, using defaults'
+          );
         } else {
           this.systemLogger.info('RelayConfig', 'Relay list is up to date');
         }

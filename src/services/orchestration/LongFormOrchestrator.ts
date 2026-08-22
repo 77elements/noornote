@@ -68,7 +68,9 @@ export class LongFormOrchestrator extends Orchestrator {
   /**
    * Fetch addressable event from naddr reference
    */
-  public async fetchAddressableEvent(naddrRef: string): Promise<NostrEvent | null> {
+  public async fetchAddressableEvent(
+    naddrRef: string
+  ): Promise<NostrEvent | null> {
     // If already fetching, wait for that request
     if (this.fetching.has(naddrRef)) {
       return await this.fetching.get(naddrRef)!;
@@ -97,7 +99,10 @@ export class LongFormOrchestrator extends Orchestrator {
     // Decode naddr
     const data = this.decodeNaddr(naddrRef);
     if (!data) {
-      this.systemLogger.error('LongFormOrchestrator', `Invalid naddr: ${naddrRef.slice(0, 30)}`);
+      this.systemLogger.error(
+        'LongFormOrchestrator',
+        `Invalid naddr: ${naddrRef.slice(0, 30)}`
+      );
       return null;
     }
 
@@ -118,10 +123,16 @@ export class LongFormOrchestrator extends Orchestrator {
 
     // Stage 3: Try with outbound relays
     try {
-      const outboundRelays = await this.relayDiscovery.getCombinedRelays([data.pubkey], true);
+      const outboundRelays = await this.relayDiscovery.getCombinedRelays(
+        [data.pubkey],
+        true
+      );
       return await this.fetchByCoordinates(data, outboundRelays);
     } catch (error) {
-      this.systemLogger.error('LongFormOrchestrator', `Stage 3 failed: ${error}`);
+      this.systemLogger.error(
+        'LongFormOrchestrator',
+        `Stage 3 failed: ${error}`
+      );
       return null;
     }
   }
@@ -133,21 +144,31 @@ export class LongFormOrchestrator extends Orchestrator {
     data: AddressableEventData,
     relays: string[]
   ): Promise<NostrEvent | null> {
-    const filters: NDKFilter[] = [{
-      kinds: [data.kind],
-      authors: [data.pubkey],
-      '#d': [data.identifier],
-      limit: 1
-    }];
+    const filters: NDKFilter[] = [
+      {
+        kinds: [data.kind],
+        authors: [data.pubkey],
+        '#d': [data.identifier],
+        limit: 1,
+      },
+    ];
 
     try {
-      const events = await this.transport.fetch(relays, filters, 5000, false, 'LongFormOrch');
+      const events = await this.transport.fetch(
+        relays,
+        filters,
+        5000,
+        false,
+        'LongFormOrch'
+      );
       if (events.length === 0) return null;
       // Pick the latest version by created_at. `limit: 1` is per-relay, so
       // NDK can still aggregate multiple versions from different relays
       // into the result set — `events[0]` would otherwise return whichever
       // landed first in iteration order, occasionally a stale generation.
-      return events.reduce((latest, ev) => ev.created_at > latest.created_at ? ev : latest);
+      return events.reduce((latest, ev) =>
+        ev.created_at > latest.created_at ? ev : latest
+      );
     } catch {
       return null;
     }
@@ -173,7 +194,7 @@ export class LongFormOrchestrator extends Orchestrator {
         kind: data.kind,
         pubkey: data.pubkey,
         identifier: data.identifier,
-        relays: data.relays || []
+        relays: data.relays || [],
       };
     } catch {
       return null;
@@ -190,9 +211,14 @@ export class LongFormOrchestrator extends Orchestrator {
       title: getTag(tags, 'title', 'Untitled Article'),
       image: getTag(tags, 'image'),
       summary: getTag(tags, 'summary'),
-      publishedAt: parseInt(tags.find(t => t[0] === 'published_at')?.[1] || String(event.created_at)),
+      publishedAt: parseInt(
+        tags.find(t => t[0] === 'published_at')?.[1] || String(event.created_at)
+      ),
       identifier: getTag(tags, 'd'),
-      topics: tags.filter(t => t[0] === 't').map(t => t[1]).filter((v): v is string => v !== undefined)
+      topics: tags
+        .filter(t => t[0] === 't')
+        .map(t => t[1])
+        .filter((v): v is string => v !== undefined),
     };
   }
 
@@ -219,7 +245,10 @@ export class LongFormOrchestrator extends Orchestrator {
   }
 
   public onerror(relay: string, error: Error): void {
-    this.systemLogger.error('LongFormOrchestrator', `Relay error (${relay}): ${error.message}`);
+    this.systemLogger.error(
+      'LongFormOrchestrator',
+      `Relay error (${relay}): ${error.message}`
+    );
   }
 
   public onclose(_relay: string): void {

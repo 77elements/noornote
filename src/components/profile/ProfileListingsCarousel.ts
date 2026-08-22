@@ -16,10 +16,17 @@ import { NostrTransport } from '../../services/transport/NostrTransport';
 import { ProfileCarouselOrchestrator } from '../../services/orchestration/ProfileCarouselOrchestrator';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
-import { createCardGrid, type ScrollCarouselInstance } from '../../helpers/CarouselHelper';
+import {
+  createCardGrid,
+  type ScrollCarouselInstance,
+} from '../../helpers/CarouselHelper';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
-import { parseListingMetadata, formatPrice, type ListingMetadata } from '../../addons/marketplace/marketplace-helpers';
+import {
+  parseListingMetadata,
+  formatPrice,
+  type ListingMetadata,
+} from '../../addons/marketplace/marketplace-helpers';
 
 interface ListingCardData {
   event: NostrEvent;
@@ -60,7 +67,10 @@ export class ProfileListingsCarousel {
       // Shared fetch (read + outbound relays) via the carousel orchestrator,
       // reusing the same cached round-trip as the articles/videos carousels.
       // It also returns this author's kind:5 deletions for the tombstone filter.
-      const content = await ProfileCarouselOrchestrator.getInstance().fetchProfileContent(this.pubkey);
+      const content =
+        await ProfileCarouselOrchestrator.getInstance().fetchProfileContent(
+          this.pubkey
+        );
       const rawEvents = content.listings;
       const deletionEvents = content.deletions;
 
@@ -115,7 +125,10 @@ export class ProfileListingsCarousel {
         count: this.listings.length,
       });
     } catch (error) {
-      console.error('[ProfileListingsCarousel] Failed to fetch listings:', error);
+      console.error(
+        '[ProfileListingsCarousel] Failed to fetch listings:',
+        error
+      );
       this.listings = [];
     }
   }
@@ -129,7 +142,11 @@ export class ProfileListingsCarousel {
         ? `<div class="nn-card__media"><img src="${escapeHtmlAttr(firstImage)}" alt="" loading="lazy" /></div>`
         : `<div class="nn-card__media nn-card__media--empty"></div>`;
 
-      const priceLine = formatPrice(metadata.price, metadata.priceCurrency, metadata.priceFrequency);
+      const priceLine = formatPrice(
+        metadata.price,
+        metadata.priceCurrency,
+        metadata.priceFrequency
+      );
 
       return {
         html: `

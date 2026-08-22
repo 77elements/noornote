@@ -123,7 +123,7 @@ export class NoteService {
     if (event.id && !this.cache.has(event.id)) {
       this.cache.set(event.id, {
         event,
-        fetchedAt: Date.now()
+        fetchedAt: Date.now(),
       });
       TypedEventBus.getInstance().emit('note:cached', { eventId: event.id });
     }
@@ -191,10 +191,12 @@ export class NoteService {
    * nos.lol / primal.net / offchain.pub explicitly.
    */
   private getLookupRelays(): string[] {
-    return [...new Set<string>([
-      ...this.relayConfig.getReadRelays(),
-      ...this.relayConfig.getAggregatorRelays(),
-    ])];
+    return [
+      ...new Set<string>([
+        ...this.relayConfig.getReadRelays(),
+        ...this.relayConfig.getAggregatorRelays(),
+      ]),
+    ];
   }
 
   /**
@@ -203,13 +205,21 @@ export class NoteService {
   private async fetchFromRelays(eventId: string): Promise<NostrEvent | null> {
     const relays = this.getLookupRelays();
 
-    const filters: NDKFilter[] = [{
-      ids: [eventId],
-      limit: 1
-    }];
+    const filters: NDKFilter[] = [
+      {
+        ids: [eventId],
+        limit: 1,
+      },
+    ];
 
     try {
-      const events = await this.transport.fetch(relays, filters, 5000, false, 'NoteService');
+      const events = await this.transport.fetch(
+        relays,
+        filters,
+        5000,
+        false,
+        'NoteService'
+      );
       return events[0] || null;
     } catch (error) {
       console.warn(`NoteService: Failed to fetch note ${eventId}:`, error);
@@ -220,16 +230,26 @@ export class NoteService {
   /**
    * Fetch multiple notes from relays
    */
-  private async fetchMultipleFromRelays(eventIds: string[]): Promise<Map<string, NostrEvent>> {
+  private async fetchMultipleFromRelays(
+    eventIds: string[]
+  ): Promise<Map<string, NostrEvent>> {
     const result = new Map<string, NostrEvent>();
     const relays = this.getLookupRelays();
 
-    const filters: NDKFilter[] = [{
-      ids: eventIds
-    }];
+    const filters: NDKFilter[] = [
+      {
+        ids: eventIds,
+      },
+    ];
 
     try {
-      const events = await this.transport.fetch(relays, filters, 5000, false, 'NoteService');
+      const events = await this.transport.fetch(
+        relays,
+        filters,
+        5000,
+        false,
+        'NoteService'
+      );
       for (const event of events) {
         if (event.id) {
           result.set(event.id, event);

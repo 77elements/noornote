@@ -28,7 +28,10 @@ async function platformReadFile(filePath: string): Promise<Uint8Array> {
   }
   if (platform.isCapacitor) {
     const { Filesystem, Directory } = await getCapFs();
-    const result = await Filesystem.readFile({ path: filePath, directory: Directory.Data });
+    const result = await Filesystem.readFile({
+      path: filePath,
+      directory: Directory.Data,
+    });
     const binary = atob(result.data as string);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
@@ -37,11 +40,16 @@ async function platformReadFile(filePath: string): Promise<Uint8Array> {
   throw new Error('platformReadFile: not available');
 }
 
-async function platformReadDir(dirPath: string): Promise<Array<{ name: string; isFile: boolean }>> {
+async function platformReadDir(
+  dirPath: string
+): Promise<Array<{ name: string; isFile: boolean }>> {
   if (platform.isElectron) return window.electronAPI!.readDir(dirPath);
   if (platform.isCapacitor) {
     const { Filesystem, Directory } = await getCapFs();
-    const result = await Filesystem.readdir({ path: dirPath, directory: Directory.Data });
+    const result = await Filesystem.readdir({
+      path: dirPath,
+      directory: Directory.Data,
+    });
     return result.files.map(f => ({ name: f.name, isFile: f.type === 'file' }));
   }
   throw new Error('platformReadDir: not available');
@@ -54,7 +62,9 @@ async function platformExists(path: string): Promise<boolean> {
       const { Filesystem, Directory } = await getCapFs();
       await Filesystem.stat({ path, directory: Directory.Data });
       return true;
-    } catch { return false; }
+    } catch {
+      return false;
+    }
   }
   return false;
 }
@@ -64,7 +74,9 @@ async function platformHomeDir(): Promise<string> {
   throw new Error('platformHomeDir: not available');
 }
 
-async function platformSaveFileDialog(filename: string): Promise<string | null> {
+async function platformSaveFileDialog(
+  filename: string
+): Promise<string | null> {
   if (platform.isElectron) {
     return window.electronAPI!.saveFileDialog({
       defaultPath: filename,
@@ -74,7 +86,10 @@ async function platformSaveFileDialog(filename: string): Promise<string | null> 
   throw new Error('platformSaveFileDialog: not available');
 }
 
-async function platformWriteFile(filePath: string, data: Uint8Array): Promise<void> {
+async function platformWriteFile(
+  filePath: string,
+  data: Uint8Array
+): Promise<void> {
   if (platform.isElectron) return window.electronAPI!.writeFile(filePath, data);
   throw new Error('platformWriteFile: not available');
 }
@@ -116,7 +131,11 @@ export async function runDiagLogExportFromButton(
       ToastService.show('Logs exported', 'success');
     } else {
       const debugInfo = (exportDiagnosticLogs as any).lastDebugInfo || '';
-      ToastService.show(exportError || debugInfo || 'export returned false', 'error', 15000);
+      ToastService.show(
+        exportError || debugInfo || 'export returned false',
+        'error',
+        15000
+      );
     }
   } catch (error) {
     const { ToastService } = await import('./ToastService');
@@ -141,7 +160,9 @@ export async function exportDiagnosticLogs(): Promise<boolean> {
 
     // 2. Collect log data (web: IndexedDB ring, native: filesystem)
     const isWeb = platform.isBrowser;
-    const collected = isWeb ? await collectWebLogFiles() : await collectLogFiles();
+    const collected = isWeb
+      ? await collectWebLogFiles()
+      : await collectLogFiles();
     if (Object.keys(collected.files).length === 0) {
       (exportDiagnosticLogs as any).lastDebugInfo = collected.debugInfo;
       logger.warn('DiagLogExport', `No logs: ${collected.debugInfo}`);
@@ -155,10 +176,16 @@ export async function exportDiagnosticLogs(): Promise<boolean> {
     // map stays alive in the closure and stacks on top of zipData, which has
     // OOM'd the 256MB WebView heap on large log sets.
     collected.files = {};
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const timestamp = new Date()
+      .toISOString()
+      .replace(/[:.]/g, '-')
+      .slice(0, 19);
     const filename = `noornote-logs-${timestamp}.zip`;
 
-    logger.info('DiagLogExport', `ZIP ready — ${(zipData.length / 1024).toFixed(1)} KB`);
+    logger.info(
+      'DiagLogExport',
+      `ZIP ready — ${(zipData.length / 1024).toFixed(1)} KB`
+    );
 
     // 4. Save (platform-specific)
     if (isWeb) {
@@ -177,7 +204,10 @@ export async function exportDiagnosticLogs(): Promise<boolean> {
   }
 }
 
-async function collectLogFiles(): Promise<{ files: Record<string, Uint8Array>; debugInfo: string }> {
+async function collectLogFiles(): Promise<{
+  files: Record<string, Uint8Array>;
+  debugInfo: string;
+}> {
   const logsDir = await getLogsDir();
   if (!logsDir) return { files: {}, debugInfo: 'no logsDir' };
 
@@ -201,7 +231,8 @@ async function collectLogFiles(): Promise<{ files: Record<string, Uint8Array>; d
     debug.push(`${prefix || 'root'}:[${names.join(',')}]`);
 
     for (const entry of entries) {
-      if (!entry.name.endsWith('.jsonl') && !entry.name.endsWith('.jsonl.gz')) continue;
+      if (!entry.name.endsWith('.jsonl') && !entry.name.endsWith('.jsonl.gz'))
+        continue;
 
       try {
         const data = await platformReadFile(`${path}/${entry.name}`);
@@ -234,7 +265,10 @@ async function getLogsDir(): Promise<string | null> {
  * `{area}-{date}.jsonl` filenames identical to Desktop's daily files, so the
  * diagnose/*.py tooling consumes web exports unchanged.
  */
-async function collectWebLogFiles(): Promise<{ files: Record<string, Uint8Array>; debugInfo: string }> {
+async function collectWebLogFiles(): Promise<{
+  files: Record<string, Uint8Array>;
+  debugInfo: string;
+}> {
   const { diagWebStore } = await import('./DiagWebStore');
   const all = await diagWebStore.readAll();
   const files: Record<string, Uint8Array> = {};
@@ -261,8 +295,9 @@ async function collectWebLogFiles(): Promise<{ files: Record<string, Uint8Array>
 
     let areaCount = 0;
     for (const [date, dateLines] of byDate) {
-      const name = date === 'unknown' ? `${area}.jsonl` : `${area}-${date}.jsonl`;
-      files[name] = encoder.encode(dateLines.join('\n') + '\n');
+      const name =
+        date === 'unknown' ? `${area}.jsonl` : `${area}-${date}.jsonl`;
+      files[name] = encoder.encode(`${dateLines.join('\n')}\n`);
       areaCount += dateLines.length;
     }
     debug.push(`${area}:${areaCount}`);
@@ -297,7 +332,10 @@ function downloadBlob(data: Uint8Array, filename: string): boolean {
  * 256MB WebView heap. Streaming through a Cache file keeps peak JS heap at
  * roughly zipData + one small chunk.
  */
-async function saveToDownloads(zipData: Uint8Array, filename: string): Promise<boolean> {
+async function saveToDownloads(
+  zipData: Uint8Array,
+  filename: string
+): Promise<boolean> {
   const { Filesystem, Directory } = await getCapFs();
 
   // Multiple of 3 so each chunk base64-encodes cleanly with no padding glue.
@@ -309,35 +347,62 @@ async function saveToDownloads(zipData: Uint8Array, filename: string): Promise<b
     const slice = zipData.subarray(i, i + CHUNK);
     const b64 = btoa(String.fromCharCode(...slice));
     if (first) {
-      await Filesystem.writeFile({ path: tempPath, data: b64, directory: Directory.Cache, recursive: true });
+      await Filesystem.writeFile({
+        path: tempPath,
+        data: b64,
+        directory: Directory.Cache,
+        recursive: true,
+      });
       first = false;
     } else {
-      await Filesystem.appendFile({ path: tempPath, data: b64, directory: Directory.Cache });
+      await Filesystem.appendFile({
+        path: tempPath,
+        data: b64,
+        directory: Directory.Cache,
+      });
     }
   }
   if (first) {
     // Empty zip — create the file so the native copy has a source.
-    await Filesystem.writeFile({ path: tempPath, data: '', directory: Directory.Cache, recursive: true });
+    await Filesystem.writeFile({
+      path: tempPath,
+      data: '',
+      directory: Directory.Cache,
+      recursive: true,
+    });
   }
 
   try {
-    const { uri } = await Filesystem.getUri({ path: tempPath, directory: Directory.Cache });
+    const { uri } = await Filesystem.getUri({
+      path: tempPath,
+      directory: Directory.Cache,
+    });
     const { registerPlugin } = await import('@capacitor/core');
     const MediaSave = registerPlugin('MediaSave');
-    await (MediaSave as any).saveFileToDownloads({ fileUri: uri, filename, mimeType: 'application/zip' });
+    await (MediaSave as any).saveFileToDownloads({
+      fileUri: uri,
+      filename,
+      mimeType: 'application/zip',
+    });
 
     logger.success('DiagLogExport', `Logs exported to Downloads — ${filename}`);
     return true;
   } finally {
     // Remove the temp cache file whether the copy succeeded or failed.
-    await Filesystem.deleteFile({ path: tempPath, directory: Directory.Cache }).catch(() => {});
+    await Filesystem.deleteFile({
+      path: tempPath,
+      directory: Directory.Cache,
+    }).catch(() => {});
   }
 }
 
 /**
  * Desktop (Electron): Save via native dialog.
  */
-async function saveViaDialog(zipData: Uint8Array, filename: string): Promise<boolean> {
+async function saveViaDialog(
+  zipData: Uint8Array,
+  filename: string
+): Promise<boolean> {
   const filePath = await platformSaveFileDialog(filename);
 
   if (!filePath) {

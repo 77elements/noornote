@@ -38,7 +38,12 @@ export class TextBlinker {
     // Don't start if already blinking, if texts are the same, or if either side
     // is missing — blinking against an empty baseline would make the element
     // disappear every other cycle (the "missing avatar" bug).
-    if (this.interval || !currentText || !firstEncounterText || currentText === firstEncounterText) {
+    if (
+      this.interval ||
+      !currentText ||
+      !firstEncounterText ||
+      currentText === firstEncounterText
+    ) {
       this.textElement.textContent = currentText;
       return;
     }
@@ -55,7 +60,9 @@ export class TextBlinker {
 
       // Swap text after fade completes
       setTimeout(() => {
-        this.textElement.textContent = this.showFirst ? firstEncounterText : currentText;
+        this.textElement.textContent = this.showFirst
+          ? firstEncounterText
+          : currentText;
         this.textElement.style.opacity = '1';
         this.showFirst = !this.showFirst;
       }, TRANSITION_DURATION);
@@ -122,7 +129,12 @@ export class ProfileBlinker {
     // Don't start if already blinking, if pics are the same, or if either side
     // is missing — blinking against an empty baseline would make the avatar
     // disappear every other cycle (the "missing avatar" bug).
-    if (this.interval || !currentPic || !firstEncounterPic || currentPic === firstEncounterPic) {
+    if (
+      this.interval ||
+      !currentPic ||
+      !firstEncounterPic ||
+      currentPic === firstEncounterPic
+    ) {
       this.imgElement.src = currentPic;
       return;
     }

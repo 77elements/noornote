@@ -53,25 +53,26 @@ export class CacheManager {
   public async getCacheStats(): Promise<CacheStats> {
     const localStorageSize = getStorageSize(localStorage);
     const sessionStorageSize = getStorageSize(sessionStorage);
-    const { size: ndkCacheSize, count: ndkCacheCount } = await this.getNDKCacheSize();
+    const { size: ndkCacheSize, count: ndkCacheCount } =
+      await this.getNDKCacheSize();
 
     return {
       localStorage: {
         size: localStorageSize,
-        items: localStorage.length
+        items: localStorage.length,
       },
       sessionStorage: {
         size: sessionStorageSize,
-        items: sessionStorage.length
+        items: sessionStorage.length,
       },
       ndkCache: {
         size: ndkCacheSize,
-        items: ndkCacheCount
+        items: ndkCacheCount,
       },
       total: {
         size: localStorageSize + sessionStorageSize + ndkCacheSize,
-        items: localStorage.length + sessionStorage.length + ndkCacheCount
-      }
+        items: localStorage.length + sessionStorage.length + ndkCacheCount,
+      },
     };
   }
 
@@ -91,7 +92,14 @@ export class CacheManager {
 
       // Only measure safe tables (exclude unpublishedEvents, decryptedEvents, eventRelays)
       // Note: eventRelays removed - table may not exist in all DB versions
-      const safeTableNames = ['events', 'profiles', 'eventTags', 'nip05', 'lnurl', 'relayStatus'];
+      const safeTableNames = [
+        'events',
+        'profiles',
+        'eventTags',
+        'nip05',
+        'lnurl',
+        'relayStatus',
+      ];
 
       // Check which tables actually exist
       const existingTables = safeTableNames.filter(tableName =>
@@ -118,7 +126,9 @@ export class CacheManager {
         const tableCount = counts[i]!;
         if (tableCount === 0) continue;
 
-        const sample = await (db as any)[tableName].limit(SAMPLE_SIZE).toArray();
+        const sample = await (db as any)[tableName]
+          .limit(SAMPLE_SIZE)
+          .toArray();
         let sampleBytes = 0;
         sample.forEach((item: any) => {
           sampleBytes += JSON.stringify(item).length;
@@ -145,10 +155,12 @@ export class CacheManager {
       profileCache = true,
       eventCache = true,
       notificationsCache = true,
-      reload = true
+      reload = true,
     } = options;
 
-    console.log('🧹 CacheManager: Starting complete site data clear (like DevTools)');
+    console.log(
+      '🧹 CacheManager: Starting complete site data clear (like DevTools)'
+    );
 
     try {
       // Clear localStorage
@@ -181,7 +193,9 @@ export class CacheManager {
         this.clearNotificationsCache();
       }
 
-      console.log('✅ Complete site data clear completed successfully (equivalent to DevTools)');
+      console.log(
+        '✅ Complete site data clear completed successfully (equivalent to DevTools)'
+      );
 
       // Reload page if requested
       if (reload) {
@@ -189,7 +203,6 @@ export class CacheManager {
           window.location.reload();
         }, 500);
       }
-
     } catch (error) {
       console.error('❌ Error during site data clear operation:', error);
       throw error;
@@ -227,7 +240,7 @@ export class CacheManager {
       'noornote_user_event_ancestry',
       'noornote_bookmark_folders',
       'noornote_bookmark_folder_assignments',
-      'noornote_bookmark_root_order'
+      'noornote_bookmark_root_order',
     ];
 
     keysToRemove.forEach(key => localStorage.removeItem(key));
@@ -247,13 +260,15 @@ export class CacheManager {
   private clearNotificationsCache(): void {
     try {
       // Dynamically import to avoid circular dependencies
-      import('./NotificationsCacheService').then(module => {
-        const cacheService = module.NotificationsCacheService.getInstance();
-        cacheService.clearCache();
-        console.log('✅ Notifications cache cleared');
-      }).catch(error => {
-        console.warn('⚠️ Failed to clear notifications cache:', error);
-      });
+      import('./NotificationsCacheService')
+        .then(module => {
+          const cacheService = module.NotificationsCacheService.getInstance();
+          cacheService.clearCache();
+          console.log('✅ Notifications cache cleared');
+        })
+        .catch(error => {
+          console.warn('⚠️ Failed to clear notifications cache:', error);
+        });
     } catch (error) {
       console.warn('⚠️ Failed to clear notifications cache:', error);
     }
@@ -278,7 +293,7 @@ export class CacheManager {
       }
 
       // Delete each cache
-      const deletePromises = cacheNames.map(async (cacheName) => {
+      const deletePromises = cacheNames.map(async cacheName => {
         try {
           await caches.delete(cacheName);
           console.log(`✅ Cache Storage '${cacheName}' deleted`);
@@ -289,7 +304,6 @@ export class CacheManager {
 
       await Promise.all(deletePromises);
       console.log('✅ All Cache Storage cleared');
-
     } catch (error) {
       console.warn('⚠️ Failed to clear Cache Storage:', error);
     }
@@ -309,7 +323,7 @@ export class CacheManager {
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-    return Math.round(bytes / Math.pow(k, i)) + ' ' + sizes[i];
+    return `${Math.round(bytes / Math.pow(k, i))} ${sizes[i]}`;
   }
 
   /**

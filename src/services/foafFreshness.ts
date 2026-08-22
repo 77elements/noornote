@@ -19,8 +19,10 @@ export const FOAF_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
  * Tolerance is measured against the graph's ORIGINAL build count, so it
  * never accumulates across sessions (no re-save of restored entries).
  */
-export const foafFollowCountTolerance = (buildCount: number, currentCount: number): number =>
-  Math.max(20, Math.ceil(0.05 * Math.max(buildCount, currentCount)));
+export const foafFollowCountTolerance = (
+  buildCount: number,
+  currentCount: number
+): number => Math.max(20, Math.ceil(0.05 * Math.max(buildCount, currentCount)));
 
 /**
  * A cache entry is fresh when (a) the user's follow count hasn't diverged
@@ -33,6 +35,6 @@ export const isFoafEntryFresh = (
   currentFollowCount: number,
   now: number = Date.now()
 ): boolean =>
-  Math.abs(followCountAtBuild - currentFollowCount)
-    <= foafFollowCountTolerance(followCountAtBuild, currentFollowCount)
-  && now - builtAt < FOAF_CACHE_TTL_MS;
+  Math.abs(followCountAtBuild - currentFollowCount) <=
+    foafFollowCountTolerance(followCountAtBuild, currentFollowCount) &&
+  now - builtAt < FOAF_CACHE_TTL_MS;

@@ -35,7 +35,11 @@ export interface RepliesRendererOptions {
   /** Whether to update ISL stats after fetching replies */
   updateISL?: boolean;
   /** Callback to load zaps list for a reply */
-  onLoadZapsList?: (noteId: string, authorPubkey: string, noteElement: HTMLElement) => void;
+  onLoadZapsList?: (
+    noteId: string,
+    authorPubkey: string,
+    noteElement: HTMLElement
+  ) => void;
 }
 
 export class RepliesRenderer {
@@ -43,15 +47,21 @@ export class RepliesRenderer {
   private noteId: string;
   private noteAuthor: string;
   private updateISL: boolean;
-  private onLoadZapsList?: (noteId: string, authorPubkey: string, noteElement: HTMLElement) => void;
+  private onLoadZapsList?: (
+    noteId: string,
+    authorPubkey: string,
+    noteElement: HTMLElement
+  ) => void;
 
   private _singleNoteApi?: SingleNoteModuleApi | null;
   private get singleNoteApi(): SingleNoteModuleApi | null {
-    return this._singleNoteApi ??= ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
+    return (this._singleNoteApi ??=
+      ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note'));
   }
   private _reactionsApi?: ReactionsModuleApi | null;
   private get reactionsApi(): ReactionsModuleApi | null {
-    return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
+    return (this._reactionsApi ??=
+      ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
   }
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
@@ -83,15 +93,19 @@ export class RepliesRenderer {
       // Fetch both replies and quoted reposts in parallel
       const [allReplies, allQuotedReposts] = await Promise.all([
         this.singleNoteApi?.fetchReplies(this.noteId) ?? Promise.resolve([]),
-        this.fetchQuotedReposts(this.noteId)
+        this.fetchQuotedReposts(this.noteId),
       ]);
 
       // Filter out quoted reposts from the same author (own replies with quotes)
-      const fetchedQuotedReposts = allQuotedReposts.filter(q => q.pubkey !== this.noteAuthor);
+      const fetchedQuotedReposts = allQuotedReposts.filter(
+        q => q.pubkey !== this.noteAuthor
+      );
 
       // Filter out any "replies" that are also quoted reposts (to avoid duplicates)
       const fetchedQuoteIds = new Set(fetchedQuotedReposts.map(q => q.id));
-      const repliesAndUnmarkedQuotes = allReplies.filter(r => !fetchedQuoteIds.has(r.id));
+      const repliesAndUnmarkedQuotes = allReplies.filter(
+        r => !fetchedQuoteIds.has(r.id)
+      );
 
       // Reclassify kind:1 events whose addressable parent reference is bare
       // (no reply/root marker) as quoted reposts. Bare 'a' tags on kind:1
@@ -136,13 +150,13 @@ export class RepliesRenderer {
           await isl.waitForInitialFetch();
           isl.updateStats({
             replies: replies.length,
-            quotedReposts: quotedReposts.length
+            quotedReposts: quotedReposts.length,
           });
 
           // Also update the cache so Timeline shows correct count
           this.reactionsApi?.updateCachedStats(this.noteId, {
             replies: replies.length,
-            quotedReposts: quotedReposts.length
+            quotedReposts: quotedReposts.length,
           });
         }
       }
@@ -161,14 +175,14 @@ export class RepliesRenderer {
         const comments = [
           ...threadTree.map(node => ({
             type: 'reply' as const,
-            node: node,
-            timestamp: node.event.created_at
+            node,
+            timestamp: node.event.created_at,
           })),
           ...quotedReposts.map(event => ({
             type: 'quote' as const,
-            event: event,
-            timestamp: event.created_at
-          }))
+            event,
+            timestamp: event.created_at,
+          })),
         ].sort((a, b) => a.timestamp - b.timestamp); // Oldest first (chronological)
 
         // Render all comments
@@ -193,7 +207,10 @@ export class RepliesRenderer {
   /**
    * Build thread tree from flat reply list
    */
-  private buildThreadTree(replies: NostrEvent[], rootNoteId: string): ThreadNode[] {
+  private buildThreadTree(
+    replies: NostrEvent[],
+    rootNoteId: string
+  ): ThreadNode[] {
     const nodes = new Map<string, ThreadNode>();
     const rootNodes: ThreadNode[] = [];
 
@@ -204,7 +221,7 @@ export class RepliesRenderer {
       nodes.set(replyId, {
         event: reply,
         children: [],
-        depth: 0
+        depth: 0,
       });
     });
 
@@ -240,7 +257,10 @@ export class RepliesRenderer {
   private async fetchQuotedReposts(noteId: string): Promise<NostrEvent[]> {
     const relays = this.relayConfig.getReadRelays();
 
-    this.systemLogger.info('RepliesRenderer', `🔍 Fetching quoted reposts for ${noteId.slice(0, 8)}...`);
+    this.systemLogger.info(
+      'RepliesRenderer',
+      `🔍 Fetching quoted reposts for ${noteId.slice(0, 8)}...`
+    );
 
     try {
       // Addressable events (NIP-33 kinds 30000–39999) are referenced via #a,
@@ -251,12 +271,31 @@ export class RepliesRenderer {
       // Two relay queries in parallel: NIP-18 q-tag AND legacy e-tag-with-mention
       // (Primal-iOS pre-NIP-18 pattern). Tag-OR can't be expressed in one filter.
       const fetches: Array<Promise<{ events: NostrEvent[] }>> = [
-        fetchNostrEvents({ relays, kinds: [1, 6], tags: { 'q': [noteId] }, limit: 100 }),
+        fetchNostrEvents({
+          relays,
+          kinds: [1, 6],
+          tags: { q: [noteId] },
+          limit: 100,
+        }),
       ];
       if (isAddressable) {
-        fetches.push(fetchNostrEvents({ relays, kinds: [1, 6], tags: { 'a': [noteId] }, limit: 100 }));
+        fetches.push(
+          fetchNostrEvents({
+            relays,
+            kinds: [1, 6],
+            tags: { a: [noteId] },
+            limit: 100,
+          })
+        );
       } else {
-        fetches.push(fetchNostrEvents({ relays, kinds: [1], tags: { 'e': [noteId] }, limit: 100 }));
+        fetches.push(
+          fetchNostrEvents({
+            relays,
+            kinds: [1],
+            tags: { e: [noteId] },
+            limit: 100,
+          })
+        );
       }
       const results = await Promise.all(fetches);
       const qTagResult = results[0]!;
@@ -271,22 +310,33 @@ export class RepliesRenderer {
         const hasContent = event.content.trim().length > 0;
         if (!hasContent) return false;
 
-        if (event.tags.some(tag => tag[0] === 'q' && tag[1] === noteId)) return true;
+        if (event.tags.some(tag => tag[0] === 'q' && tag[1] === noteId))
+          return true;
 
         if (isAddressable) {
           // Addressable: match via #a tag
           return event.tags.some(tag => tag[0] === 'a' && tag[1] === noteId);
         }
 
-        const eTags = event.tags.filter(tag => tag[0] === 'e' && tag[1] === noteId);
-        return eTags.some(tag => tag[3] === 'mention')
-          && /nostr:(nevent1|note1|naddr1)/.test(event.content);
+        const eTags = event.tags.filter(
+          tag => tag[0] === 'e' && tag[1] === noteId
+        );
+        return (
+          eTags.some(tag => tag[3] === 'mention') &&
+          /nostr:(nevent1|note1|naddr1)/.test(event.content)
+        );
       });
 
-      this.systemLogger.info('RepliesRenderer', `✅ Quoted reposts: ${quotedReposts.length}`);
+      this.systemLogger.info(
+        'RepliesRenderer',
+        `✅ Quoted reposts: ${quotedReposts.length}`
+      );
       return quotedReposts;
     } catch (error) {
-      this.systemLogger.error('RepliesRenderer', `Failed to fetch quoted reposts: ${error}`);
+      this.systemLogger.error(
+        'RepliesRenderer',
+        `Failed to fetch quoted reposts: ${error}`
+      );
       return [];
     }
   }
@@ -330,7 +380,10 @@ export class RepliesRenderer {
   /**
    * Create a reply element with depth-based indentation
    */
-  private createReplyElement(reply: NostrEvent, depth: number = 0): HTMLElement {
+  private createReplyElement(
+    reply: NostrEvent,
+    depth: number = 0
+  ): HTMLElement {
     const isUserLoggedIn = AuthService.getInstance().getCurrentUser() !== null;
 
     const noteElement = NoteUI.createNoteElement(reply, {
@@ -338,7 +391,7 @@ export class RepliesRenderer {
       islFetchStats: true,
       isLoggedIn: isUserLoggedIn,
       headerSize: 'small',
-      depth: 0
+      depth: 0,
     });
 
     // Load zaps list for this reply (if callback provided)
@@ -360,11 +413,17 @@ export class RepliesRenderer {
   /**
    * Render a quoted repost as a special comment
    */
-  private async renderQuotedRepost(quoteEvent: NostrEvent, container: Element): Promise<void> {
+  private async renderQuotedRepost(
+    quoteEvent: NostrEvent,
+    container: Element
+  ): Promise<void> {
     const quoteEventId = quoteEvent.id;
     if (!quoteEventId) return;
 
-    this.systemLogger.info('RepliesRenderer', `🎨 Rendering quoted repost: ${quoteEventId.slice(0, 8)}`);
+    this.systemLogger.info(
+      'RepliesRenderer',
+      `🎨 Rendering quoted repost: ${quoteEventId.slice(0, 8)}`
+    );
 
     // Strip the embedded event/note/naddr references from content (the
     // quoted target is already indicated by the "X quoted this note:" header
@@ -373,7 +432,9 @@ export class RepliesRenderer {
     // distinct from the quoted target, and useful UX.
     const cleanedEvent = {
       ...quoteEvent,
-      content: quoteEvent.content.replace(/nostr:(nevent|note|naddr)[a-z0-9]+/gi, '').trim()
+      content: quoteEvent.content
+        .replace(/nostr:(nevent|note|naddr)[a-z0-9]+/gi, '')
+        .trim(),
     };
 
     // Create wrapper for quote
@@ -394,19 +455,21 @@ export class RepliesRenderer {
     const quoteHeader = document.createElement('div');
     quoteHeader.className = 'snv-quoted-repost__header';
     quoteHeader.innerHTML = `<a href="/note/${nevent}" class="snv-quoted-repost__link"><strong>${escapeHtml(username)}</strong> quoted this note:</a>`;
-    const link = quoteHeader.querySelector('.snv-quoted-repost__link') as HTMLAnchorElement | null;
-    link?.addEventListener('click', (e) => {
+    const link = quoteHeader.querySelector(
+      '.snv-quoted-repost__link'
+    ) as HTMLAnchorElement | null;
+    link?.addEventListener('click', e => {
       e.preventDefault();
       Router.getInstance().navigate(`/note/${nevent}`);
     });
 
     // Use NoteUI to render the quote (disable auto-setup)
     const noteElement = NoteUI.createNoteElement(cleanedEvent, {
-      collapsible: false,  // Disable auto-setup - will setup manually after DOM insertion
+      collapsible: false, // Disable auto-setup - will setup manually after DOM insertion
       islFetchStats: false,
       isLoggedIn: false,
       headerSize: 'small',
-      depth: 0
+      depth: 0,
     });
 
     // Assemble: header + note
@@ -415,7 +478,9 @@ export class RepliesRenderer {
     container.appendChild(quoteWrapper);
 
     // Setup CollapsibleManager AFTER element is in DOM
-    const { CollapsibleManager } = await import('../ui/note-features/CollapsibleManager');
+    const { CollapsibleManager } = await import(
+      '../ui/note-features/CollapsibleManager'
+    );
     CollapsibleManager.setup(noteElement, { maxHeight: '40vh' });
   }
 }

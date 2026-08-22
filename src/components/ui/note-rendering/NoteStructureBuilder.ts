@@ -5,7 +5,10 @@
  */
 
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
-import { encodeNevent, type Event as NostrEvent } from '../../../services/NostrToolsAdapter';
+import {
+  encodeNevent,
+  type Event as NostrEvent,
+} from '../../../services/NostrToolsAdapter';
 import { NoteHeader } from '../NoteHeader';
 import { ThreadContextIndicator } from '../ThreadContextIndicator';
 import { InteractionStatusLine } from '../InteractionStatusLine';
@@ -16,7 +19,10 @@ import { replaceBolt11Placeholders } from '../../../helpers/renderBolt11';
 import { extractOriginalNoteId } from '../../../helpers/extractOriginalNoteId';
 import { UserHoverCard } from '../UserHoverCard';
 import { getViewNavigationController } from '../../../services/ViewNavigationController';
-import { PerAccountLocalStorage, StorageKeys } from '../../../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../../services/PerAccountLocalStorage';
 import { ModuleLoader } from '../../../core/ModuleLoader';
 import { OutboundRelaysOrchestrator } from '../../../services/orchestration/OutboundRelaysOrchestrator';
 import type { PostsModuleApi } from '../../../modules/posts/contracts';
@@ -55,11 +61,15 @@ export class NoteStructureBuilder {
    * Extract reply information (parent event ID + relay hint)
    * Uses NIP-10 convention with proper marker support
    */
-  private static extractReplyInfo(event: NostrEvent): { parentEventId: string; relayHint: string | null } | null {
+  private static extractReplyInfo(
+    event: NostrEvent
+  ): { parentEventId: string; relayHint: string | null } | null {
     // NIP-10: marker "mention" is citation, NOT reply parent. Filter them out
     // so legacy quote-reposts (Primal-iOS pre-NIP-18: e-tag marked "mention")
     // don't get the ThreadContextIndicator strip mounted at the top.
-    const eTags = event.tags.filter(tag => tag[0] === 'e' && tag[3] !== 'mention');
+    const eTags = event.tags.filter(
+      tag => tag[0] === 'e' && tag[3] !== 'mention'
+    );
 
     if (eTags.length > 0) {
       // NIP-10: Look for explicit "reply" marker
@@ -79,7 +89,7 @@ export class NoteStructureBuilder {
       if (selectedTag && parentEventId) {
         return {
           parentEventId,
-          relayHint: selectedTag[2] || null
+          relayHint: selectedTag[2] || null,
         };
       }
     }
@@ -94,21 +104,23 @@ export class NoteStructureBuilder {
     //     quote-posts (NIP-18 quote-with-tagging) which already render the
     //     parent inline in the body — adding the indicator would duplicate.
     if (event.kind === 1111) {
-      const parentATag = event.tags.find(tag => tag[0] === 'a')
-                      ?? event.tags.find(tag => tag[0] === 'A');
+      const parentATag =
+        event.tags.find(tag => tag[0] === 'a') ??
+        event.tags.find(tag => tag[0] === 'A');
       if (parentATag?.[1]) {
         return {
           parentEventId: parentATag[1],
-          relayHint: parentATag[2] || null
+          relayHint: parentATag[2] || null,
         };
       }
     } else if (event.kind === 1) {
-      const parentATag = event.tags.find(tag => tag[0] === 'a' && tag[3] === 'reply')
-                      ?? event.tags.find(tag => tag[0] === 'a' && tag[3] === 'root');
+      const parentATag =
+        event.tags.find(tag => tag[0] === 'a' && tag[3] === 'reply') ??
+        event.tags.find(tag => tag[0] === 'a' && tag[3] === 'root');
       if (parentATag?.[1]) {
         return {
           parentEventId: parentATag[1],
-          relayHint: parentATag[2] || null
+          relayHint: parentATag[2] || null,
         };
       }
     }
@@ -130,7 +142,9 @@ export class NoteStructureBuilder {
    */
   private static getUserNSFWPreference(): boolean {
     try {
-      const settings = PerAccountLocalStorage.getInstance().get<{ displayNSFW: boolean }>(StorageKeys.SENSITIVE_MEDIA, { displayNSFW: false });
+      const settings = PerAccountLocalStorage.getInstance().get<{
+        displayNSFW: boolean;
+      }>(StorageKeys.SENSITIVE_MEDIA, { displayNSFW: false });
       return settings.displayNSFW || false;
     } catch (error) {
       console.warn('Failed to load NSFW preference:', error);
@@ -154,7 +168,9 @@ export class NoteStructureBuilder {
     // Register the raw event with the posts module so features that need a sync
     // event lookup by id (e.g. TextSelectionToolbar → highlight publishing)
     // can resolve it without re-fetching from relays.
-    ModuleLoader.getInstance().getApi<PostsModuleApi>('posts')?.registerNote(note.rawEvent);
+    ModuleLoader.getInstance()
+      .getApi<PostsModuleApi>('posts')
+      ?.registerNote(note.rawEvent);
 
     // Create note header component
     // For a reposted note the author is often someone you don't follow, so their
@@ -163,8 +179,15 @@ export class NoteStructureBuilder {
     // already-discovered write relays first. Non-blocking cached lookup; [] when
     // unavailable, in which case the profile fetch behaves exactly as before.
     let authorRelayHints: string[] = [];
-    if (note.type === 'repost' && note.reposter?.pubkey && note.reposter.pubkey !== note.author.pubkey) {
-      authorRelayHints = OutboundRelaysOrchestrator.getInstance().getCachedWriteRelays(note.reposter.pubkey);
+    if (
+      note.type === 'repost' &&
+      note.reposter?.pubkey &&
+      note.reposter.pubkey !== note.author.pubkey
+    ) {
+      authorRelayHints =
+        OutboundRelaysOrchestrator.getInstance().getCachedWriteRelays(
+          note.reposter.pubkey
+        );
     }
 
     const noteHeader = new NoteHeader({
@@ -175,7 +198,7 @@ export class NoteStructureBuilder {
       showVerification: true,
       showTimestamp: true,
       showMenu: true,
-      relayHints: authorRelayHints
+      relayHints: authorRelayHints,
     });
 
     // Check if this is a reply and extract parent event ID + relay hint
@@ -184,7 +207,9 @@ export class NoteStructureBuilder {
     let replyInfo = null;
     if (note.type === 'repost') {
       // Only check reply info if we have the reposted event (standard format)
-      replyInfo = note.repostedEvent ? NoteStructureBuilder.extractReplyInfo(note.repostedEvent) : null;
+      replyInfo = note.repostedEvent
+        ? NoteStructureBuilder.extractReplyInfo(note.repostedEvent)
+        : null;
     } else {
       // For regular notes, check the raw event
       replyInfo = NoteStructureBuilder.extractReplyInfo(note.rawEvent);
@@ -192,13 +217,17 @@ export class NoteStructureBuilder {
 
     // Check for long content
     const hasLong = NoteStructureBuilder.hasLongContent(note.content.text);
-    const contentClass = hasLong ? 'event-content has-long-content' : 'event-content';
+    const contentClass = hasLong
+      ? 'event-content has-long-content'
+      : 'event-content';
 
     // Build HTML structure (quotes are inline in processedHtml, no separate section needed)
     let processedHtml = note.content.html;
 
     // Check for content-warning tag (NIP-36 NSFW)
-    const hasContentWarning = note.rawEvent.tags.some(tag => tag[0] === 'content-warning');
+    const hasContentWarning = note.rawEvent.tags.some(
+      tag => tag[0] === 'content-warning'
+    );
 
     // Load user preference for displaying NSFW
     const shouldBlurNSFW = !NoteStructureBuilder.getUserNSFWPreference();
@@ -214,10 +243,16 @@ export class NoteStructureBuilder {
       note.rawEvent.id,
       note.rawEvent.pubkey
     );
-    processedHtml = replaceBolt11Placeholders(processedHtml, note.content.bolt11Invoices);
+    processedHtml = replaceBolt11Placeholders(
+      processedHtml,
+      note.content.bolt11Invoices
+    );
 
     // Remove line breaks before quote markers (user pressed Enter before pasting quote)
-    processedHtml = processedHtml.replace(/((<br\s*\/?>)\s*)+(?=<span class="quote-marker")/gi, '');
+    processedHtml = processedHtml.replace(
+      /((<br\s*\/?>)\s*)+(?=<span class="quote-marker")/gi,
+      ''
+    );
 
     noteDiv.innerHTML = `
       <div class="reply-indicator-container"></div>
@@ -238,18 +273,23 @@ export class NoteStructureBuilder {
 
     // Mount thread context indicator if this is a reply
     if (replyInfo) {
-      const replyIndicatorContainer = noteDiv.querySelector('.reply-indicator-container');
+      const replyIndicatorContainer = noteDiv.querySelector(
+        '.reply-indicator-container'
+      );
       if (replyIndicatorContainer) {
         // For reposts, use the original event ID for thread context
-        const contextNoteId = (note.type === 'repost' && note.repostedEvent?.id)
-          ? note.repostedEvent.id
-          : note.id;
+        const contextNoteId =
+          note.type === 'repost' && note.repostedEvent?.id
+            ? note.repostedEvent.id
+            : note.id;
 
         const threadContextIndicator = new ThreadContextIndicator({
           noteId: contextNoteId,
-          replyContext: renderOptions.replyContext === true
+          replyContext: renderOptions.replyContext === true,
         });
-        replyIndicatorContainer.appendChild(threadContextIndicator.getElement());
+        replyIndicatorContainer.appendChild(
+          threadContextIndicator.getElement()
+        );
       }
     }
 
@@ -270,25 +310,29 @@ export class NoteStructureBuilder {
         isLoggedIn: renderOptions.isLoggedIn || false,
         onAnalytics: () => {
           // Save ProfileView scroll position BEFORE opening modal
-          const profileView = document.querySelector('.profile-view') as HTMLElement;
+          const profileView = document.querySelector(
+            '.profile-view'
+          ) as HTMLElement;
 
           if (profileView) {
             const scrollPosition = profileView.scrollTop;
             const appState = AppState.getInstance();
-            appState.setState('view', { profileScrollPosition: scrollPosition });
+            appState.setState('view', {
+              profileScrollPosition: scrollPosition,
+            });
           }
 
           // Open Analytics Modal
           const analyticsModal = AnalyticsModal.getInstance();
           analyticsModal.show(islNoteId, note.rawEvent);
-        }
+        },
       });
       noteDiv.appendChild(isl.getElement());
       islInstance = isl;
     }
 
     // Add click handler to navigate to Single Note View
-    noteDiv.addEventListener('mousedown', (e) => {
+    noteDiv.addEventListener('mousedown', e => {
       const target = e.target as HTMLElement;
 
       // Don't navigate if clicking on interactive elements
@@ -356,7 +400,9 @@ export class NoteStructureBuilder {
   static cleanupElement(root: HTMLElement): void {
     const elements: HTMLElement[] = [];
     if (root.classList?.contains('note-card')) elements.push(root);
-    root.querySelectorAll<HTMLElement>('.note-card').forEach(el => elements.push(el));
+    root
+      .querySelectorAll<HTMLElement>('.note-card')
+      .forEach(el => elements.push(el));
 
     for (const el of elements) {
       const instances = instancesByElement.get(el);

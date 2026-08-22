@@ -95,7 +95,10 @@ export class ArticleFeedOrchestrator extends Orchestrator {
   private constructor() {
     super('ArticleFeedOrchestrator');
     this.systemLogger = SystemLogger.getInstance();
-    this.systemLogger.info('ArticleFeedOrchestrator', 'Article Feed Orchestrator initialized');
+    this.systemLogger.info(
+      'ArticleFeedOrchestrator',
+      'Article Feed Orchestrator initialized'
+    );
   }
 
   public static getInstance(): ArticleFeedOrchestrator {
@@ -131,7 +134,10 @@ export class ArticleFeedOrchestrator extends Orchestrator {
   public async loadMore(): Promise<ArticleFeedResult> {
     const authors = getAllFollowedPubkeys();
     if (authors.length === 0) {
-      this.systemLogger.info('ArticleFeedOrchestrator', 'No follows — feed empty');
+      this.systemLogger.info(
+        'ArticleFeedOrchestrator',
+        'No follows — feed empty'
+      );
       return { articles: [], hasMore: false };
     }
 
@@ -144,7 +150,10 @@ export class ArticleFeedOrchestrator extends Orchestrator {
 
     for (const article of result.articles) {
       this.seenIds.add(ArticleFeedOrchestrator.getAddressableId(article));
-      this.articleCache.set(ArticleFeedOrchestrator.getAddressableId(article), article);
+      this.articleCache.set(
+        ArticleFeedOrchestrator.getAddressableId(article),
+        article
+      );
     }
     this.oldestTimestamp = result.oldestTimestamp;
 
@@ -211,7 +220,7 @@ export class ArticleFeedOrchestrator extends Orchestrator {
     for (let i = 0; i < batches.length; i += AUTHOR_FETCH_CONCURRENCY) {
       const window = batches.slice(i, i + AUTHOR_FETCH_CONCURRENCY);
       const results = await Promise.allSettled(
-        window.map(async (batch) => {
+        window.map(async batch => {
           try {
             return await fetchEvents(
               [{ kinds: [30023], authors: batch, until, limit: fetchLimit }],
@@ -241,9 +250,12 @@ export class ArticleFeedOrchestrator extends Orchestrator {
     const deduped = ArticleFeedOrchestrator.dedupeByAddressableId(allEvents);
 
     // Drop already-seen (caller-owned seen-set).
-    const fresh = excludeIds && excludeIds.size > 0
-      ? deduped.filter(e => !excludeIds.has(ArticleFeedOrchestrator.getAddressableId(e)))
-      : deduped;
+    const fresh =
+      excludeIds && excludeIds.size > 0
+        ? deduped.filter(
+            e => !excludeIds.has(ArticleFeedOrchestrator.getAddressableId(e))
+          )
+        : deduped;
 
     if (fresh.length === 0) {
       return { articles: [], oldestTimestamp: until };
@@ -255,9 +267,7 @@ export class ArticleFeedOrchestrator extends Orchestrator {
     // Page slice.
     const page = fresh.slice(0, limit);
     const oldest = page[page.length - 1];
-    const oldestTimestamp = oldest
-      ? (oldest.created_at || until) - 1
-      : until;
+    const oldestTimestamp = oldest ? (oldest.created_at || until) - 1 : until;
 
     return { articles: page, oldestTimestamp };
   }

@@ -5,7 +5,10 @@
  * Uses custom-dropdown CSS classes for consistent styling.
  */
 
-import { UserProfileService, UserProfile } from '../../services/UserProfileService';
+import {
+  UserProfileService,
+  UserProfile,
+} from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
 import { AccountStorageService } from '../../services/AccountStorageService';
 import { KeySignerClient } from '../../services/KeySignerClient';
@@ -73,7 +76,7 @@ export class AccountSwitcher {
     // Setup trigger click
     const trigger = container.querySelector('.custom-dropdown__trigger');
     if (trigger) {
-      trigger.addEventListener('click', (e) => {
+      trigger.addEventListener('click', e => {
         e.stopPropagation();
         this.isOpen ? this.close() : this.open();
       });
@@ -97,7 +100,7 @@ export class AccountSwitcher {
         const avatarUrl = profile.picture;
         this.accountStorage.updateAccount(this.options.pubkey, {
           ...(displayName && { displayName }),
-          ...(avatarUrl && { avatarUrl })
+          ...(avatarUrl && { avatarUrl }),
         });
       }
     );
@@ -105,7 +108,10 @@ export class AccountSwitcher {
     try {
       await this.userProfileService.getUserProfile(this.options.pubkey);
     } catch (error) {
-      console.warn(`[AccountSwitcher] Failed to load profile: ${this.options.pubkey}`, error);
+      console.warn(
+        `[AccountSwitcher] Failed to load profile: ${this.options.pubkey}`,
+        error
+      );
       this.showFallback();
     }
   }
@@ -116,7 +122,10 @@ export class AccountSwitcher {
   private updateDisplay(): void {
     const nameEl = this.element.querySelector('.custom-dropdown__label');
     if (nameEl) {
-      const displayName = this.profile?.name || this.profile?.display_name || `${this.options.npub.slice(0, 12)}...`;
+      const displayName =
+        this.profile?.name ||
+        this.profile?.display_name ||
+        `${this.options.npub.slice(0, 12)}...`;
       nameEl.textContent = displayName;
     }
   }
@@ -148,7 +157,8 @@ export class AccountSwitcher {
     this.element.appendChild(menu);
 
     // Show loading
-    menu.innerHTML = '<li class="custom-dropdown__item" style="opacity: 0.5;">Loading...</li>';
+    menu.innerHTML =
+      '<li class="custom-dropdown__item" style="opacity: 0.5;">Loading...</li>';
 
     await this.populateMenu(menu);
   }
@@ -178,11 +188,14 @@ export class AccountSwitcher {
         accounts = result.accounts.map(acc => ({
           pubkey: acc.pubkey,
           npub: acc.npub,
-          authMethod: 'key-signer'
+          authMethod: 'key-signer',
         }));
         await this.loadAccountProfiles(accounts);
       } catch (error) {
-        console.error('[AccountSwitcher] Failed to list NoorSigner accounts:', error);
+        console.error(
+          '[AccountSwitcher] Failed to list NoorSigner accounts:',
+          error
+        );
       }
     } else if (authMethod === 'nip46') {
       const stored = this.accountStorage.getAccounts();
@@ -192,7 +205,7 @@ export class AccountSwitcher {
           pubkey: acc.pubkey,
           npub: acc.npub,
           ...(acc.displayName && { displayName: acc.displayName }),
-          authMethod: 'nip46'
+          authMethod: 'nip46',
         }));
     }
 
@@ -203,7 +216,8 @@ export class AccountSwitcher {
     if (accounts.length > 1) {
       for (const account of accounts) {
         const isActive = account.pubkey === currentPubkey;
-        const displayName = account.displayName || `${account.npub.slice(0, 12)}...`;
+        const displayName =
+          account.displayName || `${account.npub.slice(0, 12)}...`;
 
         const item = document.createElement('li');
         item.className = `custom-dropdown__item${isActive ? ' custom-dropdown__item--selected' : ''}`;
@@ -226,14 +240,17 @@ export class AccountSwitcher {
     // Add account
     const addItem = document.createElement('li');
     addItem.className = 'custom-dropdown__item';
-    addItem.innerHTML = '<span class="account-switcher__icon">+</span> Add account';
+    addItem.innerHTML =
+      '<span class="account-switcher__icon">+</span> Add account';
     addItem.addEventListener('click', () => this.handleAddAccount());
     menu.appendChild(addItem);
 
     // Sign out
     const logoutItem = document.createElement('li');
-    logoutItem.className = 'custom-dropdown__item account-switcher__item--danger';
-    logoutItem.innerHTML = '<span class="account-switcher__icon"><svg width="14" height="14"><use href="#icon-logout"/></svg></span> Sign out';
+    logoutItem.className =
+      'custom-dropdown__item account-switcher__item--danger';
+    logoutItem.innerHTML =
+      '<span class="account-switcher__icon"><svg width="14" height="14"><use href="#icon-logout"/></svg></span> Sign out';
     logoutItem.addEventListener('click', () => this.handleLogout());
     menu.appendChild(logoutItem);
   }
@@ -242,14 +259,18 @@ export class AccountSwitcher {
    * Load profiles for accounts
    */
   private async loadAccountProfiles(accounts: DisplayAccount[]): Promise<void> {
-    const promises = accounts.map(async (account) => {
+    const promises = accounts.map(async account => {
       if (this.profileCache.has(account.pubkey)) {
-        account.displayName = this.getDisplayName(this.profileCache.get(account.pubkey)!);
+        account.displayName = this.getDisplayName(
+          this.profileCache.get(account.pubkey)!
+        );
         return;
       }
 
       try {
-        const profile = await this.userProfileService.getUserProfile(account.pubkey);
+        const profile = await this.userProfileService.getUserProfile(
+          account.pubkey
+        );
         if (profile) {
           this.profileCache.set(account.pubkey, profile);
           account.displayName = this.getDisplayName(profile);
@@ -279,7 +300,7 @@ export class AccountSwitcher {
       ...(account.displayName && { displayName: account.displayName }),
       onSuccess: async () => {
         await this.authService.authenticateWithKeySigner();
-      }
+      },
     });
     modal.show();
   }

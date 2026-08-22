@@ -27,13 +27,15 @@ export class NewFolderModal {
       width: '400px',
       showCloseButton: true,
       closeOnOverlay: true,
-      closeOnEsc: true
+      closeOnEsc: true,
     });
 
     setTimeout(() => {
       this.setupEventHandlers();
       // Focus input
-      const input = document.getElementById('new-folder-input') as HTMLInputElement;
+      const input = document.getElementById(
+        'new-folder-input'
+      ) as HTMLInputElement;
       input?.focus();
     }, 0);
   }
@@ -67,7 +69,9 @@ export class NewFolderModal {
   }
 
   private setupEventHandlers(): void {
-    const input = document.getElementById('new-folder-input') as HTMLInputElement;
+    const input = document.getElementById(
+      'new-folder-input'
+    ) as HTMLInputElement;
     const cancelBtn = document.getElementById('new-folder-cancel-btn');
     const confirmBtn = document.getElementById('new-folder-confirm-btn');
 
@@ -90,7 +94,7 @@ export class NewFolderModal {
     confirmBtn.addEventListener('click', handleConfirm);
 
     // Enter key
-    input.addEventListener('keydown', (e) => {
+    input.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
         handleConfirm();
       } else if (e.key === 'Escape') {

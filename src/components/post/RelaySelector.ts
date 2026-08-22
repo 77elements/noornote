@@ -28,11 +28,12 @@ export class RelaySelector {
    * Render relay selector HTML
    */
   public render(): string {
-    const relayOptions = this.config.availableRelays.map(relay => {
-      const isSelected = this.config.selectedRelays.has(relay);
-      const cleanUrl = relay.replace(/^wss?:\/\//, '');
+    const relayOptions = this.config.availableRelays
+      .map(relay => {
+        const isSelected = this.config.selectedRelays.has(relay);
+        const cleanUrl = relay.replace(/^wss?:\/\//, '');
 
-      return `
+        return `
         <label class="nn-checkbox">
           <input
             type="checkbox"
@@ -43,7 +44,8 @@ export class RelaySelector {
           <span>${cleanUrl}</span>
         </label>
       `;
-    }).join('');
+      })
+      .join('');
 
     return `
       <div class="post-note-relay-selector">
@@ -69,12 +71,14 @@ export class RelaySelector {
 
     const wrapper = container.querySelector('.custom-dropdown');
     const trigger = container.querySelector('.custom-dropdown__trigger');
-    const menu = container.querySelector('.custom-dropdown__menu') as HTMLElement;
+    const menu = container.querySelector(
+      '.custom-dropdown__menu'
+    ) as HTMLElement;
 
     if (!wrapper || !trigger || !menu || this.config.isTestMode) return;
 
     // Toggle dropdown on trigger click
-    trigger.addEventListener('click', (e) => {
+    trigger.addEventListener('click', e => {
       e.stopPropagation();
       wrapper.classList.toggle('custom-dropdown--open');
     });
@@ -82,7 +86,7 @@ export class RelaySelector {
     // Handle checkbox changes
     const checkboxes = menu.querySelectorAll('input[type="checkbox"]');
     checkboxes.forEach(checkbox => {
-      checkbox.addEventListener('change', (e) => {
+      checkbox.addEventListener('change', e => {
         const input = e.target as HTMLInputElement;
         if (input.checked) {
           this.config.selectedRelays.add(input.value);

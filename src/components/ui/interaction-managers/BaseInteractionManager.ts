@@ -19,11 +19,14 @@ export interface BaseInteractionConfig {
   onStatsUpdate?: () => void;
 }
 
-export abstract class BaseInteractionManager<TConfig extends BaseInteractionConfig> {
+export abstract class BaseInteractionManager<
+  TConfig extends BaseInteractionConfig,
+> {
   protected config: TConfig;
   protected _reactionsApi?: ReactionsModuleApi | null;
   protected get reactionsApi(): ReactionsModuleApi | null {
-    return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
+    return (this._reactionsApi ??=
+      ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
   }
   protected button: HTMLElement | null = null;
   protected hasInteracted: boolean = false;
@@ -84,7 +87,7 @@ export abstract class BaseInteractionManager<TConfig extends BaseInteractionConf
   public attachEventListeners(button: HTMLElement): void {
     this.setButtonElement(button);
 
-    button.addEventListener('click', (e) => {
+    button.addEventListener('click', e => {
       e.stopPropagation();
       this.handleInteraction();
     });

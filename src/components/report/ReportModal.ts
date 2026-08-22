@@ -25,7 +25,8 @@ export class ReportModal {
   private modalService: ModalService;
   private _postsApi?: PostsModuleApi | null;
   private get postsApi(): PostsModuleApi | null {
-    return this._postsApi ??= ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
+    return (this._postsApi ??=
+      ModuleLoader.getInstance().getApi<PostsModuleApi>('posts'));
   }
   private userProfileService: UserProfileService;
   private systemLogger: SystemLogger;
@@ -65,7 +66,7 @@ export class ReportModal {
       width: '500px',
       showCloseButton: true,
       closeOnOverlay: true,
-      closeOnEsc: true
+      closeOnEsc: true,
     });
 
     // Setup event handlers after modal is shown
@@ -78,7 +79,8 @@ export class ReportModal {
    * Render modal content
    */
   private renderContent(options: ReportModalOptions): HTMLElement {
-    const username = this.userProfileService.getUsername(options.reportedPubkey) ?? 'Unknown';
+    const username =
+      this.userProfileService.getUsername(options.reportedPubkey) ?? 'Unknown';
     const reportTypes = this.postsApi?.getReportTypes() ?? [];
 
     const container = document.createElement('div');
@@ -91,7 +93,7 @@ export class ReportModal {
 
     // Report types list
     const reportTypesHtml = reportTypes
-      .map((type) => {
+      .map(type => {
         const label = this.postsApi?.getReportTypeLabel(type) ?? '';
         const description = this.postsApi?.getReportTypeDescription(type) ?? '';
 
@@ -153,12 +155,18 @@ export class ReportModal {
 
     const submitBtn = modal.querySelector('.btn--submit') as HTMLButtonElement;
     const cancelBtn = modal.querySelector('.btn--cancel') as HTMLButtonElement;
-    const radioButtons = modal.querySelectorAll('input[name="report-type"]') as NodeListOf<HTMLInputElement>;
-    const textarea = modal.querySelector('.report-modal__textarea') as HTMLTextAreaElement;
-    const charCurrent = modal.querySelector('.report-modal__char-current') as HTMLSpanElement;
+    const radioButtons = modal.querySelectorAll(
+      'input[name="report-type"]'
+    ) as NodeListOf<HTMLInputElement>;
+    const textarea = modal.querySelector(
+      '.report-modal__textarea'
+    ) as HTMLTextAreaElement;
+    const charCurrent = modal.querySelector(
+      '.report-modal__char-current'
+    ) as HTMLSpanElement;
 
     // Enable submit button when report type is selected
-    radioButtons.forEach((radio) => {
+    radioButtons.forEach(radio => {
       radio.addEventListener('change', () => {
         if (submitBtn) {
           submitBtn.disabled = false;
@@ -194,14 +202,18 @@ export class ReportModal {
   private async handleSubmit(modal: Element): Promise<void> {
     if (!this.currentOptions) return;
 
-    const selectedRadio = modal.querySelector('input[name="report-type"]:checked') as HTMLInputElement;
+    const selectedRadio = modal.querySelector(
+      'input[name="report-type"]:checked'
+    ) as HTMLInputElement;
     if (!selectedRadio) {
       ToastService.show('Please select a report reason', 'error');
       return;
     }
 
     const reportType = selectedRadio.value as ReportType;
-    const textarea = modal.querySelector('.report-modal__textarea') as HTMLTextAreaElement;
+    const textarea = modal.querySelector(
+      '.report-modal__textarea'
+    ) as HTMLTextAreaElement;
     const reason = textarea?.value.trim();
 
     const submitBtn = modal.querySelector('.btn--submit') as HTMLButtonElement;
@@ -213,9 +225,14 @@ export class ReportModal {
     }
 
     try {
-      const reportOptions: { type: ReportType; reportedPubkey: string; reason?: string; reportedEventId?: string } = {
+      const reportOptions: {
+        type: ReportType;
+        reportedPubkey: string;
+        reason?: string;
+        reportedEventId?: string;
+      } = {
         type: reportType,
-        reportedPubkey: this.currentOptions.reportedPubkey
+        reportedPubkey: this.currentOptions.reportedPubkey,
       };
       if (reason) {
         reportOptions.reason = reason;
@@ -223,7 +240,10 @@ export class ReportModal {
       if (this.currentOptions.reportedEventId) {
         reportOptions.reportedEventId = this.currentOptions.reportedEventId;
       }
-      const result = await this.postsApi?.createReport(reportOptions) ?? { success: false, error: 'Module not loaded' };
+      const result = (await this.postsApi?.createReport(reportOptions)) ?? {
+        success: false,
+        error: 'Module not loaded',
+      };
 
       if (result.success) {
         this.systemLogger.info('ReportModal', 'Report submitted successfully');
@@ -238,7 +258,10 @@ export class ReportModal {
         }
       }
     } catch (error) {
-      this.systemLogger.error('ReportModal', `Report submission error: ${error}`);
+      this.systemLogger.error(
+        'ReportModal',
+        `Report submission error: ${error}`
+      );
 
       // Re-enable button
       if (submitBtn) {

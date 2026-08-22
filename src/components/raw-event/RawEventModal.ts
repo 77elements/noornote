@@ -42,7 +42,7 @@ export class RawEventModal {
       height: '80vh',
       showCloseButton: true,
       closeOnOverlay: true,
-      closeOnEsc: true
+      closeOnEsc: true,
     });
 
     // Setup copy button handler after modal is shown

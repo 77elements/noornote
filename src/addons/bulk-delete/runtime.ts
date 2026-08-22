@@ -11,8 +11,12 @@
 import type { AddonRuntime } from '../AddonLoader';
 
 const runtime: AddonRuntime = {
-  async init(_ctx) { /* no-op — view-only addon, see file header */ },
-  async destroy() { /* no-op — see file header */ },
+  async init(_ctx) {
+    /* no-op — view-only addon, see file header */
+  },
+  async destroy() {
+    /* no-op — see file header */
+  },
 };
 
 export default runtime;

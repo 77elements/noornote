@@ -20,7 +20,10 @@ import { CollapsibleManager } from './components/ui/note-features/CollapsibleMan
 import { TextSelectionToolbar } from './components/ui/TextSelectionToolbar';
 import { FontSizeService } from './services/FontSizeService';
 import { ThemeService } from './services/ThemeService';
-import { initDiagnosticLogger, destroyDiagnosticLogger } from './services/DiagnosticLogger';
+import {
+  initDiagnosticLogger,
+  destroyDiagnosticLogger,
+} from './services/DiagnosticLogger';
 import { ViewMountingService } from './services/ViewMountingService';
 import { PostLoginService } from './services/PostLoginService';
 import { AddonLoader } from './addons/AddonLoader';
@@ -34,8 +37,8 @@ import { hexToNpub } from './helpers/nip19';
 /** Maps viewName to the AppState key that stores the route parameter */
 const VIEW_PARAM_STATE_KEY: Record<string, string> = {
   'single-note': 'currentNoteId',
-  'profile': 'currentProfileNpub',
-  'article': 'currentArticleNaddr',
+  profile: 'currentProfileNpub',
+  article: 'currentArticleNaddr',
   'relay-browser': 'currentRelayUrl',
 };
 
@@ -107,8 +110,12 @@ export class App {
     // global MutationObserver for video.note-video (download button + auto-pause).
     // Single source of truth — works for ANY render path / nesting depth.
     // See ImageClickHandler.ts / VideoPlayerService.ts headers + /build-validate guard.
-    import('./components/ui/ImageClickHandler').then(m => m.getImageClickHandler().init());
-    import('./services/VideoPlayerService').then(m => m.getVideoPlayerService().init());
+    import('./components/ui/ImageClickHandler').then(m =>
+      m.getImageClickHandler().init()
+    );
+    import('./services/VideoPlayerService').then(m =>
+      m.getVideoPlayerService().init()
+    );
 
     // Global avatar 404 fallback — any <img class="profile-pic"> whose URL fails
     // to load is swapped to its deterministic identicon. Pubkey comes from
@@ -118,14 +125,19 @@ export class App {
     // Global upload progress overlay — singleton, listens for media-upload:status
     // events from MediaUploadService. Renders compression + upload progress for
     // every video/audio upload regardless of which UI surface triggered it.
-    import('./components/ui/UploadProgressOverlay').then(m => m.UploadProgressOverlay.getInstance().mount());
+    import('./components/ui/UploadProgressOverlay').then(m =>
+      m.UploadProgressOverlay.getInstance().mount()
+    );
 
     // Resume any unfinished NIP-09 deletion broadcasts persisted from a previous
     // session (crash / app-quit / navigation mid-broadcast). Self-wires resume
     // triggers (app resume, visibility, connectivity) and drains in background.
-    import('./services/BroadcastDeleteService').then(m => m.BroadcastDeleteService.getInstance().resumePending());
+    import('./services/BroadcastDeleteService').then(m =>
+      m.BroadcastDeleteService.getInstance().resumePending()
+    );
 
-    const isOnline = await ConnectivityService.getInstance().checkConnectivity();
+    const isOnline =
+      await ConnectivityService.getInstance().checkConnectivity();
     if (!isOnline) {
       OfflineOverlay.getInstance().show();
       return;
@@ -138,37 +150,47 @@ export class App {
     }
 
     // Read ?r= relay browser parameter (captured early in main.ts before HMR can strip query params)
-    const relayParam: string | null = (window as any).__noornote_relay_param || null;
+    const relayParam: string | null =
+      (window as any).__noornote_relay_param || null;
     if (relayParam) {
       delete (window as any).__noornote_relay_param;
     }
 
     // Capture intended URL: ?r= override > explicit address-bar path (web) > sessionStorage (reload / Electron restore)
-    const relayPath = relayParam ? `/relay/${encodeURIComponent(relayParam)}` : null;
+    const relayPath = relayParam
+      ? `/relay/${encodeURIComponent(relayParam)}`
+      : null;
     // sessionStorage survives an in-process reload; getPersistedURL is the mobile (Capacitor)
     // cold-start fallback (localStorage, recency-gated) for when Android killed the backgrounded process.
     const lastURL = this.router.getLastURL() ?? this.router.getPersistedURL();
     // In Electron prod, window.location.pathname is the on-disk file path of dist/index.html
     // (never matches an SPA route). Honor pathname only in true web builds; native deep links
     // arrive via electronAPI.onDeepLink / Capacitor app URL events.
-    const browserPath = PlatformService.getInstance().isBrowser ? window.location.pathname : '/';
+    const browserPath = PlatformService.getInstance().isBrowser
+      ? window.location.pathname
+      : '/';
     // A specific address-bar path (web) is the user's explicit intent and must beat the stored
     // lastURL — otherwise pasting /note/X after landing on /login or /welcome keeps the stale
     // path and the user is stuck. lastURL stays the fallback for root '/' restore and Electron
     // (where browserPath is always '/').
-    const intendedURL = relayPath || (browserPath !== '/' ? browserPath : null) || lastURL;
+    const intendedURL =
+      relayPath || (browserPath !== '/' ? browserPath : null) || lastURL;
 
     // Wait for auth initialization with safety timeout
     let authTimedOut = false;
     await Promise.race([
       this.authService.waitForInitialization(),
-      new Promise<void>(resolve => setTimeout(() => {
-        authTimedOut = true;
-        resolve();
-      }, 10000)),
+      new Promise<void>(resolve =>
+        setTimeout(() => {
+          authTimedOut = true;
+          resolve();
+        }, 10000)
+      ),
     ]);
     if (authTimedOut) {
-      console.warn('[App] Auth initialization timed out after 10s — continuing without session');
+      console.warn(
+        '[App] Auth initialization timed out after 10s — continuing without session'
+      );
     }
 
     // Initialize DiagnosticLogger early (Android: no npub needed, Desktop: after login)
@@ -187,11 +209,17 @@ export class App {
       const currentUser = this.authService.getCurrentUser();
       if (currentUser) {
         initDiagnosticLogger(currentUser.npub);
-        this.postLoginService.handleLogin({ npub: currentUser.npub, pubkey: currentUser.pubkey });
+        this.postLoginService.handleLogin({
+          npub: currentUser.npub,
+          pubkey: currentUser.pubkey,
+        });
         // Fallback: ensure addons load even if user:login was emitted before
         // AddonLoader subscribed. Already-loaded addons are skipped (idempotent).
         AddonLoader.getInstance().refresh(currentUser.pubkey, currentUser.npub);
-        ModuleLoader.getInstance().refresh(currentUser.pubkey, currentUser.npub);
+        ModuleLoader.getInstance().refresh(
+          currentUser.pubkey,
+          currentUser.npub
+        );
         await ModuleLoader.getInstance().awaitReady();
 
         // Restore the secondary pane (scc) from ?scc= now that the layout,
@@ -203,18 +231,28 @@ export class App {
     this.setInitialFocus();
   }
 
-  private async resolveTargetPath(isLoggedIn: boolean, intendedURL: string | null): Promise<string> {
+  private async resolveTargetPath(
+    isLoggedIn: boolean,
+    intendedURL: string | null
+  ): Promise<string> {
     if (!isLoggedIn) return intendedURL || '/';
 
-    const { PerAccountLocalStorage, StorageKeys } = await import('./services/PerAccountLocalStorage');
+    const { PerAccountLocalStorage, StorageKeys } = await import(
+      './services/PerAccountLocalStorage'
+    );
     const storage = PerAccountLocalStorage.getInstance();
     const currentUser = this.authService.getCurrentUser();
     const needsSetup = currentUser
-      ? storage.getForPubkey<boolean>(StorageKeys.NEEDS_PROFILE_SETUP, currentUser.pubkey, false)
+      ? storage.getForPubkey<boolean>(
+          StorageKeys.NEEDS_PROFILE_SETUP,
+          currentUser.pubkey,
+          false
+        )
       : false;
 
     if (needsSetup) return '/setup';
-    if (intendedURL && intendedURL !== '/login' && intendedURL !== '/welcome') return intendedURL;
+    if (intendedURL && intendedURL !== '/login' && intendedURL !== '/welcome')
+      return intendedURL;
     return '/';
   }
 
@@ -233,7 +271,9 @@ export class App {
 
   private async checkForUpdates(): Promise<void> {
     try {
-      const { UpdateCheckService } = await import('./services/UpdateCheckService');
+      const { UpdateCheckService } = await import(
+        './services/UpdateCheckService'
+      );
       const service = UpdateCheckService.getInstance();
       await service.checkOnStartup();
 
@@ -248,13 +288,43 @@ export class App {
   // ─── Route Registration ──────────────────────────────────────────────
 
   private registerMarketplaceRoutes(): void {
-    this.registerRoute('/marketplace', 'marketplace', 'marketplace', 'npv', true);
-    this.registerRoute('/listing/:naddr', 'listing', 'listing', 'lv', true,
-      (params) => params.naddr);
-    this.registerRoute('/write-listing', 'write-listing', 'write-listing', 'lev', true);
-    this.registerRoute('/write-listing/:naddr', 'edit-listing', 'edit-listing', 'elv', true,
-      (params) => params.naddr);
-    this.registerRoute('/my-listings', 'my-listings', 'my-listings', 'mlv', true);
+    this.registerRoute(
+      '/marketplace',
+      'marketplace',
+      'marketplace',
+      'npv',
+      true
+    );
+    this.registerRoute(
+      '/listing/:naddr',
+      'listing',
+      'listing',
+      'lv',
+      true,
+      params => params.naddr
+    );
+    this.registerRoute(
+      '/write-listing',
+      'write-listing',
+      'write-listing',
+      'lev',
+      true
+    );
+    this.registerRoute(
+      '/write-listing/:naddr',
+      'edit-listing',
+      'edit-listing',
+      'elv',
+      true,
+      params => params.naddr
+    );
+    this.registerRoute(
+      '/my-listings',
+      'my-listings',
+      'my-listings',
+      'mlv',
+      true
+    );
   }
 
   private registerRoute(
@@ -263,11 +333,13 @@ export class App {
     viewType: string,
     shortcut: string,
     requiresAuth: boolean = false,
-    paramHandler?: (params: Record<string, string | undefined>) => string | undefined
+    paramHandler?: (
+      params: Record<string, string | undefined>
+    ) => string | undefined
   ): void {
     this.router.register(
       path,
-      (params) => {
+      params => {
         const state: Record<string, unknown> = { currentView: viewName };
 
         let param: string | undefined;
@@ -293,80 +365,322 @@ export class App {
   private setupRoutes(): void {
     // Public routes (Onboarding)
     this.registerRoute('/welcome', 'welcome', 'welcome', 'welcome-view');
-    this.registerRoute('/createnewaccount', 'create-account', 'create-account', 'create-account-view');
+    this.registerRoute(
+      '/createnewaccount',
+      'create-account',
+      'create-account',
+      'create-account-view'
+    );
     this.registerRoute('/login', 'login', 'not-logged-in', 'login-view');
     this.registerRoute('/setup', 'setup', 'profile-setup', 'setup-view');
     this.registerRoute('/about', 'about', 'about', 'abv');
     this.registerRoute('/articles', 'articles', 'articles', 'atv');
 
     // Parameterized routes (public)
-    this.registerRoute('/note/:noteId', 'single-note', 'single-note', 'snv', false,
-      (params) => params.noteId ?? '');
-    this.registerRoute('/profile/:npub', 'profile', 'profile', 'pv', false,
-      (params) => params.npub ?? '');
-    this.registerRoute('/article/:naddr', 'article', 'article', 'av', false,
-      (params) => params.naddr);
-    this.registerRoute('/relay/:relayUrl', 'relay-browser', 'relay-browser', 'rbv', false,
-      (params) => params.relayUrl ? decodeURIComponent(params.relayUrl) : undefined);
-    this.registerRoute('/follow-pack/:naddr', 'follow-pack', 'follow-pack', 'fpv', false,
-      (params) => params.naddr);
-    this.registerRoute('/zapstore/:naddr', 'zapstore', 'zapstore', 'zsv', false,
-      (params) => params.naddr);
+    this.registerRoute(
+      '/note/:noteId',
+      'single-note',
+      'single-note',
+      'snv',
+      false,
+      params => params.noteId ?? ''
+    );
+    this.registerRoute(
+      '/profile/:npub',
+      'profile',
+      'profile',
+      'pv',
+      false,
+      params => params.npub ?? ''
+    );
+    this.registerRoute(
+      '/article/:naddr',
+      'article',
+      'article',
+      'av',
+      false,
+      params => params.naddr
+    );
+    this.registerRoute(
+      '/relay/:relayUrl',
+      'relay-browser',
+      'relay-browser',
+      'rbv',
+      false,
+      params =>
+        params.relayUrl ? decodeURIComponent(params.relayUrl) : undefined
+    );
+    this.registerRoute(
+      '/follow-pack/:naddr',
+      'follow-pack',
+      'follow-pack',
+      'fpv',
+      false,
+      params => params.naddr
+    );
+    this.registerRoute(
+      '/zapstore/:naddr',
+      'zapstore',
+      'zapstore',
+      'zsv',
+      false,
+      params => params.naddr
+    );
 
     // Authenticated routes
     this.registerRoute('/', 'timeline', 'timeline', 'tv', true);
-    this.registerRoute('/notifications', 'notifications', 'notifications', 'nv', true);
+    this.registerRoute(
+      '/notifications',
+      'notifications',
+      'notifications',
+      'nv',
+      true
+    );
     this.registerRoute('/settings', 'settings', 'settings', 'sv', true);
-    this.registerRoute('/settings/ui', 'settings-ui', 'settings-ui', 'sv', true);
-    this.registerRoute('/settings/notification-priorities', 'settings-notif', 'settings-notif', 'sv', true);
-    this.registerRoute('/settings/relays', 'settings-relays', 'settings-relays', 'sv', true);
-    this.registerRoute('/settings/key-signer', 'settings-key-signer', 'settings-key-signer', 'sv', true);
-    this.registerRoute('/settings/media', 'settings-media', 'settings-media', 'sv', true);
-    this.registerRoute('/settings/zaps', 'settings-zaps', 'settings-zaps', 'sv', true);
-    this.registerRoute('/settings/privacy', 'settings-privacy', 'settings-privacy', 'sv', true);
-    this.registerRoute('/settings/cache', 'settings-cache', 'settings-cache', 'sv', true);
+    this.registerRoute(
+      '/settings/ui',
+      'settings-ui',
+      'settings-ui',
+      'sv',
+      true
+    );
+    this.registerRoute(
+      '/settings/notification-priorities',
+      'settings-notif',
+      'settings-notif',
+      'sv',
+      true
+    );
+    this.registerRoute(
+      '/settings/relays',
+      'settings-relays',
+      'settings-relays',
+      'sv',
+      true
+    );
+    this.registerRoute(
+      '/settings/key-signer',
+      'settings-key-signer',
+      'settings-key-signer',
+      'sv',
+      true
+    );
+    this.registerRoute(
+      '/settings/media',
+      'settings-media',
+      'settings-media',
+      'sv',
+      true
+    );
+    this.registerRoute(
+      '/settings/zaps',
+      'settings-zaps',
+      'settings-zaps',
+      'sv',
+      true
+    );
+    this.registerRoute(
+      '/settings/privacy',
+      'settings-privacy',
+      'settings-privacy',
+      'sv',
+      true
+    );
+    this.registerRoute(
+      '/settings/cache',
+      'settings-cache',
+      'settings-cache',
+      'sv',
+      true
+    );
     this.registerRoute('/messages', 'messages', 'messages', 'mv', true);
-    this.registerRoute('/write-article', 'write-article', 'write-article', 'aev', true);
-    this.registerRoute('/edit-article/:naddr', 'edit-article', 'edit-article', 'aev', true,
-      (params) => params.naddr);
-    this.registerRoute('/write-video', 'write-video', 'write-video', 'vev', true);
+    this.registerRoute(
+      '/write-article',
+      'write-article',
+      'write-article',
+      'aev',
+      true
+    );
+    this.registerRoute(
+      '/edit-article/:naddr',
+      'edit-article',
+      'edit-article',
+      'aev',
+      true,
+      params => params.naddr
+    );
+    this.registerRoute(
+      '/write-video',
+      'write-video',
+      'write-video',
+      'vev',
+      true
+    );
     this.registerRoute('/tribes', 'tribes', 'tribes', 'tribes-view', true);
 
     // Parameterized routes (authenticated)
-    this.registerRoute('/messages/:pubkey', 'conversation', 'conversation', 'cv', true,
-      (params) => params.pubkey);
+    this.registerRoute(
+      '/messages/:pubkey',
+      'conversation',
+      'conversation',
+      'cv',
+      true,
+      params => params.pubkey
+    );
 
     // Add-Ons routes — one dedicated view per addon
-    this.registerRoute('/addons/bookmarks',             'addon-bookmarks',             'addon-bookmarks',             'adv', true);
-    this.registerRoute('/addons/tribes',                'addon-tribes',                'addon-tribes',                'adv', true);
-    this.registerRoute('/addons/extended-follows',      'addon-extended-follows',      'addon-extended-follows',      'adv', true);
-    this.registerRoute('/addons/wallet-balance',        'addon-wallet-balance',        'addon-wallet-balance',        'adv', true);
-    this.registerRoute('/addons/profile-recognition',   'addon-profile-recognition',   'addon-profile-recognition',   'adv', true);
-    this.registerRoute('/addons/marketplace',           'addon-marketplace',           'addon-marketplace',           'adv', true);
-    this.registerRoute('/addons/follow-packs',          'addon-follow-packs',          'addon-follow-packs',          'adv', true);
-    this.registerRoute('/addons/follower-notification', 'addon-follower-notification', 'addon-follower-notification', 'adv', true);
-    this.registerRoute('/addons/hashtag-subscriptions', 'addon-hashtag-subscriptions', 'addon-hashtag-subscriptions', 'adv', true);
-    this.registerRoute('/addons/list-settings',         'addon-list-settings',         'addon-list-settings',         'adv', true);
-    this.registerRoute('/addons/custom-emojis',         'addon-custom-emojis',         'addon-custom-emojis',         'adv', true);
-    this.registerRoute('/addons/wordfilter',            'addon-wordfilter',            'addon-wordfilter',            'adv', true);
-    this.registerRoute('/addons/live-streams-player',   'addon-live-streams-player',   'addon-live-streams-player',   'adv', true);
-    this.registerRoute('/addons/scheduled-posts',       'addon-scheduled-posts',       'addon-scheduled-posts',       'adv', true);
-    this.registerRoute('/addons/badges',               'addon-badges',                'addon-badges',                'adv', true);
-    this.registerRoute('/addons/note-taking',           'addon-note-taking',           'addon-note-taking',           'adv', true);
-    this.registerRoute('/addons/bulk-delete',           'addon-bulk-delete',           'addon-bulk-delete',           'adv', true);
-    this.registerRoute('/addons/nostr-majlis',          'addon-nostr-majlis',          'addon-nostr-majlis',          'adv', true);
+    this.registerRoute(
+      '/addons/bookmarks',
+      'addon-bookmarks',
+      'addon-bookmarks',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/addons/tribes',
+      'addon-tribes',
+      'addon-tribes',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/addons/extended-follows',
+      'addon-extended-follows',
+      'addon-extended-follows',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/addons/wallet-balance',
+      'addon-wallet-balance',
+      'addon-wallet-balance',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/addons/profile-recognition',
+      'addon-profile-recognition',
+      'addon-profile-recognition',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/addons/marketplace',
+      'addon-marketplace',
+      'addon-marketplace',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/addons/follow-packs',
+      'addon-follow-packs',
+      'addon-follow-packs',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/addons/follower-notification',
+      'addon-follower-notification',
+      'addon-follower-notification',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/addons/hashtag-subscriptions',
+      'addon-hashtag-subscriptions',
+      'addon-hashtag-subscriptions',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/addons/list-settings',
+      'addon-list-settings',
+      'addon-list-settings',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/addons/custom-emojis',
+      'addon-custom-emojis',
+      'addon-custom-emojis',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/addons/wordfilter',
+      'addon-wordfilter',
+      'addon-wordfilter',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/addons/live-streams-player',
+      'addon-live-streams-player',
+      'addon-live-streams-player',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/addons/scheduled-posts',
+      'addon-scheduled-posts',
+      'addon-scheduled-posts',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/addons/badges',
+      'addon-badges',
+      'addon-badges',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/addons/note-taking',
+      'addon-note-taking',
+      'addon-note-taking',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/addons/bulk-delete',
+      'addon-bulk-delete',
+      'addon-bulk-delete',
+      'adv',
+      true
+    );
+    this.registerRoute(
+      '/addons/nostr-majlis',
+      'addon-nostr-majlis',
+      'addon-nostr-majlis',
+      'adv',
+      true
+    );
     // Tab-addressable variant so a dhikr notification can deep-link straight to the Community Dhikr tab.
-    this.registerRoute('/addons/nostr-majlis/:tab',     'addon-nostr-majlis',          'addon-nostr-majlis',          'adv', true,
-      (params) => params.tab);
-    this.registerRoute('/addons/group-chats',           'addon-group-chats',           'addon-group-chats',           'adv', true);
+    this.registerRoute(
+      '/addons/nostr-majlis/:tab',
+      'addon-nostr-majlis',
+      'addon-nostr-majlis',
+      'adv',
+      true,
+      params => params.tab
+    );
+    this.registerRoute(
+      '/addons/group-chats',
+      'addon-group-chats',
+      'addon-group-chats',
+      'adv',
+      true
+    );
     // /addons (no slug) → redirect to first addon
-    this.router.register('/addons', () => this.router.navigate('/addons/bookmarks'));
+    this.router.register('/addons', () =>
+      this.router.navigate('/addons/bookmarks')
+    );
     this.registerMarketplaceRoutes();
 
     // Catch-all: bare nip19 entities in URL path (njump.me links like noornote.app/nprofile1...)
     this.router.register(
       '/:entity',
-      (params) => {
+      params => {
         const entity = params['entity'];
         if (!entity) return;
 
@@ -378,7 +692,9 @@ export class App {
             this.router.navigate(`/note/${entity}`);
           } else if (decoded.type === 'naddr') {
             const addrData = decoded.data as { kind: number };
-            this.router.navigate(App.getRouteForAddressableEvent(addrData.kind, entity));
+            this.router.navigate(
+              App.getRouteForAddressableEvent(addrData.kind, entity)
+            );
           }
         } catch {
           this.router.navigate('/');
@@ -417,7 +733,10 @@ export class App {
   }
 
   private setupEventListeners(): void {
-    document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
+    document.addEventListener(
+      'visibilitychange',
+      this.handleVisibilityChange.bind(this)
+    );
     this.setupExternalLinkHandler();
     this.setupHashtagClickHandler();
     this.setupDeepLinkHandler();
@@ -465,9 +784,10 @@ export class App {
         const type = decoded.type;
 
         if (type === 'npub' || type === 'nprofile') {
-          const npub = type === 'npub'
-            ? nip19String
-            : hexToNpub((decoded.data as { pubkey: string }).pubkey);
+          const npub =
+            type === 'npub'
+              ? nip19String
+              : hexToNpub((decoded.data as { pubkey: string }).pubkey);
           if (npub) {
             this.router.navigate(`/profile/${npub}`);
           }
@@ -475,24 +795,30 @@ export class App {
         }
 
         if (type === 'note' || type === 'nevent') {
-          const noteId = type === 'note'
-            ? nip19String
-            : `note1${(decoded.data as { id: string }).id}`;
+          const noteId =
+            type === 'note'
+              ? nip19String
+              : `note1${(decoded.data as { id: string }).id}`;
           this.router.navigate(`/note/${noteId}`);
           return;
         }
 
         if (type === 'naddr') {
           const addrData = decoded.data as { kind: number };
-          this.router.navigate(App.getRouteForAddressableEvent(addrData.kind, nip19String));
+          this.router.navigate(
+            App.getRouteForAddressableEvent(addrData.kind, nip19String)
+          );
         }
       } catch {
-        this.systemLogger.warn('Deep Link', `Failed to handle nostr: URL: ${url}`);
+        this.systemLogger.warn(
+          'Deep Link',
+          `Failed to handle nostr: URL: ${url}`
+        );
       }
     };
 
     try {
-      window.electronAPI!.onDeepLink((url) => handleDeepLink(url));
+      window.electronAPI!.onDeepLink(url => handleDeepLink(url));
     } catch {
       // Deep link handler setup failed - expected in non-desktop environments
     }
@@ -516,10 +842,11 @@ export class App {
 
       const shouldStopDaemon = await ModalService.getInstance().confirm({
         title: 'Stop NoorSigner Daemon?',
-        message: 'The NoorSigner daemon is currently running. Do you want to stop it when closing the app?',
+        message:
+          'The NoorSigner daemon is currently running. Do you want to stop it when closing the app?',
         confirmText: 'Stop Daemon',
         cancelText: 'Keep Running',
-        confirmDestructive: false
+        confirmDestructive: false,
       });
 
       if (shouldStopDaemon) {
@@ -548,8 +875,12 @@ export class App {
     if (document.visibilityState !== 'visible') return;
 
     const ml = ModuleLoader.getInstance();
-    const notificationsApi = ml.getApi<import('./modules/notifications/contracts').NotificationsModuleApi>('notifications');
-    const dmsApi = ml.getApi<import('./modules/dms/contracts').DMsModuleApi>('dms');
+    const notificationsApi =
+      ml.getApi<
+        import('./modules/notifications/contracts').NotificationsModuleApi
+      >('notifications');
+    const dmsApi =
+      ml.getApi<import('./modules/dms/contracts').DMsModuleApi>('dms');
 
     const [notifResult, dmResult] = await Promise.allSettled([
       notificationsApi?.refreshSubscriptions() ?? Promise.resolve(),
@@ -557,21 +888,35 @@ export class App {
     ]);
 
     if (notifResult.status === 'rejected') {
-      this.systemLogger.error('App', 'Notification refresh failed on visibility change:', notifResult.reason);
+      this.systemLogger.error(
+        'App',
+        'Notification refresh failed on visibility change:',
+        notifResult.reason
+      );
     }
     if (dmResult.status === 'rejected') {
-      this.systemLogger.error('App', 'DM refresh failed on visibility change:', dmResult.reason);
+      this.systemLogger.error(
+        'App',
+        'DM refresh failed on visibility change:',
+        dmResult.reason
+      );
     }
   }
 
   private setupExternalLinkHandler(): void {
-    document.addEventListener('click', async (event) => {
+    document.addEventListener('click', async event => {
       const target = event.target as HTMLElement;
       const anchor = target.closest('a');
       if (!anchor) return;
 
       const href = anchor.getAttribute('href');
-      if (!href || (!href.startsWith('http://') && !href.startsWith('https://') && !href.startsWith('mailto:'))) return;
+      if (
+        !href ||
+        (!href.startsWith('http://') &&
+          !href.startsWith('https://') &&
+          !href.startsWith('mailto:'))
+      )
+        return;
 
       event.preventDefault();
 
@@ -589,7 +934,7 @@ export class App {
   }
 
   private setupHashtagClickHandler(): void {
-    document.addEventListener('click', (event) => {
+    document.addEventListener('click', event => {
       const target = event.target as HTMLElement;
       const hashtagEl = target.closest('.hashtag');
       if (!hashtagEl) return;

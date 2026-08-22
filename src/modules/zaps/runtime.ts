@@ -17,11 +17,29 @@ export class ZapsRuntime implements ModuleRuntime<ZapsModuleApi> {
     const svc = this.service;
     const noop: ZapResult = { success: false, error: 'Module not loaded' };
     return {
-      sendQuickZap: (noteId, authorPubkey, articleEventId) => svc?.sendQuickZap(noteId, authorPubkey, articleEventId) ?? Promise.resolve(noop),
-      sendCustomZap: (noteId, authorPubkey, amount, comment, articleEventId, anonymous) => svc?.sendCustomZap(noteId, authorPubkey, amount, comment, articleEventId, anonymous) ?? Promise.resolve(noop),
-      isOwnAnonZapInvoice: (invoice) => svc?.isOwnAnonZapInvoice(invoice) ?? false,
-      getUserZapAmount: (noteId) => svc?.getUserZapAmount(noteId) ?? 0,
-      hasUserZapped: (noteId) => svc?.hasUserZapped(noteId) ?? false,
+      sendQuickZap: (noteId, authorPubkey, articleEventId) =>
+        svc?.sendQuickZap(noteId, authorPubkey, articleEventId) ??
+        Promise.resolve(noop),
+      sendCustomZap: (
+        noteId,
+        authorPubkey,
+        amount,
+        comment,
+        articleEventId,
+        anonymous
+      ) =>
+        svc?.sendCustomZap(
+          noteId,
+          authorPubkey,
+          amount,
+          comment,
+          articleEventId,
+          anonymous
+        ) ?? Promise.resolve(noop),
+      isOwnAnonZapInvoice: invoice =>
+        svc?.isOwnAnonZapInvoice(invoice) ?? false,
+      getUserZapAmount: noteId => svc?.getUserZapAmount(noteId) ?? 0,
+      hasUserZapped: noteId => svc?.hasUserZapped(noteId) ?? false,
     };
   }
 }

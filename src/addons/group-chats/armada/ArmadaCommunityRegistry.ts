@@ -11,7 +11,10 @@
  * list; the "remove" action deletes from here.
  */
 
-import { PerAccountLocalStorage, StorageKeys } from '../../../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../../services/PerAccountLocalStorage';
 import type { TrackedCommunity } from './types';
 
 export class ArmadaCommunityRegistry {
@@ -36,7 +39,12 @@ export class ArmadaCommunityRegistry {
 
   /** Read the full registry as a Map (naddr → community). */
   private readMap(): Record<string, TrackedCommunity> {
-    return this.storage.get<Record<string, TrackedCommunity>>(StorageKeys.ARMADA_COMMUNITIES, {}) ?? {};
+    return (
+      this.storage.get<Record<string, TrackedCommunity>>(
+        StorageKeys.ARMADA_COMMUNITIES,
+        {}
+      ) ?? {}
+    );
   }
 
   /** Write the full registry map. */

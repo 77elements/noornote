@@ -29,7 +29,7 @@ export function renderUsernameField(value: string): HTMLElement {
   return createFormGroup({
     id: 'name',
     label: 'Username',
-    inputHtml: `<input type="text" id="name" name="name" class="input" value="${escapeHtmlAttr(value)}" placeholder="username" data-input="name" />`
+    inputHtml: `<input type="text" id="name" name="name" class="input" value="${escapeHtmlAttr(value)}" placeholder="username" data-input="name" />`,
   });
 }
 
@@ -37,7 +37,7 @@ export function renderDisplayNameField(value: string): HTMLElement {
   return createFormGroup({
     id: 'display_name',
     label: 'Display Name',
-    inputHtml: `<input type="text" id="display_name" name="display_name" class="input" value="${escapeHtmlAttr(value)}" placeholder="Your full name" data-input="display_name" />`
+    inputHtml: `<input type="text" id="display_name" name="display_name" class="input" value="${escapeHtmlAttr(value)}" placeholder="Your full name" data-input="display_name" />`,
   });
 }
 
@@ -45,7 +45,7 @@ export function renderBioField(value: string): HTMLElement {
   return createFormGroup({
     id: 'about',
     label: 'Bio',
-    inputHtml: `<textarea id="about" name="about" class="textarea textarea--small" rows="3" placeholder="Tell us about yourself..." data-input="about">${escapeHtmlAttr(value)}</textarea>`
+    inputHtml: `<textarea id="about" name="about" class="textarea textarea--small" rows="3" placeholder="Tell us about yourself..." data-input="about">${escapeHtmlAttr(value)}</textarea>`,
   });
 }
 
@@ -53,7 +53,7 @@ export function renderWebsiteField(value: string): HTMLElement {
   return createFormGroup({
     id: 'website',
     label: 'Website',
-    inputHtml: `<input type="text" id="website" name="website" class="input" value="${escapeHtmlAttr(value)}" placeholder="https://example.com" data-input="website" />`
+    inputHtml: `<input type="text" id="website" name="website" class="input" value="${escapeHtmlAttr(value)}" placeholder="https://example.com" data-input="website" />`,
   });
 }
 
@@ -62,7 +62,7 @@ export function renderNip05Field(value: string): HTMLElement {
     id: 'nip05',
     label: 'NIP-05 Identifier',
     inputHtml: `<input type="text" id="nip05" name="nip05" class="input" value="${escapeHtmlAttr(value)}" placeholder="user@domain.com" data-input="nip05" />`,
-    hint: 'Verification identifier(s), comma-separated (user@domain.com, user@other.com)'
+    hint: 'Verification identifier(s), comma-separated (user@domain.com, user@other.com)',
   });
 }
 
@@ -71,6 +71,6 @@ export function renderLightningField(value: string): HTMLElement {
     id: 'lud16',
     label: 'Lightning Address',
     inputHtml: `<input type="text" id="lud16" name="lud16" class="input" value="${escapeHtmlAttr(value)}" placeholder="user@getalby.com" data-input="lud16" />`,
-    hint: 'Email format (user@domain.com) or LNURL'
+    hint: 'Email format (user@domain.com) or LNURL',
   });
 }

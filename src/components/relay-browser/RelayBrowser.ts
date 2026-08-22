@@ -21,7 +21,10 @@ export class RelayBrowser {
   private notesContainer: HTMLElement;
   private _relayBrowserApi?: RelayBrowserModuleApi | null;
   private get relayBrowserApi(): RelayBrowserModuleApi | null {
-    return this._relayBrowserApi ??= ModuleLoader.getInstance().getApi<RelayBrowserModuleApi>('relay-browser');
+    return (this._relayBrowserApi ??=
+      ModuleLoader.getInstance().getApi<RelayBrowserModuleApi>(
+        'relay-browser'
+      ));
   }
   private infiniteScroll: InfiniteScroll;
   private refreshButton: RefreshButton;
@@ -40,16 +43,17 @@ export class RelayBrowser {
     this.refreshButton = new RefreshButton({
       newNotesCount: 0,
       authorPubkeys: [],
-      onClick: () => this.handleRefreshClick()
+      onClick: () => this.handleRefreshClick(),
     });
 
     this.element = this.createElement();
-    this.notesContainer = this.element.querySelector('.relay-browser__notes') as HTMLElement;
+    this.notesContainer = this.element.querySelector(
+      '.relay-browser__notes'
+    ) as HTMLElement;
 
-    this.infiniteScroll = new InfiniteScroll(
-      () => this.handleLoadMore(),
-      { loadingMessage: 'Loading more notes...' }
-    );
+    this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
+      loadingMessage: 'Loading more notes...',
+    });
 
     this.initialize();
   }
@@ -78,7 +82,9 @@ export class RelayBrowser {
     `;
 
     // Insert RefreshButton into header right side
-    const headerRight = container.querySelector('.relay-browser__header-right') as HTMLElement;
+    const headerRight = container.querySelector(
+      '.relay-browser__header-right'
+    ) as HTMLElement;
     headerRight.appendChild(this.refreshButton.getElement());
 
     return container;
@@ -88,11 +94,16 @@ export class RelayBrowser {
     this.showLoading();
 
     try {
-      const result = await this.relayBrowserApi?.loadInitial() ?? { events: [], hasMore: false };
+      const result = (await this.relayBrowserApi?.loadInitial()) ?? {
+        events: [],
+        hasMore: false,
+      };
       this.hasMore = result.hasMore;
 
       if (result.events.length > 0) {
-        ModuleLoader.getInstance().getApi<PostsModuleApi>('posts')?.registerNotes(result.events);
+        ModuleLoader.getInstance()
+          .getApi<PostsModuleApi>('posts')
+          ?.registerNotes(result.events);
         this.renderNotes(result.events);
         this.infiniteScroll.observe(this.notesContainer);
         this.startPolling();
@@ -108,7 +119,10 @@ export class RelayBrowser {
 
   private startPolling(): void {
     this.stopPolling();
-    this.pollingIntervalId = window.setInterval(() => this.poll(), this.POLL_INTERVAL);
+    this.pollingIntervalId = window.setInterval(
+      () => this.poll(),
+      this.POLL_INTERVAL
+    );
   }
 
   private stopPolling(): void {
@@ -119,14 +133,16 @@ export class RelayBrowser {
   }
 
   private async poll(): Promise<void> {
-    const newEvents = await this.relayBrowserApi?.pollNewNotes() ?? [];
+    const newEvents = (await this.relayBrowserApi?.pollNewNotes()) ?? [];
     if (newEvents.length === 0) return;
 
     // Cache polled events (accumulate between refreshes)
     this.polledEventsCache = [...newEvents, ...this.polledEventsCache];
 
     // Extract unique author pubkeys (newest first, max 4)
-    const authorPubkeys = [...new Set(this.polledEventsCache.map(e => e.pubkey))].slice(0, 4);
+    const authorPubkeys = [
+      ...new Set(this.polledEventsCache.map(e => e.pubkey)),
+    ].slice(0, 4);
 
     this.refreshButton.update(this.polledEventsCache.length, authorPubkeys);
   }
@@ -135,7 +151,9 @@ export class RelayBrowser {
     if (this.polledEventsCache.length === 0) return;
 
     // Register and prepend cached notes
-    ModuleLoader.getInstance().getApi<PostsModuleApi>('posts')?.registerNotes(this.polledEventsCache);
+    ModuleLoader.getInstance()
+      .getApi<PostsModuleApi>('posts')
+      ?.registerNotes(this.polledEventsCache);
     this.prependNotes(this.polledEventsCache);
 
     // Clear cache
@@ -159,7 +177,7 @@ export class RelayBrowser {
         islFetchStats: isLoggedIn,
         isLoggedIn,
         headerSize: 'medium',
-        depth: 0
+        depth: 0,
       });
       this.notesContainer.appendChild(noteEl);
     }
@@ -177,14 +195,16 @@ export class RelayBrowser {
         islFetchStats: isLoggedIn,
         isLoggedIn,
         headerSize: 'medium',
-        depth: 0
+        depth: 0,
       });
       this.notesContainer.insertBefore(noteEl, this.notesContainer.firstChild);
     }
   }
 
   private appendNotes(events: NostrEvent[]): void {
-    const sentinel = this.notesContainer.querySelector('.infinite-scroll-sentinel');
+    const sentinel = this.notesContainer.querySelector(
+      '.infinite-scroll-sentinel'
+    );
     const isLoggedIn = AuthService.getInstance().hasValidSession();
 
     for (const event of events) {
@@ -193,7 +213,7 @@ export class RelayBrowser {
         islFetchStats: isLoggedIn,
         isLoggedIn,
         headerSize: 'medium',
-        depth: 0
+        depth: 0,
       });
 
       if (sentinel) {
@@ -216,11 +236,16 @@ export class RelayBrowser {
     this.infiniteScroll.showLoading();
 
     try {
-      const result = await this.relayBrowserApi?.loadMore() ?? { events: [], hasMore: false };
+      const result = (await this.relayBrowserApi?.loadMore()) ?? {
+        events: [],
+        hasMore: false,
+      };
       this.hasMore = result.hasMore;
 
       if (result.events.length > 0) {
-        ModuleLoader.getInstance().getApi<PostsModuleApi>('posts')?.registerNotes(result.events);
+        ModuleLoader.getInstance()
+          .getApi<PostsModuleApi>('posts')
+          ?.registerNotes(result.events);
         this.appendNotes(result.events);
       }
 

@@ -19,7 +19,8 @@ export class ReplyIndicator {
   private options: ReplyIndicatorOptions;
   private _singleNoteApi?: SingleNoteModuleApi | null;
   private get singleNoteApi(): SingleNoteModuleApi | null {
-    return this._singleNoteApi ??= ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
+    return (this._singleNoteApi ??=
+      ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note'));
   }
 
   constructor(options: ReplyIndicatorOptions) {
@@ -62,7 +63,9 @@ export class ReplyIndicator {
 
       if (!info) {
         // Parent not found
-        const avatarEl = this.element.querySelector('.reply-avatar') as HTMLImageElement;
+        const avatarEl = this.element.querySelector(
+          '.reply-avatar'
+        ) as HTMLImageElement;
         const usernameEl = this.element.querySelector('.reply-username');
         if (avatarEl) avatarEl.remove();
         if (usernameEl) usernameEl.textContent = '[Note not found]';
@@ -70,7 +73,9 @@ export class ReplyIndicator {
       }
 
       // Update avatar and username
-      const avatarEl = this.element.querySelector('.reply-avatar') as HTMLImageElement;
+      const avatarEl = this.element.querySelector(
+        '.reply-avatar'
+      ) as HTMLImageElement;
       const usernameEl = this.element.querySelector('.reply-username');
 
       if (avatarEl) {
@@ -84,17 +89,18 @@ export class ReplyIndicator {
 
       // Make clickable - navigate to parent note
       this.element.style.cursor = 'pointer';
-      this.element.addEventListener('click', (e) => {
+      this.element.addEventListener('click', e => {
         e.stopPropagation();
         const nevent = encodeNevent(this.options.parentEventId);
         // Route through the central controller so right-pane mode opens the parent
         // note in the secondary pane (scc) instead of navigating the timeline (pcc).
         getViewNavigationController().openView('single-note', nevent, e);
       });
-
     } catch (error) {
       console.error('Failed to load parent author:', error);
-      const avatarEl = this.element.querySelector('.reply-avatar') as HTMLImageElement;
+      const avatarEl = this.element.querySelector(
+        '.reply-avatar'
+      ) as HTMLImageElement;
       const usernameEl = this.element.querySelector('.reply-username');
       if (avatarEl) avatarEl.remove();
       if (usernameEl) usernameEl.textContent = '[Error loading]';

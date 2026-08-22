@@ -25,7 +25,9 @@ export async function decryptPrivateFollows(
     return [];
   }
 
-  diagLog('lists', 'decryptPrivateFollows: attempting decryption', { contentLength: encryptedContent.length });
+  diagLog('lists', 'decryptPrivateFollows: attempting decryption', {
+    contentLength: encryptedContent.length,
+  });
 
   try {
     const { AuthService } = await import('../services/AuthService');
@@ -38,7 +40,9 @@ export async function decryptPrivateFollows(
 
     // Auto-detect NIP-04 vs NIP-44 (backward compatibility)
     const isNip04 = encryptedContent.includes('?iv=');
-    diagLog('lists', 'decryptPrivateFollows: detected format', { format: isNip04 ? 'NIP-04' : 'NIP-44' });
+    diagLog('lists', 'decryptPrivateFollows: detected format', {
+      format: isNip04 ? 'NIP-04' : 'NIP-44',
+    });
 
     // Try detected protocol first, then fallback to the other
     const primaryDecrypt = isNip04
@@ -53,36 +57,62 @@ export async function decryptPrivateFollows(
       plaintext = await primaryDecrypt(encryptedContent, authorPubkey);
       diagLog('lists', 'decryptPrivateFollows: primary decrypt succeeded');
     } catch (primaryError) {
-      diagLog('lists', 'decryptPrivateFollows: primary decrypt failed, trying fallback', { error: String(primaryError) });
+      diagLog(
+        'lists',
+        'decryptPrivateFollows: primary decrypt failed, trying fallback',
+        { error: String(primaryError) }
+      );
       try {
         plaintext = await fallbackDecrypt(encryptedContent, authorPubkey);
         diagLog('lists', 'decryptPrivateFollows: fallback decrypt succeeded');
       } catch (fallbackError) {
-        diagLog('lists', 'decryptPrivateFollows: BOTH decryption methods FAILED — private follows LOST', { primaryError: String(primaryError), fallbackError: String(fallbackError) });
+        diagLog(
+          'lists',
+          'decryptPrivateFollows: BOTH decryption methods FAILED — private follows LOST',
+          {
+            primaryError: String(primaryError),
+            fallbackError: String(fallbackError),
+          }
+        );
         return [];
       }
     }
 
     if (!plaintext) {
-      diagLog('lists', 'decryptPrivateFollows: decryption returned empty — private follows LOST');
+      diagLog(
+        'lists',
+        'decryptPrivateFollows: decryption returned empty — private follows LOST'
+      );
       return [];
     }
 
     const privateTags: string[][] = JSON.parse(plaintext);
 
     if (!Array.isArray(privateTags)) {
-      diagLog('lists', 'decryptPrivateFollows: parsed result is not an array', { type: typeof privateTags });
+      diagLog('lists', 'decryptPrivateFollows: parsed result is not an array', {
+        type: typeof privateTags,
+      });
       return [];
     }
 
     const pubkeys = privateTags
-      .filter((tag): tag is [string, string, ...string[]] => Array.isArray(tag) && tag[0] === 'p' && typeof tag[1] === 'string')
+      .filter(
+        (tag): tag is [string, string, ...string[]] =>
+          Array.isArray(tag) && tag[0] === 'p' && typeof tag[1] === 'string'
+      )
       .map(tag => tag[1]);
 
-    diagLog('lists', 'decryptPrivateFollows: SUCCESS', { decryptedCount: pubkeys.length, totalTags: privateTags.length });
+    diagLog('lists', 'decryptPrivateFollows: SUCCESS', {
+      decryptedCount: pubkeys.length,
+      totalTags: privateTags.length,
+    });
     return pubkeys;
   } catch (error) {
-    diagLog('lists', 'decryptPrivateFollows: UNEXPECTED ERROR — private follows LOST', { error: String(error) });
+    diagLog(
+      'lists',
+      'decryptPrivateFollows: UNEXPECTED ERROR — private follows LOST',
+      { error: String(error) }
+    );
     return [];
   }
 }

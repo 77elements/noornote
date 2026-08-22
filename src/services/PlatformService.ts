@@ -60,11 +60,12 @@ export class PlatformService {
 
   private constructor() {
     // Detect runtime environment
-    this.isElectron = typeof window !== 'undefined' &&
+    this.isElectron =
+      typeof window !== 'undefined' &&
       (window as any).electronAPI !== undefined;
 
-    this.isCapacitor = typeof window !== 'undefined' &&
-      (window as any).Capacitor !== undefined;
+    this.isCapacitor =
+      typeof window !== 'undefined' && (window as any).Capacitor !== undefined;
 
     this.isBrowser = !this.isElectron && !this.isCapacitor;
 
@@ -80,8 +81,7 @@ export class PlatformService {
     this.isLinux = navPlatform.includes('linux') || userAgent.includes('linux');
 
     // Android detection (Capacitor or userAgent)
-    this.isAndroid = this.isCapacitor ||
-      userAgent.includes('android');
+    this.isAndroid = this.isCapacitor || userAgent.includes('android');
 
     // Mobile = any Android runtime (Capacitor native or Android browser).
     // Mirrors the platform--mobile CSS class added below.

@@ -14,33 +14,69 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { StorageKeys, readList, writeList, deduplicateByPubkey, now, mergeByKey } from './storage';
-import { setupGridDragDrop } from '../helpers/gridDragDrop';
-import { renderListHeader, renderListBreadcrumb, bindHeaderDropdown } from './list-header';
-import { readJsonFile, writeJsonFile, uploadJsonFile, downloadAsJson } from './file';
 import {
-  fetchEvents, publishEvent, signEvent,
-  encryptContent, decryptContent,
-  requireAuth, getCurrentUserPubkey
+  StorageKeys,
+  readList,
+  writeList,
+  deduplicateByPubkey,
+  now,
+  mergeByKey,
+} from './storage';
+import { setupGridDragDrop } from '../helpers/gridDragDrop';
+import {
+  renderListHeader,
+  renderListBreadcrumb,
+  bindHeaderDropdown,
+} from './list-header';
+import {
+  readJsonFile,
+  writeJsonFile,
+  uploadJsonFile,
+  downloadAsJson,
+} from './file';
+import {
+  fetchEvents,
+  publishEvent,
+  signEvent,
+  encryptContent,
+  decryptContent,
+  requireAuth,
+  getCurrentUserPubkey,
 } from './relays';
 import { PerAccountLocalStorage } from '../services/PerAccountLocalStorage';
 import { SystemLogger } from '../services/SystemLogger';
 import { TypedEventBus } from '../core/TypedEventBus';
 import { DeletionService } from '../services/DeletionService';
 import { diagLog } from '../services/DiagnosticLogger';
-import { type DeletionRecordConfig, publishDeletionChange, syncDeletionsIntoLocal } from './listDeletionRecord';
+import {
+  type DeletionRecordConfig,
+  publishDeletionChange,
+  syncDeletionsIntoLocal,
+} from './listDeletionRecord';
 import { AuthService } from '../services/AuthService';
 import { ToastService } from '../services/ToastService';
 import { ModalService } from '../services/ModalService';
-import { UserProfileService, type UserProfile } from '../services/UserProfileService';
+import {
+  UserProfileService,
+  type UserProfile,
+} from '../services/UserProfileService';
 import { Router } from '../services/Router';
 import { encodeNpub } from '../services/NostrToolsAdapter';
-import { renderListSyncButtons, bindListSyncButtons } from '../helpers/ListSyncMode';
+import {
+  renderListSyncButtons,
+  bindListSyncButtons,
+} from '../helpers/ListSyncMode';
 import { NewFolderModal } from '../components/modals/NewFolderModal';
 import { EditFolderModal } from '../components/modals/EditFolderModal';
-import { FolderCard, type FolderData } from '../components/bookmarks/FolderCard';
+import {
+  FolderCard,
+  type FolderData,
+} from '../components/bookmarks/FolderCard';
 import { UpNavigator } from '../components/bookmarks/UpNavigator';
-import { SyncConfirmationModal, type MovedItemInfo } from '../components/modals/SyncConfirmationModal';
+import {
+  SyncConfirmationModal,
+  type MovedItemInfo,
+} from '../components/modals/SyncConfirmationModal';
 import { View } from '../components/views/View';
 import { Timeline } from '../components/timeline/Timeline';
 import { tribeTimelineConfig } from '../components/timeline/TimelineConfig';
@@ -97,7 +133,10 @@ function createBrowserSnapshot(): TribeStateSnapshot {
   }
 
   // Build members by folder (in order)
-  const membersByFolder = new Map<string, { pubkey: string; isPrivate: boolean }[]>();
+  const membersByFolder = new Map<
+    string,
+    { pubkey: string; isPrivate: boolean }[]
+  >();
 
   for (const folderName of folderOrder) {
     const folderId = `folder_${folderName}`;
@@ -109,7 +148,10 @@ function createBrowserSnapshot(): TribeStateSnapshot {
     for (const assignment of folderAssignments) {
       const member = members.find(m => m.id === assignment.memberId);
       if (member) {
-        folderMembers.push({ pubkey: member.pubkey, isPrivate: member.isPrivate || false });
+        folderMembers.push({
+          pubkey: member.pubkey,
+          isPrivate: member.isPrivate || false,
+        });
       }
     }
     membersByFolder.set(folderName, folderMembers);
@@ -133,7 +175,10 @@ function createRelaySnapshot(
   }
 
   // Build members by folder (order from relayItems array order)
-  const membersByFolder = new Map<string, { pubkey: string; isPrivate: boolean }[]>();
+  const membersByFolder = new Map<
+    string,
+    { pubkey: string; isPrivate: boolean }[]
+  >();
 
   // Initialize empty arrays for each folder
   for (const folderName of folderOrder) {
@@ -147,17 +192,33 @@ function createRelaySnapshot(
 
     const folderMembers = membersByFolder.get(folderName);
     if (folderMembers) {
-      folderMembers.push({ pubkey: item.pubkey, isPrivate: item.isPrivate || false });
+      folderMembers.push({
+        pubkey: item.pubkey,
+        isPrivate: item.isPrivate || false,
+      });
     }
   }
 
   return { folderOrder, membersByFolder };
 }
 
-function snapshotsAreEqual(a: TribeStateSnapshot, b: TribeStateSnapshot): boolean {
+function snapshotsAreEqual(
+  a: TribeStateSnapshot,
+  b: TribeStateSnapshot
+): boolean {
   diagLog('lists', 'tribes snapshotsAreEqual comparing', {
-    a: { folders: a.folderOrder, memberCounts: Object.fromEntries([...a.membersByFolder].map(([k, v]) => [k, v.length])) },
-    b: { folders: b.folderOrder, memberCounts: Object.fromEntries([...b.membersByFolder].map(([k, v]) => [k, v.length])) }
+    a: {
+      folders: a.folderOrder,
+      memberCounts: Object.fromEntries(
+        [...a.membersByFolder].map(([k, v]) => [k, v.length])
+      ),
+    },
+    b: {
+      folders: b.folderOrder,
+      memberCounts: Object.fromEntries(
+        [...b.membersByFolder].map(([k, v]) => [k, v.length])
+      ),
+    },
   });
   // Compare folder order
   if (a.folderOrder.length !== b.folderOrder.length) return false;
@@ -184,7 +245,9 @@ function snapshotsAreEqual(a: TribeStateSnapshot, b: TribeStateSnapshot): boolea
   // Check if b has any folders that a doesn't have
   for (const folderName of b.folderOrder) {
     if (!a.folderOrder.includes(folderName)) {
-      diagLog('lists', 'tribes snapshotsAreEqual: b has folder not in a', { folderName });
+      diagLog('lists', 'tribes snapshotsAreEqual: b has folder not in a', {
+        folderName,
+      });
       return false;
     }
   }
@@ -203,7 +266,11 @@ function hasAnyDifference(
   const browserSnapshot = createBrowserSnapshot();
   const relaySnapshot = createRelaySnapshot(relayItems, categories);
   const result = !snapshotsAreEqual(browserSnapshot, relaySnapshot);
-  diagLog('lists', 'tribes hasAnyDifference', { result, relayItemCount: relayItems.length, categories });
+  diagLog('lists', 'tribes hasAnyDifference', {
+    result,
+    relayItemCount: relayItems.length,
+    categories,
+  });
   return result;
 }
 
@@ -212,7 +279,10 @@ function hasAnyDifference(
  */
 function createFileSnapshot(data: TribeSetData): TribeStateSnapshot {
   const folderOrder: string[] = [];
-  const membersByFolder = new Map<string, { pubkey: string; isPrivate: boolean }[]>();
+  const membersByFolder = new Map<
+    string,
+    { pubkey: string; isPrivate: boolean }[]
+  >();
 
   // Use metadata.setOrder if available, otherwise use set order in file
   const setOrder = data.metadata?.setOrder || data.sets.map(s => s.d);
@@ -272,12 +342,12 @@ const eventBus = TypedEventBus.getInstance();
  * Tribe member stored in localStorage
  */
 export interface TribeMember {
-  id: string;          // pubkey or pubkey_category
+  id: string; // pubkey or pubkey_category
   pubkey: string;
   relay?: string;
   addedAt?: number;
   isPrivate?: boolean;
-  category?: string;   // tribe name (d-tag value, '' = root)
+  category?: string; // tribe name (d-tag value, '' = root)
 }
 
 /**
@@ -316,7 +386,7 @@ export interface TribeMemberTag {
 
 export interface TribeSet {
   kind: 30000;
-  d: string;           // d-tag value (tribe name, '' = root)
+  d: string; // d-tag value (tribe name, '' = root)
   title: string;
   publicMembers: TribeMemberTag[];
   privateMembers: TribeMemberTag[];
@@ -392,7 +462,10 @@ export function getFolderByName(name: string): TribeFolder | undefined {
 // ----- Assignments -----
 
 export function getAssignments(): MemberAssignment[] {
-  return getStorage().get<MemberAssignment[]>(StorageKeys.TRIBE_MEMBER_ASSIGNMENTS, []);
+  return getStorage().get<MemberAssignment[]>(
+    StorageKeys.TRIBE_MEMBER_ASSIGNMENTS,
+    []
+  );
 }
 
 export function setAssignments(assignments: MemberAssignment[]): void {
@@ -418,7 +491,10 @@ export function getFolderItemCount(folderId: string): number {
 // ----- Root Order -----
 
 export function getRootOrder(): RootOrderItem[] {
-  const order = getStorage().get<RootOrderItem[]>(StorageKeys.TRIBE_ROOT_ORDER, []);
+  const order = getStorage().get<RootOrderItem[]>(
+    StorageKeys.TRIBE_ROOT_ORDER,
+    []
+  );
   if (order.length === 0) {
     return buildInitialRootOrder();
   }
@@ -430,7 +506,10 @@ export function setRootOrder(order: RootOrderItem[]): void {
 }
 
 export function hasRootOrder(): boolean {
-  const order = getStorage().get<RootOrderItem[]>(StorageKeys.TRIBE_ROOT_ORDER, []);
+  const order = getStorage().get<RootOrderItem[]>(
+    StorageKeys.TRIBE_ROOT_ORDER,
+    []
+  );
   return order.length > 0;
 }
 
@@ -558,7 +637,7 @@ export function addMember(
     relay: '',
     addedAt: now(),
     isPrivate: canBePrivate,
-    category
+    category,
   };
 
   members.push(member);
@@ -569,7 +648,10 @@ export function addMember(
   ensureMemberAssignment(uniqueId);
   moveMemberToFolder(uniqueId, targetFolderId);
 
-  logger.info('Tribes', `Added ${canBePrivate ? 'private' : 'public'} member: ${pubkey.slice(0, 8)}...`);
+  logger.info(
+    'Tribes',
+    `Added ${canBePrivate ? 'private' : 'public'} member: ${pubkey.slice(0, 8)}...`
+  );
   return true;
 }
 
@@ -601,14 +683,20 @@ export function removeMember(pubkey: string): boolean {
 // ASSIGNMENT OPERATIONS
 // ============================================================
 
-export function ensureMemberAssignment(memberId: string, explicitOrder?: number): void {
+export function ensureMemberAssignment(
+  memberId: string,
+  explicitOrder?: number
+): void {
   const assignments = getAssignments();
   const existing = assignments.find(a => a.memberId === memberId);
 
   if (!existing) {
-    const order = explicitOrder !== undefined
-      ? explicitOrder
-      : assignments.filter(a => a.folderId === '').reduce((max, a) => Math.max(max, a.order), -1) + 1;
+    const order =
+      explicitOrder !== undefined
+        ? explicitOrder
+        : assignments
+            .filter(a => a.folderId === '')
+            .reduce((max, a) => Math.max(max, a.order), -1) + 1;
 
     assignments.push({ memberId, folderId: '', order });
     setAssignments(assignments);
@@ -621,11 +709,17 @@ export function removeMemberAssignment(memberId: string): void {
 }
 
 export function removeMemberAssignmentsByPubkey(pubkey: string): void {
-  const assignments = getAssignments().filter(a => !a.memberId.startsWith(pubkey));
+  const assignments = getAssignments().filter(
+    a => !a.memberId.startsWith(pubkey)
+  );
   setAssignments(assignments);
 }
 
-export function moveMemberToFolder(memberId: string, targetFolderId: string, explicitOrder?: number): void {
+export function moveMemberToFolder(
+  memberId: string,
+  targetFolderId: string,
+  explicitOrder?: number
+): void {
   const assignments = getAssignments();
   const existing = assignments.find(a => a.memberId === memberId);
 
@@ -645,9 +739,12 @@ export function moveMemberToFolder(memberId: string, targetFolderId: string, exp
     setAssignments(assignments);
     reorderItemsInFolder(oldFolderId);
   } else {
-    const order = explicitOrder !== undefined
-      ? explicitOrder
-      : assignments.filter(a => a.folderId === targetFolderId).reduce((max, a) => Math.max(max, a.order), -1) + 1;
+    const order =
+      explicitOrder !== undefined
+        ? explicitOrder
+        : assignments
+            .filter(a => a.folderId === targetFolderId)
+            .reduce((max, a) => Math.max(max, a.order), -1) + 1;
 
     assignments.push({ memberId, folderId: targetFolderId, order });
     setAssignments(assignments);
@@ -671,7 +768,9 @@ export function moveItemToPosition(memberId: string, newOrder: number): void {
   const insertIndex = Math.min(newOrder, itemsInFolder.length);
   itemsInFolder.splice(insertIndex, 0, item);
 
-  itemsInFolder.forEach((a, index) => { a.order = index; });
+  itemsInFolder.forEach((a, index) => {
+    a.order = index;
+  });
   setAssignments(assignments);
 }
 
@@ -681,7 +780,9 @@ function reorderItemsInFolder(folderId: string): void {
     .filter(a => a.folderId === folderId)
     .sort((a, b) => a.order - b.order);
 
-  itemsInFolder.forEach((item, index) => { item.order = index; });
+  itemsInFolder.forEach((item, index) => {
+    item.order = index;
+  });
   setAssignments(assignments);
 }
 
@@ -697,14 +798,25 @@ export function addToRootOrder(type: 'folder' | 'member', id: string): void {
   }
 }
 
-export function removeFromRootOrder(type: 'folder' | 'member', id: string): void {
-  const order = getRootOrder().filter(item => !(item.type === type && item.id === id));
+export function removeFromRootOrder(
+  type: 'folder' | 'member',
+  id: string
+): void {
+  const order = getRootOrder().filter(
+    item => !(item.type === type && item.id === id)
+  );
   setRootOrder(order);
 }
 
-export function moveInRootOrder(type: 'folder' | 'member', id: string, newIndex: number): void {
+export function moveInRootOrder(
+  type: 'folder' | 'member',
+  id: string,
+  newIndex: number
+): void {
   const order = getRootOrder();
-  const currentIndex = order.findIndex(item => item.type === type && item.id === id);
+  const currentIndex = order.findIndex(
+    item => item.type === type && item.id === id
+  );
   if (currentIndex === -1) return;
 
   const [item] = order.splice(currentIndex, 1);
@@ -778,23 +890,28 @@ function createEmptyTribeSetData(): TribeSetData {
   const timestamp = now();
   return {
     version: 1,
-    sets: [{
-      kind: 30000,
-      d: '',
-      title: '',
-      publicMembers: [],
-      privateMembers: []
-    }],
+    sets: [
+      {
+        kind: 30000,
+        d: '',
+        title: '',
+        publicMembers: [],
+        privateMembers: [],
+      },
+    ],
     metadata: {
       setOrder: [''],
-      lastModified: timestamp
+      lastModified: timestamp,
     },
-    lastModified: timestamp
+    lastModified: timestamp,
   };
 }
 
 export async function readFromFile(): Promise<TribeSetData> {
-  return await readJsonFile<TribeSetData>(TRIBES_FILE, createEmptyTribeSetData());
+  return await readJsonFile<TribeSetData>(
+    TRIBES_FILE,
+    createEmptyTribeSetData()
+  );
 }
 
 export async function writeToFile(data: TribeSetData): Promise<void> {
@@ -824,8 +941,13 @@ export async function restoreFromFile(): Promise<void> {
   if (members.length === 0) {
     const browserMembers = getMembers();
     if (browserMembers.length > 0) {
-      logger.warn('Tribes', `Restore aborted: file empty but browser has ${browserMembers.length} members`);
-      throw new Error('File is empty. Use "Sync from Relays" to restore your tribes.');
+      logger.warn(
+        'Tribes',
+        `Restore aborted: file empty but browser has ${browserMembers.length} members`
+      );
+      throw new Error(
+        'File is empty. Use "Sync from Relays" to restore your tribes.'
+      );
     }
   }
 
@@ -849,7 +971,10 @@ export async function restoreFolderDataOnly(): Promise<void> {
   setAssignments(assignments);
   setRootOrder(rootOrder);
 
-  logger.info('Tribes', `Restored folder structure from file: ${folders.length} folders`);
+  logger.info(
+    'Tribes',
+    `Restored folder structure from file: ${folders.length} folders`
+  );
 }
 
 /**
@@ -872,8 +997,12 @@ export function applyRelayFetchResult(
 ): void {
   diagLog('lists', 'tribes applyRelayFetchResult inputs', {
     memberCount: members.length,
-    members: members.map(m => ({ pubkey: m.pubkey.slice(0, 8), category: m.category, isPrivate: m.isPrivate })),
-    categories
+    members: members.map(m => ({
+      pubkey: m.pubkey.slice(0, 8),
+      category: m.category,
+      isPrivate: m.isPrivate,
+    })),
+    categories,
   });
   // Build folders from categories (skip empty/root category)
   const newFolders: TribeFolder[] = [];
@@ -900,14 +1029,18 @@ export function applyRelayFetchResult(
       newFolders.push({
         id: folderId,
         name: tribeName,
-        createdAt: now()
+        createdAt: now(),
       });
       folderNameToId.set(tribeName, folderId);
     }
   }
 
   if (skippedTombstoned.length > 0) {
-    diagLog('lists', 'tribes applyRelayFetchResult: suppressed tombstoned categories', { skipped: skippedTombstoned });
+    diagLog(
+      'lists',
+      'tribes applyRelayFetchResult: suppressed tombstoned categories',
+      { skipped: skippedTombstoned }
+    );
   }
 
   // Build assignments from member categories
@@ -928,8 +1061,8 @@ export function applyRelayFetchResult(
       // Member belongs to a folder
       newAssignments.push({
         memberId: member.id,
-        folderId: folderId,
-        order: newAssignments.filter(a => a.folderId === folderId).length
+        folderId,
+        order: newAssignments.filter(a => a.folderId === folderId).length,
       });
     }
     // Note: In Tribes, members without a folder assignment are NOT added to root
@@ -941,7 +1074,10 @@ export function applyRelayFetchResult(
   setAssignments(newAssignments);
   setRootOrder(newRootOrder);
 
-  logger.info('Tribes', `Applied folder structure: ${newFolders.length} folders`);
+  logger.info(
+    'Tribes',
+    `Applied folder structure: ${newFolders.length} folders`
+  );
   // Note: Caller is responsible for emitting tribe:updated if needed
 }
 
@@ -952,7 +1088,10 @@ export function applyRelayFetchResult(
 export function addNewMembersToFolders(newMembers: TribeMember[]): void {
   diagLog('lists', 'tribes addNewMembersToFolders', {
     newMemberCount: newMembers.length,
-    newMembers: newMembers.map(m => ({ pubkey: m.pubkey.slice(0, 8), category: m.category }))
+    newMembers: newMembers.map(m => ({
+      pubkey: m.pubkey.slice(0, 8),
+      category: m.category,
+    })),
   });
   if (newMembers.length === 0) return;
 
@@ -982,17 +1121,30 @@ export function addNewMembersToFolders(newMembers: TribeMember[]): void {
     let folderId = folderNameToId.get(tribeName);
     if (!folderId) {
       folderId = `folder_${tribeName}`;
-      const newFolder: TribeFolder = { id: folderId, name: tribeName, createdAt: now() };
+      const newFolder: TribeFolder = {
+        id: folderId,
+        name: tribeName,
+        createdAt: now(),
+      };
       addedFolders.push(newFolder);
       addedRootOrderItems.push({ type: 'folder', id: folderId });
       folderNameToId.set(tribeName, folderId);
     }
 
     // Add assignment if not already assigned
-    const alreadyAssigned = existingAssignments.some(a => a.memberId === member.id);
+    const alreadyAssigned = existingAssignments.some(
+      a => a.memberId === member.id
+    );
     if (!alreadyAssigned) {
-      const orderInFolder = [...existingAssignments, ...addedAssignments].filter(a => a.folderId === folderId).length;
-      addedAssignments.push({ memberId: member.id, folderId: folderId!, order: orderInFolder });
+      const orderInFolder = [
+        ...existingAssignments,
+        ...addedAssignments,
+      ].filter(a => a.folderId === folderId).length;
+      addedAssignments.push({
+        memberId: member.id,
+        folderId: folderId!,
+        order: orderInFolder,
+      });
     }
   }
 
@@ -1006,7 +1158,10 @@ export function addNewMembersToFolders(newMembers: TribeMember[]): void {
     setRootOrder([...existingRootOrder, ...addedRootOrderItems]);
   }
 
-  logger.info('Tribes', `Added folder assignments for ${addedAssignments.length} new members, ${addedFolders.length} new folders`);
+  logger.info(
+    'Tribes',
+    `Added folder assignments for ${addedAssignments.length} new members, ${addedFolders.length} new folders`
+  );
 }
 
 /**
@@ -1022,20 +1177,26 @@ export function mergeRelayFolderStructurePreservingBrowserOnly(
     relayMemberCount: relayMembers.length,
     categories,
     browserOnlyCount: browserOnlyMembers.length,
-    browserOnlyPubkeys: browserOnlyMembers.map(m => m.pubkey.slice(0, 8))
+    browserOnlyPubkeys: browserOnlyMembers.map(m => m.pubkey.slice(0, 8)),
   });
   // Snapshot browser assignments for browser-only members BEFORE overwriting
   const existingAssignments = getAssignments();
   const existingFolders = getFolders();
 
   // Map browser-only member IDs → their current folder assignment
-  const browserOnlyAssignments = new Map<string, { folderId: string; folderName: string }>();
+  const browserOnlyAssignments = new Map<
+    string,
+    { folderId: string; folderName: string }
+  >();
   const browserOnlyIds = new Set(browserOnlyMembers.map(m => m.id));
   for (const assignment of existingAssignments) {
     if (browserOnlyIds.has(assignment.memberId)) {
       const folder = existingFolders.find(f => f.id === assignment.folderId);
       if (folder) {
-        browserOnlyAssignments.set(assignment.memberId, { folderId: assignment.folderId, folderName: folder.name });
+        browserOnlyAssignments.set(assignment.memberId, {
+          folderId: assignment.folderId,
+          folderName: folder.name,
+        });
       }
     }
   }
@@ -1064,13 +1225,23 @@ export function mergeRelayFolderStructurePreservingBrowserOnly(
     if (!folderId) {
       // Folder doesn't exist in relay data — recreate it
       folderId = info.folderId;
-      extraFolders.push({ id: folderId, name: info.folderName, createdAt: now() });
+      extraFolders.push({
+        id: folderId,
+        name: info.folderName,
+        createdAt: now(),
+      });
       extraRootOrder.push({ type: 'folder', id: folderId });
       folderNameToId.set(info.folderName, folderId);
     }
 
-    const orderInFolder = [...newAssignments, ...extraAssignments].filter(a => a.folderId === folderId).length;
-    extraAssignments.push({ memberId, folderId: folderId!, order: orderInFolder });
+    const orderInFolder = [...newAssignments, ...extraAssignments].filter(
+      a => a.folderId === folderId
+    ).length;
+    extraAssignments.push({
+      memberId,
+      folderId: folderId!,
+      order: orderInFolder,
+    });
   }
 
   if (extraFolders.length > 0) {
@@ -1083,7 +1254,10 @@ export function mergeRelayFolderStructurePreservingBrowserOnly(
     setRootOrder([...newRootOrder, ...extraRootOrder]);
   }
 
-  logger.info('Tribes', `Merged relay folders, preserved ${extraAssignments.length} browser-only member assignments`);
+  logger.info(
+    'Tribes',
+    `Merged relay folders, preserved ${extraAssignments.length} browser-only member assignments`
+  );
 }
 
 /**
@@ -1108,7 +1282,7 @@ function buildSetDataFromBrowser(): TribeSetData {
     d: '',
     title: '',
     publicMembers: [],
-    privateMembers: []
+    privateMembers: [],
   });
 
   // Create sets for each folder
@@ -1118,7 +1292,7 @@ function buildSetDataFromBrowser(): TribeSetData {
       d: folder.name,
       title: folder.name,
       publicMembers: [],
-      privateMembers: []
+      privateMembers: [],
     });
   }
 
@@ -1151,16 +1325,38 @@ function buildSetDataFromBrowser(): TribeSetData {
   // Tribes: Root members are NOT allowed - skip them (log warning if any exist)
   const rootMemberIds = getMembersInFolder('');
   if (rootMemberIds.length > 0) {
-    logger.warn('Tribes', `Skipping ${rootMemberIds.length} root members (not allowed in tribes)`);
+    logger.warn(
+      'Tribes',
+      `Skipping ${rootMemberIds.length} root members (not allowed in tribes)`
+    );
   }
 
   // Tribes: Orphaned items are NOT allowed - skip them (log warning if any exist)
   const orphanedItems = allMembers.filter(item => !assignedIds.has(item.id));
   if (orphanedItems.length > 0) {
-    logger.warn('Tribes', `Skipping ${orphanedItems.length} orphaned members (not allowed in tribes)`);
-    console.debug(`[Tribes] ORPHANED MEMBERS (will NOT be published):`, orphanedItems.map(m => ({ id: m.id, pubkey: m.pubkey.slice(0, 8), category: m.category })));
-    console.debug(`[Tribes] All folder IDs:`, folders.map(f => f.id));
-    console.debug(`[Tribes] All assignments:`, getAssignments().map(a => ({ memberId: a.memberId.slice(0, 20), folderId: a.folderId })));
+    logger.warn(
+      'Tribes',
+      `Skipping ${orphanedItems.length} orphaned members (not allowed in tribes)`
+    );
+    console.debug(
+      `[Tribes] ORPHANED MEMBERS (will NOT be published):`,
+      orphanedItems.map(m => ({
+        id: m.id,
+        pubkey: m.pubkey.slice(0, 8),
+        category: m.category,
+      }))
+    );
+    console.debug(
+      `[Tribes] All folder IDs:`,
+      folders.map(f => f.id)
+    );
+    console.debug(
+      `[Tribes] All assignments:`,
+      getAssignments().map(a => ({
+        memberId: a.memberId.slice(0, 20),
+        folderId: a.folderId,
+      }))
+    );
   }
 
   // Build setOrder from rootOrder (respects user's custom folder order)
@@ -1187,9 +1383,9 @@ function buildSetDataFromBrowser(): TribeSetData {
     sets: Array.from(setsMap.values()),
     metadata: {
       setOrder,
-      lastModified: now()
+      lastModified: now(),
     },
-    lastModified: now()
+    lastModified: now(),
   };
 }
 
@@ -1225,7 +1421,7 @@ function extractFromSetData(data: TribeSetData): {
     let itemOrder = 0;
     const allMemberTags = [
       ...set.publicMembers.map(tag => ({ ...tag, isPrivate: false })),
-      ...set.privateMembers.map(tag => ({ ...tag, isPrivate: true }))
+      ...set.privateMembers.map(tag => ({ ...tag, isPrivate: true })),
     ];
 
     for (const tag of allMemberTags) {
@@ -1235,7 +1431,7 @@ function extractFromSetData(data: TribeSetData): {
         pubkey: tag.pubkey,
         addedAt: timestamp,
         isPrivate: tag.isPrivate,
-        category
+        category,
       };
       if (tag.relay) member.relay = tag.relay;
       members.push(member);
@@ -1262,17 +1458,29 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
 
   try {
     // Fetch all kind:30000 events (skipCache=true to get fresh data for sync)
-    const events = await fetchEvents([{
-      authors: [pubkey],
-      kinds: [30000],
-      limit: 100
-    }], 10000, true);
+    const events = await fetchEvents(
+      [
+        {
+          authors: [pubkey],
+          kinds: [30000],
+          limit: 100,
+        },
+      ],
+      10000,
+      true
+    );
 
     // Fetch deletion events (kind:5) - also skip cache
-    const deletionEvents = await fetchEvents([{
-      authors: [pubkey],
-      kinds: [5]
-    }], 5000, true);
+    const deletionEvents = await fetchEvents(
+      [
+        {
+          authors: [pubkey],
+          kinds: [5],
+        },
+      ],
+      5000,
+      true
+    );
 
     // Extract deleted coordinates with timestamps
     const deletedCoordinates = new Map<string, number>();
@@ -1319,7 +1527,10 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
       // (2) NIP-09 created_at-based suppression
       const coordinate = `30000:${pubkey}:${dTag}`;
       const deletionTimestamp = deletedCoordinates.get(coordinate);
-      if (deletionTimestamp !== undefined && event.created_at < deletionTimestamp) {
+      if (
+        deletionTimestamp !== undefined &&
+        event.created_at < deletionTimestamp
+      ) {
         continue;
       }
 
@@ -1330,8 +1541,14 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
     }
 
     if (tombstonedSkipped.length > 0) {
-      diagLog('lists', 'tribes fetchFromRelays: suppressed by tombstone', { count: tombstonedSkipped.length, tribeNames: tombstonedSkipped });
-      logger.info('Tribes', `Suppressed ${tombstonedSkipped.length} tombstoned tribe(s) from relay fetch: ${tombstonedSkipped.join(', ')}`);
+      diagLog('lists', 'tribes fetchFromRelays: suppressed by tombstone', {
+        count: tombstonedSkipped.length,
+        tribeNames: tombstonedSkipped,
+      });
+      logger.info(
+        'Tribes',
+        `Suppressed ${tombstonedSkipped.length} tombstoned tribe(s) from relay fetch: ${tombstonedSkipped.join(', ')}`
+      );
     }
 
     if (eventsByDTag.size === 0) {
@@ -1340,15 +1557,22 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
     }
 
     // Fetch folder order metadata (NIP-78)
-    const orderEvents = await fetchEvents([{
-      authors: [pubkey],
-      kinds: [30078],
-      '#d': ['noornote:tribe-folders-order']
-    }], 5000);
+    const orderEvents = await fetchEvents(
+      [
+        {
+          authors: [pubkey],
+          kinds: [30078],
+          '#d': ['noornote:tribe-folders-order'],
+        },
+      ],
+      5000
+    );
 
     let folderOrder: string[] = [];
     if (orderEvents.length > 0) {
-      const sortedOrderEvents = orderEvents.sort((a, b) => b.created_at - a.created_at);
+      const sortedOrderEvents = orderEvents.sort(
+        (a, b) => b.created_at - a.created_at
+      );
       const orderEvent = sortedOrderEvents[0];
       if (orderEvent) {
         folderOrder = orderEvent.tags
@@ -1420,7 +1644,10 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
       }
 
       allItems.push(...publicItems, ...privateItems);
-      logger.info('Tribes', `Fetched tribe "${tribeName || 'root'}": ${publicItems.length} public + ${privateItems.length} private`);
+      logger.info(
+        'Tribes',
+        `Fetched tribe "${tribeName || 'root'}": ${publicItems.length} public + ${privateItems.length} private`
+      );
     }
 
     // Deduplicate by pubkey
@@ -1432,35 +1659,45 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
     const finalItems = Array.from(itemMap.values());
     diagLog('lists', 'tribes fetchFromRelays result', {
       itemCount: finalItems.length,
-      items: finalItems.map(i => ({ pubkey: i.pubkey.slice(0, 8), category: i.category, isPrivate: i.isPrivate })),
+      items: finalItems.map(i => ({
+        pubkey: i.pubkey.slice(0, 8),
+        category: i.category,
+        isPrivate: i.isPrivate,
+      })),
       categories,
-      categoryAssignmentCount: categoryAssignments.size
+      categoryAssignmentCount: categoryAssignments.size,
     });
 
     // Compute relay timestamp: MAX created_at across all tribe events
     let maxEventTimestamp = 0;
     for (const event of eventsByDTag.values()) {
-      if (event.created_at > maxEventTimestamp) maxEventTimestamp = event.created_at;
+      if (event.created_at > maxEventTimestamp)
+        maxEventTimestamp = event.created_at;
     }
 
     // RESURRECTION DETECTION (logging only, no behavior change) — see docs/features/lists.md "Folder-Resurrection"
     const browserFolderNames = new Set(getFolders().map(f => f.name));
     const relayFolderNames = categories
       .filter(c => c !== 'tribes/' && c !== '')
-      .map(c => c.startsWith('tribes/') ? c.substring(7) : c);
-    const resurrectionCandidates = relayFolderNames.filter(name => !browserFolderNames.has(name));
+      .map(c => (c.startsWith('tribes/') ? c.substring(7) : c));
+    const resurrectionCandidates = relayFolderNames.filter(
+      name => !browserFolderNames.has(name)
+    );
     if (resurrectionCandidates.length > 0 && browserFolderNames.size > 0) {
-      console.debug('[Lists] Possible folder resurrection in tribes — relay returned folders not present in local browser state', {
-        resurrectionCandidates,
-        browserFolders: [...browserFolderNames],
-        relayFolders: relayFolderNames,
-        eventCreatedAt: maxEventTimestamp
-      });
+      console.debug(
+        '[Lists] Possible folder resurrection in tribes — relay returned folders not present in local browser state',
+        {
+          resurrectionCandidates,
+          browserFolders: [...browserFolderNames],
+          relayFolders: relayFolderNames,
+          eventCreatedAt: maxEventTimestamp,
+        }
+      );
       diagLog('lists', 'tribes RESURRECTION CANDIDATE in fetchFromRelays', {
         resurrectionCandidates,
         browserFolders: [...browserFolderNames],
         relayFolders: relayFolderNames,
-        eventCreatedAt: maxEventTimestamp
+        eventCreatedAt: maxEventTimestamp,
       });
     }
 
@@ -1469,7 +1706,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
       relayContentWasEmpty: false,
       categoryAssignments,
       categories,
-      relayTimestamp: maxEventTimestamp
+      relayTimestamp: maxEventTimestamp,
     };
   } catch (error) {
     logger.error('Tribes', `Failed to fetch from relays: ${error}`);
@@ -1486,7 +1723,8 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
 
 function getTribeTombstones(): Record<string, number> {
   return PerAccountLocalStorage.getInstance().get<Record<string, number>>(
-    StorageKeys.TRIBE_TOMBSTONES, {}
+    StorageKeys.TRIBE_TOMBSTONES,
+    {}
   );
 }
 
@@ -1504,7 +1742,10 @@ export function addTribeTombstone(tribeName: string): void {
   const map = getTribeTombstones();
   map[tribeName] = Math.floor(Date.now() / 1000);
   setTribeTombstones(map);
-  diagLog('lists', 'addTribeTombstone', { tribeName, total: Object.keys(map).length });
+  diagLog('lists', 'addTribeTombstone', {
+    tribeName,
+    total: Object.keys(map).length,
+  });
   // Mirror into the shared, durable deletion record so the delete propagates
   // to the user's other devices (best-effort, never blocks the local mutation).
   publishTribeDeletionChange(tribeName, true);
@@ -1516,7 +1757,10 @@ export function removeTribeTombstone(tribeName: string): void {
   if (!(tribeName in map)) return;
   delete map[tribeName];
   setTribeTombstones(map);
-  diagLog('lists', 'removeTribeTombstone', { tribeName, remaining: Object.keys(map).length });
+  diagLog('lists', 'removeTribeTombstone', {
+    tribeName,
+    remaining: Object.keys(map).length,
+  });
   // Mirror the revival (explicit re-creation) so it overrides the deletion on
   // every device. Only fires when an actual tombstone was cleared (guard above).
   publishTribeDeletionChange(tribeName, false);
@@ -1570,25 +1814,54 @@ export async function publishToRelays(): Promise<void> {
   });
 
   if (skippedTombstoned.length > 0) {
-    diagLog('lists', 'tribes publishToRelays: skipped sets due to client-side tombstone', { skipped: skippedTombstoned });
-    logger.warn('Tribes', `Skipped ${skippedTombstoned.length} tombstoned tribe set(s): ${skippedTombstoned.join(', ')}`);
+    diagLog(
+      'lists',
+      'tribes publishToRelays: skipped sets due to client-side tombstone',
+      { skipped: skippedTombstoned }
+    );
+    logger.warn(
+      'Tribes',
+      `Skipped ${skippedTombstoned.length} tombstoned tribe set(s): ${skippedTombstoned.join(', ')}`
+    );
   }
 
-  const totalMembers = filteredSets.reduce((sum, s) => sum + s.publicMembers.length + s.privateMembers.length, 0);
+  const totalMembers = filteredSets.reduce(
+    (sum, s) => sum + s.publicMembers.length + s.privateMembers.length,
+    0
+  );
   diagLog('lists', 'tribes publishToRelays', {
     setCount: filteredSets.length,
     totalMembers,
-    sets: filteredSets.map(s => ({ d: s.d, publicCount: s.publicMembers.length, privateCount: s.privateMembers.length, publicPubkeys: s.publicMembers.map(p => p.pubkey.slice(0, 8)) }))
+    sets: filteredSets.map(s => ({
+      d: s.d,
+      publicCount: s.publicMembers.length,
+      privateCount: s.privateMembers.length,
+      publicPubkeys: s.publicMembers.map(p => p.pubkey.slice(0, 8)),
+    })),
   });
-  logger.info('Tribes', `Publishing: ${filteredSets.length} sets, ${totalMembers} total members`);
-  console.debug(`[Tribes] publishToRelays: ${filteredSets.length} sets, ${totalMembers} members`, filteredSets.map(s => ({ d: s.d, pub: s.publicMembers.length, priv: s.privateMembers.length })));
+  logger.info(
+    'Tribes',
+    `Publishing: ${filteredSets.length} sets, ${totalMembers} total members`
+  );
+  console.debug(
+    `[Tribes] publishToRelays: ${filteredSets.length} sets, ${totalMembers} members`,
+    filteredSets.map(s => ({
+      d: s.d,
+      pub: s.publicMembers.length,
+      priv: s.privateMembers.length,
+    }))
+  );
 
   // Publish each tribe
   let totalPublished = 0;
 
   for (const set of filteredSets) {
     // Skip empty sets (except root)
-    if (set.publicMembers.length === 0 && set.privateMembers.length === 0 && set.d !== '') {
+    if (
+      set.publicMembers.length === 0 &&
+      set.privateMembers.length === 0 &&
+      set.d !== ''
+    ) {
       continue;
     }
 
@@ -1611,7 +1884,11 @@ export async function publishToRelays(): Promise<void> {
     // Encrypt private members
     let content = '';
     if (set.privateMembers.length > 0) {
-      const privateTags = set.privateMembers.map(m => ['p', m.pubkey, m.relay || '']);
+      const privateTags = set.privateMembers.map(m => [
+        'p',
+        m.pubkey,
+        m.relay || '',
+      ]);
       content = await encryptContent(JSON.stringify(privateTags), user.pubkey);
     }
 
@@ -1620,7 +1897,7 @@ export async function publishToRelays(): Promise<void> {
       created_at: now(),
       tags,
       content,
-      pubkey: user.pubkey
+      pubkey: user.pubkey,
     };
 
     const signed = await signEvent(event);
@@ -1632,7 +1909,10 @@ export async function publishToRelays(): Promise<void> {
     await publishEvent(signed);
     totalPublished++;
 
-    logger.info('Tribes', `Published tribe "${set.d || 'root'}": ${set.publicMembers.length} public + ${set.privateMembers.length} private`);
+    logger.info(
+      'Tribes',
+      `Published tribe "${set.d || 'root'}": ${set.publicMembers.length} public + ${set.privateMembers.length} private`
+    );
   }
 
   // Publish folder order metadata (NIP-78) — exclude tombstoned tribes so
@@ -1653,13 +1933,16 @@ export async function publishToRelays(): Promise<void> {
       created_at: now(),
       tags: orderTags,
       content: '',
-      pubkey: user.pubkey
+      pubkey: user.pubkey,
     };
 
     const signedOrderEvent = await signEvent(orderEvent);
     if (signedOrderEvent) {
       await publishEvent(signedOrderEvent);
-      logger.info('Tribes', `Published folder order metadata with ${folderOrder.length} tribes`);
+      logger.info(
+        'Tribes',
+        `Published folder order metadata with ${folderOrder.length} tribes`
+      );
     }
   }
 
@@ -1679,7 +1962,7 @@ function tagsToMembers(tags: string[][], timestamp: number): TribeMember[] {
         id: tag[1],
         pubkey: tag[1],
         relay: tag[2] || '',
-        addedAt: timestamp
+        addedAt: timestamp,
       });
     }
   }
@@ -1687,7 +1970,10 @@ function tagsToMembers(tags: string[][], timestamp: number): TribeMember[] {
   return items;
 }
 
-async function decryptPrivateMembers(ciphertext: string, pubkey: string): Promise<TribeMember[]> {
+async function decryptPrivateMembers(
+  ciphertext: string,
+  pubkey: string
+): Promise<TribeMember[]> {
   const plaintext = await decryptContent(ciphertext, pubkey);
   if (!plaintext) return [];
 
@@ -1730,10 +2016,13 @@ export class TribeManager {
 
   // ===== Sync Helper Methods (inlined) =====
 
-  private calculateDiff(browserItems: TribeMember[], sourceItems: TribeMember[]): SyncDiff {
+  private calculateDiff(
+    browserItems: TribeMember[],
+    sourceItems: TribeMember[]
+  ): SyncDiff {
     diagLog('lists', 'TribeListManager.calculateDiff', {
       browserCount: browserItems.length,
-      sourceCount: sourceItems.length
+      sourceCount: sourceItems.length,
     });
     const browserMap = new Map(browserItems.map(item => [item.pubkey, item]));
     const sourceMap = new Map(sourceItems.map(item => [item.pubkey, item]));
@@ -1761,7 +2050,10 @@ export class TribeManager {
     return { added, removed, unchanged, moved };
   }
 
-  private mergeItems(browserItems: TribeMember[], newItems: TribeMember[]): TribeMember[] {
+  private mergeItems(
+    browserItems: TribeMember[],
+    newItems: TribeMember[]
+  ): TribeMember[] {
     return mergeByKey(browserItems, newItems, 'pubkey');
   }
 
@@ -1770,24 +2062,36 @@ export class TribeManager {
     const browserItems = this.adapter.getBrowserItems();
     diagLog('lists', 'TribeListManager.syncFromRelays: browserItems', {
       count: browserItems.length,
-      items: browserItems.map(m => ({ pubkey: m.pubkey.slice(0, 8), category: m.category }))
+      items: browserItems.map(m => ({
+        pubkey: m.pubkey.slice(0, 8),
+        category: m.category,
+      })),
     });
-    const fetchResult = await this.adapter.fetchFromRelays() as { items: TribeMember[]; relayContentWasEmpty: boolean; categoryAssignments?: Map<string, string>; categories?: string[]; relayTimestamp: number };
+    const fetchResult = (await this.adapter.fetchFromRelays()) as {
+      items: TribeMember[];
+      relayContentWasEmpty: boolean;
+      categoryAssignments?: Map<string, string>;
+      categories?: string[];
+      relayTimestamp: number;
+    };
     diagLog('lists', 'TribeListManager.syncFromRelays: fetchResult', {
       itemCount: fetchResult.items.length,
       relayContentWasEmpty: fetchResult.relayContentWasEmpty,
-      categories: fetchResult.categories
+      categories: fetchResult.categories,
     });
     const diff = this.calculateDiff(browserItems, fetchResult.items);
 
     // Use full state comparison (checks ALL differences, not just added/removed/moved)
-    const requiresConfirmation = hasAnyDifference(fetchResult.items, fetchResult.categories);
+    const requiresConfirmation = hasAnyDifference(
+      fetchResult.items,
+      fetchResult.categories
+    );
     diagLog('lists', 'TribeListManager.syncFromRelays: diff', {
       added: diff.added.length,
       removed: diff.removed.length,
       unchanged: diff.unchanged.length,
       moved: diff.moved.length,
-      requiresConfirmation
+      requiresConfirmation,
     });
 
     const result: SyncFromRelaysResult = {
@@ -1795,14 +2099,18 @@ export class TribeManager {
       diff,
       relayItems: fetchResult.items,
       relayContentWasEmpty: fetchResult.relayContentWasEmpty,
-      relayTimestamp: fetchResult.relayTimestamp
+      relayTimestamp: fetchResult.relayTimestamp,
     };
-    if (fetchResult.categoryAssignments) result.categoryAssignments = fetchResult.categoryAssignments;
+    if (fetchResult.categoryAssignments)
+      result.categoryAssignments = fetchResult.categoryAssignments;
     if (fetchResult.categories) result.categories = fetchResult.categories;
     return result;
   }
 
-  private applySync(strategy: 'merge' | 'overwrite', items: TribeMember[]): void {
+  private applySync(
+    strategy: 'merge' | 'overwrite',
+    items: TribeMember[]
+  ): void {
     if (strategy === 'overwrite') {
       this.adapter.setBrowserItems(items);
     } else {
@@ -1876,7 +2184,9 @@ export class TribeManager {
   }
 
   private refreshIfActive(): void {
-    const listTab = this.containerElement.querySelector('[data-tab-content="list-tribes"]');
+    const listTab = this.containerElement.querySelector(
+      '[data-tab-content="list-tribes"]'
+    );
     if (listTab && listTab.classList.contains('tab-content--active')) {
       this.renderTribesTab(listTab as HTMLElement);
     }
@@ -1982,8 +2292,8 @@ export class TribeManager {
       }
 
       // Sort members by addedAt DESC (newest first) for initial display
-      const sortedMembers = [...membersFromBrowser].sort((a, b) =>
-        (b.addedAt || 0) - (a.addedAt || 0)
+      const sortedMembers = [...membersFromBrowser].sort(
+        (a, b) => (b.addedAt || 0) - (a.addedAt || 0)
       );
 
       // Fetch profiles for all members
@@ -2004,7 +2314,7 @@ export class TribeManager {
         const memberWithProfile: MemberWithProfile = {
           id: member.id,
           pubkey: member.pubkey,
-          isPrivate: member.isPrivate || false
+          isPrivate: member.isPrivate || false,
         };
         if (member.relay) memberWithProfile.relay = member.relay;
         if (member.addedAt) memberWithProfile.addedAt = member.addedAt;
@@ -2015,7 +2325,10 @@ export class TribeManager {
 
       // On first init, build root order from sorted members (newest first)
       if (isFirstInit) {
-        const rootOrderItems = sortedMembers.map(m => ({ type: 'member' as const, id: m.id }));
+        const rootOrderItems = sortedMembers.map(m => ({
+          type: 'member' as const,
+          id: m.id,
+        }));
         setRootOrder(rootOrderItems);
       }
     } finally {
@@ -2059,8 +2372,16 @@ export class TribeManager {
   private renderHeader(folder: TribeFolder | undefined): string {
     const title = folder ? folder.name : 'Tribes';
     return renderListHeader(title, [
-      { action: 'new-tribe', icon: '<svg width="16" height="16"><use href="#icon-folder"/></svg>', label: 'Tribe' },
-      { action: 'new-member', icon: '<svg width="16" height="16"><use href="#icon-tribe"/></svg>', label: 'Member' },
+      {
+        action: 'new-tribe',
+        icon: '<svg width="16" height="16"><use href="#icon-folder"/></svg>',
+        label: 'Tribe',
+      },
+      {
+        action: 'new-member',
+        icon: '<svg width="16" height="16"><use href="#icon-tribe"/></svg>',
+        label: 'Member',
+      },
     ]);
   }
 
@@ -2079,9 +2400,9 @@ export class TribeManager {
       // In a folder - show up navigator first
       const upNav = new UpNavigator({
         onClick: () => this.navigateToRoot(),
-        onDrop: async (memberPubkey) => {
+        onDrop: async memberPubkey => {
           await this.moveMemberToFolderUI(memberPubkey, '');
-        }
+        },
       });
       grid.appendChild(upNav.render());
 
@@ -2142,7 +2463,9 @@ export class TribeManager {
   /**
    * Create a member card
    */
-  private async createMemberCard(member: MemberWithProfile): Promise<HTMLElement> {
+  private async createMemberCard(
+    member: MemberWithProfile
+  ): Promise<HTMLElement> {
     // Build move targets: all folders except current one
     const allFolders = getFolders();
     const currentFolder = this.currentFolderId;
@@ -2150,19 +2473,22 @@ export class TribeManager {
       .filter(f => f.id !== currentFolder)
       .map(f => ({ id: f.id, label: f.name }));
 
-    const card = new TribeMemberCard({
-      pubkey: member.pubkey,
-      isPrivate: member.isPrivate,
-      folderId: getMemberFolder(member.id)
-    }, {
-      onDelete: async (pubkey: string) => {
-        await this.deleteMember(pubkey);
+    const card = new TribeMemberCard(
+      {
+        pubkey: member.pubkey,
+        isPrivate: member.isPrivate,
+        folderId: getMemberFolder(member.id),
       },
-      moveTargets,
-      onMove: async (pubkey: string, targetFolderId: string) => {
-        await this.moveMemberToFolderUI(pubkey, targetFolderId);
+      {
+        onDelete: async (pubkey: string) => {
+          await this.deleteMember(pubkey);
+        },
+        moveTargets,
+        onMove: async (pubkey: string, targetFolderId: string) => {
+          await this.moveMemberToFolderUI(pubkey, targetFolderId);
+        },
       }
-    });
+    );
 
     return await card.render();
   }
@@ -2184,25 +2510,25 @@ export class TribeManager {
       id: folder.id,
       name: folder.name,
       itemCount: this.getActualFolderItemCount(folder.id),
-      isMounted: false // Tribes don't support profile mounting
+      isMounted: false, // Tribes don't support profile mounting
     };
 
     const card = new FolderCard(folderData, {
-      onClick: (folderId) => this.navigateToFolder(folderId),
-      onEdit: (folderId) => this.editFolder(folderId),
-      onDelete: async (folderId) => {
+      onClick: folderId => this.navigateToFolder(folderId),
+      onEdit: folderId => this.editFolder(folderId),
+      onDelete: async folderId => {
         await this.deleteFolderUI(folderId);
       },
       onDrop: async (memberPubkey, folderId) => {
         await this.moveMemberToFolderUI(memberPubkey, folderId);
       },
-      onDragStart: (_folderId) => {
+      onDragStart: _folderId => {
         // Drag state tracked internally by setupGridDragDrop
       },
       onDragEnd: () => {
         // Drag state tracked internally by setupGridDragDrop
       },
-      showMountCheckbox: false // Tribes don't support profile mounting
+      showMountCheckbox: false, // Tribes don't support profile mounting
     });
 
     return card.render();
@@ -2216,9 +2542,10 @@ export class TribeManager {
       itemSelector: '[data-tribe-member], [data-folder]',
       excludeSelector: 'button.delete, .move',
       placeholderClass: 'tribe-member-card-placeholder',
-      getItemId: (el) => el.dataset.pubkey || el.dataset.folderId || null,
+      getItemId: el => el.dataset.pubkey || el.dataset.folderId || null,
       onDrop: (draggedId, draggedEl, dropTarget) => {
-        const targetId = dropTarget.dataset.pubkey || dropTarget.dataset.folderId;
+        const targetId =
+          dropTarget.dataset.pubkey || dropTarget.dataset.folderId;
         const isDraggingMember = draggedEl.dataset.tribeMember !== undefined;
         const isDraggingFolder = draggedEl.dataset.folder !== undefined;
         const isTargetFolder = dropTarget.dataset.folder !== undefined;
@@ -2230,8 +2557,12 @@ export class TribeManager {
           this.moveMemberToFolderUI(draggedId, targetId);
         } else if (targetId && targetId !== draggedId) {
           if (this.currentFolderId && isDraggingMember) {
-            const membersInFolderList = getMembersInFolder(this.currentFolderId);
-            const targetIndex = membersInFolderList.findIndex(id => id === targetId);
+            const membersInFolderList = getMembersInFolder(
+              this.currentFolderId
+            );
+            const targetIndex = membersInFolderList.findIndex(
+              id => id === targetId
+            );
             if (targetIndex !== -1) {
               moveItemToPosition(draggedId, targetIndex);
               grid.insertBefore(draggedEl, dropTarget);
@@ -2240,15 +2571,21 @@ export class TribeManager {
           } else {
             const draggedType = isDraggingFolder ? 'folder' : 'member';
             const rootOrderItems = getRootOrder();
-            const targetIndex = rootOrderItems.findIndex(item => item.id === targetId);
+            const targetIndex = rootOrderItems.findIndex(
+              item => item.id === targetId
+            );
             if (targetIndex !== -1) {
-              moveInRootOrder(draggedType as 'folder' | 'member', draggedId, targetIndex);
+              moveInRootOrder(
+                draggedType as 'folder' | 'member',
+                draggedId,
+                targetIndex
+              );
               grid.insertBefore(draggedEl, dropTarget);
               eventBus.emit('tribe:updated');
             }
           }
         }
-      }
+      },
     });
   }
 
@@ -2263,7 +2600,9 @@ export class TribeManager {
   }
 
   private rerenderCurrentView(): void {
-    const container = this.containerElement.querySelector('[data-tab-content="list-tribes"]');
+    const container = this.containerElement.querySelector(
+      '[data-tab-content="list-tribes"]'
+    );
     if (container) {
       this.renderCurrentView(container as HTMLElement);
     }
@@ -2281,13 +2620,23 @@ export class TribeManager {
       this.rerenderCurrentView();
 
       // Reliable propagation: republish parent tribe set IMMEDIATELY, bypassing debounce.
-      diagLog('lists', 'immediate publish after deleteMember — start', { pubkey: pubkey.slice(0, 8) });
+      diagLog('lists', 'immediate publish after deleteMember — start', {
+        pubkey: pubkey.slice(0, 8),
+      });
       try {
         await publishToRelays();
-        diagLog('lists', 'immediate publish after deleteMember — done', { pubkey: pubkey.slice(0, 8) });
+        diagLog('lists', 'immediate publish after deleteMember — done', {
+          pubkey: pubkey.slice(0, 8),
+        });
       } catch (pubErr) {
-        diagLog('lists', 'immediate publish after deleteMember — FAILED', { pubkey: pubkey.slice(0, 8), error: String(pubErr) });
-        logger.warn('Tribes', `Immediate publish after member delete failed: ${pubErr}`);
+        diagLog('lists', 'immediate publish after deleteMember — FAILED', {
+          pubkey: pubkey.slice(0, 8),
+          error: String(pubErr),
+        });
+        logger.warn(
+          'Tribes',
+          `Immediate publish after member delete failed: ${pubErr}`
+        );
       }
     } catch (error) {
       console.error('Failed to delete member:', error);
@@ -2312,16 +2661,32 @@ export class TribeManager {
           const currentUser = this.authService.getCurrentUser();
           if (currentUser) {
             const oldCoordinate = `30000:${currentUser.pubkey}:tribes/${oldName}`;
-            diagLog('lists', 'eager kind:5 publish for tribe rename — start', { oldName, newName, oldCoordinate });
+            diagLog('lists', 'eager kind:5 publish for tribe rename — start', {
+              oldName,
+              newName,
+              oldCoordinate,
+            });
             try {
-              const ok = await DeletionService.getInstance().deleteByCoordinates(
-                [oldCoordinate],
-                `Tribe renamed from "${oldName}" to "${newName}"`
-              );
-              diagLog('lists', 'eager kind:5 publish for tribe rename — done', { oldName, newName, ok });
+              const ok =
+                await DeletionService.getInstance().deleteByCoordinates(
+                  [oldCoordinate],
+                  `Tribe renamed from "${oldName}" to "${newName}"`
+                );
+              diagLog('lists', 'eager kind:5 publish for tribe rename — done', {
+                oldName,
+                newName,
+                ok,
+              });
             } catch (kind5Err) {
-              diagLog('lists', 'eager kind:5 publish for tribe rename — FAILED', { oldName, newName, error: String(kind5Err) });
-              logger.warn('Tribes', `Eager kind:5 publish failed for tribe rename "${oldName}" → "${newName}": ${kind5Err}`);
+              diagLog(
+                'lists',
+                'eager kind:5 publish for tribe rename — FAILED',
+                { oldName, newName, error: String(kind5Err) }
+              );
+              logger.warn(
+                'Tribes',
+                `Eager kind:5 publish failed for tribe rename "${oldName}" → "${newName}": ${kind5Err}`
+              );
             }
           }
         }
@@ -2336,7 +2701,7 @@ export class TribeManager {
         renameFolder(folderId, newName);
         ToastService.show('Tribe renamed', 'success');
         this.rerenderCurrentView();
-      }
+      },
     });
 
     modal.show();
@@ -2350,9 +2715,10 @@ export class TribeManager {
     if (!folder) return;
 
     const itemCount = this.getActualFolderItemCount(folderId);
-    const message = itemCount > 0
-      ? `Delete tribe "${folder.name}"? ${itemCount} member(s) will be deleted.`
-      : `Delete tribe "${folder.name}"?`;
+    const message =
+      itemCount > 0
+        ? `Delete tribe "${folder.name}"? ${itemCount} member(s) will be deleted.`
+        : `Delete tribe "${folder.name}"?`;
 
     this.modalService.show({
       title: 'Delete Tribe',
@@ -2368,7 +2734,7 @@ export class TribeManager {
       width: '400px',
       showCloseButton: true,
       closeOnOverlay: true,
-      closeOnEsc: true
+      closeOnEsc: true,
     });
 
     setTimeout(() => {
@@ -2387,16 +2753,32 @@ export class TribeManager {
             const currentUser = this.authService.getCurrentUser();
             if (currentUser) {
               const coordinate = `30000:${currentUser.pubkey}:tribes/${tribeName}`;
-              diagLog('lists', 'eager kind:5 publish for tribe delete — start', { tribeName, coordinate });
+              diagLog(
+                'lists',
+                'eager kind:5 publish for tribe delete — start',
+                { tribeName, coordinate }
+              );
               try {
-                const ok = await DeletionService.getInstance().deleteByCoordinates(
-                  [coordinate],
-                  `Tribe "${tribeName}" deleted`
+                const ok =
+                  await DeletionService.getInstance().deleteByCoordinates(
+                    [coordinate],
+                    `Tribe "${tribeName}" deleted`
+                  );
+                diagLog(
+                  'lists',
+                  'eager kind:5 publish for tribe delete — done',
+                  { tribeName, ok }
                 );
-                diagLog('lists', 'eager kind:5 publish for tribe delete — done', { tribeName, ok });
               } catch (kind5Err) {
-                diagLog('lists', 'eager kind:5 publish for tribe delete — FAILED', { tribeName, error: String(kind5Err) });
-                logger.warn('Tribes', `Eager kind:5 publish failed for tribe "${tribeName}": ${kind5Err}`);
+                diagLog(
+                  'lists',
+                  'eager kind:5 publish for tribe delete — FAILED',
+                  { tribeName, error: String(kind5Err) }
+                );
+                logger.warn(
+                  'Tribes',
+                  `Eager kind:5 publish failed for tribe "${tribeName}": ${kind5Err}`
+                );
               }
             }
           }
@@ -2425,13 +2807,26 @@ export class TribeManager {
           this.rerenderCurrentView();
 
           // Reliable propagation: republish remaining tribes IMMEDIATELY (kind:30000 for other tribes + kind:30078 order)
-          diagLog('lists', 'immediate publish after deleteFolderUI(tribe) — start');
+          diagLog(
+            'lists',
+            'immediate publish after deleteFolderUI(tribe) — start'
+          );
           try {
             await publishToRelays();
-            diagLog('lists', 'immediate publish after deleteFolderUI(tribe) — done');
+            diagLog(
+              'lists',
+              'immediate publish after deleteFolderUI(tribe) — done'
+            );
           } catch (pubErr) {
-            diagLog('lists', 'immediate publish after deleteFolderUI(tribe) — FAILED', { error: String(pubErr) });
-            logger.warn('Tribes', `Immediate publish after tribe delete failed: ${pubErr}`);
+            diagLog(
+              'lists',
+              'immediate publish after deleteFolderUI(tribe) — FAILED',
+              { error: String(pubErr) }
+            );
+            logger.warn(
+              'Tribes',
+              `Immediate publish after tribe delete failed: ${pubErr}`
+            );
           }
         } catch (error) {
           console.error('Failed to delete tribe:', error);
@@ -2445,7 +2840,10 @@ export class TribeManager {
   /**
    * Move member to a different folder (UI handler)
    */
-  private async moveMemberToFolderUI(memberPubkey: string, targetFolderId: string): Promise<void> {
+  private async moveMemberToFolderUI(
+    memberPubkey: string,
+    targetFolderId: string
+  ): Promise<void> {
     try {
       // Tribes: Members must always be in a folder, never at root
       if (targetFolderId === '') {
@@ -2491,7 +2889,7 @@ export class TribeManager {
         createFolder(name);
         ToastService.show('Tribe created', 'success');
         this.rerenderCurrentView();
-      }
+      },
     });
 
     modal.show();
@@ -2502,9 +2900,9 @@ export class TribeManager {
    */
   private addNewMember(): void {
     const allTribes = getFolders();
-    const tribeOptions = allTribes.map(t =>
-      `<option value="${t.id}">${escapeHtml(t.name)}</option>`
-    ).join('');
+    const tribeOptions = allTribes
+      .map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`)
+      .join('');
 
     const container = document.createElement('div');
     container.className = 'new-bookmark-modal';
@@ -2547,20 +2945,26 @@ export class TribeManager {
       width: '450px',
       showCloseButton: true,
       closeOnOverlay: true,
-      closeOnEsc: true
+      closeOnEsc: true,
     });
 
     setTimeout(async () => {
-      const input = document.getElementById('tribe-member-input') as HTMLTextAreaElement;
-      const tribeSelect = document.getElementById('tribe-select') as HTMLSelectElement;
+      const input = document.getElementById(
+        'tribe-member-input'
+      ) as HTMLTextAreaElement;
+      const tribeSelect = document.getElementById(
+        'tribe-select'
+      ) as HTMLSelectElement;
       const cancelBtn = document.getElementById('tribe-member-cancel-btn');
       const saveBtn = document.getElementById('tribe-member-save-btn');
 
       input?.focus();
 
-      const { MentionAutocomplete } = await import('../components/mentions/MentionAutocomplete');
+      const { MentionAutocomplete } = await import(
+        '../components/mentions/MentionAutocomplete'
+      );
       const mentionAutocomplete = new MentionAutocomplete({
-        textareaSelector: '#tribe-member-input'
+        textareaSelector: '#tribe-member-input',
       });
       mentionAutocomplete.init();
 
@@ -2583,7 +2987,7 @@ export class TribeManager {
 
       saveBtn?.addEventListener('click', handleSave);
 
-      input?.addEventListener('keydown', (e) => {
+      input?.addEventListener('keydown', e => {
         if (e.key === 'Enter' && e.ctrlKey) {
           handleSave();
         } else if (e.key === 'Escape') {
@@ -2596,7 +3000,10 @@ export class TribeManager {
   /**
    * Process adding members from comma-separated @mentions or npubs
    */
-  private async processAddMembers(inputValue: string, tribeId: string): Promise<void> {
+  private async processAddMembers(
+    inputValue: string,
+    tribeId: string
+  ): Promise<void> {
     try {
       const { extractPubkeysFromText } = await import('../helpers/nip19');
       const pubkeys = extractPubkeysFromText(inputValue);
@@ -2630,7 +3037,7 @@ export class TribeManager {
             this.membersCache.set(pubkey, {
               ...browserItem,
               profile: profile || undefined,
-              isPrivate: browserItem.isPrivate || false
+              isPrivate: browserItem.isPrivate || false,
             });
           }
         }
@@ -2704,11 +3111,13 @@ export class TribeManager {
 
       if (result.requiresConfirmation) {
         // Convert moved items to MovedItemInfo format
-        const movedItems: MovedItemInfo<TribeMember>[] = result.diff.moved.map(m => ({
-          item: m.browserItem,
-          browserFolder: m.browserItem.category || '',
-          sourceFolder: m.sourceItem.category || ''
-        }));
+        const movedItems: MovedItemInfo<TribeMember>[] = result.diff.moved.map(
+          m => ({
+            item: m.browserItem,
+            browserFolder: m.browserItem.category || '',
+            sourceFolder: m.sourceItem.category || '',
+          })
+        );
 
         const modal = new SyncConfirmationModal({
           listType: 'Tribes',
@@ -2717,14 +3126,21 @@ export class TribeManager {
           moved: movedItems,
           getDisplayName: async (member: TribeMember) => {
             const cached = this.membersCache.get(member.pubkey);
-            if (cached?.profile) return cached.profile.display_name || cached.profile.name || member.pubkey.slice(0, 8) + '...';
-            return member.pubkey.slice(0, 8) + '...';
+            if (cached?.profile)
+              return (
+                cached.profile.display_name ||
+                cached.profile.name ||
+                `${member.pubkey.slice(0, 8)}...`
+              );
+            return `${member.pubkey.slice(0, 8)}...`;
           },
           onKeep: async () => {
             // Merge: combine both local + relay, then push back to relays
             const browserItems = this.adapter.getBrowserItems();
             const existingPubkeys = new Set(browserItems.map(m => m.pubkey));
-            const newFromRelay = result.relayItems.filter(m => !existingPubkeys.has(m.pubkey));
+            const newFromRelay = result.relayItems.filter(
+              m => !existingPubkeys.has(m.pubkey)
+            );
 
             if (newFromRelay.length > 0) {
               this.adapter.setBrowserItems([...browserItems, ...newFromRelay]);
@@ -2747,8 +3163,15 @@ export class TribeManager {
           },
           onRelay: async () => {
             this.applySync('overwrite', result.relayItems);
-            applyRelayFetchResult(result.relayItems, result.categoryAssignments, result.categories);
-            ToastService.show(`Synced from relays (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            applyRelayFetchResult(
+              result.relayItems,
+              result.categoryAssignments,
+              result.categories
+            );
+            ToastService.show(
+              `Synced from relays (added ${result.diff.added.length}, removed ${result.diff.removed.length})`,
+              'success'
+            );
             this.membersCache.clear();
             await this.loadMembers();
             await this.renderCurrentView(container);
@@ -2759,19 +3182,30 @@ export class TribeManager {
             this.membersCache.clear();
             await this.loadMembers();
             await this.renderCurrentView(container);
-          }
+          },
         });
         modal.show();
       } else if (result.diff.added.length > 0) {
         this.applySync('merge', result.relayItems);
-        applyRelayFetchResult(result.relayItems, result.categoryAssignments, result.categories);
-        ToastService.show(`Synced ${result.diff.added.length} member${result.diff.added.length > 1 ? 's' : ''} from relays`, 'success');
+        applyRelayFetchResult(
+          result.relayItems,
+          result.categoryAssignments,
+          result.categories
+        );
+        ToastService.show(
+          `Synced ${result.diff.added.length} member${result.diff.added.length > 1 ? 's' : ''} from relays`,
+          'success'
+        );
         this.membersCache.clear();
         await this.loadMembers();
         await this.renderCurrentView(container);
       } else {
         // Even if no diff, ensure assignments are in sync with members
-        applyRelayFetchResult(this.adapter.getBrowserItems(), result.categoryAssignments, result.categories);
+        applyRelayFetchResult(
+          this.adapter.getBrowserItems(),
+          result.categoryAssignments,
+          result.categories
+        );
         this.membersCache.clear();
         await this.loadMembers();
         await this.renderCurrentView(container);
@@ -2833,7 +3267,14 @@ export class TribeManager {
         }
         const browserItems = this.adapter.getBrowserItems();
         const diff = this.calculateDiff(browserItems, uploadedItems);
-        result = { requiresConfirmation: diff.added.length > 0 || diff.removed.length > 0 || diff.moved.length > 0, diff, fileItems: uploadedItems };
+        result = {
+          requiresConfirmation:
+            diff.added.length > 0 ||
+            diff.removed.length > 0 ||
+            diff.moved.length > 0,
+          diff,
+          fileItems: uploadedItems,
+        };
       } else {
         // Desktop: Read from local file
         ToastService.show('Reading from file...', 'info');
@@ -2847,11 +3288,13 @@ export class TribeManager {
 
       if (result.requiresConfirmation) {
         // Convert moved items to MovedItemInfo format
-        const movedItems: MovedItemInfo<TribeMember>[] = result.diff.moved.map(m => ({
-          item: m.browserItem,
-          browserFolder: m.browserItem.category || '',
-          sourceFolder: m.sourceItem.category || ''
-        }));
+        const movedItems: MovedItemInfo<TribeMember>[] = result.diff.moved.map(
+          m => ({
+            item: m.browserItem,
+            browserFolder: m.browserItem.category || '',
+            sourceFolder: m.sourceItem.category || '',
+          })
+        );
 
         const modal = new SyncConfirmationModal({
           listType: 'Tribes (File)',
@@ -2860,8 +3303,13 @@ export class TribeManager {
           moved: movedItems,
           getDisplayName: async (member: TribeMember) => {
             const cached = this.membersCache.get(member.pubkey);
-            if (cached?.profile) return cached.profile.display_name || cached.profile.name || member.pubkey.slice(0, 8) + '...';
-            return member.pubkey.slice(0, 8) + '...';
+            if (cached?.profile)
+              return (
+                cached.profile.display_name ||
+                cached.profile.name ||
+                `${member.pubkey.slice(0, 8)}...`
+              );
+            return `${member.pubkey.slice(0, 8)}...`;
           },
           onKeep: async () => {
             // Merge: add new members from file, then push to relays
@@ -2881,7 +3329,10 @@ export class TribeManager {
             } else {
               await restoreFromFile();
             }
-            ToastService.show(`Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            ToastService.show(
+              `Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`,
+              'success'
+            );
             this.membersCache.clear();
             await this.loadMembers();
             await this.renderCurrentView(container);
@@ -2892,7 +3343,7 @@ export class TribeManager {
             this.membersCache.clear();
             await this.loadMembers();
             await this.renderCurrentView(container);
-          }
+          },
         });
         modal.show();
       } else if (result.diff.added.length > 0) {
@@ -2902,7 +3353,10 @@ export class TribeManager {
         } else {
           await restoreFromFile();
         }
-        ToastService.show(`Restored ${result.diff.added.length} member${result.diff.added.length > 1 ? 's' : ''} from file`, 'success');
+        ToastService.show(
+          `Restored ${result.diff.added.length} member${result.diff.added.length > 1 ? 's' : ''} from file`,
+          'success'
+        );
         this.membersCache.clear();
         await this.loadMembers();
         await this.renderCurrentView(container);
@@ -2952,7 +3406,8 @@ export class TribeView extends View {
     // Get current user
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      this.container.innerHTML = '<div class="tribe-view__error">Please login to view tribes</div>';
+      this.container.innerHTML =
+        '<div class="tribe-view__error">Please login to view tribes</div>';
       return;
     }
 
@@ -2960,7 +3415,8 @@ export class TribeView extends View {
     this.currentTribes = getFoldersInRootOrder();
 
     if (this.currentTribes.length === 0 || !this.currentTribes[0]) {
-      this.container.innerHTML = '<div class="tribe-view__error">No tribes found. Create one in the sidebar.</div>';
+      this.container.innerHTML =
+        '<div class="tribe-view__error">No tribes found. Create one in the sidebar.</div>';
       return;
     }
 
@@ -3014,7 +3470,11 @@ export class TribeView extends View {
   /**
    * Create a tab button
    */
-  private createTab(tribeId: string, name: string, isActive: boolean): HTMLElement {
+  private createTab(
+    tribeId: string,
+    name: string,
+    isActive: boolean
+  ): HTMLElement {
     const tab = document.createElement('button');
     tab.className = `tab${isActive ? ' tab--active' : ''}`;
     tab.dataset.tribeId = tribeId;
@@ -3022,7 +3482,9 @@ export class TribeView extends View {
 
     tab.addEventListener('click', async () => {
       // Update active state
-      this.container.querySelectorAll('.tab').forEach(t => t.classList.remove('tab--active'));
+      this.container
+        .querySelectorAll('.tab')
+        .forEach(t => t.classList.remove('tab--active'));
       tab.classList.add('tab--active');
 
       // Update current tribe
@@ -3055,7 +3517,9 @@ export class TribeView extends View {
     this.timeline = new Timeline(userPubkey, tribeTimelineConfig(tribePubkeys));
 
     // Mount timeline
-    const timelineContainer = this.container.querySelector('.tribe-view__timeline');
+    const timelineContainer = this.container.querySelector(
+      '.tribe-view__timeline'
+    );
     if (timelineContainer) {
       timelineContainer.innerHTML = '';
       timelineContainer.appendChild(this.timeline.getElement());
@@ -3144,16 +3608,21 @@ export class TribeMemberCard {
     const profilePic = profile?.picture || '';
 
     // NIP-05: prefer nip05s from tags, fallback to single nip05 from content
-    const nip05s = profile?.nip05s?.length ? profile.nip05s : (profile?.nip05 ? [profile.nip05] : []);
+    const nip05s = profile?.nip05s?.length
+      ? profile.nip05s
+      : profile?.nip05
+        ? [profile.nip05]
+        : [];
     const nip05Display = nip05s.join(', ');
 
     card.innerHTML = `
       ${isPrivate ? '<span class="private-badge">🔒</span>' : ''}
       <div class="nn-card__content">
         <div class="avatar">
-          ${profilePic
-            ? `<img class="avatar-img" src="${escapeHtmlAttr(profilePic)}" alt="" loading="lazy" />`
-            : '<div class="avatar-img" data-empty></div>'
+          ${
+            profilePic
+              ? `<img class="avatar-img" src="${escapeHtmlAttr(profilePic)}" alt="" loading="lazy" />`
+              : '<div class="avatar-img" data-empty></div>'
           }
         </div>
         <div class="info">
@@ -3194,7 +3663,7 @@ export class TribeMemberCard {
 
     // Delete button
     const deleteBtn = card.querySelector('button.delete');
-    deleteBtn?.addEventListener('click', async (e) => {
+    deleteBtn?.addEventListener('click', async e => {
       e.stopPropagation();
       await this.options.onDelete(pubkey);
       card.remove();
@@ -3202,11 +3671,16 @@ export class TribeMemberCard {
 
     // Mount move dropdown (browser only)
     const moveMount = card.querySelector('.move');
-    if (moveMount && this.options.onMove && this.options.moveTargets && MoveDropdown.shouldShow()) {
+    if (
+      moveMount &&
+      this.options.onMove &&
+      this.options.moveTargets &&
+      MoveDropdown.shouldShow()
+    ) {
       const dropdown = new MoveDropdown({
         targets: this.options.moveTargets,
         ariaLabel: 'Move member',
-        onSelect: (targetId) => this.options.onMove!(pubkey, targetId),
+        onSelect: targetId => this.options.onMove!(pubkey, targetId),
       });
       moveMount.appendChild(dropdown.getElement());
     }
@@ -3242,10 +3716,13 @@ export interface TribeAdapterSyncFromRelaysResult {
   relayTimestamp: number;
 }
 
-function calculateTribeSyncDiff(browserItems: TribeMember[], sourceItems: TribeMember[]): TribeAdapterSyncDiff {
+function calculateTribeSyncDiff(
+  browserItems: TribeMember[],
+  sourceItems: TribeMember[]
+): TribeAdapterSyncDiff {
   diagLog('lists', 'calculateTribeSyncDiff', {
     browserCount: browserItems.length,
-    sourceCount: sourceItems.length
+    sourceCount: sourceItems.length,
   });
   const browserMap = new Map(browserItems.map(item => [item.pubkey, item]));
   const sourceMap = new Map(sourceItems.map(item => [item.pubkey, item]));
@@ -3272,7 +3749,10 @@ function calculateTribeSyncDiff(browserItems: TribeMember[], sourceItems: TribeM
   return { added, removed, unchanged, moved };
 }
 
-function mergeTribeItems(browserItems: TribeMember[], newItems: TribeMember[]): TribeMember[] {
+function mergeTribeItems(
+  browserItems: TribeMember[],
+  newItems: TribeMember[]
+): TribeMember[] {
   return mergeByKey(browserItems, newItems, 'pubkey');
 }
 
@@ -3334,18 +3814,30 @@ export class TribeStorageAdapter {
     try {
       await restoreFolderDataOnly();
     } catch (error) {
-      logger.error('TribeStorageAdapter', `Failed to restore folder data: ${error}`);
+      logger.error(
+        'TribeStorageAdapter',
+        `Failed to restore folder data: ${error}`
+      );
     }
   }
 
   /**
    * Relay Storage - fetch from relays
    */
-  async fetchFromRelays(): Promise<{ items: TribeMember[]; relayContentWasEmpty: boolean; categoryAssignments?: Map<string, string>; categories?: string[]; relayTimestamp: number }> {
+  async fetchFromRelays(): Promise<{
+    items: TribeMember[];
+    relayContentWasEmpty: boolean;
+    categoryAssignments?: Map<string, string>;
+    categories?: string[];
+    relayTimestamp: number;
+  }> {
     try {
       return await fetchFromRelays();
     } catch (error) {
-      logger.error('TribeStorageAdapter', `Failed to fetch from relays: ${error}`);
+      logger.error(
+        'TribeStorageAdapter',
+        `Failed to fetch from relays: ${error}`
+      );
       throw error;
     }
   }
@@ -3357,7 +3849,10 @@ export class TribeStorageAdapter {
     try {
       await publishToRelays();
     } catch (error) {
-      logger.error('TribeStorageAdapter', `Failed to publish to relays: ${error}`);
+      logger.error(
+        'TribeStorageAdapter',
+        `Failed to publish to relays: ${error}`
+      );
       throw error;
     }
   }
@@ -3368,24 +3863,30 @@ export class TribeStorageAdapter {
     const browserItems = this.getBrowserItems();
     diagLog('lists', 'TribeStorageAdapter.syncFromRelays: browserItems', {
       count: browserItems.length,
-      items: browserItems.map(m => ({ pubkey: m.pubkey.slice(0, 8), category: m.category }))
+      items: browserItems.map(m => ({
+        pubkey: m.pubkey.slice(0, 8),
+        category: m.category,
+      })),
     });
     const fetchResult = await this.fetchFromRelays();
     diagLog('lists', 'TribeStorageAdapter.syncFromRelays: fetchResult', {
       itemCount: fetchResult.items.length,
       relayContentWasEmpty: fetchResult.relayContentWasEmpty,
-      categories: fetchResult.categories
+      categories: fetchResult.categories,
     });
     const diff = calculateTribeSyncDiff(browserItems, fetchResult.items);
 
     // Use full state comparison (checks ALL differences, not just added/removed/moved)
-    const requiresConfirmation = hasAnyDifference(fetchResult.items, fetchResult.categories);
+    const requiresConfirmation = hasAnyDifference(
+      fetchResult.items,
+      fetchResult.categories
+    );
     diagLog('lists', 'TribeStorageAdapter.syncFromRelays: result', {
       added: diff.added.length,
       removed: diff.removed.length,
       unchanged: diff.unchanged.length,
       moved: diff.moved.length,
-      requiresConfirmation
+      requiresConfirmation,
     });
 
     return {
@@ -3395,11 +3896,14 @@ export class TribeStorageAdapter {
       relayContentWasEmpty: fetchResult.relayContentWasEmpty,
       categoryAssignments: fetchResult.categoryAssignments,
       categories: fetchResult.categories,
-      relayTimestamp: fetchResult.relayTimestamp
+      relayTimestamp: fetchResult.relayTimestamp,
     };
   }
 
-  applySyncFromRelays(strategy: 'merge' | 'overwrite', relayItems: TribeMember[]): void {
+  applySyncFromRelays(
+    strategy: 'merge' | 'overwrite',
+    relayItems: TribeMember[]
+  ): void {
     if (strategy === 'overwrite') {
       this.setBrowserItems(relayItems);
     } else {

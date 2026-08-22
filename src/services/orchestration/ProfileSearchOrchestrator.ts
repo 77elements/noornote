@@ -54,10 +54,16 @@ export class ProfileSearchOrchestrator extends Orchestrator {
   private readonly CACHE_TTL = 30 * 60 * 1000;
 
   /** Search cache (per session, LRU-bounded) */
-  private searchCache = new LRUCache<CachedSearch>(getCacheSize(20, 15, 10), this.CACHE_TTL);
+  private searchCache = new LRUCache<CachedSearch>(
+    getCacheSize(20, 15, 10),
+    this.CACHE_TTL
+  );
 
   /** Fetched notes cache (per pubkey, LRU-bounded) */
-  private notesCache = new LRUCache<NostrEvent[]>(getCacheSize(10, 8, 5), this.CACHE_TTL);
+  private notesCache = new LRUCache<NostrEvent[]>(
+    getCacheSize(10, 8, 5),
+    this.CACHE_TTL
+  );
 
   /** In-flight note fetches per pubkey; coalesces concurrent searches before the cache fills */
   private notesFetchInProgress = new Map<string, Promise<NostrEvent[]>>();
@@ -91,7 +97,10 @@ export class ProfileSearchOrchestrator extends Orchestrator {
       return cached.result;
     }
 
-    this.systemLogger.info('ProfileSearch', `🔍 Searching notes for: "${searchTerms}"`);
+    this.systemLogger.info(
+      'ProfileSearch',
+      `🔍 Searching notes for: "${searchTerms}"`
+    );
     onProgress?.('Preparing search...');
 
     try {
@@ -122,7 +131,7 @@ export class ProfileSearchOrchestrator extends Orchestrator {
         if (firstTimestamp !== undefined && lastTimestamp !== undefined) {
           dateRange = {
             start: formatDate(firstTimestamp),
-            end: formatDate(lastTimestamp)
+            end: formatDate(lastTimestamp),
           };
         }
       }
@@ -134,14 +143,14 @@ export class ProfileSearchOrchestrator extends Orchestrator {
         events: matchingNotes,
         matchCount: matchingNotes.length,
         totalNotes: allNotes.length,
-        dateRange
+        dateRange,
       };
 
       // Cache result
       this.searchCache.set(cacheKey, {
         pubkeyHex,
         searchTerms: searchTerms.toLowerCase(),
-        result
+        result,
       });
 
       this.systemLogger.info(
@@ -174,7 +183,10 @@ export class ProfileSearchOrchestrator extends Orchestrator {
     // same profile don't each open their own relay queries before the cache fills.
     const inFlight = this.notesFetchInProgress.get(pubkeyHex);
     if (inFlight) {
-      this.systemLogger.info('ProfileSearch', '⏳ Joining in-flight note fetch');
+      this.systemLogger.info(
+        'ProfileSearch',
+        '⏳ Joining in-flight note fetch'
+      );
       return inFlight;
     }
 
@@ -211,7 +223,7 @@ export class ProfileSearchOrchestrator extends Orchestrator {
 
       chunks.push({
         since: Math.floor(currentDate.getTime() / 1000),
-        until: Math.floor(chunkEnd.getTime() / 1000)
+        until: Math.floor(chunkEnd.getTime() / 1000),
       });
 
       currentDate = new Date(chunkEnd);
@@ -228,24 +240,34 @@ export class ProfileSearchOrchestrator extends Orchestrator {
         const date = new Date(timestamp * 1000);
         return date.toLocaleDateString('en-US', {
           month: 'short',
-          year: 'numeric'
+          year: 'numeric',
         });
       };
       const chunkStart = formatDate(chunk.since);
       const chunkEnd = formatDate(chunk.until);
 
-      onProgress?.(`Chunk ${i + 1}/${chunks.length} (${chunkStart} - ${chunkEnd})`);
+      onProgress?.(
+        `Chunk ${i + 1}/${chunks.length} (${chunkStart} - ${chunkEnd})`
+      );
 
-      const filters: NDKFilter[] = [{
-        kinds: [1], // Text notes only
-        authors: [pubkeyHex],
-        since: chunk.since,
-        until: chunk.until,
-        limit: 500
-      }];
+      const filters: NDKFilter[] = [
+        {
+          kinds: [1], // Text notes only
+          authors: [pubkeyHex],
+          since: chunk.since,
+          until: chunk.until,
+          limit: 500,
+        },
+      ];
 
       try {
-        const events = await this.transport.fetch(relays, filters, 5000, false, 'ProfileSearchOrch');
+        const events = await this.transport.fetch(
+          relays,
+          filters,
+          5000,
+          false,
+          'ProfileSearchOrch'
+        );
 
         // Deduplicate
         events.forEach(event => {
@@ -258,7 +280,10 @@ export class ProfileSearchOrchestrator extends Orchestrator {
         // Small delay to be nice to relays
         await new Promise(resolve => setTimeout(resolve, 100));
       } catch (error) {
-        this.systemLogger.warn('ProfileSearch', `Chunk ${i + 1} failed: ${error}`);
+        this.systemLogger.warn(
+          'ProfileSearch',
+          `Chunk ${i + 1} failed: ${error}`
+        );
       }
     }
 
@@ -268,15 +293,26 @@ export class ProfileSearchOrchestrator extends Orchestrator {
     onProgress?.('Checking author relays for additional notes...');
 
     try {
-      const outboundRelays = await this.relayDiscovery.getCombinedRelays([pubkeyHex], true);
+      const outboundRelays = await this.relayDiscovery.getCombinedRelays(
+        [pubkeyHex],
+        true
+      );
 
-      const outboundFilters: NDKFilter[] = [{
-        kinds: [1],
-        authors: [pubkeyHex],
-        limit: 5000
-      }];
+      const outboundFilters: NDKFilter[] = [
+        {
+          kinds: [1],
+          authors: [pubkeyHex],
+          limit: 5000,
+        },
+      ];
 
-      const outboundEvents = await this.transport.fetch(outboundRelays, outboundFilters, 10000, true, 'ProfileSearchOrch');
+      const outboundEvents = await this.transport.fetch(
+        outboundRelays,
+        outboundFilters,
+        10000,
+        true,
+        'ProfileSearchOrch'
+      );
 
       outboundEvents.forEach(event => {
         const eventId = event.id;
@@ -287,13 +323,20 @@ export class ProfileSearchOrchestrator extends Orchestrator {
 
       const newFromOutbound = allEvents.size - countBeforeOutbound;
       if (newFromOutbound > 0) {
-        diagLog('relays', 'ProfileSearchOrchestrator: outbound fallback found additional notes', {
-          pubkey: pubkeyHex.slice(0, 8),
-          newNotes: newFromOutbound
-        });
+        diagLog(
+          'relays',
+          'ProfileSearchOrchestrator: outbound fallback found additional notes',
+          {
+            pubkey: pubkeyHex.slice(0, 8),
+            newNotes: newFromOutbound,
+          }
+        );
       }
     } catch (error) {
-      this.systemLogger.warn('ProfileSearch', `Outbound relay fetch failed: ${error}`);
+      this.systemLogger.warn(
+        'ProfileSearch',
+        `Outbound relay fetch failed: ${error}`
+      );
     }
 
     onProgress?.('Processing notes...');
@@ -369,7 +412,10 @@ export class ProfileSearchOrchestrator extends Orchestrator {
   }
 
   public onerror(relay: string, error: Error): void {
-    this.systemLogger.error('ProfileSearch', `Relay error (${relay}): ${error.message}`);
+    this.systemLogger.error(
+      'ProfileSearch',
+      `Relay error (${relay}): ${error.message}`
+    );
   }
 
   public onclose(_relay: string): void {

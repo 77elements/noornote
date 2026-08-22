@@ -47,7 +47,9 @@ export class NostrMajlisRuntime implements AddonRuntime {
     this.dhikr = new DhikrService();
     void this.dhikr.start();
 
-    diagLog('addons', 'nostr-majlis: runtime init', { npub: ctx.npub?.slice(0, 12) });
+    diagLog('addons', 'nostr-majlis: runtime init', {
+      npub: ctx.npub?.slice(0, 12),
+    });
   }
 
   async destroy(): Promise<void> {
@@ -55,9 +57,12 @@ export class NostrMajlisRuntime implements AddonRuntime {
     this.initialized = false;
     this.widget?.destroy();
     this.widget = null;
-    if (this.native) { await this.native.destroy(); this.native = null; }
-    else NostrMajlisReminderService.getInstance().destroy();
-    this.dhikr?.destroy(); this.dhikr = null;
+    if (this.native) {
+      await this.native.destroy();
+      this.native = null;
+    } else NostrMajlisReminderService.getInstance().destroy();
+    this.dhikr?.destroy();
+    this.dhikr = null;
     DiyanetService.getInstance().destroy();
     diagLog('addons', 'nostr-majlis: runtime destroy');
   }

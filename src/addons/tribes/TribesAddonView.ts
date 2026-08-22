@@ -6,10 +6,11 @@ export class TribesAddonView extends AddonToggleView {
     super({
       id: 'tribes',
       name: 'Tribes',
-      description: 'Create custom user groups and view dedicated tribe timelines.',
+      description:
+        'Create custom user groups and view dedicated tribe timelines.',
       toggleEvent: 'tribes:addon-toggle',
       isEnabled: () => isTribesEnabled(),
-      setEnabled: (v) => setTribesEnabled(v),
+      setEnabled: v => setTribesEnabled(v),
     });
   }
 }

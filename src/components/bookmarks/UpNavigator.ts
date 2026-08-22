@@ -48,7 +48,7 @@ export class UpNavigator {
     });
 
     // Drag & Drop - as drop target
-    card.addEventListener('dragover', (e) => {
+    card.addEventListener('dragover', e => {
       e.preventDefault();
       if (e.dataTransfer?.types.includes('application/x-bookmark-id')) {
         card.classList.add('drag-over');
@@ -59,7 +59,7 @@ export class UpNavigator {
       card.classList.remove('drag-over');
     });
 
-    card.addEventListener('drop', async (e) => {
+    card.addEventListener('drop', async e => {
       e.preventDefault();
       card.classList.remove('drag-over');
 

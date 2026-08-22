@@ -71,7 +71,8 @@ export class KeySignerClient {
   private readonly SOCKET_ERROR_THROTTLE = 5000; // Log once every 5s
 
   // Connection state tracking
-  private connectionState: 'connected' | 'reconnecting' | 'disconnected' = 'disconnected';
+  private connectionState: 'connected' | 'reconnecting' | 'disconnected' =
+    'disconnected';
   private consecutiveFailures = 0;
   private readonly MAX_RETRY_ATTEMPTS = 3;
   private readonly RETRY_DELAY = 1000; // 1s between retries
@@ -112,7 +113,10 @@ export class KeySignerClient {
     }
   }
 
-  private buildRequest(method: string, params?: Record<string, unknown>): SignerRequest {
+  private buildRequest(
+    method: string,
+    params?: Record<string, unknown>
+  ): SignerRequest {
     return {
       id: `req-${++this.requestId}`,
       method,
@@ -126,10 +130,15 @@ export class KeySignerClient {
    */
   private async invokeWithTimeout(request: SignerRequest): Promise<string> {
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('KeySigner request timeout')), this.timeout);
+      setTimeout(
+        () => reject(new Error('KeySigner request timeout')),
+        this.timeout
+      );
     });
 
-    const invokePromise = window.electronAPI!.keySignerRequest(JSON.stringify(request));
+    const invokePromise = window.electronAPI!.keySignerRequest(
+      JSON.stringify(request)
+    );
 
     return Promise.race([invokePromise, timeoutPromise]) as Promise<string>;
   }
@@ -138,7 +147,10 @@ export class KeySignerClient {
     if (this.isTransientError(errorMessage)) {
       this.consecutiveFailures++;
       this.connectionState = 'reconnecting';
-      console.log(`[KeySigner] Transient connection error (attempt ${this.consecutiveFailures}/${this.MAX_RETRY_ATTEMPTS}):`, errorMessage);
+      console.log(
+        `[KeySigner] Transient connection error (attempt ${this.consecutiveFailures}/${this.MAX_RETRY_ATTEMPTS}):`,
+        errorMessage
+      );
       throw new Error('KeySigner connection temporarily lost. Reconnecting...');
     }
 
@@ -146,10 +158,15 @@ export class KeySignerClient {
 
     if (errorMessage.includes('timeout')) {
       console.error('[KeySigner] Request timeout - daemon may be unresponsive');
-      throw new Error('KeySigner daemon is not responding. Please restart the daemon.');
+      throw new Error(
+        'KeySigner daemon is not responding. Please restart the daemon.'
+      );
     }
 
-    if (errorMessage.includes('No such file or directory') || errorMessage.includes('os error 2')) {
+    if (
+      errorMessage.includes('No such file or directory') ||
+      errorMessage.includes('os error 2')
+    ) {
       const now = Date.now();
       if (now - this.lastSocketErrorTime > this.SOCKET_ERROR_THROTTLE) {
         console.log('[KeySigner] Socket not found - daemon is not running');
@@ -159,18 +176,28 @@ export class KeySignerClient {
     }
 
     if (errorMessage.includes('Connection refused')) {
-      console.error('[KeySigner] Connection refused - daemon crashed or stopped');
-      throw new Error('KeySigner daemon connection failed. Please restart the daemon.');
+      console.error(
+        '[KeySigner] Connection refused - daemon crashed or stopped'
+      );
+      throw new Error(
+        'KeySigner daemon connection failed. Please restart the daemon.'
+      );
     }
 
     console.error('[KeySigner] Request failed:', errorMessage);
     throw new Error(`KeySigner error: ${errorMessage}`);
   }
 
-  private async sendRequest(method: string, eventJson?: string): Promise<SignResponse> {
+  private async sendRequest(
+    method: string,
+    eventJson?: string
+  ): Promise<SignResponse> {
     this.ensureDesktop();
 
-    const request = this.buildRequest(method, eventJson ? { event_json: eventJson } : undefined);
+    const request = this.buildRequest(
+      method,
+      eventJson ? { event_json: eventJson } : undefined
+    );
 
     try {
       const responseStr = await this.invokeWithTimeout(request);
@@ -185,12 +212,16 @@ export class KeySignerClient {
 
       return response;
     } catch (_error) {
-      const errorMessage = _error instanceof Error ? _error.message : String(_error);
+      const errorMessage =
+        _error instanceof Error ? _error.message : String(_error);
       this.handleConnectionError(errorMessage);
     }
   }
 
-  private async sendCustomRequest<T>(method: string, params?: Record<string, unknown>): Promise<T> {
+  private async sendCustomRequest<T>(
+    method: string,
+    params?: Record<string, unknown>
+  ): Promise<T> {
     this.ensureDesktop();
 
     const request = this.buildRequest(method, params);
@@ -199,7 +230,8 @@ export class KeySignerClient {
       const responseStr = await this.invokeWithTimeout(request);
       return JSON.parse(responseStr) as T;
     } catch (_error) {
-      const errorMessage = _error instanceof Error ? _error.message : String(_error);
+      const errorMessage =
+        _error instanceof Error ? _error.message : String(_error);
       throw new Error(`${method} failed: ${errorMessage}`);
     }
   }
@@ -224,44 +256,68 @@ export class KeySignerClient {
     return response.signature;
   }
 
-  public async nip44Encrypt(plaintext: string, recipientPubkey: string): Promise<string> {
-    const response = await this.sendCustomRequest<SignResponse>('nip44_encrypt', {
-      plaintext,
-      recipient_pubkey: recipientPubkey,
-    });
+  public async nip44Encrypt(
+    plaintext: string,
+    recipientPubkey: string
+  ): Promise<string> {
+    const response = await this.sendCustomRequest<SignResponse>(
+      'nip44_encrypt',
+      {
+        plaintext,
+        recipient_pubkey: recipientPubkey,
+      }
+    );
     if (response.error) {
       throw new Error(`NIP-44 encrypt error: ${response.error}`);
     }
     return response.signature || '';
   }
 
-  public async nip44Decrypt(payload: string, senderPubkey: string): Promise<string> {
-    const response = await this.sendCustomRequest<SignResponse>('nip44_decrypt', {
-      payload,
-      sender_pubkey: senderPubkey,
-    });
+  public async nip44Decrypt(
+    payload: string,
+    senderPubkey: string
+  ): Promise<string> {
+    const response = await this.sendCustomRequest<SignResponse>(
+      'nip44_decrypt',
+      {
+        payload,
+        sender_pubkey: senderPubkey,
+      }
+    );
     if (response.error) {
       throw new Error(`NIP-44 decrypt error: ${response.error}`);
     }
     return response.signature || '';
   }
 
-  public async nip04Encrypt(plaintext: string, recipientPubkey: string): Promise<string> {
-    const response = await this.sendCustomRequest<SignResponse>('nip04_encrypt', {
-      plaintext,
-      recipient_pubkey: recipientPubkey,
-    });
+  public async nip04Encrypt(
+    plaintext: string,
+    recipientPubkey: string
+  ): Promise<string> {
+    const response = await this.sendCustomRequest<SignResponse>(
+      'nip04_encrypt',
+      {
+        plaintext,
+        recipient_pubkey: recipientPubkey,
+      }
+    );
     if (response.error) {
       throw new Error(`NIP-04 encrypt error: ${response.error}`);
     }
     return response.signature || '';
   }
 
-  public async nip04Decrypt(payload: string, senderPubkey: string): Promise<string> {
-    const response = await this.sendCustomRequest<SignResponse>('nip04_decrypt', {
-      payload,
-      sender_pubkey: senderPubkey,
-    });
+  public async nip04Decrypt(
+    payload: string,
+    senderPubkey: string
+  ): Promise<string> {
+    const response = await this.sendCustomRequest<SignResponse>(
+      'nip04_decrypt',
+      {
+        payload,
+        sender_pubkey: senderPubkey,
+      }
+    );
     if (response.error) {
       throw new Error(`NIP-04 decrypt error: ${response.error}`);
     }
@@ -276,11 +332,17 @@ export class KeySignerClient {
         await this.sendRequest('get_npub');
         return true;
       } catch (_error) {
-        const errorMessage = _error instanceof Error ? _error.message : String(_error);
+        const errorMessage =
+          _error instanceof Error ? _error.message : String(_error);
 
-        if (this.isTransientError(errorMessage) && attempts < this.MAX_RETRY_ATTEMPTS - 1) {
+        if (
+          this.isTransientError(errorMessage) &&
+          attempts < this.MAX_RETRY_ATTEMPTS - 1
+        ) {
           attempts++;
-          console.log(`[KeySigner] Retrying connection check (${attempts}/${this.MAX_RETRY_ATTEMPTS})...`);
+          console.log(
+            `[KeySigner] Retrying connection check (${attempts}/${this.MAX_RETRY_ATTEMPTS})...`
+          );
           await this.sleep(this.RETRY_DELAY);
           continue;
         }
@@ -344,8 +406,12 @@ export class KeySignerClient {
     return this.launchSigner('init');
   }
 
-  public async listAccounts(): Promise<{ accounts: KeySignerAccount[]; activePubkey: string }> {
-    const response = await this.sendCustomRequest<ListAccountsResponse>('list_accounts');
+  public async listAccounts(): Promise<{
+    accounts: KeySignerAccount[];
+    activePubkey: string;
+  }> {
+    const response =
+      await this.sendCustomRequest<ListAccountsResponse>('list_accounts');
     if (response.error) throw new Error(response.error);
     return {
       accounts: response.accounts || [],
@@ -353,11 +419,17 @@ export class KeySignerClient {
     };
   }
 
-  public async switchAccount(npub: string, password: string): Promise<{ pubkey: string; npub: string }> {
-    const response = await this.sendCustomRequest<SwitchAccountResponse>('switch_account', {
-      npub,
-      password,
-    });
+  public async switchAccount(
+    npub: string,
+    password: string
+  ): Promise<{ pubkey: string; npub: string }> {
+    const response = await this.sendCustomRequest<SwitchAccountResponse>(
+      'switch_account',
+      {
+        npub,
+        password,
+      }
+    );
     if (response.error) throw new Error(response.error);
     if (!response.success) throw new Error('Account switch failed');
     return {
@@ -371,11 +443,14 @@ export class KeySignerClient {
     password: string,
     setActive = false
   ): Promise<{ pubkey: string; npub: string }> {
-    const response = await this.sendCustomRequest<AddAccountResponse>('add_account', {
-      nsec,
-      password,
-      set_active: setActive,
-    });
+    const response = await this.sendCustomRequest<AddAccountResponse>(
+      'add_account',
+      {
+        nsec,
+        password,
+        set_active: setActive,
+      }
+    );
     if (response.error) throw new Error(response.error);
     if (!response.success) throw new Error('Failed to add account');
     return {
@@ -384,11 +459,17 @@ export class KeySignerClient {
     };
   }
 
-  public async removeAccount(pubkey: string, password: string): Promise<boolean> {
-    const response = await this.sendCustomRequest<RemoveAccountResponse>('remove_account', {
-      pubkey,
-      password,
-    });
+  public async removeAccount(
+    pubkey: string,
+    password: string
+  ): Promise<boolean> {
+    const response = await this.sendCustomRequest<RemoveAccountResponse>(
+      'remove_account',
+      {
+        pubkey,
+        password,
+      }
+    );
     if (response.error) throw new Error(response.error);
     return response.success || false;
   }
@@ -398,7 +479,8 @@ export class KeySignerClient {
     npub: string;
     isUnlocked: boolean;
   }> {
-    const response = await this.sendCustomRequest<ActiveAccountResponse>('get_active_account');
+    const response =
+      await this.sendCustomRequest<ActiveAccountResponse>('get_active_account');
     if (response.error) throw new Error(response.error);
     return {
       pubkey: response.pubkey || '',

@@ -30,9 +30,17 @@ export class ClipboardActionsService {
    * @param authorPubkey - Hex author pubkey (optional but strongly recommended)
    * @param showToast - Show success toast (default: true)
    */
-  public async copyEventId(eventId: string, authorPubkey?: string, showToast: boolean = true): Promise<boolean> {
+  public async copyEventId(
+    eventId: string,
+    authorPubkey?: string,
+    showToast: boolean = true
+  ): Promise<boolean> {
     try {
-      const nevent = encodeNevent(eventId, undefined, authorPubkey || undefined);
+      const nevent = encodeNevent(
+        eventId,
+        undefined,
+        authorPubkey || undefined
+      );
       await navigator.clipboard.writeText(nevent);
 
       if (showToast) {
@@ -52,7 +60,10 @@ export class ClipboardActionsService {
    * @param pubkey - Hex pubkey
    * @param showToast - Show success toast (default: true)
    */
-  public async copyUserPubkey(pubkey: string, showToast: boolean = true): Promise<boolean> {
+  public async copyUserPubkey(
+    pubkey: string,
+    showToast: boolean = true
+  ): Promise<boolean> {
     try {
       const npub = hexToNpub(pubkey);
       if (!npub) {
@@ -81,9 +92,17 @@ export class ClipboardActionsService {
    * @param authorPubkey - Hex author pubkey (optional but strongly recommended)
    * @param showToast - Show success toast (default: true)
    */
-  public async copyShareLink(eventId: string, authorPubkey?: string, showToast: boolean = true): Promise<boolean> {
+  public async copyShareLink(
+    eventId: string,
+    authorPubkey?: string,
+    showToast: boolean = true
+  ): Promise<boolean> {
     try {
-      const nevent = encodeNevent(eventId, undefined, authorPubkey || undefined);
+      const nevent = encodeNevent(
+        eventId,
+        undefined,
+        authorPubkey || undefined
+      );
       const shareUrl = `${window.location.origin}/note/${nevent}`;
       await navigator.clipboard.writeText(shareUrl);
 
@@ -105,7 +124,11 @@ export class ClipboardActionsService {
    * @param label - Label for success message (e.g., "Username", "Link")
    * @param showToast - Show success toast (default: true)
    */
-  public async copyText(text: string, label: string = 'Text', showToast: boolean = true): Promise<boolean> {
+  public async copyText(
+    text: string,
+    label: string = 'Text',
+    showToast: boolean = true
+  ): Promise<boolean> {
     try {
       await navigator.clipboard.writeText(text);
 

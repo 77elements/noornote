@@ -57,7 +57,7 @@ export class ModalEventHandlerManager {
 
     const tabs = this.modal.querySelectorAll('[data-tab]');
     tabs.forEach(tab => {
-      tab.addEventListener('click', (e) => {
+      tab.addEventListener('click', e => {
         const target = e.currentTarget as HTMLElement;
         const tabName = target.dataset.tab as TabMode;
         this.switchTab(tabName);
@@ -71,7 +71,9 @@ export class ModalEventHandlerManager {
   private setupTextareaInput(): void {
     if (!this.modal) return;
 
-    const textarea = this.modal.querySelector(this.config.textareaSelector) as HTMLTextAreaElement;
+    const textarea = this.modal.querySelector(
+      this.config.textareaSelector
+    ) as HTMLTextAreaElement;
     if (textarea) {
       textarea.addEventListener('input', () => {
         this.config.onTextInput(textarea.value);
@@ -111,7 +113,9 @@ export class ModalEventHandlerManager {
     // Save content when leaving the edit tab (preview or drafts) so the text
     // is preserved when switching back.
     if (tab !== 'edit') {
-      const textarea = document.querySelector(this.config.textareaSelector) as HTMLTextAreaElement;
+      const textarea = document.querySelector(
+        this.config.textareaSelector
+      ) as HTMLTextAreaElement;
       if (textarea) {
         this.config.onTextInput(textarea.value);
       }
@@ -145,7 +149,9 @@ export class ModalEventHandlerManager {
   public refreshTextareaListener(): void {
     if (!this.modal) return;
 
-    const textarea = this.modal.querySelector(this.config.textareaSelector) as HTMLTextAreaElement;
+    const textarea = this.modal.querySelector(
+      this.config.textareaSelector
+    ) as HTMLTextAreaElement;
     if (textarea) {
       // Remove old listener by cloning (simple approach)
       const newTextarea = textarea.cloneNode(true) as HTMLTextAreaElement;
@@ -176,7 +182,9 @@ export class ModalEventHandlerManager {
     if (modalContainer) {
       modalContainer.style.display = originalDisplay;
     }
-    const postBtn = document.querySelector('[data-action="post"]') as HTMLButtonElement;
+    const postBtn = document.querySelector(
+      '[data-action="post"]'
+    ) as HTMLButtonElement;
     if (postBtn) {
       postBtn.disabled = false;
       postBtn.textContent = buttonText;

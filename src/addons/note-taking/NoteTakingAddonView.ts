@@ -22,7 +22,8 @@ export class NoteTakingAddonView extends View {
   constructor() {
     super();
     this.container = document.createElement('div');
-    this.container.className = 'view-content view-content--addon view-content--addon-note-taking';
+    this.container.className =
+      'view-content view-content--addon view-content--addon-note-taking';
     this.render();
   }
 
@@ -30,10 +31,15 @@ export class NoteTakingAddonView extends View {
     this.enableSwitch = new Switch({
       label: '',
       checked: isNoteTakingEnabled(),
-      onChange: (checked) => {
+      onChange: checked => {
         setNoteTakingEnabled(checked);
-        TypedEventBus.getInstance().emit('note-taking:addon-toggle', { enabled: checked });
-        ToastService.show(checked ? 'Note taking enabled' : 'Note taking disabled', 'success');
+        TypedEventBus.getInstance().emit('note-taking:addon-toggle', {
+          enabled: checked,
+        });
+        ToastService.show(
+          checked ? 'Note taking enabled' : 'Note taking disabled',
+          'success'
+        );
         this.renderBoard();
       },
     });
@@ -55,7 +61,9 @@ export class NoteTakingAddonView extends View {
 
   /** Mount the board inline when enabled; tear it down when disabled. */
   private renderBoard(): void {
-    const slot = this.container.querySelector('[data-addon-content="note-board"]') as HTMLElement | null;
+    const slot = this.container.querySelector(
+      '[data-addon-content="note-board"]'
+    ) as HTMLElement | null;
     if (!slot) return;
 
     const npub = AuthService.getInstance().getCurrentUser()?.npub ?? '';

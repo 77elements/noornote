@@ -36,7 +36,7 @@ export class PollCreator {
   // State
   private options: PollOption[] = [
     { id: this.generateId(), label: '' },
-    { id: this.generateId(), label: '' }
+    { id: this.generateId(), label: '' },
   ];
   private multipleChoice: boolean = false;
   private endDate: string = ''; // ISO string for datetime-local input
@@ -65,7 +65,9 @@ export class PollCreator {
         </div>
 
         <div class="poll-creator__options">
-          ${this.options.map((option, index) => `
+          ${this.options
+            .map(
+              (option, index) => `
             <div class="poll-creator__option" data-option-id="${option.id}">
               <input
                 type="text"
@@ -75,7 +77,9 @@ export class PollCreator {
                 data-option-input="${option.id}"
                 maxlength="100"
               />
-              ${this.options.length > 2 ? `
+              ${
+                this.options.length > 2
+                  ? `
                 <button
                   class="poll-creator__option-remove"
                   data-action="remove-option"
@@ -83,9 +87,13 @@ export class PollCreator {
                   type="button"
                   title="Remove option"
                 >×</button>
-              ` : ''}
+              `
+                  : ''
+              }
             </div>
-          `).join('')}
+          `
+            )
+            .join('')}
         </div>
 
         <button class="btn btn--passive" data-action="add-option" type="button">
@@ -147,19 +155,23 @@ export class PollCreator {
     this.container = container;
 
     // Multiple choice switch
-    const switchContainer = container.querySelector('#poll-multiple-choice-container');
+    const switchContainer = container.querySelector(
+      '#poll-multiple-choice-container'
+    );
     if (switchContainer) {
       this.multipleChoiceSwitch = new Switch({
         label: 'Allow multiple choices',
         checked: this.multipleChoice,
-        onChange: (checked) => {
+        onChange: checked => {
           this.multipleChoice = checked;
           this.emitPollData();
-        }
+        },
       });
 
       switchContainer.innerHTML = this.multipleChoiceSwitch.render();
-      this.multipleChoiceSwitch.setupEventListeners(switchContainer as HTMLElement);
+      this.multipleChoiceSwitch.setupEventListeners(
+        switchContainer as HTMLElement
+      );
     }
 
     // Add option button
@@ -169,9 +181,11 @@ export class PollCreator {
     }
 
     // Remove option buttons
-    const removeOptionBtns = container.querySelectorAll('[data-action="remove-option"]');
+    const removeOptionBtns = container.querySelectorAll(
+      '[data-action="remove-option"]'
+    );
     removeOptionBtns.forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', e => {
         const target = e.currentTarget as HTMLElement;
         const optionId = target.dataset.optionId;
         if (optionId) {
@@ -182,7 +196,9 @@ export class PollCreator {
 
     // Option inputs
     this.options.forEach(option => {
-      const input = container.querySelector(`[data-option-input="${option.id}"]`) as HTMLInputElement;
+      const input = container.querySelector(
+        `[data-option-input="${option.id}"]`
+      ) as HTMLInputElement;
       if (input) {
         input.addEventListener('input', () => {
           this.handleOptionChange(option.id, input.value);
@@ -191,7 +207,9 @@ export class PollCreator {
     });
 
     // End date input
-    const endDateInput = container.querySelector('[data-input="end-date"]') as HTMLInputElement;
+    const endDateInput = container.querySelector(
+      '[data-input="end-date"]'
+    ) as HTMLInputElement;
     if (endDateInput) {
       endDateInput.addEventListener('change', () => {
         this.endDate = endDateInput.value;
@@ -200,7 +218,9 @@ export class PollCreator {
     }
 
     // Relay URLs input
-    const relayUrlsInput = container.querySelector('[data-input="relay-urls"]') as HTMLInputElement;
+    const relayUrlsInput = container.querySelector(
+      '[data-input="relay-urls"]'
+    ) as HTMLInputElement;
     if (relayUrlsInput) {
       relayUrlsInput.addEventListener('input', () => {
         this.relayUrls = relayUrlsInput.value;
@@ -209,7 +229,9 @@ export class PollCreator {
     }
 
     // Remove poll button
-    const removePollBtn = container.querySelector('[data-action="remove-poll"]');
+    const removePollBtn = container.querySelector(
+      '[data-action="remove-poll"]'
+    );
     if (removePollBtn) {
       removePollBtn.addEventListener('click', () => this.handleRemovePoll());
     }
@@ -221,7 +243,7 @@ export class PollCreator {
   private handleAddOption(): void {
     this.options.push({
       id: this.generateId(),
-      label: ''
+      label: '',
     });
     this.rerender();
     this.emitPollData();
@@ -262,7 +284,7 @@ export class PollCreator {
   private emitPollData(): void {
     const pollData: PollData = {
       options: this.options,
-      multipleChoice: this.multipleChoice
+      multipleChoice: this.multipleChoice,
     };
 
     // Add end date if set
@@ -305,14 +327,16 @@ export class PollCreator {
    */
   public getPollData(): PollData | null {
     // Validate: at least 2 options with non-empty labels
-    const validOptions = this.options.filter(opt => opt.label.trim().length > 0);
+    const validOptions = this.options.filter(
+      opt => opt.label.trim().length > 0
+    );
     if (validOptions.length < 2) {
       return null;
     }
 
     const pollData: PollData = {
       options: validOptions,
-      multipleChoice: this.multipleChoice
+      multipleChoice: this.multipleChoice,
     };
 
     if (this.endDate) {

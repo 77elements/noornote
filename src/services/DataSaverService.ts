@@ -19,12 +19,18 @@ import { PlatformService } from './PlatformService';
  */
 export function isDataSaverEnabled(): boolean {
   if (!PlatformService.getInstance().isAndroid) return false;
-  return PerAccountLocalStorage.getInstance().get<boolean>(StorageKeys.DATA_SAVER_ENABLED, true);
+  return PerAccountLocalStorage.getInstance().get<boolean>(
+    StorageKeys.DATA_SAVER_ENABLED,
+    true
+  );
 }
 
 /**
  * Toggle data saver mode (Android only).
  */
 export function setDataSaverEnabled(enabled: boolean): void {
-  PerAccountLocalStorage.getInstance().set(StorageKeys.DATA_SAVER_ENABLED, enabled);
+  PerAccountLocalStorage.getInstance().set(
+    StorageKeys.DATA_SAVER_ENABLED,
+    enabled
+  );
 }

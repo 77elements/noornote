@@ -19,7 +19,10 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 // HARDCODED: the only relays this addon ever touches. No outbox, no aggregated, no user relays.
-export const DHIKR_RELAYS = ['wss://noornode.nostr1.com', 'wss://bitcoinmajlis.nostr1.com'];
+export const DHIKR_RELAYS = [
+  'wss://noornode.nostr1.com',
+  'wss://bitcoinmajlis.nostr1.com',
+];
 
 export const DHIKR_KIND = 30078;
 export const ROUND_LABEL = 'noornote-dhikr-round';
@@ -28,12 +31,17 @@ const ROUND_D_PREFIX = 'noornote/dhikr/';
 const COMMIT_D_PREFIX = 'noornote/dhikr/commit/';
 
 /** An unsigned event draft (no pubkey/id/sig yet); DhikrService signs + publishes it. */
-export interface DraftEvent { kind: number; created_at: number; tags: string[][]; content: string; }
+export interface DraftEvent {
+  kind: number;
+  created_at: number;
+  tags: string[][];
+  content: string;
+}
 
 export interface DhikrRound {
-  uuid: string;       // round id (suffix of the d-tag)
-  addr: string;       // `30078:<pubkey>:<dtag>` addressable ref
-  author: string;     // pubkey
+  uuid: string; // round id (suffix of the d-tag)
+  addr: string; // `30078:<pubkey>:<dtag>` addressable ref
+  author: string; // pubkey
   phrase: string;
   goal: number;
   description: string;
@@ -41,8 +49,8 @@ export interface DhikrRound {
 }
 
 export interface DhikrCommit {
-  author: string;     // pubkey (real or one-time)
-  dtag: string;       // dedup key together with author
+  author: string; // pubkey (real or one-time)
+  dtag: string; // dedup key together with author
   roundAddr: string;
   count: number;
   createdAt: number;
@@ -60,7 +68,8 @@ export function stableCommitDtag(round: DhikrRound): string {
 /** Parse a kind-30078 round event, or null if it isn't a well-formed dhikr round. */
 export function parseRound(ev: NostrEvent): DhikrRound | null {
   const d = tagValue(ev, 'd');
-  if (!d || !d.startsWith(ROUND_D_PREFIX) || d.startsWith(COMMIT_D_PREFIX)) return null;
+  if (!d || !d.startsWith(ROUND_D_PREFIX) || d.startsWith(COMMIT_D_PREFIX))
+    return null;
   const phrase = tagValue(ev, 'title');
   const goalStr = tagValue(ev, 'goal');
   if (!phrase || !goalStr) return null;
@@ -85,11 +94,21 @@ export function parseCommit(ev: NostrEvent): DhikrCommit | null {
   if (!a || !d || !countStr) return null;
   const count = parseInt(countStr, 10);
   if (!Number.isFinite(count) || count < 0) return null;
-  return { author: ev.pubkey, dtag: d, roundAddr: a, count, createdAt: ev.created_at };
+  return {
+    author: ev.pubkey,
+    dtag: d,
+    roundAddr: a,
+    count,
+    createdAt: ev.created_at,
+  };
 }
 
 /** Build the unsigned round event (signing + publishing done by DhikrService). */
-export function buildRoundDraft(phrase: string, goal: number, description: string): DraftEvent {
+export function buildRoundDraft(
+  phrase: string,
+  goal: number,
+  description: string
+): DraftEvent {
   const uuid = crypto.randomUUID();
   const tags: string[][] = [
     ['d', ROUND_D_PREFIX + uuid],
@@ -98,7 +117,12 @@ export function buildRoundDraft(phrase: string, goal: number, description: strin
     ['goal', String(goal)],
   ];
   if (description) tags.push(['description', description]);
-  return { kind: DHIKR_KIND, created_at: Math.floor(Date.now() / 1000), tags, content: '' };
+  return {
+    kind: DHIKR_KIND,
+    created_at: Math.floor(Date.now() / 1000),
+    tags,
+    content: '',
+  };
 }
 
 /** Build the unsigned commit event: stable d per round → replaceable, so the count accumulates. */
@@ -109,5 +133,10 @@ export function buildCommitDraft(round: DhikrRound, count: number): DraftEvent {
     ['a', round.addr],
     ['count', String(count)],
   ];
-  return { kind: DHIKR_KIND, created_at: Math.floor(Date.now() / 1000), tags, content: '' };
+  return {
+    kind: DHIKR_KIND,
+    created_at: Math.floor(Date.now() / 1000),
+    tags,
+    content: '',
+  };
 }

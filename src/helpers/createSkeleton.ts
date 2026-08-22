@@ -26,9 +26,9 @@ const SKELETON_TEMPLATES = {
   `,
   media: {
     image: '',
-    video: '<div class="media-skeleton__play-icon">▶</div>'
+    video: '<div class="media-skeleton__play-icon">▶</div>',
   },
-  profile: ''
+  profile: '',
 };
 
 /**
@@ -95,7 +95,9 @@ export function createNoteSkeleton(): HTMLElement {
  * const skeleton = createMediaSkeleton('image');
  * mediaContainer.appendChild(skeleton);
  */
-export function createMediaSkeleton(type: 'image' | 'video' = 'image'): HTMLElement {
+export function createMediaSkeleton(
+  type: 'image' | 'video' = 'image'
+): HTMLElement {
   return createSkeleton('media', type);
 }
 
@@ -109,6 +111,8 @@ export function createMediaSkeleton(type: 'image' | 'video' = 'image'): HTMLElem
  * const skeleton = createProfileSkeleton('medium');
  * avatarContainer.appendChild(skeleton);
  */
-export function createProfileSkeleton(size: 'small' | 'medium' | 'large' = 'medium'): HTMLElement {
+export function createProfileSkeleton(
+  size: 'small' | 'medium' | 'large' = 'medium'
+): HTMLElement {
   return createSkeleton('profile', size);
 }

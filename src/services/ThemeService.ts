@@ -4,7 +4,15 @@
  * Sets data-theme attribute on <html> for CSS custom property overrides.
  */
 
-export type ThemeId = 'default' | 'bright-superman' | 'code-bunker' | 'soft-lilac' | 'dark-symbiote' | 'neon-harley' | 'wake-up-neo' | 'noor-jadid';
+export type ThemeId =
+  | 'default'
+  | 'bright-superman'
+  | 'code-bunker'
+  | 'soft-lilac'
+  | 'dark-symbiote'
+  | 'neon-harley'
+  | 'wake-up-neo'
+  | 'noor-jadid';
 
 export interface ThemeOption {
   id: ThemeId;

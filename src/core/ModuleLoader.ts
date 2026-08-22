@@ -113,13 +113,19 @@ export class ModuleLoader {
 
   // ── Bootstrap ──────────────────────────────────────────────
 
-  public bootstrap(current?: { pubkey: string | null; npub: string | null }): void {
+  public bootstrap(current?: {
+    pubkey: string | null;
+    npub: string | null;
+  }): void {
     if (this.initialized) return;
     this.initialized = true;
 
-    this.eventBus.on('user:login', (data?: { pubkey?: string; npub?: string }) => {
-      void this.handleLogin(data?.pubkey ?? null, data?.npub ?? null);
-    });
+    this.eventBus.on(
+      'user:login',
+      (data?: { pubkey?: string; npub?: string }) => {
+        void this.handleLogin(data?.pubkey ?? null, data?.npub ?? null);
+      }
+    );
     this.eventBus.on('user:logout', () => {
       void this.handleLogout();
     });
@@ -164,7 +170,12 @@ export class ModuleLoader {
 
       if (matches && !entry.instance && this.safeIsEnabled(entry)) {
         this.enqueue(entry, () => this.runInit(entry));
-      } else if (!matches && wasMatching && entry.instance && entry.sleepPolicy === 'sleep-on-leave') {
+      } else if (
+        !matches &&
+        wasMatching &&
+        entry.instance &&
+        entry.sleepPolicy === 'sleep-on-leave'
+      ) {
         this.enqueue(entry, () => this.runDestroy(entry));
       }
     }
@@ -174,7 +185,7 @@ export class ModuleLoader {
 
   public isLoaded(id: string): boolean {
     const entry = this.entries.get(id);
-    return !!(entry?.instance);
+    return !!entry?.instance;
   }
 
   public getApi<T>(id: string): T | null {
@@ -193,10 +204,10 @@ export class ModuleLoader {
 
     if (!this.safeIsEnabled(entry)) return null;
 
-    return new Promise<T | null>((resolve) => {
+    return new Promise<T | null>(resolve => {
       this.enqueue(entry, async () => {
         await this.runInit(entry);
-        resolve(entry.instance?.getApi?.() as T ?? null);
+        resolve((entry.instance?.getApi?.() as T) ?? null);
       });
     });
   }
@@ -212,7 +223,10 @@ export class ModuleLoader {
     };
   }
 
-  private async handleLogin(pubkey: string | null, npub: string | null): Promise<void> {
+  private async handleLogin(
+    pubkey: string | null,
+    npub: string | null
+  ): Promise<void> {
     const prev = this.currentPubkey;
     this.currentPubkey = pubkey;
     this.currentNpub = npub;
@@ -258,7 +272,9 @@ export class ModuleLoader {
     entry.opChain = entry.opChain.then(op).catch(err => {
       diagLog('system', 'module_runtime_error', {
         id: entry.id,
-        error: String(err && (err as Error).message ? (err as Error).message : err),
+        error: String(
+          err && (err as Error).message ? (err as Error).message : err
+        ),
         stack: (err as Error)?.stack ?? null,
       });
     });
@@ -268,7 +284,10 @@ export class ModuleLoader {
     if (entry.instance) return;
 
     const loadStart = performance.now();
-    diagLog('system', 'module_load_start', { id: entry.id, pubkey: this.currentPubkey });
+    diagLog('system', 'module_load_start', {
+      id: entry.id,
+      pubkey: this.currentPubkey,
+    });
 
     let runtime: ModuleRuntime<any>;
     try {
@@ -276,7 +295,9 @@ export class ModuleLoader {
     } catch (err) {
       diagLog('system', 'module_load_error', {
         id: entry.id,
-        error: String(err && (err as Error).message ? (err as Error).message : err),
+        error: String(
+          err && (err as Error).message ? (err as Error).message : err
+        ),
       });
       return;
     }
@@ -291,7 +312,9 @@ export class ModuleLoader {
       diagLog('system', 'module_runtime_error', {
         id: entry.id,
         phase: 'init',
-        error: String(err && (err as Error).message ? (err as Error).message : err),
+        error: String(
+          err && (err as Error).message ? (err as Error).message : err
+        ),
         stack: (err as Error)?.stack ?? null,
       });
       return;
@@ -320,7 +343,9 @@ export class ModuleLoader {
       diagLog('system', 'module_runtime_error', {
         id: entry.id,
         phase: 'destroy',
-        error: String(err && (err as Error).message ? (err as Error).message : err),
+        error: String(
+          err && (err as Error).message ? (err as Error).message : err
+        ),
         stack: (err as Error)?.stack ?? null,
       });
       return;
@@ -337,7 +362,9 @@ export class ModuleLoader {
       diagLog('system', 'module_runtime_error', {
         id: entry.id,
         phase: 'isEnabled',
-        error: String(err && (err as Error).message ? (err as Error).message : err),
+        error: String(
+          err && (err as Error).message ? (err as Error).message : err
+        ),
       });
       return false;
     }

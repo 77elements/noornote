@@ -25,16 +25,25 @@ export class DittoFeatureRenderer {
       event.kind ?? DITTO_GEOCACHE_KIND,
       event.pubkey,
       getTag(event.tags, 'd'),
-      event.id,
+      event.id
     );
   }
 
   /** Render the notice from a decoded naddr coordinate (no event fetched). */
-  static renderFromCoordinate(kind: number, pubkey: string, identifier: string): HTMLElement {
+  static renderFromCoordinate(
+    kind: number,
+    pubkey: string,
+    identifier: string
+  ): HTMLElement {
     return DittoFeatureRenderer.renderCard(kind, pubkey, identifier);
   }
 
-  private static renderCard(kind: number, pubkey: string, identifier: string, eventId?: string): HTMLElement {
+  private static renderCard(
+    kind: number,
+    pubkey: string,
+    identifier: string,
+    eventId?: string
+  ): HTMLElement {
     const element = document.createElement('div');
     element.className = 'note-card note-card--unsupported';
     if (eventId) element.dataset.eventId = eventId;

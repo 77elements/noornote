@@ -9,7 +9,10 @@
  * - Single source of truth for profile recognition
  */
 
-import { BaseFileStorage, type BaseFileData } from '../../services/BaseFileStorage';
+import {
+  BaseFileStorage,
+  type BaseFileData,
+} from '../../services/BaseFileStorage';
 
 /**
  * Profile encounter snapshot
@@ -53,7 +56,7 @@ export class ProfileEncounterFileStorage extends BaseFileStorage<ProfileEncounte
   protected getDefaultData(): ProfileEncounterData {
     return {
       encounters: {},
-      lastModified: Math.floor(Date.now() / 1000)
+      lastModified: Math.floor(Date.now() / 1000),
     };
   }
 

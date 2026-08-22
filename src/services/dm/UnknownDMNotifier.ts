@@ -103,11 +103,14 @@ export class UnknownDMNotifier {
       this.eventBus.on('user:logout', () => {
         this.resetBurstState();
         this.toastedConvs.clear();
-      }),
+      })
     );
   }
 
-  private handleNewMessage({ message, conversationWith }: DMNewMessagePayload): void {
+  private handleNewMessage({
+    message,
+    conversationWith,
+  }: DMNewMessagePayload): void {
     // Outgoing echoes (own messages) are not interesting here.
     if (message.isMine) return;
     // Only surface senders the user does not follow. Known-sender messages
@@ -120,7 +123,10 @@ export class UnknownDMNotifier {
 
     this.burstCount++;
     this.armBurstWindow();
-    diagLog('dms', 'Unknown DM toast counted', { conversationWith, burstCount: this.burstCount });
+    diagLog('dms', 'Unknown DM toast counted', {
+      conversationWith,
+      burstCount: this.burstCount,
+    });
 
     const desiredAggregated = this.burstCount > 1;
     const text = desiredAggregated
@@ -128,7 +134,9 @@ export class UnknownDMNotifier {
       : 'New message from an unknown sender';
     // Single-sender toast opens that conversation; once aggregated (multiple
     // senders), open the messages list where the Unknown tab lists all of them.
-    const target = desiredAggregated ? '/messages' : `/messages/${conversationWith}`;
+    const target = desiredAggregated
+      ? '/messages'
+      : `/messages/${conversationWith}`;
 
     // Update the visible toast in place when it's the same shape; otherwise
     // dismiss + show a fresh one (happens once per burst, at the 1→2 boundary,
@@ -144,9 +152,11 @@ export class UnknownDMNotifier {
         'info',
         {
           label: 'Open',
-          onClick: () => { Router.getInstance().navigate(target); },
+          onClick: () => {
+            Router.getInstance().navigate(target);
+          },
         },
-        TOAST_DURATION_MS,
+        TOAST_DURATION_MS
       );
       this.aggregated = desiredAggregated;
     }

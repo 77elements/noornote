@@ -7,13 +7,25 @@
 import { Router } from '../../services/Router';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { ModuleLoader } from '../../core/ModuleLoader';
-import type { SearchModuleApi, UserSearchResult } from '../../modules/search/contracts';
+import type {
+  SearchModuleApi,
+  UserSearchResult,
+} from '../../modules/search/contracts';
 import { hexToNpub } from '../../helpers/nip19';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { resolveNip05 } from '../../helpers/Nip05Resolver';
 
 /** Prefixes that bypass user search (the user clearly wants direct navigation, not a name match) */
-const SPECIAL_INPUT_PREFIXES = ['/', 'http', 'npub1', 'nprofile1', 'nevent1', 'note1', 'naddr1', 'nostr:'] as const;
+const SPECIAL_INPUT_PREFIXES = [
+  '/',
+  'http',
+  'npub1',
+  'nprofile1',
+  'nevent1',
+  'note1',
+  'naddr1',
+  'nostr:',
+] as const;
 
 /** Loose NIP-05 shape check: "name@domain.tld" — full validation happens in the resolver */
 function looksLikeNip05(input: string): boolean {
@@ -31,7 +43,8 @@ export class SearchSpotlight {
   private eventBus: TypedEventBus;
   private _searchApi?: SearchModuleApi | null;
   private get searchApi(): SearchModuleApi | null {
-    return this._searchApi ??= ModuleLoader.getInstance().getApi<SearchModuleApi>('search');
+    return (this._searchApi ??=
+      ModuleLoader.getInstance().getApi<SearchModuleApi>('search'));
   }
   private isOpen: boolean = false;
   private inputElement: HTMLInputElement | null = null;
@@ -134,7 +147,9 @@ export class SearchSpotlight {
 
     // Back/Forward buttons
     const backBtn = this.element.querySelector('.search-spotlight__btn--back');
-    const forwardBtn = this.element.querySelector('.search-spotlight__btn--forward');
+    const forwardBtn = this.element.querySelector(
+      '.search-spotlight__btn--forward'
+    );
 
     backBtn?.addEventListener('click', () => {
       this.router.back();
@@ -147,10 +162,14 @@ export class SearchSpotlight {
     });
 
     // User suggestions element
-    this.userSuggestionsElement = this.element.querySelector('.search-spotlight__user-suggestions');
+    this.userSuggestionsElement = this.element.querySelector(
+      '.search-spotlight__user-suggestions'
+    );
 
     // URL suggestions element
-    this.suggestionsElement = this.element.querySelector('.search-spotlight__suggestions');
+    this.suggestionsElement = this.element.querySelector(
+      '.search-spotlight__suggestions'
+    );
   }
 
   public open(): void {
@@ -172,7 +191,8 @@ export class SearchSpotlight {
     // Set placeholder
     if (this.inputElement) {
       this.inputElement.value = '';
-      this.inputElement.placeholder = 'Search: (npub / nevent / username / full text)';
+      this.inputElement.placeholder =
+        'Search: (npub / nevent / username / full text)';
       this.inputElement.focus();
     }
 
@@ -249,24 +269,27 @@ export class SearchSpotlight {
    * Perform user search (local + remote)
    */
   private performUserSearch(query: string): void {
-    this.currentSearchController = this.searchApi?.searchUsers(query, {
-      onLocalResults: (results) => {
-        // Merge local results (they come first)
-        this.userResults = results;
-        this.updateUserSuggestions();
-      },
-      onRemoteResults: (results) => {
-        // Add remote results (deduplicated in service)
-        const existingPubkeys = new Set(this.userResults.map(r => r.pubkey));
-        const newResults = results.filter(r => !existingPubkeys.has(r.pubkey));
-        this.userResults = [...this.userResults, ...newResults];
-        this.updateUserSuggestions();
-      },
-      onComplete: () => {
-        this.isSearchingUsers = false;
-        this.updateUserSuggestions();
-      }
-    }) ?? null;
+    this.currentSearchController =
+      this.searchApi?.searchUsers(query, {
+        onLocalResults: results => {
+          // Merge local results (they come first)
+          this.userResults = results;
+          this.updateUserSuggestions();
+        },
+        onRemoteResults: results => {
+          // Add remote results (deduplicated in service)
+          const existingPubkeys = new Set(this.userResults.map(r => r.pubkey));
+          const newResults = results.filter(
+            r => !existingPubkeys.has(r.pubkey)
+          );
+          this.userResults = [...this.userResults, ...newResults];
+          this.updateUserSuggestions();
+        },
+        onComplete: () => {
+          this.isSearchingUsers = false;
+          this.updateUserSuggestions();
+        },
+      }) ?? null;
   }
 
   /** Update user suggestions display */
@@ -293,12 +316,16 @@ export class SearchSpotlight {
     }
 
     // Render user results
-    const usersHtml = this.userResults.slice(0, 8).map((user, index) => {
-      const displayName = user.displayName || user.name || 'Anonymous';
-      const picture = user.picture || '';
-      const followBadge = user.isFollowing ? '<span class="badge badge--accent">Following</span>' : '';
+    const usersHtml = this.userResults
+      .slice(0, 8)
+      .map((user, index) => {
+        const displayName = user.displayName || user.name || 'Anonymous';
+        const picture = user.picture || '';
+        const followBadge = user.isFollowing
+          ? '<span class="badge badge--accent">Following</span>'
+          : '';
 
-      return `
+        return `
         <div class="search-spotlight__user-item" data-pubkey="${user.pubkey}" data-user-index="${index}">
           <div class="search-spotlight__user-avatar">
             ${picture ? `<img src="${escapeHtmlAttr(picture)}" alt="" loading="lazy" />` : '<div class="search-spotlight__user-avatar-placeholder"></div>'}
@@ -310,7 +337,8 @@ export class SearchSpotlight {
           ${followBadge}
         </div>
       `;
-    }).join('');
+      })
+      .join('');
 
     this.userSuggestionsElement.innerHTML = `
       <div class="search-spotlight__user-section">
@@ -320,16 +348,18 @@ export class SearchSpotlight {
     `;
 
     // Add click handlers
-    this.userSuggestionsElement.querySelectorAll('.search-spotlight__user-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const pubkey = item.getAttribute('data-pubkey');
-        if (pubkey) {
-          const npub = hexToNpub(pubkey);
-          this.router.navigate(`/profile/${npub}`);
-          this.close();
-        }
+    this.userSuggestionsElement
+      .querySelectorAll('.search-spotlight__user-item')
+      .forEach(item => {
+        item.addEventListener('click', () => {
+          const pubkey = item.getAttribute('data-pubkey');
+          if (pubkey) {
+            const npub = hexToNpub(pubkey);
+            this.router.navigate(`/profile/${npub}`);
+            this.close();
+          }
+        });
       });
-    });
   }
 
   private async navigateToInputURL(): Promise<void> {
@@ -374,7 +404,10 @@ export class SearchSpotlight {
       return null; // External URL
     }
     // Profile identifiers: npub (bare 63-char) and nprofile (variable length, carries relay hints)
-    if ((input.startsWith('npub1') && input.length === 63) || input.startsWith('nprofile1')) {
+    if (
+      (input.startsWith('npub1') && input.length === 63) ||
+      input.startsWith('nprofile1')
+    ) {
       return `/profile/${input}`;
     }
     // Event identifiers: note (bare, 63-char) and nevent (with relay hints). SNV decodes both.
@@ -398,7 +431,9 @@ export class SearchSpotlight {
    */
   private async openExternalURL(url: string): Promise<void> {
     try {
-      const { PlatformService } = await import('../../services/PlatformService');
+      const { PlatformService } = await import(
+        '../../services/PlatformService'
+      );
       const _p = PlatformService.getInstance();
       if (_p.isElectron) {
         await window.electronAPI!.openExternal(url);
@@ -411,8 +446,12 @@ export class SearchSpotlight {
   }
 
   private updateNavigationButtons(): void {
-    const backBtn = this.element.querySelector('.search-spotlight__btn--back') as HTMLButtonElement;
-    const forwardBtn = this.element.querySelector('.search-spotlight__btn--forward') as HTMLButtonElement;
+    const backBtn = this.element.querySelector(
+      '.search-spotlight__btn--back'
+    ) as HTMLButtonElement;
+    const forwardBtn = this.element.querySelector(
+      '.search-spotlight__btn--forward'
+    ) as HTMLButtonElement;
 
     if (backBtn) {
       backBtn.disabled = !this.router.canGoBack();
@@ -445,36 +484,44 @@ export class SearchSpotlight {
 
     // Render suggestions
     if (suggestions.length === 0) {
-      this.suggestionsElement.innerHTML = '<div class="search-spotlight__empty">No recent URLs</div>';
+      this.suggestionsElement.innerHTML =
+        '<div class="search-spotlight__empty">No recent URLs</div>';
       return;
     }
 
     this.suggestionsElement.innerHTML = suggestions
-      .map((url, index) => `
+      .map(
+        (url, index) => `
         <div class="search-spotlight__suggestion" data-url="${url}" data-index="${index}">
           <svg class="search-spotlight__suggestion-icon"><use href="#icon-search-clock"/></svg>
           <span class="search-spotlight__suggestion-text">${url}</span>
         </div>
-      `)
+      `
+      )
       .join('');
 
     // Add click handlers to suggestions
-    this.suggestionsElement.querySelectorAll('.search-spotlight__suggestion').forEach(item => {
-      item.addEventListener('click', () => {
-        const url = item.getAttribute('data-url');
-        if (url) {
-          this.router.navigate(url);
-          this.close();
-        }
+    this.suggestionsElement
+      .querySelectorAll('.search-spotlight__suggestion')
+      .forEach(item => {
+        item.addEventListener('click', () => {
+          const url = item.getAttribute('data-url');
+          if (url) {
+            this.router.navigate(url);
+            this.close();
+          }
+        });
       });
-    });
   }
 
   private selectNextSuggestion(): void {
     const focusableElements = this.getFocusableElements();
     if (focusableElements.length === 0) return;
 
-    this.selectedSuggestionIndex = Math.min(this.selectedSuggestionIndex + 1, focusableElements.length - 1);
+    this.selectedSuggestionIndex = Math.min(
+      this.selectedSuggestionIndex + 1,
+      focusableElements.length - 1
+    );
     this.updateSelectedSuggestion();
   }
 
@@ -482,7 +529,10 @@ export class SearchSpotlight {
     const focusableElements = this.getFocusableElements();
     if (focusableElements.length === 0) return;
 
-    this.selectedSuggestionIndex = Math.max(this.selectedSuggestionIndex - 1, -1);
+    this.selectedSuggestionIndex = Math.max(
+      this.selectedSuggestionIndex - 1,
+      -1
+    );
     this.updateSelectedSuggestion();
   }
 
@@ -490,21 +540,29 @@ export class SearchSpotlight {
     const elements: Element[] = [];
 
     // Add Back/Forward buttons
-    const backBtn = this.element.querySelector('.search-spotlight__btn--back:not(:disabled)');
-    const forwardBtn = this.element.querySelector('.search-spotlight__btn--forward:not(:disabled)');
+    const backBtn = this.element.querySelector(
+      '.search-spotlight__btn--back:not(:disabled)'
+    );
+    const forwardBtn = this.element.querySelector(
+      '.search-spotlight__btn--forward:not(:disabled)'
+    );
 
     if (backBtn) elements.push(backBtn);
     if (forwardBtn) elements.push(forwardBtn);
 
     // Add user suggestions
     if (this.userSuggestionsElement) {
-      const userItems = this.userSuggestionsElement.querySelectorAll('.search-spotlight__user-item');
+      const userItems = this.userSuggestionsElement.querySelectorAll(
+        '.search-spotlight__user-item'
+      );
       elements.push(...Array.from(userItems));
     }
 
     // Add URL suggestions
     if (this.suggestionsElement) {
-      const suggestions = this.suggestionsElement.querySelectorAll('.search-spotlight__suggestion');
+      const suggestions = this.suggestionsElement.querySelectorAll(
+        '.search-spotlight__suggestion'
+      );
       elements.push(...Array.from(suggestions));
     }
 
@@ -561,10 +619,11 @@ export class SearchSpotlight {
     this.navigateToInputURL();
   }
 
-
   public destroy(): void {
     if (this.escHandler) {
-      document.removeEventListener('keydown', this.escHandler, { capture: true });
+      document.removeEventListener('keydown', this.escHandler, {
+        capture: true,
+      });
     }
     this.cancelPendingSearch();
     this.element.remove();

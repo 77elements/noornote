@@ -91,7 +91,10 @@ export class NoteTakingStore {
 
     const pubkey = userPubkey || this.currentUserPubkey;
     if (!pubkey) {
-      this.systemLogger.warn('NoteTakingStore', 'init() called without pubkey and no current user');
+      this.systemLogger.warn(
+        'NoteTakingStore',
+        'init() called without pubkey and no current user'
+      );
       return;
     }
 
@@ -103,7 +106,11 @@ export class NoteTakingStore {
       const request = indexedDB.open(dbName, DB_VERSION);
 
       request.onerror = () => {
-        this.systemLogger.error('NoteTakingStore', 'Failed to open IndexedDB:', request.error);
+        this.systemLogger.error(
+          'NoteTakingStore',
+          'Failed to open IndexedDB:',
+          request.error
+        );
         reject(request.error);
       };
 
@@ -112,7 +119,7 @@ export class NoteTakingStore {
         resolve();
       };
 
-      request.onupgradeneeded = (event) => {
+      request.onupgradeneeded = event => {
         const db = (event.target as IDBOpenDBRequest).result;
         if (!db.objectStoreNames.contains(NOTES_STORE)) {
           const store = db.createObjectStore(NOTES_STORE, { keyPath: 'id' });
@@ -166,7 +173,7 @@ export class NoteTakingStore {
   /** Notes that still need to be pushed to relays. */
   public async getDirty(): Promise<NoteRecord[]> {
     const all = await this.getAll();
-    return all.filter((n) => n.dirty);
+    return all.filter(n => n.dirty);
   }
 
   /** Delete a note by id. */

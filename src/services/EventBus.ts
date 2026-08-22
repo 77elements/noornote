@@ -49,7 +49,7 @@ export class EventBus {
     const subscriptionId = `${eventName}_${this.subscriptionCounter++}`;
     const subscription: EventSubscription = {
       id: subscriptionId,
-      callback
+      callback,
     };
 
     this.events.get(eventName)!.push(subscription);
@@ -93,13 +93,16 @@ export class EventBus {
       'view:change': '📱 View changed',
       'note:created': '📝 Note created',
       'relays:updated': '⚡ Relays updated',
-      'notifications:badge-update': '🔔 Notifications badge update'
+      'notifications:badge-update': '🔔 Notifications badge update',
     };
 
     const message = eventMessages[eventName] || `Event '${eventName}'`;
     const componentText = subscriberCount === 1 ? 'component' : 'components';
 
-    this.systemLogger.info('EventBus', `${message} → notifying ${subscriberCount} ${componentText}`);
+    this.systemLogger.info(
+      'EventBus',
+      `${message} → notifying ${subscriberCount} ${componentText}`
+    );
 
     if (subscriptions) {
       // Create a copy to avoid issues if callbacks modify subscriptions
@@ -108,7 +111,10 @@ export class EventBus {
           sub.callback(data);
         } catch (error) {
           console.error(`EventBus error in ${eventName} handler:`, error);
-          this.systemLogger.error('EventBus', `Error in '${eventName}' handler: ${error}`);
+          this.systemLogger.error(
+            'EventBus',
+            `Error in '${eventName}' handler: ${error}`
+          );
         }
       });
     }
@@ -143,7 +149,7 @@ export class EventBus {
     }
 
     let total = 0;
-    this.events.forEach(subs => total += subs.length);
+    this.events.forEach(subs => (total += subs.length));
     return total;
   }
 }

@@ -62,7 +62,7 @@ export function deriveCommunityKey(fragment: string): Uint8Array | undefined {
  */
 export function decryptCommunityGiftWrap(
   wrapEvent: NostrEvent,
-  communityKey: Uint8Array,
+  communityKey: Uint8Array
 ): NostrEvent | null {
   if (wrapEvent.kind !== KIND_GIFT_WRAP) return null;
 

@@ -53,7 +53,7 @@ export class FallbackElementFactory {
     // Make it clickable to view full note in new context
     if (eventId) {
       maxDepthDiv.style.cursor = 'pointer';
-      maxDepthDiv.addEventListener('click', (e) => {
+      maxDepthDiv.addEventListener('click', e => {
         e.stopPropagation();
         const router = Router.getInstance();
         const nevent = encodeNevent(eventId);

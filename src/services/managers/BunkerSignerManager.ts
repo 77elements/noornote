@@ -17,10 +17,14 @@
 
 import { NDKNip46Signer } from '@nostr-dev-kit/ndk';
 import { hexToNpub } from '../../helpers/nip19';
-import { Nip46BaseManager, NIP46_STORAGE_KEY, nip46Log, type Nip46AuthResult } from './Nip46BaseManager';
+import {
+  Nip46BaseManager,
+  NIP46_STORAGE_KEY,
+  nip46Log,
+  type Nip46AuthResult,
+} from './Nip46BaseManager';
 
 export class BunkerSignerManager extends Nip46BaseManager {
-
   /**
    * Authenticate with a bunker:// URI.
    * Creates a new NDKNip46Signer, locks encryption to NIP-04,
@@ -29,7 +33,10 @@ export class BunkerSignerManager extends Nip46BaseManager {
   public async authenticate(bunkerUri: string): Promise<Nip46AuthResult> {
     try {
       if (!bunkerUri.startsWith('bunker://')) {
-        return { success: false, error: 'Invalid bunker URI format. Must start with bunker://' };
+        return {
+          success: false,
+          error: 'Invalid bunker URI format. Must start with bunker://',
+        };
       }
 
       const { NostrTransport } = await import('../transport/NostrTransport');
@@ -43,7 +50,9 @@ export class BunkerSignerManager extends Nip46BaseManager {
         try {
           const parsed = JSON.parse(storedPayload);
           if (parsed.payload?.localSignerPayload) {
-            const localSignerParsed = JSON.parse(parsed.payload.localSignerPayload);
+            const localSignerParsed = JSON.parse(
+              parsed.payload.localSignerPayload
+            );
             localNsec = localSignerParsed.payload?.nsec;
           }
           nip46Log.info('Reusing stored local key');
@@ -65,8 +74,8 @@ export class BunkerSignerManager extends Nip46BaseManager {
       const bunkerPubkey = this.signer.bunkerPubkey;
 
       nip46Log.info('Bunker config:', {
-        bunkerPubkey: bunkerPubkey?.slice(0, 12) + '...',
-        secret: secret ? secret.slice(0, 8) + '...' : 'none',
+        bunkerPubkey: `${bunkerPubkey?.slice(0, 12)}...`,
+        secret: secret ? `${secret.slice(0, 8)}...` : 'none',
         relays: this.signer.relayUrls,
       });
 
@@ -101,7 +110,8 @@ export class BunkerSignerManager extends Nip46BaseManager {
       return { success: true, npub, pubkey: bunkerPubkey! };
     } catch (error: unknown) {
       this.signer = null;
-      const msg = error instanceof Error ? error.message : 'Bunker authentication failed';
+      const msg =
+        error instanceof Error ? error.message : 'Bunker authentication failed';
       nip46Log.error('Authentication failed:', msg);
       return { success: false, error: msg };
     }

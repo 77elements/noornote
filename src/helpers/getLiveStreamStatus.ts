@@ -23,8 +23,14 @@ const STALE_PLANNED_AFTER_START_SEC = 60 * 60;
  * Used by every live-stream renderer so the staleness rule is applied
  * consistently (top-level 30311, reposts, quotes, SNV, bookmarks).
  */
-export function getLiveStreamStatus(event: NostrEvent, nowSec: number = Math.floor(Date.now() / 1000)): LiveStreamStatus {
-  const raw = event.tags.find(t => t[0] === 'status')?.[1]?.toLowerCase().trim();
+export function getLiveStreamStatus(
+  event: NostrEvent,
+  nowSec: number = Math.floor(Date.now() / 1000)
+): LiveStreamStatus {
+  const raw = event.tags
+    .find(t => t[0] === 'status')?.[1]
+    ?.toLowerCase()
+    .trim();
 
   if (raw === 'live') {
     const ageSec = nowSec - (event.created_at ?? 0);
@@ -40,7 +46,11 @@ export function getLiveStreamStatus(event: NostrEvent, nowSec: number = Math.flo
   const startsRaw = event.tags.find(t => t[0] === 'starts')?.[1];
   if (startsRaw) {
     const starts = Number(startsRaw);
-    if (Number.isFinite(starts) && starts > 0 && (nowSec - starts) > STALE_PLANNED_AFTER_START_SEC) {
+    if (
+      Number.isFinite(starts) &&
+      starts > 0 &&
+      nowSec - starts > STALE_PLANNED_AFTER_START_SEC
+    ) {
       return 'ended';
     }
   }

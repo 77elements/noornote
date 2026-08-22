@@ -22,7 +22,11 @@ import { UserService } from '../../services/UserService';
 import { AuthService } from '../../services/AuthService';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
 import { CustomDropdown } from '../ui/CustomDropdown';
-import { getSavedFeedMode, saveFeedMode, type FeedMode } from './TimelineConfig';
+import {
+  getSavedFeedMode,
+  saveFeedMode,
+  type FeedMode,
+} from './TimelineConfig';
 import { TimelineStateManager } from './timeline-state/TimelineStateManager';
 import { TimelineUIStateHandler } from './timeline-ui/TimelineUIStateHandler';
 import { TimelineRenderer } from './timeline-ui/TimelineRenderer';
@@ -68,7 +72,12 @@ export class LastNotesPerFollow extends View {
     this.stateManager = new TimelineStateManager();
     this.uiStateHandler = new TimelineUIStateHandler(this.element);
     // Allow DOM trimming (long ranked list) — same as the main timeline.
-    this.renderer = new TimelineRenderer(this.element, this.stateManager, this.uiStateHandler, false);
+    this.renderer = new TimelineRenderer(
+      this.element,
+      this.stateManager,
+      this.uiStateHandler,
+      false
+    );
     this.islStatsUpdater = new ISLStatsUpdater(this.element);
     this.scrollPositionManager = new ScrollPositionManager(this.element);
 
@@ -77,7 +86,8 @@ export class LastNotesPerFollow extends View {
       rootMargin: '0px 0px 1200px 0px',
     });
 
-    this.element.querySelector('[data-action="refresh"]')
+    this.element
+      .querySelector('[data-action="refresh"]')
       ?.addEventListener('click', () => void this.load());
 
     this.setupViewDropdown();
@@ -98,7 +108,8 @@ export class LastNotesPerFollow extends View {
       ],
       selectedValue: getSavedFeedMode(),
       onChange: (value: string) => {
-        const mode: FeedMode = value === 'latest-replies' ? 'latest-replies' : 'latest';
+        const mode: FeedMode =
+          value === 'latest-replies' ? 'latest-replies' : 'latest';
         saveFeedMode(mode);
         void this.load();
       },
@@ -150,7 +161,9 @@ export class LastNotesPerFollow extends View {
     this.shownCount = 0;
     this.stateManager.clear();
     NoteUI.cleanupAll(this.element);
-    this.element.querySelectorAll<HTMLElement>('.note-card').forEach(card => card.remove());
+    this.element
+      .querySelectorAll<HTMLElement>('.note-card')
+      .forEach(card => card.remove());
     this.infiniteScroll.pause();
     this.uiStateHandler.hideEmptyState();
     this.uiStateHandler.showSkeletonLoaders(5);
@@ -158,7 +171,9 @@ export class LastNotesPerFollow extends View {
     try {
       await this.authService.waitForInitialization();
 
-      const followingPubkeys = await this.userService.getUserFollowing(this.userPubkey);
+      const followingPubkeys = await this.userService.getUserFollowing(
+        this.userPubkey
+      );
       if (followingPubkeys.length === 0) {
         this.uiStateHandler.hideSkeletonLoaders();
         this.uiStateHandler.showEmptyState();
@@ -175,7 +190,7 @@ export class LastNotesPerFollow extends View {
       this.allEvents = await api.loadLatestPerAuthor(
         followingPubkeys,
         getSavedFeedMode() === 'latest-replies', // same Latest / Latest+Replies preference as the main timeline
-        true                                     // apply Word Filter addon when enabled (processEvents checks internally)
+        true // apply Word Filter addon when enabled (processEvents checks internally)
       );
 
       this.uiStateHandler.hideSkeletonLoaders();
@@ -194,9 +209,14 @@ export class LastNotesPerFollow extends View {
 
       this.setupInfiniteScroll();
     } catch (error) {
-      SystemLogger.getInstance().warn('LastNotesPerFollow', `Failed to load: ${error}`);
+      SystemLogger.getInstance().warn(
+        'LastNotesPerFollow',
+        `Failed to load: ${error}`
+      );
       this.uiStateHandler.hideSkeletonLoaders();
-      this.uiStateHandler.showError('Failed to load. Please check your connection.');
+      this.uiStateHandler.showError(
+        'Failed to load. Please check your connection.'
+      );
     } finally {
       this.loading = false;
       this.setRefreshDisabled(false);
@@ -204,9 +224,14 @@ export class LastNotesPerFollow extends View {
   }
 
   private setupInfiniteScroll(): void {
-    const loadTrigger = this.element.querySelector('.timeline-load-trigger') as HTMLElement | null;
+    const loadTrigger = this.element.querySelector(
+      '.timeline-load-trigger'
+    ) as HTMLElement | null;
     if (!loadTrigger) return;
-    this.infiniteScroll.observe(loadTrigger, loadTrigger.closest('.timeline-view__timeline'));
+    this.infiniteScroll.observe(
+      loadTrigger,
+      loadTrigger.closest('.timeline-view__timeline')
+    );
     if (this.shownCount >= this.allEvents.length) this.infiniteScroll.pause();
   }
 
@@ -216,7 +241,10 @@ export class LastNotesPerFollow extends View {
       this.infiniteScroll.pause();
       return;
     }
-    const next = this.allEvents.slice(this.shownCount, this.shownCount + PAGE_SIZE);
+    const next = this.allEvents.slice(
+      this.shownCount,
+      this.shownCount + PAGE_SIZE
+    );
     if (next.length === 0) {
       this.infiniteScroll.pause();
       return;
@@ -230,7 +258,9 @@ export class LastNotesPerFollow extends View {
   }
 
   private setRefreshDisabled(disabled: boolean): void {
-    const btn = this.element.querySelector('[data-action="refresh"]') as HTMLButtonElement | null;
+    const btn = this.element.querySelector(
+      '[data-action="refresh"]'
+    ) as HTMLButtonElement | null;
     if (btn) btn.disabled = disabled;
   }
 

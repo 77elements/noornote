@@ -26,7 +26,10 @@ import { UserProfileService } from '../services/UserProfileService';
 import { Router } from '../services/Router';
 import { ProfileMountsService } from '../services/ProfileMountsService';
 import { ProfileMountsOrchestrator } from '../services/orchestration/ProfileMountsOrchestrator';
-import { PerAccountLocalStorage, StorageKeys as PerAccountStorageKeys } from '../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys as PerAccountStorageKeys,
+} from '../services/PerAccountLocalStorage';
 import { PlatformService } from '../services/PlatformService';
 import { diagLog } from '../services/DiagnosticLogger';
 
@@ -44,19 +47,45 @@ export interface RootOrderItem<T extends string = string> {
 import { encodeNevent } from '../services/NostrToolsAdapter';
 import { formatBookmarkTimestamp } from '../helpers/formatTimestamp';
 import { applyFolderAssignments } from '../helpers/FolderAssignmentHelper';
-import { renderListSyncButtons, bindListSyncButtons, isEasyMode } from '../helpers/ListSyncMode';
-import { SyncConfirmationModal, type MovedItemInfo } from '../components/modals/SyncConfirmationModal';
+import {
+  renderListSyncButtons,
+  bindListSyncButtons,
+  isEasyMode,
+} from '../helpers/ListSyncMode';
+import {
+  SyncConfirmationModal,
+  type MovedItemInfo,
+} from '../components/modals/SyncConfirmationModal';
 import { NewFolderModal } from '../components/modals/NewFolderModal';
 import { EditFolderModal } from '../components/modals/EditFolderModal';
-import { FolderCard, type FolderData } from '../components/bookmarks/FolderCard';
+import {
+  FolderCard,
+  type FolderData,
+} from '../components/bookmarks/FolderCard';
 import { UpNavigator } from '../components/bookmarks/UpNavigator';
 import { MoveDropdown } from '../components/ui/MoveDropdown';
 
 // Shared helpers from /src/lists/
-import { readList, writeList, StorageKeys, now, deduplicateById, mergeByKey } from './storage';
+import {
+  readList,
+  writeList,
+  StorageKeys,
+  now,
+  deduplicateById,
+  mergeByKey,
+} from './storage';
 import { setupGridDragDrop } from '../helpers/gridDragDrop';
-import { renderListHeader, renderListBreadcrumb, bindHeaderDropdown } from './list-header';
-import { readJsonFile, writeJsonFile, uploadJsonFile, downloadAsJson } from './file';
+import {
+  renderListHeader,
+  renderListBreadcrumb,
+  bindHeaderDropdown,
+} from './list-header';
+import {
+  readJsonFile,
+  writeJsonFile,
+  uploadJsonFile,
+  downloadAsJson,
+} from './file';
 import {
   fetchEvents,
   publishEvent,
@@ -65,9 +94,13 @@ import {
   getCurrentUserPubkey,
   getWriteRelays,
   encryptContent,
-  decryptContent
+  decryptContent,
 } from './relays';
-import { type DeletionRecordConfig, publishDeletionChange, syncDeletionsIntoLocal } from './listDeletionRecord';
+import {
+  type DeletionRecordConfig,
+  publishDeletionChange,
+  syncDeletionsIntoLocal,
+} from './listDeletionRecord';
 
 // Re-export for backward compatibility
 export { StorageKeys };
@@ -107,10 +140,10 @@ export interface BookmarkTag {
  */
 export interface BookmarkSet {
   kind: 30003;
-  d: string;  // d-tag value ('' = root, 'Work' = Work folder, etc.)
+  d: string; // d-tag value ('' = root, 'Work' = Work folder, etc.)
   title: string;
   publicTags: BookmarkTag[];
-  privateTags: BookmarkTag[];  // Stored encrypted in event content
+  privateTags: BookmarkTag[]; // Stored encrypted in event content
 }
 
 /**
@@ -120,7 +153,7 @@ export interface BookmarkSetData {
   version: 2;
   sets: BookmarkSet[];
   metadata: {
-    setOrder: string[];  // Order of d-tags (folders)
+    setOrder: string[]; // Order of d-tags (folders)
     lastModified: number;
   };
 }
@@ -134,7 +167,7 @@ export interface BookmarkItem {
   value: string;
   addedAt?: number;
   isPrivate?: boolean;
-  category?: string;  // d-tag value (folder name)
+  category?: string; // d-tag value (folder name)
   description?: string;
 }
 
@@ -221,14 +254,16 @@ export function createEmptyBookmarkSetData(): BookmarkSetData {
   return {
     version: 2,
     sets: [createEmptySet('')],
-    metadata: { setOrder: [''], lastModified: now() }
+    metadata: { setOrder: [''], lastModified: now() },
   };
 }
 
 /**
  * Migrate from old file format to new BookmarkSetData format
  */
-export function migrateFromOldFormat(oldData: OldBookmarkFileData): BookmarkSetData {
+export function migrateFromOldFormat(
+  oldData: OldBookmarkFileData
+): BookmarkSetData {
   const folders = oldData.folders || [];
   const assignments = oldData.folderAssignments || [];
   const rootOrder = oldData.rootOrder || [];
@@ -253,7 +288,11 @@ export function migrateFromOldFormat(oldData: OldBookmarkFileData): BookmarkSetD
   const assignedIds = new Set(assignments.map(a => a.bookmarkId));
   for (const item of oldData.items) {
     if (!assignedIds.has(item.id)) {
-      rootAssignments.push({ bookmarkId: item.id, folderId: '', order: rootAssignments.length });
+      rootAssignments.push({
+        bookmarkId: item.id,
+        folderId: '',
+        order: rootAssignments.length,
+      });
     }
   }
 
@@ -261,12 +300,15 @@ export function migrateFromOldFormat(oldData: OldBookmarkFileData): BookmarkSetD
     const tag: BookmarkTag = {
       type: item.type,
       value: item.value,
-      ...(item.description !== undefined && { description: item.description })
+      ...(item.description !== undefined && { description: item.description }),
     };
     (item.isPrivate ? set.privateTags : set.publicTags).push(tag);
   };
 
-  const processAssignments = (targetSet: BookmarkSet, assignmentList: FolderAssignment[]): void => {
+  const processAssignments = (
+    targetSet: BookmarkSet,
+    assignmentList: FolderAssignment[]
+  ): void => {
     assignmentList.sort((a, b) => a.order - b.order);
     for (const assignment of assignmentList) {
       const item = itemMap.get(assignment.bookmarkId);
@@ -296,7 +338,7 @@ export function migrateFromOldFormat(oldData: OldBookmarkFileData): BookmarkSetD
   return {
     version: 2,
     sets: [rootSet, ...folderSets.values()],
-    metadata: { setOrder, lastModified: oldData.lastModified }
+    metadata: { setOrder, lastModified: oldData.lastModified },
   };
 }
 
@@ -334,7 +376,10 @@ export function getAllBookmarkValues(data: BookmarkSetData): string[] {
 /**
  * Check if a value is bookmarked
  */
-export function isValueBookmarked(data: BookmarkSetData, value: string): { exists: boolean; isPrivate: boolean; dTag: string } {
+export function isValueBookmarked(
+  data: BookmarkSetData,
+  value: string
+): { exists: boolean; isPrivate: boolean; dTag: string } {
   for (const set of data.sets) {
     if (set.publicTags.some(t => t.value === value)) {
       return { exists: true, isPrivate: false, dTag: set.d };
@@ -349,7 +394,12 @@ export function isValueBookmarked(data: BookmarkSetData, value: string): { exist
 /**
  * Add bookmark to set data
  */
-export function addBookmarkToSetData(data: BookmarkSetData, dTag: string, tag: BookmarkTag, isPrivate: boolean): void {
+export function addBookmarkToSetData(
+  data: BookmarkSetData,
+  dTag: string,
+  tag: BookmarkTag,
+  isPrivate: boolean
+): void {
   let set = data.sets.find(s => s.d === dTag);
   if (!set) {
     set = createEmptySet(dTag);
@@ -367,7 +417,10 @@ export function addBookmarkToSetData(data: BookmarkSetData, dTag: string, tag: B
 /**
  * Remove bookmark from set data
  */
-export function removeBookmarkFromSetData(data: BookmarkSetData, value: string): void {
+export function removeBookmarkFromSetData(
+  data: BookmarkSetData,
+  value: string
+): void {
   for (const set of data.sets) {
     set.publicTags = set.publicTags.filter(t => t.value !== value);
     set.privateTags = set.privateTags.filter(t => t.value !== value);
@@ -378,7 +431,11 @@ export function removeBookmarkFromSetData(data: BookmarkSetData, value: string):
 /**
  * Move bookmark between sets
  */
-export function moveBookmarkInSetData(data: BookmarkSetData, value: string, targetDTag: string): void {
+export function moveBookmarkInSetData(
+  data: BookmarkSetData,
+  value: string,
+  targetDTag: string
+): void {
   let foundTag: BookmarkTag | undefined;
   let wasPrivate = false;
 
@@ -448,12 +505,15 @@ function tagsToItems(tags: string[][], timestamp: number): BookmarkItem[] {
       id: tagValue,
       type: tagType as 'e' | 'a' | 't' | 'r',
       value: tagValue,
-      addedAt: timestamp
+      addedAt: timestamp,
     };
     if (description) item.description = description;
     items.push(item);
   }
-  diagLog('lists', 'tagsToItems: output', { count: items.length, items: items.map(i => ({ id: i.id, type: i.type })) });
+  diagLog('lists', 'tagsToItems: output', {
+    count: items.length,
+    items: items.map(i => ({ id: i.id, type: i.type })),
+  });
   return items;
 }
 
@@ -466,7 +526,10 @@ function tagsToItems(tags: string[][], timestamp: number): BookmarkItem[] {
  */
 export function readBrowserBookmarks(): BookmarkItem[] {
   const items = readList<BookmarkItem>(StorageKeys.BOOKMARKS, []);
-  diagLog('lists', 'readBrowserBookmarks', { count: items.length, ids: items.map(i => i.id) });
+  diagLog('lists', 'readBrowserBookmarks', {
+    count: items.length,
+    ids: items.map(i => i.id),
+  });
   return items;
 }
 
@@ -474,7 +537,10 @@ export function readBrowserBookmarks(): BookmarkItem[] {
  * Write bookmarks to browser localStorage
  */
 export function writeBrowserBookmarks(items: BookmarkItem[]): void {
-  diagLog('lists', 'writeBrowserBookmarks', { count: items.length, ids: items.map(i => i.id) });
+  diagLog('lists', 'writeBrowserBookmarks', {
+    count: items.length,
+    ids: items.map(i => i.id),
+  });
   writeList(StorageKeys.BOOKMARKS, items);
   TypedEventBus.getInstance().emit('bookmark:updated');
 }
@@ -540,14 +606,18 @@ export async function writeBookmarkFile(data: BookmarkSetData): Promise<void> {
 /**
  * Convert tag to BookmarkItem
  */
-function tagToItem(tag: BookmarkTag, isPrivate: boolean, category: string): BookmarkItem {
+function tagToItem(
+  tag: BookmarkTag,
+  isPrivate: boolean,
+  category: string
+): BookmarkItem {
   return {
     id: tag.value,
     type: tag.type,
     value: tag.value,
     isPrivate,
     category,
-    ...(tag.description !== undefined && { description: tag.description })
+    ...(tag.description !== undefined && { description: tag.description }),
   };
 }
 
@@ -557,7 +627,7 @@ function tagToItem(tag: BookmarkTag, isPrivate: boolean, category: string): Book
 export function extractItemsFromSetData(data: BookmarkSetData): BookmarkItem[] {
   return data.sets.flatMap(set => [
     ...set.publicTags.map(tag => tagToItem(tag, false, set.d)),
-    ...set.privateTags.map(tag => tagToItem(tag, true, set.d))
+    ...set.privateTags.map(tag => tagToItem(tag, true, set.d)),
   ]);
 }
 
@@ -578,7 +648,11 @@ export function extractFolderDataFromSetData(data: BookmarkSetData): {
     if (set.d === '') continue;
 
     const folderId = `folder_${set.d}`;
-    folders.push({ id: folderId, name: set.d, createdAt: data.metadata.lastModified });
+    folders.push({
+      id: folderId,
+      name: set.d,
+      createdAt: data.metadata.lastModified,
+    });
     rootOrder.push({ type: 'folder', id: folderId });
 
     const allTags = [...set.publicTags, ...set.privateTags];
@@ -655,7 +729,10 @@ class BookmarkFolderServiceImpl {
   // ===== Storage Helpers =====
 
   private getFoldersFromStorage(): BookmarkFolder[] {
-    return this.storage.get<BookmarkFolder[]>(PerAccountStorageKeys.BOOKMARK_FOLDERS, []);
+    return this.storage.get<BookmarkFolder[]>(
+      PerAccountStorageKeys.BOOKMARK_FOLDERS,
+      []
+    );
   }
 
   private saveFoldersToStorage(folders: BookmarkFolder[]): void {
@@ -663,15 +740,24 @@ class BookmarkFolderServiceImpl {
   }
 
   private getAssignmentsFromStorage(): BookmarkAssignment[] {
-    return this.storage.get<BookmarkAssignment[]>(PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, []);
+    return this.storage.get<BookmarkAssignment[]>(
+      PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS,
+      []
+    );
   }
 
   private saveAssignmentsToStorage(assignments: BookmarkAssignment[]): void {
-    this.storage.set(PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, assignments);
+    this.storage.set(
+      PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS,
+      assignments
+    );
   }
 
   private getRootOrderFromStorage(): RootOrderItem<'bookmark'>[] {
-    return this.storage.get<RootOrderItem<'bookmark'>[]>(PerAccountStorageKeys.BOOKMARK_ROOT_ORDER, []);
+    return this.storage.get<RootOrderItem<'bookmark'>[]>(
+      PerAccountStorageKeys.BOOKMARK_ROOT_ORDER,
+      []
+    );
   }
 
   private saveRootOrderToStorage(order: RootOrderItem<'bookmark'>[]): void {
@@ -682,7 +768,9 @@ class BookmarkFolderServiceImpl {
 
   public getFolders(): BookmarkFolder[] {
     const folders = this.getFoldersFromStorage();
-    diagLog('lists', 'getFolders', { folders: folders.map(f => ({ id: f.id, name: f.name })) });
+    diagLog('lists', 'getFolders', {
+      folders: folders.map(f => ({ id: f.id, name: f.name })),
+    });
     return folders;
   }
 
@@ -700,7 +788,7 @@ class BookmarkFolderServiceImpl {
     const newFolder: BookmarkFolder = {
       id: crypto.randomUUID(),
       name,
-      createdAt: Date.now()
+      createdAt: Date.now(),
     };
     folders.push(newFolder);
     this.saveFoldersToStorage(folders);
@@ -728,7 +816,9 @@ class BookmarkFolderServiceImpl {
 
     // Remove all assignments for this folder
     const assignments = this.getAssignmentsFromStorage();
-    const filteredAssignments = assignments.filter(a => a.folderId !== folderId);
+    const filteredAssignments = assignments.filter(
+      a => a.folderId !== folderId
+    );
     this.saveAssignmentsToStorage(filteredAssignments);
 
     // Remove from root order
@@ -760,8 +850,16 @@ class BookmarkFolderServiceImpl {
     return assignments.filter(a => a.folderId === folderId).length;
   }
 
-  public moveBookmarkToFolder(bookmarkId: string, targetFolderId: string, explicitOrder?: number): void {
-    diagLog('lists', 'moveBookmarkToFolder', { bookmarkId, targetFolderId, explicitOrder });
+  public moveBookmarkToFolder(
+    bookmarkId: string,
+    targetFolderId: string,
+    explicitOrder?: number
+  ): void {
+    diagLog('lists', 'moveBookmarkToFolder', {
+      bookmarkId,
+      targetFolderId,
+      explicitOrder,
+    });
     const assignments = this.getAssignmentsFromStorage();
 
     // Remove existing assignment
@@ -770,7 +868,11 @@ class BookmarkFolderServiceImpl {
     if (targetFolderId) {
       // Calculate order
       const folderItems = filtered.filter(a => a.folderId === targetFolderId);
-      const order = explicitOrder ?? (folderItems.length > 0 ? Math.max(...folderItems.map(a => a.order)) + 1 : 0);
+      const order =
+        explicitOrder ??
+        (folderItems.length > 0
+          ? Math.max(...folderItems.map(a => a.order)) + 1
+          : 0);
 
       filtered.push({ bookmarkId, folderId: targetFolderId, order });
     }
@@ -778,10 +880,16 @@ class BookmarkFolderServiceImpl {
     this.saveAssignmentsToStorage(filtered);
   }
 
-  public ensureBookmarkAssignment(bookmarkId: string, _explicitOrder?: number): void {
+  public ensureBookmarkAssignment(
+    bookmarkId: string,
+    _explicitOrder?: number
+  ): void {
     const assignments = this.getAssignmentsFromStorage();
     const existing = assignments.find(a => a.bookmarkId === bookmarkId);
-    diagLog('lists', 'ensureBookmarkAssignment', { bookmarkId, existing: !!existing });
+    diagLog('lists', 'ensureBookmarkAssignment', {
+      bookmarkId,
+      existing: !!existing,
+    });
 
     if (!existing) {
       // Add to root (no folder)
@@ -800,7 +908,9 @@ class BookmarkFolderServiceImpl {
 
   public reorderItems(folderId: string): void {
     const assignments = this.getAssignmentsFromStorage();
-    const folderItems = assignments.filter(a => a.folderId === folderId).sort((a, b) => a.order - b.order);
+    const folderItems = assignments
+      .filter(a => a.folderId === folderId)
+      .sort((a, b) => a.order - b.order);
 
     folderItems.forEach((item, index) => {
       item.order = index;
@@ -851,13 +961,21 @@ class BookmarkFolderServiceImpl {
 
   public removeFromRootOrder(type: 'folder' | 'bookmark', id: string): void {
     const order = this.getRootOrderFromStorage();
-    const filtered = order.filter(item => !(item.type === type && item.id === id));
+    const filtered = order.filter(
+      item => !(item.type === type && item.id === id)
+    );
     this.saveRootOrderToStorage(filtered);
   }
 
-  public moveInRootOrder(type: 'folder' | 'bookmark', id: string, newIndex: number): void {
+  public moveInRootOrder(
+    type: 'folder' | 'bookmark',
+    id: string,
+    newIndex: number
+  ): void {
     const order = this.getRootOrderFromStorage();
-    const currentIndex = order.findIndex(item => item.type === type && item.id === id);
+    const currentIndex = order.findIndex(
+      item => item.type === type && item.id === id
+    );
 
     if (currentIndex !== -1) {
       const item = order[currentIndex]!;
@@ -874,9 +992,15 @@ class BookmarkFolderServiceImpl {
     const folders = this.getFoldersFromStorage();
     const folderIds = new Set(folders.map(f => f.id));
 
-    const validAssignments = assignments.filter(a => a.folderId === '' || folderIds.has(a.folderId));
+    const validAssignments = assignments.filter(
+      a => a.folderId === '' || folderIds.has(a.folderId)
+    );
     const removedCount = assignments.length - validAssignments.length;
-    diagLog('lists', 'cleanupOrphanedAssignments', { total: assignments.length, valid: validAssignments.length, removed: removedCount });
+    diagLog('lists', 'cleanupOrphanedAssignments', {
+      total: assignments.length,
+      valid: validAssignments.length,
+      removed: removedCount,
+    });
 
     if (removedCount > 0) {
       this.saveAssignmentsToStorage(validAssignments);
@@ -887,14 +1011,18 @@ class BookmarkFolderServiceImpl {
 
   // ===== Export for NIP-51 =====
 
-  public exportFolderAsNip51(folderId: string): { dTag: string; titleTag: string; bookmarkIds: string[] } {
+  public exportFolderAsNip51(folderId: string): {
+    dTag: string;
+    titleTag: string;
+    bookmarkIds: string[];
+  } {
     const folder = this.getFolder(folderId);
     const bookmarkIds = this.getBookmarksInFolder(folderId);
 
     return {
       dTag: folder?.name || folderId,
       titleTag: folder?.name || 'Unnamed Folder',
-      bookmarkIds
+      bookmarkIds,
     };
   }
 
@@ -905,13 +1033,19 @@ class BookmarkFolderServiceImpl {
     assignments: FolderAssignment[],
     rootOrder: RootOrderItem<'bookmark'>[]
   ): void {
-    diagLog('lists', 'restoreAllFolderData', { folders: folders.map(f => ({ id: f.id, name: f.name })), assignmentCount: assignments.length, rootOrder });
+    diagLog('lists', 'restoreAllFolderData', {
+      folders: folders.map(f => ({ id: f.id, name: f.name })),
+      assignmentCount: assignments.length,
+      rootOrder,
+    });
     this.saveFoldersToStorage(folders);
-    this.saveAssignmentsToStorage(assignments.map(a => ({
-      bookmarkId: a.bookmarkId,
-      folderId: a.folderId,
-      order: a.order
-    })));
+    this.saveAssignmentsToStorage(
+      assignments.map(a => ({
+        bookmarkId: a.bookmarkId,
+        folderId: a.folderId,
+        order: a.order,
+      }))
+    );
     this.saveRootOrderToStorage(rootOrder);
   }
 }
@@ -971,7 +1105,10 @@ export function applyRelayFetchResult(
   _categoryAssignments: Map<string, string> | undefined,
   categories: string[] | undefined
 ): void {
-  diagLog('lists', 'applyRelayFetchResult: input', { itemCount: items.length, categories });
+  diagLog('lists', 'applyRelayFetchResult: input', {
+    itemCount: items.length,
+    categories,
+  });
   // Build folders from categories (skip empty/root category)
   const newFolders: BookmarkFolder[] = [];
   const folderNameToId = new Map<string, string>();
@@ -995,14 +1132,18 @@ export function applyRelayFetchResult(
       newFolders.push({
         id: folderId,
         name: folderName,
-        createdAt: Date.now()
+        createdAt: Date.now(),
       });
       folderNameToId.set(folderName, folderId);
     }
   }
 
   if (skippedTombstoned.length > 0) {
-    diagLog('lists', 'applyRelayFetchResult: suppressed tombstoned categories', { skipped: skippedTombstoned });
+    diagLog(
+      'lists',
+      'applyRelayFetchResult: suppressed tombstoned categories',
+      { skipped: skippedTombstoned }
+    );
   }
 
   // Build assignments from item categories
@@ -1023,8 +1164,8 @@ export function applyRelayFetchResult(
       // Item belongs to a folder
       newAssignments.push({
         bookmarkId: item.id,
-        folderId: folderId,
-        order: newAssignments.filter(a => a.folderId === folderId).length
+        folderId,
+        order: newAssignments.filter(a => a.folderId === folderId).length,
       });
     } else {
       // Item is in root
@@ -1032,15 +1173,25 @@ export function applyRelayFetchResult(
     }
   }
 
-  diagLog('lists', 'applyRelayFetchResult: output', { newFolders: newFolders.map(f => ({ id: f.id, name: f.name })), newAssignmentCount: newAssignments.length, newRootOrder });
+  diagLog('lists', 'applyRelayFetchResult: output', {
+    newFolders: newFolders.map(f => ({ id: f.id, name: f.name })),
+    newAssignmentCount: newAssignments.length,
+    newRootOrder,
+  });
 
   // Apply folder structure only (NOT items - that's done by applySyncFromRelays)
   const storage = PerAccountLocalStorage.getInstance();
   storage.set(PerAccountStorageKeys.BOOKMARK_FOLDERS, newFolders);
-  storage.set(PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, newAssignments);
+  storage.set(
+    PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS,
+    newAssignments
+  );
   storage.set(PerAccountStorageKeys.BOOKMARK_ROOT_ORDER, newRootOrder);
 
-  SystemLogger.getInstance().info('bookmarks.ts', `Applied folder structure: ${newFolders.length} folders`);
+  SystemLogger.getInstance().info(
+    'bookmarks.ts',
+    `Applied folder structure: ${newFolders.length} folders`
+  );
 }
 
 /**
@@ -1048,14 +1199,29 @@ export function applyRelayFetchResult(
  * Does NOT touch existing browser folder structure — only adds assignments for newly added items.
  */
 export function addNewBookmarksToFolders(newItems: BookmarkItem[]): void {
-  diagLog('lists', 'addNewBookmarksToFolders: input', { items: newItems.map(i => ({ id: i.id, category: i.category })) });
+  diagLog('lists', 'addNewBookmarksToFolders: input', {
+    items: newItems.map(i => ({ id: i.id, category: i.category })),
+  });
   if (newItems.length === 0) return;
 
   const storage = PerAccountLocalStorage.getInstance();
-  const existingFolders = storage.get<BookmarkFolder[]>(PerAccountStorageKeys.BOOKMARK_FOLDERS, []);
-  const existingAssignments = storage.get<BookmarkAssignment[]>(PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, []);
-  const existingRootOrder = storage.get<RootOrderItem<'bookmark'>[]>(PerAccountStorageKeys.BOOKMARK_ROOT_ORDER, []);
-  diagLog('lists', 'addNewBookmarksToFolders: existing state', { folders: existingFolders.map(f => ({ id: f.id, name: f.name })), assignmentCount: existingAssignments.length, rootOrder: existingRootOrder });
+  const existingFolders = storage.get<BookmarkFolder[]>(
+    PerAccountStorageKeys.BOOKMARK_FOLDERS,
+    []
+  );
+  const existingAssignments = storage.get<BookmarkAssignment[]>(
+    PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS,
+    []
+  );
+  const existingRootOrder = storage.get<RootOrderItem<'bookmark'>[]>(
+    PerAccountStorageKeys.BOOKMARK_ROOT_ORDER,
+    []
+  );
+  diagLog('lists', 'addNewBookmarksToFolders: existing state', {
+    folders: existingFolders.map(f => ({ id: f.id, name: f.name })),
+    assignmentCount: existingAssignments.length,
+    rootOrder: existingRootOrder,
+  });
 
   const folderNameToId = new Map<string, string>();
   for (const f of existingFolders) {
@@ -1070,7 +1236,9 @@ export function addNewBookmarksToFolders(newItems: BookmarkItem[]): void {
     const categoryName = item.category || '';
     if (!categoryName) {
       // Root item — add to root order if not already there
-      const alreadyInRoot = existingRootOrder.some(r => r.type === 'bookmark' && r.id === item.id);
+      const alreadyInRoot = existingRootOrder.some(
+        r => r.type === 'bookmark' && r.id === item.id
+      );
       if (!alreadyInRoot) {
         addedRootOrderItems.push({ type: 'bookmark', id: item.id });
       }
@@ -1080,7 +1248,9 @@ export function addNewBookmarksToFolders(newItems: BookmarkItem[]): void {
     // Defense in depth: if the item's category was tombstoned on this device,
     // drop the item into root rather than re-creating the dead folder.
     if (isBookmarkFolderTombstoned(categoryName)) {
-      const alreadyInRoot = existingRootOrder.some(r => r.type === 'bookmark' && r.id === item.id);
+      const alreadyInRoot = existingRootOrder.some(
+        r => r.type === 'bookmark' && r.id === item.id
+      );
       if (!alreadyInRoot) {
         addedRootOrderItems.push({ type: 'bookmark', id: item.id });
       }
@@ -1091,32 +1261,61 @@ export function addNewBookmarksToFolders(newItems: BookmarkItem[]): void {
     let folderId = folderNameToId.get(categoryName);
     if (!folderId) {
       folderId = `folder_${categoryName}`;
-      addedFolders.push({ id: folderId, name: categoryName, createdAt: Date.now() });
+      addedFolders.push({
+        id: folderId,
+        name: categoryName,
+        createdAt: Date.now(),
+      });
       addedRootOrderItems.push({ type: 'folder', id: folderId });
       folderNameToId.set(categoryName, folderId);
     }
 
     // Add assignment if not already assigned
-    const alreadyAssigned = existingAssignments.some(a => a.bookmarkId === item.id);
+    const alreadyAssigned = existingAssignments.some(
+      a => a.bookmarkId === item.id
+    );
     if (!alreadyAssigned) {
-      const orderInFolder = [...existingAssignments, ...addedAssignments].filter(a => a.folderId === folderId).length;
-      addedAssignments.push({ bookmarkId: item.id, folderId: folderId!, order: orderInFolder });
+      const orderInFolder = [
+        ...existingAssignments,
+        ...addedAssignments,
+      ].filter(a => a.folderId === folderId).length;
+      addedAssignments.push({
+        bookmarkId: item.id,
+        folderId: folderId!,
+        order: orderInFolder,
+      });
     }
   }
 
-  diagLog('lists', 'addNewBookmarksToFolders: adding', { folders: addedFolders.map(f => ({ id: f.id, name: f.name })), assignments: addedAssignments, rootOrderItems: addedRootOrderItems });
+  diagLog('lists', 'addNewBookmarksToFolders: adding', {
+    folders: addedFolders.map(f => ({ id: f.id, name: f.name })),
+    assignments: addedAssignments,
+    rootOrderItems: addedRootOrderItems,
+  });
 
   if (addedFolders.length > 0) {
-    storage.set(PerAccountStorageKeys.BOOKMARK_FOLDERS, [...existingFolders, ...addedFolders]);
+    storage.set(PerAccountStorageKeys.BOOKMARK_FOLDERS, [
+      ...existingFolders,
+      ...addedFolders,
+    ]);
   }
   if (addedAssignments.length > 0) {
-    storage.set(PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, [...existingAssignments, ...addedAssignments]);
+    storage.set(PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, [
+      ...existingAssignments,
+      ...addedAssignments,
+    ]);
   }
   if (addedRootOrderItems.length > 0) {
-    storage.set(PerAccountStorageKeys.BOOKMARK_ROOT_ORDER, [...existingRootOrder, ...addedRootOrderItems]);
+    storage.set(PerAccountStorageKeys.BOOKMARK_ROOT_ORDER, [
+      ...existingRootOrder,
+      ...addedRootOrderItems,
+    ]);
   }
 
-  SystemLogger.getInstance().info('bookmarks.ts', `Added folder assignments for ${addedAssignments.length} new bookmarks, ${addedFolders.length} new folders`);
+  SystemLogger.getInstance().info(
+    'bookmarks.ts',
+    `Added folder assignments for ${addedAssignments.length} new bookmarks, ${addedFolders.length} new folders`
+  );
 }
 
 /**
@@ -1128,24 +1327,43 @@ export function mergeRelayBookmarkStructurePreservingBrowserOnly(
   categories: string[] | undefined,
   browserOnlyItems: BookmarkItem[]
 ): void {
-  diagLog('lists', 'mergeRelayBookmarkStructurePreservingBrowserOnly: browser-only items', { items: browserOnlyItems.map(i => ({ id: i.id, category: i.category })) });
+  diagLog(
+    'lists',
+    'mergeRelayBookmarkStructurePreservingBrowserOnly: browser-only items',
+    { items: browserOnlyItems.map(i => ({ id: i.id, category: i.category })) }
+  );
   const storage = PerAccountLocalStorage.getInstance();
 
   // Snapshot browser assignments for browser-only items BEFORE overwriting
-  const existingAssignments = storage.get<BookmarkAssignment[]>(PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, []);
-  const existingFolders = storage.get<BookmarkFolder[]>(PerAccountStorageKeys.BOOKMARK_FOLDERS, []);
-  const existingRootOrder = storage.get<RootOrderItem<'bookmark'>[]>(PerAccountStorageKeys.BOOKMARK_ROOT_ORDER, []);
+  const existingAssignments = storage.get<BookmarkAssignment[]>(
+    PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS,
+    []
+  );
+  const existingFolders = storage.get<BookmarkFolder[]>(
+    PerAccountStorageKeys.BOOKMARK_FOLDERS,
+    []
+  );
+  const existingRootOrder = storage.get<RootOrderItem<'bookmark'>[]>(
+    PerAccountStorageKeys.BOOKMARK_ROOT_ORDER,
+    []
+  );
 
   // Map browser-only item IDs → their current folder assignment (or root)
   const browserOnlyIds = new Set(browserOnlyItems.map(b => b.id));
-  const browserOnlyFolderAssignments = new Map<string, { folderId: string; folderName: string }>();
+  const browserOnlyFolderAssignments = new Map<
+    string,
+    { folderId: string; folderName: string }
+  >();
   const browserOnlyInRoot = new Set<string>();
 
   for (const assignment of existingAssignments) {
     if (browserOnlyIds.has(assignment.bookmarkId)) {
       const folder = existingFolders.find(f => f.id === assignment.folderId);
       if (folder) {
-        browserOnlyFolderAssignments.set(assignment.bookmarkId, { folderId: assignment.folderId, folderName: folder.name });
+        browserOnlyFolderAssignments.set(assignment.bookmarkId, {
+          folderId: assignment.folderId,
+          folderName: folder.name,
+        });
       }
     }
   }
@@ -1155,17 +1373,35 @@ export function mergeRelayBookmarkStructurePreservingBrowserOnly(
     }
   }
 
-  diagLog('lists', 'mergeRelayBookmarkStructurePreservingBrowserOnly: snapshot before applyRelayFetchResult', { assignmentCount: existingAssignments.length, folders: existingFolders.map(f => f.name), rootOrderLength: existingRootOrder.length });
+  diagLog(
+    'lists',
+    'mergeRelayBookmarkStructurePreservingBrowserOnly: snapshot before applyRelayFetchResult',
+    {
+      assignmentCount: existingAssignments.length,
+      folders: existingFolders.map(f => f.name),
+      rootOrderLength: existingRootOrder.length,
+    }
+  );
 
   // Apply relay folder structure (this overwrites everything)
   applyRelayFetchResult(relayItems, undefined, categories);
 
   // Re-add browser-only items' folder assignments
-  if (browserOnlyFolderAssignments.size === 0 && browserOnlyInRoot.size === 0) return;
+  if (browserOnlyFolderAssignments.size === 0 && browserOnlyInRoot.size === 0)
+    return;
 
-  const newFolders = storage.get<BookmarkFolder[]>(PerAccountStorageKeys.BOOKMARK_FOLDERS, []);
-  const newAssignments = storage.get<BookmarkAssignment[]>(PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, []);
-  const newRootOrder = storage.get<RootOrderItem<'bookmark'>[]>(PerAccountStorageKeys.BOOKMARK_ROOT_ORDER, []);
+  const newFolders = storage.get<BookmarkFolder[]>(
+    PerAccountStorageKeys.BOOKMARK_FOLDERS,
+    []
+  );
+  const newAssignments = storage.get<BookmarkAssignment[]>(
+    PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS,
+    []
+  );
+  const newRootOrder = storage.get<RootOrderItem<'bookmark'>[]>(
+    PerAccountStorageKeys.BOOKMARK_ROOT_ORDER,
+    []
+  );
 
   const folderNameToId = new Map<string, string>();
   for (const f of newFolders) {
@@ -1180,31 +1416,61 @@ export function mergeRelayBookmarkStructurePreservingBrowserOnly(
     let folderId = folderNameToId.get(info.folderName);
     if (!folderId) {
       folderId = info.folderId;
-      extraFolders.push({ id: folderId, name: info.folderName, createdAt: Date.now() });
+      extraFolders.push({
+        id: folderId,
+        name: info.folderName,
+        createdAt: Date.now(),
+      });
       extraRootOrder.push({ type: 'folder', id: folderId });
       folderNameToId.set(info.folderName, folderId);
     }
-    const orderInFolder = [...newAssignments, ...extraAssignments].filter(a => a.folderId === folderId).length;
-    extraAssignments.push({ bookmarkId, folderId: folderId!, order: orderInFolder });
+    const orderInFolder = [...newAssignments, ...extraAssignments].filter(
+      a => a.folderId === folderId
+    ).length;
+    extraAssignments.push({
+      bookmarkId,
+      folderId: folderId!,
+      order: orderInFolder,
+    });
   }
 
   for (const bookmarkId of browserOnlyInRoot) {
     extraRootOrder.push({ type: 'bookmark', id: bookmarkId });
   }
 
-  diagLog('lists', 'mergeRelayBookmarkStructurePreservingBrowserOnly: re-adding after applyRelayFetchResult', { extraFolders: extraFolders.map(f => f.name), extraAssignments, extraRootOrder });
+  diagLog(
+    'lists',
+    'mergeRelayBookmarkStructurePreservingBrowserOnly: re-adding after applyRelayFetchResult',
+    {
+      extraFolders: extraFolders.map(f => f.name),
+      extraAssignments,
+      extraRootOrder,
+    }
+  );
 
   if (extraFolders.length > 0) {
-    storage.set(PerAccountStorageKeys.BOOKMARK_FOLDERS, [...newFolders, ...extraFolders]);
+    storage.set(PerAccountStorageKeys.BOOKMARK_FOLDERS, [
+      ...newFolders,
+      ...extraFolders,
+    ]);
   }
   if (extraAssignments.length > 0) {
-    storage.set(PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, [...newAssignments, ...extraAssignments]);
+    storage.set(PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, [
+      ...newAssignments,
+      ...extraAssignments,
+    ]);
   }
   if (extraRootOrder.length > 0) {
-    storage.set(PerAccountStorageKeys.BOOKMARK_ROOT_ORDER, [...newRootOrder, ...extraRootOrder]);
+    storage.set(PerAccountStorageKeys.BOOKMARK_ROOT_ORDER, [
+      ...newRootOrder,
+      ...extraRootOrder,
+    ]);
   }
 
-  SystemLogger.getInstance().info('bookmarks.ts', `Merged relay folders, preserved ${extraAssignments.length + browserOnlyInRoot.size} browser-only bookmark assignments`);
+  SystemLogger.getInstance().info(
+    'bookmarks.ts',
+    `Merged relay folders, preserved ${extraAssignments.length + browserOnlyInRoot.size} browser-only bookmark assignments`
+  );
 }
 
 // =============================================================================
@@ -1215,14 +1481,20 @@ export function mergeRelayBookmarkStructurePreservingBrowserOnly(
  * Check if private bookmarks feature is enabled
  */
 export function isPrivateBookmarksEnabled(): boolean {
-  return PerAccountLocalStorage.getInstance().get<boolean>(PerAccountStorageKeys.PRIVATE_BOOKMARKS_ENABLED, false);
+  return PerAccountLocalStorage.getInstance().get<boolean>(
+    PerAccountStorageKeys.PRIVATE_BOOKMARKS_ENABLED,
+    false
+  );
 }
 
 /**
  * Set private bookmarks feature flag
  */
 export function setPrivateBookmarksEnabled(enabled: boolean): void {
-  PerAccountLocalStorage.getInstance().set(PerAccountStorageKeys.PRIVATE_BOOKMARKS_ENABLED, enabled);
+  PerAccountLocalStorage.getInstance().set(
+    PerAccountStorageKeys.PRIVATE_BOOKMARKS_ENABLED,
+    enabled
+  );
 }
 
 /**
@@ -1237,7 +1509,13 @@ export function isNoteBookmarked(noteId: string): BookmarkStatus {
 /**
  * Add a bookmark
  */
-export async function addBookmark(noteId: string, isPrivate: boolean, category: string = '', tagType: 'e' | 'a' = 'e', description?: string): Promise<boolean> {
+export async function addBookmark(
+  noteId: string,
+  isPrivate: boolean,
+  category: string = '',
+  tagType: 'e' | 'a' = 'e',
+  description?: string
+): Promise<boolean> {
   requireAuth();
 
   const items = readBrowserBookmarks();
@@ -1250,12 +1528,15 @@ export async function addBookmark(noteId: string, isPrivate: boolean, category: 
     addedAt: now(),
     isPrivate,
     category,
-    ...(description ? { description } : {})
+    ...(description ? { description } : {}),
   });
   writeBrowserBookmarks(items);
   getBookmarkFolderService().ensureBookmarkAssignment(noteId);
 
-  logger.info('bookmarks.ts', `Added ${isPrivate ? 'private' : 'public'} bookmark to "${category || 'root'}": ${noteId}`);
+  logger.info(
+    'bookmarks.ts',
+    `Added ${isPrivate ? 'private' : 'public'} bookmark to "${category || 'root'}": ${noteId}`
+  );
   return true;
 }
 
@@ -1278,10 +1559,16 @@ export async function removeBookmark(noteId: string): Promise<boolean> {
 /**
  * Get all bookmarks with status
  */
-export function getAllBookmarksWithStatus(): Map<string, { public: boolean; private: boolean }> {
+export function getAllBookmarksWithStatus(): Map<
+  string,
+  { public: boolean; private: boolean }
+> {
   const result = new Map<string, { public: boolean; private: boolean }>();
   for (const item of readBrowserBookmarks()) {
-    result.set(item.id, { public: !item.isPrivate, private: item.isPrivate || false });
+    result.set(item.id, {
+      public: !item.isPrivate,
+      private: item.isPrivate || false,
+    });
   }
   return result;
 }
@@ -1312,10 +1599,15 @@ export async function getAllBookmarkIds(): Promise<string[]> {
 /**
  * Get all bookmarks with metadata
  */
-export async function getAllBookmarksWithMetadata(): Promise<BookmarkWithMetadata[]> {
+export async function getAllBookmarksWithMetadata(): Promise<
+  BookmarkWithMetadata[]
+> {
   const items = await ensureBrowserBookmarksLoaded();
   return items.map(item => {
-    const meta: BookmarkWithMetadata = { id: item.id, isPrivate: item.isPrivate || false };
+    const meta: BookmarkWithMetadata = {
+      id: item.id,
+      isPrivate: item.isPrivate || false,
+    };
     if (item.category !== undefined) meta.category = item.category;
     return meta;
   });
@@ -1330,7 +1622,12 @@ function buildSetDataFromLocalStorage(): BookmarkSetData {
   const existingFolders = folderService.getFolders();
   const allAssignments = folderService.getBookmarksInFolder('');
   const allRootOrder = folderService.getRootOrder();
-  diagLog('lists', 'buildSetDataFromLocalStorage START', { itemCount: allItems.length, folders: existingFolders.map(f => ({ id: f.id, name: f.name })), rootAssignments: allAssignments, rootOrder: allRootOrder });
+  diagLog('lists', 'buildSetDataFromLocalStorage START', {
+    itemCount: allItems.length,
+    folders: existingFolders.map(f => ({ id: f.id, name: f.name })),
+    rootAssignments: allAssignments,
+    rootOrder: allRootOrder,
+  });
   const itemMap = new Map(allItems.map(item => [item.id, item]));
   const setsMap = new Map<string, BookmarkSet>();
 
@@ -1346,14 +1643,18 @@ function buildSetDataFromLocalStorage(): BookmarkSetData {
     const tag: BookmarkTag = {
       type: item.type,
       value: item.value,
-      ...(item.description && { description: item.description })
+      ...(item.description && { description: item.description }),
     };
     (item.isPrivate ? set.privateTags : set.publicTags).push(tag);
   };
 
   const processFolder = (folderId: string, set: BookmarkSet): void => {
     const folderBookmarkIds = folderService.getBookmarksInFolder(folderId);
-    diagLog('lists', 'buildSetDataFromLocalStorage processFolder', { folderId, dTag: set.d, itemsFound: folderBookmarkIds });
+    diagLog('lists', 'buildSetDataFromLocalStorage processFolder', {
+      folderId,
+      dTag: set.d,
+      itemsFound: folderBookmarkIds,
+    });
     for (const bookmarkId of folderBookmarkIds) {
       const item = itemMap.get(bookmarkId);
       if (item) {
@@ -1372,7 +1673,9 @@ function buildSetDataFromLocalStorage(): BookmarkSetData {
   // Handle orphaned items - add to root
   const rootSet = setsMap.get('')!;
   const orphanedItems = allItems.filter(item => !assignedItemIds.has(item.id));
-  diagLog('lists', 'buildSetDataFromLocalStorage orphaned items', { ids: orphanedItems.map(i => i.id) });
+  diagLog('lists', 'buildSetDataFromLocalStorage orphaned items', {
+    ids: orphanedItems.map(i => i.id),
+  });
   for (const item of orphanedItems) {
     addItemToSet(rootSet, item);
     folderService.ensureBookmarkAssignment(item.id);
@@ -1391,21 +1694,45 @@ function buildSetDataFromLocalStorage(): BookmarkSetData {
     sets: Array.from(setsMap.values()),
     metadata: {
       setOrder,
-      lastModified: now()
-    }
+      lastModified: now(),
+    },
   };
-  diagLog('lists', 'buildSetDataFromLocalStorage END', { setOrder, sets: result.sets.map(s => ({ d: s.d, publicTags: s.publicTags.length, privateTags: s.privateTags.length, publicTagValues: s.publicTags.map(t => [t.type, t.value, t.description]), privateTagValues: s.privateTags.map(t => [t.type, t.value, t.description]) })) });
+  diagLog('lists', 'buildSetDataFromLocalStorage END', {
+    setOrder,
+    sets: result.sets.map(s => ({
+      d: s.d,
+      publicTags: s.publicTags.length,
+      privateTags: s.privateTags.length,
+      publicTagValues: s.publicTags.map(t => [t.type, t.value, t.description]),
+      privateTagValues: s.privateTags.map(t => [
+        t.type,
+        t.value,
+        t.description,
+      ]),
+    })),
+  });
   return result;
 }
 
 /**
  * Encrypt private items for relay publishing
  */
-async function encryptPrivateItems(items: BookmarkItem[], pubkey: string): Promise<string> {
-  diagLog('lists', 'encryptPrivateItems', { items: items.map(i => ({ type: i.type, value: i.value, description: i.description })) });
+async function encryptPrivateItems(
+  items: BookmarkItem[],
+  pubkey: string
+): Promise<string> {
+  diagLog('lists', 'encryptPrivateItems', {
+    items: items.map(i => ({
+      type: i.type,
+      value: i.value,
+      description: i.description,
+    })),
+  });
   if (items.length === 0) return '';
   const tags = items.map(item =>
-    item.description ? [item.type, item.value, item.description] : [item.type, item.value]
+    item.description
+      ? [item.type, item.value, item.description]
+      : [item.type, item.value]
   );
   return encryptContent(JSON.stringify(tags), pubkey);
 }
@@ -1413,26 +1740,40 @@ async function encryptPrivateItems(items: BookmarkItem[], pubkey: string): Promi
 /**
  * Decrypt private items from relay event
  */
-async function decryptPrivateItems(event: NostrEvent, pubkey: string): Promise<BookmarkItem[]> {
+async function decryptPrivateItems(
+  event: NostrEvent,
+  pubkey: string
+): Promise<BookmarkItem[]> {
   if (!event.content?.trim()) {
     diagLog('lists', 'decryptPrivateItems: empty content, skipping');
     return [];
   }
 
-  diagLog('lists', 'decryptPrivateItems: attempting decryption', { contentLength: event.content.length });
+  diagLog('lists', 'decryptPrivateItems: attempting decryption', {
+    contentLength: event.content.length,
+  });
   const decrypted = await decryptContent(event.content, pubkey);
   if (!decrypted) {
-    diagLog('lists', 'decryptPrivateItems: decryption returned null — private items LOST');
+    diagLog(
+      'lists',
+      'decryptPrivateItems: decryption returned null — private items LOST'
+    );
     return [];
   }
 
   try {
     const tags = JSON.parse(decrypted) as string[][];
     const items = tagsToItems(tags, event.created_at);
-    diagLog('lists', 'decryptPrivateItems: SUCCESS', { itemCount: items.length, tagCount: tags.length });
+    diagLog('lists', 'decryptPrivateItems: SUCCESS', {
+      itemCount: items.length,
+      tagCount: tags.length,
+    });
     return items;
   } catch (error) {
-    diagLog('lists', 'decryptPrivateItems: FAILED to parse decrypted content', { error: String(error), rawPreview: decrypted.slice(0, 200) });
+    diagLog('lists', 'decryptPrivateItems: FAILED to parse decrypted content', {
+      error: String(error),
+      rawPreview: decrypted.slice(0, 200),
+    });
     logger.error('bookmarks.ts', `Failed to parse decrypted content: ${error}`);
     return [];
   }
@@ -1459,12 +1800,16 @@ export async function saveBookmarksToFile(): Promise<void> {
 
 function getBookmarkTombstones(): Record<string, number> {
   return PerAccountLocalStorage.getInstance().get<Record<string, number>>(
-    PerAccountStorageKeys.BOOKMARK_TOMBSTONES, {}
+    PerAccountStorageKeys.BOOKMARK_TOMBSTONES,
+    {}
   );
 }
 
 function setBookmarkTombstones(map: Record<string, number>): void {
-  PerAccountLocalStorage.getInstance().set(PerAccountStorageKeys.BOOKMARK_TOMBSTONES, map);
+  PerAccountLocalStorage.getInstance().set(
+    PerAccountStorageKeys.BOOKMARK_TOMBSTONES,
+    map
+  );
 }
 
 export function isBookmarkFolderTombstoned(folderName: string): boolean {
@@ -1477,7 +1822,10 @@ export function addBookmarkFolderTombstone(folderName: string): void {
   const map = getBookmarkTombstones();
   map[folderName] = Math.floor(Date.now() / 1000);
   setBookmarkTombstones(map);
-  diagLog('lists', 'addBookmarkFolderTombstone', { folderName, total: Object.keys(map).length });
+  diagLog('lists', 'addBookmarkFolderTombstone', {
+    folderName,
+    total: Object.keys(map).length,
+  });
   // Mirror into the shared, durable deletion record so the delete propagates
   // to the user's other devices (best-effort, never blocks the local mutation).
   publishBookmarkDeletionChange(folderName, true);
@@ -1489,7 +1837,10 @@ export function removeBookmarkFolderTombstone(folderName: string): void {
   if (!(folderName in map)) return;
   delete map[folderName];
   setBookmarkTombstones(map);
-  diagLog('lists', 'removeBookmarkFolderTombstone', { folderName, remaining: Object.keys(map).length });
+  diagLog('lists', 'removeBookmarkFolderTombstone', {
+    folderName,
+    remaining: Object.keys(map).length,
+  });
   // Mirror the revival (explicit re-creation) so it overrides the deletion on
   // every device. Only fires when an actual tombstone was cleared (guard above).
   publishBookmarkDeletionChange(folderName, false);
@@ -1507,7 +1858,10 @@ const BOOKMARK_DELETION_CONFIG: DeletionRecordConfig = {
 };
 
 /** Fire-and-forget mirror of a local tombstone add/remove into the shared record. */
-function publishBookmarkDeletionChange(folderName: string, deleted: boolean): void {
+function publishBookmarkDeletionChange(
+  folderName: string,
+  deleted: boolean
+): void {
   publishDeletionChange(BOOKMARK_DELETION_CONFIG, folderName, deleted);
 }
 
@@ -1519,19 +1873,32 @@ function syncBookmarkDeletionsIntoLocal(pubkey: string): Promise<void> {
 /**
  * Publish bookmarks to relays (NIP-51)
  */
-export async function publishBookmarksToRelays(callerTag: string = 'unknown'): Promise<void> {
+export async function publishBookmarksToRelays(
+  callerTag: string = 'unknown'
+): Promise<void> {
   diagLog('lists', 'publishBookmarksToRelays: START', { callerTag });
   const { pubkey } = requireAuth();
-  diagLog('lists', 'publishBookmarksToRelays: auth ok', { pubkey: pubkey.slice(0, 8) });
+  diagLog('lists', 'publishBookmarksToRelays: auth ok', {
+    pubkey: pubkey.slice(0, 8),
+  });
   const writeRelays = getWriteRelays();
   if (writeRelays.length === 0) {
     diagLog('lists', 'publishBookmarksToRelays: FAILED — no write relays');
     throw new Error('No write relays available');
   }
-  diagLog('lists', 'publishBookmarksToRelays: write relays', { count: writeRelays.length });
+  diagLog('lists', 'publishBookmarksToRelays: write relays', {
+    count: writeRelays.length,
+  });
 
   const setData = buildSetDataFromLocalStorage();
-  diagLog('lists', 'publishBookmarksToRelays: full setData', { setOrder: setData.metadata.setOrder, sets: setData.sets.map(s => ({ d: s.d, publicTags: s.publicTags, privateTags: s.privateTags })) });
+  diagLog('lists', 'publishBookmarksToRelays: full setData', {
+    setOrder: setData.metadata.setOrder,
+    sets: setData.sets.map(s => ({
+      d: s.d,
+      publicTags: s.publicTags,
+      privateTags: s.privateTags,
+    })),
+  });
 
   // REMOVED 2026-04-30: conditional kind:5 publish based on local-vs-relay folder diff.
   //
@@ -1553,7 +1920,10 @@ export async function publishBookmarksToRelays(callerTag: string = 'unknown'): P
   // BookmarkManager.deleteFolder / editFolder (added 2026-04-29 — Step 1).
   //
   // See docs/features/lists.md "Folder-Resurrection" + "Eager kind:5 deletion publish".
-  diagLog('lists', 'publishBookmarksToRelays: skipping conditional kind:5 — destructive cross-device path removed');
+  diagLog(
+    'lists',
+    'publishBookmarksToRelays: skipping conditional kind:5 — destructive cross-device path removed'
+  );
 
   // Publish-side self-correction (2026-05-01): fetch the latest kind:5
   // deletions from relays and drop any set whose coordinate has a deletion
@@ -1563,19 +1933,28 @@ export async function publishBookmarksToRelays(callerTag: string = 'unknown'): P
   //
   // Legit re-creation still works: createFolder sets createdAt = now, so
   // a freshly created folder's createdAt > any past deletion → publish proceeds.
-  let activeDeletions = new Map<string, number>();
+  const activeDeletions = new Map<string, number>();
   try {
-    const deletionEvents = await fetchEvents([{ authors: [pubkey], kinds: [5] }], 5000, true);
+    const deletionEvents = await fetchEvents(
+      [{ authors: [pubkey], kinds: [5] }],
+      5000,
+      true
+    );
     for (const ev of deletionEvents) {
       for (const tag of ev.tags) {
         if (tag[0] !== 'a' || !tag[1]?.startsWith('30003:')) continue;
         const coord = tag[1];
         const existing = activeDeletions.get(coord);
-        if (!existing || ev.created_at > existing) activeDeletions.set(coord, ev.created_at);
+        if (!existing || ev.created_at > existing)
+          activeDeletions.set(coord, ev.created_at);
       }
     }
   } catch (err) {
-    diagLog('lists', 'publishBookmarksToRelays: deletion pre-fetch FAILED — proceeding without self-correction', { error: String(err) });
+    diagLog(
+      'lists',
+      'publishBookmarksToRelays: deletion pre-fetch FAILED — proceeding without self-correction',
+      { error: String(err) }
+    );
   }
 
   const folderService = getBookmarkFolderService();
@@ -1602,7 +1981,9 @@ export async function publishBookmarksToRelays(callerTag: string = 'unknown'): P
 
     const folder = localFolders.find(f => f.name === set.d);
     // folder.createdAt is in ms, deletion timestamp is in seconds
-    const folderCreatedAtSec = folder?.createdAt ? Math.floor(folder.createdAt / 1000) : 0;
+    const folderCreatedAtSec = folder?.createdAt
+      ? Math.floor(folder.createdAt / 1000)
+      : 0;
     if (folderCreatedAtSec > deletionTs) return true; // legit re-creation → publish
 
     skippedSets.push(set.d);
@@ -1610,97 +1991,185 @@ export async function publishBookmarksToRelays(callerTag: string = 'unknown'): P
   });
 
   if (skippedTombstoned.length > 0) {
-    diagLog('lists', 'publishBookmarksToRelays: skipped sets due to client-side tombstone', {
-      skipped: skippedTombstoned,
-      callerTag,
-    });
-    logger.warn('bookmarks.ts', `Skipped ${skippedTombstoned.length} tombstoned bookmark set(s): ${skippedTombstoned.join(', ')}`);
+    diagLog(
+      'lists',
+      'publishBookmarksToRelays: skipped sets due to client-side tombstone',
+      {
+        skipped: skippedTombstoned,
+        callerTag,
+      }
+    );
+    logger.warn(
+      'bookmarks.ts',
+      `Skipped ${skippedTombstoned.length} tombstoned bookmark set(s): ${skippedTombstoned.join(', ')}`
+    );
   }
 
   if (skippedSets.length > 0) {
-    diagLog('lists', 'publishBookmarksToRelays: skipped sets due to active relay deletion (anti-resurrection)', {
-      skipped: skippedSets,
-      activeDeletionCount: activeDeletions.size,
-      callerTag,
-    });
-    logger.warn('bookmarks.ts', `Skipped ${skippedSets.length} bookmark set(s) due to relay deletion: ${skippedSets.join(', ')}`);
+    diagLog(
+      'lists',
+      'publishBookmarksToRelays: skipped sets due to active relay deletion (anti-resurrection)',
+      {
+        skipped: skippedSets,
+        activeDeletionCount: activeDeletions.size,
+        callerTag,
+      }
+    );
+    logger.warn(
+      'bookmarks.ts',
+      `Skipped ${skippedSets.length} bookmark set(s) due to relay deletion: ${skippedSets.join(', ')}`
+    );
   }
 
   logger.info('bookmarks.ts', `Publishing: ${filteredSets.length} sets`);
 
   let totalPublished = 0;
   for (const set of filteredSets) {
-    if (set.publicTags.length === 0 && set.privateTags.length === 0 && set.d !== '') continue;
+    if (
+      set.publicTags.length === 0 &&
+      set.privateTags.length === 0 &&
+      set.d !== ''
+    )
+      continue;
 
-    diagLog('lists', 'publishBookmarksToRelays: publishing set', { dTag: set.d, publicTagCount: set.publicTags.length, privateTagCount: set.privateTags.length, publicTags: set.publicTags.map(t => [t.type, t.value, t.description]) });
-    const tags: string[][] = [['d', set.d], ['title', set.d]];
+    diagLog('lists', 'publishBookmarksToRelays: publishing set', {
+      dTag: set.d,
+      publicTagCount: set.publicTags.length,
+      privateTagCount: set.privateTags.length,
+      publicTags: set.publicTags.map(t => [t.type, t.value, t.description]),
+    });
+    const tags: string[][] = [
+      ['d', set.d],
+      ['title', set.d],
+    ];
     for (const tag of set.publicTags) {
-      tags.push(tag.description ? [tag.type, tag.value, tag.description] : [tag.type, tag.value]);
+      tags.push(
+        tag.description
+          ? [tag.type, tag.value, tag.description]
+          : [tag.type, tag.value]
+      );
     }
 
     let content = '';
     if (set.privateTags.length > 0) {
-      diagLog('lists', 'publishBookmarksToRelays: encrypting private tags', { count: set.privateTags.length, category: set.d });
-      content = await encryptPrivateItems(set.privateTags.map(t => ({
-        id: t.value, type: t.type, value: t.value, isPrivate: true
-      })), pubkey);
-      diagLog('lists', 'publishBookmarksToRelays: encrypted content', { length: content.length });
+      diagLog('lists', 'publishBookmarksToRelays: encrypting private tags', {
+        count: set.privateTags.length,
+        category: set.d,
+      });
+      content = await encryptPrivateItems(
+        set.privateTags.map(t => ({
+          id: t.value,
+          type: t.type,
+          value: t.value,
+          isPrivate: true,
+        })),
+        pubkey
+      );
+      diagLog('lists', 'publishBookmarksToRelays: encrypted content', {
+        length: content.length,
+      });
     }
 
-    diagLog('lists', 'publishBookmarksToRelays: signing event', { category: set.d, tagCount: tags.length, hasContent: content.length > 0 });
+    diagLog('lists', 'publishBookmarksToRelays: signing event', {
+      category: set.d,
+      tagCount: tags.length,
+      hasContent: content.length > 0,
+    });
     let signed;
     try {
-      signed = await signEvent({ kind: 30003, created_at: now(), tags, content, pubkey });
+      signed = await signEvent({
+        kind: 30003,
+        created_at: now(),
+        tags,
+        content,
+        pubkey,
+      });
     } catch (signError) {
-      diagLog('lists', 'publishBookmarksToRelays: signEvent THREW', { category: set.d, error: String(signError) });
-      logger.error('bookmarks.ts', `Sign event threw for category: ${set.d}: ${signError}`);
+      diagLog('lists', 'publishBookmarksToRelays: signEvent THREW', {
+        category: set.d,
+        error: String(signError),
+      });
+      logger.error(
+        'bookmarks.ts',
+        `Sign event threw for category: ${set.d}: ${signError}`
+      );
       continue;
     }
     if (!signed) {
-      diagLog('lists', 'publishBookmarksToRelays: signEvent returned null', { category: set.d });
-      logger.error('bookmarks.ts', `Failed to sign event for category: ${set.d}`);
+      diagLog('lists', 'publishBookmarksToRelays: signEvent returned null', {
+        category: set.d,
+      });
+      logger.error(
+        'bookmarks.ts',
+        `Failed to sign event for category: ${set.d}`
+      );
       continue;
     }
 
-    diagLog('lists', 'publishBookmarksToRelays: publishing signed event', { category: set.d, eventId: signed.id?.slice(0, 8) });
+    diagLog('lists', 'publishBookmarksToRelays: publishing signed event', {
+      category: set.d,
+      eventId: signed.id?.slice(0, 8),
+    });
     try {
       await publishEvent(signed);
     } catch (pubError) {
-      diagLog('lists', 'publishBookmarksToRelays: publishEvent THREW', { category: set.d, error: String(pubError) });
+      diagLog('lists', 'publishBookmarksToRelays: publishEvent THREW', {
+        category: set.d,
+        error: String(pubError),
+      });
       throw pubError;
     }
     totalPublished++;
-    logger.info('bookmarks.ts', `Published category "${set.d || 'root'}": ${set.publicTags.length} public + ${set.privateTags.length} private`);
+    logger.info(
+      'bookmarks.ts',
+      `Published category "${set.d || 'root'}": ${set.publicTags.length} public + ${set.privateTags.length} private`
+    );
   }
 
-  logger.info('bookmarks.ts', `Published ${totalPublished} bookmark set events to relays`);
+  logger.info(
+    'bookmarks.ts',
+    `Published ${totalPublished} bookmark set events to relays`
+  );
 
   // Publish folder order metadata (NIP-78 kind:30078) — exclude tombstoned
   // folders so they don't reappear via the order event after suppression.
   const folderOrder = setData.metadata.setOrder
     .filter(d => d !== '')
     .filter(d => !isBookmarkFolderTombstoned(d));
-  diagLog('lists', 'publishBookmarksToRelays: folder order for kind:30078', { folderOrder });
+  diagLog('lists', 'publishBookmarksToRelays: folder order for kind:30078', {
+    folderOrder,
+  });
   if (folderOrder.length > 0) {
     const orderTags: string[][] = [
       ['d', 'noornote:bookmark-folders-order'],
-      ...folderOrder.map(dTag => ['a', `30003:${pubkey}:${dTag}`])
+      ...folderOrder.map(dTag => ['a', `30003:${pubkey}:${dTag}`]),
     ];
 
     const publishTimestamp = now();
     // Store order in content JSON — tag order is NOT preserved by all relays
     const orderContent = JSON.stringify({ order: folderOrder });
-    const signedOrderEvent = await signEvent({ kind: 30078, created_at: publishTimestamp, tags: orderTags, content: orderContent, pubkey });
+    const signedOrderEvent = await signEvent({
+      kind: 30078,
+      created_at: publishTimestamp,
+      tags: orderTags,
+      content: orderContent,
+      pubkey,
+    });
     if (signedOrderEvent) {
       diagLog('lists', 'publishBookmarksToRelays: kind:30078 PUBLISH details', {
         created_at: publishTimestamp,
         created_at_ISO: new Date(publishTimestamp * 1000).toISOString(),
-        tagOrder: orderTags.filter(t => t[0] === 'a').map(t => t[1]?.split(':')[2]),
+        tagOrder: orderTags
+          .filter(t => t[0] === 'a')
+          .map(t => t[1]?.split(':')[2]),
         content: orderContent,
-        eventId: signedOrderEvent.id
+        eventId: signedOrderEvent.id,
       });
       await publishEvent(signedOrderEvent);
-      logger.info('bookmarks.ts', `Published folder order metadata (kind:30078) with ${folderOrder.length} folders`);
+      logger.info(
+        'bookmarks.ts',
+        `Published folder order metadata (kind:30078) with ${folderOrder.length} folders`
+      );
     }
   }
 }
@@ -1708,22 +2177,38 @@ export async function publishBookmarksToRelays(callerTag: string = 'unknown'): P
 /**
  * Fetch bookmarks from relays
  */
-export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFromRelaysResult> {
+export async function fetchBookmarksFromRelays(
+  pubkey: string
+): Promise<FetchFromRelaysResult> {
   try {
     // Fetch ALL kind:30003 events (skipCache=true for sync)
-    const events = await fetchEvents([{
-      authors: [pubkey],
-      kinds: [30003],
-      limit: 100
-    }], 10000, true);
+    const events = await fetchEvents(
+      [
+        {
+          authors: [pubkey],
+          kinds: [30003],
+          limit: 100,
+        },
+      ],
+      10000,
+      true
+    );
 
-    diagLog('lists', 'fetchBookmarksFromRelays: raw event count received', { count: events.length });
+    diagLog('lists', 'fetchBookmarksFromRelays: raw event count received', {
+      count: events.length,
+    });
 
     // Fetch deletion events (kind:5) - also skip cache
-    const deletionEvents = await fetchEvents([{
-      authors: [pubkey],
-      kinds: [5]
-    }], 5000, true);
+    const deletionEvents = await fetchEvents(
+      [
+        {
+          authors: [pubkey],
+          kinds: [5],
+        },
+      ],
+      5000,
+      true
+    );
 
     // Extract deleted coordinates with deletion timestamp
     const deletedCoordinates = new Map<string, number>();
@@ -1732,15 +2217,24 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
         if (tag[0] !== 'a' || !tag[1]?.startsWith('30003:')) continue;
         const coordinate = tag[1];
         const existingTimestamp = deletedCoordinates.get(coordinate);
-        if (!existingTimestamp || deletionEvent.created_at > existingTimestamp) {
+        if (
+          !existingTimestamp ||
+          deletionEvent.created_at > existingTimestamp
+        ) {
           deletedCoordinates.set(coordinate, deletionEvent.created_at);
         }
       }
     }
 
-    diagLog('lists', 'fetchBookmarksFromRelays: deletion events', { count: deletionEvents.length, deletedCoordinates: Array.from(deletedCoordinates.entries()) });
+    diagLog('lists', 'fetchBookmarksFromRelays: deletion events', {
+      count: deletionEvents.length,
+      deletedCoordinates: Array.from(deletedCoordinates.entries()),
+    });
     if (deletedCoordinates.size > 0) {
-      logger.info('bookmarks.ts', `Found ${deletedCoordinates.size} deletion requests for bookmark sets`);
+      logger.info(
+        'bookmarks.ts',
+        `Found ${deletedCoordinates.size} deletion requests for bookmark sets`
+      );
     }
 
     // Pull the shared cross-device deletion record into local tombstones BEFORE the
@@ -1749,7 +2243,11 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
     try {
       await syncBookmarkDeletionsIntoLocal(pubkey);
     } catch (delErr) {
-      diagLog('lists', 'fetchBookmarksFromRelays: deletion-record sync FAILED', { error: String(delErr) });
+      diagLog(
+        'lists',
+        'fetchBookmarksFromRelays: deletion-record sync FAILED',
+        { error: String(delErr) }
+      );
     }
 
     if (events.length === 0 && deletedCoordinates.size === 0) {
@@ -1781,7 +2279,10 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
       // through here — the tombstone above is what stops those on this device.
       const coordinate = `30003:${pubkey}:${dTag}`;
       const deletionTimestamp = deletedCoordinates.get(coordinate);
-      if (deletionTimestamp !== undefined && event.created_at < deletionTimestamp) {
+      if (
+        deletionTimestamp !== undefined &&
+        event.created_at < deletionTimestamp
+      ) {
         filteredDeletedCount++;
         continue;
       }
@@ -1793,13 +2294,26 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
     }
 
     if (filteredTombstonedCount > 0) {
-      diagLog('lists', 'fetchBookmarksFromRelays: suppressed by tombstone', { count: filteredTombstonedCount, dTags: tombstonedSkipped });
-      logger.info('bookmarks.ts', `Suppressed ${filteredTombstonedCount} tombstoned bookmark set(s) from relay fetch: ${tombstonedSkipped.join(', ')}`);
+      diagLog('lists', 'fetchBookmarksFromRelays: suppressed by tombstone', {
+        count: filteredTombstonedCount,
+        dTags: tombstonedSkipped,
+      });
+      logger.info(
+        'bookmarks.ts',
+        `Suppressed ${filteredTombstonedCount} tombstoned bookmark set(s) from relay fetch: ${tombstonedSkipped.join(', ')}`
+      );
     }
 
-    diagLog('lists', 'fetchBookmarksFromRelays: events after d-tag dedup', { count: eventsByDTag.size, dTags: Array.from(eventsByDTag.keys()), filteredDeletedCount });
+    diagLog('lists', 'fetchBookmarksFromRelays: events after d-tag dedup', {
+      count: eventsByDTag.size,
+      dTags: Array.from(eventsByDTag.keys()),
+      filteredDeletedCount,
+    });
     if (filteredDeletedCount > 0) {
-      logger.info('bookmarks.ts', `Filtered out ${filteredDeletedCount} deleted bookmark sets from relay fetch`);
+      logger.info(
+        'bookmarks.ts',
+        `Filtered out ${filteredDeletedCount} deleted bookmark sets from relay fetch`
+      );
     }
 
     if (eventsByDTag.size === 0) {
@@ -1808,14 +2322,22 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
     }
 
     // Fetch folder order metadata (NIP-78 kind:30078) - also skip cache
-    const orderEvents = await fetchEvents([{
-      authors: [pubkey],
-      kinds: [30078],
-      '#d': ['noornote:bookmark-folders-order']
-    }], 5000, true);
+    const orderEvents = await fetchEvents(
+      [
+        {
+          authors: [pubkey],
+          kinds: [30078],
+          '#d': ['noornote:bookmark-folders-order'],
+        },
+      ],
+      5000,
+      true
+    );
 
     let folderOrder: string[] = [];
-    const sortedOrderEvents = orderEvents.sort((a, b) => b.created_at - a.created_at);
+    const sortedOrderEvents = orderEvents.sort(
+      (a, b) => b.created_at - a.created_at
+    );
     const orderEvent = sortedOrderEvents[0];
     if (orderEvent) {
       // Prefer content-based order (reliable) — tag order is NOT preserved by all relays
@@ -1827,29 +2349,42 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
             folderOrder = parsed.order;
             usedContentOrder = true;
           }
-        } catch { /* not JSON, fall through to tag-based extraction */ }
+        } catch {
+          /* not JSON, fall through to tag-based extraction */
+        }
       }
 
       if (!usedContentOrder) {
         // Legacy fallback: extract from tag order (unreliable — relays may sort tags)
         folderOrder = orderEvent.tags
-          .filter((t): t is [string, string, ...string[]] => t[0] === 'a' && !!t[1]?.startsWith('30003:'))
+          .filter(
+            (t): t is [string, string, ...string[]] =>
+              t[0] === 'a' && !!t[1]?.startsWith('30003:')
+          )
           .map(t => {
             const parts = t[1].split(':');
             return parts[2] || '';
           });
       }
 
-      logger.info('bookmarks.ts', `Loaded folder order from NIP-78 metadata (${usedContentOrder ? 'content' : 'tags'}): ${folderOrder.join(', ')}`);
+      logger.info(
+        'bookmarks.ts',
+        `Loaded folder order from NIP-78 metadata (${usedContentOrder ? 'content' : 'tags'}): ${folderOrder.join(', ')}`
+      );
     }
 
     diagLog('lists', 'fetchBookmarksFromRelays: NIP-78 event details', {
       totalEventsReturned: orderEvents.length,
       selectedCreatedAt: orderEvent?.created_at,
-      selectedCreatedAtISO: orderEvent ? new Date(orderEvent.created_at * 1000).toISOString() : 'none',
-      allEventTimestamps: orderEvents.map(e => ({ created_at: e.created_at, iso: new Date(e.created_at * 1000).toISOString() })),
+      selectedCreatedAtISO: orderEvent
+        ? new Date(orderEvent.created_at * 1000).toISOString()
+        : 'none',
+      allEventTimestamps: orderEvents.map(e => ({
+        created_at: e.created_at,
+        iso: new Date(e.created_at * 1000).toISOString(),
+      })),
       rawTags: orderEvent?.tags,
-      folderOrder
+      folderOrder,
     });
 
     // Build categories array in correct order (root always first)
@@ -1860,18 +2395,32 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
       for (const dTag of eventsByDTag.keys()) {
         if (dTag !== '' && !categories.includes(dTag)) {
           categories.push(dTag);
-          logger.warn('bookmarks.ts', `Folder "${dTag}" not in order metadata, appending to end`);
+          logger.warn(
+            'bookmarks.ts',
+            `Folder "${dTag}" not in order metadata, appending to end`
+          );
         }
       }
     } else {
-      categories.push(...Array.from(eventsByDTag.keys()).filter(d => d !== '').sort());
-      logger.info('bookmarks.ts', 'No folder order metadata found, using alphabetical fallback');
+      categories.push(
+        ...Array.from(eventsByDTag.keys())
+          .filter(d => d !== '')
+          .sort()
+      );
+      logger.info(
+        'bookmarks.ts',
+        'No folder order metadata found, using alphabetical fallback'
+      );
     }
 
     const allItems: BookmarkItem[] = [];
     const categoryAssignments = new Map<string, string>();
 
-    const assignCategory = (items: BookmarkItem[], categoryName: string, isPrivate: boolean): void => {
+    const assignCategory = (
+      items: BookmarkItem[],
+      categoryName: string,
+      isPrivate: boolean
+    ): void => {
       for (const item of items) {
         item.isPrivate = isPrivate;
         item.category = categoryName;
@@ -1885,58 +2434,116 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
 
       const hasContent = !!event.content?.trim();
 
-      const publicItems = tagsToItems(event.tags.filter(t => t[0] !== 'd' && t[0] !== 'title'), event.created_at);
+      const publicItems = tagsToItems(
+        event.tags.filter(t => t[0] !== 'd' && t[0] !== 'title'),
+        event.created_at
+      );
       assignCategory(publicItems, categoryName, false);
 
       let privateItems: BookmarkItem[] = [];
       if (hasContent) {
-        diagLog('lists', 'fetchBookmarksFromRelays: category has encrypted content, decrypting', { category: categoryName, contentLength: event.content.length });
+        diagLog(
+          'lists',
+          'fetchBookmarksFromRelays: category has encrypted content, decrypting',
+          { category: categoryName, contentLength: event.content.length }
+        );
         try {
           privateItems = await decryptPrivateItems(event, pubkey);
           assignCategory(privateItems, categoryName, true);
         } catch (error) {
-          diagLog('lists', 'fetchBookmarksFromRelays: DECRYPT FAILED', { category: categoryName, error: String(error) });
-          logger.error('bookmarks.ts', `Failed to decrypt private items for category "${categoryName}": ${error}`);
+          diagLog('lists', 'fetchBookmarksFromRelays: DECRYPT FAILED', {
+            category: categoryName,
+            error: String(error),
+          });
+          logger.error(
+            'bookmarks.ts',
+            `Failed to decrypt private items for category "${categoryName}": ${error}`
+          );
         }
       } else {
-        diagLog('lists', 'fetchBookmarksFromRelays: category has no encrypted content', { category: categoryName });
+        diagLog(
+          'lists',
+          'fetchBookmarksFromRelays: category has no encrypted content',
+          { category: categoryName }
+        );
       }
 
       allItems.push(...publicItems, ...privateItems);
-      diagLog('lists', 'fetchBookmarksFromRelays: category items', { category: categoryName, publicItems: publicItems.map(i => ({ id: i.id, category: i.category, isPrivate: i.isPrivate, description: i.description })), privateItems: privateItems.map(i => ({ id: i.id, category: i.category, isPrivate: i.isPrivate, description: i.description })) });
-      logger.info('bookmarks.ts', `Fetched category "${categoryName || 'root'}": ${publicItems.length} public + ${privateItems.length} private`);
+      diagLog('lists', 'fetchBookmarksFromRelays: category items', {
+        category: categoryName,
+        publicItems: publicItems.map(i => ({
+          id: i.id,
+          category: i.category,
+          isPrivate: i.isPrivate,
+          description: i.description,
+        })),
+        privateItems: privateItems.map(i => ({
+          id: i.id,
+          category: i.category,
+          isPrivate: i.isPrivate,
+          description: i.description,
+        })),
+      });
+      logger.info(
+        'bookmarks.ts',
+        `Fetched category "${categoryName || 'root'}": ${publicItems.length} public + ${privateItems.length} private`
+      );
     }
 
-    diagLog('lists', 'fetchBookmarksFromRelays: final categories array', { categories });
+    diagLog('lists', 'fetchBookmarksFromRelays: final categories array', {
+      categories,
+    });
 
     // Deduplicate by ID
     const deduped = deduplicateById(allItems);
 
-    diagLog('lists', 'fetchBookmarksFromRelays: final deduped result', { count: deduped.length, items: deduped.map(i => ({ id: i.id, category: i.category, isPrivate: i.isPrivate, description: i.description })) });
+    diagLog('lists', 'fetchBookmarksFromRelays: final deduped result', {
+      count: deduped.length,
+      items: deduped.map(i => ({
+        id: i.id,
+        category: i.category,
+        isPrivate: i.isPrivate,
+        description: i.description,
+      })),
+    });
 
     // Compute relay timestamp: MAX created_at across all bookmark events
     let maxEventTimestamp = 0;
     for (const event of eventsByDTag.values()) {
-      if (event.created_at > maxEventTimestamp) maxEventTimestamp = event.created_at;
+      if (event.created_at > maxEventTimestamp)
+        maxEventTimestamp = event.created_at;
     }
 
     // RESURRECTION DETECTION (logging only, no behavior change) — see docs/features/lists.md "Folder-Resurrection"
-    const browserFolderNames = new Set(getBookmarkFolderService().getFolders().map(f => f.name));
+    const browserFolderNames = new Set(
+      getBookmarkFolderService()
+        .getFolders()
+        .map(f => f.name)
+    );
     const relayFolderNames = categories.filter(c => c !== '');
-    const resurrectionCandidates = relayFolderNames.filter(name => !browserFolderNames.has(name));
+    const resurrectionCandidates = relayFolderNames.filter(
+      name => !browserFolderNames.has(name)
+    );
     if (resurrectionCandidates.length > 0 && browserFolderNames.size > 0) {
-      console.debug('[Lists] Possible folder resurrection in bookmarks — relay returned folders not present in local browser state', {
-        resurrectionCandidates,
-        browserFolders: [...browserFolderNames],
-        relayFolders: relayFolderNames,
-        eventCreatedAt: maxEventTimestamp
-      });
-      diagLog('lists', 'bookmarks RESURRECTION CANDIDATE in fetchBookmarksFromRelays', {
-        resurrectionCandidates,
-        browserFolders: [...browserFolderNames],
-        relayFolders: relayFolderNames,
-        eventCreatedAt: maxEventTimestamp
-      });
+      console.debug(
+        '[Lists] Possible folder resurrection in bookmarks — relay returned folders not present in local browser state',
+        {
+          resurrectionCandidates,
+          browserFolders: [...browserFolderNames],
+          relayFolders: relayFolderNames,
+          eventCreatedAt: maxEventTimestamp,
+        }
+      );
+      diagLog(
+        'lists',
+        'bookmarks RESURRECTION CANDIDATE in fetchBookmarksFromRelays',
+        {
+          resurrectionCandidates,
+          browserFolders: [...browserFolderNames],
+          relayFolders: relayFolderNames,
+          eventCreatedAt: maxEventTimestamp,
+        }
+      );
     }
 
     return {
@@ -1945,7 +2552,7 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
       categoryAssignments,
       categories,
       relayTimestamp: maxEventTimestamp,
-      deletedCoordinates
+      deletedCoordinates,
     };
   } catch (error) {
     logger.error('bookmarks.ts', `Failed to fetch from relays: ${error}`);
@@ -1988,8 +2595,14 @@ export interface BookmarkAdapterSyncFromRelaysResult {
   deletedCoordinates: Map<string, number> | undefined;
 }
 
-function calculateBookmarkSyncDiff(browserItems: BookmarkItem[], sourceItems: BookmarkItem[]): BookmarkAdapterSyncDiff {
-  diagLog('lists', 'calculateBookmarkSyncDiff: inputs', { browserItems: browserItems.map(i => ({ id: i.id, category: i.category })), sourceItems: sourceItems.map(i => ({ id: i.id, category: i.category })) });
+function calculateBookmarkSyncDiff(
+  browserItems: BookmarkItem[],
+  sourceItems: BookmarkItem[]
+): BookmarkAdapterSyncDiff {
+  diagLog('lists', 'calculateBookmarkSyncDiff: inputs', {
+    browserItems: browserItems.map(i => ({ id: i.id, category: i.category })),
+    sourceItems: sourceItems.map(i => ({ id: i.id, category: i.category })),
+  });
   const browserMap = new Map(browserItems.map(item => [item.id, item]));
   const sourceMap = new Map(sourceItems.map(item => [item.id, item]));
 
@@ -2020,11 +2633,23 @@ function calculateBookmarkSyncDiff(browserItems: BookmarkItem[], sourceItems: Bo
   }
 
   const result = { added, removed, unchanged, moved };
-  diagLog('lists', 'calculateBookmarkSyncDiff: result', { added: added.map(i => i.id), removed: removed.map(i => i.id), moved: moved.map(m => ({ id: m.browserItem.id, browserCategory: m.browserItem.category, sourceCategory: m.sourceItem.category })), unchangedCount: unchanged.length });
+  diagLog('lists', 'calculateBookmarkSyncDiff: result', {
+    added: added.map(i => i.id),
+    removed: removed.map(i => i.id),
+    moved: moved.map(m => ({
+      id: m.browserItem.id,
+      browserCategory: m.browserItem.category,
+      sourceCategory: m.sourceItem.category,
+    })),
+    unchangedCount: unchanged.length,
+  });
   return result;
 }
 
-function mergeBookmarkItems(browserItems: BookmarkItem[], newItems: BookmarkItem[]): BookmarkItem[] {
+function mergeBookmarkItems(
+  browserItems: BookmarkItem[],
+  newItems: BookmarkItem[]
+): BookmarkItem[] {
   return mergeByKey(browserItems, newItems, 'id');
 }
 
@@ -2037,8 +2662,8 @@ function mergeBookmarkItems(browserItems: BookmarkItem[], newItems: BookmarkItem
  * Captures: folder order, items per folder (with order), item properties.
  */
 interface BookmarkStateSnapshot {
-  folderOrder: string[];  // Folder names in order ('' = root always first)
-  itemsByFolder: Map<string, string[]>;  // folder name → ordered item ids
+  folderOrder: string[]; // Folder names in order ('' = root always first)
+  itemsByFolder: Map<string, string[]>; // folder name → ordered item ids
   itemProperties: Map<string, { isPrivate: boolean; description: string }>;
 }
 
@@ -2052,7 +2677,7 @@ function createBrowserBookmarkSnapshot(): BookmarkStateSnapshot {
   const rootOrder = folderService.getRootOrder();
 
   // Build folder order from rootOrder (folders only)
-  const folderOrder: string[] = [''];  // Root always first
+  const folderOrder: string[] = ['']; // Root always first
   for (const item of rootOrder) {
     if (item.type === 'folder') {
       const folder = folders.find(f => f.id === item.id);
@@ -2068,7 +2693,7 @@ function createBrowserBookmarkSnapshot(): BookmarkStateSnapshot {
 
   // Build itemsByFolder with order
   const itemsByFolder = new Map<string, string[]>();
-  itemsByFolder.set('', []);  // Initialize root
+  itemsByFolder.set('', []); // Initialize root
   for (const folderName of folderOrder) {
     if (folderName !== '') itemsByFolder.set(folderName, []);
   }
@@ -2089,16 +2714,23 @@ function createBrowserBookmarkSnapshot(): BookmarkStateSnapshot {
   }
 
   // Build item properties map
-  const itemProperties = new Map<string, { isPrivate: boolean; description: string }>();
+  const itemProperties = new Map<
+    string,
+    { isPrivate: boolean; description: string }
+  >();
   for (const item of browserItems) {
     itemProperties.set(item.id, {
       isPrivate: item.isPrivate || false,
-      description: item.description || ''
+      description: item.description || '',
     });
   }
 
   const snapshot = { folderOrder, itemsByFolder, itemProperties };
-  diagLog('lists', 'createBrowserBookmarkSnapshot', { folderOrder, itemsByFolder: Object.fromEntries(itemsByFolder), itemProperties: Object.fromEntries(itemProperties) });
+  diagLog('lists', 'createBrowserBookmarkSnapshot', {
+    folderOrder,
+    itemsByFolder: Object.fromEntries(itemsByFolder),
+    itemProperties: Object.fromEntries(itemProperties),
+  });
   return snapshot;
 }
 
@@ -2129,19 +2761,25 @@ function createSourceBookmarkSnapshot(
   }
 
   // Build item properties map
-  const itemProperties = new Map<string, { isPrivate: boolean; description: string }>();
+  const itemProperties = new Map<
+    string,
+    { isPrivate: boolean; description: string }
+  >();
   for (const item of items) {
     itemProperties.set(item.id, {
       isPrivate: item.isPrivate || false,
-      description: item.description || ''
+      description: item.description || '',
     });
   }
 
   const snapshot = { folderOrder, itemsByFolder, itemProperties };
-  diagLog('lists', 'createSourceBookmarkSnapshot', { folderOrder, itemsByFolder: Object.fromEntries(itemsByFolder), itemProperties: Object.fromEntries(itemProperties) });
+  diagLog('lists', 'createSourceBookmarkSnapshot', {
+    folderOrder,
+    itemsByFolder: Object.fromEntries(itemsByFolder),
+    itemProperties: Object.fromEntries(itemProperties),
+  });
   return snapshot;
 }
-
 
 /**
  * Detailed diff between browser and source snapshots.
@@ -2163,13 +2801,22 @@ function getBookmarkSnapshotDiffInfo(
   const bFolders = new Set(b.folderOrder);
   const newFromRelay = [...bFolders].filter(f => !aFolders.has(f));
   const onlyInBrowser = [...aFolders].filter(f => !bFolders.has(f));
-  if (newFromRelay.length > 0) { hasContentDiff = true; details.push(`New folders from relay: ${newFromRelay.join(', ')}`); }
-  if (onlyInBrowser.length > 0) { hasContentDiff = true; details.push(`Folders only in browser: ${onlyInBrowser.join(', ')}`); }
+  if (newFromRelay.length > 0) {
+    hasContentDiff = true;
+    details.push(`New folders from relay: ${newFromRelay.join(', ')}`);
+  }
+  if (onlyInBrowser.length > 0) {
+    hasContentDiff = true;
+    details.push(`Folders only in browser: ${onlyInBrowser.join(', ')}`);
+  }
 
   // 2. Folder order (compare common folders in both)
   const aCommonOrder = a.folderOrder.filter(f => bFolders.has(f));
   const bCommonOrder = b.folderOrder.filter(f => aFolders.has(f));
-  if (aCommonOrder.length > 0 && aCommonOrder.some((f, i) => f !== bCommonOrder[i])) {
+  if (
+    aCommonOrder.length > 0 &&
+    aCommonOrder.some((f, i) => f !== bCommonOrder[i])
+  ) {
     hasOrderDiff = true;
     details.push('Folder order differs');
   }
@@ -2183,17 +2830,29 @@ function getBookmarkSnapshotDiffInfo(
     const newItems = [...bSet].filter(id => !aSet.has(id));
     const removedItems = [...aSet].filter(id => !bSet.has(id));
     const label = folderName || 'Root';
-    if (newItems.length > 0) { hasContentDiff = true; details.push(`${label}: ${newItems.length} new item(s) from relay`); }
-    if (removedItems.length > 0) { hasContentDiff = true; details.push(`${label}: ${removedItems.length} item(s) only in browser`); }
+    if (newItems.length > 0) {
+      hasContentDiff = true;
+      details.push(`${label}: ${newItems.length} new item(s) from relay`);
+    }
+    if (removedItems.length > 0) {
+      hasContentDiff = true;
+      details.push(`${label}: ${removedItems.length} item(s) only in browser`);
+    }
     const commonItems = aItems.filter(id => bSet.has(id));
     const bCommonItems = bItems.filter(id => aSet.has(id));
-    if (commonItems.length > 1 && commonItems.some((id, i) => id !== bCommonItems[i])) {
+    if (
+      commonItems.length > 1 &&
+      commonItems.some((id, i) => id !== bCommonItems[i])
+    ) {
       hasOrderDiff = true;
       details.push(`${label}: Item order differs`);
     }
   }
   for (const folderName of b.itemsByFolder.keys()) {
-    if (!a.itemsByFolder.has(folderName) && !newFromRelay.includes(folderName)) {
+    if (
+      !a.itemsByFolder.has(folderName) &&
+      !newFromRelay.includes(folderName)
+    ) {
       hasContentDiff = true;
       details.push(`Folder "${folderName}" only on relay`);
     }
@@ -2217,7 +2876,14 @@ function getBookmarkSnapshotDiffInfo(
   const isOrderOnly = !hasContentDiff && hasOrderDiff;
   const hasFolderSetDiff = onlyInBrowser.length > 0 || newFromRelay.length > 0;
 
-  diagLog('lists', 'getBookmarkSnapshotDiffInfo', { hasDifference, isOrderOnly, hasFolderSetDiff, hasContentDiff, hasOrderDiff, details });
+  diagLog('lists', 'getBookmarkSnapshotDiffInfo', {
+    hasDifference,
+    isOrderOnly,
+    hasFolderSetDiff,
+    hasContentDiff,
+    hasOrderDiff,
+    details,
+  });
   return { hasDifference, isOrderOnly, hasFolderSetDiff, details };
 }
 
@@ -2241,24 +2907,38 @@ function hasAnyBookmarkDifference(
  * Storage adapter for bookmark lists
  */
 export class BookmarkStorageAdapter {
-  getBrowserItems(): BookmarkItem[] { return readBrowserBookmarks(); }
+  getBrowserItems(): BookmarkItem[] {
+    return readBrowserBookmarks();
+  }
 
   setBrowserItems(items: BookmarkItem[]): void {
     writeBrowserBookmarks(items);
     TypedEventBus.getInstance().emit('bookmark:updated');
   }
 
-  getItemId(item: BookmarkItem): string { return item.id; }
+  getItemId(item: BookmarkItem): string {
+    return item.id;
+  }
 
-  async getFileItems(): Promise<BookmarkItem[]> { return getAllBookmarksFromFile(); }
-  async setFileItems(_items: BookmarkItem[]): Promise<void> { await saveBookmarksToFile(); }
+  async getFileItems(): Promise<BookmarkItem[]> {
+    return getAllBookmarksFromFile();
+  }
+  async setFileItems(_items: BookmarkItem[]): Promise<void> {
+    await saveBookmarksToFile();
+  }
 
   async restoreFolderDataFromFile(): Promise<void> {
     const folderData = await getAllFolderDataFromFile();
     const storage = (await import('./storage')).getStorage();
-    if (folderData.folders.length > 0) storage.set(StorageKeys.BOOKMARK_FOLDERS, folderData.folders);
-    if (folderData.folderAssignments.length > 0) storage.set(StorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, folderData.folderAssignments);
-    if (folderData.rootOrder.length > 0) storage.set(StorageKeys.BOOKMARK_ROOT_ORDER, folderData.rootOrder);
+    if (folderData.folders.length > 0)
+      storage.set(StorageKeys.BOOKMARK_FOLDERS, folderData.folders);
+    if (folderData.folderAssignments.length > 0)
+      storage.set(
+        StorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS,
+        folderData.folderAssignments
+      );
+    if (folderData.rootOrder.length > 0)
+      storage.set(StorageKeys.BOOKMARK_ROOT_ORDER, folderData.rootOrder);
   }
 
   async fetchFromRelays(): Promise<FetchFromRelaysResult> {
@@ -2267,21 +2947,47 @@ export class BookmarkStorageAdapter {
     return fetchBookmarksFromRelays(pubkey);
   }
 
-  async publishToRelays(_items: BookmarkItem[]): Promise<void> { await publishBookmarksToRelays('adapter'); }
+  async publishToRelays(_items: BookmarkItem[]): Promise<void> {
+    await publishBookmarksToRelays('adapter');
+  }
 
   // Sync helper methods (for AutoSyncService)
   async syncFromRelays(): Promise<BookmarkAdapterSyncFromRelaysResult> {
     // Snapshot browser state BEFORE fetch (fetch takes 2-10s, user could change list meanwhile)
     const browserItems = this.getBrowserItems();
-    diagLog('lists', 'syncFromRelays: browser items snapshot', { count: browserItems.length, ids: browserItems.map(i => i.id) });
+    diagLog('lists', 'syncFromRelays: browser items snapshot', {
+      count: browserItems.length,
+      ids: browserItems.map(i => i.id),
+    });
     const fetchResult = await this.fetchFromRelays();
-    diagLog('lists', 'syncFromRelays: fetch result', { itemCount: fetchResult.items.length, categories: fetchResult.categories, categoryAssignments: fetchResult.categoryAssignments ? Object.fromEntries(fetchResult.categoryAssignments) : undefined });
+    diagLog('lists', 'syncFromRelays: fetch result', {
+      itemCount: fetchResult.items.length,
+      categories: fetchResult.categories,
+      categoryAssignments: fetchResult.categoryAssignments
+        ? Object.fromEntries(fetchResult.categoryAssignments)
+        : undefined,
+    });
     const diff = calculateBookmarkSyncDiff(browserItems, fetchResult.items);
-    diagLog('lists', 'syncFromRelays: diff', { added: diff.added.map(i => i.id), removed: diff.removed.map(i => i.id), moved: diff.moved.map(m => ({ id: m.browserItem.id, from: m.browserItem.category, to: m.sourceItem.category })), unchangedCount: diff.unchanged.length });
+    diagLog('lists', 'syncFromRelays: diff', {
+      added: diff.added.map(i => i.id),
+      removed: diff.removed.map(i => i.id),
+      moved: diff.moved.map(m => ({
+        id: m.browserItem.id,
+        from: m.browserItem.category,
+        to: m.sourceItem.category,
+      })),
+      unchangedCount: diff.unchanged.length,
+    });
 
-    const snapshotDiffInfo = getBookmarkSnapshotDiffInfo(fetchResult.items, fetchResult.categories);
+    const snapshotDiffInfo = getBookmarkSnapshotDiffInfo(
+      fetchResult.items,
+      fetchResult.categories
+    );
     const requiresConfirmation = snapshotDiffInfo.hasDifference;
-    diagLog('lists', 'syncFromRelays: requiresConfirmation', { requiresConfirmation, snapshotDiffInfo });
+    diagLog('lists', 'syncFromRelays: requiresConfirmation', {
+      requiresConfirmation,
+      snapshotDiffInfo,
+    });
 
     return {
       requiresConfirmation,
@@ -2292,15 +2998,20 @@ export class BookmarkStorageAdapter {
       categoryAssignments: fetchResult.categoryAssignments,
       categories: fetchResult.categories,
       relayTimestamp: fetchResult.relayTimestamp,
-      deletedCoordinates: fetchResult.deletedCoordinates
+      deletedCoordinates: fetchResult.deletedCoordinates,
     };
   }
 
-  applySyncFromRelays(strategy: 'merge' | 'overwrite', relayItems: BookmarkItem[]): void {
+  applySyncFromRelays(
+    strategy: 'merge' | 'overwrite',
+    relayItems: BookmarkItem[]
+  ): void {
     if (strategy === 'overwrite') {
       this.setBrowserItems(relayItems);
     } else {
-      this.setBrowserItems(mergeBookmarkItems(this.getBrowserItems(), relayItems));
+      this.setBrowserItems(
+        mergeBookmarkItems(this.getBrowserItems(), relayItems)
+      );
     }
   }
 }
@@ -2355,7 +3066,9 @@ export class BookmarkCard {
     card.dataset.bookmarkId = id;
 
     if (event) {
-      const profile = await this.userProfileService.getUserProfile(event.pubkey);
+      const profile = await this.userProfileService.getUserProfile(
+        event.pubkey
+      );
       const username = profile?.name || 'Anonymous';
       const profilePic = profile?.picture || '';
       const snippet = this.getEventSnippet(event);
@@ -2365,9 +3078,10 @@ export class BookmarkCard {
         ${isPrivate ? '<span class="private-badge">🔒</span>' : ''}
         <div class="nn-card__content">
           <div class="author">
-            ${profilePic
-              ? `<img class="author-pic" src="${escapeHtmlAttr(profilePic)}" alt="" loading="lazy" />`
-              : '<div class="author-pic"></div>'
+            ${
+              profilePic
+                ? `<img class="author-pic" src="${escapeHtmlAttr(profilePic)}" alt="" loading="lazy" />`
+                : '<div class="author-pic"></div>'
             }
             <span class="author-name">${escapeHtml(username)}</span>
           </div>
@@ -2395,13 +3109,18 @@ export class BookmarkCard {
         let displayUrl = '';
         try {
           const url = new URL(value);
-          displayUrl = url.hostname + (url.pathname !== '/' ? url.pathname.slice(0, 30) : '');
+          displayUrl =
+            url.hostname +
+            (url.pathname !== '/' ? url.pathname.slice(0, 30) : '');
         } catch {
           displayUrl = value.slice(0, 40);
         }
         displayContent = `<a href="${escapeHtmlAttr(value)}" class="external-link">${escapeHtml(displayUrl)}</a>`;
         if (description) {
-          const descText = description.length > 60 ? description.slice(0, 60) + '...' : description;
+          const descText =
+            description.length > 60
+              ? `${description.slice(0, 60)}...`
+              : description;
           displayContent += `<span class="description">${escapeHtml(descText)}</span>`;
         }
         isContentHtml = true;
@@ -2411,11 +3130,18 @@ export class BookmarkCard {
       } else if (type === 'a' && value) {
         const isListing = value.startsWith('30402:');
         const isLiveStream = value.startsWith('30311:');
-        displayLabel = isListing ? 'Listing' : isLiveStream ? 'Live Stream' : 'Address';
+        displayLabel = isListing
+          ? 'Listing'
+          : isLiveStream
+            ? 'Live Stream'
+            : 'Address';
         if (description) {
-          displayContent = description.length > 60 ? description.slice(0, 60) + '...' : description;
+          displayContent =
+            description.length > 60
+              ? `${description.slice(0, 60)}...`
+              : description;
         } else {
-          displayContent = value.slice(0, 40) + '...';
+          displayContent = `${value.slice(0, 40)}...`;
         }
       } else if ((type === 'e' || !type) && id) {
         // type='e' without a loaded event: don't cry "Note not found" — we may
@@ -2424,14 +3150,14 @@ export class BookmarkCard {
         // (title, content, picture, time) once the event resolves. The SNV
         // reverse-lookup does the same thing when the user clicks through.
         displayLabel = 'Note';
-        displayContent = id.slice(0, 12) + '…';
+        displayContent = `${id.slice(0, 12)}…`;
       } else {
         displayLabel = 'Note not found';
-        displayContent = id.slice(0, 8) + '...';
+        displayContent = `${id.slice(0, 8)}...`;
       }
 
       card.dataset.bookmarkType = type || 'e';
-      const snippetMode = (type === 'e' || !type) ? 'not-found' : 'external';
+      const snippetMode = type === 'e' || !type ? 'not-found' : 'external';
       card.innerHTML = `
         ${isPrivate ? '<span class="private-badge">🔒</span>' : ''}
         <div class="nn-card__content">
@@ -2446,11 +3172,15 @@ export class BookmarkCard {
             <span class="timestamp">${escapeHtml(footerText)}</span>
             <div class="actions">
               <span class="move"></span>
-              ${type === 'r' ? `
+              ${
+                type === 'r'
+                  ? `
                 <button class="btn btn--mini edit" aria-label="Edit bookmark" title="Edit bookmark">
                   Edit
                 </button>
-              ` : ''}
+              `
+                  : ''
+              }
               <button class="delete" aria-label="Remove bookmark" title="Remove bookmark">
                 ${ICON_TRASH_16}
               </button>
@@ -2471,7 +3201,11 @@ export class BookmarkCard {
     // no longer on any relay because the author published a newer version.
     // Read-only — never writes to localStorage; the lists-sync logic stays
     // untouched.
-    if (!this.data.event && (this.data.type === 'e' || !this.data.type) && this.data.id) {
+    if (
+      !this.data.event &&
+      (this.data.type === 'e' || !this.data.type) &&
+      this.data.id
+    ) {
       void this.loadEventForPlaceholder(card);
     }
 
@@ -2492,13 +3226,16 @@ export class BookmarkCard {
       if (!id) return;
 
       // Stage 1: NoteService (LRU cache + hex-id relay fetch)
-      let event: NostrEvent | null = await NoteService.getInstance().getNote(id);
+      let event: NostrEvent | null =
+        await NoteService.getInstance().getNote(id);
 
       // Stage 2: Reverse-lookup for replaceable kinds. If the hex id no longer
       // resolves (older version of a 30311/30023/... replaced by the author),
       // look for any repost referencing this id and extract the coordinate.
       if (!event) {
-        const { resolveAddressableFromReferences } = await import('../helpers/resolveAddressableFromReferences');
+        const { resolveAddressableFromReferences } = await import(
+          '../helpers/resolveAddressableFromReferences'
+        );
         event = await resolveAddressableFromReferences(id);
       }
 
@@ -2508,16 +3245,24 @@ export class BookmarkCard {
       if (!card.isConnected) return;
 
       this.data.event = event;
-      const profile = await this.userProfileService.getUserProfile(event.pubkey);
+      const profile = await this.userProfileService.getUserProfile(
+        event.pubkey
+      );
       const username = profile?.name || 'Anonymous';
       const profilePic = profile?.picture || '';
       const snippet = this.getEventSnippet(event);
       const timeAgo = formatBookmarkTimestamp(event.created_at);
 
-      const authorNameEl = card.querySelector('.author-name') as HTMLElement | null;
-      const authorPicEl = card.querySelector('.author-pic') as HTMLElement | null;
+      const authorNameEl = card.querySelector(
+        '.author-name'
+      ) as HTMLElement | null;
+      const authorPicEl = card.querySelector(
+        '.author-pic'
+      ) as HTMLElement | null;
       const snippetEl = card.querySelector('.snippet') as HTMLElement | null;
-      const timestampEl = card.querySelector('.timestamp') as HTMLElement | null;
+      const timestampEl = card.querySelector(
+        '.timestamp'
+      ) as HTMLElement | null;
 
       if (authorNameEl) authorNameEl.textContent = username;
       if (snippetEl) {
@@ -2548,9 +3293,14 @@ export class BookmarkCard {
   private bindEvents(card: HTMLElement): void {
     const { id, event } = this.data;
 
-    card.addEventListener('click', async (e) => {
+    card.addEventListener('click', async e => {
       const target = e.target as HTMLElement;
-      if (target.closest('.delete') || target.closest('.edit') || target.closest('.move')) return;
+      if (
+        target.closest('.delete') ||
+        target.closest('.edit') ||
+        target.closest('.move')
+      )
+        return;
 
       if (card.dataset.wasDragging === 'true') {
         card.dataset.wasDragging = 'false';
@@ -2560,7 +3310,10 @@ export class BookmarkCard {
       const anchor = target.closest('a');
       if (anchor) {
         const href = anchor.getAttribute('href');
-        if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
+        if (
+          href &&
+          (href.startsWith('http://') || href.startsWith('https://'))
+        ) {
           e.preventDefault();
           e.stopPropagation();
           if (PlatformService.getInstance().isElectron) {
@@ -2577,7 +3330,11 @@ export class BookmarkCard {
         const parts = this.data.value.split(':');
         if (parts.length >= 3) {
           const { encodeNaddr } = await import('../services/NostrToolsAdapter');
-          const naddr = encodeNaddr({ kind: 30402, pubkey: parts[1]!, identifier: parts.slice(2).join(':') });
+          const naddr = encodeNaddr({
+            kind: 30402,
+            pubkey: parts[1]!,
+            identifier: parts.slice(2).join(':'),
+          });
           this.router.navigate(`/listing/${naddr}`);
         }
         return;
@@ -2594,7 +3351,9 @@ export class BookmarkCard {
           const pubkey = parts[1]!;
           const identifier = parts.slice(2).join(':');
           if (Number.isFinite(kindNum) && pubkey && identifier) {
-            const { encodeNaddr } = await import('../services/NostrToolsAdapter');
+            const { encodeNaddr } = await import(
+              '../services/NostrToolsAdapter'
+            );
             const naddr = encodeNaddr({ kind: kindNum, pubkey, identifier });
             this.router.navigate(`/note/${naddr}`);
           }
@@ -2614,13 +3373,13 @@ export class BookmarkCard {
     });
 
     const editBtn = card.querySelector('button.edit');
-    editBtn?.addEventListener('click', (e) => {
+    editBtn?.addEventListener('click', e => {
       e.stopPropagation();
       this.options.onEdit?.(id);
     });
 
     const deleteBtn = card.querySelector('button.delete');
-    deleteBtn?.addEventListener('click', async (e) => {
+    deleteBtn?.addEventListener('click', async e => {
       e.stopPropagation();
       await this.options.onDelete(id);
       card.remove();
@@ -2628,11 +3387,16 @@ export class BookmarkCard {
 
     // Mount move dropdown (browser only)
     const moveMount = card.querySelector('.move');
-    if (moveMount && this.options.onMove && this.options.moveTargets && MoveDropdown.shouldShow()) {
+    if (
+      moveMount &&
+      this.options.onMove &&
+      this.options.moveTargets &&
+      MoveDropdown.shouldShow()
+    ) {
       const dropdown = new MoveDropdown({
         targets: this.options.moveTargets,
         ariaLabel: 'Move bookmark',
-        onSelect: (targetId) => this.options.onMove!(id, targetId),
+        onSelect: targetId => this.options.onMove!(id, targetId),
       });
       moveMount.appendChild(dropdown.getElement());
     }
@@ -2640,12 +3404,17 @@ export class BookmarkCard {
 
   private getTextSnippet(content: string, maxLength: number): string {
     const text = content
-      .replace(/nostr:(note|nevent|npub|nprofile|naddr|nrelay)[a-zA-Z0-9]+/g, '')
+      .replace(
+        /nostr:(note|nevent|npub|nprofile|naddr|nrelay)[a-zA-Z0-9]+/g,
+        ''
+      )
       .replace(/^>.*$/gm, '')
       .replace(/https?:\/\/[^\s]+/g, '')
       .trim();
     if (!text) return '(No text content)';
-    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    return text.length > maxLength
+      ? `${text.substring(0, maxLength)}...`
+      : text;
   }
 
   /**
@@ -2655,9 +3424,10 @@ export class BookmarkCard {
    */
   private getEventSnippet(event: NostrEvent): string {
     if (event.kind === 39089) {
-      const title = event.tags.find(t => t[0] === 'title')?.[1]
-                 || event.tags.find(t => t[0] === 'n')?.[1]
-                 || 'Untitled';
+      const title =
+        event.tags.find(t => t[0] === 'title')?.[1] ||
+        event.tags.find(t => t[0] === 'n')?.[1] ||
+        'Untitled';
       return `Follow Pack: ${title}`;
     }
     if (event.kind === 30023) {
@@ -2669,9 +3439,10 @@ export class BookmarkCard {
       return `App: ${name}`;
     }
     if (event.kind === 30030) {
-      const title = event.tags.find(t => t[0] === 'title')?.[1]
-                 || event.tags.find(t => t[0] === 'name')?.[1]
-                 || 'Untitled';
+      const title =
+        event.tags.find(t => t[0] === 'title')?.[1] ||
+        event.tags.find(t => t[0] === 'name')?.[1] ||
+        'Untitled';
       return `Emoji Pack: ${title}`;
     }
     if (event.kind === 30311) {
@@ -2679,7 +3450,8 @@ export class BookmarkCard {
       return `Live Stream: ${title}`;
     }
     if (event.kind === 30402) {
-      const title = event.tags.find(t => t[0] === 'title')?.[1] || 'Untitled Listing';
+      const title =
+        event.tags.find(t => t[0] === 'title')?.[1] || 'Untitled Listing';
       return `Listing: ${title}`;
     }
     if (event.kind === 20) {
@@ -2688,36 +3460,55 @@ export class BookmarkCard {
     }
     if (event.kind === 1068) {
       const question = (event.content || '').trim();
-      const snippet = question.length > 80 ? question.slice(0, 80) + '...' : question;
+      const snippet =
+        question.length > 80 ? `${question.slice(0, 80)}...` : question;
       return snippet ? `Poll: ${snippet}` : 'Poll';
     }
     if (event.kind === 9802) {
       const text = (event.content || '').trim();
-      const snippet = text.length > 80 ? text.slice(0, 80) + '...' : text;
+      const snippet = text.length > 80 ? `${text.slice(0, 80)}...` : text;
       return snippet ? `Highlight: ${snippet}` : 'Highlight';
     }
     if (event.kind === 30617) {
       const name = event.tags.find(t => t[0] === 'name')?.[1] || 'Repo';
       return `Git Repository: ${name}`;
     }
-    if (event.kind === 1617 || event.kind === 1618 || event.kind === 1619 || event.kind === 1621) {
+    if (
+      event.kind === 1617 ||
+      event.kind === 1618 ||
+      event.kind === 1619 ||
+      event.kind === 1621
+    ) {
       const subject = event.tags.find(t => t[0] === 'subject')?.[1];
-      const label = event.kind === 1617 ? 'Git Patch'
-                  : event.kind === 1621 ? 'Git Issue'
-                  : 'Pull Request';
+      const label =
+        event.kind === 1617
+          ? 'Git Patch'
+          : event.kind === 1621
+            ? 'Git Issue'
+            : 'Pull Request';
       return subject ? `${label}: ${subject}` : label;
     }
-    if (event.kind === 1630 || event.kind === 1631 || event.kind === 1632 || event.kind === 1633) {
-      const status = event.kind === 1630 ? 'Open'
-                   : event.kind === 1631 ? 'Applied/Merged'
-                   : event.kind === 1632 ? 'Closed'
-                   : 'Draft';
+    if (
+      event.kind === 1630 ||
+      event.kind === 1631 ||
+      event.kind === 1632 ||
+      event.kind === 1633
+    ) {
+      const status =
+        event.kind === 1630
+          ? 'Open'
+          : event.kind === 1631
+            ? 'Applied/Merged'
+            : event.kind === 1632
+              ? 'Closed'
+              : 'Draft';
       return `Git Status: ${status}`;
     }
     if (event.kind === 35129) {
-      const title = event.tags.find(t => t[0] === 'title')?.[1]
-                 || event.tags.find(t => t[0] === 'd')?.[1]
-                 || 'Untitled';
+      const title =
+        event.tags.find(t => t[0] === 'title')?.[1] ||
+        event.tags.find(t => t[0] === 'd')?.[1] ||
+        'Untitled';
       return `Satellite Earth: ${title}`;
     }
     return this.getTextSnippet(event.content, 100);
@@ -2735,7 +3526,12 @@ export class BookmarkCard {
 // ----- NewBookmarkModal -----
 
 export interface NewBookmarkModalOptions {
-  onConfirm: (url: string, description: string, folderId: string, newFolderName?: string) => void;
+  onConfirm: (
+    url: string,
+    description: string,
+    folderId: string,
+    newFolderName?: string
+  ) => void;
 }
 
 /**
@@ -2761,12 +3557,14 @@ export class NewBookmarkModal {
       width: '450px',
       showCloseButton: true,
       closeOnOverlay: true,
-      closeOnEsc: true
+      closeOnEsc: true,
     });
 
     setTimeout(() => {
       this.setupEventHandlers();
-      const input = document.getElementById('new-bookmark-url-input') as HTMLInputElement;
+      const input = document.getElementById(
+        'new-bookmark-url-input'
+      ) as HTMLInputElement;
       input?.focus();
     }, 0);
   }
@@ -2838,11 +3636,21 @@ export class NewBookmarkModal {
   }
 
   private setupEventHandlers(): void {
-    const urlInput = document.getElementById('new-bookmark-url-input') as HTMLInputElement;
-    const descriptionInput = document.getElementById('new-bookmark-description-input') as HTMLInputElement;
-    const folderSelect = document.getElementById('new-bookmark-folder-select') as HTMLSelectElement;
-    const newFolderGroup = document.querySelector('.new-bookmark-modal__new-folder-group') as HTMLElement;
-    const newFolderInput = document.getElementById('new-bookmark-folder-name-input') as HTMLInputElement;
+    const urlInput = document.getElementById(
+      'new-bookmark-url-input'
+    ) as HTMLInputElement;
+    const descriptionInput = document.getElementById(
+      'new-bookmark-description-input'
+    ) as HTMLInputElement;
+    const folderSelect = document.getElementById(
+      'new-bookmark-folder-select'
+    ) as HTMLSelectElement;
+    const newFolderGroup = document.querySelector(
+      '.new-bookmark-modal__new-folder-group'
+    ) as HTMLElement;
+    const newFolderInput = document.getElementById(
+      'new-bookmark-folder-name-input'
+    ) as HTMLInputElement;
     const cancelBtn = document.getElementById('new-bookmark-cancel-btn');
     const saveBtn = document.getElementById('new-bookmark-save-btn');
 
@@ -2867,13 +3675,16 @@ export class NewBookmarkModal {
       }
 
       if (!isValidUrl(url)) {
-        urlInput.setCustomValidity('Please enter a valid URL starting with http:// or https://');
+        urlInput.setCustomValidity(
+          'Please enter a valid URL starting with http:// or https://'
+        );
         urlInput.reportValidity();
         return;
       }
 
       const folderId = folderSelect.value;
-      const newFolderName = folderId === '__new__' ? newFolderInput?.value.trim() : undefined;
+      const newFolderName =
+        folderId === '__new__' ? newFolderInput?.value.trim() : undefined;
 
       if (folderId === '__new__' && !newFolderName) {
         newFolderInput?.focus();
@@ -2884,15 +3695,17 @@ export class NewBookmarkModal {
       this.options.onConfirm(url, description, folderId, newFolderName);
     };
 
-    cancelBtn.addEventListener('click', () => { this.modalService.hide(); });
+    cancelBtn.addEventListener('click', () => {
+      this.modalService.hide();
+    });
     saveBtn.addEventListener('click', handleSave);
 
-    urlInput.addEventListener('keydown', (e) => {
+    urlInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') handleSave();
       else if (e.key === 'Escape') this.modalService.hide();
     });
 
-    newFolderInput?.addEventListener('keydown', (e) => {
+    newFolderInput?.addEventListener('keydown', e => {
       if (e.key === 'Enter') handleSave();
       else if (e.key === 'Escape') this.modalService.hide();
     });
@@ -2928,12 +3741,14 @@ export class EditBookmarkModal {
       width: '450px',
       showCloseButton: true,
       closeOnOverlay: true,
-      closeOnEsc: true
+      closeOnEsc: true,
     });
 
     setTimeout(() => {
       this.setupEventHandlers();
-      const input = document.getElementById('edit-bookmark-url-input') as HTMLInputElement;
+      const input = document.getElementById(
+        'edit-bookmark-url-input'
+      ) as HTMLInputElement;
       input?.focus();
       input?.select();
     }, 0);
@@ -2985,8 +3800,12 @@ export class EditBookmarkModal {
   }
 
   private setupEventHandlers(): void {
-    const urlInput = document.getElementById('edit-bookmark-url-input') as HTMLInputElement;
-    const descriptionInput = document.getElementById('edit-bookmark-description-input') as HTMLInputElement;
+    const urlInput = document.getElementById(
+      'edit-bookmark-url-input'
+    ) as HTMLInputElement;
+    const descriptionInput = document.getElementById(
+      'edit-bookmark-description-input'
+    ) as HTMLInputElement;
     const cancelBtn = document.getElementById('edit-bookmark-cancel-btn');
     const saveBtn = document.getElementById('edit-bookmark-save-btn');
 
@@ -3002,7 +3821,9 @@ export class EditBookmarkModal {
       }
 
       if (!isValidUrl(url)) {
-        urlInput.setCustomValidity('Please enter a valid URL starting with http:// or https://');
+        urlInput.setCustomValidity(
+          'Please enter a valid URL starting with http:// or https://'
+        );
         urlInput.reportValidity();
         return;
       }
@@ -3011,15 +3832,17 @@ export class EditBookmarkModal {
       this.options.onSave(url, description);
     };
 
-    cancelBtn.addEventListener('click', () => { this.modalService.hide(); });
+    cancelBtn.addEventListener('click', () => {
+      this.modalService.hide();
+    });
     saveBtn.addEventListener('click', handleSave);
 
-    urlInput.addEventListener('keydown', (e) => {
+    urlInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') handleSave();
       else if (e.key === 'Escape') this.modalService.hide();
     });
 
-    descriptionInput?.addEventListener('keydown', (e) => {
+    descriptionInput?.addEventListener('keydown', e => {
       if (e.key === 'Enter') handleSave();
       else if (e.key === 'Escape') this.modalService.hide();
     });
@@ -3111,7 +3934,10 @@ export class BookmarkManager {
 
   // ===== Sync Helper Methods (inlined) =====
 
-  private calculateDiff(browserItems: BookmarkItem[], sourceItems: BookmarkItem[]): BookmarkSyncDiff {
+  private calculateDiff(
+    browserItems: BookmarkItem[],
+    sourceItems: BookmarkItem[]
+  ): BookmarkSyncDiff {
     const browserMap = new Map(browserItems.map(item => [item.id, item]));
     const sourceMap = new Map(sourceItems.map(item => [item.id, item]));
 
@@ -3138,23 +3964,31 @@ export class BookmarkManager {
     return { added, removed, unchanged, moved };
   }
 
-  private mergeItems(browserItems: BookmarkItem[], newItems: BookmarkItem[]): BookmarkItem[] {
+  private mergeItems(
+    browserItems: BookmarkItem[],
+    newItems: BookmarkItem[]
+  ): BookmarkItem[] {
     return mergeByKey(browserItems, newItems, 'id');
   }
 
   private async syncFromRelays(): Promise<BookmarkSyncFromRelaysResult> {
-    const fetchResult = await this.adapter.fetchFromRelays() as FetchFromRelaysResult;
+    const fetchResult =
+      (await this.adapter.fetchFromRelays()) as FetchFromRelaysResult;
     const browserItems = this.adapter.getBrowserItems();
     const diff = this.calculateDiff(browserItems, fetchResult.items);
 
     const result: BookmarkSyncFromRelaysResult = {
-      requiresConfirmation: hasAnyBookmarkDifference(fetchResult.items, fetchResult.categories),
+      requiresConfirmation: hasAnyBookmarkDifference(
+        fetchResult.items,
+        fetchResult.categories
+      ),
       diff,
       relayItems: fetchResult.items,
       relayContentWasEmpty: fetchResult.relayContentWasEmpty,
-      relayTimestamp: fetchResult.relayTimestamp
+      relayTimestamp: fetchResult.relayTimestamp,
     };
-    if (fetchResult.categoryAssignments) result.categoryAssignments = fetchResult.categoryAssignments;
+    if (fetchResult.categoryAssignments)
+      result.categoryAssignments = fetchResult.categoryAssignments;
     if (fetchResult.categories) result.categories = fetchResult.categories;
     return result;
   }
@@ -3166,7 +4000,11 @@ export class BookmarkManager {
     // Get categories from file for proper folder order comparison
     const fileData = await readBookmarkFile();
     const fileCategories = fileData.metadata.setOrder;
-    return { requiresConfirmation: hasAnyBookmarkDifference(fileItems, fileCategories), diff, fileItems };
+    return {
+      requiresConfirmation: hasAnyBookmarkDifference(fileItems, fileCategories),
+      diff,
+      fileItems,
+    };
   }
 
   private async syncToRelays(): Promise<void> {
@@ -3186,11 +4024,16 @@ export class BookmarkManager {
       this.bookmarksCache.clear();
     };
     this.eventBus.on('user:logout', resetState);
-    this.eventBus.on('user:login', () => { resetState(); this.refreshIfActive(); });
+    this.eventBus.on('user:login', () => {
+      resetState();
+      this.refreshIfActive();
+    });
   }
 
   private getBookmarksTabContainer(): HTMLElement | null {
-    return this.containerElement.querySelector('[data-tab-content="list-bookmarks"]');
+    return this.containerElement.querySelector(
+      '[data-tab-content="list-bookmarks"]'
+    );
   }
 
   private refreshCurrentView(): void {
@@ -3218,7 +4061,11 @@ export class BookmarkManager {
     // (the user deleted it). createFolder would also clear the tombstone, so skipping
     // here keeps the deletion intact. Items of such folders are routed to root below.
     for (const categoryName of categories) {
-      if (categoryName !== '' && !isBookmarkFolderTombstoned(categoryName) && !existingFolders.find(f => f.name === categoryName)) {
+      if (
+        categoryName !== '' &&
+        !isBookmarkFolderTombstoned(categoryName) &&
+        !existingFolders.find(f => f.name === categoryName)
+      ) {
         this.folderService.createFolder(categoryName);
       }
     }
@@ -3227,22 +4074,30 @@ export class BookmarkManager {
     const currentRootOrder = this.folderService.getRootOrder();
 
     // Build new root order: relay folders first, then existing non-relay folders
-    const newRootOrder: Array<{type: 'folder' | 'bookmark'; id: string}> = categories
-      .filter(c => c !== '')
-      .map(categoryName => updatedFolders.find(f => f.name === categoryName))
-      .filter((f): f is NonNullable<typeof f> => !!f)
-      .map(f => ({ type: 'folder' as const, id: f.id }));
+    const newRootOrder: Array<{ type: 'folder' | 'bookmark'; id: string }> =
+      categories
+        .filter(c => c !== '')
+        .map(categoryName => updatedFolders.find(f => f.name === categoryName))
+        .filter((f): f is NonNullable<typeof f> => !!f)
+        .map(f => ({ type: 'folder' as const, id: f.id }));
 
     const relayFolderIds = new Set(newRootOrder.map(item => item.id));
-    newRootOrder.push(...currentRootOrder.filter(item => item.type === 'folder' && !relayFolderIds.has(item.id)));
+    newRootOrder.push(
+      ...currentRootOrder.filter(
+        item => item.type === 'folder' && !relayFolderIds.has(item.id)
+      )
+    );
 
     // Add bookmarks to root order
     if (includeRootBookmarks) {
       for (const [bookmarkId, categoryName] of categoryAssignments) {
-        if (categoryName === '') newRootOrder.push({ type: 'bookmark', id: bookmarkId });
+        if (categoryName === '')
+          newRootOrder.push({ type: 'bookmark', id: bookmarkId });
       }
     } else {
-      newRootOrder.push(...currentRootOrder.filter(item => item.type === 'bookmark'));
+      newRootOrder.push(
+        ...currentRootOrder.filter(item => item.type === 'bookmark')
+      );
     }
 
     this.folderService.saveRootOrder(newRootOrder);
@@ -3258,7 +4113,8 @@ export class BookmarkManager {
         this.folderService.moveBookmarkToFolder(bookmarkId, '');
       } else {
         const folder = updatedFolders.find(f => f.name === categoryName);
-        if (folder) this.folderService.moveBookmarkToFolder(bookmarkId, folder.id);
+        if (folder)
+          this.folderService.moveBookmarkToFolder(bookmarkId, folder.id);
       }
     }
   }
@@ -3317,7 +4173,10 @@ export class BookmarkManager {
           if (fileItems.length > 0) {
             this.adapter.setBrowserItems(fileItems);
             bookmarks = fileItems;
-            logger.info('BookmarkManager', `Restored ${fileItems.length} bookmarks from file`);
+            logger.info(
+              'BookmarkManager',
+              `Restored ${fileItems.length} bookmarks from file`
+            );
           }
         } catch {
           // File read failed, continue to try relays
@@ -3326,18 +4185,26 @@ export class BookmarkManager {
         // If still empty, try relays
         if (bookmarks.length === 0) {
           try {
-            const relayResult = await this.adapter.fetchFromRelays() as FetchFromRelaysResult;
+            const relayResult =
+              (await this.adapter.fetchFromRelays()) as FetchFromRelaysResult;
             if (relayResult.items.length > 0) {
               this.adapter.setBrowserItems(relayResult.items);
               bookmarks = relayResult.items;
-              logger.info('BookmarkManager', `Restored ${relayResult.items.length} bookmarks from relays`);
+              logger.info(
+                'BookmarkManager',
+                `Restored ${relayResult.items.length} bookmarks from relays`
+              );
 
               // Apply folder assignments from relay categories
               if (relayResult.categoryAssignments) {
                 await applyFolderAssignments(
                   relayResult.categoryAssignments,
                   this.folderService,
-                  (bookmarkId, folderId) => this.folderService.moveBookmarkToFolder(bookmarkId, folderId),
+                  (bookmarkId, folderId) =>
+                    this.folderService.moveBookmarkToFolder(
+                      bookmarkId,
+                      folderId
+                    ),
                   'BookmarkManager',
                   isBookmarkFolderTombstoned
                 );
@@ -3362,9 +4229,10 @@ export class BookmarkManager {
 
       const eventBookmarks = sortedBookmarks.filter(b => b.type === 'e');
       const eventIds = eventBookmarks.map(b => b.id);
-      const eventMap = eventIds.length > 0
-        ? await this.noteService.getNotes(eventIds)
-        : new Map<string, NostrEvent>();
+      const eventMap =
+        eventIds.length > 0
+          ? await this.noteService.getNotes(eventIds)
+          : new Map<string, NostrEvent>();
 
       this.bookmarksCache.clear();
 
@@ -3376,11 +4244,16 @@ export class BookmarkManager {
           id: bookmark.id,
           type: bookmark.type,
           value: bookmark.value,
-          isPrivate: (bookmark as BookmarkItem & { isPrivate?: boolean }).isPrivate || false
+          isPrivate:
+            (bookmark as BookmarkItem & { isPrivate?: boolean }).isPrivate ||
+            false,
         };
-        if (bookmark.addedAt !== undefined) cacheEntry.addedAt = bookmark.addedAt;
-        if (bookmark.category !== undefined) cacheEntry.category = bookmark.category;
-        if (bookmark.description !== undefined) cacheEntry.description = bookmark.description;
+        if (bookmark.addedAt !== undefined)
+          cacheEntry.addedAt = bookmark.addedAt;
+        if (bookmark.category !== undefined)
+          cacheEntry.category = bookmark.category;
+        if (bookmark.description !== undefined)
+          cacheEntry.description = bookmark.description;
         if (event) cacheEntry.event = event;
         this.bookmarksCache.set(bookmark.id, cacheEntry);
 
@@ -3388,7 +4261,8 @@ export class BookmarkManager {
       }
 
       if (isFirstInit) {
-        const rootOrder: Array<{ type: 'folder' | 'bookmark'; id: string }> = [];
+        const rootOrder: Array<{ type: 'folder' | 'bookmark'; id: string }> =
+          [];
         for (const bookmark of sortedBookmarks) {
           rootOrder.push({ type: 'bookmark', id: bookmark.id });
         }
@@ -3401,7 +4275,9 @@ export class BookmarkManager {
 
   private async renderCurrentView(container: HTMLElement): Promise<void> {
     const isInFolder = this.currentFolderId !== '';
-    const folder = isInFolder ? this.folderService.getFolder(this.currentFolderId) : null;
+    const folder = isInFolder
+      ? this.folderService.getFolder(this.currentFolderId)
+      : null;
 
     container.innerHTML = `
       ${this.renderSyncControls()}
@@ -3424,12 +4300,22 @@ export class BookmarkManager {
   private renderHeader(folder: { id: string; name: string } | null): string {
     const title = folder ? folder.name : 'Bookmarks';
     return renderListHeader(title, [
-      { action: 'new-folder', icon: '<svg width="16" height="16"><use href="#icon-folder"/></svg>', label: 'Folder' },
-      { action: 'new-bookmark', icon: '<svg width="16" height="16"><use href="#icon-bookmark-link"/></svg>', label: 'Bookmark' },
+      {
+        action: 'new-folder',
+        icon: '<svg width="16" height="16"><use href="#icon-folder"/></svg>',
+        label: 'Folder',
+      },
+      {
+        action: 'new-bookmark',
+        icon: '<svg width="16" height="16"><use href="#icon-bookmark-link"/></svg>',
+        label: 'Bookmark',
+      },
     ]);
   }
 
-  private renderBreadcrumb(folder: { id: string; name: string } | null): string {
+  private renderBreadcrumb(
+    folder: { id: string; name: string } | null
+  ): string {
     if (!folder) return '';
     return renderListBreadcrumb('Bookmarks', folder.name);
   }
@@ -3440,13 +4326,15 @@ export class BookmarkManager {
     if (this.currentFolderId !== '') {
       const upNav = new UpNavigator({
         onClick: () => this.navigateTo(''),
-        onDrop: async (bookmarkId) => {
+        onDrop: async bookmarkId => {
           await this.moveBookmarkToFolder(bookmarkId, '');
-        }
+        },
       });
       grid.appendChild(upNav.render());
 
-      const bookmarkIds = this.folderService.getBookmarksInFolder(this.currentFolderId);
+      const bookmarkIds = this.folderService.getBookmarksInFolder(
+        this.currentFolderId
+      );
       for (const bookmarkId of bookmarkIds) {
         const bookmark = this.bookmarksCache.get(bookmarkId);
         if (bookmark) {
@@ -3496,7 +4384,10 @@ export class BookmarkManager {
       }
     }
 
-    if (grid.children.length === 0 || (this.currentFolderId === '' && grid.children.length === 0)) {
+    if (
+      grid.children.length === 0 ||
+      (this.currentFolderId === '' && grid.children.length === 0)
+    ) {
       grid.innerHTML = `
         <div class="bookmarks-empty-state" style="grid-column: 1 / -1;">
           <p>No bookmarks yet</p>
@@ -3507,16 +4398,19 @@ export class BookmarkManager {
     this.initGridDragDrop(grid);
   }
 
-  private async createBookmarkCard(bookmark: BookmarkWithEvent): Promise<HTMLElement> {
+  private async createBookmarkCard(
+    bookmark: BookmarkWithEvent
+  ): Promise<HTMLElement> {
     const cardData: BookmarkCardData = {
       id: bookmark.id,
       type: bookmark.type,
       value: bookmark.value,
       isPrivate: bookmark.isPrivate,
-      folderId: this.folderService.getBookmarkFolder(bookmark.id)
+      folderId: this.folderService.getBookmarkFolder(bookmark.id),
     };
     if (bookmark.event) cardData.event = bookmark.event;
-    if (bookmark.description !== undefined) cardData.description = bookmark.description;
+    if (bookmark.description !== undefined)
+      cardData.description = bookmark.description;
 
     // Build move targets: all folders (excluding current) + root if in a folder
     const currentFolderId = cardData.folderId || '';
@@ -3549,7 +4443,9 @@ export class BookmarkManager {
   }
 
   private getActualFolderItemCount(folderId: string): number {
-    const realBookmarkIds = new Set(this.adapter.getBrowserItems().map(b => b.id));
+    const realBookmarkIds = new Set(
+      this.adapter.getBrowserItems().map(b => b.id)
+    );
     const assignedIds = this.folderService.getBookmarksInFolder(folderId);
     return assignedIds.filter(id => realBookmarkIds.has(id)).length;
   }
@@ -3563,22 +4459,25 @@ export class BookmarkManager {
       id: folder.id,
       name: folder.name,
       itemCount: this.getActualFolderItemCount(folder.id),
-      isMounted: isLoggedIn ? this.profileMountsService.isMounted(folder.name) : false,
+      isMounted: isLoggedIn
+        ? this.profileMountsService.isMounted(folder.name)
+        : false,
     };
 
     const card = new FolderCard(folderData, {
-      onClick: (folderId) => this.navigateTo(folderId),
-      onEdit: (folderId) => this.editFolder(folderId),
-      onDelete: async (folderId) => {
+      onClick: folderId => this.navigateTo(folderId),
+      onEdit: folderId => this.editFolder(folderId),
+      onDelete: async folderId => {
         await this.deleteFolder(folderId);
       },
       onDrop: async (bookmarkId, folderId) => {
         await this.moveBookmarkToFolder(bookmarkId, folderId);
       },
-      onDragStart: (_folderId) => {},
+      onDragStart: _folderId => {},
       onDragEnd: () => {},
       showMountCheckbox: showProfileMountCheckbox,
-      onMountToggle: (_folderId, folderName) => this.handleMountToggle(folderName),
+      onMountToggle: (_folderId, folderName) =>
+        this.handleMountToggle(folderName),
     });
 
     return card.render();
@@ -3612,9 +4511,10 @@ export class BookmarkManager {
       itemSelector: '[data-bookmark], [data-folder]',
       excludeSelector: 'button.delete',
       placeholderClass: 'bookmark-card-placeholder',
-      getItemId: (el) => el.dataset.bookmarkId || el.dataset.folderId || null,
+      getItemId: el => el.dataset.bookmarkId || el.dataset.folderId || null,
       onDrop: (draggedId, draggedEl, dropTarget) => {
-        const targetId = dropTarget.dataset.bookmarkId || dropTarget.dataset.folderId;
+        const targetId =
+          dropTarget.dataset.bookmarkId || dropTarget.dataset.folderId;
         const isDraggingBookmark = draggedEl.dataset.bookmark !== undefined;
         const isDraggingFolder = draggedEl.dataset.folder !== undefined;
         const isTargetFolder = dropTarget.dataset.folder !== undefined;
@@ -3626,8 +4526,12 @@ export class BookmarkManager {
           this.moveBookmarkToFolder(draggedId, targetId);
         } else if (targetId && targetId !== draggedId) {
           if (this.currentFolderId && isDraggingBookmark) {
-            const bookmarksInFolder = this.folderService.getBookmarksInFolder(this.currentFolderId);
-            const targetIndex = bookmarksInFolder.findIndex(id => id === targetId);
+            const bookmarksInFolder = this.folderService.getBookmarksInFolder(
+              this.currentFolderId
+            );
+            const targetIndex = bookmarksInFolder.findIndex(
+              id => id === targetId
+            );
             if (targetIndex !== -1) {
               this.folderService.moveItemToPosition(draggedId, targetIndex);
               grid.insertBefore(draggedEl, dropTarget);
@@ -3636,15 +4540,21 @@ export class BookmarkManager {
           } else {
             const draggedType = isDraggingFolder ? 'folder' : 'bookmark';
             const rootOrder = this.folderService.getRootOrder();
-            const targetIndex = rootOrder.findIndex(item => item.id === targetId);
+            const targetIndex = rootOrder.findIndex(
+              item => item.id === targetId
+            );
             if (targetIndex !== -1) {
-              this.folderService.moveInRootOrder(draggedType as 'folder' | 'bookmark', draggedId, targetIndex);
+              this.folderService.moveInRootOrder(
+                draggedType as 'folder' | 'bookmark',
+                draggedId,
+                targetIndex
+              );
               grid.insertBefore(draggedEl, dropTarget);
               this.eventBus.emit('bookmark:order-changed');
             }
           }
         }
-      }
+      },
     });
   }
 
@@ -3674,13 +4584,23 @@ export class BookmarkManager {
       // Reliable propagation: republish parent set IMMEDIATELY, bypassing the 2.5s debounce.
       // Per docs/features/lists.md "Reliable deletion publish" — every user-triggered delete
       // must reach relays without depending on debounce timing.
-      diagLog('lists', 'immediate publish after deleteBookmark — start', { eventId });
+      diagLog('lists', 'immediate publish after deleteBookmark — start', {
+        eventId,
+      });
       try {
         await publishBookmarksToRelays('bookmark-delete-immediate');
-        diagLog('lists', 'immediate publish after deleteBookmark — done', { eventId });
+        diagLog('lists', 'immediate publish after deleteBookmark — done', {
+          eventId,
+        });
       } catch (pubErr) {
-        diagLog('lists', 'immediate publish after deleteBookmark — FAILED', { eventId, error: String(pubErr) });
-        logger.warn('bookmarks.ts', `Immediate publish after item delete failed: ${pubErr}`);
+        diagLog('lists', 'immediate publish after deleteBookmark — FAILED', {
+          eventId,
+          error: String(pubErr),
+        });
+        logger.warn(
+          'bookmarks.ts',
+          `Immediate publish after item delete failed: ${pubErr}`
+        );
       }
     } catch (error) {
       console.error('Failed to delete bookmark:', error);
@@ -3703,7 +4623,7 @@ export class BookmarkManager {
               const updated: BookmarkItem = {
                 ...item,
                 id: newUrl,
-                value: newUrl
+                value: newUrl,
               };
               if (newDescription) {
                 updated.description = newDescription;
@@ -3723,10 +4643,12 @@ export class BookmarkManager {
               id: newUrl,
               type: cachedBookmark.type,
               value: newUrl,
-              isPrivate: cachedBookmark.isPrivate
+              isPrivate: cachedBookmark.isPrivate,
             };
-            if (cachedBookmark.addedAt !== undefined) updatedCache.addedAt = cachedBookmark.addedAt;
-            if (cachedBookmark.category !== undefined) updatedCache.category = cachedBookmark.category;
+            if (cachedBookmark.addedAt !== undefined)
+              updatedCache.addedAt = cachedBookmark.addedAt;
+            if (cachedBookmark.category !== undefined)
+              updatedCache.category = cachedBookmark.category;
             if (cachedBookmark.event) updatedCache.event = cachedBookmark.event;
             if (newDescription) updatedCache.description = newDescription;
             this.bookmarksCache.set(newUrl, updatedCache);
@@ -3750,7 +4672,7 @@ export class BookmarkManager {
           console.error('Failed to update bookmark:', error);
           ToastService.show('Failed to update bookmark', 'error');
         }
-      }
+      },
     });
 
     modal.show();
@@ -3764,7 +4686,7 @@ export class BookmarkManager {
 
     const modal = new EditFolderModal({
       currentName: folder.name,
-      onSave: async (newName) => {
+      onSave: async newName => {
         try {
           // Eager NIP-09 kind:5 deletion for the OLD folder coordinate, otherwise the
           // old kind:30003 set event keeps living on relays and resurrects on next fetch.
@@ -3773,16 +4695,32 @@ export class BookmarkManager {
             const currentUser = this.authService.getCurrentUser();
             if (currentUser) {
               const oldCoordinate = `30003:${currentUser.pubkey}:${oldName}`;
-              diagLog('lists', 'eager kind:5 publish for folder rename — start', { oldName, newName, oldCoordinate });
+              diagLog(
+                'lists',
+                'eager kind:5 publish for folder rename — start',
+                { oldName, newName, oldCoordinate }
+              );
               try {
-                const ok = await DeletionService.getInstance().deleteByCoordinates(
-                  [oldCoordinate],
-                  `Bookmark folder renamed from "${oldName}" to "${newName}"`
+                const ok =
+                  await DeletionService.getInstance().deleteByCoordinates(
+                    [oldCoordinate],
+                    `Bookmark folder renamed from "${oldName}" to "${newName}"`
+                  );
+                diagLog(
+                  'lists',
+                  'eager kind:5 publish for folder rename — done',
+                  { oldName, newName, ok }
                 );
-                diagLog('lists', 'eager kind:5 publish for folder rename — done', { oldName, newName, ok });
               } catch (kind5Err) {
-                diagLog('lists', 'eager kind:5 publish for folder rename — FAILED', { oldName, newName, error: String(kind5Err) });
-                logger.warn('bookmarks.ts', `Eager kind:5 publish failed for folder rename "${oldName}" → "${newName}": ${kind5Err}`);
+                diagLog(
+                  'lists',
+                  'eager kind:5 publish for folder rename — FAILED',
+                  { oldName, newName, error: String(kind5Err) }
+                );
+                logger.warn(
+                  'bookmarks.ts',
+                  `Eager kind:5 publish failed for folder rename "${oldName}" → "${newName}": ${kind5Err}`
+                );
               }
             }
           }
@@ -3820,7 +4758,7 @@ export class BookmarkManager {
           console.error('Failed to rename folder:', error);
           ToastService.show('Failed to rename folder', 'error');
         }
-      }
+      },
     });
 
     modal.show();
@@ -3839,16 +4777,29 @@ export class BookmarkManager {
         const currentUser = this.authService.getCurrentUser();
         if (currentUser) {
           const coordinate = `30003:${currentUser.pubkey}:${folderName}`;
-          diagLog('lists', 'eager kind:5 publish for folder delete — start', { folderName, coordinate });
+          diagLog('lists', 'eager kind:5 publish for folder delete — start', {
+            folderName,
+            coordinate,
+          });
           try {
             const ok = await DeletionService.getInstance().deleteByCoordinates(
               [coordinate],
               `Bookmark folder "${folderName}" deleted`
             );
-            diagLog('lists', 'eager kind:5 publish for folder delete — done', { folderName, ok });
+            diagLog('lists', 'eager kind:5 publish for folder delete — done', {
+              folderName,
+              ok,
+            });
           } catch (kind5Err) {
-            diagLog('lists', 'eager kind:5 publish for folder delete — FAILED', { folderName, error: String(kind5Err) });
-            logger.warn('bookmarks.ts', `Eager kind:5 publish failed for folder "${folderName}": ${kind5Err}`);
+            diagLog(
+              'lists',
+              'eager kind:5 publish for folder delete — FAILED',
+              { folderName, error: String(kind5Err) }
+            );
+            logger.warn(
+              'bookmarks.ts',
+              `Eager kind:5 publish failed for folder "${folderName}": ${kind5Err}`
+            );
           }
         }
       }
@@ -3890,13 +4841,18 @@ export class BookmarkManager {
     }
   }
 
-  private async moveBookmarkToFolder(bookmarkId: string, targetFolderId: string): Promise<void> {
+  private async moveBookmarkToFolder(
+    bookmarkId: string,
+    targetFolderId: string
+  ): Promise<void> {
     try {
       const currentFolderId = this.folderService.getBookmarkFolder(bookmarkId);
 
       if (currentFolderId === targetFolderId) return;
 
-      const targetFolder = targetFolderId ? this.folderService.getFolder(targetFolderId) : null;
+      const targetFolder = targetFolderId
+        ? this.folderService.getFolder(targetFolderId)
+        : null;
       const targetCategoryName = targetFolder?.name || '';
 
       this.folderService.moveBookmarkToFolder(bookmarkId, targetFolderId);
@@ -3921,16 +4877,21 @@ export class BookmarkManager {
         cachedBookmark.category = targetCategoryName;
       }
 
-      const targetName = targetFolderId === '' ? 'root' : targetFolder?.name || 'folder';
+      const targetName =
+        targetFolderId === '' ? 'root' : targetFolder?.name || 'folder';
       ToastService.show(`Moved to ${targetName}`, 'success');
 
       this.eventBus.emit('bookmark:updated');
 
-      const card = this.containerElement.querySelector(`[data-bookmark-id="${bookmarkId}"]`);
+      const card = this.containerElement.querySelector(
+        `[data-bookmark-id="${bookmarkId}"]`
+      );
       card?.remove();
 
       if (targetFolderId !== '') {
-        const folderCard = this.containerElement.querySelector(`[data-folder-id="${targetFolderId}"]`);
+        const folderCard = this.containerElement.querySelector(
+          `[data-folder-id="${targetFolderId}"]`
+        );
         const countEl = folderCard?.querySelector('.folder-card__count');
         if (countEl) {
           const newCount = this.getActualFolderItemCount(targetFolderId);
@@ -3945,7 +4906,7 @@ export class BookmarkManager {
 
   private createNewFolder(): void {
     const modal = new NewFolderModal({
-      onConfirm: (name) => {
+      onConfirm: name => {
         try {
           const folder = this.folderService.createFolder(name);
           this.folderService.addToRootOrder('folder', folder.id);
@@ -3963,7 +4924,7 @@ export class BookmarkManager {
           console.error('Failed to create folder:', error);
           ToastService.show('Failed to create folder', 'error');
         }
-      }
+      },
     });
 
     modal.show();
@@ -3992,7 +4953,7 @@ export class BookmarkManager {
             value: url,
             addedAt: now(),
             isPrivate: false,
-            category: categoryName
+            category: categoryName,
           };
           if (description) {
             bookmarkItem.description = description;
@@ -4010,9 +4971,10 @@ export class BookmarkManager {
             type: 'r',
             value: url,
             isPrivate: false,
-            category: categoryName
+            category: categoryName,
           };
-          if (bookmarkItem.addedAt !== undefined) cacheEntry.addedAt = bookmarkItem.addedAt;
+          if (bookmarkItem.addedAt !== undefined)
+            cacheEntry.addedAt = bookmarkItem.addedAt;
           if (description) cacheEntry.description = description;
           this.bookmarksCache.set(url, cacheEntry);
 
@@ -4032,7 +4994,7 @@ export class BookmarkManager {
           console.error('Failed to create bookmark:', error);
           ToastService.show('Failed to create bookmark', 'error');
         }
-      }
+      },
     });
 
     modal.show();
@@ -4055,7 +5017,9 @@ export class BookmarkManager {
 
     const dropdown = container.querySelector('[data-list-header-dropdown]');
     const folderItem = container.querySelector('[data-action="new-folder"]');
-    const bookmarkItem = container.querySelector('[data-action="new-bookmark"]');
+    const bookmarkItem = container.querySelector(
+      '[data-action="new-bookmark"]'
+    );
 
     folderItem?.addEventListener('click', () => {
       dropdown?.classList.remove('custom-dropdown--open');
@@ -4084,42 +5048,50 @@ export class BookmarkManager {
           this.applyRelayFolderAssignments(
             result.categoryAssignments,
             result.categories || [],
-            true  // Include root bookmarks - full replacement
+            true // Include root bookmarks - full replacement
           );
         }
       };
 
       // Merge: add new bookmarks with their folder assignments
       const mergeFromRelays = () => {
-        const merged = this.mergeItems(this.adapter.getBrowserItems(), result.relayItems);
+        const merged = this.mergeItems(
+          this.adapter.getBrowserItems(),
+          result.relayItems
+        );
         this.adapter.setBrowserItems(merged);
         if (result.categoryAssignments) {
           this.applyRelayFolderAssignments(
             result.categoryAssignments,
             result.categories || [],
-            false  // Don't replace root bookmarks - merge only
+            false // Don't replace root bookmarks - merge only
           );
         }
       };
 
       if (result.requiresConfirmation) {
         // Convert moved items to MovedItemInfo format
-        const movedItems: MovedItemInfo<BookmarkItem>[] = result.diff.moved.map(m => ({
-          item: m.browserItem,
-          browserFolder: m.browserItem.category || '',
-          sourceFolder: m.sourceItem.category || ''
-        }));
+        const movedItems: MovedItemInfo<BookmarkItem>[] = result.diff.moved.map(
+          m => ({
+            item: m.browserItem,
+            browserFolder: m.browserItem.category || '',
+            sourceFolder: m.sourceItem.category || '',
+          })
+        );
 
         const modal = new SyncConfirmationModal({
           listType: 'Bookmarks',
           added: result.diff.added,
           removed: result.diff.removed,
           moved: movedItems,
-          getDisplayName: (item) => this.getDisplayNameForSync(item),
+          getDisplayName: item => this.getDisplayNameForSync(item),
           onKeep: async () => {
             mergeFromRelays();
             await this.syncToRelays();
-            ToastService.show('Merged bookmarks and synced to relays', 'success');
+            ToastService.show(
+              'Merged bookmarks and synced to relays',
+              'success'
+            );
             await this.loadBookmarks();
             this.renderCurrentView(container);
           },
@@ -4134,7 +5106,7 @@ export class BookmarkManager {
             ToastService.show('Local bookmarks pushed to relays', 'success');
             await this.loadBookmarks();
             this.renderCurrentView(container);
-          }
+          },
         });
 
         await modal.show();
@@ -4159,7 +5131,10 @@ export class BookmarkManager {
       ToastService.show('Bookmarks published successfully', 'success');
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
-      diagLog('lists', 'handleSyncToRelays: FAILED', { error: msg, stack: error instanceof Error ? error.stack : undefined });
+      diagLog('lists', 'handleSyncToRelays: FAILED', {
+        error: msg,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       console.error('Failed to publish to relays:', error);
       ToastService.show('Failed to publish to relays', 'error');
     }
@@ -4194,7 +5169,11 @@ export class BookmarkManager {
         const browserItems = this.adapter.getBrowserItems();
         const diff = this.calculateDiff(browserItems, uploadedItems);
         // For uploaded file, categories are derived from items (no setOrder available)
-        result = { requiresConfirmation: hasAnyBookmarkDifference(uploadedItems), diff, fileItems: uploadedItems };
+        result = {
+          requiresConfirmation: hasAnyBookmarkDifference(uploadedItems),
+          diff,
+          fileItems: uploadedItems,
+        };
       } else {
         // Desktop: Read from local file
         ToastService.show('Reading from file...', 'info');
@@ -4206,7 +5185,11 @@ export class BookmarkManager {
         this.adapter.setBrowserItems(result.fileItems);
         if (!isBrowser) {
           const folderData = await getAllFolderDataFromFile();
-          this.folderService.restoreAllFolderData(folderData.folders, folderData.folderAssignments, folderData.rootOrder);
+          this.folderService.restoreAllFolderData(
+            folderData.folders,
+            folderData.folderAssignments,
+            folderData.rootOrder
+          );
         }
       };
 
@@ -4225,7 +5208,9 @@ export class BookmarkManager {
           if (categoryName === '') {
             this.folderService.ensureBookmarkAssignment(item.id);
           } else {
-            const folder = this.folderService.getFolders().find(f => f.name === categoryName);
+            const folder = this.folderService
+              .getFolders()
+              .find(f => f.name === categoryName);
             if (folder) {
               this.folderService.moveBookmarkToFolder(item.id, folder.id);
             }
@@ -4235,28 +5220,37 @@ export class BookmarkManager {
 
       if (result.requiresConfirmation) {
         // Convert moved items to MovedItemInfo format
-        const movedItems: MovedItemInfo<BookmarkItem>[] = result.diff.moved.map(m => ({
-          item: m.browserItem,
-          browserFolder: m.browserItem.category || '',
-          sourceFolder: m.sourceItem.category || ''
-        }));
+        const movedItems: MovedItemInfo<BookmarkItem>[] = result.diff.moved.map(
+          m => ({
+            item: m.browserItem,
+            browserFolder: m.browserItem.category || '',
+            sourceFolder: m.sourceItem.category || '',
+          })
+        );
 
         const modal = new SyncConfirmationModal({
           listType: 'Bookmarks (File)',
           added: result.diff.added,
           removed: result.diff.removed,
           moved: movedItems,
-          getDisplayName: (item: BookmarkItem) => this.getDisplayNameForSync(item),
+          getDisplayName: (item: BookmarkItem) =>
+            this.getDisplayNameForSync(item),
           onKeep: async () => {
             await mergeFromFile(result.diff.added);
             await this.syncToRelays();
-            ToastService.show(`Merged ${result.diff.added.length} from file and synced to relays`, 'success');
+            ToastService.show(
+              `Merged ${result.diff.added.length} from file and synced to relays`,
+              'success'
+            );
             await this.loadBookmarks();
             this.renderCurrentView(container);
           },
           onRelay: async () => {
             await fullRestoreFromFile();
-            ToastService.show(`Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            ToastService.show(
+              `Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`,
+              'success'
+            );
             await this.loadBookmarks();
             this.renderCurrentView(container);
           },
@@ -4265,12 +5259,15 @@ export class BookmarkManager {
             ToastService.show('Local bookmarks pushed to relays', 'success');
             await this.loadBookmarks();
             this.renderCurrentView(container);
-          }
+          },
         });
         modal.show();
       } else if (result.diff.added.length > 0) {
         await fullRestoreFromFile();
-        ToastService.show(`Restored ${result.diff.added.length} bookmark${result.diff.added.length > 1 ? 's' : ''} from file`, 'success');
+        ToastService.show(
+          `Restored ${result.diff.added.length} bookmark${result.diff.added.length > 1 ? 's' : ''} from file`,
+          'success'
+        );
         await this.loadBookmarks();
         this.renderCurrentView(container);
       } else {
@@ -4283,9 +5280,9 @@ export class BookmarkManager {
   }
 
   private async getDisplayNameForSync(item: BookmarkItem): Promise<string> {
-    const fallback = item.id.slice(0, 12) + '...';
+    const fallback = `${item.id.slice(0, 12)}...`;
     const formatContent = (content?: string): string | null =>
-      content ? (content.slice(0, 60) || fallback) : null;
+      content ? content.slice(0, 60) || fallback : null;
 
     try {
       const cached = this.bookmarksCache.get(item.id);
@@ -4317,7 +5314,7 @@ export class BookmarkManager {
 
 // For components that import from old paths
 export const BookmarkFolderService = {
-  getInstance: getBookmarkFolderService
+  getInstance: getBookmarkFolderService,
 };
 
 // Legacy alias for BookmarkOrchestrator consumers
@@ -4326,9 +5323,11 @@ export const BookmarkOrchestrator = {
     isPrivateBookmarksEnabled,
     setPrivateBookmarksEnabled,
     // Backward compatibility wrappers (extra params ignored)
-    isBookmarked: (noteId: string, _pubkey?: string) => isNoteBookmarked(noteId),
+    isBookmarked: (noteId: string, _pubkey?: string) =>
+      isNoteBookmarked(noteId),
     addBookmark,
-    removeBookmark: (noteId: string, _isPrivate?: boolean) => removeBookmark(noteId),
+    removeBookmark: (noteId: string, _isPrivate?: boolean) =>
+      removeBookmark(noteId),
     getAllBookmarks: getAllBookmarkIds,
     getAllBookmarksWithMetadata,
     getAllBookmarksWithStatus,
@@ -4337,6 +5336,6 @@ export const BookmarkOrchestrator = {
     fetchFromRelays: fetchBookmarksFromRelays,
     fetchBookmarksFromRelays,
     getBrowserItems: readBrowserBookmarks,
-    setBrowserItems: writeBrowserBookmarks
-  })
+    setBrowserItems: writeBrowserBookmarks,
+  }),
 };

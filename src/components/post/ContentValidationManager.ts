@@ -43,7 +43,7 @@ export class ContentValidationManager {
       isValid,
       hasContent,
       hasPoll,
-      hasRelays
+      hasRelays,
     };
   }
 

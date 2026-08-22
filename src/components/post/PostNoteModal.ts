@@ -39,7 +39,10 @@ import { MentionAutocomplete } from '../mentions/MentionAutocomplete';
 import { ProfileSearchComponent } from '../profile/ProfileSearchComponent';
 import { isCustomEmojisEnabled } from '../../addons/custom-emojis/index';
 import { isScheduledPostsEnabled } from '../../addons/scheduled-posts/index';
-import { ModalEventHandlerManager, type TabMode } from '../modals/ModalEventHandlerManager';
+import {
+  ModalEventHandlerManager,
+  type TabMode,
+} from '../modals/ModalEventHandlerManager';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { NoteDraftService } from '../../services/NoteDraftService';
 import { ToastService } from '../../services/ToastService';
@@ -74,7 +77,8 @@ export class PostNoteModal {
   private modalService: ModalService;
   private _postsApi?: PostsModuleApi | null;
   private get postsApi(): PostsModuleApi | null {
-    return this._postsApi ??= ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
+    return (this._postsApi ??=
+      ModuleLoader.getInstance().getApi<PostsModuleApi>('posts'));
   }
   private relayConfig: RelayConfig;
   private authService: AuthService;
@@ -88,8 +92,12 @@ export class PostNoteModal {
   private nsfwSwitch: Switch | null = null;
   private pollCreator: PollCreator | null = null;
   private mentionAutocomplete: MentionAutocomplete | null = null;
-  private customEmojiAutocomplete: import('../../addons/custom-emojis/CustomEmojiAutocomplete').CustomEmojiAutocomplete | null = null;
-  private customEmojiService: import('../../addons/custom-emojis/EmojiService').EmojiService | null = null;
+  private customEmojiAutocomplete:
+    | import('../../addons/custom-emojis/CustomEmojiAutocomplete').CustomEmojiAutocomplete
+    | null = null;
+  private customEmojiService:
+    | import('../../addons/custom-emojis/EmojiService').EmojiService
+    | null = null;
   private eventHandlerManager: ModalEventHandlerManager | null = null;
 
   // State
@@ -139,7 +147,11 @@ export class PostNoteModal {
    *                  or an options object with optional `highlightSource` to
    *                  switch into NIP-84 Highlight mode.
    */
-  public show(options?: string | { initialContent?: string; highlightSource?: HighlightSource }): void {
+  public show(
+    options?:
+      | string
+      | { initialContent?: string; highlightSource?: HighlightSource }
+  ): void {
     let initialContent: string | undefined;
     if (typeof options === 'string') {
       initialContent = options;
@@ -166,7 +178,7 @@ export class PostNoteModal {
       showCloseButton: true,
       closeOnOverlay: false,
       closeOnEsc: true,
-      onBeforeClose: () => this.confirmDiscardOrSave()
+      onBeforeClose: () => this.confirmDiscardOrSave(),
     });
 
     setTimeout(() => {
@@ -184,7 +196,10 @@ export class PostNoteModal {
     this.selectedRelays = cfg.selectedRelays;
 
     if (cfg.isTestMode) {
-      this.systemLogger.info('PostNoteModal', 'TEST mode: Using local relay only');
+      this.systemLogger.info(
+        'PostNoteModal',
+        'TEST mode: Using local relay only'
+      );
       return;
     }
 
@@ -192,12 +207,17 @@ export class PostNoteModal {
     const selectedRelay = this.appState.getState('timeline').selectedRelay;
     if (selectedRelay) {
       this.selectedRelays = new Set([selectedRelay]);
-      this.systemLogger.info('PostNoteModal', `Relay filter active: Pre-selecting ${selectedRelay}`);
+      this.systemLogger.info(
+        'PostNoteModal',
+        `Relay filter active: Pre-selecting ${selectedRelay}`
+      );
     } else {
-      this.systemLogger.info('PostNoteModal', `Normal mode: ${this.availableRelays.length} relays available`);
+      this.systemLogger.info(
+        'PostNoteModal',
+        `Normal mode: ${this.availableRelays.length} relays available`
+      );
     }
   }
-
 
   /**
    * Render modal content
@@ -236,18 +256,18 @@ export class PostNoteModal {
       availableRelays: this.availableRelays,
       selectedRelays: this.selectedRelays,
       isTestMode: this.isTestMode,
-      onChange: (selectedRelays) => {
+      onChange: selectedRelays => {
         this.selectedRelays = selectedRelays;
         this.updatePostButton();
-      }
+      },
     });
 
     // Per-post custom client tag control (mounted into modal__header, see setupEventHandlers)
     this.clientTagControl = new ClientTagControl({
       initialValue: this.customClientTag,
-      onChange: (value) => {
+      onChange: value => {
         this.customClientTag = value;
-      }
+      },
     });
 
     return `
@@ -286,7 +306,9 @@ export class PostNoteModal {
    * Refresh the Drafts tab count badge in place.
    */
   private updateDraftsTabBadge(): void {
-    const btn = document.querySelector('.post-note-modal [data-tab="drafts"]') as HTMLElement | null;
+    const btn = document.querySelector(
+      '.post-note-modal [data-tab="drafts"]'
+    ) as HTMLElement | null;
     if (btn) btn.innerHTML = this.renderDraftsTabLabel();
   }
 
@@ -324,7 +346,7 @@ export class PostNoteModal {
         content: cleanedContent,
         pubkey: currentUser?.pubkey || '',
         isNSFW: this.isNSFW,
-        ...(extraTags.length > 0 ? { extraTags } : {})
+        ...(extraTags.length > 0 ? { extraTags } : {}),
       });
 
       return `<div class="post-note-preview">${previewHTML}</div>`;
@@ -337,8 +359,8 @@ export class PostNoteModal {
   private renderActions(): string {
     // Create toolbar component
     this.toolbar = new PostEditorToolbar({
-      onMediaUploaded: (url) => this.handleMediaUploaded(url),
-      onEmojiSelected: (emoji) => this.handleEmojiSelected(emoji),
+      onMediaUploaded: url => this.handleMediaUploaded(url),
+      onEmojiSelected: emoji => this.handleEmojiSelected(emoji),
       onPollToggle: () => this.handlePollToggle(),
       onScheduleClick: () => this.handleScheduleClick(),
       textareaSelector: '[data-textarea]',
@@ -352,12 +374,14 @@ export class PostNoteModal {
       : ContentValidationManager.validate({
           content: this.content,
           selectedRelays: this.selectedRelays,
-          pollData: this.pollData
+          pollData: this.pollData,
         }).isValid;
 
     const postButtonLabel = this.highlightSource
       ? 'Post Highlight'
-      : (this.scheduledAt !== null ? 'Schedule' : 'Post');
+      : this.scheduledAt !== null
+        ? 'Schedule'
+        : 'Post';
     return `
       <div class="l-row l-row--split">
         <div>
@@ -395,13 +419,17 @@ export class PostNoteModal {
    * so it survives any subsequent innerHTML replacements.
    */
   private updateScheduleHint(): void {
-    const hintEl = document.querySelector('#post-note-schedule-hint') as HTMLElement | null;
+    const hintEl = document.querySelector(
+      '#post-note-schedule-hint'
+    ) as HTMLElement | null;
     if (!hintEl) return;
     hintEl.innerHTML = this.renderScheduleHintHtml();
     if (!hintEl.dataset.delegated) {
       hintEl.dataset.delegated = 'true';
-      hintEl.addEventListener('click', (e) => {
-        const target = (e.target as HTMLElement).closest('[data-action="clear-schedule"]');
+      hintEl.addEventListener('click', e => {
+        const target = (e.target as HTMLElement).closest(
+          '[data-action="clear-schedule"]'
+        );
         if (!target) return;
         e.preventDefault();
         e.stopPropagation();
@@ -416,7 +444,9 @@ export class PostNoteModal {
    * Update the Post/Schedule button label based on scheduledAt state.
    */
   private updatePostButtonLabel(): void {
-    const btn = document.querySelector('[data-action="post"]') as HTMLButtonElement | null;
+    const btn = document.querySelector(
+      '[data-action="post"]'
+    ) as HTMLButtonElement | null;
     if (!btn) return;
     btn.textContent = this.scheduledAt !== null ? 'Schedule' : 'Post';
   }
@@ -454,12 +484,16 @@ export class PostNoteModal {
     if (!modal) return;
 
     // Mount relay selector into modal__header (outside overflow container)
-    const modalHeader = modal.closest('.modal__body')?.previousElementSibling as HTMLElement;
+    const modalHeader = modal.closest('.modal__body')
+      ?.previousElementSibling as HTMLElement;
     if (this.relaySelector && modalHeader) {
       const relaySelectorDiv = document.createElement('div');
       relaySelectorDiv.innerHTML = this.relaySelector.render();
       const relaySelectorEl = relaySelectorDiv.firstElementChild as HTMLElement;
-      modalHeader.insertBefore(relaySelectorEl, modalHeader.querySelector('.modal__close'));
+      modalHeader.insertBefore(
+        relaySelectorEl,
+        modalHeader.querySelector('.modal__close')
+      );
       this.relaySelector.setupEventListeners(relaySelectorEl);
 
       // Mount the client-tag control just before the relay selector
@@ -482,8 +516,11 @@ export class PostNoteModal {
     this.mentionAutocomplete = new MentionAutocomplete({
       textareaSelector: '[data-textarea]',
       onMentionInserted: (_npub, username) => {
-        this.systemLogger.info('PostNoteModal', `Mention inserted: @${username}`);
-      }
+        this.systemLogger.info(
+          'PostNoteModal',
+          `Mention inserted: @${username}`
+        );
+      },
     });
     this.mentionAutocomplete.init();
 
@@ -497,20 +534,26 @@ export class PostNoteModal {
       textareaSelector: '[data-textarea]',
       activeTabClass: 'tab--active',
       currentTab: this.currentTab,
-      onTabSwitch: (tab) => this.switchTab(tab),
-      onTextInput: (value) => {
+      onTabSwitch: tab => this.switchTab(tab),
+      onTextInput: value => {
         this.content = value;
         this.updatePostButton();
       },
       onCancel: () => this.handleCancel(),
       onSubmit: () => this.handlePost(),
-      onSaveDraft: () => this.handleSaveDraft()
+      onSaveDraft: () => this.handleSaveDraft(),
     });
     this.eventHandlerManager.setupEventListeners();
 
     // Paste-to-upload: a pasted image/video/audio is uploaded via the upload path.
-    const textarea = modal.querySelector('[data-textarea]') as HTMLElement | null;
-    if (textarea) setupPasteUpload(textarea, files => void this.toolbar?.handleFileUpload(files));
+    const textarea = modal.querySelector(
+      '[data-textarea]'
+    ) as HTMLElement | null;
+    if (textarea)
+      setupPasteUpload(
+        textarea,
+        files => void this.toolbar?.handleFileUpload(files)
+      );
   }
 
   /**
@@ -530,31 +573,36 @@ export class PostNoteModal {
         let html = renderPostPreview({
           content: stripTrackingParams(this.content),
           pubkey: currentUser?.pubkey || '',
-          isNSFW: this.isNSFW
+          isNSFW: this.isNSFW,
         });
         // Add poll preview if poll is configured
         const pollPreviewHtml = this.renderPollPreview();
         if (pollPreviewHtml) html += pollPreviewHtml;
         return html;
       },
-      onPreviewRendered: (previewContainer) => {
+      onPreviewRendered: previewContainer => {
         this.renderQuotedNotesInPreview(previewContainer);
-        attachPreviewClickToEdit(previewContainer, () => this.switchTab('edit'));
+        attachPreviewClickToEdit(previewContainer, () =>
+          this.switchTab('edit')
+        );
       },
       renderDraftsHtml: () => renderDraftsList(),
-      onDraftsRendered: (draftsContainer) => setupDraftsList(draftsContainer, {
-        onOpen: (draft) => {
-          this.cleanup();
-          this.modalService.hide();
-          openDraftInComposer(draft);
-        },
-        onChanged: () => this.updateDraftsTabBadge(),
-      }),
+      onDraftsRendered: draftsContainer =>
+        setupDraftsList(draftsContainer, {
+          onOpen: draft => {
+            this.cleanup();
+            this.modalService.hide();
+            openDraftInComposer(draft);
+          },
+          onChanged: () => this.updateDraftsTabBadge(),
+        }),
     });
 
     if (rendered) {
       // Toggle poll-creator visibility based on tab
-      const pollContainer = document.querySelector('.post-note-modal #poll-creator-container') as HTMLElement;
+      const pollContainer = document.querySelector(
+        '.post-note-modal #poll-creator-container'
+      ) as HTMLElement;
       if (pollContainer) {
         pollContainer.style.display = this.currentTab === 'edit' ? '' : 'none';
       }
@@ -566,7 +614,9 @@ export class PostNoteModal {
    */
   private updatePostButton(): void {
     if (this.highlightSource) {
-      const btn = document.querySelector('[data-action="post"]') as HTMLButtonElement | null;
+      const btn = document.querySelector(
+        '[data-action="post"]'
+      ) as HTMLButtonElement | null;
       if (btn) btn.disabled = this.selectedRelays.size === 0;
       return;
     }
@@ -586,7 +636,7 @@ export class PostNoteModal {
     EditorStateManager.updatePreview('.post-note-preview', {
       content: stripTrackingParams(this.content),
       pubkey: currentUser?.pubkey || '',
-      isNSFW: this.isNSFW
+      isNSFW: this.isNSFW,
     });
   }
 
@@ -595,11 +645,11 @@ export class PostNoteModal {
    */
   private handleMediaUploaded(url: string): void {
     EditorStateManager.handleMediaUploaded(url, '[data-textarea]', {
-      onContentChange: (newContent) => {
+      onContentChange: newContent => {
         this.content = newContent;
         this.updatePostButton();
       },
-      onShowNSFWSwitch: () => this.showNSFWSwitch()
+      onShowNSFWSwitch: () => this.showNSFWSwitch(),
     });
     // NIP-68 image tagging — register URL in state + render thumbnail.
     // Skip non-image URLs (videos, audio) — NIP-68 is image-only.
@@ -629,8 +679,10 @@ export class PostNoteModal {
     strip.appendChild(thumb);
 
     // Wire tag-button click
-    const tagBtn = thumb.querySelector('.post-note-modal__tag-btn') as HTMLElement;
-    tagBtn.addEventListener('click', (e) => {
+    const tagBtn = thumb.querySelector(
+      '.post-note-modal__tag-btn'
+    ) as HTMLElement;
+    tagBtn.addEventListener('click', e => {
       e.preventDefault();
       e.stopPropagation();
       this.openTagOverlay(url, tagBtn);
@@ -668,7 +720,7 @@ export class PostNoteModal {
       privacyHint: 'Tagged users will be publicly visible',
       chipMode: true,
       initialChips: (this.imageTags.get(url) ?? []).map(e => ({ ...e })),
-      onChipsChange: (chips) => {
+      onChipsChange: chips => {
         // Hard cap (UI guard before publish — also enforced in PostService).
         if (chips.length > PostNoteModal.MAX_TAGS_PER_IMAGE) {
           ToastService.show('Only 50 tags permitted', 'error');
@@ -676,7 +728,10 @@ export class PostNoteModal {
           const trimmed = chips.slice(0, PostNoteModal.MAX_TAGS_PER_IMAGE);
           this.imageTags.set(url, trimmed);
         } else {
-          this.imageTags.set(url, chips.map(c => ({ ...c })));
+          this.imageTags.set(
+            url,
+            chips.map(c => ({ ...c }))
+          );
         }
         this.updateTagBadge(url);
 
@@ -691,7 +746,10 @@ export class PostNoteModal {
       },
       onSubmit: async (_value, helpers) => {
         // Chips are already synced via onChipsChange — Apply just closes.
-        if ((this.imageTags.get(url) ?? []).length > PostNoteModal.MAX_TAGS_PER_IMAGE) {
+        if (
+          (this.imageTags.get(url) ?? []).length >
+          PostNoteModal.MAX_TAGS_PER_IMAGE
+        ) {
           ToastService.show('Only 50 tags permitted', 'error');
           return;
         }
@@ -700,7 +758,9 @@ export class PostNoteModal {
     });
 
     // Mount next to the thumbnail
-    const allThumbs = Array.from(document.querySelectorAll('.post-note-modal__media-thumb')) as HTMLElement[];
+    const allThumbs = Array.from(
+      document.querySelectorAll('.post-note-modal__media-thumb')
+    ) as HTMLElement[];
     const thumb = allThumbs.find(t => t.dataset.imageUrl === url);
     if (!thumb) return;
     const host = document.createElement('div');
@@ -712,7 +772,9 @@ export class PostNoteModal {
     // Wire MentionAutocomplete to the component's input. When the user
     // picks a suggestion, cache the username so the chip created from
     // Enter/comma later shows the proper name instead of a truncated npub.
-    const inputEl = component.getElement().querySelector('.textinput-overlay__input') as HTMLInputElement | null;
+    const inputEl = component
+      .getElement()
+      .querySelector('.textinput-overlay__input') as HTMLInputElement | null;
     if (inputEl) {
       inputEl.setAttribute('data-image-tags', url);
       const autocomplete = new MentionAutocomplete({
@@ -748,7 +810,9 @@ export class PostNoteModal {
       this.tagMentionAutocompletes.delete(url);
     }
     // Remove the host (and its DOM subtree) from the thumbnail.
-    const allThumbs = Array.from(document.querySelectorAll('.post-note-modal__media-thumb')) as HTMLElement[];
+    const allThumbs = Array.from(
+      document.querySelectorAll('.post-note-modal__media-thumb')
+    ) as HTMLElement[];
     const thumb = allThumbs.find(t => t.dataset.imageUrl === url);
     thumb?.querySelector('.post-note-modal__tag-overlay-host')?.remove();
   }
@@ -762,17 +826,21 @@ export class PostNoteModal {
     const entries = this.imageTags.get(url);
     if (!entries || entries.length === 0) return;
 
-    await Promise.all(entries.map(async (entry) => {
-      // Only enrich chips that still show the truncated-npub fallback.
-      if (!entry.username.endsWith('…')) return;
-      const real = await this.usernameFromPubkey(entry.pubkey);
-      if (real) entry.username = real;
-    }));
+    await Promise.all(
+      entries.map(async entry => {
+        // Only enrich chips that still show the truncated-npub fallback.
+        if (!entry.username.endsWith('…')) return;
+        const real = await this.usernameFromPubkey(entry.pubkey);
+        if (real) entry.username = real;
+      })
+    );
 
     // Update chip DOM if the overlay is still open.
     const component = this.tagOverlays.get(url);
     if (component) {
-      const chipNames = component.getElement().querySelectorAll('.textinput-overlay__chip-name');
+      const chipNames = component
+        .getElement()
+        .querySelectorAll('.textinput-overlay__chip-name');
       chipNames.forEach((el, i) => {
         if (entries[i]) el.textContent = entries[i].username;
       });
@@ -783,7 +851,9 @@ export class PostNoteModal {
    * Update the count badge on a thumbnail after tag changes.
    */
   private updateTagBadge(url: string): void {
-    const allBtns = Array.from(document.querySelectorAll('.post-note-modal__tag-btn')) as HTMLElement[];
+    const allBtns = Array.from(
+      document.querySelectorAll('.post-note-modal__tag-btn')
+    ) as HTMLElement[];
     const btn = allBtns.find(b => b.dataset.tagUrl === url);
     if (!btn) return;
     const badge = btn.querySelector('[data-tag-badge]') as HTMLElement;
@@ -802,7 +872,8 @@ export class PostNoteModal {
    */
   private async usernameFromPubkey(hex: string): Promise<string | null> {
     try {
-      const profile = await UserProfileService.getInstance().getUserProfile(hex);
+      const profile =
+        await UserProfileService.getInstance().getUserProfile(hex);
       return profile?.name || profile?.display_name || null;
     } catch {
       return null;
@@ -814,10 +885,10 @@ export class PostNoteModal {
    */
   private handleEmojiSelected(emoji: string): void {
     EditorStateManager.handleEmojiSelected(emoji, '[data-textarea]', {
-      onContentChange: (newContent) => {
+      onContentChange: newContent => {
         this.content = newContent;
         this.updatePostButton();
-      }
+      },
     });
   }
 
@@ -828,20 +899,22 @@ export class PostNoteModal {
     // Don't create switch if it already exists
     if (this.nsfwSwitch) return;
 
-    const optionsContainer = document.querySelector('#post-note-options-container');
+    const optionsContainer = document.querySelector(
+      '#post-note-options-container'
+    );
     if (!optionsContainer) return;
 
     // Create NSFW switch component
     this.nsfwSwitch = new Switch({
       label: 'NSFW',
       checked: this.isNSFW,
-      onChange: (checked) => {
+      onChange: checked => {
         this.isNSFW = checked;
         // Re-render preview if currently in preview tab
         if (this.currentTab === 'preview') {
           this.updatePreview();
         }
-      }
+      },
     });
 
     // Insert switch into DOM
@@ -867,7 +940,7 @@ export class PostNoteModal {
     } else {
       // Add poll
       this.pollCreator = new PollCreator({
-        onPollDataChange: (data) => {
+        onPollDataChange: data => {
           if (data === null) {
             // Remove poll requested
             this.pollCreator?.destroy();
@@ -879,7 +952,7 @@ export class PostNoteModal {
           }
           // Update post button state when poll data changes
           this.updatePostButton();
-        }
+        },
       });
 
       pollContainer.innerHTML = this.pollCreator.render();
@@ -909,7 +982,9 @@ export class PostNoteModal {
    */
   private confirmDiscardOrSave(): boolean {
     if (this.highlightSource) return true;
-    const textarea = document.querySelector('.post-note-modal [data-textarea]') as HTMLTextAreaElement | null;
+    const textarea = document.querySelector(
+      '.post-note-modal [data-textarea]'
+    ) as HTMLTextAreaElement | null;
     const content = (textarea ? textarea.value : this.content).trim();
     if (!content) return true;
     queueMicrotask(() => void this.askSaveDraftThenClose(content));
@@ -930,7 +1005,11 @@ export class PostNoteModal {
       cancelText: 'No',
     });
     if (save) {
-      NoteDraftService.getInstance().add({ type: 'note', content, failed: false });
+      NoteDraftService.getInstance().add({
+        type: 'note',
+        content,
+        failed: false,
+      });
       ToastService.show('Draft saved', 'success');
     }
   }
@@ -947,7 +1026,7 @@ export class PostNoteModal {
     const validation = ContentValidationManager.validate({
       content: this.content,
       selectedRelays: this.selectedRelays,
-      pollData: this.pollData
+      pollData: this.pollData,
     });
 
     if (!validation.isValid) return;
@@ -966,8 +1045,12 @@ export class PostNoteModal {
     const loadingId = ToastService.loading('Waiting for signer approval…');
     try {
       const quotedRefs = extractQuotedReferences(this.content);
-      let quotedEvent: { eventId: string; authorPubkey: string; relayHint?: string } | undefined;
-      let quotedArticle: { addressableId: string; authorPubkey: string; relayHint?: string } | undefined;
+      let quotedEvent:
+        | { eventId: string; authorPubkey: string; relayHint?: string }
+        | undefined;
+      let quotedArticle:
+        | { addressableId: string; authorPubkey: string; relayHint?: string }
+        | undefined;
 
       const ref = quotedRefs[0];
       if (ref) {
@@ -977,21 +1060,30 @@ export class PostNoteModal {
           const decoded = decodeNip19(cleanRef);
 
           if (decoded.type === 'nevent') {
-            const neventData = decoded.data as { id: string; author?: string; relays?: string[] };
+            const neventData = decoded.data as {
+              id: string;
+              author?: string;
+              relays?: string[];
+            };
             const relayHint = neventData.relays?.[0];
             quotedEvent = {
               eventId: neventData.id,
               authorPubkey: neventData.author || '',
-              ...(relayHint ? { relayHint } : {})
+              ...(relayHint ? { relayHint } : {}),
             };
           } else if (decoded.type === 'naddr') {
-            const naddrData = decoded.data as { kind: number; pubkey: string; identifier: string; relays?: string[] };
+            const naddrData = decoded.data as {
+              kind: number;
+              pubkey: string;
+              identifier: string;
+              relays?: string[];
+            };
             const addressableId = `${naddrData.kind}:${naddrData.pubkey}:${naddrData.identifier}`;
             const relayHint = naddrData.relays?.[0];
             quotedArticle = {
               addressableId,
               authorPubkey: naddrData.pubkey,
-              ...(relayHint ? { relayHint } : {})
+              ...(relayHint ? { relayHint } : {}),
             };
           }
         } catch (error) {
@@ -1003,7 +1095,9 @@ export class PostNoteModal {
 
       let success: boolean;
       if (this.scheduledAt !== null && isScheduledPostsEnabled()) {
-        const { scheduleNote } = await import('../../addons/scheduled-posts/scheduleNote');
+        const { scheduleNote } = await import(
+          '../../addons/scheduled-posts/scheduleNote'
+        );
         success = await scheduleNote({
           content: this.content,
           relays: Array.from(this.selectedRelays),
@@ -1025,26 +1119,33 @@ export class PostNoteModal {
             taggedPubkeys: tags.map(t => t.pubkey),
           }));
 
-        success = await this.postsApi?.createPost({
-          content: this.content,
-          relays: Array.from(this.selectedRelays),
-          contentWarning: this.isNSFW,
-          ...(this.pollData ? { pollData: this.pollData } : {}),
-          ...(quotedEvent ? { quotedEvent } : {}),
-          ...(quotedArticle ? { quotedArticle } : {}),
-          ...(clientTag ? { clientTag } : {}),
-          ...(imageTagsPayload.length > 0 ? { imageTags: imageTagsPayload } : {}),
-        }) ?? false;
+        success =
+          (await this.postsApi?.createPost({
+            content: this.content,
+            relays: Array.from(this.selectedRelays),
+            contentWarning: this.isNSFW,
+            ...(this.pollData ? { pollData: this.pollData } : {}),
+            ...(quotedEvent ? { quotedEvent } : {}),
+            ...(quotedArticle ? { quotedArticle } : {}),
+            ...(clientTag ? { clientTag } : {}),
+            ...(imageTagsPayload.length > 0
+              ? { imageTags: imageTagsPayload }
+              : {}),
+          })) ?? false;
       }
 
       ToastService.dismiss(loadingId);
 
       if (success) {
         if (quotedEvent?.eventId) {
-          ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions')?.clearCacheOnly(quotedEvent.eventId);
+          ModuleLoader.getInstance()
+            .getApi<ReactionsModuleApi>('reactions')
+            ?.clearCacheOnly(quotedEvent.eventId);
         }
         if (quotedArticle?.addressableId) {
-          ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions')?.clearCacheOnly(quotedArticle.addressableId);
+          ModuleLoader.getInstance()
+            .getApi<ReactionsModuleApi>('reactions')
+            ?.clearCacheOnly(quotedArticle.addressableId);
         }
 
         this.cleanup();
@@ -1063,13 +1164,19 @@ export class PostNoteModal {
    * Save the current composer content as a manual draft.
    */
   private handleSaveDraft(): void {
-    const textarea = document.querySelector('.post-note-modal [data-textarea]') as HTMLTextAreaElement | null;
+    const textarea = document.querySelector(
+      '.post-note-modal [data-textarea]'
+    ) as HTMLTextAreaElement | null;
     const content = (textarea ? textarea.value : this.content).trim();
     if (!content) {
       ToastService.show('Nothing to save', 'info');
       return;
     }
-    NoteDraftService.getInstance().add({ type: 'note', content, failed: false });
+    NoteDraftService.getInstance().add({
+      type: 'note',
+      content,
+      failed: false,
+    });
     ToastService.show('Draft saved', 'success');
     this.updateDraftsTabBadge();
   }
@@ -1084,9 +1191,12 @@ export class PostNoteModal {
     label: string,
     error?: unknown
   ): void {
-    const reason = error instanceof SignerTimeoutError
-      ? 'Signer did not respond in time'
-      : (error instanceof Error && error.message ? error.message : 'Note could not be published');
+    const reason =
+      error instanceof SignerTimeoutError
+        ? 'Signer did not respond in time'
+        : error instanceof Error && error.message
+          ? error.message
+          : 'Note could not be published';
 
     NoteDraftService.getInstance().add({
       type: 'note',
@@ -1095,7 +1205,11 @@ export class PostNoteModal {
       failureReason: reason,
     });
 
-    ModalEventHandlerManager.restoreAfterError(modalContainer, originalDisplay, label);
+    ModalEventHandlerManager.restoreAfterError(
+      modalContainer,
+      originalDisplay,
+      label
+    );
     this.updateDraftsTabBadge();
 
     ToastService.showWithAction(`Failed to post: ${reason}`, 'error', {
@@ -1127,7 +1241,7 @@ export class PostNoteModal {
         highlightedText: this.highlightSource.selectedText,
         comment: this.content,
         sourceEvent: this.highlightSource.event,
-        relays: Array.from(this.selectedRelays)
+        relays: Array.from(this.selectedRelays),
       });
 
       if (success) {
@@ -1135,18 +1249,28 @@ export class PostNoteModal {
         this.cleanup();
         this.modalService.hide();
       } else {
-        ModalEventHandlerManager.restoreAfterError(modalContainer, originalDisplay, 'Post Highlight');
+        ModalEventHandlerManager.restoreAfterError(
+          modalContainer,
+          originalDisplay,
+          'Post Highlight'
+        );
       }
     } catch (error) {
       console.error('Highlight post error:', error);
-      ModalEventHandlerManager.restoreAfterError(modalContainer, originalDisplay, 'Post Highlight');
+      ModalEventHandlerManager.restoreAfterError(
+        modalContainer,
+        originalDisplay,
+        'Post Highlight'
+      );
     }
   }
 
   /**
    * Render quoted notes in preview
    */
-  private async renderQuotedNotesInPreview(container: HTMLElement): Promise<void> {
+  private async renderQuotedNotesInPreview(
+    container: HTMLElement
+  ): Promise<void> {
     const quotedRefs = extractQuotedReferences(this.content);
     if (quotedRefs.length === 0) return;
 
@@ -1178,17 +1302,24 @@ export class PostNoteModal {
 
     const metaItems: string[] = [];
     if (this.pollData.multipleChoice) {
-      metaItems.push('<span class="nip88-poll__meta-item">Multiple choice allowed</span>');
+      metaItems.push(
+        '<span class="nip88-poll__meta-item">Multiple choice allowed</span>'
+      );
     }
     if (this.pollData.endDate) {
       const endDate = new Date(this.pollData.endDate * 1000);
-      metaItems.push(`<span class="nip88-poll__meta-item">Ends ${endDate.toLocaleDateString()}</span>`);
+      metaItems.push(
+        `<span class="nip88-poll__meta-item">Ends ${endDate.toLocaleDateString()}</span>`
+      );
     }
-    const metaHtml = metaItems.length > 0
-      ? `<div class="nip88-poll__meta">${metaItems.join('')}</div>`
-      : '';
+    const metaHtml =
+      metaItems.length > 0
+        ? `<div class="nip88-poll__meta">${metaItems.join('')}</div>`
+        : '';
 
-    const optionsHtml = validOptions.map(option => `
+    const optionsHtml = validOptions
+      .map(
+        option => `
       <div class="nip88-poll__option nip88-poll__option--preview">
         <span class="nip88-poll__option-label">${escapeHtml(option.label)}</span>
         <span class="nip88-poll__option-stats">
@@ -1197,7 +1328,9 @@ export class PostNoteModal {
         </span>
         <span class="nip88-poll__option-bar" style="width: 0%"></span>
       </div>
-    `).join('');
+    `
+      )
+      .join('');
 
     return `
       <div class="nip88-poll nip88-poll--preview">
@@ -1208,7 +1341,6 @@ export class PostNoteModal {
       </div>
     `;
   }
-
 
   /**
    * Cleanup sub-components
@@ -1254,20 +1386,28 @@ export class PostNoteModal {
    */
   private async initCustomEmojiAutocomplete(): Promise<void> {
     try {
-      const [{ CustomEmojiAutocomplete }, { EmojiService }] = await Promise.all([
-        import('../../addons/custom-emojis/CustomEmojiAutocomplete'),
-        import('../../addons/custom-emojis/EmojiService'),
-      ]);
+      const [{ CustomEmojiAutocomplete }, { EmojiService }] = await Promise.all(
+        [
+          import('../../addons/custom-emojis/CustomEmojiAutocomplete'),
+          import('../../addons/custom-emojis/EmojiService'),
+        ]
+      );
       this.customEmojiService = EmojiService.getInstance();
       this.customEmojiAutocomplete = new CustomEmojiAutocomplete({
         textareaSelector: '[data-textarea]',
-        onEmojiInserted: (shortcode) => {
-          this.systemLogger.info('PostNoteModal', `Custom emoji inserted: :${shortcode}:`);
-        }
+        onEmojiInserted: shortcode => {
+          this.systemLogger.info(
+            'PostNoteModal',
+            `Custom emoji inserted: :${shortcode}:`
+          );
+        },
       });
       this.customEmojiAutocomplete.init();
     } catch (err) {
-      this.systemLogger.warn('PostNoteModal', `Custom emoji autocomplete load failed: ${err}`);
+      this.systemLogger.warn(
+        'PostNoteModal',
+        `Custom emoji autocomplete load failed: ${err}`
+      );
     }
   }
 

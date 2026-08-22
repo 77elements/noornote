@@ -12,7 +12,11 @@
  * @used-by MainLayout (via ListViewPartial)
  */
 
-import { type FollowPack, parseFollowPackEvent, filterFollowPacks } from '../../helpers/parseFollowPack';
+import {
+  type FollowPack,
+  parseFollowPackEvent,
+  filterFollowPacks,
+} from '../../helpers/parseFollowPack';
 import { NostrTransport } from '../../services/transport/NostrTransport';
 import { RelayConfig } from '../../services/RelayConfig';
 import { UserProfileService } from '../../services/UserProfileService';
@@ -23,7 +27,10 @@ import { SystemLogger } from '../../services/SystemLogger';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { hexToNpub } from '../../helpers/nip19';
 import { npubToUsername } from '../../helpers/npubToUsername';
-import { renderUserMention, setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
+import {
+  renderUserMention,
+  setupUserMentionHandlers,
+} from '../../helpers/UserMentionHelper';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { MediaModuleApi } from '../../modules/media/contracts';
 import { renderFollowPackMembers } from '../../components/follow-packs/renderFollowPackMembers';
@@ -63,7 +70,8 @@ export class FollowPackManager {
     this.selectedPack = null;
 
     if (!this.loaded) {
-      container.innerHTML = '<div class="follow-packs__loading pulsate">Loading Follow Packs...</div>';
+      container.innerHTML =
+        '<div class="follow-packs__loading pulsate">Loading Follow Packs...</div>';
       await this.fetchPacks();
     }
 
@@ -73,17 +81,23 @@ export class FollowPackManager {
   /**
    * Open a specific pack in a given view mode (called externally via EventBus)
    */
-  public async openPackView(container: HTMLElement, packId: string, mode: 'timeline' | 'edit'): Promise<void> {
+  public async openPackView(
+    container: HTMLElement,
+    packId: string,
+    mode: 'timeline' | 'edit'
+  ): Promise<void> {
     this.currentContainer = container;
 
     if (!this.loaded) {
-      container.innerHTML = '<div class="follow-packs__loading pulsate">Loading Follow Packs...</div>';
+      container.innerHTML =
+        '<div class="follow-packs__loading pulsate">Loading Follow Packs...</div>';
       await this.fetchPacks();
     }
 
     const pack = this.packs.find(p => p.id === packId);
     if (!pack) {
-      container.innerHTML = '<div class="follow-packs__loading">Pack not found</div>';
+      container.innerHTML =
+        '<div class="follow-packs__loading">Pack not found</div>';
       return;
     }
 
@@ -101,13 +115,18 @@ export class FollowPackManager {
       const events = await this.transport.fetch(
         relays,
         [{ kinds: [39089 as any], limit: 50 }],
-        8000, false, 'FollowPackMgr'
+        8000,
+        false,
+        'FollowPackMgr'
       );
 
       this.packs = filterFollowPacks(events.map(e => parseFollowPackEvent(e)));
       this.loaded = true;
 
-      this.systemLogger.info('FollowPacks', `Loaded ${this.packs.length} packs`);
+      this.systemLogger.info(
+        'FollowPacks',
+        `Loaded ${this.packs.length} packs`
+      );
     } catch {
       this.packs = [];
       this.loaded = true;
@@ -157,15 +176,18 @@ export class FollowPackManager {
       `;
       wrapper.appendChild(teaser);
 
-      teaser.querySelector('.follow-packs__btn-create')?.addEventListener('click', () => {
-        this.initCreateState();
-        this.viewMode = 'create';
-        this.renderCurrentView();
-      });
+      teaser
+        .querySelector('.follow-packs__btn-create')
+        ?.addEventListener('click', () => {
+          this.initCreateState();
+          this.viewMode = 'create';
+          this.renderCurrentView();
+        });
     }
 
     if (this.packs.length === 0) {
-      wrapper.innerHTML += '<div class="follow-packs__empty">No follow packs found</div>';
+      wrapper.innerHTML +=
+        '<div class="follow-packs__empty">No follow packs found</div>';
       container.appendChild(wrapper);
       return;
     }
@@ -225,13 +247,19 @@ export class FollowPackManager {
     const profiles = await this.profileService.getUserProfiles(pubkeys);
 
     // Update author names in DOM
-    const authorEls = this.currentContainer?.querySelectorAll('.author[data-pubkey]');
+    const authorEls = this.currentContainer?.querySelectorAll(
+      '.author[data-pubkey]'
+    );
     authorEls?.forEach(el => {
       const pubkey = (el as HTMLElement).dataset.pubkey;
       if (!pubkey) return;
       const profile = profiles.get(pubkey);
       if (profile) {
-        (el as HTMLElement).textContent = profile.display_name || profile.name || (el as HTMLElement).textContent || '';
+        (el as HTMLElement).textContent =
+          profile.display_name ||
+          profile.name ||
+          (el as HTMLElement).textContent ||
+          '';
       }
     });
   }
@@ -282,60 +310,81 @@ export class FollowPackManager {
     wrapper.appendChild(header);
 
     // Back button
-    header.querySelector('.follow-packs__back-btn')?.addEventListener('click', () => {
-      this.viewMode = 'grid';
-      this.selectedPack = null;
-      this.renderCurrentView();
-    });
+    header
+      .querySelector('.follow-packs__back-btn')
+      ?.addEventListener('click', () => {
+        this.viewMode = 'grid';
+        this.selectedPack = null;
+        this.renderCurrentView();
+      });
 
     // Follow All
-    header.querySelector('.follow-packs__btn-follow-all')?.addEventListener('click', () => {
-      this.followAll(pack);
-    });
+    header
+      .querySelector('.follow-packs__btn-follow-all')
+      ?.addEventListener('click', () => {
+        this.followAll(pack);
+      });
 
     // See Notes
-    header.querySelector('.follow-packs__btn-see-notes')?.addEventListener('click', () => {
-      this.viewMode = 'timeline';
-      this.renderCurrentView();
-    });
+    header
+      .querySelector('.follow-packs__btn-see-notes')
+      ?.addEventListener('click', () => {
+        this.viewMode = 'timeline';
+        this.renderCurrentView();
+      });
 
     // Edit List
-    header.querySelector('.follow-packs__btn-edit')?.addEventListener('click', () => {
-      this.initEditState(pack);
-      this.viewMode = 'edit';
-      this.renderCurrentView();
-    });
+    header
+      .querySelector('.follow-packs__btn-edit')
+      ?.addEventListener('click', () => {
+        this.initEditState(pack);
+        this.viewMode = 'edit';
+        this.renderCurrentView();
+      });
 
     // Member list
     const memberList = document.createElement('div');
     memberList.className = 'follow-packs__members';
-    memberList.innerHTML = '<div class="follow-packs__members-loading pulsate">Loading members...</div>';
+    memberList.innerHTML =
+      '<div class="follow-packs__members-loading pulsate">Loading members...</div>';
     wrapper.appendChild(memberList);
 
     container.appendChild(wrapper);
 
     // Render author as UserMention
-    const authorMentionContainer = header.querySelector('.follow-packs__detail-author-mention') as HTMLElement;
+    const authorMentionContainer = header.querySelector(
+      '.follow-packs__detail-author-mention'
+    ) as HTMLElement;
     if (authorMentionContainer) {
-      const profiles = await this.profileService.getUserProfiles([pack.authorPubkey]);
+      const profiles = await this.profileService.getUserProfiles([
+        pack.authorPubkey,
+      ]);
       const profile = profiles.get(pack.authorPubkey);
       const username = profile?.display_name || profile?.name || 'Unknown';
       const avatarUrl = profile?.picture || '';
-      authorMentionContainer.innerHTML = renderUserMention(pack.authorPubkey, { username, avatarUrl });
+      authorMentionContainer.innerHTML = renderUserMention(pack.authorPubkey, {
+        username,
+        avatarUrl,
+      });
       setupUserMentionHandlers(authorMentionContainer);
     }
 
     // DM button → navigate to DM conversation
-    header.querySelector('.follow-packs__dm-btn')?.addEventListener('click', () => {
-      const npub = hexToNpub(pack.authorPubkey);
-      if (npub) Router.getInstance().navigate(`/messages/${npub}`);
-    });
+    header
+      .querySelector('.follow-packs__dm-btn')
+      ?.addEventListener('click', () => {
+        const npub = hexToNpub(pack.authorPubkey);
+        if (npub) Router.getInstance().navigate(`/messages/${npub}`);
+      });
 
     // Load member profiles and render list
     await this.loadMembers(pack, memberList);
   }
 
-  private async loadMembers(pack: FollowPack, memberList: HTMLElement): Promise<void> {
+  private async loadMembers(
+    pack: FollowPack,
+    memberList: HTMLElement
+  ): Promise<void> {
     await renderFollowPackMembers(pack, memberList);
   }
 
@@ -360,13 +409,18 @@ export class FollowPackManager {
    * @param mode 'create' or 'edit'
    * @param pack existing pack (edit) or null (create)
    */
-  private async renderPackForm(mode: 'create' | 'edit', pack: FollowPack | null): Promise<void> {
+  private async renderPackForm(
+    mode: 'create' | 'edit',
+    pack: FollowPack | null
+  ): Promise<void> {
     const container = this.currentContainer!;
     container.innerHTML = '';
 
     const isCreate = mode === 'create';
     const heading = isCreate ? 'Create Follow Pack' : 'Edit Follow Pack';
-    const publishLabel = isCreate ? 'Publish Follow Pack' : 'Update Follow Pack';
+    const publishLabel = isCreate
+      ? 'Publish Follow Pack'
+      : 'Update Follow Pack';
     const cancelTarget = isCreate ? 'grid' : 'detail';
 
     const wrapper = document.createElement('div');
@@ -383,10 +437,12 @@ export class FollowPackManager {
     `;
     wrapper.appendChild(header);
 
-    header.querySelector('.follow-packs__back-btn')?.addEventListener('click', () => {
-      this.viewMode = cancelTarget as ViewMode;
-      this.renderCurrentView();
-    });
+    header
+      .querySelector('.follow-packs__back-btn')
+      ?.addEventListener('click', () => {
+        this.viewMode = cancelTarget as ViewMode;
+        this.renderCurrentView();
+      });
 
     // Form fields
     const form = document.createElement('div');
@@ -408,11 +464,15 @@ export class FollowPackManager {
           </button>
         </div>
       </div>
-      ${this.editCoverImage ? `
+      ${
+        this.editCoverImage
+          ? `
         <div class="follow-packs__edit-preview">
           <img src="${escapeHtmlAttr(this.editCoverImage)}" alt="Cover preview" class="follow-packs__detail-cover" />
         </div>
-      ` : ''}
+      `
+          : ''
+      }
       <div class="form__row">
         <label>Description</label>
         <textarea class="textarea" data-field="description"
@@ -424,7 +484,10 @@ export class FollowPackManager {
     // Bind form field changes to edit state
     form.querySelectorAll('[data-field]').forEach(el => {
       el.addEventListener('input', () => {
-        const field = (el as HTMLElement).dataset.field as 'title' | 'description' | 'coverImage';
+        const field = (el as HTMLElement).dataset.field as
+          | 'title'
+          | 'description'
+          | 'coverImage';
         const value = (el as HTMLInputElement | HTMLTextAreaElement).value;
         if (field === 'title') this.editTitle = value;
         else if (field === 'description') this.editDescription = value;
@@ -436,9 +499,15 @@ export class FollowPackManager {
     });
 
     // Cover image upload button
-    const coverUploadBtn = form.querySelector('[data-cover-upload]') as HTMLButtonElement;
-    const coverFileInput = form.querySelector('[data-cover-file-input]') as HTMLInputElement;
-    const coverInput = form.querySelector('[data-field="coverImage"]') as HTMLInputElement;
+    const coverUploadBtn = form.querySelector(
+      '[data-cover-upload]'
+    ) as HTMLButtonElement;
+    const coverFileInput = form.querySelector(
+      '[data-cover-file-input]'
+    ) as HTMLInputElement;
+    const coverInput = form.querySelector(
+      '[data-field="coverImage"]'
+    ) as HTMLInputElement;
     if (coverUploadBtn && coverFileInput && coverInput) {
       coverUploadBtn.addEventListener('click', () => coverFileInput.click());
       coverFileInput.addEventListener('change', async () => {
@@ -448,8 +517,12 @@ export class FollowPackManager {
         const originalHTML = coverUploadBtn.innerHTML;
         coverUploadBtn.textContent = '...';
         try {
-          const mediaApi = ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
-          if (!mediaApi) { ToastService.show('Media module not available', 'error'); return; }
+          const mediaApi =
+            ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
+          if (!mediaApi) {
+            ToastService.show('Media module not available', 'error');
+            return;
+          }
           const result = await mediaApi.uploadFile(file);
           if (result.success && result.url) {
             coverInput.value = result.url;
@@ -476,7 +549,9 @@ export class FollowPackManager {
     const addRow = document.createElement('div');
     addRow.className = 'follow-packs__edit-add-row';
 
-    const { UserSearchInput } = await import('../../components/user-search/UserSearchInput');
+    const { UserSearchInput } = await import(
+      '../../components/user-search/UserSearchInput'
+    );
     const userSearch = new UserSearchInput({
       placeholder: 'Search by name or paste npub...',
       onUserSelected: () => {
@@ -484,7 +559,7 @@ export class FollowPackManager {
       },
       onSelectionCleared: () => {
         addBtn.disabled = true;
-      }
+      },
     });
     addRow.appendChild(userSearch.getElement());
 
@@ -505,9 +580,11 @@ export class FollowPackManager {
     const memberList = document.createElement('div');
     memberList.className = 'follow-packs__members';
     if (this.editMembers.length === 0) {
-      memberList.innerHTML = '<div class="follow-packs__empty">No members yet</div>';
+      memberList.innerHTML =
+        '<div class="follow-packs__empty">No members yet</div>';
     } else {
-      memberList.innerHTML = '<div class="follow-packs__members-loading pulsate">Loading members...</div>';
+      memberList.innerHTML =
+        '<div class="follow-packs__members-loading pulsate">Loading members...</div>';
     }
     wrapper.appendChild(memberList);
 
@@ -540,9 +617,11 @@ export class FollowPackManager {
     });
 
     // Publish button handler
-    actions.querySelector('.follow-packs__btn-publish')?.addEventListener('click', async () => {
-      await this.publishPack(mode, pack, actions);
-    });
+    actions
+      .querySelector('.follow-packs__btn-publish')
+      ?.addEventListener('click', async () => {
+        await this.publishPack(mode, pack, actions);
+      });
 
     // Load existing members (if any)
     if (this.editMembers.length > 0) {
@@ -554,12 +633,15 @@ export class FollowPackManager {
     const existing = wrapper.querySelector('.follow-packs__edit-preview');
     if (this.editCoverImage) {
       if (existing) {
-        (existing.querySelector('img') as HTMLImageElement).src = this.editCoverImage;
+        (existing.querySelector('img') as HTMLImageElement).src =
+          this.editCoverImage;
       } else {
         const preview = document.createElement('div');
         preview.className = 'follow-packs__edit-preview';
         preview.innerHTML = `<img src="${escapeHtmlAttr(this.editCoverImage)}" alt="Cover preview" class="follow-packs__detail-cover" />`;
-        const coverField = wrapper.querySelector('[data-field="coverImage"]')?.closest('.form__row');
+        const coverField = wrapper
+          .querySelector('[data-field="coverImage"]')
+          ?.closest('.form__row');
         coverField?.after(preview);
       }
     } else if (existing) {
@@ -567,15 +649,21 @@ export class FollowPackManager {
     }
   }
 
-  private async renderEditMembers(memberList: HTMLElement, membersLabel: HTMLElement): Promise<void> {
+  private async renderEditMembers(
+    memberList: HTMLElement,
+    membersLabel: HTMLElement
+  ): Promise<void> {
     membersLabel.textContent = `Members (${this.editMembers.length})`;
 
     if (this.editMembers.length === 0) {
-      memberList.innerHTML = '<div class="follow-packs__empty">No members yet</div>';
+      memberList.innerHTML =
+        '<div class="follow-packs__empty">No members yet</div>';
       return;
     }
 
-    const profiles = await this.profileService.getUserProfiles(this.editMembers);
+    const profiles = await this.profileService.getUserProfiles(
+      this.editMembers
+    );
 
     memberList.innerHTML = '';
     const list = document.createElement('div');
@@ -584,7 +672,11 @@ export class FollowPackManager {
     this.editMembers.forEach(pubkey => {
       const profile = profiles.get(pubkey);
       const npub = hexToNpub(pubkey) || '';
-      const name = profile?.display_name || profile?.name || npubToUsername(npub) || npub.slice(0, 12);
+      const name =
+        profile?.display_name ||
+        profile?.name ||
+        npubToUsername(npub) ||
+        npub.slice(0, 12);
       const picture = profile?.picture || '';
 
       const item = document.createElement('div');
@@ -604,17 +696,21 @@ export class FollowPackManager {
       `;
 
       // Click content → profile
-      item.querySelector('.follow-packs__member-content')?.addEventListener('click', () => {
-        if (npub) Router.getInstance().navigate(`/profile/${npub}`);
-      });
+      item
+        .querySelector('.follow-packs__member-content')
+        ?.addEventListener('click', () => {
+          if (npub) Router.getInstance().navigate(`/profile/${npub}`);
+        });
 
       // Remove button
-      item.querySelector('.follow-packs__member-action-btn')?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.editMembers = this.editMembers.filter(pk => pk !== pubkey);
-        item.remove();
-        membersLabel.textContent = `Members (${this.editMembers.length})`;
-      });
+      item
+        .querySelector('.follow-packs__member-action-btn')
+        ?.addEventListener('click', e => {
+          e.stopPropagation();
+          this.editMembers = this.editMembers.filter(pk => pk !== pubkey);
+          item.remove();
+          membersLabel.textContent = `Members (${this.editMembers.length})`;
+        });
 
       list.appendChild(item);
     });
@@ -626,8 +722,14 @@ export class FollowPackManager {
    * Publish a new pack (create) or update an existing one (edit).
    * Create generates a new d-tag, edit reuses the existing one.
    */
-  private async publishPack(mode: 'create' | 'edit', pack: FollowPack | null, actionsContainer: HTMLElement): Promise<void> {
-    const publishBtn = actionsContainer.querySelector('.follow-packs__btn-publish') as HTMLButtonElement;
+  private async publishPack(
+    mode: 'create' | 'edit',
+    pack: FollowPack | null,
+    actionsContainer: HTMLElement
+  ): Promise<void> {
+    const publishBtn = actionsContainer.querySelector(
+      '.follow-packs__btn-publish'
+    ) as HTMLButtonElement;
     if (!publishBtn) return;
 
     if (!this.editTitle.trim()) {
@@ -646,9 +748,14 @@ export class FollowPackManager {
       }
 
       // d-tag: reuse for edit, generate for create
-      const dTag = mode === 'edit' && pack
-        ? pack.id
-        : this.editTitle.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30) + '-' + Math.random().toString(36).slice(2, 8);
+      const dTag =
+        mode === 'edit' && pack
+          ? pack.id
+          : `${this.editTitle
+              .trim()
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, '-')
+              .slice(0, 30)}-${Math.random().toString(36).slice(2, 8)}`;
 
       const tags: string[][] = [
         ['d', dTag],
@@ -673,14 +780,15 @@ export class FollowPackManager {
         created_at: Math.floor(Date.now() / 1000),
         tags,
         content: '',
-        pubkey: currentUser.pubkey
+        pubkey: currentUser.pubkey,
       };
 
       const signedEvent = await this.authService.signEvent(unsignedEvent);
       if (!signedEvent) {
         ToastService.show('Failed to sign event', 'error');
         publishBtn.disabled = false;
-        publishBtn.textContent = mode === 'create' ? 'Publish Follow Pack' : 'Update Follow Pack';
+        publishBtn.textContent =
+          mode === 'create' ? 'Publish Follow Pack' : 'Update Follow Pack';
         return;
       }
 
@@ -698,7 +806,10 @@ export class FollowPackManager {
         pack.userPubkeys = [...this.editMembers];
 
         ToastService.show('Follow Pack updated', 'success');
-        this.systemLogger.info('FollowPacks', `Updated pack "${pack.title}" with ${pack.userPubkeys.length} members`);
+        this.systemLogger.info(
+          'FollowPacks',
+          `Updated pack "${pack.title}" with ${pack.userPubkeys.length} members`
+        );
 
         this.viewMode = 'detail';
       } else {
@@ -711,12 +822,15 @@ export class FollowPackManager {
           coverImage: this.editCoverImage.trim(),
           authorPubkey: currentUser.pubkey,
           createdAt: Math.floor(Date.now() / 1000),
-          userPubkeys: [...this.editMembers]
+          userPubkeys: [...this.editMembers],
         };
         this.packs.unshift(newPack);
 
         ToastService.show('Follow Pack published', 'success');
-        this.systemLogger.info('FollowPacks', `Created pack "${newPack.title}" with ${newPack.userPubkeys.length} members`);
+        this.systemLogger.info(
+          'FollowPacks',
+          `Created pack "${newPack.title}" with ${newPack.userPubkeys.length} members`
+        );
 
         this.selectedPack = newPack;
         this.viewMode = 'detail';
@@ -727,7 +841,8 @@ export class FollowPackManager {
       ToastService.show('Failed to publish pack', 'error');
       this.systemLogger.error('FollowPacks', `Pack publish failed: ${error}`);
       publishBtn.disabled = false;
-      publishBtn.textContent = mode === 'create' ? 'Publish Follow Pack' : 'Update Follow Pack';
+      publishBtn.textContent =
+        mode === 'create' ? 'Publish Follow Pack' : 'Update Follow Pack';
     }
   }
 
@@ -749,10 +864,12 @@ export class FollowPackManager {
     `;
     wrapper.appendChild(header);
 
-    header.querySelector('.follow-packs__back-btn')?.addEventListener('click', () => {
-      this.viewMode = 'detail';
-      this.renderCurrentView();
-    });
+    header
+      .querySelector('.follow-packs__back-btn')
+      ?.addEventListener('click', () => {
+        this.viewMode = 'detail';
+        this.renderCurrentView();
+      });
 
     // Timeline container
     const timelineContainer = document.createElement('div');
@@ -764,18 +881,22 @@ export class FollowPackManager {
 
     // Load timeline
     try {
-      const timelineApi = ModuleLoader.getInstance().getApi<import('../../modules/timeline/contracts').TimelineModuleApi>('timeline');
+      const timelineApi =
+        ModuleLoader.getInstance().getApi<
+          import('../../modules/timeline/contracts').TimelineModuleApi
+        >('timeline');
 
-      const result = await timelineApi?.loadInitialFeed({
+      const result = (await timelineApi?.loadInitialFeed({
         followingPubkeys: pack.userPubkeys,
         includeReplies: false,
-        timeWindowHours: 24
-      }) ?? { events: [], hasMore: false };
+        timeWindowHours: 24,
+      })) ?? { events: [], hasMore: false };
 
       timelineContainer.innerHTML = '';
 
       if (result.events.length === 0) {
-        timelineContainer.innerHTML = '<div class="follow-packs__empty">No recent notes from this pack</div>';
+        timelineContainer.innerHTML =
+          '<div class="follow-packs__empty">No recent notes from this pack</div>';
         return;
       }
 
@@ -786,14 +907,18 @@ export class FollowPackManager {
           collapsible: true,
           islFetchStats: true,
           isLoggedIn: !!this.authService.getCurrentUser(),
-          depth: 0
+          depth: 0,
         });
         timelineContainer.appendChild(noteEl);
       });
 
-      this.systemLogger.info('FollowPacks', `Timeline: ${result.events.length} notes for "${pack.title}"`);
+      this.systemLogger.info(
+        'FollowPacks',
+        `Timeline: ${result.events.length} notes for "${pack.title}"`
+      );
     } catch (error) {
-      timelineContainer.innerHTML = '<div class="follow-packs__empty">Failed to load notes</div>';
+      timelineContainer.innerHTML =
+        '<div class="follow-packs__empty">Failed to load notes</div>';
       this.systemLogger.error('FollowPacks', `Timeline load failed: ${error}`);
     }
   }
@@ -802,7 +927,9 @@ export class FollowPackManager {
 
   private async followAll(pack: FollowPack): Promise<void> {
     try {
-      const { getFollowItems, setFollowItems } = await import('../../lists/follows');
+      const { getFollowItems, setFollowItems } = await import(
+        '../../lists/follows'
+      );
 
       const currentFollows = getFollowItems();
       const currentPubkeys = new Set(currentFollows.map(f => f.pubkey));
@@ -819,13 +946,19 @@ export class FollowPackManager {
         id: pubkey,
         pubkey,
         relay: '',
-        addedAt: now
+        addedAt: now,
       }));
 
       setFollowItems([...currentFollows, ...newItems]);
 
-      ToastService.show(`Added ${newPubkeys.length} people to your follows`, 'success');
-      this.systemLogger.info('FollowPacks', `Follow All: added ${newPubkeys.length} from "${pack.title}"`);
+      ToastService.show(
+        `Added ${newPubkeys.length} people to your follows`,
+        'success'
+      );
+      this.systemLogger.info(
+        'FollowPacks',
+        `Follow All: added ${newPubkeys.length} from "${pack.title}"`
+      );
     } catch (error) {
       ToastService.show('Failed to follow pack members', 'error');
       this.systemLogger.error('FollowPacks', `Follow All failed: ${error}`);

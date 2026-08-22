@@ -24,7 +24,9 @@ interface CacheEntry {
 const CACHE_TTL_MS = 60 * 60 * 1000;
 const cache = new Map<string, CacheEntry>();
 
-export async function resolveNip05(handle: string): Promise<Nip05Resolution | null> {
+export async function resolveNip05(
+  handle: string
+): Promise<Nip05Resolution | null> {
   const trimmed = handle.trim();
   const at = trimmed.indexOf('@');
   if (at <= 0 || at === trimmed.length - 1) return null;
@@ -35,7 +37,7 @@ export async function resolveNip05(handle: string): Promise<Nip05Resolution | nu
 
   const cacheKey = `${name.toLowerCase()}@${domain.toLowerCase()}`;
   const cached = cache.get(cacheKey);
-  if (cached && (Date.now() - cached.fetchedAt) < CACHE_TTL_MS) {
+  if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
     return cached.result;
   }
 
@@ -47,15 +49,23 @@ export async function resolveNip05(handle: string): Promise<Nip05Resolution | nu
       cache.set(cacheKey, { result: null, fetchedAt: Date.now() });
       return null;
     }
-    const data = await res.json() as { names?: Record<string, string>; relays?: Record<string, string[]> };
+    const data = (await res.json()) as {
+      names?: Record<string, string>;
+      relays?: Record<string, string[]>;
+    };
     const pubkey = data.names?.[name];
-    if (!pubkey || typeof pubkey !== 'string' || !/^[0-9a-f]{64}$/i.test(pubkey)) {
+    if (
+      !pubkey ||
+      typeof pubkey !== 'string' ||
+      !/^[0-9a-f]{64}$/i.test(pubkey)
+    ) {
       cache.set(cacheKey, { result: null, fetchedAt: Date.now() });
       return null;
     }
 
     const relays = data.relays?.[pubkey];
-    const result: Nip05Resolution = relays && Array.isArray(relays) ? { pubkey, relays } : { pubkey };
+    const result: Nip05Resolution =
+      relays && Array.isArray(relays) ? { pubkey, relays } : { pubkey };
     cache.set(cacheKey, { result, fetchedAt: Date.now() });
     return result;
   } catch {

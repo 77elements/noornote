@@ -29,7 +29,7 @@ const DEFAULT_CONFIG: NDKCacheConfig = {
   nip05CacheSize: 1000,
   eventCacheSize: 50000,
   eventTagsCacheSize: 100000,
-  saveSig: false
+  saveSig: false,
 };
 
 const STORAGE_KEY = 'ndk_cache_config';
@@ -68,17 +68,26 @@ export class CacheSettingsSection extends SettingsSection {
     if (!contentContainer) return;
 
     const config = this.getConfig();
-    const notificationsApi = ModuleLoader.getInstance().getApi<NotificationsModuleApi>('notifications');
+    const notificationsApi =
+      ModuleLoader.getInstance().getApi<NotificationsModuleApi>(
+        'notifications'
+      );
     const notificationsCacheLimit = notificationsApi?.getCacheLimit() ?? 100;
 
-    contentContainer.innerHTML = this.renderContent(config, notificationsCacheLimit);
+    contentContainer.innerHTML = this.renderContent(
+      config,
+      notificationsCacheLimit
+    );
     this.bindListeners(contentContainer);
   }
 
   /**
    * Render cache settings content
    */
-  private renderContent(config: NDKCacheConfig, notificationsCacheLimit: number): string {
+  private renderContent(
+    config: NDKCacheConfig,
+    notificationsCacheLimit: number
+  ): string {
     const isDesktop = PlatformService.getInstance().isDesktop;
 
     return `
@@ -121,7 +130,9 @@ export class CacheSettingsSection extends SettingsSection {
           </div>
         </section>
 
-        ${isDesktop ? `
+        ${
+          isDesktop
+            ? `
         <section class="section">
           <h2 class="subsection-title">Notifications Cache</h3>
           <div class="form__row form__row--oneline">
@@ -214,7 +225,9 @@ export class CacheSettingsSection extends SettingsSection {
           </label>
           <p class="form__note">Store signatures in cache (increases storage usage).</p>
         </section>
-        ` : ''}
+        `
+            : ''
+        }
     `;
   }
 
@@ -223,44 +236,69 @@ export class CacheSettingsSection extends SettingsSection {
    */
   private bindListeners(contentContainer: HTMLElement): void {
     // Notifications cache size: save on blur / Enter
-    const notifInput = contentContainer.querySelector('#notifications-cache-size') as HTMLInputElement;
+    const notifInput = contentContainer.querySelector(
+      '#notifications-cache-size'
+    ) as HTMLInputElement;
     const saveNotifCache = () => {
       const val = parseInt(notifInput.value, 10);
       if (isNaN(val) || val < 10 || val > 1000) {
-        ToastService.show('Invalid notifications cache size (10-1000)', 'error');
+        ToastService.show(
+          'Invalid notifications cache size (10-1000)',
+          'error'
+        );
         return;
       }
-      ModuleLoader.getInstance().getApi<NotificationsModuleApi>('notifications')?.setCacheLimit(val);
+      ModuleLoader.getInstance()
+        .getApi<NotificationsModuleApi>('notifications')
+        ?.setCacheLimit(val);
       ToastService.show('Notifications cache size saved', 'success');
     };
     notifInput?.addEventListener('blur', saveNotifCache);
-    notifInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveNotifCache(); });
+    notifInput?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') saveNotifCache();
+    });
 
     // NDK cache inputs: save on blur / Enter
     const ndkInputIds = [
-      'profile-cache-size', 'event-cache-size', 'event-tags-cache-size',
-      'zapper-cache-size', 'nip05-cache-size'
+      'profile-cache-size',
+      'event-cache-size',
+      'event-tags-cache-size',
+      'zapper-cache-size',
+      'nip05-cache-size',
     ];
     const saveNDKConfig = () => {
       const config = this.readConfigFromDOM(contentContainer);
       if (!config) return;
       this.saveConfig(config);
-      ToastService.show('Saved. Reload app for changes to take effect.', 'success');
+      ToastService.show(
+        'Saved. Reload app for changes to take effect.',
+        'success'
+      );
     };
 
     ndkInputIds.forEach(id => {
-      const input = contentContainer.querySelector(`#${id}`) as HTMLInputElement;
+      const input = contentContainer.querySelector(
+        `#${id}`
+      ) as HTMLInputElement;
       input?.addEventListener('blur', saveNDKConfig);
-      input?.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveNDKConfig(); });
+      input?.addEventListener('keydown', e => {
+        if (e.key === 'Enter') saveNDKConfig();
+      });
     });
 
     // Save signatures checkbox: save on change
-    const saveSigInput = contentContainer.querySelector('#save-sig') as HTMLInputElement;
+    const saveSigInput = contentContainer.querySelector(
+      '#save-sig'
+    ) as HTMLInputElement;
     saveSigInput?.addEventListener('change', saveNDKConfig);
 
     // Clear selected tables button
-    const clearSelectedBtn = contentContainer.querySelector('#clear-selected-btn');
-    clearSelectedBtn?.addEventListener('click', () => this.handleClearSelected(contentContainer));
+    const clearSelectedBtn = contentContainer.querySelector(
+      '#clear-selected-btn'
+    );
+    clearSelectedBtn?.addEventListener('click', () =>
+      this.handleClearSelected(contentContainer)
+    );
 
     // Clear all button
     const clearAllBtn = contentContainer.querySelector('#clear-all-btn');
@@ -270,9 +308,13 @@ export class CacheSettingsSection extends SettingsSection {
   /**
    * Read current NDK cache config values from DOM inputs
    */
-  private readConfigFromDOM(contentContainer: HTMLElement): NDKCacheConfig | null {
+  private readConfigFromDOM(
+    contentContainer: HTMLElement
+  ): NDKCacheConfig | null {
     const getValue = (id: string): number => {
-      const input = contentContainer.querySelector(`#${id}`) as HTMLInputElement;
+      const input = contentContainer.querySelector(
+        `#${id}`
+      ) as HTMLInputElement;
       return parseInt(input.value, 10);
     };
 
@@ -281,9 +323,12 @@ export class CacheSettingsSection extends SettingsSection {
     const eventTagsCacheSize = getValue('event-tags-cache-size');
     const zapperCacheSize = getValue('zapper-cache-size');
     const nip05CacheSize = getValue('nip05-cache-size');
-    const saveSig = (contentContainer.querySelector('#save-sig') as HTMLInputElement).checked;
+    const saveSig = (
+      contentContainer.querySelector('#save-sig') as HTMLInputElement
+    ).checked;
 
-    const isInvalidSize = (val: number, min: number): boolean => isNaN(val) || val < min;
+    const isInvalidSize = (val: number, min: number): boolean =>
+      isNaN(val) || val < min;
     if (
       isInvalidSize(profileCacheSize, 1000) ||
       isInvalidSize(eventCacheSize, 1000) ||
@@ -295,7 +340,14 @@ export class CacheSettingsSection extends SettingsSection {
       return null;
     }
 
-    return { profileCacheSize, eventCacheSize, eventTagsCacheSize, zapperCacheSize, nip05CacheSize, saveSig };
+    return {
+      profileCacheSize,
+      eventCacheSize,
+      eventTagsCacheSize,
+      zapperCacheSize,
+      nip05CacheSize,
+      saveSig,
+    };
   }
 
   /**
@@ -323,18 +375,22 @@ export class CacheSettingsSection extends SettingsSection {
       `,
       width: '500px',
       closeOnOverlay: true,
-      closeOnEsc: true
+      closeOnEsc: true,
     });
 
     setTimeout(() => {
-      document.querySelector('[data-action="cancel"]')?.addEventListener('click', () => {
-        modalService.hide();
-      });
+      document
+        .querySelector('[data-action="cancel"]')
+        ?.addEventListener('click', () => {
+          modalService.hide();
+        });
 
-      document.querySelector('[data-action="confirm"]')?.addEventListener('click', async () => {
-        modalService.hide();
-        await onConfirm();
-      });
+      document
+        .querySelector('[data-action="confirm"]')
+        ?.addEventListener('click', async () => {
+          modalService.hide();
+          await onConfirm();
+        });
     }, 100);
   }
 
@@ -367,10 +423,18 @@ export class CacheSettingsSection extends SettingsSection {
             }
           }
 
-          checkboxes.forEach(cb => cb.checked = false);
-          ToastService.show(`Successfully cleared ${tableNames.length} cache table(s)`, 'success');
+          checkboxes.forEach(cb => (cb.checked = false));
+          ToastService.show(
+            `Successfully cleared ${tableNames.length} cache table(s)`,
+            'success'
+          );
         } catch (error) {
-          ErrorService.handle(error, 'CacheSettingsSection.handleClearSelected', true, 'Failed to clear cache tables');
+          ErrorService.handle(
+            error,
+            'CacheSettingsSection.handleClearSelected',
+            true,
+            'Failed to clear cache tables'
+          );
         }
       }
     );
@@ -397,13 +461,21 @@ export class CacheSettingsSection extends SettingsSection {
             db.eventTags.clear(),
             db.nip05.clear(),
             db.lnurl.clear(),
-            db.relayStatus.clear()
+            db.relayStatus.clear(),
           ]);
 
-          ToastService.show('Cache cleared successfully. Reloading...', 'success');
+          ToastService.show(
+            'Cache cleared successfully. Reloading...',
+            'success'
+          );
           setTimeout(() => window.location.reload(), 1000);
         } catch (error) {
-          ErrorService.handle(error, 'CacheSettingsSection.handleClearAll', true, 'Failed to clear cache');
+          ErrorService.handle(
+            error,
+            'CacheSettingsSection.handleClearAll',
+            true,
+            'Failed to clear cache'
+          );
         }
       }
     );

@@ -6,7 +6,10 @@
  */
 
 import { View } from './View';
-import { UserProfileService, type UserProfile } from '../../services/UserProfileService';
+import {
+  UserProfileService,
+  type UserProfile,
+} from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
 import { UserService } from '../../services/UserService';
 import { FollowVerificationService } from '../../services/FollowVerificationService';
@@ -17,7 +20,10 @@ import { ProfileSearchComponent } from '../profile/ProfileSearchComponent';
 import { ProfileFollowManager } from '../../lists/follows';
 import { ProfileMuteManager } from '../../lists/mutes';
 import { SoftMuteService } from '../../services/SoftMuteService';
-import { isHighlightHiddenFor, setHighlightHiddenFor } from '../../helpers/highlightSetting';
+import {
+  isHighlightHiddenFor,
+  setHighlightHiddenFor,
+} from '../../helpers/highlightSetting';
 import { ProfileEditModal } from '../profile/ProfileEditModal';
 import { QRCodeModal } from '../qrcode/QRCodeModal';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
@@ -42,19 +48,29 @@ import type { ProfileRecognitionRuntime } from '../../addons/profile-recognition
 
 // Lazy-loaded types for profile recognition
 // Types only (erased at build time) — live runtime accessed via AddonLoader
-type ProfileBlinkerType = import('../../addons/profile-recognition/profileBlinking').ProfileBlinker;
-type TextBlinkerType = import('../../addons/profile-recognition/profileBlinking').TextBlinker;
+type ProfileBlinkerType =
+  import('../../addons/profile-recognition/profileBlinking').ProfileBlinker;
+type TextBlinkerType =
+  import('../../addons/profile-recognition/profileBlinking').TextBlinker;
 // ProfileOrchestrator accessed via profile module API
 import dayjs from 'dayjs';
 import calendarSystems from '@calidy/dayjs-calendarsystems';
 import HijriCalendarSystem from '@calidy/dayjs-calendarsystems/calendarSystems/HijriCalendarSystem';
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../services/PerAccountLocalStorage';
 import { CustomDropdown } from '../ui/CustomDropdown';
 import { ToastService } from '../../services/ToastService';
 import { isTribesEnabled } from '../../addons/tribes/index';
 import { HIJRI_MONTHS } from '../../helpers/formatTimestamp';
 import { diagLog } from '../../services/DiagnosticLogger';
-import { escapeHtml, escapeHtmlAttr, escapeCssUrl, safeHttpUrl } from '../../helpers/escapeHtml';
+import {
+  escapeHtml,
+  escapeHtmlAttr,
+  escapeCssUrl,
+  safeHttpUrl,
+} from '../../helpers/escapeHtml';
 import { extractDisplayName } from '../../helpers/extractDisplayName';
 import { getTag } from '../../helpers/tagUtils';
 import { Tooltip } from '../ui/Tooltip';
@@ -118,7 +134,8 @@ export class ProfileView extends View {
   // Services
   private _profileModuleApi?: ProfileModuleApi | null;
   private get profileModuleApi(): ProfileModuleApi | null {
-    return this._profileModuleApi ??= ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
+    return (this._profileModuleApi ??=
+      ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile'));
   }
 
   // Profile recognition blinker instances — service + classes live in the
@@ -129,7 +146,9 @@ export class ProfileView extends View {
 
   // Tribe dropdown
   private tribeDropdown: CustomDropdown | null = null;
-  private tribeDropdownCleanupHandlers: Array<(e: MouseEvent | KeyboardEvent) => void> = [];
+  private tribeDropdownCleanupHandlers: Array<
+    (e: MouseEvent | KeyboardEvent) => void
+  > = [];
 
   // TypedEventBus subscription IDs for cleanup
   private eventBusSubscriptions: string[] = [];
@@ -192,19 +211,27 @@ export class ProfileView extends View {
 
   /** Fetch the current profile-recognition runtime, or null if addon is OFF. */
   private getRecognitionRuntime(): ProfileRecognitionRuntime | null {
-    return AddonLoader.getInstance().getRuntime<ProfileRecognitionRuntime>('profile-recognition');
+    return AddonLoader.getInstance().getRuntime<ProfileRecognitionRuntime>(
+      'profile-recognition'
+    );
   }
 
   /**
    * Setup listener for profile updates (after save in ProfileEditModal)
    */
   private setupProfileUpdateListener(): void {
-    const id = this.eventBus.on('profile:updated', (data: { pubkey: string }) => {
-      if (this.authService.isCurrentUser(data.pubkey) && this.authService.isCurrentUser(this.pubkey)) {
-        // Reload own profile after edit
-        this.refreshProfile();
+    const id = this.eventBus.on(
+      'profile:updated',
+      (data: { pubkey: string }) => {
+        if (
+          this.authService.isCurrentUser(data.pubkey) &&
+          this.authService.isCurrentUser(this.pubkey)
+        ) {
+          // Reload own profile after edit
+          this.refreshProfile();
+        }
       }
-    });
+    );
     this.eventBusSubscriptions.push(id);
   }
 
@@ -334,7 +361,8 @@ export class ProfileView extends View {
       }
 
       // Fetch profile data (uses shared promise to prevent duplicate requests)
-      const { profile, following, followsYou, mutedYou } = await this.getProfileData();
+      const { profile, following, followsYou, mutedYou } =
+        await this.getProfileData();
 
       this.followingCount = following.length;
 
@@ -358,9 +386,12 @@ export class ProfileView extends View {
       // Subscribe to profile updates for live avatar/name updates.
       // Guard against stacking subscriptions if render() runs more than once.
       this.profileUnsubscribe?.();
-      this.profileUnsubscribe = this.userProfileService.subscribeToProfile(this.pubkey, (updatedProfile) => {
-        this.renderProfileHeader(updatedProfile);
-      });
+      this.profileUnsubscribe = this.userProfileService.subscribeToProfile(
+        this.pubkey,
+        updatedProfile => {
+          this.renderProfileHeader(updatedProfile);
+        }
+      );
 
       // Initialize search component
       this.initializeSearchComponent();
@@ -410,7 +441,10 @@ export class ProfileView extends View {
     if (followerEl) {
       // Show count with "+" while loading, pulse effect
       if (this.isLoadingFollowers) {
-        followerEl.textContent = this.followerCount > 0 ? `${this.followerCount.toLocaleString('en-US')}+` : '...';
+        followerEl.textContent =
+          this.followerCount > 0
+            ? `${this.followerCount.toLocaleString('en-US')}+`
+            : '...';
         followerEl.classList.add('pulsate');
       } else {
         // Final count, no pulse, no "+"
@@ -429,13 +463,17 @@ export class ProfileView extends View {
     this.updateJoinedDateDisplay();
 
     try {
-      const oldestTimestamp = await this.profileModuleApi?.fetchOldestEvent(this.pubkey) ?? null;
+      const oldestTimestamp =
+        (await this.profileModuleApi?.fetchOldestEvent(this.pubkey)) ?? null;
 
       if (oldestTimestamp) {
         // Format date based on calendar system setting
         const date = new Date(oldestTimestamp * 1000);
         const storage = PerAccountLocalStorage.getInstance();
-        const calendarSystem = storage.get<string>(StorageKeys.CALENDAR_SYSTEM, 'gregorian');
+        const calendarSystem = storage.get<string>(
+          StorageKeys.CALENDAR_SYSTEM,
+          'gregorian'
+        );
 
         // Format date(s) based on calendar system
         this.joinedDate = this.formatJoinedDate(date, calendarSystem);
@@ -497,16 +535,17 @@ export class ProfileView extends View {
   private async fetchProfileData(): Promise<ProfileLoadResult> {
     try {
       const isSelf = this.authService.isCurrentUser(this.pubkey);
-      const [profile, following, followsYouVerdict, mutedYouVerdict] = await Promise.all([
-        this.userProfileService.getUserProfile(this.pubkey),
-        this.userService.getUserFollowing(this.pubkey),
-        isSelf
-          ? Promise.resolve(null)
-          : this.followVerification.verifyFollowsBack(this.pubkey),
-        isSelf
-          ? Promise.resolve(null)
-          : this.remoteMuteCheck.verifyMutedByThem(this.pubkey)
-      ]);
+      const [profile, following, followsYouVerdict, mutedYouVerdict] =
+        await Promise.all([
+          this.userProfileService.getUserProfile(this.pubkey),
+          this.userService.getUserFollowing(this.pubkey),
+          isSelf
+            ? Promise.resolve(null)
+            : this.followVerification.verifyFollowsBack(this.pubkey),
+          isSelf
+            ? Promise.resolve(null)
+            : this.remoteMuteCheck.verifyMutedByThem(this.pubkey),
+        ]);
 
       const followsYou = followsYouVerdict?.status === 'follows';
       const mutedYou = mutedYouVerdict?.status === 'muted';
@@ -537,16 +576,21 @@ export class ProfileView extends View {
     const about = profile.about || '';
     const website = profile.website || '';
     const banner = profile.banner || '';
-    const picture = profile.picture || this.userProfileService.getProfilePicture(this.pubkey) || '';
+    const picture =
+      profile.picture ||
+      this.userProfileService.getProfilePicture(this.pubkey) ||
+      '';
     // Multiple NIP-05: prefer nip05s from tags, fallback to single nip05 from content
-    const nip05s = profile.nip05s && profile.nip05s.length > 0
-      ? profile.nip05s
-      : (profile.nip05 ? [profile.nip05] : []);
+    const nip05s =
+      profile.nip05s && profile.nip05s.length > 0
+        ? profile.nip05s
+        : profile.nip05
+          ? [profile.nip05]
+          : [];
     const lud16 = profile.lud16 || '';
     this.lud16 = lud16;
     const isOwnProfile = this.authService.isCurrentUser(this.pubkey);
     const isBunker = this.authService.isBunkerAuth();
-
 
     // Process about text: escape HTML, convert line breaks, linkify URLs, and turn
     // npub/nprofile mentions into clickable chips (same resolver as note content, so
@@ -555,17 +599,22 @@ export class ProfileView extends View {
       ? npubToUsername(
           linkifyUrls(convertLineBreaks(escapeHtml(about))),
           'html-multi',
-          (hex: string) => ContentProcessor.getInstance().getNonBlockingProfile(hex)
+          (hex: string) =>
+            ContentProcessor.getInstance().getNonBlockingProfile(hex)
         )
       : '';
 
     const headerHTML = `
       <div class="profile-nip01">
-        ${banner ? `
+        ${
+          banner
+            ? `
           <div class="profile-banner" style="background-image: url('${escapeCssUrl(banner)}')"></div>
-        ` : `
+        `
+            : `
           <div class="profile-banner profile-banner-fallback"></div>
-        `}
+        `
+        }
         <div class="profile-info">
           <div class="profile-avatar-wrapper">
             <img src="${escapeHtmlAttr(picture)}" alt="${escapeHtml(displayName)}" class="profile-pic profile-pic--big" />
@@ -578,12 +627,16 @@ export class ProfileView extends View {
             ${nip05s.length > 0 ? `<p class="profile-nip05">${nip05s.map(n => escapeHtml(n)).join(', ')}</p>` : ''}
             <p class="profile-status${isOwnProfile ? ' profile-status--editable' : ''}" data-role="status" ${isOwnProfile ? '' : 'hidden'}></p>
 
-            ${lud16 ? `
+            ${
+              lud16
+                ? `
               <div class="profile-lightning">
                 <svg class="lightning-icon"><use href="#icon-lightning-filled"/></svg>
                 <span>${escapeHtml(lud16)}</span>
               </div>
-            ` : ''}
+            `
+                : ''
+            }
 
             <div class="profile-stats">
               <div class="stat-item stat-item--clickable" id="following-count-link">
@@ -609,19 +662,27 @@ export class ProfileView extends View {
               <button class="profile-badge-btn" title="Award Badge" style="display:none">
                 <svg width="18" height="18"><use href="#icon-badge"/></svg>
               </button>
-              ${!isOwnProfile ? `
+              ${
+                !isOwnProfile
+                  ? `
               <button class="profile-dm-btn"${isBunker ? ' disabled' : ''} title="${isBunker ? 'Switch to NoorSigner or browser extension to send messages' : 'Send message'}">
                 <svg width="18" height="18"><use href="#icon-message"/></svg>
               </button>
-              ` : ''}
-              ${lud16 && !isOwnProfile ? `
+              `
+                  : ''
+              }
+              ${
+                lud16 && !isOwnProfile
+                  ? `
               <button class="lightning-qr-btn" title="Lightning QR Code">
                 <svg width="18" height="18"><use href="#icon-lightning-qr"/></svg>
               </button>
               <button class="profile-zap-btn" title="Zap this user">
                 <svg width="18" height="18"><use href="#icon-lightning-filled"/></svg>
               </button>
-              ` : ''}
+              `
+                  : ''
+              }
               <div class="textinput-overlay-mount"></div>
               <span class="copy-feedback">Copied!</span>
             </div>
@@ -716,8 +777,12 @@ export class ProfileView extends View {
       // On subsequent renders (profile updates), only update dynamic parts without destroying timeline
 
       // Update avatar and name with blinking logic
-      const avatar = this.container.querySelector('.profile-pic--big') as HTMLImageElement;
-      const nameEl = this.container.querySelector('.profile-name') as HTMLElement;
+      const avatar = this.container.querySelector(
+        '.profile-pic--big'
+      ) as HTMLImageElement;
+      const nameEl = this.container.querySelector(
+        '.profile-name'
+      ) as HTMLElement;
       if (avatar && nameEl) {
         this.updateProfileWithBlinking(avatar, nameEl, displayName, picture);
       }
@@ -739,7 +804,9 @@ export class ProfileView extends View {
       }
 
       // Update banner
-      const bannerEl = this.container.querySelector('.profile-banner') as HTMLElement;
+      const bannerEl = this.container.querySelector(
+        '.profile-banner'
+      ) as HTMLElement;
       if (bannerEl && banner) {
         bannerEl.style.backgroundImage = `url('${escapeCssUrl(banner)}')`;
         bannerEl.classList.remove('profile-banner-fallback');
@@ -769,7 +836,7 @@ export class ProfileView extends View {
       // Pass pubkey to show this profile's follows (not own follows)
       TypedEventBus.getInstance().emit('list:open', {
         listType: 'follows',
-        pubkey: this.pubkey
+        pubkey: this.pubkey,
       });
     });
   }
@@ -789,7 +856,7 @@ export class ProfileView extends View {
     newLink.addEventListener('click', () => {
       TypedEventBus.getInstance().emit('list:open', {
         listType: 'followers',
-        pubkey: this.pubkey
+        pubkey: this.pubkey,
       });
     });
   }
@@ -815,7 +882,9 @@ export class ProfileView extends View {
    * Setup edit profile button event handler
    */
   private setupEditButton(): void {
-    const editBtn = this.container.querySelector('[data-action="edit-profile"]');
+    const editBtn = this.container.querySelector(
+      '[data-action="edit-profile"]'
+    );
     if (!editBtn) return;
 
     editBtn.addEventListener('click', async () => {
@@ -843,14 +912,19 @@ export class ProfileView extends View {
     const muteButton = this.muteManager.renderMuteButton();
 
     // Add article notification checkbox (only if logged in and not own profile)
-    if (!this.authService.getCurrentUser() || this.authService.isCurrentUser(this.pubkey)) {
+    if (
+      !this.authService.getCurrentUser() ||
+      this.authService.isCurrentUser(this.pubkey)
+    ) {
       return muteButton;
     }
 
     const softMuteButton = this.renderSoftMuteButton();
 
-    const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
-    const isSubscribed = articlesApi?.isSubscribedToArticleNotifications(this.pubkey) ?? false;
+    const articlesApi =
+      ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+    const isSubscribed =
+      articlesApi?.isSubscribedToArticleNotifications(this.pubkey) ?? false;
 
     const articleNotifCheckbox = `
       <label class="nn-checkbox" title="Get notified when this user posts a new article">
@@ -866,7 +940,9 @@ export class ProfileView extends View {
       </label>
     `;
 
-    return muteButton + softMuteButton + articleNotifCheckbox + highlightsCheckbox;
+    return (
+      muteButton + softMuteButton + articleNotifCheckbox + highlightsCheckbox
+    );
   }
 
   /**
@@ -885,7 +961,10 @@ export class ProfileView extends View {
    */
   private renderTribeButton(): string {
     // Don't show if not logged in or on own profile
-    if (!this.authService.getCurrentUser() || this.authService.isCurrentUser(this.pubkey)) {
+    if (
+      !this.authService.getCurrentUser() ||
+      this.authService.isCurrentUser(this.pubkey)
+    ) {
       return '';
     }
 
@@ -917,7 +996,9 @@ export class ProfileView extends View {
    * lives in the header markup.
    */
   private refreshFollowButtonInline(): void {
-    const existingButton = this.container.querySelector('[data-action="follow"], [data-action="unfollow"], .follow-dropdown-container') as HTMLElement | null;
+    const existingButton = this.container.querySelector(
+      '[data-action="follow"], [data-action="unfollow"], .follow-dropdown-container'
+    ) as HTMLElement | null;
     if (!existingButton) return;
     const html = this.renderFollowButton();
     if (!html) return;
@@ -947,12 +1028,20 @@ export class ProfileView extends View {
     // Clone the node first to drop any listeners attached by earlier
     // renderProfileHeader() passes — setupMuteButton() runs on every
     // re-render while the element is only recreated on the first.
-    const articleNotifCheckbox = this.container.querySelector('#article-notif-toggle') as HTMLInputElement;
+    const articleNotifCheckbox = this.container.querySelector(
+      '#article-notif-toggle'
+    ) as HTMLInputElement;
     if (articleNotifCheckbox) {
-      const freshArticleNotif = articleNotifCheckbox.cloneNode(true) as HTMLInputElement;
-      articleNotifCheckbox.parentNode?.replaceChild(freshArticleNotif, articleNotifCheckbox);
+      const freshArticleNotif = articleNotifCheckbox.cloneNode(
+        true
+      ) as HTMLInputElement;
+      articleNotifCheckbox.parentNode?.replaceChild(
+        freshArticleNotif,
+        articleNotifCheckbox
+      );
       freshArticleNotif.addEventListener('change', () => {
-        const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+        const articlesApi =
+          ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
         articlesApi?.toggleArticleNotifications(this.pubkey);
       });
     }
@@ -960,13 +1049,22 @@ export class ProfileView extends View {
     // Setup highlights toggle handler — hides this user's highlights
     // (kind 9802 with web source) from all timelines.
     // Same clone-to-dedup pattern as the article checkbox above.
-    const highlightsCheckbox = this.container.querySelector('#highlights-toggle') as HTMLInputElement;
+    const highlightsCheckbox = this.container.querySelector(
+      '#highlights-toggle'
+    ) as HTMLInputElement;
     if (highlightsCheckbox) {
-      const freshHighlights = highlightsCheckbox.cloneNode(true) as HTMLInputElement;
-      highlightsCheckbox.parentNode?.replaceChild(freshHighlights, highlightsCheckbox);
+      const freshHighlights = highlightsCheckbox.cloneNode(
+        true
+      ) as HTMLInputElement;
+      highlightsCheckbox.parentNode?.replaceChild(
+        freshHighlights,
+        highlightsCheckbox
+      );
       freshHighlights.addEventListener('change', () => {
         setHighlightHiddenFor(this.pubkey, freshHighlights.checked);
-        this.eventBus.emit('settings:hide-highlights-changed', { hidden: freshHighlights.checked });
+        this.eventBus.emit('settings:hide-highlights-changed', {
+          hidden: freshHighlights.checked,
+        });
         ToastService.show(
           freshHighlights.checked
             ? "This user's highlights are now hidden"
@@ -982,7 +1080,9 @@ export class ProfileView extends View {
    * in place (no class change, no full re-render).
    */
   private setupSoftMuteButton(): void {
-    const btn = this.container.querySelector('.soft-mute-btn') as HTMLButtonElement | null;
+    const btn = this.container.querySelector(
+      '.soft-mute-btn'
+    ) as HTMLButtonElement | null;
     if (!btn) return;
     // Idempotent: renderProfileHeader() runs again on profile updates and
     // would otherwise stack another click listener on the same node each
@@ -996,12 +1096,13 @@ export class ProfileView extends View {
       const muted = SoftMuteService.getInstance().isSoftMuted(this.pubkey);
       btn.textContent = muted ? 'Soft muted' : 'Soft mute';
       ToastService.show(
-        muted ? 'Soft muted — their interactions no longer notify you' : 'Soft mute lifted',
+        muted
+          ? 'Soft muted — their interactions no longer notify you'
+          : 'Soft mute lifted',
         'success'
       );
     });
   }
-
 
   /**
    * Setup copy button event handlers
@@ -1011,11 +1112,15 @@ export class ProfileView extends View {
     const copyButtons = this.container.querySelectorAll('.copy-btn');
 
     copyButtons.forEach(button => {
-      button.addEventListener('click', async (e) => {
+      button.addEventListener('click', async e => {
         e.preventDefault();
         const textToCopy = (button as HTMLElement).dataset.copy;
         if (textToCopy) {
-          const success = await clipboardService.copyText(textToCopy, 'ID', true);
+          const success = await clipboardService.copyText(
+            textToCopy,
+            'ID',
+            true
+          );
           if (success) {
             clipboardService.addVisualFeedback(button as HTMLElement);
           }
@@ -1031,7 +1136,16 @@ export class ProfileView extends View {
    */
   private attachIconTooltips(): void {
     // Search link is handled in initializeSearchComponent() — it mounts later.
-    const selectors = ['.copy-btn', '.qr-btn', '.tribe-btn', '.profile-badge-btn', '.profile-dm-btn', '.lightning-qr-btn', '.profile-zap-btn', '.soft-mute-btn'];
+    const selectors = [
+      '.copy-btn',
+      '.qr-btn',
+      '.tribe-btn',
+      '.profile-badge-btn',
+      '.profile-dm-btn',
+      '.lightning-qr-btn',
+      '.profile-zap-btn',
+      '.soft-mute-btn',
+    ];
     selectors.forEach(sel => {
       const el = this.container.querySelector(sel) as HTMLElement | null;
       const label = el?.getAttribute('title');
@@ -1047,7 +1161,7 @@ export class ProfileView extends View {
   private setupQRButton(): void {
     const qrButton = this.container.querySelector('.qr-btn');
     if (qrButton) {
-      qrButton.addEventListener('click', (e) => {
+      qrButton.addEventListener('click', e => {
         e.preventDefault();
         const qrModal = QRCodeModal.getInstance();
         qrModal.show(this.npub);
@@ -1061,7 +1175,7 @@ export class ProfileView extends View {
   private setupLightningButtons(): void {
     const lightningQrBtn = this.container.querySelector('.lightning-qr-btn');
     if (lightningQrBtn) {
-      lightningQrBtn.addEventListener('click', (e) => {
+      lightningQrBtn.addEventListener('click', e => {
         e.preventDefault();
         if (this.lud16) {
           const qrModal = QRCodeModal.getInstance();
@@ -1072,7 +1186,7 @@ export class ProfileView extends View {
 
     const profileZapBtn = this.container.querySelector('.profile-zap-btn');
     if (profileZapBtn) {
-      profileZapBtn.addEventListener('click', async (e) => {
+      profileZapBtn.addEventListener('click', async e => {
         e.preventDefault();
         if (!AuthGuard.requireAuth('zap')) return;
         const { ZapModal } = await import('../modals/ZapModal');
@@ -1089,54 +1203,68 @@ export class ProfileView extends View {
    * Disabled when the viewer is on Bunker auth (NIP-04/44 unsupported).
    */
   private setupDmButton(): void {
-    const dmBtn = this.container.querySelector('.profile-dm-btn') as HTMLButtonElement | null;
+    const dmBtn = this.container.querySelector(
+      '.profile-dm-btn'
+    ) as HTMLButtonElement | null;
     if (!dmBtn || dmBtn.disabled) return;
-    dmBtn.addEventListener('click', (e) => {
+    dmBtn.addEventListener('click', e => {
       e.preventDefault();
       Router.getInstance().navigate(`/messages/${this.npub}`);
     });
   }
 
   private setupBadgeButton(): void {
-    const badgeBtn = this.container.querySelector('.profile-badge-btn') as HTMLElement | null;
+    const badgeBtn = this.container.querySelector(
+      '.profile-badge-btn'
+    ) as HTMLElement | null;
     if (!badgeBtn) return;
 
     // Only show for foreign profiles when addon is enabled
-    const isOwnProfile = this.authService.getCurrentUser()?.pubkey === this.pubkey;
+    const isOwnProfile =
+      this.authService.getCurrentUser()?.pubkey === this.pubkey;
     if (isOwnProfile) return;
 
     import('../../addons/badges/index').then(({ isBadgesEnabled }) => {
       if (!isBadgesEnabled()) return;
       badgeBtn.style.display = '';
 
-      badgeBtn.addEventListener('click', async (e) => {
+      badgeBtn.addEventListener('click', async e => {
         e.preventDefault();
         if (!AuthGuard.requireAuth('award badge')) return;
 
-        const { BadgeService } = await import('../../addons/badges/BadgeService');
+        const { BadgeService } = await import(
+          '../../addons/badges/BadgeService'
+        );
         const service = BadgeService.getInstance();
         const defs = await service.fetchOwnDefinitions();
 
         if (defs.length === 0) {
-          ToastService.show('No badges created yet. Create one in Addons → Badges.', 'info');
+          ToastService.show(
+            'No badges created yet. Create one in Addons → Badges.',
+            'info'
+          );
           return;
         }
 
         const { ModalService } = await import('../../services/ModalService');
         const content = document.createElement('div');
         content.className = 'badge-picker';
-        content.innerHTML = defs.map(d => {
-          const img = d.imageUrl
-            ? `<img src="${escapeHtmlAttr(d.imageUrl)}" alt="${escapeHtmlAttr(d.name)}" />`
-            : '<span class="badge-picker__emoji">🏅</span>';
-          return `<div class="badge-picker__card" data-slug="${escapeHtmlAttr(d.slug)}">
+        content.innerHTML = defs
+          .map(d => {
+            const img = d.imageUrl
+              ? `<img src="${escapeHtmlAttr(d.imageUrl)}" alt="${escapeHtmlAttr(d.name)}" />`
+              : '<span class="badge-picker__emoji">🏅</span>';
+            return `<div class="badge-picker__card" data-slug="${escapeHtmlAttr(d.slug)}">
             <div class="badge-picker__name">${escapeHtml(d.name)}</div>
             <div class="badge-picker__image">${img}</div>
           </div>`;
-        }).join('');
+          })
+          .join('');
 
-        content.addEventListener('click', async (ev) => {
-          const item = (ev.target as HTMLElement).closest('[data-slug]') as HTMLElement | null;
+        content.addEventListener('click', async ev => {
+          const item = (ev.target as HTMLElement).closest(
+            '[data-slug]'
+          ) as HTMLElement | null;
           if (!item) return;
           const slug = item.dataset.slug!;
           const def = defs.find(d => d.slug === slug);
@@ -1148,7 +1276,9 @@ export class ProfileView extends View {
           const recipientPubkey = this.pubkey;
           if (!recipientPubkey) return;
 
-          const success = await service.awardBadge(coordinate, [recipientPubkey]);
+          const success = await service.awardBadge(coordinate, [
+            recipientPubkey,
+          ]);
           if (success) ModalService.getInstance().hide();
         });
 
@@ -1173,39 +1303,44 @@ export class ProfileView extends View {
    * Publicly readable by anyone who reads your contact list.
    */
   private setupPublicPetname(): void {
-    const petnameEl = this.container.querySelector('[data-role="petname"]') as HTMLElement | null;
+    const petnameEl = this.container.querySelector(
+      '[data-role="petname"]'
+    ) as HTMLElement | null;
     if (!petnameEl) return;
 
-    import('../../lists/follows').then(({ isFollowing, getFollowPetname, setFollowPetname }) => {
-      const render = (): void => {
-        if (!isFollowing(this.pubkey).public) {
-          petnameEl.textContent = '';
-          petnameEl.style.display = 'none';
-          return;
-        }
-        petnameEl.style.display = '';
-        const petname = getFollowPetname(this.pubkey);
-        petnameEl.textContent = petname ? ` (${petname})` : ' (+)';
-      };
-      render();
-
-      petnameEl.addEventListener('click', async (e) => {
-        e.preventDefault();
-        if (!isFollowing(this.pubkey).public) return;
-        const { ModalService } = await import('../../services/ModalService');
-        const current = getFollowPetname(this.pubkey) ?? '';
-        const result = await ModalService.getInstance().prompt({
-          title: 'Set Petname',
-          message: '⚠️ Public label, stored in your contact list (NIP-02). Anyone who reads your follow list can see it.',
-          defaultValue: current,
-          placeholder: 'e.g. Bob from work',
-          allowEmpty: true,
-        });
-        if (result === null) return;
-        await setFollowPetname(this.pubkey, result.trim());
+    import('../../lists/follows').then(
+      ({ isFollowing, getFollowPetname, setFollowPetname }) => {
+        const render = (): void => {
+          if (!isFollowing(this.pubkey).public) {
+            petnameEl.textContent = '';
+            petnameEl.style.display = 'none';
+            return;
+          }
+          petnameEl.style.display = '';
+          const petname = getFollowPetname(this.pubkey);
+          petnameEl.textContent = petname ? ` (${petname})` : ' (+)';
+        };
         render();
-      });
-    });
+
+        petnameEl.addEventListener('click', async e => {
+          e.preventDefault();
+          if (!isFollowing(this.pubkey).public) return;
+          const { ModalService } = await import('../../services/ModalService');
+          const current = getFollowPetname(this.pubkey) ?? '';
+          const result = await ModalService.getInstance().prompt({
+            title: 'Set Petname',
+            message:
+              '⚠️ Public label, stored in your contact list (NIP-02). Anyone who reads your follow list can see it.',
+            defaultValue: current,
+            placeholder: 'e.g. Bob from work',
+            allowEmpty: true,
+          });
+          if (result === null) return;
+          await setFollowPetname(this.pubkey, result.trim());
+          render();
+        });
+      }
+    );
   }
 
   /**
@@ -1213,7 +1348,9 @@ export class ProfileView extends View {
    * "Private petnames" Privacy setting. Empty = peach icon, filled = warning orange.
    */
   private setupPrivateNote(): void {
-    const noteEl = this.container.querySelector('[data-role="petname-note"]') as HTMLElement | null;
+    const noteEl = this.container.querySelector(
+      '[data-role="petname-note"]'
+    ) as HTMLElement | null;
     if (!noteEl) return;
 
     import('../../services/PetnameService').then(({ PetnameService }) => {
@@ -1229,17 +1366,19 @@ export class ProfileView extends View {
         const filled = !!note;
         noteEl.classList.toggle('profile-petname-note--filled', filled);
         noteEl.title = filled ? 'Edit private note' : 'Add private note';
-        noteEl.innerHTML = '<svg width="18" height="18"><use href="#icon-note"/></svg>';
+        noteEl.innerHTML =
+          '<svg width="18" height="18"><use href="#icon-note"/></svg>';
       };
       render();
 
-      noteEl.addEventListener('click', async (e) => {
+      noteEl.addEventListener('click', async e => {
         e.preventDefault();
         const { ModalService } = await import('../../services/ModalService');
         const current = service.getPetname(this.pubkey) ?? '';
         const result = await ModalService.getInstance().prompt({
           title: 'Private Note',
-          message: '🔒 Encrypted note about this user. Only you can decrypt and read it.',
+          message:
+            '🔒 Encrypted note about this user. Only you can decrypt and read it.',
           defaultValue: current,
           placeholder: 'Write anything you want to remember about this user…',
           allowEmpty: true,
@@ -1260,7 +1399,9 @@ export class ProfileView extends View {
    * runs in the background and reverts the UI on failure.
    */
   private setupStatus(): void {
-    const statusEl = this.container.querySelector('[data-role="status"]') as HTMLElement | null;
+    const statusEl = this.container.querySelector(
+      '[data-role="status"]'
+    ) as HTMLElement | null;
     if (!statusEl) return;
 
     import('../../services/UserStatusService').then(({ UserStatusService }) => {
@@ -1278,7 +1419,7 @@ export class ProfileView extends View {
         if (!editable) statusEl.hidden = !hasText;
       };
 
-      service.getStatus(this.pubkey).then((text) => {
+      service.getStatus(this.pubkey).then(text => {
         if (fetched) return; // optimistic edit already won
         current = text ?? '';
         render();
@@ -1302,7 +1443,10 @@ export class ProfileView extends View {
           done = true;
           const value = input.value.trim();
           input.remove();
-          if (!save || value === current) { render(); return; }
+          if (!save || value === current) {
+            render();
+            return;
+          }
 
           // Optimistic: show the new status immediately, publish in the
           // background. Revert if the publish fails (Toast/diagLog come from
@@ -1312,7 +1456,7 @@ export class ProfileView extends View {
           current = value;
           fetched = true;
           render();
-          void service.setStatus(value).then((ok) => {
+          void service.setStatus(value).then(ok => {
             if (!ok) {
               current = previous;
               render();
@@ -1320,10 +1464,15 @@ export class ProfileView extends View {
           });
         };
 
-        input.addEventListener('keydown', (e) => {
+        input.addEventListener('keydown', e => {
           e.stopPropagation();
-          if (e.key === 'Enter') { e.preventDefault(); finish(true); }
-          else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            finish(true);
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            finish(false);
+          }
         });
         input.addEventListener('blur', () => finish(true));
 
@@ -1341,14 +1490,16 @@ export class ProfileView extends View {
    * Setup tribe button event handler
    */
   private setupTribeButton(): void {
-    const tribeButton = this.container.querySelector('.tribe-btn') as HTMLElement;
+    const tribeButton = this.container.querySelector(
+      '.tribe-btn'
+    ) as HTMLElement;
     if (!tribeButton) return;
     if (!isTribesEnabled()) return;
 
     // Show button (hidden by default in HTML)
     tribeButton.style.display = '';
 
-    tribeButton.addEventListener('click', async (e) => {
+    tribeButton.addEventListener('click', async e => {
       e.preventDefault();
 
       // Check authentication
@@ -1360,7 +1511,10 @@ export class ProfileView extends View {
       const tribeFolders = tribes.getFolders();
 
       if (tribeFolders.length === 0) {
-        ToastService.show('No tribes found. Create a tribe first in the Tribe view.', 'info');
+        ToastService.show(
+          'No tribes found. Create a tribe first in the Tribe view.',
+          'info'
+        );
         return;
       }
 
@@ -1369,8 +1523,8 @@ export class ProfileView extends View {
         { value: '', label: 'Choose a tribe' },
         ...tribeFolders.map(folder => ({
           value: folder.id,
-          label: folder.name
-        }))
+          label: folder.name,
+        })),
       ];
 
       // Show dropdown
@@ -1390,9 +1544,9 @@ export class ProfileView extends View {
 
     // Create dropdown
     this.tribeDropdown = new CustomDropdown({
-      options: options,
+      options,
       selectedValue: '',
-      onChange: (folderId) => {
+      onChange: folderId => {
         // Close dropdown if placeholder selected
         if (!folderId) {
           this.cleanupTribeDropdown();
@@ -1401,14 +1555,16 @@ export class ProfileView extends View {
         this.handleTribeSelection(folderId);
       },
       className: 'tribe-dropdown',
-      width: '200px'
+      width: '200px',
     });
 
     // Mount dropdown
     dropdownMount.appendChild(this.tribeDropdown.getElement());
 
     // Auto-open dropdown
-    const trigger = this.tribeDropdown.getElement().querySelector('.custom-dropdown__trigger') as HTMLElement;
+    const trigger = this.tribeDropdown
+      .getElement()
+      .querySelector('.custom-dropdown__trigger') as HTMLElement;
     if (trigger) {
       trigger.click();
     }
@@ -1418,7 +1574,8 @@ export class ProfileView extends View {
       const dropdownEl = this.tribeDropdown?.getElement();
       if (!dropdownEl) return;
 
-      const isClickOutside = e instanceof MouseEvent && !dropdownEl.contains(e.target as Node);
+      const isClickOutside =
+        e instanceof MouseEvent && !dropdownEl.contains(e.target as Node);
       const isEscape = e instanceof KeyboardEvent && e.key === 'Escape';
 
       if (isClickOutside || isEscape) {
@@ -1469,7 +1626,9 @@ export class ProfileView extends View {
 
       // Check if user is already in THIS specific tribe
       const allMembers = tribes.getMembers();
-      const isInThisTribe = allMembers.some(m => m.pubkey === this.pubkey && m.category === folder.name);
+      const isInThisTribe = allMembers.some(
+        m => m.pubkey === this.pubkey && m.category === folder.name
+      );
 
       if (isInThisTribe) {
         ToastService.show(`User is already in tribe "${folder.name}"`, 'info');
@@ -1547,7 +1706,10 @@ export class ProfileView extends View {
       const userPubkey = currentUser ? currentUser.pubkey : this.pubkey;
 
       // Create the timeline for a single author's complete feed
-      this.timeline = new Timeline(userPubkey, profileTimelineConfig(this.pubkey));
+      this.timeline = new Timeline(
+        userPubkey,
+        profileTimelineConfig(this.pubkey)
+      );
 
       // Mount timeline
       timelineContainer.appendChild(this.timeline.getElement());
@@ -1571,13 +1733,13 @@ export class ProfileView extends View {
    * Show muted profile placeholder with unmute options
    */
   private async showMutedProfile(): Promise<void> {
-    this.container.innerHTML = await this.muteManager.renderMutedProfile(escapeHtml);
+    this.container.innerHTML =
+      await this.muteManager.renderMutedProfile(escapeHtml);
     this.muteManager.setupUnmuteButton(this.container, () => {
       // Reload profile after unmute
       this.render();
     });
   }
-
 
   /**
    * Initialize search component
@@ -1599,7 +1761,7 @@ export class ProfileView extends View {
           const result = await profileApi.searchUserNotes({
             pubkeyHex: this.pubkey,
             searchTerms,
-            onProgress: (message) => helpers.showStatus(message, 'info'),
+            onProgress: message => helpers.showStatus(message, 'info'),
           });
 
           this.eventBus.emit('profileSearch:complete', {
@@ -1620,13 +1782,17 @@ export class ProfileView extends View {
     });
 
     // Mount search component in header
-    const searchMount = this.container.querySelector('.textinput-overlay-mount');
+    const searchMount = this.container.querySelector(
+      '.textinput-overlay-mount'
+    );
     if (searchMount && this.searchComponent) {
       searchMount.appendChild(this.searchComponent.getElement());
 
       // The search trigger mounts after attachIconTooltips() ran, so give it its
       // nn-tooltip here (drop the native title, attach the shared popup).
-      const searchLink = searchMount.querySelector('.textinput-overlay__link') as HTMLElement | null;
+      const searchLink = searchMount.querySelector(
+        '.textinput-overlay__link'
+      ) as HTMLElement | null;
       const label = searchLink?.getAttribute('title');
       if (searchLink && label) {
         searchLink.removeAttribute('title');
@@ -1656,7 +1822,9 @@ export class ProfileView extends View {
       this.profileListsComponent = null;
     }
 
-    const { ProfileListsComponent: PLC } = await import('../profile/ProfileListsComponent');
+    const { ProfileListsComponent: PLC } = await import(
+      '../profile/ProfileListsComponent'
+    );
     this.profileListsComponent = new PLC(this.pubkey);
     await this.profileListsComponent.render(anchor);
   }
@@ -1679,10 +1847,14 @@ export class ProfileView extends View {
 
     const activate = (tab: string): void => {
       tabRow.querySelectorAll('.tab').forEach(btn => {
-        btn.classList.toggle('tab--active', (btn as HTMLElement).dataset.tab === tab);
+        btn.classList.toggle(
+          'tab--active',
+          (btn as HTMLElement).dataset.tab === tab
+        );
       });
       this.container.querySelectorAll('.profile-section').forEach(sec => {
-        (sec as HTMLElement).hidden = (sec as HTMLElement).dataset.section !== tab;
+        (sec as HTMLElement).hidden =
+          (sec as HTMLElement).dataset.section !== tab;
       });
     };
 
@@ -1703,7 +1875,9 @@ export class ProfileView extends View {
       { tab: 'badges', loader: () => this.loadBadgesCarousel() },
     ];
     sections.forEach(({ tab, loader }) => {
-      void loader().then(() => this.revealTabIfHasItems(tab)).catch(() => {});
+      void loader()
+        .then(() => this.revealTabIfHasItems(tab))
+        .catch(() => {});
     });
   }
 
@@ -1714,10 +1888,18 @@ export class ProfileView extends View {
    * "has items" iff it holds a child that isn't display:none.
    */
   private revealTabIfHasItems(tab: string): void {
-    const section = this.container.querySelector(`.profile-section[data-section="${tab}"]`);
-    const hasItems = !!section && [...section.children].some(c => (c as HTMLElement).style.display !== 'none');
+    const section = this.container.querySelector(
+      `.profile-section[data-section="${tab}"]`
+    );
+    const hasItems =
+      !!section &&
+      [...section.children].some(
+        c => (c as HTMLElement).style.display !== 'none'
+      );
     if (!hasItems) return;
-    const tabBtn = this.container.querySelector(`.profile-tabs .tab[data-tab="${tab}"]`) as HTMLElement | null;
+    const tabBtn = this.container.querySelector(
+      `.profile-tabs .tab[data-tab="${tab}"]`
+    ) as HTMLElement | null;
     if (tabBtn) tabBtn.hidden = false;
   }
 
@@ -1725,9 +1907,13 @@ export class ProfileView extends View {
     const badgesMount = this.container.querySelector('.profile-badges-mount');
     if (!badgesMount) return;
 
-    const { NostrTransport } = await import('../../services/transport/NostrTransport');
+    const { NostrTransport } = await import(
+      '../../services/transport/NostrTransport'
+    );
     const { RelayConfig } = await import('../../services/RelayConfig');
-    const { OutboundRelaysOrchestrator } = await import('../../services/orchestration/OutboundRelaysOrchestrator');
+    const { OutboundRelaysOrchestrator } = await import(
+      '../../services/orchestration/OutboundRelaysOrchestrator'
+    );
     const transport = NostrTransport.getInstance();
     const baseRelays = [
       ...transport.getReadRelays(),
@@ -1737,21 +1923,30 @@ export class ProfileView extends View {
     // Also include the profile owner's outbound relays (NIP-65)
     let relays = baseRelays;
     try {
-      const outbound = await OutboundRelaysOrchestrator.getInstance().getCombinedRelays([this.pubkey], true);
+      const outbound =
+        await OutboundRelaysOrchestrator.getInstance().getCombinedRelays(
+          [this.pubkey],
+          true
+        );
       relays = [...new Set([...baseRelays, ...outbound])];
-    } catch { /* fall back to base relays */ }
+    } catch {
+      /* fall back to base relays */
+    }
 
     // Fetch kind:10008 (new) and kind:30008 (legacy) for this profile
     const events = await transport.fetch(
       relays,
       [{ kinds: [10008 as number, 30008 as number], authors: [this.pubkey] }],
-      5000, false, 'PV-Badges'
+      5000,
+      false,
+      'PV-Badges'
     );
 
     if (events.length === 0) return;
 
     // Prefer kind:10008 over kind:30008
-    const profileBadges = events.find(e => e.kind === 10008) || events.find(e => e.kind === 30008);
+    const profileBadges =
+      events.find(e => e.kind === 10008) || events.find(e => e.kind === 30008);
     if (!profileBadges) return;
 
     // Parse alternating a+e tag pairs, deduplicate by coordinate
@@ -1771,17 +1966,22 @@ export class ProfileView extends View {
 
     if (pairs.length === 0) return;
 
-    const { BadgeOrchestrator } = await import('../../services/orchestration/BadgeOrchestrator');
+    const { BadgeOrchestrator } = await import(
+      '../../services/orchestration/BadgeOrchestrator'
+    );
     const orch = BadgeOrchestrator.getInstance();
 
     const section = document.createElement('div');
     section.className = 'profile-badges-carousel section';
-    section.innerHTML = '<h2>Badges</h2><div class="profile-badges-carousel__list"></div>';
+    section.innerHTML =
+      '<h2>Badges</h2><div class="profile-badges-carousel__list"></div>';
     badgesMount.appendChild(section);
 
     const list = section.querySelector('.profile-badges-carousel__list')!;
     const shown = pairs.slice(0, 8);
-    const defsMap = await orch.fetchBadgeDefinitions(shown.map(p => p.coordinate));
+    const defsMap = await orch.fetchBadgeDefinitions(
+      shown.map(p => p.coordinate)
+    );
     for (const pair of shown) {
       const def = defsMap.get(pair.coordinate);
       if (!def) continue;
@@ -1801,17 +2001,29 @@ export class ProfileView extends View {
       thumb.addEventListener('click', async () => {
         const { ModalService } = await import('../../services/ModalService');
         const content = document.createElement('div');
-        const imgHtml = capturedDef.thumb || capturedDef.image
-          ? `<img src="${escapeHtmlAttr(capturedDef.image || capturedDef.thumb || '')}" alt="${escapeHtmlAttr(capturedDef.name)}" />`
-          : '<div>🏅</div>';
-        const issuerName = (await import('../../services/UserProfileService')).UserProfileService.getInstance().getDisplayName(capturedDef.issuerPubkey);
-        const issuerNpub = (await import('../../helpers/nip19')).hexToNpub(capturedDef.issuerPubkey);
+        const imgHtml =
+          capturedDef.thumb || capturedDef.image
+            ? `<img src="${escapeHtmlAttr(capturedDef.image || capturedDef.thumb || '')}" alt="${escapeHtmlAttr(capturedDef.name)}" />`
+            : '<div>🏅</div>';
+        const issuerName = (
+          await import('../../services/UserProfileService')
+        ).UserProfileService.getInstance().getDisplayName(
+          capturedDef.issuerPubkey
+        );
+        const issuerNpub = (await import('../../helpers/nip19')).hexToNpub(
+          capturedDef.issuerPubkey
+        );
         content.innerHTML = `
           <div>${imgHtml}</div>
           ${capturedDef.description ? `<p>${escapeHtml(capturedDef.description)}</p>` : ''}
           <p>by <a href="/profile/${issuerNpub}" class="mention-link">${escapeHtml(issuerName)}</a></p>
         `;
-        ModalService.getInstance().show({ title: capturedDef.name, content, width: '360px', height: 'auto' });
+        ModalService.getInstance().show({
+          title: capturedDef.name,
+          content,
+          width: '360px',
+          height: 'auto',
+        });
       });
 
       list.appendChild(thumb);
@@ -1829,7 +2041,11 @@ export class ProfileView extends View {
    * Load articles carousel (user's long-form articles)
    */
   /** Carousel-styled "Loading …" placeholder shown while the (now wait-for-all) fetch runs. */
-  private appendCarouselLoading(mount: Element, title: string, label: string): HTMLElement {
+  private appendCarouselLoading(
+    mount: Element,
+    title: string,
+    label: string
+  ): HTMLElement {
     const el = document.createElement('div');
     el.className = 'nn-scroll-carousel';
     el.innerHTML = `<div class="nn-scroll-carousel__header"><h2 class="nn-scroll-carousel__title">${title}</h2></div><div class="nn-scroll-carousel__loading pulsate">${label}</div>`;
@@ -1838,10 +2054,16 @@ export class ProfileView extends View {
   }
 
   private async loadArticlesCarousel(): Promise<void> {
-    const articlesMount = this.container.querySelector('.profile-articles-mount');
+    const articlesMount = this.container.querySelector(
+      '.profile-articles-mount'
+    );
     if (!articlesMount) return;
 
-    const loading = this.appendCarouselLoading(articlesMount, 'Articles', 'Loading articles…');
+    const loading = this.appendCarouselLoading(
+      articlesMount,
+      'Articles',
+      'Loading articles…'
+    );
     this.articlesCarousel = new ProfileArticlesCarousel(this.pubkey);
     const element = await this.articlesCarousel.render();
     loading.remove();
@@ -1855,7 +2077,11 @@ export class ProfileView extends View {
     const videosMount = this.container.querySelector('.profile-videos-mount');
     if (!videosMount) return;
 
-    const loading = this.appendCarouselLoading(videosMount, 'Videos', 'Loading videos…');
+    const loading = this.appendCarouselLoading(
+      videosMount,
+      'Videos',
+      'Loading videos…'
+    );
     this.videosCarousel = new ProfileVideosCarousel(this.pubkey);
     const element = await this.videosCarousel.render();
     loading.remove();
@@ -1885,20 +2111,28 @@ export class ProfileView extends View {
   private async loadZapstoreApps(): Promise<void> {
     const mount = this.container.querySelector('.profile-zapstore-mount');
     if (!mount) {
-      diagLog('system', 'ZapstoreApps: mount element not found', { pubkey: this.pubkey.slice(0, 8) });
+      diagLog('system', 'ZapstoreApps: mount element not found', {
+        pubkey: this.pubkey.slice(0, 8),
+      });
       return;
     }
 
     try {
-      const { NostrTransport } = await import('../../services/transport/NostrTransport');
+      const { NostrTransport } = await import(
+        '../../services/transport/NostrTransport'
+      );
       const transport = NostrTransport.getInstance();
 
-      diagLog('system', 'ZapstoreApps: fetching', { pubkey: this.pubkey.slice(0, 8) });
+      diagLog('system', 'ZapstoreApps: fetching', {
+        pubkey: this.pubkey.slice(0, 8),
+      });
 
       const events = await transport.fetch(
         ['wss://relay.zapstore.dev'],
         [{ kinds: [32267 as any], authors: [this.pubkey], limit: 10 }],
-        8000, false, 'ZapstoreApps'
+        8000,
+        false,
+        'ZapstoreApps'
       );
 
       diagLog('system', `ZapstoreApps: fetch result`, {
@@ -1909,7 +2143,9 @@ export class ProfileView extends View {
       if (events.length === 0) return;
 
       const { encodeNaddr } = await import('../../services/NostrToolsAdapter');
-      const { escapeHtml, escapeHtmlAttr } = await import('../../helpers/escapeHtml');
+      const { escapeHtml, escapeHtmlAttr } = await import(
+        '../../helpers/escapeHtml'
+      );
 
       // Each app renders as a Note-Card-style card: icon + name + summary header,
       // description, and a row of screenshots. No interactions / replies (those
@@ -1920,7 +2156,10 @@ export class ProfileView extends View {
         const summary = getTag(tags, 'summary');
         const icon = getTag(tags, 'icon');
         const description = event.content || '';
-        const images = tags.filter(t => t[0] === 'image').map(t => t[1] || '').filter(Boolean);
+        const images = tags
+          .filter(t => t[0] === 'image')
+          .map(t => t[1] || '')
+          .filter(Boolean);
         const identifier = getTag(tags, 'd');
         const naddr = encodeNaddr({
           kind: 32267,
@@ -1989,7 +2228,9 @@ export class ProfileView extends View {
    * Setup profile blinking on initial render
    */
   private setupProfileBlinking(displayName: string, picture: string): void {
-    const avatar = this.container.querySelector('.profile-pic--big') as HTMLImageElement;
+    const avatar = this.container.querySelector(
+      '.profile-pic--big'
+    ) as HTMLImageElement;
     const nameEl = this.container.querySelector('.profile-name') as HTMLElement;
     if (!avatar || !nameEl) return;
 
@@ -2016,12 +2257,17 @@ export class ProfileView extends View {
     const encounter = rt?.service?.getEncounter(this.pubkey);
 
     // Check if we need to update lastKnown metadata
-    if (encounter && (currentPicture !== encounter.lastKnownPictureUrl || currentName !== encounter.lastKnownName)) {
+    if (
+      encounter &&
+      (currentPicture !== encounter.lastKnownPictureUrl ||
+        currentName !== encounter.lastKnownName)
+    ) {
       rt?.service?.updateLastKnown(this.pubkey, currentName, currentPicture);
     }
 
     // Determine if blinking should be active
-    const shouldBlink = encounter && rt?.service?.hasChangedWithinWindow(this.pubkey);
+    const shouldBlink =
+      encounter && rt?.service?.hasChangedWithinWindow(this.pubkey);
 
     // Update avatar with blinking
     if (shouldBlink && encounter) {
@@ -2059,7 +2305,6 @@ export class ProfileView extends View {
       }
     }
   }
-
 
   private setNamePreservingPetname(nameEl: HTMLElement, name: string): void {
     const petnameSpan = nameEl.querySelector('[data-role="petname"]');

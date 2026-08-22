@@ -46,7 +46,10 @@ import { ContentValidationManager } from '../post/ContentValidationManager';
 import { EditorStateManager } from '../post/EditorStateManager';
 import { MentionAutocomplete } from '../mentions/MentionAutocomplete';
 import { isCustomEmojisEnabled } from '../../addons/custom-emojis/index';
-import { ModalEventHandlerManager, type TabMode } from '../modals/ModalEventHandlerManager';
+import {
+  ModalEventHandlerManager,
+  type TabMode,
+} from '../modals/ModalEventHandlerManager';
 import { NoteDraftService } from '../../services/NoteDraftService';
 import { ToastService } from '../../services/ToastService';
 import { SignerTimeoutError } from '../../services/SignerTimeoutError';
@@ -59,7 +62,8 @@ export class ReplyModal {
   private modalService: ModalService;
   private _postsApi?: PostsModuleApi | null;
   private get postsApi(): PostsModuleApi | null {
-    return this._postsApi ??= ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
+    return (this._postsApi ??=
+      ModuleLoader.getInstance().getApi<PostsModuleApi>('posts'));
   }
   private relayConfig: RelayConfig;
   private authService: AuthService;
@@ -67,7 +71,8 @@ export class ReplyModal {
   private appState: AppState;
   private _reactionsApi?: ReactionsModuleApi | null;
   private get reactionsApi(): ReactionsModuleApi | null {
-    return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
+    return (this._reactionsApi ??=
+      ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
   }
   private eventBus: TypedEventBus;
 
@@ -77,8 +82,12 @@ export class ReplyModal {
   private nsfwSwitch: Switch | null = null;
   private commentSwitch: Switch | null = null;
   private mentionAutocomplete: MentionAutocomplete | null = null;
-  private customEmojiAutocomplete: import('../../addons/custom-emojis/CustomEmojiAutocomplete').CustomEmojiAutocomplete | null = null;
-  private customEmojiService: import('../../addons/custom-emojis/EmojiService').EmojiService | null = null;
+  private customEmojiAutocomplete:
+    | import('../../addons/custom-emojis/CustomEmojiAutocomplete').CustomEmojiAutocomplete
+    | null = null;
+  private customEmojiService:
+    | import('../../addons/custom-emojis/EmojiService').EmojiService
+    | null = null;
   private eventHandlerManager: ModalEventHandlerManager | null = null;
 
   // State
@@ -119,14 +128,24 @@ export class ReplyModal {
    * @param parentNoteId - ID of the note being replied to
    * @param parentEvent - Optional: Parent event (avoids cache lookup/fetch)
    */
-  public async show(parentNoteId: string, parentEvent?: NostrEvent, initialContent?: string): Promise<void> {
+  public async show(
+    parentNoteId: string,
+    parentEvent?: NostrEvent,
+    initialContent?: string
+  ): Promise<void> {
     // If parent event not provided, fetch from relays
     if (!parentEvent) {
-      this.systemLogger.info('ReplyModal', `Fetching parent event from relays...`);
+      this.systemLogger.info(
+        'ReplyModal',
+        `Fetching parent event from relays...`
+      );
       const fetchedEvent = await this.fetchParentEvent(parentNoteId);
 
       if (!fetchedEvent) {
-        this.systemLogger.error('ReplyModal', `Parent event not found: ${parentNoteId}`);
+        this.systemLogger.error(
+          'ReplyModal',
+          `Parent event not found: ${parentNoteId}`
+        );
         return;
       }
       parentEvent = fetchedEvent;
@@ -148,7 +167,7 @@ export class ReplyModal {
       height: 'auto',
       showCloseButton: true,
       closeOnOverlay: false,
-      closeOnEsc: true
+      closeOnEsc: true,
     });
 
     setTimeout(() => {
@@ -166,7 +185,7 @@ export class ReplyModal {
     const result = await fetchNostrEvents({
       relays,
       ids: [noteId],
-      limit: 1
+      limit: 1,
     });
 
     if (result.events.length === 0) {
@@ -194,12 +213,17 @@ export class ReplyModal {
     const selectedRelay = this.appState.getState('timeline').selectedRelay;
     if (selectedRelay) {
       this.selectedRelays = new Set([selectedRelay]);
-      this.systemLogger.info('ReplyModal', `Relay filter active: Pre-selecting ${selectedRelay}`);
+      this.systemLogger.info(
+        'ReplyModal',
+        `Relay filter active: Pre-selecting ${selectedRelay}`
+      );
     } else {
-      this.systemLogger.info('ReplyModal', `Normal mode: ${this.availableRelays.length} relays available`);
+      this.systemLogger.info(
+        'ReplyModal',
+        `Normal mode: ${this.availableRelays.length} relays available`
+      );
     }
   }
-
 
   /**
    * Render modal content
@@ -248,7 +272,7 @@ export class ReplyModal {
       islFetchStats: false,
       isLoggedIn: false,
       headerSize: 'medium',
-      depth: 0
+      depth: 0,
     });
     mount.appendChild(noteElement);
   }
@@ -262,10 +286,10 @@ export class ReplyModal {
       availableRelays: this.availableRelays,
       selectedRelays: this.selectedRelays,
       isTestMode: this.isTestMode,
-      onChange: (selectedRelays) => {
+      onChange: selectedRelays => {
         this.selectedRelays = selectedRelays;
         this.updatePostButton();
-      }
+      },
     });
 
     return `
@@ -304,7 +328,9 @@ export class ReplyModal {
    * Refresh the Drafts tab count badge in place.
    */
   private updateDraftsTabBadge(): void {
-    const btn = document.querySelector('.reply-modal [data-tab="drafts"]') as HTMLElement | null;
+    const btn = document.querySelector(
+      '.reply-modal [data-tab="drafts"]'
+    ) as HTMLElement | null;
     if (btn) btn.innerHTML = this.renderDraftsTabLabel();
   }
 
@@ -338,7 +364,7 @@ export class ReplyModal {
         content: cleanedContent,
         pubkey: currentUser?.pubkey || '',
         isNSFW: this.isNSFW,
-        ...(extraTags.length > 0 ? { extraTags } : {})
+        ...(extraTags.length > 0 ? { extraTags } : {}),
       });
 
       return `<div class="post-note-preview">${previewHTML}</div>`;
@@ -351,16 +377,16 @@ export class ReplyModal {
   private renderActions(): string {
     // Create toolbar component
     this.toolbar = new PostEditorToolbar({
-      onMediaUploaded: (url) => this.handleMediaUploaded(url),
-      onEmojiSelected: (emoji) => this.handleEmojiSelected(emoji),
+      onMediaUploaded: url => this.handleMediaUploaded(url),
+      onEmojiSelected: emoji => this.handleEmojiSelected(emoji),
       textareaSelector: '[data-textarea]',
-      showPoll: false // No polls in replies
+      showPoll: false, // No polls in replies
     });
 
     // Check if reply can be submitted (content + relays)
     const validation = ContentValidationManager.validate({
       content: this.content,
-      selectedRelays: this.selectedRelays
+      selectedRelays: this.selectedRelays,
     });
     const isPostDisabled = !validation.isValid;
     const buttonLabel = 'Reply';
@@ -391,12 +417,16 @@ export class ReplyModal {
     this.mountParentNote(modal);
 
     // Mount relay selector into modal__header (outside overflow container)
-    const modalHeader = modal.closest('.modal__body')?.previousElementSibling as HTMLElement;
+    const modalHeader = modal.closest('.modal__body')
+      ?.previousElementSibling as HTMLElement;
     if (this.relaySelector && modalHeader) {
       const relaySelectorDiv = document.createElement('div');
       relaySelectorDiv.innerHTML = this.relaySelector.render();
       const relaySelectorEl = relaySelectorDiv.firstElementChild as HTMLElement;
-      modalHeader.insertBefore(relaySelectorEl, modalHeader.querySelector('.modal__close'));
+      modalHeader.insertBefore(
+        relaySelectorEl,
+        modalHeader.querySelector('.modal__close')
+      );
       this.relaySelector.setupEventListeners(relaySelectorEl);
     }
 
@@ -407,8 +437,14 @@ export class ReplyModal {
     }
 
     // Paste-to-upload: pasted media goes through the same upload path as the button.
-    const pasteTarget = modal.querySelector('[data-textarea]') as HTMLElement | null;
-    if (pasteTarget) setupPasteUpload(pasteTarget, files => void this.toolbar?.handleFileUpload(files));
+    const pasteTarget = modal.querySelector(
+      '[data-textarea]'
+    ) as HTMLElement | null;
+    if (pasteTarget)
+      setupPasteUpload(
+        pasteTarget,
+        files => void this.toolbar?.handleFileUpload(files)
+      );
 
     // Setup Comment/Reply switch (only for kind:1 parents)
     if (this.parentIsKind1) {
@@ -420,7 +456,7 @@ export class ReplyModal {
       textareaSelector: '[data-textarea]',
       onMentionInserted: (_npub, username) => {
         this.systemLogger.info('ReplyModal', `Mention inserted: @${username}`);
-      }
+      },
     });
     this.mentionAutocomplete.init();
 
@@ -435,14 +471,14 @@ export class ReplyModal {
       textareaSelector: '[data-textarea]',
       activeTabClass: 'tab--active',
       currentTab: this.currentTab,
-      onTabSwitch: (tab) => this.switchTab(tab),
-      onTextInput: (value) => {
+      onTabSwitch: tab => this.switchTab(tab),
+      onTextInput: value => {
         this.content = value;
         this.updatePostButton();
       },
       onCancel: () => this.handleCancel(),
       onSubmit: () => this.handlePost(),
-      onSaveDraft: () => this.handleSaveDraft()
+      onSaveDraft: () => this.handleSaveDraft(),
     });
     this.eventHandlerManager.setupEventListeners();
   }
@@ -459,10 +495,10 @@ export class ReplyModal {
     this.commentSwitch = new Switch({
       label: 'Show in my timeline',
       checked: !this.isComment,
-      onChange: (checked) => {
+      onChange: checked => {
         this.isComment = !checked;
         this.updatePostButton();
-      }
+      },
     });
 
     const switchContainer = document.createElement('div');
@@ -472,7 +508,6 @@ export class ReplyModal {
     editor.parentNode?.insertBefore(switchContainer, editor);
     this.commentSwitch.setupEventListeners(switchContainer);
   }
-
 
   /**
    * Switch between Edit/Preview tabs
@@ -494,22 +529,25 @@ export class ReplyModal {
           content: cleanedContent,
           pubkey: currentUser?.pubkey || '',
           isNSFW: this.isNSFW,
-          ...(extraTags.length > 0 ? { extraTags } : {})
+          ...(extraTags.length > 0 ? { extraTags } : {}),
         });
       },
-      onPreviewRendered: (previewContainer) => {
+      onPreviewRendered: previewContainer => {
         this.renderQuotedNotesInPreview(previewContainer);
-        attachPreviewClickToEdit(previewContainer, () => this.switchTab('edit'));
+        attachPreviewClickToEdit(previewContainer, () =>
+          this.switchTab('edit')
+        );
       },
       renderDraftsHtml: () => renderDraftsList(),
-      onDraftsRendered: (draftsContainer) => setupDraftsList(draftsContainer, {
-        onOpen: (draft) => {
-          this.cleanup();
-          this.modalService.hide();
-          openDraftInComposer(draft);
-        },
-        onChanged: () => this.updateDraftsTabBadge(),
-      }),
+      onDraftsRendered: draftsContainer =>
+        setupDraftsList(draftsContainer, {
+          onOpen: draft => {
+            this.cleanup();
+            this.modalService.hide();
+            openDraftInComposer(draft);
+          },
+          onChanged: () => this.updateDraftsTabBadge(),
+        }),
     });
   }
 
@@ -540,7 +578,7 @@ export class ReplyModal {
     EditorStateManager.updatePreview('.post-note-preview', {
       content: stripTrackingParams(this.content),
       pubkey: currentUser?.pubkey || '',
-      isNSFW: this.isNSFW
+      isNSFW: this.isNSFW,
     });
   }
 
@@ -549,11 +587,11 @@ export class ReplyModal {
    */
   private handleMediaUploaded(url: string): void {
     EditorStateManager.handleMediaUploaded(url, '[data-textarea]', {
-      onContentChange: (newContent) => {
+      onContentChange: newContent => {
         this.content = newContent;
         this.updatePostButton();
       },
-      onShowNSFWSwitch: () => this.showNSFWSwitch()
+      onShowNSFWSwitch: () => this.showNSFWSwitch(),
     });
   }
 
@@ -562,10 +600,10 @@ export class ReplyModal {
    */
   private handleEmojiSelected(emoji: string): void {
     EditorStateManager.handleEmojiSelected(emoji, '[data-textarea]', {
-      onContentChange: (newContent) => {
+      onContentChange: newContent => {
         this.content = newContent;
         this.updatePostButton();
-      }
+      },
     });
   }
 
@@ -576,20 +614,22 @@ export class ReplyModal {
     // Don't create switch if it already exists
     if (this.nsfwSwitch) return;
 
-    const optionsContainer = document.querySelector('#reply-note-options-container');
+    const optionsContainer = document.querySelector(
+      '#reply-note-options-container'
+    );
     if (!optionsContainer) return;
 
     // Create NSFW switch component
     this.nsfwSwitch = new Switch({
       label: 'NSFW',
       checked: this.isNSFW,
-      onChange: (checked) => {
+      onChange: checked => {
         this.isNSFW = checked;
         // Re-render preview if currently in preview tab
         if (this.currentTab === 'preview') {
           this.updatePreview();
         }
-      }
+      },
     });
 
     // Insert switch into DOM
@@ -612,7 +652,7 @@ export class ReplyModal {
     // Validate content before posting
     const validation = ContentValidationManager.validate({
       content: this.content,
-      selectedRelays: this.selectedRelays
+      selectedRelays: this.selectedRelays,
     });
 
     if (!validation.isValid) {
@@ -646,17 +686,23 @@ export class ReplyModal {
 
     const loadingId = ToastService.loading('Waiting for signer approval…');
     try {
-      this.systemLogger.info('ReplyModal', `Calling PostService.createReply...`);
+      this.systemLogger.info(
+        'ReplyModal',
+        `Calling PostService.createReply...`
+      );
 
       const replyEvent = await this.postsApi?.createReply({
         content: this.content,
         parentEvent: this.parentEvent,
         relays: Array.from(this.selectedRelays),
         contentWarning: this.isNSFW,
-        asComment: this.isComment
+        asComment: this.isComment,
       });
 
-      this.systemLogger.info('ReplyModal', `Received reply event: ${replyEvent ? replyEvent.id?.slice(0, 8) : 'NULL'}`);
+      this.systemLogger.info(
+        'ReplyModal',
+        `Received reply event: ${replyEvent ? replyEvent.id?.slice(0, 8) : 'NULL'}`
+      );
 
       ToastService.dismiss(loadingId);
 
@@ -667,7 +713,10 @@ export class ReplyModal {
         }
 
         // Emit event for optimistic UI update (SingleNoteView listens to this)
-        this.systemLogger.info('ReplyModal', `Emitting reply:created event for ${replyEvent.id.slice(0, 8)}`);
+        this.systemLogger.info(
+          'ReplyModal',
+          `Emitting reply:created event for ${replyEvent.id.slice(0, 8)}`
+        );
         this.eventBus.emit('reply:created', replyEvent);
 
         this.cleanup();
@@ -686,7 +735,9 @@ export class ReplyModal {
    * Save the current reply text as a manual draft tied to its parent.
    */
   private handleSaveDraft(): void {
-    const textarea = document.querySelector('.reply-modal [data-textarea]') as HTMLTextAreaElement | null;
+    const textarea = document.querySelector(
+      '.reply-modal [data-textarea]'
+    ) as HTMLTextAreaElement | null;
     const content = (textarea ? textarea.value : this.content).trim();
     if (!content) {
       ToastService.show('Nothing to save', 'info');
@@ -712,9 +763,12 @@ export class ReplyModal {
     originalDisplay: string,
     error?: unknown
   ): void {
-    const reason = error instanceof SignerTimeoutError
-      ? 'Signer did not respond in time'
-      : (error instanceof Error && error.message ? error.message : 'Reply could not be published');
+    const reason =
+      error instanceof SignerTimeoutError
+        ? 'Signer did not respond in time'
+        : error instanceof Error && error.message
+          ? error.message
+          : 'Reply could not be published';
 
     NoteDraftService.getInstance().add({
       type: 'reply',
@@ -725,7 +779,11 @@ export class ReplyModal {
       contextLabel: 'Reply',
     });
 
-    ModalEventHandlerManager.restoreAfterError(modalContainer, originalDisplay, 'Reply');
+    ModalEventHandlerManager.restoreAfterError(
+      modalContainer,
+      originalDisplay,
+      'Reply'
+    );
     this.updateDraftsTabBadge();
 
     ToastService.showWithAction(`Failed to post: ${reason}`, 'error', {
@@ -737,7 +795,9 @@ export class ReplyModal {
   /**
    * Render quoted notes in preview
    */
-  private async renderQuotedNotesInPreview(container: HTMLElement): Promise<void> {
+  private async renderQuotedNotesInPreview(
+    container: HTMLElement
+  ): Promise<void> {
     const quotedRefs = extractQuotedReferences(this.content);
     if (quotedRefs.length === 0) return;
 
@@ -801,20 +861,28 @@ export class ReplyModal {
    */
   private async initCustomEmojiAutocomplete(): Promise<void> {
     try {
-      const [{ CustomEmojiAutocomplete }, { EmojiService }] = await Promise.all([
-        import('../../addons/custom-emojis/CustomEmojiAutocomplete'),
-        import('../../addons/custom-emojis/EmojiService'),
-      ]);
+      const [{ CustomEmojiAutocomplete }, { EmojiService }] = await Promise.all(
+        [
+          import('../../addons/custom-emojis/CustomEmojiAutocomplete'),
+          import('../../addons/custom-emojis/EmojiService'),
+        ]
+      );
       this.customEmojiService = EmojiService.getInstance();
       this.customEmojiAutocomplete = new CustomEmojiAutocomplete({
         textareaSelector: '[data-textarea]',
-        onEmojiInserted: (shortcode) => {
-          this.systemLogger.info('ReplyModal', `Custom emoji inserted: :${shortcode}:`);
-        }
+        onEmojiInserted: shortcode => {
+          this.systemLogger.info(
+            'ReplyModal',
+            `Custom emoji inserted: :${shortcode}:`
+          );
+        },
       });
       this.customEmojiAutocomplete.init();
     } catch (err) {
-      this.systemLogger.warn('ReplyModal', `Custom emoji autocomplete load failed: ${err}`);
+      this.systemLogger.warn(
+        'ReplyModal',
+        `Custom emoji autocomplete load failed: ${err}`
+      );
     }
   }
 

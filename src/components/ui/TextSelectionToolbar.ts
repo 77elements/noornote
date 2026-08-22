@@ -86,9 +86,10 @@ export class TextSelectionToolbar {
     }
 
     const range = sel.getRangeAt(0);
-    const startEl = range.startContainer instanceof Element
-      ? range.startContainer
-      : range.startContainer.parentElement;
+    const startEl =
+      range.startContainer instanceof Element
+        ? range.startContainer
+        : range.startContainer.parentElement;
     if (!startEl) {
       this.hide();
       return;
@@ -148,12 +149,12 @@ export class TextSelectionToolbar {
 
     // Prevent the click on the button from clearing the selection before we
     // can read it on click.
-    btn.addEventListener('mousedown', (e) => {
+    btn.addEventListener('mousedown', e => {
       e.preventDefault();
       e.stopPropagation();
     });
 
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', e => {
       e.preventDefault();
       e.stopPropagation();
       void this.openModal();
@@ -168,7 +169,10 @@ export class TextSelectionToolbar {
     const postsApi = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
     const event = postsApi?.getCachedNote(this.pending.eventId) ?? null;
     if (!event) {
-      ToastService.show('Could not resolve source note. Please reload and try again.', 'error');
+      ToastService.show(
+        'Could not resolve source note. Please reload and try again.',
+        'error'
+      );
       this.hide();
       return;
     }
@@ -180,7 +184,7 @@ export class TextSelectionToolbar {
 
     const { PostNoteModal } = await import('../post/PostNoteModal');
     PostNoteModal.getInstance().show({
-      highlightSource: { selectedText, event }
+      highlightSource: { selectedText, event },
     });
   }
 }

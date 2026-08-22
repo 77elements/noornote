@@ -24,7 +24,10 @@ import { AuthService } from '../../services/AuthService';
 import { RelayConfig } from '../../services/RelayConfig';
 import { NostrTransport } from '../../services/transport/NostrTransport';
 import { TypedEventBus } from '../../core/TypedEventBus';
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../services/PerAccountLocalStorage';
 import { diagLog } from '../../services/DiagnosticLogger';
 import { GroupChatsGroupClient } from './GroupChatsGroupClient';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -81,12 +84,18 @@ export class GroupChatsService {
   }
 
   public loadInterval(): number {
-    return this.storage.get<number>(StorageKeys.GROUP_CHATS_POLL_INTERVAL, GROUP_CHATS_DEFAULT_INTERVAL_MS);
+    return this.storage.get<number>(
+      StorageKeys.GROUP_CHATS_POLL_INTERVAL,
+      GROUP_CHATS_DEFAULT_INTERVAL_MS
+    );
   }
 
   /** Whether the user's own posts should also raise a notification. Default: yes. */
   private loadNotifyOwn(): boolean {
-    return this.storage.get<boolean>(StorageKeys.GROUP_CHATS_NOTIFY_OWN_POSTS, true);
+    return this.storage.get<boolean>(
+      StorageKeys.GROUP_CHATS_NOTIFY_OWN_POSTS,
+      true
+    );
   }
 
   /** Change the poll cadence and restart the timer immediately (no re-login needed). */
@@ -95,7 +104,10 @@ export class GroupChatsService {
     this.storage.set(StorageKeys.GROUP_CHATS_POLL_INTERVAL, intervalMs);
     if (this.interval !== null) {
       clearInterval(this.interval);
-      this.interval = window.setInterval(() => void this.tick(), this.intervalMs);
+      this.interval = window.setInterval(
+        () => void this.tick(),
+        this.intervalMs
+      );
     }
   }
 
@@ -104,13 +116,21 @@ export class GroupChatsService {
     this.destroyed = false;
     this.intervalMs = this.loadInterval();
 
-    this.systemLogger.info('Group Chats', 'Watching your groups for new activity');
-    diagLog('addons', 'group-chats: scheduler started', { intervalMs: this.intervalMs });
+    this.systemLogger.info(
+      'Group Chats',
+      'Watching your groups for new activity'
+    );
+    diagLog('addons', 'group-chats: scheduler started', {
+      intervalMs: this.intervalMs,
+    });
 
     this.initialTimer = window.setTimeout(() => {
       this.initialTimer = null;
       void this.tick();
-      this.interval = window.setInterval(() => void this.tick(), this.intervalMs);
+      this.interval = window.setInterval(
+        () => void this.tick(),
+        this.intervalMs
+      );
     }, INITIAL_DELAY_MS);
   }
 
@@ -131,7 +151,10 @@ export class GroupChatsService {
 
       const notifyOwn = this.loadNotifyOwn();
       const nowSeconds = Math.floor(Date.now() / 1000);
-      const anchors = this.storage.get<Record<string, number>>(StorageKeys.GROUP_CHATS_LAST_CHECK, {});
+      const anchors = this.storage.get<Record<string, number>>(
+        StorageKeys.GROUP_CHATS_LAST_CHECK,
+        {}
+      );
 
       // Group by relay so each relay is polled once for all its groups.
       const byRelay = new Map<string, GroupRef[]>();
@@ -145,16 +168,32 @@ export class GroupChatsService {
         if (this.destroyed) return;
         const groupIds = relayGroups.map(g => g.groupId);
         // Fetch since the oldest anchor among this relay's groups; baseline groups contribute `now`.
-        const since = Math.min(...relayGroups.map(g => anchors[g.groupId] ?? nowSeconds));
-        const events = await this.client.fetchActivity(relayUrl, groupIds, since);
-        diagLog('addons', 'group-chats: relay fetch', { relay: relayUrl, groups: groupIds.length, events: events.length, since });
+        const since = Math.min(
+          ...relayGroups.map(g => anchors[g.groupId] ?? nowSeconds)
+        );
+        const events = await this.client.fetchActivity(
+          relayUrl,
+          groupIds,
+          since
+        );
+        diagLog('addons', 'group-chats: relay fetch', {
+          relay: relayUrl,
+          groups: groupIds.length,
+          events: events.length,
+          since,
+        });
         await this.resolveNames(relayUrl, relayGroups, events);
 
         for (const g of relayGroups) {
           const hadAnchor = anchors[g.groupId] !== undefined;
           const anchor = anchors[g.groupId] ?? 0;
-          const groupEvents = events.filter(e => (e.tags.find(t => t[0] === 'h')?.[1]) === g.groupId);
-          const newestSeen = groupEvents.reduce((max, e) => Math.max(max, e.created_at), 0);
+          const groupEvents = events.filter(
+            e => e.tags.find(t => t[0] === 'h')?.[1] === g.groupId
+          );
+          const newestSeen = groupEvents.reduce(
+            (max, e) => Math.max(max, e.created_at),
+            0
+          );
 
           // First time we ever see this group: seed the baseline and never notify for pre-existing
           // posts. Seed from the newest post we pulled, else from `now` — but ALWAYS seed (even on
@@ -168,15 +207,18 @@ export class GroupChatsService {
           // anchor untouched so the next tick retries the SAME window. Never advance past unread.
           if (groupEvents.length === 0) continue;
 
-          const fresh = groupEvents.filter(e =>
-            (notifyOwn || e.pubkey !== me) &&
-            e.created_at > anchor
+          const fresh = groupEvents.filter(
+            e => (notifyOwn || e.pubkey !== me) && e.created_at > anchor
           );
 
           if (fresh.length > 0) {
             const mineOnly = fresh.every(e => e.pubkey === me);
             this.notify(g, nowSeconds, mineOnly);
-            diagLog('addons', 'group-chats: fresh activity', { groupId: g.groupId, fresh: fresh.length, mineOnly });
+            diagLog('addons', 'group-chats: fresh activity', {
+              groupId: g.groupId,
+              fresh: fresh.length,
+              mineOnly,
+            });
             // Advance only to what we actually read — never to `now`.
             anchors[g.groupId] = Math.max(anchor, newestSeen);
           }
@@ -191,7 +233,10 @@ export class GroupChatsService {
       }
       this.storage.set(StorageKeys.GROUP_CHATS_LAST_CHECK, anchors);
     } catch (error) {
-      this.systemLogger.error('Group Chats', 'Could not check your groups this time');
+      this.systemLogger.error(
+        'Group Chats',
+        'Could not check your groups this time'
+      );
       diagLog('addons', 'group-chats: tick failed', { error: String(error) });
     } finally {
       this.running = false;
@@ -234,7 +279,10 @@ export class GroupChatsService {
         groupId = parts[1] ?? groupId;
       }
       if (!relayUrl) continue; // no relay, can't poll
-      const ref: GroupRef = { groupId, relayUrl: this.normalizeRelay(relayUrl) };
+      const ref: GroupRef = {
+        groupId,
+        relayUrl: this.normalizeRelay(relayUrl),
+      };
       if (tagName) ref.tagName = tagName;
       out.push(ref);
     }
@@ -248,11 +296,18 @@ export class GroupChatsService {
   }
 
   /** Fill the name cache from tag names and, where missing, kind:39000 metadata. */
-  private async resolveNames(relayUrl: string, groups: GroupRef[], _events: NostrEvent[]): Promise<void> {
+  private async resolveNames(
+    relayUrl: string,
+    groups: GroupRef[],
+    _events: NostrEvent[]
+  ): Promise<void> {
     const missing: string[] = [];
     for (const g of groups) {
       if (this.nameCache[g.groupId]) continue;
-      if (g.tagName) { this.nameCache[g.groupId] = g.tagName; continue; }
+      if (g.tagName) {
+        this.nameCache[g.groupId] = g.tagName;
+        continue;
+      }
       missing.push(g.groupId);
     }
     if (missing.length === 0) return;
@@ -281,14 +336,28 @@ export class GroupChatsService {
       content: groupName,
       sig: '',
     };
-    diagLog('addons', 'nostrord: group activity notification', { groupId: g.groupId, mine });
-    this.eventBus.emit('nostrord-notification:new', { event, groupName, mine, groupRelay });
+    diagLog('addons', 'nostrord: group activity notification', {
+      groupId: g.groupId,
+      mine,
+    });
+    this.eventBus.emit('nostrord-notification:new', {
+      event,
+      groupName,
+      mine,
+      groupRelay,
+    });
   }
 
   public destroy(): void {
     this.destroyed = true;
-    if (this.initialTimer !== null) { clearTimeout(this.initialTimer); this.initialTimer = null; }
-    if (this.interval !== null) { clearInterval(this.interval); this.interval = null; }
+    if (this.initialTimer !== null) {
+      clearTimeout(this.initialTimer);
+      this.initialTimer = null;
+    }
+    if (this.interval !== null) {
+      clearInterval(this.interval);
+      this.interval = null;
+    }
     this.client.destroy();
     this.nameCache = {};
     GroupChatsService.instance = null;

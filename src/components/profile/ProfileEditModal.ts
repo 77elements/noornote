@@ -12,8 +12,14 @@
 
 import { ModalService } from '../../services/ModalService';
 import { ModuleLoader } from '../../core/ModuleLoader';
-import type { ProfileModuleApi, ProfileMetadata } from '../../modules/profile/contracts';
-import { UserProfileService, type UserProfile } from '../../services/UserProfileService';
+import type {
+  ProfileModuleApi,
+  ProfileMetadata,
+} from '../../modules/profile/contracts';
+import {
+  UserProfileService,
+  type UserProfile,
+} from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
 import { SystemLogger } from '../../services/SystemLogger';
 import { ImageUploader } from './ImageUploader';
@@ -25,7 +31,8 @@ export class ProfileEditModal {
   private modalService: ModalService;
   private _profileApi?: ProfileModuleApi | null;
   private get profileApi(): ProfileModuleApi | null {
-    return this._profileApi ??= ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
+    return (this._profileApi ??=
+      ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile'));
   }
   private userProfileService: UserProfileService;
   private authService: AuthService;
@@ -63,15 +70,22 @@ export class ProfileEditModal {
   public async show(): Promise<void> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      this.systemLogger.error('ProfileEditModal', 'Cannot open: User not authenticated');
+      this.systemLogger.error(
+        'ProfileEditModal',
+        'Cannot open: User not authenticated'
+      );
       return;
     }
 
-    this.originalProfile = await this.userProfileService.getUserProfile(currentUser.pubkey);
+    this.originalProfile = await this.userProfileService.getUserProfile(
+      currentUser.pubkey
+    );
 
     const nip05s = this.originalProfile.nip05s?.length
       ? this.originalProfile.nip05s
-      : (this.originalProfile.nip05 ? [this.originalProfile.nip05] : []);
+      : this.originalProfile.nip05
+        ? [this.originalProfile.nip05]
+        : [];
 
     this.currentProfile = {
       name: this.originalProfile.name || '',
@@ -82,7 +96,7 @@ export class ProfileEditModal {
       website: this.originalProfile.website || '',
       nip05: nip05s.join(', '),
       lud16: this.originalProfile.lud16 || '',
-      lud06: this.originalProfile.lud06 || ''
+      lud06: this.originalProfile.lud06 || '',
     };
 
     this.hasChanges = false;
@@ -94,7 +108,7 @@ export class ProfileEditModal {
       width: '600px',
       showCloseButton: true,
       closeOnOverlay: false,
-      closeOnEsc: true
+      closeOnEsc: true,
     });
 
     setTimeout(() => this.setupEventHandlers(), 0);
@@ -113,13 +127,15 @@ export class ProfileEditModal {
 
   private renderBannerUploader(): string {
     this.bannerUploader = new ImageUploader({
-      ...(this.currentProfile.banner && { currentUrl: this.currentProfile.banner }),
-      onUploadSuccess: (url) => {
+      ...(this.currentProfile.banner && {
+        currentUrl: this.currentProfile.banner,
+      }),
+      onUploadSuccess: url => {
         this.currentProfile.banner = url;
         this.markAsChanged();
       },
       mediaType: 'banner',
-      className: 'profile-banner-uploader'
+      className: 'profile-banner-uploader',
     });
 
     return `
@@ -131,13 +147,15 @@ export class ProfileEditModal {
 
   private renderAvatarUploader(): string {
     this.avatarUploader = new ImageUploader({
-      ...(this.currentProfile.picture && { currentUrl: this.currentProfile.picture }),
-      onUploadSuccess: (url) => {
+      ...(this.currentProfile.picture && {
+        currentUrl: this.currentProfile.picture,
+      }),
+      onUploadSuccess: url => {
         this.currentProfile.picture = url;
         this.markAsChanged();
       },
       mediaType: 'avatar',
-      className: 'profile-avatar-uploader'
+      className: 'profile-avatar-uploader',
     });
 
     return `
@@ -244,7 +262,11 @@ export class ProfileEditModal {
     `;
   }
 
-  private setupImageUploader(modal: Element, sectionClass: string, uploader: ImageUploader | null): void {
+  private setupImageUploader(
+    modal: Element,
+    sectionClass: string,
+    uploader: ImageUploader | null
+  ): void {
     const section = modal.querySelector(`.${sectionClass}`);
     if (section && uploader) {
       uploader.setupEventListeners(section as HTMLElement);
@@ -255,20 +277,36 @@ export class ProfileEditModal {
     const modal = document.querySelector('.profile-edit-modal');
     if (!modal) return;
 
-    this.setupImageUploader(modal, 'profile-banner-section', this.bannerUploader);
-    this.setupImageUploader(modal, 'profile-avatar-section', this.avatarUploader);
+    this.setupImageUploader(
+      modal,
+      'profile-banner-section',
+      this.bannerUploader
+    );
+    this.setupImageUploader(
+      modal,
+      'profile-avatar-section',
+      this.avatarUploader
+    );
 
-    modal.querySelectorAll('[data-input]').forEach((input) => {
-      input.addEventListener('input', (e) => {
-        this.handleInputChange(e.target as HTMLInputElement | HTMLTextAreaElement);
+    modal.querySelectorAll('[data-input]').forEach(input => {
+      input.addEventListener('input', e => {
+        this.handleInputChange(
+          e.target as HTMLInputElement | HTMLTextAreaElement
+        );
       });
     });
 
-    modal.querySelector('[data-action="cancel"]')?.addEventListener('click', () => this.handleCancel());
-    modal.querySelector('[data-action="save"]')?.addEventListener('click', () => this.handleSave());
+    modal
+      .querySelector('[data-action="cancel"]')
+      ?.addEventListener('click', () => this.handleCancel());
+    modal
+      .querySelector('[data-action="save"]')
+      ?.addEventListener('click', () => this.handleSave());
   }
 
-  private handleInputChange(input: HTMLInputElement | HTMLTextAreaElement): void {
+  private handleInputChange(
+    input: HTMLInputElement | HTMLTextAreaElement
+  ): void {
     const fieldName = input.getAttribute('data-input');
     if (fieldName && fieldName in this.currentProfile) {
       (this.currentProfile as Record<string, string>)[fieldName] = input.value;
@@ -282,7 +320,9 @@ export class ProfileEditModal {
   }
 
   private updateSaveButton(): void {
-    const saveBtn = document.querySelector('[data-action="save"]') as HTMLButtonElement;
+    const saveBtn = document.querySelector(
+      '[data-action="save"]'
+    ) as HTMLButtonElement;
     if (saveBtn) {
       saveBtn.disabled = !this.hasChanges || this.saving;
     }
@@ -317,7 +357,8 @@ export class ProfileEditModal {
         profileToSave.nip05 = nip05s[0] || '';
       }
 
-      const result = await (this.profileApi?.updateProfile(profileToSave) ?? Promise.resolve(null));
+      const result = await (this.profileApi?.updateProfile(profileToSave) ??
+        Promise.resolve(null));
 
       if (result) {
         const pubkey = this.authService.getCurrentUser()?.pubkey;
@@ -337,7 +378,9 @@ export class ProfileEditModal {
 
   private toggleSavingState(isSaving: boolean): void {
     const saveText = document.querySelector('[data-save-text]') as HTMLElement;
-    const saveSpinner = document.querySelector('[data-save-spinner]') as HTMLElement;
+    const saveSpinner = document.querySelector(
+      '[data-save-spinner]'
+    ) as HTMLElement;
 
     if (saveText) saveText.style.display = isSaving ? 'none' : 'inline';
     if (saveSpinner) saveSpinner.style.display = isSaving ? 'inline' : 'none';
@@ -349,5 +392,4 @@ export class ProfileEditModal {
     this.avatarUploader = null;
     this.bannerUploader = null;
   }
-
 }

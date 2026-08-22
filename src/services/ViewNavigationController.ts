@@ -21,7 +21,14 @@ import { ViewTabManager } from './ViewTabManager';
 import { getSccDefaultTab } from '../helpers/sccDefaultTab';
 import { viewTypeToPath } from '../helpers/sccRoute';
 
-export type ViewType = 'single-note' | 'article' | 'follow-pack' | 'listing' | 'profile' | 'notifications' | 'messages';
+export type ViewType =
+  | 'single-note'
+  | 'article'
+  | 'follow-pack'
+  | 'listing'
+  | 'profile'
+  | 'notifications'
+  | 'messages';
 
 export class ViewNavigationController {
   private static instance: ViewNavigationController;
@@ -45,7 +52,11 @@ export class ViewNavigationController {
    * CENTRAL navigation method - called by ALL click handlers
    * Analyzes event, checks layout mode, routes appropriately
    */
-  public openView(viewType: ViewType, param?: string, event?: MouseEvent): void {
+  public openView(
+    viewType: ViewType,
+    param?: string,
+    event?: MouseEvent
+  ): void {
     // Only 'right-pane' mode uses tab system
     if (!this.layoutService.isRightPane()) {
       // Route via traditional Router (for 'default', 'wide', 'mobile' modes)
@@ -109,7 +120,11 @@ export class ViewNavigationController {
   /**
    * Delegate to ViewTabManager (when setting enabled)
    */
-  private openInTabSystem(viewType: ViewType, param: string | undefined, clickMode: 'new-tab' | 'replace-active'): void {
+  private openInTabSystem(
+    viewType: ViewType,
+    param: string | undefined,
+    clickMode: 'new-tab' | 'replace-active'
+  ): void {
     if (!this.viewTabManager) return;
 
     const replaceActive = clickMode === 'replace-active';

@@ -38,7 +38,8 @@ export class ToastService {
   private activeToasts: Map<string, HTMLElement> = new Map();
   /** Auto-dismiss timers (and their original duration), so updateMessage can
    *  reset the lifetime of an existing toast. */
-  private dismissTimers: Map<string, { timer: number; duration: number }> = new Map();
+  private dismissTimers: Map<string, { timer: number; duration: number }> =
+    new Map();
   private counter = 0;
 
   private constructor() {
@@ -55,7 +56,11 @@ export class ToastService {
   /**
    * Show a basic toast notification
    */
-  public static show(message: string, type: ToastType = 'info', duration: number = 4000): void {
+  public static show(
+    message: string,
+    type: ToastType = 'info',
+    duration: number = 4000
+  ): void {
     ToastService.getInstance().showToast({ message, type, duration });
   }
 
@@ -68,7 +73,12 @@ export class ToastService {
     action: ToastAction,
     duration: number = 10000
   ): string {
-    return ToastService.getInstance().showToast({ message, type, action, duration });
+    return ToastService.getInstance().showToast({
+      message,
+      type,
+      action,
+      duration,
+    });
   }
 
   /**
@@ -149,7 +159,10 @@ export class ToastService {
   /**
    * Create toast DOM element
    */
-  private createToastElement(options: ToastOptions, toastId: string): HTMLElement {
+  private createToastElement(
+    options: ToastOptions,
+    toastId: string
+  ): HTMLElement {
     const toast = document.createElement('div');
     toast.className = `toast toast--${options.type}${options.loading ? ' toast--loading' : ''}`;
 
@@ -157,7 +170,9 @@ export class ToastService {
       ? `<svg class="toast__spinner pulsate" width="18" height="18"><use href="#icon-spinner"/></svg>`
       : this.getIcon(options.type);
 
-    const messageClass = options.loading ? 'toast__message pulsate' : 'toast__message';
+    const messageClass = options.loading
+      ? 'toast__message pulsate'
+      : 'toast__message';
 
     const actionHtml = options.action
       ? `<button class="btn btn--passive btn--mini toast__action">${escapeHtml(options.action.label)}</button>`
@@ -251,5 +266,4 @@ export class ToastService {
         return 'ℹ';
     }
   }
-
 }

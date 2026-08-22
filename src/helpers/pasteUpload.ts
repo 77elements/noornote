@@ -17,8 +17,9 @@ export function setupPasteUpload(
   uploadFiles: (files: File[]) => void
 ): () => void {
   const handler = (e: ClipboardEvent): void => {
-    const files = Array.from(e.clipboardData?.files ?? [])
-      .filter(f => /^(image|video|audio)\//.test(f.type));
+    const files = Array.from(e.clipboardData?.files ?? []).filter(f =>
+      /^(image|video|audio)\//.test(f.type)
+    );
     if (files.length === 0) return; // plain text paste — leave it to the default
     e.preventDefault();
     uploadFiles(files);

@@ -79,7 +79,8 @@ export class RailFlyout {
     this.submenu.style.top = `${rect.top}px`;
 
     // Clamp to the viewport bottom so long lists (Addons) stay fully visible.
-    const overflow = this.submenu.getBoundingClientRect().bottom - (window.innerHeight - 8);
+    const overflow =
+      this.submenu.getBoundingClientRect().bottom - (window.innerHeight - 8);
     if (overflow > 0) {
       this.submenu.style.top = `${Math.max(8, rect.top - overflow)}px`;
     }

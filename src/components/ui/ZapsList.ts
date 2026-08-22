@@ -13,7 +13,13 @@ import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
 import { NoteService } from '../../services/NoteService';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
-import { extractZapperPubkey, extractZapMessage, getZapAmountSats, formatNumberWithCommas, isZapAnonymous } from '../../helpers/zapUtils';
+import {
+  extractZapperPubkey,
+  extractZapMessage,
+  getZapAmountSats,
+  formatNumberWithCommas,
+  isZapAnonymous,
+} from '../../helpers/zapUtils';
 import { UserHoverCard } from './UserHoverCard';
 import { Tooltip } from './Tooltip';
 
@@ -36,11 +42,13 @@ export class ZapsList {
   private authService: AuthService;
   private _zapsApi?: ZapsModuleApi | null;
   private get zapsApi(): ZapsModuleApi | null {
-    return this._zapsApi ??= ModuleLoader.getInstance().getApi<ZapsModuleApi>('zaps');
+    return (this._zapsApi ??=
+      ModuleLoader.getInstance().getApi<ZapsModuleApi>('zaps'));
   }
   private _reactionsApi?: ReactionsModuleApi | null;
   private get reactionsApi(): ReactionsModuleApi | null {
-    return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
+    return (this._reactionsApi ??=
+      ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
   }
 
   constructor(zapEvents: NostrEvent[]) {
@@ -64,7 +72,8 @@ export class ZapsList {
         // from anonymous zaps sent by others. Only the sender's own browser
         // can resolve this — other viewers see a generic lock badge.
         const bolt11 = event.tags.find(t => t[0] === 'bolt11')?.[1];
-        const isOwn = !!bolt11 && (this.zapsApi?.isOwnAnonZapInvoice(bolt11) ?? false);
+        const isOwn =
+          !!bolt11 && (this.zapsApi?.isOwnAnonZapInvoice(bolt11) ?? false);
 
         if (isOwn) {
           const currentUser = this.authService.getCurrentUser();
@@ -99,7 +108,8 @@ export class ZapsList {
       }
 
       const zapperPubkey = extractZapperPubkey(event);
-      const profile = await this.userProfileService.getUserProfile(zapperPubkey);
+      const profile =
+        await this.userProfileService.getUserProfile(zapperPubkey);
 
       zaps.push({
         zapperPubkey,
@@ -146,7 +156,8 @@ export class ZapsList {
     for (const zap of zaps) {
       const badge = document.createElement('div');
       const badgeClasses = ['zaps-list__badge'];
-      if (zap.isAnonymous && !zap.isOwn) badgeClasses.push('zaps-list__badge--anonymous');
+      if (zap.isAnonymous && !zap.isOwn)
+        badgeClasses.push('zaps-list__badge--anonymous');
       if (zap.isOwn) badgeClasses.push('zaps-list__badge--own-anonymous');
       badge.className = badgeClasses.join(' ');
 
@@ -197,7 +208,7 @@ export class ZapsList {
       if (!zap.isAnonymous) {
         badge.classList.add('zaps-list__badge--replyable');
         badge.title = `Reply to ${zap.username}'s zap`;
-        badge.addEventListener('click', async (e) => {
+        badge.addEventListener('click', async e => {
           e.stopPropagation();
           userHoverCard.hide();
           const { ReplyModal } = await import('../reply/ReplyModal');
@@ -236,14 +247,14 @@ export class ZapsList {
 
     for (const { zap, badge } of replyables) {
       const zapId = zap.event.id;
-      const count = zapId ? counts.get(zapId) ?? 0 : 0;
+      const count = zapId ? (counts.get(zapId) ?? 0) : 0;
       if (count <= 0 || !zapId) continue;
 
       const threadBadge = document.createElement('div');
       threadBadge.className = 'zaps-list__badge zaps-list__badge--thread';
       threadBadge.textContent = `T${count}`;
       Tooltip.attach(threadBadge, 'See zap comment thread');
-      threadBadge.addEventListener('click', (e) => {
+      threadBadge.addEventListener('click', e => {
         e.stopPropagation();
         userHoverCard.hide();
         // Prime the cache so the zap-rooted SNV resolves instantly — zap

@@ -18,13 +18,21 @@
 
 import { marked } from 'marked';
 
-export function processFootnotes(markdown: string): { bodyMd: string; footnotesHtml: string } {
+export function processFootnotes(markdown: string): {
+  bodyMd: string;
+  footnotesHtml: string;
+} {
   const defs = new Map<string, string>();
 
   // Extract definitions: [^id]: content (supports indented continuation lines)
   const defPattern = /^\[\^([^\]]+)\]:[ \t]*([^\n]*(?:\n[ \t]+[^\n]*)*)/gm;
   const stripped = markdown.replace(defPattern, (_m, id, rawContent) => {
-    defs.set(String(id), String(rawContent).replace(/\n[ \t]+/g, ' ').trim());
+    defs.set(
+      String(id),
+      String(rawContent)
+        .replace(/\n[ \t]+/g, ' ')
+        .trim()
+    );
     return '';
   });
 

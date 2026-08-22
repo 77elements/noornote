@@ -17,12 +17,15 @@ export interface QuotedReference {
   fullMatch: string;
 }
 
-export function renderQuotedReferencesPlaceholder(quotedReferences: QuotedReference[]): string {
+export function renderQuotedReferencesPlaceholder(
+  quotedReferences: QuotedReference[]
+): string {
   if (quotedReferences.length === 0) return '';
 
-  const quotesHtml = quotedReferences.map(ref => {
-    // Placeholder that will be replaced with actual fetched content
-    return `
+  const quotesHtml = quotedReferences
+    .map(ref => {
+      // Placeholder that will be replaced with actual fetched content
+      return `
       <div class="quoted-note-container">
         <div class="quoted-note-header">
           <span class="quote-icon">💬</span>
@@ -36,7 +39,8 @@ export function renderQuotedReferencesPlaceholder(quotedReferences: QuotedRefere
         </div>
       </div>
     `;
-  }).join('');
+    })
+    .join('');
 
   return `<div class="note-quotes">${quotesHtml}</div>`;
 }

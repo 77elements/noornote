@@ -9,19 +9,26 @@
  * custom emojis is core and always active (see src/helpers/formatCustomEmojis.ts).
  */
 
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../services/PerAccountLocalStorage';
 
 const STORAGE_KEY = 'noornote_custom_emojis_enabled';
 
 export function isCustomEmojisEnabled(): boolean {
   const perAccount = PerAccountLocalStorage.getInstance().get<boolean | null>(
-    StorageKeys.CUSTOM_EMOJIS_ENABLED, null
+    StorageKeys.CUSTOM_EMOJIS_ENABLED,
+    null
   );
   if (perAccount !== null) return perAccount;
   return localStorage.getItem(STORAGE_KEY) === 'true';
 }
 
 export function setCustomEmojisEnabled(enabled: boolean): void {
-  PerAccountLocalStorage.getInstance().set(StorageKeys.CUSTOM_EMOJIS_ENABLED, enabled);
+  PerAccountLocalStorage.getInstance().set(
+    StorageKeys.CUSTOM_EMOJIS_ENABLED,
+    enabled
+  );
   localStorage.setItem(STORAGE_KEY, 'false');
 }

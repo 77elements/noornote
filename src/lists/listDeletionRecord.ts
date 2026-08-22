@@ -23,7 +23,12 @@
  * its own local tombstone map. Nothing list-specific lives here.
  */
 
-import { fetchEvents, publishEvent, signEvent, getCurrentUserPubkey } from './relays';
+import {
+  fetchEvents,
+  publishEvent,
+  signEvent,
+  getCurrentUserPubkey,
+} from './relays';
 import { now } from './storage';
 import { diagLog } from '../services/DiagnosticLogger';
 
@@ -40,26 +45,41 @@ export interface DeletionRecordConfig {
   setLocalTombstones: (map: Record<string, number>) => void;
 }
 
-interface SharedDeletionEntry { t: number; d: boolean; }
+interface SharedDeletionEntry {
+  t: number;
+  d: boolean;
+}
 
 const DELETION_MAX_AGE_SEC = 365 * 24 * 60 * 60; // prune entries older than 1 year
 
-async function fetchDeletionEntries(cfg: DeletionRecordConfig, pubkey: string): Promise<Record<string, SharedDeletionEntry>> {
-  const events = await fetchEvents([{
-    authors: [pubkey],
-    kinds: [30078],
-    '#d': [cfg.dTag]
-  }], 5000, true);
+async function fetchDeletionEntries(
+  cfg: DeletionRecordConfig,
+  pubkey: string
+): Promise<Record<string, SharedDeletionEntry>> {
+  const events = await fetchEvents(
+    [
+      {
+        authors: [pubkey],
+        kinds: [30078],
+        '#d': [cfg.dTag],
+      },
+    ],
+    5000,
+    true
+  );
   if (events.length === 0) return {};
   const newest = events.sort((a, b) => b.created_at - a.created_at)[0];
   if (!newest?.content) return {};
   try {
-    const parsed = JSON.parse(newest.content) as { entries?: Record<string, unknown> };
+    const parsed = JSON.parse(newest.content) as {
+      entries?: Record<string, unknown>;
+    };
     if (!parsed.entries || typeof parsed.entries !== 'object') return {};
     const out: Record<string, SharedDeletionEntry> = {};
     for (const [name, raw] of Object.entries(parsed.entries)) {
       const entry = raw as { t?: unknown; d?: unknown };
-      if (typeof entry?.t === 'number') out[name] = { t: entry.t, d: entry.d === true };
+      if (typeof entry?.t === 'number')
+        out[name] = { t: entry.t, d: entry.d === true };
     }
     return out;
   } catch {
@@ -85,7 +105,8 @@ export async function publishDeletions(
   const localTombstones = cfg.getLocalTombstones();
   for (const [name, ts] of Object.entries(localTombstones)) {
     // Don't override a newer revival the relay already knows about.
-    if (!merged[name] || merged[name].t <= ts) merged[name] = { t: ts, d: true };
+    if (!merged[name] || merged[name].t <= ts)
+      merged[name] = { t: ts, d: true };
   }
 
   if (change?.name) merged[change.name] = { t: nowSec, d: change.deleted };
@@ -97,23 +118,39 @@ export async function publishDeletions(
   const signed = await signEvent({
     kind: 30078,
     created_at: nowSec,
-    tags: [['d', cfg.dTag], ['alt', cfg.alt]],
+    tags: [
+      ['d', cfg.dTag],
+      ['alt', cfg.alt],
+    ],
     content: JSON.stringify({ v: 1, entries: merged }),
-    pubkey
+    pubkey,
   });
   if (signed) {
     await publishEvent(signed);
-    diagLog('lists', `${cfg.logLabel}: published`, { change, entryCount: Object.keys(merged).length });
+    diagLog('lists', `${cfg.logLabel}: published`, {
+      change,
+      entryCount: Object.keys(merged).length,
+    });
   }
 }
 
 /** Fire-and-forget wrapper used from the local tombstone add/remove hooks. */
-export function publishDeletionChange(cfg: DeletionRecordConfig, folderName: string, deleted: boolean): void {
+export function publishDeletionChange(
+  cfg: DeletionRecordConfig,
+  folderName: string,
+  deleted: boolean
+): void {
   const pubkey = getCurrentUserPubkey();
   if (!pubkey) return;
-  void publishDeletions(cfg, pubkey, { name: folderName, deleted }).catch(err => {
-    diagLog('lists', `${cfg.logLabel}: publish change FAILED`, { folderName, deleted, error: String(err) });
-  });
+  void publishDeletions(cfg, pubkey, { name: folderName, deleted }).catch(
+    err => {
+      diagLog('lists', `${cfg.logLabel}: publish change FAILED`, {
+        folderName,
+        deleted,
+        error: String(err),
+      });
+    }
+  );
 }
 
 /**
@@ -122,7 +159,10 @@ export function publishDeletionChange(cfg: DeletionRecordConfig, folderName: str
  * Run inside the list's relay-fetch path before its tombstone filter, so every
  * relay-read path honours cross-device deletions. Prunes entries older than 1 year.
  */
-export async function syncDeletionsIntoLocal(cfg: DeletionRecordConfig, pubkey: string): Promise<void> {
+export async function syncDeletionsIntoLocal(
+  cfg: DeletionRecordConfig,
+  pubkey: string
+): Promise<void> {
   const relayEntries = await fetchDeletionEntries(cfg, pubkey);
   const local = cfg.getLocalTombstones();
   const nowSec = now();
@@ -130,21 +170,30 @@ export async function syncDeletionsIntoLocal(cfg: DeletionRecordConfig, pubkey: 
 
   for (const [name, entry] of Object.entries(relayEntries)) {
     if (entry.d) {
-      if (local[name] === undefined || local[name] < entry.t) { local[name] = entry.t; changed = true; }
+      if (local[name] === undefined || local[name] < entry.t) {
+        local[name] = entry.t;
+        changed = true;
+      }
     } else {
-      if (local[name] !== undefined && entry.t >= local[name]) { delete local[name]; changed = true; }
+      if (local[name] !== undefined && entry.t >= local[name]) {
+        delete local[name];
+        changed = true;
+      }
     }
   }
 
   for (const [name, ts] of Object.entries(local)) {
-    if (nowSec - ts > DELETION_MAX_AGE_SEC) { delete local[name]; changed = true; }
+    if (nowSec - ts > DELETION_MAX_AGE_SEC) {
+      delete local[name];
+      changed = true;
+    }
   }
 
   if (changed) {
     cfg.setLocalTombstones(local);
     diagLog('lists', `${cfg.logLabel}: synced into local`, {
       relayEntryCount: Object.keys(relayEntries).length,
-      localTombstoneCount: Object.keys(local).length
+      localTombstoneCount: Object.keys(local).length,
     });
   }
 }

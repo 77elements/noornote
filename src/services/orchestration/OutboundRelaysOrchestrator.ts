@@ -51,12 +51,15 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
   private readonly CACHE_TTL = 24 * 60 * 60 * 1000;
-  private relayListCache = new LRUCache<UserRelayList>(getCacheSize(200, 100, 50), this.CACHE_TTL);
+  private relayListCache = new LRUCache<UserRelayList>(
+    getCacheSize(200, 100, 50),
+    this.CACHE_TTL
+  );
   private stats: RelayDiscoveryStats = {
     totalUsers: 0,
     discoveredRelays: 0,
     cacheHits: 0,
-    cacheMisses: 0
+    cacheMisses: 0,
   };
   private readonly LOG_TAG = 'OutboundRelaysOrchestrator';
 
@@ -92,7 +95,10 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
     const results: UserRelayList[] = [];
     const uncachedPubkeys: string[] = [];
 
-    this.systemLogger.info(this.LOG_TAG, `Fetching relay lists for ${pubkeys.length} users`);
+    this.systemLogger.info(
+      this.LOG_TAG,
+      `Fetching relay lists for ${pubkeys.length} users`
+    );
 
     for (const pubkey of pubkeys) {
       const cached = this.getCachedRelayList(pubkey);
@@ -110,17 +116,29 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
       return results;
     }
 
-    this.systemLogger.info(this.LOG_TAG, `Fetching ${uncachedPubkeys.length} uncached users`);
+    this.systemLogger.info(
+      this.LOG_TAG,
+      `Fetching ${uncachedPubkeys.length} uncached users`
+    );
 
     const filter: NDKFilter = {
       authors: uncachedPubkeys,
       kinds: [10002],
-      limit: uncachedPubkeys.length * 2
+      limit: uncachedPubkeys.length * 2,
     };
 
     try {
-      const events = await this.transport.fetch(baseRelays, [filter], 5000, false, 'OutboundOrch');
-      this.systemLogger.info(this.LOG_TAG, `Received ${events.length} relay list events`);
+      const events = await this.transport.fetch(
+        baseRelays,
+        [filter],
+        5000,
+        false,
+        'OutboundOrch'
+      );
+      this.systemLogger.info(
+        this.LOG_TAG,
+        `Received ${events.length} relay list events`
+      );
 
       const processedPubkeys = new Set<string>();
 
@@ -142,7 +160,7 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
             pubkey,
             writeRelays: aggregatorRelays,
             readRelays: aggregatorRelays,
-            lastUpdated: Date.now()
+            lastUpdated: Date.now(),
           };
           results.push(defaultRelayList);
           this.cacheRelayList(defaultRelayList);
@@ -155,7 +173,10 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
         0
       );
     } catch (error) {
-      this.systemLogger.error(this.LOG_TAG, `Fetch relay lists error: ${error}`);
+      this.systemLogger.error(
+        this.LOG_TAG,
+        `Fetch relay lists error: ${error}`
+      );
     }
 
     return results;
@@ -172,7 +193,11 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
       // connection-bloat fix in docs/todos/timeline-component-modularization.md.
       let perAuthor = 0;
       for (const relay of relayList.writeRelays) {
-        if (this.isValidRelay(relay) && !baseRelays.has(relay) && this.isQualityRelay(relay)) {
+        if (
+          this.isValidRelay(relay) &&
+          !baseRelays.has(relay) &&
+          this.isQualityRelay(relay)
+        ) {
           outboundRelays.add(relay);
           if (++perAuthor >= MAX_OUTBOUND_RELAYS_PER_AUTHOR) break;
         }
@@ -180,7 +205,10 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
     }
 
     const result = Array.from(outboundRelays);
-    this.systemLogger.info(this.LOG_TAG, `Discovered ${result.length} quality outbound relays from ${userRelayLists.length} users`);
+    this.systemLogger.info(
+      this.LOG_TAG,
+      `Discovered ${result.length} quality outbound relays from ${userRelayLists.length} users`
+    );
 
     return result;
   }
@@ -196,24 +224,38 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
   public async getProfileRelays(pubkey: string): Promise<string[]> {
     const relayLists = await this.discoverUserRelays([pubkey]);
     const writeRelays = Array.from(
-      new Set(relayLists.flatMap((l) => l.writeRelays).filter((r) => this.isValidRelay(r)))
+      new Set(
+        relayLists.flatMap(l => l.writeRelays).filter(r => this.isValidRelay(r))
+      )
     ).slice(0, 8);
 
     if (writeRelays.length === 0) {
       const fallback = this.relayConfig.getReadRelays();
-      this.systemLogger.info(this.LOG_TAG, `Profile relays: none discovered, falling back to ${fallback.length} read relays`);
+      this.systemLogger.info(
+        this.LOG_TAG,
+        `Profile relays: none discovered, falling back to ${fallback.length} read relays`
+      );
       return fallback;
     }
 
-    this.systemLogger.info(this.LOG_TAG, `Profile relays: ${writeRelays.length} author write relays`);
+    this.systemLogger.info(
+      this.LOG_TAG,
+      `Profile relays: ${writeRelays.length} author write relays`
+    );
     return writeRelays;
   }
 
-  public async getCombinedRelays(pubkeys: string[], includeOutbound: boolean = true): Promise<string[]> {
+  public async getCombinedRelays(
+    pubkeys: string[],
+    includeOutbound: boolean = true
+  ): Promise<string[]> {
     const standardRelays = this.relayConfig.getReadRelays();
 
     if (!includeOutbound) {
-      this.systemLogger.info(this.LOG_TAG, `Using ${standardRelays.length} standard relays`);
+      this.systemLogger.info(
+        this.LOG_TAG,
+        `Using ${standardRelays.length} standard relays`
+      );
       return standardRelays;
     }
 
@@ -222,12 +264,20 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
       const outboundRelays = this.getOutboundRelays(relayLists);
       const aggregatorRelays = this.relayConfig.getAggregatorRelays();
 
-      const combined = [...new Set([...standardRelays, ...outboundRelays, ...aggregatorRelays])];
+      const combined = [
+        ...new Set([...standardRelays, ...outboundRelays, ...aggregatorRelays]),
+      ];
 
-      this.systemLogger.info(this.LOG_TAG, `${standardRelays.length} own + ${outboundRelays.length} author's + ${aggregatorRelays.length} aggregator = ${combined.length} total`);
+      this.systemLogger.info(
+        this.LOG_TAG,
+        `${standardRelays.length} own + ${outboundRelays.length} author's + ${aggregatorRelays.length} aggregator = ${combined.length} total`
+      );
       return combined;
     } catch (error) {
-      this.systemLogger.error(this.LOG_TAG, `Discovery failed, using standard relays: ${error}`);
+      this.systemLogger.error(
+        this.LOG_TAG,
+        `Discovery failed, using standard relays: ${error}`
+      );
       return standardRelays;
     }
   }
@@ -257,10 +307,13 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
         pubkey: event.pubkey,
         writeRelays: [...new Set(writeRelays)],
         readRelays: [...new Set(readRelays)],
-        lastUpdated: Date.now()
+        lastUpdated: Date.now(),
       };
     } catch (error) {
-      this.systemLogger.error(this.LOG_TAG, `Parse relay list event error: ${error}`);
+      this.systemLogger.error(
+        this.LOG_TAG,
+        `Parse relay list event error: ${error}`
+      );
       return null;
     }
   }
@@ -341,10 +394,16 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
       }
 
       if (restored > 0) {
-        this.systemLogger.info(this.LOG_TAG, `Restored ${restored} relay lists from IndexedDB (${expired} expired)`);
+        this.systemLogger.info(
+          this.LOG_TAG,
+          `Restored ${restored} relay lists from IndexedDB (${expired} expired)`
+        );
       }
     } catch (error) {
-      this.systemLogger.warn(this.LOG_TAG, `IndexedDB restore failed: ${error}`);
+      this.systemLogger.warn(
+        this.LOG_TAG,
+        `IndexedDB restore failed: ${error}`
+      );
     }
   }
 
@@ -365,7 +424,10 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
       });
       db.close();
     } catch (error) {
-      this.systemLogger.warn(this.LOG_TAG, `IndexedDB persist failed: ${error}`);
+      this.systemLogger.warn(
+        this.LOG_TAG,
+        `IndexedDB persist failed: ${error}`
+      );
     }
   }
 
@@ -482,7 +544,10 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
   public onclose(): void {}
 
   public onerror(relay: string, error: Error): void {
-    this.systemLogger.error(this.LOG_TAG, `Relay error (${relay}): ${error.message}`);
+    this.systemLogger.error(
+      this.LOG_TAG,
+      `Relay error (${relay}): ${error.message}`
+    );
   }
 
   public override destroy(): void {

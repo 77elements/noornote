@@ -11,7 +11,11 @@ import { Switch } from '../../components/ui/Switch';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
 import { isCustomEmojisEnabled, setCustomEmojisEnabled } from './index';
-import { EmojiService, type PersonalEmoji, type RemoteEmojiPack } from './EmojiService';
+import {
+  EmojiService,
+  type PersonalEmoji,
+  type RemoteEmojiPack,
+} from './EmojiService';
 import { UserSearchInput } from '../../components/user-search/UserSearchInput';
 import { escapeHtml } from '../../helpers/escapeHtml';
 
@@ -36,12 +40,15 @@ export class CustomEmojisSettings extends SettingsSection {
     this.enableSwitch = new Switch({
       label: '',
       checked: enabled,
-      onChange: async (checked) => {
+      onChange: async checked => {
         setCustomEmojisEnabled(checked);
         // Emit the uniform AddonLoader event + legacy event so existing
         // listeners (CustomEmojisView etc.) keep working.
         this.eventBus.emit('custom-emojis:addon-toggle', { enabled: checked });
-        ToastService.show(checked ? 'Custom Emojis enabled' : 'Custom Emojis disabled', 'success');
+        ToastService.show(
+          checked ? 'Custom Emojis enabled' : 'Custom Emojis disabled',
+          'success'
+        );
         if (checked && this.currentContentZone) {
           await this.renderContentZone(this.currentContentZone);
         }
@@ -58,7 +65,9 @@ export class CustomEmojisSettings extends SettingsSection {
     this.enableSwitch.setupEventListeners(contentContainer);
 
     // Mount management UI into the addon content zone (visible only when enabled)
-    const contentZone = parentContainer.querySelector('[data-addon-content="custom-emojis"]') as HTMLElement | null;
+    const contentZone = parentContainer.querySelector(
+      '[data-addon-content="custom-emojis"]'
+    ) as HTMLElement | null;
     this.currentContentZone = contentZone;
     if (contentZone && enabled) {
       void this.renderContentZone(contentZone);
@@ -125,13 +134,17 @@ export class CustomEmojisSettings extends SettingsSection {
     `;
 
     const form = zone.querySelector('[data-add-form]') as HTMLFormElement;
-    form?.addEventListener('submit', async (e) => {
+    form?.addEventListener('submit', async e => {
       e.preventDefault();
       await this.handleAdd(zone);
     });
 
-    const uploadBtn = zone.querySelector('[data-upload-btn]') as HTMLButtonElement | null;
-    const fileInput = zone.querySelector('[data-file-input]') as HTMLInputElement | null;
+    const uploadBtn = zone.querySelector(
+      '[data-upload-btn]'
+    ) as HTMLButtonElement | null;
+    const fileInput = zone.querySelector(
+      '[data-file-input]'
+    ) as HTMLInputElement | null;
     uploadBtn?.addEventListener('click', () => fileInput?.click());
     fileInput?.addEventListener('change', async () => {
       const file = fileInput.files?.[0];
@@ -140,16 +153,20 @@ export class CustomEmojisSettings extends SettingsSection {
     });
 
     // Mount UserSearchInput for the import-from-another-user flow
-    const browseInputMount = zone.querySelector('.custom-emojis__browse-input-mount') as HTMLElement | null;
+    const browseInputMount = zone.querySelector(
+      '.custom-emojis__browse-input-mount'
+    ) as HTMLElement | null;
     if (browseInputMount) {
       this.userSearchInput?.destroy();
       this.userSearchInput = new UserSearchInput({
         placeholder: 'Show me the Custom Emojis of this user…',
-        onUserSelected: (pubkey) => {
+        onUserSelected: pubkey => {
           void this.handleBrowseUser(pubkey, zone);
         },
         onSelectionCleared: () => {
-          const resultsMount = zone.querySelector('.custom-emojis__browse-results-mount') as HTMLElement | null;
+          const resultsMount = zone.querySelector(
+            '.custom-emojis__browse-results-mount'
+          ) as HTMLElement | null;
           if (resultsMount) resultsMount.innerHTML = '';
         },
       });
@@ -163,7 +180,9 @@ export class CustomEmojisSettings extends SettingsSection {
   }
 
   private renderEmojiList(zone: HTMLElement): void {
-    const mount = zone.querySelector('.custom-emojis__list-mount') as HTMLElement | null;
+    const mount = zone.querySelector(
+      '.custom-emojis__list-mount'
+    ) as HTMLElement | null;
     if (!mount) return;
 
     const emojis = EmojiService.getInstance().getEmojis();
@@ -179,13 +198,15 @@ export class CustomEmojisSettings extends SettingsSection {
       </div>
     `;
 
-    mount.querySelectorAll<HTMLButtonElement>('[data-remove-shortcode]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const code = btn.dataset.removeShortcode;
-        if (!code) return;
-        await this.handleRemove(code);
+    mount
+      .querySelectorAll<HTMLButtonElement>('[data-remove-shortcode]')
+      .forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const code = btn.dataset.removeShortcode;
+          if (!code) return;
+          await this.handleRemove(code);
+        });
       });
-    });
   }
 
   private renderRow(emoji: PersonalEmoji): string {
@@ -201,8 +222,12 @@ export class CustomEmojisSettings extends SettingsSection {
   }
 
   private async handleAdd(zone: HTMLElement): Promise<void> {
-    const codeInput = zone.querySelector('[data-shortcode-input]') as HTMLInputElement | null;
-    const urlInput = zone.querySelector('[data-url-input]') as HTMLInputElement | null;
+    const codeInput = zone.querySelector(
+      '[data-shortcode-input]'
+    ) as HTMLInputElement | null;
+    const urlInput = zone.querySelector(
+      '[data-url-input]'
+    ) as HTMLInputElement | null;
     if (!codeInput || !urlInput) return;
 
     const code = codeInput.value.trim();
@@ -223,8 +248,12 @@ export class CustomEmojisSettings extends SettingsSection {
   }
 
   private async handleUpload(file: File, zone: HTMLElement): Promise<void> {
-    const urlInput = zone.querySelector('[data-url-input]') as HTMLInputElement | null;
-    const status = zone.querySelector('[data-upload-status]') as HTMLElement | null;
+    const urlInput = zone.querySelector(
+      '[data-url-input]'
+    ) as HTMLInputElement | null;
+    const status = zone.querySelector(
+      '[data-upload-status]'
+    ) as HTMLElement | null;
     if (!urlInput) return;
 
     if (!file.type.startsWith('image/')) {
@@ -240,12 +269,19 @@ export class CustomEmojisSettings extends SettingsSection {
     try {
       const { ModuleLoader } = await import('../../core/ModuleLoader');
       type MediaApi = import('../../modules/media/contracts').MediaModuleApi;
-      const mediaApi = await ModuleLoader.getInstance().ensure<MediaApi>('media');
-      if (!mediaApi) { ToastService.show('Media module not available', 'error'); return; }
+      const mediaApi =
+        await ModuleLoader.getInstance().ensure<MediaApi>('media');
+      if (!mediaApi) {
+        ToastService.show('Media module not available', 'error');
+        return;
+      }
       const result = await mediaApi.uploadFile(file);
       if (result.success && result.url) {
         urlInput.value = result.url;
-        ToastService.show('Uploaded — give it a shortcode and click Add', 'success');
+        ToastService.show(
+          'Uploaded — give it a shortcode and click Add',
+          'success'
+        );
       } else {
         ToastService.show(result.error || 'Upload failed', 'error');
       }
@@ -270,8 +306,13 @@ export class CustomEmojisSettings extends SettingsSection {
 
   // ── Browse + import from another user ───────────────────────────
 
-  private async handleBrowseUser(pubkey: string, zone: HTMLElement): Promise<void> {
-    const mount = zone.querySelector('.custom-emojis__browse-results-mount') as HTMLElement | null;
+  private async handleBrowseUser(
+    pubkey: string,
+    zone: HTMLElement
+  ): Promise<void> {
+    const mount = zone.querySelector(
+      '.custom-emojis__browse-results-mount'
+    ) as HTMLElement | null;
     if (!mount) return;
 
     mount.innerHTML = `<p class="custom-emojis__hint pulsate">Fetching emoji packs…</p>`;
@@ -284,20 +325,27 @@ export class CustomEmojisSettings extends SettingsSection {
     }
   }
 
-  private renderBrowseResults(mount: HTMLElement, packs: RemoteEmojiPack[]): void {
+  private renderBrowseResults(
+    mount: HTMLElement,
+    packs: RemoteEmojiPack[]
+  ): void {
     if (packs.length === 0) {
       mount.innerHTML = `<p class="custom-emojis__empty">This user has no custom emoji packs.</p>`;
       return;
     }
 
-    mount.innerHTML = packs.map((pack, packIdx) => `
+    mount.innerHTML = packs
+      .map(
+        (pack, packIdx) => `
       <div class="custom-emojis__remote-pack" data-pack-index="${packIdx}">
         <div class="l-spread">
           <h3>${escapeHtml(pack.name)} <small>(${pack.emojis.length})</small></h3>
           <button class="btn btn--passive btn--medium" data-import-all="${packIdx}">Import all</button>
         </div>
         <div class="custom-emojis__remote-grid">
-          ${pack.emojis.map((emoji, emojiIdx) => `
+          ${pack.emojis
+            .map(
+              (emoji, emojiIdx) => `
             <button
               type="button"
               class="custom-emojis__remote-item"
@@ -307,51 +355,68 @@ export class CustomEmojisSettings extends SettingsSection {
               <img class="custom-emoji" src="${emoji.url.replace(/"/g, '&quot;')}" alt=":${escapeHtml(emoji.shortcode)}:" loading="lazy" />
               <span class="custom-emojis__remote-code">:${escapeHtml(emoji.shortcode)}:</span>
             </button>
-          `).join('')}
+          `
+            )
+            .join('')}
         </div>
       </div>
-    `).join('');
+    `
+      )
+      .join('');
 
     // Per-emoji import buttons
-    mount.querySelectorAll<HTMLButtonElement>('[data-import-emoji]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const [pIdx, eIdx] = (btn.dataset.importEmoji ?? '').split(':').map(Number);
-        const pack = packs[pIdx!];
-        const emoji = pack?.emojis[eIdx!];
-        if (!emoji) return;
-        btn.disabled = true;
-        try {
-          const finalCode = await EmojiService.getInstance().importEmoji(emoji);
-          const msg = finalCode === emoji.shortcode
-            ? `Imported :${finalCode}:`
-            : `Imported as :${finalCode}: (shortcode collision)`;
-          ToastService.show(msg, 'success');
-        } catch (err) {
-          ToastService.show((err as Error).message, 'error');
-        } finally {
-          btn.disabled = false;
-        }
+    mount
+      .querySelectorAll<HTMLButtonElement>('[data-import-emoji]')
+      .forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const [pIdx, eIdx] = (btn.dataset.importEmoji ?? '')
+            .split(':')
+            .map(Number);
+          const pack = packs[pIdx!];
+          const emoji = pack?.emojis[eIdx!];
+          if (!emoji) return;
+          btn.disabled = true;
+          try {
+            const finalCode =
+              await EmojiService.getInstance().importEmoji(emoji);
+            const msg =
+              finalCode === emoji.shortcode
+                ? `Imported :${finalCode}:`
+                : `Imported as :${finalCode}: (shortcode collision)`;
+            ToastService.show(msg, 'success');
+          } catch (err) {
+            ToastService.show((err as Error).message, 'error');
+          } finally {
+            btn.disabled = false;
+          }
+        });
       });
-    });
 
     // Per-pack "Import all" buttons
-    mount.querySelectorAll<HTMLButtonElement>('[data-import-all]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const pIdx = Number(btn.dataset.importAll);
-        const pack = packs[pIdx];
-        if (!pack) return;
-        btn.disabled = true;
-        btn.textContent = 'Importing…';
-        try {
-          const count = await EmojiService.getInstance().importPack(pack.emojis);
-          ToastService.show(`Imported ${count} emoji${count === 1 ? '' : 's'} from "${pack.name}"`, 'success');
-        } catch (err) {
-          ToastService.show((err as Error).message, 'error');
-        } finally {
-          btn.disabled = false;
-          btn.textContent = 'Import all';
-        }
+    mount
+      .querySelectorAll<HTMLButtonElement>('[data-import-all]')
+      .forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const pIdx = Number(btn.dataset.importAll);
+          const pack = packs[pIdx];
+          if (!pack) return;
+          btn.disabled = true;
+          btn.textContent = 'Importing…';
+          try {
+            const count = await EmojiService.getInstance().importPack(
+              pack.emojis
+            );
+            ToastService.show(
+              `Imported ${count} emoji${count === 1 ? '' : 's'} from "${pack.name}"`,
+              'success'
+            );
+          } catch (err) {
+            ToastService.show((err as Error).message, 'error');
+          } finally {
+            btn.disabled = false;
+            btn.textContent = 'Import all';
+          }
+        });
       });
-    });
   }
 }

@@ -33,7 +33,10 @@ ctx.onmessage = (e: MessageEvent<ResizeRequest>): void => {
       const bitmap = await createImageBitmap(new Blob([buf], { type }));
 
       // Target dimensions preserving aspect ratio (mirrors the main-thread path).
-      const maxDim = maxResolution > 0 ? maxResolution : Math.max(bitmap.width, bitmap.height);
+      const maxDim =
+        maxResolution > 0
+          ? maxResolution
+          : Math.max(bitmap.width, bitmap.height);
       let targetW = bitmap.width;
       let targetH = bitmap.height;
       if (bitmap.width > maxDim || bitmap.height > maxDim) {
@@ -53,14 +56,18 @@ ctx.onmessage = (e: MessageEvent<ResizeRequest>): void => {
       bitmap.close();
 
       // convertToBlob honors `quality` for image/jpeg + image/webp, ignores it for png.
-      const opts: ImageEncodeOptions = quality === undefined
-        ? { type: outputMime }
-        : { type: outputMime, quality };
+      const opts: ImageEncodeOptions =
+        quality === undefined
+          ? { type: outputMime }
+          : { type: outputMime, quality };
       const blob = await canvas.convertToBlob(opts);
       const outBuf = await blob.arrayBuffer();
       ctx.postMessage({ ok: true, buf: outBuf }, [outBuf]);
     } catch (err) {
-      ctx.postMessage({ ok: false, error: err instanceof Error ? err.message : String(err) });
+      ctx.postMessage({
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   })();
 };

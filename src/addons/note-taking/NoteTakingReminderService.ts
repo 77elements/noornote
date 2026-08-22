@@ -49,7 +49,8 @@ export class NoteTakingReminderService {
       this.timer = null;
     }
     this.shown.clear();
-    NoteTakingReminderService.instance = undefined as unknown as NoteTakingReminderService;
+    NoteTakingReminderService.instance =
+      undefined as unknown as NoteTakingReminderService;
   }
 
   private async scan(): Promise<void> {
@@ -61,7 +62,11 @@ export class NoteTakingReminderService {
       return;
     }
     for (const note of notes) {
-      if (note.reminderAt > 0 && note.reminderAt <= now && !this.shown.has(note.id)) {
+      if (
+        note.reminderAt > 0 &&
+        note.reminderAt <= now &&
+        !this.shown.has(note.id)
+      ) {
         this.shown.add(note.id);
         this.fire(note.id, note.title || note.body || 'Note');
       }
@@ -81,7 +86,7 @@ export class NoteTakingReminderService {
         this.shown.delete(id);
         void this.service.updateNote(id, { reminderAt: 0 });
       },
-      onSnooze: (minutes) => {
+      onSnooze: minutes => {
         this.shown.delete(id);
         const next = Math.floor(Date.now() / 1000) + minutes * 60;
         void this.service.updateNote(id, { reminderAt: next });

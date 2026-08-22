@@ -51,11 +51,13 @@ class FoafStore {
     if (this.initPromise && this.npub === npub) return this.initPromise;
 
     this.npub = npub;
-    this.initPromise = new Promise((resolve) => {
+    this.initPromise = new Promise(resolve => {
       const request = indexedDB.open(DB_NAME_PREFIX + npub, DB_VERSION);
       request.onerror = () => resolve(null);
-      request.onblocked = () => { /* stays pending; resolves when unblocked */ };
-      request.onupgradeneeded = (event) => {
+      request.onblocked = () => {
+        /* stays pending; resolves when unblocked */
+      };
+      request.onupgradeneeded = event => {
         const db = (event.target as IDBOpenDBRequest).result;
         if (!db.objectStoreNames.contains(STORE)) {
           db.createObjectStore(STORE);
@@ -79,7 +81,7 @@ class FoafStore {
     try {
       const db = await this.ensureDb();
       if (!db) return;
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         const tx = db.transaction(STORE, 'readwrite');
         tx.objectStore(STORE).put(entry, degree);
         tx.oncomplete = () => resolve();
@@ -96,10 +98,11 @@ class FoafStore {
     try {
       const db = await this.ensureDb();
       if (!db) return null;
-      return await new Promise((resolve) => {
+      return await new Promise(resolve => {
         const tx = db.transaction(STORE, 'readonly');
         const req = tx.objectStore(STORE).get(degree);
-        req.onsuccess = () => resolve((req.result as FoafPersistedEntry | undefined) ?? null);
+        req.onsuccess = () =>
+          resolve((req.result as FoafPersistedEntry | undefined) ?? null);
         req.onerror = () => resolve(null);
       });
     } catch {
@@ -113,7 +116,7 @@ class FoafStore {
     try {
       const db = await this.ensureDb();
       if (!db) return;
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         const tx = db.transaction(STORE, 'readwrite');
         tx.objectStore(STORE).clear();
         tx.oncomplete = () => resolve();

@@ -38,7 +38,11 @@ export function lightboxImageHtml(
   index: number,
   opts?: { alt?: string; extraClasses?: string[] }
 ): string {
-  const classes = ['note-image', 'note-image--clickable', ...(opts?.extraClasses ?? [])].join(' ');
+  const classes = [
+    'note-image',
+    'note-image--clickable',
+    ...(opts?.extraClasses ?? []),
+  ].join(' ');
   const alt = escapeHtmlAttr(opts?.alt ?? '');
   return `<img src="${escapeHtmlAttr(url)}" alt="${alt}" loading="lazy" class="${classes}" data-image-index="${index}" />`;
 }
@@ -70,10 +74,12 @@ export function buildLightboxImagesHtml(
   opts?: { alts?: string[] }
 ): LightboxImagesHtml {
   const imagesHtml = urls
-    .map((url, index) => lightboxImageHtml(url, index, { alt: opts?.alts?.[index] ?? '' }))
+    .map((url, index) =>
+      lightboxImageHtml(url, index, { alt: opts?.alts?.[index] ?? '' })
+    )
     .join('');
   return {
     imagesHtml,
-    containerDataAttr: lightboxContainerDataUrlsAttr(urls)
+    containerDataAttr: lightboxContainerDataUrlsAttr(urls),
   };
 }

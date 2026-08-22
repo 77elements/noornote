@@ -83,12 +83,16 @@ export class ErrorService {
 
     // 3. Log to DiagnosticLogger (all errors → crashes.jsonl)
     const isCritical = critical || this.isCriticalError(err);
-    diagLog('crashes', `${isCritical ? 'CRITICAL' : 'Error'}: [${context}] ${err.message}`, {
-      context,
-      error: err.message,
-      stack: err.stack,
-      critical: isCritical
-    });
+    diagLog(
+      'crashes',
+      `${isCritical ? 'CRITICAL' : 'Error'}: [${context}] ${err.message}`,
+      {
+        context,
+        error: err.message,
+        stack: err.stack,
+        critical: isCritical,
+      }
+    );
 
     // 4. Also route critical errors through CrashLogger (adds SystemLogger context)
     if (isCritical) {
@@ -120,7 +124,7 @@ export class ErrorService {
       'upload',
       'media',
       'blob',
-      'file'
+      'file',
     ];
     return criticalPatterns.some(pattern => message.includes(pattern));
   }

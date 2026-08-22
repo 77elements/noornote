@@ -56,7 +56,7 @@ export async function discoverChannelsFromControlPlane(
   communityId: string,
   controlPk: string,
   rootEpoch: number,
-  relays: string[],
+  relays: string[]
 ): Promise<DiscoveredChannel[]> {
   // Read key every member derives (CORD-02 §5). NOTE: this key's .pk is NOT
   // the plane's address — that one comes from the staff-held control_root.
@@ -68,13 +68,18 @@ export async function discoverChannelsFromControlPlane(
   client.destroy();
 
   if (events.length === 0) {
-    diagLog('addons', 'armada: control plane empty on relays', { controlPk: controlPk.slice(0, 12) });
+    diagLog('addons', 'armada: control plane empty on relays', {
+      controlPk: controlPk.slice(0, 12),
+    });
     return [];
   }
 
   // Fold editions per entity: highest version wins (CORD-04 §4 fold).
   // We only need ChannelMetadata (vsk 2) entities.
-  const heads = new Map<string, { version: number; name: string; isPrivate: boolean; deleted: boolean }>();
+  const heads = new Map<
+    string,
+    { version: number; name: string; isPrivate: boolean; deleted: boolean }
+  >();
 
   for (const wrap of events) {
     if (wrap.kind !== KIND_WRAP) continue;
@@ -107,7 +112,9 @@ export async function discoverChannelsFromControlPlane(
         name = typeof meta.name === 'string' ? meta.name : '';
         isPrivate = meta.private === true;
         deleted = meta.deleted === true;
-      } catch { /* malformed content — treat as unnamed, not fatal */ }
+      } catch {
+        /* malformed content — treat as unnamed, not fatal */
+      }
 
       heads.set(channelId, { version, name, isPrivate, deleted });
     } catch {

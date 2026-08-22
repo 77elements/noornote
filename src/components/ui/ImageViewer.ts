@@ -35,7 +35,9 @@ export class ImageViewer {
   private isDragging: boolean = false;
   private dragStart = { x: 0, y: 0 };
   private imagePosition = { x: 0, y: 0 };
-  private sourceEvent: { eventId: string; authorPubkey: string; isNSFW: boolean } | undefined;
+  private sourceEvent:
+    | { eventId: string; authorPubkey: string; isNSFW: boolean }
+    | undefined;
 
   // Bound event handlers for proper cleanup
   private boundMouseMove: ((e: MouseEvent) => void) | null = null;
@@ -86,7 +88,8 @@ export class ImageViewer {
    * Navigate to image at given index, resetting zoom state
    */
   private navigateTo(index: number): void {
-    if (index < 0 || index >= this.images.length || index === this.currentIndex) return;
+    if (index < 0 || index >= this.images.length || index === this.currentIndex)
+      return;
     this.currentIndex = index;
     this.zoomLevel = 1;
     this.imagePosition = { x: 0, y: 0 };
@@ -257,7 +260,9 @@ export class ImageViewer {
   private updateImage(): void {
     if (!this.container) return;
 
-    const img = this.container.querySelector('.image-viewer__image') as HTMLImageElement;
+    const img = this.container.querySelector(
+      '.image-viewer__image'
+    ) as HTMLImageElement;
     const currentSrc = this.images[this.currentIndex];
     if (img && currentSrc) {
       img.src = currentSrc;
@@ -266,8 +271,12 @@ export class ImageViewer {
 
     // Update navigation if multiple images
     if (this.images.length > 1) {
-      const prevBtn = this.container.querySelector('.image-viewer__nav--prev') as HTMLButtonElement;
-      const nextBtn = this.container.querySelector('.image-viewer__nav--next') as HTMLButtonElement;
+      const prevBtn = this.container.querySelector(
+        '.image-viewer__nav--prev'
+      ) as HTMLButtonElement;
+      const nextBtn = this.container.querySelector(
+        '.image-viewer__nav--next'
+      ) as HTMLButtonElement;
       const counter = this.container.querySelector('.image-viewer__counter');
 
       if (prevBtn) {
@@ -277,7 +286,10 @@ export class ImageViewer {
 
       if (nextBtn) {
         nextBtn.disabled = this.currentIndex === this.images.length - 1;
-        nextBtn.classList.toggle('disabled', this.currentIndex === this.images.length - 1);
+        nextBtn.classList.toggle(
+          'disabled',
+          this.currentIndex === this.images.length - 1
+        );
       }
 
       if (counter) {
@@ -292,10 +304,16 @@ export class ImageViewer {
   private attachControlListeners(): void {
     if (!this.container) return;
 
-    const zoomInBtn = this.container.querySelector('.image-viewer__btn--zoom-in');
-    const zoomOutBtn = this.container.querySelector('.image-viewer__btn--zoom-out');
+    const zoomInBtn = this.container.querySelector(
+      '.image-viewer__btn--zoom-in'
+    );
+    const zoomOutBtn = this.container.querySelector(
+      '.image-viewer__btn--zoom-out'
+    );
     const resetBtn = this.container.querySelector('.image-viewer__btn--reset');
-    const downloadBtn = this.container.querySelector('.image-viewer__btn--download');
+    const downloadBtn = this.container.querySelector(
+      '.image-viewer__btn--download'
+    );
     const shareBtn = this.container.querySelector('.image-viewer__btn--share');
     const closeBtn = this.container.querySelector('.image-viewer__btn--close');
 
@@ -320,7 +338,9 @@ export class ImageViewer {
   private attachImageDragListeners(): void {
     if (!this.container) return;
 
-    const img = this.container.querySelector('.image-viewer__image') as HTMLImageElement;
+    const img = this.container.querySelector(
+      '.image-viewer__image'
+    ) as HTMLImageElement;
     if (!img) return;
 
     img.addEventListener('mousedown', (e: MouseEvent) => {
@@ -328,7 +348,7 @@ export class ImageViewer {
         this.isDragging = true;
         this.dragStart = {
           x: e.clientX - this.imagePosition.x,
-          y: e.clientY - this.imagePosition.y
+          y: e.clientY - this.imagePosition.y,
         };
         img.style.cursor = 'grabbing';
       }
@@ -338,7 +358,7 @@ export class ImageViewer {
       if (this.isDragging && this.zoomLevel > 1) {
         this.imagePosition = {
           x: e.clientX - this.dragStart.x,
-          y: e.clientY - this.dragStart.y
+          y: e.clientY - this.dragStart.y,
         };
         this.updateImage();
       }
@@ -374,12 +394,18 @@ export class ImageViewer {
     // Mobile: horizontal swipe navigates between images (mirrors the prev/next
     // buttons). Only when unzoomed, so a pan gesture on a zoomed image is free.
     if (PlatformService.getInstance().isMobile && this.images.length > 1) {
-      const imageContainer = this.container?.querySelector('.image-viewer__image-container') as HTMLElement | null;
+      const imageContainer = this.container?.querySelector(
+        '.image-viewer__image-container'
+      ) as HTMLElement | null;
       if (imageContainer) {
         addSwipeSupport(
           imageContainer,
-          () => { if (this.zoomLevel === 1) this.next(); },
-          () => { if (this.zoomLevel === 1) this.previous(); }
+          () => {
+            if (this.zoomLevel === 1) this.next();
+          },
+          () => {
+            if (this.zoomLevel === 1) this.previous();
+          }
         );
       }
     }
@@ -426,7 +452,6 @@ export class ImageViewer {
         break;
     }
   }
-
 }
 
 // Singleton instance

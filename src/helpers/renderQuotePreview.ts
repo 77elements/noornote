@@ -12,10 +12,13 @@ import { UserProfileService } from '../services/UserProfileService';
 import { escapeHtml, escapeHtmlAttr } from './escapeHtml';
 import { getTag } from './tagUtils';
 
-export async function renderQuotePreview(nostrRef: string): Promise<HTMLElement> {
+export async function renderQuotePreview(
+  nostrRef: string
+): Promise<HTMLElement> {
   const container = document.createElement('div');
   container.className = 'quote-preview';
-  container.innerHTML = '<div class="quote-preview__loading">Loading quoted note...</div>';
+  container.innerHTML =
+    '<div class="quote-preview__loading">Loading quoted note...</div>';
 
   try {
     const cleanRef = nostrRef.replace(/^nostr:/, '');
@@ -32,7 +35,8 @@ export async function renderQuotePreview(nostrRef: string): Promise<HTMLElement>
     throw new Error(`Unsupported reference type: ${decoded.type}`);
   } catch (error) {
     console.debug('Failed to render quote preview:', error);
-    container.innerHTML = '<div class="quote-preview__error">Failed to load quoted note</div>';
+    container.innerHTML =
+      '<div class="quote-preview__error">Failed to load quoted note</div>';
     return container;
   }
 }
@@ -50,17 +54,27 @@ interface NaddrData {
   relays?: string[];
 }
 
-async function renderNeventPreview(container: HTMLElement, data: NeventData): Promise<HTMLElement> {
+async function renderNeventPreview(
+  container: HTMLElement,
+  data: NeventData
+): Promise<HTMLElement> {
   const transport = NostrTransport.getInstance();
   const readRelays = transport.getReadRelays();
   const hintRelays = data.relays || [];
   const allRelays = [...new Set([...readRelays, ...hintRelays])];
 
-  const events = await transport.fetch(allRelays, [{ ids: [data.id], limit: 1 }], 5000, false, 'renderQuotePreview');
+  const events = await transport.fetch(
+    allRelays,
+    [{ ids: [data.id], limit: 1 }],
+    5000,
+    false,
+    'renderQuotePreview'
+  );
 
   const event = events[0];
   if (!event) {
-    container.innerHTML = '<div class="quote-preview__error">Quoted note not found</div>';
+    container.innerHTML =
+      '<div class="quote-preview__error">Quoted note not found</div>';
     return container;
   }
 
@@ -76,7 +90,10 @@ async function renderNeventPreview(container: HTMLElement, data: NeventData): Pr
   return container;
 }
 
-async function renderNaddrPreview(container: HTMLElement, data: NaddrData): Promise<HTMLElement> {
+async function renderNaddrPreview(
+  container: HTMLElement,
+  data: NaddrData
+): Promise<HTMLElement> {
   const transport = NostrTransport.getInstance();
   const readRelays = transport.getReadRelays();
   const hintRelays = data.relays || [];
@@ -84,7 +101,14 @@ async function renderNaddrPreview(container: HTMLElement, data: NaddrData): Prom
 
   const events = await transport.fetch(
     allRelays,
-    [{ kinds: [data.kind], authors: [data.pubkey], '#d': [data.identifier], limit: 1 }],
+    [
+      {
+        kinds: [data.kind],
+        authors: [data.pubkey],
+        '#d': [data.identifier],
+        limit: 1,
+      },
+    ],
     5000,
     false,
     'renderQuotePreview'
@@ -92,25 +116,36 @@ async function renderNaddrPreview(container: HTMLElement, data: NaddrData): Prom
 
   const event = events[0];
   if (!event) {
-    container.innerHTML = '<div class="quote-preview__error">Quoted note not found</div>';
+    container.innerHTML =
+      '<div class="quote-preview__error">Quoted note not found</div>';
     return container;
   }
 
   // Marketplace listings (Kind 30402) → compact listing card preview
   if (data.kind === 30402) {
-    const { parseListingMetadata, formatPrice } = await import('./listingMetadata');
+    const { parseListingMetadata, formatPrice } = await import(
+      './listingMetadata'
+    );
     const meta = parseListingMetadata(event);
-    const priceDisplay = formatPrice(meta.price, meta.priceCurrency, meta.priceFrequency);
+    const priceDisplay = formatPrice(
+      meta.price,
+      meta.priceCurrency,
+      meta.priceFrequency
+    );
     const authorName = await getAuthorName(event.pubkey);
     const firstImage = meta.images[0] || '';
 
     container.className = 'timeline-listing-card timeline-listing-card--quoted';
     container.innerHTML = `
-      ${firstImage ? `
+      ${
+        firstImage
+          ? `
         <div class="timeline-listing-card__image">
           <img src="${escapeHtmlAttr(firstImage)}" alt="" loading="lazy" />
         </div>
-      ` : ''}
+      `
+          : ''
+      }
       <div class="timeline-listing-card__body">
         <div class="timeline-listing-card__seller">
           <span>${escapeHtml(authorName)}</span>
@@ -124,12 +159,15 @@ async function renderNaddrPreview(container: HTMLElement, data: NaddrData): Prom
   }
 
   const authorName = await getAuthorName(event.pubkey);
-  const title = event.tags.find(t => t[0] === 'title')?.[1]
-    || event.tags.find(t => t[0] === 'name')?.[1]
-    || '';
+  const title =
+    event.tags.find(t => t[0] === 'title')?.[1] ||
+    event.tags.find(t => t[0] === 'name')?.[1] ||
+    '';
   const summary = getTag(event.tags, 'summary');
   const displayContent = title
-    ? (summary ? `${title}\n${summary}` : title)
+    ? summary
+      ? `${title}\n${summary}`
+      : title
     : truncateContent(event.content);
 
   container.innerHTML = `
@@ -150,5 +188,5 @@ function truncateContent(content: string): string {
   const lines = content.split('\n');
   const truncated = lines.slice(0, 3).join('\n');
   const isTruncated = lines.length > 3 || truncated.length > 200;
-  return isTruncated ? truncated.slice(0, 200) + '...' : truncated;
+  return isTruncated ? `${truncated.slice(0, 200)}...` : truncated;
 }

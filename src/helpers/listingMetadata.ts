@@ -28,7 +28,13 @@ export interface ListingMetadata {
 }
 
 /** Tag names that may contain image URLs (non-standard clients use various names) */
-const IMAGE_TAG_NAMES = ['image', 'thumb', 'thumbnail', 'featuredImageUrl', 'screenshotsUrls'];
+const IMAGE_TAG_NAMES = [
+  'image',
+  'thumb',
+  'thumbnail',
+  'featuredImageUrl',
+  'screenshotsUrls',
+];
 
 /**
  * Extract images from event tags and content.
@@ -54,7 +60,12 @@ function extractImages(event: NostrEvent): string[] {
 
   // 2. Check `r` tags that look like image URLs
   for (const tag of tags) {
-    if (tag[0] === 'r' && tag[1] && IMAGE_URL_REGEX.test(tag[1]) && !seen.has(tag[1])) {
+    if (
+      tag[0] === 'r' &&
+      tag[1] &&
+      IMAGE_URL_REGEX.test(tag[1]) &&
+      !seen.has(tag[1])
+    ) {
       seen.add(tag[1]);
       images.push(tag[1]);
       IMAGE_URL_REGEX.lastIndex = 0;
@@ -96,8 +107,14 @@ export function parseListingMetadata(event: NostrEvent): ListingMetadata {
     location: getTag(tags, 'location'),
     status: getTag(tags, 'status', 'active'),
     identifier: getTag(tags, 'd'),
-    publishedAt: parseInt(tags.find(t => t[0] === 'published_at')?.[1] || String(event.created_at || 0)),
-    tags: tags.filter(t => t[0] === 't').map(t => t[1]).filter((v): v is string => !!v),
+    publishedAt: parseInt(
+      tags.find(t => t[0] === 'published_at')?.[1] ||
+        String(event.created_at || 0)
+    ),
+    tags: tags
+      .filter(t => t[0] === 't')
+      .map(t => t[1])
+      .filter((v): v is string => !!v),
     geohash: getTag(tags, 'g'),
   };
 }
@@ -106,7 +123,11 @@ export function parseListingMetadata(event: NostrEvent): ListingMetadata {
  * Format price for display
  * Examples: "50 USD", "0.005 BTC", "15 EUR/month"
  */
-export function formatPrice(price: string, currency: string, frequency: string): string {
+export function formatPrice(
+  price: string,
+  currency: string,
+  frequency: string
+): string {
   if (!price) return 'Price not set';
 
   const currencyUpper = currency.toUpperCase();

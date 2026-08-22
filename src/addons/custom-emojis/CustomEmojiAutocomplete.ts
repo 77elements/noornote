@@ -36,7 +36,9 @@ export class CustomEmojiAutocomplete {
 
   /** Resolve the live textarea via the configured selector. */
   private getTextarea(): HTMLTextAreaElement | null {
-    return document.querySelector<HTMLTextAreaElement>(this.options.textareaSelector);
+    return document.querySelector<HTMLTextAreaElement>(
+      this.options.textareaSelector
+    );
   }
 
   /** Initialise event delegation. Idempotent — safe to call repeatedly. */
@@ -46,15 +48,16 @@ export class CustomEmojiAutocomplete {
     // Pre-warm the service so the first lookup is synchronous
     void EmojiService.getInstance().refreshFromRelays();
 
-    this.inputHandler = (e) => {
+    this.inputHandler = e => {
       const target = e.target as HTMLElement | null;
       if (target?.matches?.(this.options.textareaSelector)) this.handleInput();
     };
-    this.keydownHandler = (e) => {
+    this.keydownHandler = e => {
       const target = e.target as HTMLElement | null;
-      if (target?.matches?.(this.options.textareaSelector)) this.handleKeydown(e);
+      if (target?.matches?.(this.options.textareaSelector))
+        this.handleKeydown(e);
     };
-    this.focusoutHandler = (e) => {
+    this.focusoutHandler = e => {
       const target = e.target as HTMLElement | null;
       if (target?.matches?.(this.options.textareaSelector)) {
         setTimeout(() => this.hide(), 200);
@@ -82,7 +85,8 @@ export class CustomEmojiAutocomplete {
     }
 
     // The colon must sit at a word boundary (start of text, space, newline)
-    const charBeforeColon = lastColonIndex > 0 ? textBeforeCursor[lastColonIndex - 1] : ' ';
+    const charBeforeColon =
+      lastColonIndex > 0 ? textBeforeCursor[lastColonIndex - 1] : ' ';
     if (charBeforeColon !== ' ' && charBeforeColon !== '\n') {
       this.hide();
       return;
@@ -91,7 +95,11 @@ export class CustomEmojiAutocomplete {
     const textAfterColon = textBeforeCursor.substring(lastColonIndex + 1);
 
     // If there's a closing colon, space, or newline → not in trigger mode
-    if (textAfterColon.includes(' ') || textAfterColon.includes('\n') || textAfterColon.includes(':')) {
+    if (
+      textAfterColon.includes(' ') ||
+      textAfterColon.includes('\n') ||
+      textAfterColon.includes(':')
+    ) {
       this.hide();
       return;
     }
@@ -173,7 +181,7 @@ export class CustomEmojiAutocomplete {
         <img class="custom-emoji" src="${safeUrl}" alt=":${escapeHtml(emoji.shortcode)}:" loading="lazy" />
         <span class="custom-emojis__autocomplete-code">:${escapeHtml(emoji.shortcode)}:</span>
       `;
-      item.addEventListener('mousedown', (e) => {
+      item.addEventListener('mousedown', e => {
         // mousedown so the textarea blur handler doesn't kill us first
         e.preventDefault();
         this.insertEmoji(emoji);
@@ -187,14 +195,16 @@ export class CustomEmojiAutocomplete {
 
   private updateSelection(): void {
     if (!this.dropdown) return;
-    this.dropdown.querySelectorAll<HTMLElement>('.custom-emojis__autocomplete-item').forEach((el, i) => {
-      if (i === this.selectedIndex) {
-        el.classList.add('selected');
-        el.scrollIntoView({ block: 'nearest' });
-      } else {
-        el.classList.remove('selected');
-      }
-    });
+    this.dropdown
+      .querySelectorAll<HTMLElement>('.custom-emojis__autocomplete-item')
+      .forEach((el, i) => {
+        if (i === this.selectedIndex) {
+          el.classList.add('selected');
+          el.scrollIntoView({ block: 'nearest' });
+        } else {
+          el.classList.remove('selected');
+        }
+      });
   }
 
   private selectNext(): void {
@@ -205,7 +215,9 @@ export class CustomEmojiAutocomplete {
 
   private selectPrevious(): void {
     if (this.suggestions.length === 0) return;
-    this.selectedIndex = (this.selectedIndex - 1 + this.suggestions.length) % this.suggestions.length;
+    this.selectedIndex =
+      (this.selectedIndex - 1 + this.suggestions.length) %
+      this.suggestions.length;
     this.updateSelection();
   }
 
@@ -223,15 +235,28 @@ export class CustomEmojiAutocomplete {
     this.dropdown.style.zIndex = '10000';
   }
 
-  private getCursorCoordinates(textarea: HTMLTextAreaElement): { left: number; top: number; height: number } {
+  private getCursorCoordinates(textarea: HTMLTextAreaElement): {
+    left: number;
+    top: number;
+    height: number;
+  } {
     const mirror = document.createElement('div');
     const computedStyle = window.getComputedStyle(textarea);
 
     [
-      'fontFamily', 'fontSize', 'fontWeight', 'fontStyle',
-      'letterSpacing', 'lineHeight', 'textTransform',
-      'wordSpacing', 'wordWrap', 'whiteSpace',
-      'padding', 'border', 'boxSizing'
+      'fontFamily',
+      'fontSize',
+      'fontWeight',
+      'fontStyle',
+      'letterSpacing',
+      'lineHeight',
+      'textTransform',
+      'wordSpacing',
+      'wordWrap',
+      'whiteSpace',
+      'padding',
+      'border',
+      'boxSizing',
     ].forEach(prop => {
       const value = computedStyle[prop as any];
       if (value !== undefined) {
@@ -300,9 +325,12 @@ export class CustomEmojiAutocomplete {
 
   public destroy(): void {
     this.hide();
-    if (this.inputHandler) document.removeEventListener('input', this.inputHandler, true);
-    if (this.keydownHandler) document.removeEventListener('keydown', this.keydownHandler, true);
-    if (this.focusoutHandler) document.removeEventListener('focusout', this.focusoutHandler, true);
+    if (this.inputHandler)
+      document.removeEventListener('input', this.inputHandler, true);
+    if (this.keydownHandler)
+      document.removeEventListener('keydown', this.keydownHandler, true);
+    if (this.focusoutHandler)
+      document.removeEventListener('focusout', this.focusoutHandler, true);
     this.inputHandler = null;
     this.keydownHandler = null;
     this.focusoutHandler = null;

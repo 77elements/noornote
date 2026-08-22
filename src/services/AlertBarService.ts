@@ -77,13 +77,17 @@ export class AlertBarService {
         <span class="alert-bar__text" data-text>${escapeHtml(config.text)}</span>
         <div class="alert-bar__actions">
           <a class="alert-bar__link" data-ok role="button" tabindex="0">Ok</a>
-          ${config.onSnooze ? `
+          ${
+            config.onSnooze
+              ? `
           <div class="alert-bar__snooze">
             <a class="alert-bar__link" data-snooze-toggle role="button" tabindex="0">Notify again in &#9662;</a>
             <div class="alert-bar__snooze-menu" data-snooze-menu hidden>
-              ${snooze.map((o) => `<a class="alert-bar__snooze-option" role="button" tabindex="0" data-min="${o.minutes}">${escapeHtml(o.label)}</a>`).join('')}
+              ${snooze.map(o => `<a class="alert-bar__snooze-option" role="button" tabindex="0" data-min="${o.minutes}">${escapeHtml(o.label)}</a>`).join('')}
             </div>
-          </div>` : ''}
+          </div>`
+              : ''
+          }
         </div>
       </div>
     `;
@@ -102,21 +106,25 @@ export class AlertBarService {
     });
 
     // Snooze pulldown.
-    const toggle = bar.querySelector('[data-snooze-toggle]') as HTMLElement | null;
+    const toggle = bar.querySelector(
+      '[data-snooze-toggle]'
+    ) as HTMLElement | null;
     const menu = bar.querySelector('[data-snooze-menu]') as HTMLElement | null;
     if (toggle && menu) {
-      toggle.addEventListener('click', (e) => {
+      toggle.addEventListener('click', e => {
         e.stopPropagation();
         menu.hidden = !menu.hidden;
       });
-      menu.querySelectorAll('[data-min]').forEach((opt) => {
+      menu.querySelectorAll('[data-min]').forEach(opt => {
         opt.addEventListener('click', () => {
           const minutes = Number((opt as HTMLElement).dataset.min);
           config.onSnooze?.(minutes);
           this.next();
         });
       });
-      this.outsideClick = () => { menu.hidden = true; };
+      this.outsideClick = () => {
+        menu.hidden = true;
+      };
       document.addEventListener('click', this.outsideClick);
     }
 
@@ -124,7 +132,10 @@ export class AlertBarService {
     this.barEl = bar;
     // Expose the (dynamic, mobile-stacked) bar height so the fixed mobile header
     // can sit below the bar instead of overlapping it.
-    document.documentElement.style.setProperty('--alert-bar-h', `${bar.offsetHeight}px`);
+    document.documentElement.style.setProperty(
+      '--alert-bar-h',
+      `${bar.offsetHeight}px`
+    );
   }
 
   private teardown(): void {

@@ -17,9 +17,12 @@ export class FontSizeSwitcher {
     this.element = this.createElement();
     this.updateButtonStates();
 
-    this.subscription = TypedEventBus.getInstance().on('font-size:changed', () => {
-      this.updateButtonStates();
-    });
+    this.subscription = TypedEventBus.getInstance().on(
+      'font-size:changed',
+      () => {
+        this.updateButtonStates();
+      }
+    );
   }
 
   private createElement(): HTMLElement {
@@ -31,10 +34,12 @@ export class FontSizeSwitcher {
       <button class="btn btn--secondary btn--square font-size-switcher__btn--increase" type="button" title="Increase font size">+</button>
     `;
 
-    container.querySelector('.font-size-switcher__btn--decrease')!
+    container
+      .querySelector('.font-size-switcher__btn--decrease')!
       .addEventListener('click', () => this.fontSizeService.cycleDown());
 
-    container.querySelector('.font-size-switcher__btn--increase')!
+    container
+      .querySelector('.font-size-switcher__btn--increase')!
       .addEventListener('click', () => this.fontSizeService.cycleUp());
 
     return container;
@@ -42,8 +47,12 @@ export class FontSizeSwitcher {
 
   private updateButtonStates(): void {
     const scale = this.fontSizeService.getScale();
-    const dec = this.element.querySelector('.font-size-switcher__btn--decrease') as HTMLButtonElement;
-    const inc = this.element.querySelector('.font-size-switcher__btn--increase') as HTMLButtonElement;
+    const dec = this.element.querySelector(
+      '.font-size-switcher__btn--decrease'
+    ) as HTMLButtonElement;
+    const inc = this.element.querySelector(
+      '.font-size-switcher__btn--increase'
+    ) as HTMLButtonElement;
     if (dec) dec.disabled = scale === 'small';
     if (inc) inc.disabled = scale === 'x-large';
   }

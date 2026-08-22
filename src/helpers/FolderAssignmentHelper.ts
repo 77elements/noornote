@@ -49,13 +49,19 @@ export async function applyFolderAssignments(
   // createFolder and resurrect the folder. Its items are routed to root below.
   for (const categoryName of categoriesWithItems) {
     if (isTombstoned?.(categoryName)) {
-      systemLogger.info(logCategory, `Skipped tombstoned folder from relay: "${categoryName}"`);
+      systemLogger.info(
+        logCategory,
+        `Skipped tombstoned folder from relay: "${categoryName}"`
+      );
       continue;
     }
     const existingFolder = existingFolders.find(f => f.name === categoryName);
     if (!existingFolder) {
       folderService.createFolder(categoryName);
-      systemLogger.info(logCategory, `Created folder from relay: "${categoryName}"`);
+      systemLogger.info(
+        logCategory,
+        `Created folder from relay: "${categoryName}"`
+      );
     }
   }
 
@@ -74,5 +80,8 @@ export async function applyFolderAssignments(
     }
   }
 
-  systemLogger.info(logCategory, `Restored ${categoriesWithItems.size} folders from relays`);
+  systemLogger.info(
+    logCategory,
+    `Restored ${categoriesWithItems.size} folders from relays`
+  );
 }

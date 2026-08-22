@@ -43,8 +43,11 @@ export class NoteEditorModal {
     content.className = 'note-taking-editor';
 
     this.toolbar = new MarkdownToolbar({
-      getTextarea: () => content.querySelector('.note-taking-editor__body') as HTMLTextAreaElement | null,
-      onImageUpload: (file) => this.uploadImage(file),
+      getTextarea: () =>
+        content.querySelector(
+          '.note-taking-editor__body'
+        ) as HTMLTextAreaElement | null,
+      onImageUpload: file => this.uploadImage(file),
     });
 
     content.innerHTML = `
@@ -61,7 +64,7 @@ export class NoteEditorModal {
         <input type="text" class="input note-taking-editor__label-input" placeholder="Add label and press Enter…" data-label-input />
       </div>
       <div class="note-taking-editor__colors" data-colors>
-        ${NOTE_COLORS.map((c) => `<button type="button" class="note-taking-swatch note-taking-color-${c}${c === this.color ? ' is-active' : ''}" data-color="${c}" title="${c}" aria-label="${c} color"></button>`).join('')}
+        ${NOTE_COLORS.map(c => `<button type="button" class="note-taking-swatch note-taking-color-${c}${c === this.color ? ' is-active' : ''}" data-color="${c}" title="${c}" aria-label="${c} color"></button>`).join('')}
       </div>
       <div class="note-taking-editor__reminder-hint" data-reminder-hint></div>
       <div class="note-taking-editor__actions l-row--split">
@@ -72,13 +75,17 @@ export class NoteEditorModal {
           <button type="button" class="btn-icon note-taking-editor__reminder${this.reminderAt ? ' is-active' : ''}" title="Set reminder" aria-label="Set reminder">
             <svg width="18" height="18"><use href="#icon-calendar"/></svg>
           </button>
-          ${note ? `
+          ${
+            note
+              ? `
           <button type="button" class="btn-icon note-taking-editor__archive${this.archived ? ' is-active' : ''}" title="${this.archived ? 'Unarchive' : 'Archive'}" aria-label="${this.archived ? 'Unarchive' : 'Archive'}">
             <svg width="18" height="18"><use href="#icon-folder"/></svg>
           </button>
           <button type="button" class="btn-icon note-taking-editor__delete" title="Delete note" aria-label="Delete note">
             <svg width="18" height="18"><use href="#icon-trash"/></svg>
-          </button>` : ''}
+          </button>`
+              : ''
+          }
         </div>
         <div>
           <button type="button" class="btn note-taking-editor__save">Save</button>
@@ -86,21 +93,32 @@ export class NoteEditorModal {
       </div>
     `;
 
-    const toolbarRoot = content.querySelector('.md-toolbar') as HTMLElement | null;
+    const toolbarRoot = content.querySelector(
+      '.md-toolbar'
+    ) as HTMLElement | null;
     if (toolbarRoot) this.toolbar.attach(toolbarRoot);
 
     // Paste-to-upload: pasted images go through the same upload + markdown-insert path.
-    const noteBody = content.querySelector('.note-taking-editor__body') as HTMLElement | null;
-    if (noteBody) setupPasteUpload(noteBody, files => files.forEach(f => void this.toolbar?.handleImageUpload(f)));
+    const noteBody = content.querySelector(
+      '.note-taking-editor__body'
+    ) as HTMLElement | null;
+    if (noteBody)
+      setupPasteUpload(noteBody, files =>
+        files.forEach(f => void this.toolbar?.handleImageUpload(f))
+      );
 
-    const pinBtn = content.querySelector('.note-taking-editor__pin') as HTMLButtonElement;
+    const pinBtn = content.querySelector(
+      '.note-taking-editor__pin'
+    ) as HTMLButtonElement;
     pinBtn.addEventListener('click', () => {
       this.pinned = !this.pinned;
       pinBtn.classList.toggle('is-active', this.pinned);
       pinBtn.blur(); // drop focus so .btn-icon:focus green doesn't mask the toggle state
     });
 
-    const archiveBtn = content.querySelector('.note-taking-editor__archive') as HTMLButtonElement | null;
+    const archiveBtn = content.querySelector(
+      '.note-taking-editor__archive'
+    ) as HTMLButtonElement | null;
     archiveBtn?.addEventListener('click', () => {
       this.archived = !this.archived;
       archiveBtn.classList.toggle('is-active', this.archived);
@@ -111,12 +129,16 @@ export class NoteEditorModal {
     });
 
     // Reminder: pick a date+time with the shared picker; show a hint with Clear.
-    const reminderBtn = content.querySelector('.note-taking-editor__reminder') as HTMLButtonElement;
+    const reminderBtn = content.querySelector(
+      '.note-taking-editor__reminder'
+    ) as HTMLButtonElement;
     reminderBtn.addEventListener('click', async () => {
       const { pickDateTime } = await import('../../helpers/datePickerModal');
       const picked = await pickDateTime({
         title: 'Set reminder',
-        initial: this.reminderAt ? new Date(this.reminderAt * 1000) : new Date(Date.now() + 60 * 60 * 1000),
+        initial: this.reminderAt
+          ? new Date(this.reminderAt * 1000)
+          : new Date(Date.now() + 60 * 60 * 1000),
         min: new Date(Date.now() + 60 * 1000),
         confirmLabel: 'Set',
         anchorEl: reminderBtn,
@@ -130,16 +152,18 @@ export class NoteEditorModal {
 
     // Checklist: render existing items, wire "Add item".
     const list = content.querySelector('[data-checklist]') as HTMLElement;
-    (note?.checklist ?? []).forEach((item) => this.addChecklistRow(list, item));
+    (note?.checklist ?? []).forEach(item => this.addChecklistRow(list, item));
     content.querySelector('[data-add-item]')?.addEventListener('click', () => {
       this.addChecklistRow(list, { text: '', checked: false }, true);
     });
 
     // Labels: render existing chips, add on Enter / comma.
     const chips = content.querySelector('[data-label-chips]') as HTMLElement;
-    (note?.labels ?? []).forEach((label) => this.addLabelChip(chips, label));
-    const labelInput = content.querySelector('[data-label-input]') as HTMLInputElement;
-    labelInput.addEventListener('keydown', (e) => {
+    (note?.labels ?? []).forEach(label => this.addLabelChip(chips, label));
+    const labelInput = content.querySelector(
+      '[data-label-input]'
+    ) as HTMLInputElement;
+    labelInput.addEventListener('keydown', e => {
       if (e.key === 'Enter' || e.key === ',') {
         e.preventDefault();
         const value = labelInput.value.trim().replace(/,+$/, '').trim();
@@ -151,16 +175,26 @@ export class NoteEditorModal {
     });
 
     // Color swatches: select one, highlight it.
-    content.querySelectorAll('.note-taking-swatch').forEach((swatch) => {
+    content.querySelectorAll('.note-taking-swatch').forEach(swatch => {
       swatch.addEventListener('click', () => {
         this.color = (swatch as HTMLElement).dataset.color || 'default';
-        content.querySelectorAll('.note-taking-swatch').forEach((s) =>
-          s.classList.toggle('is-active', (s as HTMLElement).dataset.color === this.color));
+        content
+          .querySelectorAll('.note-taking-swatch')
+          .forEach(s =>
+            s.classList.toggle(
+              'is-active',
+              (s as HTMLElement).dataset.color === this.color
+            )
+          );
       });
     });
 
-    content.querySelector('.note-taking-editor__delete')?.addEventListener('click', () => this.handleDelete());
-    content.querySelector('.note-taking-editor__save')?.addEventListener('click', () => this.handleSave(content));
+    content
+      .querySelector('.note-taking-editor__delete')
+      ?.addEventListener('click', () => this.handleDelete());
+    content
+      .querySelector('.note-taking-editor__save')
+      ?.addEventListener('click', () => this.handleSave(content));
 
     ModalService.getInstance().show({
       title: note ? 'Edit note' : 'New note',
@@ -172,11 +206,17 @@ export class NoteEditorModal {
       },
     });
 
-    (content.querySelector('.note-taking-editor__title') as HTMLInputElement)?.focus();
+    (
+      content.querySelector('.note-taking-editor__title') as HTMLInputElement
+    )?.focus();
   }
 
   /** Append a checklist row (checkbox + text + remove). */
-  private addChecklistRow(list: HTMLElement, item: NoteChecklistItem, focus = false): void {
+  private addChecklistRow(
+    list: HTMLElement,
+    item: NoteChecklistItem,
+    focus = false
+  ): void {
     const row = document.createElement('div');
     row.className = 'note-taking-checklist-row';
     row.innerHTML = `
@@ -186,14 +226,23 @@ export class NoteEditorModal {
         <svg width="14" height="14"><use href="#icon-close"/></svg>
       </button>
     `;
-    row.querySelector('.note-taking-checklist-row__remove')?.addEventListener('click', () => row.remove());
+    row
+      .querySelector('.note-taking-checklist-row__remove')
+      ?.addEventListener('click', () => row.remove());
     list.appendChild(row);
-    if (focus) (row.querySelector('.note-taking-checklist-row__text') as HTMLInputElement)?.focus();
+    if (focus)
+      (
+        row.querySelector(
+          '.note-taking-checklist-row__text'
+        ) as HTMLInputElement
+      )?.focus();
   }
 
   /** Append a label chip (text + remove), de-duplicated. */
   private addLabelChip(container: HTMLElement, label: string): void {
-    const existing = Array.from(container.querySelectorAll('.note-taking-label-chip__text')).map((e) => e.textContent);
+    const existing = Array.from(
+      container.querySelectorAll('.note-taking-label-chip__text')
+    ).map(e => e.textContent);
     if (existing.includes(label)) return;
     const chip = document.createElement('span');
     chip.className = 'note-taking-label-chip';
@@ -203,30 +252,44 @@ export class NoteEditorModal {
         <svg width="12" height="12"><use href="#icon-close"/></svg>
       </button>
     `;
-    chip.querySelector('.note-taking-label-chip__remove')?.addEventListener('click', () => chip.remove());
+    chip
+      .querySelector('.note-taking-label-chip__remove')
+      ?.addEventListener('click', () => chip.remove());
     container.appendChild(chip);
   }
 
   private collectLabels(content: HTMLElement): string[] {
     return Array.from(content.querySelectorAll('.note-taking-label-chip__text'))
-      .map((e) => (e.textContent || '').trim())
+      .map(e => (e.textContent || '').trim())
       .filter(Boolean);
   }
 
   /** Read checklist rows back into items, dropping blanks. */
   private collectChecklist(content: HTMLElement): NoteChecklistItem[] {
     return Array.from(content.querySelectorAll('.note-taking-checklist-row'))
-      .map((row) => ({
-        text: (row.querySelector('.note-taking-checklist-row__text') as HTMLInputElement).value.trim(),
-        checked: (row.querySelector('.note-taking-checklist-row__check') as HTMLInputElement).checked,
+      .map(row => ({
+        text: (
+          row.querySelector(
+            '.note-taking-checklist-row__text'
+          ) as HTMLInputElement
+        ).value.trim(),
+        checked: (
+          row.querySelector(
+            '.note-taking-checklist-row__check'
+          ) as HTMLInputElement
+        ).checked,
       }))
-      .filter((item) => item.text.length > 0);
+      .filter(item => item.text.length > 0);
   }
 
   /** Show "Reminder: <when>" + Clear when a reminder is set; sync the button state. */
   private renderReminderHint(content: HTMLElement): void {
-    const hint = content.querySelector('[data-reminder-hint]') as HTMLElement | null;
-    const btn = content.querySelector('.note-taking-editor__reminder') as HTMLButtonElement | null;
+    const hint = content.querySelector(
+      '[data-reminder-hint]'
+    ) as HTMLElement | null;
+    const btn = content.querySelector(
+      '.note-taking-editor__reminder'
+    ) as HTMLButtonElement | null;
     if (!hint) return;
     btn?.classList.toggle('is-active', this.reminderAt > 0);
     if (!this.reminderAt) {
@@ -238,15 +301,21 @@ export class NoteEditorModal {
       <span>Reminder: ${escapeHtml(when)}</span>
       <button type="button" class="note-taking-editor__reminder-clear" data-reminder-clear>Clear</button>
     `;
-    hint.querySelector('[data-reminder-clear]')?.addEventListener('click', () => {
-      this.reminderAt = 0;
-      this.renderReminderHint(content);
-    });
+    hint
+      .querySelector('[data-reminder-clear]')
+      ?.addEventListener('click', () => {
+        this.reminderAt = 0;
+        this.renderReminderHint(content);
+      });
   }
 
   private async handleSave(content: HTMLElement): Promise<void> {
-    const title = (content.querySelector('.note-taking-editor__title') as HTMLInputElement).value.trim();
-    const body = (content.querySelector('.note-taking-editor__body') as HTMLTextAreaElement).value;
+    const title = (
+      content.querySelector('.note-taking-editor__title') as HTMLInputElement
+    ).value.trim();
+    const body = (
+      content.querySelector('.note-taking-editor__body') as HTMLTextAreaElement
+    ).value;
     const checklist = this.collectChecklist(content);
     const labels = this.collectLabels(content);
 
@@ -258,9 +327,27 @@ export class NoteEditorModal {
 
     const service = NoteTakingService.getInstance();
     if (this.opts.note) {
-      await service.updateNote(this.opts.note.id, { title, body, pinned: this.pinned, archived: this.archived, color: this.color, reminderAt: this.reminderAt, checklist, labels });
+      await service.updateNote(this.opts.note.id, {
+        title,
+        body,
+        pinned: this.pinned,
+        archived: this.archived,
+        color: this.color,
+        reminderAt: this.reminderAt,
+        checklist,
+        labels,
+      });
     } else {
-      await service.createNote({ title, body, pinned: this.pinned, archived: this.archived, color: this.color, reminderAt: this.reminderAt, checklist, labels });
+      await service.createNote({
+        title,
+        body,
+        pinned: this.pinned,
+        archived: this.archived,
+        color: this.color,
+        reminderAt: this.reminderAt,
+        checklist,
+        labels,
+      });
     }
 
     ModalService.getInstance().hide();

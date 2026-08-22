@@ -7,7 +7,11 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { ProcessedNote } from '../types/NoteTypes';
 import type { MediaContent } from '../../../helpers/renderMediaContent';
 import { ContentProcessor } from '../../../services/ContentProcessor';
-import { escapeHtml, escapeHtmlAttr, safeHttpUrl } from '../../../helpers/escapeHtml';
+import {
+  escapeHtml,
+  escapeHtmlAttr,
+  safeHttpUrl,
+} from '../../../helpers/escapeHtml';
 import { getTag } from '../../../helpers/tagUtils';
 
 export class FileMetadataProcessor {
@@ -19,12 +23,16 @@ export class FileMetadataProcessor {
       throw new Error('Event ID is required');
     }
 
-    const authorProfile = FileMetadataProcessor.contentProcessor.getNonBlockingProfile(event.pubkey);
+    const authorProfile =
+      FileMetadataProcessor.contentProcessor.getNonBlockingProfile(
+        event.pubkey
+      );
 
-    const processedContent = FileMetadataProcessor.contentProcessor.processContentWithTags(
-      event.content,
-      event.tags
-    );
+    const processedContent =
+      FileMetadataProcessor.contentProcessor.processContentWithTags(
+        event.content,
+        event.tags
+      );
 
     FileMetadataProcessor.prependFileContent(processedContent, event.tags);
 
@@ -33,17 +41,17 @@ export class FileMetadataProcessor {
       type: 'original',
       timestamp: event.created_at,
       author: {
-        pubkey: event.pubkey
+        pubkey: event.pubkey,
       },
       content: processedContent,
-      rawEvent: event
+      rawEvent: event,
     };
 
     if (authorProfile) {
       result.author.profile = {
         name: authorProfile.name,
         display_name: authorProfile.display_name,
-        picture: authorProfile.picture
+        picture: authorProfile.picture,
       };
     }
 
@@ -54,7 +62,10 @@ export class FileMetadataProcessor {
    * Extract file info from NIP-94 tags and prepend media or download link
    * Tags: ["url", "https://..."], ["m", "video/mp4"], ["dim", "1920x1080"], ["alt", "..."], ["size", "12345"]
    */
-  static prependFileContent(processedContent: import('../../../services/ContentProcessor').ProcessedContent, tags: string[][]): void {
+  static prependFileContent(
+    processedContent: import('../../../services/ContentProcessor').ProcessedContent,
+    tags: string[][]
+  ): void {
     const url = tags.find(tag => tag[0] === 'url')?.[1];
     if (!url) return;
 
@@ -67,7 +78,10 @@ export class FileMetadataProcessor {
     let dimensions: { width: number; height: number } | undefined;
     const dimMatch = dimTag.match(/^(\d+)x(\d+)$/);
     if (dimMatch) {
-      dimensions = { width: parseInt(dimMatch[1]!), height: parseInt(dimMatch[2]!) };
+      dimensions = {
+        width: parseInt(dimMatch[1]!),
+        height: parseInt(dimMatch[2]!),
+      };
     }
 
     let html = '';
@@ -89,7 +103,9 @@ export class FileMetadataProcessor {
     } else {
       // Non-media file: render as download link
       const fileName = FileMetadataProcessor.extractFileName(url);
-      const sizeStr = size ? ` (${FileMetadataProcessor.formatFileSize(parseInt(size))})` : '';
+      const sizeStr = size
+        ? ` (${FileMetadataProcessor.formatFileSize(parseInt(size))})`
+        : '';
       const safeUrl = safeHttpUrl(url);
       html += safeUrl
         ? `<div class="file-metadata-download"><a href="${escapeHtmlAttr(safeUrl)}" target="_blank" rel="noopener noreferrer" class="btn">&#x1F4CE; ${escapeHtml(fileName)}${sizeStr}</a></div>`
@@ -102,7 +118,10 @@ export class FileMetadataProcessor {
   /**
    * Determine media type from MIME type, with URL extension fallback
    */
-  private static getMediaType(mimeType: string, url: string): 'image' | 'video' | 'audio' | null {
+  private static getMediaType(
+    mimeType: string,
+    url: string
+  ): 'image' | 'video' | 'audio' | null {
     if (mimeType) {
       if (mimeType.startsWith('image/')) return 'image';
       if (mimeType.startsWith('video/')) return 'video';
@@ -113,9 +132,11 @@ export class FileMetadataProcessor {
     const ext = url.split('.').pop()?.toLowerCase().split('?')[0];
     if (!ext) return null;
 
-    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'avif'].includes(ext)) return 'image';
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'avif'].includes(ext))
+      return 'image';
     if (['mp4', 'webm', 'mov', 'avi', 'mkv'].includes(ext)) return 'video';
-    if (['mp3', 'wav', 'ogg', 'flac', 'm4a', 'aac', 'opus'].includes(ext)) return 'audio';
+    if (['mp3', 'wav', 'ogg', 'flac', 'm4a', 'aac', 'opus'].includes(ext))
+      return 'audio';
 
     return null;
   }
@@ -134,7 +155,8 @@ export class FileMetadataProcessor {
     if (isNaN(bytes) || bytes <= 0) return '';
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    if (bytes < 1024 * 1024 * 1024)
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
     return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
   }
 }

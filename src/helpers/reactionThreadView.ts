@@ -18,7 +18,10 @@ import { CustomDropdown } from '../components/ui/CustomDropdown';
 import { AuthGuard } from '../services/AuthGuard';
 import { UserProfileService } from '../services/UserProfileService';
 import { resolveReactionEmoji } from './formatCustomEmojis';
-import { renderUserMention, type UserMentionProfile } from './UserMentionHelper';
+import {
+  renderUserMention,
+  type UserMentionProfile,
+} from './UserMentionHelper';
 import { escapeHtml } from './escapeHtml';
 import { isCustomEmojisEnabled } from '../addons/custom-emojis/index';
 import type { CustomEmojiEntry } from '../components/emoji/EmojiPicker';
@@ -53,30 +56,41 @@ function sameEmojiContent(event: NostrEvent): string {
   return c === '' ? '+' : c;
 }
 
-function customEmojiTag(event: NostrEvent): [string, string, string] | undefined {
+function customEmojiTag(
+  event: NostrEvent
+): [string, string, string] | undefined {
   const t = event.tags.find(x => x[0] === 'emoji' && !!x[1] && !!x[2]);
   return t ? ['emoji', t[1]!, t[2]!] : undefined;
 }
 
 /** Every pubkey that appears anywhere in the tree (for name prefetching). */
-export function collectTreePubkeys(tree: Map<string, NostrEvent[]>): Set<string> {
+export function collectTreePubkeys(
+  tree: Map<string, NostrEvent[]>
+): Set<string> {
   const set = new Set<string>();
   tree.forEach(children => children.forEach(c => set.add(c.pubkey)));
   return set;
 }
 
 /** Fetch display profiles for the given pubkeys (never rejects per entry). */
-export async function buildReactionProfileMap(pubkeys: Iterable<string>): Promise<Map<string, UserMentionProfile>> {
+export async function buildReactionProfileMap(
+  pubkeys: Iterable<string>
+): Promise<Map<string, UserMentionProfile>> {
   const svc = UserProfileService.getInstance();
   const map = new Map<string, UserMentionProfile>();
-  await Promise.all([...new Set(pubkeys)].map(async pk => {
-    try {
-      const p = await svc.getUserProfile(pk);
-      map.set(pk, { username: p.display_name || p.name || p.username || 'Anonymous', avatarUrl: p.picture || '' });
-    } catch {
-      map.set(pk, { username: 'Anonymous', avatarUrl: '' });
-    }
-  }));
+  await Promise.all(
+    [...new Set(pubkeys)].map(async pk => {
+      try {
+        const p = await svc.getUserProfile(pk);
+        map.set(pk, {
+          username: p.display_name || p.name || p.username || 'Anonymous',
+          avatarUrl: p.picture || '',
+        });
+      } catch {
+        map.set(pk, { username: 'Anonymous', avatarUrl: '' });
+      }
+    })
+  );
   return map;
 }
 
@@ -86,7 +100,10 @@ export async function buildReactionProfileMap(pubkeys: Iterable<string>): Promis
  * it's a no-op with a mouse. Solves the mobile case where the thin ">" toggle is
  * nearly impossible to hit with a finger — long-press anywhere on the pill.
  */
-export function attachThreadLongPress(pill: HTMLElement, onLongPress: () => void): void {
+export function attachThreadLongPress(
+  pill: HTMLElement,
+  onLongPress: () => void
+): void {
   let timer: number | null = null;
   let longPressed = false;
   const cancel = () => {
@@ -96,15 +113,19 @@ export function attachThreadLongPress(pill: HTMLElement, onLongPress: () => void
     }
   };
 
-  pill.addEventListener('touchstart', () => {
-    longPressed = false;
-    timer = window.setTimeout(() => {
-      longPressed = true;
-      onLongPress();
-    }, 500);
-  }, { passive: true });
+  pill.addEventListener(
+    'touchstart',
+    () => {
+      longPressed = false;
+      timer = window.setTimeout(() => {
+        longPressed = true;
+        onLongPress();
+      }, 500);
+    },
+    { passive: true }
+  );
 
-  pill.addEventListener('touchend', (e) => {
+  pill.addEventListener('touchend', e => {
     cancel();
     if (longPressed) {
       // Suppress the synthetic click so the pulldown doesn't also open.
@@ -122,7 +143,7 @@ async function reactWithSame(
   targetNoteId: string,
   targetAuthor: string,
   targetEvent: NostrEvent | undefined,
-  ctx: ReactionThreadContext,
+  ctx: ReactionThreadContext
 ): Promise<void> {
   if (!AuthGuard.requireAuth('react to reaction')) return;
   const tag = customEmojiTag(reaction);
@@ -138,7 +159,7 @@ async function reactWithSame(
 async function reactToReaction(
   reaction: NostrEvent,
   triggerEl: HTMLElement,
-  ctx: ReactionThreadContext,
+  ctx: ReactionThreadContext
 ): Promise<void> {
   if (!AuthGuard.requireAuth('react to reaction')) return;
 
@@ -147,7 +168,9 @@ async function reactToReaction(
   let customEmojis: CustomEmojiEntry[] | undefined;
   if (isCustomEmojisEnabled()) {
     try {
-      const { EmojiService } = await import('../addons/custom-emojis/EmojiService');
+      const { EmojiService } = await import(
+        '../addons/custom-emojis/EmojiService'
+      );
       const service = EmojiService.getInstance();
       void service.refreshFromRelays();
       customEmojis = service.getEmojis();
@@ -160,7 +183,7 @@ async function reactToReaction(
   const picker = new EmojiPicker({
     triggerElement: triggerEl,
     ...(customEmojis ? { customEmojis } : {}),
-    onSelect: async (emoji) => {
+    onSelect: async emoji => {
       picker.destroy();
       await ctx.reactionsApi?.publishReaction({
         noteId: reaction.id!,
@@ -169,7 +192,7 @@ async function reactToReaction(
         targetEvent: reaction,
       });
     },
-    onCustomSelect: async (entry) => {
+    onCustomSelect: async entry => {
       picker.destroy();
       await ctx.reactionsApi?.publishReaction({
         noteId: reaction.id!,
@@ -196,7 +219,7 @@ export function buildEmojiMenu(
   targetEvent: NostrEvent | undefined,
   emojiHtml: string,
   ctx: ReactionThreadContext,
-  extraHtml?: string,
+  extraHtml?: string
 ): HTMLElement {
   const dd = new CustomDropdown({
     options: [
@@ -205,9 +228,17 @@ export function buildEmojiMenu(
     ],
     selectedValue: '',
     className: 'reaction-menu',
-    onChange: (value) => {
-      if (value === 'same') void reactWithSame(reaction, targetNoteId, targetAuthor, targetEvent, ctx);
-      else if (value === 'to') void reactToReaction(reaction, dd.getElement(), ctx);
+    onChange: value => {
+      if (value === 'same')
+        void reactWithSame(
+          reaction,
+          targetNoteId,
+          targetAuthor,
+          targetEvent,
+          ctx
+        );
+      else if (value === 'to')
+        void reactToReaction(reaction, dd.getElement(), ctx);
     },
   });
   ctx.dropdowns.push(dd);
@@ -218,7 +249,8 @@ export function buildEmojiMenu(
   // the affordance, exactly like the repost menu shows just its icon. Emoji and
   // the optional count each get their own element so they align cleanly.
   // (Off-screen flipping is handled centrally by CustomDropdown.positionMenu.)
-  if (trigger) trigger.innerHTML = `<span class="reaction-menu__emoji">${emojiHtml}</span>${extraHtml ?? ''}`; // security-ok: emojiHtml escaped via reactionDisplayEmoji, extraHtml is a numeric count span
+  if (trigger)
+    trigger.innerHTML = `<span class="reaction-menu__emoji">${emojiHtml}</span>${extraHtml ?? ''}`; // security-ok: emojiHtml escaped via reactionDisplayEmoji, extraHtml is a numeric count span
   return el;
 }
 
@@ -229,9 +261,9 @@ export function buildEmojiMenu(
 export function buildChildrenContainer(
   parent: NostrEvent,
   ctx: ReactionThreadContext,
-  depth = 0,
+  depth = 0
 ): HTMLElement | null {
-  const children = parent.id ? ctx.tree.get(parent.id) ?? [] : [];
+  const children = parent.id ? (ctx.tree.get(parent.id) ?? []) : [];
   if (children.length === 0 || depth >= MAX_RENDER_DEPTH) return null;
 
   const wrap = document.createElement('div');
@@ -251,7 +283,7 @@ function buildNodeRow(
   reaction: NostrEvent,
   targetEvent: NostrEvent,
   ctx: ReactionThreadContext,
-  depth: number,
+  depth: number
 ): HTMLElement {
   const node = document.createElement('div');
   node.className = 'reaction-node';
@@ -281,9 +313,21 @@ function buildNodeRow(
     row.appendChild(spacer);
   }
 
-  row.appendChild(buildEmojiMenu(reaction, targetEvent.id!, targetEvent.pubkey, targetEvent, reactionDisplayEmoji(reaction), ctx));
+  row.appendChild(
+    buildEmojiMenu(
+      reaction,
+      targetEvent.id!,
+      targetEvent.pubkey,
+      targetEvent,
+      reactionDisplayEmoji(reaction),
+      ctx
+    )
+  );
 
-  const profile = ctx.profiles.get(reaction.pubkey) || { username: 'Anonymous', avatarUrl: '' };
+  const profile = ctx.profiles.get(reaction.pubkey) || {
+    username: 'Anonymous',
+    avatarUrl: '',
+  };
   const user = document.createElement('span');
   user.className = 'reaction-node__user';
   user.innerHTML = `(${renderUserMention(reaction.pubkey, profile)})`; // security-ok: renderUserMention returns escaped, trusted markup

@@ -8,10 +8,10 @@ import { ReactionsOrchestrator } from './orchestration/ReactionsOrchestrator';
 
 export interface InteractionStats {
   replies: number;
-  reposts: number;      // Regular reposts (kind 6 without 'q' tag)
+  reposts: number; // Regular reposts (kind 6 without 'q' tag)
   quotedReposts: number; // Quoted reposts (kind 6 with 'q' tag)
-  likes: number;         // Reactions (kind 7 with content '+')
-  zaps: number;          // Zap receipts (kind 9735)
+  likes: number; // Reactions (kind 7 with content '+')
+  zaps: number; // Zap receipts (kind 9735)
   lastUpdated: number;
 }
 
@@ -35,7 +35,10 @@ export class InteractionStatsService {
    * @param noteId - The note ID to fetch stats for
    * @param authorPubkey - Optional author pubkey for Hollywood-style logging
    */
-  public async getStats(noteId: string, authorPubkey?: string): Promise<InteractionStats> {
+  public async getStats(
+    noteId: string,
+    authorPubkey?: string
+  ): Promise<InteractionStats> {
     return this.orchestrator.getStats(noteId, authorPubkey);
   }
 
@@ -51,7 +54,10 @@ export class InteractionStatsService {
   /**
    * Update cached stats for a note (used by SNV to correct reply count)
    */
-  public updateCachedStats(noteId: string, updates: Partial<InteractionStats>): void {
+  public updateCachedStats(
+    noteId: string,
+    updates: Partial<InteractionStats>
+  ): void {
     this.orchestrator.updateCachedStats(noteId, updates);
   }
 

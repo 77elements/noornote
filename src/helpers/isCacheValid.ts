@@ -24,5 +24,5 @@ export function isCacheValid(
   ttlMs: number = 24 * 60 * 60 * 1000 // Default: 24 hours
 ): boolean {
   if (!item.lastUpdated) return false;
-  return (Date.now() - item.lastUpdated) < ttlMs;
+  return Date.now() - item.lastUpdated < ttlMs;
 }

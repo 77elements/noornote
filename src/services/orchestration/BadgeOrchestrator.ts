@@ -49,7 +49,9 @@ export class BadgeOrchestrator {
    * Fetch a badge definition by its addressable coordinate.
    * @param coordinate  `30009:<issuer-pubkey>:<badge-slug>`
    */
-  public async fetchBadgeDefinition(coordinate: string): Promise<BadgeDefinition | null> {
+  public async fetchBadgeDefinition(
+    coordinate: string
+  ): Promise<BadgeDefinition | null> {
     const cached = this.cache.get(coordinate);
     if (cached) return cached;
 
@@ -75,7 +77,9 @@ export class BadgeOrchestrator {
    * per-coordinate path (which adds stage-2 outbound discovery). Returns a
    * coordinate -> definition map (missing coordinates are simply absent).
    */
-  public async fetchBadgeDefinitions(coordinates: string[]): Promise<Map<string, BadgeDefinition>> {
+  public async fetchBadgeDefinitions(
+    coordinates: string[]
+  ): Promise<Map<string, BadgeDefinition>> {
     const result = new Map<string, BadgeDefinition>();
     const uncached: string[] = [];
     for (const coord of new Set(coordinates)) {
@@ -90,7 +94,10 @@ export class BadgeOrchestrator {
         const p = coord.split(':');
         return { coord, issuer: p[1], slug: p.slice(2).join(':') };
       })
-      .filter((x): x is { coord: string; issuer: string; slug: string } => !!x.issuer && !!x.slug);
+      .filter(
+        (x): x is { coord: string; issuer: string; slug: string } =>
+          !!x.issuer && !!x.slug
+      );
 
     const requested = new Set(uncached);
     const issuers = [...new Set(parts.map(p => p.issuer))];
@@ -104,9 +111,17 @@ export class BadgeOrchestrator {
         ...this.relayConfig.getReadRelays(),
         ...this.relayConfig.getAggregatorRelays(),
       ];
-      const filters: NDKFilter[] = [{ kinds: [30009 as number], authors: issuers, '#d': slugs }];
+      const filters: NDKFilter[] = [
+        { kinds: [30009 as number], authors: issuers, '#d': slugs },
+      ];
       try {
-        const events = await this.transport.fetch(baseRelays, filters, 5000, false, 'BadgeOrch-batch');
+        const events = await this.transport.fetch(
+          baseRelays,
+          filters,
+          5000,
+          false,
+          'BadgeOrch-batch'
+        );
         for (const ev of events) {
           const d = ev.tags.find(t => t[0] === 'd')?.[1];
           if (!d) continue;
@@ -116,13 +131,17 @@ export class BadgeOrchestrator {
           this.cache.set(coord, def);
           result.set(coord, def);
         }
-      } catch { /* batch failed — fall through to per-coordinate */ }
+      } catch {
+        /* batch failed — fall through to per-coordinate */
+      }
     }
 
     // Per-coordinate fallback (adds stage-2 outbound) for anything unresolved.
     const missing = uncached.filter(c => !result.has(c));
     if (missing.length > 0) {
-      const defs = await Promise.all(missing.map(c => this.fetchBadgeDefinition(c)));
+      const defs = await Promise.all(
+        missing.map(c => this.fetchBadgeDefinition(c))
+      );
       missing.forEach((c, i) => {
         const d = defs[i];
         if (d) result.set(c, d);
@@ -131,7 +150,9 @@ export class BadgeOrchestrator {
     return result;
   }
 
-  private async fetchFromRelays(coordinate: string): Promise<BadgeDefinition | null> {
+  private async fetchFromRelays(
+    coordinate: string
+  ): Promise<BadgeDefinition | null> {
     const parts = coordinate.split(':');
     if (parts.length < 3) return null;
 
@@ -151,27 +172,62 @@ export class BadgeOrchestrator {
       ...this.relayConfig.getAggregatorRelays(),
     ];
 
-    let events = await this.transport.fetch(baseRelays, [filter], 5000, false, 'BadgeOrch');
-    if (events[0]) return BadgeOrchestrator.parseDefinition(events[0], issuerPubkey, slug);
+    let events = await this.transport.fetch(
+      baseRelays,
+      [filter],
+      5000,
+      false,
+      'BadgeOrch'
+    );
+    if (events[0])
+      return BadgeOrchestrator.parseDefinition(events[0], issuerPubkey, slug);
 
     // Stage 2: issuer's outbound relays
     try {
-      const outbound: string[] = await this.relayDiscovery.getCombinedRelays([issuerPubkey], true);
+      const outbound: string[] = await this.relayDiscovery.getCombinedRelays(
+        [issuerPubkey],
+        true
+      );
       const newRelays = outbound.filter(r => !baseRelays.includes(r));
       if (newRelays.length > 0) {
-        events = await this.transport.fetch(newRelays, [filter], 5000, true, 'BadgeOrch');
-        if (events[0]) return BadgeOrchestrator.parseDefinition(events[0], issuerPubkey, slug);
+        events = await this.transport.fetch(
+          newRelays,
+          [filter],
+          5000,
+          true,
+          'BadgeOrch'
+        );
+        if (events[0])
+          return BadgeOrchestrator.parseDefinition(
+            events[0],
+            issuerPubkey,
+            slug
+          );
       }
-    } catch { /* outbound discovery failed — acceptable */ }
+    } catch {
+      /* outbound discovery failed — acceptable */
+    }
 
     return null;
   }
 
-  private static parseDefinition(event: NostrEvent, issuerPubkey: string, slug: string): BadgeDefinition {
+  private static parseDefinition(
+    event: NostrEvent,
+    issuerPubkey: string,
+    slug: string
+  ): BadgeDefinition {
     const name = event.tags.find(t => t[0] === 'name')?.[1] ?? slug;
     const description = event.tags.find(t => t[0] === 'description')?.[1] ?? '';
     const image = event.tags.find(t => t[0] === 'image')?.[1] ?? undefined;
     const thumb = event.tags.find(t => t[0] === 'thumb')?.[1] ?? undefined;
-    return { name, description, image, thumb, issuerPubkey, slug, rawEvent: event };
+    return {
+      name,
+      description,
+      image,
+      thumb,
+      issuerPubkey,
+      slug,
+      rawEvent: event,
+    };
   }
 }

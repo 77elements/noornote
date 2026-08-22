@@ -50,25 +50,37 @@ export class PollVoteService {
     // Validate authentication
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      this.systemLogger.error('PollVoteService', 'Cannot cast vote: User not authenticated');
+      this.systemLogger.error(
+        'PollVoteService',
+        'Cannot cast vote: User not authenticated'
+      );
       return false;
     }
 
     // Validate poll event ID
     if (!pollEventId || pollEventId.trim().length === 0) {
-      this.systemLogger.error('PollVoteService', 'Cannot cast vote: Poll event ID is empty');
+      this.systemLogger.error(
+        'PollVoteService',
+        'Cannot cast vote: Poll event ID is empty'
+      );
       return false;
     }
 
     // Validate option IDs
     if (!optionIds || optionIds.length === 0) {
-      this.systemLogger.error('PollVoteService', 'Cannot cast vote: No option IDs specified');
+      this.systemLogger.error(
+        'PollVoteService',
+        'Cannot cast vote: No option IDs specified'
+      );
       return false;
     }
 
     // Validate relays
     if (!relays || relays.length === 0) {
-      this.systemLogger.error('PollVoteService', 'Cannot cast vote: No relays specified');
+      this.systemLogger.error(
+        'PollVoteService',
+        'Cannot cast vote: No relays specified'
+      );
       return false;
     }
 
@@ -90,7 +102,7 @@ export class PollVoteService {
         created_at: Math.floor(Date.now() / 1000),
         tags,
         content: '', // NIP-88: content is typically empty for responses
-        pubkey: currentUser.pubkey
+        pubkey: currentUser.pubkey,
       };
 
       // Sign event using browser extension
@@ -111,7 +123,10 @@ export class PollVoteService {
 
       return true;
     } catch (_error) {
-      this.systemLogger.error('PollVoteService', `Failed to cast vote: ${_error}`);
+      this.systemLogger.error(
+        'PollVoteService',
+        `Failed to cast vote: ${_error}`
+      );
       return false;
     }
   }

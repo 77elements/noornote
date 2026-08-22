@@ -13,7 +13,10 @@
  * This file stays lightweight: only PerAccountLocalStorage, no network / adhan / UI / dataset.
  */
 
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../services/PerAccountLocalStorage';
 import { TypedEventBus } from '../../core/TypedEventBus';
 
 /** A location in Diyanet's own hierarchy (Country -> Region -> District). */
@@ -93,22 +96,31 @@ const DEFAULT_SETTINGS: NostrMajlisSettings = {
 };
 
 export function isNostrMajlisEnabled(): boolean {
-  return PerAccountLocalStorage.getInstance().get<boolean>(StorageKeys.NOSTR_MAJLIS_ENABLED, false);
+  return PerAccountLocalStorage.getInstance().get<boolean>(
+    StorageKeys.NOSTR_MAJLIS_ENABLED,
+    false
+  );
 }
 
 export function setNostrMajlisEnabled(enabled: boolean): void {
-  PerAccountLocalStorage.getInstance().set(StorageKeys.NOSTR_MAJLIS_ENABLED, enabled);
+  PerAccountLocalStorage.getInstance().set(
+    StorageKeys.NOSTR_MAJLIS_ENABLED,
+    enabled
+  );
 }
 
 export function getNostrMajlisSettings(): NostrMajlisSettings {
-  const stored = PerAccountLocalStorage.getInstance().get<Partial<NostrMajlisSettings>>(
-    StorageKeys.NOSTR_MAJLIS_SETTINGS, {}
-  );
+  const stored = PerAccountLocalStorage.getInstance().get<
+    Partial<NostrMajlisSettings>
+  >(StorageKeys.NOSTR_MAJLIS_SETTINGS, {});
   return { ...DEFAULT_SETTINGS, ...stored };
 }
 
 export function setNostrMajlisSettings(settings: NostrMajlisSettings): void {
-  PerAccountLocalStorage.getInstance().set(StorageKeys.NOSTR_MAJLIS_SETTINGS, settings);
+  PerAccountLocalStorage.getInstance().set(
+    StorageKeys.NOSTR_MAJLIS_SETTINGS,
+    settings
+  );
   // Let the native scheduler re-enqueue alarms after any source/location/reminder change.
   TypedEventBus.getInstance().emit('nostr-majlis:settings-changed');
 }

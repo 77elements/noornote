@@ -11,14 +11,15 @@
 import { parseBolt11Amount } from './zapUtils';
 
 export interface Bolt11Match {
-  invoice: string;   // raw lnbc... string (without prefix)
+  invoice: string; // raw lnbc... string (without prefix)
   fullMatch: string; // what to replace in content (incl. prefix if present)
-  amount: number;    // in sats
+  amount: number; // in sats
 }
 
 // Matches lnbc invoices with optional prefix. Case-insensitive.
 // Must start with lnbc + amount + multiplier marker + "1" (separator).
-const BOLT11_REGEX = /(?:lightning:|nostr:)?(lnbc(?:\d+[munp]?)?1[02-9ac-hj-np-z]+)/gi;
+const BOLT11_REGEX =
+  /(?:lightning:|nostr:)?(lnbc(?:\d+[munp]?)?1[02-9ac-hj-np-z]+)/gi;
 
 export function extractBolt11(content: string): Bolt11Match[] {
   const results: Bolt11Match[] = [];

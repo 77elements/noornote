@@ -31,7 +31,7 @@ export class FollowPackRenderer {
       kind: 39089,
       pubkey: event.pubkey,
       identifier: pack.id,
-      relays: []
+      relays: [],
     });
     const noteHeader = new NoteHeader({
       pubkey: event.pubkey,
@@ -40,7 +40,7 @@ export class FollowPackRenderer {
       rawEvent: event,
       showVerification: true,
       showTimestamp: true,
-      showMenu: true
+      showMenu: true,
     });
     element.appendChild(noteHeader.getElement());
 
@@ -64,7 +64,9 @@ export class FollowPackRenderer {
 
     const card = document.createElement('div');
     card.className = 'nn-card';
-    const coverClass = pack.coverImage ? 'nn-card__media' : 'nn-card__media nn-card__media--empty';
+    const coverClass = pack.coverImage
+      ? 'nn-card__media'
+      : 'nn-card__media nn-card__media--empty';
     card.innerHTML = `
       <div class="${coverClass}">
         ${pack.coverImage ? `<img src="${escapeHtmlAttr(pack.coverImage)}" alt="" loading="lazy" />` : ''}
@@ -79,12 +81,16 @@ export class FollowPackRenderer {
     // Route through the central controller so right-pane mode opens the pack in the
     // secondary pane (scc) instead of navigating the timeline (pcc).
     const openBtn = card.querySelector('[data-action="open-pack"]');
-    openBtn?.addEventListener('click', (e) => {
+    openBtn?.addEventListener('click', e => {
       e.stopPropagation();
-      getViewNavigationController().openView('follow-pack', naddr, e as MouseEvent);
+      getViewNavigationController().openView(
+        'follow-pack',
+        naddr,
+        e as MouseEvent
+      );
     });
 
-    card.addEventListener('click', (e) => {
+    card.addEventListener('click', e => {
       const target = e.target as HTMLElement;
       if (target.closest('.note-image--clickable, .note-media, video')) return;
       if (target.closest('button') || target.closest('a')) return;
@@ -111,7 +117,9 @@ export class FollowPackRenderer {
   }
 }
 
-function buildHintLines(pack: ReturnType<typeof parseFollowPackEvent>): string[] {
+function buildHintLines(
+  pack: ReturnType<typeof parseFollowPackEvent>
+): string[] {
   if (!pack.authorPubkey || !pack.id) return [];
 
   const prev = getFollowPackSnapshot(pack.authorPubkey, pack.id);

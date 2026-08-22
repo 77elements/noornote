@@ -14,7 +14,10 @@ import type { SearchModuleApi } from '../../modules/search/contracts';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { SystemLogger } from '../../services/SystemLogger';
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../services/PerAccountLocalStorage';
 
 const POLL_INTERVAL = 5 * 60 * 1000; // 5 minutes in milliseconds
 
@@ -34,7 +37,8 @@ export class HashtagNotificationService {
   private static instance: HashtagNotificationService;
   private _searchApi?: SearchModuleApi | null;
   private get searchApi(): SearchModuleApi | null {
-    return this._searchApi ??= ModuleLoader.getInstance().getApi<SearchModuleApi>('search');
+    return (this._searchApi ??=
+      ModuleLoader.getInstance().getApi<SearchModuleApi>('search'));
   }
   private eventBus: TypedEventBus;
   private systemLogger: SystemLogger;
@@ -74,10 +78,13 @@ export class HashtagNotificationService {
       data.subscriptions[hashtag] = {
         subscribedAt: Date.now(),
         lastSeenTimestamp: Math.floor(Date.now() / 1000),
-        includeWithoutHash: false
+        includeWithoutHash: false,
       };
       this.saveData(data);
-      this.eventBus.emit('hashtag-subscription:updated', { hashtag, subscribed: true });
+      this.eventBus.emit('hashtag-subscription:updated', {
+        hashtag,
+        subscribed: true,
+      });
     }
   }
 
@@ -90,7 +97,10 @@ export class HashtagNotificationService {
     if (hashtag in data.subscriptions) {
       delete data.subscriptions[hashtag];
       this.saveData(data);
-      this.eventBus.emit('hashtag-subscription:updated', { hashtag, subscribed: false });
+      this.eventBus.emit('hashtag-subscription:updated', {
+        hashtag,
+        subscribed: false,
+      });
     }
   }
 
@@ -126,16 +136,21 @@ export class HashtagNotificationService {
   /**
    * Get all subscriptions with details
    */
-  public getAllSubscriptions(): { hashtag: string; subscription: HashtagSubscription }[] {
+  public getAllSubscriptions(): {
+    hashtag: string;
+    subscription: HashtagSubscription;
+  }[] {
     const data = this.loadData();
-    return Object.entries(data.subscriptions).map(([hashtag, subscription]) => ({
-      hashtag,
-      subscription: {
-        ...subscription,
-        // Ensure includeWithoutHash has a default for old subscriptions
-        includeWithoutHash: subscription.includeWithoutHash ?? false
-      }
-    }));
+    return Object.entries(data.subscriptions).map(
+      ([hashtag, subscription]) => ({
+        hashtag,
+        subscription: {
+          ...subscription,
+          // Ensure includeWithoutHash has a default for old subscriptions
+          includeWithoutHash: subscription.includeWithoutHash ?? false,
+        },
+      })
+    );
   }
 
   /**
@@ -148,7 +163,10 @@ export class HashtagNotificationService {
     if (subscription) {
       subscription.includeWithoutHash = include;
       this.saveData(data);
-      this.eventBus.emit('hashtag-subscription:updated', { hashtag, includeWithoutHash: include });
+      this.eventBus.emit('hashtag-subscription:updated', {
+        hashtag,
+        includeWithoutHash: include,
+      });
     }
   }
 
@@ -218,7 +236,10 @@ export class HashtagNotificationService {
     }
 
     // System log: Polling start
-    this.systemLogger.info('HashtagNotificationService', `🔍 Polling ${subscribed.length} subscribed hashtags`);
+    this.systemLogger.info(
+      'HashtagNotificationService',
+      `🔍 Polling ${subscribed.length} subscribed hashtags`
+    );
 
     for (const hashtag of subscribed) {
       const subscription = data.subscriptions[hashtag];
@@ -229,18 +250,20 @@ export class HashtagNotificationService {
 
       try {
         // Search for #hashtag
-        const hashtagResults = await this.searchApi?.search({
-          query: `#${hashtag}`,
-          limit: 10
-        }) ?? [];
+        const hashtagResults =
+          (await this.searchApi?.search({
+            query: `#${hashtag}`,
+            limit: 10,
+          })) ?? [];
 
         let allResults = [...hashtagResults];
 
         if (includeWithoutHash) {
-          const termResults = await this.searchApi?.search({
-            query: hashtag,
-            limit: 10
-          }) ?? [];
+          const termResults =
+            (await this.searchApi?.search({
+              query: hashtag,
+              limit: 10,
+            })) ?? [];
 
           const seenIds = new Set(allResults.map((e: any) => e.id));
           for (const event of termResults) {
@@ -270,30 +293,44 @@ export class HashtagNotificationService {
         });
 
         // Register verified notes in NoteService (via PostsModuleApi) for cache reuse
-        const postsApi = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
+        const postsApi =
+          ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
         postsApi?.registerNotes(allResults);
 
         // Filter: only posts newer than lastSeenTimestamp
-        const newPosts = allResults.filter(e => e.created_at > subscription.lastSeenTimestamp);
+        const newPosts = allResults.filter(
+          e => e.created_at > subscription.lastSeenTimestamp
+        );
 
         if (newPosts.length > 0) {
           // System log: New posts found
-          const searchType = includeWithoutHash ? `#${hashtag} + "${hashtag}"` : `#${hashtag}`;
-          this.systemLogger.info('HashtagNotificationService', `Found ${newPosts.length} new posts for ${searchType}`);
+          const searchType = includeWithoutHash
+            ? `#${hashtag} + "${hashtag}"`
+            : `#${hashtag}`;
+          this.systemLogger.info(
+            'HashtagNotificationService',
+            `Found ${newPosts.length} new posts for ${searchType}`
+          );
 
           // Update last seen
-          subscription.lastSeenTimestamp = Math.max(...newPosts.map(e => e.created_at));
+          subscription.lastSeenTimestamp = Math.max(
+            ...newPosts.map(e => e.created_at)
+          );
           this.saveData(data);
 
           // Emit ONE notification per hashtag (not per post)
           this.eventBus.emit('hashtag:new-posts', {
             hashtag,
             count: newPosts.length,
-            latestEvent: newPosts[0]!
+            latestEvent: newPosts[0]!,
           });
         }
       } catch (error) {
-        this.systemLogger.error('HashtagNotificationService', `Failed to check #${hashtag}:`, error);
+        this.systemLogger.error(
+          'HashtagNotificationService',
+          `Failed to check #${hashtag}:`,
+          error
+        );
       }
     }
 
@@ -305,7 +342,9 @@ export class HashtagNotificationService {
    * Load data from PerAccountLocalStorage
    */
   private loadData(): StorageData {
-    return this.storage.get<StorageData>(StorageKeys.HASHTAG_SUBSCRIPTIONS, { subscriptions: {} });
+    return this.storage.get<StorageData>(StorageKeys.HASHTAG_SUBSCRIPTIONS, {
+      subscriptions: {},
+    });
   }
 
   /**

@@ -86,7 +86,7 @@ export class ConnectivityService {
   private verifyNetworkReachability(): boolean {
     const anyRelayConnected = RelayHealthMonitor.getInstance()
       .getAllMetrics()
-      .some((m) => m.isConnected);
+      .some(m => m.isConnected);
 
     return anyRelayConnected || navigator.onLine;
   }

@@ -19,7 +19,10 @@
 import dayjs from 'dayjs';
 import calendarSystems from '@calidy/dayjs-calendarsystems';
 import HijriCalendarSystem from '@calidy/dayjs-calendarsystems/calendarSystems/HijriCalendarSystem';
-import { PerAccountLocalStorage, StorageKeys } from '../services/PerAccountLocalStorage';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../services/PerAccountLocalStorage';
 
 // Initialize dayjs with calendar systems plugin
 dayjs.extend(calendarSystems);
@@ -72,7 +75,13 @@ export function formatTimestamp(timestamp: number): string {
     } else {
       // Rule 3 & 4: Absolute dates (calendar-aware)
       const includeYear = !isSameYear(date, now, calendarSystem);
-      formatted = formatAbsoluteDate(date, now, time, includeYear, calendarSystem);
+      formatted = formatAbsoluteDate(
+        date,
+        now,
+        time,
+        includeYear,
+        calendarSystem
+      );
     }
   }
 
@@ -151,7 +160,10 @@ export function formatDateByCalendar(date: Date): string {
 function getCalendarSystem(): CalendarSystem {
   try {
     const storage = PerAccountLocalStorage.getInstance();
-    return storage.get<CalendarSystem>(StorageKeys.CALENDAR_SYSTEM, 'gregorian');
+    return storage.get<CalendarSystem>(
+      StorageKeys.CALENDAR_SYSTEM,
+      'gregorian'
+    );
   } catch {
     return 'gregorian';
   }
@@ -182,7 +194,11 @@ function formatAbsoluteDate(
 /**
  * Format Gregorian date (existing logic)
  */
-function formatGregorianDate(date: Date, time: string, includeYear: boolean): string {
+function formatGregorianDate(
+  date: Date,
+  time: string,
+  includeYear: boolean
+): string {
   const day = date.getDate();
   const month = getMonthShort(date);
 
@@ -196,7 +212,11 @@ function formatGregorianDate(date: Date, time: string, includeYear: boolean): st
 /**
  * Format Hijri date using Day.js calendar plugin
  */
-function formatHijriDate(date: Date, time: string, includeYear: boolean): string {
+function formatHijriDate(
+  date: Date,
+  time: string,
+  includeYear: boolean
+): string {
   const hijriDate = dayjs(date).toCalendarSystem('hijri' as any);
   const day = hijriDate.date();
   const month = HIJRI_MONTHS[hijriDate.month()];
@@ -212,7 +232,11 @@ function formatHijriDate(date: Date, time: string, includeYear: boolean): string
 /**
  * Format both Gregorian and Hijri dates side-by-side
  */
-function formatBothDates(date: Date, time: string, includeYear: boolean): string {
+function formatBothDates(
+  date: Date,
+  time: string,
+  includeYear: boolean
+): string {
   const gregorianDay = date.getDate();
   const gregorianMonth = getMonthShort(date);
   const gregorianYear = date.getFullYear();
@@ -238,7 +262,10 @@ function formatBothDates(date: Date, time: string, includeYear: boolean): string
  */
 function formatTime(date: Date): string {
   try {
-    return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString('de-DE', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   } catch {
     // Fallback: Manual formatting if Intl is unavailable
     const hours = String(date.getHours()).padStart(2, '0');
@@ -255,7 +282,20 @@ function getMonthShort(date: Date): string {
     return date.toLocaleString('en-US', { month: 'short' });
   } catch {
     // Fallback: Manual month names if Intl is unavailable
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return months[date.getMonth()] ?? 'Jan';
   }
 }
@@ -263,7 +303,11 @@ function getMonthShort(date: Date): string {
 /**
  * Check if two dates are the same calendar day (calendar-aware)
  */
-function isSameDay(date1: Date, date2: Date, calendarSystem: CalendarSystem): boolean {
+function isSameDay(
+  date1: Date,
+  date2: Date,
+  calendarSystem: CalendarSystem
+): boolean {
   // For Gregorian and 'both' mode, use Gregorian comparison
   if (calendarSystem === 'gregorian' || calendarSystem === 'both') {
     return (
@@ -290,7 +334,11 @@ function isSameDay(date1: Date, date2: Date, calendarSystem: CalendarSystem): bo
 /**
  * Check if two dates are in the same calendar year (calendar-aware)
  */
-function isSameYear(date1: Date, date2: Date, calendarSystem: CalendarSystem): boolean {
+function isSameYear(
+  date1: Date,
+  date2: Date,
+  calendarSystem: CalendarSystem
+): boolean {
   // For Gregorian and 'both' mode, use Gregorian comparison
   if (calendarSystem === 'gregorian' || calendarSystem === 'both') {
     return date1.getFullYear() === date2.getFullYear();

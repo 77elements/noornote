@@ -16,7 +16,6 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 import { getTag } from '../helpers/tagUtils';
 
-
 const POLL_INTERVAL = 60 * 60 * 1000; // 1 hour in milliseconds
 
 export interface ArticleNotification {
@@ -74,10 +73,13 @@ export class ArticleNotificationService {
     if (!(pubkey in data.subscriptions)) {
       data.subscriptions[pubkey] = {
         subscribedAt: Date.now(),
-        lastSeenArticleTimestamp: Math.floor(Date.now() / 1000)
+        lastSeenArticleTimestamp: Math.floor(Date.now() / 1000),
       };
       this.saveData(data);
-      this.eventBus.emit('article-notification:updated', { pubkey, subscribed: true });
+      this.eventBus.emit('article-notification:updated', {
+        pubkey,
+        subscribed: true,
+      });
     }
   }
 
@@ -90,7 +92,10 @@ export class ArticleNotificationService {
     if (pubkey in data.subscriptions) {
       delete data.subscriptions[pubkey];
       this.saveData(data);
-      this.eventBus.emit('article-notification:updated', { pubkey, subscribed: false });
+      this.eventBus.emit('article-notification:updated', {
+        pubkey,
+        subscribed: false,
+      });
     }
   }
 
@@ -171,10 +176,16 @@ export class ArticleNotificationService {
           kinds: [30023],
           authors: [pubkey],
           since: subscription.lastSeenArticleTimestamp + 1,
-          limit: 10
+          limit: 10,
         };
 
-        const events = await this.transport.fetch(relays, [filter], 5000, false, 'ArticleNotifService');
+        const events = await this.transport.fetch(
+          relays,
+          [filter],
+          5000,
+          false,
+          'ArticleNotifService'
+        );
 
         for (const event of events) {
           const metadata = this.extractMetadata(event);
@@ -183,7 +194,7 @@ export class ArticleNotificationService {
             kind: 30023,
             pubkey: event.pubkey,
             identifier: metadata.identifier,
-            relays: []
+            relays: [],
           });
 
           newArticles.push({
@@ -191,7 +202,7 @@ export class ArticleNotificationService {
             articleId: event.id || '',
             naddr,
             title: metadata.title,
-            createdAt: event.created_at || 0
+            createdAt: event.created_at || 0,
           });
 
           // Update last seen timestamp
@@ -218,7 +229,10 @@ export class ArticleNotificationService {
   /**
    * Extract metadata from article event
    */
-  private extractMetadata(event: NostrEvent): { title: string; identifier: string } {
+  private extractMetadata(event: NostrEvent): {
+    title: string;
+    identifier: string;
+  } {
     const tags = event.tags || [];
     const title = getTag(tags, 'title', 'Untitled');
     const identifier = getTag(tags, 'd');
@@ -229,13 +243,19 @@ export class ArticleNotificationService {
    * Load data from localStorage
    */
   private loadData(): StorageData {
-    return PerAccountLocalStorage.getInstance().get<StorageData>(StorageKeys.ARTICLE_NOTIFICATIONS, { subscriptions: {} });
+    return PerAccountLocalStorage.getInstance().get<StorageData>(
+      StorageKeys.ARTICLE_NOTIFICATIONS,
+      { subscriptions: {} }
+    );
   }
 
   /**
    * Save data to per-account storage
    */
   private saveData(data: StorageData): void {
-    PerAccountLocalStorage.getInstance().set(StorageKeys.ARTICLE_NOTIFICATIONS, data);
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.ARTICLE_NOTIFICATIONS,
+      data
+    );
   }
 }

@@ -65,12 +65,14 @@ export class ClientTagControl {
     // `container` IS the .post-note-client-tag wrapper (data-client-tag lives on it).
     const wrapper = container;
     const toggle = container.querySelector('[data-client-tag-toggle]');
-    const input = container.querySelector('[data-client-tag-input]') as HTMLInputElement;
+    const input = container.querySelector(
+      '[data-client-tag-input]'
+    ) as HTMLInputElement;
 
     if (!toggle || !input) return;
 
     // Toggle the field open/closed on icon click
-    toggle.addEventListener('click', (e) => {
+    toggle.addEventListener('click', e => {
       e.stopPropagation();
       const isOpen = wrapper.classList.toggle('post-note-client-tag--open');
       if (isOpen) {
@@ -82,17 +84,23 @@ export class ClientTagControl {
     // Track value as the user types
     input.addEventListener('input', () => {
       this.value = input.value;
-      wrapper.classList.toggle('post-note-client-tag--active', this.value.trim().length > 0);
+      wrapper.classList.toggle(
+        'post-note-client-tag--active',
+        this.value.trim().length > 0
+      );
       this.config.onChange(this.value);
     });
 
     // Keep typing inside the field from bubbling to modal-level handlers
-    input.addEventListener('click', (e) => e.stopPropagation());
+    input.addEventListener('click', e => e.stopPropagation());
 
     // Collapse when clicking outside ONLY if the field is empty. With a value
     // set, keep it open so the user can still see/edit their tag.
     this.documentClickHandler = (e: MouseEvent) => {
-      if (!wrapper.contains(e.target as Node) && this.value.trim().length === 0) {
+      if (
+        !wrapper.contains(e.target as Node) &&
+        this.value.trim().length === 0
+      ) {
         wrapper.classList.remove('post-note-client-tag--open');
       }
     };

@@ -44,7 +44,8 @@ export class ZapModal {
   private modalService: ModalService;
   private _zapsApi?: ZapsModuleApi | null;
   private get zapsApi(): ZapsModuleApi | null {
-    return this._zapsApi ??= ModuleLoader.getInstance().getApi<ZapsModuleApi>('zaps');
+    return (this._zapsApi ??=
+      ModuleLoader.getInstance().getApi<ZapsModuleApi>('zaps'));
   }
   private nwcService: NWCService;
   private systemLogger: SystemLogger;
@@ -80,7 +81,7 @@ export class ZapModal {
       height: 'auto',
       showCloseButton: true,
       closeOnOverlay: true,
-      closeOnEsc: true
+      closeOnEsc: true,
     });
 
     // Setup event handlers after modal is shown
@@ -99,8 +100,9 @@ export class ZapModal {
     // Get default values from Keychain/localStorage
     const defaults = await this.getZapDefaults();
 
-    const presetButtonsHtml = PRESET_AMOUNTS.map(p =>
-      `<button type="button" class="btn btn--mini zap-modal__preset${p.value === defaults.amount ? ' zap-modal__preset--active' : ''}" data-amount="${p.value}">${p.display}</button>`
+    const presetButtonsHtml = PRESET_AMOUNTS.map(
+      p =>
+        `<button type="button" class="btn btn--mini zap-modal__preset${p.value === defaults.amount ? ' zap-modal__preset--active' : ''}" data-amount="${p.value}">${p.display}</button>`
     ).join('');
 
     // Silent Zap switch: throwaway-key Anonymous mode. Always available — works
@@ -109,7 +111,7 @@ export class ZapModal {
       label: 'Silent Zap',
       checked: false,
       id: 'zap-silent-switch',
-      onChange: (checked) => {
+      onChange: checked => {
         this.isAnonymous = checked;
       },
     });
@@ -165,10 +167,16 @@ export class ZapModal {
    * Setup event handlers
    */
   private setupEventHandlers(): void {
-    const amountInput = document.getElementById('zap-amount') as HTMLInputElement;
-    const commentInput = document.getElementById('zap-comment') as HTMLInputElement;
+    const amountInput = document.getElementById(
+      'zap-amount'
+    ) as HTMLInputElement;
+    const commentInput = document.getElementById(
+      'zap-comment'
+    ) as HTMLInputElement;
     const cancelBtn = document.getElementById('zap-cancel-btn');
-    const sendBtn = document.getElementById('zap-send-btn') as HTMLButtonElement | null;
+    const sendBtn = document.getElementById(
+      'zap-send-btn'
+    ) as HTMLButtonElement | null;
 
     if (!amountInput || !commentInput || !cancelBtn || !sendBtn) {
       this.systemLogger.error('ZapModal', 'Failed to find modal elements');
@@ -192,7 +200,9 @@ export class ZapModal {
         if (amount) {
           amountInput.value = amount;
           // Update active state
-          presetButtons.forEach(b => b.classList.remove('zap-modal__preset--active'));
+          presetButtons.forEach(b =>
+            b.classList.remove('zap-modal__preset--active')
+          );
           btn.classList.add('zap-modal__preset--active');
         }
       });
@@ -202,7 +212,10 @@ export class ZapModal {
     amountInput.addEventListener('input', () => {
       const val = parseInt(amountInput.value, 10);
       presetButtons.forEach(btn => {
-        const presetVal = parseInt((btn as HTMLElement).dataset.amount || '0', 10);
+        const presetVal = parseInt(
+          (btn as HTMLElement).dataset.amount || '0',
+          10
+        );
         btn.classList.toggle('zap-modal__preset--active', presetVal === val);
       });
     });
@@ -218,7 +231,7 @@ export class ZapModal {
     });
 
     // Enter key in amount input moves to comment
-    amountInput.addEventListener('keydown', (e) => {
+    amountInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
         e.preventDefault();
         commentInput.focus();
@@ -237,7 +250,7 @@ export class ZapModal {
     commentInput.addEventListener('keydown', handleCtrlEnter);
 
     // Enter in comment field sends zap
-    commentInput.addEventListener('keydown', (e) => {
+    commentInput.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
         this.handleSendZap(amountInput, commentInput, sendBtn);
@@ -282,14 +295,14 @@ export class ZapModal {
 
     try {
       // Send custom zap via ZapService
-      const result = await this.zapsApi?.sendCustomZap(
+      const result = (await this.zapsApi?.sendCustomZap(
         this.currentOptions.noteId,
         this.currentOptions.authorPubkey,
         amount,
         comment,
         this.currentOptions.articleEventId,
         this.isAnonymous
-      ) ?? { success: false };
+      )) ?? { success: false };
 
       this.isSending = false;
       sendBtn.disabled = false;
@@ -341,7 +354,9 @@ export class ZapModal {
    */
   private async getZapDefaults(): Promise<{ amount: number; comment: string }> {
     try {
-      const { KeychainStorage } = await import('../../services/KeychainStorage');
+      const { KeychainStorage } = await import(
+        '../../services/KeychainStorage'
+      );
       const stored = await KeychainStorage.loadZapDefaults();
       if (stored) {
         return stored;
@@ -352,7 +367,7 @@ export class ZapModal {
 
     return {
       amount: 21,
-      comment: ''
+      comment: '',
     };
   }
 }

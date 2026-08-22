@@ -52,7 +52,9 @@ export class KeySignerSection extends SettingsSection {
             </div>
           </div>
 
-          ${isRunning ? `
+          ${
+            isRunning
+              ? `
             <div class="setting">
               <span class="setting__label">Launch key signer on system startup</span>
               <div class="setting__control" id="autostart-switch-container"></div>
@@ -68,11 +70,13 @@ export class KeySignerSection extends SettingsSection {
             <div class="l-row l-row--right">
               <button class="btn" id="stop-daemon-btn">Stop Key Signer & Logout</button>
             </div>
-          ` : `
+          `
+              : `
             <div class="key-signer-info">
               <p>NoorSigner key signer is not running. Start it by logging in with NoorSigner.</p>
             </div>
-          `}
+          `
+          }
         </section>
     `;
   }
@@ -87,12 +91,14 @@ export class KeySignerSection extends SettingsSection {
       const isEnabled = await this.keySignerClient.getAutostartStatus();
 
       // Autostart switch
-      const switchContainer = contentContainer.querySelector('#autostart-switch-container');
+      const switchContainer = contentContainer.querySelector(
+        '#autostart-switch-container'
+      );
       if (switchContainer) {
         this.autostartSwitch = new Switch({
           label: '',
           checked: isEnabled,
-          onChange: async (checked) => {
+          onChange: async checked => {
             try {
               if (checked) {
                 await this.keySignerClient.enableAutostart();
@@ -106,37 +112,47 @@ export class KeySignerSection extends SettingsSection {
               ToastService.show('Failed to toggle autostart', 'error');
 
               // Refresh section to reflect actual state
-              const parentContainer = contentContainer.closest('.view-content--settings') as HTMLElement;
+              const parentContainer = contentContainer.closest(
+                '.view-content--settings'
+              ) as HTMLElement;
               if (parentContainer) {
                 this.mount(parentContainer);
               }
             }
-          }
+          },
         });
 
         switchContainer.innerHTML = this.autostartSwitch.render();
-        this.autostartSwitch.setupEventListeners(switchContainer as HTMLElement);
+        this.autostartSwitch.setupEventListeners(
+          switchContainer as HTMLElement
+        );
       }
 
       // Silent mode switch
-      const silentContainer = contentContainer.querySelector('#silent-mode-switch-container');
+      const silentContainer = contentContainer.querySelector(
+        '#silent-mode-switch-container'
+      );
       if (silentContainer) {
         const isSilent = localStorage.getItem(SILENT_MODE_KEY) !== 'false';
 
         this.silentModeSwitch = new Switch({
           label: '',
           checked: isSilent,
-          onChange: (checked) => {
+          onChange: checked => {
             localStorage.setItem(SILENT_MODE_KEY, String(checked));
             ToastService.show(
-              checked ? 'NoorSigner managed via NoorNote' : 'NoorSigner uses terminal mode',
+              checked
+                ? 'NoorSigner managed via NoorNote'
+                : 'NoorSigner uses terminal mode',
               'success'
             );
-          }
+          },
         });
 
         silentContainer.innerHTML = this.silentModeSwitch.render();
-        this.silentModeSwitch.setupEventListeners(silentContainer as HTMLElement);
+        this.silentModeSwitch.setupEventListeners(
+          silentContainer as HTMLElement
+        );
       }
 
       const stopBtn = contentContainer.querySelector('#stop-daemon-btn');

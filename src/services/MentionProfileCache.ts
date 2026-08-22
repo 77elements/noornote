@@ -45,7 +45,8 @@ export class MentionProfileCache {
 
     this.loadPromise = (async () => {
       try {
-        const profiles = await this.userProfileService.getUserProfiles(followingPubkeys);
+        const profiles =
+          await this.userProfileService.getUserProfiles(followingPubkeys);
 
         const suggestions: MentionSuggestion[] = [];
         profiles.forEach((profile, pubkey) => {
@@ -62,7 +63,7 @@ export class MentionProfileCache {
             npub,
             username,
             displayName,
-            picture: profile.picture || ''
+            picture: profile.picture || '',
           };
           if (profile.nip05) suggestion.nip05 = profile.nip05;
           suggestions.push(suggestion);
@@ -88,7 +89,9 @@ export class MentionProfileCache {
    * Get cached suggestions (instant if preloaded)
    * @param followingPubkeys - Fallback if not preloaded
    */
-  public async getSuggestions(followingPubkeys: string[]): Promise<MentionSuggestion[]> {
+  public async getSuggestions(
+    followingPubkeys: string[]
+  ): Promise<MentionSuggestion[]> {
     // If cached, return instantly
     if (this.cachedSuggestions !== null) {
       return this.cachedSuggestions;

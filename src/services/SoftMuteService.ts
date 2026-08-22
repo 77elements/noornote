@@ -139,7 +139,11 @@ export class SoftMuteService {
     this.cache.clear();
     if (map && typeof map === 'object') {
       for (const [k, v] of Object.entries(map)) {
-        if (typeof v === 'object' && v !== null && typeof v.addedAt === 'number') {
+        if (
+          typeof v === 'object' &&
+          v !== null &&
+          typeof v.addedAt === 'number'
+        ) {
           this.cache.set(k, v);
         }
       }
@@ -167,29 +171,48 @@ export class SoftMuteService {
     if (!user) return;
 
     try {
-      const relays = await OutboundRelaysOrchestrator.getInstance().getCombinedRelays([user.pubkey], true);
+      const relays =
+        await OutboundRelaysOrchestrator.getInstance().getCombinedRelays(
+          [user.pubkey],
+          true
+        );
       if (relays.length === 0) return;
 
-      const events = await this.transport.fetch(relays, [{
-        kinds: [NIP78_KIND as number],
-        authors: [user.pubkey],
-        '#d': [D_TAG],
-        limit: 1,
-      }], 5000, false, 'SoftMuteSvc');
+      const events = await this.transport.fetch(
+        relays,
+        [
+          {
+            kinds: [NIP78_KIND as number],
+            authors: [user.pubkey],
+            '#d': [D_TAG],
+            limit: 1,
+          },
+        ],
+        5000,
+        false,
+        'SoftMuteSvc'
+      );
 
       if (events.length === 0) return;
 
       const event = events.sort((a, b) => b.created_at - a.created_at)[0];
       if (!event?.content) return;
 
-      const plaintext = await this.auth.nip44Decrypt(event.content, user.pubkey);
+      const plaintext = await this.auth.nip44Decrypt(
+        event.content,
+        user.pubkey
+      );
       const remote = JSON.parse(plaintext);
       if (typeof remote !== 'object' || remote === null) return;
 
       let changed = false;
       for (const [pubkey, entry] of Object.entries(remote)) {
         if (this.cache.has(pubkey)) continue;
-        if (typeof entry === 'object' && entry !== null && typeof (entry as SoftMuteEntry).addedAt === 'number') {
+        if (
+          typeof entry === 'object' &&
+          entry !== null &&
+          typeof (entry as SoftMuteEntry).addedAt === 'number'
+        ) {
           this.cache.set(pubkey, entry as SoftMuteEntry);
           changed = true;
         }
@@ -198,9 +221,13 @@ export class SoftMuteService {
         this.persistLocal();
         this.eventBus.emit('soft-mute:updated');
       }
-      diagLog('system', 'SoftMuteService synced from relays', { count: this.cache.size });
+      diagLog('system', 'SoftMuteService synced from relays', {
+        count: this.cache.size,
+      });
     } catch (error) {
-      diagLog('system', 'SoftMuteService sync failed', { error: String(error) });
+      diagLog('system', 'SoftMuteService sync failed', {
+        error: String(error),
+      });
     }
   }
 
@@ -237,9 +264,13 @@ export class SoftMuteService {
       }
 
       await this.transport.publishContent(signed);
-      diagLog('system', 'SoftMuteService published to relays', { count: Object.keys(map).length });
+      diagLog('system', 'SoftMuteService published to relays', {
+        count: Object.keys(map).length,
+      });
     } catch (error) {
-      diagLog('system', 'SoftMuteService publish failed', { error: String(error) });
+      diagLog('system', 'SoftMuteService publish failed', {
+        error: String(error),
+      });
       ToastService.show('Failed to sync soft mute', 'error');
     }
   }

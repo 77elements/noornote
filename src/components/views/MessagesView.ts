@@ -18,7 +18,10 @@ import { SystemLogger } from '../../services/SystemLogger';
 import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
 import { ToastService } from '../../services/ToastService';
-import { setupTabClickHandlers, switchTabWithContent } from '../../helpers/TabsHelper';
+import {
+  setupTabClickHandlers,
+  switchTabWithContent,
+} from '../../helpers/TabsHelper';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { ProgressBarHelper } from '../../helpers/ProgressBarHelper';
 import { formatTimestamp } from '../../helpers/formatTimestamp';
@@ -32,7 +35,8 @@ export class MessagesView extends View {
   private container: HTMLElement;
   private _dmsApi?: DMsModuleApi | null;
   private get dmsApi(): DMsModuleApi | null {
-    return this._dmsApi ??= ModuleLoader.getInstance().getApi<DMsModuleApi>('dms');
+    return (this._dmsApi ??=
+      ModuleLoader.getInstance().getApi<DMsModuleApi>('dms'));
   }
   private userProfileService: UserProfileService;
   private eventBus: TypedEventBus;
@@ -61,7 +65,7 @@ export class MessagesView extends View {
     this.router = Router.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
-      loadingMessage: 'Loading more conversations...'
+      loadingMessage: 'Loading more conversations...',
     });
     this.outsideClickHandler = () => this.closeMenu();
 
@@ -73,9 +77,12 @@ export class MessagesView extends View {
     // because dmService.start() may emit events immediately if already running
     // Listen for fetch progress updates (for progress bar)
     this.subscriptionIds.push(
-      this.eventBus.on('dm:fetch-progress', (data: { current: number; total: number }) => {
-        this.handleFetchProgress(data);
-      })
+      this.eventBus.on(
+        'dm:fetch-progress',
+        (data: { current: number; total: number }) => {
+          this.handleFetchProgress(data);
+        }
+      )
     );
 
     // Listen for fetch completion - then load conversations
@@ -176,7 +183,9 @@ export class MessagesView extends View {
     `;
 
     // Initialize progress bar on header
-    const header = this.container.querySelector('.messages-view__header') as HTMLElement;
+    const header = this.container.querySelector(
+      '.messages-view__header'
+    ) as HTMLElement;
     if (header) {
       this.progressBar = new ProgressBarHelper(header);
     }
@@ -187,21 +196,29 @@ export class MessagesView extends View {
    */
   private setupEventListeners(): void {
     // Setup compose button
-    const composeBtn = this.container.querySelector('.messages-view__compose-btn');
+    const composeBtn = this.container.querySelector(
+      '.messages-view__compose-btn'
+    );
     composeBtn?.addEventListener('click', () => this.openComposeModal());
 
     // Setup menu trigger
-    const menuTrigger = this.container.querySelector('.messages-view__menu-trigger');
-    menuTrigger?.addEventListener('click', (e) => {
+    const menuTrigger = this.container.querySelector(
+      '.messages-view__menu-trigger'
+    );
+    menuTrigger?.addEventListener('click', e => {
       e.stopPropagation();
       this.toggleMenu();
     });
 
     // Setup tab click handlers using TabsHelper
-    setupTabClickHandlers(this.container, (tabId) => this.handleTabSwitch(tabId as TabFilter));
+    setupTabClickHandlers(this.container, tabId =>
+      this.handleTabSwitch(tabId as TabFilter)
+    );
 
     // "Load older messages" — manual backward paging from relays
-    const loadOlderBtn = this.container.querySelector('.messages-view__load-older-btn');
+    const loadOlderBtn = this.container.querySelector(
+      '.messages-view__load-older-btn'
+    );
     loadOlderBtn?.addEventListener('click', () => this.handleLoadOlder());
   }
 
@@ -210,8 +227,12 @@ export class MessagesView extends View {
    * Disables the button and shows "No older messages" when the bottom is reached.
    */
   private async handleLoadOlder(): Promise<void> {
-    const btn = this.container.querySelector('.messages-view__load-older-btn') as HTMLButtonElement | null;
-    const label = btn?.querySelector('.messages-view__load-older-label') as HTMLElement | null;
+    const btn = this.container.querySelector(
+      '.messages-view__load-older-btn'
+    ) as HTMLButtonElement | null;
+    const label = btn?.querySelector(
+      '.messages-view__load-older-label'
+    ) as HTMLElement | null;
     if (!btn || btn.disabled) return;
 
     btn.disabled = true;
@@ -221,7 +242,10 @@ export class MessagesView extends View {
     }
 
     try {
-      const result = await this.dmsApi?.loadOlderMessages() ?? { fetched: 0, reachedEnd: true };
+      const result = (await this.dmsApi?.loadOlderMessages()) ?? {
+        fetched: 0,
+        reachedEnd: true,
+      };
       // Older history may add conversations to the active tab — refresh it.
       await this.refreshConversationsQuiet();
 
@@ -234,7 +258,10 @@ export class MessagesView extends View {
         btn.disabled = false;
       }
     } catch (error) {
-      this.systemLogger.warn('MessagesView', `Failed to load older messages: ${error instanceof Error ? error.message : String(error)}`);
+      this.systemLogger.warn(
+        'MessagesView',
+        `Failed to load older messages: ${error instanceof Error ? error.message : String(error)}`
+      );
       if (label) {
         label.classList.remove('pulsate');
         label.textContent = 'Load older messages';
@@ -271,7 +298,9 @@ export class MessagesView extends View {
    * Setup infinite scroll on the active list container
    */
   private setupInfiniteScroll(): void {
-    const list = this.container.querySelector(`[data-list="${this.activeTab}"]`);
+    const list = this.container.querySelector(
+      `[data-list="${this.activeTab}"]`
+    );
     if (list) {
       this.infiniteScroll.observe(list as HTMLElement);
     }
@@ -298,7 +327,9 @@ export class MessagesView extends View {
       this.progressBar?.update(percent);
 
       // Update loading text with progress
-      const loadingEl = this.container.querySelector(`[data-list="${this.activeTab}"] .messages-view__loading`);
+      const loadingEl = this.container.querySelector(
+        `[data-list="${this.activeTab}"] .messages-view__loading`
+      );
       if (loadingEl) {
         loadingEl.textContent = `Loading messages... ${data.current}/${data.total}`;
       }
@@ -323,7 +354,11 @@ export class MessagesView extends View {
    * Update unread badge counts
    */
   private async updateBadgeCounts(): Promise<void> {
-    const counts = await this.dmsApi?.getUnreadCountsSplit() ?? { known: 0, unknown: 0, total: 0 };
+    const counts = (await this.dmsApi?.getUnreadCountsSplit()) ?? {
+      known: 0,
+      unknown: 0,
+      total: 0,
+    };
     this.updateBadge('known', counts.known);
     this.updateBadge('unknown', counts.unknown);
   }
@@ -332,7 +367,9 @@ export class MessagesView extends View {
    * Update a single badge element
    */
   private updateBadge(type: TabFilter, count: number): void {
-    const badge = this.container.querySelector(`[data-badge="${type}"]`) as HTMLElement;
+    const badge = this.container.querySelector(
+      `[data-badge="${type}"]`
+    ) as HTMLElement;
     if (!badge) return;
 
     if (count > 0) {
@@ -375,7 +412,9 @@ export class MessagesView extends View {
     this.isLoading = true;
 
     const isInitialLoad = this.currentOffset === 0;
-    const list = this.container.querySelector(`[data-list="${this.activeTab}"]`);
+    const list = this.container.querySelector(
+      `[data-list="${this.activeTab}"]`
+    );
 
     try {
       // Show loading indicator for subsequent loads (not initial)
@@ -384,11 +423,12 @@ export class MessagesView extends View {
       }
 
       // Get batch of conversations filtered by tab
-      const batch = await this.dmsApi?.getConversationsFiltered(
-        this.activeTab,
-        BATCH_SIZE,
-        this.currentOffset
-      ) ?? [];
+      const batch =
+        (await this.dmsApi?.getConversationsFiltered(
+          this.activeTab,
+          BATCH_SIZE,
+          this.currentOffset
+        )) ?? [];
 
       if (batch.length < BATCH_SIZE) {
         this.hasMoreConversations = false;
@@ -397,14 +437,24 @@ export class MessagesView extends View {
       this.conversations.push(...batch);
       this.currentOffset += batch.length;
 
-      await this.renderConversationsBatch(batch, isInitialLoad, list as HTMLElement);
+      await this.renderConversationsBatch(
+        batch,
+        isInitialLoad,
+        list as HTMLElement
+      );
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       if (this.conversations.length === 0) {
-        this.systemLogger.error('MessagesView', `Failed to load conversations: ${errorMsg}`);
+        this.systemLogger.error(
+          'MessagesView',
+          `Failed to load conversations: ${errorMsg}`
+        );
         this.renderError(list as HTMLElement);
       } else {
-        this.systemLogger.warn('MessagesView', `Error loading more conversations: ${errorMsg}`);
+        this.systemLogger.warn(
+          'MessagesView',
+          `Error loading more conversations: ${errorMsg}`
+        );
       }
     } finally {
       this.isLoading = false;
@@ -425,9 +475,10 @@ export class MessagesView extends View {
 
     // Handle empty state
     if (isInitialLoad && batch.length === 0) {
-      const emptyMessage = this.activeTab === 'known'
-        ? 'No messages from people you follow'
-        : 'No messages from unknown users';
+      const emptyMessage =
+        this.activeTab === 'known'
+          ? 'No messages from people you follow'
+          : 'No messages from unknown users';
 
       list.innerHTML = `
         <div class="messages-view__empty">
@@ -451,7 +502,10 @@ export class MessagesView extends View {
 
     // Append successful results and setup hover cards for each new item
     const conversationElements = results
-      .filter((r): r is PromiseFulfilledResult<HTMLElement> => r.status === 'fulfilled')
+      .filter(
+        (r): r is PromiseFulfilledResult<HTMLElement> =>
+          r.status === 'fulfilled'
+      )
       .map(r => r.value);
 
     conversationElements.forEach(el => {
@@ -464,7 +518,9 @@ export class MessagesView extends View {
   /**
    * Render a single conversation item
    */
-  private async renderConversationItem(conversation: DMConversation): Promise<HTMLElement> {
+  private async renderConversationItem(
+    conversation: DMConversation
+  ): Promise<HTMLElement> {
     const item = document.createElement('div');
     item.className = 'ui-list__item ui-list__item--clickable conversation-item';
     item.dataset.pubkey = conversation.pubkey;
@@ -473,12 +529,14 @@ export class MessagesView extends View {
     }
 
     // Fetch profile info (with fallback)
-    const fallbackName = conversation.pubkey.slice(0, 8) + '...';
+    const fallbackName = `${conversation.pubkey.slice(0, 8)}...`;
     let displayName = fallbackName;
     let avatarUrl = '';
 
     try {
-      const profile = await this.userProfileService.getUserProfile(conversation.pubkey);
+      const profile = await this.userProfileService.getUserProfile(
+        conversation.pubkey
+      );
       if (profile) {
         displayName = profile.display_name || profile.name || fallbackName;
         avatarUrl = profile.picture || '';
@@ -510,9 +568,13 @@ export class MessagesView extends View {
           </div>
         </div>
       </div>
-      ${conversation.unreadCount > 0 ? `
+      ${
+        conversation.unreadCount > 0
+          ? `
         <div class="badge">${conversation.unreadCount}</div>
-      ` : ''}
+      `
+          : ''
+      }
       <button class="conversation-item__delete" aria-label="${this.activeTab === 'unknown' ? 'Delete &amp; mute sender' : 'Delete conversation'}" title="${this.activeTab === 'unknown' ? 'Delete &amp; mute sender' : 'Delete conversation'}">
         <svg width="18" height="18"><use href="#icon-trash"/></svg>
       </button>
@@ -525,7 +587,7 @@ export class MessagesView extends View {
 
     // Per-row delete — stop propagation so it doesn't open the conversation
     const deleteBtn = item.querySelector('.conversation-item__delete');
-    deleteBtn?.addEventListener('click', (e) => {
+    deleteBtn?.addEventListener('click', e => {
       e.stopPropagation();
       this.confirmDeleteConversation(conversation.pubkey, displayName);
     });
@@ -537,7 +599,10 @@ export class MessagesView extends View {
    * Confirm + delete a conversation. In the Unknown (spam) tab this also mutes
    * the sender; in the Known tab it's a plain local soft-delete.
    */
-  private async confirmDeleteConversation(partnerPubkey: string, displayName: string): Promise<void> {
+  private async confirmDeleteConversation(
+    partnerPubkey: string,
+    displayName: string
+  ): Promise<void> {
     const { ModalService } = await import('../../services/ModalService');
     const isUnknown = this.activeTab === 'unknown';
 
@@ -559,9 +624,18 @@ export class MessagesView extends View {
     }
 
     // Remove the row from the DOM immediately
-    this.container.querySelector(`.conversation-item[data-pubkey="${partnerPubkey}"]`)?.remove();
-    this.conversations = this.conversations.filter(c => c.pubkey !== partnerPubkey);
-    ToastService.show(isUnknown ? 'Conversation deleted & sender muted' : 'Conversation deleted', 'success');
+    this.container
+      .querySelector(`.conversation-item[data-pubkey="${partnerPubkey}"]`)
+      ?.remove();
+    this.conversations = this.conversations.filter(
+      c => c.pubkey !== partnerPubkey
+    );
+    ToastService.show(
+      isUnknown
+        ? 'Conversation deleted & sender muted'
+        : 'Conversation deleted',
+      'success'
+    );
   }
 
   /**
@@ -607,7 +681,7 @@ export class MessagesView extends View {
     `;
 
     // Setup menu click handler
-    menu.addEventListener('click', (e) => {
+    menu.addEventListener('click', e => {
       e.stopPropagation();
       const target = e.target as HTMLElement;
       const menuItem = target.closest('.dropdown-menu-item') as HTMLElement;
@@ -700,7 +774,9 @@ export class MessagesView extends View {
    * Position menu below trigger
    */
   private positionMenu(): void {
-    const trigger = this.container.querySelector('.messages-view__menu-trigger') as HTMLElement;
+    const trigger = this.container.querySelector(
+      '.messages-view__menu-trigger'
+    ) as HTMLElement;
     if (!trigger || !this.menuElement) return;
 
     const triggerRect = trigger.getBoundingClientRect();
@@ -734,7 +810,8 @@ export class MessagesView extends View {
         const { ModalService } = await import('../../services/ModalService');
         const confirmed = await ModalService.getInstance().confirm({
           title: 'Re-sync messages',
-          message: 'Re-fetch your full message history from the relays. Existing messages are kept — this only pulls anything missing. May take a moment.',
+          message:
+            'Re-fetch your full message history from the relays. Existing messages are kept — this only pulls anything missing. May take a moment.',
           confirmText: 'Re-sync',
           cancelText: 'Cancel',
         });

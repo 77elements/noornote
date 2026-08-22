@@ -88,7 +88,10 @@ export class UserHoverCard {
   /**
    * Render the hover card
    */
-  private async renderCard(pubkey: string, triggerElement: HTMLElement): Promise<void> {
+  private async renderCard(
+    pubkey: string,
+    triggerElement: HTMLElement
+  ): Promise<void> {
     this.currentPubkey = pubkey;
 
     // Remove existing card
@@ -121,12 +124,17 @@ export class UserHoverCard {
 
     const displayName = profile.display_name || profile.name || 'Anonymous';
     // Use NIP-05(s) if available - prefer nip05s from tags, fallback to single nip05
-    const nip05s = profile.nip05s && profile.nip05s.length > 0
-      ? profile.nip05s
-      : (profile.nip05 ? [profile.nip05] : []);
-    const handle = nip05s.length > 0 ? nip05s.join(', ') : (profile.name || 'anon');
+    const nip05s =
+      profile.nip05s && profile.nip05s.length > 0
+        ? profile.nip05s
+        : profile.nip05
+          ? [profile.nip05]
+          : [];
+    const handle =
+      nip05s.length > 0 ? nip05s.join(', ') : profile.name || 'anon';
     const about = profile.about || '';
-    const truncatedAbout = about.length > 160 ? about.slice(0, 160) + '...' : about;
+    const truncatedAbout =
+      about.length > 160 ? `${about.slice(0, 160)}...` : about;
     const avatarUrl = profile.picture || '';
 
     return `
@@ -153,7 +161,7 @@ export class UserHoverCard {
     this.card.addEventListener('mouseleave', () => this.hide());
 
     // Click on card navigates to profile
-    this.card.addEventListener('click', (e) => {
+    this.card.addEventListener('click', e => {
       // Don't navigate if clicking follow button
       if ((e.target as HTMLElement).closest('.user-hover-card__actions')) {
         return;
@@ -162,13 +170,19 @@ export class UserHoverCard {
       if (npub) {
         // Route through the central controller so right-pane mode opens the profile
         // in the secondary pane (scc) instead of navigating the timeline (pcc).
-        getViewNavigationController().openView('profile', npub, e as MouseEvent);
+        getViewNavigationController().openView(
+          'profile',
+          npub,
+          e as MouseEvent
+        );
         this.removeCard();
       }
     });
 
     // Render follow button
-    const actionsContainer = this.card.querySelector('.user-hover-card__actions');
+    const actionsContainer = this.card.querySelector(
+      '.user-hover-card__actions'
+    );
     if (actionsContainer && this.card) {
       const card = this.card;
       const followManager = new ProfileFollowManager(pubkey);
@@ -196,7 +210,7 @@ export class UserHoverCard {
 
     // Default position: below and centered
     let top = rect.bottom + 10;
-    let left = rect.left + (rect.width / 2) - (cardWidth / 2);
+    let left = rect.left + rect.width / 2 - cardWidth / 2;
 
     // Adjust if going off screen (right)
     if (left + cardWidth > window.innerWidth) {
@@ -238,9 +252,11 @@ export class UserHoverCard {
       }
 
       // Don't hide if clicking on a username/avatar that triggers the card
-      if (target.closest('.note-header') ||
-          target.closest('[data-mention]') ||
-          target.closest('.user-identity')) {
+      if (
+        target.closest('.note-header') ||
+        target.closest('[data-mention]') ||
+        target.closest('.user-identity')
+      ) {
         return;
       }
 
@@ -299,16 +315,17 @@ export class UserHoverCard {
     UserHoverCard.instance = null;
   }
 
-
   /**
    * Initialize hover card for all mention links in a container
    * Call this after rendering content with mentions
    */
   public initializeForMentions(container: HTMLElement): void {
     // Find all mention links (created by npubToUsername helper)
-    const mentionLinks = container.querySelectorAll('a[href^="/profile/"][data-mention]');
+    const mentionLinks = container.querySelectorAll(
+      'a[href^="/profile/"][data-mention]'
+    );
 
-    mentionLinks.forEach((link) => {
+    mentionLinks.forEach(link => {
       const linkElement = link as HTMLAnchorElement;
 
       // Extract npub from href
@@ -322,7 +339,7 @@ export class UserHoverCard {
       if (!hexPubkey) return; // Invalid npub, skip
 
       // Add hover listeners
-      linkElement.addEventListener('mouseenter', (e) => {
+      linkElement.addEventListener('mouseenter', e => {
         e.stopPropagation(); // Prevent parent note click
         this.show(hexPubkey, linkElement);
       });
@@ -332,5 +349,4 @@ export class UserHoverCard {
       });
     });
   }
-
 }

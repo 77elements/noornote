@@ -28,7 +28,10 @@ import { setupPasteUpload } from '../../helpers/pasteUpload';
 import { MentionAutocomplete } from '../mentions/MentionAutocomplete';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { MediaModuleApi } from '../../modules/media/contracts';
-import type { ArticlesModuleApi, ArticleOptions } from '../../modules/articles/contracts';
+import type {
+  ArticlesModuleApi,
+  ArticleOptions,
+} from '../../modules/articles/contracts';
 import { ModalService } from '../../services/ModalService';
 import { marked } from 'marked';
 import { setupTabClickHandlers, switchTab } from '../../helpers/TabsHelper';
@@ -36,10 +39,16 @@ import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { FullscreenOverlay } from '../ui/FullscreenOverlay';
 import { MarkdownToolbar } from '../ui/MarkdownToolbar';
 import { npubToUsername } from '../../helpers/npubToUsername';
-import { upgradeInlineMentions, setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
+import {
+  upgradeInlineMentions,
+  setupUserMentionHandlers,
+} from '../../helpers/UserMentionHelper';
 import { upgradeArticleImages } from '../../helpers/upgradeArticleImages';
 import { extractQuotedReferences } from '../../helpers/extractQuotedReferences';
-import { formatQuotedReferences, type QuotedReference } from '../../helpers/formatQuotedReferences';
+import {
+  formatQuotedReferences,
+  type QuotedReference,
+} from '../../helpers/formatQuotedReferences';
 import { unwrapSolitaryParagraph } from '../../helpers/unwrapSolitaryParagraph';
 import { processFootnotes } from '../../helpers/processFootnotes';
 import { sanitizeArticleHtml } from '../../helpers/sanitizeUserHtml';
@@ -64,13 +73,15 @@ export class ArticleEditorView extends View {
   private router: Router;
   private _articlesApi?: ArticlesModuleApi | null;
   private get articlesApi(): ArticlesModuleApi | null {
-    return this._articlesApi ??= ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+    return (this._articlesApi ??=
+      ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles'));
   }
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
   private _mediaApi?: MediaModuleApi | null;
   private get mediaApi(): MediaModuleApi | null {
-    return this._mediaApi ??= ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
+    return (this._mediaApi ??=
+      ModuleLoader.getInstance().getApi<MediaModuleApi>('media'));
   }
 
   // Sub-components
@@ -103,7 +114,14 @@ export class ArticleEditorView extends View {
   private focusMdToolbar: MarkdownToolbar | null = null;
 
   // Dirty-state tracking
-  private snapshot: EditorSnapshot = { title: '', content: '', summary: '', image: '', tags: '', publishedAt: null };
+  private snapshot: EditorSnapshot = {
+    title: '',
+    content: '',
+    summary: '',
+    image: '',
+    tags: '',
+    publishedAt: null,
+  };
   private beforeUnloadHandler = (e: BeforeUnloadEvent): void => {
     if (this.isDirty()) {
       e.preventDefault();
@@ -121,8 +139,11 @@ export class ArticleEditorView extends View {
     // Main-editor Markdown toolbar — operates on the content textarea; the
     // existing input listener keeps this.content + button states in sync.
     this.mdToolbar = new MarkdownToolbar({
-      getTextarea: () => this.container.querySelector('.article-editor-content') as HTMLTextAreaElement | null,
-      onImageUpload: (file) => this.uploadContentImage(file),
+      getTextarea: () =>
+        this.container.querySelector(
+          '.article-editor-content'
+        ) as HTMLTextAreaElement | null,
+      onImageUpload: file => this.uploadContentImage(file),
     });
 
     // Generate initial identifier
@@ -151,17 +172,31 @@ export class ArticleEditorView extends View {
     `;
 
     try {
-      this.systemLogger.info('ArticleEditorView', `Loading article: ${naddr.slice(0, 30)}...`);
-      const event = await this.articlesApi?.fetchAddressableEvent(naddr) ?? null;
+      this.systemLogger.info(
+        'ArticleEditorView',
+        `Loading article: ${naddr.slice(0, 30)}...`
+      );
+      const event =
+        (await this.articlesApi?.fetchAddressableEvent(naddr)) ?? null;
 
       if (!event) {
-        this.systemLogger.error('ArticleEditorView', 'Article not found on relays');
+        this.systemLogger.error(
+          'ArticleEditorView',
+          'Article not found on relays'
+        );
         this.container.innerHTML = `<div class="article-view-error"><p>Article not found</p></div>`;
         return;
       }
 
       // Extract metadata and pre-fill fields
-      const metadata = this.articlesApi?.extractArticleMetadata(event) ?? { title: '', image: '', summary: '', publishedAt: 0, identifier: '', topics: [] };
+      const metadata = this.articlesApi?.extractArticleMetadata(event) ?? {
+        title: '',
+        image: '',
+        summary: '',
+        publishedAt: 0,
+        identifier: '',
+        topics: [],
+      };
       this.title = metadata.title;
       this.content = event.content;
       this.summary = metadata.summary;
@@ -172,10 +207,16 @@ export class ArticleEditorView extends View {
       this.isDraftMode = event.kind === 30024;
       this.editPubkey = event.pubkey;
 
-      this.systemLogger.info('ArticleEditorView', `Article loaded: "${metadata.title}"`);
+      this.systemLogger.info(
+        'ArticleEditorView',
+        `Article loaded: "${metadata.title}"`
+      );
       this.render();
     } catch (error) {
-      this.systemLogger.error('ArticleEditorView', `Failed to load article: ${error}`);
+      this.systemLogger.error(
+        'ArticleEditorView',
+        `Failed to load article: ${error}`
+      );
       this.container.innerHTML = `<div class="article-view-error"><p>Failed to load article</p></div>`;
     }
   }
@@ -189,7 +230,6 @@ export class ArticleEditorView extends View {
     this.availableRelays = cfg.availableRelays;
     this.selectedRelays = cfg.selectedRelays;
   }
-
 
   /**
    * Save a snapshot of the current editor state for dirty-checking
@@ -228,18 +268,18 @@ export class ArticleEditorView extends View {
       availableRelays: this.availableRelays,
       selectedRelays: this.selectedRelays,
       isTestMode: this.isTestMode,
-      onChange: (selectedRelays) => {
+      onChange: selectedRelays => {
         this.selectedRelays = selectedRelays;
         this.updateButtonStates();
-      }
+      },
     });
 
     // Create toolbar (no poll button for articles)
     this.toolbar = new PostEditorToolbar({
-      onMediaUploaded: (url) => this.handleMediaUploaded(url),
-      onEmojiSelected: (emoji) => this.handleEmojiSelected(emoji),
+      onMediaUploaded: url => this.handleMediaUploaded(url),
+      onEmojiSelected: emoji => this.handleEmojiSelected(emoji),
       textareaSelector: '.article-editor-content',
-      showPoll: false
+      showPoll: false,
     });
 
     this.container.innerHTML = `
@@ -398,16 +438,24 @@ export class ArticleEditorView extends View {
   private renderPublishedAtLabel(): string {
     if (!this.publishedAt) return '<em>Now (on publish)</em>';
     const date = new Date(this.publishedAt * 1000);
-    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+    return date.toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
   }
 
   private refreshPublishedAtUI(): void {
     const label = this.container.querySelector('[data-published-at-label]');
     if (label) label.innerHTML = this.renderPublishedAtLabel();
     // Re-render the whole row's actions so the Reset button toggles correctly
-    const row = this.container.querySelector('[data-action="pick-published-at"]')?.parentElement;
+    const row = this.container.querySelector(
+      '[data-action="pick-published-at"]'
+    )?.parentElement;
     if (row) {
-      const hasReset = !!row.querySelector('[data-action="clear-published-at"]');
+      const hasReset = !!row.querySelector(
+        '[data-action="clear-published-at"]'
+      );
       if (this.publishedAt && !hasReset) {
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -426,7 +474,9 @@ export class ArticleEditorView extends View {
     const { pickDate } = await import('../../helpers/datePickerModal');
     const picked = await pickDate({
       title: 'Published at',
-      initial: this.publishedAt ? new Date(this.publishedAt * 1000) : new Date(),
+      initial: this.publishedAt
+        ? new Date(this.publishedAt * 1000)
+        : new Date(),
       max: new Date(),
       confirmLabel: 'Set date',
     });
@@ -454,11 +504,21 @@ export class ArticleEditorView extends View {
         <h1 class="article-editor__preview-title">${escapeHtml(this.title) || 'Untitled'}</h1>
         ${this.summary ? `<p class="article-editor__preview-summary">${escapeHtml(this.summary)}</p>` : ''}
         <div class="article-editor__preview-content">${htmlContent}</div>
-        ${this.tags ? `
+        ${
+          this.tags
+            ? `
           <div class="article-editor__preview-tags">
-            ${this.tags.split(',').map(tag => `<span class="article-editor__preview-tag">#${escapeHtml(tag.trim())}</span>`).join('')}
+            ${this.tags
+              .split(',')
+              .map(
+                tag =>
+                  `<span class="article-editor__preview-tag">#${escapeHtml(tag.trim())}</span>`
+              )
+              .join('')}
           </div>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
     `;
   }
@@ -472,20 +532,28 @@ export class ArticleEditorView extends View {
     backBtn?.addEventListener('click', () => this.handleBack());
 
     // Tab switching
-    setupTabClickHandlers(this.container, (tabId) => this.switchTab(tabId as TabMode));
+    setupTabClickHandlers(this.container, tabId =>
+      this.switchTab(tabId as TabMode)
+    );
 
     // Field inputs
     this.setupFieldListeners();
 
     // Accordion toggle
     this.container.querySelectorAll('.nn-ui-toggle__header').forEach(header => {
-      header.addEventListener('click', () => header.closest('.nn-ui-toggle')?.classList.toggle('open'));
+      header.addEventListener('click', () =>
+        header.closest('.nn-ui-toggle')?.classList.toggle('open')
+      );
     });
 
     // Relay selector
-    const relaySelectorContainer = this.container.querySelector('.post-note-relay-selector');
+    const relaySelectorContainer = this.container.querySelector(
+      '.post-note-relay-selector'
+    );
     if (this.relaySelector && relaySelectorContainer) {
-      this.relaySelector.setupEventListeners(relaySelectorContainer as HTMLElement);
+      this.relaySelector.setupEventListeners(
+        relaySelectorContainer as HTMLElement
+      );
     }
 
     // Footer Toolbar (emoji, media for footer)
@@ -495,8 +563,14 @@ export class ArticleEditorView extends View {
     }
 
     // Paste-to-upload into the article body.
-    const pasteTarget = this.container.querySelector('.article-editor-content') as HTMLElement | null;
-    if (pasteTarget) setupPasteUpload(pasteTarget, files => void this.toolbar?.handleFileUpload(files));
+    const pasteTarget = this.container.querySelector(
+      '.article-editor-content'
+    ) as HTMLElement | null;
+    if (pasteTarget)
+      setupPasteUpload(
+        pasteTarget,
+        files => void this.toolbar?.handleFileUpload(files)
+      );
 
     // Markdown toolbar
     this.setupMarkdownToolbar();
@@ -508,40 +582,66 @@ export class ArticleEditorView extends View {
     this.mentionAutocomplete = new MentionAutocomplete({
       textareaSelector: '.article-editor-content',
       onMentionInserted: (_npub, username) => {
-        this.systemLogger.info('ArticleEditorView', `Mention inserted: @${username}`);
-      }
+        this.systemLogger.info(
+          'ArticleEditorView',
+          `Mention inserted: @${username}`
+        );
+      },
     });
     this.mentionAutocomplete.init();
 
     // Action buttons
-    const saveDraftBtn = this.container.querySelector('[data-action="save-draft"]');
+    const saveDraftBtn = this.container.querySelector(
+      '[data-action="save-draft"]'
+    );
     saveDraftBtn?.addEventListener('click', () => this.handleSaveDraft());
 
     const publishBtn = this.container.querySelector('[data-action="publish"]');
     publishBtn?.addEventListener('click', () => this.handlePublish());
 
-    const schedulePublishBtn = this.container.querySelector('[data-action="schedule-publish"]');
-    schedulePublishBtn?.addEventListener('click', () => this.handleSchedulePublish());
+    const schedulePublishBtn = this.container.querySelector(
+      '[data-action="schedule-publish"]'
+    );
+    schedulePublishBtn?.addEventListener('click', () =>
+      this.handleSchedulePublish()
+    );
 
-    const deleteDraftBtn = this.container.querySelector('[data-action="delete-draft"]');
+    const deleteDraftBtn = this.container.querySelector(
+      '[data-action="delete-draft"]'
+    );
     deleteDraftBtn?.addEventListener('click', () => this.handleDeleteDraft());
 
-    const focusBtn = this.container.querySelector('[data-action="enter-focus"]');
+    const focusBtn = this.container.querySelector(
+      '[data-action="enter-focus"]'
+    );
     focusBtn?.addEventListener('click', () => this.enterFocusMode());
 
-    const pickPublishedAtBtn = this.container.querySelector('[data-action="pick-published-at"]');
-    pickPublishedAtBtn?.addEventListener('click', () => this.handlePickPublishedAt());
-    const clearPublishedAtBtn = this.container.querySelector('[data-action="clear-published-at"]');
-    clearPublishedAtBtn?.addEventListener('click', () => this.handleClearPublishedAt());
+    const pickPublishedAtBtn = this.container.querySelector(
+      '[data-action="pick-published-at"]'
+    );
+    pickPublishedAtBtn?.addEventListener('click', () =>
+      this.handlePickPublishedAt()
+    );
+    const clearPublishedAtBtn = this.container.querySelector(
+      '[data-action="clear-published-at"]'
+    );
+    clearPublishedAtBtn?.addEventListener('click', () =>
+      this.handleClearPublishedAt()
+    );
 
     // Auto-generate slug from title (only for new articles, not when editing)
     if (!this.isEditMode) {
-      const titleInput = this.container.querySelector('[data-field="title"]') as HTMLInputElement;
+      const titleInput = this.container.querySelector(
+        '[data-field="title"]'
+      ) as HTMLInputElement;
       titleInput?.addEventListener('blur', () => {
         if (this.title && !this.identifier.includes('-')) {
           // Only auto-generate if identifier hasn't been customized
-          this.identifier = this.articlesApi?.generateIdentifier(this.title) ?? '';
-          const identifierInput = this.container.querySelector('[data-field="identifier"]') as HTMLInputElement;
+          this.identifier =
+            this.articlesApi?.generateIdentifier(this.title) ?? '';
+          const identifierInput = this.container.querySelector(
+            '[data-field="identifier"]'
+          ) as HTMLInputElement;
           if (identifierInput) {
             identifierInput.value = this.identifier;
           }
@@ -557,7 +657,9 @@ export class ArticleEditorView extends View {
    * Setup Markdown toolbar event listeners
    */
   private setupMarkdownToolbar(): void {
-    const root = this.container.querySelector('.md-toolbar') as HTMLElement | null;
+    const root = this.container.querySelector(
+      '.md-toolbar'
+    ) as HTMLElement | null;
     if (root) this.mdToolbar.attach(root);
   }
 
@@ -570,11 +672,18 @@ export class ArticleEditorView extends View {
       if (!this.mediaApi) return null;
       const result = await this.mediaApi.uploadFile(file);
       if (result.success && result.url) {
-        this.systemLogger.info('ArticleEditorView', 'Image uploaded and inserted');
+        this.systemLogger.info(
+          'ArticleEditorView',
+          'Image uploaded and inserted'
+        );
         return result.url;
       }
     } catch (_error) {
-      this.systemLogger.error('ArticleEditorView', 'Image upload failed:', _error);
+      this.systemLogger.error(
+        'ArticleEditorView',
+        'Image upload failed:',
+        _error
+      );
     }
     return null;
   }
@@ -583,8 +692,12 @@ export class ArticleEditorView extends View {
    * Setup cover image upload
    */
   private setupCoverUpload(): void {
-    const uploadBtn = this.container.querySelector('[data-action="upload-cover"]');
-    const fileInput = this.container.querySelector('[data-cover-file]') as HTMLInputElement;
+    const uploadBtn = this.container.querySelector(
+      '[data-action="upload-cover"]'
+    );
+    const fileInput = this.container.querySelector(
+      '[data-cover-file]'
+    ) as HTMLInputElement;
 
     uploadBtn?.addEventListener('click', () => {
       if (!this.isCoverUploading) {
@@ -592,7 +705,7 @@ export class ArticleEditorView extends View {
       }
     });
 
-    fileInput?.addEventListener('change', async (e) => {
+    fileInput?.addEventListener('change', async e => {
       const target = e.target as HTMLInputElement;
       const file = target.files?.[0];
       if (file) {
@@ -609,8 +722,12 @@ export class ArticleEditorView extends View {
     if (!file.type.startsWith('image/') || this.isCoverUploading) return;
 
     this.isCoverUploading = true;
-    const uploadBtn = this.container.querySelector('[data-action="upload-cover"]') as HTMLButtonElement;
-    const imageInput = this.container.querySelector('[data-field="image"]') as HTMLInputElement;
+    const uploadBtn = this.container.querySelector(
+      '[data-action="upload-cover"]'
+    ) as HTMLButtonElement;
+    const imageInput = this.container.querySelector(
+      '[data-field="image"]'
+    ) as HTMLInputElement;
 
     // Show loading state
     if (uploadBtn) {
@@ -633,7 +750,11 @@ export class ArticleEditorView extends View {
         this.systemLogger.info('ArticleEditorView', 'Cover image uploaded');
       }
     } catch (_error) {
-      this.systemLogger.error('ArticleEditorView', 'Cover upload failed:', _error);
+      this.systemLogger.error(
+        'ArticleEditorView',
+        'Cover upload failed:',
+        _error
+      );
     } finally {
       this.isCoverUploading = false;
       if (uploadBtn) {
@@ -651,7 +772,7 @@ export class ArticleEditorView extends View {
   private setupFieldListeners(): void {
     const fields = this.container.querySelectorAll('[data-field]');
     fields.forEach(field => {
-      field.addEventListener('input', (e) => {
+      field.addEventListener('input', e => {
         const target = e.target as HTMLInputElement | HTMLTextAreaElement;
         const fieldName = target.dataset.field;
 
@@ -693,12 +814,14 @@ export class ArticleEditorView extends View {
         }
         this.mentionAutocomplete = new MentionAutocomplete({
           textareaSelector: '.article-editor-content',
-          onMentionInserted: (_npub, _username) => {}
+          onMentionInserted: (_npub, _username) => {},
         });
         this.mentionAutocomplete.init();
       } else {
         body.innerHTML = this.renderPreviewMode();
-        const previewContent = body.querySelector<HTMLElement>('.article-editor__preview-content');
+        const previewContent = body.querySelector<HTMLElement>(
+          '.article-editor__preview-content'
+        );
         if (previewContent) {
           upgradeInlineMentions(previewContent);
           setupUserMentionHandlers(previewContent);
@@ -718,8 +841,12 @@ export class ArticleEditorView extends View {
     const hasRelays = this.selectedRelays.size > 0;
     const isValid = hasTitle && hasContent && hasRelays;
 
-    const publishBtn = this.container.querySelector('[data-action="publish"]') as HTMLButtonElement;
-    const saveDraftBtn = this.container.querySelector('[data-action="save-draft"]') as HTMLButtonElement;
+    const publishBtn = this.container.querySelector(
+      '[data-action="publish"]'
+    ) as HTMLButtonElement;
+    const saveDraftBtn = this.container.querySelector(
+      '[data-action="save-draft"]'
+    ) as HTMLButtonElement;
 
     if (publishBtn) {
       publishBtn.disabled = !isValid || this.isPublishing;
@@ -755,7 +882,9 @@ export class ArticleEditorView extends View {
    * Insert text at the current cursor position in the content textarea
    */
   private insertAtCursor(text: string): void {
-    const textarea = this.container.querySelector('.article-editor-content') as HTMLTextAreaElement;
+    const textarea = this.container.querySelector(
+      '.article-editor-content'
+    ) as HTMLTextAreaElement;
     if (!textarea) return;
     this.content = insertTextAtCursor(textarea, this.content, text);
     this.updateButtonStates();
@@ -817,18 +946,28 @@ export class ArticleEditorView extends View {
 
     this.isPublishing = true;
     this.updateButtonStates();
-    const btn = this.container.querySelector('[data-action="schedule-publish"]') as HTMLButtonElement;
+    const btn = this.container.querySelector(
+      '[data-action="schedule-publish"]'
+    ) as HTMLButtonElement;
     const originalText = btn?.textContent || '';
     if (btn) btn.textContent = 'Scheduling...';
 
     try {
-      const topics = this.tags.split(',').map(t => t.trim()).filter(Boolean);
-      const { scheduleArticle } = await import('../../addons/scheduled-posts/scheduleArticle');
+      const topics = this.tags
+        .split(',')
+        .map(t => t.trim())
+        .filter(Boolean);
+      const { scheduleArticle } = await import(
+        '../../addons/scheduled-posts/scheduleArticle'
+      );
 
       const naddr = await scheduleArticle({
         title: this.title,
         content: this.content,
-        identifier: this.identifier || this.articlesApi?.generateIdentifier(this.title) || '',
+        identifier:
+          this.identifier ||
+          this.articlesApi?.generateIdentifier(this.title) ||
+          '',
         relays: Array.from(this.selectedRelays),
         scheduledAt,
         ...(this.summary ? { summary: this.summary } : {}),
@@ -856,7 +995,8 @@ export class ArticleEditorView extends View {
 
     const confirmed = await ModalService.getInstance().confirm({
       title: 'Delete Draft',
-      message: 'This will send a deletion request to all relays. This cannot be undone.',
+      message:
+        'This will send a deletion request to all relays. This cannot be undone.',
       confirmText: 'Delete',
       cancelText: 'Cancel',
       confirmDestructive: true,
@@ -865,9 +1005,13 @@ export class ArticleEditorView extends View {
     if (!confirmed) return;
 
     const { ModuleLoader } = await import('../../core/ModuleLoader');
-    const postsApi = ModuleLoader.getInstance().getApi<import('../../modules/posts/contracts').PostsModuleApi>('posts');
+    const postsApi =
+      ModuleLoader.getInstance().getApi<
+        import('../../modules/posts/contracts').PostsModuleApi
+      >('posts');
     const coordinate = `30024:${this.editPubkey}:${this.identifier}`;
-    const deleted = await (postsApi?.deleteByCoordinates([coordinate]) ?? Promise.resolve(false));
+    const deleted = await (postsApi?.deleteByCoordinates([coordinate]) ??
+      Promise.resolve(false));
 
     if (deleted) {
       this.saveSnapshot(); // Prevent unsaved changes warning
@@ -893,13 +1037,19 @@ export class ArticleEditorView extends View {
     }
 
     try {
-      const topics = this.tags.split(',').map(t => t.trim()).filter(Boolean);
+      const topics = this.tags
+        .split(',')
+        .map(t => t.trim())
+        .filter(Boolean);
 
       const articleData: ArticleOptions = {
         title: this.title,
         content: this.content,
-        identifier: this.identifier || this.articlesApi?.generateIdentifier(this.title) || '',
-        relays: Array.from(this.selectedRelays)
+        identifier:
+          this.identifier ||
+          this.articlesApi?.generateIdentifier(this.title) ||
+          '',
+        relays: Array.from(this.selectedRelays),
       };
 
       // Only add optional properties if they have values (exactOptionalPropertyTypes)
@@ -909,15 +1059,16 @@ export class ArticleEditorView extends View {
       if (this.publishedAt) articleData.publishedAt = this.publishedAt;
 
       const naddr = isDraft
-        ? await this.articlesApi?.saveDraft(articleData) ?? null
-        : await this.articlesApi?.publishArticle(articleData) ?? null;
+        ? ((await this.articlesApi?.saveDraft(articleData)) ?? null)
+        : ((await this.articlesApi?.publishArticle(articleData)) ?? null);
 
       // After successful save, update snapshot so dirty-check won't trigger
       this.saveSnapshot();
 
       // Refresh the author's profile carousel cache so the new article/draft
       // shows immediately instead of waiting out the orchestrator TTL.
-      if (naddr) ProfileCarouselOrchestrator.getInstance().invalidateForCurrentUser();
+      if (naddr)
+        ProfileCarouselOrchestrator.getInstance().invalidateForCurrentUser();
 
       if (naddr && !isDraft) {
         this.router.navigate(`/article/${naddr}`);
@@ -943,17 +1094,21 @@ export class ArticleEditorView extends View {
     try {
       marked.setOptions({
         breaks: true,
-        gfm: true
+        gfm: true,
       });
 
       // Extract quoted nostr references before markdown parsing (NIP-27)
-      const quotedReferences = extractQuotedReferences(content) as QuotedReference[];
+      const quotedReferences = extractQuotedReferences(
+        content
+      ) as QuotedReference[];
       this.previewQuotedRefs = quotedReferences;
 
       // Same pipeline as ArticleView.renderMarkdown: footnotes + sanitize with
       // the shared whitelist, so the preview shows exactly the published result.
       const { bodyMd, footnotesHtml } = processFootnotes(content);
-      let html = sanitizeArticleHtml((marked.parse(bodyMd) as string) + footnotesHtml);
+      let html = sanitizeArticleHtml(
+        (marked.parse(bodyMd) as string) + footnotesHtml
+      );
       // Add rel for security - global handler in App.ts opens external links
       html = html.replace(/<a href=/g, '<a rel="noopener noreferrer" href=');
 
@@ -965,13 +1120,17 @@ export class ArticleEditorView extends View {
       const contentProcessor = ContentProcessor.getInstance();
       const profileResolver = (hexPubkey: string) => {
         const profile = contentProcessor.getNonBlockingProfile(hexPubkey);
-        return profile ? {
-          name: profile.name,
-          display_name: profile.display_name,
-          picture: profile.picture
-        } : null;
+        return profile
+          ? {
+              name: profile.name,
+              display_name: profile.display_name,
+              picture: profile.picture,
+            }
+          : null;
       };
-      return npubToUsername(html, 'html-multi', profileResolver, { forceFullMode: true });
+      return npubToUsername(html, 'html-multi', profileResolver, {
+        forceFullMode: true,
+      });
     } catch (_err) {
       this.previewQuotedRefs = [];
       return `<p>${escapeHtml(content)}</p>`;
@@ -999,7 +1158,10 @@ export class ArticleEditorView extends View {
       unwrapSolitaryParagraph(marker);
 
       if (ref.type === 'addr') {
-        articleRenderer.renderArticlePreview(ref.fullMatch, marker.parentElement!);
+        articleRenderer.renderArticlePreview(
+          ref.fullMatch,
+          marker.parentElement!
+        );
         marker.remove();
       } else {
         const skeleton = quotedNoteRenderer.createQuoteSkeleton();
@@ -1008,7 +1170,6 @@ export class ArticleEditorView extends View {
       }
     });
   }
-
 
   /**
    * Get element
@@ -1025,8 +1186,11 @@ export class ArticleEditorView extends View {
 
     // Focus-mode Markdown toolbar — same component, bound to the focus textarea.
     this.focusMdToolbar = new MarkdownToolbar({
-      getTextarea: () => body.querySelector('[data-focus-field="content"]') as HTMLTextAreaElement | null,
-      onImageUpload: (file) => this.uploadContentImage(file),
+      getTextarea: () =>
+        body.querySelector(
+          '[data-focus-field="content"]'
+        ) as HTMLTextAreaElement | null,
+      onImageUpload: file => this.uploadContentImage(file),
     });
 
     body.innerHTML = `
@@ -1043,15 +1207,25 @@ export class ArticleEditorView extends View {
       </section>
     `;
 
-    const titleInput = body.querySelector('[data-focus-field="title"]') as HTMLInputElement;
-    const contentInput = body.querySelector('[data-focus-field="content"]') as HTMLTextAreaElement;
+    const titleInput = body.querySelector(
+      '[data-focus-field="title"]'
+    ) as HTMLInputElement;
+    const contentInput = body.querySelector(
+      '[data-focus-field="content"]'
+    ) as HTMLTextAreaElement;
     titleInput.value = this.title;
     contentInput.value = this.content;
 
-    titleInput.addEventListener('input', () => { this.title = titleInput.value; });
-    contentInput.addEventListener('input', () => { this.content = contentInput.value; });
+    titleInput.addEventListener('input', () => {
+      this.title = titleInput.value;
+    });
+    contentInput.addEventListener('input', () => {
+      this.content = contentInput.value;
+    });
 
-    const focusToolbarRoot = body.querySelector('.md-toolbar') as HTMLElement | null;
+    const focusToolbarRoot = body.querySelector(
+      '.md-toolbar'
+    ) as HTMLElement | null;
     if (focusToolbarRoot) this.focusMdToolbar.attach(focusToolbarRoot);
 
     this.fullscreenOverlay = new FullscreenOverlay({
@@ -1059,8 +1233,12 @@ export class ArticleEditorView extends View {
       exitLabel: 'Exit Focus Mode',
       body,
       onExit: () => {
-        const realTitle = this.container.querySelector('[data-field="title"]') as HTMLInputElement | null;
-        const realContent = this.container.querySelector('[data-field="content"]') as HTMLTextAreaElement | null;
+        const realTitle = this.container.querySelector(
+          '[data-field="title"]'
+        ) as HTMLInputElement | null;
+        const realContent = this.container.querySelector(
+          '[data-field="content"]'
+        ) as HTMLTextAreaElement | null;
         if (realTitle) {
           realTitle.value = this.title;
           realTitle.dispatchEvent(new Event('input', { bubbles: true }));

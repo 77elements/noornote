@@ -27,32 +27,32 @@ export class ArticleProcessor {
     const summary = getTag(event.tags, 'summary');
 
     // For timeline preview, show title and summary
-    const previewContent = summary
-      ? `# ${title}\n\n${summary}`
-      : `# ${title}`;
+    const previewContent = summary ? `# ${title}\n\n${summary}` : `# ${title}`;
 
-    const authorProfile = ArticleProcessor.contentProcessor.getNonBlockingProfile(event.pubkey);
-    const processedContent = ArticleProcessor.contentProcessor.processContentWithTags(
-      previewContent,
-      event.tags
-    );
+    const authorProfile =
+      ArticleProcessor.contentProcessor.getNonBlockingProfile(event.pubkey);
+    const processedContent =
+      ArticleProcessor.contentProcessor.processContentWithTags(
+        previewContent,
+        event.tags
+      );
 
     const result: ProcessedNote = {
       id: eventId,
       type: 'original',
       timestamp: event.created_at,
       author: {
-        pubkey: event.pubkey
+        pubkey: event.pubkey,
       },
       content: processedContent,
-      rawEvent: event
+      rawEvent: event,
     };
 
     if (authorProfile) {
       result.author.profile = {
         name: authorProfile.name,
         display_name: authorProfile.display_name,
-        picture: authorProfile.picture
+        picture: authorProfile.picture,
       };
     }
 

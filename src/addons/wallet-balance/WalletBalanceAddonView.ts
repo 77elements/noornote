@@ -23,16 +23,19 @@ export class WalletBalanceAddonView extends View {
   constructor() {
     super();
     this.container = document.createElement('div');
-    this.container.className = 'view-content view-content--addon view-content--addon-wallet-balance';
+    this.container.className =
+      'view-content view-content--addon view-content--addon-wallet-balance';
 
     const enabled = isWalletBalanceEnabled();
 
     this.enableSwitch = new Switch({
       label: '',
       checked: enabled,
-      onChange: (checked) => {
+      onChange: checked => {
         setWalletBalanceEnabled(checked);
-        TypedEventBus.getInstance().emit('wallet-balance:addon-toggle', { enabled: checked });
+        TypedEventBus.getInstance().emit('wallet-balance:addon-toggle', {
+          enabled: checked,
+        });
         ToastService.show(
           checked ? 'Wallet Balance enabled' : 'Wallet Balance disabled',
           'success'
@@ -58,16 +61,21 @@ export class WalletBalanceAddonView extends View {
     if (controlEl) controlEl.innerHTML = this.enableSwitch.render();
     this.enableSwitch.setupEventListeners(this.container);
 
-    this.contentEl = this.container.querySelector('[data-addon-content="wallet-balance"]');
+    this.contentEl = this.container.querySelector(
+      '[data-addon-content="wallet-balance"]'
+    );
 
     if (enabled) {
       this.mountTxList();
     }
 
-    this.toggleSubId = TypedEventBus.getInstance().on('wallet-balance:addon-toggle', (payload: { enabled: boolean }) => {
-      if (payload.enabled) this.mountTxList();
-      else this.unmountTxList();
-    });
+    this.toggleSubId = TypedEventBus.getInstance().on(
+      'wallet-balance:addon-toggle',
+      (payload: { enabled: boolean }) => {
+        if (payload.enabled) this.mountTxList();
+        else this.unmountTxList();
+      }
+    );
   }
 
   private async mountTxList(): Promise<void> {

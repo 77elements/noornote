@@ -43,11 +43,13 @@ export function getTransport(): NostrTransport {
  */
 export function getReadRelays(): string[] {
   const cfg = RelayConfig.getInstance();
-  return [...new Set<string>([
-    ...getTransport().getWriteRelays(),
-    ...cfg.getReadRelays(),
-    ...cfg.getAggregatorRelays(),
-  ])];
+  return [
+    ...new Set<string>([
+      ...getTransport().getWriteRelays(),
+      ...cfg.getReadRelays(),
+      ...cfg.getAggregatorRelays(),
+    ]),
+  ];
 }
 
 /**
@@ -130,12 +132,20 @@ async function tryEncryptWithFallback(
 ): Promise<string> {
   try {
     const result = await nip44Fn(plaintext, pubkey);
-    diagLog('relays', 'tryEncryptWithFallback: NIP-44 succeeded', { ciphertextLength: result.length });
+    diagLog('relays', 'tryEncryptWithFallback: NIP-44 succeeded', {
+      ciphertextLength: result.length,
+    });
     return result;
   } catch (nip44Error) {
-    diagLog('relays', 'tryEncryptWithFallback: NIP-44 failed, falling back to NIP-04', { error: String(nip44Error) });
+    diagLog(
+      'relays',
+      'tryEncryptWithFallback: NIP-44 failed, falling back to NIP-04',
+      { error: String(nip44Error) }
+    );
     const result = await nip04Fn(plaintext, pubkey);
-    diagLog('relays', 'tryEncryptWithFallback: NIP-04 succeeded', { ciphertextLength: result.length });
+    diagLog('relays', 'tryEncryptWithFallback: NIP-04 succeeded', {
+      ciphertextLength: result.length,
+    });
     return result;
   }
 }
@@ -152,18 +162,29 @@ async function tryDecryptWithFallback(
   if (nip44Fn) {
     try {
       const result = await nip44Fn(ciphertext, pubkey);
-      diagLog('relays', 'tryDecryptWithFallback: NIP-44 succeeded', { plaintextLength: result.length });
+      diagLog('relays', 'tryDecryptWithFallback: NIP-44 succeeded', {
+        plaintextLength: result.length,
+      });
       return result;
     } catch (nip44Error) {
-      diagLog('relays', 'tryDecryptWithFallback: NIP-44 failed, trying NIP-04', { error: String(nip44Error) });
+      diagLog(
+        'relays',
+        'tryDecryptWithFallback: NIP-44 failed, trying NIP-04',
+        { error: String(nip44Error) }
+      );
     }
   }
   if (nip04Fn) {
     const result = await nip04Fn(ciphertext, pubkey);
-    diagLog('relays', 'tryDecryptWithFallback: NIP-04 succeeded', { plaintextLength: result.length });
+    diagLog('relays', 'tryDecryptWithFallback: NIP-04 succeeded', {
+      plaintextLength: result.length,
+    });
     return result;
   }
-  diagLog('relays', 'tryDecryptWithFallback: no decrypt function available, returning null');
+  diagLog(
+    'relays',
+    'tryDecryptWithFallback: no decrypt function available, returning null'
+  );
   return null;
 }
 
@@ -182,9 +203,15 @@ function getNip46Manager(): import('../services/managers/Nip46BaseManager').Nip4
 /**
  * Encrypt content for private items (NIP-44 with NIP-04 fallback)
  */
-export async function encryptContent(plaintext: string, pubkey: string): Promise<string> {
+export async function encryptContent(
+  plaintext: string,
+  pubkey: string
+): Promise<string> {
   const authMethod = AuthService.getInstance().getAuthMethod();
-  diagLog('relays', 'encryptContent', { authMethod, plaintextLength: plaintext.length });
+  diagLog('relays', 'encryptContent', {
+    authMethod,
+    plaintextLength: plaintext.length,
+  });
 
   if (authMethod === 'key-signer') {
     const { KeySignerClient } = await import('../services/KeySignerClient');
@@ -227,14 +254,24 @@ export async function encryptContent(plaintext: string, pubkey: string): Promise
 /**
  * Decrypt content from private items (NIP-44 with NIP-04 fallback)
  */
-export async function decryptContent(ciphertext: string, senderPubkey: string): Promise<string | null> {
+export async function decryptContent(
+  ciphertext: string,
+  senderPubkey: string
+): Promise<string | null> {
   const authService = AuthService.getInstance();
   if (authService.isBunkerAuth()) {
-    diagLog('relays', 'decryptContent: skipping — bunker auth has no decryption support');
+    diagLog(
+      'relays',
+      'decryptContent: skipping — bunker auth has no decryption support'
+    );
     return null;
   }
   const authMethod = authService.getAuthMethod();
-  diagLog('relays', 'decryptContent', { authMethod, ciphertextLength: ciphertext.length, isNip04: ciphertext.includes('?iv=') });
+  diagLog('relays', 'decryptContent', {
+    authMethod,
+    ciphertextLength: ciphertext.length,
+    isNip04: ciphertext.includes('?iv='),
+  });
 
   try {
     if (authMethod === 'key-signer') {
@@ -251,8 +288,10 @@ export async function decryptContent(ciphertext: string, senderPubkey: string): 
     if (authMethod === 'nip46') {
       const manager = getNip46Manager();
       return await tryDecryptWithFallback(
-        (c, k) => withTimeout(() => manager.nip44Decrypt(c, k), NIP46_TIMEOUT_MS),
-        (c, k) => withTimeout(() => manager.nip04Decrypt(c, k), NIP46_TIMEOUT_MS),
+        (c, k) =>
+          withTimeout(() => manager.nip44Decrypt(c, k), NIP46_TIMEOUT_MS),
+        (c, k) =>
+          withTimeout(() => manager.nip04Decrypt(c, k), NIP46_TIMEOUT_MS),
         ciphertext,
         senderPubkey
       );
@@ -275,7 +314,10 @@ export async function decryptContent(ciphertext: string, senderPubkey: string): 
     logger.error('relays.ts', `Decryption failed: ${error}`);
   }
 
-  diagLog('relays', 'decryptContent: returning null (no supported auth method or all attempts failed)');
+  diagLog(
+    'relays',
+    'decryptContent: returning null (no supported auth method or all attempts failed)'
+  );
   return null;
 }
 
@@ -287,6 +329,6 @@ function withTimeout<T>(fn: () => Promise<T>, timeoutMs: number): Promise<T> {
     fn(),
     new Promise<T>((_, reject) =>
       setTimeout(() => reject(new Error('Timeout')), timeoutMs)
-    )
+    ),
   ]);
 }

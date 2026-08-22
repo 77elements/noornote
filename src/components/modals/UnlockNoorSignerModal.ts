@@ -32,12 +32,14 @@ export class UnlockNoorSignerModal {
       width: '400px',
       showCloseButton: true,
       closeOnOverlay: false,
-      closeOnEsc: true
+      closeOnEsc: true,
     });
 
     setTimeout(() => {
       this.setupEventHandlers();
-      const input = document.getElementById('unlock-ns-password-input') as HTMLInputElement;
+      const input = document.getElementById(
+        'unlock-ns-password-input'
+      ) as HTMLInputElement;
       input?.focus();
     }, 0);
   }
@@ -74,7 +76,9 @@ export class UnlockNoorSignerModal {
   }
 
   private setupEventHandlers(): void {
-    const input = document.getElementById('unlock-ns-password-input') as HTMLInputElement;
+    const input = document.getElementById(
+      'unlock-ns-password-input'
+    ) as HTMLInputElement;
     const cancelBtn = document.getElementById('unlock-ns-cancel-btn');
     const submitBtn = document.getElementById('unlock-ns-submit-btn');
     const errorEl = document.getElementById('unlock-ns-password-error');
@@ -101,7 +105,8 @@ export class UnlockNoorSignerModal {
         try {
           await this.keySignerClient.submitDaemonPassword(password);
         } catch (prepError) {
-          const msg = prepError instanceof Error ? prepError.message : String(prepError);
+          const msg =
+            prepError instanceof Error ? prepError.message : String(prepError);
           if (msg.includes('No daemon process')) {
             // Process died or wasn't prepared — restart and retry
             await this.keySignerClient.prepareDaemonForUnlock();
@@ -113,9 +118,11 @@ export class UnlockNoorSignerModal {
         this.modalService.hide();
         this.options.onSuccess();
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        const isPasswordError = errorMessage.includes('invalid_password') ||
-                                errorMessage.includes('Invalid password');
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        const isPasswordError =
+          errorMessage.includes('invalid_password') ||
+          errorMessage.includes('Invalid password');
         this.showError(isPasswordError ? 'Incorrect password' : errorMessage);
         // Re-prepare daemon for next attempt (previous process consumed)
         this.keySignerClient.prepareDaemonForUnlock().catch(() => {});
@@ -136,7 +143,7 @@ export class UnlockNoorSignerModal {
     cancelBtn.addEventListener('click', handleCancel);
     submitBtn.addEventListener('click', handleSubmit);
 
-    input.addEventListener('keydown', (e) => {
+    input.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
         handleSubmit();
       } else if (e.key === 'Escape') {
