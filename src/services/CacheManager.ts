@@ -168,7 +168,7 @@ export class CacheManager {
 
       // Clear specific profile cache if UserProfileService is available
       if (profileCache) {
-        this.clearProfileCache();
+        await this.clearProfileCache();
       }
 
       // Clear event cache
@@ -197,18 +197,16 @@ export class CacheManager {
   }
 
   /**
-   * Clear profile cache through UserProfileService
+   * Clear profile cache through UserProfileService — memory LRU AND the
+   * per-account IndexedDB mirror (ProfileStore), so a "clear cache" is
+   * complete. Explicit user intent only; the account-switch path
+   * (clearUserSpecificCaches) never comes through here.
    */
-  private clearProfileCache(): void {
+  private async clearProfileCache(): Promise<void> {
     try {
-      // Try to access UserProfileService if available
-      const userProfileService = (window as any).userProfileService;
-      if (userProfileService && typeof userProfileService.clearCache === 'function') {
-        userProfileService.clearCache();
-        console.log('✅ Profile cache cleared');
-      } else {
-        console.log('ℹ️ UserProfileService not available for cache clearing');
-      }
+      const { UserProfileService } = await import('./UserProfileService');
+      await UserProfileService.getInstance().wipePersisted();
+      console.log('✅ Profile cache cleared (memory + persisted)');
     } catch (error) {
       console.warn('⚠️ Failed to clear profile cache:', error);
     }

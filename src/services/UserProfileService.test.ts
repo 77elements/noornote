@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const { mockFetchProfile, mockFetchMultipleProfiles } = vi.hoisted(() => ({
   mockFetchProfile: vi.fn(),
@@ -17,12 +17,35 @@ vi.mock('./orchestration/ProfileOrchestrator', () => {
   };
 });
 
+vi.mock('./ProfileStore', () => ({
+  profileStore: {
+    saveMany: vi.fn(),
+    loadAll: vi.fn(async () => new Map()),
+    delete: vi.fn(),
+    wipePersisted: vi.fn(),
+  },
+}));
+
+vi.mock('./AuthService', () => ({
+  AuthService: {
+    getInstance: () => ({ getCurrentUser: () => ({ npub: 'npub1test', pubkey: 'pk' }) }),
+  },
+}));
+
 const orch = { fetchProfile: mockFetchProfile, fetchMultipleProfiles: mockFetchMultipleProfiles };
 
 const PK = 'aa'.repeat(32);
 const PK2 = 'bb'.repeat(32);
 
 import { UserProfileService, type UserProfile } from './UserProfileService';
+import { profileStore } from './ProfileStore';
+
+const store = profileStore as unknown as {
+  saveMany: ReturnType<typeof vi.fn>;
+  loadAll: ReturnType<typeof vi.fn>;
+  delete: ReturnType<typeof vi.fn>;
+  wipePersisted: vi.Mock;
+};
 
 const realProfile = (pubkey: string, name: string): UserProfile => ({
   pubkey,
@@ -133,6 +156,103 @@ describe('UserProfileService (cache semantics)', () => {
 
     expect(service.hasProfile(PK)).toBe(true);
     expect(updates).toEqual([]); // no downgrade broadcast for name-less entries
+  });
+});
+
+describe('UserProfileService (ProfileStore integration)', () => {
+  let service: UserProfileService;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    orch.fetchProfile.mockReset();
+    orch.fetchMultipleProfiles.mockReset();
+    store.loadAll.mockReset().mockResolvedValue(new Map());
+    service = UserProfileService.getInstance();
+    service.clearCache();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('display-bearing fetch results are persisted (debounced batch)', async () => {
+    orch.fetchProfile.mockResolvedValue(realProfile(PK, 'alice'));
+    await service.getUserProfile(PK);
+
+    expect(store.saveMany).not.toHaveBeenCalled(); // still inside debounce window
+    vi.advanceTimersByTime(2000);
+    expect(store.saveMany).toHaveBeenCalledTimes(1);
+    const batch = store.saveMany.mock.calls[0][0] as Map<string, UserProfile>;
+    expect(batch.get(PK)?.name).toBe('alice');
+  });
+
+  it('name-less fetch results are NEVER persisted', async () => {
+    orch.fetchProfile.mockResolvedValue({ pubkey: PK });
+    await service.getUserProfile(PK);
+    vi.advanceTimersByTime(2000);
+    expect(store.saveMany).not.toHaveBeenCalled();
+  });
+
+  it('warmFromStore fills the LRU and notifies for display-bearing entries', async () => {
+    const updates: string[] = [];
+    // any-updates subscriber (fetch-free registration — per-pubkey subscribe
+    // would trigger a relay fetch on cache miss, which warm must not need)
+    const unsub = service.subscribeToAnyProfileUpdate((_pk, p) => updates.push(p.name ?? '(none)'));
+    store.loadAll.mockResolvedValue(new Map([[PK, realProfile(PK, 'restored')]]));
+
+    await service.warmFromStore();
+
+    expect(service.hasProfile(PK)).toBe(true);
+    expect(orch.fetchProfile).not.toHaveBeenCalled(); // warm, not fetch
+    expect(updates).toEqual(['restored']);
+    unsub();
+  });
+
+  it('warmFromStore never overwrites fresher in-memory entries', async () => {
+    service.setCachedProfile(PK, realProfile(PK, 'fresh'));
+    store.loadAll.mockResolvedValue(new Map([[PK, realProfile(PK, 'stale')]]));
+
+    await service.warmFromStore();
+
+    expect(service.getCachedProfile(PK)?.name).toBe('fresh');
+  });
+
+  it('warmFromStore is idempotent per account', async () => {
+    await service.warmFromStore();
+    await service.warmFromStore();
+    expect(store.loadAll).toHaveBeenCalledTimes(1);
+  });
+
+  it('clearCache drops the warm guard so the next account re-warms', async () => {
+    await service.warmFromStore();
+    service.clearCache();
+    await service.warmFromStore();
+    expect(store.loadAll).toHaveBeenCalledTimes(2);
+  });
+
+  it('invalidateProfile drops memory AND the persisted entry', async () => {
+    service.setCachedProfile(PK, realProfile(PK, 'old'));
+    vi.advanceTimersByTime(2000);
+    expect(store.saveMany).toHaveBeenCalled();
+
+    service.invalidateProfile(PK);
+    expect(service.hasProfile(PK)).toBe(false);
+    expect(store.delete).toHaveBeenCalledWith(PK);
+  });
+
+  it('clearCache (account switch) flushes pending writes but NEVER wipes the store', async () => {
+    service.setCachedProfile(PK, realProfile(PK, 'x'));
+    service.clearCache();
+    vi.advanceTimersByTime(5000);
+    expect(store.wipePersisted).not.toHaveBeenCalled();
+  });
+
+  it('wipePersisted (Settings clear-cache) clears memory + store', async () => {
+    service.setCachedProfile(PK, realProfile(PK, 'x'));
+    await service.wipePersisted();
+    expect(service.hasProfile(PK)).toBe(false);
+    expect(store.wipePersisted).toHaveBeenCalledTimes(1);
   });
 });
 

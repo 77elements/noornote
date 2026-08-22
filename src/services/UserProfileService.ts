@@ -3,6 +3,38 @@
  * Resolves user pubkeys to usernames, profile pictures, and metadata
  * Uses ProfileOrchestrator for fetching
  *
+ * ── Profile-Discovery in NoorNote — die Anlaufstellen-Karte ────────────────
+ * Wer macht was (Read-Pfad):
+ *   • THIS SERVICE — the single hub. LRU cache + in-flight dedup + retry
+ *     cooldown + pubsub. All consumers (61 call sites) go through
+ *     getUserProfile / getUserProfiles / getDisplayName / getDisplayPicture /
+ *     subscribeToProfile.
+ *   • ProfileOrchestrator — relay fetch only (2-stage: aggregator batch →
+ *     author outbound recovery). No caching of its own.
+ *   • MentionProfileCache — autocomplete preloader layered ON TOP of this
+ *     service (no duplicate cache); expires with its suggestions list.
+ *   • ContentProcessor.getNonBlockingProfile() — synchronous render read
+ *     from this service's cache (delegates, never fetches itself).
+ * Anti-patterns (enforced by review):
+ *   ✗ Direct kind:0 fetches anywhere else (bypasses cache + cooldown →
+ *     duplicate relay traffic and flicker). Historically: ZapService's
+ *     write-relay fallback — since rerouted through ProfileOrchestrator.
+ *     (NOT a bypass: SearchOrchestrator.searchProfiles — NIP-50 full-text
+ *     search over kind:0 is a different query type, not a pubkey lookup.)
+ *   ✗ Caching name-less placeholders (poisons displays with "@npub…" —
+ *     see getUserProfile miss handling).
+ *   ✗ Broadcasting name-less entries to subscribers (downgrade flicker —
+ *     see getUserProfiles stage 1 guard).
+ * Write path: ProfileEditorService publishes kind:0 and feeds
+ * setCachedProfile(); invalidateProfile() drops a stale entry.
+ * Persistence (since 2026-08-22): display-bearing cache writes are mirrored
+ * (debounced batch) into ProfileStore — per-account IndexedDB
+ * `noornote-profiles-{npub}` — and warmFromStore() refills the LRU at login
+ * (PostLoginService) so cold starts render names instantly. Never persisted:
+ * name-less placeholders. Account switch clears memory only (per-account DB
+ * naming isolates); Settings "clear cache" wipes via wipePersisted().
+ * ───────────────────────────────────────────────────────────────────────────
+ *
  * LRU CACHE STRATEGY:
  * - Memory-only LRU cache (via LRUCache helper)
  * - Platform-aware size: Desktop > Web > Mobile
@@ -13,6 +45,15 @@ import { ProfileOrchestrator } from './orchestration/ProfileOrchestrator';
 import { LRUCache, getCacheSize } from '../helpers/LRUCache';
 import { getAvatarFallback } from '../helpers/avatarFallback';
 import { hexToNpub } from '../helpers/nip19';
+import { profileStore } from './ProfileStore';
+import { AuthService } from './AuthService';
+
+/** A profile is worth persisting/restoring only when it carries display data. */
+const hasDisplayData = (p: UserProfile): boolean =>
+  !!(p.name || p.display_name || p.username || p.picture);
+
+/** Debounce window for batched ProfileStore writes (ms). */
+const PERSIST_DEBOUNCE_MS = 2000;
 
 export interface UserProfile {
   pubkey: string;
@@ -46,6 +87,12 @@ export class UserProfileService {
   /** Track failed fetches to prevent rapid retry storms (pubkey → timestamp) */
   private failedFetches: Map<string, number> = new Map();
   private readonly FAILED_FETCH_COOLDOWN = 30000; // 30s — throttle retries for a missing profile without poisoning the cache
+
+  /** Debounced ProfileStore writes: dirty pubkeys + flush timer. */
+  private dirtyProfiles = new Map<string, UserProfile>();
+  private persistTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Account (npub) whose store has been warmed this session; null = not warmed. */
+  private warmedNpub: string | null = null;
 
   private constructor() {
     this.orchestrator = ProfileOrchestrator.getInstance();
@@ -166,8 +213,7 @@ export class UserProfileService {
       if (profile) {
         // Real profile found — cache it and clear any prior failure.
         this.failedFetches.delete(pubkey);
-        this.profileCache.set(pubkey, profile);
-        this.notifyProfileUpdate(pubkey, profile);
+        this.cacheProfile(pubkey, profile, { notify: true });
         return profile;
       }
 
@@ -221,14 +267,11 @@ export class UserProfileService {
       try {
         const fetchedProfiles = await this.fetchMultipleProfilesFromRelays(toFetch);
         fetchedProfiles.forEach((profile, pubkey) => {
-          this.profileCache.set(pubkey, profile);
+          // 'display-only': broadcasting a name-less entry (e.g. an empty
+          // kind:0) would downgrade already-resolved displays back to the
+          // npub fallback — notify only entries carrying display data.
+          this.cacheProfile(pubkey, profile, { notify: 'display-only' });
           result.set(pubkey, profile);
-          // Only notify subscribers for profiles carrying display data —
-          // broadcasting a name-less entry (e.g. an empty kind:0) would
-          // downgrade already-resolved displays back to the npub fallback.
-          if (profile.name || profile.display_name || profile.username || profile.picture) {
-            this.notifyProfileUpdate(pubkey, profile);
-          }
         });
       } catch (error) {
         console.warn('Failed to fetch user profiles (aggregator batch):', error);
@@ -255,9 +298,8 @@ export class UserProfileService {
               const profile = await this.orchestrator.fetchProfile(pubkey);
               if (profile) {
                 const userProfile = profile as UserProfile;
-                this.profileCache.set(pubkey, userProfile);
+                this.cacheProfile(pubkey, userProfile, { notify: true });
                 result.set(pubkey, userProfile);
-                this.notifyProfileUpdate(pubkey, userProfile);
               } else {
                 // Full 2-stage attempt (aggregator + outbound) came back
                 // empty — record the retry cooldown exactly like the
@@ -388,8 +430,62 @@ export class UserProfileService {
    * Manually set a profile in cache (e.g., after onboarding publish)
    */
   public setCachedProfile(pubkey: string, profile: UserProfile): void {
+    this.cacheProfile(pubkey, profile, { notify: true });
+  }
+
+  /**
+   * Single funnel for every cache write: LRU set + optional subscriber
+   * notify + gated persistence into ProfileStore (display-bearing entries
+   * only, debounced batch write).
+   *
+   * notify: true          → always broadcast (fetch results, explicit sets)
+   * notify: 'display-only' → broadcast only entries carrying display data
+   *                         (batch path: a name-less broadcast downgrades
+   *                         already-resolved displays — the npub-flicker bug)
+   */
+  private cacheProfile(pubkey: string, profile: UserProfile, opts: { notify?: boolean | 'display-only' } = {}): void {
     this.profileCache.set(pubkey, profile);
-    this.notifyProfileUpdate(pubkey, profile);
+    if (opts.notify === true) {
+      this.notifyProfileUpdate(pubkey, profile);
+    } else if (opts.notify === 'display-only' && hasDisplayData(profile)) {
+      this.notifyProfileUpdate(pubkey, profile);
+    }
+    if (hasDisplayData(profile)) this.schedulePersist(pubkey, profile);
+  }
+
+  /** Debounced batch write into ProfileStore. Non-display entries are never
+   *  queued (persisting placeholders is the cache-poisoning bug). */
+  private schedulePersist(pubkey: string, profile: UserProfile): void {
+    this.dirtyProfiles.set(pubkey, profile);
+    if (this.persistTimer !== null) return;
+    this.persistTimer = setTimeout(() => {
+      this.persistTimer = null;
+      const batch = this.dirtyProfiles;
+      this.dirtyProfiles = new Map();
+      void profileStore.saveMany(batch);
+    }, PERSIST_DEBOUNCE_MS);
+  }
+
+  /**
+   * Warm the LRU from the per-account ProfileStore (IndexedDB). Called once
+   * per account after login (PostLoginService). Restored entries carrying
+   * display data notify subscribers so already-rendered fallbacks
+   * (@npub… / identicons) patch to the real name/picture immediately.
+   *
+   * Idempotent per account; re-runs after clearCache() (account switch).
+   */
+  public async warmFromStore(): Promise<void> {
+    const npub = AuthService.getInstance().getCurrentUser()?.npub;
+    if (!npub || this.warmedNpub === npub) return;
+    this.warmedNpub = npub;
+
+    const stored = await profileStore.loadAll();
+    if (this.warmedNpub !== npub) return; // account switched mid-warm — discard
+    for (const [pubkey, profile] of stored) {
+      if (this.profileCache.has(pubkey)) continue; // never overwrite fresher memory
+      this.profileCache.set(pubkey, profile);
+      if (hasDisplayData(profile)) this.notifyProfileUpdate(pubkey, profile);
+    }
   }
 
   /**
@@ -397,14 +493,35 @@ export class UserProfileService {
    */
   public invalidateProfile(pubkey: string): void {
     this.profileCache.delete(pubkey);
+    this.dirtyProfiles.delete(pubkey);
+    void profileStore.delete(pubkey);
   }
 
   /**
-   * Clear all cached profiles
+   * Clear all cached profiles (MEMORY only). Called on account switch
+   * (CacheManager.clearUserSpecificCaches) — must NOT wipe ProfileStore:
+   * per-account DB naming already isolates accounts, and at switch time the
+   * store belongs to the NEWLY-current account. Use wipePersisted() for the
+   * explicit Settings "clear cache" action.
    */
   public clearCache(): void {
     this.profileCache.clear();
     this.failedFetches.clear();
+    this.dirtyProfiles.clear();
+    if (this.persistTimer !== null) {
+      clearTimeout(this.persistTimer);
+      this.persistTimer = null;
+    }
+    this.warmedNpub = null; // re-warm for the next account
+  }
+
+  /**
+   * Wipe persisted profiles (Settings "clear cache"). Explicit user intent —
+   * unlike clearCache() this empties the current account's IndexedDB mirror.
+   */
+  public async wipePersisted(): Promise<void> {
+    this.clearCache();
+    await profileStore.wipePersisted();
   }
 
   /**

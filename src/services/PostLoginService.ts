@@ -90,6 +90,13 @@ export class PostLoginService {
     // Start all post-login services in parallel
     await Promise.all([
       this.loadFollowList(data.pubkey),
+      // Warm the profile LRU from the per-account ProfileStore so the first
+      // renders show names/pictures instead of @npub fallbacks. Runs before
+      // the timeline mounts in practice (IDB read of ~1-2k entries is fast).
+      this.startService('profile store warm-up', async () => {
+        const { UserProfileService } = await import('./UserProfileService');
+        await UserProfileService.getInstance().warmFromStore();
+      }),
       this.startService('notifications', async () => {
         const { NotificationsOrchestrator } = await import('./orchestration/NotificationsOrchestrator');
         await NotificationsOrchestrator.getInstance().start();
