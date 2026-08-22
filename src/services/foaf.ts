@@ -38,6 +38,7 @@ import { SystemLogger } from './SystemLogger';
 import { FollowCheckService } from './FollowCheckService';
 import { diagLog } from './DiagnosticLogger';
 import { foafStore } from './FoafStore';
+import { isFoafEntryFresh } from './foafFreshness';
 
 export type FoafDegree = 1 | 2 | 3;
 
@@ -51,22 +52,8 @@ interface FoafCacheEntry {
   builtAt: number;
 }
 
-const FOAF_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h safety TTL
 const FOAF_FETCH_BATCH = 50; // pubkeys per kind:3 fetch
 const FOAF_FETCH_TIMEOUT_MS = 15000; // per batch
-
-/**
- * Follow-count divergence tolerated before a cached graph is considered
- * stale. The graph is a discovery approximation, not correctness-critical
- * data: ±20 follows out of ~400 change which authors COULD appear in a
- * degree-2 feed by a fraction of a percent — but a strict === check
- * discarded an otherwise fresh 28k-pubkey graph (measured: AutoSync
- * completing one follow after the build → full 40s rebuild on next load).
- * Tolerance is measured against the graph's ORIGINAL build count, so it
- * never accumulates across sessions (no re-save of restored entries).
- */
-const FOAF_FOLLOW_COUNT_TOLERANCE = (buildCount: number, currentCount: number): number =>
-  Math.max(20, Math.ceil(0.05 * Math.max(buildCount, currentCount)));
 
 /**
  * Hard cap on how many source pubkeys we expand to the NEXT degree. Without
@@ -165,20 +152,15 @@ export class FoafService {
   private async ensure(degree: FoafDegree): Promise<string[]> {
     const currentFollowCount = await this.followCheckService.getFollowCount();
 
-    const isFresh = (followCountAtBuild: number, builtAt: number): boolean =>
-      Math.abs(followCountAtBuild - currentFollowCount)
-        <= FOAF_FOLLOW_COUNT_TOLERANCE(followCountAtBuild, currentFollowCount)
-      && Date.now() - builtAt < FOAF_CACHE_TTL_MS;
-
     const cached = this.cache.get(degree);
-    if (cached && isFresh(cached.followCountAtBuild, cached.builtAt)) {
+    if (cached && isFoafEntryFresh(cached.followCountAtBuild, cached.builtAt, currentFollowCount)) {
       return cached.pubkeys;
     }
 
     // Cold start: restore the last persisted build (IndexedDB, per account)
     // under the same freshness rules before hitting any relay.
     const persisted = await foafStore.load(degree);
-    if (persisted && isFresh(persisted.followCountAtBuild, persisted.builtAt)) {
+    if (persisted && isFoafEntryFresh(persisted.followCountAtBuild, persisted.builtAt, currentFollowCount)) {
       // Cache the restored graph with its ORIGINAL build count (not the
       // current one) so tolerance keeps measuring against the true build
       // snapshot and can't drift across sessions.
