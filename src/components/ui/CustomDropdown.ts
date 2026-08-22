@@ -11,7 +11,7 @@
  *     { value: 'option2', label: 'Option 2' }
  *   ],
  *   selectedValue: 'option1',
- *   onChange: (value) => console.log('Selected:', value),
+ *   onChange: (value) => console.debug('Selected:', value),
  *   className: 'my-custom-class',
  *   width: '200px',
  *   searchable: true,

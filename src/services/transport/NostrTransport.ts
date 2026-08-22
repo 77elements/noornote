@@ -12,15 +12,18 @@ import NDK, {
   NDKSubscription,
   NDKSubscriptionCacheUsage,
   normalizeRelayUrl,
+  type NDKCacheAdapter,
+  type NDKFilter,
+  type NDKRelay,
+  type NostrEvent,
 } from '@nostr-dev-kit/ndk';
 // NDK ships a ready signature-verification worker. ?worker&inline base64-embeds
 // it into the bundle so it also loads under file:// (Electron/Capacitor), where
 // a separate worker chunk URL would break.
 import SigVerificationWorker from '@nostr-dev-kit/ndk/workers/sig-verification?worker&inline';
-import NDKCacheDexie from '@nostr-dev-kit/ndk-cache-dexie';
-import type { NDKCacheAdapter, NDKFilter, NDKRelay } from '@nostr-dev-kit/ndk';
-import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import type { NDKCacheAdapterDexieOptions } from '@nostr-dev-kit/ndk-cache-dexie';
+import NDKCacheDexie, {
+  type NDKCacheAdapterDexieOptions,
+} from '@nostr-dev-kit/ndk-cache-dexie';
 import { RelayConfig } from '../RelayConfig';
 import { SystemLogger } from '../SystemLogger';
 import { TypedEventBus } from '../../core/TypedEventBus';

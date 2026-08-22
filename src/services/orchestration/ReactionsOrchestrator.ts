@@ -278,7 +278,7 @@ export class ReactionsOrchestrator extends Orchestrator {
     // If already fetching, wait for that request
     if (this.fetchingDetailedStats.has(noteId)) {
       this.systemLogger.info('ReactionsOrch', '⏳ Detailed stats loading...');
-      return await this.fetchingDetailedStats.get(noteId)!;
+      return this.fetchingDetailedStats.get(noteId)!;
     }
 
     // For long-form articles: get cached eventId if not provided

@@ -12,8 +12,7 @@
  * - This is NOT adding nostr-tools as OUR dependency - it's using NDK's
  */
 
-import { nip19 } from '@nostr-dev-kit/ndk';
-import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { nip19, type NostrEvent } from '@nostr-dev-kit/ndk';
 import { hexToBytes, bytesToHex } from '@noble/hashes/utils';
 
 // Low-level crypto functions from nostr-tools (NDK's peer dependency)

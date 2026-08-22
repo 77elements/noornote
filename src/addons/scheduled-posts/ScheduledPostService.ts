@@ -67,7 +67,7 @@ export class ScheduledPostService {
   public async getScheduled(pubkey: string): Promise<ScheduledPost[]> {
     const res = await fetch(`${this.BASE_URL}/scheduled/${pubkey}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
+    return res.json();
   }
 
   /**

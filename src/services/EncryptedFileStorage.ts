@@ -156,7 +156,7 @@ export class EncryptedFileStorage {
         const reencrypted =
           await NWCCryptoService.getInstance().encrypt(legacyPlaintext);
         await writeTextFile(filePath, reencrypted);
-        console.info(
+        console.debug(
           '[EncryptedFileStorage] Migrated legacy XOR NWC blob to v2 (AES-GCM)'
         );
         diagLog('wallet', 'nwc_migrate_ok', {

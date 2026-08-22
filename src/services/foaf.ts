@@ -29,8 +29,7 @@
  *     the same freshness rules (follow-count match + 24h TTL).
  */
 
-import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import type { NDKFilter } from '@nostr-dev-kit/ndk';
+import { type NostrEvent, type NDKFilter } from '@nostr-dev-kit/ndk';
 import { AuthService } from './AuthService';
 import { NostrTransport } from './transport/NostrTransport';
 import { RelayConfig } from './RelayConfig';

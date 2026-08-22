@@ -3,8 +3,7 @@
  * Uses NDK types for all Nostr protocol interactions
  */
 
-import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import type { NDKFilter } from '@nostr-dev-kit/ndk';
+import { type NostrEvent, type NDKFilter } from '@nostr-dev-kit/ndk';
 
 // Re-export NDK types as application types
 export type Event = NostrEvent;

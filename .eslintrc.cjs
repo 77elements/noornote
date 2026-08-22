@@ -26,7 +26,6 @@ module.exports = {
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     '@typescript-eslint/explicit-function-return-type': 'warn',
     '@typescript-eslint/no-explicit-any': 'error',
-    '@typescript-eslint/prefer-const': 'error',
     '@typescript-eslint/no-inferrable-types': 'off',
     // MISFIRING under @typescript-eslint v6 + TS 5.x type info: removes legit
     // downcast assertions (Element → HTMLInputElement) as "unnecessary" —
@@ -34,7 +33,9 @@ module.exports = {
     '@typescript-eslint/no-unnecessary-type-assertion': 'off',
 
     // Performance and best practices
-    'no-console': ['warn', { allow: ['warn', 'error'] }],
+    // console.debug is the sanctioned DevTools-only channel (log-review skill);
+    // console.warn/error are allowed escape hatches. log/info are violations.
+    'no-console': ['warn', { allow: ['warn', 'error', 'debug'] }],
     'no-debugger': 'error',
     'prefer-const': 'error',
     'no-var': 'error',

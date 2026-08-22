@@ -76,7 +76,7 @@ export class SyncStatusBadge {
           </div>
         `;
 
-      case 'synced':
+      case 'synced': {
         const timeAgo = data.timestamp ? formatTimeAgo(data.timestamp) : '';
         const countText =
           data.count !== undefined ? ` (${data.count} follows)` : '';
@@ -86,8 +86,9 @@ export class SyncStatusBadge {
             <span class="sync-status-badge__text">Synced ${timeAgo}${countText}</span>
           </div>
         `;
+      }
 
-      case 'error':
+      case 'error': {
         const errorText = data.error ? `: ${data.error}` : '';
         return `
           <div class="sync-status-badge sync-status-badge--error">
@@ -95,6 +96,7 @@ export class SyncStatusBadge {
             <span class="sync-status-badge__text">Sync failed${errorText}</span>
           </div>
         `;
+      }
 
       default:
         return '';

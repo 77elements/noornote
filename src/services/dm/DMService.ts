@@ -13,8 +13,12 @@
  * - kind:10050 = DM Relay List (user's preferred DM relays)
  */
 
-import { NDKEvent, NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
-import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
+import {
+  NDKEvent,
+  NDKPrivateKeySigner,
+  type NostrEvent,
+  type NDKFilter,
+} from '@nostr-dev-kit/ndk';
 import { NostrTransport } from '../transport/NostrTransport';
 import { AuthService } from '../AuthService';
 import { RelayConfig } from '../RelayConfig';

@@ -6,8 +6,7 @@
  * Loads 20 transactions initially, more via InfiniteScroll (offset pagination).
  */
 
-import { NWCService } from '../../services/NWCService';
-import type { NWCTransaction } from '../../services/NWCService';
+import { NWCService, type NWCTransaction } from '../../services/NWCService';
 import { ExchangeRateService } from '../../services/ExchangeRateService';
 import { UserProfileService } from '../../services/UserProfileService';
 import { KeychainStorage } from '../../services/KeychainStorage';

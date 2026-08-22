@@ -840,7 +840,9 @@ export class NotificationItem {
               const profile =
                 await this.userProfileService.getUserProfile(tagPubkey);
               profiles.set(tagPubkey, profile);
-            } catch {}
+            } catch {
+              /* ignore */
+            }
           }
 
           // Truncate plain text FIRST, THEN resolve mentions with loaded profiles

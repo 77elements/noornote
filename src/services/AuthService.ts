@@ -134,7 +134,7 @@ export class AuthService {
 
     this.keySignerManager = new KeySignerConnectionManager();
     this.keySignerManager.onConnectionLost(() => {
-      console.log('[AuthService] KeySigner connection lost - logging out');
+      console.debug('[AuthService] KeySigner connection lost - logging out');
       this.currentUser = null;
       this.authMethod = null;
       this.eventBus.emit('user:logout');
@@ -718,7 +718,7 @@ export class AuthService {
       if (keySigner) {
         try {
           await keySigner.stopDaemon();
-          console.log('[AuthService] NoorSigner daemon stopped');
+          console.debug('[AuthService] NoorSigner daemon stopped');
           const { ToastService } = await import('./ToastService');
           ToastService.show('Key signer stopped', 'success');
         } catch (error) {
@@ -966,7 +966,9 @@ export class AuthService {
   private clearSession(): void {
     try {
       localStorage.removeItem(this.storageKey);
-    } catch {}
+    } catch {
+      /* ignore */
+    }
     this.currentUser = null;
     this.authMethod = null;
     this.isReadOnly = false;

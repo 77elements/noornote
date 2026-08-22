@@ -438,7 +438,7 @@ export class InteractionStatusLine {
     if (this.config.onAnalytics) {
       this.config.onAnalytics();
     } else {
-      console.log('📊 View analytics for note:', this.config.noteId);
+      console.debug('📊 View analytics for note:', this.config.noteId);
     }
   }
 

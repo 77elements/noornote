@@ -7,7 +7,7 @@
  * const nsfwSwitch = new Switch({
  *   label: 'NSFW',
  *   checked: false,
- *   onChange: (checked) => console.log('NSFW:', checked)
+ *   onChange: (checked) => console.debug('NSFW:', checked)
  * });
  * container.innerHTML = nsfwSwitch.render();
  * nsfwSwitch.setupEventListeners(container);

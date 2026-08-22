@@ -150,7 +150,7 @@ export class UpdateCheckService {
       const version = (release.tag_name || '').replace(/^v/, '');
       const update = this.buildUpdateInfo(release, version || '99.0.0');
 
-      console.log(
+      console.debug(
         'Simulating update:',
         update.version,
         '(current:',
@@ -174,7 +174,7 @@ export class UpdateCheckService {
 
     if (!response.ok) return null;
 
-    return await response.json();
+    return response.json();
   }
 
   /**

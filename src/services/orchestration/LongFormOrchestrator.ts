@@ -73,7 +73,7 @@ export class LongFormOrchestrator extends Orchestrator {
   ): Promise<NostrEvent | null> {
     // If already fetching, wait for that request
     if (this.fetching.has(naddrRef)) {
-      return await this.fetching.get(naddrRef)!;
+      return this.fetching.get(naddrRef)!;
     }
 
     // Start new fetch

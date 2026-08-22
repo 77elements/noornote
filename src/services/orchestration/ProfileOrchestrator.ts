@@ -74,7 +74,7 @@ export class ProfileOrchestrator extends Orchestrator {
   ): Promise<Profile | null> {
     // If already fetching, wait for that request
     if (this.fetchingProfiles.has(pubkey)) {
-      return await this.fetchingProfiles.get(pubkey)!;
+      return this.fetchingProfiles.get(pubkey)!;
     }
 
     // Start new fetch

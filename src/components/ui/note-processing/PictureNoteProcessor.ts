@@ -6,8 +6,10 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { ProcessedNote } from '../types/NoteTypes';
 import type { MediaContent } from '../../../helpers/renderMediaContent';
-import type { ProcessedContent } from '../../../services/ContentProcessor';
-import { ContentProcessor } from '../../../services/ContentProcessor';
+import {
+  ContentProcessor,
+  type ProcessedContent,
+} from '../../../services/ContentProcessor';
 import { escapeHtml } from '../../../helpers/escapeHtml';
 import { getTag } from '../../../helpers/tagUtils';
 

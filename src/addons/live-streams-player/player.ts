@@ -48,7 +48,9 @@ export async function mountPlayer(
       destroy() {
         try {
           video.pause();
-        } catch {}
+        } catch {
+          /* ignore */
+        }
         video.removeAttribute('src');
         video.load();
         container.innerHTML = '';
@@ -66,7 +68,9 @@ export async function mountPlayer(
       destroy() {
         try {
           video.pause();
-        } catch {}
+        } catch {
+          /* ignore */
+        }
         video.removeAttribute('src');
         video.load();
         container.innerHTML = '';
@@ -85,10 +89,14 @@ export async function mountPlayer(
     destroy() {
       try {
         hls.destroy();
-      } catch {}
+      } catch {
+        /* ignore */
+      }
       try {
         video.pause();
-      } catch {}
+      } catch {
+        /* ignore */
+      }
       video.removeAttribute('src');
       video.load();
       container.innerHTML = '';

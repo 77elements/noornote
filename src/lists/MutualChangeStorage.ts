@@ -294,11 +294,11 @@ if (typeof window !== 'undefined') {
   (window as any).__MUTUAL_CHANGE_STORAGE__ = {
     logState: () => {
       const storage = MutualChangeStorage.getInstance();
-      console.log('=== MutualChangeStorage State ===');
-      console.log('Snapshot:', storage.getSnapshot());
-      console.log('Last Check:', storage.getLastCheckTimestamp());
-      console.log('Unseen Changes:', storage.hasUnseenChanges());
-      console.log('Changes:', storage.getChanges());
+      console.debug('=== MutualChangeStorage State ===');
+      console.debug('Snapshot:', storage.getSnapshot());
+      console.debug('Last Check:', storage.getLastCheckTimestamp());
+      console.debug('Unseen Changes:', storage.hasUnseenChanges());
+      console.debug('Changes:', storage.getChanges());
     },
   };
 }

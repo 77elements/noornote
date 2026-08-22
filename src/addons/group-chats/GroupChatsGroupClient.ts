@@ -12,9 +12,14 @@
  * created on first poll and torn down on addon destroy / account switch.
  */
 
-import NDK, { NDKEvent, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
-import type { NDKFilter, NDKRelay, NDKSubscription } from '@nostr-dev-kit/ndk';
-import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import NDK, {
+  NDKEvent,
+  NDKSubscriptionCacheUsage,
+  type NDKFilter,
+  type NDKRelay,
+  type NDKSubscription,
+  type NostrEvent,
+} from '@nostr-dev-kit/ndk';
 import { AuthService } from '../../services/AuthService';
 import { diagLog } from '../../services/DiagnosticLogger';
 
@@ -127,7 +132,7 @@ export class GroupChatsGroupClient {
       since,
     } as NDKFilter;
 
-    return await new Promise<NostrEvent[]>(resolve => {
+    return new Promise<NostrEvent[]>(resolve => {
       const buffer = new Map<string, NostrEvent>(); // dedup across relays/dups by event id
       let settled = false;
       let sub: NDKSubscription | null = null;

@@ -8,8 +8,10 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { encodeNevent, decodeNip19 } from '../../../services/NostrToolsAdapter';
 import { NoteHeader } from '../../../components/ui/NoteHeader';
 import { CollapsibleManager } from '../../../components/ui/note-features/CollapsibleManager';
-import { QuoteNoteFetcher } from '../../../services/QuoteNoteFetcher';
-import type { QuoteFetchError } from '../../../services/QuoteNoteFetcher';
+import {
+  QuoteNoteFetcher,
+  type QuoteFetchError,
+} from '../../../services/QuoteNoteFetcher';
 import { ArticlePreviewRenderer } from './ArticlePreviewRenderer';
 import {
   ContentProcessor,

@@ -745,19 +745,19 @@ if (typeof window !== 'undefined') {
   (window as unknown as Record<string, unknown>).__diagLogs = {
     read: async (area: DiagArea) => {
       const entries = await DiagnosticLogger.getInstance().readLog(area);
-      console.log(`=== ${area} today (${entries.length} entries) ===`);
-      entries.forEach(e => console.log(`[${e.ts}] ${e.msg}`, e.data || ''));
+      console.debug(`=== ${area} today (${entries.length} entries) ===`);
+      entries.forEach(e => console.debug(`[${e.ts}] ${e.msg}`, e.data || ''));
       return entries;
     },
     tail: async (area: DiagArea, n: number = 50) => {
       const entries = await DiagnosticLogger.getInstance().tail(area, n);
-      console.log(`=== ${area} (last ${entries.length}) ===`);
-      entries.forEach(e => console.log(`[${e.ts}] ${e.msg}`, e.data || ''));
+      console.debug(`=== ${area} (last ${entries.length}) ===`);
+      entries.forEach(e => console.debug(`[${e.ts}] ${e.msg}`, e.data || ''));
       return entries;
     },
     clear: async (area: DiagArea) => {
       await DiagnosticLogger.getInstance().clearLog(area);
-      console.log(`${area} today cleared`);
+      console.debug(`${area} today cleared`);
     },
     paths: () => DiagnosticLogger.getInstance().getAllPaths(),
     dir: () => DiagnosticLogger.getInstance().getLogsDir(),

@@ -167,13 +167,14 @@ export class MentionAutocomplete {
         e.preventDefault();
         this.selectPrevious();
         break;
-      case 'Enter':
+      case 'Enter': {
         const selected = this.suggestions[this.selectedIndex];
         if (selected) {
           e.preventDefault();
           this.insertMention(selected);
         }
         break;
+      }
       case 'Escape':
         e.preventDefault();
         e.stopPropagation();

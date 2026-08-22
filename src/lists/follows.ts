@@ -47,7 +47,10 @@ import {
   bindListSyncButtons,
 } from '../helpers/ListSyncMode';
 import { PlatformService } from '../services/PlatformService';
-import { UserProfileService } from '../services/UserProfileService';
+import {
+  UserProfileService,
+  type UserProfile,
+} from '../services/UserProfileService';
 import { UserService } from '../services/UserService';
 import { FollowerCountService } from '../services/FollowerCountService';
 import type { FollowsExtendedFeatures } from './follows-extended';
@@ -58,7 +61,6 @@ import { extractDisplayName } from '../helpers/extractDisplayName';
 import { InfiniteScroll } from '../components/ui/InfiniteScroll';
 import { ProgressBarHelper } from '../helpers/ProgressBarHelper';
 import { ArticleNotificationService } from '../services/ArticleNotificationService';
-import type { UserProfile } from '../services/UserProfileService';
 
 const logger = SystemLogger.getInstance();
 const eventBus = TypedEventBus.getInstance();
@@ -445,7 +447,7 @@ function createEmptyFollowListData(): FollowListData {
  * Read public follows from file
  */
 export async function readPublicFollowsFile(): Promise<FollowListData> {
-  return await readJsonFile<FollowListData>(
+  return readJsonFile<FollowListData>(
     PUBLIC_FOLLOWS_FILE,
     createEmptyFollowListData()
   );
@@ -455,7 +457,7 @@ export async function readPublicFollowsFile(): Promise<FollowListData> {
  * Read private follows from file
  */
 export async function readPrivateFollowsFile(): Promise<FollowListData> {
-  return await readJsonFile<FollowListData>(
+  return readJsonFile<FollowListData>(
     PRIVATE_FOLLOWS_FILE,
     createEmptyFollowListData()
   );
@@ -866,7 +868,7 @@ export class FollowStorageAdapter {
   }
 
   async getFileItems(): Promise<FollowItem[]> {
-    return await getFileFollows();
+    return getFileFollows();
   }
 
   async setFileItems(_items: FollowItem[]): Promise<void> {
@@ -874,7 +876,7 @@ export class FollowStorageAdapter {
   }
 
   async fetchFromRelays(): Promise<FetchFromRelaysResult> {
-    return await fetchFromRelays();
+    return fetchFromRelays();
   }
 
   async publishToRelays(_items: FollowItem[]): Promise<void> {
@@ -1093,7 +1095,7 @@ export const FollowOrchestrator = {
 
     // Fetch from relays (for sync button)
     fetchFollowsFromRelays: async (_pubkey: string) => {
-      return await fetchFromRelays();
+      return fetchFromRelays();
     },
 
     // Browser storage access

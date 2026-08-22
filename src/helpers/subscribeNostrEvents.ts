@@ -10,8 +10,7 @@
  */
 
 import { NostrTransport } from '../services/transport/NostrTransport';
-import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import type { NDKFilter } from '@nostr-dev-kit/ndk';
+import { type NostrEvent, type NDKFilter } from '@nostr-dev-kit/ndk';
 
 export interface SubscribeNostrEventsParams {
   /** Relay URLs to subscribe to */

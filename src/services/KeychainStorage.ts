@@ -272,7 +272,7 @@ export class KeychainStorage {
     try {
       const reencrypted = await NWCCryptoService.getInstance().encrypt(raw);
       await this.setInIndexedDB(key, reencrypted);
-      console.info(
+      console.debug(
         '[KeychainStorage] Migrated legacy plaintext NWC blob to v2 (AES-GCM)'
       );
       diagLog('wallet', 'nwc_migrate_ok', {

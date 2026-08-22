@@ -13,7 +13,10 @@
 
 import { View } from './View';
 import { Router } from '../../services/Router';
-import type { VideoOptions } from '../../modules/media/contracts';
+import {
+  type VideoOptions,
+  type MediaModuleApi,
+} from '../../modules/media/contracts';
 import { RelayConfig } from '../../services/RelayConfig';
 import { AuthGuard } from '../../services/AuthGuard';
 import { loadEditorRelayConfig } from '../../helpers/editorRelayConfig';
@@ -24,7 +27,6 @@ import { RelaySelector } from '../post/RelaySelector';
 import { PostEditorToolbar } from '../post/PostEditorToolbar';
 import { setupPasteUpload } from '../../helpers/pasteUpload';
 import { ModuleLoader } from '../../core/ModuleLoader';
-import type { MediaModuleApi } from '../../modules/media/contracts';
 import { ToastService } from '../../services/ToastService';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 

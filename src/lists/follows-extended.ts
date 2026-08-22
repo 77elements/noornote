@@ -9,8 +9,10 @@
  * the items list and container element.
  */
 
-import type { UserProfile } from '../services/UserProfileService';
-import { UserProfileService } from '../services/UserProfileService';
+import {
+  UserProfileService,
+  type UserProfile,
+} from '../services/UserProfileService';
 import {
   FollowVerificationService,
   type MutualState,

@@ -558,7 +558,7 @@ async function resizeEncodeMainThread(
   ctx.drawImage(img, 0, 0, targetW, targetH);
   onProgress(60);
 
-  return await new Promise<Blob>((resolve, reject) => {
+  return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
       b => (b ? resolve(b) : reject(new Error('Canvas toBlob failed'))),
       outputMime,
@@ -585,7 +585,7 @@ async function transferExif(
   const encodedUrl = await blobToDataUrl(encoded);
   const merged = piexif.insert(exifBin, encodedUrl);
   const res = await fetch(merged);
-  return await res.blob();
+  return res.blob();
 }
 
 function blobToDataUrl(blob: Blob): Promise<string> {

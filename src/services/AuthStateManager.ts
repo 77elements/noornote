@@ -70,7 +70,7 @@ export class AuthStateManager {
    *
    * @example
    * const unsubscribe = authStateManager.subscribe((isLoggedIn) => {
-   *   console.log('Auth state changed:', isLoggedIn);
+   *   console.debug('Auth state changed:', isLoggedIn);
    * });
    * // Later: unsubscribe();
    */

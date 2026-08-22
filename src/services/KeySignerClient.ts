@@ -147,7 +147,7 @@ export class KeySignerClient {
     if (this.isTransientError(errorMessage)) {
       this.consecutiveFailures++;
       this.connectionState = 'reconnecting';
-      console.log(
+      console.debug(
         `[KeySigner] Transient connection error (attempt ${this.consecutiveFailures}/${this.MAX_RETRY_ATTEMPTS}):`,
         errorMessage
       );
@@ -169,7 +169,7 @@ export class KeySignerClient {
     ) {
       const now = Date.now();
       if (now - this.lastSocketErrorTime > this.SOCKET_ERROR_THROTTLE) {
-        console.log('[KeySigner] Socket not found - daemon is not running');
+        console.debug('[KeySigner] Socket not found - daemon is not running');
         this.lastSocketErrorTime = now;
       }
       throw new Error('KeySigner daemon is not running. Please log in again.');
@@ -340,7 +340,7 @@ export class KeySignerClient {
           attempts < this.MAX_RETRY_ATTEMPTS - 1
         ) {
           attempts++;
-          console.log(
+          console.debug(
             `[KeySigner] Retrying connection check (${attempts}/${this.MAX_RETRY_ATTEMPTS})...`
           );
           await this.sleep(this.RETRY_DELAY);

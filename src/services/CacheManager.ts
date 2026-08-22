@@ -158,7 +158,7 @@ export class CacheManager {
       reload = true,
     } = options;
 
-    console.log(
+    console.debug(
       '🧹 CacheManager: Starting complete site data clear (like DevTools)'
     );
 
@@ -166,13 +166,13 @@ export class CacheManager {
       // Clear localStorage
       if (clearLocalStorage) {
         localStorage.clear();
-        console.log('✅ localStorage cleared');
+        console.debug('✅ localStorage cleared');
       }
 
       // Clear sessionStorage
       if (clearSessionStorage) {
         sessionStorage.clear();
-        console.log('✅ sessionStorage cleared');
+        console.debug('✅ sessionStorage cleared');
       }
 
       // Clear Cache Storage (Service Workers)
@@ -193,7 +193,7 @@ export class CacheManager {
         this.clearNotificationsCache();
       }
 
-      console.log(
+      console.debug(
         '✅ Complete site data clear completed successfully (equivalent to DevTools)'
       );
 
@@ -219,7 +219,7 @@ export class CacheManager {
     try {
       const { UserProfileService } = await import('./UserProfileService');
       await UserProfileService.getInstance().wipePersisted();
-      console.log('✅ Profile cache cleared (memory + persisted)');
+      console.debug('✅ Profile cache cleared (memory + persisted)');
     } catch (error) {
       console.warn('⚠️ Failed to clear profile cache:', error);
     }
@@ -251,7 +251,7 @@ export class CacheManager {
    */
   private clearEventCache(): void {
     // Event cache clearing is now handled by individual services
-    console.log('ℹ️ Event cache clearing delegated to individual services');
+    console.debug('ℹ️ Event cache clearing delegated to individual services');
   }
 
   /**
@@ -264,7 +264,7 @@ export class CacheManager {
         .then(module => {
           const cacheService = module.NotificationsCacheService.getInstance();
           cacheService.clearCache();
-          console.log('✅ Notifications cache cleared');
+          console.debug('✅ Notifications cache cleared');
         })
         .catch(error => {
           console.warn('⚠️ Failed to clear notifications cache:', error);
@@ -280,7 +280,7 @@ export class CacheManager {
   private async clearCacheStorage(): Promise<void> {
     try {
       if (!('caches' in window)) {
-        console.log('ℹ️ Cache Storage not supported');
+        console.debug('ℹ️ Cache Storage not supported');
         return;
       }
 
@@ -288,7 +288,7 @@ export class CacheManager {
       const cacheNames = await caches.keys();
 
       if (cacheNames.length === 0) {
-        console.log('ℹ️ No Cache Storage to clear');
+        console.debug('ℹ️ No Cache Storage to clear');
         return;
       }
 
@@ -296,14 +296,14 @@ export class CacheManager {
       const deletePromises = cacheNames.map(async cacheName => {
         try {
           await caches.delete(cacheName);
-          console.log(`✅ Cache Storage '${cacheName}' deleted`);
+          console.debug(`✅ Cache Storage '${cacheName}' deleted`);
         } catch (error) {
           console.warn(`⚠️ Failed to delete cache '${cacheName}':`, error);
         }
       });
 
       await Promise.all(deletePromises);
-      console.log('✅ All Cache Storage cleared');
+      console.debug('✅ All Cache Storage cleared');
     } catch (error) {
       console.warn('⚠️ Failed to clear Cache Storage:', error);
     }

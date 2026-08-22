@@ -128,13 +128,14 @@ export class CustomEmojiAutocomplete {
         this.selectPrevious();
         break;
       case 'Enter':
-      case 'Tab':
+      case 'Tab': {
         const selected = this.suggestions[this.selectedIndex];
         if (selected) {
           e.preventDefault();
           this.insertEmoji(selected);
         }
         break;
+      }
       case 'Escape':
         e.preventDefault();
         e.stopPropagation();

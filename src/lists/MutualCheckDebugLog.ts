@@ -307,9 +307,9 @@ if (typeof window !== 'undefined') {
     readLogs: async () => {
       const log = MutualCheckDebugLog.getInstance();
       const logs = await log.readLogs();
-      console.log('=== Mutual Check Debug Logs ===');
-      console.log(`File: ${log.getFilePath()}`);
-      console.log(`Entries: ${logs.length}`);
+      console.debug('=== Mutual Check Debug Logs ===');
+      console.debug(`File: ${log.getFilePath()}`);
+      console.debug(`Entries: ${logs.length}`);
 
       const byCheckId = new Map<string, DebugLogEntry[]>();
       logs.forEach(entry => {
@@ -319,10 +319,10 @@ if (typeof window !== 'undefined') {
       });
 
       byCheckId.forEach((entries, checkId) => {
-        console.log(`\n========== ${checkId} ==========`);
+        console.debug(`\n========== ${checkId} ==========`);
         entries.forEach(entry => {
-          console.log(`[${entry.timestamp}] ${entry.event}`);
-          console.log('   Data:', JSON.stringify(entry.data, null, 2));
+          console.debug(`[${entry.timestamp}] ${entry.event}`);
+          console.debug('   Data:', JSON.stringify(entry.data, null, 2));
         });
       });
 
@@ -331,13 +331,13 @@ if (typeof window !== 'undefined') {
     getFilePath: () => MutualCheckDebugLog.getInstance().getFilePath(),
     clearLogs: async () => {
       await MutualCheckDebugLog.getInstance().clearLogs();
-      console.log('Logs cleared');
+      console.debug('Logs cleared');
     },
     getLastCheck: async () => {
       const log = MutualCheckDebugLog.getInstance();
       const logs = await log.readLogs();
       if (logs.length === 0) {
-        console.log('No logs found');
+        console.debug('No logs found');
         return null;
       }
 
@@ -345,15 +345,15 @@ if (typeof window !== 'undefined') {
         .reverse()
         .find(l => l.event === 'CHECK_COMPLETE');
       if (lastComplete) {
-        console.log('=== Last Check ===');
-        console.log('CheckID:', lastComplete.checkId);
-        console.log('Time:', lastComplete.timestamp);
-        console.log('Data:', lastComplete.data);
+        console.debug('=== Last Check ===');
+        console.debug('CheckID:', lastComplete.checkId);
+        console.debug('Time:', lastComplete.timestamp);
+        console.debug('Data:', lastComplete.data);
 
         const checkLogs = logs.filter(l => l.checkId === lastComplete.checkId);
-        console.log('\n=== Full Check Log ===');
+        console.debug('\n=== Full Check Log ===');
         checkLogs.forEach(entry => {
-          console.log(`[${entry.event}]`, entry.data);
+          console.debug(`[${entry.event}]`, entry.data);
         });
 
         return checkLogs;

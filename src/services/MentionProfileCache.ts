@@ -99,7 +99,7 @@ export class MentionProfileCache {
 
     // If loading, wait for it
     if (this.isLoading && this.loadPromise) {
-      return await this.loadPromise;
+      return this.loadPromise;
     }
 
     // Not preloaded, load now (fallback)

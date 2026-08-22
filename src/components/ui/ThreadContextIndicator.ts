@@ -9,8 +9,10 @@
  */
 
 import { ModuleLoader } from '../../core/ModuleLoader';
-import type { SingleNoteModuleApi } from '../../modules/single-note/contracts';
-import type { ThreadContext } from '../../modules/single-note/contracts';
+import {
+  type SingleNoteModuleApi,
+  type ThreadContext,
+} from '../../modules/single-note/contracts';
 import { UserProfileService } from '../../services/UserProfileService';
 import { Router } from '../../services/Router';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
@@ -250,7 +252,9 @@ export class ThreadContextIndicator {
                   await this.userProfileService.getUserProfile(decoded.data);
                 mentionedProfiles.set(decoded.data, mentionProfile);
               }
-            } catch (_err) {}
+            } catch (_err) {
+              /* ignore */
+            }
           })
         );
       }

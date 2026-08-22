@@ -10,8 +10,7 @@
  * // => '<div class="note-media"><img src="..." class="note-image" loading="lazy"></div>'
  */
 
-import { escapeHtmlAttr } from './escapeHtml';
-import { escapeHtml } from './escapeHtml';
+import { escapeHtmlAttr, escapeHtml } from './escapeHtml';
 import {
   lightboxImageHtml,
   lightboxContainerDataUrlsAttr,
@@ -116,7 +115,7 @@ export function renderSingleMedia(
         ...(item.alt ? { alt: item.alt } : {}),
         ...(isNSFW ? { extraClasses: ['note-image--nsfw-blur'] } : {}),
       });
-    case 'video':
+    case 'video': {
       // Check if YouTube
       const videoId = getYouTubeVideoId(item.url);
       if (videoId) {
@@ -124,6 +123,7 @@ export function renderSingleMedia(
         return `<div class="youtube-embed-wrapper"><div class="youtube-embed"><iframe src="https://www.youtube.com/embed/${safeId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><a href="https://www.youtube.com/watch?v=${safeId}" class="youtube-external-link">Watch on YouTube</a></div>`;
       }
       return renderVideo(item, index);
+    }
     case 'audio':
       return `<audio src="${escapeHtmlAttr(item.url)}" controls preload="metadata" class="note-audio"></audio>`;
     default:
@@ -216,13 +216,14 @@ export function renderMediaContent(
           );
           return wrapImageCell(img, item);
         }
-        case 'video':
+        case 'video': {
           const ytId = getYouTubeVideoId(item.url);
           if (ytId) {
             const safeId = escapeHtmlAttr(ytId);
             return `<div class="youtube-embed-wrapper"><div class="youtube-embed"><iframe src="https://www.youtube.com/embed/${safeId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><a href="https://www.youtube.com/watch?v=${safeId}" class="youtube-external-link">Watch on YouTube</a></div>`;
           }
           return renderVideo(item, index);
+        }
         case 'audio':
           return `<audio src="${escapeHtmlAttr(item.url)}" controls preload="metadata" class="note-audio"></audio>`;
         default:

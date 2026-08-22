@@ -4439,7 +4439,7 @@ export class BookmarkManager {
       moveTargets,
     });
 
-    return await card.render();
+    return card.render();
   }
 
   private getActualFolderItemCount(folderId: string): number {

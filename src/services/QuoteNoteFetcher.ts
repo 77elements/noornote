@@ -49,7 +49,7 @@ export class QuoteNoteFetcher {
     parentAuthorPubkey?: string,
     outboundOnly: boolean = false
   ): Promise<NostrEvent | null> {
-    return await this.orchestrator.fetchQuotedEvent(
+    return this.orchestrator.fetchQuotedEvent(
       nostrRef,
       undefined,
       parentAuthorPubkey ? [parentAuthorPubkey] : [],

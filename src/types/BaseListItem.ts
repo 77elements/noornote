@@ -88,7 +88,7 @@ export function migrateMuteStorage(): MuteItem[] {
       });
     });
 
-    console.log(
+    console.debug(
       `[MuteStorage] Migrated ${migratedItems.length} items from old format`
     );
     return migratedItems;
@@ -121,5 +121,5 @@ export function cleanupOldMuteStorage(): void {
   localStorage.removeItem('noornote_mutes_private_browser');
   localStorage.removeItem('noornote_muted_threads_browser');
   localStorage.removeItem('noornote_muted_threads_private_browser');
-  console.log('[MuteStorage] Cleaned up old storage keys');
+  console.debug('[MuteStorage] Cleaned up old storage keys');
 }

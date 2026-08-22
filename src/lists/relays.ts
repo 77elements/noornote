@@ -88,7 +88,7 @@ export async function fetchEvents(
   skipCache: boolean = false
 ): Promise<NostrEvent[]> {
   const relays = getReadRelays();
-  return await getTransport().fetch(relays, filters, timeoutMs, skipCache);
+  return getTransport().fetch(relays, filters, timeoutMs, skipCache);
 }
 
 /**
@@ -113,7 +113,7 @@ export async function signEvent(event: {
   content: string;
   pubkey: string;
 }): Promise<NostrEvent | null> {
-  return await AuthService.getInstance().signEvent(event);
+  return AuthService.getInstance().signEvent(event);
 }
 
 // ===== Encryption =====
@@ -243,7 +243,7 @@ export async function encryptContent(
       }
     }
     if (window.nostr?.nip04?.encrypt) {
-      return await window.nostr.nip04.encrypt(pubkey, plaintext);
+      return window.nostr.nip04.encrypt(pubkey, plaintext);
     }
     throw new Error('No encryption support available in browser extension');
   }

@@ -4,8 +4,7 @@
  * Extracts from: NoteUI.createNoteElement() switch statement
  */
 
-import type { ProcessedNote } from '../types/NoteTypes';
-import type { NoteUIOptions } from '../types/NoteTypes';
+import { type ProcessedNote, type NoteUIOptions } from '../types/NoteTypes';
 import { OriginalNoteRenderer } from './OriginalNoteRenderer';
 import { RepostRenderer } from './RepostRenderer';
 import { QuoteRenderer } from './QuoteRenderer';

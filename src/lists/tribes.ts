@@ -908,10 +908,7 @@ function createEmptyTribeSetData(): TribeSetData {
 }
 
 export async function readFromFile(): Promise<TribeSetData> {
-  return await readJsonFile<TribeSetData>(
-    TRIBES_FILE,
-    createEmptyTribeSetData()
-  );
+  return readJsonFile<TribeSetData>(TRIBES_FILE, createEmptyTribeSetData());
 }
 
 export async function writeToFile(data: TribeSetData): Promise<void> {
@@ -2490,7 +2487,7 @@ export class TribeManager {
       }
     );
 
-    return await card.render();
+    return card.render();
   }
 
   /**

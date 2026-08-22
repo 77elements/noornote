@@ -1066,11 +1066,11 @@ export class FeedOrchestrator extends Orchestrator {
       return [specificRelay];
     }
     if (relayStrategy === 'author-outbox') {
-      return await this.relayDiscovery.getProfileRelays(
+      return this.relayDiscovery.getProfileRelays(
         followingPubkeys[0] as string
       );
     }
-    return await this.relayDiscovery.getCombinedRelays(followingPubkeys, false);
+    return this.relayDiscovery.getCombinedRelays(followingPubkeys, false);
   }
 
   /**
@@ -1089,20 +1089,9 @@ export class FeedOrchestrator extends Orchestrator {
     skipCache: boolean
   ): Promise<NostrEvent[]> {
     if (fetchMode === 'direct') {
-      return await this.transport.fetchDirect(
-        relays,
-        filters,
-        15000,
-        'FeedOrch-PV'
-      );
+      return this.transport.fetchDirect(relays, filters, 15000, 'FeedOrch-PV');
     }
-    return await this.transport.fetch(
-      relays,
-      filters,
-      5000,
-      skipCache,
-      'FeedOrch'
-    );
+    return this.transport.fetch(relays, filters, 5000, skipCache, 'FeedOrch');
   }
 
   /**

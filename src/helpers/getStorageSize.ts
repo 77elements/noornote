@@ -8,10 +8,10 @@
  *
  * @example
  * const size = getStorageSize(localStorage);
- * console.log(`localStorage is using ${size} bytes`);
+ * console.debug(`localStorage is using ${size} bytes`);
  *
  * const sessionSize = getStorageSize(sessionStorage);
- * console.log(`sessionStorage is using ${sessionSize} bytes`);
+ * console.debug(`sessionStorage is using ${sessionSize} bytes`);
  */
 
 export function getStorageSize(storage: Storage): number {

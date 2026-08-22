@@ -91,7 +91,7 @@ export class QuoteOrchestrator extends Orchestrator {
     // would silently return the same (still-pending or already-null) promise
     // and never reach Stage 3 with warm relays.
     if (!outboundOnly && this.fetchingQuotes.has(nostrRef)) {
-      return await this.fetchingQuotes.get(nostrRef)!;
+      return this.fetchingQuotes.get(nostrRef)!;
     }
 
     // Check if this is an naddr (addressable event)

@@ -157,7 +157,7 @@ export class ZapStatsService {
     followPubkeys: string[]
   ): Promise<void> {
     const zapRelays = this.getZapRelays();
-    console.log(
+    console.debug(
       `[ZapStatsService] Fetching zap stats for ${followPubkeys.length} follows from ${zapRelays.length} relays...`
     );
 
@@ -166,7 +166,7 @@ export class ZapStatsService {
     const seenEventIds = new Set<string>();
 
     // Fetch incoming zaps (zaps TO current user)
-    console.log('[ZapStatsService] Fetching incoming zaps...');
+    console.debug('[ZapStatsService] Fetching incoming zaps...');
     const incomingZaps = await this.transport.fetch(
       zapRelays,
       [
@@ -181,7 +181,7 @@ export class ZapStatsService {
       'ZapStatsService'
     );
 
-    console.log(
+    console.debug(
       `[ZapStatsService] Received ${incomingZaps.length} incoming zap events`
     );
 
@@ -197,7 +197,7 @@ export class ZapStatsService {
     });
 
     // Fetch outgoing zaps (zaps FROM current user to follows, in batches)
-    console.log('[ZapStatsService] Fetching outgoing zaps...');
+    console.debug('[ZapStatsService] Fetching outgoing zaps...');
     seenEventIds.clear();
 
     for (let i = 0; i < followPubkeys.length; i += BATCH_SIZE) {
@@ -236,7 +236,7 @@ export class ZapStatsService {
       }
     }
 
-    console.log('[ZapStatsService] Zap stats fetching complete');
+    console.debug('[ZapStatsService] Zap stats fetching complete');
   }
 
   /**

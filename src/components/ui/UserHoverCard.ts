@@ -4,12 +4,14 @@
  * Similar to Jumble/Twitter user hover cards
  */
 
-import { UserProfileService } from '../../services/UserProfileService';
+import {
+  UserProfileService,
+  type UserProfile,
+} from '../../services/UserProfileService';
 import { ProfileFollowManager } from '../../lists/follows';
 import { AuthService } from '../../services/AuthService';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
 import { hexToNpub, npubToHex } from '../../helpers/nip19';
-import type { UserProfile } from '../../services/UserProfileService';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { npubToUsername } from '../../helpers/npubToUsername';
 import { ContentProcessor } from '../../services/ContentProcessor';

@@ -108,7 +108,7 @@ export class LiveChatService {
         );
       }
 
-      console.log('[LiveChatService] Publish result', {
+      console.debug('[LiveChatService] Publish result', {
         addressableId,
         eventId: signedEvent.id,
         targeted: relays,

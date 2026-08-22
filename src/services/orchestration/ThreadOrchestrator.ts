@@ -96,7 +96,7 @@ export class ThreadOrchestrator extends Orchestrator {
     authorPubkey?: string
   ): Promise<NostrEvent[]> {
     if (this.fetchingReplies.has(noteId)) {
-      return await this.fetchingReplies.get(noteId)!;
+      return this.fetchingReplies.get(noteId)!;
     }
 
     const fetchPromise = this.fetchRepliesFromRelays(noteId, authorPubkey);
@@ -260,7 +260,7 @@ export class ThreadOrchestrator extends Orchestrator {
     }
 
     if (this.fetchingParentChain.has(noteId)) {
-      return await this.fetchingParentChain.get(noteId)!;
+      return this.fetchingParentChain.get(noteId)!;
     }
 
     const fetchPromise = this.fetchParentChainFromRelays(noteId);

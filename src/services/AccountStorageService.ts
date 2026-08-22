@@ -237,7 +237,7 @@ export class AccountStorageService {
             addedAt: Date.now(),
             lastUsedAt: Date.now(),
           });
-          console.log(
+          console.debug(
             '[AccountStorageService] Migrated existing account to multi-account storage'
           );
         }

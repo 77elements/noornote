@@ -588,14 +588,14 @@ function createEmptyMuteListData(): MuteListData {
 }
 
 export async function readPublicMutesFile(): Promise<MuteListData> {
-  return await readJsonFile<MuteListData>(
+  return readJsonFile<MuteListData>(
     PUBLIC_MUTES_FILE,
     createEmptyMuteListData()
   );
 }
 
 export async function readPrivateMutesFile(): Promise<MuteListData> {
-  return await readJsonFile<MuteListData>(
+  return readJsonFile<MuteListData>(
     PRIVATE_MUTES_FILE,
     createEmptyMuteListData()
   );
@@ -2261,7 +2261,7 @@ export class ProfileMuteManager {
       return { public: false, private: false };
     }
 
-    return await this.muteOrch.isMuted(this.targetPubkey);
+    return this.muteOrch.isMuted(this.targetPubkey);
   }
 
   public renderMuteButton(): string {
