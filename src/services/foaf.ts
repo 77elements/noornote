@@ -24,10 +24,9 @@
  *     24h TTL fallback for safety.
  *   - Concurrent callers for the same degree share one in-flight build
  *     (de-dupe).
- *
- * Not persisted across sessions — every cold start rebuilds. Add a
- * PerAccountLocalStorage mirror if a caller needs instant cold-start
- * availability.
+ *   - Mirrored to IndexedDB per account (FoafStore) — a cold start restores
+ *     the last build instead of re-fetching every kind:3 from relays, under
+ *     the same freshness rules (follow-count match + 24h TTL).
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -38,6 +37,7 @@ import { RelayConfig } from './RelayConfig';
 import { SystemLogger } from './SystemLogger';
 import { FollowCheckService } from './FollowCheckService';
 import { diagLog } from './DiagnosticLogger';
+import { foafStore } from './FoafStore';
 
 export type FoafDegree = 1 | 2 | 3;
 
@@ -54,6 +54,19 @@ interface FoafCacheEntry {
 const FOAF_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h safety TTL
 const FOAF_FETCH_BATCH = 50; // pubkeys per kind:3 fetch
 const FOAF_FETCH_TIMEOUT_MS = 15000; // per batch
+
+/**
+ * Follow-count divergence tolerated before a cached graph is considered
+ * stale. The graph is a discovery approximation, not correctness-critical
+ * data: ±20 follows out of ~400 change which authors COULD appear in a
+ * degree-2 feed by a fraction of a percent — but a strict === check
+ * discarded an otherwise fresh 28k-pubkey graph (measured: AutoSync
+ * completing one follow after the build → full 40s rebuild on next load).
+ * Tolerance is measured against the graph's ORIGINAL build count, so it
+ * never accumulates across sessions (no re-save of restored entries).
+ */
+const FOAF_FOLLOW_COUNT_TOLERANCE = (buildCount: number, currentCount: number): number =>
+  Math.max(20, Math.ceil(0.05 * Math.max(buildCount, currentCount)));
 
 /**
  * Hard cap on how many source pubkeys we expand to the NEXT degree. Without
@@ -124,12 +137,13 @@ export class FoafService {
   }
 
   /**
-   * Drop the entire cache. Call on logout, account switch, or any other event
-   * that orphans the current user's graph.
+   * Drop the entire cache (memory + persisted). Call on logout, account
+   * switch, or any other event that orphans the current user's graph.
    */
   public clearCache(): void {
     this.cache.clear();
     this.inflight.clear();
+    void foafStore.clear();
     this.systemLogger.info('Foaf', 'Cache cleared');
   }
 
@@ -151,13 +165,34 @@ export class FoafService {
   private async ensure(degree: FoafDegree): Promise<string[]> {
     const currentFollowCount = await this.followCheckService.getFollowCount();
 
+    const isFresh = (followCountAtBuild: number, builtAt: number): boolean =>
+      Math.abs(followCountAtBuild - currentFollowCount)
+        <= FOAF_FOLLOW_COUNT_TOLERANCE(followCountAtBuild, currentFollowCount)
+      && Date.now() - builtAt < FOAF_CACHE_TTL_MS;
+
     const cached = this.cache.get(degree);
-    if (
-      cached &&
-      cached.followCountAtBuild === currentFollowCount &&
-      Date.now() - cached.builtAt < FOAF_CACHE_TTL_MS
-    ) {
+    if (cached && isFresh(cached.followCountAtBuild, cached.builtAt)) {
       return cached.pubkeys;
+    }
+
+    // Cold start: restore the last persisted build (IndexedDB, per account)
+    // under the same freshness rules before hitting any relay.
+    const persisted = await foafStore.load(degree);
+    if (persisted && isFresh(persisted.followCountAtBuild, persisted.builtAt)) {
+      // Cache the restored graph with its ORIGINAL build count (not the
+      // current one) so tolerance keeps measuring against the true build
+      // snapshot and can't drift across sessions.
+      this.cache.set(degree, persisted);
+      const ageMin = Math.round((Date.now() - persisted.builtAt) / 60000);
+      this.systemLogger.info(
+        'Foaf',
+        `Degree ${degree} restored from local cache — ${persisted.pubkeys.length} pubkeys (built ${ageMin}m ago)`
+      );
+      diagLog('system', `Foaf degree ${degree} restored from IndexedDB`, {
+        pubkeys: persisted.pubkeys.length,
+        builtAt: new Date(persisted.builtAt).toISOString(),
+      });
+      return persisted.pubkeys;
     }
 
     const inflight = this.inflight.get(degree);
@@ -293,6 +328,9 @@ export class FoafService {
       followCountAtBuild: followCount,
       builtAt: t0,
     });
+    // Mirror to IndexedDB (per account) so cold starts restore instead of
+    // rebuilding. Fire-and-forget — see FoafStore.
+    void foafStore.save(degree, { pubkeys, followCountAtBuild: followCount, builtAt: t0 });
   }
 
   private logBuild(degree: FoafDegree, count: number, t0: number): void {
