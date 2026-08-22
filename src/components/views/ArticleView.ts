@@ -26,6 +26,8 @@ import { formatQuotedReferences, type QuotedReference } from '../../helpers/form
 import { ContentProcessor } from '../../services/ContentProcessor';
 import { QuotedNoteRenderer } from '../ui/note-rendering/QuotedNoteRenderer';
 import { ArticlePreviewRenderer } from '../ui/note-rendering/ArticlePreviewRenderer';
+import { ProfileCarouselOrchestrator } from '../../services/orchestration/ProfileCarouselOrchestrator';
+import { diagLog } from '../../services/DiagnosticLogger';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { marked } from 'marked';
@@ -281,6 +283,13 @@ export class ArticleView extends View {
       this.loadZapsList(noteId, event.pubkey, articleBody.parentElement as HTMLElement, articleEventId, event);
     }
 
+    // "Read more from this author" — inserted after the ISL mount so it lands
+    // between article-body and the zaps/likes lists (those insert before the ISL).
+    const moreSection = document.createElement('section');
+    moreSection.className = 'more-from-this-author';
+    articleBody?.insertAdjacentElement('afterend', moreSection);
+    this.loadMoreFromAuthor(moreSection, event);
+
     // Load and render replies (pass articleEventId for long-form article dual-tag search)
     this.loadReplies(noteId, event.pubkey, articleEventId);
   }
@@ -324,6 +333,87 @@ export class ArticleView extends View {
       }
     } catch (_error) {
       console.warn('Failed to load zaps/likes list:', _error);
+    }
+  }
+
+  /**
+   * Load and render up to 4 earlier published articles (kind 30023) by the
+   * same author, excluding the one currently open. Removes the section
+   * silently when the author has no other (undeleted) articles.
+   */
+  private async loadMoreFromAuthor(section: HTMLElement, currentEvent: NostrEvent & { id: string }): Promise<void> {
+    try {
+      const content = await ProfileCarouselOrchestrator.getInstance().fetchProfileContent(currentEvent.pubkey);
+
+      // Bail if the view was destroyed while fetching
+      if (!section.isConnected) return;
+
+      // Index NIP-09 `a`-tag deletions targeting the author's 30023 coords
+      // (same tombstone semantics as ProfileArticlesCarousel: newer events
+      // survive, deleted coords stay hidden).
+      const prefix = `30023:${currentEvent.pubkey}:`;
+      const deletedCoordinates = new Map<string, number>();
+      for (const delEvent of content.deletions) {
+        for (const tag of delEvent.tags) {
+          if (tag[0] !== 'a' || !tag[1]?.startsWith(prefix)) continue;
+          const existing = deletedCoordinates.get(tag[1]);
+          if (!existing || delEvent.created_at > existing) {
+            deletedCoordinates.set(tag[1], delEvent.created_at);
+          }
+        }
+      }
+
+      // Dedupe by addressable coordinate, keep latest version per slot
+      const eventsByCoord = new Map<string, NostrEvent>();
+      for (const event of content.articles) {
+        if (event.kind !== 30023) continue;
+        const dTag = event.tags.find(t => t[0] === 'd')?.[1] ?? '';
+        const coord = `30023:${event.pubkey}:${dTag}`;
+        const existing = eventsByCoord.get(coord);
+        if (!existing || event.created_at > existing.created_at) {
+          eventsByCoord.set(coord, event);
+        }
+      }
+
+      const currentDTag = currentEvent.tags.find(t => t[0] === 'd')?.[1] ?? '';
+      const currentCoord = `${currentEvent.kind}:${currentEvent.pubkey}:${currentDTag}`;
+
+      const others = Array.from(eventsByCoord.entries())
+        .filter(([coord, event]) => coord !== currentCoord
+          && (deletedCoordinates.get(coord) ?? -1) < event.created_at)
+        .map(([, event]) => event);
+
+      // Random pick of 3 — shuffle then slice
+      for (let i = others.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = others[i]!;
+        others[i] = others[j]!;
+        others[j] = tmp;
+      }
+      const selection = others.slice(0, 3);
+
+      if (selection.length === 0) {
+        section.remove();
+        return;
+      }
+
+      const heading = document.createElement('h2');
+      heading.className = 'more-from-this-author__title';
+      heading.textContent = 'Read more from this author';
+      section.appendChild(heading);
+
+      const renderer = ArticlePreviewRenderer.getInstance();
+      for (const event of selection) {
+        renderer.renderFromEvent(event, section);
+      }
+
+      diagLog('system', 'ArticleView: more-from-author loaded', {
+        author: currentEvent.pubkey.slice(0, 8),
+        shown: selection.length,
+        total: eventsByCoord.size,
+      });
+    } catch (_error) {
+      section.remove();
     }
   }
 

@@ -234,6 +234,20 @@
   }
 }
 
+// "Read more from this author" — up to 4 earlier articles by the same author
+// (cards reuse .article-preview-card from _article-preview.scss, which brings
+// its own vertical margin — no extra stacking styles needed)
+.more-from-this-author {
+  margin-top: calc($gap * 2);
+  padding-bottom: $gap;
+
+  &__title {
+    @extend %h3;
+    color: var(--color-5);
+    margin: 0 0 $gap 0;
+  }
+}
+
 // Loading state
 .article-view-loading {
   display: flex;
