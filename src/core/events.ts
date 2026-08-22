@@ -25,6 +25,14 @@ export interface UserLoginPayload {
 export interface DMNewMessagePayload {
   message: DMMessage;
   conversationWith: string;
+  /**
+   * Whether DMStore.saveMessage actually counted this message as unread
+   * (read-anchor check passed). False = re-ingested already-read history
+   * (relay replay / post-eviction backlog) — consumers must not present it
+   * as a new unread arrival. Optional because older emit sites predate it;
+   * treat undefined as "unknown, assume unread" for compatibility.
+   */
+  wasUnread?: boolean;
 }
 
 export interface DMFetchProgressPayload {

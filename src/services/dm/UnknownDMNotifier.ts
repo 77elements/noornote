@@ -16,11 +16,16 @@
  * Burst-safe (wall-proof): at most ONE toast is ever on screen. A burst of
  * unknown-sender messages from DIFFERENT senders collapses into a single
  * rolling toast that updates its text to "N new messages from unknown senders"
- * instead of stacking N toasts top-to-bottom. This is the defence-in-depth
- * backstop: the root cause — a relay-replayed / post-eviction backlog
- * re-emitting dm:new-message — is fixed in DMService.storeAndEmit (gated on
- * the live sub's EOSE), but this notifier stays wall-proof against any future
- * upstream regression regardless.
+ * instead of stacking N toasts top-to-bottom.
+ *
+ * Anti-false-positive stack (see DMService.storeAndEmit):
+ *  1. Root cause: events that ARRIVED during the live sub's pre-EOSE backlog
+ *     burst carry an arrival stamp and never emit dm:new-message — the async
+ *     decrypt pipeline can no longer race the EOSE gate open.
+ *  2. wasUnread: the store's read-anchor verdict travels in the payload. An
+ *     event that leaked through any future gate hole as "live" but is already
+ *     read (relay replay / post-eviction backlog of read conversations) is
+ *     ignored here — a toast must never claim unread messages that aren't.
  *
  * Dedup: one count contribution per conversation while that conversation still
  * has unread messages. The remembered pubkey is cleared on `dm:read` (fired by
@@ -110,12 +115,18 @@ export class UnknownDMNotifier {
   private handleNewMessage({
     message,
     conversationWith,
+    wasUnread,
   }: DMNewMessagePayload): void {
     // Outgoing echoes (own messages) are not interesting here.
     if (message.isMine) return;
     // Only surface senders the user does not follow. Known-sender messages
     // are already visible in the default "Known" tab.
     if (this.followCheckService.isFollowingSync(conversationWith)) return;
+    // Read-anchor verdict from DMStore: explicitly-read arrivals (replayed
+    // backlog of read conversations) must never be claimed as unread. Filter
+    // only on explicit false — undefined means "predate the flag", keep the
+    // legacy assume-unread behavior.
+    if (wasUnread === false) return;
     // One count contribution per conversation within the current unread cycle —
     // a burst of N messages from the SAME sender bumps the count once, not N×.
     if (this.toastedConvs.has(conversationWith)) return;

@@ -296,9 +296,15 @@ export class DMStore {
 
   /**
    * Save a message (upsert)
-   * Only increments unread count for messages newer than lastReadAt
+   * Only increments unread count for messages newer than lastReadAt.
+   * Returns whether the message was newly inserted (false = duplicate wrapId)
+   * and whether it bumped the conversation's unread count (the read-anchor
+   * verdict — used by DMService to mark dm:new-message payloads wasUnread so
+   * replayed already-read backlogs are never presented as new arrivals).
    */
-  public async saveMessage(message: DMMessage): Promise<void> {
+  public async saveMessage(
+    message: DMMessage
+  ): Promise<{ inserted: boolean; unreadBumped: boolean }> {
     await this.init();
 
     return new Promise((resolve, reject) => {
@@ -310,6 +316,7 @@ export class DMStore {
       const conversationsStore = tx.objectStore(CONVERSATIONS_STORE);
 
       let mirrorUpdated = false;
+      let unreadBumped = false;
 
       // Check for duplicate by wrapId
       const wrapIndex = messagesStore.index('wrapId');
@@ -318,7 +325,7 @@ export class DMStore {
       checkRequest.onsuccess = () => {
         if (checkRequest.result) {
           // Already exists, skip
-          resolve();
+          resolve({ inserted: false, unreadBumped: false });
           return;
         }
 
@@ -352,6 +359,7 @@ export class DMStore {
             : (this.readAnchorMirror.get(message.conversationWith) ?? 0);
           const shouldIncrementUnread =
             !message.isMine && message.createdAt > lastReadAt && !staysDeleted;
+          unreadBumped = shouldIncrementUnread;
 
           // Diagnostic: any time unread is bumped, record whether we knew the conversation and what
           // its read-anchor was. The false-"unread" bug shows up here as a burst with hadConversation
@@ -406,7 +414,7 @@ export class DMStore {
 
       tx.oncomplete = () => {
         if (mirrorUpdated) this.saveReadAnchorMirror();
-        resolve();
+        resolve({ inserted: true, unreadBumped });
       };
       tx.onerror = () => reject(tx.error);
     });

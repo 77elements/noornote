@@ -104,7 +104,7 @@ export class DMService {
   // Coalesce incoming gift-wrapped events over a short window so bursts don't
   // cause one UI re-render per message. Dedup via DMStore wrapId unique index
   // keeps semantics correct even if a duplicate sneaks into the buffer.
-  private incomingBatch: NostrEvent[] = [];
+  private incomingBatch: Array<{ event: NostrEvent; inBacklog: boolean }> = [];
   private incomingBatchTimer: number | null = null;
   private static readonly INCOMING_BATCH_WINDOW_MS = 50;
 
@@ -357,9 +357,11 @@ export class DMService {
     }
 
     await Promise.all(
-      batch.map(event => {
-        if (event.kind === KIND_GIFT_WRAP) return this.processGiftWrap(event);
-        if (event.kind === KIND_LEGACY_DM) return this.processLegacyDM(event);
+      batch.map(({ event, inBacklog }) => {
+        if (event.kind === KIND_GIFT_WRAP)
+          return this.processGiftWrap(event, inBacklog);
+        if (event.kind === KIND_LEGACY_DM)
+          return this.processLegacyDM(event, inBacklog);
         return Promise.resolve();
       })
     );
@@ -469,10 +471,10 @@ export class DMService {
       );
 
       for (const event of nip17Events) {
-        await this.processGiftWrap(event);
+        await this.processGiftWrap(event, true);
       }
       for (const event of legacyEvents) {
-        await this.processLegacyDM(event);
+        await this.processLegacyDM(event, true);
       }
 
       if (nip17Events.length > 0 || legacyEvents.length > 0) {
@@ -703,9 +705,9 @@ export class DMService {
 
       for (const { event, isNip17 } of allEvents) {
         if (isNip17) {
-          await this.processGiftWrap(event);
+          await this.processGiftWrap(event, true);
         } else {
-          await this.processLegacyDM(event);
+          await this.processLegacyDM(event, true);
         }
         this.fetchProgress.current++;
         // Emit progress every 10 events to avoid flooding
@@ -838,8 +840,8 @@ export class DMService {
       ];
 
       for (const { event, isNip17 } of allEvents) {
-        if (isNip17) await this.processGiftWrap(event);
-        else await this.processLegacyDM(event);
+        if (isNip17) await this.processGiftWrap(event, true);
+        else await this.processLegacyDM(event, true);
       }
 
       // No events at or before the cursor ⇒ bottom of history reached.
@@ -916,7 +918,16 @@ export class DMService {
       filters,
       this.subscriptionId,
       (event: NostrEvent) => {
-        this.incomingBatch.push(event);
+        // Stamp the backlog-gate state AT ARRIVAL. The downstream pipeline
+        // (batch window + NIP-55 signer decryption) is asynchronous and can
+        // easily outlast the EOSE/timeout that opens the gate — checking the
+        // gate at emission time let a replayed backlog through as "live"
+        // (the recurring false-unread-toast bug). An event that arrived
+        // during the backlog burst can never be a live notification.
+        this.incomingBatch.push({
+          event,
+          inBacklog: !this.liveSubBacklogDone,
+        });
         if (this.incomingBatchTimer === null) {
           this.incomingBatchTimer = window.setTimeout(
             () => this.flushIncomingBatch(),
@@ -939,8 +950,14 @@ export class DMService {
 
   /**
    * Process a gift-wrapped event (unwrap and store)
+   * @param arrivedDuringBacklog - true when the event arrived via the live
+   *        sub before its EOSE (replayed backlog); forwarded to storeAndEmit
+   *        so it never emits dm:new-message regardless of decrypt latency.
    */
-  private async processGiftWrap(wrapEvent: NostrEvent): Promise<void> {
+  private async processGiftWrap(
+    wrapEvent: NostrEvent,
+    arrivedDuringBacklog = false
+  ): Promise<void> {
     try {
       // Check if already processed
       const wrapId = wrapEvent.id;
@@ -1051,7 +1068,7 @@ export class DMService {
         // else: store + emit request below so the banner prompts the user.
       }
 
-      await this.storeAndEmit(message, conversationWith);
+      await this.storeAndEmit(message, conversationWith, arrivedDuringBacklog);
 
       // If the peer sent a message with a duration we haven't yet accepted
       // AND haven't yet been prompted about, fire a request event so the
@@ -1085,8 +1102,12 @@ export class DMService {
 
   /**
    * Process a legacy NIP-04 DM (kind:4)
+   * @param arrivedDuringBacklog - see processGiftWrap
    */
-  private async processLegacyDM(event: NostrEvent): Promise<void> {
+  private async processLegacyDM(
+    event: NostrEvent,
+    arrivedDuringBacklog = false
+  ): Promise<void> {
     try {
       // Check if already processed
       const eventId = event.id;
@@ -1147,7 +1168,7 @@ export class DMService {
         format: 'legacy',
       };
 
-      await this.storeAndEmit(message, conversationWith);
+      await this.storeAndEmit(message, conversationWith, arrivedDuringBacklog);
     } catch (error) {
       this.systemLogger.error(
         'DMService',
@@ -1160,28 +1181,44 @@ export class DMService {
   /**
    * Store a message and emit appropriate events.
    * Batches events during historical fetch, emits immediately for live messages.
+   *
+   * Live-notification rules (the anti-false-toast defence stack):
+   *  1. `arrivedDuringBacklog` — stamped AT ARRIVAL in the live-sub callback.
+   *     The downstream batch/decrypt pipeline is async (NIP-55 signer IPC can
+   *     take seconds for a backlog), so the EOSE gate can be long open by the
+   *     time we get here; the arrival stamp is the only race-free signal.
+   *  2. `isFetchingHistorical` — explicit historical fetches never notify.
+   *  3. `wasUnread` — DMStore's read-anchor verdict. Even a genuinely-live
+   *     arrival that the store classified as already-read (replay of a read
+   *     conversation) carries wasUnread:false so consumers (UnknownDMNotifier)
+   *     never present it as a new unread message.
    */
   private async storeAndEmit(
     message: DMMessage,
-    conversationWith: string
+    conversationWith: string,
+    arrivedDuringBacklog = false
   ): Promise<void> {
-    await this.dmStore.saveMessage(message);
+    const { inserted, unreadBumped } = await this.dmStore.saveMessage(message);
 
-    // Only emit the live notification for genuinely-live arrivals: not during
-    // an explicit historical fetch (isFetchingHistorical) and not during the
-    // live sub's pre-EOSE backlog replay (liveSubBacklogDone). Without this,
-    // a relay-replayed or post-eviction re-ingested backlog emits one
-    // dm:new-message per message → a toast wall from UnknownDMNotifier.
-    const isLive = !this.isFetchingHistorical && this.liveSubBacklogDone;
+    // Duplicate (already stored under this wrapId) — nothing new, no events.
+    if (!inserted) return;
+
+    const isLive =
+      !arrivedDuringBacklog && !this.isFetchingHistorical && this.liveSubBacklogDone;
     if (!isLive) {
       this.pendingBadgeUpdate = true;
     } else {
       if (!message.isMine) {
         diagLog('dms', 'DM live notification emitted', {
           createdAt: message.createdAt,
+          wasUnread: unreadBumped,
         });
       }
-      this.eventBus.emit('dm:new-message', { message, conversationWith });
+      this.eventBus.emit('dm:new-message', {
+        message,
+        conversationWith,
+        wasUnread: unreadBumped,
+      });
       this.eventBus.emit('dm:badge-update');
     }
   }
