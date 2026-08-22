@@ -17,6 +17,7 @@ import { ErrorService } from './ErrorService';
 import { ToastService } from './ToastService';
 import { SystemLogger } from './SystemLogger';
 import { OutboundRelaysOrchestrator } from './orchestration/OutboundRelaysOrchestrator';
+import { ProfileOrchestrator } from './orchestration/ProfileOrchestrator';
 import { SignatureVerificationService } from './security/SignatureVerificationService';
 import { PlatformService } from './PlatformService';
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
@@ -409,63 +410,27 @@ export class ZapService {
         return null;
       }
 
-      const writeRelays = firstRelay.writeRelays;
-      this.systemLogger.info('ZapService', `Found ${writeRelays.length} outbound relays`);
+      this.systemLogger.info('ZapService', `Found ${firstRelay.writeRelays.length} outbound relays`);
 
-      // Step 2: Fetch Kind 0 (profile) from user's outbound relays
-      const profiles: NostrEvent[] = [];
-
-      const sub = await this.nostrTransport.subscribe(
-        writeRelays,
-        [{ kinds: [0], authors: [pubkey], limit: 1 }],
-        {
-          onEvent: (event: NostrEvent) => {
-            profiles.push(event);
-          },
-          onEose: () => {
-            sub.close();
-          }
-        }
-      );
-
-      // Wait for profile or timeout after 5 seconds
-      await new Promise<void>((resolve) => {
-        const timeoutId = setTimeout(() => {
-          sub.close();
-          resolve();
-        }, 5000);
-
-        const checkInterval = setInterval(() => {
-          if (profiles.length > 0) {
-            clearTimeout(timeoutId);
-            clearInterval(checkInterval);
-            resolve();
-          }
-        }, 100);
-      });
-
-      if (profiles.length === 0) {
+      // Step 2: Fetch kind:0 from the author's write relays via the sanctioned
+      // orchestrator path (hints-first fetch; dedup + timeouts handled there).
+      // This replaces a hand-rolled raw subscription whose 100ms polling
+      // interval leaked on timeout and blocked the zap flow for a fixed 5s.
+      const profile = await ProfileOrchestrator.getInstance().fetchProfile(pubkey, firstRelay.writeRelays);
+      if (!profile) {
         this.systemLogger.warn('ZapService', 'No profile found in user\'s relays');
         return null;
       }
 
-      // Step 3: Parse profile content
-      const latestProfile = profiles.sort((a, b) => b.created_at - a.created_at)[0];
-      if (!latestProfile) {
-        this.systemLogger.warn('ZapService', 'No profile found after sort');
-        return null;
-      }
-      const profileData = JSON.parse(latestProfile.content);
-
       this.systemLogger.info('ZapService', `Profile fetched from user's relays`);
 
-      return {
-        pubkey,
-        lud16: profileData.lud16 || (!profileData.lud06 && profileData.nip05?.includes('@') ? profileData.nip05 : undefined),
-        lud06: profileData.lud06,
-        name: profileData.name,
-        display_name: profileData.display_name
-      };
+      const lightning: ProfileWithLightning = { pubkey };
+      const lud16 = profile.lud16 || (!profile.lud06 && profile.nip05?.includes('@') ? profile.nip05 : undefined);
+      if (lud16) lightning.lud16 = lud16;
+      if (profile.lud06) lightning.lud06 = profile.lud06;
+      if (profile.name) lightning.name = profile.name;
+      if (profile.display_name) lightning.display_name = profile.display_name;
+      return lightning;
     } catch (error) {
       this.systemLogger.error('ZapService', 'Failed to fetch profile from user relays', error);
       return null;
