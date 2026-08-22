@@ -7,8 +7,8 @@ module.exports = {
   },
   extends: [
     'eslint:recommended',
-    '@typescript-eslint/recommended',
-    '@typescript-eslint/recommended-requiring-type-checking',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:@typescript-eslint/recommended-requiring-type-checking',
     'prettier',
   ],
   parser: '@typescript-eslint/parser',
@@ -55,9 +55,6 @@ module.exports = {
     {
       // Test files
       files: ['**/*.test.ts', '**/*.spec.ts'],
-      env: {
-        vitest: true,
-      },
       rules: {
         '@typescript-eslint/no-explicit-any': 'off',
         'no-console': 'off',
@@ -65,7 +62,7 @@ module.exports = {
     },
     {
       // Configuration files
-      files: ['*.config.js', '*.config.ts', '.eslintrc.js'],
+      files: ['*.config.js', '*.config.ts', '.eslintrc.cjs', 'vitest.config.ts'],
       rules: {
         '@typescript-eslint/no-var-requires': 'off',
         'no-console': 'off',

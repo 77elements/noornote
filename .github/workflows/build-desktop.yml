@@ -73,6 +73,9 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
+      - name: Run tests
+        run: bun run test
+
       - name: Build frontend
         run: ELECTRON_BUILD=1 bun run build
 

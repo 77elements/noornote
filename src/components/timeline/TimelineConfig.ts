@@ -9,10 +9,11 @@
  * component is driven entirely by it. Common denominators (mute/reply/word/dedup
  * /sort) stay central; the config only toggles inputs.
  *
- * Migration plan + behavior matrix: docs/todos/timeline-component-modularization.md
+ * Status: fully consumed. Timeline reads source/relays/range via the readers
+ * below (relayFilterUrl / timeRangeOf) and every boolean field directly.
+ * Enforced by /build-validate Step 25 (Timeline Architecture Guard).
  *
- * Phase 0: this type + buildTimelineConfig() exist and the Timeline constructor
- * builds a config, but nothing downstream consumes it yet (behavior-preserving).
+ * Behavior matrix + guard mapping: docs/todos/timeline-component-modularization.md
  */
 
 import { isDataSaverEnabled } from '../../services/DataSaverService';
