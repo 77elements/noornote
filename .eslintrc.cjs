@@ -24,7 +24,10 @@ module.exports = {
 
     // TypeScript specific rules
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-    '@typescript-eslint/explicit-function-return-type': 'warn',
+    // OFF (2026-08-22, user decision): 695 warnings of pure style; retrofitting
+    // return types across the codebase has no safety value. Re-enable only if
+    // the codebase is typed strictly enough that violations are rare.
+    '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/no-explicit-any': 'error',
     '@typescript-eslint/no-inferrable-types': 'off',
     // MISFIRING under @typescript-eslint v6 + TS 5.x type info: removes legit
