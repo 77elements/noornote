@@ -29,18 +29,18 @@ import { fetchEvents } from '../../lists/relays';
 /**
  * Authors per kind:30023 fetch. Some relays cap `authors` list length;
  * batching keeps us well under any reasonable cap and matches the proven
- * SccArticleFeed behaviour.
+ * SccArticleFeed behaviour. Exported for tests.
  */
-const AUTHOR_FETCH_BATCH = 150;
+export const AUTHOR_FETCH_BATCH = 150;
 
 /**
  * How many author-batches to fire concurrently. Bounded to be polite to
  * relays — high concurrency on large FOAF sets (hundreds of batches) is
  * exactly the kind of burst that gets a client rate-limited or blocked.
  * 3 concurrent × 150 authors = 450 authors in flight at once, well below
- * typical relay tolerance thresholds.
+ * typical relay tolerance thresholds. Exported for tests.
  */
-const AUTHOR_FETCH_CONCURRENCY = 3;
+export const AUTHOR_FETCH_CONCURRENCY = 3;
 
 /**
  * Per-batch relay fetch timeout. SccArticleFeed used 8000; keep it.
