@@ -3,6 +3,21 @@
  * Fetches and caches BTC exchange rates for fiat currencies
  */
 
+/** Fiat currencies NoorNote quotes BTC prices in (CoinGecko vs_currencies). */
+export type SupportedCurrency =
+  | 'EUR'
+  | 'USD'
+  | 'GBP'
+  | 'JPY'
+  | 'CNY'
+  | 'AUD'
+  | 'CHF'
+  | 'SAR'
+  | 'CAD'
+  | 'NZD'
+  | 'AED'
+  | 'ZAR';
+
 export class ExchangeRateService {
   private static instance: ExchangeRateService;
   private rates: Map<string, number> = new Map();
@@ -53,22 +68,25 @@ export class ExchangeRateService {
         throw new Error('Failed to fetch exchange rates');
       }
 
-      const data = await response.json();
+      // CoinGecko simple/price shape: { bitcoin: { <currency>: <rate>, … } }.
+      // Third-party response — validate before trusting the numbers.
+      const data = (await response.json()) as {
+        bitcoin?: Partial<Record<SupportedCurrency, number>>;
+      };
       const btcRates = data.bitcoin;
+      if (!btcRates) {
+        throw new Error('Exchange rate response missing bitcoin object');
+      }
 
-      // Store rates (12 currencies)
-      this.rates.set('EUR', btcRates.eur);
-      this.rates.set('USD', btcRates.usd);
-      this.rates.set('GBP', btcRates.gbp);
-      this.rates.set('JPY', btcRates.jpy);
-      this.rates.set('CNY', btcRates.cny);
-      this.rates.set('AUD', btcRates.aud);
-      this.rates.set('CHF', btcRates.chf);
-      this.rates.set('SAR', btcRates.sar);
-      this.rates.set('CAD', btcRates.cad);
-      this.rates.set('NZD', btcRates.nzd);
-      this.rates.set('AED', btcRates.aed);
-      this.rates.set('ZAR', btcRates.zar);
+      // Store rates (12 currencies) — skip any the API didn't return
+      for (const [cur, rate] of Object.entries(btcRates) as [
+        SupportedCurrency,
+        number | undefined,
+      ][]) {
+        if (typeof rate === 'number' && Number.isFinite(rate)) {
+          this.rates.set(cur, rate);
+        }
+      }
 
       this.lastFetch = Date.now();
     } catch (error) {

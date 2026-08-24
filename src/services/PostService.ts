@@ -771,7 +771,7 @@ export class PostService {
     } catch (err) {
       this.systemLogger.warn(
         'PostService',
-        `Custom emoji tag enrichment skipped: ${err}`
+        `Custom emoji tag enrichment skipped: ${String(err)}`
       );
       return tags;
     }

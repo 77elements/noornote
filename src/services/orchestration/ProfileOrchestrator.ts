@@ -191,7 +191,9 @@ export class ProfileOrchestrator extends Orchestrator {
    * Parse a kind:0 event into a Profile
    */
   private parseProfileEvent(pubkey: string, event: NostrEvent): Profile {
-    const metadata = JSON.parse(event.content);
+    // Relay-controlled content — typed loosely; buildProfile validates every
+    // field it reads (typeof checks) before promoting it into the Profile.
+    const metadata = JSON.parse(event.content) as Record<string, unknown>;
     const nip05s = this.extractNip05sFromTags(event.tags);
     return this.buildProfile(pubkey, metadata, nip05s);
   }
@@ -240,7 +242,7 @@ export class ProfileOrchestrator extends Orchestrator {
         } catch (error) {
           this.systemLogger.error(
             'ProfileOrchestrator',
-            `Parse error for ${pubkey.slice(0, 8)}: ${error}`
+            `Parse error for ${pubkey.slice(0, 8)}: ${String(error)}`
           );
         }
       });
@@ -249,7 +251,7 @@ export class ProfileOrchestrator extends Orchestrator {
     } catch (error) {
       this.systemLogger.error(
         'ProfileOrchestrator',
-        `Batch fetch failed: ${error}`
+        `Batch fetch failed: ${String(error)}`
       );
       return profiles;
     }
@@ -297,7 +299,7 @@ export class ProfileOrchestrator extends Orchestrator {
     } catch (error) {
       this.systemLogger.error(
         'ProfileOrchestrator',
-        `Fetch oldest event failed for ${pubkey.slice(0, 8)}: ${error}`
+        `Fetch oldest event failed for ${pubkey.slice(0, 8)}: ${String(error)}`
       );
       return null;
     }
@@ -335,14 +337,22 @@ export class ProfileOrchestrator extends Orchestrator {
 
       ws.onmessage = msg => {
         try {
-          const data = JSON.parse(msg.data);
+          // Primal's proprietary {cache:[...]} protocol: [verb, id, payload]
+          const data = JSON.parse(String(msg.data)) as unknown[];
           // Look for kind 10000105 (USER_PROFILE_INFO) which contains time_joined
-          if (Array.isArray(data) && data[2]?.kind === 10000105) {
-            const content = JSON.parse(data[2].content);
-            if (content.time_joined && content.time_joined > 0) {
+          const payload = Array.isArray(data)
+            ? (data[2] as Record<string, unknown> | undefined)
+            : undefined;
+          if (payload?.kind === 10000105) {
+            const content = JSON.parse(String(payload.content)) as Record<
+              string,
+              unknown
+            >;
+            const joined = content.time_joined;
+            if (typeof joined === 'number' && joined > 0) {
               clearTimeout(timeout);
               ws.close();
-              resolve(content.time_joined);
+              resolve(joined);
               return;
             }
           }
@@ -408,7 +418,7 @@ export class ProfileOrchestrator extends Orchestrator {
 
   // Orchestrator interface implementations (unused for now, required by base class)
 
-  public onui(_data: any): void {
+  public onui(_data: unknown): void {
     // Handle UI actions (future: profile update subscriptions)
   }
 

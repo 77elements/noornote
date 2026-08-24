@@ -24,10 +24,26 @@ import {
   StorageKeys,
 } from '../services/PerAccountLocalStorage';
 
+// The plugin's own dayjs augmentation types CalendarSystem as a fixed union
+// ('amazethiopic' | 'gregory' | …) that does not include 'hijri', although
+// its HijriCalendarSystem implementation registers under exactly that name.
+// Interface merging adds 'hijri' overloads so call sites stay fully typed
+// (previously every call needed `'hijri' as any`, cascading 26 lint findings).
+declare module 'dayjs' {
+  interface Dayjs {
+    toCalendarSystem(calendar: 'hijri'): this;
+  }
+  interface DayjsConstructor {
+    registerCalendarSystem(
+      name: 'hijri',
+      calendarSystem: HijriCalendarSystem
+    ): void;
+  }
+}
+
 // Initialize dayjs with calendar systems plugin
 dayjs.extend(calendarSystems);
-// Cast 'hijri' as any because the plugin defines its own types
-dayjs.registerCalendarSystem('hijri' as any, new HijriCalendarSystem());
+dayjs.registerCalendarSystem('hijri', new HijriCalendarSystem());
 
 type CalendarSystem = 'gregorian' | 'hijri' | 'both';
 
@@ -113,11 +129,11 @@ export function formatBookmarkTimestamp(timestamp: number): string {
   let formatted: string;
 
   if (calendarSystem === 'hijri') {
-    const hijriDate = dayjs(date).toCalendarSystem('hijri' as any);
-    const hijriNow = dayjs(now).toCalendarSystem('hijri' as any);
+    const hijriDate = dayjs(date).toCalendarSystem('hijri');
+    const hijriNow = dayjs(now).toCalendarSystem('hijri');
     const month = HIJRI_MONTHS[hijriDate.month()];
     if (hijriDate.year() === hijriNow.year()) {
-      formatted = `${hijriDate.date()} ${month}`;
+      formatted = `${Number(hijriDate.date())} ${month}`;
     } else {
       const yearShort = String(hijriDate.year()).slice(-2);
       formatted = `${month} '${yearShort}`;
@@ -148,8 +164,8 @@ export function formatDateByCalendar(date: Date): string {
   const gregorian = `${date.getDate()} ${getMonthShort(date)} ${date.getFullYear()}`;
   if (system === 'gregorian') return gregorian;
 
-  const h = dayjs(date).toCalendarSystem('hijri' as any);
-  const hijri = `${h.date()} ${HIJRI_MONTHS[h.month()]} ${h.year()}`;
+  const h = dayjs(date).toCalendarSystem('hijri');
+  const hijri = `${Number(h.date())} ${HIJRI_MONTHS[h.month()]} ${h.year()}`;
   if (system === 'hijri') return hijri;
   return `${gregorian} (${hijri})`;
 }
@@ -217,8 +233,8 @@ function formatHijriDate(
   time: string,
   includeYear: boolean
 ): string {
-  const hijriDate = dayjs(date).toCalendarSystem('hijri' as any);
-  const day = hijriDate.date();
+  const hijriDate = dayjs(date).toCalendarSystem('hijri');
+  const day = Number(hijriDate.date());
   const month = HIJRI_MONTHS[hijriDate.month()];
   const year = hijriDate.year();
 
@@ -241,8 +257,8 @@ function formatBothDates(
   const gregorianMonth = getMonthShort(date);
   const gregorianYear = date.getFullYear();
 
-  const hijriDate = dayjs(date).toCalendarSystem('hijri' as any);
-  const hijriDay = hijriDate.date();
+  const hijriDate = dayjs(date).toCalendarSystem('hijri');
+  const hijriDay = Number(hijriDate.date());
   const hijriMonth = HIJRI_MONTHS[hijriDate.month()];
   const hijriYear = hijriDate.year();
 
@@ -319,8 +335,8 @@ function isSameDay(
 
   // For Hijri mode, use Islamic calendar comparison
   if (calendarSystem === 'hijri') {
-    const hijri1 = dayjs(date1).toCalendarSystem('hijri' as any);
-    const hijri2 = dayjs(date2).toCalendarSystem('hijri' as any);
+    const hijri1 = dayjs(date1).toCalendarSystem('hijri');
+    const hijri2 = dayjs(date2).toCalendarSystem('hijri');
     return (
       hijri1.year() === hijri2.year() &&
       hijri1.month() === hijri2.month() &&
@@ -346,8 +362,8 @@ function isSameYear(
 
   // For Hijri mode, use Islamic calendar comparison
   if (calendarSystem === 'hijri') {
-    const hijri1 = dayjs(date1).toCalendarSystem('hijri' as any);
-    const hijri2 = dayjs(date2).toCalendarSystem('hijri' as any);
+    const hijri1 = dayjs(date1).toCalendarSystem('hijri');
+    const hijri2 = dayjs(date2).toCalendarSystem('hijri');
     return hijri1.year() === hijri2.year();
   }
 

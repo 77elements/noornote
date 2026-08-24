@@ -12,7 +12,7 @@
  * - This is NOT adding nostr-tools as OUR dependency - it's using NDK's
  */
 
-import { nip19, type NostrEvent } from '@nostr-dev-kit/ndk';
+import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { hexToBytes, bytesToHex } from '@noble/hashes/utils';
 
 // Low-level crypto functions from nostr-tools (NDK's peer dependency)
@@ -22,6 +22,7 @@ import {
   finalizeEvent,
   verifyEvent,
   nip04,
+  nip19,
   getEventHash,
   generateSecretKey,
   type UnsignedEvent as NostrToolsUnsignedEvent,
@@ -78,7 +79,7 @@ export function encodeNevent(
   return nip19.neventEncode({
     id: eventId,
     relays: relays || [],
-    author,
+    ...(author !== undefined ? { author } : {}),
   });
 }
 

@@ -201,7 +201,7 @@ export class KeySignerClient {
 
     try {
       const responseStr = await this.invokeWithTimeout(request);
-      const response: SignResponse = JSON.parse(responseStr);
+      const response = JSON.parse(responseStr) as SignResponse;
 
       if (response.error) {
         throw new Error(`KeySigner error: ${response.error}`);
@@ -250,10 +250,10 @@ export class KeySignerClient {
     throw new Error('Invalid npub from daemon');
   }
 
-  public async signEvent(event: any): Promise<any> {
+  public async signEvent(event: unknown): Promise<string> {
     const eventJson = JSON.stringify(event);
     const response = await this.sendRequest('sign_event', eventJson);
-    return response.signature;
+    return response.signature || '';
   }
 
   public async nip44Encrypt(
@@ -499,7 +499,13 @@ export class KeySignerClient {
 
     try {
       const responseStr = await window.electronAPI!.addAccountViaCli(jsonInput);
-      const response = JSON.parse(responseStr);
+      // Electron IPC bridge response (daemon CLI output)
+      const response = JSON.parse(responseStr) as {
+        success?: boolean;
+        error?: string;
+        pubkey?: string;
+        npub?: string;
+      };
 
       if (!response.success) {
         throw new Error(response.error || 'Failed to add account');

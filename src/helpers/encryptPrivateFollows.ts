@@ -58,7 +58,7 @@ export async function encryptPrivateFollows(
         return encrypted;
       } catch (nip04Error) {
         throw new Error(
-          `Encryption failed: NIP-44 (${nip44Error}), NIP-04 (${nip04Error})`
+          `Encryption failed: NIP-44 (${String(nip44Error)}), NIP-04 (${String(nip04Error)})`
         );
       }
     }
@@ -89,14 +89,14 @@ export async function encryptPrivateFollows(
         return encrypted;
       } catch (nip04Error) {
         throw new Error(
-          `Encryption failed: NIP-44 (${nip44Error}), NIP-04 (${nip04Error})`
+          `Encryption failed: NIP-44 (${String(nip44Error)}), NIP-04 (${String(nip04Error)})`
         );
       }
     }
   } else if (authMethod === 'nip46') {
     // Use NIP-46 remote signer for encryption (NIP-44 → NIP-04 fallback)
     const { AuthService } = await import('../services/AuthService');
-    const nip46Manager = (AuthService.getInstance() as any).nip46Manager;
+    const nip46Manager = AuthService.getInstance().nip46Manager;
 
     if (!nip46Manager?.isAvailable()) {
       throw new Error('NIP-46 remote signer not available');
@@ -119,7 +119,7 @@ export async function encryptPrivateFollows(
         return encrypted;
       } catch (nip04Error) {
         throw new Error(
-          `Encryption failed: NIP-44 (${nip44Error}), NIP-04 (${nip04Error})`
+          `Encryption failed: NIP-44 (${String(nip44Error)}), NIP-04 (${String(nip04Error)})`
         );
       }
     }

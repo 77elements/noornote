@@ -45,6 +45,55 @@ export type AuthMethod =
   | 'amber';
 export type InputType = 'npub' | 'bunker' | 'nip05' | 'unknown';
 
+/**
+ * Mutable event draft handed to signEvent(). The signer completes it:
+ * pubkey/id/sig are filled in (or replaced) during signing. Callers
+ * construct `{ kind, content, tags, created_at? }` and get a full
+ * NostrEvent back.
+ */
+export interface SignableEvent {
+  kind: number;
+  created_at?: number;
+  tags?: string[][];
+  content: string;
+  pubkey?: string;
+  id?: string;
+  sig?: string;
+}
+
+/** A signEvent() result: NDK's NostrEvent with the signed fields guaranteed. */
+export type SignedEvent = NostrEvent & {
+  id: string;
+  sig: string;
+  kind: number;
+};
+
+/** localStorage session payload (this.storageKey) — validated on load. */
+interface StoredAuthSession {
+  npub?: string;
+  pubkey?: string;
+  timestamp?: number;
+  authMethod?: string;
+  isReadOnly?: boolean;
+  nip46SubType?: string | null;
+}
+
+/** Minimal NIP-07 provider shape we consume from window.nostr. */
+export interface Nip07Provider {
+  getPublicKey(): Promise<string>;
+  signEvent(
+    event: unknown
+  ): Promise<{ id: string; sig: string } & Record<string, unknown>>;
+  nip04?: {
+    encrypt(pubkey: string, plaintext: string): Promise<string>;
+    decrypt(pubkey: string, ciphertext: string): Promise<string>;
+  };
+  nip44?: {
+    encrypt(pubkey: string, plaintext: string): Promise<string>;
+    decrypt(pubkey: string, ciphertext: string): Promise<string>;
+  };
+}
+
 export class AuthService {
   private static instance: AuthService;
 
@@ -413,7 +462,7 @@ export class AuthService {
   // Signing & Crypto (routed to active manager)
   // ══════════════════════════════════════════════════════════════════
 
-  public async signEvent(event: any): Promise<any> {
+  public async signEvent(event: SignableEvent): Promise<SignedEvent> {
     if (this.isReadOnly) {
       throw new Error(
         'Cannot sign events in read-only mode (npub login). Please use KeySigner or browser extension for write access.'
@@ -435,11 +484,11 @@ export class AuthService {
         this.authMethod === 'extension' &&
         this.extensionManager?.isSignerAvailable()
       ) {
-        return await this.withSignerTimeout(
+        return (await this.withSignerTimeout(
           this.extensionManager.signEvent(event),
           AuthService.SIGN_TIMEOUT_MS,
           'extension sign'
-        );
+        )) as SignedEvent;
       } else if (this.authMethod === 'key-signer' && this.keySignerManager) {
         const keySigner = this.keySignerManager.getClient();
         if (!keySigner) throw new Error('KeySigner client not available');
@@ -455,7 +504,7 @@ export class AuthService {
             'KeySigner returned invalid signature - hash mismatch'
           );
         }
-        return event;
+        return event as SignedEvent;
       } else if (
         this.authMethod === 'nip46' &&
         this.activeNip46Manager?.isAvailable()
@@ -464,7 +513,7 @@ export class AuthService {
         const signature = await this.activeNip46Manager.signEvent(event);
         event.id = calculateEventHash(event as UnsignedEvent);
         event.sig = signature;
-        return event;
+        return event as SignedEvent;
       } else if (this.authMethod === 'amber' && this.amberManager) {
         event.pubkey = this.currentUser!.pubkey;
         event.created_at = event.created_at || Math.floor(Date.now() / 1000);
@@ -473,7 +522,7 @@ export class AuthService {
           AuthService.SIGN_TIMEOUT_MS,
           'amber sign'
         );
-        const signedEvent = JSON.parse(signedEventJson);
+        const signedEvent = JSON.parse(signedEventJson) as SignedEvent;
         return signedEvent;
       } else {
         const disconnectErrors: Record<string, string> = {
@@ -499,13 +548,13 @@ export class AuthService {
    * Prevents the publish flow from hanging forever on a dead/hung signer.
    */
   public async signEventWithTimeout(
-    event: any,
+    event: SignableEvent,
     timeoutMs: number = AuthService.SIGN_TIMEOUT_MS
-  ): Promise<any> {
+  ): Promise<SignedEvent> {
     const { SignerTimeoutError } = await import('./SignerTimeoutError');
     return Promise.race([
       this.signEvent(event),
-      new Promise((_, reject) =>
+      new Promise<never>((_, reject) =>
         setTimeout(() => reject(new SignerTimeoutError()), timeoutMs)
       ),
     ]);
@@ -894,7 +943,7 @@ export class AuthService {
       const stored = localStorage.getItem(this.storageKey);
       if (!stored) return;
 
-      const sessionData = JSON.parse(stored);
+      const sessionData = JSON.parse(stored) as StoredAuthSession;
       if (
         !sessionData.npub ||
         !sessionData.pubkey ||
@@ -918,9 +967,10 @@ export class AuthService {
       }
 
       this.currentUser = { npub: sessionData.npub, pubkey: sessionData.pubkey };
-      this.authMethod = sessionData.authMethod;
+      this.authMethod = (sessionData.authMethod as AuthMethod) ?? null;
       this.isReadOnly = sessionData.isReadOnly || false;
-      this.nip46SubType = sessionData.nip46SubType || null;
+      this.nip46SubType =
+        (sessionData.nip46SubType as 'bunker' | 'nostrconnect') || null;
 
       // Legacy guard: old sessions (≤0.4.7) lack nip46SubType — clear and re-login
       if (this.authMethod === 'nip46' && !this.nip46SubType) {
@@ -1072,7 +1122,9 @@ export class AuthService {
   // ── Deprecated getters (keep for backward compatibility) ──────────
 
   /** @deprecated Use extensionManager directly */
-  public getExtension(): any {
-    return this.extensionManager?.isSignerAvailable() ? window.nostr : null;
+  public getExtension(): Nip07Provider | null {
+    return this.extensionManager?.isSignerAvailable()
+      ? ((window as unknown as { nostr?: Nip07Provider }).nostr ?? null)
+      : null;
   }
 }
