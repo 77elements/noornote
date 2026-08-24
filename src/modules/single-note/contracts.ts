@@ -1,6 +1,7 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { ThreadContext } from '../../services/orchestration/ThreadOrchestrator';
 import type { VoteOptions } from '../../services/PollVoteService';
+import type { PollResults } from '../../services/orchestration/PollOrchestrator';
 
 export type { ThreadContext, VoteOptions };
 
@@ -51,6 +52,6 @@ export interface SingleNoteModuleApi {
     pollEventId: string,
     pollOptions: PollOptionInput[],
     currentUserPubkey?: string
-  ): Promise<any>;
+  ): Promise<PollResults>;
   clearPollCache(pollEventId: string): void;
 }

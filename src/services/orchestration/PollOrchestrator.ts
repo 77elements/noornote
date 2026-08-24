@@ -25,7 +25,7 @@ interface PollOptionResult {
   voteCount: number;
 }
 
-interface PollResults {
+export interface PollResults {
   options: PollOptionResult[];
   totalVotes: number; // Total unique voters
   userVote: string | null; // Current user's vote (option ID), if any

@@ -13,6 +13,7 @@ import type { SingleNoteModuleApi } from '../../../modules/single-note/contracts
 import { AuthService } from '../../../services/AuthService';
 import { SystemLogger } from '../../../services/SystemLogger';
 import { TypedEventBus } from '../../../core/TypedEventBus';
+import type { PollResults } from '../../../services/orchestration/PollOrchestrator';
 import { RelayConfig } from '../../../services/RelayConfig';
 import { escapeHtml, escapeHtmlAttr } from '../../../helpers/escapeHtml';
 import { isImageUrl } from '../../../helpers/extractMedia';
@@ -33,7 +34,7 @@ export class NIP88PollRenderer {
 
     this.eventBus.on(
       'poll:voted',
-      (data: { pollEventId: string; results: any }) => {
+      (data: { pollEventId: string; results: PollResults }) => {
         this.updateAllPollContainers(data.pollEventId, data.results);
       }
     );
@@ -44,7 +45,7 @@ export class NIP88PollRenderer {
    */
   private static updateAllPollContainers(
     pollEventId: string,
-    results: any
+    results: PollResults
   ): void {
     const pollData = pollDataCache.get(pollEventId);
     if (!pollData) return;
@@ -208,7 +209,7 @@ export class NIP88PollRenderer {
     } catch (error) {
       systemLogger.error(
         'NIP88PollRenderer',
-        `Failed to fetch poll results: ${error}`
+        `Failed to fetch poll results: ${String(error)}`
       );
     }
   }
@@ -259,7 +260,7 @@ export class NIP88PollRenderer {
       } catch (error) {
         systemLogger.error(
           'NIP88PollRenderer',
-          `Failed to refresh poll results: ${error}`
+          `Failed to refresh poll results: ${String(error)}`
         );
       }
     }
@@ -270,7 +271,7 @@ export class NIP88PollRenderer {
    */
   private static updatePollResults(
     pollContainer: HTMLElement,
-    results: any,
+    results: PollResults,
     pollData: PollData
   ): void {
     const totalVoters = results.totalVotes; // Unique voter count
@@ -282,7 +283,7 @@ export class NIP88PollRenderer {
 
       if (!optionBtn) return;
 
-      const resultOption = results.options.find((o: any) => o.id === option.id);
+      const resultOption = results.options.find(o => o.id === option.id);
       const voteCount = resultOption?.voteCount || 0;
       const percentage =
         totalVoters > 0 ? Math.round((voteCount / totalVoters) * 100) : 0;

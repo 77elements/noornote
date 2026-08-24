@@ -6,6 +6,57 @@
 
 import { PlatformService } from './PlatformService';
 
+/**
+ * Typed surface of the plugin's POSITIONAL JS wrapper (index.js) — the
+ * shipped `NostrSignerNative` d.ts describes the raw options-object native
+ * layer, NOT this wrapper, which is why the import used to be `any`.
+ */
+interface NostrSignerWrapper {
+  setPackageName(packageName: string): Promise<void>;
+  isExternalSignerInstalled(
+    packageName?: string
+  ): Promise<{ installed: boolean }>;
+  getInstalledSignerApps(): Promise<{ apps: { packageName: string }[] }>;
+  getPublicKey(
+    packageName?: string,
+    permissions?: unknown
+  ): Promise<{ npub: string; package: string }>;
+  signEvent(
+    packageName: string,
+    eventJson: string,
+    id: string,
+    npub: string
+  ): Promise<{ signature: string; id: string; event: string }>;
+  nip04Encrypt(
+    packageName: string,
+    plainText: string,
+    id: string,
+    pubKey: string,
+    npub: string
+  ): Promise<{ result: string; id: string }>;
+  nip04Decrypt(
+    packageName: string,
+    encryptedText: string,
+    id: string,
+    pubKey: string,
+    npub: string
+  ): Promise<{ result: string; id: string }>;
+  nip44Encrypt(
+    packageName: string,
+    plainText: string,
+    id: string,
+    pubKey: string,
+    npub: string
+  ): Promise<{ result: string; id: string }>;
+  nip44Decrypt(
+    packageName: string,
+    encryptedText: string,
+    id: string,
+    pubKey: string,
+    npub: string
+  ): Promise<{ result: string; id: string }>;
+}
+
 interface AmberLoginResult {
   pubkey: string;
   packageName: string;
@@ -19,11 +70,11 @@ interface AmberSignResult {
 const platform = PlatformService.getInstance();
 
 /** Capacitor NostrSigner plugin singleton */
-let _signerPlugin: any = null;
-async function getSignerPlugin(): Promise<any> {
+let _signerPlugin: NostrSignerWrapper | null = null;
+async function getSignerPlugin(): Promise<NostrSignerWrapper> {
   if (!_signerPlugin) {
     const { NostrSignerPlugin } = await import('nostr-signer-capacitor-plugin');
-    _signerPlugin = NostrSignerPlugin;
+    _signerPlugin = NostrSignerPlugin as NostrSignerWrapper;
   }
   return _signerPlugin;
 }
@@ -58,8 +109,9 @@ export class AmberSignerService {
     const signer = await getSignerPlugin();
     // Discover Amber's package name first
     const apps = await signer.getInstalledSignerApps();
-    if (apps.apps && apps.apps.length > 0) {
-      this.packageName = apps.apps[0].packageName;
+    const firstApp = apps.apps?.[0];
+    if (firstApp) {
+      this.packageName = firstApp.packageName;
       await signer.setPackageName(this.packageName);
     }
     const permissions = [

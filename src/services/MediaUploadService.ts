@@ -10,7 +10,18 @@
  * - Platform-specific upload adapters (Windows uses Electron HTTP, Mac/Linux uses XHR)
  */
 
-import { AuthService } from './AuthService';
+import {
+  AuthService,
+  type SignableEvent,
+  type SignedEvent,
+} from './AuthService';
+
+/** NIP-96/NIP-98 upload response (server-controlled — validated on read). */
+interface Nip94UploadResponse {
+  status?: string;
+  nip94_event?: { tags?: string[][] };
+  message?: string;
+}
 import { ErrorService } from './ErrorService';
 import { PlatformService } from './PlatformService';
 import { ToastService } from './ToastService';
@@ -363,7 +374,7 @@ export class MediaUploadService {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
-  private async signEventWithTimeout(event: any): Promise<any> {
+  private signEventWithTimeout(event: SignableEvent): Promise<SignedEvent> {
     return this.authService.signEventWithTimeout(event, this.SIGN_TIMEOUT_MS);
   }
 
@@ -448,8 +459,10 @@ export class MediaUploadService {
       });
 
       if (response.ok) {
-        const descriptor = await response.json();
+        const descriptor = (await response.json()) as { url?: string };
         onProgress?.(100);
+        if (!descriptor.url)
+          return this.errorResult('No URL in upload response');
         return { success: true, url: descriptor.url };
       }
 
@@ -459,7 +472,7 @@ export class MediaUploadService {
     } catch (error) {
       console.error('Blossom upload error:', error);
       return this.errorResult(
-        `Upload error: ${error instanceof Error ? error.message : error}`
+        `Upload error: ${String(error instanceof Error ? error.message : error)}`
       );
     }
   }
@@ -491,8 +504,10 @@ export class MediaUploadService {
       onProgress?.(90);
 
       if (response.ok) {
-        const descriptor = await response.json();
+        const descriptor = (await response.json()) as { url?: string };
         onProgress?.(100);
+        if (!descriptor.url)
+          return this.errorResult('No URL in upload response');
         return { success: true, url: descriptor.url };
       }
 
@@ -518,7 +533,7 @@ export class MediaUploadService {
     try {
       const response = await fetch(url);
       if (!response.ok) return null;
-      return await response.json();
+      return (await response.json()) as { api_url: string } | null;
     } catch (error) {
       console.debug('Failed to fetch NIP-96 config:', error);
       return null;
@@ -642,14 +657,14 @@ export class MediaUploadService {
       });
 
       if (response.ok) {
-        const result = await response.json();
+        const result = (await response.json()) as Nip94UploadResponse;
         if (result.status === 'success' && result.nip94_event) {
-          const urlTag = result.nip94_event.tags.find(
+          const urlTag = (result.nip94_event.tags ?? []).find(
             (t: string[]) => t[0] === 'url'
           );
           if (urlTag) {
             onProgress?.(100);
-            return { success: true, url: urlTag[1] };
+            return { success: true, url: urlTag[1] ?? '' };
           }
         }
         return this.errorResult('No URL in upload response');
@@ -661,7 +676,7 @@ export class MediaUploadService {
     } catch (error) {
       console.error('NIP-96 upload error:', error);
       return this.errorResult(
-        `Upload error: ${error instanceof Error ? error.message : error}`
+        `Upload error: ${String(error instanceof Error ? error.message : error)}`
       );
     }
   }
@@ -692,14 +707,14 @@ export class MediaUploadService {
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
           try {
-            const result = JSON.parse(xhr.responseText);
+            const result = JSON.parse(xhr.responseText) as Nip94UploadResponse;
             if (result.status === 'success' && result.nip94_event) {
-              const urlTag = result.nip94_event.tags.find(
+              const urlTag = (result.nip94_event.tags ?? []).find(
                 (t: string[]) => t[0] === 'url'
               );
               if (urlTag) {
                 onProgress?.(100);
-                resolve({ success: true, url: urlTag[1] });
+                resolve({ success: true, url: urlTag[1] ?? '' });
                 return;
               }
             }

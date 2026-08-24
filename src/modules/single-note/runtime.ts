@@ -70,7 +70,12 @@ export class SingleNoteRuntime implements ModuleRuntime<SingleNoteModuleApi> {
         Promise.resolve(null),
       fetchPollResults: (pollEventId, pollOptions, currentUserPubkey) =>
         po?.fetchPollResults(pollEventId, pollOptions, currentUserPubkey) ??
-        Promise.resolve({ options: [], totalVotes: 0 }),
+        Promise.resolve({
+          options: [],
+          totalVotes: 0,
+          userVote: null,
+          timestamp: Date.now(),
+        }),
       clearPollCache: pollEventId => po?.clearCache(pollEventId),
     };
   }

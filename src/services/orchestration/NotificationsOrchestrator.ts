@@ -25,6 +25,7 @@ import { SystemLogger } from '../SystemLogger';
 import { AuthService } from '../AuthService';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { decodeNip19 } from '../NostrToolsAdapter';
+import type { RelayConfig } from '../RelayConfig';
 import { PerAccountLocalStorage, StorageKeys } from '../PerAccountLocalStorage';
 import { NoteService } from '../NoteService';
 import { SoftMuteService } from '../SoftMuteService';
@@ -109,7 +110,7 @@ export class NotificationsOrchestrator extends Orchestrator {
   > = new Map();
 
   /** Cached RelayConfig instance (lazy-loaded) */
-  private relayConfig: any = null;
+  private relayConfig: RelayConfig | null = null;
 
   /** NoteService for caching kind 1 events */
   private noteService: NoteService;
@@ -189,7 +190,7 @@ export class NotificationsOrchestrator extends Orchestrator {
     );
 
     // Step 0: Load muted users
-    await this.loadMutedUsers(currentUser.pubkey);
+    this.loadMutedUsers(currentUser.pubkey);
 
     // Step 0.1: Load soft-muted pubkeys (notification-only suppression)
     this.loadSoftMutedUsers();
@@ -327,9 +328,9 @@ export class NotificationsOrchestrator extends Orchestrator {
     const relays = await this.getReadRelays();
 
     // Filter 1: Direct mentions/tags (#p filter)
-    const ptagFilter: NDKFilter = {
+    const ptagFilter: NDKFilter<number> = {
       '#p': [this.userPubkey],
-      kinds: [1, 6, 7, 8, 16, 20, 21, 22, 1111, 9735, 9802] as any,
+      kinds: [1, 6, 7, 8, 16, 20, 21, 22, 1111, 9735, 9802],
       since: now,
     };
 
@@ -351,9 +352,9 @@ export class NotificationsOrchestrator extends Orchestrator {
     // Filter 2: Replies to user's events (#e filter)
     const userEventIds = this.getUserEventIds();
     if (userEventIds.length > 0) {
-      const etagFilter: NDKFilter = {
+      const etagFilter: NDKFilter<number> = {
         '#e': userEventIds,
-        kinds: [1, 7, 20, 21, 22, 1018, 1111, 9735, 9802] as any,
+        kinds: [1, 7, 20, 21, 22, 1018, 1111, 9735, 9802],
         since: now,
       };
 
@@ -454,9 +455,9 @@ export class NotificationsOrchestrator extends Orchestrator {
       );
 
       // Build filter for last 100 notifications
-      const ptagFilter: NDKFilter = {
+      const ptagFilter: NDKFilter<number> = {
         '#p': [userPubkey],
-        kinds: [1, 6, 7, 8, 16, 20, 21, 22, 1111, 9735, 9802] as any,
+        kinds: [1, 6, 7, 8, 16, 20, 21, 22, 1111, 9735, 9802],
         limit: 100,
       };
 
@@ -476,11 +477,11 @@ export class NotificationsOrchestrator extends Orchestrator {
 
       // Fetch #e notifications
       const userEventIds = this.getUserEventIds();
-      let etagNotifications: any[] = [];
+      let etagNotifications: NostrEvent[] = [];
       if (userEventIds.length > 0) {
-        const etagFilter: NDKFilter = {
+        const etagFilter: NDKFilter<number> = {
           '#e': userEventIds,
-          kinds: [1, 7, 20, 21, 22, 1018, 1111, 9735, 9802] as any,
+          kinds: [1, 7, 20, 21, 22, 1018, 1111, 9735, 9802],
           limit: 100,
         };
 
@@ -557,9 +558,9 @@ export class NotificationsOrchestrator extends Orchestrator {
       );
 
       // Build filter for new notifications
-      const ptagFilter: NDKFilter = {
+      const ptagFilter: NDKFilter<number> = {
         '#p': [currentUser.pubkey],
-        kinds: [1, 6, 7, 8, 16, 20, 21, 22, 1111, 9735, 9802] as any,
+        kinds: [1, 6, 7, 8, 16, 20, 21, 22, 1111, 9735, 9802],
         since,
       };
 
@@ -574,11 +575,11 @@ export class NotificationsOrchestrator extends Orchestrator {
 
       // Fetch #e notifications (skipCache for fresh data)
       const userEventIds = this.getUserEventIds();
-      let etagNotifications: any[] = [];
+      let etagNotifications: NostrEvent[] = [];
       if (userEventIds.length > 0) {
-        const etagFilter: NDKFilter = {
+        const etagFilter: NDKFilter<number> = {
           '#e': userEventIds,
-          kinds: [1, 7, 20, 21, 22, 1018, 1111, 9735, 9802] as any,
+          kinds: [1, 7, 20, 21, 22, 1018, 1111, 9735, 9802],
           since,
         };
 
@@ -661,9 +662,9 @@ export class NotificationsOrchestrator extends Orchestrator {
       );
 
       // Build filter for older notifications
-      const ptagFilter: NDKFilter = {
+      const ptagFilter: NDKFilter<number> = {
         '#p': [currentUser.pubkey],
-        kinds: [1, 6, 7, 8, 16, 20, 21, 22, 1111, 9735, 9802] as any,
+        kinds: [1, 6, 7, 8, 16, 20, 21, 22, 1111, 9735, 9802],
         until,
         limit,
       };
@@ -679,11 +680,11 @@ export class NotificationsOrchestrator extends Orchestrator {
 
       // Fetch #e notifications
       const userEventIds = this.getUserEventIds();
-      let etagNotifications: any[] = [];
+      let etagNotifications: NostrEvent[] = [];
       if (userEventIds.length > 0) {
-        const etagFilter: NDKFilter = {
+        const etagFilter: NDKFilter<number> = {
           '#e': userEventIds,
-          kinds: [1, 7, 20, 21, 22, 1018, 1111, 9735, 9802] as any,
+          kinds: [1, 7, 20, 21, 22, 1018, 1111, 9735, 9802],
           until,
           limit,
         };
@@ -1332,7 +1333,7 @@ export class NotificationsOrchestrator extends Orchestrator {
 
   // ========== Orchestrator Interface ==========
 
-  public onui(_data: any): void {
+  public onui(_data: unknown): void {
     // Not used for notifications (no UI-triggered actions)
   }
 
@@ -1386,11 +1387,10 @@ export class NotificationsOrchestrator extends Orchestrator {
   /**
    * Load muted users and threads from MuteOrchestrator
    */
-  private async loadMutedUsers(userPubkey: string): Promise<void> {
+  private loadMutedUsers(userPubkey: string): void {
     try {
       // Load muted users
-      const mutedPubkeys =
-        this.muteOrchestrator.getAllMutedUsers(userPubkey);
+      const mutedPubkeys = this.muteOrchestrator.getAllMutedUsers(userPubkey);
       this.mutedPubkeys = new Set(mutedPubkeys);
 
       // Load muted threads (Hell Thread protection)
@@ -1406,7 +1406,7 @@ export class NotificationsOrchestrator extends Orchestrator {
     } catch (error) {
       this.systemLogger.error(
         'NotificationsOrchestrator',
-        `Failed to load muted users: ${error}`
+        `Failed to load muted users: ${String(error)}`
       );
     }
   }
@@ -1428,7 +1428,7 @@ export class NotificationsOrchestrator extends Orchestrator {
     } catch (error) {
       this.systemLogger.error(
         'NotificationsOrchestrator',
-        `Failed to load soft-muted users: ${error}`
+        `Failed to load soft-muted users: ${String(error)}`
       );
     }
   }
@@ -1474,9 +1474,9 @@ export class NotificationsOrchestrator extends Orchestrator {
   /**
    * Refresh muted users list (called when mute list is updated)
    */
-  public async refreshMutedUsers(): Promise<void> {
+  public refreshMutedUsers(): void {
     if (this.userPubkey) {
-      await this.loadMutedUsers(this.userPubkey);
+      this.loadMutedUsers(this.userPubkey);
 
       // Filter existing notifications (users, threads, and notifications about user's posts in muted threads)
       this.notifications = this.notifications.filter(
@@ -1494,13 +1494,13 @@ export class NotificationsOrchestrator extends Orchestrator {
   /**
    * Handle new article notification from ArticleNotificationService
    */
-  private async handleNewArticleNotification(data: {
+  private handleNewArticleNotification(data: {
     pubkey: string;
     articleId: string;
     naddr: string;
     title: string;
     createdAt: number;
-  }): Promise<void> {
+  }): void {
     // Skip if from muted user (full mute OR soft mute)
     if (this.isAuthorMutedOrSoftMuted(data.pubkey)) {
       return;
