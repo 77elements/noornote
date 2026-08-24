@@ -81,7 +81,7 @@ export class AuthService {
       PerAccountListStorageMigration.getInstance().migrateForUser(data.pubkey);
     });
 
-    this.initializeSession();
+    void this.initializeSession();
   }
 
   public static getInstance(): AuthService {
@@ -759,15 +759,20 @@ export class AuthService {
       return localStorage.getItem(STORAGE_KEY) === 'true';
     }
 
-    return new Promise(async resolve => {
-      const { ModalService } = await import('./ModalService');
-      const modalService = ModalService.getInstance();
+    // Wrapped in a sync executor: an async executor that throws BEFORE wiring
+    // the resolve calls (e.g. failed dynamic import) never settles the promise
+    // and the caller hangs forever. The catch resolves the safe default
+    // (keep the signer running) instead.
+    return new Promise<boolean>(resolve => {
+      void (async () => {
+        const { ModalService } = await import('./ModalService');
+        const modalService = ModalService.getInstance();
 
-      const lastPreference = localStorage.getItem(STORAGE_KEY) === 'true';
+        const lastPreference = localStorage.getItem(STORAGE_KEY) === 'true';
 
-      const content = document.createElement('div');
-      content.style.cssText = 'padding: 1rem;';
-      content.innerHTML = `
+        const content = document.createElement('div');
+        content.style.cssText = 'padding: 1rem;';
+        content.innerHTML = `
         <p style="margin-bottom: 1.5rem; line-height: 1.5; text-align: center;">
           Do you want to quit the Key Signer as well?<br>
           If you keep it running, you can log back in without entering your password.
@@ -788,52 +793,56 @@ export class AuthService {
         </div>
       `;
 
-      const quitSignerCheckbox = content.querySelector(
-        '#quit-signer-checkbox'
-      ) as HTMLInputElement;
-      const rememberCheckbox = content.querySelector(
-        '#remember-checkbox'
-      ) as HTMLInputElement;
-      const quitBtn = content.querySelector(
-        '[data-action="quit"]'
-      ) as HTMLButtonElement;
-      const cancelBtn = content.querySelector(
-        '[data-action="cancel"]'
-      ) as HTMLButtonElement;
+        const quitSignerCheckbox = content.querySelector(
+          '#quit-signer-checkbox'
+        ) as HTMLInputElement;
+        const rememberCheckbox = content.querySelector(
+          '#remember-checkbox'
+        ) as HTMLInputElement;
+        const quitBtn = content.querySelector(
+          '[data-action="quit"]'
+        ) as HTMLButtonElement;
+        const cancelBtn = content.querySelector(
+          '[data-action="cancel"]'
+        ) as HTMLButtonElement;
 
-      const updateButtonText = () => {
-        quitBtn.textContent = quitSignerCheckbox.checked
-          ? 'Quit NoorNote & Key Signer'
-          : 'Quit NoorNote';
-      };
+        const updateButtonText = () => {
+          quitBtn.textContent = quitSignerCheckbox.checked
+            ? 'Quit NoorNote & Key Signer'
+            : 'Quit NoorNote';
+        };
 
-      quitSignerCheckbox.addEventListener('change', updateButtonText);
-      updateButtonText();
+        quitSignerCheckbox.addEventListener('change', updateButtonText);
+        updateButtonText();
 
-      quitBtn.addEventListener('click', () => {
-        const quitSigner = quitSignerCheckbox.checked;
-        localStorage.setItem(STORAGE_KEY, quitSigner.toString());
-        if (rememberCheckbox.checked) {
-          localStorage.setItem(STORAGE_KEY_REMEMBER, 'true');
-        } else {
-          localStorage.removeItem(STORAGE_KEY_REMEMBER);
-        }
-        modalService.hide();
-        resolve(quitSigner);
-      });
+        quitBtn.addEventListener('click', () => {
+          const quitSigner = quitSignerCheckbox.checked;
+          localStorage.setItem(STORAGE_KEY, quitSigner.toString());
+          if (rememberCheckbox.checked) {
+            localStorage.setItem(STORAGE_KEY_REMEMBER, 'true');
+          } else {
+            localStorage.removeItem(STORAGE_KEY_REMEMBER);
+          }
+          modalService.hide();
+          resolve(quitSigner);
+        });
 
-      cancelBtn.addEventListener('click', () => {
-        modalService.hide();
-      });
+        cancelBtn.addEventListener('click', () => {
+          modalService.hide();
+        });
 
-      modalService.show({
-        title: 'Quit NoorNote & Key Signer?',
-        content,
-        width: '450px',
-        height: 'auto',
-        closeOnOverlay: true,
-        closeOnEsc: true,
-        showCloseButton: true,
+        modalService.show({
+          title: 'Quit NoorNote & Key Signer?',
+          content,
+          width: '450px',
+          height: 'auto',
+          closeOnOverlay: true,
+          closeOnEsc: true,
+          showCloseButton: true,
+        });
+      })().catch(error => {
+        console.warn('[AuthService] Quit-signer dialog failed:', error);
+        resolve(false);
       });
     });
   }

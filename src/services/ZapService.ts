@@ -345,16 +345,21 @@ export class ZapService {
     ToastService.show(`${request.amount} sats zapped`, 'success');
 
     // Step 5: Verify zap receipt in background (don't await - let stats update naturally)
-    this.waitForZapReceipt(invoice, request.authorPubkey).then(verified => {
-      if (verified) {
-        this.systemLogger.info('ZapService', 'Zap receipt verified on relays');
-      } else {
-        this.systemLogger.warn(
-          'ZapService',
-          'Zap receipt not found on relays (payment was successful though)'
-        );
+    void this.waitForZapReceipt(invoice, request.authorPubkey).then(
+      verified => {
+        if (verified) {
+          this.systemLogger.info(
+            'ZapService',
+            'Zap receipt verified on relays'
+          );
+        } else {
+          this.systemLogger.warn(
+            'ZapService',
+            'Zap receipt not found on relays (payment was successful though)'
+          );
+        }
       }
-    });
+    );
 
     const result: ZapResult = {
       success: true,
@@ -736,79 +741,84 @@ export class ZapService {
     invoice: string,
     recipientPubkey: string
   ): Promise<boolean> {
-    return new Promise(async resolve => {
-      try {
-        const relays = this.relayConfig.getReadRelays();
+    // Sync executor + inner async IIFE: async executors that throw never
+    // settle the promise (caller hangs). Body keeps its own try/catch.
+    return new Promise<boolean>(resolve => {
+      void (async () => {
+        try {
+          const relays = this.relayConfig.getReadRelays();
 
-        // Subscribe to zap receipts (kind 9735) for recipient in last minute
-        const oneMinuteAgo = Math.floor(Date.now() / 1000) - 60;
+          // Subscribe to zap receipts (kind 9735) for recipient in last minute
+          const oneMinuteAgo = Math.floor(Date.now() / 1000) - 60;
 
-        this.systemLogger.info(
-          'ZapService',
-          `Subscribing to zap receipts for ${recipientPubkey.slice(0, 8)}...`
-        );
+          this.systemLogger.info(
+            'ZapService',
+            `Subscribing to zap receipts for ${recipientPubkey.slice(0, 8)}...`
+          );
 
-        const verificationService = SignatureVerificationService.getInstance();
+          const verificationService =
+            SignatureVerificationService.getInstance();
 
-        const sub = await this.nostrTransport.subscribe(
-          relays,
-          [
+          const sub = await this.nostrTransport.subscribe(
+            relays,
+            [
+              {
+                kinds: [9735], // Zap receipt
+                '#p': [recipientPubkey], // Recipient pubkey
+                since: oneMinuteAgo,
+              },
+            ],
             {
-              kinds: [9735], // Zap receipt
-              '#p': [recipientPubkey], // Recipient pubkey
-              since: oneMinuteAgo,
-            },
-          ],
-          {
-            onEvent: (event: NostrEvent) => {
-              const eventId = event.id;
-              if (!eventId) return;
+              onEvent: (event: NostrEvent) => {
+                const eventId = event.id;
+                if (!eventId) return;
 
-              // Security: Verify signature before processing (external source)
-              const verification = verificationService.verifyEvent(event);
-              if (!verification.valid) {
-                this.systemLogger.warn(
+                // Security: Verify signature before processing (external source)
+                const verification = verificationService.verifyEvent(event);
+                if (!verification.valid) {
+                  this.systemLogger.warn(
+                    'ZapService',
+                    `Rejected invalid zap receipt ${eventId.slice(0, 8)}: ${verification.error}`
+                  );
+                  return;
+                }
+
+                this.systemLogger.info(
                   'ZapService',
-                  `Rejected invalid zap receipt ${eventId.slice(0, 8)}: ${verification.error}`
+                  `Received zap receipt event ${eventId.slice(0, 8)}`
                 );
-                return;
-              }
+                // Extract bolt11 invoice from zap receipt
+                const boltTag = event.tags.find(tag => tag[0] === 'bolt11');
+                if (boltTag && boltTag[1] === invoice) {
+                  this.systemLogger.info('ZapService', 'Zap receipt found');
+                  sub.close();
+                  resolve(true);
+                }
+              },
+              onEose: () => {
+                this.systemLogger.info(
+                  'ZapService',
+                  'EOSE received, zap receipts loaded'
+                );
+              },
+            }
+          );
 
-              this.systemLogger.info(
-                'ZapService',
-                `Received zap receipt event ${eventId.slice(0, 8)}`
-              );
-              // Extract bolt11 invoice from zap receipt
-              const boltTag = event.tags.find(tag => tag[0] === 'bolt11');
-              if (boltTag && boltTag[1] === invoice) {
-                this.systemLogger.info('ZapService', 'Zap receipt found');
-                sub.close();
-                resolve(true);
-              }
-            },
-            onEose: () => {
-              this.systemLogger.info(
-                'ZapService',
-                'EOSE received, zap receipts loaded'
-              );
-            },
-          }
-        );
-
-        // Timeout after 15 seconds (LNURL server should publish receipt quickly)
-        setTimeout(() => {
-          this.systemLogger.warn('ZapService', 'Zap receipt timeout (15s)');
-          sub.close();
+          // Timeout after 15 seconds (LNURL server should publish receipt quickly)
+          setTimeout(() => {
+            this.systemLogger.warn('ZapService', 'Zap receipt timeout (15s)');
+            sub.close();
+            resolve(false);
+          }, 15000);
+        } catch (error) {
+          this.systemLogger.error(
+            'ZapService',
+            'Failed to subscribe to zap receipts',
+            error
+          );
           resolve(false);
-        }, 15000);
-      } catch (error) {
-        this.systemLogger.error(
-          'ZapService',
-          'Failed to subscribe to zap receipts',
-          error
-        );
-        resolve(false);
-      }
+        }
+      })();
     });
   }
 
