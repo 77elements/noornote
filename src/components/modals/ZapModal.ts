@@ -242,7 +242,7 @@ export class ZapModal {
     const handleCtrlEnter = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault();
-        this.handleSendZap(amountInput, commentInput, sendBtn);
+        void this.handleSendZap(amountInput, commentInput, sendBtn);
       }
     };
 
@@ -253,7 +253,7 @@ export class ZapModal {
     commentInput.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
-        this.handleSendZap(amountInput, commentInput, sendBtn);
+        void this.handleSendZap(amountInput, commentInput, sendBtn);
       }
     });
   }

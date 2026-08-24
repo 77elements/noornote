@@ -324,7 +324,7 @@ export class NoteStructureBuilder {
 
           // Open Analytics Modal
           const analyticsModal = AnalyticsModal.getInstance();
-          analyticsModal.show(islNoteId, note.rawEvent);
+          void analyticsModal.show(islNoteId, note.rawEvent);
         },
       });
       noteDiv.appendChild(isl.getElement());

@@ -34,6 +34,17 @@ module.exports = {
     // downcast assertions (Element → HTMLInputElement) as "unnecessary" —
     // broke the build 178× on 2026-08-22. Assertions here are intentional.
     '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+    // checksVoidReturn OFF (2026-08-24): async callbacks passed to void-returning
+    // APIs (addEventListener, EventBus.on, option objects like Switch.onChange,
+    // InfiniteScroll) discard the promise BY DESIGN — 233 such sites, all
+    // intentional fire-and-forget. IIFE-wrapping them is churn without runtime
+    // benefit. The rule's other checks (await-thenable, promise-in-condition)
+    // stay active. Real bugs of this class (async promise executors) were fixed
+    // in AuthService/ZapService instead of suppressed.
+    '@typescript-eslint/no-misused-promises': [
+      'error',
+      { checksVoidReturn: false },
+    ],
 
     // Performance and best practices
     // console.debug is the sanctioned DevTools-only channel (log-review skill);
@@ -56,10 +67,23 @@ module.exports = {
     'eqeqeq': ['error', 'always'],
 
     // Async/await best practices
-    'require-await': 'error',
+    // Core require-await OFF — duplicates @typescript-eslint/require-await
+    // (every site was double-counted). The TS variant's real bug value
+    // (missing internal awaits) is covered by @typescript-eslint/await-thenable.
+    // 'require-await': removed 2026-08-24
     'no-return-await': 'error',
   },
   overrides: [
+    {
+      // Module/addon runtime entry points implement the AddonRuntime /
+      // module lifecycle contract (async init/destroy) — often with no
+      // internal await on purpose (no-op runtimes). require-await must not
+      // flag interface compliance.
+      files: ['**/runtime.ts'],
+      rules: {
+        '@typescript-eslint/require-await': 'off',
+      },
+    },
     {
       // Test files
       files: ['**/*.test.ts', '**/*.spec.ts'],

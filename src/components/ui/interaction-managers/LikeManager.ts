@@ -59,7 +59,7 @@ export class LikeManager extends BaseInteractionManager<LikeManagerConfig> {
    * Handle like action - Show emoji picker
    */
   protected handleInteraction(): void {
-    this.handleLike();
+    void this.handleLike();
   }
 
   /**
@@ -113,13 +113,13 @@ export class LikeManager extends BaseInteractionManager<LikeManagerConfig> {
       triggerElement: this.button,
       ...(customEmojis ? { customEmojis } : {}),
       onSelect: emoji => {
-        this.publishReaction(emoji);
+        void this.publishReaction(emoji);
         this.emojiPicker?.hide();
         this.emojiPicker?.destroy();
         this.emojiPicker = null;
       },
       onCustomSelect: entry => {
-        this.publishReaction(`:${entry.shortcode}:`, [
+        void this.publishReaction(`:${entry.shortcode}:`, [
           'emoji',
           entry.shortcode,
           entry.url,
@@ -148,7 +148,7 @@ export class LikeManager extends BaseInteractionManager<LikeManagerConfig> {
     this.updateStats('like');
 
     try {
-      const writeRelays = await RelayConfig.getInstance().getWriteRelays();
+      const writeRelays = RelayConfig.getInstance().getWriteRelays();
 
       if (writeRelays.length === 0) {
         // Revert optimistic update

@@ -116,11 +116,11 @@ export class ArticleTimeline {
       (payload: ArticleFoafDegreeChangedPayload) => {
         if (payload.variant !== this.config.variant) return;
         this.resetState();
-        this.loadInitial();
+        void this.loadInitial();
       }
     );
 
-    this.loadInitial();
+    void this.loadInitial();
   }
 
   /** Lazy getter (never cache getApi in the constructor — avoids null-forever timing bugs). */
@@ -204,7 +204,7 @@ export class ArticleTimeline {
     const margin = 300;
     const remaining = root.scrollHeight - root.clientHeight - root.scrollTop;
     if (remaining <= margin) {
-      this.handleLoadMore();
+      void this.handleLoadMore();
     }
   }
 
@@ -469,7 +469,7 @@ export class ArticleTimeline {
       this.config.onNavigate(naddr, e);
     });
 
-    this.loadAuthorInfo(card, event.pubkey);
+    void this.loadAuthorInfo(card, event.pubkey);
     return card;
   }
 

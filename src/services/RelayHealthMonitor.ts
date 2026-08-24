@@ -244,7 +244,7 @@ export class RelayHealthMonitor {
 
     // Periodic checks every 10 minutes
     this.healthCheckInterval = window.setInterval(() => {
-      this.performHealthCheck();
+      void this.performHealthCheck();
     }, this.HEALTH_CHECK_INTERVAL);
   }
 
@@ -289,7 +289,7 @@ export class RelayHealthMonitor {
     if (this.isFirstCheck) {
       this.isFirstCheck = false;
       for (const relay of allRelays) {
-        this.pingRelay(relay.url, transport);
+        void this.pingRelay(relay.url, transport);
         this.connectionChecks.set(relay.url, Date.now());
       }
       return;
@@ -323,7 +323,7 @@ export class RelayHealthMonitor {
 
     // Ping selected relays
     for (const relay of batch) {
-      this.pingRelay(relay.url, transport);
+      void this.pingRelay(relay.url, transport);
       this.connectionChecks.set(relay.url, Date.now());
     }
   }

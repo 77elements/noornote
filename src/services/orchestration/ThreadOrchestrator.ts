@@ -223,7 +223,7 @@ export class ThreadOrchestrator extends Orchestrator {
 
     const currentUser = this.authService.getCurrentUser();
     if (currentUser) {
-      const mutedPubkeys = await this.muteOrchestrator.getAllMutedUsers(
+      const mutedPubkeys = this.muteOrchestrator.getAllMutedUsers(
         currentUser.pubkey
       );
       const mutedSet = new Set(mutedPubkeys);
@@ -625,7 +625,7 @@ export class ThreadOrchestrator extends Orchestrator {
           },
         ];
 
-    this.transport.subscribeLive(relays, filters, subId, event => {
+    void this.transport.subscribeLive(relays, filters, subId, event => {
       if (this.isActualReply(event, noteId)) {
         this.systemLogger.info(
           this.LOG_TAG,

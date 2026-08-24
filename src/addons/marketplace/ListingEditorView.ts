@@ -98,7 +98,7 @@ export class ListingEditorView extends View {
     this.loadRelayConfiguration();
 
     if (this.editNaddr) {
-      this.loadExistingListing();
+      void this.loadExistingListing();
     } else {
       this.render();
     }

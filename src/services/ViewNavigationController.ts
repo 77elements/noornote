@@ -128,7 +128,7 @@ export class ViewNavigationController {
     if (!this.viewTabManager) return;
 
     const replaceActive = clickMode === 'replace-active';
-    this.viewTabManager.openTab(viewType, param, replaceActive);
+    void this.viewTabManager.openTab(viewType, param, replaceActive);
   }
 
   /**

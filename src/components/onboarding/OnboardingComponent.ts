@@ -274,7 +274,7 @@ export class OnboardingComponent {
    * Redirect to wizard (for /createnewaccount route compatibility)
    */
   public showCreateAccountScreen(): void {
-    import('./AccountSetupWizard').then(({ AccountSetupWizard }) => {
+    void import('./AccountSetupWizard').then(({ AccountSetupWizard }) => {
       const wizard = new AccountSetupWizard();
       wizard.show();
     });

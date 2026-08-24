@@ -67,8 +67,8 @@ export class NotificationItem {
     this.element = this.createElement();
     // UserIdentity is created in createElement() - no need for loadProfile()
     this.attachISL();
-    this.loadZapsList();
-    this.loadResolvedPreview();
+    void this.loadZapsList();
+    void this.loadResolvedPreview();
   }
 
   /**
@@ -227,7 +227,7 @@ export class NotificationItem {
       (t: string[]) => t[0] === 'a'
     )?.[1];
     if (!aTag) return;
-    import('../../services/orchestration/BadgeOrchestrator').then(
+    void import('../../services/orchestration/BadgeOrchestrator').then(
       ({ BadgeOrchestrator }) => {
         BadgeOrchestrator.getInstance()
           .fetchBadgeDefinition(aTag)

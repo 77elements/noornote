@@ -115,7 +115,7 @@ export class MentionAutocomplete {
     // Trigger autocomplete
     this.mentionStartPos = lastAtIndex;
     this.searchQuery = textAfterAt.toLowerCase();
-    this.show();
+    void this.show();
   }
 
   /**

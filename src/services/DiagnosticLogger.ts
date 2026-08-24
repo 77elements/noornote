@@ -273,9 +273,9 @@ export class DiagnosticLogger {
         // Auto-init: if not initialized yet, try with current user
         if (!this.initialized && !this.initializing) {
           const user = AuthService.getInstance().getCurrentUser();
-          if (user?.npub) this.init(user.npub);
+          if (user?.npub) void this.init(user.npub);
         }
-        this.flushAll();
+        void this.flushAll();
       }, FLUSH_INTERVAL_MS);
     }
   }
@@ -325,7 +325,7 @@ export class DiagnosticLogger {
           /* ignore */
         }
         // Flush anything buffered before init completed.
-        this.flushAll();
+        void this.flushAll();
       } catch (error) {
         this.initError = String(error);
       } finally {
@@ -364,17 +364,17 @@ export class DiagnosticLogger {
       this.initialized = true;
 
       // Flush any buffered entries that arrived before init
-      this.flushAll();
+      void this.flushAll();
 
       // Run rotation on startup, then hourly
-      this.rotate();
+      void this.rotate();
       this.rotationTimer = setInterval(
         () => this.rotate(),
         ROTATION_INTERVAL_MS
       );
 
       // Migrate legacy files (one-time: lists.jsonl → lists-{date}.jsonl)
-      this.migrateLegacyFiles();
+      void this.migrateLegacyFiles();
     } catch (error) {
       this.initError = String(error);
     } finally {
@@ -403,9 +403,9 @@ export class DiagnosticLogger {
     // Check for date rollover
     const now = todayDate();
     if (now !== this.currentDate) {
-      this.flushAll();
+      void this.flushAll();
       this.currentDate = now;
-      this.rotate();
+      void this.rotate();
     }
 
     const entry: DiagLogEntry = {
@@ -422,12 +422,12 @@ export class DiagnosticLogger {
 
     // Crash: flush ALL areas immediately (crash entry + context from other areas)
     if (area === 'crashes') {
-      this.flushAll();
+      void this.flushAll();
       return;
     }
 
     if (buffer.length >= FLUSH_THRESHOLD) {
-      this.flush(area);
+      void this.flush(area);
     }
   }
 

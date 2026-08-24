@@ -133,7 +133,7 @@ export class DMComposeModal {
 
     // Send button
     sendBtn?.addEventListener('click', () => {
-      this.handleSend(textarea, sendBtn);
+      void this.handleSend(textarea, sendBtn);
     });
 
     // Enable/disable send button based on input
@@ -159,7 +159,7 @@ export class DMComposeModal {
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault();
         if (!sendBtn.disabled) {
-          this.handleSend(textarea, sendBtn);
+          void this.handleSend(textarea, sendBtn);
         }
       }
     });

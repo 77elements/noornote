@@ -45,7 +45,7 @@ export class ArticlePreviewRenderer {
     skeleton.dataset.naddrRef = naddrRef;
     container.appendChild(skeleton);
 
-    this.fetchAndRender(naddrRef, skeleton);
+    void this.fetchAndRender(naddrRef, skeleton);
   }
 
   /**
@@ -175,7 +175,7 @@ export class ArticlePreviewRenderer {
     // Addon: Live Streams Player — inline HLS playback.
     // Only for currently-live streams with a streaming URL.
     if (status === 'live' && streaming && isLiveStreamsPlayerEnabled()) {
-      this.upgradeToInlinePlayer(card, streaming, image);
+      void this.upgradeToInlinePlayer(card, streaming, image);
     }
 
     // Zap button — only for live streams. Zaps the kind 30311 event
@@ -298,7 +298,7 @@ export class ArticlePreviewRenderer {
       input.disabled = true;
 
       try {
-        const writeRelays = await RelayConfig.getInstance().getWriteRelays();
+        const writeRelays = RelayConfig.getInstance().getWriteRelays();
         const mergedRelays = Array.from(
           new Set([...writeRelays, ...streamRelays])
         );
@@ -422,7 +422,7 @@ export class ArticlePreviewRenderer {
       attributeFilter: ['disabled'],
     });
 
-    zapManager.checkRecipientCanReceiveZaps();
+    void zapManager.checkRecipientCanReceiveZaps();
   }
 
   /**

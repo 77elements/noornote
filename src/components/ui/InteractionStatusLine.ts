@@ -177,14 +177,14 @@ export class InteractionStatusLine {
    */
   private checkInteractionStates(): void {
     if (this.zapManager) {
-      this.zapManager.checkZappedStatus();
-      this.zapManager.checkRecipientCanReceiveZaps();
+      void this.zapManager.checkZappedStatus();
+      void this.zapManager.checkRecipientCanReceiveZaps();
     }
     if (this.likeManager) {
-      this.likeManager.checkLikedStatus();
+      void this.likeManager.checkLikedStatus();
     }
     if (this.repostManager) {
-      this.repostManager.checkRepostedStatus();
+      void this.repostManager.checkRepostedStatus();
     }
   }
 
@@ -367,7 +367,7 @@ export class InteractionStatusLine {
     if (replyBtn) {
       replyBtn.addEventListener('click', e => {
         e.stopPropagation();
-        this.handleReply();
+        void this.handleReply();
       });
     }
 
@@ -425,7 +425,7 @@ export class InteractionStatusLine {
   private async openReplyModal(): Promise<void> {
     const { ReplyModal } = await import('../reply/ReplyModal');
     // Pass originalEvent if available (avoids cache lookup/relay fetch = instant!)
-    ReplyModal.getInstance().show(
+    void ReplyModal.getInstance().show(
       this.config.noteId,
       this.config.originalEvent
     );
@@ -457,7 +457,7 @@ export class InteractionStatusLine {
     try {
       const { BookmarkOrchestrator } = await import('../../lists/bookmarks');
       const orch = BookmarkOrchestrator.getInstance();
-      const status = await orch.isBookmarked(
+      const status = orch.isBookmarked(
         this.config.noteId,
         currentUser.pubkey
       );
@@ -484,7 +484,7 @@ export class InteractionStatusLine {
   private async checkBookmarkState(): Promise<void> {
     try {
       const { BookmarkOrchestrator } = await import('../../lists/bookmarks');
-      const status = await BookmarkOrchestrator.getInstance().isBookmarked(
+      const status = BookmarkOrchestrator.getInstance().isBookmarked(
         this.config.noteId
       );
       const btn = this.element.querySelector('.isl-bookmark');

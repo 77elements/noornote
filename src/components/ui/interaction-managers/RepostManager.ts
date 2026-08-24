@@ -63,7 +63,7 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
    * Handle repost action
    */
   protected handleInteraction(): void {
-    this.handleRepost();
+    void this.handleRepost();
   }
 
   /**
@@ -122,7 +122,7 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
       // Per NIP-18: A repost MUST reference the original event, not another repost
       const unwrappedEvent = await getRepostsOriginalEvent(originalEvent);
 
-      const writeRelays = await RelayConfig.getInstance().getWriteRelays();
+      const writeRelays = RelayConfig.getInstance().getWriteRelays();
 
       if (writeRelays.length === 0) {
         console.error('No write relays configured');
@@ -169,7 +169,7 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
       // If this is a repost (Kind 6), extract the original note being reposted
       const unwrappedEvent = await getRepostsOriginalEvent(originalEvent);
 
-      const writeRelays = await RelayConfig.getInstance().getWriteRelays();
+      const writeRelays = RelayConfig.getInstance().getWriteRelays();
       let reference: string;
 
       // For addressable events (kind 30000-39999: articles, listings, etc.), use naddr encoding
@@ -228,7 +228,7 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
 
     repostButton.addEventListener('click', e => {
       e.stopPropagation();
-      this.handleRepost();
+      void this.handleRepost();
     });
   }
 
@@ -238,7 +238,7 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
   public attachQuoteListener(quoteButton: HTMLElement): void {
     quoteButton.addEventListener('click', e => {
       e.stopPropagation();
-      this.handleQuote();
+      void this.handleQuote();
     });
   }
 }

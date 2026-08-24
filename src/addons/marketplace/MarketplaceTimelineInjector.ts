@@ -268,7 +268,7 @@ export class MarketplaceTimelineInjector {
       getViewNavigationController().openView('listing', naddr, e);
     });
 
-    this.loadSellerName(card, event.pubkey);
+    void this.loadSellerName(card, event.pubkey);
 
     return card;
   }
@@ -289,7 +289,7 @@ export class MarketplaceTimelineInjector {
         });
     } else if (action === 'quote') {
       const dTag = getTag(event.tags, 'd');
-      const writeRelays = await RelayConfig.getInstance().getWriteRelays();
+      const writeRelays = RelayConfig.getInstance().getWriteRelays();
       const reference = `nostr:${encodeNaddr({
         kind: 30402,
         pubkey: event.pubkey,

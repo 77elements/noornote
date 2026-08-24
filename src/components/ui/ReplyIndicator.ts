@@ -28,7 +28,7 @@ export class ReplyIndicator {
     this.element = this.createElement();
 
     // Load parent author info asynchronously
-    this.loadParentAuthor();
+    void this.loadParentAuthor();
   }
 
   /**

@@ -120,11 +120,11 @@ export class NWCSettingsSection extends SettingsSection {
     this.fiatCurrencySettings = await this.loadFiatCurrencySettings();
 
     contentContainer.innerHTML = this.renderContent();
-    this.bindListeners(contentContainer);
+    void this.bindListeners(contentContainer);
 
     // Listen for NWC connection restoration event
     window.addEventListener('nwc-connection-restored', () => {
-      this.mount(parentContainer); // Re-render to show connected state
+      void this.mount(parentContainer); // Re-render to show connected state
     });
   }
 
@@ -307,7 +307,7 @@ export class NWCSettingsSection extends SettingsSection {
             '.view-content--settings'
           ) as HTMLElement;
           if (parentContainer) {
-            this.mount(parentContainer);
+            void this.mount(parentContainer);
           }
         } else {
           // Re-enable button on failure
@@ -327,7 +327,7 @@ export class NWCSettingsSection extends SettingsSection {
           '.view-content--settings'
         ) as HTMLElement;
         if (parentContainer) {
-          this.mount(parentContainer);
+          void this.mount(parentContainer);
         }
       });
     }
@@ -348,7 +348,7 @@ export class NWCSettingsSection extends SettingsSection {
     };
     amountInput?.addEventListener('blur', saveAmount);
     amountInput?.addEventListener('keydown', e => {
-      if (e.key === 'Enter') saveAmount();
+      if (e.key === 'Enter') void saveAmount();
     });
 
     // Zap default comment: save on blur / Enter
@@ -362,7 +362,7 @@ export class NWCSettingsSection extends SettingsSection {
     };
     commentInput?.addEventListener('blur', saveComment);
     commentInput?.addEventListener('keydown', e => {
-      if (e.key === 'Enter') saveComment();
+      if (e.key === 'Enter') void saveComment();
     });
   }
 

@@ -181,12 +181,12 @@ export class HashtagNotificationService {
     // Initial check after 1 minute — tracked so destroy() can cancel it
     this.initialPollTimeout = setTimeout(() => {
       this.initialPollTimeout = null;
-      this.checkForNewPosts();
+      void this.checkForNewPosts();
     }, 60 * 1000);
 
     // Poll every 5 minutes
     this.pollInterval = setInterval(() => {
-      this.checkForNewPosts();
+      void this.checkForNewPosts();
     }, POLL_INTERVAL);
   }
 

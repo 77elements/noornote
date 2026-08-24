@@ -90,7 +90,7 @@ export class BadgesView extends View {
 
     if (enabled) {
       this.setupCreateForm();
-      this.loadGallery();
+      void this.loadGallery();
     }
   }
 
@@ -204,7 +204,7 @@ export class BadgesView extends View {
             '[data-field="imageUrl"]'
           ) as HTMLInputElement
         ).value = '';
-        this.loadGallery();
+        void this.loadGallery();
       }
     });
   }
@@ -230,7 +230,7 @@ export class BadgesView extends View {
     galleryEl.classList.remove('pulsate');
 
     this.setupGalleryActions(galleryEl as HTMLElement, defs);
-    this.loadAwardeesForGallery(galleryEl as HTMLElement, defs);
+    void this.loadAwardeesForGallery(galleryEl as HTMLElement, defs);
   }
 
   private setupGalleryActions(
@@ -266,7 +266,7 @@ export class BadgesView extends View {
           ?.deleteByCoordinates([coordinate]) ?? Promise.resolve(false));
         if (success) {
           ToastService.show('Badge deleted', 'success');
-          this.loadGallery();
+          void this.loadGallery();
         }
       });
     });

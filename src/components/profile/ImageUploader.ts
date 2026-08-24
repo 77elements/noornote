@@ -122,7 +122,7 @@ export class ImageUploader {
       const target = e.target as HTMLInputElement;
       const file = target.files?.[0];
       if (file) {
-        this.handleFileUpload(file);
+        void this.handleFileUpload(file);
       }
     });
   }

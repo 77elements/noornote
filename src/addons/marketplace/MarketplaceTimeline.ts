@@ -56,7 +56,7 @@ export class MarketplaceTimeline {
       loadingMessage: 'Loading more listings...',
     });
 
-    this.initialize();
+    void this.initialize();
   }
 
   private createElement(): HTMLElement {
@@ -102,7 +102,7 @@ export class MarketplaceTimeline {
     const currentUser = AuthService.getInstance().getCurrentUser();
     if (currentUser) {
       if (addBtn) addBtn.style.display = '';
-      this.checkUserHasListings(currentUser.pubkey, dashboardBtn);
+      void this.checkUserHasListings(currentUser.pubkey, dashboardBtn);
     }
   }
 
@@ -384,7 +384,7 @@ export class MarketplaceTimeline {
       getViewNavigationController().openView('listing', naddr, e);
     });
 
-    this.loadAuthorName(card, event.pubkey);
+    void this.loadAuthorName(card, event.pubkey);
 
     return card;
   }

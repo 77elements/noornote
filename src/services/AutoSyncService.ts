@@ -132,12 +132,12 @@ export class AutoSyncService {
     // Listen to list update events
     this.eventBus.on('follow:updated', () => {
       this.systemLogger.info('ListAutoSync', 'follow:updated triggered');
-      this.handleListChange('follows');
+      void this.handleListChange('follows');
     });
 
     this.eventBus.on('bookmark:updated', () => {
       this.systemLogger.info('ListAutoSync', 'bookmark:updated triggered');
-      this.handleListChange('bookmarks');
+      void this.handleListChange('bookmarks');
     });
 
     this.eventBus.on('bookmark:order-changed', () => {
@@ -145,22 +145,22 @@ export class AutoSyncService {
         'ListAutoSync',
         'bookmark:order-changed triggered'
       );
-      this.handleListChange('bookmarks');
+      void this.handleListChange('bookmarks');
     });
 
     this.eventBus.on('mute:updated', () => {
       this.systemLogger.info('ListAutoSync', 'mute:updated triggered');
-      this.handleListChange('mutes');
+      void this.handleListChange('mutes');
     });
 
     this.eventBus.on('mute:thread:updated', () => {
       this.systemLogger.info('ListAutoSync', 'mute:thread:updated triggered');
-      this.handleListChange('mutes');
+      void this.handleListChange('mutes');
     });
 
     this.eventBus.on('tribe:updated', () => {
       this.systemLogger.info('ListAutoSync', 'tribe:updated triggered');
-      this.handleListChange('tribes');
+      void this.handleListChange('tribes');
     });
 
     // Reset on logout
@@ -278,7 +278,7 @@ export class AutoSyncService {
         'ListAutoSync',
         'Back online - resuming periodic sync and catching up'
       );
-      this.syncFromRelaysAll();
+      void this.syncFromRelaysAll();
     }
   }
 
@@ -447,7 +447,7 @@ export class AutoSyncService {
     );
 
     this.periodicSyncInterval = setInterval(() => {
-      this.syncFromRelaysAll();
+      void this.syncFromRelaysAll();
     }, this.PERIODIC_SYNC_INTERVAL);
   }
 
@@ -475,7 +475,7 @@ export class AutoSyncService {
       `${listType}: addon activated, scheduling sync in 10s`
     );
     setTimeout(() => {
-      this.syncFromRelays(listType);
+      void this.syncFromRelays(listType);
     }, 10000);
   }
 

@@ -240,7 +240,7 @@ export class ArmadaInviteRenderer {
       preview,
     });
     ArmadaInviteRenderer.wireActions(root, invite.openUrl);
-    ArmadaInviteRenderer.loadIcon(root, preview);
+    void ArmadaInviteRenderer.loadIcon(root, preview);
   }
 
   /**

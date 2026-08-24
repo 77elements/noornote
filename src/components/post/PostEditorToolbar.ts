@@ -92,7 +92,7 @@ export class PostEditorToolbar {
       fileInput.addEventListener('change', e => {
         const target = e.target as HTMLInputElement;
         if (target.files && target.files.length > 0) {
-          this.handleFileUpload(Array.from(target.files));
+          void this.handleFileUpload(Array.from(target.files));
         }
       });
     }
@@ -101,7 +101,7 @@ export class PostEditorToolbar {
     const emojiBtn = container.querySelector('[data-action="emoji"]');
     if (emojiBtn) {
       emojiBtn.addEventListener('click', () => {
-        this.handleEmojiPicker();
+        void this.handleEmojiPicker();
       });
     }
 

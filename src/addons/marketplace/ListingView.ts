@@ -40,7 +40,7 @@ export class ListingView extends View {
     this.naddr = naddr;
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--listing';
-    this.render();
+    void this.render();
   }
 
   private async render(): Promise<void> {
@@ -167,7 +167,7 @@ export class ListingView extends View {
 
       this.mountImageCarousel(meta.images);
       this.setupEventHandlers(event);
-      this.loadSellerProfile(event.pubkey);
+      void this.loadSellerProfile(event.pubkey);
       void this.loadReviews(event);
       void this.mountComments(event);
     } catch {
@@ -243,7 +243,7 @@ export class ListingView extends View {
         const { encodeNaddr } = await import(
           '../../services/NostrToolsAdapter'
         );
-        const writeRelays = await RelayConfig.getInstance().getWriteRelays();
+        const writeRelays = RelayConfig.getInstance().getWriteRelays();
 
         if (action === 'repost') {
           const { ModuleLoader } = await import('../../core/ModuleLoader');
@@ -503,7 +503,7 @@ export class ListingView extends View {
       noteId,
       noteAuthor: event.pubkey,
     });
-    repliesRenderer.loadAndRender();
+    void repliesRenderer.loadAndRender();
   }
 
   public destroy(): void {

@@ -134,7 +134,7 @@ export class DMService {
 
     // Listen for mute updates to refresh cache
     this.eventBus.on('mute:updated', () => {
-      this.refreshMutedPubkeys();
+      void this.refreshMutedPubkeys();
     });
 
     // Listen for relay sync — re-subscribe if inbox relays changed
@@ -388,7 +388,7 @@ export class DMService {
       'DMService',
       'Inbox relays changed, refreshing DM subscription'
     );
-    this.refreshSubscriptions();
+    void this.refreshSubscriptions();
   }
 
   /**
@@ -437,7 +437,7 @@ export class DMService {
     const since = missedStartedAt - 35 * 60; // last 35 minutes
 
     try {
-      const inboxRelays = await this.getMyInboxRelays();
+      const inboxRelays = this.getMyInboxRelays();
 
       // NIP-17 Gift Wraps
       const nip17Events = await this.transport.fetch(
@@ -509,7 +509,7 @@ export class DMService {
   private startRefreshTimer(): void {
     this.clearRefreshTimer();
     this.refreshTimer = window.setInterval(() => {
-      this.refreshSubscriptions();
+      void this.refreshSubscriptions();
     }, DMService.REFRESH_INTERVAL);
   }
 
@@ -599,7 +599,7 @@ export class DMService {
 
     try {
       // NIP-17 uses inbox relays
-      const inboxRelays = await this.getMyInboxRelays();
+      const inboxRelays = this.getMyInboxRelays();
 
       // Fetch NIP-17 Gift Wraps (kind:1059).
       // Incremental: only wraps newer than the checkpoint (minus the backdate
@@ -794,7 +794,7 @@ export class DMService {
     this.isFetchingHistorical = true;
     this.pendingBadgeUpdate = false;
     try {
-      const inboxRelays = await this.getMyInboxRelays();
+      const inboxRelays = this.getMyInboxRelays();
       const readRelays = this.relayConfig.getReadRelays();
 
       // `until` is inclusive — the boundary event is re-fetched (deduped on write).
@@ -1204,7 +1204,9 @@ export class DMService {
     if (!inserted) return;
 
     const isLive =
-      !arrivedDuringBacklog && !this.isFetchingHistorical && this.liveSubBacklogDone;
+      !arrivedDuringBacklog &&
+      !this.isFetchingHistorical &&
+      this.liveSubBacklogDone;
     if (!isLive) {
       this.pendingBadgeUpdate = true;
     } else {

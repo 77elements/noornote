@@ -403,7 +403,7 @@ export class RelayConfig {
       this.eventBus.emit('relays:loaded');
 
       // Background-sync: check relays for newer list (don't block UI)
-      this.syncFromRelays(pubkey);
+      void this.syncFromRelays(pubkey);
       return;
     }
 

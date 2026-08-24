@@ -62,7 +62,7 @@ export class ArticleView extends View {
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--article';
 
-    this.render();
+    void this.render();
   }
 
   /**
@@ -185,7 +185,7 @@ export class ArticleView extends View {
           } else {
             const skeleton = quotedNoteRenderer.createQuoteSkeleton();
             marker.replaceWith(skeleton);
-            quotedNoteRenderer.fetchAndRenderQuote(ref, skeleton, true);
+            void quotedNoteRenderer.fetchAndRenderQuote(ref, skeleton, true);
           }
         }
       });
@@ -320,14 +320,14 @@ export class ArticleView extends View {
         articleEventId, // LONG-FORM ARTICLE: Pass event ID for proper zap tagging
         onAnalytics: () => {
           const analyticsModal = AnalyticsModal.getInstance();
-          analyticsModal.show(noteId, event);
+          void analyticsModal.show(noteId, event);
         },
       });
       articleBody.insertAdjacentElement('afterend', isl.getElement());
 
       // Load zaps and likes list (pass articleEventId for long-form article dual-tag search,
       // and the full event so emoji-badge reactions can build NIP-25-compliant addressable tags)
-      this.loadZapsList(
+      void this.loadZapsList(
         noteId,
         event.pubkey,
         articleBody.parentElement as HTMLElement,
@@ -341,10 +341,10 @@ export class ArticleView extends View {
     const moreSection = document.createElement('section');
     moreSection.className = 'more-from-this-author';
     articleBody?.insertAdjacentElement('afterend', moreSection);
-    this.loadMoreFromAuthor(moreSection, event);
+    void this.loadMoreFromAuthor(moreSection, event);
 
     // Load and render replies (pass articleEventId for long-form article dual-tag search)
-    this.loadReplies(noteId, event.pubkey, articleEventId);
+    void this.loadReplies(noteId, event.pubkey, articleEventId);
   }
 
   /**
@@ -523,7 +523,7 @@ export class ArticleView extends View {
       updateISL: false, // Don't update ISL for articles (addressable identifier mismatch)
       onLoadZapsList: (replyId, replyAuthor, noteElement) => {
         // Replies are normal notes (not addressable), no articleEventId needed
-        this.loadZapsListForReply(replyId, replyAuthor, noteElement);
+        void this.loadZapsListForReply(replyId, replyAuthor, noteElement);
       },
     });
 

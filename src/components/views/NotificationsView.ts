@@ -69,11 +69,11 @@ export class NotificationsView extends View {
     this.eventBus.emit('notifications:badge-update');
 
     // Load cached notifications first (instant), then fetch new ones
-    this.loadFromCacheAndFetch();
+    void this.loadFromCacheAndFetch();
 
     // Listen for real-time updates (includes hashtag notifications via NotificationsOrchestrator)
     this.notificationsOrch.onNewNotification(notification => {
-      this.handleNewNotification(notification);
+      void this.handleNewNotification(notification);
     });
 
     // Listen for mute-filtered notifications (refresh list when threads are muted)
@@ -445,7 +445,7 @@ export class NotificationsView extends View {
     this.hasMoreNotifications = true;
 
     // Load first batch
-    this.loadNotificationsBatch();
+    void this.loadNotificationsBatch();
   }
 
   /**

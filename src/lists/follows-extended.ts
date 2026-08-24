@@ -94,7 +94,7 @@ export class FollowsExtendedFeatures {
    * Start loading zap stats for all pubkeys (fire-and-forget).
    */
   public startZapStatsLoading(pubkeys: string[]): void {
-    this.zapStatsService.loadStatsForPubkeys(pubkeys);
+    void this.zapStatsService.loadStatsForPubkeys(pubkeys);
   }
 
   /**
@@ -337,7 +337,7 @@ export class FollowsExtendedFeatures {
       } else if (result.totalChanges === 0) {
         ToastService.show('No changes detected', 'success');
       } else {
-        this.showChangesModal(container, result);
+        void this.showChangesModal(container, result);
       }
     } catch (error) {
       console.error('Failed to check for changes:', error);

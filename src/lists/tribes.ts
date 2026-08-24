@@ -2185,7 +2185,7 @@ export class TribeManager {
       '[data-tab-content="list-tribes"]'
     );
     if (listTab && listTab.classList.contains('tab-content--active')) {
-      this.renderTribesTab(listTab as HTMLElement);
+      void this.renderTribesTab(listTab as HTMLElement);
     }
   }
 
@@ -2194,7 +2194,7 @@ export class TribeManager {
    */
   public handleTabSwitch(tabName: string, content: HTMLElement): void {
     if (tabName === 'tribes') {
-      this.renderTribesTab(content);
+      void this.renderTribesTab(content);
     }
   }
 
@@ -2549,9 +2549,9 @@ export class TribeManager {
         const isTargetUpNav = dropTarget.dataset.upNav !== undefined;
 
         if (isTargetUpNav && isDraggingMember) {
-          this.moveMemberToFolderUI(draggedId, '');
+          void this.moveMemberToFolderUI(draggedId, '');
         } else if (isTargetFolder && isDraggingMember && targetId) {
-          this.moveMemberToFolderUI(draggedId, targetId);
+          void this.moveMemberToFolderUI(draggedId, targetId);
         } else if (targetId && targetId !== draggedId) {
           if (this.currentFolderId && isDraggingMember) {
             const membersInFolderList = getMembersInFolder(
@@ -2601,7 +2601,7 @@ export class TribeManager {
       '[data-tab-content="list-tribes"]'
     );
     if (container) {
-      this.renderCurrentView(container as HTMLElement);
+      void this.renderCurrentView(container as HTMLElement);
     }
   }
 
@@ -2986,7 +2986,7 @@ export class TribeManager {
 
       input?.addEventListener('keydown', e => {
         if (e.key === 'Enter' && e.ctrlKey) {
-          handleSave();
+          void handleSave();
         } else if (e.key === 'Escape') {
           this.modalService.hide();
         }
@@ -3181,7 +3181,7 @@ export class TribeManager {
             await this.renderCurrentView(container);
           },
         });
-        modal.show();
+        void modal.show();
       } else if (result.diff.added.length > 0) {
         this.applySync('merge', result.relayItems);
         applyRelayFetchResult(
@@ -3342,7 +3342,7 @@ export class TribeManager {
             await this.renderCurrentView(container);
           },
         });
-        modal.show();
+        void modal.show();
       } else if (result.diff.added.length > 0) {
         // No confirmation needed, but file has new items - do full restore
         if (isBrowser) {
@@ -3393,7 +3393,7 @@ export class TribeView extends View {
     this.authService = AuthService.getInstance();
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--tribe';
-    this.render();
+    void this.render();
   }
 
   /**

@@ -160,10 +160,10 @@ export class MainLayout {
     // wallet-balance is managed by AddonLoader + src/addons/wallet-balance/runtime.ts
     this.setupKeyboardShortcuts();
     this.setupSpacebarScroll();
-    this.initializeGlobalSearchView();
+    void this.initializeGlobalSearchView();
     this.setupActiveNavigation();
     this.initializeViewTabManager();
-    this.initializeDateTimeCalendar();
+    void this.initializeDateTimeCalendar();
     this.startDateTimeUpdates();
   }
 
@@ -205,7 +205,7 @@ export class MainLayout {
   private setupKeyboardShortcuts(): void {
     this.keyboardShortcutManager = KeyboardShortcutManager.getInstance();
     this.keyboardShortcutManager.registerSearchModalCallback(() => {
-      this.openSearchModal();
+      void this.openSearchModal();
     });
   }
 
@@ -237,7 +237,7 @@ export class MainLayout {
 
   private initializeManagers(): void {
     // Lazy-load list managers (they pull in heavy deps)
-    this.loadListManagers();
+    void this.loadListManagers();
     // Initialize NotificationsBadgeManager
     const badgeElement = this.element.querySelector(
       '.notifications-badge'
@@ -1002,7 +1002,7 @@ export class MainLayout {
         // Re-initialize addons now that auth is available
         // (initial init in constructor may have run before auth completed)
         // wallet-balance is handled by AddonLoader via the user:login TypedEventBus event.
-        this.initializeAddonsAfterAuth();
+        void this.initializeAddonsAfterAuth();
         // Update sidebar for logged-in state
         this.element
           .querySelector('.sidebar')
@@ -1350,7 +1350,7 @@ export class MainLayout {
     if (searchLink) {
       searchLink.addEventListener('click', e => {
         e.preventDefault();
-        this.openSearchModal();
+        void this.openSearchModal();
       });
     }
 
@@ -2023,7 +2023,7 @@ export class MainLayout {
       const isSilentMode =
         localStorage.getItem('noorsigner_silent_mode') !== 'false';
       if (isSilentMode) {
-        this.showAddAccountSilent();
+        void this.showAddAccountSilent();
       } else {
         this.showAddAccountInstructions();
       }
@@ -2262,7 +2262,7 @@ export class MainLayout {
           : 'none';
       }
     };
-    updateProductVisibility();
+    void updateProductVisibility();
     this.eventBus.on('marketplace:toggle', () => updateProductVisibility());
     this.eventBus.on('user:login', () => updateProductVisibility());
 
@@ -2278,9 +2278,9 @@ export class MainLayout {
    * Start periodic cache size updates
    */
   private startCacheSizeUpdates(): void {
-    this.updateCacheSize(); // Initial update
+    void this.updateCacheSize(); // Initial update
     this.cacheSizeUpdateInterval = window.setInterval(() => {
-      this.updateCacheSize();
+      void this.updateCacheSize();
     }, 5000); // Update every 5 seconds
   }
 
@@ -2596,7 +2596,7 @@ export class MainLayout {
     mode: 'follows' | 'followers'
   ): void {
     // Import dynamically to avoid circular dependencies
-    import('../../lists/follows').then(({ ExternalFollowListManager }) => {
+    void import('../../lists/follows').then(({ ExternalFollowListManager }) => {
       if (!this.layoutService.isSecondaryVisible()) {
         this.renderExternalFollowsInPrimaryContent(
           pubkey,

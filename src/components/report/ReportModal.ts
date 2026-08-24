@@ -191,7 +191,7 @@ export class ReportModal {
     // Submit button
     if (submitBtn) {
       submitBtn.addEventListener('click', () => {
-        this.handleSubmit(modal);
+        void this.handleSubmit(modal);
       });
     }
   }

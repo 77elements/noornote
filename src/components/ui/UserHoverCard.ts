@@ -57,7 +57,7 @@ export class UserHoverCard {
 
     // Delay showing to avoid flicker on quick mouse movements
     this.showTimeout = setTimeout(() => {
-      this.renderCard(pubkey, triggerElement);
+      void this.renderCard(pubkey, triggerElement);
     }, 500); // 500ms delay before showing
   }
 
@@ -115,7 +115,7 @@ export class UserHoverCard {
     document.body.appendChild(this.card);
 
     // Add event listeners
-    this.setupEventListeners(pubkey);
+    void this.setupEventListeners(pubkey);
   }
 
   /**

@@ -13,7 +13,7 @@ export class KeyboardShortcutManager {
   private searchModalCallback: (() => void) | null = null;
 
   private constructor() {
-    this.setupGlobalShortcuts();
+    void this.setupGlobalShortcuts();
   }
 
   public static getInstance(): KeyboardShortcutManager {

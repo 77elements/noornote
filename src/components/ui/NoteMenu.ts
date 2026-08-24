@@ -96,7 +96,7 @@ export class NoteMenu {
       let isPublicBookmarked = false;
       let isPrivateBookmarked = false;
       if (currentUser) {
-        const status = await bookmarkOrch.isBookmarked(
+        const status = bookmarkOrch.isBookmarked(
           this.options.eventId,
           currentUser.pubkey
         );
@@ -349,22 +349,22 @@ export class NoteMenu {
   private handleAction(action: string): void {
     switch (action) {
       case 'copy-event-id':
-        this.copyEventId();
+        void this.copyEventId();
         break;
       case 'copy-user-id':
-        this.copyUserId();
+        void this.copyUserId();
         break;
       case 'copy-share-link':
-        this.copyShareLink();
+        void this.copyShareLink();
         break;
       case 'bookmark-public':
-        this.toggleBookmark(false);
+        void this.toggleBookmark(false);
         break;
       case 'bookmark-private':
-        this.toggleBookmark(true);
+        void this.toggleBookmark(true);
         break;
       case 'add-author-to-tribe':
-        this.addAuthorToTribe();
+        void this.addAuthorToTribe();
         break;
       case 'view-raw-event':
         this.viewRawEvent();
@@ -376,13 +376,13 @@ export class NoteMenu {
         this.reportNote();
         break;
       case 'mute-user-privately':
-        this.muteUser(true);
+        void this.muteUser(true);
         break;
       case 'mute-user-publicly':
-        this.muteUser(false);
+        void this.muteUser(false);
         break;
       case 'toggle-mute-thread':
-        this.toggleMuteThread();
+        void this.toggleMuteThread();
         break;
       case 'toggle-article-notifications':
         this.toggleArticleNotifications();
@@ -586,7 +586,7 @@ export class NoteMenu {
       }
 
       // Check current bookmark status
-      const status = await bookmarkOrch.isBookmarked(
+      const status = bookmarkOrch.isBookmarked(
         eventIdToBookmark,
         currentUser.pubkey
       );
@@ -688,7 +688,7 @@ export class NoteMenu {
 
       // Add member to tribe as public (private tribes not supported via NoteMenu)
       // Note: addMember already emits 'tribe:updated', no need to emit again
-      await tribes.addMember(
+      tribes.addMember(
         this.options.authorPubkey,
         false,
         tribeName,

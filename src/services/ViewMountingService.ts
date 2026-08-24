@@ -136,7 +136,7 @@ export class ViewMountingService {
         this.mainLayout.showLoginScreen();
         return true;
       case 'profile-setup':
-        this.mainLayout.showAccountSetupWizard();
+        void this.mainLayout.showAccountSetupWizard();
         return true;
       default:
         return false;

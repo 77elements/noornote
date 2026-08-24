@@ -98,7 +98,7 @@ export class QuotedNoteRenderer {
       container.appendChild(skeleton);
 
       // Fetch quote in background
-      this.fetchAndRenderQuote(
+      void this.fetchAndRenderQuote(
         ref,
         skeleton,
         enableCollapsible,
@@ -709,7 +709,7 @@ export class QuotedNoteRenderer {
         if (marker) {
           const skeleton = this.createQuoteSkeleton();
           marker.replaceWith(skeleton);
-          this.fetchAndRenderQuote(ref, skeleton, false, event.pubkey); // No collapsible for nested quotes
+          void this.fetchAndRenderQuote(ref, skeleton, false, event.pubkey); // No collapsible for nested quotes
         }
       });
     }
@@ -953,7 +953,7 @@ export class QuotedNoteRenderer {
       const result =
         await this.quoteFetcher.fetchQuotedEventWithError(naddrRef);
       if (result.success && result.event.kind === 30402) {
-        this.renderListingPreviewFromEvent(result.event, container);
+        void this.renderListingPreviewFromEvent(result.event, container);
       }
     } catch {
       /* silent — container stays empty */

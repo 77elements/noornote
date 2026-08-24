@@ -26,7 +26,7 @@ export class UserStatus {
     this.userProfileService = UserProfileService.getInstance();
     this.options = options;
     this.element = this.createElement();
-    this.loadProfile();
+    void this.loadProfile();
   }
 
   /**
@@ -123,7 +123,7 @@ export class UserStatus {
 
     this.options = options;
     this.profile = null;
-    this.loadProfile();
+    void this.loadProfile();
   }
 
   /**

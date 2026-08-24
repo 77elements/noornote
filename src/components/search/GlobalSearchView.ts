@@ -87,14 +87,14 @@ export class GlobalSearchView {
     // Listen for global search start (NIP-50 relay search)
     this.eventBusSubscriptions.push(
       this.eventBus.on('globalSearch:start', (data: { query: string }) => {
-        this.performGlobalSearch(data.query);
+        void this.performGlobalSearch(data.query);
       })
     );
 
     // Listen for hashtag search start (NIP-50 relay search for hashtags)
     this.eventBusSubscriptions.push(
       this.eventBus.on('hashtagSearch:start', (data: { hashtag: string }) => {
-        this.performHashtagSearch(data.hashtag);
+        void this.performHashtagSearch(data.hashtag);
       })
     );
 
@@ -449,7 +449,7 @@ export class GlobalSearchView {
 
     try {
       // Get all muted pubkeys
-      const mutedPubkeys = await this.muteOrchestrator.getAllMutedUsers(
+      const mutedPubkeys = this.muteOrchestrator.getAllMutedUsers(
         currentUser.pubkey
       );
       const mutedSet = new Set(mutedPubkeys);

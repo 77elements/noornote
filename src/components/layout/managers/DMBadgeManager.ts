@@ -28,12 +28,12 @@ export class DMBadgeManager {
   private setupEventListeners(): void {
     this.subscriptionIds.push(
       this.eventBus.on('dm:fetch-complete', () => {
-        this.updateBadgeCount();
+        void this.updateBadgeCount();
       })
     );
     this.subscriptionIds.push(
       this.eventBus.on('dm:badge-update', () => {
-        this.updateBadgeCount();
+        void this.updateBadgeCount();
       })
     );
   }

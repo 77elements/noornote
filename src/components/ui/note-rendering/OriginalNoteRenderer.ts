@@ -59,7 +59,7 @@ export class OriginalNoteRenderer {
             // Always false: the outer note's collapsible (set up below) handles
             // truncation for the entire content including nested quotes. Letting
             // the inner quote add its own Show More would stack two buttons.
-            quotedNoteRenderer.fetchAndRenderQuote(
+            void quotedNoteRenderer.fetchAndRenderQuote(
               ref,
               skeleton,
               false,

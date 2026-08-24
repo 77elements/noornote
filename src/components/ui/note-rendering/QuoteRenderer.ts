@@ -52,7 +52,7 @@ export class QuoteRenderer {
             marker.replaceWith(skeleton);
             // Always false: the outer note's collapsible (set up below) handles
             // truncation for the entire content including nested quotes.
-            QuoteRenderer.quotedNoteRenderer.fetchAndRenderQuote(
+            void QuoteRenderer.quotedNoteRenderer.fetchAndRenderQuote(
               ref,
               skeleton,
               false,

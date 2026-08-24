@@ -31,7 +31,7 @@ export class AppBadgeService {
     this.platform = PlatformService.getInstance();
     this.originalTitle = document.title;
 
-    this.initBadgeApi();
+    void this.initBadgeApi();
     this.setupEventListeners();
 
     // Initial update if user is already logged in

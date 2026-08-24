@@ -1918,7 +1918,7 @@ export class FollowListManager {
             await this.renderListTab(container);
           },
         });
-        modal.show();
+        void modal.show();
       } else if (result.diff.added.length > 0) {
         this.applySyncFromFile('overwrite', result.fileItems);
         ToastService.show(
@@ -2521,7 +2521,7 @@ export class FollowListManager {
     );
     loadAllLink?.addEventListener('click', e => {
       e.preventDefault();
-      this.handleLoadAll(container);
+      void this.handleLoadAll(container);
     });
 
     // Sort by Date link

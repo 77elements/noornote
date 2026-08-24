@@ -93,7 +93,7 @@ export class UserSearchService {
       }
     });
 
-    Promise.allSettled([localPromise, remotePromise]).finally(() => {
+    void Promise.allSettled([localPromise, remotePromise]).finally(() => {
       if (!abortController.signal.aborted) {
         callbacks.onComplete();
       }

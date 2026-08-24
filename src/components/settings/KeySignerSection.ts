@@ -36,7 +36,7 @@ export class KeySignerSection extends SettingsSection {
     const isRunning = await this.keySignerClient.isRunning();
 
     contentContainer.innerHTML = this.renderContent(isRunning);
-    this.bindListeners(contentContainer);
+    void this.bindListeners(contentContainer);
   }
 
   /**
@@ -116,7 +116,7 @@ export class KeySignerSection extends SettingsSection {
                 '.view-content--settings'
               ) as HTMLElement;
               if (parentContainer) {
-                this.mount(parentContainer);
+                void this.mount(parentContainer);
               }
             }
           },

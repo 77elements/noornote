@@ -82,7 +82,7 @@ export class TimelineEventHandler {
       this.stateManager.getHasMore() &&
       this.stateManager.getFollowingPubkeys().length > 0
     ) {
-      this.loadMoreEvents();
+      void this.loadMoreEvents();
     }
   }
 

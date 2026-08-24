@@ -237,7 +237,7 @@ export class ImportToNoorSignerModal {
 
     confirmInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
-        handleSubmit();
+        void handleSubmit();
       } else if (e.key === 'Escape') {
         handleCancel();
       }

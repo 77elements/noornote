@@ -72,7 +72,7 @@ export class HashtagSubscriptionsSettings extends SettingsSection {
     this.enableSwitch.setupEventListeners(contentContainer);
 
     if (enabled && contentZone) {
-      this.loadService().then(() => this.renderContent(contentZone, true));
+      void this.loadService().then(() => this.renderContent(contentZone, true));
     }
 
     // Listen for subscription updates

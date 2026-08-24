@@ -533,7 +533,7 @@ export class ReplyModal {
         });
       },
       onPreviewRendered: previewContainer => {
-        this.renderQuotedNotesInPreview(previewContainer);
+        void this.renderQuotedNotesInPreview(previewContainer);
         attachPreviewClickToEdit(previewContainer, () =>
           this.switchTab('edit')
         );

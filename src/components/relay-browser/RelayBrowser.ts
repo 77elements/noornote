@@ -55,7 +55,7 @@ export class RelayBrowser {
       loadingMessage: 'Loading more notes...',
     });
 
-    this.initialize();
+    void this.initialize();
   }
 
   private createElement(): HTMLElement {
@@ -144,7 +144,10 @@ export class RelayBrowser {
       ...new Set(this.polledEventsCache.map(e => e.pubkey)),
     ].slice(0, 4);
 
-    this.refreshButton.update(this.polledEventsCache.length, authorPubkeys);
+    void this.refreshButton.update(
+      this.polledEventsCache.length,
+      authorPubkeys
+    );
   }
 
   private handleRefreshClick(): void {

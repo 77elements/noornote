@@ -249,7 +249,7 @@ export class LayoutService {
         clearTimeout(this.resizeDebounceTimer);
       }
       this.resizeDebounceTimer = setTimeout(() => {
-        this.handleScreenSizeChange();
+        void this.handleScreenSizeChange();
       }, 150);
     });
   }

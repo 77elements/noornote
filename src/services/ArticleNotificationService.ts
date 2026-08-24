@@ -129,11 +129,11 @@ export class ArticleNotificationService {
     this.isPollingStarted = true;
 
     // Initial check
-    this.checkForNewArticles();
+    void this.checkForNewArticles();
 
     // Poll every hour
     this.pollInterval = setInterval(() => {
-      this.checkForNewArticles();
+      void this.checkForNewArticles();
     }, POLL_INTERVAL);
   }
 

@@ -280,7 +280,7 @@ export class RepostRenderer {
     // Stage-3 outbound includes BOTH the original author AND the reposter.
     const singleNoteApi =
       ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
-    (
+    void (
       singleNoteApi?.fetchQuotedEvent(`nostr:${neventRef}`, authorPubkey, [
         reposterPubkey,
       ]) ?? Promise.resolve(null)

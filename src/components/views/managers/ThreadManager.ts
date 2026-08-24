@@ -222,7 +222,7 @@ export class ThreadManager {
       const threadTree = this.buildThreadTree(replies, this.config.noteId);
       const totalComments = replies.length + filteredQuotedReposts.length;
 
-      this.updateStats(replies.length, filteredQuotedReposts.length);
+      void this.updateStats(replies.length, filteredQuotedReposts.length);
 
       repliesContainer.innerHTML = `
         <div class="snv-replies__header">

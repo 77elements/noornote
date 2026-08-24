@@ -52,7 +52,7 @@ export class ThreadContextIndicator {
     this.router = Router.getInstance();
 
     // Load thread context asynchronously
-    this.loadThreadContext();
+    void this.loadThreadContext();
   }
 
   /**

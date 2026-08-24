@@ -26,7 +26,7 @@ export class RefreshButton {
     this.authorPubkeys = options.authorPubkeys;
     this.onClick = options.onClick;
     this.element = this.createElement();
-    this.updateContent();
+    void this.updateContent();
   }
 
   /**

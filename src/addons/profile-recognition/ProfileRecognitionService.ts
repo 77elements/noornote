@@ -163,7 +163,7 @@ export class ProfileRecognitionService {
     this.setupEventListeners();
 
     // Initial sync: capture encounters for any current follows that don't have one yet
-    this.handleFollowListChange();
+    void this.handleFollowListChange();
   }
 
   /**
@@ -218,7 +218,7 @@ export class ProfileRecognitionService {
     if (this.followUpdatedSubId !== null) return;
     // Listen for follow/unfollow events
     this.followUpdatedSubId = this.eventBus.on('follow:updated', () => {
-      this.handleFollowListChange();
+      void this.handleFollowListChange();
     });
   }
 
@@ -525,7 +525,7 @@ export class ProfileRecognitionService {
       clearTimeout(this.fileSaveTimeout);
     }
     this.fileSaveTimeout = setTimeout(() => {
-      this.saveToFile();
+      void this.saveToFile();
     }, FILE_SAVE_DEBOUNCE);
 
     // Debounce relay save (5s)
@@ -533,7 +533,7 @@ export class ProfileRecognitionService {
       clearTimeout(this.relaySaveTimeout);
     }
     this.relaySaveTimeout = setTimeout(() => {
-      this.saveToRelays();
+      void this.saveToRelays();
     }, RELAY_SAVE_DEBOUNCE);
   }
 

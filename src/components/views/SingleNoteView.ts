@@ -75,7 +75,7 @@ export class SingleNoteView extends View {
 
     this.reactionsApi?.resetFetchCounter();
     this.setupMuteListener();
-    this.render();
+    void this.render();
   }
 
   private async render(): Promise<void> {
@@ -100,7 +100,7 @@ export class SingleNoteView extends View {
         return;
       }
 
-      this.renderNote(event);
+      void this.renderNote(event);
     } catch (error) {
       this.systemLogger.error('SNV', `Failed to load note: ${error}`);
       this.showError('Failed to load note');
@@ -283,7 +283,7 @@ export class SingleNoteView extends View {
     this.currentEvent = event;
 
     this.initializeManagers(effectiveNoteId, eventPubkey, repliesContainer);
-    this.loadZapsList(effectiveNoteId, eventPubkey, noteElement);
+    void this.loadZapsList(effectiveNoteId, eventPubkey, noteElement);
 
     if (this.threadManager) {
       const quotedReposts = await this.threadManager.fetchQuotedReposts();
@@ -308,7 +308,7 @@ export class SingleNoteView extends View {
       rootKind: this.currentEvent?.kind,
       onStatsUpdate: (replies, quotedReposts) => {
         const isl = NoteUI.getInteractionStatusLine(noteId);
-        isl?.waitForInitialFetch().then(() => {
+        void isl?.waitForInitialFetch().then(() => {
           isl.updateStats({ replies, quotedReposts });
           this.reactionsApi?.updateCachedStats(noteId, {
             replies,
@@ -317,7 +317,7 @@ export class SingleNoteView extends View {
         });
       },
       onLoadZapsList: (replyId, authorPubkey, element) => {
-        this.loadZapsList(replyId, authorPubkey, element);
+        void this.loadZapsList(replyId, authorPubkey, element);
       },
     });
 
@@ -333,7 +333,7 @@ export class SingleNoteView extends View {
         if (noteElement instanceof HTMLElement) {
           const authorPubkey = noteElement.getAttribute('data-author-pubkey');
           if (authorPubkey) {
-            this.loadZapsList(targetNoteId, authorPubkey, noteElement);
+            void this.loadZapsList(targetNoteId, authorPubkey, noteElement);
           }
         }
       },

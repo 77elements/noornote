@@ -102,7 +102,7 @@ export class PostLoginService {
 
         this.viewMountingService.destroyTimelineCache();
         if (currentPath === '/' || currentPath === '/timeline') {
-          this.viewMountingService.mountView('timeline');
+          void this.viewMountingService.mountView('timeline');
         }
       }
       localStorage.setItem('noornote_last_logged_in_pubkey', data.pubkey);
@@ -143,7 +143,7 @@ export class PostLoginService {
       AutoSyncService.getInstance();
 
       // Sync petnames from relays (NIP-78 encrypted, non-blocking)
-      import('./PetnameService').then(({ PetnameService }) => {
+      void import('./PetnameService').then(({ PetnameService }) => {
         PetnameService.getInstance()
           .syncFromRelays()
           .catch(() => {});
@@ -151,7 +151,7 @@ export class PostLoginService {
 
       // Sync soft-mutes from relays (NIP-78 encrypted, non-blocking).
       // Notification-only suppression — consumed by NotificationsOrchestrator.
-      import('./SoftMuteService').then(({ SoftMuteService }) => {
+      void import('./SoftMuteService').then(({ SoftMuteService }) => {
         SoftMuteService.getInstance()
           .syncFromRelays()
           .catch(() => {});

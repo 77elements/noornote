@@ -88,7 +88,7 @@ export class MessagesView extends View {
     // Listen for fetch completion - then load conversations
     this.subscriptionIds.push(
       this.eventBus.on('dm:fetch-complete', () => {
-        this.handleFetchComplete();
+        void this.handleFetchComplete();
       })
     );
 
@@ -100,15 +100,15 @@ export class MessagesView extends View {
     );
 
     // Call loadInitialData AFTER event listeners are setup
-    this.loadInitialData();
+    void this.loadInitialData();
 
     // Listen for badge updates (mark all read/unread) - only update badges, not full refresh
     this.subscriptionIds.push(
       this.eventBus.on('dm:badge-update', () => {
         // Only refresh if we're not currently fetching
         if (!this.isFetchingDMs) {
-          this.updateBadgeCounts();
-          this.refreshConversationsQuiet();
+          void this.updateBadgeCounts();
+          void this.refreshConversationsQuiet();
         }
       })
     );
@@ -118,7 +118,7 @@ export class MessagesView extends View {
       this.eventBus.on('dm:new-message', () => {
         // Only refresh if we're not currently fetching
         if (!this.isFetchingDMs) {
-          this.refreshConversationsQuiet();
+          void this.refreshConversationsQuiet();
         }
       })
     );
@@ -129,7 +129,7 @@ export class MessagesView extends View {
     this.subscriptionIds.push(
       this.eventBus.on('dm:messages-expired', () => {
         if (!this.isFetchingDMs) {
-          this.refreshConversationsQuiet();
+          void this.refreshConversationsQuiet();
         }
       })
     );
@@ -291,7 +291,7 @@ export class MessagesView extends View {
     this.setupInfiniteScroll();
 
     // Load conversations for this tab
-    this.loadConversationsBatch();
+    void this.loadConversationsBatch();
   }
 
   /**
@@ -589,7 +589,7 @@ export class MessagesView extends View {
     const deleteBtn = item.querySelector('.conversation-item__delete');
     deleteBtn?.addEventListener('click', e => {
       e.stopPropagation();
-      this.confirmDeleteConversation(conversation.pubkey, displayName);
+      void this.confirmDeleteConversation(conversation.pubkey, displayName);
     });
 
     return item;
@@ -643,7 +643,7 @@ export class MessagesView extends View {
    */
   private openConversation(partnerPubkey: string): void {
     // Mark as read
-    this.dmsApi?.markAsRead(partnerPubkey);
+    void this.dmsApi?.markAsRead(partnerPubkey);
 
     // Navigate to conversation view
     this.router.navigate(`/messages/${partnerPubkey}`);
@@ -688,7 +688,7 @@ export class MessagesView extends View {
       if (menuItem) {
         const action = menuItem.dataset.action;
         if (action) {
-          this.handleMenuAction(action);
+          void this.handleMenuAction(action);
           this.closeMenu();
         }
       }

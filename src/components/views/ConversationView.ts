@@ -93,7 +93,7 @@ export class ConversationView extends View {
     this.outsideClickHandler = () => this.closeMenu();
 
     this.render();
-    this.loadConversation();
+    void this.loadConversation();
 
     // Listen for new messages in this conversation
     this.subscriptionId = this.eventBus.on(
@@ -143,7 +143,7 @@ export class ConversationView extends View {
     // by the periodic background sync.
     this.fetchCompleteSubId = this.eventBus.on('dm:fetch-complete', () => {
       if (this.messages.length === 0) {
-        this.loadConversation();
+        void this.loadConversation();
       }
     });
 
@@ -319,7 +319,7 @@ export class ConversationView extends View {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         if (textarea.value.trim()) {
-          this.sendMessage();
+          void this.sendMessage();
         }
       }
     });
@@ -327,7 +327,7 @@ export class ConversationView extends View {
     // Send button click
     sendBtn?.addEventListener('click', () => {
       if (!this.isSending && textarea.value.trim()) {
-        this.sendMessage();
+        void this.sendMessage();
       }
     });
   }
@@ -461,14 +461,14 @@ export class ConversationView extends View {
       this.closeMenu();
       const action = item.dataset.action;
       if (action === 'delete-conversation') {
-        this.confirmDelete();
+        void this.confirmDelete();
       } else if (action === 'disappear') {
         const seconds = Number(item.dataset.seconds);
         void this.applyDisappearingChoice(seconds);
       } else if (action === 'disappear-custom') {
         void this.openCustomDisappearingModal();
       } else if (action === 'mute-privately' || action === 'mute-publicly') {
-        this.muteUser(action === 'mute-privately');
+        void this.muteUser(action === 'mute-privately');
       }
     });
 

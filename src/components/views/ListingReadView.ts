@@ -152,7 +152,7 @@ export class ListingReadView extends View {
       </article>
     `;
 
-    this.loadSellerProfile(event.pubkey);
+    void this.loadSellerProfile(event.pubkey);
     this.mountIsl(event);
     this.mountReplies(event);
   }

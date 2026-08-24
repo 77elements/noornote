@@ -145,7 +145,7 @@ export class UnlockNoorSignerModal {
 
     input.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
-        handleSubmit();
+        void handleSubmit();
       } else if (e.key === 'Escape') {
         handleCancel();
       }

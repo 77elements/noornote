@@ -85,7 +85,7 @@ export class ZapstoreAppView extends View {
     this.container.className = 'view-content view-content--zapstore-app';
     this.systemLogger = SystemLogger.getInstance();
 
-    this.render();
+    void this.render();
   }
 
   private async render(): Promise<void> {
@@ -107,7 +107,7 @@ export class ZapstoreAppView extends View {
       const app = parseZapstoreApp(event);
       const release = await this.fetchRelease(event);
 
-      this.renderApp(event, app, release);
+      void this.renderApp(event, app, release);
     } catch (error) {
       this.systemLogger.error('ZapstoreAppView', `Failed to load: ${error}`);
       this.container.innerHTML =
@@ -428,7 +428,7 @@ export class ZapstoreAppView extends View {
         noteId,
         noteAuthor: event.pubkey,
       });
-      repliesRenderer.loadAndRender();
+      void repliesRenderer.loadAndRender();
     }
 
     // Copy buttons for hash values

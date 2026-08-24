@@ -44,7 +44,7 @@ export class AuthComponent {
     this.setupEventListeners();
 
     // Async session restore after UI is ready
-    this.checkExistingSession();
+    void this.checkExistingSession();
   }
 
   /**
@@ -212,7 +212,7 @@ export class AuthComponent {
     // uses the QR, mobile-web uses the deep-link button. Capacitor APK
     // skips this since the Amber plugin path is synchronous.
     if (!isCapacitor) {
-      this.initNostrConnect();
+      void this.initNostrConnect();
     }
   }
 
@@ -325,7 +325,7 @@ export class AuthComponent {
     browserExtTriggers.forEach(el => {
       el.addEventListener('click', e => {
         if ((e.target as HTMLElement).tagName === 'A') e.preventDefault();
-        this.handleBrowserExtLogin();
+        void this.handleBrowserExtLogin();
       });
     });
 
@@ -342,7 +342,7 @@ export class AuthComponent {
     if (bunkerInput) {
       bunkerInput.addEventListener('keypress', e => {
         if ((e as KeyboardEvent).key === 'Enter') {
-          this.handleBunkerLogin();
+          void this.handleBunkerLogin();
         }
       });
     }
@@ -406,7 +406,7 @@ export class AuthComponent {
    * Show unlock modal when trust session expired (silent mode)
    */
   private showUnlockModal(): void {
-    import('../modals/UnlockNoorSignerModal').then(
+    void import('../modals/UnlockNoorSignerModal').then(
       ({ UnlockNoorSignerModal }) => {
         const modal = new UnlockNoorSignerModal({
           onSuccess: async () => {
@@ -434,7 +434,7 @@ export class AuthComponent {
    * Show import modal when no NoorSigner accounts exist (silent mode)
    */
   private showImportModal(): void {
-    import('../modals/ImportToNoorSignerModal').then(
+    void import('../modals/ImportToNoorSignerModal').then(
       ({ ImportToNoorSignerModal }) => {
         const modal = new ImportToNoorSignerModal({
           nsec: '',

@@ -206,7 +206,7 @@ export class ProfileView extends View {
 
     // No more async recognition-load dance — the addon runtime is owned by
     // AddonLoader and looked up fresh via getRecognitionRuntime() at use time.
-    this.render();
+    void this.render();
   }
 
   /** Fetch the current profile-recognition runtime, or null if addon is OFF. */
@@ -228,7 +228,7 @@ export class ProfileView extends View {
           this.authService.isCurrentUser(this.pubkey)
         ) {
           // Reload own profile after edit
-          this.refreshProfile();
+          void this.refreshProfile();
         }
       }
     );
@@ -242,7 +242,7 @@ export class ProfileView extends View {
     const id = this.eventBus.on('user:login', () => {
       // Reset initial render flag and re-render to update Edit Profile button visibility
       this.isInitialRender = true;
-      this.render();
+      void this.render();
     });
     this.eventBusSubscriptions.push(id);
   }
@@ -254,7 +254,7 @@ export class ProfileView extends View {
     const id = this.eventBus.on('settings:calendar-system-changed', () => {
       // Reload joined date with new calendar format
       if (this.joinedDate) {
-        this.loadJoinedDate();
+        void this.loadJoinedDate();
       }
     });
     this.eventBusSubscriptions.push(id);
@@ -273,7 +273,7 @@ export class ProfileView extends View {
       if (wasMuted !== isMuted) {
         this.lastKnownMuteStatus = isMuted;
         this.isInitialRender = true;
-        this.render();
+        void this.render();
       }
     });
     this.eventBusSubscriptions.push(id);
@@ -309,7 +309,7 @@ export class ProfileView extends View {
     const id = this.eventBus.on('profileMounts:changed', () => {
       const currentUser = this.authService.getCurrentUser();
       if (!currentUser || currentUser.pubkey !== this.pubkey) return;
-      this.loadProfileLists();
+      void this.loadProfileLists();
     });
     this.eventBusSubscriptions.push(id);
   }
@@ -378,10 +378,10 @@ export class ProfileView extends View {
       this.renderProfileHeader(profile);
 
       // Load follower count (async, non-blocking)
-      this.loadFollowerCount();
+      void this.loadFollowerCount();
 
       // Load joined date (async, non-blocking)
-      this.loadJoinedDate();
+      void this.loadJoinedDate();
 
       // Subscribe to profile updates for live avatar/name updates.
       // Guard against stacking subscriptions if render() runs more than once.
@@ -728,7 +728,7 @@ export class ProfileView extends View {
       this.setupCopyButtons();
 
       // Load profile lists (mounted bookmark folders)
-      this.loadProfileLists();
+      void this.loadProfileLists();
 
       // Below-the-fold carousels: lazy-load each when its mount scrolls near
       // the viewport, so opening a profile doesn't fire every carousel's relay
@@ -894,7 +894,7 @@ export class ProfileView extends View {
 
       // Open profile edit modal
       const profileEditModal = ProfileEditModal.getInstance();
-      profileEditModal.show();
+      void profileEditModal.show();
     });
   }
 
@@ -1018,7 +1018,7 @@ export class ProfileView extends View {
     this.muteManager.setupMuteButton(this.container, () => {
       // Force full re-render (mute state changes HTML structure completely)
       this.isInitialRender = true;
-      this.render();
+      void this.render();
     });
 
     // Setup soft-mute button handler
@@ -1164,7 +1164,7 @@ export class ProfileView extends View {
       qrButton.addEventListener('click', e => {
         e.preventDefault();
         const qrModal = QRCodeModal.getInstance();
-        qrModal.show(this.npub);
+        void qrModal.show(this.npub);
       });
     }
   }
@@ -1179,7 +1179,7 @@ export class ProfileView extends View {
         e.preventDefault();
         if (this.lud16) {
           const qrModal = QRCodeModal.getInstance();
-          qrModal.showLightning(this.lud16);
+          void qrModal.showLightning(this.lud16);
         }
       });
     }
@@ -1193,7 +1193,7 @@ export class ProfileView extends View {
         const zapModal = new ZapModal({
           authorPubkey: this.pubkey,
         });
-        zapModal.show();
+        void zapModal.show();
       });
     }
   }
@@ -1224,7 +1224,7 @@ export class ProfileView extends View {
       this.authService.getCurrentUser()?.pubkey === this.pubkey;
     if (isOwnProfile) return;
 
-    import('../../addons/badges/index').then(({ isBadgesEnabled }) => {
+    void import('../../addons/badges/index').then(({ isBadgesEnabled }) => {
       if (!isBadgesEnabled()) return;
       badgeBtn.style.display = '';
 
@@ -1308,7 +1308,7 @@ export class ProfileView extends View {
     ) as HTMLElement | null;
     if (!petnameEl) return;
 
-    import('../../lists/follows').then(
+    void import('../../lists/follows').then(
       ({ isFollowing, getFollowPetname, setFollowPetname }) => {
         const render = (): void => {
           if (!isFollowing(this.pubkey).public) {
@@ -1353,7 +1353,7 @@ export class ProfileView extends View {
     ) as HTMLElement | null;
     if (!noteEl) return;
 
-    import('../../services/PetnameService').then(({ PetnameService }) => {
+    void import('../../services/PetnameService').then(({ PetnameService }) => {
       const service = PetnameService.getInstance();
       if (!service.isPrivateNotesEnabled()) {
         noteEl.style.display = 'none';
@@ -1404,86 +1404,90 @@ export class ProfileView extends View {
     ) as HTMLElement | null;
     if (!statusEl) return;
 
-    import('../../services/UserStatusService').then(({ UserStatusService }) => {
-      const service = UserStatusService.getInstance();
-      const editable = statusEl.classList.contains('profile-status--editable');
-      let current = '';
-      // Set once the initial relay fetch resolves. A late fetch must not
-      // overwrite an optimistic edit made before it arrived.
-      let fetched = false;
+    void import('../../services/UserStatusService').then(
+      ({ UserStatusService }) => {
+        const service = UserStatusService.getInstance();
+        const editable = statusEl.classList.contains(
+          'profile-status--editable'
+        );
+        let current = '';
+        // Set once the initial relay fetch resolves. A late fetch must not
+        // overwrite an optimistic edit made before it arrived.
+        let fetched = false;
 
-      const render = (): void => {
-        const hasText = !!current;
-        statusEl.classList.toggle('profile-status--empty', !hasText);
-        statusEl.textContent = hasText ? current : '';
-        if (!editable) statusEl.hidden = !hasText;
-      };
-
-      service.getStatus(this.pubkey).then(text => {
-        if (fetched) return; // optimistic edit already won
-        current = text ?? '';
-        render();
-        fetched = true;
-      });
-
-      if (!editable) return;
-
-      statusEl.addEventListener('click', () => {
-        if (statusEl.querySelector('input')) return; // already editing
-
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'input profile-status__input';
-        input.placeholder = 'Set status…';
-        input.maxLength = 140;
-
-        let done = false;
-        const finish = (save: boolean): void => {
-          if (done) return;
-          done = true;
-          const value = input.value.trim();
-          input.remove();
-          if (!save || value === current) {
-            render();
-            return;
-          }
-
-          // Optimistic: show the new status immediately, publish in the
-          // background. Revert if the publish fails (Toast/diagLog come from
-          // the service). Concurrent edits are safe: kind 30315 is
-          // replaceable, the relay keeps the latest created_at.
-          const previous = current;
-          current = value;
-          fetched = true;
-          render();
-          void service.setStatus(value).then(ok => {
-            if (!ok) {
-              current = previous;
-              render();
-            }
-          });
+        const render = (): void => {
+          const hasText = !!current;
+          statusEl.classList.toggle('profile-status--empty', !hasText);
+          statusEl.textContent = hasText ? current : '';
+          if (!editable) statusEl.hidden = !hasText;
         };
 
-        input.addEventListener('keydown', e => {
-          e.stopPropagation();
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            finish(true);
-          } else if (e.key === 'Escape') {
-            e.preventDefault();
-            finish(false);
-          }
+        void service.getStatus(this.pubkey).then(text => {
+          if (fetched) return; // optimistic edit already won
+          current = text ?? '';
+          render();
+          fetched = true;
         });
-        input.addEventListener('blur', () => finish(true));
 
-        statusEl.classList.remove('profile-status--empty');
-        statusEl.textContent = '';
-        statusEl.appendChild(input);
-        input.value = current;
-        input.focus();
-        input.select();
-      });
-    });
+        if (!editable) return;
+
+        statusEl.addEventListener('click', () => {
+          if (statusEl.querySelector('input')) return; // already editing
+
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.className = 'input profile-status__input';
+          input.placeholder = 'Set status…';
+          input.maxLength = 140;
+
+          let done = false;
+          const finish = (save: boolean): void => {
+            if (done) return;
+            done = true;
+            const value = input.value.trim();
+            input.remove();
+            if (!save || value === current) {
+              render();
+              return;
+            }
+
+            // Optimistic: show the new status immediately, publish in the
+            // background. Revert if the publish fails (Toast/diagLog come from
+            // the service). Concurrent edits are safe: kind 30315 is
+            // replaceable, the relay keeps the latest created_at.
+            const previous = current;
+            current = value;
+            fetched = true;
+            render();
+            void service.setStatus(value).then(ok => {
+              if (!ok) {
+                current = previous;
+                render();
+              }
+            });
+          };
+
+          input.addEventListener('keydown', e => {
+            e.stopPropagation();
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              finish(true);
+            } else if (e.key === 'Escape') {
+              e.preventDefault();
+              finish(false);
+            }
+          });
+          input.addEventListener('blur', () => finish(true));
+
+          statusEl.classList.remove('profile-status--empty');
+          statusEl.textContent = '';
+          statusEl.appendChild(input);
+          input.value = current;
+          input.focus();
+          input.select();
+        });
+      }
+    );
   }
 
   /**
@@ -1552,7 +1556,7 @@ export class ProfileView extends View {
           this.cleanupTribeDropdown();
           return;
         }
-        this.handleTribeSelection(folderId);
+        void this.handleTribeSelection(folderId);
       },
       className: 'tribe-dropdown',
       width: '200px',
@@ -1737,7 +1741,7 @@ export class ProfileView extends View {
       await this.muteManager.renderMutedProfile(escapeHtml);
     this.muteManager.setupUnmuteButton(this.container, () => {
       // Reload profile after unmute
-      this.render();
+      void this.render();
     });
   }
 

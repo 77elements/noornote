@@ -230,7 +230,7 @@ export class NotificationsOrchestrator extends Orchestrator {
         title: string;
         createdAt: number;
       }) => {
-        this.handleNewArticleNotification(data);
+        void this.handleNewArticleNotification(data);
       }
     );
 
@@ -302,17 +302,17 @@ export class NotificationsOrchestrator extends Orchestrator {
 
     // Listen for user mute changes (refresh filter when user is muted/unmuted)
     this.eventBus.on('mute:updated', () => {
-      this.refreshMutedUsers();
+      void this.refreshMutedUsers();
     });
 
     // Listen for thread mute changes (Hell Thread protection)
     this.eventBus.on('mute:thread:updated', () => {
-      this.refreshMutedUsers();
+      void this.refreshMutedUsers();
     });
 
     // Listen for soft-mute changes (notification-only suppression)
     this.eventBus.on('soft-mute:updated', () => {
-      this.refreshMutedUsers();
+      void this.refreshMutedUsers();
     });
   }
 
@@ -334,7 +334,7 @@ export class NotificationsOrchestrator extends Orchestrator {
     };
 
     this.ptagSubId = 'notifications-ptag';
-    this.transport.subscribeLive(
+    void this.transport.subscribeLive(
       relays,
       [ptagFilter],
       this.ptagSubId,
@@ -358,7 +358,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       };
 
       this.etagSubId = 'notifications-etag';
-      this.transport.subscribeLive(
+      void this.transport.subscribeLive(
         relays,
         [etagFilter],
         this.etagSubId,
@@ -429,7 +429,7 @@ export class NotificationsOrchestrator extends Orchestrator {
   private startRefreshTimer(): void {
     this.clearRefreshTimer();
     this.refreshTimer = window.setInterval(() => {
-      this.refreshSubscriptions();
+      void this.refreshSubscriptions();
     }, NotificationsOrchestrator.REFRESH_INTERVAL);
   }
 
@@ -1390,11 +1390,11 @@ export class NotificationsOrchestrator extends Orchestrator {
     try {
       // Load muted users
       const mutedPubkeys =
-        await this.muteOrchestrator.getAllMutedUsers(userPubkey);
+        this.muteOrchestrator.getAllMutedUsers(userPubkey);
       this.mutedPubkeys = new Set(mutedPubkeys);
 
       // Load muted threads (Hell Thread protection)
-      const mutedEventIds = await this.muteOrchestrator.getAllMutedEventIds();
+      const mutedEventIds = this.muteOrchestrator.getAllMutedEventIds();
       this.mutedEventIds = new Set(mutedEventIds);
 
       if (mutedPubkeys.length > 0 || mutedEventIds.length > 0) {

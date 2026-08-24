@@ -44,7 +44,7 @@ export class FollowPackDetailView extends View {
     this.router = Router.getInstance();
     this.systemLogger = SystemLogger.getInstance();
 
-    this.render();
+    void this.render();
   }
 
   private async render(): Promise<void> {
@@ -63,7 +63,7 @@ export class FollowPackDetailView extends View {
         return;
       }
 
-      this.renderPack(event);
+      void this.renderPack(event);
     } catch (error) {
       this.systemLogger.error(
         'FollowPackDetailView',
@@ -217,7 +217,7 @@ export class FollowPackDetailView extends View {
         noteId,
         noteAuthor: event.pubkey,
       });
-      repliesRenderer.loadAndRender();
+      void repliesRenderer.loadAndRender();
     }
 
     // Addon-dependent buttons (See Notes, Edit List) — only if Follow Packs addon is enabled

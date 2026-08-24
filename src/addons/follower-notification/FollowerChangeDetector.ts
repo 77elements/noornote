@@ -350,7 +350,7 @@ export class FollowerChangeDetector {
   private async loadMutedSet(myPubkey: string): Promise<Set<string>> {
     try {
       return new Set(
-        await MuteOrchestrator.getInstance().getAllMutedUsers(myPubkey)
+        MuteOrchestrator.getInstance().getAllMutedUsers(myPubkey)
       );
     } catch (error) {
       this.systemLogger.warn(

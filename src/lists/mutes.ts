@@ -1294,7 +1294,7 @@ export class MuteListView extends View {
     this.authService = AuthService.getInstance();
     this.adapter = new MuteStorageAdapter();
 
-    this.initializeBrowserStorage();
+    void this.initializeBrowserStorage();
   }
 
   private async initializeBrowserStorage(): Promise<void> {
@@ -1335,7 +1335,7 @@ export class MuteListView extends View {
       </div>
     `;
 
-    this.loadMuteList();
+    void this.loadMuteList();
     this.bindButtons();
 
     return this.container;
@@ -1564,7 +1564,7 @@ export class MuteListView extends View {
             await this.loadMuteList();
           },
         });
-        modal.show();
+        void modal.show();
       } else {
         this.adapter.applySyncFromRelays('merge', result.relayItems);
         ToastService.show(
@@ -1661,7 +1661,7 @@ export class MuteListView extends View {
             await this.loadMuteList();
           },
         });
-        modal.show();
+        void modal.show();
       } else if (result.diff.added.length > 0) {
         this.adapter.applySyncFromFile('overwrite', result.fileItems);
         ToastService.show(
@@ -1793,7 +1793,7 @@ export class MuteListManager {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) throw new Error('User not authenticated');
 
-    const allMutedPubkeys = await this.muteOrch.getAllMutedUsers();
+    const allMutedPubkeys = this.muteOrch.getAllMutedUsers();
     const muteStatus = await this.muteOrch.getAllMutedUsersWithStatus();
 
     const mutesWithProfiles: MutedUserWithProfile[] = await Promise.all(
@@ -2060,7 +2060,7 @@ export class MuteListManager {
             await this.renderListTab(container);
           },
         });
-        modal.show();
+        void modal.show();
       } else if (result.diff.added.length > 0) {
         this.adapter.applySyncFromFile('overwrite', result.fileItems);
         ToastService.show(

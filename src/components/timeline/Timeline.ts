@@ -138,11 +138,11 @@ export class Timeline extends View {
         onRenderEvents: () => this.renderer.renderEvents(),
         onAppendEvents: events => {
           this.renderer.appendNewEvents(events);
-          this.islStatsUpdater.fetchAndUpdateStats(events);
+          void this.islStatsUpdater.fetchAndUpdateStats(events);
         },
         onPrependEvents: events => {
           this.renderer.prependNewEvents(events);
-          this.islStatsUpdater.fetchAndUpdateStats(events);
+          void this.islStatsUpdater.fetchAndUpdateStats(events);
         },
         onInitializeTimeline: () => this.initializeTimeline(),
       }
@@ -176,7 +176,7 @@ export class Timeline extends View {
           if (!data.enabled) {
             this.stopMarketplaceInjector();
           } else if (isTimelineListingsEnabled()) {
-            this.startMarketplaceInjector();
+            void this.startMarketplaceInjector();
           }
         }
       );
@@ -186,13 +186,13 @@ export class Timeline extends View {
           if (!data.enabled) {
             this.stopMarketplaceInjector();
           } else if (isMarketplaceEnabled()) {
-            this.startMarketplaceInjector();
+            void this.startMarketplaceInjector();
           }
         }
       );
     }
 
-    this.initializeTimeline();
+    void this.initializeTimeline();
   }
 
   /**
@@ -290,7 +290,7 @@ export class Timeline extends View {
 
           // Update pubkey and reinitialize
           this.userPubkey = data.pubkey;
-          this.reinitialize();
+          void this.reinitialize();
         }
       }
     );
@@ -493,7 +493,7 @@ export class Timeline extends View {
       const unique = this.stateManager.prependEvents(newEvents);
       if (unique.length > 0) {
         this.renderer.prependNewEvents(unique);
-        this.islStatsUpdater.fetchAndUpdateStats(unique);
+        void this.islStatsUpdater.fetchAndUpdateStats(unique);
         this.feedOrchestrator.resetPollingTimestamp(newEvents[0]!.created_at);
       }
     }
@@ -646,7 +646,7 @@ export class Timeline extends View {
       this.renderer.renderEvents();
 
       // Batch-fetch ISL stats for rendered notes (non-blocking)
-      this.islStatsUpdater.fetchAndUpdateStats(result.events);
+      void this.islStatsUpdater.fetchAndUpdateStats(result.events);
 
       this.stateManager.setHasMore(result.hasMore);
 
@@ -657,7 +657,7 @@ export class Timeline extends View {
 
       // Marketplace timeline injection (main timeline only)
       if (this.config.marketplaceInjection) {
-        this.startMarketplaceInjector();
+        void this.startMarketplaceInjector();
       }
     } catch (error) {
       console.error('Failed to initialize timeline:', error);
@@ -711,7 +711,7 @@ export class Timeline extends View {
    */
   private handleNewNotesDetected(info: NewNotesInfo): void {
     if (this.refreshButton) {
-      this.refreshButton.update(info.count, info.authorPubkeys);
+      void this.refreshButton.update(info.count, info.authorPubkeys);
     }
   }
 

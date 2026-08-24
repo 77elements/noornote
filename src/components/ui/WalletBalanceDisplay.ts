@@ -33,7 +33,7 @@ export class WalletBalanceDisplay {
   private onNwcRestored: () => void = () => this.loadBalance();
   private onZapSent: () => void = () => {
     window.setTimeout(() => {
-      if (!this.destroyed) this.loadBalance();
+      if (!this.destroyed) void this.loadBalance();
     }, 2000);
   };
   private onFiatCurrencyChanged: (e: Event) => void = (event: Event) => {
@@ -67,7 +67,7 @@ export class WalletBalanceDisplay {
     }
 
     // Load currency preference
-    this.loadCurrencyPreference();
+    void this.loadCurrencyPreference();
 
     this.element = this.createElement();
     this.setupEventListeners();
@@ -75,7 +75,7 @@ export class WalletBalanceDisplay {
     if (this.hasBalance) {
       void this.updateDisplay(this.balanceInMsats);
     }
-    this.loadBalance();
+    void this.loadBalance();
     this.startAutoUpdate();
   }
 
@@ -135,7 +135,7 @@ export class WalletBalanceDisplay {
   private async loadBalance(): Promise<void> {
     if (!this.nwcService.isConnected()) {
       // NWC not connected: only show placeholder if we have no cached value to fall back on
-      if (!this.hasBalance) this.updateDisplay(null);
+      if (!this.hasBalance) void this.updateDisplay(null);
       return;
     }
 
@@ -148,10 +148,10 @@ export class WalletBalanceDisplay {
           StorageKeys.WALLET_BALANCE_LAST_MSATS,
           balanceMsats
         );
-        this.updateDisplay(balanceMsats);
+        void this.updateDisplay(balanceMsats);
       } else if (!this.hasBalance) {
         // No cached value yet — show placeholder
-        this.updateDisplay(null);
+        void this.updateDisplay(null);
       }
       // On null with cached value: keep showing last known balance (don't reset)
     } catch (error) {
@@ -160,7 +160,7 @@ export class WalletBalanceDisplay {
         'Failed to load balance:',
         error
       );
-      if (!this.hasBalance) this.updateDisplay(null);
+      if (!this.hasBalance) void this.updateDisplay(null);
       // Keep showing last known balance on errors (rate limiting, network, etc.)
     }
   }
@@ -252,7 +252,7 @@ export class WalletBalanceDisplay {
     );
 
     this.updateEyeIcon();
-    this.updateDisplay(this.balanceInMsats);
+    void this.updateDisplay(this.balanceInMsats);
   }
 
   private updateEyeIcon(): void {
@@ -272,7 +272,7 @@ export class WalletBalanceDisplay {
     // Update balance every 60 seconds
     this.updateInterval = window.setInterval(() => {
       if (this.nwcService.isConnected()) {
-        this.loadBalance();
+        void this.loadBalance();
       }
     }, 60000);
   }

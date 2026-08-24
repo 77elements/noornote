@@ -171,7 +171,7 @@ export class ZapManager {
     if (this.config.onCustomZap) {
       this.config.onCustomZap();
     } else {
-      this.openCustomZapModal();
+      void this.openCustomZapModal();
     }
   }
 
@@ -262,7 +262,7 @@ export class ZapManager {
     }
 
     const zapModal = new ZapModal(options);
-    zapModal.show();
+    void zapModal.show();
   }
 
   /**
@@ -350,7 +350,7 @@ export class ZapManager {
       if (isLongPress) return;
 
       if (this.isQuickZapEnabled()) {
-        this.handleQuickZap();
+        void this.handleQuickZap();
       } else {
         this.handleCustomZap();
       }

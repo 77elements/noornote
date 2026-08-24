@@ -74,7 +74,7 @@ export class PublicTimelineComponent {
     });
 
     this.infiniteScroll.observe(this.noteContainer);
-    this.loadInitial();
+    void this.loadInitial();
   }
 
   /**
@@ -327,7 +327,7 @@ export class PublicTimelineComponent {
           this.noteContainer.prepend(this.refreshButton.getElement());
         }
       } else {
-        this.refreshButton.update(this.polledEvents.length, authorPubkeys);
+        void this.refreshButton.update(this.polledEvents.length, authorPubkeys);
       }
     } catch (error) {
       console.error('[PublicTimeline] Poll failed:', error);

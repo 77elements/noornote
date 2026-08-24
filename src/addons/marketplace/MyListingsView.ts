@@ -36,7 +36,7 @@ export class MyListingsView extends View {
     if (!AuthGuard.requireAuth('view your listings')) return;
 
     this.render();
-    this.loadListings();
+    void this.loadListings();
   }
 
   private render(): void {
@@ -218,7 +218,7 @@ export class MyListingsView extends View {
       .querySelector('[data-action="delete"]')
       ?.addEventListener('click', e => {
         e.stopPropagation();
-        this.confirmDelete(event, meta.identifier, row);
+        void this.confirmDelete(event, meta.identifier, row);
       });
 
     return row;

@@ -91,7 +91,7 @@ export class KeySignerConnectionManager {
       if (pubkey) {
         this.logger.success('KeySigner', 'Auto-login successful');
         const { hexToNpub } = await import('../../helpers/nip19');
-        const npub = await hexToNpub(pubkey);
+        const npub = hexToNpub(pubkey);
 
         if (!npub) {
           this.keySigner = null;
@@ -270,7 +270,7 @@ export class KeySignerConnectionManager {
     this.logger.success('KeySigner', `Got pubkey: ${pubkey.slice(0, 8)}...`);
 
     const { hexToNpub } = await import('../../helpers/nip19');
-    const npub = await hexToNpub(pubkey);
+    const npub = hexToNpub(pubkey);
 
     if (!npub) {
       this.keySigner = null;

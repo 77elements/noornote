@@ -2616,7 +2616,7 @@ IMPORTANT:
     if (!this.followPacksLoaded) {
       grid.innerHTML = '<p class="wizard-intro">Loading follow packs...</p>';
       el.appendChild(grid);
-      this.fetchFollowPacks().then(() => {
+      void this.fetchFollowPacks().then(() => {
         this.renderPackCards(grid);
       });
     } else {
@@ -2648,7 +2648,7 @@ IMPORTANT:
         this.selectedPackIndex = index;
         this.renderCurrentStep();
         // Load profiles for this pack
-        this.loadPackProfiles(index);
+        void this.loadPackProfiles(index);
       });
 
       const coverWrap = document.createElement('div');
@@ -2723,7 +2723,7 @@ IMPORTANT:
       followAllBtn.addEventListener('click', () => {
         pack.userPubkeys.forEach(pk => this.followedPubkeys.add(pk));
         this.renderCurrentStep();
-        this.loadPackProfiles(this.selectedPackIndex);
+        void this.loadPackProfiles(this.selectedPackIndex);
       });
     }
     el.appendChild(followAllBtn);
@@ -2760,7 +2760,7 @@ IMPORTANT:
           this.followedPubkeys.add(pubkey);
         }
         this.renderCurrentStep();
-        this.loadPackProfiles(this.selectedPackIndex);
+        void this.loadPackProfiles(this.selectedPackIndex);
       });
       row.appendChild(followBtn);
 

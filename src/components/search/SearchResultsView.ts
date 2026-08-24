@@ -106,7 +106,7 @@ export class SearchResultsView {
     // Add subscribe button if hashtag is provided AND addon is enabled
     // Loaded async to avoid blocking render — button appears after import resolves
     if (this.config.hashtag && isHashtagSubscriptionsEnabled()) {
-      this.loadSubscribeButton(headerRow);
+      void this.loadSubscribeButton(headerRow);
     }
 
     header.appendChild(headerRow);

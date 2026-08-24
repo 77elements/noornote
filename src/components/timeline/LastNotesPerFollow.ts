@@ -205,7 +205,7 @@ export class LastNotesPerFollow extends View {
       this.shownCount = firstPage.length;
       this.stateManager.setEvents(firstPage);
       this.renderer.renderEvents();
-      this.islStatsUpdater.fetchAndUpdateStats(firstPage);
+      void this.islStatsUpdater.fetchAndUpdateStats(firstPage);
 
       this.setupInfiniteScroll();
     } catch (error) {
@@ -251,7 +251,7 @@ export class LastNotesPerFollow extends View {
     }
     this.stateManager.addEvents(next);
     this.renderer.appendNewEvents(next);
-    this.islStatsUpdater.fetchAndUpdateStats(next);
+    void this.islStatsUpdater.fetchAndUpdateStats(next);
     this.shownCount += next.length;
     this.infiniteScroll.refresh();
     if (this.shownCount >= this.allEvents.length) this.infiniteScroll.pause();

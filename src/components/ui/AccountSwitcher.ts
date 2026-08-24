@@ -48,7 +48,7 @@ export class AccountSwitcher {
     this.keySignerClient = KeySignerClient.getInstance();
     this.options = options;
     this.element = this.createElement();
-    this.loadProfile();
+    void this.loadProfile();
 
     // Click outside handler
     this.clickOutsideHandler = (e: MouseEvent) => {
@@ -78,7 +78,7 @@ export class AccountSwitcher {
     if (trigger) {
       trigger.addEventListener('click', e => {
         e.stopPropagation();
-        this.isOpen ? this.close() : this.open();
+        void (this.isOpen ? this.close() : this.open());
       });
     }
 
@@ -228,7 +228,7 @@ export class AccountSwitcher {
             if (account.authMethod === 'key-signer') {
               this.handleKeySignerSwitch(account);
             } else {
-              this.handleBunkerSwitch(account);
+              void this.handleBunkerSwitch(account);
             }
           });
         }
@@ -345,7 +345,7 @@ export class AccountSwitcher {
     }
     this.options = options;
     this.profile = null;
-    this.loadProfile();
+    void this.loadProfile();
     this.close();
   }
 

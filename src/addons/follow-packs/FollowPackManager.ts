@@ -143,16 +143,17 @@ export class FollowPackManager {
         this.renderGrid();
         break;
       case 'detail':
-        if (this.selectedPack) this.renderDetail(this.selectedPack);
+        if (this.selectedPack) void this.renderDetail(this.selectedPack);
         break;
       case 'timeline':
-        if (this.selectedPack) this.renderTimeline(this.selectedPack);
+        if (this.selectedPack) void this.renderTimeline(this.selectedPack);
         break;
       case 'edit':
-        if (this.selectedPack) this.renderPackForm('edit', this.selectedPack);
+        if (this.selectedPack)
+          void this.renderPackForm('edit', this.selectedPack);
         break;
       case 'create':
-        this.renderPackForm('create', null);
+        void this.renderPackForm('create', null);
         break;
     }
   }
@@ -204,7 +205,7 @@ export class FollowPackManager {
     container.appendChild(wrapper);
 
     // Load author profiles in background
-    this.loadAuthorProfiles();
+    void this.loadAuthorProfiles();
   }
 
   private createPackCard(pack: FollowPack, _index: number): HTMLElement {
@@ -322,7 +323,7 @@ export class FollowPackManager {
     header
       .querySelector('.follow-packs__btn-follow-all')
       ?.addEventListener('click', () => {
-        this.followAll(pack);
+        void this.followAll(pack);
       });
 
     // See Notes
@@ -613,7 +614,7 @@ export class FollowPackManager {
       this.editMembers.push(pubkey);
       userSearch.clearSelection();
       addBtn.disabled = true;
-      this.renderEditMembers(memberList, membersLabel);
+      void this.renderEditMembers(memberList, membersLabel);
     });
 
     // Publish button handler

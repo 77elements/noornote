@@ -40,7 +40,7 @@ export class WalletBalanceAddonView extends View {
           checked ? 'Wallet Balance enabled' : 'Wallet Balance disabled',
           'success'
         );
-        if (checked) this.mountTxList();
+        if (checked) void this.mountTxList();
         else this.unmountTxList();
       },
     });
@@ -66,13 +66,13 @@ export class WalletBalanceAddonView extends View {
     );
 
     if (enabled) {
-      this.mountTxList();
+      void this.mountTxList();
     }
 
     this.toggleSubId = TypedEventBus.getInstance().on(
       'wallet-balance:addon-toggle',
       (payload: { enabled: boolean }) => {
-        if (payload.enabled) this.mountTxList();
+        if (payload.enabled) void this.mountTxList();
         else this.unmountTxList();
       }
     );

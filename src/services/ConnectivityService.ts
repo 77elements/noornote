@@ -164,7 +164,7 @@ export class ConnectivityService {
   private setupBrowserListeners(): void {
     window.addEventListener('online', () => {
       // Browser reports online - verify with actual check
-      this.checkConnectivity();
+      void this.checkConnectivity();
     });
 
     window.addEventListener('offline', () => {
@@ -181,7 +181,7 @@ export class ConnectivityService {
     // Relay connected - if we were offline, verify connectivity
     this.eventBus.on('relay:connected', () => {
       if (!this._isOnline) {
-        this.checkConnectivity();
+        void this.checkConnectivity();
       }
       // Reset error count on successful connection
       this.resetRelayErrorCount();
@@ -203,7 +203,7 @@ export class ConnectivityService {
 
       // If we hit threshold, check connectivity
       if (this.relayErrorCount >= this.RELAY_ERROR_THRESHOLD) {
-        this.checkConnectivity();
+        void this.checkConnectivity();
         this.relayErrorCount = 0; // Reset after check
       }
     });

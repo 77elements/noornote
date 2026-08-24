@@ -50,7 +50,7 @@ export class TimelineView extends View {
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--timeline';
     this.setupUserLoginListener();
-    this.render();
+    void this.render();
   }
 
   /**
@@ -100,7 +100,7 @@ export class TimelineView extends View {
 
     // Clear container and re-render
     this.container.innerHTML = '';
-    this.render();
+    void this.render();
   }
 
   /**

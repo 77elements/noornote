@@ -130,7 +130,7 @@ export class FeedOrchestrator extends Orchestrator {
       'FeedOrchestrator',
       'Feed Orchestrator at your service'
     );
-    this.loadMutedUsers();
+    void this.loadMutedUsers();
   }
 
   public static getInstance(): FeedOrchestrator {
@@ -1276,7 +1276,7 @@ export class FeedOrchestrator extends Orchestrator {
     // Start polling after delay (store timeout ID for cancellation)
     this.pollingTimeoutId = window.setTimeout(() => {
       this.pollingTimeoutId = null; // Clear reference after firing
-      this.poll(); // First poll immediately after delay
+      void this.poll(); // First poll immediately after delay
       this.pollingIntervalId = window.setInterval(
         () => this.poll(),
         this.pollingInterval
@@ -1466,7 +1466,7 @@ export class FeedOrchestrator extends Orchestrator {
       const currentUser = AuthService.getInstance().getCurrentUser();
       if (!currentUser) return;
 
-      const mutedPubkeys = await this.muteOrchestrator.getAllMutedUsers(
+      const mutedPubkeys = this.muteOrchestrator.getAllMutedUsers(
         currentUser.pubkey
       );
       this.mutedPubkeys = new Set(mutedPubkeys);

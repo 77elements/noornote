@@ -84,11 +84,11 @@ export class NWCService {
 
     // Listen for user login to restore NWC connection
     TypedEventBus.getInstance().on('user:login', () => {
-      this.restoreConnectionForCurrentUser();
+      void this.restoreConnectionForCurrentUser();
     });
 
     // Try to restore connection for current user (if already logged in)
-    this.restoreConnectionForCurrentUser();
+    void this.restoreConnectionForCurrentUser();
   }
 
   public static getInstance(): NWCService {
@@ -378,7 +378,7 @@ export class NWCService {
       const content = JSON.stringify({ method, params });
       const appSecretKey = hexToBytes(connection.secret);
       const appPubkey = getPublicKeyFromPrivate(connection.secret);
-      const encryptedContent = await nip04.encrypt(
+      const encryptedContent = nip04.encrypt(
         connection.secret,
         connection.walletPubkey,
         content
@@ -401,7 +401,7 @@ export class NWCService {
         appPubkey,
         timeoutMs
       );
-      const decrypted = await nip04.decrypt(
+      const decrypted = nip04.decrypt(
         connection.secret,
         connection.walletPubkey,
         response.content

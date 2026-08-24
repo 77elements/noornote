@@ -97,44 +97,54 @@ export class App {
     ThemeService.getInstance();
 
     // Inline BOLT11 invoice pay handler (event delegation)
-    import('./services/Bolt11PayHandler').then(m => m.initBolt11PayHandler());
+    import('./services/Bolt11PayHandler')
+      .then(m => m.initBolt11PayHandler())
+      .catch(err => console.warn('[App] Bolt11PayHandler failed:', err));
 
     // Auto-seek video thumbnails + tap-to-load handler for Data Saver placeholders
-    import('./helpers/renderMediaContent').then(m => {
-      m.startVideoThumbnailObserver();
-      m.initMediaPlaceholderHandler();
-      m.initImageTaglineTooltips();
-    });
+    import('./helpers/renderMediaContent')
+      .then(m => {
+        m.startVideoThumbnailObserver();
+        m.initMediaPlaceholderHandler();
+        m.initImageTaglineTooltips();
+      })
+      .catch(err => console.warn('[App] renderMediaContent init failed:', err));
 
     // Global delegated click for .note-image--clickable (lightbox) +
     // global MutationObserver for video.note-video (download button + auto-pause).
     // Single source of truth — works for ANY render path / nesting depth.
     // See ImageClickHandler.ts / VideoPlayerService.ts headers + /build-validate guard.
-    import('./components/ui/ImageClickHandler').then(m =>
-      m.getImageClickHandler().init()
-    );
-    import('./services/VideoPlayerService').then(m =>
-      m.getVideoPlayerService().init()
-    );
+    import('./components/ui/ImageClickHandler')
+      .then(m => m.getImageClickHandler().init())
+      .catch(err => console.warn('[App] ImageClickHandler init failed:', err));
+    import('./services/VideoPlayerService')
+      .then(m => m.getVideoPlayerService().init())
+      .catch(err => console.warn('[App] VideoPlayerService init failed:', err));
 
     // Global avatar 404 fallback — any <img class="profile-pic"> whose URL fails
     // to load is swapped to its deterministic identicon. Pubkey comes from
     // data-pubkey on the img or its closest ancestor.
-    import('./helpers/avatarFallback').then(m => m.installImgErrorFallback());
+    import('./helpers/avatarFallback')
+      .then(m => m.installImgErrorFallback())
+      .catch(err => console.warn('[App] avatarFallback init failed:', err));
 
     // Global upload progress overlay — singleton, listens for media-upload:status
     // events from MediaUploadService. Renders compression + upload progress for
     // every video/audio upload regardless of which UI surface triggered it.
-    import('./components/ui/UploadProgressOverlay').then(m =>
-      m.UploadProgressOverlay.getInstance().mount()
-    );
+    import('./components/ui/UploadProgressOverlay')
+      .then(m => m.UploadProgressOverlay.getInstance().mount())
+      .catch(err =>
+        console.warn('[App] UploadProgressOverlay init failed:', err)
+      );
 
     // Resume any unfinished NIP-09 deletion broadcasts persisted from a previous
     // session (crash / app-quit / navigation mid-broadcast). Self-wires resume
     // triggers (app resume, visibility, connectivity) and drains in background.
-    import('./services/BroadcastDeleteService').then(m =>
-      m.BroadcastDeleteService.getInstance().resumePending()
-    );
+    import('./services/BroadcastDeleteService')
+      .then(m => m.BroadcastDeleteService.getInstance().resumePending())
+      .catch(err =>
+        console.warn('[App] BroadcastDeleteService resume failed:', err)
+      );
 
     const isOnline =
       await ConnectivityService.getInstance().checkConnectivity();
@@ -146,7 +156,7 @@ export class App {
     // Check for app updates (desktop only, non-blocking)
     const platform = PlatformService.getInstance();
     if (platform.isDesktop) {
-      this.checkForUpdates();
+      void this.checkForUpdates();
     }
 
     // Read ?r= relay browser parameter (captured early in main.ts before HMR can strip query params)
@@ -195,7 +205,7 @@ export class App {
 
     // Initialize DiagnosticLogger early (Android: no npub needed, Desktop: after login)
     if (PlatformService.getInstance().isAndroid) {
-      initDiagnosticLogger();
+      void initDiagnosticLogger();
     }
 
     const isLoggedIn = this.authService.hasValidSession();
@@ -208,8 +218,8 @@ export class App {
     if (isLoggedIn) {
       const currentUser = this.authService.getCurrentUser();
       if (currentUser) {
-        initDiagnosticLogger(currentUser.npub);
-        this.postLoginService.handleLogin({
+        void initDiagnosticLogger(currentUser.npub);
+        void this.postLoginService.handleLogin({
           npub: currentUser.npub,
           pubkey: currentUser.pubkey,
         });
@@ -355,7 +365,7 @@ export class App {
         }
 
         this.appState.setState('view', state);
-        this.viewMountingService.mountView(viewType, param);
+        void this.viewMountingService.mountView(viewType, param);
       },
       shortcut,
       requiresAuth
@@ -733,27 +743,26 @@ export class App {
   }
 
   private setupEventListeners(): void {
-    document.addEventListener(
-      'visibilitychange',
-      this.handleVisibilityChange.bind(this)
-    );
+    document.addEventListener('visibilitychange', () => {
+      void this.handleVisibilityChange();
+    });
     this.setupExternalLinkHandler();
     this.setupHashtagClickHandler();
-    this.setupDeepLinkHandler();
+    void this.setupDeepLinkHandler();
 
     // Mouse-selection driven NIP-84 highlight trigger (desktop only).
     TextSelectionToolbar.getInstance().init();
 
     this.eventBus.on('user:login', (data: { npub: string; pubkey: string }) => {
-      initDiagnosticLogger(data.npub);
-      this.postLoginService.handleLogin(data);
+      void initDiagnosticLogger(data.npub);
+      void this.postLoginService.handleLogin(data);
     });
 
     this.eventBus.on('relays:updated', () => {
       this.viewMountingService.destroyTimelineCache();
       const viewState = this.appState.getState('view');
       if (viewState?.currentView === 'timeline') {
-        this.viewMountingService.mountView('timeline');
+        void this.viewMountingService.mountView('timeline');
       }
     });
 
@@ -768,7 +777,7 @@ export class App {
       this.router.navigate('/login');
     });
 
-    this.setupDesktopCloseHandler();
+    void this.setupDesktopCloseHandler();
   }
 
   // ─── Platform Handlers (thin glue) ───────────────────────────────────
@@ -861,8 +870,8 @@ export class App {
     };
 
     try {
-      window.electronAPI!.onCloseRequested(async () => {
-        await handleCloseRequest(async () => {
+      window.electronAPI!.onCloseRequested(() => {
+        void handleCloseRequest(async () => {
           // Electron: closing proceeds after callback returns
         });
       });
@@ -904,33 +913,37 @@ export class App {
   }
 
   private setupExternalLinkHandler(): void {
-    document.addEventListener('click', async event => {
-      const target = event.target as HTMLElement;
-      const anchor = target.closest('a');
-      if (!anchor) return;
-
-      const href = anchor.getAttribute('href');
-      if (
-        !href ||
-        (!href.startsWith('http://') &&
-          !href.startsWith('https://') &&
-          !href.startsWith('mailto:'))
-      )
-        return;
-
-      event.preventDefault();
-
-      try {
-        const _platform = PlatformService.getInstance();
-        if (_platform.isElectron) {
-          await window.electronAPI!.openExternal(href);
-        } else {
-          window.open(href, '_blank', 'noopener,noreferrer');
-        }
-      } catch {
-        // External link open failed
-      }
+    document.addEventListener('click', event => {
+      void this.handleExternalLinkClick(event);
     });
+  }
+
+  private async handleExternalLinkClick(event: MouseEvent): Promise<void> {
+    const target = event.target as HTMLElement;
+    const anchor = target.closest('a');
+    if (!anchor) return;
+
+    const href = anchor.getAttribute('href');
+    if (
+      !href ||
+      (!href.startsWith('http://') &&
+        !href.startsWith('https://') &&
+        !href.startsWith('mailto:'))
+    )
+      return;
+
+    event.preventDefault();
+
+    try {
+      const _platform = PlatformService.getInstance();
+      if (_platform.isElectron) {
+        await window.electronAPI!.openExternal(href);
+      } else {
+        window.open(href, '_blank', 'noopener,noreferrer');
+      }
+    } catch {
+      // External link open failed
+    }
   }
 
   private setupHashtagClickHandler(): void {

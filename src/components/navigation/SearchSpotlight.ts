@@ -616,7 +616,7 @@ export class SearchSpotlight {
     }
 
     // Otherwise, navigate to input value
-    this.navigateToInputURL();
+    void this.navigateToInputURL();
   }
 
   public destroy(): void {

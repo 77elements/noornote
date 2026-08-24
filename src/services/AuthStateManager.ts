@@ -33,7 +33,7 @@ export class AuthStateManager {
     this.eventBus.on('user:login', (data: { npub: string; pubkey: string }) => {
       this.setAuthState(true);
       // Fetch and cache own profile on login (force refresh from relays)
-      this.refreshOwnProfile(data.pubkey);
+      void this.refreshOwnProfile(data.pubkey);
     });
 
     this.eventBus.on('user:logout', () => {
@@ -44,7 +44,7 @@ export class AuthStateManager {
     if (this.isAuthenticated) {
       const currentUser = this.authService.getCurrentUser();
       if (currentUser) {
-        this.refreshOwnProfile(currentUser.pubkey);
+        void this.refreshOwnProfile(currentUser.pubkey);
       }
     }
   }

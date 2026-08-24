@@ -4039,14 +4039,14 @@ export class BookmarkManager {
   private refreshCurrentView(): void {
     const container = this.getBookmarksTabContainer();
     if (container) {
-      this.renderCurrentView(container);
+      void this.renderCurrentView(container);
     }
   }
 
   private refreshIfActive(): void {
     const listTab = this.getBookmarksTabContainer();
     if (listTab?.classList.contains('tab-content--active')) {
-      this.renderBookmarksTab(listTab);
+      void this.renderBookmarksTab(listTab);
     }
   }
 
@@ -4121,7 +4121,7 @@ export class BookmarkManager {
 
   public handleTabSwitch(tabName: string, content: HTMLElement): void {
     if (tabName === 'bookmarks') {
-      this.renderBookmarksTab(content);
+      void this.renderBookmarksTab(content);
     }
   }
 
@@ -4490,7 +4490,7 @@ export class BookmarkManager {
       ToastService.show(result.error, 'error');
       const container = this.getBookmarksTabContainer();
       if (container) {
-        this.renderCurrentView(container);
+        void this.renderCurrentView(container);
       }
       return;
     }
@@ -4521,9 +4521,9 @@ export class BookmarkManager {
         const isTargetUpNav = dropTarget.dataset.upNav !== undefined;
 
         if (isTargetUpNav && isDraggingBookmark) {
-          this.moveBookmarkToFolder(draggedId, '');
+          void this.moveBookmarkToFolder(draggedId, '');
         } else if (isTargetFolder && isDraggingBookmark && targetId) {
-          this.moveBookmarkToFolder(draggedId, targetId);
+          void this.moveBookmarkToFolder(draggedId, targetId);
         } else if (targetId && targetId !== draggedId) {
           if (this.currentFolderId && isDraggingBookmark) {
             const bookmarksInFolder = this.folderService.getBookmarksInFolder(
@@ -4562,7 +4562,7 @@ export class BookmarkManager {
     this.currentFolderId = folderId;
     const container = this.getBookmarksTabContainer();
     if (container) {
-      this.renderCurrentView(container);
+      void this.renderCurrentView(container);
     }
   }
 
@@ -5093,19 +5093,19 @@ export class BookmarkManager {
               'success'
             );
             await this.loadBookmarks();
-            this.renderCurrentView(container);
+            void this.renderCurrentView(container);
           },
           onRelay: async () => {
             fullOverwriteFromRelays();
             ToastService.show('Synced from relays', 'success');
             await this.loadBookmarks();
-            this.renderCurrentView(container);
+            void this.renderCurrentView(container);
           },
           onLocal: async () => {
             await this.syncToRelays();
             ToastService.show('Local bookmarks pushed to relays', 'success');
             await this.loadBookmarks();
-            this.renderCurrentView(container);
+            void this.renderCurrentView(container);
           },
         });
 
@@ -5114,7 +5114,7 @@ export class BookmarkManager {
         mergeFromRelays();
         ToastService.show('Synced from relays', 'success');
         await this.loadBookmarks();
-        this.renderCurrentView(container);
+        void this.renderCurrentView(container);
       }
     } catch (error) {
       console.error('Failed to sync from relays:', error);
@@ -5243,7 +5243,7 @@ export class BookmarkManager {
               'success'
             );
             await this.loadBookmarks();
-            this.renderCurrentView(container);
+            void this.renderCurrentView(container);
           },
           onRelay: async () => {
             await fullRestoreFromFile();
@@ -5252,16 +5252,16 @@ export class BookmarkManager {
               'success'
             );
             await this.loadBookmarks();
-            this.renderCurrentView(container);
+            void this.renderCurrentView(container);
           },
           onLocal: async () => {
             await this.syncToRelays();
             ToastService.show('Local bookmarks pushed to relays', 'success');
             await this.loadBookmarks();
-            this.renderCurrentView(container);
+            void this.renderCurrentView(container);
           },
         });
-        modal.show();
+        void modal.show();
       } else if (result.diff.added.length > 0) {
         await fullRestoreFromFile();
         ToastService.show(
@@ -5269,7 +5269,7 @@ export class BookmarkManager {
           'success'
         );
         await this.loadBookmarks();
-        this.renderCurrentView(container);
+        void this.renderCurrentView(container);
       } else {
         ToastService.show('File is identical to current list', 'info');
       }

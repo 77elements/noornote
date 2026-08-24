@@ -90,7 +90,7 @@ export class RelaySettingsSection extends SettingsSection {
         if (contentContainer) {
           contentContainer.innerHTML = this.renderContent();
           this.bindListeners(contentContainer as HTMLElement);
-          this.updateHealthSummary();
+          void this.updateHealthSummary();
         }
       })
     );
@@ -113,7 +113,7 @@ export class RelaySettingsSection extends SettingsSection {
       }
     });
 
-    this.updateHealthSummary();
+    void this.updateHealthSummary();
   }
 
   /**
@@ -343,7 +343,7 @@ export class RelaySettingsSection extends SettingsSection {
       '#new-relay-url'
     ) as HTMLInputElement;
     input?.addEventListener('keypress', e => {
-      if (e.key === 'Enter') this.handleAddRelay(contentContainer);
+      if (e.key === 'Enter') void this.handleAddRelay(contentContainer);
     });
 
     // Relay type toggle buttons

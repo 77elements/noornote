@@ -447,7 +447,7 @@ export class NostrTransport {
       // Trigger connection if not already connecting
       if (relay.status === 0) {
         // 0 = DISCONNECTED
-        relay.connect();
+        void relay.connect();
       }
     });
   }

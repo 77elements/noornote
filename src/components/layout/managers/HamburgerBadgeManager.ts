@@ -25,7 +25,7 @@ export class HamburgerBadgeManager {
     this.authService = AuthService.getInstance();
 
     this.setupEventListeners();
-    this.updateDot();
+    void this.updateDot();
   }
 
   private setupEventListeners(): void {

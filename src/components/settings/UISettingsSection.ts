@@ -598,7 +598,7 @@ export class UISettingsSection extends SettingsSection {
       '#client-tag-switch-container'
     );
     if (clientTagContainer) {
-      import('../../helpers/clientTagSetting').then(
+      void import('../../helpers/clientTagSetting').then(
         ({ isClientTagEnabled, setClientTagEnabled }) => {
           this.clientTagSwitch = new Switch({
             label: '',

@@ -52,7 +52,7 @@ export class ParentNoteFetcher {
       this.queue.push({ parentEventId, relayHint, resolve, reject });
 
       if (!this.isProcessing) {
-        this.processQueue();
+        void this.processQueue();
       }
     });
   }

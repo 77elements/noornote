@@ -45,7 +45,7 @@ export class SccMediaFeed {
       rootMargin: '400px',
     });
 
-    this.loadInitial();
+    void this.loadInitial();
   }
 
   private async loadInitial(): Promise<void> {
@@ -207,7 +207,7 @@ export class SccMediaFeed {
       this.router.navigate(`/note/${item.event.id}`);
     });
 
-    this.loadAuthor(tile, item.event.pubkey);
+    void this.loadAuthor(tile, item.event.pubkey);
 
     return tile;
   }

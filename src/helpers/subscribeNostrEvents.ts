@@ -123,7 +123,7 @@ export function subscribeNostrEvents(
   }
 
   // Start subscription (async)
-  transport.subscribe(relays, [filter], callbacks).then(closer => {
+  void transport.subscribe(relays, [filter], callbacks).then(closer => {
     if (isUnsubscribed) {
       // Already unsubscribed before subscription started
       closer.close();

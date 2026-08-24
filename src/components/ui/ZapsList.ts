@@ -130,7 +130,7 @@ export class ZapsList {
   private createElement(): HTMLElement {
     const container = document.createElement('div');
     container.className = 'zaps-list';
-    this.renderAsync(container);
+    void this.renderAsync(container);
     return container;
   }
 

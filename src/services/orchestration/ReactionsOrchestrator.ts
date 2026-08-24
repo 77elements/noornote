@@ -529,7 +529,7 @@ export class ReactionsOrchestrator extends Orchestrator {
 
     return new Promise(resolve => {
       let timeout: ReturnType<typeof setTimeout>;
-      this.transport
+      void this.transport
         .subscribe(relays, filters, {
           onEvent: (event: NostrEvent) => {
             // Only store one reaction per author (latest one)
@@ -611,7 +611,7 @@ export class ReactionsOrchestrator extends Orchestrator {
 
     return new Promise(resolve => {
       let timeout: ReturnType<typeof setTimeout>;
-      this.transport
+      void this.transport
         .subscribe(relays, filters, {
           onEvent: (event: NostrEvent) => {
             if (event.id && !seen.has(event.id)) {
@@ -671,7 +671,7 @@ export class ReactionsOrchestrator extends Orchestrator {
 
     return new Promise(resolve => {
       let timeout: ReturnType<typeof setTimeout>;
-      this.transport
+      void this.transport
         .subscribe(relays, filters, {
           onEvent: (event: NostrEvent) => {
             if (event.kind === 6 || event.kind === 16) {
@@ -728,7 +728,7 @@ export class ReactionsOrchestrator extends Orchestrator {
 
     return new Promise(resolve => {
       let timeout: ReturnType<typeof setTimeout>;
-      this.transport
+      void this.transport
         .subscribe(relays, filters, {
           onEvent: (event: NostrEvent) => {
             if (!event.id || seenReplyIds.has(event.id)) return;
@@ -783,7 +783,7 @@ export class ReactionsOrchestrator extends Orchestrator {
 
     return new Promise(resolve => {
       let timeout: ReturnType<typeof setTimeout>;
-      this.transport
+      void this.transport
         .subscribe(relays, filters, {
           onEvent: (event: NostrEvent) => {
             if (!event.id || seenZapIds.has(event.id)) return;
@@ -871,7 +871,7 @@ export class ReactionsOrchestrator extends Orchestrator {
 
     await new Promise<void>(resolve => {
       const timeout = setTimeout(resolve, 8000);
-      this.transport.subscribe(relays, filters, {
+      void this.transport.subscribe(relays, filters, {
         onEvent: (event: NostrEvent) => {
           const qTag = event.tags.find(
             tag => tag[0] === 'q' && collectors.has(tag[1]!)

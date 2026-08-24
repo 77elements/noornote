@@ -153,7 +153,7 @@ export class ArticleEditorView extends View {
 
     if (editNaddr) {
       this.isEditMode = true;
-      this.loadExistingArticle(editNaddr);
+      void this.loadExistingArticle(editNaddr);
     } else {
       this.render();
     }
@@ -1166,7 +1166,7 @@ export class ArticleEditorView extends View {
       } else {
         const skeleton = quotedNoteRenderer.createQuoteSkeleton();
         marker.replaceWith(skeleton);
-        quotedNoteRenderer.fetchAndRenderQuote(ref, skeleton, true);
+        void quotedNoteRenderer.fetchAndRenderQuote(ref, skeleton, true);
       }
     });
   }
