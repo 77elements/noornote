@@ -18,7 +18,7 @@ interface QueueTask {
   parentEventId: string;
   relayHint: string | null;
   resolve: (info: ParentAuthorInfo | null) => void;
-  reject: (error: any) => void;
+  reject: (error: unknown) => void;
 }
 
 export class ParentNoteFetcher {

@@ -62,10 +62,11 @@ export class PlatformService {
     // Detect runtime environment
     this.isElectron =
       typeof window !== 'undefined' &&
-      (window as any).electronAPI !== undefined;
+      window.electronAPI !== undefined;
 
     this.isCapacitor =
-      typeof window !== 'undefined' && (window as any).Capacitor !== undefined;
+      typeof window !== 'undefined' &&
+      (window as unknown as { Capacitor?: unknown }).Capacitor !== undefined;
 
     this.isBrowser = !this.isElectron && !this.isCapacitor;
 
@@ -115,10 +116,10 @@ export class PlatformService {
   }
 
   private hasNip07Extension(): boolean {
-    return typeof window !== 'undefined' && (window as any).nostr !== undefined;
+    return typeof window !== 'undefined' && window.nostr !== undefined;
   }
 
   public checkNip07Available(): boolean {
-    return typeof window !== 'undefined' && (window as any).nostr !== undefined;
+    return typeof window !== 'undefined' && window.nostr !== undefined;
   }
 }

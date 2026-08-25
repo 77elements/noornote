@@ -181,7 +181,7 @@ export class ProfileCarouselOrchestrator extends Orchestrator {
   }
 
   // Fetch-only orchestrator — no live subscription handlers needed.
-  public onui(_data: any): void {
+  public onui(_data: unknown): void {
     /* unused */
   }
   public onopen(_relay: string): void {

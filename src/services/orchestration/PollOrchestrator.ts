@@ -193,7 +193,7 @@ export class PollOrchestrator extends Orchestrator {
   }
 
   // Orchestrator interface implementations (not used for polls, but required)
-  public onui(_data: any): void {
+  public onui(_data: unknown): void {
     // Polls don't use router subscriptions, we fetch on-demand
   }
 

@@ -214,7 +214,7 @@ export class RelayListOrchestrator extends Orchestrator {
 
   // Orchestrator interface implementations
 
-  public onui(_data: any): void {
+  public onui(_data: unknown): void {
     // Handle UI actions (future: relay status updates)
   }
 

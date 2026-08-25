@@ -449,7 +449,9 @@ export class ThreadOrchestrator extends Orchestrator {
     if (Number.isNaN(kind)) return null;
 
     const filter: NDKFilter = { kinds: [kind], authors: [pubkey], limit: 1 };
-    if (dtag) (filter as any)['#d'] = [dtag];
+    if (dtag) {
+      (filter as NDKFilter<number> & Record<string, unknown>)['#d'] = [dtag];
+    }
 
     if (relayHint) {
       try {

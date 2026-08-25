@@ -399,7 +399,7 @@ export class ProfileSearchOrchestrator extends Orchestrator {
 
   // Orchestrator interface implementations (required by base class)
 
-  public onui(_data: any): void {
+  public onui(_data: unknown): void {
     // Handle UI actions if needed
   }
 

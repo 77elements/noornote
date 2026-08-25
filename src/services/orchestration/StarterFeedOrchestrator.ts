@@ -240,7 +240,7 @@ export class StarterFeedOrchestrator extends Orchestrator {
 
   // Orchestrator interface (minimal implementation)
 
-  public onui(_data: any): void {}
+  public onui(_data: unknown): void {}
   public onopen(_relay: string): void {}
   public onmessage(_relay: string, _event: NostrEvent): void {}
   public onerror(_relay: string, error: Error): void {

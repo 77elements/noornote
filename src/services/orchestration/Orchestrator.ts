@@ -38,7 +38,7 @@ export abstract class Orchestrator {
    * Handle UI-triggered actions (e.g., user clicks "Load More")
    * @param data - Action-specific data from UI
    */
-  public abstract onui(data: any): void;
+  public abstract onui(data: unknown): void;
 
   /**
    * Handle relay connection opened

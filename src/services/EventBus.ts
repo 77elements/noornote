@@ -13,7 +13,7 @@
 
 import { SystemLogger } from './SystemLogger';
 
-type EventCallback = (data?: any) => void;
+type EventCallback = (data?: unknown) => void;
 
 interface EventSubscription {
   id: string;
@@ -82,7 +82,7 @@ export class EventBus {
   /**
    * Emit an event with optional data
    */
-  public emit(eventName: string, data?: any): void {
+  public emit(eventName: string, data?: unknown): void {
     const subscriptions = this.events.get(eventName);
     const subscriberCount = subscriptions?.length || 0;
 
@@ -124,7 +124,7 @@ export class EventBus {
    * Subscribe once - automatically unsubscribes after first emit
    */
   public once(eventName: string, callback: EventCallback): string {
-    const wrappedCallback = (data?: any) => {
+    const wrappedCallback = (data?: unknown) => {
       callback(data);
       this.off(subscriptionId);
     };

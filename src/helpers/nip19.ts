@@ -89,7 +89,8 @@ export function nprofileToNpub(nprofile: string): string {
   if (decoded.type === 'nprofile') {
     // nprofile contains pubkey (hex) - convert to npub
     // decoded.data is ProfilePointer { pubkey: string, relays?: string[] }
-    const pubkeyHex = (decoded.data as any).pubkey;
+    const pubkeyHex = (decoded.data as { pubkey?: string }).pubkey;
+    if (!pubkeyHex) throw new Error('nprofile without pubkey');
     return encodeNpub(pubkeyHex);
   }
 
@@ -125,8 +126,8 @@ export function extractPubkeysFromText(text: string): string[] {
       } else if (nip19Id.startsWith('nprofile')) {
         const decoded = decodeNip19(nip19Id);
         if (decoded.type === 'nprofile') {
-          const pubkeyHex = (decoded.data as any).pubkey;
-          pubkeys.add(pubkeyHex);
+          const pubkeyHex = (decoded.data as { pubkey?: string }).pubkey;
+          if (pubkeyHex) pubkeys.add(pubkeyHex);
         }
       }
     } catch (error) {

@@ -24,14 +24,20 @@ export class TypedEventBus {
     event: K,
     callback: EventCallback<K>
   ): string {
-    return this.bus.on(event, callback as any);
+    // Wrap for variance: EventBus stores (data?: unknown) => void; a typed
+    // callback accepting AppEvents[K] is called by emit() with that payload.
+    return this.bus.on(event, data => {
+      (callback as (data?: unknown) => void)(data);
+    });
   }
 
   public once<K extends AppEventName>(
     event: K,
     callback: EventCallback<K>
   ): string {
-    return this.bus.once(event, callback as any);
+    return this.bus.once(event, data => {
+      (callback as (data?: unknown) => void)(data);
+    });
   }
 
   public emit<K extends AppEventName>(

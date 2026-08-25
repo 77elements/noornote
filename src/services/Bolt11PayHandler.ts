@@ -55,7 +55,7 @@ export function initBolt11PayHandler(): void {
 
 async function payInvoice(invoice: string): Promise<void> {
   // Prefer WebLN if available (browser extension like Alby)
-  const webln = (window as any).webln;
+  const webln = window.webln;
   if (webln && typeof webln.sendPayment === 'function') {
     try {
       if (typeof webln.enable === 'function') {
