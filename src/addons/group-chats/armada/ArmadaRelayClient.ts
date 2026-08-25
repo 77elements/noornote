@@ -126,7 +126,8 @@ export class ArmadaRelayClient {
 
       ws.onmessage = async e => {
         try {
-          const data = JSON.parse(e.data as string);
+          // Nostr WS frame: [verb, ...args] (relay-controlled)
+          const data = JSON.parse(String(e.data)) as unknown[];
           if (data[0] === 'AUTH') {
             // NIP-42 challenge — sign with stream keys + user key, then resend REQ
             for (const gk of this.streamKeys) {
@@ -138,7 +139,7 @@ export class ArmadaRelayClient {
                     content: '',
                     tags: [
                       ['relay', relayUrl],
-                      ['challenge', data[1]],
+                      ['challenge', String(data[1] ?? '')],
                     ],
                   },
                   gk.sk
@@ -157,7 +158,7 @@ export class ArmadaRelayClient {
                   content: '',
                   tags: [
                     ['relay', relayUrl],
-                    ['challenge', data[1]],
+                    ['challenge', String(data[1] ?? '')],
                   ],
                 })) as NostrEvent;
                 ws?.send(JSON.stringify(['AUTH', userAuth]));
@@ -168,8 +169,14 @@ export class ArmadaRelayClient {
             // Allow re-sending REQ after auth
             reqSent = false;
             sendReq();
-          } else if (data[0] === 'EVENT' && data[2]?.id) {
-            buffer.set(data[2].id, data[2] as NostrEvent);
+          } else if (
+            data[0] === 'EVENT' &&
+            typeof data[2] === 'object' &&
+            data[2] !== null &&
+            'id' in data[2]
+          ) {
+            const ev = data[2] as NostrEvent & { id: string };
+            buffer.set(ev.id, ev);
           } else if (data[0] === 'EOSE') {
             finish();
           } else if (data[0] === 'CLOSED') {

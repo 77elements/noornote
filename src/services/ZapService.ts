@@ -570,10 +570,15 @@ export class ZapService {
         throw new Error(`LNURL fetch failed: ${res.status}`);
       }
 
-      const body = await res.json();
+      // LNURL-pay capability response (third-party server — validate!)
+      const body = (await res.json()) as {
+        allowsNostr?: boolean;
+        nostrPubkey?: string;
+        callback?: string;
+      };
 
       // CRITICAL: Check for Nostr support (NIP-57 requirement)
-      if (body.allowsNostr && body.nostrPubkey) {
+      if (body.allowsNostr && body.nostrPubkey && body.callback) {
         return { callback: body.callback, lnurl };
       }
 
@@ -716,7 +721,12 @@ export class ZapService {
         throw new Error(`LNURL server error: ${response.status}`);
       }
 
-      const data = await response.json();
+      // LNURL-pay invoice response (third-party server — validate!)
+      const data = (await response.json()) as {
+        status?: string;
+        reason?: string;
+        pr?: string;
+      };
 
       if (data.status === 'ERROR') {
         throw new Error(data.reason || 'LNURL server returned error');

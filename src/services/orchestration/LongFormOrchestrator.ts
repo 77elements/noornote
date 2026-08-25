@@ -131,7 +131,7 @@ export class LongFormOrchestrator extends Orchestrator {
     } catch (error) {
       this.systemLogger.error(
         'LongFormOrchestrator',
-        `Stage 3 failed: ${error}`
+        `Stage 3 failed: ${String(error)}`
       );
       return null;
     }
@@ -188,7 +188,13 @@ export class LongFormOrchestrator extends Orchestrator {
         return null;
       }
 
-      const data = decoded.data as any;
+      // NIP-19 naddr payload (bech32-decoded, well-formed by contract)
+      const data = decoded.data as {
+        kind: number;
+        pubkey: string;
+        identifier: string;
+        relays?: string[];
+      };
 
       return {
         kind: data.kind,
@@ -232,7 +238,7 @@ export class LongFormOrchestrator extends Orchestrator {
 
   // Orchestrator interface implementations
 
-  public onui(_data: any): void {
+  public onui(_data: unknown): void {
     // Handle UI actions (future: article refresh/reload)
   }
 
