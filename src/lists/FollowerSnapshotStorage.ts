@@ -138,7 +138,7 @@ export class FollowerSnapshotStorage extends BaseFileStorage<FollowerCheckData> 
       // Web/Android have no file backend — runtime cache is authoritative there.
       this.systemLogger.info(
         this.getLoggerName(),
-        `No file backend (using runtime cache): ${error}`
+        `No file backend (using runtime cache): ${String(error)}`
       );
     }
   }
@@ -158,7 +158,7 @@ export class FollowerSnapshotStorage extends BaseFileStorage<FollowerCheckData> 
     } catch (error) {
       this.systemLogger.info(
         this.getLoggerName(),
-        `Skipped file save (no backend): ${error}`
+        `Skipped file save (no backend): ${String(error)}`
       );
     }
   }

@@ -118,7 +118,7 @@ export class MutualChangeStorage extends BaseFileStorage<MutualCheckData> {
     } catch (error) {
       this.systemLogger.error(
         this.getLoggerName(),
-        `Failed to init from file: ${error}`
+        `Failed to init from file: ${String(error)}`
       );
     }
   }
@@ -148,7 +148,7 @@ export class MutualChangeStorage extends BaseFileStorage<MutualCheckData> {
     } catch (error) {
       this.systemLogger.error(
         this.getLoggerName(),
-        `Failed to save to file: ${error}`
+        `Failed to save to file: ${String(error)}`
       );
     }
   }
@@ -270,7 +270,7 @@ export class MutualChangeStorage extends BaseFileStorage<MutualCheckData> {
     } catch (error) {
       this.systemLogger.error(
         this.getLoggerName(),
-        `Failed to add history entry: ${error}`
+        `Failed to add history entry: ${String(error)}`
       );
     }
   }

@@ -335,7 +335,7 @@ export class RepliesRenderer {
     } catch (error) {
       this.systemLogger.error(
         'RepliesRenderer',
-        `Failed to fetch quoted reposts: ${error}`
+        `Failed to fetch quoted reposts: ${String(error)}`
       );
       return [];
     }

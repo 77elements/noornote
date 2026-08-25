@@ -117,7 +117,7 @@ export class ProfileRecognitionService {
       } catch (error) {
         this.systemLogger.error(
           'ProfileRecognitionService',
-          `Failed to load from file: ${error}`
+          `Failed to load from file: ${String(error)}`
         );
       }
     }
@@ -150,7 +150,7 @@ export class ProfileRecognitionService {
       } catch (error) {
         this.systemLogger.error(
           'ProfileRecognitionService',
-          `Failed to load from relays: ${error}`
+          `Failed to load from relays: ${String(error)}`
         );
       }
     }
@@ -318,7 +318,7 @@ export class ProfileRecognitionService {
     } catch (error) {
       this.systemLogger.error(
         'ProfileRecognitionService',
-        `Failed to record encounter for ${pubkey.slice(0, 8)}: ${error}`
+        `Failed to record encounter for ${pubkey.slice(0, 8)}: ${String(error)}`
       );
     }
   }
@@ -556,7 +556,7 @@ export class ProfileRecognitionService {
     } catch (error) {
       this.systemLogger.error(
         'ProfileRecognitionService',
-        `Failed to save to file: ${error}`
+        `Failed to save to file: ${String(error)}`
       );
     }
   }
@@ -575,7 +575,7 @@ export class ProfileRecognitionService {
     } catch (error) {
       this.systemLogger.error(
         'ProfileRecognitionService',
-        `Failed to save to relays: ${error}`
+        `Failed to save to relays: ${String(error)}`
       );
     }
   }

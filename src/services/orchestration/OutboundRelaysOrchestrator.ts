@@ -175,7 +175,7 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
     } catch (error) {
       this.systemLogger.error(
         this.LOG_TAG,
-        `Fetch relay lists error: ${error}`
+        `Fetch relay lists error: ${String(error)}`
       );
     }
 
@@ -276,7 +276,7 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
     } catch (error) {
       this.systemLogger.error(
         this.LOG_TAG,
-        `Discovery failed, using standard relays: ${error}`
+        `Discovery failed, using standard relays: ${String(error)}`
       );
       return standardRelays;
     }
@@ -312,7 +312,7 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
     } catch (error) {
       this.systemLogger.error(
         this.LOG_TAG,
-        `Parse relay list event error: ${error}`
+        `Parse relay list event error: ${String(error)}`
       );
       return null;
     }
@@ -402,7 +402,7 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
     } catch (error) {
       this.systemLogger.warn(
         this.LOG_TAG,
-        `IndexedDB restore failed: ${error}`
+        `IndexedDB restore failed: ${String(error)}`
       );
     }
   }
@@ -426,7 +426,7 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
     } catch (error) {
       this.systemLogger.warn(
         this.LOG_TAG,
-        `IndexedDB persist failed: ${error}`
+        `IndexedDB persist failed: ${String(error)}`
       );
     }
   }
@@ -456,7 +456,7 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
       });
       db.close();
     } catch (error) {
-      this.systemLogger.warn(this.LOG_TAG, `IndexedDB prune failed: ${error}`);
+      this.systemLogger.warn(this.LOG_TAG, `IndexedDB prune failed: ${String(error)}`);
     }
   }
 
@@ -530,7 +530,7 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
       });
       db.close();
     } catch (error) {
-      this.systemLogger.warn(this.LOG_TAG, `IndexedDB clear failed: ${error}`);
+      this.systemLogger.warn(this.LOG_TAG, `IndexedDB clear failed: ${String(error)}`);
     }
   }
 

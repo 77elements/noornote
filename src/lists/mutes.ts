@@ -1672,7 +1672,7 @@ export class MuteListView extends View {
         ToastService.show('File is identical to current list', 'info');
       }
     } catch (error) {
-      ToastService.show(`Failed to restore from file: ${error}`, 'error');
+      ToastService.show(`Failed to restore from file: ${String(error)}`, 'error');
     }
   }
 
@@ -2072,7 +2072,7 @@ export class MuteListManager {
       }
     } catch (error) {
       console.error('Failed to restore from file:', error);
-      ToastService.show(`Failed to restore: ${error}`, 'error');
+      ToastService.show(`Failed to restore: ${String(error)}`, 'error');
     }
   }
 

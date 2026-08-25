@@ -127,7 +127,7 @@ export class FollowerNotificationService {
     } catch (error) {
       this.systemLogger.error(
         'FollowerNotificationService',
-        `Check failed: ${error}`
+        `Check failed: ${String(error)}`
       );
     } finally {
       this.running = false;

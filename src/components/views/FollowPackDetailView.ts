@@ -67,7 +67,7 @@ export class FollowPackDetailView extends View {
     } catch (error) {
       this.systemLogger.error(
         'FollowPackDetailView',
-        `Failed to load: ${error}`
+        `Failed to load: ${String(error)}`
       );
       this.container.innerHTML =
         '<div class="article-view-error"><p>Failed to load follow pack</p></div>';

@@ -160,7 +160,7 @@ export class ProfileSearchOrchestrator extends Orchestrator {
 
       return result;
     } catch (error) {
-      this.systemLogger.error('ProfileSearch', `Search failed: ${error}`);
+      this.systemLogger.error('ProfileSearch', `Search failed: ${String(error)}`);
       throw error;
     }
   }
@@ -282,7 +282,7 @@ export class ProfileSearchOrchestrator extends Orchestrator {
       } catch (error) {
         this.systemLogger.warn(
           'ProfileSearch',
-          `Chunk ${i + 1} failed: ${error}`
+          `Chunk ${i + 1} failed: ${String(error)}`
         );
       }
     }
@@ -335,7 +335,7 @@ export class ProfileSearchOrchestrator extends Orchestrator {
     } catch (error) {
       this.systemLogger.warn(
         'ProfileSearch',
-        `Outbound relay fetch failed: ${error}`
+        `Outbound relay fetch failed: ${String(error)}`
       );
     }
 

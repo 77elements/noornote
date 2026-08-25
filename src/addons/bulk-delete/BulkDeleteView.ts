@@ -490,7 +490,7 @@ export class BulkDeleteView extends View {
       if (seq !== this.loadSeq) return;
       SystemLogger.getInstance().warn(
         'BulkDeleteView',
-        `Search failed: ${err}`
+        `Search failed: ${String(err)}`
       );
       ToastService.show('Search failed', 'error');
       this.searchBase = [];
@@ -572,7 +572,7 @@ export class BulkDeleteView extends View {
         if (seq !== this.loadSeq) return;
         SystemLogger.getInstance().warn(
           'BulkDeleteView',
-          `Failed to load notes: ${err}`
+          `Failed to load notes: ${String(err)}`
         );
         ToastService.show('Failed to load your notes', 'error');
         this.notes = [];
@@ -624,7 +624,7 @@ export class BulkDeleteView extends View {
     } catch (err) {
       SystemLogger.getInstance().warn(
         'BulkDeleteView',
-        `Load more failed: ${err}`
+        `Load more failed: ${String(err)}`
       );
       this.hasMore = false;
     } finally {
@@ -917,7 +917,7 @@ export class BulkDeleteView extends View {
       } catch (err) {
         SystemLogger.getInstance().warn(
           'BulkDeleteView',
-          `Delete chunk failed: ${err}`
+          `Delete chunk failed: ${String(err)}`
         );
       }
     }

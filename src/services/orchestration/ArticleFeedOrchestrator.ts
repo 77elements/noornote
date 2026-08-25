@@ -231,7 +231,7 @@ export class ArticleFeedOrchestrator extends Orchestrator {
             // are common. Subsequent batches still deliver what they can.
             SystemLogger.getInstance().warn(
               'ArticleFeedOrchestrator',
-              `Batch fetch failed (${batch.length} authors): ${err}`
+              `Batch fetch failed (${batch.length} authors): ${String(err)}`
             );
             return [] as NostrEvent[];
           }

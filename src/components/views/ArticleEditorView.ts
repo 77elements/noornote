@@ -215,7 +215,7 @@ export class ArticleEditorView extends View {
     } catch (error) {
       this.systemLogger.error(
         'ArticleEditorView',
-        `Failed to load article: ${error}`
+        `Failed to load article: ${String(error)}`
       );
       this.container.innerHTML = `<div class="article-view-error"><p>Failed to load article</p></div>`;
     }

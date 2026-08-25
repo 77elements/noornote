@@ -75,7 +75,7 @@ export class RelayListOrchestrator extends Orchestrator {
     } catch (error) {
       this.systemLogger.error(
         'RelayListOrchestrator',
-        `Fetch kind:${kind} relay list failed: ${error}`
+        `Fetch kind:${String(kind)} relay list failed: ${String(error)}`
       );
       return null;
     }
@@ -133,7 +133,7 @@ export class RelayListOrchestrator extends Orchestrator {
     } catch (error) {
       this.systemLogger.error(
         'RelayListOrchestrator',
-        `Publish relay list failed: ${error}`
+        `Publish relay list failed: ${String(error)}`
       );
       throw error;
     }

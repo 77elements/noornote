@@ -48,7 +48,7 @@ class MutualChangeServiceImpl {
     } catch (error) {
       this.systemLogger.error(
         'MutualChangeService',
-        `Failed to init storage: ${error}`
+        `Failed to init storage: ${String(error)}`
       );
     }
   }

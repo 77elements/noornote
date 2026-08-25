@@ -199,7 +199,7 @@ export class FollowerChangeDetector {
     } catch (error) {
       this.systemLogger.error(
         'FollowerChangeDetector',
-        `Sweep failed: ${error}`
+        `Sweep failed: ${String(error)}`
       );
       diagLog('lists', 'follower-check: sweep failed', {
         error: String(error),
@@ -353,7 +353,7 @@ export class FollowerChangeDetector {
     } catch (error) {
       this.systemLogger.warn(
         'FollowerChangeDetector',
-        `Mute list unavailable this round: ${error}`
+        `Mute list unavailable this round: ${String(error)}`
       );
       return new Set();
     }

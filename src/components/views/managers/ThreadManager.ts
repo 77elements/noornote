@@ -174,7 +174,7 @@ export class ThreadManager {
     } catch (error) {
       this.systemLogger.error(
         'ThreadManager',
-        `Failed to fetch quoted reposts: ${error}`
+        `Failed to fetch quoted reposts: ${String(error)}`
       );
       return [];
     }
@@ -257,7 +257,7 @@ export class ThreadManager {
     } catch (error) {
       this.systemLogger.error(
         'ThreadManager',
-        `Failed to load replies: ${error}`
+        `Failed to load replies: ${String(error)}`
       );
       repliesContainer.innerHTML = `
         <div class="snv-replies__error">

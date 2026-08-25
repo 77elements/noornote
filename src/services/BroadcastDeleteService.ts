@@ -1697,7 +1697,7 @@ export class BroadcastDeleteService {
         await this.drainOnce();
       } while (this.drainQueued);
     } catch (error) {
-      this.systemLogger.error('BroadcastDelete', `Drain failed: ${error}`);
+      this.systemLogger.error('BroadcastDelete', `Drain failed: ${String(error)}`);
     } finally {
       this.draining = false;
     }

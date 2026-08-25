@@ -102,7 +102,7 @@ export class SingleNoteView extends View {
 
       void this.renderNote(event);
     } catch (error) {
-      this.systemLogger.error('SNV', `Failed to load note: ${error}`);
+      this.systemLogger.error('SNV', `Failed to load note: ${String(error)}`);
       this.showError('Failed to load note');
     }
   }

@@ -881,7 +881,7 @@ export class ReplyModal {
     } catch (err) {
       this.systemLogger.warn(
         'ReplyModal',
-        `Custom emoji autocomplete load failed: ${err}`
+        `Custom emoji autocomplete load failed: ${String(err)}`
       );
     }
   }

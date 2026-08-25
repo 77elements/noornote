@@ -113,7 +113,7 @@ export class EventBus {
           console.error(`EventBus error in ${eventName} handler:`, error);
           this.systemLogger.error(
             'EventBus',
-            `Error in '${eventName}' handler: ${error}`
+            `Error in '${String(eventName)}' handler: ${String(error)}`
           );
         }
       });

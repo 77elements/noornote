@@ -1092,7 +1092,7 @@ export class ReactionsOrchestrator extends Orchestrator {
     } catch (error) {
       this.systemLogger.error(
         'ReactionsOrchestrator',
-        `Polling failed: ${error}`
+        `Polling failed: ${String(error)}`
       );
     }
   }

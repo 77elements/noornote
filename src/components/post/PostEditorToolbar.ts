@@ -215,7 +215,7 @@ export class PostEditorToolbar {
       }
     } catch (error) {
       console.error('Upload error:', error);
-      this.systemLogger.error('PostEditorToolbar', `Upload error: ${error}`);
+      this.systemLogger.error('PostEditorToolbar', `Upload error: ${String(error)}`);
       this.modalService.show({
         title: 'Upload Failed',
         content: '<p>Upload failed. Please try again.</p>',
@@ -286,7 +286,7 @@ export class PostEditorToolbar {
       } catch (err) {
         this.systemLogger.warn(
           'PostEditorToolbar',
-          `Custom emoji load failed: ${err}`
+          `Custom emoji load failed: ${String(err)}`
         );
       }
     }

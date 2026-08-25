@@ -149,7 +149,7 @@ export class ScheduledPostsAddonView extends View {
     } catch (err) {
       SystemLogger.getInstance().warn(
         'ScheduledPostsAddonView',
-        `Failed to load list: ${err}`
+        `Failed to load list: ${String(err)}`
       );
       this.posts = [];
       ToastService.show('Failed to load scheduled posts', 'error');
@@ -257,9 +257,9 @@ export class ScheduledPostsAddonView extends View {
     } catch (err) {
       SystemLogger.getInstance().warn(
         'ScheduledPostsAddonView',
-        `Cancel failed: ${err}`
+        `Cancel failed: ${String(err)}`
       );
-      ToastService.show(`Cancel failed: ${err}`, 'error');
+      ToastService.show(`Cancel failed: ${String(err)}`, 'error');
     }
   }
 }

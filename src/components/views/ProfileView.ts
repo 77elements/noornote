@@ -1779,7 +1779,7 @@ export class ProfileView extends View {
           helpers.collapse();
         } catch (error) {
           console.error('[ProfileSearch] Search failed:', error);
-          helpers.showStatus(`Search failed: ${error}`, 'error');
+          helpers.showStatus(`Search failed: ${String(error)}`, 'error');
           helpers.setButtonState('idle');
         }
       },

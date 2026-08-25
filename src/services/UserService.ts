@@ -85,7 +85,7 @@ export class UserService {
     } catch (error) {
       this.systemLogger.error(
         'UserService',
-        `Error fetching follow list: ${error}`
+        `Error fetching follow list: ${String(error)}`
       );
       return [];
     }
@@ -138,7 +138,7 @@ export class UserService {
     } catch (error) {
       this.systemLogger.error(
         'UserService',
-        `Error fetching other user's follow list: ${error}`
+        `Error fetching other user's follow list: ${String(error)}`
       );
       return [];
     }

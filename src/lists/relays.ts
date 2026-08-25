@@ -311,7 +311,7 @@ export async function decryptContent(
     }
   } catch (error) {
     diagLog('relays', 'decryptContent: FAILED', { error: String(error) });
-    logger.error('relays.ts', `Decryption failed: ${error}`);
+    logger.error('relays.ts', `Decryption failed: ${String(error)}`);
   }
 
   diagLog(

@@ -210,7 +210,7 @@ export class FollowerCountService {
         } catch (error) {
           this.systemLogger.error(
             'FollowerCount',
-            `✗ ${relay} failed: ${error}`
+            `✗ ${String(relay)} failed: ${String(error)}`
           );
           return { relay, followers: [] as string[], success: false };
         }
@@ -310,7 +310,7 @@ export class FollowerCountService {
       } catch (error) {
         this.systemLogger.error(
           'FollowerCount',
-          `${relayUrl} batch ${batchCount + 1} failed: ${error}`
+          `${String(relayUrl)} batch ${batchCount + 1} failed: ${String(error)}`
         );
         break;
       }

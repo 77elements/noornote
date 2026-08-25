@@ -977,7 +977,7 @@ export class ConversationView extends View {
     } catch (_error) {
       this.systemLogger.error(
         'ConversationView',
-        `Failed to mute user: ${_error}`
+        `Failed to mute user: ${String(_error)}`
       );
       ToastService.show('Failed to mute user', 'error');
     }

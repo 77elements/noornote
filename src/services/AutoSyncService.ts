@@ -349,7 +349,7 @@ export class AutoSyncService {
     } catch (error) {
       this.systemLogger.error(
         'ListAutoSync',
-        `${listType}: save to file failed: ${error}`
+        `${String(listType)}: save to file failed: ${String(error)}`
       );
     }
   }
@@ -419,7 +419,7 @@ export class AutoSyncService {
     } catch (error) {
       this.systemLogger.error(
         'ListAutoSync',
-        `${listType}: relay sync failed: ${error}`
+        `${String(listType)}: relay sync failed: ${String(error)}`
       );
     }
   }
@@ -752,7 +752,7 @@ export class AutoSyncService {
     } catch (error) {
       this.systemLogger.error(
         'ListAutoSync',
-        `Periodic sync failed for ${listType}: ${error}`
+        `Periodic sync failed for ${String(listType)}: ${String(error)}`
       );
     } finally {
       this.isSyncing.delete(listType);
@@ -867,7 +867,7 @@ export class AutoSyncService {
     } catch (error) {
       this.systemLogger.error(
         'ListAutoSync',
-        `Failed to fetch ${listType} from relays: ${error}`
+        `Failed to fetch ${String(listType)} from relays: ${String(error)}`
       );
       return null;
     }

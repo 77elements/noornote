@@ -125,7 +125,7 @@ export class PollVoteService {
     } catch (_error) {
       this.systemLogger.error(
         'PollVoteService',
-        `Failed to cast vote: ${_error}`
+        `Failed to cast vote: ${String(_error)}`
       );
       return false;
     }

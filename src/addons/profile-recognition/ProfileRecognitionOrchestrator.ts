@@ -160,7 +160,7 @@ export class ProfileRecognitionOrchestrator {
     } catch (error) {
       this.systemLogger.error(
         'ProfileRecognitionOrchestrator',
-        `Failed to fetch encounters for ${pubkey}: ${error}`
+        `Failed to fetch encounters for ${String(pubkey)}: ${String(error)}`
       );
       return null;
     }

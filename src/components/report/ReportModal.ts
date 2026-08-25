@@ -260,7 +260,7 @@ export class ReportModal {
     } catch (error) {
       this.systemLogger.error(
         'ReportModal',
-        `Report submission error: ${error}`
+        `Report submission error: ${String(error)}`
       );
 
       // Re-enable button

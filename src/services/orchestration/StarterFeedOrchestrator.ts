@@ -125,7 +125,7 @@ export class StarterFeedOrchestrator extends Orchestrator {
     } catch (error) {
       this.systemLogger.error(
         'StarterFeedOrchestrator',
-        `Load failed: ${error}`
+        `Load failed: ${String(error)}`
       );
       return {
         events: [],
@@ -191,7 +191,7 @@ export class StarterFeedOrchestrator extends Orchestrator {
     } catch (error) {
       this.systemLogger.error(
         'StarterFeedOrchestrator',
-        `Load more failed: ${error}`
+        `Load more failed: ${String(error)}`
       );
       return {
         events: [],

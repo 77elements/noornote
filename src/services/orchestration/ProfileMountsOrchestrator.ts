@@ -157,7 +157,7 @@ export class ProfileMountsOrchestrator {
     } catch (error) {
       this.systemLogger.error(
         'ProfileMountsOrchestrator',
-        `Failed to fetch profile mounts for ${pubkey}: ${error}`
+        `Failed to fetch profile mounts for ${String(pubkey)}: ${String(error)}`
       );
       return [];
     }

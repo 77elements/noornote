@@ -211,7 +211,7 @@ export class QuoteOrchestrator extends Orchestrator {
     } catch (error) {
       this.systemLogger.error(
         'QuoteOrchestrator',
-        `Extract ID error: ${error}`
+        `Extract ID error: ${String(error)}`
       );
       return { eventId: null, relayHints: [], author: null };
     }

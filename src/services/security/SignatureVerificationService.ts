@@ -108,11 +108,11 @@ export class SignatureVerificationService {
       this.failureCount++;
       this.systemLogger.error(
         'SignatureVerificationService',
-        `Verification error: ${error}`
+        `Verification error: ${String(error)}`
       );
       return {
         valid: false,
-        error: `Verification exception: ${error}`,
+        error: `Verification exception: ${String(error)}`,
       };
     }
   }

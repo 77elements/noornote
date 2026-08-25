@@ -161,7 +161,7 @@ export async function scheduleNote(
         );
       }
     } catch (err) {
-      logger.warn('scheduleNote', `Custom emoji enrichment skipped: ${err}`);
+      logger.warn('scheduleNote', `Custom emoji enrichment skipped: ${String(err)}`);
     }
 
     const unsignedEvent = {

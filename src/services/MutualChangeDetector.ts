@@ -303,9 +303,9 @@ export class MutualChangeDetector {
     } catch (_error) {
       this.systemLogger.error(
         'MutualChangeDetector',
-        `Detection failed: ${_error}`
+        `Detection failed: ${String(_error)}`
       );
-      await this.debugLog.logError(`Detection failed: ${_error}`, {
+      await this.debugLog.logError(`Detection failed: ${String(_error)}`, {
         stack: _error instanceof Error ? _error.stack : undefined,
       });
       return {

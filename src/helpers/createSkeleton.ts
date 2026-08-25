@@ -66,7 +66,7 @@ export function createSkeleton(
     }
 
     default:
-      throw new Error(`Unknown skeleton type: ${type}`);
+      throw new Error(`Unknown skeleton type: ${String(type)}`);
   }
 
   return skeleton;

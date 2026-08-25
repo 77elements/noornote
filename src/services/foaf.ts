@@ -139,7 +139,7 @@ export class FoafService {
 
   private assertDegree(degree: FoafDegree): void {
     if (degree !== 1 && degree !== 2 && degree !== 3) {
-      throw new Error(`FoafService: degree must be 1, 2, or 3 (got ${degree})`);
+      throw new Error(`FoafService: degree must be 1, 2, or 3 (got ${String(degree)})`);
     }
   }
 
@@ -306,7 +306,7 @@ export class FoafService {
         // are common and the graph is best-effort.
         this.systemLogger.warn(
           'Foaf',
-          `Batch ${Math.floor(i / FOAF_FETCH_BATCH) + 1} failed: ${err}`
+          `Batch ${Math.floor(i / FOAF_FETCH_BATCH) + 1} failed: ${String(err)}`
         );
         continue;
       }

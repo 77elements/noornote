@@ -211,7 +211,7 @@ export class LastNotesPerFollow extends View {
     } catch (error) {
       SystemLogger.getInstance().warn(
         'LastNotesPerFollow',
-        `Failed to load: ${error}`
+        `Failed to load: ${String(error)}`
       );
       this.uiStateHandler.hideSkeletonLoaders();
       this.uiStateHandler.showError(

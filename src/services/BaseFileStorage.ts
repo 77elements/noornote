@@ -135,7 +135,7 @@ export abstract class BaseFileStorage<T extends BaseFileData> {
     } catch (error) {
       this.systemLogger.error(
         this.getLoggerName(),
-        `Failed to initialize: ${error}`
+        `Failed to initialize: ${String(error)}`
       );
       throw error;
     }
@@ -180,7 +180,7 @@ export abstract class BaseFileStorage<T extends BaseFileData> {
     } catch (error) {
       this.systemLogger.error(
         this.getLoggerName(),
-        `Failed to read data: ${error}`
+        `Failed to read data: ${String(error)}`
       );
       return this.getDefaultData();
     }
@@ -205,7 +205,7 @@ export abstract class BaseFileStorage<T extends BaseFileData> {
     } catch (error) {
       this.systemLogger.error(
         this.getLoggerName(),
-        `Failed to write data: ${error}`
+        `Failed to write data: ${String(error)}`
       );
       throw error;
     }

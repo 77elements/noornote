@@ -297,7 +297,7 @@ export class PrivacySettingsSection extends SettingsSection {
               success ? 'success' : 'error'
             );
           } catch (error) {
-            ToastService.show(`Migration error: ${error}`, 'error');
+            ToastService.show(`Migration error: ${String(error)}`, 'error');
           }
         });
     }, 0);

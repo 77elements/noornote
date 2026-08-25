@@ -180,7 +180,7 @@ export class PerAccountListStorageMigration {
     } catch (error) {
       this.logger.error(
         'PerAccountListStorageMigration',
-        `Failed to migrate ${legacyKey}: ${error}`
+        `Failed to migrate ${String(legacyKey)}: ${String(error)}`
       );
       return false;
     }
@@ -200,7 +200,7 @@ export class PerAccountListStorageMigration {
     } catch (error) {
       this.logger.error(
         'PerAccountListStorageMigration',
-        `Failed to remove legacy key ${legacyKey}: ${error}`
+        `Failed to remove legacy key ${String(legacyKey)}: ${String(error)}`
       );
     }
   }

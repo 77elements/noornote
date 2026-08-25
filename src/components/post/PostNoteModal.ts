@@ -1406,7 +1406,7 @@ export class PostNoteModal {
     } catch (err) {
       this.systemLogger.warn(
         'PostNoteModal',
-        `Custom emoji autocomplete load failed: ${err}`
+        `Custom emoji autocomplete load failed: ${String(err)}`
       );
     }
   }
