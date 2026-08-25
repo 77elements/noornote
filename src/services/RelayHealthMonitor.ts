@@ -12,6 +12,7 @@
  */
 
 import { TypedEventBus } from '../core/TypedEventBus';
+import type { NostrTransport } from './transport/NostrTransport';
 import { diagLog } from './DiagnosticLogger';
 import { isDataSaverEnabled } from './DataSaverService';
 
@@ -331,7 +332,10 @@ export class RelayHealthMonitor {
   /**
    * Ping a single relay to check health
    */
-  private async pingRelay(relayUrl: string, transport: any): Promise<void> {
+  private async pingRelay(
+    relayUrl: string,
+    transport: { subscribe: typeof NostrTransport.prototype.subscribe }
+  ): Promise<void> {
     const startTime = Date.now();
     let responded = false;
 

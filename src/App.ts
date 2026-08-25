@@ -160,10 +160,9 @@ export class App {
     }
 
     // Read ?r= relay browser parameter (captured early in main.ts before HMR can strip query params)
-    const relayParam: string | null =
-      (window as any).__noornote_relay_param || null;
+    const relayParam: string | null = window.__noornote_relay_param || null;
     if (relayParam) {
-      delete (window as any).__noornote_relay_param;
+      delete window.__noornote_relay_param;
     }
 
     // Capture intended URL: ?r= override > explicit address-bar path (web) > sessionStorage (reload / Electron restore)
@@ -288,7 +287,8 @@ export class App {
       await service.checkOnStartup();
 
       if (import.meta.env.DEV) {
-        (window as any).__updateService = service;
+        (window as unknown as Record<string, unknown>).__updateService =
+          service;
       }
     } catch (error) {
       console.error('[App] Update check failed:', error);
@@ -960,7 +960,3 @@ export class App {
     });
   }
 }
-
-// Global type declarations for Vite environment variables
-declare const __APP_VERSION__: string;
-declare const __BUILD_DATE__: string;

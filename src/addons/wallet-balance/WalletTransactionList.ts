@@ -201,15 +201,22 @@ export class WalletTransactionList {
     const timeStr = formatTimeAgo((tx.settled_at || tx.created_at) * 1000);
 
     // Extract zap sender info from metadata.nostr (kind 9734 zap request)
-    const zapRequest = (tx as any).metadata?.nostr;
+    // NWC transaction metadata carries the zap request event (optional)
+    const zapRequest = (
+      tx as {
+        metadata?: {
+          nostr?: { pubkey?: string; content?: string; tags?: unknown[] };
+        };
+      }
+    ).metadata?.nostr;
     const isAnon =
-      zapRequest?.tags?.some((t: string[]) => t[0] === 'anon') ?? false;
+      zapRequest?.tags?.some(t => Array.isArray(t) && t[0] === 'anon') ?? false;
     const senderPubkey =
       !isAnon && isIncoming && zapRequest?.pubkey
-        ? (zapRequest.pubkey as string)
+        ? (zapRequest.pubkey ?? '')
         : null;
     const zapMessage = zapRequest?.content
-      ? escapeHtml(zapRequest.content as string)
+      ? escapeHtml(zapRequest.content ?? '')
       : null;
 
     // Icon: profile pic placeholder for zaps, arrow for regular

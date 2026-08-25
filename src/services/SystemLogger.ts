@@ -19,7 +19,7 @@ export interface LogEntry {
   category: string;
   logCategory: LogCategory; // 'global' or 'page'
   message: string;
-  data?: any;
+  data?: unknown;
   count?: number; // How many times this exact log occurred
   id?: string; // Stable key for in-place updatable lines (see setLine)
   statusDot?: 'success' | 'error'; // Small round red/green diode after the message
@@ -111,11 +111,12 @@ export class SystemLogger {
     });
 
     // Clear page logs on navigation (avoid circular dependency with Router)
-    window.addEventListener('router:navigate', (event: any) => {
+    window.addEventListener('router:navigate', (event: unknown) => {
+      const detail = (event as CustomEvent<{ path?: string }>).detail;
       this.clearPageLogs();
       this.info(
         'Router',
-        `🧹 Local logs cleared (switched to ${event.detail.path})`
+        `🧹 Local logs cleared (switched to ${detail?.path ?? '?'})`
       );
     });
   }
@@ -223,7 +224,7 @@ export class SystemLogger {
     level: LogLevel,
     category: string,
     message: string,
-    data?: any
+    data?: unknown
   ): void {
     // Mirror to DiagnosticLogger (writes to JSONL on mobile, no-op on web)
     diagLog('system', `[${level}] ${category}: ${message}`, data);
@@ -313,23 +314,23 @@ export class SystemLogger {
   /**
    * Convenience methods
    */
-  public info(category: string, message: string, data?: any): void {
+  public info(category: string, message: string, data?: unknown): void {
     this.log('info', category, message, data);
   }
 
-  public debug(category: string, message: string, data?: any): void {
+  public debug(category: string, message: string, data?: unknown): void {
     this.log('debug', category, message, data);
   }
 
-  public warn(category: string, message: string, data?: any): void {
+  public warn(category: string, message: string, data?: unknown): void {
     this.log('warn', category, message, data);
   }
 
-  public error(category: string, message: string, data?: any): void {
+  public error(category: string, message: string, data?: unknown): void {
     this.log('error', category, message, data);
   }
 
-  public success(category: string, message: string, data?: any): void {
+  public success(category: string, message: string, data?: unknown): void {
     this.log('success', category, message, data);
   }
 

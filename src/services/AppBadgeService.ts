@@ -23,7 +23,9 @@ export class AppBadgeService {
   private platform: PlatformService;
   private subscriptionIds: string[] = [];
   private originalTitle: string;
-  private badgeApi: any = null;
+  private badgeApi: {
+    setBadgeCount(count: number | null): Promise<void>;
+  } | null = null;
 
   private constructor() {
     this.eventBus = TypedEventBus.getInstance();

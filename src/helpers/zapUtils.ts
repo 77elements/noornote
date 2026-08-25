@@ -23,10 +23,15 @@ function parseZapRequest(zapEvent: NostrEvent): ZapRequestData | null {
   if (!descTag?.[1]) return null;
 
   try {
-    const zapRequest = JSON.parse(descTag[1]);
+    // kind:9798 description embeds the zap request event (relay-controlled)
+    const zapRequest = JSON.parse(descTag[1]) as {
+      pubkey?: unknown;
+      content?: unknown;
+      tags?: unknown;
+    };
     return {
-      pubkey: zapRequest.pubkey || '',
-      message: zapRequest.content || '',
+      pubkey: typeof zapRequest.pubkey === 'string' ? zapRequest.pubkey : '',
+      message: typeof zapRequest.content === 'string' ? zapRequest.content : '',
     };
   } catch {
     return null;
@@ -62,7 +67,12 @@ export function isZapAnonymous(zapEvent: NostrEvent): boolean {
   const descTag = zapEvent.tags.find(t => t[0] === 'description');
   if (!descTag?.[1]) return false;
   try {
-    const zapRequest = JSON.parse(descTag[1]);
+    // kind:9798 description embeds the zap request event (relay-controlled)
+    const zapRequest = JSON.parse(descTag[1]) as {
+      pubkey?: unknown;
+      content?: unknown;
+      tags?: unknown;
+    };
     return (
       Array.isArray(zapRequest.tags) &&
       zapRequest.tags.some((t: string[]) => t[0] === 'anon')
