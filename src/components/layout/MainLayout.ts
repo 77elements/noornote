@@ -4,6 +4,10 @@
  */
 
 import { AuthComponent } from '../auth/AuthComponent';
+
+/** Shared param type for the dynamically-imported ExternalFollowListManager. */
+type ExternalFollowListManagerType =
+  typeof import('../../lists/follows').ExternalFollowListManager;
 import { OnboardingComponent } from '../onboarding/OnboardingComponent';
 import { SystemLogger } from '../../services/SystemLogger';
 import { AccountSwitcher } from '../ui/AccountSwitcher';
@@ -91,7 +95,7 @@ export class MainLayout {
   private themeSwitcher: ThemeSwitcher | null = null;
   private searchSpotlight: SearchSpotlight | null = null;
   private keyboardShortcutManager!: KeyboardShortcutManager;
-  private authComponent: any = null; // Store reference to trigger logout
+  private authComponent: AuthComponent | null = null; // Store reference to trigger logout
   private onboardingComponent: OnboardingComponent | null = null;
   private cacheManager: CacheManager;
   private appState: AppState;
@@ -135,7 +139,7 @@ export class MainLayout {
   private sccDefaultDropdown: CustomDropdown | null = null;
   private sccArticleFeed: ArticleTimeline | null = null;
   private sccMediaFeed: SccMediaFeed | null = null;
-  private _dayjs: any = null;
+  private _dayjs: typeof import('dayjs') | null = null;
 
   constructor() {
     this.element = this.createElement();
@@ -813,7 +817,11 @@ export class MainLayout {
     // Intercept profile search (profile search component)
     this.eventBus.on(
       'profileSearch:complete',
-      (data: { query: string; results: any[]; meta: string }) => {
+      (data: {
+        query: string;
+        results: { pubkey: string }[];
+        meta: string;
+      }) => {
         if (!this.layoutService.isSecondaryVisible()) {
           // Wide/Mobile mode: Render search in primary content
           this.renderSearchInPrimaryContent('profile', data.query);
@@ -893,7 +901,9 @@ export class MainLayout {
    */
   private setupActiveNavigation(): void {
     // Update on route changes
-    window.addEventListener('router:view-changed', ((e: CustomEvent) => {
+    window.addEventListener('router:view-changed', ((
+      e: CustomEvent<{ view?: string }>
+    ) => {
       this.updateActiveNavigation(e.detail?.view || '');
     }) as EventListener);
 
@@ -2006,9 +2016,9 @@ export class MainLayout {
    * Handle logout from AccountSwitcher component
    */
   private handleLogout(): void {
-    if (this.authComponent && this.authComponent.handleLogout) {
+    if (this.authComponent?.handleLogout) {
       // Call AuthComponent's logout method
-      this.authComponent.handleLogout();
+      void this.authComponent.handleLogout();
     }
   }
 
@@ -2322,10 +2332,7 @@ export class MainLayout {
     );
     this._dayjs = dayjsModule.default;
     this._dayjs.extend(calendarSystemsModule.default);
-    this._dayjs.registerCalendarSystem(
-      'hijri' as any,
-      new hijriModule.default()
-    );
+    this._dayjs.registerCalendarSystem('hijri', new hijriModule.default());
 
     // Listen for calendar system changes
     this.eventBus.on('settings:calendar-system-changed', () => {
@@ -2372,8 +2379,8 @@ export class MainLayout {
       dateString = `<span>${day}. ${month}. ${year}</span><span>${version}</span>${aboutLink}`;
     } else if (calendarSystem === 'hijri') {
       if (!this._dayjs) return; // dayjs not loaded yet (async init)
-      const hijriDate = this._dayjs(now).toCalendarSystem('hijri' as any);
-      const day = hijriDate.date();
+      const hijriDate = this._dayjs(now).toCalendarSystem('hijri');
+      const day = Number(hijriDate.date());
       const month = HIJRI_MONTHS[hijriDate.month()];
       const year = hijriDate.year();
       dateString = `<span>${day}. ${month} ${year}</span><span>${version}</span>${aboutLink}`;
@@ -2383,8 +2390,8 @@ export class MainLayout {
       const gregorianMonth = now.toLocaleString('en-US', { month: 'short' });
       const gregorianYear = now.getFullYear();
 
-      const hijriDate = this._dayjs(now).toCalendarSystem('hijri' as any);
-      const hijriDay = hijriDate.date();
+      const hijriDate = this._dayjs(now).toCalendarSystem('hijri');
+      const hijriDay = Number(hijriDate.date());
       const hijriMonth = HIJRI_MONTHS[hijriDate.month()];
       const hijriYear = hijriDate.year();
       dateString = `<span>${gregorianDay}. ${gregorianMonth}. ${gregorianYear}</span><span>${hijriDay}. ${hijriMonth} ${hijriYear}</span><span>${version}</span>${aboutLink}`;
@@ -2407,12 +2414,7 @@ export class MainLayout {
    * Show login screen (trigger AuthComponent to display login options)
    */
   public showLoginScreen(): void {
-    if (
-      this.authComponent &&
-      typeof this.authComponent.showLoginScreen === 'function'
-    ) {
-      this.authComponent.showLoginScreen();
-    }
+    this.authComponent?.showLoginScreen();
   }
 
   /**
@@ -2619,7 +2621,7 @@ export class MainLayout {
   private renderExternalFollowsInSecondaryContent(
     pubkey: string,
     mode: 'follows' | 'followers',
-    ExternalFollowListManager: any
+    ExternalFollowListManager: ExternalFollowListManagerType
   ): void {
     // Close existing list tab if any
     if (this.currentListView) {
@@ -2652,7 +2654,7 @@ export class MainLayout {
       title: mode === 'followers' ? 'Followers' : 'Following',
       onClose: () => this.closeListTab(),
       onRender: container => {
-        externalManager.renderListTab(container);
+        void externalManager.renderListTab(container);
       },
     });
 
@@ -2700,7 +2702,7 @@ export class MainLayout {
   private renderExternalFollowsInPrimaryContent(
     pubkey: string,
     mode: 'follows' | 'followers',
-    ExternalFollowListManager: any
+    ExternalFollowListManager: ExternalFollowListManagerType
   ): void {
     const primaryContent = this.element.querySelector('.primary-content');
     if (!primaryContent) return;
@@ -2748,7 +2750,7 @@ export class MainLayout {
     primaryContent.appendChild(listContainer);
 
     // Render content
-    externalManager.renderListTab(contentContainer);
+    void externalManager.renderListTab(contentContainer);
   }
 
   /**
@@ -2806,8 +2808,11 @@ export class MainLayout {
       tribes: 'List: Tribes',
     };
 
-    // Map list types to managers
-    const managers: Record<ListType, any> = {
+    // Map list types to managers. All four share the renderListTab contract.
+    const managers: Record<
+      ListType,
+      { renderListTab(container: HTMLElement): Promise<void> } | null
+    > = {
       bookmarks: this.bookmarkManager,
       follows: this.followManager,
       mutes: this.muteManager,
@@ -2830,7 +2835,7 @@ export class MainLayout {
         if (customRender) {
           customRender(container);
         } else {
-          manager.renderListTab(container);
+          void manager.renderListTab(container);
         }
       },
     });
@@ -2903,8 +2908,11 @@ export class MainLayout {
       tribes: 'List: Tribes',
     };
 
-    // Map list types to managers
-    const managers: Record<ListType, any> = {
+    // Map list types to managers. All four share the renderListTab contract.
+    const managers: Record<
+      ListType,
+      { renderListTab(container: HTMLElement): Promise<void> } | null
+    > = {
       bookmarks: this.bookmarkManager,
       follows: this.followManager,
       mutes: this.muteManager,
@@ -2957,7 +2965,7 @@ export class MainLayout {
     if (customRender) {
       customRender(content);
     } else {
-      manager.renderListTab(content);
+      void manager.renderListTab(content);
     }
   }
 
@@ -3043,8 +3051,8 @@ export class MainLayout {
    */
   public restoreSccFromUrl(): void {
     if (!this.layoutService.isSecondaryVisible()) return;
-    const raw = (window as any).__noornote_scc_param ?? readSccParam();
-    delete (window as any).__noornote_scc_param;
+    const raw = window.__noornote_scc_param ?? readSccParam();
+    delete window.__noornote_scc_param;
     if (!raw) return;
     const parsed = parseSccParam(raw);
     if (!parsed) return;

@@ -18,7 +18,7 @@ const __capturedSccParam = new URLSearchParams(window.location.search).get(
   'scc'
 );
 if (__capturedSccParam) {
-  (window as any).__noornote_scc_param = __capturedSccParam;
+  window.__noornote_scc_param = __capturedSccParam;
 }
 
 // Capture ?r= relay browser parameter immediately (before any module side-effects or HMR)
@@ -27,7 +27,7 @@ const __capturedRelayParam = new URLSearchParams(window.location.search).get(
 );
 if (__capturedRelayParam) {
   window.history.replaceState({}, '', window.location.pathname);
-  (window as any).__noornote_relay_param = __capturedRelayParam;
+  window.__noornote_relay_param = __capturedRelayParam;
 }
 
 // Suppress NDK v3 serialization errors for malformed events from other clients
@@ -117,7 +117,12 @@ if (originalSrcDescriptor && originalSrcDescriptor.set) {
       }
       // Silently ignore empty/null/undefined values
     },
-    ...(originalSrcDescriptor.get && { get: originalSrcDescriptor.get }),
+    ...(originalSrcDescriptor.get && {
+      get(this: HTMLImageElement): string {
+        // lib.dom types the getter's return as any — normalize to string
+        return String(originalSrcDescriptor.get!.call(this));
+      },
+    }),
     configurable: true,
   });
 }

@@ -2022,7 +2022,7 @@ export class FollowListManager {
   /**
    * Render list tab content with sticky header, stats and filter
    */
-  private async renderListTab(container: HTMLElement): Promise<void> {
+  public async renderListTab(container: HTMLElement): Promise<void> {
     // Wait for extended features to be initialized (if enabled)
     if (this.extendedReady) await this.extendedReady;
 
