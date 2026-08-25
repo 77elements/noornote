@@ -11,8 +11,14 @@
  * - Session persistence and restore
  */
 
-import { NDKNip46Signer, NDKUser } from '@nostr-dev-kit/ndk';
+import {
+  NDKNip46Signer,
+  NDKUser,
+  type NostrEvent,
+  type NDKRpcResponse,
+} from '@nostr-dev-kit/ndk';
 import { SystemLogger } from '../SystemLogger';
+import type { SignableEvent } from '../AuthService';
 
 export const NIP46_STORAGE_KEY = 'noornote_nip46_payload';
 
@@ -24,16 +30,31 @@ const CIRCUIT_COOLDOWN_MS = 30_000;
 
 // Technical debug logger (DevTools console only)
 export const nip46Log = {
-  info: (msg: string, ...args: any[]) =>
+  info: (msg: string, ...args: unknown[]) =>
     console.debug(`[NIP-46] ${msg}`, ...args),
-  warn: (msg: string, ...args: any[]) =>
+  warn: (msg: string, ...args: unknown[]) =>
     console.debug(`[NIP-46] ${msg}`, ...args),
-  error: (msg: string, ...args: any[]) =>
+  error: (msg: string, ...args: unknown[]) =>
     console.error(`[NIP-46] ${msg}`, ...args),
 };
 
 // User-facing System Log
 const sysLog = () => SystemLogger.getInstance();
+
+/**
+ * Structural view of NDKNostrRpc's PRIVATE internals (pool/relays). NDK
+ * declares `pool` as private and offers no API for pool-level health checks
+ * or disconnects, so we reach in deliberately — typed here so every access
+ * is visible and reviewed instead of hidden behind `as any`.
+ */
+interface Nip46RpcInternals {
+  subscribe(filter: { kinds: number[]; '#p': string[] }): Promise<unknown>;
+  pool?: {
+    relays: Map<string, { status: number; disconnect(): void }>;
+    connect(timeoutMs?: number): Promise<void>;
+  };
+  encryptionType: 'nip04' | 'nip44';
+}
 
 export interface Nip46AuthResult {
   success: boolean;
@@ -64,11 +85,12 @@ export abstract class Nip46BaseManager {
    * and can flip it to 'nip44', which breaks sendRequest for signers
    * that only support NIP-04 on the RPC layer. This lock prevents that.
    */
-  protected lockEncryptionType(rpc: any): void {
+  protected lockEncryptionType(signer: NDKNip46Signer): void {
+    const rpc = signer.rpc as unknown as Nip46RpcInternals;
     const _encType: 'nip04' | 'nip44' = 'nip04';
     Object.defineProperty(rpc, 'encryptionType', {
       get: () => _encType,
-      set: (val: string) => {
+      set: (val: 'nip04' | 'nip44') => {
         if (val !== _encType) {
           nip46Log.info(
             `Encryption locked to ${_encType} — rejected ${val} upgrade`
@@ -89,7 +111,7 @@ export abstract class Nip46BaseManager {
   protected stopSignerAndPool(signer: NDKNip46Signer): void {
     signer.stop();
     this.sessionEstablished = false;
-    const rpc = signer.rpc as any;
+    const rpc = signer.rpc as unknown as Nip46RpcInternals;
     if (rpc.pool) {
       for (const relay of rpc.pool.relays.values()) {
         relay.disconnect();
@@ -103,10 +125,11 @@ export abstract class Nip46BaseManager {
    * pool.connect(), leaving the pool in "idle" state where system-wide
    * reconnection is disabled.
    */
-  protected activateRpcPool(rpc: any): void {
+  protected activateRpcPool(signer: NDKNip46Signer): void {
+    const rpc = signer.rpc as unknown as Nip46RpcInternals;
     const pool = rpc.pool;
     if (!pool) return;
-    pool.connect().catch(() => {
+    void pool.connect().catch(() => {
       // Swallow — ensureRpcRelayConnected() will retry before any operation.
     });
   }
@@ -153,7 +176,9 @@ export abstract class Nip46BaseManager {
 
   // ── Relay health ───────────────────────────────────────────────────
 
-  private hasConnectedRelay(pool: any): boolean {
+  private hasConnectedRelay(
+    pool: NonNullable<Nip46RpcInternals['pool']>
+  ): boolean {
     for (const relay of pool.relays.values()) {
       if (relay.status >= RELAY_STATUS_CONNECTED) return true;
     }
@@ -163,7 +188,7 @@ export abstract class Nip46BaseManager {
   private async ensureRpcRelayConnected(): Promise<void> {
     if (!this.signer) return;
 
-    const rpc = this.signer.rpc as any;
+    const rpc = this.signer.rpc as unknown as Nip46RpcInternals;
     const pool = rpc.pool;
     if (!pool) return;
 
@@ -276,9 +301,17 @@ export abstract class Nip46BaseManager {
     );
   }
 
-  public async signEvent(event: any): Promise<string> {
+  public async signEvent(event: SignableEvent): Promise<string> {
     const signer = await this.guardRpcReady();
-    return this.withTimeout(signer.sign(event), 30000, 'sign_event');
+    // Drafts from AuthService always carry pubkey/created_at by now; default
+    // tags so the serialized event is well-formed for the remote signer.
+    const complete = {
+      ...event,
+      tags: event.tags ?? [],
+      created_at: event.created_at ?? Math.floor(Date.now() / 1000),
+      pubkey: event.pubkey ?? '',
+    } as NostrEvent;
+    return this.withTimeout(signer.sign(complete), 30000, 'sign_event');
   }
 
   public async nip44Encrypt(
@@ -357,7 +390,7 @@ export abstract class Nip46BaseManager {
         reject(new Error(`${label} timeout after ${timeoutMs / 1000}s`));
       }, timeoutMs);
 
-      signer.rpc.on('response', (response: any) => {
+      signer.rpc.on('response', (response: NDKRpcResponse) => {
         if (settled) return;
 
         if (response?.result === secret || response?.result === 'ack') {
@@ -374,7 +407,7 @@ export abstract class Nip46BaseManager {
 
       signer.rpc
         .sendRequest(bunkerPubkey, 'connect', [bunkerPubkey, secret!], 24133)
-        .catch((err: any) => {
+        .catch((err: unknown) => {
           nip46Log.error(`${label} sendRequest error:`, err);
         });
     });
@@ -402,8 +435,8 @@ export abstract class Nip46BaseManager {
         this.signer.userPubkey = bunkerPubkey;
       }
 
-      this.lockEncryptionType(this.signer.rpc);
-      this.activateRpcPool(this.signer.rpc);
+      this.lockEncryptionType(this.signer);
+      this.activateRpcPool(this.signer);
 
       // Lazy connect: try handshake but keep signer alive if remote signer is offline.
       // guardRpcReady() will reconnect before the first actual sign/encrypt operation.

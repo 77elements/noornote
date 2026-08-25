@@ -106,7 +106,7 @@ export class KeySignerConnectionManager {
       this.keySigner = null;
       return { success: false, error: 'No pubkey available' };
     } catch (_error) {
-      this.logger.error('KeySigner', `Auto-login failed: ${_error}`);
+      this.logger.error('KeySigner', `Auto-login failed: ${String(_error)}`);
       this.keySigner = null;
       return { success: false, error: String(_error) };
     }
@@ -168,10 +168,13 @@ export class KeySignerConnectionManager {
       }
 
       return this.finishAuthentication();
-    } catch (_error: any) {
-      this.logger.error('KeySigner', `Authentication failed: ${_error}`);
+    } catch (_error) {
+      this.logger.error(
+        'KeySigner',
+        `Authentication failed: ${String(_error)}`
+      );
 
-      if (_error.name === 'AbortError') {
+      if (_error instanceof Error && _error.name === 'AbortError') {
         this.logger.info('KeySigner', 'Login cancelled by user');
         return { success: false, error: 'Login cancelled' };
       }
@@ -212,7 +215,10 @@ export class KeySignerConnectionManager {
           'Daemon process started, waiting for password'
         );
       } catch (_error) {
-        this.logger.warn('KeySigner', `Failed to prepare daemon: ${_error}`);
+        this.logger.warn(
+          'KeySigner',
+          `Failed to prepare daemon: ${String(_error)}`
+        );
       }
       this.keySigner = null;
       return { success: false, needsPassword: true };
@@ -228,7 +234,10 @@ export class KeySignerConnectionManager {
         await window.electronAPI!.launchDaemonSilent();
       }
     } catch (_error) {
-      this.logger.warn('KeySigner', `Silent launch invoke failed: ${_error}`);
+      this.logger.warn(
+        'KeySigner',
+        `Silent launch invoke failed: ${String(_error)}`
+      );
     }
 
     // Wait for daemon to start
@@ -285,7 +294,7 @@ export class KeySignerConnectionManager {
   /**
    * Cancel ongoing KeySigner login
    */
-  public async cancelLogin(): Promise<void> {
+  public cancelLogin(): void {
     if (this.keySignerAbortController) {
       this.logger.info('KeySigner', 'Cancelling login...');
       this.keySignerAbortController.abort();
@@ -338,16 +347,16 @@ export class KeySignerConnectionManager {
             this.daemonFailureCount = 0;
           }
         }
-      } catch (_error: any) {
+      } catch (_error) {
+        const message = _error instanceof Error ? _error.message : '';
         const isTransientError =
-          _error.message?.includes('Broken pipe') ||
-          _error.message?.includes('os error 32');
+          message.includes('Broken pipe') || message.includes('os error 32');
 
         if (isTransientError) {
           this.daemonFailureCount++;
           this.logger.warn(
             'KeySigner',
-            `Transient error (${this.daemonFailureCount}/${this.MAX_DAEMON_FAILURES}): ${_error.message}`
+            `Transient error (${this.daemonFailureCount}/${this.MAX_DAEMON_FAILURES}): ${message}`
           );
 
           if (this.daemonFailureCount >= this.MAX_DAEMON_FAILURES) {
@@ -365,7 +374,10 @@ export class KeySignerConnectionManager {
             );
           }
         } else {
-          this.logger.error('KeySigner', `Daemon polling error: ${_error}`);
+          this.logger.error(
+            'KeySigner',
+            `Daemon polling error: ${String(_error)}`
+          );
         }
       }
     }, this.DAEMON_POLL_INTERVAL);
@@ -414,13 +426,19 @@ export class KeySignerConnectionManager {
         this.logger.success('KeySigner', 'Daemon stopped successfully');
         return true;
       } catch (_error) {
-        this.logger.error('KeySigner', `Failed to stop daemon: ${_error}`);
+        this.logger.error(
+          'KeySigner',
+          `Failed to stop daemon: ${String(_error)}`
+        );
         const { ToastService } = await import('../ToastService');
         ToastService.show('Failed to stop daemon', 'error');
         return false;
       }
     } catch (_error) {
-      this.logger.error('KeySigner', `Error checking daemon status: ${_error}`);
+      this.logger.error(
+        'KeySigner',
+        `Error checking daemon status: ${String(_error)}`
+      );
       return false;
     }
   }

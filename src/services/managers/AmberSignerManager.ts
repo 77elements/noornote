@@ -8,6 +8,7 @@
 
 import { AmberSignerService } from '../AmberSignerService';
 import { encodeNpub, decodeNip19 } from '../NostrToolsAdapter';
+import type { SignableEvent } from '../AuthService';
 
 export interface AmberAuthResult {
   success: boolean;
@@ -86,7 +87,12 @@ export class AmberSignerManager {
       const stored = localStorage.getItem(AMBER_SESSION_KEY);
       if (!stored) return false;
 
-      const session = JSON.parse(stored);
+      // Own session payload (see saveSession): packageName/pubkey/npub
+      const session = JSON.parse(stored) as {
+        packageName?: string;
+        pubkey?: string;
+        npub?: string;
+      };
       if (session.packageName && session.pubkey) {
         this.amberService.setPackageName(session.packageName);
         this.pubkey = session.pubkey;
@@ -106,7 +112,7 @@ export class AmberSignerManager {
     }
   }
 
-  async signEvent(event: any): Promise<string> {
+  async signEvent(event: SignableEvent): Promise<string> {
     const eventJson = JSON.stringify({
       kind: event.kind,
       content: event.content,

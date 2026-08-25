@@ -375,7 +375,7 @@ export class AuthService {
   }
 
   public async cancelKeySignerLogin(): Promise<void> {
-    if (this.keySignerManager) await this.keySignerManager.cancelLogin();
+    if (this.keySignerManager) this.keySignerManager.cancelLogin();
   }
 
   private async tryAutoLoginWithKeySigner(): Promise<void> {
@@ -510,6 +510,7 @@ export class AuthService {
         this.activeNip46Manager?.isAvailable()
       ) {
         event.pubkey = this.currentUser!.pubkey;
+        event.created_at = event.created_at || Math.floor(Date.now() / 1000);
         const signature = await this.activeNip46Manager.signEvent(event);
         event.id = calculateEventHash(event as UnsignedEvent);
         event.sig = signature;

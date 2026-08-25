@@ -84,10 +84,10 @@ export class NostrConnectSignerManager extends Nip46BaseManager {
         }
 
         // Lock NIP-04 for the RPC layer after nostrconnect handshake
-        this.lockEncryptionType(signer.rpc);
+        this.lockEncryptionType(signer);
 
         // Activate pool for NDK auto-reconnection
-        this.activateRpcPool(signer.rpc);
+        this.activateRpcPool(signer);
 
         const signerPayload = signer.toPayload();
         localStorage.setItem(NIP46_STORAGE_KEY, signerPayload);

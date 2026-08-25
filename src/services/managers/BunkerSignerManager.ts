@@ -48,11 +48,15 @@ export class BunkerSignerManager extends Nip46BaseManager {
 
       if (storedPayload) {
         try {
-          const parsed = JSON.parse(storedPayload);
+          // Session payload shape (NDK signer payload + our wrapper):
+          // { payload?: { localSignerPayload?: string } }
+          const parsed = JSON.parse(storedPayload) as {
+            payload?: { localSignerPayload?: string };
+          };
           if (parsed.payload?.localSignerPayload) {
             const localSignerParsed = JSON.parse(
               parsed.payload.localSignerPayload
-            );
+            ) as { payload?: { nsec?: string } };
             localNsec = localSignerParsed.payload?.nsec;
           }
           nip46Log.info('Reusing stored local key');
@@ -97,10 +101,10 @@ export class BunkerSignerManager extends Nip46BaseManager {
 
       // Now lock encryptionType to NIP-04 for all subsequent operations
       // (prevents NDK auto-flip to nip44 which breaks hardware signers)
-      this.lockEncryptionType(this.signer.rpc);
+      this.lockEncryptionType(this.signer);
 
       // Activate pool for NDK auto-reconnection (same as restoreSession)
-      this.activateRpcPool(this.signer.rpc);
+      this.activateRpcPool(this.signer);
 
       // Persist signer payload for session restore
       const signerPayload = this.signer.toPayload();
