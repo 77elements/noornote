@@ -241,10 +241,10 @@ export class EmojiService {
     const pubkey = getCurrentUserPubkey();
     if (!pubkey) throw new Error('Not authenticated');
 
-    const created_at = now();
+    const createdAt = now();
     const event = {
       kind: 30030,
-      created_at,
+      created_at: createdAt,
       pubkey,
       content: '',
       tags: [
@@ -261,7 +261,7 @@ export class EmojiService {
     await publishEvent(signed);
 
     this.emojis = emojis;
-    this.persistCache(created_at);
+    this.persistCache(createdAt);
     this.eventBus.emit('emojis:updated', { emojis: this.emojis });
   }
 

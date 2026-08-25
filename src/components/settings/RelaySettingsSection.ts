@@ -291,7 +291,7 @@ export class RelaySettingsSection extends SettingsSection {
           <span class="relay-health-indicator ${isConnected ? 'connected' : 'disconnected'}"></span>
           <div class="relay-url">
             ${relay.url}
-            ${latency != null ? `<span class="relay-latency">${latency}ms</span>` : ''}
+            ${latency !== null ? `<span class="relay-latency">${latency}ms</span>` : ''}
           </div>
         </div>
 

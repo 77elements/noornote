@@ -160,7 +160,10 @@ export class ProfileSearchOrchestrator extends Orchestrator {
 
       return result;
     } catch (error) {
-      this.systemLogger.error('ProfileSearch', `Search failed: ${String(error)}`);
+      this.systemLogger.error(
+        'ProfileSearch',
+        `Search failed: ${String(error)}`
+      );
       throw error;
     }
   }

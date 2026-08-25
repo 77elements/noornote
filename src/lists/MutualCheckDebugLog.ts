@@ -69,7 +69,10 @@ export class MutualCheckDebugLog {
       this.filePath = `${userDir}/${LOG_FILE_NAME}`;
       this.initialized = true;
     } catch (error) {
-      this.systemLogger.error('MutualCheckDebugLog', `Init failed: ${String(error)}`);
+      this.systemLogger.error(
+        'MutualCheckDebugLog',
+        `Init failed: ${String(error)}`
+      );
     }
   }
 
@@ -114,7 +117,10 @@ export class MutualCheckDebugLog {
         JSON.stringify(logs, null, 2)
       );
     } catch (error) {
-      this.systemLogger.error('MutualCheckDebugLog', `Write failed: ${String(error)}`);
+      this.systemLogger.error(
+        'MutualCheckDebugLog',
+        `Write failed: ${String(error)}`
+      );
     }
   }
 
@@ -297,7 +303,10 @@ export class MutualCheckDebugLog {
       );
       this.systemLogger.info('MutualCheckDebugLog', 'Logs cleared');
     } catch (error) {
-      this.systemLogger.error('MutualCheckDebugLog', `Clear failed: ${String(error)}`);
+      this.systemLogger.error(
+        'MutualCheckDebugLog',
+        `Clear failed: ${String(error)}`
+      );
     }
   }
 }

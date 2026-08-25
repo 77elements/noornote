@@ -160,7 +160,10 @@ export class ThreadOrchestrator extends Orchestrator {
         if (e.id) allReplies.set(e.id, e);
       });
     } catch (error) {
-      this.systemLogger.error(this.LOG_TAG, `Stage 1 replies failed: ${String(error)}`);
+      this.systemLogger.error(
+        this.LOG_TAG,
+        `Stage 1 replies failed: ${String(error)}`
+      );
     }
 
     // Stage 2: Outbound relays of the note's author (replies often land on same relays)

@@ -352,7 +352,11 @@ export class RepostRenderer {
     // (2) Addressable article-preview kinds (30023 article, 32267 Zapstore
     //     app, 30311 live stream). All share the ArticlePreviewRenderer pipeline
     //     and are listed in ARTICLE_PREVIEW_KINDS as the single source of truth.
-    if (innerEvent.kind != null && ARTICLE_PREVIEW_KINDS.has(innerEvent.kind)) {
+    if (
+      innerEvent.kind !== null &&
+      innerEvent.kind !== undefined &&
+      ARTICLE_PREVIEW_KINDS.has(innerEvent.kind)
+    ) {
       const container = document.createElement('div');
       container.className = 'repost-article-container';
       RepostRenderer.articlePreviewRenderer.renderFromEvent(

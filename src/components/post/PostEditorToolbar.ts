@@ -215,7 +215,10 @@ export class PostEditorToolbar {
       }
     } catch (error) {
       console.error('Upload error:', error);
-      this.systemLogger.error('PostEditorToolbar', `Upload error: ${String(error)}`);
+      this.systemLogger.error(
+        'PostEditorToolbar',
+        `Upload error: ${String(error)}`
+      );
       this.modalService.show({
         title: 'Upload Failed',
         content: '<p>Upload failed. Please try again.</p>',

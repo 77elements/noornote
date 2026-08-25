@@ -737,7 +737,11 @@ export class MessagesView extends View {
    * Toggle menu visibility
    */
   private toggleMenu(): void {
-    this.menuOpen ? this.closeMenu() : this.openMenu();
+    if (this.menuOpen) {
+      this.closeMenu();
+    } else {
+      this.openMenu();
+    }
   }
 
   /**

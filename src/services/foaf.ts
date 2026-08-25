@@ -139,7 +139,9 @@ export class FoafService {
 
   private assertDegree(degree: FoafDegree): void {
     if (degree !== 1 && degree !== 2 && degree !== 3) {
-      throw new Error(`FoafService: degree must be 1, 2, or 3 (got ${String(degree)})`);
+      throw new Error(
+        `FoafService: degree must be 1, 2, or 3 (got ${String(degree)})`
+      );
     }
   }
 

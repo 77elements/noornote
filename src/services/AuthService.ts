@@ -198,7 +198,7 @@ export class AuthService {
     const trimmed = input.trim();
     if (trimmed.startsWith('npub1')) return 'npub';
     if (trimmed.startsWith('bunker://')) return 'bunker';
-    if (/^[\w\-\.]+@[\w\-\.]+\.\w+$/.test(trimmed)) return 'nip05';
+    if (/^[\w-.]+@[\w-.]+\.\w+$/.test(trimmed)) return 'nip05';
     return 'unknown';
   }
 
@@ -659,40 +659,36 @@ export class AuthService {
         | 'nip04Encrypt'
         | 'nip04Decrypt';
 
-    try {
-      if (
-        this.authMethod === 'extension' &&
-        this.extensionManager?.isSignerAvailable()
-      ) {
-        return await this.withSignerTimeout(
-          this.extensionManager[methodName](data, pubkey),
-          AuthService.CRYPTO_TIMEOUT_MS,
-          `extension ${methodName}`
-        );
-      }
-
-      if (this.authMethod === 'key-signer' && this.keySignerManager) {
-        const keySigner = this.keySignerManager.getClient();
-        if (!keySigner) throw new Error('KeySigner client not available');
-        return await keySigner[methodName](data, pubkey);
-      }
-
-      if (this.authMethod === 'nip46' && this.activeNip46Manager) {
-        return await this.activeNip46Manager[methodName](data, pubkey);
-      }
-
-      if (this.authMethod === 'amber' && this.amberManager) {
-        return await this.withSignerTimeout(
-          this.amberManager[methodName](data, pubkey),
-          AuthService.CRYPTO_TIMEOUT_MS,
-          `amber ${methodName}`
-        );
-      }
-
-      throw new Error(`No ${operation}ion method available`);
-    } catch (error) {
-      throw error;
+    if (
+      this.authMethod === 'extension' &&
+      this.extensionManager?.isSignerAvailable()
+    ) {
+      return await this.withSignerTimeout(
+        this.extensionManager[methodName](data, pubkey),
+        AuthService.CRYPTO_TIMEOUT_MS,
+        `extension ${methodName}`
+      );
     }
+
+    if (this.authMethod === 'key-signer' && this.keySignerManager) {
+      const keySigner = this.keySignerManager.getClient();
+      if (!keySigner) throw new Error('KeySigner client not available');
+      return await keySigner[methodName](data, pubkey);
+    }
+
+    if (this.authMethod === 'nip46' && this.activeNip46Manager) {
+      return await this.activeNip46Manager[methodName](data, pubkey);
+    }
+
+    if (this.authMethod === 'amber' && this.amberManager) {
+      return await this.withSignerTimeout(
+        this.amberManager[methodName](data, pubkey),
+        AuthService.CRYPTO_TIMEOUT_MS,
+        `amber ${methodName}`
+      );
+    }
+
+    throw new Error(`No ${operation}ion method available`);
   }
 
   // ══════════════════════════════════════════════════════════════════

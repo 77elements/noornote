@@ -392,8 +392,9 @@ export class ViewTabManager {
       this.eventBus.emit('view-tab:label-updated', {
         tabId: tab.id,
         label: finalLabel,
-        ...(pubkey != null && { pubkey }),
-        ...(profilePicUrl != null && { profilePicUrl }),
+        ...(pubkey !== null && pubkey !== undefined && { pubkey }),
+        ...(profilePicUrl !== null &&
+          profilePicUrl !== undefined && { profilePicUrl }),
       });
     } catch (error) {
       console.warn('Failed to fetch tab label:', error);

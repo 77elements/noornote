@@ -109,7 +109,10 @@ export class ZapstoreAppView extends View {
 
       void this.renderApp(event, app, release);
     } catch (error) {
-      this.systemLogger.error('ZapstoreAppView', `Failed to load: ${String(error)}`);
+      this.systemLogger.error(
+        'ZapstoreAppView',
+        `Failed to load: ${String(error)}`
+      );
       this.container.innerHTML =
         '<div class="article-view-error"><p>Failed to load app</p></div>';
     }

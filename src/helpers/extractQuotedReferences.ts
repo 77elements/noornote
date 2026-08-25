@@ -43,7 +43,7 @@ export function extractQuotedReferences(text: string): QuotedReference[] {
   // to NOT be a bech32 char (so we don't swallow trailing bech32 body) AND
   // not another `#` (defensive — no double-fragment).
   const nostrRegex =
-    /(?<!\/)(?:nostr:)?(event1[023456789acdefghjklmnpqrstuvwxyz]{58}|note1[023456789acdefghjklmnpqrstuvwxyz]{58}|nevent1[023456789acdefghjklmnpqrstuvwxyz]+|naddr1[023456789acdefghjklmnpqrstuvwxyz]+)(#([A-Za-z0-9_\-]+))?(?=[^023456789acdefghjklmnpqrstuvwxyz#]|$)/gi;
+    /(?<!\/)(?:nostr:)?(event1[023456789acdefghjklmnpqrstuvwxyz]{58}|note1[023456789acdefghjklmnpqrstuvwxyz]{58}|nevent1[023456789acdefghjklmnpqrstuvwxyz]+|naddr1[023456789acdefghjklmnpqrstuvwxyz]+)(#([A-Za-z0-9_-]+))?(?=[^023456789acdefghjklmnpqrstuvwxyz#]|$)/gi;
 
   const matches = Array.from(text.matchAll(nostrRegex));
 

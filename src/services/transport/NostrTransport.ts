@@ -543,8 +543,9 @@ export class NostrTransport {
       relays = secureRelays(relays);
 
       // Check if this is a NIP-50 search query (has 'search' field)
-      // @ts-ignore - search field not in NDKFilter types
-      const hasSearchField = filters.some(f => f.search);
+      const hasSearchField = filters.some(
+        f => (f as NDKFilter & { search?: string }).search !== undefined
+      );
 
       if (hasSearchField) {
         return this.fetchWithSearch(relays, filters, timeout);

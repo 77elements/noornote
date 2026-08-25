@@ -79,7 +79,10 @@ export async function readJsonFile<T>(
     logger.info('file.ts', `Read: ${filename}`);
     return data;
   } catch (error) {
-    logger.error('file.ts', `Failed to read ${String(filename)}: ${String(error)}`);
+    logger.error(
+      'file.ts',
+      `Failed to read ${String(filename)}: ${String(error)}`
+    );
     return defaultData;
   }
 }
@@ -104,7 +107,10 @@ export async function writeJsonFile<T>(
 
     logger.info('file.ts', `Wrote: ${filename}`);
   } catch (error) {
-    logger.error('file.ts', `Failed to write ${String(filename)}: ${String(error)}`);
+    logger.error(
+      'file.ts',
+      `Failed to write ${String(filename)}: ${String(error)}`
+    );
     throw error;
   }
 }
@@ -165,7 +171,10 @@ export function uploadJsonFile<T>(): Promise<T | null> {
         logger.info('file.ts', `Uploaded and parsed: ${file.name}`);
         resolve(data);
       } catch (error) {
-        logger.error('file.ts', `Failed to parse uploaded file: ${String(error)}`);
+        logger.error(
+          'file.ts',
+          `Failed to parse uploaded file: ${String(error)}`
+        );
         resolve(null);
       }
     };

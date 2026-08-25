@@ -286,8 +286,9 @@ export class NoteTakingService {
 
   /** Strip local-only metadata, leaving just the publishable payload. */
   public toPayload(record: NoteRecord): NotePayload {
-    const { dirty: _dirty, ...payload } = record;
-    return payload;
+    const payload = { ...record } as Partial<typeof record>;
+    delete payload.dirty;
+    return payload as NotePayload;
   }
 
   /**

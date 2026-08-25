@@ -60,7 +60,7 @@ export class ArticlePreviewRenderer {
    */
   public renderFromEvent(event: NostrEvent, container: Element): void {
     const dTag = event.tags.find(t => t[0] === 'd')?.[1];
-    if (!dTag || event.kind == null) {
+    if (!dTag || event.kind === null || event.kind === undefined) {
       // Without a d-tag/kind there is no valid naddr — silently bail.
       return;
     }

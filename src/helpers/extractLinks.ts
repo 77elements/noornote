@@ -26,7 +26,7 @@ export function extractLinks(text: string): LinkPreview[] {
   urls.forEach(rawUrl => {
     // Clean trailing characters that are often part of markdown/html syntax
     // Remove trailing: > ) , . ! ? ; :
-    const url = rawUrl.replace(/[>),.\!?;:]+$/, '');
+    const url = rawUrl.replace(/[>),.!?;:]+$/, '');
 
     try {
       const parsed = new URL(url);

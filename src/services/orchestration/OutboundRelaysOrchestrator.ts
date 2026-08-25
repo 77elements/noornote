@@ -456,7 +456,10 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
       });
       db.close();
     } catch (error) {
-      this.systemLogger.warn(this.LOG_TAG, `IndexedDB prune failed: ${String(error)}`);
+      this.systemLogger.warn(
+        this.LOG_TAG,
+        `IndexedDB prune failed: ${String(error)}`
+      );
     }
   }
 
@@ -530,7 +533,10 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
       });
       db.close();
     } catch (error) {
-      this.systemLogger.warn(this.LOG_TAG, `IndexedDB clear failed: ${String(error)}`);
+      this.systemLogger.warn(
+        this.LOG_TAG,
+        `IndexedDB clear failed: ${String(error)}`
+      );
     }
   }
 

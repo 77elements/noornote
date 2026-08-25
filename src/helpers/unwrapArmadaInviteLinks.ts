@@ -49,7 +49,7 @@ const ARMADA_URL_REGEX =
  * don't double-match a naddr that's already inside a URL we just rewrote.
  */
 const BARE_NADDR_WITH_FRAGMENT_REGEX =
-  /(?<!\/)(naddr1[02-9ac-hj-np-z]+)(#[A-Za-z0-9_\-]+)/gi;
+  /(?<!\/)(naddr1[02-9ac-hj-np-z]+)(#[A-Za-z0-9_-]+)/gi;
 
 export function unwrapArmadaInviteLinks(text: string): string {
   return text

@@ -50,7 +50,11 @@ export class MoveDropdown {
 
     this.button.addEventListener('click', e => {
       e.stopPropagation();
-      this.dropdown ? this.close() : this.open();
+      if (this.dropdown) {
+        this.close();
+      } else {
+        this.open();
+      }
     });
   }
 

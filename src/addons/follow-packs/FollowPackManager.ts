@@ -840,7 +840,10 @@ export class FollowPackManager {
       this.renderCurrentView();
     } catch (error) {
       ToastService.show('Failed to publish pack', 'error');
-      this.systemLogger.error('FollowPacks', `Pack publish failed: ${String(error)}`);
+      this.systemLogger.error(
+        'FollowPacks',
+        `Pack publish failed: ${String(error)}`
+      );
       publishBtn.disabled = false;
       publishBtn.textContent =
         mode === 'create' ? 'Publish Follow Pack' : 'Update Follow Pack';
@@ -920,7 +923,10 @@ export class FollowPackManager {
     } catch (error) {
       timelineContainer.innerHTML =
         '<div class="follow-packs__empty">Failed to load notes</div>';
-      this.systemLogger.error('FollowPacks', `Timeline load failed: ${String(error)}`);
+      this.systemLogger.error(
+        'FollowPacks',
+        `Timeline load failed: ${String(error)}`
+      );
     }
   }
 
@@ -962,7 +968,10 @@ export class FollowPackManager {
       );
     } catch (error) {
       ToastService.show('Failed to follow pack members', 'error');
-      this.systemLogger.error('FollowPacks', `Follow All failed: ${String(error)}`);
+      this.systemLogger.error(
+        'FollowPacks',
+        `Follow All failed: ${String(error)}`
+      );
     }
   }
 }

@@ -61,8 +61,7 @@ export class PlatformService {
   private constructor() {
     // Detect runtime environment
     this.isElectron =
-      typeof window !== 'undefined' &&
-      window.electronAPI !== undefined;
+      typeof window !== 'undefined' && window.electronAPI !== undefined;
 
     this.isCapacitor =
       typeof window !== 'undefined' &&

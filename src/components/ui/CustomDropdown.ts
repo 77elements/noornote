@@ -232,7 +232,11 @@ export class CustomDropdown {
    * Toggle dropdown
    */
   private toggle(): void {
-    this.isOpen ? this.close() : this.open();
+    if (this.isOpen) {
+      this.close();
+    } else {
+      this.open();
+    }
   }
 
   /**
