@@ -168,11 +168,11 @@ export class ZapstoreAppView extends View {
       [ZAPSTORE_RELAY],
       [
         {
-          kinds: [30063 as any],
+          kinds: [30063],
           authors: [parts[1]!],
           '#d': [parts[2]!],
           limit: 1,
-        },
+        } as import('@nostr-dev-kit/ndk').NDKFilter<number>,
       ],
       8000,
       false,

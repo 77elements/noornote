@@ -114,7 +114,7 @@ export class FollowPackManager {
       const relays = RelayConfig.getInstance().getAggregatorRelays();
       const events = await this.transport.fetch(
         relays,
-        [{ kinds: [39089 as any], limit: 50 }],
+        [{ kinds: [39089], limit: 50 }],
         8000,
         false,
         'FollowPackMgr'

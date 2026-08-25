@@ -515,7 +515,7 @@ export class FollowerChangeDetector {
 if (typeof window !== 'undefined') {
   const prog = (c: number, t: number) =>
     console.debug(`[follower-check] verified ${c}/${t}`);
-  (window as any).__FOLLOWER_CHANGE_DETECTOR__ = {
+  window.__FOLLOWER_CHANGE_DETECTOR__ = {
     check: () =>
       FollowerChangeDetector.getInstance().detect({ onProgress: prog }),
     full: () =>

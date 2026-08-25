@@ -33,7 +33,8 @@ export async function getRepostsOriginalEvent(
   // Try 1: Parse from content (legacy format - embedded JSON)
   if (event.content) {
     try {
-      const embeddedEvent = JSON.parse(event.content);
+      // kind:6/16 repost embeds the original event (relay-controlled)
+      const embeddedEvent = JSON.parse(event.content) as NostrEvent | null;
       if (embeddedEvent && embeddedEvent.id && embeddedEvent.kind) {
         return embeddedEvent;
       }

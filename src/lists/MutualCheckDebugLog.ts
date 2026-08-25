@@ -101,7 +101,13 @@ export class MutualCheckDebugLog {
       let logs: DebugLogEntry[] = [];
       try {
         const content = await window.electronAPI!.readTextFile(this.filePath);
-        logs = JSON.parse(content);
+        // Own debug-log file format: { entries: [...] } (see toFileContent)
+        const parsed = JSON.parse(content) as {
+          entries?: unknown;
+        } | null;
+        logs = Array.isArray(parsed?.entries)
+          ? (parsed.entries as DebugLogEntry[])
+          : [];
       } catch {
         logs = [];
       }
@@ -281,7 +287,12 @@ export class MutualCheckDebugLog {
 
     try {
       const content = await window.electronAPI.readTextFile(this.filePath);
-      return JSON.parse(content);
+      const parsed = JSON.parse(content) as {
+      entries?: unknown;
+    } | null;
+    return Array.isArray(parsed?.entries)
+      ? (parsed.entries as DebugLogEntry[])
+      : [];
     } catch {
       return [];
     }
@@ -312,7 +323,7 @@ export class MutualCheckDebugLog {
 }
 
 if (typeof window !== 'undefined') {
-  (window as any).__MUTUAL_CHECK_DEBUG_LOG__ = {
+  window.__MUTUAL_CHECK_DEBUG_LOG__ = {
     readLogs: async () => {
       const log = MutualCheckDebugLog.getInstance();
       const logs = await log.readLogs();

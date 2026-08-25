@@ -8,6 +8,10 @@ interface Window {
   __noornote_scc_param?: string;
   /** Captured relay param pre-router (deep-link handling in App.ts). */
   __noornote_relay_param?: string;
+  /** Dev-console debug handles (diagnose helpers, dev builds only). */
+  __MUTUAL_CHECK_DEBUG_LOG__?: Record<string, unknown>;
+  __MUTUAL_CHANGE_STORAGE__?: Record<string, unknown>;
+  __FOLLOWER_CHANGE_DETECTOR__?: Record<string, unknown>;
 }
 
 interface Window {

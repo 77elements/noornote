@@ -324,9 +324,9 @@ export class MentionAutocomplete {
       'border',
       'boxSizing',
     ].forEach(prop => {
-      const value = computedStyle[prop as any];
+      const value = computedStyle[prop as keyof CSSStyleDeclaration];
       if (value !== undefined) {
-        mirror.style[prop as any] = value;
+        mirror.style.setProperty(prop, value as string);
       }
     });
 

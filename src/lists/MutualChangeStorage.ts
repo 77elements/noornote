@@ -291,7 +291,7 @@ export class MutualChangeStorage extends BaseFileStorage<MutualCheckData> {
 
 // Debug helper
 if (typeof window !== 'undefined') {
-  (window as any).__MUTUAL_CHANGE_STORAGE__ = {
+  window.__MUTUAL_CHANGE_STORAGE__ = {
     logState: () => {
       const storage = MutualChangeStorage.getInstance();
       console.debug('=== MutualChangeStorage State ===');

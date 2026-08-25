@@ -2042,8 +2042,8 @@ export class BroadcastDeleteService {
 
       ws.onmessage = msg => {
         try {
-          const data = JSON.parse(msg.data);
-          // NIP-01 OK message: ["OK", <event_id>, <true|false>, <message>]
+          // NIP-01 OK frame: ["OK", <event_id>, <true|false>, <message>]
+          const data = JSON.parse(String(msg.data)) as unknown[];
           if (data[0] === 'OK' && data[1] === event.id) {
             finish(data[2] === true ? 'ok' : 'rejected');
           }

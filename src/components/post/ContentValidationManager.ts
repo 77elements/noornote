@@ -10,10 +10,12 @@
  * Used by: PostNoteModal, ReplyModal (and future modals)
  */
 
+import type { PollData } from '../poll/PollCreator';
+
 export interface ValidationOptions {
   content: string;
   selectedRelays: Set<string>;
-  pollData?: any | null;
+  pollData?: PollData | null;
 }
 
 export interface ValidationResult {

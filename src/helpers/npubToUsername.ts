@@ -222,26 +222,35 @@ function npubToUsernameHTMLMulti(
     : mentionCount > SIMPLE_MENTION_THRESHOLD;
 
   // Step 1: Replace nprofile mentions
-  text = text.replace(NPROFILE_REGEX, (fullMatch, _prefix, nprofile) => {
-    try {
-      const npub = nprofileToNpub(nprofile);
-      const hexPubkey = npubToHex(npub);
-      if (!hexPubkey) return fullMatch;
-      return resolveProfileToMentionHTML(
-        npub,
-        profileResolver(hexPubkey),
-        useSimpleMode,
-        hexPubkey
-      );
-    } catch {
-      return fullMatch;
+  text = text.replace(
+    NPROFILE_REGEX,
+    (fullMatch: string, _prefix: string, nprofile: string) => {
+      try {
+        const npub = nprofileToNpub(nprofile);
+        const hexPubkey = npubToHex(npub);
+        if (!hexPubkey) return fullMatch;
+        return resolveProfileToMentionHTML(
+          npub,
+          profileResolver(hexPubkey),
+          useSimpleMode,
+          hexPubkey
+        );
+      } catch {
+        return fullMatch;
+      }
     }
-  });
+  );
 
   // Step 2: Replace npub mentions, skipping those already inside HTML from step 1
   text = text.replace(
     NPUB_REGEX,
-    (fullMatch, _prefix, npub, offset, string) => {
+    (
+      fullMatch: string,
+      _prefix: string,
+      npub: string,
+      offset: number,
+      string: string
+    ) => {
       if (isInsideExistingHTML(string, offset)) return fullMatch;
 
       try {

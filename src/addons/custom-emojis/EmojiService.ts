@@ -21,6 +21,7 @@ import {
   signEvent,
   getCurrentUserPubkey,
 } from '../../lists/relays';
+import type { NDKFilter } from '@nostr-dev-kit/ndk';
 import {
   PerAccountLocalStorage,
   StorageKeys,
@@ -105,7 +106,7 @@ export class EmojiService {
           authors: [pubkey],
           '#d': [PACK_D_TAG],
           limit: 1,
-        } as any,
+        } as NDKFilter<number>,
       ]);
 
       if (events.length === 0) {
@@ -168,7 +169,7 @@ export class EmojiService {
             kinds: [30030],
             authors: [pubkey],
             limit: 20,
-          } as any,
+          } as NDKFilter<number>,
         ],
         5000
       );

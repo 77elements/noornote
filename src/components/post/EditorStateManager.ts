@@ -96,7 +96,7 @@ export class EditorStateManager {
     buttonSelector: string,
     content: string,
     selectedRelays: Set<string>,
-    pollData?: any | null
+    pollData?: import('../poll/PollCreator').PollData | null
   ): void {
     const postBtn = document.querySelector(buttonSelector) as HTMLButtonElement;
     if (!postBtn) return;
@@ -104,7 +104,7 @@ export class EditorStateManager {
     const validation = ContentValidationManager.validate({
       content,
       selectedRelays,
-      pollData,
+      ...(pollData !== undefined && { pollData }),
     });
     postBtn.disabled = !validation.isValid;
   }
