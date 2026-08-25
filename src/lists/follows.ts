@@ -654,7 +654,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
           );
           logger.error(
             'follows.ts',
-            `Failed to decrypt private follows: ${error}`
+            `Failed to decrypt private follows: ${String(error)}`
           );
           decryptionFailed = true;
         }
@@ -698,7 +698,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
       relayTimestamp: eventTimestamp,
     };
   } catch (error) {
-    logger.error('follows.ts', `Failed to fetch from relays: ${error}`);
+    logger.error('follows.ts', `Failed to fetch from relays: ${String(error)}`);
     return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
   }
 }
@@ -795,7 +795,10 @@ export async function publishToRelays(): Promise<void> {
         );
       }
     } catch (error) {
-      logger.error('follows.ts', `Failed to publish private follows: ${error}`);
+      logger.error(
+        'follows.ts',
+        `Failed to publish private follows: ${String(error)}`
+      );
       throw error;
     }
   }
@@ -1031,7 +1034,10 @@ export const FollowOrchestrator = {
       } catch (error) {
         if (isInitialSync) {
           isSyncing = false;
-          logger.error('FollowOrchestrator', `Initial sync failed: ${error}`);
+          logger.error(
+            'FollowOrchestrator',
+            `Initial sync failed: ${String(error)}`
+          );
           AppState.getInstance().setState('user', {
             syncStatus: { status: 'error', error: String(error) },
           });
@@ -1400,7 +1406,7 @@ export class ProfileFollowManager {
         });
         logger.warn(
           'follows.ts',
-          `Immediate publish after unfollow failed: ${pubErr}`
+          `Immediate publish after unfollow failed: ${String(pubErr)}`
         );
       }
     } catch (error) {
@@ -1931,7 +1937,7 @@ export class FollowListManager {
       }
     } catch (error) {
       console.error('Failed to restore from file:', error);
-      ToastService.show(`Failed to restore: ${error}`, 'error');
+      ToastService.show(`Failed to restore: ${String(error)}`, 'error');
     }
   }
 

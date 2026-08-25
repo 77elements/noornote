@@ -72,7 +72,23 @@ export class AccountStorageService {
         return [];
       }
 
-      const accounts: StoredAccount[] = JSON.parse(stored);
+      // Own storage format (see saveAccount) — parse then shape-check
+      const parsed = JSON.parse(stored) as unknown;
+      if (
+        !Array.isArray(parsed) ||
+        !parsed.every(
+          a =>
+            a &&
+            typeof a === 'object' &&
+            'pubkey' in a &&
+            'npub' in a &&
+            'authMethod' in a
+        )
+      ) {
+        console.error('[AccountStorageService] Corrupted accounts storage');
+        return [];
+      }
+      const accounts = parsed as StoredAccount[];
 
       // Sort by lastUsedAt descending (most recent first)
       return accounts.sort((a, b) => b.lastUsedAt - a.lastUsedAt);
@@ -224,7 +240,12 @@ export class AccountStorageService {
         return;
       }
 
-      const session = JSON.parse(oldSession);
+      // Legacy AuthService session (pre multi-account) — validated before use
+      const session = JSON.parse(oldSession) as {
+        pubkey?: string;
+        npub?: string;
+        authMethod?: string;
+      };
 
       // Only migrate if we have valid session data
       if (session.pubkey && session.npub && session.authMethod) {
@@ -233,7 +254,7 @@ export class AccountStorageService {
           this.addAccount({
             pubkey: session.pubkey,
             npub: session.npub,
-            authMethod: session.authMethod,
+            authMethod: session.authMethod as StoredAccount['authMethod'],
             addedAt: Date.now(),
             lastUsedAt: Date.now(),
           });

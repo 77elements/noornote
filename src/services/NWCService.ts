@@ -219,7 +219,7 @@ export class NWCService {
 
       ws.onerror = error => {
         clearTimeout(timeout);
-        reject(new Error(`WebSocket connection error: ${error}`));
+        reject(new Error(`WebSocket connection error: ${String(error)}`));
       };
     });
   }
@@ -249,10 +249,16 @@ export class NWCService {
 
       const handleMessage = (msgEvent: MessageEvent) => {
         try {
-          const data = JSON.parse(msgEvent.data);
+          // NWC JSON-RPC over WS: [verb, id, payload] arrays (wallet-controlled)
+          const data = JSON.parse(String(msgEvent.data)) as unknown[];
 
           // Handle EVENT messages
-          if (data[0] === 'EVENT' && data[1] === subId && data[2]) {
+          if (
+            data[0] === 'EVENT' &&
+            data[1] === subId &&
+            typeof data[2] === 'object' &&
+            data[2] !== null
+          ) {
             const responseEvent = data[2] as NostrEvent;
 
             // Verify it's a response event (kind 23195) from the expected author
@@ -407,7 +413,9 @@ export class NWCService {
         response.content
       );
 
-      return JSON.parse(decrypted);
+      // NIP-47 response payload (result object per method) — opaque here,
+      // typed by each caller
+      return JSON.parse(decrypted) as Record<string, unknown>;
     } finally {
       ws?.close();
     }
