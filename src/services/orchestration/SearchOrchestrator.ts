@@ -54,7 +54,7 @@ export class SearchOrchestrator extends Orchestrator {
   /**
    * Handle UI-triggered actions (not used for search - direct API calls)
    */
-  public onui(_data: any): void {
+  public onui(_data: unknown): void {
     // Search is triggered via direct API calls (search/searchPaginated)
     // No UI event handling needed
   }
@@ -129,8 +129,8 @@ export class SearchOrchestrator extends Orchestrator {
       }
     }
 
-    // @ts-ignore - NIP-50 search field (not in nostr-tools types yet)
-    filter.search = searchString;
+    // NIP-50 search field — not in NDK's filter types, hence the intersection
+    (filter as NDKFilter & { search?: string }).search = searchString;
 
     // Get search relays (hardcoded + user relays)
     const searchRelays = this.getSearchRelays();
@@ -203,8 +203,7 @@ export class SearchOrchestrator extends Orchestrator {
       if (includeSpam) searchString += ` include:spam`;
     }
 
-    // @ts-ignore
-    filter.search = searchString;
+    (filter as NDKFilter & { search?: string }).search = searchString;
 
     const searchRelays = this.getSearchRelays();
     const events = await this.transport.fetch(
@@ -235,8 +234,7 @@ export class SearchOrchestrator extends Orchestrator {
       limit,
     };
 
-    // @ts-ignore - NIP-50 search field
-    filter.search = query;
+    (filter as NDKFilter & { search?: string }).search = query;
 
     const searchRelays = this.getSearchRelays();
 
@@ -258,14 +256,31 @@ export class SearchOrchestrator extends Orchestrator {
       const profiles: ProfileSearchResult[] = [];
       for (const event of events) {
         try {
-          const metadata = JSON.parse(event.content);
+          // kind:0 metadata JSON (relay-controlled — fields validated by use)
+          const metadata = JSON.parse(event.content) as {
+            name?: unknown;
+            display_name?: unknown;
+            picture?: unknown;
+            nip05?: unknown;
+            about?: unknown;
+          };
           profiles.push({
             pubkey: event.pubkey,
-            name: metadata.name,
-            display_name: metadata.display_name,
-            picture: metadata.picture,
-            nip05: metadata.nip05,
-            about: metadata.about,
+            ...(typeof metadata.name === 'string' && {
+              name: metadata.name,
+            }),
+            ...(typeof metadata.display_name === 'string' && {
+              display_name: metadata.display_name,
+            }),
+            ...(typeof metadata.picture === 'string' && {
+              picture: metadata.picture,
+            }),
+            ...(typeof metadata.nip05 === 'string' && {
+              nip05: metadata.nip05,
+            }),
+            ...(typeof metadata.about === 'string' && {
+              about: metadata.about,
+            }),
           });
         } catch {
           // Skip invalid profile JSON
@@ -280,7 +295,7 @@ export class SearchOrchestrator extends Orchestrator {
     } catch (error) {
       this.systemLogger.error(
         'SearchOrchestrator',
-        `Profile search failed: ${error}`
+        `Profile search failed: ${String(error)}`
       );
       return [];
     }

@@ -2004,7 +2004,8 @@ IMPORTANT:
         }
       } else if ('showSaveFilePicker' in window) {
         // Web: File System Access API
-        const handle = await (window as any).showSaveFilePicker({
+        // File System Access API (Chromium only) — typed in window-globals.d.ts
+        const handle = await window.showSaveFilePicker!({
           suggestedName: defaultFileName,
           types: [
             { description: 'Text Files', accept: { 'text/plain': ['.txt'] } },
@@ -2781,7 +2782,7 @@ IMPORTANT:
 
       const events = await transport.fetch(
         relays,
-        [{ kinds: [39089 as any], limit: 50 }],
+        [{ kinds: [39089], limit: 50 }],
         8000,
         false,
         'AccountSetup'
@@ -3120,7 +3121,7 @@ IMPORTANT:
       this.destroy();
       this.router.navigate('/');
     } catch (error) {
-      ToastService.show(`Failed to publish: ${error}`, 'error');
+      ToastService.show(`Failed to publish: ${String(error)}`, 'error');
       this.resetFinishButton(finishBtn, finishText, finishSpinner);
     }
   }

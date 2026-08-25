@@ -43,23 +43,17 @@ export class TextNoteProcessor {
     };
 
     if (authorProfile) {
-
-
       result.author.profile = {
-
-
         ...(authorProfile.name !== undefined && { name: authorProfile.name }),
 
+        ...(authorProfile.display_name !== undefined && {
+          display_name: authorProfile.display_name,
+        }),
 
-        ...(authorProfile.display_name !== undefined && { display_name: authorProfile.display_name }),
-
-
-        ...(authorProfile.picture !== undefined && { picture: authorProfile.picture }),
-
-
+        ...(authorProfile.picture !== undefined && {
+          picture: authorProfile.picture,
+        }),
       };
-
-
     }
 
     return result;

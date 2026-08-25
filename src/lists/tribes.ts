@@ -1636,7 +1636,10 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
             categoryAssignments.set(item.pubkey, tribeName);
           }
         } catch (error) {
-          logger.error('Tribes', `Failed to decrypt private members: ${error}`);
+          logger.error(
+            'Tribes',
+            `Failed to decrypt private members: ${String(error)}`
+          );
         }
       }
 
@@ -1706,7 +1709,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
       relayTimestamp: maxEventTimestamp,
     };
   } catch (error) {
-    logger.error('Tribes', `Failed to fetch from relays: ${error}`);
+    logger.error('Tribes', `Failed to fetch from relays: ${String(error)}`);
     return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
   }
 }
@@ -1975,8 +1978,16 @@ async function decryptPrivateMembers(
   if (!plaintext) return [];
 
   try {
-    const tags: string[][] = JSON.parse(plaintext);
-    return tagsToMembers(tags, now());
+    // NIP-04-encrypted member list payload: array of p-tags (user-published)
+    const tags = JSON.parse(plaintext) as unknown;
+    // Narrow to string[][] — malformed entries are skipped by tagsToMembers
+    if (
+      !Array.isArray(tags) ||
+      !tags.every(t => Array.isArray(t) && t.every(v => typeof v === 'string'))
+    ) {
+      return [];
+    }
+    return tagsToMembers(tags as string[][], now());
   } catch {
     return [];
   }
@@ -2632,7 +2643,7 @@ export class TribeManager {
         });
         logger.warn(
           'Tribes',
-          `Immediate publish after member delete failed: ${pubErr}`
+          `Immediate publish after member delete failed: ${String(pubErr)}`
         );
       }
     } catch (error) {
@@ -2682,7 +2693,7 @@ export class TribeManager {
               );
               logger.warn(
                 'Tribes',
-                `Eager kind:5 publish failed for tribe rename "${oldName}" → "${newName}": ${kind5Err}`
+                `Eager kind:5 publish failed for tribe rename "${oldName}" → "${newName}": ${String(kind5Err)}`
               );
             }
           }
@@ -2774,7 +2785,7 @@ export class TribeManager {
                 );
                 logger.warn(
                   'Tribes',
-                  `Eager kind:5 publish failed for tribe "${tribeName}": ${kind5Err}`
+                  `Eager kind:5 publish failed for tribe "${tribeName}": ${String(kind5Err)}`
                 );
               }
             }
@@ -2822,7 +2833,7 @@ export class TribeManager {
             );
             logger.warn(
               'Tribes',
-              `Immediate publish after tribe delete failed: ${pubErr}`
+              `Immediate publish after tribe delete failed: ${String(pubErr)}`
             );
           }
         } catch (error) {
@@ -3362,7 +3373,10 @@ export class TribeManager {
       }
     } catch (error) {
       console.error('Restore from file failed:', error);
-      ToastService.show(`Failed to restore from file: ${error}`, 'error');
+      ToastService.show(
+        `Failed to restore from file: ${String(error)}`,
+        'error'
+      );
     }
   }
 
@@ -3787,7 +3801,10 @@ export class TribeStorageAdapter {
     try {
       return await getFileMembers();
     } catch (error) {
-      logger.error('TribeStorageAdapter', `Failed to read from file: ${error}`);
+      logger.error(
+        'TribeStorageAdapter',
+        `Failed to read from file: ${String(error)}`
+      );
       throw error;
     }
   }
@@ -3799,7 +3816,10 @@ export class TribeStorageAdapter {
     try {
       await saveToFile();
     } catch (error) {
-      logger.error('TribeStorageAdapter', `Failed to write to file: ${error}`);
+      logger.error(
+        'TribeStorageAdapter',
+        `Failed to write to file: ${String(error)}`
+      );
       throw error;
     }
   }
@@ -3813,7 +3833,7 @@ export class TribeStorageAdapter {
     } catch (error) {
       logger.error(
         'TribeStorageAdapter',
-        `Failed to restore folder data: ${error}`
+        `Failed to restore folder data: ${String(error)}`
       );
     }
   }
@@ -3833,7 +3853,7 @@ export class TribeStorageAdapter {
     } catch (error) {
       logger.error(
         'TribeStorageAdapter',
-        `Failed to fetch from relays: ${error}`
+        `Failed to fetch from relays: ${String(error)}`
       );
       throw error;
     }
@@ -3848,7 +3868,7 @@ export class TribeStorageAdapter {
     } catch (error) {
       logger.error(
         'TribeStorageAdapter',
-        `Failed to publish to relays: ${error}`
+        `Failed to publish to relays: ${String(error)}`
       );
       throw error;
     }

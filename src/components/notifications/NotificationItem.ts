@@ -616,7 +616,8 @@ export class NotificationItem {
     );
     if (!descTag?.[1]) return false;
     try {
-      const zapRequest = JSON.parse(descTag[1]);
+      // kind:9798 description embeds the zap request event (relay-controlled)
+      const zapRequest = JSON.parse(descTag[1]) as { tags?: unknown };
       return (
         Array.isArray(zapRequest.tags) &&
         zapRequest.tags.some((t: string[]) => t[0] === 'anon')
@@ -741,10 +742,17 @@ export class NotificationItem {
     if (this.options.type === 'repost') {
       // Try quick parse from content (legacy format) for instant display
       try {
-        const repostedEvent = JSON.parse(this.options.event.content);
-        if (repostedEvent && repostedEvent.content) {
+        // kind:6 repost embeds the original event in content (relay-controlled)
+        const repostedEvent = JSON.parse(this.options.event.content) as {
+          content?: unknown;
+        };
+        if (
+          repostedEvent &&
+          typeof repostedEvent.content === 'string' &&
+          repostedEvent.content
+        ) {
           const maxLength = 100;
-          const content = repostedEvent.content;
+          const content: string = repostedEvent.content;
           return content.length > maxLength
             ? `${content.slice(0, maxLength)}...`
             : content;
@@ -830,7 +838,10 @@ export class NotificationItem {
           const content = originalEvent.content;
 
           // Load profiles from 'p' tags
-          const profiles = new Map();
+          const profiles = new Map<
+            string,
+            import('../../services/UserProfileService').UserProfile
+          >();
           const pTags =
             originalEvent.tags?.filter((t: string[]) => t[0] === 'p') || [];
           for (const tag of pTags) {
@@ -851,7 +862,7 @@ export class NotificationItem {
           const withMentions = npubToUsername(
             escapeHtml(truncatedPlain),
             'html-multi',
-            hex => profiles.get(hex) || null
+            (hex: string) => profiles.get(hex) || null
           );
 
           if (contextElement) contextElement.innerHTML = withMentions;

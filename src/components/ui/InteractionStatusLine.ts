@@ -457,10 +457,7 @@ export class InteractionStatusLine {
     try {
       const { BookmarkOrchestrator } = await import('../../lists/bookmarks');
       const orch = BookmarkOrchestrator.getInstance();
-      const status = orch.isBookmarked(
-        this.config.noteId,
-        currentUser.pubkey
-      );
+      const status = orch.isBookmarked(this.config.noteId, currentUser.pubkey);
 
       if (status.public) {
         await orch.removeBookmark(this.config.noteId, false);

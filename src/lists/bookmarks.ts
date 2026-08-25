@@ -1774,7 +1774,10 @@ async function decryptPrivateItems(
       error: String(error),
       rawPreview: decrypted.slice(0, 200),
     });
-    logger.error('bookmarks.ts', `Failed to parse decrypted content: ${error}`);
+    logger.error(
+      'bookmarks.ts',
+      `Failed to parse decrypted content: ${String(error)}`
+    );
     return [];
   }
 }
@@ -2091,7 +2094,7 @@ export async function publishBookmarksToRelays(
       });
       logger.error(
         'bookmarks.ts',
-        `Sign event threw for category: ${set.d}: ${signError}`
+        `Sign event threw for category: ${set.d}: ${String(signError)}`
       );
       continue;
     }
@@ -2344,9 +2347,14 @@ export async function fetchBookmarksFromRelays(
       let usedContentOrder = false;
       if (orderEvent.content) {
         try {
-          const parsed = JSON.parse(orderEvent.content);
-          if (Array.isArray(parsed.order) && parsed.order.length > 0) {
-            folderOrder = parsed.order;
+          // Kind 10005 folder-order content: { order: string[] }
+          const parsed = JSON.parse(orderEvent.content) as { order?: unknown };
+          if (
+            Array.isArray(parsed.order) &&
+            parsed.order.length > 0 &&
+            parsed.order.every(o => typeof o === 'string')
+          ) {
+            folderOrder = parsed.order as string[];
             usedContentOrder = true;
           }
         } catch {
@@ -2457,7 +2465,7 @@ export async function fetchBookmarksFromRelays(
           });
           logger.error(
             'bookmarks.ts',
-            `Failed to decrypt private items for category "${categoryName}": ${error}`
+            `Failed to decrypt private items for category "${categoryName}": ${String(error)}`
           );
         }
       } else {
@@ -2555,7 +2563,10 @@ export async function fetchBookmarksFromRelays(
       deletedCoordinates,
     };
   } catch (error) {
-    logger.error('bookmarks.ts', `Failed to fetch from relays: ${error}`);
+    logger.error(
+      'bookmarks.ts',
+      `Failed to fetch from relays: ${String(error)}`
+    );
     return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
   }
 }
@@ -4105,9 +4116,11 @@ export class BookmarkManager {
     // Apply folder assignments
     for (const [bookmarkId, categoryName] of categoryAssignments) {
       if (categoryName === '') {
-        includeRootBookmarks
-          ? this.folderService.moveBookmarkToFolder(bookmarkId, '')
-          : this.folderService.ensureBookmarkAssignment(bookmarkId);
+        if (includeRootBookmarks) {
+          this.folderService.moveBookmarkToFolder(bookmarkId, '');
+        } else {
+          this.folderService.ensureBookmarkAssignment(bookmarkId);
+        }
       } else if (isBookmarkFolderTombstoned(categoryName)) {
         // Tombstoned folder was not recreated — keep its items in root instead of losing them.
         this.folderService.moveBookmarkToFolder(bookmarkId, '');
@@ -4599,7 +4612,7 @@ export class BookmarkManager {
         });
         logger.warn(
           'bookmarks.ts',
-          `Immediate publish after item delete failed: ${pubErr}`
+          `Immediate publish after item delete failed: ${String(pubErr)}`
         );
       }
     } catch (error) {
@@ -4719,7 +4732,7 @@ export class BookmarkManager {
                 );
                 logger.warn(
                   'bookmarks.ts',
-                  `Eager kind:5 publish failed for folder rename "${oldName}" → "${newName}": ${kind5Err}`
+                  `Eager kind:5 publish failed for folder rename "${oldName}" → "${newName}": ${String(kind5Err)}`
                 );
               }
             }
@@ -4746,7 +4759,7 @@ export class BookmarkManager {
           });
           this.adapter.setBrowserItems(updatedItems);
 
-          for (const [_id, bookmark] of this.bookmarksCache) {
+          for (const bookmark of this.bookmarksCache.values()) {
             if (bookmark.category === folder.name) {
               bookmark.category = newName;
             }
@@ -4798,7 +4811,7 @@ export class BookmarkManager {
             );
             logger.warn(
               'bookmarks.ts',
-              `Eager kind:5 publish failed for folder "${folderName}": ${kind5Err}`
+              `Eager kind:5 publish failed for folder "${folderName}": ${String(kind5Err)}`
             );
           }
         }
@@ -4827,7 +4840,7 @@ export class BookmarkManager {
       });
       this.adapter.setBrowserItems(updatedItems);
 
-      for (const [_id, bookmark] of this.bookmarksCache) {
+      for (const bookmark of this.bookmarksCache.values()) {
         if (bookmark.category === folderName) {
           bookmark.category = '';
         }
@@ -5275,7 +5288,10 @@ export class BookmarkManager {
       }
     } catch (error) {
       console.error('Failed to restore from file:', error);
-      ToastService.show(`Failed to restore from file: ${error}`, 'error');
+      ToastService.show(
+        `Failed to restore from file: ${String(error)}`,
+        'error'
+      );
     }
   }
 

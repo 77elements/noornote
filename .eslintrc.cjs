@@ -71,6 +71,10 @@ module.exports = {
     // (every site was double-counted). The TS variant's real bug value
     // (missing internal awaits) is covered by @typescript-eslint/await-thenable.
     // 'require-await': removed 2026-08-24
+    '@typescript-eslint/require-await': 'off', // 2026-08-24: remaining ~70 sites are
+    // intentional contract-async (manager wrappers, lifecycle symmetry) — same
+    // rationale as explicit-function-return-type. runtime.ts override kept for
+    // documentation purposes.
     'no-return-await': 'error',
   },
   overrides: [

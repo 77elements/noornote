@@ -9,3 +9,16 @@ interface Window {
   /** Captured relay param pre-router (deep-link handling in App.ts). */
   __noornote_relay_param?: string;
 }
+
+interface Window {
+  /** File System Access API (Chromium/Electron) — absent in Firefox/Safari. */
+  showSaveFilePicker?: (options?: {
+    suggestedName?: string;
+    types?: { description?: string; accept: Record<string, string[]> }[];
+  }) => Promise<{
+    createWritable(): Promise<{
+      write(data: string): Promise<void>;
+      close(): Promise<void>;
+    }>;
+  }>;
+}
