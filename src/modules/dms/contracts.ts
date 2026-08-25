@@ -1,3 +1,5 @@
+import type { DMConversation, DMMessage } from '../../services/dm/DMStore';
+
 export interface DMsModuleApi {
   getUnreadCount(): Promise<number>;
   getUnreadCountsSplit(): Promise<{
@@ -11,17 +13,20 @@ export interface DMsModuleApi {
     content: string,
     replyTo?: string
   ): Promise<boolean>;
-  getConversations(limit?: number, offset?: number): Promise<any[]>;
+  getConversations(
+    limit?: number,
+    offset?: number
+  ): Promise<DMConversation[]>;
   getConversationsFiltered(
     filter: 'known' | 'unknown' | 'all',
     limit?: number,
     offset?: number
-  ): Promise<any[]>;
+  ): Promise<DMConversation[]>;
   getMessages(
     partnerPubkey: string,
     limit?: number,
     before?: number
-  ): Promise<any[]>;
+  ): Promise<DMMessage[]>;
   getFetchProgress(): { current: number; total: number; isLoading: boolean };
   markAsRead(partnerPubkey: string): Promise<void>;
   markAllAsRead(): Promise<void>;

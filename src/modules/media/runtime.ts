@@ -28,7 +28,7 @@ export class MediaRuntime implements ModuleRuntime<MediaModuleApi> {
     const vs = this.videoService;
     return {
       uploadFile: (file, onProgress) =>
-        (svc?.uploadFile(file, onProgress) as any) ??
+        svc?.uploadFile(file, onProgress) ??
         Promise.resolve({ success: false, error: 'Module not loaded' }),
       uploadFiles: (files, onProgress) => {
         if (!svc) return Promise.resolve([]);

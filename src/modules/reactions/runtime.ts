@@ -1,4 +1,5 @@
 import type { ModuleRuntime, ModuleContext } from '../../core/ModuleLoader';
+import type { DetailedStats } from './contracts';
 import type { ReactionsModuleApi, InteractionStats } from './contracts';
 
 export class ReactionsRuntime implements ModuleRuntime<ReactionsModuleApi> {
@@ -56,8 +57,8 @@ export class ReactionsRuntime implements ModuleRuntime<ReactionsModuleApi> {
           quotedEvents: [],
           reactionEvents: [],
           zapEvents: [],
-          totalZapAmount: 0,
-        } as any),
+          lastUpdated: 0,
+        } satisfies DetailedStats),
       updateCachedStats: (noteId, updates) =>
         orch?.updateCachedStats(noteId, updates),
       clearCache: noteId => orch?.clearCache(noteId),

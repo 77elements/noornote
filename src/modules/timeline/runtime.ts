@@ -1,4 +1,5 @@
 import type { ModuleRuntime, ModuleContext } from '../../core/ModuleLoader';
+import type { FeedLoadResult } from './contracts';
 import type { TimelineModuleApi } from './contracts';
 
 export class TimelineRuntime implements ModuleRuntime<TimelineModuleApi> {
@@ -19,12 +20,15 @@ export class TimelineRuntime implements ModuleRuntime<TimelineModuleApi> {
 
   getApi(): TimelineModuleApi {
     const orch = this.orchestrator;
-    const emptyResult = { events: [], hasMore: false };
+    const emptyResult: FeedLoadResult = {
+      events: [],
+      hasMore: false,
+    };
     return {
       loadInitialFeed: request =>
-        orch?.loadInitialFeed(request) ?? Promise.resolve(emptyResult as any),
+        orch?.loadInitialFeed(request) ?? Promise.resolve(emptyResult),
       loadMore: request =>
-        orch?.loadMore(request) ?? Promise.resolve(emptyResult as any),
+        orch?.loadMore(request) ?? Promise.resolve(emptyResult),
       loadLatestPerAuthor: (pubkeys, includeReplies, applyWordFilter) =>
         orch?.loadLatestPerAuthor(pubkeys, includeReplies, applyWordFilter) ??
         Promise.resolve([]),

@@ -56,7 +56,15 @@ export class SingleNoteRuntime implements ModuleRuntime<SingleNoteModuleApi> {
         orch?.fetchReplies(noteId, authorPubkey) ?? Promise.resolve([]),
       fetchParentChain: noteId =>
         orch?.fetchParentChain(noteId) ??
-        Promise.resolve({ items: [], rootId: null } as any),
+        // Contract-correct empty context (the previous `as any` fallback
+        // returned a {items, rootId} shape that matched nothing — consumers
+        // read .root/.directParent and correctly saw "no context").
+        Promise.resolve({
+          root: null,
+          parents: [],
+          directParent: null,
+          hasSkippedReplies: false,
+        }),
       startLiveReplies: (noteId, callback) =>
         orch?.startLiveReplies(noteId, callback),
       stopLiveReplies: noteId => orch?.stopLiveReplies(noteId),
