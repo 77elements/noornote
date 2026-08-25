@@ -10,7 +10,7 @@ import { AuthService } from '../../services/AuthService';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { ZapsModuleApi } from '../../modules/zaps/contracts';
 import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
-import { NoteService } from '../../services/NoteService';
+import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import {
@@ -49,6 +49,11 @@ export class ZapsList {
   private get reactionsApi(): ReactionsModuleApi | null {
     return (this._reactionsApi ??=
       ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
+  }
+  private _postsApi?: PostsModuleApi | null;
+  private get postsApi(): PostsModuleApi | null {
+    return (this._postsApi ??=
+      ModuleLoader.getInstance().getApi<PostsModuleApi>('posts'));
   }
 
   constructor(zapEvents: NostrEvent[]) {
@@ -259,7 +264,7 @@ export class ZapsList {
         userHoverCard.hide();
         // Prime the cache so the zap-rooted SNV resolves instantly — zap
         // receipts are often unfetchable by id from relays alone.
-        NoteService.getInstance().registerNote(zap.event);
+        this.postsApi?.registerNote(zap.event);
         // No click event passed on purpose: in right-pane this opens the zap
         // thread as a NEW tab so the original note tab stays reachable.
         getViewNavigationController().openView('single-note', zapId);
