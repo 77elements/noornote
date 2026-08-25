@@ -76,7 +76,7 @@ export class TimelineRuntime implements ModuleRuntime<TimelineModuleApi> {
         ) ?? Promise.resolve([]),
 
       // Mute management
-      refreshMutedUsers: () => orch?.refreshMutedUsers() ?? Promise.resolve(),
+      refreshMutedUsers: () => orch?.refreshMutedUsers(),
 
       // Event metadata
       getEventRelays: eventId => orch?.getEventRelays(eventId) ?? [],

@@ -33,6 +33,12 @@ import {
 } from './relays';
 import { PerAccountLocalStorage } from '../services/PerAccountLocalStorage';
 import { SystemLogger } from '../services/SystemLogger';
+import {
+  temporaryUnmute,
+  removeTemporaryUnmute,
+  isTemporarilyUnmuted as _isTempUnmuted,
+  clearTemporaryUnmutes,
+} from './temporaryUnmute';
 import { TypedEventBus } from '../core/TypedEventBus';
 import { diagLog } from '../services/DiagnosticLogger';
 // UI component imports
@@ -489,25 +495,9 @@ export function setEncryptionMethod(method: 'nip44' | 'nip04'): void {
 // ============================================================
 // TEMPORARY UNMUTE (for viewing muted content temporarily)
 // ============================================================
-
-const temporarilyUnmuted = new Set<string>();
-
-export function temporaryUnmute(pubkey: string): void {
-  temporarilyUnmuted.add(pubkey);
-  logger.info('mutes.ts', `Temporarily unmuted ${pubkey.slice(0, 8)}...`);
-}
-
-export function removeTemporaryUnmute(pubkey: string): void {
-  temporarilyUnmuted.delete(pubkey);
-}
-
-export function isTemporarilyUnmuted(pubkey: string): boolean {
-  return temporarilyUnmuted.has(pubkey);
-}
-
-export function clearTemporaryUnmutes(): void {
-  temporarilyUnmuted.clear();
-}
+// Implementation lives in ./temporaryUnmute (imported at the top — pure,
+// dependency-free leaf so FeedOrchestrator and tests don't pull the whole
+// list/storage graph).
 
 // ============================================================
 // CENTRAL VISIBILITY FILTER
@@ -556,14 +546,14 @@ eventBus.on('user:logout', () => invalidateMutedSetCache());
 export function isEventHidden(event: NostrEvent): boolean {
   const mutedSet = getMutedPubkeysSet();
 
-  if (mutedSet.has(event.pubkey) && !isTemporarilyUnmuted(event.pubkey)) {
+  if (mutedSet.has(event.pubkey) && !_isTempUnmuted(event.pubkey)) {
     return true;
   }
 
   if (event.kind === 6 || event.kind === 16) {
     const pTag = event.tags.find(tag => tag[0] === 'p');
     const original = pTag?.[1];
-    if (original && mutedSet.has(original) && !isTemporarilyUnmuted(original)) {
+    if (original && mutedSet.has(original) && !_isTempUnmuted(original)) {
       return true;
     }
   }
@@ -810,7 +800,10 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
           }
         }
       } catch (error) {
-        logger.error('mutes.ts', `Failed to decrypt private mutes: ${error}`);
+        logger.error(
+          'mutes.ts',
+          `Failed to decrypt private mutes: ${String(error)}`
+        );
       }
     }
 
@@ -840,7 +833,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
       relayTimestamp: timestamp,
     };
   } catch (error) {
-    logger.error('mutes.ts', `Failed to fetch from relays: ${error}`);
+    logger.error('mutes.ts', `Failed to fetch from relays: ${String(error)}`);
     return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
   }
 }
@@ -921,11 +914,11 @@ async function decryptPrivateMutes(
   }
 
   try {
-    const tags = JSON.parse(plaintext);
+    const tags = JSON.parse(plaintext) as string[][];
     diagLog('lists', 'decryptPrivateMutes: SUCCESS', {
       decryptedTags: tags.length,
     });
-    return tags;
+    return Array.isArray(tags) ? tags : [];
   } catch (error) {
     diagLog('lists', 'decryptPrivateMutes: FAILED to parse decrypted content', {
       error: String(error),
@@ -1080,7 +1073,10 @@ export class MuteStorageAdapter {
 
       return items;
     } catch (error) {
-      logger.error('MuteStorageAdapter', `Failed to read from file: ${error}`);
+      logger.error(
+        'MuteStorageAdapter',
+        `Failed to read from file: ${String(error)}`
+      );
       throw error;
     }
   }
@@ -1089,7 +1085,10 @@ export class MuteStorageAdapter {
     try {
       await saveToFile();
     } catch (error) {
-      logger.error('MuteStorageAdapter', `Failed to write to file: ${error}`);
+      logger.error(
+        'MuteStorageAdapter',
+        `Failed to write to file: ${String(error)}`
+      );
       throw error;
     }
   }
@@ -1118,7 +1117,7 @@ export class MuteStorageAdapter {
     } catch (error) {
       logger.error(
         'MuteStorageAdapter',
-        `Failed to fetch from relays: ${error}`
+        `Failed to fetch from relays: ${String(error)}`
       );
       throw error;
     }
@@ -1130,7 +1129,7 @@ export class MuteStorageAdapter {
     } catch (error) {
       logger.error(
         'MuteStorageAdapter',
-        `Failed to publish to relays: ${error}`
+        `Failed to publish to relays: ${String(error)}`
       );
       throw error;
     }
@@ -1250,10 +1249,10 @@ export const MuteOrchestrator = {
     isInMutedThread,
 
     // Temporary unmute
-    temporaryUnmute,
-    removeTemporaryUnmute,
-    isTemporarilyUnmuted,
-    clearTemporaryUnmutes,
+    temporaryUnmute: (pubkey: string) => temporaryUnmute(pubkey),
+    removeTemporaryUnmute: (pubkey: string) => removeTemporaryUnmute(pubkey),
+    isTemporarilyUnmuted: (pubkey: string) => _isTempUnmuted(pubkey),
+    clearTemporaryUnmutes: () => clearTemporaryUnmutes(),
 
     // Central visibility filter (sync, the workhorse for all render paths)
     isEventHidden,

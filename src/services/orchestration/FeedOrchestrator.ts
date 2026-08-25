@@ -18,6 +18,7 @@ import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
 import { OutboundRelaysOrchestrator } from './OutboundRelaysOrchestrator';
 import { MuteOrchestrator } from '../../lists/mutes';
+import { isTemporarilyUnmuted } from '../../lists/temporaryUnmute';
 import { NoteService } from '../NoteService';
 import { SystemLogger } from '../SystemLogger';
 import { AppState } from '../AppState';
@@ -392,7 +393,7 @@ export class FeedOrchestrator extends Orchestrator {
     } catch (error) {
       this.systemLogger.error(
         'FeedOrchestrator',
-        `Initial load failed: ${error}`
+        `Initial load failed: ${String(error)}`
       );
       return {
         events: [],
@@ -580,7 +581,10 @@ export class FeedOrchestrator extends Orchestrator {
         hasMore,
       };
     } catch (error) {
-      this.systemLogger.error('FeedOrchestrator', `Load more failed: ${error}`);
+      this.systemLogger.error(
+        'FeedOrchestrator',
+        `Load more failed: ${String(error)}`
+      );
       return {
         events: [],
         hasMore: false,
@@ -846,7 +850,7 @@ export class FeedOrchestrator extends Orchestrator {
       : this.filterReplies(uniqueEvents);
 
     // Filter muted users
-    filteredEvents = await this.filterMutedUsers(
+    filteredEvents = this.filterMutedUsers(
       filteredEvents,
       exemptFromMuteFilter
     );
@@ -916,13 +920,19 @@ export class FeedOrchestrator extends Orchestrator {
           tags?: string[][];
         } | null = null;
         try {
-          const parsed = JSON.parse(event.content);
+          const parsed = JSON.parse(event.content) as {
+            kind?: unknown;
+          };
           if (
             parsed &&
             typeof parsed === 'object' &&
             typeof parsed.kind === 'number'
           ) {
-            inner = parsed;
+            inner = parsed as {
+              kind: number;
+              pubkey?: string;
+              tags?: string[][];
+            };
           }
         } catch {
           // No embedded event (empty-content repost variant) — keep.
@@ -979,7 +989,8 @@ export class FeedOrchestrator extends Orchestrator {
       }
 
       // Need the original timestamp to measure the gap — keep if unknown
-      if (inner?.created_at == null) return true;
+      if (inner?.created_at === null || inner?.created_at === undefined)
+        return true;
 
       const gapSeconds = event.created_at - inner.created_at;
       if (gapSeconds < maxGapSeconds) {
@@ -1004,14 +1015,16 @@ export class FeedOrchestrator extends Orchestrator {
   ): { pubkey?: string; created_at?: number } | null {
     if (event.content && event.content.trim()) {
       try {
-        const inner = JSON.parse(event.content);
+        const inner = JSON.parse(event.content) as {
+          pubkey?: unknown;
+          created_at?: unknown;
+        };
         if (inner && typeof inner === 'object') {
           return {
-            pubkey: typeof inner.pubkey === 'string' ? inner.pubkey : undefined,
-            created_at:
-              typeof inner.created_at === 'number'
-                ? inner.created_at
-                : undefined,
+            ...(typeof inner.pubkey === 'string' && { pubkey: inner.pubkey }),
+            ...(typeof inner.created_at === 'number' && {
+              created_at: inner.created_at,
+            }),
           };
         }
       } catch {
@@ -1152,7 +1165,7 @@ export class FeedOrchestrator extends Orchestrator {
         } catch (err) {
           this.systemLogger.warn(
             'FeedOrchestrator',
-            `Last-notes batch failed: ${err}`
+            `Last-notes batch failed: ${String(err)}`
           );
         }
       }
@@ -1207,7 +1220,7 @@ export class FeedOrchestrator extends Orchestrator {
 
   // Orchestrator interface implementations (unused for now, but required by base class)
 
-  public onui(_data: any): void {
+  public onui(_data: unknown): void {
     // Handle UI actions (future: real-time subscriptions)
   }
 
@@ -1445,7 +1458,10 @@ export class FeedOrchestrator extends Orchestrator {
         this.isManualPoll = false; // Reset flag
       }
     } catch (error) {
-      this.systemLogger.error('FeedOrchestrator', `Polling error: ${error}`);
+      this.systemLogger.error(
+        'FeedOrchestrator',
+        `Polling error: ${String(error)}`
+      );
 
       // Log manual poll error
       if (this.isManualPoll) {
@@ -1461,7 +1477,7 @@ export class FeedOrchestrator extends Orchestrator {
   /**
    * Load muted users from MuteOrchestrator
    */
-  private async loadMutedUsers(): Promise<void> {
+  private loadMutedUsers(): void {
     try {
       const currentUser = AuthService.getInstance().getCurrentUser();
       if (!currentUser) return;
@@ -1480,7 +1496,7 @@ export class FeedOrchestrator extends Orchestrator {
     } catch (error) {
       this.systemLogger.error(
         'FeedOrchestrator',
-        `Failed to load muted users: ${error}`
+        `Failed to load muted users: ${String(error)}`
       );
     }
   }
@@ -1490,11 +1506,14 @@ export class FeedOrchestrator extends Orchestrator {
    */
   private isTemporarilyUnmuted(
     pubkey: string,
-    muteOrch: ReturnType<typeof MuteOrchestrator.getInstance>
+    _muteOrch: ReturnType<typeof MuteOrchestrator.getInstance>
   ): boolean {
-    const currentUser = AuthService.getInstance().getCurrentUser();
-    if (!currentUser) return false;
-    return (muteOrch as any).temporaryUnmutes?.has(pubkey) ?? false;
+    // BUGFIX 2026-08-24: this used to poke `(muteOrch as any).temporaryUnmutes`,
+    // a property that no longer exists on the orchestrator (lost in the
+    // bookmarks/mutes consolidation) — so temporary unmutes silently never
+    // applied in the timeline. The canonical state is the exported
+    // module-level set in lists/mutes.ts.
+    return isTemporarilyUnmuted(pubkey);
   }
 
   /**
@@ -1503,10 +1522,10 @@ export class FeedOrchestrator extends Orchestrator {
    * Respects temporary unmutes
    * @param exemptPubkey - Optional pubkey to exempt from filtering (for ProfileView)
    */
-  private async filterMutedUsers(
+  private filterMutedUsers(
     events: NostrEvent[],
     exemptPubkey?: string
-  ): Promise<NostrEvent[]> {
+  ): NostrEvent[] {
     if (this.mutedPubkeys.size === 0) {
       return events;
     }
@@ -1590,7 +1609,10 @@ export class FeedOrchestrator extends Orchestrator {
         applyWordFilter
       );
     } catch (error) {
-      this.systemLogger.error('FeedOrchestrator', `pollOnce failed: ${error}`);
+      this.systemLogger.error(
+        'FeedOrchestrator',
+        `pollOnce failed: ${String(error)}`
+      );
       return [];
     }
   }
@@ -1598,8 +1620,8 @@ export class FeedOrchestrator extends Orchestrator {
   /**
    * Refresh muted users list (called when mute list is updated)
    */
-  public async refreshMutedUsers(): Promise<void> {
-    await this.loadMutedUsers();
+  public refreshMutedUsers(): void {
+    this.loadMutedUsers();
   }
 
   public override destroy(): void {

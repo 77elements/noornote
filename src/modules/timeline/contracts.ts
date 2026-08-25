@@ -49,7 +49,7 @@ export interface TimelineModuleApi {
   ): Promise<NostrEvent[]>;
 
   // Mute management
-  refreshMutedUsers(): Promise<void>;
+  refreshMutedUsers(): void;
 
   // Event metadata
   getEventRelays(eventId: string): string[];
