@@ -130,7 +130,7 @@ export async function runDiagLogExportFromButton(
     if (success) {
       ToastService.show('Logs exported', 'success');
     } else {
-      const debugInfo = (exportDiagnosticLogs as any).lastDebugInfo || '';
+      const debugInfo = lastExportDebugInfo;
       ToastService.show(
         exportError || debugInfo || 'export returned false',
         'error',
@@ -139,7 +139,7 @@ export async function runDiagLogExportFromButton(
     }
   } catch (error) {
     const { ToastService } = await import('./ToastService');
-    ToastService.show(`Import error: ${error}`, 'error', 15000);
+    ToastService.show(`Import error: ${String(error)}`, 'error', 15000);
   } finally {
     btn.disabled = false;
     btn.textContent = restingLabel;
@@ -150,6 +150,12 @@ export async function runDiagLogExportFromButton(
  * Export all diagnostic logs as a ZIP file and share/save it.
  * Call from Settings UI.
  */
+/**
+ * Debug info from the last export attempt — read by the Settings error toast
+ * right after exportDiagnosticLogs() returns false, to explain the failure.
+ */
+let lastExportDebugInfo = '';
+
 export async function exportDiagnosticLogs(): Promise<boolean> {
   try {
     logger.info('DiagLogExport', 'Collecting logs...');
@@ -164,7 +170,7 @@ export async function exportDiagnosticLogs(): Promise<boolean> {
       ? await collectWebLogFiles()
       : await collectLogFiles();
     if (Object.keys(collected.files).length === 0) {
-      (exportDiagnosticLogs as any).lastDebugInfo = collected.debugInfo;
+      lastExportDebugInfo = collected.debugInfo;
       logger.warn('DiagLogExport', `No logs: ${collected.debugInfo}`);
       return false;
     }
@@ -198,8 +204,8 @@ export async function exportDiagnosticLogs(): Promise<boolean> {
     }
     return await saveViaDialog(zipData, filename);
   } catch (error) {
-    (exportDiagnosticLogs as any).lastDebugInfo = `THROW: ${error}`;
-    logger.error('DiagLogExport', `Export failed: ${error}`);
+    lastExportDebugInfo = `THROW: ${String(error)}`;
+    logger.error('DiagLogExport', `Export failed: ${String(error)}`);
     return false;
   }
 }
@@ -283,7 +289,7 @@ async function collectWebLogFiles(): Promise<{
     for (const line of lines) {
       let date = 'unknown';
       try {
-        const parsed = JSON.parse(line);
+        const parsed = JSON.parse(line) as { ts?: string | number };
         if (parsed?.ts) date = String(parsed.ts).slice(0, 10);
       } catch {
         /* unparsable line → 'unknown' bucket */
@@ -378,8 +384,16 @@ async function saveToDownloads(
       directory: Directory.Cache,
     });
     const { registerPlugin } = await import('@capacitor/core');
-    const MediaSave = registerPlugin('MediaSave');
-    await (MediaSave as any).saveFileToDownloads({
+    // Custom Capacitor plugin (MediaSave) declared in android/ — not in the
+    // official plugin types, hence the narrow local interface.
+    const MediaSave = registerPlugin<{
+      saveFileToDownloads(options: {
+        fileUri: string;
+        filename: string;
+        mimeType: string;
+      }): Promise<void>;
+    }>('MediaSave');
+    await MediaSave.saveFileToDownloads({
       fileUri: uri,
       filename,
       mimeType: 'application/zip',

@@ -9,7 +9,7 @@ import { extractBolt11, type Bolt11Match } from '../helpers/extractBolt11';
 import { unwrapStreamLinks } from '../helpers/unwrapStreamLinks';
 import { unwrapGitLinks } from '../helpers/unwrapGitLinks';
 import { unwrapArmadaInviteLinks } from '../helpers/unwrapArmadaInviteLinks';
-import { extractLinks } from '../helpers/extractLinks';
+import { extractLinks, type LinkPreview } from '../helpers/extractLinks';
 import { extractHashtags } from '../helpers/extractHashtags';
 import { extractQuotedReferences } from '../helpers/extractQuotedReferences';
 import { escapeHtml } from '../helpers/escapeHtml';
@@ -23,7 +23,7 @@ import {
   formatCustomEmojis,
 } from '../helpers/formatCustomEmojis';
 import { hexToNpub } from '../helpers/nip19';
-import { UserProfileService } from './UserProfileService';
+import { UserProfileService, type UserProfile } from './UserProfileService';
 import type { MediaContent } from '../helpers/renderMediaContent';
 import { AddonLoader } from '../addons/AddonLoader';
 import type { ProfileRecognitionRuntime } from '../addons/profile-recognition/runtime';
@@ -49,7 +49,7 @@ export interface ProcessedContent {
   text: string;
   html: string;
   media: MediaContent[];
-  links: any[];
+  links: LinkPreview[];
   hashtags: string[];
   quotedReferences: QuotedReference[];
   bolt11Invoices: Bolt11Match[];
@@ -58,7 +58,7 @@ export interface ProcessedContent {
 export class ContentProcessor {
   private static instance: ContentProcessor;
   private userProfileService: UserProfileService;
-  private profileCache: LRUCache<any> = new LRUCache<any>(
+  private profileCache: LRUCache<UserProfile> = new LRUCache<UserProfile>(
     getCacheSize(500, 200, 100)
   );
 
@@ -163,9 +163,13 @@ export class ContentProcessor {
       const profile = this.getNonBlockingProfile(hexPubkey);
       return profile
         ? {
-            name: profile.name,
-            display_name: profile.display_name,
-            picture: profile.picture,
+            ...(profile.name !== undefined && { name: profile.name }),
+            ...(profile.display_name !== undefined && {
+              display_name: profile.display_name,
+            }),
+            ...(profile.picture !== undefined && {
+              picture: profile.picture,
+            }),
           }
         : null;
     };
@@ -225,7 +229,7 @@ export class ContentProcessor {
    * profile already in UPS and left mention chips stuck on npub/"…" even
    * though the data was available.
    */
-  getNonBlockingProfile(pubkey: string): any {
+  getNonBlockingProfile(pubkey: string): UserProfile | null {
     // 1. Authoritative source first — UPS may already have the profile
     //    (loaded by NoteHeader, UserHoverCard, RepostRenderer, etc.).
     const upsProfile = this.userProfileService.getCachedProfile(pubkey);
@@ -245,12 +249,9 @@ export class ContentProcessor {
 
     // 3. No real data anywhere — return a temporary placeholder and fetch.
     //    Do NOT cache the null fallback (it would shadow future UPS resolves).
-    const placeholderProfile = {
+    const placeholderProfile: UserProfile = {
       pubkey,
-      name: null,
-      display_name: null,
       picture: '',
-      about: null,
     };
 
     this.userProfileService
@@ -272,7 +273,7 @@ export class ContentProcessor {
    * Update mentions in DOM after profile loads (progressive enhancement)
    * Applies profile recognition blinking if addon is loaded
    */
-  private updateMentionsInDOM(hexPubkey: string, profile: any): void {
+  private updateMentionsInDOM(hexPubkey: string, profile: UserProfile): void {
     // Convert hex to npub for profile URL
     const npub = hexToNpub(hexPubkey);
     if (!npub) return;

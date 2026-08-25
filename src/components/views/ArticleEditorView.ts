@@ -1122,9 +1122,13 @@ export class ArticleEditorView extends View {
         const profile = contentProcessor.getNonBlockingProfile(hexPubkey);
         return profile
           ? {
-              name: profile.name,
-              display_name: profile.display_name,
-              picture: profile.picture,
+              ...(profile.name !== undefined && { name: profile.name }),
+              ...(profile.display_name !== undefined && {
+                display_name: profile.display_name,
+              }),
+              ...(profile.picture !== undefined && {
+                picture: profile.picture,
+              }),
             }
           : null;
       };

@@ -48,11 +48,23 @@ export class FileMetadataProcessor {
     };
 
     if (authorProfile) {
+
+
       result.author.profile = {
-        name: authorProfile.name,
-        display_name: authorProfile.display_name,
-        picture: authorProfile.picture,
+
+
+        ...(authorProfile.name !== undefined && { name: authorProfile.name }),
+
+
+        ...(authorProfile.display_name !== undefined && { display_name: authorProfile.display_name }),
+
+
+        ...(authorProfile.picture !== undefined && { picture: authorProfile.picture }),
+
+
       };
+
+
     }
 
     return result;

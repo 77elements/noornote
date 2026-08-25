@@ -103,7 +103,7 @@ export class CacheManager {
 
       // Check which tables actually exist
       const existingTables = safeTableNames.filter(tableName =>
-        db.tables.some((t: any) => t.name === tableName)
+        db.tables.some(t => t.name === tableName)
       );
 
       if (existingTables.length === 0) {
@@ -112,7 +112,7 @@ export class CacheManager {
 
       // Count items in existing tables
       const counts = await Promise.all(
-        existingTables.map(tableName => (db as any)[tableName].count())
+        existingTables.map(tableName => db.table(tableName).count())
       );
 
       const totalCount = counts.reduce((sum, count) => sum + count, 0);
@@ -126,11 +126,9 @@ export class CacheManager {
         const tableCount = counts[i]!;
         if (tableCount === 0) continue;
 
-        const sample = await (db as any)[tableName]
-          .limit(SAMPLE_SIZE)
-          .toArray();
+        const sample = await db.table(tableName).limit(SAMPLE_SIZE).toArray();
         let sampleBytes = 0;
-        sample.forEach((item: any) => {
+        sample.forEach(item => {
           sampleBytes += JSON.stringify(item).length;
         });
 
