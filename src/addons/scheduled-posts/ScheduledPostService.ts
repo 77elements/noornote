@@ -48,26 +48,28 @@ export class ScheduledPostService {
       body: JSON.stringify({ event, relays, publishAt }),
     });
     if (!res.ok) {
-      const err = await res
+      // Scheduler error responses: { error: string } (own service — trusted shape)
+      const err = (await res
         .json()
-        .catch(() => ({ error: `HTTP ${res.status}` }));
+        .catch(() => ({ error: `HTTP ${res.status}` }))) as { error?: string };
       throw new Error(err.error || `Scheduler error ${res.status}`);
     }
-    const data = await res.json();
+    const data = (await res.json()) as { id?: string };
     const kindLabel =
       event.kind === 30023 ? 'Article' : event.kind === 1068 ? 'Poll' : 'Note';
     this.systemLogger.info(
       'ScheduledPostService',
       `${kindLabel} scheduled for ${new Date(publishAt * 1000).toLocaleString()}`
     );
-    return data.id as string;
+    if (!data.id) throw new Error('Scheduler returned no id');
+    return data.id;
   }
 
   /** List scheduled posts for a pubkey. */
   public async getScheduled(pubkey: string): Promise<ScheduledPost[]> {
     const res = await fetch(`${this.BASE_URL}/scheduled/${pubkey}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.json();
+    return (await res.json()) as ScheduledPost[];
   }
 
   /**
@@ -89,9 +91,9 @@ export class ScheduledPostService {
       }
     );
     if (!res.ok) {
-      const err = await res
+      const err = (await res
         .json()
-        .catch(() => ({ error: `HTTP ${res.status}` }));
+        .catch(() => ({ error: `HTTP ${res.status}` }))) as { error?: string };
       throw new Error(err.error || `Cancel error ${res.status}`);
     }
   }

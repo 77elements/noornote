@@ -77,7 +77,7 @@ import { Tooltip } from '../ui/Tooltip';
 
 // Initialize dayjs calendar system
 dayjs.extend(calendarSystems);
-dayjs.registerCalendarSystem('hijri' as any, new HijriCalendarSystem());
+dayjs.registerCalendarSystem('hijri', new HijriCalendarSystem());
 
 // Shared promise map to prevent duplicate profile loads on rapid navigation
 type ProfileLoadResult = {
@@ -502,8 +502,8 @@ export class ProfileView extends View {
     }
 
     // Format Hijri date
-    const hijriDate = dayjs(date).toCalendarSystem('hijri' as any);
-    const hijriFormatted = `${hijriDate.date()}. ${HIJRI_MONTHS[hijriDate.month()]} ${hijriDate.year()}`;
+    const hijriDate = dayjs(date).toCalendarSystem('hijri');
+    const hijriFormatted = `${Number(hijriDate.date())}. ${HIJRI_MONTHS[hijriDate.month()]} ${hijriDate.year()}`;
 
     if (calendarSystem === 'hijri') {
       return hijriFormatted;
@@ -2133,7 +2133,13 @@ export class ProfileView extends View {
 
       const events = await transport.fetch(
         ['wss://relay.zapstore.dev'],
-        [{ kinds: [32267 as any], authors: [this.pubkey], limit: 10 }],
+        [
+          {
+            kinds: [32267],
+            authors: [this.pubkey],
+            limit: 10,
+          } as import('@nostr-dev-kit/ndk').NDKFilter<number>,
+        ],
         8000,
         false,
         'ZapstoreApps'

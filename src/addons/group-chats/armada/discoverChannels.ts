@@ -108,7 +108,12 @@ export async function discoverChannelsFromControlPlane(
       let isPrivate = false;
       let deleted = false;
       try {
-        const meta = JSON.parse(rumor.content);
+        // Channel-creation rumor payload ( decrypted, own Armada schema)
+        const meta = JSON.parse(rumor.content) as {
+          name?: unknown;
+          private?: unknown;
+          deleted?: unknown;
+        };
         name = typeof meta.name === 'string' ? meta.name : '';
         isPrivate = meta.private === true;
         deleted = meta.deleted === true;

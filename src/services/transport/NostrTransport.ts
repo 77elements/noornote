@@ -12,6 +12,7 @@ import NDK, {
   NDKSubscription,
   NDKSubscriptionCacheUsage,
   normalizeRelayUrl,
+  NDKRelayStatus,
   type NDKCacheAdapter,
   type NDKFilter,
   type NDKRelay,
@@ -94,8 +95,13 @@ function getNDKCacheConfig(): NDKCacheAdapterDexieOptions {
   }
 
   try {
-    const config = JSON.parse(stored);
-    return { dbName: 'noornote', ...DEFAULT_CONFIG, ...config };
+    // CacheSettingsSection-persisted overrides (own storage format)
+    const config = JSON.parse(stored) as Record<string, unknown>;
+    return {
+      dbName: 'noornote',
+      ...DEFAULT_CONFIG,
+      ...config,
+    } as NDKCacheAdapterDexieOptions;
   } catch {
     return { dbName: 'noornote', ...DEFAULT_CONFIG };
   }
@@ -287,7 +293,7 @@ export class NostrTransport {
     await this.ndk.connect(3000);
 
     const connectedRelays = Array.from(this.ndk.pool.relays.values()).filter(
-      relay => relay.status >= 5
+      relay => relay.status >= NDKRelayStatus.CONNECTED
     );
 
     this.ndkConnected = true;
@@ -412,7 +418,7 @@ export class NostrTransport {
 
     // Check if relay is already connected
     const existingRelay = this.ndk.pool.relays.get(url);
-    if (existingRelay && existingRelay.status === 1) {
+    if (existingRelay && existingRelay.status === NDKRelayStatus.DISCONNECTED) {
       return true;
     }
 
@@ -425,7 +431,7 @@ export class NostrTransport {
     }
 
     // If already connected, return immediately
-    if (relay.status >= 5) {
+    if (relay.status >= NDKRelayStatus.CONNECTED) {
       return true;
     }
 
@@ -445,7 +451,7 @@ export class NostrTransport {
       relay.on('connect', onConnect);
 
       // Trigger connection if not already connecting
-      if (relay.status === 0) {
+      if (relay.status === NDKRelayStatus.DISCONNECTING) {
         // 0 = DISCONNECTED
         void relay.connect();
       }
@@ -699,6 +705,10 @@ export class NostrTransport {
       const subs: NDKSubscription[] = [];
       let settledRelays = 0;
       let done = false;
+      // let (not const): assigned once below AFTER finish() captures it in a
+      // closure — a const initializer at the assignment site would escape
+      // finish's scope.
+      // eslint-disable-next-line prefer-const
       let hardTimeoutId: ReturnType<typeof setTimeout> | undefined;
       let graceTimer: ReturnType<typeof setTimeout> | undefined;
 

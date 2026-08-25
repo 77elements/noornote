@@ -61,10 +61,15 @@ export function parseModeration(ev: NostrEvent): DhikrModeration | null {
   const d = ev.tags.find(t => t[0] === 'd')?.[1];
   if (d !== MODERATION_DTAG) return null;
   try {
-    const body = JSON.parse(ev.content || '{}');
+    // kind:31k config payload (own service schema — fields narrowed below)
+    const body = JSON.parse(ev.content || '{}') as {
+      overrides?: unknown;
+      hiddenRounds?: unknown;
+      bannedAuthors?: unknown;
+    };
     const overrides: Record<string, DhikrOverride> =
       body.overrides && typeof body.overrides === 'object'
-        ? body.overrides
+        ? (body.overrides as Record<string, DhikrOverride>)
         : {};
     return {
       hiddenRounds: strArray(body.hiddenRounds),

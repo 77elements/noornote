@@ -48,7 +48,7 @@ export interface ModuleRuntime<TApi = unknown> {
 export type ModuleActivation = 'login' | 'route' | 'manual';
 export type ModuleSleepPolicy = 'keep-alive' | 'sleep-on-leave' | 'manual';
 
-type RuntimeLoader = () => Promise<ModuleRuntime<any>>;
+type RuntimeLoader = () => Promise<ModuleRuntime<unknown>>;
 
 export interface ModuleRegistration {
   id: string;
@@ -66,7 +66,7 @@ interface ModuleEntry {
   sleepPolicy: ModuleSleepPolicy;
   isEnabled: () => boolean;
   load: RuntimeLoader;
-  instance: ModuleRuntime<any> | null;
+  instance: ModuleRuntime<unknown> | null;
   loadedForPubkey: string | null;
   opChain: Promise<void>;
 }
@@ -130,8 +130,8 @@ export class ModuleLoader {
       void this.handleLogout();
     });
 
-    window.addEventListener('router:navigate', (event: any) => {
-      const path = event.detail?.path;
+    window.addEventListener('router:navigate', (event: unknown) => {
+      const path = (event as CustomEvent<{ path?: string }>).detail?.path;
       if (path) this.handleRouteChange(path);
     });
 
@@ -289,7 +289,7 @@ export class ModuleLoader {
       pubkey: this.currentPubkey,
     });
 
-    let runtime: ModuleRuntime<any>;
+    let runtime: ModuleRuntime<unknown>;
     try {
       runtime = await entry.load();
     } catch (err) {

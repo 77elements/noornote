@@ -13,7 +13,7 @@ import HijriCalendarSystem from '@calidy/dayjs-calendarsystems/calendarSystems/H
 
 // Match the app-wide registration (idempotent; MainLayout / ProfileView / formatTimestamp do the same).
 dayjs.extend(calendarSystems);
-dayjs.registerCalendarSystem('hijri' as any, new HijriCalendarSystem());
+dayjs.registerCalendarSystem('hijri', new HijriCalendarSystem());
 
 // We call convertToGregorian() directly: dayjs.fromCalendarSystem() has a month off-by-one
 // (it stringifies a 0-based month that dayjs then reads as 1-based). The calendar instance's
@@ -70,10 +70,10 @@ export function getHolidaysForGregorianYear(
   gYear: number
 ): HolidayOccurrence[] {
   const hStart = dayjs(new Date(gYear, 0, 1))
-    .toCalendarSystem('hijri' as any)
+    .toCalendarSystem('hijri')
     .year();
   const hEnd = dayjs(new Date(gYear, 11, 31))
-    .toCalendarSystem('hijri' as any)
+    .toCalendarSystem('hijri')
     .year();
 
   const out: HolidayOccurrence[] = [];

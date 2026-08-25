@@ -47,7 +47,7 @@ export class CacheSettingsSection extends SettingsSection {
     if (!stored) return DEFAULT_CONFIG;
 
     try {
-      return { ...DEFAULT_CONFIG, ...JSON.parse(stored) };
+      return { ...DEFAULT_CONFIG, ...(JSON.parse(stored) as object) };
     } catch {
       return DEFAULT_CONFIG;
     }
@@ -418,8 +418,9 @@ export class CacheSettingsSection extends SettingsSection {
           const { db } = await import('@nostr-dev-kit/ndk-cache-dexie');
 
           for (const tableName of tableNames) {
-            if ((db as any)[tableName]) {
-              await (db as any)[tableName].clear();
+            const table = db.tables.find(t => t.name === tableName);
+            if (table) {
+              await table.clear();
             }
           }
 

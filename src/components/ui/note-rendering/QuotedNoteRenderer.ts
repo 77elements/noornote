@@ -236,7 +236,12 @@ export class QuotedNoteRenderer {
           result.event.content
         ) {
           try {
-            const inner = JSON.parse(result.event.content);
+            // kind:6/16 repost embeds the original event (relay-controlled)
+            const inner = JSON.parse(result.event.content) as {
+              kind?: unknown;
+              pubkey?: unknown;
+              id?: unknown;
+            };
             if (
               inner &&
               typeof inner === 'object' &&
@@ -244,7 +249,7 @@ export class QuotedNoteRenderer {
               inner.pubkey &&
               inner.id
             ) {
-              result.event = inner as NostrEvent;
+              result.event = inner as unknown as NostrEvent;
             }
           } catch {
             // Content wasn't valid JSON — fall through and render the
@@ -831,11 +836,14 @@ export class QuotedNoteRenderer {
     return false;
   }
 
-  private createQuoteError(error: any): HTMLElement {
+  private createQuoteError(error: unknown): HTMLElement {
     const errorDiv = document.createElement('div');
     errorDiv.className = 'quote-error';
     // NO whitespace to prevent invisible text nodes
-    errorDiv.innerHTML = `<div class="quote-error-content"><span class="error-icon">⚠️</span><span class="error-text">${escapeHtml(error.message || 'Failed to load quoted note')}</span></div>`;
+    errorDiv.innerHTML = `<div class="quote-error-content"><span class="error-icon">⚠️</span><span class="error-text">${escapeHtml(
+      (error instanceof Error ? error.message : '') ||
+        'Failed to load quoted note'
+    )}</span></div>`;
     return errorDiv;
   }
 

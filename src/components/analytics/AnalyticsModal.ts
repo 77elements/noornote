@@ -180,8 +180,12 @@ export class AnalyticsModal {
     );
     if (descTag && descTag[1]) {
       try {
-        const zapRequest = JSON.parse(descTag[1]);
-        if (zapRequest.pubkey) {
+        // kind:9798 description embeds the zap request event (relay-controlled)
+        const zapRequest = JSON.parse(descTag[1]) as {
+          pubkey?: unknown;
+          content?: unknown;
+        };
+        if (typeof zapRequest.pubkey === 'string') {
           return zapRequest.pubkey;
         }
       } catch {
@@ -200,8 +204,12 @@ export class AnalyticsModal {
     );
     if (descTag && descTag[1]) {
       try {
-        const zapRequest = JSON.parse(descTag[1]);
-        return zapRequest.content || '';
+        // kind:9798 description embeds the zap request event (relay-controlled)
+        const zapRequest = JSON.parse(descTag[1]) as {
+          pubkey?: unknown;
+          content?: unknown;
+        };
+        return typeof zapRequest.content === 'string' ? zapRequest.content : '';
       } catch {
         // Parse error
       }

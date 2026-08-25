@@ -225,8 +225,8 @@ export class UserSearchService {
     query: string
   ): UserSearchResult[] {
     return results.sort((a, b) => {
-      const aName = extractDisplayName(a as any) || '';
-      const bName = extractDisplayName(b as any) || '';
+      const aName = extractDisplayName(a as UserProfile) || '';
+      const bName = extractDisplayName(b as UserProfile) || '';
       const aLower = aName.toLowerCase();
       const bLower = bName.toLowerCase();
 

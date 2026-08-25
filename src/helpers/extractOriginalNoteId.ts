@@ -48,12 +48,18 @@ export function extractOriginalNoteId(event: NostrEvent): string | undefined {
 
     // Try parsing embedded event (legacy format)
     try {
-      const embedded = JSON.parse(event.content);
+      // kind:6 legacy repost embeds the original event (relay-controlled)
+      const embedded = JSON.parse(event.content) as {
+        id?: string;
+        kind?: number;
+        pubkey?: string;
+        tags?: string[][];
+      };
       if (embedded && embedded.id) {
         // Recurse: if the embedded event is itself addressable, hand back
         // its coordinate; otherwise its hex id.
         if (isAddressableKind(embedded.kind)) {
-          const coord = addressableCoordinate(embedded);
+          const coord = addressableCoordinate(embedded as NostrEvent);
           if (coord) return coord;
         }
         return embedded.id;

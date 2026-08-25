@@ -73,10 +73,13 @@ export class Router {
   ): void {
     // Convert pattern to regex (e.g., /note/:id -> /note/([^/]+))
     const paramNames: string[] = [];
-    const regexPattern = pattern.replace(/:([^/]+)/g, (_, paramName) => {
-      paramNames.push(paramName);
-      return '([^/]+)';
-    });
+    const regexPattern = pattern.replace(
+      /:([^/]+)/g,
+      (_match, paramName: string) => {
+        paramNames.push(paramName);
+        return '([^/]+)';
+      }
+    );
 
     const regex = new RegExp(`^${regexPattern}$`);
 
@@ -352,9 +355,13 @@ export class Router {
     try {
       const stored = sessionStorage.getItem(this.HISTORY_STORAGE_KEY);
       if (stored) {
-        const data = JSON.parse(stored);
-        this.history = data.history || [];
-        this.historyIndex = data.index || -1;
+        // Own sessionStorage history format (see persistHistory)
+        const data = JSON.parse(stored) as {
+          history?: string[];
+          index?: number;
+        };
+        this.history = data.history ?? [];
+        this.historyIndex = data.index ?? -1;
       }
     } catch (error) {
       console.warn('Failed to restore navigation history:', error);

@@ -115,9 +115,7 @@ class CrashLoggerService {
    * Get logs from SystemLogger (accessing internal state)
    */
   private getLogsFromSystemLogger(): LogEntry[] {
-    const logger = this.systemLogger as any;
-    const globalLogs: LogEntry[] = logger.globalLogs || [];
-    const pageLogs: LogEntry[] = logger.pageLogs || [];
+    const { globalLogs, pageLogs } = this.systemLogger!.getLogBuffers();
     return [...globalLogs, ...pageLogs].sort(
       (a, b) => a.timestamp - b.timestamp
     );

@@ -121,6 +121,14 @@ export class SystemLogger {
     });
   }
 
+  /**
+   * Snapshot of the in-memory log buffers (global + page), oldest first.
+   * Used by CrashLogger for crash reports — read-only view of private state.
+   */
+  public getLogBuffers(): { globalLogs: LogEntry[]; pageLogs: LogEntry[] } {
+    return { globalLogs: this.globalLogs, pageLogs: this.pageLogs };
+  }
+
   public static getInstance(): SystemLogger {
     if (!SystemLogger.instance) {
       SystemLogger.instance = new SystemLogger();

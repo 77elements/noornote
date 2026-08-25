@@ -4,18 +4,16 @@
  * Web-only — extensions are not available in Electron.
  */
 
-export interface NostrExtension {
-  getPublicKey(): Promise<string>;
-  signEvent(event: any): Promise<any>;
-  nip04?: {
-    encrypt(pubkey: string, plaintext: string): Promise<string>;
-    decrypt(pubkey: string, ciphertext: string): Promise<string>;
-  };
-  nip44?: {
-    encrypt(pubkey: string, plaintext: string): Promise<string>;
-    decrypt(pubkey: string, ciphertext: string): Promise<string>;
-  };
-}
+import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import type { SignableEvent } from '../AuthService';
+
+/**
+ * The NIP-07 provider exactly as NDK declares window.nostr (global
+ * augmentation in @nostr-dev-kit/ndk). Derived via typeof so it always
+ * tracks the upstream shape — including its quirks (signEvent typed as
+ * Promise<{sig}> even though real extensions resolve the full event).
+ */
+export type NostrExtension = NonNullable<Window['nostr']>;
 
 export class ExtensionSignerManager {
   private extension: NostrExtension | null = null;
@@ -108,9 +106,18 @@ export class ExtensionSignerManager {
 
   // ── Signing & Crypto ──────────────────────────────────────────────
 
-  public async signEvent(event: any): Promise<any> {
+  public async signEvent(event: SignableEvent): Promise<NostrEvent> {
     if (!this.extension) throw new Error('Extension not available');
-    return this.extension.signEvent(event);
+    // Complete the draft before handing it to the provider (its typed
+    // parameter is a full NostrEvent). Runtime contract: NIP-07 extensions
+    // resolve with the completed event — typed only as {sig} by NDK.
+    const complete: NostrEvent = {
+      ...event,
+      tags: event.tags ?? [],
+      created_at: event.created_at ?? Math.floor(Date.now() / 1000),
+      pubkey: event.pubkey ?? '',
+    };
+    return (await this.extension.signEvent(complete)) as unknown as NostrEvent;
   }
 
   public async nip44Encrypt(
