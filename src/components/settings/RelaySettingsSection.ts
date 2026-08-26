@@ -138,7 +138,7 @@ export class RelaySettingsSection extends SettingsSection {
     try {
       const stored = localStorage.getItem(this.localRelayStorageKey);
       if (stored) {
-        return JSON.parse(stored);
+        return JSON.parse(stored) as LocalRelaySettings;
       }
     } catch (error) {
       console.warn('Failed to load local relay settings:', error);

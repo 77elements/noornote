@@ -663,7 +663,7 @@ export class AuthService {
       this.authMethod === 'extension' &&
       this.extensionManager?.isSignerAvailable()
     ) {
-      return await this.withSignerTimeout(
+      return this.withSignerTimeout(
         this.extensionManager[methodName](data, pubkey),
         AuthService.CRYPTO_TIMEOUT_MS,
         `extension ${methodName}`
@@ -673,15 +673,15 @@ export class AuthService {
     if (this.authMethod === 'key-signer' && this.keySignerManager) {
       const keySigner = this.keySignerManager.getClient();
       if (!keySigner) throw new Error('KeySigner client not available');
-      return await keySigner[methodName](data, pubkey);
+      return keySigner[methodName](data, pubkey);
     }
 
     if (this.authMethod === 'nip46' && this.activeNip46Manager) {
-      return await this.activeNip46Manager[methodName](data, pubkey);
+      return this.activeNip46Manager[methodName](data, pubkey);
     }
 
     if (this.authMethod === 'amber' && this.amberManager) {
-      return await this.withSignerTimeout(
+      return this.withSignerTimeout(
         this.amberManager[methodName](data, pubkey),
         AuthService.CRYPTO_TIMEOUT_MS,
         `amber ${methodName}`

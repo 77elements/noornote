@@ -14,11 +14,14 @@ export function replaceBolt11Placeholders(
 ): string {
   if (invoices.length === 0) return html;
 
-  return html.replace(/__BOLT11_(\d+)__/g, (_m, idx) => {
-    const match = invoices[parseInt(idx, 10)];
-    if (!match) return '';
-    return renderBolt11Card(match);
-  });
+  return html.replace(
+    /__BOLT11_(\d+)__/g,
+    (_m: string, idx: string): string => {
+      const match = invoices[parseInt(idx, 10)];
+      if (!match) return '';
+      return renderBolt11Card(match);
+    }
+  );
 }
 
 function renderBolt11Card(match: Bolt11Match): string {

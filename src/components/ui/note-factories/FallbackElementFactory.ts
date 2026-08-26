@@ -12,7 +12,7 @@ export class FallbackElementFactory {
   /**
    * Create fallback element when note processing fails
    */
-  static createErrorElement(event: NostrEvent, _error: any): HTMLElement {
+  static createErrorElement(event: NostrEvent, _error: unknown): HTMLElement {
     const eventId = event.id;
     const errorDiv = document.createElement('div');
     errorDiv.className = 'note-card note-card--error';

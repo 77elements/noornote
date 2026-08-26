@@ -697,7 +697,7 @@ export class DiagnosticLogger {
       .filter(line => line.trim())
       .map(line => {
         try {
-          return JSON.parse(line);
+          return JSON.parse(line) as DiagLogEntry;
         } catch {
           return null;
         }

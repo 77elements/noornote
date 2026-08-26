@@ -170,7 +170,7 @@ export abstract class BaseFileStorage<T extends BaseFileData> {
 
     try {
       const content = await platformReadTextFile(this.filePath);
-      const rawData: T = JSON.parse(content);
+      const rawData = JSON.parse(content) as T;
       const data = this.migrateData(rawData);
       this.systemLogger.info(
         this.getLoggerName(),

@@ -67,9 +67,11 @@ export interface ZapAddedPayload {
   noteId: string;
 }
 
+import type { PollResults } from '../services/orchestration/PollOrchestrator';
+
 export interface PollVotedPayload {
   pollEventId: string;
-  results: any;
+  results: PollResults;
 }
 
 // ── Relay ────────────────────────────────────────────────────

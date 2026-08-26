@@ -37,7 +37,7 @@ export class WalletBalanceDisplay {
     }, 2000);
   };
   private onFiatCurrencyChanged: (e: Event) => void = (event: Event) => {
-    const customEvent = event as CustomEvent;
+    const customEvent = event as CustomEvent<{ currency?: string }>;
     const currency = customEvent.detail?.currency;
     if (currency) {
       this.selectedCurrency = currency;

@@ -86,7 +86,7 @@ export async function decryptPrivateFollows(
       return [];
     }
 
-    const privateTags: string[][] = JSON.parse(plaintext);
+    const privateTags = JSON.parse(plaintext) as unknown as string[][];
 
     if (!Array.isArray(privateTags)) {
       diagLog('lists', 'decryptPrivateFollows: parsed result is not an array', {

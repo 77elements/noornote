@@ -1,6 +1,9 @@
 import type { ModuleRuntime, ModuleContext } from '../../core/ModuleLoader';
-import type { DetailedStats } from './contracts';
-import type { ReactionsModuleApi, InteractionStats } from './contracts';
+import type {
+  DetailedStats,
+  InteractionStats,
+  ReactionsModuleApi,
+} from './contracts';
 
 export class ReactionsRuntime implements ModuleRuntime<ReactionsModuleApi> {
   private orchestrator:

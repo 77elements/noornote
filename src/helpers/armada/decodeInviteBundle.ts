@@ -86,7 +86,7 @@ export function decodeInviteBundle(
   try {
     bundle = JSON.parse(
       nip44DecryptWithKey(event.content, inviteBundleKey(token))
-    );
+    ) as Record<string, unknown>;
   } catch {
     return undefined;
   }

@@ -40,8 +40,12 @@ export class ImageClickHandler {
   public init(): void {
     if (this.initialized) return;
     this.initialized = true;
-    document.body.addEventListener('click', this.handleDelegatedClick);
+    document.body.addEventListener('click', this.handleDelegatedClickBound);
   }
+
+  // Bound once — addEventListener/removeEventListener need the same ref.
+  private readonly handleDelegatedClickBound = ((event: MouseEvent) =>
+    this.handleDelegatedClick(event)).bind(this);
 
   private handleDelegatedClick(event: MouseEvent): void {
     const target = event.target as HTMLElement | null;
@@ -66,7 +70,11 @@ export class ImageClickHandler {
 
     let imageUrls: string[] = [];
     try {
-      imageUrls = JSON.parse(decodeURIComponent(imageUrlsJson));
+      // data-image-urls attribute (set by our own renderers)
+      const parsed = JSON.parse(decodeURIComponent(imageUrlsJson)) as unknown;
+      imageUrls = Array.isArray(parsed)
+        ? parsed.filter((u): u is string => typeof u === 'string')
+        : [];
     } catch (error) {
       console.debug(
         'ImageClickHandler: failed to parse data-image-urls',

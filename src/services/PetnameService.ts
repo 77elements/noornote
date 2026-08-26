@@ -123,7 +123,7 @@ export class PetnameService {
         event.content,
         user.pubkey
       );
-      const map = JSON.parse(plaintext);
+      const map = JSON.parse(plaintext) as Record<string, string>;
       if (typeof map === 'object' && map !== null) {
         this.pals.set(StorageKeys.PETNAMES, map);
         this.cachedMap = map;

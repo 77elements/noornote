@@ -28,11 +28,16 @@ vi.mock('./ProfileStore', () => ({
 
 vi.mock('./AuthService', () => ({
   AuthService: {
-    getInstance: () => ({ getCurrentUser: () => ({ npub: 'npub1test', pubkey: 'pk' }) }),
+    getInstance: () => ({
+      getCurrentUser: () => ({ npub: 'npub1test', pubkey: 'pk' }),
+    }),
   },
 }));
 
-const orch = { fetchProfile: mockFetchProfile, fetchMultipleProfiles: mockFetchMultipleProfiles };
+const orch = {
+  fetchProfile: mockFetchProfile,
+  fetchMultipleProfiles: mockFetchMultipleProfiles,
+};
 
 const PK = 'aa'.repeat(32);
 const PK2 = 'bb'.repeat(32);
@@ -74,9 +79,12 @@ describe('UserProfileService (cache semantics)', () => {
   });
 
   it('dedupes concurrent fetches for the same pubkey (in-flight join)', async () => {
-    orch.fetchProfile.mockImplementation(() => new Promise(resolve =>
-      setTimeout(() => resolve(realProfile(PK, 'alice')), 20)
-    ));
+    orch.fetchProfile.mockImplementation(
+      () =>
+        new Promise(resolve =>
+          setTimeout(() => resolve(realProfile(PK, 'alice')), 20)
+        )
+    );
     const [a, b] = await Promise.all([
       service.getUserProfile(PK),
       service.getUserProfile(PK),
@@ -136,7 +144,9 @@ describe('UserProfileService (cache semantics)', () => {
   });
 
   it('getUserProfiles: batch hit via aggregator, misses beyond recovery stay uncached placeholders', async () => {
-    orch.fetchMultipleProfiles.mockResolvedValue(new Map([[PK, realProfile(PK, 'batched')]]));
+    orch.fetchMultipleProfiles.mockResolvedValue(
+      new Map([[PK, realProfile(PK, 'batched')]])
+    );
     orch.fetchProfile.mockResolvedValue(null); // stage-2 recovery finds nothing
 
     const result = await service.getUserProfiles([PK, PK2]);
@@ -148,9 +158,13 @@ describe('UserProfileService (cache semantics)', () => {
   });
 
   it('getUserProfiles: a name-less aggregator hit is cached but NOT broadcast', async () => {
-    orch.fetchMultipleProfiles.mockResolvedValue(new Map([[PK, { pubkey: PK }]]));
+    orch.fetchMultipleProfiles.mockResolvedValue(
+      new Map([[PK, { pubkey: PK }]])
+    );
     const updates: string[] = [];
-    service.subscribeToAnyProfileUpdate((_pk, p) => updates.push(p.name ?? '(none)'));
+    service.subscribeToAnyProfileUpdate((_pk, p) =>
+      updates.push(p.name ?? '(none)')
+    );
 
     await service.getUserProfiles([PK]);
 
@@ -198,8 +212,12 @@ describe('UserProfileService (ProfileStore integration)', () => {
     const updates: string[] = [];
     // any-updates subscriber (fetch-free registration — per-pubkey subscribe
     // would trigger a relay fetch on cache miss, which warm must not need)
-    const unsub = service.subscribeToAnyProfileUpdate((_pk, p) => updates.push(p.name ?? '(none)'));
-    store.loadAll.mockResolvedValue(new Map([[PK, realProfile(PK, 'restored')]]));
+    const unsub = service.subscribeToAnyProfileUpdate((_pk, p) =>
+      updates.push(p.name ?? '(none)')
+    );
+    store.loadAll.mockResolvedValue(
+      new Map([[PK, realProfile(PK, 'restored')]])
+    );
 
     await service.warmFromStore();
 
@@ -258,16 +276,29 @@ describe('UserProfileService (ProfileStore integration)', () => {
 
 describe('UserProfileService (render-ready fallbacks)', () => {
   it('displayNameOf prefers display_name > name > username > npub fallback', () => {
-    expect(UserProfileService.displayNameOf({ pubkey: PK, display_name: 'D', name: 'N' }, PK)).toBe('D');
-    expect(UserProfileService.displayNameOf({ pubkey: PK, name: 'N' }, PK)).toBe('N');
-    expect(UserProfileService.displayNameOf({ pubkey: PK, username: 'U' }, PK)).toBe('U');
+    expect(
+      UserProfileService.displayNameOf(
+        { pubkey: PK, display_name: 'D', name: 'N' },
+        PK
+      )
+    ).toBe('D');
+    expect(
+      UserProfileService.displayNameOf({ pubkey: PK, name: 'N' }, PK)
+    ).toBe('N');
+    expect(
+      UserProfileService.displayNameOf({ pubkey: PK, username: 'U' }, PK)
+    ).toBe('U');
     const fallback = UserProfileService.displayNameOf(null, PK);
     expect(fallback).toMatch(/^@[a-z0-9]+…$/);
   });
 
   it('displayPictureOf falls back to a deterministic identicon data-URL', () => {
-    expect(UserProfileService.displayPictureOf({ pubkey: PK, picture: 'https://x/y.png' }, PK))
-      .toBe('https://x/y.png');
+    expect(
+      UserProfileService.displayPictureOf(
+        { pubkey: PK, picture: 'https://x/y.png' },
+        PK
+      )
+    ).toBe('https://x/y.png');
     const a = UserProfileService.displayPictureOf(null, PK);
     expect(a).toMatch(/^data:image\/svg\+xml/);
     expect(UserProfileService.displayPictureOf(null, PK)).toBe(a); // deterministic

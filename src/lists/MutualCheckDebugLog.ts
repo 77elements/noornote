@@ -288,11 +288,11 @@ export class MutualCheckDebugLog {
     try {
       const content = await window.electronAPI.readTextFile(this.filePath);
       const parsed = JSON.parse(content) as {
-      entries?: unknown;
-    } | null;
-    return Array.isArray(parsed?.entries)
-      ? (parsed.entries as DebugLogEntry[])
-      : [];
+        entries?: unknown;
+      } | null;
+      return Array.isArray(parsed?.entries)
+        ? (parsed.entries as DebugLogEntry[])
+        : [];
     } catch {
       return [];
     }

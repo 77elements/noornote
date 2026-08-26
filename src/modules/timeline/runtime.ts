@@ -1,6 +1,5 @@
 import type { ModuleRuntime, ModuleContext } from '../../core/ModuleLoader';
-import type { FeedLoadResult } from './contracts';
-import type { TimelineModuleApi } from './contracts';
+import type { FeedLoadResult, TimelineModuleApi } from './contracts';
 
 export class TimelineRuntime implements ModuleRuntime<TimelineModuleApi> {
   private orchestrator:

@@ -1,6 +1,11 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
-import { escapeHtml, escapeHtmlAttr, safeHttpUrl, escapeCssUrl } from './escapeHtml';
+import {
+  escapeHtml,
+  escapeHtmlAttr,
+  safeHttpUrl,
+  escapeCssUrl,
+} from './escapeHtml';
 
 describe('escapeHtml', () => {
   it('escapes angle brackets so script payloads become inert text', () => {
@@ -20,7 +25,9 @@ describe('escapeHtml', () => {
 
 describe('escapeHtmlAttr', () => {
   it('escapes all attribute-context metacharacters', () => {
-    expect(escapeHtmlAttr('<a href="x">&\'')).toBe('&lt;a href=&quot;x&quot;&gt;&amp;&#39;');
+    expect(escapeHtmlAttr('<a href="x">&\'')).toBe(
+      '&lt;a href=&quot;x&quot;&gt;&amp;&#39;'
+    );
   });
 
   it('passes through plain text unchanged', () => {
@@ -30,7 +37,9 @@ describe('escapeHtmlAttr', () => {
 
 describe('safeHttpUrl', () => {
   it('allows http and https URLs', () => {
-    expect(safeHttpUrl('https://example.com/a?b=1')).toBe('https://example.com/a?b=1');
+    expect(safeHttpUrl('https://example.com/a?b=1')).toBe(
+      'https://example.com/a?b=1'
+    );
     expect(safeHttpUrl('http://example.com')).toBe('http://example.com');
   });
 
@@ -52,6 +61,6 @@ describe('safeHttpUrl', () => {
 describe('escapeCssUrl', () => {
   it('strips quotes and newlines, escapes backslash and single quote', () => {
     // order matters: strip [\r\n"] first, then \\ doubled, then ' escaped
-    expect(escapeCssUrl("a'b\nc\"d\\e")).toBe("a\\'bcd\\\\e");
+    expect(escapeCssUrl('a\'b\nc"d\\e')).toBe("a\\'bcd\\\\e");
   });
 });

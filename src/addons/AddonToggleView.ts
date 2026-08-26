@@ -32,6 +32,7 @@
 import { View } from '../components/views/View';
 import { Switch } from '../components/ui/Switch';
 import { TypedEventBus } from '../core/TypedEventBus';
+import type { AppEventName } from '../core/events';
 import { ToastService } from '../services/ToastService';
 import { escapeHtml } from '../helpers/escapeHtml';
 
@@ -72,9 +73,12 @@ export class AddonToggleView extends View {
       onChange: checked => {
         this.opts.setEnabled(checked);
         if (this.opts.toggleEvent) {
-          TypedEventBus.getInstance().emit(this.opts.toggleEvent as any, {
-            enabled: checked,
-          });
+          TypedEventBus.getInstance().emit(
+            this.opts.toggleEvent as AppEventName,
+            {
+              enabled: checked,
+            }
+          );
         }
         ToastService.show(
           checked ? `${this.opts.name} enabled` : `${this.opts.name} disabled`,

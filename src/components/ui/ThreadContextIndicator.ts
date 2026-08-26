@@ -234,7 +234,10 @@ export class ThreadContextIndicator {
       };
     } else {
       // Regular note: resolve mentions, truncate body
-      const mentionedProfiles = new Map<string, any>();
+      const mentionedProfiles = new Map<
+        string,
+        import('../../services/UserProfileService').UserProfile
+      >();
       const npubMatches = content.match(
         /nostr:npub1[023456789acdefghjklmnpqrstuvwxyz]{58}/gi
       );

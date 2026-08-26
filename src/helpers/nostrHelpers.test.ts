@@ -4,7 +4,11 @@ import { getAddressableIdentifier } from './getAddressableIdentifier';
 import { hexToNpub, npubToHex } from './nip19';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
-const TAGS = [['d', 'slug'], ['title', 'Hello'], ['title', 'Second']] as string[][];
+const TAGS = [
+  ['d', 'slug'],
+  ['title', 'Hello'],
+  ['title', 'Second'],
+] as string[][];
 
 describe('tagUtils', () => {
   it('getTag returns the first matching tag value', () => {
@@ -26,7 +30,11 @@ describe('tagUtils', () => {
 
 describe('getAddressableIdentifier', () => {
   const ev = (kind: number | undefined, d?: string) =>
-    ({ kind, pubkey: 'pk', tags: d ? [['d', d]] : [] } as unknown as NostrEvent);
+    ({
+      kind,
+      pubkey: 'pk',
+      tags: d ? [['d', d]] : [],
+    }) as unknown as NostrEvent;
 
   it('builds kind:pubkey:d-tag for addressable kinds', () => {
     expect(getAddressableIdentifier(ev(30023, 'slug'))).toBe('30023:pk:slug');

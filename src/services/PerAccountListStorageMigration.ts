@@ -163,7 +163,7 @@ export class PerAccountListStorageMigration {
       }
 
       // Parse legacy data
-      const parsed = JSON.parse(legacyData);
+      const parsed = JSON.parse(legacyData) as unknown;
 
       // Migrate to per-account storage
       this.storage.setForPubkey(newKey, pubkey, parsed);

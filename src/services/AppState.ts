@@ -158,7 +158,11 @@ export class AppState {
     key: K,
     updates: Partial<AppStateData[K]>
   ): void {
-    (this.stores[key] as StateStore<any>).set(updates);
+    (
+      this.stores[key] as unknown as {
+        set(u: Partial<AppStateData[K]>): void;
+      }
+    ).set(updates);
     this.logStateChange(key, updates);
   }
 
@@ -166,7 +170,11 @@ export class AppState {
     key: K,
     callback: StateCallback<K>
   ): () => void {
-    return (this.stores[key] as StateStore<any>).subscribe(callback);
+    return (
+      this.stores[key] as unknown as {
+        subscribe(cb: StateCallback<K>): () => void;
+      }
+    ).subscribe(callback);
   }
 
   public reset(): void {

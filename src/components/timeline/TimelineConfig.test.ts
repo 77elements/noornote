@@ -13,7 +13,8 @@ vi.mock('../../services/PerAccountLocalStorage', () => {
   return {
     PerAccountLocalStorage: {
       getInstance: () => ({
-        get: (key: string, def: unknown) => (store.has(key) ? store.get(key) : def),
+        get: (key: string, def: unknown) =>
+          store.has(key) ? store.get(key) : def,
         set: (key: string, v: unknown) => store.set(key, v),
       }),
     },
@@ -22,7 +23,6 @@ vi.mock('../../services/PerAccountLocalStorage', () => {
 });
 
 import {
-  buildTimelineConfig,
   profileTimelineConfig,
   tribeTimelineConfig,
   followingTimelineConfig,
@@ -59,7 +59,10 @@ describe('buildTimelineConfig use-case matrix', () => {
 
   it('tribe: explicit author set, window pagination, trimmed DOM', () => {
     const c = tribeTimelineConfig([PK, 'cd'.repeat(32)]);
-    expect(c.source).toEqual({ kind: 'authors', pubkeys: [PK, 'cd'.repeat(32)] });
+    expect(c.source).toEqual({
+      kind: 'authors',
+      pubkeys: [PK, 'cd'.repeat(32)],
+    });
     expect(c.fetchMode).toBe('cache-first');
     expect(c.pagination).toBe('window');
     expect(c.pageSize).toBe(50);
@@ -87,15 +90,26 @@ describe('runtime override readers', () => {
   it('relayFilterUrl: only explicit relay sets produce a filter', () => {
     const base = followingTimelineConfig();
     expect(relayFilterUrl(base)).toBeNull();
-    expect(relayFilterUrl({ ...base, relays: { kind: 'author-outbox' } })).toBeNull();
-    expect(relayFilterUrl({ ...base, relays: { kind: 'explicit', urls: ['wss://r'] } })).toBe('wss://r');
-    expect(relayFilterUrl({ ...base, relays: { kind: 'explicit', urls: [] } })).toBeNull();
+    expect(
+      relayFilterUrl({ ...base, relays: { kind: 'author-outbox' } })
+    ).toBeNull();
+    expect(
+      relayFilterUrl({
+        ...base,
+        relays: { kind: 'explicit', urls: ['wss://r'] },
+      })
+    ).toBe('wss://r');
+    expect(
+      relayFilterUrl({ ...base, relays: { kind: 'explicit', urls: [] } })
+    ).toBeNull();
   });
 
   it('timeRangeOf: only between-ranges produce a window', () => {
     const base = followingTimelineConfig();
     expect(timeRangeOf(base)).toBeNull();
-    expect(timeRangeOf({ ...base, range: { kind: 'between', since: 1, until: 2 } })).toEqual({ since: 1, until: 2 });
+    expect(
+      timeRangeOf({ ...base, range: { kind: 'between', since: 1, until: 2 } })
+    ).toEqual({ since: 1, until: 2 });
   });
 });
 

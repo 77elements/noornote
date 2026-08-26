@@ -5,7 +5,11 @@
  */
 
 import { CustomDropdown } from './CustomDropdown';
-import { ThemeService, THEMES } from '../../services/ThemeService';
+import {
+  ThemeService,
+  THEMES,
+  type ThemeId,
+} from '../../services/ThemeService';
 
 export class ThemeSwitcher {
   private element: HTMLElement;
@@ -17,7 +21,7 @@ export class ThemeSwitcher {
     this.dropdown = new CustomDropdown({
       options: THEMES.map(t => ({ value: t.id, label: t.label })),
       selectedValue: themeService.getTheme(),
-      onChange: value => themeService.setTheme(value as any),
+      onChange: value => themeService.setTheme(value as ThemeId),
       className: 'theme-switcher',
     });
 

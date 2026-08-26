@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { isFoafEntryFresh, foafFollowCountTolerance, FOAF_CACHE_TTL_MS } from './foafFreshness';
+import {
+  isFoafEntryFresh,
+  foafFollowCountTolerance,
+  FOAF_CACHE_TTL_MS,
+} from './foafFreshness';
 
 const NOW = 1_700_000_000_000;
 
@@ -33,9 +37,15 @@ describe('isFoafEntryFresh', () => {
   });
 
   it('rejects entries older than the 24h TTL regardless of follow count', () => {
-    expect(isFoafEntryFresh(400, NOW - FOAF_CACHE_TTL_MS, 400, NOW)).toBe(false);
-    expect(isFoafEntryFresh(400, NOW - FOAF_CACHE_TTL_MS - 1, 400, NOW)).toBe(false);
-    expect(isFoafEntryFresh(400, NOW - FOAF_CACHE_TTL_MS + 1, 400, NOW)).toBe(true);
+    expect(isFoafEntryFresh(400, NOW - FOAF_CACHE_TTL_MS, 400, NOW)).toBe(
+      false
+    );
+    expect(isFoafEntryFresh(400, NOW - FOAF_CACHE_TTL_MS - 1, 400, NOW)).toBe(
+      false
+    );
+    expect(isFoafEntryFresh(400, NOW - FOAF_CACHE_TTL_MS + 1, 400, NOW)).toBe(
+      true
+    );
   });
 
   it('future-built entries (clock skew) stay fresh within the TTL window', () => {

@@ -42,7 +42,7 @@ export function formatCustomEmojis(
   // Regex to match :shortcode: patterns (alphanumeric, underscores, hyphens)
   const regex = /:([a-zA-Z0-9_-]+):/g;
 
-  return html.replace(regex, (match, shortcode) => {
+  return html.replace(regex, (match: string, shortcode: string) => {
     const url = emojiMap.get(shortcode);
     if (url) {
       // Escape URL for safety (attribute-context: covers & " ' < >)

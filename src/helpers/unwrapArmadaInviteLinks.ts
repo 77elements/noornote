@@ -38,7 +38,7 @@ import { parseArmadaInvite } from './armada/parseArmadaInvite';
  * those keep going through unwrapStreamLinks as before.
  */
 const ARMADA_URL_REGEX =
-  /https?:\/\/(?:www\.)?armada\.buzz\/invite\/(naddr1[02-9ac-hj-np-z]+)(#[A-Za-z0-9_\-]+)?/gi;
+  /https?:\/\/(?:www\.)?armada\.buzz\/invite\/(naddr1[02-9ac-hj-np-z]+)(#[A-Za-z0-9_-]+)?/gi;
 
 /**
  * Matches a bare invite-bundle naddr with a `#fragment`. We only rewrite

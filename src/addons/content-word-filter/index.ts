@@ -66,8 +66,11 @@ function getContentToCheck(event: NostrEvent): string | null {
 
   if (event.kind === 6 || event.kind === 16) {
     try {
-      const original = JSON.parse(event.content);
-      return original?.content || null;
+      // kind:6/16 repost embeds the original note (relay-controlled)
+      const original = JSON.parse(event.content) as {
+        content?: unknown;
+      } | null;
+      return typeof original?.content === 'string' ? original.content : null;
     } catch {
       return null;
     }

@@ -35,7 +35,7 @@ export function parseFollowPackEvent(event: NostrEvent): FollowPack {
     description: getTag('description') || '',
     coverImage: getTag('image') || '',
     authorPubkey: event.pubkey || '',
-    createdAt: (event as any).created_at ?? 0,
+    createdAt: (event as NostrEvent).created_at ?? 0,
     userPubkeys: tags
       .filter((t: string[]) => t[0] === 'p' && t[1])
       .map((t: string[]) => t[1]!),

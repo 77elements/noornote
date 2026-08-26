@@ -265,7 +265,7 @@ export class HashtagNotificationService {
               limit: 10,
             })) ?? [];
 
-          const seenIds = new Set(allResults.map((e: any) => e.id));
+          const seenIds = new Set(allResults.map(e => e.id));
           for (const event of termResults) {
             if (!seenIds.has(event.id)) {
               allResults.push(event);

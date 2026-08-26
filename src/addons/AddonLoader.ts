@@ -48,6 +48,7 @@
  */
 
 import { TypedEventBus } from '../core/TypedEventBus';
+import type { AddonTogglePayload } from '../core/events';
 import { diagLog } from '../services/DiagnosticLogger';
 import { resetGlobalAddonEnabledFlags } from './addonEnabledStorage';
 
@@ -124,20 +125,25 @@ export class AddonLoader {
     });
     // Subscribe to the per-addon toggle event. AddonToggleView emits
     // `<id>:addon-toggle` with { enabled: boolean }.
-    this.eventBus.on(
-      `${entry.id}:addon-toggle` as any,
-      (data?: { enabled?: boolean }) => {
-        const enabled = !!(data && data.enabled);
-        diagLog('addons', enabled ? 'addons_toggle_on' : 'addons_toggle_off', {
-          id: entry.id,
-        });
-        if (enabled) {
-          void this.activate(entry.id);
-        } else {
-          void this.deactivate(entry.id);
-        }
+    // Dynamic event name (one per addon id — every `<id>:addon-toggle` is
+    // declared in events.ts, but TS can't narrow a runtime template literal
+    // to the matching key). Downcast to the string-keyed base bus.
+    (
+      this.eventBus.on as unknown as (
+        event: string,
+        cb: (data?: AddonTogglePayload) => void
+      ) => string
+    )(`${entry.id}:addon-toggle`, data => {
+      const enabled = !!(data && data.enabled);
+      diagLog('addons', enabled ? 'addons_toggle_on' : 'addons_toggle_off', {
+        id: entry.id,
+      });
+      if (enabled) {
+        void this.activate(entry.id);
+      } else {
+        void this.deactivate(entry.id);
       }
-    );
+    });
   }
 
   /**

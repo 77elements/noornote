@@ -117,7 +117,12 @@ export class RelayConfig {
     try {
       const stored = localStorage.getItem('noornote_local_relay');
       if (stored) {
-        return JSON.parse(stored);
+        // LocalRelaySettings persisted shape (own storage format)
+        return JSON.parse(stored) as {
+          enabled: boolean;
+          url: string;
+          mode: string;
+        };
       }
     } catch (error) {
       // Failed to load local relay settings

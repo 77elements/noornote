@@ -36,7 +36,7 @@ export class RepostProcessor {
 
     try {
       if (event.content && event.content.trim()) {
-        originalEvent = JSON.parse(event.content);
+        originalEvent = JSON.parse(event.content) as NostrEvent;
         if (originalEvent && originalEvent.content) {
           originalContent = originalEvent.content;
         }

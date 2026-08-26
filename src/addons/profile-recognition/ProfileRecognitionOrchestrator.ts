@@ -14,7 +14,10 @@
 import { NostrTransport } from '../../services/transport/NostrTransport';
 import { AuthService } from '../../services/AuthService';
 import { SystemLogger } from '../../services/SystemLogger';
-import type { ProfileEncounterData } from './ProfileEncounterFileStorage';
+import type {
+  ProfileEncounterData,
+  ProfileEncounter,
+} from './ProfileEncounterFileStorage';
 
 const NIP78_KIND = 30078;
 const D_TAG = 'noornote:profile-encounters';
@@ -220,10 +223,14 @@ export class ProfileRecognitionOrchestrator {
     }
 
     try {
-      const parsed = JSON.parse(content);
+      // Own recognition-file payload: { version, encounters } (encrypted)
+      const parsed = JSON.parse(content) as {
+        version?: unknown;
+        encounters?: unknown;
+      };
       if (parsed.version === 1 && parsed.encounters) {
         return {
-          encounters: parsed.encounters,
+          encounters: parsed.encounters as Record<string, ProfileEncounter>,
           lastModified: Math.floor(Date.now() / 1000),
         };
       }

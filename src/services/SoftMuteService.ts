@@ -202,7 +202,7 @@ export class SoftMuteService {
         event.content,
         user.pubkey
       );
-      const remote = JSON.parse(plaintext);
+      const remote = JSON.parse(plaintext) as Record<string, unknown>;
       if (typeof remote !== 'object' || remote === null) return;
 
       let changed = false;

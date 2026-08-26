@@ -13,7 +13,8 @@ import { escapeHtmlAttr } from '../../helpers/escapeHtml';
 
 // Handle both default and named export patterns
 const emojilib: Record<string, string[]> =
-  (emojilibData as any).default || emojilibData;
+  (emojilibData as { default?: Record<string, string[]> }).default ||
+  (emojilibData as Record<string, string[]>);
 
 export interface CustomEmojiEntry {
   shortcode: string;

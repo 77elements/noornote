@@ -75,7 +75,7 @@ export async function readJsonFile<T>(
       return defaultData;
     }
     const content = await window.electronAPI!.readTextFile(filePath);
-    const data: T = JSON.parse(content);
+    const data = JSON.parse(content) as T;
     logger.info('file.ts', `Read: ${filename}`);
     return data;
   } catch (error) {

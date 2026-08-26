@@ -13,10 +13,7 @@ export interface DMsModuleApi {
     content: string,
     replyTo?: string
   ): Promise<boolean>;
-  getConversations(
-    limit?: number,
-    offset?: number
-  ): Promise<DMConversation[]>;
+  getConversations(limit?: number, offset?: number): Promise<DMConversation[]>;
   getConversationsFiltered(
     filter: 'known' | 'unknown' | 'all',
     limit?: number,

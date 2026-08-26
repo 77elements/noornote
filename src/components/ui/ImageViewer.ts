@@ -47,9 +47,9 @@ export class ImageViewer {
   // instead of navigating the view underneath it.
   private overlayHandle: OverlayHandle | null = null;
 
-  constructor() {
-    this.handleKeyDown = this.handleKeyDown.bind(this);
-  }
+  // Bound once — addEventListener/removeEventListener need the same ref.
+  private readonly handleKeyDownBound = ((e: KeyboardEvent) =>
+    this.handleKeyDown(e)).bind(this);
 
   /**
    * Open the image viewer
@@ -381,7 +381,7 @@ export class ImageViewer {
    * Attach global event listeners
    */
   private attachEventListeners(): void {
-    document.addEventListener('keydown', this.handleKeyDown);
+    document.addEventListener('keydown', this.handleKeyDownBound);
 
     // Click on content area (but not on image or controls) closes viewer
     const content = this.container?.querySelector('.image-viewer__content');
@@ -415,7 +415,7 @@ export class ImageViewer {
    * Detach global event listeners
    */
   private detachEventListeners(): void {
-    document.removeEventListener('keydown', this.handleKeyDown);
+    document.removeEventListener('keydown', this.handleKeyDownBound);
     if (this.boundMouseMove) {
       document.removeEventListener('mousemove', this.boundMouseMove);
       this.boundMouseMove = null;

@@ -174,7 +174,7 @@ export class UpdateCheckService {
 
     if (!response.ok) return null;
 
-    return response.json();
+    return (await response.json()) as { tag_name: string; body?: string };
   }
 
   /**

@@ -112,9 +112,8 @@ export class SyncStatusBadge {
     // Subscribe to followlist sync state in AppState
     this.unsubscribe = this.appState.subscribe('user', userState => {
       // We'll add syncStatus to UserState in next step
-      const syncData = (userState as any).syncStatus as
-        | SyncStatusData
-        | undefined;
+      const syncData = (userState as { syncStatus?: SyncStatusData })
+        .syncStatus as SyncStatusData | undefined;
 
       if (syncData) {
         this.render(syncData);

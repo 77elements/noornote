@@ -7,19 +7,33 @@ class IOStub {
   static instances: IOStub[] = [];
   static last: IOStub | null = null;
   private targets = new Set<Element>();
-  constructor(public cb: IntersectionObserverCallback, public opts?: IntersectionObserverInit) {
+  constructor(
+    public cb: IntersectionObserverCallback,
+    public opts?: IntersectionObserverInit
+  ) {
     IOStub.instances.push(this);
     IOStub.last = this;
   }
-  observe(el: Element) { this.targets.add(el); }
-  unobserve(el: Element) { this.targets.delete(el); }
-  disconnect() { this.targets.clear(); }
+  observe(el: Element) {
+    this.targets.add(el);
+  }
+  unobserve(el: Element) {
+    this.targets.delete(el);
+  }
+  disconnect() {
+    this.targets.clear();
+  }
   trigger(isIntersecting: boolean) {
-    const entries = [...this.targets].map(target => ({ target, isIntersecting } as IntersectionObserverEntry));
+    const entries = [...this.targets].map(
+      target => ({ target, isIntersecting }) as IntersectionObserverEntry
+    );
     this.cb(entries, this as unknown as IntersectionObserver);
   }
 }
-vi.stubGlobal('IntersectionObserver', IOStub as unknown as typeof IntersectionObserver);
+vi.stubGlobal(
+  'IntersectionObserver',
+  IOStub as unknown as typeof IntersectionObserver
+);
 
 import { InfiniteScroll } from './InfiniteScroll';
 
@@ -43,8 +57,12 @@ describe('InfiniteScroll', () => {
     const is = new InfiniteScroll(vi.fn(), { loadingMessage: 'Loading more…' });
     is.observe(container);
 
-    const sentinel = container.querySelector('.infinite-scroll-sentinel') as HTMLElement | null;
-    const loading = container.querySelector('.infinite-scroll-loading') as HTMLElement | null;
+    const sentinel = container.querySelector(
+      '.infinite-scroll-sentinel'
+    ) as HTMLElement | null;
+    const loading = container.querySelector(
+      '.infinite-scroll-loading'
+    ) as HTMLElement | null;
     expect(sentinel).not.toBeNull();
     expect(loading).not.toBeNull();
     expect(loading?.textContent).toContain('Loading more…');
@@ -131,7 +149,9 @@ describe('InfiniteScroll', () => {
   it('showLoading/hideLoading toggle the indicator visibility', () => {
     const is = new InfiniteScroll(vi.fn());
     is.observe(container);
-    const loading = container.querySelector('.infinite-scroll-loading') as HTMLElement;
+    const loading = container.querySelector(
+      '.infinite-scroll-loading'
+    ) as HTMLElement;
 
     is.showLoading();
     expect(loading.style.display).toBe('flex');
@@ -143,8 +163,12 @@ describe('InfiniteScroll', () => {
     const is = new InfiniteScroll(vi.fn());
     is.observe(container);
     is.observe(container);
-    expect(container.querySelectorAll('.infinite-scroll-sentinel')).toHaveLength(1);
-    expect(container.querySelectorAll('.infinite-scroll-loading')).toHaveLength(1);
+    expect(
+      container.querySelectorAll('.infinite-scroll-sentinel')
+    ).toHaveLength(1);
+    expect(container.querySelectorAll('.infinite-scroll-loading')).toHaveLength(
+      1
+    );
     // old stub disconnected → its trigger is a no-op; only the new one fires
     const first = IOStub.instances[0]!;
     first.trigger(true);

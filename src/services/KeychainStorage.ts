@@ -78,7 +78,9 @@ export class KeychainStorage {
 
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
-        resolve(request.result?.value ?? null);
+        resolve(
+          (request.result as { value?: string } | undefined)?.value ?? null
+        );
       };
     });
   }

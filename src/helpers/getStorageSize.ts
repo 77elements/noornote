@@ -19,7 +19,7 @@ export function getStorageSize(storage: Storage): number {
   try {
     for (const key in storage) {
       if (Object.prototype.hasOwnProperty.call(storage, key)) {
-        size += key.length + (storage[key]?.length || 0);
+        size += key.length + (String(storage[key] ?? '')?.length || 0);
       }
     }
   } catch (error) {

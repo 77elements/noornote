@@ -28,7 +28,9 @@ const { mockBus, mockToast, mockFollowFn, mockRouter } = vi.hoisted(() => {
 vi.mock('../../core/TypedEventBus', () => ({ TypedEventBus: mockBus }));
 vi.mock('../ToastService', () => ({ ToastService: mockToast }));
 vi.mock('../FollowCheckService', () => ({
-  FollowCheckService: { getInstance: () => ({ isFollowingSync: mockFollowFn }) },
+  FollowCheckService: {
+    getInstance: () => ({ isFollowingSync: mockFollowFn }),
+  },
 }));
 vi.mock('../Router', () => ({ Router: mockRouter }));
 vi.mock('../DiagnosticLogger', () => ({ diagLog: vi.fn() }));
@@ -53,12 +55,11 @@ const emit = (name: string, payload: unknown) =>
   mockBus.handlers.get(name)!(payload);
 
 describe('UnknownDMNotifier — wasUnread read-anchor filter', () => {
-  let notifier: UnknownDMNotifier;
-
   beforeEach(() => {
     vi.clearAllMocks();
     UnknownDMNotifier.reset();
-    notifier = UnknownDMNotifier.getInstance();
+    // Instantiate (registers bus handlers) — tests assert via mockBus
+    void UnknownDMNotifier.getInstance();
   });
 
   it('ignores explicitly-read arrivals (wasUnread: false) — no toast for replayed read backlog', () => {

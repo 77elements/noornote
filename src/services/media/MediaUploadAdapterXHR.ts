@@ -44,7 +44,7 @@ export class MediaUploadAdapterXHR implements MediaUploadAdapter {
           status: this.xhr!.status,
           statusText: this.xhr!.statusText,
           text: async () => responseText,
-          json: async () => JSON.parse(responseText),
+          json: async () => JSON.parse(responseText) as Record<string, unknown>,
         });
 
         this.xhr = null;

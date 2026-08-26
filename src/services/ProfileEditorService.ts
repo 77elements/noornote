@@ -117,7 +117,8 @@ export class ProfileEditorService {
 
       // Clean metadata (remove undefined/null fields)
       // Remove nip05s from content (only goes in tags)
-      const { nip05s: _, ...metadataWithoutNip05s } = metadata;
+      const metadataWithoutNip05s = { ...metadata } as Partial<typeof metadata>;
+      delete metadataWithoutNip05s.nip05s;
       const cleanedMetadata = this.cleanMetadata(metadataWithoutNip05s);
 
       // Set primary NIP-05 in content (for compatibility with other clients)
@@ -322,7 +323,7 @@ export class ProfileEditorService {
 
     Object.entries(metadata).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
-        cleaned[key] = value;
+        cleaned[key] = typeof value === 'string' ? value : String(value);
       }
     });
 

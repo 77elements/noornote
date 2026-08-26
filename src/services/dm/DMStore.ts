@@ -543,7 +543,8 @@ export class DMStore {
       const store = tx.objectStore(CONVERSATIONS_STORE);
       const request = store.get(partnerPubkey);
 
-      request.onsuccess = () => resolve(request.result || null);
+      request.onsuccess = () =>
+        resolve((request.result as DMConversation | undefined) ?? null);
       request.onerror = () => reject(request.error);
     });
   }

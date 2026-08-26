@@ -3,9 +3,24 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const { mockFetchEvents } = vi.hoisted(() => ({ mockFetchEvents: vi.fn() }));
 
 vi.mock('../../lists/relays', () => ({ fetchEvents: mockFetchEvents }));
-vi.mock('../../lists/follows', () => ({ getAllFollowedPubkeys: vi.fn(() => []) }));
+vi.mock('../../lists/follows', () => ({
+  getAllFollowedPubkeys: vi.fn(() => []),
+}));
 vi.mock('../../helpers/LRUCache', () => ({
-  LRUCache: class { get() { return undefined; } set() { /* noop */ } clear() { /* noop */ } get size() { return 0; } },
+  LRUCache: class {
+    get() {
+      return undefined;
+    }
+    set() {
+      /* noop */
+    }
+    clear() {
+      /* noop */
+    }
+    get size() {
+      return 0;
+    }
+  },
   getCacheSize: () => 10,
 }));
 vi.mock('../SystemLogger', () => ({
@@ -18,16 +33,39 @@ vi.mock('./LongFormOrchestrator', () => ({
 }));
 vi.mock('./Orchestrator', () => ({
   Orchestrator: class {
-    constructor(_name: string) { /* stubbed base — no router/transport in tests */ }
-    destroy() { /* noop */ }
+    constructor(_name: string) {
+      /* stubbed base — no router/transport in tests */
+    }
+    destroy() {
+      /* noop */
+    }
   },
 }));
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { ArticleFeedOrchestrator, AUTHOR_FETCH_BATCH } from './ArticleFeedOrchestrator';
+import {
+  ArticleFeedOrchestrator,
+  AUTHOR_FETCH_BATCH,
+} from './ArticleFeedOrchestrator';
 
-const mkArticle = (id: string, pubkey: string, dTag: string, createdAt: number, title = ''): NostrEvent =>
-  ({ id, pubkey, kind: 30023, created_at: createdAt, tags: [['d', dTag], ['title', title]], content: '' } as NostrEvent);
+const mkArticle = (
+  id: string,
+  pubkey: string,
+  dTag: string,
+  createdAt: number,
+  title = ''
+): NostrEvent =>
+  ({
+    id,
+    pubkey,
+    kind: 30023,
+    created_at: createdAt,
+    tags: [
+      ['d', dTag],
+      ['title', title],
+    ],
+    content: '',
+  }) as NostrEvent;
 
 const a1 = mkArticle('e1', 'aa', 'slug-a', 1000, 'A');
 const a2 = mkArticle('e2', 'bb', 'slug-b', 2000, 'B');
@@ -40,7 +78,9 @@ describe('ArticleFeedOrchestrator.fetchFollowingArticles (stateless pipeline)', 
     mockFetchEvents.mockResolvedValue([a1, a2, a3]);
 
     const res = await ArticleFeedOrchestrator.fetchFollowingArticles({
-      authors: ['aa', 'bb', 'cc'], until: 10_000, limit: 20,
+      authors: ['aa', 'bb', 'cc'],
+      until: 10_000,
+      limit: 20,
     });
 
     expect(res.articles.map(e => e.id)).toEqual(['e3', 'e2', 'e1']);
@@ -53,7 +93,9 @@ describe('ArticleFeedOrchestrator.fetchFollowingArticles (stateless pipeline)', 
     mockFetchEvents.mockResolvedValue([oldVersion, newVersion]);
 
     const res = await ArticleFeedOrchestrator.fetchFollowingArticles({
-      authors: ['aa'], until: 10_000, limit: 20,
+      authors: ['aa'],
+      until: 10_000,
+      limit: 20,
     });
 
     expect(res.articles).toHaveLength(1);
@@ -65,7 +107,10 @@ describe('ArticleFeedOrchestrator.fetchFollowingArticles (stateless pipeline)', 
     const seen = new Set(['aa:slug-a']); // a1 already rendered
 
     const res = await ArticleFeedOrchestrator.fetchFollowingArticles({
-      authors: ['aa', 'bb'], until: 10_000, limit: 20, excludeIds: seen,
+      authors: ['aa', 'bb'],
+      until: 10_000,
+      limit: 20,
+      excludeIds: seen,
     });
 
     expect(res.articles.map(e => e.id)).toEqual(['e2']);
@@ -75,7 +120,9 @@ describe('ArticleFeedOrchestrator.fetchFollowingArticles (stateless pipeline)', 
     mockFetchEvents.mockResolvedValue([a1, a2, a3]);
 
     const res = await ArticleFeedOrchestrator.fetchFollowingArticles({
-      authors: ['aa', 'bb', 'cc'], until: 10_000, limit: 2,
+      authors: ['aa', 'bb', 'cc'],
+      until: 10_000,
+      limit: 2,
     });
 
     expect(res.articles.map(e => e.id)).toEqual(['e3', 'e2']);
@@ -85,7 +132,9 @@ describe('ArticleFeedOrchestrator.fetchFollowingArticles (stateless pipeline)', 
   it('leaves the cursor UNCHANGED on an empty page (no infinite-jump contract)', async () => {
     mockFetchEvents.mockResolvedValue([]);
     const res = await ArticleFeedOrchestrator.fetchFollowingArticles({
-      authors: ['aa'], until: 42, limit: 20,
+      authors: ['aa'],
+      until: 42,
+      limit: 20,
     });
     expect(res.articles).toEqual([]);
     expect(res.oldestTimestamp).toBe(42);
@@ -93,33 +142,50 @@ describe('ArticleFeedOrchestrator.fetchFollowingArticles (stateless pipeline)', 
 
   it('batches authors by AUTHOR_FETCH_BATCH with one fetch per batch', async () => {
     mockFetchEvents.mockResolvedValue([]);
-    const authors = Array.from({ length: AUTHOR_FETCH_BATCH * 2 + 10 }, (_, i) => `pk${i}`);
+    const authors = Array.from(
+      { length: AUTHOR_FETCH_BATCH * 2 + 10 },
+      (_, i) => `pk${i}`
+    );
 
-    await ArticleFeedOrchestrator.fetchFollowingArticles({ authors, until: 1, limit: 20 });
+    await ArticleFeedOrchestrator.fetchFollowingArticles({
+      authors,
+      until: 1,
+      limit: 20,
+    });
 
     expect(mockFetchEvents).toHaveBeenCalledTimes(3);
-    const sizes = mockFetchEvents.mock.calls.map((c: unknown[]) => (c[0] as { authors: string[] }[])[0].authors.length);
+    const sizes = mockFetchEvents.mock.calls.map(
+      (c: unknown[]) => (c[0] as { authors: string[] }[])[0].authors.length
+    );
     expect(sizes).toEqual([AUTHOR_FETCH_BATCH, AUTHOR_FETCH_BATCH, 10]);
   });
 
   it('a failed batch does not poison the page — remaining batches deliver', async () => {
     // 2 batches needed: 'aa' in batch 1 (fails), 'bb' in batch 2 (delivers a2)
     const authors = ['aa'];
-    authors.push(...Array.from({ length: AUTHOR_FETCH_BATCH - 1 }, (_, i) => `pad1-${i}`));
+    authors.push(
+      ...Array.from({ length: AUTHOR_FETCH_BATCH - 1 }, (_, i) => `pad1-${i}`)
+    );
     authors.push('bb');
     mockFetchEvents
       .mockRejectedValueOnce(new Error('relay hiccup'))
       .mockResolvedValueOnce([a2]);
 
     const res = await ArticleFeedOrchestrator.fetchFollowingArticles({
-      authors, until: 10_000, limit: 20,
+      authors,
+      until: 10_000,
+      limit: 20,
     });
 
     expect(res.articles.map(e => e.id)).toEqual(['e2']);
   });
 
   it('short-circuits on empty authors or non-positive limit (no relay traffic)', async () => {
-    const res = await ArticleFeedOrchestrator.fetchFollowingArticles({ authors: [], until: 5, limit: 20 });
+    const res = await ArticleFeedOrchestrator.fetchFollowingArticles({
+      authors: [],
+      until: 5,
+      limit: 20,
+    });
     expect(res.articles).toEqual([]);
     expect(res.oldestTimestamp).toBe(5);
     expect(mockFetchEvents).not.toHaveBeenCalled();

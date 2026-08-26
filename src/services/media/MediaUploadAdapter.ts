@@ -18,7 +18,7 @@ export interface UploadResponse {
   status: number;
   statusText: string;
   text(): Promise<string>;
-  json(): Promise<any>;
+  json(): Promise<Record<string, unknown>>;
 }
 
 export interface MediaUploadAdapter {
