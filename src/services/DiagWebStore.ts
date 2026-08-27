@@ -15,8 +15,11 @@
  * so the `diagnose/*.py` tooling consumes web exports unchanged.
  *
  * Never throws (logging must not break the app). All ops are fire-and-forget.
+ * init() rejects on hard open failure so the caller can record an init error
+ * — daher KEIN bestEffort-Flag, die Ops fangen selbst still ab.
  */
 import type { DiagArea } from './DiagnosticLogger';
+import { openDb, type NoorDatabase } from './persistence/NoorDB';
 
 const DB_NAME_PREFIX = 'noornote-diag-';
 const DB_VERSION = 1;
@@ -42,12 +45,12 @@ interface DiagRecord {
 }
 
 class DiagWebStore {
-  private db: IDBDatabase | null = null;
+  private db: NoorDatabase | null = null;
   private npub: string | null = null;
   private initPromise: Promise<void> | null = null;
 
   isReady(): boolean {
-    return this.db !== null;
+    return this.db?.isOpen === true;
   }
 
   getNpub(): string | null {
@@ -61,7 +64,7 @@ class DiagWebStore {
    */
   init(npub: string): Promise<void> {
     // Already open for this user.
-    if (this.db && this.npub === npub) return Promise.resolve();
+    if (this.db?.isOpen && this.npub === npub) return Promise.resolve();
     // Switching accounts — close the old connection first.
     if (this.db) {
       this.db.close();
@@ -75,38 +78,25 @@ class DiagWebStore {
     }
 
     const dbName = DB_NAME_PREFIX + npub;
-    this.initPromise = new Promise<void>((resolve, reject) => {
-      const request = indexedDB.open(dbName, DB_VERSION);
-
-      request.onerror = () => reject(request.error);
-      request.onblocked = () => {
-        // Another tab holds an older version; stays pending until it closes.
-        // Don't reject — resolve once it eventually opens.
-      };
-
-      request.onupgradeneeded = event => {
-        const db = (event.target as IDBOpenDBRequest).result;
-        for (const area of AREAS) {
-          if (!db.objectStoreNames.contains(area)) {
-            // autoIncrement keys give stable insertion order for oldest-eviction.
-            db.createObjectStore(area, { autoIncrement: true });
-          }
-        }
-      };
-
-      request.onsuccess = () => {
-        this.db = request.result;
-        // If the DB is invalidated (e.g. cleared via DevTools) elsewhere,
-        // drop our handle so the next init reopens cleanly.
-        this.db.onversionchange = () => {
-          this.db?.close();
-          this.db = null;
-        };
-        resolve();
-      };
+    const openPromise = openDb(dbName, {
+      version: DB_VERSION,
+      // autoIncrement keys give stable insertion order for oldest-eviction.
+      stores: AREAS.map(area => ({ name: area, autoIncrement: true })),
+    }).then(db => {
+      this.db = db;
     });
-
-    return this.initPromise;
+    this.initPromise = openPromise;
+    // In-Flight-Cache nach Abschluss leeren (Retry nach Failed-Open, sauberes
+    // Re-Open nach versionchange-Auto-Close).
+    void openPromise.then(
+      () => {
+        if (this.initPromise === openPromise) this.initPromise = null;
+      },
+      () => {
+        if (this.initPromise === openPromise) this.initPromise = null;
+      }
+    );
+    return openPromise;
   }
 
   /**
@@ -115,20 +105,19 @@ class DiagWebStore {
    */
   append(area: DiagArea, lines: string[]): void {
     const db = this.db;
-    if (!db || lines.length === 0) return;
-    if (!db.objectStoreNames.contains(area)) return;
+    if (!db?.isOpen || lines.length === 0) return;
     try {
-      const tx = db.transaction(area, 'readwrite');
-      const store = tx.objectStore(area);
-      const now = new Date().toISOString();
-      for (const line of lines) {
-        const rec: DiagRecord = { line, ts: now };
-        store.add(rec);
-      }
-      tx.oncomplete = () => this.prune(area);
-      tx.onerror = () => {
-        /* silent — a failed diag write must never break the app */
-      };
+      void db
+        .withStore(area, 'readwrite', store => {
+          const now = new Date().toISOString();
+          for (const line of lines) {
+            void store.add({ line, ts: now } satisfies DiagRecord);
+          }
+        })
+        .then(() => this.prune(area))
+        .catch(() => {
+          /* silent — a failed diag write must never break the app */
+        });
     } catch {
       /* silent */
     }
@@ -136,34 +125,41 @@ class DiagWebStore {
 
   /**
    * Drop the oldest entries beyond the per-area cap. Runs after each append.
+   * Count und Cursor laufen in EINER Transaction — die Count-Auflösung liegt
+   * im Success-Event-Microtask, hält die Transaktion aktiv (idb-Pattern).
    */
   private prune(area: DiagArea): void {
     const db = this.db;
-    if (!db || !db.objectStoreNames.contains(area)) return;
-    try {
-      const tx = db.transaction(area, 'readwrite');
-      const store = tx.objectStore(area);
-      const countReq = store.count();
-      countReq.onsuccess = () => {
-        const excess = countReq.result - MAX_ENTRIES_PER_AREA;
+    if (!db?.isOpen) return;
+    void db
+      .withStore(area, 'readwrite', async store => {
+        const count = await new Promise<number>(resolve => {
+          const countReq = store.count();
+          countReq.onsuccess = () => resolve(countReq.result);
+          countReq.onerror = () => resolve(0);
+        });
+        const excess = count - MAX_ENTRIES_PER_AREA;
         if (excess <= 0) return;
         // Keys are auto-increment → ascending cursor visits oldest first.
-        const cursorReq = store.openCursor();
-        let deleted = 0;
-        cursorReq.onsuccess = () => {
-          const cursor = cursorReq.result;
-          if (!cursor || deleted >= excess) return;
-          cursor.delete();
-          deleted++;
-          cursor.continue();
-        };
-      };
-      tx.onerror = () => {
+        await new Promise<void>(resolve => {
+          const cursorReq = store.openCursor();
+          let deleted = 0;
+          cursorReq.onsuccess = () => {
+            const cursor = cursorReq.result;
+            if (!cursor || deleted >= excess) {
+              resolve();
+              return;
+            }
+            void cursor.delete();
+            deleted++;
+            cursor.continue();
+          };
+          cursorReq.onerror = () => resolve();
+        });
+      })
+      .catch(() => {
         /* silent */
-      };
-    } catch {
-      /* silent */
-    }
+      });
   }
 
   /**
@@ -172,11 +168,10 @@ class DiagWebStore {
    */
   async readAll(): Promise<Partial<Record<DiagArea, string[]>>> {
     const db = this.db;
-    if (!db) return {};
+    if (!db?.isOpen) return {};
     const result: Partial<Record<DiagArea, string[]>> = {};
-    const present = AREAS.filter(a => db.objectStoreNames.contains(a));
     await Promise.all(
-      present.map(area =>
+      AREAS.map(area =>
         this.readArea(area).then(lines => {
           if (lines.length) result[area] = lines;
         })
@@ -185,28 +180,21 @@ class DiagWebStore {
     return result;
   }
 
-  private readArea(area: DiagArea): Promise<string[]> {
-    const db = this.db!;
-    return new Promise<string[]>(resolve => {
-      try {
-        const tx = db.transaction(area, 'readonly');
-        const store = tx.objectStore(area);
-        const req = store.getAll();
-        req.onsuccess = () =>
-          resolve((req.result as DiagRecord[]).map(r => r.line));
-        req.onerror = () => resolve([]);
-      } catch {
-        resolve([]);
-      }
-    });
+  private async readArea(area: DiagArea): Promise<string[]> {
+    try {
+      const db = this.db;
+      if (!db?.isOpen) return [];
+      const records = await db.getAll<DiagRecord>(area);
+      return records.map(r => r.line);
+    } catch {
+      return [];
+    }
   }
 
   /** Close the DB connection (account switch / logout). Keeps data on disk. */
   close(): void {
-    if (this.db) {
-      this.db.close();
-      this.db = null;
-    }
+    this.db?.close();
+    this.db = null;
     this.npub = null;
     this.initPromise = null;
   }

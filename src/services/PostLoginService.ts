@@ -97,6 +97,13 @@ export class PostLoginService {
         'noornote_last_logged_in_pubkey'
       );
       if (lastLoggedInPubkey && lastLoggedInPubkey !== data.pubkey) {
+        // Stale per-account IndexedDB-Verbindungen (NoorDB-Registry) schließen,
+        // bevor irgendein Service des neuen Accounts eigene öffnet.
+        const { closeAllPerAccountDatabases } = await import(
+          './persistence/NoorDB'
+        );
+        closeAllPerAccountDatabases();
+
         const { CacheManager } = await import('./CacheManager');
         CacheManager.getInstance().clearUserSpecificCaches();
 

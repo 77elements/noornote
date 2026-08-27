@@ -26,6 +26,7 @@ import {
 } from './services/DiagnosticLogger';
 import { ViewMountingService } from './services/ViewMountingService';
 import { PostLoginService } from './services/PostLoginService';
+import { closeAllPerAccountDatabases } from './services/persistence/NoorDB';
 import { AddonLoader } from './addons/AddonLoader';
 import { registerCoreAddons } from './addons/registerAddons';
 import { ensurePersistentStorage } from './helpers/ensurePersistentStorage';
@@ -767,6 +768,7 @@ export class App {
     });
 
     this.eventBus.on('user:logout', () => {
+      closeAllPerAccountDatabases();
       destroyDiagnosticLogger();
       this.postLoginService.resetLoginState();
       this.viewMountingService.destroyAllCaches();

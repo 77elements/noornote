@@ -10,6 +10,7 @@
  */
 
 import { SystemLogger } from '../../services/SystemLogger';
+import { openDb, type NoorDatabase } from '../../services/persistence/NoorDB';
 
 export interface NoteChecklistItem {
   text: string;
@@ -44,7 +45,7 @@ export interface NotePayload {
   createdAt: number;
   updatedAt: number;
   /** nostr-keep interop: soft "trash" flag. We never set it, but preserve it on
-   * round-trip and hide trashed notes from the board. */
+   *  round-trip and hide trashed notes from the board. */
   trash?: boolean;
   /** Tombstone marker: when true, all content fields are emptied (a deleted note). */
   deleted?: boolean;
@@ -62,7 +63,7 @@ const NOTES_STORE = 'notes';
 
 export class NoteTakingStore {
   private static instance: NoteTakingStore;
-  private db: IDBDatabase | null = null;
+  private db: NoorDatabase | null = null;
   private systemLogger: SystemLogger;
   private initPromise: Promise<void> | null = null;
   private currentUserPubkey: string | null = null;
@@ -78,7 +79,7 @@ export class NoteTakingStore {
     return NoteTakingStore.instance;
   }
 
-  /** Open (or switch to) the per-user database. */
+  /** Open (or switch to) the per-user database. Rejects on open failure like before. */
   public async init(userPubkey?: string): Promise<void> {
     if (userPubkey && this.currentUserPubkey !== userPubkey) {
       if (this.db) {
@@ -98,76 +99,61 @@ export class NoteTakingStore {
       return;
     }
 
-    if (this.db) return;
+    if (this.db?.isOpen) return;
     if (this.initPromise) return this.initPromise;
 
     const dbName = DB_NAME_PREFIX + pubkey;
-    this.initPromise = new Promise((resolve, reject) => {
-      const request = indexedDB.open(dbName, DB_VERSION);
-
-      request.onerror = () => {
+    const openPromise = openDb(dbName, {
+      version: DB_VERSION,
+      stores: [
+        {
+          name: NOTES_STORE,
+          keyPath: 'id',
+          indexes: [{ name: 'updatedAt', keyPath: 'updatedAt' }],
+        },
+      ],
+    })
+      .then(db => {
+        this.db = db;
+      })
+      .catch(error => {
         this.systemLogger.error(
           'NoteTakingStore',
           'Failed to open IndexedDB:',
-          request.error
+          error
         );
-        reject(request.error);
-      };
-
-      request.onsuccess = () => {
-        this.db = request.result;
-        resolve();
-      };
-
-      request.onupgradeneeded = event => {
-        const db = (event.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(NOTES_STORE)) {
-          const store = db.createObjectStore(NOTES_STORE, { keyPath: 'id' });
-          store.createIndex('updatedAt', 'updatedAt', { unique: false });
-        }
-      };
-    });
-
-    return this.initPromise;
+        throw error;
+      })
+      // In-Flight-Cache leeren: Retry nach Failed-Open, sauberes Re-Open nach
+      // versionchange-Auto-Close.
+      .finally(() => {
+        this.initPromise = null;
+      });
+    this.initPromise = openPromise;
+    return openPromise;
   }
 
   /** Insert or replace a note. */
   public async put(record: NoteRecord): Promise<void> {
     await this.init();
-    return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(NOTES_STORE, 'readwrite');
-      tx.objectStore(NOTES_STORE).put(record);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
+    if (!this.db?.isOpen) return;
+    await this.db.put(NOTES_STORE, record);
   }
 
   /** Get a single note by id. */
   public async get(id: string): Promise<NoteRecord | null> {
     await this.init();
-    if (!this.db) return null;
-    return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(NOTES_STORE, 'readonly');
-      const request = tx.objectStore(NOTES_STORE).get(id);
-      request.onsuccess = () => resolve((request.result as NoteRecord) || null);
-      request.onerror = () => reject(request.error);
-    });
+    if (!this.db?.isOpen) return null;
+    return (await this.db.get<NoteRecord>(NOTES_STORE, id)) ?? null;
   }
 
   /** All notes, newest-updated first. */
   public async getAll(): Promise<NoteRecord[]> {
     await this.init();
-    if (!this.db) return [];
-    return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(NOTES_STORE, 'readonly');
-      const request = tx.objectStore(NOTES_STORE).getAll();
-      request.onsuccess = () => {
-        const notes = (request.result as NoteRecord[]) || [];
-        notes.sort((a, b) => b.updatedAt - a.updatedAt);
-        resolve(notes);
-      };
-      request.onerror = () => reject(request.error);
-    });
+    if (!this.db?.isOpen) return [];
+    const notes = await this.db.getAll<NoteRecord>(NOTES_STORE);
+    notes.sort((a, b) => b.updatedAt - a.updatedAt);
+    return notes;
   }
 
   /** Notes that still need to be pushed to relays. */
@@ -179,31 +165,20 @@ export class NoteTakingStore {
   /** Delete a note by id. */
   public async delete(id: string): Promise<void> {
     await this.init();
-    return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(NOTES_STORE, 'readwrite');
-      tx.objectStore(NOTES_STORE).delete(id);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
+    if (!this.db?.isOpen) return;
+    await this.db.delete(NOTES_STORE, id);
   }
 
   /** Wipe all notes for the current user. */
   public async clear(): Promise<void> {
-    if (!this.db) return;
-    return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(NOTES_STORE, 'readwrite');
-      tx.objectStore(NOTES_STORE).clear();
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
+    if (!this.db?.isOpen) return;
+    await this.db.clear(NOTES_STORE);
   }
 
   /** Close the DB connection (logout / addon teardown). Does NOT delete data. */
   public close(): void {
-    if (this.db) {
-      this.db.close();
-      this.db = null;
-    }
+    this.db?.close();
+    this.db = null;
     this.initPromise = null;
     this.currentUserPubkey = null;
   }

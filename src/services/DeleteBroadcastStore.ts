@@ -13,6 +13,7 @@
  */
 
 import { SystemLogger } from './SystemLogger';
+import { openDb, type NoorDatabase } from './persistence/NoorDB';
 
 /** Per-relay delivery state within a broadcast job */
 export interface RelayDeliveryState {
@@ -63,7 +64,7 @@ const JOBS_STORE = 'jobs';
 
 export class DeleteBroadcastStore {
   private static instance: DeleteBroadcastStore;
-  private db: IDBDatabase | null = null;
+  private db: NoorDatabase | null = null;
   private initPromise: Promise<void> | null = null;
   private systemLogger: SystemLogger;
 
@@ -78,35 +79,29 @@ export class DeleteBroadcastStore {
     return DeleteBroadcastStore.instance;
   }
 
-  /** Open the global database (idempotent) */
+  /** Open the global database (idempotent). Rejects on open failure like before. */
   public async init(): Promise<void> {
-    if (this.db) return;
+    if (this.db?.isOpen) return;
     if (this.initPromise) return this.initPromise;
 
-    this.initPromise = new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-      request.onerror = () => {
+    this.initPromise = openDb(DB_NAME, {
+      version: DB_VERSION,
+      stores: [{ name: JOBS_STORE, keyPath: 'id' }],
+    })
+      .then(db => {
+        this.db = db;
+      })
+      .catch(error => {
         this.systemLogger.error(
           'DeleteBroadcast',
           'Failed to open IndexedDB:',
-          request.error
+          error
         );
-        reject(request.error);
-      };
-
-      request.onsuccess = () => {
-        this.db = request.result;
-        resolve();
-      };
-
-      request.onupgradeneeded = event => {
-        const db = (event.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(JOBS_STORE)) {
-          db.createObjectStore(JOBS_STORE, { keyPath: 'id' });
-        }
-      };
-    });
+        throw error;
+      })
+      .finally(() => {
+        this.initPromise = null;
+      });
 
     return this.initPromise;
   }
@@ -114,36 +109,21 @@ export class DeleteBroadcastStore {
   /** Insert or update a job */
   public async putJob(job: BroadcastJob): Promise<void> {
     await this.init();
-    if (!this.db) return;
-    return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction([JOBS_STORE], 'readwrite');
-      tx.objectStore(JOBS_STORE).put(job);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
+    if (!this.db?.isOpen) return;
+    await this.db.put(JOBS_STORE, job);
   }
 
   /** Get all stored jobs */
   public async getAllJobs(): Promise<BroadcastJob[]> {
     await this.init();
-    if (!this.db) return [];
-    return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction([JOBS_STORE], 'readonly');
-      const req = tx.objectStore(JOBS_STORE).getAll();
-      req.onsuccess = () => resolve((req.result as BroadcastJob[]) || []);
-      req.onerror = () => reject(req.error);
-    });
+    if (!this.db?.isOpen) return [];
+    return this.db.getAll<BroadcastJob>(JOBS_STORE);
   }
 
   /** Delete a job by id (called once fully delivered or expired) */
   public async deleteJob(id: string): Promise<void> {
     await this.init();
-    if (!this.db) return;
-    return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction([JOBS_STORE], 'readwrite');
-      tx.objectStore(JOBS_STORE).delete(id);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
+    if (!this.db?.isOpen) return;
+    await this.db.delete(JOBS_STORE, id);
   }
 }

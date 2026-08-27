@@ -18,13 +18,14 @@
  *     whichever account is current. wipePersisted() exists for the explicit
  *     "clear cache" action in Settings.
  *
- * Never throws — persistence is best-effort; on any failure the caller simply
- * fetches from relays like before.
+ * Never throws — persistence is best-effort (NoorDB bestEffort-Flag); on any
+ * failure the caller simply fetches from relays like before.
  */
 
 import { AuthService } from './AuthService';
 import type { UserProfile } from './UserProfileService';
 import { diagLog } from './DiagnosticLogger';
+import { openDb, type NoorDatabase } from './persistence/NoorDB';
 
 const DB_NAME_PREFIX = 'noornote-profiles-';
 const DB_VERSION = 1;
@@ -39,9 +40,9 @@ export interface PersistedProfile {
 }
 
 class ProfileStore {
-  private db: IDBDatabase | null = null;
+  private db: NoorDatabase | null = null;
   private npub: string | null = null;
-  private initPromise: Promise<IDBDatabase | null> | null = null;
+  private initPromise: Promise<NoorDatabase | null> | null = null;
 
   /** True when a DB is open for the given npub (used by tests/diagnostics). */
   get currentNpub(): string | null {
@@ -51,43 +52,39 @@ class ProfileStore {
   /** Open (or re-open for a different account) the per-user DB. Resolves null
    *  on failure (no user, IndexedDB unavailable/blocked) — callers fall back
    *  to the relay fetch path. */
-  private async ensureDb(): Promise<IDBDatabase | null> {
+  private async ensureDb(): Promise<NoorDatabase | null> {
     const npub = AuthService.getInstance().getCurrentUser()?.npub;
     if (!npub) return null;
 
-    if (this.db && this.npub === npub) return this.db;
+    if (this.db?.isOpen && this.npub === npub) return this.db;
     if (this.db) {
+      // Different account — release the old connection; per-account DB naming
+      // already isolates the data itself.
       this.db.close();
       this.db = null;
-      this.npub = null;
     }
 
     if (this.initPromise && this.npub === npub) return this.initPromise;
 
     this.npub = npub;
-    this.initPromise = new Promise(resolve => {
-      const request = indexedDB.open(DB_NAME_PREFIX + npub, DB_VERSION);
-      request.onerror = () => resolve(null);
-      request.onblocked = () => {
-        /* stays pending; resolves when unblocked */
-      };
-      request.onupgradeneeded = event => {
-        const db = (event.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(STORE)) {
-          db.createObjectStore(STORE);
-        }
-      };
-      request.onsuccess = () => {
-        const db = request.result;
-        db.onversionchange = () => {
-          db.close();
-          if (this.db === db) this.db = null;
-        };
+    const openPromise = openDb(DB_NAME_PREFIX + npub, {
+      version: DB_VERSION,
+      stores: [{ name: STORE }],
+      bestEffort: true,
+    }).then(
+      db => {
         this.db = db;
-        resolve(db);
-      };
+        return db as NoorDatabase | null;
+      },
+      () => null
+    );
+    this.initPromise = openPromise;
+    // In-Flight-Cache nach Abschluss leeren, damit ein versionchange-Close
+    // beim nächsten Zugriff sauber neu öffnet (und ein Failed-Open retried).
+    void openPromise.then(() => {
+      if (this.initPromise === openPromise) this.initPromise = null;
     });
-    return this.initPromise;
+    return openPromise;
   }
 
   /** Persist a batch of profiles in one transaction. Fire-and-forget safe. */
@@ -97,15 +94,13 @@ class ProfileStore {
       const db = await this.ensureDb();
       if (!db) return;
       const savedAt = Date.now();
-      await new Promise<void>(resolve => {
-        const tx = db.transaction(STORE, 'readwrite');
-        const store = tx.objectStore(STORE);
+      await db.withStore(STORE, 'readwrite', store => {
         for (const [pubkey, profile] of entries) {
-          store.put({ profile, savedAt } satisfies PersistedProfile, pubkey);
+          void store.put(
+            { profile, savedAt } satisfies PersistedProfile,
+            pubkey
+          );
         }
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => resolve();
-        tx.onabort = () => resolve();
       });
     } catch {
       // best-effort — a failed persist just means a relay fetch next cold start
@@ -118,22 +113,24 @@ class ProfileStore {
     try {
       const db = await this.ensureDb();
       if (!db) return out;
-      const entries = await new Promise<Map<string, PersistedProfile>>(
-        resolve => {
-          const tx = db.transaction(STORE, 'readonly');
-          const req = tx.objectStore(STORE).openCursor();
-          const acc = new Map<string, PersistedProfile>();
-          req.onsuccess = () => {
-            const cursor = req.result;
-            if (cursor) {
-              acc.set(String(cursor.key), cursor.value as PersistedProfile);
-              cursor.continue();
-            } else {
-              resolve(acc);
-            }
-          };
-          req.onerror = () => resolve(acc);
-        }
+      const entries = await db.withStore(
+        STORE,
+        'readonly',
+        store =>
+          new Promise<Map<string, PersistedProfile>>(resolve => {
+            const acc = new Map<string, PersistedProfile>();
+            const req = store.openCursor();
+            req.onsuccess = () => {
+              const cursor = req.result;
+              if (cursor) {
+                acc.set(String(cursor.key), cursor.value as PersistedProfile);
+                cursor.continue();
+              } else {
+                resolve(acc);
+              }
+            };
+            req.onerror = () => resolve(acc);
+          })
       );
 
       const now = Date.now();
@@ -163,13 +160,7 @@ class ProfileStore {
     try {
       const db = await this.ensureDb();
       if (!db) return;
-      await new Promise<void>(resolve => {
-        const tx = db.transaction(STORE, 'readwrite');
-        tx.objectStore(STORE).delete(pubkey);
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => resolve();
-        tx.onabort = () => resolve();
-      });
+      await db.delete(STORE, pubkey);
     } catch {
       // ignore
     }
@@ -182,13 +173,7 @@ class ProfileStore {
     try {
       const db = await this.ensureDb();
       if (!db) return;
-      await new Promise<void>(resolve => {
-        const tx = db.transaction(STORE, 'readwrite');
-        tx.objectStore(STORE).clear();
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => resolve();
-        tx.onabort = () => resolve();
-      });
+      await db.clear(STORE);
       diagLog('system', 'ProfileStore: persisted profiles wiped', {});
     } catch {
       // ignore
