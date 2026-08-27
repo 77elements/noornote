@@ -1,0 +1,80 @@
+/* ================================
+   Analytics addon — stat tile rows
+   ================================ */
+
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+// The zone itself is the container-query context — tiles adapt to the space
+// the pcc offers (phone 1 column → up to 4 columns when wide).
+.analytics {
+  container-type: inline-size;
+}
+
+.analytics__meta {
+  margin-bottom: $gap;
+}
+
+.analytics__first-run {
+  margin-bottom: $gap;
+}
+
+.analytics__row {
+  margin-bottom: $gap * 1.5;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.analytics__row-note {
+  margin-top: calc($gap / 2);
+}
+
+.analytics__row-title {
+  @include heading-base;
+  margin-bottom: calc($gap / 2);
+}
+
+.analytics-tiles {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: calc($gap / 2);
+
+  @container (min-width: 420px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  // Rows carry 2–5 tiles: 3 columns from medium, 4 when space is plentiful
+  // (pcc wide / right-pane mode) — the 5th tile wraps gracefully.
+  @container (min-width: 640px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @container (min-width: 900px) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.analytics-tile {
+  background: var(--color-2);
+  border-radius: $radius-pill;
+  padding: calc($gap / 2) $gap;
+  display: grid;
+  gap: calc($gap / 4);
+}
+
+.analytics-tile__label {
+  color: var(--color-3);
+}
+
+.analytics-tile__value {
+  color: var(--color-5);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.analytics-tile__value--loading {
+  color: var(--color-3);
+  font-weight: 400;
+}

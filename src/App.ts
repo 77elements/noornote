@@ -682,6 +682,13 @@ export class App {
       'adv',
       true
     );
+    this.registerRoute(
+      '/addons/analytics',
+      'addon-analytics',
+      'addon-analytics',
+      'adv',
+      true
+    );
     // /addons (no slug) → redirect to first addon
     this.router.register('/addons', () =>
       this.router.navigate('/addons/bookmarks')

@@ -559,6 +559,17 @@ export class ViewMountingService {
           },
         };
 
+      case 'addon-analytics':
+        return {
+          factory: async () => {
+            const { AnalyticsAddonView } = await import(
+              '../addons/analytics/AnalyticsAddonView'
+            );
+            const view = new AnalyticsAddonView();
+            return { element: view.getElement(), view };
+          },
+        };
+
       case 'addon-list-settings':
         return {
           factory: async () => {

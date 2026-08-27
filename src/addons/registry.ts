@@ -136,4 +136,10 @@ export const ADDON_REGISTRY: AddonRegistryEntry[] = [
     route: '/addons/group-chats',
     viewId: 'addon-group-chats',
   },
+  {
+    id: 'analytics',
+    name: 'Analytics',
+    route: '/addons/analytics',
+    viewId: 'addon-analytics',
+  },
 ];

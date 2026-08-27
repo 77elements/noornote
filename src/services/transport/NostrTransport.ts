@@ -878,7 +878,8 @@ export class NostrTransport {
     filters: NDKFilter[],
     perRelayUntil: Record<string, number>,
     timeout: number = 5000,
-    caller: string = ''
+    caller: string = '',
+    waitForAll: boolean = false
   ): Promise<{
     events: NostrEvent[];
     perRelay: Record<
@@ -886,7 +887,14 @@ export class NostrTransport {
       { oldest: number | null; count: number; eosed: boolean }
     >;
   }> {
-    return this.directFetch(relays, filters, timeout, caller, perRelayUntil);
+    return this.directFetch(
+      relays,
+      filters,
+      timeout,
+      caller,
+      perRelayUntil,
+      waitForAll
+    );
   }
 
   /**
