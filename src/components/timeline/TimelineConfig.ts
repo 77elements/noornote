@@ -80,6 +80,20 @@ export interface TimelineConfig {
    * timeline only — profile/tribe/relay-filter views keep the empty error.
    */
   curatedFallbackWhenEmpty?: boolean;
+  /**
+   * Size of one loadMore time chunk in hours. Default (when unset): 3 for
+   * windowed feeds, 720 for author-outbox (ProfileView). Tribes set 720 so a
+   * multi-day posting gap is crossed in ONE non-empty chunk instead of
+   * recursing through dozens of empty 3h windows (each an extra relay fetch).
+   */
+  loadMoreWindowHours?: number;
+  /**
+   * How far back loadMore may search through empty chunks before declaring the
+   * feed exhausted (measured from NOW, in hours). Default 168 (7 days) — the
+   * historical hardcode. Tribes raise this to ~4 years (effectively endless);
+   * the 56-recursion cap per scroll still bounds relay cost.
+   */
+  historyDepthHours?: number;
 }
 
 /**
@@ -115,7 +129,10 @@ export function buildTimelineConfig(
     };
   }
 
-  // TribeView: explicit author set.
+  // TribeView: explicit author set. 30-day loadMore chunks + ~4 years depth:
+  // tribe members post sparsely; with 3h windows the empty-chunk recursion
+  // burned a relay fetch per window and hit the 7-day wall even though older
+  // posts exist (proven via loadMore diagLog, 2026-08-27).
   if (tribePubkeys && tribePubkeys.length > 0) {
     return {
       source: { kind: 'authors', pubkeys: tribePubkeys },
@@ -129,6 +146,8 @@ export function buildTimelineConfig(
       trimDom: true,
       marketplaceInjection: false,
       applyWordFilter: true,
+      loadMoreWindowHours: 720,
+      historyDepthHours: 35040,
     };
   }
 

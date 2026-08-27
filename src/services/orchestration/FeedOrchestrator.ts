@@ -420,6 +420,16 @@ export class FeedOrchestrator extends Orchestrator {
     } = request;
     const params = this.resolveFetchParams(request);
     const isTimeRangeMode = explicitSince !== undefined;
+    const sourceKind = request.config?.source.kind ?? 'legacy';
+
+    diagLog('system', 'loadMore enter', {
+      sourceKind,
+      pagination: params.pagination,
+      until: new Date(until * 1000).toISOString(),
+      timeWindowHours,
+      depth: recursionDepth,
+      specificRelay: specificRelay ?? null,
+    });
 
     this.systemLogger.info(
       'FeedOrchestrator',
@@ -437,6 +447,11 @@ export class FeedOrchestrator extends Orchestrator {
 
       // If we've already reached the lower bound, no more to load
       if (isTimeRangeMode && until <= explicitSince) {
+        diagLog('system', 'loadMore terminal', {
+          reason: 'time-range-boundary',
+          sourceKind,
+          until: new Date(until * 1000).toISOString(),
+        });
         return { events: [], hasMore: false };
       }
 
@@ -525,6 +540,19 @@ export class FeedOrchestrator extends Orchestrator {
         // Max recursion depth: 'until' feeds 3 attempts, windowed feeds check time limit
         const maxRecursionDepth = params.pagination === 'until' ? 3 : 56; // until: 3 attempts (9h), window: 56 attempts (7 days)
 
+        // raw vs filtered is THE diagnostic signal: raw=0 means the relay/network
+        // delivered nothing (timeout, sparse relays); raw>0 + filtered=0 means
+        // events arrived but were dropped by reply/mute/word filtering.
+        diagLog('system', 'loadMore empty-chunk', {
+          sourceKind,
+          attempt: recursionDepth + 1,
+          maxAttempts: maxRecursionDepth,
+          hoursSinceUntil: Math.round(hoursSinceUntil),
+          rawEvents: events.length,
+          filteredEvents: filteredEvents.length,
+          until: new Date(until * 1000).toISOString(),
+        });
+
         if (recursionDepth >= maxRecursionDepth) {
           this.systemLogger.info(
             'FeedOrchestrator',
@@ -532,18 +560,38 @@ export class FeedOrchestrator extends Orchestrator {
               ? `📭 No events found after ${recursionDepth} attempts (${Math.round(hoursSinceUntil)}h searched)`
               : '📭 Reached 7-day limit - no more events'
           );
+          diagLog('system', 'loadMore terminal', {
+            reason: 'recursion-cap',
+            sourceKind,
+            attempt: recursionDepth,
+            hoursSinceUntil: Math.round(hoursSinceUntil),
+          });
           return {
             events: [],
             hasMore: false,
           };
         }
 
-        // Windowed feeds: also check time limit (7 days)
-        if (params.pagination === 'window' && hoursSinceUntil >= 168) {
+        // Windowed feeds: time limit on the empty-chunk gap search. Default
+        // 7 days; the config can raise it (tribes: ~4 years) so sparse author
+        // sets can scroll deep into history. Cost stays bounded by the
+        // 56-recursion cap per loadMore call.
+        const historyDepthHours = request.config?.historyDepthHours ?? 168;
+        if (
+          params.pagination === 'window' &&
+          hoursSinceUntil >= historyDepthHours
+        ) {
           this.systemLogger.info(
             'FeedOrchestrator',
             '📭 Reached 7-day limit - no more events'
           );
+          diagLog('system', 'loadMore terminal', {
+            reason: '7d-limit',
+            sourceKind,
+            hoursSinceUntil: Math.round(hoursSinceUntil),
+            historyDepthHours,
+            until: new Date(until * 1000).toISOString(),
+          });
           return {
             events: [],
             hasMore: false,
@@ -576,6 +624,17 @@ export class FeedOrchestrator extends Orchestrator {
       // In time range mode, check if we've reached the lower boundary
       const hasMore = isTimeRangeMode ? since > explicitSince : true; // Always more history on Nostr
 
+      diagLog('system', 'loadMore terminal', {
+        reason: 'normal-return',
+        sourceKind,
+        rawEvents: events.length,
+        filteredEvents: filteredEvents.length,
+        returned: resultEvents.length,
+        hasMore,
+        until: new Date(until * 1000).toISOString(),
+        depth: recursionDepth,
+      });
+
       return {
         events: resultEvents,
         hasMore,
@@ -585,9 +644,20 @@ export class FeedOrchestrator extends Orchestrator {
         'FeedOrchestrator',
         `Load more failed: ${String(error)}`
       );
+      diagLog('system', 'loadMore terminal', {
+        reason: 'exception',
+        sourceKind,
+        error: String(error).slice(0, 300),
+      });
+      // A transient fetch failure (relay timeout, mobile network blip) must NOT
+      // permanently end infinite scroll: hasMore=false latches in the timeline
+      // state manager and every later scroll early-returns until the timeline
+      // is rebuilt (observed as dead LoadMore in tribe tabs on the Android APK).
+      // Keep hasMore=true so the next scroll proximity retries; the caller's
+      // finally-block already resets the loading flag.
       return {
         events: [],
-        hasMore: false,
+        hasMore: true,
       };
     }
   }

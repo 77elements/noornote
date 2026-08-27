@@ -73,6 +73,9 @@ export class TimelineEventHandler {
     this.onInitializeTimeline = callbacks.onInitializeTimeline;
   }
 
+  // Rate limit for gate-blocked logs: one entry per 10s max (scroll fires often)
+  private lastGateLogAt = 0;
+
   /**
    * Handle load more request from infinite scroll component
    */
@@ -83,6 +86,22 @@ export class TimelineEventHandler {
       this.stateManager.getFollowingPubkeys().length > 0
     ) {
       void this.loadMoreEvents();
+      return;
+    }
+    // Blocked — log which gate refused (rate-limited). A stream of these with
+    // reason=loading points at a stuck isLoading (hang); hasMore-false points
+    // at a terminal condition latched earlier (see 'loadMore hasMore-latched').
+    const now = Date.now();
+    if (now - this.lastGateLogAt > 10000) {
+      this.lastGateLogAt = now;
+      diagLog('system', 'loadMore gate-blocked', {
+        reason: this.stateManager.isLoading()
+          ? 'loading'
+          : !this.stateManager.getHasMore()
+            ? 'hasMore-false'
+            : 'no-pubkeys',
+        sourceKind: this.config.source.kind,
+      });
     }
   }
 
@@ -290,12 +309,32 @@ export class TimelineEventHandler {
     this.stateManager.setLoading(true);
     this.uiStateHandler.showMoreLoading(true);
 
+    const startedAt = Date.now();
+    const sourceKind = this.config.source.kind;
+
     try {
       const oldestEvent = this.stateManager.getOldestEvent();
       if (!oldestEvent) {
+        diagLog('system', 'loadMore terminal', {
+          reason: 'no-oldest-event',
+          sourceKind,
+        });
         this.stateManager.setHasMore(false);
         return;
       }
+
+      const untilISO = new Date(oldestEvent.created_at * 1000).toISOString();
+      // Chunk size from the config when the use case set it (tribes: 720h);
+      // legacy fallback keeps the old derivation.
+      const timeWindowHours =
+        this.config.loadMoreWindowHours ??
+        (this.config.relays.kind === 'author-outbox' ? 720 : 3);
+      diagLog('system', 'loadMore request', {
+        sourceKind,
+        until: untilISO,
+        timeWindowHours,
+        loadedEvents: this.stateManager.getEvents().length,
+      });
 
       // Use TimelineModuleApi for load more
       // Build request object, only adding optional properties if they have values
@@ -303,7 +342,7 @@ export class TimelineEventHandler {
         followingPubkeys: this.stateManager.getFollowingPubkeys(),
         includeReplies: this.config.includeReplies,
         until: oldestEvent.created_at,
-        timeWindowHours: this.config.relays.kind === 'author-outbox' ? 720 : 3, // ProfileView: 30 days, TimelineView: 3 hours
+        timeWindowHours,
         config: this.config,
       };
       const selectedRelay = relayFilterUrl(this.config);
@@ -331,9 +370,33 @@ export class TimelineEventHandler {
       }
 
       this.stateManager.setHasMore(result.hasMore);
-    } catch {
+
+      diagLog('system', 'loadMore exit', {
+        sourceKind,
+        durationMs: Date.now() - startedAt,
+        returned: result.events.length,
+        unique: uniqueNewEvents.length,
+        hasMore: result.hasMore,
+        until: untilISO,
+      });
+
+      // The moment LoadMore dies for this tab: every later scroll gate-blocks
+      // with hasMore-false until the timeline is rebuilt (reload/tab switch).
+      if (!result.hasMore) {
+        diagLog('system', 'loadMore hasMore-latched-false', {
+          sourceKind,
+          until: untilISO,
+          durationMs: Date.now() - startedAt,
+        });
+      }
+    } catch (error) {
       // Load-more failure is non-fatal; finally resets the loading state so
       // a later scroll can retry. State stays consistent (no events added).
+      diagLog('system', 'loadMore terminal', {
+        reason: 'caller-exception',
+        sourceKind,
+        error: String(error).slice(0, 300),
+      });
     } finally {
       this.stateManager.setLoading(false);
       this.uiStateHandler.showMoreLoading(false);

@@ -72,6 +72,23 @@ describe('buildTimelineConfig use-case matrix', () => {
     expect(c.curatedFallbackWhenEmpty).toBeUndefined();
   });
 
+  it('tribe: deep-history loadMore settings (30d chunks, ~4y depth)', () => {
+    // REGRESSION (2026-08-27): tribes stopped at now-7d because loadMore's
+    // gap search hit the hardcoded 168h wall (diagLog: reason=7d-limit).
+    const c = tribeTimelineConfig([PK]);
+    expect(c.loadMoreWindowHours).toBe(720);
+    expect(c.historyDepthHours).toBe(35040);
+  });
+
+  it('following and profile keep the legacy loadMore defaults', () => {
+    // Undefined => FeedOrchestrator/TimelineEventHandler fall back to the
+    // historical 3h-window / 168h-depth derivation — unchanged behavior.
+    expect(followingTimelineConfig().loadMoreWindowHours).toBeUndefined();
+    expect(followingTimelineConfig().historyDepthHours).toBeUndefined();
+    expect(profileTimelineConfig(PK).loadMoreWindowHours).toBeUndefined();
+    expect(profileTimelineConfig(PK).historyDepthHours).toBeUndefined();
+  });
+
   it('following: user follow list, marketplace injection + curated fallback', () => {
     const c = followingTimelineConfig();
     expect(c.source).toEqual({ kind: 'following' });
