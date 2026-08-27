@@ -26,21 +26,21 @@ export class ClipboardActionsService {
    * Copy event ID to clipboard (nevent format).
    * Embeds the author pubkey when known so other clients (and our own
    * PostService when this nevent is later quoted) get a complete tag set.
+   * Relay hints make the nevent resolvable even when the receiving client
+   * is not connected to a relay that carries the event.
    * @param eventId - Hex event ID
    * @param authorPubkey - Hex author pubkey (optional but strongly recommended)
+   * @param relays - Relay hints to embed (optional, keep ≤ 3)
    * @param showToast - Show success toast (default: true)
    */
   public async copyEventId(
     eventId: string,
     authorPubkey?: string,
+    relays?: string[],
     showToast: boolean = true
   ): Promise<boolean> {
     try {
-      const nevent = encodeNevent(
-        eventId,
-        undefined,
-        authorPubkey || undefined
-      );
+      const nevent = encodeNevent(eventId, relays, authorPubkey || undefined);
       await navigator.clipboard.writeText(nevent);
 
       if (showToast) {
@@ -87,22 +87,21 @@ export class ClipboardActionsService {
   /**
    * Copy share link to clipboard (full URL with nevent).
    * Embeds the author pubkey when known so receiving clients can resolve
-   * the note from the author's outbox relays.
+   * the note from the author's outbox relays. Relay hints improve
+   * resolvability for clients that don't do outbox discovery.
    * @param eventId - Hex event ID
    * @param authorPubkey - Hex author pubkey (optional but strongly recommended)
+   * @param relays - Relay hints to embed (optional, keep ≤ 3)
    * @param showToast - Show success toast (default: true)
    */
   public async copyShareLink(
     eventId: string,
     authorPubkey?: string,
+    relays?: string[],
     showToast: boolean = true
   ): Promise<boolean> {
     try {
-      const nevent = encodeNevent(
-        eventId,
-        undefined,
-        authorPubkey || undefined
-      );
+      const nevent = encodeNevent(eventId, relays, authorPubkey || undefined);
       const shareUrl = `${window.location.origin}/note/${nevent}`;
       await navigator.clipboard.writeText(shareUrl);
 

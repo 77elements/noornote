@@ -19,6 +19,8 @@ import { AuthGuard } from '../../services/AuthGuard';
 import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { ClipboardActionsService } from '../../services/ClipboardActionsService';
+import { RelayConfig } from '../../services/RelayConfig';
+import { capRelayHints } from '../../helpers/capRelayHints';
 import { ModalService } from '../../services/ModalService';
 import { isBookmarksEnabled } from '../../addons/bookmarks/index';
 import { isTribesEnabled } from '../../addons/tribes/index';
@@ -393,14 +395,27 @@ export class NoteMenu {
   }
 
   /**
-   * Copy event ID to clipboard (nevent format)
+   * Copy event ID to clipboard (nevent format, with relay hints)
    */
   private async copyEventId(): Promise<void> {
     const clipboardService = ClipboardActionsService.getInstance();
     await clipboardService.copyEventId(
       this.options.eventId,
-      this.options.authorPubkey
+      this.options.authorPubkey,
+      this.resolveRelayHints()
     );
+  }
+
+  /**
+   * Relay hints to embed in copied nevents: relays the event was actually
+   * seen on this session (NostrTransport tracking via the timeline module),
+   * padded with the user's write relays. Capped so the nevent stays short.
+   */
+  private resolveRelayHints(): string[] {
+    const timelineApi =
+      ModuleLoader.getInstance().getApi<TimelineModuleApi>('timeline');
+    const seenOn = timelineApi?.getEventRelays(this.options.eventId) ?? [];
+    return capRelayHints(seenOn, RelayConfig.getInstance().getWriteRelays());
   }
 
   /**
@@ -412,13 +427,14 @@ export class NoteMenu {
   }
 
   /**
-   * Copy share link (nevent) to clipboard
+   * Copy share link (nevent with relay hints) to clipboard
    */
   private async copyShareLink(): Promise<void> {
     const clipboardService = ClipboardActionsService.getInstance();
     await clipboardService.copyShareLink(
       this.options.eventId,
-      this.options.authorPubkey
+      this.options.authorPubkey,
+      this.resolveRelayHints()
     );
   }
 

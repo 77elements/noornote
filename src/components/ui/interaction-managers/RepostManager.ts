@@ -18,6 +18,7 @@ import {
   BaseInteractionConfig,
 } from './BaseInteractionManager';
 import { getTag } from '../../../helpers/tagUtils';
+import { capRelayHints } from '../../../helpers/capRelayHints';
 
 export interface RepostManagerConfig extends BaseInteractionConfig {
   originalEvent?: NostrEvent;
@@ -196,7 +197,11 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
           return;
         }
         const { encodeNevent } = await import('../../../helpers/encodeNevent');
-        reference = encodeNevent(eventId, writeRelays, unwrappedEvent.pubkey);
+        reference = encodeNevent(
+          eventId,
+          capRelayHints(writeRelays),
+          unwrappedEvent.pubkey
+        );
       }
 
       // Open post modal with pre-filled content
