@@ -228,11 +228,19 @@ export class LastNotesPerFollow extends View {
       '.timeline-load-trigger'
     ) as HTMLElement | null;
     if (!loadTrigger) return;
-    this.infiniteScroll.observe(
-      loadTrigger,
-      loadTrigger.closest('.timeline-view__timeline')
-    );
-    if (this.shownCount >= this.allEvents.length) this.infiniteScroll.pause();
+    // Defer one frame: this component is constructed BEFORE it is mounted
+    // into .timeline-view__timeline (TimelineView.updateTimeline), so
+    // closest() can't find the scroll container yet — the observer would
+    // start with viewport root and the rootMargin prefetch would be dead
+    // until the next pause/resume cycle. Same fix as Timeline.ts.
+    requestAnimationFrame(() => {
+      if (!loadTrigger.isConnected) return;
+      this.infiniteScroll.observe(
+        loadTrigger,
+        loadTrigger.closest('.timeline-view__timeline')
+      );
+      if (this.shownCount >= this.allEvents.length) this.infiniteScroll.pause();
+    });
   }
 
   /** Reveal the next display page from the already-fetched, sorted list (no network). */

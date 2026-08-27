@@ -395,11 +395,19 @@ export class Timeline extends View {
       '.timeline-load-trigger'
     ) as HTMLElement;
     if (loadTrigger) {
-      // Root = the actual scroll container, so rootMargin prefetch fires early.
-      this.infiniteScroll.observe(
-        loadTrigger,
-        loadTrigger.closest('.timeline-view__timeline')
-      );
+      // Defer one frame: the Timeline is constructed BEFORE it is mounted
+      // into .timeline-view__timeline (TimelineView.updateTimeline /
+      // TribeView), so closest() can't find the scroll container yet and the
+      // observer would start with viewport root — killing the rootMargin
+      // prefetch until the next pause/resume cycle re-observes correctly.
+      requestAnimationFrame(() => {
+        if (!loadTrigger.isConnected) return;
+        // Root = the actual scroll container, so rootMargin prefetch fires early.
+        this.infiniteScroll.observe(
+          loadTrigger,
+          loadTrigger.closest('.timeline-view__timeline')
+        );
+      });
     }
   }
 
