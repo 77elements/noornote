@@ -3,8 +3,8 @@
  *
  * The sidebar lists every registered addon. Users can reorder it (drag&drop on desktop, ▲▼ via
  * long-press on touch) to float their favourites to the top. The chosen order is an array of
- * addon ids in PerAccountLocalStorage; addons not yet in it (newly added ones) are appended in
- * registry order, so the list always stays complete.
+ * addon ids in PerAccountLocalStorage; addons not yet in it (newly added ones) are appended
+ * alphabetically by name, so the initial list is A→Z and always stays complete.
  */
 
 import {
@@ -48,9 +48,10 @@ function orderBy(saved: string[]): AddonRegistryEntry[] {
       byId.delete(id);
     }
   }
-  // Append any addons not covered by the saved order (new ones), keeping registry order.
-  for (const entry of ADDON_REGISTRY)
-    if (byId.has(entry.id)) ordered.push(entry);
+  // Append any addons not covered by the saved order (new ones), alphabetically by name.
+  const uncovered = ADDON_REGISTRY.filter(entry => byId.has(entry.id));
+  uncovered.sort((a, b) => a.name.localeCompare(b.name));
+  ordered.push(...uncovered);
   return ordered;
 }
 
