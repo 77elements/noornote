@@ -29,6 +29,7 @@ import { FollowCheckService } from '../../services/FollowCheckService';
 import { diagLog } from '../../services/DiagnosticLogger';
 import {
   bucketEngagementTimeline,
+  bucketSentZaps,
   classifyInbox,
   classifyOwnContent,
   classifySentZaps,
@@ -66,6 +67,8 @@ export interface AuxData {
   timelineUnit?: EngagementUnit;
   /** Oldest own event seen (epoch seconds) — account-age basis for the unit. */
   oldestOwnEventAt?: number;
+  /** Persisted SENT zap sats per bucket (Diagrams tab, sent-zaps sweep). */
+  sentZapsTimeline?: EngagementBucket[];
 }
 
 export interface CollectorSnapshot {
@@ -580,12 +583,14 @@ const topPostsCollector: AnalyticsCollector = {
 const engagementTimelineCollector: AnalyticsCollector = {
   id: 'engagement-timeline',
   async collect(ctx: RunContext): Promise<CollectorSnapshot> {
-    const [ownEvents, inbox] = await Promise.all([
+    const [ownEvents, inbox, sent] = await Promise.all([
       ctx.sweeps.ownContent(ctx),
       ctx.sweeps.inbox(ctx),
+      ctx.sweeps.sentZaps(ctx),
     ]);
     const ownLogic = asLogic(ownEvents);
     const inboxLogic = asLogic(inbox);
+    const sentLogic = asLogic(sent);
 
     // Own-id basis: persisted ids from the previous posts snapshot, overlaid
     // with the ids this run's own-content sweep already classified.
@@ -610,21 +615,28 @@ const engagementTimelineCollector: AnalyticsCollector = {
     const unit = pickEngagementUnit(oldest, nowSec);
 
     const delta = bucketEngagementTimeline(inboxLogic, ownIds, unit);
-    const prevTimeline =
-      !ctx.fullRun && prev?.aux?.timelineUnit === unit
-        ? (prev.aux.timeline ?? [])
-        : [];
+    const sentDelta = bucketSentZaps(sentLogic, unit);
+    const unitStable = !ctx.fullRun && prev?.aux?.timelineUnit === unit;
+    const prevTimeline = unitStable ? (prev?.aux?.timeline ?? []) : [];
     const timeline = mergeEngagementTimeline(prevTimeline, delta);
+    const prevSent = unitStable ? (prev?.aux?.sentZapsTimeline ?? []) : [];
+    const sentZapsTimeline = mergeEngagementTimeline(prevSent, sentDelta);
 
     let cursor = prev?.sinceCursor ?? 0;
     for (const ev of inboxLogic) cursor = Math.max(cursor, ev.created_at);
+    for (const ev of sentLogic) cursor = Math.max(cursor, ev.created_at);
 
     return {
       collectorId: 'engagement-timeline',
       metrics: {},
       sinceCursor: cursor,
       fetchedAt: Date.now(),
-      aux: { timeline, timelineUnit: unit, oldestOwnEventAt: oldest },
+      aux: {
+        timeline,
+        timelineUnit: unit,
+        oldestOwnEventAt: oldest,
+        sentZapsTimeline,
+      },
     };
   },
 };

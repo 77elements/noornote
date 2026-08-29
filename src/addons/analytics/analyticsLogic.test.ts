@@ -20,6 +20,7 @@ import {
   mergeOwnContent,
   mergeTopPosts,
   compareTopPosts,
+  bucketSentZaps,
   pickEngagementUnit,
   subtractIds,
   tallyInboxByTarget,
@@ -492,5 +493,27 @@ describe('engagement timeline (P9)', () => {
       likes: 0,
     });
     expect(merged[1].start).toBe(200);
+  });
+});
+
+describe('sent zaps timeline (P9)', () => {
+  it('bucketSentZaps sums sats per bucket, ignores other kinds', () => {
+    const t = Date.UTC(2024, 0, 8) / 1000; // Monday
+    const buckets = bucketSentZaps(
+      [
+        ev({
+          kind: 9735,
+          created_at: t + 10,
+          tags: [['bolt11', 'lnbc10u1xyz']],
+        }),
+        ev({ kind: 9735, created_at: t + 20, tags: [['bolt11', 'lnbc1u1a']] }), // 100 sats
+        ev({ kind: 1, created_at: t + 30, tags: [] }),
+      ],
+      'week'
+    );
+    expect(buckets).toHaveLength(1);
+    expect(buckets[0].start).toBe(t);
+    expect(buckets[0].zaps).toBe(2);
+    expect(buckets[0].zapSats).toBe(1_100);
   });
 });

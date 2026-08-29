@@ -468,6 +468,37 @@ export function mergeEngagementTimeline(
   return [...byStart.values()].sort((a, b) => a.start - b.start);
 }
 
+/**
+ * Bucket SENT zap sats per time unit (kind 9735 #P:me sweep — no validation,
+ * the #P filter already targeted us). Only zaps/zapSats are filled.
+ */
+export function bucketSentZaps(
+  events: LogicEvent[],
+  unit: EngagementUnit
+): EngagementBucket[] {
+  const byStart = new Map<number, EngagementBucket>();
+  for (const ev of events) {
+    if (ev.kind !== 9735) continue;
+    const start = bucketStartOf(ev.created_at, unit);
+    let b = byStart.get(start);
+    if (!b) {
+      b = {
+        start,
+        replies: 0,
+        zaps: 0,
+        zapSats: 0,
+        reposts: 0,
+        quotes: 0,
+        likes: 0,
+      };
+      byStart.set(start, b);
+    }
+    b.zaps++;
+    b.zapSats += getZapAmountSats(ev);
+  }
+  return [...byStart.values()].sort((a, b) => a.start - b.start);
+}
+
 // ─── Top posts (P8) ──────────────────────────────────────────────────────
 
 /** Minimal own-post info extracted from the own-content sweep. */

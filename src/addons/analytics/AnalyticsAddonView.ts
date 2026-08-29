@@ -369,6 +369,20 @@ export class AnalyticsAddonView extends View {
         <div class="analytics-chart" data-engagement-chart>
           <p class="form__note pulsate">Building your engagement curve…</p>
         </div>
+      </section>
+      <section class="analytics__row" data-analytics-row="zaps-earned">
+        <h2 class="analytics__row-title">Zaps earned</h2>
+        <p class="form__note">Sats received per bucket. Hover a bar for details.</p>
+        <div class="analytics-chart" data-zaps-earned-chart>
+          <p class="form__note pulsate">Building…</p>
+        </div>
+      </section>
+      <section class="analytics__row" data-analytics-row="zaps-sent">
+        <h2 class="analytics__row-title">Zaps sent</h2>
+        <p class="form__note">Sats sent per bucket — best effort (wallets without the P tag may be missing).</p>
+        <div class="analytics-chart" data-zaps-sent-chart>
+          <p class="form__note pulsate">Building…</p>
+        </div>
       </section>`;
 
     const refreshBtn = overview.querySelector<HTMLButtonElement>(
@@ -426,11 +440,8 @@ export class AnalyticsAddonView extends View {
       if (topSnapshot.fetchedAt > newest) newest = topSnapshot.fetchedAt;
     }
     const timelineSnapshot = service.getCachedSnapshot('engagement-timeline');
-    if (timelineSnapshot?.aux?.timeline && timelineSnapshot.aux.timelineUnit) {
-      this.paintEngagementChart(
-        timelineSnapshot.aux.timeline,
-        timelineSnapshot.aux.timelineUnit
-      );
+    if (timelineSnapshot?.aux) {
+      this.paintDiagramsCharts(timelineSnapshot.aux);
     }
     this.paintLastUpdated(live, newest, false);
 
@@ -549,36 +560,69 @@ export class AnalyticsAddonView extends View {
     valueSlot.className = 'analytics-tile__value';
     valueSlot.textContent = formatted;
   }
-
   /**
-   * Render the engagement curve as CSS bars (no chart SDK). One column per
-   * bucket, height ∝ score (same components as the Top-Posts ranking);
-   * every bar carries a Tooltip with the per-component breakdown.
+   * Paint all Diagrams-tab charts from one timeline snapshot (CSS bars, no
+   * chart SDK). Heights are normalized per chart; every bar carries a
+   * Tooltip with the details.
    */
-  private paintEngagementChart(
-    timeline: EngagementBucket[],
-    unit: EngagementUnit
-  ): void {
-    const chart = this.diagramsZone()?.querySelector<HTMLElement>(
-      '[data-engagement-chart]'
-    );
-    if (!chart) return;
+  private paintDiagramsCharts(aux: {
+    timeline?: EngagementBucket[];
+    timelineUnit?: EngagementUnit;
+    sentZapsTimeline?: EngagementBucket[];
+  }): void {
+    const unit = aux.timelineUnit;
+    if (!unit || !aux.timeline) return;
+    // One shared dispose cycle for all three charts (each paint pushes its
+    // own tooltips; wiping per chart would kill the earlier charts' tooltips).
     this.engagementTooltipDisposers.forEach(dispose => dispose());
     this.engagementTooltipDisposers = [];
+    const label = (b: EngagementBucket) =>
+      this.formatBucketLabel(b.start, unit);
+
+    this.paintBarChart(
+      '[data-engagement-chart]',
+      aux.timeline,
+      engagementScore,
+      b =>
+        `${label(b)} — ${engagementScore(b)} engagement ` +
+        `(${b.replies} replies, ${b.zaps} zaps, ${b.reposts + b.quotes} reposts/quotes, ${b.likes} likes)`
+    );
+    this.paintBarChart(
+      '[data-zaps-earned-chart]',
+      aux.timeline,
+      b => b.zapSats,
+      b =>
+        `${label(b)} — ${formatSatsCompact(b.zapSats)} sats earned (${b.zaps} zaps)`
+    );
+    this.paintBarChart(
+      '[data-zaps-sent-chart]',
+      aux.sentZapsTimeline ?? [],
+      b => b.zapSats,
+      b =>
+        `${label(b)} — ${formatSatsCompact(b.zapSats)} sats sent (${b.zaps} zaps)`
+    );
+  }
+
+  /** CSS bar chart renderer: one column per bucket, height ∝ valueOf. */
+  private paintBarChart(
+    selector: string,
+    timeline: EngagementBucket[],
+    valueOf: (b: EngagementBucket) => number,
+    tooltipOf: (b: EngagementBucket) => string
+  ): void {
+    const chart = this.diagramsZone()?.querySelector<HTMLElement>(selector);
+    if (!chart) return;
 
     if (!timeline.length) {
       chart.innerHTML =
-        '<p class="form__note">No engagement data yet — run a Refresh.</p>';
+        '<p class="form__note">No data yet — run a Refresh.</p>';
       return;
     }
 
-    const max = Math.max(...timeline.map(engagementScore), 1);
+    const max = Math.max(...timeline.map(valueOf), 1);
     let bars = '';
     timeline.forEach((bucket, i) => {
-      const height = Math.max(
-        2,
-        Math.round((engagementScore(bucket) / max) * 100)
-      );
+      const height = Math.max(2, Math.round((valueOf(bucket) / max) * 100));
       bars += `<div class="analytics-chart__col"><div class="analytics-chart__bar" data-bucket="${i}" style="height:${height}%"></div></div>`;
     });
     chart.innerHTML = `<div class="analytics-chart__plot">${bars}</div>`;
@@ -586,15 +630,8 @@ export class AnalyticsAddonView extends View {
     timeline.forEach((bucket, i) => {
       const bar = chart.querySelector<HTMLElement>(`[data-bucket="${i}"]`);
       if (!bar) return;
-      const breakdown =
-        `${bucket.replies} replies, ${bucket.zaps} zaps, ` +
-        `${bucket.reposts + bucket.quotes} reposts/quotes, ${bucket.likes} likes`;
       this.engagementTooltipDisposers.push(
-        Tooltip.attach(
-          bar,
-          `${this.formatBucketLabel(bucket.start, unit)} — ${engagementScore(bucket)} engagement (${breakdown})`,
-          { placement: 'top' }
-        )
+        Tooltip.attach(bar, tooltipOf(bucket), { placement: 'top' })
       );
     });
   }
@@ -626,9 +663,7 @@ export class AnalyticsAddonView extends View {
         const snap = AnalyticsService.getInstance().getCachedSnapshot(
           'engagement-timeline'
         );
-        if (snap?.aux?.timeline && snap.aux.timelineUnit) {
-          this.paintEngagementChart(snap.aux.timeline, snap.aux.timelineUnit);
-        }
+        if (snap?.aux) this.paintDiagramsCharts(snap.aux);
       } else {
         const live = this.overviewZone();
         if (!live) return;
