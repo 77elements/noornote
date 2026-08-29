@@ -426,7 +426,20 @@ export interface AppEvents {
   'marketplace:toggle': AddonTogglePayload;
   'marketplace:timeline-toggle': AddonTogglePayload;
 
+  // ── Analytics Addon ────────────────────────
+  /** A metric run has started (firstRun = initial full run). */
+  'analytics:run-started': { firstRun: boolean };
+  /** One collector finished — the view fills its row/tiles. */
+  'analytics:section-ready': {
+    collectorId: string;
+    metrics: Record<string, number>;
+    fetchedAt: number;
+  };
+  /** Run finished (ok = false when at least one collector failed). */
+  'analytics:run-finished': { firstRun: boolean; ok: boolean };
+
   // ── Addon Toggles ─────────────────────────
+  'analytics:addon-toggle': AddonTogglePayload;
   'badges:addon-toggle': AddonTogglePayload;
   'bookmarks:addon-toggle': AddonTogglePayload;
   'bulk-delete:addon-toggle': AddonTogglePayload;

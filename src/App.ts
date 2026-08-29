@@ -26,6 +26,7 @@ import {
 } from './services/DiagnosticLogger';
 import { ViewMountingService } from './services/ViewMountingService';
 import { PostLoginService } from './services/PostLoginService';
+import { closeAllPerAccountDatabases } from './services/persistence/NoorDB';
 import { AddonLoader } from './addons/AddonLoader';
 import { registerCoreAddons } from './addons/registerAddons';
 import { ensurePersistentStorage } from './helpers/ensurePersistentStorage';
@@ -681,6 +682,13 @@ export class App {
       'adv',
       true
     );
+    this.registerRoute(
+      '/addons/analytics',
+      'addon-analytics',
+      'addon-analytics',
+      'adv',
+      true
+    );
     // /addons (no slug) → redirect to first addon
     this.router.register('/addons', () =>
       this.router.navigate('/addons/bookmarks')
@@ -767,6 +775,7 @@ export class App {
     });
 
     this.eventBus.on('user:logout', () => {
+      closeAllPerAccountDatabases();
       destroyDiagnosticLogger();
       this.postLoginService.resetLoginState();
       this.viewMountingService.destroyAllCaches();

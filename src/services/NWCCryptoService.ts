@@ -29,6 +29,7 @@
 
 import { PlatformService } from './PlatformService';
 import { diagLog } from './DiagnosticLogger';
+import { openDb, type NoorDatabase } from './persistence/NoorDB';
 
 const FORMAT_PREFIX = 'v2:';
 const DEVICE_KEY_SIZE = 32; // 256 bits
@@ -300,43 +301,33 @@ export class NWCCryptoService {
 
   // ----- Web (IndexedDB); also legacy Capacitor key source pre-migration -----
 
-  private async openDeviceDB(): Promise<IDBDatabase> {
-    return new Promise((resolve, reject) => {
-      const req = indexedDB.open(IDB_DEVICE_DB_NAME, IDB_DEVICE_DB_VERSION);
-      req.onerror = () => reject(req.error);
-      req.onsuccess = () => resolve(req.result);
-      req.onupgradeneeded = ev => {
-        const db = (ev.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(IDB_DEVICE_STORE)) {
-          db.createObjectStore(IDB_DEVICE_STORE, { keyPath: 'key' });
-        }
-      };
+  /** Cached NoorDB-Verbindung zur Device-Key-DB (global, account-unabhängig). */
+  private deviceDb: NoorDatabase | null = null;
+
+  private async openDeviceDB(): Promise<NoorDatabase> {
+    if (this.deviceDb?.isOpen) return this.deviceDb;
+    this.deviceDb = await openDb(IDB_DEVICE_DB_NAME, {
+      version: IDB_DEVICE_DB_VERSION,
+      stores: [{ name: IDB_DEVICE_STORE, keyPath: 'key' }],
     });
+    return this.deviceDb;
   }
 
   private async readIndexedDBKey(): Promise<Uint8Array | null> {
     try {
       const db = await this.openDeviceDB();
-      return await new Promise<Uint8Array | null>((resolve, reject) => {
-        const tx = db.transaction(IDB_DEVICE_STORE, 'readonly');
-        const store = tx.objectStore(IDB_DEVICE_STORE);
-        const req = store.get(IDB_DEVICE_KEY);
-        req.onerror = () => reject(req.error);
-        req.onsuccess = () => {
-          const record = req.result as
-            | { key: string; value: string }
-            | undefined;
-          if (!record || typeof record.value !== 'string') {
-            resolve(null);
-            return;
-          }
-          try {
-            resolve(base64ToBytes(record.value));
-          } catch {
-            resolve(null);
-          }
-        };
-      });
+      const record = await db.get<{ key: string; value: string }>(
+        IDB_DEVICE_STORE,
+        IDB_DEVICE_KEY
+      );
+      if (!record || typeof record.value !== 'string') {
+        return null;
+      }
+      try {
+        return base64ToBytes(record.value);
+      } catch {
+        return null;
+      }
     } catch (err) {
       console.warn('[NWCCryptoService] readIndexedDBKey failed:', err);
       return null;
@@ -345,15 +336,9 @@ export class NWCCryptoService {
 
   private async writeIndexedDBKey(keyBytes: Uint8Array): Promise<void> {
     const db = await this.openDeviceDB();
-    await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(IDB_DEVICE_STORE, 'readwrite');
-      const store = tx.objectStore(IDB_DEVICE_STORE);
-      const req = store.put({
-        key: IDB_DEVICE_KEY,
-        value: bytesToBase64(keyBytes),
-      });
-      req.onerror = () => reject(req.error);
-      req.onsuccess = () => resolve();
+    await db.put(IDB_DEVICE_STORE, {
+      key: IDB_DEVICE_KEY,
+      value: bytesToBase64(keyBytes),
     });
   }
 }

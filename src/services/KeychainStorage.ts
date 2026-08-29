@@ -19,6 +19,7 @@ import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 import { AuthService } from './AuthService';
 import { NWCCryptoService } from './NWCCryptoService';
 import { diagLog } from './DiagnosticLogger';
+import { openDb, type NoorDatabase } from './persistence/NoorDB';
 
 // IndexedDB database name and store
 const DB_NAME = 'noornote_secure';
@@ -26,10 +27,11 @@ const STORE_NAME = 'keychain';
 const DB_VERSION = 1;
 
 export class KeychainStorage {
-  private static dbPromise: Promise<IDBDatabase> | null = null;
+  private static db: NoorDatabase | null = null;
+  private static dbOpenPromise: Promise<NoorDatabase> | null = null;
 
   /**
-   * Get IndexedDB database (lazy initialization)
+   * Get NoorDB connection (lazy initialization, single-flight)
    *
    * If the open fails once, the rejected promise is dropped (not cached) so
    * the next call can retry. The WebView can evict `noornote_secure` between
@@ -37,33 +39,32 @@ export class KeychainStorage {
    * service in degraded mode for the whole session and bypass the mirror
    * recovery in `loadNWC`.
    */
-  private static getDB(): Promise<IDBDatabase> {
-    if (!this.dbPromise) {
-      this.dbPromise = new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
+  private static getDB(): Promise<NoorDatabase> {
+    if (this.db?.isOpen) return Promise.resolve(this.db);
+    if (this.dbOpenPromise) return this.dbOpenPromise;
 
-        request.onerror = () => {
-          console.error('Failed to open IndexedDB:', request.error);
-          // Drop the cached rejected promise so a later call can retry —
-          // otherwise a single transient IDB failure permanently degrades
-          // the service for the session.
-          this.dbPromise = null;
-          reject(request.error);
-        };
-
-        request.onsuccess = () => {
-          resolve(request.result);
-        };
-
-        request.onupgradeneeded = event => {
-          const db = (event.target as IDBOpenDBRequest).result;
-          if (!db.objectStoreNames.contains(STORE_NAME)) {
-            db.createObjectStore(STORE_NAME, { keyPath: 'key' });
-          }
-        };
+    this.dbOpenPromise = openDb(DB_NAME, {
+      version: DB_VERSION,
+      stores: [{ name: STORE_NAME, keyPath: 'key' }],
+    })
+      .then(db => {
+        this.db = db;
+        return db;
+      })
+      .catch(error => {
+        console.error('Failed to open IndexedDB:', error);
+        // Drop the cached rejected promise so a later call can retry —
+        // otherwise a single transient IDB failure permanently degrades
+        // the service for the session.
+        throw error;
+      })
+      // In-Flight-Cache immer leeren: bei Fehler für Retry, bei Erfolg weil
+      // this.db übernimmt — und damit ein versionchange-Close später sauber
+      // neu öffnet statt denresolved Alt-Promise zu returnen.
+      .finally(() => {
+        this.dbOpenPromise = null;
       });
-    }
-    return this.dbPromise;
+    return this.dbOpenPromise;
   }
 
   /**
@@ -71,18 +72,11 @@ export class KeychainStorage {
    */
   private static async getFromIndexedDB(key: string): Promise<string | null> {
     const db = await this.getDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(STORE_NAME, 'readonly');
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.get(key);
-
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
-        resolve(
-          (request.result as { value?: string } | undefined)?.value ?? null
-        );
-      };
-    });
+    const record = await db.get<{ key: string; value: string }>(
+      STORE_NAME,
+      key
+    );
+    return record?.value ?? null;
   }
 
   /**
@@ -93,14 +87,7 @@ export class KeychainStorage {
     value: string
   ): Promise<void> {
     const db = await this.getDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(STORE_NAME, 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.put({ key, value });
-
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve();
-    });
+    await db.put(STORE_NAME, { key, value });
   }
 
   /**
@@ -108,14 +95,7 @@ export class KeychainStorage {
    */
   private static async deleteFromIndexedDB(key: string): Promise<void> {
     const db = await this.getDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(STORE_NAME, 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.delete(key);
-
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve();
-    });
+    await db.delete(STORE_NAME, key);
   }
 
   /**

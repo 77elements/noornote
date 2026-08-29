@@ -167,6 +167,11 @@ export const StorageKeys = {
   ARMADA_LAST_CHECK: 'noornote_armada_last_check_map',
   ARMADA_COMMUNITIES: 'noornote_armada_communities_map',
 
+  // Analytics addon master toggle (per-account)
+  // Same `_map` suffix convention — the raw global fallback key in
+  // addons/analytics/index.ts must never collide with this per-account map.
+  ANALYTICS_ENABLED: 'noornote_analytics_enabled_map',
+
   // Quick Zap toggle (per-account)
   QUICK_ZAP_ENABLED: 'noornote_quick_zap_enabled_map',
 

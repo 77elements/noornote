@@ -125,8 +125,9 @@ export function parseBolt11Amount(invoice: string): number {
 /**
  * Extract the bolt11 amount in sats from a zap event's bolt11 tag.
  * Convenience wrapper that finds the tag and parses it in one step.
+ * Accepts any event shape carrying tags (NostrEvent satisfies this).
  */
-export function getZapAmountSats(zapEvent: NostrEvent): number {
+export function getZapAmountSats(zapEvent: { tags: string[][] }): number {
   const bolt11Value = zapEvent.tags.find(t => t[0] === 'bolt11')?.[1];
   return bolt11Value ? parseBolt11Amount(bolt11Value) : 0;
 }
@@ -137,4 +138,19 @@ export function getZapAmountSats(zapEvent: NostrEvent): number {
  */
 export function formatNumberWithCommas(num: number): string {
   return num.toLocaleString('en-US');
+}
+
+/**
+ * Compact sats formatting for stat tiles: 1500 → "1.5k",
+ * 11200 → "11.2k", 1500000 → "1.5M". Pure function (no service import)
+ * so views can use it without pulling transport/relay dependencies.
+ */
+export function formatSatsCompact(sats: number): string {
+  if (sats >= 1_000_000) {
+    return `${(sats / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
+  }
+  if (sats >= 1_000) {
+    return `${(sats / 1_000).toFixed(1).replace(/\.0$/, '')}k`;
+  }
+  return sats.toString();
 }

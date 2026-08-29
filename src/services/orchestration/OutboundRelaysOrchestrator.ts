@@ -21,6 +21,7 @@ import { NostrTransport } from '../transport/NostrTransport';
 import { RelayConfig } from '../RelayConfig';
 import { SystemLogger } from '../SystemLogger';
 import { LRUCache, getCacheSize } from '../../helpers/LRUCache';
+import { openDb, type NoorDatabase } from '../persistence/NoorDB';
 
 export interface UserRelayList {
   pubkey: string;
@@ -341,21 +342,20 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
   }
 
   /**
-   * Open (or create on first use) the shared IndexedDB store. Single global DB
-   * since relay lists are public NIP-65 metadata, not per-account state.
+   * Cached NoorDB-Verbindung zur globalen Relay-List-DB (NIP-65-Metadaten sind
+   * public, nicht per-account). Wird lazy geöffnet und nach einem versionchange-
+   * Auto-Close beim nächsten Zugriff neu geöffnet.
    */
-  private openIDB(): Promise<IDBDatabase> {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(IDB_NAME, IDB_VERSION);
-      request.onupgradeneeded = () => {
-        const db = request.result;
-        if (!db.objectStoreNames.contains(IDB_STORE)) {
-          db.createObjectStore(IDB_STORE, { keyPath: 'pubkey' });
-        }
-      };
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
+  private idb: NoorDatabase | null = null;
+
+  private async ensureIDB(): Promise<NoorDatabase | null> {
+    if (typeof indexedDB === 'undefined') return null;
+    if (this.idb?.isOpen) return this.idb;
+    this.idb = await openDb(IDB_NAME, {
+      version: IDB_VERSION,
+      stores: [{ name: IDB_STORE, keyPath: 'pubkey' }],
     });
+    return this.idb;
   }
 
   /**
@@ -366,14 +366,9 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
     try {
       if (typeof indexedDB === 'undefined') return;
 
-      const db = await this.openIDB();
-      const entries: UserRelayList[] = await new Promise((resolve, reject) => {
-        const tx = db.transaction(IDB_STORE, 'readonly');
-        const store = tx.objectStore(IDB_STORE);
-        const request = store.getAll();
-        request.onsuccess = () => resolve(request.result as UserRelayList[]);
-        request.onerror = () => reject(request.error);
-      });
+      const db = await this.ensureIDB();
+      if (!db) return;
+      const entries = await db.getAll<UserRelayList>(IDB_STORE);
 
       const now = Date.now();
       let restored = 0;
@@ -386,7 +381,6 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
           expired++;
         }
       }
-      db.close();
 
       // Best-effort sweep of expired rows so the IDB store doesn't grow unbounded.
       if (expired > 0) {
@@ -415,14 +409,9 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
     try {
       if (typeof indexedDB === 'undefined') return;
 
-      const db = await this.openIDB();
-      await new Promise<void>((resolve, reject) => {
-        const tx = db.transaction(IDB_STORE, 'readwrite');
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-        tx.objectStore(IDB_STORE).put(relayList);
-      });
-      db.close();
+      const db = await this.ensureIDB();
+      if (!db) return;
+      await db.put(IDB_STORE, relayList);
     } catch (error) {
       this.systemLogger.warn(
         this.LOG_TAG,
@@ -435,26 +424,34 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
     try {
       if (typeof indexedDB === 'undefined') return;
 
-      const db = await this.openIDB();
+      const db = await this.ensureIDB();
+      if (!db) return;
       const cutoff = Date.now() - this.CACHE_TTL;
-      await new Promise<void>((resolve, reject) => {
-        const tx = db.transaction(IDB_STORE, 'readwrite');
-        const store = tx.objectStore(IDB_STORE);
-        const cursorReq = store.openCursor();
-        cursorReq.onsuccess = () => {
-          const cursor = cursorReq.result;
-          if (cursor) {
-            const value = cursor.value as UserRelayList;
-            if (!value || !value.lastUpdated || value.lastUpdated < cutoff) {
-              cursor.delete();
-            }
-            cursor.continue();
-          }
-        };
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-      });
-      db.close();
+      await db.withStore(
+        IDB_STORE,
+        'readwrite',
+        store =>
+          new Promise<void>(resolve => {
+            const cursorReq = store.openCursor();
+            cursorReq.onsuccess = () => {
+              const cursor = cursorReq.result;
+              if (cursor) {
+                const value = cursor.value as UserRelayList;
+                if (
+                  !value ||
+                  !value.lastUpdated ||
+                  value.lastUpdated < cutoff
+                ) {
+                  void cursor.delete();
+                }
+                cursor.continue();
+              } else {
+                resolve();
+              }
+            };
+            cursorReq.onerror = () => resolve();
+          })
+      );
     } catch (error) {
       this.systemLogger.warn(
         this.LOG_TAG,
@@ -524,14 +521,9 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
   private async clearIDB(): Promise<void> {
     try {
       if (typeof indexedDB === 'undefined') return;
-      const db = await this.openIDB();
-      await new Promise<void>((resolve, reject) => {
-        const tx = db.transaction(IDB_STORE, 'readwrite');
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-        tx.objectStore(IDB_STORE).clear();
-      });
-      db.close();
+      const db = await this.ensureIDB();
+      if (!db) return;
+      await db.clear(IDB_STORE);
     } catch (error) {
       this.systemLogger.warn(
         this.LOG_TAG,

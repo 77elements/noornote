@@ -10,6 +10,11 @@
 import { SystemLogger } from '../SystemLogger';
 import { diagLog } from '../DiagnosticLogger';
 import { PerAccountLocalStorage, StorageKeys } from '../PerAccountLocalStorage';
+import {
+  openDb,
+  type NoorDatabase,
+  type NoorDbDefinition,
+} from '../persistence/NoorDB';
 
 export type DMFormat = 'nip17' | 'legacy';
 
@@ -89,14 +94,14 @@ const DB_NAME_PREFIX = 'noornote_dm_';
 // silently failed to create the index on some installs (either the upgrade
 // transaction was blocked by a stale connection, or the ELSE branch hit an
 // untracked error). v6 forces a fresh upgrade attempt; the missing index is
-// re-created below.
+// re-created by NoorDB's schema reconciliation on every upgrade.
 const DB_VERSION = 6;
 const MESSAGES_STORE = 'messages';
 const CONVERSATIONS_STORE = 'conversations';
 
 export class DMStore {
   private static instance: DMStore;
-  private db: IDBDatabase | null = null;
+  private db: NoorDatabase | null = null;
   private systemLogger: SystemLogger;
   private initPromise: Promise<void> | null = null;
   private currentUserPubkey: string | null = null;
@@ -152,39 +157,16 @@ export class DMStore {
       return;
     }
 
-    if (this.db) return;
+    if (this.db?.isOpen) return;
     if (this.initPromise) return this.initPromise;
 
     const dbName = DB_NAME_PREFIX + pubkey;
 
-    this.initPromise = new Promise((resolve, reject) => {
-      const request = indexedDB.open(dbName, DB_VERSION);
-
-      request.onerror = () => {
-        this.systemLogger.error(
-          'DMStore',
-          'Failed to open IndexedDB:',
-          request.error
-        );
-        reject(request.error);
-      };
-
-      request.onblocked = () => {
-        // Another tab/connection is holding the DB at an older version and
-        // didn't close in response to our version-change request. The upgrade
-        // will fire as soon as that connection closes; meanwhile this open()
-        // stays pending. Most common cause: dev-time HMR leaves a stale
-        // DMService connection alive. Closing the other tab (or reloading)
-        // resolves it.
-        diagLog('dms', 'upgrade_blocked', { dbName });
-        this.systemLogger.warn(
-          'DMStore',
-          'IndexedDB upgrade blocked — close other tabs / reload to apply schema change'
-        );
-      };
-
-      request.onsuccess = () => {
-        this.db = request.result;
+    const openPromise = openDb(dbName, this.dbDefinition(DB_VERSION), {
+      perAccount: true,
+    })
+      .then(db => {
+        this.db = db;
         this.systemLogger.info(
           'DMStore',
           `IndexedDB initialized for user ${pubkey.slice(0, 8)}...`
@@ -196,13 +178,24 @@ export class DMStore {
         this.loadReadAnchorMirror(pubkey);
         // Same eviction-survival rationale for the disappearing-messages setting.
         this.loadDisappearingMirror(pubkey);
-        // Defensive: ensure the expiresAt index actually exists. Earlier
-        // v4→v5 upgrades silently failed to create it on some installs; the
-        // version bump to v6 should have re-created it via onupgradeneeded,
-        // but if for any reason it's still missing, force a fresh upgrade
-        // attempt right now.
+        // Defensive: NoorDB reconciles declared stores/indexes on EVERY upgrade,
+        // which covers the historical v5 index-loss case. The recovery reopen
+        // here only fires for the pathological "same-version open after a
+        // partially failed upgrade" install.
         this.ensureExpiresAtIndex();
-        resolve();
+      })
+      .catch(error => {
+        this.systemLogger.error('DMStore', 'Failed to open IndexedDB:', error);
+        throw error;
+      })
+      // In-Flight-Cache leeren: Retry nach Failed-Open, sauberes Re-Open nach
+      // versionchange-Auto-Close (NoorDB schließt und markiert selbst).
+      .finally(() => {
+        this.initPromise = null;
+      });
+
+    this.initPromise = openPromise.then(
+      () => {
         // Self-heal: if the mirror is empty (fresh install, localStorage cleared,
         // or this feature was added after data already existed), rebuild it from
         // the IndexedDB conversation records so the first re-sync doesn't
@@ -211,69 +204,39 @@ export class DMStore {
         if (this.readAnchorMirror.size === 0) {
           this.rebuildAnchorMirrorFromDB().catch(() => {});
         }
-      };
-
-      request.onupgradeneeded = event => {
-        const req = event.target as IDBOpenDBRequest;
-        const db = req.result;
-        const upgradeTx = req.transaction!; // set during upgrade
-
-        // Messages store with indexes
-        if (!db.objectStoreNames.contains(MESSAGES_STORE)) {
-          // Fresh DB → create store with all indexes including expiresAt.
-          const messagesStore = db.createObjectStore(MESSAGES_STORE, {
-            keyPath: 'id',
-          });
-          messagesStore.createIndex('conversationWith', 'conversationWith', {
-            unique: false,
-          });
-          messagesStore.createIndex('createdAt', 'createdAt', {
-            unique: false,
-          });
-          messagesStore.createIndex('wrapId', 'wrapId', { unique: true });
-          messagesStore.createIndex('expiresAt', 'expiresAt', {
-            unique: false,
-          });
-        } else {
-          // Existing store (v4 or v5 upgrade path) → ensure expiresAt index.
-          // Wrapped in try/catch because createIndex on an already-existing
-          // index throws, and we want the rest of the upgrade to still run.
-          try {
-            const messagesStore = upgradeTx.objectStore(MESSAGES_STORE);
-            if (!messagesStore.indexNames.contains('expiresAt')) {
-              messagesStore.createIndex('expiresAt', 'expiresAt', {
-                unique: false,
-              });
-              diagLog('dms', 'expiresAt_index_created_during_upgrade', {
-                version: db.version,
-              });
-            }
-          } catch (idxErr) {
-            diagLog('dms', 'expiresAt_index_create_failed', {
-              error: String(idxErr),
-            });
-          }
-        }
-
-        // Conversations store
-        if (!db.objectStoreNames.contains(CONVERSATIONS_STORE)) {
-          const conversationsStore = db.createObjectStore(CONVERSATIONS_STORE, {
-            keyPath: 'pubkey',
-          });
-          conversationsStore.createIndex('lastMessageAt', 'lastMessageAt', {
-            unique: false,
-          });
-        }
-        // Note: DMConversation.disappearingSeconds is additive — no index needed,
-        // existing records just gain an undefined field which our helpers treat
-        // as "undecided". Reads go through getDisappearing() which falls back to
-        // the localStorage mirror when the field is missing.
-
-        this.systemLogger.info('DMStore', 'IndexedDB schema created/upgraded');
-      };
-    });
+      },
+      () => {}
+    );
 
     return this.initPromise;
+  }
+
+  /**
+   * Deklariertes DM-Schema für NoorDB: die Engine reconciled Stores + Indexe
+   * idempotent bei jedem Upgrade — ein Version-Bump heilt damit garantiert
+   * jedes früher fehlgeschlagene partielle Upgrade (die v5-Bugklasse).
+   */
+  private dbDefinition(version: number): NoorDbDefinition {
+    return {
+      version,
+      stores: [
+        {
+          name: MESSAGES_STORE,
+          keyPath: 'id',
+          indexes: [
+            { name: 'conversationWith', keyPath: 'conversationWith' },
+            { name: 'createdAt', keyPath: 'createdAt' },
+            { name: 'wrapId', keyPath: 'wrapId', unique: true },
+            { name: 'expiresAt', keyPath: 'expiresAt' },
+          ],
+        },
+        {
+          name: CONVERSATIONS_STORE,
+          keyPath: 'pubkey',
+          indexes: [{ name: 'lastMessageAt', keyPath: 'lastMessageAt' }],
+        },
+      ],
+    };
   }
 
   /**
@@ -307,117 +270,124 @@ export class DMStore {
   ): Promise<{ inserted: boolean; unreadBumped: boolean }> {
     await this.init();
 
-    return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(
-        [MESSAGES_STORE, CONVERSATIONS_STORE],
-        'readwrite'
-      );
-      const messagesStore = tx.objectStore(MESSAGES_STORE);
-      const conversationsStore = tx.objectStore(CONVERSATIONS_STORE);
+    let mirrorUpdated = false;
+    let unreadBumped = false;
 
-      let mirrorUpdated = false;
-      let unreadBumped = false;
+    const outcome = await this.db!.withTransaction(
+      [MESSAGES_STORE, CONVERSATIONS_STORE],
+      'readwrite',
+      tx =>
+        new Promise<{ inserted: boolean }>(resolve => {
+          const messagesStore = tx.objectStore(MESSAGES_STORE);
+          const conversationsStore = tx.objectStore(CONVERSATIONS_STORE);
 
-      // Check for duplicate by wrapId
-      const wrapIndex = messagesStore.index('wrapId');
-      const checkRequest = wrapIndex.get(message.wrapId);
+          // Check for duplicate by wrapId
+          const wrapIndex = messagesStore.index('wrapId');
+          const checkRequest = wrapIndex.get(message.wrapId);
 
-      checkRequest.onsuccess = () => {
-        if (checkRequest.result) {
-          // Already exists, skip
-          resolve({ inserted: false, unreadBumped: false });
-          return;
-        }
+          checkRequest.onsuccess = () => {
+            if (checkRequest.result) {
+              // Already exists, skip
+              resolve({ inserted: false });
+              return;
+            }
 
-        // Save message
-        messagesStore.put(message);
+            // Save message
+            messagesStore.put(message);
 
-        // Update conversation
-        const getConvRequest = conversationsStore.get(message.conversationWith);
-        getConvRequest.onsuccess = () => {
-          const existing = getConvRequest.result as DMConversation | undefined;
-          const isNewer =
-            !existing || message.createdAt > existing.lastMessageAt;
+            // Update conversation
+            const getConvRequest = conversationsStore.get(
+              message.conversationWith
+            );
+            getConvRequest.onsuccess = () => {
+              const existing = getConvRequest.result as
+                | DMConversation
+                | undefined;
+              const isNewer =
+                !existing || message.createdAt > existing.lastMessageAt;
 
-          // Soft-delete handling: a message newer than the delete cutoff
-          // resurrects the conversation; an older one (e.g. re-synced history)
-          // keeps it hidden and does NOT bump unread.
-          const wasDeleted = existing?.deleted === true;
-          const resurrect =
-            wasDeleted && message.createdAt > (existing?.deletedAt || 0);
-          const staysDeleted = wasDeleted && !resurrect;
+              // Soft-delete handling: a message newer than the delete cutoff
+              // resurrects the conversation; an older one (e.g. re-synced history)
+              // keeps it hidden and does NOT bump unread.
+              const wasDeleted = existing?.deleted === true;
+              const resurrect =
+                wasDeleted && message.createdAt > (existing?.deletedAt || 0);
+              const staysDeleted = wasDeleted && !resurrect;
 
-          // Only count as unread if:
-          // 1. Not my own message
-          // 2. Message is newer than lastReadAt (or no lastReadAt exists = 0)
-          // 3. The conversation isn't staying soft-deleted
-          // Read anchor: prefer the live conversation record; if it's missing
-          // (evicted/fresh DB), fall back to the localStorage-mirrored anchor so
-          // re-synced history isn't re-counted as unread.
-          const lastReadAt = existing
-            ? existing.lastReadAt
-            : (this.readAnchorMirror.get(message.conversationWith) ?? 0);
-          const shouldIncrementUnread =
-            !message.isMine && message.createdAt > lastReadAt && !staysDeleted;
-          unreadBumped = shouldIncrementUnread;
+              // Only count as unread if:
+              // 1. Not my own message
+              // 2. Message is newer than lastReadAt (or no lastReadAt exists = 0)
+              // 3. The conversation isn't staying soft-deleted
+              // Read anchor: prefer the live conversation record; if it's missing
+              // (evicted/fresh DB), fall back to the localStorage-mirrored anchor so
+              // re-synced history isn't re-counted as unread.
+              const lastReadAt = existing
+                ? existing.lastReadAt
+                : (this.readAnchorMirror.get(message.conversationWith) ?? 0);
+              const shouldIncrementUnread =
+                !message.isMine &&
+                message.createdAt > lastReadAt &&
+                !staysDeleted;
+              unreadBumped = shouldIncrementUnread;
 
-          // Diagnostic: any time unread is bumped, record whether we knew the conversation and what
-          // its read-anchor was. The false-"unread" bug shows up here as a burst with hadConversation
-          // true but lastReadAt 0 (known chat that was never marked read → re-counted every re-sync),
-          // or hadConversation false (conversation record lost). Live new DMs also log here, but with
-          // a real lastReadAt. Makes the mechanism observable instead of guessed.
-          if (shouldIncrementUnread) {
-            diagLog('dms', 'DM unread bumped', {
-              hadConversation: !!existing,
-              createdAt: message.createdAt,
-              lastReadAt,
-              prevUnread: existing?.unreadCount || 0,
-            });
-          }
+              // Diagnostic: any time unread is bumped, record whether we knew the conversation and what
+              // its read-anchor was. The false-"unread" bug shows up here as a burst with hadConversation
+              // true but lastReadAt 0 (known chat that was never marked read → re-counted every re-sync),
+              // or hadConversation false (conversation record lost). Live new DMs also log here, but with
+              // a real lastReadAt. Makes the mechanism observable instead of guessed.
+              if (shouldIncrementUnread) {
+                diagLog('dms', 'DM unread bumped', {
+                  hadConversation: !!existing,
+                  createdAt: message.createdAt,
+                  lastReadAt,
+                  prevUnread: existing?.unreadCount || 0,
+                });
+              }
 
-          const subject = message.subject || existing?.subject;
-          const conversation: DMConversation = {
-            pubkey: message.conversationWith,
-            lastMessageAt: isNewer
-              ? message.createdAt
-              : existing!.lastMessageAt,
-            lastMessagePreview: isNewer
-              ? message.content.slice(0, 100)
-              : existing!.lastMessagePreview,
-            unreadCount: shouldIncrementUnread
-              ? (existing?.unreadCount || 0) + 1
-              : existing?.unreadCount || 0,
-            lastReadAt,
-            ...(subject && { subject }),
-            // Keep hidden only while staying deleted; resurrection/new convo clears it.
-            ...(staysDeleted && {
-              deleted: true,
-              deletedAt: existing!.deletedAt,
-            }),
+              const subject = message.subject || existing?.subject;
+              const conversation: DMConversation = {
+                pubkey: message.conversationWith,
+                lastMessageAt: isNewer
+                  ? message.createdAt
+                  : existing!.lastMessageAt,
+                lastMessagePreview: isNewer
+                  ? message.content.slice(0, 100)
+                  : existing!.lastMessagePreview,
+                unreadCount: shouldIncrementUnread
+                  ? (existing?.unreadCount || 0) + 1
+                  : existing?.unreadCount || 0,
+                lastReadAt,
+                ...(subject && { subject }),
+                // Keep hidden only while staying deleted; resurrection/new convo clears it.
+                ...(staysDeleted && {
+                  deleted: true,
+                  deletedAt: existing!.deletedAt,
+                }),
+              };
+
+              conversationsStore.put(conversation);
+
+              // Keep the read-anchor mirror warm: if this conversation has a
+              // lastReadAt higher than what's currently mirrored, update it so
+              // a future IndexedDB eviction doesn't lose the read state.
+              if (
+                lastReadAt > 0 &&
+                lastReadAt >
+                  (this.readAnchorMirror.get(message.conversationWith) ?? 0)
+              ) {
+                this.readAnchorMirror.set(message.conversationWith, lastReadAt);
+                mirrorUpdated = true;
+              }
+
+              resolve({ inserted: true });
+            };
           };
+        })
+    );
 
-          conversationsStore.put(conversation);
-
-          // Keep the read-anchor mirror warm: if this conversation has a
-          // lastReadAt higher than what's currently mirrored, update it so
-          // a future IndexedDB eviction doesn't lose the read state.
-          if (
-            lastReadAt > 0 &&
-            lastReadAt >
-              (this.readAnchorMirror.get(message.conversationWith) ?? 0)
-          ) {
-            this.readAnchorMirror.set(message.conversationWith, lastReadAt);
-            mirrorUpdated = true;
-          }
-        };
-      };
-
-      tx.oncomplete = () => {
-        if (mirrorUpdated) this.saveReadAnchorMirror();
-        resolve({ inserted: true, unreadBumped });
-      };
-      tx.onerror = () => reject(tx.error);
-    });
+    // Tx completed (withTransaction resolves erst nach oncomplete).
+    if (mirrorUpdated) this.saveReadAnchorMirror();
+    return { inserted: outcome.inserted, unreadBumped };
   }
 
   /**
@@ -430,52 +400,54 @@ export class DMStore {
   ): Promise<DMMessage[]> {
     await this.init();
 
-    return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(
-        [MESSAGES_STORE, CONVERSATIONS_STORE],
-        'readonly'
-      );
+    return this.db!.withTransaction(
+      [MESSAGES_STORE, CONVERSATIONS_STORE],
+      'readonly',
+      tx =>
+        new Promise<DMMessage[]>((resolve, reject) => {
+          // Look up the soft-delete cutoff first, so messages up to deletedAt stay hidden.
+          const convRequest = tx
+            .objectStore(CONVERSATIONS_STORE)
+            .get(partnerPubkey);
+          convRequest.onsuccess = () => {
+            const conv = convRequest.result as DMConversation | undefined;
+            const deletedAt = conv?.deletedAt || 0;
 
-      // Look up the soft-delete cutoff first, so messages up to deletedAt stay hidden.
-      const convRequest = tx
-        .objectStore(CONVERSATIONS_STORE)
-        .get(partnerPubkey);
-      convRequest.onsuccess = () => {
-        const conv = convRequest.result as DMConversation | undefined;
-        const deletedAt = conv?.deletedAt || 0;
+            const index = tx
+              .objectStore(MESSAGES_STORE)
+              .index('conversationWith');
+            const request = index.getAll(IDBKeyRange.only(partnerPubkey));
 
-        const index = tx.objectStore(MESSAGES_STORE).index('conversationWith');
-        const request = index.getAll(IDBKeyRange.only(partnerPubkey));
+            request.onsuccess = () => {
+              let result = request.result as DMMessage[];
 
-        request.onsuccess = () => {
-          let result = request.result as DMMessage[];
+              // Filter out messages from before a local soft-delete
+              if (deletedAt) {
+                result = result.filter(m => m.createdAt > deletedAt);
+              }
 
-          // Filter out messages from before a local soft-delete
-          if (deletedAt) {
-            result = result.filter(m => m.createdAt > deletedAt);
-          }
+              // Apply before filter if specified
+              if (before) {
+                result = result.filter(m => m.createdAt < before);
+              }
 
-          // Apply before filter if specified
-          if (before) {
-            result = result.filter(m => m.createdAt < before);
-          }
+              // Sort by createdAt ascending (oldest first for display)
+              result = result.sort((a, b) => a.createdAt - b.createdAt);
 
-          // Sort by createdAt ascending (oldest first for display)
-          result = result.sort((a, b) => a.createdAt - b.createdAt);
+              // Apply limit (take newest)
+              if (result.length > limit) {
+                result = result.slice(-limit);
+              }
 
-          // Apply limit (take newest)
-          if (result.length > limit) {
-            result = result.slice(-limit);
-          }
+              resolve(result);
+            };
 
-          resolve(result);
-        };
+            request.onerror = () => reject(request.error);
+          };
 
-        request.onerror = () => reject(request.error);
-      };
-
-      convRequest.onerror = () => reject(convRequest.error);
-    });
+          convRequest.onerror = () => reject(convRequest.error);
+        })
+    );
   }
 
   /**
@@ -487,47 +459,50 @@ export class DMStore {
   ): Promise<DMConversation[]> {
     await this.init();
 
-    return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(CONVERSATIONS_STORE, 'readonly');
-      const store = tx.objectStore(CONVERSATIONS_STORE);
-      const index = store.index('lastMessageAt');
-      const conversations: DMConversation[] = [];
-      let skipped = 0;
+    return this.db!.withStore(
+      CONVERSATIONS_STORE,
+      'readonly',
+      store =>
+        new Promise<DMConversation[]>((resolve, reject) => {
+          const index = store.index('lastMessageAt');
+          const conversations: DMConversation[] = [];
+          let skipped = 0;
 
-      const request = index.openCursor(null, 'prev');
+          const request = index.openCursor(null, 'prev');
 
-      request.onsuccess = () => {
-        const cursor = request.result;
-        if (!cursor) {
-          resolve(conversations);
-          return;
-        }
+          request.onsuccess = () => {
+            const cursor = request.result;
+            if (!cursor) {
+              resolve(conversations);
+              return;
+            }
 
-        // Skip locally soft-deleted conversations entirely (not counted toward offset)
-        if ((cursor.value as DMConversation).deleted === true) {
-          cursor.continue();
-          return;
-        }
+            // Skip locally soft-deleted conversations entirely (not counted toward offset)
+            if ((cursor.value as DMConversation).deleted === true) {
+              cursor.continue();
+              return;
+            }
 
-        // Skip items until we reach offset
-        if (skipped < offset) {
-          skipped++;
-          cursor.continue();
-          return;
-        }
+            // Skip items until we reach offset
+            if (skipped < offset) {
+              skipped++;
+              cursor.continue();
+              return;
+            }
 
-        // Check limit
-        if (limit !== undefined && conversations.length >= limit) {
-          resolve(conversations);
-          return;
-        }
+            // Check limit
+            if (limit !== undefined && conversations.length >= limit) {
+              resolve(conversations);
+              return;
+            }
 
-        conversations.push(cursor.value as DMConversation);
-        cursor.continue();
-      };
+            conversations.push(cursor.value as DMConversation);
+            cursor.continue();
+          };
 
-      request.onerror = () => reject(request.error);
-    });
+          request.onerror = () => reject(request.error);
+        })
+    );
   }
 
   /**
@@ -538,15 +513,12 @@ export class DMStore {
   ): Promise<DMConversation | null> {
     await this.init();
 
-    return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(CONVERSATIONS_STORE, 'readonly');
-      const store = tx.objectStore(CONVERSATIONS_STORE);
-      const request = store.get(partnerPubkey);
-
-      request.onsuccess = () =>
-        resolve((request.result as DMConversation | undefined) ?? null);
-      request.onerror = () => reject(request.error);
-    });
+    return (
+      (await this.db!.get<DMConversation>(
+        CONVERSATIONS_STORE,
+        partnerPubkey
+      )) ?? null
+    );
   }
 
   /**
@@ -555,26 +527,29 @@ export class DMStore {
   public async markAsRead(partnerPubkey: string): Promise<void> {
     await this.init();
 
-    return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(CONVERSATIONS_STORE, 'readwrite');
-      const store = tx.objectStore(CONVERSATIONS_STORE);
-      const request = store.get(partnerPubkey);
+    await this.db!.withStore(
+      CONVERSATIONS_STORE,
+      'readwrite',
+      store =>
+        new Promise<void>((resolve, reject) => {
+          const request = store.get(partnerPubkey);
 
-      request.onsuccess = () => {
-        const conversation = request.result as DMConversation | undefined;
-        if (conversation) {
-          conversation.unreadCount = 0;
-          conversation.lastReadAt = Math.floor(Date.now() / 1000);
-          store.put(conversation);
-          // Mirror the new anchor so it survives an IndexedDB eviction.
-          this.readAnchorMirror.set(partnerPubkey, conversation.lastReadAt);
-          this.saveReadAnchorMirror();
-        }
-        resolve();
-      };
+          request.onsuccess = () => {
+            const conversation = request.result as DMConversation | undefined;
+            if (conversation) {
+              conversation.unreadCount = 0;
+              conversation.lastReadAt = Math.floor(Date.now() / 1000);
+              void store.put(conversation);
+              // Mirror the new anchor so it survives an IndexedDB eviction.
+              this.readAnchorMirror.set(partnerPubkey, conversation.lastReadAt);
+              this.saveReadAnchorMirror();
+            }
+            resolve();
+          };
 
-      tx.onerror = () => reject(tx.error);
-    });
+          request.onerror = () => reject(request.error);
+        })
+    );
   }
 
   /**
@@ -627,13 +602,8 @@ export class DMStore {
    */
   private async rebuildAnchorMirrorFromDB(): Promise<void> {
     await this.init();
-    if (!this.db) return;
-    const all = await new Promise<DMConversation[]>((resolve, reject) => {
-      const tx = this.db!.transaction(CONVERSATIONS_STORE, 'readonly');
-      const req = tx.objectStore(CONVERSATIONS_STORE).getAll();
-      req.onsuccess = () => resolve((req.result as DMConversation[]) || []);
-      req.onerror = () => reject(req.error);
-    });
+    if (!this.db?.isOpen) return;
+    const all = await this.db.getAll<DMConversation>(CONVERSATIONS_STORE);
     this.readAnchorMirror = new Map(
       all.map(c => [c.pubkey, c.lastReadAt] as const)
     );
@@ -642,47 +612,51 @@ export class DMStore {
 
   /**
    * Defensive check: ensure the `expiresAt` index exists on the messages
-   * store. If a previous upgrade was silently blocked or hit an error, the
-   * index could be missing even though the DB version was bumped. In that
-   * case, close this connection and reopen at version+1 — the upgrade
-   * transaction will then recreate the index. Idempotent: no-op if the index
-   * is present. Safe to call after every successful open().
+   * store. NoorDB's reconciliation covers this on every version upgrade; this
+   * probe only catches the pathological case of a same-version open after a
+   * partially failed historical upgrade. In that case, close this connection
+   * and reopen at version+1 — NoorDB's upgrade engine then recreates the
+   * index. Idempotent: no-op if the index is present.
    */
   private ensureExpiresAtIndex(): void {
-    if (!this.db) return;
-    if (!this.db.objectStoreNames.contains(MESSAGES_STORE)) return;
+    const db = this.db;
+    if (!db?.isOpen) return;
 
-    let indexMissing = false;
-    try {
-      const tx = this.db.transaction(MESSAGES_STORE, 'readonly');
-      const store = tx.objectStore(MESSAGES_STORE);
-      indexMissing = !store.indexNames.contains('expiresAt');
-    } catch (err) {
-      diagLog('dms', 'ensureExpiresAtIndex_probe_failed', {
-        error: String(err),
+    void db
+      .withStore(MESSAGES_STORE, 'readonly', store =>
+        store.indexNames.contains('expiresAt')
+      )
+      .then(present => {
+        if (present) return;
+        const currentVersion = db.version;
+        if (currentVersion === null) return;
+
+        diagLog('dms', 'expiresAt_index_missing_force_reopen', {
+          currentVersion,
+        });
+        this.systemLogger.warn(
+          'DMStore',
+          `expiresAt index missing despite DB v${currentVersion} — forcing reopen at v${currentVersion + 1}`
+        );
+        // Close the current connection so the version-change request isn't blocked
+        // by our own stale handle. The reopen happens via init() which nulls
+        // initPromise; the next caller awaits a fresh open().
+        this.db?.close();
+        this.db = null;
+        this.initPromise = null;
+        // Bump the requested version. DB_VERSION stays constant in code; the
+        // override here is just for this recovery path.
+        void this.initWithVersion(currentVersion + 1).catch(err => {
+          diagLog('dms', 'expiresAt_force_reopen_failed', {
+            error: String(err),
+          });
+        });
+      })
+      .catch(err => {
+        diagLog('dms', 'ensureExpiresAtIndex_probe_failed', {
+          error: String(err),
+        });
       });
-      return; // Don't risk a recursive reopen if the probe itself failed.
-    }
-
-    if (!indexMissing) return;
-
-    const currentVersion = this.db.version;
-    diagLog('dms', 'expiresAt_index_missing_force_reopen', { currentVersion });
-    this.systemLogger.warn(
-      'DMStore',
-      `expiresAt index missing despite DB v${currentVersion} — forcing reopen at v${currentVersion + 1}`
-    );
-    // Close the current connection so the version-change request isn't blocked
-    // by our own stale handle. The reopen happens via init() which nulls
-    // initPromise; the next caller awaits a fresh open().
-    this.db.close();
-    this.db = null;
-    this.initPromise = null;
-    // Bump the requested version. DB_VERSION stays constant in code; the
-    // override here is just for this recovery path.
-    void this.initWithVersion(currentVersion + 1).catch(err => {
-      diagLog('dms', 'expiresAt_force_reopen_failed', { error: String(err) });
-    });
   }
 
   /**
@@ -692,37 +666,13 @@ export class DMStore {
   private async initWithVersion(targetVersion: number): Promise<void> {
     if (!this.currentUserPubkey) return;
     const dbName = DB_NAME_PREFIX + this.currentUserPubkey;
-    this.initPromise = new Promise((resolve, reject) => {
-      const request = indexedDB.open(dbName, targetVersion);
-      request.onerror = () => reject(request.error);
-      request.onblocked = () => {
-        diagLog('dms', 'force_reopen_blocked', { targetVersion });
-      };
-      request.onsuccess = () => {
-        this.db = request.result;
-        resolve();
-      };
-      request.onupgradeneeded = event => {
-        const req = event.target as IDBOpenDBRequest;
-        const upgradeTx = req.transaction!;
-        try {
-          const messagesStore = upgradeTx.objectStore(MESSAGES_STORE);
-          if (!messagesStore.indexNames.contains('expiresAt')) {
-            messagesStore.createIndex('expiresAt', 'expiresAt', {
-              unique: false,
-            });
-            diagLog('dms', 'expiresAt_index_created_via_force_reopen', {
-              version: targetVersion,
-            });
-          }
-        } catch (err) {
-          diagLog('dms', 'expiresAt_index_force_reopen_failed', {
-            error: String(err),
-          });
-        }
-      };
+    const openPromise = openDb(dbName, this.dbDefinition(targetVersion), {
+      perAccount: true,
+    }).then(db => {
+      this.db = db;
     });
-    return this.initPromise;
+    this.initPromise = openPromise;
+    return openPromise;
   }
 
   /**
@@ -733,24 +683,27 @@ export class DMStore {
   public async softDeleteConversation(partnerPubkey: string): Promise<void> {
     await this.init();
 
-    return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(CONVERSATIONS_STORE, 'readwrite');
-      const store = tx.objectStore(CONVERSATIONS_STORE);
-      const request = store.get(partnerPubkey);
+    await this.db!.withStore(
+      CONVERSATIONS_STORE,
+      'readwrite',
+      store =>
+        new Promise<void>((resolve, reject) => {
+          const request = store.get(partnerPubkey);
 
-      request.onsuccess = () => {
-        const conversation = request.result as DMConversation | undefined;
-        if (conversation) {
-          conversation.deleted = true;
-          conversation.deletedAt = Math.floor(Date.now() / 1000);
-          conversation.unreadCount = 0;
-          store.put(conversation);
-        }
-        resolve();
-      };
+          request.onsuccess = () => {
+            const conversation = request.result as DMConversation | undefined;
+            if (conversation) {
+              conversation.deleted = true;
+              conversation.deletedAt = Math.floor(Date.now() / 1000);
+              conversation.unreadCount = 0;
+              void store.put(conversation);
+            }
+            resolve();
+          };
 
-      tx.onerror = () => reject(tx.error);
-    });
+          request.onerror = () => reject(request.error);
+        })
+    );
   }
 
   /**
@@ -760,27 +713,30 @@ export class DMStore {
   public async purgeConversation(partnerPubkey: string): Promise<void> {
     await this.init();
 
-    return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(
-        [MESSAGES_STORE, CONVERSATIONS_STORE],
-        'readwrite'
-      );
-      tx.objectStore(CONVERSATIONS_STORE).delete(partnerPubkey);
+    await this.db!.withTransaction(
+      [MESSAGES_STORE, CONVERSATIONS_STORE],
+      'readwrite',
+      tx =>
+        new Promise<void>((resolve, reject) => {
+          tx.objectStore(CONVERSATIONS_STORE).delete(partnerPubkey);
 
-      // Delete every message in this conversation via the conversationWith index
-      const index = tx.objectStore(MESSAGES_STORE).index('conversationWith');
-      const cursorReq = index.openCursor(IDBKeyRange.only(partnerPubkey));
-      cursorReq.onsuccess = () => {
-        const cursor = cursorReq.result;
-        if (cursor) {
-          cursor.delete();
-          cursor.continue();
-        }
-      };
-
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
+          // Delete every message in this conversation via the conversationWith index
+          const index = tx
+            .objectStore(MESSAGES_STORE)
+            .index('conversationWith');
+          const cursorReq = index.openCursor(IDBKeyRange.only(partnerPubkey));
+          cursorReq.onsuccess = () => {
+            const cursor = cursorReq.result;
+            if (cursor) {
+              void cursor.delete();
+              cursor.continue();
+            } else {
+              resolve();
+            }
+          };
+          cursorReq.onerror = () => reject(cursorReq.error);
+        })
+    );
   }
 
   /**
@@ -821,26 +777,30 @@ export class DMStore {
   ): Promise<void> {
     await this.init();
 
-    return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(CONVERSATIONS_STORE, 'readwrite');
-      const store = tx.objectStore(CONVERSATIONS_STORE);
-      const request = store.openCursor();
+    await this.db!.withStore(
+      CONVERSATIONS_STORE,
+      'readwrite',
+      store =>
+        new Promise<void>((resolve, reject) => {
+          const request = store.openCursor();
 
-      request.onsuccess = () => {
-        const cursor = request.result;
-        if (cursor) {
-          const conversation = cursor.value as DMConversation;
-          if (shouldUpdate(conversation)) {
-            update(conversation);
-            cursor.update(conversation);
-          }
-          cursor.continue();
-        }
-      };
+          request.onsuccess = () => {
+            const cursor = request.result;
+            if (cursor) {
+              const conversation = cursor.value as DMConversation;
+              if (shouldUpdate(conversation)) {
+                update(conversation);
+                void cursor.update(conversation);
+              }
+              cursor.continue();
+            } else {
+              resolve();
+            }
+          };
 
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
+          request.onerror = () => reject(request.error);
+        })
+    );
   }
 
   /**
@@ -849,19 +809,9 @@ export class DMStore {
   public async getTotalUnreadCount(): Promise<number> {
     await this.init();
 
-    return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(CONVERSATIONS_STORE, 'readonly');
-      const store = tx.objectStore(CONVERSATIONS_STORE);
-      const request = store.getAll();
-
-      request.onsuccess = () => {
-        const conversations = request.result as DMConversation[];
-        const total = conversations.reduce((sum, c) => sum + c.unreadCount, 0);
-        resolve(total);
-      };
-
-      request.onerror = () => reject(request.error);
-    });
+    const conversations =
+      await this.db!.getAll<DMConversation>(CONVERSATIONS_STORE);
+    return conversations.reduce((sum, c) => sum + c.unreadCount, 0);
   }
 
   /**
@@ -870,15 +820,17 @@ export class DMStore {
   public async hasMessage(wrapId: string): Promise<boolean> {
     await this.init();
 
-    return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(MESSAGES_STORE, 'readonly');
-      const store = tx.objectStore(MESSAGES_STORE);
-      const index = store.index('wrapId');
-      const request = index.get(wrapId);
-
-      request.onsuccess = () => resolve(!!request.result);
-      request.onerror = () => reject(request.error);
-    });
+    const existing = await this.db!.withStore(
+      MESSAGES_STORE,
+      'readonly',
+      store =>
+        new Promise<unknown>((resolve, reject) => {
+          const request = store.index('wrapId').get(wrapId);
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        })
+    );
+    return !!existing;
   }
 
   /**
@@ -887,23 +839,26 @@ export class DMStore {
   public async getNewestMessageTimestamp(): Promise<number> {
     await this.init();
 
-    return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(MESSAGES_STORE, 'readonly');
-      const store = tx.objectStore(MESSAGES_STORE);
-      const index = store.index('createdAt');
-      const request = index.openCursor(null, 'prev');
+    return this.db!.withStore(
+      MESSAGES_STORE,
+      'readonly',
+      store =>
+        new Promise<number>((resolve, reject) => {
+          const index = store.index('createdAt');
+          const request = index.openCursor(null, 'prev');
 
-      request.onsuccess = () => {
-        const cursor = request.result;
-        if (cursor) {
-          resolve((cursor.value as DMMessage).createdAt);
-        } else {
-          resolve(0);
-        }
-      };
+          request.onsuccess = () => {
+            const cursor = request.result;
+            if (cursor) {
+              resolve((cursor.value as DMMessage).createdAt);
+            } else {
+              resolve(0);
+            }
+          };
 
-      request.onerror = () => reject(request.error);
-    });
+          request.onerror = () => reject(request.error);
+        })
+    );
   }
 
   /**
@@ -999,39 +954,42 @@ export class DMStore {
   ): Promise<void> {
     await this.init();
 
-    return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(CONVERSATIONS_STORE, 'readwrite');
-      const store = tx.objectStore(CONVERSATIONS_STORE);
-      const req = store.get(partnerPubkey);
+    await this.db!.withStore(
+      CONVERSATIONS_STORE,
+      'readwrite',
+      store =>
+        new Promise<void>((resolve, reject) => {
+          const req = store.get(partnerPubkey);
 
-      req.onsuccess = () => {
-        const conv = (req.result as DMConversation | undefined) || {
-          pubkey: partnerPubkey,
-          lastMessageAt: 0,
-          lastMessagePreview: '',
-          unreadCount: 0,
-          lastReadAt: 0,
-        };
-        conv.disappearingSeconds = seconds;
-        // Keep lastPromptedPeerDuration in sync when accepting a new duration
-        // so the same duration doesn't re-prompt. When `seconds` is undefined
-        // (reset to undecided) or 0 (off), leave lastPromptedPeerDuration
-        // untouched — the next incoming tagged message will re-prompt.
-        if (typeof seconds === 'number' && seconds > 0) {
-          conv.lastPromptedPeerDuration = seconds;
-        }
-        store.put(conv);
-        this.disappearingMirror.set(partnerPubkey, seconds);
-        this.saveDisappearingMirror();
-        diagLog('dms', 'disappearing_set', {
-          partner: partnerPubkey.slice(0, 8),
-          seconds,
-        });
-      };
+          req.onsuccess = () => {
+            const conv = (req.result as DMConversation | undefined) || {
+              pubkey: partnerPubkey,
+              lastMessageAt: 0,
+              lastMessagePreview: '',
+              unreadCount: 0,
+              lastReadAt: 0,
+            };
+            conv.disappearingSeconds = seconds;
+            // Keep lastPromptedPeerDuration in sync when accepting a new duration
+            // so the same duration doesn't re-prompt. When `seconds` is undefined
+            // (reset to undecided) or 0 (off), leave lastPromptedPeerDuration
+            // untouched — the next incoming tagged message will re-prompt.
+            if (typeof seconds === 'number' && seconds > 0) {
+              conv.lastPromptedPeerDuration = seconds;
+            }
+            void store.put(conv);
+            this.disappearingMirror.set(partnerPubkey, seconds);
+            this.saveDisappearingMirror();
+            diagLog('dms', 'disappearing_set', {
+              partner: partnerPubkey.slice(0, 8),
+              seconds,
+            });
+            resolve();
+          };
 
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
+          req.onerror = () => reject(req.error);
+        })
+    );
   }
 
   /**
@@ -1060,26 +1018,29 @@ export class DMStore {
   ): Promise<void> {
     await this.init();
 
-    return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(CONVERSATIONS_STORE, 'readwrite');
-      const store = tx.objectStore(CONVERSATIONS_STORE);
-      const req = store.get(partnerPubkey);
+    await this.db!.withStore(
+      CONVERSATIONS_STORE,
+      'readwrite',
+      store =>
+        new Promise<void>((resolve, reject) => {
+          const req = store.get(partnerPubkey);
 
-      req.onsuccess = () => {
-        const conv = (req.result as DMConversation | undefined) || {
-          pubkey: partnerPubkey,
-          lastMessageAt: 0,
-          lastMessagePreview: '',
-          unreadCount: 0,
-          lastReadAt: 0,
-        };
-        conv.lastPromptedPeerDuration = seconds;
-        store.put(conv);
-      };
+          req.onsuccess = () => {
+            const conv = (req.result as DMConversation | undefined) || {
+              pubkey: partnerPubkey,
+              lastMessageAt: 0,
+              lastMessagePreview: '',
+              unreadCount: 0,
+              lastReadAt: 0,
+            };
+            conv.lastPromptedPeerDuration = seconds;
+            void store.put(conv);
+            resolve();
+          };
 
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
+          req.onerror = () => reject(req.error);
+        })
+    );
   }
 
   /**
@@ -1093,41 +1054,45 @@ export class DMStore {
     duration: number
   ): Promise<number> {
     await this.init();
-    let deleted = 0;
 
-    return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(MESSAGES_STORE, 'readwrite');
-      const store = tx.objectStore(MESSAGES_STORE);
-      const index = store.index('conversationWith');
-      const cursorReq = index.openCursor(IDBKeyRange.only(partnerPubkey));
+    const deleted = await this.db!.withStore(
+      MESSAGES_STORE,
+      'readwrite',
+      store =>
+        new Promise<number>((resolve, reject) => {
+          const index = store.index('conversationWith');
+          const cursorReq = index.openCursor(IDBKeyRange.only(partnerPubkey));
+          let count = 0;
 
-      cursorReq.onsuccess = () => {
-        const cursor = cursorReq.result;
-        if (cursor) {
-          const m = cursor.value as DMMessage;
-          if (
-            typeof m.expiresAt === 'number' &&
-            m.expiresAt - m.createdAt === duration
-          ) {
-            cursor.delete();
-            deleted++;
-          }
-          cursor.continue();
-        }
-      };
+          cursorReq.onsuccess = () => {
+            const cursor = cursorReq.result;
+            if (cursor) {
+              const m = cursor.value as DMMessage;
+              if (
+                typeof m.expiresAt === 'number' &&
+                m.expiresAt - m.createdAt === duration
+              ) {
+                void cursor.delete();
+                count++;
+              }
+              cursor.continue();
+            } else {
+              resolve(count);
+            }
+          };
 
-      tx.oncomplete = () => {
-        if (deleted > 0) {
-          diagLog('dms', 'pending_messages_deleted', {
-            partner: partnerPubkey.slice(0, 8),
-            duration,
-            deleted,
-          });
-        }
-        resolve(deleted);
-      };
-      tx.onerror = () => reject(tx.error);
-    });
+          cursorReq.onerror = () => reject(cursorReq.error);
+        })
+    );
+
+    if (deleted > 0) {
+      diagLog('dms', 'pending_messages_deleted', {
+        partner: partnerPubkey.slice(0, 8),
+        duration,
+        deleted,
+      });
+    }
+    return deleted;
   }
 
   /**
@@ -1150,43 +1115,47 @@ export class DMStore {
     const affected = new Set<string>();
     let count = 0;
 
-    return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(MESSAGES_STORE, 'readwrite');
-      const messagesStore = tx.objectStore(MESSAGES_STORE);
+    await this.db!.withStore(
+      MESSAGES_STORE,
+      'readwrite',
+      store =>
+        new Promise<void>((resolve, reject) => {
+          // The expiresAt index excludes records where the field is undefined, so
+          // never-expiring messages are skipped cheaply. upperBound(now, false)
+          // matches everything strictly ≤ now (already-expired).
+          const index = store.index('expiresAt');
+          const range = IDBKeyRange.upperBound(now, false);
+          const cursorReq = index.openCursor(range);
 
-      // The expiresAt index excludes records where the field is undefined, so
-      // never-expiring messages are skipped cheaply. upperBound(now, false)
-      // matches everything strictly ≤ now (already-expired).
-      const index = messagesStore.index('expiresAt');
-      const range = IDBKeyRange.upperBound(now, false);
-      const cursorReq = index.openCursor(range);
+          cursorReq.onsuccess = () => {
+            const cursor = cursorReq.result;
+            if (cursor) {
+              const msg = cursor.value as DMMessage;
+              affected.add(msg.conversationWith);
+              count++;
+              void cursor.delete();
+              cursor.continue();
+            } else {
+              resolve();
+            }
+          };
 
-      cursorReq.onsuccess = () => {
-        const cursor = cursorReq.result;
-        if (cursor) {
-          const msg = cursor.value as DMMessage;
-          affected.add(msg.conversationWith);
-          count++;
-          cursor.delete();
-          cursor.continue();
-        }
-      };
+          cursorReq.onerror = () => reject(cursorReq.error);
+        })
+    );
 
-      tx.oncomplete = async () => {
-        if (count > 0) {
-          diagLog('dms', 'expired_sweep', { count, partners: affected.size });
-          // Recompute lastMessageAt + lastMessagePreview for each affected
-          // conversation so the messages-list doesn't show ghost previews.
-          // Open a fresh transaction per conversation (the deletion tx is
-          // already completed at this point).
-          for (const partnerPubkey of affected) {
-            await this.recomputeConversationPreview(partnerPubkey);
-          }
-        }
-        resolve({ partnerPubkeys: affected, count });
-      };
-      tx.onerror = () => reject(tx.error);
-    });
+    // Tx completed (withStore resolves erst nach oncomplete).
+    if (count > 0) {
+      diagLog('dms', 'expired_sweep', { count, partners: affected.size });
+      // Recompute lastMessageAt + lastMessagePreview for each affected
+      // conversation so the messages-list doesn't show ghost previews.
+      // Each recompute opens fresh transactions (the deletion tx is
+      // already completed at this point).
+      for (const partnerPubkey of affected) {
+        await this.recomputeConversationPreview(partnerPubkey);
+      }
+    }
+    return { partnerPubkeys: affected, count };
   }
 
   /**
@@ -1206,52 +1175,60 @@ export class DMStore {
     await this.init();
 
     // Step 1: find the latest remaining message for this partner (read-only).
-    const latestMessage = await new Promise<DMMessage | null>(
-      (resolve, reject) => {
-        const tx = this.db!.transaction(MESSAGES_STORE, 'readonly');
-        const index = tx.objectStore(MESSAGES_STORE).index('conversationWith');
-        const cursorReq = index.openCursor(IDBKeyRange.only(partnerPubkey));
-        let latest: DMMessage | null = null;
+    const latestMessage = await this.db!.withStore(
+      MESSAGES_STORE,
+      'readonly',
+      store =>
+        new Promise<DMMessage | null>((resolve, reject) => {
+          const index = store.index('conversationWith');
+          const cursorReq = index.openCursor(IDBKeyRange.only(partnerPubkey));
+          let latest: DMMessage | null = null;
 
-        cursorReq.onsuccess = () => {
-          const cursor = cursorReq.result;
-          if (cursor) {
-            const m = cursor.value as DMMessage;
-            if (!latest || m.createdAt > latest.createdAt) latest = m;
-            cursor.continue();
-          } else {
-            resolve(latest);
-          }
-        };
-        cursorReq.onerror = () => reject(cursorReq.error);
-      }
+          cursorReq.onsuccess = () => {
+            const cursor = cursorReq.result;
+            if (cursor) {
+              const m = cursor.value as DMMessage;
+              if (!latest || m.createdAt > latest.createdAt) latest = m;
+              cursor.continue();
+            } else {
+              resolve(latest);
+            }
+          };
+          cursorReq.onerror = () => reject(cursorReq.error);
+        })
     );
 
     // Step 2: update the conversation record (readwrite).
-    await new Promise<void>((resolve, reject) => {
-      const tx = this.db!.transaction(CONVERSATIONS_STORE, 'readwrite');
-      const store = tx.objectStore(CONVERSATIONS_STORE);
-      const req = store.get(partnerPubkey);
+    await this.db!.withStore(
+      CONVERSATIONS_STORE,
+      'readwrite',
+      store =>
+        new Promise<void>((resolve, reject) => {
+          const req = store.get(partnerPubkey);
 
-      req.onsuccess = () => {
-        const conv = req.result as DMConversation | undefined;
-        if (!conv) {
-          resolve();
-          return;
-        }
-        if (latestMessage) {
-          conv.lastMessageAt = latestMessage.createdAt;
-          conv.lastMessagePreview = (latestMessage.content || '').slice(0, 100);
-        } else {
-          conv.lastMessageAt = 0;
-          conv.lastMessagePreview = '';
-        }
-        store.put(conv);
-      };
+          req.onsuccess = () => {
+            const conv = req.result as DMConversation | undefined;
+            if (!conv) {
+              resolve();
+              return;
+            }
+            if (latestMessage) {
+              conv.lastMessageAt = latestMessage.createdAt;
+              conv.lastMessagePreview = (latestMessage.content || '').slice(
+                0,
+                100
+              );
+            } else {
+              conv.lastMessageAt = 0;
+              conv.lastMessagePreview = '';
+            }
+            void store.put(conv);
+            resolve();
+          };
 
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
+          req.onerror = () => reject(req.error);
+        })
+    );
   }
 
   /**
@@ -1259,28 +1236,26 @@ export class DMStore {
    * Note: With per-user DBs, this is rarely needed - just close the DB on logout
    */
   public async clear(): Promise<void> {
-    if (!this.db) return;
+    if (!this.db?.isOpen) return;
 
-    return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(
-        [MESSAGES_STORE, CONVERSATIONS_STORE],
-        'readwrite'
-      );
-      tx.objectStore(MESSAGES_STORE).clear();
-      tx.objectStore(CONVERSATIONS_STORE).clear();
+    await this.db!.withTransaction(
+      [MESSAGES_STORE, CONVERSATIONS_STORE],
+      'readwrite',
+      tx =>
+        new Promise<void>(resolve => {
+          tx.objectStore(MESSAGES_STORE).clear();
+          tx.objectStore(CONVERSATIONS_STORE).clear();
+          resolve();
+        })
+    );
 
-      tx.oncomplete = () => {
-        // Explicit data wipe also clears the mirrors, so a later re-sync
-        // starts genuinely fresh instead of resurrecting old anchors/settings.
-        this.readAnchorMirror = new Map();
-        this.saveReadAnchorMirror();
-        this.disappearingMirror = new Map();
-        this.saveDisappearingMirror();
-        this.systemLogger.info('DMStore', 'All DM data cleared');
-        resolve();
-      };
-      tx.onerror = () => reject(tx.error);
-    });
+    // Explicit data wipe also clears the mirrors, so a later re-sync
+    // starts genuinely fresh instead of resurrecting old anchors/settings.
+    this.readAnchorMirror = new Map();
+    this.saveReadAnchorMirror();
+    this.disappearingMirror = new Map();
+    this.saveDisappearingMirror();
+    this.systemLogger.info('DMStore', 'All DM data cleared');
   }
 
   /**
@@ -1288,10 +1263,8 @@ export class DMStore {
    * Does NOT delete data - just closes connection
    */
   public close(): void {
-    if (this.db) {
-      this.db.close();
-      this.db = null;
-    }
+    this.db?.close();
+    this.db = null;
     this.initPromise = null;
     this.currentUserPubkey = null;
     // Drop the in-memory anchor mirror so it can't leak into another account.

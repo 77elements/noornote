@@ -12,7 +12,11 @@ import { NostrTransport } from './transport/NostrTransport';
 import { AuthService } from './AuthService';
 import { RelayConfig } from './RelayConfig';
 import { TypedEventBus } from '../core/TypedEventBus';
-import { extractZapperPubkey, getZapAmountSats } from '../helpers/zapUtils';
+import {
+  extractZapperPubkey,
+  getZapAmountSats,
+  formatSatsCompact,
+} from '../helpers/zapUtils';
 import { LRUCache, getCacheSize } from '../helpers/LRUCache';
 
 export interface ZapStats {
@@ -240,16 +244,11 @@ export class ZapStatsService {
   }
 
   /**
-   * Format sats for display (e.g., 1500 -> "1.5k", 150000 -> "150k")
+   * Format sats for display (e.g., 1500 -> "1.5k", 150000 -> "150k").
+   * Delegates to the pure helper in zapUtils (shared with the Analytics addon).
    */
   public formatSats(sats: number): string {
-    if (sats >= 1_000_000) {
-      return `${(sats / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
-    }
-    if (sats >= 1_000) {
-      return `${(sats / 1_000).toFixed(1).replace(/\.0$/, '')}k`;
-    }
-    return sats.toString();
+    return formatSatsCompact(sats);
   }
 
   public clearCache(): void {

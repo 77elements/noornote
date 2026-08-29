@@ -9,12 +9,13 @@
  * restored entry as to its in-memory cache (follow-count match + 24h TTL), so
  * a stale graph is never served.
  *
- * Never throws — persistence is best-effort; on any failure the caller simply
- * rebuilds from relays like before.
+ * Never throws — persistence is best-effort (NoorDB bestEffort-Flag); on any
+ * failure the caller simply rebuilds from relays like before.
  */
 
 import { AuthService } from './AuthService';
 import { diagLog } from './DiagnosticLogger';
+import { openDb, type NoorDatabase } from './persistence/NoorDB';
 
 const DB_NAME_PREFIX = 'noornote-foaf-';
 const DB_VERSION = 1;
@@ -30,50 +31,46 @@ export interface FoafPersistedEntry {
 }
 
 class FoafStore {
-  private db: IDBDatabase | null = null;
+  private db: NoorDatabase | null = null;
   private npub: string | null = null;
-  private initPromise: Promise<IDBDatabase | null> | null = null;
+  private initPromise: Promise<NoorDatabase | null> | null = null;
 
   /** Open (or re-open for a different account) the per-user DB. Resolves null
    *  on failure (no user, IndexedDB unavailable/blocked) — callers fall back
    *  to the relay build path. */
-  private async ensureDb(): Promise<IDBDatabase | null> {
+  private async ensureDb(): Promise<NoorDatabase | null> {
     const npub = AuthService.getInstance().getCurrentUser()?.npub;
     if (!npub) return null;
 
-    if (this.db && this.npub === npub) return this.db;
+    if (this.db?.isOpen && this.npub === npub) return this.db;
     if (this.db) {
+      // Different account — release the old connection; per-account DB naming
+      // already isolates the data itself.
       this.db.close();
       this.db = null;
-      this.npub = null;
     }
 
     if (this.initPromise && this.npub === npub) return this.initPromise;
 
     this.npub = npub;
-    this.initPromise = new Promise(resolve => {
-      const request = indexedDB.open(DB_NAME_PREFIX + npub, DB_VERSION);
-      request.onerror = () => resolve(null);
-      request.onblocked = () => {
-        /* stays pending; resolves when unblocked */
-      };
-      request.onupgradeneeded = event => {
-        const db = (event.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(STORE)) {
-          db.createObjectStore(STORE);
-        }
-      };
-      request.onsuccess = () => {
-        const db = request.result;
-        db.onversionchange = () => {
-          db.close();
-          if (this.db === db) this.db = null;
-        };
+    const openPromise = openDb(DB_NAME_PREFIX + npub, {
+      version: DB_VERSION,
+      stores: [{ name: STORE }],
+      bestEffort: true,
+    }).then(
+      db => {
         this.db = db;
-        resolve(db);
-      };
+        return db as NoorDatabase | null;
+      },
+      () => null
+    );
+    this.initPromise = openPromise;
+    // In-Flight-Cache nach Abschluss leeren, damit ein versionchange-Close
+    // beim nächsten Zugriff sauber neu öffnet (und ein Failed-Open retried).
+    void openPromise.then(() => {
+      if (this.initPromise === openPromise) this.initPromise = null;
     });
-    return this.initPromise;
+    return openPromise;
   }
 
   /** Persist one degree's entry. Fire-and-forget, never rejects. */
@@ -81,13 +78,7 @@ class FoafStore {
     try {
       const db = await this.ensureDb();
       if (!db) return;
-      await new Promise<void>(resolve => {
-        const tx = db.transaction(STORE, 'readwrite');
-        tx.objectStore(STORE).put(entry, degree);
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => resolve();
-        tx.onabort = () => resolve();
-      });
+      await db.put(STORE, entry, degree);
     } catch {
       // best-effort — a failed persist just means a rebuild next cold start
     }
@@ -98,13 +89,7 @@ class FoafStore {
     try {
       const db = await this.ensureDb();
       if (!db) return null;
-      return await new Promise(resolve => {
-        const tx = db.transaction(STORE, 'readonly');
-        const req = tx.objectStore(STORE).get(degree);
-        req.onsuccess = () =>
-          resolve((req.result as FoafPersistedEntry | undefined) ?? null);
-        req.onerror = () => resolve(null);
-      });
+      return (await db.get<FoafPersistedEntry>(STORE, degree)) ?? null;
     } catch {
       return null;
     }
@@ -116,13 +101,7 @@ class FoafStore {
     try {
       const db = await this.ensureDb();
       if (!db) return;
-      await new Promise<void>(resolve => {
-        const tx = db.transaction(STORE, 'readwrite');
-        tx.objectStore(STORE).clear();
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => resolve();
-        tx.onabort = () => resolve();
-      });
+      await db.clear(STORE);
       diagLog('system', 'FoafStore: persisted FOAF degrees cleared', {});
     } catch {
       // ignore

@@ -27,6 +27,7 @@ import { isNoteTakingEnabled } from './note-taking/index';
 import { isBulkDeleteEnabled } from './bulk-delete/index';
 import { isNostrMajlisEnabled } from './nostr-majlis/index';
 import { isGroupChatsEnabled } from './group-chats/index';
+import { isAnalyticsEnabled } from './analytics/index';
 
 export function registerCoreAddons(): void {
   const loader = AddonLoader.getInstance();
@@ -120,6 +121,12 @@ export function registerCoreAddons(): void {
     id: 'group-chats',
     isEnabled: isGroupChatsEnabled,
     load: () => import('./group-chats/runtime').then(m => m.default),
+  });
+
+  loader.register({
+    id: 'analytics',
+    isEnabled: isAnalyticsEnabled,
+    load: () => import('./analytics/runtime').then(m => m.default),
   });
 
   // Out of scope (list-adjacent, deferred — separate decision):
