@@ -205,6 +205,7 @@ export class AnalyticsAddonView extends View {
   private enableSwitch: Switch | null = null;
   private eventSubscriptionId: string | null = null;
   private runFinishedSubscriptionId: string | null = null;
+  private followersProgressSubscriptionId: string | null = null;
 
   constructor() {
     super();
@@ -404,6 +405,30 @@ export class AnalyticsAddonView extends View {
           );
       if (live) this.setRefreshState(live, false);
     });
+    // Progressive follower count (PV semantics): `N+` pulsating while the
+    // shared FollowerCountService sweep is still querying relays.
+    this.followersProgressSubscriptionId = bus.on(
+      'analytics:followers-progress',
+      payload => {
+        const live = zone.isConnected
+          ? zone
+          : this.container.querySelector<HTMLElement>(
+              '[data-addon-content="analytics"]'
+            );
+        if (live) this.paintFollowersProgress(live, payload.count);
+      }
+    );
+  }
+
+  /** Followers tile while sweeping: `N+` pulsating (count 0 → keep loading). */
+  private paintFollowersProgress(zone: HTMLElement, count: number): void {
+    if (count <= 0) return;
+    const el = zone.querySelector<HTMLElement>('[data-tile="followers"]');
+    if (!el) return;
+    const valueSlot = el.querySelector('.analytics-tile__value');
+    if (!valueSlot) return;
+    valueSlot.className = 'analytics-tile__value pulsate';
+    valueSlot.textContent = `${count.toLocaleString('en-US')}+`;
   }
 
   /** Refresh forces a full run (heals deletion drift via since-cursor reset). */
@@ -456,6 +481,10 @@ export class AnalyticsAddonView extends View {
     if (this.runFinishedSubscriptionId !== null) {
       bus.off(this.runFinishedSubscriptionId);
       this.runFinishedSubscriptionId = null;
+    }
+    if (this.followersProgressSubscriptionId !== null) {
+      bus.off(this.followersProgressSubscriptionId);
+      this.followersProgressSubscriptionId = null;
     }
   }
 

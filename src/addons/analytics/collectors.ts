@@ -23,6 +23,7 @@ import { NostrTransport } from '../../services/transport/NostrTransport';
 import { RelayConfig } from '../../services/RelayConfig';
 import { OutboundRelaysOrchestrator } from '../../services/orchestration/OutboundRelaysOrchestrator';
 import { ModuleLoader } from '../../core/ModuleLoader';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import type { ProfileModuleApi } from '../../modules/profile/contracts';
 import { FollowCheckService } from '../../services/FollowCheckService';
 import { diagLog } from '../../services/DiagnosticLogger';
@@ -85,8 +86,6 @@ function asLogic(events: NostrEvent[]): LogicEvent[] {
 const SWEEP_PAGE_LIMIT = 400;
 const SWEEP_MAX_PAGES = 25;
 const SWEEP_TIMEOUT_MS = 12_000;
-/** Upper bound for the shared PV follower sweep before we give up this run. */
-const FOLLOWER_TIMEOUT_MS = 90_000;
 
 /**
  * Per-run cache for the three relay sweeps. Two collectors requesting the
@@ -354,34 +353,35 @@ const postsCollector: AnalyticsCollector = {
   },
 };
 
-/** Follow row: follows (local, instant) + followers (shared PV cache, P3). */
+/**
+ * Follow row: follows (local, instant) + followers (shared PV cache, P3).
+ *
+ * The follower count streams progressively (PV semantics): each relay batch
+ * emits `analytics:followers-progress` so the tile shows `N+` pulsating while
+ * the sweep runs, and the final section-ready settles the plain number. No
+ * artificial timeout — the collector awaits the shared FollowerCountService
+ * exactly as the ProfileView does (warm cache resolves instantly).
+ */
 const followCollector: AnalyticsCollector = {
   id: 'follow',
   async collect(ctx: RunContext): Promise<CollectorSnapshot> {
     const follows = await FollowCheckService.getInstance().getFollowCount();
 
-    // The follower count is a slow sequential relay sweep (PV shares this
-    // cache). Bound it: on timeout, emit the follows-only snapshot — the
-    // tile stays loading and the NEXT run picks up the then-warm cache.
+    const profileApi =
+      ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
     let followers: number | undefined;
-    try {
-      const profileApi =
-        ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
-      if (profileApi) {
-        followers = await Promise.race([
-          profileApi.getFollowerCount(ctx.pubkey),
-          new Promise<never>((_, reject) =>
-            setTimeout(
-              () => reject(new Error('follower-count-timeout')),
-              FOLLOWER_TIMEOUT_MS
-            )
-          ),
-        ]);
+    if (profileApi) {
+      try {
+        followers = await profileApi.getFollowerCount(ctx.pubkey, count =>
+          TypedEventBus.getInstance().emit('analytics:followers-progress', {
+            count,
+          })
+        );
+      } catch (err) {
+        diagLog('addons', 'analytics: follower count unavailable', {
+          error: String(err),
+        });
       }
-    } catch (err) {
-      diagLog('addons', 'analytics: follower count unavailable', {
-        error: String(err),
-      });
     }
 
     return {
@@ -516,8 +516,9 @@ const engagementCollector: AnalyticsCollector = {
 /**
  * All active collectors — sequential run order matters:
  * posts FIRST (builds the own-event-id set engagement validates against),
- * follow LAST (its follower count is a slow full relay sweep owned by the
- * profile module — it must not block the faster collectors behind it).
+ * follow LAST (its follower count is a long relay sweep owned by the
+ * profile module — it must not delay the faster collectors; it streams
+ * progress while running and bounds the run's tail).
  */
 export const COLLECTORS: AnalyticsCollector[] = [
   postsCollector,

@@ -3,8 +3,11 @@
  * Fetches follower counts sequentially from each relay with pagination
  *
  * @purpose Display follower counts in ProfileView, and stream the follower list
- * @pattern Sequential relay queries with pagination to overcome relay limits
- * @used-by ProfileView (count), ExternalFollowListManager (list)
+ * @pattern Sequential relay queries with pagination to overcome relay limits;
+ *          single-flight coalescing — concurrent full sweeps for the same
+ *          pubkey share ONE relay sweep (late joiners replay the pubkeys
+ *          discovered so far and stream onward from the shared batch feed)
+ * @used-by ProfileView (count), ExternalFollowListManager (list), Analytics addon (count)
  */
 
 import { RelayConfig } from './RelayConfig';
@@ -29,6 +32,26 @@ interface CachedFollowers {
 
 const CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 
+/** Per-batch progress of a shared follower sweep. */
+type FollowerSweepListener = (
+  newPubkeys: string[],
+  total: number,
+  relay: string | undefined
+) => void;
+
+/**
+ * One in-flight full sweep for a pubkey. Concurrent callers attach to it via
+ * `addListener` instead of starting a second relay sweep (single-flight).
+ */
+interface InFlightFollowerSweep {
+  promise: Promise<string[]>;
+  /** Pubkeys discovered so far — replayed to late joiners. */
+  discovered: string[];
+  latestTotal: number;
+  latestRelay: string | undefined;
+  addListener(listener: FollowerSweepListener): void;
+}
+
 export class FollowerCountService {
   private static instance: FollowerCountService;
   private relayConfig: RelayConfig;
@@ -37,6 +60,8 @@ export class FollowerCountService {
   private cache: LRUCache<CachedFollowers> = new LRUCache<CachedFollowers>(
     getCacheSize(500, 200, 100)
   );
+  /** Single-flight registry: pubkey → running full sweep. */
+  private inFlightSweeps = new Map<string, InFlightFollowerSweep>();
 
   private constructor() {
     this.relayConfig = RelayConfig.getInstance();
@@ -70,27 +95,71 @@ export class FollowerCountService {
       return cached.count;
     }
 
+    // Single-flight: join a running sweep instead of duplicating the relay load.
+    const job = this.getOrCreateSweepJob(pubkey);
+    if (onUpdate) {
+      // Mid-sweep joiner: catch up to the current total immediately.
+      if (job.latestTotal > 0)
+        onUpdate(job.latestTotal, job.latestRelay ?? 'cache');
+      job.addListener((_newPubkeys, total, relay) => {
+        if (relay !== undefined) onUpdate(total, relay);
+      });
+    }
+
+    const followers = await job.promise;
+    return followers.length;
+  }
+
+  /**
+   * Create (or return) the single in-flight FULL follower sweep for `pubkey`.
+   * Only plain full sweeps coalesce — incremental (`since`) or
+   * `forceFullRelays` sweeps have different filters and run their own sweep.
+   * The count cache is written exactly once, by the shared sweep's completion.
+   */
+  private getOrCreateSweepJob(pubkey: string): InFlightFollowerSweep {
+    const existing = this.inFlightSweeps.get(pubkey);
+    if (existing) return existing;
+
     this.systemLogger.success('FollowerCount', 'Fetching follower counts...');
 
-    const followers = await this.collectFollowers(
-      pubkey,
-      (_newPubkeys, total, lastRelay) => {
-        if (onUpdate && lastRelay) onUpdate(total, lastRelay);
+    const listeners = new Set<FollowerSweepListener>();
+    const job: InFlightFollowerSweep = {
+      discovered: [],
+      latestTotal: 0,
+      latestRelay: undefined,
+      addListener: listener => {
+        listeners.add(listener);
+      },
+      // Placeholder — replaced synchronously right below, before any caller
+      // can observe the job (no await between assignment and map insert).
+      promise: Promise.resolve([]),
+    };
+    job.promise = this.collectFollowers(pubkey, (newPubkeys, total, relay) => {
+      job.discovered.push(...newPubkeys);
+      job.latestTotal = total;
+      job.latestRelay = relay;
+      for (const listener of listeners) listener(newPubkeys, total, relay);
+    }).then(
+      followers => {
+        this.cache.set(pubkey, {
+          count: followers.length,
+          pubkeys: followers,
+          timestamp: Date.now(),
+        });
+        this.systemLogger.success(
+          'FollowerCount',
+          `✓ Follower count fetching completed: ${followers.length} followers`
+        );
+        this.inFlightSweeps.delete(pubkey);
+        return followers;
+      },
+      error => {
+        this.inFlightSweeps.delete(pubkey);
+        throw error;
       }
     );
-
-    const finalCount = followers.length;
-    this.cache.set(pubkey, {
-      count: finalCount,
-      pubkeys: followers,
-      timestamp: Date.now(),
-    });
-    this.systemLogger.success(
-      'FollowerCount',
-      `✓ Follower count fetching completed: ${finalCount} followers`
-    );
-
-    return finalCount;
+    this.inFlightSweeps.set(pubkey, job);
+    return job;
   }
 
   /**
@@ -134,6 +203,21 @@ export class FollowerCountService {
       return cached!.pubkeys;
     }
 
+    // Plain full sweep → single-flight (share a running sweep, never double
+    // the relay load). Incremental/forced sweeps have different filters and
+    // always run their own.
+    const isPlainFull = opts?.since === undefined && !opts?.forceFullRelays;
+    if (isPlainFull) {
+      const job = this.getOrCreateSweepJob(pubkey);
+      // Late joiner: replay everything discovered so far (the manager's `seen`
+      // set dedupes overlaps), then stream onward from the shared batch feed.
+      if (job.discovered.length > 0) onBatch(job.discovered.slice());
+      job.addListener(newPubkeys => {
+        if (newPubkeys.length > 0) onBatch(newPubkeys);
+      });
+      return job.promise;
+    }
+
     const followers = await this.collectFollowers(
       pubkey,
       newPubkeys => {
@@ -145,6 +229,7 @@ export class FollowerCountService {
 
     // Only a FULL sweep (no `since`) reflects the real follower count. An incremental
     // sweep returns just the lists updated since `since`, so it must not touch the count cache.
+    // (Plain full sweeps write the cache once in the shared job's completion.)
     if (opts?.since === undefined) {
       this.cache.set(pubkey, {
         count: followers.length,

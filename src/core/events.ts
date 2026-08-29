@@ -437,6 +437,8 @@ export interface AppEvents {
   };
   /** Run finished (ok = false when at least one collector failed). */
   'analytics:run-finished': { firstRun: boolean; ok: boolean };
+  /** Progressive follower count (per relay batch, PV semantics — `N+` while sweeping). */
+  'analytics:followers-progress': { count: number };
 
   // ── Addon Toggles ─────────────────────────
   'analytics:addon-toggle': AddonTogglePayload;
