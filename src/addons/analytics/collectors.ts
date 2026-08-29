@@ -28,15 +28,20 @@ import type { ProfileModuleApi } from '../../modules/profile/contracts';
 import { FollowCheckService } from '../../services/FollowCheckService';
 import { diagLog } from '../../services/DiagnosticLogger';
 import {
+  bucketEngagementTimeline,
   classifyInbox,
   classifyOwnContent,
   classifySentZaps,
   computeZapsMetrics,
   extractOwnPosts,
   mergeCounts,
+  mergeEngagementTimeline,
   mergeOwnContent,
   mergeTopPosts,
+  pickEngagementUnit,
   tallyInboxByTarget,
+  type EngagementBucket,
+  type EngagementUnit,
   type LogicEvent,
   type TopPostEntry,
 } from './analyticsLogic';
@@ -47,13 +52,20 @@ export type CollectorId =
   | 'content'
   | 'zaps'
   | 'engagement'
-  | 'top-posts';
+  | 'top-posts'
+  | 'engagement-timeline';
 
 export interface AuxData {
   /** Persisted own event ids (posts snapshot) — engagement validation basis. */
   ownEventIds?: string[];
   /** Persisted top-post entries (top-posts snapshot) — view list basis. */
   topPosts?: TopPostEntry[];
+  /** Persisted engagement timeline buckets (Diagrams tab). */
+  timeline?: EngagementBucket[];
+  /** Bucket unit the timeline was built with (drift on unit change → Refresh). */
+  timelineUnit?: EngagementUnit;
+  /** Oldest own event seen (epoch seconds) — account-age basis for the unit. */
+  oldestOwnEventAt?: number;
 }
 
 export interface CollectorSnapshot {
@@ -559,6 +571,65 @@ const topPostsCollector: AnalyticsCollector = {
 };
 
 /**
+ * Engagement timeline (P9, Diagrams tab): received engagement per time
+ * bucket, bucket unit adaptive to the account age. Shares both sweeps via
+ * the SweepCache — zero extra relay load. Buckets merge additively by their
+ * UTC-aligned start; a unit change between runs restarts the curve from the
+ * delta (heals on Refresh).
+ */
+const engagementTimelineCollector: AnalyticsCollector = {
+  id: 'engagement-timeline',
+  async collect(ctx: RunContext): Promise<CollectorSnapshot> {
+    const [ownEvents, inbox] = await Promise.all([
+      ctx.sweeps.ownContent(ctx),
+      ctx.sweeps.inbox(ctx),
+    ]);
+    const ownLogic = asLogic(ownEvents);
+    const inboxLogic = asLogic(inbox);
+
+    // Own-id basis: persisted ids from the previous posts snapshot, overlaid
+    // with the ids this run's own-content sweep already classified.
+    const prevPosts = ctx.previous('posts');
+    const ownIds = new Set<string>(prevPosts?.aux?.ownEventIds ?? []);
+    for (const ev of ownEvents) {
+      if (ev.kind !== 5 && ev.id) ownIds.add(ev.id);
+    }
+
+    const nowSec = Math.floor(Date.now() / 1000);
+    let oldest = nowSec;
+    for (const ev of ownLogic) {
+      if (ev.kind !== 5 && ev.created_at < oldest) oldest = ev.created_at;
+    }
+    const prev = ctx.previous('engagement-timeline');
+    // Incremental sweeps only carry NEW own events — the account-age basis
+    // must come from the persisted oldest event, or the unit would reset to
+    // 'day' on every incremental run and wipe the curve (2026-08-29 bug).
+    if (!ctx.fullRun && prev?.aux?.oldestOwnEventAt) {
+      oldest = Math.min(oldest, prev.aux.oldestOwnEventAt);
+    }
+    const unit = pickEngagementUnit(oldest, nowSec);
+
+    const delta = bucketEngagementTimeline(inboxLogic, ownIds, unit);
+    const prevTimeline =
+      !ctx.fullRun && prev?.aux?.timelineUnit === unit
+        ? (prev.aux.timeline ?? [])
+        : [];
+    const timeline = mergeEngagementTimeline(prevTimeline, delta);
+
+    let cursor = prev?.sinceCursor ?? 0;
+    for (const ev of inboxLogic) cursor = Math.max(cursor, ev.created_at);
+
+    return {
+      collectorId: 'engagement-timeline',
+      metrics: {},
+      sinceCursor: cursor,
+      fetchedAt: Date.now(),
+      aux: { timeline, timelineUnit: unit, oldestOwnEventAt: oldest },
+    };
+  },
+};
+
+/**
  * All active collectors — sequential run order matters:
  * posts FIRST (builds the own-event-id set engagement validates against),
  * follow LAST (its follower count is a long relay sweep owned by the
@@ -571,5 +642,6 @@ export const COLLECTORS: AnalyticsCollector[] = [
   zapsCollector,
   engagementCollector,
   topPostsCollector,
+  engagementTimelineCollector,
   followCollector,
 ];

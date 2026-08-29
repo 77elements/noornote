@@ -7,15 +7,20 @@
 
 import { describe, it, expect } from 'vitest';
 import {
+  bucketEngagementTimeline,
+  bucketStartOf,
   classifyOwnContent,
   classifyInbox,
   classifySentZaps,
   computeZapsMetrics,
+  engagementScore,
   extractOwnPosts,
   mergeCounts,
+  mergeEngagementTimeline,
   mergeOwnContent,
   mergeTopPosts,
   compareTopPosts,
+  pickEngagementUnit,
   subtractIds,
   tallyInboxByTarget,
   type LogicEvent,
@@ -374,5 +379,118 @@ describe('top posts (P8)', () => {
     const merged = mergeTopPosts(prev, [], new Map(), new Set());
     expect(merged).toHaveLength(20);
     expect(merged[0].replies).toBe(24);
+  });
+});
+
+describe('engagement timeline (P9)', () => {
+  const DAY = 86400;
+
+  it('bucketStartOf aligns day/week/month/quarter to UTC', () => {
+    const ts = Date.UTC(2024, 2, 15, 12, 34, 56) / 1000; // Friday
+    expect(bucketStartOf(ts, 'day')).toBe(Date.UTC(2024, 2, 15) / 1000);
+    expect(bucketStartOf(ts, 'week')).toBe(Date.UTC(2024, 2, 11) / 1000); // Monday
+    expect(bucketStartOf(ts, 'month')).toBe(Date.UTC(2024, 2, 1) / 1000);
+    expect(bucketStartOf(ts, 'quarter')).toBe(Date.UTC(2024, 0, 1) / 1000);
+  });
+
+  it('pickEngagementUnit adapts to the account age', () => {
+    const now = Date.now() / 1000;
+    expect(pickEngagementUnit(now - 14 * DAY, now)).toBe('day'); // 2 weeks
+    expect(pickEngagementUnit(now - 180 * DAY, now)).toBe('week'); // ~6 months
+    expect(pickEngagementUnit(now - 400 * DAY, now)).toBe('month'); // ~13 months
+    expect(pickEngagementUnit(now - 1200 * DAY, now)).toBe('quarter'); // >3 years
+  });
+
+  it('engagementScore sums the Top-Posts components', () => {
+    expect(
+      engagementScore({
+        start: 0,
+        replies: 2,
+        zaps: 1,
+        zapSats: 500,
+        reposts: 3,
+        quotes: 1,
+        likes: 4,
+      })
+    ).toBe(11);
+  });
+
+  it('bucketEngagementTimeline tallies per bucket with strict validation', () => {
+    const t1 = Date.UTC(2024, 0, 8) / 1000; // Monday
+    const t2 = Date.UTC(2024, 0, 15) / 1000; // Monday next week
+    const buckets = bucketEngagementTimeline(
+      [
+        ev({ kind: 1, created_at: t1 + 10, tags: [['e', 'p1']] }),
+        ev({ kind: 1, created_at: t1 + 20, tags: [['e', 'other']] }),
+        ev({ kind: 6, created_at: t1 + 30, tags: [['e', 'p1']] }),
+        ev({ kind: 7, created_at: t1 + 40, tags: [['e', 'p1']] }),
+        ev({
+          kind: 9735,
+          created_at: t2 + 10,
+          tags: [
+            ['e', 'p1'],
+            ['bolt11', 'lnbc10u1xyz'],
+          ],
+        }),
+        ev({ kind: 1111, created_at: t2 + 20, tags: [['e', 'p1']] }),
+      ],
+      new Set(['p1']),
+      'week'
+    );
+    expect(buckets).toHaveLength(2);
+    expect(buckets[0]).toMatchObject({
+      start: t1,
+      replies: 1,
+      reposts: 1,
+      likes: 1,
+    });
+    expect(buckets[1]).toMatchObject({
+      start: t2,
+      zaps: 1,
+      zapSats: 1_000,
+      replies: 1,
+    });
+  });
+
+  it('mergeEngagementTimeline adds by bucket start, keeps sort order', () => {
+    const a = {
+      start: 100,
+      replies: 1,
+      zaps: 0,
+      zapSats: 0,
+      reposts: 0,
+      quotes: 0,
+      likes: 0,
+    };
+    const b = {
+      start: 100,
+      replies: 2,
+      zaps: 1,
+      zapSats: 50,
+      reposts: 0,
+      quotes: 0,
+      likes: 0,
+    };
+    const c = {
+      start: 200,
+      replies: 1,
+      zaps: 0,
+      zapSats: 0,
+      reposts: 0,
+      quotes: 0,
+      likes: 0,
+    };
+    const merged = mergeEngagementTimeline([a], [b, c]);
+    expect(merged).toHaveLength(2);
+    expect(merged[0]).toEqual({
+      start: 100,
+      replies: 3,
+      zaps: 1,
+      zapSats: 50,
+      reposts: 0,
+      quotes: 0,
+      likes: 0,
+    });
+    expect(merged[1].start).toBe(200);
   });
 });

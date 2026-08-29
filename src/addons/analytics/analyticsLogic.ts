@@ -318,6 +318,156 @@ export function subtractIds(
   return ids.filter(id => !dead.has(id));
 }
 
+// ─── Engagement timeline (P9, Diagrams tab) ─────────────────────────────
+
+/** One time bucket of received engagement (Diagrams tab). */
+export interface EngagementBucket {
+  /** Bucket start in epoch seconds (UTC-aligned). */
+  start: number;
+  replies: number;
+  zaps: number;
+  zapSats: number;
+  reposts: number;
+  quotes: number;
+  likes: number;
+}
+
+export type EngagementUnit = 'day' | 'week' | 'month' | 'quarter';
+
+const UNIT_DAYS: Record<EngagementUnit, number> = {
+  day: 1,
+  week: 7,
+  month: 30,
+  quarter: 91,
+};
+
+/** Engagement score of a bucket — same components as the Top-Posts ranking. */
+export function engagementScore(b: EngagementBucket): number {
+  return b.replies + b.zaps + b.reposts + b.quotes + b.likes;
+}
+
+/** UTC-aligned bucket start for a timestamp (epoch seconds). */
+export function bucketStartOf(ts: number, unit: EngagementUnit): number {
+  if (unit === 'day') return Math.floor(ts / 86400) * 86400;
+  if (unit === 'week') {
+    const day = Math.floor(ts / 86400) * 86400;
+    const dow = new Date(day * 1000).getUTCDay();
+    return day - ((dow + 6) % 7) * 86400; // Monday start
+  }
+  const d = new Date(ts * 1000);
+  const month =
+    unit === 'quarter' ? Math.floor(d.getUTCMonth() / 3) * 3 : d.getUTCMonth();
+  return Date.UTC(d.getUTCFullYear(), month, 1) / 1000;
+}
+
+/**
+ * Pick the x-axis bucket unit relative to the account age (user directive
+ * 2026-08-29): young accounts get daily buckets, old ones coarse sections.
+ * A ~26-bucket cap escalates the unit so the curve stays readable
+ * (≤26 days → day, ≤~6 months → week, ≤~2 years → month, beyond → quarter).
+ */
+export function pickEngagementUnit(
+  oldestSec: number,
+  nowSec: number
+): EngagementUnit {
+  const ageDays = Math.max(0, (nowSec - oldestSec) / 86400);
+  const units: EngagementUnit[] = ['day', 'week', 'month', 'quarter'];
+  let chosen: EngagementUnit = 'quarter';
+  for (const unit of units) {
+    chosen = unit;
+    if (ageDays / UNIT_DAYS[unit] <= 26) break;
+  }
+  return chosen;
+}
+
+/**
+ * Bucket received engagement per time unit (strict validation, same event
+ * semantics as classifyInbox: replies/reposts/likes via e-tag ∈ ownIds,
+ * quotes via q-tag, zap receipts via their e-tag).
+ */
+export function bucketEngagementTimeline(
+  events: LogicEvent[],
+  ownEventIds: ReadonlySet<string>,
+  unit: EngagementUnit
+): EngagementBucket[] {
+  const byStart = new Map<number, EngagementBucket>();
+  const bucketOf = (ts: number): EngagementBucket => {
+    const start = bucketStartOf(ts, unit);
+    let b = byStart.get(start);
+    if (!b) {
+      b = {
+        start,
+        replies: 0,
+        zaps: 0,
+        zapSats: 0,
+        reposts: 0,
+        quotes: 0,
+        likes: 0,
+      };
+      byStart.set(start, b);
+    }
+    return b;
+  };
+  for (const ev of events) {
+    const start = bucketStartOf(ev.created_at, unit);
+    switch (ev.kind) {
+      case 1:
+      case 1111: {
+        const e = firstTagValue(ev.tags, 'e');
+        if (e && ownEventIds.has(e)) bucketOf(start).replies++;
+        break;
+      }
+      case 6: {
+        const q = firstTagValue(ev.tags, 'q');
+        if (q) {
+          if (ownEventIds.has(q)) bucketOf(start).quotes++;
+        } else {
+          const e = firstTagValue(ev.tags, 'e');
+          if (e && ownEventIds.has(e)) bucketOf(start).reposts++;
+        }
+        break;
+      }
+      case 9735: {
+        const e = firstTagValue(ev.tags, 'e');
+        if (e) {
+          const b = bucketOf(start);
+          b.zaps++;
+          b.zapSats += getZapAmountSats(ev);
+        }
+        break;
+      }
+      case 7: {
+        const e = firstTagValue(ev.tags, 'e');
+        if (e && ownEventIds.has(e)) bucketOf(start).likes++;
+        break;
+      }
+    }
+  }
+  return [...byStart.values()].sort((a, b) => a.start - b.start);
+}
+
+/** Additive merge of timeline buckets by start (incremental runs, kumulativ). */
+export function mergeEngagementTimeline(
+  prev: EngagementBucket[],
+  delta: EngagementBucket[]
+): EngagementBucket[] {
+  const byStart = new Map<number, EngagementBucket>();
+  for (const b of [...prev, ...delta]) {
+    const existing = byStart.get(b.start);
+    if (existing) {
+      existing.replies += b.replies;
+      existing.zaps += b.zaps;
+      existing.zapSats += b.zapSats;
+      existing.reposts += b.reposts;
+      existing.quotes += b.quotes;
+      existing.likes += b.likes;
+    } else {
+      byStart.set(b.start, { ...b });
+    }
+  }
+  return [...byStart.values()].sort((a, b) => a.start - b.start);
+}
+
 // ─── Top posts (P8) ──────────────────────────────────────────────────────
 
 /** Minimal own-post info extracted from the own-content sweep. */

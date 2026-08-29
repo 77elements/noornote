@@ -115,4 +115,8 @@
   &--active {
     display: block;
   }
+
+  > section {
+    padding-top: $gap;
+  }
 }

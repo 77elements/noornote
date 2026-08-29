@@ -153,3 +153,42 @@
   align-items: center;
   font-variant-numeric: tabular-nums;
 }
+
+// ── Engagement chart (P9, Diagrams tab) ──────────────────────────────────
+
+.analytics-chart__plot {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  align-items: end;
+  gap: calc($gap / 8);
+  height: $gap * 11;
+}
+
+.analytics-chart__col {
+  display: grid;
+  align-items: end;
+  height: 100%;
+}
+
+.analytics-chart__bar {
+  width: 100%;
+  background: var(--color-3);
+  border-radius: $radius-pill $radius-pill 0 0;
+  transition: height $transition-all;
+
+  &:hover {
+    background: var(--color-4);
+  }
+}
+
+.analytics-chart__axis {
+  display: grid;
+  margin-top: calc($gap / 4);
+  color: var(--color-3);
+}
+
+.analytics-chart__label {
+  @include text-truncate;
+  white-space: nowrap;
+}

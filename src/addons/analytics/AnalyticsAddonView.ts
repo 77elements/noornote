@@ -13,6 +13,7 @@
 
 import { View } from '../../components/views/View';
 import { Switch } from '../../components/ui/Switch';
+import { Tooltip } from '../../components/ui/Tooltip';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
 import { Router } from '../../services/Router';
@@ -27,7 +28,12 @@ import { formatTimeAgo } from '../../helpers/formatTimeAgo';
 import { isAnalyticsEnabled, setAnalyticsEnabled } from './index';
 import { AnalyticsService } from './AnalyticsService';
 import type { CollectorId } from './collectors';
-import type { TopPostEntry } from './analyticsLogic';
+import {
+  engagementScore,
+  type EngagementBucket,
+  type EngagementUnit,
+  type TopPostEntry,
+} from './analyticsLogic';
 
 /** One stat tile: label + value slot, mapped to a metric key. */
 interface TileSpec {
@@ -220,6 +226,7 @@ export class AnalyticsAddonView extends View {
   private eventSubscriptionId: string | null = null;
   private runFinishedSubscriptionId: string | null = null;
   private followersProgressSubscriptionId: string | null = null;
+  private engagementTooltipDisposers: (() => void)[] = [];
 
   constructor() {
     super();
@@ -260,9 +267,11 @@ export class AnalyticsAddonView extends View {
       <div class="tabs tabs--scrollable" data-el="analytics-tabs" hidden>
         <button class="tab tab--active" data-tab="overview">Overview</button>
         <button class="tab" data-tab="top-posts">Top Posts</button>
+        <button class="tab" data-tab="diagrams">Diagrams</button>
       </div>
       <div class="tab-content tab-content--active" data-tab-content="overview" data-addon-content="overview"></div>
       <div class="tab-content" data-tab-content="top-posts" data-addon-content="top-posts"></div>
+      <div class="tab-content" data-tab-content="diagrams" data-addon-content="diagrams"></div>
     `;
     this.enableSwitch.setupEventListeners(this.container);
     setupTabClickHandlers(this.container, tabId =>
@@ -284,6 +293,12 @@ export class AnalyticsAddonView extends View {
     );
   }
 
+  private diagramsZone(): HTMLElement | null {
+    return this.container.querySelector<HTMLElement>(
+      '[data-addon-content="diagrams"]'
+    );
+  }
+
   /**
    * Fill the feature panes. When enabled, both tabs render their complete
    * skeleton synchronously (no waiting, no whole-zone spinner) — tile values
@@ -297,7 +312,8 @@ export class AnalyticsAddonView extends View {
     );
     const overview = this.overviewZone();
     const topZone = this.topPostsZone();
-    if (!overview || !topZone) return;
+    const diagrams = this.diagramsZone();
+    if (!overview || !topZone || !diagrams) return;
 
     if (!isAnalyticsEnabled()) {
       if (tabsBar) tabsBar.hidden = true;
@@ -305,12 +321,15 @@ export class AnalyticsAddonView extends View {
         '<p class="form__note">Enable Analytics to see your stats.</p>';
       overview.innerHTML = note;
       topZone.innerHTML = note;
+      diagrams.innerHTML = note;
       return;
     }
     if (tabsBar) tabsBar.hidden = false;
 
-    // Complete skeleton, immediately — this is the whole point.
-    let html = '<div class="analytics">';
+    // Complete skeleton, immediately — this is the whole point. Wrapped in a
+    // <section> so the `.tab-content > section` padding rule applies uniformly
+    // across all tabs.
+    let html = '<section><div class="analytics">';
     html +=
       '<div class="l-row--right analytics__meta">' +
       '<span class="small pulsate" data-analytics-updated>Loading…</span>' +
@@ -333,7 +352,7 @@ export class AnalyticsAddonView extends View {
       }
       html += '</section>';
     }
-    html += '</div>';
+    html += '</div></section>';
     overview.innerHTML = html;
 
     topZone.innerHTML = `
@@ -341,6 +360,15 @@ export class AnalyticsAddonView extends View {
         <ul class="ui-list" data-top-posts-list>
           <li class="ui-list__item"><span class="small pulsate">Ranking your posts…</span></li>
         </ul>
+      </section>`;
+
+    diagrams.innerHTML = `
+      <section class="analytics__row" data-analytics-row="engagement-timeline">
+        <h2 class="analytics__row-title">Engagement over time</h2>
+        <p class="form__note">Received engagement per bucket — replies, zaps, reposts, quotes and likes combined, same components as the Top Posts ranking. Hover a bar for the breakdown.</p>
+        <div class="analytics-chart" data-engagement-chart>
+          <p class="form__note pulsate">Building your engagement curve…</p>
+        </div>
       </section>`;
 
     const refreshBtn = overview.querySelector<HTMLButtonElement>(
@@ -396,6 +424,13 @@ export class AnalyticsAddonView extends View {
     if (topSnapshot?.aux?.topPosts) {
       this.paintTopPosts(topSnapshot.aux.topPosts);
       if (topSnapshot.fetchedAt > newest) newest = topSnapshot.fetchedAt;
+    }
+    const timelineSnapshot = service.getCachedSnapshot('engagement-timeline');
+    if (timelineSnapshot?.aux?.timeline && timelineSnapshot.aux.timelineUnit) {
+      this.paintEngagementChart(
+        timelineSnapshot.aux.timeline,
+        timelineSnapshot.aux.timelineUnit
+      );
     }
     this.paintLastUpdated(live, newest, false);
 
@@ -515,6 +550,82 @@ export class AnalyticsAddonView extends View {
     valueSlot.textContent = formatted;
   }
 
+  /**
+   * Render the engagement curve as CSS bars (no chart SDK). One column per
+   * bucket, height ∝ score (same components as the Top-Posts ranking);
+   * every bar carries a Tooltip with the per-component breakdown.
+   */
+  private paintEngagementChart(
+    timeline: EngagementBucket[],
+    unit: EngagementUnit
+  ): void {
+    const chart = this.diagramsZone()?.querySelector<HTMLElement>(
+      '[data-engagement-chart]'
+    );
+    if (!chart) return;
+    this.engagementTooltipDisposers.forEach(dispose => dispose());
+    this.engagementTooltipDisposers = [];
+
+    if (!timeline.length) {
+      chart.innerHTML =
+        '<p class="form__note">No engagement data yet — run a Refresh.</p>';
+      return;
+    }
+
+    const max = Math.max(...timeline.map(engagementScore), 1);
+    const labelEvery = Math.max(1, Math.ceil(timeline.length / 8));
+    let bars = '';
+    let labels = '';
+    timeline.forEach((bucket, i) => {
+      const height = Math.max(
+        2,
+        Math.round((engagementScore(bucket) / max) * 100)
+      );
+      bars += `<div class="analytics-chart__col"><div class="analytics-chart__bar" data-bucket="${i}" style="height:${height}%"></div></div>`;
+      if (i % labelEvery === 0) {
+        labels += `<span class="analytics-chart__label" style="grid-column:${i + 1}">${this.formatBucketLabel(bucket.start, unit)}</span>`;
+      }
+    });
+    chart.innerHTML =
+      `<div class="analytics-chart__plot">${bars}</div>` +
+      `<div class="analytics-chart__axis" style="grid-template-columns:repeat(${timeline.length},minmax(0,1fr))">${labels}</div>`;
+
+    timeline.forEach((bucket, i) => {
+      const bar = chart.querySelector<HTMLElement>(`[data-bucket="${i}"]`);
+      if (!bar) return;
+      const breakdown =
+        `${bucket.replies} replies, ${bucket.zaps} zaps, ` +
+        `${bucket.reposts + bucket.quotes} reposts/quotes, ${bucket.likes} likes`;
+      this.engagementTooltipDisposers.push(
+        Tooltip.attach(
+          bar,
+          `${this.formatBucketLabel(bucket.start, unit, true)} — ${engagementScore(bucket)} engagement (${breakdown})`,
+          { placement: 'top' }
+        )
+      );
+    });
+  }
+
+  private formatBucketLabel(
+    start: number,
+    unit: EngagementUnit,
+    withYear = false
+  ): string {
+    const date = new Date(start * 1000);
+    if (unit === 'day' || unit === 'week') {
+      return date.toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'short',
+        ...(withYear ? { year: 'numeric' } : {}),
+      });
+    }
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      year: unit === 'quarter' ? 'numeric' : '2-digit',
+      ...(withYear ? { year: 'numeric' } : {}),
+    });
+  }
+
   private attachEventSubscription(): void {
     this.detachEventSubscription();
     const bus = TypedEventBus.getInstance();
@@ -523,6 +634,13 @@ export class AnalyticsAddonView extends View {
         const snap =
           AnalyticsService.getInstance().getCachedSnapshot('top-posts');
         if (snap?.aux?.topPosts) this.paintTopPosts(snap.aux.topPosts);
+      } else if (payload.collectorId === 'engagement-timeline') {
+        const snap = AnalyticsService.getInstance().getCachedSnapshot(
+          'engagement-timeline'
+        );
+        if (snap?.aux?.timeline && snap.aux.timelineUnit) {
+          this.paintEngagementChart(snap.aux.timeline, snap.aux.timelineUnit);
+        }
       } else {
         const live = this.overviewZone();
         if (!live) return;
@@ -619,6 +737,8 @@ export class AnalyticsAddonView extends View {
 
   public destroy(): void {
     this.detachEventSubscription();
+    this.engagementTooltipDisposers.forEach(dispose => dispose());
+    this.engagementTooltipDisposers = [];
     this.enableSwitch?.destroy();
     this.enableSwitch = null;
     this.container.innerHTML = '';
