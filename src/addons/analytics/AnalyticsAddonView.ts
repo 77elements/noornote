@@ -201,6 +201,12 @@ const ROWS: RowSpec[] = [
         collector: 'engagement',
         metric: 'quotesReceived',
       },
+      {
+        tile: 'likes-received',
+        label: 'Likes',
+        collector: 'engagement',
+        metric: 'likesReceived',
+      },
     ],
   },
 ];

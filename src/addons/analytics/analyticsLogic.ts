@@ -39,6 +39,7 @@ export interface EngagementMetrics {
   repliesReceived: number;
   repostsReceived: number;
   quotesReceived: number;
+  likesReceived: number;
 }
 
 export interface ZapsMetrics {
@@ -178,10 +179,11 @@ export interface InboxClassification {
 }
 
 /**
- * Classify the inbox sweep (#p:me, kinds 1, 6, 1111, 9735) with STRICT
- * validation: a reply/repost/quote only counts when it references one of the
- * user's own event ids (e-tag for replies/reposts, q-tag for quotes).
- * Zap receipts (9735) always count — the #p filter already targeted us.
+ * Classify the inbox sweep (#p:me, kinds 1, 6, 1111, 9735, 7) with STRICT
+ * validation: a reply/repost/quote/like only counts when it references one of
+ * the user's own event ids (e-tag for replies/reposts/likes, q-tag for
+ * quotes). Zap receipts (9735) always count — the #p filter already targeted
+ * us.
  */
 export function classifyInbox(
   events: LogicEvent[],
@@ -191,6 +193,7 @@ export function classifyInbox(
     repliesReceived: 0,
     repostsReceived: 0,
     quotesReceived: 0,
+    likesReceived: 0,
   };
   const zapsReceived = { count: 0, sats: 0 };
   let maxCreatedAt = 0;
@@ -217,6 +220,11 @@ export function classifyInbox(
       case 9735: {
         zapsReceived.count++;
         zapsReceived.sats += getZapAmountSats(ev);
+        break;
+      }
+      case 7: {
+        const e = firstTagValue(ev.tags, 'e');
+        if (e && ownEventIds.has(e)) engagement.likesReceived++;
         break;
       }
     }

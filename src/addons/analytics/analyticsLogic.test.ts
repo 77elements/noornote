@@ -148,6 +148,18 @@ describe('classifyInbox (strict validation)', () => {
     expect(engagement.quotesReceived).toBe(1);
   });
 
+  it('counts likes (kind 7) only when they target own events', () => {
+    const { engagement } = classifyInbox(
+      [
+        ev({ kind: 7, tags: [['e', OWN]] }),
+        ev({ kind: 7, tags: [['e', OTHER]] }), // like in someone else's thread → no
+        ev({ kind: 7, tags: [['p', 'me']] }), // no e-tag → no
+      ],
+      new Set([OWN])
+    );
+    expect(engagement.likesReceived).toBe(1);
+  });
+
   it('counts zap receipts with their bolt11 amounts', () => {
     // lnbc10u… = 10 × 100 sats (u multiplier) = 1,000 sats
     const { zapsReceived } = classifyInbox(
