@@ -45,8 +45,9 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  // Rows carry 2–5 tiles: 3 columns from medium, 4 when space is plentiful
-  // (pcc wide / right-pane mode) — the 5th tile wraps gracefully.
+  // Rows carry 2–8 tiles (Posts spans two tile lines): 3 columns from medium,
+  // 4 when space is plentiful (pcc wide / right-pane mode) — extra tiles wrap
+  // gracefully onto the next line.
   @container (min-width: 640px) {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -57,21 +58,29 @@
 }
 
 .analytics-tile {
-  background: var(--color-2);
+  @extend %bg-section;
   border-radius: $radius-pill;
   padding: calc($gap / 2) $gap;
   display: grid;
   gap: calc($gap / 4);
 }
 
+// Start on a fresh tile-grid line (e.g. content tiles after the posts tiles)
+.analytics-tile--row-break {
+  grid-column-start: 1;
+}
+
 .analytics-tile__label {
   color: var(--color-3);
+  margin-bottom: $gap;
 }
 
 .analytics-tile__value {
   color: var(--color-5);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+  margin-bottom: $gap;
+  text-align: center;
 }
 
 .analytics-tile__value--loading {

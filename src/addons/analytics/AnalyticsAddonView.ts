@@ -32,6 +32,8 @@ interface TileSpec {
   metric?: string;
   /** Value formatter (default: plain localized number). */
   format?: (value: number) => string;
+  /** Start on a fresh tile-grid line instead of flowing after the previous tile. */
+  newLine?: boolean;
 }
 
 interface RowSpec {
@@ -47,14 +49,17 @@ const quotientFormat = (v: number): string =>
   Number.isFinite(v) ? `1 : ${v.toFixed(1)}` : '—';
 
 /**
- * The five metric rows (posts / follow / content / zaps / engagement).
- * Tiles whose metric is not collected yet (P2–P5) simply keep their
- * loading state until their phase lands — the skeleton is final now.
+ * The four metric rows (content (posts+articles/videos/products) / follow /
+ * zaps / engagement). The content tiles (articles/videos/listings) flow into
+ * the former Posts row as a second tile line, the whole section is titled
+ * "Content" (user directive 2026-08-29). The 'content' collector still feeds
+ * its tiles via `analytics:section-ready`; rows may span multiple collectors.
+ * Tiles whose metric is not collected yet keep their loading state.
  */
 const ROWS: RowSpec[] = [
   {
     row: 'posts',
-    title: 'Posts',
+    title: 'Content',
     tiles: [
       {
         tile: 'originals',
@@ -87,6 +92,25 @@ const ROWS: RowSpec[] = [
         metric: 'quotient',
         format: quotientFormat,
       },
+      {
+        tile: 'articles',
+        label: 'Articles',
+        collector: 'content',
+        metric: 'articles',
+        newLine: true,
+      },
+      {
+        tile: 'videos',
+        label: 'Video posts',
+        collector: 'content',
+        metric: 'videos',
+      },
+      {
+        tile: 'listings',
+        label: 'Products',
+        collector: 'content',
+        metric: 'listings',
+      },
     ],
   },
   {
@@ -104,30 +128,6 @@ const ROWS: RowSpec[] = [
         label: 'Followers',
         collector: 'follow',
         metric: 'followers',
-      },
-    ],
-  },
-  {
-    row: 'content',
-    title: 'Content',
-    tiles: [
-      {
-        tile: 'articles',
-        label: 'Articles',
-        collector: 'content',
-        metric: 'articles',
-      },
-      {
-        tile: 'videos',
-        label: 'Video posts',
-        collector: 'content',
-        metric: 'videos',
-      },
-      {
-        tile: 'listings',
-        label: 'Listings',
-        collector: 'content',
-        metric: 'listings',
       },
     ],
   },
@@ -240,7 +240,7 @@ export class AnalyticsAddonView extends View {
         <div class="setting">
           <span class="setting__label">Enable Analytics</span>
           <div class="setting__control">${this.enableSwitch.render()}</div>
-          <p class="setting__desc">Your personal Nostr stats — posts and replies, follows, content, zaps and engagement. Data is gathered relay-friendly, cached per account and refreshed incrementally.</p>
+          <p class="setting__desc">Your personal Nostr stats — posts and replies, follows, content, zaps and engagement. Data is gathered relay-friendly, cached per account and refreshed incrementally. Counts cover your entire history — all-time, not a fixed window, as far as relay retention allows.</p>
         </div>
       </section>
       <div data-addon-content="analytics"></div>
@@ -281,7 +281,7 @@ export class AnalyticsAddonView extends View {
       html += '<div class="analytics-tiles">';
       for (const tile of row.tiles) {
         html +=
-          `<div class="analytics-tile" data-tile="${tile.tile}">` +
+          `<div class="analytics-tile${tile.newLine ? ' analytics-tile--row-break' : ''}" data-tile="${tile.tile}">` +
           `<span class="analytics-tile__label small">${tile.label}</span>${
             LOADING_HTML
           }</div>`;
@@ -321,12 +321,18 @@ export class AnalyticsAddonView extends View {
     this.paintFirstRunNotice(live, service.isFirstRun());
 
     // Instant paint from cache (tiles without a cached value keep loading).
+    // A row may span multiple collectors (posts+content) — paint per collector.
     let newest = 0;
+    const painted = new Set<CollectorId>();
     for (const row of ROWS) {
-      const snapshot = service.getCachedSnapshot(row.tiles[0]!.collector);
-      if (!snapshot) continue;
-      this.fillRow(live, row, snapshot.metrics);
-      if (snapshot.fetchedAt > newest) newest = snapshot.fetchedAt;
+      for (const tile of row.tiles) {
+        if (painted.has(tile.collector)) continue;
+        painted.add(tile.collector);
+        const snapshot = service.getCachedSnapshot(tile.collector);
+        if (!snapshot) continue;
+        this.fillRow(live, row, snapshot.metrics);
+        if (snapshot.fetchedAt > newest) newest = snapshot.fetchedAt;
+      }
     }
     this.paintLastUpdated(live, newest, false);
 
