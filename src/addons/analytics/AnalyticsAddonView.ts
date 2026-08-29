@@ -2,7 +2,7 @@
  * AnalyticsAddonView — Pattern-B addon view: enable toggle + feature zone.
  *
  * Canonical markup (per addons skill): h1 → section.section > div.setting
- * (toggle) → div[data-addon-content="analytics"] (feature UI mount point).
+ * (toggle) → tabs bar → div[data-addon-content="overview" | "top-posts"]
  *
  * UX contract (user directive 2026-08-27): when enabled, the COMPLETE row
  * skeleton renders IMMEDIATELY — only the numeric tile values carry the
@@ -15,11 +15,19 @@ import { View } from '../../components/views/View';
 import { Switch } from '../../components/ui/Switch';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
+import { Router } from '../../services/Router';
+import {
+  setupTabClickHandlers,
+  switchTabWithContent,
+} from '../../helpers/TabsHelper';
+import { escapeHtml } from '../../helpers/escapeHtml';
+import { encodeNevent } from '../../services/NostrToolsAdapter';
 import { formatSatsCompact } from '../../helpers/zapUtils';
 import { formatTimeAgo } from '../../helpers/formatTimeAgo';
 import { isAnalyticsEnabled, setAnalyticsEnabled } from './index';
 import { AnalyticsService } from './AnalyticsService';
 import type { CollectorId } from './collectors';
+import type { TopPostEntry } from './analyticsLogic';
 
 /** One stat tile: label + value slot, mapped to a metric key. */
 interface TileSpec {
@@ -243,35 +251,62 @@ export class AnalyticsAddonView extends View {
           <p class="setting__desc">Your personal Nostr stats — posts and replies, follows, content, zaps and engagement. Data is gathered relay-friendly, cached per account and refreshed incrementally. Counts cover your entire history — all-time, not a fixed window, as far as relay retention allows.</p>
         </div>
       </section>
-      <div data-addon-content="analytics"></div>
+      <div class="tabs tabs--scrollable" data-el="analytics-tabs" hidden>
+        <button class="tab tab--active" data-tab="overview">Overview</button>
+        <button class="tab" data-tab="top-posts">Top Posts</button>
+      </div>
+      <div class="tab-content tab-content--active" data-tab-content="overview" data-addon-content="overview"></div>
+      <div class="tab-content" data-tab-content="top-posts" data-addon-content="top-posts"></div>
     `;
     this.enableSwitch.setupEventListeners(this.container);
+    setupTabClickHandlers(this.container, tabId =>
+      switchTabWithContent(this.container, tabId)
+    );
     this.renderContentZone();
   }
 
+  /** Live query helpers — panes are re-rendered, this.container is stable. */
+  private overviewZone(): HTMLElement | null {
+    return this.container.querySelector<HTMLElement>(
+      '[data-addon-content="overview"]'
+    );
+  }
+
+  private topPostsZone(): HTMLElement | null {
+    return this.container.querySelector<HTMLElement>(
+      '[data-addon-content="top-posts"]'
+    );
+  }
+
   /**
-   * Fill the feature zone. When enabled the FULL row skeleton renders
-   * synchronously (no waiting, no whole-zone spinner) — only tile values
-   * start in loading state. Cache + run fill them afterwards.
+   * Fill the feature panes. When enabled, both tabs render their complete
+   * skeleton synchronously (no waiting, no whole-zone spinner) — tile values
+   * and the list start in loading state. Cache + run fill them afterwards.
    */
   private renderContentZone(): void {
     this.detachEventSubscription();
 
-    const zone = this.container.querySelector<HTMLElement>(
-      '[data-addon-content="analytics"]'
+    const tabsBar = this.container.querySelector<HTMLElement>(
+      '[data-el="analytics-tabs"]'
     );
-    if (!zone) return;
+    const overview = this.overviewZone();
+    const topZone = this.topPostsZone();
+    if (!overview || !topZone) return;
 
     if (!isAnalyticsEnabled()) {
-      zone.innerHTML =
+      if (tabsBar) tabsBar.hidden = true;
+      const note =
         '<p class="form__note">Enable Analytics to see your stats.</p>';
+      overview.innerHTML = note;
+      topZone.innerHTML = note;
       return;
     }
+    if (tabsBar) tabsBar.hidden = false;
 
     // Complete skeleton, immediately — this is the whole point.
     let html = '<div class="analytics">';
     html +=
-      '<div class="l-spread analytics__meta">' +
+      '<div class="l-row--right analytics__meta">' +
       '<span class="small pulsate" data-analytics-updated>Loading…</span>' +
       '<button type="button" class="btn btn--passive btn--mini" data-analytics-refresh>Refresh</button>' +
       '</div>';
@@ -293,29 +328,46 @@ export class AnalyticsAddonView extends View {
       html += '</section>';
     }
     html += '</div>';
-    zone.innerHTML = html;
+    overview.innerHTML = html;
 
-    const refreshBtn = zone.querySelector<HTMLButtonElement>(
+    topZone.innerHTML = `
+      <section class="analytics__row" data-analytics-row="top-posts">
+        <ul class="ui-list" data-top-posts-list>
+          <li class="ui-list__item"><span class="small pulsate">Ranking your posts…</span></li>
+        </ul>
+      </section>`;
+
+    const refreshBtn = overview.querySelector<HTMLButtonElement>(
       '[data-analytics-refresh]'
     );
     refreshBtn?.addEventListener('click', () =>
       this.onRefreshClick(refreshBtn)
     );
 
-    void this.bootAnalytics(zone);
+    const topList = topZone.querySelector('[data-top-posts-list]');
+    topList?.addEventListener('click', e => this.onTopPostClick(e));
+
+    void this.bootAnalytics();
+  }
+
+  /** Top-post item click → SNV of the own post (canonical bare-nevent form). */
+  private onTopPostClick(e: Event): void {
+    const item = (e.target as HTMLElement).closest<HTMLElement>(
+      '[data-top-post-id]'
+    );
+    if (!item) return;
+    const id = item.dataset.topPostId;
+    if (!id) return;
+    Router.getInstance().navigate(`/note/${encodeNevent(id)}`);
   }
 
   /** Load cache → paint instantly → subscribe → start background run. */
-  private async bootAnalytics(zone: HTMLElement): Promise<void> {
+  private async bootAnalytics(): Promise<void> {
     const service = AnalyticsService.getInstance();
     await service.ensureReady();
 
-    // Zone may have been re-rendered while awaiting — re-query.
-    const live = zone.isConnected
-      ? zone
-      : this.container.querySelector<HTMLElement>(
-          '[data-addon-content="analytics"]'
-        );
+    // Panes may have been re-rendered while awaiting — re-query.
+    const live = this.overviewZone();
     if (!live) return;
 
     this.paintFirstRunNotice(live, service.isFirstRun());
@@ -334,9 +386,14 @@ export class AnalyticsAddonView extends View {
         if (snapshot.fetchedAt > newest) newest = snapshot.fetchedAt;
       }
     }
+    const topSnapshot = service.getCachedSnapshot('top-posts');
+    if (topSnapshot?.aux?.topPosts) {
+      this.paintTopPosts(topSnapshot.aux.topPosts);
+      if (topSnapshot.fetchedAt > newest) newest = topSnapshot.fetchedAt;
+    }
     this.paintLastUpdated(live, newest, false);
 
-    this.attachEventSubscription(live);
+    this.attachEventSubscription();
 
     // Background run refreshes/fills everything (first run = full sweep).
     void service.startRun().catch(() => {
@@ -374,6 +431,72 @@ export class AnalyticsAddonView extends View {
     }
   }
 
+  /**
+   * Render the ranked top-posts list (top 10 of the capped snapshot).
+   * Snippets are plain-text-ish (whitespace collapsed) and escapeHtml'd —
+   * event content is untrusted. Each item links to its SNV.
+   */
+  private paintTopPosts(posts: TopPostEntry[]): void {
+    const list = this.topPostsZone()?.querySelector<HTMLElement>(
+      '[data-top-posts-list]'
+    );
+    if (!list) return;
+    if (!posts.length) {
+      list.innerHTML =
+        '<li class="ui-list__item"><span class="small">No own posts found yet.</span></li>';
+      return;
+    }
+    list.innerHTML = posts
+      .slice(0, 10)
+      .map((p, i) => {
+        const snippet = escapeHtml(
+          (p.content.replace(/\s+/g, ' ').trim() || '(no text content)').slice(
+            0,
+            160
+          )
+        );
+        const stats = [
+          {
+            icon: 'icon-reply',
+            label: 'Replies',
+            value: String(p.replies),
+          },
+          {
+            icon: 'icon-zap',
+            label:
+              p.zapSats > 0
+                ? `Zaps · ${formatSatsCompact(p.zapSats)} sats`
+                : 'Zaps',
+            value: String(p.zaps),
+          },
+          {
+            icon: 'icon-repost',
+            label: 'Reposts & quotes',
+            value: String(p.reposts + p.quotes),
+          },
+          { icon: 'icon-heart', label: 'Likes', value: String(p.likes) },
+        ]
+          .map(
+            s =>
+              `<span class="analytics-top__stat" title="${s.label}">` +
+              `<svg width="14" height="14" aria-hidden="true"><use href="#${s.icon}"/></svg>` +
+              `${s.value}</span>`
+          )
+          .join('');
+        return (
+          `<li class="ui-list__item ui-list__item--clickable analytics-top__item" data-top-post-id="${p.id}">` +
+          `<span class="analytics-top__rank">${i + 1}</span>` +
+          `<div class="analytics-top__body">` +
+          `<span class="analytics-top__snippet">${snippet}</span>` +
+          `<span class="analytics-top__meta small">${formatTimeAgo(p.createdAt * 1000)}</span>` +
+          `</div>` +
+          `<div class="analytics-top__stats">${stats}</div>` +
+          `</li>`
+        );
+      })
+      .join('');
+  }
+
   private setTileValue(zone: HTMLElement, tile: TileSpec, value: number): void {
     const el = zone.querySelector<HTMLElement>(`[data-tile="${tile.tile}"]`);
     if (!el) return;
@@ -386,29 +509,26 @@ export class AnalyticsAddonView extends View {
     valueSlot.textContent = formatted;
   }
 
-  private attachEventSubscription(zone: HTMLElement): void {
+  private attachEventSubscription(): void {
     this.detachEventSubscription();
     const bus = TypedEventBus.getInstance();
     this.eventSubscriptionId = bus.on('analytics:section-ready', payload => {
-      const row = ROWS.find(r =>
-        r.tiles.some(t => t.collector === payload.collectorId)
-      );
-      // Always target the LIVE zone (view may have re-rendered since).
-      const live = zone.isConnected
-        ? zone
-        : this.container.querySelector<HTMLElement>(
-            '[data-addon-content="analytics"]'
-          );
-      if (!live) return;
-      if (row) this.fillRow(live, row, payload.metrics);
-      this.paintLastUpdated(live, payload.fetchedAt, true);
+      if (payload.collectorId === 'top-posts') {
+        const snap =
+          AnalyticsService.getInstance().getCachedSnapshot('top-posts');
+        if (snap?.aux?.topPosts) this.paintTopPosts(snap.aux.topPosts);
+      } else {
+        const live = this.overviewZone();
+        if (!live) return;
+        const row = ROWS.find(r =>
+          r.tiles.some(t => t.collector === payload.collectorId)
+        );
+        if (row) this.fillRow(live, row, payload.metrics);
+        this.paintLastUpdated(live, payload.fetchedAt, true);
+      }
     });
     this.runFinishedSubscriptionId = bus.on('analytics:run-finished', () => {
-      const live = zone.isConnected
-        ? zone
-        : this.container.querySelector<HTMLElement>(
-            '[data-addon-content="analytics"]'
-          );
+      const live = this.overviewZone();
       if (live) this.setRefreshState(live, false);
     });
     // Progressive follower count (PV semantics): `N+` pulsating while the
@@ -416,11 +536,7 @@ export class AnalyticsAddonView extends View {
     this.followersProgressSubscriptionId = bus.on(
       'analytics:followers-progress',
       payload => {
-        const live = zone.isConnected
-          ? zone
-          : this.container.querySelector<HTMLElement>(
-              '[data-addon-content="analytics"]'
-            );
+        const live = this.overviewZone();
         if (live) this.paintFollowersProgress(live, payload.count);
       }
     );
@@ -440,10 +556,7 @@ export class AnalyticsAddonView extends View {
   /** Refresh forces a full run (heals deletion drift via since-cursor reset). */
   private onRefreshClick(button: HTMLButtonElement): void {
     if (button.disabled) return;
-    this.setRefreshState(
-      button.closest('[data-addon-content="analytics"]') as HTMLElement,
-      true
-    );
+    this.setRefreshState(this.overviewZone(), true);
     void AnalyticsService.getInstance()
       .startRun({ forceFull: true })
       .catch(() => {

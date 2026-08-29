@@ -11,10 +11,15 @@ import {
   classifyInbox,
   classifySentZaps,
   computeZapsMetrics,
+  extractOwnPosts,
   mergeCounts,
   mergeOwnContent,
+  mergeTopPosts,
+  compareTopPosts,
   subtractIds,
+  tallyInboxByTarget,
   type LogicEvent,
+  type TopPostEntry,
 } from './analyticsLogic';
 
 const OWN = 'own-1';
@@ -245,5 +250,117 @@ describe('incremental merges (P6)', () => {
 
   it('subtractIds filters', () => {
     expect(subtractIds(['a', 'b', 'c'], new Set(['b']))).toEqual(['a', 'c']);
+  });
+});
+
+describe('top posts (P8)', () => {
+  const mk = (o: Partial<TopPostEntry>): TopPostEntry => ({
+    id: 'x',
+    createdAt: 1,
+    content: '',
+    replies: 0,
+    zaps: 0,
+    zapSats: 0,
+    reposts: 0,
+    quotes: 0,
+    likes: 0,
+    ...o,
+  });
+
+  it('extractOwnPosts: kind-1 originals only, deletions excluded', () => {
+    const { posts, deletedIds } = extractOwnPosts([
+      ev({ kind: 1, id: 'p1', content: 'hello', tags: [] }),
+      ev({ kind: 1, id: 'r', tags: [['e', 'x']] }), // reply → no
+      ev({ kind: 1, id: 'gone', content: 'bye', tags: [] }),
+      ev({ kind: 5, tags: [['e', 'gone']] }),
+      ev({ kind: 1111, id: 'c1', content: 'comment', tags: [] }), // comment → no
+    ]);
+    expect(posts.map(p => p.id)).toEqual(['p1']);
+    expect(posts[0].content).toBe('hello');
+    expect(deletedIds.has('gone')).toBe(true);
+  });
+
+  it('tallyInboxByTarget maps kinds per e/q target, unattributable zaps skipped', () => {
+    const tallies = tallyInboxByTarget([
+      ev({ kind: 1, tags: [['e', 'p1']] }),
+      ev({ kind: 1111, tags: [['e', 'p1']] }),
+      ev({ kind: 6, tags: [['e', 'p1']] }),
+      ev({ kind: 6, tags: [['q', 'p2']] }),
+      ev({ kind: 7, tags: [['e', 'p1']] }),
+      ev({ kind: 7, tags: [['e', 'p1']] }),
+      ev({
+        kind: 9735,
+        tags: [
+          ['e', 'p1'],
+          ['bolt11', 'lnbc10u1xyz'],
+        ],
+      }),
+      ev({ kind: 9735, tags: [['p', 'me']] }), // no e-tag → unattributed
+    ]);
+    expect(tallies.get('p1')).toEqual({
+      replies: 2,
+      zaps: 1,
+      zapSats: 1_000,
+      reposts: 1,
+      quotes: 0,
+      likes: 2,
+    });
+    expect(tallies.get('p2')?.quotes).toBe(1);
+  });
+
+  it('compareTopPosts: replies > zaps > reposts+quotes > likes > createdAt', () => {
+    expect(compareTopPosts(mk({ replies: 1 }), mk({ zaps: 100 }))).toBeLessThan(
+      0
+    );
+    expect(compareTopPosts(mk({ zaps: 1 }), mk({ reposts: 50 }))).toBeLessThan(
+      0
+    );
+    expect(
+      compareTopPosts(
+        mk({ reposts: 5, quotes: 1 }),
+        mk({ reposts: 4, quotes: 1 })
+      )
+    ).toBeLessThan(0);
+    expect(
+      compareTopPosts(
+        mk({ likes: 2, createdAt: 5 }),
+        mk({ likes: 2, createdAt: 9 })
+      )
+    ).toBeGreaterThan(0);
+  });
+
+  it('mergeTopPosts: additive delta on prev entries, drops deletions, ranks', () => {
+    const prev: TopPostEntry[] = [
+      mk({ id: 'p1', createdAt: 10, content: 'one', replies: 5 }),
+      mk({ id: 'p2', createdAt: 20, content: 'two', zaps: 9, zapSats: 900 }),
+    ];
+    const tallies = new Map([
+      [
+        'p2',
+        { replies: 1, zaps: 0, zapSats: 0, reposts: 0, quotes: 0, likes: 3 },
+      ],
+    ]);
+    const merged = mergeTopPosts(
+      prev,
+      [{ id: 'p3', createdAt: 30, content: 'three' }],
+      tallies,
+      new Set(['p1'])
+    );
+    expect(merged.find(e => e.id === 'p1')).toBeUndefined();
+    const p2 = merged.find(e => e.id === 'p2')!;
+    expect(p2.replies).toBe(1);
+    expect(p2.likes).toBe(3);
+    expect(p2.zaps).toBe(9);
+    expect(merged[0].id).toBe('p2'); // replies(1) > zeros
+    expect(merged[1].id).toBe('p3');
+  });
+
+  it('mergeTopPosts caps at 20', () => {
+    const prev = Array.from({ length: 25 }, (_, i) =>
+      mk({ id: `p${i}`, createdAt: i, replies: i })
+    );
+    const merged = mergeTopPosts(prev, [], new Map(), new Set());
+    expect(merged).toHaveLength(20);
+    expect(merged[0].replies).toBe(24);
   });
 });

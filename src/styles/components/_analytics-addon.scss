@@ -11,8 +11,20 @@
   container-type: inline-size;
 }
 
+// Scoped exception to .tab-content (user directive 2026-08-29): the addon
+// view scrolls as a whole — the panes must not form a second scroll context
+// (height: 100% + overflow-y: auto produced a redundant inner scrollbar).
+.view-content--addon-analytics .tab-content {
+  height: auto;
+  overflow-y: visible;
+}
+
 .analytics__meta {
   margin-bottom: $gap;
+
+  [data-analytics-updated] {
+    margin-right: calc($gap / 2);
+  }
 }
 
 .analytics__first-run {
@@ -86,4 +98,58 @@
 .analytics-tile__value--loading {
   color: var(--color-3);
   font-weight: 400;
+}
+
+// ── Top posts list (P8) ──────────────────────────────────────────────────
+
+.analytics-top__item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: calc($gap / 2);
+  align-items: center;
+}
+
+// Scoped exception (user directive 2026-08-29): no left inset on the
+// Top-Posts list — the global ul padding-left (base/_typography.scss) is
+// neutralized so items sit flush with the pane edge.
+[data-addon-content='top-posts'] .ui-list {
+  padding-left: 0;
+}
+
+.analytics-top__rank {
+  color: var(--color-3);
+  font-variant-numeric: tabular-nums;
+  min-width: $gap;
+}
+
+.analytics-top__body {
+  display: grid;
+  gap: calc($gap / 4);
+  min-width: 0;
+}
+
+.analytics-top__snippet {
+  @include text-truncate-lines(2);
+  color: var(--color-5);
+}
+
+.analytics-top__meta {
+  color: var(--color-3);
+}
+
+.analytics-top__stats {
+  display: grid;
+  grid-auto-flow: column;
+  gap: $gap;
+  align-items: center;
+  color: var(--color-3);
+  white-space: nowrap;
+}
+
+.analytics-top__stat {
+  display: inline-grid;
+  grid-auto-flow: column;
+  gap: calc($gap / 4);
+  align-items: center;
+  font-variant-numeric: tabular-nums;
 }

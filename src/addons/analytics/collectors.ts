@@ -6,7 +6,7 @@
  * THREE sweeps, shared across collectors via the per-run SweepCache:
  *
  *   1. own-content  authors:[me]  kinds [1, 1111, 30023, 21, 22, 30402, 5]  → posts + content
- *   2. inbox        #p:[me]       kinds [1, 6, 1111, 9735]                  → zaps(received) + engagement
+ *   2. inbox        #p:[me]       kinds [1, 6, 1111, 9735, 7]               → zaps(received) + engagement + top-posts
  *   3. sent zaps    #P:[me]       kinds [9735]                              → zaps(sent, best effort)
  *
  * All sweeps run over read + aggregator relays, per-relay paginated via
@@ -32,9 +32,13 @@ import {
   classifyOwnContent,
   classifySentZaps,
   computeZapsMetrics,
+  extractOwnPosts,
   mergeCounts,
   mergeOwnContent,
+  mergeTopPosts,
+  tallyInboxByTarget,
   type LogicEvent,
+  type TopPostEntry,
 } from './analyticsLogic';
 
 export type CollectorId =
@@ -42,11 +46,14 @@ export type CollectorId =
   | 'follow'
   | 'content'
   | 'zaps'
-  | 'engagement';
+  | 'engagement'
+  | 'top-posts';
 
 export interface AuxData {
   /** Persisted own event ids (posts snapshot) — engagement validation basis. */
   ownEventIds?: string[];
+  /** Persisted top-post entries (top-posts snapshot) — view list basis. */
+  topPosts?: TopPostEntry[];
 }
 
 export interface CollectorSnapshot {
@@ -170,13 +177,14 @@ export class SweepCache {
     const since = ctx.fullRun
       ? undefined
       : this.cursor(ctx, 'zaps', 'engagement');
-    // Same per-filter discipline: replies/reposts and zap receipts each get
-    // their own limit window so a reply flood cannot starve zap receipts.
+    // Same per-filter discipline: replies/reposts, zap receipts and likes
+    // each get their own limit window so one flood cannot starve the others.
     this.inboxPromise = this.sweep(
       this.relays(),
       [
         { kinds: [1, 6, 1111], '#p': [ctx.pubkey], limit: SWEEP_PAGE_LIMIT },
         { kinds: [9735], '#p': [ctx.pubkey], limit: SWEEP_PAGE_LIMIT },
+        { kinds: [7], '#p': [ctx.pubkey], limit: SWEEP_PAGE_LIMIT },
       ],
       since,
       'inbox'
@@ -514,6 +522,43 @@ const engagementCollector: AnalyticsCollector = {
 };
 
 /**
+ * Top posts row (P8): the user's own original posts ranked by the criteria
+ * tree Replies > Zaps > Reposts/Quotes > Likes (compareTopPosts). Shares both
+ * sweeps via the SweepCache — zero extra relay load. The ranked list lives in
+ * the snapshot aux (capped at 20); incremental deltas tally against the
+ * previous list, drift outside the cap heals on a full run.
+ */
+const topPostsCollector: AnalyticsCollector = {
+  id: 'top-posts',
+  async collect(ctx: RunContext): Promise<CollectorSnapshot> {
+    const [ownEvents, inbox] = await Promise.all([
+      ctx.sweeps.ownContent(ctx),
+      ctx.sweeps.inbox(ctx),
+    ]);
+    const ownLogic = asLogic(ownEvents);
+    const inboxLogic = asLogic(inbox);
+
+    const { posts, deletedIds } = extractOwnPosts(ownLogic);
+    const tallies = tallyInboxByTarget(inboxLogic);
+    const prev = ctx.previous('top-posts');
+    const prevPosts = !ctx.fullRun && prev ? (prev.aux?.topPosts ?? []) : [];
+    const topPosts = mergeTopPosts(prevPosts, posts, tallies, deletedIds);
+
+    let cursor = prev?.sinceCursor ?? 0;
+    for (const ev of ownLogic) cursor = Math.max(cursor, ev.created_at);
+    for (const ev of inboxLogic) cursor = Math.max(cursor, ev.created_at);
+
+    return {
+      collectorId: 'top-posts',
+      metrics: {},
+      sinceCursor: cursor,
+      fetchedAt: Date.now(),
+      aux: { topPosts },
+    };
+  },
+};
+
+/**
  * All active collectors — sequential run order matters:
  * posts FIRST (builds the own-event-id set engagement validates against),
  * follow LAST (its follower count is a long relay sweep owned by the
@@ -525,5 +570,6 @@ export const COLLECTORS: AnalyticsCollector[] = [
   contentCollector,
   zapsCollector,
   engagementCollector,
+  topPostsCollector,
   followCollector,
 ];
