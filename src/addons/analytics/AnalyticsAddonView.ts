@@ -573,22 +573,15 @@ export class AnalyticsAddonView extends View {
     }
 
     const max = Math.max(...timeline.map(engagementScore), 1);
-    const labelEvery = Math.max(1, Math.ceil(timeline.length / 8));
     let bars = '';
-    let labels = '';
     timeline.forEach((bucket, i) => {
       const height = Math.max(
         2,
         Math.round((engagementScore(bucket) / max) * 100)
       );
       bars += `<div class="analytics-chart__col"><div class="analytics-chart__bar" data-bucket="${i}" style="height:${height}%"></div></div>`;
-      if (i % labelEvery === 0) {
-        labels += `<span class="analytics-chart__label" style="grid-column:${i + 1}">${this.formatBucketLabel(bucket.start, unit)}</span>`;
-      }
     });
-    chart.innerHTML =
-      `<div class="analytics-chart__plot">${bars}</div>` +
-      `<div class="analytics-chart__axis" style="grid-template-columns:repeat(${timeline.length},minmax(0,1fr))">${labels}</div>`;
+    chart.innerHTML = `<div class="analytics-chart__plot">${bars}</div>`;
 
     timeline.forEach((bucket, i) => {
       const bar = chart.querySelector<HTMLElement>(`[data-bucket="${i}"]`);
@@ -599,30 +592,25 @@ export class AnalyticsAddonView extends View {
       this.engagementTooltipDisposers.push(
         Tooltip.attach(
           bar,
-          `${this.formatBucketLabel(bucket.start, unit, true)} — ${engagementScore(bucket)} engagement (${breakdown})`,
+          `${this.formatBucketLabel(bucket.start, unit)} — ${engagementScore(bucket)} engagement (${breakdown})`,
           { placement: 'top' }
         )
       );
     });
   }
 
-  private formatBucketLabel(
-    start: number,
-    unit: EngagementUnit,
-    withYear = false
-  ): string {
+  private formatBucketLabel(start: number, unit: EngagementUnit): string {
     const date = new Date(start * 1000);
     if (unit === 'day' || unit === 'week') {
       return date.toLocaleDateString('en-US', {
         day: 'numeric',
         month: 'short',
-        ...(withYear ? { year: 'numeric' } : {}),
+        year: 'numeric',
       });
     }
     return date.toLocaleDateString('en-US', {
       month: 'short',
-      year: unit === 'quarter' ? 'numeric' : '2-digit',
-      ...(withYear ? { year: 'numeric' } : {}),
+      year: 'numeric',
     });
   }
 

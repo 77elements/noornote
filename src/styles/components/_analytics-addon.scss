@@ -181,14 +181,3 @@
     background: var(--color-4);
   }
 }
-
-.analytics-chart__axis {
-  display: grid;
-  margin-top: calc($gap / 4);
-  color: var(--color-3);
-}
-
-.analytics-chart__label {
-  @include text-truncate;
-  white-space: nowrap;
-}
