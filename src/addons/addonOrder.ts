@@ -58,3 +58,25 @@ function orderBy(saved: string[]): AddonRegistryEntry[] {
 export function saveAddonOrder(ids: string[]): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.ADDON_ORDER, ids);
 }
+
+/**
+ * True when the current account has a saved custom addon order (reordered at
+ * least once and not reset since). An empty saved order means the default
+ * (alphabetical) order applies.
+ */
+export function hasCustomAddonOrder(): boolean {
+  return (
+    PerAccountLocalStorage.getInstance().get<string[]>(
+      StorageKeys.ADDON_ORDER,
+      []
+    ).length > 0
+  );
+}
+
+/**
+ * Drop the saved custom order — the sidebar falls back to the default
+ * (alphabetical) order for the current account.
+ */
+export function resetAddonOrder(): void {
+  PerAccountLocalStorage.getInstance().remove(StorageKeys.ADDON_ORDER);
+}

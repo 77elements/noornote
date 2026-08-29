@@ -91,7 +91,7 @@
   }
 
   // Legacy support for non-BEM a tags (e.g., sublinks)
-  a:not([class*="primary-nav__"]) {
+  a:not([class*='primary-nav__']) {
     display: block;
     padding: calc($gap / 2);
     color: var(--color-5);
@@ -166,6 +166,26 @@
 
   // Accordion menu (Lists)
   &__item--accordion {
+    // Addons head: trigger + "(reset order)" as SEPARATE click targets in one
+    // row (Analytics-side directive 2026-08-29) — grid keeps the trigger
+    // stretch and the reset link auto-sized. Lists keeps the plain trigger.
+    .addons-nav-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+    }
+
+    .addons-nav-head .primary-nav__accordion-trigger {
+      width: 100%;
+    }
+
+    // Plain text link — the legacy non-BEM rule `.primary-nav
+    // a:not([class*='primary-nav__'])` wins on specificity, so the padding
+    // reset needs !important (single sanctioned exception, 2026-08-29).
+    .addon-order-reset {
+      padding: 0 !important;
+    }
+
     .primary-nav__accordion-trigger {
       display: block;
       width: 100%;
@@ -268,7 +288,6 @@
     opacity: 0.6;
     cursor: grabbing;
   }
-
 }
 
 // Addon list reordering — ▲▼ controls, hidden until touch reorder mode is on.
@@ -311,7 +330,8 @@
 }
 
 @keyframes badge-pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     box-shadow: 0 0 8px color-mix(in srgb, var(--color-6) 60%, transparent);
   }

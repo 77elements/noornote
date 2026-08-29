@@ -7,6 +7,7 @@
  *
  * The order is persisted per account via saveAddonOrder(). Navigation is suppressed while
  * reordering / right after a drag so a reorder never opens an addon by accident.
+ * `onOrderChanged` fires after every persist (label/UI refresh hook).
  */
 
 import { saveAddonOrder } from '../../addons/addonOrder';
@@ -16,17 +17,22 @@ const LONG_PRESS_MS = 500;
 const DRAG_THRESHOLD = 6;
 const TOUCH_MOVE_CANCEL = 10;
 
-export function wireAddonReorder(submenu: HTMLElement): void {
+export function wireAddonReorder(
+  submenu: HTMLElement,
+  onOrderChanged?: () => void
+): void {
   const rows = () =>
     Array.from(
       submenu.querySelectorAll<HTMLElement>(':scope > li[data-addon-id]')
     );
-  const persist = () =>
+  const persist = () => {
     saveAddonOrder(
       rows()
         .map(li => li.dataset.addonId || '')
         .filter(Boolean)
     );
+    onOrderChanged?.();
+  };
 
   // Capture-phase guard: swallow sublink navigation while reordering or just after a drag.
   let suppressClick = false;

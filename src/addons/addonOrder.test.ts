@@ -12,13 +12,20 @@ vi.mock('../services/PerAccountLocalStorage', () => ({
       set: (key: string, v: unknown) => store.set(key, v),
       getForPubkey: (key: string, _pubkey: string, def: unknown) =>
         store.has(key) ? store.get(key) : def,
+      remove: (key: string) => store.delete(key),
     }),
   },
   StorageKeys: { ADDON_ORDER: 'noornote_addon_order_map' },
 }));
 
 import { ADDON_REGISTRY } from './registry';
-import { getOrderedAddons, getOrderedAddonsForPubkey } from './addonOrder';
+import {
+  getOrderedAddons,
+  getOrderedAddonsForPubkey,
+  hasCustomAddonOrder,
+  resetAddonOrder,
+  saveAddonOrder,
+} from './addonOrder';
 
 const ORDER_KEY = 'noornote_addon_order_map';
 
@@ -47,5 +54,15 @@ describe('addonOrder', () => {
   it('getOrderedAddonsForPubkey reads the per-pubkey order', () => {
     store.set(ORDER_KEY, ['tribes']);
     expect(getOrderedAddonsForPubkey('pk')[0].id).toBe('tribes');
+  });
+
+  it('hasCustomAddonOrder tracks save and reset', () => {
+    expect(hasCustomAddonOrder()).toBe(false);
+    saveAddonOrder(['tribes', 'bookmarks']);
+    expect(hasCustomAddonOrder()).toBe(true);
+    resetAddonOrder();
+    expect(hasCustomAddonOrder()).toBe(false);
+    // Reset = back to the default (alphabetical) order.
+    expect(getOrderedAddons()[0].name).toBe('Analytics');
   });
 });

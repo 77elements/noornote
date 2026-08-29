@@ -30,8 +30,11 @@ import { TypedEventBus } from '../../core/TypedEventBus';
 import {
   getOrderedAddons,
   getOrderedAddonsForPubkey,
+  hasCustomAddonOrder,
+  resetAddonOrder,
 } from '../../addons/addonOrder';
 import { wireAddonReorder } from './AddonNavReorder';
+import { ToastService } from '../../services/ToastService';
 // WalletBalanceDisplay is owned by src/addons/wallet-balance/runtime.ts and
 // managed by the AddonLoader. MainLayout only provides the mount point
 // (.wallet-balance-container, see this.element template).
@@ -1076,6 +1079,20 @@ export class MainLayout {
       const li = byId.get(entry.id);
       if (li) submenu.appendChild(li);
     }
+    this.updateAddonResetVisibility();
+  }
+
+  /**
+   * Show the "(reset order)" affordance only while the addon submenu is open
+   * AND the current account has a saved custom order.
+   */
+  private updateAddonResetVisibility(): void {
+    const resetLink = this.element.querySelector<HTMLElement>(
+      '.primary-nav__link--addons [data-addon-order-reset]'
+    );
+    if (!resetLink) return;
+    const visible = this.addonsAccordionOpen && hasCustomAddonOrder();
+    resetLink.style.display = visible ? '' : 'none';
   }
 
   /**
@@ -2480,10 +2497,13 @@ export class MainLayout {
     li.className =
       'primary-nav__item primary-nav__item--accordion primary-nav__link--addons';
     li.innerHTML = `
-      <button class="primary-nav__accordion-trigger">
-        <svg class="primary-nav__item-icon"><use href="#icon-addons"/></svg>
-        Addons
-      </button>
+      <div class="addons-nav-head">
+        <button class="primary-nav__accordion-trigger">
+          <svg class="primary-nav__item-icon"><use href="#icon-addons"/></svg>
+          Addons
+        </button>
+        <a href="#" class="addon-order-reset" data-addon-order-reset>(reset order)</a>
+      </div>
       <ul class="primary-nav__submenu">
         ${addonItems
           .map(
@@ -2523,6 +2543,23 @@ export class MainLayout {
         'primary-nav__item--expanded',
         this.addonsAccordionOpen
       );
+      this.updateAddonResetVisibility();
+    });
+
+    // Reset order: drop the saved custom order (back to alphabetical) —
+    // separate click target next to the accordion trigger, only visible
+    // while the submenu is open AND the user has reordered.
+    const resetLink = li.querySelector<HTMLElement>('[data-addon-order-reset]');
+    resetLink?.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      resetAddonOrder();
+      const pubkey = AuthService.getInstance().getCurrentUser()?.pubkey ?? '';
+      this.applyAddonOrder(pubkey);
+      this.addonsAccordionOpen = true;
+      li.classList.add('primary-nav__item--expanded');
+      this.updateAddonResetVisibility();
+      ToastService.show('Addon order reset to default', 'success');
     });
 
     // Sublink handlers
@@ -2550,7 +2587,10 @@ export class MainLayout {
     const submenu = li.querySelector(
       '.primary-nav__submenu'
     ) as HTMLElement | null;
-    if (submenu) wireAddonReorder(submenu);
+    if (submenu) {
+      wireAddonReorder(submenu, () => this.updateAddonResetVisibility());
+      this.updateAddonResetVisibility();
+    }
 
     const downloadLink = navContainer.querySelector(
       '.primary-nav__link--download'
