@@ -16,7 +16,9 @@ export interface LogicEvent {
   kind: number;
   tags: string[][];
   created_at: number;
-  /** Raw event content — only needed by the Top-Posts extraction (P8). */
+  /** Author pubkey — needed for like dedup (P10). */
+  pubkey?: string;
+  /** Raw event content — like "-" filtering and the Top-Posts extraction. */
   content?: string;
 }
 
@@ -181,9 +183,11 @@ export interface InboxClassification {
 /**
  * Classify the inbox sweep (#p:me, kinds 1, 6, 1111, 9735, 7) with STRICT
  * validation: a reply/repost/quote/like only counts when it references one of
- * the user's own event ids (e-tag for replies/reposts/likes, q-tag for
- * quotes). Zap receipts (9735) always count — the #p filter already targeted
- * us.
+ * the user's own event ids. Kind 1 with a q-tag on an own event counts as a
+ * QUOTE (the common quote form — YakiHonne-comparison 2026-08-29); an e-tag
+ * on an own event wins as reply/comment when both are present. Kind 1111
+ * replies use the NIP-22 `e` (parent) or `E` (root) tags. Zap receipts
+ * (9735) always count — the #p filter already targeted us.
  */
 export function classifyInbox(
   events: LogicEvent[],
@@ -195,15 +199,25 @@ export function classifyInbox(
     quotesReceived: 0,
     likesReceived: 0,
   };
+  const likeAuthors = new Map<string, Set<string>>();
   const zapsReceived = { count: 0, sats: 0 };
   let maxCreatedAt = 0;
 
   for (const ev of events) {
     if (ev.created_at > maxCreatedAt) maxCreatedAt = ev.created_at;
     switch (ev.kind) {
-      case 1:
-      case 1111: {
+      case 1: {
         const e = firstTagValue(ev.tags, 'e');
+        if (e && ownEventIds.has(e)) {
+          engagement.repliesReceived++;
+          break;
+        }
+        const q = firstTagValue(ev.tags, 'q');
+        if (q && ownEventIds.has(q)) engagement.quotesReceived++;
+        break;
+      }
+      case 1111: {
+        const e = firstTagValue(ev.tags, 'e') ?? firstTagValue(ev.tags, 'E');
         if (e && ownEventIds.has(e)) engagement.repliesReceived++;
         break;
       }
@@ -223,8 +237,19 @@ export function classifyInbox(
         break;
       }
       case 7: {
+        // Unlike (content "-") and duplicate likes by the same author don't count.
+        if (ev.content === '-') break;
         const e = firstTagValue(ev.tags, 'e');
-        if (e && ownEventIds.has(e)) engagement.likesReceived++;
+        if (!e || !ownEventIds.has(e)) break;
+        let seen = likeAuthors.get(e);
+        if (!seen) {
+          seen = new Set();
+          likeAuthors.set(e, seen);
+        }
+        if (!seen.has(ev.pubkey ?? '')) {
+          seen.add(ev.pubkey ?? '');
+          engagement.likesReceived++;
+        }
         break;
       }
     }
@@ -391,6 +416,7 @@ export function bucketEngagementTimeline(
   unit: EngagementUnit
 ): EngagementBucket[] {
   const byStart = new Map<number, EngagementBucket>();
+  const likeAuthors = new Map<string, Set<string>>();
   const bucketOf = (ts: number): EngagementBucket => {
     const start = bucketStartOf(ts, unit);
     let b = byStart.get(start);
@@ -411,9 +437,18 @@ export function bucketEngagementTimeline(
   for (const ev of events) {
     const start = bucketStartOf(ev.created_at, unit);
     switch (ev.kind) {
-      case 1:
-      case 1111: {
+      case 1: {
         const e = firstTagValue(ev.tags, 'e');
+        if (e && ownEventIds.has(e)) {
+          bucketOf(start).replies++;
+          break;
+        }
+        const q = firstTagValue(ev.tags, 'q');
+        if (q && ownEventIds.has(q)) bucketOf(start).quotes++;
+        break;
+      }
+      case 1111: {
+        const e = firstTagValue(ev.tags, 'e') ?? firstTagValue(ev.tags, 'E');
         if (e && ownEventIds.has(e)) bucketOf(start).replies++;
         break;
       }
@@ -437,8 +472,20 @@ export function bucketEngagementTimeline(
         break;
       }
       case 7: {
+        // Unlike (content "-") and duplicate likes by the same author don't count.
+        if (ev.content === '-') break;
         const e = firstTagValue(ev.tags, 'e');
-        if (e && ownEventIds.has(e)) bucketOf(start).likes++;
+        if (!e || !ownEventIds.has(e)) break;
+        const key = `${start}:${e}`;
+        let seen = likeAuthors.get(key);
+        if (!seen) {
+          seen = new Set();
+          likeAuthors.set(key, seen);
+        }
+        if (!seen.has(ev.pubkey ?? '')) {
+          seen.add(ev.pubkey ?? '');
+          bucketOf(start).likes++;
+        }
         break;
       }
     }
@@ -582,11 +629,15 @@ export function extractOwnPosts(events: LogicEvent[]): {
 
 /**
  * Tally inbox engagement per TARGET event id (e-tag for replies/zaps/likes/
- * reposts, q-tag for quotes). Mirrors classifyInbox semantics; zap receipts
- * without an e-tag stay unattributed (they count in the zaps row only).
+ * reposts, q-tag for quotes). Mirrors classifyInbox semantics — kind 1 with
+ * a q-tag on an own event counts as quote (an own-event e-tag wins as
+ * reply), kind 1111 uses e/E, likes dedupe per author and skip "-" —; zap
+ * receipts without an e-tag stay unattributed (they count in the zaps row
+ * only).
  */
 export function tallyInboxByTarget(
-  events: LogicEvent[]
+  events: LogicEvent[],
+  ownEventIds: ReadonlySet<string>
 ): Map<string, TargetTally> {
   const byTarget = new Map<string, TargetTally>();
   const tallyOf = (id: string): TargetTally => {
@@ -597,12 +648,22 @@ export function tallyInboxByTarget(
     }
     return t;
   };
+  const likeAuthors = new Map<string, Set<string>>();
   for (const ev of events) {
     switch (ev.kind) {
-      case 1:
-      case 1111: {
+      case 1: {
         const e = firstTagValue(ev.tags, 'e');
-        if (e) tallyOf(e).replies++;
+        if (e && ownEventIds.has(e)) {
+          tallyOf(e).replies++;
+          break;
+        }
+        const q = firstTagValue(ev.tags, 'q');
+        if (q && ownEventIds.has(q)) tallyOf(q).quotes++;
+        break;
+      }
+      case 1111: {
+        const e = firstTagValue(ev.tags, 'e') ?? firstTagValue(ev.tags, 'E');
+        if (e && ownEventIds.has(e)) tallyOf(e).replies++;
         break;
       }
       case 6: {
@@ -623,8 +684,18 @@ export function tallyInboxByTarget(
         break;
       }
       case 7: {
+        if (ev.content === '-') break;
         const e = firstTagValue(ev.tags, 'e');
-        if (e) tallyOf(e).likes++;
+        if (!e) break;
+        let seen = likeAuthors.get(e);
+        if (!seen) {
+          seen = new Set();
+          likeAuthors.set(e, seen);
+        }
+        if (!seen.has(ev.pubkey ?? '')) {
+          seen.add(ev.pubkey ?? '');
+          tallyOf(e).likes++;
+        }
         break;
       }
     }

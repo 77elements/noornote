@@ -299,31 +299,91 @@ describe('top posts (P8)', () => {
   });
 
   it('tallyInboxByTarget maps kinds per e/q target, unattributable zaps skipped', () => {
-    const tallies = tallyInboxByTarget([
-      ev({ kind: 1, tags: [['e', 'p1']] }),
-      ev({ kind: 1111, tags: [['e', 'p1']] }),
-      ev({ kind: 6, tags: [['e', 'p1']] }),
-      ev({ kind: 6, tags: [['q', 'p2']] }),
-      ev({ kind: 7, tags: [['e', 'p1']] }),
-      ev({ kind: 7, tags: [['e', 'p1']] }),
-      ev({
-        kind: 9735,
-        tags: [
-          ['e', 'p1'],
-          ['bolt11', 'lnbc10u1xyz'],
-        ],
-      }),
-      ev({ kind: 9735, tags: [['p', 'me']] }), // no e-tag → unattributed
-    ]);
+    const tallies = tallyInboxByTarget(
+      [
+        ev({ kind: 1, tags: [['e', 'p1']] }),
+        ev({ kind: 1, tags: [['q', 'p1']] }), // kind-1 quote → quote, not reply
+        ev({ kind: 1111, tags: [['E', 'p1']] }), // NIP-22 root tag
+        ev({ kind: 6, tags: [['e', 'p1']] }),
+        ev({ kind: 6, tags: [['q', 'p2']] }),
+        ev({ kind: 7, tags: [['e', 'p1']] }),
+        ev({ kind: 7, tags: [['e', 'p1']] }), // duplicate author → no
+        ev({
+          kind: 9735,
+          tags: [
+            ['e', 'p1'],
+            ['bolt11', 'lnbc10u1xyz'],
+          ],
+        }),
+        ev({ kind: 9735, tags: [['p', 'me']] }), // no e-tag → unattributed
+      ],
+      new Set(['p1', 'p2'])
+    );
     expect(tallies.get('p1')).toEqual({
       replies: 2,
       zaps: 1,
       zapSats: 1_000,
       reposts: 1,
-      quotes: 0,
-      likes: 2,
+      quotes: 1,
+      likes: 1,
     });
     expect(tallies.get('p2')?.quotes).toBe(1);
+  });
+
+  it('classifyInbox: kind-1 quotes count, own e-tag wins as reply', () => {
+    const ownIds = new Set([OWN]);
+    const { engagement } = classifyInbox(
+      [
+        ev({ kind: 1, tags: [['q', OWN]] }), // pure quote → quote
+        ev({
+          kind: 1,
+          tags: [
+            ['e', OTHER],
+            ['q', OWN],
+          ],
+        }), // quote embedded elsewhere → quote
+        ev({
+          kind: 1,
+          tags: [
+            ['e', OWN],
+            ['q', OWN],
+          ],
+        }), // reply in my thread wins
+      ],
+      ownIds
+    );
+    expect(engagement.quotesReceived).toBe(2);
+    expect(engagement.repliesReceived).toBe(1);
+  });
+
+  it('classifyInbox: kind 1111 replies via NIP-22 e and E tags', () => {
+    const { engagement } = classifyInbox(
+      [
+        ev({ kind: 1111, tags: [['e', OWN]] }),
+        ev({ kind: 1111, tags: [['E', OWN]] }),
+        ev({ kind: 1111, tags: [['e', OTHER]] }),
+      ],
+      new Set([OWN])
+    );
+    expect(engagement.repliesReceived).toBe(2);
+  });
+
+  it('classifyInbox: unlike and duplicate likes by the same author are skipped', () => {
+    const { engagement } = classifyInbox(
+      [
+        ev({ kind: 7, tags: [['e', OWN]], content: '+' }),
+        ev({ kind: 7, tags: [['e', OWN]], content: '+' }), // same author → no
+        ev({ kind: 7, tags: [['e', OWN]], content: '-' }), // unlike → no
+        ev({
+          kind: 7,
+          pubkey: 'someone-else',
+          tags: [['e', OWN]],
+          content: '+',
+        }), // different author → yes
+      ],
+      new Set([OWN])
+    );
+    expect(engagement.likesReceived).toBe(2);
   });
 
   it('compareTopPosts: replies > zaps > reposts+quotes > likes > createdAt', () => {

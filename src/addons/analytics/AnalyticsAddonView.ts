@@ -372,14 +372,14 @@ export class AnalyticsAddonView extends View {
       </section>
       <section class="analytics__row" data-analytics-row="zaps-earned">
         <h2 class="analytics__row-title">Zaps earned</h2>
-        <p class="form__note">Sats received per bucket. Hover a bar for details.</p>
+        <p class="form__note">Sats received per month, last 12 months — older receipts rarely survive relay retention. Hover a bar for details.</p>
         <div class="analytics-chart" data-zaps-earned-chart>
           <p class="form__note pulsate">Building…</p>
         </div>
       </section>
       <section class="analytics__row" data-analytics-row="zaps-sent">
         <h2 class="analytics__row-title">Zaps sent</h2>
-        <p class="form__note">Sats sent per bucket — best effort (wallets without the P tag may be missing).</p>
+        <p class="form__note">Sats sent per month, last 12 months — best effort (wallets without the P tag may be missing).</p>
         <div class="analytics-chart" data-zaps-sent-chart>
           <p class="form__note pulsate">Building…</p>
         </div>
@@ -568,6 +568,7 @@ export class AnalyticsAddonView extends View {
   private paintDiagramsCharts(aux: {
     timeline?: EngagementBucket[];
     timelineUnit?: EngagementUnit;
+    zapsEarnedTimeline?: EngagementBucket[];
     sentZapsTimeline?: EngagementBucket[];
   }): void {
     const unit = aux.timelineUnit;
@@ -589,7 +590,7 @@ export class AnalyticsAddonView extends View {
     );
     this.paintBarChart(
       '[data-zaps-earned-chart]',
-      aux.timeline,
+      aux.zapsEarnedTimeline ?? [],
       b => b.zapSats,
       b =>
         `${label(b)} — ${formatSatsCompact(b.zapSats)} sats earned (${b.zaps} zaps)`

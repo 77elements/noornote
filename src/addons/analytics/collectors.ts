@@ -67,7 +67,9 @@ export interface AuxData {
   timelineUnit?: EngagementUnit;
   /** Oldest own event seen (epoch seconds) — account-age basis for the unit. */
   oldestOwnEventAt?: number;
-  /** Persisted SENT zap sats per bucket (Diagrams tab, sent-zaps sweep). */
+  /** Persisted received zap sats per month (Diagrams tab, last 12 months). */
+  zapsEarnedTimeline?: EngagementBucket[];
+  /** Persisted sent zap sats per month (Diagrams tab, last 12 months). */
   sentZapsTimeline?: EngagementBucket[];
 }
 
@@ -135,10 +137,13 @@ export class SweepCache {
   }
 
   /**
-   * Own-content relay set: read + aggregator + the OWN NIP-65 write relays.
+   * Own sweep relay set: read + aggregator + the OWN NIP-65 write relays.
    * Articles/videos/listings often live ONLY on the author's write relays —
-   * the exact reason ProfileCarouselOrchestrator broadens too. The outbound
-   * discovery is IDB-cached, so this is one cheap extra fetch at most.
+   * the exact reason ProfileCarouselOrchestrator broadens too. Zap receipts
+   * are published to the recipient's write relays at zap time (P10: the
+   * inbox sweep broadens the same way — receipts from the CURRENT write set
+   * become reachable; pre-switch history stays unreachable by design). The
+   * outbound discovery is IDB-cached, so this is one cheap extra fetch.
    */
   private async ownContentRelays(pubkey: string): Promise<string[]> {
     const base = this.relays();
@@ -194,19 +199,29 @@ export class SweepCache {
       : this.cursor(ctx, 'zaps', 'engagement');
     // Same per-filter discipline: replies/reposts, zap receipts and likes
     // each get their own limit window so one flood cannot starve the others.
-    this.inboxPromise = this.sweep(
-      this.relays(),
-      [
-        { kinds: [1, 6, 1111], '#p': [ctx.pubkey], limit: SWEEP_PAGE_LIMIT },
-        { kinds: [9735], '#p': [ctx.pubkey], limit: SWEEP_PAGE_LIMIT },
-        { kinds: [7], '#p': [ctx.pubkey], limit: SWEEP_PAGE_LIMIT },
-      ],
-      since,
-      'inbox'
-    ).then(events => {
-      this.inboxEvents = events;
-      return events;
-    });
+    // Broadened to the own NIP-65 write relays (P10): zap receipts are
+    // published to the recipient's write relays.
+    this.inboxPromise = this.ownContentRelays(ctx.pubkey)
+      .then(relays =>
+        this.sweep(
+          relays,
+          [
+            {
+              kinds: [1, 6, 1111],
+              '#p': [ctx.pubkey],
+              limit: SWEEP_PAGE_LIMIT,
+            },
+            { kinds: [9735], '#p': [ctx.pubkey], limit: SWEEP_PAGE_LIMIT },
+            { kinds: [7], '#p': [ctx.pubkey], limit: SWEEP_PAGE_LIMIT },
+          ],
+          since,
+          'inbox'
+        )
+      )
+      .then(events => {
+        this.inboxEvents = events;
+        return events;
+      });
     return this.inboxPromise;
   }
 
@@ -554,7 +569,14 @@ const topPostsCollector: AnalyticsCollector = {
     const inboxLogic = asLogic(inbox);
 
     const { posts, deletedIds } = extractOwnPosts(ownLogic);
-    const tallies = tallyInboxByTarget(inboxLogic);
+    // Reply-vs-quote decision basis (same as the engagement collector): the
+    // persisted own-event ids overlaid with this run's own content.
+    const prevPostsSnapshot = ctx.previous('posts');
+    const ownIds = new Set<string>(prevPostsSnapshot?.aux?.ownEventIds ?? []);
+    for (const ev of ownEvents) {
+      if (ev.kind !== 5 && ev.id) ownIds.add(ev.id);
+    }
+    const tallies = tallyInboxByTarget(inboxLogic, ownIds);
     const prev = ctx.previous('top-posts');
     const prevPosts = !ctx.fullRun && prev ? (prev.aux?.topPosts ?? []) : [];
     const topPosts = mergeTopPosts(prevPosts, posts, tallies, deletedIds);
@@ -615,12 +637,37 @@ const engagementTimelineCollector: AnalyticsCollector = {
     const unit = pickEngagementUnit(oldest, nowSec);
 
     const delta = bucketEngagementTimeline(inboxLogic, ownIds, unit);
-    const sentDelta = bucketSentZaps(sentLogic, unit);
     const unitStable = !ctx.fullRun && prev?.aux?.timelineUnit === unit;
     const prevTimeline = unitStable ? (prev?.aux?.timeline ?? []) : [];
     const timeline = mergeEngagementTimeline(prevTimeline, delta);
-    const prevSent = unitStable ? (prev?.aux?.sentZapsTimeline ?? []) : [];
-    const sentZapsTimeline = mergeEngagementTimeline(prevSent, sentDelta);
+
+    // Zap charts show the LAST 12 MONTHS only (user directive 2026-08-29):
+    // older receipts are unreliably retained, and zeros would read as "no
+    // zaps". Own monthly buckets — calendar-stable, so merges stay additive.
+    const winStart = nowSec - 365 * 86400;
+    const zapsEarnedDelta = bucketSentZaps(
+      inboxLogic.filter(ev => ev.kind === 9735 && ev.created_at >= winStart),
+      'month'
+    );
+    const prevEarned = !ctx.fullRun
+      ? (prev?.aux?.zapsEarnedTimeline ?? [])
+      : [];
+    const zapsEarnedTimeline = mergeEngagementTimeline(
+      prevEarned,
+      zapsEarnedDelta
+    ).filter(b => b.start >= winStart);
+
+    const sentDelta = bucketSentZaps(
+      sentLogic.filter(ev => ev.created_at >= winStart),
+      'month'
+    );
+    const prevSentWindow = !ctx.fullRun
+      ? (prev?.aux?.sentZapsTimeline ?? [])
+      : [];
+    const sentZapsTimeline = mergeEngagementTimeline(
+      prevSentWindow,
+      sentDelta
+    ).filter(b => b.start >= winStart);
 
     let cursor = prev?.sinceCursor ?? 0;
     for (const ev of inboxLogic) cursor = Math.max(cursor, ev.created_at);
@@ -636,6 +683,7 @@ const engagementTimelineCollector: AnalyticsCollector = {
         timelineUnit: unit,
         oldestOwnEventAt: oldest,
         sentZapsTimeline,
+        zapsEarnedTimeline,
       },
     };
   },
