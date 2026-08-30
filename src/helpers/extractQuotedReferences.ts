@@ -30,6 +30,15 @@ export interface QuotedReference {
   fragment?: string;
 }
 
+/**
+ * Matches Nostr event references — both "nostr:nevent1…" AND bare "nevent1…"
+ * (negative lookbehind `(?<!\/)` prevents matching inside URL paths).
+ * Shared single source of truth: extractQuotedReferences (quote boxes) and
+ * renderNostrReferenceLinks (inline single-line links) both use this.
+ */
+export const NOSTR_EVENT_REF_REGEX =
+  /(?<!\/)(?:nostr:)?(event1[023456789acdefghjklmnpqrstuvwxyz]{58}|note1[023456789acdefghjklmnpqrstuvwxyz]{58}|nevent1[023456789acdefghjklmnpqrstuvwxyz]+|naddr1[023456789acdefghjklmnpqrstuvwxyz]+)(#([A-Za-z0-9_-]+))?(?=[^023456789acdefghjklmnpqrstuvwxyz#]|$)/gi;
+
 export function extractQuotedReferences(text: string): QuotedReference[] {
   const quotes: QuotedReference[] = [];
 
@@ -42,10 +51,8 @@ export function extractQuotedReferences(text: string): QuotedReference[] {
   // and reaches the renderer; the lookahead after it requires the next char
   // to NOT be a bech32 char (so we don't swallow trailing bech32 body) AND
   // not another `#` (defensive — no double-fragment).
-  const nostrRegex =
-    /(?<!\/)(?:nostr:)?(event1[023456789acdefghjklmnpqrstuvwxyz]{58}|note1[023456789acdefghjklmnpqrstuvwxyz]{58}|nevent1[023456789acdefghjklmnpqrstuvwxyz]+|naddr1[023456789acdefghjklmnpqrstuvwxyz]+)(#([A-Za-z0-9_-]+))?(?=[^023456789acdefghjklmnpqrstuvwxyz#]|$)/gi;
-
-  const matches = Array.from(text.matchAll(nostrRegex));
+  // The pattern itself lives in NOSTR_EVENT_REF_REGEX above (shared).
+  const matches = Array.from(text.matchAll(NOSTR_EVENT_REF_REGEX));
 
   matches.forEach(match => {
     const fullMatch = match[0];

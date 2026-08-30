@@ -5,6 +5,7 @@
 
 @use 'sass:color';
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 
 a {
   color: var(--color-4); // Pink (interactive color)
@@ -63,5 +64,24 @@ a {
   &:active,
   &:focus {
     background-color: var(--bg-accent);
+  }
+}
+
+// Inline single-line links for Nostr event references in field text
+// (profile bios etc.) — see renderNostrReferenceLinks helper.
+.nostr-ref-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  vertical-align: baseline;
+  white-space: nowrap;
+
+  svg {
+    flex-shrink: 0;
+    opacity: 0.7;
+  }
+
+  span {
+    @extend %small;
   }
 }
