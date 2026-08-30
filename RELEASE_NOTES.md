@@ -1,9 +1,13 @@
-# NoorNote 1.3.6
+# NoorNote 1.4.0
 
-**New** — user statuses on profiles (NIP-38): see someone's one-liner under their NIP-05, set your own by clicking it.
+**New: Analytics** — Your personal Nostr stats: posts, replies, follows, content, zaps and engagement. Includes your Top 10 posts and engagement/zap diagrams over time. Relay-friendly, cached per account, refreshed incrementally.
 
-**New** — classified listings (NIP-99) now display everywhere in the app; the marketplace addon is only needed to buy & sell.
+**New** — "Read more from this author" on articles. NIP-29 group chat messages now render as readable cards with notification previews.
 
-**Improved** — private petname notes now show in warning orange: filled note icon plus an orange avatar ring, everywhere.
+**Improved** — Faster article feed loads (cached social graph). Addons menu: initial order is alphabetical, with a "(reset order)" link after customizing.
 
-**Fixed** — long single-block draft text scrolls sideways so the delete button stays reachable.
+**Fixed** — Infinite scroll prefetch, dead "Load more" in tribe timelines, false unread-DM toasts after login. Copied event IDs and share links now carry relay hints.
+
+**Renamed** — "External quotes" is now called "Highlights".
+
+**Under the hood** — Big stability and quality pass: the whole codebase was cleaned to zero lint warnings (now enforced on every build) and covered by a growing automated test suite — fewer regressions, more reliable updates.
