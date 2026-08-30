@@ -122,6 +122,7 @@
 @use 'components/upload-progress-overlay';
 @use 'components/nostr-majlis';
 @use 'components/epub-reader';
+@use 'components/podcast-episode';
 
 // Add-Ons
 @use '../addons/marketplace/marketplace';

@@ -52,6 +52,11 @@ import type { TimelineConfig } from '../../components/timeline/TimelineConfig';
  * marketplace addon injector and the profile listings carousel — adding them
  * here would flood the feed. Listings still reach the timeline through kind 6/16
  * reposts, where RepostRenderer dispatches them via ListingProcessor/ListingRenderer.
+ *
+ * Deliberately excludes 30054 (podcast episodes): podcast clients announce
+ * episodes via kind-1 notes quoting the episode (which renders the episode
+ * preview card); adding bare episodes here would duplicate that. Episodes
+ * surface through quotes, the SNV and notifications instead.
  */
 const FEED_KINDS: number[] = [
   1, 6, 16, 20, 21, 22, 1063, 1068, 1617, 1618, 1619, 1621, 1630, 1631, 1632,

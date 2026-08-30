@@ -5,7 +5,7 @@
   "homepage": "https://noornote.app",
   "app": {
     "name": "NoorNote",
-    "about": "Privacy-first Nostr client for desktop (macOS/Linux), Android and web. Feeds, articles, DMs, zaps, marketplace, lists and tribes — your keys, your relays, no analytics.",
+    "about": "Privacy-first Nostr client for desktop (macOS/Linux), Android and web. Feeds, articles, DMs, zaps, marketplace, lists and tribes \u2014 your keys, your relays, no analytics.",
     "picture": "https://noornote.app/favicon.png",
     "website": "https://noornote.app",
     "handlers": {
@@ -15,70 +15,309 @@
       "linux": "https://noornote.app",
       "macos": "https://noornote.app"
     },
-    "topics": ["social", "client", "media", "marketplace", "messaging", "zaps", "articles"],
-    "nips": ["01", "02", "04", "05", "07", "09", "10", "17", "18", "19", "21", "22", "23", "24", "25", "27", "30", "34", "36", "42", "44", "46", "47", "50", "51", "53", "55", "56", "57", "58", "59", "65", "68", "71", "73", "78", "84", "88", "92", "94", "96", "98", "99"]
+    "topics": [
+      "social",
+      "client",
+      "media",
+      "marketplace",
+      "messaging",
+      "zaps",
+      "articles"
+    ],
+    "nips": [
+      "01",
+      "02",
+      "04",
+      "05",
+      "07",
+      "09",
+      "10",
+      "17",
+      "18",
+      "19",
+      "21",
+      "22",
+      "23",
+      "24",
+      "25",
+      "27",
+      "30",
+      "34",
+      "36",
+      "42",
+      "44",
+      "46",
+      "47",
+      "50",
+      "51",
+      "53",
+      "55",
+      "56",
+      "57",
+      "58",
+      "59",
+      "65",
+      "68",
+      "71",
+      "73",
+      "78",
+      "84",
+      "88",
+      "92",
+      "94",
+      "96",
+      "98",
+      "99"
+    ]
   },
   "kinds": [
-    ["0", "Profile Metadata"],
-    ["1", "Short Text Note"],
-    ["3", "Follow List"],
-    ["4", "Encrypted DM (legacy)"],
-    ["5", "Event Deletion"],
-    ["6", "Repost"],
-    ["7", "Reaction"],
-    ["8", "Badge Award"],
-    ["13", "Seal (NIP-17)"],
-    ["14", "Private DM (NIP-17)"],
-    ["16", "Generic Repost"],
-    ["20", "Picture Post"],
-    ["21", "Video (landscape)"],
-    ["22", "Video (portrait)"],
-    ["1018", "Poll Response"],
-    ["1059", "Gift Wrap (NIP-59)"],
-    ["1063", "File Metadata"],
-    ["1068", "Poll"],
-    ["1111", "Comment"],
-    ["1311", "Live Chat Message"],
-    ["1617", "Git Patch (NIP-34)"],
-    ["1618", "Git Event (NIP-34)"],
-    ["1619", "Git Event (NIP-34)"],
-    ["1621", "Git Issue (NIP-34)"],
-    ["1630", "Git Status (NIP-34)"],
-    ["1631", "Git Status (NIP-34)"],
-    ["1632", "Git Status (NIP-34)"],
-    ["1633", "Git Status (NIP-34)"],
-    ["1984", "Reporting"],
-    ["6969", "Poll (legacy)"],
-    ["9734", "Zap Request"],
-    ["9735", "Zap Receipt"],
-    ["9802", "Highlight"],
-    ["10000", "Mute List"],
-    ["10002", "Relay List Metadata"],
-    ["10003", "Bookmark List (legacy)"],
-    ["10008", "Badges (profile)"],
-    ["10050", "DM Relay List"],
-    ["22242", "Client Auth to Relay (NIP-42)"],
-    ["23194", "Wallet Connect Request (NIP-47)"],
-    ["23195", "Wallet Connect Response (NIP-47)"],
-    ["24133", "Remote Signing (NIP-46)"],
-    ["24242", "Blossom Upload Auth"],
-    ["27235", "HTTP Auth"],
-    ["30000", "Follow Set"],
-    ["30003", "Bookmark Set"],
-    ["30008", "Profile Badges"],
-    ["30009", "Badge Definition"],
-    ["30023", "Long-form Article"],
-    ["30024", "Long-form Draft"],
-    ["30030", "Custom Emoji Pack"],
-    ["30063", "Zapstore Release Artifact"],
-    ["30078", "App-specific Data"],
-    ["30315", "User Status"],
-    ["30311", "Live Event"],
-    ["30402", "Classified Listing"],
-    ["30617", "Git Repository (NIP-34)"],
-    ["32267", "Zapstore App"],
-    ["33301", "Armada Community Invite"],
-    ["39089", "Follow Pack"],
-    ["35129", "Satellite Earth site page"]
+    [
+      "0",
+      "Profile Metadata"
+    ],
+    [
+      "1",
+      "Short Text Note"
+    ],
+    [
+      "3",
+      "Follow List"
+    ],
+    [
+      "4",
+      "Encrypted DM (legacy)"
+    ],
+    [
+      "5",
+      "Event Deletion"
+    ],
+    [
+      "6",
+      "Repost"
+    ],
+    [
+      "7",
+      "Reaction"
+    ],
+    [
+      "8",
+      "Badge Award"
+    ],
+    [
+      "13",
+      "Seal (NIP-17)"
+    ],
+    [
+      "14",
+      "Private DM (NIP-17)"
+    ],
+    [
+      "16",
+      "Generic Repost"
+    ],
+    [
+      "20",
+      "Picture Post"
+    ],
+    [
+      "21",
+      "Video (landscape)"
+    ],
+    [
+      "22",
+      "Video (portrait)"
+    ],
+    [
+      "1018",
+      "Poll Response"
+    ],
+    [
+      "1059",
+      "Gift Wrap (NIP-59)"
+    ],
+    [
+      "1063",
+      "File Metadata"
+    ],
+    [
+      "1068",
+      "Poll"
+    ],
+    [
+      "1111",
+      "Comment"
+    ],
+    [
+      "1311",
+      "Live Chat Message"
+    ],
+    [
+      "1617",
+      "Git Patch (NIP-34)"
+    ],
+    [
+      "1618",
+      "Git Event (NIP-34)"
+    ],
+    [
+      "1619",
+      "Git Event (NIP-34)"
+    ],
+    [
+      "1621",
+      "Git Issue (NIP-34)"
+    ],
+    [
+      "1630",
+      "Git Status (NIP-34)"
+    ],
+    [
+      "1631",
+      "Git Status (NIP-34)"
+    ],
+    [
+      "1632",
+      "Git Status (NIP-34)"
+    ],
+    [
+      "1633",
+      "Git Status (NIP-34)"
+    ],
+    [
+      "1984",
+      "Reporting"
+    ],
+    [
+      "6969",
+      "Poll (legacy)"
+    ],
+    [
+      "9734",
+      "Zap Request"
+    ],
+    [
+      "9735",
+      "Zap Receipt"
+    ],
+    [
+      "9802",
+      "Highlight"
+    ],
+    [
+      "10000",
+      "Mute List"
+    ],
+    [
+      "10002",
+      "Relay List Metadata"
+    ],
+    [
+      "10003",
+      "Bookmark List (legacy)"
+    ],
+    [
+      "10008",
+      "Badges (profile)"
+    ],
+    [
+      "10050",
+      "DM Relay List"
+    ],
+    [
+      "22242",
+      "Client Auth to Relay (NIP-42)"
+    ],
+    [
+      "23194",
+      "Wallet Connect Request (NIP-47)"
+    ],
+    [
+      "23195",
+      "Wallet Connect Response (NIP-47)"
+    ],
+    [
+      "24133",
+      "Remote Signing (NIP-46)"
+    ],
+    [
+      "24242",
+      "Blossom Upload Auth"
+    ],
+    [
+      "27235",
+      "HTTP Auth"
+    ],
+    [
+      "30000",
+      "Follow Set"
+    ],
+    [
+      "30003",
+      "Bookmark Set"
+    ],
+    [
+      "30008",
+      "Profile Badges"
+    ],
+    [
+      "30009",
+      "Badge Definition"
+    ],
+    [
+      "30023",
+      "Long-form Article"
+    ],
+    [
+      "30024",
+      "Long-form Draft"
+    ],
+    [
+      "30030",
+      "Custom Emoji Pack"
+    ],
+    [
+      "30054",
+      "Podcast Episode"
+    ],
+    [
+      "30063",
+      "Zapstore Release Artifact"
+    ],
+    [
+      "30078",
+      "App-specific Data"
+    ],
+    [
+      "30311",
+      "Live Event"
+    ],
+    [
+      "30315",
+      "User Status"
+    ],
+    [
+      "30402",
+      "Classified Listing"
+    ],
+    [
+      "30617",
+      "Git Repository (NIP-34)"
+    ],
+    [
+      "32267",
+      "Zapstore App"
+    ],
+    [
+      "33301",
+      "Armada Community Invite"
+    ],
+    [
+      "35129",
+      "Satellite Earth site page"
+    ],
+    [
+      "39089",
+      "Follow Pack"
+    ]
   ]
 }

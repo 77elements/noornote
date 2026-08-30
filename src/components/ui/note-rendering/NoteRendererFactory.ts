@@ -13,6 +13,7 @@ import { UnsupportedKindRenderer } from './UnsupportedKindRenderer';
 import { FollowPackRenderer } from './FollowPackRenderer';
 import { GitEventRenderer } from './GitEventRenderer';
 import { HighlightRenderer } from './HighlightRenderer';
+import { PodcastEpisodeRenderer } from './PodcastEpisodeRenderer';
 import { BadgeAwardRenderer } from './BadgeAwardRenderer';
 import { EmojiPackRenderer } from './EmojiPackRenderer';
 import { LiveStreamRenderer } from './LiveStreamRenderer';
@@ -39,6 +40,8 @@ export class NoteRendererFactory {
         return GitEventRenderer.render(note, options);
       case 'highlight':
         return HighlightRenderer.render(note, options);
+      case 'podcast-episode':
+        return PodcastEpisodeRenderer.render(note, options);
       case 'badge-award':
         return BadgeAwardRenderer.render(note, options);
       case 'emoji-pack':

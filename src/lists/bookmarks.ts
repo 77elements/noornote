@@ -3445,6 +3445,10 @@ export class BookmarkCard {
       const title = event.tags.find(t => t[0] === 'title')?.[1] || 'Untitled';
       return `Article: ${title}`;
     }
+    if (event.kind === 30054) {
+      const title = event.tags.find(t => t[0] === 'title')?.[1] || 'Untitled';
+      return `Podcast: ${title}`;
+    }
     if (event.kind === 32267) {
       const name = event.tags.find(t => t[0] === 'name')?.[1] || 'App';
       return `App: ${name}`;

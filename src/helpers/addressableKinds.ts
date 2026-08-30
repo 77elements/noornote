@@ -11,6 +11,7 @@
  */
 export const ARTICLE_PREVIEW_KINDS: ReadonlySet<number> = new Set<number>([
   30023, // NIP-23 long-form article
+  30054, // Podcast Draft NIP — podcast episode
   32267, // Zapstore app
   30311, // NIP-53 live activity / live stream
 ]);

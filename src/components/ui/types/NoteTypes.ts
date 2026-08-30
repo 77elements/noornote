@@ -16,6 +16,7 @@ export interface ProcessedNote {
     | 'zap-receipt'
     | 'unsupported'
     | 'follow-pack'
+    | 'podcast-episode'
     | 'git-event'
     | 'highlight'
     | 'badge-award'

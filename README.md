@@ -197,6 +197,7 @@ If the app crashes, check the log files:
 - **Blossom upload auth** — kind `24242`, signed-event upload authorization for [Blossom](https://github.com/hzrd149/blossom)-style media servers
 - **Capability profile** — kind `30817`, community-authored "NIP"-style capability profile, published via `/publish-nip` (Markdown body + `k`-tags listing supported kinds)
 - **Follow Packs** — kind `39089`, used by the Follow Packs add-on and [calle's Follow Packs](https://github.com/callebtc/following.space)
+- **Podcast Episodes** — kind `30054`, podcast draft NIP episode metadata (`title`, `audio`, `image`, `duration`, `episode`/`season` tags; shownotes in content), published by podcast clients like Nostr Compass; rendered as a podcast card with inline player
 - **Zapstore Apps** — kind `32267`, app metadata for [Zapstore](https://zapstore.dev/) listings
 - **Zapstore Release Artifacts** — kind `30063`, release artifact metadata for Zapstore apps
 - **Polls (legacy / Pollerama)** — kind `6969`, alternative poll format predating NIP-88

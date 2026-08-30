@@ -489,6 +489,7 @@ export class NotificationItem {
     if (aTag?.[1]) {
       const kind = parseInt(aTag[1].split(':')[0] || '');
       if (kind === 30023) return 'article';
+      if (kind === 30054) return 'podcast episode';
       if (kind === 32267) return 'app on Zapstore';
       if (kind === 39089) return 'follow pack';
       if (kind === 30030) return 'emoji pack';
@@ -508,6 +509,7 @@ export class NotificationItem {
       if (kind === 1068) return 'poll';
       if (kind === 9) return 'group chat message';
       if (kind === 30023) return 'article';
+      if (kind === 30054) return 'podcast episode';
       if (kind === 32267) return 'app on Zapstore';
       if (kind === 39089) return 'follow pack';
       if (kind === 30030) return 'emoji pack';

@@ -1,0 +1,59 @@
+/**
+ * Podcast episode (kind 30054) — full card block inside a note +
+ * compact nn-card preview for quotes/reposts.
+ * See docs/todos (kinds checklist, /kinds skill).
+ */
+
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
+
+.podcast-episode {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: $gap;
+  padding-bottom: calc($gap / 2);
+
+  &__cover {
+    width: 96px;
+    height: 96px;
+    object-fit: cover;
+    border-radius: $radius-xl;
+    align-self: start;
+
+    &--placeholder {
+      @include flex-center;
+      background: var(--color-2);
+      color: var(--color-3);
+      font-size: 2rem;
+    }
+  }
+
+  &__body {
+    min-width: 0;
+  }
+
+  &__meta {
+    @extend %small;
+    display: inline-flex;
+    align-items: center;
+    gap: calc($gap / 2);
+    color: var(--color-3);
+    margin-bottom: $gap;
+  }
+
+  &__player {
+    width: 100%;
+  }
+}
+
+// Compact quote/repost preview (nn-card pattern)
+.podcast-episode-card {
+  display: block;
+
+  .nn-card__meta {
+    display: inline-flex;
+    align-items: center;
+    gap: calc($gap / 2);
+  }
+}

@@ -21,6 +21,7 @@ import { HighlightProcessor } from './HighlightProcessor';
 import { BadgeAwardProcessor } from './BadgeAwardProcessor';
 import { LiveStreamProcessor } from './LiveStreamProcessor';
 import { ListingProcessor } from './ListingProcessor';
+import { PodcastEpisodeProcessor } from './PodcastEpisodeProcessor';
 
 export class NoteProcessor {
   /**
@@ -54,6 +55,8 @@ export class NoteProcessor {
           return HighlightProcessor.process(event);
         case 30023:
           return ArticleProcessor.process(event);
+        case 30054:
+          return PodcastEpisodeProcessor.process(event);
         case 30402:
           return ListingProcessor.process(event);
         case 30311:
