@@ -61,15 +61,28 @@ export function saveAddonOrder(ids: string[]): void {
 
 /**
  * True when the current account has a saved custom addon order (reordered at
- * least once and not reset since). An empty saved order means the default
- * (alphabetical) order applies.
+ * least once and not reset since) that actually DIFFERS from the default
+ * (alphabetical) order. A stored list that matches the default — e.g. written
+ * by entering touch-reorder mode without moving anything — must not reveal
+ * the "(reset order)" affordance.
  */
 export function hasCustomAddonOrder(): boolean {
+  const saved = PerAccountLocalStorage.getInstance().get<string[]>(
+    StorageKeys.ADDON_ORDER,
+    []
+  );
+  if (saved.length === 0) return false;
+
+  const defaultIds = [...ADDON_REGISTRY]
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(a => a.id);
+  const validSaved = saved.filter(id =>
+    ADDON_REGISTRY.some(entry => entry.id === id)
+  );
+
   return (
-    PerAccountLocalStorage.getInstance().get<string[]>(
-      StorageKeys.ADDON_ORDER,
-      []
-    ).length > 0
+    validSaved.length !== defaultIds.length ||
+    validSaved.some((id, index) => id !== defaultIds[index])
   );
 }
 

@@ -65,4 +65,29 @@ describe('addonOrder', () => {
     // Reset = back to the default (alphabetical) order.
     expect(getOrderedAddons()[0].name).toBe('Analytics');
   });
+
+  it('a saved order matching the alphabetical default is NOT a custom order', () => {
+    // Regression: entering touch-reorder mode without moving anything stored
+    // the default order — the reset link showed although nothing was custom.
+    const alphabeticalIds = [...ADDON_REGISTRY]
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(a => a.id);
+    saveAddonOrder(alphabeticalIds);
+    expect(hasCustomAddonOrder()).toBe(false);
+  });
+
+  it('a saved order with real changes IS a custom order', () => {
+    const alphabeticalIds = [...ADDON_REGISTRY]
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(a => a.id);
+    const reordered = [...alphabeticalIds];
+    [reordered[0], reordered[1]] = [reordered[1]!, reordered[0]!];
+    saveAddonOrder(reordered);
+    expect(hasCustomAddonOrder()).toBe(true);
+  });
+
+  it('a saved order referencing removed addons still counts as custom', () => {
+    saveAddonOrder(['wallet-balance', 'nonexistent-addon']);
+    expect(hasCustomAddonOrder()).toBe(true);
+  });
 });

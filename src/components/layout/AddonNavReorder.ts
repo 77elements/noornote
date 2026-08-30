@@ -10,7 +10,7 @@
  * `onOrderChanged` fires after every persist (label/UI refresh hook).
  */
 
-import { saveAddonOrder } from '../../addons/addonOrder';
+import { getOrderedAddons, saveAddonOrder } from '../../addons/addonOrder';
 
 const REORDER_CLASS = 'primary-nav__submenu--reorder';
 const LONG_PRESS_MS = 500;
@@ -26,11 +26,21 @@ export function wireAddonReorder(
       submenu.querySelectorAll<HTMLElement>(':scope > li[data-addon-id]')
     );
   const persist = () => {
-    saveAddonOrder(
-      rows()
-        .map(li => li.dataset.addonId || '')
-        .filter(Boolean)
-    );
+    const ids = rows()
+      .map(li => li.dataset.addonId || '')
+      .filter(Boolean);
+    // Persist only REAL changes: entering reorder mode without moving anything
+    // (mobile long-press while scrolling) must not create a custom-order entry
+    // — otherwise the "(reset order)" link appears although the list still
+    // matches the alphabetical default.
+    const current = getOrderedAddons().map(a => a.id);
+    if (
+      ids.length === current.length &&
+      ids.every((id, index) => id === current[index])
+    ) {
+      return;
+    }
+    saveAddonOrder(ids);
     onOrderChanged?.();
   };
 
