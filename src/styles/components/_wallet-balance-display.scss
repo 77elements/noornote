@@ -100,6 +100,11 @@
   padding: $gap * 2;
 }
 
+// Fiat currency selector (same .setting pattern + preference as Settings → NWC)
+.wallet-currency-setting {
+  margin-bottom: $gap;
+}
+
 // Balance summary card
 .wallet-tx-balance {
   display: flex;

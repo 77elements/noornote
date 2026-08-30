@@ -12,6 +12,8 @@ import { UserProfileService } from '../../services/UserProfileService';
 import { KeychainStorage } from '../../services/KeychainStorage';
 import { SystemLogger } from '../../services/SystemLogger';
 import { InfiniteScroll } from '../../components/ui/InfiniteScroll';
+import { CustomDropdown } from '../../components/ui/CustomDropdown';
+import { ToastService } from '../../services/ToastService';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { formatTimeAgo } from '../../helpers/formatTimeAgo';
 
@@ -20,6 +22,7 @@ const PAGE_SIZE = 20;
 export class WalletTransactionList {
   private element: HTMLElement;
   private listEl: HTMLElement | null = null;
+  private currencyDropdown: CustomDropdown | null = null;
   private nwcService: NWCService;
   private exchangeRateService: ExchangeRateService;
   private systemLogger: SystemLogger;
@@ -101,8 +104,12 @@ export class WalletTransactionList {
     const balanceSats =
       balanceMsats !== null ? Math.floor(balanceMsats / 1000) : null;
 
-    // Balance summary
-    let html = `<div class="wallet-tx-balance">`;
+    // Balance summary — currency dropdown first (same preference as Settings → NWC)
+    let html = `<div class="setting wallet-currency-setting" data-wallet-currency-mount>
+      <span class="setting__label">Zap Balance Fiat Currency</span>
+      <div class="setting__control"></div>
+    </div>`;
+    html += `<div class="wallet-tx-balance">`;
     if (balanceSats !== null) {
       html += `<span class="wallet-tx-balance__sats">${balanceSats.toLocaleString()}</span>`;
       html += ` <span class="wallet-tx-balance__sats-icon">丰</span>`;
@@ -114,11 +121,14 @@ export class WalletTransactionList {
     if (transactions.length === 0) {
       html += '<p class="wallet-tx-list__placeholder">No transactions yet</p>';
       this.element.innerHTML = html;
+      void this.setupCurrencyDropdown();
       return;
     }
 
     html += '<div class="ui-list" data-wallet-tx-list></div>';
     this.element.innerHTML = html;
+
+    void this.setupCurrencyDropdown();
 
     this.listEl = this.element.querySelector('[data-wallet-tx-list]');
     this.appendTransactions(transactions);
@@ -309,6 +319,51 @@ export class WalletTransactionList {
     }
   }
 
+  /**
+   * Currency selector above the balance — same preference as Settings → NWC
+   * (KeychainStorage/FIAT_CURRENCY) and the same event the sidebar display
+   * listens to, so both stay in sync.
+   */
+  private async setupCurrencyDropdown(): Promise<void> {
+    if (this.destroyed || !this.element) return;
+    this.currencyDropdown?.destroy();
+    this.currencyDropdown = null;
+
+    const mount = this.element.querySelector(
+      '[data-wallet-currency-mount] .setting__control'
+    );
+    if (!mount) return;
+
+    const stored = await KeychainStorage.loadFiatCurrency();
+    if (this.destroyed) return;
+
+    const currencies = this.exchangeRateService.getAvailableCurrencies();
+    const options = currencies.map(c => ({
+      value: c.code,
+      label: `${c.symbol} ${c.name} (${c.code})`,
+    }));
+
+    this.currencyDropdown = new CustomDropdown({
+      options,
+      selectedValue: stored ?? 'EUR',
+      onChange: async code => {
+        await KeychainStorage.saveFiatCurrency(code);
+        window.dispatchEvent(
+          new CustomEvent('fiat-currency-changed', {
+            detail: { currency: code },
+          })
+        );
+        ToastService.show('Fiat currency saved', 'success');
+      },
+    });
+    if (this.destroyed) {
+      this.currencyDropdown.destroy();
+      this.currencyDropdown = null;
+      return;
+    }
+    mount.appendChild(this.currencyDropdown.getElement());
+  }
+
   private async fillFiatBalance(sats: number): Promise<void> {
     if (this.destroyed) return;
     const fiat = await this.exchangeRateService.convertSatsToFiat(
@@ -371,6 +426,8 @@ export class WalletTransactionList {
     this.destroyed = true;
     this.infiniteScroll?.destroy();
     this.infiniteScroll = null;
+    this.currencyDropdown?.destroy();
+    this.currencyDropdown = null;
     window.removeEventListener('nwc-connection-restored', this.onNwcRestored);
     this.element.innerHTML = '';
     this.listEl = null;

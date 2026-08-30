@@ -91,22 +91,74 @@ export class ExchangeRateService {
       this.lastFetch = Date.now();
     } catch (error) {
       console.error('Failed to fetch exchange rates:', error);
-      // Set fallback rates (approximate)
-      if (this.rates.size === 0) {
-        this.rates.set('EUR', 95000);
-        this.rates.set('USD', 100000);
-        this.rates.set('GBP', 80000);
-        this.rates.set('JPY', 14000000);
-        this.rates.set('CNY', 700000);
-        this.rates.set('AUD', 150000);
-        this.rates.set('CHF', 90000);
-        this.rates.set('SAR', 375000);
-        this.rates.set('CAD', 135000);
-        this.rates.set('NZD', 165000);
-        this.rates.set('AED', 367000);
-        this.rates.set('ZAR', 1750000);
+    }
+
+    // CoinGecko rate-limits/blocks anonymous browser clients intermittently
+    // ("Failed to fetch" on the network layer) — Kraken's public ticker needs
+    // no key and covers the major currencies as a secondary source.
+    try {
+      if (!this.rates.has('EUR') || !this.rates.has('USD')) {
+        await this.fetchKrakenRates();
+      }
+    } catch (error) {
+      console.error('Failed to fetch Kraken rates:', error);
+    }
+
+    // Guarantee usable rates: without a EUR/USD rate the wallet renders
+    // "<0,01 €" for every balance (rate missing → convertSatsToFiat → 0).
+    // Static fallbacks fill whatever the live sources left blank.
+    if (!this.rates.has('EUR') || !this.rates.has('USD')) {
+      this.setStaticFallbackRates();
+      this.lastFetch = Date.now();
+    }
+  }
+
+  /** Kraken public ticker — BTC/fiat last prices, no API key required. */
+  private async fetchKrakenRates(): Promise<void> {
+    const response = await fetch(
+      'https://api.kraken.com/0/public/Ticker?pair=XXBTZEUR,XXBTZUSD,XBTGBP,XBTJPY,XBTCHF,XBTCAD,XBTAUD'
+    );
+    if (!response.ok) {
+      throw new Error('Failed to fetch Kraken rates');
+    }
+    const data = (await response.json()) as {
+      result?: Record<string, { c?: [string | undefined, string | undefined] }>;
+    };
+    const result = data.result;
+    if (!result) {
+      throw new Error('Kraken response missing result object');
+    }
+    const pairs: Record<string, SupportedCurrency> = {
+      XXBTZEUR: 'EUR',
+      XXBTZUSD: 'USD',
+      XBTGBP: 'GBP',
+      XBTJPY: 'JPY',
+      XBTCHF: 'CHF',
+      XBTCAD: 'CAD',
+      XBTAUD: 'AUD',
+    };
+    for (const [pair, currency] of Object.entries(pairs)) {
+      const price = parseFloat(result[pair]?.c?.[0] ?? '');
+      if (Number.isFinite(price) && price > 0) {
+        this.rates.set(currency, price);
       }
     }
+  }
+
+  /** Approximate static rates (fiat per BTC) — last resort for offline/blocked sources. */
+  private setStaticFallbackRates(): void {
+    if (!this.rates.has('EUR')) this.rates.set('EUR', 95000);
+    if (!this.rates.has('USD')) this.rates.set('USD', 100000);
+    if (!this.rates.has('GBP')) this.rates.set('GBP', 80000);
+    if (!this.rates.has('JPY')) this.rates.set('JPY', 14000000);
+    if (!this.rates.has('CNY')) this.rates.set('CNY', 700000);
+    if (!this.rates.has('AUD')) this.rates.set('AUD', 150000);
+    if (!this.rates.has('CHF')) this.rates.set('CHF', 90000);
+    if (!this.rates.has('SAR')) this.rates.set('SAR', 375000);
+    if (!this.rates.has('CAD')) this.rates.set('CAD', 135000);
+    if (!this.rates.has('NZD')) this.rates.set('NZD', 165000);
+    if (!this.rates.has('AED')) this.rates.set('AED', 367000);
+    if (!this.rates.has('ZAR')) this.rates.set('ZAR', 1750000);
   }
 
   /**
