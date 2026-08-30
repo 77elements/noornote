@@ -25,6 +25,7 @@ export interface LiveUpdatesConfig {
   onLiveReply?: (reply: NostrEvent) => void;
   onStatsUpdate?: (stats: InteractionStats) => void;
   onZapAdded?: (noteId: string) => void;
+  onQuotedRepost?: (event: NostrEvent) => void;
   onMuteUpdated?: () => void;
   onNoteDeleted?: () => void;
 }
@@ -87,6 +88,22 @@ export class LiveUpdatesManager {
       },
       { interval: 30000 }
     ); // 30 seconds
+
+    // Real-time interaction subscription (kinds 7/9735/6/16) — instant lists
+    // and counters; the 30s poll above stays as a catch-up fallback.
+    this.reactionsApi?.startLiveStats(
+      this.config.noteId,
+      stats => {
+        if (this.config.onStatsUpdate) {
+          this.config.onStatsUpdate(stats);
+        }
+      },
+      event => {
+        if (this.config.onQuotedRepost) {
+          this.config.onQuotedRepost(event);
+        }
+      }
+    );
 
     // Setup TypedEventBus listeners
     this.setupZapListener();
@@ -240,6 +257,7 @@ export class LiveUpdatesManager {
     // Stop orchestrators
     this.singleNoteApi?.stopLiveReplies(this.config.noteId);
     this.reactionsApi?.stopLiveReactions(this.config.noteId);
+    this.reactionsApi?.stopLiveStats(this.config.noteId);
 
     this.systemLogger.info(
       'LiveUpdatesManager',

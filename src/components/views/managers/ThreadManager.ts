@@ -434,6 +434,62 @@ export class ThreadManager {
     this.updateStatsAfterLiveReply();
   }
 
+  /**
+   * Live-append a newly arriving quoted repost (kind 6/1 with q/a-tag on this
+   * note). Mirrors appendLiveReply: dedup, header count, stats bump — the
+   * card itself is rendered by renderQuotedRepost.
+   */
+  public appendQuotedRepost(event: NostrEvent): void {
+    const eventId = event.id;
+    if (!eventId) return;
+    // Same filter as loadReplies: the author's own quotes are not listed
+    if (event.pubkey === this.config.noteAuthor) return;
+
+    const repliesContainer = this.getRepliesContainer();
+    if (!repliesContainer) return;
+    if (
+      this.config.container.querySelector(
+        `.snv-quoted-repost[data-event-id="${eventId}"]`
+      )
+    ) {
+      return;
+    }
+
+    let repliesList = this.getRepliesList();
+    if (!repliesList) {
+      repliesContainer.innerHTML = `
+        <div class="snv-replies__header">
+          <h2 class="h3">${this.repliesHeaderLabel} (1)</h2>
+        </div>
+        <div class="snv-replies__list"></div>
+      `;
+      repliesList = repliesContainer.querySelector('.snv-replies__list');
+    } else {
+      const header = repliesContainer.querySelector('.snv-replies__header h2');
+      if (header) {
+        const match = header.textContent?.match(/\((\d+)\)/);
+        if (match?.[1]) {
+          header.textContent = `${this.repliesHeaderLabel} (${
+            parseInt(match[1], 10) + 1
+          })`;
+        }
+      }
+    }
+    if (!repliesList) return;
+
+    void this.renderQuotedRepost(event, repliesList);
+
+    const isl = NoteUI.getInteractionStatusLine(this.config.noteId);
+    const currentStats = isl?.getCurrentStats();
+    if (isl && currentStats) {
+      const newQuotes = currentStats.quotedReposts + 1;
+      isl.updateStats({ quotedReposts: newQuotes });
+      this.reactionsApi?.updateCachedStats(this.config.noteId, {
+        quotedReposts: newQuotes,
+      });
+    }
+  }
+
   public confirmReply(replyId: string): void {
     const replyElement = this.getRepliesList()?.querySelector(
       `[data-reply-id="${replyId}"]`

@@ -25,6 +25,13 @@ export interface ReactionsModuleApi {
     options?: { interval?: number; authorPubkey?: string; eventId?: string }
   ): void;
   stopLiveReactions(noteId: string): void;
+  /** Real-time interaction subscription (kinds 7/9735/6/16) — must be stopped via stopLiveStats (SNV teardown) */
+  startLiveStats(
+    noteId: string,
+    onStats: (stats: InteractionStats) => void,
+    onQuotedRepost?: (event: NostrEvent) => void
+  ): void;
+  stopLiveStats(noteId: string): void;
   resetFetchCounter(): void;
   hasUserLiked(noteId: string): Promise<boolean>;
   hasUserLikedWithEmoji(noteId: string, emoji: string): Promise<boolean>;

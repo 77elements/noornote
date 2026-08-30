@@ -53,6 +53,7 @@ export class SingleNoteView extends View {
   private eventBus: TypedEventBus;
   private currentNoteId: string | null = null;
   private currentEvent: NostrEvent | null = null;
+  private noteElement: HTMLElement | null = null;
 
   // Managers
   private threadManager?: ThreadManager;
@@ -255,6 +256,9 @@ export class SingleNoteView extends View {
       headerSize: 'large',
       depth: 0,
     });
+    // Direct reference for live-update handlers — the root note element does
+    // NOT reliably carry `data-note-id` matching the (addressable) note id.
+    this.noteElement = noteElement;
 
     const snvWrapper = document.createElement('div');
     snvWrapper.className = 'snv-wrapper';
@@ -324,17 +328,33 @@ export class SingleNoteView extends View {
     this.liveUpdatesManager = new LiveUpdatesManager({
       noteId,
       onLiveReply: reply => this.threadManager?.appendLiveReply(reply),
-      onStatsUpdate: stats =>
-        NoteUI.getInteractionStatusLine(noteId)?.updateStats(stats),
+      onStatsUpdate: stats => {
+        NoteUI.getInteractionStatusLine(noteId)?.updateStats(stats);
+        // New reactions/zaps arrived — refresh the likes/zaps lists from the
+        // (already updated) detailed stats cache so emojis and zap rows
+        // appear live, not only on reload.
+        if (this.noteElement) {
+          this.scheduleZapsListRefresh(
+            noteId,
+            this.currentEvent?.pubkey ?? '',
+            this.noteElement
+          );
+        }
+      },
+      onQuotedRepost: event => this.threadManager?.appendQuotedRepost(event),
       onZapAdded: targetNoteId => {
-        const noteElement = this.container.querySelector(
-          `[data-note-id="${targetNoteId}"]`
-        );
-        if (noteElement instanceof HTMLElement) {
-          const authorPubkey = noteElement.getAttribute('data-author-pubkey');
-          if (authorPubkey) {
-            void this.loadZapsList(targetNoteId, authorPubkey, noteElement);
-          }
+        // The [data-note-id] query fails for addressable notes (DOM carries
+        // the hex id) — fall back to the root note element reference.
+        const target =
+          (this.container.querySelector(
+            `[data-note-id="${targetNoteId}"]`
+          ) as HTMLElement | null) ?? this.noteElement;
+        if (target) {
+          const authorPubkey =
+            target.getAttribute('data-author-pubkey') ??
+            this.currentEvent?.pubkey ??
+            '';
+          this.scheduleZapsListRefresh(targetNoteId, authorPubkey, target);
         }
       },
       onMuteUpdated: () => this.render(),
@@ -342,7 +362,54 @@ export class SingleNoteView extends View {
     });
   }
 
-  private async loadZapsList(
+  /**
+   * Serialized + debounced zaps/likes list refresh. `zap:added` and the live
+   * stats stream fire for the SAME zap — two concurrent runs interleave their
+   * remove/insert awaits and duplicate the lists in the DOM. Everything goes
+   * through one promise chain; bursts collapse into one debounced run.
+   */
+  private zapsListChain: Promise<void> = Promise.resolve();
+  private zapsRefreshTimer: number | null = null;
+  private zapsRefresh: {
+    noteId: string;
+    authorPubkey: string;
+    element: HTMLElement;
+  } | null = null;
+
+  private scheduleZapsListRefresh(
+    noteId: string,
+    authorPubkey: string,
+    element: HTMLElement
+  ): void {
+    this.zapsRefresh = { noteId, authorPubkey, element };
+    if (this.zapsRefreshTimer !== null) return;
+    this.zapsRefreshTimer = window.setTimeout(() => {
+      this.zapsRefreshTimer = null;
+      const pending = this.zapsRefresh;
+      this.zapsRefresh = null;
+      if (pending) {
+        void this.loadZapsList(
+          pending.noteId,
+          pending.authorPubkey,
+          pending.element
+        );
+      }
+    }, 400);
+  }
+
+  private loadZapsList(
+    noteId: string,
+    authorPubkey: string,
+    noteElement: HTMLElement
+  ): Promise<void> {
+    const run = (): Promise<void> =>
+      this.doLoadZapsList(noteId, authorPubkey, noteElement);
+    const next = this.zapsListChain.then(run, run);
+    this.zapsListChain = next.catch(() => undefined);
+    return next;
+  }
+
+  private async doLoadZapsList(
     noteId: string,
     authorPubkey: string,
     noteElement: HTMLElement
@@ -447,6 +514,12 @@ export class SingleNoteView extends View {
   }
 
   public destroy(): void {
+    if (this.zapsRefreshTimer !== null) {
+      clearTimeout(this.zapsRefreshTimer);
+      this.zapsRefreshTimer = null;
+    }
+    this.zapsRefresh = null;
+
     if (this.muteUpdatedSubscriptionId) {
       this.eventBus.off(this.muteUpdatedSubscriptionId);
     }

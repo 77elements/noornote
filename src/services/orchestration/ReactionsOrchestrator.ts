@@ -21,6 +21,7 @@ import { parseBolt11Amount } from '../../helpers/zapUtils';
 import { SystemLogger } from '../SystemLogger';
 import { UserProfileService } from '../UserProfileService';
 import { isUserMuted } from '../../lists/mutes';
+import { mergeInteractionEvents } from './interactionMerge';
 
 /**
  * Count replies excluding events authored by users the current user has
@@ -87,6 +88,7 @@ export class ReactionsOrchestrator extends Orchestrator {
   /** Live reactions polling tracking */
   private reactionIntervals: Map<string, number> = new Map(); // noteId → intervalId
   private lastReactionFetch: Map<string, number> = new Map(); // noteId → timestamp
+  private liveStatSubscriptions: Map<string, string> = new Map(); // noteId → subId
 
   private constructor() {
     super('ReactionsOrchestrator');
@@ -1021,14 +1023,14 @@ export class ReactionsOrchestrator extends Orchestrator {
     if (isArticle) {
       // LONG-FORM ARTICLE: Poll both #a and #e
       filters.push({
-        kinds: [7],
+        kinds: [7, 9735, 6, 16],
         '#a': [noteId],
         since: lastFetch,
         until: now,
       });
       if (articleEventId) {
         filters.push({
-          kinds: [7],
+          kinds: [7, 9735, 6, 16],
           '#e': [articleEventId],
           since: lastFetch,
           until: now,
@@ -1037,7 +1039,7 @@ export class ReactionsOrchestrator extends Orchestrator {
     } else {
       // NORMAL NOTE: Poll #e only (unchanged)
       filters.push({
-        kinds: [7],
+        kinds: [7, 9735, 6, 16],
         '#e': [noteId],
         since: lastFetch,
         until: now,
@@ -1056,20 +1058,15 @@ export class ReactionsOrchestrator extends Orchestrator {
       if (newReactions.length > 0) {
         this.systemLogger.info(
           'ReactionsOrchestrator',
-          `Polled ${newReactions.length} new reactions for ${noteId}`
+          `Polled ${newReactions.length} new interactions for ${noteId}`
         );
 
-        // Update cache with new reactions
+        // Update cache: id-based dedup + kind/tag classification, identical to
+        // the live-stats subscription (interactionMerge) and the initial
+        // detailed-stats fetch — multiple emojis from one author DO appear.
         const cached = this.detailedStatsCache.get(noteId);
         if (cached) {
-          // Deduplicate new reactions by author (one reaction per author)
-          const seenAuthors = new Set(cached.reactionEvents.map(e => e.pubkey));
-          newReactions.forEach(event => {
-            if (!seenAuthors.has(event.pubkey)) {
-              cached.reactionEvents.push(event);
-              seenAuthors.add(event.pubkey);
-            }
-          });
+          mergeInteractionEvents(cached, newReactions, noteId);
 
           cached.lastUpdated = Date.now();
 
@@ -1121,6 +1118,109 @@ export class ReactionsOrchestrator extends Orchestrator {
     );
   }
 
+  /**
+   * Live stats subscription (real-time, NDK pool): reactions (7), zap receipts
+   * (9735) and reposts/quotes (6/16) referencing this note via #e (hex) or
+   * #a/#A (addressable). Each arriving event merges into the detailed stats
+   * cache (same classification as the 30s poll — interactionMerge) and fires
+   * the callback. Restart-safe; MUST be stopped via stopLiveStats (SNV
+   * teardown), otherwise the subscription leaks.
+   */
+  public startLiveStats(
+    noteId: string,
+    onStats: (stats: InteractionStats) => void,
+    onQuotedRepost?: (event: NostrEvent) => void
+  ): void {
+    if (this.liveStatSubscriptions.has(noteId)) {
+      this.systemLogger.warn(
+        'ReactionsOrchestrator',
+        `Live stats already subscribed to ${noteId}, restarting`
+      );
+      this.stopLiveStats(noteId);
+    }
+
+    const relays = this.transport.getReadRelays();
+    const subId = `live-stats-${noteId}`;
+    const isAddressable = noteId.includes(':');
+    const kinds = [7, 9735, 6, 16];
+    const since = Math.floor(Date.now() / 1000);
+
+    const filters: NDKFilter[] = isAddressable
+      ? [
+          { kinds, '#a': [noteId], since },
+          { kinds, '#A': [noteId], since },
+        ]
+      : [{ kinds, '#e': [noteId], since }];
+
+    // Long-form articles also collect reactions/zaps via the hex event id
+    const articleEventId = this.isLongFormArticle(noteId)
+      ? this.articleEventIdCache.get(noteId)
+      : undefined;
+    if (isAddressable && articleEventId) {
+      filters.push({ kinds, '#e': [articleEventId], since });
+    }
+
+    void this.transport.subscribeLive(relays, filters, subId, event => {
+      let cached = this.detailedStatsCache.get(noteId);
+      if (!cached) {
+        // The initial detailed-stats fetch may still be in flight when the
+        // first interaction arrives (fast reactors) — create the buckets now
+        // instead of dropping the event.
+        cached = {
+          replyEvents: [],
+          repostEvents: [],
+          quotedEvents: [],
+          reactionEvents: [],
+          zapEvents: [],
+          lastUpdated: Date.now(),
+        };
+        this.detailedStatsCache.set(noteId, cached);
+      }
+
+      const isQuote =
+        event.kind === 6 &&
+        event.tags.some(t => (t[0] === 'q' || t[0] === 'a') && t[1] === noteId);
+
+      mergeInteractionEvents(cached, [event], noteId);
+      cached.lastUpdated = Date.now();
+
+      onStats({
+        replies: countVisibleReplies(cached.replyEvents),
+        reposts: cached.repostEvents.length,
+        quotedReposts: cached.quotedEvents.length,
+        likes: cached.reactionEvents.length,
+        zaps: this.calculateTotalZaps(cached.zapEvents),
+        lastUpdated: cached.lastUpdated,
+      });
+
+      if (isQuote && onQuotedRepost) onQuotedRepost(event);
+    });
+
+    this.liveStatSubscriptions.set(noteId, subId);
+    this.systemLogger.info(
+      'ReactionsOrchestrator',
+      `Live stats started for ${noteId}`
+    );
+  }
+
+  public stopLiveStats(noteId: string): void {
+    const subId = this.liveStatSubscriptions.get(noteId);
+    if (!subId) {
+      this.systemLogger.warn(
+        'ReactionsOrchestrator',
+        `No live stats subscription for ${noteId}`
+      );
+      return;
+    }
+
+    this.transport.unsubscribeLive(subId);
+    this.liveStatSubscriptions.delete(noteId);
+    this.systemLogger.info(
+      'ReactionsOrchestrator',
+      `Live stats stopped for ${noteId}`
+    );
+  }
+
   // Orchestrator interface implementations (unused for now, required by base class)
 
   public onui(_data: unknown): void {
@@ -1163,6 +1263,12 @@ export class ReactionsOrchestrator extends Orchestrator {
     });
     this.reactionIntervals.clear();
     this.lastReactionFetch.clear();
+
+    // Tear down all live stats subscriptions (NDK pool)
+    this.liveStatSubscriptions.forEach(subId => {
+      this.transport.unsubscribeLive(subId);
+    });
+    this.liveStatSubscriptions.clear();
 
     this.detailedStatsCache.clear();
     this.fetchingDetailedStats.clear();

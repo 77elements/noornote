@@ -68,6 +68,9 @@ export class ReactionsRuntime implements ModuleRuntime<ReactionsModuleApi> {
       startLiveReactions: (noteId, callback, options) =>
         orch?.startLiveReactions(noteId, callback, options),
       stopLiveReactions: noteId => orch?.stopLiveReactions(noteId),
+      startLiveStats: (noteId, onStats, onQuotedRepost) =>
+        orch?.startLiveStats(noteId, onStats, onQuotedRepost),
+      stopLiveStats: noteId => orch?.stopLiveStats(noteId),
       resetFetchCounter: () => orch?.resetFetchCounter(),
       hasUserLiked: noteId =>
         svc?.hasUserLiked(noteId) ?? Promise.resolve(false),
