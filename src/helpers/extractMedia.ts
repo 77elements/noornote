@@ -13,6 +13,7 @@
 // Re-export canonical MediaContent definition (single source of truth in NoteTypes.ts)
 export type { MediaContent } from '../components/ui/types/NoteTypes';
 import type { MediaContent } from '../components/ui/types/NoteTypes';
+import { EPUB_MIME, EPUB_URL_REGEX } from './epubDetection';
 
 /**
  * Extract the clean media URL from a full URL that may contain query/tracking params.
@@ -88,6 +89,19 @@ export function extractMedia(text: string): MediaContent[] {
     });
   });
 
+  // EPUB patterns (raw .epub URL — NIP-92 imeta enrichment happens in
+  // extractMediaWithImeta below)
+  EPUB_URL_REGEX.lastIndex = 0;
+  const epubs = text.match(EPUB_URL_REGEX) || [];
+
+  epubs.forEach(fullUrl => {
+    media.push({
+      type: 'epub',
+      url: extractCleanMediaUrl(fullUrl, ['epub']),
+      originalUrl: fullUrl,
+    });
+  });
+
   // YouTube detection (keep query params — v= is essential)
   // Accepts any subdomain (www, m, music, …) AND greedily consumes trailing
   // non-whitespace chars so originalUrl covers the ENTIRE URL including
@@ -128,8 +142,12 @@ export function extractMediaWithImeta(
   const imetaTags = tags.filter(tag => tag[0] === 'imeta');
   if (imetaTags.length === 0) return media;
 
+  const epubEntries: { url: string; hash?: string }[] = [];
+
   for (const tag of imetaTags) {
     let url = '';
+    let epubHash: string | undefined;
+    let isEpub = false;
     const taggedPubkeys: string[] = [];
 
     for (let i = 1; i < tag.length; i++) {
@@ -142,6 +160,10 @@ export function extractMediaWithImeta(
 
       if (key === 'url') {
         url = value;
+      } else if (key === 'm' && value.toLowerCase() === EPUB_MIME) {
+        isEpub = true;
+      } else if (key === 'x') {
+        epubHash = value;
       } else if (key === 'annotate-user') {
         // NIP-68: "<pubkey_hex>:<x>:<y>"
         const annotMatch = value.match(/^([0-9a-f]{64}):\d+:\d+$/);
@@ -152,12 +174,36 @@ export function extractMediaWithImeta(
       }
     }
 
+    if (isEpub && url)
+      epubEntries.push(epubHash ? { url, hash: epubHash } : { url });
     if (!url || taggedPubkeys.length === 0) continue;
 
     // Match against both the cleaned URL and the original URL (with tracking params)
     const match = media.find(m => m.url === url || m.originalUrl === url);
     if (match) {
       match.taggedPubkeys = [...(match.taggedPubkeys ?? []), ...taggedPubkeys];
+    }
+  }
+
+  // Enrich detected .epub items with the imeta `x` hash (progress key) and add
+  // imeta-declared EPUBs whose URL lacks the .epub extension. Per NIP-92 the
+  // imeta URL must also appear in the content — enforce that here.
+  for (const entry of epubEntries) {
+    if (!text.includes(entry.url)) continue;
+    const existing = media.find(
+      m =>
+        m.type === 'epub' &&
+        (m.url === entry.url || m.originalUrl === entry.url)
+    );
+    if (existing) {
+      if (entry.hash) existing.hash = entry.hash;
+    } else {
+      media.push({
+        type: 'epub',
+        url: entry.url,
+        originalUrl: entry.url,
+        ...(entry.hash && { hash: entry.hash }),
+      });
     }
   }
 

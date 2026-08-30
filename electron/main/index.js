@@ -77,7 +77,9 @@ app.whenReady().then(() => {
           " media-src 'self' https: blob:;" +
           " font-src 'self';" +
           " worker-src 'self' blob:;" +
-          " frame-src https://www.youtube.com https://youtube.com"
+          // blob: is required by the EPUB reader (foliate-js renders book
+          // sections in a blob: iframe — docs/todos/epub-reader.md)
+          " frame-src https://www.youtube.com https://youtube.com blob:"
         ],
       },
     });

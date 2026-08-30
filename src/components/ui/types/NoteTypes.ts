@@ -69,13 +69,15 @@ export interface ZapReceiptData {
 }
 
 export interface MediaContent {
-  type: 'image' | 'video' | 'audio';
+  type: 'image' | 'video' | 'audio' | 'epub';
   url: string;
   originalUrl?: string;
   alt?: string;
   thumbnail?: string;
   dimensions?: { width: number; height: number };
   taggedPubkeys?: string[];
+  /** EPUB only: SHA-256 of the file (NIP-92 imeta `x`) — stable key for reading progress */
+  hash?: string;
 }
 
 export interface LinkPreview {

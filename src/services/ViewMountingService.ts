@@ -220,6 +220,18 @@ export class ViewMountingService {
           },
         };
 
+      case 'epub-reader':
+        return {
+          requiresParam: true,
+          factory: async param => {
+            const { EpubReaderView } = await import(
+              '../components/views/EpubReaderView'
+            );
+            const view = new EpubReaderView(param!);
+            return { element: view.getElement(), view };
+          },
+        };
+
       case 'zapstore':
         return {
           requiresParam: true,

@@ -94,6 +94,7 @@
     "dompurify": "^3.3.2",
     "emojilib": "^4.0.2",
     "fflate": "^0.8.2",
+    "foliate-js": "^1.0.1",
     "hls.js": "^1.6.15",
     "marked": "^16.4.0",
     "mediabunny": "^1.43.1",

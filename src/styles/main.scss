@@ -121,6 +121,7 @@
 @use 'components/listing-read-view';
 @use 'components/upload-progress-overlay';
 @use 'components/nostr-majlis';
+@use 'components/epub-reader';
 
 // Add-Ons
 @use '../addons/marketplace/marketplace';

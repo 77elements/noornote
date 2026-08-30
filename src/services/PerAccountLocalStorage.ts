@@ -178,6 +178,13 @@ export const StorageKeys = {
   // Font size preference (per-account)
   FONT_SIZE_SCALE: 'noornote_font_size_scale_map',
 
+  // EPUB reading progress (per-account): Record<bookHash, { cfi, fraction, updatedAt }>
+  EPUB_READER_POSITIONS: 'noornote_epub_reader_positions_map',
+
+  // EPUB monochrome reading mode (per-account accessibility setting):
+  // 'off' | 'bw' (black on white) | 'wb' (white on black)
+  EPUB_READER_MONO_MODE: 'noornote_epub_reader_mono_map',
+
   // Addon feature flags (per-account)
   FOLLOW_PACKS_ENABLED: 'noornote_follow_packs_enabled_map',
   MARKETPLACE_ENABLED: 'noornote_marketplace_enabled_map',

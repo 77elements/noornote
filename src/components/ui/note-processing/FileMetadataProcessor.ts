@@ -127,11 +127,12 @@ export class FileMetadataProcessor {
   private static getMediaType(
     mimeType: string,
     url: string
-  ): 'image' | 'video' | 'audio' | null {
+  ): 'image' | 'video' | 'audio' | 'epub' | null {
     if (mimeType) {
       if (mimeType.startsWith('image/')) return 'image';
       if (mimeType.startsWith('video/')) return 'video';
       if (mimeType.startsWith('audio/')) return 'audio';
+      if (mimeType === 'application/epub+zip') return 'epub';
     }
 
     // Fallback: guess from URL extension
@@ -143,6 +144,7 @@ export class FileMetadataProcessor {
     if (['mp4', 'webm', 'mov', 'avi', 'mkv'].includes(ext)) return 'video';
     if (['mp3', 'wav', 'ogg', 'flac', 'm4a', 'aac', 'opus'].includes(ext))
       return 'audio';
+    if (ext === 'epub') return 'epub';
 
     return null;
   }

@@ -10,7 +10,7 @@
  * // => '<div class="note-media"><img src="..." class="note-image" loading="lazy"></div>'
  */
 
-import { escapeHtmlAttr, escapeHtml } from './escapeHtml';
+import { escapeHtmlAttr, escapeHtml, safeHttpUrl } from './escapeHtml';
 import {
   lightboxImageHtml,
   lightboxContainerDataUrlsAttr,
@@ -18,6 +18,8 @@ import {
 import { isDataSaverEnabled } from '../services/DataSaverService';
 import { Tooltip } from '../components/ui/Tooltip';
 import { UserProfileService } from '../services/UserProfileService';
+import { Router } from '../services/Router';
+import { extractEpubFileName, isEpubReaderSupported } from './epubDetection';
 
 /**
  * Render a tap-to-load placeholder (Data Saver mode).
@@ -92,6 +94,23 @@ function getYouTubeVideoId(url: string): string | null {
 }
 
 /**
+ * Render an EPUB book card: file name + read affordance, with a download
+ * button below. The card navigates to the reader route when clicked (only
+ * when the runtime supports the reader engine — see isEpubReaderSupported).
+ * The EPUB URL stays a normal link in the note text.
+ */
+function renderEpubCard(item: MediaContent): string {
+  const fileName = extractEpubFileName(item.url);
+  const canRead = isEpubReaderSupported();
+  const safeUrl = safeHttpUrl(item.url);
+  const downloadHref = safeUrl ? escapeHtmlAttr(safeUrl) : '';
+  const download = safeUrl
+    ? `<a href="${downloadHref}" target="_blank" rel="noopener noreferrer" class="btn btn--mini btn--passive epub-book-card__download">Download Epub File</a>`
+    : `<span class="btn btn--mini btn--disabled epub-book-card__download">Download Epub File</span>`;
+  return `<div class="epub-book-card${canRead ? ' epub-book-card--readable' : ''}" data-epub-url="${escapeHtmlAttr(item.url)}"${item.hash ? ` data-epub-hash="${escapeHtmlAttr(item.hash)}"` : ''}${canRead ? ' role="button" tabindex="0" aria-label="Read this book"' : ''}><span class="epub-book-card__icon" aria-hidden="true"><svg width="18" height="18"><use href="#icon-book-open"/></svg></span><span class="epub-book-card__info"><span class="epub-book-card__title">${escapeHtml(fileName)}</span><span class="epub-book-card__meta">${canRead ? 'Click to read · EPUB' : 'EPUB'}</span></span></div>${download}`;
+}
+
+/**
  * Render single media item inline (without grid wrapper)
  * Used for inline media placement where placeholders are
  */
@@ -100,6 +119,8 @@ export function renderSingleMedia(
   index: number,
   isNSFW = false
 ): string {
+  if (item.type === 'epub') return renderEpubCard(item);
+
   if (isDataSaverEnabled())
     return renderPlaceholder(
       item.type,
@@ -198,7 +219,8 @@ export function renderMediaContent(
 
   const mediaHtml = mediaArray
     .map((item, index) => {
-      if (dataSaver)
+      // EPUB cards are lightweight (no fetch) — render them in Data Saver too
+      if (dataSaver && item.type !== 'epub')
         return renderPlaceholder(
           item.type,
           item.url,
@@ -226,6 +248,8 @@ export function renderMediaContent(
         }
         case 'audio':
           return `<audio src="${escapeHtmlAttr(item.url)}" controls preload="metadata" class="note-audio"></audio>`;
+        case 'epub':
+          return renderEpubCard(item);
         default:
           return '';
       }
@@ -473,6 +497,33 @@ export function initMediaPlaceholderHandler(): void {
 
     placeholder.replaceWith(el);
   });
+}
+
+/**
+ * Global click handler for EPUB book cards.
+ * Uses capture phase to fire BEFORE note-card click handlers (prevents SNV
+ * navigation — same pattern as initMediaPlaceholderHandler). Navigates to the
+ * reader route. Only cards on reader-capable runtimes carry
+ * `.epub-book-card--readable`.
+ * Call once at app startup.
+ */
+export function initEpubCardHandler(): void {
+  document.body.addEventListener(
+    'click',
+    e => {
+      const card = (e.target as HTMLElement).closest(
+        '.epub-book-card--readable'
+      ) as HTMLElement | null;
+      if (!card) return;
+      if ((e.target as HTMLElement).closest('a')) return;
+      const url = card.dataset.epubUrl;
+      if (!url) return;
+      e.preventDefault();
+      e.stopPropagation();
+      Router.getInstance().navigate(`/reader/${encodeURIComponent(url)}`);
+    },
+    true
+  );
 }
 
 /**

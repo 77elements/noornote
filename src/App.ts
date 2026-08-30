@@ -41,6 +41,7 @@ const VIEW_PARAM_STATE_KEY: Record<string, string> = {
   profile: 'currentProfileNpub',
   article: 'currentArticleNaddr',
   'relay-browser': 'currentRelayUrl',
+  'epub-reader': 'currentReaderUrl',
 };
 
 export class App {
@@ -108,6 +109,7 @@ export class App {
         m.startVideoThumbnailObserver();
         m.initMediaPlaceholderHandler();
         m.initImageTaglineTooltips();
+        m.initEpubCardHandler();
       })
       .catch(err => console.warn('[App] renderMediaContent init failed:', err));
 
@@ -420,6 +422,15 @@ export class App {
       false,
       params =>
         params.relayUrl ? decodeURIComponent(params.relayUrl) : undefined
+    );
+    this.registerRoute(
+      '/reader/:encodedUrl',
+      'epub-reader',
+      'epub-reader',
+      'erv',
+      false,
+      params =>
+        params.encodedUrl ? decodeURIComponent(params.encodedUrl) : undefined
     );
     this.registerRoute(
       '/follow-pack/:naddr',
