@@ -47,13 +47,11 @@
   }
 }
 
-// Compact quote/repost preview (nn-card pattern)
+// Compact quote/repost preview: renders the SAME episode block as the SNV
+// card (PodcastEpisodeProcessor.buildEpisodeBlock) — all styles come from
+// .podcast-episode above; the wrapper only adds the click cursor (inline)
+// and vertical breathing room.
+// See ArticlePreviewRenderer.createPodcastEpisodeCard.
 .podcast-episode-card {
-  display: block;
-
-  .nn-card__meta {
-    display: inline-flex;
-    align-items: center;
-    gap: calc($gap / 2);
-  }
+  margin: $gap 0;
 }

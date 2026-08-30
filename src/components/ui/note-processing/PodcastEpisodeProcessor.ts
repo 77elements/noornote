@@ -41,14 +41,15 @@ export class PodcastEpisodeProcessor {
     return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
   }
 
-  static process(event: NostrEvent): ProcessedNote {
-    const eventId = event.id;
-    if (!eventId) throw new Error('Event ID is required');
-
+  /**
+   * Build the standalone episode block (cover, title, meta, audio player) —
+   * no shownotes. Shared by the full SNV card (which prepends it to the
+   * shownotes) and the quote/repost preview (which renders it alone).
+   */
+  static buildEpisodeBlock(event: NostrEvent): string {
     const get = (name: string): string =>
       event.tags.find(t => t[0] === name)?.[1] ?? '';
 
-    const title = get('title');
     const audioUrl = safeHttpUrl(get('audio'));
     const imageUrl = safeHttpUrl(get('image'));
     const durationSeconds = parseInt(get('duration'), 10);
@@ -56,8 +57,50 @@ export class PodcastEpisodeProcessor {
       Number.isFinite(durationSeconds) && durationSeconds > 0
         ? PodcastEpisodeProcessor.formatDuration(durationSeconds)
         : '';
-    const episode = get('episode');
-    const season = get('season');
+
+    return PodcastEpisodeProcessor.buildEpisodeHtml(
+      get('title'),
+      audioUrl,
+      imageUrl,
+      duration,
+      get('episode'),
+      get('season')
+    );
+  }
+
+  /**
+   * Remove inline audio players from the quoting note's text when they point
+   * at the same audio as this episode — podcast clients embed the episode URL
+   * in the quoting note, and the quote card already carries the player.
+   * Call AFTER the episode card is attached to the DOM (needs .event-content
+   * as the search scope). Handles both rendered players and Data Saver
+   * placeholders; empty .note-media wrappers are cleaned up.
+   */
+  static removeDuplicateInlineAudio(
+    card: HTMLElement,
+    audioUrl: string | null
+  ): void {
+    if (!audioUrl) return;
+    const scope = card.closest('.event-content');
+    const candidates = scope?.querySelectorAll<HTMLElement>(
+      'audio.note-audio, .media-placeholder[data-type="audio"]'
+    );
+    if (!candidates) return;
+    for (const el of Array.from(candidates)) {
+      const src =
+        el instanceof HTMLAudioElement
+          ? el.getAttribute('src')
+          : el.getAttribute('data-src');
+      if (src !== audioUrl) continue;
+      const wrapper = el.closest('.note-media');
+      el.remove();
+      if (wrapper && wrapper.children.length === 0) wrapper.remove();
+    }
+  }
+
+  static process(event: NostrEvent): ProcessedNote {
+    const eventId = event.id;
+    if (!eventId) throw new Error('Event ID is required');
 
     const processedContent =
       PodcastEpisodeProcessor.contentProcessor.processContentWithTags(
@@ -66,14 +109,7 @@ export class PodcastEpisodeProcessor {
       );
 
     processedContent.html =
-      PodcastEpisodeProcessor.buildEpisodeHtml(
-        title,
-        audioUrl,
-        imageUrl,
-        duration,
-        episode,
-        season
-      ) + processedContent.html;
+      PodcastEpisodeProcessor.buildEpisodeBlock(event) + processedContent.html;
 
     const authorProfile =
       PodcastEpisodeProcessor.contentProcessor.getNonBlockingProfile(

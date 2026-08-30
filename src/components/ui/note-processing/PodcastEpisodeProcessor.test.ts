@@ -131,3 +131,59 @@ describe('PodcastEpisodeProcessor.process', () => {
     expect(html).not.toContain('podcast-episode__meta');
   });
 });
+
+describe('PodcastEpisodeProcessor.removeDuplicateInlineAudio', () => {
+  const AUDIO = 'https://media.example.net/episode.ogg';
+
+  function buildDom(): {
+    scope: HTMLElement;
+    card: HTMLElement;
+  } {
+    const scope = document.createElement('div');
+    scope.className = 'event-content';
+    scope.innerHTML = `
+      <div class="note-media"><audio class="note-audio" src="${AUDIO}"></audio></div>
+      <div class="note-media"><div class="media-placeholder media-placeholder--audio" data-type="audio" data-src="${AUDIO}"></div></div>
+      <div class="note-media"><audio class="note-audio" src="https://media.example.net/other.mp3"></audio></div>
+    `;
+    const card = document.createElement('div');
+    card.className = 'podcast-episode-card';
+    scope.appendChild(card);
+    document.body.appendChild(scope);
+    return { scope, card };
+  }
+
+  it('removes matching inline players and placeholders, keeps others', () => {
+    const { scope, card } = buildDom();
+    PodcastEpisodeProcessor.removeDuplicateInlineAudio(card, AUDIO);
+
+    const remaining = scope.querySelectorAll('audio.note-audio');
+    expect(remaining.length).toBe(1);
+    expect(remaining[0]?.getAttribute('src')).toBe(
+      'https://media.example.net/other.mp3'
+    );
+    expect(scope.querySelectorAll('.media-placeholder').length).toBe(0);
+    // empty .note-media wrappers are cleaned up
+    expect(scope.querySelectorAll('.note-media').length).toBe(1);
+    scope.remove();
+  });
+
+  it('does nothing without an audio URL', () => {
+    const { scope, card } = buildDom();
+    PodcastEpisodeProcessor.removeDuplicateInlineAudio(card, null);
+    expect(scope.querySelectorAll('audio.note-audio').length).toBe(2);
+    scope.remove();
+  });
+
+  it('does nothing when the card is detached', () => {
+    const card = document.createElement('div');
+    const scope = document.createElement('div');
+    scope.className = 'event-content';
+    scope.innerHTML = `<audio class="note-audio" src="${AUDIO}"></audio>`;
+    document.body.appendChild(scope);
+    PodcastEpisodeProcessor.removeDuplicateInlineAudio(card, AUDIO);
+    // detached card → no .event-content scope → nothing removed
+    expect(scope.querySelectorAll('audio.note-audio').length).toBe(1);
+    scope.remove();
+  });
+});

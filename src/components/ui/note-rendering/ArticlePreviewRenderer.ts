@@ -114,40 +114,48 @@ export class ArticlePreviewRenderer {
   }
 
   /**
-   * Podcast episode card (kind 30054) — nn-card with cover, title and
-   * duration; tapping opens the SNV which carries the full audio player.
+   * Podcast episode card (kind 30054) — renders the SAME episode block as the
+   * SNV card (PodcastEpisodeProcessor.buildEpisodeBlock), wrapped in a click
+   * target that opens the episode's SNV (audio excluded from the guard).
    */
   private createPodcastEpisodeCard(
     event: NostrEvent,
     naddrRef: string
   ): HTMLElement {
-    const get = (name: string) =>
-      event.tags.find(t => t[0] === name)?.[1] || '';
-    const title = get('title') || 'Podcast episode';
-    const image = get('image');
-    const durationSeconds = parseInt(get('duration'), 10);
-    const duration =
-      Number.isFinite(durationSeconds) && durationSeconds > 0
-        ? PodcastEpisodeProcessor.formatDuration(durationSeconds)
-        : '';
+    const card = document.createElement('div');
+    card.className = 'podcast-episode-card';
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', e => {
+      if (
+        (e.target as HTMLElement).closest(
+          '.note-image--clickable, .note-media, video, audio'
+        )
+      )
+        return;
+      e.stopPropagation();
+      const cleanNaddr = naddrRef.replace(/^nostr:/, '');
+      getViewNavigationController().openView('single-note', cleanNaddr, e);
+    });
 
-    const card = document.createElement('a');
-    card.className = 'nn-card podcast-episode-card';
-    card.href = `/note/${naddrRef.replace(/^nostr:/, '')}`;
-
-    card.innerHTML = `
-      ${
-        image
-          ? `<img class="nn-card__image" src="${escapeHtmlAttr(image)}" alt="" loading="lazy" />`
-          : `<div class="nn-card__image nn-card__image--placeholder" aria-hidden="true">&#x1F399;</div>`
+    card.innerHTML = PodcastEpisodeProcessor.buildEpisodeBlock(event);
+    // Podcast clients embed the episode URL in the quoting note's text — drop
+    // the duplicate inline player once the card (with its own player) is in.
+    // Also unwrap the anonymous mount div the quote pipeline created around
+    // the card (it holds nothing else and is purely a skeleton mount point).
+    const audioUrl = event.tags.find(t => t[0] === 'audio')?.[1] ?? null;
+    requestAnimationFrame(() => {
+      PodcastEpisodeProcessor.removeDuplicateInlineAudio(card, audioUrl);
+      const wrapper = card.parentElement;
+      if (
+        wrapper &&
+        wrapper.tagName === 'DIV' &&
+        !wrapper.className &&
+        wrapper.childElementCount === 1 &&
+        wrapper.childNodes.length === 1
+      ) {
+        wrapper.replaceWith(card);
       }
-      <div class="nn-card__body">
-        <div class="nn-card__title">${escapeHtml(title)}</div>
-        <div class="nn-card__meta"><span class="badge badge--warning">&#x1F399; Podcast</span>${
-          duration ? ` <span>${escapeHtml(duration)}</span>` : ''
-        }</div>
-      </div>
-    `;
+    });
     return card;
   }
 
