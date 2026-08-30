@@ -10,6 +10,37 @@ export interface MoveTarget {
   label: string;
 }
 
+/**
+ * Location-sensitive menu placement, shared semantics with CustomDropdown's
+ * portal positioner: drops down / left-anchored by default; flips to
+ * right-anchored when the menu would overflow the right viewport edge (third
+ * tile in a row) and to drop-up when there is no room below.
+ */
+export function computeMenuPosition(
+  triggerRect: { left: number; right: number; top: number; bottom: number },
+  menuWidth: number,
+  menuHeight: number,
+  viewportWidth: number,
+  viewportHeight: number
+): { left: number; top: number } {
+  const m = 8;
+
+  let left = triggerRect.left;
+  if (left + menuWidth > viewportWidth - m) {
+    left = Math.max(m, triggerRect.right - menuWidth);
+  }
+
+  const spaceBelow = viewportHeight - triggerRect.bottom;
+  let top: number;
+  if (spaceBelow < menuHeight && triggerRect.top > menuHeight) {
+    top = triggerRect.top - menuHeight - 4;
+  } else {
+    top = triggerRect.bottom + 4;
+  }
+
+  return { left, top };
+}
+
 interface MoveDropdownOptions {
   targets: MoveTarget[];
   onSelect: (targetId: string) => void;
@@ -92,16 +123,16 @@ export class MoveDropdown {
     if (!this.dropdown) return;
 
     const rect = this.button.getBoundingClientRect();
-    const dropdownHeight = this.dropdown.offsetHeight;
-    const spaceBelow = window.innerHeight - rect.bottom;
+    const pos = computeMenuPosition(
+      rect,
+      this.dropdown.offsetWidth,
+      this.dropdown.offsetHeight,
+      window.innerWidth,
+      window.innerHeight
+    );
 
-    this.dropdown.style.left = `${rect.left}px`;
-
-    if (spaceBelow < dropdownHeight && rect.top > dropdownHeight) {
-      this.dropdown.style.top = `${rect.top - dropdownHeight - 4}px`;
-    } else {
-      this.dropdown.style.top = `${rect.bottom + 4}px`;
-    }
+    this.dropdown.style.left = `${pos.left}px`;
+    this.dropdown.style.top = `${pos.top}px`;
   }
 
   private close(): void {
