@@ -891,6 +891,17 @@ export class QuotedNoteRenderer {
     placeholder.innerHTML = `<div class="quote-depth-cap__content"><span class="quote-depth-cap__icon">📄</span><span class="quote-depth-cap__text">Quoted repost — open to view</span></div>`;
 
     placeholder.addEventListener('click', e => {
+      // Inviolable media-click rule: media inside the placeholder must never
+      // be pre-empted by this navigation handler (defensive — the placeholder
+      // contains no media today, but this keeps the guard invariant intact).
+      const target = e.target as HTMLElement;
+      if (
+        target.closest('.note-image--clickable') ||
+        target.closest('.note-media') ||
+        target.tagName === 'VIDEO'
+      ) {
+        return;
+      }
       e.stopPropagation();
       const router = Router.getInstance();
       router.navigate(`/note/${ref.fullMatch.replace(/^nostr:/, '')}`);
