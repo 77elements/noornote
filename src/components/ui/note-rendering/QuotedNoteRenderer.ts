@@ -46,6 +46,8 @@ import {
 
 export class QuotedNoteRenderer {
   private static instance: QuotedNoteRenderer;
+  /** Rendered quote levels; deeper nested quotes become the depth-cap placeholder. */
+  private static readonly MAX_QUOTE_DEPTH = 3;
   private quoteFetcher: QuoteNoteFetcher;
   private articleRenderer: ArticlePreviewRenderer;
   private contentProcessor: ContentProcessor;
@@ -213,8 +215,17 @@ export class QuotedNoteRenderer {
     skeleton: HTMLElement,
     enableCollapsible: boolean,
     parentAuthorPubkey?: string,
-    isRetry: boolean = false
+    isRetry: boolean = false,
+    depth: number = 1
   ): Promise<void> {
+    // Depth cap: nested quoted-repost chains may render 3 levels; anything
+    // deeper becomes a clickable placeholder (perspective shift via open —
+    // that view starts fresh at level 1 with its own 3 levels). No fetch, no
+    // skeleton, no recovery — a runaway chain can no longer storm the relays.
+    if (depth > QuotedNoteRenderer.MAX_QUOTE_DEPTH) {
+      skeleton.replaceWith(this.createDepthCapPlaceholder(ref));
+      return;
+    }
     try {
       // Always fetch the normal path here. The retry-vs-not distinction lives
       // ONLY in the error branch below — `isRetry` decides whether a failure
@@ -266,7 +277,10 @@ export class QuotedNoteRenderer {
           );
           if (muteStatus.public || muteStatus.private) {
             // Show muted placeholder instead of quote box
-            const mutedPlaceholder = this.createMutedPlaceholder(result.event);
+            const mutedPlaceholder = this.createMutedPlaceholder(
+              result.event,
+              depth
+            );
             skeleton.replaceWith(mutedPlaceholder);
             return;
           }
@@ -440,7 +454,8 @@ export class QuotedNoteRenderer {
 
         const quoteBox = await this.createQuoteBox(
           result.event,
-          enableCollapsible
+          enableCollapsible,
+          depth
         );
         skeleton.replaceWith(quoteBox);
       } else if (this.isUnresolvableByDesign(ref)) {
@@ -467,7 +482,8 @@ export class QuotedNoteRenderer {
           skeleton,
           enableCollapsible,
           parentAuthorPubkey,
-          result.error
+          result.error,
+          depth
         );
       }
     } catch (error) {
@@ -494,7 +510,8 @@ export class QuotedNoteRenderer {
     skeleton: HTMLElement,
     enableCollapsible: boolean,
     parentAuthorPubkey: string | undefined,
-    error: QuoteFetchError
+    error: QuoteFetchError,
+    depth: number = 1
   ): void {
     let resolved = false;
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
@@ -545,7 +562,8 @@ export class QuotedNoteRenderer {
               skeleton,
               enableCollapsible,
               parentAuthorPubkey,
-              true
+              true,
+              depth
             );
           }
         }
@@ -576,7 +594,8 @@ export class QuotedNoteRenderer {
               skeleton,
               enableCollapsible,
               parentAuthorPubkey,
-              true
+              true,
+              depth
             );
           }
           // else: failTimer still scheduled — leave skeleton in place.
@@ -634,7 +653,8 @@ export class QuotedNoteRenderer {
    */
   private async createQuoteBox(
     event: NostrEvent,
-    enableCollapsible: boolean
+    enableCollapsible: boolean,
+    depth: number = 1
   ): Promise<HTMLElement> {
     const quoteBox = document.createElement('div');
     quoteBox.className = 'quote-box';
@@ -714,7 +734,15 @@ export class QuotedNoteRenderer {
         if (marker) {
           const skeleton = this.createQuoteSkeleton();
           marker.replaceWith(skeleton);
-          void this.fetchAndRenderQuote(ref, skeleton, false, event.pubkey); // No collapsible for nested quotes
+          // No collapsible for nested quotes; nested level = depth + 1
+          void this.fetchAndRenderQuote(
+            ref,
+            skeleton,
+            false,
+            event.pubkey,
+            false,
+            depth + 1
+          );
         }
       });
     }
@@ -781,7 +809,10 @@ export class QuotedNoteRenderer {
   /**
    * Create placeholder for muted user's quoted note
    */
-  private createMutedPlaceholder(event: NostrEvent): HTMLElement {
+  private createMutedPlaceholder(
+    event: NostrEvent,
+    depth: number = 1
+  ): HTMLElement {
     const eventId = event.id ?? '';
     const placeholder = document.createElement('div');
     placeholder.className = 'quote-muted';
@@ -806,7 +837,7 @@ export class QuotedNoteRenderer {
       showBtn.addEventListener('click', async e => {
         e.stopPropagation();
         // Replace placeholder with actual quote box
-        const quoteBox = await this.createQuoteBox(event, true);
+        const quoteBox = await this.createQuoteBox(event, true, depth);
         placeholder.replaceWith(quoteBox);
       });
     }
@@ -845,6 +876,27 @@ export class QuotedNoteRenderer {
         'Failed to load quoted note'
     )}</span></div>`;
     return errorDiv;
+  }
+
+  /**
+   * Depth-cap placeholder for deeply nested quoted-repost chains: the card
+   * looks like a note skeleton, but carries a text instead of skeleton bars.
+   * Fully clickable — opening it navigates to the quoted note, whose own view
+   * renders the next 3 levels from that perspective (no invented IDs/hex).
+   */
+  private createDepthCapPlaceholder(ref: QuotedReference): HTMLElement {
+    const placeholder = document.createElement('div');
+    placeholder.className = 'quote-depth-cap';
+    placeholder.dataset.quoteRef = ref.fullMatch;
+    placeholder.innerHTML = `<div class="quote-depth-cap__content"><span class="quote-depth-cap__icon">📄</span><span class="quote-depth-cap__text">Quoted repost — open to view</span></div>`;
+
+    placeholder.addEventListener('click', e => {
+      e.stopPropagation();
+      const router = Router.getInstance();
+      router.navigate(`/note/${ref.fullMatch.replace(/^nostr:/, '')}`);
+    });
+
+    return placeholder;
   }
 
   /**
