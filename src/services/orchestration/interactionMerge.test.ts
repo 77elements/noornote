@@ -7,6 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import {
+  calculateTotalZapSats,
   mergeInteractionEvents,
   type InteractionEventBuckets,
 } from './interactionMerge';
@@ -105,5 +106,36 @@ describe('mergeInteractionEvents', () => {
       HEX_NOTE
     );
     expect(cached.reactionEvents.length).toBe(0);
+  });
+});
+
+describe('calculateTotalZapSats', () => {
+  it('dedupes zapper retries: two receipts with the same bolt11 count once', () => {
+    const bolt11 = 'lnbc50m1testinvoice';
+    const total = calculateTotalZapSats([
+      ev('r1', 9735, [['bolt11', bolt11]]),
+      ev('r2', 9735, [['bolt11', bolt11]]), // zapper retry — different id, same payment
+    ]);
+    expect(total).toBe(5_000_000); // lnbc50m = 50 mBTC — counted ONCE
+  });
+
+  it('different invoices sum up', () => {
+    const total = calculateTotalZapSats([
+      ev('r1', 9735, [['bolt11', 'lnbc50m1a']]),
+      ev('r2', 9735, [['bolt11', 'lnbc21m1b']]),
+    ]);
+    expect(total).toBe(5_000_000 + 2_100_000);
+  });
+
+  it('receipts without a bolt11 tag contribute nothing', () => {
+    const total = calculateTotalZapSats([
+      ev('r1', 9735, [['p', 'a'.repeat(64)]]),
+      ev('r2', 9735, [['bolt11', 'lnbc50m1a']]),
+    ]);
+    expect(total).toBe(5_000_000);
+  });
+
+  it('empty list → 0', () => {
+    expect(calculateTotalZapSats([])).toBe(0);
   });
 });

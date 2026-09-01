@@ -21,6 +21,24 @@ import { ProfileOrchestrator } from './orchestration/ProfileOrchestrator';
 import { SignatureVerificationService } from './security/SignatureVerificationService';
 import { PlatformService } from './PlatformService';
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
+import { diagLog } from './DiagnosticLogger';
+import { TypedEventBus } from '../core/TypedEventBus';
+
+export type ZapPaymentState = 'verifying' | 'succeeded';
+
+export interface ZapPendingState {
+  invoice: string;
+  noteId: string;
+  amount: number;
+  state: ZapPaymentState;
+  startedAt: number;
+  /** Zap comment — the optimistic row renders it like a receipt row. */
+  comment?: string;
+  /** Anonymous zap (throwaway key) — rendered with the own-anon lock badge. */
+  anonymous?: boolean;
+}
+
+interface ZapPendingEntry extends ZapPendingState {}
 
 export interface ZapRequest {
   noteId?: string;
@@ -66,6 +84,7 @@ export class ZapService {
   private nostrTransport: NostrTransport;
   private systemLogger: SystemLogger;
   private outboundRelaysFetcher: OutboundRelaysOrchestrator;
+  private eventBus: TypedEventBus;
 
   private constructor() {
     this.nwcService = NWCService.getInstance();
@@ -75,6 +94,9 @@ export class ZapService {
     this.nostrTransport = NostrTransport.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.outboundRelaysFetcher = OutboundRelaysOrchestrator.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
+    // In-memory lifecycle state is per-account — wipe it on account switch.
+    this.eventBus.on('user:logout', () => this.clearPendingZaps());
   }
 
   public static getInstance(): ZapService {
@@ -313,15 +335,34 @@ export class ZapService {
 
     // Step 4: Pay invoice (NWC if configured, otherwise WebLN)
     const useNWC = this.nwcService.isConnected();
-    const paymentResult = useNWC
-      ? await this.nwcService.payInvoice(invoice)
-      : await this.payWithWebLN(invoice);
+    let paymentResult: PayInvoiceResult;
+    try {
+      paymentResult = useNWC
+        ? await this.nwcService.payInvoice(invoice)
+        : await this.payWithWebLN(invoice);
+    } catch (error) {
+      if (useNWC) {
+        // Defensive: a rejected payInvoice is an ambiguous outcome — the
+        // payment MAY have settled. Verify via the wallet, never blind-revert.
+        this.beginVerification(request, invoice);
+        return { success: true, invoice, amount: request.amount };
+      }
+      throw error;
+    }
 
     if (!useNWC) {
       this.systemLogger.info('ZapService', 'Paying via WebLN');
     }
 
     if (!paymentResult.success) {
+      if (useNWC && paymentResult.definitive === false) {
+        // Ambiguous outcome (NWC timeout / connection lost): the payment MAY
+        // have settled. Lightning payments are atomic — the wallet is the only
+        // authority. UI shows the zap optimistically; the verification loop
+        // resolves it (paid → succeeded, unpaid → full revert).
+        this.beginVerification(request, invoice);
+        return { success: true, invoice, amount: request.amount };
+      }
       this.systemLogger.error(
         'ZapService',
         'Payment failed',
@@ -336,26 +377,33 @@ export class ZapService {
 
     this.systemLogger.info('ZapService', 'Payment successful');
 
-    // Store zap locally for consistent UI (optimistic update)
+    // Optimistic UI: the sats have left the wallet — success is final (atomic
+    // payment, no revert path exists for this state).
     if (request.noteId) {
       this.storeUserZap(request.noteId, request.amount);
     }
+    this.trackZap(request, invoice, 'succeeded');
 
-    // Show success immediately (UX like Jumble - don't wait for receipt)
+    // Show success immediately (don't wait for receipt)
     ToastService.show(`${request.amount} sats zapped`, 'success');
 
-    // Step 5: Verify zap receipt in background (don't await - let stats update naturally)
+    // Background receipt watch — purely cosmetic: upgrades the local zap row
+    // with sender metadata once the zapper publishes the receipt. Receipts are
+    // often never published on relays; that is normal, not an error.
     void this.waitForZapReceipt(invoice, request.authorPubkey).then(
       verified => {
         if (verified) {
+          // Receipt-based stats now include this zap — drop the optimistic
+          // entry so the count does not double-count.
+          this.onReceiptConfirmed(invoice);
           this.systemLogger.info(
             'ZapService',
-            'Zap receipt verified on relays'
+            'Zap receipt published on relays'
           );
         } else {
-          this.systemLogger.warn(
+          this.systemLogger.info(
             'ZapService',
-            'Zap receipt not found on relays (payment was successful though)'
+            'No zap receipt on relays — payment was wallet-verified'
           );
         }
       }
@@ -814,12 +862,16 @@ export class ZapService {
             }
           );
 
-          // Timeout after 15 seconds (LNURL server should publish receipt quickly)
+          // Keep watching for 2 minutes — receipts are often published late
+          // (or never); the wallet stays the success authority regardless.
           setTimeout(() => {
-            this.systemLogger.warn('ZapService', 'Zap receipt timeout (15s)');
+            this.systemLogger.info(
+              'ZapService',
+              'No zap receipt published — zap confirmed by wallet'
+            );
             sub.close();
             resolve(false);
-          }, 15000);
+          }, 120000);
         } catch (error) {
           this.systemLogger.error(
             'ZapService',
@@ -855,6 +907,184 @@ export class ZapService {
       amount: 21,
       comment: '',
     };
+  }
+
+  // ── Zap payment lifecycle (single source of truth) ──────────────────────
+  // Keyed by bolt11 invoice — the stable link between payment and UI state.
+  private pendingZaps = new Map<string, ZapPendingEntry>();
+  /** Verification poll interval for ambiguous payment outcomes. */
+  private verifyIntervalMs = 15000;
+
+  private emitLifecycle(
+    event: 'zap:pending' | 'zap:succeeded' | 'zap:failed',
+    noteId: string,
+    invoice: string,
+    amount: number
+  ): void {
+    this.eventBus.emit(event, { noteId, invoice, amount });
+  }
+
+  private trackZap(
+    request: ZapRequest,
+    invoice: string,
+    state: ZapPaymentState
+  ): void {
+    if (!request.noteId) return;
+    this.pendingZaps.set(invoice, {
+      invoice,
+      noteId: request.noteId,
+      amount: request.amount,
+      state,
+      startedAt: Date.now(),
+      ...(request.comment && { comment: request.comment }),
+      ...(request.anonymous && { anonymous: true }),
+    });
+    this.emitLifecycle(
+      state === 'verifying' ? 'zap:pending' : 'zap:succeeded',
+      request.noteId,
+      invoice,
+      request.amount
+    );
+  }
+
+  /**
+   * Ambiguous payment outcome (NWC timeout / connection lost): the sats MAY
+   * have left the wallet. Track optimistically and resolve via the wallet —
+   * paid → zap:succeeded; unpaid (NOT_FOUND) → zap:failed + full revert;
+   * unreachable → stays 'verifying' and keeps polling (never a false revert).
+   */
+  private beginVerification(request: ZapRequest, invoice: string): void {
+    if (request.noteId) {
+      this.storeUserZap(request.noteId, request.amount);
+    }
+    this.trackZap(request, invoice, 'verifying');
+    this.systemLogger.info(
+      'ZapService',
+      'Payment outcome unclear — verifying with wallet'
+    );
+    diagLog('wallet', 'Zap payment ambiguous — verification started', {
+      noteId: request.noteId,
+      invoice: invoice.slice(0, 16),
+      amount: request.amount,
+    });
+    void this.verificationLoop(invoice);
+    // The receipt (kind 9735, signature-verified, bolt11-matched) is the
+    // fastest paid-signal — it races the wallet lookup, whoever wins resolves.
+    void this.waitForZapReceipt(invoice, request.authorPubkey).then(found => {
+      if (found) this.onReceiptConfirmed(invoice);
+    });
+  }
+
+  private async verificationLoop(invoice: string): Promise<void> {
+    while (this.pendingZaps.get(invoice)?.state === 'verifying') {
+      let outcome: 'paid' | 'unpaid' | 'unknown';
+      try {
+        outcome = await this.nwcService.lookupInvoice(invoice);
+      } catch {
+        outcome = 'unknown';
+      }
+      const current = this.pendingZaps.get(invoice);
+      if (!current || current.state !== 'verifying') return;
+      if (outcome === 'paid') {
+        this.markSucceeded(invoice);
+        return;
+      }
+      if (outcome === 'unpaid') {
+        this.markFailed(invoice);
+        return;
+      }
+      await new Promise(resolve => setTimeout(resolve, this.verifyIntervalMs));
+    }
+  }
+
+  private markSucceeded(invoice: string): void {
+    const entry = this.pendingZaps.get(invoice);
+    if (!entry || entry.state === 'succeeded') return;
+    entry.state = 'succeeded';
+    this.emitLifecycle('zap:succeeded', entry.noteId, invoice, entry.amount);
+    this.systemLogger.info('ZapService', 'Zap payment verified with wallet');
+    diagLog('wallet', 'Zap lifecycle: succeeded', {
+      noteId: entry.noteId,
+      invoice: invoice.slice(0, 16),
+      amount: entry.amount,
+    });
+  }
+
+  private markFailed(invoice: string): void {
+    const entry = this.pendingZaps.get(invoice);
+    if (!entry) return;
+    this.pendingZaps.delete(invoice);
+    this.removeUserZap(entry.noteId);
+    this.emitLifecycle('zap:failed', entry.noteId, invoice, entry.amount);
+    this.systemLogger.warn('ZapService', 'Zap not settled — UI reverted');
+    diagLog('wallet', 'Zap lifecycle: failed, UI reverted', {
+      noteId: entry.noteId,
+      invoice: invoice.slice(0, 16),
+      amount: entry.amount,
+    });
+  }
+
+  private onReceiptConfirmed(invoice: string): void {
+    const entry = this.pendingZaps.get(invoice);
+    if (!entry) return;
+    if (entry.state === 'verifying') {
+      this.markSucceeded(invoice);
+    } else {
+      // Receipt-based stats now include this zap — drop the optimistic entry
+      // so the count does not double-count.
+      this.pendingZaps.delete(invoice);
+    }
+  }
+
+  /** Outstanding optimistic zap states for a note (list merge + count). */
+  public getZapPendingStates(noteId: string): ZapPendingState[] {
+    return Array.from(this.pendingZaps.values())
+      .filter(entry => entry.noteId === noteId)
+      .map(entry => {
+        const { invoice, noteId, amount, state, startedAt, ...rest } = entry;
+        return {
+          invoice,
+          noteId,
+          amount,
+          state,
+          startedAt,
+          ...(rest.comment !== undefined && { comment: rest.comment }),
+          ...(rest.anonymous !== undefined && { anonymous: rest.anonymous }),
+        };
+      });
+  }
+
+  /** Sum of optimistic amounts for a note (ISL count addition). */
+  public getUnconfirmedZapAmount(noteId: string): number {
+    let total = 0;
+    this.pendingZaps.forEach(entry => {
+      if (entry.noteId === noteId) total += entry.amount;
+    });
+    return total;
+  }
+
+  /**
+   * Drop lifecycle entries whose receipt is already present in the fetched
+   * stats — called by the SNV zaps-list after each receipt fetch so the
+   * optimistic amount hands over to receipt-based stats without double count.
+   */
+  public reconcileZapStates(noteId: string, zapEvents: NostrEvent[]): void {
+    const invoices = new Set<string>();
+    zapEvents.forEach(event => {
+      const bolt = event.tags?.find(tag => tag[0] === 'bolt11')?.[1];
+      if (bolt) invoices.add(bolt);
+    });
+    if (invoices.size === 0) return;
+    this.pendingZaps.forEach((entry, invoice) => {
+      if (entry.noteId === noteId && invoices.has(invoice)) {
+        this.pendingZaps.delete(invoice);
+      }
+    });
+  }
+
+  /** Wipe in-memory lifecycle state (account switch — state is per-account). */
+  public clearPendingZaps(): void {
+    this.pendingZaps.clear();
   }
 
   /**
@@ -902,6 +1132,18 @@ export class ZapService {
       []
     );
     return list.includes(invoice);
+  }
+
+  /**
+   * Remove the optimistic zap entry for a note (definitive wallet-side
+   * failure — the sats did NOT leave the wallet).
+   */
+  public removeUserZap(noteId: string): void {
+    const store = PerAccountLocalStorage.getInstance();
+    const zaps = store.get<Record<string, number>>(StorageKeys.USER_ZAPS, {});
+    if (!(noteId in zaps)) return;
+    delete zaps[noteId];
+    store.set(StorageKeys.USER_ZAPS, zaps);
   }
 
   /**

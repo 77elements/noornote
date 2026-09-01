@@ -6,6 +6,7 @@
 
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
+import type { ZapsModuleApi } from '../../modules/zaps/contracts';
 import { AuthGuard } from '../../services/AuthGuard';
 import { AuthService } from '../../services/AuthService';
 import { ToastService } from '../../services/ToastService';
@@ -58,6 +59,12 @@ export class InteractionStatusLine {
   }
   private initialFetchPromise?: Promise<void>;
   private bookmarkSubId?: string;
+  private _zapsApi?: ZapsModuleApi | null;
+  private get zapsApi(): ZapsModuleApi | null {
+    return (this._zapsApi ??=
+      ModuleLoader.getInstance().getApi<ZapsModuleApi>('zaps'));
+  }
+  private zapLifecycleSubIds: string[] = [];
   private zapManager: ZapManager | null = null;
   private likeManager: LikeManager | null = null;
   private repostManager: RepostManager | null = null;
@@ -117,6 +124,21 @@ export class InteractionStatusLine {
     if (config.fetchStats) {
       this.initialFetchPromise = this.fetchStats();
     }
+
+    // Zap payment lifecycle (ZapService authority): the count includes the
+    // optimistic amounts and re-renders on every state change — the same bus
+    // drives the SNV zaps list, so both stay synchronized.
+    this.zapLifecycleSubIds = [
+      TypedEventBus.getInstance().on('zap:pending', payload => {
+        if (payload.noteId === this.config.noteId) this.renderZapCount();
+      }),
+      TypedEventBus.getInstance().on('zap:succeeded', payload => {
+        if (payload.noteId === this.config.noteId) this.renderZapCount();
+      }),
+      TypedEventBus.getInstance().on('zap:failed', payload => {
+        if (payload.noteId === this.config.noteId) this.renderZapCount();
+      }),
+    ];
   }
 
   /**
@@ -549,8 +571,25 @@ export class InteractionStatusLine {
       likesCount.textContent = formatCount(stats.likes);
     }
     if (zapsCount && stats.zaps !== undefined) {
-      zapsCount.textContent = formatCount(stats.zaps);
+      // Receipt-based stats + outstanding optimistic amounts (ZapService
+      // lifecycle) — the zap count updates instantly on zap:succeeded.
+      const unconfirmed =
+        this.zapsApi?.getUnconfirmedZapAmount(this.config.noteId) ?? 0;
+      zapsCount.textContent = formatCount(stats.zaps + unconfirmed);
     }
+  }
+
+  /**
+   * Re-render the zap count only: receipt-based stats + outstanding
+   * optimistic amounts. Called on zap lifecycle events — no stats refetch
+   * needed (the optimistic amount comes from the ZapService lifecycle map).
+   */
+  private renderZapCount(): void {
+    const zapsCount = this.element.querySelector('.isl-zap .isl-count');
+    if (!zapsCount) return;
+    const unconfirmed =
+      this.zapsApi?.getUnconfirmedZapAmount(this.config.noteId) ?? 0;
+    zapsCount.textContent = formatCount(this.stats.zaps + unconfirmed);
   }
 
   /**
@@ -578,6 +617,8 @@ export class InteractionStatusLine {
     if (this.bookmarkSubId) {
       TypedEventBus.getInstance().off(this.bookmarkSubId);
     }
+    this.zapLifecycleSubIds.forEach(id => TypedEventBus.getInstance().off(id));
+    this.zapLifecycleSubIds = [];
     // Cleanup managers
     if (this.likeManager) {
       this.likeManager.destroy();

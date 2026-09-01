@@ -6,8 +6,6 @@
 
 import { View } from './View';
 import { NoteUI } from '../ui/NoteUI';
-import { ZapsList } from '../ui/ZapsList';
-import { LikesList } from '../ui/LikesList';
 import { ThreadManager } from './managers/ThreadManager';
 import { LiveUpdatesManager } from './managers/LiveUpdatesManager';
 import { fetchNostrEvents } from '../../helpers/fetchNostrEvents';
@@ -15,6 +13,8 @@ import { RelayConfig } from '../../services/RelayConfig';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { SingleNoteModuleApi } from '../../modules/single-note/contracts';
 import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
+import type { ZapsModuleApi } from '../../modules/zaps/contracts';
+import { SnvZapsListController } from './managers/SnvZapsListController';
 import type { ArticlesModuleApi } from '../../modules/articles/contracts';
 import { UserProfileService } from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
@@ -53,7 +53,6 @@ export class SingleNoteView extends View {
   private eventBus: TypedEventBus;
   private currentNoteId: string | null = null;
   private currentEvent: NostrEvent | null = null;
-  private noteElement: HTMLElement | null = null;
 
   // Managers
   private threadManager?: ThreadManager;
@@ -61,6 +60,27 @@ export class SingleNoteView extends View {
 
   // TypedEventBus subscription IDs
   private muteUpdatedSubscriptionId?: string;
+
+  /**
+   * The ONE renderer for the zaps/likes lists: optimistic lifecycle rows
+   * appear synchronously in the same tick (true optimistic UI), receipt data
+   * replaces them, relay fetches never block rendering. See the class doc.
+   */
+  private _zapsListController: SnvZapsListController | null = null;
+  private get zapsListController(): SnvZapsListController {
+    if (!this._zapsListController) {
+      this._zapsListController = new SnvZapsListController(
+        () =>
+          ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'),
+        async () =>
+          (await ModuleLoader.getInstance().ensure<ReactionsModuleApi>(
+            'reactions'
+          )) ?? null,
+        () => ModuleLoader.getInstance().getApi<ZapsModuleApi>('zaps')
+      );
+    }
+    return this._zapsListController;
+  }
 
   constructor(noteId: string) {
     super();
@@ -256,10 +276,6 @@ export class SingleNoteView extends View {
       headerSize: 'large',
       depth: 0,
     });
-    // Direct reference for live-update handlers — the root note element does
-    // NOT reliably carry `data-note-id` matching the (addressable) note id.
-    this.noteElement = noteElement;
-
     const snvWrapper = document.createElement('div');
     snvWrapper.className = 'snv-wrapper';
 
@@ -287,7 +303,7 @@ export class SingleNoteView extends View {
     this.currentEvent = event;
 
     this.initializeManagers(effectiveNoteId, eventPubkey, repliesContainer);
-    void this.loadZapsList(effectiveNoteId, eventPubkey, noteElement);
+    this.zapsListController.attach(effectiveNoteId, eventPubkey, noteElement);
 
     if (this.threadManager) {
       const quotedReposts = await this.threadManager.fetchQuotedReposts();
@@ -321,7 +337,7 @@ export class SingleNoteView extends View {
         });
       },
       onLoadZapsList: (replyId, authorPubkey, element) => {
-        void this.loadZapsList(replyId, authorPubkey, element);
+        this.zapsListController.attach(replyId, authorPubkey, element);
       },
     });
 
@@ -330,128 +346,17 @@ export class SingleNoteView extends View {
       onLiveReply: reply => this.threadManager?.appendLiveReply(reply),
       onStatsUpdate: stats => {
         NoteUI.getInteractionStatusLine(noteId)?.updateStats(stats);
-        // New reactions/zaps arrived — refresh the likes/zaps lists from the
-        // (already updated) detailed stats cache so emojis and zap rows
-        // appear live, not only on reload.
-        if (this.noteElement) {
-          this.scheduleZapsListRefresh(
-            noteId,
-            this.currentEvent?.pubkey ?? '',
-            this.noteElement
-          );
-        }
+        // New reactions/zaps arrived — refresh the lists from the (already
+        // updated) detailed stats cache so emojis and zap rows appear live.
+        this.zapsListController.refresh(noteId);
       },
       onQuotedRepost: event => this.threadManager?.appendQuotedRepost(event),
       onZapAdded: targetNoteId => {
-        // The [data-note-id] query fails for addressable notes (DOM carries
-        // the hex id) — fall back to the root note element reference.
-        const target =
-          (this.container.querySelector(
-            `[data-note-id="${targetNoteId}"]`
-          ) as HTMLElement | null) ?? this.noteElement;
-        if (target) {
-          const authorPubkey =
-            target.getAttribute('data-author-pubkey') ??
-            this.currentEvent?.pubkey ??
-            '';
-          this.scheduleZapsListRefresh(targetNoteId, authorPubkey, target);
-        }
+        this.zapsListController.refresh(targetNoteId);
       },
       onMuteUpdated: () => this.render(),
       onNoteDeleted: () => this.router.navigate('/timeline'),
     });
-  }
-
-  /**
-   * Serialized + debounced zaps/likes list refresh. `zap:added` and the live
-   * stats stream fire for the SAME zap — two concurrent runs interleave their
-   * remove/insert awaits and duplicate the lists in the DOM. Everything goes
-   * through one promise chain; bursts collapse into one debounced run.
-   */
-  private zapsListChain: Promise<void> = Promise.resolve();
-  private zapsRefreshTimer: number | null = null;
-  private zapsRefresh: {
-    noteId: string;
-    authorPubkey: string;
-    element: HTMLElement;
-  } | null = null;
-
-  private scheduleZapsListRefresh(
-    noteId: string,
-    authorPubkey: string,
-    element: HTMLElement
-  ): void {
-    this.zapsRefresh = { noteId, authorPubkey, element };
-    if (this.zapsRefreshTimer !== null) return;
-    this.zapsRefreshTimer = window.setTimeout(() => {
-      this.zapsRefreshTimer = null;
-      const pending = this.zapsRefresh;
-      this.zapsRefresh = null;
-      if (pending) {
-        void this.loadZapsList(
-          pending.noteId,
-          pending.authorPubkey,
-          pending.element
-        );
-      }
-    }, 400);
-  }
-
-  private loadZapsList(
-    noteId: string,
-    authorPubkey: string,
-    noteElement: HTMLElement
-  ): Promise<void> {
-    const run = (): Promise<void> =>
-      this.doLoadZapsList(noteId, authorPubkey, noteElement);
-    const next = this.zapsListChain.then(run, run);
-    this.zapsListChain = next.catch(() => undefined);
-    return next;
-  }
-
-  private async doLoadZapsList(
-    noteId: string,
-    authorPubkey: string,
-    noteElement: HTMLElement
-  ): Promise<void> {
-    try {
-      // ensure() so the zaps/likes lists load on public, logged-out note views.
-      const reactionsApi =
-        await ModuleLoader.getInstance().ensure<ReactionsModuleApi>(
-          'reactions'
-        );
-      const stats = await reactionsApi?.getDetailedStats(noteId);
-      if (!stats) return;
-
-      const islContainer = noteElement.querySelector('.isl');
-      if (!islContainer?.parentNode) return;
-
-      noteElement.querySelector('.zaps-list')?.remove();
-      noteElement.querySelector('.likes-list')?.remove();
-
-      if (stats.zapEvents.length > 0) {
-        const zapsList = new ZapsList(stats.zapEvents);
-        islContainer.parentNode.insertBefore(
-          zapsList.getElement(),
-          islContainer
-        );
-      }
-
-      if (stats.reactionEvents.length > 0) {
-        const likesList = new LikesList(
-          stats.reactionEvents,
-          noteId,
-          authorPubkey
-        );
-        await likesList.init();
-        islContainer.parentNode.insertBefore(
-          likesList.getElement(),
-          islContainer
-        );
-      }
-    } catch (error) {
-      console.warn('Failed to load zaps/likes list:', error);
-    }
   }
 
   private createBackButton(
@@ -514,11 +419,8 @@ export class SingleNoteView extends View {
   }
 
   public destroy(): void {
-    if (this.zapsRefreshTimer !== null) {
-      clearTimeout(this.zapsRefreshTimer);
-      this.zapsRefreshTimer = null;
-    }
-    this.zapsRefresh = null;
+    this._zapsListController?.destroy();
+    this._zapsListController = null;
 
     if (this.muteUpdatedSubscriptionId) {
       this.eventBus.off(this.muteUpdatedSubscriptionId);

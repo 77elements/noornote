@@ -73,9 +73,22 @@ vi.mock('../../lists/mutes', () => ({
   isUserMuted: () => ({ public: false, private: false, any: false }),
 }));
 
+const { verificationMock } = vi.hoisted(() => ({
+  verificationMock: {
+    verifyEvent: vi.fn(
+      () => ({ valid: true }) as { valid: boolean; error?: string }
+    ),
+  },
+}));
+
+vi.mock('../security/SignatureVerificationService', () => ({
+  SignatureVerificationService: { getInstance: () => verificationMock },
+}));
+
 import { ReactionsOrchestrator } from './ReactionsOrchestrator';
 
 const NOTE = 'a'.repeat(64);
+const NOTE2 = 'f'.repeat(64);
 
 function ev(id: string, kind: number, tags: string[][]): NostrEvent {
   return {
@@ -188,5 +201,35 @@ describe('ReactionsOrchestrator startLiveStats/stopLiveStats', () => {
 
     expect(unsubscribeLiveMock).toHaveBeenCalledWith(`live-stats-${NOTE}`);
     expect(liveHandlers.has(`live-stats-${NOTE}`)).toBe(false);
+  });
+
+  it('rejects invalid-signature receipts before merging (zapper retry protection)', () => {
+    const onStats = vi.fn();
+    orchestrator.startLiveStats(NOTE2, onStats);
+    const subId = `live-stats-${NOTE2}`;
+
+    // Zapper retry with a broken signature — must NOT enter the stats
+    verificationMock.verifyEvent.mockReturnValueOnce({
+      valid: false,
+      error: 'Invalid cryptographic signature',
+    });
+    liveHandlers.get(subId)?.(
+      ev('bad', 9735, [
+        ['e', NOTE2],
+        ['bolt11', 'lnbc330n'],
+      ])
+    );
+    expect(onStats).not.toHaveBeenCalled();
+
+    // The valid original still works
+    liveHandlers.get(subId)?.(
+      ev('good', 9735, [
+        ['e', NOTE2],
+        ['bolt11', 'lnbc330n'],
+      ])
+    );
+    expect(onStats).toHaveBeenCalledWith(expect.objectContaining({ zaps: 33 }));
+
+    orchestrator.stopLiveStats(NOTE2);
   });
 });

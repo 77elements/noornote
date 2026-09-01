@@ -17,6 +17,8 @@ export interface ReactionsModuleApi {
   batchFetchStats(noteIds: string[]): Promise<Map<string, InteractionStats>>;
   getCachedStats(noteId: string): InteractionStats | null;
   getDetailedStats(noteId: string, eventId?: string): Promise<DetailedStats>;
+  /** Non-fetching cache read (any freshness) — instant UI, never blocks. */
+  peekDetailedStats(noteId: string): DetailedStats | null;
   updateCachedStats(noteId: string, updates: Partial<InteractionStats>): void;
   clearCache(noteId: string): void;
   startLiveReactions(

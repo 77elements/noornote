@@ -67,6 +67,18 @@ export interface ZapAddedPayload {
   noteId: string;
 }
 
+/**
+ * Zap payment lifecycle (wallet-side success criterion: "the sats left the
+ * wallet"). Emitted by ZapService; consumed by the SNV zaps list (unified
+ * renderer) and the ISL count — one bus, synchronized.
+ */
+export interface ZapLifecyclePayload {
+  noteId: string;
+  /** bolt11 invoice — the stable link between payment and UI state */
+  invoice: string;
+  amount: number;
+}
+
 import type { PollResults } from '../services/orchestration/PollOrchestrator';
 
 export interface PollVotedPayload {
@@ -350,6 +362,9 @@ export interface AppEvents {
 
   // ── Zaps ───────────────────────────────────
   'zap:added': ZapAddedPayload;
+  'zap:pending': ZapLifecyclePayload;
+  'zap:succeeded': ZapLifecyclePayload;
+  'zap:failed': ZapLifecyclePayload;
   'zapstats:loaded': void;
 
   // ── Profile ────────────────────────────────

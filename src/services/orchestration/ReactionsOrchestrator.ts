@@ -17,11 +17,15 @@ import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
 import { RelayConfig } from '../RelayConfig';
-import { parseBolt11Amount } from '../../helpers/zapUtils';
 import { SystemLogger } from '../SystemLogger';
 import { UserProfileService } from '../UserProfileService';
 import { isUserMuted } from '../../lists/mutes';
-import { mergeInteractionEvents } from './interactionMerge';
+import {
+  mergeInteractionEvents,
+  calculateTotalZapSats,
+} from './interactionMerge';
+import { SignatureVerificationService } from '../security/SignatureVerificationService';
+import { diagLog } from '../DiagnosticLogger';
 
 /**
  * Count replies excluding events authored by users the current user has
@@ -210,7 +214,7 @@ export class ReactionsOrchestrator extends Orchestrator {
       reposts: detailedStats.repostEvents.length,
       quotedReposts: detailedStats.quotedEvents.length,
       likes: detailedStats.reactionEvents.length,
-      zaps: this.calculateTotalZaps(detailedStats.zapEvents),
+      zaps: calculateTotalZapSats(detailedStats.zapEvents),
       lastUpdated: detailedStats.lastUpdated,
     };
   }
@@ -232,7 +236,7 @@ export class ReactionsOrchestrator extends Orchestrator {
         reposts: cached.repostEvents.length,
         quotedReposts: cached.quotedEvents.length,
         likes: cached.reactionEvents.length,
-        zaps: this.calculateTotalZaps(cached.zapEvents),
+        zaps: calculateTotalZapSats(cached.zapEvents),
         lastUpdated: cached.lastUpdated,
       };
     }
@@ -245,6 +249,19 @@ export class ReactionsOrchestrator extends Orchestrator {
    * @param noteId - The note ID (addressable identifier or event ID)
    * @param eventId - Optional event ID for long-form articles (to search both #a and #e)
    */
+  /**
+   * Non-fetching cache read for instant UI: returns the cached detailed stats
+   * for a note WITHOUT hitting relays (any freshness). Used by the SNV
+   * zaps/likes list so rendering never waits on a slow relay fetch —
+   * optimistic lifecycle rows render immediately; a background
+   * getDetailedStats refresh re-renders once fresh data lands. Null if
+   * nothing is cached.
+   */
+  public peekDetailedStats(noteId: string): DetailedStats | null {
+    if (!this.isValidNoteId(noteId)) return null;
+    return this.detailedStatsCache.get(noteId) ?? null;
+  }
+
   public async getDetailedStats(
     noteId: string,
     eventId?: string
@@ -311,15 +328,9 @@ export class ReactionsOrchestrator extends Orchestrator {
     this.fetchCounter = 0;
   }
 
-  /**
-   * Calculate total zaps in sats from zap events
-   */
-  private calculateTotalZaps(zapEvents: NostrEvent[]): number {
-    return zapEvents.reduce((total, event) => {
-      const bolt11Tag = event.tags.find(tag => tag[0] === 'bolt11');
-      return bolt11Tag?.[1] ? total + parseBolt11Amount(bolt11Tag[1]) : total;
-    }, 0);
-  }
+  // (calculateTotalZaps removed — use the shared, retry-deduping
+  // calculateTotalZapSats from interactionMerge.ts; one payment = one
+  // bolt11 = counted once)
 
   /**
    * Fetch detailed stats from relays (all types in parallel, full events)
@@ -908,7 +919,7 @@ export class ReactionsOrchestrator extends Orchestrator {
         reposts: stats.repostEvents.length,
         quotedReposts: stats.quotedEvents.length,
         likes: stats.reactionEvents.length,
-        zaps: this.calculateTotalZaps(stats.zapEvents),
+        zaps: calculateTotalZapSats(stats.zapEvents),
         lastUpdated: stats.lastUpdated,
       });
     }
@@ -1076,7 +1087,7 @@ export class ReactionsOrchestrator extends Orchestrator {
             reposts: cached.repostEvents.length,
             quotedReposts: cached.quotedEvents.length,
             likes: cached.reactionEvents.length,
-            zaps: this.calculateTotalZaps(cached.zapEvents),
+            zaps: calculateTotalZapSats(cached.zapEvents),
             lastUpdated: cached.lastUpdated,
           };
 
@@ -1161,6 +1172,22 @@ export class ReactionsOrchestrator extends Orchestrator {
     }
 
     void this.transport.subscribeLive(relays, filters, subId, event => {
+      // Security: NDK does not reliably verify subscription events — zap
+      // receipts are money-relevant, so verify before merging. Zapper retries
+      // with broken signatures must never reach the stats (duplicate rows).
+      if (event.kind === 9735) {
+        const verification =
+          SignatureVerificationService.getInstance().verifyEvent(event);
+        if (!verification.valid) {
+          diagLog('wallet', 'Invalid zap receipt rejected (live stats)', {
+            noteId,
+            eventId: event.id?.slice(0, 16),
+            error: verification.error,
+          });
+          return;
+        }
+      }
+
       let cached = this.detailedStatsCache.get(noteId);
       if (!cached) {
         // The initial detailed-stats fetch may still be in flight when the
@@ -1189,7 +1216,7 @@ export class ReactionsOrchestrator extends Orchestrator {
         reposts: cached.repostEvents.length,
         quotedReposts: cached.quotedEvents.length,
         likes: cached.reactionEvents.length,
-        zaps: this.calculateTotalZaps(cached.zapEvents),
+        zaps: calculateTotalZapSats(cached.zapEvents),
         lastUpdated: cached.lastUpdated,
       });
 

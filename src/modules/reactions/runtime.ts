@@ -52,6 +52,7 @@ export class ReactionsRuntime implements ModuleRuntime<ReactionsModuleApi> {
       batchFetchStats: noteIds =>
         orch?.batchFetchStats(noteIds) ?? Promise.resolve(new Map()),
       getCachedStats: noteId => orch?.getCachedStats(noteId) ?? null,
+      peekDetailedStats: noteId => orch?.peekDetailedStats(noteId) ?? null,
       getDetailedStats: (noteId, eventId) =>
         orch?.getDetailedStats(noteId, eventId) ??
         Promise.resolve({

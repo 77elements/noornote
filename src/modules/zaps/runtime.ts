@@ -40,6 +40,11 @@ export class ZapsRuntime implements ModuleRuntime<ZapsModuleApi> {
         svc?.isOwnAnonZapInvoice(invoice) ?? false,
       getUserZapAmount: noteId => svc?.getUserZapAmount(noteId) ?? 0,
       hasUserZapped: noteId => svc?.hasUserZapped(noteId) ?? false,
+      getZapPendingStates: noteId => svc?.getZapPendingStates(noteId) ?? [],
+      getUnconfirmedZapAmount: noteId =>
+        svc?.getUnconfirmedZapAmount(noteId) ?? 0,
+      reconcileZapStates: (noteId, zapEvents) =>
+        svc?.reconcileZapStates(noteId, zapEvents),
     };
   }
 }

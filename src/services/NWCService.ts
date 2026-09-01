@@ -45,6 +45,14 @@ export interface PayInvoiceResult {
   success: boolean;
   preimage?: string;
   error?: string;
+  /**
+   * true  = the wallet explicitly reported the payment as failed (NIP-47
+   *         error response) — the sats did NOT leave the wallet.
+   * false = inconclusive (timeout, connection lost) — the payment MAY have
+   *         settled. Callers must verify via lookupInvoice() before treating
+   *         the zap as failed (wallet-side success criterion).
+   */
+  definitive?: boolean;
 }
 
 export interface NWCTransaction {
@@ -375,7 +383,10 @@ export class NWCService {
     method: string,
     params: Record<string, unknown> = {},
     timeoutMs: number = 10000
-  ): Promise<{ result?: T; error?: { message: string } }> {
+  ): Promise<{
+    result?: T;
+    error?: { code?: string; message: string };
+  }> {
     let ws: WebSocket | null = null;
 
     try {
@@ -626,6 +637,7 @@ export class NWCService {
         return {
           success: false,
           error: response.error.message || 'Payment failed',
+          definitive: true,
         };
       }
 
@@ -644,13 +656,71 @@ export class NWCService {
         return { success: true, preimage: response.result.preimage };
       }
 
-      return { success: false, error: 'Invalid response' };
+      return { success: false, error: 'Invalid response', definitive: false };
     } catch (error) {
       this.systemLogger.error('NWCService', 'Payment failed:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
+        definitive: false,
       };
+    }
+  }
+
+  /**
+   * Look up an outgoing invoice in the wallet (NIP-47 lookup_invoice).
+   * Decides the zap payment lifecycle for ambiguous payment outcomes:
+   *   'paid'    — wallet settled the invoice (preimage / settled_at)
+   *   'unpaid'  — wallet explicitly does not know the invoice as paid
+   *               (NOT_FOUND) — the sats did NOT leave the wallet
+   *   'unknown' — wallet unreachable, method unsupported, inconclusive state —
+   *               keep verifying, NEVER treat as failure
+   */
+  public async lookupInvoice(
+    invoice: string
+  ): Promise<'paid' | 'unpaid' | 'unknown'> {
+    const connection = this.getConnectionForCurrentUser();
+    if (!connection) return 'unknown';
+
+    try {
+      const response = await this.executeNwcRequest<{
+        transaction?: { settled_at?: number | null; state?: string };
+        settled_at?: number | null;
+        state?: string;
+        preimage?: string;
+      }>(connection, 'lookup_invoice', { invoice }, 10000);
+
+      if (response.error) {
+        const code = response.error.code;
+        if (code === 'NOT_FOUND') return 'unpaid';
+        if (code === 'NOT_SUPPORTED') {
+          return this.lookupInvoiceViaTransactions(invoice);
+        }
+        return 'unknown';
+      }
+      return parseLookupInvoiceResponse(response.result ?? null);
+    } catch {
+      return 'unknown';
+    }
+  }
+
+  /**
+   * Fallback for wallets without lookup_invoice (NOT_SUPPORTED): scan recent
+   * outgoing transactions for the bolt11 invoice. Absence from the list is
+   * NOT conclusive (lists are paginated/truncated) — only a settled match is.
+   */
+  private async lookupInvoiceViaTransactions(
+    invoice: string
+  ): Promise<'paid' | 'unpaid' | 'unknown'> {
+    try {
+      const transactions = await this.listTransactions({ limit: 100 });
+      const match = transactions.find(
+        tx => tx.type === 'outgoing' && tx.invoice === invoice
+      );
+      if (!match) return 'unknown';
+      return match.settled_at ? 'paid' : 'unknown';
+    } catch {
+      return 'unknown';
     }
   }
 
@@ -746,4 +816,29 @@ export class NWCService {
       );
     }
   }
+}
+
+/**
+ * Pure parser for the NIP-47 lookup_invoice response — decides the zap payment
+ * lifecycle outcome. Exported for unit testing (see NWCService.lookup.test.ts).
+ *
+ * 'paid'    — preimage present, settled_at set or state 'settled'
+ * 'unknown' — everything else (pending, missing fields, empty result): the
+ *             payment may still settle; callers keep verifying. Never maps to
+ *             'unpaid' — only the explicit NOT_FOUND error code is conclusive.
+ */
+export function parseLookupInvoiceResponse(
+  result: {
+    transaction?: { settled_at?: number | null; state?: string } | null;
+    settled_at?: number | null;
+    state?: string;
+    preimage?: string;
+  } | null
+): 'paid' | 'unpaid' | 'unknown' {
+  if (!result) return 'unknown';
+  const tx = result.transaction ?? result;
+  if (result.preimage || tx.settled_at || tx.state === 'settled') {
+    return 'paid';
+  }
+  return 'unknown';
 }

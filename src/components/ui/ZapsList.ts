@@ -5,6 +5,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import type { ZapPendingState } from '../../services/ZapService';
 import { UserProfileService } from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
 import { ModuleLoader } from '../../core/ModuleLoader';
@@ -31,13 +32,15 @@ interface ZapData {
   avatarUrl: string;
   isAnonymous: boolean;
   isOwn: boolean;
-  /** The raw kind:9735 receipt — needed to reply (NIP-22 comment) to this zap. */
-  event: NostrEvent;
+  /** The raw kind:9735 receipt — needed to reply (NIP-22 comment) to this zap.
+   *  Optimistic lifecycle rows have none (not replyable until it arrives). */
+  event?: NostrEvent;
 }
 
 export class ZapsList {
   private element: HTMLElement;
   private zapEvents: NostrEvent[];
+  private pendingStates: ZapPendingState[];
   private userProfileService: UserProfileService;
   private authService: AuthService;
   private _zapsApi?: ZapsModuleApi | null;
@@ -56,8 +59,9 @@ export class ZapsList {
       ModuleLoader.getInstance().getApi<PostsModuleApi>('posts'));
   }
 
-  constructor(zapEvents: NostrEvent[]) {
+  constructor(zapEvents: NostrEvent[], pendingStates: ZapPendingState[] = []) {
     this.zapEvents = zapEvents;
+    this.pendingStates = pendingStates;
     this.userProfileService = UserProfileService.getInstance();
     this.authService = AuthService.getInstance();
     this.element = this.createElement();
@@ -68,8 +72,16 @@ export class ZapsList {
    */
   private async parseZaps(): Promise<ZapData[]> {
     const zaps: ZapData[] = [];
+    // One payment = one bolt11: zappers occasionally publish a receipt RETRY
+    // (re-signed → different event id, same payment) — render it once.
+    const seenReceiptInvoices = new Set<string>();
 
     for (const event of this.zapEvents) {
+      const bolt11 = event.tags.find(t => t[0] === 'bolt11')?.[1];
+      if (bolt11) {
+        if (seenReceiptInvoices.has(bolt11)) continue;
+        seenReceiptInvoices.add(bolt11);
+      }
       const anon = isZapAnonymous(event);
 
       if (anon) {
@@ -125,6 +137,27 @@ export class ZapsList {
         isAnonymous: false,
         isOwn: false,
         event,
+      });
+    }
+
+    // Optimistic lifecycle entries (ZapService authority): own zaps whose
+    // receipt has not shown up yet. They flow through the SAME ZapData path
+    // as receipt rows — identical markup, no invented pending styling. A
+    // receipt whose bolt11 matches a pending invoice wins (no duplicate).
+    for (const entry of this.pendingStates) {
+      if (entry.invoice && seenReceiptInvoices.has(entry.invoice)) continue;
+      const currentUser = this.authService.getCurrentUser();
+      const ownProfile = currentUser
+        ? await this.userProfileService.getUserProfile(currentUser.pubkey)
+        : null;
+      zaps.push({
+        zapperPubkey: currentUser?.pubkey || '',
+        username: ownProfile?.display_name || ownProfile?.name || 'You',
+        amountSats: entry.amount,
+        message: entry.comment ?? '',
+        avatarUrl: ownProfile?.picture || '',
+        isAnonymous: !!entry.anonymous,
+        isOwn: !!entry.anonymous,
       });
     }
 
@@ -210,14 +243,18 @@ export class ZapsList {
 
       // Reply to a zap (NIP-22 comment on the kind:9735): only when the zapper is identifiable —
       // an anonymous zap has nobody to notify, and replying to your own zap makes no sense.
-      if (!zap.isAnonymous) {
+      if (!zap.isAnonymous && zap.event) {
+        const receiptEvent = zap.event;
         badge.classList.add('zaps-list__badge--replyable');
         badge.title = `Reply to ${zap.username}'s zap`;
         badge.addEventListener('click', async e => {
           e.stopPropagation();
           userHoverCard.hide();
           const { ReplyModal } = await import('../reply/ReplyModal');
-          await ReplyModal.getInstance().show(zap.event.id ?? '', zap.event);
+          await ReplyModal.getInstance().show(
+            receiptEvent.id ?? '',
+            receiptEvent
+          );
         });
         replyables.push({ zap, badge });
       }
@@ -245,13 +282,13 @@ export class ZapsList {
     if (replyables.length === 0) return;
 
     const zapIds = replyables
-      .map(r => r.zap.event.id)
+      .map(r => r.zap.event?.id)
       .filter((id): id is string => !!id);
     const counts = await this.reactionsApi?.getZapReplyCounts(zapIds);
     if (!counts || counts.size === 0) return;
 
     for (const { zap, badge } of replyables) {
-      const zapId = zap.event.id;
+      const zapId = zap.event?.id;
       const count = zapId ? (counts.get(zapId) ?? 0) : 0;
       if (count <= 0 || !zapId) continue;
 
@@ -264,7 +301,7 @@ export class ZapsList {
         userHoverCard.hide();
         // Prime the cache so the zap-rooted SNV resolves instantly — zap
         // receipts are often unfetchable by id from relays alone.
-        this.postsApi?.registerNote(zap.event);
+        if (zap.event) this.postsApi?.registerNote(zap.event);
         // No click event passed on purpose: in right-pane this opens the zap
         // thread as a NEW tab so the original note tab stays reachable.
         getViewNavigationController().openView('single-note', zapId);

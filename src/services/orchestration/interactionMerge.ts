@@ -8,6 +8,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { parseBolt11Amount } from '../../helpers/zapUtils';
 
 /** Classifiable event buckets on one note (mirrors DetailedStats). */
 export interface InteractionEventBuckets {
@@ -89,4 +90,23 @@ export function mergeInteractionEvents(
   }
 
   return cached;
+}
+
+/**
+ * Total zap amount in sats across the given receipts, deduped by bolt11:
+ * zappers occasionally publish a receipt RETRY (re-signed → different event
+ * id, same payment) — counting both would double the zaps total. One payment
+ * = one bolt11 = counted once. Receipts without a bolt11 tag contribute 0.
+ */
+export function calculateTotalZapSats(zapEvents: NostrEvent[]): number {
+  const seenInvoices = new Set<string>();
+  let total = 0;
+  for (const event of zapEvents) {
+    const bolt11 = event.tags?.find(tag => tag[0] === 'bolt11')?.[1];
+    if (!bolt11) continue;
+    if (seenInvoices.has(bolt11)) continue;
+    seenInvoices.add(bolt11);
+    total += parseBolt11Amount(bolt11);
+  }
+  return total;
 }
