@@ -8,11 +8,12 @@ import { View } from './View';
 import { NoteHeader } from '../ui/NoteHeader';
 import { InteractionStatusLine } from '../ui/InteractionStatusLine';
 import { RepliesRenderer } from '../replies/RepliesRenderer';
-import { ZapsList } from '../ui/ZapsList';
-import { LikesList } from '../ui/LikesList';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { ArticlesModuleApi } from '../../modules/articles/contracts';
 import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
+
+import type { ZapsModuleApi } from '../../modules/zaps/contracts';
+import { SnvZapsListController } from './managers/SnvZapsListController';
 import { AuthService } from '../../services/AuthService';
 import { Router } from '../../services/Router';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
@@ -50,10 +51,20 @@ export class ArticleView extends View {
     return (this._articlesApi ??=
       ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles'));
   }
-  private _reactionsApi?: ReactionsModuleApi | null;
-  private get reactionsApi(): ReactionsModuleApi | null {
-    return (this._reactionsApi ??=
-      ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
+  private _zapsListController: SnvZapsListController | null = null;
+  private get zapsListController(): SnvZapsListController {
+    if (!this._zapsListController) {
+      this._zapsListController = new SnvZapsListController(
+        () =>
+          ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'),
+        async () =>
+          (await ModuleLoader.getInstance().ensure<ReactionsModuleApi>(
+            'reactions'
+          )) ?? null,
+        () => ModuleLoader.getInstance().getApi<ZapsModuleApi>('zaps')
+      );
+    }
+    return this._zapsListController;
   }
 
   constructor(naddrRef: string) {
@@ -325,14 +336,21 @@ export class ArticleView extends View {
       });
       articleBody.insertAdjacentElement('afterend', isl.getElement());
 
-      // Load zaps and likes list (pass articleEventId for long-form article dual-tag search,
-      // and the full event so emoji-badge reactions can build NIP-25-compliant addressable tags)
-      void this.loadZapsList(
+      // Zaps/likes lists via the unified controller: optimistic lifecycle rows,
+      // receipt-data convergence, live interaction stats for the ISL count.
+      // detailedStatsEventId → dual-tag (#a + #e) search; likesContext → the
+      // full article event for NIP-25-compliant addressable reaction tags.
+      this.zapsListController.attach(
         noteId,
         event.pubkey,
         articleBody.parentElement as HTMLElement,
-        articleEventId,
-        event
+        {
+          detailedStatsEventId: articleEventId,
+          likesContext: event,
+          liveStats: {
+            onStats: stats => isl.updateStats(stats),
+          },
+        }
       );
     }
 
@@ -345,68 +363,6 @@ export class ArticleView extends View {
 
     // Load and render replies (pass articleEventId for long-form article dual-tag search)
     void this.loadReplies(noteId, event.pubkey, articleEventId);
-  }
-
-  /**
-   * Load and render zaps/likes lists above ISL
-   * @param noteId - Addressable identifier (kind:pubkey:d-tag)
-   * @param authorPubkey - Author's pubkey
-   * @param articleContainer - Container element
-   * @param articleEventId - Event ID for long-form articles (to search both #a and #e tags)
-   */
-  private async loadZapsList(
-    noteId: string,
-    authorPubkey: string,
-    articleContainer: HTMLElement,
-    articleEventId?: string,
-    articleEvent?: NostrEvent
-  ): Promise<void> {
-    try {
-      // LONG-FORM ARTICLE: Pass eventId to search both #a and #e tags
-      const stats = await this.reactionsApi?.getDetailedStats(
-        noteId,
-        articleEventId
-      );
-      if (!stats) return;
-
-      // Find ISL container
-      const islContainer = articleContainer.querySelector('.isl');
-      if (!islContainer || !islContainer.parentNode) return;
-
-      // Remove existing lists if present
-      const existingZapsList = articleContainer.querySelector('.zaps-list');
-      const existingLikesList = articleContainer.querySelector('.likes-list');
-      if (existingZapsList) existingZapsList.remove();
-      if (existingLikesList) existingLikesList.remove();
-
-      // Render ZapsList if zaps exist
-      if (stats.zapEvents.length > 0) {
-        const zapsList = new ZapsList(stats.zapEvents);
-        islContainer.parentNode.insertBefore(
-          zapsList.getElement(),
-          islContainer
-        );
-      }
-
-      // Render LikesList if reactions exist — pass the full article event so
-      // badge-clicks (additional emoji reactions) can build NIP-25-compliant
-      // tags for addressable kinds (long-form articles).
-      if (stats.reactionEvents.length > 0) {
-        const likesList = new LikesList(
-          stats.reactionEvents,
-          noteId,
-          authorPubkey,
-          articleEvent
-        );
-        await likesList.init();
-        islContainer.parentNode.insertBefore(
-          likesList.getElement(),
-          islContainer
-        );
-      }
-    } catch (_error) {
-      console.warn('Failed to load zaps/likes list:', _error);
-    }
   }
 
   /**
@@ -522,61 +478,13 @@ export class ArticleView extends View {
       noteAuthor,
       updateISL: false, // Don't update ISL for articles (addressable identifier mismatch)
       onLoadZapsList: (replyId, replyAuthor, noteElement) => {
-        // Replies are normal notes (not addressable), no articleEventId needed
-        void this.loadZapsListForReply(replyId, replyAuthor, noteElement);
+        // Replies are normal notes (not addressable) — plain attach; zap
+        // lifecycle events for a reply still render its optimistic row.
+        this.zapsListController.attach(replyId, replyAuthor, noteElement);
       },
     });
 
     await repliesRenderer.loadAndRender();
-  }
-
-  /**
-   * Load zaps list for a reply (normal note, not addressable)
-   */
-  private async loadZapsListForReply(
-    noteId: string,
-    authorPubkey: string,
-    noteElement: HTMLElement
-  ): Promise<void> {
-    try {
-      // Replies are normal notes - no articleEventId needed
-      const stats = await this.reactionsApi?.getDetailedStats(noteId);
-      if (!stats) return;
-
-      const islContainer = noteElement.querySelector('.isl');
-      if (!islContainer || !islContainer.parentNode) return;
-
-      // Remove existing lists
-      const existingZapsList = noteElement.querySelector('.zaps-list');
-      const existingLikesList = noteElement.querySelector('.likes-list');
-      if (existingZapsList) existingZapsList.remove();
-      if (existingLikesList) existingLikesList.remove();
-
-      // Render ZapsList
-      if (stats.zapEvents.length > 0) {
-        const zapsList = new ZapsList(stats.zapEvents);
-        islContainer.parentNode.insertBefore(
-          zapsList.getElement(),
-          islContainer
-        );
-      }
-
-      // Render LikesList
-      if (stats.reactionEvents.length > 0) {
-        const likesList = new LikesList(
-          stats.reactionEvents,
-          noteId,
-          authorPubkey
-        );
-        await likesList.init();
-        islContainer.parentNode.insertBefore(
-          likesList.getElement(),
-          islContainer
-        );
-      }
-    } catch (_error) {
-      console.warn('Failed to load zaps/likes list for reply:', _error);
-    }
   }
 
   /**
@@ -668,6 +576,8 @@ export class ArticleView extends View {
    * Cleanup when view is destroyed
    */
   public destroy(): void {
+    this._zapsListController?.destroy();
+    this._zapsListController = null;
     this.container.innerHTML = '';
   }
 }

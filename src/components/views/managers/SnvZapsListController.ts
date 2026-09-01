@@ -15,6 +15,7 @@
 
 import type {
   DetailedStats,
+  InteractionStats,
   ReactionsModuleApi,
 } from '../../../modules/reactions/contracts';
 import type { ZapsModuleApi } from '../../../modules/zaps/contracts';
@@ -38,6 +39,13 @@ const STATS_CACHE_REFRESH_MS = 30_000;
 interface AttachedNote {
   authorPubkey: string;
   noteElement: HTMLElement;
+  /** Addressable notes: hex event id for dual-tag (#a + #e) stats searches. */
+  detailedStatsEventId?: string;
+  /** Full original event → LikesList builds NIP-25-compliant addressable tags. */
+  likesContext?: NostrEvent;
+  /** Real-time interaction stats (kinds 7/9735/6/16) with a view callback. */
+  liveStats?: { onStats: (stats: InteractionStats) => void };
+  liveStatsStarted?: boolean;
 }
 
 export class SnvZapsListController {
@@ -59,17 +67,42 @@ export class SnvZapsListController {
     ];
   }
 
-  /** Register a note element (root SNV note or a reply note). */
+  /**
+   * Register a note element (root SNV note, a reply note, or an article).
+   * Options (all optional): detailedStatsEventId for addressable dual-tag
+   * searches, likesContext for NIP-25-compliant likes rows, liveStats for the
+   * real-time interaction subscription with a view callback.
+   */
   public attach(
     noteId: string,
     authorPubkey: string,
-    noteElement: HTMLElement
+    noteElement: HTMLElement,
+    options?: {
+      detailedStatsEventId?: string;
+      likesContext?: NostrEvent;
+      liveStats?: { onStats: (stats: InteractionStats) => void };
+    }
   ): void {
-    this.entries.set(noteId, { authorPubkey, noteElement });
+    this.entries.set(noteId, {
+      authorPubkey,
+      noteElement,
+      ...(options?.detailedStatsEventId !== undefined && {
+        detailedStatsEventId: options.detailedStatsEventId,
+      }),
+      ...(options?.likesContext !== undefined && {
+        likesContext: options.likesContext,
+      }),
+      ...(options?.liveStats !== undefined && { liveStats: options.liveStats }),
+      liveStatsStarted: false,
+    });
     void this.renderViaChain(noteId);
   }
 
   public detach(noteId: string): void {
+    const entry = this.entries.get(noteId);
+    if (entry?.liveStatsStarted) {
+      this.getReactionsSync()?.stopLiveStats(noteId);
+    }
     this.entries.delete(noteId);
     this.likesSignature.delete(noteId);
   }
@@ -85,6 +118,11 @@ export class SnvZapsListController {
     const bus = TypedEventBus.getInstance();
     this.lifecycleSubIds.forEach(id => bus.off(id));
     this.lifecycleSubIds = [];
+    this.entries.forEach((entry, noteId) => {
+      if (entry.liveStatsStarted) {
+        this.getReactionsSync()?.stopLiveStats(noteId);
+      }
+    });
     this.entries.clear();
     this.likesSignature.clear();
   }
@@ -139,7 +177,8 @@ export class SnvZapsListController {
       const likesList = new LikesList(
         stats.reactionEvents,
         noteId,
-        entry.authorPubkey
+        entry.authorPubkey,
+        entry.likesContext
       );
       await likesList.init();
       if (!noteElement.isConnected) return;
@@ -158,14 +197,26 @@ export class SnvZapsListController {
   private renderViaChain(noteId: string): Promise<void> {
     const run = async (): Promise<void> => {
       const reactions = await this.getReactionsAsync();
-      if (!reactions || !this.entries.has(noteId)) return;
+      const entry = this.entries.get(noteId);
+      if (!reactions || !entry) return;
+
+      // Real-time interaction stats (articles and any view that opts in):
+      // started once per attached note, stopped on detach/destroy.
+      if (entry.liveStats && !entry.liveStatsStarted) {
+        entry.liveStatsStarted = true;
+        reactions.startLiveStats(noteId, stats => {
+          entry.liveStats?.onStats(stats);
+          this.renderNow(noteId);
+        });
+      }
+
       const cached = reactions.peekDetailedStats(noteId) ?? null;
       this.renderNow(noteId);
       if (cached && Date.now() - cached.lastUpdated < STATS_CACHE_REFRESH_MS) {
         return;
       }
       void reactions
-        .getDetailedStats(noteId)
+        .getDetailedStats(noteId, entry.detailedStatsEventId)
         .then(fresh => {
           if (!fresh || fresh === cached) return;
           this.renderNow(noteId);

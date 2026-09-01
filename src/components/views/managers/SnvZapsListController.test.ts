@@ -13,7 +13,7 @@
  *    data lands (identity check, no loops).
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 const ME = 'a'.repeat(64);
@@ -30,12 +30,17 @@ const emptyStats = () => ({
   lastUpdated: 0,
 });
 
-const { reactionsDouble, zapsDouble } = vi.hoisted(() => {
+const { reactionsDouble, zapsDouble, likesListCtorMock } = vi.hoisted(() => {
   let cached: ReturnType<typeof emptyStats> | null = null;
+  let liveStatsHandler: ((stats: unknown) => void) | null = null;
   return {
+    likesListCtorMock: vi.fn(),
     reactionsDouble: {
       get cached() {
         return cached;
+      },
+      get liveStatsHandler() {
+        return liveStatsHandler;
       },
       setCached: (s: ReturnType<typeof emptyStats> | null) => {
         cached = s;
@@ -46,6 +51,14 @@ const { reactionsDouble, zapsDouble } = vi.hoisted(() => {
       getDetailedStats: vi.fn(
         async (_noteId: string) => cached ?? emptyStats()
       ),
+      startLiveStats: vi.fn(
+        (noteId: string, onStats: (stats: unknown) => void) => {
+          liveStatsHandler = onStats;
+        }
+      ),
+      stopLiveStats: vi.fn((_noteId: string) => {
+        liveStatsHandler = null;
+      }),
     },
     zapsDouble: {
       pending: [] as Array<Record<string, unknown>>,
@@ -104,6 +117,9 @@ vi.mock('../../../services/ViewNavigationController', () => ({
 vi.mock('../../ui/LikesList', () => ({
   LikesList: class {
     private element = document.createElement('div');
+    constructor(...args: unknown[]) {
+      likesListCtorMock(...args);
+    }
     async init(): Promise<void> {}
     getElement(): HTMLElement {
       return this.element;
@@ -318,6 +334,104 @@ describe('SnvZapsListController', () => {
     });
 
     expect(shell.querySelector('.zaps-list')).toBeNull();
+    controller.detach(NOTE);
+  });
+});
+
+describe('SnvZapsListController — view-agnostic options (article support)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+    reactionsDouble.setCached(null);
+    reactionsDouble.peekDetailedStats.mockClear();
+    reactionsDouble.getDetailedStats.mockClear();
+    zapsDouble.pending = [];
+    zapsDouble.reconcileZapStates.mockClear();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('detailedStatsEventId is passed through to getDetailedStats (article dual-tag search)', async () => {
+    const shell = snvShell();
+    const controller = newController();
+    const articleNoteId = '30023:b'.repeat(1) + 'b'.repeat(58); // addressable id
+    controller.attach(articleNoteId, AUTHOR, shell, {
+      detailedStatsEventId: 'd'.repeat(64),
+    });
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(reactionsDouble.getDetailedStats).toHaveBeenCalledWith(
+      articleNoteId,
+      'd'.repeat(64)
+    );
+    controller.detach(articleNoteId);
+  });
+
+  it('liveStats: starts the subscription once, onStats fires the callback and re-renders, detach stops it', async () => {
+    const shell = snvShell();
+    const controller = newController();
+    const onStats = vi.fn();
+    reactionsDouble.setCached({
+      ...emptyStats(),
+      zapEvents: [receipt('r1', 'lnbc50m1a')],
+      lastUpdated: Date.now(),
+    });
+
+    controller.attach(NOTE, AUTHOR, shell, { liveStats: { onStats } });
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(reactionsDouble.startLiveStats).toHaveBeenCalledTimes(1);
+    expect(reactionsDouble.startLiveStats).toHaveBeenCalledWith(
+      NOTE,
+      expect.any(Function)
+    );
+
+    // Orchestrator merged new data into the cache → fires the callback
+    const handler = reactionsDouble.liveStatsHandler!;
+    reactionsDouble.setCached({
+      ...emptyStats(),
+      zapEvents: [receipt('r1', 'lnbc50m1a'), receipt('r2', 'lnbc21m1b')],
+      lastUpdated: Date.now(),
+    });
+    handler({ zaps: 71 } as never);
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(onStats).toHaveBeenCalledWith({ zaps: 71 });
+    expect(shell.querySelectorAll('.zaps-list__badge').length).toBe(2);
+
+    controller.detach(NOTE);
+    expect(reactionsDouble.stopLiveStats).toHaveBeenCalledWith(NOTE);
+  });
+
+  it('likesContext is passed to the LikesList (NIP-25-compliant tags for articles)', async () => {
+    const shell = snvShell();
+    const controller = newController();
+    const articleEvent = { id: 'd'.repeat(64), kind: 30023 } as never;
+    reactionsDouble.setCached({
+      ...emptyStats(),
+      reactionEvents: [
+        {
+          id: 'x1',
+          kind: 7,
+          pubkey: 'e'.repeat(64),
+          tags: [['a', '30023:b'.repeat(1)]],
+          content: '+',
+        } as never,
+      ],
+      lastUpdated: Date.now(),
+    });
+
+    controller.attach(NOTE, AUTHOR, shell, {
+      detailedStatsEventId: 'd'.repeat(64),
+      likesContext: articleEvent,
+    });
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(likesListCtorMock).toHaveBeenCalled();
+    const args = likesListCtorMock.mock.calls[0];
+    expect(args[3]).toBe(articleEvent); // originalEvent for NIP-25 addressable tags
     controller.detach(NOTE);
   });
 });

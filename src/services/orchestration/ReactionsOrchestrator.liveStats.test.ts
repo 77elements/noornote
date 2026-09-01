@@ -233,3 +233,46 @@ describe('ReactionsOrchestrator startLiveStats/stopLiveStats', () => {
     orchestrator.stopLiveStats(NOTE2);
   });
 });
+
+describe('startLiveStats — addressable notes (long-form articles)', () => {
+  const ADDR = `30023:${'b'.repeat(64)}:my-article`;
+  const HEX = 'd'.repeat(64);
+
+  it('builds #a + #A filters for addressable ids (no #e without a cached event id)', () => {
+    const orchestrator = ReactionsOrchestrator.getInstance();
+    orchestrator.startLiveStats(ADDR, vi.fn());
+
+    const [, , subId] = subscribeLiveMock.mock.calls.at(-1)!;
+    const filters =
+      liveHandlers.size >= 0
+        ? (subscribeLiveMock.mock.calls.at(-1)![1] as Array<
+            Record<string, unknown>
+          >)
+        : [];
+    expect(subId).toBe(`live-stats-${ADDR}`);
+    expect(filters).toHaveLength(2);
+    expect(filters[0]!['#a']).toEqual([ADDR]);
+    expect(filters[1]!['#A']).toEqual([ADDR]);
+    expect(filters.every(f => f['#e'] === undefined)).toBe(true);
+
+    orchestrator.stopLiveStats(ADDR);
+  });
+
+  it('adds an #e filter for the article hex id when it is cached (dual-tag)', () => {
+    const orchestrator = ReactionsOrchestrator.getInstance();
+    // Prime the articleEventIdCache the way getDetailedStats(noteId, eventId) does
+    (
+      orchestrator as unknown as { articleEventIdCache: Map<string, string> }
+    ).articleEventIdCache.set(ADDR, HEX);
+    orchestrator.startLiveStats(ADDR, vi.fn());
+
+    const [, filters] = subscribeLiveMock.mock.calls.at(-1)!;
+    const withE = (filters as Array<Record<string, unknown>>).filter(
+      f => f['#e'] !== undefined
+    );
+    expect(withE).toHaveLength(1);
+    expect(withE[0]!['#e']).toEqual([HEX]);
+
+    orchestrator.stopLiveStats(ADDR);
+  });
+});
