@@ -38,6 +38,8 @@ import {
 } from '../../../components/ui/note-rendering/SatelliteSiteRenderer';
 import { ArmadaInviteRenderer } from '../../../components/ui/note-rendering/ArmadaInviteRenderer';
 import { UnsupportedKindRenderer } from './UnsupportedKindRenderer';
+import { GatedNoteRenderer } from './GatedNoteRenderer';
+import { isGatedNoteEvent } from '../../../helpers/gatedNote';
 import { ARTICLE_PREVIEW_KINDS } from '../../../helpers/addressableKinds';
 import {
   parseListingMetadata,
@@ -132,6 +134,7 @@ export class QuotedNoteRenderer {
     let kind: number | undefined;
     let pubkey = '';
     let identifier = '';
+    let decodedNaddr = false;
     try {
       // Strip the `nostr:` prefix AND any `#fragment` (armada invite unlock
       // secret, preserved through extractQuotedReferences) — decodeNip19
@@ -143,9 +146,25 @@ export class QuotedNoteRenderer {
         kind = decoded.data.kind;
         pubkey = decoded.data.pubkey;
         identifier = decoded.data.identifier;
+        decodedNaddr = true;
       }
     } catch {
       /* fall through to the unsupported fallback below */
+    }
+
+    // REGULAR note kinds wrapped in an naddr: some publishers encode plain
+    // kind-1 notes as naddr URLs (e.g. fanfares.io). These are NOT addressable
+    // cards — route them through the regular quote pipeline; the naddr carries
+    // the relay hints, and the depth cap applies like any other quote.
+    if (decodedNaddr && typeof kind === 'number' && kind < 30000) {
+      const skeleton = this.createQuoteSkeleton();
+      container.appendChild(skeleton);
+      void this.fetchAndRenderQuote(
+        { fullMatch: naddrRef, type: 'addr' } as QuotedReference,
+        skeleton,
+        true
+      );
+      return;
     }
 
     // Marketplace listings (kind 30402) → listing preview.
@@ -239,6 +258,12 @@ export class QuotedNoteRenderer {
       );
 
       if (result.success) {
+        // Gated premium notes (fanfares): render the unlock card — the teaser
+        // CTA is self-referential and would recurse into the same event.
+        if (isGatedNoteEvent(result.event)) {
+          skeleton.replaceWith(GatedNoteRenderer.renderQuoteCard(result.event));
+          return;
+        }
         // Unwrap kind:6 / kind:16 reposts: their content field holds the
         // JSON-stringified inner event. Without this, the quote box would
         // process that JSON as plain text and dump it on the page.

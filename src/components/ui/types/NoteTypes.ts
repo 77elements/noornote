@@ -22,7 +22,8 @@ export interface ProcessedNote {
     | 'badge-award'
     | 'emoji-pack'
     | 'live-stream'
-    | 'listing';
+    | 'listing'
+    | 'premium';
   timestamp: number;
   author: {
     pubkey: string;

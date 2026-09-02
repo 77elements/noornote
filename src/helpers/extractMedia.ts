@@ -45,7 +45,21 @@ export function isImageUrl(text: string): boolean {
   );
 }
 
+/**
+ * Some publishers (fanfares.io) concatenate media URLs WITHOUT a separator
+ * ("…8848.jpghttps://…f5ca.jpg") — media regexes then swallow both as one
+ * broken URL (404 image). Insert a newline between a media extension and a
+ * following protocol. Idempotent: already-separated content is untouched.
+ */
+export function splitGluedMediaUrls(text: string): string {
+  return text.replace(
+    /(\.(?:jpg|jpeg|png|gif|webp|svg|mp4|webm|mov|avi|mp3|wav|ogg|flac|m4a|aac))(https?:\/\/)/gi,
+    '$1\n$2'
+  );
+}
+
 export function extractMedia(text: string): MediaContent[] {
+  text = splitGluedMediaUrls(text);
   const media: MediaContent[] = [];
 
   const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];

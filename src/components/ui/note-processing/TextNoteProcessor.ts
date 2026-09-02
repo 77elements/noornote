@@ -5,6 +5,10 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { ProcessedNote } from '../types/NoteTypes';
+import {
+  isGatedNoteEvent,
+  stripGatedNoteCta,
+} from '../../../helpers/gatedNote';
 import { ContentProcessor } from '../../../services/ContentProcessor';
 
 export class TextNoteProcessor {
@@ -25,15 +29,22 @@ export class TextNoteProcessor {
     const quoteTags = event.tags.filter(tag => tag[0] === 'q');
     const isQuote = quoteTags.length > 0;
 
-    const processedContent =
-      TextNoteProcessor.contentProcessor.processContentWithTags(
-        event.content,
-        event.tags
-      );
+    // Gated premium notes (fanfares): the public content is a teaser ending
+    // in a SELF-REFERENTIAL unlock CTA — rendering its quote references
+    // recurses forever. Strip the CTA and render plain text (no markers).
+    const isGated = isGatedNoteEvent(event);
+    const processedContent = isGated
+      ? TextNoteProcessor.contentProcessor.processContent(
+          stripGatedNoteCta(event.content)
+        )
+      : TextNoteProcessor.contentProcessor.processContentWithTags(
+          event.content,
+          event.tags
+        );
 
     const result: ProcessedNote = {
       id: eventId,
-      type: isQuote ? 'quote' : 'original',
+      type: isGated ? 'premium' : isQuote ? 'quote' : 'original',
       timestamp: event.created_at,
       author: {
         pubkey: event.pubkey,

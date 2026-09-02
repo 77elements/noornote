@@ -86,6 +86,7 @@ vi.mock('../../../components/ui/NoteHeader', () => ({
 }));
 vi.mock('../../../components/ui/note-features/CollapsibleManager', () => ({
   CollapsibleManager: {
+    setup: vi.fn(),
     getInstance: () => ({ register: vi.fn(), unregister: vi.fn() }),
   },
 }));
@@ -125,10 +126,14 @@ vi.mock('./ArmadaInviteRenderer', () => ({
   ArmadaInviteRenderer: { render: vi.fn() },
 }));
 vi.mock('./UnsupportedKindRenderer', () => ({
-  UnsupportedKindRenderer: { render: vi.fn() },
+  UnsupportedKindRenderer: {
+    render: vi.fn(),
+    renderFromCoordinate: vi.fn(() => document.createElement('div')),
+  },
 }));
 
 import { QuotedNoteRenderer } from './QuotedNoteRenderer';
+import { encodeNaddr } from '../../../services/NostrToolsAdapter';
 
 function noteEvent(id: string, nestedRef?: string): NostrEvent {
   const tags: string[][] = [];
@@ -300,5 +305,61 @@ describe('QuotedNoteRenderer depth cap (nested QR chains)', () => {
     expect(document.body.querySelector('.quote-box')).not.toBeNull();
     expect(document.body.querySelector('.quote-depth-cap')).toBeNull();
     vi.useRealTimers();
+  });
+});
+
+describe('renderAddressableReference — regular note kinds wrapped in naddr', () => {
+  let renderer: QuotedNoteRenderer;
+
+  beforeEach(() => {
+    document.body.innerHTML = '';
+    fetchQuotedEventWithErrorMock.mockReset();
+    routerNavigateMock.mockReset();
+    (
+      QuotedNoteRenderer as unknown as { instance: QuotedNoteRenderer | null }
+    ).instance = null;
+    renderer = QuotedNoteRenderer.getInstance();
+  });
+
+  it('naddr with kind 1 (fanfares-style) fetches and renders a regular quote box', async () => {
+    // fanfares.io encodes kind-1 notes as naddr URLs; the old router saw
+    // kind 1 outside the 30000 block and showed "Unsupported event kind 1".
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+
+    fetchQuotedEventWithErrorMock.mockResolvedValue({
+      success: true,
+      event: noteEvent('d'.repeat(64)),
+    });
+
+    renderer.renderAddressableReference(
+      'nostr:naddr1qvzqqqqqqypzpamkhnqjyud70878rdj4709lavag595lx0hpxd0ucrpzs2vsrkj2qyvhwumn8ghj7enpdenxzun9wvhxummnw3erztnrdaksqfrrv33n2cn9v5mj6vtrxvmz6dph8qcz6c3cx43z6ve5venrvvek8qmxvdejqz2fpp',
+      container
+    );
+    await flush();
+    await flush();
+
+    expect(fetchQuotedEventWithErrorMock).toHaveBeenCalledTimes(1);
+    expect(fetchQuotedEventWithErrorMock.mock.calls[0]![0]).toContain('naddr1');
+    expect(container.querySelector('.quote-box')).not.toBeNull();
+    expect(container.querySelector('.quote-error')).toBeNull();
+    expect(container.textContent).not.toContain('Unsupported event kind');
+  });
+
+  it('addressable kinds (30023) still route to their dedicated card, no id fetch', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+
+    const articleNaddr = encodeNaddr({
+      kind: 30023,
+      pubkey: 'f'.repeat(64),
+      identifier: 'my-article',
+      relays: [],
+    });
+    renderer.renderAddressableReference(`nostr:${articleNaddr}`, container);
+    await flush();
+
+    expect(fetchQuotedEventWithErrorMock).not.toHaveBeenCalled();
+    expect(container.textContent).not.toContain('Unsupported event kind 30023');
   });
 });
