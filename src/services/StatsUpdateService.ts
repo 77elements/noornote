@@ -34,14 +34,17 @@ export class StatsUpdateService {
    * @param islComponent - Optional ISL component for optimistic UI update
    */
   public updateAfterInteraction(
-    noteId: string,
+    _noteId: string,
     type: StatsUpdateType,
     islComponent?: InteractionStatusLine
   ): void {
-    // Step 1: Invalidate cache to force fresh data from relays
-    this.reactionsOrchestrator.clearCache(noteId);
+    // NOTE: NO cache invalidation here. Clearing the cache made the
+    // live-stats subscription rebuild it from the user's OWN event alone
+    // (create-if-missing) — wiping every existing reaction from the lists.
+    // The realtime subscription merges new interactions into the cache and
+    // the ISL updates optimistically below.
 
-    // Step 2: Optimistic UI update (if ISL component provided)
+    // Optimistic UI update (if ISL component provided)
     if (islComponent) {
       switch (type) {
         case 'like':

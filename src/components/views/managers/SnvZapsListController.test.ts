@@ -30,60 +30,84 @@ const emptyStats = () => ({
   lastUpdated: 0,
 });
 
-const { reactionsDouble, zapsDouble, likesListCtorMock } = vi.hoisted(() => {
-  let cached: ReturnType<typeof emptyStats> | null = null;
-  let liveStatsHandler: ((stats: unknown) => void) | null = null;
-  return {
-    likesListCtorMock: vi.fn(),
-    reactionsDouble: {
-      get cached() {
-        return cached;
+const { reactionsDouble, zapsDouble, likesListCtorMock, orchestratorDoubles } =
+  vi.hoisted(() => {
+    let cached: ReturnType<typeof emptyStats> | null = null;
+    let liveStatsHandler: ((stats: unknown) => void) | null = null;
+    const detailFetchEvents: Array<{
+      id: string;
+      kind: number;
+      pubkey: string;
+      tags: string[][];
+      content: string;
+      sig: string;
+    }> = [];
+    const liveStatsHandlers = new Map<
+      string,
+      (event: {
+        id: string;
+        kind: number;
+        pubkey: string;
+        tags: string[][];
+        content: string;
+        sig: string;
+      }) => void
+    >();
+    const orchestratorDoubles = { detailFetchEvents, liveStatsHandlers };
+    return {
+      likesListCtorMock: vi.fn(),
+      orchestratorDoubles,
+      reactionsDouble: {
+        get cached() {
+          return cached;
+        },
+        get liveStatsHandler() {
+          return liveStatsHandler;
+        },
+        setCached: (s: ReturnType<typeof emptyStats> | null) => {
+          cached = s;
+        },
+        peekDetailedStats: vi.fn((_noteId: string) =>
+          cached && cached.lastUpdated > 0 ? cached : null
+        ),
+        getDetailedStats: vi.fn(
+          async (_noteId: string) => cached ?? emptyStats()
+        ),
+        startLiveStats: vi.fn(
+          (noteId: string, onStats: (stats: unknown) => void) => {
+            liveStatsHandler = onStats;
+          }
+        ),
+        stopLiveStats: vi.fn((_noteId: string) => {
+          liveStatsHandler = null;
+        }),
       },
-      get liveStatsHandler() {
-        return liveStatsHandler;
+      zapsDouble: {
+        pending: [] as Array<Record<string, unknown>>,
+        reconcileZapStates: vi.fn(
+          (_noteId: string, zapEvents: NostrEvent[]) => {
+            // mirror ZapService.reconcileZapStates: drop entries whose receipt is present
+            const invoices = new Set(
+              zapEvents
+                .map(e => e.tags?.find(t => t[0] === 'bolt11')?.[1])
+                .filter(Boolean)
+            );
+            zapsDouble.pending = zapsDouble.pending.filter(
+              p => !invoices.has(p.invoice as string)
+            );
+          }
+        ),
+        getZapPendingStates: vi.fn((noteId: string) =>
+          zapsDouble.pending.filter(p => p.noteId === noteId)
+        ),
+        getUnconfirmedZapAmount: vi.fn((noteId: string) =>
+          zapsDouble.pending
+            .filter(p => p.noteId === noteId)
+            .reduce((t, p) => t + (p.amount as number), 0)
+        ),
       },
-      setCached: (s: ReturnType<typeof emptyStats> | null) => {
-        cached = s;
-      },
-      peekDetailedStats: vi.fn((_noteId: string) =>
-        cached && cached.lastUpdated > 0 ? cached : null
-      ),
-      getDetailedStats: vi.fn(
-        async (_noteId: string) => cached ?? emptyStats()
-      ),
-      startLiveStats: vi.fn(
-        (noteId: string, onStats: (stats: unknown) => void) => {
-          liveStatsHandler = onStats;
-        }
-      ),
-      stopLiveStats: vi.fn((_noteId: string) => {
-        liveStatsHandler = null;
-      }),
-    },
-    zapsDouble: {
-      pending: [] as Array<Record<string, unknown>>,
-      reconcileZapStates: vi.fn((_noteId: string, zapEvents: NostrEvent[]) => {
-        // mirror ZapService.reconcileZapStates: drop entries whose receipt is present
-        const invoices = new Set(
-          zapEvents
-            .map(e => e.tags?.find(t => t[0] === 'bolt11')?.[1])
-            .filter(Boolean)
-        );
-        zapsDouble.pending = zapsDouble.pending.filter(
-          p => !invoices.has(p.invoice as string)
-        );
-      }),
-      getZapPendingStates: vi.fn((noteId: string) =>
-        zapsDouble.pending.filter(p => p.noteId === noteId)
-      ),
-      getUnconfirmedZapAmount: vi.fn((noteId: string) =>
-        zapsDouble.pending
-          .filter(p => p.noteId === noteId)
-          .reduce((t, p) => t + (p.amount as number), 0)
-      ),
-    },
-  };
-});
+    };
+  });
 
 vi.mock('../../../services/UserProfileService', () => ({
   UserProfileService: {
@@ -114,6 +138,55 @@ vi.mock('../../../services/ViewNavigationController', () => ({
 }));
 // LikesList pulls a deep import chain (lists/file needs Electron APIs at
 // module level) — not under test here, stub it.
+vi.mock('../../../services/transport/NostrTransport', () => ({
+  NostrTransport: {
+    getInstance: () => ({
+      getReadRelays: () => ['wss://relay.test'],
+      subscribeLive: (
+        _relays: string[],
+        _filters: unknown,
+        subId: string,
+        onEvent: (e: {
+          id: string;
+          kind: number;
+          pubkey: string;
+          tags: string[][];
+          content: string;
+          sig: string;
+        }) => void
+      ) => {
+        orchestratorDoubles.liveStatsHandlers.set(subId, onEvent);
+      },
+      unsubscribeLive: (subId: string) => {
+        orchestratorDoubles.liveStatsHandlers.delete(subId);
+      },
+      fetch: vi.fn(async () => []),
+      subscribe: vi.fn(
+        (
+          _relays: string[],
+          _filters: unknown,
+          handlers: {
+            onEvent: (e: {
+              id: string;
+              kind: number;
+              pubkey: string;
+              tags: string[][];
+              content: string;
+              sig: string;
+            }) => void;
+            onEose: () => void;
+          }
+        ) => {
+          orchestratorDoubles.detailFetchEvents.forEach(e =>
+            handlers.onEvent(e)
+          );
+          void Promise.resolve().then(() => handlers.onEose());
+          return Promise.resolve({ close: vi.fn() });
+        }
+      ),
+    }),
+  },
+}));
 vi.mock('../../ui/LikesList', () => ({
   LikesList: class {
     private element = document.createElement('div');
@@ -129,6 +202,7 @@ vi.mock('../../ui/LikesList', () => ({
 
 import { SnvZapsListController } from './SnvZapsListController';
 import { TypedEventBus } from '../../../core/TypedEventBus';
+import { ReactionsOrchestrator } from '../../../services/orchestration/ReactionsOrchestrator';
 
 function receipt(id: string, bolt11: string) {
   return {
@@ -433,5 +507,74 @@ describe('SnvZapsListController — view-agnostic options (article support)', ()
     const args = likesListCtorMock.mock.calls[0];
     expect(args[3]).toBe(articleEvent); // originalEvent for NIP-25 addressable tags
     controller.detach(NOTE);
+  });
+});
+
+describe('SnvZapsListController — like flow integration (real orchestrator)', () => {
+  const NOTE = 'c'.repeat(64);
+  const AUTHOR = 'b'.repeat(64);
+
+  function reactionEvent(
+    id: string,
+    pubkey: string,
+    emoji: string
+  ): NostrEvent {
+    return {
+      id,
+      kind: 7,
+      pubkey,
+      created_at: Math.floor(Date.now() / 1000),
+      tags: [['e', NOTE]],
+      content: emoji,
+      sig: 'c'.repeat(128),
+    } as never;
+  }
+
+  it('existing reactions survive the own-like live echo (no wipe regression)', async () => {
+    const orchestrator = ReactionsOrchestrator.getInstance();
+    // Initial detailed-stats fetch delivers 2 existing reactions (different authors)
+    orchestratorDoubles.detailFetchEvents.push(
+      reactionEvent('rA', 'e'.repeat(64), '👍'),
+      reactionEvent('rB', 'f'.repeat(64), '🚀')
+    );
+    await orchestrator.getDetailedStats(NOTE);
+
+    const shell = snvShell();
+    const controller = new SnvZapsListController(
+      () => orchestrator as never,
+      async () => orchestrator as never,
+      () => null
+    );
+    controller.attach(NOTE, AUTHOR, shell);
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    // LikesList received BOTH existing reactions
+    const initialArgs = likesListCtorMock.mock.calls.at(-1)![0] as NostrEvent[];
+    expect(initialArgs).toHaveLength(2);
+
+    // The user's own like: LiveUpdatesManager owns the live-stats subscription
+    // (model it) — the echo merges into the EXISTING cache (2 + 1 = 3)…
+    const onStats = vi.fn();
+    orchestrator.startLiveStats(NOTE, onStats);
+    const handler = orchestratorDoubles.liveStatsHandlers.get(
+      `live-stats-${NOTE}`
+    )!;
+    handler(reactionEvent('rOWN', 'a'.repeat(64), '🎉'));
+    expect(onStats).toHaveBeenCalledWith(expect.objectContaining({ likes: 3 }));
+
+    // …and the SNV's onStatsUpdate wiring refreshes the controller, whose
+    // rebuild MUST contain all three reactions (the reported bug wiped the
+    // two existing ones and kept only the own emoji).
+    controller.refresh(NOTE);
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    const finalArgs = likesListCtorMock.mock.calls.at(-1)![0] as NostrEvent[];
+    expect(finalArgs).toHaveLength(3);
+    expect(finalArgs.map(e => e.content)).toEqual(
+      expect.arrayContaining(['👍', '🚀', '🎉'])
+    );
+
+    controller.detach(NOTE);
+    orchestrator.stopLiveStats(NOTE);
   });
 });

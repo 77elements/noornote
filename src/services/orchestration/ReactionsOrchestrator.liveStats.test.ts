@@ -13,23 +13,38 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 type LiveEventHandler = (event: NostrEvent) => void;
 
-const { liveHandlers, subscribeLiveMock, unsubscribeLiveMock } = vi.hoisted(
-  () => {
-    const liveHandlers = new Map<string, LiveEventHandler>();
-    const subscribeLiveMock =
-      vi.fn<
-        (
-          relays: string[],
-          filters: unknown,
-          subId: string,
-          onEvent: LiveEventHandler
-        ) => void
-      >();
-    const unsubscribeLiveMock = vi.fn<(subId: string) => void>();
-    return { liveHandlers, subscribeLiveMock, unsubscribeLiveMock };
-  }
-);
+const {
+  liveHandlers,
+  subscribeLiveMock,
+  unsubscribeLiveMock,
+  transportFetchMock,
+  detailFetchEvents,
+} = vi.hoisted(() => {
+  const liveHandlers = new Map<string, LiveEventHandler>();
+  const transportFetchMock = vi.fn();
+  const detailFetchEvents: NostrEvent[] = [];
+  const subscribeLiveMock =
+    vi.fn<
+      (
+        relays: string[],
+        filters: unknown,
+        subId: string,
+        onEvent: LiveEventHandler
+      ) => void
+    >();
+  const unsubscribeLiveMock = vi.fn<(subId: string) => void>();
+  return {
+    liveHandlers,
+    subscribeLiveMock,
+    unsubscribeLiveMock,
+    transportFetchMock,
+    detailFetchEvents,
+  };
+});
 
+vi.mock('../services/DiagnosticLogger', () => ({
+  diagLog: vi.fn(),
+}));
 vi.mock('../transport/NostrTransport', () => ({
   NostrTransport: {
     getInstance: () => ({
@@ -47,6 +62,19 @@ vi.mock('../transport/NostrTransport', () => ({
         unsubscribeLiveMock(subId);
         liveHandlers.delete(subId);
       },
+      fetch: transportFetchMock,
+      subscribe: vi.fn(
+        (
+          _relays: string[],
+          _filters: unknown,
+          handlers: { onEvent: (e: never) => void; onEose: () => void }
+        ) => {
+          // Deliver the scripted detail-fetch events, then EOSE (microtask)
+          detailFetchEvents.forEach(e => handlers.onEvent(e as never));
+          void Promise.resolve().then(() => handlers.onEose());
+          return Promise.resolve({ close: vi.fn() });
+        }
+      ),
     }),
   },
 }));
@@ -62,7 +90,13 @@ vi.mock('../SystemLogger', () => ({
 }));
 
 vi.mock('../RelayConfig', () => ({
-  RelayConfig: { getInstance: () => ({}) },
+  RelayConfig: {
+    getInstance: () => ({
+      getReadRelays: () => ['wss://relay.test'],
+      getAggregatorRelays: () => [],
+      getWriteRelays: () => ['wss://relay.test'],
+    }),
+  },
 }));
 
 vi.mock('../UserProfileService', () => ({
@@ -274,5 +308,81 @@ describe('startLiveStats — addressable notes (long-form articles)', () => {
     expect(withE[0]!['#e']).toEqual([HEX]);
 
     orchestrator.stopLiveStats(ADDR);
+  });
+});
+
+describe('like flow — existing reactions must survive the live echo (regression)', () => {
+  it('own like merges into the EXISTING cache: 2 old + 1 own = 3 likes', async () => {
+    const orchestrator = ReactionsOrchestrator.getInstance();
+    // Initial detailed-stats fetch returns 2 existing reactions
+    detailFetchEvents.push(
+      ev('rA', 7, [['e', NOTE]]),
+      Object.assign(ev('rB', 7, [['e', NOTE]]), { pubkey: 'e'.repeat(64) })
+    );
+    await orchestrator.getDetailedStats(NOTE);
+
+    const onStats = vi.fn();
+    orchestrator.startLiveStats(NOTE, onStats);
+    const subId = `live-stats-${NOTE}`;
+
+    // The user's own reaction echoes back through the live subscription
+    liveHandlers.get(subId)?.(ev('rOWN', 7, [['e', NOTE]]));
+
+    const cached = (
+      orchestrator as unknown as {
+        detailedStatsCache: Map<string, { reactionEvents: unknown[] }>;
+      }
+    ).detailedStatsCache.get(NOTE);
+    expect(cached?.reactionEvents.length).toBe(3);
+    expect(onStats).toHaveBeenLastCalledWith(
+      expect.objectContaining({ likes: 3 })
+    );
+
+    orchestrator.stopLiveStats(NOTE);
+  });
+});
+
+describe('live-stats create-if-missing — unfresh marker (heal-after-wipe)', () => {
+  const NOTE3 = '1'.repeat(64); // fresh id — the singleton cache persists across tests
+
+  it('rebuilt cache has lastUpdated 0 → the next getDetailedStats performs a FULL refetch', async () => {
+    const orchestrator = ReactionsOrchestrator.getInstance();
+    // No initial fetch — cache is ABSENT when the echo arrives (the wipe case)
+    detailFetchEvents.length = 0; // isolate from other tests
+    orchestrator.startLiveStats(NOTE3, vi.fn());
+    const subId = `live-stats-${NOTE3}`;
+    liveHandlers.get(subId)?.(ev('rOWN', 7, [['e', NOTE3]]));
+
+    const rebuilt = (
+      orchestrator as unknown as {
+        detailedStatsCache: Map<
+          string,
+          { lastUpdated: number; reactionEvents: unknown[] }
+        >;
+      }
+    ).detailedStatsCache.get(NOTE3);
+    expect(rebuilt).toBeDefined();
+    expect(rebuilt!.lastUpdated).toBe(0); // UNFRESH marker
+
+    // The next getDetailedStats must treat it as stale → full refetch
+    detailFetchEvents.push(
+      Object.assign(ev('rOld1', 7, [['e', NOTE3]]), { pubkey: 'e'.repeat(64) }),
+      Object.assign(ev('rOld2', 7, [['e', NOTE3]]), { pubkey: 'f'.repeat(64) })
+    );
+    await orchestrator.getDetailedStats(NOTE3);
+
+    const healed = (
+      orchestrator as unknown as {
+        detailedStatsCache: Map<
+          string,
+          { lastUpdated: number; reactionEvents: Array<{ id: string }> }
+        >;
+      }
+    ).detailedStatsCache.get(NOTE3);
+    expect(healed!.reactionEvents.map(e => e.id)).toEqual(
+      expect.arrayContaining(['rOld1', 'rOld2'])
+    );
+
+    orchestrator.stopLiveStats(NOTE3);
   });
 });

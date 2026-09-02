@@ -20,6 +20,7 @@ import type {
 } from '../../../modules/reactions/contracts';
 import type { ZapsModuleApi } from '../../../modules/zaps/contracts';
 import { TypedEventBus } from '../../../core/TypedEventBus';
+
 import { ZapsList } from '../../ui/ZapsList';
 import { LikesList } from '../../ui/LikesList';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -152,6 +153,11 @@ export class SnvZapsListController {
     const stats = reactions?.peekDetailedStats(noteId) ?? EMPTY_STATS;
     zaps?.reconcileZapStates(noteId, stats.zapEvents);
     const pendingStates = zaps?.getZapPendingStates(noteId) ?? [];
+
+    // DevTools-only: fires on every render — too noisy for the System Log
+    console.debug(
+      `[SnvZapsList] re-render — reactions: ${stats.reactionEvents.length}, zaps: ${stats.zapEvents.length}, pending: ${pendingStates.length}`
+    );
 
     const { noteElement } = entry;
     const islContainer = noteElement.querySelector('.isl');

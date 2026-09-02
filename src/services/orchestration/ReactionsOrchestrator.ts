@@ -935,6 +935,10 @@ export class ReactionsOrchestrator extends Orchestrator {
    * Clear cached stats for a note
    */
   public clearCache(noteId: string): void {
+    this.systemLogger.warn(
+      'ReactionsOrchestrator',
+      `Detailed-stats cache CLEARED for ${noteId.slice(0, 12)}…`
+    );
     this.detailedStatsCache.delete(noteId);
   }
 
@@ -1076,6 +1080,10 @@ export class ReactionsOrchestrator extends Orchestrator {
         // the live-stats subscription (interactionMerge) and the initial
         // detailed-stats fetch — multiple emojis from one author DO appear.
         const cached = this.detailedStatsCache.get(noteId);
+        this.systemLogger.info(
+          'ReactionsOrchestrator',
+          `Polled interactions — cache ${cached ? `has ${cached.reactionEvents.length} reactions` : 'MISSING'}`
+        );
         if (cached) {
           mergeInteractionEvents(cached, newReactions, noteId);
 
@@ -1189,6 +1197,7 @@ export class ReactionsOrchestrator extends Orchestrator {
       }
 
       let cached = this.detailedStatsCache.get(noteId);
+      const cacheWasAbsent = !cached;
       if (!cached) {
         // The initial detailed-stats fetch may still be in flight when the
         // first interaction arrives (fast reactors) — create the buckets now
@@ -1202,6 +1211,10 @@ export class ReactionsOrchestrator extends Orchestrator {
           lastUpdated: Date.now(),
         };
         this.detailedStatsCache.set(noteId, cached);
+        this.systemLogger.info(
+          'ReactionsOrchestrator',
+          'Live-stats cache was EMPTY — created fresh buckets'
+        );
       }
 
       const isQuote =
@@ -1210,6 +1223,15 @@ export class ReactionsOrchestrator extends Orchestrator {
 
       mergeInteractionEvents(cached, [event], noteId);
       cached.lastUpdated = Date.now();
+      // A cache rebuilt from the live echo holds only the just-arrived event —
+      // mark it UNFRESH so the next getDetailedStats performs a full refetch
+      // and wiped interactions heal within seconds instead of persisting.
+      if (cacheWasAbsent) cached.lastUpdated = 0;
+
+      this.systemLogger.info(
+        'ReactionsOrchestrator',
+        `Live-stats echo merged — reactions now: ${cached.reactionEvents.length}`
+      );
 
       onStats({
         replies: countVisibleReplies(cached.replyEvents),
