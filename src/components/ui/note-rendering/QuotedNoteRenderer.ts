@@ -22,8 +22,7 @@ import { replaceBolt11Placeholders } from '../../../helpers/renderBolt11';
 import { Router } from '../../../services/Router';
 import { getViewNavigationController } from '../../../services/ViewNavigationController';
 import { RENDERABLE_KINDS, GIT_EVENT_KINDS } from '../../../types/nostr';
-import { ModuleLoader } from '../../../core/ModuleLoader';
-import type { SingleNoteModuleApi } from '../../../modules/single-note/contracts';
+import { PollRenderer } from '../note-features/PollRenderer';
 import { MuteOrchestrator } from '../../../lists/mutes';
 import { AuthService } from '../../../services/AuthService';
 import { escapeHtml } from '../../../helpers/escapeHtml';
@@ -937,41 +936,17 @@ export class QuotedNoteRenderer {
   }
 
   /**
-   * Render poll options for kind:6969 poll events
-   * Fetches vote counts via PollOrchestrator and displays results
+   * Render poll options for kind:6969 poll events inside a quote box.
+   * UI building blocks + result fetching live in PollRenderer.
    */
   private renderPollOptions(quoteBox: HTMLElement, event: NostrEvent): void {
     const eventId = event.id;
     if (!eventId) return;
 
-    // Parse poll options from tags, filtering out invalid entries
-    const pollOptions = event.tags
-      .filter(tag => tag[0] === 'poll_option' && tag[1] && tag[2])
-      .map(tag => ({
-        id: tag[1] as string,
-        label: tag[2] as string,
-        voteCount: 0,
-      }))
-      .sort((a, b) => parseInt(a.id) - parseInt(b.id));
-
+    const pollOptions = PollRenderer.extractOptions(event.tags);
     if (pollOptions.length === 0) return;
 
-    const pollContainer = document.createElement('div');
-    pollContainer.className = 'poll-options';
-
-    pollOptions.forEach(option => {
-      const optionBtn = document.createElement('button');
-      optionBtn.className = 'poll-option';
-      optionBtn.disabled = true;
-      optionBtn.dataset.optionIndex = option.id;
-      optionBtn.innerHTML = `
-        <span class="poll-option-text">${escapeHtml(option.label)}</span>
-        <span class="poll-option-stats">
-          <span class="poll-option-count">Loading...</span>
-        </span>
-      `;
-      pollContainer.appendChild(optionBtn);
-    });
+    const pollContainer = PollRenderer.buildOptionsContainer(pollOptions);
 
     // Insert poll options after quote-content
     const quoteContent = quoteBox.querySelector('.quote-content');
@@ -979,50 +954,7 @@ export class QuotedNoteRenderer {
       quoteContent.appendChild(pollContainer);
     }
 
-    // Fetch poll results asynchronously via the single-note module
-    ModuleLoader.getInstance()
-      .getApi<SingleNoteModuleApi>('single-note')
-      ?.fetchPollResults(eventId, pollOptions)
-      .then(results => {
-        // Update UI with vote counts
-        results.options.forEach(option => {
-          const optionBtn = pollContainer.querySelector(
-            `[data-option-index="${option.id}"]`
-          ) as HTMLElement | null;
-          if (!optionBtn) return;
-
-          const countSpan = optionBtn.querySelector('.poll-option-count');
-          if (!countSpan) return;
-
-          // Calculate percentage
-          const percentage =
-            results.totalVotes > 0
-              ? Math.round((option.voteCount / results.totalVotes) * 100)
-              : 0;
-
-          // Update text
-          countSpan.textContent = `${percentage}% (${option.voteCount} ${option.voteCount === 1 ? 'vote' : 'votes'})`;
-
-          // Add progress bar background
-          optionBtn.style.setProperty('--vote-percentage', `${percentage}%`);
-          optionBtn.classList.add('has-votes');
-        });
-      })
-      .catch(error => {
-        console.debug('Failed to fetch poll results:', error);
-        // Show error state
-        pollOptions.forEach(option => {
-          const optionBtn = pollContainer.querySelector(
-            `[data-option-index="${option.id}"]`
-          );
-          if (!optionBtn) return;
-
-          const countSpan = optionBtn.querySelector('.poll-option-count');
-          if (countSpan) {
-            countSpan.textContent = 'Failed to load votes';
-          }
-        });
-      });
+    PollRenderer.fetchAndFill(eventId, pollOptions, pollContainer);
   }
 
   /**

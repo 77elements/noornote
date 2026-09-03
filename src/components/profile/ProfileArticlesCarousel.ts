@@ -26,6 +26,7 @@ import {
 } from '../../helpers/CarouselHelper';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { dedupeByCoordinateWithTombstones } from '../../helpers/addressableDedupe';
 import { extractDisplayName } from '../../helpers/extractDisplayName';
 
 interface ArticleCardData {
@@ -94,45 +95,13 @@ export class ProfileArticlesCarousel {
       const deletionEvents = content.deletions;
       const hintRelays = content.hintRelays;
 
-      // Index NIP-09 `a`-tag deletions targeting our addressable kinds
-      // (30023 / 30024) for this pubkey. Map value = most recent
-      // deletion's created_at, so resurrection events strictly newer
-      // than the deletion stay visible (canonical NIP-09 behaviour).
-      const deletedCoordinates = new Map<string, number>();
-      const prefixes = kinds.map(k => `${k}:${this.pubkey}:`);
-      for (const delEvent of deletionEvents) {
-        for (const tag of delEvent.tags) {
-          if (tag[0] !== 'a' || !tag[1]) continue;
-          if (!prefixes.some(p => tag[1]!.startsWith(p))) continue;
-          const coord = tag[1];
-          const existing = deletedCoordinates.get(coord);
-          if (!existing || delEvent.created_at > existing) {
-            deletedCoordinates.set(coord, delEvent.created_at);
-          }
-        }
-      }
-
-      // Dedupe by addressable coordinate `<kind>:<pubkey>:<d>`. NDK's
-      // own Set-dedup runs on event id, so two versions of the same
-      // addressable slot served by different relays (or by one relay
-      // that hasn't replaced) both reach this code. Keep latest
-      // created_at per coord, then drop coords whose deletion is newer
-      // than the surviving event.
-      const eventsByCoord = new Map<string, NostrEvent>();
-      for (const event of rawEvents) {
-        const dTag = event.tags.find(t => t[0] === 'd')?.[1] ?? '';
-        const coord = `${event.kind}:${event.pubkey}:${dTag}`;
-        const existing = eventsByCoord.get(coord);
-        if (!existing || event.created_at > existing.created_at) {
-          eventsByCoord.set(coord, event);
-        }
-      }
-      const events = Array.from(eventsByCoord.entries())
-        .filter(([coord, event]) => {
-          const delTs = deletedCoordinates.get(coord);
-          return delTs === undefined || event.created_at > delTs;
-        })
-        .map(([, event]) => event);
+      // Index NIP-09 deletions, dedupe by coordinate, apply tombstone
+      // filter — shared with the listings carousel (see helper).
+      const events = dedupeByCoordinateWithTombstones(
+        rawEvents,
+        deletionEvents,
+        kinds.map(k => `${k}:${this.pubkey}:`)
+      );
 
       events.sort((a, b) => {
         const aPublished = parseInt(

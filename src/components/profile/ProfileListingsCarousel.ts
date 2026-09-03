@@ -22,6 +22,7 @@ import {
 } from '../../helpers/CarouselHelper';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { dedupeByCoordinateWithTombstones } from '../../helpers/addressableDedupe';
 import {
   parseListingMetadata,
   formatPrice,
@@ -77,37 +78,13 @@ export class ProfileListingsCarousel {
       const deletionEvents = content.deletions;
       const hintRelays = content.hintRelays;
 
-      const deletedCoordinates = new Map<string, number>();
-      const prefix = `30402:${this.pubkey}:`;
-      for (const delEvent of deletionEvents) {
-        for (const tag of delEvent.tags) {
-          if (tag[0] !== 'a' || !tag[1] || !tag[1].startsWith(prefix)) continue;
-          const coord = tag[1];
-          const existing = deletedCoordinates.get(coord);
-          if (!existing || delEvent.created_at > existing) {
-            deletedCoordinates.set(coord, delEvent.created_at);
-          }
-        }
-      }
-
-      // Dedupe by addressable coordinate `30402:<pubkey>:<d>`, keep latest
-      // created_at per coord, then drop coords whose deletion is newer
-      // than the surviving event.
-      const eventsByCoord = new Map<string, NostrEvent>();
-      for (const event of rawEvents) {
-        const dTag = event.tags.find(t => t[0] === 'd')?.[1] ?? '';
-        const coord = `${event.kind}:${event.pubkey}:${dTag}`;
-        const existing = eventsByCoord.get(coord);
-        if (!existing || event.created_at > existing.created_at) {
-          eventsByCoord.set(coord, event);
-        }
-      }
-      const events = Array.from(eventsByCoord.entries())
-        .filter(([coord, event]) => {
-          const delTs = deletedCoordinates.get(coord);
-          return delTs === undefined || event.created_at > delTs;
-        })
-        .map(([, event]) => event);
+      // Index NIP-09 deletions, dedupe by coordinate, apply tombstone
+      // filter — shared with the articles carousel (see helper).
+      const events = dedupeByCoordinateWithTombstones(
+        rawEvents,
+        deletionEvents,
+        [`30402:${this.pubkey}:`]
+      );
 
       // Newest first by created_at
       events.sort((a, b) => b.created_at - a.created_at);
