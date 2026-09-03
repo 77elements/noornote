@@ -65,7 +65,7 @@ async function payInvoice(invoice: string): Promise<void> {
       return;
     } catch (err) {
       // Fall through to NWC
-      console.warn('[Bolt11PayHandler] WebLN failed, trying NWC:', err);
+      console.debug('[Bolt11PayHandler] WebLN failed, trying NWC:', err);
     }
   }
 

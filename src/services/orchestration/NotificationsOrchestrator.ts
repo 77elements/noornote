@@ -198,21 +198,25 @@ export class NotificationsOrchestrator extends Orchestrator {
     // Step 0.5: Load user event ancestry from localStorage (for muted thread checking)
     this.loadUserEventAncestry();
 
-    // Step 1: Fetch and store user's recent events (for #e filter)
-    await this.fetchAndStoreUserEvents(currentUser.pubkey);
+    // Steps 1 + 2.5 + 2.6: the user-event relay fetch and the two storage
+    // file inits are independent of each other — run them concurrently.
+    // Step 2 (initial notifications) must stay AFTER Step 1: its #e filter
+    // reads the user event ids that Step 1 stores.
+    const mutualStorage = MutualChangeStorage.getInstance();
+    const followerStorage = FollowerSnapshotStorage.getInstance();
+    await Promise.all([
+      this.fetchAndStoreUserEvents(currentUser.pubkey),
+      mutualStorage.initFromFile(),
+      followerStorage.initFromFile(),
+    ]);
 
     // Step 2: Fetch initial notifications (last 100)
     await this.fetchInitialNotifications(currentUser.pubkey);
 
     // Step 2.5: Restore mutual change notifications from storage
-    // First ensure storage is initialized from file
-    const mutualStorage = MutualChangeStorage.getInstance();
-    await mutualStorage.initFromFile();
     this.restoreMutualChangeNotifications(currentUser.pubkey);
 
     // Step 2.6: Restore follower change notifications from storage (follower-notification addon)
-    const followerStorage = FollowerSnapshotStorage.getInstance();
-    await followerStorage.initFromFile();
     this.restoreFollowerChangeNotifications(currentUser.pubkey);
 
     // Step 3: Subscribe to new notifications (real-time)

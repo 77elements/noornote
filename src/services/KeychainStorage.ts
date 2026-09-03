@@ -184,7 +184,7 @@ export class KeychainStorage {
     try {
       raw = await this.getFromIndexedDB(key);
     } catch (err) {
-      console.warn('[KeychainStorage] IDB read failed, trying mirror:', err);
+      console.debug('[KeychainStorage] IDB read failed, trying mirror:', err);
       diagLog('wallet', 'nwc_load_idb_error', {
         error: String(
           err && (err as Error).message ? (err as Error).message : err
@@ -266,7 +266,7 @@ export class KeychainStorage {
     } catch (migrationErr) {
       // Migration failure is non-fatal — we still return the plaintext so the
       // user stays connected. Next load will retry migration.
-      console.warn(
+      console.debug(
         '[KeychainStorage] Legacy migration re-encrypt failed:',
         migrationErr
       );

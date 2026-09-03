@@ -344,7 +344,7 @@ export class Router {
         })
       );
     } catch (error) {
-      console.warn('Failed to save navigation history:', error);
+      console.debug('Failed to save navigation history:', error);
     }
   }
 
@@ -364,7 +364,7 @@ export class Router {
         this.historyIndex = data.index ?? -1;
       }
     } catch (error) {
-      console.warn('Failed to restore navigation history:', error);
+      console.debug('Failed to restore navigation history:', error);
     }
   }
 
@@ -413,7 +413,7 @@ export class Router {
     }
 
     // No route matched - show 404 or default route
-    console.warn(`No route matched for: ${path}`);
+    console.debug(`No route matched for: ${path}`);
   }
 
   /**

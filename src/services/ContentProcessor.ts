@@ -155,7 +155,7 @@ export class ContentProcessor {
             this.updateMentionsInDOM(pubkey, profile);
           });
         })
-        .catch(err => console.warn('Failed to load mention profiles:', err));
+        .catch(err => console.debug('Failed to load mention profiles:', err));
     }
 
     // Profile resolver for mentions

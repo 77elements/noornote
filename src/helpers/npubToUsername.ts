@@ -116,7 +116,7 @@ function npubToUsernameHTMLSingle(
     const escapedUsername = escapeHtml(username);
     const picture = profile?.picture || getAvatarFallback(hexPubkey);
     const escapedPicture = escapeHtmlAttr(picture);
-    return `<a href="/profile/${npub}" class="mention-link mention-link--bg"><img class="profile-pic profile-pic--mini" src="${escapedPicture}" data-pubkey="${hexPubkey}" alt="" />${escapedUsername}</a>`;
+    return `<a href="/profile/${npub}" class="mention-link mention-link--bg"><img class="profile-pic profile-pic--mini" src="${escapedPicture}" data-pubkey="${hexPubkey}" alt="" width="18" height="18" loading="lazy" decoding="async" />${escapedUsername}</a>`;
   } catch {
     return npub;
   }
@@ -137,7 +137,7 @@ function buildMentionHTML(
   const pubkeyAttr = hexPubkey ? `data-pubkey="${hexPubkey}"` : '';
   const escapedUsername = escapeHtml(username);
   const attrs = isLoading ? 'data-mention data-loading' : 'data-mention';
-  return `<a href="/profile/${npub}" ${attrs} class="mention-link mention-link--bg"><img class="profile-pic profile-pic--mini" src="${avatarSrc}" ${pubkeyAttr} alt="" />${escapedUsername}</a>`;
+  return `<a href="/profile/${npub}" ${attrs} class="mention-link mention-link--bg"><img class="profile-pic profile-pic--mini" src="${avatarSrc}" ${pubkeyAttr} alt="" width="18" height="18" loading="lazy" decoding="async" />${escapedUsername}</a>`;
 }
 
 /**

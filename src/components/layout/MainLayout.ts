@@ -19,7 +19,6 @@ import {
   setDataSaverEnabled,
 } from '../../services/DataSaverService';
 import { FontSizeService } from '../../services/FontSizeService';
-import { CacheManager } from '../../services/CacheManager';
 import { AppState } from '../../services/AppState';
 import { Router } from '../../services/Router';
 // PostNoteModal loaded lazily on click (Step 4 bundle optimization)
@@ -100,14 +99,15 @@ export class MainLayout {
   private keyboardShortcutManager!: KeyboardShortcutManager;
   private authComponent: AuthComponent | null = null; // Store reference to trigger logout
   private onboardingComponent: OnboardingComponent | null = null;
-  private cacheManager: CacheManager;
   private appState: AppState;
   private authStateManager: AuthStateManager;
   private authService: AuthService;
   private eventBus: TypedEventBus;
-  private cacheSizeUpdateInterval: number | null = null;
   private dateTimeUpdateInterval: number | null = null;
   private authStateUnsubscribe: (() => void) | null = null;
+  private spacebarScrollHandler: ((e: KeyboardEvent) => void) | null = null;
+  private routerViewChangedHandler: EventListener | null = null;
+  private mentionClickHandler: ((e: MouseEvent) => void) | null = null;
   private globalSearchView: GlobalSearchView | null = null;
   private bookmarkManager: BookmarkManager | null = null;
   private followManager: FollowListManager | null = null;
@@ -147,7 +147,6 @@ export class MainLayout {
   constructor() {
     this.element = this.createElement();
     this.systemLogger = SystemLogger.getInstance();
-    this.cacheManager = CacheManager.getInstance();
     this.appState = AppState.getInstance();
     this.authStateManager = AuthStateManager.getInstance();
     this.authService = AuthService.getInstance();
@@ -161,7 +160,6 @@ export class MainLayout {
     this.setupTabSwitching();
     this.setupMentionLinks();
     this.initializeContent();
-    this.startCacheSizeUpdates();
     this.setupAuthStateListener();
     this.initializeManagers();
     // wallet-balance is managed by AddonLoader + src/addons/wallet-balance/runtime.ts
@@ -178,7 +176,7 @@ export class MainLayout {
    * Setup spacebar scrolling for primary content
    */
   private setupSpacebarScroll(): void {
-    window.addEventListener('keydown', e => {
+    this.spacebarScrollHandler = (e: KeyboardEvent) => {
       if (e.code === 'Space' && !this.isInputFocused()) {
         e.preventDefault();
         const scrollContainer =
@@ -191,7 +189,8 @@ export class MainLayout {
           scrollContainer.scrollBy({ top: scrollAmount, behavior: 'smooth' });
         }
       }
-    });
+    };
+    window.addEventListener('keydown', this.spacebarScrollHandler);
   }
 
   /**
@@ -904,11 +903,13 @@ export class MainLayout {
    */
   private setupActiveNavigation(): void {
     // Update on route changes
-    window.addEventListener('router:view-changed', ((
-      e: CustomEvent<{ view?: string }>
-    ) => {
+    this.routerViewChangedHandler = ((e: CustomEvent<{ view?: string }>) => {
       this.updateActiveNavigation(e.detail?.view || '');
-    }) as EventListener);
+    }) as EventListener;
+    window.addEventListener(
+      'router:view-changed',
+      this.routerViewChangedHandler
+    );
 
     // Set Timeline as active by default (it's the default route)
     // Will be updated by router:view-changed event when navigating
@@ -1100,7 +1101,7 @@ export class MainLayout {
    * Uses event delegation to catch all clicks on <a href="/profile/..."> and other internal links
    */
   private setupMentionLinks(): void {
-    document.addEventListener('click', e => {
+    this.mentionClickHandler = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
 
       // Check if clicked element or its parent is an internal link
@@ -1115,7 +1116,8 @@ export class MainLayout {
       if (href) {
         Router.getInstance().navigate(href);
       }
-    });
+    };
+    document.addEventListener('click', this.mentionClickHandler);
   }
 
   /**
@@ -2302,39 +2304,6 @@ export class MainLayout {
   }
 
   /**
-   * Start periodic cache size updates
-   */
-  private startCacheSizeUpdates(): void {
-    void this.updateCacheSize(); // Initial update
-    this.cacheSizeUpdateInterval = window.setInterval(() => {
-      void this.updateCacheSize();
-    }, 5000); // Update every 5 seconds
-  }
-
-  /**
-   * Update cache size display in sidebar
-   */
-  private async updateCacheSize(): Promise<void> {
-    const cacheSizeDisplay = this.element.querySelector('.cache-size-display');
-    if (!cacheSizeDisplay) return;
-
-    const stats = await this.cacheManager.getCacheStats();
-    const totalCacheSize = stats.total.size;
-
-    cacheSizeDisplay.textContent = `(${this.cacheManager.formatBytes(totalCacheSize)})`;
-  }
-
-  /**
-   * Stop cache size updates
-   */
-  private stopCacheSizeUpdates(): void {
-    if (this.cacheSizeUpdateInterval !== null) {
-      clearInterval(this.cacheSizeUpdateInterval);
-      this.cacheSizeUpdateInterval = null;
-    }
-  }
-
-  /**
    * Initialize dayjs calendar system for date/time display
    */
   private async initializeDateTimeCalendar(): Promise<void> {
@@ -3117,8 +3086,25 @@ export class MainLayout {
    * Cleanup resources
    */
   public destroy(): void {
-    this.stopCacheSizeUpdates();
     this.stopDateTimeUpdates();
+
+    if (this.spacebarScrollHandler) {
+      window.removeEventListener('keydown', this.spacebarScrollHandler);
+      this.spacebarScrollHandler = null;
+    }
+
+    if (this.routerViewChangedHandler) {
+      window.removeEventListener(
+        'router:view-changed',
+        this.routerViewChangedHandler
+      );
+      this.routerViewChangedHandler = null;
+    }
+
+    if (this.mentionClickHandler) {
+      document.removeEventListener('click', this.mentionClickHandler);
+      this.mentionClickHandler = null;
+    }
 
     // Unsubscribe from auth state
     if (this.authStateUnsubscribe) {

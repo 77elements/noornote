@@ -147,7 +147,7 @@ export class NoteStructureBuilder {
       }>(StorageKeys.SENSITIVE_MEDIA, { displayNSFW: false });
       return settings.displayNSFW || false;
     } catch (error) {
-      console.warn('Failed to load NSFW preference:', error);
+      console.debug('Failed to load NSFW preference:', error);
     }
     return false; // Default: hide NSFW (blur)
   }

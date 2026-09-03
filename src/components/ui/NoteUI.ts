@@ -85,7 +85,7 @@ export class NoteUI {
 
       // Check if we've exceeded maximum nesting depth
       if (opts.depth! > NoteUI.MAX_NESTING_DEPTH) {
-        console.warn(
+        console.debug(
           `⚠️ Max nesting depth (${NoteUI.MAX_NESTING_DEPTH}) reached for note ${event.id?.slice(0, 8) ?? 'unknown'}`
         );
         return FallbackElementFactory.createMaxDepthElement(event);

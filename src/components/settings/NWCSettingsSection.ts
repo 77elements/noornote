@@ -53,7 +53,7 @@ export class NWCSettingsSection extends SettingsSection {
         return stored;
       }
     } catch (error) {
-      console.warn('Failed to load zap defaults:', error);
+      console.debug('Failed to load zap defaults:', error);
     }
 
     return { amount: 21, comment: '' };
@@ -69,7 +69,7 @@ export class NWCSettingsSection extends SettingsSection {
         this.zapDefaults.comment
       );
     } catch (error) {
-      console.warn('Failed to save zap defaults:', error);
+      console.debug('Failed to save zap defaults:', error);
     }
   }
 
@@ -83,7 +83,7 @@ export class NWCSettingsSection extends SettingsSection {
         return { currency: stored };
       }
     } catch (error) {
-      console.warn('Failed to load fiat currency settings:', error);
+      console.debug('Failed to load fiat currency settings:', error);
     }
 
     return { currency: 'EUR' };
@@ -104,7 +104,7 @@ export class NWCSettingsSection extends SettingsSection {
         })
       );
     } catch (error) {
-      console.warn('Failed to save fiat currency settings:', error);
+      console.debug('Failed to save fiat currency settings:', error);
     }
   }
 

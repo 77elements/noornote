@@ -126,7 +126,7 @@ export class AccountStorageService {
     } else {
       // Check max accounts limit
       if (accounts.length >= this.MAX_ACCOUNTS) {
-        console.warn(
+        console.debug(
           `[AccountStorageService] Maximum accounts (${this.MAX_ACCOUNTS}) reached`
         );
         // Remove oldest account (by lastUsedAt)

@@ -95,6 +95,29 @@ export class UserProfileService {
   /** Track failed fetches to prevent rapid retry storms (pubkey → timestamp) */
   private failedFetches: Map<string, number> = new Map();
   private readonly FAILED_FETCH_COOLDOWN = 30000; // 30s — throttle retries for a missing profile without poisoning the cache
+  private readonly FAILED_FETCH_MAX_ENTRIES = 500; // cap — drop oldest beyond this
+
+  /**
+   * Record a failed-fetch cooldown, evicting the oldest entry when the cap
+   * is reached so long sessions on npub-heavy feeds can't grow the map forever.
+   */
+  private recordFailedFetch(pubkey: string): void {
+    if (
+      this.failedFetches.size >= this.FAILED_FETCH_MAX_ENTRIES &&
+      !this.failedFetches.has(pubkey)
+    ) {
+      let oldestKey: string | null = null;
+      let oldestTs = Infinity;
+      for (const [key, ts] of this.failedFetches) {
+        if (ts < oldestTs) {
+          oldestTs = ts;
+          oldestKey = key;
+        }
+      }
+      if (oldestKey !== null) this.failedFetches.delete(oldestKey);
+    }
+    this.failedFetches.set(pubkey, Date.now());
+  }
 
   /** Debounced ProfileStore writes: dirty pubkeys + flush timer. */
   private dirtyProfiles = new Map<string, UserProfile>();
@@ -255,12 +278,12 @@ export class UserProfileService {
       // renders are throttled, and return the fallback to the direct caller
       // (their own Promise chain) — subscribers that already have real data
       // keep it untouched.
-      this.failedFetches.set(pubkey, Date.now());
+      this.recordFailedFetch(pubkey);
       return this.getDefaultProfile(pubkey);
     } catch (error) {
-      console.warn(`Failed to fetch profile for ${pubkey}:`, error);
+      console.debug(`Failed to fetch profile for ${pubkey}:`, error);
       // Record failure timestamp to prevent rapid retries
-      this.failedFetches.set(pubkey, Date.now());
+      this.recordFailedFetch(pubkey);
       return this.getDefaultProfile(pubkey);
     } finally {
       this.fetchingProfiles.delete(pubkey);
@@ -307,7 +330,7 @@ export class UserProfileService {
           result.set(pubkey, profile);
         });
       } catch (error) {
-        console.warn(
+        console.debug(
           'Failed to fetch user profiles (aggregator batch):',
           error
         );
@@ -342,11 +365,11 @@ export class UserProfileService {
                   // empty — record the retry cooldown exactly like the
                   // single-fetch path, so repeat renders don't re-hammer
                   // the relays for a profile that is genuinely unfindable.
-                  this.failedFetches.set(pubkey, Date.now());
+                  this.recordFailedFetch(pubkey);
                 }
               } catch {
                 // Transport-level failure — also a spent attempt, cooldown applies.
-                this.failedFetches.set(pubkey, Date.now());
+                this.recordFailedFetch(pubkey);
               }
             })
           );

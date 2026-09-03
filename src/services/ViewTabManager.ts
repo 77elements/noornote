@@ -397,7 +397,7 @@ export class ViewTabManager {
           profilePicUrl !== undefined && { profilePicUrl }),
       });
     } catch (error) {
-      console.warn('Failed to fetch tab label:', error);
+      console.debug('Failed to fetch tab label:', error);
       // Keep placeholder label on error
     }
   }
@@ -420,7 +420,7 @@ export class ViewTabManager {
       const firstEvent = events[0];
       return firstEvent !== undefined ? firstEvent : null;
     } catch (error) {
-      console.warn('Failed to fetch note event:', error);
+      console.debug('Failed to fetch note event:', error);
       return null;
     }
   }

@@ -141,7 +141,7 @@ export class RelaySettingsSection extends SettingsSection {
         return JSON.parse(stored) as LocalRelaySettings;
       }
     } catch (error) {
-      console.warn('Failed to load local relay settings:', error);
+      console.debug('Failed to load local relay settings:', error);
     }
 
     return {
@@ -161,7 +161,7 @@ export class RelaySettingsSection extends SettingsSection {
         JSON.stringify(this.localRelaySettings)
       );
     } catch (error) {
-      console.warn('Failed to save local relay settings:', error);
+      console.debug('Failed to save local relay settings:', error);
     }
   }
 
@@ -574,7 +574,7 @@ export class RelaySettingsSection extends SettingsSection {
         void accountEssentialsPromise
           .then(events => this.publishEventsTo(events, newlyAdded))
           .catch(err => {
-            console.warn(
+            console.debug(
               '[RelaySettings] republish to new write-relays failed',
               err
             );
@@ -597,13 +597,13 @@ export class RelaySettingsSection extends SettingsSection {
   } | null {
     const user = this.authService.getCurrentUser();
     if (!user) {
-      console.warn('No user logged in, skipping publish');
+      console.debug('No user logged in, skipping publish');
       return null;
     }
 
     const writeRelays = this.relayConfig.getWriteRelays();
     if (writeRelays.length === 0) {
-      console.warn('No write relays available for publishing');
+      console.debug('No write relays available for publishing');
       return null;
     }
 
@@ -719,7 +719,7 @@ export class RelaySettingsSection extends SettingsSection {
         'RelaySettingsRepublish'
       );
     } catch (err) {
-      console.warn('[RelaySettings] account-essentials fetch failed', err);
+      console.debug('[RelaySettings] account-essentials fetch failed', err);
       return [];
     }
   }

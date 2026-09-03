@@ -108,7 +108,7 @@ export class AccountSwitcher {
     try {
       await this.userProfileService.getUserProfile(this.options.pubkey);
     } catch (error) {
-      console.warn(
+      console.debug(
         `[AccountSwitcher] Failed to load profile: ${this.options.pubkey}`,
         error
       );

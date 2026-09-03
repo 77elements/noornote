@@ -49,7 +49,7 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
         this.updateButtonState(true);
       }
     } catch (error) {
-      console.warn('Failed to check reposted status:', error);
+      console.debug('Failed to check reposted status:', error);
     }
   }
 

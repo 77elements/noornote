@@ -69,7 +69,7 @@ export class UserStatus {
     try {
       await this.userProfileService.getUserProfile(this.options.pubkey);
     } catch (error) {
-      console.warn(
+      console.debug(
         `Failed to load profile for user status: ${this.options.pubkey}`,
         error
       );

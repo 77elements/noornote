@@ -115,7 +115,7 @@ export class RepostRenderer {
       <span class="repost-icon"><svg width="16" height="16"><use href="#icon-repost"/></svg></span>
       <span class="user-mention" data-pubkey="${reposterPubkey}">
         <a href="/profile/${reposterNpub}" class="mention-link" data-profile-pubkey="${reposterPubkey}">
-          <img src="${escapeHtmlAttr(reposterPicture)}" alt="" data-pubkey="${reposterPubkey}" class="profile-pic profile-pic--mini" /><span class="reposter-username"></span></a></span><span class="repost-label">reposted</span>
+          <img src="${escapeHtmlAttr(reposterPicture)}" alt="" data-pubkey="${reposterPubkey}" class="profile-pic profile-pic--mini" width="18" height="18" loading="lazy" decoding="async" /><span class="reposter-username"></span></a></span><span class="repost-label">reposted</span>
     `;
 
     const usernameSpan = repostHeader.querySelector(

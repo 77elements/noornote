@@ -170,37 +170,6 @@ export class ProfileRecognitionOrchestrator {
   }
 
   /**
-   * Sync current user's encounters from relays (overwrite local)
-   */
-  public async syncFromRelays(): Promise<void> {
-    const currentUser = this.authService.getCurrentUser();
-    if (!currentUser) {
-      throw new Error('User not authenticated');
-    }
-
-    const encounterData = await this.fetchFromRelays(currentUser.pubkey, true);
-
-    if (!encounterData || Object.keys(encounterData.encounters).length === 0) {
-      this.systemLogger.info(
-        'ProfileRecognitionOrchestrator',
-        'No encounters found on relays'
-      );
-      return;
-    }
-
-    // Import encounters into service (this will trigger auto-save back to file)
-    // Note: We'll need to add an import method to ProfileRecognitionService
-    // For now, log the intent
-    this.systemLogger.info(
-      'ProfileRecognitionOrchestrator',
-      `Synced from relays: ${Object.keys(encounterData.encounters).length} profiles`
-    );
-
-    // TODO: Add importEncounters() method to ProfileRecognitionService
-    // that sets encounters in localStorage and triggers file save
-  }
-
-  /**
    * Clear cache for a specific user or all
    */
   public clearCache(pubkey?: string): void {

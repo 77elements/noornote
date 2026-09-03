@@ -35,7 +35,7 @@ export function extractLinks(text: string): LinkPreview[] {
         domain: parsed.hostname,
       });
     } catch (error) {
-      console.warn('Invalid URL:', rawUrl);
+      console.debug('Invalid URL:', rawUrl);
     }
   });
 

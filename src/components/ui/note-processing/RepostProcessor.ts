@@ -42,7 +42,7 @@ export class RepostProcessor {
         }
       }
     } catch (error) {
-      console.warn('⚠️ Could not parse repost content as JSON');
+      console.debug('⚠️ Could not parse repost content as JSON');
     }
 
     // For media events (kind 20/21/22), delegate to specialized processors

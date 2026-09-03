@@ -235,7 +235,7 @@ export class InteractionStatusLine {
         zaps: stats.zaps,
       });
     } catch (error) {
-      console.warn('Failed to load interaction stats:', error);
+      console.debug('Failed to load interaction stats:', error);
     }
   }
 

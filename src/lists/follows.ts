@@ -2307,7 +2307,7 @@ export class FollowListManager {
     followItemDiv.innerHTML = `
       <div class="follow-item__content-wrapper">
         <div class="follow-item__avatar">
-          <img class="profile-pic profile-pic--medium" src="${escapeHtmlAttr(avatarUrl)}" alt="${escapeHtmlAttr(username)}" />
+          <img class="profile-pic profile-pic--medium" src="${escapeHtmlAttr(avatarUrl)}" alt="${escapeHtmlAttr(username)}" width="40" height="40" loading="lazy" decoding="async" />
         </div>
         <div class="follow-item__info">
           <div class="follow-item__username">
@@ -3109,7 +3109,7 @@ export class ExternalFollowListManager {
     itemDiv.innerHTML = `
       <div class="follow-item__content-wrapper">
         <div class="follow-item__avatar">
-          <img class="profile-pic profile-pic--medium" src="${escapeHtmlAttr(avatarUrl)}" alt="${escapeHtmlAttr(username)}" />
+          <img class="profile-pic profile-pic--medium" src="${escapeHtmlAttr(avatarUrl)}" alt="${escapeHtmlAttr(username)}" width="40" height="40" loading="lazy" decoding="async" />
         </div>
         <div class="follow-item__info">
           <div class="follow-item__username">${escapeHtml(username)}</div>

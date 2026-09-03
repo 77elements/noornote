@@ -211,7 +211,7 @@ export class ArticleNotificationService {
           }
         }
       } catch (error) {
-        console.warn(`Failed to fetch articles for ${pubkey}:`, error);
+        console.debug(`Failed to fetch articles for ${pubkey}:`, error);
       }
     }
 

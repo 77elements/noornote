@@ -96,7 +96,7 @@ export class ZapManager {
         this.updateButtonState(true);
       }
     } catch (error) {
-      console.warn('Failed to check zapped status:', error);
+      console.debug('Failed to check zapped status:', error);
     }
   }
 
@@ -124,7 +124,7 @@ export class ZapManager {
       }
     } catch (error) {
       // On error, leave button enabled (fail open)
-      console.warn('Failed to check recipient zap capability:', error);
+      console.debug('Failed to check recipient zap capability:', error);
     }
   }
 

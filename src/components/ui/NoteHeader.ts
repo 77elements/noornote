@@ -260,7 +260,7 @@ export class NoteHeader {
     const timestamp = element.dataset.timestamp;
 
     if (!pubkey || !timestamp) {
-      console.warn(
+      console.debug(
         'NoteHeader requires data-pubkey and data-timestamp attributes'
       );
       return null;

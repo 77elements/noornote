@@ -222,7 +222,7 @@ export class NoteService {
       );
       return events[0] || null;
     } catch (error) {
-      console.warn(`NoteService: Failed to fetch note ${eventId}:`, error);
+      console.debug(`NoteService: Failed to fetch note ${eventId}:`, error);
       return null;
     }
   }
@@ -256,7 +256,7 @@ export class NoteService {
         }
       }
     } catch (error) {
-      console.warn(`NoteService: Failed to fetch notes:`, error);
+      console.debug(`NoteService: Failed to fetch notes:`, error);
     }
 
     return result;

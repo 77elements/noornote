@@ -87,24 +87,26 @@ export class ISLStatsUpdater {
       chunks.push(noteIds.slice(i, i + 25));
     }
 
-    for (const chunk of chunks) {
-      const statsMap = await this.reactionsApi?.batchFetchStats(chunk);
-      if (!statsMap) continue;
+    await Promise.all(
+      chunks.map(async chunk => {
+        const statsMap = await this.reactionsApi?.batchFetchStats(chunk);
+        if (!statsMap) return;
 
-      for (const [noteId, stats] of statsMap) {
-        this.fetchedNoteIds.add(noteId);
-        const isl = NoteUI.getInteractionStatusLine(noteId);
-        if (isl) {
-          isl.updateStats({
-            replies: stats.replies,
-            reposts: stats.reposts,
-            quotedReposts: stats.quotedReposts,
-            likes: stats.likes,
-            zaps: stats.zaps,
-          });
+        for (const [noteId, stats] of statsMap) {
+          this.fetchedNoteIds.add(noteId);
+          const isl = NoteUI.getInteractionStatusLine(noteId);
+          if (isl) {
+            isl.updateStats({
+              replies: stats.replies,
+              reposts: stats.reposts,
+              quotedReposts: stats.quotedReposts,
+              likes: stats.likes,
+              zaps: stats.zaps,
+            });
+          }
         }
-      }
-    }
+      })
+    );
   }
 
   resetFetchedIds(): void {

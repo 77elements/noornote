@@ -390,7 +390,7 @@ export class NoteMenu {
         this.toggleArticleNotifications();
         break;
       default:
-        console.warn(`Unknown action: ${action}`);
+        console.debug(`Unknown action: ${action}`);
     }
   }
 
@@ -443,7 +443,7 @@ export class NoteMenu {
    */
   private viewRawEvent(): void {
     if (!this.options.rawEvent) {
-      console.warn('Raw event not available');
+      console.debug('Raw event not available');
       ToastService.show('Raw event data not available', 'error');
       return;
     }

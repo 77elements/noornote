@@ -110,7 +110,7 @@ export class RefreshButton {
       }
       // No fallback - just don't show avatar if profile not loaded
     } catch (error) {
-      console.warn('Failed to load avatar for', pubkey, error);
+      console.debug('Failed to load avatar for', pubkey, error);
     }
 
     return avatar;

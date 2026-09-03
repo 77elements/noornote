@@ -23,7 +23,7 @@ export function getStorageSize(storage: Storage): number {
       }
     }
   } catch (error) {
-    console.warn('Failed to calculate storage size:', error);
+    console.debug('Failed to calculate storage size:', error);
   }
   return size;
 }

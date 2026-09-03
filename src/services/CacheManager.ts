@@ -219,7 +219,7 @@ export class CacheManager {
       await UserProfileService.getInstance().wipePersisted();
       console.debug('✅ Profile cache cleared (memory + persisted)');
     } catch (error) {
-      console.warn('⚠️ Failed to clear profile cache:', error);
+      console.debug('⚠️ Failed to clear profile cache:', error);
     }
   }
 
@@ -265,10 +265,10 @@ export class CacheManager {
           console.debug('✅ Notifications cache cleared');
         })
         .catch(error => {
-          console.warn('⚠️ Failed to clear notifications cache:', error);
+          console.debug('⚠️ Failed to clear notifications cache:', error);
         });
     } catch (error) {
-      console.warn('⚠️ Failed to clear notifications cache:', error);
+      console.debug('⚠️ Failed to clear notifications cache:', error);
     }
   }
 
@@ -296,14 +296,14 @@ export class CacheManager {
           await caches.delete(cacheName);
           console.debug(`✅ Cache Storage '${cacheName}' deleted`);
         } catch (error) {
-          console.warn(`⚠️ Failed to delete cache '${cacheName}':`, error);
+          console.debug(`⚠️ Failed to delete cache '${cacheName}':`, error);
         }
       });
 
       await Promise.all(deletePromises);
       console.debug('✅ All Cache Storage cleared');
     } catch (error) {
-      console.warn('⚠️ Failed to clear Cache Storage:', error);
+      console.debug('⚠️ Failed to clear Cache Storage:', error);
     }
   }
 

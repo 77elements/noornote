@@ -416,7 +416,7 @@ export class ArticlePreviewRenderer {
       );
       await mountPlayer(playerEl, { streamUrl, poster });
     } catch (err) {
-      console.warn('[LiveStreamsPlayer] Failed to mount inline player:', err);
+      console.debug('[LiveStreamsPlayer] Failed to mount inline player:', err);
     }
   }
 

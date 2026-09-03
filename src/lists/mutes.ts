@@ -1428,7 +1428,7 @@ export class MuteListView extends View {
           <div class="mute-list-item__info">
             <span class="user-mention" data-pubkey="${pubkey}">
               <a href="/profile/${npub}" class="mention-link mention-link--bg" data-profile-pubkey="${pubkey}">
-                <img class="profile-pic profile-pic--mini" src="${escapeHtmlAttr(avatarUrl)}" alt="${escapeHtmlAttr(username)}" />${escapeHtml(username)}</a></span>${lockIcon}
+                <img class="profile-pic profile-pic--mini" src="${escapeHtmlAttr(avatarUrl)}" alt="${escapeHtmlAttr(username)}" width="18" height="18" loading="lazy" decoding="async" />${escapeHtml(username)}</a></span>${lockIcon}
           </div>
           <button class="btn btn--passive btn--medium unmute-user-btn" data-pubkey="${pubkey}">
             Unmute
@@ -2094,7 +2094,7 @@ export class MuteListManager {
       muteItemDiv.innerHTML = `
         <div class="mute-item__content-wrapper">
           <div class="mute-item__avatar">
-            <img class="profile-pic profile-pic--medium" src="${escapeHtmlAttr(avatarUrl)}" alt="${escapeHtmlAttr(username)}" />
+            <img class="profile-pic profile-pic--medium" src="${escapeHtmlAttr(avatarUrl)}" alt="${escapeHtmlAttr(username)}" width="40" height="40" loading="lazy" decoding="async" />
           </div>
           <div class="mute-item__info">
             <div class="mute-item__username">

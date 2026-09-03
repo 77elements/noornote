@@ -1698,7 +1698,7 @@ export class AccountSetupWizard {
                 await window.electronAPI!.removeNoorSignerAccount(npub);
               }
             } catch (e) {
-              console.warn(
+              console.debug(
                 '[AccountSetupWizard] Failed to remove NoorSigner account files:',
                 e
               );

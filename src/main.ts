@@ -82,7 +82,13 @@ window.addEventListener(
       const message = `Failed to load ${target.tagName.toLowerCase()}: ${src} (Resource unavailable)`;
       systemLogger.warn('ImageLoader', message);
 
-      // Track this failure so we can remove it on successful retry
+      // Track this failure so we can remove it on successful retry.
+      // Cap: a long session on spammy feeds can hit hundreds of broken
+      // hosts — drop the oldest entries so the map never grows unbounded.
+      if (failedImageLogs.size >= 500) {
+        const oldestKey = failedImageLogs.keys().next().value;
+        if (oldestKey !== undefined) failedImageLogs.delete(oldestKey);
+      }
       failedImageLogs.set(src, message);
 
       // Setup retry listener: if image loads successfully later, remove the error log

@@ -768,7 +768,7 @@ export class AuthService {
           const { ToastService } = await import('./ToastService');
           ToastService.show('Key signer stopped', 'success');
         } catch (error) {
-          console.warn('[AuthService] Failed to stop daemon:', error);
+          console.debug('[AuthService] Failed to stop daemon:', error);
           const { ToastService } = await import('./ToastService');
           ToastService.show('Failed to stop key signer', 'error');
         }
@@ -887,7 +887,7 @@ export class AuthService {
           showCloseButton: true,
         });
       })().catch(error => {
-        console.warn('[AuthService] Quit-signer dialog failed:', error);
+        console.debug('[AuthService] Quit-signer dialog failed:', error);
         resolve(false);
       });
     });
@@ -971,7 +971,7 @@ export class AuthService {
 
       // Legacy guard: old sessions (≤0.4.7) lack nip46SubType — clear and re-login
       if (this.authMethod === 'nip46' && !this.nip46SubType) {
-        console.warn(
+        console.debug(
           '[AuthService] Legacy NIP-46 session without subType — clearing'
         );
         this.clearSession();
@@ -993,7 +993,7 @@ export class AuthService {
         pubkey: sessionData.pubkey,
       });
     } catch (error) {
-      console.warn('Failed to load session:', error);
+      console.debug('Failed to load session:', error);
       this.clearSession();
     }
   }
@@ -1015,7 +1015,7 @@ export class AuthService {
         })
       );
     } catch (error) {
-      console.warn('Failed to save session:', error);
+      console.debug('Failed to save session:', error);
     }
   }
 

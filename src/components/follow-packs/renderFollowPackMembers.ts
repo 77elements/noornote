@@ -53,7 +53,7 @@ export async function renderFollowPackMembers(
     item.innerHTML = `
       <div class="follow-packs__member-content">
         <div class="follow-packs__member-avatar">
-          <img class="profile-pic profile-pic--medium" src="${escapeHtmlAttr(picture)}" alt="${escapeHtmlAttr(name)}" />
+          <img class="profile-pic profile-pic--medium" src="${escapeHtmlAttr(picture)}" alt="${escapeHtmlAttr(name)}" width="40" height="40" loading="lazy" decoding="async" />
         </div>
         <div class="follow-packs__member-info">
           <div class="follow-packs__member-name">${escapeHtml(name)}</div>

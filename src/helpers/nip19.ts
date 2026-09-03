@@ -131,7 +131,7 @@ export function extractPubkeysFromText(text: string): string[] {
         }
       }
     } catch (error) {
-      console.warn('Failed to decode NIP-19 identifier:', match[1], error);
+      console.debug('Failed to decode NIP-19 identifier:', match[1], error);
     }
   }
 

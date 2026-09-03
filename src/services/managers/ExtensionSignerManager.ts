@@ -96,7 +96,7 @@ export class ExtensionSignerManager {
     }
 
     if (!this.isAvailable()) {
-      console.warn('[ExtensionSigner] Extension not available after retries');
+      console.debug('[ExtensionSigner] Extension not available after retries');
       return false;
     }
 

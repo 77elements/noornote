@@ -1008,7 +1008,7 @@ export class QuotedNoteRenderer {
         });
       })
       .catch(error => {
-        console.warn('Failed to fetch poll results:', error);
+        console.debug('Failed to fetch poll results:', error);
         // Show error state
         pollOptions.forEach(option => {
           const optionBtn = pollContainer.querySelector(

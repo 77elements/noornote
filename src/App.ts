@@ -101,7 +101,7 @@ export class App {
     // Inline BOLT11 invoice pay handler (event delegation)
     import('./services/Bolt11PayHandler')
       .then(m => m.initBolt11PayHandler())
-      .catch(err => console.warn('[App] Bolt11PayHandler failed:', err));
+      .catch(err => console.debug('[App] Bolt11PayHandler failed:', err));
 
     // Auto-seek video thumbnails + tap-to-load handler for Data Saver placeholders
     import('./helpers/renderMediaContent')
@@ -111,7 +111,9 @@ export class App {
         m.initImageTaglineTooltips();
         m.initEpubCardHandler();
       })
-      .catch(err => console.warn('[App] renderMediaContent init failed:', err));
+      .catch(err =>
+        console.debug('[App] renderMediaContent init failed:', err)
+      );
 
     // Global delegated click for .note-image--clickable (lightbox) +
     // global MutationObserver for video.note-video (download button + auto-pause).
@@ -119,17 +121,19 @@ export class App {
     // See ImageClickHandler.ts / VideoPlayerService.ts headers + /build-validate guard.
     import('./components/ui/ImageClickHandler')
       .then(m => m.getImageClickHandler().init())
-      .catch(err => console.warn('[App] ImageClickHandler init failed:', err));
+      .catch(err => console.debug('[App] ImageClickHandler init failed:', err));
     import('./services/VideoPlayerService')
       .then(m => m.getVideoPlayerService().init())
-      .catch(err => console.warn('[App] VideoPlayerService init failed:', err));
+      .catch(err =>
+        console.debug('[App] VideoPlayerService init failed:', err)
+      );
 
     // Global avatar 404 fallback — any <img class="profile-pic"> whose URL fails
     // to load is swapped to its deterministic identicon. Pubkey comes from
     // data-pubkey on the img or its closest ancestor.
     import('./helpers/avatarFallback')
       .then(m => m.installImgErrorFallback())
-      .catch(err => console.warn('[App] avatarFallback init failed:', err));
+      .catch(err => console.debug('[App] avatarFallback init failed:', err));
 
     // Global upload progress overlay — singleton, listens for media-upload:status
     // events from MediaUploadService. Renders compression + upload progress for
@@ -137,7 +141,7 @@ export class App {
     import('./components/ui/UploadProgressOverlay')
       .then(m => m.UploadProgressOverlay.getInstance().mount())
       .catch(err =>
-        console.warn('[App] UploadProgressOverlay init failed:', err)
+        console.debug('[App] UploadProgressOverlay init failed:', err)
       );
 
     // Resume any unfinished NIP-09 deletion broadcasts persisted from a previous
@@ -146,7 +150,7 @@ export class App {
     import('./services/BroadcastDeleteService')
       .then(m => m.BroadcastDeleteService.getInstance().resumePending())
       .catch(err =>
-        console.warn('[App] BroadcastDeleteService resume failed:', err)
+        console.debug('[App] BroadcastDeleteService resume failed:', err)
       );
 
     const isOnline =
@@ -200,7 +204,7 @@ export class App {
       ),
     ]);
     if (authTimedOut) {
-      console.warn(
+      console.debug(
         '[App] Auth initialization timed out after 10s — continuing without session'
       );
     }

@@ -40,7 +40,7 @@ class CrashLoggerService {
       this.initialized = true;
       diagLog('crashes', 'CrashLogger initialized');
     } catch (err) {
-      console.warn('[CrashLogger] Could not initialize:', err);
+      console.debug('[CrashLogger] Could not initialize:', err);
     }
   }
 

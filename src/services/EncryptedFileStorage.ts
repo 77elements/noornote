@@ -168,7 +168,7 @@ export class EncryptedFileStorage {
       } catch (migrationErr) {
         // Migration failure is non-fatal — we still return the plaintext so the
         // user stays connected. Next load will retry migration.
-        console.warn(
+        console.debug(
           '[EncryptedFileStorage] Legacy migration re-encrypt failed:',
           migrationErr
         );
@@ -198,7 +198,7 @@ export class EncryptedFileStorage {
         await fsRemove(filePath);
       }
     } catch (error) {
-      console.warn('[EncryptedFileStorage] Failed to delete NWC file:', error);
+      console.debug('[EncryptedFileStorage] Failed to delete NWC file:', error);
     }
   }
 

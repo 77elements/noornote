@@ -221,7 +221,7 @@ export class NWCCryptoService {
       const b64 = await window.electronAPI!.readTextFile(path);
       return base64ToBytes(b64.trim());
     } catch (err) {
-      console.warn('[NWCCryptoService] readDesktopKey failed:', err);
+      console.debug('[NWCCryptoService] readDesktopKey failed:', err);
       return null;
     }
   }
@@ -329,7 +329,7 @@ export class NWCCryptoService {
         return null;
       }
     } catch (err) {
-      console.warn('[NWCCryptoService] readIndexedDBKey failed:', err);
+      console.debug('[NWCCryptoService] readIndexedDBKey failed:', err);
       return null;
     }
   }

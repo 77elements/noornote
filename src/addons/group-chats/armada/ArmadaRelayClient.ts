@@ -12,7 +12,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { finalizeEvent } from 'nostr-tools/pure';
+import { finalizeEvent } from '../../../services/NostrToolsAdapter';
 import { AuthService } from '../../../services/AuthService';
 import { diagLog } from '../../../services/DiagnosticLogger';
 import type { GroupKey } from './concordGroupKey';

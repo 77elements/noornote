@@ -44,7 +44,7 @@ export class LikeManager extends BaseInteractionManager<LikeManagerConfig> {
         this.updateButtonState(true);
       }
     } catch (error) {
-      console.warn('Failed to check liked status:', error);
+      console.debug('Failed to check liked status:', error);
     }
   }
 
@@ -104,7 +104,7 @@ export class LikeManager extends BaseInteractionManager<LikeManagerConfig> {
         void service.refreshFromRelays();
         customEmojis = service.getEmojis();
       } catch (err) {
-        console.warn('[LikeManager] Custom emoji load failed:', err);
+        console.debug('[LikeManager] Custom emoji load failed:', err);
       }
     }
 

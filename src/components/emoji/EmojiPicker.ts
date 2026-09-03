@@ -335,7 +335,7 @@ export class EmojiPicker {
         []
       );
     } catch (error) {
-      console.warn('Failed to load frequently used emojis:', error);
+      console.debug('Failed to load frequently used emojis:', error);
     }
   }
 

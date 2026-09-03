@@ -127,7 +127,7 @@ export class EmojiService {
       this.persistCache(event.created_at || now());
       this.eventBus.emit('emojis:updated', { emojis: this.emojis });
     } catch (err) {
-      console.warn('[EmojiService] refresh failed:', err);
+      console.debug('[EmojiService] refresh failed:', err);
     }
   }
 
@@ -201,7 +201,7 @@ export class EmojiService {
         })
         .filter(pack => pack.emojis.length > 0);
     } catch (err) {
-      console.warn('[EmojiService] fetchUserPacks failed:', err);
+      console.debug('[EmojiService] fetchUserPacks failed:', err);
       return [];
     }
   }

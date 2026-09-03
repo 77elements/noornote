@@ -873,7 +873,7 @@ export class NotificationItem {
           hideContext();
         }
       } catch (error) {
-        console.warn('Failed to fetch replied-to note:', error);
+        console.debug('Failed to fetch replied-to note:', error);
         hideContext();
       }
       return;
@@ -923,7 +923,7 @@ export class NotificationItem {
           return;
         }
       } catch (error) {
-        console.warn('Failed to fetch reposted note:', error);
+        console.debug('Failed to fetch reposted note:', error);
       }
     }
 
@@ -949,7 +949,7 @@ export class NotificationItem {
         previewElement.textContent = truncated;
       }
     } catch (error) {
-      console.warn('Failed to resolve quoted content in notification:', error);
+      console.debug('Failed to resolve quoted content in notification:', error);
       // Keep original preview on error
     }
   }
@@ -1161,7 +1161,7 @@ export class NotificationItem {
       // e-tag fetch failed or unknown kind — show short-id fallback
       setPreview(fallbackPreview);
     } catch (error) {
-      console.warn('Failed to fetch referenced note:', error);
+      console.debug('Failed to fetch referenced note:', error);
       setPreview(fallbackPreview);
     }
   }

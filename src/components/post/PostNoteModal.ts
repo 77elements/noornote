@@ -1087,7 +1087,7 @@ export class PostNoteModal {
             };
           }
         } catch (error) {
-          console.warn('Failed to decode quoted reference:', error);
+          console.debug('Failed to decode quoted reference:', error);
         }
       }
 
