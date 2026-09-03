@@ -19,16 +19,11 @@
  * @purpose Cross-device-synced preference for suppressing notifications
  */
 
-import { AuthService } from './AuthService';
-import { NostrTransport } from './transport/NostrTransport';
-import { OutboundRelaysOrchestrator } from './orchestration/OutboundRelaysOrchestrator';
-import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
-import { ToastService } from './ToastService';
+import { Nip78EncryptedListService } from './Nip78EncryptedListService';
+import { StorageKeys } from './PerAccountLocalStorage';
 import { TypedEventBus } from '../core/TypedEventBus';
 import { diagLog } from './DiagnosticLogger';
 
-const NIP78_KIND = 30078;
-const D_TAG = 'noornote:soft-mutes';
 const PUBLISH_DEBOUNCE_MS = 1500;
 
 export interface SoftMuteEntry {
@@ -37,11 +32,8 @@ export interface SoftMuteEntry {
 
 type SoftMuteMap = Record<string, SoftMuteEntry>;
 
-export class SoftMuteService {
+export class SoftMuteService extends Nip78EncryptedListService {
   private static instance: SoftMuteService | null = null;
-  private auth: AuthService;
-  private transport: NostrTransport;
-  private pals: PerAccountLocalStorage;
   private eventBus: TypedEventBus;
 
   /** In-memory cache mirror of the PerAccountLocalStorage map for O(1) lookups. */
@@ -50,10 +42,20 @@ export class SoftMuteService {
   /** Debounce timer for batching rapid toggles into one relay publish. */
   private publishTimer: ReturnType<typeof setTimeout> | null = null;
 
+  protected get dTag(): string {
+    return 'noornote:soft-mutes';
+  }
+
+  protected get logTag(): string {
+    return 'SoftMuteSvc';
+  }
+
+  protected override get diagTag(): string {
+    return 'SoftMuteService';
+  }
+
   private constructor() {
-    this.auth = AuthService.getInstance();
-    this.transport = NostrTransport.getInstance();
-    this.pals = PerAccountLocalStorage.getInstance();
+    super();
     this.eventBus = TypedEventBus.getInstance();
     this.loadCacheFromStorage();
 
@@ -170,65 +172,28 @@ export class SoftMuteService {
     const user = this.auth.getCurrentUser();
     if (!user) return;
 
-    try {
-      const relays =
-        await OutboundRelaysOrchestrator.getInstance().getCombinedRelays(
-          [user.pubkey],
-          true
-        );
-      if (relays.length === 0) return;
+    const remote = await this.fetchEncryptedMap();
+    if (!remote) return;
 
-      const events = await this.transport.fetch(
-        relays,
-        [
-          {
-            kinds: [NIP78_KIND as number],
-            authors: [user.pubkey],
-            '#d': [D_TAG],
-            limit: 1,
-          },
-        ],
-        5000,
-        false,
-        'SoftMuteSvc'
-      );
-
-      if (events.length === 0) return;
-
-      const event = events.sort((a, b) => b.created_at - a.created_at)[0];
-      if (!event?.content) return;
-
-      const plaintext = await this.auth.nip44Decrypt(
-        event.content,
-        user.pubkey
-      );
-      const remote = JSON.parse(plaintext) as Record<string, unknown>;
-      if (typeof remote !== 'object' || remote === null) return;
-
-      let changed = false;
-      for (const [pubkey, entry] of Object.entries(remote)) {
-        if (this.cache.has(pubkey)) continue;
-        if (
-          typeof entry === 'object' &&
-          entry !== null &&
-          typeof (entry as SoftMuteEntry).addedAt === 'number'
-        ) {
-          this.cache.set(pubkey, entry as SoftMuteEntry);
-          changed = true;
-        }
+    let changed = false;
+    for (const [pubkey, entry] of Object.entries(remote)) {
+      if (this.cache.has(pubkey)) continue;
+      if (
+        typeof entry === 'object' &&
+        entry !== null &&
+        typeof (entry as SoftMuteEntry).addedAt === 'number'
+      ) {
+        this.cache.set(pubkey, entry as SoftMuteEntry);
+        changed = true;
       }
-      if (changed) {
-        this.persistLocal();
-        this.eventBus.emit('soft-mute:updated');
-      }
-      diagLog('system', 'SoftMuteService synced from relays', {
-        count: this.cache.size,
-      });
-    } catch (error) {
-      diagLog('system', 'SoftMuteService sync failed', {
-        error: String(error),
-      });
     }
+    if (changed) {
+      this.persistLocal();
+      this.eventBus.emit('soft-mute:updated');
+    }
+    diagLog('system', 'SoftMuteService synced from relays', {
+      count: this.cache.size,
+    });
   }
 
   private schedulePublish(): void {
@@ -242,36 +207,6 @@ export class SoftMuteService {
   }
 
   private async publishToRelays(map: SoftMuteMap): Promise<void> {
-    const user = this.auth.getCurrentUser();
-    if (!user) return;
-
-    try {
-      const plaintext = JSON.stringify(map);
-      const encrypted = await this.auth.nip44Encrypt(plaintext, user.pubkey);
-
-      const unsigned = {
-        kind: NIP78_KIND,
-        created_at: Math.floor(Date.now() / 1000),
-        tags: [['d', D_TAG]],
-        content: encrypted,
-        pubkey: user.pubkey,
-      };
-
-      const signed = await this.auth.signEvent(unsigned);
-      if (!signed) {
-        ToastService.show('Signing failed', 'error');
-        return;
-      }
-
-      await this.transport.publishContent(signed);
-      diagLog('system', 'SoftMuteService published to relays', {
-        count: Object.keys(map).length,
-      });
-    } catch (error) {
-      diagLog('system', 'SoftMuteService publish failed', {
-        error: String(error),
-      });
-      ToastService.show('Failed to sync soft mute', 'error');
-    }
+    await this.publishEncryptedMap(map, 'Failed to sync soft mute');
   }
 }

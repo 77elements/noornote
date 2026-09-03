@@ -16,6 +16,10 @@ import { AppState } from '../../services/AppState';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import {
+  measureCursorCoordinates,
+  positionDropdownAtCaret,
+} from './autocompleteShared';
 
 export interface MentionSuggestion {
   pubkey: string;
@@ -284,13 +288,8 @@ export class MentionAutocomplete {
   private positionDropdown(): void {
     if (!this.textarea || !this.dropdown) return;
 
-    const textareaRect = this.textarea.getBoundingClientRect();
     const cursorCoords = this.getCursorCoordinates();
-
-    this.dropdown.style.position = 'fixed';
-    this.dropdown.style.left = `${textareaRect.left + cursorCoords.left}px`;
-    this.dropdown.style.top = `${textareaRect.top + cursorCoords.top + cursorCoords.height + 5}px`; // 5px spacing
-    this.dropdown.style.zIndex = '10000';
+    positionDropdownAtCaret(this.dropdown, this.textarea, cursorCoords);
   }
 
   /**
@@ -303,63 +302,7 @@ export class MentionAutocomplete {
     height: number;
   } {
     if (!this.textarea) return { left: 0, top: 0, height: 20 };
-
-    // Create mirror div with same styling as textarea
-    const mirror = document.createElement('div');
-    const computedStyle = window.getComputedStyle(this.textarea);
-
-    // Copy all relevant styles
-    [
-      'fontFamily',
-      'fontSize',
-      'fontWeight',
-      'fontStyle',
-      'letterSpacing',
-      'lineHeight',
-      'textTransform',
-      'wordSpacing',
-      'wordWrap',
-      'whiteSpace',
-      'padding',
-      'border',
-      'boxSizing',
-    ].forEach(prop => {
-      const value = computedStyle[prop as keyof CSSStyleDeclaration];
-      if (value !== undefined) {
-        mirror.style.setProperty(prop, value as string);
-      }
-    });
-
-    mirror.style.position = 'absolute';
-    mirror.style.visibility = 'hidden';
-    mirror.style.whiteSpace = 'pre-wrap';
-    mirror.style.wordWrap = 'break-word';
-    mirror.style.width = `${this.textarea.clientWidth}px`;
-    mirror.style.height = 'auto';
-
-    document.body.appendChild(mirror);
-
-    // Insert text up to @ position
-    const textUpToAt = this.textarea.value.substring(0, this.mentionStartPos);
-    mirror.textContent = textUpToAt;
-
-    // Create span for @ character to measure position
-    const atSpan = document.createElement('span');
-    atSpan.textContent = '@';
-    mirror.appendChild(atSpan);
-
-    // Get span position
-    const atRect = atSpan.getBoundingClientRect();
-    const mirrorRect = mirror.getBoundingClientRect();
-
-    const left = atRect.left - mirrorRect.left;
-    const top = atRect.top - mirrorRect.top;
-    const height = atRect.height;
-
-    // Cleanup
-    document.body.removeChild(mirror);
-
-    return { left, top, height };
+    return measureCursorCoordinates(this.textarea, this.mentionStartPos, '@');
   }
 
   /**

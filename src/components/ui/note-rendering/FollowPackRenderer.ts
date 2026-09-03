@@ -5,7 +5,6 @@
 
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { NoteHeader } from '../NoteHeader';
-import { InteractionStatusLine } from '../InteractionStatusLine';
 import { parseFollowPackEvent } from '../../../helpers/parseFollowPack';
 import {
   computeFollowPackDiffLines,
@@ -17,6 +16,11 @@ import { getAddressableIdentifier } from '../../../helpers/getAddressableIdentif
 import { encodeNaddr } from '../../../services/NostrToolsAdapter';
 import { getViewNavigationController } from '../../../services/ViewNavigationController';
 import { escapeHtml, escapeHtmlAttr } from '../../../helpers/escapeHtml';
+import {
+  appendPackHint,
+  appendPackISL,
+  buildPackHintLines,
+} from './packCardShared';
 
 export class FollowPackRenderer {
   static render(note: ProcessedNote, opts: NoteUIOptions): HTMLElement {
@@ -44,23 +48,16 @@ export class FollowPackRenderer {
     });
     element.appendChild(noteHeader.getElement());
 
-    const hintLines = buildHintLines(pack);
-    if (hintLines.length > 0) {
-      const hint = document.createElement('div');
-      hint.className = 'follow-pack-hint';
-      if (hintLines.length === 1) {
-        hint.textContent = hintLines[0]!;
-      } else {
-        const ul = document.createElement('ul');
-        hintLines.forEach(line => {
-          const li = document.createElement('li');
-          li.textContent = line;
-          ul.appendChild(li);
-        });
-        hint.appendChild(ul);
-      }
-      element.appendChild(hint);
-    }
+    appendPackHint(
+      element,
+      'follow-pack-hint',
+      buildPackHintLines(pack, 'Follow pack was updated', {
+        getSnapshot: getFollowPackSnapshot,
+        setSnapshot: setFollowPackSnapshot,
+        snapshotFrom: snapshotFromPack,
+        computeDiffLines: computeFollowPackDiffLines,
+      })
+    );
 
     const card = document.createElement('div');
     card.className = 'nn-card';
@@ -101,41 +98,8 @@ export class FollowPackRenderer {
 
     const addressableId = getAddressableIdentifier(event);
     const noteId = addressableId || event.id;
-    if (noteId) {
-      const isl = new InteractionStatusLine({
-        noteId,
-        authorPubkey: event.pubkey,
-        originalEvent: event,
-        fetchStats: opts.islFetchStats || false,
-        isLoggedIn: opts.isLoggedIn || false,
-        ...(event.id ? { articleEventId: event.id } : {}),
-      });
-      element.appendChild(isl.getElement());
-    }
+    if (noteId) appendPackISL(element, event, noteId, opts);
 
     return element;
   }
-}
-
-function buildHintLines(
-  pack: ReturnType<typeof parseFollowPackEvent>
-): string[] {
-  if (!pack.authorPubkey || !pack.id) return [];
-
-  const prev = getFollowPackSnapshot(pack.authorPubkey, pack.id);
-  const fallback = ['Follow pack was updated'];
-
-  if (!prev) {
-    setFollowPackSnapshot(pack.authorPubkey, pack.id, snapshotFromPack(pack));
-    return fallback;
-  }
-
-  if (pack.createdAt <= prev.createdAt) return prev.diffLines ?? [];
-
-  const diff = computeFollowPackDiffLines(prev, pack);
-  const lines = diff.length > 0 ? diff : fallback;
-  const snapshot = snapshotFromPack(pack);
-  snapshot.diffLines = lines;
-  setFollowPackSnapshot(pack.authorPubkey, pack.id, snapshot);
-  return lines;
 }

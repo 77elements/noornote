@@ -6,11 +6,7 @@
 
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { NoteHeader } from '../NoteHeader';
-import { InteractionStatusLine } from '../InteractionStatusLine';
-import {
-  parseEmojiPackEvent,
-  type EmojiPack,
-} from '../../../helpers/parseEmojiPack';
+import { parseEmojiPackEvent } from '../../../helpers/parseEmojiPack';
 import {
   computeEmojiPackDiffLines,
   getEmojiPackSnapshot,
@@ -24,6 +20,11 @@ import { AuthService } from '../../../services/AuthService';
 import { ToastService } from '../../../services/ToastService';
 import { escapeHtml, escapeHtmlAttr } from '../../../helpers/escapeHtml';
 import { isCustomEmojisEnabled } from '../../../addons/custom-emojis/index';
+import {
+  appendPackHint,
+  appendPackISL,
+  buildPackHintLines,
+} from './packCardShared';
 
 export class EmojiPackRenderer {
   static render(note: ProcessedNote, opts: NoteUIOptions): HTMLElement {
@@ -54,23 +55,16 @@ export class EmojiPackRenderer {
     element.appendChild(noteHeader.getElement());
 
     // What-changed sentence (vs the locally cached previous 30030 version).
-    const hintLines = buildHintLines(pack);
-    if (hintLines.length > 0) {
-      const hint = document.createElement('div');
-      hint.className = 'emoji-pack-hint';
-      if (hintLines.length === 1) {
-        hint.textContent = hintLines[0]!;
-      } else {
-        const ul = document.createElement('ul');
-        hintLines.forEach(line => {
-          const li = document.createElement('li');
-          li.textContent = line;
-          ul.appendChild(li);
-        });
-        hint.appendChild(ul);
-      }
-      element.appendChild(hint);
-    }
+    appendPackHint(
+      element,
+      'emoji-pack-hint',
+      buildPackHintLines(pack, 'Emoji set was updated', {
+        getSnapshot: getEmojiPackSnapshot,
+        setSnapshot: setEmojiPackSnapshot,
+        snapshotFrom: snapshotFromEmojiPack,
+        computeDiffLines: computeEmojiPackDiffLines,
+      })
+    );
 
     const card = document.createElement('div');
     card.className = 'nn-card nn-card--emoji-pack';
@@ -144,49 +138,8 @@ export class EmojiPackRenderer {
 
     const addressableId = getAddressableIdentifier(event);
     const noteId = addressableId || event.id;
-    if (noteId) {
-      const isl = new InteractionStatusLine({
-        noteId,
-        authorPubkey: event.pubkey,
-        originalEvent: event,
-        fetchStats: opts.islFetchStats || false,
-        isLoggedIn: opts.isLoggedIn || false,
-        ...(event.id ? { articleEventId: event.id } : {}),
-      });
-      element.appendChild(isl.getElement());
-    }
+    if (noteId) appendPackISL(element, event, noteId, opts);
 
     return element;
   }
-}
-
-/**
- * Build the change-description lines for an emoji set, diffing against the
- * locally cached previous version. First encounter falls back to a generic
- * "Emoji set was updated"; same-or-older versions reuse the cached lines.
- * Mirrors FollowPackRenderer.buildHintLines.
- */
-function buildHintLines(pack: EmojiPack): string[] {
-  if (!pack.authorPubkey || !pack.id) return [];
-
-  const prev = getEmojiPackSnapshot(pack.authorPubkey, pack.id);
-  const fallback = ['Emoji set was updated'];
-
-  if (!prev) {
-    setEmojiPackSnapshot(
-      pack.authorPubkey,
-      pack.id,
-      snapshotFromEmojiPack(pack)
-    );
-    return fallback;
-  }
-
-  if (pack.createdAt <= prev.createdAt) return prev.diffLines ?? [];
-
-  const diff = computeEmojiPackDiffLines(prev, pack);
-  const lines = diff.length > 0 ? diff : fallback;
-  const snapshot = snapshotFromEmojiPack(pack);
-  snapshot.diffLines = lines;
-  setEmojiPackSnapshot(pack.authorPubkey, pack.id, snapshot);
-  return lines;
 }

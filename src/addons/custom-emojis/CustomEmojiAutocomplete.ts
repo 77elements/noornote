@@ -13,6 +13,10 @@
 
 import { EmojiService, type PersonalEmoji } from './EmojiService';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import {
+  measureCursorCoordinates,
+  positionDropdownAtCaret,
+} from '../../components/mentions/autocompleteShared';
 
 export interface CustomEmojiAutocompleteOptions {
   textareaSelector: string;
@@ -227,13 +231,8 @@ export class CustomEmojiAutocomplete {
   private positionDropdown(textarea: HTMLTextAreaElement): void {
     if (!this.dropdown) return;
 
-    const textareaRect = textarea.getBoundingClientRect();
     const cursorCoords = this.getCursorCoordinates(textarea);
-
-    this.dropdown.style.position = 'fixed';
-    this.dropdown.style.left = `${textareaRect.left + cursorCoords.left}px`;
-    this.dropdown.style.top = `${textareaRect.top + cursorCoords.top + cursorCoords.height + 5}px`;
-    this.dropdown.style.zIndex = '10000';
+    positionDropdownAtCaret(this.dropdown, textarea, cursorCoords);
   }
 
   private getCursorCoordinates(textarea: HTMLTextAreaElement): {
@@ -241,56 +240,7 @@ export class CustomEmojiAutocomplete {
     top: number;
     height: number;
   } {
-    const mirror = document.createElement('div');
-    const computedStyle = window.getComputedStyle(textarea);
-
-    [
-      'fontFamily',
-      'fontSize',
-      'fontWeight',
-      'fontStyle',
-      'letterSpacing',
-      'lineHeight',
-      'textTransform',
-      'wordSpacing',
-      'wordWrap',
-      'whiteSpace',
-      'padding',
-      'border',
-      'boxSizing',
-    ].forEach(prop => {
-      const value = computedStyle[prop as keyof CSSStyleDeclaration];
-      if (value !== undefined) {
-        mirror.style.setProperty(prop, value as string);
-      }
-    });
-
-    mirror.style.position = 'absolute';
-    mirror.style.visibility = 'hidden';
-    mirror.style.whiteSpace = 'pre-wrap';
-    mirror.style.wordWrap = 'break-word';
-    mirror.style.width = `${textarea.clientWidth}px`;
-    mirror.style.height = 'auto';
-
-    document.body.appendChild(mirror);
-
-    const textUpToTrigger = textarea.value.substring(0, this.triggerStartPos);
-    mirror.textContent = textUpToTrigger;
-
-    const triggerSpan = document.createElement('span');
-    triggerSpan.textContent = ':';
-    mirror.appendChild(triggerSpan);
-
-    const triggerRect = triggerSpan.getBoundingClientRect();
-    const mirrorRect = mirror.getBoundingClientRect();
-
-    const left = triggerRect.left - mirrorRect.left;
-    const top = triggerRect.top - mirrorRect.top;
-    const height = triggerRect.height;
-
-    document.body.removeChild(mirror);
-
-    return { left, top, height };
+    return measureCursorCoordinates(textarea, this.triggerStartPos, ':');
   }
 
   // ── Insert + cleanup ────────────────────────────────────────────

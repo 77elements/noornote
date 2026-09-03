@@ -6,21 +6,12 @@
  * d-tag: "noornote-petnames".
  */
 
-import { AuthService } from './AuthService';
-import { NostrTransport } from './transport/NostrTransport';
-import { OutboundRelaysOrchestrator } from './orchestration/OutboundRelaysOrchestrator';
-import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
-import { ToastService } from './ToastService';
+import { Nip78EncryptedListService } from './Nip78EncryptedListService';
+import { StorageKeys } from './PerAccountLocalStorage';
 import { diagLog } from './DiagnosticLogger';
 
-const NIP78_KIND = 30078;
-const D_TAG = 'noornote-petnames';
-
-export class PetnameService {
+export class PetnameService extends Nip78EncryptedListService {
   private static instance: PetnameService | null = null;
-  private auth: AuthService;
-  private transport: NostrTransport;
-  private pals: PerAccountLocalStorage;
 
   // In-memory mirror of the PETNAMES map so per-note lookups (avatar rings)
   // never trigger a JSON.parse per call. Keyed to the owning pubkey so an
@@ -28,10 +19,20 @@ export class PetnameService {
   private cachedMap: Record<string, string> | null = null;
   private cachedOwnerPubkey: string | null = null;
 
+  protected get dTag(): string {
+    return 'noornote-petnames';
+  }
+
+  protected get logTag(): string {
+    return 'PetnameSvc';
+  }
+
+  protected override get diagTag(): string {
+    return 'PetnameService';
+  }
+
   private constructor() {
-    this.auth = AuthService.getInstance();
-    this.transport = NostrTransport.getInstance();
-    this.pals = PerAccountLocalStorage.getInstance();
+    super();
   }
 
   public static getInstance(): PetnameService {
@@ -91,50 +92,15 @@ export class PetnameService {
     const user = this.auth.getCurrentUser();
     if (!user) return;
 
-    try {
-      const relays =
-        await OutboundRelaysOrchestrator.getInstance().getCombinedRelays(
-          [user.pubkey],
-          true
-        );
-      if (relays.length === 0) return;
+    const map = await this.fetchEncryptedMap();
+    if (!map) return;
 
-      const events = await this.transport.fetch(
-        relays,
-        [
-          {
-            kinds: [NIP78_KIND as number],
-            authors: [user.pubkey],
-            '#d': [D_TAG],
-            limit: 1,
-          },
-        ],
-        5000,
-        false,
-        'PetnameSvc'
-      );
-
-      if (events.length === 0) return;
-
-      const event = events.sort((a, b) => b.created_at - a.created_at)[0];
-      if (!event?.content) return;
-
-      const plaintext = await this.auth.nip44Decrypt(
-        event.content,
-        user.pubkey
-      );
-      const map = JSON.parse(plaintext) as Record<string, string>;
-      if (typeof map === 'object' && map !== null) {
-        this.pals.set(StorageKeys.PETNAMES, map);
-        this.cachedMap = map;
-        this.cachedOwnerPubkey = user.pubkey;
-        diagLog('system', 'PetnameService synced from relays', {
-          count: Object.keys(map).length,
-        });
-      }
-    } catch (error) {
-      diagLog('system', 'PetnameService sync failed', { error: String(error) });
-    }
+    this.pals.set(StorageKeys.PETNAMES, map as Record<string, string>);
+    this.cachedMap = map as Record<string, string>;
+    this.cachedOwnerPubkey = user.pubkey;
+    diagLog('system', 'PetnameService synced from relays', {
+      count: Object.keys(map).length,
+    });
   }
 
   /**
@@ -153,36 +119,6 @@ export class PetnameService {
   }
 
   private async publishToRelays(map: Record<string, string>): Promise<void> {
-    const user = this.auth.getCurrentUser();
-    if (!user) return;
-
-    try {
-      const plaintext = JSON.stringify(map);
-      const encrypted = await this.auth.nip44Encrypt(plaintext, user.pubkey);
-
-      const unsigned = {
-        kind: NIP78_KIND,
-        created_at: Math.floor(Date.now() / 1000),
-        tags: [['d', D_TAG]],
-        content: encrypted,
-        pubkey: user.pubkey,
-      };
-
-      const signed = await this.auth.signEvent(unsigned);
-      if (!signed) {
-        ToastService.show('Signing failed', 'error');
-        return;
-      }
-
-      await this.transport.publishContent(signed);
-      diagLog('system', 'PetnameService published to relays', {
-        count: Object.keys(map).length,
-      });
-    } catch (error) {
-      diagLog('system', 'PetnameService publish failed', {
-        error: String(error),
-      });
-      ToastService.show('Failed to save petname', 'error');
-    }
+    await this.publishEncryptedMap(map, 'Failed to save petname');
   }
 }
