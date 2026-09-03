@@ -24,7 +24,6 @@ import {
   StorageKeys,
 } from '../../../services/PerAccountLocalStorage';
 import { ModuleLoader } from '../../../core/ModuleLoader';
-import { OutboundRelaysOrchestrator } from '../../../services/orchestration/OutboundRelaysOrchestrator';
 import type { PostsModuleApi } from '../../../modules/posts/contracts';
 
 // Component lifecycle is tied to the DOM node, never the note id: a card is
@@ -185,9 +184,9 @@ export class NoteStructureBuilder {
       note.reposter.pubkey !== note.author.pubkey
     ) {
       authorRelayHints =
-        OutboundRelaysOrchestrator.getInstance().getCachedWriteRelays(
-          note.reposter.pubkey
-        );
+        ModuleLoader.getInstance()
+          .getApi<PostsModuleApi>('posts')
+          ?.getCachedWriteRelays(note.reposter.pubkey) ?? [];
     }
 
     const noteHeader = new NoteHeader({

@@ -33,7 +33,7 @@ import {
 import { ContentProcessor } from '../../services/ContentProcessor';
 import { QuotedNoteRenderer } from '../ui/note-rendering/QuotedNoteRenderer';
 import { ArticlePreviewRenderer } from '../ui/note-rendering/ArticlePreviewRenderer';
-import { ProfileCarouselOrchestrator } from '../../services/orchestration/ProfileCarouselOrchestrator';
+import type { ProfileModuleApi } from '../../modules/profile/contracts';
 import { diagLog } from '../../services/DiagnosticLogger';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -375,10 +375,12 @@ export class ArticleView extends View {
     currentEvent: NostrEvent & { id: string }
   ): Promise<void> {
     try {
-      const content =
-        await ProfileCarouselOrchestrator.getInstance().fetchProfileContent(
-          currentEvent.pubkey
-        );
+      const profileApi =
+        ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
+      const content = await profileApi?.fetchCarouselContent(
+        currentEvent.pubkey
+      );
+      if (!content) return;
 
       // Bail if the view was destroyed while fetching
       if (!section.isConnected) return;

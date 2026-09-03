@@ -11,6 +11,11 @@
  * - kind:13 = Seal (encrypted rumor, signed by sender)
  * - kind:1059 = Gift Wrap (encrypted seal, signed by ephemeral key)
  * - kind:10050 = DM Relay List (user's preferred DM relays)
+ *
+ * Documented NDK exception: imports NDKPrivateKeySigner directly. Gift wraps
+ * are signed by EPHEMERAL keys (never the user's identity key), which is NDK
+ * signer machinery, not event transport — it does not belong behind
+ * NostrTransport. Do NOT extend this exception to other NDK usage.
  */
 
 import {

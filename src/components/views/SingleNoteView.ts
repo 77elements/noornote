@@ -8,7 +8,7 @@ import { View } from './View';
 import { NoteUI } from '../ui/NoteUI';
 import { ThreadManager } from './managers/ThreadManager';
 import { LiveUpdatesManager } from './managers/LiveUpdatesManager';
-import { fetchNostrEvents } from '../../helpers/fetchNostrEvents';
+import { fetchNostrEvents } from '../../services/FetchNostrEvents';
 import { RelayConfig } from '../../services/RelayConfig';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { SingleNoteModuleApi } from '../../modules/single-note/contracts';

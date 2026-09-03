@@ -20,6 +20,15 @@ export class ProfileRuntime implements ModuleRuntime<ProfileModuleApi> {
   private searchOrchestrator:
     | import('../../services/orchestration/ProfileSearchOrchestrator').ProfileSearchOrchestrator
     | null = null;
+  private carouselOrchestrator:
+    | import('../../services/orchestration/ProfileCarouselOrchestrator').ProfileCarouselOrchestrator
+    | null = null;
+  private transport:
+    | import('../../services/transport/NostrTransport').NostrTransport
+    | null = null;
+  private badgeOrchestrator:
+    | import('../../services/orchestration/BadgeOrchestrator').BadgeOrchestrator
+    | null = null;
 
   async init(_ctx: ModuleContext): Promise<void> {
     const [
@@ -29,6 +38,9 @@ export class ProfileRuntime implements ModuleRuntime<ProfileModuleApi> {
       mountsMod,
       mountsOrchMod,
       searchMod,
+      carouselMod,
+      transportMod,
+      badgeMod,
     ] = await Promise.all([
       import('../../services/orchestration/ProfileOrchestrator'),
       import('../../services/ProfileEditorService'),
@@ -36,6 +48,9 @@ export class ProfileRuntime implements ModuleRuntime<ProfileModuleApi> {
       import('../../services/ProfileMountsService'),
       import('../../services/orchestration/ProfileMountsOrchestrator'),
       import('../../services/orchestration/ProfileSearchOrchestrator'),
+      import('../../services/orchestration/ProfileCarouselOrchestrator'),
+      import('../../services/transport/NostrTransport'),
+      import('../../services/orchestration/BadgeOrchestrator'),
     ]);
     this.orchestrator = orchMod.ProfileOrchestrator.getInstance();
     this.editorService = editorMod.ProfileEditorService.getInstance();
@@ -44,6 +59,10 @@ export class ProfileRuntime implements ModuleRuntime<ProfileModuleApi> {
     this.mountsOrchestrator =
       mountsOrchMod.ProfileMountsOrchestrator.getInstance();
     this.searchOrchestrator = searchMod.ProfileSearchOrchestrator.getInstance();
+    this.carouselOrchestrator =
+      carouselMod.ProfileCarouselOrchestrator.getInstance();
+    this.transport = transportMod.NostrTransport.getInstance();
+    this.badgeOrchestrator = badgeMod.BadgeOrchestrator.getInstance();
   }
 
   async destroy(): Promise<void> {
@@ -53,6 +72,9 @@ export class ProfileRuntime implements ModuleRuntime<ProfileModuleApi> {
     this.mountsService = null;
     this.mountsOrchestrator = null;
     this.searchOrchestrator = null;
+    this.carouselOrchestrator = null;
+    this.transport = null;
+    this.badgeOrchestrator = null;
   }
 
   getApi(): ProfileModuleApi {
@@ -62,6 +84,9 @@ export class ProfileRuntime implements ModuleRuntime<ProfileModuleApi> {
     const ms = this.mountsService;
     const mo = this.mountsOrchestrator;
     const so = this.searchOrchestrator;
+    const co = this.carouselOrchestrator;
+    const tp = this.transport;
+    const bo = this.badgeOrchestrator;
     return {
       fetchProfile: pubkey =>
         orch?.fetchProfile(pubkey) ?? Promise.resolve(null),
@@ -95,6 +120,47 @@ export class ProfileRuntime implements ModuleRuntime<ProfileModuleApi> {
           totalNotes: 0,
           dateRange: { start: 'N/A', end: 'N/A' },
         }),
+      fetchCarouselContent: pubkey =>
+        co?.fetchProfileContent(pubkey) ??
+        Promise.resolve({
+          articles: [],
+          videos: [],
+          listings: [],
+          deletions: [],
+          hintRelays: [],
+        }),
+      invalidateCarouselCacheForCurrentUser: () =>
+        co?.invalidateForCurrentUser(),
+      fetchAddressableEvents: async (addresses, timeoutMs) => {
+        if (!tp || addresses.length === 0) return [];
+        const readRelays = tp.getReadRelays();
+        if (readRelays.length === 0) return [];
+        const filters = addresses.map(addr => {
+          const parts = addr.split(':');
+          return {
+            kinds: [parseInt(parts[0]!)],
+            authors: [parts[1]!],
+            '#d': [parts.slice(2).join(':')],
+          };
+        });
+        try {
+          return await tp.fetch(
+            readRelays,
+            filters,
+            timeoutMs ?? 5000,
+            false,
+            'PLC-Listings'
+          );
+        } catch {
+          return [];
+        }
+      },
+      fetchProfileBadgeEvents: pubkey =>
+        bo?.fetchProfileBadgeEvents(pubkey) ?? Promise.resolve([]),
+      fetchBadgeDefinition: coordinate =>
+        bo?.fetchBadgeDefinition(coordinate) ?? Promise.resolve(null),
+      fetchBadgeDefinitions: coordinates =>
+        bo?.fetchBadgeDefinitions(coordinates) ?? Promise.resolve(new Map()),
     };
   }
 }

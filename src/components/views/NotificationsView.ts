@@ -4,10 +4,9 @@
  */
 
 import { View } from './View';
-import {
-  NotificationsOrchestrator,
-  type NotificationType,
-  type NotificationEvent,
+import type {
+  NotificationType,
+  NotificationEvent,
 } from '../../services/orchestration/NotificationsOrchestrator';
 import {
   NotificationItem,
@@ -25,7 +24,6 @@ type TabType = 'all' | 'mentions' | 'reactions' | 'zaps' | 'replies';
 
 export class NotificationsView extends View {
   private container: HTMLElement;
-  private notificationsOrch: NotificationsOrchestrator;
   private userProfileService: UserProfileService;
   private eventBus: TypedEventBus;
   private systemLogger: SystemLogger;
@@ -51,7 +49,6 @@ export class NotificationsView extends View {
 
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--notifications';
-    this.notificationsOrch = NotificationsOrchestrator.getInstance();
     this.userProfileService = UserProfileService.getInstance();
     this.eventBus = TypedEventBus.getInstance();
     this.systemLogger = SystemLogger.getInstance();
@@ -71,8 +68,8 @@ export class NotificationsView extends View {
     // Load cached notifications first (instant), then fetch new ones
     void this.loadFromCacheAndFetch();
 
-    // Listen for real-time updates (includes hashtag notifications via NotificationsOrchestrator)
-    this.notificationsOrch.onNewNotification(notification => {
+    // Listen for real-time updates (includes hashtag notifications via the notifications module)
+    this.notificationsApi?.onNewNotification(notification => {
       void this.handleNewNotification(notification);
     });
 
@@ -95,9 +92,9 @@ export class NotificationsView extends View {
         );
         if (
           showingEmpty &&
-          this.notificationsOrch.getNotificationCount(
+          (this.notificationsApi?.getNotificationCount(
             this.getNotificationTypeFromTab()
-          ) > 0
+          ) ?? 0) > 0
         ) {
           this.resetAndReload();
         }
@@ -168,7 +165,7 @@ export class NotificationsView extends View {
 
     if (cachedNotifications.length > 0) {
       // Feed cached events into NotificationsOrchestrator
-      this.notificationsOrch.addCachedNotifications(cachedNotifications);
+      this.notificationsApi?.addCachedNotifications(cachedNotifications);
 
       // Render first batch from cache
       await this.loadNotificationsBatch();
@@ -186,11 +183,11 @@ export class NotificationsView extends View {
     const lastFetch = this.notificationsApi?.getLastFetch() ?? 0;
     if (lastFetch > 0) {
       // Fetch only new notifications
-      await this.notificationsOrch.fetchNewNotifications(lastFetch);
+      await this.notificationsApi?.fetchNewNotifications(lastFetch);
 
       // Get all current notifications and update cache
       const allNotifications =
-        this.notificationsOrch.getAllNotificationEvents();
+        this.notificationsApi?.getAllNotificationEvents() ?? [];
       this.notificationsApi?.addNotifications(allNotifications);
 
       // Log if new notifications arrived (but don't re-render - they're already in orchestrator)
@@ -206,7 +203,7 @@ export class NotificationsView extends View {
     } else {
       // First time - cache what we just fetched
       const allNotifications =
-        this.notificationsOrch.getAllNotificationEvents();
+        this.notificationsApi?.getAllNotificationEvents() ?? [];
       this.notificationsApi?.addNotifications(allNotifications);
     }
 
@@ -238,11 +235,12 @@ export class NotificationsView extends View {
 
     // Get notifications batch from memory
     const notificationType = this.getNotificationTypeFromTab();
-    let notifications = this.notificationsOrch.getNotifications(
-      notificationType,
-      this.currentOffset,
-      this.BATCH_SIZE
-    );
+    let notifications =
+      this.notificationsApi?.getNotifications(
+        notificationType,
+        this.currentOffset,
+        this.BATCH_SIZE
+      ) ?? [];
 
     // If no notifications in memory AND we haven't loaded everything, fetch older from relays
     if (notifications.length === 0 && this.hasMoreNotifications) {
@@ -254,23 +252,24 @@ export class NotificationsView extends View {
       }
 
       // Get oldest timestamp from current notifications
-      const allNotifications = this.notificationsOrch.getNotifications();
+      const allNotifications = this.notificationsApi?.getNotifications() ?? [];
       const oldestNotification = allNotifications[allNotifications.length - 1];
       if (oldestNotification) {
         const oldestTimestamp = oldestNotification.timestamp;
 
         // Fetch older notifications from relays
-        await this.notificationsOrch.fetchOlderNotifications(
+        await this.notificationsApi?.fetchOlderNotifications(
           oldestTimestamp,
           this.BATCH_SIZE
         );
 
         // Now try getting from memory again
-        notifications = this.notificationsOrch.getNotifications(
-          notificationType,
-          this.currentOffset,
-          this.BATCH_SIZE
-        );
+        notifications =
+          this.notificationsApi?.getNotifications(
+            notificationType,
+            this.currentOffset,
+            this.BATCH_SIZE
+          ) ?? [];
       } else {
         // No notifications at all (first load returned nothing)
         this.hasMoreNotifications = false;
@@ -279,7 +278,7 @@ export class NotificationsView extends View {
 
     // Check if we have more notifications
     const totalCount =
-      this.notificationsOrch.getNotificationCount(notificationType);
+      this.notificationsApi?.getNotificationCount(notificationType) ?? 0;
     this.hasMoreNotifications =
       this.currentOffset + notifications.length < totalCount;
 
@@ -455,7 +454,8 @@ export class NotificationsView extends View {
     notification: NotificationEvent
   ): Promise<void> {
     // Update cache with new notification
-    const allNotifications = this.notificationsOrch.getAllNotificationEvents();
+    const allNotifications =
+      this.notificationsApi?.getAllNotificationEvents() ?? [];
     this.notificationsApi?.addNotifications(allNotifications);
 
     // Only add if current tab matches (or "all" tab is active)
@@ -512,6 +512,6 @@ export class NotificationsView extends View {
    * Save state (mark as read when navigating away)
    */
   public override saveState(): void {
-    this.notificationsOrch.markAsRead();
+    this.notificationsApi?.markAsRead();
   }
 }

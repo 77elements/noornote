@@ -69,6 +69,8 @@ export class SingleNoteRuntime implements ModuleRuntime<SingleNoteModuleApi> {
         orch?.startLiveReplies(noteId, callback),
       stopLiveReplies: noteId => orch?.stopLiveReplies(noteId),
       clearCache: noteId => orch?.clearCache(noteId),
+      waitForReplyOnRelays: (replyId, onConfirmed) =>
+        orch?.waitForReplyOnRelays(replyId, onConfirmed) ?? Promise.resolve(),
       fetchParentAuthor: (parentEventId, relayHint) =>
         pnf?.fetchParentAuthor(parentEventId, relayHint) ??
         Promise.resolve(null),

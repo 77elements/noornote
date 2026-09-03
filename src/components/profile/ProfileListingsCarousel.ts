@@ -12,8 +12,8 @@
  * @used-by ProfileView
  */
 
-import { NostrTransport } from '../../services/transport/NostrTransport';
-import { ProfileCarouselOrchestrator } from '../../services/orchestration/ProfileCarouselOrchestrator';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { ProfileModuleApi } from '../../modules/profile/contracts';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
 import {
@@ -38,12 +38,19 @@ export class ProfileListingsCarousel {
   private element: HTMLElement;
   private pubkey: string;
   private listings: ListingCardData[] = [];
-  private transport: NostrTransport;
+  private _profileApi: ProfileModuleApi | null = null;
+  private get profileApi(): ProfileModuleApi {
+    const api = (this._profileApi ??=
+      ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile'));
+    if (!api) {
+      throw new Error('Profile module API not available');
+    }
+    return api;
+  }
   private carousel: ScrollCarouselInstance | null = null;
 
   constructor(pubkey: string) {
     this.pubkey = pubkey;
-    this.transport = NostrTransport.getInstance();
     this.element = document.createElement('div');
     this.element.className = 'profile-listings-carousel';
   }
@@ -61,18 +68,14 @@ export class ProfileListingsCarousel {
   }
 
   private async fetchListings(): Promise<void> {
-    const relays = this.transport.getReadRelays();
-
     try {
-      // Shared fetch (read + outbound relays) via the carousel orchestrator,
+      // Shared fetch (read + outbound relays) via the profile module,
       // reusing the same cached round-trip as the articles/videos carousels.
       // It also returns this author's kind:5 deletions for the tombstone filter.
-      const content =
-        await ProfileCarouselOrchestrator.getInstance().fetchProfileContent(
-          this.pubkey
-        );
+      const content = await this.profileApi.fetchCarouselContent(this.pubkey);
       const rawEvents = content.listings;
       const deletionEvents = content.deletions;
+      const hintRelays = content.hintRelays;
 
       const deletedCoordinates = new Map<string, number>();
       const prefix = `30402:${this.pubkey}:`;
@@ -115,7 +118,7 @@ export class ProfileListingsCarousel {
           kind: 30402,
           pubkey: event.pubkey,
           identifier: metadata.identifier,
-          relays: relays.slice(0, 2),
+          relays: hintRelays,
         });
         return { event, metadata, naddr };
       });

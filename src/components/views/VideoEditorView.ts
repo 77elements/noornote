@@ -21,12 +21,12 @@ import { RelayConfig } from '../../services/RelayConfig';
 import { AuthGuard } from '../../services/AuthGuard';
 import { loadEditorRelayConfig } from '../../helpers/editorRelayConfig';
 import { insertTextAtCursor } from '../../helpers/insertTextAtCursor';
-import { ProfileCarouselOrchestrator } from '../../services/orchestration/ProfileCarouselOrchestrator';
 import { SystemLogger } from '../../services/SystemLogger';
 import { RelaySelector } from '../post/RelaySelector';
 import { PostEditorToolbar } from '../post/PostEditorToolbar';
 import { setupPasteUpload } from '../../helpers/pasteUpload';
 import { ModuleLoader } from '../../core/ModuleLoader';
+import type { ProfileModuleApi } from '../../modules/profile/contracts';
 import { ToastService } from '../../services/ToastService';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 
@@ -598,7 +598,9 @@ export class VideoEditorView extends View {
       const nevent = (await this.mediaApi?.publishVideo(videoData)) ?? null;
 
       if (nevent) {
-        ProfileCarouselOrchestrator.getInstance().invalidateForCurrentUser();
+        ModuleLoader.getInstance()
+          .getApi<ProfileModuleApi>('profile')
+          ?.invalidateCarouselCacheForCurrentUser();
         this.router.navigate('/');
       }
     } finally {

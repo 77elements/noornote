@@ -18,6 +18,7 @@ import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
 import { OutboundRelaysOrchestrator } from './OutboundRelaysOrchestrator';
+import { RelayConfig } from '../RelayConfig';
 import { MuteOrchestrator } from '../../lists/mutes';
 import { NoteService } from '../NoteService';
 import { AuthService } from '../AuthService';
@@ -254,6 +255,67 @@ export class ThreadOrchestrator extends Orchestrator {
     }
     const tags = event.tags.filter(tag => tag[0] === 'e' && tag[1] === noteId);
     return tags.length > 0;
+  }
+
+  /**
+   * Subscribe to the user's write relays for a specific reply event id and
+   * call onConfirmed once at least one relay serves it (publish-ACK proxy).
+   * Falls back to confirming after 5 seconds regardless. Idempotent: the
+   * callback fires at most once.
+   */
+  public async waitForReplyOnRelays(
+    replyId: string,
+    onConfirmed: () => void
+  ): Promise<void> {
+    let confirmed = false;
+    const confirmOnce = () => {
+      if (confirmed) return;
+      confirmed = true;
+      onConfirmed();
+    };
+
+    const writeRelays = RelayConfig.getInstance().getWriteRelays();
+    if (writeRelays.length === 0) {
+      // No write relays configured, assume confirmed
+      confirmOnce();
+      return;
+    }
+
+    this.systemLogger.info(
+      this.LOG_TAG,
+      `🔍 Waiting for reply confirmation: ${replyId.slice(0, 8)}`
+    );
+
+    const sub = await this.transport.subscribe(
+      writeRelays,
+      [{ ids: [replyId] }],
+      {
+        onEvent: event => {
+          if (event.id === replyId) {
+            this.systemLogger.info(
+              this.LOG_TAG,
+              `✓ Reply confirmed on relay: ${replyId.slice(0, 8)}`
+            );
+            confirmOnce();
+            sub.close();
+          }
+        },
+      }
+    );
+
+    // Fallback: confirm anyway after 5 seconds
+    setTimeout(() => {
+      if (confirmed) {
+        sub.close();
+        return;
+      }
+      this.systemLogger.warn(
+        this.LOG_TAG,
+        `⏱️ Reply confirmation timeout, assuming success: ${replyId.slice(0, 8)}`
+      );
+      confirmOnce();
+      sub.close();
+    }, 5000);
   }
 
   public async fetchParentChain(noteId: string): Promise<ThreadContext> {

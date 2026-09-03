@@ -12,6 +12,8 @@ import { NoteStructureBuilder } from './NoteStructureBuilder';
 import { UserProfileService } from '../../../services/UserProfileService';
 import { hexToNpub } from '../../../helpers/nip19';
 import { escapeHtml, escapeHtmlAttr } from '../../../helpers/escapeHtml';
+import { ModuleLoader } from '../../../core/ModuleLoader';
+import type { ProfileModuleApi } from '../../../modules/profile/contracts';
 
 export class BadgeAwardRenderer {
   static render(note: ProcessedNote, opts: NoteUIOptions): HTMLElement {
@@ -88,10 +90,9 @@ export class BadgeAwardRenderer {
     coordinate: string
   ): void {
     if (!coordinate) return;
-    import('../../../services/orchestration/BadgeOrchestrator')
-      .then(({ BadgeOrchestrator }) =>
-        BadgeOrchestrator.getInstance().fetchBadgeDefinition(coordinate)
-      )
+    ModuleLoader.getInstance()
+      .getApi<ProfileModuleApi>('profile')
+      ?.fetchBadgeDefinition(coordinate)
       .then(def => {
         if (!def) return;
         const nameEl = container.querySelector('.badge-award__name');

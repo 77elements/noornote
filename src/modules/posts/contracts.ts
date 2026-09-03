@@ -35,6 +35,10 @@ export interface PostsModuleApi {
   registerNotes(events: NostrEvent[]): void;
   hasNote(eventId: string): boolean;
 
+  /** Cache-only NIP-65 write relays for a pubkey ([] when undiscovered) —
+   *  used as relay hints when rendering reposted notes' author profiles. */
+  getCachedWriteRelays(pubkey: string): string[];
+
   // RepostService
   hasUserReposted(noteId: string): Promise<boolean>;
   publishRepost(

@@ -12,10 +12,8 @@
 import { ModuleLoader } from '../../../core/ModuleLoader';
 import type { SingleNoteModuleApi } from '../../../modules/single-note/contracts';
 import type { ReactionsModuleApi } from '../../../modules/reactions/contracts';
-import { RelayConfig } from '../../../services/RelayConfig';
 import { SystemLogger } from '../../../services/SystemLogger';
 import { TypedEventBus } from '../../../core/TypedEventBus';
-import { NostrTransport } from '../../../services/transport/NostrTransport';
 import { Router } from '../../../services/Router';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { InteractionStats } from '../../../services/InteractionStatsService';
@@ -42,10 +40,8 @@ export class LiveUpdatesManager {
     return (this._reactionsApi ??=
       ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
   }
-  private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
   private eventBus: TypedEventBus;
-  private transport: NostrTransport;
   private router: Router;
 
   private zapAddedUnsubscribe?: string;
@@ -55,10 +51,8 @@ export class LiveUpdatesManager {
 
   constructor(config: LiveUpdatesConfig) {
     this.config = config;
-    this.relayConfig = RelayConfig.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.eventBus = TypedEventBus.getInstance();
-    this.transport = NostrTransport.getInstance();
     this.router = Router.getInstance();
   }
 
@@ -194,46 +188,12 @@ export class LiveUpdatesManager {
     replyId: string,
     onConfirmed: () => void
   ): Promise<void> {
-    const writeRelays = this.relayConfig.getWriteRelays();
-
-    if (writeRelays.length === 0) {
-      // No write relays configured, assume confirmed
-      onConfirmed();
-      return;
-    }
-
     this.systemLogger.info(
       'LiveUpdatesManager',
       `🔍 Subscribing for reply confirmation: ${replyId.slice(0, 8)}`
     );
 
-    // Subscribe to write relays with a filter for this specific event
-    const sub = await this.transport.subscribe(
-      writeRelays,
-      [{ ids: [replyId] }],
-      {
-        onEvent: event => {
-          if (event.id === replyId) {
-            this.systemLogger.info(
-              'LiveUpdatesManager',
-              `✓ Reply confirmed on relay: ${replyId.slice(0, 8)}`
-            );
-            onConfirmed();
-            sub.close(); // Unsubscribe after confirmation
-          }
-        },
-      }
-    );
-
-    // Set timeout to confirm anyway after 5 seconds (fallback)
-    setTimeout(() => {
-      this.systemLogger.warn(
-        'LiveUpdatesManager',
-        `⏱️ Reply confirmation timeout, assuming success: ${replyId.slice(0, 8)}`
-      );
-      onConfirmed();
-      sub.close();
-    }, 5000);
+    await this.singleNoteApi?.waitForReplyOnRelays(replyId, onConfirmed);
   }
 
   /**

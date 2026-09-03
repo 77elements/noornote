@@ -4,7 +4,7 @@
  * Used by QuoteRenderer and OriginalNoteRenderer when encountering naddr references
  */
 
-import type { NostrEvent, NDKFilter, NDKKind } from '@nostr-dev-kit/ndk';
+import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { ModuleLoader } from '../../../core/ModuleLoader';
 import type { ArticlesModuleApi } from '../../../modules/articles/contracts';
 import { Router } from '../../../services/Router';
@@ -24,7 +24,6 @@ import { PodcastEpisodeProcessor } from '../note-processing/PodcastEpisodeProces
 import { ZapManager } from '../../../components/ui/interaction-managers/ZapManager';
 import { LiveChatService } from '../../../services/LiveChatService';
 import { RelayConfig } from '../../../services/RelayConfig';
-import { NostrTransport } from '../../../services/transport/NostrTransport';
 
 export class ArticlePreviewRenderer {
   private static instance: ArticlePreviewRenderer;
@@ -263,17 +262,29 @@ export class ArticlePreviewRenderer {
     event: NostrEvent,
     streamRelays: string[]
   ): void {
-    const dTag = event.tags.find(t => t[0] === 'd')?.[1];
-    if (!dTag) return;
-
-    const transport = NostrTransport.getInstance();
-    const relays =
-      streamRelays.length > 0 ? streamRelays : transport.getReadRelays();
-    const subId = `live-stream-status-${event.id}`;
     const baseCreatedAt = event.created_at;
 
+    const articlesApi =
+      ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+    if (!articlesApi) return;
+
+    const unsubscribe = articlesApi.watchLiveStream(
+      event,
+      streamRelays,
+      incoming => {
+        if (incoming.created_at < baseCreatedAt) return;
+        const newStatus = (
+          incoming.tags.find(t => t[0] === 'status')?.[1] || ''
+        ).toLowerCase();
+        if (newStatus && newStatus !== 'live') {
+          removeInteractiveElements();
+          cleanup();
+        }
+      }
+    );
+
     const cleanup = () => {
-      transport.unsubscribeLive(subId);
+      unsubscribe();
       observer.disconnect();
     };
 
@@ -288,25 +299,6 @@ export class ArticlePreviewRenderer {
       }
     });
     observer.observe(document.body, { childList: true, subtree: true });
-
-    const filters: NDKFilter[] = [
-      {
-        kinds: [30311 as NDKKind],
-        authors: [event.pubkey],
-        '#d': [dTag],
-      },
-    ];
-
-    void transport.subscribeLive(relays, filters, subId, incoming => {
-      if (incoming.created_at < baseCreatedAt) return;
-      const newStatus = (
-        incoming.tags.find(t => t[0] === 'status')?.[1] || ''
-      ).toLowerCase();
-      if (newStatus && newStatus !== 'live') {
-        removeInteractiveElements();
-        cleanup();
-      }
-    });
   }
 
   /**

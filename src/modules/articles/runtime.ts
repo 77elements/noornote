@@ -20,14 +20,19 @@ export class ArticlesRuntime implements ModuleRuntime<ArticlesModuleApi> {
   private FeedOrchestratorClass:
     | typeof import('../../services/orchestration/ArticleFeedOrchestrator').ArticleFeedOrchestrator
     | null = null;
+  private transport:
+    | import('../../services/transport/NostrTransport').NostrTransport
+    | null = null;
 
   async init(_ctx: ModuleContext): Promise<void> {
-    const [articleMod, orchMod, notifMod, feedMod] = await Promise.all([
-      import('../../services/ArticleService'),
-      import('../../services/orchestration/LongFormOrchestrator'),
-      import('../../services/ArticleNotificationService'),
-      import('../../services/orchestration/ArticleFeedOrchestrator'),
-    ]);
+    const [articleMod, orchMod, notifMod, feedMod, transportMod] =
+      await Promise.all([
+        import('../../services/ArticleService'),
+        import('../../services/orchestration/LongFormOrchestrator'),
+        import('../../services/ArticleNotificationService'),
+        import('../../services/orchestration/ArticleFeedOrchestrator'),
+        import('../../services/transport/NostrTransport'),
+      ]);
     this.ServiceClass = articleMod.ArticleService;
     this.service = articleMod.ArticleService.getInstance();
     this.OrchestratorClass = orchMod.LongFormOrchestrator;
@@ -35,6 +40,7 @@ export class ArticlesRuntime implements ModuleRuntime<ArticlesModuleApi> {
     this.articleNotifService =
       notifMod.ArticleNotificationService.getInstance();
     this.FeedOrchestratorClass = feedMod.ArticleFeedOrchestrator;
+    this.transport = transportMod.NostrTransport.getInstance();
   }
 
   async destroy(): Promise<void> {
@@ -44,6 +50,7 @@ export class ArticlesRuntime implements ModuleRuntime<ArticlesModuleApi> {
     this.OrchestratorClass = null;
     this.articleNotifService = null;
     this.FeedOrchestratorClass = null;
+    this.transport = null;
   }
 
   getApi(): ArticlesModuleApi {
@@ -53,6 +60,7 @@ export class ArticlesRuntime implements ModuleRuntime<ArticlesModuleApi> {
     const OrchCls = this.OrchestratorClass;
     const ans = this.articleNotifService;
     const FoCls = this.FeedOrchestratorClass;
+    const tp = this.transport;
     return {
       publishArticle: options =>
         svc?.publishArticle(options) ?? Promise.resolve(null),
@@ -88,6 +96,21 @@ export class ArticlesRuntime implements ModuleRuntime<ArticlesModuleApi> {
           identifier: '',
           topics: [],
         },
+      watchLiveStream: (event, streamRelays, onUpdate) => {
+        if (!tp) return () => {};
+        const dTag = event.tags.find(t => t[0] === 'd')?.[1];
+        if (!dTag) return () => {};
+        const relays =
+          streamRelays.length > 0 ? streamRelays : tp.getReadRelays();
+        const subId = `live-stream-status-${event.id}`;
+        void tp.subscribeLive(
+          relays,
+          [{ kinds: [30311 as number], authors: [event.pubkey], '#d': [dTag] }],
+          subId,
+          onUpdate
+        );
+        return () => tp.unsubscribeLive(subId);
+      },
     };
   }
 }

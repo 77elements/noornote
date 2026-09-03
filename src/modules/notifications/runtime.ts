@@ -53,6 +53,21 @@ export class NotificationsRuntime
       getCachedNotifications: () => cs?.getCachedNotifications() ?? [],
       getLastFetch: () => cs?.getLastFetch() ?? 0,
       addNotifications: events => cs?.addNotifications(events),
+      onNewNotification: callback => orch?.onNewNotification(callback),
+      getNotifications: (type, offset, limit) =>
+        orch?.getNotifications(type, offset, limit) ?? [],
+      getNotificationCount: type => orch?.getNotificationCount(type) ?? 0,
+      addCachedNotifications: events => orch?.addCachedNotifications(events),
+      fetchNewNotifications: since =>
+        orch?.fetchNewNotifications(since) ?? Promise.resolve(),
+      fetchOlderNotifications: (until, limit) =>
+        orch?.fetchOlderNotifications(until, limit) ?? Promise.resolve([]),
+      getAllNotificationEvents: () => orch?.getAllNotificationEvents() ?? [],
+      fetchReferencedEvent: (noteId, kindHint) =>
+        orch?.fetchReferencedEvent(noteId, kindHint) ?? Promise.resolve(null),
+      fetchAddressableEventByCoordinate: coordinate =>
+        orch?.fetchAddressableEventByCoordinate(coordinate) ??
+        Promise.resolve(null),
     };
   }
 }

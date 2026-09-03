@@ -7,14 +7,14 @@
 import { View } from './View';
 import { Router } from '../../services/Router';
 import { AuthService } from '../../services/AuthService';
-import { NostrTransport } from '../../services/transport/NostrTransport';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { ArticlesModuleApi } from '../../modules/articles/contracts';
 import { UserProfileService } from '../../services/UserProfileService';
 import { SystemLogger } from '../../services/SystemLogger';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { InteractionStatusLine } from '../ui/InteractionStatusLine';
 import { RepliesRenderer } from '../replies/RepliesRenderer';
 import { NoteHeader } from '../ui/NoteHeader';
-import { decodeNip19 } from '../../services/NostrToolsAdapter';
 import { hexToNpub } from '../../helpers/nip19';
 import {
   parseFollowPackEvent,
@@ -75,36 +75,12 @@ export class FollowPackDetailView extends View {
   }
 
   private async fetchEvent(): Promise<NostrEvent | null> {
-    const decoded = decodeNip19(this.naddrRef);
-    if (decoded.type !== 'naddr') return null;
-
-    const data = decoded.data as {
-      kind: number;
-      pubkey: string;
-      identifier: string;
-      relays?: string[];
-    };
-    const transport = NostrTransport.getInstance();
-    const relays = data.relays?.length
-      ? data.relays
-      : transport.getReadRelays();
-
-    const events = await transport.fetch(
-      relays,
-      [
-        {
-          kinds: [data.kind],
-          authors: [data.pubkey],
-          '#d': [data.identifier],
-          limit: 1,
-        },
-      ],
-      8000,
-      false,
-      'FollowPackDetail'
-    );
-
-    return events[0] || null;
+    // Route through the articles module's generic addressable-event fetch
+    // (naddr hints → read relays → author outbound relays). Kind 39089 is
+    // fetched exactly like articles/listings — no special relay handling.
+    const articlesApi =
+      ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+    return articlesApi?.fetchAddressableEvent(this.naddrRef) ?? null;
   }
 
   private async renderPack(event: NostrEvent): Promise<void> {

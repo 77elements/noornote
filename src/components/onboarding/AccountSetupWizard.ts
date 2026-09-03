@@ -2771,6 +2771,13 @@ IMPORTANT:
     el.appendChild(userList);
   }
 
+  /**
+   * Fetch follow packs for the onboarding suggestion step.
+   *
+   * Documented architecture exception: direct NostrTransport access — the
+   * wizard runs PRE-LOGIN, before modules initialize (modules activate on
+   * user:login). Do NOT add further direct transport calls here.
+   */
   private async fetchFollowPacks(): Promise<void> {
     try {
       const { NostrTransport } = await import(

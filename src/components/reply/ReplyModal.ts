@@ -179,7 +179,9 @@ export class ReplyModal {
    * Fetch parent event from relays (fallback when not in cache)
    */
   private async fetchParentEvent(noteId: string): Promise<NostrEvent | null> {
-    const { fetchNostrEvents } = await import('../../helpers/fetchNostrEvents');
+    const { fetchNostrEvents } = await import(
+      '../../services/FetchNostrEvents'
+    );
     const relays = this.relayConfig.getReadRelays();
 
     const result = await fetchNostrEvents({

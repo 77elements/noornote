@@ -6,6 +6,11 @@
  * @used-by SettingsView
  *
  * Listens to 'relays:loaded' event to update UI when account changes
+ *
+ * Documented architecture exception: direct NostrTransport access — this is
+ * the relay diagnostics UI itself (connectivity checks, test publishes to
+ * user-selected relays). The whole point is talking to specific relays
+ * directly. Do NOT add further direct transport calls here.
  */
 
 import { SettingsSection } from './SettingsSection';

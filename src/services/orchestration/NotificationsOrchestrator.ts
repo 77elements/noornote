@@ -907,6 +907,71 @@ export class NotificationsOrchestrator extends Orchestrator {
   }
 
   /**
+   * Fetch an event referenced by a notification (e-tag) for preview display.
+   * Includes the hinted kind (from k-tag) so addressable events (e.g. follow
+   * packs) resolve; kind 9 (NIP-29 group message) is always included since
+   * reactions to group messages often carry no k-tag hint.
+   */
+  public async fetchReferencedEvent(
+    noteId: string,
+    kindHint?: number
+  ): Promise<NostrEvent | null> {
+    try {
+      const kinds =
+        typeof kindHint === 'number' && !isNaN(kindHint)
+          ? Array.from(new Set([...USER_CONTENT_KINDS, kindHint]))
+          : [...USER_CONTENT_KINDS, 9];
+
+      const events = await this.transport.fetch(
+        this.transport.getReadRelays(),
+        [{ ids: [noteId], kinds, limit: 1 }],
+        5000,
+        false,
+        'NotifItem'
+      );
+      return events[0] || null;
+    } catch (error) {
+      console.debug(
+        '[NotificationsOrchestrator] Failed to fetch referenced note:',
+        error
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Fetch an addressable event by a-tag coordinate (`kind:pubkey:d`) for
+   * notification preview display.
+   */
+  public async fetchAddressableEventByCoordinate(
+    coordinate: string
+  ): Promise<NostrEvent | null> {
+    try {
+      const parts = coordinate.split(':');
+      if (parts.length < 3) return null;
+
+      const kind = parseInt(parts[0]!);
+      const pubkey = parts[1]!;
+      const identifier = parts[2]!;
+
+      const events = await this.transport.fetch(
+        this.transport.getReadRelays(),
+        [{ kinds: [kind], authors: [pubkey], '#d': [identifier], limit: 1 }],
+        5000,
+        false,
+        'NotifItem'
+      );
+      return events[0] || null;
+    } catch (error) {
+      console.debug(
+        '[NotificationsOrchestrator] Failed to fetch addressable event:',
+        error
+      );
+      return null;
+    }
+  }
+
+  /**
    * Stop notifications subscriptions (called on logout)
    */
   public stop(): void {

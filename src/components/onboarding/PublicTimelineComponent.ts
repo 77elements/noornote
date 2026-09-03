@@ -3,6 +3,10 @@
  * Read-only timeline for the /welcome landing page
  * Fetches notes from curated pubkeys via aggregator relays (no auth needed)
  * Inserts marketing interstitials every 15 notes (5 total)
+ *
+ * Documented architecture exception: direct NostrTransport access — this
+ * component runs PRE-LOGIN, before modules initialize (modules activate on
+ * user:login). Do NOT add further direct transport calls here.
  */
 
 import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';

@@ -1915,40 +1915,10 @@ export class ProfileView extends View {
     const badgesMount = this.container.querySelector('.profile-badges-mount');
     if (!badgesMount) return;
 
-    const { NostrTransport } = await import(
-      '../../services/transport/NostrTransport'
-    );
-    const { RelayConfig } = await import('../../services/RelayConfig');
-    const { OutboundRelaysOrchestrator } = await import(
-      '../../services/orchestration/OutboundRelaysOrchestrator'
-    );
-    const transport = NostrTransport.getInstance();
-    const baseRelays = [
-      ...transport.getReadRelays(),
-      ...RelayConfig.getInstance().getAggregatorRelays(),
-    ];
-
-    // Also include the profile owner's outbound relays (NIP-65)
-    let relays = baseRelays;
-    try {
-      const outbound =
-        await OutboundRelaysOrchestrator.getInstance().getCombinedRelays(
-          [this.pubkey],
-          true
-        );
-      relays = [...new Set([...baseRelays, ...outbound])];
-    } catch {
-      /* fall back to base relays */
-    }
-
-    // Fetch kind:10008 (new) and kind:30008 (legacy) for this profile
-    const events = await transport.fetch(
-      relays,
-      [{ kinds: [10008 as number, 30008 as number], authors: [this.pubkey] }],
-      5000,
-      false,
-      'PV-Badges'
-    );
+    // Fetch kind:10008 (new) and kind:30008 (legacy) for this profile via the
+    // profile module (relay broadening lives in the badge orchestrator).
+    const events =
+      (await this.profileModuleApi?.fetchProfileBadgeEvents(this.pubkey)) ?? [];
 
     if (events.length === 0) return;
 
@@ -1974,11 +1944,6 @@ export class ProfileView extends View {
 
     if (pairs.length === 0) return;
 
-    const { BadgeOrchestrator } = await import(
-      '../../services/orchestration/BadgeOrchestrator'
-    );
-    const orch = BadgeOrchestrator.getInstance();
-
     const section = document.createElement('div');
     section.className = 'profile-badges-carousel section';
     section.innerHTML =
@@ -1987,9 +1952,10 @@ export class ProfileView extends View {
 
     const list = section.querySelector('.profile-badges-carousel__list')!;
     const shown = pairs.slice(0, 8);
-    const defsMap = await orch.fetchBadgeDefinitions(
-      shown.map(p => p.coordinate)
-    );
+    const defsMap =
+      (await this.profileModuleApi?.fetchBadgeDefinitions(
+        shown.map(p => p.coordinate)
+      )) ?? new Map<string, never>();
     for (const pair of shown) {
       const def = defsMap.get(pair.coordinate);
       if (!def) continue;
@@ -2114,7 +2080,10 @@ export class ProfileView extends View {
   }
 
   /**
-   * Load Zapstore apps for this user
+   * Load Zapstore apps for this user.
+   *
+   * Documented architecture exception: direct NostrTransport access — the
+   * zapstore relay is a dedicated-relay protocol (see ZapstoreAppView).
    */
   private async loadZapstoreApps(): Promise<void> {
     const mount = this.container.querySelector('.profile-zapstore-mount');

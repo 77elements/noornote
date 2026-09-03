@@ -5,16 +5,23 @@ export class TimelineRuntime implements ModuleRuntime<TimelineModuleApi> {
   private orchestrator:
     | import('../../services/orchestration/FeedOrchestrator').FeedOrchestrator
     | null = null;
+  private starter:
+    | import('../../services/orchestration/StarterFeedOrchestrator').StarterFeedOrchestrator
+    | null = null;
 
   async init(_ctx: ModuleContext): Promise<void> {
-    const { FeedOrchestrator } = await import(
-      '../../services/orchestration/FeedOrchestrator'
-    );
+    const [{ FeedOrchestrator }, { StarterFeedOrchestrator }] =
+      await Promise.all([
+        import('../../services/orchestration/FeedOrchestrator'),
+        import('../../services/orchestration/StarterFeedOrchestrator'),
+      ]);
     this.orchestrator = FeedOrchestrator.getInstance();
+    this.starter = StarterFeedOrchestrator.getInstance();
   }
 
   async destroy(): Promise<void> {
     this.orchestrator = null;
+    this.starter = null;
   }
 
   getApi(): TimelineModuleApi {
@@ -83,6 +90,9 @@ export class TimelineRuntime implements ModuleRuntime<TimelineModuleApi> {
 
       // Event metadata
       getEventRelays: eventId => orch?.getEventRelays(eventId) ?? [],
+
+      // Curated starter feed
+      getStarterPubkeys: () => this.starter?.getStarterPubkeys() ?? [],
     };
   }
 }

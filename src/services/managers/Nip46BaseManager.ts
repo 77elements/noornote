@@ -9,6 +9,11 @@
  * - Circuit breaker (prevents timeout floods when relay is down)
  * - encryptionType lock (prevents NDK auto-flip to nip44)
  * - Session persistence and restore
+ *
+ * Documented NDK exception: these managers ARE the NIP-46 signer layer —
+ * NDKNip46Signer/NDKUser are the signer implementation itself, not event
+ * transport, so routing them through NostrTransport is not possible by
+ * design.
  */
 
 import {

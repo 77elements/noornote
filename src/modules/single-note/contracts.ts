@@ -31,6 +31,10 @@ export interface SingleNoteModuleApi {
   stopLiveReplies(noteId: string): void;
   clearCache(noteId: string): void;
 
+  /** Subscribe to the user's write relays for a specific reply id; calls
+   *  onConfirmed once one relay serves it (5s fallback). Fires at most once. */
+  waitForReplyOnRelays(replyId: string, onConfirmed: () => void): Promise<void>;
+
   // ParentNoteFetcher
   fetchParentAuthor(
     parentEventId: string,

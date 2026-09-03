@@ -26,6 +26,8 @@ export interface ProfileCarouselContent {
   listings: NostrEvent[];
   /** kind 5 deletions by this author — for addressable tombstone filtering */
   deletions: NostrEvent[];
+  /** Relays that were queried — consumers use them as naddr/nevent hints. */
+  hintRelays: string[];
 }
 
 export class ProfileCarouselOrchestrator extends Orchestrator {
@@ -131,6 +133,7 @@ export class ProfileCarouselOrchestrator extends Orchestrator {
       videos: [],
       listings: [],
       deletions: [],
+      hintRelays: relays.slice(0, 2),
     };
 
     // Use fetchDirect (raw WS, no NDK cache/outbox layer). NDK's fetchEvents

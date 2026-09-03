@@ -10,7 +10,7 @@ import type { SingleNoteModuleApi } from '../../modules/single-note/contracts';
 import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
 import { UserProfileService } from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
-import { fetchNostrEvents } from '../../helpers/fetchNostrEvents';
+import { fetchNostrEvents } from '../../services/FetchNostrEvents';
 import { RelayConfig } from '../../services/RelayConfig';
 import { SystemLogger } from '../../services/SystemLogger';
 import { encodeNevent } from '../../services/NostrToolsAdapter';

@@ -5,7 +5,6 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { NotificationType } from '../../services/orchestration/NotificationsOrchestrator';
-import { USER_CONTENT_KINDS } from '../../types/nostr';
 import { UserProfileService } from '../../services/UserProfileService';
 import { Router } from '../../services/Router';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
@@ -18,6 +17,8 @@ import { AuthService } from '../../services/AuthService';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
 import type { ArticlesModuleApi } from '../../modules/articles/contracts';
+import type { NotificationsModuleApi } from '../../modules/notifications/contracts';
+import type { ProfileModuleApi } from '../../modules/profile/contracts';
 import { UserIdentity } from '../shared/UserIdentity';
 import { resolveQuotedContent } from '../../helpers/resolveQuotedContent';
 import { extractOriginalNoteId } from '../../helpers/extractOriginalNoteId';
@@ -54,6 +55,18 @@ export class NotificationItem {
   private get reactionsApi(): ReactionsModuleApi | null {
     return (this._reactionsApi ??=
       ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions'));
+  }
+  private _notificationsApi?: NotificationsModuleApi | null;
+  private get notificationsApi(): NotificationsModuleApi | null {
+    return (this._notificationsApi ??=
+      ModuleLoader.getInstance().getApi<NotificationsModuleApi>(
+        'notifications'
+      ));
+  }
+  private _profileApi?: ProfileModuleApi | null;
+  private get profileApi(): ProfileModuleApi | null {
+    return (this._profileApi ??=
+      ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile'));
   }
   private options: NotificationItemOptions;
   private userIdentity: UserIdentity | null = null;
@@ -227,19 +240,15 @@ export class NotificationItem {
       (t: string[]) => t[0] === 'a'
     )?.[1];
     if (!aTag) return;
-    void import('../../services/orchestration/BadgeOrchestrator').then(
-      ({ BadgeOrchestrator }) => {
-        BadgeOrchestrator.getInstance()
-          .fetchBadgeDefinition(aTag)
-          .then(def => {
-            if (!def) return;
-            const actionEl = item.querySelector('.notification-item__action');
-            if (actionEl)
-              actionEl.textContent = `awarded you a "${def.name}" badge`;
-          })
-          .catch(() => {});
-      }
-    );
+    void this.profileApi
+      ?.fetchBadgeDefinition(aTag)
+      .then(def => {
+        if (!def) return;
+        const actionEl = item.querySelector('.notification-item__action');
+        if (actionEl)
+          actionEl.textContent = `awarded you a "${def.name}" badge`;
+      })
+      .catch(() => {});
   }
 
   private setupHashtagFooterLinks(item: HTMLElement): void {
@@ -1329,50 +1338,16 @@ export class NotificationItem {
   }
 
   /**
-   * Fetch original note by ID
-   * Uses configured read relays from NostrTransport
+   * Fetch original note by ID (via the notifications module — preview
+   * resolution lives in the orchestrator)
    */
   private async fetchOriginalNote(
     noteId: string,
     kindHint?: number
   ): Promise<NostrEvent | null> {
-    const { NostrTransport } = await import(
-      '../../services/transport/NostrTransport'
+    return (
+      this.notificationsApi?.fetchReferencedEvent(noteId, kindHint) ?? null
     );
-    const transport = NostrTransport.getInstance();
-
-    try {
-      // Get read relays from config
-      const readRelays = transport.getReadRelays();
-
-      // Include the hinted kind (from k-tag) so we can resolve addressable
-      // events — e.g. Follow Packs — that are referenced only via e-tag.
-      // Kind 9 (NIP-29 group chat message) is always included: reactions to
-      // group messages reference it via e-tag, often without a k-tag hint.
-      const kinds =
-        typeof kindHint === 'number' && !isNaN(kindHint)
-          ? Array.from(new Set([...USER_CONTENT_KINDS, kindHint]))
-          : [...USER_CONTENT_KINDS, 9];
-
-      const events = await transport.fetch(
-        readRelays,
-        [
-          {
-            ids: [noteId],
-            kinds,
-            limit: 1,
-          },
-        ],
-        5000,
-        false,
-        'NotifItem'
-      );
-
-      return events[0] || null;
-    } catch (error) {
-      console.error('[NotificationItem] Failed to fetch original note:', error);
-      return null;
-    }
   }
 
   /**
@@ -1381,43 +1356,10 @@ export class NotificationItem {
   private async fetchAddressableEvent(
     coordinate: string
   ): Promise<NostrEvent | null> {
-    const { NostrTransport } = await import(
-      '../../services/transport/NostrTransport'
+    return (
+      this.notificationsApi?.fetchAddressableEventByCoordinate(coordinate) ??
+      null
     );
-    const transport = NostrTransport.getInstance();
-
-    try {
-      const parts = coordinate.split(':');
-      if (parts.length < 3) return null;
-
-      const kind = parseInt(parts[0]!);
-      const pubkey = parts[1]!;
-      const identifier = parts[2]!;
-
-      const readRelays = transport.getReadRelays();
-      const events = await transport.fetch(
-        readRelays,
-        [
-          {
-            kinds: [kind],
-            authors: [pubkey],
-            '#d': [identifier],
-            limit: 1,
-          },
-        ],
-        5000,
-        false,
-        'NotifItem'
-      );
-
-      return events[0] || null;
-    } catch (error) {
-      console.error(
-        '[NotificationItem] Failed to fetch addressable event:',
-        error
-      );
-      return null;
-    }
   }
 
   /**

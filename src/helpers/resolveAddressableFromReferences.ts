@@ -23,7 +23,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { fetchNostrEvents } from './fetchNostrEvents';
+import { fetchNostrEvents } from '../services/FetchNostrEvents';
 import { RelayConfig } from '../services/RelayConfig';
 import { ModuleLoader } from '../core/ModuleLoader';
 import type { ArticlesModuleApi } from '../modules/articles/contracts';

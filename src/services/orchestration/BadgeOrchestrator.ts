@@ -46,6 +46,40 @@ export class BadgeOrchestrator {
   }
 
   /**
+   * Fetch a profile's NIP-58 badge acceptance events: kind:10008 (current)
+   * and kind:30008 (legacy). Queries read + aggregator relays plus the
+   * profile owner's outbound (NIP-65) relays so badges pinned only there
+   * still surface. Returns raw events (both kinds); consumers pick the
+   * newest 10008 preferring over 30008.
+   */
+  public async fetchProfileBadgeEvents(pubkey: string): Promise<NostrEvent[]> {
+    const baseRelays: string[] = [
+      ...this.transport.getReadRelays(),
+      ...this.relayConfig.getAggregatorRelays(),
+    ];
+
+    // Also include the profile owner's outbound relays (NIP-65)
+    let relays = baseRelays;
+    try {
+      const outbound = await this.relayDiscovery.getCombinedRelays(
+        [pubkey],
+        true
+      );
+      relays = [...new Set([...baseRelays, ...outbound])];
+    } catch {
+      /* fall back to base relays */
+    }
+
+    return this.transport.fetch(
+      relays,
+      [{ kinds: [10008 as number, 30008 as number], authors: [pubkey] }],
+      5000,
+      false,
+      'BadgeOrch'
+    );
+  }
+
+  /**
    * Fetch a badge definition by its addressable coordinate.
    * @param coordinate  `30009:<issuer-pubkey>:<badge-slug>`
    */

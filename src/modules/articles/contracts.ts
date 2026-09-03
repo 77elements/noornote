@@ -42,4 +42,12 @@ export interface ArticlesModuleApi {
   getArticleAddressableId(event: NostrEvent): string;
   /** Alias for extractArticleMetadata — kept for the legacy module-API name. */
   extractArticleFeedMetadata(event: NostrEvent): ArticleMetadata;
+
+  /** Live streams (kind 30311): subscribe to replaceable updates of the
+   *  stream event. Returns a teardown function that unsubscribes. */
+  watchLiveStream(
+    event: NostrEvent,
+    streamRelays: string[],
+    onUpdate: (incoming: NostrEvent) => void
+  ): () => void;
 }

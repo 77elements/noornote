@@ -35,6 +35,7 @@ interface GitHubRelease {
 
 export class UpdateCheckService {
   private static instance: UpdateCheckService;
+  private updatePresenter: ((update: UpdateInfo) => void) | null = null;
 
   private constructor() {}
 
@@ -43,6 +44,15 @@ export class UpdateCheckService {
       UpdateCheckService.instance = new UpdateCheckService();
     }
     return UpdateCheckService.instance;
+  }
+
+  /**
+   * Register the UI presenter for available updates (App.ts glue does this).
+   * Keeps this service free of component imports — no services→components
+   * layer inversion.
+   */
+  public setUpdatePresenter(presenter: (update: UpdateInfo) => void): void {
+    this.updatePresenter = presenter;
   }
 
   /**
@@ -60,8 +70,7 @@ export class UpdateCheckService {
 
     const update = await this.checkForUpdate();
     if (update) {
-      const { UpdateModal } = await import('../components/modals/UpdateModal');
-      new UpdateModal().show(update);
+      this.updatePresenter?.(update);
     }
   }
 
@@ -102,10 +111,7 @@ export class UpdateCheckService {
       const update = await this.checkForUpdate();
 
       if (update) {
-        const { UpdateModal } = await import(
-          '../components/modals/UpdateModal'
-        );
-        new UpdateModal().show(update);
+        this.updatePresenter?.(update);
       } else {
         const { ToastService } = await import('./ToastService');
         ToastService.show('You are on the latest version', 'success');
@@ -157,8 +163,7 @@ export class UpdateCheckService {
         `${__APP_VERSION__})`
       );
 
-      const { UpdateModal } = await import('../components/modals/UpdateModal');
-      new UpdateModal().show(update);
+      this.updatePresenter?.(update);
     } catch (e) {
       console.error('simulateUpdate failed:', e);
     }

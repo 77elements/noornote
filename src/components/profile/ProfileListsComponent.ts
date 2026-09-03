@@ -15,7 +15,6 @@
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
 import type { ProfileModuleApi } from '../../modules/profile/contracts';
-import { NostrTransport } from '../../services/transport/NostrTransport';
 import { encodeNaddr, encodeNevent } from '../../services/NostrToolsAdapter';
 import {
   BookmarkOrchestrator,
@@ -380,26 +379,13 @@ export class ProfileListsComponent {
       work.push(
         (async () => {
           try {
-            const transport = NostrTransport.getInstance();
-            const readRelays = transport.getReadRelays();
-            if (readRelays.length === 0) return;
+            const profileApi =
+              ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
+            const events =
+              (await profileApi?.fetchAddressableEvents(
+                Array.from(listingAddrs)
+              )) ?? [];
 
-            const filters = Array.from(listingAddrs).map(addr => {
-              const parts = addr.split(':');
-              return {
-                kinds: [parseInt(parts[0]!)],
-                authors: [parts[1]!],
-                '#d': [parts.slice(2).join(':')],
-              };
-            });
-
-            const events = await transport.fetch(
-              readRelays,
-              filters,
-              5000,
-              false,
-              'PLC-Listings'
-            );
             for (const event of events) {
               const dTag = event.tags.find(t => t[0] === 'd')?.[1] || '';
               const titleTag = event.tags.find(t => t[0] === 'title')?.[1];

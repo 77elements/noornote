@@ -7,13 +7,15 @@
  * @used-by ProfileView
  */
 
-import { NostrTransport } from '../../services/transport/NostrTransport';
-import { ProfileCarouselOrchestrator } from '../../services/orchestration/ProfileCarouselOrchestrator';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type {
   ArticlesModuleApi,
   ArticleMetadata,
 } from '../../modules/articles/contracts';
+import type {
+  ProfileModuleApi,
+  ProfileCarouselContent,
+} from '../../modules/profile/contracts';
 import { UserProfileService } from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
 import { Router } from '../../services/Router';
@@ -37,14 +39,21 @@ export class ProfileArticlesCarousel {
   private element: HTMLElement;
   private pubkey: string;
   private articles: ArticleCardData[] = [];
-  private transport: NostrTransport;
+  private _profileApi: ProfileModuleApi | null = null;
+  private get profileApi(): ProfileModuleApi {
+    const api = (this._profileApi ??=
+      ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile'));
+    if (!api) {
+      throw new Error('Profile module API not available');
+    }
+    return api;
+  }
   private userProfileService: UserProfileService;
   private carousel: ScrollCarouselInstance | null = null;
   private isOwnProfile: boolean;
 
   constructor(pubkey: string) {
     this.pubkey = pubkey;
-    this.transport = NostrTransport.getInstance();
     this.userProfileService = UserProfileService.getInstance();
     this.element = document.createElement('div');
     this.element.className = 'profile-articles-carousel';
@@ -70,23 +79,20 @@ export class ProfileArticlesCarousel {
   }
 
   private async fetchArticles(): Promise<void> {
-    const relays = this.transport.getReadRelays();
-
     try {
       // Fetch published articles (+ drafts for own profile)
       const kinds = this.isOwnProfile ? [30023, 30024] : [30023];
 
       // Single shared fetch (read + aggregator + outbound relays) via the
-      // carousel orchestrator. Read-relays-only previously hid articles that
-      // live only on the author's NIP-65 write relays; the orchestrator also
+      // profile module. Read-relays-only previously hid articles that
+      // live only on the author's NIP-65 write relays; the fetch also
       // returns the author's kind:5 deletions (for the tombstone filter below)
       // and is reused by the videos/listings carousels from one cached fetch.
-      const content =
-        await ProfileCarouselOrchestrator.getInstance().fetchProfileContent(
-          this.pubkey
-        );
+      const content: ProfileCarouselContent =
+        await this.profileApi.fetchCarouselContent(this.pubkey);
       const rawEvents = content.articles;
       const deletionEvents = content.deletions;
+      const hintRelays = content.hintRelays;
 
       // Index NIP-09 `a`-tag deletions targeting our addressable kinds
       // (30023 / 30024) for this pubkey. Map value = most recent
@@ -158,7 +164,7 @@ export class ProfileArticlesCarousel {
           kind: event.kind!,
           pubkey: event.pubkey,
           identifier: metadata.identifier,
-          relays: relays.slice(0, 2),
+          relays: hintRelays,
         });
         return { event, metadata, naddr, isDraft };
       });

@@ -16,6 +16,13 @@
  *  - UnsupportedKindRenderer also routes 33301 here as a safety net for
  *    the bare-event path (rare — the addressable-quote path is the norm).
  *  - RepostRenderer.dispatchInnerEvent routes inner-33301 events here.
+ *
+ * Documented architecture exception: this renderer calls NostrTransport
+ * (fetchDirect) directly. Armada/CORD is an isolated protocol family with its
+ * own transport access (see ArmadaRelayClient's raw-WebSocket exception in
+ * /build-validate Step 26); routing this single fetch through a module would
+ * invent structure without decoupling anything. Do NOT add further direct
+ * transport calls here.
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';

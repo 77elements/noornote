@@ -14,13 +14,13 @@ import { RelayConfig } from '../../services/RelayConfig';
 import { AuthGuard } from '../../services/AuthGuard';
 import { loadEditorRelayConfig } from '../../helpers/editorRelayConfig';
 import { insertTextAtCursor } from '../../helpers/insertTextAtCursor';
-import { ProfileCarouselOrchestrator } from '../../services/orchestration/ProfileCarouselOrchestrator';
 import { SystemLogger } from '../../services/SystemLogger';
 import { RelaySelector } from '../../components/post/RelaySelector';
 import { PostEditorToolbar } from '../../components/post/PostEditorToolbar';
 import { setupPasteUpload } from '../../helpers/pasteUpload';
 import { MentionAutocomplete } from '../../components/mentions/MentionAutocomplete';
 import { ModuleLoader } from '../../core/ModuleLoader';
+import type { ProfileModuleApi } from '../../modules/profile/contracts';
 import type { MediaModuleApi } from '../../modules/media/contracts';
 import type { ArticlesModuleApi } from '../../modules/articles/contracts';
 import { parseListingMetadata } from './marketplace-helpers';
@@ -720,7 +720,9 @@ export class ListingEditorView extends View {
       const naddr = await this.listingService.publishListing(options);
 
       if (naddr) {
-        ProfileCarouselOrchestrator.getInstance().invalidateForCurrentUser();
+        ModuleLoader.getInstance()
+          .getApi<ProfileModuleApi>('profile')
+          ?.invalidateCarouselCacheForCurrentUser();
         this.router.navigate(`/listing/${naddr}`);
       }
     } finally {

@@ -4,7 +4,7 @@
  * Sequential queue to avoid overwhelming relays
  */
 
-import { fetchNostrEvents } from '../helpers/fetchNostrEvents';
+import { fetchNostrEvents } from './FetchNostrEvents';
 import { RelayConfig } from './RelayConfig';
 import { UserProfileService } from './UserProfileService';
 

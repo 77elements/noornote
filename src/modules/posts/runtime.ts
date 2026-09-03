@@ -22,17 +22,28 @@ export class PostsRuntime implements ModuleRuntime<PostsModuleApi> {
   private mentionCache:
     | import('../../services/MentionProfileCache').MentionProfileCache
     | null = null;
+  private outboundRelays:
+    | import('../../services/orchestration/OutboundRelaysOrchestrator').OutboundRelaysOrchestrator
+    | null = null;
 
   async init(_ctx: ModuleContext): Promise<void> {
-    const [postMod, noteMod, repostMod, deletionMod, reportMod, mentionMod] =
-      await Promise.all([
-        import('../../services/PostService'),
-        import('../../services/NoteService'),
-        import('../../services/RepostService'),
-        import('../../services/DeletionService'),
-        import('../../services/ReportService'),
-        import('../../services/MentionProfileCache'),
-      ]);
+    const [
+      postMod,
+      noteMod,
+      repostMod,
+      deletionMod,
+      reportMod,
+      mentionMod,
+      outboundMod,
+    ] = await Promise.all([
+      import('../../services/PostService'),
+      import('../../services/NoteService'),
+      import('../../services/RepostService'),
+      import('../../services/DeletionService'),
+      import('../../services/ReportService'),
+      import('../../services/MentionProfileCache'),
+      import('../../services/orchestration/OutboundRelaysOrchestrator'),
+    ]);
     this.service = postMod.PostService.getInstance();
     this.noteService = noteMod.NoteService.getInstance();
     this.repostService = repostMod.RepostService.getInstance();
@@ -40,6 +51,7 @@ export class PostsRuntime implements ModuleRuntime<PostsModuleApi> {
     this.reportService = reportMod.ReportService.getInstance();
     this.ReportServiceClass = reportMod.ReportService;
     this.mentionCache = mentionMod.MentionProfileCache.getInstance();
+    this.outboundRelays = outboundMod.OutboundRelaysOrchestrator.getInstance();
   }
 
   async destroy(): Promise<void> {
@@ -50,6 +62,7 @@ export class PostsRuntime implements ModuleRuntime<PostsModuleApi> {
     this.reportService = null;
     this.ReportServiceClass = null;
     this.mentionCache = null;
+    this.outboundRelays = null;
   }
 
   getApi(): PostsModuleApi {
@@ -60,6 +73,7 @@ export class PostsRuntime implements ModuleRuntime<PostsModuleApi> {
     const rps = this.reportService;
     const RpsCls = this.ReportServiceClass;
     const mc = this.mentionCache;
+    const ob = this.outboundRelays;
     return {
       createPost: options => svc?.createPost(options) ?? Promise.resolve(false),
       createReply: options =>
@@ -73,6 +87,7 @@ export class PostsRuntime implements ModuleRuntime<PostsModuleApi> {
       registerNote: event => ns?.registerNote(event),
       registerNotes: events => ns?.registerNotes(events),
       hasNote: eventId => ns?.hasNote(eventId) ?? false,
+      getCachedWriteRelays: pubkey => ob?.getCachedWriteRelays(pubkey) ?? [],
       hasUserReposted: noteId =>
         rs?.hasUserReposted(noteId) ?? Promise.resolve(false),
       publishRepost: options =>

@@ -20,7 +20,7 @@ import { Router } from '../../../services/Router';
 import { LayoutService } from '../../../services/LayoutService';
 import { encodeNevent } from '../../../services/NostrToolsAdapter';
 import { escapeHtml } from '../../../helpers/escapeHtml';
-import { fetchNostrEvents } from '../../../helpers/fetchNostrEvents';
+import { fetchNostrEvents } from '../../../services/FetchNostrEvents';
 import { filterVisibleEvents } from '../../../lists/mutes';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 

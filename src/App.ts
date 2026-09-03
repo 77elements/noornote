@@ -291,6 +291,15 @@ export class App {
         './services/UpdateCheckService'
       );
       const service = UpdateCheckService.getInstance();
+      // App.ts is the glue layer: it owns the UI presentation so the
+      // service stays free of component imports (no layer inversion).
+      service.setUpdatePresenter(update => {
+        void import('./components/modals/UpdateModal').then(
+          ({ UpdateModal }) => {
+            new UpdateModal().show(update);
+          }
+        );
+      });
       await service.checkOnStartup();
 
       if (import.meta.env.DEV) {
@@ -717,24 +726,57 @@ export class App {
         const entity = params['entity'];
         if (!entity) return;
 
-        try {
-          const decoded = decodeNip19(entity);
-          if (decoded.type === 'npub' || decoded.type === 'nprofile') {
-            this.router.navigate(`/profile/${entity}`);
-          } else if (decoded.type === 'note' || decoded.type === 'nevent') {
-            this.router.navigate(`/note/${entity}`);
-          } else if (decoded.type === 'naddr') {
-            const addrData = decoded.data as { kind: number };
-            this.router.navigate(
-              App.getRouteForAddressableEvent(addrData.kind, entity)
-            );
-          }
-        } catch {
+        if (!this.routeNip19Entity(entity)) {
           this.router.navigate('/');
         }
       },
       'nip19-entity'
     );
+  }
+
+  /**
+   * Decode a nip19 entity and navigate to its view. Normalizes nprofile→npub
+   * and nevent→note so URLs stay canonical. Returns false when the string is
+   * not a routable nip19 entity — the caller decides error handling.
+   */
+  private routeNip19Entity(entity: string): boolean {
+    try {
+      const decoded = decodeNip19(entity);
+      const type = decoded.type;
+
+      if (type === 'npub' || type === 'nprofile') {
+        const npub =
+          type === 'npub'
+            ? entity
+            : hexToNpub((decoded.data as { pubkey: string }).pubkey);
+        if (npub) {
+          this.router.navigate(`/profile/${npub}`);
+          return true;
+        }
+        return false;
+      }
+
+      if (type === 'note' || type === 'nevent') {
+        const noteId =
+          type === 'note'
+            ? entity
+            : `note1${(decoded.data as { id: string }).id}`;
+        this.router.navigate(`/note/${noteId}`);
+        return true;
+      }
+
+      if (type === 'naddr') {
+        const addrData = decoded.data as { kind: number };
+        this.router.navigate(
+          App.getRouteForAddressableEvent(addrData.kind, entity)
+        );
+        return true;
+      }
+
+      return false;
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -811,38 +853,8 @@ export class App {
     if (!platform.isElectron) return;
 
     const handleDeepLink = (url: string) => {
-      try {
-        const nip19String = url.startsWith('nostr:') ? url.slice(6) : url;
-        const decoded = decodeNip19(nip19String);
-        const type = decoded.type;
-
-        if (type === 'npub' || type === 'nprofile') {
-          const npub =
-            type === 'npub'
-              ? nip19String
-              : hexToNpub((decoded.data as { pubkey: string }).pubkey);
-          if (npub) {
-            this.router.navigate(`/profile/${npub}`);
-          }
-          return;
-        }
-
-        if (type === 'note' || type === 'nevent') {
-          const noteId =
-            type === 'note'
-              ? nip19String
-              : `note1${(decoded.data as { id: string }).id}`;
-          this.router.navigate(`/note/${noteId}`);
-          return;
-        }
-
-        if (type === 'naddr') {
-          const addrData = decoded.data as { kind: number };
-          this.router.navigate(
-            App.getRouteForAddressableEvent(addrData.kind, nip19String)
-          );
-        }
-      } catch {
+      const nip19String = url.startsWith('nostr:') ? url.slice(6) : url;
+      if (!this.routeNip19Entity(nip19String)) {
         this.systemLogger.warn(
           'Deep Link',
           `Failed to handle nostr: URL: ${url}`

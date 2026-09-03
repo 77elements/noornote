@@ -22,7 +22,8 @@ import { replaceBolt11Placeholders } from '../../../helpers/renderBolt11';
 import { Router } from '../../../services/Router';
 import { getViewNavigationController } from '../../../services/ViewNavigationController';
 import { RENDERABLE_KINDS, GIT_EVENT_KINDS } from '../../../types/nostr';
-import { PollOrchestrator } from '../../../services/orchestration/PollOrchestrator';
+import { ModuleLoader } from '../../../core/ModuleLoader';
+import type { SingleNoteModuleApi } from '../../../modules/single-note/contracts';
 import { MuteOrchestrator } from '../../../lists/mutes';
 import { AuthService } from '../../../services/AuthService';
 import { escapeHtml } from '../../../helpers/escapeHtml';
@@ -978,10 +979,10 @@ export class QuotedNoteRenderer {
       quoteContent.appendChild(pollContainer);
     }
 
-    // Fetch poll results asynchronously
-    const pollOrchestrator = PollOrchestrator.getInstance();
-    pollOrchestrator
-      .fetchPollResults(eventId, pollOptions)
+    // Fetch poll results asynchronously via the single-note module
+    ModuleLoader.getInstance()
+      .getApi<SingleNoteModuleApi>('single-note')
+      ?.fetchPollResults(eventId, pollOptions)
       .then(results => {
         // Update UI with vote counts
         results.options.forEach(option => {

@@ -1,15 +1,16 @@
 /**
  * Timeline UI
  * Pure UI component for displaying timeline events
- * Uses FeedOrchestrator for data fetching
+ * Uses the timeline module API (via ModuleLoader) for data fetching
  */
 
 import { View } from '../views/View';
-import {
-  FeedOrchestrator,
-  type NewNotesInfo,
-  type FeedLoadRequest,
-} from '../../services/orchestration/FeedOrchestrator';
+import type {
+  NewNotesInfo,
+  FeedLoadRequest,
+  TimelineModuleApi,
+} from '../../modules/timeline/contracts';
+import { ModuleLoader } from '../../core/ModuleLoader';
 import { UserService } from '../../services/UserService';
 import { RelayConfig } from '../../services/RelayConfig';
 import { AuthService } from '../../services/AuthService';
@@ -38,7 +39,16 @@ import {
 
 export class Timeline extends View {
   private element: HTMLElement;
-  private feedOrchestrator: FeedOrchestrator;
+  private _timelineApi: TimelineModuleApi | null = null;
+  /** Lazy module API access — the timeline module initializes on login. */
+  private get timelineApi(): TimelineModuleApi {
+    const api = (this._timelineApi ??=
+      ModuleLoader.getInstance().getApi<TimelineModuleApi>('timeline'));
+    if (!api) {
+      throw new Error('Timeline module API not available');
+    }
+    return api;
+  }
   private userService: UserService;
   private relayConfig: RelayConfig;
   private authService: AuthService;
@@ -87,7 +97,6 @@ export class Timeline extends View {
     // The caller hands in a typed use-case config; the whole component is driven
     // by it. See docs/todos/timeline-component-modularization.md.
     this.config = config;
-    this.feedOrchestrator = FeedOrchestrator.getInstance();
     this.userService = UserService.getInstance();
     this.relayConfig = RelayConfig.getInstance();
     this.authService = AuthService.getInstance();
@@ -105,7 +114,7 @@ export class Timeline extends View {
     // Initialize managers
     this.stateManager = new TimelineStateManager();
     this.lifecycleManager = new TimelineLifecycleManager(
-      this.feedOrchestrator,
+      this.timelineApi,
       this.infiniteScroll
     );
     this.uiStateHandler = new TimelineUIStateHandler(this.element);
@@ -127,7 +136,7 @@ export class Timeline extends View {
 
     // Initialize event handler (requires refresh button, renderer, and dropdown to be set up first)
     this.eventHandler = new TimelineEventHandler(
-      this.feedOrchestrator,
+      this.timelineApi,
       this.stateManager,
       this.uiStateHandler,
       this.refreshButton,
@@ -488,7 +497,7 @@ export class Timeline extends View {
     if (pubkeys.length === 0 || newestTimestamp === 0) return;
 
     const newEvents =
-      (await this.feedOrchestrator.pollOnce(
+      (await this.timelineApi.pollOnce(
         pubkeys,
         newestTimestamp,
         this.config.includeReplies,
@@ -502,7 +511,7 @@ export class Timeline extends View {
       if (unique.length > 0) {
         this.renderer.prependNewEvents(unique);
         void this.islStatsUpdater.fetchAndUpdateStats(unique);
-        this.feedOrchestrator.resetPollingTimestamp(newEvents[0]!.created_at);
+        this.timelineApi.resetPollingTimestamp(newEvents[0]!.created_at);
       }
     }
 
@@ -512,7 +521,7 @@ export class Timeline extends View {
     }
 
     // Clear polled events cache so next poll cycle starts fresh
-    this.feedOrchestrator.getPolledEvents();
+    this.timelineApi.getPolledEvents();
 
     // Scroll to top
     this.element.scrollTo({ top: 0, behavior: 'smooth' });
@@ -531,7 +540,7 @@ export class Timeline extends View {
     }
 
     // Stop and restart polling immediately
-    this.feedOrchestrator.stopPolling();
+    this.timelineApi.stopPolling();
     this.doStartPolling(0);
 
     // Schedule link to reappear after 60s
@@ -551,7 +560,7 @@ export class Timeline extends View {
       return;
     }
 
-    this.feedOrchestrator.startPolling(
+    this.timelineApi.startPolling(
       this.stateManager.getFollowingPubkeys(),
       newestTimestamp,
       (info: NewNotesInfo) => this.handleNewNotesDetected(info),
@@ -606,11 +615,7 @@ export class Timeline extends View {
           // end; as soon as they follow one person, this branch is skipped and
           // the real feed loads. Other views keep the plain empty error.
           if (this.config.curatedFallbackWhenEmpty) {
-            const { StarterFeedOrchestrator } = await import(
-              '../../services/orchestration/StarterFeedOrchestrator'
-            );
-            const curated =
-              StarterFeedOrchestrator.getInstance().getStarterPubkeys();
+            const curated = this.timelineApi.getStarterPubkeys();
             this.stateManager.setFollowingPubkeys(curated);
             this.uiStateHandler.showCuratedFallbackBanner();
           } else {
@@ -643,9 +648,10 @@ export class Timeline extends View {
       if (this.config.muteExemptPubkey) {
         feedRequest.exemptFromMuteFilter = this.config.muteExemptPubkey; // Don't filter profile user's notes in ProfileView
       }
-      const result = (await this.feedOrchestrator.loadInitialFeed(
-        feedRequest
-      )) ?? { events: [], hasMore: false };
+      const result = (await this.timelineApi.loadInitialFeed(feedRequest)) ?? {
+        events: [],
+        hasMore: false,
+      };
 
       this.stateManager.setEvents(result.events);
 

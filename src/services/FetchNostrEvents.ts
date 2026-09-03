@@ -14,7 +14,7 @@
  * 6. Load more (same as timeline but with until)
  */
 
-import { NostrTransport } from '../services/transport/NostrTransport';
+import { NostrTransport } from './transport/NostrTransport';
 import { type NostrEvent, type NDKFilter } from '@nostr-dev-kit/ndk';
 
 export interface FetchNostrEventsParams {

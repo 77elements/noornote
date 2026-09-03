@@ -20,7 +20,6 @@ import { RelayConfig } from '../../services/RelayConfig';
 import { AuthGuard } from '../../services/AuthGuard';
 import { loadEditorRelayConfig } from '../../helpers/editorRelayConfig';
 import { insertTextAtCursor } from '../../helpers/insertTextAtCursor';
-import { ProfileCarouselOrchestrator } from '../../services/orchestration/ProfileCarouselOrchestrator';
 import { SystemLogger } from '../../services/SystemLogger';
 import { RelaySelector } from '../post/RelaySelector';
 import { PostEditorToolbar } from '../post/PostEditorToolbar';
@@ -28,6 +27,7 @@ import { setupPasteUpload } from '../../helpers/pasteUpload';
 import { MentionAutocomplete } from '../mentions/MentionAutocomplete';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { MediaModuleApi } from '../../modules/media/contracts';
+import type { ProfileModuleApi } from '../../modules/profile/contracts';
 import type {
   ArticlesModuleApi,
   ArticleOptions,
@@ -1067,8 +1067,11 @@ export class ArticleEditorView extends View {
 
       // Refresh the author's profile carousel cache so the new article/draft
       // shows immediately instead of waiting out the orchestrator TTL.
-      if (naddr)
-        ProfileCarouselOrchestrator.getInstance().invalidateForCurrentUser();
+      if (naddr) {
+        ModuleLoader.getInstance()
+          .getApi<ProfileModuleApi>('profile')
+          ?.invalidateCarouselCacheForCurrentUser();
+      }
 
       if (naddr && !isDraft) {
         this.router.navigate(`/article/${naddr}`);

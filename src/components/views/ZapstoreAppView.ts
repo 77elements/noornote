@@ -2,6 +2,12 @@
  * ZapstoreAppView - Displays a Zapstore app listing (kind 32267)
  * Loaded via /zapstore/:naddr route.
  * Shows app details, screenshots, release info, ISL, and replies.
+ *
+ * Documented architecture exception: this view calls NostrTransport directly.
+ * Zapstore is a dedicated-relay protocol (relay.zapstore.dev serves kinds
+ * 32267/30063/1063 — they don't reliably live on general relays), accessed
+ * like other isolated protocol families (see ArmadaInviteRenderer /
+ * ArmadaRelayClient). Do NOT add further direct transport calls here.
  */
 
 import { View } from './View';

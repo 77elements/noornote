@@ -7,7 +7,8 @@
  * @used-by ProfileView
  */
 
-import { ProfileCarouselOrchestrator } from '../../services/orchestration/ProfileCarouselOrchestrator';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { ProfileModuleApi } from '../../modules/profile/contracts';
 import { Router } from '../../services/Router';
 import { VideoNoteProcessor } from '../ui/note-processing/VideoNoteProcessor';
 import { type ScrollCarouselInstance } from '../../helpers/CarouselHelper';
@@ -26,6 +27,15 @@ export class ProfileVideosCarousel {
   private element: HTMLElement;
   private pubkey: string;
   private videos: VideoCardData[] = [];
+  private _profileApi: ProfileModuleApi | null = null;
+  private get profileApi(): ProfileModuleApi {
+    const api = (this._profileApi ??=
+      ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile'));
+    if (!api) {
+      throw new Error('Profile module API not available');
+    }
+    return api;
+  }
   private carousel: ScrollCarouselInstance | null = null;
 
   constructor(pubkey: string) {
@@ -51,12 +61,9 @@ export class ProfileVideosCarousel {
 
   private async fetchVideos(): Promise<void> {
     try {
-      // Shared fetch (read + outbound relays) via the carousel orchestrator;
+      // Shared fetch (read + outbound relays) via the profile module;
       // reuses the same cached round-trip as the articles/listings carousels.
-      const content =
-        await ProfileCarouselOrchestrator.getInstance().fetchProfileContent(
-          this.pubkey
-        );
+      const content = await this.profileApi.fetchCarouselContent(this.pubkey);
       const events = [...content.videos];
 
       events.sort((a, b) => b.created_at - a.created_at);

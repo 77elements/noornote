@@ -53,4 +53,7 @@ export interface TimelineModuleApi {
 
   // Event metadata
   getEventRelays(eventId: string): string[];
+
+  /** Curated starter pubkeys for accounts that don't follow anyone yet. */
+  getStarterPubkeys(): string[];
 }
