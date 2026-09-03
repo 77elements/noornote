@@ -22,13 +22,11 @@ import { encodeNevent } from '../../../services/NostrToolsAdapter';
 import { escapeHtml } from '../../../helpers/escapeHtml';
 import { fetchNostrEvents } from '../../../services/FetchNostrEvents';
 import { filterVisibleEvents } from '../../../lists/mutes';
+import {
+  buildThreadTree as buildSharedThreadTree,
+  type ThreadNode,
+} from '../../../helpers/threadTree';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-
-export interface ThreadNode {
-  event: NostrEvent;
-  children: ThreadNode[];
-  depth: number;
-}
 
 export interface ThreadManagerConfig {
   noteId: string;
@@ -271,46 +269,7 @@ export class ThreadManager {
     replies: NostrEvent[],
     rootNoteId: string
   ): ThreadNode[] {
-    const nodes = new Map<string, ThreadNode>();
-    const rootNodes: ThreadNode[] = [];
-
-    replies.forEach(reply => {
-      const replyId = reply.id;
-      if (!replyId) return;
-      nodes.set(replyId, { event: reply, children: [], depth: 0 });
-    });
-
-    replies.forEach(reply => {
-      const replyId = reply.id;
-      if (!replyId) return;
-      const node = nodes.get(replyId)!;
-      const parentId = this.extractReplyParentId(reply);
-
-      if (!parentId || parentId === rootNoteId) {
-        rootNodes.push(node);
-      } else {
-        const parentNode = nodes.get(parentId);
-        if (parentNode) {
-          node.depth = parentNode.depth + 1;
-          parentNode.children.push(node);
-        } else {
-          rootNodes.push(node);
-        }
-      }
-    });
-
-    return rootNodes;
-  }
-
-  private extractReplyParentId(reply: NostrEvent): string | null {
-    const eTags = reply.tags.filter(tag => tag[0] === 'e');
-    if (eTags.length === 0) return null;
-
-    const replyTag = eTags.find(tag => tag[3] === 'reply');
-    if (replyTag) return replyTag[1] ?? null;
-
-    const lastETag = eTags[eTags.length - 1];
-    return lastETag?.[1] ?? null;
+    return buildSharedThreadTree(replies, rootNoteId);
   }
 
   private renderThreadedReply(node: ThreadNode, container: Element): void {
