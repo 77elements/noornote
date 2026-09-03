@@ -6,6 +6,7 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { ProcessedNote } from '../types/NoteTypes';
+import { LRUCache, getCacheSize } from '../../../helpers/LRUCache';
 import { TextNoteProcessor } from './TextNoteProcessor';
 import { RepostProcessor } from './RepostProcessor';
 import { PollProcessor } from './PollProcessor';
@@ -25,11 +26,39 @@ import { PodcastEpisodeProcessor } from './PodcastEpisodeProcessor';
 
 export class NoteProcessor {
   /**
+   * Memoized ProcessedNotes keyed by event id. Processing is a PURE function
+   * of the event (ContentProcessor has no mute/NSFW/wordfilter dependency —
+   * those filter upstream; NSFW blur happens at render time; profile updates
+   * patch the DOM post-render), so cached results never go stale. Full
+   * timeline rebuilds (mute toggle, refresh, NSFW toggle) then skip the
+   * re-processing of every note entirely.
+   *
+   * Consumers treat ProcessedNote as immutable (audited — no writes outside
+   * the processors themselves).
+   */
+  private static memo = new LRUCache<ProcessedNote>(
+    getCacheSize(500, 200, 100)
+  );
+
+  /**
    * Process any Nostr event into a ProcessedNote
    * SYNCHRONOUS - routes to specialized processor
    */
   static process(event: NostrEvent): ProcessedNote {
     const eventId = event.id ?? 'unknown';
+
+    const cached = eventId !== 'unknown' ? this.memo.get(eventId) : undefined;
+    if (cached) return cached;
+
+    const result = this.dispatch(event, eventId);
+
+    if (eventId !== 'unknown') {
+      this.memo.set(eventId, result);
+    }
+    return result;
+  }
+
+  private static dispatch(event: NostrEvent, eventId: string): ProcessedNote {
     try {
       switch (event.kind) {
         case 1:

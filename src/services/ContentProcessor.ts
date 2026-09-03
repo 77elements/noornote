@@ -83,8 +83,12 @@ export class ContentProcessor {
     // Patch mention chips whenever ANY profile arrives — covers profiles that
     // were filled by another path (UserHoverCard, NoteHeader, RepostRenderer)
     // and would otherwise leave the chip stuck on the loading placeholder.
+    // Patches are batched (one document pass per frame) — warmFromStore
+    // notifies 1-2k restored profiles at login, and a per-profile
+    // document.querySelectorAll burst on the login critical path caused
+    // visible main-thread jank exactly when the timeline first rendered.
     this.userProfileService.subscribeToAnyProfileUpdate((pubkey, profile) => {
-      this.updateMentionsInDOM(pubkey, profile);
+      this.scheduleMentionPatch(pubkey, profile);
     });
   }
 
@@ -152,7 +156,7 @@ export class ContentProcessor {
           profiles.forEach((profile, pubkey) => {
             this.profileCache.set(pubkey, profile);
             // Update DOM immediately when profile loads
-            this.updateMentionsInDOM(pubkey, profile);
+            this.scheduleMentionPatch(pubkey, profile);
           });
         })
         .catch(err => console.debug('Failed to load mention profiles:', err));
@@ -259,7 +263,7 @@ export class ContentProcessor {
       .then(realProfile => {
         if (realProfile && (realProfile.name || realProfile.display_name)) {
           this.profileCache.set(pubkey, realProfile);
-          this.updateMentionsInDOM(pubkey, realProfile);
+          this.scheduleMentionPatch(pubkey, realProfile);
         }
       })
       .catch(_error => {
@@ -273,19 +277,60 @@ export class ContentProcessor {
    * Update mentions in DOM after profile loads (progressive enhancement)
    * Applies profile recognition blinking if addon is loaded
    */
-  private updateMentionsInDOM(hexPubkey: string, profile: UserProfile): void {
-    // Convert hex to npub for profile URL
-    const npub = hexToNpub(hexPubkey);
-    if (!npub) return;
+  /** Batched mention patches: hexPubkey → latest profile (one flush per frame). */
+  private pendingMentionPatches = new Map<string, UserProfile>();
+  private mentionPatchFlushScheduled = false;
 
-    // Bail early if no mention chips for this pubkey are in the DOM — the
-    // global subscription fires for every profile update, so most calls have
-    // nothing to patch. querySelectorAll(...) is the cheapest filter.
-    const mentionLinks = document.querySelectorAll(
-      `a[href="/profile/${npub}"][data-mention]`
-    );
-    if (mentionLinks.length === 0) return;
+  /** Queue a mention patch; flushes at most once per animation frame. */
+  private scheduleMentionPatch(hexPubkey: string, profile: UserProfile): void {
+    this.pendingMentionPatches.set(hexPubkey, profile);
+    if (this.mentionPatchFlushScheduled) return;
+    this.mentionPatchFlushScheduled = true;
 
+    const schedule =
+      typeof requestAnimationFrame === 'function'
+        ? (cb: () => void) => requestAnimationFrame(() => cb())
+        : (cb: () => void) => setTimeout(cb, 16);
+    schedule(() => this.flushMentionPatches());
+  }
+
+  private flushMentionPatches(): void {
+    this.mentionPatchFlushScheduled = false;
+    const batch = this.pendingMentionPatches;
+    this.pendingMentionPatches = new Map();
+    if (batch.size === 0) return;
+
+    // ONE document-wide pass, grouped by profile href — replaces the
+    // per-profile querySelectorAll storm.
+    const linksByHref = new Map<string, HTMLElement[]>();
+    document
+      .querySelectorAll('a[href^="/profile/"][data-mention]')
+      .forEach(el => {
+        const href = el.getAttribute('href') ?? '';
+        if (!href.startsWith('/profile/')) return;
+        const list = linksByHref.get(href);
+        if (list) {
+          list.push(el as HTMLElement);
+        } else {
+          linksByHref.set(href, [el as HTMLElement]);
+        }
+      });
+    if (linksByHref.size === 0) return;
+
+    for (const [hexPubkey, profile] of batch) {
+      const npub = hexToNpub(hexPubkey);
+      if (!npub) continue;
+      const links = linksByHref.get(`/profile/${npub}`);
+      if (!links) continue;
+      this.patchMentionLinks(hexPubkey, profile, links);
+    }
+  }
+
+  private patchMentionLinks(
+    hexPubkey: string,
+    profile: UserProfile,
+    mentionLinks: HTMLElement[]
+  ): void {
     // Render-ready values from the cache (real or fallback — see UserProfileService).
     const rawUsername = profile.name || profile.display_name;
     const username = UserProfileService.displayNameOf(profile, hexPubkey);
