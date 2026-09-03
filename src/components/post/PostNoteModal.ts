@@ -29,7 +29,6 @@ import { stripTrackingParams } from '../../helpers/stripTrackingParams';
 import { Switch } from '../ui/Switch';
 import { PollCreator, type PollData } from '../poll/PollCreator';
 import { extractQuotedReferences } from '../../helpers/extractQuotedReferences';
-import { renderQuotePreview } from '../../helpers/renderQuotePreview';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
 import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
 import { AppState } from '../../services/AppState';
@@ -46,8 +45,15 @@ import {
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { NoteDraftService } from '../../services/NoteDraftService';
 import { ToastService } from '../../services/ToastService';
-import { SignerTimeoutError } from '../../services/SignerTimeoutError';
 import { renderDraftsList, setupDraftsList } from './DraftsListUI';
+import {
+  composerDraftsTabLabel,
+  updateComposerDraftsBadge,
+  setComposerActiveTab,
+  saveComposerDraft,
+  composerPostFailure,
+  renderQuotedNotesInPreview as fillQuotedPreviewMarkers,
+} from './composerShared';
 import { openDraftInComposer } from '../../helpers/draftRouter';
 import { attachPreviewClickToEdit } from '../../helpers/previewClickToEdit';
 import { isImageUrl } from '../../helpers/extractMedia';
@@ -298,28 +304,21 @@ export class PostNoteModal {
    * Tab label for the Drafts tab, with a count badge when drafts exist.
    */
   private renderDraftsTabLabel(): string {
-    const count = NoteDraftService.getInstance().count();
-    return `Drafts${count > 0 ? ` <span class="badge badge--accent">${count}</span>` : ''}`;
+    return composerDraftsTabLabel();
   }
 
   /**
    * Refresh the Drafts tab count badge in place.
    */
   private updateDraftsTabBadge(): void {
-    const btn = document.querySelector(
-      '.post-note-modal [data-tab="drafts"]'
-    ) as HTMLElement | null;
-    if (btn) btn.innerHTML = this.renderDraftsTabLabel();
+    updateComposerDraftsBadge('.post-note-modal');
   }
 
   /**
    * Toggle the tab--active class across the composer tabs.
    */
   private setActiveTab(tab: TabMode): void {
-    document.querySelectorAll('.post-note-modal [data-tab]').forEach(el => {
-      const tabEl = el as HTMLElement;
-      tabEl.classList.toggle('tab--active', tabEl.dataset.tab === tab);
-    });
+    setComposerActiveTab('.post-note-modal', tab);
   }
 
   /**
@@ -1164,21 +1163,11 @@ export class PostNoteModal {
    * Save the current composer content as a manual draft.
    */
   private handleSaveDraft(): void {
-    const textarea = document.querySelector(
-      '.post-note-modal [data-textarea]'
-    ) as HTMLTextAreaElement | null;
-    const content = (textarea ? textarea.value : this.content).trim();
-    if (!content) {
-      ToastService.show('Nothing to save', 'info');
-      return;
-    }
-    NoteDraftService.getInstance().add({
-      type: 'note',
-      content,
-      failed: false,
+    saveComposerDraft({
+      modalScope: '.post-note-modal',
+      draftType: 'note',
+      fallbackContent: this.content,
     });
-    ToastService.show('Draft saved', 'success');
-    this.updateDraftsTabBadge();
   }
 
   /**
@@ -1191,30 +1180,16 @@ export class PostNoteModal {
     label: string,
     error?: unknown
   ): void {
-    const reason =
-      error instanceof SignerTimeoutError
-        ? 'Signer did not respond in time'
-        : error instanceof Error && error.message
-          ? error.message
-          : 'Note could not be published';
-
-    NoteDraftService.getInstance().add({
-      type: 'note',
-      content: this.content,
-      failed: true,
-      failureReason: reason,
-    });
-
-    ModalEventHandlerManager.restoreAfterError(
+    composerPostFailure({
+      modalScope: '.post-note-modal',
+      draftType: 'note',
+      fallbackContent: this.content,
       modalContainer,
       originalDisplay,
-      label
-    );
-    this.updateDraftsTabBadge();
-
-    ToastService.showWithAction(`Failed to post: ${reason}`, 'error', {
-      label: 'Open drafts',
-      onClick: () => this.switchTab('drafts'),
+      restoreLabel: label,
+      fallbackReason: 'Note could not be published',
+      onOpenDrafts: () => this.switchTab('drafts'),
+      error,
     });
   }
 
@@ -1271,24 +1246,7 @@ export class PostNoteModal {
   private async renderQuotedNotesInPreview(
     container: HTMLElement
   ): Promise<void> {
-    const quotedRefs = extractQuotedReferences(this.content);
-    if (quotedRefs.length === 0) return;
-
-    const markers = container.querySelectorAll('.quote-marker');
-
-    for (let i = 0; i < Math.min(quotedRefs.length, markers.length); i++) {
-      const ref = quotedRefs[i];
-      const marker = markers[i];
-
-      if (ref && marker) {
-        try {
-          const quotePreview = await renderQuotePreview(ref.id);
-          marker.replaceWith(quotePreview);
-        } catch (error) {
-          console.error('Failed to render quote preview:', error);
-        }
-      }
-    }
+    await fillQuotedPreviewMarkers(this.content, container);
   }
 
   /**
