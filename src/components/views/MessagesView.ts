@@ -7,6 +7,7 @@
  * @used-by App.ts via Router
  */
 
+import { errMessage } from '../../helpers/errorMessage';
 import { View } from './View';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { DMsModuleApi } from '../../modules/dms/contracts';
@@ -260,7 +261,7 @@ export class MessagesView extends View {
     } catch (error) {
       this.systemLogger.warn(
         'MessagesView',
-        `Failed to load older messages: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to load older messages: ${errMessage(error)}`
       );
       if (label) {
         label.classList.remove('pulsate');
@@ -443,7 +444,7 @@ export class MessagesView extends View {
         list as HTMLElement
       );
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
+      const errorMsg = errMessage(error);
       if (this.conversations.length === 0) {
         this.systemLogger.error(
           'MessagesView',

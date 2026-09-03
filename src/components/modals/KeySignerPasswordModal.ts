@@ -3,6 +3,7 @@
  * Modal for entering password when switching NoorSigner accounts
  */
 
+import { errMessage } from '../../helpers/errorMessage';
 import { ModalService } from '../../services/ModalService';
 import { KeySignerClient } from '../../services/KeySignerClient';
 
@@ -112,8 +113,7 @@ export class KeySignerPasswordModal {
         this.modalService.hide();
         this.options.onSuccess(result);
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
+        const errorMessage = errMessage(error);
         // NoorSigner returns various error messages for wrong password
         const isPasswordError =
           errorMessage.includes('invalid password') ||

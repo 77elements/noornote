@@ -13,6 +13,7 @@
  * 6. Done - summary + publish + go to timeline
  */
 
+import { GLOBAL_KEY_HAS_KEY } from '../../helpers/globalStorageKeys';
 import { Router } from '../../services/Router';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type {
@@ -2103,7 +2104,7 @@ IMPORTANT:
           nsec: this.currentKeypair!.nsec,
           npub: this.currentKeypair!.npub,
           onSuccess: async () => {
-            localStorage.setItem('noornote_has_key', 'true');
+            localStorage.setItem(GLOBAL_KEY_HAS_KEY, 'true');
 
             // Auto-login
             try {
@@ -2308,7 +2309,7 @@ IMPORTANT:
               true
             );
 
-            localStorage.setItem('noornote_has_key', 'true');
+            localStorage.setItem(GLOBAL_KEY_HAS_KEY, 'true');
             ToastService.show('Logged in!', 'success');
             this.updateNextButtonState(true);
             // Auto-advance to next step

@@ -3,6 +3,7 @@
  * Modal for importing newly generated key into NoorSigner during onboarding
  */
 
+import { errMessage } from '../../helpers/errorMessage';
 import { ModalService } from '../../services/ModalService';
 import { KeySignerClient } from '../../services/KeySignerClient';
 import { ToastService } from '../../services/ToastService';
@@ -209,8 +210,7 @@ export class ImportToNoorSignerModal {
         ToastService.show('Key successfully imported to NoorSigner', 'success');
         this.options.onSuccess(result);
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
+        const errorMessage = errMessage(error);
         console.error('Import failed:', errorMessage);
 
         if (errorMessage.includes('account already exists')) {

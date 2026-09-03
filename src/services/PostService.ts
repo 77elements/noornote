@@ -11,6 +11,7 @@
  * NIP-22: https://github.com/nostr-protocol/nips/blob/master/22.md (Comments)
  */
 
+import { errMessage } from '../helpers/errorMessage';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { AuthService } from './AuthService';
 import { NostrTransport } from './transport/NostrTransport';
@@ -331,7 +332,7 @@ export class PostService {
       // failed draft and show the "Open drafts" recovery toast.
       this.systemLogger.error(
         'PostService',
-        `Post failed: ${error instanceof Error ? error.message : String(error)}`
+        `Post failed: ${errMessage(error)}`
       );
       throw error;
     }
@@ -446,7 +447,7 @@ export class PostService {
     } catch (error) {
       this.systemLogger.error(
         'PostService',
-        `Highlight failed: ${error instanceof Error ? error.message : String(error)}`
+        `Highlight failed: ${errMessage(error)}`
       );
       throw error;
     }
@@ -564,7 +565,7 @@ export class PostService {
     } catch (error) {
       this.systemLogger.error(
         'PostService',
-        `${label} failed: ${error instanceof Error ? error.message : String(error)}`
+        `${label} failed: ${errMessage(error)}`
       );
       throw error;
     }

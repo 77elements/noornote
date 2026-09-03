@@ -27,13 +27,7 @@
  * generate an unfollow notification".
  */
 
-import type { NDKFilter, NostrEvent } from '@nostr-dev-kit/ndk';
-import { NostrTransport } from './transport/NostrTransport';
-import { RelayConfig } from './RelayConfig';
-import { RelayListOrchestrator } from './orchestration/RelayListOrchestrator';
-import { AuthService } from './AuthService';
-import { SystemLogger } from './SystemLogger';
-import { LRUCache, getCacheSize } from '../helpers/LRUCache';
+import { RemoteKindVerdictService } from './RemoteKindVerdictService';
 
 export type FollowVerdict =
   | {
@@ -64,30 +58,21 @@ export type FollowVerdict =
  */
 export type MutualState = FollowVerdict['status'];
 
-const VERDICT_TTL_MS = 30 * 60 * 1000;
-const FETCH_TIMEOUT_MS = 8000;
-const MAX_WRITE_RELAYS = 6;
 const STALE_DAYS = 90;
 
-export class FollowVerificationService {
+export class FollowVerificationService extends RemoteKindVerdictService<FollowVerdict> {
   private static instance: FollowVerificationService;
-  private transport: NostrTransport;
-  private relayConfig: RelayConfig;
-  private relayListOrch: RelayListOrchestrator;
-  private authService: AuthService;
-  private systemLogger: SystemLogger;
-
-  private cache: LRUCache<FollowVerdict> = new LRUCache<FollowVerdict>(
-    getCacheSize(1000, 500, 200),
-    VERDICT_TTL_MS
-  );
 
   private constructor() {
-    this.transport = NostrTransport.getInstance();
-    this.relayConfig = RelayConfig.getInstance();
-    this.relayListOrch = RelayListOrchestrator.getInstance();
-    this.authService = AuthService.getInstance();
-    this.systemLogger = SystemLogger.getInstance();
+    super();
+  }
+
+  protected get kind(): number {
+    return 3;
+  }
+
+  protected get logTag(): string {
+    return 'FollowVerification';
   }
 
   public static getInstance(): FollowVerificationService {
@@ -110,25 +95,13 @@ export class FollowVerificationService {
       return { status: 'unknown', reason: 'error' };
     }
 
-    const cacheKey = `${theirPubkey}:${currentUser.pubkey}`;
-
-    if (!opts.forceRefresh) {
-      const cached = this.cache.get(cacheKey);
-      if (cached) return cached;
-    }
-
-    const verdict = await this.performVerification(
-      theirPubkey,
-      currentUser.pubkey,
-      opts.forceRefresh ?? false
+    return this.verifyCached(theirPubkey, currentUser.pubkey, opts, () =>
+      this.performVerification(
+        theirPubkey,
+        currentUser.pubkey,
+        opts.forceRefresh ?? false
+      )
     );
-
-    // Never cache 'unknown' — next call must retry.
-    if (verdict.status !== 'unknown') {
-      this.cache.set(cacheKey, verdict);
-    }
-
-    return verdict;
   }
 
   /**
@@ -193,73 +166,19 @@ export class FollowVerificationService {
     return results;
   }
 
-  public clearCache(): void {
-    this.cache.clear();
-  }
-
-  public clearCacheForPubkey(theirPubkey: string): void {
-    const currentUser = this.authService.getCurrentUser();
-    if (!currentUser) return;
-    this.cache.delete(`${theirPubkey}:${currentUser.pubkey}`);
-  }
-
   private async performVerification(
     theirPubkey: string,
     myPubkey: string,
     forceRefresh: boolean
   ): Promise<FollowVerdict> {
-    const writeRelays = await this.getTheirWriteRelays(theirPubkey);
+    const fetched = await this.fetchNewestKindEvent(theirPubkey, forceRefresh);
 
-    // Wider net: target's own write relays + aggregators + indexer relays.
-    // Indexers (hzrd149, coracle, kindpag.es via getMetadataRelays()) often
-    // hold a more recent kind:3 than the relays listed in a stale kind:10002.
-    const metadataRelays = this.relayConfig.getMetadataRelays();
+    // Fetch-phase failure: the shared unknown result is shape-compatible
+    // with FollowVerdict's unknown variant.
+    if ('status' in fetched) return fetched as FollowVerdict;
 
-    const queryRelays = Array.from(
-      new Set([...writeRelays.slice(0, MAX_WRITE_RELAYS), ...metadataRelays])
-    );
-
-    if (queryRelays.length === 0) {
-      return { status: 'unknown', reason: 'no-write-relays' };
-    }
-
-    const filters: NDKFilter[] = [
-      {
-        authors: [theirPubkey],
-        kinds: [3],
-        limit: 1,
-      },
-    ];
-
-    let events: NostrEvent[];
-    try {
-      events = await this.transport.fetch(
-        queryRelays,
-        filters,
-        FETCH_TIMEOUT_MS,
-        forceRefresh,
-        'FollowVerification'
-      );
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      const reason: 'timeout' | 'error' = msg.toLowerCase().includes('timeout')
-        ? 'timeout'
-        : 'error';
-      this.systemLogger.warn(
-        'FollowVerification',
-        `Fetch failed for ${theirPubkey.slice(0, 8)} (${reason}): ${msg}`
-      );
-      return { status: 'unknown', reason };
-    }
-
-    if (!events || events.length === 0) {
-      return { status: 'unknown', reason: 'no-event' };
-    }
-
-    // Pick newest across all relays.
-    const newest = events.reduce((a, b) =>
-      (a.created_at ?? 0) >= (b.created_at ?? 0) ? a : b
-    );
+    const { newest, queryRelays } = fetched;
+    void forceRefresh;
 
     const pTags = newest.tags.filter(
       (tag): tag is [string, string, ...string[]] =>
@@ -289,7 +208,7 @@ export class FollowVerificationService {
     const ageDays = (Date.now() / 1000 - newestTs) / 86400;
     if (ageDays > STALE_DAYS) {
       this.systemLogger.info(
-        'FollowVerification',
+        this.logTag,
         `Stale verdict ignored for ${theirPubkey.slice(0, 8)}: newest kind:3 is ${Math.round(ageDays)} days old`
       );
       return { status: 'unknown', reason: 'stale' };
@@ -301,15 +220,5 @@ export class FollowVerificationService {
       viaRelays: queryRelays,
       theirFollowCount: pTags.length,
     };
-  }
-
-  private async getTheirWriteRelays(theirPubkey: string): Promise<string[]> {
-    const bootstrap = this.relayConfig.getAggregatorRelays();
-    const result = await this.relayListOrch.fetchRelayList(
-      theirPubkey,
-      bootstrap
-    );
-    if (!result || !result.relays.length) return [];
-    return result.relays.filter(r => r.types.includes('write')).map(r => r.url);
   }
 }

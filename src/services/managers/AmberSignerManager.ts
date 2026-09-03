@@ -6,6 +6,7 @@
  * @used-by AuthService
  */
 
+import { errMessage } from '../../helpers/errorMessage';
 import { AmberSignerService } from '../AmberSignerService';
 import { encodeNpub, decodeNip19 } from '../NostrToolsAdapter';
 import type { SignableEvent } from '../AuthService';
@@ -77,7 +78,7 @@ export class AmberSignerManager {
       return { success: true, npub, pubkey };
     } catch (error) {
       console.error('[AmberSignerManager] Login failed:', error);
-      const msg = error instanceof Error ? error.message : String(error);
+      const msg = errMessage(error);
       return { success: false, error: msg || 'Amber login failed' };
     }
   }

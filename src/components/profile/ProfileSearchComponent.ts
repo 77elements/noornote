@@ -24,6 +24,7 @@
  * `setButtonState`) so the caller can drive feedback without re-querying the DOM.
  */
 
+import { errMessage } from '../../helpers/errorMessage';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { npubToHex } from '../../helpers/nip19';
 
@@ -448,10 +449,7 @@ export class ProfileSearchComponent {
       await this.options.onSubmit(value, helpers);
     } catch (error) {
       console.error('[ProfileSearchComponent] onSubmit threw:', error);
-      helpers.showStatus(
-        `Error: ${error instanceof Error ? error.message : String(error)}`,
-        'error'
-      );
+      helpers.showStatus(`Error: ${errMessage(error)}`, 'error');
       helpers.setButtonState('idle');
     }
   }

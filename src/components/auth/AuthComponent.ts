@@ -5,6 +5,8 @@
  *           Bunker (remote signer), and NostrConnect QR (desktop/web)
  */
 
+import { GLOBAL_KEY_HAS_KEY } from '../../helpers/globalStorageKeys';
+import { errMessage } from '../../helpers/errorMessage';
 import { AuthService } from '../../services/AuthService';
 import { SystemLogger } from '../../services/SystemLogger';
 import { Router } from '../../services/Router';
@@ -271,7 +273,7 @@ export class AuthComponent {
             'Connection failed. Reload to try again.';
       }
     } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
+      const msg = errMessage(error);
       this.systemLogger.warn('Auth', `NostrConnect init failed: ${msg}`);
       if (qrContainer)
         qrContainer.innerHTML = '<p class="auth-hint">QR code unavailable</p>';
@@ -354,7 +356,7 @@ export class AuthComponent {
     if (createAccountLink) {
       createAccountLink.addEventListener('click', e => {
         e.preventDefault();
-        localStorage.removeItem('noornote_has_key');
+        localStorage.removeItem(GLOBAL_KEY_HAS_KEY);
         this.router.navigate('/welcome');
       });
     }
@@ -586,7 +588,7 @@ export class AuthComponent {
         this.resetButton(amberBtn, originalText);
       }
     } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
+      const msg = errMessage(error);
       console.error(`ERROR: ${msg}`);
       console.error('Amber login error:', msg);
       this.showError(`Amber error: ${msg}`);

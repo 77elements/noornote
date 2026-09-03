@@ -19,14 +19,8 @@
  * and 'unknown' both collapse to "no badge".
  */
 
-import type { NDKFilter, NostrEvent } from '@nostr-dev-kit/ndk';
-import { NostrTransport } from './transport/NostrTransport';
-import { RelayConfig } from './RelayConfig';
-import { RelayListOrchestrator } from './orchestration/RelayListOrchestrator';
-import { AuthService } from './AuthService';
-import { SystemLogger } from './SystemLogger';
+import { RemoteKindVerdictService } from './RemoteKindVerdictService';
 import { diagLog } from './DiagnosticLogger';
-import { LRUCache, getCacheSize } from '../helpers/LRUCache';
 
 export type MuteVerdict =
   | { status: 'muted'; verifiedAt: number; viaRelays: string[] }
@@ -36,30 +30,19 @@ export type MuteVerdict =
       reason: 'no-write-relays' | 'no-event' | 'timeout' | 'error';
     };
 
-const KIND_MUTE_LIST = 10000;
-const VERDICT_TTL_MS = 30 * 60 * 1000;
-const FETCH_TIMEOUT_MS = 8000;
-const MAX_WRITE_RELAYS = 6;
-
-export class RemoteMuteCheckService {
+export class RemoteMuteCheckService extends RemoteKindVerdictService<MuteVerdict> {
   private static instance: RemoteMuteCheckService;
-  private transport: NostrTransport;
-  private relayConfig: RelayConfig;
-  private relayListOrch: RelayListOrchestrator;
-  private authService: AuthService;
-  private systemLogger: SystemLogger;
-
-  private cache: LRUCache<MuteVerdict> = new LRUCache<MuteVerdict>(
-    getCacheSize(1000, 500, 200),
-    VERDICT_TTL_MS
-  );
 
   private constructor() {
-    this.transport = NostrTransport.getInstance();
-    this.relayConfig = RelayConfig.getInstance();
-    this.relayListOrch = RelayListOrchestrator.getInstance();
-    this.authService = AuthService.getInstance();
-    this.systemLogger = SystemLogger.getInstance();
+    super();
+  }
+
+  protected get kind(): number {
+    return 10000;
+  }
+
+  protected get logTag(): string {
+    return 'RemoteMuteCheck';
   }
 
   public static getInstance(): RemoteMuteCheckService {
@@ -82,25 +65,13 @@ export class RemoteMuteCheckService {
       return { status: 'unknown', reason: 'error' };
     }
 
-    const cacheKey = `${theirPubkey}:${currentUser.pubkey}`;
-
-    if (!opts.forceRefresh) {
-      const cached = this.cache.get(cacheKey);
-      if (cached) return cached;
-    }
-
-    const verdict = await this.performCheck(
-      theirPubkey,
-      currentUser.pubkey,
-      opts.forceRefresh ?? false
+    return this.verifyCached(theirPubkey, currentUser.pubkey, opts, () =>
+      this.performCheck(
+        theirPubkey,
+        currentUser.pubkey,
+        opts.forceRefresh ?? false
+      )
     );
-
-    // Never cache 'unknown' — next call must retry.
-    if (verdict.status !== 'unknown') {
-      this.cache.set(cacheKey, verdict);
-    }
-
-    return verdict;
   }
 
   /**
@@ -115,72 +86,17 @@ export class RemoteMuteCheckService {
     return verdict.status === 'muted';
   }
 
-  public clearCache(): void {
-    this.cache.clear();
-  }
-
-  public clearCacheForPubkey(theirPubkey: string): void {
-    const currentUser = this.authService.getCurrentUser();
-    if (!currentUser) return;
-    this.cache.delete(`${theirPubkey}:${currentUser.pubkey}`);
-  }
-
   private async performCheck(
     theirPubkey: string,
     myPubkey: string,
     forceRefresh: boolean
   ): Promise<MuteVerdict> {
-    const writeRelays = await this.getTheirWriteRelays(theirPubkey);
+    const fetched = await this.fetchNewestKindEvent(theirPubkey, forceRefresh);
 
-    // Wider net: target's own write relays + indexer relays. The target's
-    // kind:10000 may live on relays outside their current kind:10002.
-    const metadataRelays = this.relayConfig.getMetadataRelays();
+    // Fetch-phase failure: shape-compatible with MuteVerdict's unknown variant.
+    if ('status' in fetched) return fetched as MuteVerdict;
 
-    const queryRelays = Array.from(
-      new Set([...writeRelays.slice(0, MAX_WRITE_RELAYS), ...metadataRelays])
-    );
-
-    if (queryRelays.length === 0) {
-      return { status: 'unknown', reason: 'no-write-relays' };
-    }
-
-    const filters: NDKFilter[] = [
-      {
-        authors: [theirPubkey],
-        kinds: [KIND_MUTE_LIST],
-        limit: 1,
-      },
-    ];
-
-    let events: NostrEvent[];
-    try {
-      events = await this.transport.fetch(
-        queryRelays,
-        filters,
-        FETCH_TIMEOUT_MS,
-        forceRefresh,
-        'RemoteMuteCheck'
-      );
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      const reason: 'timeout' | 'error' = msg.toLowerCase().includes('timeout')
-        ? 'timeout'
-        : 'error';
-      this.systemLogger.warn(
-        'RemoteMuteCheck',
-        `Fetch failed for ${theirPubkey.slice(0, 8)} (${reason}): ${msg}`
-      );
-      return { status: 'unknown', reason };
-    }
-
-    if (!events || events.length === 0) {
-      return { status: 'unknown', reason: 'no-event' };
-    }
-
-    // Newest across all relays.
-    const newest = events.reduce((a, b) =>
-      (a.created_at ?? 0) >= (b.created_at ?? 0) ? a : b
-    );
+    const { newest, queryRelays } = fetched;
 
     // Public mutes only — plaintext `p` tags. The encrypted `.content` block
     // (private mutes) is intentionally not touched; it isn't ours to decrypt.
@@ -205,15 +121,5 @@ export class RemoteMuteCheckService {
       verifiedAt: Date.now(),
       viaRelays: queryRelays,
     };
-  }
-
-  private async getTheirWriteRelays(theirPubkey: string): Promise<string[]> {
-    const bootstrap = this.relayConfig.getAggregatorRelays();
-    const result = await this.relayListOrch.fetchRelayList(
-      theirPubkey,
-      bootstrap
-    );
-    if (!result || !result.relays.length) return [];
-    return result.relays.filter(r => r.types.includes('write')).map(r => r.url);
   }
 }

@@ -11,6 +11,7 @@
  * - Manual logCrash() calls
  */
 
+import { errMessage } from '../helpers/errorMessage';
 import { SystemLogger, type LogEntry } from './SystemLogger';
 import { diagLog } from './DiagnosticLogger';
 
@@ -88,7 +89,7 @@ class CrashLoggerService {
     error: unknown,
     extra?: Record<string, unknown>
   ): void {
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorMessage = errMessage(error);
     const errorStack = error instanceof Error ? error.stack : undefined;
 
     diagLog('crashes', `${type}: ${errorMessage}`, {

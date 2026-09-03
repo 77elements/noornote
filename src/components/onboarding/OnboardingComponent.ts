@@ -5,6 +5,7 @@
  * - SCC: Onboarding carousel ("What is Nostr?") + CTA buttons
  */
 
+import { GLOBAL_KEY_HAS_KEY } from '../../helpers/globalStorageKeys';
 import { Router } from '../../services/Router';
 import { setupCarouselNavigation } from '../../helpers/CarouselHelper';
 import { getImageViewer } from '../ui/ImageViewer';
@@ -110,7 +111,7 @@ export class OnboardingComponent {
     const hasKeyBtn = primaryContent.querySelector('[data-action="has-key"]');
     if (hasKeyBtn) {
       hasKeyBtn.addEventListener('click', () => {
-        localStorage.setItem('noornote_has_key', 'true');
+        localStorage.setItem(GLOBAL_KEY_HAS_KEY, 'true');
         this.router.navigate('/login');
       });
     }

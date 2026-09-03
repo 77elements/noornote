@@ -18,6 +18,7 @@
  * NostrTransport. Do NOT extend this exception to other NDK usage.
  */
 
+import { errMessage } from '../../helpers/errorMessage';
 import {
   NDKEvent,
   NDKPrivateKeySigner,
@@ -1294,7 +1295,7 @@ export class DMService {
       return rumor;
     } catch (error) {
       diagLog('dms', 'Gift wrap unwrap failed', {
-        error: error instanceof Error ? error.message : String(error),
+        error: errMessage(error),
       });
       return null;
     }
@@ -1537,7 +1538,7 @@ export class DMService {
 
       return wrapEvent.rawEvent();
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
+      const errorMsg = errMessage(error);
       diagLog('dms', 'Gift wrap creation failed', { error: errorMsg });
       this.systemLogger.error(
         'DMService',

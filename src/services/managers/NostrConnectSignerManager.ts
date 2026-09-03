@@ -8,6 +8,7 @@
  * goes down, communication continues via the other.
  */
 
+import { errMessage } from '../../helpers/errorMessage';
 import { NDKNip46Signer } from '@nostr-dev-kit/ndk';
 import { hexToNpub } from '../../helpers/nip19';
 import {
@@ -99,7 +100,7 @@ export class NostrConnectSignerManager extends Nip46BaseManager {
         if (cancelled) return { success: false, error: 'Cancelled' };
         this.stopSignerAndPool(signer);
         this.signer = null;
-        const msg = error instanceof Error ? error.message : String(error);
+        const msg = errMessage(error);
         nip46Log.error('nostrconnect failed:', msg);
         return { success: false, error: msg };
       }

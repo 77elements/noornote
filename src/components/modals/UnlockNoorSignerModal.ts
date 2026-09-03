@@ -3,6 +3,7 @@
  * Modal for entering password when trust session has expired (silent mode)
  */
 
+import { errMessage } from '../../helpers/errorMessage';
 import { ModalService } from '../../services/ModalService';
 import { KeySignerClient } from '../../services/KeySignerClient';
 
@@ -118,8 +119,7 @@ export class UnlockNoorSignerModal {
         this.modalService.hide();
         this.options.onSuccess();
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
+        const errorMessage = errMessage(error);
         const isPasswordError =
           errorMessage.includes('invalid_password') ||
           errorMessage.includes('Invalid password');

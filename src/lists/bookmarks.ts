@@ -14,6 +14,7 @@
  * Shared components (FolderCard, UpNavigator) are imported from /src/components/bookmarks/
  */
 
+import { errMessage } from '../helpers/errorMessage';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { SystemLogger } from '../services/SystemLogger';
 import { TypedEventBus } from '../core/TypedEventBus';
@@ -5147,7 +5148,7 @@ export class BookmarkManager {
       diagLog('lists', 'handleSyncToRelays: success');
       ToastService.show('Bookmarks published successfully', 'success');
     } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
+      const msg = errMessage(error);
       diagLog('lists', 'handleSyncToRelays: FAILED', {
         error: msg,
         stack: error instanceof Error ? error.stack : undefined,

@@ -3,6 +3,7 @@
  * Handles client-side routing with history API
  */
 
+import { GLOBAL_KEY_HAS_KEY } from '../helpers/globalStorageKeys';
 import { AuthStateManager } from './AuthStateManager';
 import { PlatformService } from './PlatformService';
 import { OverlayStack } from './OverlayStack';
@@ -398,7 +399,7 @@ export class Router {
             route.unauthenticatedHandler(params);
           } else if (route.requiresAuth) {
             // Route requires auth - redirect to welcome or login based on user preference
-            const hasKey = localStorage.getItem('noornote_has_key');
+            const hasKey = localStorage.getItem(GLOBAL_KEY_HAS_KEY);
             this.navigate(hasKey ? '/login' : '/welcome');
           } else {
             // Route is public, show it

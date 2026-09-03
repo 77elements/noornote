@@ -5,6 +5,7 @@
  * Uses Electron (window.electronAPI) backend.
  */
 
+import { errMessage } from '../helpers/errorMessage';
 import { PlatformService } from './PlatformService';
 import { decodeNip19 } from './NostrToolsAdapter';
 
@@ -516,7 +517,7 @@ export class KeySignerClient {
         npub: response.npub || '',
       };
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      const message = errMessage(error);
       throw new Error(`Failed to add account: ${message}`);
     }
   }

@@ -3,6 +3,7 @@
  * CSS Grid-based 3-column layout: Sidebar + Primary + Secondary
  */
 
+import { GLOBAL_KEY_HAS_KEY } from '../../helpers/globalStorageKeys';
 import { AuthComponent } from '../auth/AuthComponent';
 
 /** Shared param type for the dynamically-imported ExternalFollowListManager. */
@@ -1321,7 +1322,7 @@ export class MainLayout {
     if (welcomeLink) {
       welcomeLink.addEventListener('click', e => {
         e.preventDefault();
-        localStorage.removeItem('noornote_has_key');
+        localStorage.removeItem(GLOBAL_KEY_HAS_KEY);
         const router = Router.getInstance();
         router.navigate('/welcome');
       });
