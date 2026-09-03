@@ -10,6 +10,7 @@ import { SettingsSection } from '../../components/settings/SettingsSection';
 import { Switch } from '../../components/ui/Switch';
 import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import {
   isContentWordFilterEnabled,
   setContentWordFilterEnabled,
@@ -93,7 +94,7 @@ function renderWordList(contentEl: HTMLElement): void {
             word => `
           <div class="ui-list__item" style="display: flex; justify-content: space-between; align-items: center;">
             <span>${escapeHtml(word)}</span>
-            <button class="btn btn--mini btn--danger" data-action="remove-word" data-word="${escapeAttr(word)}">Remove</button>
+            <button class="btn btn--mini btn--danger" data-action="remove-word" data-word="${escapeHtmlAttr(word)}">Remove</button>
           </div>
         `
           )
@@ -147,14 +148,4 @@ function bindInputHandler(contentEl: HTMLElement): void {
   input.addEventListener('keypress', e => {
     if (e.key === 'Enter') addWord();
   });
-}
-
-function escapeHtml(str: string): string {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
-
-function escapeAttr(str: string): string {
-  return str.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
