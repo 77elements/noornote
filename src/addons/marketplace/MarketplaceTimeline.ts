@@ -406,7 +406,7 @@ export class MarketplaceTimeline {
 
       authorEl.innerHTML = `
         <a href="/profile/${npub}" class="mention-link" data-profile-pubkey="${pubkey}">
-          <img class="profile-pic profile-pic--mini" src="${escapeHtmlAttr(picture)}" alt="" />${escapeHtml(username)}</a>
+          <img class="profile-pic profile-pic--mini" src="${escapeHtmlAttr(picture)}" alt="" width="18" height="18" loading="lazy" decoding="async" />${escapeHtml(username)}</a>
       `;
     } catch {
       authorEl.innerHTML = `

@@ -49,6 +49,17 @@ class CrashLoggerService {
    */
   private setupGlobalErrorHandlers(): void {
     window.addEventListener('error', event => {
+      // Benign browser noise: ResizeObserver fires after layout; when its
+      // callback triggers more layout in the same frame the browser reports
+      // "ResizeObserver loop completed with undelivered notifications" (or
+      // the legacy "loop limit exceeded"). Not a crash — no data lost.
+      const message = typeof event.message === 'string' ? event.message : '';
+      if (message.includes('ResizeObserver loop')) {
+        event.preventDefault();
+        console.debug('[CrashLogger] Benign browser noise ignored:', message);
+        return;
+      }
+
       this.logCrash('UncaughtError', event.error || event.message, {
         filename: event.filename,
         lineno: event.lineno,

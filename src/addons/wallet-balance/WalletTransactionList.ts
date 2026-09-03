@@ -232,7 +232,7 @@ export class WalletTransactionList {
     // Icon: profile pic placeholder for zaps, arrow for regular
     let iconHtml: string;
     if (senderPubkey) {
-      iconHtml = `<img class="wallet-tx__avatar profile-pic profile-pic--mini" data-zap-pubkey="${senderPubkey}" src="" alt="" />`;
+      iconHtml = `<img class="wallet-tx__avatar profile-pic profile-pic--mini" data-zap-pubkey="${senderPubkey}" src="" alt="" width="18" height="18" loading="lazy" decoding="async" />`;
     } else {
       const arrow = isIncoming ? '↙' : '↗';
       iconHtml = `<div class="wallet-tx__icon">${arrow}</div>`;

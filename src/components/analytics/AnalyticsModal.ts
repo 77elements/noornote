@@ -224,7 +224,7 @@ export class AnalyticsModal {
     event: NostrEvent,
     profile: UserMentionProfile
   ): string {
-    return `<span class="user-mention" data-pubkey="${event.pubkey}"><a href="#" class="mention-link mention-link--bg" data-note-id="${event.id}"><img class="profile-pic profile-pic--mini" src="${escapeHtmlAttr(profile.avatarUrl)}" alt="" />${escapeHtml(profile.username)}</a></span>`;
+    return `<span class="user-mention" data-pubkey="${event.pubkey}"><a href="#" class="mention-link mention-link--bg" data-note-id="${event.id}"><img class="profile-pic profile-pic--mini" src="${escapeHtmlAttr(profile.avatarUrl)}" alt="" width="18" height="18" loading="lazy" decoding="async" />${escapeHtml(profile.username)}</a></span>`;
   }
 
   /**

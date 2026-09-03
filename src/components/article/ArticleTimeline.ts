@@ -453,7 +453,7 @@ export class ArticleTimeline {
         <div class="nn-card__meta">
           <span class="author user-mention" data-pubkey="${event.pubkey}">
             <a href="/profile/${hexToNpub(event.pubkey)}" class="mention-link" data-profile-pubkey="${event.pubkey}">
-              <img class="profile-pic profile-pic--mini" src="" alt="" />...</a>
+              <img class="profile-pic profile-pic--mini" src="" alt="" width="18" height="18" loading="lazy" decoding="async" />...</a>
           </span>
           <span>${formatTimestamp(metadata.publishedAt || event.created_at || 0)}</span>
         </div>
@@ -515,12 +515,12 @@ export class ArticleTimeline {
 
       authorEl.innerHTML = `
         <a href="/profile/${npub}" class="mention-link" data-profile-pubkey="${pubkey}">
-          <img class="profile-pic profile-pic--mini" src="${escapeHtmlAttr(picture)}" alt="" />${escapeHtml(username)}</a>
+          <img class="profile-pic profile-pic--mini" src="${escapeHtmlAttr(picture)}" alt="" width="18" height="18" loading="lazy" decoding="async" />${escapeHtml(username)}</a>
       `;
     } catch {
       authorEl.innerHTML = `
         <a href="/profile/${npub}" class="mention-link" data-profile-pubkey="${pubkey}">
-          <img class="profile-pic profile-pic--mini" src="" alt="" />${npub.slice(0, 12)}...</a>
+          <img class="profile-pic profile-pic--mini" src="" alt="" width="18" height="18" loading="lazy" decoding="async" />${npub.slice(0, 12)}...</a>
       `;
     }
 

@@ -284,7 +284,7 @@ export class ThreadContextIndicator {
 
     item.innerHTML = `
       ${arrow}
-      <img class="profile-pic profile-pic--mini" src="${escapeHtmlAttr(avatarUrl)}" alt="${escapeHtmlAttr(displayName)}" />
+      <img class="profile-pic profile-pic--mini" src="${escapeHtmlAttr(avatarUrl)}" alt="${escapeHtmlAttr(displayName)}" width="18" height="18" loading="lazy" decoding="async" />
       <span class="thread-context-content"><b class="thread-context-author">${escapeHtml(displayName)}</b> ${previewHtml}</span>
     `;
 
