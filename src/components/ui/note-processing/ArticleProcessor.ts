@@ -7,6 +7,7 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { ProcessedNote } from '../types/NoteTypes';
 import { ContentProcessor } from '../../../services/ContentProcessor';
+import { buildProcessedNote } from './processedNoteFactory';
 import { getTag } from '../../../helpers/tagUtils';
 
 export class ArticleProcessor {
@@ -17,11 +18,6 @@ export class ArticleProcessor {
    * Full rendering is handled by ArticleView when viewing the article directly
    */
   static process(event: NostrEvent): ProcessedNote {
-    const eventId = event.id;
-    if (!eventId) {
-      throw new Error('Event ID is required');
-    }
-
     // Extract article metadata
     const title = getTag(event.tags, 'title', 'Untitled Article');
     const summary = getTag(event.tags, 'summary');
@@ -29,39 +25,15 @@ export class ArticleProcessor {
     // For timeline preview, show title and summary
     const previewContent = summary ? `# ${title}\n\n${summary}` : `# ${title}`;
 
-    const authorProfile =
-      ArticleProcessor.contentProcessor.getNonBlockingProfile(event.pubkey);
     const processedContent =
       ArticleProcessor.contentProcessor.processContentWithTags(
         previewContent,
         event.tags
       );
 
-    const result: ProcessedNote = {
-      id: eventId,
+    return buildProcessedNote(event, {
       type: 'original',
-      timestamp: event.created_at,
-      author: {
-        pubkey: event.pubkey,
-      },
       content: processedContent,
-      rawEvent: event,
-    };
-
-    if (authorProfile) {
-      result.author.profile = {
-        ...(authorProfile.name !== undefined && { name: authorProfile.name }),
-
-        ...(authorProfile.display_name !== undefined && {
-          display_name: authorProfile.display_name,
-        }),
-
-        ...(authorProfile.picture !== undefined && {
-          picture: authorProfile.picture,
-        }),
-      };
-    }
-
-    return result;
+    });
   }
 }

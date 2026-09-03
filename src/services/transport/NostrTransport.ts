@@ -1166,6 +1166,55 @@ export class NostrTransport {
   }
 
   /**
+   * Publish a user-content event with author-outbox resolution: the user's
+   * own NIP-65 write relays (primary, must succeed) plus the target
+   * author(s)' outbound relays and any caller-supplied relay hints
+   * (best-effort) — so the author's inbox-set reliably picks the event up
+   * (reactions, reposts, …).
+   *
+   * Outbox resolution uses the narrow `discoverUserRelays + getOutboundRelays`
+   * pair (NOT the broad `getCombinedRelays`): the latter unions in the user's
+   * own read-set + aggregator relays, which then overlap with the primary
+   * publish-set and trip NDK's per-relay duplicate-OK accounting ("0
+   * published, 1 required" despite acceptance — see publishWithHints).
+   * `getOutboundRelays` excludes the user's read-set internally, so the
+   * resulting hint-set stays strictly author-specific.
+   *
+   * Discovery failure is non-fatal: falls back to caller hints + own write
+   * relays. Dynamic-imports the orchestrator to avoid a transport ↔
+   * orchestrator import cycle.
+   */
+  public async publishWithOutbox(
+    event: NostrEvent,
+    opts: {
+      /** Pubkeys whose NIP-65 outbox should receive the event. */
+      authorPubkeys?: string[];
+      /** Caller-collected relay hints (e.g. e-tag hints from the note). */
+      relayHints?: string[];
+      requiredRelayCount?: number;
+    } = {}
+  ): Promise<Set<string>> {
+    const { authorPubkeys = [], relayHints = [], requiredRelayCount } = opts;
+
+    let authorOutbox: string[] = [];
+    if (authorPubkeys.length > 0) {
+      try {
+        const { OutboundRelaysOrchestrator } = await import(
+          '../orchestration/OutboundRelaysOrchestrator'
+        );
+        const orch = OutboundRelaysOrchestrator.getInstance();
+        const relayLists = await orch.discoverUserRelays(authorPubkeys);
+        authorOutbox = orch.getOutboundRelays(relayLists);
+      } catch {
+        /* fall back to caller hints + own write-relays only */
+      }
+    }
+
+    const hints = [...new Set([...relayHints, ...authorOutbox])];
+    return this.publishWithHints(event, hints, requiredRelayCount);
+  }
+
+  /**
    * Publish a NIP-17 DM gift-wrap (kind:1059) to the recipient's inbox
    * relays. Caller is responsible for resolving the inbox set (typically
    * kind:10050 with kind:10002-read as fallback) — this helper is just a

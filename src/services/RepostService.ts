@@ -14,7 +14,6 @@ import { SystemLogger } from './SystemLogger';
 import { ErrorService } from './ErrorService';
 import { ToastService } from './ToastService';
 import { ReactionsOrchestrator } from './orchestration/ReactionsOrchestrator';
-import { OutboundRelaysOrchestrator } from './orchestration/OutboundRelaysOrchestrator';
 import { getTag } from '../helpers/tagUtils';
 
 export interface RepostOptions {
@@ -163,25 +162,15 @@ export class RepostService {
 
       // Resolve the reposted-event author's NIP-65 outbox so the
       // repost reaches their inbox-set — combined with any caller-
-      // supplied relay-hints (e-tag relay-hint).
-      // Narrow author-outbound only (no user-read or aggregator union),
-      // see ReactionService for rationale — broader sets trip NDK's
-      // per-relay duplicate-publish accounting.
-      let authorOutbox: string[] = [];
-      try {
-        const orch = OutboundRelaysOrchestrator.getInstance();
-        const relayLists = await orch.discoverUserRelays([
-          originalEvent.pubkey,
-        ]);
-        authorOutbox = orch.getOutboundRelays(relayLists);
-      } catch {
-        /* fall back to relayHints + own write-relays only */
-      }
-      const hints = [...new Set([...relayHints, ...authorOutbox])];
-
-      const acceptedRelays = await this.transport.publishWithHints(
+      // supplied relay-hints (e-tag relay-hint). Relay resolution +
+      // NDK duplicate-publish accounting live in the transport
+      // (publishWithOutbox).
+      const acceptedRelays = await this.transport.publishWithOutbox(
         signedEvent,
-        hints
+        {
+          authorPubkeys: [originalEvent.pubkey],
+          relayHints,
+        }
       );
 
       this.systemLogger.info(
@@ -260,22 +249,10 @@ export class RepostService {
         return { success: false, error: 'Signing failed' };
       }
 
-      // Narrow author-outbound only (no user-read or aggregator union),
-      // see ReactionService for rationale — broader sets trip NDK's
-      // per-relay duplicate-publish accounting.
-      let authorOutbox: string[] = [];
-      try {
-        const orch = OutboundRelaysOrchestrator.getInstance();
-        const relayLists = await orch.discoverUserRelays([
-          originalEvent.pubkey,
-        ]);
-        authorOutbox = orch.getOutboundRelays(relayLists);
-      } catch {
-        /* fall back to relayHints + own write-relays only */
-      }
-      const hints = [...new Set([...relayHints, ...authorOutbox])];
-
-      await this.transport.publishWithHints(signedEvent, hints);
+      await this.transport.publishWithOutbox(signedEvent, {
+        authorPubkeys: [originalEvent.pubkey],
+        relayHints,
+      });
       this.systemLogger.info(
         'RepostService',
         `Generic repost (kind ${originalEvent.kind}) published`

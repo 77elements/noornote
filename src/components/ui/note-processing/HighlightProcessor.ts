@@ -16,6 +16,7 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { ProcessedNote } from '../types/NoteTypes';
 import { ContentProcessor } from '../../../services/ContentProcessor';
+import { buildProcessedNote } from './processedNoteFactory';
 import { encodeNevent, encodeNaddr } from '../../../services/NostrToolsAdapter';
 import { hexToNpub } from '../../../helpers/nip19';
 import { npubToUsername } from '../../../helpers/npubToUsername';
@@ -31,9 +32,6 @@ export class HighlightProcessor {
   private static contentProcessor = ContentProcessor.getInstance();
 
   static process(event: NostrEvent): ProcessedNote {
-    const eventId = event.id;
-    if (!eventId) throw new Error('Event ID is required');
-
     const sourceTag = HighlightProcessor.extractSourceTag(event.tags);
     const sourceAuthorPubkey = HighlightProcessor.extractSourceAuthor(
       event.tags
@@ -54,14 +52,8 @@ export class HighlightProcessor {
       sourceAuthorPubkey
     );
 
-    const authorProfile =
-      HighlightProcessor.contentProcessor.getNonBlockingProfile(event.pubkey);
-
-    const result: ProcessedNote = {
-      id: eventId,
+    return buildProcessedNote(event, {
       type: 'highlight',
-      timestamp: event.created_at,
-      author: { pubkey: event.pubkey },
       content: {
         text: event.content,
         html,
@@ -71,24 +63,7 @@ export class HighlightProcessor {
         quotedReferences: processedComment?.quotedReferences ?? [],
         bolt11Invoices: processedComment?.bolt11Invoices ?? [],
       },
-      rawEvent: event,
-    };
-
-    if (authorProfile) {
-      result.author.profile = {
-        ...(authorProfile.name !== undefined && { name: authorProfile.name }),
-
-        ...(authorProfile.display_name !== undefined && {
-          display_name: authorProfile.display_name,
-        }),
-
-        ...(authorProfile.picture !== undefined && {
-          picture: authorProfile.picture,
-        }),
-      };
-    }
-
-    return result;
+    });
   }
 
   private static extractSourceTag(tags: string[][]): string[] | null {

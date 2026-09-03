@@ -10,6 +10,7 @@ import {
   ContentProcessor,
   type ProcessedContent,
 } from '../../../services/ContentProcessor';
+import { buildProcessedNote } from './processedNoteFactory';
 import { escapeHtml } from '../../../helpers/escapeHtml';
 import { getTag } from '../../../helpers/tagUtils';
 
@@ -17,14 +18,6 @@ export class PictureNoteProcessor {
   private static contentProcessor = ContentProcessor.getInstance();
 
   static process(event: NostrEvent): ProcessedNote {
-    const eventId = event.id;
-    if (!eventId) {
-      throw new Error('Event ID is required');
-    }
-
-    const authorProfile =
-      PictureNoteProcessor.contentProcessor.getNonBlockingProfile(event.pubkey);
-
     const processedContent =
       PictureNoteProcessor.contentProcessor.processContentWithTags(
         event.content,
@@ -33,32 +26,10 @@ export class PictureNoteProcessor {
 
     PictureNoteProcessor.prependPictureContent(processedContent, event.tags);
 
-    const result: ProcessedNote = {
-      id: eventId,
+    return buildProcessedNote(event, {
       type: 'original',
-      timestamp: event.created_at,
-      author: {
-        pubkey: event.pubkey,
-      },
       content: processedContent,
-      rawEvent: event,
-    };
-
-    if (authorProfile) {
-      result.author.profile = {
-        ...(authorProfile.name !== undefined && { name: authorProfile.name }),
-
-        ...(authorProfile.display_name !== undefined && {
-          display_name: authorProfile.display_name,
-        }),
-
-        ...(authorProfile.picture !== undefined && {
-          picture: authorProfile.picture,
-        }),
-      };
-    }
-
-    return result;
+    });
   }
 
   /**

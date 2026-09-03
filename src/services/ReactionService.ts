@@ -13,7 +13,6 @@ import { SystemLogger } from './SystemLogger';
 import { ErrorService } from './ErrorService';
 import { ToastService } from './ToastService';
 import { ReactionsOrchestrator } from './orchestration/ReactionsOrchestrator';
-import { OutboundRelaysOrchestrator } from './orchestration/OutboundRelaysOrchestrator';
 import { getAddressableIdentifier } from '../helpers/getAddressableIdentifier';
 
 export interface ReactionOptions {
@@ -247,30 +246,15 @@ export class ReactionService {
 
       // Resolve the author's NIP-65 outbox so the reaction reliably
       // reaches their inbox-set — even if the user saw the note on a
-      // relay that the author doesn't write to. Use the narrow
-      // `discoverUserRelays + getOutboundRelays` pair instead of the
-      // broad `getCombinedRelays`: the latter unions in the user's own
-      // read-set + the aggregator-relays, which then overlap with the
-      // primary publish-set and trip NDK's per-relay duplicate-detection
-      // (only one OK-resolver gets popped per publish, leaving the
-      // other relaySet.publish waiting for a timeout → "0 published, 1
-      // required" even when the relay accepted the event).
-      // `getOutboundRelays` already excludes anything in the user's
-      // read-set internally — so the resulting hint-set is strictly
-      // author-specific.
-      let authorOutbox: string[] = [];
-      try {
-        const orch = OutboundRelaysOrchestrator.getInstance();
-        const relayLists = await orch.discoverUserRelays([authorPubkey]);
-        authorOutbox = orch.getOutboundRelays(relayLists);
-      } catch {
-        /* fall back to relayHints + own write-relays only */
-      }
-      const hints = [...new Set([...relayHints, ...authorOutbox])];
-
-      const acceptedRelays = await this.transport.publishWithHints(
+      // relay that the author doesn't write to. Relay resolution +
+      // NDK duplicate-publish accounting live in the transport
+      // (publishWithOutbox).
+      const acceptedRelays = await this.transport.publishWithOutbox(
         signedEvent,
-        hints
+        {
+          authorPubkeys: [authorPubkey],
+          relayHints,
+        }
       );
 
       this.systemLogger.info(
