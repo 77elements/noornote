@@ -1,17 +1,9 @@
-# NoorNote 1.4.1
+# NoorNote 1.5.0
 
-New in this version:
+**New** — Own zaps appear instantly; gated premium notes show a clean unlock card; quoted repost chains cap at 3 levels with a clean "open" placeholder; live zaps and likes now work on long-form articles.
 
-📖 **EPUB Reader** — Books shared in notes open directly in NoorNote: paginated reading view with table of contents, reading progress, and automatic resume. Downloads still available for every book.
+**Performance** — Posting and replying feel snappier; timeline refreshes and mute/NSFW toggles rebuild instantly instead of re-rendering everything; load-more pages in faster; reply/like counters fill in all at once; login is smoother with fewer background requests; mini avatars load lazily as you scroll.
 
-🎙 **Podcast Episodes** — Podcast episodes (kind 30054) render as cards with cover art, duration and a built-in audio player.
+**Reliability** — Feeds recover automatically after sleep, network switches or long background stays — no more empty timeline after opening the lid. Posts that fail (offline, relay outage) are queued and delivered automatically once you're back — with their original timestamp. Gaps after long absences are caught up completely instead of silently skipped. Reaction flicker on double-tap is gone; long sessions no longer accumulate slowdowns.
 
-⚡ **Live Interactions** — While a note is open, new reactions, zaps, quoted reposts and replies appear instantly — no reload needed.
-
-🔗 **Profile Bio Links** — `nevent1…` / `note1…` references in profile descriptions are now tappable links that open the note.
-
-Fixes & polish:
-
-- Wallet balance: fiat conversion works reliably again (new Kraken rate fallback) + currency selector directly on the Wallet Balance addon page.
-- Addons sidebar: "(reset order)" link no longer shows up without a real custom order; move dropdown no longer overflows the screen edge.
-- Noor Jadid theme: brighter accents for better readability.
+**Fixes** — Comment nesting in threads, dropdown positioning in multi-line textareas, plus assorted stability fixes.
