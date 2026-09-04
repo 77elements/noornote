@@ -98,6 +98,12 @@ export class App {
     FontSizeService.getInstance();
     ThemeService.getInstance();
 
+    // Offline publish queue (M6.1): must exist before any publish can fail —
+    // listens for `publish:failed-all` and persists signed events for retry.
+    import('./services/PublishQueueService')
+      .then(m => m.PublishQueueService.getInstance())
+      .catch(err => console.debug('[App] PublishQueue init failed:', err));
+
     // Inline BOLT11 invoice pay handler (event delegation)
     import('./services/Bolt11PayHandler')
       .then(m => m.initBolt11PayHandler())

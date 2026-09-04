@@ -27,6 +27,7 @@ import NDKCacheDexie, {
 } from '@nostr-dev-kit/ndk-cache-dexie';
 import { RelayConfig } from '../RelayConfig';
 import { SystemLogger } from '../SystemLogger';
+import { RelayHealthMonitor } from '../RelayHealthMonitor';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { PlatformService } from '../PlatformService';
 import { diagLog } from '../DiagnosticLogger';
@@ -263,6 +264,78 @@ export class NostrTransport {
       this.handleRelayAuth(relay, challenge);
 
     this.systemLogger.info('NostrTransport', 'Transport ready');
+
+    // Socket-recovery lifecycle (see recoverConnections): browsers keep
+    // half-open WebSockets after system suspend / network switches, and NDK
+    // only notices once its own writes fail. Wire the recovery triggers.
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', () => {
+        this.recoverConnections('online');
+      });
+      if (typeof document !== 'undefined') {
+        document.addEventListener('visibilitychange', () => {
+          if (document.hidden) {
+            this.hiddenAt = Date.now();
+          } else {
+            const hiddenMs = this.hiddenAt ? Date.now() - this.hiddenAt : 0;
+            this.hiddenAt = null;
+            // Only recover after a meaningful background stay — quick tab
+            // switches must not churn healthy sockets.
+            if (hiddenMs > 30_000) {
+              this.recoverConnections('visible');
+            }
+          }
+        });
+      }
+    }
+  }
+
+  /** Throttle + bookkeeping for socket-recovery passes. */
+  private lastRecoveryAt = 0;
+  private hiddenAt: number | null = null;
+  private static readonly RECOVERY_THROTTLE_MS = 15_000;
+
+  /**
+   * Half-open socket recovery: after system suspend (laptop lid, Android
+   * background) or a network switch, sockets can report CONNECTED while the
+   * peer is long gone — NDK's own reconnect only fires when IT notices the
+   * drop, which may never happen for a silently dead socket. A recovery pass
+   * force-reconnects every pool socket that believes it is open; NDK then
+   * re-establishes its active subscriptions on each reconnect (same path as
+   * any normal network blip).
+   *
+   * Triggered on `online` and on tab-visible-after->30s. Throttled to one
+   * pass per 15s so bursty triggers coalesce.
+   */
+  public recoverConnections(reason: 'online' | 'visible'): void {
+    const now = Date.now();
+    if (now - this.lastRecoveryAt < NostrTransport.RECOVERY_THROTTLE_MS) {
+      return;
+    }
+    this.lastRecoveryAt = now;
+
+    let rebuilt = 0;
+    for (const relay of this.ndk.pool.relays.values()) {
+      if (relay.status !== NDKRelayStatus.CONNECTED) continue;
+      try {
+        relay.disconnect();
+        void relay.connect();
+        rebuilt++;
+      } catch (err) {
+        diagLog('relays', 'Socket recovery reconnect failed (non-fatal)', {
+          relay: relay.url,
+          error: String(err),
+        });
+      }
+    }
+
+    if (rebuilt > 0) {
+      diagLog('relays', `Socket recovery pass (${reason})`, { rebuilt });
+      this.systemLogger.info(
+        'NostrTransport',
+        `Rebuilt ${rebuilt} relay connection(s) after ${reason}`
+      );
+    }
   }
 
   // Shared promise prevents multiple parallel connect attempts
@@ -665,6 +738,11 @@ export class NostrTransport {
     >;
   }> {
     relays = secureRelays(relays);
+    // Passive health scoring (M5.2): fastest-first ordering so the fetch
+    // quorum is reached by healthy relays instead of stalled stragglers;
+    // penalized relays (≥3 failures, 0 successes in 15 min) go last.
+    // perRelayUntil is URL-keyed — ordering cannot break pagination cursors.
+    relays = RelayHealthMonitor.getInstance().sortByScore(relays);
     const dbgStart = Date.now();
     // Per-relay outcome: oldest created_at (this relay's next loadMore cursor),
     // count (to detect exhaustion), eosed, plus state/ms for diagnostics. Each
@@ -763,7 +841,12 @@ export class NostrTransport {
       hardTimeoutId = setTimeout(() => {
         relays.forEach(u => {
           const r = perRelay[u]!;
-          if (r.state === 'pending') r.state = 'timeout';
+          if (r.state === 'pending') {
+            r.state = 'timeout';
+            // Never answered within the budget — a request-level failure for
+            // passive health scoring (M5.2).
+            RelayHealthMonitor.getInstance().observeFailure(u);
+          }
         });
         finish();
       }, timeout);
@@ -773,6 +856,13 @@ export class NostrTransport {
         if (r.state !== 'pending') return; // already settled
         r.state = state;
         r.ms = Date.now() - dbgStart;
+        // Passive health scoring (M5.2): EOSE with round-trip ms = success,
+        // subscription error = failure.
+        if (state === 'eosed') {
+          RelayHealthMonitor.getInstance().observeSuccess(url, r.ms);
+        } else {
+          RelayHealthMonitor.getInstance().observeFailure(url);
+        }
         settledRelays++;
         if (settledRelays >= relays.length) {
           finish(); // every relay answered — no reason to wait
@@ -801,6 +891,7 @@ export class NostrTransport {
           relayUntil !== undefined
             ? filters.map(f => ({ ...f, until: relayUntil - 1 }))
             : filters;
+
         try {
           const sub = this.ndk.subscribe(relayFilters, {
             relayUrls: [relayUrl], // pin this relay → bypass outbox + reuse pooled socket
@@ -939,10 +1030,25 @@ export class NostrTransport {
       const successful = publishedRelays.size;
       const failed = relays.length - successful;
 
-      // Track relay health
+      // Passive health scoring (M5.2): ACKs are successes. Non-ACKed relays
+      // only count as failures on a FULL broadcast (no requiredRelayCount) —
+      // with a quorum threshold NDK keeps writing to the remaining relays in
+      // the background, so "not yet ACKed" is not "failed" there.
+      const ackedUrls = new Set(
+        Array.from(publishedRelays).map(relay => relay.url)
+      );
+      const health = RelayHealthMonitor.getInstance();
       publishedRelays.forEach(relay => {
         this.eventBus.emit('relay:connected', { url: relay.url });
+        health.observeSuccess(relay.url);
       });
+      if (requiredRelayCount === undefined) {
+        relays.forEach(url => {
+          if (!ackedUrls.has(url)) {
+            health.observeFailure(url);
+          }
+        });
+      }
 
       diagLog('relays', 'Publish result', {
         successful,
@@ -971,6 +1077,10 @@ export class NostrTransport {
           'NostrTransport',
           'Delivery failed — no relays responded'
         );
+        // M6.1: hand the signed event to the offline publish queue (via the
+        // event bus — the transport must not import the queue service, which
+        // itself calls back into the transport for retries).
+        this.eventBus.emit('publish:failed-all', { event, relays });
         throw new Error(`Failed to publish to any relay`);
       }
 
@@ -1144,7 +1254,12 @@ export class NostrTransport {
     const writeSet = new Set(writeRelays.map(r => normalizeRelayUrl(r)));
     const safeHints = hintRelays
       .filter(r => r.startsWith('wss://') || r.startsWith('ws://'))
-      .filter(r => !writeSet.has(normalizeRelayUrl(r)));
+      .filter(r => !writeSet.has(normalizeRelayUrl(r)))
+      // Penalty box (M5.2): a relay with ≥3 failures and 0 successes in the
+      // last 15 min is skipped for best-effort hint publishes — connecting to
+      // it would stall the fire-and-forget round and it almost certainly
+      // won't ACK. A single success anywhere clears the penalty.
+      .filter(r => !RelayHealthMonitor.getInstance().isPenalized(r));
 
     // Primary publish — propagates errors to the caller for UI feedback.
     const accepted = await this.publish(writeRelays, event, requiredRelayCount);

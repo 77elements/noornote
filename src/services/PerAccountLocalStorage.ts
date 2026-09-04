@@ -39,6 +39,10 @@ export const StorageKeys = {
   // NIP-44-encrypted blob (see SoftMuteService). Distinct from full Mutes so
   // the two systems never entangle in list-sync logic.
   SOFT_MUTED_PUBKEYS: 'noornote_soft_muted_pubkeys_map',
+  // Offline publish queue (M6.1): signed events that failed on ALL target
+  // relays, retried on reconnect/login/startup. Per-account isolation is
+  // mandatory — a queued note must only ever be delivered by its author.
+  PUBLISH_QUEUE: 'noornote_publish_queue_map',
   TRIBES: 'noornote_tribes_map',
   TRIBE_FOLDERS: 'noornote_tribe_folders_map',
   TRIBE_MEMBER_ASSIGNMENTS: 'noornote_tribe_member_assignments_map',

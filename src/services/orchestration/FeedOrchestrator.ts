@@ -360,13 +360,45 @@ export class FeedOrchestrator extends Orchestrator {
           }
           const loadMoreResult = await this.loadMore(loadMoreRequest);
 
-          // Merge new events and deduplicate by event ID
-          const mergedEvents = [...accumulatedEvents, ...loadMoreResult.events];
-          accumulatedEvents = Array.from(
-            new Map(mergedEvents.map(e => [e.id, e])).values()
+          // Merge new events and deduplicate by event ID — O(N + M log M):
+          // the accumulated array is already sorted descending, so only the
+          // new page gets sorted and the two are k-way-style merged (the
+          // previous concat + full re-sort re-sorted every accumulated note
+          // on every page).
+          const page = [...loadMoreResult.events].sort(
+            (a, b) => b.created_at - a.created_at
           );
-          // Re-sort after deduplication (newest first)
-          accumulatedEvents.sort((a, b) => b.created_at - a.created_at);
+          const seenIds = new Set(accumulatedEvents.map(e => e.id));
+          const merged: typeof accumulatedEvents = [];
+          let accIdx = 0;
+          let pageIdx = 0;
+          while (accIdx < accumulatedEvents.length && pageIdx < page.length) {
+            const acc = accumulatedEvents[accIdx]!;
+            const fresh = page[pageIdx]!;
+            if ((acc.created_at ?? 0) >= (fresh.created_at ?? 0)) {
+              merged.push(acc);
+              accIdx++;
+            } else {
+              if (!seenIds.has(fresh.id)) {
+                seenIds.add(fresh.id);
+                merged.push(fresh);
+              }
+              pageIdx++;
+            }
+          }
+          while (accIdx < accumulatedEvents.length) {
+            merged.push(accumulatedEvents[accIdx]!);
+            accIdx++;
+          }
+          while (pageIdx < page.length) {
+            const fresh = page[pageIdx]!;
+            if (!seenIds.has(fresh.id)) {
+              seenIds.add(fresh.id);
+              merged.push(fresh);
+            }
+            pageIdx++;
+          }
+          accumulatedEvents = merged;
           currentUntil =
             loadMoreResult.events[loadMoreResult.events.length - 1]
               ?.created_at || currentUntil - 3 * 3600;
@@ -1654,29 +1686,84 @@ export class FeedOrchestrator extends Orchestrator {
       if (relays.length === 0) return [];
 
       const now = Math.floor(Date.now() / 1000);
-      const filters: NDKFilter<number>[] = [
-        {
-          kinds: FEED_KINDS,
-          authors: followingPubkeys,
-          since: newestTimestamp + 1,
-          until: now,
-          limit: this.pollLimit,
-        },
-      ];
-      const wc = this.webCommentFilter(followingPubkeys, {
-        since: newestTimestamp + 1,
-        until: now,
-        limit: this.pollLimit,
-      });
-      if (wc) filters.push(wc);
 
-      const events = await this.transport.fetch(
-        relays,
-        filters,
-        5000,
-        true,
-        'FeedOrch'
-      );
+      // Windowed catch-up (M5.4): relays cap results by limit, so a single
+      // giant `since` silently skips the dense middle of a long absence.
+      // Gaps >4h are walked backward in 4h windows (max 6 windows = 24h —
+      // longer absences still reach older content via backward load-more).
+      // Regular polling gaps (≤4h) take the single-fetch path unchanged.
+      const GAP_WINDOW = 4 * 3600;
+      const MAX_CATCHUP_WINDOWS = 6;
+      const gapSeconds = now - newestTimestamp;
+      const windows: { since: number; until: number }[] = [];
+
+      if (gapSeconds <= GAP_WINDOW) {
+        windows.push({ since: newestTimestamp + 1, until: now });
+      } else {
+        let windowUntil = now;
+        let covered = 0;
+        while (windowUntil > newestTimestamp && covered < MAX_CATCHUP_WINDOWS) {
+          const windowSince = Math.max(
+            newestTimestamp + 1,
+            windowUntil - GAP_WINDOW
+          );
+          windows.push({ since: windowSince, until: windowUntil });
+          windowUntil = windowSince;
+          covered++;
+        }
+        if (windowUntil > newestTimestamp) {
+          this.systemLogger.info(
+            'FeedOrchestrator',
+            `Catch-up capped at ${MAX_CATCHUP_WINDOWS * 4}h — older gap reachable via Load More`
+          );
+        }
+      }
+
+      // Fetch all windows (sequential — each is a bounded REQ) and merge
+      // deduped, newest first.
+      const events: NostrEvent[] = [];
+      const seenIds = new Set<string>();
+      for (const window of windows) {
+        const filters: NDKFilter<number>[] = [
+          {
+            kinds: FEED_KINDS,
+            authors: followingPubkeys,
+            since: window.since,
+            until: window.until,
+            limit: this.pollLimit,
+          },
+        ];
+        const wc = this.webCommentFilter(followingPubkeys, {
+          since: window.since,
+          until: window.until,
+          limit: this.pollLimit,
+        });
+        if (wc) filters.push(wc);
+
+        const windowEvents = await this.transport.fetch(
+          relays,
+          filters,
+          5000,
+          true,
+          'FeedOrch'
+        );
+        for (const event of windowEvents) {
+          if (event.id && !seenIds.has(event.id)) {
+            seenIds.add(event.id);
+            events.push(event);
+          }
+        }
+      }
+
+      events.sort((a, b) => b.created_at - a.created_at);
+
+      if (windows.length > 1) {
+        this.systemLogger.info(
+          'FeedOrchestrator',
+          `Catch-up fetched ${events.length} notes across ${windows.length} gap windows`
+        );
+      }
+
       return await this.processEvents(
         events,
         includeReplies,

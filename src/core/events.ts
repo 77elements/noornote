@@ -304,6 +304,17 @@ export interface HideHighlightsChangedPayload {
   hidden: boolean;
 }
 
+export interface PublishFailedAllPayload {
+  event: NostrEvent;
+  /** The relay set the publish originally targeted. */
+  relays: string[];
+}
+
+export interface PublishQueueDrainedPayload {
+  delivered: number;
+  stillPending: number;
+}
+
 // ═════════════════════════════════════════════════════════════
 //  Central Event Registry — ALL EventBus events in one place.
 //  New events MUST be added here. build-validate enforces this.
@@ -359,6 +370,12 @@ export interface AppEvents {
   'note:cached': NoteCachedPayload;
   'reply:created': NostrEvent;
   'poll:voted': PollVotedPayload;
+
+  // ── Publish queue (offline retry) ──────────
+  /** A signed event failed on ALL target relays — PublishQueueService persists it. */
+  'publish:failed-all': PublishFailedAllPayload;
+  /** Previously-queued events were delivered on a retry pass. */
+  'publish:queue-drained': PublishQueueDrainedPayload;
 
   // ── Zaps ───────────────────────────────────
   'zap:added': ZapAddedPayload;

@@ -1,20 +1,30 @@
 /**
- * RelayHealthMonitor Service
- * Monitors relay connection health, latency, and uptime
+ * RelayHealthMonitor Service — PASSIVE relay health scoring.
  *
- * @purpose Track relay health metrics for UI visibility and diagnostics
- * @architecture Singleton service, integrates with NostrTransport
+ * Since the Maturity-Initiative M5.2 this monitor does NOT generate any
+ * traffic of its own. The old active probes (dummy kind-1 subscriptions every
+ * 10 minutes, batched with backoff) cost data-saver bandwidth and their
+ * results were display-only anyway. Health now derives exclusively from real
+ * traffic:
  *
- * Memory optimization:
- * - Batched health checks (max 3 relays per cycle)
- * - Exponential backoff for healthy relays (5min → 15min → 30min)
- * - Unhealthy relays checked every cycle
+ *   - NDK pool connect/disconnect events (socket level)
+ *   - directFetch per-relay outcomes: EOSE (+ round-trip ms) = success,
+ *     error / timeout = failure (request level)
+ *   - publish per-relay ACKs (request level)
+ *
+ * Everything feeds a sliding 15-minute observation window per relay which
+ * powers:
+ *   - UI health display (getMetrics / getHealthSummary — unchanged API)
+ *   - `isPenalized(url)`: ≥3 failures and 0 successes in the window → the
+ *     relay is excluded from best-effort hint publishes (publishWithHints)
+ *     and sorted last for fetch quorums
+ *   - `sortByScore(urls)`: fastest-first ordering for fetch relay sets
+ *
+ * NostrTransport calls observeSuccess/observeFailure from its fetch/publish
+ * paths; the pool connect/disconnect events flow in via TypedEventBus.
  */
 
 import { TypedEventBus } from '../core/TypedEventBus';
-import type { NostrTransport } from './transport/NostrTransport';
-import { diagLog } from './DiagnosticLogger';
-import { isDataSaverEnabled } from './DataSaverService';
 
 export interface RelayHealthMetrics {
   url: string;
@@ -26,34 +36,28 @@ export interface RelayHealthMetrics {
   uptimePercentage: number; // 0-100
 }
 
-/** How many consecutive healthy checks before backoff increases */
-const HEALTHY_STREAK_FOR_BACKOFF = 2;
-/** Max relays to ping per health check cycle */
-const BATCH_SIZE = 3;
+/** Sliding window for request-level observations. */
+const OBSERVATION_WINDOW_MS = 15 * 60 * 1000;
+/** Max stored observations per relay (ring cap; window pruning applies too). */
+const MAX_OBSERVATIONS = 100;
+/** Penalty box: failures in window with zero successes in the same window. */
+const PENALTY_MIN_FAILURES = 3;
+
+interface RelayObservation {
+  t: number;
+  ok: boolean;
+  latency?: number;
+}
 
 export class RelayHealthMonitor {
   private static instance: RelayHealthMonitor;
   private metrics: Map<string, RelayHealthMetrics> = new Map();
+  private observations: Map<string, RelayObservation[]> = new Map();
   private eventBus: TypedEventBus;
-  private connectionChecks: Map<string, number> = new Map(); // url -> timestamp of last check
-  private healthCheckInterval: number | null = null;
-  private readonly HEALTH_CHECK_INTERVAL = isDataSaverEnabled()
-    ? 30 * 60 * 1000
-    : 10 * 60 * 1000;
-
-  /** Track consecutive healthy checks per relay for backoff */
-  private healthyStreaks: Map<string, number> = new Map();
-
-  /** Round-robin index for batched checking */
-  private batchIndex = 0;
-
-  /** First health check pings all relays (no batching) */
-  private isFirstCheck = true;
 
   private constructor() {
     this.eventBus = TypedEventBus.getInstance();
     this.setupEventListeners();
-    this.startPeriodicHealthCheck();
   }
 
   public static getInstance(): RelayHealthMonitor {
@@ -64,19 +68,19 @@ export class RelayHealthMonitor {
   }
 
   /**
-   * Setup listeners for relay connection events
+   * Setup listeners for relay connection events (socket level — from NDK
+   * pool connect/disconnect, forwarded by NostrTransport).
    */
   private setupEventListeners(): void {
-    // Listen to relay connection events from NostrTransport
     this.eventBus.on(
       'relay:connected',
       (data: { url: string; latency?: number }) => {
-        this.handleRelayConnected(data.url, data.latency);
+        this.observeSuccess(data.url, data.latency);
       }
     );
 
     this.eventBus.on('relay:error', (data: { url: string }) => {
-      this.handleRelayError(data.url);
+      this.observeFailure(data.url);
     });
   }
 
@@ -98,45 +102,49 @@ export class RelayHealthMonitor {
     return this.metrics.get(url)!;
   }
 
+  // ── Observation intake (called from NostrTransport) ──────────
+
   /**
-   * Handle relay connected event
+   * Record a success: socket connect, fetch EOSE (with round-trip ms) or a
+   * publish ACK. Updates the metrics for display and appends to the sliding
+   * window for scoring.
    */
-  private handleRelayConnected(url: string, latency?: number): void {
+  public observeSuccess(url: string, latency?: number): void {
     const metrics = this.getOrCreateMetrics(url);
     metrics.isConnected = true;
     metrics.lastConnected = new Date();
     metrics.errorCount = 0; // Reset error count on successful connection
-
     if (latency !== undefined) {
       metrics.latency = latency;
     }
 
-    // Track healthy streak for backoff
-    this.healthyStreaks.set(url, (this.healthyStreaks.get(url) || 0) + 1);
-
+    this.pushObservation(
+      url,
+      latency !== undefined
+        ? { t: Date.now(), ok: true, latency }
+        : { t: Date.now(), ok: true }
+    );
     this.updateUptimePercentage(url);
     this.eventBus.emit('relay:health:updated', { url, metrics });
   }
 
   /**
-   * Handle relay error event
+   * Record a failure: fetch error/timeout or a publish without ACK. Socket
+   * disconnects also arrive here (via relay:error). Updates metrics and the
+   * sliding window.
    */
-  private handleRelayError(url: string): void {
+  public observeFailure(url: string): void {
     const metrics = this.getOrCreateMetrics(url);
     metrics.errorCount++;
     metrics.isConnected = false;
+    metrics.lastDisconnected = new Date();
 
-    // Reset healthy streak
-    this.healthyStreaks.set(url, 0);
-
-    diagLog('relays', 'Relay error', { url, errorCount: metrics.errorCount });
+    this.pushObservation(url, { t: Date.now(), ok: false });
+    this.updateUptimePercentage(url);
     this.eventBus.emit('relay:health:updated', { url, metrics });
   }
 
-  /**
-   * Update uptime percentage based on connection history
-   * Simple algorithm: 100% if connected, decreases by 10% per hour offline
-   */
+  /** Uptime display value: 100% connected, −10%/hour offline. */
   private updateUptimePercentage(url: string): void {
     const metrics = this.metrics.get(url);
     if (!metrics) return;
@@ -150,13 +158,98 @@ export class RelayHealthMonitor {
     }
   }
 
+  private pushObservation(url: string, observation: RelayObservation): void {
+    let list = this.observations.get(url);
+    if (!list) {
+      list = [];
+      this.observations.set(url, list);
+    }
+    list.push(observation);
+    if (list.length > MAX_OBSERVATIONS) {
+      list.splice(0, list.length - MAX_OBSERVATIONS);
+    }
+    // Window pruning (keeps the success/fail counts meaningful)
+    const cutoff = Date.now() - OBSERVATION_WINDOW_MS;
+    while (list.length > 0 && list[0]!.t < cutoff) {
+      list.shift();
+    }
+  }
+
+  // ── Scoring ──────────────────────────────────────────────────
+
+  /** Successes inside the sliding window. */
+  private windowSuccesses(url: string): number {
+    const cutoff = Date.now() - OBSERVATION_WINDOW_MS;
+    return (this.observations.get(url) ?? []).filter(o => o.ok && o.t >= cutoff)
+      .length;
+  }
+
+  /** Failures inside the sliding window. */
+  private windowFailures(url: string): number {
+    const cutoff = Date.now() - OBSERVATION_WINDOW_MS;
+    return (this.observations.get(url) ?? []).filter(
+      o => !o.ok && o.t >= cutoff
+    ).length;
+  }
+
+  /** Average latency of successful observations in the window (or null). */
+  private windowAvgLatency(url: string): number | null {
+    const cutoff = Date.now() - OBSERVATION_WINDOW_MS;
+    const latencies = (this.observations.get(url) ?? [])
+      .filter(o => o.ok && o.t >= cutoff && o.latency !== undefined)
+      .map(o => o.latency!);
+    if (latencies.length === 0) return null;
+    return latencies.reduce((a, b) => a + b, 0) / latencies.length;
+  }
+
+  /**
+   * Penalty box: the relay accumulated PENALTY_MIN_FAILURES+ failures while
+   * delivering ZERO successes within the window. Such relays are excluded
+   * from best-effort hint publishes and sorted last for fetches — until a
+   * single success clears them.
+   */
+  public isPenalized(url: string): boolean {
+    return (
+      this.windowFailures(url) >= PENALTY_MIN_FAILURES &&
+      this.windowSuccesses(url) === 0
+    );
+  }
+
+  /**
+   * Order a relay set for fetching: penalized relays last, then known relays
+   * by average latency (fastest first), unknown relays in between (original
+   * relative order preserved within each group — stable sort).
+   */
+  public sortByScore(urls: string[]): string[] {
+    const rank = (url: string): number => {
+      if (this.isPenalized(url)) return 2;
+      const avg = this.windowAvgLatency(url);
+      return avg === null ? 1 : 0;
+    };
+    return urls
+      .map((url, i) => ({
+        url,
+        i,
+        rank: rank(url),
+        latency: this.windowAvgLatency(url),
+      }))
+      .sort((a, b) => {
+        if (a.rank !== b.rank) return a.rank - b.rank;
+        if (a.rank === 0 && a.latency !== null && b.latency !== null) {
+          return a.latency - b.latency;
+        }
+        return a.i - b.i;
+      })
+      .map(e => e.url);
+  }
+
+  // ── Display API (unchanged surface) ──────────────────────────
+
   /**
    * Manually record latency measurement
    */
   public recordLatency(url: string, latency: number): void {
-    const metrics = this.getOrCreateMetrics(url);
-    metrics.latency = latency;
-    this.eventBus.emit('relay:health:updated', { url, metrics });
+    this.observeSuccess(url, latency);
   }
 
   /**
@@ -222,8 +315,7 @@ export class RelayHealthMonitor {
    */
   public clearMetrics(url: string): void {
     this.metrics.delete(url);
-    this.connectionChecks.delete(url);
-    this.healthyStreaks.delete(url);
+    this.observations.delete(url);
   }
 
   /**
@@ -231,159 +323,6 @@ export class RelayHealthMonitor {
    */
   public reset(): void {
     this.metrics.clear();
-    this.connectionChecks.clear();
-    this.healthyStreaks.clear();
-    this.batchIndex = 0;
-  }
-
-  /**
-   * Start periodic health check (every 10 minutes)
-   */
-  private startPeriodicHealthCheck(): void {
-    // Initial check after 10 seconds
-    setTimeout(() => this.performHealthCheck(), 10000);
-
-    // Periodic checks every 10 minutes
-    this.healthCheckInterval = window.setInterval(() => {
-      void this.performHealthCheck();
-    }, this.HEALTH_CHECK_INTERVAL);
-  }
-
-  /**
-   * Check if a relay needs checking this cycle (backoff logic)
-   * Healthy relays are checked less frequently:
-   * - 0-1 healthy streaks: every cycle
-   * - 2-3 healthy streaks: every 2nd cycle (skip 1)
-   * - 4+ healthy streaks: every 3rd cycle (skip 2)
-   */
-  private needsCheck(url: string): boolean {
-    const streak = this.healthyStreaks.get(url) || 0;
-    const lastCheck = this.connectionChecks.get(url) || 0;
-    const elapsed = Date.now() - lastCheck;
-
-    if (streak < HEALTHY_STREAK_FOR_BACKOFF) {
-      // Unhealthy or new: always check
-      return true;
-    }
-
-    // Backoff: multiply interval by streak tier
-    const backoffMultiplier = streak >= 4 ? 3 : 2;
-    return elapsed >= this.HEALTH_CHECK_INTERVAL * backoffMultiplier;
-  }
-
-  /**
-   * Perform batched health check on configured relays
-   * Checks max BATCH_SIZE relays per cycle, prioritizing unhealthy ones
-   */
-  private async performHealthCheck(): Promise<void> {
-    // Dynamically import to avoid circular dependencies
-    const { RelayConfig } = await import('./RelayConfig');
-    const { NostrTransport } = await import('./transport/NostrTransport');
-
-    const relayConfig = RelayConfig.getInstance();
-    const transport = NostrTransport.getInstance();
-
-    const allRelays = relayConfig.getAllRelays();
-    if (allRelays.length === 0) return;
-
-    // First check: ping ALL relays to establish initial health status
-    if (this.isFirstCheck) {
-      this.isFirstCheck = false;
-      for (const relay of allRelays) {
-        void this.pingRelay(relay.url, transport);
-        this.connectionChecks.set(relay.url, Date.now());
-      }
-      return;
-    }
-
-    // Subsequent checks: batched with backoff
-    const needsChecking = allRelays.filter(r => this.needsCheck(r.url));
-
-    // Take a batch: prioritize unhealthy relays, then round-robin the rest
-    const batch: { url: string }[] = [];
-
-    // First: unhealthy relays (streak 0)
-    const unhealthy = needsChecking.filter(
-      r => (this.healthyStreaks.get(r.url) || 0) === 0
-    );
-    batch.push(...unhealthy.slice(0, BATCH_SIZE));
-
-    // Fill remaining slots with healthy relays that need checking
-    if (batch.length < BATCH_SIZE) {
-      const healthy = needsChecking.filter(
-        r => (this.healthyStreaks.get(r.url) || 0) > 0
-      );
-      const remaining = BATCH_SIZE - batch.length;
-      // Round-robin through healthy relays
-      const startIdx = this.batchIndex % Math.max(1, healthy.length);
-      for (let i = 0; i < remaining && i < healthy.length; i++) {
-        batch.push(healthy[(startIdx + i) % healthy.length]!);
-      }
-      this.batchIndex += remaining;
-    }
-
-    // Ping selected relays
-    for (const relay of batch) {
-      void this.pingRelay(relay.url, transport);
-      this.connectionChecks.set(relay.url, Date.now());
-    }
-  }
-
-  /**
-   * Ping a single relay to check health
-   */
-  private async pingRelay(
-    relayUrl: string,
-    transport: { subscribe: typeof NostrTransport.prototype.subscribe }
-  ): Promise<void> {
-    const startTime = Date.now();
-    let responded = false;
-
-    try {
-      // Create minimal subscription to test connectivity
-      const sub = await transport.subscribe(
-        [relayUrl],
-        [{ kinds: [1], limit: 1 }], // Minimal filter
-        {
-          onEvent: () => {
-            if (!responded) {
-              responded = true;
-              const latency = Date.now() - startTime;
-              this.recordLatency(relayUrl, latency);
-              this.eventBus.emit('relay:connected', { url: relayUrl, latency });
-              sub.close();
-            }
-          },
-          onEose: () => {
-            if (!responded) {
-              responded = true;
-              const latency = Date.now() - startTime;
-              this.eventBus.emit('relay:connected', { url: relayUrl, latency });
-              sub.close();
-            }
-          },
-        }
-      );
-
-      // Timeout after 10 seconds
-      setTimeout(() => {
-        if (!responded) {
-          this.eventBus.emit('relay:error', { url: relayUrl });
-          sub.close();
-        }
-      }, 10000);
-    } catch (error) {
-      this.eventBus.emit('relay:error', { url: relayUrl });
-    }
-  }
-
-  /**
-   * Stop periodic health check (cleanup)
-   */
-  public stopPeriodicHealthCheck(): void {
-    if (this.healthCheckInterval !== null) {
-      clearInterval(this.healthCheckInterval);
-      this.healthCheckInterval = null;
-    }
+    this.observations.clear();
   }
 }
