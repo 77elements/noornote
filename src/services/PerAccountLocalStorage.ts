@@ -206,6 +206,8 @@ export const StorageKeys = {
   TRIBES_ADDON_ENABLED: 'noornote_tribes_addon_enabled_map',
   EXTENDED_FOLLOWS_ADDON_ENABLED: 'noornote_extended_follows_addon_enabled_map',
   WALLET_BALANCE_ADDON_ENABLED: 'noornote_wallet_balance_addon_enabled_map',
+  BTC_PRICE_ENABLED: 'noornote_btc_price_enabled_map',
+  BTC_PRICE_SIDEBAR_WIDGET: 'noornote_btc_price_sidebar_widget_map',
   LIVE_STREAMS_PLAYER_ENABLED: 'noornote_live_streams_player_enabled_map',
   BADGES_ENABLED: 'noornote_badges_enabled_map',
   BULK_DELETE_ENABLED: 'noornote_bulk_delete_enabled_map',

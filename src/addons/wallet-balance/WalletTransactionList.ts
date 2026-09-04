@@ -106,7 +106,7 @@ export class WalletTransactionList {
 
     // Balance summary — currency dropdown first (same preference as Settings → NWC)
     let html = `<div class="setting wallet-currency-setting" data-wallet-currency-mount>
-      <span class="setting__label">Zap Balance Fiat Currency</span>
+      <span class="setting__label">Fiat Currency</span>
       <div class="setting__control"></div>
     </div>`;
     html += `<div class="wallet-tx-balance">`;

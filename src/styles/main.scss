@@ -37,6 +37,7 @@
 @use 'components/timeline';
 @use 'components/custom-dropdown';
 @use 'components/move-dropdown';
+@use 'components/btc-price';
 @use 'components/_system-logger';
 @use 'components/_follower-notification';
 @use 'components/_bulk-delete';
@@ -149,6 +150,7 @@
 @use 'molecules/mobile-header';
 @use 'molecules/list-view';
 @use 'molecules/search-view';
+@use 'molecules/sidebar-widget';
 
 // 5. Organisms - Complex UI sections
 @use 'organisms/sidebar';

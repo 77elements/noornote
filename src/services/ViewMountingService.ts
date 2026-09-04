@@ -505,6 +505,17 @@ export class ViewMountingService {
           },
         };
 
+      case 'addon-btc-price':
+        return {
+          factory: async () => {
+            const { BtcPriceAddonView } = await import(
+              '../addons/btc-price/BtcPriceAddonView'
+            );
+            const view = new BtcPriceAddonView();
+            return { element: view.getElement(), view };
+          },
+        };
+
       case 'addon-profile-recognition':
         return {
           factory: async () => {

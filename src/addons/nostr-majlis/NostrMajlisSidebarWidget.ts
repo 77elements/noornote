@@ -1,8 +1,9 @@
 /**
  * NostrMajlisSidebarWidget - current-prayer / countdown widget in the left sidebar.
  *
- * Mounts into the static `.nm-sidebar-widget-container` (MainLayout, between the primary
- * nav and the data-saver toggle) when the `sidebarWidget` setting is on. Two rows:
+ * Mounts into the static sidebar slot `[data-sidebar-widget="nostr-majlis"]`
+ * (MainLayout, between the BTC price widget and the data-saver toggle) when the
+ * `sidebarWidget` setting is on. Two rows:
  *   current prayer | "time left" | next prayer
  *   current clock  | H:MM left   | next start
  * Ticks every 10s; owned by the runtime so the interval/DOM are cleared on toggle/destroy.
@@ -104,14 +105,18 @@ export class NostrMajlisSidebarWidget {
 
   /** Find the sidebar slot and render according to the current setting. */
   mount(): void {
-    this.container = document.querySelector('.nm-sidebar-widget-container');
+    this.container = document.querySelector(
+      '[data-sidebar-widget="nostr-majlis"]'
+    );
     this.refresh();
   }
 
   /** Re-evaluate the setting: show + start ticking, or tear down. */
   refresh(): void {
     if (!this.container)
-      this.container = document.querySelector('.nm-sidebar-widget-container');
+      this.container = document.querySelector(
+        '[data-sidebar-widget="nostr-majlis"]'
+      );
     if (!this.container) return;
 
     if (!getNostrMajlisSettings().sidebarWidget) {
@@ -121,7 +126,7 @@ export class NostrMajlisSidebarWidget {
 
     if (!this.el) {
       this.el = document.createElement('div');
-      this.el.className = 'nm-widget';
+      this.el.className = 'sidebar-widget';
       this.el.addEventListener('click', this.onClick);
       this.container.appendChild(this.el);
     }
@@ -142,9 +147,9 @@ export class NostrMajlisSidebarWidget {
       // Diyanet can run out (rolling window); offer an in-place re-fetch. Calc sources can't.
       const refetch =
         activeDiyanetIlceId() !== null
-          ? `<button type="button" class="nm-widget__refetch" data-action="nm-refetch">Fetch times again</button>`
+          ? `<button type="button" class="sidebar-widget__refetch" data-action="nm-refetch">Fetch times again</button>`
           : '';
-      this.el.innerHTML = `<div class="nm-widget__empty">Prayer times not set</div>${refetch}`;
+      this.el.innerHTML = `<div class="sidebar-widget__empty">Prayer times not set</div>${refetch}`;
       return;
     }
 
@@ -163,8 +168,8 @@ export class NostrMajlisSidebarWidget {
       data.countdownMin <= r.offsetMin;
 
     this.el.innerHTML = `
-      <div class="nm-widget__row nm-widget__head"><span>${escapeHtml(data.currentName)}</span><span>time left</span><span>${escapeHtml(data.nextName)}</span></div>
-      <div class="nm-widget__row nm-widget__vals"><span>${clock}</span><span class="${pulsate ? 'pulsate' : ''}">${left}</span><span>${escapeHtml(data.nextTime)}</span></div>
+      <div class="sidebar-widget__row sidebar-widget__head"><span>${escapeHtml(data.currentName)}</span><span>time left</span><span>${escapeHtml(data.nextName)}</span></div>
+      <div class="sidebar-widget__row sidebar-widget__vals"><span>${clock}</span><span class="${pulsate ? 'pulsate' : ''}">${left}</span><span>${escapeHtml(data.nextTime)}</span></div>
     `;
   }
 
@@ -173,7 +178,7 @@ export class NostrMajlisSidebarWidget {
     const ilceId = activeDiyanetIlceId();
     if (!ilceId || this.fetching || !this.el) return;
     this.fetching = true;
-    this.el.innerHTML = `<div class="nm-widget__empty pulsate">Fetching times…</div>`;
+    this.el.innerHTML = `<div class="sidebar-widget__empty pulsate">Fetching times…</div>`;
     try {
       await DiyanetService.getInstance().fetchAndCacheTimes(ilceId);
     } catch {

@@ -1829,7 +1829,8 @@ export class MainLayout {
               </a>
             </li>
           </ul>
-            <div class="nm-sidebar-widget-container"></div>
+            <div class="sidebar-widget-container" data-sidebar-widget="btc-price"></div>
+            <div class="sidebar-widget-container" data-sidebar-widget="nostr-majlis"></div>
             <div class="data-saver-toggle"></div>
             <div class="l-row--right sidebar-logout">
               <button type="button" class="btn btn--passive btn--mini sidebar-logout__signout" data-action="sidebar-logout">

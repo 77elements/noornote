@@ -599,6 +599,13 @@ export class App {
       true
     );
     this.registerRoute(
+      '/addons/btc-price',
+      'addon-btc-price',
+      'addon-btc-price',
+      'adv',
+      true
+    );
+    this.registerRoute(
       '/addons/profile-recognition',
       'addon-profile-recognition',
       'addon-profile-recognition',

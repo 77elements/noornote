@@ -32,6 +32,7 @@ export const ADDON_GLOBAL_ENABLED_KEYS: string[] = [
   'noornote_scheduled_posts_enabled',
   'noornote_wallet_balance_addon_enabled',
   'noornote_analytics_enabled',
+  'noornote_btc_price_enabled',
 ];
 
 /** Force every global addon-enabled key OFF. Run once at app bootstrap. */

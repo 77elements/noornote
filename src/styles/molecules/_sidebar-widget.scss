@@ -1,0 +1,67 @@
+// Sidebar widgets — shared chrome for addon widgets in the left sidebar
+// (BTC price, Nostr-Majlis prayer times). The container is a static slot in
+// MainLayout (`.sidebar-widget-container`); the enabled addon mounts its
+// widget element into it. Addon-specific extras live in the addon's own
+// component file — this block is the generic look only.
+@use '../abstracts/variables' as *;
+
+.sidebar-widget-container {
+  margin-bottom: $gap;
+}
+
+.sidebar-widget {
+  padding: calc($gap / 2) calc($gap * 0.75);
+  background: var(--color-2);
+  border-radius: $radius-xl;
+
+  &__row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: calc($gap / 2);
+
+    > span:first-child { text-align: left; }
+    > span:nth-child(2) { text-align: center; }
+    > span:last-child { text-align: right; }
+  }
+
+  // Two-column variant (label left, value right) — e.g. the BTC price line.
+  &__row--pair {
+    grid-template-columns: 1fr auto;
+  }
+
+  &__head {
+    color: var(--color-3);
+    padding-bottom: calc($gap / 4);
+    margin-bottom: calc($gap / 4);
+    border-bottom: 1px solid var(--surface-tint);
+  }
+
+  &__vals {
+    color: var(--color-5);
+    font-weight: 500;
+  }
+
+  &__label {
+    color: var(--color-3);
+    font-weight: 400;
+  }
+
+  &__empty {
+    color: var(--color-3);
+    text-align: center;
+  }
+
+  &__refetch {
+    display: block;
+    margin: calc($gap / 4) auto 0;
+    padding: 0;
+    background: none;
+    border: none;
+    color: var(--color-5);
+    cursor: pointer;
+    text-decoration: underline;
+
+    &:hover { color: var(--color-3); }
+  }
+}

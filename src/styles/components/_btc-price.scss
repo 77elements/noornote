@@ -1,0 +1,9 @@
+// BTC Price addon page — host for the rate display. Reuses the shared
+// `.sidebar-widget` chrome; constrained to a sidebar-like width so the page
+// variant matches the sidebar look.
+@use '../abstracts/variables' as *;
+
+.btc-price-display {
+  max-width: calc($gap * 15);
+  margin-bottom: $gap;
+}

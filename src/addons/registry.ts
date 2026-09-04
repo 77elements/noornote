@@ -142,4 +142,10 @@ export const ADDON_REGISTRY: AddonRegistryEntry[] = [
     route: '/addons/analytics',
     viewId: 'addon-analytics',
   },
+  {
+    id: 'btc-price',
+    name: 'BTC Price',
+    route: '/addons/btc-price',
+    viewId: 'addon-btc-price',
+  },
 ];

@@ -13,6 +13,7 @@
 
 import { AddonLoader } from './AddonLoader';
 import { isWalletBalanceEnabled } from './wallet-balance/index';
+import { isBtcPriceEnabled } from './btc-price/index';
 import { isProfileRecognitionEnabled } from './profile-recognition/index';
 import { isLiveStreamsPlayerEnabled } from './live-streams-player/index';
 import { isHashtagSubscriptionsEnabled } from './hashtag-subscriptions/index';
@@ -36,6 +37,12 @@ export function registerCoreAddons(): void {
     id: 'wallet-balance',
     isEnabled: isWalletBalanceEnabled,
     load: () => import('./wallet-balance/runtime').then(m => m.default),
+  });
+
+  loader.register({
+    id: 'btc-price',
+    isEnabled: isBtcPriceEnabled,
+    load: () => import('./btc-price/runtime').then(m => m.default),
   });
 
   loader.register({

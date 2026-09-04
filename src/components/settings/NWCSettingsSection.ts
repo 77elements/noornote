@@ -197,7 +197,7 @@ export class NWCSettingsSection extends SettingsSection {
         </div>
 
         <div class="setting">
-          <span class="setting__label">Zap Balance Fiat Currency</span>
+          <span class="setting__label">Fiat Currency</span>
           <div class="setting__control" id="fiat-currency-dropdown-mount"></div>
         </div>
     `;

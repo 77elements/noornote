@@ -476,6 +476,7 @@ export interface AppEvents {
   'analytics:addon-toggle': AddonTogglePayload;
   'badges:addon-toggle': AddonTogglePayload;
   'bookmarks:addon-toggle': AddonTogglePayload;
+  'btc-price:addon-toggle': AddonTogglePayload;
   'bulk-delete:addon-toggle': AddonTogglePayload;
   'content-word-filter:toggle': AddonTogglePayload;
   'custom-emojis:addon-toggle': AddonTogglePayload;
