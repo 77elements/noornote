@@ -1,4 +1,4 @@
-# NoorNote 1.5.0
+# NoorNote 1.5.1
 
 **New** — Own zaps appear instantly; gated premium notes show a clean unlock card; quoted repost chains cap at 3 levels with a clean "open" placeholder; live zaps and likes now work on long-form articles.
 
