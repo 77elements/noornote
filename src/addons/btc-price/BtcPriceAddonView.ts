@@ -99,7 +99,7 @@ export class BtcPriceAddonView extends View {
         <div class="setting">
           <span class="setting__label">Show BTC Sidebar Widget</span>
           <div class="setting__control" data-btc-sidebar-switch-mount></div>
-          <p class="setting__desc">Show the "1 BTC = …" rate line in the sidebar, above the prayer-times widget.</p>
+          <p class="setting__desc">Show the "1 BTC = …" rate line in the sidebar.</p>
         </div>
         <div class="setting">
           <span class="setting__label">Fiat Currency</span>
