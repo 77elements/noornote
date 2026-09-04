@@ -40,16 +40,70 @@ import {
 export class Timeline extends View {
   private element: HTMLElement;
   private _timelineApi: TimelineModuleApi | null = null;
-  /** Lazy module API access — the timeline module initializes on login. */
-  private get timelineApi(): TimelineModuleApi {
-    const api = (this._timelineApi ??=
-      ModuleLoader.getInstance().getApi<TimelineModuleApi>('timeline'));
-    if (!api) {
-      throw new Error('Timeline module API not available');
-    }
-    return api;
+  private timelineApiPromise: Promise<TimelineModuleApi> | null = null;
+
+  /**
+   * Resolve the timeline module API, loading the module on demand.
+   * Modules load asynchronously at boot — a TV mount racing the loader
+   * (auto-login) previously hit a null API and killed the whole mount
+   * (empty timeline, fixed in 1.5.0 hotfix).
+   */
+  private ensureTimelineApi(): Promise<TimelineModuleApi> {
+    this.timelineApiPromise ??= (async () => {
+      this._timelineApi ??=
+        ModuleLoader.getInstance().getApi<TimelineModuleApi>('timeline');
+      if (!this._timelineApi) {
+        const api =
+          await ModuleLoader.getInstance().ensure<TimelineModuleApi>(
+            'timeline'
+          );
+        if (!api) {
+          throw new Error('Timeline module failed to load');
+        }
+        this._timelineApi = api;
+      }
+      return this._timelineApi;
+    })();
+    return this.timelineApiPromise;
   }
+
+  /**
+   * Lazy delegating handle for collaborators constructed before the module
+   * has finished loading. Every consumer invokes methods (never destructures)
+   * after data flow has started, so the API is guaranteed to be resolved by
+   * the time any call executes.
+   */
+  private buildLazyApi(): TimelineModuleApi {
+    return new Proxy({} as TimelineModuleApi, {
+      get: (_target, prop) => {
+        if (!this._timelineApi) {
+          throw new Error('Timeline module API not ready yet');
+        }
+        const source = this._timelineApi as unknown as Record<
+          string | symbol,
+          unknown
+        >;
+        const value = source[prop];
+        return typeof value === 'function'
+          ? (value as (...args: unknown[]) => unknown).bind(this._timelineApi)
+          : value;
+      },
+    });
+  }
+
   private userService: UserService;
+
+  /**
+   * Post-initialization accessor. Every call site here runs after
+   * initializeTimeline() awaited ensureTimelineApi() — a throw here would be
+   * a genuine ordering bug, not a boot race.
+   */
+  private get timelineApi(): TimelineModuleApi {
+    if (!this._timelineApi) {
+      throw new Error('Timeline module API used before resolution');
+    }
+    return this._timelineApi;
+  }
   private relayConfig: RelayConfig;
   private authService: AuthService;
   private infiniteScroll: InfiniteScroll;
@@ -97,6 +151,11 @@ export class Timeline extends View {
     // The caller hands in a typed use-case config; the whole component is driven
     // by it. See docs/todos/timeline-component-modularization.md.
     this.config = config;
+    // Boot-race safe: the timeline module may still be loading when the TV
+    // mounts right after auto-login. Managers get a lazy delegating handle;
+    // initializeTimeline() awaits ensureTimelineApi() before its first call.
+    const lazyApi = this.buildLazyApi();
+    void this.ensureTimelineApi();
     this.userService = UserService.getInstance();
     this.relayConfig = RelayConfig.getInstance();
     this.authService = AuthService.getInstance();
@@ -114,7 +173,7 @@ export class Timeline extends View {
     // Initialize managers
     this.stateManager = new TimelineStateManager();
     this.lifecycleManager = new TimelineLifecycleManager(
-      this.timelineApi,
+      lazyApi,
       this.infiniteScroll
     );
     this.uiStateHandler = new TimelineUIStateHandler(this.element);
@@ -136,7 +195,7 @@ export class Timeline extends View {
 
     // Initialize event handler (requires refresh button, renderer, and dropdown to be set up first)
     this.eventHandler = new TimelineEventHandler(
-      this.timelineApi,
+      lazyApi,
       this.stateManager,
       this.uiStateHandler,
       this.refreshButton,
@@ -591,6 +650,10 @@ export class Timeline extends View {
     try {
       // Wait for auth to be fully initialized (session restore, NIP-46, etc.)
       await this.authService.waitForInitialization();
+
+      // Boot-race guard: the timeline module may still be loading when the TV
+      // mounts right after auto-login — await it before the first API call.
+      await this.ensureTimelineApi();
 
       // Get authors to fetch from the config source: explicit authors (profile /
       // tribe) or the current user's following list.

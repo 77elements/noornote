@@ -41,13 +41,24 @@ export class ProfileArticlesCarousel {
   private pubkey: string;
   private articles: ArticleCardData[] = [];
   private _profileApi: ProfileModuleApi | null = null;
-  private get profileApi(): ProfileModuleApi {
-    const api = (this._profileApi ??=
-      ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile'));
-    if (!api) {
-      throw new Error('Profile module API not available');
-    }
-    return api;
+  private profileApiPromise: Promise<ProfileModuleApi> | null = null;
+
+  /** Boot-race safe: loads the profile module on demand. */
+  private ensureProfileApi(): Promise<ProfileModuleApi> {
+    this.profileApiPromise ??= (async () => {
+      this._profileApi ??=
+        ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
+      if (!this._profileApi) {
+        const api =
+          await ModuleLoader.getInstance().ensure<ProfileModuleApi>('profile');
+        if (!api) {
+          throw new Error('Profile module failed to load');
+        }
+        this._profileApi = api;
+      }
+      return this._profileApi;
+    })();
+    return this.profileApiPromise;
   }
   private userProfileService: UserProfileService;
   private carousel: ScrollCarouselInstance | null = null;
@@ -89,8 +100,9 @@ export class ProfileArticlesCarousel {
       // live only on the author's NIP-65 write relays; the fetch also
       // returns the author's kind:5 deletions (for the tombstone filter below)
       // and is reused by the videos/listings carousels from one cached fetch.
+      const profileApi = await this.ensureProfileApi();
       const content: ProfileCarouselContent =
-        await this.profileApi.fetchCarouselContent(this.pubkey);
+        await profileApi.fetchCarouselContent(this.pubkey);
       const rawEvents = content.articles;
       const deletionEvents = content.deletions;
       const hintRelays = content.hintRelays;

@@ -28,13 +28,24 @@ export class ProfileVideosCarousel {
   private pubkey: string;
   private videos: VideoCardData[] = [];
   private _profileApi: ProfileModuleApi | null = null;
-  private get profileApi(): ProfileModuleApi {
-    const api = (this._profileApi ??=
-      ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile'));
-    if (!api) {
-      throw new Error('Profile module API not available');
-    }
-    return api;
+  private profileApiPromise: Promise<ProfileModuleApi> | null = null;
+
+  /** Boot-race safe: loads the profile module on demand. */
+  private ensureProfileApi(): Promise<ProfileModuleApi> {
+    this.profileApiPromise ??= (async () => {
+      this._profileApi ??=
+        ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
+      if (!this._profileApi) {
+        const api =
+          await ModuleLoader.getInstance().ensure<ProfileModuleApi>('profile');
+        if (!api) {
+          throw new Error('Profile module failed to load');
+        }
+        this._profileApi = api;
+      }
+      return this._profileApi;
+    })();
+    return this.profileApiPromise;
   }
   private carousel: ScrollCarouselInstance | null = null;
 
@@ -63,7 +74,8 @@ export class ProfileVideosCarousel {
     try {
       // Shared fetch (read + outbound relays) via the profile module;
       // reuses the same cached round-trip as the articles/listings carousels.
-      const content = await this.profileApi.fetchCarouselContent(this.pubkey);
+      const profileApi = await this.ensureProfileApi();
+      const content = await profileApi.fetchCarouselContent(this.pubkey);
       const events = [...content.videos];
 
       events.sort((a, b) => b.created_at - a.created_at);
