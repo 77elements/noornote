@@ -7,8 +7,9 @@
  *  - Basic (always, zero outbound): icon + "Podcast Episode" + a link to the
  *    URL hint. Built purely from the event's tags.
  *  - Rich (lazy, fountain.fm only): when the card scrolls into view we fetch the
- *    Fountain page's Open Graph tags and upgrade in place with cover, title,
- *    show name and an inline play button. See fountainMeta for the privacy note.
+ *    Fountain page's Open Graph tags and upgrade in place. The card becomes an
+ *    `.nn-card` (same chrome as the article cards: cover on top, details in
+ *    `.nn-card__content` below). See fountainMeta for the privacy note.
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -87,7 +88,7 @@ function basicMarkup(isEpisode: boolean, url: string | null): string {
     <div class="podcast-card__content">
       <span class="podcast-card__kicker">${kicker}</span>
       <h3 class="podcast-card__title">${domain ? escapeHtml(domain) : 'Podcast'}</h3>
-      ${url ? `<a class="btn btn--mini podcast-card__open" href="${escapeHtmlAttr(url)}" target="_blank" rel="noopener noreferrer">${openLabel}</a>` : ''}
+      ${url ? `<a class="btn btn--mini" href="${escapeHtmlAttr(url)}" target="_blank" rel="noopener noreferrer">${openLabel}</a>` : ''}
     </div>
   `;
 }
@@ -119,7 +120,10 @@ function renderRich(
   isEpisode: boolean,
   meta: FountainMeta
 ): void {
-  card.classList.add('podcast-card--rich');
+  // Rich state swaps the compact basic card for the shared .nn-card chrome
+  // (cover on top, details below — like the article cards). Podcast-specific
+  // extras (kicker, actions, audio player) hang off .podcast-card--rich.
+  card.className = 'nn-card podcast-card--rich';
 
   const image = meta.image ? safeHttpUrl(meta.image) : '';
   const audio = meta.audio ? safeHttpUrl(meta.audio) : '';
@@ -129,22 +133,22 @@ function renderRich(
   card.innerHTML = `
     ${
       image
-        ? `<div class="podcast-card__media"><img src="${escapeHtmlAttr(image)}" alt="${escapeHtmlAttr(title)}" loading="lazy" /></div>`
-        : `<div class="podcast-card__media podcast-card__media--empty">🎙️</div>`
+        ? `<div class="nn-card__media"><img src="${escapeHtmlAttr(image)}" alt="${escapeHtmlAttr(title)}" loading="lazy" /></div>`
+        : `<div class="nn-card__media nn-card__media--empty">🎙️</div>`
     }
-    <div class="podcast-card__content">
+    <div class="nn-card__content">
       <span class="podcast-card__kicker">${kicker}</span>
-      <h3 class="podcast-card__title">${escapeHtml(title)}</h3>
-      ${meta.show ? `<p class="podcast-card__show">${escapeHtml(meta.show)}</p>` : ''}
+      <h3>${escapeHtml(title)}</h3>
+      ${meta.show ? `<div class="meta">${escapeHtml(meta.show)}</div>` : ''}
       <div class="podcast-card__actions">
-        ${audio ? `<button class="btn btn--mini podcast-card__play" type="button">▶ Play</button>` : ''}
-        <a class="btn btn--mini podcast-card__open" href="${escapeHtmlAttr(url)}" target="_blank" rel="noopener noreferrer">Open on ${escapeHtml(providerName(url))} →</a>
+        ${audio ? `<button class="btn btn--mini" data-action="podcast-play" type="button">▶ Play</button>` : ''}
+        <a class="btn btn--mini" href="${escapeHtmlAttr(url)}" target="_blank" rel="noopener noreferrer">Open on ${escapeHtml(providerName(url))} →</a>
       </div>
     </div>
   `;
 
   if (audio) {
-    const playBtn = card.querySelector('.podcast-card__play');
+    const playBtn = card.querySelector('[data-action="podcast-play"]');
     playBtn?.addEventListener('click', () => {
       const player = document.createElement('audio');
       player.controls = true;

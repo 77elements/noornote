@@ -2,7 +2,9 @@
  * Podcast Card (NIP-73 podcast:guid / podcast:item:guid)
  * Inline card appended to a note that references a podcast show or episode
  * (e.g. Fountain boosts). The basic state is built from tags only; the rich
- * state (cover, title, show, play) is fetched lazily from fountain.fm.
+ * state swaps the element to the shared .nn-card chrome (cover on top,
+ * details below — like the article cards), so only podcast-specific bits
+ * (kicker, actions, audio player) are styled here.
  */
 
 @use '../abstracts/variables' as *;
@@ -71,15 +73,6 @@
   overflow: hidden;
 }
 
-.podcast-card__show {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--color-3);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .podcast-card__actions {
   display: flex;
   flex-direction: column;
@@ -91,4 +84,15 @@
 .podcast-card__audio {
   width: 100%;
   height: 40px;
+}
+
+// Rich state — the element itself is an .nn-card (molecules/_cards.scss):
+// cover via .nn-card__media on top, details via .nn-card__content below.
+// Only podcast extras live here.
+.podcast-card--rich {
+  margin: $gap 0;
+
+  .nn-card__media--empty {
+    font-size: 2rem;
+  }
 }
