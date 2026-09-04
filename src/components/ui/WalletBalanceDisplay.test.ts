@@ -4,9 +4,9 @@
  * shown, the sats amount and the fiat conversion in the SELECTED currency
  * (docs: wallet fiat conversion fix, 2026-08-30).
  *
- * ExchangeRateService is real, but its network sources are stubbed: CoinGecko
- * fails (the intermittent rate-limit that broke the conversion) and Kraken
- * serves fixed rates — proving the fallback cascade ends in a usable rate.
+ * ExchangeRateService is real, but its network sources are stubbed: Kraken
+ * serves fixed rates (primary source) and CoinGecko 429s (its intermittent
+ * rate limit) — proving the cascade ends in a usable rate either way.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -50,7 +50,7 @@ vi.mock('../../services/PerAccountLocalStorage', () => ({
 
 import { WalletBalanceDisplay } from './WalletBalanceDisplay';
 
-/** Route fetches: CoinGecko broken (the production bug), Kraken serving. */
+/** Route fetches: Kraken serving (primary); CoinGecko blocked (rate limited). */
 function stubFetch(): void {
   vi.stubGlobal(
     'fetch',

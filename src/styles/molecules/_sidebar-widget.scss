@@ -25,9 +25,9 @@
     > span:last-child { text-align: right; }
   }
 
-  // Two-column variant (label left, value right) — e.g. the BTC price line.
+  // Label left, value + action (e.g. refresh icon) right — the BTC price line.
   &__row--pair {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr auto auto;
   }
 
   &__head {
@@ -50,6 +50,26 @@
   &__empty {
     color: var(--color-3);
     text-align: center;
+  }
+
+  // Manual refresh action (icon-sync sprite) — sits in the row's last column.
+  &__refresh {
+    display: block;
+    padding: 0;
+    background: none;
+    border: none;
+    color: var(--color-3);
+    cursor: pointer;
+    line-height: 0;
+
+    &:hover { color: var(--color-5); }
+
+    // Locked (fetch running / cooldown) — greyed out, no pointer. Must come
+    // after :hover so the disabled color wins on hover too.
+    &:disabled {
+      color: color-mix(in srgb, var(--color-5) 40%, transparent);
+      cursor: default;
+    }
   }
 
   &__refetch {
