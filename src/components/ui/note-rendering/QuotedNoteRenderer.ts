@@ -443,11 +443,33 @@ export class QuotedNoteRenderer {
 
         // Route zap receipts (kind 9735) to ZapReceiptRenderer
         if (result.event.kind === 9735) {
-          const { ZapReceiptRenderer } = await import(
-            '../../../components/ui/note-rendering/ZapReceiptRenderer'
-          );
           const { ZapReceiptProcessor } = await import(
             '../../../components/ui/note-processing/ZapReceiptProcessor'
+          );
+          // Boost note (NIP-73, marked by OriginalNoteRenderer): the receipt
+          // is the payment FOR this note — fold the amount into the podcast
+          // card as a "⚡ X sats" line instead of a standalone zap card.
+          if (skeleton.dataset.podcastBoost === 'true') {
+            const processed = ZapReceiptProcessor.process(result.event);
+            const sats = processed.zapReceiptData?.amountSats ?? 0;
+            const card = skeleton
+              .closest('.event-content')
+              ?.querySelector<HTMLElement>(
+                '.podcast-card, .podcast-card--rich'
+              );
+            if (card) {
+              if (sats > 0) {
+                const { setPodcastCardZapSats } = await import('./PodcastCard');
+                setPodcastCardZapSats(card, sats);
+              }
+              skeleton.remove();
+              return;
+            }
+            // Card not in the DOM (unexpected) — fall through to the normal
+            // zap card so the payment info is never lost.
+          }
+          const { ZapReceiptRenderer } = await import(
+            '../../../components/ui/note-rendering/ZapReceiptRenderer'
           );
           const processedNote = ZapReceiptProcessor.process(result.event);
           const zapElement = ZapReceiptRenderer.render(processedNote, {

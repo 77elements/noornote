@@ -86,6 +86,13 @@
   height: 40px;
 }
 
+// Boost zap amount line ("⚡ X sats"). Rich state combines it with .meta
+// (nn-card scope); the basic state relies on this rule alone.
+.podcast-card__zap {
+  font-size: 0.85rem;
+  color: var(--color-3);
+}
+
 // Rich state — the element itself is an .nn-card (molecules/_cards.scss):
 // cover via .nn-card__media on top, details via .nn-card__content below.
 // Only podcast extras live here.

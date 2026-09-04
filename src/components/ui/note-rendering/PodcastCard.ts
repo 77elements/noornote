@@ -3,6 +3,16 @@
  * inline card inside a note. Additive: it is appended to a note's content,
  * the rest of the note (text, quotes, media) renders as usual.
  *
+ * Boost consolidation (Fountain boosts): a boost note carries its message,
+ * a naked URL hint, and a nostr:nevent reference to the kind-9735 zap receipt
+ * that PAID for the boost. Instead of three scattered elements, everything is
+ * folded into this one card:
+ *  - the naked URL-hint link is removed (suppressPodcastUrlLinks) — the card's
+ *    "Open on …" button covers it;
+ *  - the zap amount is folded in as a "⚡ X sats" line (setPodcastCardZapSats,
+ *    driven by QuotedNoteRenderer's kind-9735 branch via the skeleton's
+ *    data-podcastBoost marker).
+ *
  * Two states:
  *  - Basic (always, zero outbound): icon + "Podcast Episode" + a link to the
  *    URL hint. Built purely from the event's tags.
@@ -31,6 +41,92 @@ function hostLabel(url: string): string {
   } catch {
     return '';
   }
+}
+
+/** Boost amount (sats) per rendered card — survives renderRich's innerHTML rewrite. */
+const zapSatsByCard = new WeakMap<HTMLElement, number>();
+
+/** "⚡ 2 100 sats" — same amount formatting as ZapReceiptRenderer. */
+export function formatZapSatsLine(sats: number): string {
+  return `⚡ ${sats.toLocaleString()} sats`;
+}
+
+/**
+ * Fold a boost zap amount into a podcast card as a "⚡ X sats" line.
+ * Called by QuotedNoteRenderer when the host note is a NIP-73 boost and the
+ * quoted kind-9735 receipt was fetched. No-op for non-positive amounts.
+ */
+export function setPodcastCardZapSats(card: HTMLElement, sats: number): void {
+  if (!Number.isFinite(sats) || sats <= 0) return;
+  zapSatsByCard.set(card, Math.floor(sats));
+  syncZapLine(card);
+}
+
+/** Create/update the zap line in an already-rendered card (basic or rich). */
+function syncZapLine(card: HTMLElement): void {
+  const sats = zapSatsByCard.get(card);
+  if (!sats) return;
+  let line = card.querySelector<HTMLElement>('.podcast-card__zap');
+  if (line) {
+    line.textContent = formatZapSatsLine(sats);
+    return;
+  }
+  const content = card.querySelector<HTMLElement>(
+    '.nn-card__content, .podcast-card__content'
+  );
+  if (!content) return;
+  line = document.createElement('div');
+  line.className = card.classList.contains('podcast-card--rich')
+    ? 'meta podcast-card__zap'
+    : 'podcast-card__zap';
+  line.textContent = formatZapSatsLine(sats);
+  // Before the actions row when present, otherwise at the end.
+  content.insertBefore(line, content.querySelector('.podcast-card__actions'));
+}
+
+/**
+ * Remove anchors in the note body that exactly duplicate the NIP-73 URL hint —
+ * the podcast card's "Open on …" button covers them. Blocks (<p>, <div>) that
+ * become empty are collapsed so no blank gaps remain. Returns the removal count.
+ */
+export function removePodcastUrlLinks(
+  container: HTMLElement,
+  url: string
+): number {
+  let removed = 0;
+  const anchors = Array.from(container.querySelectorAll('a')).filter(
+    a => a.getAttribute('href') === url
+  );
+  for (const anchor of anchors) {
+    const block = anchor.closest('p, div');
+    anchor.remove();
+    removed++;
+    if (
+      block &&
+      !block.textContent?.trim() &&
+      !block.querySelector('img, video, audio, svg, a')
+    ) {
+      block.remove();
+    }
+  }
+  return removed;
+}
+
+/**
+ * Suppress the naked URL-hint link of a podcast reference after the card (with
+ * its "Open on …" button) was appended to the note.
+ */
+export function suppressPodcastUrlLinks(
+  noteEl: HTMLElement,
+  event: NostrEvent
+): void {
+  const ref = extractPodcastRef(event.tags);
+  const url = ref?.url ? safeHttpUrl(ref.url) : null;
+  if (!url) return;
+  removePodcastUrlLinks(
+    (noteEl.querySelector('.event-content') || noteEl) as HTMLElement,
+    url
+  );
 }
 
 /** Title-case a bare domain for button copy ("fountain.fm" → "Fountain"). */
@@ -114,7 +210,7 @@ function upgradeWhenVisible(
   observer.observe(card);
 }
 
-function renderRich(
+export function renderRich(
   card: HTMLElement,
   url: string,
   isEpisode: boolean,
@@ -129,6 +225,7 @@ function renderRich(
   const audio = meta.audio ? safeHttpUrl(meta.audio) : '';
   const title = meta.title || hostLabel(url) || 'Podcast';
   const kicker = isEpisode ? 'Podcast Episode' : 'Podcast';
+  const zapSats = zapSatsByCard.get(card) ?? 0;
 
   card.innerHTML = `
     ${
@@ -140,6 +237,7 @@ function renderRich(
       <span class="podcast-card__kicker">${kicker}</span>
       <h3>${escapeHtml(title)}</h3>
       ${meta.show ? `<div class="meta">${escapeHtml(meta.show)}</div>` : ''}
+      ${zapSats > 0 ? `<div class="meta podcast-card__zap">${formatZapSatsLine(zapSats)}</div>` : ''}
       <div class="podcast-card__actions">
         ${audio ? `<button class="btn btn--mini" data-action="podcast-play" type="button">▶ Play</button>` : ''}
         <a class="btn btn--mini" href="${escapeHtmlAttr(url)}" target="_blank" rel="noopener noreferrer">Open on ${escapeHtml(providerName(url))} →</a>

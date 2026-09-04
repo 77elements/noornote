@@ -9,8 +9,9 @@ import { CollapsibleManager } from '../note-features/CollapsibleManager';
 import { PollRenderer } from '../note-features/PollRenderer';
 import { NIP88PollRenderer } from '../note-features/NIP88PollRenderer';
 import { QuotedNoteRenderer } from './QuotedNoteRenderer';
-import { renderPodcastCard } from './PodcastCard';
+import { renderPodcastCard, suppressPodcastUrlLinks } from './PodcastCard';
 import { renderWebCommentCard } from './WebCommentCard';
+import { extractPodcastRef } from '../../../helpers/podcastTags';
 
 export class OriginalNoteRenderer {
   /**
@@ -19,6 +20,12 @@ export class OriginalNoteRenderer {
   static render(note: ProcessedNote, opts: NoteUIOptions): HTMLElement {
     // Check if note has quoted references
     const hasQuotedNotes = note.content.quotedReferences.length > 0;
+
+    // NIP-73 podcast reference (e.g. Fountain boosts) — hoisted: the quote
+    // loop marks its skeletons for boost consolidation, the card itself is
+    // appended further below. For reposts the tags live on the inner event.
+    const podcastSource = note.repostedEvent || note.rawEvent;
+    const hostIsPodcastBoost = !!extractPodcastRef(podcastSource.tags);
 
     const { element } = NoteStructureBuilder.build(
       note,
@@ -55,6 +62,11 @@ export class OriginalNoteRenderer {
             // fall back to the quoter's outbound relays when the quoted
             // event's own author relays don't carry the original.
             const skeleton = quotedNoteRenderer.createQuoteSkeleton();
+            // Boost note (NIP-73): mark the skeleton so QuotedNoteRenderer's
+            // kind-9735 branch folds the zap amount into the podcast card
+            // instead of rendering a standalone zap-receipt card. The marker
+            // travels with the element through fetch retries.
+            if (hostIsPodcastBoost) skeleton.dataset.podcastBoost = 'true';
             marker.replaceWith(skeleton);
             // Always false: the outer note's collapsible (set up below) handles
             // truncation for the entire content including nested quotes. Letting
@@ -87,13 +99,14 @@ export class OriginalNoteRenderer {
     }
 
     // NIP-73 podcast reference (e.g. Fountain boosts) → inline podcast card,
-    // appended to the note body. For reposts the tags live on the inner event.
-    const podcastSource = note.repostedEvent || note.rawEvent;
+    // appended to the note body. The naked URL-hint link is suppressed — the
+    // card's "Open on …" button covers it.
     const podcastCard = renderPodcastCard(podcastSource);
     if (podcastCard) {
       (element.querySelector('.event-content') || element).appendChild(
         podcastCard
       );
+      suppressPodcastUrlLinks(element, podcastSource);
     }
 
     // Web comment (NIP-22 comment whose root is a web page, NIP-73 `k:web`) → inline
