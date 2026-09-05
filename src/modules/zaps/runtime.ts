@@ -36,6 +36,7 @@ export class ZapsRuntime implements ModuleRuntime<ZapsModuleApi> {
           articleEventId,
           anonymous
         ) ?? Promise.resolve(noop),
+      isPaymentAvailable: () => svc?.isPaymentAvailable() ?? false,
       isOwnAnonZapInvoice: invoice =>
         svc?.isOwnAnonZapInvoice(invoice) ?? false,
       getUserZapAmount: noteId => svc?.getUserZapAmount(noteId) ?? 0,

@@ -190,6 +190,17 @@ export class ZapService {
   }
 
   /**
+   * Cheap connectivity probe for UI gating (e.g. ZapModal open): true when NWC
+   * is configured or a WebLN provider is present. Deliberately does NOT call
+   * webln.enable() — that prompts for permission in some wallets (Alby) and
+   * only happens at send time (checkPaymentAvailability).
+   */
+  public isPaymentAvailable(): boolean {
+    if (this.nwcService.isConnected()) return true;
+    return PlatformService.getInstance().isBrowser && !!window.webln;
+  }
+
+  /**
    * Check if any payment method is available (NWC or WebLN)
    * NWC takes priority (user explicitly configured it in Settings).
    * WebLN is only used when no NWC is configured (e.g., Keychat browser).
@@ -817,6 +828,10 @@ export class ZapService {
           const verificationService =
             SignatureVerificationService.getInstance();
 
+          // Watch timer, cleared when the receipt arrives so it cannot fire
+          // afterwards and log a misleading "no receipt" line.
+          let watchTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
           const sub = await this.nostrTransport.subscribe(
             relays,
             [
@@ -849,6 +864,7 @@ export class ZapService {
                 const boltTag = event.tags.find(tag => tag[0] === 'bolt11');
                 if (boltTag && boltTag[1] === invoice) {
                   this.systemLogger.info('ZapService', 'Zap receipt found');
+                  if (watchTimeoutId !== null) clearTimeout(watchTimeoutId);
                   sub.close();
                   resolve(true);
                 }
@@ -864,7 +880,7 @@ export class ZapService {
 
           // Keep watching for 2 minutes — receipts are often published late
           // (or never); the wallet stays the success authority regardless.
-          setTimeout(() => {
+          watchTimeoutId = setTimeout(() => {
             this.systemLogger.info(
               'ZapService',
               'No zap receipt published — zap confirmed by wallet'

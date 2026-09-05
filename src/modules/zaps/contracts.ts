@@ -22,6 +22,8 @@ export interface ZapsModuleApi {
     articleEventId?: string,
     anonymous?: boolean
   ): Promise<ZapResult>;
+  /** Cheap probe: NWC connected or WebLN provider present (no enable prompt). */
+  isPaymentAvailable(): boolean;
   isOwnAnonZapInvoice(invoice: string): boolean;
   getUserZapAmount(noteId: string): number;
   hasUserZapped(noteId: string): boolean;
