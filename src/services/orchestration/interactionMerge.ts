@@ -50,11 +50,16 @@ function classify(
  * Merge new events into the cached buckets: dedup by event id, classify by
  * kind/tag, and return the updated buckets (mutates `cached` in place for the
  * orchestrator's cache, but the returned object is the same reference).
+ *
+ * `blockedIds` (optional): tombstoned interaction event ids (removed via
+ * NIP-09 by the user). Slow relays keep serving them after deletion — they
+ * must never re-enter the buckets.
  */
 export function mergeInteractionEvents(
   cached: InteractionEventBuckets,
   newEvents: NostrEvent[],
-  noteId: string
+  noteId: string,
+  blockedIds?: Set<string>
 ): InteractionEventBuckets {
   const isAddressableNote = noteId.includes(':');
   const seen = new Set<string>();
@@ -69,6 +74,7 @@ export function mergeInteractionEvents(
 
   for (const event of newEvents) {
     if (!event.id || seen.has(event.id)) continue;
+    if (blockedIds?.has(event.id)) continue;
     seen.add(event.id);
 
     switch (classify(event, noteId, isAddressableNote)) {

@@ -16,7 +16,9 @@ import type { ReactionsModuleApi } from '../../../modules/reactions/contracts';
 export interface BaseInteractionConfig {
   noteId: string;
   authorPubkey: string;
-  onStatsUpdate?: () => void;
+  /** Fired after a successful interaction change; delta = +1 (new
+   *  interaction) or -1 (undo/removal) for optimistic count updates. */
+  onStatsUpdate?: (delta?: number) => void;
 }
 
 export abstract class BaseInteractionManager<
@@ -61,16 +63,20 @@ export abstract class BaseInteractionManager<
   protected abstract updateButtonState(interacted: boolean): void;
 
   /**
-   * Update stats after successful interaction
+   * Update stats after a successful interaction change (delta = +1 new,
+   * -1 undo/removal)
    */
-  protected updateStats(interactionType: 'like' | 'repost'): void {
+  protected updateStats(
+    interactionType: 'like' | 'repost',
+    delta: 1 | -1 = 1
+  ): void {
     this.reactionsApi?.updateAfterInteraction(
       this.config.noteId,
       interactionType
     );
 
     if (this.config.onStatsUpdate) {
-      this.config.onStatsUpdate();
+      this.config.onStatsUpdate(delta);
     }
   }
 

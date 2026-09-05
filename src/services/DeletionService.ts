@@ -33,6 +33,11 @@ export interface DeletionOptions {
    * surfaces progress itself by subscribing to BroadcastDeleteService progress.
    */
   silent?: boolean;
+  /** AuthGuard message (defaults to "delete this note" — customize for
+   *  interaction removals like "remove this like"). */
+  authAction?: string;
+  /** Success toast text (defaults to the generic deletion message). */
+  successMessage?: string;
 }
 
 export class DeletionService {
@@ -68,11 +73,11 @@ export class DeletionService {
    */
   public async deleteEvents(options: DeletionOptions): Promise<boolean> {
     // Check authentication for deletion (Write Event)
-    if (!AuthGuard.requireAuth('delete this note')) {
+    if (!AuthGuard.requireAuth(options.authAction ?? 'delete this note')) {
       return false;
     }
 
-    const { eventIds, coordinates, reason, silent } = options;
+    const { eventIds, coordinates, reason, silent, successMessage } = options;
 
     // Validate authentication (redundant check for safety, but AuthGuard already handled UI)
     const currentUser = this.authService.getCurrentUser();
@@ -166,7 +171,10 @@ export class DeletionService {
 
       // Show success toast to user (suppressed in silent mode — caller shows its own status)
       if (!silent)
-        ToastService.show('Deletion request sent successfully', 'success');
+        ToastService.show(
+          successMessage ?? 'Deletion request sent successfully',
+          'success'
+        );
 
       return true;
     } catch (error) {

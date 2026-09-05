@@ -14,6 +14,8 @@ import { SystemLogger } from './SystemLogger';
 import { ErrorService } from './ErrorService';
 import { ToastService } from './ToastService';
 import { ReactionsOrchestrator } from './orchestration/ReactionsOrchestrator';
+import { DeletionService } from './DeletionService';
+import { diagLog } from './DiagnosticLogger';
 import { getTag } from '../helpers/tagUtils';
 
 export interface RepostOptions {
@@ -267,6 +269,64 @@ export class RepostService {
         'Repost failed'
       );
       return { success: false, error: 'Publish failed' };
+    }
+  }
+
+  /**
+   * Take back the own repost on a note (toggle-off): collects ALL own repost
+   * events on the note — the stats bucket holds kind 6 AND kind 16 — and
+   * removes them via a NIP-09 kind 5 deletion request (real relay deletion,
+   * Amethyst tryBoost pattern). Tombstones + targeted cache removal prevent
+   * the repost from resurrecting via slow relays.
+   *
+   * @param noteId - Note ID the repost targets
+   * @returns success + how many repost events were removed (0 = not reposted)
+   */
+  public async removeRepost(
+    noteId: string
+  ): Promise<{ success: boolean; removed: number }> {
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) {
+      return { success: false, removed: 0 };
+    }
+
+    try {
+      const stats = await this.reactionsOrchestrator.getDetailedStats(noteId);
+      const ownIds = stats.repostEvents
+        .filter(event => event.pubkey === currentUser.pubkey && event.id)
+        .map(event => event.id as string);
+
+      if (ownIds.length === 0) {
+        return { success: true, removed: 0 };
+      }
+
+      const deleted = await DeletionService.getInstance().deleteEvents({
+        eventIds: ownIds,
+        authAction: 'remove this repost',
+        successMessage: 'Repost removed',
+      });
+
+      if (deleted) {
+        this.reactionsOrchestrator.tombstoneInteractions(ownIds);
+        this.reactionsOrchestrator.removeInteractionsFromCache(noteId, ownIds);
+        diagLog('system', 'Own repost removed via NIP-09', {
+          noteId: noteId.slice(0, 16),
+          removedEvents: ownIds.length,
+        });
+        this.systemLogger.info(
+          'RepostService',
+          `Repost taken back — ${ownIds.length} repost event(s) deleted`
+        );
+      }
+
+      return { success: deleted, removed: deleted ? ownIds.length : 0 };
+    } catch (error) {
+      this.systemLogger.warn(
+        'RepostService',
+        'Failed to remove repost:',
+        error
+      );
+      return { success: false, removed: 0 };
     }
   }
 }

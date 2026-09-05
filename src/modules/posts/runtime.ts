@@ -96,6 +96,9 @@ export class PostsRuntime implements ModuleRuntime<PostsModuleApi> {
       publishGenericRepost: options =>
         rs?.publishGenericRepost(options) ??
         Promise.resolve({ success: false, error: 'Module not loaded' }),
+      removeRepost: noteId =>
+        rs?.removeRepost(noteId) ??
+        Promise.resolve({ success: false, removed: 0 }),
       deleteEvent: (eventId, reason) =>
         ds?.deleteEvent(eventId, reason) ?? Promise.resolve(false),
       deleteEvents: options =>

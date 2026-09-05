@@ -47,6 +47,9 @@ export interface PostsModuleApi {
   publishGenericRepost(
     options: RepostOptions
   ): Promise<{ success: boolean; error?: string }>;
+  /** Take back the own repost on a note: NIP-09 kind 5 deletion of all own
+   *  repost events (kind 6 + 16) on the note + tombstone/cache removal. */
+  removeRepost(noteId: string): Promise<{ success: boolean; removed: number }>;
 
   // DeletionService
   deleteEvent(eventId: string, reason?: string): Promise<boolean>;

@@ -80,6 +80,9 @@ export class ReactionsRuntime implements ModuleRuntime<ReactionsModuleApi> {
       publishReaction: options =>
         svc?.publishReaction(options) ??
         Promise.resolve({ success: false, error: 'Module not loaded' }),
+      removeReaction: noteId =>
+        svc?.removeReaction(noteId) ??
+        Promise.resolve({ success: false, removed: 0 }),
       fetchReactionTree: rootEventIds =>
         orch?.fetchReactionTree(rootEventIds) ?? Promise.resolve(new Map()),
       getZapReplyCounts: zapIds =>

@@ -13,7 +13,10 @@ import { SystemLogger } from './SystemLogger';
 import { ErrorService } from './ErrorService';
 import { ToastService } from './ToastService';
 import { ReactionsOrchestrator } from './orchestration/ReactionsOrchestrator';
+import { DeletionService } from './DeletionService';
 import { getAddressableIdentifier } from '../helpers/getAddressableIdentifier';
+import { diagLog } from './DiagnosticLogger';
+import { TypedEventBus } from '../core/TypedEventBus';
 
 export interface ReactionOptions {
   /** Note ID to react to. For non-addressable events this is the hex event-id;
@@ -275,6 +278,70 @@ export class ReactionService {
         errorMsg
       );
       return { success: false, error: errorMsg };
+    }
+  }
+
+  /**
+   * Take back the own like on a note (toggle-off): collects ALL own kind 7
+   * reaction events on the note (retries can produce several) and removes
+   * them via a NIP-09 kind 5 deletion request — real relay deletion, not
+   * just optical (Amethyst reactToOrDelete pattern). Tombstones + targeted
+   * cache removal prevent the like from resurrecting via slow relays.
+   *
+   * @param noteId - Note ID the reaction targets
+   * @returns success + how many reaction events were removed (0 = not liked)
+   */
+  public async removeReaction(
+    noteId: string
+  ): Promise<{ success: boolean; removed: number }> {
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) {
+      return { success: false, removed: 0 };
+    }
+
+    try {
+      const stats = await this.reactionsOrchestrator.getDetailedStats(noteId);
+      const ownIds = stats.reactionEvents
+        .filter(event => event.pubkey === currentUser.pubkey && event.id)
+        .map(event => event.id as string);
+
+      if (ownIds.length === 0) {
+        return { success: true, removed: 0 };
+      }
+
+      const deleted = await DeletionService.getInstance().deleteEvents({
+        eventIds: ownIds,
+        authAction: 'remove this like',
+        successMessage: 'Like removed',
+      });
+
+      if (deleted) {
+        this.reactionsOrchestrator.tombstoneInteractions(ownIds);
+        this.reactionsOrchestrator.removeInteractionsFromCache(noteId, ownIds);
+        diagLog('system', 'Own reaction removed via NIP-09', {
+          noteId: noteId.slice(0, 16),
+          removedEvents: ownIds.length,
+        });
+        this.systemLogger.info(
+          'ReactionService',
+          `Like taken back — ${ownIds.length} reaction event(s) deleted`
+        );
+        // Cache is already updated — consumers (SNV likes list) re-render
+        // from it so the emoji disappears immediately.
+        TypedEventBus.getInstance().emit('reactions:removed', {
+          noteId,
+          eventIds: ownIds,
+        });
+      }
+
+      return { success: deleted, removed: deleted ? ownIds.length : 0 };
+    } catch (error) {
+      this.systemLogger.warn(
+        'ReactionService',
+        'Failed to remove reaction:',
+        error
+      );
+      return { success: false, removed: 0 };
     }
   }
 }

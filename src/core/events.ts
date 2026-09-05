@@ -68,6 +68,18 @@ export interface ZapAddedPayload {
 }
 
 /**
+ * Own interaction events (kind 7/6/16) removed via NIP-09 by the user
+ * (un-like / un-repost). Emitted after the deletion request is out and the
+ * stats cache was updated — consumers (e.g. SNV likes list) re-render from
+ * the cache so the emoji disappears without waiting for a relay round-trip.
+ */
+export interface ReactionsRemovedPayload {
+  noteId: string;
+  /** Deleted interaction event ids (kind 7 for likes, 6/16 for reposts). */
+  eventIds: string[];
+}
+
+/**
  * Zap payment lifecycle (wallet-side success criterion: "the sats left the
  * wallet"). Emitted by ZapService; consumed by the SNV zaps list (unified
  * renderer) and the ISL count — one bus, synchronized.
@@ -383,6 +395,9 @@ export interface AppEvents {
   'zap:succeeded': ZapLifecyclePayload;
   'zap:failed': ZapLifecyclePayload;
   'zapstats:loaded': void;
+
+  // ── Reactions ──────────────────────────────
+  'reactions:removed': ReactionsRemovedPayload;
 
   // ── Profile ────────────────────────────────
   'profile:updated': ProfileUpdatedPayload;

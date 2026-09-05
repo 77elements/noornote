@@ -165,8 +165,10 @@ export class InteractionStatusLine {
       this.likeManager = new LikeManager({
         noteId: this.config.noteId,
         authorPubkey: this.config.authorPubkey,
-        onStatsUpdate: () => {
-          this.updateStats({ likes: this.stats.likes + 1 });
+        onStatsUpdate: delta => {
+          this.updateStats({
+            likes: Math.max(0, this.stats.likes + (delta ?? 1)),
+          });
         },
         ...(this.config.onLike && { onLike: this.config.onLike }),
         // Pass the original event so reactions on addressable kinds
@@ -182,8 +184,10 @@ export class InteractionStatusLine {
       this.repostManager = new RepostManager({
         noteId: this.config.noteId,
         authorPubkey: this.config.authorPubkey,
-        onStatsUpdate: () => {
-          this.updateStats({ reposts: this.stats.reposts + 1 });
+        onStatsUpdate: delta => {
+          this.updateStats({
+            reposts: Math.max(0, this.stats.reposts + (delta ?? 1)),
+          });
         },
         ...(this.config.originalEvent && {
           originalEvent: this.config.originalEvent,

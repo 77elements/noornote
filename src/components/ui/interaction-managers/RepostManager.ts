@@ -75,9 +75,9 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
       return;
     }
 
-    // Don't allow reposting if already reposted
+    // Toggle-off: take the own repost back (NIP-09 deletion of own reposts)
     if (this.hasInteracted) {
-      ToastService.show('You already reposted this note', 'info');
+      void this.removeRepost();
       return;
     }
 
@@ -152,6 +152,33 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
       }
     } catch (error) {
       console.error('Failed to publish repost:', error);
+    }
+  }
+
+  /**
+   * Take the own repost back: NIP-09 deletion via the posts module.
+   * Optimistic revert; restored on failure.
+   */
+  private async removeRepost(): Promise<void> {
+    // Optimistic UI: revert immediately before async deletion
+    this.hasInteracted = false;
+    this.updateButtonState(false);
+    this.updateStats('repost', -1);
+
+    try {
+      const result = await this.postsApi?.removeRepost(this.config.noteId);
+
+      if (!result?.success) {
+        // Revert optimistic update on failure
+        this.hasInteracted = true;
+        this.updateButtonState(true);
+        this.updateStats('repost', 1);
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      this.hasInteracted = true;
+      this.updateButtonState(true);
+      this.updateStats('repost', 1);
     }
   }
 

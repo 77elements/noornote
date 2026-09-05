@@ -45,6 +45,11 @@ export interface ReactionsModuleApi {
     targetEvent?: NostrEvent;
     emojiTag?: [string, string, string];
   }): Promise<{ success: boolean; alreadyLiked?: boolean; error?: string }>;
+  /** Take back the own like on a note: NIP-09 kind 5 deletion of all own
+   *  kind 7 events on the note + tombstone/cache removal. 0 removed = not liked. */
+  removeReaction(
+    noteId: string
+  ): Promise<{ success: boolean; removed: number }>;
   /** Fetch the full reaction-on-reaction tree rooted at the given kind:7 event
    *  ids. Returns a map from a parent event-id to the kind:7 events that react
    *  to it (one hop per map entry; traverse recursively for the full tree). */

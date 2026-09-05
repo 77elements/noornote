@@ -191,6 +191,9 @@ vi.mock('../../ui/LikesList', () => ({
   LikesList: class {
     private element = document.createElement('div');
     constructor(...args: unknown[]) {
+      // Carry the real class so renderNow's querySelector('.likes-list')
+      // removal path behaves like production.
+      this.element.className = 'likes-list';
       likesListCtorMock(...args);
     }
     async init(): Promise<void> {}
@@ -396,6 +399,42 @@ describe('SnvZapsListController', () => {
     controller.detach(NOTE);
   });
 
+  it('reactions:removed rebuilds the SNV without the likes list (un-like sync)', async () => {
+    const shell = snvShell();
+    const controller = newController();
+    const like = {
+      id: 'like-1',
+      kind: 7,
+      pubkey: ME,
+      tags: [['e', NOTE]],
+      content: '❤️',
+    } as unknown as NostrEvent;
+    reactionsDouble.setCached({
+      ...emptyStats(),
+      reactionEvents: [like],
+      lastUpdated: Date.now(),
+    });
+    controller.attach(NOTE, AUTHOR, shell);
+    await vi.waitFor(() => {
+      expect(shell.querySelector('.likes-list')).not.toBeNull();
+    });
+
+    // Un-like: ReactionService removed the events from the stats cache,
+    // then emits — the controller must rebuild synchronously from the cache.
+    reactionsDouble.setCached({
+      ...emptyStats(),
+      reactionEvents: [],
+      lastUpdated: Date.now(),
+    });
+    TypedEventBus.getInstance().emit('reactions:removed', {
+      noteId: NOTE,
+      eventIds: ['like-1'],
+    });
+
+    expect(shell.querySelector('.likes-list')).toBeNull();
+    controller.detach(NOTE);
+  });
+
   it('lifecycle events for other notes are ignored', () => {
     const shell = snvShell();
     const controller = newController();
@@ -504,7 +543,7 @@ describe('SnvZapsListController — view-agnostic options (article support)', ()
     await vi.advanceTimersByTimeAsync(0);
 
     expect(likesListCtorMock).toHaveBeenCalled();
-    const args = likesListCtorMock.mock.calls[0];
+    const args = likesListCtorMock.mock.calls.at(-1)!;
     expect(args[3]).toBe(articleEvent); // originalEvent for NIP-25 addressable tags
     controller.detach(NOTE);
   });

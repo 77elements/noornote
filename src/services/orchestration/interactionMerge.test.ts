@@ -107,6 +107,55 @@ describe('mergeInteractionEvents', () => {
     );
     expect(cached.reactionEvents.length).toBe(0);
   });
+
+  it('blockedIds: tombstoned reactions and reposts never re-enter the buckets', () => {
+    const cached = emptyBuckets();
+    const blocked = new Set(['dead-like', 'dead-repost']);
+    mergeInteractionEvents(
+      cached,
+      [
+        ev('dead-like', 7, [['e', HEX_NOTE]], '+'),
+        ev('dead-repost', 6, [['e', HEX_NOTE]]),
+        ev('live-like', 7, [['e', HEX_NOTE]], '🔥'),
+      ],
+      HEX_NOTE,
+      blocked
+    );
+    expect(cached.reactionEvents.map(e => e.id)).toEqual(['live-like']);
+    expect(cached.repostEvents.length).toBe(0);
+  });
+
+  it('blockedIds: absent set keeps the original behavior', () => {
+    const cached = emptyBuckets();
+    mergeInteractionEvents(
+      cached,
+      [ev('r1', 7, [['e', HEX_NOTE]], '+')],
+      HEX_NOTE
+    );
+    expect(cached.reactionEvents.length).toBe(1);
+  });
+
+  it('blockedIds: tombstoned event stays out even if relay re-serves it later', () => {
+    const cached = emptyBuckets();
+    const blocked = new Set(['r1']);
+    // First merge without the tombstone (like existed)
+    mergeInteractionEvents(
+      cached,
+      [ev('r1', 7, [['e', HEX_NOTE]], '+')],
+      HEX_NOTE
+    );
+    expect(cached.reactionEvents.length).toBe(1);
+
+    // Cache wiped (TTL eviction) → full refetch re-serves the deleted event
+    const fresh = emptyBuckets();
+    mergeInteractionEvents(
+      fresh,
+      [ev('r1', 7, [['e', HEX_NOTE]], '+')],
+      HEX_NOTE,
+      blocked
+    );
+    expect(fresh.reactionEvents.length).toBe(0);
+  });
 });
 
 describe('calculateTotalZapSats', () => {

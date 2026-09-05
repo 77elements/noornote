@@ -26,6 +26,8 @@ import {
 } from './interactionMerge';
 import { SignatureVerificationService } from '../security/SignatureVerificationService';
 import { diagLog } from '../DiagnosticLogger';
+import { TypedEventBus } from '../../core/TypedEventBus';
+import { PerAccountLocalStorage, StorageKeys } from '../PerAccountLocalStorage';
 
 /**
  * Count replies excluding events authored by users the current user has
@@ -94,6 +96,15 @@ export class ReactionsOrchestrator extends Orchestrator {
   private lastReactionFetch: Map<string, number> = new Map(); // noteId → timestamp
   private liveStatSubscriptions: Map<string, string> = new Map(); // noteId → subId
 
+  /**
+   * Tombstoned own interaction event ids (kind 7/6/16 removed via NIP-09 by
+   * the user). Slow relays keep serving deleted events — filtered at every
+   * bucket entry point so a removed like/repost never resurrects. Persisted
+   * per-account (capped) so it survives restarts.
+   */
+  private deletedInteractionIds: Set<string> = new Set();
+  private static readonly MAX_TOMBSTONES = 200;
+
   private constructor() {
     super('ReactionsOrchestrator');
     this.transport = NostrTransport.getInstance();
@@ -102,6 +113,14 @@ export class ReactionsOrchestrator extends Orchestrator {
       'ReactionsOrchestrator',
       'Reactions Orchestrator at your service'
     );
+
+    // Tombstones are per-account — reload on login/logout (account switch).
+    const eventBus = TypedEventBus.getInstance();
+    eventBus.on('user:login', () => this.loadTombstones());
+    eventBus.on('user:logout', () => {
+      this.deletedInteractionIds.clear();
+    });
+    this.loadTombstones();
 
     // Start periodic eviction sweep
     this.evictionTimer = window.setInterval(
@@ -395,11 +414,16 @@ export class ReactionsOrchestrator extends Orchestrator {
       this.fetchZapEvents(noteId, articleEventId),
     ]);
 
-    detailedStats.reactionEvents = reactions;
-    detailedStats.repostEvents = reposts.regular;
-    detailedStats.quotedEvents = reposts.quoted;
-    detailedStats.replyEvents = replies;
-    detailedStats.zapEvents = zaps;
+    // Tombstone filter: events the user deleted (NIP-09) must never return
+    // via a fresh fetch while slow relays keep serving them.
+    const notTombstoned = (events: NostrEvent[]) =>
+      events.filter(e => !e.id || !this.deletedInteractionIds.has(e.id));
+
+    detailedStats.reactionEvents = notTombstoned(reactions);
+    detailedStats.repostEvents = notTombstoned(reposts.regular);
+    detailedStats.quotedEvents = notTombstoned(reposts.quoted);
+    detailedStats.replyEvents = notTombstoned(replies);
+    detailedStats.zapEvents = notTombstoned(zaps);
 
     this.systemLogger.info('ReactionsOrch', readyMessage);
 
@@ -886,6 +910,8 @@ export class ReactionsOrchestrator extends Orchestrator {
       const timeout = setTimeout(resolve, 8000);
       void this.transport.subscribe(relays, filters, {
         onEvent: (event: NostrEvent) => {
+          // Tombstone filter — deleted interactions never re-enter the buckets
+          if (event.id && this.deletedInteractionIds.has(event.id)) return;
           const qTag = event.tags.find(
             tag => tag[0] === 'q' && collectors.has(tag[1]!)
           );
@@ -947,6 +973,59 @@ export class ReactionsOrchestrator extends Orchestrator {
    */
   public clearAllCache(): void {
     this.detailedStatsCache.clear();
+  }
+
+  // ── Tombstones (removed own interactions) ──────────────────
+
+  /** Load persisted tombstones for the current account. */
+  private loadTombstones(): void {
+    try {
+      const list = PerAccountLocalStorage.getInstance().get<string[]>(
+        StorageKeys.DELETED_INTERACTIONS,
+        []
+      );
+      this.deletedInteractionIds = new Set(list);
+    } catch {
+      this.deletedInteractionIds = new Set();
+    }
+  }
+
+  /**
+   * Tombstone interaction event ids (removed via NIP-09 by the user) and
+   * persist the set (capped, FIFO) so deleted interactions stay gone across
+   * restarts even while slow relays keep serving them.
+   */
+  public tombstoneInteractions(ids: string[]): void {
+    if (ids.length === 0) return;
+    for (const id of ids) this.deletedInteractionIds.add(id);
+    const list = [...this.deletedInteractionIds];
+    while (list.length > ReactionsOrchestrator.MAX_TOMBSTONES) list.shift();
+    this.deletedInteractionIds = new Set(list);
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.DELETED_INTERACTIONS,
+      list
+    );
+  }
+
+  /**
+   * Remove interaction events from the cached buckets of a note (optimistic
+   * undo — the relay-side deletion may lag behind by minutes).
+   */
+  public removeInteractionsFromCache(noteId: string, eventIds: string[]): void {
+    const cached = this.detailedStatsCache.get(noteId);
+    if (!cached) return;
+    const drop = new Set(eventIds);
+    cached.reactionEvents = cached.reactionEvents.filter(
+      e => !e.id || !drop.has(e.id)
+    );
+    cached.repostEvents = cached.repostEvents.filter(
+      e => !e.id || !drop.has(e.id)
+    );
+    cached.quotedEvents = cached.quotedEvents.filter(
+      e => !e.id || !drop.has(e.id)
+    );
+    cached.zapEvents = cached.zapEvents.filter(e => !e.id || !drop.has(e.id));
+    cached.lastUpdated = Date.now();
   }
 
   /**
@@ -1085,7 +1164,12 @@ export class ReactionsOrchestrator extends Orchestrator {
           `Polled interactions — cache ${cached ? `has ${cached.reactionEvents.length} reactions` : 'MISSING'}`
         );
         if (cached) {
-          mergeInteractionEvents(cached, newReactions, noteId);
+          mergeInteractionEvents(
+            cached,
+            newReactions,
+            noteId,
+            this.deletedInteractionIds
+          );
 
           cached.lastUpdated = Date.now();
 
@@ -1221,7 +1305,12 @@ export class ReactionsOrchestrator extends Orchestrator {
         event.kind === 6 &&
         event.tags.some(t => (t[0] === 'q' || t[0] === 'a') && t[1] === noteId);
 
-      mergeInteractionEvents(cached, [event], noteId);
+      mergeInteractionEvents(
+        cached,
+        [event],
+        noteId,
+        this.deletedInteractionIds
+      );
       cached.lastUpdated = Date.now();
       // A cache rebuilt from the live echo holds only the just-arrived event —
       // mark it UNFRESH so the next getDetailedStats performs a full refetch

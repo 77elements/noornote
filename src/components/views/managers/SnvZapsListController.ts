@@ -65,6 +65,11 @@ export class SnvZapsListController {
       bus.on('zap:pending', payload => this.onLifecycle(payload)),
       bus.on('zap:succeeded', payload => this.onLifecycle(payload)),
       bus.on('zap:failed', payload => this.onLifecycle(payload)),
+      // Un-like: cache is already updated by ReactionService — rebuild the
+      // likes list synchronously so the emoji pill disappears immediately.
+      bus.on('reactions:removed', payload => {
+        if (this.entries.has(payload.noteId)) this.renderNow(payload.noteId);
+      }),
     ];
   }
 

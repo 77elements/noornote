@@ -261,6 +261,8 @@ export const StorageKeys = {
   FIAT_CURRENCY: 'noornote_fiat_currency_map',
   USER_ZAPS: 'noornote_user_zaps_map',
   OWN_ANON_ZAP_INVOICES: 'noornote_own_anon_zap_invoices_map',
+  /** Own interactions (kind 7/6/16) removed via NIP-09 — never resurrect. */
+  DELETED_INTERACTIONS: 'noornote_deleted_interactions_map',
 
   // SCC default content preference (per-account)
   SCC_DEFAULT_CONTENT: 'noornote_scc_default_content_map',

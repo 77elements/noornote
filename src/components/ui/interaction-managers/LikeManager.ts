@@ -63,16 +63,16 @@ export class LikeManager extends BaseInteractionManager<LikeManagerConfig> {
   }
 
   /**
-   * Handle like action - Show emoji picker
+   * Handle like action - Show emoji picker, or take the like back on second click
    */
   public async handleLike(): Promise<void> {
     if (!this.requireAuth('like this note')) {
       return;
     }
 
-    // Don't allow liking if already liked
+    // Toggle-off: take the own like back (NIP-09 deletion of own reactions)
     if (this.hasInteracted) {
-      ToastService.show('You already liked this note', 'info');
+      void this.removeLike();
       return;
     }
 
@@ -181,18 +181,47 @@ export class LikeManager extends BaseInteractionManager<LikeManagerConfig> {
   }
 
   /**
+   * Take the own like back: NIP-09 deletion via the reactions module.
+   * Optimistic revert; restored on failure.
+   */
+  private async removeLike(): Promise<void> {
+    // Optimistic UI: revert immediately before async deletion
+    this.hasInteracted = false;
+    this.updateButtonState(false);
+    this.updateStats('like', -1);
+
+    try {
+      const result = await this.reactionsApi?.removeReaction(
+        this.config.noteId
+      );
+
+      if (!result?.success) {
+        // Revert optimistic update on failure
+        this.hasInteracted = true;
+        this.updateButtonState(true);
+        this.updateStats('like', 1);
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      this.hasInteracted = true;
+      this.updateButtonState(true);
+      this.updateStats('like', 1);
+    }
+  }
+
+  /**
    * Update like button visual state
    */
   protected updateButtonState(liked: boolean): void {
     if (!this.button) return;
 
     const likeBtn = this.button as HTMLButtonElement;
+    // Stay clickable in both states — second click takes the like back.
+    likeBtn.disabled = false;
     if (liked) {
       likeBtn.classList.add('active');
-      likeBtn.disabled = true;
     } else {
       likeBtn.classList.remove('active');
-      likeBtn.disabled = false;
     }
   }
 
