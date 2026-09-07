@@ -541,11 +541,12 @@ export class MediaUploadService {
   }
 
   /**
-   * Convert an API URL to a proxied URL for browser dev mode
-   * Handles both absolute URLs and relative paths
+   * Convert an API URL to a proxied URL — browser uploads always route
+   * through the proxy (CORS-immune, real server statuses come through).
+   * Desktop uses the native adapter (no CORS) and hits the server directly.
    */
   private getProxiedApiUrl(serverUrl: string, apiUrl: string): string {
-    if (!this.platform.isBrowser || !import.meta.env.DEV) {
+    if (!this.platform.isBrowser) {
       return apiUrl;
     }
 

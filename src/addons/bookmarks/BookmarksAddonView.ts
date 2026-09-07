@@ -77,6 +77,9 @@ export class BookmarksAddonView extends View {
           service.stop();
         }
         this.updateVisibility();
+        // Mounted bookmarks views re-render: unread borders drop when the
+        // feature deactivates, appear when it activates.
+        TypedEventBus.getInstance().emit('bookmark:updated');
       },
     });
 
@@ -92,6 +95,9 @@ export class BookmarksAddonView extends View {
           service.stop();
         }
         this.updateVisibility();
+        // Mounted bookmarks views re-render: unread borders drop when the
+        // feature deactivates, appear when it activates.
+        TypedEventBus.getInstance().emit('bookmark:updated');
         ToastService.show(
           checked
             ? 'Bookmark read-state sync enabled'

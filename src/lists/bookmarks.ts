@@ -1787,6 +1787,23 @@ async function decryptPrivateItems(
 /**
  * Save bookmarks to file (in BookmarkSetData format)
  */
+// Read-state feature gate (docs/todos/unread-bookmarks.md): the ENTIRE
+// unread feature (borders, marking, counter) is active ONLY while the
+// "Sync read bookmarks across relays" toggle in the bookmarks addon is on.
+// Cached module ref — flag reads stay synchronous-cheap per call.
+let readSyncFlagModule: typeof import('../addons/bookmarks/index') | null =
+  null;
+
+export async function isReadSyncFeatureActive(): Promise<boolean> {
+  if (!readSyncFlagModule) {
+    readSyncFlagModule = await import('../addons/bookmarks/index');
+  }
+  return (
+    readSyncFlagModule.isBookmarksEnabled() &&
+    readSyncFlagModule.isReadSyncEnabled()
+  );
+}
+
 export async function saveBookmarksToFile(): Promise<void> {
   const setData = buildSetDataFromLocalStorage();
   await writeBookmarkFile(setData);
@@ -1795,9 +1812,9 @@ export async function saveBookmarksToFile(): Promise<void> {
 
 // ============================================================
 // READ STATE (unread counter — see docs/todos/unread-bookmarks.md)
-// Gated by the "Sync gelesene Bookmarks über Relays" toggle in the
-// bookmarks addon settings; when off, nothing is marked and the sidebar
-// shows the plain total.
+// ENTIRELY gated by the "Sync read bookmarks across relays" toggle in
+// the bookmarks addon settings (User-Entscheidung 2026-09-06): toggle off
+// = no borders, no marking, no counter.
 // ============================================================
 
 export function getBookmarkReadMap(): Record<string, number> {
@@ -3149,7 +3166,9 @@ export class BookmarkCard {
 
     const card = document.createElement('div');
     card.className = 'nn-card';
-    if (!isBookmarkRead(id)) card.classList.add('bookmark-card--unread');
+    if ((await isReadSyncFeatureActive()) && !isBookmarkRead(id)) {
+      card.classList.add('bookmark-card--unread');
+    }
     card.dataset.bookmark = '';
     card.dataset.eventId = id;
     card.dataset.bookmarkId = id;
