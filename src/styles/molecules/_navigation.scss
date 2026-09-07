@@ -237,8 +237,7 @@
   &__submenu {
     display: none;
     list-style: none;
-    padding: 0;
-    padding-left: calc(1.5 * $gap);
+    padding: 0 0 0 calc($gap / 2);
     margin: calc($gap / 4) 0 0 0;
 
     li[data-addon-id] {
@@ -252,7 +251,7 @@
   &__sublink:link,
   &__sublink:visited {
     display: grid;
-    grid-template-columns: 16px 1fr;
+    grid-template-columns: 16px 1fr auto;
     grid-gap: calc($gap / 2);
     align-items: center;
     padding: calc($gap / 2) calc($gap / 2) calc($gap / 2) $gap;
@@ -281,6 +280,18 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  // Item counter on the Lists submenu (bookmarks/follows/mutes/tribes)
+  &__sublink-count {
+    color: var(--color-3);
+    font-size: 0.85em;
+    white-space: nowrap;
+
+    strong {
+      font-weight: 700;
+      color: var(--color-4);
+    }
   }
 
   // Row being dragged (desktop reorder).

@@ -23,3 +23,52 @@ export function setBookmarksEnabled(enabled: boolean): void {
   // reflect the actual state, otherwise the sidebar entry stays hidden on next launch.
   localStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
 }
+
+// ── Read-sync settings (unread counter — see docs/todos/unread-bookmarks.md) ──
+
+export type BookmarkReadSyncFrequency =
+  | 'rare'
+  | 'moderate'
+  | 'frequent'
+  | 'more-frequent'
+  | 'realtime';
+
+export function isReadSyncEnabled(): boolean {
+  return PerAccountLocalStorage.getInstance().get<boolean>(
+    StorageKeys.BOOKMARKS_READ_SYNC_ENABLED,
+    false
+  );
+}
+
+export function setReadSyncEnabled(enabled: boolean): void {
+  PerAccountLocalStorage.getInstance().set(
+    StorageKeys.BOOKMARKS_READ_SYNC_ENABLED,
+    enabled
+  );
+}
+
+export function getReadSyncFrequency(): BookmarkReadSyncFrequency {
+  const stored = PerAccountLocalStorage.getInstance().get<string>(
+    StorageKeys.BOOKMARKS_READ_SYNC_FREQUENCY,
+    'moderate'
+  );
+  const valid: BookmarkReadSyncFrequency[] = [
+    'rare',
+    'moderate',
+    'frequent',
+    'more-frequent',
+    'realtime',
+  ];
+  return (valid as string[]).includes(stored)
+    ? (stored as BookmarkReadSyncFrequency)
+    : 'moderate';
+}
+
+export function setReadSyncFrequency(
+  frequency: BookmarkReadSyncFrequency
+): void {
+  PerAccountLocalStorage.getInstance().set(
+    StorageKeys.BOOKMARKS_READ_SYNC_FREQUENCY,
+    frequency
+  );
+}

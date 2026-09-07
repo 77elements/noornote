@@ -56,6 +56,7 @@ import { ListViewPartial, type ListType } from './partials/ListViewPartial';
 import { ArticleTimeline } from '../article/ArticleTimeline';
 import { SccMediaFeed } from './partials/SccMediaFeed';
 import { ListsMenuPartial } from './partials/ListsMenuPartial';
+import { ListsCountManager } from './managers/ListsCountManager';
 import {
   deactivateAllTabs,
   switchTabWithContent,
@@ -117,6 +118,7 @@ export class MainLayout {
   private badgeManager: NotificationsBadgeManager | null = null;
   private hamburgerBadgeManager: HamburgerBadgeManager | null = null;
   private listsMenu: ListsMenuPartial | null = null;
+  private listsCountManager: ListsCountManager | null = null;
   private currentListView: ListViewPartial | null = null;
   /**
    * Tracks an open external user-list (a target's follows/followers) so syncScc
@@ -232,6 +234,13 @@ export class MainLayout {
     if (isBookmarksEnabled()) {
       const { BookmarkManager } = await import('../../lists/bookmarks');
       this.bookmarkManager = new BookmarkManager(this.element);
+
+      // Read-state sync (unread counter) — no-op unless the sync toggle in
+      // the bookmarks addon settings is on (docs/todos/unread-bookmarks.md).
+      const { BookmarkReadStateService } = await import(
+        '../../services/BookmarkReadStateService'
+      );
+      await BookmarkReadStateService.getInstance().start();
     }
 
     // Tribes addon: lazy-load only when enabled
@@ -282,19 +291,22 @@ export class MainLayout {
       onListClick: listType => this.openListTab(listType),
     });
 
+    // Item counters on the Lists submenu (bookmarks/follows/mutes/tribes)
+    const menuEl = this.listsMenu.createElement();
+    if (menuEl) {
+      this.listsCountManager = new ListsCountManager(menuEl);
+    }
+
     const listsMenuContainer = this.element.querySelector('.primary-nav');
-    if (listsMenuContainer) {
+    if (listsMenuContainer && menuEl) {
       // Insert after Settings link (before Download link)
       const downloadLink = listsMenuContainer.querySelector(
         '.primary-nav__link--download'
       )?.parentElement;
       if (downloadLink) {
-        listsMenuContainer.insertBefore(
-          this.listsMenu.createElement(),
-          downloadLink
-        );
+        listsMenuContainer.insertBefore(menuEl, downloadLink);
       } else {
-        listsMenuContainer.appendChild(this.listsMenu.createElement());
+        listsMenuContainer.appendChild(menuEl);
       }
     }
 
@@ -3122,6 +3134,11 @@ export class MainLayout {
     // Destroy managers
     if (this.bookmarkManager) {
       this.bookmarkManager.destroy();
+    }
+
+    if (this.listsCountManager) {
+      this.listsCountManager.destroy();
+      this.listsCountManager = null;
     }
 
     if (this.badgeManager) {

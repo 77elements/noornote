@@ -42,6 +42,7 @@ export class ListsMenuPartial {
           <a href="#" class="primary-nav__sublink" data-list-type="bookmarks">
             <svg class="primary-nav__sublink-icon"><use href="#icon-bookmark-24"/></svg>
             <span class="primary-nav__sublink-desc">Bookmarks</span>
+            <span class="primary-nav__sublink-count" data-list-count="bookmarks" style="display: none;"></span>
           </a>
         </li>
         <li>

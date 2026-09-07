@@ -32,6 +32,12 @@ export const StorageKeys = {
   // is re-created. Honored by fetch/apply/publish paths to filter out any
   // resurrection events that slip through the NIP-09 created_at check.
   BOOKMARK_TOMBSTONES: 'noornote_bookmark_tombstones_map',
+  /** Read-markers for bookmarks (id → readAt) — unread counter + optional NIP-78 sync. */
+  BOOKMARKS_READ: 'noornote_bookmarks_read_map',
+  /** Gelesen-Sync über Relays (NIP-78) — Default aus; gate für das Unread-Feature. */
+  BOOKMARKS_READ_SYNC_ENABLED: 'noornote_bookmarks_read_sync_enabled_map',
+  /** Sync-Frequenz (marketplace levels: rare/moderate/frequent/more-frequent/realtime). */
+  BOOKMARKS_READ_SYNC_FREQUENCY: 'noornote_bookmarks_read_sync_frequency_map',
   FOLLOWS: 'noornote_follows_map',
   MUTES: 'noornote_mutes_map',
   // Soft mutes — notification-only suppression. Record<pubkey, { addedAt }>.

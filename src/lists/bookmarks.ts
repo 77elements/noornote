@@ -31,6 +31,7 @@ import {
   PerAccountLocalStorage,
   StorageKeys as PerAccountStorageKeys,
 } from '../services/PerAccountLocalStorage';
+import { pruneReadMap } from './bookmarkReadMerge';
 import { PlatformService } from '../services/PlatformService';
 import { diagLog } from '../services/DiagnosticLogger';
 
@@ -1793,6 +1794,81 @@ export async function saveBookmarksToFile(): Promise<void> {
 }
 
 // ============================================================
+// READ STATE (unread counter — see docs/todos/unread-bookmarks.md)
+// Gated by the "Sync gelesene Bookmarks über Relays" toggle in the
+// bookmarks addon settings; when off, nothing is marked and the sidebar
+// shows the plain total.
+// ============================================================
+
+export function getBookmarkReadMap(): Record<string, number> {
+  return PerAccountLocalStorage.getInstance().get<Record<string, number>>(
+    PerAccountStorageKeys.BOOKMARKS_READ,
+    {}
+  );
+}
+
+export function isBookmarkRead(id: string): boolean {
+  return id in getBookmarkReadMap();
+}
+
+export function getUnreadBookmarkCount(): number {
+  const read = getBookmarkReadMap();
+  return readBrowserBookmarks().filter(b => !(b.id in read)).length;
+}
+
+async function publishReadState(map: Record<string, number>): Promise<void> {
+  const { BookmarkReadStateService } = await import(
+    '../services/BookmarkReadStateService'
+  );
+  BookmarkReadStateService.getInstance().schedulePublish(map);
+}
+
+/** Mark one bookmark as read (card activation). No-op when sync is off. */
+export async function markBookmarkRead(id: string): Promise<void> {
+  const { isReadSyncEnabled } = await import('../addons/bookmarks/index');
+  if (!isReadSyncEnabled()) return;
+
+  const map = getBookmarkReadMap();
+  if (map[id]) return;
+
+  const existing = new Set(readBrowserBookmarks().map(b => b.id));
+  if (!existing.has(id)) return;
+
+  map[id] = now();
+  const pruned = pruneReadMap(map, existing);
+  PerAccountLocalStorage.getInstance().set(
+    PerAccountStorageKeys.BOOKMARKS_READ,
+    pruned
+  );
+  TypedEventBus.getInstance().emit('bookmark:read');
+  diagLog('lists', 'bookmark marked read', { id: id.slice(0, 16) });
+  await publishReadState(pruned);
+}
+
+/** Mark every current bookmark as read (header bulk action). */
+export async function markAllBookmarksRead(): Promise<void> {
+  const { isReadSyncEnabled } = await import('../addons/bookmarks/index');
+  if (!isReadSyncEnabled()) return;
+
+  const items = readBrowserBookmarks();
+  const map = getBookmarkReadMap();
+  const ts = now();
+  for (const b of items) map[b.id] = ts;
+
+  const existing = new Set(items.map(b => b.id));
+  const pruned = pruneReadMap(map, existing);
+  PerAccountLocalStorage.getInstance().set(
+    PerAccountStorageKeys.BOOKMARKS_READ,
+    pruned
+  );
+  TypedEventBus.getInstance().emit('bookmark:read');
+  diagLog('lists', 'all bookmarks marked read', {
+    count: Object.keys(pruned).length,
+  });
+  await publishReadState(pruned);
+}
+
+// ============================================================
 // Client-side tombstones for deleted bookmark folders.
 // Honors the user's intent ("I deleted this") locally and independently of
 // what relays still serve. NIP-09's created_at-based deletion leaves a gap
@@ -3319,6 +3395,10 @@ export class BookmarkCard {
         return;
       }
 
+      // Card activation = bookmark processed → mark as read (unread counter,
+      // see docs/todos/unread-bookmarks.md). Gated by the read-sync toggle.
+      void markBookmarkRead(id);
+
       const anchor = target.closest('a');
       if (anchor) {
         const href = anchor.getAttribute('href');
@@ -4034,6 +4114,12 @@ export class BookmarkManager {
   private setupEventListeners(): void {
     this.eventBus.on('bookmark:updated', () => this.refreshIfActive());
     this.eventBus.on('list-sync-mode:changed', () => this.refreshIfActive());
+    // Read-state changed (card click / bulk / NIP-78 sync) — refresh the
+    // "Mark as read" button state in the mounted header without re-render.
+    this.eventBus.on('bookmark:read', () => {
+      const container = this.containerElement;
+      if (container) this.updateMarkReadButtonState(container);
+    });
 
     const resetState = (): void => {
       this.currentFolderId = '';
@@ -4317,18 +4403,35 @@ export class BookmarkManager {
 
   private renderHeader(folder: { id: string; name: string } | null): string {
     const title = folder ? folder.name : 'Bookmarks';
-    return renderListHeader(title, [
-      {
-        action: 'new-folder',
-        icon: '<svg width="16" height="16"><use href="#icon-folder"/></svg>',
-        label: 'Folder',
-      },
-      {
-        action: 'new-bookmark',
-        icon: '<svg width="16" height="16"><use href="#icon-bookmark-link"/></svg>',
-        label: 'Bookmark',
-      },
-    ]);
+
+    // "Mark as read" (unread feature) — only with the read-sync toggle on.
+    let headerActionsHtml = '';
+    const readSyncOn = PerAccountLocalStorage.getInstance().get<boolean>(
+      PerAccountStorageKeys.BOOKMARKS_READ_SYNC_ENABLED,
+      false
+    );
+    if (readSyncOn) {
+      const unread = getUnreadBookmarkCount();
+      const passive = unread === 0;
+      headerActionsHtml = `<button class="btn btn--medium${passive ? ' btn--passive' : ''}" data-action="mark-read"${passive ? ' disabled' : ''}>Mark as read</button>`;
+    }
+
+    return renderListHeader(
+      title,
+      [
+        {
+          action: 'new-folder',
+          icon: '<svg width="16" height="16"><use href="#icon-folder"/></svg>',
+          label: 'Folder',
+        },
+        {
+          action: 'new-bookmark',
+          icon: '<svg width="16" height="16"><use href="#icon-bookmark-link"/></svg>',
+          label: 'Bookmark',
+        },
+      ],
+      headerActionsHtml
+    );
   }
 
   private renderBreadcrumb(
@@ -5028,6 +5131,21 @@ export class BookmarkManager {
     });
   }
 
+  /**
+   * Sync the "Mark as read" header button with the current unread count:
+   * passive + disabled at 0 unread, clickable otherwise. Called on render
+   * and on bookmark:read (card clicks / bulk / NIP-78 sync).
+   */
+  private updateMarkReadButtonState(container: HTMLElement): void {
+    const btn = container.querySelector(
+      '[data-action="mark-read"]'
+    ) as HTMLButtonElement | null;
+    if (!btn) return;
+    const passive = getUnreadBookmarkCount() === 0;
+    btn.classList.toggle('btn--passive', passive);
+    btn.disabled = passive;
+  }
+
   private bindHeaderButtons(container: HTMLElement): void {
     const closeRef = { current: this.closeDropdownHandler };
     bindHeaderDropdown(container, closeRef);
@@ -5047,6 +5165,16 @@ export class BookmarkManager {
     bookmarkItem?.addEventListener('click', () => {
       dropdown?.classList.remove('custom-dropdown--open');
       this.createNewBookmark();
+    });
+
+    // "Mark as read" bulk action (unread feature — see
+    // docs/todos/unread-bookmarks.md). Passive/disabled at 0 unread.
+    const markReadBtn = container.querySelector(
+      '[data-action="mark-read"]'
+    ) as HTMLButtonElement | null;
+    markReadBtn?.addEventListener('click', async () => {
+      await markAllBookmarksRead();
+      this.updateMarkReadButtonState(container);
     });
 
     const rootLink = container.querySelector('[data-navigate="root"]');

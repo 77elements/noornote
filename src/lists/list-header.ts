@@ -14,10 +14,14 @@ export interface DropdownItem {
 
 /**
  * Render the list header with title and "New" dropdown button.
+ * `headerActionsHtml` (optional): extra actions rendered LEFT of the
+ * "+ New" dropdown, grouped with it on the right side (e.g. the
+ * bookmarks "Mark as read" bulk button).
  */
 export function renderListHeader(
   title: string,
-  dropdownItems: DropdownItem[]
+  dropdownItems: DropdownItem[],
+  headerActionsHtml: string = ''
 ): string {
   const itemsHtml = dropdownItems
     .map(
@@ -30,9 +34,7 @@ export function renderListHeader(
     )
     .join('');
 
-  return `
-    <div class="l-spread">
-      <h2>${escapeHtml(title)}</h2>
+  const dropdownBlock = `
       <div class="custom-dropdown" data-list-header-dropdown>
         <button class="custom-dropdown__trigger" type="button" title="Create new">
           <span class="custom-dropdown__label">+ New</span>
@@ -41,7 +43,16 @@ export function renderListHeader(
         <ul class="custom-dropdown__menu" role="listbox">
           ${itemsHtml}
         </ul>
-      </div>
+      </div>`;
+
+  const rightBlock = headerActionsHtml
+    ? `<div class="bookmark-header-actions">${headerActionsHtml}${dropdownBlock}</div>`
+    : dropdownBlock;
+
+  return `
+    <div class="l-spread">
+      <h2>${escapeHtml(title)}</h2>
+      ${rightBlock}
     </div>
   `;
 }

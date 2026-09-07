@@ -1,0 +1,40 @@
+/**
+ * Bookmarks addon page + bookmarks list header extras
+ * (read-sync settings, see docs/todos/unread-bookmarks.md)
+ */
+
+@use '../abstracts/variables' as *;
+
+// Bookmarks list header: "Mark as read" button grouped with the +New dropdown
+.bookmark-header-actions {
+  display: flex;
+  align-items: center;
+  gap: calc($gap / 2);
+}
+
+// Bookmarks addon page: read-sync settings block
+.bookmarks-read-sync {
+  margin-top: $gap;
+
+  &.is-hidden {
+    display: none;
+  }
+}
+
+// Frequency options (radio list), hidden while the sync toggle is off
+.frequency-selector {
+  margin-top: $gap;
+
+  .setting__label {
+    display: block;
+    margin-bottom: calc($gap / 2);
+  }
+
+  .nn-checkbox {
+    margin-bottom: calc($gap / 2);
+  }
+
+  &.is-hidden {
+    display: none;
+  }
+}

@@ -347,6 +347,8 @@ export interface AppEvents {
   'soft-mute:updated': void;
   'bookmark:updated': void;
   'bookmark:order-changed': void;
+  /** A bookmark's read-state changed (marked read via card click / bulk action / NIP-78 sync). */
+  'bookmark:read': void;
   'tribe:updated': void;
   'list:open': ListOpenPayload;
   'list-sync-mode:changed': ListSyncModeChangedPayload;
