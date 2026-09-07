@@ -9,8 +9,9 @@
  * JSON or an empty body, we show the page title (from the `title` tag) plus
  * a link that opens the naddr coordinate on njump, the universal viewer.
  *
- * Scope is deliberately limited to 35129: Satellite Earth's other NAP kinds
- * (if any) have not been verified, so we don't pretend to handle them.
+ * Scope: 35129 (site pages, archetype "NAP-4") and 35128 (site-level
+ * settings of the same NAP spec). Both render as a notice card with an
+ * external link — the body stays opaque to NoorNote.
  *
  * Mirrors `DittoFeatureRenderer` (kind 37516) — same problem class, same
  * solution shape.
@@ -24,6 +25,14 @@ import { escapeHtml, escapeHtmlAttr } from '../../../helpers/escapeHtml';
 
 /** Satellite Earth personal-site page kind (addressable, no NIP). */
 export const SATELLITE_SITE_KIND = 35129;
+
+/** Satellite Earth site-level settings kind (same NAP spec, no NIP). */
+export const SATELLITE_SITE_SETTINGS_KIND = 35128;
+
+/** Both Satellite Earth NAP kinds NoorNote renders notice cards for. */
+export function isSatelliteEarthKind(kind: number): boolean {
+  return kind === SATELLITE_SITE_KIND || kind === SATELLITE_SITE_SETTINGS_KIND;
+}
 
 /**
  * Satellite Earth's `/thread/` viewer expects a NIP-19 note1 (raw event id).
@@ -65,7 +74,7 @@ export class SatelliteSiteRenderer {
     identifier: string
   ): HTMLElement {
     const element = SatelliteSiteRenderer.renderCard(kind, pubkey, identifier);
-    if (kind !== SATELLITE_SITE_KIND) return element;
+    if (!isSatelliteEarthKind(kind)) return element;
 
     const naddr = encodeNaddr({ kind, pubkey, identifier, relays: [] });
     const link = element.querySelector('a[href]');

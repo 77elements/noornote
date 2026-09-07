@@ -107,7 +107,7 @@ vi.mock('./DittoFeatureRenderer', () => ({
 }));
 vi.mock('./SatelliteSiteRenderer', () => ({
   SatelliteSiteRenderer: { render: vi.fn() },
-  SATELLITE_SITE_KIND: 30442,
+  isSatelliteEarthKind: (kind: unknown) => kind === 35128 || kind === 35129,
 }));
 vi.mock('./ArmadaInviteRenderer', () => ({
   ArmadaInviteRenderer: { render: vi.fn() },

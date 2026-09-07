@@ -13,7 +13,7 @@ import {
 } from './DittoFeatureRenderer';
 import {
   SatelliteSiteRenderer,
-  SATELLITE_SITE_KIND,
+  isSatelliteEarthKind,
 } from './SatelliteSiteRenderer';
 import { ArmadaInviteRenderer } from './ArmadaInviteRenderer';
 
@@ -32,9 +32,12 @@ export class UnsupportedKindRenderer {
     if (note.rawEvent.kind === DITTO_GEOCACHE_KIND) {
       return DittoFeatureRenderer.render(note.rawEvent);
     }
-    // Satellite Earth personal-site page (kind 35129): dedicated "open on
-    // Satellite Earth" notice with the page title from the title tag.
-    if (note.rawEvent.kind === SATELLITE_SITE_KIND) {
+    // Satellite Earth NAP kinds (35128 settings / 35129 pages): dedicated
+    // "open on Satellite Earth" notice with the page title from the title tag.
+    if (
+      note.rawEvent.kind !== undefined &&
+      isSatelliteEarthKind(note.rawEvent.kind)
+    ) {
       return SatelliteSiteRenderer.render(note.rawEvent);
     }
     // Armada invite bundle reached as a raw event (rare — normally the
@@ -116,7 +119,7 @@ export class UnsupportedKindRenderer {
         identifier
       );
     }
-    if (kind === SATELLITE_SITE_KIND) {
+    if (isSatelliteEarthKind(kind)) {
       return SatelliteSiteRenderer.renderFromCoordinate(
         kind,
         pubkey,

@@ -3621,7 +3621,7 @@ export class BookmarkCard {
               : 'Draft';
       return `Git Status: ${status}`;
     }
-    if (event.kind === 35129) {
+    if (event.kind === 35128 || event.kind === 35129) {
       const title =
         event.tags.find(t => t[0] === 'title')?.[1] ||
         event.tags.find(t => t[0] === 'd')?.[1] ||

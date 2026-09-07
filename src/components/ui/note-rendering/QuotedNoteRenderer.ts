@@ -34,7 +34,7 @@ import {
 } from '../../../components/ui/note-rendering/DittoFeatureRenderer';
 import {
   SatelliteSiteRenderer,
-  SATELLITE_SITE_KIND,
+  isSatelliteEarthKind,
 } from '../../../components/ui/note-rendering/SatelliteSiteRenderer';
 import { ArmadaInviteRenderer } from '../../../components/ui/note-rendering/ArmadaInviteRenderer';
 import { UnsupportedKindRenderer } from './UnsupportedKindRenderer';
@@ -179,8 +179,9 @@ export class QuotedNoteRenderer {
       );
       return;
     }
-    // Satellite Earth site page (kind 35129): proprietary, no NIP — dedicated notice.
-    if (kind === SATELLITE_SITE_KIND) {
+    // Satellite Earth NAP kinds (35128 settings / 35129 pages): proprietary,
+    // no NIP — dedicated notice.
+    if (kind !== undefined && isSatelliteEarthKind(kind)) {
       container.appendChild(
         SatelliteSiteRenderer.renderFromCoordinate(kind, pubkey, identifier)
       );
@@ -357,9 +358,12 @@ export class QuotedNoteRenderer {
           return;
         }
 
-        // Satellite Earth site page (kind 35129): proprietary, no NIP — same
-        // reason as the Ditto branch above.
-        if (result.event.kind === SATELLITE_SITE_KIND) {
+        // Satellite Earth NAP kinds (35128 settings / 35129 pages):
+        // proprietary, no NIP — same reason as the Ditto branch above.
+        if (
+          result.event.kind !== undefined &&
+          isSatelliteEarthKind(result.event.kind)
+        ) {
           skeleton.replaceWith(SatelliteSiteRenderer.render(result.event));
           return;
         }

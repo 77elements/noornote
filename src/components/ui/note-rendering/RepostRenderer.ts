@@ -22,7 +22,7 @@ import {
 } from './DittoFeatureRenderer';
 import {
   SatelliteSiteRenderer,
-  SATELLITE_SITE_KIND,
+  isSatelliteEarthKind,
 } from './SatelliteSiteRenderer';
 import { ArmadaInviteRenderer } from './ArmadaInviteRenderer';
 import { ARTICLE_PREVIEW_KINDS } from '../../../helpers/addressableKinds';
@@ -326,8 +326,12 @@ export class RepostRenderer {
       return;
     }
 
-    // (1) Satellite Earth site page (kind 35129): proprietary, no NIP. Same shape.
-    if (innerEvent.kind === SATELLITE_SITE_KIND) {
+    // (1) Satellite Earth NAP kinds (35128 settings / 35129 pages):
+    //     proprietary, no NIP. Same shape.
+    if (
+      innerEvent.kind !== undefined &&
+      isSatelliteEarthKind(innerEvent.kind)
+    ) {
       const satelliteContainer = document.createElement('div');
       satelliteContainer.className = 'repost-article-container';
       satelliteContainer.appendChild(SatelliteSiteRenderer.render(innerEvent));
