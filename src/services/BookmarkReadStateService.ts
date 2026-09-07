@@ -88,7 +88,7 @@ export class BookmarkReadStateService extends Nip78EncryptedListService {
 
   public writeLocalMap(map: BookmarkReadMap): void {
     PerAccountLocalStorage.getInstance().set(StorageKeys.BOOKMARKS_READ, map);
-    TypedEventBus.getInstance().emit('bookmark:read');
+    TypedEventBus.getInstance().emit('bookmark:read', {});
   }
 
   /**
@@ -141,12 +141,16 @@ export class BookmarkReadStateService extends Nip78EncryptedListService {
    * Reset the read-state everywhere: publish an EMPTY map (overwrites the
    * relay event, so other instances converge to all-unread on their next
    * sync) and clear the local mirror. All bookmarks count as unread again.
+   * Also emits bookmark:updated so mounted list views re-render their cards
+   * (unread borders reappear immediately).
    */
   public async reset(): Promise<void> {
     PerAccountLocalStorage.getInstance().set(StorageKeys.BOOKMARKS_READ, {});
     await this.publishEncryptedMap({}, 'Failed to reset bookmark read state');
     diagLog('system', 'BookmarkReadStateService reset — all bookmarks unread');
-    TypedEventBus.getInstance().emit('bookmark:read');
+    const bus = TypedEventBus.getInstance();
+    bus.emit('bookmark:read', { all: true });
+    bus.emit('bookmark:updated');
     this.systemLogger.info(
       'BookmarkReadSvc',
       'Bookmark read-state reset — all bookmarks marked unread'

@@ -1840,7 +1840,7 @@ export async function markBookmarkRead(id: string): Promise<void> {
     PerAccountStorageKeys.BOOKMARKS_READ,
     pruned
   );
-  TypedEventBus.getInstance().emit('bookmark:read');
+  TypedEventBus.getInstance().emit('bookmark:read', { id });
   diagLog('lists', 'bookmark marked read', { id: id.slice(0, 16) });
   await publishReadState(pruned);
 }
@@ -1861,7 +1861,7 @@ export async function markAllBookmarksRead(): Promise<void> {
     PerAccountStorageKeys.BOOKMARKS_READ,
     pruned
   );
-  TypedEventBus.getInstance().emit('bookmark:read');
+  TypedEventBus.getInstance().emit('bookmark:read', { all: true });
   diagLog('lists', 'all bookmarks marked read', {
     count: Object.keys(pruned).length,
   });
@@ -3149,6 +3149,7 @@ export class BookmarkCard {
 
     const card = document.createElement('div');
     card.className = 'nn-card';
+    if (!isBookmarkRead(id)) card.classList.add('bookmark-card--unread');
     card.dataset.bookmark = '';
     card.dataset.eventId = id;
     card.dataset.bookmarkId = id;
@@ -3398,6 +3399,7 @@ export class BookmarkCard {
       // Card activation = bookmark processed → mark as read (unread counter,
       // see docs/todos/unread-bookmarks.md). Gated by the read-sync toggle.
       void markBookmarkRead(id);
+      card.classList.remove('bookmark-card--unread');
 
       const anchor = target.closest('a');
       if (anchor) {
@@ -4114,11 +4116,23 @@ export class BookmarkManager {
   private setupEventListeners(): void {
     this.eventBus.on('bookmark:updated', () => this.refreshIfActive());
     this.eventBus.on('list-sync-mode:changed', () => this.refreshIfActive());
-    // Read-state changed (card click / bulk / NIP-78 sync) — refresh the
-    // "Mark as read" button state in the mounted header without re-render.
-    this.eventBus.on('bookmark:read', () => {
+    // Read-state changed — drop unread borders IN-PLACE (no re-render):
+    // payload.id = one card was clicked; payload.all = bulk mark-as-read
+    // or reset; no payload = NIP-78 sync merge (next render picks it up).
+    this.eventBus.on('bookmark:read', payload => {
       const container = this.containerElement;
-      if (container) this.updateMarkReadButtonState(container);
+      if (!container) return;
+
+      if (payload.id) {
+        container
+          .querySelector(`[data-bookmark-id="${payload.id}"]`)
+          ?.classList.remove('bookmark-card--unread');
+      } else if (payload.all) {
+        container
+          .querySelectorAll('.bookmark-card--unread')
+          .forEach(card => card.classList.remove('bookmark-card--unread'));
+      }
+      this.updateMarkReadButtonState(container);
     });
 
     const resetState = (): void => {
@@ -5168,7 +5182,8 @@ export class BookmarkManager {
     });
 
     // "Mark as read" bulk action (unread feature — see
-    // docs/todos/unread-bookmarks.md). Passive/disabled at 0 unread.
+    // docs/todos/unread-bookmarks.md). Passive/disabled at 0 unread; the
+    // bookmark:read event clears the borders in-place.
     const markReadBtn = container.querySelector(
       '[data-action="mark-read"]'
     ) as HTMLButtonElement | null;

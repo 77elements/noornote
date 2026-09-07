@@ -526,3 +526,9 @@
     margin-top: calc($gap / 2);
   }
 }
+
+// Unread bookmark card — subtle mint border until the card is opened
+// (read-state feature, see docs/todos/unread-bookmarks.md)
+.nn-card.bookmark-card--unread {
+  border: 1px solid var(--color-6);
+}
