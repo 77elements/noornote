@@ -211,6 +211,12 @@ export class QuotedNoteRenderer {
       this.articleRenderer.renderArticlePreview(naddrRef, container);
       return;
     }
+    // NIP-34 repo announcement (kind 30617) → Git card (fetch + render via
+    // Processor/Renderer pair, mirroring the follow-pack preview).
+    if (kind === 30617) {
+      void this.renderGitRepoPreview(naddrRef, container);
+      return;
+    }
     // Any other addressable kind → shared unsupported fallback (no article card).
     container.appendChild(
       UnsupportedKindRenderer.renderFromCoordinate(
@@ -219,6 +225,38 @@ export class QuotedNoteRenderer {
         identifier
       )
     );
+  }
+
+  /**
+   * Fetch a NIP-34 repo announcement by naddr and render it as a Git card
+   * via the standard Processor + Renderer pair (mirrors the follow-pack
+   * preview). Falls back silently — the container stays empty on failure.
+   */
+  public async renderGitRepoPreview(
+    naddrRef: string,
+    container: Element
+  ): Promise<void> {
+    try {
+      const result =
+        await this.quoteFetcher.fetchQuotedEventWithError(naddrRef);
+      if (result.success && result.event.kind === 30617) {
+        const { GitEventProcessor } = await import(
+          '../../../components/ui/note-processing/GitEventProcessor'
+        );
+        const { GitEventRenderer } = await import(
+          '../../../components/ui/note-rendering/GitEventRenderer'
+        );
+        const processedNote = GitEventProcessor.process(result.event);
+        container.appendChild(
+          GitEventRenderer.render(processedNote, {
+            collapsible: false,
+            depth: 1,
+          })
+        );
+      }
+    } catch {
+      /* silent — container stays empty */
+    }
   }
 
   /**
