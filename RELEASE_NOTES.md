@@ -1,9 +1,7 @@
-# NoorNote 1.5.1
+# NoorNote 1.5.2
 
-**New** — Own zaps appear instantly; gated premium notes show a clean unlock card; quoted repost chains cap at 3 levels with a clean "open" placeholder; live zaps and likes now work on long-form articles.
+**New** — Unread bookmark counter in the sidebar: bookmark posts to read them later, and the counter ticks down as you open them — so you never forget one. Optional encrypted cross-device sync in the bookmark addon settings (with frequency selector), plus a "Mark as read" button and a reset. Unread bookmarks show a subtle mint border until opened. You can now take back likes and reposts — just click the icon again. New BTC Price addon with sidebar widget.
 
-**Performance** — Posting and replying feel snappier; timeline refreshes and mute/NSFW toggles rebuild instantly instead of re-rendering everything; load-more pages in faster; reply/like counters fill in all at once; login is smoother with fewer background requests; mini avatars load lazily as you scroll.
+**Improved** — Podcast cards look cleaner: boost link and zap receipt now live in one card, styled on the shared card design. Bitcoin rates load Kraken-first with more reliable fallbacks and a manual refresh in the BTC widget.
 
-**Reliability** — Feeds recover automatically after sleep, network switches or long background stays — no more empty timeline after opening the lid. Posts that fail (offline, relay outage) are queued and delivered automatically once you're back — with their original timestamp. Gaps after long absences are caught up completely instead of silently skipped. Reaction flicker on double-tap is gone; long sessions no longer accumulate slowdowns.
-
-**Fixes** — Comment nesting in threads, dropdown positioning in multi-line textareas, plus assorted stability fixes.
+**Fixes** — Zap button payment checks hardened; BTC widget description cleaned up; assorted stability fixes.
