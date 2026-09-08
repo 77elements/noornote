@@ -1,7 +1,10 @@
-# NoorNote 1.5.2
+# Release Notes 1.5.3 (Compact)
 
-**New** — Unread bookmark counter in the sidebar: bookmark posts to read them later, and the counter ticks down as you open them — so you never forget one. Optional encrypted cross-device sync in the bookmark addon settings (with frequency selector), plus a "Mark as read" button and a reset. Unread bookmarks show a subtle mint border until opened. You can now take back likes and reposts — just click the icon again. New BTC Price addon with sidebar widget.
+## New
 
-**Improved** — Podcast cards look cleaner: boost link and zap receipt now live in one card, styled on the shared card design. Bitcoin rates load Kraken-first with more reliable fallbacks and a manual refresh in the BTC widget.
+- Share Note / Share article: share links now open in a slim modal with one-tap copy — article links open the article view directly
 
-**Fixes** — Zap button payment checks hardened; BTC widget description cleaned up; assorted stability fixes.
+## Improved
+
+- Repo announcements and Satellite Earth site settings render properly instead of "unsupported"
+- Unread bookmark markers respect your read-sync setting
