@@ -1,0 +1,52 @@
+/**
+ * Share Link Modal Styles
+ * Slim modal showing a copyable note/article share URL
+ */
+
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+.share-link-modal {
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+    margin-bottom: $gap;
+  }
+
+  &__input {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__copy {
+    position: relative;
+    flex-shrink: 0;
+
+    // Default state shows the copy icon; the check shows on `[data-share-copied]`.
+    .share-link-modal__copy-check {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      color: var(--color-6);
+    }
+
+    .share-link-modal__copy-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    &[data-share-copied] {
+      .share-link-modal__copy-icon {
+        opacity: 0;
+      }
+      .share-link-modal__copy-check {
+        opacity: 1;
+      }
+    }
+  }
+}

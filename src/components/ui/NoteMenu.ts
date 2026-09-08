@@ -5,7 +5,11 @@
  * Used in: Timeline View, Single Note View, Profile View
  */
 
-import { type Event as NostrEvent } from '../../services/NostrToolsAdapter';
+import {
+  type Event as NostrEvent,
+  encodeNaddr,
+  encodeNevent,
+} from '../../services/NostrToolsAdapter';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { TimelineModuleApi } from '../../modules/timeline/contracts';
 import type { NotificationsModuleApi } from '../../modules/notifications/contracts';
@@ -21,6 +25,7 @@ import { TypedEventBus } from '../../core/TypedEventBus';
 import { ClipboardActionsService } from '../../services/ClipboardActionsService';
 import { RelayConfig } from '../../services/RelayConfig';
 import { capRelayHints } from '../../helpers/capRelayHints';
+import { getTag } from '../../helpers/tagUtils';
 import { ModalService } from '../../services/ModalService';
 import { isBookmarksEnabled } from '../../addons/bookmarks/index';
 import { isTribesEnabled } from '../../addons/tribes/index';
@@ -46,6 +51,7 @@ const ICONS = {
   muteThread: icon('mute-thread'),
   notification: icon('bell'),
   link: icon('link'),
+  share: icon('share-link'),
 } as const;
 
 export class NoteMenu {
@@ -168,11 +174,6 @@ export class NoteMenu {
         Copy user ID
       </button>
 
-      <button class="note-menu-item" data-action="copy-share-link">
-        ${ICONS.link}
-        Copy share link
-      </button>
-
       ${bookmarkButtons}
 
       ${
@@ -189,6 +190,13 @@ export class NoteMenu {
       <button class="note-menu-item" data-action="view-raw-event">
         ${ICONS.code}
         View raw event
+      </button>
+
+      <div class="note-menu-divider"></div>
+
+      <button class="note-menu-item" data-action="share-note">
+        ${ICONS.share}
+        ${this.options.rawEvent?.kind === 30023 ? 'Share article' : 'Share Note'}
       </button>
 
       <div class="note-menu-divider"></div>
@@ -356,9 +364,6 @@ export class NoteMenu {
       case 'copy-user-id':
         void this.copyUserId();
         break;
-      case 'copy-share-link':
-        void this.copyShareLink();
-        break;
       case 'bookmark-public':
         void this.toggleBookmark(false);
         break;
@@ -370,6 +375,9 @@ export class NoteMenu {
         break;
       case 'view-raw-event':
         this.viewRawEvent();
+        break;
+      case 'share-note':
+        this.shareNote();
         break;
       case 'delete-note':
         this.deleteNote();
@@ -427,15 +435,87 @@ export class NoteMenu {
   }
 
   /**
-   * Copy share link (nevent with relay hints) to clipboard
+   * Share link in a modal with copy-to-clipboard.
+   * Articles (kind 30023) link via /article/<naddr> so the URL opens the
+   * ArticleView deep link; everything else via /note/<nevent>.
    */
-  private async copyShareLink(): Promise<void> {
-    const clipboardService = ClipboardActionsService.getInstance();
-    await clipboardService.copyShareLink(
-      this.options.eventId,
-      this.options.authorPubkey,
-      this.resolveRelayHints()
-    );
+  private shareNote(): void {
+    const rawEvent = this.options.rawEvent;
+
+    let shareUrl: string;
+    if (rawEvent && rawEvent.kind === 30023) {
+      const naddr = encodeNaddr({
+        kind: rawEvent.kind,
+        pubkey: rawEvent.pubkey,
+        identifier: getTag(rawEvent.tags, 'd'),
+        relays: this.resolveRelayHints(),
+      });
+      shareUrl = `${window.location.origin}/article/${naddr}`;
+    } else {
+      const nevent = encodeNevent(
+        this.options.eventId,
+        this.resolveRelayHints(),
+        this.options.authorPubkey || undefined
+      );
+      shareUrl = `${window.location.origin}/note/${nevent}`;
+    }
+
+    const modalService = ModalService.getInstance();
+    modalService.show({
+      title: rawEvent?.kind === 30023 ? 'Share article' : 'Share Note',
+      content: `
+        <div class="share-link-modal">
+          <div class="share-link-modal__row">
+            <input
+              class="input share-link-modal__input"
+              type="text"
+              readonly
+              data-share-url-input
+            />
+            <button
+              type="button"
+              class="btn-icon share-link-modal__copy"
+              data-share-copy
+              aria-label="Copy link"
+            >
+              <svg class="share-link-modal__copy-icon" width="16" height="16"><use href="#icon-copy"/></svg>
+              <svg class="share-link-modal__copy-check" width="16" height="16"><use href="#icon-checkmark"/></svg>
+            </button>
+          </div>
+          <div class="l-row--right">
+            <button class="btn btn--passive" data-share-close>Close</button>
+          </div>
+        </div>
+      `,
+      width: '480px',
+      showCloseButton: true,
+      closeOnOverlay: true,
+      closeOnEsc: true,
+    });
+
+    // Wait for the modal DOM to be mounted, then wire it up
+    setTimeout(() => {
+      const urlInput = document.querySelector<HTMLInputElement>(
+        '[data-share-url-input]'
+      );
+      const copyBtn =
+        document.querySelector<HTMLButtonElement>('[data-share-copy]');
+      const closeBtn =
+        document.querySelector<HTMLButtonElement>('[data-share-close]');
+
+      // Set via property (not attribute) so raw nevent/naddr needs no escaping
+      if (urlInput) urlInput.value = shareUrl;
+
+      copyBtn?.addEventListener('click', async () => {
+        const copied = await ClipboardActionsService.getInstance().copyText(
+          shareUrl,
+          'Link'
+        );
+        if (copied) copyBtn.setAttribute('data-share-copied', '');
+      });
+
+      closeBtn?.addEventListener('click', () => modalService.hide());
+    }, 0);
   }
 
   /**
