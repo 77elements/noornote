@@ -268,6 +268,21 @@ export class ReactionService {
       // Show success toast to user
       ToastService.show(`Liked: ${emoji}`, 'success');
 
+      // Optimistic stats: top-level reactions land in the detailed-stats
+      // cache immediately so the likes-list pill count updates without
+      // waiting for the relay echo (mirror of removeReaction's cache
+      // removal + reactions:removed). Reaction-on-reaction targets the
+      // parent reaction, not the note — it must not bump the pill count.
+      if (targetEvent?.kind !== 7) {
+        this.reactionsOrchestrator.addInteractionsToCache(noteId, [
+          signedEvent,
+        ]);
+        TypedEventBus.getInstance().emit('reactions:added', {
+          noteId,
+          eventIds: signedEvent.id ? [signedEvent.id] : [],
+        });
+      }
+
       return { success: true };
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';

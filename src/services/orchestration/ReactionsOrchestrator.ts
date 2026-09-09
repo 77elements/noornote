@@ -1029,6 +1029,35 @@ export class ReactionsOrchestrator extends Orchestrator {
   }
 
   /**
+   * Add own interaction events to the cached buckets of a note (optimistic
+   * publish — the relay echo may lag behind by seconds). Same id-dedup /
+   * tombstone-aware classification as the live-stats path (interactionMerge),
+   * so the later echo merges as a no-op.
+   *
+   * Create-if-missing mirrors startLiveStats: buckets built from the
+   * optimistic event alone are marked UNFRESH (lastUpdated = 0) so the next
+   * getDetailedStats performs a full refetch and converges.
+   */
+  public addInteractionsToCache(noteId: string, events: NostrEvent[]): void {
+    if (!this.isValidNoteId(noteId) || events.length === 0) return;
+    let cached = this.detailedStatsCache.get(noteId);
+    const cacheWasAbsent = !cached;
+    if (!cached) {
+      cached = {
+        replyEvents: [],
+        repostEvents: [],
+        quotedEvents: [],
+        reactionEvents: [],
+        zapEvents: [],
+        lastUpdated: 0,
+      };
+      this.detailedStatsCache.set(noteId, cached);
+    }
+    mergeInteractionEvents(cached, events, noteId, this.deletedInteractionIds);
+    if (!cacheWasAbsent) cached.lastUpdated = Date.now();
+  }
+
+  /**
    * Validate note ID format
    * Returns true for valid 64-char hex strings, naddr identifiers, or addressable identifiers
    * Returns false for synthetic IDs (e.g., "mutual-mutual_unfollow-...")

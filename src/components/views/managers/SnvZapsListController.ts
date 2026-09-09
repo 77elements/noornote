@@ -66,8 +66,14 @@ export class SnvZapsListController {
       bus.on('zap:succeeded', payload => this.onLifecycle(payload)),
       bus.on('zap:failed', payload => this.onLifecycle(payload)),
       // Un-like: cache is already updated by ReactionService — rebuild the
-      // likes list synchronously so the emoji pill disappears immediately.
+      // likes list synchronously so the emoji disappears immediately.
       bus.on('reactions:removed', payload => {
+        if (this.entries.has(payload.noteId)) this.renderNow(payload.noteId);
+      }),
+      // Own reaction published: cache is already updated by ReactionService —
+      // rebuild synchronously so the pill count increments without waiting
+      // for the relay echo (mirror of reactions:removed).
+      bus.on('reactions:added', payload => {
         if (this.entries.has(payload.noteId)) this.renderNow(payload.noteId);
       }),
     ];

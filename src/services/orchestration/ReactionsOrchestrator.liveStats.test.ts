@@ -386,3 +386,54 @@ describe('live-stats create-if-missing — unfresh marker (heal-after-wipe)', ()
     orchestrator.stopLiveStats(NOTE3);
   });
 });
+
+describe('addInteractionsToCache — optimistic own-like (instant pill count)', () => {
+  /** Fresh ids — the orchestrator singleton's cache persists across tests. */
+  const NOTE4 = '2'.repeat(64);
+  const NOTE5 = '3'.repeat(64);
+
+  type CacheEntry = {
+    lastUpdated: number;
+    reactionEvents: Array<{ id: string }>;
+  };
+  const cacheOf = (orchestrator: ReactionsOrchestrator, noteId: string) =>
+    (
+      orchestrator as unknown as {
+        detailedStatsCache: Map<string, CacheEntry>;
+      }
+    ).detailedStatsCache.get(noteId)!;
+
+  it('create-if-missing: adds the event, marks the cache UNFRESH (lastUpdated 0); echo re-add dedups by id', () => {
+    const orchestrator = ReactionsOrchestrator.getInstance();
+    orchestrator.addInteractionsToCache(NOTE4, [ev('rME', 7, [['e', NOTE4]])]);
+
+    const created = cacheOf(orchestrator, NOTE4);
+    expect(created.reactionEvents.map(e => e.id)).toEqual(['rME']);
+    expect(created.lastUpdated).toBe(0); // UNFRESH → next getDetailedStats refetches fully
+
+    // Relay echo of the same event merges as a no-op (id dedup)
+    orchestrator.addInteractionsToCache(NOTE4, [ev('rME', 7, [['e', NOTE4]])]);
+    expect(created.reactionEvents).toHaveLength(1);
+  });
+
+  it('fresh cache: bumps lastUpdated; tombstoned ids never re-enter', async () => {
+    const orchestrator = ReactionsOrchestrator.getInstance();
+    detailFetchEvents.length = 0; // isolate from other tests
+    detailFetchEvents.push(
+      Object.assign(ev('rOld', 7, [['e', NOTE5]]), { pubkey: 'e'.repeat(64) })
+    );
+    await orchestrator.getDetailedStats(NOTE5);
+    const before = cacheOf(orchestrator, NOTE5).lastUpdated;
+
+    // NIP-09 take-back racing the publish echo: tombstoned id must be blocked
+    orchestrator.tombstoneInteractions(['rTomb']);
+    orchestrator.addInteractionsToCache(NOTE5, [
+      ev('rTomb', 7, [['e', NOTE5]]),
+      ev('rNew', 7, [['e', NOTE5]]),
+    ]);
+
+    const after = cacheOf(orchestrator, NOTE5);
+    expect(after.reactionEvents.map(e => e.id)).toEqual(['rOld', 'rNew']);
+    expect(after.lastUpdated).toBeGreaterThanOrEqual(before);
+  });
+});

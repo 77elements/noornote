@@ -435,6 +435,58 @@ describe('SnvZapsListController', () => {
     controller.detach(NOTE);
   });
 
+  it('reactions:added rebuilds the likes list with the new own reaction (instant pill count)', async () => {
+    const shell = snvShell();
+    const controller = newController();
+    const existing = {
+      id: 'like-1',
+      kind: 7,
+      pubkey: 'e'.repeat(64),
+      tags: [['e', NOTE]],
+      content: '💯',
+    } as unknown as NostrEvent;
+    const own = {
+      id: 'like-2',
+      kind: 7,
+      pubkey: ME,
+      tags: [['e', NOTE]],
+      content: '💯',
+    } as unknown as NostrEvent;
+    reactionsDouble.setCached({
+      ...emptyStats(),
+      reactionEvents: [existing],
+      lastUpdated: Date.now(),
+    });
+    controller.attach(NOTE, AUTHOR, shell);
+    await vi.waitFor(() => {
+      expect(shell.querySelector('.likes-list')).not.toBeNull();
+    });
+
+    // Own reaction published: ReactionService added the signed event to the
+    // stats cache, then emits — the controller must rebuild synchronously
+    // from the cache (no relay round-trip wait).
+    reactionsDouble.setCached({
+      ...emptyStats(),
+      reactionEvents: [existing, own],
+      lastUpdated: Date.now(),
+    });
+    likesListCtorMock.mockClear();
+    TypedEventBus.getInstance().emit('reactions:added', {
+      noteId: NOTE,
+      eventIds: ['like-2'],
+    });
+
+    await vi.waitFor(() => {
+      expect(likesListCtorMock).toHaveBeenCalled();
+    });
+    const call = likesListCtorMock.mock.calls.at(-1)!;
+    expect((call[0] as NostrEvent[]).map(e => e.id)).toEqual([
+      'like-1',
+      'like-2',
+    ]);
+    controller.detach(NOTE);
+  });
+
   it('lifecycle events for other notes are ignored', () => {
     const shell = snvShell();
     const controller = newController();

@@ -80,6 +80,19 @@ export interface ReactionsRemovedPayload {
 }
 
 /**
+ * Own top-level interaction published (kind 7 like on the note itself — not a
+ * reaction-on-reaction). Emitted by ReactionService after the stats cache was
+ * optimistically updated with the signed event — consumers (e.g. SNV likes
+ * list) re-render from the cache so the pill count updates without waiting
+ * for the relay echo.
+ */
+export interface ReactionsAddedPayload {
+  noteId: string;
+  /** The published interaction event id(s) (kind 7 for likes). */
+  eventIds: string[];
+}
+
+/**
  * Zap payment lifecycle (wallet-side success criterion: "the sats left the
  * wallet"). Emitted by ZapService; consumed by the SNV zaps list (unified
  * renderer) and the ISL count — one bus, synchronized.
@@ -400,6 +413,7 @@ export interface AppEvents {
   'zapstats:loaded': void;
 
   // ── Reactions ──────────────────────────────
+  'reactions:added': ReactionsAddedPayload;
   'reactions:removed': ReactionsRemovedPayload;
 
   // ── Profile ────────────────────────────────
