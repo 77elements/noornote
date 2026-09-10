@@ -75,6 +75,21 @@ export class LikesList {
     const tree =
       (await this.reactionsApi?.fetchReactionTree(rootIds)) ??
       new Map<string, NostrEvent[]>();
+    // Remote NIP-09 take-backs: sweep the tree's child reactions so an
+    // emoji-reply whose author un-reacted never renders. Idempotent — the
+    // orchestrator skips already-swept ids, so re-renders stay cheap.
+    if (tree.size > 0 && this.reactionsApi) {
+      const children = [...tree.values()].flat();
+      const deleted = await this.reactionsApi.sweepRemoteDeletions(children);
+      if (deleted.size > 0) {
+        for (const [parentId, childEvents] of tree) {
+          tree.set(
+            parentId,
+            childEvents.filter(e => !e.id || !deleted.has(e.id))
+          );
+        }
+      }
+    }
     const profiles = await buildReactionProfileMap(collectTreePubkeys(tree));
     this.ctx = {
       reactionsApi: this.reactionsApi,

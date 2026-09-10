@@ -8,6 +8,8 @@ import { describe, it, expect } from 'vitest';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import {
   calculateTotalZapSats,
+  chunkIds,
+  extractRemoteDeletionIds,
   mergeInteractionEvents,
   type InteractionEventBuckets,
 } from './interactionMerge';
@@ -155,6 +157,79 @@ describe('mergeInteractionEvents', () => {
       blocked
     );
     expect(fresh.reactionEvents.length).toBe(0);
+  });
+});
+
+describe('extractRemoteDeletionIds — NIP-09 author-match rule', () => {
+  const LIKE_AUTHOR = '9'.repeat(64);
+  const OTHER_AUTHOR = 'x'.repeat(64);
+
+  it('deletes an interaction when the kind 5 author matches the interaction author', () => {
+    const authors = new Map([['like1', LIKE_AUTHOR]]);
+    const k5 = Object.assign(ev('k5', 5, [['e', 'like1']]), {
+      pubkey: LIKE_AUTHOR,
+    });
+    expect(extractRemoteDeletionIds([k5], authors)).toEqual(['like1']);
+  });
+
+  it('ignores a kind 5 from a foreign author (NIP-09 authorization)', () => {
+    const authors = new Map([['like1', LIKE_AUTHOR]]);
+    const k5 = Object.assign(ev('k5', 5, [['e', 'like1']]), {
+      pubkey: OTHER_AUTHOR,
+    });
+    expect(extractRemoteDeletionIds([k5], authors)).toEqual([]);
+  });
+
+  it('matches multiple e-tags in one deletion event', () => {
+    const authors = new Map([
+      ['like1', LIKE_AUTHOR],
+      ['repost1', OTHER_AUTHOR],
+    ]);
+    const k5 = Object.assign(
+      ev('k5', 5, [
+        ['e', 'like1'],
+        ['e', 'repost1'],
+        ['e', 'unknown-id'],
+      ]),
+      { pubkey: LIKE_AUTHOR }
+    );
+    // like1 (same author) + repost1 (different author) — only like1 matches
+    expect(extractRemoteDeletionIds([k5], authors)).toEqual(['like1']);
+  });
+
+  it('ignores unknown ids and non-e tags', () => {
+    const authors = new Map([['like1', LIKE_AUTHOR]]);
+    const k5 = Object.assign(
+      ev('k5', 5, [
+        ['a', 'like1'],
+        ['e', 'not-known'],
+      ]),
+      { pubkey: LIKE_AUTHOR }
+    );
+    expect(extractRemoteDeletionIds([k5], authors)).toEqual([]);
+  });
+
+  it('ignores non-kind-5 events', () => {
+    const authors = new Map([['like1', LIKE_AUTHOR]]);
+    const k7 = Object.assign(ev('k7', 7, [['e', 'like1']]), {
+      pubkey: LIKE_AUTHOR,
+    });
+    expect(extractRemoteDeletionIds([k7], authors)).toEqual([]);
+  });
+});
+
+describe('chunkIds', () => {
+  it('splits by size and keeps order', () => {
+    expect(chunkIds(['a', 'b', 'c', 'd', 'e'], 2)).toEqual([
+      ['a', 'b'],
+      ['c', 'd'],
+      ['e'],
+    ]);
+  });
+
+  it('handles empty and exact-size inputs', () => {
+    expect(chunkIds([], 250)).toEqual([]);
+    expect(chunkIds(['a', 'b'], 2)).toEqual([['a', 'b']]);
   });
 });
 

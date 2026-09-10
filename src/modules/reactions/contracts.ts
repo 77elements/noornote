@@ -54,6 +54,10 @@ export interface ReactionsModuleApi {
    *  ids. Returns a map from a parent event-id to the kind:7 events that react
    *  to it (one hop per map entry; traverse recursively for the full tree). */
   fetchReactionTree(rootEventIds: string[]): Promise<Map<string, NostrEvent[]>>;
+  /** Discover remote NIP-09 deletions among the given interaction events
+   *  (kind 5 sweep with author-match) and tombstone them in-memory. Returns
+   *  the deleted event ids so callers can filter their render data. */
+  sweepRemoteDeletions(events: NostrEvent[]): Promise<Set<string>>;
   /** Count kind:1111 comments replying to each given zap (kind:9735) event id,
    *  in one batched fetch. Returns zapId → count; zaps with no comments absent. */
   getZapReplyCounts(zapIds: string[]): Promise<Map<string, number>>;

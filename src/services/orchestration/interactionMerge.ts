@@ -99,6 +99,44 @@ export function mergeInteractionEvents(
 }
 
 /**
+ * Extract the interaction event ids that were taken back via NIP-09: a kind 5
+ * deletion event only counts when its AUTHOR matches the author of the
+ * referenced interaction event (NIP-09 authorization — clients must ignore
+ * deletion requests for events the requester does not own).
+ *
+ * @param deletionEvents kind 5 events fetched for the sweep
+ * @param authorByInteractionId map from interaction event id → author pubkey
+ * @returns deleted interaction ids (may contain duplicates — caller dedupes)
+ */
+export function extractRemoteDeletionIds(
+  deletionEvents: NostrEvent[],
+  authorByInteractionId: Map<string, string>
+): string[] {
+  const deleted: string[] = [];
+  for (const deletion of deletionEvents) {
+    if (deletion.kind !== 5 || !deletion.pubkey) continue;
+    for (const tag of deletion.tags) {
+      if (tag[0] !== 'e' || !tag[1]) continue;
+      if (authorByInteractionId.get(tag[1]) !== deletion.pubkey) continue;
+      deleted.push(tag[1]);
+    }
+  }
+  return deleted;
+}
+
+/**
+ * Split ids into filter-size chunks — relays cap tag filters (NIP-01
+ * recommends ≤256 values per #e/#p filter).
+ */
+export function chunkIds(ids: string[], size: number): string[][] {
+  const chunks: string[][] = [];
+  for (let i = 0; i < ids.length; i += size) {
+    chunks.push(ids.slice(i, i + size));
+  }
+  return chunks;
+}
+
+/**
  * Total zap amount in sats across the given receipts, deduped by bolt11:
  * zappers occasionally publish a receipt RETRY (re-signed → different event
  * id, same payment) — counting both would double the zaps total. One payment

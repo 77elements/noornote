@@ -85,6 +85,8 @@ export class ReactionsRuntime implements ModuleRuntime<ReactionsModuleApi> {
         Promise.resolve({ success: false, removed: 0 }),
       fetchReactionTree: rootEventIds =>
         orch?.fetchReactionTree(rootEventIds) ?? Promise.resolve(new Map()),
+      sweepRemoteDeletions: events =>
+        orch?.sweepRemoteDeletions(events) ?? Promise.resolve(new Set()),
       getZapReplyCounts: zapIds =>
         orch?.getZapReplyCounts(zapIds) ?? Promise.resolve(new Map()),
       updateAfterInteraction: (noteId, type, islComponent) =>

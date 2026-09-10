@@ -437,3 +437,104 @@ describe('addInteractionsToCache — optimistic own-like (instant pill count)', 
     expect(after.lastUpdated).toBeGreaterThanOrEqual(before);
   });
 });
+
+describe('remote NIP-09 deletions — sweep filters taken-back interactions', () => {
+  /** Fresh ids — the orchestrator singleton's state persists across tests. */
+  const NOTE6 = '4'.repeat(64);
+  const NOTE7 = '5'.repeat(64);
+  const NOTE8 = '6'.repeat(64);
+  const NOTE9 = '7'.repeat(64);
+  const LIKER = '9'.repeat(64);
+
+  type CacheEntry = { reactionEvents: Array<{ id: string }> };
+  const cacheOf = (orchestrator: ReactionsOrchestrator, noteId: string) =>
+    (
+      orchestrator as unknown as {
+        detailedStatsCache: Map<string, CacheEntry>;
+      }
+    ).detailedStatsCache.get(noteId)!;
+
+  beforeEach(() => {
+    detailFetchEvents.length = 0;
+    transportFetchMock.mockReset();
+  });
+
+  it('fetch path: a like whose author published a kind 5 is filtered out', async () => {
+    const orchestrator = ReactionsOrchestrator.getInstance();
+    detailFetchEvents.push(
+      Object.assign(ev('likeDel', 7, [['e', NOTE6]]), { pubkey: LIKER }),
+      Object.assign(ev('likeKeep', 7, [['e', NOTE6]]), {
+        pubkey: 'e'.repeat(64),
+      })
+    );
+    transportFetchMock.mockResolvedValueOnce([
+      Object.assign(ev('k5', 5, [['e', 'likeDel']]), { pubkey: LIKER }),
+    ]);
+
+    const stats = await orchestrator.getDetailedStats(NOTE6);
+    expect(stats.reactionEvents.map(e => e.id)).toEqual(['likeKeep']);
+  });
+
+  it('fetch path: a kind 5 from a foreign author does NOT remove the like', async () => {
+    const orchestrator = ReactionsOrchestrator.getInstance();
+    detailFetchEvents.push(
+      Object.assign(ev('likeKept', 7, [['e', NOTE7]]), { pubkey: LIKER })
+    );
+    transportFetchMock.mockResolvedValueOnce([
+      Object.assign(ev('k5f', 5, [['e', 'likeKept']]), {
+        pubkey: 'x'.repeat(64),
+      }),
+    ]);
+
+    const stats = await orchestrator.getDetailedStats(NOTE7);
+    expect(stats.reactionEvents.map(e => e.id)).toEqual(['likeKept']);
+  });
+
+  it('poll path: a like that arrives already taken back never reaches the callback', async () => {
+    const orchestrator = ReactionsOrchestrator.getInstance();
+    // Prime the cache so the poll path runs (it requires a cache entry)
+    detailFetchEvents.push(
+      Object.assign(ev('rOld', 7, [['e', NOTE8]]), { pubkey: 'e'.repeat(64) })
+    );
+    await orchestrator.getDetailedStats(NOTE8);
+    // Poll returns one new like; the sweep finds its kind 5 take-back
+    transportFetchMock
+      .mockResolvedValueOnce([
+        Object.assign(ev('likeRace', 7, [['e', NOTE8]]), { pubkey: LIKER }),
+      ])
+      .mockResolvedValueOnce([
+        Object.assign(ev('k5r', 5, [['e', 'likeRace']]), { pubkey: LIKER }),
+      ]);
+
+    const onStats = vi.fn();
+    const internals = orchestrator as unknown as {
+      lastReactionFetch: Map<string, number>;
+      pollReactions: (n: string, cb: (s: unknown) => void) => Promise<void>;
+    };
+    internals.lastReactionFetch.set(NOTE8, Math.floor(Date.now() / 1000) - 10);
+    await internals.pollReactions(NOTE8, onStats);
+
+    expect(onStats).toHaveBeenCalledWith(expect.objectContaining({ likes: 1 }));
+    expect(cacheOf(orchestrator, NOTE8).reactionEvents.map(e => e.id)).toEqual([
+      'rOld',
+    ]);
+  });
+
+  it('addInteractionsToCache: remote-deleted ids never re-enter the buckets', async () => {
+    const orchestrator = ReactionsOrchestrator.getInstance();
+    detailFetchEvents.push(
+      Object.assign(ev('likeGone', 7, [['e', NOTE9]]), { pubkey: LIKER })
+    );
+    transportFetchMock.mockResolvedValueOnce([
+      Object.assign(ev('k5g', 5, [['e', 'likeGone']]), { pubkey: LIKER }),
+    ]);
+    await orchestrator.getDetailedStats(NOTE9);
+    expect(cacheOf(orchestrator, NOTE9).reactionEvents).toHaveLength(0);
+
+    // Slow relay re-serves the taken-back like via the optimistic path
+    orchestrator.addInteractionsToCache(NOTE9, [
+      Object.assign(ev('likeGone', 7, [['e', NOTE9]]), { pubkey: LIKER }),
+    ]);
+    expect(cacheOf(orchestrator, NOTE9).reactionEvents).toHaveLength(0);
+  });
+});

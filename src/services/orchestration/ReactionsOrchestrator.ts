@@ -21,6 +21,8 @@ import { SystemLogger } from '../SystemLogger';
 import { UserProfileService } from '../UserProfileService';
 import { isUserMuted } from '../../lists/mutes';
 import {
+  chunkIds,
+  extractRemoteDeletionIds,
   mergeInteractionEvents,
   calculateTotalZapSats,
 } from './interactionMerge';
@@ -105,6 +107,25 @@ export class ReactionsOrchestrator extends Orchestrator {
   private deletedInteractionIds: Set<string> = new Set();
   private static readonly MAX_TOMBSTONES = 200;
 
+  /**
+   * Remote NIP-09 deletions of OTHER users' interactions — discovered by
+   * sweeping kind 5 events that reference fetched interaction ids (a taken-
+   * back like/repost never disappears from relays by itself; the kind 5
+   * deletion request is the only signal). In-memory only: these are facts,
+   * not account state — a fresh detailed-stats fetch rediscovers them.
+   */
+  private remoteDeletedInteractionIds: Set<string> = new Set();
+  private static readonly MAX_REMOTE_DELETIONS = 5000;
+  private static readonly SWEEP_CHUNK_SIZE = 250;
+  private static readonly MAX_SWEEP_IDS = 2048;
+
+  /**
+   * Own tombstones ∪ remote deletions — the single block set every bucket
+   * entry point consults. Rebuilt whenever either source changes so the
+   * per-event merge paths can stay a plain Set lookup.
+   */
+  private blockedInteractionIds: Set<string> = new Set();
+
   private constructor() {
     super('ReactionsOrchestrator');
     this.transport = NostrTransport.getInstance();
@@ -119,6 +140,8 @@ export class ReactionsOrchestrator extends Orchestrator {
     eventBus.on('user:login', () => this.loadTombstones());
     eventBus.on('user:logout', () => {
       this.deletedInteractionIds.clear();
+      this.remoteDeletedInteractionIds.clear();
+      this.rebuildBlockedInteractionIds();
     });
     this.loadTombstones();
 
@@ -414,16 +437,34 @@ export class ReactionsOrchestrator extends Orchestrator {
       this.fetchZapEvents(noteId, articleEventId),
     ]);
 
-    // Tombstone filter: events the user deleted (NIP-09) must never return
-    // via a fresh fetch while slow relays keep serving them.
-    const notTombstoned = (events: NostrEvent[]) =>
-      events.filter(e => !e.id || !this.deletedInteractionIds.has(e.id));
+    // Remote NIP-09 deletions: sweep the fetched interactions so likes,
+    // reposts, quotes, replies and zaps their authors took back (kind 5)
+    // never reach the stats. Own deletions are already blocked via tombstones.
+    const remoteDeleted = await this.sweepRemoteDeletions([
+      ...reactions,
+      ...reposts.regular,
+      ...reposts.quoted,
+      ...replies,
+      ...zaps,
+    ]);
+    if (remoteDeleted.size > 0) {
+      this.systemLogger.info(
+        'ReactionsOrch',
+        `Removed ${remoteDeleted.size} taken-back interaction(s)`
+      );
+    }
 
-    detailedStats.reactionEvents = notTombstoned(reactions);
-    detailedStats.repostEvents = notTombstoned(reposts.regular);
-    detailedStats.quotedEvents = notTombstoned(reposts.quoted);
-    detailedStats.replyEvents = notTombstoned(replies);
-    detailedStats.zapEvents = notTombstoned(zaps);
+    // Block filter: events deleted by the user (own tombstones) or taken back
+    // by their author (remote NIP-09, discovered above) must never return via
+    // a fresh fetch while slow relays keep serving them.
+    const notBlocked = (events: NostrEvent[]) =>
+      events.filter(e => !e.id || !this.blockedInteractionIds.has(e.id));
+
+    detailedStats.reactionEvents = notBlocked(reactions);
+    detailedStats.repostEvents = notBlocked(reposts.regular);
+    detailedStats.quotedEvents = notBlocked(reposts.quoted);
+    detailedStats.replyEvents = notBlocked(replies);
+    detailedStats.zapEvents = notBlocked(zaps);
 
     this.systemLogger.info('ReactionsOrch', readyMessage);
 
@@ -910,8 +951,8 @@ export class ReactionsOrchestrator extends Orchestrator {
       const timeout = setTimeout(resolve, 8000);
       void this.transport.subscribe(relays, filters, {
         onEvent: (event: NostrEvent) => {
-          // Tombstone filter — deleted interactions never re-enter the buckets
-          if (event.id && this.deletedInteractionIds.has(event.id)) return;
+          // Block filter — deleted interactions never re-enter the buckets
+          if (event.id && this.blockedInteractionIds.has(event.id)) return;
           const qTag = event.tags.find(
             tag => tag[0] === 'q' && collectors.has(tag[1]!)
           );
@@ -938,6 +979,31 @@ export class ReactionsOrchestrator extends Orchestrator {
       });
     });
 
+    // Remote NIP-09 deletions: sweep the collected interactions so timeline
+    // counts honor likes/reposts their authors took back.
+    const collected = [...collectors.values()].flatMap(stats => [
+      ...stats.reactionEvents,
+      ...stats.repostEvents,
+      ...stats.quotedEvents,
+      ...stats.replyEvents,
+      ...stats.zapEvents,
+    ]);
+    const batchDeleted = await this.sweepRemoteDeletions(collected);
+    if (batchDeleted.size > 0) {
+      for (const stats of collectors.values()) {
+        const drop = (events: NostrEvent[]) =>
+          events.filter(e => !e.id || !batchDeleted.has(e.id));
+        stats.reactionEvents = drop(stats.reactionEvents);
+        stats.repostEvents = drop(stats.repostEvents);
+        stats.quotedEvents = drop(stats.quotedEvents);
+        stats.zapEvents = drop(stats.zapEvents);
+      }
+      this.systemLogger.info(
+        'ReactionsOrch',
+        `Removed ${batchDeleted.size} taken-back interaction(s) from batch stats`
+      );
+    }
+
     for (const [id, stats] of collectors) {
       this.detailedStatsCache.set(id, stats);
       result.set(id, {
@@ -949,7 +1015,6 @@ export class ReactionsOrchestrator extends Orchestrator {
         lastUpdated: stats.lastUpdated,
       });
     }
-
     this.systemLogger.info(
       'ReactionsOrch',
       `📊 Batch stats loaded for ${collectors.size} notes`
@@ -988,6 +1053,7 @@ export class ReactionsOrchestrator extends Orchestrator {
     } catch {
       this.deletedInteractionIds = new Set();
     }
+    this.rebuildBlockedInteractionIds();
   }
 
   /**
@@ -1005,6 +1071,94 @@ export class ReactionsOrchestrator extends Orchestrator {
       StorageKeys.DELETED_INTERACTIONS,
       list
     );
+    this.rebuildBlockedInteractionIds();
+  }
+
+  /** Rebuild the combined block set (own tombstones ∪ remote deletions). */
+  private rebuildBlockedInteractionIds(): void {
+    if (this.remoteDeletedInteractionIds.size === 0) {
+      this.blockedInteractionIds = this.deletedInteractionIds;
+      return;
+    }
+    const merged = new Set(this.deletedInteractionIds);
+    for (const id of this.remoteDeletedInteractionIds) merged.add(id);
+    this.blockedInteractionIds = merged;
+  }
+
+  /**
+   * Discover remote NIP-09 deletions among the given interaction events:
+   * query kind 5 deletion events referencing their ids and tombstone the ones
+   * whose author matches the deleted event's author (NIP-09 authorization —
+   * a kind 5 from anyone else is ignored). Idempotent: already-known
+   * deletions (own or remote) are not re-queried. Findings are remembered
+   * in-memory so blocked interactions can never re-enter any bucket.
+   *
+   * Callers filter the affected buckets/counts with `blockedInteractionIds`
+   * afterwards. Lives on a 5s transport.fetch — worst case it delays a
+   * stats update by one relay round-trip.
+   */
+  public async sweepRemoteDeletions(
+    events: NostrEvent[]
+  ): Promise<Set<string>> {
+    const authorById = new Map<string, string>();
+    for (const event of events) {
+      if (!event.id || !event.pubkey) continue;
+      if (this.deletedInteractionIds.has(event.id)) continue;
+      if (this.remoteDeletedInteractionIds.has(event.id)) continue;
+      authorById.set(event.id, event.pubkey);
+    }
+    if (authorById.size === 0) return new Set();
+
+    const allIds = [...authorById.keys()];
+    const capped = allIds.slice(0, ReactionsOrchestrator.MAX_SWEEP_IDS);
+    if (capped.length < allIds.length) {
+      console.debug(
+        `[ReactionsOrchestrator] Deletion sweep truncated: ${allIds.length} → ${capped.length} ids`
+      );
+    }
+    const filters: NDKFilter[] = chunkIds(
+      capped,
+      ReactionsOrchestrator.SWEEP_CHUNK_SIZE
+    ).map(ids => ({ kinds: [5], '#e': ids }));
+
+    const relays = await this.getReactionFetchRelays();
+    let deletionEvents: NostrEvent[];
+    try {
+      deletionEvents = await this.transport.fetch(
+        relays,
+        filters,
+        5000,
+        false,
+        'DeletionSweep'
+      );
+    } catch (error) {
+      // Sweep failure must never break the stats path — the next refetch retries.
+      console.debug(
+        '[ReactionsOrchestrator] Deletion sweep fetch failed — retrying on next refetch',
+        error
+      );
+      return new Set();
+    }
+    if (!deletionEvents || deletionEvents.length === 0) return new Set();
+
+    const deleted = new Set(
+      extractRemoteDeletionIds(deletionEvents, authorById)
+    );
+    if (deleted.size === 0) return deleted;
+
+    for (const id of deleted) this.remoteDeletedInteractionIds.add(id);
+    // Cap the in-memory set (FIFO) so long sessions stay bounded.
+    const list = [...this.remoteDeletedInteractionIds];
+    while (list.length > ReactionsOrchestrator.MAX_REMOTE_DELETIONS) {
+      list.shift();
+    }
+    this.remoteDeletedInteractionIds = new Set(list);
+    this.rebuildBlockedInteractionIds();
+
+    console.debug(
+      `[ReactionsOrchestrator] Remote NIP-09 deletions discovered: ${deleted.size} of ${authorById.size} swept interaction(s)`
+    );
+    return deleted;
   }
 
   /**
@@ -1053,7 +1207,7 @@ export class ReactionsOrchestrator extends Orchestrator {
       };
       this.detailedStatsCache.set(noteId, cached);
     }
-    mergeInteractionEvents(cached, events, noteId, this.deletedInteractionIds);
+    mergeInteractionEvents(cached, events, noteId, this.blockedInteractionIds);
     if (!cacheWasAbsent) cached.lastUpdated = Date.now();
   }
 
@@ -1193,12 +1347,43 @@ export class ReactionsOrchestrator extends Orchestrator {
           `Polled interactions — cache ${cached ? `has ${cached.reactionEvents.length} reactions` : 'MISSING'}`
         );
         if (cached) {
+          // Merge first, then check the newcomers for remote NIP-09
+          // take-backs — a like→unlike race inside one poll window must
+          // never produce a visible interaction.
+          const idsBefore = new Set(
+            [
+              ...cached.reactionEvents,
+              ...cached.repostEvents,
+              ...cached.quotedEvents,
+              ...cached.zapEvents,
+            ]
+              .map(e => e.id)
+              .filter((id): id is string => !!id)
+          );
           mergeInteractionEvents(
             cached,
             newReactions,
             noteId,
-            this.deletedInteractionIds
+            this.blockedInteractionIds
           );
+          const arrived = newReactions.filter(
+            e => e.id && !idsBefore.has(e.id)
+          );
+          if (arrived.length > 0) {
+            const remoteDeleted = await this.sweepRemoteDeletions(arrived);
+            if (remoteDeleted.size > 0) {
+              const drop = (events: NostrEvent[]) =>
+                events.filter(e => !e.id || !remoteDeleted.has(e.id));
+              cached.reactionEvents = drop(cached.reactionEvents);
+              cached.repostEvents = drop(cached.repostEvents);
+              cached.quotedEvents = drop(cached.quotedEvents);
+              cached.zapEvents = drop(cached.zapEvents);
+              this.systemLogger.info(
+                'ReactionsOrch',
+                `Removed ${remoteDeleted.size} taken-back interaction(s)`
+              );
+            }
+          }
 
           cached.lastUpdated = Date.now();
 
@@ -1338,7 +1523,7 @@ export class ReactionsOrchestrator extends Orchestrator {
         cached,
         [event],
         noteId,
-        this.deletedInteractionIds
+        this.blockedInteractionIds
       );
       cached.lastUpdated = Date.now();
       // A cache rebuilt from the live echo holds only the just-arrived event —
