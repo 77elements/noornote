@@ -1,10 +1,5 @@
-# Release Notes 1.5.3 (Compact)
+# NoorNote 1.5.4
 
-## New
+**Prayer reminders clean up after themselves** — prayer notifications vanish 10 min after the prayer time, holiday reminders after 3 hours, on all platforms. No more notification pile-ups on your phone.
 
-- Share Note / Share article: share links now open in a slim modal with one-tap copy — article links open the article view directly
-
-## Improved
-
-- Repo announcements and Satellite Earth site settings render properly instead of "unsupported"
-- Unread bookmark markers respect your read-sync setting
+**Taken-back interactions disappear for real** — if an author deletes a like, repost, quote, reply or zap, it is now removed from your stats, timelines and likes lists too. Own likes show up instantly in the likes list.
