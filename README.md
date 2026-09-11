@@ -209,6 +209,7 @@ If the app crashes, check the log files:
 - **Ditto geocache** — kind `37516`, proprietary [Ditto](https://ditto.pub) feature with no NIP; rendered as a notice with an "open in Ditto" link instead of broken output
 - **Satellite Earth site page** — kinds `35128` / `35129`, proprietary [Satellite Earth](https://satellite.earth) events (NAP protocol: 35128 site settings, 35129 site page); rendered as a notice card linking to the naddr on njump
 - **Armada community invite** — kind `33301`, [Concord CORD-05](https://github.com/concord-protocol/concord) encrypted-community invite bundle (addressable, content NIP-44-encrypted). Recognised inside note text via `armada.buzz/invite/<naddr>#<fragment>` URLs and bare `nostr:naddr1…` quotes; when the URL fragment is present, the public preview (community name, icon, channel count) is decrypted locally and rendered as an invite card with an "Open in Armada" action.
+- **Gated premium note (Fanfares / NIP-108-2.0)** — kind `1` with `encrypted` (AES-256-GCM) and `price` (sats) tags; NoorNote detects these Fanfares-style gated notes (NIP-108-2.0 evolution) and renders a gated card instead of recursing into the encrypted payload.
 
 ## Build from Source
 
