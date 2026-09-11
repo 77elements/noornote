@@ -5,7 +5,9 @@
  * enabled prayer, it shows the core AlertBar once (deduped per day+prayer). When the window
  * is NOT focused it additionally fires an OS notification (same web Notification API in both
  * the Electron renderer and the browser), so the reminder surfaces even when NoorNote is in
- * the background / minimised. Times come from the active source (Diyanet cache or local
+ * the background / minimised. OS notifications auto-close (prayer: 10 min after the prayer
+ * time, holiday: after 3 hours) so they don't pile up in notification centers.
+ * Times come from the active source (Diyanet cache or local
  * calculation). Owned by the addon runtime, so the timer is cleared on logout /
  * account-switch / toggle-off.
  *
@@ -34,6 +36,10 @@ import { getHolidayReminders } from './holidays';
 import { formatDateByCalendar } from '../../helpers/formatTimestamp';
 
 const POLL_MS = 30_000;
+/** OS prayer notifications auto-close this many minutes after the prayer time (no piling up). */
+const PRAYER_LINGER_MIN = 10;
+/** OS holiday notifications auto-close after this duration. */
+const HOLIDAY_LINGER_MS = 3 * 60 * 60_000;
 const PRAYERS: [keyof ReminderPrayers, string][] = [
   ['fajr', 'Fajr'],
   ['dhuhr', 'Dhuhr'],
@@ -62,6 +68,7 @@ export class NostrMajlisReminderService {
   private timer: number | null = null;
   private shown = new Set<string>(); // `${yyyy-m-d}:${prayerKey}` already fired today
   private shownHolidays = new Set<string>(); // `${holidayDate}:${key}` already fired
+  private osCloseTimers = new Set<number>(); // pending auto-close timers for OS notifications
 
   start(): void {
     if (this.timer !== null) return;
@@ -192,14 +199,12 @@ export class NostrMajlisReminderService {
         Notification.permission === 'granted' &&
         !document.hasFocus()
       ) {
-        const n = new Notification(rem.name, {
-          body: text,
-          tag: `nostr-majlis-holiday-${rem.key}`,
-        });
-        n.onclick = () => {
-          window.focus();
-          Router.getInstance().navigate('/addons/nostr-majlis');
-        };
+        this.fireOsNotification(
+          rem.name,
+          text,
+          `nostr-majlis-holiday-${rem.key}`,
+          HOLIDAY_LINGER_MS
+        );
       }
     }
   }
@@ -232,22 +237,51 @@ export class NostrMajlisReminderService {
     diagLog('addons', 'nostr-majlis: holiday reminder acknowledged', { dedup });
   }
 
-  /** Background OS notification — only when the window isn't focused (else the AlertBar is enough). */
-  private notifyOs(name: string, time: string, remaining: number): void {
+  /**
+   * Fire an OS notification that auto-closes after `closeAfterMs` — notification centers
+   * would otherwise keep it until manually dismissed. No focus check here; callers decide
+   * (prayers: only when unfocused, holidays: always).
+   */
+  private fireOsNotification(
+    title: string,
+    body: string,
+    tag: string,
+    closeAfterMs: number
+  ): void {
     if (
       typeof Notification === 'undefined' ||
       Notification.permission !== 'granted'
     )
       return;
-    if (document.hasFocus()) return;
-    const n = new Notification(`${name} prayer`, {
-      body: `In ${remaining} min (${time})`,
-      tag: `nostr-majlis-${name}`,
-    });
+    const n = new Notification(title, { body, tag });
     n.onclick = () => {
       window.focus();
       Router.getInstance().navigate('/addons/nostr-majlis');
     };
+    const t = window.setTimeout(() => {
+      this.osCloseTimers.delete(t);
+      try {
+        n.close();
+      } catch {
+        // Already gone (tapped / dismissed) — nothing to clean up.
+      }
+    }, closeAfterMs);
+    this.osCloseTimers.add(t);
+  }
+
+  /**
+   * Background OS notification — only when the window isn't focused (else the AlertBar is
+   * enough). Auto-closes 10 min after the prayer time: `remaining` is minutes to the prayer
+   * at fire time, so the close delay is `remaining + PRAYER_LINGER_MIN`.
+   */
+  private notifyOs(name: string, time: string, remaining: number): void {
+    if (document.hasFocus()) return;
+    this.fireOsNotification(
+      `${name} prayer`,
+      `In ${remaining} min (${time})`,
+      `nostr-majlis-${name}`,
+      (remaining + PRAYER_LINGER_MIN) * 60_000
+    );
   }
 
   destroy(): void {
@@ -255,6 +289,8 @@ export class NostrMajlisReminderService {
       clearInterval(this.timer);
       this.timer = null;
     }
+    for (const t of this.osCloseTimers) clearTimeout(t);
+    this.osCloseTimers.clear();
     this.shown.clear();
     this.shownHolidays.clear();
     NostrMajlisReminderService.instance = null;

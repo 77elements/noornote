@@ -17,6 +17,10 @@
  * where the user is (the normal case). A foreign city only shifts reminder timing.
  *
  * No-op on Electron / Web (handled separately by the running-app Notification path).
+ *
+ * Auto-dismiss: every notification carries extra.timeoutAfter (NoorNote plugin patch →
+ * NotificationCompat.setTimeoutAfter): prayers vanish 10 min after the prayer time, holidays
+ * after 3 hours — the shade never piles up, even when the app stays closed.
  */
 
 import { PlatformService } from '../../services/PlatformService';
@@ -33,6 +37,10 @@ import { formatDateByCalendar } from '../../helpers/formatTimestamp';
 
 // Dedicated id ranges so we can cancel exactly our own notifications without touching others.
 const PRAYER_DAYS_AHEAD = 7;
+/** Prayer notifications auto-close this many minutes after the prayer time (system-side timeout). */
+const PRAYER_LINGER_MIN = 10;
+/** Holiday notifications auto-close 3 hours after firing. */
+const HOLIDAY_LINGER_MS = 3 * 60 * 60_000;
 const PRAYERS: [keyof ReminderPrayers, string][] = [
   ['fajr', 'Fajr'],
   ['dhuhr', 'Dhuhr'],
@@ -60,6 +68,8 @@ interface NotificationSpec {
   title: string;
   body: string;
   schedule: { at: Date; allowWhileIdle: boolean };
+  /** timeoutAfter (ms from posting) — Android auto-dismisses the notification itself. */
+  extra: { timeoutAfter: number };
 }
 
 /** Minimal Capacitor PluginListenerHandle shape (avoids importing the type into core paths). */
@@ -159,6 +169,11 @@ export class NostrMajlisNativeReminders {
           id: PRAYER_ID_BASE + n,
           title: `${name} prayer`,
           body: `In ${s.reminders.offsetMin} min (${day.times[key]})`,
+          // timeoutAfter counts from POSTING (= prayer − offset): dismiss at prayer + 10 min,
+          // even when the app is closed (NoorNote plugin patch reads extra.timeoutAfter).
+          extra: {
+            timeoutAfter: (s.reminders.offsetMin + PRAYER_LINGER_MIN) * 60_000,
+          },
           // allowWhileIdle: time-critical, must fire during Doze / while the phone is asleep.
           schedule: { at: new Date(at), allowWhileIdle: true },
         });
@@ -181,6 +196,7 @@ export class NostrMajlisNativeReminders {
         id: HOLIDAY_ID_BASE + n,
         title: rem.name,
         body: `In ${days} day${days === 1 ? '' : 's'} (${formatDateByCalendar(rem.date)})`,
+        extra: { timeoutAfter: HOLIDAY_LINGER_MS },
         schedule: { at: rem.fireAt, allowWhileIdle: true },
       });
       n++;
