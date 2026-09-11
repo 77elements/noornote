@@ -1,0 +1,23 @@
+// Web update banner — "App updated." + Reload, inserted below the sidebar logo
+// (after .sidebar-header) by MainLayout when WebUpdateCheck detects a newer deployed build.
+// Stays visible until the user reloads; no dismiss by design.
+
+@use '../abstracts/variables' as *;
+
+.web-update-banner {
+  margin: calc($gap / 2) $gap $gap;
+  padding: calc($gap / 2);
+  background: var(--color-2);
+  border-radius: $radius-xl;
+  text-align: center;
+
+  &__text {
+    display: block;
+    margin-bottom: calc($gap / 2);
+    font-size: 0.85rem;
+  }
+
+  &__reload {
+    width: auto;
+  }
+}

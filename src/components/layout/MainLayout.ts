@@ -35,6 +35,7 @@ import {
 } from '../../addons/addonOrder';
 import { wireAddonReorder } from './AddonNavReorder';
 import { ToastService } from '../../services/ToastService';
+import { WebUpdateCheck } from '../../services/WebUpdateCheck';
 // WalletBalanceDisplay is owned by src/addons/wallet-balance/runtime.ts and
 // managed by the AddonLoader. MainLayout only provides the mount point
 // (.wallet-balance-container, see this.element template).
@@ -140,6 +141,7 @@ export class MainLayout {
   private viewTabManager: ViewTabManager | null = null;
   private viewTabEventSubscriptions: string[] = [];
   private sidebarTabsWheelCleanup: (() => void) | null = null;
+  private webUpdateBannerActive = false; // newer deployed build detected (WebUpdateCheck)
   private layoutService: LayoutService;
   private pullToRefresh: PullToRefresh | null = null;
   private sccDefaultDropdown: CustomDropdown | null = null;
@@ -173,6 +175,7 @@ export class MainLayout {
     this.initializeViewTabManager();
     void this.initializeDateTimeCalendar();
     this.startDateTimeUpdates();
+    this.initWebUpdateCheck();
   }
 
   /**
@@ -1932,12 +1935,48 @@ export class MainLayout {
   }
 
   /**
+   * Web-only: start the deployed-build check. The service owns detection only — the DOM
+   * lives here (services must not touch components). On detection the banner is inserted
+   * under the sidebar logo and stays until the user reloads.
+   */
+  private initWebUpdateCheck(): void {
+    WebUpdateCheck.getInstance().start(() => {
+      this.webUpdateBannerActive = true;
+      this.mountWebUpdateBanner();
+    });
+  }
+
+  /**
+   * Insert the "App updated" banner below the sidebar logo. Guarded: only when a newer
+   * build was detected, only once per position, re-inserted after sidebar re-renders
+   * (updateSidebar wipes innerHTML).
+   */
+  private mountWebUpdateBanner(): void {
+    if (!this.webUpdateBannerActive) return;
+    if (this.element.querySelector('.web-update-banner')) return;
+    const header = this.element.querySelector('.sidebar-header');
+    if (!header) return;
+    header.insertAdjacentHTML(
+      'afterend',
+      `
+      <div class="web-update-banner">
+        <span class="web-update-banner__text">App updated.</span>
+        <button type="button" class="btn btn--mini web-update-banner__reload">Reload</button>
+      </div>
+    `
+    );
+    const reloadBtn = this.element.querySelector('.web-update-banner__reload');
+    reloadBtn?.addEventListener('click', () => window.location.reload());
+  }
+
+  /**
    * Update sidebar content
    */
   public updateSidebar(content: string): void {
     const sidebar = this.element.querySelector('.sidebar-content');
     if (sidebar) {
       sidebar.innerHTML = content;
+      this.mountWebUpdateBanner();
     }
   }
 
@@ -3101,6 +3140,8 @@ export class MainLayout {
    */
   public destroy(): void {
     this.stopDateTimeUpdates();
+    WebUpdateCheck.getInstance().destroy();
+    this.webUpdateBannerActive = false;
 
     if (this.spacebarScrollHandler) {
       window.removeEventListener('keydown', this.spacebarScrollHandler);

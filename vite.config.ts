@@ -1,6 +1,25 @@
 import { defineConfig, type PluginOption } from 'vite';
 import { resolve } from 'path';
+import { writeFileSync, mkdirSync } from 'node:fs';
 import { visualizer } from 'rollup-plugin-visualizer';
+
+// Unique id per build. It is baked into the running bundle via define(__BUILD_ID__) and
+// written to dist/version.json by the plugin below. The web update banner (WebUpdateCheck)
+// compares the running id against the freshly deployed version.json to detect a new
+// deployment and prompts the user to reload.
+const BUILD_ID = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+
+function buildIdPlugin(): PluginOption {
+  return {
+    name: 'noornote-build-id',
+    apply: 'build',
+    closeBundle() {
+      const distDir = resolve(__dirname, 'dist');
+      mkdirSync(distDir, { recursive: true });
+      writeFileSync(resolve(distDir, 'version.json'), JSON.stringify({ id: BUILD_ID }));
+    },
+  };
+}
 
 export default defineConfig({
   // Base URL: './' for Electron (file:// protocol), '/' for Web (SPA deep links)
@@ -144,6 +163,7 @@ export default defineConfig({
 
   // Plugin configuration
   plugins: [
+    buildIdPlugin(),
     // Bundle analyzer for development
     ...(process.env.ANALYZE ? [visualizer({
       filename: 'dist/bundle-analysis.html',
@@ -159,6 +179,7 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
     __BUILD_DATE__: JSON.stringify(new Date().toISOString()),
+    __BUILD_ID__: JSON.stringify(BUILD_ID),
   },
 
   // Preview server (for production builds)
