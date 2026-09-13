@@ -1,6 +1,9 @@
+// @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import {
+  buildZapOnZapPreview,
+  buildZapReactionEntries,
   extractZapperPubkey,
   extractZapMessage,
   formatNumberWithCommas,
@@ -199,5 +202,108 @@ describe('formatNumberWithCommas', () => {
 
   it('passes through small numbers unchanged', () => {
     expect(formatNumberWithCommas(21)).toBe('21');
+  });
+});
+
+describe('buildZapReactionEntries', () => {
+  function reaction(
+    id: string,
+    pubkey: string,
+    content: string,
+    tags: string[][] = []
+  ): NostrEvent {
+    return {
+      id,
+      kind: 7,
+      pubkey,
+      created_at: 1,
+      tags,
+      content,
+      sig: '',
+    } as NostrEvent;
+  }
+
+  it('maps one entry per reaction with the reactor pubkey', () => {
+    const entries = buildZapReactionEntries([
+      reaction('r1', 'cody', '💜'),
+      reaction('r2', 'bob', '👍'),
+    ]);
+    expect(entries).toEqual([
+      { emojiHtml: '💜', pubkey: 'cody' },
+      { emojiHtml: '👍', pubkey: 'bob' },
+    ]);
+  });
+
+  it('maps "+" and empty content to ❤️ (ISL/LikesList convention)', () => {
+    const entries = buildZapReactionEntries([
+      reaction('r1', 'cody', '+'),
+      reaction('r2', 'bob', ''),
+    ]);
+    expect(entries.map(e => e.emojiHtml)).toEqual(['❤️', '❤️']);
+  });
+
+  it('skips downvotes and entries without a pubkey', () => {
+    const entries = buildZapReactionEntries([
+      reaction('r1', 'cody', '-'),
+      reaction('r2', '', '💜'),
+      reaction('r3', 'bob', '👍'),
+    ]);
+    expect(entries).toEqual([{ emojiHtml: '👍', pubkey: 'bob' }]);
+  });
+
+  it('escapes crafted content (XSS-safe output)', () => {
+    const entries = buildZapReactionEntries([
+      reaction('r1', 'cody', '<img src=x onerror=alert(1)>'),
+    ]);
+    expect(entries[0]!.emojiHtml).not.toContain('<img');
+    expect(entries[0]!.emojiHtml).toContain('&lt;img');
+  });
+
+  it('resolves NIP-30 custom emojis to an img tag', () => {
+    const entries = buildZapReactionEntries([
+      reaction('r1', 'cody', ':noornote:', [
+        ['emoji', 'noornote', 'https://emo.test/noornote.png'],
+      ]),
+    ]);
+    expect(entries[0]!.emojiHtml).toContain('<img');
+    expect(entries[0]!.emojiHtml).toContain(
+      'src="https://emo.test/noornote.png"'
+    );
+  });
+
+  it('returns escaped shortcode text when no matching emoji tag exists', () => {
+    const entries = buildZapReactionEntries([
+      reaction('r1', 'cody', ':ghost:'),
+    ]);
+    expect(entries[0]!.emojiHtml).toBe(':ghost:');
+  });
+});
+
+describe('buildZapOnZapPreview', () => {
+  it('formats amount and note snippet', () => {
+    expect(buildZapOnZapPreview(1_000, 'hello world')).toBe(
+      '⚡ 1,000 sats zap on "hello world"'
+    );
+  });
+
+  it('falls back to the bare zap when the note is unfetchable', () => {
+    expect(buildZapOnZapPreview(1_000, null)).toBe('⚡ 1,000 sats zap');
+    expect(buildZapOnZapPreview(1_000, '   ')).toBe('⚡ 1,000 sats zap');
+  });
+
+  it('uses "a zap" when the receipt carries no bolt11 amount', () => {
+    expect(buildZapOnZapPreview(0, 'nice')).toBe('⚡ a zap on "nice"');
+  });
+
+  it('truncates long snippets at 80 chars with an ellipsis', () => {
+    const long = 'x'.repeat(200);
+    const preview = buildZapOnZapPreview(21, long);
+    expect(preview).toBe(`⚡ 21 sats zap on "${'x'.repeat(80)}…"`);
+  });
+
+  it('collapses whitespace in the snippet', () => {
+    expect(buildZapOnZapPreview(5, 'a\n\n  b\tc')).toBe(
+      '⚡ 5 sats zap on "a b c"'
+    );
   });
 });

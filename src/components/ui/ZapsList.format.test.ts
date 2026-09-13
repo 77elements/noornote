@@ -11,6 +11,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const ME = 'a'.repeat(64);
 
+const { getApiMock } = vi.hoisted(() => ({
+  getApiMock: vi.fn((_id: string) => null),
+}));
+
 vi.mock('../../services/UserProfileService', () => ({
   UserProfileService: {
     getInstance: () => ({
@@ -29,7 +33,7 @@ vi.mock('../../services/AuthService', () => ({
   },
 }));
 vi.mock('../../core/ModuleLoader', () => ({
-  ModuleLoader: { getInstance: () => ({ getApi: () => null }) },
+  ModuleLoader: { getInstance: () => ({ getApi: getApiMock }) },
 }));
 vi.mock('./UserHoverCard', () => ({
   UserHoverCard: { getInstance: () => ({ show: vi.fn(), hide: vi.fn() }) },
@@ -203,6 +207,89 @@ describe('ZapsList receipt rendering', () => {
       });
       // sorted by amount descending: 5,000,000 (receipt) before 210 (pending)
       expect(badgeTexts(list.getElement())).toEqual(['5,000,000', '210']);
+    });
+  });
+
+  describe('ZapsList reaction hints', () => {
+    beforeEach(() => {
+      document.body.innerHTML = '';
+      getApiMock.mockReset();
+      getApiMock.mockReturnValue(null);
+    });
+
+    function reactionsDoubleWith(overrides: {
+      peekDetailedStats: (id: string) => unknown;
+    }) {
+      return {
+        batchFetchStats: vi.fn(async () => new Map()),
+        getZapReplyCounts: vi.fn(async () => new Map()),
+        peekDetailedStats: overrides.peekDetailedStats,
+      };
+    }
+
+    it('pill whose receipt has reactions gets a tiny grouped emoji overlay', async () => {
+      const reaction = (id: string, pubkey: string, content: string) => ({
+        id,
+        kind: 7,
+        pubkey,
+        created_at: 1,
+        tags: [],
+        content,
+        sig: '',
+      });
+      getApiMock.mockImplementation((id: string) =>
+        id === 'reactions'
+          ? reactionsDoubleWith({
+              peekDetailedStats: (id: string) =>
+                id === 'r1'
+                  ? {
+                      reactionEvents: [
+                        reaction('x1', '2'.repeat(64), '💜'),
+                        reaction('x2', '3'.repeat(64), '💜'),
+                        reaction('x3', '4'.repeat(64), '👍'),
+                      ],
+                      lastUpdated: Date.now(),
+                    }
+                  : null,
+            })
+          : null
+      );
+
+      const list = new ZapsList([
+        receipt('r1', 'lnbc50m1a'),
+        receipt('r2', 'lnbc21m1b'),
+      ]);
+      document.body.appendChild(list.getElement());
+      await vi.waitFor(() => {
+        expect(
+          list.getElement().querySelector('.zaps-list__reaction-hint')
+        ).not.toBeNull();
+      });
+
+      const badges = list.getElement().querySelectorAll('.zaps-list__badge');
+      // r1 (5,000,000 sats) sorts before r2 — hint on r1 only
+      const hint1 = badges[0]!.querySelector('.zaps-list__reaction-hint');
+      expect(hint1).not.toBeNull();
+      expect(hint1!.textContent).toContain('💜');
+      expect(
+        hint1!.querySelector('.zaps-list__reaction-count')!.textContent
+      ).toBe('2');
+      expect(hint1!.textContent).toContain('👍');
+      expect(badges[1]!.querySelector('.zaps-list__reaction-hint')).toBeNull();
+    });
+
+    it('receipt without reactions gets no hint', async () => {
+      getApiMock.mockImplementation((id: string) =>
+        id === 'reactions'
+          ? reactionsDoubleWith({ peekDetailedStats: () => null })
+          : null
+      );
+      const list = new ZapsList([receipt('r1', 'lnbc50m1a')]);
+      document.body.appendChild(list.getElement());
+      await new Promise(resolve => setTimeout(resolve, 20));
+      expect(
+        list.getElement().querySelector('.zaps-list__reaction-hint')
+      ).toBeNull();
     });
   });
 });

@@ -23,6 +23,7 @@ import { TypedEventBus } from '../../../core/TypedEventBus';
 
 import { ZapsList } from '../../ui/ZapsList';
 import { LikesList } from '../../ui/LikesList';
+import { ZapReceiptRenderer } from '../../ui/note-rendering/ZapReceiptRenderer';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 const EMPTY_STATS: DetailedStats = {
@@ -171,6 +172,23 @@ export class SnvZapsListController {
     );
 
     const { noteElement } = entry;
+
+    // Zap-receipt cards render bare (no header/ISL — ZapReceiptRenderer
+    // bypasses NoteStructureBuilder), so the zaps/likes lists have no ISL to
+    // anchor on. The receipt card shows who reacted instead: "❤️ Cody → Alp".
+    // The card can BE the noteElement (root SNV / thread reply) — hence
+    // matches() first, the descendant query is the safety net.
+    const receiptCard = noteElement.matches('.note-card--zap-receipt')
+      ? noteElement
+      : noteElement.querySelector('.note-card--zap-receipt');
+    if (receiptCard) {
+      ZapReceiptRenderer.updateReactions(
+        receiptCard as HTMLElement,
+        stats.reactionEvents
+      );
+      return;
+    }
+
     const islContainer = noteElement.querySelector('.isl');
     if (!islContainer?.parentNode) return;
 

@@ -118,6 +118,13 @@ vi.mock('../../../services/UserProfileService', () => ({
         display_name: 'Alp',
         picture: 'https://img.test/alp.png',
       })),
+      // ZapReceiptRenderer.mentionHtml reads cached profiles (sync)
+      getCachedProfile: vi.fn(() => ({
+        pubkey: ME,
+        name: 'alp',
+        display_name: 'Alp',
+        picture: 'https://img.test/alp.png',
+      })),
     }),
   },
 }));
@@ -135,6 +142,10 @@ vi.mock('../../ui/UserHoverCard', () => ({
 vi.mock('../../ui/Tooltip', () => ({ Tooltip: { attach: vi.fn() } }));
 vi.mock('../../../services/ViewNavigationController', () => ({
   getViewNavigationController: () => ({ openView: vi.fn() }),
+}));
+// ZapReceiptRenderer.updateReactions wires mention links → needs Router
+vi.mock('../../../services/Router', () => ({
+  Router: { getInstance: () => ({ navigate: vi.fn() }) },
 }));
 // LikesList pulls a deep import chain (lists/file needs Electron APIs at
 // module level) — not under test here, stub it.
@@ -597,6 +608,126 @@ describe('SnvZapsListController — view-agnostic options (article support)', ()
     expect(likesListCtorMock).toHaveBeenCalled();
     const args = likesListCtorMock.mock.calls.at(-1)!;
     expect(args[3]).toBe(articleEvent); // originalEvent for NIP-25 addressable tags
+    controller.detach(NOTE);
+  });
+});
+
+describe('SnvZapsListController — zap receipt reaction line', () => {
+  const SENDER = '1'.repeat(64);
+  const CODY = '2'.repeat(64);
+
+  function receiptCardShell(): HTMLElement {
+    // Production: the receipt card IS the noteElement (ZapReceiptRenderer
+    // returns the bare card — matches() path in renderNow).
+    const el = document.createElement('div');
+    el.className = 'note-card note-card--zap-receipt';
+    el.dataset.senderPubkey = SENDER;
+    el.innerHTML = `
+      <div class="zap-receipt">
+        <div class="zap-receipt__header"><span>⚡</span><span>1.000 sats</span></div>
+        <div class="zap-receipt__details"><span>alp → Cody</span></div>
+      </div>`;
+    document.body.appendChild(el);
+    return el;
+  }
+
+  function reactionEvent(
+    id: string,
+    pubkey: string,
+    content: string
+  ): NostrEvent {
+    return {
+      id,
+      kind: 7,
+      pubkey,
+      created_at: 1,
+      tags: [['e', NOTE]],
+      content,
+      sig: 'f'.repeat(128),
+    } as never;
+  }
+
+  beforeEach(() => {
+    document.body.innerHTML = '';
+    reactionsDouble.setCached(null);
+    reactionsDouble.getDetailedStats.mockClear();
+  });
+
+  it('receipt card replaces the sender→recipient line with the reaction line (no lists)', async () => {
+    const shell = receiptCardShell();
+    reactionsDouble.setCached({
+      ...emptyStats(),
+      reactionEvents: [reactionEvent('r1', CODY, '💜')],
+      lastUpdated: Date.now(),
+    });
+    const controller = newController();
+    controller.attach(NOTE, AUTHOR, shell);
+
+    await vi.waitFor(() => {
+      expect(
+        shell.querySelectorAll('.zap-receipt__details .user-mention').length
+      ).toBeGreaterThan(0);
+    });
+
+    const details = shell.querySelector('.zap-receipt__details')!;
+    // "💜 Cody → Alp": reactor mention first, arrow, zap sender mention last
+    const mentions = details.querySelectorAll('a.mention-link');
+    expect(mentions.length).toBe(2);
+    expect(mentions[0]!.getAttribute('data-profile-pubkey')).toBe(CODY);
+    expect(mentions[1]!.getAttribute('data-profile-pubkey')).toBe(SENDER);
+    expect(details.querySelector('.zap-receipt__arrow')).not.toBeNull();
+    expect(details.textContent).toContain('💜');
+    // No ISL to anchor on → the zaps/likes lists must not be attempted
+    expect(shell.querySelector('.likes-list')).toBeNull();
+    expect(shell.querySelector('.zaps-list')).toBeNull();
+    controller.detach(NOTE);
+  });
+
+  it('reactions:added updates the reaction line synchronously from the cache', async () => {
+    const shell = receiptCardShell();
+    reactionsDouble.setCached({
+      ...emptyStats(),
+      reactionEvents: [reactionEvent('r1', CODY, '💜')],
+      lastUpdated: Date.now(),
+    });
+    const controller = newController();
+    controller.attach(NOTE, AUTHOR, shell);
+    await vi.waitFor(() => {
+      expect(
+        shell.querySelectorAll('.zap-receipt__details .user-mention').length
+      ).toBe(2);
+    });
+
+    reactionsDouble.setCached({
+      ...emptyStats(),
+      reactionEvents: [
+        reactionEvent('r1', CODY, '💜'),
+        reactionEvent('r2', 'f'.repeat(64), '👍'),
+      ],
+      lastUpdated: Date.now(),
+    });
+    TypedEventBus.getInstance().emit('reactions:added', {
+      noteId: NOTE,
+      eventIds: ['r2'],
+    });
+
+    await vi.waitFor(() => {
+      expect(
+        shell.querySelectorAll('.zap-receipt__details .user-mention').length
+      ).toBe(3);
+    });
+    controller.detach(NOTE);
+  });
+
+  it('without reactions the sender→recipient fallback line stays untouched', async () => {
+    const shell = receiptCardShell();
+    const controller = newController();
+    controller.attach(NOTE, AUTHOR, shell);
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(shell.querySelector('.zap-receipt__details')!.textContent).toBe(
+      'alp → Cody'
+    );
     controller.detach(NOTE);
   });
 });

@@ -5,6 +5,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { resolveReactionEmoji } from './formatCustomEmojis';
 
 /**
  * Parsed zap request data extracted from a Kind 9735 event's description tag
@@ -153,4 +154,47 @@ export function formatSatsCompact(sats: number): string {
     return `${(sats / 1_000).toFixed(1).replace(/\.0$/, '')}k`;
   }
   return sats.toString();
+}
+
+/**
+ * Build the per-reaction entries for a zap receipt's reaction line
+ * ("❤️ Cody 👍 Bob → Alp"): one entry per kind:7 reaction targeting the
+ * receipt, with the display emoji ready for innerHTML.
+ *
+ * Conventions mirrored from LikesList/ISL: '+' and empty content mean ❤️,
+ * downvotes ('-') are skipped, NIP-30 custom emojis (:shortcode: with a
+ * matching emoji tag) resolve to an <img>. Unicode content is escaped, so the
+ * result is XSS-safe.
+ */
+export function buildZapReactionEntries(
+  reactions: NostrEvent[]
+): Array<{ emojiHtml: string; pubkey: string }> {
+  const entries: Array<{ emojiHtml: string; pubkey: string }> = [];
+  for (const event of reactions) {
+    const content = (event.content || '').trim();
+    if (content === '-') continue;
+    if (!event.pubkey) continue;
+    const emojiHtml =
+      content === '+' || content === '' ? '❤️' : resolveReactionEmoji(event);
+    entries.push({ emojiHtml, pubkey: event.pubkey });
+  }
+  return entries;
+}
+
+/**
+ * Preview text for a notification about a reaction on a zap receipt
+ * (kind:7 → kind:9735). Format: `⚡ 1,000 sats zap on "<snippet>"`.
+ * Falls back: note unfetchable → `⚡ 1,000 sats zap`; no bolt11 amount
+ * → `⚡ a zap on "<snippet>"`. Whitespace is collapsed, snippet ≤ 80 chars.
+ */
+export function buildZapOnZapPreview(
+  amountSats: number,
+  zappedNoteContent: string | null | undefined
+): string {
+  const amount =
+    amountSats > 0 ? `${formatNumberWithCommas(amountSats)} sats zap` : 'a zap';
+  const snippet = (zappedNoteContent ?? '').trim().replace(/\s+/g, ' ');
+  if (!snippet) return `⚡ ${amount}`;
+  const short = snippet.length > 80 ? `${snippet.slice(0, 80)}…` : snippet;
+  return `⚡ ${amount} on "${short}"`;
 }

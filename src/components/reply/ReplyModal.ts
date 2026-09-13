@@ -40,6 +40,7 @@ import { AppState } from '../../services/AppState';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { NoteUI } from '../ui/NoteUI';
+import { ZapReceiptRenderer } from '../ui/note-rendering/ZapReceiptRenderer';
 import { ContentValidationManager } from '../post/ContentValidationManager';
 import { EditorStateManager } from '../post/EditorStateManager';
 import { MentionAutocomplete } from '../mentions/MentionAutocomplete';
@@ -279,8 +280,33 @@ export class ReplyModal {
       isLoggedIn: false,
       headerSize: 'medium',
       depth: 0,
+      zapReceiptClickable: false,
     });
     mount.appendChild(noteElement);
+
+    // Zap-receipt parent: replace the plain sender→recipient line with the
+    // reaction line ("💜 Cody → alp") — same display as the receipt card in
+    // the SNV. Shared detailed-stats cache (the zaps-list pill hints batch-
+    // fetch the same receipt ids).
+    if (this.parentEvent.kind === 9735 && this.parentEvent.id) {
+      const card = noteElement.matches('.note-card--zap-receipt')
+        ? noteElement
+        : noteElement.querySelector('.note-card--zap-receipt');
+      const receiptId = this.parentEvent.id;
+      if (card) {
+        void this.reactionsApi
+          ?.getDetailedStats(receiptId)
+          .then(stats => {
+            if (stats && stats.reactionEvents.length > 0) {
+              ZapReceiptRenderer.updateReactions(
+                card as HTMLElement,
+                stats.reactionEvents
+              );
+            }
+          })
+          .catch(() => undefined);
+      }
+    }
   }
 
   /**

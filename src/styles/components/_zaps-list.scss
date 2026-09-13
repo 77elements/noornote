@@ -28,6 +28,7 @@
   }
 
   &__badge {
+    position: relative;
     display: inline-flex;
     align-items: center;
     gap: calc($gap / 4);
@@ -36,6 +37,26 @@
     border-radius: $radius-full;
     white-space: nowrap;
     flex-shrink: 0;
+  }
+
+  // Tiny reaction overlay ("💜2👍") bottom-right of a pill whose zap receipt
+  // has kind:7 reactions — pure display, no own click behavior.
+  &__reaction-hint {
+    position: absolute;
+    right: calc($gap / 6);
+    bottom: calc($gap / 8);
+    display: inline-flex;
+    align-items: center;
+    gap: calc($gap / 8);
+    font-size: 0.625rem;
+    line-height: 1;
+    pointer-events: none;
+    filter: drop-shadow(0 0 2px $color-black);
+  }
+
+  &__reaction-count {
+    font-weight: 700;
+    color: var(--color-5);
   }
 
   // Identifiable zaps are clickable to reply (NIP-22 comment on the kind:9735).

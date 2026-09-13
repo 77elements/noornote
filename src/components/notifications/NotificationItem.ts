@@ -31,6 +31,7 @@ import {
   getZapAmountSats,
   extractZapMessage,
   formatNumberWithCommas,
+  buildZapOnZapPreview,
 } from '../../helpers/zapUtils';
 
 export interface NotificationItemOptions {
@@ -701,6 +702,7 @@ export class NotificationItem {
     const kTag = this.options.event.tags.find((t: string[]) => t[0] === 'k');
     if (kTag?.[1]) {
       const kKind = parseInt(kTag[1]);
+      if (kKind === 9735) return 'Your zap';
       if (kKind === 30023) return 'Article';
       if (kKind === 32267) return 'App';
       if (kKind === 39089) return 'Follow Pack';
@@ -1047,6 +1049,21 @@ export class NotificationItem {
         isNaN(kHint) ? undefined : kHint
       );
       if (originalEvent) {
+        if (originalEvent.kind === 9735) {
+          // Reaction on a zap receipt: resolve receipt → zapped note so the
+          // preview reads `⚡ 1,000 sats zap on "<snippet>"` instead of the
+          // useless "Event (kind 9735)" fallback.
+          const amount = getZapAmountSats(originalEvent);
+          const receiptETags = originalEvent.tags.filter(
+            (t: string[]) => t[0] === 'e'
+          );
+          const zappedNoteId = receiptETags[receiptETags.length - 1]?.[1];
+          const zappedNote = zappedNoteId
+            ? await this.fetchOriginalNote(zappedNoteId)
+            : null;
+          setPreview(buildZapOnZapPreview(amount, zappedNote?.content ?? null));
+          return;
+        }
         if (originalEvent.kind === 9) {
           const content = formatGroupChatContent(originalEvent.content || '');
           const maxLength = 100;

@@ -15,6 +15,7 @@ import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import {
+  buildZapReactionEntries,
   extractZapperPubkey,
   extractZapMessage,
   getZapAmountSats,
@@ -190,6 +191,8 @@ export class ZapsList {
 
     // Replyable zaps whose comment count we'll fetch to show a thread badge.
     const replyables: { zap: ZapData; badge: HTMLElement }[] = [];
+    // Receipt pills for the tiny reaction-hint overlay (reactions on the zap)
+    const receiptBadges = new Map<string, HTMLElement>();
 
     for (const zap of zaps) {
       const badge = document.createElement('div');
@@ -259,6 +262,9 @@ export class ZapsList {
         replyables.push({ zap, badge });
       }
 
+      // Receipt pill → eligible for the reaction-hint overlay
+      if (zap.event?.id) receiptBadges.set(zap.event.id, badge);
+
       scrollContainer.appendChild(badge);
     }
 
@@ -268,6 +274,49 @@ export class ZapsList {
     // comments, so anyone — not just the zapper via their notification — can
     // open the zap's reply thread.
     void this.injectThreadBadges(replyables, userHoverCard);
+
+    // Tiny reaction overlay ("💜2👍") bottom-right on pills whose zap receipt
+    // has kind:7 reactions — one batched relay round-trip for all receipts.
+    void this.injectReactionHints(receiptBadges);
+  }
+
+  /**
+   * Batch-fetch stats for every receipt pill and append a tiny emoji overlay
+   * to those with reactions. Fire-and-forget: a later list rebuild (lifecycle
+   * events) simply re-runs it — batchFetchStats serves cached ids for free.
+   */
+  private async injectReactionHints(
+    receiptBadges: Map<string, HTMLElement>
+  ): Promise<void> {
+    if (receiptBadges.size === 0) return;
+    const ids = [...receiptBadges.keys()];
+    try {
+      await this.reactionsApi?.batchFetchStats(ids);
+    } catch {
+      return;
+    }
+    for (const [receiptId, badge] of receiptBadges) {
+      if (!badge.isConnected) continue;
+      const stats = this.reactionsApi?.peekDetailedStats(receiptId);
+      const entries = buildZapReactionEntries(stats?.reactionEvents ?? []);
+      if (entries.length === 0) continue;
+      // Group identical emojis with a count: "💜2👍" instead of "💜💜👍"
+      const groups = new Map<string, number>();
+      for (const entry of entries) {
+        groups.set(entry.emojiHtml, (groups.get(entry.emojiHtml) ?? 0) + 1);
+      }
+      const hint = document.createElement('span');
+      hint.className = 'zaps-list__reaction-hint';
+      hint.title = 'Reactions on this zap';
+      hint.innerHTML = [...groups.entries()]
+        .map(([emoji, count]) =>
+          count > 1
+            ? `${emoji}<span class="zaps-list__reaction-count">${count}</span>`
+            : emoji
+        )
+        .join('');
+      badge.appendChild(hint);
+    }
   }
 
   /**

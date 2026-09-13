@@ -418,6 +418,11 @@ html.content-visibility-auto .note-card {
   padding: $gap;
   margin-top: $gap;
 
+  // Receipts with a zapped-note target navigate there on click
+  &--clickable {
+    cursor: pointer;
+  }
+
   &:hover {
     background: color-mix(in srgb, var(--color-3) 50%, transparent);
     border-color: color-mix(in srgb, var(--color-4) 50%, transparent);
@@ -449,6 +454,13 @@ html.content-visibility-auto .note-card {
     align-items: center;
     gap: calc($gap / 2);
     flex-wrap: wrap;
+  }
+
+  // One reaction entry (emoji + reactor mention) in the reaction line
+  &__reaction {
+    display: inline-flex;
+    align-items: center;
+    gap: calc($gap / 4);
   }
 
   &__arrow {
