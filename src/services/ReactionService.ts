@@ -14,7 +14,7 @@ import { ErrorService } from './ErrorService';
 import { ToastService } from './ToastService';
 import { ReactionsOrchestrator } from './orchestration/ReactionsOrchestrator';
 import { DeletionService } from './DeletionService';
-import { getAddressableIdentifier } from '../helpers/getAddressableIdentifier';
+import { buildReactionTags } from '../helpers/reactionTags';
 import { diagLog } from './DiagnosticLogger';
 import { TypedEventBus } from '../core/TypedEventBus';
 
@@ -182,39 +182,9 @@ export class ReactionService {
     }
 
     try {
-      // Build tags array (NIP-25)
-      //
-      // For ADDRESSABLE reacted-to events (kind 30000–39999) we MUST emit the
-      // hex event-id in the `e`-tag and add `a` + `k` tags. The legacy code
-      // path passes the addressable identifier ("kind:pubkey:dtag") as
-      // `noteId` for long-form articles, which is NOT a valid 32-byte hex —
-      // strict relays reject it. The caller surfaces the original event
-      // via `targetEvent` so we can build the correct tags here.
-      const tags: string[][] = [];
-      const isAddressable =
-        targetEvent?.kind !== undefined &&
-        targetEvent.kind >= 30000 &&
-        targetEvent.kind < 40000 &&
-        !!targetEvent.id;
-
-      if (isAddressable && targetEvent && targetEvent.id) {
-        const addressableId = getAddressableIdentifier(targetEvent);
-        tags.push(['e', targetEvent.id]);
-        if (addressableId) tags.push(['a', addressableId]);
-        tags.push(['k', String(targetEvent.kind)]);
-        tags.push(['p', authorPubkey]);
-      } else if (targetEvent?.kind === 7 && targetEvent.id) {
-        // Reaction-on-reaction (kind:7 → kind:7). The `k`=7 marker lets readers
-        // recognize this as a reply within a reaction thread and build the tree
-        // without resolving the parent event first. `p` points at the author of
-        // the reaction being reacted to, so the loop reaches the right person.
-        tags.push(['e', targetEvent.id]);
-        tags.push(['k', '7']);
-        tags.push(['p', authorPubkey]);
-      } else {
-        tags.push(['e', noteId]);
-        tags.push(['p', authorPubkey]);
-      }
+      // Build tags array (NIP-25) — branch logic in buildReactionTags
+      // (addressable / reaction-on-reaction / reaction-on-zap / default).
+      const tags = buildReactionTags(noteId, authorPubkey, targetEvent);
 
       // NIP-30: custom emoji reaction — content is `:shortcode:`, tags carry the URL
       if (emojiTag) {
@@ -266,7 +236,11 @@ export class ReactionService {
       );
 
       // Show success toast to user
-      ToastService.show(`Liked: ${emoji}`, 'success');
+      const isZapTarget = targetEvent?.kind === 9735;
+      ToastService.show(
+        `${isZapTarget ? 'Reacted' : 'Liked'}: ${emoji}`,
+        'success'
+      );
 
       // Optimistic stats: top-level reactions land in the detailed-stats
       // cache immediately so the likes-list pill count updates without

@@ -24,6 +24,11 @@ import {
 } from '../../helpers/zapUtils';
 import { UserHoverCard } from './UserHoverCard';
 import { Tooltip } from './Tooltip';
+import { CustomDropdown } from './CustomDropdown';
+import { TypedEventBus } from '../../core/TypedEventBus';
+import type { CustomEmojiEntry } from '../emoji/EmojiPicker';
+import { AuthGuard } from '../../services/AuthGuard';
+import { isCustomEmojisEnabled } from '../../addons/custom-emojis/index';
 
 interface ZapData {
   zapperPubkey: string;
@@ -59,6 +64,12 @@ export class ZapsList {
     return (this._postsApi ??=
       ModuleLoader.getInstance().getApi<PostsModuleApi>('posts'));
   }
+  /** Open zap-pill pulldowns — torn down with the list (destroy contract). */
+  private dropdowns: CustomDropdown[] = [];
+  /** Receipt id → pill, for instant reaction-hint updates. */
+  private receiptBadges = new Map<string, HTMLElement>();
+  /** TypedEventBus subscription ids (reactions added/removed on shown zaps). */
+  private busIds: string[] = [];
 
   constructor(zapEvents: NostrEvent[], pendingStates: ZapPendingState[] = []) {
     this.zapEvents = zapEvents;
@@ -66,6 +77,15 @@ export class ZapsList {
     this.userProfileService = UserProfileService.getInstance();
     this.authService = AuthService.getInstance();
     this.element = this.createElement();
+    const bus = TypedEventBus.getInstance();
+    this.busIds = [
+      bus.on('reactions:added', (payload: { noteId: string }) =>
+        this.onBusInteraction(payload)
+      ),
+      bus.on('reactions:removed', (payload: { noteId: string }) =>
+        this.onBusInteraction(payload)
+      ),
+    ];
   }
 
   /**
@@ -190,9 +210,10 @@ export class ZapsList {
     const userHoverCard = UserHoverCard.getInstance();
 
     // Replyable zaps whose comment count we'll fetch to show a thread badge.
-    const replyables: { zap: ZapData; badge: HTMLElement }[] = [];
+    // `anchor` is the pill's dropdown container — thread badges insert after it.
+    const replyables: { zap: ZapData; anchor: HTMLElement }[] = [];
     // Receipt pills for the tiny reaction-hint overlay (reactions on the zap)
-    const receiptBadges = new Map<string, HTMLElement>();
+    this.receiptBadges = new Map<string, HTMLElement>();
 
     for (const zap of zaps) {
       const badge = document.createElement('div');
@@ -244,26 +265,48 @@ export class ZapsList {
         });
       }
 
-      // Reply to a zap (NIP-22 comment on the kind:9735): only when the zapper is identifiable —
-      // an anonymous zap has nobody to notify, and replying to your own zap makes no sense.
-      if (!zap.isAnonymous && zap.event) {
-        const receiptEvent = zap.event;
-        badge.classList.add('zaps-list__badge--replyable');
-        badge.title = `Reply to ${zap.username}'s zap`;
-        badge.addEventListener('click', async e => {
-          e.stopPropagation();
-          userHoverCard.hide();
-          const { ReplyModal } = await import('../reply/ReplyModal');
-          await ReplyModal.getInstance().show(
-            receiptEvent.id ?? '',
-            receiptEvent
-          );
-        });
-        replyables.push({ zap, badge });
-      }
-
       // Receipt pill → eligible for the reaction-hint overlay
-      if (zap.event?.id) receiptBadges.set(zap.event.id, badge);
+      if (zap.event?.id) this.receiptBadges.set(zap.event.id, badge);
+
+      // Receipt pills open the zap pulldown (LikesList emoji-menu pattern):
+      // the pill is the trigger. Options: "React to Zap" (always — reacting
+      // needs no identity) and "Reply to Zap" (identifiable zapper only).
+      if (zap.event) {
+        badge.classList.add('zaps-list__badge--menu');
+        badge.title = zap.isAnonymous
+          ? 'React to this zap'
+          : `React to or reply to ${zap.username}'s zap`;
+
+        const options = zap.isAnonymous
+          ? [{ value: 'react', label: 'React to Zap' }]
+          : [
+              { value: 'react', label: 'React to Zap' },
+              { value: 'reply', label: 'Reply to Zap' },
+            ];
+        const dd = new CustomDropdown({
+          options,
+          selectedValue: '',
+          className: 'zap-menu',
+          menuPortal: true,
+          onChange: value => {
+            userHoverCard.hide();
+            if (value === 'react') void this.reactToZap(zap, dd.getElement());
+            else if (value === 'reply') void this.replyToZap(zap);
+          },
+        });
+        this.dropdowns.push(dd);
+
+        const menuEl = dd.getElement();
+        const trigger = menuEl.querySelector('.custom-dropdown__trigger');
+        if (trigger) {
+          // Drop the default arrow — the pill IS the affordance.
+          trigger.innerHTML = '';
+          trigger.appendChild(badge);
+        }
+        scrollContainer.appendChild(menuEl);
+        replyables.push({ zap, anchor: menuEl });
+        continue;
+      }
 
       scrollContainer.appendChild(badge);
     }
@@ -277,7 +320,7 @@ export class ZapsList {
 
     // Tiny reaction overlay ("💜2👍") bottom-right on pills whose zap receipt
     // has kind:7 reactions — one batched relay round-trip for all receipts.
-    void this.injectReactionHints(receiptBadges);
+    void this.injectReactionHints();
   }
 
   /**
@@ -285,9 +328,8 @@ export class ZapsList {
    * to those with reactions. Fire-and-forget: a later list rebuild (lifecycle
    * events) simply re-runs it — batchFetchStats serves cached ids for free.
    */
-  private async injectReactionHints(
-    receiptBadges: Map<string, HTMLElement>
-  ): Promise<void> {
+  private async injectReactionHints(): Promise<void> {
+    const receiptBadges = this.receiptBadges;
     if (receiptBadges.size === 0) return;
     const ids = [...receiptBadges.keys()];
     try {
@@ -296,27 +338,56 @@ export class ZapsList {
       return;
     }
     for (const [receiptId, badge] of receiptBadges) {
-      if (!badge.isConnected) continue;
-      const stats = this.reactionsApi?.peekDetailedStats(receiptId);
-      const entries = buildZapReactionEntries(stats?.reactionEvents ?? []);
-      if (entries.length === 0) continue;
-      // Group identical emojis with a count: "💜2👍" instead of "💜💜👍"
-      const groups = new Map<string, number>();
-      for (const entry of entries) {
-        groups.set(entry.emojiHtml, (groups.get(entry.emojiHtml) ?? 0) + 1);
-      }
-      const hint = document.createElement('span');
-      hint.className = 'zaps-list__reaction-hint';
-      hint.title = 'Reactions on this zap';
-      hint.innerHTML = [...groups.entries()]
-        .map(([emoji, count]) =>
-          count > 1
-            ? `${emoji}<span class="zaps-list__reaction-count">${count}</span>`
-            : emoji
-        )
-        .join('');
-      badge.appendChild(hint);
+      this.appendHint(receiptId, badge);
     }
+  }
+
+  /**
+   * Rebuild one pill's reaction hint from the detailed-stats cache (already
+   * updated by publishReaction/removeReaction before the bus event fires).
+   */
+  private appendHint(receiptId: string, badge: HTMLElement): void {
+    if (!badge.isConnected) return;
+    badge.querySelector('.zaps-list__reaction-hint')?.remove();
+    const stats = this.reactionsApi?.peekDetailedStats(receiptId);
+    const entries = buildZapReactionEntries(stats?.reactionEvents ?? []);
+    if (entries.length === 0) return;
+    // Group identical emojis with a count: "💜2👍" instead of "💜💜👍"
+    const groups = new Map<string, number>();
+    for (const entry of entries) {
+      groups.set(entry.emojiHtml, (groups.get(entry.emojiHtml) ?? 0) + 1);
+    }
+    const hint = document.createElement('span');
+    hint.className = 'zaps-list__reaction-hint';
+    hint.title = 'Reactions on this zap';
+    hint.innerHTML = [...groups.entries()]
+      .map(([emoji, count]) =>
+        count > 1
+          ? `${emoji}<span class="zaps-list__reaction-count">${count}</span>`
+          : emoji
+      )
+      .join('');
+    badge.appendChild(hint);
+  }
+
+  /**
+   * Own react/un-react on a zap shown in THIS list: refresh that pill's hint
+   * instantly (state changes are visible immediately — never on reload only).
+   * Self-detaches once the list is gone (list rebuilds replace the instance).
+   */
+  private onBusInteraction = (payload: { noteId: string }): void => {
+    if (!this.element.isConnected) {
+      this.detachBus();
+      return;
+    }
+    const badge = this.receiptBadges.get(payload.noteId);
+    if (badge) this.appendHint(payload.noteId, badge);
+  };
+
+  private detachBus(): void {
+    const bus = TypedEventBus.getInstance();
+    this.busIds.forEach(id => bus.off(id));
+    this.busIds = [];
   }
 
   /**
@@ -325,7 +396,7 @@ export class ZapsList {
    * zap's thread (the zap as root note + its kind:1111 comments below).
    */
   private async injectThreadBadges(
-    replyables: { zap: ZapData; badge: HTMLElement }[],
+    replyables: { zap: ZapData; anchor: HTMLElement }[],
     userHoverCard: UserHoverCard
   ): Promise<void> {
     if (replyables.length === 0) return;
@@ -336,7 +407,7 @@ export class ZapsList {
     const counts = await this.reactionsApi?.getZapReplyCounts(zapIds);
     if (!counts || counts.size === 0) return;
 
-    for (const { zap, badge } of replyables) {
+    for (const { zap, anchor } of replyables) {
       const zapId = zap.event?.id;
       const count = zapId ? (counts.get(zapId) ?? 0) : 0;
       if (count <= 0 || !zapId) continue;
@@ -356,8 +427,88 @@ export class ZapsList {
         getViewNavigationController().openView('single-note', zapId);
       });
 
-      badge.insertAdjacentElement('afterend', threadBadge);
+      anchor.insertAdjacentElement('afterend', threadBadge);
     }
+  }
+
+  /**
+   * Reply to a zap (NIP-22 comment on the kind:9735) — existing ReplyModal
+   * flow, now behind the pill pulldown.
+   */
+  private async replyToZap(zap: ZapData): Promise<void> {
+    const receiptEvent = zap.event;
+    if (!receiptEvent?.id) return;
+    const { ReplyModal } = await import('../reply/ReplyModal');
+    await ReplyModal.getInstance().show(receiptEvent.id, receiptEvent);
+  }
+
+  /**
+   * React to a zap (kind:7 → kind:9735) via the shared EmojiPicker — same
+   * flow as reactToReaction (NIP-30 custom emojis included). The reaction's
+   * p-tag points at the zap sender; anonymous receipts fall back to the
+   * receipt's p-tag (recipient), since no real sender identity exists.
+   */
+  private async reactToZap(
+    zap: ZapData,
+    triggerEl: HTMLElement
+  ): Promise<void> {
+    const receipt = zap.event;
+    if (!receipt?.id) return;
+    if (!AuthGuard.requireAuth('react to zap')) return;
+
+    // Load the user's NIP-30 custom emoji pack when the addon is on, so the
+    // picker shows the same Custom tab as the direct like flow (LikeManager).
+    let customEmojis: CustomEmojiEntry[] | undefined;
+    if (isCustomEmojisEnabled()) {
+      try {
+        const { EmojiService } = await import(
+          '../../addons/custom-emojis/EmojiService'
+        );
+        const service = EmojiService.getInstance();
+        void service.refreshFromRelays();
+        customEmojis = service.getEmojis();
+      } catch (err) {
+        console.debug('[ZapsList] Custom emoji load failed:', err);
+      }
+    }
+
+    const { EmojiPicker } = await import('../emoji/EmojiPicker');
+    const picker = new EmojiPicker({
+      triggerElement: triggerEl,
+      ...(customEmojis ? { customEmojis } : {}),
+      onSelect: async emoji => {
+        picker.destroy();
+        await this.publishZapReaction(zap, emoji);
+      },
+      onCustomSelect: async entry => {
+        picker.destroy();
+        await this.publishZapReaction(zap, `:${entry.shortcode}:`, [
+          'emoji',
+          entry.shortcode,
+          entry.url,
+        ]);
+      },
+    });
+    picker.show();
+  }
+
+  private async publishZapReaction(
+    zap: ZapData,
+    emoji: string,
+    emojiTag?: [string, string, string]
+  ): Promise<void> {
+    const receipt = zap.event;
+    if (!receipt?.id) return;
+    const senderPubkey = zap.isAnonymous
+      ? receipt.tags.find(t => t[0] === 'p')?.[1] || zap.zapperPubkey
+      : zap.zapperPubkey;
+    await this.reactionsApi?.publishReaction({
+      noteId: receipt.id,
+      authorPubkey: senderPubkey,
+      emoji,
+      ...(emojiTag ? { emojiTag } : {}),
+      targetEvent: receipt,
+    });
   }
 
   public getElement(): HTMLElement {
@@ -365,6 +516,9 @@ export class ZapsList {
   }
 
   public destroy(): void {
+    this.detachBus();
+    this.dropdowns.forEach(dd => dd.destroy());
+    this.dropdowns = [];
     this.element.remove();
   }
 }

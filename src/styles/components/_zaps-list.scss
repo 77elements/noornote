@@ -59,8 +59,8 @@
     color: var(--color-5);
   }
 
-  // Identifiable zaps are clickable to reply (NIP-22 comment on the kind:9735).
-  &__badge--replyable {
+  // Receipt pills open the zap pulldown (react/reply)
+  &__badge--menu {
     cursor: pointer;
 
     &:hover {
@@ -124,5 +124,24 @@
     max-width: 200px;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+}
+
+// Zap-pill pulldown (CustomDropdown variant, mirrors the LikesList emoji
+// menu): the pill itself is the trigger — strip the default trigger chrome.
+.zap-menu {
+  display: inline-block;
+
+  &.custom-dropdown--open {
+    position: relative;
+    z-index: $z-sticky;
+  }
+
+  .custom-dropdown__trigger {
+    display: inline-block;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
   }
 }

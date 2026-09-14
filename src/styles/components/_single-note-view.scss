@@ -13,6 +13,17 @@
 .snv-wrapper {
   // Note itself uses .note-card from NoteUI
 
+  // Root note card above the replies container: the root card has
+  // `contain: content` (isolated stacking context), so any z-index inside it
+  // (zaps list, likes list, ISL) can never lift above the later-painted
+  // replies subtree. For long (collapsed) root notes the zaps/likes lists and
+  // ISL flow below the card box into the replies region — without this the
+  // reply cards paint over them and swallow their clicks.
+  > .note-card {
+    position: relative;
+    z-index: 2;
+  }
+
   // Replies container
   .snv-replies-container {
     margin-top: $gap * 2;
@@ -25,6 +36,19 @@
     padding-top: $gap;
     margin-top: $gap;
     border-top: 1px solid var(--color-2);
+  }
+}
+
+// Drop paint containment for the SNV root card only: the global
+// `html.content-visibility-auto .note-card` rule adds `contain: paint`, which
+// clips everything into the card box. For long (collapsed) root notes the
+// zaps/likes lists and ISL flow below the card box — paint containment makes
+// them invisible and swallows their clicks. Specificity (0,3,1) beats the
+// global rule's (0,2,1). Must stay TOP-LEVEL (outside .snv-wrapper) — nested,
+// Sass would prepend `.snv-wrapper ` and the selector never matches.
+@supports (contain: layout) {
+  html.content-visibility-auto .snv-wrapper > .note-card {
+    contain: layout style;
   }
 }
 

@@ -150,16 +150,14 @@ describe('ZapsList receipt rendering', () => {
 
       const badge = list.getElement().querySelector('.zaps-list__badge')!;
       // Same markup classes as receipt rows — no invented pending styling
-      expect(badge.classList.contains('zaps-list__badge--pending')).toBe(false);
+      expect(badge.classList.contains('zaps-list__badge--menu')).toBe(false);
       expect(badge.classList.contains('pulsate')).toBe(false);
       expect(badgeTexts(list.getElement())).toEqual(['50']);
       expect(badge.querySelector('.zaps-list__text')!.textContent).toBe(
         'Zapped by Alp'
       );
-      // No receipt event → not replyable
-      expect(badge.classList.contains('zaps-list__badge--replyable')).toBe(
-        false
-      );
+      // No receipt event → no pulldown menu
+      expect(badge.classList.contains('zaps-list__badge--menu')).toBe(false);
     });
 
     it('pending with comment renders "⚡ amount comment"', async () => {
@@ -187,11 +185,9 @@ describe('ZapsList receipt rendering', () => {
           list.getElement().querySelectorAll('.zaps-list__badge').length
         ).toBe(1);
       });
-      // The rendered row is the RECEIPT row (replyable)
+      // The rendered row is the RECEIPT row (with pulldown menu)
       const badge = list.getElement().querySelector('.zaps-list__badge')!;
-      expect(badge.classList.contains('zaps-list__badge--replyable')).toBe(
-        true
-      );
+      expect(badge.classList.contains('zaps-list__badge--menu')).toBe(true);
     });
 
     it('pending and unrelated receipts coexist, sorted by amount', async () => {
@@ -207,6 +203,73 @@ describe('ZapsList receipt rendering', () => {
       });
       // sorted by amount descending: 5,000,000 (receipt) before 210 (pending)
       expect(badgeTexts(list.getElement())).toEqual(['5,000,000', '210']);
+    });
+  });
+
+  describe('ZapsList zap-pill pulldown', () => {
+    beforeEach(() => {
+      document.body.innerHTML = '';
+      getApiMock.mockReset();
+      getApiMock.mockReturnValue(null);
+    });
+
+    function anonReceipt(id: string, bolt11: string) {
+      return {
+        id,
+        kind: 9735,
+        pubkey: 'd'.repeat(64),
+        tags: [
+          ['bolt11', bolt11],
+          ['p', 'e'.repeat(64)],
+          [
+            'description',
+            JSON.stringify({
+              pubkey: 'eph'.padEnd(64, '0'),
+              content: '',
+              tags: [['anon', '']],
+            }),
+          ],
+        ],
+        content: '',
+      } as never;
+    }
+
+    function menuValues(root: HTMLElement): string[] {
+      return Array.from(
+        root.querySelectorAll('.zap-menu .custom-dropdown__item')
+      ).map(el => el.getAttribute('data-value') ?? '');
+    }
+
+    it('identifiable receipt pill: menu with React + Reply options, pill inside trigger', async () => {
+      const list = new ZapsList([receipt('r1', 'lnbc50m1a')]);
+      document.body.appendChild(list.getElement());
+      await vi.waitFor(() => {
+        expect(
+          list.getElement().querySelector('.zap-menu .custom-dropdown__item')
+        ).not.toBeNull();
+      });
+
+      expect(menuValues(list.getElement())).toEqual(['react', 'reply']);
+      // The pill is the trigger content
+      const trigger = list
+        .getElement()
+        .querySelector('.custom-dropdown__trigger')!;
+      expect(trigger.querySelector('.zaps-list__badge--menu')).not.toBeNull();
+      expect(trigger.querySelector('.zaps-list__amount')!.textContent).toBe(
+        '5,000,000'
+      );
+    });
+
+    it('anonymous receipt pill: menu with only the React option', async () => {
+      const list = new ZapsList([anonReceipt('r1', 'lnbc50m1a')]);
+      document.body.appendChild(list.getElement());
+      await vi.waitFor(() => {
+        expect(
+          list.getElement().querySelector('.zap-menu .custom-dropdown__item')
+        ).not.toBeNull();
+      });
+
+      expect(menuValues(list.getElement())).toEqual(['react']);
     });
   });
 
