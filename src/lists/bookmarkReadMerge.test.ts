@@ -39,6 +39,22 @@ describe('mergeBookmarkReadMaps', () => {
       remote
     );
   });
+
+  it('equal timestamps stay equal (max is stable)', () => {
+    const local: BookmarkReadMap = { a: 300 };
+    const remote: BookmarkReadMap = { a: 300 };
+    expect(mergeBookmarkReadMaps(local, remote, new Set(['a']))).toEqual({
+      a: 300,
+    });
+  });
+
+  it('never resurrects unread: remote marker cannot beat a newer local one', () => {
+    const local: BookmarkReadMap = { a: 500 };
+    const remote: BookmarkReadMap = { a: 100 };
+    expect(mergeBookmarkReadMaps(local, remote, new Set(['a']))).toEqual({
+      a: 500,
+    });
+  });
 });
 
 describe('pruneReadMap', () => {
