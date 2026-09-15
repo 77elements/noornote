@@ -1,5 +1,5 @@
-# NoorNote 1.5.4
+# NoorNote 1.5.5
 
-**Prayer reminders clean up after themselves** — prayer notifications vanish 10 min after the prayer time, holiday reminders after 3 hours, on all platforms. No more notification pile-ups on your phone.
+**React and reply to zaps** — zap receipts now show their own reaction line, and the zap pill opens a menu: react with any emoji (❤️) or reply to the zapper. Zap-reaction notifications link straight to the zapped note.
 
-**Taken-back interactions disappear for real** — if an author deletes a like, repost, quote, reply or zap, it is now removed from your stats, timelines and likes lists too. Own likes show up instantly in the likes list.
+**Web updates announce themselves** — when a new version is live on noornote.app, a notice with a reload button appears in the sidebar.
