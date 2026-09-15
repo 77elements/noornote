@@ -278,10 +278,14 @@ export class ZapsList {
           : `React to or reply to ${zap.username}'s zap`;
 
         const options = zap.isAnonymous
-          ? [{ value: 'react', label: 'React to Zap' }]
+          ? [{ value: 'react', label: '❤️ React to Zap' }]
           : [
-              { value: 'react', label: 'React to Zap' },
-              { value: 'reply', label: 'Reply to Zap' },
+              { value: 'react', label: '❤️ React to Zap' },
+              {
+                value: 'reply',
+                label:
+                  '<svg width="14" height="14" style="display: inline;"><use href="#icon-reply"/></svg> Reply to Zap',
+              },
             ];
         const dd = new CustomDropdown({
           options,

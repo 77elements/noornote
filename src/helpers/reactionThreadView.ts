@@ -223,8 +223,11 @@ export function buildEmojiMenu(
 ): HTMLElement {
   const dd = new CustomDropdown({
     options: [
-      { value: 'same', label: 'Add the same emoji' },
-      { value: 'to', label: 'React to this reaction' },
+      {
+        value: 'same',
+        label: `${emojiHtml} Add the same emoji`,
+      },
+      { value: 'to', label: '❤️ React to this reaction' },
     ],
     selectedValue: '',
     className: 'reaction-menu',
