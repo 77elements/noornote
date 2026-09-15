@@ -1694,10 +1694,8 @@ export class MuteListView extends View {
         '../services/orchestration/NotificationsOrchestrator'
       );
 
-      await Promise.all([
-        FeedOrchestrator.getInstance().refreshMutedUsers(),
-        NotificationsOrchestrator.getInstance().refreshMutedUsers(),
-      ]);
+      FeedOrchestrator.getInstance().refreshMutedUsers();
+      NotificationsOrchestrator.getInstance().refreshMutedUsers();
 
       TypedEventBus.getInstance().emit('mute:updated');
     } catch {
@@ -2196,10 +2194,8 @@ export class MuteListManager {
         '../services/orchestration/NotificationsOrchestrator'
       );
 
-      await Promise.all([
-        FeedOrchestrator.getInstance().refreshMutedUsers(),
-        NotificationsOrchestrator.getInstance().refreshMutedUsers(),
-      ]);
+      FeedOrchestrator.getInstance().refreshMutedUsers();
+      NotificationsOrchestrator.getInstance().refreshMutedUsers();
 
       this.eventBus.emit('mute:updated');
     } catch (error) {

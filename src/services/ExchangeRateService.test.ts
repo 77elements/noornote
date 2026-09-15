@@ -46,7 +46,7 @@ describe('ExchangeRateService — Kraken-first source cascade', () => {
     const Service = await freshService();
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (input: RequestInfo | URL) => {
+      vi.fn(async (input: string | URL) => {
         const url = String(input);
         calls.push(url);
         if (url.includes('api.kraken.com'))
@@ -64,7 +64,7 @@ describe('ExchangeRateService — Kraken-first source cascade', () => {
     const Service = await freshService();
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (input: RequestInfo | URL) => {
+      vi.fn(async (input: string | URL) => {
         const url = String(input);
         calls.push(url);
         if (url.includes('api.kraken.com'))
@@ -82,7 +82,7 @@ describe('ExchangeRateService — Kraken-first source cascade', () => {
     const Service = await freshService();
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (input: RequestInfo | URL) => {
+      vi.fn(async (input: string | URL) => {
         const url = String(input);
         calls.push(url);
         if (url.includes('api.kraken.com'))
@@ -110,7 +110,7 @@ describe('ExchangeRateService — Kraken-first source cascade', () => {
     const Service = await freshService();
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (input: RequestInfo | URL) => {
+      vi.fn(async (input: string | URL) => {
         const url = String(input);
         calls.push(url);
         if (url.includes('api.kraken.com'))
@@ -129,7 +129,7 @@ describe('ExchangeRateService — Kraken-first source cascade', () => {
     const krakenRates = [67777.8, 68000];
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (input: RequestInfo | URL) => {
+      vi.fn(async (input: string | URL) => {
         const url = String(input);
         calls.push(url);
         if (url.includes('api.kraken.com')) {

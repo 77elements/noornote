@@ -23,6 +23,7 @@ import {
   type NDKRpcResponse,
 } from '@nostr-dev-kit/ndk';
 import { SystemLogger } from '../SystemLogger';
+import { errMessage } from '../../helpers/errorMessage';
 import type { SignableEvent } from '../AuthService';
 
 export const NIP46_STORAGE_KEY = 'noornote_nip46_payload';
@@ -252,7 +253,7 @@ export abstract class Nip46BaseManager {
         },
         err => {
           clearTimeout(timeout);
-          reject(err);
+          reject(err instanceof Error ? err : new Error(errMessage(err)));
         }
       );
     });

@@ -23,7 +23,13 @@ module.exports = {
     'prettier/prettier': 'error',
 
     // TypeScript specific rules
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    // caughtErrors: 'none' restores the v6 default — v8 changed the default to
+    // 'all' and flagged 27 unused catch params (`catch (error) { /* ignore */ }`)
+    // in one sweep. Deliberate: silent catch-and-ignore stays legal.
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      { argsIgnorePattern: '^_', caughtErrors: 'none' },
+    ],
     // OFF (2026-08-22, user decision): 695 warnings of pure style; retrofitting
     // return types across the codebase has no safety value. Re-enable only if
     // the codebase is typed strictly enough that violations are rare.

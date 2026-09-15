@@ -442,10 +442,12 @@ export class DMStore {
               resolve(result);
             };
 
-            request.onerror = () => reject(request.error);
+            request.onerror = () =>
+              reject(request.error ?? new Error('IndexedDB request failed'));
           };
 
-          convRequest.onerror = () => reject(convRequest.error);
+          convRequest.onerror = () =>
+            reject(convRequest.error ?? new Error('IndexedDB request failed'));
         })
     );
   }
@@ -500,7 +502,8 @@ export class DMStore {
             cursor.continue();
           };
 
-          request.onerror = () => reject(request.error);
+          request.onerror = () =>
+            reject(request.error ?? new Error('IndexedDB request failed'));
         })
     );
   }
@@ -547,7 +550,8 @@ export class DMStore {
             resolve();
           };
 
-          request.onerror = () => reject(request.error);
+          request.onerror = () =>
+            reject(request.error ?? new Error('IndexedDB request failed'));
         })
     );
   }
@@ -701,7 +705,8 @@ export class DMStore {
             resolve();
           };
 
-          request.onerror = () => reject(request.error);
+          request.onerror = () =>
+            reject(request.error ?? new Error('IndexedDB request failed'));
         })
     );
   }
@@ -734,7 +739,8 @@ export class DMStore {
               resolve();
             }
           };
-          cursorReq.onerror = () => reject(cursorReq.error);
+          cursorReq.onerror = () =>
+            reject(cursorReq.error ?? new Error('IndexedDB request failed'));
         })
     );
   }
@@ -798,7 +804,8 @@ export class DMStore {
             }
           };
 
-          request.onerror = () => reject(request.error);
+          request.onerror = () =>
+            reject(request.error ?? new Error('IndexedDB request failed'));
         })
     );
   }
@@ -827,7 +834,8 @@ export class DMStore {
         new Promise<unknown>((resolve, reject) => {
           const request = store.index('wrapId').get(wrapId);
           request.onsuccess = () => resolve(request.result);
-          request.onerror = () => reject(request.error);
+          request.onerror = () =>
+            reject(request.error ?? new Error('IndexedDB request failed'));
         })
     );
     return !!existing;
@@ -856,7 +864,8 @@ export class DMStore {
             }
           };
 
-          request.onerror = () => reject(request.error);
+          request.onerror = () =>
+            reject(request.error ?? new Error('IndexedDB request failed'));
         })
     );
   }
@@ -987,7 +996,8 @@ export class DMStore {
             resolve();
           };
 
-          req.onerror = () => reject(req.error);
+          req.onerror = () =>
+            reject(req.error ?? new Error('IndexedDB request failed'));
         })
     );
   }
@@ -1038,7 +1048,8 @@ export class DMStore {
             resolve();
           };
 
-          req.onerror = () => reject(req.error);
+          req.onerror = () =>
+            reject(req.error ?? new Error('IndexedDB request failed'));
         })
     );
   }
@@ -1081,7 +1092,8 @@ export class DMStore {
             }
           };
 
-          cursorReq.onerror = () => reject(cursorReq.error);
+          cursorReq.onerror = () =>
+            reject(cursorReq.error ?? new Error('IndexedDB request failed'));
         })
     );
 
@@ -1140,7 +1152,8 @@ export class DMStore {
             }
           };
 
-          cursorReq.onerror = () => reject(cursorReq.error);
+          cursorReq.onerror = () =>
+            reject(cursorReq.error ?? new Error('IndexedDB request failed'));
         })
     );
 
@@ -1194,7 +1207,8 @@ export class DMStore {
               resolve(latest);
             }
           };
-          cursorReq.onerror = () => reject(cursorReq.error);
+          cursorReq.onerror = () =>
+            reject(cursorReq.error ?? new Error('IndexedDB request failed'));
         })
     );
 
@@ -1226,7 +1240,8 @@ export class DMStore {
             resolve();
           };
 
-          req.onerror = () => reject(req.error);
+          req.onerror = () =>
+            reject(req.error ?? new Error('IndexedDB request failed'));
         })
     );
   }

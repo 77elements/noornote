@@ -54,7 +54,7 @@ import { WalletBalanceDisplay } from './WalletBalanceDisplay';
 function stubFetch(): void {
   vi.stubGlobal(
     'fetch',
-    vi.fn(async (input: RequestInfo | URL) => {
+    vi.fn(async (input: string | URL) => {
       const url = String(input);
       if (url.includes('api.coingecko.com')) {
         return new Response('rate limited', { status: 429 });

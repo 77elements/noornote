@@ -139,7 +139,7 @@ export class ArmadaRelayClient {
                     content: '',
                     tags: [
                       ['relay', relayUrl],
-                      ['challenge', String(data[1] ?? '')],
+                      ['challenge', typeof data[1] === 'string' ? data[1] : ''],
                     ],
                   },
                   gk.sk
@@ -158,7 +158,7 @@ export class ArmadaRelayClient {
                   content: '',
                   tags: [
                     ['relay', relayUrl],
-                    ['challenge', String(data[1] ?? '')],
+                    ['challenge', typeof data[1] === 'string' ? data[1] : ''],
                   ],
                 })) as NostrEvent;
                 ws?.send(JSON.stringify(['AUTH', userAuth]));

@@ -88,7 +88,7 @@ export class PollRenderer {
       ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
     (
       singleNoteApi?.fetchPollResults(eventId, pollOptions) ??
-      Promise.reject('Module not loaded')
+      Promise.reject(new Error('Module not loaded'))
     )
       .then(results => PollRenderer.applyResults(pollContainer, results))
       .catch(error => {

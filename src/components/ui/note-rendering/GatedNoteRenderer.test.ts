@@ -215,6 +215,7 @@ describe('Gated premium note rendering (fanfares)', () => {
 
   it('quote card click opens fanfares.io (external unlock)', async () => {
     const openMock = vi.fn();
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- saving the native method to restore after the test
     const originalOpen = window.open;
     window.open = openMock as never;
     try {

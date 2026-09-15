@@ -8,7 +8,7 @@
  * duplicated one-liner in the codebase.
  */
 export function errMessage(error: unknown): string {
-  return errMessage(error);
+  return error instanceof Error ? error.message : String(error);
 }
 
 /** Shorten a hex pubkey for log/diagnostic display ("abcdef12…"). */

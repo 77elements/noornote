@@ -51,7 +51,7 @@ import './services/AuthStateManager'; // Initialize AuthStateManager and window.
 // MutualChangeService: only load if Extended Follows addon is enabled
 import { isExtendedFollowsEnabled } from './addons/extended-follows/index';
 if (isExtendedFollowsEnabled()) {
-  import('./services/MutualChangeService');
+  void import('./services/MutualChangeService');
 }
 import './services/AppBadgeService'; // Initialize AppBadgeService (browser tab + dock badge)
 

@@ -38,7 +38,7 @@ export interface ZapPendingState {
   anonymous?: boolean;
 }
 
-interface ZapPendingEntry extends ZapPendingState {}
+type ZapPendingEntry = ZapPendingState;
 
 export interface ZapRequest {
   noteId?: string;

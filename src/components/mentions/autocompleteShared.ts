@@ -44,7 +44,9 @@ export function measureCursorCoordinates(
     'border',
     'boxSizing',
   ].forEach(prop => {
-    const value = computedStyle[prop as keyof CSSStyleDeclaration];
+    const value = (
+      computedStyle as unknown as Record<string, string | undefined>
+    )[prop as string];
     if (value !== undefined) {
       mirror.style.setProperty(prop, value as string);
     }

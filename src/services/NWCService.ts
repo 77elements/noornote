@@ -26,6 +26,7 @@ import { ToastService } from './ToastService';
 import { KeychainStorage } from './KeychainStorage';
 import { AuthService } from './AuthService';
 import { TypedEventBus } from '../core/TypedEventBus';
+import { errMessage } from '../helpers/errorMessage';
 import { SignatureVerificationService } from './security/SignatureVerificationService';
 
 export type NWCConnectionState =
@@ -227,7 +228,7 @@ export class NWCService {
 
       ws.onerror = error => {
         clearTimeout(timeout);
-        reject(new Error(`WebSocket connection error: ${String(error)}`));
+        reject(new Error(`WebSocket connection error: ${errMessage(error)}`));
       };
     });
   }

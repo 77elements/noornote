@@ -123,7 +123,7 @@ class ProfileStore {
             req.onsuccess = () => {
               const cursor = req.result;
               if (cursor) {
-                acc.set(String(cursor.key), cursor.value as PersistedProfile);
+                acc.set(cursor.key as string, cursor.value as PersistedProfile);
                 cursor.continue();
               } else {
                 resolve(acc);
