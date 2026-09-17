@@ -12,11 +12,15 @@
 }
 
 .calendar-addon__toolbar {
+  padding-bottom: $gap;
+}
+
+.calendar-addon__toolbar-nav {
   display: flex;
+  justify-content: center;
   align-items: center;
   gap: calc($gap / 2);
-  flex-wrap: wrap;
-  padding-bottom: $gap;
+  margin-bottom: $gap;
 }
 
 .calendar-addon__nav {
@@ -28,11 +32,14 @@
 .calendar-addon__range {
   font-weight: 600;
   color: var(--color-5);
-  min-width: 12ch;
 }
 
 .calendar-addon__tabs {
-  margin-left: auto;
+  margin-bottom: $gap;
+}
+
+.calendar-addon__toolbar-actions .btn + .btn {
+  margin-left: calc($gap / 2);
 }
 
 .calendar-addon__loading,
@@ -287,4 +294,47 @@
 
 .calendar-addon-editor__actions {
   padding-top: $gap;
+}
+
+/* --- Event calendars management (phase 2.5) --- */
+
+.calendar-collections__new {
+  padding-bottom: calc($gap / 2);
+}
+
+.calendar-collections__empty {
+  color: var(--color-3);
+  padding: calc($gap / 2) 0;
+}
+
+.calendar-collections__row {
+  display: flex;
+  align-items: center;
+  gap: calc($gap / 2);
+}
+
+.calendar-collections__title {
+  @include text-truncate;
+
+  color: var(--color-5);
+  font-weight: 500;
+}
+
+.calendar-collections__meta {
+  color: var(--color-3);
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+.calendar-collections__pick {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: calc($gap / 2);
+  cursor: pointer;
+}
+
+.calendar-collections__pick-list {
+  max-height: calc($gap * 16);
+  overflow-y: auto;
 }

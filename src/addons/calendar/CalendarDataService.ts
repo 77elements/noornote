@@ -211,6 +211,21 @@ export class CalendarDataService {
     });
   }
 
+  /** Drop one collection from the per-account cache (after a delete publish). */
+  public removeCollectionFromCache(coordinate: string): void {
+    const cache = this.readCache();
+    if (!cache) return;
+    const before = cache.collections.length;
+    cache.collections = cache.collections.filter(
+      col => col.coordinate !== coordinate
+    );
+    if (cache.collections.length === before) return;
+    this.writeCache(cache);
+    diagLog('system', 'calendar: collection removed from cache', {
+      coordinate: coordinate.slice(0, 40),
+    });
+  }
+
   // ---------- collection subscriptions (phase 2.5) ----------
 
   /**

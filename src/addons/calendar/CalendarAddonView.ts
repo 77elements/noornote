@@ -56,7 +56,7 @@ export class CalendarAddonView extends View {
         <div class="setting">
           <span class="setting__label">Enable Calendar</span>
           <div class="setting__control">${this.enableSwitch.render()}</div>
-          <p class="setting__desc">NIP-52 calendar for Nostr: month, week and list views over your public events (kinds 31922/31923), calendar collections (kind 31924) and RSVPs (kind 31925). Private encrypted events are planned.</p>
+          <p class="setting__desc">Your personal calendar on Nostr: keep your own appointments in month, week and list views, subscribe to public event calendars you're interested in, and add private events that only you can see. With reminders — and when you join someone's event, you can let them know you're coming.</p>
         </div>
         <div class="setting">
           <span class="setting__label">Remind me before events start</span>

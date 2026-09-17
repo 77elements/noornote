@@ -186,18 +186,23 @@ export class CalendarGridView {
     const toolbar = document.createElement('div');
     toolbar.className = 'calendar-addon__toolbar';
     toolbar.innerHTML = `
-      <div class="calendar-addon__nav">
-        <button class="btn-icon" type="button" data-action="prev" aria-label="Previous">‹</button>
-        <button class="btn btn--passive btn--mini" type="button" data-action="today">Today</button>
-        <button class="btn-icon" type="button" data-action="next" aria-label="Next">›</button>
+      <div class="calendar-addon__toolbar-nav">
+        <div class="calendar-addon__nav">
+          <button class="btn-icon" type="button" data-action="prev" aria-label="Previous">‹</button>
+          <button class="btn btn--passive btn--mini" type="button" data-action="today">Today</button>
+          <button class="btn-icon" type="button" data-action="next" aria-label="Next">›</button>
+        </div>
+        <span class="calendar-addon__range">${escapeHtml(this.rangeLabel())}</span>
       </div>
-      <span class="calendar-addon__range">${escapeHtml(this.rangeLabel())}</span>
       <div class="tabs calendar-addon__tabs">
         <button class="tab${this.mode === 'month' ? ' tab--active' : ''}" data-tab="month" type="button">Month</button>
         <button class="tab${this.mode === 'week' ? ' tab--active' : ''}" data-tab="week" type="button">Week</button>
         <button class="tab${this.mode === 'list' ? ' tab--active' : ''}" data-tab="list" type="button">List</button>
       </div>
-      <button class="btn btn--mini" type="button" data-action="new">+ New Event</button>
+      <div class="l-row--right calendar-addon__toolbar-actions">
+        <button class="btn btn--passive btn--mini" type="button" data-action="calendars">Calendars</button>
+        <button class="btn btn--mini" type="button" data-action="new">+ New Event</button>
+      </div>
     `;
     this.container.appendChild(toolbar);
 
@@ -212,6 +217,11 @@ export class CalendarGridView {
       ?.addEventListener('click', () => {
         this.anchorDate = this.startOfDay(new Date());
         this.render();
+      });
+    toolbar
+      .querySelector('[data-action="calendars"]')
+      ?.addEventListener('click', () => {
+        void this.openCollections();
       });
     toolbar
       .querySelector('[data-action="new"]')
@@ -289,7 +299,7 @@ export class CalendarGridView {
       const empty = document.createElement('div');
       empty.className = 'calendar-addon__empty';
       empty.textContent =
-        'No calendar events yet. Create one, or open a public calendar collection to fill your grid.';
+        'No events yet. Create one — or find a public event calendar and hit Subscribe to fill your grid.';
       target.appendChild(empty);
     }
   }
@@ -410,6 +420,14 @@ export class CalendarGridView {
   private async openEditor(): Promise<void> {
     const { CalendarEventEditor } = await import('./CalendarEventEditor');
     new CalendarEventEditor(() => void this.load()).open();
+  }
+
+  private openCollections(): void {
+    void import('./CalendarCollectionsModal').then(
+      ({ CalendarCollectionsModal }) => {
+        new CalendarCollectionsModal(() => void this.load()).open();
+      }
+    );
   }
 
   // ---------- range helpers ----------

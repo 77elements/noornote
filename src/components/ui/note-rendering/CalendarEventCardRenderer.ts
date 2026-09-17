@@ -128,7 +128,7 @@ export class CalendarEventCardRenderer {
     const body = `
       <div class="nn-card__content">
         <h3>${escapeHtml(parsed?.title || 'Calendar')}</h3>
-        <div class="meta">Calendar · ${parsed?.eventRefs.length ?? 0} events</div>
+        <div class="meta">Event calendar · ${parsed?.eventRefs.length ?? 0} events</div>
         ${
           isOwn || !coordinate
             ? ''

@@ -20,7 +20,10 @@ import {
   type RecurrenceFrequency,
 } from '../../helpers/nip52/recurrence';
 import {
+  buildCalendarCoordinate,
   calendarEventToTags,
+  CALENDAR_COLLECTION_KIND,
+  type CalendarCollectionData,
   type CalendarEventData,
 } from '../../helpers/nip52/parser';
 
@@ -148,6 +151,33 @@ export class CalendarPublishService {
    * all settings relays + the background broadcast to 1000+ relays.
    */
   public async deleteEvent(event: CalendarEventData): Promise<boolean> {
+    return this.publishDeletion(event.coordinate, event.kind, event.title);
+  }
+
+  /** Delete an own public calendar collection (kind 31924). */
+  public async deleteCollection(
+    collection: CalendarCollectionData
+  ): Promise<boolean> {
+    const ok = await this.publishDeletion(
+      collection.coordinate,
+      CALENDAR_COLLECTION_KIND,
+      collection.title
+    );
+    if (ok) {
+      const { CalendarDataService } = await import('./CalendarDataService');
+      CalendarDataService.getInstance().removeCollectionFromCache(
+        collection.coordinate
+      );
+    }
+    return ok;
+  }
+
+  /** Shared NIP-09 deletion: targeted calendar-relay publish + breadth pass. */
+  private async publishDeletion(
+    coordinate: string,
+    kind: number,
+    title: string
+  ): Promise<boolean> {
     const user = this.auth.getCurrentUser();
     if (!user) throw new Error('Not logged in');
 
@@ -155,10 +185,10 @@ export class CalendarPublishService {
       kind: 5,
       created_at: Math.floor(Date.now() / 1000),
       tags: [
-        ['a', event.coordinate],
-        ['k', String(event.kind)],
+        ['a', coordinate],
+        ['k', String(kind)],
       ],
-      content: `Deleted calendar event "${event.title}"`,
+      content: `Deleted calendar item "${title}"`,
       pubkey: user.pubkey,
     };
     const signed = await this.auth.signEvent(unsigned);
@@ -169,27 +199,77 @@ export class CalendarPublishService {
 
     // Breadth pass (settings relays + 1000+ background broadcast). The
     // own-relay publish above already guarantees the delete lands where the
-    // event lives.
+    // item lives.
     try {
       const posts = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
       void posts?.deleteByCoordinates(
-        [event.coordinate],
-        `Deleted calendar event "${event.title}"`
+        [coordinate],
+        `Deleted calendar item "${title}"`
       );
     } catch {
       // Breadth pass is best-effort.
     }
 
-    // Remove from the local cache immediately so the grid is clean even if
-    // relays are slow to serve the deletion back.
-    const { CalendarDataService } = await import('./CalendarDataService');
-    CalendarDataService.getInstance().removeEventFromCache(event.coordinate);
-
-    diagLog('system', 'calendar: event deleted', {
-      dTag: event.dTag,
+    diagLog('system', 'calendar: item deleted', {
+      coordinate: coordinate.slice(0, 40),
       acceptedRelays: accepted.size,
     });
     return accepted.size > 0;
+  }
+
+  /**
+   * Publish (create or update) an own public calendar collection (kind 31924).
+   * eventRefs are coordinates of public calendar events. Private events must
+   * never be referenced — their coordinates would leak metadata publicly.
+   */
+  public async publishCollection(draft: {
+    dTag: string;
+    title: string;
+    description: string;
+    eventRefs: string[];
+  }): Promise<CalendarCollectionData> {
+    const user = this.auth.getCurrentUser();
+    if (!user) throw new Error('Not logged in');
+    if (!draft.title.trim()) throw new Error('Title is required');
+
+    const unsigned = {
+      kind: CALENDAR_COLLECTION_KIND,
+      created_at: Math.floor(Date.now() / 1000),
+      tags: [
+        ['d', draft.dTag],
+        ['title', draft.title.trim()],
+        ...draft.eventRefs.map(ref => ['a', ref] as string[]),
+      ],
+      content: draft.description.trim(),
+      pubkey: user.pubkey,
+    };
+    const signed = await this.auth.signEvent(unsigned);
+    if (!signed) throw new Error('Signing failed');
+
+    await this.transport.publishWithOutbox(signed, {
+      authorPubkeys: [user.pubkey],
+    });
+
+    const coordinate = buildCalendarCoordinate(
+      CALENDAR_COLLECTION_KIND,
+      user.pubkey,
+      draft.dTag
+    );
+    diagLog('system', 'calendar: collection published', {
+      dTag: draft.dTag,
+      events: draft.eventRefs.length,
+    });
+
+    return {
+      coordinate,
+      eventId: signed.id ?? '',
+      pubkey: user.pubkey,
+      dTag: draft.dTag,
+      title: draft.title.trim(),
+      description: draft.description.trim(),
+      eventRefs: draft.eventRefs,
+      createdAt: unsigned.created_at,
+    };
   }
 
   /** Publish the current user's RSVP (kind 31925) for an event. */
