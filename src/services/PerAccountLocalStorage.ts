@@ -218,6 +218,12 @@ export const StorageKeys = {
   BADGES_ENABLED: 'noornote_badges_enabled_map',
   BULK_DELETE_ENABLED: 'noornote_bulk_delete_enabled_map',
   NOTE_TAKING_ENABLED: 'noornote_note_taking_enabled_map',
+  CALENDAR_ENABLED: 'noornote_calendar_enabled_map',
+  // Calendar addon cache — { version, events, collections } (NIP-52 own data).
+  CALENDAR_CACHE: 'noornote_calendar_cache_map',
+  // Calendar invites (3b): wrap event ids dismissed locally (deletion may be
+  // impossible without the wrap's signing key).
+  CALENDAR_DISMISSED_INVITES: 'noornote_calendar_dismissed_invites_map',
   // Note taking deletion tombstones — Record<noteUuid, deletionTimestampSec>.
   // Prevents a GC'd kind:5 from resurrecting a deleted note on next fetch.
   NOTE_TAKING_TOMBSTONES: 'noornote_note_taking_tombstones_map',

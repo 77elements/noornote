@@ -1,4 +1,5 @@
 import type { DMConversation, DMMessage } from '../../services/dm/DMStore';
+import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 export interface DMsModuleApi {
   getUnreadCount(): Promise<number>;
@@ -59,4 +60,18 @@ export interface DMsModuleApi {
   loadOlderMessages(): Promise<{ fetched: number; reachedEnd: boolean }>;
   start(): Promise<void>;
   stop(): void;
+  /**
+   * Shared NIP-59 primitive (calendar private-event invitations): builds the
+   * seal+wrap for a kind-14 rumor, injects the ephemeral `signing_nsec` into
+   * the encrypted rumor and delivers the wrap to the recipient's inbox relays.
+   * Returns the signing key (nsec) so the caller can hand delete-capability
+   * to the recipient via the rumor.
+   */
+  deliverGiftWrap(
+    rumor: NostrEvent,
+    recipientPubkey: string,
+    extraTags?: string[][]
+  ): Promise<{ signingNsec: string } | null>;
+  /** Unwrap a NIP-59 gift wrap from any producer (anti-spoof checked). */
+  unwrapGiftWrapEvent(wrapEvent: NostrEvent): Promise<NostrEvent | null>;
 }

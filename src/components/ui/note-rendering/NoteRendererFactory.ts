@@ -19,6 +19,7 @@ import { EmojiPackRenderer } from './EmojiPackRenderer';
 import { LiveStreamRenderer } from './LiveStreamRenderer';
 import { ListingRenderer } from './ListingRenderer';
 import { GatedNoteRenderer } from './GatedNoteRenderer';
+import { CalendarEventCardRenderer } from './CalendarEventCardRenderer';
 
 export class NoteRendererFactory {
   /**
@@ -53,6 +54,10 @@ export class NoteRendererFactory {
         return LiveStreamRenderer.render(note, options);
       case 'listing':
         return ListingRenderer.render(note, options);
+      case 'calendar-event':
+        return CalendarEventCardRenderer.render(note, options);
+      case 'calendar-collection':
+        return CalendarEventCardRenderer.renderCollection(note, options);
       default:
         return OriginalNoteRenderer.render(note, options);
     }

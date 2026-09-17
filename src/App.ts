@@ -606,6 +606,13 @@ export class App {
       true
     );
     this.registerRoute(
+      '/addons/calendar',
+      'addon-calendar',
+      'addon-calendar',
+      'adv',
+      true
+    );
+    this.registerRoute(
       '/addons/profile-recognition',
       'addon-profile-recognition',
       'addon-profile-recognition',

@@ -3571,6 +3571,18 @@ export class BookmarkCard {
         event.tags.find(t => t[0] === 'title')?.[1] || 'Untitled Listing';
       return `Listing: ${title}`;
     }
+    if (event.kind === 31923 || event.kind === 31922) {
+      const title =
+        event.tags.find(t => t[0] === 'title')?.[1] ||
+        event.tags.find(t => t[0] === 'name')?.[1] ||
+        'Untitled';
+      return `Calendar Event: ${title}`;
+    }
+    if (event.kind === 31924) {
+      const title =
+        event.tags.find(t => t[0] === 'title')?.[1] || 'Untitled Calendar';
+      return `Calendar: ${title}`;
+    }
     if (event.kind === 20) {
       const s = this.getTextSnippet(event.content, 100);
       return s === '(No text content)' ? 'Picture' : s;

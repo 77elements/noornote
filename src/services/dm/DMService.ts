@@ -40,6 +40,8 @@ import {
   generateSecretKey,
   getPublicKey,
   calculateEventHash,
+  encodeNsec,
+  hexToBytes,
 } from '../../services/NostrToolsAdapter';
 
 type InboxRelayCacheEntry = { relays: string[]; fetchedAt: number };
@@ -1471,8 +1473,103 @@ export class DMService {
     recipientPubkey: string,
     expiresAt?: number
   ): Promise<NostrEvent | null> {
+    const built = await this.buildGiftWrap(
+      rumor,
+      recipientPubkey,
+      expiresAt === undefined ? {} : { expiresAt }
+    );
+    return built?.wrap ?? null;
+  }
+
+  /**
+   * Deliver a gift wrap to a recipient's inbox (shared primitive).
+   *
+   * Generalized NIP-59 delivery for non-DM payloads that ride the same
+   * rumor→seal→wrap scheme — currently the calendar addon's private-event
+   * invitations (kind 14 rumor carrying the event ref + view key, wrap
+   * classified via an extra `["k", "1052"]` tag). The DM path (sendMessage)
+   * keeps using createGiftWrap + its own publish flow.
+   *
+   * @returns the ephemeral wrap-signing key (hex) so the RECIPIENT can later
+   * NIP-09-delete the wrap (Form*-style `signing_nsec`), or null on failure.
+   */
+  public async deliverGiftWrap(
+    rumor: NostrEvent,
+    recipientPubkey: string,
+    extraTags: string[][] = []
+  ): Promise<{ signingNsec: string } | null> {
+    // Form*-style invitations: the ephemeral wrap-signing key rides INSIDE
+    // the encrypted rumor (`signing_nsec` tag) so the recipient can
+    // NIP-09-delete the wrap on dismiss. Generate the key first, inject it,
+    // then hash the rumor (its id covers the tag).
+    const ephemeralSecretKey = generateSecretKey();
+    const ephemeralHex = Array.from(ephemeralSecretKey)
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    const signingNsec = encodeNsec(ephemeralHex);
+
+    let finalRumor = rumor;
+    if (!rumor.tags.some(tag => tag[0] === 'signing_nsec')) {
+      const rumorWithKey = {
+        kind: rumor.kind ?? KIND_PRIVATE_MESSAGE,
+        pubkey: rumor.pubkey,
+        created_at: rumor.created_at,
+        content: rumor.content,
+        tags: [...rumor.tags, ['signing_nsec', signingNsec]],
+      };
+      finalRumor = {
+        ...rumorWithKey,
+        id: calculateEventHash(rumorWithKey),
+      };
+    }
+
+    const built = await this.buildGiftWrap(finalRumor, recipientPubkey, {
+      extraTags,
+      ephemeralHex,
+    });
+    if (!built) return null;
+
+    const relays = await this.getUserInboxRelays(recipientPubkey);
+    try {
+      await this.transport.publishToInbox(built.wrap, relays, 1);
+    } catch (error) {
+      diagLog('dms', 'Gift wrap delivery failed', {
+        to: recipientPubkey.slice(0, 8),
+        error: errMessage(error),
+      });
+      return null;
+    }
+    return { signingNsec: built.signingNsec };
+  }
+
+  /**
+   * Unwrap a gift wrap received from ANY producer (DM or calendar invite):
+   * NIP-44-decrypts wrap→seal→rumor with anti-spoofing checks. The rumor is
+   * kind 14 in both cases (NIP-17 chat message / calendar invite rumor).
+   */
+  public async unwrapGiftWrapEvent(
+    wrapEvent: NostrEvent
+  ): Promise<NostrEvent | null> {
+    return this.unwrapGiftWrap(wrapEvent);
+  }
+
+  /**
+   * Shared rumor→seal→wrap builder behind createGiftWrap (DM path) and
+   * deliverGiftWrap (calendar invites).
+   */
+  private async buildGiftWrap(
+    rumor: NostrEvent,
+    recipientPubkey: string,
+    opts: {
+      expiresAt?: number;
+      extraTags?: string[][];
+      ephemeralHex?: string;
+    } = {}
+  ): Promise<{ wrap: NostrEvent; signingNsec: string } | null> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) return null;
+    const expiresAt = opts.expiresAt;
+    const extraTags = opts.extraTags ?? [];
 
     try {
       // Step 1: Create seal (encrypt rumor, sign with sender's key)
@@ -1496,7 +1593,9 @@ export class DMService {
       const signedSeal = await this.authService.signEvent(unsignedSeal);
 
       // Step 2: Create gift wrap (encrypt seal with ephemeral key)
-      const ephemeralSecretKey = generateSecretKey();
+      const ephemeralSecretKey = opts.ephemeralHex
+        ? hexToBytes(opts.ephemeralHex)
+        : generateSecretKey();
       const ephemeralPubkey = getPublicKey(ephemeralSecretKey);
       // Convert Uint8Array to hex string (browser-compatible, no Buffer)
       const ephemeralHex = Array.from(ephemeralSecretKey)
@@ -1524,6 +1623,7 @@ export class DMService {
       if (typeof expiresAt === 'number') {
         wrapTags.push(['expiration', String(expiresAt)]);
       }
+      wrapTags.push(...extraTags);
       const unsignedWrap = {
         kind: KIND_GIFT_WRAP,
         pubkey: ephemeralPubkey,
@@ -1536,7 +1636,10 @@ export class DMService {
       const wrapEvent = new NDKEvent(ndk, unsignedWrap);
       await wrapEvent.sign(ephemeralSigner);
 
-      return wrapEvent.rawEvent();
+      // The ephemeral signing key rides INSIDE the encrypted rumor so the
+      // recipient can NIP-09-delete the wrap later (Form*-style
+      // `signing_nsec` — see the calendar invite flow).
+      return { wrap: wrapEvent.rawEvent(), signingNsec: ephemeralHex };
     } catch (error) {
       const errorMsg = errMessage(error);
       diagLog('dms', 'Gift wrap creation failed', { error: errorMsg });

@@ -207,6 +207,12 @@ export class QuotedNoteRenderer {
       void this.renderFollowPackPreview(naddrRef, container);
       return;
     }
+    // NIP-52 calendar event/collection (31922/31923/31924) → fetch + render
+    // via the calendar card pipeline.
+    if (kind === 31922 || kind === 31923 || kind === 31924) {
+      void this.renderCalendarPreview(naddrRef, container);
+      return;
+    }
     // Article / Zapstore app / live stream → article-preview renderer.
     if (kind !== undefined && ARTICLE_PREVIEW_KINDS.has(kind)) {
       this.articleRenderer.renderArticlePreview(naddrRef, container);
@@ -421,6 +427,19 @@ export class QuotedNoteRenderer {
           if (result.event.kind === 39089) {
             const packElement = await this.buildFollowPackElement(result.event);
             skeleton.replaceWith(packElement);
+            return;
+          }
+          // NIP-52 calendar event/collection (31922/31923/31924) → nn-card
+          // via the calendar Processor/Renderer pair.
+          if (
+            result.event.kind === 31922 ||
+            result.event.kind === 31923 ||
+            result.event.kind === 31924
+          ) {
+            const calendarElement = await this.buildCalendarEventElement(
+              result.event
+            );
+            skeleton.replaceWith(calendarElement);
             return;
           }
           // Article / Zapstore app / live stream → article-preview renderer.
@@ -1091,6 +1110,54 @@ export class QuotedNoteRenderer {
     );
     const processedNote = FollowPackProcessor.process(event);
     return FollowPackRenderer.render(processedNote, {
+      collapsible: false,
+      depth: 1,
+    });
+  }
+
+  /**
+   * Render a NIP-52 calendar event/collection preview (.nn-card) from an
+   * naddr reference. Fetches the event, then dispatches it through the
+   * CalendarEventProcessor + CalendarEventCardRenderer pipeline so the inline
+   * quote box shows the same card as the timeline.
+   */
+  public async renderCalendarPreview(
+    naddrRef: string,
+    container: Element
+  ): Promise<void> {
+    try {
+      const result =
+        await this.quoteFetcher.fetchQuotedEventWithError(naddrRef);
+      if (
+        result.success &&
+        (result.event.kind === 31922 ||
+          result.event.kind === 31923 ||
+          result.event.kind === 31924)
+      ) {
+        const el = await this.buildCalendarEventElement(result.event);
+        container.appendChild(el);
+      }
+    } catch {
+      /* silent — container stays empty */
+    }
+  }
+
+  /**
+   * Build the calendar event element via the standard Processor + Renderer
+   * pair. Shared by the naddr quote path ({@link renderCalendarPreview}) and
+   * the fetched-quote addressable branch in {@link fetchAndRenderQuote}.
+   */
+  private async buildCalendarEventElement(
+    event: NostrEvent
+  ): Promise<HTMLElement> {
+    const { CalendarEventProcessor } = await import(
+      '../../../components/ui/note-processing/CalendarEventProcessor'
+    );
+    const { CalendarEventCardRenderer } = await import(
+      '../../../components/ui/note-rendering/CalendarEventCardRenderer'
+    );
+    const processedNote = CalendarEventProcessor.process(event);
+    return CalendarEventCardRenderer.render(processedNote, {
       collapsible: false,
       depth: 1,
     });

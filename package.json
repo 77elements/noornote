@@ -102,7 +102,8 @@
     "mediabunny": "^1.43.1",
     "nostr-signer-capacitor-plugin": "^0.0.5",
     "piexifjs": "^1.0.6",
-    "qrcode": "^1.5.4"
+    "qrcode": "^1.5.4",
+    "rrule": "^2.8.1"
   },
   "engines": {
     "node": ">=18.0.0"

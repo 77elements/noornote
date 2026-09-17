@@ -68,6 +68,11 @@ export class DMsRuntime implements ModuleRuntime<DMsModuleApi> {
         Promise.resolve({ fetched: 0, reachedEnd: true }),
       start: () => svc?.start() ?? Promise.resolve(),
       stop: () => svc?.stop(),
+      deliverGiftWrap: (rumor, recipientPubkey, extraTags) =>
+        svc?.deliverGiftWrap(rumor, recipientPubkey, extraTags) ??
+        Promise.resolve(null),
+      unwrapGiftWrapEvent: wrapEvent =>
+        svc?.unwrapGiftWrapEvent(wrapEvent) ?? Promise.resolve(null),
     };
   }
 }

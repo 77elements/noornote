@@ -161,7 +161,8 @@ If the app crashes, check the log files:
 | [NIP-27](https://github.com/nostr-protocol/nips/blob/master/27.md) | Text note references | - |
 | [NIP-29](https://github.com/nostr-protocol/nips/blob/master/29.md) | Relay-based groups — read-only activity notifications (Nostrord add-on) | 9, 11, 39000, 10009 |
 | [NIP-30](https://github.com/nostr-protocol/nips/blob/master/30.md) | Custom emojis (incl. animated GIFs) | 30030 |
-| [NIP-33](https://github.com/nostr-protocol/nips/blob/master/33.md) | Parameterized replaceable events (addressable coordinates for articles, live streams, badges, follow packs, Zapstore apps, …) | 30023, 30030, 30311, 30009, 39089, 32267, 30617, 30402 |
+| [NIP-32](https://github.com/nostr-protocol/nips/blob/master/32.md) | Label tags (read: `["L","rrule"]`/`["l",…]` recurrence labels on NIP-52 calendar events) | - |
+| [NIP-33](https://github.com/nostr-protocol/nips/blob/master/33.md) | Parameterized replaceable events (addressable coordinates for articles, live streams, badges, follow packs, Zapstore apps, …) | 30023, 30030, 30311, 30009, 39089, 32267, 30617, 30402, 31922, 31923, 31924 |
 | [NIP-34](https://github.com/nostr-protocol/nips/blob/master/34.md) | Git on Nostr (lightweight cards linking to gitworkshop.dev) | 1617, 1618, 1619, 1621, 1630, 1631, 1632, 1633, 30617 |
 | [NIP-36](https://github.com/nostr-protocol/nips/blob/master/36.md) | Content warnings (NSFW) | - |
 | [NIP-38](https://github.com/nostr-protocol/nips/blob/master/38.md) | User statuses (general status line on profiles) | 30315 |
@@ -172,6 +173,7 @@ If the app crashes, check the log files:
 | [NIP-47](https://github.com/nostr-protocol/nips/blob/master/47.md) | Nostr Wallet Connect | 23194, 23195 |
 | [NIP-50](https://github.com/nostr-protocol/nips/blob/master/50.md) | Search | - |
 | [NIP-51](https://github.com/nostr-protocol/nips/blob/master/51.md) | Lists (bookmarks, mutes, private follows, tribes) | 10000, 30000, 30003 |
+| [NIP-52](https://github.com/nostr-protocol/nips/blob/master/52.md) | Calendar Events (Calendar add-on: grid views, event cards, RSVPs, ICS export) | 31922, 31923, 31924, 31925 |
 | [NIP-53](https://github.com/nostr-protocol/nips/blob/master/53.md) | Live Activities (inline HLS player for live streams + chat input) | 1311, 30311 |
 | [NIP-55](https://github.com/nostr-protocol/nips/blob/master/55.md) | Android signer application (Amber) | - |
 | [NIP-56](https://github.com/nostr-protocol/nips/blob/master/56.md) | Reporting | 1984 |
@@ -197,6 +199,9 @@ If the app crashes, check the log files:
 - **Blossom upload auth** — kind `24242`, signed-event upload authorization for [Blossom](https://github.com/hzrd149/blossom)-style media servers
 - **Capability profile** — kind `30817`, community-authored "NIP"-style capability profile, published via `/publish-nip` (Markdown body + `k`-tags listing supported kinds)
 - **Follow Packs** — kind `39089`, used by the Follow Packs add-on and [calle's Follow Packs](https://github.com/callebtc/following.space)
+- **NIP-52R Recurring Calendar Events** — kinds `31922`/`31923` with `["L","rrule"] ["l","<RRULE>"]` label tags (draft addendum to NIP-52, reference implementation [formstr-hq/nostr-calendar](https://github.com/formstr-hq/nostr-calendar)); NoorNote expands RRULE occurrences client-side in the Calendar add-on grid
+- **Private calendar (NIP-52E draft, Form\*)** — kind `32678` (private calendar event), `32679` (recurring variant): NIP-44-encrypted payload with a one-time view key; kind `32123` self-encrypted private calendar list; kind `32069` view-key-encrypted private RSVP. Only ciphertext is visible on relays — readable by NoorNote and Form\* Calendar.
+- **Calendar invitation gift wraps** — kinds `1059` (with `["k","1052"]` classifier tag) and legacy `1052`: NIP-59 wraps carrying the private-event ref + view key for invited participants (Form\* NIP-52E invitation flow)
 - **Podcast Episodes** — kind `30054`, podcast draft NIP episode metadata (`title`, `audio`, `image`, `duration`, `episode`/`season` tags; shownotes in content), published by podcast clients like Nostr Compass; rendered as a podcast card with inline player
 - **Zapstore Apps** — kind `32267`, app metadata for [Zapstore](https://zapstore.dev/) listings
 - **Zapstore Release Artifacts** — kind `30063`, release artifact metadata for Zapstore apps

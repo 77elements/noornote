@@ -35,6 +35,7 @@
         "nostr-signer-capacitor-plugin": "^0.0.5",
         "piexifjs": "^1.0.6",
         "qrcode": "^1.5.4",
+        "rrule": "^2.8.1",
       },
       "devDependencies": {
         "@types/dompurify": "^3.2.0",
@@ -1274,6 +1275,8 @@
     "rollup": ["rollup@4.52.5", "", { "dependencies": { "@types/estree": "1.0.8" }, "optionalDependencies": { "@rollup/rollup-darwin-arm64": "4.52.5", "fsevents": "~2.3.2" }, "bin": "dist/bin/rollup" }, ""],
 
     "rollup-plugin-visualizer": ["rollup-plugin-visualizer@5.14.0", "", { "dependencies": { "open": "^8.4.0", "picomatch": "^4.0.2", "source-map": "^0.7.4", "yargs": "^17.5.1" }, "peerDependencies": { "rolldown": "1.x", "rollup": "2.x || 3.x || 4.x" }, "optionalPeers": ["rolldown"], "bin": "dist/bin/cli.js" }, ""],
+
+    "rrule": ["rrule@2.8.1", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-hM3dHSBMeaJ0Ktp7W38BJZ7O1zOgaFEsn41PDk+yHoEtfLV+PoJt9E9xAlZiWgf/iqEqionN0ebHFZIDAp+iGw=="],
 
     "run-applescript": ["run-applescript@5.0.0", "", { "dependencies": { "execa": "^5.0.0" } }, ""],
 

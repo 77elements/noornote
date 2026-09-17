@@ -23,6 +23,8 @@ export interface ProcessedNote {
     | 'emoji-pack'
     | 'live-stream'
     | 'listing'
+    | 'calendar-event'
+    | 'calendar-collection'
     | 'premium';
   timestamp: number;
   author: {

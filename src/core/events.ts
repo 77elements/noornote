@@ -510,6 +510,7 @@ export interface AppEvents {
   'bookmarks:addon-toggle': AddonTogglePayload;
   'btc-price:addon-toggle': AddonTogglePayload;
   'bulk-delete:addon-toggle': AddonTogglePayload;
+  'calendar:addon-toggle': AddonTogglePayload;
   'content-word-filter:toggle': AddonTogglePayload;
   'custom-emojis:addon-toggle': AddonTogglePayload;
   'extended-follows:toggle': AddonTogglePayload;

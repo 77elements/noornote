@@ -23,6 +23,7 @@ import { BadgeAwardProcessor } from './BadgeAwardProcessor';
 import { LiveStreamProcessor } from './LiveStreamProcessor';
 import { ListingProcessor } from './ListingProcessor';
 import { PodcastEpisodeProcessor } from './PodcastEpisodeProcessor';
+import { CalendarEventProcessor } from './CalendarEventProcessor';
 
 export class NoteProcessor {
   /**
@@ -90,6 +91,10 @@ export class NoteProcessor {
           return ListingProcessor.process(event);
         case 30311:
           return LiveStreamProcessor.process(event);
+        case 31922:
+        case 31923:
+        case 31924:
+          return CalendarEventProcessor.process(event);
         case 39089:
           return FollowPackProcessor.process(event);
         case 30030:

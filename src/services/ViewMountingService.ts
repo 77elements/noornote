@@ -668,6 +668,17 @@ export class ViewMountingService {
           },
         };
 
+      case 'addon-calendar':
+        return {
+          factory: async () => {
+            const { CalendarAddonView } = await import(
+              '../addons/calendar/CalendarAddonView'
+            );
+            const view = new CalendarAddonView();
+            return { element: view.getElement(), view };
+          },
+        };
+
       case 'addon-bulk-delete':
         return {
           factory: async () => {

@@ -148,4 +148,10 @@ export const ADDON_REGISTRY: AddonRegistryEntry[] = [
     route: '/addons/btc-price',
     viewId: 'addon-btc-price',
   },
+  {
+    id: 'calendar',
+    name: 'Calendar',
+    route: '/addons/calendar',
+    viewId: 'addon-calendar',
+  },
 ];

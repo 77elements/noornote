@@ -1,0 +1,290 @@
+/* ================================
+   Calendar addon - NIP-52 grid + detail
+   ================================ */
+
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+.calendar-addon {
+  display: flex;
+  flex-direction: column;
+  padding: 0 calc($gap * 1.5) calc($gap * 1.5);
+}
+
+.calendar-addon__toolbar {
+  display: flex;
+  align-items: center;
+  gap: calc($gap / 2);
+  flex-wrap: wrap;
+  padding-bottom: $gap;
+}
+
+.calendar-addon__nav {
+  display: flex;
+  align-items: center;
+  gap: calc($gap / 4);
+}
+
+.calendar-addon__range {
+  font-weight: 600;
+  color: var(--color-5);
+  min-width: 12ch;
+}
+
+.calendar-addon__tabs {
+  margin-left: auto;
+}
+
+.calendar-addon__loading,
+.calendar-addon__empty {
+  color: var(--color-3);
+  padding: calc($gap * 2) 0;
+  text-align: center;
+}
+
+/* --- Invitations (phase 3b) --- */
+
+.calendar-addon__invites {
+  margin-bottom: $gap;
+  padding: calc($gap / 2);
+  background: var(--color-2);
+  border-radius: $radius-xl;
+}
+
+.calendar-addon__invites-title {
+  font-weight: 600;
+  color: var(--color-4);
+  padding-bottom: calc($gap / 2);
+}
+
+.calendar-addon__invite {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc($gap / 2);
+  padding: calc($gap / 4) 0;
+}
+
+.calendar-addon__invite-message {
+  @include text-truncate;
+
+  color: var(--color-5);
+}
+
+/* --- Month grid --- */
+
+.calendar-addon__month {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: calc($gap / 8);
+}
+
+.calendar-addon__weekday {
+  padding: calc($gap / 4) calc($gap / 2);
+  font-weight: 600;
+  color: var(--color-3);
+  text-align: center;
+
+  &--today {
+    color: var(--color-4);
+  }
+}
+
+.calendar-addon__day {
+  min-height: 84px;
+  padding: calc($gap / 4);
+  background: var(--color-2);
+  border-radius: $radius-xl;
+  overflow: hidden;
+
+  &--outside {
+    opacity: 0.45;
+  }
+}
+
+.calendar-addon__daynum {
+  font-size: 0.8em;
+  color: var(--color-5);
+  opacity: 0.8;
+}
+
+.calendar-addon__chips {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 8);
+  margin-top: calc($gap / 8);
+}
+
+.calendar-addon__chip {
+  @include text-truncate;
+
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: calc($gap / 16) calc($gap / 4);
+  font-size: 0.78em;
+  color: var(--color-5);
+  background: color-mix(in srgb, var(--color-4) 28%, transparent);
+  border-radius: $radius-xl;
+  cursor: pointer;
+
+  &--allday {
+    background: color-mix(in srgb, var(--color-6) 30%, transparent);
+  }
+
+  &:hover {
+    background: color-mix(in srgb, var(--color-4) 45%, transparent);
+  }
+}
+
+.calendar-addon__chip-time {
+  display: block;
+  opacity: 0.75;
+  font-size: 0.9em;
+}
+
+.calendar-addon__chip--private {
+  background: color-mix(in srgb, var(--color-3) 30%, transparent);
+}
+
+.calendar-addon__more {
+  font-size: 0.75em;
+  color: var(--color-3);
+  padding-left: calc($gap / 4);
+}
+
+/* --- Week grid --- */
+
+.calendar-addon__week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: calc($gap / 2);
+}
+
+.calendar-addon__week-col {
+  min-height: 200px;
+  padding: calc($gap / 4);
+  background: var(--color-2);
+  border-radius: $radius-xl;
+
+  .calendar-addon__weekday {
+    text-align: center;
+  }
+}
+
+/* --- List --- */
+
+.calendar-addon__list-row {
+  display: grid;
+  grid-template-columns: 14ch 1fr auto;
+  align-items: center;
+  gap: calc($gap / 2);
+  width: 100%;
+  text-align: left;
+}
+
+.calendar-addon__list-date {
+  color: var(--color-3);
+}
+
+.calendar-addon__list-title {
+  @include text-truncate;
+
+  color: var(--color-5);
+  font-weight: 500;
+}
+
+.calendar-addon__list-meta {
+  color: var(--color-3);
+  font-size: 0.85em;
+}
+
+/* --- Detail modal --- */
+
+.calendar-addon-detail {
+  display: flex;
+  flex-direction: column;
+  gap: $gap;
+}
+
+.calendar-addon-detail__when {
+  display: flex;
+  align-items: center;
+  gap: calc($gap / 2);
+  flex-wrap: wrap;
+}
+
+.calendar-addon-detail__date {
+  font-weight: 600;
+  color: var(--color-5);
+}
+
+.calendar-addon-detail__time {
+  color: var(--color-3);
+}
+
+.calendar-addon-detail__image {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: $radius-xl;
+}
+
+.calendar-addon-detail__row {
+  color: var(--color-5);
+
+  strong {
+    color: var(--color-3);
+  }
+}
+
+.calendar-addon-detail__desc {
+  color: var(--color-5);
+  white-space: pre-wrap;
+}
+
+.calendar-addon-detail__hashtags {
+  display: flex;
+  gap: calc($gap / 4);
+  flex-wrap: wrap;
+}
+
+.calendar-addon-detail__actions {
+  padding-top: calc($gap / 2);
+}
+
+/* --- RSVP bar (phase 2) --- */
+
+.calendar-addon-detail__rsvp {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+}
+
+.calendar-addon-detail__rsvp-counts {
+  color: var(--color-3);
+  font-size: 0.9em;
+}
+
+.calendar-addon-detail__rsvp-buttons {
+  display: flex;
+  gap: calc($gap / 2);
+  flex-wrap: wrap;
+}
+
+.calendar-addon-detail__rsvp-empty {
+  color: var(--color-3);
+  font-size: 0.9em;
+}
+
+/* --- Editor modal (phase 2) --- */
+
+.calendar-addon-editor {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+}
+
+.calendar-addon-editor__actions {
+  padding-top: $gap;
+}

@@ -304,6 +304,18 @@
       "Git Repository (NIP-34)"
     ],
     [
+      "31922",
+      "Calendar Event (date-based)"
+    ],
+    [
+      "31923",
+      "Calendar Event (time-based)"
+    ],
+    [
+      "31924",
+      "Calendar"
+    ],
+    [
       "32267",
       "Zapstore App"
     ],
