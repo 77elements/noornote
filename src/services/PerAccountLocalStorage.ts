@@ -228,6 +228,9 @@ export const StorageKeys = {
   // coordinates `31924:<pubkey>:<dTag>`) — live references, never copies.
   CALENDAR_SUBSCRIBED_COLLECTIONS:
     'noornote_calendar_subscribed_collections_map',
+  // Calendar addon: single saved public events (coordinates
+  // `<kind>:<pubkey>:<dTag>`) imported into the grid via "Add to my cal".
+  CALENDAR_SAVED_EVENTS: 'noornote_calendar_saved_events_map',
   // Calendar reminder default lead time in minutes (0 = never).
   CALENDAR_REMINDER_LEAD: 'noornote_calendar_reminder_lead_map',
   // Per-event lead override — Record<coordinate, minutes> (0 = never).

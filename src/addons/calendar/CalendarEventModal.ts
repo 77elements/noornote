@@ -30,6 +30,8 @@ const RSVP_ACTIONS: Array<{
 
 export class CalendarEventModal {
   private destroyed = false;
+  /** Foreign events: currently imported into the user's grid? */
+  private saved: boolean | null = null;
 
   constructor(
     private readonly event: CalendarEventData,
@@ -37,8 +39,20 @@ export class CalendarEventModal {
     private readonly onSaved?: () => void
   ) {}
 
-  public open(): void {
+  public async open(): Promise<void> {
     const isOwn = AuthService.getInstance().isCurrentUser(this.event.pubkey);
+
+    // Foreign events: resolve whether they are already in the user's grid.
+    if (!isOwn) {
+      try {
+        const { CalendarDataService } = await import('./CalendarDataService');
+        this.saved = CalendarDataService.getInstance().isEventSaved(
+          this.event.coordinate
+        );
+      } catch {
+        this.saved = false;
+      }
+    }
 
     const content = document.createElement('div');
     content.className = 'calendar-addon-detail';
@@ -64,17 +78,17 @@ export class CalendarEventModal {
       }
       ${
         this.event.description
-          ? `<div class="calendar-addon-detail__desc">${convertLineBreaks(escapeHtml(this.event.description))}</div>`
+          ? `<p class="calendar-addon-detail__desc">${convertLineBreaks(escapeHtml(this.event.description))}</p>`
           : ''
       }
       ${
         this.event.participants.length
-          ? `<div class="calendar-addon-detail__row"><strong>Participants:</strong> ${escapeHtml(
+          ? `<p class="calendar-addon-detail__row"><strong>Participants:</strong> ${escapeHtml(
               this.event.participants
                 .slice(0, 12)
                 .map(pk => npubToUsername(encodeNpub(pk)))
                 .join(', ')
-            )}${this.event.participants.length > 12 ? ` and ${this.event.participants.length - 12} more` : ''}</div>`
+            )}${this.event.participants.length > 12 ? ` and ${this.event.participants.length - 12} more` : ''}</p>`
           : ''
       }
       ${
@@ -93,7 +107,11 @@ export class CalendarEventModal {
             isOwn
               ? `<button class="btn btn--passive btn--medium" type="button" data-action="edit">Edit</button>
           <button class="btn btn--danger btn--medium" type="button" data-action="delete">Delete</button>`
-              : ''
+              : this.event.isPrivate
+                ? ''
+                : `<button class="btn ${this.saved ? 'btn--danger' : 'btn--passive'} btn--medium" type="button" data-action="save-toggle">
+              ${this.saved ? 'Remove' : '+ Add to my cal'}
+            </button>`
           }
         </div>
         <div class="l-row">
@@ -127,6 +145,11 @@ export class CalendarEventModal {
       .querySelector('[data-action="delete"]')
       ?.addEventListener('click', () => {
         void this.remove();
+      });
+    content
+      .querySelector('[data-action="save-toggle"]')
+      ?.addEventListener('click', () => {
+        void this.toggleSave(content);
       });
 
     ModalService.getInstance().show({
@@ -177,16 +200,16 @@ export class CalendarEventModal {
         : 'No responses yet';
 
     slot.innerHTML = `
-      <div class="calendar-addon-detail__rsvp-counts">${escapeHtml(counts)}</div>
       <div class="calendar-addon-detail__rsvp-buttons">
         ${RSVP_ACTIONS.map(
           action => `
-        <button class="btn ${action.css} btn--mini" type="button" data-rsvp="${action.status}"
+        <button class="btn btn--passive btn--mini" type="button" data-rsvp="${action.status}"
           ${summary.mine === action.status ? 'disabled' : ''}>
           ${summary.mine === action.status ? '✓ ' : ''}${action.label}
         </button>`
         ).join('')}
       </div>
+      <div class="calendar-addon-detail__rsvp-counts">${escapeHtml(counts)}</div>
     `;
 
     slot.querySelectorAll('[data-rsvp]').forEach(button => {
@@ -266,20 +289,20 @@ export class CalendarEventModal {
     const total = records.length;
 
     slot.innerHTML = `
-      <div class="calendar-addon-detail__rsvp-counts">${
-        total > 0
-          ? `${escapeHtml(String(counts.accepted))} going · ${escapeHtml(String(counts.tentative))} maybe · ${escapeHtml(String(counts.declined))} declined`
-          : 'No responses yet'
-      }</div>
       <div class="calendar-addon-detail__rsvp-buttons">
         ${RSVP_ACTIONS.map(
           action => `
-        <button class="btn ${action.css} btn--mini" type="button" data-rsvp="${action.status}"
+        <button class="btn btn--passive btn--mini" type="button" data-rsvp="${action.status}"
           ${mine === action.status ? 'disabled' : ''}>
           ${mine === action.status ? '✓ ' : ''}${action.label}
         </button>`
         ).join('')}
       </div>
+      <div class="calendar-addon-detail__rsvp-counts">${
+        total > 0
+          ? `${escapeHtml(String(counts.accepted))} going · ${escapeHtml(String(counts.tentative))} maybe · ${escapeHtml(String(counts.declined))} declined`
+          : 'No responses yet'
+      }</div>
     `;
 
     slot.querySelectorAll('[data-rsvp]').forEach(button => {
@@ -322,6 +345,43 @@ export class CalendarEventModal {
     const { CalendarEventEditor } = await import('./CalendarEventEditor');
     ModalService.getInstance().hide();
     new CalendarEventEditor(() => this.onSaved?.(), this.event).open();
+  }
+
+  /**
+   * Foreign events: add/remove the local grid reference. "Remove" confirms
+   * first (user decision) — it only drops the local reference, the event
+   * itself stays untouched.
+   */
+  private async toggleSave(content: HTMLElement): Promise<void> {
+    const { CalendarDataService } = await import('./CalendarDataService');
+    const data = CalendarDataService.getInstance();
+    const coordinate = this.event.coordinate;
+
+    if (this.saved) {
+      const confirmed = await ModalService.getInstance().confirm({
+        title: 'Remove from your calendar',
+        message: `Remove "${this.event.title || 'this event'}" from your calendar grid? The event itself stays untouched.`,
+        confirmText: 'Remove',
+        confirmDestructive: true,
+      });
+      if (!confirmed) return;
+      data.unsaveEvent(coordinate);
+      this.saved = false;
+      ToastService.show('Removed from your calendar', 'success');
+    } else {
+      data.saveEvent(coordinate);
+      this.saved = true;
+      ToastService.show('Added to your calendar grid', 'success');
+    }
+
+    const btn = content.querySelector<HTMLButtonElement>(
+      '[data-action="save-toggle"]'
+    );
+    if (btn) {
+      btn.textContent = this.saved ? 'Remove' : '+ Add to my cal';
+      btn.classList.toggle('btn--danger', this.saved);
+      btn.classList.toggle('btn--passive', !this.saved);
+    }
   }
 
   /** Delete this event (public: NIP-09 via DeletionService, private: list ref + kind-5). */

@@ -226,6 +226,105 @@ export class CalendarDataService {
     });
   }
 
+  // ---------- saved events ("Add to my cal", phase 2.5) ----------
+
+  /**
+   * Single public events the user imported into their grid ("Add to my cal").
+   * Coordinates only — live references, re-fetched on every load, never
+   * copied, never published. Locally stored per account (same model as the
+   * subscribed collections).
+   */
+  public getSavedEventCoords(): string[] {
+    return PerAccountLocalStorage.getInstance().get<string[]>(
+      StorageKeys.CALENDAR_SAVED_EVENTS,
+      []
+    );
+  }
+
+  public isEventSaved(coordinate: string): boolean {
+    return this.getSavedEventCoords().includes(coordinate);
+  }
+
+  public saveEvent(coordinate: string): void {
+    const coords = this.getSavedEventCoords();
+    if (!coords.includes(coordinate)) {
+      coords.push(coordinate);
+      PerAccountLocalStorage.getInstance().set(
+        StorageKeys.CALENDAR_SAVED_EVENTS,
+        coords
+      );
+      diagLog('system', 'calendar: event saved', {
+        coordinate: coordinate.slice(0, 40),
+        total: coords.length,
+      });
+    }
+  }
+
+  public unsaveEvent(coordinate: string): void {
+    const coords = this.getSavedEventCoords().filter(c => c !== coordinate);
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.CALENDAR_SAVED_EVENTS,
+      coords
+    );
+    diagLog('system', 'calendar: event unsaved', {
+      coordinate: coordinate.slice(0, 40),
+      total: coords.length,
+    });
+  }
+
+  /**
+   * Fetch all saved public events, grouped by author (one relay query per
+   * author; latest addressable version wins).
+   */
+  public async fetchSavedEvents(): Promise<CalendarEventData[]> {
+    const coords = this.getSavedEventCoords();
+    if (coords.length === 0 || this.destroyed) return [];
+
+    const groups = new Map<
+      string,
+      { kinds: number[]; author: string; dTags: string[] }
+    >();
+    for (const coord of coords) {
+      const [kindStr, author, ...rest] = coord.split(':');
+      const dTag = rest.join(':');
+      const kind = Number(kindStr);
+      if (
+        !author ||
+        !dTag ||
+        ![CALENDAR_EVENT_DATE_KIND, CALENDAR_EVENT_TIME_KIND].includes(kind)
+      ) {
+        continue;
+      }
+      const group = groups.get(author) ?? { kinds: [], author, dTags: [] };
+      if (!group.kinds.includes(kind)) group.kinds.push(kind);
+      group.dTags.push(dTag);
+      groups.set(author, group);
+    }
+
+    const events: CalendarEventData[] = [];
+    for (const group of groups.values()) {
+      const raw = await this.fetchForeignEvents(
+        group.author,
+        group.kinds,
+        group.dTags
+      );
+      const seen = new Set<string>();
+      for (const ev of raw) {
+        const parsed = parseCalendarEvent(ev);
+        if (!parsed || seen.has(parsed.coordinate)) continue;
+        seen.add(parsed.coordinate);
+        events.push(parsed);
+      }
+    }
+
+    if (events.length > 0) {
+      diagLog('system', 'calendar: saved events fetched', {
+        events: events.length,
+      });
+    }
+    return events;
+  }
+
   // ---------- collection subscriptions (phase 2.5) ----------
 
   /**

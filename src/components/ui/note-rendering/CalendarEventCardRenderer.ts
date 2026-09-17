@@ -93,27 +93,69 @@ export class CalendarEventCardRenderer {
     const coverClass = parsed?.image
       ? 'nn-card__media'
       : 'nn-card__media nn-card__media--empty';
+    const isOwn = AuthService.getInstance().isCurrentUser(event.pubkey);
     const body = `
       <div class="${coverClass}">
         ${parsed?.image ? `<img src="${escapeHtmlAttr(parsed.image)}" alt="" loading="lazy" />` : ''}
       </div>
-      <div class="nn-card__content">
-        <h3>${escapeHtml(parsed?.title || '(Untitled event)')}</h3>
-        <div class="meta">${escapeHtml(
-          parsed
-            ? formatWhen(parsed.startMs, parsed.endMs, parsed.allDay)
-            : 'Calendar event'
-        )}</div>
-        ${parsed?.locations.length ? `<div class="meta">${escapeHtml(parsed.locations.join(', '))}</div>` : ''}
+      <div class="l-row--split calendar-card__split">
+        <div class="calendar-card__info">
+          <h3>${escapeHtml(parsed?.title || '(Untitled event)')}</h3>
+          <div class="meta">${escapeHtml(
+            parsed
+              ? formatWhen(parsed.startMs, parsed.endMs, parsed.allDay)
+              : 'Calendar event'
+          )}</div>
+          ${parsed?.locations.length ? `<div class="meta">${escapeHtml(parsed.locations.join(', '))}</div>` : ''}
+        </div>
+        ${
+          parsed && !isOwn
+            ? `<button class="btn btn--passive btn--mini" type="button" data-action="save">+ Add to my cal</button>`
+            : ''
+        }
       </div>
     `;
-    return CalendarEventCardRenderer.buildCard(
+    const card = CalendarEventCardRenderer.buildCard(
       note,
       opts,
       'calendar-event',
       body,
       () => void CalendarEventCardRenderer.openDetailModal(event)
     );
+
+    // Wire the "Add to my cal" toggle (foreign events only — dynamic import
+    // keeps the addon chunk lazy; label reflects the saved state).
+    const saveBtn = card.querySelector('[data-action="save"]');
+    const coordinate = parsed?.coordinate;
+    if (saveBtn && coordinate) {
+      void import('../../../addons/calendar/CalendarDataService').then(
+        ({ CalendarDataService }) => {
+          const data = CalendarDataService.getInstance();
+          const refresh = () => {
+            const saved = data.isEventSaved(coordinate);
+            saveBtn.textContent = saved
+              ? '✓ In your calendar'
+              : '+ Add to my cal';
+            saveBtn.classList.toggle('btn--passive', !saved);
+            saveBtn.classList.toggle('btn--success', saved);
+          };
+          refresh();
+          saveBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            if (data.isEventSaved(coordinate)) {
+              data.unsaveEvent(coordinate);
+              ToastService.show('Removed from your calendar', 'success');
+            } else {
+              data.saveEvent(coordinate);
+              ToastService.show('Added to your calendar grid', 'success');
+            }
+            refresh();
+          });
+        }
+      );
+    }
+
+    return card;
   }
 
   /** Collection (kind 31924) as a compact nn-card with a subscribe toggle. */
@@ -188,6 +230,6 @@ export class CalendarEventCardRenderer {
     const { CalendarEventModal } = await import(
       '../../../addons/calendar/CalendarEventModal'
     );
-    new CalendarEventModal(parsed, parsed.startMs).open();
+    void new CalendarEventModal(parsed, parsed.startMs).open();
   }
 }

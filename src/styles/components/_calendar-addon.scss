@@ -238,7 +238,9 @@
 }
 
 .calendar-addon-detail__row {
+  margin: 0; // flex gap handles the rhythm (global p adds its own margin)
   color: var(--color-5);
+  line-height: 1.5;
 
   strong {
     color: var(--color-3);
@@ -246,7 +248,9 @@
 }
 
 .calendar-addon-detail__desc {
+  margin: 0; // flex gap handles the rhythm (global p adds its own margin)
   color: var(--color-5);
+  line-height: 1.5;
   white-space: pre-wrap;
 }
 
@@ -273,12 +277,15 @@
 }
 
 .calendar-addon-detail__rsvp-counts {
+  margin-bottom: 0; // last element — rsvp container gap handles spacing
   color: var(--color-3);
   font-size: 0.9em;
+  text-align: center;
 }
 
 .calendar-addon-detail__rsvp-buttons {
   display: flex;
+  justify-content: center;
   gap: calc($gap / 2);
   flex-wrap: wrap;
 }
@@ -298,6 +305,17 @@
 
 .calendar-addon-editor__actions {
   padding-top: $gap;
+}
+
+.calendar-card__split {
+  padding: $gap;
+}
+
+.calendar-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 8);
+  min-width: 0;
 }
 
 /* --- Event calendars management (phase 2.5) --- */

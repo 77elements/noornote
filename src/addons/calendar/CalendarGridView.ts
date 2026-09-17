@@ -62,17 +62,18 @@ export class CalendarGridView {
     try {
       // Instant render from cache, then refresh from relays.
       this.ingest(this.dataService.getCachedEvents());
-      const [{ events, collections }, invites, subscribed] = await Promise.all([
-        this.dataService.fetchOwnCalendarData(),
-        this.fetchInvites(),
-        this.dataService.fetchSubscribedCollectionData().catch(() => ({
-          collections: [],
-          events: [],
-        })),
-      ]);
+      const [{ events, collections }, invites, subscribed, saved] =
+        await Promise.all([
+          this.dataService.fetchOwnCalendarData(),
+          this.fetchInvites(),
+          this.dataService
+            .fetchSubscribedCollectionData()
+            .catch(() => ({ collections: [], events: [] })),
+          this.dataService.fetchSavedEvents(),
+        ]);
       this.invites = invites;
       this.loading = false;
-      this.ingest([...events, ...subscribed.events]);
+      this.ingest([...events, ...subscribed.events, ...saved]);
 
       // Collections (31924) can reference foreign events — pull those in so
       // subscribed public calendars show up in the grid too.
@@ -80,7 +81,7 @@ export class CalendarGridView {
         events,
         collections
       );
-      this.ingest([...events, ...subscribed.events, ...foreign]);
+      this.ingest([...events, ...subscribed.events, ...saved, ...foreign]);
     } finally {
       this.loading = false;
     }
@@ -414,7 +415,7 @@ export class CalendarGridView {
       entry.occurrenceStartMs,
       () => void this.load()
     );
-    modal.open();
+    void modal.open();
   }
 
   private async openEditor(): Promise<void> {
