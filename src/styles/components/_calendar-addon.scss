@@ -260,6 +260,10 @@
   padding-top: calc($gap / 2);
 }
 
+.calendar-addon-detail__actions .btn + .btn {
+  margin-left: calc($gap / 2);
+}
+
 /* --- RSVP bar (phase 2) --- */
 
 .calendar-addon-detail__rsvp {

@@ -89,7 +89,12 @@ export class CalendarEventModal {
       }
       <div class="calendar-addon-detail__actions l-row--split">
         <div class="l-row">
-          ${isOwn ? '<button class="btn btn--passive btn--medium" type="button" data-action="edit">Edit</button>' : ''}
+          ${
+            isOwn
+              ? `<button class="btn btn--passive btn--medium" type="button" data-action="edit">Edit</button>
+          <button class="btn btn--danger btn--medium" type="button" data-action="delete">Delete</button>`
+              : ''
+          }
         </div>
         <div class="l-row">
           <button class="btn btn--passive btn--medium" type="button" data-action="ics">Download .ics</button>
@@ -117,6 +122,11 @@ export class CalendarEventModal {
       .querySelector('[data-action="edit"]')
       ?.addEventListener('click', () => {
         void this.openEditor();
+      });
+    content
+      .querySelector('[data-action="delete"]')
+      ?.addEventListener('click', () => {
+        void this.remove();
       });
 
     ModalService.getInstance().show({
@@ -312,6 +322,43 @@ export class CalendarEventModal {
     const { CalendarEventEditor } = await import('./CalendarEventEditor');
     ModalService.getInstance().hide();
     new CalendarEventEditor(() => this.onSaved?.(), this.event).open();
+  }
+
+  /** Delete this event (public: NIP-09 via DeletionService, private: list ref + kind-5). */
+  private async remove(): Promise<void> {
+    const confirmed = await ModalService.getInstance().confirm({
+      title: 'Delete event',
+      message: `Delete "${this.event.title || 'this event'}"${this.event.isPrivate ? '' : ' for everyone'}? A deletion request is published to relays.`,
+      confirmText: 'Delete',
+      confirmDestructive: true,
+    });
+    if (!confirmed) return;
+
+    try {
+      if (this.event.isPrivate) {
+        const { PrivateCalendarService } = await import(
+          './PrivateCalendarService'
+        );
+        await PrivateCalendarService.getInstance().deletePrivateEvent(
+          this.event
+        );
+      } else {
+        const { CalendarPublishService } = await import(
+          './CalendarPublishService'
+        );
+        await CalendarPublishService.getInstance().deleteEvent(this.event);
+      }
+      ToastService.show('Event deleted', 'success');
+      ModalService.getInstance().hide();
+      this.onSaved?.();
+    } catch (error) {
+      ErrorService.handle(
+        error,
+        'CalendarEventModal.remove',
+        true,
+        'Could not delete the event'
+      );
+    }
   }
 
   private dateLabel(): string {
