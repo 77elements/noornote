@@ -7,6 +7,8 @@
 
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { NoteHeader } from '../NoteHeader';
+import { AuthService } from '../../../services/AuthService';
+import { ToastService } from '../../../services/ToastService';
 import {
   parseCalendarEvent,
   parseCalendarCollection,
@@ -114,25 +116,67 @@ export class CalendarEventCardRenderer {
     );
   }
 
-  /** Collection (kind 31924) as a compact nn-card. */
+  /** Collection (kind 31924) as a compact nn-card with a subscribe toggle. */
   static renderCollection(
     note: ProcessedNote,
     opts: NoteUIOptions
   ): HTMLElement {
-    const parsed = parseCalendarCollection(note.rawEvent);
+    const event = note.rawEvent;
+    const parsed = parseCalendarCollection(event);
+    const coordinate = parsed?.coordinate ?? '';
+    const isOwn = AuthService.getInstance().isCurrentUser(event.pubkey);
     const body = `
       <div class="nn-card__content">
         <h3>${escapeHtml(parsed?.title || 'Calendar')}</h3>
         <div class="meta">Calendar · ${parsed?.eventRefs.length ?? 0} events</div>
+        ${
+          isOwn || !coordinate
+            ? ''
+            : `<button class="btn btn--passive btn--mini" type="button" data-action="subscribe">+ Subscribe</button>`
+        }
       </div>
     `;
-    return CalendarEventCardRenderer.buildCard(
+    const card = CalendarEventCardRenderer.buildCard(
       note,
       opts,
       'calendar-collection',
       body,
       () => {}
     );
+
+    // Wire the subscribe toggle (async import keeps the addon chunk lazy;
+    // the label reflects the current subscription state).
+    const subscribeBtn = card.querySelector('[data-action="subscribe"]');
+    if (subscribeBtn && coordinate) {
+      void import('../../../addons/calendar/CalendarDataService').then(
+        ({ CalendarDataService }) => {
+          const data = CalendarDataService.getInstance();
+          const refresh = () => {
+            const active = data.isCollectionSubscribed(coordinate);
+            subscribeBtn.textContent = active ? '✓ Subscribed' : '+ Subscribe';
+            subscribeBtn.classList.toggle('btn--passive', !active);
+            subscribeBtn.classList.toggle('btn--success', active);
+          };
+          refresh();
+          subscribeBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            if (data.isCollectionSubscribed(coordinate)) {
+              data.unsubscribeFromCollection(coordinate);
+              ToastService.show('Unsubscribed from calendar', 'success');
+            } else {
+              data.subscribeToCollection(coordinate);
+              ToastService.show(
+                'Subscribed — events added to your calendar grid',
+                'success'
+              );
+            }
+            refresh();
+          });
+        }
+      );
+    }
+
+    return card;
   }
 
   /** Open the addon detail modal (dynamic import — keeps the chunk lazy). */

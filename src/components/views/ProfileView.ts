@@ -710,10 +710,12 @@ export class ProfileView extends View {
         <button class="tab" data-tab="videos" type="button">Videos</button>
         <button class="tab" data-tab="products" type="button">Products</button>
         <button class="tab" data-tab="zapstore" type="button">Zapstore</button>
+        <button class="tab" data-tab="calendar" type="button">Calendar</button>
         <button class="tab" data-tab="badges" type="button">Badges</button>
       </div>
 
       <div class="profile-badges-mount profile-section" data-section="badges" hidden></div>
+      <div class="profile-calendar-mount profile-section" data-section="calendar" hidden></div>
       <div class="profile-articles-mount profile-section" data-section="articles" hidden></div>
       <div class="profile-videos-mount profile-section" data-section="videos" hidden></div>
       <div class="profile-listings-mount profile-section" data-section="products" hidden></div>
@@ -1880,6 +1882,7 @@ export class ProfileView extends View {
       { tab: 'videos', loader: () => this.loadVideosCarousel() },
       { tab: 'products', loader: () => this.loadListingsCarousel() },
       { tab: 'zapstore', loader: () => this.loadZapstoreApps() },
+      { tab: 'calendar', loader: () => this.loadCalendarSection() },
       { tab: 'badges', loader: () => this.loadBadgesCarousel() },
     ];
     sections.forEach(({ tab, loader }) => {
@@ -1909,6 +1912,93 @@ export class ProfileView extends View {
       `.profile-tabs .tab[data-tab="${tab}"]`
     ) as HTMLElement | null;
     if (tabBtn) tabBtn.hidden = false;
+  }
+
+  /**
+   * Load this author's public calendar content (phase 2.5): own calendar
+   * events (31922/31923) + published collections (31924) as full cards.
+   * Private events (32678/32123) are NEVER fetched here — they belong to the
+   * author's own addon grid only.
+   *
+   * Documented architecture exception: direct NostrTransport access —
+   * ProfileView is on the M2 allowlist (see /build-validate Step 28).
+   */
+  private async loadCalendarSection(): Promise<void> {
+    const mount = this.container.querySelector('.profile-calendar-mount');
+    if (!mount) return;
+
+    try {
+      const { NostrTransport } = await import(
+        '../../services/transport/NostrTransport'
+      );
+      const { RelayConfig } = await import('../../services/RelayConfig');
+      const transport = NostrTransport.getInstance();
+      const relayConfig = RelayConfig.getInstance();
+      const relays = [
+        ...new Set([
+          ...relayConfig.getReadRelays(),
+          ...relayConfig.getAggregatorRelays(),
+        ]),
+      ];
+
+      const events = await transport.fetchDirect(
+        relays,
+        [
+          {
+            kinds: [31922, 31923, 31924],
+            authors: [this.pubkey],
+            limit: 200,
+          } as import('@nostr-dev-kit/ndk').NDKFilter<number>,
+        ],
+        8000,
+        'ProfileCalendar'
+      );
+      if (events.length === 0) return;
+
+      const { CalendarEventProcessor } = await import(
+        '../ui/note-processing/CalendarEventProcessor'
+      );
+      const { CalendarEventCardRenderer } = await import(
+        '../ui/note-rendering/CalendarEventCardRenderer'
+      );
+
+      const section = document.createElement('div');
+      section.className = 'profile-calendar-carousel section';
+      section.innerHTML =
+        '<h2>Calendar</h2><div class="profile-calendar-carousel__list"></div>';
+      mount.appendChild(section);
+
+      const list = section.querySelector('.profile-calendar-carousel__list')!;
+
+      // Collections first, then events chronologically.
+      const collections = events
+        .filter(e => e.kind === 31924)
+        .sort((a, b) => b.created_at - a.created_at);
+      const calendarEvents = events
+        .filter(e => e.kind === 31922 || e.kind === 31923)
+        .sort((a, b) => {
+          const start = (ev: typeof a) =>
+            Number(ev.tags.find(t => t[0] === 'start')?.[1] ?? 0);
+          return start(a) - start(b);
+        });
+
+      for (const ev of [...collections, ...calendarEvents]) {
+        try {
+          const processed = CalendarEventProcessor.process(ev);
+          const card = CalendarEventCardRenderer.render(processed, {
+            collapsible: false,
+            depth: 1,
+          });
+          card.style.marginBottom = 'var(--gap)';
+          list.appendChild(card);
+        } catch {
+          // Skip malformed events.
+        }
+      }
+    } catch (error) {
+      // Empty tab stays hidden (revealTabIfHasItems).
+      console.debug('Profile calendar load failed:', error);
+    }
   }
 
   private async loadBadgesCarousel(): Promise<void> {

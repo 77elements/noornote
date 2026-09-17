@@ -224,6 +224,10 @@ export const StorageKeys = {
   // Calendar invites (3b): wrap event ids dismissed locally (deletion may be
   // impossible without the wrap's signing key).
   CALENDAR_DISMISSED_INVITES: 'noornote_calendar_dismissed_invites_map',
+  // Calendar addon (phase 2.5): subscribed public collections (kind 31924
+  // coordinates `31924:<pubkey>:<dTag>`) — live references, never copies.
+  CALENDAR_SUBSCRIBED_COLLECTIONS:
+    'noornote_calendar_subscribed_collections_map',
   // Note taking deletion tombstones — Record<noteUuid, deletionTimestampSec>.
   // Prevents a GC'd kind:5 from resurrecting a deleted note on next fetch.
   NOTE_TAKING_TOMBSTONES: 'noornote_note_taking_tombstones_map',

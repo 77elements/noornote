@@ -20,6 +20,7 @@ import {
 } from '../../services/PerAccountLocalStorage';
 import { AuthService } from '../../services/AuthService';
 import { diagLog } from '../../services/DiagnosticLogger';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { dedupeByCoordinateWithTombstones } from '../../helpers/addressableDedupe';
 import { resolveCalendarRelays } from './relays';
 import {
@@ -181,6 +182,8 @@ export class CalendarDataService {
         collections: collections.length,
         relays: relays.length,
       });
+      // Reminders (and other listeners) rebuild from the fresh data.
+      TypedEventBus.getInstance().emit('calendar:data-refreshed', {});
       return { events: [...events, ...privateEvents], collections };
     })();
 
@@ -189,6 +192,151 @@ export class CalendarDataService {
     } finally {
       this.fetchInFlight = null;
     }
+  }
+
+  // ---------- collection subscriptions (phase 2.5) ----------
+
+  /**
+   * Subscribed public collections (kind 31924 coordinates) — live references
+   * to the author's list, never copies. The grid re-reads the latest list
+   * version and its referenced events on every load, so organizer updates
+   * flow in automatically.
+   */
+  public getSubscribedCollectionCoords(): string[] {
+    return PerAccountLocalStorage.getInstance().get<string[]>(
+      StorageKeys.CALENDAR_SUBSCRIBED_COLLECTIONS,
+      []
+    );
+  }
+
+  public isCollectionSubscribed(coordinate: string): boolean {
+    return this.getSubscribedCollectionCoords().includes(coordinate);
+  }
+
+  public subscribeToCollection(coordinate: string): void {
+    const coords = this.getSubscribedCollectionCoords();
+    if (!coords.includes(coordinate)) {
+      coords.push(coordinate);
+      PerAccountLocalStorage.getInstance().set(
+        StorageKeys.CALENDAR_SUBSCRIBED_COLLECTIONS,
+        coords
+      );
+      diagLog('system', 'calendar: collection subscribed', {
+        coordinate,
+        total: coords.length,
+      });
+    }
+  }
+
+  public unsubscribeFromCollection(coordinate: string): void {
+    const coords = this.getSubscribedCollectionCoords().filter(
+      c => c !== coordinate
+    );
+    PerAccountLocalStorage.getInstance().set(
+      StorageKeys.CALENDAR_SUBSCRIBED_COLLECTIONS,
+      coords
+    );
+    diagLog('system', 'calendar: collection unsubscribed', {
+      coordinate,
+      total: coords.length,
+    });
+  }
+
+  /**
+   * Fetch the latest version of every subscribed collection (31924) and all
+   * calendar events they reference. Groups relay queries by (author, kind).
+   */
+  public async fetchSubscribedCollectionData(): Promise<{
+    collections: CalendarCollectionData[];
+    events: CalendarEventData[];
+  }> {
+    const coords = this.getSubscribedCollectionCoords();
+    if (coords.length === 0 || this.destroyed) {
+      return { collections: [], events: [] };
+    }
+
+    // 1. Latest 31924 per coordinate.
+    const collections: CalendarCollectionData[] = [];
+    const byAuthor = new Map<
+      string,
+      { kind: number; author: string; dTags: string[] }
+    >();
+    for (const coord of coords) {
+      const [kindStr, author, ...rest] = coord.split(':');
+      const dTag = rest.join(':');
+      const kind = Number(kindStr);
+      if (!author || !dTag || kind !== CALENDAR_COLLECTION_KIND) continue;
+      const group = byAuthor.get(author) ?? { kind, author, dTags: [] };
+      group.dTags.push(dTag);
+      byAuthor.set(author, group);
+    }
+
+    for (const group of byAuthor.values()) {
+      const raw = await this.fetchForeignEvents(
+        group.author,
+        [group.kind],
+        group.dTags
+      );
+      // Latest version per d-tag wins (parameterized replaceable).
+      const latest = new Map<string, NostrEvent>();
+      for (const ev of raw) {
+        const dTag = ev.tags.find(t => t[0] === 'd')?.[1] ?? '';
+        const prev = latest.get(dTag);
+        if (!prev || ev.created_at > prev.created_at) latest.set(dTag, ev);
+      }
+      for (const ev of latest.values()) {
+        const parsed = parseCalendarCollection(ev);
+        if (parsed) collections.push(parsed);
+      }
+    }
+
+    // 2. Referenced events across all subscribed collections.
+    const refs = new Set<string>();
+    for (const collection of collections) {
+      for (const ref of collection.eventRefs) refs.add(ref);
+    }
+    const events: CalendarEventData[] = [];
+    const eventGroups = new Map<
+      string,
+      { kinds: number[]; author: string; dTags: string[] }
+    >();
+    for (const ref of refs) {
+      const [kindStr, author, ...rest] = ref.split(':');
+      const dTag = rest.join(':');
+      const kind = Number(kindStr);
+      if (
+        !author ||
+        !dTag ||
+        ![CALENDAR_EVENT_DATE_KIND, CALENDAR_EVENT_TIME_KIND].includes(kind)
+      ) {
+        continue;
+      }
+      const key = `${author}`;
+      const group = eventGroups.get(key) ?? { kinds: [], author, dTags: [] };
+      if (!group.kinds.includes(kind)) group.kinds.push(kind);
+      group.dTags.push(dTag);
+      eventGroups.set(key, group);
+    }
+    for (const group of eventGroups.values()) {
+      const raw = await this.fetchForeignEvents(
+        group.author,
+        group.kinds,
+        group.dTags
+      );
+      const seen = new Set<string>();
+      for (const ev of raw) {
+        const parsed = parseCalendarEvent(ev);
+        if (!parsed || seen.has(parsed.coordinate)) continue;
+        seen.add(parsed.coordinate);
+        events.push(parsed);
+      }
+    }
+
+    diagLog('system', 'calendar: subscribed collections fetched', {
+      collections: collections.length,
+      events: events.length,
+    });
+    return { collections, events };
   }
 
   /**

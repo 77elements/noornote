@@ -504,6 +504,10 @@ export interface AppEvents {
   /** Progressive follower count (per relay batch, PV semantics — `N+` while sweeping). */
   'analytics:followers-progress': { count: number };
 
+  // ── Calendar ─────────────────────────────
+  /** Emitted after a successful relay fetch of the user's calendar data. */
+  'calendar:data-refreshed': Record<string, never>;
+
   // ── Addon Toggles ─────────────────────────
   'analytics:addon-toggle': AddonTogglePayload;
   'badges:addon-toggle': AddonTogglePayload;

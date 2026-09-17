@@ -20,6 +20,7 @@
  */
 
 import { AlertBarService } from '../../services/AlertBarService';
+import { ReminderHub } from '../../services/notifications/ReminderHub';
 import { Router } from '../../services/Router';
 import { diagLog } from '../../services/DiagnosticLogger';
 import {
@@ -68,7 +69,6 @@ export class NostrMajlisReminderService {
   private timer: number | null = null;
   private shown = new Set<string>(); // `${yyyy-m-d}:${prayerKey}` already fired today
   private shownHolidays = new Set<string>(); // `${holidayDate}:${key}` already fired
-  private osCloseTimers = new Set<number>(); // pending auto-close timers for OS notifications
 
   start(): void {
     if (this.timer !== null) return;
@@ -248,25 +248,16 @@ export class NostrMajlisReminderService {
     tag: string,
     closeAfterMs: number
   ): void {
-    if (
-      typeof Notification === 'undefined' ||
-      Notification.permission !== 'granted'
-    )
-      return;
-    const n = new Notification(title, { body, tag });
-    n.onclick = () => {
-      window.focus();
-      Router.getInstance().navigate('/addons/nostr-majlis');
-    };
-    const t = window.setTimeout(() => {
-      this.osCloseTimers.delete(t);
-      try {
-        n.close();
-      } catch {
-        // Already gone (tapped / dismissed) — nothing to clean up.
-      }
-    }, closeAfterMs);
-    this.osCloseTimers.add(t);
+    // Delegated to the central ReminderHub (desktop path: web Notification
+    // with tag, auto-close and click-through to this addon).
+    void ReminderHub.getInstance().osNotifyNow({
+      title,
+      body,
+      tag,
+      autoCloseMs: closeAfterMs,
+      osWhen: 'always',
+      onClick: () => Router.getInstance().navigate('/addons/nostr-majlis'),
+    });
   }
 
   /**
@@ -289,8 +280,6 @@ export class NostrMajlisReminderService {
       clearInterval(this.timer);
       this.timer = null;
     }
-    for (const t of this.osCloseTimers) clearTimeout(t);
-    this.osCloseTimers.clear();
     this.shown.clear();
     this.shownHolidays.clear();
     NostrMajlisReminderService.instance = null;
