@@ -230,7 +230,7 @@ label {
   // intact — without the exclusion, this block-display rule wins on
   // specificity and stacks the toggle below the label.
   label:not(.switch-label) {
-    display: block;
+    display: inline-block;
     margin-bottom: calc($gap / 2);
     color: var(--color-4);
     white-space: nowrap;

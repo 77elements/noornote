@@ -14,6 +14,7 @@ import { NostrTransport } from '../../services/transport/NostrTransport';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { diagLog } from '../../services/DiagnosticLogger';
+import { encodeNaddr } from '../../services/NostrToolsAdapter';
 import { resolveCalendarRelays } from './relays';
 import {
   buildRecurrenceRule,
@@ -44,6 +45,8 @@ export interface CalendarEventDraft {
   image: string;
   /** null = one-off; otherwise an NIP-52R frequency. */
   repeat: RecurrenceFrequency | null;
+  /** Auto-publish a kind-1 share note linking the event after saving. */
+  shareInTl?: boolean | undefined;
 }
 
 export interface RSVPSummary {
@@ -170,6 +173,42 @@ export class CalendarPublishService {
       );
     }
     return ok;
+  }
+
+  /**
+   * Publish a kind-1 "share" note that just carries the event's naddr — the
+   * composer pattern used by quoted reposts: the note content is the
+   * `nostr:naddr1…` reference, clients (incl. NoorNote) render it as the
+   * calendar event card.
+   */
+  public async publishShareNote(params: {
+    kind: number;
+    pubkey: string;
+    dTag: string;
+  }): Promise<void> {
+    const user = this.auth.getCurrentUser();
+    if (!user) throw new Error('Not logged in');
+
+    const naddr = encodeNaddr({
+      kind: params.kind,
+      pubkey: params.pubkey,
+      identifier: params.dTag,
+      relays: [],
+    });
+    const unsigned = {
+      kind: 1,
+      created_at: Math.floor(Date.now() / 1000),
+      tags: [],
+      content: `nostr:${naddr}`,
+      pubkey: user.pubkey,
+    };
+    const signed = await this.auth.signEvent(unsigned);
+    if (!signed) throw new Error('Signing failed');
+
+    await this.transport.publishWithOutbox(signed, {
+      authorPubkeys: [user.pubkey],
+    });
+    diagLog('system', 'calendar: shared in timeline', { dTag: params.dTag });
   }
 
   /** Shared NIP-09 deletion: targeted calendar-relay publish + breadth pass. */

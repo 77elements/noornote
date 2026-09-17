@@ -13,7 +13,7 @@ import { TypedEventBus } from '../../core/TypedEventBus';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { convertLineBreaks } from '../../helpers/convertLineBreaks';
 import { npubToUsername } from '../../helpers/npubToUsername';
-import { encodeNpub } from '../../services/NostrToolsAdapter';
+import { encodeNaddr, encodeNpub } from '../../services/NostrToolsAdapter';
 import { downloadCalendarEventICS } from '../../helpers/nip52/icsExport';
 import { summarizeRecurrenceRule } from '../../helpers/nip52/recurrence';
 import type { CalendarEventData } from '../../helpers/nip52/parser';
@@ -107,12 +107,14 @@ export class CalendarEventModal {
           ${
             isOwn
               ? `<button class="btn btn--passive btn--medium" type="button" data-action="edit">Edit</button>
-          <button class="btn btn--danger btn--medium" type="button" data-action="delete">Delete</button>`
+          <button class="btn btn--danger btn--medium" type="button" data-action="delete">Delete</button>
+          <button class="btn btn--passive btn--medium" type="button" data-action="share">Share in TL</button>`
               : this.event.isPrivate
                 ? ''
                 : `<button class="btn ${this.saved ? 'btn--danger' : 'btn--passive'} btn--medium" type="button" data-action="save-toggle">
               ${this.saved ? 'Remove' : '+ Add to my cal'}
-            </button>`
+            </button>
+          <button class="btn btn--passive btn--medium" type="button" data-action="share">Share in TL</button>`
           }
         </div>
         <div class="l-row">
@@ -151,6 +153,11 @@ export class CalendarEventModal {
       .querySelector('[data-action="save-toggle"]')
       ?.addEventListener('click', () => {
         void this.toggleSave(content);
+      });
+    content
+      .querySelector('[data-action="share"]')
+      ?.addEventListener('click', () => {
+        void this.shareInTl();
       });
 
     ModalService.getInstance().show({
@@ -346,6 +353,27 @@ export class CalendarEventModal {
     const { CalendarEventEditor } = await import('./CalendarEventEditor');
     ModalService.getInstance().hide();
     new CalendarEventEditor(() => this.onSaved?.(), this.event).open();
+  }
+
+  /**
+   * Share this event in the timeline: opens the note composer pre-filled
+   * with the event's naddr reference (same pattern as quoted reposts).
+   * Public events only — private events have no public address to share.
+   */
+  private async shareInTl(): Promise<void> {
+    if (this.event.isPrivate) return;
+    const { PostNoteModal } = await import(
+      '../../components/post/PostNoteModal'
+    );
+    ModalService.getInstance().hide();
+    PostNoteModal.getInstance().show(
+      `nostr:${encodeNaddr({
+        kind: this.event.kind,
+        pubkey: this.event.pubkey,
+        identifier: this.event.dTag,
+        relays: [],
+      })}`
+    );
   }
 
   /**

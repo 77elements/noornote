@@ -28,10 +28,13 @@ import {
   LEAD_OPTIONS,
 } from './CalendarReminderService';
 import {
+  CALENDAR_EVENT_TIME_KIND,
+  type CalendarEventData,
+} from '../../helpers/nip52/parser';
+import {
   generateDTag,
   type CalendarEventDraft,
 } from './CalendarPublishService';
-import type { CalendarEventData } from '../../helpers/nip52/parser';
 
 const REPEAT_OPTIONS: DropdownOption[] = [
   { value: 'none', label: 'Does not repeat' },
@@ -96,6 +99,13 @@ export class CalendarEventEditor {
       </div>
       <div class="form__row">
         <div id="cal-editor-private"></div>
+      </div>
+      <div class="form__row" data-public-only${this.isPrivate ? ' hidden' : ''}>
+        <label class="nn-checkbox nn-checkbox--label-left calendar-editor__share">
+          <span class="setting__label">Share in TL</span>
+          <input type="checkbox" id="cal-editor-share" />
+        </label>
+        <p class="form__note" data-editor-note-share>Publishes a timeline note linking to this event right after saving.</p>
       </div>
       <div class="form__row" data-when="timed">
         <label for="cal-editor-start">Starts</label>
@@ -384,6 +394,8 @@ export class CalendarEventEditor {
       endMs = endRaw ? new Date(endRaw).getTime() : null;
     }
 
+    const shareInput =
+      content.querySelector<HTMLInputElement>('#cal-editor-share');
     return {
       dTag: this.existing?.dTag ?? generateDTag(),
       allDay,
@@ -394,6 +406,7 @@ export class CalendarEventEditor {
       location,
       image: this.existing?.image ?? '',
       repeat: this.repeatValue,
+      shareInTl: shareInput?.checked ?? false,
     };
   }
 
@@ -458,6 +471,14 @@ export class CalendarEventEditor {
         this.persistReminderLead(
           `${signed.kind}:${signed.pubkey}:${draft.dTag}`
         );
+        if (draft.shareInTl) {
+          await CalendarPublishService.getInstance().publishShareNote({
+            kind: signed.kind ?? CALENDAR_EVENT_TIME_KIND,
+            pubkey: signed.pubkey,
+            dTag: draft.dTag,
+          });
+          ToastService.show('Shared in timeline', 'success');
+        }
       }
       ToastService.show(
         this.existing ? 'Event updated' : 'Event published',
