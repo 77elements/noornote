@@ -95,6 +95,7 @@
   &:hover {
     transform: translateY(-2px);
     box-shadow: $box-hover;
+    background: var(--bg-accent); // same hover tint as sidebar nav items
   }
 
   // Drag-and-drop state classes (set by JS during drag operations)

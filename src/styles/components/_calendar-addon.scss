@@ -318,6 +318,17 @@
   min-width: 0;
 }
 
+// Quoted calendar cards render COMPACT: inside a quote box the full SNV
+// treatment (zaps/likes lists + double padding) tears the card apart.
+.note-card--quote .note-card--calendar-event {
+  padding: calc($gap / 2);
+}
+
+.note-card--quote .note-card--calendar-event .zaps-list,
+.note-card--quote .note-card--calendar-event .likes-list {
+  display: none;
+}
+
 /* --- Event calendars management (phase 2.5) --- */
 
 .calendar-collection-editor__events {
