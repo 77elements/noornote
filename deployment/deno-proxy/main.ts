@@ -28,8 +28,14 @@ Deno.serve(async (request: Request) => {
       body: request.body,
     });
 
-    // Add CORS headers to response
+    // Add CORS headers to response.
+    // Deno's fetch() already decompresses response.body, but the copied
+    // headers still claim `content-encoding: gzip` — the browser then tries
+    // to gunzip plaintext and fails with ERR_CONTENT_DECODING_FAILED on a
+    // 200. Strip the transport headers; the body is decoded.
     const headers = new Headers(response.headers);
+    headers.delete('content-encoding');
+    headers.delete('content-length');
     headers.set('Access-Control-Allow-Origin', 'https://noornote.app');
 
     return new Response(response.body, {

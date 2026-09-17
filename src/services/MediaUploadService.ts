@@ -541,6 +541,28 @@ export class MediaUploadService {
   }
 
   /**
+   * Try to read the NIP-96 config DIRECTLY (no proxy). Some servers —
+   * nostr.build among them — serve the config CORS-enabled, so the proxy hop
+   * (privacy: we see every upload; UX: no extra latency) is unnecessary for
+   * them. Note: the Access-Control-Allow-Origin header itself is NOT
+   * readable via response.headers on a cross-origin response — a successful
+   * fetch is the only (and sufficient) proof that the endpoint allows us.
+   * Returns the config, or null when the direct fetch is blocked.
+   */
+  private async tryDirectNIP96Config(
+    serverUrl: string
+  ): Promise<{ api_url: string } | null> {
+    try {
+      const response = await fetch(`${serverUrl}/.well-known/nostr/nip96.json`);
+      if (!response.ok) return null;
+      return (await response.json()) as { api_url: string } | null;
+    } catch {
+      // Direct fetch blocked (CORS) — caller falls back to the proxy.
+      return null;
+    }
+  }
+
+  /**
    * Convert an API URL to a proxied URL — browser uploads always route
    * through the proxy (CORS-immune, real server statuses come through).
    * Desktop uses the native adapter (no CORS) and hits the server directly.
@@ -610,13 +632,35 @@ export class MediaUploadService {
     try {
       onProgress?.(5);
 
-      // In browser mode, fetch config through proxy to bypass CORS
-      const configUrl = this.platform.isBrowser
-        ? this.getProxiedUrl(serverUrl, '/.well-known/nostr/nip96.json')
-        : `${serverUrl}/.well-known/nostr/nip96.json`;
-
-      const config = await this.fetchNIP96ConfigFromUrl(configUrl);
-      const apiUrl = config?.api_url || `${serverUrl}/upload`;
+      // Browser: prefer DIRECT access for CORS-friendly servers (e.g.
+      // nostr.build exposes the config with Access-Control-Allow-Origin and
+      // accepts the upload preflight) — no proxy hop, real progress, real
+      // server errors. If the direct upload itself fails (some servers
+      // expose the config but not the endpoint), retry once via the proxy.
+      // Desktop never uses the proxy.
+      let direct = false;
+      let apiUrl: string;
+      let proxiedUrl: string | null = null;
+      if (this.platform.isBrowser) {
+        const directConfig = await this.tryDirectNIP96Config(serverUrl);
+        if (directConfig?.api_url) {
+          apiUrl = directConfig.api_url;
+          direct = true;
+        } else {
+          const config = await this.fetchNIP96ConfigFromUrl(
+            this.getProxiedUrl(serverUrl, '/.well-known/nostr/nip96.json')
+          );
+          // Correct NIP-96 fallback: the API endpoint (serverUrl + /upload is
+          // the HTML page on some servers, e.g. nostr.build).
+          apiUrl = config?.api_url || `${serverUrl}/api/v2/nip96/upload`;
+          proxiedUrl = this.getProxiedApiUrl(serverUrl, apiUrl);
+        }
+      } else {
+        const config = await this.fetchNIP96ConfigFromUrl(
+          `${serverUrl}/.well-known/nostr/nip96.json`
+        );
+        apiUrl = config?.api_url || `${serverUrl}/api/v2/nip96/upload`;
+      }
 
       onProgress?.(10);
       const sha256 = await this.calculateSHA256(file);
@@ -627,14 +671,27 @@ export class MediaUploadService {
 
       onProgress?.(20);
 
-      // Browser mode: Use native FormData with XMLHttpRequest
-      // In dev mode, route through proxy to bypass CORS
+      // Browser mode: native FormData with XMLHttpRequest (direct for
+      // CORS-friendly servers, proxied otherwise).
       if (this.platform.isBrowser) {
-        // Convert apiUrl to proxied URL for the actual request
-        const proxiedApiUrl = this.getProxiedApiUrl(serverUrl, apiUrl);
+        if (direct) {
+          try {
+            return await this.uploadNIP96Browser(
+              file,
+              apiUrl,
+              authHeader,
+              onProgress
+            );
+          } catch (error) {
+            console.debug(
+              'Direct NIP-96 upload failed, falling back to proxy:',
+              error
+            );
+          }
+        }
         return await this.uploadNIP96Browser(
           file,
-          proxiedApiUrl,
+          proxiedUrl ?? this.getProxiedApiUrl(serverUrl, apiUrl),
           authHeader,
           onProgress
         );
