@@ -228,6 +228,13 @@ export const StorageKeys = {
   // coordinates `31924:<pubkey>:<dTag>`) — live references, never copies.
   CALENDAR_SUBSCRIBED_COLLECTIONS:
     'noornote_calendar_subscribed_collections_map',
+  // Calendar reminder default lead time in minutes (0 = never).
+  CALENDAR_REMINDER_LEAD: 'noornote_calendar_reminder_lead_map',
+  // Per-event lead override — Record<coordinate, minutes> (0 = never).
+  CALENDAR_EVENT_LEADS: 'noornote_calendar_event_leads_map',
+  // Calendar reminders acknowledged with "Ok" — keys `coordinate@occStartMs`.
+  // Persistent so a dismissed reminder stays dismissed across restarts.
+  CALENDAR_REMINDER_ACKED: 'noornote_calendar_reminder_acked_map',
   // Note taking deletion tombstones — Record<noteUuid, deletionTimestampSec>.
   // Prevents a GC'd kind:5 from resurrecting a deleted note on next fetch.
   NOTE_TAKING_TOMBSTONES: 'noornote_note_taking_tombstones_map',

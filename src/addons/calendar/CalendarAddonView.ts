@@ -11,12 +11,18 @@ import { Switch } from '../../components/ui/Switch';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
 import { AuthService } from '../../services/AuthService';
+import { CustomDropdown } from '../../components/ui/CustomDropdown';
 import { isCalendarEnabled, setCalendarEnabled } from './index';
 import { CalendarGridView } from './CalendarGridView';
+import {
+  CalendarReminderService,
+  LEAD_OPTIONS,
+} from './CalendarReminderService';
 
 export class CalendarAddonView extends View {
   private container: HTMLElement;
   private enableSwitch: Switch | null = null;
+  private leadDropdown: CustomDropdown | null = null;
   private grid: CalendarGridView | null = null;
 
   constructor() {
@@ -52,11 +58,37 @@ export class CalendarAddonView extends View {
           <div class="setting__control">${this.enableSwitch.render()}</div>
           <p class="setting__desc">NIP-52 calendar for Nostr: month, week and list views over your public events (kinds 31922/31923), calendar collections (kind 31924) and RSVPs (kind 31925). Private encrypted events are planned.</p>
         </div>
+        <div class="setting">
+          <span class="setting__label">Remind me before events start</span>
+          <div class="setting__control" data-slot="reminder-lead"></div>
+          <p class="setting__desc">Default reminder lead for all events. Reminders stay local to this device — nothing is published. Single events can override this in their editor.</p>
+        </div>
       </section>
       <div data-addon-content="calendar-grid"></div>
     `;
     this.enableSwitch.setupEventListeners(this.container);
+    this.renderLeadDropdown();
     this.renderGrid();
+  }
+
+  /** Reminder default lead: applies to every event without its own override. */
+  private renderLeadDropdown(): void {
+    const slot = this.container.querySelector(
+      '[data-slot="reminder-lead"]'
+    ) as HTMLElement | null;
+    if (!slot) return;
+    this.leadDropdown?.destroy();
+    const service = CalendarReminderService.getInstance();
+    this.leadDropdown = new CustomDropdown({
+      options: LEAD_OPTIONS,
+      selectedValue: String(service.getDefaultLeadMin()),
+      width: '100%',
+      onChange: value => {
+        service.setDefaultLeadMin(Number(value));
+        ToastService.show('Reminder default updated', 'success');
+      },
+    });
+    slot.appendChild(this.leadDropdown.getElement());
   }
 
   /** Mount the grid inline when enabled; tear it down when disabled. */
@@ -90,6 +122,8 @@ export class CalendarAddonView extends View {
     this.grid = null;
     this.enableSwitch?.destroy();
     this.enableSwitch = null;
+    this.leadDropdown?.destroy();
+    this.leadDropdown = null;
     this.container.innerHTML = '';
   }
 }

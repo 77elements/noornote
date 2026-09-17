@@ -23,6 +23,11 @@ import {
   type RecurrenceFrequency,
 } from '../../helpers/nip52/recurrence';
 import {
+  CalendarReminderService,
+  humanizeLeadMinutes,
+  LEAD_OPTIONS,
+} from './CalendarReminderService';
+import {
   generateDTag,
   type CalendarEventDraft,
 } from './CalendarPublishService';
@@ -55,6 +60,9 @@ export class CalendarEventEditor {
   private allDaySwitch: Switch | null = null;
   private privateSwitch: Switch | null = null;
   private repeatDropdown: CustomDropdown | null = null;
+  private remindDropdown: CustomDropdown | null = null;
+  /** 'default' or minutes-as-string; persisted per event coordinate on save. */
+  private remindValue = 'default';
   private repeatValue: RecurrenceFrequency | null;
   private isPrivate: boolean;
   /** Existing event being edited, or null when creating. */
@@ -117,6 +125,11 @@ export class CalendarEventEditor {
       <div class="form__row">
         <label>Repeat</label>
         <div id="cal-editor-repeat"></div>
+      </div>
+      <div class="form__row">
+        <label>Remind me</label>
+        <div id="cal-editor-remind"></div>
+        <p class="form__note" data-editor-note-remind></p>
       </div>
       <div class="form__row">
         <label for="cal-editor-desc">Description</label>
@@ -214,6 +227,35 @@ export class CalendarEventEditor {
     content
       .querySelector('#cal-editor-repeat')!
       .appendChild(this.repeatDropdown.getElement());
+
+    // Reminder lead: per-event override of the calendar default (local only).
+    const reminderService = CalendarReminderService.getInstance();
+    const defaultLead = reminderService.getDefaultLeadMin();
+    const existingOverride = this.existing
+      ? reminderService.getEventLeadOverride(this.existing.coordinate)
+      : null;
+    this.remindValue =
+      existingOverride === null ? 'default' : String(existingOverride);
+    this.remindDropdown = new CustomDropdown({
+      options: [
+        {
+          value: 'default',
+          label:
+            defaultLead === 0
+              ? 'Calendar default (never)'
+              : `Calendar default (${humanizeLeadMinutes(defaultLead).replace(/^in /, '')})`,
+        },
+        ...LEAD_OPTIONS,
+      ],
+      selectedValue: this.remindValue,
+      width: '100%',
+      onChange: value => {
+        this.remindValue = value;
+      },
+    });
+    content
+      .querySelector('#cal-editor-remind')!
+      .appendChild(this.remindDropdown.getElement());
 
     // Actions.
     content
@@ -394,6 +436,7 @@ export class CalendarEventEditor {
               : null,
             participants,
           });
+        this.persistReminderLead(model.coordinate);
         // Phase 3b: gift-wrap invitations for new participants.
         const newParticipants = participants.filter(p => p && !previous.has(p));
         if (newParticipants.length > 0) {
@@ -410,7 +453,11 @@ export class CalendarEventEditor {
         const { CalendarPublishService } = await import(
           './CalendarPublishService'
         );
-        await CalendarPublishService.getInstance().publishEvent(draft);
+        const signed =
+          await CalendarPublishService.getInstance().publishEvent(draft);
+        this.persistReminderLead(
+          `${signed.kind}:${signed.pubkey}:${draft.dTag}`
+        );
       }
       ToastService.show(
         this.existing ? 'Event updated' : 'Event published',
@@ -467,6 +514,18 @@ export class CalendarEventEditor {
   }
 
   /** Parse the participants input: comma/whitespace-separated npub or hex. */
+  /**
+   * Persist the per-event reminder lead (local-only preference — the lead is
+   * about THIS user's reminders, so it never gets published). Passing null
+   * clears the override back to the calendar default.
+   */
+  private persistReminderLead(coordinate: string): void {
+    CalendarReminderService.getInstance().setEventLead(
+      coordinate,
+      this.remindValue === 'default' ? null : Number(this.remindValue)
+    );
+  }
+
   private readParticipants(content: HTMLElement): string[] {
     const raw =
       content.querySelector<HTMLInputElement>('#cal-editor-participants')
@@ -497,6 +556,9 @@ export class CalendarEventEditor {
   public destroy(): void {
     this.repeatDropdown?.destroy();
     this.repeatDropdown = null;
+    this.remindDropdown?.destroy();
+    this.remindDropdown = null;
     this.allDaySwitch = null;
+    this.privateSwitch = null;
   }
 }
