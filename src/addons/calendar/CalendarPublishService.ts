@@ -137,18 +137,59 @@ export class CalendarPublishService {
     return signed;
   }
 
-  /** Delete an own calendar event or collection (NIP-09 by coordinates). */
+  /**
+   * Delete an own calendar event or collection (NIP-09).
+   *
+   * Two-step on purpose: (1) publish the kind-5 DIRECTLY to the calendar
+   * relay set (read + aggregator + own NIP-65 outbox) — exactly where the
+   * event lives; DeletionService only covers the user's active Settings
+   * relays, which can miss outbox-only relays and leaves the event alive
+   * there forever. (2) then DeletionService (posts module) for breadth:
+   * all settings relays + the background broadcast to 1000+ relays.
+   */
   public async deleteEvent(event: CalendarEventData): Promise<boolean> {
-    const posts = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
-    const ok =
-      (await posts?.deleteByCoordinates(
+    const user = this.auth.getCurrentUser();
+    if (!user) throw new Error('Not logged in');
+
+    const unsigned = {
+      kind: 5,
+      created_at: Math.floor(Date.now() / 1000),
+      tags: [
+        ['a', event.coordinate],
+        ['k', String(event.kind)],
+      ],
+      content: `Deleted calendar event "${event.title}"`,
+      pubkey: user.pubkey,
+    };
+    const signed = await this.auth.signEvent(unsigned);
+    if (!signed) throw new Error('Signing failed');
+
+    const relays = await resolveCalendarRelays([user.pubkey]);
+    const accepted = await this.transport.publish(relays, signed);
+
+    // Breadth pass (settings relays + 1000+ background broadcast). The
+    // own-relay publish above already guarantees the delete lands where the
+    // event lives.
+    try {
+      const posts = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
+      void posts?.deleteByCoordinates(
         [event.coordinate],
         `Deleted calendar event "${event.title}"`
-      )) ?? false;
-    if (ok) {
-      diagLog('system', 'calendar: event deleted', { dTag: event.dTag });
+      );
+    } catch {
+      // Breadth pass is best-effort.
     }
-    return ok;
+
+    // Remove from the local cache immediately so the grid is clean even if
+    // relays are slow to serve the deletion back.
+    const { CalendarDataService } = await import('./CalendarDataService');
+    CalendarDataService.getInstance().removeEventFromCache(event.coordinate);
+
+    diagLog('system', 'calendar: event deleted', {
+      dTag: event.dTag,
+      acceptedRelays: accepted.size,
+    });
+    return accepted.size > 0;
   }
 
   /** Publish the current user's RSVP (kind 31925) for an event. */

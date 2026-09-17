@@ -194,6 +194,23 @@ export class CalendarDataService {
     }
   }
 
+  /**
+   * Drop one event from the per-account cache (after a delete publish) so
+   * the grid is clean immediately, without waiting for relays to serve the
+   * deletion back into the tombstone filter.
+   */
+  public removeEventFromCache(coordinate: string): void {
+    const cache = this.readCache();
+    if (!cache) return;
+    const before = cache.events.length;
+    cache.events = cache.events.filter(ev => ev.coordinate !== coordinate);
+    if (cache.events.length === before) return;
+    this.writeCache(cache);
+    diagLog('system', 'calendar: event removed from cache', {
+      coordinate: coordinate.slice(0, 40),
+    });
+  }
+
   // ---------- collection subscriptions (phase 2.5) ----------
 
   /**
