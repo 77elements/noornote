@@ -1945,7 +1945,7 @@ export class ProfileView extends View {
         relays,
         [
           {
-            kinds: [31922, 31923, 31924],
+            kinds: [31924],
             authors: [this.pubkey],
             limit: 200,
           } as import('@nostr-dev-kit/ndk').NDKFilter<number>,
@@ -1970,22 +1970,16 @@ export class ProfileView extends View {
 
       const list = section.querySelector('.profile-calendar-carousel__list')!;
 
-      // Collections first, then events chronologically.
+      // Only published event calendars (kind 31924) — individual events are
+      // not listed here; they surface via their calendar / the grid.
       const collections = events
         .filter(e => e.kind === 31924)
         .sort((a, b) => b.created_at - a.created_at);
-      const calendarEvents = events
-        .filter(e => e.kind === 31922 || e.kind === 31923)
-        .sort((a, b) => {
-          const start = (ev: typeof a) =>
-            Number(ev.tags.find(t => t[0] === 'start')?.[1] ?? 0);
-          return start(a) - start(b);
-        });
 
-      for (const ev of [...collections, ...calendarEvents]) {
+      for (const ev of collections) {
         try {
           const processed = CalendarEventProcessor.process(ev);
-          const card = CalendarEventCardRenderer.render(processed, {
+          const card = CalendarEventCardRenderer.renderCollection(processed, {
             collapsible: false,
             depth: 1,
           });

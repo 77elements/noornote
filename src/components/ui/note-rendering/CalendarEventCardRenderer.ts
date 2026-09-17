@@ -218,7 +218,7 @@ export class CalendarEventCardRenderer {
       opts,
       'calendar-collection',
       body,
-      () => {}
+      () => void CalendarEventCardRenderer.openCollectionDetail(event)
     );
 
     // Wire the subscribe toggle (async import keeps the addon chunk lazy;
@@ -254,6 +254,23 @@ export class CalendarEventCardRenderer {
     }
 
     return card;
+  }
+
+  /** Open the collection detail modal (dynamic import — keeps the chunk lazy). */
+  public static async openCollectionDetail(event: {
+    id?: string | undefined;
+    kind?: number | undefined;
+    pubkey: string;
+    created_at?: number | undefined;
+    content?: string | undefined;
+    tags?: string[][] | undefined;
+  }): Promise<void> {
+    const parsed = parseCalendarCollection(event);
+    if (!parsed) return;
+    const { CalendarCollectionDetailModal } = await import(
+      '../../../addons/calendar/CalendarCollectionDetailModal'
+    );
+    await new CalendarCollectionDetailModal(parsed).open();
   }
 
   /** Open the addon detail modal (dynamic import — keeps the chunk lazy). */
