@@ -9,6 +9,7 @@ import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { NoteHeader } from '../NoteHeader';
 import { AuthService } from '../../../services/AuthService';
 import { ToastService } from '../../../services/ToastService';
+import { TypedEventBus } from '../../../core/TypedEventBus';
 import {
   parseCalendarEvent,
   parseCalendarCollection,
@@ -45,6 +46,37 @@ function formatWhen(
 }
 
 export class CalendarEventCardRenderer {
+  /** One shared listener: keeps every rendered card's save label in sync. */
+  private static saveSyncSubId: string | null = null;
+
+  private static ensureSaveSyncListener(): void {
+    if (CalendarEventCardRenderer.saveSyncSubId) return;
+    CalendarEventCardRenderer.saveSyncSubId = TypedEventBus.getInstance().on(
+      'calendar:saved-changed',
+      () => {
+        void import('../../../addons/calendar/CalendarDataService').then(
+          ({ CalendarDataService }) => {
+            const data = CalendarDataService.getInstance();
+            document
+              .querySelectorAll<HTMLElement>(
+                '.note-card--calendar-event [data-action="save"][data-coordinate]'
+              )
+              .forEach(btn => {
+                const coordinate = btn.dataset.coordinate;
+                if (!coordinate) return;
+                const saved = data.isEventSaved(coordinate);
+                btn.textContent = saved
+                  ? '✓ In your calendar'
+                  : '+ Add to my cal';
+                btn.classList.toggle('btn--passive', !saved);
+                btn.classList.toggle('btn--success', saved);
+              });
+          }
+        );
+      }
+    );
+  }
+
   /** Shared card scaffold: NoteHeader + nn-card body + ISL (both variants). */
   private static buildCard(
     note: ProcessedNote,
@@ -125,9 +157,11 @@ export class CalendarEventCardRenderer {
 
     // Wire the "Add to my cal" toggle (foreign events only — dynamic import
     // keeps the addon chunk lazy; label reflects the saved state).
-    const saveBtn = card.querySelector('[data-action="save"]');
+    const saveBtn = card.querySelector<HTMLElement>('[data-action="save"]');
     const coordinate = parsed?.coordinate;
     if (saveBtn && coordinate) {
+      saveBtn.dataset.coordinate = coordinate;
+      CalendarEventCardRenderer.ensureSaveSyncListener();
       void import('../../../addons/calendar/CalendarDataService').then(
         ({ CalendarDataService }) => {
           const data = CalendarDataService.getInstance();
@@ -150,6 +184,7 @@ export class CalendarEventCardRenderer {
               ToastService.show('Added to your calendar grid', 'success');
             }
             refresh();
+            TypedEventBus.getInstance().emit('calendar:saved-changed', {});
           });
         }
       );

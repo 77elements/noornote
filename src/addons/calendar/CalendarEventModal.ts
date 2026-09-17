@@ -9,6 +9,7 @@ import { ModalService } from '../../services/ModalService';
 import { ErrorService } from '../../services/ErrorService';
 import { ToastService } from '../../services/ToastService';
 import { AuthService } from '../../services/AuthService';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { convertLineBreaks } from '../../helpers/convertLineBreaks';
 import { npubToUsername } from '../../helpers/npubToUsername';
@@ -382,6 +383,8 @@ export class CalendarEventModal {
       btn.classList.toggle('btn--danger', this.saved);
       btn.classList.toggle('btn--passive', !this.saved);
     }
+    // Let the (possibly open) grid reload immediately.
+    TypedEventBus.getInstance().emit('calendar:saved-changed', {});
   }
 
   /** Delete this event (public: NIP-09 via DeletionService, private: list ref + kind-5). */

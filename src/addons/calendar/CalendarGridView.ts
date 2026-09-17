@@ -9,6 +9,7 @@
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { setupTabClickHandlers } from '../../helpers/TabsHelper';
 import { ToastService } from '../../services/ToastService';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { CalendarDataService } from './CalendarDataService';
 import { CalendarEventModal } from './CalendarEventModal';
 import {
@@ -36,12 +37,19 @@ export class CalendarGridView {
   private entries: GridEntry[] = [];
   private invites: CalendarInvite[] = [];
   private loading = false;
+  private busSubId: string | null = null;
 
   constructor() {
     this.container = document.createElement('div');
     this.container.className = 'calendar-addon';
     this.anchorDate = this.startOfDay(new Date());
     this.dataService = CalendarDataService.getInstance();
+    // "Add to my cal" from feed cards: reload immediately so the imported
+    // event shows up without a route change.
+    this.busSubId = TypedEventBus.getInstance().on(
+      'calendar:saved-changed',
+      () => void this.load()
+    );
     this.render();
     void this.load();
   }
@@ -51,6 +59,10 @@ export class CalendarGridView {
   }
 
   public destroy(): void {
+    if (this.busSubId) {
+      TypedEventBus.getInstance().off(this.busSubId);
+      this.busSubId = null;
+    }
     this.container.innerHTML = '';
   }
 

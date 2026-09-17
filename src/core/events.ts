@@ -507,6 +507,8 @@ export interface AppEvents {
   // ── Calendar ─────────────────────────────
   /** Emitted after a successful relay fetch of the user's calendar data. */
   'calendar:data-refreshed': Record<string, never>;
+  /** Emitted when a single event is saved/unsaved via "Add to my cal". */
+  'calendar:saved-changed': Record<string, never>;
 
   // ── Addon Toggles ─────────────────────────
   'analytics:addon-toggle': AddonTogglePayload;
