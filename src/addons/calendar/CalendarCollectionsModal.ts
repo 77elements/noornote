@@ -12,6 +12,7 @@ import { ModalService } from '../../services/ModalService';
 import { ErrorService } from '../../services/ErrorService';
 import { ToastService } from '../../services/ToastService';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { Tooltip } from '../../components/ui/Tooltip';
 import { generateDTag } from './CalendarPublishService';
 import { CalendarDataService } from './CalendarDataService';
 import type {
@@ -116,6 +117,7 @@ export class CalendarCollectionsModal {
 
 export class CalendarCollectionEditorModal {
   private selected = new Set<string>();
+  private tooltipDisposers: Array<() => void> = [];
 
   constructor(
     private readonly existing: CalendarCollectionData | null,
@@ -137,8 +139,8 @@ export class CalendarCollectionEditorModal {
         <input id="cal-col-title" class="input input--title" type="text" maxlength="120"
           placeholder="e.g. My meetups 2026" value="${escapeHtmlAttr(this.existing?.title ?? '')}" />
       </div>
-      <div class="form__row">
-        <label>Add public events</label>
+      <div class="calendar-collection-editor__events">
+        <span class="setting__label">Add public events</span>
         <p class="form__note">Pick from the events currently in your grid. Subscribers get all of them and any future changes.</p>
         <div class="ui-list calendar-collections__pick-list" data-slot="events">
           ${
@@ -158,11 +160,14 @@ export class CalendarCollectionEditorModal {
     for (const event of selectable) {
       const checked = this.selected.has(event.coordinate);
       const row = document.createElement('label');
-      row.className = 'ui-list__item calendar-collections__pick';
+      row.className =
+        'nn-checkbox nn-checkbox--label-left calendar-collections__pick';
       row.innerHTML = `
+        <span class="calendar-collections__pick-label">
+          <span class="calendar-collections__title">${escapeHtml(event.title || '(Untitled event)')}</span>
+          <span class="calendar-collections__meta">${escapeHtml(this.dateLabel(event))}</span>
+        </span>
         <input type="checkbox" data-coordinate="${escapeHtmlAttr(event.coordinate)}" ${checked ? 'checked' : ''} />
-        <span class="calendar-collections__title">${escapeHtml(event.title || '(Untitled event)')}</span>
-        <span class="calendar-collections__meta">${escapeHtml(this.dateLabel(event))}</span>
       `;
       row.querySelector('input')?.addEventListener('change', e => {
         const box = e.target as HTMLInputElement;
@@ -170,6 +175,8 @@ export class CalendarCollectionEditorModal {
         else this.selected.delete(event.coordinate);
       });
       list.appendChild(row);
+      // Whole row is the click target — explain the interaction on hover.
+      this.tooltipDisposers.push(Tooltip.attach(row, 'Click/tap to select'));
     }
 
     content
@@ -183,7 +190,14 @@ export class CalendarCollectionEditorModal {
       title: this.existing ? 'Edit event calendar' : 'New event calendar',
       content,
       width: '520px',
+      onClose: () => this.dispose(),
     });
+  }
+
+  /** Tooltip disposers (destroy contract — modal teardown). */
+  private dispose(): void {
+    for (const dispose of this.tooltipDisposers) dispose();
+    this.tooltipDisposers = [];
   }
 
   /** Public calendar events available for membership (own + subscribed). */

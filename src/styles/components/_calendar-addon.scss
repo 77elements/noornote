@@ -298,6 +298,10 @@
 
 /* --- Event calendars management (phase 2.5) --- */
 
+.calendar-collection-editor__events {
+  margin-bottom: $gap;
+}
+
 .calendar-collections__new {
   padding-bottom: calc($gap / 2);
 }
@@ -326,12 +330,15 @@
   white-space: nowrap;
 }
 
-.calendar-collections__pick {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: calc($gap / 2);
-  cursor: pointer;
+.calendar-collections__pick + .calendar-collections__pick {
+  margin-bottom: calc($gap / 2); // 0.5rem spacing between event rows
+}
+
+.calendar-collections__pick-label {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: calc($gap / 8);
 }
 
 .calendar-collections__pick-list {

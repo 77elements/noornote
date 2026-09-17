@@ -100,6 +100,24 @@
   }
 }
 
+// Native picker indicators on plain .input date/time fields (e.g. the
+// calendar editor's datetime-local) — without a color-scheme the indicator
+// icon renders in default black and vanishes on dark input backgrounds.
+.input[type="date"],
+.input[type="datetime-local"],
+.input[type="time"] {
+  color-scheme: dark;
+
+  [data-theme="bright-superman"] &,
+  [data-theme="soft-lilac"] & {
+    color-scheme: light;
+  }
+
+  &::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+  }
+}
+
 // ========================================
 // Labels (global)
 // ========================================
