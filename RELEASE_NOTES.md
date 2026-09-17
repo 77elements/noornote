@@ -1,5 +1,15 @@
-# NoorNote 1.5.5
+# NoorNote 1.6.0
 
-**React and reply to zaps** — zap receipts now show their own reaction line, and the zap pill opens a menu: react with any emoji (❤️) or reply to the zapper. Zap-reaction notifications link straight to the zapped note.
+## New: Calendar addon
+Your personal calendar on Nostr: month, week and list views, public and private (encrypted) events, reminders — and you can subscribe to other people's public event calendars with one click.
 
-**Web updates announce themselves** — when a new version is live on noornote.app, a notice with a reload button appears in the sidebar.
+## New: Centralized reminders
+Calendar, notes and prayer reminders now share one notification system — including proper Android notifications that fire even when the app is closed.
+
+## New: "Share in TL"
+Share any of your calendar events (or events you follow) into your timeline with one click — they render as interactive event cards.
+
+## Fixes
+- Fixed nostr.build media upload failures (CORS errors)
+- Fixed calendar event deletion not sticking on all relays
+- Calendar reminder dismissals now stick across app restarts
