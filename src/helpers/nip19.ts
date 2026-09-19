@@ -137,3 +137,45 @@ export function extractPubkeysFromText(text: string): string[] {
 
   return Array.from(pubkeys);
 }
+
+/**
+ * URL-safe variant for MENTION TAGGING (NIP-10 p-tags): ignores npub/nprofile
+ * tokens embedded in URLs — path segments (`https://…/profile/npub1…`) and
+ * query values (`?x=npub1…`, `?x=nostr:npub1…`) — so sharing a profile link
+ * never tags the linked person as "mentioned". Same lookbehind technique as
+ * npubToUsername / NOSTR_EVENT_REF_REGEX.
+ *
+ * Do NOT use this where extracting from pasted URLs is the FEATURE (e.g.
+ * tribes member input) — that is what extractPubkeysFromText is for.
+ */
+export function extractMentionPubkeysFromText(text: string): string[] {
+  // Two branches so the URL guard applies BEFORE `nostr:` (prefixed form) or
+  // before the token itself (bare form) — otherwise the optional prefix would
+  // let the match restart after the `:` of `?x=nostr:npub1…`.
+  const mentionRegex =
+    /(?:(?<![/])(?<![?&=])nostr:|(?<![:/?&=]))(npub1[023456789acdefghjklmnpqrstuvwxyz]{58}|nprofile1[023456789acdefghjklmnpqrstuvwxyz]{58,})/g;
+  const matches = text.matchAll(mentionRegex);
+  const pubkeys = new Set<string>();
+
+  for (const match of matches) {
+    try {
+      const nip19Id = match[1];
+      if (!nip19Id) continue;
+
+      if (nip19Id.startsWith('npub')) {
+        const hex = npubToHex(nip19Id);
+        if (hex) pubkeys.add(hex);
+      } else if (nip19Id.startsWith('nprofile')) {
+        const decoded = decodeNip19(nip19Id);
+        if (decoded.type === 'nprofile') {
+          const pubkeyHex = (decoded.data as { pubkey?: string }).pubkey;
+          if (pubkeyHex) pubkeys.add(pubkeyHex);
+        }
+      }
+    } catch {
+      // Undecodable token — skip (same tolerance as extractPubkeysFromText).
+    }
+  }
+
+  return Array.from(pubkeys);
+}

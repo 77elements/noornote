@@ -96,8 +96,10 @@ export async function scheduleNote(
 
     if (contentWarning) tags.push(['content-warning', '']);
 
-    const { extractPubkeysFromText } = await import('../../helpers/nip19');
-    const mentionedPubkeys = new Set(extractPubkeysFromText(content));
+    const { extractMentionPubkeysFromText } = await import(
+      '../../helpers/nip19'
+    );
+    const mentionedPubkeys = new Set(extractMentionPubkeysFromText(content));
     mentionedPubkeys.forEach(pubkey => tags.push(['p', pubkey]));
 
     if (quotedEvent) {

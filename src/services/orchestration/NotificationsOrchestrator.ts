@@ -1222,13 +1222,15 @@ export class NotificationsOrchestrator extends Orchestrator {
 
   /**
    * Check if user is mentioned in event content (nostr:npub... or nostr:nprofile...)
+   * The lookbehinds keep URL-embedded values (`?x=nostr:npub1…`) out — a
+   * genuine NIP-21 mention never sits inside a URL's query/path.
    */
   private isUserMentionedInContent(
     content: string,
     userPubkey: string
   ): boolean {
     const mentionRegex =
-      /nostr:(npub1[023456789acdefghjklmnpqrstuvwxyz]{58}|nprofile1[023456789acdefghjklmnpqrstuvwxyz]{58,})/g;
+      /(?<!\/)(?<![?&=])nostr:(npub1[023456789acdefghjklmnpqrstuvwxyz]{58}|nprofile1[023456789acdefghjklmnpqrstuvwxyz]{58,})/g;
     const mentions = content.matchAll(mentionRegex);
 
     for (const match of mentions) {

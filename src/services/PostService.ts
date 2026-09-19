@@ -169,8 +169,11 @@ export class PostService {
       }
 
       // Extract mentions from content (nostr:npub... or nostr:nprofile...)
-      const { extractPubkeysFromText } = await import('../helpers/nip19');
-      const mentionedPubkeys = new Set(extractPubkeysFromText(content));
+      // URL-safe variant: npubs inside shared links must not become p-tags.
+      const { extractMentionPubkeysFromText } = await import(
+        '../helpers/nip19'
+      );
+      const mentionedPubkeys = new Set(extractMentionPubkeysFromText(content));
 
       // Add p-tags for mentioned users
       mentionedPubkeys.forEach(pubkey => {
@@ -403,8 +406,12 @@ export class PostService {
       // Add mentions from the comment as p-tags (skip duplicates)
       const trimmedComment = (comment || '').trim();
       if (trimmedComment) {
-        const { extractPubkeysFromText } = await import('../helpers/nip19');
-        const mentioned = new Set(extractPubkeysFromText(trimmedComment));
+        const { extractMentionPubkeysFromText } = await import(
+          '../helpers/nip19'
+        );
+        const mentioned = new Set(
+          extractMentionPubkeysFromText(trimmedComment)
+        );
         mentioned.delete(sourceEvent.pubkey); // already tagged as author
         mentioned.forEach(pubkey => {
           tags.push(['p', pubkey, '', 'mention']);
