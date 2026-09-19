@@ -299,18 +299,14 @@ export class BookingManager {
         <label>Bookable window</label>
         <div data-slot="dropdown-horizon"></div>
       </div>
-      <div class="booking-manager__row">
-        <span>Weekly availability</span>
-        <div class="booking-manager__week">${dayRows}</div>
-      </div>
-      <div class="booking-manager__row">
-        <span>Vacation</span>
-        ${vacations}
-        <div class="l-row booking-manager__vacation-add">
-          <input class="input datepicker" type="date" data-vacation-from aria-label="Vacation from" />
-          <input class="input datepicker" type="date" data-vacation-to aria-label="Vacation to" />
-          <button class="btn btn--passive btn--mini" data-vacation-add>Add</button>
-        </div>
+      <h3>Weekly availability</h3>
+      <div class="booking-manager__week">${dayRows}</div>
+      <h3>Vacation</h3>
+      ${vacations}
+      <div class="l-row booking-manager__vacation-add">
+        <input class="input datepicker" type="date" data-vacation-from aria-label="Vacation from" />
+        <input class="input datepicker" type="date" data-vacation-to aria-label="Vacation to" />
+        <button class="btn btn--passive" data-vacation-add>Add</button>
       </div>
       <div class="l-row--right">
         <button class="btn" data-booking-save>Save &amp; publish slots</button>

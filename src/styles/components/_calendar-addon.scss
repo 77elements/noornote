@@ -412,6 +412,7 @@
 
   &__vacation-add {
     margin-top: calc($gap / 2);
+    margin-bottom: $gap;
     gap: calc($gap / 2);
   }
 
@@ -438,6 +439,16 @@
 // (input, textarea, nn-checkbox, custom dropdown all count). Inputs in the
 // custom rows size to their content.
 .booking-manager {
+  // Date pickers (vacation ranges) size to their content, not full width.
+  input.datepicker {
+    width: auto;
+  }
+
+  // Time pickers (weekly availability) too.
+  input[type='time'] {
+    width: auto;
+  }
+
   &__row {
     margin-bottom: $gap;
 
