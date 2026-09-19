@@ -29,7 +29,10 @@ import {
 import { getAddonEnabled } from '../../addons/addonFlags';
 import { ADDON_REGISTRY, type AddonRegistryEntry } from '../../addons/registry';
 
-const TILE_SELECTOR = '.addon-tile';
+// JS selection via data attributes only (scss rule: CSS classes are for
+// styling, never for querySelector).
+const TILE_SELECTOR = '[data-addon-id]';
+const GRID_SELECTOR = '[data-addons-grid]';
 
 export class AddonsOverviewView extends View {
   private container: HTMLElement;
@@ -71,7 +74,7 @@ export class AddonsOverviewView extends View {
         Drag tiles to reorder (on touch: use ▲▼). The order is saved per account.
       </p>
       <div class="nn-card-grid-wrap">
-        <div class="nn-card-grid addons-overview__grid">
+        <div class="nn-card-grid addons-overview__grid" data-addons-grid>
           ${addons.map(a => this.renderTile(a)).join('')}
         </div>
       </div>
@@ -117,9 +120,7 @@ export class AddonsOverviewView extends View {
   }
 
   private wireGrid(): void {
-    const grid = this.container.querySelector(
-      '.addons-overview__grid'
-    ) as HTMLElement;
+    const grid = this.container.querySelector(GRID_SELECTOR) as HTMLElement;
     if (!grid) return;
 
     // Tile click → open the addon page. Suppress after a drag (same pattern
