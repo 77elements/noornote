@@ -50,6 +50,19 @@ const IDB_DEVICE_STORE = 'keychain';
 const IDB_DEVICE_KEY = 'device_key';
 const IDB_DEVICE_DB_VERSION = 1;
 
+// Web-only localStorage mirror for the device key. The NWC ciphertext mirror
+// (KeychainStorage NWC_BLOB_MIRROR) is useless if a browser eviction wipes
+// BOTH IndexedDB databases (`noornote_secure` + `noornote_device`) — a fresh
+// random key cannot decrypt the mirrored ciphertext and the wallet connection
+// is lost. localStorage survives those evictions (observed repeatedly, see
+// docs/features/indexeddb-eviction-nwc-dm.md). Device-level key (NOT
+// per-account), same scope as the IndexedDB key. No added attack surface in
+// practice: localStorage and IndexedDB are equally JS-readable, so the
+// "separate storage" posture never protected against XSS anyway (see the
+// threat model above) — it only ever guarded against file-copy attacks that
+// do not exist in the browser.
+const DEVICE_KEY_MIRROR_STORAGE_KEY = 'noornote_device_key_mirror';
+
 export class NWCCryptoService {
   private static instance: NWCCryptoService | null = null;
   private cachedKey: CryptoKey | null = null;
@@ -190,7 +203,7 @@ export class NWCCryptoService {
     if (platform.isCapacitor) {
       return this.readCapacitorKey();
     }
-    return this.readIndexedDBKey();
+    return this.readWebKey();
   }
 
   private async writeStoredKeyBytes(keyBytes: Uint8Array): Promise<void> {
@@ -204,6 +217,66 @@ export class NWCCryptoService {
       return;
     }
     await this.writeIndexedDBKey(keyBytes);
+    this.writeKeyMirror(keyBytes);
+  }
+
+  // ----- Web (IndexedDB + localStorage mirror) -----
+
+  /**
+   * Web key resolution with eviction recovery: prefer IndexedDB, fall back to
+   * the localStorage mirror when the browser evicted the `noornote_device`
+   * database, and backfill the mirror when only IndexedDB has the key (users
+   * from before this mirror shipped).
+   */
+  private async readWebKey(): Promise<Uint8Array | null> {
+    const fromIdb = await this.readIndexedDBKey();
+    if (fromIdb) {
+      if (!this.readKeyMirror()) {
+        this.writeKeyMirror(fromIdb);
+        diagLog('wallet', 'nwc_device_key_mirror_backfilled', {
+          storage: 'localstorage',
+        });
+      }
+      return fromIdb;
+    }
+
+    const mirrored = this.readKeyMirror();
+    if (mirrored) {
+      try {
+        await this.writeIndexedDBKey(mirrored);
+      } catch {
+        /* repopulate is best-effort — the mirror stays authoritative */
+      }
+      diagLog('wallet', 'nwc_device_key_from_mirror', {
+        storage: 'localstorage',
+      });
+      return mirrored;
+    }
+    return null;
+  }
+
+  /** Read the device key from the localStorage mirror (device-level key). */
+  private readKeyMirror(): Uint8Array | null {
+    try {
+      const b64 = localStorage.getItem(DEVICE_KEY_MIRROR_STORAGE_KEY);
+      return b64 ? base64ToBytes(b64) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Write the device key to the localStorage mirror (best-effort). */
+  private writeKeyMirror(keyBytes: Uint8Array): void {
+    try {
+      localStorage.setItem(
+        DEVICE_KEY_MIRROR_STORAGE_KEY,
+        bytesToBase64(keyBytes)
+      );
+    } catch (err) {
+      diagLog('wallet', 'nwc_device_key_mirror_save_failed', {
+        error: String(err),
+      });
+    }
   }
 
   // ----- Desktop (Electron) -----
