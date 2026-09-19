@@ -1,15 +1,8 @@
-# NoorNote 1.6.0
+# NoorNote 1.6.1
 
-## New: Calendar addon
-Your personal calendar on Nostr: month, week and list views, public and private (encrypted) events, reminders — and you can subscribe to other people's public event calendars with one click.
-
-## New: Centralized reminders
-Calendar, notes and prayer reminders now share one notification system — including proper Android notifications that fire even when the app is closed.
-
-## New: "Share in TL"
-Share any of your calendar events (or events you follow) into your timeline with one click — they render as interactive event cards.
+## New: Addons overview page
+The "Addons" sidebar entry now opens a clean tile overview of all addons instead of a long submenu — with descriptions, an active/inactive LED and "New"/"Updated" badges. Reorder tiles by drag & drop or with the ▲▼ buttons; the order is saved per account and can be reset anytime.
 
 ## Fixes
-- Fixed nostr.build media upload failures (CORS errors)
-- Fixed calendar event deletion not sticking on all relays
-- Calendar reminder dismissals now stick across app restarts
+- Fixed broken note rendering for links that contain an naddr in the URL (false "Satellite Earth" cards and garbled link text)
+- URLs containing npubs are no longer mangled by mention detection
