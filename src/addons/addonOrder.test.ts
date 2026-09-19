@@ -25,6 +25,7 @@ import {
   hasCustomAddonOrder,
   resetAddonOrder,
   saveAddonOrder,
+  reorderAddonIds,
 } from './addonOrder';
 
 const ORDER_KEY = 'noornote_addon_order_map';
@@ -89,5 +90,59 @@ describe('addonOrder', () => {
   it('a saved order referencing removed addons still counts as custom', () => {
     saveAddonOrder(['wallet-balance', 'nonexistent-addon']);
     expect(hasCustomAddonOrder()).toBe(true);
+  });
+
+  describe('reorderAddonIds', () => {
+    const ids = ['a', 'b', 'c', 'd'];
+
+    it('moves before the target (grid drop semantics, insertBefore)', () => {
+      expect(reorderAddonIds(ids, 'b', 'd', 'before')).toEqual([
+        'a',
+        'c',
+        'b',
+        'd',
+      ]);
+      expect(reorderAddonIds(ids, 'b', 'a', 'before')).toEqual([
+        'b',
+        'a',
+        'c',
+        'd',
+      ]);
+    });
+
+    it('moves after the target (touch ▼ button)', () => {
+      expect(reorderAddonIds(ids, 'b', 'c', 'after')).toEqual([
+        'a',
+        'c',
+        'b',
+        'd',
+      ]);
+      expect(reorderAddonIds(ids, 'a', 'd', 'after')).toEqual([
+        'b',
+        'c',
+        'd',
+        'a',
+      ]);
+    });
+
+    it('moves up via before-previous (touch ▲ button)', () => {
+      expect(reorderAddonIds(ids, 'c', 'b', 'before')).toEqual([
+        'a',
+        'c',
+        'b',
+        'd',
+      ]);
+    });
+
+    it('returns the identical array on no-op inputs', () => {
+      expect(reorderAddonIds(ids, 'b', 'b', 'before')).toBe(ids);
+      expect(reorderAddonIds(ids, 'x', 'a', 'before')).toBe(ids);
+      expect(reorderAddonIds(ids, 'a', 'x', 'before')).toBe(ids);
+    });
+
+    it('does not mutate the input array', () => {
+      reorderAddonIds(ids, 'a', 'd', 'after');
+      expect(ids).toEqual(['a', 'b', 'c', 'd']);
+    });
   });
 });

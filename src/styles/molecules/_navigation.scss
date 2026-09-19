@@ -166,26 +166,6 @@
 
   // Accordion menu (Lists)
   &__item--accordion {
-    // Addons head: trigger + "(reset order)" as SEPARATE click targets in one
-    // row (Analytics-side directive 2026-08-29) — grid keeps the trigger
-    // stretch and the reset link auto-sized. Lists keeps the plain trigger.
-    .addons-nav-head {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: center;
-    }
-
-    .addons-nav-head .primary-nav__accordion-trigger {
-      width: 100%;
-    }
-
-    // Plain text link — the legacy non-BEM rule `.primary-nav
-    // a:not([class*='primary-nav__'])` wins on specificity, so the padding
-    // reset needs !important (single sanctioned exception, 2026-08-29).
-    .addon-order-reset {
-      padding: 0 !important;
-    }
-
     .primary-nav__accordion-trigger {
       display: block;
       width: 100%;
@@ -239,12 +219,6 @@
     list-style: none;
     padding: 0 0 0 calc($gap / 2);
     margin: calc($gap / 4) 0 0 0;
-
-    li[data-addon-id] {
-      position: relative;
-      user-select: none;
-      cursor: grab;
-    }
   }
 
   &__sublink,
@@ -292,51 +266,6 @@
       font-weight: 700;
       color: var(--color-4);
     }
-  }
-
-  // Row being dragged (desktop reorder).
-  &__item--dragging {
-    opacity: 0.6;
-    cursor: grabbing;
-  }
-}
-
-// Addon list reordering — ▲▼ controls, hidden until touch reorder mode is on.
-.addon-reorder {
-  display: none;
-  position: absolute;
-  top: 50%;
-  right: calc($gap / 2);
-  transform: translateY(-50%);
-  gap: calc($gap / 4);
-  align-items: center;
-
-  .primary-nav__submenu--reorder & {
-    display: inline-flex;
-  }
-}
-
-.addon-reorder__btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.6rem;
-  height: 1.6rem;
-  padding: 0;
-  border: none;
-  border-radius: $radius-xl;
-  background: var(--color-2);
-  color: var(--color-5);
-  cursor: pointer;
-
-  &:hover {
-    color: var(--color-4);
-  }
-
-  svg {
-    width: 0.9rem;
-    height: 0.9rem;
-    fill: none; // chevron icons are stroke-based (stroke="currentColor")
   }
 }
 

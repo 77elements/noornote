@@ -27,14 +27,6 @@ import { ModalService } from '../../services/ModalService';
 import { AuthStateManager } from '../../services/AuthStateManager';
 import { AuthService } from '../../services/AuthService';
 import { TypedEventBus } from '../../core/TypedEventBus';
-import {
-  getOrderedAddons,
-  getOrderedAddonsForPubkey,
-  hasCustomAddonOrder,
-  resetAddonOrder,
-} from '../../addons/addonOrder';
-import { wireAddonReorder } from './AddonNavReorder';
-import { ToastService } from '../../services/ToastService';
 import { WebUpdateCheck } from '../../services/WebUpdateCheck';
 // WalletBalanceDisplay is owned by src/addons/wallet-balance/runtime.ts and
 // managed by the AddonLoader. MainLayout only provides the mount point
@@ -63,7 +55,6 @@ import {
   switchTabWithContent,
   createClosableTab,
 } from '../../helpers/TabsHelper';
-import { RailFlyout } from '../../helpers/RailFlyout';
 import { ViewTabManager, type ViewTab } from '../../services/ViewTabManager';
 import {
   PerAccountLocalStorage,
@@ -939,11 +930,10 @@ export class MainLayout {
    * Update active navigation based on view class (e.g., 'tv', 'pv', 'nv')
    */
   private updateActiveNavigation(viewClass: string): void {
-    // Clear all active states (main nav + list sublinks + addon sublinks)
+    // Clear all active states (main nav + list sublinks)
     const navLinks = this.element.querySelectorAll('.primary-nav > li > a');
     navLinks.forEach(link => link.classList.remove('is-active'));
     this.setActiveListSublink(null);
-    this.setActiveAddonSublink(null);
 
     // Map viewClass abbreviations to nav selectors
     const viewToSelector: Record<string, string> = {
@@ -964,15 +954,6 @@ export class MainLayout {
       const activeLink = this.element.querySelector(`.primary-nav ${selector}`);
       activeLink?.classList.add('is-active');
     }
-
-    // For AddonsView: highlight the specific addon sublink
-    if (viewClass === 'adv') {
-      const path = window.location.pathname;
-      const match = path.match(/^\/addons\/(.+)$/);
-      if (match) {
-        this.setActiveAddonSublink(match[1]!);
-      }
-    }
   }
 
   /**
@@ -988,20 +969,6 @@ export class MainLayout {
     if (listType) {
       const activeSublink = this.element.querySelector(
         `.primary-nav__sublink[data-list-type="${listType}"]`
-      );
-      activeSublink?.classList.add('is-active');
-    }
-  }
-
-  private setActiveAddonSublink(addonId: string | null): void {
-    const addonSublinks = this.element.querySelectorAll(
-      '.primary-nav__sublink[data-addon-type]'
-    );
-    addonSublinks.forEach(link => link.classList.remove('is-active'));
-
-    if (addonId) {
-      const activeSublink = this.element.querySelector(
-        `.primary-nav__sublink[data-addon-type="${addonId}"]`
       );
       activeSublink?.classList.add('is-active');
     }
@@ -1073,43 +1040,7 @@ export class MainLayout {
       if (profileLink) {
         profileLink.href = `/profile/${data.npub}`;
       }
-
-      // The addon submenu is built once at construction; re-apply THIS account's saved order on
-      // switch, otherwise the list keeps whatever order the previous account left it in.
-      this.applyAddonOrder(data.pubkey);
     });
-  }
-
-  /** Reorder the existing addon submenu nodes to match the saved order for `pubkey` (no rebuild). */
-  private applyAddonOrder(pubkey: string): void {
-    const submenu = this.element.querySelector(
-      '.primary-nav__link--addons .primary-nav__submenu'
-    ) as HTMLElement | null;
-    if (!submenu) return;
-    const byId = new Map<string, HTMLElement>();
-    submenu
-      .querySelectorAll<HTMLElement>(':scope > li[data-addon-id]')
-      .forEach(li => byId.set(li.dataset.addonId || '', li));
-    // Re-append each row in saved order; appendChild moves the existing node, preserving its
-    // wired listeners (wireAddonReorder delegates on the submenu, so it survives the moves).
-    for (const entry of getOrderedAddonsForPubkey(pubkey)) {
-      const li = byId.get(entry.id);
-      if (li) submenu.appendChild(li);
-    }
-    this.updateAddonResetVisibility();
-  }
-
-  /**
-   * Show the "(reset order)" affordance only while the addon submenu is open
-   * AND the current account has a saved custom order.
-   */
-  private updateAddonResetVisibility(): void {
-    const resetLink = this.element.querySelector<HTMLElement>(
-      '.primary-nav__link--addons [data-addon-order-reset]'
-    );
-    if (!resetLink) return;
-    const visible = this.addonsAccordionOpen && hasCustomAddonOrder();
-    resetLink.style.display = visible ? '' : 'none';
   }
 
   /**
@@ -2501,118 +2432,37 @@ export class MainLayout {
 
   /**
    * Addons: Insert sidebar entry (always visible, not gated by any single addon).
+   * Plain link to the /addons overview page — the former 22-entry submenu was
+   * replaced by it (docs/todos/addons-overview-page.md).
    * Inserts before Download link, after Lists accordion.
    */
-  private addonsAccordionOpen = false;
-
   private insertAddonsSidebarEntry(navContainer: Element | null): void {
     if (!navContainer) return;
     if (navContainer.querySelector('.primary-nav__link--addons')) return;
 
-    // Source of truth: src/addons/registry.ts, reordered by the user's saved preference.
-    const addonItems = getOrderedAddons().map(a => ({
-      id: a.id,
-      name: a.name,
-    }));
-
     const li = document.createElement('li');
-    li.className =
-      'primary-nav__item primary-nav__item--accordion primary-nav__link--addons';
     li.innerHTML = `
-      <div class="addons-nav-head">
-        <button class="primary-nav__accordion-trigger">
-          <svg class="primary-nav__item-icon"><use href="#icon-addons"/></svg>
-          Addons
-        </button>
-        <a href="#" class="addon-order-reset" data-addon-order-reset>(reset order)</a>
-      </div>
-      <ul class="primary-nav__submenu">
-        ${addonItems
-          .map(
-            a => `
-          <li data-addon-id="${a.id}">
-            <a href="#" class="primary-nav__sublink" data-addon-type="${a.id}" draggable="false">
-              <svg class="primary-nav__sublink-icon"><use href="#icon-addons"/></svg>
-              <span class="primary-nav__sublink-desc">${a.name}</span>
-            </a>
-            <span class="addon-reorder">
-              <button class="addon-reorder__btn" data-reorder="up" aria-label="Move up"><svg><use href="#icon-chevron-up"/></svg></button>
-              <button class="addon-reorder__btn" data-reorder="down" aria-label="Move down"><svg><use href="#icon-chevron-down"/></svg></button>
-            </span>
-          </li>
-        `
-          )
-          .join('')}
-      </ul>
+      <a href="/addons" class="primary-nav__link primary-nav__link--addons">
+        <svg class="primary-nav__item-icon"><use href="#icon-addons"/></svg>
+        <span class="primary-nav__item-desc">Addons</span>
+      </a>
     `;
 
-    // Collapsed icon rail: the submenu opens as a floating panel next to the icon.
-    const addonsSubmenu = li.querySelector(
-      '.primary-nav__submenu'
-    ) as HTMLElement | null;
-    const trigger = li.querySelector(
-      '.primary-nav__accordion-trigger'
-    ) as HTMLElement | null;
-    const flyout =
-      trigger && addonsSubmenu ? new RailFlyout(trigger, addonsSubmenu) : null;
-
-    // Accordion trigger
-    trigger?.addEventListener('click', e => {
-      e.preventDefault();
-      if (flyout?.handleTriggerClick()) return;
-      this.addonsAccordionOpen = !this.addonsAccordionOpen;
-      li.classList.toggle(
-        'primary-nav__item--expanded',
-        this.addonsAccordionOpen
-      );
-      this.updateAddonResetVisibility();
-    });
-
-    // Reset order: drop the saved custom order (back to alphabetical) —
-    // separate click target next to the accordion trigger, only visible
-    // while the submenu is open AND the user has reordered.
-    const resetLink = li.querySelector<HTMLElement>('[data-addon-order-reset]');
-    resetLink?.addEventListener('click', e => {
-      e.preventDefault();
-      e.stopPropagation();
-      resetAddonOrder();
-      const pubkey = AuthService.getInstance().getCurrentUser()?.pubkey ?? '';
-      this.applyAddonOrder(pubkey);
-      this.addonsAccordionOpen = true;
-      li.classList.add('primary-nav__item--expanded');
-      this.updateAddonResetVisibility();
-      ToastService.show('Addon order reset to default', 'success');
-    });
-
-    // Sublink handlers
-    li.querySelectorAll('.primary-nav__sublink').forEach(link => {
-      link.addEventListener('click', e => {
+    li.querySelector('.primary-nav__link--addons')?.addEventListener(
+      'click',
+      e => {
         e.preventDefault();
-        flyout?.close();
-        const addonId = (link as HTMLElement).dataset.addonType;
-        if (addonId) {
-          if (this.layoutService.isPhone()) {
-            this.element
-              .querySelector('.sidebar')
-              ?.classList.remove('sidebar--open');
-            this.element
-              .querySelector('.sidebar-overlay')
-              ?.classList.remove('sidebar-overlay--visible');
-          }
-          this.setActiveAddonSublink(addonId);
-          Router.getInstance().navigate(`/addons/${addonId}`);
+        if (this.layoutService.isPhone()) {
+          this.element
+            .querySelector('.sidebar')
+            ?.classList.remove('sidebar--open');
+          this.element
+            .querySelector('.sidebar-overlay')
+            ?.classList.remove('sidebar-overlay--visible');
         }
-      });
-    });
-
-    // Drag&drop (desktop) + long-press ▲▼ (touch) reordering of the addon list.
-    const submenu = li.querySelector(
-      '.primary-nav__submenu'
-    ) as HTMLElement | null;
-    if (submenu) {
-      wireAddonReorder(submenu, () => this.updateAddonResetVisibility());
-      this.updateAddonResetVisibility();
-    }
+        Router.getInstance().navigate('/addons');
+      }
+    );
 
     const downloadLink = navContainer.querySelector(
       '.primary-nav__link--download'

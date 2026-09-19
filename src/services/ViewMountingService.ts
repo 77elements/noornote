@@ -461,6 +461,17 @@ export class ViewMountingService {
           },
         };
 
+      case 'addons-overview':
+        return {
+          factory: async () => {
+            const { AddonsOverviewView } = await import(
+              '../components/views/AddonsOverviewView'
+            );
+            const view = new AddonsOverviewView();
+            return { element: view.getElement(), view };
+          },
+        };
+
       case 'addon-bookmarks':
         return {
           factory: async () => {

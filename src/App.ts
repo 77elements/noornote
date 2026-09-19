@@ -733,9 +733,22 @@ export class App {
       'adv',
       true
     );
-    // /addons (no slug) → redirect to first addon
-    this.router.register('/addons', () =>
-      this.router.navigate('/addons/bookmarks')
+    // /addons (no slug) → overview page with all addon tiles
+    this.registerRoute(
+      '/addons',
+      'addons-overview',
+      'addons-overview',
+      'adv',
+      true
+    );
+    // Alias: the Router matches patterns exactly (^…$), so a trailing slash
+    // (typed URLs, external links) gets its own registration.
+    this.registerRoute(
+      '/addons/',
+      'addons-overview',
+      'addons-overview',
+      'adv',
+      true
     );
     this.registerMarketplaceRoutes();
 

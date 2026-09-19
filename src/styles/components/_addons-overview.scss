@@ -1,0 +1,126 @@
+/**
+ * Addons overview (/addons) — tile grid itself is the shared .nn-card-grid +
+ * .nn-card. This file adds only the overview-specific bits: page head with the
+ * reset action, per-tile LED, touch reorder buttons and the drag placeholder.
+ * See src/components/views/AddonsOverviewView.ts +
+ * docs/todos/addons-overview-page.md.
+ */
+
+@use '../abstracts/variables' as *;
+@use '../base/typography' as *;
+
+.addons-overview__head {
+  margin-bottom: calc($gap / 2);
+
+  h2 {
+    margin: 0;
+  }
+
+  // The .btn display rule beats the UA [hidden] style — the reset button must
+  // really disappear when there is no custom order.
+  [data-addons-reset][hidden] {
+    display: none;
+  }
+}
+
+.addons-overview__intro {
+  margin: 0 0 calc($gap / 2);
+}
+
+.addons-overview__hint {
+  margin: 0 0 $gap;
+  color: var(--color-3);
+  font-size: 0.9em;
+}
+
+.addon-tile {
+  &__head {
+    // Keep the LED glued to the title line even on two-line names.
+    align-items: center;
+  }
+
+  &__meta {
+    display: inline-flex;
+    align-items: center;
+    gap: calc($gap / 4);
+  }
+
+  &__status {
+    @extend %small;
+    font-weight: 600;
+    white-space: nowrap;
+
+    // $color-4 here is an explicit user decision (2026-09-19), deviating from
+    // the "interactive-only" role in _variables.scss: pink = "New",
+    // status-green $color-6 = "Updated".
+    &--new {
+      color: $color-4;
+    }
+
+    &--updated {
+      color: $color-6;
+    }
+  }
+
+  &__led {
+    flex-shrink: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: $radius-full;
+
+    &--on {
+      background: $color-success;
+      box-shadow: 0 0 6px color-mix(in srgb, $color-success 60%, transparent);
+    }
+
+    &--off {
+      background: $color-red;
+      box-shadow: 0 0 6px color-mix(in srgb, $color-red 50%, transparent);
+    }
+  }
+
+  &__desc {
+    color: var(--color-3);
+    font-size: 0.9em;
+  }
+
+  // ▲▼ reorder — visible on ALL platforms (user decision 2026-09-19: desktop
+  // users who don't get along with drag & drop can use the buttons too).
+  // Right-aligned via the .l-row--right molecule (text-align); the buttons
+  // are inline-flex, so the sibling margin provides the gap.
+  &__move {
+    margin-top: calc($gap / 2);
+  }
+
+  &__move-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: none;
+    border-radius: $radius-xl;
+    background: var(--color-2);
+    color: var(--color-5);
+    cursor: pointer;
+
+    &:hover {
+      color: var(--color-4);
+    }
+
+    svg {
+      width: 0.9rem;
+      height: 0.9rem;
+      // caret icons are fill-based (symbol sets fill="currentColor")
+    }
+  }
+}
+
+// Drag placeholder (mirrors .bookmark-card-placeholder, nn-card radius).
+.addon-tile-placeholder {
+  border-radius: $radius-pill;
+  background: color-mix(in srgb, var(--color-2) 90%, black);
+  border: 2px dashed var(--color-3);
+  opacity: 0.5;
+}

@@ -93,3 +93,33 @@ export function hasCustomAddonOrder(): boolean {
 export function resetAddonOrder(): void {
   PerAccountLocalStorage.getInstance().remove(StorageKeys.ADDON_ORDER);
 }
+
+/**
+ * Pure reorder used by the /addons overview grid (desktop drag + touch ▲▼):
+ * move `draggedId` before/after `targetId`. Mirrors the DOM semantics of
+ * `grid.insertBefore(draggedEl, dropTarget)` for 'before'. Returns the same
+ * array content unchanged when either id is missing or both are equal, so
+ * callers can compare references to detect a real change.
+ */
+export function reorderAddonIds(
+  ids: string[],
+  draggedId: string,
+  targetId: string,
+  position: 'before' | 'after'
+): string[] {
+  const from = ids.indexOf(draggedId);
+  const to = ids.indexOf(targetId);
+  if (from === -1 || to === -1 || from === to) return ids;
+  const next = [...ids];
+  next.splice(from, 1);
+  const insertAt =
+    from < to
+      ? position === 'before'
+        ? to - 1
+        : to
+      : position === 'before'
+        ? to
+        : to + 1;
+  next.splice(insertAt, 0, draggedId);
+  return next;
+}
