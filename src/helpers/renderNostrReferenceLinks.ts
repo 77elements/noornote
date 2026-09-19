@@ -7,8 +7,9 @@
  * inline link that opens the referenced event in the SNV.
  *
  * Input contract: escaped HTML (run AFTER escapeHtml, like linkifyUrls).
- * The shared NOSTR_EVENT_REF_REGEX is URL-safe (`(?<!\/)` keeps it out of
- * href attributes written by linkifyUrls).
+ * The shared NOSTR_EVENT_REF_REGEX is URL-safe (`(?<!\/)` + `(?<![?&=])`
+ * keep it out of href attributes and URL query strings written by
+ * linkifyUrls).
  *
  * Labels are synchronous from the profile cache; a cache miss primes the
  * profile fetch (fire-and-forget) so the next render shows the name — the

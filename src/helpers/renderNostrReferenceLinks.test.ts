@@ -87,6 +87,15 @@ describe('renderNostrReferenceLinks', () => {
     expect(out).toBe(html);
   });
 
+  it('does not match references inside URL query params of linkified anchors', () => {
+    // 2026-09 regression: `?naddr=naddr1…` inside a linkified URL used to be
+    // rewritten into a ref link, corrupting the anchor's href.
+    const naddr = makeNaddr(35129);
+    const url = `https://example.com/web/paja/?naddr=${naddr}`;
+    const html = `<a href="${url}" rel="noopener">${url}</a>`;
+    expect(renderNostrReferenceLinks(html)).toBe(html);
+  });
+
   it('still links undecodable references with a generic label', () => {
     // Valid bech32 shape, garbage payload — decode throws, link must remain
     const fake = `nevent1${'q'.repeat(80)}`;

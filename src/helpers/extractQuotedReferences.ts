@@ -32,19 +32,22 @@ export interface QuotedReference {
 
 /**
  * Matches Nostr event references — both "nostr:nevent1…" AND bare "nevent1…"
- * (negative lookbehind `(?<!\/)` prevents matching inside URL paths).
+ * (negative lookbehinds `(?<!\/)` + `(?<![?&=])` keep the pattern out of
+ * URLs — both path segments and query params like `?naddr=naddr1…`).
  * Shared single source of truth: extractQuotedReferences (quote boxes) and
  * renderNostrReferenceLinks (inline single-line links) both use this.
  */
 export const NOSTR_EVENT_REF_REGEX =
-  /(?<!\/)(?:nostr:)?(event1[023456789acdefghjklmnpqrstuvwxyz]{58}|note1[023456789acdefghjklmnpqrstuvwxyz]{58}|nevent1[023456789acdefghjklmnpqrstuvwxyz]+|naddr1[023456789acdefghjklmnpqrstuvwxyz]+)(#([A-Za-z0-9_-]+))?(?=[^023456789acdefghjklmnpqrstuvwxyz#]|$)/gi;
+  /(?<!\/)(?<![?&=])(?:nostr:)?(event1[023456789acdefghjklmnpqrstuvwxyz]{58}|note1[023456789acdefghjklmnpqrstuvwxyz]{58}|nevent1[023456789acdefghjklmnpqrstuvwxyz]+|naddr1[023456789acdefghjklmnpqrstuvwxyz]+)(#([A-Za-z0-9_-]+))?(?=[^023456789acdefghjklmnpqrstuvwxyz#]|$)/gi;
 
 export function extractQuotedReferences(text: string): QuotedReference[] {
   const quotes: QuotedReference[] = [];
 
   // Regex to catch all nostr references (event, note, nevent, naddr)
   // Matches both "nostr:nevent1..." AND standalone "nevent1..." (optional nostr: prefix)
-  // Negative lookbehind (?<!\/) prevents matching inside URL paths (e.g. https://example.com/naddr1...)
+  // Negative lookbehinds (?<!\/) + (?<![?&=]) prevent matching inside URLs —
+  // both paths (https://example.com/naddr1...) and query params
+  // (https://example.com/?naddr=naddr1...).
   //
   // Optional `#fragment` group: armada invite secrets are base64url
   // (`[A-Za-z0-9_\-]+`). Captured separately so it survives into the marker

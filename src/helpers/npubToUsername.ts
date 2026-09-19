@@ -24,12 +24,15 @@ export interface NpubToUsernameOptions {
 const SIMPLE_MENTION_THRESHOLD = 20;
 
 const BECH32_CHARS = '023456789acdefghjklmnpqrstuvwxyz';
+// Lookbehinds `(?<!\/)` + `(?<![?&=])` keep mentions out of URLs (path
+// segments and query params) — mirrors NOSTR_EVENT_REF_REGEX so linkified
+// URLs don't get mention chips injected into their href/visible text.
 const NPROFILE_REGEX = new RegExp(
-  `(nostr:)?(nprofile1[${BECH32_CHARS}]{58,})(?=[^${BECH32_CHARS}]|$)`,
+  `(?<!\\/)(?<![?&=])(nostr:)?(nprofile1[${BECH32_CHARS}]{58,})(?=[^${BECH32_CHARS}]|$)`,
   'gi'
 );
 const NPUB_REGEX = new RegExp(
-  `(nostr:)?(npub1[${BECH32_CHARS}]{58})(?=[^${BECH32_CHARS}]|$)`,
+  `(?<!\\/)(?<![?&=])(nostr:)?(npub1[${BECH32_CHARS}]{58})(?=[^${BECH32_CHARS}]|$)`,
   'gi'
 );
 
