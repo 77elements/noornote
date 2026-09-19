@@ -39,6 +39,7 @@ import { hexToNpub } from './helpers/nip19';
 const VIEW_PARAM_STATE_KEY: Record<string, string> = {
   'single-note': 'currentNoteId',
   profile: 'currentProfileNpub',
+  'profile-booking': 'currentProfileNpub',
   article: 'currentArticleNaddr',
   'relay-browser': 'currentRelayUrl',
   'epub-reader': 'currentReaderUrl',
@@ -421,6 +422,17 @@ export class App {
       '/profile/:npub',
       'profile',
       'profile',
+      'pv',
+      false,
+      params => params.npub ?? ''
+    );
+    // Public booking page (calendar booking feature). Pattern is disjoint
+    // from `/profile/:npub` (`[^/]+` never crosses a slash), so registration
+    // order between the two does not matter.
+    this.registerRoute(
+      '/profile/:npub/book',
+      'profile-booking',
+      'profile-booking',
       'pv',
       false,
       params => params.npub ?? ''

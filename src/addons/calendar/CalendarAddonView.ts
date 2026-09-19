@@ -12,8 +12,13 @@ import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
 import { AuthService } from '../../services/AuthService';
 import { CustomDropdown } from '../../components/ui/CustomDropdown';
+import {
+  setupTabClickHandlers,
+  switchTabWithContent,
+} from '../../helpers/TabsHelper';
 import { isCalendarEnabled, setCalendarEnabled } from './index';
 import { CalendarGridView } from './CalendarGridView';
+import { BookingManager } from './BookingManager';
 import {
   CalendarReminderService,
   LEAD_OPTIONS,
@@ -24,6 +29,7 @@ export class CalendarAddonView extends View {
   private enableSwitch: Switch | null = null;
   private leadDropdown: CustomDropdown | null = null;
   private grid: CalendarGridView | null = null;
+  private bookingManager: BookingManager | null = null;
 
   constructor() {
     super();
@@ -64,11 +70,24 @@ export class CalendarAddonView extends View {
           <p class="setting__desc">Default reminder lead for all events. Reminders stay local to this device — nothing is published. Single events can override this in their editor.</p>
         </div>
       </section>
-      <div data-addon-content="calendar-grid"></div>
+      <div class="tabs" data-el="calendar-tabs">
+        <button class="tab tab--active" data-tab="personal">Personal calendar</button>
+        <button class="tab" data-tab="booking">Booking Calendar</button>
+      </div>
+      <div class="tab-content tab-content--active" data-tab-content="personal">
+        <div data-addon-content="calendar-grid"></div>
+      </div>
+      <div class="tab-content" data-tab-content="booking">
+        <div data-addon-content="calendar-booking"></div>
+      </div>
     `;
     this.enableSwitch.setupEventListeners(this.container);
     this.renderLeadDropdown();
+    setupTabClickHandlers(this.container, tabId =>
+      switchTabWithContent(this.container, tabId)
+    );
     this.renderGrid();
+    this.renderBooking();
   }
 
   /** Reminder default lead: applies to every event without its own override. */
@@ -113,6 +132,27 @@ export class CalendarAddonView extends View {
     slot.appendChild(this.grid.getElement());
   }
 
+  /** Mount the booking manager inline when enabled; tear down when disabled. */
+  private renderBooking(): void {
+    const slot = this.container.querySelector(
+      '[data-addon-content="calendar-booking"]'
+    ) as HTMLElement | null;
+    if (!slot) return;
+
+    const npub = AuthService.getInstance().getCurrentUser()?.npub ?? '';
+    const shouldShow = isCalendarEnabled() && !!npub;
+
+    if (!shouldShow) {
+      this.bookingManager?.destroy();
+      this.bookingManager = null;
+      slot.innerHTML = '';
+      return;
+    }
+
+    if (this.bookingManager) return; // already mounted
+    this.bookingManager = new BookingManager(slot);
+  }
+
   public getElement(): HTMLElement {
     return this.container;
   }
@@ -120,6 +160,8 @@ export class CalendarAddonView extends View {
   public destroy(): void {
     this.grid?.destroy();
     this.grid = null;
+    this.bookingManager?.destroy();
+    this.bookingManager = null;
     this.enableSwitch?.destroy();
     this.enableSwitch = null;
     this.leadDropdown?.destroy();

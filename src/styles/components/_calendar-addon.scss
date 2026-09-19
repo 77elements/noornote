@@ -378,3 +378,71 @@
   max-height: calc($gap * 16);
   overflow-y: auto;
 }
+
+// ── Booking page management (owner side, NIP-52 booking feature) ──
+// Config editor + slot list mounted in the calendar addon view.
+
+.booking-manager {
+  margin-top: $gap;
+  padding-top: $gap;
+  border-top: 1px solid var(--color-2);
+
+  h2 {
+    margin-bottom: calc($gap / 2);
+  }
+
+  &__day {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+    margin-bottom: calc($gap / 2);
+  }
+
+  &__day-label {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+    min-width: calc($gap * 4);
+    font-size: 0.9em;
+  }
+
+  &__dash {
+    color: var(--color-3);
+  }
+
+  &__vacation-add {
+    margin-top: calc($gap / 2);
+    gap: calc($gap / 2);
+  }
+
+  .ui-list__item {
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+// Tab bar needs breathing room above the tab content.
+.view-content--addon-calendar .tabs {
+  margin-bottom: $gap;
+}
+
+// The addon page itself scrolls — the tab content's own overflow container
+// (shared molecule, needed by Majlis) only produces a nested scrollbar here.
+.view-content--addon-calendar .tab-content {
+  height: auto;
+  overflow-y: visible;
+}
+
+// Booking manager: the complex blocks (weekly availability, vacation) use
+// their own row layout — `.form__row` is strictly 1 label + 1 form element
+// (input, textarea, nn-checkbox, custom dropdown all count). Inputs in the
+// custom rows size to their content.
+.booking-manager {
+  &__row {
+    margin-bottom: $gap;
+
+    input {
+      width: auto;
+    }
+  }
+}

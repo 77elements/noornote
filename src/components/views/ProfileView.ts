@@ -89,6 +89,9 @@ type ProfileLoadResult = {
 };
 const loadingProfiles: Map<string, Promise<ProfileLoadResult>> = new Map();
 
+/** Per-pubkey cache: does this profile offer a booking page? (PV icon check) */
+const bookingPageCache: Map<string, boolean> = new Map();
+
 export class ProfileView extends View {
   private container: HTMLElement;
   private npub: string;
@@ -663,6 +666,9 @@ export class ProfileView extends View {
                 <svg width="18" height="18"><use href="#icon-qr-code"/></svg>
               </button>
               ${this.renderTribeButton()}
+              <button class="profile-book-btn" title="Book a meeting" style="display:none">
+                <svg width="18" height="18"><use href="#icon-calendar"/></svg>
+              </button>
               <button class="profile-badge-btn" title="Award Badge" style="display:none">
                 <svg width="18" height="18"><use href="#icon-badge"/></svg>
               </button>
@@ -758,6 +764,9 @@ export class ProfileView extends View {
 
       // Setup badge award button (visible when addon enabled + foreign profile)
       this.setupBadgeButton();
+
+      // Setup booking button (visible when the profile offers a booking page)
+      this.setupBookingButton();
 
       // Setup petname display + click-to-edit
       this.setupPetname();
@@ -1146,6 +1155,7 @@ export class ProfileView extends View {
       '.copy-btn',
       '.qr-btn',
       '.tribe-btn',
+      '.profile-book-btn',
       '.profile-badge-btn',
       '.profile-dm-btn',
       '.lightning-qr-btn',
@@ -1216,6 +1226,55 @@ export class ProfileView extends View {
     dmBtn.addEventListener('click', e => {
       e.preventDefault();
       Router.getInstance().navigate(`/messages/${this.npub}`);
+    });
+  }
+
+  /**
+   * Booking button: reveal when the profile owner publishes a booking config
+   * (NIP-78 kind 30078). Results are cached per pubkey so re-renders and
+   * timeline revisits don't re-query relays.
+   */
+  private setupBookingButton(): void {
+    const bookBtn = this.container.querySelector(
+      '.profile-book-btn'
+    ) as HTMLElement | null;
+    if (!bookBtn) return;
+
+    const isOwnProfile =
+      this.authService.getCurrentUser()?.pubkey === this.pubkey;
+    if (isOwnProfile) return;
+
+    const pubkey = this.pubkey;
+    const cached = bookingPageCache.get(pubkey);
+    if (cached === false) return;
+
+    if (cached === true) {
+      this.revealBookingButton(bookBtn, pubkey);
+      return;
+    }
+
+    void import('../../addons/calendar/BookingService').then(
+      ({ BookingService }) =>
+        BookingService.getInstance()
+          .fetchConfigForPubkey(pubkey)
+          .then(config => {
+            const hasPage = !!config?.enabled;
+            bookingPageCache.set(pubkey, hasPage);
+            if (hasPage && bookBtn.isConnected) {
+              this.revealBookingButton(bookBtn, pubkey);
+            }
+          })
+          .catch(() => {
+            bookingPageCache.set(pubkey, false);
+          })
+    );
+  }
+
+  private revealBookingButton(bookBtn: HTMLElement, npub: string): void {
+    bookBtn.style.display = '';
+    bookBtn.addEventListener('click', e => {
+      e.preventDefault();
+      Router.getInstance().navigate(`/profile/${npub}/book`);
     });
   }
 

@@ -1,0 +1,25 @@
+/**
+ * ProfileBookingView — public booking page (`/profile/:npub/book`).
+ * Slots are grouped by the visitor's local day; the booking form expands
+ * inline under the selected slot. See ProfileBookingView.ts.
+ */
+
+@use '../abstracts/variables' as *;
+
+.profile-booking__desc {
+  color: var(--color-3);
+  margin-bottom: $gap;
+}
+
+.profile-booking__slot {
+  align-items: center;
+
+  .profile-booking__time {
+    font-weight: 600;
+  }
+}
+
+.profile-booking__form {
+  flex: 1;
+  min-width: 0;
+}

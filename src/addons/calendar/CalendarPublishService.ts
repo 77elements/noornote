@@ -47,6 +47,8 @@ export interface CalendarEventDraft {
   repeat: RecurrenceFrequency | null;
   /** Auto-publish a kind-1 share note linking the event after saving. */
   shareInTl?: boolean | undefined;
+  /** Extra hashtags → `t` tags (e.g. ['booking'] for bookable slots). */
+  hashtags?: string[] | undefined;
 }
 
 export interface RSVPSummary {
@@ -112,7 +114,7 @@ export class CalendarPublishService {
       locations: draft.location.trim() ? [draft.location.trim()] : [],
       geoHashes: [],
       participants: [],
-      hashtags: [],
+      hashtags: draft.hashtags ?? [],
       links: [],
       rrule: draft.repeat
         ? buildRecurrenceRule({ frequency: draft.repeat, startMs })

@@ -472,6 +472,17 @@ export class ViewMountingService {
           },
         };
 
+      case 'profile-booking':
+        return {
+          factory: async param => {
+            const { ProfileBookingView } = await import(
+              '../components/views/ProfileBookingView'
+            );
+            const view = new ProfileBookingView(param!);
+            return { element: view.getElement(), view };
+          },
+        };
+
       case 'addon-bookmarks':
         return {
           factory: async () => {
