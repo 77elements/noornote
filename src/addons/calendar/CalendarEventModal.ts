@@ -16,6 +16,8 @@ import { npubToUsername } from '../../helpers/npubToUsername';
 import { encodeNaddr, encodeNpub } from '../../services/NostrToolsAdapter';
 import { downloadCalendarEventICS } from '../../helpers/nip52/icsExport';
 import { summarizeRecurrenceRule } from '../../helpers/nip52/recurrence';
+import { BOOKING_SLOT_DTAG_PREFIX } from '../../helpers/nip52/bookingSlots';
+import { diagLog } from '../../services/DiagnosticLogger';
 import type { CalendarEventData } from '../../helpers/nip52/parser';
 import type { RSVPStatusValue } from './CalendarPublishService';
 
@@ -242,6 +244,14 @@ export class CalendarEventModal {
         this.event,
         status
       );
+      // Booking slot declined via the generic RSVP bar → clean up the
+      // decliner's own booking artifacts (grid import + guest reminder).
+      if (
+        this.event.dTag.startsWith(BOOKING_SLOT_DTAG_PREFIX) &&
+        status === 'declined'
+      ) {
+        await this.cleanupBookingParticipation();
+      }
       ToastService.show('Response published', 'success');
       const summary =
         await CalendarPublishService.getInstance().fetchRSVPSummary(this.event);
@@ -254,6 +264,33 @@ export class CalendarEventModal {
         true,
         'Could not publish your response'
       );
+    }
+  }
+
+  /**
+   * Decliner-side cleanup for booking slots: the declined RSVP is already
+   * published — this informs owner + participants (DM) and cleans up the
+   * decliner's device state (calendar import, guest reminder record).
+   */
+  private async cleanupBookingParticipation(): Promise<void> {
+    try {
+      const { BookingService } = await import('./BookingService');
+      await BookingService.getInstance().notifyAndCleanupCancellation(
+        this.event,
+        ''
+      );
+    } catch (err) {
+      diagLog('system', 'booking: participation cleanup failed', {
+        error: String(err),
+      });
+    }
+    try {
+      const { ReminderHub } = await import(
+        '../../services/notifications/ReminderHub'
+      );
+      ReminderHub.getInstance().rescheduleSoon('booking-guest');
+    } catch (err) {
+      diagLog('system', 'booking: cleanup failed', { error: String(err) });
     }
   }
 

@@ -19,6 +19,7 @@
  * ID ranges:
  *   majlis-prayer   90_000_000 (35)   majlis-holiday  90_001_000 (16)
  *   calendar        90_002_000 (64)   note-taking     90_003_000 (32)
+ *   booking-owner   90_004_000 (32)   booking-guest   90_005_000 (32)
  *   ephemeral (osNotifyNow on Capacitor) 99_000_000+
  *
  * The App-Resume listener is owned here (one per app): on resume every

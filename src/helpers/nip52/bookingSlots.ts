@@ -147,12 +147,15 @@ export function computeBookingSlots(
   const horizonEnd = nowMs + config.horizonDays * DAY_MS;
 
   const slots: ComputedSlot[] = [];
-  // Owner-local day number: shift by the offset, work in UTC, shift back.
-  const firstDay = Math.floor((nowMs + off) / DAY_MS);
-  const lastDay = Math.floor((horizonEnd + off) / DAY_MS);
+  // Convention (Date.getTimezoneOffset(), positive = west of UTC):
+  // owner-local wall time as pseudo-UTC = realUTC − off, i.e. realUTC = wall + off.
+  // Owner-local day number of "now":
+  const firstDay = Math.floor((nowMs - off) / DAY_MS);
+  const lastDay = Math.floor((horizonEnd - off) / DAY_MS);
 
   for (let day = firstDay; day <= lastDay; day++) {
-    const localDayStartMs = day * DAY_MS - off;
+    // Real-UTC instant of the owner-local midnight of this day:
+    const localDayStartMs = day * DAY_MS + off;
     const weekday = new Date(day * DAY_MS).getUTCDay();
     const rule = config.week[weekday];
     if (!rule || !rule.enabled) continue;

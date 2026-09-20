@@ -1231,8 +1231,9 @@ export class ProfileView extends View {
 
   /**
    * Booking button: reveal when the profile owner publishes a booking config
-   * (NIP-78 kind 30078). Results are cached per pubkey so re-renders and
-   * timeline revisits don't re-query relays.
+   * (NIP-78 kind 30078). Shown on foreign AND own profiles (own = 1-click
+   * preview of the booking page). Results are cached per pubkey so
+   * re-renders and timeline revisits don't re-query relays.
    */
   private setupBookingButton(): void {
     const bookBtn = this.container.querySelector(
@@ -1240,16 +1241,12 @@ export class ProfileView extends View {
     ) as HTMLElement | null;
     if (!bookBtn) return;
 
-    const isOwnProfile =
-      this.authService.getCurrentUser()?.pubkey === this.pubkey;
-    if (isOwnProfile) return;
-
     const pubkey = this.pubkey;
     const cached = bookingPageCache.get(pubkey);
     if (cached === false) return;
 
     if (cached === true) {
-      this.revealBookingButton(bookBtn, pubkey);
+      this.revealBookingButton(bookBtn, this.npub);
       return;
     }
 
@@ -1261,7 +1258,7 @@ export class ProfileView extends View {
             const hasPage = !!config?.enabled;
             bookingPageCache.set(pubkey, hasPage);
             if (hasPage && bookBtn.isConnected) {
-              this.revealBookingButton(bookBtn, pubkey);
+              this.revealBookingButton(bookBtn, this.npub);
             }
           })
           .catch(() => {

@@ -1,13 +1,14 @@
 /**
  * ProfileBookingView — public booking page at `/profile/:npub/book`.
  *
- * Shows an owner's bookable slots (NIP-52 kind-31923 events with t=booking,
- * published by the calendar booking feature) and lets a signed-in visitor
- * book one: accepted RSVP (public, collision protection) + NIP-17 DM to the
- * owner with a summary. Guest name/note live ONLY in the DM.
+ * Weekly calendar view of an owner's bookable slots (NIP-52 kind-31923
+ * events with t=booking): the visitor flips through weeks (Previous/Next
+ * week + week dots in the `.nn-carousel-nav` pattern) and books a free slot
+ * — accepted RSVP (public, collision protection) + NIP-17 DM to the owner
+ * with the summary. Guest name/note live ONLY in the DM.
  *
- * Logged-out visitors can browse slots; booking triggers the standard
- * AuthGuard login redirect. Config missing or disabled → friendly state.
+ * Logged-out visitors can browse; booking triggers the standard AuthGuard
+ * login redirect. Config missing or disabled → friendly state.
  */
 
 import { View } from './View';
@@ -17,16 +18,22 @@ import { UserProfileService } from '../../services/UserProfileService';
 import { ToastService } from '../../services/ToastService';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { downloadCalendarEventICS } from '../../helpers/nip52/icsExport';
+import { extractMentionPubkeysFromText } from '../../helpers/nip19';
+import { MentionAutocomplete } from '../mentions/MentionAutocomplete';
 import type { BookingConfig } from '../../helpers/nip52/bookingSlots';
 import type { CalendarEventData } from '../../helpers/nip52/parser';
 import type { OwnerSlot } from '../../addons/calendar/BookingService';
 
-interface DateGroup {
-  /** Visitor-local date label, e.g. "Mon, Sep 21". */
-  label: string;
-  /** Sort key (UTC ms of the day's first slot). */
+const DAY_MS = 86_400_000;
+const TIME_LOCALE = 'en-US';
+
+interface WeekDayCell {
+  /** Visitor-local day start (midnight). */
   dayStartMs: number;
+  weekdayLabel: string;
+  dayNumber: number;
   slots: OwnerSlot[];
+  isToday: boolean;
 }
 
 export class ProfileBookingView extends View {
@@ -34,12 +41,20 @@ export class ProfileBookingView extends View {
   private notFound = false;
   private config: BookingConfig | null = null;
   private ownerPubkey = '';
-  private freeSlots: OwnerSlot[] = [];
-  /** d-tag of the slot currently showing its booking form, if any. */
+  /** ALL slots (free + booked) — booked ones render as plain text. */
+  private slots: OwnerSlot[] = [];
+  /** d-tag of the slot currently selected (form shown below the grid). */
   private selectedDTag: string | null = null;
   private booking = false;
   private bookedSlot: CalendarEventData | null = null;
   private destroyed = false;
+  private participantAutocomplete: MentionAutocomplete | null = null;
+  /** Page index into `weekStarts()`. */
+  private weekIndex = 0;
+  /** d-tag of the own booked slot currently showing its cancel form. */
+  private cancelDTag: string | null = null;
+  /** Session-local: own bookings cancelled in this session (relay lag guard). */
+  private cancelledDTags = new Set<string>();
 
   constructor(private npub: string) {
     super();
@@ -49,23 +64,38 @@ export class ProfileBookingView extends View {
     void this.load();
   }
 
+  public getElement(): HTMLElement {
+    return this.container;
+  }
+
+  public destroy(): void {
+    this.destroyed = true;
+    this.participantAutocomplete?.destroy();
+    this.participantAutocomplete = null;
+    this.container.innerHTML = '';
+  }
+
   private async load(): Promise<void> {
+    // Accept both npub/nprofile (bech32) and raw 64-hex pubkeys in the URL —
+    // hex URLs exist from older links.
     let ownerPubkey = '';
-    try {
-      const decoded = (
-        await import('../../services/NostrToolsAdapter')
-      ).decodeNip19(this.npub);
-      if (decoded.type === 'npub') {
-        ownerPubkey = String(decoded.data);
-      } else if (decoded.type === 'nprofile') {
-        ownerPubkey = String(
-          (decoded.data as { pubkey?: string }).pubkey ?? ''
-        );
+    if (/^[0-9a-fA-F]{64}$/.test(this.npub)) {
+      ownerPubkey = this.npub.toLowerCase();
+    } else {
+      try {
+        const decoded = (
+          await import('../../services/NostrToolsAdapter')
+        ).decodeNip19(this.npub);
+        if (decoded.type === 'npub') {
+          ownerPubkey = String(decoded.data);
+        } else if (decoded.type === 'nprofile') {
+          ownerPubkey = String(
+            (decoded.data as { pubkey?: string }).pubkey ?? ''
+          );
+        }
+      } catch {
+        ownerPubkey = '';
       }
-    } catch {
-      this.notFound = true;
-      this.render();
-      return;
     }
     if (!ownerPubkey) {
       this.notFound = true;
@@ -89,33 +119,58 @@ export class ProfileBookingView extends View {
 
     const slots = await service.fetchOwnerSlots(ownerPubkey);
     if (this.destroyed) return;
-    this.freeSlots = slots.filter(s => !s.bookedBy);
+    this.slots = slots;
     this.render();
   }
 
-  /** Group free slots by the visitor's local calendar day. */
-  private dateGroups(): DateGroup[] {
-    const groups = new Map<string, DateGroup>();
-    for (const slot of this.freeSlots) {
-      const date = new Date(slot.data.startMs);
-      const key = date.toDateString();
-      let group = groups.get(key);
-      if (!group) {
-        group = {
-          label: date.toLocaleDateString(undefined, {
-            weekday: 'long',
-            month: 'long',
-            day: 'numeric',
-          }),
-          dayStartMs: slot.data.startMs,
-          slots: [],
-        };
-        groups.set(key, group);
-      }
-      group.slots.push(slot);
-    }
-    return [...groups.values()].sort((a, b) => a.dayStartMs - b.dayStartMs);
+  // ========== Week helpers (visitor-local, Monday-start weeks) ==========
+
+  private weekStartMs(ms: number): number {
+    const d = new Date(ms);
+    const mondayOffset = (d.getDay() + 6) % 7;
+    return (
+      d.getTime() -
+      mondayOffset * DAY_MS -
+      d.getHours() * 3_600_000 -
+      d.getMinutes() * 60_000 -
+      d.getSeconds() * 1000
+    );
   }
+
+  /** Distinct weeks (Mon-start) that contain free slots, ascending. */
+  private weekStarts(): number[] {
+    const set = new Set<number>();
+    this.slots.forEach(s => set.add(this.weekStartMs(s.data.startMs)));
+    return [...set].sort((a, b) => a - b);
+  }
+
+  /** All 7 days of the week starting at `weekStartMs` with their free slots. */
+  private weekDays(weekStartMs: number): WeekDayCell[] {
+    const today = new Date();
+    const todayStart = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    ).getTime();
+    return Array.from({ length: 7 }, (_, i) => {
+      const dayStartMs = weekStartMs + i * DAY_MS;
+      const date = new Date(dayStartMs);
+      return {
+        dayStartMs,
+        weekdayLabel: date.toLocaleDateString(TIME_LOCALE, {
+          weekday: 'short',
+        }),
+        dayNumber: date.getDate(),
+        slots: this.slots.filter(
+          s =>
+            s.data.startMs >= dayStartMs && s.data.startMs < dayStartMs + DAY_MS
+        ),
+        isToday: dayStartMs === todayStart,
+      };
+    });
+  }
+
+  // ========== Rendering ==========
 
   private renderLoading(): void {
     this.container.innerHTML =
@@ -148,84 +203,280 @@ export class ProfileBookingView extends View {
       return;
     }
 
-    const groups = this.dateGroups();
-    const body = groups.length
-      ? groups
-          .map(
-            group => `
-        <h2>${escapeHtml(group.label)}</h2>
-        <div class="ui-list">
-          ${group.slots
-            .map(slot => {
-              const time = new Date(slot.data.startMs).toLocaleTimeString(
-                undefined,
-                { hour: '2-digit', minute: '2-digit' }
-              );
-              const isSelected = this.selectedDTag === slot.data.dTag;
-              return `
-              <div class="ui-list__item profile-booking__slot">
-                <span class="profile-booking__time">${escapeHtml(time)}</span>
-                ${
-                  isSelected
-                    ? this.renderForm(slot)
-                    : `<button class="btn btn--passive btn--mini" data-book="${escapeHtmlAttr(
-                        slot.data.dTag
-                      )}">Book</button>`
-                }
-              </div>`;
-            })
+    const weekStarts = this.weekStarts();
+    this.weekIndex = Math.min(
+      Math.max(this.weekIndex, 0),
+      Math.max(weekStarts.length - 1, 0)
+    );
+
+    const nav = `
+      <div class="nn-carousel-nav">
+        <button class="btn btn--mini btn--passive" data-week-prev ${
+          this.weekIndex === 0 ? 'disabled' : ''
+        }>Previous week</button>
+        <span class="nn-carousel-dots">
+          ${weekStarts
+            .map(
+              (_, i) =>
+                `<span class="nn-carousel-dot ${
+                  i === this.weekIndex ? 'active' : ''
+                }" data-week-dot="${i}"></span>`
+            )
             .join('')}
-        </div>`
+        </span>
+        <button class="btn btn--mini" data-week-next ${
+          this.weekIndex >= weekStarts.length - 1 ? 'disabled' : ''
+        }>Next week</button>
+      </div>
+    `;
+
+    const rangeLabel =
+      weekStarts.length > 0
+        ? this.weekRangeLabel(weekStarts[this.weekIndex]!)
+        : '';
+
+    const grid =
+      weekStarts.length > 0
+        ? `<div class="profile-booking__week">${this.weekDays(
+            weekStarts[this.weekIndex]!
           )
-          .join('')
-      : '<p class="form__note">No open slots at the moment — check back later.</p>';
+            .map(day => this.renderDayCell(day))
+            .join('')}</div>`
+        : '<p class="form__note">No open slots at the moment — check back later.</p>';
+
+    const selectedSlot = this.slots.find(
+      s => s.data.dTag === this.selectedDTag && !s.bookedBy
+    );
 
     this.container.innerHTML = `
-      <h1>${escapeHtml(this.config.title || 'Book a meeting')}</h1>
+      <h1>Book a meeting with ${escapeHtml(ownerName)}</h1>
+      ${
+        this.config.title
+          ? `<p class="profile-booking__title">${escapeHtml(this.config.title)}</p>`
+          : ''
+      }
       ${
         this.config.description
           ? `<p class="profile-booking__desc">${escapeHtml(this.config.description)}</p>`
           : ''
       }
-      <p class="form__note">with ${escapeHtml(ownerName)} · times shown in your local timezone</p>
-      ${body}
+      <p class="form__note">times shown in your local timezone</p>
+      ${nav}
+      ${
+        rangeLabel
+          ? `<div class="profile-booking__range">${escapeHtml(rangeLabel)}</div>`
+          : ''
+      }
+      ${grid}
+      ${selectedSlot ? this.renderBookingForm(selectedSlot.data) : ''}
       <div class="l-row--right"><button class="btn btn--passive" data-back>Back to profile</button></div>
     `;
 
+    this.wireNav(weekStarts);
+    this.wireSlotButtons();
+    this.wireCancelLinks();
+    if (selectedSlot) this.wireBookingForm(selectedSlot.data);
     this.container
       .querySelector('[data-back]')
       ?.addEventListener('click', () =>
         Router.getInstance().navigate(`/profile/${this.npub}`)
       );
+  }
 
+  private weekRangeLabel(weekStartMs: number): string {
+    const start = new Date(weekStartMs);
+    const end = new Date(weekStartMs + 6 * DAY_MS);
+    const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+    return `${start.toLocaleDateString(TIME_LOCALE, opts)} – ${end.toLocaleDateString(
+      TIME_LOCALE,
+      { ...opts, year: 'numeric' }
+    )}`;
+  }
+
+  private renderDayCell(day: WeekDayCell): string {
+    const entries = day.slots
+      .map(slot => {
+        const time = new Date(slot.data.startMs).toLocaleTimeString(
+          TIME_LOCALE,
+          { hour: '2-digit', minute: '2-digit', hour12: false }
+        );
+        // Booked by someone else: plain text, not clickable.
+        if (slot.bookedBy && !slot.bookedByMe) {
+          return `<span class="profile-booking__slot-booked">${escapeHtml(time)}</span>`;
+        }
+        // Own booking: text + cancel affordance (reason form on demand).
+        if (slot.bookedByMe) {
+          if (this.cancelDTag === slot.data.dTag) {
+            return `
+            <div class="profile-booking__cancel-form">
+              <input class="input input--mini" data-cancel-reason placeholder="Reason (optional)" maxlength="200" />
+              <div class="profile-booking__cancel-actions">
+                <button class="btn btn--mini" data-cancel-confirm="${escapeHtmlAttr(slot.data.dTag)}">Confirm</button>
+                <button class="btn btn--passive btn--mini" data-cancel-abort>Keep</button>
+              </div>
+            </div>`;
+          }
+          return `<span class="profile-booking__slot-booked"><span>${escapeHtml(time)}</span>
+            <a href="#" class="profile-booking__cancel-link" data-cancel-booked="${escapeHtmlAttr(slot.data.dTag)}">Cancel</a></span>`;
+        }
+        const selected = this.selectedDTag === slot.data.dTag;
+        return `<a href="#" class="profile-booking__slot-link${
+          selected ? ' profile-booking__slot-link--selected' : ''
+        }" data-book="${escapeHtmlAttr(slot.data.dTag)}">${escapeHtml(time)}</a>`;
+      })
+      .join('');
+    return `
+      <div class="profile-booking__day ${day.slots.length === 0 ? 'profile-booking__day--empty' : ''}">
+        <div class="profile-booking__day-head">
+          <span>${escapeHtml(day.weekdayLabel)}</span>
+          <strong class="${day.isToday ? 'profile-booking__today' : ''}">${day.dayNumber}</strong>
+        </div>
+        <div class="profile-booking__day-slots">${entries}</div>
+      </div>
+    `;
+  }
+
+  private wireNav(weekStarts: number[]): void {
     this.container
-      .querySelectorAll<HTMLButtonElement>('[data-book]')
-      .forEach(btn =>
-        btn.addEventListener('click', () => {
+      .querySelector('[data-week-prev]')
+      ?.addEventListener('click', () => {
+        if (this.weekIndex > 0) {
+          this.weekIndex--;
+          this.selectedDTag = null;
+          this.render();
+        }
+      });
+    this.container
+      .querySelector('[data-week-next]')
+      ?.addEventListener('click', () => {
+        if (this.weekIndex < weekStarts.length - 1) {
+          this.weekIndex++;
+          this.selectedDTag = null;
+          this.render();
+        }
+      });
+    this.container
+      .querySelectorAll<HTMLElement>('[data-week-dot]')
+      .forEach(dot =>
+        dot.addEventListener('click', () => {
+          const index = Number(dot.dataset.weekDot);
+          if (index !== this.weekIndex) {
+            this.weekIndex = index;
+            this.selectedDTag = null;
+            this.render();
+          }
+        })
+      );
+  }
+
+  private wireSlotButtons(): void {
+    this.container
+      .querySelectorAll<HTMLAnchorElement>('a[data-book]')
+      .forEach(link =>
+        link.addEventListener('click', e => {
+          e.preventDefault();
           if (!AuthGuard.requireAuth('book an appointment')) return;
-          this.selectedDTag = btn.dataset.book ?? null;
+          const dTag = link.dataset.book ?? null;
+          this.selectedDTag = dTag === this.selectedDTag ? null : dTag;
           this.render();
         })
       );
-
-    this.wireForm();
   }
 
-  private renderForm(slot: OwnerSlot): string {
+  /** Own-booked slot: open the inline cancel form (reason + confirm). */
+  private wireCancelLinks(): void {
+    this.container
+      .querySelectorAll<HTMLAnchorElement>('a[data-cancel-booked]')
+      .forEach(link =>
+        link.addEventListener('click', e => {
+          e.preventDefault();
+          this.cancelDTag = link.dataset.cancelBooked ?? null;
+          this.render();
+        })
+      );
+    this.container
+      .querySelectorAll<HTMLElement>('[data-cancel-confirm]')
+      .forEach(btn =>
+        btn.addEventListener('click', () => {
+          const dTag = btn.dataset.cancelConfirm ?? '';
+          const slot = this.slots.find(s => s.data.dTag === dTag);
+          const reason =
+            (
+              this.container.querySelector(
+                '[data-cancel-reason]'
+              ) as HTMLInputElement | null
+            )?.value ?? '';
+          if (slot) void this.confirmCancel(slot, reason);
+        })
+      );
+    this.container
+      .querySelectorAll<HTMLElement>('[data-cancel-abort]')
+      .forEach(btn =>
+        btn.addEventListener('click', () => {
+          this.cancelDTag = null;
+          this.render();
+        })
+      );
+  }
+
+  /** Guest cancellation: declined RSVP + cleanup + notifications. */
+  private async confirmCancel(slot: OwnerSlot, reason: string): Promise<void> {
+    const { BookingService } = await import(
+      '../../addons/calendar/BookingService'
+    );
+    try {
+      await BookingService.getInstance().cancelBooking(slot.data, reason);
+      if (this.destroyed) return;
+      this.cancelledDTags.add(slot.data.dTag);
+      this.cancelDTag = null;
+      this.render();
+      ToastService.show(
+        'Booking cancelled — the host has been informed',
+        'success'
+      );
+    } catch (err) {
+      ToastService.show(
+        `Cancellation failed: ${err instanceof Error ? err.message : String(err)}`,
+        'error'
+      );
+      this.cancelDTag = null;
+      this.render();
+    }
+  }
+
+  private renderBookingForm(slot: CalendarEventData): string {
+    const when = new Date(slot.startMs).toLocaleString(TIME_LOCALE, {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
     return `
-      <div class="profile-booking__form" data-booking-form="${escapeHtmlAttr(slot.data.dTag)}">
+      <div class="profile-booking__form" data-booking-form>
+        <p class="profile-booking__form-title">
+          Selected: <strong>${escapeHtml(slot.title)}</strong> — ${escapeHtml(when)}
+        </p>
         <div class="form__row">
-          <label for="booking-name-${escapeHtmlAttr(slot.data.dTag)}">Your name (optional)</label>
-          <input class="input" id="booking-name-${escapeHtmlAttr(slot.data.dTag)}" data-form-name maxlength="80" />
+          <label for="booking-name">Your name (optional)</label>
+          <input class="input" id="booking-name" data-form-name maxlength="80" />
         </div>
         <div class="form__row">
-          <label for="booking-note-${escapeHtmlAttr(slot.data.dTag)}">Note for ${escapeHtml(
+          <label for="booking-note">Note for ${escapeHtml(
             UserProfileService.getInstance().getUsername(this.ownerPubkey) ||
               'the host'
           )} (optional, sent as a private message)</label>
-          <textarea class="textarea textarea--small" id="booking-note-${escapeHtmlAttr(
-            slot.data.dTag
-          )}" data-form-note maxlength="500"></textarea>
+          <textarea class="textarea textarea--small" id="booking-note" data-form-note maxlength="500"></textarea>
+        </div>
+        <div class="form__row">
+          <label for="booking-participants">Additional participants (optional)</label>
+          <input class="input" id="booking-participants" data-participants-input maxlength="2000"
+            placeholder="Tag with @, separate multiple participants with commas" />
+          <p class="form__note">
+            Nostr users taking part in the meeting — they receive a private
+            message about this booking.
+          </p>
         </div>
         <div class="l-row--end-pair">
           <button class="btn btn--passive" data-cancel-book>Cancel</button>
@@ -237,15 +488,11 @@ export class ProfileBookingView extends View {
     `;
   }
 
-  private wireForm(): void {
-    if (!this.selectedDTag) return;
+  private wireBookingForm(slot: CalendarEventData): void {
     const form = this.container.querySelector(
       '[data-booking-form]'
     ) as HTMLElement | null;
     if (!form) return;
-
-    const slot = this.freeSlots.find(s => s.data.dTag === this.selectedDTag);
-    if (!slot) return;
 
     form.querySelector('[data-cancel-book]')?.addEventListener('click', () => {
       this.selectedDTag = null;
@@ -259,24 +506,48 @@ export class ProfileBookingView extends View {
       const note =
         (form.querySelector('[data-form-note]') as HTMLTextAreaElement | null)
           ?.value ?? '';
-      void this.confirmBooking(slot, name, note);
+      const participantsInput =
+        (
+          form.querySelector(
+            '[data-participants-input]'
+          ) as HTMLInputElement | null
+        )?.value ?? '';
+      void this.confirmBooking(slot, name, note, participantsInput);
     });
+
+    // @-tagging, same as the note composer: typing @ + a few characters shows
+    // the candidate list; selection inserts the mention.
+    this.participantAutocomplete?.destroy();
+    this.participantAutocomplete = new MentionAutocomplete({
+      textareaSelector: '[data-participants-input]',
+      onMentionInserted: () => {},
+    });
+    this.participantAutocomplete.init();
   }
 
   private async confirmBooking(
-    slot: OwnerSlot,
+    slot: CalendarEventData,
     guestName: string,
-    note: string
+    note: string,
+    participantsInput: string
   ): Promise<void> {
     this.booking = true;
     this.render();
     const { BookingService } = await import(
       '../../addons/calendar/BookingService'
     );
+    // Participants are the @-mentions / npubs typed into the field
+    // (comma-separated). Established extractor — URL-embedded npubs stay out.
+    const participants = extractMentionPubkeysFromText(participantsInput);
     try {
-      await BookingService.getInstance().bookSlot(slot.data, guestName, note);
+      await BookingService.getInstance().bookSlot(
+        slot,
+        guestName,
+        note,
+        participants
+      );
       if (this.destroyed) return;
-      this.bookedSlot = slot.data;
+      this.bookedSlot = slot;
       this.render();
     } catch (err) {
       ToastService.show(
@@ -291,13 +562,14 @@ export class ProfileBookingView extends View {
   private renderSuccess(): void {
     const slot = this.bookedSlot;
     if (!slot) return;
-    const when = new Date(slot.startMs).toLocaleString(undefined, {
+    const when = new Date(slot.startMs).toLocaleString(TIME_LOCALE, {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+      hour12: false,
     });
     this.container.innerHTML = `
       <h1>Booked!</h1>
@@ -322,14 +594,5 @@ export class ProfileBookingView extends View {
       ?.addEventListener('click', () =>
         Router.getInstance().navigate(`/profile/${this.npub}`)
       );
-  }
-
-  public getElement(): HTMLElement {
-    return this.container;
-  }
-
-  public destroy(): void {
-    this.destroyed = true;
-    this.container.innerHTML = '';
   }
 }

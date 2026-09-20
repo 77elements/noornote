@@ -21,7 +21,6 @@ import { UserProfileService } from '../../services/UserProfileService';
 import { CustomDropdown } from '../../components/ui/CustomDropdown';
 import { Switch } from '../../components/ui/Switch';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
-import { formatTimestamp } from '../../helpers/formatTimestamp';
 import { encodeNpub } from '../../services/NostrToolsAdapter';
 import { BookingService, type OwnerSlot } from './BookingService';
 import type {
@@ -113,6 +112,20 @@ export class BookingManager {
     this.slots = slots;
     this.loading = false;
     this.render();
+    // Owner device: rebuild booking reminders from the fresh slot state.
+    service.rescheduleOwnerReminders();
+  }
+
+  /** Re-fetch only the slot list (config stays as locally staged/saved). */
+  private async refreshSlots(): Promise<void> {
+    const pubkey = AuthService.getInstance().getCurrentUser()?.pubkey ?? '';
+    if (!pubkey) return;
+    const service = BookingService.getInstance();
+    this.slots = await service.fetchOwnerSlots(pubkey);
+    if (this.destroyed) return;
+    this.loading = false;
+    this.render();
+    service.rescheduleOwnerReminders();
   }
 
   private readForm(): BookingConfig | null {
@@ -168,7 +181,13 @@ export class BookingManager {
           : 'Booking page disabled — published slots removed',
         'success'
       );
-      await this.load();
+      // Do NOT re-fetch the config from relays here: propagation lag would
+      // hand back the PREVIOUS config (enabled=false) and clobber the state
+      // the user just saved, flipping the switch off and deleting the slots
+      // on their next save. The just-saved object IS the truth — refresh only
+      // the slot list.
+      this.config = config;
+      await this.refreshSlots();
     } catch (err) {
       ToastService.show(
         `Booking config failed: ${err instanceof Error ? err.message : String(err)}`,
@@ -234,15 +253,33 @@ export class BookingManager {
         ? '<p class="form__note">No slots published yet. Save the config to generate them.</p>'
         : `<div class="ui-list">${this.slots
             .map(slot => {
+              // Absolute date+time in the viewer's locale — formatTimestamp()
+              // is built for past events (relative "1s"/"5m" for anything not
+              // yet started).
+              const when = new Date(slot.data.startMs).toLocaleString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              });
               const booked = slot.bookedBy
                 ? `<span class="badge badge--green">Booked by ${escapeHtml(
                     UserProfileService.getInstance().getUsername(
                       slot.bookedBy
                     ) || 'guest'
-                  )}</span>`
+                  )}</span>
+                   ${
+                     slot.participants.length
+                       ? `<span class="badge">+${slot.participants.length}</span>`
+                       : ''
+                   }
+                   <button class="btn btn--passive btn--mini" data-cancel-booking="${escapeHtmlAttr(
+                     slot.data.dTag
+                   )}">Cancel</button>`
                 : '<span class="badge badge--accent">Free</span>';
               return `<div class="ui-list__item">
-                <span>${escapeHtml(formatTimestamp(slot.data.startMs))}</span>
+                <span>${escapeHtml(when)}</span>
                 ${booked}
               </div>`;
             })
@@ -271,8 +308,8 @@ export class BookingManager {
           <svg width="18" height="18"><use href="#icon-copy-24"/></svg>
         </button>
       </p>
-      <div class="form__row">
-        <label>Enable booking page</label>
+      <div class="form__row form__row--oneline">
+        <span class="setting__label">Enable booking page</span>
         <div class="setting__control" data-slot="booking-enabled"></div>
       </div>
       <div class="form__row">
@@ -283,19 +320,19 @@ export class BookingManager {
         <label for="booking-desc">Description</label>
         <textarea class="textarea textarea--small" id="booking-desc" data-booking-desc maxlength="1000">${escapeHtml(c.description)}</textarea>
       </div>
-      <div class="form__row">
+      <div class="form__row form__row--oneline">
         <label>Slot length</label>
         <div data-slot="dropdown-slot-minutes"></div>
       </div>
-      <div class="form__row">
+      <div class="form__row form__row--oneline">
         <label>Buffer between slots</label>
         <div data-slot="dropdown-buffer"></div>
       </div>
-      <div class="form__row">
+      <div class="form__row form__row--oneline">
         <label>Minimum notice</label>
         <div data-slot="dropdown-lead"></div>
       </div>
-      <div class="form__row">
+      <div class="form__row form__row--oneline">
         <label>Bookable window</label>
         <div data-slot="dropdown-horizon"></div>
       </div>
@@ -318,6 +355,52 @@ export class BookingManager {
     this.wire();
     this.renderEnableSwitch();
     this.renderDropdowns();
+    this.wireCancelButtons();
+  }
+
+  /** Owner cancels a guest's booking: reason prompt → delete + notify. */
+  private async cancelBooking(dTag: string): Promise<void> {
+    const slot = this.slots.find(s => s.data.dTag === dTag);
+    if (!slot || !slot.bookedBy) return;
+    const { ModalService } = await import('../../services/ModalService');
+    const reason = await ModalService.getInstance().prompt({
+      title: 'Cancel booking',
+      message: 'The guest and all participants will be informed by DM.',
+      placeholder: 'Reason (optional)',
+      multiline: true,
+      allowEmpty: true,
+      confirmText: 'Cancel booking',
+    });
+    if (reason === null) return;
+    try {
+      await BookingService.getInstance().ownerCancelBooking(
+        slot.data,
+        reason,
+        slot.bookedBy,
+        slot.participants
+      );
+      ToastService.show(
+        'Booking cancelled — guest and participants informed',
+        'success'
+      );
+    } catch (err) {
+      ToastService.show(
+        `Cancellation failed: ${err instanceof Error ? err.message : String(err)}`,
+        'error'
+      );
+    }
+    await this.refreshSlots();
+  }
+
+  private wireCancelButtons(): void {
+    this.element
+      .querySelectorAll<HTMLElement>('[data-cancel-booking]')
+      .forEach(btn =>
+        btn.addEventListener('click', () => {
+          const dTag = btn.dataset.cancelBooking;
+          if (dTag) void this.cancelBooking(dTag);
+        })
+      );
   }
 
   /** Enable toggle: staged like the dropdowns, applied on save. */
@@ -423,6 +506,24 @@ export class BookingManager {
         this.element.querySelector('[data-booking-link]')?.textContent ?? '';
       void navigator.clipboard.writeText(link);
       ToastService.show('Booking page link copied', 'success');
+    });
+
+    // Keep the "to" time ahead of the "from" time: when the user moves the
+    // start past the current end, bump the end to start + 30 min so a
+    // negative/empty window can't be entered by hand.
+    this.element.querySelectorAll('[data-day-start]').forEach(input => {
+      input.addEventListener('change', () => {
+        const startInput = input as HTMLInputElement;
+        const endInput = this.element.querySelector(
+          `[data-day-end="${startInput.dataset.dayStart}"]`
+        ) as HTMLInputElement | null;
+        if (!endInput) return;
+        const start = timeToMinutes(startInput.value);
+        const end = timeToMinutes(endInput.value);
+        if (start >= 0 && end <= start) {
+          endInput.value = minutesToTime(Math.min(start + 30, 1439));
+        }
+      });
     });
 
     this.element.querySelectorAll('[data-vacation-remove]').forEach(btn =>

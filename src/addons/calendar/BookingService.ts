@@ -25,6 +25,12 @@ import type { DMsModuleApi } from '../../modules/dms/contracts';
 import { diagLog } from '../../services/DiagnosticLogger';
 import { encodeNpub } from '../../services/NostrToolsAdapter';
 import { resolveCalendarRelays } from './relays';
+import { UserProfileService } from '../../services/UserProfileService';
+import { ReminderHub } from '../../services/notifications/ReminderHub';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../services/PerAccountLocalStorage';
 import {
   parseCalendarEvent,
   type CalendarEventData,
@@ -48,11 +54,37 @@ const FETCH_TIMEOUT_MS = 8000;
 /** Kind 31922/31923 coordinate prefixes for the tombstone filter. */
 const COORD_PREFIXES = ['31922:', '31923:'];
 
+// ReminderHub namespaces (ID ranges — see ReminderHub.ts range table).
+const REMINDER_NAMESPACE_OWNER = 'booking-owner';
+const REMINDER_ID_BASE_OWNER = 90_004_000;
+const REMINDER_POOL_SIZE_OWNER = 32;
+const REMINDER_NAMESPACE_GUEST = 'booking-guest';
+const REMINDER_ID_BASE_GUEST = 90_005_000;
+const REMINDER_POOL_SIZE_GUEST = 32;
+
+/** A booking the current account made on someone's booking page (guest side). */
+export interface MyBookingRecord {
+  ownerPubkey: string;
+  dTag: string;
+  title: string;
+  startMs: number;
+  endMs: number;
+  /** Guest name + note from the booking form — reused in cancellation DMs. */
+  guestName: string;
+  note: string;
+  /** Additional participants (hex pubkeys) — for cancellation DMs. */
+  participants: string[];
+}
+
 export interface OwnerSlot {
   /** Parsed slot event. */
   data: CalendarEventData;
   /** Accepted-RSVP responder pubkey, or null when the slot is free. */
   bookedBy: string | null;
+  /** True when the current account made this booking. */
+  bookedByMe: boolean;
+  /** Additional participants (p-tags on the accepted RSVP). */
+  participants: string[];
 }
 
 export interface RebuildResult {
@@ -62,12 +94,106 @@ export interface RebuildResult {
 
 export class BookingService {
   private static instance: BookingService | null = null;
+  private hub = ReminderHub.getInstance();
+
+  constructor() {
+    this.registerReminderNamespaces();
+  }
 
   public static getInstance(): BookingService {
     if (!BookingService.instance) {
       BookingService.instance = new BookingService();
     }
     return BookingService.instance;
+  }
+
+  /**
+   * Register the booking reminder pools. Both builders fetch fresh state at
+   * reschedule time — the owner side reads the relay slot list, the guest
+   * side the per-account local booking records.
+   */
+  private registerReminderNamespaces(): void {
+    const hub = this.hub;
+    hub.registerNamespace({
+      name: REMINDER_NAMESPACE_OWNER,
+      idBase: REMINDER_ID_BASE_OWNER,
+      poolSize: REMINDER_POOL_SIZE_OWNER,
+      build: async () => {
+        const pubkey = this.auth.getCurrentUser()?.pubkey ?? '';
+        if (!pubkey) return [];
+        const slots = await this.fetchOwnerSlots(pubkey);
+        return slots
+          .filter(s => s.bookedBy)
+          .map((s, index) => ({
+            id: REMINDER_ID_BASE_OWNER + index,
+            title: s.data.title || 'Appointment',
+            body: `Your booked meeting starts now — guest: ${
+              UserProfileService.getInstance().getUsername(s.bookedBy!) ||
+              'guest'
+            }`,
+            fireAt: s.data.startMs,
+            allowWhileIdle: true,
+          }));
+      },
+    });
+    hub.registerNamespace({
+      name: REMINDER_NAMESPACE_GUEST,
+      idBase: REMINDER_ID_BASE_GUEST,
+      poolSize: REMINDER_POOL_SIZE_GUEST,
+      build: async () => {
+        const now = Date.now();
+        const records = this.getMyBookings().filter(r => r.startMs > now);
+        return records.map((r, index) => ({
+          id: REMINDER_ID_BASE_GUEST + index,
+          title: r.title || 'Appointment',
+          body: 'Your booked meeting starts now.',
+          fireAt: r.startMs,
+          allowWhileIdle: true,
+        }));
+      },
+    });
+  }
+
+  // ========== Guest-side booking records (reminders) ==========
+
+  private getMyBookings(): MyBookingRecord[] {
+    try {
+      return PerAccountLocalStorage.getInstance().get<MyBookingRecord[]>(
+        StorageKeys.BOOKING_MY_BOOKINGS,
+        []
+      );
+    } catch {
+      return [];
+    }
+  }
+
+  private saveMyBookingRecord(record: MyBookingRecord): void {
+    try {
+      const records = this.getMyBookings().filter(r => r.dTag !== record.dTag);
+      const now = Date.now();
+      // Prune past bookings — they only exist for the reminder.
+      const alive = records.filter(r => r.endMs > now);
+      alive.push(record);
+      PerAccountLocalStorage.getInstance().set(
+        StorageKeys.BOOKING_MY_BOOKINGS,
+        alive
+      );
+    } catch (err) {
+      diagLog('system', 'booking: record save failed', { error: String(err) });
+    }
+  }
+
+  /** Drop one guest booking record (after cancellation). */
+  private removeMyBookingRecord(dTag: string): void {
+    try {
+      const alive = this.getMyBookings().filter(r => r.dTag !== dTag);
+      PerAccountLocalStorage.getInstance().set(
+        StorageKeys.BOOKING_MY_BOOKINGS,
+        alive
+      );
+    } catch {
+      /* best-effort */
+    }
   }
 
   private auth = AuthService.getInstance();
@@ -204,19 +330,36 @@ export class BookingService {
       }
     }
 
-    const acceptedByCoordinate = new Map<string, string>();
+    const acceptedByCoordinate = new Map<
+      string,
+      { responder: string; participants: string[] }
+    >();
     for (const [, ev] of latestByResponder) {
       const status = ev.tags.find(t => t[0] === 'status')?.[1];
       if (status !== 'accepted') continue;
       const coordinate = ev.tags.find(t => t[0] === 'a')?.[1];
       if (!coordinate) continue;
-      acceptedByCoordinate.set(coordinate, ev.pubkey);
+      // Additional participants travel as p-tags on the RSVP (guest carries
+      // them when booking) — visible to every party reading the event.
+      const participants = (ev.tags ?? [])
+        .filter(t => t[0] === 'p' && t[1] && t[1] !== ev.pubkey)
+        .map(t => t[1]!);
+      acceptedByCoordinate.set(coordinate, {
+        responder: ev.pubkey,
+        participants,
+      });
     }
 
-    return slots.map(data => ({
-      data,
-      bookedBy: acceptedByCoordinate.get(data.coordinate) ?? null,
-    }));
+    const me = this.auth.getCurrentUser()?.pubkey ?? '';
+    return slots.map(data => {
+      const booking = acceptedByCoordinate.get(data.coordinate);
+      return {
+        data,
+        bookedBy: booking?.responder ?? null,
+        bookedByMe: booking?.responder === me,
+        participants: booking?.participants ?? [],
+      };
+    });
   }
 
   /**
@@ -269,6 +412,7 @@ export class BookingService {
       }
     }
 
+    const toDelete: CalendarEventData[] = [];
     for (const [dTag, ownerSlot] of existingByDTag) {
       if (desiredByDTag.has(dTag)) continue;
       // Only delete slots this rebuild owns: future slots that fell out of
@@ -276,15 +420,13 @@ export class BookingService {
       if ((ownerSlot.data.endMs ?? ownerSlot.data.startMs) < Date.now()) {
         continue;
       }
-      try {
-        await publishService.deleteEvent(ownerSlot.data);
-        deleted++;
-      } catch (err) {
-        diagLog('system', 'booking: slot delete failed', {
-          dTag,
-          error: String(err),
-        });
-      }
+      toDelete.push(ownerSlot.data);
+    }
+
+    if (toDelete.length > 0) {
+      // ONE grouped kind-5 + ONE silent breadth pass — no toast spam.
+      const ok = await publishService.deleteEventsBulk(toDelete);
+      deleted = ok ? toDelete.length : 0;
     }
 
     diagLog('system', 'booking: slots rebuilt', { published, deleted });
@@ -301,7 +443,8 @@ export class BookingService {
   public async bookSlot(
     slot: CalendarEventData,
     guestName: string,
-    note: string
+    note: string,
+    participants: string[] = []
   ): Promise<void> {
     const user = this.auth.getCurrentUser();
     if (!user) throw new Error('Sign in to book an appointment');
@@ -309,7 +452,8 @@ export class BookingService {
     await CalendarPublishService.getInstance().publishRSVP(
       slot,
       'accepted',
-      ''
+      '',
+      participants.map(p => ['p', p])
     );
 
     const lines = [
@@ -319,6 +463,7 @@ export class BookingService {
     if (guestName.trim()) lines.push(`Name: ${guestName.trim()}`);
     if (note.trim()) lines.push(`Note: ${note.trim()}`);
     lines.push(`Booked by: ${encodeNpub(user.pubkey)}`);
+    const summary = lines.join('\n');
 
     const dms = ModuleLoader.getInstance().getApi<DMsModuleApi>('dms');
     if (!dms) {
@@ -328,14 +473,176 @@ export class BookingService {
       });
       return;
     }
-    const sent = await dms.sendMessage(slot.pubkey, lines.join('\n'));
+    await dms.sendMessage(slot.pubkey, summary);
+
+    // Guest's own NIP-52 calendar: import the slot into their grid via the
+    // established "Add to my cal" saved-events mechanism (live reference to
+    // the owner's event — never copied, re-fetched on every calendar load).
+    try {
+      const { CalendarDataService } = await import('./CalendarDataService');
+      CalendarDataService.getInstance().saveEvent(slot.coordinate);
+    } catch {
+      /* best-effort — the RSVP + reminders already stand */
+    }
+
+    // Additional participants: their own copy of the summary — failures are
+    // non-fatal (the booking itself already exists via the RSVP).
+    for (const participant of participants) {
+      if (participant === user.pubkey || participant === slot.pubkey) continue;
+      try {
+        await dms.sendMessage(
+          participant,
+          `📅 You are included as a participant of a meeting that was just booked:\n\n${summary}`
+        );
+      } catch (err) {
+        diagLog('system', 'booking: participant dm failed', {
+          participant,
+          error: String(err),
+        });
+      }
+    }
+
+    // Guest-side reminder record (device-local, per account) + reschedule.
+    this.saveMyBookingRecord({
+      ownerPubkey: slot.pubkey,
+      dTag: slot.dTag,
+      title: slot.title,
+      startMs: slot.startMs,
+      endMs: slot.endMs ?? slot.startMs,
+      guestName: guestName.trim(),
+      note: note.trim(),
+      participants,
+    });
+    this.hub.rescheduleSoon(REMINDER_NAMESPACE_GUEST);
+
     diagLog('system', 'booking: slot booked', {
       dTag: slot.dTag,
-      dmSent: sent,
+      participants: participants.length,
     });
-    if (!sent) {
-      // RSVP won — booking is valid even if the DM transport hiccups.
-      diagLog('system', 'booking: dm send failed', { dTag: slot.dTag });
+  }
+
+  /**
+   * Guest cancels their own booking: declined RSVP (same parameterized d-tag,
+   * latest status wins → slot is free again), reason goes into the RSVP
+   * content and the notification DMs. Also removes the calendar import,
+   * the local record and the guest reminder.
+   */
+  public async cancelBooking(
+    slot: CalendarEventData,
+    reason: string
+  ): Promise<void> {
+    const user = this.auth.getCurrentUser();
+    if (!user) throw new Error('Sign in to manage your booking');
+
+    await CalendarPublishService.getInstance().publishRSVP(
+      slot,
+      'declined',
+      reason
+    );
+
+    await this.notifyAndCleanupCancellation(slot, reason);
+  }
+
+  /**
+   * Notification + device cleanup for a guest cancellation — WITHOUT
+   * publishing the RSVP. Called by cancelBooking (after the declined RSVP)
+   * AND by the generic RSVP bar path (CalendarEventModal "Can't go" on a
+   * bookslot- event), so both guest cancel paths inform owner + participants
+   * identically.
+   */
+  public async notifyAndCleanupCancellation(
+    slot: CalendarEventData,
+    reason: string
+  ): Promise<void> {
+    const user = this.auth.getCurrentUser();
+    if (!user) return;
+
+    // Guest name + original note from the booking record — so recipients can
+    // associate the cancellation with the right appointment.
+    const record = this.getMyBookings().find(r => r.dTag === slot.dTag);
+    const dms = ModuleLoader.getInstance().getApi<DMsModuleApi>('dms');
+    const cancelNote = [
+      `❌ Booking cancelled: ${slot.title}`,
+      `When: ${new Date(slot.startMs).toUTCString()}`,
+      record?.guestName ? `Name: ${record.guestName}` : null,
+      record?.note ? `Note: ${record.note}` : null,
+      `Reason: ${reason.trim() || '—'}`,
+      `By: ${encodeNpub(user.pubkey)}`,
+    ]
+      .filter((line): line is string => line !== null)
+      .join('\n');
+    if (dms) {
+      try {
+        await dms.sendMessage(slot.pubkey, cancelNote);
+      } catch (err) {
+        diagLog('system', 'booking: cancel dm owner failed', {
+          error: String(err),
+        });
+      }
+      // Participants travel on the local record (guest-side knowledge).
+      for (const participant of record?.participants ?? []) {
+        try {
+          await dms.sendMessage(participant, cancelNote);
+        } catch (err) {
+          diagLog('system', 'booking: cancel dm participant failed', {
+            error: String(err),
+          });
+        }
+      }
     }
+
+    try {
+      const { CalendarDataService } = await import('./CalendarDataService');
+      CalendarDataService.getInstance().unsaveEvent(slot.coordinate);
+    } catch {
+      /* best-effort */
+    }
+    this.removeMyBookingRecord(slot.dTag);
+    this.hub.rescheduleSoon(REMINDER_NAMESPACE_GUEST);
+
+    diagLog('system', 'booking: slot cancelled', { dTag: slot.dTag });
+  }
+
+  /**
+   * Owner cancels a booking on their own slot: the slot event is deleted
+   * (reason in the kind-5 content) and the guest + participants are informed
+   * via DM. Guest + participants are known from the public RSVP.
+   */
+  public async ownerCancelBooking(
+    slot: CalendarEventData,
+    reason: string,
+    guestPubkey: string,
+    participants: string[]
+  ): Promise<void> {
+    const user = this.auth.getCurrentUser();
+    if (!user) throw new Error('Not logged in');
+
+    await CalendarPublishService.getInstance().deleteEvent(slot, reason);
+
+    const dms = ModuleLoader.getInstance().getApi<DMsModuleApi>('dms');
+    if (!dms) return;
+    const note = `❌ The host cancelled the booking "${slot.title}"\nWhen: ${new Date(slot.startMs).toUTCString()}\nReason: ${reason.trim() || '—'}`;
+    const recipients = [guestPubkey, ...participants].filter(
+      (p, i, all) => p && p !== user.pubkey && all.indexOf(p) === i
+    );
+    for (const recipient of recipients) {
+      try {
+        await dms.sendMessage(recipient, note);
+      } catch (err) {
+        diagLog('system', 'booking: cancel dm failed', {
+          recipient,
+          error: String(err),
+        });
+      }
+    }
+    diagLog('system', 'booking: owner cancelled booking', {
+      dTag: slot.dTag,
+      informed: recipients.length,
+    });
+  }
+
+  /** Owner device: rebuild the reminders for all booked slots. */
+  public rescheduleOwnerReminders(): void {
+    this.hub.rescheduleSoon(REMINDER_NAMESPACE_OWNER);
   }
 }

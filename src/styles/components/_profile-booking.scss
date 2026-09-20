@@ -1,25 +1,125 @@
 /**
  * ProfileBookingView — public booking page (`/profile/:npub/book`).
- * Slots are grouped by the visitor's local day; the booking form expands
- * inline under the selected slot. See ProfileBookingView.ts.
+ * Week calendar (Mon-start) with bookable slots, week navigation in the
+ * `.nn-carousel-nav` pattern. See ProfileBookingView.ts.
  */
 
 @use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+.profile-booking__title {
+  color: var(--color-5);
+  font-weight: 600;
+  margin-bottom: calc($gap / 4);
+}
 
 .profile-booking__desc {
   color: var(--color-3);
   margin-bottom: $gap;
 }
 
-.profile-booking__slot {
-  align-items: center;
+// Nav sits directly above the week calendar — needs breathing room.
+.view-content--profile-booking .nn-carousel-nav {
+  margin-bottom: calc($gap * 2); // 2rem
 
-  .profile-booking__time {
-    font-weight: 600;
+  // Week dots don't fit next to the buttons on phones — buttons only.
+  @include mobile-down {
+    .nn-carousel-dots {
+      display: none;
+    }
   }
 }
 
+.profile-booking__range {
+  color: var(--color-4);
+  font-weight: 600;
+  margin-bottom: calc($gap / 2);
+}
+
+// Week calendar: 7 day columns on desktop, stacked day blocks on phone/tablet.
+.profile-booking__week {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: calc($gap / 2);
+  margin-bottom: $gap;
+
+  @include desktop {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+
+.profile-booking__day {
+  background: var(--color-2);
+  border-radius: $radius-xl;
+  padding: calc($gap / 2);
+  min-height: calc($gap * 7);
+
+  &--empty {
+    opacity: 0.35;
+  }
+}
+
+.profile-booking__day-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  color: var(--color-3);
+  margin-bottom: calc($gap / 2);
+
+  strong {
+    color: var(--color-5);
+    font-size: 1.1em;
+  }
+
+  .profile-booking__today {
+    color: var(--color-4);
+  }
+}
+
+.profile-booking__day-slots {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 4);
+}
+
+// Slots are simple time links (compact on phones), not buttons.
+.profile-booking__slot-link {
+  display: block;
+  margin-bottom: calc($gap / 2); // 0.5rem
+  text-align: center;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &--selected {
+    color: var(--color-4);
+    font-weight: 700;
+    text-decoration: underline;
+  }
+}
+
+// Booked slot: plain text, not clickable.
+.profile-booking__slot-booked {
+  display: block;
+  margin-bottom: calc($gap / 2); // 0.5rem
+  text-align: center;
+  color: var(--color-3);
+}
+
 .profile-booking__form {
-  flex: 1;
-  min-width: 0;
+  background: var(--color-2);
+  border-radius: $radius-xl;
+  padding: $gap;
+  margin-bottom: $gap;
+
+  input,
+  textarea {
+    width: 100%;
+  }
+}
+
+.profile-booking__form-title {
+  margin-bottom: calc($gap / 2);
 }

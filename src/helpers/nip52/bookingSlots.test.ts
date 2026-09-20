@@ -19,10 +19,10 @@ import {
 
 const DAY = 86_400_000;
 
-/** Owner in UTC+2 (tzOffsetMinutes = -120). Monday, 2026-09-21 owner-local 00:00 = Sun 22:00 UTC. */
+/** Owner in UTC+2 (tzOffsetMinutes = -120, getTimezoneOffset convention).
+ * Owner-local Monday 2026-09-21 00:00 = real UTC Sun 2026-09-20 22:00. */
 const OFFSET = -120;
-/** Owner-local Monday 2026-09-21 00:00 in real UTC ms. */
-const MON_LOCAL_MIDNIGHT = Date.UTC(2026, 8, 21, 0, 0) - OFFSET * 60_000;
+const MON_LOCAL_MIDNIGHT = Date.UTC(2026, 8, 21, 0, 0) + OFFSET * 60_000;
 
 function cfg(overrides: Partial<BookingConfig> = {}): BookingConfig {
   const day = (enabled: boolean) => ({
@@ -209,5 +209,25 @@ describe('parseBookingConfig', () => {
       ],
     });
     expect(parsed!.vacations).toEqual([{ startMs: 1000, endMs: 2000 }]);
+  });
+
+  it('clamps a day window whose end is before its start (no negative period)', () => {
+    // UI regression guard: 19:00–18:00 entered by hand must clamp end to start.
+    const base = cfg();
+    base.week[1] = { enabled: true, startMinute: 1140, endMinute: 1080 };
+    const parsed = parseBookingConfig({ ...base });
+    expect(parsed!.week[1]).toEqual({
+      enabled: true,
+      startMinute: 1140,
+      endMinute: 1140,
+    });
+    // An empty window produces no slots on that day (other days unaffected).
+    // week[1] = Monday (getDay convention, 0 = Sunday).
+    const slots = computeBookingSlots(parsed!, MON_LOCAL_MIDNIGHT);
+    const mondaySlots = slots.filter(
+      s =>
+        s.startMs >= MON_LOCAL_MIDNIGHT && s.startMs < MON_LOCAL_MIDNIGHT + DAY
+    );
+    expect(mondaySlots).toEqual([]);
   });
 });

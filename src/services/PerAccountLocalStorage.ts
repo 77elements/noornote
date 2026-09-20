@@ -273,6 +273,7 @@ export const StorageKeys = {
   SENSITIVE_MEDIA: 'noornote_sensitive_media_map',
   WALLET_BALANCE_VISIBLE: 'noornote_wallet_balance_visible_map',
   WALLET_BALANCE_LAST_MSATS: 'noornote_wallet_balance_last_msats_map',
+  BOOKING_MY_BOOKINGS: 'noornote_booking_my_bookings_map',
   SCHEDULED_POSTS_ENABLED: 'noornote_scheduled_posts_enabled_map',
 
   // Service data (per-account)

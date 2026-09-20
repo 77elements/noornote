@@ -155,8 +155,64 @@ export class CalendarPublishService {
    * there forever. (2) then DeletionService (posts module) for breadth:
    * all settings relays + the background broadcast to 1000+ relays.
    */
-  public async deleteEvent(event: CalendarEventData): Promise<boolean> {
-    return this.publishDeletion(event.coordinate, event.kind, event.title);
+  public async deleteEvent(
+    event: CalendarEventData,
+    reason?: string
+  ): Promise<boolean> {
+    return this.publishDeletion(
+      event.coordinate,
+      event.kind,
+      event.title,
+      reason
+    );
+  }
+
+  /**
+   * Bulk deletion for the booking slot rebuild: ONE kind-5 event carrying all
+   * coordinates (NIP-09 allows multiple `a` tags) to the calendar relay set,
+   * plus ONE silent breadth pass. No per-item toasts — the caller (booking
+   * rebuild) surfaces a single summary toast.
+   */
+  public async deleteEventsBulk(events: CalendarEventData[]): Promise<boolean> {
+    const user = this.auth.getCurrentUser();
+    if (!user || events.length === 0) return false;
+
+    const coordinates = events.map(e => e.coordinate);
+    const kinds = [...new Set(events.map(e => e.kind))];
+    const unsigned = {
+      kind: 5,
+      created_at: Math.floor(Date.now() / 1000),
+      tags: [
+        ...coordinates.map(coordinate => ['a', coordinate] as string[]),
+        ...kinds.map(kind => ['k', String(kind)] as string[]),
+      ],
+      content: `Deleted ${events.length} booking slots`,
+      pubkey: user.pubkey,
+    };
+    const signed = await this.auth.signEvent(unsigned);
+    if (!signed) throw new Error('Signing failed');
+
+    const relays = await resolveCalendarRelays([user.pubkey]);
+    const accepted = await this.transport.publish(relays, signed);
+
+    // Breadth pass (settings relays + background broadcast), silent — the
+    // rebuild's summary toast is the user-facing signal.
+    try {
+      await ModuleLoader.getInstance()
+        .getApi<PostsModuleApi>('posts')
+        ?.deleteByCoordinates(
+          coordinates,
+          `Deleted ${events.length} booking slots`
+        );
+    } catch {
+      // Breadth pass is best-effort.
+    }
+
+    diagLog('system', 'booking: bulk deletion', {
+      slots: events.length,
+      acceptedRelays: accepted.size,
+    });
+    return accepted.size > 0;
   }
 
   /** Delete an own public calendar collection (kind 31924). */
@@ -217,7 +273,8 @@ export class CalendarPublishService {
   private async publishDeletion(
     coordinate: string,
     kind: number,
-    title: string
+    title: string,
+    reason?: string
   ): Promise<boolean> {
     const user = this.auth.getCurrentUser();
     if (!user) throw new Error('Not logged in');
@@ -229,7 +286,7 @@ export class CalendarPublishService {
         ['a', coordinate],
         ['k', String(kind)],
       ],
-      content: `Deleted calendar item "${title}"`,
+      content: reason?.trim() || `Deleted calendar item "${title}"`,
       pubkey: user.pubkey,
     };
     const signed = await this.auth.signEvent(unsigned);
@@ -317,7 +374,8 @@ export class CalendarPublishService {
   public async publishRSVP(
     event: CalendarEventData,
     status: RSVPStatusValue,
-    comment = ''
+    comment = '',
+    extraTags: string[][] = []
   ): Promise<void> {
     const user = this.auth.getCurrentUser();
     if (!user) throw new Error('Not logged in');
@@ -330,6 +388,7 @@ export class CalendarPublishService {
         ['a', event.coordinate],
         ['d', dTag],
         ['status', status],
+        ...extraTags,
       ],
       content: comment,
       pubkey: user.pubkey,
