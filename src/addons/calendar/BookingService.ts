@@ -76,6 +76,18 @@ export interface MyBookingRecord {
   participants: string[];
 }
 
+/** Structured outcome of a booking operation — every path ends here. */
+export interface BookingOpResult {
+  /** True when the relay publish was confirmed (≥1 relay accepted). */
+  ok: boolean;
+  /** Human-readable outcome for the final toast. */
+  detail: string;
+  /** Recipients successfully DM'd. */
+  informed: number;
+  /** DM attempts that failed. */
+  dmFailures: number;
+}
+
 export interface OwnerSlot {
   /** Parsed slot event. */
   data: CalendarEventData;
@@ -445,16 +457,25 @@ export class BookingService {
     guestName: string,
     note: string,
     participants: string[] = []
-  ): Promise<void> {
+  ): Promise<BookingOpResult> {
     const user = this.auth.getCurrentUser();
     if (!user) throw new Error('Sign in to book an appointment');
 
-    await CalendarPublishService.getInstance().publishRSVP(
+    const published = await CalendarPublishService.getInstance().publishRSVP(
       slot,
       'accepted',
       '',
       participants.map(p => ['p', p])
     );
+    if (!published) {
+      return {
+        ok: false,
+        detail:
+          'The booking could not be published — no relay accepted it. Check your connection and try again.',
+        informed: 0,
+        dmFailures: 0,
+      };
+    }
 
     const lines = [
       `📅 New booking: ${slot.title}`,
@@ -466,43 +487,9 @@ export class BookingService {
     const summary = lines.join('\n');
 
     const dms = ModuleLoader.getInstance().getApi<DMsModuleApi>('dms');
-    if (!dms) {
-      // RSVP already won — the booking stands; only the summary DM is lost.
-      diagLog('system', 'booking: dm module unavailable', {
-        dTag: slot.dTag,
-      });
-      return;
-    }
-    await dms.sendMessage(slot.pubkey, summary);
 
-    // Guest's own NIP-52 calendar: import the slot into their grid via the
-    // established "Add to my cal" saved-events mechanism (live reference to
-    // the owner's event — never copied, re-fetched on every calendar load).
-    try {
-      const { CalendarDataService } = await import('./CalendarDataService');
-      CalendarDataService.getInstance().saveEvent(slot.coordinate);
-    } catch {
-      /* best-effort — the RSVP + reminders already stand */
-    }
-
-    // Additional participants: their own copy of the summary — failures are
-    // non-fatal (the booking itself already exists via the RSVP).
-    for (const participant of participants) {
-      if (participant === user.pubkey || participant === slot.pubkey) continue;
-      try {
-        await dms.sendMessage(
-          participant,
-          `📅 You are included as a participant of a meeting that was just booked:\n\n${summary}`
-        );
-      } catch (err) {
-        diagLog('system', 'booking: participant dm failed', {
-          participant,
-          error: String(err),
-        });
-      }
-    }
-
-    // Guest-side reminder record (device-local, per account) + reschedule.
+    // Guest-side reminder record (device-local, per account) + reschedule —
+    // only after the relay publish was confirmed.
     this.saveMyBookingRecord({
       ownerPubkey: slot.pubkey,
       dTag: slot.dTag,
@@ -515,10 +502,59 @@ export class BookingService {
     });
     this.hub.rescheduleSoon(REMINDER_NAMESPACE_GUEST);
 
+    let informed = 0;
+    let dmFailures = 0;
+    if (!dms) {
+      // Booking stands — only the notification DMs are lost.
+      diagLog('system', 'booking: dm module unavailable', {
+        dTag: slot.dTag,
+      });
+      return {
+        ok: true,
+        detail: 'Booked — notification module unavailable',
+        informed: 0,
+        dmFailures: 0,
+      };
+    }
+    try {
+      await dms.sendMessage(slot.pubkey, summary);
+      informed++;
+    } catch (err) {
+      dmFailures++;
+      diagLog('system', 'booking: dm owner failed', { error: String(err) });
+    }
+
+    // Additional participants: their own copy of the summary — failures are
+    // non-fatal (the booking itself already exists via the RSVP).
+    for (const participant of participants) {
+      if (participant === user.pubkey || participant === slot.pubkey) continue;
+      try {
+        await dms.sendMessage(
+          participant,
+          `📅 You are included as a participant of a meeting that was just booked:\n\n${summary}`
+        );
+        informed++;
+      } catch (err) {
+        dmFailures++;
+        diagLog('system', 'booking: participant dm failed', {
+          error: String(err),
+        });
+      }
+    }
+
     diagLog('system', 'booking: slot booked', {
       dTag: slot.dTag,
-      participants: participants.length,
+      informed,
+      dmFailures,
     });
+    return {
+      ok: true,
+      detail: dmFailures
+        ? `Booked — ${informed} DM(s) sent, ${dmFailures} failed`
+        : 'Booked',
+      informed,
+      dmFailures,
+    };
   }
 
   /**
@@ -530,17 +566,38 @@ export class BookingService {
   public async cancelBooking(
     slot: CalendarEventData,
     reason: string
-  ): Promise<void> {
+  ): Promise<BookingOpResult> {
     const user = this.auth.getCurrentUser();
     if (!user) throw new Error('Sign in to manage your booking');
 
-    await CalendarPublishService.getInstance().publishRSVP(
+    const published = await CalendarPublishService.getInstance().publishRSVP(
       slot,
       'declined',
       reason
     );
+    if (!published) {
+      return {
+        ok: false,
+        detail:
+          'The cancellation could not be published — no relay accepted it. Check your connection and try again.',
+        informed: 0,
+        dmFailures: 0,
+      };
+    }
 
-    await this.notifyAndCleanupCancellation(slot, reason);
+    const { informed, dmFailures } = await this.notifyAndCleanupCancellation(
+      slot,
+      reason
+    );
+    return {
+      ok: true,
+      detail:
+        informed > 0
+          ? `Booking cancelled — host and ${informed - 1} participant(s) informed`
+          : 'Booking cancelled',
+      informed,
+      dmFailures,
+    };
   }
 
   /**
@@ -553,9 +610,9 @@ export class BookingService {
   public async notifyAndCleanupCancellation(
     slot: CalendarEventData,
     reason: string
-  ): Promise<void> {
+  ): Promise<{ informed: number; dmFailures: number }> {
     const user = this.auth.getCurrentUser();
-    if (!user) return;
+    if (!user) return { informed: 0, dmFailures: 0 };
 
     // Guest name + original note from the booking record — so recipients can
     // associate the cancellation with the right appointment.
@@ -571,10 +628,15 @@ export class BookingService {
     ]
       .filter((line): line is string => line !== null)
       .join('\n');
+
+    let informed = 0;
+    let dmFailures = 0;
     if (dms) {
       try {
         await dms.sendMessage(slot.pubkey, cancelNote);
+        informed++;
       } catch (err) {
+        dmFailures++;
         diagLog('system', 'booking: cancel dm owner failed', {
           error: String(err),
         });
@@ -583,7 +645,9 @@ export class BookingService {
       for (const participant of record?.participants ?? []) {
         try {
           await dms.sendMessage(participant, cancelNote);
+          informed++;
         } catch (err) {
+          dmFailures++;
           diagLog('system', 'booking: cancel dm participant failed', {
             error: String(err),
           });
@@ -600,7 +664,12 @@ export class BookingService {
     this.removeMyBookingRecord(slot.dTag);
     this.hub.rescheduleSoon(REMINDER_NAMESPACE_GUEST);
 
-    diagLog('system', 'booking: slot cancelled', { dTag: slot.dTag });
+    diagLog('system', 'booking: slot cancelled', {
+      dTag: slot.dTag,
+      informed,
+      dmFailures,
+    });
+    return { informed, dmFailures };
   }
 
   /**
@@ -613,32 +682,60 @@ export class BookingService {
     reason: string,
     guestPubkey: string,
     participants: string[]
-  ): Promise<void> {
+  ): Promise<BookingOpResult> {
     const user = this.auth.getCurrentUser();
     if (!user) throw new Error('Not logged in');
 
-    await CalendarPublishService.getInstance().deleteEvent(slot, reason);
+    const deleted = await CalendarPublishService.getInstance().deleteEvent(
+      slot,
+      reason
+    );
+    if (!deleted) {
+      return {
+        ok: false,
+        detail:
+          'The cancellation was not accepted by any relay. Check your connection and try again.',
+        informed: 0,
+        dmFailures: 0,
+      };
+    }
 
     const dms = ModuleLoader.getInstance().getApi<DMsModuleApi>('dms');
-    if (!dms) return;
     const note = `❌ The host cancelled the booking "${slot.title}"\nWhen: ${new Date(slot.startMs).toUTCString()}\nReason: ${reason.trim() || '—'}`;
     const recipients = [guestPubkey, ...participants].filter(
       (p, i, all) => p && p !== user.pubkey && all.indexOf(p) === i
     );
-    for (const recipient of recipients) {
-      try {
-        await dms.sendMessage(recipient, note);
-      } catch (err) {
-        diagLog('system', 'booking: cancel dm failed', {
-          recipient,
-          error: String(err),
-        });
+
+    let informed = 0;
+    let dmFailures = 0;
+    if (dms) {
+      for (const recipient of recipients) {
+        try {
+          await dms.sendMessage(recipient, note);
+          informed++;
+        } catch (err) {
+          dmFailures++;
+          diagLog('system', 'booking: cancel dm failed', {
+            recipient,
+            error: String(err),
+          });
+        }
       }
     }
+
     diagLog('system', 'booking: owner cancelled booking', {
       dTag: slot.dTag,
-      informed: recipients.length,
+      informed,
+      dmFailures,
     });
+    return {
+      ok: true,
+      detail: informed
+        ? `Booking cancelled — ${informed} recipient(s) informed`
+        : 'Booking cancelled',
+      informed,
+      dmFailures,
+    };
   }
 
   /** Owner device: rebuild the reminders for all booked slots. */

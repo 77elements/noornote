@@ -376,7 +376,7 @@ export class CalendarPublishService {
     status: RSVPStatusValue,
     comment = '',
     extraTags: string[][] = []
-  ): Promise<void> {
+  ): Promise<boolean> {
     const user = this.auth.getCurrentUser();
     if (!user) throw new Error('Not logged in');
 
@@ -396,10 +396,10 @@ export class CalendarPublishService {
     const signed = await this.auth.signEvent(unsigned);
     if (!signed) throw new Error('Signing failed');
 
-    await this.transport.publishWithOutbox(signed, {
+    const accepted = await this.transport.publishWithOutbox(signed, {
       authorPubkeys: [user.pubkey],
     });
-    diagLog('system', 'calendar: rsvp published', { status, dTag: event.dTag });
+    return accepted.size > 0;
   }
 
   /**

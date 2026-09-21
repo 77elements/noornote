@@ -84,6 +84,8 @@ export class BookingManager {
   private element: HTMLElement;
   private config: BookingConfig = defaultConfig();
   private slots: OwnerSlot[] = [];
+  /** d-tag of the slot currently being cancelled (busy state). */
+  private cancellingDTag: string | null = null;
   private loading = false;
   private destroyed = false;
   /** Staged dropdown selections (written on change, applied on save). */
@@ -263,12 +265,16 @@ export class BookingManager {
                 hour: '2-digit',
                 minute: '2-digit',
               });
-              const booked = slot.bookedBy
-                ? `<span class="badge badge--green">Booked by ${escapeHtml(
-                    UserProfileService.getInstance().getUsername(
-                      slot.bookedBy
-                    ) || 'guest'
-                  )}</span>
+              // Busy state: deletion/DMs in flight for this slot.
+              const cancelling = this.cancellingDTag === slot.data.dTag;
+              const booked = cancelling
+                ? '<span class="pulsate">Cancelling…</span>'
+                : slot.bookedBy
+                  ? `<span class="badge badge--green">Booked by ${escapeHtml(
+                      UserProfileService.getInstance().getUsername(
+                        slot.bookedBy
+                      ) || 'guest'
+                    )}</span>
                    ${
                      slot.participants.length
                        ? `<span class="badge">+${slot.participants.length}</span>`
@@ -277,7 +283,7 @@ export class BookingManager {
                    <button class="btn btn--passive btn--mini" data-cancel-booking="${escapeHtmlAttr(
                      slot.data.dTag
                    )}">Cancel</button>`
-                : '<span class="badge badge--accent">Free</span>';
+                  : '<span class="badge badge--accent">Free</span>';
               return `<div class="ui-list__item">
                 <span>${escapeHtml(when)}</span>
                 ${booked}
@@ -372,24 +378,37 @@ export class BookingManager {
       confirmText: 'Cancel booking',
     });
     if (reason === null) return;
-    try {
-      await BookingService.getInstance().ownerCancelBooking(
-        slot.data,
-        reason,
-        slot.bookedBy,
-        slot.participants
-      );
+    // Busy state on the affected row: pulsating placeholder instead of the
+    // booked badge while the deletion + DMs are in flight.
+    this.cancellingDTag = dTag;
+    this.render();
+    const result = await BookingService.getInstance().ownerCancelBooking(
+      slot.data,
+      reason,
+      slot.bookedBy,
+      slot.participants
+    );
+    if (this.destroyed) return;
+    if (result.ok) {
+      // Optimistic release: the deletion was accepted — free the slot locally
+      // right away; the background re-fetch only reconciles.
+      slot.bookedBy = null;
+      slot.bookedByMe = false;
+      slot.participants = [];
+      this.cancellingDTag = null;
+      this.render();
       ToastService.show(
-        'Booking cancelled — guest and participants informed',
-        'success'
+        result.dmFailures
+          ? `${result.detail} — ${result.dmFailures} DM(s) failed`
+          : result.detail,
+        result.dmFailures ? 'warning' : 'success'
       );
-    } catch (err) {
-      ToastService.show(
-        `Cancellation failed: ${err instanceof Error ? err.message : String(err)}`,
-        'error'
-      );
+      void this.refreshSlots();
+    } else {
+      ToastService.show(result.detail, 'error');
+      this.cancellingDTag = null;
+      this.render();
     }
-    await this.refreshSlots();
   }
 
   private wireCancelButtons(): void {

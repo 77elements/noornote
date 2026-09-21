@@ -53,6 +53,9 @@ export class ProfileBookingView extends View {
   private weekIndex = 0;
   /** d-tag of the own booked slot currently showing its cancel form. */
   private cancelDTag: string | null = null;
+  /** d-tag of the slot currently being cancelled/booked (busy state). */
+  private cancellingDTag: string | null = null;
+  private bookingDTag: string | null = null;
   /** Session-local: own bookings cancelled in this session (relay lag guard). */
   private cancelledDTags = new Set<string>();
 
@@ -287,6 +290,13 @@ export class ProfileBookingView extends View {
           TIME_LOCALE,
           { hour: '2-digit', minute: '2-digit', hour12: false }
         );
+        // Busy states: the slot currently being cancelled or booked.
+        if (this.cancellingDTag === slot.data.dTag) {
+          return `<span class="pulsate profile-booking__slot-pending">Cancelling…</span>`;
+        }
+        if (this.bookingDTag === slot.data.dTag) {
+          return `<span class="pulsate profile-booking__slot-pending">Booking…</span>`;
+        }
         // Booked by someone else: plain text, not clickable.
         if (slot.bookedBy && !slot.bookedByMe) {
           return `<span class="profile-booking__slot-booked">${escapeHtml(time)}</span>`;
@@ -408,25 +418,30 @@ export class ProfileBookingView extends View {
 
   /** Guest cancellation: declined RSVP + cleanup + notifications. */
   private async confirmCancel(slot: OwnerSlot, reason: string): Promise<void> {
+    this.cancellingDTag = slot.data.dTag;
+    this.render();
     const { BookingService } = await import(
       '../../addons/calendar/BookingService'
     );
-    try {
-      await BookingService.getInstance().cancelBooking(slot.data, reason);
-      if (this.destroyed) return;
+    const result = await BookingService.getInstance().cancelBooking(
+      slot.data,
+      reason
+    );
+    if (this.destroyed) return;
+    if (result.ok) {
       this.cancelledDTags.add(slot.data.dTag);
       this.cancelDTag = null;
+      this.cancellingDTag = null;
       this.render();
       ToastService.show(
-        'Booking cancelled — the host has been informed',
-        'success'
+        result.dmFailures
+          ? `${result.detail} — ${result.dmFailures} DM(s) failed`
+          : result.detail,
+        result.dmFailures ? 'warning' : 'success'
       );
-    } catch (err) {
-      ToastService.show(
-        `Cancellation failed: ${err instanceof Error ? err.message : String(err)}`,
-        'error'
-      );
-      this.cancelDTag = null;
+    } else {
+      ToastService.show(result.detail, 'error');
+      this.cancellingDTag = null;
       this.render();
     }
   }
@@ -519,6 +534,7 @@ export class ProfileBookingView extends View {
     participantsInput: string
   ): Promise<void> {
     this.booking = true;
+    this.bookingDTag = slot.dTag;
     this.render();
     const { BookingService } = await import(
       '../../addons/calendar/BookingService'
@@ -526,24 +542,21 @@ export class ProfileBookingView extends View {
     // Participants are the @-mentions / npubs typed into the field
     // (comma-separated). Established extractor — URL-embedded npubs stay out.
     const participants = extractMentionPubkeysFromText(participantsInput);
-    try {
-      await BookingService.getInstance().bookSlot(
-        slot,
-        guestName,
-        note,
-        participants
-      );
-      if (this.destroyed) return;
+    const result = await BookingService.getInstance().bookSlot(
+      slot,
+      guestName,
+      note,
+      participants
+    );
+    if (this.destroyed) return;
+    if (!result.ok) {
+      ToastService.show(result.detail, 'error');
+    } else {
       this.bookedSlot = slot;
-      this.render();
-    } catch (err) {
-      ToastService.show(
-        `Booking failed: ${err instanceof Error ? err.message : String(err)}`,
-        'error'
-      );
-      this.booking = false;
-      this.render();
     }
+    this.booking = false;
+    this.bookingDTag = null;
+    this.render();
   }
 
   private renderSuccess(): void {
