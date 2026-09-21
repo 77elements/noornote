@@ -72,12 +72,12 @@
   // Lift the whole control (not just the absolute menu) above later siblings
   // while open. The ISL sits after the LikesList in the DOM and already claims
   // $z-dropdown, so at an equal value it would win — go one layer higher.
-  &.custom-dropdown--open {
+  &.nn-dropdown--open {
     position: relative;
     z-index: $z-sticky;
   }
 
-  .custom-dropdown__trigger {
+  .nn-dropdown__trigger {
     display: inline-block; // plain box — override the base flex, none needed here
     padding: 0 calc($gap / 4); // 0 0.25rem
     background: none;

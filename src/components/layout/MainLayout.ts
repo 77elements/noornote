@@ -60,7 +60,7 @@ import {
   PerAccountLocalStorage,
   StorageKeys,
 } from '../../services/PerAccountLocalStorage';
-import { CustomDropdown } from '../ui/CustomDropdown';
+import { NnDropdown } from '../ui/NnDropdown';
 import {
   getSccDefaultTab,
   setSccDefaultTab,
@@ -135,7 +135,7 @@ export class MainLayout {
   private webUpdateBannerActive = false; // newer deployed build detected (WebUpdateCheck)
   private layoutService: LayoutService;
   private pullToRefresh: PullToRefresh | null = null;
-  private sccDefaultDropdown: CustomDropdown | null = null;
+  private sccDefaultDropdown: NnDropdown | null = null;
   private sccArticleFeed: ArticleTimeline | null = null;
   private sccMediaFeed: SccMediaFeed | null = null;
   private _dayjs: typeof import('dayjs') | null = null;
@@ -1566,7 +1566,7 @@ export class MainLayout {
 
     const savedDefault = getSccDefaultTab();
 
-    this.sccDefaultDropdown = new CustomDropdown({
+    this.sccDefaultDropdown = new NnDropdown({
       options: [
         { value: 'system-log', label: 'System Logs' },
         { value: 'newest-articles', label: 'Newest Articles' },
@@ -1590,7 +1590,7 @@ export class MainLayout {
     // or list tab is active, a click returns to the default content instead of
     // opening the type menu. Only when the default content is already showing
     // does a click fall through to the dropdown (to change the default type).
-    // Capture phase so we suppress CustomDropdown's own toggle before it runs.
+    // Capture phase so we suppress NnDropdown's own toggle before it runs.
     dropdownMount.addEventListener(
       'click',
       e => {

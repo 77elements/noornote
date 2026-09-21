@@ -27,7 +27,7 @@ import {
   setupUserMentionHandlers,
   type UserMentionProfile,
 } from '../../helpers/UserMentionHelper';
-import type { CustomDropdown } from '../ui/CustomDropdown';
+import type { NnDropdown } from '../ui/NnDropdown';
 import {
   buildEmojiMenu,
   buildChildrenContainer,
@@ -56,7 +56,7 @@ export class AnalyticsModal {
   private modalService: ModalService;
   /** Reaction-thread pulldowns from the last render — destroyed on the next
    *  open so their document listeners don't accumulate across modal opens. */
-  private activeDropdowns: CustomDropdown[] = [];
+  private activeDropdowns: NnDropdown[] = [];
 
   private constructor() {
     this.userProfileService = UserProfileService.getInstance();

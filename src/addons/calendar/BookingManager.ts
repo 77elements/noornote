@@ -18,7 +18,7 @@
 import { ToastService } from '../../services/ToastService';
 import { AuthService } from '../../services/AuthService';
 import { UserProfileService } from '../../services/UserProfileService';
-import { CustomDropdown } from '../../components/ui/CustomDropdown';
+import { NnDropdown } from '../../components/ui/NnDropdown';
 import { Switch } from '../../components/ui/Switch';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { encodeNpub } from '../../services/NostrToolsAdapter';
@@ -87,7 +87,7 @@ export class BookingManager {
   private loading = false;
   private destroyed = false;
   /** Staged dropdown selections (written on change, applied on save). */
-  private dropdowns: CustomDropdown[] = [];
+  private dropdowns: NnDropdown[] = [];
   private enableSwitch: Switch | null = null;
 
   constructor(slot: HTMLElement) {
@@ -421,7 +421,7 @@ export class BookingManager {
     this.enableSwitch.setupEventListeners(mount);
   }
 
-  /** Replace the four settings dropdowns (CustomDropdown, staged on change). */
+  /** Replace the four settings dropdowns (NnDropdown, staged on change). */
   private renderDropdowns(): void {
     this.dropdowns.forEach(d => d.destroy());
     this.dropdowns = [];
@@ -483,7 +483,7 @@ export class BookingManager {
         spec.selector
       ) as HTMLElement | null;
       if (!mount) continue;
-      const dropdown = new CustomDropdown({
+      const dropdown = new NnDropdown({
         options: spec.options,
         selectedValue: spec.selected,
         width: '100%',

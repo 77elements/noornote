@@ -12,9 +12,9 @@ import { ErrorService } from '../../services/ErrorService';
 import { ToastService } from '../../services/ToastService';
 import { Switch } from '../../components/ui/Switch';
 import {
-  CustomDropdown,
+  NnDropdown,
   type DropdownOption,
-} from '../../components/ui/CustomDropdown';
+} from '../../components/ui/NnDropdown';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
 import { escapeHtmlAttr } from '../../helpers/escapeHtml';
 import {
@@ -62,8 +62,8 @@ function toLocalDateInput(ms: number): string {
 export class CalendarEventEditor {
   private allDaySwitch: Switch | null = null;
   private privateSwitch: Switch | null = null;
-  private repeatDropdown: CustomDropdown | null = null;
-  private remindDropdown: CustomDropdown | null = null;
+  private repeatDropdown: NnDropdown | null = null;
+  private remindDropdown: NnDropdown | null = null;
   /** 'default' or minutes-as-string; persisted per event coordinate on save. */
   private remindValue = 'default';
   private repeatValue: RecurrenceFrequency | null;
@@ -225,7 +225,7 @@ export class CalendarEventEditor {
     }
 
     // Repeat dropdown.
-    this.repeatDropdown = new CustomDropdown({
+    this.repeatDropdown = new NnDropdown({
       options: REPEAT_OPTIONS,
       selectedValue: this.repeatValue ?? 'none',
       width: '100%',
@@ -246,7 +246,7 @@ export class CalendarEventEditor {
       : null;
     this.remindValue =
       existingOverride === null ? 'default' : String(existingOverride);
-    this.remindDropdown = new CustomDropdown({
+    this.remindDropdown = new NnDropdown({
       options: [
         {
           value: 'default',

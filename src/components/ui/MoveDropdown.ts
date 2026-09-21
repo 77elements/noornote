@@ -11,7 +11,7 @@ export interface MoveTarget {
 }
 
 /**
- * Location-sensitive menu placement, shared semantics with CustomDropdown's
+ * Location-sensitive menu placement, shared semantics with NnDropdown's
  * portal positioner: drops down / left-anchored by default; flips to
  * right-anchored when the menu would overflow the right viewport edge (third
  * tile in a row) and to drop-up when there is no room below.

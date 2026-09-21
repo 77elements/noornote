@@ -209,7 +209,7 @@ html.layout--phone {
         display: flex;
       }
 
-      .custom-dropdown__trigger {
+      .nn-dropdown__trigger {
         background: none;
         border: none;
         border-radius: $radius-xl $radius-xl 0 0;
@@ -218,7 +218,7 @@ html.layout--phone {
         font-weight: 600;
       }
 
-      .custom-dropdown__menu {
+      .nn-dropdown__menu {
         left: 0;
         right: auto;
       }

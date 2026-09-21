@@ -14,7 +14,7 @@ import { TypedEventBus } from '../../core/TypedEventBus';
 import { isBookmarksEnabled } from '../../addons/bookmarks/index';
 import { formatCount } from '../../helpers/formatCount';
 import { PlatformService } from '../../services/PlatformService';
-import { CustomDropdown } from './CustomDropdown';
+import { NnDropdown } from './NnDropdown';
 import { ZapManager } from './interaction-managers/ZapManager';
 import { LikeManager } from './interaction-managers/LikeManager';
 import { RepostManager } from './interaction-managers/RepostManager';
@@ -69,7 +69,7 @@ export class InteractionStatusLine {
   private likeManager: LikeManager | null = null;
   private repostManager: RepostManager | null = null;
   // Mobile only: merged Repost+Quote action menu (saves ISL horizontal space).
-  private repostMenu: CustomDropdown | null = null;
+  private repostMenu: NnDropdown | null = null;
 
   constructor(config: ISLConfig) {
     this.config = config;
@@ -329,7 +329,7 @@ export class InteractionStatusLine {
   private attachRepostMenu(container: HTMLElement): void {
     if (!this.repostManager) return;
 
-    this.repostMenu = new CustomDropdown({
+    this.repostMenu = new NnDropdown({
       options: [
         {
           value: 'repost',
@@ -353,7 +353,7 @@ export class InteractionStatusLine {
     });
 
     const menuEl = this.repostMenu.getElement();
-    const trigger = menuEl.querySelector('.custom-dropdown__trigger');
+    const trigger = menuEl.querySelector('.nn-dropdown__trigger');
     if (trigger) {
       trigger.setAttribute('title', 'Repost');
       trigger.innerHTML =
@@ -362,7 +362,7 @@ export class InteractionStatusLine {
       this.repostManager.setButtonElement(trigger as HTMLElement);
 
       // Open downward by default, upward when near the bottom of the screen.
-      // Capture phase runs before CustomDropdown's own toggle handler.
+      // Capture phase runs before NnDropdown's own toggle handler.
       trigger.addEventListener(
         'click',
         () => {

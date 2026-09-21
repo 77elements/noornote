@@ -2,7 +2,7 @@
  * Account Switcher Component
  * Shows current user with dropdown for switching between stored accounts.
  * Supports: NoorSigner (local daemon) and Bunker (remote signer)
- * Uses custom-dropdown CSS classes for consistent styling.
+ * Uses nn-dropdown CSS classes for consistent styling.
  */
 
 import {
@@ -64,17 +64,17 @@ export class AccountSwitcher {
    */
   private createElement(): HTMLElement {
     const container = document.createElement('div');
-    container.className = 'custom-dropdown account-switcher';
+    container.className = 'nn-dropdown account-switcher';
     container.innerHTML = `
-      <button class="custom-dropdown__trigger" type="button">
+      <button class="nn-dropdown__trigger" type="button">
         <span class="account-switcher__indicator"></span>
-        <span class="custom-dropdown__label">Loading...</span>
-        <span class="custom-dropdown__arrow" aria-hidden="true"></span>
+        <span class="nn-dropdown__label">Loading...</span>
+        <span class="nn-dropdown__arrow" aria-hidden="true"></span>
       </button>
     `;
 
     // Setup trigger click
-    const trigger = container.querySelector('.custom-dropdown__trigger');
+    const trigger = container.querySelector('.nn-dropdown__trigger');
     if (trigger) {
       trigger.addEventListener('click', e => {
         e.stopPropagation();
@@ -120,7 +120,7 @@ export class AccountSwitcher {
    * Update display with loaded profile
    */
   private updateDisplay(): void {
-    const nameEl = this.element.querySelector('.custom-dropdown__label');
+    const nameEl = this.element.querySelector('.nn-dropdown__label');
     if (nameEl) {
       const displayName =
         this.profile?.name ||
@@ -134,7 +134,7 @@ export class AccountSwitcher {
    * Show fallback when profile loading fails
    */
   private showFallback(): void {
-    const nameEl = this.element.querySelector('.custom-dropdown__label');
+    const nameEl = this.element.querySelector('.nn-dropdown__label');
     if (nameEl) {
       nameEl.textContent = `${this.options.npub.slice(0, 12)}...`;
     }
@@ -146,11 +146,11 @@ export class AccountSwitcher {
   private async open(): Promise<void> {
     if (this.isOpen) return;
     this.isOpen = true;
-    this.element.classList.add('custom-dropdown--open');
+    this.element.classList.add('nn-dropdown--open');
 
     // Create menu
     const menu = document.createElement('ul');
-    menu.className = 'custom-dropdown__menu';
+    menu.className = 'nn-dropdown__menu';
     menu.style.display = 'block';
     menu.style.opacity = '1';
     menu.style.transform = 'translateY(0)';
@@ -158,7 +158,7 @@ export class AccountSwitcher {
 
     // Show loading
     menu.innerHTML =
-      '<li class="custom-dropdown__item" style="opacity: 0.5;">Loading...</li>';
+      '<li class="nn-dropdown__item" style="opacity: 0.5;">Loading...</li>';
 
     await this.populateMenu(menu);
   }
@@ -169,9 +169,9 @@ export class AccountSwitcher {
   private close(): void {
     if (!this.isOpen) return;
     this.isOpen = false;
-    this.element.classList.remove('custom-dropdown--open');
+    this.element.classList.remove('nn-dropdown--open');
 
-    const menu = this.element.querySelector('.custom-dropdown__menu');
+    const menu = this.element.querySelector('.nn-dropdown__menu');
     if (menu) menu.remove();
   }
 
@@ -220,7 +220,7 @@ export class AccountSwitcher {
           account.displayName || `${account.npub.slice(0, 12)}...`;
 
         const item = document.createElement('li');
-        item.className = `custom-dropdown__item${isActive ? ' custom-dropdown__item--selected' : ''}`;
+        item.className = `nn-dropdown__item${isActive ? ' nn-dropdown__item--selected' : ''}`;
         item.innerHTML = `${displayName}${isActive ? ' <span class="account-switcher__active-dot"></span>' : ''}`;
 
         if (!isActive) {
@@ -239,7 +239,7 @@ export class AccountSwitcher {
 
     // Add account
     const addItem = document.createElement('li');
-    addItem.className = 'custom-dropdown__item';
+    addItem.className = 'nn-dropdown__item';
     addItem.innerHTML =
       '<span class="account-switcher__icon">+</span> Add account';
     addItem.addEventListener('click', () => this.handleAddAccount());
@@ -247,8 +247,7 @@ export class AccountSwitcher {
 
     // Sign out
     const logoutItem = document.createElement('li');
-    logoutItem.className =
-      'custom-dropdown__item account-switcher__item--danger';
+    logoutItem.className = 'nn-dropdown__item account-switcher__item--danger';
     logoutItem.innerHTML =
       '<span class="account-switcher__icon"><svg width="14" height="14"><use href="#icon-logout"/></svg></span> Sign out';
     logoutItem.addEventListener('click', () => this.handleLogout());

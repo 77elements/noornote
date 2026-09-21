@@ -1,11 +1,11 @@
 /**
- * CustomDropdown Component
+ * NnDropdown Component
  * Minimal JS + CSS-based dropdown with custom styling
  * Fully parametrized and reusable across multiple components
  *
  * @example
  * ```typescript
- * const dropdown = new CustomDropdown({
+ * const dropdown = new NnDropdown({
  *   options: [
  *     { value: 'option1', label: 'Option 1' },
  *     { value: 'option2', label: 'Option 2' }
@@ -28,7 +28,7 @@ export interface DropdownOption {
   label: string;
 }
 
-export interface CustomDropdownOptions {
+export interface NnDropdownOptions {
   /** Dropdown options */
   options: DropdownOption[];
   /** Currently selected value */
@@ -54,7 +54,7 @@ export interface CustomDropdownOptions {
   menuPortal?: boolean;
 }
 
-export class CustomDropdown {
+export class NnDropdown {
   private element: HTMLElement;
   private options: DropdownOption[];
   private selectedValue: string;
@@ -92,7 +92,7 @@ export class CustomDropdown {
     if (this.isOpen && this.menuPortal) this.positionPortalMenu();
   };
 
-  constructor(config: CustomDropdownOptions) {
+  constructor(config: NnDropdownOptions) {
     this.options = config.options;
     this.selectedValue = config.selectedValue;
     this.onChange = config.onChange;
@@ -105,10 +105,10 @@ export class CustomDropdown {
   /**
    * Create dropdown structure
    */
-  private createElement(config: CustomDropdownOptions): HTMLElement {
+  private createElement(config: NnDropdownOptions): HTMLElement {
     const container = document.createElement('div');
     container.className =
-      `custom-dropdown ${this.searchable ? 'custom-dropdown--searchable' : ''} ${config.className || ''}`
+      `nn-dropdown ${this.searchable ? 'nn-dropdown--searchable' : ''} ${config.className || ''}`
         .replace(/\s+/g, ' ')
         .trim();
 
@@ -130,21 +130,21 @@ export class CustomDropdown {
     const selectedLabel = selectedOption?.label ?? this.options[0]?.label ?? '';
 
     const searchHtml = this.searchable
-      ? `<li class="custom-dropdown__search"><input type="text" class="custom-dropdown__search-input" placeholder="${config.searchPlaceholder ?? 'Search…'}" /></li>`
+      ? `<li class="nn-dropdown__search"><input type="text" class="nn-dropdown__search-input" placeholder="${config.searchPlaceholder ?? 'Search…'}" /></li>`
       : '';
 
     container.innerHTML = `
-      <button class="custom-dropdown__trigger" type="button">
-        <span class="custom-dropdown__label">${selectedLabel}</span>
-        <span class="custom-dropdown__arrow" aria-hidden="true"></span>
+      <button class="nn-dropdown__trigger" type="button">
+        <span class="nn-dropdown__label">${selectedLabel}</span>
+        <span class="nn-dropdown__arrow" aria-hidden="true"></span>
       </button>
-      <ul class="custom-dropdown__menu" role="listbox">
+      <ul class="nn-dropdown__menu" role="listbox">
         ${searchHtml}
         ${this.options
           .map(
             option => `
           <li
-            class="custom-dropdown__item ${option.value === this.selectedValue ? 'custom-dropdown__item--selected' : ''}"
+            class="nn-dropdown__item ${option.value === this.selectedValue ? 'nn-dropdown__item--selected' : ''}"
             data-value="${option.value}"
             role="option"
             aria-selected="${option.value === this.selectedValue}"
@@ -164,10 +164,10 @@ export class CustomDropdown {
    * Setup event listeners
    */
   private setupEventListeners(): void {
-    const trigger = this.element.querySelector('.custom-dropdown__trigger');
-    const items = this.element.querySelectorAll('.custom-dropdown__item');
+    const trigger = this.element.querySelector('.nn-dropdown__trigger');
+    const items = this.element.querySelectorAll('.nn-dropdown__item');
     this.triggerEl = trigger as HTMLElement | null;
-    this.menuEl = this.element.querySelector('.custom-dropdown__menu');
+    this.menuEl = this.element.querySelector('.nn-dropdown__menu');
 
     // Toggle dropdown
     trigger?.addEventListener('click', e => {
@@ -192,7 +192,7 @@ export class CustomDropdown {
     // Type-to-filter search (long lists)
     if (this.searchable) {
       const input = this.element.querySelector(
-        '.custom-dropdown__search-input'
+        '.nn-dropdown__search-input'
       ) as HTMLInputElement | null;
       input?.addEventListener('click', e => e.stopPropagation());
       input?.addEventListener('keydown', e => e.stopPropagation());
@@ -209,7 +209,7 @@ export class CustomDropdown {
   /** Show only items whose label contains the query (case-insensitive). */
   private filterItems(query: string): void {
     const q = query.trim().toLowerCase();
-    this.element.querySelectorAll('.custom-dropdown__item').forEach(item => {
+    this.element.querySelectorAll('.nn-dropdown__item').forEach(item => {
       const label = (item.textContent || '').trim().toLowerCase();
       (item as HTMLElement).style.display =
         !q || label.includes(q) ? '' : 'none';
@@ -220,10 +220,10 @@ export class CustomDropdown {
   private resetFilter(): void {
     if (!this.searchable) return;
     const input = this.element.querySelector(
-      '.custom-dropdown__search-input'
+      '.nn-dropdown__search-input'
     ) as HTMLInputElement | null;
     if (input) input.value = '';
-    this.element.querySelectorAll('.custom-dropdown__item').forEach(item => {
+    this.element.querySelectorAll('.nn-dropdown__item').forEach(item => {
       (item as HTMLElement).style.display = '';
     });
   }
@@ -244,7 +244,7 @@ export class CustomDropdown {
    */
   private open(): void {
     this.isOpen = true;
-    this.element.classList.add('custom-dropdown--open');
+    this.element.classList.add('nn-dropdown--open');
 
     if (this.menuPortal && this.menuEl) {
       // Lift the menu out to <body> so an ancestor's scroll-overflow clip (e.g.
@@ -252,7 +252,7 @@ export class CustomDropdown {
       // to the trigger with fixed positioning.
       if (!this.menuHome) this.menuHome = this.menuEl.parentElement;
       document.body.appendChild(this.menuEl);
-      this.menuEl.classList.add('custom-dropdown__menu--portaled');
+      this.menuEl.classList.add('nn-dropdown__menu--portaled');
       this.positionPortalMenu();
       window.addEventListener('scroll', this.onPortalReflow, true);
       window.addEventListener('resize', this.onPortalReflow);
@@ -262,7 +262,7 @@ export class CustomDropdown {
 
     if (this.searchable) {
       const input = (this.menuEl ?? this.element).querySelector(
-        '.custom-dropdown__search-input'
+        '.nn-dropdown__search-input'
       ) as HTMLInputElement | null;
       // Focus after the menu becomes visible.
       setTimeout(() => input?.focus(), 0);
@@ -306,16 +306,16 @@ export class CustomDropdown {
    */
   private positionMenu(): void {
     const menu = this.element.querySelector(
-      '.custom-dropdown__menu'
+      '.nn-dropdown__menu'
     ) as HTMLElement | null;
     const trigger = this.element.querySelector(
-      '.custom-dropdown__trigger'
+      '.nn-dropdown__trigger'
     ) as HTMLElement | null;
     if (!menu || !trigger) return;
 
     this.element.classList.remove(
-      'custom-dropdown--align-left',
-      'custom-dropdown--drop-up'
+      'nn-dropdown--align-left',
+      'nn-dropdown--drop-up'
     );
 
     const t = trigger.getBoundingClientRect();
@@ -333,13 +333,13 @@ export class CustomDropdown {
     const rightAnchorFits = t.right - menuW >= clip.left + m;
     const leftAnchorFits = t.left + menuW <= clip.right - m;
     if (!rightAnchorFits && leftAnchorFits) {
-      this.element.classList.add('custom-dropdown--align-left');
+      this.element.classList.add('nn-dropdown--align-left');
     }
 
     // Vertical: drops down by default. If it would clip the bottom and there's
     // room above, drop up instead.
     if (t.bottom + menuH > clip.bottom - m && t.top - menuH > clip.top + m) {
-      this.element.classList.add('custom-dropdown--drop-up');
+      this.element.classList.add('nn-dropdown--drop-up');
     }
   }
 
@@ -385,10 +385,10 @@ export class CustomDropdown {
    */
   private close(): void {
     this.isOpen = false;
-    this.element.classList.remove('custom-dropdown--open');
+    this.element.classList.remove('nn-dropdown--open');
 
     if (this.menuPortal && this.menuEl) {
-      this.menuEl.classList.remove('custom-dropdown__menu--portaled');
+      this.menuEl.classList.remove('nn-dropdown__menu--portaled');
       this.menuEl.style.top = '';
       this.menuEl.style.left = '';
       // Return the menu to its home so the normal descendant CSS applies again.
@@ -410,20 +410,20 @@ export class CustomDropdown {
     this.selectedValue = value;
 
     // Update label
-    const label = this.element.querySelector('.custom-dropdown__label');
+    const label = this.element.querySelector('.nn-dropdown__label');
     if (label) {
       label.textContent = selectedOption.label;
     }
 
     // Update selected state
-    const items = this.element.querySelectorAll('.custom-dropdown__item');
+    const items = this.element.querySelectorAll('.nn-dropdown__item');
     items.forEach(item => {
       const itemValue = (item as HTMLElement).dataset.value;
       if (itemValue === value) {
-        item.classList.add('custom-dropdown__item--selected');
+        item.classList.add('nn-dropdown__item--selected');
         item.setAttribute('aria-selected', 'true');
       } else {
-        item.classList.remove('custom-dropdown__item--selected');
+        item.classList.remove('nn-dropdown__item--selected');
         item.setAttribute('aria-selected', 'false');
       }
     });
@@ -440,7 +440,7 @@ export class CustomDropdown {
    * Used for showing date ranges like "Mar 1 – Mar 3" while value stays "time-range"
    */
   public setCustomLabel(text: string): void {
-    const label = this.element.querySelector('.custom-dropdown__label');
+    const label = this.element.querySelector('.nn-dropdown__label');
     if (label) {
       label.textContent = text;
     }
@@ -463,20 +463,20 @@ export class CustomDropdown {
     this.selectedValue = value;
 
     // Update label
-    const label = this.element.querySelector('.custom-dropdown__label');
+    const label = this.element.querySelector('.nn-dropdown__label');
     if (label) {
       label.textContent = selectedOption.label;
     }
 
     // Update selected state
-    const items = this.element.querySelectorAll('.custom-dropdown__item');
+    const items = this.element.querySelectorAll('.nn-dropdown__item');
     items.forEach(item => {
       const itemValue = (item as HTMLElement).dataset.value;
       if (itemValue === value) {
-        item.classList.add('custom-dropdown__item--selected');
+        item.classList.add('nn-dropdown__item--selected');
         item.setAttribute('aria-selected', 'true');
       } else {
-        item.classList.remove('custom-dropdown__item--selected');
+        item.classList.remove('nn-dropdown__item--selected');
         item.setAttribute('aria-selected', 'false');
       }
     });

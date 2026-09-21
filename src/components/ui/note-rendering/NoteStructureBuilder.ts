@@ -349,7 +349,7 @@ export class NoteStructureBuilder {
         target.closest('.timeline-listing-card') ||
         target.closest('.reply-indicator') ||
         target.closest('.thread-context-indicator') ||
-        target.closest('.custom-dropdown')
+        target.closest('.nn-dropdown')
       ) {
         return;
       }

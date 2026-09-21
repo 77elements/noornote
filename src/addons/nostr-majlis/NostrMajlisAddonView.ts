@@ -16,9 +16,9 @@ import { Switch } from '../../components/ui/Switch';
 import { AddonLoader } from '../AddonLoader';
 import type { NostrMajlisRuntime } from './runtime';
 import {
-  CustomDropdown,
+  NnDropdown,
   type DropdownOption,
-} from '../../components/ui/CustomDropdown';
+} from '../../components/ui/NnDropdown';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
 import { escapeHtml } from '../../helpers/escapeHtml';
@@ -96,12 +96,12 @@ function shortDate(d: Date): string {
 export class NostrMajlisAddonView extends View {
   private container: HTMLElement;
   private enableSwitch: Switch | null = null;
-  private sourceDD: CustomDropdown | null = null;
-  private dropdowns: CustomDropdown[] = []; // location dropdowns, disposed on panel switch
+  private sourceDD: NnDropdown | null = null;
+  private dropdowns: NnDropdown[] = []; // location dropdowns, disposed on panel switch
 
   // Reminder controls
   private masterSwitch: Switch | null = null;
-  private offsetDD: CustomDropdown | null = null;
+  private offsetDD: NnDropdown | null = null;
   private praySwitches: Switch[] = [];
 
   // Sidebar-widget toggle
@@ -111,7 +111,7 @@ export class NostrMajlisAddonView extends View {
   private holidayYear = new Date().getFullYear();
   private calendarSubId: string | null = null;
   private holidaySwitch: Switch | null = null;
-  private holidayDaysDD: CustomDropdown | null = null;
+  private holidayDaysDD: NnDropdown | null = null;
 
   // Community Dhikr tab: live-data event subscription.
   private dhikrBusSub: string | null = null;
@@ -347,7 +347,7 @@ export class NostrMajlisAddonView extends View {
     this.holidaySwitch.setupEventListeners(host);
 
     if (hr.enabled) {
-      this.holidayDaysDD = new CustomDropdown({
+      this.holidayDaysDD = new NnDropdown({
         options: [1, 3, 7, 10].map(n => ({
           value: String(n),
           label: `${n} day${n === 1 ? '' : 's'} before`,
@@ -685,7 +685,7 @@ export class NostrMajlisAddonView extends View {
       <div data-el="actions"></div>
     `;
 
-    this.sourceDD = new CustomDropdown({
+    this.sourceDD = new NnDropdown({
       options: SOURCE_OPTIONS,
       selectedValue: source,
       searchable: true,
@@ -820,7 +820,7 @@ export class NostrMajlisAddonView extends View {
     ) as HTMLElement | null;
     if (!host) return;
     host.innerHTML = '';
-    const dd = new CustomDropdown({
+    const dd = new NnDropdown({
       options,
       selectedValue: selected,
       searchable: searchable || options.length > 12,
@@ -1213,7 +1213,7 @@ export class NostrMajlisAddonView extends View {
     this.masterSwitch.setupEventListeners(host);
 
     if (r.enabled) {
-      this.offsetDD = new CustomDropdown({
+      this.offsetDD = new NnDropdown({
         options: [5, 10, 15, 20, 30, 45, 60].map(n => ({
           value: String(n),
           label: `${n} min`,

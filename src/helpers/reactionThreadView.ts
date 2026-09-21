@@ -14,7 +14,7 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { ReactionsModuleApi } from '../modules/reactions/contracts';
-import { CustomDropdown } from '../components/ui/CustomDropdown';
+import { NnDropdown } from '../components/ui/NnDropdown';
 import { AuthGuard } from '../services/AuthGuard';
 import { UserProfileService } from '../services/UserProfileService';
 import { resolveReactionEmoji } from './formatCustomEmojis';
@@ -32,9 +32,9 @@ export interface ReactionThreadContext {
   tree: Map<string, NostrEvent[]>;
   /** pubkey → display profile, for the "(username)" links. */
   profiles: Map<string, UserMentionProfile>;
-  /** CustomDropdown instances created here — caller MUST destroy() them on
+  /** NnDropdown instances created here — caller MUST destroy() them on
    *  teardown, otherwise their document listeners leak. */
-  dropdowns: CustomDropdown[];
+  dropdowns: NnDropdown[];
 }
 
 /** Cap recursion so a relay serving a reaction cycle can't blow the stack. */
@@ -221,7 +221,7 @@ export function buildEmojiMenu(
   ctx: ReactionThreadContext,
   extraHtml?: string
 ): HTMLElement {
-  const dd = new CustomDropdown({
+  const dd = new NnDropdown({
     options: [
       {
         value: 'same',
@@ -247,11 +247,11 @@ export function buildEmojiMenu(
   ctx.dropdowns.push(dd);
 
   const el = dd.getElement();
-  const trigger = el.querySelector('.custom-dropdown__trigger');
+  const trigger = el.querySelector('.nn-dropdown__trigger');
   // Replace the whole trigger content (drops the default arrow) — the emoji IS
   // the affordance, exactly like the repost menu shows just its icon. Emoji and
   // the optional count each get their own element so they align cleanly.
-  // (Off-screen flipping is handled centrally by CustomDropdown.positionMenu.)
+  // (Off-screen flipping is handled centrally by NnDropdown.positionMenu.)
   if (trigger)
     trigger.innerHTML = `<span class="reaction-menu__emoji">${emojiHtml}</span>${extraHtml ?? ''}`; // security-ok: emojiHtml escaped via reactionDisplayEmoji, extraHtml is a numeric count span
   return el;

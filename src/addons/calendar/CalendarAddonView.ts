@@ -11,7 +11,7 @@ import { Switch } from '../../components/ui/Switch';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
 import { AuthService } from '../../services/AuthService';
-import { CustomDropdown } from '../../components/ui/CustomDropdown';
+import { NnDropdown } from '../../components/ui/NnDropdown';
 import {
   setupTabClickHandlers,
   switchTabWithContent,
@@ -27,7 +27,7 @@ import {
 export class CalendarAddonView extends View {
   private container: HTMLElement;
   private enableSwitch: Switch | null = null;
-  private leadDropdown: CustomDropdown | null = null;
+  private leadDropdown: NnDropdown | null = null;
   private grid: CalendarGridView | null = null;
   private bookingManager: BookingManager | null = null;
 
@@ -98,7 +98,7 @@ export class CalendarAddonView extends View {
     if (!slot) return;
     this.leadDropdown?.destroy();
     const service = CalendarReminderService.getInstance();
-    this.leadDropdown = new CustomDropdown({
+    this.leadDropdown = new NnDropdown({
       options: LEAD_OPTIONS,
       selectedValue: String(service.getDefaultLeadMin()),
       width: '100%',

@@ -7,7 +7,7 @@
  * never clipped by an overflow:hidden ancestor and never inherits stacking
  * context from the target.
  *
- * Central UI primitive in the spirit of Modal / CustomDropdown: own .ts + .scss,
+ * Central UI primitive in the spirit of Modal / NnDropdown: own .ts + .scss,
  * reusable anywhere. Styling lives in styles/components/_tooltip.scss.
  *
  * @example

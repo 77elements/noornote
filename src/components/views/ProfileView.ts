@@ -61,7 +61,7 @@ import {
   PerAccountLocalStorage,
   StorageKeys,
 } from '../../services/PerAccountLocalStorage';
-import { CustomDropdown } from '../ui/CustomDropdown';
+import { NnDropdown } from '../ui/NnDropdown';
 import { ToastService } from '../../services/ToastService';
 import { isTribesEnabled } from '../../addons/tribes/index';
 import { HIJRI_MONTHS } from '../../helpers/formatTimestamp';
@@ -149,7 +149,7 @@ export class ProfileView extends View {
   private profileUnsubscribe: (() => void) | null = null;
 
   // Tribe dropdown
-  private tribeDropdown: CustomDropdown | null = null;
+  private tribeDropdown: NnDropdown | null = null;
   private tribeDropdownCleanupHandlers: Array<
     (e: MouseEvent | KeyboardEvent) => void
   > = [];
@@ -1609,7 +1609,7 @@ export class ProfileView extends View {
     if (!dropdownMount) return;
 
     // Create dropdown
-    this.tribeDropdown = new CustomDropdown({
+    this.tribeDropdown = new NnDropdown({
       options,
       selectedValue: '',
       onChange: folderId => {
@@ -1630,7 +1630,7 @@ export class ProfileView extends View {
     // Auto-open dropdown
     const trigger = this.tribeDropdown
       .getElement()
-      .querySelector('.custom-dropdown__trigger') as HTMLElement;
+      .querySelector('.nn-dropdown__trigger') as HTMLElement;
     if (trigger) {
       trigger.click();
     }

@@ -50,12 +50,12 @@ export class RelaySelector {
     return `
       <div class="post-note-relay-selector">
         <label class="relay-selector-label">Post to:</label>
-        <div class="custom-dropdown custom-dropdown--multi">
-          <button class="custom-dropdown__trigger" type="button" ${this.config.isTestMode ? 'disabled' : ''}>
-            <span class="custom-dropdown__label">${this.getSelectionText()}</span>
-            <span class="custom-dropdown__arrow" aria-hidden="true"></span>
+        <div class="nn-dropdown nn-dropdown--multi">
+          <button class="nn-dropdown__trigger" type="button" ${this.config.isTestMode ? 'disabled' : ''}>
+            <span class="nn-dropdown__label">${this.getSelectionText()}</span>
+            <span class="nn-dropdown__arrow" aria-hidden="true"></span>
           </button>
-          <div class="custom-dropdown__menu">
+          <div class="nn-dropdown__menu">
             ${relayOptions}
           </div>
         </div>
@@ -69,18 +69,16 @@ export class RelaySelector {
   public setupEventListeners(container: HTMLElement): void {
     this.container = container;
 
-    const wrapper = container.querySelector('.custom-dropdown');
-    const trigger = container.querySelector('.custom-dropdown__trigger');
-    const menu = container.querySelector(
-      '.custom-dropdown__menu'
-    ) as HTMLElement;
+    const wrapper = container.querySelector('.nn-dropdown');
+    const trigger = container.querySelector('.nn-dropdown__trigger');
+    const menu = container.querySelector('.nn-dropdown__menu') as HTMLElement;
 
     if (!wrapper || !trigger || !menu || this.config.isTestMode) return;
 
     // Toggle dropdown on trigger click
     trigger.addEventListener('click', e => {
       e.stopPropagation();
-      wrapper.classList.toggle('custom-dropdown--open');
+      wrapper.classList.toggle('nn-dropdown--open');
     });
 
     // Handle checkbox changes
@@ -101,7 +99,7 @@ export class RelaySelector {
     // Close dropdown when clicking outside
     this.documentClickHandler = (e: MouseEvent) => {
       if (!wrapper.contains(e.target as Node)) {
-        wrapper.classList.remove('custom-dropdown--open');
+        wrapper.classList.remove('nn-dropdown--open');
       }
     };
     document.addEventListener('click', this.documentClickHandler);
@@ -113,7 +111,7 @@ export class RelaySelector {
   public updateDisplay(): void {
     if (!this.container) return;
 
-    const label = this.container.querySelector('.custom-dropdown__label');
+    const label = this.container.querySelector('.nn-dropdown__label');
     if (label) {
       label.textContent = this.getSelectionText();
     }

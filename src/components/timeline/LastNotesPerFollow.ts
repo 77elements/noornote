@@ -21,7 +21,7 @@ import { ModuleLoader } from '../../core/ModuleLoader';
 import { UserService } from '../../services/UserService';
 import { AuthService } from '../../services/AuthService';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
-import { CustomDropdown } from '../ui/CustomDropdown';
+import { NnDropdown } from '../ui/NnDropdown';
 import {
   getSavedFeedMode,
   saveFeedMode,
@@ -53,7 +53,7 @@ export class LastNotesPerFollow extends View {
   private islStatsUpdater: ISLStatsUpdater;
   private scrollPositionManager: ScrollPositionManager;
   private infiniteScroll: InfiniteScroll;
-  private viewDropdown: CustomDropdown | null = null;
+  private viewDropdown: NnDropdown | null = null;
 
   /** Full sorted result (one note per author); the display is paginated from this. */
   private allEvents: NostrEvent[] = [];
@@ -101,7 +101,7 @@ export class LastNotesPerFollow extends View {
    * and per-relay options don't apply to a per-author-latest list, so they're omitted.
    */
   private setupViewDropdown(): void {
-    this.viewDropdown = new CustomDropdown({
+    this.viewDropdown = new NnDropdown({
       options: [
         { value: 'latest', label: 'Latest' },
         { value: 'latest-replies', label: 'Latest + Replies' },

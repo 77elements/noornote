@@ -10,7 +10,7 @@ import { SettingsSection } from './SettingsSection';
 import { NWCService } from '../../services/NWCService';
 import { ExchangeRateService } from '../../services/ExchangeRateService';
 import { Switch } from '../ui/Switch';
-import { CustomDropdown } from '../ui/CustomDropdown';
+import { NnDropdown } from '../ui/NnDropdown';
 import {
   PerAccountLocalStorage,
   StorageKeys,
@@ -255,7 +255,7 @@ export class NWCSettingsSection extends SettingsSection {
       label: `${c.symbol} ${c.name} (${c.code})`,
     }));
 
-    const dropdown = new CustomDropdown({
+    const dropdown = new NnDropdown({
       options,
       selectedValue: this.fiatCurrencySettings.currency,
       onChange: async value => {

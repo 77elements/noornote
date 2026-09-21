@@ -236,7 +236,7 @@ describe('ZapsList receipt rendering', () => {
 
     function menuValues(root: HTMLElement): string[] {
       return Array.from(
-        root.querySelectorAll('.zap-menu .custom-dropdown__item')
+        root.querySelectorAll('.zap-menu .nn-dropdown__item')
       ).map(el => el.getAttribute('data-value') ?? '');
     }
 
@@ -245,15 +245,13 @@ describe('ZapsList receipt rendering', () => {
       document.body.appendChild(list.getElement());
       await vi.waitFor(() => {
         expect(
-          list.getElement().querySelector('.zap-menu .custom-dropdown__item')
+          list.getElement().querySelector('.zap-menu .nn-dropdown__item')
         ).not.toBeNull();
       });
 
       expect(menuValues(list.getElement())).toEqual(['react', 'reply']);
       // The pill is the trigger content
-      const trigger = list
-        .getElement()
-        .querySelector('.custom-dropdown__trigger')!;
+      const trigger = list.getElement().querySelector('.nn-dropdown__trigger')!;
       expect(trigger.querySelector('.zaps-list__badge--menu')).not.toBeNull();
       expect(trigger.querySelector('.zaps-list__amount')!.textContent).toBe(
         '5,000,000'
@@ -265,7 +263,7 @@ describe('ZapsList receipt rendering', () => {
       document.body.appendChild(list.getElement());
       await vi.waitFor(() => {
         expect(
-          list.getElement().querySelector('.zap-menu .custom-dropdown__item')
+          list.getElement().querySelector('.zap-menu .nn-dropdown__item')
         ).not.toBeNull();
       });
 

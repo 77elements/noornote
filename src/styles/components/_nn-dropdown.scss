@@ -8,7 +8,7 @@
 @use '../abstracts/mixins' as *;
 @use '../base/typography' as *;
 
-.custom-dropdown {
+.nn-dropdown {
   position: relative;
   display: inline-block;
   width: auto; // Default width, can be overridden via inline style
@@ -92,7 +92,7 @@
 
   // Portaled menu: lifted to <body> (position: fixed, inline top/left set by
   // CustomDropdown.positionPortalMenu) so no scroll-overflow ancestor can clip
-  // it. Detached from `.custom-dropdown--open`, so it carries its own visible
+  // it. Detached from `.nn-dropdown--open`, so it carries its own visible
   // state. `min-width: 0` stops `min-width: 100%` from stretching to the
   // viewport once the offset parent is the window.
   &__menu--portaled {
@@ -182,7 +182,7 @@
 
 // Responsive adjustments
 @include tablet-down {
-  .custom-dropdown {
+  .nn-dropdown {
     &__trigger {
       padding: 12px;
     }
@@ -194,7 +194,7 @@
 }
 
 @include mobile-down {
-  .custom-dropdown {
+  .nn-dropdown {
     &__trigger {
       padding: 12px;
     }

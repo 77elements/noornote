@@ -77,7 +77,7 @@ export class ZapReceiptRenderer {
           target.tagName === 'VIDEO' ||
           target.closest('a') ||
           target.closest('button') ||
-          target.closest('.custom-dropdown')
+          target.closest('.nn-dropdown')
         ) {
           return;
         }

@@ -27,7 +27,7 @@ import { parseListingMetadata } from './marketplace-helpers';
 import { marked } from 'marked';
 import { setupTabClickHandlers, switchTab } from '../../helpers/TabsHelper';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
-import { CustomDropdown } from '../../components/ui/CustomDropdown';
+import { NnDropdown } from '../../components/ui/NnDropdown';
 
 const CURRENCY_OPTIONS = ['USD', 'EUR', 'GBP', 'BTC', 'SAT'].map(c => ({
   value: c,
@@ -59,8 +59,8 @@ export class ListingEditorView extends View {
   private relaySelector: RelaySelector | null = null;
   private toolbar: PostEditorToolbar | null = null;
   private mentionAutocomplete: MentionAutocomplete | null = null;
-  private currencyDropdown: CustomDropdown | null = null;
-  private frequencyDropdown: CustomDropdown | null = null;
+  private currencyDropdown: NnDropdown | null = null;
+  private frequencyDropdown: NnDropdown | null = null;
 
   // State
   private currentTab: TabMode = 'edit';
@@ -480,7 +480,7 @@ export class ListingEditorView extends View {
   }
 
   /**
-   * Mount the currency + frequency CustomDropdowns into their slots.
+   * Mount the currency + frequency NnDropdowns into their slots.
    * Re-runs after every renderEditMode() (initial + tab-switch back to
    * edit), so destroy any previous instances first to avoid leaks.
    */
@@ -492,7 +492,7 @@ export class ListingEditorView extends View {
       '[data-currency-mount]'
     );
     if (currencyMount) {
-      this.currencyDropdown = new CustomDropdown({
+      this.currencyDropdown = new NnDropdown({
         options: CURRENCY_OPTIONS,
         selectedValue: this.priceCurrency,
         onChange: value => {
@@ -507,7 +507,7 @@ export class ListingEditorView extends View {
       '[data-frequency-mount]'
     );
     if (frequencyMount) {
-      this.frequencyDropdown = new CustomDropdown({
+      this.frequencyDropdown = new NnDropdown({
         options: FREQUENCY_OPTIONS,
         selectedValue: this.priceFrequency,
         onChange: value => {

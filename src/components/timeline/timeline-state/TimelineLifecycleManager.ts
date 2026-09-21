@@ -10,14 +10,14 @@ import type {
 } from '../../../modules/timeline/contracts';
 import { InfiniteScroll } from '../../ui/InfiniteScroll';
 import { RefreshButton } from '../../ui/RefreshButton';
-import { CustomDropdown } from '../../ui/CustomDropdown';
+import { NnDropdown } from '../../ui/NnDropdown';
 import { NoteHeader } from '../../ui/NoteHeader';
 
 export class TimelineLifecycleManager {
   private timelineApi: TimelineModuleApi;
   private infiniteScroll: InfiniteScroll;
   private refreshButton: RefreshButton | null = null;
-  private viewDropdown: CustomDropdown | null = null;
+  private viewDropdown: NnDropdown | null = null;
   private noteHeaders: Map<string, NoteHeader> = new Map();
 
   constructor(timelineApi: TimelineModuleApi, infiniteScroll: InfiniteScroll) {
@@ -35,7 +35,7 @@ export class TimelineLifecycleManager {
   /**
    * Set view dropdown instance
    */
-  setViewDropdown(dropdown: CustomDropdown): void {
+  setViewDropdown(dropdown: NnDropdown): void {
     this.viewDropdown = dropdown;
   }
 

@@ -15,7 +15,7 @@ import {
   formatDateRangeLabel,
 } from '../../../helpers/datePickerModal';
 import { RefreshButton } from '../../ui/RefreshButton';
-import { CustomDropdown } from '../../ui/CustomDropdown';
+import { NnDropdown } from '../../ui/NnDropdown';
 import { AppState } from '../../../services/AppState';
 import { NoteUI } from '../../ui/NoteUI';
 import {
@@ -33,7 +33,7 @@ export class TimelineEventHandler {
   private uiStateHandler: TimelineUIStateHandler;
   private refreshButton: RefreshButton | null;
   private element: HTMLElement;
-  private viewDropdown: CustomDropdown | null;
+  private viewDropdown: NnDropdown | null;
   private appState: AppState;
   private previousView: string = 'latest'; // Track previous view for cancel/revert
 
@@ -51,7 +51,7 @@ export class TimelineEventHandler {
     uiStateHandler: TimelineUIStateHandler,
     refreshButton: RefreshButton | null,
     element: HTMLElement,
-    viewDropdown: CustomDropdown | null,
+    viewDropdown: NnDropdown | null,
     config: TimelineConfig,
     callbacks: {
       onRenderEvents: () => void;

@@ -24,7 +24,7 @@ import {
 } from '../../helpers/zapUtils';
 import { UserHoverCard } from './UserHoverCard';
 import { Tooltip } from './Tooltip';
-import { CustomDropdown } from './CustomDropdown';
+import { NnDropdown } from './NnDropdown';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import type { CustomEmojiEntry } from '../emoji/EmojiPicker';
 import { AuthGuard } from '../../services/AuthGuard';
@@ -65,7 +65,7 @@ export class ZapsList {
       ModuleLoader.getInstance().getApi<PostsModuleApi>('posts'));
   }
   /** Open zap-pill pulldowns — torn down with the list (destroy contract). */
-  private dropdowns: CustomDropdown[] = [];
+  private dropdowns: NnDropdown[] = [];
   /** Receipt id → pill, for instant reaction-hint updates. */
   private receiptBadges = new Map<string, HTMLElement>();
   /** TypedEventBus subscription ids (reactions added/removed on shown zaps). */
@@ -287,7 +287,7 @@ export class ZapsList {
                   '<svg width="14" height="14" style="display: inline;"><use href="#icon-reply"/></svg> Reply to Zap',
               },
             ];
-        const dd = new CustomDropdown({
+        const dd = new NnDropdown({
           options,
           selectedValue: '',
           className: 'zap-menu',
@@ -301,7 +301,7 @@ export class ZapsList {
         this.dropdowns.push(dd);
 
         const menuEl = dd.getElement();
-        const trigger = menuEl.querySelector('.custom-dropdown__trigger');
+        const trigger = menuEl.querySelector('.nn-dropdown__trigger');
         if (trigger) {
           // Drop the default arrow — the pill IS the affordance.
           trigger.innerHTML = '';

@@ -4,7 +4,7 @@
  * Mounted in .user-login-bar before FontSizeSwitcher.
  */
 
-import { CustomDropdown } from './CustomDropdown';
+import { NnDropdown } from './NnDropdown';
 import {
   ThemeService,
   THEMES,
@@ -13,12 +13,12 @@ import {
 
 export class ThemeSwitcher {
   private element: HTMLElement;
-  private dropdown: CustomDropdown;
+  private dropdown: NnDropdown;
 
   constructor() {
     const themeService = ThemeService.getInstance();
 
-    this.dropdown = new CustomDropdown({
+    this.dropdown = new NnDropdown({
       options: THEMES.map(t => ({ value: t.id, label: t.label })),
       selectedValue: themeService.getTheme(),
       onChange: value => themeService.setTheme(value as ThemeId),

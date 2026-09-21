@@ -7,7 +7,7 @@
  * with scripts/build-prayer-cities.ts. Fully on-device. See docs/todos/muslims-addon.md.
  */
 
-import type { DropdownOption } from '../../components/ui/CustomDropdown';
+import type { DropdownOption } from '../../components/ui/NnDropdown';
 import type { CalcCity } from './index';
 import { diagLog } from '../../services/DiagnosticLogger';
 

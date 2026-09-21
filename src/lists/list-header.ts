@@ -26,7 +26,7 @@ export function renderListHeader(
   const itemsHtml = dropdownItems
     .map(
       item => `
-    <li class="custom-dropdown__item" data-action="${item.action}">
+    <li class="nn-dropdown__item" data-action="${item.action}">
       ${item.icon}
       ${escapeHtml(item.label)}
     </li>
@@ -35,12 +35,12 @@ export function renderListHeader(
     .join('');
 
   const dropdownBlock = `
-      <div class="custom-dropdown" data-list-header-dropdown>
-        <button class="custom-dropdown__trigger" type="button" title="Create new">
-          <span class="custom-dropdown__label">+ New</span>
-          <span class="custom-dropdown__arrow" aria-hidden="true"></span>
+      <div class="nn-dropdown" data-list-header-dropdown>
+        <button class="nn-dropdown__trigger" type="button" title="Create new">
+          <span class="nn-dropdown__label">+ New</span>
+          <span class="nn-dropdown__arrow" aria-hidden="true"></span>
         </button>
-        <ul class="custom-dropdown__menu" role="listbox">
+        <ul class="nn-dropdown__menu" role="listbox">
           ${itemsHtml}
         </ul>
       </div>`;
@@ -82,11 +82,11 @@ export function bindHeaderDropdown(
   closeHandler: { current: ((e: Event) => void) | null }
 ): void {
   const dropdown = container.querySelector('[data-list-header-dropdown]');
-  const trigger = dropdown?.querySelector('.custom-dropdown__trigger');
+  const trigger = dropdown?.querySelector('.nn-dropdown__trigger');
 
   trigger?.addEventListener('click', e => {
     e.stopPropagation();
-    dropdown?.classList.toggle('custom-dropdown--open');
+    dropdown?.classList.toggle('nn-dropdown--open');
   });
 
   if (closeHandler.current) {
@@ -95,7 +95,7 @@ export function bindHeaderDropdown(
 
   closeHandler.current = (e: Event) => {
     if (!dropdown?.contains(e.target as Node)) {
-      dropdown?.classList.remove('custom-dropdown--open');
+      dropdown?.classList.remove('nn-dropdown--open');
     }
   };
   document.addEventListener('click', closeHandler.current);

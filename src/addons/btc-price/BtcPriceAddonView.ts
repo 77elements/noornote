@@ -9,7 +9,7 @@
 
 import { View } from '../../components/views/View';
 import { Switch } from '../../components/ui/Switch';
-import { CustomDropdown } from '../../components/ui/CustomDropdown';
+import { NnDropdown } from '../../components/ui/NnDropdown';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
 import { ExchangeRateService } from '../../services/ExchangeRateService';
@@ -29,7 +29,7 @@ export class BtcPriceAddonView extends View {
   private contentEl: HTMLElement | null = null;
   private enableSwitch: Switch | null = null;
   private widgetSwitch: Switch | null = null;
-  private currencyDropdown: CustomDropdown | null = null;
+  private currencyDropdown: NnDropdown | null = null;
   private display: BtcPriceSidebarWidget | null = null;
   private toggleSubId: string | null = null;
 
@@ -157,7 +157,7 @@ export class BtcPriceAddonView extends View {
       label: `${c.symbol} ${c.name} (${c.code})`,
     }));
 
-    this.currencyDropdown = new CustomDropdown({
+    this.currencyDropdown = new NnDropdown({
       options,
       selectedValue: stored ?? 'EUR',
       onChange: async code => {

@@ -1,6 +1,6 @@
 /**
  * Account Switcher Component Styles
- * Extends custom-dropdown with account-specific elements
+ * Extends nn-dropdown with account-specific elements
  */
 
 @use '../abstracts/variables' as *;
@@ -41,14 +41,14 @@
   }
 
   // Align dropdown menu to right
-  .custom-dropdown__menu {
+  .nn-dropdown__menu {
     right: 0;
     left: auto;
     min-width: 180px;
   }
 
   // Truncate long names
-  .custom-dropdown__label {
+  .nn-dropdown__label {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -59,7 +59,7 @@
 // Mobile responsive
 @media (max-width: 768px) {
   .account-switcher {
-    .custom-dropdown__label {
+    .nn-dropdown__label {
       max-width: 100px;
     }
   }

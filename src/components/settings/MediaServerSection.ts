@@ -8,7 +8,7 @@
 
 import { SettingsSection } from './SettingsSection';
 import { Switch } from '../ui/Switch';
-import { CustomDropdown } from '../ui/CustomDropdown';
+import { NnDropdown } from '../ui/NnDropdown';
 import { ToastService } from '../../services/ToastService';
 import {
   PerAccountLocalStorage,
@@ -425,7 +425,7 @@ export class MediaServerSection extends SettingsSection {
     );
     const selectedValue = isCustom ? 'custom' : this.mediaServerSettings.url;
 
-    const dropdown = new CustomDropdown({
+    const dropdown = new NnDropdown({
       options,
       selectedValue,
       onChange: value => {
@@ -530,7 +530,7 @@ export class MediaServerSection extends SettingsSection {
     setVideoDetailVisible(this.compressionSettings.video.enabled);
 
     if (videoQualityMount) {
-      const dropdown = new CustomDropdown({
+      const dropdown = new NnDropdown({
         options: qualityOptions,
         selectedValue: this.compressionSettings.video.quality,
         onChange: value => {
@@ -541,7 +541,7 @@ export class MediaServerSection extends SettingsSection {
       videoQualityMount.appendChild(dropdown.getElement());
     }
     if (videoResolutionMount) {
-      const dropdown = new CustomDropdown({
+      const dropdown = new NnDropdown({
         options: resolutionOptions,
         selectedValue: String(this.compressionSettings.video.maxResolution),
         onChange: value => {
@@ -595,7 +595,7 @@ export class MediaServerSection extends SettingsSection {
     setAudioDetailVisible(this.compressionSettings.audio.enabled);
 
     if (audioQualityMount) {
-      const dropdown = new CustomDropdown({
+      const dropdown = new NnDropdown({
         options: qualityOptions,
         selectedValue: this.compressionSettings.audio.quality,
         onChange: value => {
@@ -653,7 +653,7 @@ export class MediaServerSection extends SettingsSection {
     setImageDetailVisible(this.compressionSettings.image.enabled);
 
     if (imageQualityMount) {
-      const dropdown = new CustomDropdown({
+      const dropdown = new NnDropdown({
         options: qualityOptions,
         selectedValue: this.compressionSettings.image.quality,
         onChange: value => {
@@ -664,7 +664,7 @@ export class MediaServerSection extends SettingsSection {
       imageQualityMount.appendChild(dropdown.getElement());
     }
     if (imageResolutionMount) {
-      const dropdown = new CustomDropdown({
+      const dropdown = new NnDropdown({
         options: imageResolutionOptions,
         selectedValue: String(this.compressionSettings.image.maxResolution),
         onChange: value => {

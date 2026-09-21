@@ -29,7 +29,7 @@ import {
   PerAccountLocalStorage,
   StorageKeys,
 } from '../../services/PerAccountLocalStorage';
-import { CustomDropdown, type DropdownOption } from '../ui/CustomDropdown';
+import { NnDropdown, type DropdownOption } from '../ui/NnDropdown';
 import { addSwipeSupport } from '../../helpers/addSwipeSupport';
 import { extractEpubFileName } from '../../helpers/epubDetection';
 
@@ -55,7 +55,7 @@ export class EpubReaderView extends View {
   private navHint: HTMLElement;
   private titleEl: HTMLElement;
   private tocHost: HTMLElement;
-  private dropdown: CustomDropdown | null = null;
+  private dropdown: NnDropdown | null = null;
   private monoButton: HTMLButtonElement | null = null;
   private monoMode: MonoMode = 'off';
   private readonly service = new EpubReaderService();
@@ -308,7 +308,7 @@ export class EpubReaderView extends View {
       value: String(i),
       label: item.label || `Section ${i + 1}`,
     }));
-    this.dropdown = new CustomDropdown({
+    this.dropdown = new NnDropdown({
       options,
       selectedValue: '',
       searchable: true,

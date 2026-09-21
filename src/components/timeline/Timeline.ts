@@ -16,7 +16,7 @@ import { RelayConfig } from '../../services/RelayConfig';
 import { AuthService } from '../../services/AuthService';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
 import { RefreshButton } from '../ui/RefreshButton';
-import { CustomDropdown } from '../ui/CustomDropdown';
+import { NnDropdown } from '../ui/NnDropdown';
 import { TimelineStateManager } from './timeline-state/TimelineStateManager';
 import { TimelineLifecycleManager } from './timeline-state/TimelineLifecycleManager';
 import { TimelineUIStateHandler } from './timeline-ui/TimelineUIStateHandler';
@@ -114,7 +114,7 @@ export class Timeline extends View {
    */
   private readonly config: TimelineConfig;
   private refreshButton: RefreshButton | null = null;
-  private viewDropdown: CustomDropdown | null = null;
+  private viewDropdown: NnDropdown | null = null;
   private lookForNotesLink: HTMLElement | null = null;
   private lookForNotesLinkTimeout: number | null = null;
 
@@ -437,7 +437,7 @@ export class Timeline extends View {
 
     const allOptions = [...baseOptions, ...relayOptions];
 
-    this.viewDropdown = new CustomDropdown({
+    this.viewDropdown = new NnDropdown({
       options: allOptions,
       // Reflect the actual config so the remembered feed mode (Latest / Latest + Replies) shows.
       selectedValue: this.config.includeReplies ? 'latest-replies' : 'latest',

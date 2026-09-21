@@ -5203,12 +5203,12 @@ export class BookmarkManager {
     );
 
     folderItem?.addEventListener('click', () => {
-      dropdown?.classList.remove('custom-dropdown--open');
+      dropdown?.classList.remove('nn-dropdown--open');
       this.createNewFolder();
     });
 
     bookmarkItem?.addEventListener('click', () => {
-      dropdown?.classList.remove('custom-dropdown--open');
+      dropdown?.classList.remove('nn-dropdown--open');
       this.createNewBookmark();
     });
 

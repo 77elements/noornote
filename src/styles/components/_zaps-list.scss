@@ -132,12 +132,12 @@
 .zap-menu {
   display: inline-block;
 
-  &.custom-dropdown--open {
+  &.nn-dropdown--open {
     position: relative;
     z-index: $z-sticky;
   }
 
-  .custom-dropdown__trigger {
+  .nn-dropdown__trigger {
     display: inline-block;
     padding: 0;
     background: none;

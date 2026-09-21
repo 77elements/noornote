@@ -12,7 +12,7 @@ import { UserProfileService } from '../../services/UserProfileService';
 import { KeychainStorage } from '../../services/KeychainStorage';
 import { SystemLogger } from '../../services/SystemLogger';
 import { InfiniteScroll } from '../../components/ui/InfiniteScroll';
-import { CustomDropdown } from '../../components/ui/CustomDropdown';
+import { NnDropdown } from '../../components/ui/NnDropdown';
 import { ToastService } from '../../services/ToastService';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { formatTimeAgo } from '../../helpers/formatTimeAgo';
@@ -22,7 +22,7 @@ const PAGE_SIZE = 20;
 export class WalletTransactionList {
   private element: HTMLElement;
   private listEl: HTMLElement | null = null;
-  private currencyDropdown: CustomDropdown | null = null;
+  private currencyDropdown: NnDropdown | null = null;
   private nwcService: NWCService;
   private exchangeRateService: ExchangeRateService;
   private systemLogger: SystemLogger;
@@ -343,7 +343,7 @@ export class WalletTransactionList {
       label: `${c.symbol} ${c.name} (${c.code})`,
     }));
 
-    this.currencyDropdown = new CustomDropdown({
+    this.currencyDropdown = new NnDropdown({
       options,
       selectedValue: stored ?? 'EUR',
       onChange: async code => {

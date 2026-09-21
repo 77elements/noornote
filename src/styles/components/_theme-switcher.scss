@@ -5,21 +5,21 @@
 @use '../abstracts/variables' as *;
 
 .theme-switcher {
-  .custom-dropdown__trigger {
+  .nn-dropdown__trigger {
     height: 34px;
     box-sizing: border-box;
     padding: 0 $gap;
     background-color: var(--color-2);
   }
 
-  .custom-dropdown__menu {
+  .nn-dropdown__menu {
     min-width: 140px;
     right: 0;
     left: auto;
   }
 
 
-  .custom-dropdown__item {
+  .nn-dropdown__item {
     color: var(--color-4);
 
     &--selected {

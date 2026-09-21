@@ -9,7 +9,7 @@
 @use '../base/typography' as *;
 
 [data-list-header-dropdown] {
-  .custom-dropdown__item {
+  .nn-dropdown__item {
     display: flex;
     align-items: center;
     gap: calc($gap / 2);

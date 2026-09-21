@@ -3093,12 +3093,12 @@ export class TribeManager {
     rootNav?.addEventListener('click', () => this.navigateToRoot());
 
     newTribeBtn?.addEventListener('click', () => {
-      dropdown?.classList.remove('custom-dropdown--open');
+      dropdown?.classList.remove('nn-dropdown--open');
       this.createNewTribe();
     });
 
     newMemberBtn?.addEventListener('click', () => {
-      dropdown?.classList.remove('custom-dropdown--open');
+      dropdown?.classList.remove('nn-dropdown--open');
       this.addNewMember();
     });
   }

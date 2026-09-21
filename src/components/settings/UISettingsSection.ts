@@ -8,7 +8,7 @@
 
 import { SettingsSection } from './SettingsSection';
 import { Switch } from '../ui/Switch';
-import { CustomDropdown } from '../ui/CustomDropdown';
+import { NnDropdown } from '../ui/NnDropdown';
 import { ThemeSwitcher } from '../ui/ThemeSwitcher';
 import { FontSizeSwitcher } from '../ui/FontSizeSwitcher';
 import {
@@ -38,16 +38,16 @@ export class UISettingsSection extends SettingsSection {
   private storage: PerAccountLocalStorage;
   private layoutService: LayoutService;
   private eventBus: TypedEventBus;
-  private layoutModeDropdown: CustomDropdown | null = null;
+  private layoutModeDropdown: NnDropdown | null = null;
   private postTruncationSwitch: Switch | null = null;
   private hideSelfRepostsSwitch: Switch | null = null;
   private hideHighlightsSwitch: Switch | null = null;
   private contentVisibilitySwitch: Switch | null = null;
   private clientTagSwitch: Switch | null = null;
-  private calendarDropdown: CustomDropdown | null = null;
+  private calendarDropdown: NnDropdown | null = null;
   private autoUpdateSwitch: Switch | null = null;
-  private articleFeedFoafMainDropdown: CustomDropdown | null = null;
-  private articleFeedFoafSccDropdown: CustomDropdown | null = null;
+  private articleFeedFoafMainDropdown: NnDropdown | null = null;
+  private articleFeedFoafSccDropdown: NnDropdown | null = null;
   private themeSwitcher: ThemeSwitcher | null = null;
   private fontSizeSwitcher: FontSizeSwitcher | null = null;
 
@@ -272,7 +272,7 @@ export class UISettingsSection extends SettingsSection {
         'gregorian'
       );
 
-      this.calendarDropdown = new CustomDropdown({
+      this.calendarDropdown = new NnDropdown({
         options: [
           { value: 'gregorian', label: 'Gregorian' },
           { value: 'hijri', label: 'Hijri (Islamic)' },
@@ -311,7 +311,7 @@ export class UISettingsSection extends SettingsSection {
     if (layoutModeDropdownContainer) {
       const currentMode = this.layoutService.getUserPreference();
 
-      this.layoutModeDropdown = new CustomDropdown({
+      this.layoutModeDropdown = new NnDropdown({
         options: [
           { value: 'default', label: 'Default' },
           { value: 'right-pane', label: 'Right Pane' },
@@ -507,7 +507,7 @@ export class UISettingsSection extends SettingsSection {
       const current = String(
         this.storage.get<number>(StorageKeys.ARTICLE_FEED_FOAF_DEGREE_MAIN, 1)
       );
-      this.articleFeedFoafMainDropdown = new CustomDropdown({
+      this.articleFeedFoafMainDropdown = new NnDropdown({
         options: foafOptions,
         selectedValue: current,
         onChange: value => {
@@ -536,7 +536,7 @@ export class UISettingsSection extends SettingsSection {
       const current = String(
         this.storage.get<number>(StorageKeys.ARTICLE_FEED_FOAF_DEGREE_SCC, 1)
       );
-      this.articleFeedFoafSccDropdown = new CustomDropdown({
+      this.articleFeedFoafSccDropdown = new NnDropdown({
         options: foafOptions,
         selectedValue: current,
         onChange: value => {
