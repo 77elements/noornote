@@ -23,15 +23,10 @@
   margin-bottom: $gap;
 }
 
-.calendar-addon__nav {
-  display: flex;
-  align-items: center;
-  gap: calc($gap / 4);
-
-  // Next-Caret: Base-Symbol ist ▲ — Rotation hier als CSS-Knob justierbar.
-  [data-action='next'] svg {
-    transform: rotate(90deg);
-  }
+// Next-Caret in the week nav: base symbol is ▲ — rotated 90° via CSS knob
+// (tune the degree value here if the orientation needs adjusting).
+.view-content--addon-calendar .nn-pager [data-action='next'] svg {
+  transform: rotate(90deg);
 }
 
 .calendar-addon__range {

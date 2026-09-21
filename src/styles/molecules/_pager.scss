@@ -1,15 +1,13 @@
 /**
- * nn-pager — prev/next navigation with dots for paged views (e.g. week
- * calendars). Not a carousel: pure navigation chrome. Buttons come from the
- * caller (.btn-icon + caret icons from the sprite), the component provides
- * layout + dots.
+ * nn-pager — 3-column navigation: prev action | arbitrary content | next
+ * action (e.g. week calendars on the booking page, slide nav in carousels).
+ * The middle column takes anything (dots, buttons, text). Buttons come from
+ * the caller (.btn-icon + caret icons from the sprite).
  *
  * Markup:
  *   <div class="nn-pager">
  *     <button class="btn-icon" data-pager-prev ...><svg><use href="#icon-caret-left"/></svg></button>
- *     <span class="nn-pager__dots">
- *       <span class="nn-pager__dot nn-pager__dot--active" data-pager-dot="0"></span>
- *     </span>
+ *     <div class="nn-pager__content">…anything…</div>
  *     <button class="btn-icon" data-pager-next ...><svg><use href="#icon-caret-right"/></svg></button>
  *   </div>
  */
@@ -19,38 +17,14 @@
 .nn-pager {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: $gap * 2;
-  margin-top: $gap;
-  margin-bottom: calc($gap * 2);
-  padding-top: $gap;
-  border-top: 1px solid var(--color-3);
+  gap: calc($gap / 2);
 
-  &__dots {
+  &__content {
+    flex: 1;
     display: flex;
+    align-items: center;
+    justify-content: center;
     gap: calc($gap / 2);
-  }
-
-  &__dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--color-3);
-    cursor: pointer;
-    transition: background 0.2s;
-
-    .platform--mobile & {
-      width: 14px;
-      height: 14px;
-    }
-
-    &:hover:not(&--active) {
-      background: var(--color-4);
-      opacity: 0.6;
-    }
-
-    &--active {
-      background: var(--color-4);
-    }
+    min-width: 0;
   }
 }

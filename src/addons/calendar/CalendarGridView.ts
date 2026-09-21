@@ -200,11 +200,13 @@ export class CalendarGridView {
     toolbar.className = 'calendar-addon__toolbar';
     toolbar.innerHTML = `
       <div class="calendar-addon__toolbar-nav">
-        <div class="calendar-addon__nav">
+        <div class="nn-pager">
           <button class="btn-icon" type="button" data-action="prev" aria-label="Previous">
             <svg width="20" height="20"><use href="#icon-caret-left"/></svg>
           </button>
-          <button class="btn btn--passive btn--mini" type="button" data-action="today">Today</button>
+          <div class="nn-pager__content">
+            <button class="btn btn--passive btn--mini" type="button" data-action="today">Today</button>
+          </div>
           <button class="btn-icon" type="button" data-action="next" aria-label="Next">
             <svg width="20" height="20"><use href="#icon-caret-up"/></svg>
           </button>

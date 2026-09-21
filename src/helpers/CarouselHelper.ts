@@ -100,28 +100,32 @@ export function createCarousel(
 
   if (opts.showNav || opts.showDots) {
     const nav = document.createElement('div');
-    nav.className = 'nn-carousel-nav';
+    nav.className = 'nn-pager';
 
     if (opts.showNav) {
       prevBtn = document.createElement('button');
-      prevBtn.className = 'btn btn--mini btn--passive';
+      prevBtn.className = 'btn-icon';
       prevBtn.setAttribute('data-action', 'prev-slide');
+      prevBtn.setAttribute('aria-label', opts.prevLabel || 'Previous');
       prevBtn.disabled = true;
-      prevBtn.textContent = opts.prevLabel || 'Previous';
+      prevBtn.innerHTML =
+        '<svg width="20" height="20"><use href="#icon-caret-left"/></svg>';
       nav.appendChild(prevBtn);
     }
 
     if (opts.showDots) {
       dotsContainer = document.createElement('span');
-      dotsContainer.className = 'nn-carousel-dots';
+      dotsContainer.className = 'nn-pager__dots';
       nav.appendChild(dotsContainer);
     }
 
     if (opts.showNav) {
       nextBtn = document.createElement('button');
-      nextBtn.className = 'btn btn--mini';
+      nextBtn.className = 'btn-icon';
       nextBtn.setAttribute('data-action', 'next-slide');
-      nextBtn.textContent = opts.nextLabel || 'Next';
+      nextBtn.setAttribute('aria-label', opts.nextLabel || 'Next');
+      nextBtn.innerHTML =
+        '<svg width="20" height="20"><use href="#icon-caret-right"/></svg>';
       nav.appendChild(nextBtn);
     }
 
@@ -137,12 +141,12 @@ export function createCarousel(
     const slideEls = slidesContainer.querySelectorAll('.nn-carousel-slide');
 
     slideEls[currentIndex]?.classList.remove('active');
-    dots[currentIndex]?.classList.remove('active');
+    dots[currentIndex]?.classList.remove('nn-pager__dot--active');
 
     currentIndex = newIndex;
 
     slideEls[currentIndex]?.classList.add('active');
-    dots[currentIndex]?.classList.add('active');
+    dots[currentIndex]?.classList.add('nn-pager__dot--active');
 
     if (prevBtn) prevBtn.disabled = currentIndex === 0;
     if (nextBtn) nextBtn.disabled = currentIndex === totalSlides - 1;
@@ -155,7 +159,7 @@ export function createCarousel(
     if (dotsContainer) {
       for (let i = 0; i < totalSlides; i++) {
         const dot = document.createElement('span');
-        dot.className = `nn-carousel-dot${i === 0 ? ' active' : ''}`;
+        dot.className = `nn-pager__dot${i === 0 ? ' nn-pager__dot--active' : ''}`;
         dot.dataset.slide = String(i);
         dot.addEventListener('click', () => updateSlide(i));
         dotsContainer.appendChild(dot);
@@ -218,7 +222,7 @@ export function setupCarouselNavigation(
   const nextBtn = container.querySelector(
     '[data-action="next-slide"]'
   ) as HTMLButtonElement | null;
-  const dotsContainer = container.querySelector('.nn-carousel-dots');
+  const dotsContainer = container.querySelector('.nn-pager__dots');
 
   let currentIndex = 0;
   const totalSlides = slides.length;
@@ -227,22 +231,22 @@ export function setupCarouselNavigation(
   if (dotsContainer && dotsContainer.children.length === 0) {
     for (let i = 0; i < totalSlides; i++) {
       const dot = document.createElement('span');
-      dot.className = `nn-carousel-dot${i === 0 ? ' active' : ''}`;
+      dot.className = `nn-pager__dot${i === 0 ? ' nn-pager__dot--active' : ''}`;
       dot.dataset.slide = String(i);
       dotsContainer.appendChild(dot);
     }
   }
 
-  const dots = dotsContainer?.querySelectorAll('.nn-carousel-dot') || [];
+  const dots = dotsContainer?.querySelectorAll('.nn-pager__dot') || [];
 
   const updateSlide = (newIndex: number) => {
     slides[currentIndex]?.classList.remove('active');
-    dots[currentIndex]?.classList.remove('active');
+    dots[currentIndex]?.classList.remove('nn-pager__dot--active');
 
     currentIndex = newIndex;
 
     slides[currentIndex]?.classList.add('active');
-    dots[currentIndex]?.classList.add('active');
+    dots[currentIndex]?.classList.add('nn-pager__dot--active');
 
     if (prevBtn) prevBtn.disabled = currentIndex === 0;
     if (nextBtn) nextBtn.disabled = currentIndex === totalSlides - 1;

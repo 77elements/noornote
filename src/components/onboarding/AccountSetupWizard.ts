@@ -2198,10 +2198,10 @@ IMPORTANT:
                 <p class="nn-carousel-caption">Done. Your identity is in Sidecar, now log in to NoorNote</p>
               </div>
             </div>
-            <div class="nn-carousel-nav">
-              <button class="btn btn--mini btn--passive" data-action="prev-slide" disabled>Previous</button>
-              <span class="nn-carousel-dots"></span>
-              <button class="btn btn--mini" data-action="next-slide">Next</button>
+            <div class="nn-pager">
+              <button class="btn-icon" type="button" data-action="prev-slide" disabled aria-label="Previous"><svg width="20" height="20"><use href="#icon-caret-left"/></svg></button>
+              <span class="nn-pager__dots"></span>
+              <button class="btn-icon" type="button" data-action="next-slide" aria-label="Next"><svg width="20" height="20"><use href="#icon-caret-right"/></svg></button>
             </div>
           </div>
         `;

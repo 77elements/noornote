@@ -3,7 +3,7 @@
  *
  * Weekly calendar view of an owner's bookable slots (NIP-52 kind-31923
  * events with t=booking): the visitor flips through weeks (Previous/Next
- * week + week dots in the `.nn-carousel-nav` pattern) and books a free slot
+ * week + week dots in the `.nn-pager` pattern) and books a free slot
  * — accepted RSVP (public, collision protection) + NIP-17 DM to the owner
  * with the summary. Guest name/note live ONLY in the DM.
  *
@@ -216,16 +216,9 @@ export class ProfileBookingView extends View {
         } aria-label="Previous week">
           <svg width="18" height="18"><use href="#icon-caret-left"/></svg>
         </button>
-        <span class="nn-pager__dots">
-          ${weekStarts
-            .map(
-              (_, i) =>
-                `<span class="nn-pager__dot${
-                  i === this.weekIndex ? ' nn-pager__dot--active' : ''
-                }" data-week-dot="${i}"></span>`
-            )
-            .join('')}
-        </span>
+        <div class="nn-pager__content">
+          ${weekStarts.length > 0 ? escapeHtml(this.weekRangeLabel(weekStarts[this.weekIndex]!)) : ''}
+        </div>
         <button class="btn-icon" type="button" data-week-next ${
           this.weekIndex >= weekStarts.length - 1 ? 'disabled' : ''
         } aria-label="Next week">
@@ -233,11 +226,6 @@ export class ProfileBookingView extends View {
         </button>
       </div>
     `;
-
-    const rangeLabel =
-      weekStarts.length > 0
-        ? this.weekRangeLabel(weekStarts[this.weekIndex]!)
-        : '';
 
     const grid =
       weekStarts.length > 0
@@ -266,11 +254,6 @@ export class ProfileBookingView extends View {
       }
       <p class="form__note">times shown in your local timezone</p>
       ${nav}
-      ${
-        rangeLabel
-          ? `<div class="profile-booking__range">${escapeHtml(rangeLabel)}</div>`
-          : ''
-      }
       ${grid}
       ${selectedSlot ? this.renderBookingForm(selectedSlot.data) : ''}
       <div class="l-row--right"><button class="btn btn--passive" data-back>Back to profile</button></div>

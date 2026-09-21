@@ -1,7 +1,7 @@
 /**
  * ProfileBookingView — public booking page (`/profile/:npub/book`).
  * Week calendar (Mon-start) with bookable slots, week navigation in the
- * `.nn-carousel-nav` pattern. See ProfileBookingView.ts.
+ * `.nn-pager` pattern. See ProfileBookingView.ts.
  */
 
 @use '../abstracts/variables' as *;
@@ -18,17 +18,18 @@
   margin-bottom: $gap;
 }
 
+// Pager chrome: divider + spacing around the week nav.
+.view-content--profile-booking .nn-pager {
+  margin-bottom: calc($gap * 2);
+  padding-top: $gap;
+  border-top: 1px solid var(--color-3);
+}
+
 // Week dots overflow on phones — buttons only.
 .view-content--profile-booking .nn-pager__dots {
   @include mobile-down {
     display: none;
   }
-}
-
-.profile-booking__range {
-  color: var(--color-4);
-  font-weight: 600;
-  margin-bottom: calc($gap / 2);
 }
 
 // Week calendar: 7 day columns on desktop, stacked day blocks on phone/tablet.

@@ -1,6 +1,7 @@
 /**
  * Carousel Molecule
- * Reusable slide carousel with dots navigation
+ * Reusable slide carousel (slides + images). Slide navigation (prev/next +
+ * dots) lives in the `.nn-pager` molecule (molecules/_pager.scss).
  */
 
 @use '../abstracts/variables' as *;
@@ -49,44 +50,6 @@
   display: block;
   margin: 0 auto;
   border-radius: $radius-pill;
-}
-
-.nn-carousel-nav {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: $gap * 2;
-  margin-top: $gap * 2;
-  padding-top: $gap;
-  border-top: 1px solid var(--color-3);
-}
-
-.nn-carousel-dots {
-  display: flex;
-  gap: calc($gap / 2);
-}
-
-.nn-carousel-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--color-3);
-  cursor: pointer;
-  transition: background 0.2s;
-
-  .platform--mobile & {
-    width: 14px;
-    height: 14px;
-  }
-
-  &.active {
-    background: var(--color-4);
-  }
-
-  &:hover:not(.active) {
-    background: var(--color-4);
-    opacity: 0.6;
-  }
 }
 
 .nn-carousel-caption {
