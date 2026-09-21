@@ -18,15 +18,10 @@
   margin-bottom: $gap;
 }
 
-// Nav sits directly above the week calendar — needs breathing room.
-.view-content--profile-booking .nn-carousel-nav {
-  margin-bottom: calc($gap * 2); // 2rem
-
-  // Week dots don't fit next to the buttons on phones — buttons only.
+// Week dots overflow on phones — buttons only.
+.view-content--profile-booking .nn-pager__dots {
   @include mobile-down {
-    .nn-carousel-dots {
-      display: none;
-    }
+    display: none;
   }
 }
 

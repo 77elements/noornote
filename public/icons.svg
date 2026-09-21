@@ -111,6 +111,12 @@
   <symbol id="icon-caret-down" viewBox="0 0 24 24" fill="currentColor" stroke="none">
     <path d="m4 8 8 8 8-8z" />
   </symbol>
+  <symbol id="icon-caret-left" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+    <path d="M16 4 8 12l8 8z" />
+  </symbol>
+  <symbol id="icon-caret-right" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+    <path d="m8 4 8 8-8 8z" />
+  </symbol>
   <symbol id="icon-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     
       <circle cx="12" cy="12" r="10" />

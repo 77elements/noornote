@@ -210,23 +210,27 @@ export class ProfileBookingView extends View {
     );
 
     const nav = `
-      <div class="nn-carousel-nav">
-        <button class="btn btn--mini btn--passive" data-week-prev ${
+      <div class="nn-pager">
+        <button class="btn-icon" type="button" data-week-prev ${
           this.weekIndex === 0 ? 'disabled' : ''
-        }>Previous week</button>
-        <span class="nn-carousel-dots">
+        } aria-label="Previous week">
+          <svg width="18" height="18"><use href="#icon-caret-left"/></svg>
+        </button>
+        <span class="nn-pager__dots">
           ${weekStarts
             .map(
               (_, i) =>
-                `<span class="nn-carousel-dot ${
-                  i === this.weekIndex ? 'active' : ''
+                `<span class="nn-pager__dot${
+                  i === this.weekIndex ? ' nn-pager__dot--active' : ''
                 }" data-week-dot="${i}"></span>`
             )
             .join('')}
         </span>
-        <button class="btn btn--mini" data-week-next ${
+        <button class="btn-icon" type="button" data-week-next ${
           this.weekIndex >= weekStarts.length - 1 ? 'disabled' : ''
-        }>Next week</button>
+        } aria-label="Next week">
+          <svg width="18" height="18"><use href="#icon-caret-right"/></svg>
+        </button>
       </div>
     `;
 

@@ -201,9 +201,13 @@ export class CalendarGridView {
     toolbar.innerHTML = `
       <div class="calendar-addon__toolbar-nav">
         <div class="calendar-addon__nav">
-          <button class="btn-icon" type="button" data-action="prev" aria-label="Previous">‹</button>
+          <button class="btn-icon" type="button" data-action="prev" aria-label="Previous">
+            <svg width="20" height="20"><use href="#icon-caret-left"/></svg>
+          </button>
           <button class="btn btn--passive btn--mini" type="button" data-action="today">Today</button>
-          <button class="btn-icon" type="button" data-action="next" aria-label="Next">›</button>
+          <button class="btn-icon" type="button" data-action="next" aria-label="Next">
+            <svg width="20" height="20"><use href="#icon-caret-up"/></svg>
+          </button>
         </div>
         <span class="calendar-addon__range">${escapeHtml(this.rangeLabel())}</span>
       </div>
