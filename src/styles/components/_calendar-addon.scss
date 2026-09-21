@@ -139,6 +139,17 @@
     background: color-mix(in srgb, var(--color-6) 30%, transparent);
   }
 
+  // Booked booking slot: solid green (var(--color-6)) — clearly taken.
+  &--booked {
+    background: var(--color-6);
+    color: var(--color-1);
+
+    &:hover {
+      background: var(--color-6);
+      opacity: 0.85;
+    }
+  }
+
   &:hover {
     background: color-mix(in srgb, var(--color-4) 45%, transparent);
   }
@@ -235,6 +246,25 @@
   max-height: 220px;
   object-fit: cover;
   border-radius: $radius-xl;
+}
+
+// Booked appointment banner (green, dark text) — clearly not a free slot.
+.calendar-addon-detail__booked-banner {
+  display: flex;
+  align-items: center;
+  gap: calc($gap / 2);
+  margin-bottom: $gap;
+  padding: calc($gap / 2) $gap;
+  border-radius: $radius-xl;
+  background: var(--color-6);
+  color: var(--color-1);
+  font-weight: 700;
+}
+
+// Green "- booked" suffix on the modal title (booking slots only).
+.nn-booked-suffix {
+  color: var(--color-6);
+  font-weight: 700;
 }
 
 .calendar-addon-detail__row {

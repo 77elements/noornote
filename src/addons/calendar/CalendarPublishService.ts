@@ -57,6 +57,8 @@ export interface RSVPSummary {
   tentative: number;
   /** The current user's status, or null when they have not responded. */
   mine: RSVPStatusValue | null;
+  /** Pubkeys of accepted responders (booking slots: who booked). */
+  acceptedBy: string[];
 }
 
 const RANDOM_DTAG_ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -415,6 +417,7 @@ export class CalendarPublishService {
       declined: 0,
       tentative: 0,
       mine: null,
+      acceptedBy: [],
     };
 
     const relays = await resolveCalendarRelays([
@@ -447,6 +450,7 @@ export class CalendarPublishService {
       }
       summary[status]++;
       if (user && pubkey === user.pubkey) summary.mine = status;
+      if (status === 'accepted') summary.acceptedBy.push(pubkey);
     }
     return summary;
   }

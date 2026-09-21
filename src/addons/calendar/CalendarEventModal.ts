@@ -18,6 +18,7 @@ import { downloadCalendarEventICS } from '../../helpers/nip52/icsExport';
 import { summarizeRecurrenceRule } from '../../helpers/nip52/recurrence';
 import { BOOKING_SLOT_DTAG_PREFIX } from '../../helpers/nip52/bookingSlots';
 import { diagLog } from '../../services/DiagnosticLogger';
+import { UserProfileService } from '../../services/UserProfileService';
 import type { CalendarEventData } from '../../helpers/nip52/parser';
 import type { RSVPStatusValue } from './CalendarPublishService';
 
@@ -35,6 +36,9 @@ export class CalendarEventModal {
   private destroyed = false;
   /** Foreign events: currently imported into the user's grid? */
   private saved: boolean | null = null;
+  private content: HTMLElement | null = null;
+  /** Booking slot with at least one accepted RSVP (guest has booked). */
+  private booked = false;
 
   constructor(
     private readonly event: CalendarEventData,
@@ -58,6 +62,7 @@ export class CalendarEventModal {
     }
 
     const content = document.createElement('div');
+    this.content = content;
     content.className = 'calendar-addon-detail';
     content.innerHTML = `
       <div class="calendar-addon-detail__when">
@@ -201,8 +206,36 @@ export class CalendarEventModal {
       declined: number;
       tentative: number;
       mine: RSVPStatusValue | null;
+      acceptedBy: string[];
     }
   ): void {
+    // Booking slot with an accepted RSVP: clearly flagged as a booked
+    // appointment — the Edit affordance goes away (delete only), and the
+    // banner shows who booked it.
+    const isBookedSlot =
+      this.event.dTag.startsWith(BOOKING_SLOT_DTAG_PREFIX) &&
+      summary.accepted > 0;
+    this.booked = isBookedSlot;
+    if (isBookedSlot) {
+      this.content?.querySelector('[data-action="edit"]')?.remove();
+      // Green "booked" suffix on the modal title (h1 lives in .modal__header).
+      const titleEl = document.querySelector('.modal__header h1');
+      if (titleEl && !titleEl.querySelector('.nn-booked-suffix')) {
+        titleEl.insertAdjacentHTML(
+          'beforeend',
+          ' <span class="nn-booked-suffix">- booked</span>'
+        );
+      }
+      if (slot.querySelector('.calendar-addon-detail__booked-banner')) return;
+      const guestName =
+        UserProfileService.getInstance().getUsername(summary.acceptedBy[0]!) ||
+        'a guest';
+      slot.insertAdjacentHTML(
+        'afterbegin',
+        `<div class="calendar-addon-detail__booked-banner">✓ Booked appointment — guest: ${escapeHtml(guestName)}</div>`
+      );
+    }
+
     const total = summary.accepted + summary.declined + summary.tentative;
     const counts =
       total > 0
@@ -454,6 +487,43 @@ export class CalendarEventModal {
 
   /** Delete this event (public: NIP-09 via DeletionService, private: list ref + kind-5). */
   private async remove(): Promise<void> {
+    // Booked appointment: cancellation = slot deletion + guest/participant
+    // DMs (ownerCancelBooking), with an optional reason.
+    if (this.booked) {
+      const { ModalService: ModalSvc } = await import(
+        '../../services/ModalService'
+      );
+      const reason = await ModalSvc.getInstance().prompt({
+        title: 'Cancel booking',
+        message:
+          'The guest and all participants will be informed about the cancellation by DM.',
+        placeholder: 'Reason (optional)',
+        multiline: true,
+        allowEmpty: true,
+        confirmText: 'Cancel booking',
+      });
+      if (reason === null) return;
+      const { BookingService } = await import('./BookingService');
+      const result = await BookingService.getInstance().cancelBookingAsOwner(
+        this.event,
+        reason
+      );
+      if (this.destroyed) return;
+      ToastService.show(
+        result.ok
+          ? result.dmFailures
+            ? `${result.detail} — ${result.dmFailures} DM(s) failed`
+            : 'Booking cancelled — guest and participants informed'
+          : result.detail,
+        result.ok && !result.dmFailures ? 'success' : 'warning'
+      );
+      if (result.ok) {
+        ModalSvc.getInstance().hide();
+        this.onSaved?.();
+      }
+      return;
+    }
+
     const confirmed = await ModalService.getInstance().confirm({
       title: 'Delete event',
       message: `Delete "${this.event.title || 'this event'}"${this.event.isPrivate ? '' : ' for everyone'}? A deletion request is published to relays.`,

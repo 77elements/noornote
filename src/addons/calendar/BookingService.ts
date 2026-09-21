@@ -325,7 +325,6 @@ export class BookingService {
     }
     slots.sort((a, b) => a.startMs - b.startMs);
     if (slots.length === 0) return [];
-
     // Accepted RSVPs per slot coordinate (latest per responder wins).
     const coordinates = slots.map(s => s.coordinate);
     const rawRsvps = await this.transport.fetchDirect(
@@ -372,6 +371,17 @@ export class BookingService {
         participants: booking?.participants ?? [],
       };
     });
+  }
+
+  /**
+   * d-tags of the own booking slots that carry an accepted RSVP (booked).
+   * Used by the calendar grid to highlight taken slots in green.
+   */
+  public async getBookedSlotDTags(ownerPubkey: string): Promise<Set<string>> {
+    const slots = await this.fetchOwnerSlots(ownerPubkey, {
+      includePast: true,
+    });
+    return new Set(slots.filter(s => s.bookedBy).map(s => s.data.dTag));
   }
 
   /**
@@ -725,6 +735,98 @@ export class BookingService {
 
     diagLog('system', 'booking: owner cancelled booking', {
       dTag: slot.dTag,
+      informed,
+      dmFailures,
+    });
+    return {
+      ok: true,
+      detail: informed
+        ? `Booking cancelled — ${informed} recipient(s) informed`
+        : 'Booking cancelled',
+      informed,
+      dmFailures,
+    };
+  }
+
+  /**
+   * Owner cancels a booked slot directly from the event modal: resolves the
+   * accepted responders (+ their p-tag participants) from the public RSVPs,
+   * deletes the slot (reason in the kind-5 content) and informs everyone by
+   * DM. Used by CalendarEventModal's delete on a booked slot.
+   */
+  public async cancelBookingAsOwner(
+    event: CalendarEventData,
+    reason: string
+  ): Promise<BookingOpResult> {
+    const user = this.auth.getCurrentUser();
+    if (!user) throw new Error('Not logged in');
+
+    const relays = await resolveCalendarRelays([user.pubkey]);
+    const raw = await this.transport.fetchDirect(
+      relays,
+      [{ kinds: [31925 as NDKKind], '#a': [event.coordinate], limit: 200 }],
+      FETCH_TIMEOUT_MS,
+      'booking-cancel'
+    );
+
+    const latestByResponder = new Map<string, NostrEvent>();
+    for (const ev of raw) {
+      const prev = latestByResponder.get(ev.pubkey);
+      if (!prev || ev.created_at > prev.created_at) {
+        latestByResponder.set(ev.pubkey, ev);
+      }
+    }
+
+    const guests: { responder: string; participants: string[] }[] = [];
+    for (const [, ev] of latestByResponder) {
+      if (ev.tags.find(t => t[0] === 'status')?.[1] !== 'accepted') continue;
+      guests.push({
+        responder: ev.pubkey,
+        participants: (ev.tags ?? [])
+          .filter(t => t[0] === 'p' && t[1] && t[1] !== ev.pubkey)
+          .map(t => t[1]!),
+      });
+    }
+
+    const deleted = await CalendarPublishService.getInstance().deleteEvent(
+      event,
+      reason
+    );
+    if (!deleted) {
+      return {
+        ok: false,
+        detail: 'The cancellation was not accepted by any relay. Try again.',
+        informed: 0,
+        dmFailures: 0,
+      };
+    }
+
+    const dms = ModuleLoader.getInstance().getApi<DMsModuleApi>('dms');
+    const note = `❌ The host cancelled the booking "${event.title}"\nWhen: ${new Date(event.startMs).toUTCString()}\nReason: ${reason.trim() || '—'}`;
+    let informed = 0;
+    let dmFailures = 0;
+    if (dms) {
+      for (const guest of guests) {
+        const recipients = [guest.responder, ...guest.participants].filter(
+          (p, i, all) => p && p !== user.pubkey && all.indexOf(p) === i
+        );
+        for (const recipient of recipients) {
+          try {
+            await dms.sendMessage(recipient, note);
+            informed++;
+          } catch (err) {
+            dmFailures++;
+            diagLog('system', 'booking: cancel dm failed', {
+              recipient,
+              error: String(err),
+            });
+          }
+        }
+      }
+    }
+
+    diagLog('system', 'booking: owner cancelled via modal', {
+      dTag: event.dTag,
       informed,
       dmFailures,
     });

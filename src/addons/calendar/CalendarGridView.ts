@@ -12,6 +12,8 @@ import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { CalendarDataService } from './CalendarDataService';
 import { CalendarEventModal } from './CalendarEventModal';
+import { AuthService } from '../../services/AuthService';
+import { BOOKING_SLOT_DTAG_PREFIX } from '../../helpers/nip52/bookingSlots';
 import {
   parseCalendarEvent,
   type CalendarEventData,
@@ -38,6 +40,8 @@ export class CalendarGridView {
   private invites: CalendarInvite[] = [];
   private loading = false;
   private busSubId: string | null = null;
+  /** d-tags of own booking slots with an accepted RSVP (booked). */
+  private bookedDTags: Set<string> = new Set();
 
   constructor() {
     this.container = document.createElement('div');
@@ -74,7 +78,7 @@ export class CalendarGridView {
     try {
       // Instant render from cache, then refresh from relays.
       this.ingest(this.dataService.getCachedEvents());
-      const [{ events, collections }, invites, subscribed, saved] =
+      const [{ events, collections }, invites, subscribed, saved, bookedDTags] =
         await Promise.all([
           this.dataService.fetchOwnCalendarData(),
           this.fetchInvites(),
@@ -82,8 +86,11 @@ export class CalendarGridView {
             .fetchSubscribedCollectionData()
             .catch(() => ({ collections: [], events: [] })),
           this.dataService.fetchSavedEvents(),
+          // Booking slots with an accepted RSVP → highlighted as booked.
+          this.fetchBookedDTags(),
         ]);
       this.invites = invites;
+      this.bookedDTags = bookedDTags;
       this.loading = false;
       this.ingest([...events, ...subscribed.events, ...saved]);
 
@@ -96,6 +103,21 @@ export class CalendarGridView {
       this.ingest([...events, ...subscribed.events, ...saved, ...foreign]);
     } finally {
       this.loading = false;
+    }
+  }
+
+  /**
+   * d-tags of the own booking slots that carry an accepted RSVP — used to
+   * highlight booked slots in the grid (green) and lock their edit.
+   */
+  private async fetchBookedDTags(): Promise<Set<string>> {
+    try {
+      const pubkey = AuthService.getInstance().getCurrentUser()?.pubkey;
+      if (!pubkey) return new Set();
+      const { BookingService } = await import('./BookingService');
+      return await BookingService.getInstance().getBookedSlotDTags(pubkey);
+    } catch {
+      return new Set();
     }
   }
 
@@ -397,14 +419,18 @@ export class CalendarGridView {
     );
 
     for (const entry of upcoming) {
+      const booked =
+        entry.event.dTag.startsWith(BOOKING_SLOT_DTAG_PREFIX) &&
+        this.bookedDTags.has(entry.event.dTag);
       const row = document.createElement('button');
       row.type = 'button';
-      row.className =
-        'ui-list__item ui-list__item--clickable calendar-addon__list-row';
+      row.className = `ui-list__item ui-list__item--clickable calendar-addon__list-row${
+        booked ? ' calendar-addon__list-row--booked' : ''
+      }`;
       row.innerHTML = `
         <span class="calendar-addon__list-date">${escapeHtml(this.formatListDate(entry.occurrenceStartMs))}</span>
         <span class="calendar-addon__list-title">${entry.event.isPrivate ? '🔒 ' : ''}${escapeHtml(entry.event.title || '(Untitled event)')}</span>
-        <span class="calendar-addon__list-meta">${escapeHtml(this.timeLabel(entry))}</span>
+        <span class="calendar-addon__list-meta">${booked ? '<span class="badge badge--success">Booked</span> · ' : ''}${escapeHtml(this.timeLabel(entry))}</span>
       `;
       row.addEventListener('click', () => this.openDetail(entry));
       list.appendChild(row);
@@ -415,8 +441,15 @@ export class CalendarGridView {
   private buildChip(entry: GridEntry, compact: boolean): HTMLElement {
     const chip = document.createElement('button');
     chip.type = 'button';
-    chip.className = `calendar-addon__chip${entry.event.allDay ? ' calendar-addon__chip--allday' : ''}${entry.event.isPrivate ? ' calendar-addon__chip--private' : ''}`;
-    chip.title = entry.event.title || '(Untitled event)';
+    // Booked booking slots: green highlight (var(--color-6)) — clearly
+    // visible that this time is taken by a real appointment.
+    const booked =
+      entry.event.dTag.startsWith(BOOKING_SLOT_DTAG_PREFIX) &&
+      this.bookedDTags.has(entry.event.dTag);
+    chip.className = `calendar-addon__chip${entry.event.allDay ? ' calendar-addon__chip--allday' : ''}${entry.event.isPrivate ? ' calendar-addon__chip--private' : ''}${booked ? ' calendar-addon__chip--booked' : ''}`;
+    chip.title = booked
+      ? `Booked — ${entry.event.title || '(Untitled event)'}`
+      : entry.event.title || '(Untitled event)';
     chip.innerHTML = compact
       ? escapeHtml(entry.event.title || '(Untitled)')
       : `<span class="calendar-addon__chip-time">${escapeHtml(this.timeLabel(entry))}</span><span>${escapeHtml(entry.event.title || '(Untitled event)')}</span>`;
