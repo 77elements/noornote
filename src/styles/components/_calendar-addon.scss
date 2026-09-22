@@ -510,6 +510,10 @@
     gap: calc($gap / 2);
   }
 
+  &__range.form__row.form__row--oneline {
+    margin-top: 2rem;
+  }
+
   .ui-list__item {
     justify-content: space-between;
   }

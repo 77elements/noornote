@@ -9,6 +9,7 @@ import {
   parseICSCalendar,
   filterCandidatesByRange,
   candidateToDraftFields,
+  deriveImportDTag,
 } from './icsImport';
 
 const SIMPLE = [
@@ -225,5 +226,77 @@ describe('candidateToDraftFields', () => {
     expect(fields.repeat).toBe('daily');
     // COUNT is preserved via the override (publishEvent would normalize it away).
     expect(fields.rruleOverride).toBe('FREQ=DAILY;COUNT=5');
+  });
+});
+
+describe('deriveImportDTag', () => {
+  it('is deterministic: same UID → same d-tag across calls and processes', () => {
+    const a = deriveImportDTag(
+      'uid-1@example.com',
+      'Lunch',
+      1790701200000,
+      false
+    );
+    const b = deriveImportDTag(
+      'uid-1@example.com',
+      'Lunch',
+      1790701200000,
+      false
+    );
+    expect(a).toBe(b);
+    expect(a).toMatch(/^ics-[a-z0-9]{16}$/);
+  });
+
+  it('differs for different UIDs (no collision on identical titles)', () => {
+    const a = deriveImportDTag(
+      'uid-1@example.com',
+      'Lunch',
+      1790701200000,
+      false
+    );
+    const b = deriveImportDTag(
+      'uid-2@example.com',
+      'Lunch',
+      1790701200000,
+      false
+    );
+    expect(a).not.toBe(b);
+  });
+
+  it('falls back to a content hash when the VEVENT has no UID', () => {
+    const a = deriveImportDTag('', 'Lunch', 1790701200000, false);
+    const b = deriveImportDTag('', 'Lunch', 1790701200000, false);
+    const c = deriveImportDTag('', 'Lunch', 1790701200000, true);
+    expect(a).toBe(b);
+    expect(a).not.toBe(c);
+  });
+
+  it('keeps the d-tag colon-free even when the UID contains colons', () => {
+    const dTag = deriveImportDTag(
+      '31923:abc123:bookslot-1790701200',
+      'Slot',
+      1790701200000,
+      false
+    );
+    expect(dTag).not.toContain(':');
+  });
+
+  it('parses the same file twice to identical d-tags (idempotent re-import)', () => {
+    const ics = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'BEGIN:VEVENT',
+      'UID:stable-uid@example.com',
+      'DTSTAMP:20260917T160814Z',
+      'DTSTART:20260917T163000Z',
+      'DTEND:20260917T180000Z',
+      'SUMMARY:Test Event',
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].join('\r\n');
+    const first = parseICSCalendar(ics, 'UTC');
+    const second = parseICSCalendar(ics, 'UTC');
+    expect(first.candidates[0]!.dTag).toBe(second.candidates[0]!.dTag);
+    expect(first.candidates[0]!.dTag).toMatch(/^ics-[a-z0-9]{16}$/);
   });
 });

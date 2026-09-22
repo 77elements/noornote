@@ -140,15 +140,34 @@ function icsDateValueToUtcMs(
 }
 
 const RANDOM_DTAG_ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789';
-function generateImportDTag(): string {
+
+/**
+ * Deterministic d-tag for an imported event: same event in the same (or
+ * another) .ics file always maps to the same coordinate, so re-imports are
+ * idempotent instead of stacking duplicate drafts. Prefers the VEVENT UID
+ * (its reason to exist), falls back to a content hash. Hash-only output
+ * keeps the d-tag colon-free — safe inside `kind:pubkey:dtag` coordinates.
+ */
+export function deriveImportDTag(
+  uid: string,
+  title: string,
+  startMs: number,
+  allDay: boolean
+): string {
+  let hash = 0x811c9dc5;
+  const feed = (input: string): void => {
+    for (let i = 0; i < input.length; i++) {
+      hash ^= input.charCodeAt(i);
+      hash = Math.imul(hash, 0x01000193) >>> 0;
+    }
+  };
+  feed(uid || `${title}\u0000${startMs}\u0000${allDay ? '1' : '0'}`);
   let out = '';
-  for (let i = 0; i < 16; i++) {
-    out +=
-      RANDOM_DTAG_ALPHABET[
-        Math.floor(Math.random() * RANDOM_DTAG_ALPHABET.length)
-      ];
+  while (out.length < 16) {
+    hash = Math.imul(hash ^ (hash >>> 15), 0x2545f491) >>> 0;
+    out += RANDOM_DTAG_ALPHABET[hash % RANDOM_DTAG_ALPHABET.length];
   }
-  return out;
+  return `ics-${out}`;
 }
 
 /** Parse an .ics file body into import candidates (cancelled/invalid skipped). */
@@ -209,9 +228,15 @@ export function parseICSCalendar(
     }
 
     const recurrence = parseRecurrenceRule(currentRRULE || null);
+    const title = icsUnescape(current.SUMMARY ?? '');
     candidates.push({
-      dTag: generateImportDTag(),
-      title: icsUnescape(current.SUMMARY ?? ''),
+      dTag: deriveImportDTag(
+        current.UID ?? '',
+        title,
+        startMsParsed.ms,
+        allDay
+      ),
+      title,
       description: icsUnescape(current.DESCRIPTION ?? ''),
       location: icsUnescape(current.LOCATION ?? ''),
       startMs: startMsParsed.ms,

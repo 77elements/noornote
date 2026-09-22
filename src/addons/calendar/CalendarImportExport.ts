@@ -14,6 +14,7 @@
  */
 
 import { ToastService } from '../../services/ToastService';
+import { AuthService } from '../../services/AuthService';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { calendarEventsToICS } from '../../helpers/nip52/icsExport';
 import {
@@ -22,7 +23,10 @@ import {
   candidateToDraftFields,
   type ICSImportCandidate,
 } from '../../helpers/nip52/icsImport';
-import { CalendarPublishService } from './CalendarPublishService';
+import {
+  CalendarPublishService,
+  buildEventModel,
+} from './CalendarPublishService';
 import { CalendarDataService } from './CalendarDataService';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { diagLog } from '../../services/DiagnosticLogger';
@@ -48,13 +52,15 @@ export class CalendarImportExportManager {
   private render(): void {
     const hasFile = this.imported.length > 0 || this.loading;
     const rangeDefaults = this.defaultRange();
+    const draftsCount = CalendarDataService.getInstance().getDrafts().length;
 
     this.element.innerHTML = `
       <div class="calendar-io__import">
         <h3>Import</h3>
         <p class="form__note">
           Import a Google Calendar or any .ics export — events are previewed
-          first and only published when you click the button.
+          first and imported to this device. Publishing them to your relays is
+          a separate step afterwards.
         </p>
         <div class="l-row--center calendar-io__actions">
           <button class="btn btn--large btn--passive" data-io-import>
@@ -73,11 +79,34 @@ export class CalendarImportExportManager {
               </div>
               <div data-io-preview></div>
               <div class="l-row--right">
-                <button class="btn" data-io-publish disabled>Publish imports</button>
+                <button class="btn" data-io-import-local disabled>Import to my calendar</button>
               </div>`
             : ''
         }
       </div>
+      ${
+        draftsCount > 0
+          ? `<div class="calendar-io__pending">
+              <h3>Publish imports</h3>
+              <p class="form__note">
+                ${draftsCount} imported ${draftsCount === 1 ? 'event is' : 'events are'}
+                on this device only — they appear in your calendar locally, but
+                your relays don't have them yet.
+              </p>
+              <div class="l-row--center calendar-io__actions">
+                <button class="btn btn--large btn--passive" data-io-publish-drafts ${
+                  this.publishing ? 'disabled' : ''
+                }>
+                  <svg width="20" height="20"><use href="#icon-upload"/></svg>
+                  ${this.publishing ? 'Publishing…' : `Publish ${draftsCount} ${draftsCount === 1 ? 'event' : 'events'}`}
+                </button>
+                <button class="btn btn--passive" data-io-discard-drafts ${
+                  this.publishing ? 'disabled' : ''
+                }>Discard</button>
+              </div>
+            </div>`
+          : ''
+      }
       <h3>Export</h3>
       <p class="form__note">Download your whole calendar as one .ics file.</p>
       <div class="l-row--center calendar-io__actions">
@@ -119,7 +148,10 @@ export class CalendarImportExportManager {
     `;
 
     this.wire();
-    if (hasFile) this.renderPreview(this.inRange, 0);
+    if (hasFile) {
+      this.renderPreview(this.inRange, 0);
+      this.updatePublishButton(this.inRange.length);
+    }
   }
 
   private defaultRange(): { from: string; to: string } {
@@ -160,8 +192,16 @@ export class CalendarImportExportManager {
       ?.addEventListener('change', () => this.applyRange());
 
     this.element
-      .querySelector('[data-io-publish]')
-      ?.addEventListener('click', () => void this.publishImports());
+      .querySelector('[data-io-import-local]')
+      ?.addEventListener('click', () => this.importLocal());
+
+    this.element
+      .querySelector('[data-io-publish-drafts]')
+      ?.addEventListener('click', () => void this.publishDrafts());
+
+    this.element
+      .querySelector('[data-io-discard-drafts]')
+      ?.addEventListener('click', () => void this.discardDrafts());
 
     this.element
       .querySelector('[data-io-reset]')
@@ -305,51 +345,116 @@ export class CalendarImportExportManager {
 
   private updatePublishButton(count: number): void {
     const btn = this.element.querySelector(
-      '[data-io-publish]'
+      '[data-io-import-local]'
     ) as HTMLButtonElement | null;
-    if (btn) btn.disabled = count === 0 || this.publishing;
+    if (btn) btn.disabled = count === 0;
   }
 
-  private async publishImports(): Promise<void> {
+  /**
+   * Stage 1 of the import: build event models from the in-range candidates
+   * and store them as local drafts — they show up in the grid immediately,
+   * nothing touches relays yet.
+   */
+  private importLocal(): void {
+    if (this.inRange.length === 0) return;
+    const pubkey = AuthService.getInstance().getCurrentUser()?.pubkey;
+    if (!pubkey) {
+      ToastService.show('Not logged in', 'error');
+      return;
+    }
+    const models = this.inRange.map(candidate =>
+      buildEventModel(
+        {
+          ...candidateToDraftFields(candidate),
+          dTag: candidate.dTag,
+          image: '',
+        },
+        pubkey
+      )
+    );
+    CalendarDataService.getInstance().addDrafts(models);
+    this.imported = [];
+    this.inRange = [];
+    ToastService.show(
+      `${models.length} events imported to this device`,
+      'success'
+    );
+    TypedEventBus.getInstance().emit('calendar:saved-changed', {});
+    this.render();
+  }
+
+  /**
+   * Stage 2: publish the locally staged drafts to the relays. Failed events
+   * stay staged for a retry.
+   */
+  private async publishDrafts(): Promise<void> {
     if (this.publishing) return;
     this.publishing = true;
-    this.updatePublishButton(this.inRange.length);
+    this.render();
     const publishService = CalendarPublishService.getInstance();
+    const dataService = CalendarDataService.getInstance();
+    const drafts = dataService.getDrafts();
 
-    let published = 0;
+    const publishedCoords: string[] = [];
     let failed = 0;
-    const total = this.inRange.length;
-    for (const [index, candidate] of this.inRange.entries()) {
-      this.setStatus(`Publishing ${index + 1}/${total}…`, true);
+    for (const [index, model] of drafts.entries()) {
+      this.setPendingStatus(`Publishing ${index + 1}/${drafts.length}…`);
       try {
-        const draft = {
-          ...candidateToDraftFields(candidate),
-          image: '',
-          dTag: candidate.dTag,
-        };
-        await publishService.publishEvent(draft);
-        published++;
+        await publishService.publishEventModel(model);
+        publishedCoords.push(model.coordinate);
       } catch (err) {
         failed++;
-        diagLog('system', 'booking: import publish failed', {
-          title: candidate.title,
+        diagLog('system', 'calendar: draft publish failed', {
+          title: model.title,
           error: String(err),
         });
       }
     }
 
     this.publishing = false;
-    this.imported = [];
+    dataService.removeDrafts(publishedCoords);
     this.render();
     if (failed > 0) {
       ToastService.show(
-        `Import finished: ${published} published, ${failed} failed`,
+        `Publishing finished: ${publishedCoords.length} published, ${failed} failed (still staged)`,
         'warning'
       );
     } else {
-      ToastService.show(`${published} events imported`, 'success');
-      TypedEventBus.getInstance().emit('calendar:saved-changed', {});
+      ToastService.show(
+        `${publishedCoords.length} events published to your relays`,
+        'success'
+      );
     }
+    TypedEventBus.getInstance().emit('calendar:saved-changed', {});
+  }
+
+  /** Progress text for the pending-drafts block (may be unmounted). */
+  private setPendingStatus(text: string): void {
+    const pending = this.element.querySelector('.calendar-io__pending');
+    if (!pending) return;
+    const note = pending.querySelector('.form__note');
+    if (note) note.textContent = text;
+  }
+
+  /** Throw away all staged drafts without touching relays. */
+  private async discardDrafts(): Promise<void> {
+    const dataService = CalendarDataService.getInstance();
+    const drafts = dataService.getDrafts();
+    if (drafts.length === 0) return;
+    const { ModalService } = await import('../../services/ModalService');
+    const ok = await ModalService.getInstance().confirm({
+      title: 'Discard imported events?',
+      message: `This removes the ${drafts.length} locally imported ${
+        drafts.length === 1 ? 'event' : 'events'
+      } from this device. They were never published, so nothing is lost on your relays.`,
+      confirmText: 'Discard',
+      confirmDestructive: true,
+    });
+    if (!ok || this.destroyed) return;
+    dataService.removeDrafts(drafts.map(draft => draft.coordinate));
+    ToastService.show('Imported events discarded', 'success');
+    TypedEventBus.getInstance().emit('calendar:saved-changed', {});
+    this.render();
   }
 
   private exportCalendar(): void {

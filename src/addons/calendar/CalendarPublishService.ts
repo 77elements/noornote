@@ -85,6 +85,46 @@ export function generateDTag(): string {
   return out;
 }
 
+/**
+ * Build the full NIP-52 event model from an editor draft. Shared by the
+ * publish path and the .ics import's local-draft stage (import shows the
+ * events in the grid before anything is published).
+ */
+export function buildEventModel(
+  draft: CalendarEventDraft,
+  pubkey: string
+): CalendarEventData {
+  const kind = draft.allDay ? 31922 : 31923;
+  const startMs = draft.startMs;
+  let endMs = draft.endMs;
+  if (endMs !== null && endMs <= startMs) endMs = null;
+
+  return {
+    coordinate: `${kind}:${pubkey}:${draft.dTag}`,
+    eventId: '',
+    kind,
+    pubkey,
+    dTag: draft.dTag,
+    title: draft.title.trim(),
+    description: draft.description.trim(),
+    startMs,
+    endMs,
+    allDay: draft.allDay,
+    image: draft.image.trim() || undefined,
+    locations: draft.location.trim() ? [draft.location.trim()] : [],
+    geoHashes: [],
+    participants: [],
+    hashtags: draft.hashtags ?? [],
+    links: [],
+    rrule:
+      draft.rruleOverride ??
+      (draft.repeat
+        ? buildRecurrenceRule({ frequency: draft.repeat, startMs })
+        : null),
+    createdAt: Math.floor(Date.now() / 1000),
+  };
+}
+
 export class CalendarPublishService {
   private static instance: CalendarPublishService | null = null;
 
@@ -106,41 +146,22 @@ export class CalendarPublishService {
   public async publishEvent(draft: CalendarEventDraft): Promise<NostrEvent> {
     const user = this.auth.getCurrentUser();
     if (!user) throw new Error('Not logged in');
+    return this.publishEventModel(buildEventModel(draft, user.pubkey));
+  }
 
-    const kind = draft.allDay ? 31922 : 31923;
-    const startMs = draft.startMs;
-    let endMs = draft.endMs;
-    if (endMs !== null && endMs <= startMs) endMs = null;
-
-    const model: CalendarEventData = {
-      coordinate: `${kind}:${user.pubkey}:${draft.dTag}`,
-      eventId: '',
-      kind,
-      pubkey: user.pubkey,
-      dTag: draft.dTag,
-      title: draft.title.trim(),
-      description: draft.description.trim(),
-      startMs,
-      endMs,
-      allDay: draft.allDay,
-      image: draft.image.trim() || undefined,
-      locations: draft.location.trim() ? [draft.location.trim()] : [],
-      geoHashes: [],
-      participants: [],
-      hashtags: draft.hashtags ?? [],
-      links: [],
-      rrule:
-        draft.rruleOverride ??
-        (draft.repeat
-          ? buildRecurrenceRule({ frequency: draft.repeat, startMs })
-          : null),
-      createdAt: Math.floor(Date.now() / 1000),
-    };
-
+  /**
+   * Publish an already-built event model — also the second stage of the
+   * .ics import, which stages models as local drafts before publishing.
+   */
+  public async publishEventModel(
+    model: CalendarEventData
+  ): Promise<NostrEvent> {
+    const user = this.auth.getCurrentUser();
+    if (!user) throw new Error('Not logged in');
     if (!model.title) throw new Error('Title is required');
 
     const unsigned = {
-      kind,
+      kind: model.kind,
       created_at: model.createdAt,
       tags: calendarEventToTags(model),
       content: model.description,
@@ -153,8 +174,8 @@ export class CalendarPublishService {
       authorPubkeys: [user.pubkey],
     });
     diagLog('system', 'calendar: event published', {
-      kind,
-      dTag: draft.dTag,
+      kind: model.kind,
+      dTag: model.dTag,
       edit: !!model.eventId,
     });
     return signed;

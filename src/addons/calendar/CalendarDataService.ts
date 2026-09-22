@@ -48,6 +48,11 @@ interface CalendarCache {
   version: 2;
   events: CalendarEventData[];
   collections: CalendarCollectionData[];
+  /**
+   * Locally imported (.ics) events not published yet — shown in the grid,
+   * survive refetches and reloads, removed once published.
+   */
+  drafts?: CalendarEventData[];
 }
 
 export class CalendarDataService {
@@ -110,8 +115,11 @@ export class CalendarDataService {
   }> {
     if (this.fetchInFlight) return this.fetchInFlight;
 
-    // Wiped locally and not yet published: report empty without refetching.
-    if (this.localWiped) return { events: [], collections: [] };
+    // Wiped locally and not yet published: report empty without refetching —
+    // staged drafts stay visible.
+    if (this.localWiped) {
+      return { events: [...this.getDrafts()], collections: [] };
+    }
 
     this.fetchInFlight = (async () => {
       const pubkey = AuthService.getInstance().getCurrentUser()?.pubkey ?? '';
@@ -190,6 +198,8 @@ export class CalendarDataService {
 
       events.sort((a, b) => a.startMs - b.startMs);
 
+      const drafts = this.getDrafts();
+
       this.writeCache({
         version: 2,
         events: [...events, ...privateEvents],
@@ -199,11 +209,15 @@ export class CalendarDataService {
         events: events.length,
         privateEvents: privateEvents.length,
         collections: collections.length,
+        drafts: drafts.length,
         relays: relays.length,
       });
       // Reminders (and other listeners) rebuild from the fresh data.
       TypedEventBus.getInstance().emit('calendar:data-refreshed', {});
-      return { events: [...events, ...privateEvents], collections };
+      return {
+        events: [...events, ...privateEvents, ...drafts],
+        collections,
+      };
     })();
 
     try {
@@ -221,7 +235,12 @@ export class CalendarDataService {
    */
   public wipeLocal(): void {
     this.localWiped = true;
-    this.writeCache({ version: 2, events: [], collections: [] });
+    this.writeCache({
+      version: 2,
+      events: [],
+      collections: [],
+      drafts: [],
+    });
     const storage = PerAccountLocalStorage.getInstance();
     storage.remove(StorageKeys.CALENDAR_SAVED_EVENTS);
     storage.remove(StorageKeys.CALENDAR_SUBSCRIBED_COLLECTIONS);
@@ -544,7 +563,41 @@ export class CalendarDataService {
   }
 
   private writeCache(cache: CalendarCache): void {
+    // Refetch paths don't know about drafts — never drop staged imports.
+    cache.drafts = cache.drafts ?? this.readCache()?.drafts ?? [];
     PerAccountLocalStorage.getInstance().set(StorageKeys.CALENDAR_CACHE, cache);
+  }
+
+  /** Locally imported events waiting to be published (may be empty). */
+  public getDrafts(): CalendarEventData[] {
+    return this.readCache()?.drafts ?? [];
+  }
+
+  /** Stage locally imported events; they render in the grid immediately. */
+  public addDrafts(drafts: CalendarEventData[]): void {
+    if (drafts.length === 0) return;
+    const cache = this.readCache() ?? {
+      version: 2,
+      events: [],
+      collections: [],
+    };
+    const known = new Set(
+      [...(cache.drafts ?? []), ...cache.events].map(e => e.coordinate)
+    );
+    const fresh = drafts.filter(d => !known.has(d.coordinate));
+    if (fresh.length === 0) return;
+    cache.drafts = [...(cache.drafts ?? []), ...fresh];
+    this.writeCache(cache);
+    diagLog('system', 'calendar: drafts staged', { count: fresh.length });
+  }
+
+  /** Drop drafts after successful publish. */
+  public removeDrafts(coordinates: string[]): void {
+    const cache = this.readCache();
+    if (!cache || (cache.drafts ?? []).length === 0) return;
+    const drop = new Set(coordinates);
+    cache.drafts = (cache.drafts ?? []).filter(d => !drop.has(d.coordinate));
+    this.writeCache(cache);
   }
 
   public destroy(): void {
