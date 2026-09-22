@@ -1,8 +1,11 @@
-# NoorNote 1.6.1
+# NoorNote 1.7.0
 
-## New: Addons overview page
-The "Addons" sidebar entry now opens a clean tile overview of all addons instead of a long submenu — with descriptions, an active/inactive LED and "New"/"Updated" badges. Reorder tiles by drag & drop or with the ▲▼ buttons; the order is saved per account and can be reset anytime.
+## New: Appointment booking
+Let people book time with you: configure your weekly availability in the Calendar addon and share your booking page — guests pick a free slot, you get a DM, cancellations keep everyone informed.
+
+## New: Calendar import/export & reset
+Import Google Calendar or any .ics file (with preview and range filter), export your whole calendar as .ics, and reset your calendar locally with a single publishable wipe.
 
 ## Fixes
-- Fixed broken note rendering for links that contain an naddr in the URL (false "Satellite Earth" cards and garbled link text)
-- URLs containing npubs are no longer mangled by mention detection
+- Web: NWC wallet survives IndexedDB eviction (no more lost wallet connection)
+- Links containing npubs no longer trigger false mentions
