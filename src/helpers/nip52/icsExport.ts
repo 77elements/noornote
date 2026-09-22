@@ -4,6 +4,7 @@
  * kind 31923 as timed UTC (DTSTART/DTEND in basic UTC format).
  */
 
+import { normalizeRule } from './recurrence';
 import type { CalendarEventData } from './parser';
 
 function icsEscape(value: string): string {
@@ -33,12 +34,30 @@ function foldLine(line: string): string {
 }
 
 export function calendarEventToICS(event: CalendarEventData): string {
-  const uid = event.coordinate;
+  return calendarEventsToICS([event]);
+}
+
+/**
+ * Full calendar export: multiple VEVENTs in one VCALENDAR — used by the
+ * "Export calendar (.ics)" button in the Personal calendar tab.
+ */
+export function calendarEventsToICS(events: CalendarEventData[]): string {
   const lines: string[] = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'PRODID:-//NoorNote//Calendar Addon//EN',
     'CALSCALE:GREGORIAN',
+  ];
+  for (const event of events) {
+    lines.push(...veventLines(event));
+  }
+  lines.push('END:VCALENDAR');
+  return `${lines.map(foldLine).join('\r\n')}\r\n`;
+}
+
+function veventLines(event: CalendarEventData): string[] {
+  const uid = event.coordinate;
+  const lines: string[] = [
     'BEGIN:VEVENT',
     `UID:${icsEscape(uid)}`,
     `DTSTAMP:${icsTimestamp(event.createdAt * 1000 || Date.now())}`,
@@ -63,6 +82,10 @@ export function calendarEventToICS(event: CalendarEventData): string {
   }
 
   lines.push(`SUMMARY:${icsEscape(event.title || '(Untitled event)')}`);
+  if (event.rrule) {
+    // Bare NIP-52R rule → standard RRULE line so Google & co. expand it.
+    lines.push(`RRULE:${normalizeRule(event.rrule)}`);
+  }
   if (event.description) {
     lines.push(`DESCRIPTION:${icsEscape(event.description)}`);
   }
@@ -73,8 +96,7 @@ export function calendarEventToICS(event: CalendarEventData): string {
     lines.push(`URL:${icsEscape(link)}`);
   }
   lines.push('END:VEVENT');
-  lines.push('END:VCALENDAR');
-  return `${lines.map(foldLine).join('\r\n')}\r\n`;
+  return lines;
 }
 
 /** Trigger a `.ics` download in the browser/Electron renderer. */

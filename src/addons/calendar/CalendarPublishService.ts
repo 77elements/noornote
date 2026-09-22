@@ -24,9 +24,15 @@ import {
   buildCalendarCoordinate,
   calendarEventToTags,
   CALENDAR_COLLECTION_KIND,
+  PRIVATE_LIST_KIND,
   type CalendarCollectionData,
   type CalendarEventData,
 } from '../../helpers/nip52/parser';
+import { DEFAULT_PRIVATE_LIST_ID } from './privateCalendar';
+import {
+  BOOKING_CONFIG_DTAG,
+  BOOKING_CONFIG_KIND,
+} from '../../helpers/nip52/bookingSlots';
 
 export type RSVPStatusValue = 'accepted' | 'declined' | 'tentative';
 
@@ -45,6 +51,11 @@ export interface CalendarEventDraft {
   image: string;
   /** null = one-off; otherwise an NIP-52R frequency. */
   repeat: RecurrenceFrequency | null;
+  /**
+   * Pre-built bare RRULE that overrides the repeat-frequency normalization —
+   * used by the .ics import to preserve COUNT/UNTIL from the source file.
+   */
+  rruleOverride?: string | null | undefined;
   /** Auto-publish a kind-1 share note linking the event after saving. */
   shareInTl?: boolean | undefined;
   /** Extra hashtags → `t` tags (e.g. ['booking'] for bookable slots). */
@@ -118,9 +129,11 @@ export class CalendarPublishService {
       participants: [],
       hashtags: draft.hashtags ?? [],
       links: [],
-      rrule: draft.repeat
-        ? buildRecurrenceRule({ frequency: draft.repeat, startMs })
-        : null,
+      rrule:
+        draft.rruleOverride ??
+        (draft.repeat
+          ? buildRecurrenceRule({ frequency: draft.repeat, startMs })
+          : null),
       createdAt: Math.floor(Date.now() / 1000),
     };
 
@@ -170,17 +183,19 @@ export class CalendarPublishService {
   }
 
   /**
-   * Bulk deletion for the booking slot rebuild: ONE kind-5 event carrying all
-   * coordinates (NIP-09 allows multiple `a` tags) to the calendar relay set,
-   * plus ONE silent breadth pass. No per-item toasts — the caller (booking
-   * rebuild) surfaces a single summary toast.
+   * Bulk deletion: ONE kind-5 event carrying all coordinates (NIP-09 allows
+   * multiple `a` tags) to the calendar relay set, plus ONE silent breadth
+   * pass. No per-item toasts — the caller surfaces a single summary toast.
    */
-  public async deleteEventsBulk(events: CalendarEventData[]): Promise<boolean> {
+  public async deleteCoordinatesBulk(
+    items: { coordinate: string; kind: number }[],
+    reason: string
+  ): Promise<boolean> {
     const user = this.auth.getCurrentUser();
-    if (!user || events.length === 0) return false;
+    if (!user || items.length === 0) return false;
 
-    const coordinates = events.map(e => e.coordinate);
-    const kinds = [...new Set(events.map(e => e.kind))];
+    const coordinates = items.map(item => item.coordinate);
+    const kinds = [...new Set(items.map(item => item.kind))];
     const unsigned = {
       kind: 5,
       created_at: Math.floor(Date.now() / 1000),
@@ -188,7 +203,7 @@ export class CalendarPublishService {
         ...coordinates.map(coordinate => ['a', coordinate] as string[]),
         ...kinds.map(kind => ['k', String(kind)] as string[]),
       ],
-      content: `Deleted ${events.length} booking slots`,
+      content: reason,
       pubkey: user.pubkey,
     };
     const signed = await this.auth.signEvent(unsigned);
@@ -198,23 +213,112 @@ export class CalendarPublishService {
     const accepted = await this.transport.publish(relays, signed);
 
     // Breadth pass (settings relays + background broadcast), silent — the
-    // rebuild's summary toast is the user-facing signal.
+    // caller's summary toast is the user-facing signal.
     try {
       await ModuleLoader.getInstance()
         .getApi<PostsModuleApi>('posts')
-        ?.deleteByCoordinates(
-          coordinates,
-          `Deleted ${events.length} booking slots`
-        );
+        ?.deleteByCoordinates(coordinates, reason);
     } catch {
       // Breadth pass is best-effort.
     }
 
-    diagLog('system', 'booking: bulk deletion', {
-      slots: events.length,
+    diagLog('system', 'calendar: bulk deletion', {
+      items: items.length,
       acceptedRelays: accepted.size,
     });
     return accepted.size > 0;
+  }
+
+  /**
+   * Bulk deletion for the booking slot rebuild (kept for the booking paths).
+   */
+  public async deleteEventsBulk(events: CalendarEventData[]): Promise<boolean> {
+    return this.deleteCoordinatesBulk(
+      events.map(event => ({ coordinate: event.coordinate, kind: event.kind })),
+      `Deleted ${events.length} booking slots`
+    );
+  }
+
+  /**
+   * Make the calendar empty on relays (Reset → "Publish deletions"): fetch
+   * everything the user owns fresh — events (incl. booking slots), private
+   * events, collections, the private list, the booking availability config,
+   * own RSVPs (public 31925 + private 32069) — and bulk-delete it all with
+   * one NIP-09 pass. Returns the number of deleted coordinates.
+   */
+  public async wipeCalendarFromRelays(): Promise<number> {
+    const user = this.auth.getCurrentUser();
+    if (!user) throw new Error('Not logged in');
+
+    const { CalendarDataService } = await import('./CalendarDataService');
+    const dataService = CalendarDataService.getInstance();
+    // Lift the local-wipe gate BEFORE collecting: the collection fetch must
+    // see what relays actually still have.
+    dataService.clearLocalWipe();
+    const { events, collections } = await dataService.fetchOwnCalendarData();
+
+    const relays = await resolveCalendarRelays([user.pubkey]);
+    const rsvps = await this.transport.fetchDirect(
+      relays,
+      [
+        {
+          kinds: [31925 as NDKKind, 32069 as NDKKind],
+          authors: [user.pubkey],
+          limit: 500,
+        },
+      ],
+      10_000,
+      'calendar-rsvp-wipe'
+    );
+
+    const items: { coordinate: string; kind: number }[] = [
+      ...events.map(event => ({
+        coordinate: event.coordinate,
+        kind: event.kind,
+      })),
+      ...collections.map(collection => ({
+        coordinate: collection.coordinate,
+        kind: CALENDAR_COLLECTION_KIND,
+      })),
+      {
+        coordinate: buildCalendarCoordinate(
+          PRIVATE_LIST_KIND,
+          user.pubkey,
+          DEFAULT_PRIVATE_LIST_ID
+        ),
+        kind: PRIVATE_LIST_KIND,
+      },
+      {
+        coordinate: buildCalendarCoordinate(
+          BOOKING_CONFIG_KIND,
+          user.pubkey,
+          BOOKING_CONFIG_DTAG
+        ),
+        kind: BOOKING_CONFIG_KIND,
+      },
+      ...rsvps
+        .map(event => {
+          const dTag = event.tags.find(tag => tag[0] === 'd')?.[1];
+          return dTag
+            ? {
+                coordinate: buildCalendarCoordinate(
+                  event.kind ?? 0,
+                  user.pubkey,
+                  dTag
+                ),
+                kind: event.kind ?? 0,
+              }
+            : null;
+        })
+        .filter((item): item is { coordinate: string; kind: number } =>
+          Boolean(item)
+        ),
+    ];
+
+    if (items.length === 0) return 0;
+    const ok = await this.deleteCoordinatesBulk(items, 'Calendar reset');
+    if (!ok) throw new Error('Deletion was not accepted by any relay');
+    return items.length;
   }
 
   /** Delete an own public calendar collection (kind 31924). */

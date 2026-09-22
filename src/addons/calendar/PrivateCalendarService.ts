@@ -336,6 +336,11 @@ export class PrivateCalendarService {
     return ok;
   }
 
+  /** Local-only wipe (Reset): drop the cached list + decrypted events. */
+  public clearLocal(): void {
+    this.list = null;
+  }
+
   /**
    * Accept a received invitation: add the event ref (with its view key) to
    * the default private list and republish, so the event shows up in the

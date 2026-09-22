@@ -19,6 +19,7 @@ import {
 import { isCalendarEnabled, setCalendarEnabled } from './index';
 import { CalendarGridView } from './CalendarGridView';
 import { BookingManager } from './BookingManager';
+import { CalendarImportExportManager } from './CalendarImportExport';
 import {
   CalendarReminderService,
   LEAD_OPTIONS,
@@ -30,6 +31,7 @@ export class CalendarAddonView extends View {
   private leadDropdown: NnDropdown | null = null;
   private grid: CalendarGridView | null = null;
   private bookingManager: BookingManager | null = null;
+  private importExport: CalendarImportExportManager | null = null;
 
   constructor() {
     super();
@@ -53,6 +55,7 @@ export class CalendarAddonView extends View {
           'success'
         );
         this.renderGrid();
+        this.renderImportExport();
       },
     });
 
@@ -76,6 +79,7 @@ export class CalendarAddonView extends View {
       </div>
       <div class="tab-content tab-content--active" data-tab-content="personal">
         <div data-addon-content="calendar-grid"></div>
+        <div data-addon-content="calendar-io"></div>
       </div>
       <div class="tab-content" data-tab-content="booking">
         <div data-addon-content="calendar-booking"></div>
@@ -88,6 +92,28 @@ export class CalendarAddonView extends View {
     );
     this.renderGrid();
     this.renderBooking();
+    this.renderImportExport();
+  }
+
+  /** Mount the import/export section inline when enabled. */
+  private renderImportExport(): void {
+    const slot = this.container.querySelector(
+      '[data-addon-content="calendar-io"]'
+    ) as HTMLElement | null;
+    if (!slot) return;
+
+    const npub = AuthService.getInstance().getCurrentUser()?.npub ?? '';
+    const shouldShow = isCalendarEnabled() && !!npub;
+
+    if (!shouldShow) {
+      this.importExport?.destroy();
+      this.importExport = null;
+      slot.innerHTML = '';
+      return;
+    }
+
+    if (this.importExport) return; // already mounted
+    this.importExport = new CalendarImportExportManager(slot);
   }
 
   /** Reminder default lead: applies to every event without its own override. */
@@ -160,6 +186,8 @@ export class CalendarAddonView extends View {
   public destroy(): void {
     this.grid?.destroy();
     this.grid = null;
+    this.importExport?.destroy();
+    this.importExport = null;
     this.bookingManager?.destroy();
     this.bookingManager = null;
     this.enableSwitch?.destroy();

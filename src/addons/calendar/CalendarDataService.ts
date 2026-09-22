@@ -71,6 +71,22 @@ export class CalendarDataService {
     collections: CalendarCollectionData[];
   }> | null = null;
   private destroyed = false;
+  /**
+   * Set by the local wipe (Reset) until the deletions are published (or the
+   * session ends): relay refetches return empty so the wiped state holds
+   * instead of quietly restoring what relays still have.
+   */
+  private localWiped = false;
+
+  /** True between a local wipe and its publish — relay fetches are gated. */
+  public isLocalWiped(): boolean {
+    return this.localWiped;
+  }
+
+  /** Lift the wipe gate (called right before the publish collects data). */
+  public clearLocalWipe(): void {
+    this.localWiped = false;
+  }
 
   /** Cached events for instant render (may be empty on first login). */
   public getCachedEvents(): CalendarEventData[] {
@@ -93,6 +109,9 @@ export class CalendarDataService {
     collections: CalendarCollectionData[];
   }> {
     if (this.fetchInFlight) return this.fetchInFlight;
+
+    // Wiped locally and not yet published: report empty without refetching.
+    if (this.localWiped) return { events: [], collections: [] };
 
     this.fetchInFlight = (async () => {
       const pubkey = AuthService.getInstance().getCurrentUser()?.pubkey ?? '';
@@ -192,6 +211,25 @@ export class CalendarDataService {
     } finally {
       this.fetchInFlight = null;
     }
+  }
+
+  /**
+   * Local-only wipe (Reset): empty cache, saved external events, subscribed
+   * collections, per-event reminder overrides + acks and dismissed invites.
+   * Nothing touches relays — until the user publishes, a reload restores
+   * everything. Settings (enabled flag, default lead) survive.
+   */
+  public wipeLocal(): void {
+    this.localWiped = true;
+    this.writeCache({ version: 2, events: [], collections: [] });
+    const storage = PerAccountLocalStorage.getInstance();
+    storage.remove(StorageKeys.CALENDAR_SAVED_EVENTS);
+    storage.remove(StorageKeys.CALENDAR_SUBSCRIBED_COLLECTIONS);
+    storage.remove(StorageKeys.CALENDAR_EVENT_LEADS);
+    storage.remove(StorageKeys.CALENDAR_REMINDER_ACKED);
+    storage.remove(StorageKeys.CALENDAR_DISMISSED_INVITES);
+    diagLog('system', 'calendar: local wipe');
+    TypedEventBus.getInstance().emit('calendar:saved-changed', {});
   }
 
   /**

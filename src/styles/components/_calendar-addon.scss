@@ -8,7 +8,11 @@
 .calendar-addon {
   display: flex;
   flex-direction: column;
-  padding: 0 calc($gap * 1.5) calc($gap * 1.5);
+}
+
+// Abstand zwischen dem Grid und der Import/Export-Sektion.
+.view-content--addon-calendar [data-addon-content='calendar-grid'] {
+  margin-bottom: calc($gap * 2); // 2rem
 }
 
 .calendar-addon__toolbar {
@@ -489,5 +493,24 @@
     input {
       width: auto;
     }
+  }
+}
+
+// ── Import / Export section (personal calendar tab) ──
+.calendar-io {
+  h3 {
+    margin-bottom: calc($gap / 2);
+  }
+
+  &__import {
+    margin-bottom: calc($gap * 2);
+  }
+
+  &__actions {
+    gap: calc($gap / 2);
+  }
+
+  .ui-list__item {
+    justify-content: space-between;
   }
 }

@@ -247,6 +247,18 @@ export class BookingService {
   public async fetchConfigForPubkey(
     pubkey: string
   ): Promise<BookingConfig | null> {
+    // Local wipe (own calendar Reset) not yet published: own config reads
+    // default until the wipe is published — other owners are unaffected.
+    const { CalendarDataService } = await import('./CalendarDataService');
+    const ownPubkey = AuthService.getInstance().getCurrentUser()?.pubkey;
+    if (
+      ownPubkey &&
+      pubkey === ownPubkey &&
+      CalendarDataService.getInstance().isLocalWiped()
+    ) {
+      return null;
+    }
+
     const relays = await resolveCalendarRelays([pubkey]);
     if (relays.length === 0) return null;
     const raw = await this.transport.fetchDirect(
@@ -282,6 +294,18 @@ export class BookingService {
     ownerPubkey: string,
     options?: { includePast?: boolean }
   ): Promise<OwnerSlot[]> {
+    // Local wipe (own calendar Reset) not yet published: own slots stay
+    // hidden — other owners' booking pages are unaffected.
+    const { CalendarDataService } = await import('./CalendarDataService');
+    const ownPubkey = AuthService.getInstance().getCurrentUser()?.pubkey;
+    if (
+      ownPubkey &&
+      ownerPubkey === ownPubkey &&
+      CalendarDataService.getInstance().isLocalWiped()
+    ) {
+      return [];
+    }
+
     const relays = await resolveCalendarRelays([ownerPubkey]);
     if (relays.length === 0) return [];
 

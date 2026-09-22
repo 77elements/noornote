@@ -18,6 +18,7 @@
 import { ToastService } from '../../services/ToastService';
 import { AuthService } from '../../services/AuthService';
 import { UserProfileService } from '../../services/UserProfileService';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { NnDropdown } from '../../components/ui/NnDropdown';
 import { Switch } from '../../components/ui/Switch';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
@@ -91,11 +92,18 @@ export class BookingManager {
   /** Staged dropdown selections (written on change, applied on save). */
   private dropdowns: NnDropdown[] = [];
   private enableSwitch: Switch | null = null;
+  private busSubId: string | null = null;
 
   constructor(slot: HTMLElement) {
     this.element = document.createElement('div');
     this.element.className = 'booking-manager';
     slot.appendChild(this.element);
+    // Local wipe (calendar Reset) clears slots + availability config — full
+    // reload so both fall back to defaults.
+    this.busSubId = TypedEventBus.getInstance().on(
+      'calendar:saved-changed',
+      () => void this.load()
+    );
     void this.load();
   }
 
@@ -110,7 +118,16 @@ export class BookingManager {
       service.fetchOwnerSlots(pubkey),
     ]);
     if (this.destroyed) return;
-    if (config) this.config = config;
+    if (config) {
+      this.config = config;
+    } else {
+      // null means "no config yet" or "wiped locally" — only the wipe may
+      // reset what is already staged (relay hiccups keep the current state).
+      const { CalendarDataService } = await import('./CalendarDataService');
+      if (CalendarDataService.getInstance().isLocalWiped()) {
+        this.config = defaultConfig();
+      }
+    }
     this.slots = slots;
     this.loading = false;
     this.render();
@@ -590,6 +607,10 @@ export class BookingManager {
 
   public destroy(): void {
     this.destroyed = true;
+    if (this.busSubId) {
+      TypedEventBus.getInstance().off(this.busSubId);
+      this.busSubId = null;
+    }
     this.dropdowns.forEach(d => d.destroy());
     this.dropdowns = [];
     this.element.remove();
