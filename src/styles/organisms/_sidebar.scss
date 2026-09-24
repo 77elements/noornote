@@ -25,7 +25,7 @@
   // Horizontal spacing lives on .sidebar-scrollable's PADDING (not here):
   // a scroll container clips at its padding-box edge, so the nav wheel can
   // bleed into the padding via negative margins and stay fully visible.
-  padding: $gap 0;
+  padding: 0 0 $gap;
 
   @include tablet-down {
     padding: 0;
