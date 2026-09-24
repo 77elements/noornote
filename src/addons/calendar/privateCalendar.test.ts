@@ -94,7 +94,7 @@ describe('private event payload → parseCalendarEvent', () => {
       rrule: null,
     });
     expect(
-      parseCalendarEvent({ kind: 31999, pubkey: 'p', tags: payload })
+      parseCalendarEvent({ kind: 20, pubkey: 'p', tags: payload })
     ).toBeNull();
 
     const parsed = parseCalendarEvent({

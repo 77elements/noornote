@@ -61,7 +61,7 @@ export function parseModeration(ev: NostrEvent): DhikrModeration | null {
   const d = ev.tags.find(t => t[0] === 'd')?.[1];
   if (d !== MODERATION_DTAG) return null;
   try {
-    // kind:31k config payload (own service schema — fields narrowed below)
+    // kind 31k config payload (own service schema — fields narrowed below)
     const body = JSON.parse(ev.content || '{}') as {
       overrides?: unknown;
       hiddenRounds?: unknown;
