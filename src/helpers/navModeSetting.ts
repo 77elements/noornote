@@ -14,6 +14,7 @@ import {
   PerAccountLocalStorage,
   StorageKeys,
 } from '../services/PerAccountLocalStorage';
+import { diagLog } from '../services/DiagnosticLogger';
 
 export function isClassicMenuEnabled(): boolean {
   return PerAccountLocalStorage.getInstance().get<boolean>(
@@ -25,6 +26,9 @@ export function isClassicMenuEnabled(): boolean {
 export function setClassicMenuEnabled(enabled: boolean): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.CLASSIC_MENU, enabled);
   applyNavMode();
+  diagLog('system', 'navigation mode switched', {
+    mode: enabled ? 'classic' : 'wheel',
+  });
 }
 
 /**

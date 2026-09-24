@@ -71,11 +71,6 @@
     }
   }
 
-  // Collapse toggle floats right (search sits left in its place)
-  .sidebar-collapse-toggle {
-    margin-left: auto;
-  }
-
   // In the phone drawer the header stays visible (search lives here); only
   // the collapse toggle is pointless inside a drawer.
   .layout--phone & {
@@ -173,14 +168,42 @@ html.sidebar-collapsed:not(.layout--phone) {
   .scroll-to-top-btn,
   .notifications-badge,
   .dm-badge,
-  .dropup-arrow {
+  .dropup-arrow,
+  .web-update-banner,
+  // Classic nav already carries a Search icon in the rail — no duplicate.
+  .sidebar-search-btn,
+  // Footer buttons (Download/Sign out) have no place in the 64px rail.
+  .sidebar-logout {
     display: none !important;
   }
 
   // Collapsed rail always uses the classic icon list (the wheel cannot shrink
-  // to 64px) — this also overrides the wheel-mode hide below (higher specificity).
+  // to 64px). !important beats the wheel-mode hide gate further down in this
+  // file (same specificity, later source order).
   .sidebar .primary-nav {
-    display: block;
+    display: block !important;
+  }
+
+  // Footer in the rail: icon-only, stacked (labels would truncate at 64px).
+  // The footer Download button is hidden — the rail already has the Download
+  // icon in .primary-nav (duplicate otherwise).
+  .sidebar-logout {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc($gap / 2);
+
+    > .btn--mini {
+      margin-left: 0;
+      padding: calc($gap / 2);
+      font-size: 0;
+      gap: 0;
+
+      .primary-nav__item-icon {
+        width: 20px;
+        height: 20px;
+      }
+    }
   }
 
   // Center the remaining icons.

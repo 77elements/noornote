@@ -23,6 +23,10 @@ vi.mock('../services/PerAccountLocalStorage', () => ({
   },
 }));
 
+vi.mock('../services/DiagnosticLogger', () => ({
+  diagLog: vi.fn(),
+}));
+
 import {
   isClassicMenuEnabled,
   setClassicMenuEnabled,
