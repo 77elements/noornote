@@ -97,7 +97,7 @@
     transition: width $transition-all, opacity $transition-all, padding $transition-all, border-color $transition-all;
 
     &::placeholder {
-      color: var(--text-alpha-light);
+      color: var(--color-3);
     }
 
     &:focus {

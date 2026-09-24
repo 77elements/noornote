@@ -762,6 +762,22 @@ export class App {
       'adv',
       true
     );
+    // /lists → overview page with one tile per list (Bookmarks/Follows/Muted/Tribes).
+    // Replaces the former sidebar submenu in the nav wheel (2026-09-24).
+    this.registerRoute(
+      '/lists',
+      'lists-overview',
+      'lists-overview',
+      'lov',
+      true
+    );
+    this.registerRoute(
+      '/lists/',
+      'lists-overview',
+      'lists-overview',
+      'lov',
+      true
+    );
     this.registerMarketplaceRoutes();
 
     // Catch-all: bare nip19 entities in URL path (njump.me links like noornote.app/nprofile1...)

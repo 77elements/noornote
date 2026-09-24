@@ -1,0 +1,52 @@
+/**
+ * Lists Overview — the /lists route: one nn-card tile per list
+ * (Bookmarks / Follows / Muted / Tribes). Mirrors the /addons overview.
+ */
+
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+.lists-overview {
+  &__head {
+    margin-bottom: calc($gap / 2);
+  }
+
+  &__intro {
+    margin-bottom: $gap;
+    color: var(--color-3);
+    font-size: 0.9rem;
+  }
+}
+
+.list-tile {
+  cursor: pointer;
+
+  &[data-list-tile-disabled] {
+    opacity: 0.55;
+    cursor: default;
+  }
+
+  &__head {
+    align-items: flex-start;
+  }
+
+  // Right side of the head row: unread diode + tile icon (Bookmarks tile)
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+    flex-shrink: 0;
+  }
+
+  &__icon {
+    width: 20px;
+    height: 20px;
+    color: var(--color-4);
+    flex-shrink: 0;
+  }
+
+  &__desc {
+    color: var(--color-3);
+    font-size: 0.85rem;
+  }
+}

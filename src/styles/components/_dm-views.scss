@@ -99,7 +99,7 @@
 
   p {
     margin: 0;
-    &.text-alpha-medium {
+    &.empty-hint {
       color: var(--color-3);
       margin-top: calc($gap / 2);
     }
@@ -294,7 +294,7 @@
 
   p {
     margin: 0;
-    &.text-alpha-medium {
+    &.empty-hint {
       margin-top: calc($gap / 2);
     }
   }

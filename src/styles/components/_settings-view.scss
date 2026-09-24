@@ -214,7 +214,7 @@
 
 .relay-latency {
   @extend %small;
-  color: var(--text-alpha-light);
+  color: var(--color-3);
   font-weight: 400;
   margin-left: calc($gap / 4);
 }
@@ -374,7 +374,7 @@
 }
 
 .zap-info {
-  color: var(--text-alpha-heavy);
+  color: var(--color-5);
   line-height: 1.6;
   margin-bottom: $gap;
 }
@@ -464,7 +464,7 @@
     color: var(--color-5);
 
     &::placeholder {
-      color: var(--text-alpha-light);
+      color: var(--color-3);
     }
 
     &:focus {
@@ -889,13 +889,13 @@
 // Danger Zone Modal Styles
 .danger-zone-modal {
   p {
-    color: var(--text-alpha-heavy);
+    color: var(--color-5);
     line-height: 1.5;
   }
 
   ul, ol {
     margin: calc($gap / 2) 0 0 $gap * 1.5;
-    color: var(--text-alpha-heavy);
+    color: var(--color-5);
     line-height: 1.6;
 
     li {

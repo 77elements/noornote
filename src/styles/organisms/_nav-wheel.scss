@@ -1,0 +1,151 @@
+/**
+ * Nav Wheel — circular main navigation in the sidebar (default nav mode).
+ *
+ * Static wheel (no rotation): 8 items on a circle around the NoorNote glyph.
+ * Active/hover language mirrors the classic nav (--bg-accent + --color-4).
+ * Visibility is gated in _sidebar.scss: hidden for classic-nav, logged-out
+ * and the collapsed icon rail.
+ */
+
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+.nn-wheel {
+  // Geometry: the ring is sized so ring radius + half button never exceeds
+  // the half box — buttons at the 0°/90°/180°/270° extremes stay fully
+  // inside the box (no clipping by .sidebar-scrollable's overflow-x).
+  --wheel-ring: 204px; // visible ring diameter
+  --wheel-item-size: 46px; // touch target >= 44px
+  --wheel-icon-size: 21px;
+
+  // Break out of .sidebar-content's horizontal padding: the buttons on the
+  // ring's left/right extremes need the full 250px column width. Everything
+  // below the wheel keeps its padding.
+  width: calc(100% + $gap * 2);
+  margin: 0 -1rem 3rem;
+
+  // Box height = ring + one button row (top/bottom buttons stick out by
+  // half a button each).
+  height: calc(var(--wheel-ring) + var(--wheel-item-size));
+  position: relative;
+  flex-shrink: 0;
+
+  @include tablet-down {
+    // .sidebar-content halves its padding on small screens — mirror it.
+    width: calc(100% + $gap);
+    margin: 0 (calc($gap / -2)) $gap;
+  }
+
+  // The ring (smaller than the box, centered)
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: var(--wheel-ring);
+    height: var(--wheel-ring);
+    translate: -50% -50%;
+    border: 1px solid var(--color-2);
+    border-radius: $radius-full;
+  }
+
+  // Center: NoorNote glyph (currentColor → theme accent)
+  &__center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    display: grid;
+    place-items: center;
+  }
+
+  &__logo {
+    width: 52px;
+    height: 52px;
+    color: var(--color-4);
+  }
+
+  // Items sit ON the ring line, placed by their --a angle (set inline).
+  &__item {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: var(--wheel-item-size);
+    height: var(--wheel-item-size);
+    margin: calc(var(--wheel-item-size) / -2);
+    border: none;
+    border-radius: $radius-full;
+    background: transparent;
+    color: var(--color-5);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transform: rotate(var(--a)) translate(calc(var(--wheel-ring) / 2))
+      rotate(calc(var(--a) * -1));
+    transition: $transition-colors;
+
+    &:hover,
+    &:focus-visible,
+    &--active {
+      background: var(--bg-accent);
+      color: var(--color-4);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-4);
+      outline-offset: 2px;
+    }
+  }
+
+  &__icon {
+    width: var(--wheel-icon-size);
+    height: var(--wheel-icon-size);
+  }
+
+  // Hover label below the button. The side items (0°/180°) pull their label
+  // toward the wheel center so it never crosses the box edge.
+  &__label {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 50%;
+    translate: -50%;
+    padding: 2px 8px;
+    border-radius: $radius-pill;
+    background: var(--color-2);
+    color: var(--color-5);
+    font-size: 0.68rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 150ms ease-in-out;
+    z-index: 1;
+  }
+
+  // 0° (right, notifications): label extends left, into the ring
+  &__item[data-wheel-item='notifications'] &__label {
+    left: auto;
+    right: 10px;
+    translate: 0;
+  }
+
+  // 180° (left, settings): label extends right, into the ring
+  &__item[data-wheel-item='settings'] &__label {
+    left: 10px;
+    translate: 0;
+  }
+
+  &__item:hover &__label,
+  &__item:focus-visible &__label,
+  &__item--active &__label {
+    opacity: 1;
+  }
+
+  // Unread counters — same badge classes and SAME SIZE as the classic nav;
+  // parked INSIDE the button's top-left corner (outside positioning would
+  // cross the wheel box edge on the ring's side items).
+  &__badge {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+  }
+}

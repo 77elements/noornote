@@ -13,6 +13,11 @@
   padding: calc($gap / 2) calc($gap * 0.75);
   background: var(--color-2);
   border-radius: $radius-xl;
+  // Unified widget typography (all sidebar widgets — BTC price, Nostr Majlis,
+  // Wallet Balance — inherit this; no per-widget overrides).
+  color: var(--color-5);
+  font-weight: 500;
+  line-height: 1.5;
 
   &__row {
     display: grid;
@@ -30,21 +35,44 @@
     grid-template-columns: 1fr auto auto;
   }
 
+  // Three-column widget content row (shared by Wallet Balance and BTC Price):
+  // crypto value LEFT, fiat value RIGHT, action icon last. The action icon is
+  // always a 20x20 box (master: Wallet Balance eye toggle); the SVG inherits
+  // the unified widget color via currentColor.
+  &__cols {
+    display: grid;
+    grid-template-columns: 1fr auto 20px;
+    align-items: center;
+    gap: calc($gap / 2);
+
+    > :first-child {
+      text-align: left;
+    }
+
+    > :nth-child(2) {
+      text-align: right;
+    }
+
+    > :last-child {
+      display: grid;
+      place-items: center;
+      width: 20px;
+      height: 20px;
+      justify-self: end;
+
+      // Action-icon size — an action can opt into a smaller glyph via
+      // --widget-icon-size (e.g. the dense sync glyph renders 16px).
+      svg {
+        width: var(--widget-icon-size, 20px);
+        height: var(--widget-icon-size, 20px);
+      }
+    }
+  }
+
   &__head {
-    color: var(--color-3);
     padding-bottom: calc($gap / 4);
     margin-bottom: calc($gap / 4);
     border-bottom: 1px solid var(--surface-tint);
-  }
-
-  &__vals {
-    color: var(--color-5);
-    font-weight: 500;
-  }
-
-  &__label {
-    color: var(--color-3);
-    font-weight: 400;
   }
 
   &__empty {
@@ -53,16 +81,26 @@
   }
 
   // Manual refresh action (icon-sync sprite) — sits in the row's last column.
+  // The sync glyph fills its viewBox almost completely, so it renders a step
+  // smaller (16px in the 20px box) and softened to match the Wallet Balance
+  // eye toggle (opacity 0.5, full on hover).
   &__refresh {
     display: block;
     padding: 0;
     background: none;
     border: none;
-    color: var(--color-3);
+    color: var(--color-5);
     cursor: pointer;
     line-height: 0;
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+    // The sync glyph fills its viewBox almost completely — render it smaller
+    // so it visually matches the Wallet Balance eye icon.
+    --widget-icon-size: 16px;
 
-    &:hover { color: var(--color-5); }
+    &:hover {
+      opacity: 1;
+    }
 
     // Locked (fetch running / cooldown) — greyed out, no pointer. Must come
     // after :hover so the disabled color wins on hover too.

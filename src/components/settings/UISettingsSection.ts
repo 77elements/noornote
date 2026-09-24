@@ -31,6 +31,10 @@ import {
   isHideHighlightsEnabled,
   setHideHighlightsEnabled,
 } from '../../helpers/highlightSetting';
+import {
+  isClassicMenuEnabled,
+  setClassicMenuEnabled,
+} from '../../helpers/navModeSetting';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { SettingsModuleApi } from '../../modules/settings/contracts';
 
@@ -41,6 +45,7 @@ export class UISettingsSection extends SettingsSection {
   private layoutModeDropdown: NnDropdown | null = null;
   private postTruncationSwitch: Switch | null = null;
   private hideSelfRepostsSwitch: Switch | null = null;
+  private classicMenuSwitch: Switch | null = null;
   private hideHighlightsSwitch: Switch | null = null;
   private contentVisibilitySwitch: Switch | null = null;
   private clientTagSwitch: Switch | null = null;
@@ -146,6 +151,16 @@ export class UISettingsSection extends SettingsSection {
                 )
                 .join('')}
             </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="setting">
+            <span class="setting__label">Classic Menu</span>
+            <div class="setting__control" id="classic-menu-switch-container"></div>
+            <p class="setting__desc">
+              Bring back the old, linear navigation.
+            </p>
           </div>
         </section>
 
@@ -375,6 +390,29 @@ export class UISettingsSection extends SettingsSection {
       postTruncationContainer.innerHTML = this.postTruncationSwitch.render();
       this.postTruncationSwitch.setupEventListeners(
         postTruncationContainer as HTMLElement
+      );
+    }
+
+    // Initialize Classic Menu switch (wheel = default, classic = fallback)
+    const classicMenuContainer = contentContainer.querySelector(
+      '#classic-menu-switch-container'
+    );
+    if (classicMenuContainer) {
+      this.classicMenuSwitch = new Switch({
+        label: '',
+        checked: isClassicMenuEnabled(),
+        onChange: checked => {
+          setClassicMenuEnabled(checked);
+          this.eventBus.emit('settings:nav-mode-changed', { classic: checked });
+          ToastService.show(
+            checked ? 'Classic menu active' : 'Circular navigation active',
+            'success'
+          );
+        },
+      });
+      classicMenuContainer.innerHTML = this.classicMenuSwitch.render();
+      this.classicMenuSwitch.setupEventListeners(
+        classicMenuContainer as HTMLElement
       );
     }
 

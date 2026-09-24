@@ -115,6 +115,7 @@
 @use 'components/relay-browser';
 @use 'components/addons-view';
 @use 'components/addons-overview';
+@use 'components/lists-overview';
 @use 'components/profile-booking';
 @use 'components/follow-packs';
 @use 'components/git-event-card';
@@ -161,6 +162,7 @@
 
 // 5. Organisms - Complex UI sections
 @use 'organisms/sidebar';
+@use 'organisms/nav-wheel';
 @use 'organisms/note-header';
 @use 'organisms/note-menu';
 

@@ -440,6 +440,8 @@ export interface AppEvents {
   'settings:article-foaf-degree-changed': ArticleFoafDegreeChangedPayload;
   'settings:hide-self-reposts-changed': HideSelfRepostsChangedPayload;
   'settings:hide-highlights-changed': HideHighlightsChangedPayload;
+  /** Classic-Menu switch flipped — payload: { classic: boolean }. */
+  'settings:nav-mode-changed': { classic: boolean };
 
   // ── View Tabs ──────────────────────────────
   'view-tab:opened': ViewTabOpenedPayload;

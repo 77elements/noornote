@@ -217,7 +217,7 @@ export class NoteTakingView extends View {
         <div class="note-taking__empty">
           <svg width="48" height="48"><use href="#icon-note"/></svg>
           <p>${head}</p>
-          <p class="text-alpha-medium">${sub}</p>
+          <p class="empty-hint">${sub}</p>
           ${info}
         </div>
       `;

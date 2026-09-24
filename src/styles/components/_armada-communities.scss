@@ -56,7 +56,7 @@
     @extend %small;
     display: block;
     font-weight: 400;
-    color: $text-alpha-heavy;
+    color: var(--color-5);
     margin-top: calc($gap / 8);
     overflow: hidden;
     text-overflow: ellipsis;

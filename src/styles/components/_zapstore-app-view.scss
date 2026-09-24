@@ -205,12 +205,12 @@
 
   &__summary {
     @extend %small;
-    color: var(--text-alpha-medium);
+    color: var(--color-3);
   }
 
   &__desc {
     @include compact;
-    color: var(--text-alpha-heavy);
+    color: var(--color-5);
     line-height: 1.5;
     margin-bottom: calc($gap * 0.75);
     display: -webkit-box;

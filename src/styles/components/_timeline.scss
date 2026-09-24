@@ -199,7 +199,7 @@
   // Quoted body reads as a secondary preview: slightly smaller and dimmed.
   .event-content {
     @include compact;
-    color: var(--text-alpha-heavy);
+    color: var(--color-5);
   }
 
   // Max nesting depth: after 7 levels, drop the box padding so deeply nested

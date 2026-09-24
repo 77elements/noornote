@@ -96,13 +96,16 @@ export class WalletBalanceDisplay {
 
   private createElement(): HTMLElement {
     const container = document.createElement('div');
-    container.className = 'wallet-balance-display';
+    container.className = 'sidebar-widget';
     container.innerHTML = `
-      <div class="wallet-balance-content">
-        <span class="wallet-balance-amount">--</span>
-        <span class="sats-icon">丰</span>
-        <svg class="wallet-balance-exchange"><use href="#icon-switch-arrows-horizontal"/></svg>
-        <span class="wallet-balance-fiat-amount">--</span>
+      <div class="sidebar-widget__cols">
+        <span class="wallet-balance-left">
+          <span class="wallet-balance-amount">--</span>
+          <span class="sats-icon">丰</span>
+        </span>
+        <span class="wallet-balance-right">
+          <span class="wallet-balance-fiat-amount">--</span>
+        </span>
         <button class="wallet-balance-toggle" title="Toggle visibility" aria-label="Toggle balance visibility">
           <svg class="eye-icon eye-open"><use href="#icon-eye-open"/></svg>
           <svg class="eye-icon eye-closed" style="display: none;"><use href="#icon-eye-closed"/></svg>
@@ -182,9 +185,12 @@ export class WalletBalanceDisplay {
     }
 
     if (!this.balanceVisible) {
-      // Hidden state
+      // Hidden state — fiat dots carry the currency symbol (mirrors the
+      // visible fiat "144,08 €", like the sats dots keep the 丰 icon).
       if (amountEl) amountEl.textContent = '••••';
-      if (fiatAmountEl) fiatAmountEl.textContent = '••••';
+      if (fiatAmountEl) {
+        fiatAmountEl.textContent = `•••• ${this.exchangeRateService.getCurrencySymbol(this.selectedCurrency)}`;
+      }
       return;
     }
 

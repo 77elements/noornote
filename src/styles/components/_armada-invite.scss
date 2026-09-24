@@ -50,11 +50,11 @@
   }
 
   &__sep {
-    color: $text-alpha-medium;
+    color: var(--color-3);
   }
 
   &__kind {
-    color: $text-alpha-heavy;
+    color: var(--color-5);
   }
 
   &__row {
@@ -119,7 +119,7 @@
     flex-wrap: wrap;
     gap: calc($gap / 2);
     margin-top: calc($gap / 4);
-    color: $text-alpha-heavy;
+    color: var(--color-5);
   }
 
   &__meta-bit {
@@ -183,13 +183,13 @@
   &--missing-secret,
   &--incomplete {
     .armada-invite__brand {
-      color: $text-alpha-heavy;
+      color: var(--color-5);
     }
   }
 
   &--fetch-failed {
     .armada-invite__icon {
-      color: $text-alpha-heavy;
+      color: var(--color-5);
     }
   }
 

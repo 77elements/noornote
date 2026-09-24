@@ -130,7 +130,7 @@
 .profile-status {
   @include text-truncate;
   margin: 0 0 $gap 0;
-  color: $text-alpha-medium;
+  color: var(--color-3);
   font-style: italic;
 
   &--editable {
@@ -143,7 +143,7 @@
 
   &--empty::after {
     content: 'Set status…';
-    color: var(--text-alpha-light);
+    color: var(--color-3);
   }
 
   .profile-status__input {

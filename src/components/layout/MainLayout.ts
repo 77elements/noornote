@@ -50,6 +50,8 @@ import { ArticleTimeline } from '../article/ArticleTimeline';
 import { SccMediaFeed } from './partials/SccMediaFeed';
 import { ListsMenuPartial } from './partials/ListsMenuPartial';
 import { ListsCountManager } from './managers/ListsCountManager';
+import { NavWheelPartial } from './partials/NavWheelPartial';
+import { applyNavMode, isNavWheelActive } from '../../helpers/navModeSetting';
 import {
   deactivateAllTabs,
   switchTabWithContent,
@@ -108,6 +110,8 @@ export class MainLayout {
   private muteManager: MuteListManager | null = null;
   private tribeManager: TribeManager | null = null;
   private badgeManager: NotificationsBadgeManager | null = null;
+  private dmBadgeManager: DMBadgeManager | null = null;
+  private navWheel: NavWheelPartial | null = null;
   private hamburgerBadgeManager: HamburgerBadgeManager | null = null;
   private listsMenu: ListsMenuPartial | null = null;
   private listsCountManager: ListsCountManager | null = null;
@@ -246,23 +250,22 @@ export class MainLayout {
   }
 
   private initializeManagers(): void {
+    // Navigation mode gate: `classic-nav` on <html> decides wheel vs. list.
+    applyNavMode();
+
     // Lazy-load list managers (they pull in heavy deps)
     void this.loadListManagers();
-    // Initialize NotificationsBadgeManager
-    const badgeElement = this.element.querySelector(
-      '.notifications-badge'
-    ) as HTMLElement;
-    if (badgeElement) {
-      this.badgeManager = new NotificationsBadgeManager(badgeElement);
-    }
 
-    // Initialize DMBadgeManager
-    const dmBadgeElement = this.element.querySelector(
-      '.dm-badge'
-    ) as HTMLElement;
-    if (dmBadgeElement) {
-      new DMBadgeManager(dmBadgeElement);
-    }
+    // Nav wheel (default nav mode) into the sidebar top slot
+    this.mountNavWheel();
+
+    // Notification + DM badges live inside the visible nav container
+    this.setupBadgeManagers();
+
+    // Classic-Menu switch: badge nodes swap between wheel and classic list
+    this.eventBus.on('settings:nav-mode-changed', () => {
+      this.setupBadgeManagers();
+    });
 
     // Initialize UnknownDMNotifier — toasts on incoming DMs from senders the
     // user does not follow (would otherwise only be visible in the Unknown tab).
@@ -285,12 +288,7 @@ export class MainLayout {
       onListClick: listType => this.openListTab(listType),
     });
 
-    // Item counters on the Lists submenu (bookmarks/follows/mutes/tribes)
     const menuEl = this.listsMenu.createElement();
-    if (menuEl) {
-      this.listsCountManager = new ListsCountManager(menuEl);
-    }
-
     const listsMenuContainer = this.element.querySelector('.primary-nav');
     if (listsMenuContainer && menuEl) {
       // Insert after Settings link (before Download link)
@@ -303,6 +301,13 @@ export class MainLayout {
         listsMenuContainer.appendChild(menuEl);
       }
     }
+
+    // Item counters on the Lists submenu (bookmarks/follows/mutes/tribes).
+    // Scope = whole layout: the manager also drives the bookmark unread
+    // diodes on the nav wheel's Lists item and the /lists overview tile.
+    // Created AFTER the accordion is in the DOM so its first update finds
+    // the count span.
+    this.listsCountManager = new ListsCountManager(this.element);
 
     // Addons: always-visible sidebar entry
     this.insertAddonsSidebarEntry(listsMenuContainer);
@@ -954,6 +959,13 @@ export class MainLayout {
       const activeLink = this.element.querySelector(`.primary-nav ${selector}`);
       activeLink?.classList.add('is-active');
     }
+
+    // Wheel counterpart (wheel has its own viewClass→item mapping)
+    this.navWheel?.setActive(viewClass);
+
+    // The /lists overview tile is built fresh on every visit — re-sync its
+    // bookmark unread diode now that the span exists.
+    if (viewClass === 'lov') void this.listsCountManager?.updateCounts();
   }
 
   /**
@@ -972,6 +984,9 @@ export class MainLayout {
       );
       activeSublink?.classList.add('is-active');
     }
+
+    // Wheel counterpart: the Lists item lights up while a list is open.
+    this.navWheel?.setListActive(listType);
   }
 
   /**
@@ -1164,11 +1179,8 @@ export class MainLayout {
       '.sidebar .primary-nav__link--notifications'
     ) as HTMLElement | null;
     if (notificationsLink) {
-      const handleNotifications = (e: MouseEvent) => {
-        e.preventDefault();
-        const navController = getViewNavigationController();
-        navController.openView('notifications', undefined, e);
-      };
+      const handleNotifications = (e: MouseEvent) =>
+        this.handleNotificationsNavClick(e);
       notificationsLink.addEventListener('click', handleNotifications);
       notificationsLink.addEventListener(
         'auxclick',
@@ -1180,11 +1192,7 @@ export class MainLayout {
       '.sidebar a[href="/messages"]'
     ) as HTMLElement | null;
     if (messagesLink) {
-      const handleMessages = (e: MouseEvent) => {
-        e.preventDefault();
-        const navController = getViewNavigationController();
-        navController.openView('messages', undefined, e);
-      };
+      const handleMessages = (e: MouseEvent) => this.handleMessagesNavClick(e);
       messagesLink.addEventListener('click', handleMessages);
       messagesLink.addEventListener(
         'auxclick',
@@ -1198,8 +1206,7 @@ export class MainLayout {
     if (settingsLink) {
       settingsLink.addEventListener('click', e => {
         e.preventDefault();
-        const router = Router.getInstance();
-        router.navigate('/settings');
+        this.handleSettingsNavClick();
       });
     }
 
@@ -1249,15 +1256,7 @@ export class MainLayout {
     if (downloadLink) {
       downloadLink.addEventListener('click', async e => {
         e.preventDefault();
-        const url = 'https://noornote.app/download/';
-        const _p = PlatformService.getInstance();
-        if (_p.isElectron) {
-          await window.electronAPI!.openExternal(url);
-        } else if (_p.isCapacitor) {
-          window.open(url, '_blank', 'noopener,noreferrer');
-        } else {
-          window.location.href = '/download/';
-        }
+        await this.handleDownloadClick();
       });
     }
 
@@ -1278,17 +1277,7 @@ export class MainLayout {
       '.sidebar a[href="/articles"]'
     ) as HTMLElement | null;
     if (articlesLink) {
-      const handleArticles = (e: MouseEvent) => {
-        // Modifier-key / middle-click → let the browser handle (open in new tab etc.)
-        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
-        e.preventDefault();
-        // Already on /articles → scroll to top (mirrors Timeline + Profile menu items)
-        if (Router.getInstance().getCurrentPath() === '/articles') {
-          this.scrollToTop();
-          return;
-        }
-        Router.getInstance().navigate('/articles');
-      };
+      const handleArticles = (e: MouseEvent) => this.handleArticlesNavClick(e);
       articlesLink.addEventListener('click', handleArticles);
       articlesLink.addEventListener(
         'auxclick',
@@ -1300,24 +1289,21 @@ export class MainLayout {
       '.sidebar .primary-nav__link--profile'
     ) as HTMLElement | null;
     if (profileLink) {
-      const handleProfile = (e: MouseEvent) => {
-        e.preventDefault();
-        const currentUser = this.authService.getCurrentUser();
-        if (currentUser) {
-          // Already on own profile -> scroll to top (mirrors the Timeline menu item)
-          if (
-            Router.getInstance().getCurrentPath() ===
-            `/profile/${currentUser.npub}`
-          ) {
-            this.scrollToTop();
-            return;
-          }
-          const navController = getViewNavigationController();
-          navController.openView('profile', currentUser.npub, e);
-        }
-      };
+      const handleProfile = (e: MouseEvent) => this.handleProfileNavClick(e);
       profileLink.addEventListener('click', handleProfile);
       profileLink.addEventListener('auxclick', handleProfile as EventListener); // Middle-click
+    }
+
+    // Search: header icon button (wheel mode, replaces the old logo spot)
+    // and the classic-mode nav link share the same handler.
+    const searchTrigger = this.element.querySelector(
+      '.sidebar .sidebar-search-btn'
+    );
+    if (searchTrigger) {
+      searchTrigger.addEventListener('click', e => {
+        e.preventDefault();
+        void this.openSearchModal();
+      });
     }
 
     const searchLink = this.element.querySelector(
@@ -1330,8 +1316,129 @@ export class MainLayout {
       });
     }
 
+    // Download button (wheel-mode footer; classic mode uses the nav link)
+    const downloadBtn = this.element.querySelector(
+      '.sidebar [data-action="sidebar-download"]'
+    );
+    if (downloadBtn) {
+      downloadBtn.addEventListener('click', e => {
+        e.preventDefault();
+        void this.handleDownloadClick();
+      });
+    }
+
     // New Post Dropup
     this.setupNewPostDropup();
+  }
+
+  // ── Shared nav click handlers (classic links + nav wheel) ──
+
+  private handleNotificationsNavClick(e: MouseEvent): void {
+    e.preventDefault();
+    const navController = getViewNavigationController();
+    navController.openView('notifications', undefined, e);
+  }
+
+  private handleMessagesNavClick(e: MouseEvent): void {
+    e.preventDefault();
+    const navController = getViewNavigationController();
+    navController.openView('messages', undefined, e);
+  }
+
+  private handleSettingsNavClick(): void {
+    Router.getInstance().navigate('/settings');
+  }
+
+  private handleArticlesNavClick(e: MouseEvent): void {
+    // Modifier-key / middle-click → let the browser handle (open in new tab etc.)
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
+    e.preventDefault();
+    // Already on /articles → scroll to top (mirrors Timeline + Profile menu items)
+    if (Router.getInstance().getCurrentPath() === '/articles') {
+      this.scrollToTop();
+      return;
+    }
+    Router.getInstance().navigate('/articles');
+  }
+
+  private handleProfileNavClick(e: MouseEvent): void {
+    e.preventDefault();
+    const currentUser = this.authService.getCurrentUser();
+    if (currentUser) {
+      // Already on own profile -> scroll to top (mirrors the Timeline menu item)
+      if (
+        Router.getInstance().getCurrentPath() === `/profile/${currentUser.npub}`
+      ) {
+        this.scrollToTop();
+        return;
+      }
+      const navController = getViewNavigationController();
+      navController.openView('profile', currentUser.npub, e);
+    }
+  }
+
+  private async handleDownloadClick(): Promise<void> {
+    const url = 'https://noornote.app/download/';
+    const _p = PlatformService.getInstance();
+    if (_p.isElectron) {
+      await window.electronAPI!.openExternal(url);
+    } else if (_p.isCapacitor) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } else {
+      window.location.href = '/download/';
+    }
+  }
+
+  /**
+   * Mount the nav wheel into the sidebar top slot (wheel = default nav mode).
+   * The callbacks reuse the exact classic-link handlers so both modes stay in
+   * sync (scroll-to-top-when-active, right-pane tab logic, list-in-pcc).
+   */
+  private mountNavWheel(): void {
+    const header = this.element.querySelector('.sidebar-header');
+    if (!header) return;
+
+    this.navWheel = new NavWheelPartial({
+      timeline: () => this.handleHomeClick(),
+      profile: e => this.handleProfileNavClick(e),
+      notifications: e => this.handleNotificationsNavClick(e),
+      articles: e => this.handleArticlesNavClick(e),
+      messages: e => this.handleMessagesNavClick(e),
+      lists: () => Router.getInstance().navigate('/lists'),
+      settings: () => this.handleSettingsNavClick(),
+      addons: () => Router.getInstance().navigate('/addons'),
+    });
+    // Wheel sits directly between .sidebar-header and .sidebar-welcome-link.
+    header.insertAdjacentElement('afterend', this.navWheel.createElement());
+  }
+
+  /**
+   * (Re-)create the notifications/DM badge managers targeting the badge
+   * elements of the VISIBLE nav container. Called on boot and whenever the
+   * Classic-Menu switch flips (the wheel and the classic list each carry
+   * their own badge nodes).
+   */
+  private setupBadgeManagers(): void {
+    this.badgeManager?.destroy();
+    this.dmBadgeManager?.destroy();
+    this.badgeManager = null;
+    this.dmBadgeManager = null;
+
+    const scope = isNavWheelActive() ? '.nn-wheel' : '.primary-nav';
+
+    const badgeElement = this.element.querySelector(
+      `${scope} .notifications-badge`
+    ) as HTMLElement | null;
+    if (badgeElement) {
+      this.badgeManager = new NotificationsBadgeManager(badgeElement);
+    }
+
+    const dmBadgeElement = this.element.querySelector(
+      `${scope} .dm-badge`
+    ) as HTMLElement | null;
+    if (dmBadgeElement) {
+      this.dmBadgeManager = new DMBadgeManager(dmBadgeElement);
+    }
   }
 
   /**
@@ -1707,6 +1814,14 @@ export class MainLayout {
           <div class="sidebar-scrollable">
             <div class="sidebar-header">
               <span class="nn-logo">NoorNote</span>
+              <button
+                class="icon-btn sidebar-search-btn"
+                type="button"
+                aria-label="Search"
+                title="Search"
+              >
+                <svg><use href="#icon-search"/></svg>
+              </button>
               <button class="sidebar-collapse-toggle" type="button" aria-label="Collapse sidebar" title="Collapse sidebar">
                 <svg class="sidebar-collapse-toggle__icon"><use href="#icon-chevron-left"/></svg>
               </button>
@@ -1717,7 +1832,7 @@ export class MainLayout {
                 <span class="primary-nav__item-desc">Welcome</span>
               </a>
             </div>
-            <div class="wallet-balance-container">
+            <div class="sidebar-widget-container wallet-balance-container">
               <!-- WalletBalanceDisplay will be mounted here -->
             </div>
             <ul class="primary-nav">
@@ -1778,14 +1893,18 @@ export class MainLayout {
             <div class="sidebar-widget-container" data-sidebar-widget="btc-price"></div>
             <div class="sidebar-widget-container" data-sidebar-widget="nostr-majlis"></div>
             <div class="data-saver-toggle"></div>
-            <div class="l-row--right sidebar-logout">
-              <button type="button" class="btn btn--passive btn--mini sidebar-logout__signout" data-action="sidebar-logout">
-                <svg class="primary-nav__item-icon"><use href="#icon-logout"/></svg>
-                Sign out
+            <div class="l-row--split sidebar-logout">
+              <button type="button" class="btn btn--passive btn--mini sidebar-download-btn" data-action="sidebar-download">
+                <svg class="primary-nav__item-icon"><use href="#icon-download"/></svg>
+                Download
               </button>
               <button type="button" class="btn btn--passive btn--mini sidebar-logout__signin" data-action="sidebar-login">
                 <svg class="primary-nav__item-icon sidebar-logout__signin-icon"><use href="#icon-logout"/></svg>
                 Sign in
+              </button>
+              <button type="button" class="btn btn--passive btn--mini sidebar-logout__signout" data-action="sidebar-logout">
+                <svg class="primary-nav__item-icon"><use href="#icon-logout"/></svg>
+                Sign out
               </button>
             </div>
             <div class="current-datetime-display">--</div>
@@ -1878,26 +1997,26 @@ export class MainLayout {
   }
 
   /**
-   * Insert the "App updated" banner below the sidebar logo. Guarded: only when a newer
-   * build was detected, only once per position, re-inserted after sidebar re-renders
-   * (updateSidebar wipes innerHTML).
+   * Insert the "App updated" banner as the LAST element of the sidebar
+   * (below New Post). Guarded: only when a newer build was detected, only
+   * once per position, re-inserted after sidebar re-renders (updateSidebar
+   * wipes innerHTML).
    */
   private mountWebUpdateBanner(): void {
     if (!this.webUpdateBannerActive) return;
     if (this.element.querySelector('.web-update-banner')) return;
-    const header = this.element.querySelector('.sidebar-header');
-    if (!header) return;
-    header.insertAdjacentHTML(
-      'afterend',
-      `
-      <div class="web-update-banner">
-        <span class="web-update-banner__text">App updated.</span>
-        <button type="button" class="btn btn--mini web-update-banner__reload">Reload</button>
-      </div>
-    `
-    );
-    const reloadBtn = this.element.querySelector('.web-update-banner__reload');
-    reloadBtn?.addEventListener('click', () => window.location.reload());
+    const sidebarContent = this.element.querySelector('.sidebar-content');
+    if (!sidebarContent) return;
+    const banner = document.createElement('div');
+    banner.className = 'web-update-banner';
+    banner.innerHTML = `
+      <span class="web-update-banner__text">App updated.</span>
+      <button type="button" class="btn btn--mini web-update-banner__reload">Reload</button>
+    `;
+    banner
+      .querySelector('.web-update-banner__reload')
+      ?.addEventListener('click', () => window.location.reload());
+    sidebarContent.appendChild(banner);
   }
 
   /**

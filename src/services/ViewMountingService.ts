@@ -472,6 +472,17 @@ export class ViewMountingService {
           },
         };
 
+      case 'lists-overview':
+        return {
+          factory: async () => {
+            const { ListsOverviewView } = await import(
+              '../components/views/ListsOverviewView'
+            );
+            const view = new ListsOverviewView();
+            return { element: view.getElement(), view };
+          },
+        };
+
       case 'profile-booking':
         return {
           factory: async param => {

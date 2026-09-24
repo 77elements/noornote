@@ -175,10 +175,10 @@ export class BtcPriceSidebarWidget {
     const amount = svc.formatAmount(rate, this.currency, 0);
     const symbol = escapeHtml(svc.getCurrencySymbol(this.currency));
     this.el.innerHTML = `
-      <div class="sidebar-widget__row sidebar-widget__row--pair sidebar-widget__vals">
+      <div class="sidebar-widget__cols">
         <span class="sidebar-widget__label">1 BTC</span>
         <span>${amount} ${symbol}</span>
-        <button type="button" class="sidebar-widget__refresh" data-action="btc-refresh" title="Refresh rate" aria-label="Refresh rate"${this.isRefreshLocked() ? ' disabled' : ''}><svg width="14" height="14"><use href="#icon-sync"/></svg></button>
+        <button type="button" class="sidebar-widget__refresh" data-action="btc-refresh" title="Refresh rate" aria-label="Refresh rate"${this.isRefreshLocked() ? ' disabled' : ''}><svg><use href="#icon-sync"/></svg></button>
       </div>`;
     this.syncRefreshButton();
   }

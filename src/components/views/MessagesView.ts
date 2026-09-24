@@ -485,7 +485,7 @@ export class MessagesView extends View {
         <div class="messages-view__empty">
           <svg width="48" height="48"><use href="#icon-email"/></svg>
           <p>${emptyMessage}</p>
-          <p class="text-alpha-medium">Start a conversation by clicking "New Message"</p>
+          <p class="empty-hint">Start a conversation by clicking "New Message"</p>
         </div>
       `;
       return;
@@ -715,7 +715,7 @@ export class MessagesView extends View {
       <div class="messages-view__empty">
         <svg width="48" height="48"><use href="#icon-email"/></svg>
         <p>Direct messages are not available with Bunker URL login</p>
-        <p class="text-alpha-medium">Your remote signer does not support NIP-44 encryption required for private messages. Use a browser extension or NoorSigner for full DM access.</p>
+        <p class="empty-hint">Your remote signer does not support NIP-44 encryption required for private messages. Use a browser extension or NoorSigner for full DM access.</p>
       </div>
     `;
   }

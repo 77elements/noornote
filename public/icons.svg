@@ -709,4 +709,9 @@
   <symbol id="icon-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
   </symbol>
+  <!-- NoorNote brand glyph (traced from src/logos/noornote-icon.png, 2026-09-24).
+       viewBox 642x642, filled with currentColor so it follows the theme accent. -->
+  <symbol id="nn-logo" viewBox="0 0 642 642">
+    <path d="M125.0 174.5 124.5 223.0 156.5 224.0 156.5 497.0 225.5 497.0 226.0 284.5 366.5 495.0 369.0 497.5 418.0 497.5 224.0 174.5 124.5 175.0 124.5 223.0 156.5 224.0 156.5 497.0 225.5 497.0 226.0 284.5 366.5 495.0 369.0 497.5 418.5 497.0 224.5 175.0Z M262.0 174.5 266.5 185.0 455.5 496.0 457.0 497.5 502.0 497.5 502.5 175.0 400.5 175.0 409.0 180.5 423.5 198.0 430.5 211.0 435.5 229.0 436.0 358.5 312.5 175.0 261.5 175.0 457.0 497.5 502.5 497.0 502.5 175.0 400.5 175.0 409.0 180.5 423.5 198.0 430.5 211.0 435.5 229.0 436.0 358.5 312.5 175.0Z" fill="currentColor" fill-rule="nonzero" />
+  </symbol>
 </svg>

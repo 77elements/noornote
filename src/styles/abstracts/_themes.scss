@@ -14,9 +14,6 @@
   --color-4: #2563eb;
   --color-5: #000000;
   --color-6: #f59e0b;
-  --text-alpha-light: rgba(0, 0, 0, 0.4);
-  --text-alpha-medium: rgba(0, 0, 0, 0.6);
-  --text-alpha-heavy: rgba(0, 0, 0, 0.8);
   --surface-tint: rgba(0, 0, 0, 0.08);
   --color-logo-start: #f02020;
   --color-logo-end: #ffa800;
@@ -31,9 +28,6 @@
   --color-4: #9cdcfe;
   --color-5: #cccccc;
   --color-6: #dcdcaa;
-  --text-alpha-light: rgba(204, 204, 204, 0.4);
-  --text-alpha-medium: rgba(204, 204, 204, 0.6);
-  --text-alpha-heavy: rgba(204, 204, 204, 0.8);
   --surface-tint: rgba(255, 255, 255, 0.06);
   --color-logo-start: #e8875a;
   --color-logo-end: #f0f080;
@@ -42,20 +36,17 @@
 }
 
 [data-theme="soft-lilac"] {
-  --color-1: #faf8ff;
-  --color-2: #e8ddf2;
-  --color-3: #d1548e;
-  --color-4: #8757ad;
-  --color-5: #1e1e1e;
-  --color-6: #ff9800;
-  --text-alpha-light: rgba(30, 30, 30, 0.4);
-  --text-alpha-medium: rgba(30, 30, 30, 0.6);
-  --text-alpha-heavy: rgba(30, 30, 30, 0.8);
+  --color-1: #f8f4ee;
+  --color-2: #e2d8c8;
+  --color-3: #8a7fa0;
+  --color-4: #c2447e;
+  --color-5: #2a2438;
+  --color-6: #7dd87d;
   --surface-tint: rgba(0, 0, 0, 0.06);
-  --color-logo-start: #e84090;
-  --color-logo-end: #d89030;
-  --bg-section-inner: rgba(197, 187, 205, 0.35);
-  --bg-section-outer: rgba(232, 221, 242, 0.35);
+  --color-logo-start: #c2447e;
+  --color-logo-end: #8a7fa0;
+  --bg-section-inner: rgba(238, 231, 218, 0.35);
+  --bg-section-outer: rgba(226, 216, 200, 0.35);
 }
 
 [data-theme="dark-symbiote"] {
@@ -65,9 +56,6 @@
   --color-4: #b13d4c;
   --color-5: #ebdedb;
   --color-6: #8e9599;
-  --text-alpha-light: rgba(235, 222, 219, 0.4);
-  --text-alpha-medium: rgba(235, 222, 219, 0.6);
-  --text-alpha-heavy: rgba(235, 222, 219, 0.8);
   --surface-tint: rgba(255, 255, 255, 0.06);
   --color-logo-start: #d83030;
   --color-logo-end: #a0bcc4;
@@ -82,9 +70,6 @@
   --color-4: #ed3a96;
   --color-5: #ffffff;
   --color-6: #39ff14;
-  --text-alpha-light: rgba(255, 255, 255, 0.4);
-  --text-alpha-medium: rgba(255, 255, 255, 0.6);
-  --text-alpha-heavy: rgba(255, 255, 255, 0.8);
   --surface-tint: rgba(255, 255, 255, 0.06);
   --color-logo-start: #ff2aaa;
   --color-logo-end: #50ff30;
@@ -99,9 +84,6 @@
   --color-4: #00ff41;
   --color-5: #88cc88;
   --color-6: #c8a000;
-  --text-alpha-light: rgba(136, 204, 136, 0.4);
-  --text-alpha-medium: rgba(136, 204, 136, 0.6);
-  --text-alpha-heavy: rgba(136, 204, 136, 0.8);
   --surface-tint: rgba(0, 255, 65, 0.04);
   --color-logo-start: #00ff41;
   --color-logo-end: #e0c020;
@@ -116,9 +98,6 @@
   --color-4: #e33796;
   --color-5: #ece9f5;
   --color-6: #3ddc84;
-  --text-alpha-light: rgba(236, 233, 245, 0.4);
-  --text-alpha-medium: rgba(236, 233, 245, 0.6);
-  --text-alpha-heavy: rgba(236, 233, 245, 0.8);
   --surface-tint: rgba(255, 255, 255, 0.06);
   --color-logo-start: #7b2ff7;
   --color-logo-end: #e0218a;

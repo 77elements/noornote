@@ -30,7 +30,7 @@
 .live-stream-card__hint {
   margin: 0;
   font-size: 0.9rem;
-  color: var(--text-alpha-medium);
+  color: var(--color-3);
   text-align: center;
 }
 
@@ -92,7 +92,7 @@
 
   .live-stream-card--ended & {
     background: var(--color-2);
-    color: var(--text-alpha-medium);
+    color: var(--color-3);
   }
 }
 
@@ -117,7 +117,7 @@
 
 .live-stream-card__summary {
   margin: 0;
-  color: var(--text-alpha-medium);
+  color: var(--color-3);
   font-size: 0.9rem;
   line-height: 1.4;
   display: -webkit-box;
@@ -151,7 +151,7 @@
 
 .live-stream-card__zap-hint {
   font-size: 0.75rem;
-  color: var(--text-alpha-light);
+  color: var(--color-3);
 }
 
 .live-stream-card__zap {

@@ -53,7 +53,7 @@
 
   .article-summary {
     line-height: 1.6;
-    color: var(--text-alpha-heavy);
+    color: var(--color-5);
     margin: 0 0 calc($gap * 1.5) 0;
     font-style: italic;
   }
@@ -67,7 +67,7 @@
   &__edited-meta {
     text-align: center;
     padding: calc($gap / 2) $gap 0;
-    color: var(--text-alpha-light);
+    color: var(--color-3);
     font-size: 0.875rem;
     font-style: italic;
   }
@@ -137,7 +137,7 @@
     border-left: 4px solid var(--color-4);
     padding-left: $gap;
     margin: $gap 0;
-    color: var(--text-alpha-heavy);
+    color: var(--color-5);
     font-style: italic;
   }
 
@@ -202,7 +202,7 @@
     margin-top: calc($gap * 2);
     padding-top: $gap;
     border-top: 1px solid var(--color-2);
-    color: var(--text-alpha-heavy);
+    color: var(--color-5);
 
     ol {
       padding-left: calc($gap * 1.5);

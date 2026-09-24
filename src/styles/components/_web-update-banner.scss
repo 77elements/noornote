@@ -1,6 +1,6 @@
-// Web update banner — "App updated." + Reload, inserted below the sidebar logo
-// (after .sidebar-header) by MainLayout when WebUpdateCheck detects a newer deployed build.
-// Stays visible until the user reloads; no dismiss by design.
+// Web update banner — "App updated." + Reload, appended as the LAST element
+// of the sidebar by MainLayout when WebUpdateCheck detects a newer deployed
+// build. Stays visible until the user reloads; no dismiss by design.
 
 @use '../abstracts/variables' as *;
 

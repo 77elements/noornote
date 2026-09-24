@@ -33,7 +33,7 @@
   }
 
   p {
-    color: var(--text-alpha-heavy);
+    color: var(--color-5);
     line-height: 1.6;
     margin-bottom: calc($gap / 2);
   }
@@ -43,7 +43,7 @@
     padding-left: $gap * 1.5;
 
     li {
-      color: var(--text-alpha-heavy);
+      color: var(--color-5);
       line-height: 1.6;
       margin-bottom: calc($gap / 4);
     }
@@ -78,7 +78,7 @@
     padding: $gap;
 
     p {
-      color: var(--text-alpha-light);
+      color: var(--color-3);
       @extend %small;
     }
   }
@@ -87,7 +87,7 @@
 // Sidebar footer: date, version, about link
 .current-datetime-display {
   @extend %small;
-  color: var(--text-alpha-light);
+  color: var(--color-3);
   display: grid;
   grid-template-columns: 1fr auto;
   gap: calc($gap / 4);
@@ -113,7 +113,7 @@
 
 .datetime-separator {
   @extend %small;
-  color: var(--text-alpha-light);
+  color: var(--color-3);
 }
 
 .primary-nav a.about-link {

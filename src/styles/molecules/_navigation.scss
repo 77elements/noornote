@@ -135,34 +135,9 @@
     }
   }
 
-  // Notifications badge (green dot) - grid item
-  .notifications-badge {
-    display: none; // Hidden by default, shown via JS when unread notifications exist
-    min-width: 20px;
-    height: 20px;
-    padding: 0 6px;
-    background: var(--color-6); // Soft Mint Green
-    color: var(--color-1); // Black text
-    border-radius: $radius-full;
-    @extend %small;
-    font-weight: 600;
-    line-height: 20px;
-    text-align: center;
-
-    // Hashtag-only notifications: hollow circle (low priority)
-    &--hashtag-only {
-      background: transparent;
-      border: 1px solid var(--color-6);
-      color: var(--color-6);
-      line-height: 18px; // Adjust for border
-    }
-
-    // High priority notifications: pulsing badge (replies, zaps)
-    &--priority-high {
-      animation: badge-pulse 2s ease-in-out infinite;
-      box-shadow: 0 0 8px color-mix(in srgb, var(--color-6) 60%, transparent);
-    }
-  }
+  // Notifications badge (green dot): styles live in the TOP-LEVEL
+  // .notifications-badge block below — the badge is shared by the classic
+  // nav (inside .primary-nav) and the nav wheel (outside it).
 
   // Accordion menu (Lists)
   &__item--accordion {
@@ -266,6 +241,37 @@
       font-weight: 700;
       color: var(--color-4);
     }
+  }
+}
+
+// Notifications badge (green dot) — shared by the classic nav and the nav
+// wheel (the wheel's buttons sit outside .primary-nav, so this must not be
+// nested there).
+.notifications-badge {
+  display: none; // Hidden by default, shown via JS when unread notifications exist
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: var(--color-6); // Soft Mint Green
+  color: var(--color-1); // Black text
+  border-radius: $radius-full;
+  @extend %small;
+  font-weight: 600;
+  line-height: 20px;
+  text-align: center;
+
+  // Hashtag-only notifications: hollow circle (low priority)
+  &--hashtag-only {
+    background: transparent;
+    border: 1px solid var(--color-6);
+    color: var(--color-6);
+    line-height: 18px; // Adjust for border
+  }
+
+  // High priority notifications: pulsing badge (replies, zaps)
+  &--priority-high {
+    animation: badge-pulse 2s ease-in-out infinite;
+    box-shadow: 0 0 8px color-mix(in srgb, var(--color-6) 60%, transparent);
   }
 }
 

@@ -96,7 +96,7 @@
     padding: $gap * 3;
     border: 2px dashed var(--border-color);
     border-radius: $radius-xl;
-    color: var(--text-alpha-light);
+    color: var(--color-3);
     cursor: pointer;
     transition: $transition-colors;
 
@@ -160,7 +160,7 @@
 
   &__dimensions {
     @extend %small;
-    color: var(--text-alpha-light);
+    color: var(--color-3);
   }
 
   &__toggle-kind,
@@ -174,7 +174,7 @@
     background: none;
     border: none;
     border-radius: $radius-xl;
-    color: var(--text-alpha-light);
+    color: var(--color-3);
     cursor: pointer;
     transition: $transition-colors;
 

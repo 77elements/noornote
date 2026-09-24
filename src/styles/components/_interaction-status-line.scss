@@ -28,7 +28,7 @@
   background: var(--color-2);
   border: none;
   border-radius: $radius-full;
-  color: var(--text-alpha-medium);
+  color: var(--color-3);
   cursor: pointer;
   transition: all 0.2s ease;
 
@@ -50,7 +50,7 @@
     pointer-events: none;
 
     &:hover {
-      color: var(--text-alpha-medium);
+      color: var(--color-3);
     }
   }
 }
@@ -197,7 +197,7 @@
     padding: calc($gap / 2) calc($gap * 0.75);
     background: var(--color-2);
     border-radius: $radius-full;
-    color: var(--text-alpha-medium);
+    color: var(--color-3);
 
     &:hover {
       color: var(--color-4);
@@ -229,7 +229,7 @@
   // "(n)" reads as a secondary count beside each item label.
   .nn-dropdown__item .isl-count {
     font-weight: 400;
-    color: var(--text-alpha-medium);
+    color: var(--color-3);
   }
 }
 

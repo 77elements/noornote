@@ -44,7 +44,7 @@
 // Client tag (e.g. "via NoorNote")
 .note-header__client {
   @extend %small;
-  color: var(--text-alpha-light);
+  color: var(--color-3);
   white-space: nowrap;
 }
 
@@ -54,7 +54,7 @@
 .note-header__client::before {
   content: '·';
   margin-right: calc($gap / 4);
-  color: var(--text-alpha-light);
+  color: var(--color-3);
 }
 
 // Meta section (verification, timestamp, menu)

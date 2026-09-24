@@ -22,7 +22,7 @@
 .notifications-view__empty {
   text-align: center;
   padding: $gap * 4;
-  color: var(--text-alpha-light);
+  color: var(--color-3);
   @extend %h4;
 }
 
@@ -126,12 +126,12 @@
 
 .notification-item__timestamp {
   @extend %small;
-  color: var(--text-alpha-light);
+  color: var(--color-3);
   white-space: nowrap;
 }
 
 .notification-item__preview {
-  color: var(--text-alpha-heavy);
+  color: var(--color-5);
   line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
