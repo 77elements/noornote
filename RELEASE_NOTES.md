@@ -1,11 +1,9 @@
-# NoorNote 1.7.0
+# NoorNote 1.8.0
 
-## New: Appointment booking
-Let people book time with you: configure your weekly availability in the Calendar addon and share your booking page — guests pick a free slot, you get a DM, cancellations keep everyone informed.
+**New Navigation** — The sidebar menu is now a circular wheel around the NoorNote logo. Prefer the old list? Switch it back in Settings → UI ("Classic Menu"). Lists now live on their own overview page, and unread bookmarks show as a green badge.
 
-## New: Calendar import/export & reset
-Import Google Calendar or any .ics file (with preview and range filter), export your whole calendar as .ics, and reset your calendar locally with a single publishable wipe.
+**Sidebar Widgets** — Wallet Balance and BTC Price widgets now share one clean look: sats/crypto left, fiat right, matching icons and typography across all themes.
 
-## Fixes
-- Web: NWC wallet survives IndexedDB eviction (no more lost wallet connection)
-- Links containing npubs no longer trigger false mentions
+**Themes** — Soft Lilac got a full recolor (warm beige + rose), and all sidebar widgets follow your theme's colors exactly.
+
+**Fixes** — Collapsed sidebar shows the familiar icon rail again; Search moved to the sidebar top, Download to the footer.
