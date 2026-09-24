@@ -1,18 +1,18 @@
-// Web update banner — "App updated." + Reload, appended as the LAST element
-// of the sidebar by MainLayout when WebUpdateCheck detects a newer deployed
-// build. Stays visible until the user reloads; no dismiss by design.
+// Web update banner — "App updated." + Reload, inserted by MainLayout as a
+// sibling of .current-datetime-display (inside the scrollable flow, clear of
+// the fixed "New Post" button). Stays visible until the user reloads; no
+// dismiss by design.
 
 @use '../abstracts/variables' as *;
 
 .web-update-banner {
-  margin: calc($gap / 2) $gap $gap;
+  margin: $gap 0;
   padding: calc($gap / 2);
   background: var(--color-2);
   border-radius: $radius-xl;
   text-align: center;
 
   &__text {
-    display: block;
     margin-bottom: calc($gap / 2);
     font-size: 0.85rem;
   }

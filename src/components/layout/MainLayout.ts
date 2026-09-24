@@ -1997,16 +1997,14 @@ export class MainLayout {
   }
 
   /**
-   * Insert the "App updated" banner as the LAST element of the sidebar
-   * (below New Post). Guarded: only when a newer build was detected, only
-   * once per position, re-inserted after sidebar re-renders (updateSidebar
-   * wipes innerHTML).
+   * Insert the "App updated" banner directly after the nav wheel (top of the
+   * sidebar, above the widgets). Guarded: only when a newer build was
+   * detected, only once per position, re-inserted after sidebar re-renders
+   * (updateSidebar wipes innerHTML).
    */
   private mountWebUpdateBanner(): void {
     if (!this.webUpdateBannerActive) return;
     if (this.element.querySelector('.web-update-banner')) return;
-    const sidebarContent = this.element.querySelector('.sidebar-content');
-    if (!sidebarContent) return;
     const banner = document.createElement('div');
     banner.className = 'web-update-banner';
     banner.innerHTML = `
@@ -2016,7 +2014,12 @@ export class MainLayout {
     banner
       .querySelector('.web-update-banner__reload')
       ?.addEventListener('click', () => window.location.reload());
-    sidebarContent.appendChild(banner);
+    const wheel = this.element.querySelector('.nn-wheel');
+    if (wheel) {
+      wheel.insertAdjacentElement('afterend', banner);
+    } else {
+      this.element.querySelector('.sidebar-content')?.appendChild(banner);
+    }
   }
 
   /**
