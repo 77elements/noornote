@@ -23,6 +23,7 @@ import { FontSizeService } from '../../services/FontSizeService';
 import { AppState } from '../../services/AppState';
 import { Router } from '../../services/Router';
 import { NavigationDispatcher } from '../../services/NavigationDispatcher';
+import { withViewTransition } from '../../helpers/viewTransition';
 // PostNoteModal loaded lazily on click (Step 4 bundle optimization)
 import { ModalService } from '../../services/ModalService';
 import { AuthStateManager } from '../../services/AuthStateManager';
@@ -640,27 +641,30 @@ export class MainLayout {
       );
 
       if (sidebarTabs && contentBody) {
-        // Update tabs (only direct children of #sidebar-tabs)
-        sidebarTabs.querySelectorAll(':scope > .tab').forEach(tab => {
-          const el = tab as HTMLElement;
-          if (el.dataset.tab === tabId) {
-            el.classList.add('tab--active');
-          } else {
-            el.classList.remove('tab--active');
-          }
-        });
-
-        // Update content (only direct children of content-body)
-        contentBody
-          .querySelectorAll(':scope > .tab-content')
-          .forEach(content => {
-            const el = content as HTMLElement;
-            if (el.dataset.tabContent === tabId) {
-              el.classList.add('tab-content--active');
+        // Cross-fade the scc column (see activateSccDefault).
+        withViewTransition(() => {
+          // Update tabs (only direct children of #sidebar-tabs)
+          sidebarTabs.querySelectorAll(':scope > .tab').forEach(tab => {
+            const el = tab as HTMLElement;
+            if (el.dataset.tab === tabId) {
+              el.classList.add('tab--active');
             } else {
-              el.classList.remove('tab-content--active');
+              el.classList.remove('tab--active');
             }
           });
+
+          // Update content (only direct children of content-body)
+          contentBody
+            .querySelectorAll(':scope > .tab-content')
+            .forEach(content => {
+              const el = content as HTMLElement;
+              if (el.dataset.tabContent === tabId) {
+                el.classList.add('tab-content--active');
+              } else {
+                el.classList.remove('tab-content--active');
+              }
+            });
+        });
       }
 
       // Auto-scroll tab into view (align to end = right edge)
@@ -1818,9 +1822,13 @@ export class MainLayout {
       }
     }
 
-    deactivateAllTabs(secondaryContent);
-    switchTabWithContent(secondaryContent, value);
-    this.viewTabManager?.deactivateCurrentViewTab();
+    // Pure scc tab switch: cross-fade the column (no direction — tabs have no
+    // before/after semantics). Helper falls back to the instant cut elsewhere.
+    withViewTransition(() => {
+      deactivateAllTabs(secondaryContent);
+      switchTabWithContent(secondaryContent, value);
+      this.viewTabManager?.deactivateCurrentViewTab();
+    });
 
     // The log panel skips rendering while hidden; render its current logs now that
     // it is the visible tab again.

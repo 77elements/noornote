@@ -164,6 +164,86 @@ html.layout--phone {
   -webkit-overflow-scrolling: touch;
 }
 
+// ========================================
+// View Transitions (pcc page transitions)
+// The pcc is its own snapshot layer: routers' view switches cross-fade it
+// (~180ms) with a subtle 8px directional slide, keyed off the
+// html.router-nav-forward / router-nav-back classes the Router sets.
+// Everything outside the pcc (sidebar, scc, modals) switches hard — the root
+// pair carries identical frames between old and new, so its animation is
+// disabled. Browsers without the API (or prefers-reduced-motion — the Router
+// skips the call) never create the pseudo-elements: plain instant cut.
+// ========================================
+.primary-content {
+  view-transition-name: pcc-root;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(pcc-root),
+::view-transition-new(pcc-root) {
+  animation-duration: 180ms;
+  animation-timing-function: ease-out;
+}
+
+// Forward: old drifts out left, new drifts in from the right
+html.router-nav-forward::view-transition-old(pcc-root) {
+  animation-name: nn-vt-out-left;
+}
+html.router-nav-forward::view-transition-new(pcc-root) {
+  animation-name: nn-vt-in-right;
+}
+
+// Back: mirrored
+html.router-nav-back::view-transition-old(pcc-root) {
+  animation-name: nn-vt-out-right;
+}
+html.router-nav-back::view-transition-new(pcc-root) {
+  animation-name: nn-vt-in-left;
+}
+
+@keyframes nn-vt-out-left {
+  to {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+}
+@keyframes nn-vt-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+}
+@keyframes nn-vt-out-right {
+  to {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+}
+@keyframes nn-vt-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+}
+
+// scc: own snapshot layer, plain cross-fade — tab switches have no direction,
+// so no slide. Shorter than the pcc (narrower column, less area). Absent from
+// the transition entirely in wide/phone (column display:none).
+.secondary-content {
+  view-transition-name: scc-root;
+}
+
+::view-transition-old(scc-root),
+::view-transition-new(scc-root) {
+  animation-duration: 150ms;
+  animation-timing-function: ease-out;
+}
+
 .secondary-content {
   grid-area: secondary;
   min-width: 0;
