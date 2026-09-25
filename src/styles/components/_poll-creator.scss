@@ -4,7 +4,7 @@
 @use '../base/icons' as *;
 
 .poll-creator {
-  background: var(--color-1);
+  background: transparent;
   border: 1px solid var(--color-2);
   border-radius: $radius-xl;
   padding: $gap;
