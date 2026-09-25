@@ -300,7 +300,9 @@ html.sidebar-collapsed:not(.layout--phone) {
     left: 0;
     right: 0;
     margin-bottom: calc($gap / 2);
-    background: var(--color-2);
+    background: $marble-gradient;
+    backdrop-filter: blur(10px) saturate(1.2);
+    -webkit-backdrop-filter: blur(10px) saturate(1.2);
     border: none;
     border-radius: $radius-pill;
     box-shadow: $box-shadow;

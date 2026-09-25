@@ -30,7 +30,9 @@
   height: 450px;
   display: flex;
   flex-direction: column;
-  background: var(--color-1);
+  background: $marble-gradient;
+  backdrop-filter: blur(10px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
   border: 1px solid var(--color-3);
   border-radius: $radius-pill;
   overflow: hidden;

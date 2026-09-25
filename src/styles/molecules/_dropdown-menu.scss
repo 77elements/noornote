@@ -45,7 +45,9 @@
   position: fixed;
   min-width: 180px;
   padding: calc($gap / 2);
-  background: var(--color-2);
+  background: $marble-gradient;
+  backdrop-filter: blur(10px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
   border: 1px solid color-mix(in srgb, var(--color-2) 80%, white);
   border-radius: $radius-pill;
   box-shadow: $box-shadow;

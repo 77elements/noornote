@@ -7,7 +7,9 @@
  */
 
 .mention-autocomplete {
-  background: var(--color-2);
+  background: $marble-gradient;
+  backdrop-filter: blur(10px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
   border: 1px solid var(--color-3);
   border-radius: $radius-xl;
   max-height: 300px;

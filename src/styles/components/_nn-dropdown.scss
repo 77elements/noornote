@@ -61,7 +61,9 @@
     right: 0;
     min-width: 100%; // Ensure menu is at least as wide as trigger
     width: max-content;
-    background: var(--color-2);
+    background: $marble-gradient;
+    backdrop-filter: blur(10px) saturate(1.2);
+    -webkit-backdrop-filter: blur(10px) saturate(1.2);
     border: none;
     border-radius: $radius-xl;
     list-style: none;

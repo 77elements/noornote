@@ -27,7 +27,9 @@
     min-width: 160px;
     max-height: 250px;
     overflow-y: auto;
-    background: var(--color-2);
+    background: $marble-gradient;
+    backdrop-filter: blur(10px) saturate(1.2);
+    -webkit-backdrop-filter: blur(10px) saturate(1.2);
     border: 1px solid var(--color-3);
     border-radius: $radius-xl;
     padding: calc($gap / 4) 0;
