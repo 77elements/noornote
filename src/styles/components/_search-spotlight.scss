@@ -26,7 +26,12 @@
 }
 
 .search-spotlight__overlay {
-  display: none;
+  // Fullscreen dim behind the content panel — clicking it closes the spotlight
+  // (handler in SearchSpotlight.setupEventListeners). Content sits above it.
+  position: absolute;
+  inset: 0;
+  background: $alpha-medium;
+  pointer-events: auto;
 }
 
 .search-spotlight__content {
