@@ -109,26 +109,3 @@ export function resolveLogicalParent(path: string): string {
   const firstSegment = `/${clean.split('/')[1] ?? ''}`;
   return ROOT_PATHS.has(firstSegment) ? firstSegment : '/';
 }
-
-/** Which kind of navigation is happening — drives the view-transition direction. */
-export type NavigationKind = 'push' | 'back' | 'forward' | 'other';
-
-/**
- * Classify a navigation for the view-transition layer. 'other' means "no
- * directional transition" (boot, force re-render, auth redirects) — the view
- * switches with a plain fade or none at all.
- */
-export function resolveNavigationKind(opts: {
-  isHistoryNavigation: boolean;
-  historyDirection: 'back' | 'forward';
-  skipHistory: boolean;
-  force: boolean;
-  samePath: boolean;
-  isFirstNavigation: boolean;
-}): NavigationKind {
-  if (opts.isFirstNavigation) return 'other';
-  if (opts.samePath && opts.force) return 'other';
-  if (opts.isHistoryNavigation) return opts.historyDirection;
-  if (opts.skipHistory) return 'other';
-  return 'push';
-}

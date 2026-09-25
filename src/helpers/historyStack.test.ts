@@ -3,65 +3,8 @@ import {
   collapseConsecutiveDuplicates,
   normalizeRoutePath,
   resolveLogicalParent,
-  resolveNavigationKind,
   syncHistoryIndexToPath,
 } from './historyStack';
-
-describe('resolveNavigationKind', () => {
-  it('classifies a normal forward navigation as push', () => {
-    expect(
-      resolveNavigationKind({
-        isHistoryNavigation: false,
-        historyDirection: 'back',
-        skipHistory: false,
-        force: false,
-        samePath: false,
-        isFirstNavigation: false,
-      })
-    ).toBe('push');
-  });
-
-  it('returns the history direction for back/forward', () => {
-    expect(
-      resolveNavigationKind({
-        isHistoryNavigation: true,
-        historyDirection: 'back',
-        skipHistory: false,
-        force: false,
-        samePath: false,
-        isFirstNavigation: false,
-      })
-    ).toBe('back');
-    expect(
-      resolveNavigationKind({
-        isHistoryNavigation: true,
-        historyDirection: 'forward',
-        skipHistory: false,
-        force: false,
-        samePath: false,
-        isFirstNavigation: false,
-      })
-    ).toBe('forward');
-  });
-
-  it('skips transitions on boot, force re-render and auth redirects', () => {
-    const base = {
-      isHistoryNavigation: false,
-      historyDirection: 'back' as const,
-      skipHistory: false,
-      force: false,
-      samePath: false,
-      isFirstNavigation: false,
-    };
-    expect(resolveNavigationKind({ ...base, isFirstNavigation: true })).toBe(
-      'other'
-    );
-    expect(
-      resolveNavigationKind({ ...base, samePath: true, force: true })
-    ).toBe('other');
-    expect(resolveNavigationKind({ ...base, skipHistory: true })).toBe('other');
-  });
-});
 
 describe('collapseConsecutiveDuplicates', () => {
   it('collapses reload-induced runs but keeps real revisits', () => {

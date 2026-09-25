@@ -7,8 +7,6 @@ import { GLOBAL_KEY_HAS_KEY } from '../helpers/globalStorageKeys';
 import {
   syncHistoryIndexToPath,
   collapseConsecutiveDuplicates,
-  resolveNavigationKind,
-  type NavigationKind,
 } from '../helpers/historyStack';
 import { withViewTransition } from '../helpers/viewTransition';
 import { AuthStateManager } from './AuthStateManager';
@@ -40,12 +38,10 @@ export class Router {
   private history: string[] = [];
   private historyIndex: number = -1;
   private isNavigatingHistory: boolean = false;
-  /** Direction of the last back/forward move (back() vs forward()). */
-  private historyDirection: 'back' | 'forward' = 'back';
-  /** Classification of the in-flight navigation — drives view-transition direction. */
-  private navigationKind: NavigationKind = 'other';
   /** False until the first navigate() has run — the boot route never transitions. */
   private hasRoutedOnce: boolean = false;
+  /** The in-flight view switch skips the cross-fade (boot, force, auth redirect). */
+  private skipViewTransition: boolean = true;
   private readonly SESSION_STORAGE_KEY = 'noornote_last_url';
   private readonly HISTORY_STORAGE_KEY = 'noornote_url_history';
   // Mobile (Capacitor) only: mirror of the last route in localStorage, which — unlike
@@ -69,18 +65,13 @@ export class Router {
       if (OverlayStack.consumeBackPopstate()) return;
       // Native Back/Forward moved window.history without touching the custom
       // stack — realign the index so the in-app Back button stays in sync.
-      const previousIndex = this.historyIndex;
       this.historyIndex = syncHistoryIndexToPath(
         this.history,
         this.historyIndex,
         window.location.pathname
       );
       this.saveHistory();
-      // The native move found an earlier stack entry → back, later → forward;
-      // unknown paths (defensive) fall back to 'back', the common case.
-      this.historyDirection =
-        this.historyIndex < previousIndex ? 'back' : 'forward';
-      this.navigationKind = this.historyDirection;
+      this.skipViewTransition = false;
       this.handleRoute(window.location.pathname);
     });
 
@@ -182,16 +173,12 @@ export class Router {
       return; // Already on this route
     }
 
-    // Classify this navigation for the view-transition layer. The very first
-    // route (boot) and force re-renders / auth redirects never transition.
-    this.navigationKind = resolveNavigationKind({
-      isHistoryNavigation: this.isNavigatingHistory,
-      historyDirection: this.historyDirection,
-      skipHistory: opts?.skipHistory === true,
-      force,
-      samePath: path === this.currentPath,
-      isFirstNavigation: !this.hasRoutedOnce,
-    });
+    // The very first route (boot), force re-renders and auth redirects never
+    // cross-fade — the view switches with the plain instant cut.
+    this.skipViewTransition =
+      !this.hasRoutedOnce ||
+      opts?.skipHistory === true ||
+      (path === this.currentPath && force);
     this.hasRoutedOnce = true;
 
     // Emit event for SystemLogger to clear page logs (avoid circular dependency)
@@ -295,7 +282,6 @@ export class Router {
   public back(): void {
     if (this.canGoBack()) {
       this.isNavigatingHistory = true;
-      this.historyDirection = 'back';
       this.historyIndex--;
       const path = this.history[this.historyIndex];
       if (path) {
@@ -311,7 +297,6 @@ export class Router {
   public forward(): void {
     if (this.canGoForward()) {
       this.isNavigatingHistory = true;
-      this.historyDirection = 'forward';
       this.historyIndex++;
       const path = this.history[this.historyIndex];
       if (path) {
@@ -495,20 +480,17 @@ export class Router {
 
   /**
    * Run the view-mounting step inside a same-document View Transition when
-   * supported: the pcc cross-fades (~180ms) with a subtle 8px directional
-   * slide (CSS in _main-layout.scss, keyed off router-nav-forward/back).
+   * supported: the pcc cross-fades (~180ms, CSS in _main-layout.scss).
    * Falls back to the instant cut everywhere else — unsupported browsers,
    * prefers-reduced-motion, boot, force re-renders and auth redirects
-   * (navigationKind 'other').
+   * (skipViewTransition).
    */
   private routeWithTransition(apply: () => void): void {
-    if (this.navigationKind === 'other') {
+    if (this.skipViewTransition) {
       apply();
       return;
     }
-    withViewTransition(apply, {
-      direction: this.navigationKind === 'back' ? 'back' : 'forward',
-    });
+    withViewTransition(apply);
   }
 
   /**
