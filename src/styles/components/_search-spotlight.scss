@@ -33,7 +33,9 @@
   position: relative;
   width: 90%;
   max-width: 600px;
-  background: var(--color-1);
+  background: $marble-gradient;
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
   border: 1px solid var(--color-2);
   border-radius: $radius-2xl;
   box-shadow: $box-shadow;
@@ -50,7 +52,9 @@
   display: flex;
   gap: calc($gap / 2);
   padding: calc($gap / 2) $gap;
-  background: var(--color-2);
+  background: $marble-gradient;
+  backdrop-filter: blur(10px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
   border-bottom: 1px solid var(--surface-tint);
 }
 
