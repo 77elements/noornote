@@ -15,6 +15,7 @@
 
 import { View } from './View';
 import { Router } from '../../services/Router';
+import { NavigationDispatcher } from '../../services/NavigationDispatcher';
 // ArticleService accessed via articles module API
 import { RelayConfig } from '../../services/RelayConfig';
 import { AuthGuard } from '../../services/AuthGuard';
@@ -861,7 +862,7 @@ export class ArticleEditorView extends View {
    */
   private async handleBack(): Promise<void> {
     if (!this.isDirty()) {
-      this.router.back();
+      NavigationDispatcher.goBack();
       return;
     }
 
@@ -874,7 +875,7 @@ export class ArticleEditorView extends View {
     });
 
     if (discard) {
-      this.router.back();
+      NavigationDispatcher.goBack();
     }
   }
 
@@ -978,7 +979,7 @@ export class ArticleEditorView extends View {
 
       if (naddr) {
         this.saveSnapshot();
-        this.router.back();
+        NavigationDispatcher.goBack();
       }
     } finally {
       this.isPublishing = false;
@@ -1015,7 +1016,7 @@ export class ArticleEditorView extends View {
 
     if (deleted) {
       this.saveSnapshot(); // Prevent unsaved changes warning
-      this.router.back();
+      NavigationDispatcher.goBack();
     }
   }
 

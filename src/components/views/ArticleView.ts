@@ -16,6 +16,7 @@ import type { ZapsModuleApi } from '../../modules/zaps/contracts';
 import { SnvZapsListController } from './managers/SnvZapsListController';
 import { AuthService } from '../../services/AuthService';
 import { Router } from '../../services/Router';
+import { NavigationDispatcher } from '../../services/NavigationDispatcher';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
 import { AnalyticsModal } from '../analytics/AnalyticsModal';
 import { getAddressableIdentifier } from '../../helpers/getAddressableIdentifier';
@@ -285,7 +286,7 @@ export class ArticleView extends View {
           Promise.resolve(false));
 
         if (deleted) {
-          Router.getInstance().back();
+          NavigationDispatcher.goBack();
         }
       });
     }

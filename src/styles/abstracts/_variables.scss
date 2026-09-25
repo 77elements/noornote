@@ -63,6 +63,23 @@ $bg-error: rgba($color-red, 0.15);
 $surface-tint: rgba($color-white, 0.1);
 
 // ========================================
+// Marble Glass (Overlay-Hintergrund)
+// ========================================
+// THE background for overlay elements — everything that sits ON TOP of the
+// app via z-index (back-bar now, modals/flyouts/popovers later). "Glass
+// stone": a diagonal sweep alternating surface purple (--color-2) and accent
+// lilac (--color-3), half transparent so underlying content shimmers through.
+// Theme-driven via var(--color-N). The glass blur is applied by the consuming
+// component (backdrop-filter), not baked in here.
+$marble-gradient: linear-gradient(
+  105deg,
+  color-mix(in srgb, var(--color-2) 40%, transparent) 0%,
+  color-mix(in srgb, var(--color-3) 30%, transparent) 35%,
+  color-mix(in srgb, var(--color-2) 32%, transparent) 65%,
+  color-mix(in srgb, var(--color-3) 24%, transparent) 100%
+);
+
+// ========================================
 // Theme Maps
 // ========================================
 $light-theme: (
@@ -242,6 +259,7 @@ $main-content-max-width: 1200px;
 // ========================================
 $z-dropdown:           1000;   // popovers, custom dropdowns, hover cards anchored inline
 $z-sticky:             1001;   // sticky toolbars within a scroll container
+$z-back-bar:           1002;   // pcc back-bar overlay (above view content, below dropdowns)
 $z-fullscreen-overlay: 8000;   // in-app fullscreen surfaces
 $z-image-viewer:       9999;   // lightbox, offline-overlay, blocking system banners
 $z-modal:              10000;  // generic ModalService backdrop + content

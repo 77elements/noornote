@@ -5,6 +5,7 @@
  */
 
 import { Router } from '../../services/Router';
+import { NavigationDispatcher } from '../../services/NavigationDispatcher';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type {
@@ -152,12 +153,12 @@ export class SearchSpotlight {
     );
 
     backBtn?.addEventListener('click', () => {
-      this.router.back();
+      NavigationDispatcher.goBack();
       this.updateNavigationButtons();
     });
 
     forwardBtn?.addEventListener('click', () => {
-      this.router.forward();
+      NavigationDispatcher.goForward();
       this.updateNavigationButtons();
     });
 

@@ -10,8 +10,14 @@
  *
  * Browser/Electron UI back and the keyboard shortcuts go through the Router's
  * popstate handler / Router.back() directly; both consult the OverlayStack too.
+ *
+ * Back falls back to the route's logical parent when the session stack is empty
+ * (cold deep link): /note/x → /, /messages/y → /messages, /listing/x →
+ * /marketplace, … (see helpers/historyStack.ts). The app exits / hits true root
+ * only when no parent exists either.
  */
 
+import { resolveLogicalParent } from '../helpers/historyStack';
 import { Router } from './Router';
 import { OverlayStack } from './OverlayStack';
 import { PlatformService } from './PlatformService';
@@ -31,11 +37,30 @@ export class NavigationDispatcher {
   /** Back: dismiss the topmost overlay if any, otherwise navigate back. */
   static goBack(): void {
     if (OverlayStack.closeTopFromInput()) return;
-    Router.getInstance().back();
+    this.navigateBackOrFallback();
   }
 
   static goForward(): void {
     Router.getInstance().forward();
+  }
+
+  /**
+   * Router.back() with logical-parent fallback for an empty stack.
+   * Returns false when there is nothing to go back to (true root).
+   */
+  private static navigateBackOrFallback(): boolean {
+    const router = Router.getInstance();
+    if (router.canGoBack()) {
+      router.back();
+      return true;
+    }
+    const current = router.getCurrentPath();
+    const parent = resolveLogicalParent(current);
+    if (parent && parent !== current) {
+      router.navigate(parent);
+      return true;
+    }
+    return false;
   }
 
   private static setupMouseButtons(): void {
@@ -56,13 +81,11 @@ export class NavigationDispatcher {
     try {
       const { App } = await import('@capacitor/app');
       // Registering a backButton listener overrides Capacitor's default (exit/navigate),
-      // so we take full responsibility for it here.
+      // so we take full responsibility for it here. Exit only once neither the
+      // session stack nor a logical parent offers a step back.
       await App.addListener('backButton', () => {
         if (OverlayStack.closeTopFromInput()) return;
-        const router = Router.getInstance();
-        if (router.canGoBack()) {
-          router.back();
-        } else {
+        if (!this.navigateBackOrFallback()) {
           void App.exitApp();
         }
       });

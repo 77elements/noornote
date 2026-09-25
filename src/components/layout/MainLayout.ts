@@ -22,6 +22,7 @@ import {
 import { FontSizeService } from '../../services/FontSizeService';
 import { AppState } from '../../services/AppState';
 import { Router } from '../../services/Router';
+import { NavigationDispatcher } from '../../services/NavigationDispatcher';
 // PostNoteModal loaded lazily on click (Step 4 bundle optimization)
 import { ModalService } from '../../services/ModalService';
 import { AuthStateManager } from '../../services/AuthStateManager';
@@ -103,6 +104,9 @@ export class MainLayout {
   private authStateUnsubscribe: (() => void) | null = null;
   private spacebarScrollHandler: ((e: KeyboardEvent) => void) | null = null;
   private routerViewChangedHandler: EventListener | null = null;
+
+  /** Re-evaluates back-bar visibility on router:history-changed. */
+  private backBarHistoryHandler: EventListener | null = null;
   private mentionClickHandler: ((e: MouseEvent) => void) | null = null;
   private globalSearchView: GlobalSearchView | null = null;
   private bookmarkManager: BookmarkManager | null = null;
@@ -167,6 +171,7 @@ export class MainLayout {
     this.setupSpacebarScroll();
     void this.initializeGlobalSearchView();
     this.setupActiveNavigation();
+    this.setupBackBar();
     this.initializeViewTabManager();
     void this.initializeDateTimeCalendar();
     this.startDateTimeUpdates();
@@ -929,6 +934,36 @@ export class MainLayout {
       '.primary-nav .primary-nav__link--timeline'
     );
     homeLink?.classList.add('is-active');
+  }
+
+  /**
+   * Global Back bar (bottom of the pcc): wire the button and keep visibility
+   * in sync with the router's session history. Shown iff canGoBack().
+   */
+  private setupBackBar(): void {
+    const bar = this.element.querySelector('[data-back-bar]');
+    if (!bar) return;
+
+    bar
+      .querySelector('[data-back-bar-button]')
+      ?.addEventListener('click', () => {
+        NavigationDispatcher.goBack();
+      });
+
+    this.backBarHistoryHandler = () => this.updateBackBar();
+    window.addEventListener(
+      'router:history-changed',
+      this.backBarHistoryHandler
+    );
+    this.updateBackBar();
+  }
+
+  private updateBackBar(): void {
+    const bar = this.element.querySelector('[data-back-bar]');
+    bar?.classList.toggle(
+      'nn-back-bar--visible',
+      Router.getInstance().canGoBack()
+    );
   }
 
   /**
@@ -1946,6 +1981,16 @@ export class MainLayout {
         <!-- Content will be dynamically updated based on auth state -->
       </main>
 
+      <!-- Global Back bar: grid item sharing the primary area, overlays the pcc.
+           Visibility driven by Router.canGoBack() via router:history-changed. -->
+      <div class="nn-back-bar" data-back-bar>
+        <div class="l-row--right">
+          <button class="btn btn--passive btn--mini" type="button" data-back-bar-button>
+            ← Back
+          </button>
+        </div>
+      </div>
+
       <aside class="secondary-content" aria-label="Details">
         <div class="user-login-bar">
           <!-- User status will be mounted here -->
@@ -2756,7 +2801,7 @@ export class MainLayout {
     const listContainer = document.createElement('div');
     listContainer.className = 'list-view-primary';
 
-    // Add header with title and back button
+    // Add header with title (plain Back lives in the global pcc back bar)
     const header = document.createElement('div');
     header.className = 'list-view-primary__header l-spread';
 
@@ -2764,15 +2809,7 @@ export class MainLayout {
     title.className = 'list-view-primary__title';
     title.textContent = mode === 'followers' ? 'Followers' : 'Following';
 
-    const backBtn = document.createElement('button');
-    backBtn.className = 'list-view-primary__back btn btn--medium btn--passive';
-    backBtn.innerHTML = '← Back';
-    backBtn.addEventListener('click', () => {
-      history.back();
-    });
-
     header.appendChild(title);
-    header.appendChild(backBtn);
 
     // Create content container
     const contentContainer = document.createElement('div');
@@ -3126,6 +3163,14 @@ export class MainLayout {
         this.routerViewChangedHandler
       );
       this.routerViewChangedHandler = null;
+    }
+
+    if (this.backBarHistoryHandler) {
+      window.removeEventListener(
+        'router:history-changed',
+        this.backBarHistoryHandler
+      );
+      this.backBarHistoryHandler = null;
     }
 
     if (this.mentionClickHandler) {

@@ -76,21 +76,14 @@ export class EpubReaderView extends View {
 
     const header = document.createElement('header');
     header.className = 'epub-reader__header';
-    const left = document.createElement('div');
-    left.className = 'epub-reader__header-left';
-    const back = document.createElement('button');
-    back.className = 'btn btn--medium btn--passive';
-    back.textContent = '← Back';
-    back.addEventListener('click', () => history.back());
-    left.appendChild(back);
-    // Center: book title from EPUB metadata (falls back to the file name)
+    // Center: book title from EPUB metadata (falls back to the file name).
+    // Plain Back lives in the global pcc back bar — no local button.
     this.titleEl = document.createElement('span');
     this.titleEl.className = 'epub-reader__title';
     this.titleEl.textContent = this.fileName;
     this.tocHost = document.createElement('div');
     this.tocHost.className = 'epub-reader__toc-host';
     this.tocHost.appendChild(this.createMonoButton());
-    header.appendChild(left);
     header.appendChild(this.titleEl);
     header.appendChild(this.tocHost);
 

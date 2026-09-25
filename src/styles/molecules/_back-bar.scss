@@ -1,0 +1,61 @@
+/**
+ * Back Bar — the global Back affordance at the bottom of the primary content
+ * pane. Mounted ONCE by MainLayout as a grid item sharing the `primary` area,
+ * so it lays itself over the pcc content and survives view switching (no
+ * per-view mounting). Visibility is driven by Router.canGoBack() via the
+ * `router:history-changed` event; the bar slides up from the bottom edge.
+ */
+
+@use '../abstracts/variables' as *;
+
+.nn-back-bar {
+  grid-area: primary;
+  align-self: end;
+  z-index: $z-back-bar;
+
+  height: 40px; // fixed chrome height (component dimension, not spacing)
+  width: 100%;
+  box-sizing: border-box;
+  padding-inline: $gap;
+
+  background: $marble-gradient;
+  backdrop-filter: blur(10px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+
+  // Glass edge: light top rim + soft lift shadow above the bar
+  box-shadow:
+    inset 0 1px 0 rgba($color-white, 0.15),
+    0 -4px 14px $alpha-light;
+
+  // Hidden: parked below the bottom edge, then slides up when visible
+  transform: translateY(110%);
+  opacity: 0;
+  transition:
+    transform 300ms ease-out,
+    opacity 250ms ease-out;
+
+  // Only the button is interactive — clicks on the glass strip pass through
+  // to the content beneath it.
+  pointer-events: none;
+
+  // The single Back action, aligned right, vertically centered in the 40px bar
+  .l-row--right {
+    display: grid;
+    align-items: center;
+    justify-items: end;
+    height: 100%;
+  }
+
+  .btn {
+    pointer-events: auto;
+  }
+
+  &--visible {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}

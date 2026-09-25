@@ -24,6 +24,7 @@ import { extractOriginalNoteId } from '../../helpers/extractOriginalNoteId';
 import { SystemLogger } from '../../services/SystemLogger';
 import { AppState } from '../../services/AppState';
 import { Router } from '../../services/Router';
+import { NavigationDispatcher } from '../../services/NavigationDispatcher';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import {
   decodeNip19,
@@ -284,7 +285,10 @@ export class SingleNoteView extends View {
 
     snvWrapper.appendChild(noteElement);
     snvWrapper.appendChild(repliesContainer);
-    snvWrapper.appendChild(this.createFooter());
+    const footer = this.createFooter();
+    if (footer) {
+      snvWrapper.appendChild(footer);
+    }
 
     this.container.appendChild(snvWrapper);
 
@@ -370,7 +374,11 @@ export class SingleNoteView extends View {
     return btn;
   }
 
-  private createFooter(): HTMLElement {
+  /**
+   * Footer only carries the semantic "Back to Search Results" action — plain
+   * Back lives in the global pcc back bar (NavigationDispatcher).
+   */
+  private createFooter(): HTMLElement | null {
     const footer = document.createElement('div');
     footer.className = 'snv-footer';
 
@@ -386,11 +394,10 @@ export class SingleNoteView extends View {
           this.router.navigate(`/profile/${npub}`);
         })
       );
-    } else {
-      footer.appendChild(this.createBackButton('← Back', () => history.back()));
+      return footer;
     }
 
-    return footer;
+    return null;
   }
 
   private showError(message: string): void {
@@ -398,9 +405,13 @@ export class SingleNoteView extends View {
       <div class="snv-error">
         <div class="snv-error__icon">!</div>
         <div class="snv-error__message">${message}</div>
-        <button class="btn btn--medium btn--passive" onclick="history.back()">← Back</button>
       </div>
     `;
+    const backBtn = document.createElement('button');
+    backBtn.className = 'btn btn--medium btn--passive';
+    backBtn.textContent = '← Back';
+    backBtn.addEventListener('click', () => NavigationDispatcher.goBack());
+    this.container.querySelector('.snv-error')?.appendChild(backBtn);
   }
 
   public getElement(): HTMLElement {

@@ -4,9 +4,21 @@
  */
 
 import { GLOBAL_KEY_HAS_KEY } from '../helpers/globalStorageKeys';
+import {
+  syncHistoryIndexToPath,
+  collapseConsecutiveDuplicates,
+} from '../helpers/historyStack';
 import { AuthStateManager } from './AuthStateManager';
 import { PlatformService } from './PlatformService';
 import { OverlayStack } from './OverlayStack';
+
+/** Optional behaviour flags for a single navigate() call. */
+export interface NavigateOptions {
+  /** Do not record the path on the session back stack (auth redirects). */
+  skipHistory?: boolean;
+  /** Replace the browser history entry instead of pushing a new one (back/forward). */
+  replaceState?: boolean;
+}
 
 export interface Route {
   pattern: RegExp;
@@ -46,6 +58,14 @@ export class Router {
       // A Back press must first dismiss any open overlay and be consumed there,
       // instead of navigating the view underneath it.
       if (OverlayStack.consumeBackPopstate()) return;
+      // Native Back/Forward moved window.history without touching the custom
+      // stack — realign the index so the in-app Back button stays in sync.
+      this.historyIndex = syncHistoryIndexToPath(
+        this.history,
+        this.historyIndex,
+        window.location.pathname
+      );
+      this.saveHistory();
       this.handleRoute(window.location.pathname);
     });
 
@@ -136,8 +156,13 @@ export class Router {
    * Navigate to a new route
    * @param path - Path to navigate to (e.g., /note/abc123)
    * @param force - Force re-render even if already on this path (e.g., after auth state change)
+   * @param opts - Optional flags: skipHistory (auth redirects), replaceState (back/forward)
    */
-  public navigate(path: string, force: boolean = false): void {
+  public navigate(
+    path: string,
+    force: boolean = false,
+    opts?: NavigateOptions
+  ): void {
     if (path === this.currentPath && !force) {
       return; // Already on this route
     }
@@ -152,18 +177,27 @@ export class Router {
     }
 
     // Update navigation history (only if not navigating via back/forward)
-    if (!this.isNavigatingHistory && path !== this.currentPath) {
+    if (
+      !this.isNavigatingHistory &&
+      path !== this.currentPath &&
+      !opts?.skipHistory
+    ) {
       // Remove all forward history when navigating to new page
       this.history = this.history.slice(0, this.historyIndex + 1);
 
-      // Add new path to history
-      this.history.push(path);
+      // Consecutive-duplicate guard: an app reload re-pushes the restored
+      // path — without this, Back would need one press per reload for the
+      // same step. If the top entry already is the path, just stay on it.
+      if (this.history[this.historyIndex] !== path) {
+        // Add new path to history
+        this.history.push(path);
 
-      // Limit history size
-      if (this.history.length > this.MAX_HISTORY) {
-        this.history.shift();
-      } else {
-        this.historyIndex++;
+        // Limit history size
+        if (this.history.length > this.MAX_HISTORY) {
+          this.history.shift();
+        } else {
+          this.historyIndex++;
+        }
       }
 
       // Persist history to sessionStorage
@@ -176,13 +210,15 @@ export class Router {
       // after a full page-load via `window.location.href`). Pushing
       // again would create a duplicate history entry, so the user would
       // need TWO Back-button presses to leave. Detect and use
-      // replaceState in that case.
+      // replaceState in that case. Back/forward moves ALWAYS replace:
+      // the custom stack is the source of truth, so the browser entry
+      // must be rewritten in place instead of growing the native history.
       // Preserve the secondary-pane state (?scc=) across pcc navigation so the
       // scc tab survives sidebar navigation and reload. The scc param itself is
       // written by MainLayout; here we only carry it through.
       const scc = new URLSearchParams(window.location.search).get('scc');
       const targetUrl = scc ? `${path}?scc=${encodeURIComponent(scc)}` : path;
-      if (window.location.pathname === path) {
+      if (opts?.replaceState || window.location.pathname === path) {
         window.history.replaceState({}, '', targetUrl);
       } else {
         window.history.pushState({}, '', targetUrl);
@@ -235,7 +271,7 @@ export class Router {
       this.historyIndex--;
       const path = this.history[this.historyIndex];
       if (path) {
-        this.navigate(path);
+        this.navigate(path, false, { replaceState: true });
       }
       this.isNavigatingHistory = false;
     }
@@ -250,7 +286,7 @@ export class Router {
       this.historyIndex++;
       const path = this.history[this.historyIndex];
       if (path) {
-        this.navigate(path);
+        this.navigate(path, false, { replaceState: true });
       }
       this.isNavigatingHistory = false;
     }
@@ -361,8 +397,13 @@ export class Router {
           history?: string[];
           index?: number;
         };
-        this.history = data.history ?? [];
-        this.historyIndex = data.index ?? -1;
+        // Collapse reload-induced consecutive duplicates from older sessions
+        const collapsed = collapseConsecutiveDuplicates(
+          data.history ?? [],
+          data.index ?? -1
+        );
+        this.history = collapsed.history;
+        this.historyIndex = collapsed.index;
       }
     } catch (error) {
       console.debug('Failed to restore navigation history:', error);
@@ -398,9 +439,13 @@ export class Router {
             // Legacy: Use custom unauthenticated handler
             route.unauthenticatedHandler(params);
           } else if (route.requiresAuth) {
-            // Route requires auth - redirect to welcome or login based on user preference
+            // Route requires auth - redirect to welcome or login based on user preference.
+            // Auth redirects are system actions, not user navigation — they must NOT
+            // land on the back stack (the user cannot go "back" to a login gate).
             const hasKey = localStorage.getItem(GLOBAL_KEY_HAS_KEY);
-            this.navigate(hasKey ? '/login' : '/welcome');
+            this.navigate(hasKey ? '/login' : '/welcome', false, {
+              skipHistory: true,
+            });
           } else {
             // Route is public, show it
             route.handler(params);
@@ -409,12 +454,22 @@ export class Router {
           // User logged in, show route
           route.handler(params);
         }
+        this.notifyHistoryChanged();
         return;
       }
     }
 
     // No route matched - show 404 or default route
     console.debug(`No route matched for: ${path}`);
+    this.notifyHistoryChanged();
+  }
+
+  /**
+   * Fired after every routed navigation (navigate, back/forward, native popstate).
+   * Signals UI chrome (e.g. the pcc back bar) to re-evaluate canGoBack().
+   */
+  private notifyHistoryChanged(): void {
+    window.dispatchEvent(new CustomEvent('router:history-changed'));
   }
 
   /**
