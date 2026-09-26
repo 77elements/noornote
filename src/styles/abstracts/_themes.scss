@@ -89,8 +89,9 @@
   --surface-tint: rgba(255, 255, 255, 0.06);
   --color-logo-start: #ff2aaa;
   --color-logo-end: #50ff30;
-  --bg-section-inner: rgba(56, 56, 79, 0.35);
-  --bg-section-outer: rgba(21, 21, 48, 0.35);
+  // Same as noor-jadid: sidebar radial needs a touch more presence here.
+  --bg-section-inner: rgba(56, 56, 79, 0.5);
+  --bg-section-outer: rgba(21, 21, 48, 0.45);
 }
 
 [data-theme="wake-up-neo"] {
@@ -117,6 +118,10 @@
   --surface-tint: rgba(255, 255, 255, 0.06);
   --color-logo-start: #7b2ff7;
   --color-logo-end: #e0218a;
-  --bg-section-inner: rgba(39, 31, 59, 0.35);
-  --bg-section-outer: rgba(16, 13, 24, 0.35);
+  // Slightly stronger than the usual 0.35 — the sidebar radial otherwise
+  // drowns against this dark page background.
+  // Lighter lilac core for the sidebar radial — pure alpha bumps against the
+  // near-identical color-2 made no visible difference on this dark page bg.
+  --bg-section-inner: rgba(70, 56, 105, 0.5);
+  --bg-section-outer: rgba(16, 13, 24, 0.5);
 }
