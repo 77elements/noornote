@@ -46,10 +46,13 @@ export interface NnDropdownOptions {
   /** Optional data-* attributes as key-value pairs (e.g., { "note-id": "abc123" }) */
   dataAttributes?: Record<string, string>;
   /**
-   * Lift the open menu to <body> (position: fixed, anchored to the trigger) so
-   * it is not clipped by a scroll-overflow ancestor. Use when the dropdown lives
-   * inside a horizontally-scrollable strip or any `overflow: hidden` container
-   * (e.g. the scc tab row). Closes on scroll/resize. Not for searchable menus.
+   * Lift the open menu to <body> (position: fixed, anchored to the trigger).
+   * DEFAULT ON: as a direct child of <body> the menu's backdrop-filter samples
+   * the whole page, so the marble glass always blurs what is behind it — inline
+   * menus inside nested/composited layout (scroll containers, contain, …) sample
+   * an unreliable backdrop in Chromium. It also frees the menu from any
+   * scroll-overflow ancestor clip. Searchable menus stay inline; opt out
+   * explicitly with menuPortal: false if a truly inline menu is required.
    */
   menuPortal?: boolean;
 }
@@ -67,6 +70,9 @@ export class NnDropdown {
   private menuEl: HTMLElement | null = null;
   private triggerEl: HTMLElement | null = null;
   private menuHome: HTMLElement | null = null;
+
+  /** All dropdowns with a menu currently portaled to <body> (max one visible). */
+  private static openPortaled = new Set<NnDropdown>();
 
   // Stored so destroy() can detach them — the ISL creates one dropdown per note,
   // so anonymous document listeners would leak on every timeline card recycle.
@@ -87,9 +93,16 @@ export class NnDropdown {
   };
   // A portaled menu is anchored to the trigger's viewport position; re-anchor it
   // on scroll/resize. (Closing instead would be killed by unrelated scrolls, e.g.
-  // the auto-scrolling system-log panel right next to the scc dropdown.)
+  // the auto-scrolling system-log panel right next to the scc dropdown.) If the
+  // owning view went away mid-open (container detached), self-destruct — the
+  // portaled menu would otherwise linger under <body> as a visible ghost.
   private readonly onPortalReflow = (): void => {
-    if (this.isOpen && this.menuPortal) this.positionPortalMenu();
+    if (!this.isOpen || !this.menuPortal) return;
+    if (!this.element.isConnected) {
+      this.destroy();
+      return;
+    }
+    this.positionPortalMenu();
   };
 
   constructor(config: NnDropdownOptions) {
@@ -97,7 +110,7 @@ export class NnDropdown {
     this.selectedValue = config.selectedValue;
     this.onChange = config.onChange;
     this.searchable = config.searchable ?? false;
-    this.menuPortal = config.menuPortal ?? false;
+    this.menuPortal = config.menuPortal ?? !this.searchable;
     this.element = this.createElement(config);
     this.setupEventListeners();
   }
@@ -247,6 +260,12 @@ export class NnDropdown {
     this.element.classList.add('nn-dropdown--open');
 
     if (this.menuPortal && this.menuEl) {
+      // Only one portaled menu can be open app-wide: an earlier instance whose
+      // close() never ran (view switch destroyed it mid-open) would otherwise
+      // linger under <body> as a visible ghost panel.
+      NnDropdown.openPortaled.forEach(d => {
+        if (d !== this) d.close();
+      });
       // Lift the menu out to <body> so an ancestor's scroll-overflow clip (e.g.
       // the horizontally-scrollable scc tab strip) can't hide it, then anchor it
       // to the trigger with fixed positioning.
@@ -254,6 +273,7 @@ export class NnDropdown {
       document.body.appendChild(this.menuEl);
       this.menuEl.classList.add('nn-dropdown__menu--portaled');
       this.positionPortalMenu();
+      NnDropdown.openPortaled.add(this);
       window.addEventListener('scroll', this.onPortalReflow, true);
       window.addEventListener('resize', this.onPortalReflow);
     } else {
@@ -393,6 +413,7 @@ export class NnDropdown {
       this.menuEl.style.left = '';
       // Return the menu to its home so the normal descendant CSS applies again.
       if (this.menuHome) this.menuHome.appendChild(this.menuEl);
+      NnDropdown.openPortaled.delete(this);
       window.removeEventListener('scroll', this.onPortalReflow, true);
       window.removeEventListener('resize', this.onPortalReflow);
     }
@@ -497,6 +518,7 @@ export class NnDropdown {
     document.removeEventListener('keydown', this.onDocumentKeydown);
     window.removeEventListener('scroll', this.onPortalReflow, true);
     window.removeEventListener('resize', this.onPortalReflow);
+    NnDropdown.openPortaled.delete(this);
     // A portaled menu lives under <body>; drop it so it doesn't outlive us.
     if (this.menuEl && this.menuEl.parentElement === document.body) {
       this.menuEl.remove();

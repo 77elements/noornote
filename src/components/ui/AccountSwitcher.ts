@@ -40,6 +40,30 @@ export class AccountSwitcher {
   private unsubscribeProfile?: () => void;
   private clickOutsideHandler: (e: MouseEvent) => void;
   private profileCache: Map<string, UserProfile> = new Map();
+  private menuEl: HTMLUListElement | null = null;
+
+  // Portaled menu: anchored to the trigger's viewport rect; re-anchor on
+  // scroll/resize (same mechanism as NnDropdown's menuPortal).
+  private readonly repositionMenu = (): void => {
+    if (this.menuEl) this.positionMenu(this.menuEl);
+  };
+
+  private positionMenu(menu: HTMLUListElement): void {
+    const trigger = this.element.querySelector('.nn-dropdown__trigger');
+    if (!trigger) return;
+    const t = trigger.getBoundingClientRect();
+    const m = 8;
+    let left = t.left;
+    let top = t.bottom + 4;
+    if (left + menu.offsetWidth > window.innerWidth - m) {
+      left = Math.max(m, t.right - menu.offsetWidth);
+    }
+    if (top + menu.offsetHeight > window.innerHeight - m) {
+      top = Math.max(m, t.top - menu.offsetHeight - 4);
+    }
+    menu.style.top = `${Math.round(top)}px`;
+    menu.style.left = `${Math.round(left)}px`;
+  }
 
   constructor(options: AccountSwitcherOptions) {
     this.userProfileService = UserProfileService.getInstance();
@@ -52,7 +76,12 @@ export class AccountSwitcher {
 
     // Click outside handler
     this.clickOutsideHandler = (e: MouseEvent) => {
-      if (this.isOpen && !this.element.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        this.isOpen &&
+        !this.element.contains(target) &&
+        !this.menuEl?.contains(target)
+      ) {
         this.close();
       }
     };
@@ -150,11 +179,16 @@ export class AccountSwitcher {
 
     // Create menu
     const menu = document.createElement('ul');
-    menu.className = 'nn-dropdown__menu';
-    menu.style.display = 'block';
-    menu.style.opacity = '1';
-    menu.style.transform = 'translateY(0)';
-    this.element.appendChild(menu);
+    menu.className = 'nn-dropdown__menu nn-dropdown__menu--portaled';
+    this.menuEl = menu;
+
+    // Portal to <body>: as a direct body child the marble glass backdrop-filter
+    // samples the whole page (inline menus inside the scc/pcc columns sample an
+    // unreliable backdrop in Chromium — content shone through unblurred).
+    document.body.appendChild(menu);
+    this.positionMenu(menu);
+    window.addEventListener('scroll', this.repositionMenu, true);
+    window.addEventListener('resize', this.repositionMenu);
 
     // Show loading
     menu.innerHTML =
@@ -171,8 +205,10 @@ export class AccountSwitcher {
     this.isOpen = false;
     this.element.classList.remove('nn-dropdown--open');
 
-    const menu = this.element.querySelector('.nn-dropdown__menu');
-    if (menu) menu.remove();
+    window.removeEventListener('scroll', this.repositionMenu, true);
+    window.removeEventListener('resize', this.repositionMenu);
+    this.menuEl?.remove();
+    this.menuEl = null;
   }
 
   /**
@@ -363,7 +399,10 @@ export class AccountSwitcher {
       this.unsubscribeProfile();
     }
     document.removeEventListener('click', this.clickOutsideHandler);
+    window.removeEventListener('scroll', this.repositionMenu, true);
+    window.removeEventListener('resize', this.repositionMenu);
     this.close();
+    this.menuEl?.remove();
     this.element.remove();
   }
 }
