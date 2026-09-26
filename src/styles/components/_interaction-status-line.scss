@@ -23,9 +23,8 @@
   grid-template-columns: 20px auto;
   align-items: center;
   gap: calc($gap / 4);
-  // Pill: rounded background on every action (Noor jadÄ«d).
+  // Pill: rounded click area around every action (Noor jadīd).
   padding: calc($gap / 2) calc($gap * 0.75);
-  background: var(--color-2);
   border: none;
   border-radius: $radius-full;
   color: var(--color-3);
