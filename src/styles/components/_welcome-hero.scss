@@ -332,9 +332,14 @@
 // --- Wake Up (Banner 05) ---
 
 .welcome-interstitial--wake-up {
-  // Red gradient top border
+  // Status-color top border (theme-driven, matches the h2 em fill below)
   &::before {
-    background: linear-gradient(90deg, rgba($color-red, 0.8), rgba($color-red, 0.3), rgba($color-red, 0.8));
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--color-6) 80%, transparent),
+      color-mix(in srgb, var(--color-6) 30%, transparent),
+      color-mix(in srgb, var(--color-6) 80%, transparent)
+    );
   }
 
   h2 em {
@@ -349,7 +354,11 @@
   @include gigantic;
   font-weight: 900;
   letter-spacing: -2px;
-  background: linear-gradient(135deg, rgba($color-red, 0.8), rgba($color-red, 0.4));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-6) 80%, transparent),
+    color-mix(in srgb, var(--color-6) 40%, transparent)
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
