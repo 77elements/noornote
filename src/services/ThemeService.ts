@@ -9,6 +9,7 @@ export type ThemeId =
   | 'bright-superman'
   | 'code-bunker'
   | 'soft-lilac'
+  | 't-low'
   | 'dark-symbiote'
   | 'neon-harley'
   | 'wake-up-neo'
@@ -25,6 +26,7 @@ export const THEMES: ThemeOption[] = [
   { id: 'bright-superman', label: 'Bright Superman' },
   { id: 'code-bunker', label: 'Code Bunker' },
   { id: 'soft-lilac', label: 'Soft Lilac' },
+  { id: 't-low', label: 'T-Low' },
   { id: 'dark-symbiote', label: 'Dark Symbiote' },
   { id: 'neon-harley', label: 'Neon Harley' },
   { id: 'wake-up-neo', label: 'Wake up Neo' },

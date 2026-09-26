@@ -49,6 +49,22 @@
   --bg-section-outer: rgba(226, 216, 200, 0.35);
 }
 
+// T-Low: the pre-v1.8.0 Soft Lilac palette, restored under its own name after
+// feedback on the refreshed Soft Lilac.
+[data-theme="t-low"] {
+  --color-1: #faf8ff;
+  --color-2: #e8ddf2;
+  --color-3: #d1548e;
+  --color-4: #8757ad;
+  --color-5: #1e1e1e;
+  --color-6: #ff9800;
+  --surface-tint: rgba(0, 0, 0, 0.06);
+  --color-logo-start: #e84090;
+  --color-logo-end: #d89030;
+  --bg-section-inner: rgba(197, 187, 205, 0.35);
+  --bg-section-outer: rgba(232, 221, 242, 0.35);
+}
+
 [data-theme="dark-symbiote"] {
   --color-1: #0c1520;
   --color-2: #1e303a;

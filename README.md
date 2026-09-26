@@ -39,7 +39,7 @@ It focuses not just on the social media side but also heavily on the other stuff
 - **Image reposts** - Share images with automatic source attribution
 - **Notification priorities** - Drag & drop to customize notification order
 - **Rich DM content** - Links, media, mentions, and quoted notes in direct messages
-- **7 color themes** - Deep Purple, Bright Superman, Code Bunker, Soft Lilac, Dark Symbiote, Neon Harley, Wake up Neo
+- **9 color themes** - Noor jadīd, Deep Purple, Bright Superman, Code Bunker, Soft Lilac, T-Low, Dark Symbiote, Neon Harley, Wake up Neo
 - **Font size controls** - Adjustable text size with persistent preference
 - **Layout modes** - Phone mode and customizable layout options
 - **Mutual change alerts** - Get notified when someone stops following back

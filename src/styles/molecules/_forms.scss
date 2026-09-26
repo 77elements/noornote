@@ -91,7 +91,8 @@
 
   // Light themes: native calendar in light mode
   [data-theme="bright-superman"] &,
-  [data-theme="soft-lilac"] & {
+  [data-theme="soft-lilac"] &,
+  [data-theme="t-low"] & {
     color-scheme: light;
   }
 
@@ -109,7 +110,8 @@
   color-scheme: dark;
 
   [data-theme="bright-superman"] &,
-  [data-theme="soft-lilac"] & {
+  [data-theme="soft-lilac"] &,
+  [data-theme="t-low"] & {
     color-scheme: light;
   }
 
