@@ -54,6 +54,10 @@
 
   .quote-error-content {
     @extend .message-content;
+    // Single row: icon, space, then the error message inline.
+    flex-direction: row;
+    align-items: center;
+    gap: calc($gap / 4);
   }
 
   .error-icon {
