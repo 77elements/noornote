@@ -86,11 +86,13 @@
     transform: translateY(-8px);
   }
 
-  // Show menu when open
+  // Show menu when open — soft scale+fade entrance (UI 2.0 AB4)
   &--open &__menu {
     display: block;
     opacity: 1;
     transform: translateY(0);
+    transform-origin: top;
+    animation: nn-dropdown-in 150ms ease-out;
   }
 
   // Collision flips — set on open by positionMenu() when the default
@@ -112,9 +114,11 @@
     display: block;
     opacity: 1;
     transform: none;
+    transform-origin: top;
     right: auto;
     min-width: 0;
     z-index: $z-modal-top;
+    animation: nn-dropdown-in 150ms ease-out;
   }
 
   &--drop-up &__menu {
@@ -215,5 +219,20 @@
     &__item {
       padding: calc($gap / 4) calc($gap / 2);
     }
+  }
+}
+
+// Soft entrance (UI 2.0 AB4): menus scale 0.97 → 1 while fading in.
+@media (prefers-reduced-motion: reduce) {
+  .nn-dropdown--open .nn-dropdown__menu,
+  .nn-dropdown__menu--portaled {
+    animation: none;
+  }
+}
+
+@keyframes nn-dropdown-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
   }
 }

@@ -33,9 +33,10 @@
     height: 100%;
     background: $alpha-heavy;
     backdrop-filter: blur(4px);
+    animation: modal-overlay-in 150ms ease-out;
   }
 
-  // Modal content box
+  // Modal content box — soft scale+fade entrance (UI 2.0 AB4)
   &__content {
     position: relative;
     z-index: 10001;
@@ -48,6 +49,7 @@
     width: 100%;
     display: flex;
     flex-direction: column;
+    animation: modal-content-in 150ms ease-out;
 
     // Responsive: cap modals on small screens
     @include mobile-down {
@@ -125,5 +127,26 @@
     padding: $gap * 2;
     text-align: center;
     color: $color-red;
+  }
+}
+
+// Soft entrance (UI 2.0 AB4): content scales 0.97 → 1, overlay fades in.
+@media (prefers-reduced-motion: reduce) {
+  .modal__overlay,
+  .modal__content {
+    animation: none;
+  }
+}
+
+@keyframes modal-overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes modal-content-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
   }
 }
