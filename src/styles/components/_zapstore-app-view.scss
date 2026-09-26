@@ -66,6 +66,7 @@
     display: flex;
     gap: calc($gap / 2);
     overflow-x: auto;
+    @include custom-scrollbar;
     padding-bottom: calc($gap / 2);
     margin-bottom: $gap;
     -webkit-overflow-scrolling: touch;

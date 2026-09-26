@@ -164,13 +164,23 @@
 // Utility Mixins
 // ========================================
 
-// Custom scrollbar styling
+// Custom scrollbar styling — glass language: fully rounded translucent pill in
+// the lilac accent, always visible but quiet (45%), strong on direct hover
+// (80%). Firefox path uses the standard properties behind @supports — standard
+// scrollbar props must NOT be set on the webkit path, or Chromium 121+ ignores
+// the pseudo styling entirely.
 @mixin custom-scrollbar {
-  // Webkit MUST come first (Chrome, Safari, Edge, Electron)
-  // Set base scrollbar properties first (required for Electron)
+  // Firefox (no ::-webkit-scrollbar support)
+  @supports not selector(::-webkit-scrollbar) {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-3) 45%, transparent)
+      transparent;
+  }
+
+  // Webkit (Chrome, Safari, Edge, Electron)
   &::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 5px;
+    height: 5px;
     background-color: transparent;
   }
 
@@ -179,12 +189,12 @@
   }
 
   &::-webkit-scrollbar-thumb {
-    background: color-mix(in srgb, var(--color-2) 70%, white);
-    border-radius: $radius-xl;
+    background: color-mix(in srgb, var(--color-3) 45%, transparent);
+    border-radius: $radius-full;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: color-mix(in srgb, var(--color-2) 50%, white);
+    background: color-mix(in srgb, var(--color-3) 80%, transparent);
   }
 
   &::-webkit-scrollbar-corner {

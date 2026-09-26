@@ -5,6 +5,7 @@
  */
 
 @use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
 
 // The shared .tab-content scrolls internally (height:100% + overflow-y:auto) — meant for
 // fixed-height views. This addon view scrolls at .primary-content, so let the tab content
@@ -51,6 +52,7 @@
 // Community Dhikr: actions table (scrolls horizontally on narrow screens).
 .nm-dhikr-list {
   overflow-x: auto;
+  @include custom-scrollbar;
 }
 
 .nm-dhikr {

@@ -114,6 +114,7 @@
     padding: $gap;
     border-radius: $radius-xl;
     overflow-x: auto;
+    @include custom-scrollbar;
     margin: $gap 0;
 
     code {
