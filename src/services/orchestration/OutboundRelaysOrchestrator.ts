@@ -156,16 +156,33 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
 
       const aggregatorRelays = this.relayConfig.getAggregatorRelays();
       for (const pubkey of uncachedPubkeys) {
-        if (!processedPubkeys.has(pubkey)) {
-          const defaultRelayList: UserRelayList = {
+        if (processedPubkeys.has(pubkey)) continue;
+
+        // Observed-relays fallback: when no kind 10002 came back (the classic
+        // NIP-65 bootstrap gap for small users), the NDK outbox tracker knows
+        // which relays this pubkey has actually reached us on — richer than the
+        // aggregator default and free (local data, no extra network calls).
+        const outboxWrite = this.transport.getOutboxWriteRelays(pubkey);
+        if (outboxWrite.length > 0) {
+          const relayList: UserRelayList = {
             pubkey,
-            writeRelays: aggregatorRelays,
-            readRelays: aggregatorRelays,
+            writeRelays: outboxWrite,
+            readRelays: outboxWrite,
             lastUpdated: Date.now(),
           };
-          results.push(defaultRelayList);
-          this.cacheRelayList(defaultRelayList);
+          results.push(relayList);
+          this.cacheRelayList(relayList);
+          continue;
         }
+
+        const defaultRelayList: UserRelayList = {
+          pubkey,
+          writeRelays: aggregatorRelays,
+          readRelays: aggregatorRelays,
+          lastUpdated: Date.now(),
+        };
+        results.push(defaultRelayList);
+        this.cacheRelayList(defaultRelayList);
       }
 
       this.stats.totalUsers = pubkeys.length;

@@ -36,6 +36,15 @@ export class QuoteOrchestrator extends Orchestrator {
   /** In-flight fetches to prevent duplicate requests */
   private fetchingQuotes: Map<string, Promise<NostrEvent | null>> = new Map();
 
+  /**
+   * Negative cache: refs whose full pipeline came up empty, with the timestamp
+   * of the failure. Prevents re-running the entire ~30s stage cascade on every
+   * re-render of a feed containing an unfetchable quote. Entries expire after
+   * NEGATIVE_CACHE_TTL and are cleared on success.
+   */
+  private failedQuoteFetches: Map<string, number> = new Map();
+  private static readonly NEGATIVE_CACHE_TTL = 15 * 60 * 1000;
+
   private constructor() {
     super('QuoteOrchestrator');
     this.transport = NostrTransport.getInstance();
@@ -94,6 +103,22 @@ export class QuoteOrchestrator extends Orchestrator {
       return this.fetchingQuotes.get(nostrRef)!;
     }
 
+    // Negative cache: a recent full-pipeline miss means the ref is (currently)
+    // unfetchable — skip the ~30s stage cascade. Explicit outboundOnly retries
+    // bypass this, so a user-driven retry always gets a fresh attempt.
+    if (!outboundOnly) {
+      const failedAt = this.failedQuoteFetches.get(nostrRef);
+      if (
+        failedAt !== undefined &&
+        Date.now() - failedAt < QuoteOrchestrator.NEGATIVE_CACHE_TTL
+      ) {
+        diagLog('relays', 'QuoteOrchestrator: negative cache hit', {
+          ref: nostrRef.slice(0, 24),
+        });
+        return null;
+      }
+    }
+
     // Check if this is an naddr (addressable event)
     if (this.isNaddrReference(nostrRef)) {
       // Delegate to LongFormOrchestrator
@@ -136,9 +161,30 @@ export class QuoteOrchestrator extends Orchestrator {
     this.fetchingQuotes.set(nostrRef, fetchPromise);
 
     try {
-      return await fetchPromise;
+      const result = await fetchPromise;
+      if (result) {
+        // Success clears the negative entry; a miss refreshes the timestamp.
+        this.failedQuoteFetches.delete(nostrRef);
+      } else if (!outboundOnly) {
+        this.failedQuoteFetches.set(nostrRef, Date.now());
+        this.pruneFailedQuoteCache();
+      }
+      return result;
     } finally {
       this.fetchingQuotes.delete(nostrRef);
+    }
+  }
+
+  /**
+   * Keep the negative cache bounded: drop expired entries once the map grows.
+   */
+  private pruneFailedQuoteCache(): void {
+    if (this.failedQuoteFetches.size <= 500) return;
+    const now = Date.now();
+    for (const [ref, ts] of this.failedQuoteFetches) {
+      if (now - ts >= QuoteOrchestrator.NEGATIVE_CACHE_TTL) {
+        this.failedQuoteFetches.delete(ref);
+      }
     }
   }
 
@@ -254,6 +300,12 @@ export class QuoteOrchestrator extends Orchestrator {
     // walked through with cold / EOSE-empty results, re-running them only
     // burns the same timeouts again. Stage 3 (outbound) is the one whose
     // relays are now warm — that's where the retry should spend its budget.
+    // stage2Completed tracks whether stage 2 returned normally (no throw):
+    // a clean stage-2 pass over the standard set means stage 3 must not
+    // re-ask the same relays when discovery offers nothing new (NDK dedupe
+    // answers instantly-empty). After a stage-2 THROW a stage-3 retry over
+    // the same relays is still legitimate (transport may have reconnected).
+    let stage2Completed = false;
     if (!outboundOnly) {
       // Stage 1: Try relay hints first (highest priority)
       if (relayHints.length > 0) {
@@ -286,6 +338,7 @@ export class QuoteOrchestrator extends Orchestrator {
           false,
           'QuoteOrch'
         );
+        stage2Completed = true;
         if (events[0]) {
           this.noteService.registerNote(events[0]);
           return events[0];
@@ -348,6 +401,26 @@ export class QuoteOrchestrator extends Orchestrator {
         );
         const standardRelays = new Set(this.transport.getReadRelays());
         const newRelays = outboundRelays.filter(r => !standardRelays.has(r));
+
+        // Fail fast when discovery offers nothing new: the author's write
+        // relays are a subset of the standard set stage 2 just asked cleanly.
+        // Re-asking would hit the NDK subscription dedupe and return instantly
+        // empty — burning the timeout for nothing (observed 0-1ms answers).
+        if (newRelays.length === 0 && stage2Completed && !outboundOnly) {
+          diagLog(
+            'relays',
+            'QuoteOrchestrator: stage 3 skipped (no new relays, stage 2 clean)',
+            { eventId: shortId, relayCount: outboundRelays.length }
+          );
+          diagLog('relays', 'QuoteOrchestrator: NOT FOUND after all stages', {
+            eventId: shortId,
+            outboundPubkeyCount: outboundPubkeys.length,
+            hasHints: relayHints.length > 0,
+            outboundOnly,
+          });
+          return null;
+        }
+
         // Retry path: longer timeout — outbound relays (especially a bridge
         // relay like mostr.pub the quoter used) often need extra seconds on
         // their first connection of the session. 15s empirically covers the

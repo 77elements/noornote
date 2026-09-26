@@ -34,6 +34,10 @@ import {
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { MediaModuleApi } from '../../modules/media/contracts';
 import { renderFollowPackMembers } from '../../components/follow-packs/renderFollowPackMembers';
+import {
+  setFollowPackSnapshot,
+  snapshotFromPack,
+} from '../../helpers/followPackDiff';
 
 type ViewMode = 'grid' | 'detail' | 'timeline' | 'edit' | 'create';
 
@@ -224,6 +228,11 @@ export class FollowPackManager {
           <span class="author" data-pubkey="${pack.authorPubkey}"></span>
           <span>${pack.userPubkeys.length} people</span>
         </div>
+        ${
+          this.authService.isCurrentUser(pack.authorPubkey)
+            ? '<div class="l-row--right"><button class="btn btn--small btn--passive follow-packs__btn-card-share" title="Share this pack to your timeline">Share</button></div>'
+            : ''
+        }
       </div>
     `;
 
@@ -233,6 +242,14 @@ export class FollowPackManager {
       const npub = hexToNpub(pack.authorPubkey);
       authorEl.textContent = npub ? npubToUsername(npub) : 'Unknown';
     }
+
+    // Share (owner only) — must not trigger the card's open-detail click
+    card
+      .querySelector('.follow-packs__btn-card-share')
+      ?.addEventListener('click', e => {
+        e.stopPropagation();
+        void this.sharePackToTimeline(pack);
+      });
 
     card.addEventListener('click', () => {
       this.selectedPack = pack;
@@ -304,6 +321,7 @@ export class FollowPackManager {
           <button class="btn follow-packs__btn-follow-all">Follow All</button>
           <button class="btn btn--passive follow-packs__btn-see-notes">See Notes</button>
           ${isOwner ? '<button class="btn btn--secondary follow-packs__btn-edit">Edit List</button>' : ''}
+          ${isOwner ? '<button class="btn btn--passive follow-packs__btn-share" title="Share this pack to your timeline">Share in TL</button>' : ''}
         </div>
       </div>
     `;
@@ -341,6 +359,13 @@ export class FollowPackManager {
         this.initEditState(pack);
         this.viewMode = 'edit';
         this.renderCurrentView();
+      });
+
+    // Share in TL (owner only)
+    header
+      .querySelector('.follow-packs__btn-share')
+      ?.addEventListener('click', () => {
+        void this.sharePackToTimeline(pack);
       });
 
     // Member list
@@ -847,6 +872,74 @@ export class FollowPackManager {
       publishBtn.disabled = false;
       publishBtn.textContent =
         mode === 'create' ? 'Publish Follow Pack' : 'Update Follow Pack';
+    }
+  }
+
+  /**
+   * Re-publish the pack's current state (kind 39089, parameterized
+   * replaceable) so it surfaces as a fresh card in the home timeline — the
+   * same mechanism as the owner-edit auto-post, but without change notes:
+   * content is identical to the cached snapshot, so the card renders without
+   * diff hint lines. Owner-only.
+   */
+  private async sharePackToTimeline(pack: FollowPack): Promise<void> {
+    if (!this.authService.isCurrentUser(pack.authorPubkey)) {
+      ToastService.show('Only the pack owner can share this pack', 'info');
+      return;
+    }
+
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) return;
+
+    try {
+      const createdAt = Math.floor(Date.now() / 1000);
+      const tags: string[][] = [
+        ['d', pack.id],
+        ['title', pack.title],
+      ];
+
+      if (pack.description) tags.push(['description', pack.description]);
+      if (pack.coverImage) tags.push(['image', pack.coverImage]);
+      pack.userPubkeys.forEach(pubkey => tags.push(['p', pubkey]));
+
+      const unsignedEvent = {
+        kind: 39089,
+        created_at: createdAt,
+        tags,
+        content: '',
+        pubkey: currentUser.pubkey,
+      };
+
+      const signedEvent = await this.authService.signEvent(unsignedEvent);
+      if (!signedEvent) {
+        ToastService.show('Failed to sign event', 'error');
+        return;
+      }
+
+      const writeRelays = RelayConfig.getInstance().getWriteRelays();
+      const aggregatorRelays = RelayConfig.getInstance().getAggregatorRelays();
+      const publishRelays = [...new Set([...writeRelays, ...aggregatorRelays])];
+
+      await this.transport.publish(publishRelays, signedEvent);
+
+      // Keep the snapshot in sync at the new created_at with NO diff lines —
+      // the timeline card then renders without any "what changed" hint.
+      setFollowPackSnapshot(pack.authorPubkey, pack.id, {
+        ...snapshotFromPack(pack),
+        createdAt,
+      });
+
+      ToastService.show('Follow Pack shared to your timeline', 'success');
+      this.systemLogger.info(
+        'FollowPacks',
+        `Shared pack "${pack.title}" to the timeline`
+      );
+    } catch (error) {
+      ToastService.show('Failed to share pack', 'error');
+      this.systemLogger.error(
+        'FollowPacks',
+        `Pack share failed: ${String(error)}`
+      );
     }
   }
 

@@ -1369,6 +1369,24 @@ export class NostrTransport {
   }
 
   /**
+   * Write relays we have OBSERVED a pubkey on (NDK outbox tracker — populated
+   * from events that actually crossed our pool, unlike a possibly-stale NIP-65
+   * list). Empty when nothing was observed. Used by OutboundRelaysOrchestrator
+   * as a discovery fallback when a user's kind 10002 is unavailable.
+   */
+  public getOutboxWriteRelays(pubkey: string): string[] {
+    try {
+      const item = this.ndk.outboxTracker?.data?.get(pubkey);
+      if (!item?.writeRelays) return [];
+      const urls: string[] = [];
+      item.writeRelays.forEach(relay => urls.push(String(relay)));
+      return urls;
+    } catch {
+      return [];
+    }
+  }
+
+  /**
    * NIP-42 relay AUTH handler (wired as ndk.relayAuthDefaultPolicy).
    *
    * Privacy scope: authenticating reveals the user's npub to the relay, so it
