@@ -195,6 +195,11 @@ export class AccountSwitcher {
       '<li class="nn-dropdown__item" style="opacity: 0.5;">Loading...</li>';
 
     await this.populateMenu(menu);
+
+    // Re-position AFTER population: the menu grows to its final width/height
+    // only once the items are in — positioning it before that anchors a stale
+    // (too small) size and the flip checks misjudge the viewport overflow.
+    this.positionMenu(menu);
   }
 
   /**
