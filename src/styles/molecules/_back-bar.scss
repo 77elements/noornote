@@ -59,3 +59,13 @@
     transition: none;
   }
 }
+
+// Content clearance: views opt in by adding `.back-padder` to a DIRECT child
+// element of their `.view-content` container, so the last element (e.g. an
+// ISL) stays clear of the bar. Padding INSIDE the scroll content works —
+// unlike padding on the scroller itself, which Chromium does not count into
+// the scroll extent. Views whose `.view-content` container has no inner
+// wrapper need their own solution.
+.view-content > .back-padder {
+  padding-bottom: 40px;
+}

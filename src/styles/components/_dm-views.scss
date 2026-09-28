@@ -304,6 +304,7 @@
   display: flex;
   gap: calc($gap / 2);
   padding: $gap calc($gap * 1.5);
+  margin-bottom: 40px;
   border-top: 1px solid var(--color-2);
   background: var(--color-1);
   flex-shrink: 0;

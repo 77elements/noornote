@@ -141,45 +141,47 @@ export class MessagesView extends View {
    */
   private render(): void {
     this.container.innerHTML = `
-      <div class="messages-view__header progress-bar-container">
-        <h1>Messages</h1>
-        <div class="messages-view__actions">
-          <button class="btn btn--medium messages-view__compose-btn">
-            New Message
-          </button>
-          <button class="dropdown-menu-trigger messages-view__menu-trigger" aria-label="Message options">
-            <svg width="16" height="16"><use href="#icon-menu-dots"/></svg>
-          </button>
-        </div>
-      </div>
-      <div class="messages-view__tabs">
-        <div class="tabs">
-          <button class="tab tab--active" data-tab="known">
-            Known
-            <span class="badge" data-badge="known" style="display: none;"></span>
-          </button>
-          <button class="tab" data-tab="unknown">
-            Unknown
-            <span class="badge" data-badge="unknown" style="display: none;"></span>
-          </button>
-        </div>
-      </div>
-      <div class="messages-view__content">
-        <div class="tab-content tab-content--active" data-tab-content="known">
-          <div class="messages-view__list" data-list="known">
-            <div class="messages-view__loading">Loading messages...</div>
+      <div class="back-padder">
+        <div class="messages-view__header progress-bar-container">
+          <h1>Messages</h1>
+          <div class="messages-view__actions">
+            <button class="btn btn--medium messages-view__compose-btn">
+              New Message
+            </button>
+            <button class="dropdown-menu-trigger messages-view__menu-trigger" aria-label="Message options">
+              <svg width="16" height="16"><use href="#icon-menu-dots"/></svg>
+            </button>
           </div>
         </div>
-        <div class="tab-content" data-tab-content="unknown">
-          <div class="messages-view__list" data-list="unknown">
-            <div class="messages-view__loading">Loading messages...</div>
+        <div class="messages-view__tabs">
+          <div class="tabs">
+            <button class="tab tab--active" data-tab="known">
+              Known
+              <span class="badge" data-badge="known" style="display: none;"></span>
+            </button>
+            <button class="tab" data-tab="unknown">
+              Unknown
+              <span class="badge" data-badge="unknown" style="display: none;"></span>
+            </button>
           </div>
         </div>
-      </div>
-      <div class="messages-view__load-older">
-        <button class="btn btn--medium messages-view__load-older-btn">
-          <span class="messages-view__load-older-label">Load older messages</span>
-        </button>
+        <div class="messages-view__content">
+          <div class="tab-content tab-content--active" data-tab-content="known">
+            <div class="messages-view__list" data-list="known">
+              <div class="messages-view__loading">Loading messages...</div>
+            </div>
+          </div>
+          <div class="tab-content" data-tab-content="unknown">
+            <div class="messages-view__list" data-list="unknown">
+              <div class="messages-view__loading">Loading messages...</div>
+            </div>
+          </div>
+        </div>
+        <div class="messages-view__load-older">
+          <button class="btn btn--medium messages-view__load-older-btn">
+            <span class="messages-view__load-older-label">Load older messages</span>
+          </button>
+        </div>
       </div>
     `;
 

@@ -278,7 +278,7 @@ export class SingleNoteView extends View {
       depth: 0,
     });
     const snvWrapper = document.createElement('div');
-    snvWrapper.className = 'snv-wrapper';
+    snvWrapper.className = 'snv-wrapper back-padder';
 
     const repliesContainer = document.createElement('div');
     repliesContainer.className = 'snv-replies-container';

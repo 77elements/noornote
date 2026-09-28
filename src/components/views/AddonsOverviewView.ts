@@ -58,24 +58,26 @@ export class AddonsOverviewView extends View {
     const addons = getOrderedAddons();
 
     this.container.innerHTML = `
-      <div class="addons-overview__head l-spread">
-        <h2>Addons</h2>
-        <div>
-          <button class="btn btn--passive btn--mini" data-addons-reset ${hasCustomAddonOrder() ? '' : 'hidden'}>
-            Reset order
-          </button>
+      <div class="back-padder">
+        <div class="addons-overview__head l-spread">
+          <h2>Addons</h2>
+          <div>
+            <button class="btn btn--passive btn--mini" data-addons-reset ${hasCustomAddonOrder() ? '' : 'hidden'}>
+              Reset order
+            </button>
+          </div>
         </div>
-      </div>
-      <p class="addons-overview__intro">
-        Addons are extra functions that build on and enhance your NoorNote
-        experience. Right now, there are ${ADDON_REGISTRY.length} of them.
-      </p>
-      <p class="addons-overview__hint">
-        Drag tiles to reorder (on touch: use ▲▼). The order is saved per account.
-      </p>
-      <div class="nn-card-grid-wrap">
-        <div class="nn-card-grid addons-overview__grid" data-addons-grid>
-          ${addons.map(a => this.renderTile(a)).join('')}
+        <p class="addons-overview__intro">
+          Addons are extra functions that build on and enhance your NoorNote
+          experience. Right now, there are ${ADDON_REGISTRY.length} of them.
+        </p>
+        <p class="addons-overview__hint">
+          Drag tiles to reorder (on touch: use ▲▼). The order is saved per account.
+        </p>
+        <div class="nn-card-grid-wrap">
+          <div class="nn-card-grid addons-overview__grid" data-addons-grid>
+            ${addons.map(a => this.renderTile(a)).join('')}
+          </div>
         </div>
       </div>
     `;
