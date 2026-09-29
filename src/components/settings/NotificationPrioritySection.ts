@@ -13,6 +13,10 @@ import {
   type NotificationPriority,
   type NotificationPriorityMap,
 } from '../../services/PerAccountLocalStorage';
+import {
+  DEFAULT_PRIORITIES,
+  getNotificationPriorities,
+} from '../../services/NotificationPriorityConfig';
 import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { MoveDropdown, type MoveTarget } from '../ui/MoveDropdown';
@@ -48,28 +52,6 @@ const NOTIFICATION_TYPES: NotificationTypeInfo[] = [
   { type: 'group-chats', label: 'Nostrord' },
   { type: 'armada', label: 'Armada' },
 ];
-
-const DEFAULT_PRIORITIES: NotificationPriorityMap = {
-  reply: 1,
-  quote: 1,
-  zap: 1,
-  'image-tag': 1,
-  'zap-reply': 2,
-  mention: 2,
-  repost: 2,
-  reaction: 2,
-  article: 2,
-  mutual_new: 2,
-  mutual_unfollow: 2,
-  follower_new: 2,
-  'thread-reply': 3,
-  hashtag: 3,
-  dhikr_round: 3,
-  dhikr_commit: 3,
-  dhikr_complete: 3,
-  'group-chats': 2,
-  armada: 2,
-};
 
 const PRIORITY_LABELS: Record<
   NotificationPriority,
@@ -122,13 +104,7 @@ export class NotificationPrioritySection extends SettingsSection {
    * Load priorities from storage or use defaults
    */
   private loadPriorities(): NotificationPriorityMap {
-    // Merge stored over defaults so newly added types (e.g. zap-reply, follower_new) always appear
-    // at their default priority for existing users, instead of vanishing from the UI.
-    const saved = this.storage.get<NotificationPriorityMap>(
-      StorageKeys.NOTIFICATION_PRIORITIES,
-      {}
-    );
-    return { ...DEFAULT_PRIORITIES, ...saved };
+    return getNotificationPriorities();
   }
 
   /**
@@ -637,17 +613,3 @@ export class NotificationPrioritySection extends SettingsSection {
     this.resetDragState();
   }
 }
-
-/**
- * Get notification priorities (exported for use by NotificationsOrchestrator)
- */
-export function getNotificationPriorities(): NotificationPriorityMap {
-  const storage = PerAccountLocalStorage.getInstance();
-  const saved = storage.get<NotificationPriorityMap>(
-    StorageKeys.NOTIFICATION_PRIORITIES,
-    {}
-  );
-  return { ...DEFAULT_PRIORITIES, ...saved };
-}
-
-export { DEFAULT_PRIORITIES };

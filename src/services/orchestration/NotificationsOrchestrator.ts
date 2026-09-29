@@ -32,6 +32,11 @@ import { SoftMuteService } from '../SoftMuteService';
 import { USER_CONTENT_KINDS } from '../../types/nostr';
 import { getCacheSize } from '../../helpers/LRUCache';
 import { isDataSaverEnabled } from '../DataSaverService';
+import {
+  isDirectCommentToOwnContent,
+  isDirectReplyToOwnNote,
+} from '../../helpers/notificationReplyClassification';
+import { getNotificationPriorities } from '../NotificationPriorityConfig';
 
 export type NotificationType =
   | 'mention'
@@ -1073,33 +1078,9 @@ export class NotificationsOrchestrator extends Orchestrator {
 
     if (unread.length === 0) return null;
 
-    // Default priorities
-    const defaultPriorities: Record<string, 1 | 2 | 3> = {
-      reply: 1,
-      quote: 1,
-      zap: 1,
-      mention: 2,
-      repost: 2,
-      reaction: 2,
-      poll_vote: 2,
-      article: 2,
-      mutual_new: 2,
-      mutual_unfollow: 2,
-      follower_new: 2,
-      'thread-reply': 3,
-      hashtag: 3,
-      dhikr_round: 3,
-      dhikr_commit: 3,
-      dhikr_complete: 3,
-      nostrord: 2,
-      'group-chats': 2,
-      armada: 2,
-    };
-
-    // Load user's priority settings (or use defaults)
-    const effectivePriorities = this.perAccountStorage.get<
-      Record<string, 1 | 2 | 3>
-    >(StorageKeys.NOTIFICATION_PRIORITIES, defaultPriorities);
+    // User's priority settings merged over the canonical defaults
+    // (NotificationPriorityConfig — single source shared with the Settings UI).
+    const effectivePriorities = getNotificationPriorities();
 
     // Find highest priority (lowest number) among unread
     let highestPriority: 1 | 2 | 3 = 3;
@@ -1314,25 +1295,23 @@ export class NotificationsOrchestrator extends Orchestrator {
         return 'quote';
       }
 
-      // Check if this is a direct reply to user's event.
-      // The direct reply target is resolved in priority order:
-      //   1. NIP-10 'reply' marker (the event being responded to)
-      //   2. NIP-10 'root' marker (a direct reply to the root has no 'reply' marker)
-      //   3. Deprecated positional NIP-10: the last 'e' tag is the direct parent
-      // Without the positional fallback, unmarked replies (common from many clients)
-      // are misclassified as low-priority thread-replies instead of high-priority replies.
-      const eTags = event.tags.filter(t => t[0] === 'e');
-      const markedReplyId = eTags.find(t => t[3] === 'reply')?.[1];
-      const markedRootId = eTags.find(t => t[3] === 'root')?.[1];
-      const directTargetId =
-        markedReplyId ?? markedRootId ?? eTags[eTags.length - 1]?.[1];
-
-      const isDirectReplyToUser = !!(
-        directTargetId && userEventIds.includes(directTargetId)
-      );
-
-      // Priority 1: Direct reply to user's own event
-      if (isDirectReplyToUser) return 'reply';
+      // Priority 1: Direct reply to user's own event.
+      // Resolution order inside the helper: parent-ID window membership,
+      // NoteService cache lookup, then the NIP-10 tag conventions (reply/root
+      // markers, positional e-tags, parallel-index p-tags) — the tag heuristics
+      // classify correctly even when the parent is outside the 50-event
+      // USER_EVENT_IDS window (used to misclassify as thread-reply).
+      if (
+        isDirectReplyToOwnNote({
+          tags: event.tags,
+          userPubkey: currentUser.pubkey,
+          userEventIds,
+          resolveParentAuthor: id =>
+            this.noteService.getCachedNote(id)?.pubkey ?? null,
+        })
+      ) {
+        return 'reply';
+      }
 
       // Priority 2: User mentioned in content
       if (hasUserPtag && userMentionedInContent) return 'mention';
@@ -1376,16 +1355,18 @@ export class NotificationsOrchestrator extends Orchestrator {
         return 'quote';
       }
 
-      const parentTargetId = event.tags.find(t => t[0] === 'e')?.[1];
-      const rootTargetId = event.tags.find(t => t[0] === 'E')?.[1];
-
-      const isDirectReplyToUser =
-        (parentTargetId && userEventIds.includes(parentTargetId)) ||
-        (rootTargetId &&
-          userEventIds.includes(rootTargetId) &&
-          !parentTargetId);
-
-      if (isDirectReplyToUser) return 'reply';
+      // Priority 1: Direct comment on user's own content (note or article).
+      // Same helper strategy as kind 1 above, with NIP-22 tag conventions
+      // (first lowercase 'p' = parent author, also covers addressable parents).
+      if (
+        isDirectCommentToOwnContent({
+          tags: event.tags,
+          userPubkey: currentUser.pubkey,
+          userEventIds,
+        })
+      ) {
+        return 'reply';
+      }
       if (hasUserPtag && userMentionedInContent) return 'mention';
       if (hasUserPtag && hasAnyEtag && !userMentionedInContent)
         return 'thread-reply';
