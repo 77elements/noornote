@@ -104,30 +104,33 @@ export class VideoEditorView extends View {
     });
 
     this.container.innerHTML = `
-      <div class="video-editor">
-        <header class="video-editor__header">
-          <button class="video-editor__back" data-action="back">
-            <svg width="24" height="24"><use href="#icon-back"/></svg>
-            Back
-          </button>
-          <h1 class="video-editor__title">Post Video</h1>
-        </header>
+        <div class="back-padder">
+        <div class="video-editor">
+          <header class="video-editor__header">
+            <button class="video-editor__back" data-action="back">
+              <svg width="24" height="24"><use href="#icon-back"/></svg>
+              Back
+            </button>
+            <h1 class="video-editor__title">Post Video</h1>
+          </header>
 
-        <div class="video-editor__toolbar">
-          ${this.relaySelector.render()}
-        </div>
-
-        <div class="video-editor__body">
-          ${this.renderForm()}
-        </div>
-
-        <footer class="video-editor__footer">
-          ${this.toolbar.render()}
-          <div class="video-editor__actions">
-            <button class="btn" data-action="publish" disabled>Publish</button>
+          <div class="video-editor__toolbar">
+            ${this.relaySelector.render()}
           </div>
-        </footer>
-      </div>
+
+          <div class="video-editor__body">
+            ${this.renderForm()}
+          </div>
+
+          <footer class="video-editor__footer">
+            ${this.toolbar.render()}
+            <div class="video-editor__actions">
+              <button class="btn" data-action="publish" disabled>Publish</button>
+            </div>
+          </footer>
+        </div>
+    
+        </div>
     `;
 
     this.setupEventListeners();

@@ -41,20 +41,23 @@ export class MyListingsView extends View {
 
   private render(): void {
     this.container.innerHTML = `
-      <div class="marketplace-timeline">
-        <div class="marketplace-timeline__sticky-header">
-          <header class="marketplace-view__header">
-            <div class="marketplace-view__header-row">
-              <h1 class="marketplace-view__title">My Listings</h1>
-              <div class="marketplace-view__header-actions">
-                <button class="btn btn--medium btn--passive" data-action="back-to-marketplace">← Back to Marketplace</button>
-                <button class="btn btn--medium" data-action="add-product">Add Product</button>
+        <div class="back-padder">
+        <div class="marketplace-timeline">
+          <div class="marketplace-timeline__sticky-header">
+            <header class="marketplace-view__header">
+              <div class="marketplace-view__header-row">
+                <h1 class="marketplace-view__title">My Listings</h1>
+                <div class="marketplace-view__header-actions">
+                  <button class="btn btn--medium btn--passive" data-action="back-to-marketplace">← Back to Marketplace</button>
+                  <button class="btn btn--medium" data-action="add-product">Add Product</button>
+                </div>
               </div>
-            </div>
-          </header>
+            </header>
+          </div>
+          <div class="my-listings__list pulsate">Loading your listings...</div>
         </div>
-        <div class="my-listings__list pulsate">Loading your listings...</div>
-      </div>
+    
+        </div>
     `;
 
     // Wire up header buttons

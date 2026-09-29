@@ -176,31 +176,34 @@ export class ListingEditorView extends View {
     });
 
     this.container.innerHTML = `
-      <div class="article-editor">
-        <header class="l-spread">
-          <h1>${this.isEditMode ? 'Edit Listing' : 'New Listing'}</h1>
-          <button class="btn btn--passive btn--medium" data-action="back">Back</button>
-        </header>
+        <div class="back-padder">
+        <div class="article-editor">
+          <header class="l-spread">
+            <h1>${this.isEditMode ? 'Edit Listing' : 'New Listing'}</h1>
+            <button class="btn btn--passive btn--medium" data-action="back">Back</button>
+          </header>
 
-        <div class="article-editor__toolbar">
-          <div class="tabs">
-            <button class="tab tab--active" data-tab="edit">Edit</button>
-            <button class="tab" data-tab="preview">Preview</button>
+          <div class="article-editor__toolbar">
+            <div class="tabs">
+              <button class="tab tab--active" data-tab="edit">Edit</button>
+              <button class="tab" data-tab="preview">Preview</button>
+            </div>
+            ${this.relaySelector.render()}
           </div>
-          ${this.relaySelector.render()}
-        </div>
 
-        <div class="article-editor__body">
-          ${this.renderEditMode()}
-        </div>
-
-        <footer class="article-editor__footer">
-          ${this.toolbar.render()}
-          <div class="article-editor__actions">
-            <button class="btn" data-action="publish">${this.isEditMode ? 'Update Listing' : 'Publish Listing'}</button>
+          <div class="article-editor__body">
+            ${this.renderEditMode()}
           </div>
-        </footer>
-      </div>
+
+          <footer class="article-editor__footer">
+            ${this.toolbar.render()}
+            <div class="article-editor__actions">
+              <button class="btn" data-action="publish">${this.isEditMode ? 'Update Listing' : 'Publish Listing'}</button>
+            </div>
+          </footer>
+        </div>
+    
+        </div>
     `;
 
     this.setupEventListeners();

@@ -192,12 +192,15 @@ export class ProfileBookingView extends View {
 
     if (this.notFound || !this.config) {
       this.container.innerHTML = `
-        <h1>Book a meeting</h1>
-        <p class="form__note">
-          ${escapeHtml(ownerName)} does not offer a booking page right now.
-        </p>
-        <div class="l-row--right"><button class="btn btn--passive" data-back>Back to profile</button></div>
-      `;
+        <div class="back-padder">
+          <h1>Book a meeting</h1>
+          <p class="form__note">
+            ${escapeHtml(ownerName)} does not offer a booking page right now.
+          </p>
+          <div class="l-row--right"><button class="btn btn--passive" data-back>Back to profile</button></div>
+      
+        </div>
+    `;
       this.container
         .querySelector('[data-back]')
         ?.addEventListener('click', () =>

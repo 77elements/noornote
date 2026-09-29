@@ -83,10 +83,13 @@ export class ArticleView extends View {
   private async render(): Promise<void> {
     // Show loading state
     this.container.innerHTML = `
-      <div class="article-view-loading">
-        <div class="loading-spinner"></div>
-        <p>Loading article...</p>
-      </div>
+        <div class="back-padder">
+        <div class="article-view-loading">
+          <div class="loading-spinner"></div>
+          <p>Loading article...</p>
+        </div>
+    
+        </div>
     `;
 
     try {

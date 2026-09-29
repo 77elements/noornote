@@ -49,10 +49,13 @@ export class FollowPackDetailView extends View {
 
   private async render(): Promise<void> {
     this.container.innerHTML = `
-      <div class="article-view-loading">
-        <div class="loading-spinner"></div>
-        <p>Loading follow pack...</p>
-      </div>
+        <div class="back-padder">
+        <div class="article-view-loading">
+          <div class="loading-spinner"></div>
+          <p>Loading follow pack...</p>
+        </div>
+    
+        </div>
     `;
 
     try {

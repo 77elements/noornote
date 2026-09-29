@@ -106,6 +106,11 @@ export class EpubReaderView extends View {
     this.container.appendChild(this.viewport);
     this.container.appendChild(footer);
 
+    // Back bar clearance: keeps the last rendered page above the glass bar.
+    const backPadder = document.createElement('div');
+    backPadder.className = 'back-padder';
+    this.container.appendChild(backPadder);
+
     this.keyHandler = (e: KeyboardEvent) => this.handleKey(e);
     document.addEventListener('keydown', this.keyHandler);
 

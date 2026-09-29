@@ -45,10 +45,13 @@ export class ListingView extends View {
 
   private async render(): Promise<void> {
     this.container.innerHTML = `
-      <div class="listing-view__loading">
-        <div class="listing-view__loading-spinner"></div>
-        <p>Loading listing...</p>
-      </div>
+        <div class="back-padder">
+        <div class="listing-view__loading">
+          <div class="listing-view__loading-spinner"></div>
+          <p>Loading listing...</p>
+        </div>
+    
+        </div>
     `;
 
     try {

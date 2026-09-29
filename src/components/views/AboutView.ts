@@ -64,111 +64,114 @@ export class AboutView extends View {
 
   private render(): void {
     this.container.innerHTML = `
-      <h1 class="about-title">About NoorNote</h1>
+        <div class="back-padder">
+        <h1 class="about-title">About NoorNote</h1>
 
-        <section class="about-section">
-          <h2>Imprint</h2>
-          <p><strong>[ mslm dvlpmnt ]</strong></p>
-          <p>Am Engeldorfer Berg 11<br>50997 Cologne<br>Germany</p>
-          <p>
-            Email: <a href="mailto:contact@mslmdvlpmnt.com">contact@mslmdvlpmnt.com</a><br>
-            Phone: +49 1577 2456227
-          </p>
-        </section>
+          <section class="about-section">
+            <h2>Imprint</h2>
+            <p><strong>[ mslm dvlpmnt ]</strong></p>
+            <p>Am Engeldorfer Berg 11<br>50997 Cologne<br>Germany</p>
+            <p>
+              Email: <a href="mailto:contact@mslmdvlpmnt.com">contact@mslmdvlpmnt.com</a><br>
+              Phone: +49 1577 2456227
+            </p>
+          </section>
 
-        <section class="about-section">
-          <h2>Hire Me</h2>
-          <p>
-            Need help with your web project? I'm available for hire — design, UX, and development. Sats accepted.<br>
-            <a href="https://mslmdvlpmnt.com/" rel="noopener noreferrer">mslmdvlpmnt.com</a> · <a href="/profile/npub175nul9cvufswwsnpy99lvyhg7ad9nkccxhkhusznxfkr7e0zxthql9g6w0">DM me on Nostr</a>
-          </p>
-        </section>
+          <section class="about-section">
+            <h2>Hire Me</h2>
+            <p>
+              Need help with your web project? I'm available for hire — design, UX, and development. Sats accepted.<br>
+              <a href="https://mslmdvlpmnt.com/" rel="noopener noreferrer">mslmdvlpmnt.com</a> · <a href="/profile/npub175nul9cvufswwsnpy99lvyhg7ad9nkccxhkhusznxfkr7e0zxthql9g6w0">DM me on Nostr</a>
+            </p>
+          </section>
 
-        <section class="about-section">
-          <h2>Privacy Policy</h2>
+          <section class="about-section">
+            <h2>Privacy Policy</h2>
 
-          <h3>Responsible Party</h3>
-          <p>[ mslm dvlpmnt ], Am Engeldorfer Berg 11, 50997 Cologne, Germany</p>
+            <h3>Responsible Party</h3>
+            <p>[ mslm dvlpmnt ], Am Engeldorfer Berg 11, 50997 Cologne, Germany</p>
 
-          ${this.renderDataStorageSection()}
+            ${this.renderDataStorageSection()}
 
-          ${this.renderWebHostingSection()}
+            ${this.renderWebHostingSection()}
 
-          <h3>Connections to Nostr Relays</h3>
-          <p>
-            All content you create (notes, articles, profile information, etc.) is stored on
-            Nostr relays, not on your device or our servers. NoorNote simply connects to these
-            relays to read and publish your content.
-          </p>
-          <p>
-            Nostr relays are operated by third parties. When connecting, your IP address
-            may be logged by the relay operators. The choice of relays is yours
-            and can be configured in the settings.
-          </p>
+            <h3>Connections to Nostr Relays</h3>
+            <p>
+              All content you create (notes, articles, profile information, etc.) is stored on
+              Nostr relays, not on your device or our servers. NoorNote simply connects to these
+              relays to read and publish your content.
+            </p>
+            <p>
+              Nostr relays are operated by third parties. When connecting, your IP address
+              may be logged by the relay operators. The choice of relays is yours
+              and can be configured in the settings.
+            </p>
 
-          ${this.renderThirdPartySection()}
+            ${this.renderThirdPartySection()}
 
-          <h3>No Tracking or Analytics by NoorNote</h3>
-          <p>
-            NoorNote does not use any analytics services, tracking pixels, marketing cookies,
-            or telemetry. We do not collect, log, or transmit any usage data to ourselves.
-            The third-party connections described above are inherent to rendering content and
-            providing the service — they are not telemetry, and no identifier beyond a standard
-            HTTP request (IP, User-Agent) is sent.
-          </p>
+            <h3>No Tracking or Analytics by NoorNote</h3>
+            <p>
+              NoorNote does not use any analytics services, tracking pixels, marketing cookies,
+              or telemetry. We do not collect, log, or transmit any usage data to ourselves.
+              The third-party connections described above are inherent to rendering content and
+              providing the service — they are not telemetry, and no identifier beyond a standard
+              HTTP request (IP, User-Agent) is sent.
+            </p>
 
-          <h3>Your Rights</h3>
-          <p>
-            Since we do not store or process any personal data, the usual GDPR data subject rights
-            do not apply. For questions, you can contact us at
-            <a href="mailto:contact@mslmdvlpmnt.com">contact@mslmdvlpmnt.com</a>.
-          </p>
-        </section>
+            <h3>Your Rights</h3>
+            <p>
+              Since we do not store or process any personal data, the usual GDPR data subject rights
+              do not apply. For questions, you can contact us at
+              <a href="mailto:contact@mslmdvlpmnt.com">contact@mslmdvlpmnt.com</a>.
+            </p>
+          </section>
 
-        <section class="about-section">
-          <h2>Open Source</h2>
-          <p>
-            NoorNote and NoorSigner are free and open source software, released under the
-            <a href="https://opensource.org/licenses/MIT" rel="noopener noreferrer">MIT License</a>.
-          </p>
-        </section>
+          <section class="about-section">
+            <h2>Open Source</h2>
+            <p>
+              NoorNote and NoorSigner are free and open source software, released under the
+              <a href="https://opensource.org/licenses/MIT" rel="noopener noreferrer">MIT License</a>.
+            </p>
+          </section>
 
-        <section class="about-section">
-          <h2>Credits</h2>
-          <p>NoorNote integrates third-party open-source work. Thanks to:</p>
-          <ul>
-            ${CREDITS.map(c => {
-              const author = c.npub
-                ? `<span data-credit-mention data-pubkey="${npubToHex(c.npub) ?? ''}"></span>`
-                : `<a href="${c.authorUrl ?? '#'}" rel="noopener noreferrer">${c.authorName ?? ''}</a>`;
-              return `
-                <li>
-                  <a href="${c.productUrl}" rel="noopener noreferrer">${c.product}</a>
-                  by ${author}
-                </li>
-              `;
-            }).join('')}
-          </ul>
-          <p>
-            Special thanks to <span data-credit-mention data-pubkey="${npubToHex('npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6') ?? ''}"></span>
-            for inventing the Nostr protocol, and to all <a href="https://github.com/nostr-protocol/nips" rel="noopener noreferrer">NIP</a>
-            authors and other Nostr devs for the inspiration.
-          </p>
-          <p>
-            And finally, thanks to every user who actively shapes NoorNote with feedback and support.
-          </p>
-          <p lang="ar" dir="rtl" class="about-section__doxology">وَلِلَّهِ الْحَمْد</p>
-        </section>
+          <section class="about-section">
+            <h2>Credits</h2>
+            <p>NoorNote integrates third-party open-source work. Thanks to:</p>
+            <ul>
+              ${CREDITS.map(c => {
+                const author = c.npub
+                  ? `<span data-credit-mention data-pubkey="${npubToHex(c.npub) ?? ''}"></span>`
+                  : `<a href="${c.authorUrl ?? '#'}" rel="noopener noreferrer">${c.authorName ?? ''}</a>`;
+                return `
+                  <li>
+                    <a href="${c.productUrl}" rel="noopener noreferrer">${c.product}</a>
+                    by ${author}
+                  </li>
+                `;
+              }).join('')}
+            </ul>
+            <p>
+              Special thanks to <span data-credit-mention data-pubkey="${npubToHex('npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6') ?? ''}"></span>
+              for inventing the Nostr protocol, and to all <a href="https://github.com/nostr-protocol/nips" rel="noopener noreferrer">NIP</a>
+              authors and other Nostr devs for the inspiration.
+            </p>
+            <p>
+              And finally, thanks to every user who actively shapes NoorNote with feedback and support.
+            </p>
+            <p lang="ar" dir="rtl" class="about-section__doxology">وَلِلَّهِ الْحَمْد</p>
+          </section>
 
-        <section class="about-section">
-          <h2>Version</h2>
-          <p>NoorNote v${__APP_VERSION__}</p>
-          ${this.platform.isDesktop ? '<button class="btn btn--mini" id="about-check-update-btn">Check for updates</button>' : ''}
-        </section>
+          <section class="about-section">
+            <h2>Version</h2>
+            <p>NoorNote v${__APP_VERSION__}</p>
+            ${this.platform.isDesktop ? '<button class="btn btn--mini" id="about-check-update-btn">Check for updates</button>' : ''}
+          </section>
 
-        <section class="about-section about-section--footer">
-          <p>NoorNote - A Nostr Client</p>
-        </section>
+          <section class="about-section about-section--footer">
+            <p>NoorNote - A Nostr Client</p>
+          </section>
+    
+        </div>
     `;
   }
 

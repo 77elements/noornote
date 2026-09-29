@@ -92,20 +92,23 @@ export class ListsOverviewView extends View {
 
   private renderContent(): void {
     this.container.innerHTML = `
-      <div class="lists-overview__head l-spread">
-        <h2>Lists</h2>
-      </div>
-      <p class="lists-overview__intro">
-        Your lists are stored locally and synced to your relays. Pick one to
-        open it.
-      </p>
-      <div class="nn-card-grid-wrap">
-        <div class="nn-card-grid lists-overview__grid" data-lists-grid>
-          ${this.getTiles()
-            .map(t => this.renderTile(t))
-            .join('')}
+        <div class="back-padder">
+        <div class="lists-overview__head l-spread">
+          <h2>Lists</h2>
         </div>
-      </div>
+        <p class="lists-overview__intro">
+          Your lists are stored locally and synced to your relays. Pick one to
+          open it.
+        </p>
+        <div class="nn-card-grid-wrap">
+          <div class="nn-card-grid lists-overview__grid" data-lists-grid>
+            ${this.getTiles()
+              .map(t => this.renderTile(t))
+              .join('')}
+          </div>
+        </div>
+    
+        </div>
     `;
 
     this.wireGrid();

@@ -58,21 +58,24 @@ export class SettingsView extends View {
     const showExportLogs = true;
 
     this.container.innerHTML = `
-      <h1 class="settings-title">Settings</h1>
-      <nav class="section">
-        ${menuHtml}
-      </nav>
-      ${
-        showExportLogs
-          ? `
-      <section class="settings-section diagnostic-export-section" style="text-align: center;">
-        <button class="btn btn--medium btn--passive" id="export-diagnostic-logs-btn">
-          Export DiagLogs
-        </button>
-      </section>
-      `
-          : ''
-      }
+        <div class="back-padder">
+        <h1 class="settings-title">Settings</h1>
+        <nav class="section">
+          ${menuHtml}
+        </nav>
+        ${
+          showExportLogs
+            ? `
+        <section class="settings-section diagnostic-export-section" style="text-align: center;">
+          <button class="btn btn--medium btn--passive" id="export-diagnostic-logs-btn">
+            Export DiagLogs
+          </button>
+        </section>
+        `
+            : ''
+        }
+    
+        </div>
     `;
 
     // Menu item click handling (use router navigation)
