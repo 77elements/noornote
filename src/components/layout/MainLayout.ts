@@ -2745,42 +2745,8 @@ export class MainLayout {
       },
     });
 
-    // Insert tab and content into DOM (scc)
-    const secondaryContent = this.element.querySelector(
-      '.secondary-content'
-    ) as HTMLElement;
-    const tabsContainer = this.element.querySelector('#sidebar-tabs');
-    const contentBody = this.element.querySelector('.secondary-content-body');
-
-    if (secondaryContent && tabsContainer && contentBody) {
-      const tab = this.currentListView.createTab();
-      const content = this.currentListView.createContent();
-
-      tabsContainer.appendChild(tab);
-      contentBody.appendChild(content);
-
-      // Setup tab click handler
-      tab.addEventListener('click', e => {
-        if ((e.target as HTMLElement).closest('.tab__close')) {
-          return;
-        }
-        deactivateAllTabs(secondaryContent);
-        this.currentListView?.activate();
-        this.viewTabManager?.deactivateCurrentViewTab();
-        this.syncScc();
-      });
-
-      // Activate the new tab
-      deactivateAllTabs(secondaryContent);
-      this.currentListView.activate();
-      this.viewTabManager?.deactivateCurrentViewTab();
-
-      // Render content
-      this.currentListView.renderContent();
-
-      // Mirror the freshly opened external list into ?scc=.
-      this.syncScc();
-    }
+    // Mirror the freshly opened external list into ?scc= after rendering.
+    this.mountListViewTabInScc(true);
   }
 
   /**
@@ -2858,6 +2824,37 @@ export class MainLayout {
     }
   }
 
+  /** Tab titles for the four own list types. */
+  private static readonly LIST_TITLES: Record<ListType, string> = {
+    bookmarks: 'List: Bookmarks',
+    follows: 'List: Follows',
+    mutes: 'List: Muted',
+    tribes: 'List: Tribes',
+  };
+
+  /**
+   * Resolve the manager for a list type. All four share the renderListTab
+   * contract. Returns null (and logs) when no manager is mounted.
+   */
+  private getListManager(listType: ListType): {
+    renderListTab(container: HTMLElement): Promise<void>;
+  } | null {
+    const managers: Record<
+      ListType,
+      { renderListTab(container: HTMLElement): Promise<void> } | null
+    > = {
+      bookmarks: this.bookmarkManager,
+      follows: this.followManager,
+      mutes: this.muteManager,
+      tribes: this.tribeManager,
+    };
+    const manager = managers[listType];
+    if (!manager) {
+      console.error(`[MainLayout] No manager found for list type: ${listType}`);
+    }
+    return manager;
+  }
+
   /**
    * Render list in secondary content (default/right-pane mode)
    */
@@ -2879,35 +2876,13 @@ export class MainLayout {
     // Set active state on list sublink
     this.setActiveListSublink(listType);
 
-    // Map list types to titles
-    const titles: Record<ListType, string> = {
-      bookmarks: 'List: Bookmarks',
-      follows: 'List: Follows',
-      mutes: 'List: Muted',
-      tribes: 'List: Tribes',
-    };
-
-    // Map list types to managers. All four share the renderListTab contract.
-    const managers: Record<
-      ListType,
-      { renderListTab(container: HTMLElement): Promise<void> } | null
-    > = {
-      bookmarks: this.bookmarkManager,
-      follows: this.followManager,
-      mutes: this.muteManager,
-      tribes: this.tribeManager,
-    };
-
-    const manager = managers[listType];
-    if (!manager) {
-      console.error(`[MainLayout] No manager found for list type: ${listType}`);
-      return;
-    }
+    const manager = this.getListManager(listType);
+    if (!manager) return;
 
     // Create new list view
     this.currentListView = new ListViewPartial({
       type: listType,
-      title: titles[listType],
+      title: MainLayout.LIST_TITLES[listType],
       onClose: () => this.closeListTab(),
       onRender: container => {
         // Use custom render callback if provided, otherwise delegate to manager
@@ -2919,45 +2894,56 @@ export class MainLayout {
       },
     });
 
-    // Insert tab and content into DOM (scc)
+    this.mountListViewTabInScc(false);
+  }
+
+  /**
+   * Insert the currentListView's tab + content into the secondary content
+   * (scc), wire the tab click handler and activate it. `syncAfterRender`
+   * controls whether ?scc= is synced before or after the content render
+   * (own lists sync first, external lists mirror only the final state).
+   */
+  private mountListViewTabInScc(syncAfterRender: boolean): void {
     const secondaryContent = this.element.querySelector(
       '.secondary-content'
     ) as HTMLElement;
     const tabsContainer = this.element.querySelector('#sidebar-tabs');
     const contentBody = this.element.querySelector('.secondary-content-body');
+    if (!secondaryContent || !tabsContainer || !contentBody) return;
+    if (!this.currentListView) return;
 
-    if (secondaryContent && tabsContainer && contentBody) {
-      const tab = this.currentListView.createTab();
-      const content = this.currentListView.createContent();
+    const tab = this.currentListView.createTab();
+    const content = this.currentListView.createContent();
 
-      tabsContainer.appendChild(tab);
-      contentBody.appendChild(content);
+    tabsContainer.appendChild(tab);
+    contentBody.appendChild(content);
 
-      // Setup tab click handler
-      tab.addEventListener('click', e => {
-        // Ignore clicks on close button
-        if ((e.target as HTMLElement).closest('.tab__close')) {
-          return;
-        }
+    // Setup tab click handler
+    tab.addEventListener('click', e => {
+      // Ignore clicks on close button
+      if ((e.target as HTMLElement).closest('.tab__close')) {
+        return;
+      }
 
-        // Deactivate all tabs and activate clicked tab (scoped to secondary-content only)
-        deactivateAllTabs(secondaryContent);
-        this.currentListView?.activate();
-        // Notify ViewTabManager that a non-view tab was activated
-        this.viewTabManager?.deactivateCurrentViewTab();
-        this.syncScc();
-      });
-
-      // Activate the new tab (scoped to secondary-content only)
+      // Deactivate all tabs and activate clicked tab (scoped to secondary-content only)
       deactivateAllTabs(secondaryContent);
-      this.currentListView.activate();
+      this.currentListView?.activate();
       // Notify ViewTabManager that a non-view tab was activated
       this.viewTabManager?.deactivateCurrentViewTab();
       this.syncScc();
+    });
 
-      // Render content
-      this.currentListView.renderContent();
-    }
+    // Activate the new tab (scoped to secondary-content only)
+    deactivateAllTabs(secondaryContent);
+    this.currentListView.activate();
+    // Notify ViewTabManager that a non-view tab was activated
+    this.viewTabManager?.deactivateCurrentViewTab();
+    if (!syncAfterRender) this.syncScc();
+
+    // Render content
+    this.currentListView.renderContent();
+
+    if (syncAfterRender) this.syncScc();
   }
 
   /**
@@ -2979,30 +2965,8 @@ export class MainLayout {
     // Clear primary content
     primaryContent.innerHTML = '';
 
-    // Map list types to titles
-    const titles: Record<ListType, string> = {
-      bookmarks: 'List: Bookmarks',
-      follows: 'List: Follows',
-      mutes: 'List: Muted',
-      tribes: 'List: Tribes',
-    };
-
-    // Map list types to managers. All four share the renderListTab contract.
-    const managers: Record<
-      ListType,
-      { renderListTab(container: HTMLElement): Promise<void> } | null
-    > = {
-      bookmarks: this.bookmarkManager,
-      follows: this.followManager,
-      mutes: this.muteManager,
-      tribes: this.tribeManager,
-    };
-
-    const manager = managers[listType];
-    if (!manager) {
-      console.error(`[MainLayout] No manager found for list type: ${listType}`);
-      return;
-    }
+    const manager = this.getListManager(listType);
+    if (!manager) return;
 
     // Create container for list
     const listContainer = document.createElement('div');
@@ -3014,7 +2978,7 @@ export class MainLayout {
 
     const titleEl = document.createElement('h1');
     titleEl.className = 'list-view-primary__title';
-    titleEl.textContent = titles[listType];
+    titleEl.textContent = MainLayout.LIST_TITLES[listType];
 
     // Create back button with direct event handler
     const backBtn = document.createElement('button');

@@ -23,9 +23,7 @@ import { AuthGuard } from '../../services/AuthGuard';
 import { RelaySelector } from './RelaySelector';
 import { ClientTagControl } from './ClientTagControl';
 import { PostEditorToolbar } from './PostEditorToolbar';
-import { renderPostPreview } from '../../helpers/renderPostPreview';
 import { setupPasteUpload } from '../../helpers/pasteUpload';
-import { stripTrackingParams } from '../../helpers/stripTrackingParams';
 import { Switch } from '../ui/Switch';
 import { PollCreator, type PollData } from '../poll/PollCreator';
 import { extractQuotedReferences } from '../../helpers/extractQuotedReferences';
@@ -45,7 +43,6 @@ import {
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { NoteDraftService } from '../../services/NoteDraftService';
 import { ToastService } from '../../services/ToastService';
-import { renderDraftsList, setupDraftsList } from './DraftsListUI';
 import {
   composerDraftsTabLabel,
   updateComposerDraftsBadge,
@@ -53,6 +50,16 @@ import {
   saveComposerDraft,
   composerPostFailure,
   renderQuotedNotesInPreview as fillQuotedPreviewMarkers,
+  renderComposerPreviewContent,
+  buildComposerPreviewHtml,
+  updateComposerPreview,
+  createNsfwSwitchIn,
+  mountRelaySelectorInHeader,
+  loadComposerEmojiAutocomplete,
+  scanComposerEmojiShortcodes,
+  createMentionAutocomplete,
+  composerDraftsPanel,
+  createComposerEventHandlers,
 } from './composerShared';
 import { openDraftInComposer } from '../../helpers/draftRouter';
 import { attachPreviewClickToEdit } from '../../helpers/previewClickToEdit';
@@ -339,16 +346,12 @@ export class PostNoteModal {
       `;
     } else {
       const currentUser = this.authService.getCurrentUser();
-      const cleanedContent = stripTrackingParams(this.content);
-      const extraTags = this.buildPreviewEmojiTags(cleanedContent);
-      const previewHTML = renderPostPreview({
-        content: cleanedContent,
-        pubkey: currentUser?.pubkey || '',
-        isNSFW: this.isNSFW,
-        ...(extraTags.length > 0 ? { extraTags } : {}),
-      });
-
-      return `<div class="post-note-preview">${previewHTML}</div>`;
+      return renderComposerPreviewContent(
+        this.content,
+        this.isNSFW,
+        currentUser?.pubkey || '',
+        cleaned => this.buildPreviewEmojiTags(cleaned)
+      );
     }
   }
 
@@ -485,25 +488,19 @@ export class PostNoteModal {
     // Mount relay selector into modal__header (outside overflow container)
     const modalHeader = modal.closest('.modal__body')
       ?.previousElementSibling as HTMLElement;
-    if (this.relaySelector && modalHeader) {
-      const relaySelectorDiv = document.createElement('div');
-      relaySelectorDiv.innerHTML = this.relaySelector.render();
-      const relaySelectorEl = relaySelectorDiv.firstElementChild as HTMLElement;
-      modalHeader.insertBefore(
-        relaySelectorEl,
-        modalHeader.querySelector('.modal__close')
-      );
-      this.relaySelector.setupEventListeners(relaySelectorEl);
+    const relaySelectorEl =
+      this.relaySelector && modalHeader
+        ? mountRelaySelectorInHeader(modal, this.relaySelector)
+        : null;
 
-      // Mount the client-tag control just before the relay selector
-      // → header order: <h1>New Note</h1> | [tag icon+field] | Post to: | ×
-      if (this.clientTagControl) {
-        const clientTagDiv = document.createElement('div');
-        clientTagDiv.innerHTML = this.clientTagControl.render();
-        const clientTagEl = clientTagDiv.firstElementChild as HTMLElement;
-        modalHeader.insertBefore(clientTagEl, relaySelectorEl);
-        this.clientTagControl.setupEventListeners(clientTagEl);
-      }
+    // Mount the client-tag control just before the relay selector
+    // → header order: <h1>New Note</h1> | [tag icon+field] | Post to: | ×
+    if (relaySelectorEl && this.clientTagControl) {
+      const clientTagDiv = document.createElement('div');
+      clientTagDiv.innerHTML = this.clientTagControl.render();
+      const clientTagEl = clientTagDiv.firstElementChild as HTMLElement;
+      modalHeader.insertBefore(clientTagEl, relaySelectorEl);
+      this.clientTagControl.setupEventListeners(clientTagEl);
     }
 
     // Setup toolbar
@@ -512,26 +509,15 @@ export class PostNoteModal {
       this.toolbar.setupEventListeners(toolbarContainer as HTMLElement);
     }
 
-    this.mentionAutocomplete = new MentionAutocomplete({
-      textareaSelector: '[data-textarea]',
-      onMentionInserted: (_npub, username) => {
-        this.systemLogger.info(
-          'PostNoteModal',
-          `Mention inserted: @${username}`
-        );
-      },
-    });
-    this.mentionAutocomplete.init();
+    this.mentionAutocomplete = createMentionAutocomplete('PostNoteModal');
 
     // Custom emoji shortcode autocomplete (addon-gated, lazy-loaded)
     if (isCustomEmojisEnabled()) {
       void this.initCustomEmojiAutocomplete();
     }
 
-    this.eventHandlerManager = new ModalEventHandlerManager({
+    this.eventHandlerManager = createComposerEventHandlers({
       modalSelector: '.post-note-modal',
-      textareaSelector: '[data-textarea]',
-      activeTabClass: 'tab--active',
       currentTab: this.currentTab,
       onTabSwitch: tab => this.switchTab(tab),
       onTextInput: value => {
@@ -542,7 +528,6 @@ export class PostNoteModal {
       onSubmit: () => this.handlePost(),
       onSaveDraft: () => this.handleSaveDraft(),
     });
-    this.eventHandlerManager.setupEventListeners();
 
     // Paste-to-upload: a pasted image/video/audio is uploaded via the upload path.
     const textarea = modal.querySelector(
@@ -569,11 +554,12 @@ export class PostNoteModal {
       onEditRendered: () => this.eventHandlerManager?.refreshTextareaListener(),
       buildPreviewHtml: () => {
         const currentUser = this.authService.getCurrentUser();
-        let html = renderPostPreview({
-          content: stripTrackingParams(this.content),
-          pubkey: currentUser?.pubkey || '',
-          isNSFW: this.isNSFW,
-        });
+        let html = buildComposerPreviewHtml(
+          this.content,
+          this.isNSFW,
+          currentUser?.pubkey || '',
+          () => []
+        );
         // Add poll preview if poll is configured
         const pollPreviewHtml = this.renderPollPreview();
         if (pollPreviewHtml) html += pollPreviewHtml;
@@ -585,16 +571,14 @@ export class PostNoteModal {
           this.switchTab('edit')
         );
       },
-      renderDraftsHtml: () => renderDraftsList(),
-      onDraftsRendered: draftsContainer =>
-        setupDraftsList(draftsContainer, {
-          onOpen: draft => {
-            this.cleanup();
-            this.modalService.hide();
-            openDraftInComposer(draft);
-          },
-          onChanged: () => this.updateDraftsTabBadge(),
-        }),
+      ...composerDraftsPanel({
+        onOpen: draft => {
+          this.cleanup();
+          this.modalService.hide();
+          openDraftInComposer(draft);
+        },
+        onChanged: () => this.updateDraftsTabBadge(),
+      }),
     });
 
     if (rendered) {
@@ -632,11 +616,7 @@ export class PostNoteModal {
    */
   private updatePreview(): void {
     const currentUser = this.authService.getCurrentUser();
-    EditorStateManager.updatePreview('.post-note-preview', {
-      content: stripTrackingParams(this.content),
-      pubkey: currentUser?.pubkey || '',
-      isNSFW: this.isNSFW,
-    });
+    updateComposerPreview(this.content, this.isNSFW, currentUser?.pubkey || '');
   }
 
   /**
@@ -898,27 +878,17 @@ export class PostNoteModal {
     // Don't create switch if it already exists
     if (this.nsfwSwitch) return;
 
-    const optionsContainer = document.querySelector(
-      '#post-note-options-container'
-    );
-    if (!optionsContainer) return;
-
-    // Create NSFW switch component
-    this.nsfwSwitch = new Switch({
-      label: 'NSFW',
-      checked: this.isNSFW,
-      onChange: checked => {
+    this.nsfwSwitch = createNsfwSwitchIn(
+      '#post-note-options-container',
+      this.isNSFW,
+      checked => {
         this.isNSFW = checked;
         // Re-render preview if currently in preview tab
         if (this.currentTab === 'preview') {
           this.updatePreview();
         }
-      },
-    });
-
-    // Insert switch into DOM
-    optionsContainer.innerHTML = this.nsfwSwitch.render();
-    this.nsfwSwitch.setupEventListeners(optionsContainer as HTMLElement);
+      }
+    );
   }
 
   /**
@@ -1343,30 +1313,10 @@ export class PostNoteModal {
    * Only invoked when the Custom Emojis addon is enabled.
    */
   private async initCustomEmojiAutocomplete(): Promise<void> {
-    try {
-      const [{ CustomEmojiAutocomplete }, { EmojiService }] = await Promise.all(
-        [
-          import('../../addons/custom-emojis/CustomEmojiAutocomplete'),
-          import('../../addons/custom-emojis/EmojiService'),
-        ]
-      );
-      this.customEmojiService = EmojiService.getInstance();
-      this.customEmojiAutocomplete = new CustomEmojiAutocomplete({
-        textareaSelector: '[data-textarea]',
-        onEmojiInserted: shortcode => {
-          this.systemLogger.info(
-            'PostNoteModal',
-            `Custom emoji inserted: :${shortcode}:`
-          );
-        },
-      });
-      this.customEmojiAutocomplete.init();
-    } catch (err) {
-      this.systemLogger.warn(
-        'PostNoteModal',
-        `Custom emoji autocomplete load failed: ${String(err)}`
-      );
-    }
+    const loaded = await loadComposerEmojiAutocomplete('PostNoteModal');
+    if (!loaded) return;
+    this.customEmojiService = loaded.service;
+    this.customEmojiAutocomplete = loaded.autocomplete;
   }
 
   /**
@@ -1374,18 +1324,6 @@ export class PostNoteModal {
    * NIP-30 emoji tags. Used by the Preview tab so animated GIFs render inline.
    */
   private buildPreviewEmojiTags(content: string): string[][] {
-    if (!this.customEmojiService) return [];
-    const tags: string[][] = [];
-    const seen = new Set<string>();
-    const re = /:([a-zA-Z0-9_-]+):/g;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(content)) !== null) {
-      const code = m[1]!;
-      if (seen.has(code)) continue;
-      seen.add(code);
-      const emoji = this.customEmojiService.findEmoji(code);
-      if (emoji) tags.push(['emoji', code, emoji.url]);
-    }
-    return tags;
+    return scanComposerEmojiShortcodes(content, this.customEmojiService);
   }
 }

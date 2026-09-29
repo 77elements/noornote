@@ -316,22 +316,35 @@ export class NotificationPrioritySection extends SettingsSection {
     const dx = Math.abs(e.clientX - this.startX);
     const dy = Math.abs(e.clientY - this.startY);
 
+    this.updateDragProgress(dx, dy, e.clientX, e.clientY);
+  }
+
+  /**
+   * Shared drag progress (mouse + touch): lift the item after the threshold,
+   * then move it and highlight the drop zone under the pointer.
+   */
+  private updateDragProgress(
+    dx: number,
+    dy: number,
+    pointerX: number,
+    pointerY: number
+  ): void {
     // Start dragging after threshold
     if (!this.isDragging && (dx > 5 || dy > 5)) {
       this.isDragging = true;
-      this.draggedItem.classList.add('priority-item--dragging');
-      this.draggedItem.style.position = 'fixed';
-      this.draggedItem.style.zIndex = '1000';
-      this.draggedItem.style.width = `${this.draggedItem.offsetWidth}px`;
-      this.draggedItem.style.pointerEvents = 'none';
+      this.draggedItem!.classList.add('priority-item--dragging');
+      this.draggedItem!.style.position = 'fixed';
+      this.draggedItem!.style.zIndex = '1000';
+      this.draggedItem!.style.width = `${this.draggedItem!.offsetWidth}px`;
+      this.draggedItem!.style.pointerEvents = 'none';
     }
 
     if (this.isDragging) {
-      this.draggedItem.style.left = `${e.clientX - this.offsetX}px`;
-      this.draggedItem.style.top = `${e.clientY - this.offsetY}px`;
+      this.draggedItem!.style.left = `${pointerX - this.offsetX}px`;
+      this.draggedItem!.style.top = `${pointerY - this.offsetY}px`;
 
       // Highlight drop zone under cursor
-      const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
+      const elemBelow = document.elementFromPoint(pointerX, pointerY);
       const zoneBelow = elemBelow?.closest(
         '.priority-zone__items'
       ) as HTMLElement;
@@ -348,23 +361,17 @@ export class NotificationPrioritySection extends SettingsSection {
     }
   }
 
-  private onMouseUp(e: MouseEvent): void {
-    if (this.boundMouseMove) {
-      document.removeEventListener('mousemove', this.boundMouseMove);
-    }
-    if (this.boundMouseUp) {
-      document.removeEventListener('mouseup', this.boundMouseUp);
-    }
+  /**
+   * Shared drop resolution (mouse + touch): find the drop zone under the
+   * pointer, apply the priority change (via rerender) or reset the item.
+   */
+  private finishDragAt(pointerX: number, pointerY: number): void {
+    if (!this.draggedItem || !this.isDragging) return;
 
-    if (!this.draggedItem || !this.isDragging) {
-      this.resetDragState();
-      return;
-    }
-
-    // Find drop zone under cursor
+    // Find drop zone under pointer
     const savedDisplay = this.draggedItem.style.display;
     this.draggedItem.style.display = 'none';
-    const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
+    const elemBelow = document.elementFromPoint(pointerX, pointerY);
     this.draggedItem.style.display = savedDisplay;
 
     const dropZone = elemBelow?.closest('.priority-zone__items') as HTMLElement;
@@ -400,6 +407,22 @@ export class NotificationPrioritySection extends SettingsSection {
     this.draggedItem.style.pointerEvents = '';
 
     this.resetDragState();
+  }
+
+  private onMouseUp(e: MouseEvent): void {
+    if (this.boundMouseMove) {
+      document.removeEventListener('mousemove', this.boundMouseMove);
+    }
+    if (this.boundMouseUp) {
+      document.removeEventListener('mouseup', this.boundMouseUp);
+    }
+
+    if (!this.draggedItem || !this.isDragging) {
+      this.resetDragState();
+      return;
+    }
+
+    this.finishDragAt(e.clientX, e.clientY);
   }
 
   /**
@@ -458,36 +481,7 @@ export class NotificationPrioritySection extends SettingsSection {
     const dx = Math.abs(touch.clientX - this.startX);
     const dy = Math.abs(touch.clientY - this.startY);
 
-    // Start dragging after threshold
-    if (!this.isDragging && (dx > 5 || dy > 5)) {
-      this.isDragging = true;
-      this.draggedItem.classList.add('priority-item--dragging');
-      this.draggedItem.style.position = 'fixed';
-      this.draggedItem.style.zIndex = '1000';
-      this.draggedItem.style.width = `${this.draggedItem.offsetWidth}px`;
-      this.draggedItem.style.pointerEvents = 'none';
-    }
-
-    if (this.isDragging) {
-      this.draggedItem.style.left = `${touch.clientX - this.offsetX}px`;
-      this.draggedItem.style.top = `${touch.clientY - this.offsetY}px`;
-
-      // Highlight drop zone under finger
-      const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-      const zoneBelow = elemBelow?.closest(
-        '.priority-zone__items'
-      ) as HTMLElement;
-
-      this.contentContainer
-        ?.querySelectorAll('.priority-zone__items')
-        .forEach(z => {
-          z.classList.remove('priority-zone__items--drag-over');
-        });
-
-      if (zoneBelow) {
-        zoneBelow.classList.add('priority-zone__items--drag-over');
-      }
-    }
+    this.updateDragProgress(dx, dy, touch.clientX, touch.clientY);
   }
 
   private onTouchEnd(e: TouchEvent): void {
@@ -509,45 +503,7 @@ export class NotificationPrioritySection extends SettingsSection {
       return;
     }
 
-    // Find drop zone under finger
-    const savedDisplay = this.draggedItem.style.display;
-    this.draggedItem.style.display = 'none';
-    const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-    this.draggedItem.style.display = savedDisplay;
-
-    const dropZone = elemBelow?.closest('.priority-zone__items') as HTMLElement;
-
-    // Clear drag-over states
-    this.contentContainer
-      ?.querySelectorAll('.priority-zone__items')
-      .forEach(z => {
-        z.classList.remove('priority-zone__items--drag-over');
-      });
-
-    if (dropZone && this.draggedType) {
-      const newPriority = parseInt(
-        dropZone.dataset.priority || '2',
-        10
-      ) as NotificationPriority;
-
-      if (this.priorities[this.draggedType] !== newPriority) {
-        this.priorities[this.draggedType] = newPriority;
-        this.markAsUnsaved();
-        this.rerender();
-        return; // rerender will reset state
-      }
-    }
-
-    // Reset item style if no change
-    this.draggedItem.classList.remove('priority-item--dragging');
-    this.draggedItem.style.position = '';
-    this.draggedItem.style.zIndex = '';
-    this.draggedItem.style.width = '';
-    this.draggedItem.style.left = '';
-    this.draggedItem.style.top = '';
-    this.draggedItem.style.pointerEvents = '';
-
-    this.resetDragState();
+    this.finishDragAt(touch.clientX, touch.clientY);
   }
 
   private resetDragState(): void {

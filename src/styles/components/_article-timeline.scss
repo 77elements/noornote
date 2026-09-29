@@ -5,6 +5,8 @@
 
 @use '../abstracts/variables' as *;
 @use '../base/typography' as *;
+@use './skeleton' as *;
+@use '../molecules/messages' as *;
 
 // View child elements
 .article-timeline-view__header {
@@ -24,7 +26,10 @@
 }
 
 // Timeline container
+// (empty/error message styling via %feed-state-messages)
 .article-timeline {
+  @extend %feed-state-messages;
+
   &__loading,
   &__empty,
   &__error {
@@ -36,63 +41,11 @@
     color: var(--color-5);
     text-align: center;
   }
-
-  &__empty {
-    svg {
-      color: var(--color-3);
-      margin-bottom: $gap;
-      opacity: 0.6;
-    }
-
-    p {
-      @extend %h4;
-      margin: 0 0 calc($gap / 4) 0;
-    }
-
-    span {
-      color: var(--color-3);
-    }
-  }
-
-  &__error {
-    p {
-      @extend %h4;
-      margin: 0 0 $gap 0;
-      color: $color-red;
-    }
-  }
 }
 
-// Skeleton loading for article cards
+// Skeleton loading for article cards (base from %card-skeleton)
 .article-card-skeleton {
-  display: flex;
-  flex-direction: column;
-  background: var(--color-2);
-  border-radius: $radius-xl;
-  overflow: hidden;
-
-  .skeleton-image {
-    width: 100%;
-    height: 180px;
-    background: linear-gradient(90deg, var(--color-1) 25%, var(--color-2) 50%, var(--color-1) 75%);
-    background-size: 200% 100%;
-    animation: skeleton-shimmer 1.5s infinite;
-  }
-
-  .skeleton-content {
-    padding: $gap;
-    display: flex;
-    flex-direction: column;
-    gap: calc($gap / 2);
-  }
-
-  .skeleton-line {
-    height: 16px;
-    background: linear-gradient(90deg, var(--color-1) 25%, var(--color-2) 50%, var(--color-1) 75%);
-    background-size: 200% 100%;
-    animation: skeleton-shimmer 1.5s infinite;
-    border-radius: $radius-xl;
-  }
+  @extend %card-skeleton;
 
   .skeleton-title {
     width: 80%;

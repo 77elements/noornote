@@ -67,5 +67,5 @@
 // the scroll extent. Views whose `.view-content` container has no inner
 // wrapper need their own solution.
 .view-content > .back-padder {
-  padding-bottom: 40px;
+  padding-bottom: calc($gap * 2.5);
 }

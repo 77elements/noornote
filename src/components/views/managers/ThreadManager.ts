@@ -20,7 +20,11 @@ import { Router } from '../../../services/Router';
 import { LayoutService } from '../../../services/LayoutService';
 import { encodeNevent } from '../../../services/NostrToolsAdapter';
 import { escapeHtml } from '../../../helpers/escapeHtml';
-import { fetchNostrEvents } from '../../../services/FetchNostrEvents';
+import {
+  fetchQuotedRepostCandidates,
+  mergeChronologicalComments,
+  renderThreadedReplyNodes,
+} from '../../../helpers/quotedReposts';
 import { filterVisibleEvents } from '../../../lists/mutes';
 import {
   buildThreadTree as buildSharedThreadTree,
@@ -87,76 +91,11 @@ export class ThreadManager {
       `Fetching quoted reposts for note ${this.config.noteId.slice(0, 8)}`
     );
 
-    // Addressable events (NIP-33 kinds 30000–39999) are referenced via #a /
-    // #q tags, not #e. Without this branch, the #e filter would carry the
-    // coordinate string and NDK would reject it as "not a valid 64-char hex".
-    const isAddressable = this.config.noteId.includes(':');
-
     try {
-      // Two relay queries in parallel: NIP-18 q-tag AND legacy e-tag-with-mention
-      // (Primal-iOS pre-NIP-18 pattern). Tag-OR can't be expressed in one filter.
-      const fetches: Array<Promise<{ events: NostrEvent[] }>> = [
-        fetchNostrEvents({
-          relays,
-          kinds: [1, 6],
-          tags: { q: [this.config.noteId] },
-          limit: 100,
-        }),
-      ];
-      if (isAddressable) {
-        fetches.push(
-          fetchNostrEvents({
-            relays,
-            kinds: [1, 6],
-            tags: { a: [this.config.noteId] },
-            limit: 100,
-          })
-        );
-      } else {
-        fetches.push(
-          fetchNostrEvents({
-            relays,
-            kinds: [1],
-            tags: { e: [this.config.noteId] },
-            limit: 100,
-          })
-        );
-      }
-      const results = await Promise.all(fetches);
-      const qTagResult = results[0]!;
-      const eTagResult = results[1]!;
-
-      const byId = new Map<string, NostrEvent>();
-      for (const ev of [...qTagResult.events, ...eTagResult.events]) {
-        if (ev.id) byId.set(ev.id, ev);
-      }
-
-      const quotedReposts = Array.from(byId.values()).filter(event => {
-        const hasContent = event.content.trim().length > 0;
-        if (!hasContent) return false;
-
-        if (
-          event.tags.some(
-            tag => tag[0] === 'q' && tag[1] === this.config.noteId
-          )
-        )
-          return true;
-
-        if (isAddressable) {
-          // Addressable: match via #a tag
-          return event.tags.some(
-            tag => tag[0] === 'a' && tag[1] === this.config.noteId
-          );
-        }
-
-        const eTags = event.tags.filter(
-          tag => tag[0] === 'e' && tag[1] === this.config.noteId
-        );
-        return (
-          eTags.some(tag => tag[3] === 'mention') &&
-          /nostr:(nevent1|note1|naddr1)/.test(event.content)
-        );
-      });
+      const quotedReposts = await fetchQuotedRepostCandidates(
+        relays,
+        this.config.noteId
+      );
 
       // Drop QRs from muted authors at fetch time so the displayed count
       // ("Replies & Quotes (N)") matches what the user actually sees. The
@@ -166,7 +105,7 @@ export class ThreadManager {
 
       this.systemLogger.info(
         'ThreadManager',
-        `Fetched reposts: ${qTagResult.events.length + eTagResult.events.length}, quoted: ${quotedReposts.length}, visible: ${visibleQuotedReposts.length}`
+        `Quoted reposts: ${quotedReposts.length}, visible: ${visibleQuotedReposts.length}`
       );
       return visibleQuotedReposts;
     } catch (error) {
@@ -217,7 +156,7 @@ export class ThreadManager {
         return;
       }
 
-      const threadTree = this.buildThreadTree(replies, this.config.noteId);
+      const threadTree = buildSharedThreadTree(replies, this.config.noteId);
       const totalComments = replies.length + filteredQuotedReposts.length;
 
       void this.updateStats(replies.length, filteredQuotedReposts.length);
@@ -232,18 +171,10 @@ export class ThreadManager {
       const repliesList = repliesContainer.querySelector('.snv-replies__list');
       if (!repliesList) return;
 
-      const comments = [
-        ...threadTree.map(node => ({
-          type: 'reply' as const,
-          node,
-          timestamp: node.event.created_at,
-        })),
-        ...filteredQuotedReposts.map(event => ({
-          type: 'quote' as const,
-          event,
-          timestamp: event.created_at,
-        })),
-      ].sort((a, b) => a.timestamp - b.timestamp);
+      const comments = mergeChronologicalComments(
+        threadTree,
+        filteredQuotedReposts
+      );
 
       for (const comment of comments) {
         if (comment.type === 'reply') {
@@ -265,20 +196,10 @@ export class ThreadManager {
     }
   }
 
-  private buildThreadTree(
-    replies: NostrEvent[],
-    rootNoteId: string
-  ): ThreadNode[] {
-    return buildSharedThreadTree(replies, rootNoteId);
-  }
-
   private renderThreadedReply(node: ThreadNode, container: Element): void {
-    const replyElement = this.createReplyElement(node.event, node.depth);
-    container.appendChild(replyElement);
-
-    node.children.forEach(childNode => {
-      this.renderThreadedReply(childNode, container);
-    });
+    renderThreadedReplyNodes(node, container, (event, depth) =>
+      this.createReplyElement(event, depth)
+    );
   }
 
   private createReplyElement(
@@ -350,69 +271,14 @@ export class ThreadManager {
     }
   }
 
-  public appendLiveReply(reply: NostrEvent): void {
-    const replyId = reply.id;
-    if (!replyId) return;
-
-    const repliesContainer = this.getRepliesContainer();
-    if (!repliesContainer) return;
-
-    if (this.config.container.querySelector(`[data-reply-id="${replyId}"]`)) {
-      return;
-    }
-
-    let repliesList = this.getRepliesList();
-
-    if (!repliesList) {
-      repliesContainer.innerHTML = `
-        <div class="snv-replies__header">
-          <h2 class="h3">${this.repliesHeaderLabel} (1)</h2>
-        </div>
-        <div class="snv-replies__list"></div>
-      `;
-      repliesList = repliesContainer.querySelector('.snv-replies__list');
-    } else {
-      const header = repliesContainer.querySelector('.snv-replies__header h2');
-      if (header) {
-        const match = header.textContent?.match(/\((\d+)\)/);
-        const matchedCount = match?.[1];
-        if (matchedCount) {
-          const currentCount = parseInt(matchedCount, 10);
-          header.textContent = `${this.repliesHeaderLabel} (${currentCount + 1})`;
-        }
-      }
-    }
-
-    if (!repliesList) return;
-
-    const replyElement = this.createReplyElement(reply, 0);
-    replyElement.classList.add('reply-pending');
-    replyElement.dataset.replyId = replyId;
-
-    repliesList.appendChild(replyElement);
-    this.updateStatsAfterLiveReply();
-  }
-
   /**
-   * Live-append a newly arriving quoted repost (kind 6/1 with q/a-tag on this
-   * note). Mirrors appendLiveReply: dedup, header count, stats bump — the
-   * card itself is rendered by renderQuotedRepost.
+   * Ensure a replies list exists for a live append: create header+list when
+   * missing, otherwise bump the header count by one. Returns the list (or
+   * null when the container is gone).
    */
-  public appendQuotedRepost(event: NostrEvent): void {
-    const eventId = event.id;
-    if (!eventId) return;
-    // Same filter as loadReplies: the author's own quotes are not listed
-    if (event.pubkey === this.config.noteAuthor) return;
-
+  private ensureRepliesListForLiveAppend(): Element | null {
     const repliesContainer = this.getRepliesContainer();
-    if (!repliesContainer) return;
-    if (
-      this.config.container.querySelector(
-        `.snv-quoted-repost[data-event-id="${eventId}"]`
-      )
-    ) {
-      return;
-    }
+    if (!repliesContainer) return null;
 
     let repliesList = this.getRepliesList();
     if (!repliesList) {
@@ -434,6 +300,47 @@ export class ThreadManager {
         }
       }
     }
+    return repliesList;
+  }
+
+  public appendLiveReply(reply: NostrEvent): void {
+    const replyId = reply.id;
+    if (!replyId) return;
+
+    if (this.config.container.querySelector(`[data-reply-id="${replyId}"]`)) {
+      return;
+    }
+
+    const repliesList = this.ensureRepliesListForLiveAppend();
+    if (!repliesList) return;
+
+    const replyElement = this.createReplyElement(reply, 0);
+    replyElement.classList.add('reply-pending');
+    replyElement.dataset.replyId = replyId;
+
+    repliesList.appendChild(replyElement);
+    this.updateStatsAfterLiveReply();
+  }
+
+  /**
+   * Live-append a newly arriving quoted repost (kind 6/1 with q/a-tag on this
+   * note). Mirrors appendLiveReply: dedup, header count, stats bump — the
+   * card itself is rendered by renderQuotedRepost.
+   */
+  public appendQuotedRepost(event: NostrEvent): void {
+    const eventId = event.id;
+    if (!eventId) return;
+    // Same filter as loadReplies: the author's own quotes are not listed
+    if (event.pubkey === this.config.noteAuthor) return;
+    if (
+      this.config.container.querySelector(
+        `.snv-quoted-repost[data-event-id="${eventId}"]`
+      )
+    ) {
+      return;
+    }
+
+    const repliesList = this.ensureRepliesListForLiveAppend();
     if (!repliesList) return;
 
     void this.renderQuotedRepost(event, repliesList);

@@ -109,3 +109,36 @@
     }
   }
 }
+
+// ============================================================================
+// FEED STATE MESSAGES (shared empty/error blocks for card-grid feeds)
+// ============================================================================
+
+// Placeholder — extended by feed containers (.article-timeline,
+// .marketplace-timeline, …); & resolves to the extending root class.
+%feed-state-messages {
+  &__empty {
+    svg {
+      color: var(--color-3);
+      margin-bottom: $gap;
+      opacity: 0.6;
+    }
+
+    p {
+      @extend %h4;
+      margin: 0 0 calc($gap / 4) 0;
+    }
+
+    span {
+      color: var(--color-3);
+    }
+  }
+
+  &__error {
+    p {
+      @extend %h4;
+      margin: 0 0 $gap 0;
+      color: $color-red;
+    }
+  }
+}

@@ -25,7 +25,11 @@ import type { MediaModuleApi } from '../../modules/media/contracts';
 import type { ArticlesModuleApi } from '../../modules/articles/contracts';
 import { parseListingMetadata } from './marketplace-helpers';
 import { marked } from 'marked';
-import { setupTabClickHandlers, switchTab } from '../../helpers/TabsHelper';
+import { switchTab } from '../../helpers/TabsHelper';
+import {
+  setupEditorChrome,
+  createEditorRelaySelector,
+} from '../../components/post/editorChrome';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { NnDropdown } from '../../components/ui/NnDropdown';
 
@@ -158,7 +162,7 @@ export class ListingEditorView extends View {
   }
 
   private render(): void {
-    this.relaySelector = new RelaySelector({
+    this.relaySelector = createEditorRelaySelector({
       availableRelays: this.availableRelays,
       selectedRelays: this.selectedRelays,
       isTestMode: this.isTestMode,
@@ -364,36 +368,16 @@ export class ListingEditorView extends View {
         this.router.navigate('/marketplace');
       });
 
-    // Tabs
-    setupTabClickHandlers(this.container, tabId =>
-      this.switchTab(tabId as TabMode)
-    );
+    // Tabs, accordion, relay selector, footer toolbar (shared editor chrome)
+    setupEditorChrome({
+      container: this.container,
+      relaySelector: this.relaySelector,
+      toolbar: this.toolbar,
+      onTabSwitch: tabId => this.switchTab(tabId as TabMode),
+    });
 
     // Fields
     this.setupFieldListeners();
-
-    // Accordion toggle
-    this.container.querySelectorAll('.nn-ui-toggle__header').forEach(header => {
-      header.addEventListener('click', () =>
-        header.closest('.nn-ui-toggle')?.classList.toggle('open')
-      );
-    });
-
-    // Relay selector
-    const relaySelectorContainer = this.container.querySelector(
-      '.post-note-relay-selector'
-    );
-    if (this.relaySelector && relaySelectorContainer) {
-      this.relaySelector.setupEventListeners(
-        relaySelectorContainer as HTMLElement
-      );
-    }
-
-    // Footer toolbar
-    const toolbarContainer = this.container.querySelector('.post-note-toolbar');
-    if (this.toolbar && toolbarContainer) {
-      this.toolbar.setupEventListeners(toolbarContainer as HTMLElement);
-    }
 
     // Paste-to-upload into the listing description.
     const pasteTarget = this.container.querySelector(

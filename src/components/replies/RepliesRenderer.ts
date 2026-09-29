@@ -10,7 +10,11 @@ import type { SingleNoteModuleApi } from '../../modules/single-note/contracts';
 import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
 import { UserProfileService } from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
-import { fetchNostrEvents } from '../../services/FetchNostrEvents';
+import {
+  fetchQuotedRepostCandidates,
+  mergeChronologicalComments,
+  renderThreadedReplyNodes,
+} from '../../helpers/quotedReposts';
 import {
   buildThreadTree as buildSharedThreadTree,
   type ThreadNode,
@@ -135,7 +139,7 @@ export class RepliesRenderer {
       }
 
       // Build thread tree from replies
-      const threadTree = this.buildThreadTree(replies, this.noteId);
+      const threadTree = buildSharedThreadTree(replies, this.noteId);
 
       // Count total comments (replies + quoted reposts, not nested)
       const totalComments = replies.length + quotedReposts.length;
@@ -169,18 +173,7 @@ export class RepliesRenderer {
       const repliesList = this.container.querySelector('.snv-replies__list');
       if (repliesList) {
         // Mix TOP-LEVEL replies and quoted reposts, sorted by timestamp
-        const comments = [
-          ...threadTree.map(node => ({
-            type: 'reply' as const,
-            node,
-            timestamp: node.event.created_at,
-          })),
-          ...quotedReposts.map(event => ({
-            type: 'quote' as const,
-            event,
-            timestamp: event.created_at,
-          })),
-        ].sort((a, b) => a.timestamp - b.timestamp); // Oldest first (chronological)
+        const comments = mergeChronologicalComments(threadTree, quotedReposts);
 
         // Render all comments
         for (const comment of comments) {
@@ -202,16 +195,6 @@ export class RepliesRenderer {
   }
 
   /**
-   * Build thread tree from flat reply list
-   */
-  private buildThreadTree(
-    replies: NostrEvent[],
-    rootNoteId: string
-  ): ThreadNode[] {
-    return buildSharedThreadTree(replies, rootNoteId);
-  }
-
-  /**
    * Fetch quoted reposts (kind 1 or kind 6 with 'q' tag referencing this note)
    */
   private async fetchQuotedReposts(noteId: string): Promise<NostrEvent[]> {
@@ -223,70 +206,7 @@ export class RepliesRenderer {
     );
 
     try {
-      // Addressable events (NIP-33 kinds 30000–39999) are referenced via #a,
-      // not #e — passing a coordinate through the #e filter is rejected by NDK
-      // as "not a valid 64-char hex string".
-      const isAddressable = noteId.includes(':');
-
-      // Two relay queries in parallel: NIP-18 q-tag AND legacy e-tag-with-mention
-      // (Primal-iOS pre-NIP-18 pattern). Tag-OR can't be expressed in one filter.
-      const fetches: Array<Promise<{ events: NostrEvent[] }>> = [
-        fetchNostrEvents({
-          relays,
-          kinds: [1, 6],
-          tags: { q: [noteId] },
-          limit: 100,
-        }),
-      ];
-      if (isAddressable) {
-        fetches.push(
-          fetchNostrEvents({
-            relays,
-            kinds: [1, 6],
-            tags: { a: [noteId] },
-            limit: 100,
-          })
-        );
-      } else {
-        fetches.push(
-          fetchNostrEvents({
-            relays,
-            kinds: [1],
-            tags: { e: [noteId] },
-            limit: 100,
-          })
-        );
-      }
-      const results = await Promise.all(fetches);
-      const qTagResult = results[0]!;
-      const eTagResult = results[1]!;
-
-      const byId = new Map<string, NostrEvent>();
-      for (const ev of [...qTagResult.events, ...eTagResult.events]) {
-        if (ev.id) byId.set(ev.id, ev);
-      }
-
-      const quotedReposts = Array.from(byId.values()).filter(event => {
-        const hasContent = event.content.trim().length > 0;
-        if (!hasContent) return false;
-
-        if (event.tags.some(tag => tag[0] === 'q' && tag[1] === noteId))
-          return true;
-
-        if (isAddressable) {
-          // Addressable: match via #a tag
-          return event.tags.some(tag => tag[0] === 'a' && tag[1] === noteId);
-        }
-
-        const eTags = event.tags.filter(
-          tag => tag[0] === 'e' && tag[1] === noteId
-        );
-        return (
-          eTags.some(tag => tag[3] === 'mention') &&
-          /nostr:(nevent1|note1|naddr1)/.test(event.content)
-        );
-      });
-
+      const quotedReposts = await fetchQuotedRepostCandidates(relays, noteId);
       this.systemLogger.info(
         'RepliesRenderer',
         `✅ Quoted reposts: ${quotedReposts.length}`
@@ -305,13 +225,9 @@ export class RepliesRenderer {
    * Render a threaded reply recursively with indentation
    */
   private renderThreadedReply(node: ThreadNode, container: Element): void {
-    const replyElement = this.createReplyElement(node.event, node.depth);
-    container.appendChild(replyElement);
-
-    // Recursively render children
-    node.children.forEach(childNode => {
-      this.renderThreadedReply(childNode, container);
-    });
+    renderThreadedReplyNodes(node, container, (event, depth) =>
+      this.createReplyElement(event, depth)
+    );
   }
 
   /**

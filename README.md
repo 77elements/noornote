@@ -204,7 +204,7 @@ If the app crashes, check the log files:
 - **Follow Packs** — kind `39089`, used by the Follow Packs add-on and [calle's Follow Packs](https://github.com/callebtc/following.space)
 - **NIP-52R Recurring Calendar Events** — kinds `31922`/`31923` with `["L","rrule"] ["l","<RRULE>"]` label tags (draft addendum to NIP-52, reference implementation [formstr-hq/nostr-calendar](https://github.com/formstr-hq/nostr-calendar)); NoorNote expands RRULE occurrences client-side in the Calendar add-on grid
 - **Private calendar (NIP-52E draft, Form\*)** — kind `32678` (private calendar event), kind `32679` (recurring variant): NIP-44-encrypted payload with a one-time view key; kind `32123` self-encrypted private calendar list; kind `32069` view-key-encrypted private RSVP. Only ciphertext is visible on relays — readable by NoorNote and Form\* Calendar.
-- **Calendar invitation gift wraps** — kinds `1059` (with `["k","1052"]` classifier tag) and legacy `1052`: NIP-59 wraps carrying the private-event ref + view key for invited participants (Form\* NIP-52E invitation flow)
+- **Calendar invitation gift wraps** — kind `1059` (with `["k","1052"]` classifier tag) and legacy kind `1052`: NIP-59 wraps carrying the private-event ref + view key for invited participants (Form\* NIP-52E invitation flow)
 - **Podcast Episodes** — kind `30054`, podcast draft NIP episode metadata (`title`, `audio`, `image`, `duration`, `episode`/`season` tags; shownotes in content), published by podcast clients like Nostr Compass; rendered as a podcast card with inline player
 - **Zapstore Apps** — kind `32267`, app metadata for [Zapstore](https://zapstore.dev/) listings
 - **Zapstore Release Artifacts** — kind `30063`, release artifact metadata for Zapstore apps

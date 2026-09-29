@@ -32,8 +32,6 @@ import { AuthGuard } from '../../services/AuthGuard';
 import { RelaySelector } from '../post/RelaySelector';
 import { PostEditorToolbar } from '../post/PostEditorToolbar';
 import { setupPasteUpload } from '../../helpers/pasteUpload';
-import { renderPostPreview } from '../../helpers/renderPostPreview';
-import { stripTrackingParams } from '../../helpers/stripTrackingParams';
 import { Switch } from '../ui/Switch';
 import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
 import { AppState } from '../../services/AppState';
@@ -50,7 +48,6 @@ import {
   type TabMode,
 } from '../modals/ModalEventHandlerManager';
 import { ToastService } from '../../services/ToastService';
-import { renderDraftsList, setupDraftsList } from '../post/DraftsListUI';
 import {
   composerDraftsTabLabel,
   updateComposerDraftsBadge,
@@ -58,6 +55,16 @@ import {
   saveComposerDraft,
   composerPostFailure,
   renderQuotedNotesInPreview as fillQuotedPreviewMarkers,
+  buildComposerPreviewHtml,
+  renderComposerPreviewContent,
+  updateComposerPreview,
+  createNsfwSwitchIn,
+  mountRelaySelectorInHeader,
+  loadComposerEmojiAutocomplete,
+  scanComposerEmojiShortcodes,
+  createMentionAutocomplete,
+  composerDraftsPanel,
+  createComposerEventHandlers,
 } from '../post/composerShared';
 import { openDraftInComposer } from '../../helpers/draftRouter';
 import { attachPreviewClickToEdit } from '../../helpers/previewClickToEdit';
@@ -383,16 +390,12 @@ export class ReplyModal {
       `;
     } else {
       const currentUser = this.authService.getCurrentUser();
-      const cleanedContent = stripTrackingParams(this.content);
-      const extraTags = this.buildPreviewEmojiTags(cleanedContent);
-      const previewHTML = renderPostPreview({
-        content: cleanedContent,
-        pubkey: currentUser?.pubkey || '',
-        isNSFW: this.isNSFW,
-        ...(extraTags.length > 0 ? { extraTags } : {}),
-      });
-
-      return `<div class="post-note-preview">${previewHTML}</div>`;
+      return renderComposerPreviewContent(
+        this.content,
+        this.isNSFW,
+        currentUser?.pubkey || '',
+        cleaned => this.buildPreviewEmojiTags(cleaned)
+      );
     }
   }
 
@@ -442,17 +445,8 @@ export class ReplyModal {
     this.mountParentNote(modal);
 
     // Mount relay selector into modal__header (outside overflow container)
-    const modalHeader = modal.closest('.modal__body')
-      ?.previousElementSibling as HTMLElement;
-    if (this.relaySelector && modalHeader) {
-      const relaySelectorDiv = document.createElement('div');
-      relaySelectorDiv.innerHTML = this.relaySelector.render();
-      const relaySelectorEl = relaySelectorDiv.firstElementChild as HTMLElement;
-      modalHeader.insertBefore(
-        relaySelectorEl,
-        modalHeader.querySelector('.modal__close')
-      );
-      this.relaySelector.setupEventListeners(relaySelectorEl);
+    if (this.relaySelector) {
+      mountRelaySelectorInHeader(modal, this.relaySelector);
     }
 
     // Setup toolbar
@@ -477,13 +471,7 @@ export class ReplyModal {
     }
 
     // Setup mention autocomplete
-    this.mentionAutocomplete = new MentionAutocomplete({
-      textareaSelector: '[data-textarea]',
-      onMentionInserted: (_npub, username) => {
-        this.systemLogger.info('ReplyModal', `Mention inserted: @${username}`);
-      },
-    });
-    this.mentionAutocomplete.init();
+    this.mentionAutocomplete = createMentionAutocomplete('ReplyModal');
 
     // Custom emoji shortcode autocomplete (addon-gated, lazy-loaded)
     if (isCustomEmojisEnabled()) {
@@ -491,10 +479,8 @@ export class ReplyModal {
     }
 
     // Setup event handler manager (tab switching, textarea, action buttons)
-    this.eventHandlerManager = new ModalEventHandlerManager({
+    this.eventHandlerManager = createComposerEventHandlers({
       modalSelector: '.reply-modal',
-      textareaSelector: '[data-textarea]',
-      activeTabClass: 'tab--active',
       currentTab: this.currentTab,
       onTabSwitch: tab => this.switchTab(tab),
       onTextInput: value => {
@@ -505,7 +491,6 @@ export class ReplyModal {
       onSubmit: () => this.handlePost(),
       onSaveDraft: () => this.handleSaveDraft(),
     });
-    this.eventHandlerManager.setupEventListeners();
   }
 
   /**
@@ -548,14 +533,12 @@ export class ReplyModal {
       onEditRendered: () => this.eventHandlerManager?.refreshTextareaListener(),
       buildPreviewHtml: () => {
         const currentUser = this.authService.getCurrentUser();
-        const cleanedContent = stripTrackingParams(this.content);
-        const extraTags = this.buildPreviewEmojiTags(cleanedContent);
-        return renderPostPreview({
-          content: cleanedContent,
-          pubkey: currentUser?.pubkey || '',
-          isNSFW: this.isNSFW,
-          ...(extraTags.length > 0 ? { extraTags } : {}),
-        });
+        return buildComposerPreviewHtml(
+          this.content,
+          this.isNSFW,
+          currentUser?.pubkey || '',
+          cleaned => this.buildPreviewEmojiTags(cleaned)
+        );
       },
       onPreviewRendered: previewContainer => {
         void this.renderQuotedNotesInPreview(previewContainer);
@@ -563,16 +546,14 @@ export class ReplyModal {
           this.switchTab('edit')
         );
       },
-      renderDraftsHtml: () => renderDraftsList(),
-      onDraftsRendered: draftsContainer =>
-        setupDraftsList(draftsContainer, {
-          onOpen: draft => {
-            this.cleanup();
-            this.modalService.hide();
-            openDraftInComposer(draft);
-          },
-          onChanged: () => this.updateDraftsTabBadge(),
-        }),
+      ...composerDraftsPanel({
+        onOpen: draft => {
+          this.cleanup();
+          this.modalService.hide();
+          openDraftInComposer(draft);
+        },
+        onChanged: () => this.updateDraftsTabBadge(),
+      }),
     });
   }
 
@@ -600,11 +581,7 @@ export class ReplyModal {
    */
   private updatePreview(): void {
     const currentUser = this.authService.getCurrentUser();
-    EditorStateManager.updatePreview('.post-note-preview', {
-      content: stripTrackingParams(this.content),
-      pubkey: currentUser?.pubkey || '',
-      isNSFW: this.isNSFW,
-    });
+    updateComposerPreview(this.content, this.isNSFW, currentUser?.pubkey || '');
   }
 
   /**
@@ -639,27 +616,17 @@ export class ReplyModal {
     // Don't create switch if it already exists
     if (this.nsfwSwitch) return;
 
-    const optionsContainer = document.querySelector(
-      '#reply-note-options-container'
-    );
-    if (!optionsContainer) return;
-
-    // Create NSFW switch component
-    this.nsfwSwitch = new Switch({
-      label: 'NSFW',
-      checked: this.isNSFW,
-      onChange: checked => {
+    this.nsfwSwitch = createNsfwSwitchIn(
+      '#reply-note-options-container',
+      this.isNSFW,
+      checked => {
         this.isNSFW = checked;
         // Re-render preview if currently in preview tab
         if (this.currentTab === 'preview') {
           this.updatePreview();
         }
-      },
-    });
-
-    // Insert switch into DOM
-    optionsContainer.innerHTML = this.nsfwSwitch.render();
-    this.nsfwSwitch.setupEventListeners(optionsContainer as HTMLElement);
+      }
+    );
   }
 
   /**
@@ -844,45 +811,13 @@ export class ReplyModal {
    * Only invoked when the Custom Emojis addon is enabled.
    */
   private async initCustomEmojiAutocomplete(): Promise<void> {
-    try {
-      const [{ CustomEmojiAutocomplete }, { EmojiService }] = await Promise.all(
-        [
-          import('../../addons/custom-emojis/CustomEmojiAutocomplete'),
-          import('../../addons/custom-emojis/EmojiService'),
-        ]
-      );
-      this.customEmojiService = EmojiService.getInstance();
-      this.customEmojiAutocomplete = new CustomEmojiAutocomplete({
-        textareaSelector: '[data-textarea]',
-        onEmojiInserted: shortcode => {
-          this.systemLogger.info(
-            'ReplyModal',
-            `Custom emoji inserted: :${shortcode}:`
-          );
-        },
-      });
-      this.customEmojiAutocomplete.init();
-    } catch (err) {
-      this.systemLogger.warn(
-        'ReplyModal',
-        `Custom emoji autocomplete load failed: ${String(err)}`
-      );
-    }
+    const loaded = await loadComposerEmojiAutocomplete('ReplyModal');
+    if (!loaded) return;
+    this.customEmojiService = loaded.service;
+    this.customEmojiAutocomplete = loaded.autocomplete;
   }
 
   private buildPreviewEmojiTags(content: string): string[][] {
-    if (!this.customEmojiService) return [];
-    const tags: string[][] = [];
-    const seen = new Set<string>();
-    const re = /:([a-zA-Z0-9_-]+):/g;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(content)) !== null) {
-      const code = m[1]!;
-      if (seen.has(code)) continue;
-      seen.add(code);
-      const emoji = this.customEmojiService.findEmoji(code);
-      if (emoji) tags.push(['emoji', code, emoji.url]);
-    }
-    return tags;
+    return scanComposerEmojiShortcodes(content, this.customEmojiService);
   }
 }

@@ -23,6 +23,10 @@ import { loadEditorRelayConfig } from '../../helpers/editorRelayConfig';
 import { insertTextAtCursor } from '../../helpers/insertTextAtCursor';
 import { SystemLogger } from '../../services/SystemLogger';
 import { RelaySelector } from '../post/RelaySelector';
+import {
+  setupEditorChrome,
+  createEditorRelaySelector,
+} from '../post/editorChrome';
 import { PostEditorToolbar } from '../post/PostEditorToolbar';
 import { setupPasteUpload } from '../../helpers/pasteUpload';
 import { ModuleLoader } from '../../core/ModuleLoader';
@@ -84,7 +88,7 @@ export class VideoEditorView extends View {
   }
 
   private render(): void {
-    this.relaySelector = new RelaySelector({
+    this.relaySelector = createEditorRelaySelector({
       availableRelays: this.availableRelays,
       selectedRelays: this.selectedRelays,
       isTestMode: this.isTestMode,
@@ -262,28 +266,13 @@ export class VideoEditorView extends View {
     // Field inputs
     this.setupFieldListeners();
 
-    // Accordion toggle
-    this.container.querySelectorAll('.nn-ui-toggle__header').forEach(header => {
-      header.addEventListener('click', () =>
-        header.closest('.nn-ui-toggle')?.classList.toggle('open')
-      );
+    // Accordion, relay selector, footer toolbar (shared editor chrome; no tabs)
+    setupEditorChrome({
+      container: this.container,
+      relaySelector: this.relaySelector,
+      toolbar: this.toolbar,
+      onTabSwitch: () => {},
     });
-
-    // Relay selector
-    const relaySelectorContainer = this.container.querySelector(
-      '.post-note-relay-selector'
-    );
-    if (this.relaySelector && relaySelectorContainer) {
-      this.relaySelector.setupEventListeners(
-        relaySelectorContainer as HTMLElement
-      );
-    }
-
-    // Footer toolbar (emoji)
-    const toolbarContainer = this.container.querySelector('.post-note-toolbar');
-    if (this.toolbar && toolbarContainer) {
-      this.toolbar.setupEventListeners(toolbarContainer as HTMLElement);
-    }
 
     // Paste-to-upload into the video description.
     const pasteTarget = this.container.querySelector(

@@ -35,7 +35,11 @@ import type {
 } from '../../modules/articles/contracts';
 import { ModalService } from '../../services/ModalService';
 import { marked } from 'marked';
-import { setupTabClickHandlers, switchTab } from '../../helpers/TabsHelper';
+import { switchTab } from '../../helpers/TabsHelper';
+import {
+  setupEditorChrome,
+  createEditorRelaySelector,
+} from '../post/editorChrome';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { FullscreenOverlay } from '../ui/FullscreenOverlay';
 import { MarkdownToolbar } from '../ui/MarkdownToolbar';
@@ -268,7 +272,7 @@ export class ArticleEditorView extends View {
    */
   private render(): void {
     // Create relay selector
-    this.relaySelector = new RelaySelector({
+    this.relaySelector = createEditorRelaySelector({
       availableRelays: this.availableRelays,
       selectedRelays: this.selectedRelays,
       isTestMode: this.isTestMode,
@@ -535,36 +539,16 @@ export class ArticleEditorView extends View {
     const backBtn = this.container.querySelector('[data-action="back"]');
     backBtn?.addEventListener('click', () => this.handleBack());
 
-    // Tab switching
-    setupTabClickHandlers(this.container, tabId =>
-      this.switchTab(tabId as TabMode)
-    );
+    // Tabs, accordion, relay selector, footer toolbar (shared editor chrome)
+    setupEditorChrome({
+      container: this.container,
+      relaySelector: this.relaySelector,
+      toolbar: this.toolbar,
+      onTabSwitch: tabId => this.switchTab(tabId as TabMode),
+    });
 
     // Field inputs
     this.setupFieldListeners();
-
-    // Accordion toggle
-    this.container.querySelectorAll('.nn-ui-toggle__header').forEach(header => {
-      header.addEventListener('click', () =>
-        header.closest('.nn-ui-toggle')?.classList.toggle('open')
-      );
-    });
-
-    // Relay selector
-    const relaySelectorContainer = this.container.querySelector(
-      '.post-note-relay-selector'
-    );
-    if (this.relaySelector && relaySelectorContainer) {
-      this.relaySelector.setupEventListeners(
-        relaySelectorContainer as HTMLElement
-      );
-    }
-
-    // Footer Toolbar (emoji, media for footer)
-    const toolbarContainer = this.container.querySelector('.post-note-toolbar');
-    if (this.toolbar && toolbarContainer) {
-      this.toolbar.setupEventListeners(toolbarContainer as HTMLElement);
-    }
 
     // Paste-to-upload into the article body.
     const pasteTarget = this.container.querySelector(

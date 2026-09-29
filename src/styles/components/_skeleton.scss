@@ -181,3 +181,40 @@
     }
   }
 }
+
+// ============================================================================
+// CARD SKELETON (shared base for card-grid feeds: articles, listings)
+// ============================================================================
+
+// Placeholder — extended by .article-card-skeleton / .listing-card-skeleton
+// so the rules compile under each card's own class name.
+%card-skeleton {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-2);
+  border-radius: $radius-xl;
+  overflow: hidden;
+
+  .skeleton-image {
+    width: 100%;
+    height: 180px;
+    background: linear-gradient(90deg, var(--color-1) 25%, var(--color-2) 50%, var(--color-1) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+  }
+
+  .skeleton-content {
+    padding: $gap;
+    display: flex;
+    flex-direction: column;
+    gap: calc($gap / 2);
+  }
+
+  .skeleton-line {
+    height: $gap;
+    background: linear-gradient(90deg, var(--color-1) 25%, var(--color-2) 50%, var(--color-1) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+    border-radius: $radius-xl;
+  }
+}

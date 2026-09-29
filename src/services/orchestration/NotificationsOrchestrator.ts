@@ -37,6 +37,7 @@ import {
   isDirectReplyToOwnNote,
 } from '../../helpers/notificationReplyClassification';
 import { getNotificationPriorities } from '../NotificationPriorityConfig';
+import { diagLog } from '../DiagnosticLogger';
 
 export type NotificationType =
   | 'mention'
@@ -1310,6 +1311,13 @@ export class NotificationsOrchestrator extends Orchestrator {
             this.noteService.getCachedNote(id)?.pubkey ?? null,
         })
       ) {
+        diagLog('system', 'Notification classified as direct reply (NIP-10)', {
+          eventId: event.id,
+          eTagCount: event.tags.filter(t => t[0] === 'e').length,
+          inFetchWindow: event.tags.some(
+            t => t[1] !== undefined && userEventIds.includes(t[1])
+          ),
+        });
         return 'reply';
       }
 
@@ -1365,6 +1373,11 @@ export class NotificationsOrchestrator extends Orchestrator {
           userEventIds,
         })
       ) {
+        diagLog(
+          'system',
+          'Notification classified as direct comment (NIP-22)',
+          { eventId: event.id }
+        );
         return 'reply';
       }
       if (hasUserPtag && userMentionedInContent) return 'mention';

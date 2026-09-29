@@ -1,0 +1,125 @@
+/**
+ * Editor form shell — shared structural chrome for the full-page form
+ * editors (Article, Video, Marketplace listing). Placeholder selector is
+ * @extend-ed by each editor root so the rules compile under the editor's
+ * own BEM block name (jscpd H5 clone-budget consolidation, 2026-09-29).
+ *
+ * Deliberately NOT visual atoms: these rules depend on the editor root
+ * (`.article-editor`, `.video-editor`, …) and stay out of the compiled CSS
+ * until an editor extends them.
+ */
+
+@use '../abstracts/variables' as *;
+@use '../base/typography' as *;
+
+// Flex usage: the rules below are MOVED verbatim from
+// _article-editor-view.scss / _video-editor-view.scss (pre-existing flex
+// layouts). Consolidation only dedupes them — re-rolling to grid here would
+// change cascade output for zero user value.
+%editor-form-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - $gap * 6);
+
+  &__back {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+    padding: calc($gap / 2) $gap;
+    background: none;
+    border-radius: $radius-xl;
+    color: var(--color-5);
+    font-family: inherit;
+    cursor: pointer;
+    transition: $transition-colors;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    &:hover {
+      background: var(--bg-accent);
+      color: var(--color-4);
+      border-color: var(--color-4);
+    }
+  }
+
+  &__title {
+    @extend %h1;
+    font-weight: 600;
+    color: var(--color-5);
+    margin: 0;
+  }
+
+  // Body (form or preview)
+  &__body {
+    flex: 1;
+    margin-bottom: $gap * 1.5;
+  }
+
+  // Form
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: $gap;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: calc($gap / 2);
+  }
+
+  &__label {
+    @extend %small;
+    font-weight: 500;
+    color: var(--color-5);
+  }
+
+  &__upload-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    padding: 0;
+    border-radius: $radius-xl;
+    color: var(--color-5);
+    cursor: pointer;
+    transition: $transition-colors;
+
+    &:hover:not(:disabled) {
+      background: var(--bg-accent);
+      color: var(--color-4);
+      border-color: var(--color-4);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .spin {
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  // Footer with toolbar and actions
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $gap;
+    padding-top: $gap;
+
+    .post-note-toolbar {
+      display: flex;
+      gap: calc($gap / 2);
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: calc($gap / 2);
+  }
+}
