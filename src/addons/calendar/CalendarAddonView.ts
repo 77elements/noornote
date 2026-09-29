@@ -60,29 +60,31 @@ export class CalendarAddonView extends View {
     });
 
     this.container.innerHTML = `
-      <h1>Calendar</h1>
-      <section class="section">
-        <div class="setting">
-          <span class="setting__label">Enable Calendar</span>
-          <div class="setting__control">${this.enableSwitch.render()}</div>
-          <p class="setting__desc">Your personal calendar on Nostr: keep your own appointments in month, week and list views, subscribe to public event calendars you're interested in, and add private events that only you can see. With reminders — and when you join someone's event, you can let them know you're coming.</p>
+      <div class="back-padder">
+        <h1>Calendar</h1>
+        <section class="section">
+          <div class="setting">
+            <span class="setting__label">Enable Calendar</span>
+            <div class="setting__control">${this.enableSwitch.render()}</div>
+            <p class="setting__desc">Your personal calendar on Nostr: keep your own appointments in month, week and list views, subscribe to public event calendars you're interested in, and add private events that only you can see. With reminders — and when you join someone's event, you can let them know you're coming.</p>
+          </div>
+          <div class="setting">
+            <span class="setting__label">Remind me before events start</span>
+            <div class="setting__control" data-slot="reminder-lead"></div>
+            <p class="setting__desc">Default reminder lead for all events. Reminders stay local to this device — nothing is published. Single events can override this in their editor.</p>
+          </div>
+        </section>
+        <div class="tabs" data-el="calendar-tabs">
+          <button class="tab tab--active" data-tab="personal">Personal calendar</button>
+          <button class="tab" data-tab="booking">Booking Calendar</button>
         </div>
-        <div class="setting">
-          <span class="setting__label">Remind me before events start</span>
-          <div class="setting__control" data-slot="reminder-lead"></div>
-          <p class="setting__desc">Default reminder lead for all events. Reminders stay local to this device — nothing is published. Single events can override this in their editor.</p>
+        <div class="tab-content tab-content--active" data-tab-content="personal">
+          <div data-addon-content="calendar-grid"></div>
+          <div data-addon-content="calendar-io"></div>
         </div>
-      </section>
-      <div class="tabs" data-el="calendar-tabs">
-        <button class="tab tab--active" data-tab="personal">Personal calendar</button>
-        <button class="tab" data-tab="booking">Booking Calendar</button>
-      </div>
-      <div class="tab-content tab-content--active" data-tab-content="personal">
-        <div data-addon-content="calendar-grid"></div>
-        <div data-addon-content="calendar-io"></div>
-      </div>
-      <div class="tab-content" data-tab-content="booking">
-        <div data-addon-content="calendar-booking"></div>
+        <div class="tab-content" data-tab-content="booking">
+          <div data-addon-content="calendar-booking"></div>
+        </div>
       </div>
     `;
     this.enableSwitch.setupEventListeners(this.container);

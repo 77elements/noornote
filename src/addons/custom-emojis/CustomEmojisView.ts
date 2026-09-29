@@ -20,9 +20,11 @@ export class CustomEmojisView extends View {
     this.container.className =
       'view-content view-content--addon view-content--addon-custom-emojis';
     this.container.innerHTML = `
-      <h1>Custom Emojis</h1>
-      <section class="section" id="custom-emojis-settings-content"></section>
-      <div data-addon-content="custom-emojis"></div>
+      <div class="back-padder">
+        <h1>Custom Emojis</h1>
+        <section class="section" id="custom-emojis-settings-content"></section>
+        <div data-addon-content="custom-emojis"></div>
+      </div>
     `;
     this.settings = new CustomEmojisSettings();
     this.settings.mount(this.container);

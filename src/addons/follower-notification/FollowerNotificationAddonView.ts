@@ -11,9 +11,11 @@ export class FollowerNotificationAddonView extends View {
     this.container.className =
       'view-content view-content--addon view-content--addon-follower-notification';
     this.container.innerHTML = `
-      <h1>Follower Notification</h1>
-      <section class="section" id="follower-notification-settings-content"></section>
-      <div data-addon-content="follower-notification"></div>
+      <div class="back-padder">
+        <h1>Follower Notification</h1>
+        <section class="section" id="follower-notification-settings-content"></section>
+        <div data-addon-content="follower-notification"></div>
+      </div>
     `;
     this.settings = new FollowerNotificationSettings();
     this.settings.mount(this.container);

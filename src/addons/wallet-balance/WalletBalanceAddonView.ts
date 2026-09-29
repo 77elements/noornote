@@ -46,15 +46,17 @@ export class WalletBalanceAddonView extends View {
     });
 
     this.container.innerHTML = `
-      <h1>Wallet Balance</h1>
-      <section class="section">
-        <div class="setting">
-          <span class="setting__label">Enable Wallet Balance</span>
-          <div class="setting__control"></div>
-          <p class="setting__desc">Show your Lightning wallet balance in the sidebar with fiat conversion.</p>
-        </div>
-      </section>
-      <div data-addon-content="wallet-balance"></div>
+      <div class="back-padder">
+        <h1>Wallet Balance</h1>
+        <section class="section">
+          <div class="setting">
+            <span class="setting__label">Enable Wallet Balance</span>
+            <div class="setting__control"></div>
+            <p class="setting__desc">Show your Lightning wallet balance in the sidebar with fiat conversion.</p>
+          </div>
+        </section>
+        <div data-addon-content="wallet-balance"></div>
+      </div>
     `;
     this.enableSwitch.setupEventListeners(this.container);
     const controlEl = this.container.querySelector('.setting__control');

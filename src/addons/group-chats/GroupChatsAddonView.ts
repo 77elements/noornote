@@ -15,14 +15,16 @@ export class GroupChatsAddonView extends View {
     this.container.className =
       'view-content view-content--addon view-content--addon-group-chats';
     this.container.innerHTML = `
-      <h1>Group Chats</h1>
-      <p class="form__note">
-        Heads-up notifications when your group chat communities come alive.
-        Currently supports Nostrord (NIP-29) and Armada (Concord).
-      </p>
-      <section class="section" id="group-chats-settings-content"></section>
-      <div data-addon-content="armada-communities"></div>
-      <div data-addon-content="group-chats"></div>
+      <div class="back-padder">
+        <h1>Group Chats</h1>
+        <p class="form__note">
+          Heads-up notifications when your group chat communities come alive.
+          Currently supports Nostrord (NIP-29) and Armada (Concord).
+        </p>
+        <section class="section" id="group-chats-settings-content"></section>
+        <div data-addon-content="armada-communities"></div>
+        <div data-addon-content="group-chats"></div>
+      </div>
     `;
     this.settings = new GroupChatsSettings();
     this.settings.mount(this.container);

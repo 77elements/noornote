@@ -117,42 +117,44 @@ export class BookmarksAddonView extends View {
     ).join('');
 
     this.container.innerHTML = `
-      <h1>Bookmarks</h1>
-      <section class="section">
-        <div class="setting">
-          <span class="setting__label">Enable Bookmarks</span>
-          <div class="setting__control">${this.enableSwitch.render()}</div>
-          <p class="setting__desc">
-            Save notes and links to bookmark folders with drag-and-drop organization.
-          </p>
-        </div>
-
-        <div class="bookmarks-read-sync${bookmarksEnabled ? '' : ' is-hidden'}">
+      <div class="back-padder">
+        <h1>Bookmarks</h1>
+        <section class="section">
           <div class="setting">
-            <span class="setting__label">Sync read bookmarks across relays</span>
-            <div class="setting__control">${this.syncSwitch.render()}</div>
+            <span class="setting__label">Enable Bookmarks</span>
+            <div class="setting__control">${this.enableSwitch.render()}</div>
             <p class="setting__desc">
-              Tracks which bookmarks you have opened and syncs the read-state
-              across your devices (encrypted, only visible to you). When off,
-              the sidebar shows the plain bookmark total.
+              Save notes and links to bookmark folders with drag-and-drop organization.
             </p>
           </div>
 
-          <div class="frequency-selector${readSyncEnabled ? '' : ' is-hidden'}">
-            <p class="setting__label">Sync frequency</p>
-            ${freqOptions}
+          <div class="bookmarks-read-sync${bookmarksEnabled ? '' : ' is-hidden'}">
             <div class="setting">
-              <div class="setting__control">
-                <button class="btn btn--medium" data-action="reset-read-state">Reset read state</button>
-              </div>
+              <span class="setting__label">Sync read bookmarks across relays</span>
+              <div class="setting__control">${this.syncSwitch.render()}</div>
               <p class="setting__desc">
-                Marks ALL bookmarks as unread again (also on your other devices
-                after their next sync).
+                Tracks which bookmarks you have opened and syncs the read-state
+                across your devices (encrypted, only visible to you). When off,
+                the sidebar shows the plain bookmark total.
               </p>
             </div>
+
+            <div class="frequency-selector${readSyncEnabled ? '' : ' is-hidden'}">
+              <p class="setting__label">Sync frequency</p>
+              ${freqOptions}
+              <div class="setting">
+                <div class="setting__control">
+                  <button class="btn btn--medium" data-action="reset-read-state">Reset read state</button>
+                </div>
+                <p class="setting__desc">
+                  Marks ALL bookmarks as unread again (also on your other devices
+                  after their next sync).
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     `;
 
     this.enableSwitch.setupEventListeners(this.container);

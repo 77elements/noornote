@@ -45,15 +45,17 @@ export class NoteTakingAddonView extends View {
     });
 
     this.container.innerHTML = `
-      <h1>Note taking</h1>
-      <section class="section">
-        <div class="setting">
-          <span class="setting__label">Enable Note taking</span>
-          <div class="setting__control">${this.enableSwitch.render()}</div>
-          <p class="setting__desc">Encrypted, offline-first notes. Your notes are NIP-44 self-encrypted and synced privately across your devices via Nostr relays, so only ciphertext ever leaves this device.</p>
-        </div>
-      </section>
-      <div data-addon-content="note-board"></div>
+      <div class="back-padder">
+        <h1>Note taking</h1>
+        <section class="section">
+          <div class="setting">
+            <span class="setting__label">Enable Note taking</span>
+            <div class="setting__control">${this.enableSwitch.render()}</div>
+            <p class="setting__desc">Encrypted, offline-first notes. Your notes are NIP-44 self-encrypted and synced privately across your devices via Nostr relays, so only ciphertext ever leaves this device.</p>
+          </div>
+        </section>
+        <div data-addon-content="note-board"></div>
+      </div>
     `;
     this.enableSwitch.setupEventListeners(this.container);
     this.renderBoard();

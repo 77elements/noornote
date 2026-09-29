@@ -166,22 +166,24 @@ export class NostrMajlisAddonView extends View {
     });
 
     this.container.innerHTML = `
-      <h1>Nostr-Majlis</h1>
-      <section class="section">
-        <div class="setting">
-          <span class="setting__label">Enable Nostr-Majlis</span>
-          <div class="setting__control">${this.enableSwitch.render()}</div>
-          <p class="setting__desc">Islamic features for NoorNote: prayer times (Salah), Islamic holidays, and community dhikr. Pick Diyanet for official times, or a calculation method computed on your device.</p>
+      <div class="back-padder">
+        <h1>Nostr-Majlis</h1>
+        <section class="section">
+          <div class="setting">
+            <span class="setting__label">Enable Nostr-Majlis</span>
+            <div class="setting__control">${this.enableSwitch.render()}</div>
+            <p class="setting__desc">Islamic features for NoorNote: prayer times (Salah), Islamic holidays, and community dhikr. Pick Diyanet for official times, or a calculation method computed on your device.</p>
+          </div>
+        </section>
+        <div class="tabs tabs--scrollable" data-el="majlis-tabs" hidden>
+          <button class="tab tab--active" data-tab="salah">Salah</button>
+          <button class="tab" data-tab="holidays">Holidays</button>
+          <button class="tab" data-tab="dhikr">Community Dhikr</button>
         </div>
-      </section>
-      <div class="tabs tabs--scrollable" data-el="majlis-tabs" hidden>
-        <button class="tab tab--active" data-tab="salah">Salah</button>
-        <button class="tab" data-tab="holidays">Holidays</button>
-        <button class="tab" data-tab="dhikr">Community Dhikr</button>
+        <div class="tab-content tab-content--active" data-tab-content="salah" data-addon-content="salah"></div>
+        <div class="tab-content" data-tab-content="holidays" data-addon-content="holidays"></div>
+        <div class="tab-content" data-tab-content="dhikr" data-addon-content="dhikr"></div>
       </div>
-      <div class="tab-content tab-content--active" data-tab-content="salah" data-addon-content="salah"></div>
-      <div class="tab-content" data-tab-content="holidays" data-addon-content="holidays"></div>
-      <div class="tab-content" data-tab-content="dhikr" data-addon-content="dhikr"></div>
     `;
     this.enableSwitch.setupEventListeners(this.container);
     setupTabClickHandlers(this.container, tabId =>

@@ -59,15 +59,17 @@ export class BtcPriceAddonView extends View {
     });
 
     this.container.innerHTML = `
-      <h1>BTC Price</h1>
-      <section class="section">
-        <div class="setting">
-          <span class="setting__label">Enable BTC Price</span>
-          <div class="setting__control"></div>
-          <p class="setting__desc">Show the current Bitcoin exchange rate on this page and — via the switch below — as a widget in the sidebar.</p>
-        </div>
-      </section>
-      <div data-addon-content="btc-price"></div>
+      <div class="back-padder">
+        <h1>BTC Price</h1>
+        <section class="section">
+          <div class="setting">
+            <span class="setting__label">Enable BTC Price</span>
+            <div class="setting__control"></div>
+            <p class="setting__desc">Show the current Bitcoin exchange rate on this page and — via the switch below — as a widget in the sidebar.</p>
+          </div>
+        </section>
+        <div data-addon-content="btc-price"></div>
+      </div>
     `;
     const controlEl = this.container.querySelector('.setting__control');
     if (controlEl) controlEl.innerHTML = this.enableSwitch.render();

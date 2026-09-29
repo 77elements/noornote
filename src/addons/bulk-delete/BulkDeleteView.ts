@@ -133,15 +133,17 @@ export class BulkDeleteView extends View {
     });
 
     this.container.innerHTML = `
-      <h1>Bulk delete</h1>
-      <section class="section">
-        <div class="setting">
-          <span class="setting__label">Enable Bulk delete</span>
-          <div class="setting__control"></div>
-          <p class="setting__desc">Pick a time range or search your own posts, then select them and delete in bulk. Each deletion is a NIP-09 request broadcast to relays in the background — relays may honor it or not. Deletion is not guaranteed and cannot be undone.</p>
-        </div>
-      </section>
-      <div data-addon-content="bulk-delete"></div>
+      <div class="back-padder">
+        <h1>Bulk delete</h1>
+        <section class="section">
+          <div class="setting">
+            <span class="setting__label">Enable Bulk delete</span>
+            <div class="setting__control"></div>
+            <p class="setting__desc">Pick a time range or search your own posts, then select them and delete in bulk. Each deletion is a NIP-09 request broadcast to relays in the background — relays may honor it or not. Deletion is not guaranteed and cannot be undone.</p>
+          </div>
+        </section>
+        <div data-addon-content="bulk-delete"></div>
+      </div>
     `;
 
     const controlEl = this.container.querySelector('.setting__control');

@@ -16,9 +16,11 @@ export class FollowPacksView extends View {
     this.container.className =
       'view-content view-content--addon view-content--addon-follow-packs';
     this.container.innerHTML = `
-      <h1>Follow Packs</h1>
-      <section class="section" id="follow-packs-settings-content"></section>
-      <div data-addon-content="follow-packs"></div>
+      <div class="back-padder">
+        <h1>Follow Packs</h1>
+        <section class="section" id="follow-packs-settings-content"></section>
+        <div data-addon-content="follow-packs"></div>
+      </div>
     `;
     this.settings = new FollowPacksSettings();
     this.settings.mount(this.container);

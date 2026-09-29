@@ -88,14 +88,16 @@ export class AddonToggleView extends View {
     });
 
     this.container.innerHTML = `
-      <h1>${escapeHtml(this.opts.name)}</h1>
-      <section class="section">
-        <div class="setting">
-          <span class="setting__label">Enable ${escapeHtml(this.opts.name)}</span>
-          <div class="setting__control">${this.enableSwitch.render()}</div>
-          <p class="setting__desc">${escapeHtml(this.opts.description)}</p>
-        </div>
-      </section>
+      <div class="back-padder">
+        <h1>${escapeHtml(this.opts.name)}</h1>
+        <section class="section">
+          <div class="setting">
+            <span class="setting__label">Enable ${escapeHtml(this.opts.name)}</span>
+            <div class="setting__control">${this.enableSwitch.render()}</div>
+            <p class="setting__desc">${escapeHtml(this.opts.description)}</p>
+          </div>
+        </section>
+      </div>
     `;
     this.enableSwitch.setupEventListeners(this.container);
   }

@@ -30,45 +30,47 @@ export class BadgesView extends View {
     const enabled = isBadgesEnabled();
 
     this.container.innerHTML = `
-      <h1>Badges</h1>
-      <section class="section" data-role="toggle-section"></section>
-      ${
-        enabled
-          ? `
-      <section class="section">
-        <h2>Create Badge</h2>
-        <div class="form__row">
-          <label>Slug (unique identifier)</label>
-          <input class="input" type="text" data-field="slug" placeholder="e.g. early-supporter" />
-        </div>
-        <div class="form__row">
-          <label>Name</label>
-          <input class="input" type="text" data-field="name" placeholder="e.g. Early Supporter" />
-        </div>
-        <div class="form__row">
-          <label>Description</label>
-          <textarea class="textarea textarea--small" data-field="description" placeholder="What this badge represents…"></textarea>
-        </div>
-        <div class="form__row">
-          <label>Image URL</label>
-          <input class="input" type="text" data-field="imageUrl" placeholder="https://…/badge.png" />
-        </div>
-        <div class="l-row--split">
-          <div>
-            <button type="button" class="btn btn--passive" data-action="upload-image">Upload image…</button>
-            <input type="file" accept="image/*" style="display:none" data-role="file-input" />
-            <span data-role="upload-status"></span>
+      <div class="back-padder">
+        <h1>Badges</h1>
+        <section class="section" data-role="toggle-section"></section>
+        ${
+          enabled
+            ? `
+        <section class="section">
+          <h2>Create Badge</h2>
+          <div class="form__row">
+            <label>Slug (unique identifier)</label>
+            <input class="input" type="text" data-field="slug" placeholder="e.g. early-supporter" />
           </div>
-          <button class="btn" data-action="create-badge">Save to Badge Gallery</button>
-        </div>
-      </section>
-      <section class="section">
-        <h2>Your Badge Gallery</h2>
-        <div data-role="gallery" class="pulsate">Loading…</div>
-      </section>
-      `
-          : ''
-      }
+          <div class="form__row">
+            <label>Name</label>
+            <input class="input" type="text" data-field="name" placeholder="e.g. Early Supporter" />
+          </div>
+          <div class="form__row">
+            <label>Description</label>
+            <textarea class="textarea textarea--small" data-field="description" placeholder="What this badge represents…"></textarea>
+          </div>
+          <div class="form__row">
+            <label>Image URL</label>
+            <input class="input" type="text" data-field="imageUrl" placeholder="https://…/badge.png" />
+          </div>
+          <div class="l-row--split">
+            <div>
+              <button type="button" class="btn btn--passive" data-action="upload-image">Upload image…</button>
+              <input type="file" accept="image/*" style="display:none" data-role="file-input" />
+              <span data-role="upload-status"></span>
+            </div>
+            <button class="btn" data-action="create-badge">Save to Badge Gallery</button>
+          </div>
+        </section>
+        <section class="section">
+          <h2>Your Badge Gallery</h2>
+          <div data-role="gallery" class="pulsate">Loading…</div>
+        </section>
+        `
+            : ''
+        }
+      </div>
     `;
 
     const toggleSection = this.container.querySelector(

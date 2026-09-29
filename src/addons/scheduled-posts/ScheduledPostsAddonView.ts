@@ -55,15 +55,17 @@ export class ScheduledPostsAddonView extends View {
     });
 
     this.container.innerHTML = `
-      <h1>Scheduled Posts</h1>
-      <section class="section">
-        <div class="setting">
-          <span class="setting__label">Enable Scheduled Posts</span>
-          <div class="setting__control"></div>
-          <p class="setting__desc">Schedule notes and articles to be published at a later date and time. Your fully signed event is held by a NoorNote-operated Deno service and published to your chosen relays at the scheduled moment. No private keys leave your device.</p>
-        </div>
-      </section>
-      <div data-addon-content="scheduled-posts"></div>
+      <div class="back-padder">
+        <h1>Scheduled Posts</h1>
+        <section class="section">
+          <div class="setting">
+            <span class="setting__label">Enable Scheduled Posts</span>
+            <div class="setting__control"></div>
+            <p class="setting__desc">Schedule notes and articles to be published at a later date and time. Your fully signed event is held by a NoorNote-operated Deno service and published to your chosen relays at the scheduled moment. No private keys leave your device.</p>
+          </div>
+        </section>
+        <div data-addon-content="scheduled-posts"></div>
+      </div>
     `;
 
     const controlEl = this.container.querySelector('.setting__control');

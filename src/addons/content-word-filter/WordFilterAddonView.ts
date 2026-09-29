@@ -18,9 +18,11 @@ export class WordFilterAddonView extends View {
     this.container.className =
       'view-content view-content--addon view-content--addon-wordfilter';
     this.container.innerHTML = `
-      <h1>Word Filter</h1>
-      <section class="section" id="content-word-filter-settings-content"></section>
-      <div data-addon-content="wordfilter"></div>
+      <div class="back-padder">
+        <h1>Word Filter</h1>
+        <section class="section" id="content-word-filter-settings-content"></section>
+        <div data-addon-content="wordfilter"></div>
+      </div>
     `;
     this.settings = new ContentWordFilterSettings();
     this.settings.mount(this.container);

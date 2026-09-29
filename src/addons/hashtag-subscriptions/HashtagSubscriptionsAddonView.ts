@@ -11,9 +11,11 @@ export class HashtagSubscriptionsAddonView extends View {
     this.container.className =
       'view-content view-content--addon view-content--addon-hashtag-subscriptions';
     this.container.innerHTML = `
-      <h1>Hashtag Subscriptions</h1>
-      <section class="section" id="hashtag-subscriptions-settings-content"></section>
-      <div data-addon-content="hashtag-subscriptions"></div>
+      <div class="back-padder">
+        <h1>Hashtag Subscriptions</h1>
+        <section class="section" id="hashtag-subscriptions-settings-content"></section>
+        <div data-addon-content="hashtag-subscriptions"></div>
+      </div>
     `;
     this.settings = new HashtagSubscriptionsSettings();
     this.settings.mount(this.container);

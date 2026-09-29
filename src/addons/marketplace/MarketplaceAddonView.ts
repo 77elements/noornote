@@ -29,9 +29,11 @@ export class MarketplaceAddonView extends View {
     this.container.className =
       'view-content view-content--addon view-content--addon-marketplace';
     this.container.innerHTML = `
-      <h1>Marketplace</h1>
-      <section class="section" id="marketplace-settings-content"></section>
-      <div data-addon-content="marketplace"></div>
+      <div class="back-padder">
+        <h1>Marketplace</h1>
+        <section class="section" id="marketplace-settings-content"></section>
+        <div data-addon-content="marketplace"></div>
+      </div>
     `;
     this.settings = new MarketplaceSettingsSection();
     this.settings.mount(this.container);

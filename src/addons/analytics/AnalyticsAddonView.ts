@@ -256,22 +256,24 @@ export class AnalyticsAddonView extends View {
     });
 
     this.container.innerHTML = `
-      <h1>Analytics</h1>
-      <section class="section">
-        <div class="setting">
-          <span class="setting__label">Enable Analytics</span>
-          <div class="setting__control">${this.enableSwitch.render()}</div>
-          <p class="setting__desc">Your personal Nostr stats — posts and replies, follows, content, zaps and engagement. Data is gathered relay-friendly, cached per account and refreshed incrementally. Counts cover your entire history — all-time, not a fixed window, as far as relay retention allows.</p>
+      <div class="back-padder">
+        <h1>Analytics</h1>
+        <section class="section">
+          <div class="setting">
+            <span class="setting__label">Enable Analytics</span>
+            <div class="setting__control">${this.enableSwitch.render()}</div>
+            <p class="setting__desc">Your personal Nostr stats — posts and replies, follows, content, zaps and engagement. Data is gathered relay-friendly, cached per account and refreshed incrementally. Counts cover your entire history — all-time, not a fixed window, as far as relay retention allows.</p>
+          </div>
+        </section>
+        <div class="tabs tabs--scrollable" data-el="analytics-tabs" hidden>
+          <button class="tab tab--active" data-tab="overview">Overview</button>
+          <button class="tab" data-tab="top-posts">Top Posts</button>
+          <button class="tab" data-tab="diagrams">Diagrams</button>
         </div>
-      </section>
-      <div class="tabs tabs--scrollable" data-el="analytics-tabs" hidden>
-        <button class="tab tab--active" data-tab="overview">Overview</button>
-        <button class="tab" data-tab="top-posts">Top Posts</button>
-        <button class="tab" data-tab="diagrams">Diagrams</button>
+        <div class="tab-content tab-content--active" data-tab-content="overview" data-addon-content="overview"></div>
+        <div class="tab-content" data-tab-content="top-posts" data-addon-content="top-posts"></div>
+        <div class="tab-content" data-tab-content="diagrams" data-addon-content="diagrams"></div>
       </div>
-      <div class="tab-content tab-content--active" data-tab-content="overview" data-addon-content="overview"></div>
-      <div class="tab-content" data-tab-content="top-posts" data-addon-content="top-posts"></div>
-      <div class="tab-content" data-tab-content="diagrams" data-addon-content="diagrams"></div>
     `;
     this.enableSwitch.setupEventListeners(this.container);
     setupTabClickHandlers(this.container, tabId =>
