@@ -4,6 +4,7 @@
  */
 
 import { NWCService } from '../../services/NWCService';
+import { Router } from '../../services/Router';
 import { SystemLogger } from '../../services/SystemLogger';
 import { ExchangeRateService } from '../../services/ExchangeRateService';
 import { KeychainStorage } from '../../services/KeychainStorage';
@@ -30,6 +31,12 @@ export class WalletBalanceDisplay {
   // runtime and after account switches.
   private toggleBtnHandler: (() => void) | null = null;
   private toggleBtnEl: Element | null = null;
+  // Widget-wide click → open the addon page; the eye toggle keeps its own action.
+  private onWidgetClick: (e: MouseEvent) => void = e => {
+    if ((e.target as HTMLElement | null)?.closest('.wallet-balance-toggle'))
+      return;
+    Router.getInstance().navigate('/addons/wallet-balance');
+  };
   private onNwcRestored: () => void = () => this.loadBalance();
   private onZapSent: () => void = () => {
     window.setTimeout(() => {
@@ -97,6 +104,8 @@ export class WalletBalanceDisplay {
   private createElement(): HTMLElement {
     const container = document.createElement('div');
     container.className = 'sidebar-widget';
+    container.title = 'Open Wallet Balance';
+    container.addEventListener('click', this.onWidgetClick);
     container.innerHTML = `
       <div class="sidebar-widget__cols">
         <span class="wallet-balance-left">
@@ -306,6 +315,8 @@ export class WalletBalanceDisplay {
     }
     this.toggleBtnEl = null;
     this.toggleBtnHandler = null;
+
+    this.element.removeEventListener('click', this.onWidgetClick);
 
     this.element.remove();
   }

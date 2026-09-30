@@ -9,6 +9,15 @@
   margin-bottom: $gap;
 }
 
+// Sidebar widgets navigate to their addon page on click (action buttons
+// inside keep their own behavior), so the sidebar instances get the pointer
+// affordance. Addon-page widget instances are display-only — not covered here.
+.wallet-balance-container .sidebar-widget,
+[data-sidebar-widget="btc-price"] .sidebar-widget,
+[data-sidebar-widget="nostr-majlis"] .sidebar-widget {
+  cursor: pointer;
+}
+
 .sidebar-widget {
   padding: calc($gap / 2) calc($gap * 0.75);
   background: rgba($color-black, 0.25);

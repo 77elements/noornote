@@ -14,6 +14,7 @@
 
 import { ExchangeRateService } from '../../services/ExchangeRateService';
 import { KeychainStorage } from '../../services/KeychainStorage';
+import { Router } from '../../services/Router';
 import { escapeHtml } from '../../helpers/escapeHtml';
 
 export interface BtcPriceWidgetOptions {
@@ -47,12 +48,18 @@ export class BtcPriceSidebarWidget {
   };
 
   // Delegated so it survives the innerHTML rewrites in renderRate(); removed in teardown().
+  // In the sidebar slot, any click that is not the refresh button opens the
+  // addon page; the addon-page instance is display-only and stays put.
   private onClick = (e: MouseEvent): void => {
     if (
       (e.target as HTMLElement | null)?.closest('[data-action="btc-refresh"]')
     ) {
       e.preventDefault();
       void this.manualRefresh();
+      return;
+    }
+    if (this.el?.closest('[data-sidebar-widget="btc-price"]')) {
+      Router.getInstance().navigate('/addons/btc-price');
     }
   };
 
@@ -77,6 +84,7 @@ export class BtcPriceSidebarWidget {
       if (!container) return;
       this.el = document.createElement('div');
       this.el.className = 'sidebar-widget';
+      this.el.title = 'Open BTC Price';
       this.el.addEventListener('click', this.onClick);
       container.appendChild(this.el);
       this.el.innerHTML =
