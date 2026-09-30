@@ -21,6 +21,7 @@ import {
   type DayPrayerTimes,
 } from './activeTimes';
 import { DiyanetService } from './DiyanetService';
+import { Router } from '../../services/Router';
 import { escapeHtml } from '../../helpers/escapeHtml';
 
 // Sunrise IS a period boundary: Fajr lasts only until sunrise, then we are in the
@@ -94,13 +95,16 @@ export class NostrMajlisSidebarWidget {
   private fetching = false;
 
   // Delegated so it survives the innerHTML rewrites in update(); removed in teardown().
+  // Any click that is not the in-place re-fetch opens the addon page.
   private onClick = (e: MouseEvent): void => {
     if (
       (e.target as HTMLElement | null)?.closest('[data-action="nm-refetch"]')
     ) {
       e.preventDefault();
       void this.refetch();
+      return;
     }
+    Router.getInstance().navigate('/addons/nostr-majlis');
   };
 
   /** Find the sidebar slot and render according to the current setting. */
@@ -127,6 +131,7 @@ export class NostrMajlisSidebarWidget {
     if (!this.el) {
       this.el = document.createElement('div');
       this.el.className = 'sidebar-widget';
+      this.el.title = 'Open Nostr Majlis';
       this.el.addEventListener('click', this.onClick);
       this.container.appendChild(this.el);
     }

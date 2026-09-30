@@ -15,6 +15,12 @@
   overflow-y: visible;
 }
 
+// The sidebar prayer widget is clickable (opens the addon page); the in-place
+// re-fetch link keeps its own affordance.
+[data-sidebar-widget="nostr-majlis"] .sidebar-widget {
+  cursor: pointer;
+}
+
 .ui-list.times {
   margin-bottom: $gap;
 }
