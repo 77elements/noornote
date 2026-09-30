@@ -558,7 +558,7 @@ export class PostNoteModal {
           this.content,
           this.isNSFW,
           currentUser?.pubkey || '',
-          () => []
+          cleaned => this.buildPreviewEmojiTags(cleaned)
         );
         // Add poll preview if poll is configured
         const pollPreviewHtml = this.renderPollPreview();
@@ -616,7 +616,12 @@ export class PostNoteModal {
    */
   private updatePreview(): void {
     const currentUser = this.authService.getCurrentUser();
-    updateComposerPreview(this.content, this.isNSFW, currentUser?.pubkey || '');
+    updateComposerPreview(
+      this.content,
+      this.isNSFW,
+      currentUser?.pubkey || '',
+      cleaned => this.buildPreviewEmojiTags(cleaned)
+    );
   }
 
   /**

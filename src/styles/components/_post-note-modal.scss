@@ -153,6 +153,16 @@
       text-decoration: underline;
     }
   }
+
+  // Custom emojis (NIP-30) — mirror the note-body rule (_note-ui.scss):
+  // original size, scaled down only when wider than the container.
+  .custom-emoji {
+    display: inline-block;
+    max-width: 100%;
+    height: auto;
+    vertical-align: middle;
+    margin: 0 0.05em;
+  }
 }
 
 .post-note-preview-empty {

@@ -192,12 +192,16 @@ export function renderComposerPreviewContent(
 export function updateComposerPreview(
   content: string,
   isNSFW: boolean,
-  currentUserPubkey: string
+  currentUserPubkey: string,
+  scanEmojiTags?: (cleanedContent: string) => string[][]
 ): void {
+  const cleanedContent = stripTrackingParams(content);
+  const extraTags = scanEmojiTags ? scanEmojiTags(cleanedContent) : [];
   EditorStateManager.updatePreview('.post-note-preview', {
-    content: stripTrackingParams(content),
+    content: cleanedContent,
     pubkey: currentUserPubkey,
     isNSFW,
+    ...(extraTags.length > 0 ? { extraTags } : {}),
   });
 }
 

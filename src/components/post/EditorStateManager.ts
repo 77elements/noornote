@@ -24,6 +24,8 @@ export interface PreviewOptions {
   content: string;
   pubkey: string;
   isNSFW: boolean;
+  /** Optional extra tags merged into the mock event (e.g. NIP-30 emoji tags) */
+  extraTags?: string[][];
 }
 
 export class EditorStateManager {
@@ -125,6 +127,7 @@ export class EditorStateManager {
       content: options.content,
       pubkey: options.pubkey,
       isNSFW: options.isNSFW,
+      ...(options.extraTags ? { extraTags: options.extraTags } : {}),
     });
   }
 }

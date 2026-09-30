@@ -41,9 +41,12 @@ export function renderPostPreview(options: PreviewOptions): string {
     return '<p class="post-note-preview-empty">Nothing to preview yet...</p>';
   }
 
-  // Create mock Nostr event for processing
+  // Create mock Nostr event for processing.
+  // The id must be unique per render: NoteProcessor memoizes by event id,
+  // and a shared constant id would freeze every future preview at the first
+  // rendered content.
   const mockEvent: NostrEvent = {
-    id: 'preview',
+    id: `preview-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     pubkey: options.pubkey,
     created_at: Math.floor(Date.now() / 1000),
     kind: 1,

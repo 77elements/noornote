@@ -581,7 +581,12 @@ export class ReplyModal {
    */
   private updatePreview(): void {
     const currentUser = this.authService.getCurrentUser();
-    updateComposerPreview(this.content, this.isNSFW, currentUser?.pubkey || '');
+    updateComposerPreview(
+      this.content,
+      this.isNSFW,
+      currentUser?.pubkey || '',
+      cleaned => this.buildPreviewEmojiTags(cleaned)
+    );
   }
 
   /**
