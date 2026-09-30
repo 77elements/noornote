@@ -11,3 +11,15 @@
   font-style: normal;
   font-display: swap;
 }
+
+// Amiri Quran - Regular (400) - Uthmani Quran text (Daily Ayah).
+// System Arabic fonts lack glyphs for the Uthmani-script codepoints in
+// Arabic Extended-A (U+08A0–U+08FF, e.g. open tanween) and render tofu boxes;
+// this font covers them completely.
+@font-face {
+  font-family: 'Amiri Quran';
+  src: url('/fonts/AmiriQuran/AmiriQuran-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}

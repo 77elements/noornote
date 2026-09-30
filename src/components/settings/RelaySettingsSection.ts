@@ -444,7 +444,7 @@ export class RelaySettingsSection extends SettingsSection {
       content: `
         <div style="padding: 1rem 0;">
           <p>Are you sure you want to remove this relay?</p>
-          <p style="margin-top: 0.5rem; color: var(--color-text-secondary); font-size: 0.9rem;">
+          <p class="form__note">
             <strong>${url}</strong>
           </p>
         </div>

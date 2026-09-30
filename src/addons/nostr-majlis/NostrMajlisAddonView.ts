@@ -53,9 +53,10 @@ import {
   type CityData,
 } from './CityDataService';
 import { CALC_METHODS, computeTimes, type ComputedTimes } from './SalahService';
+import { getDailyAyah } from './quranDaily';
 
 const PICK = '__pick__';
-const MAJLIS_TABS: string[] = ['salah', 'holidays', 'dhikr'];
+const MAJLIS_TABS: string[] = ['salah', 'holidays', 'dhikr', 'daily-ayah'];
 const ZERO: ComputedTimes = {
   fajr: '00:00',
   sunrise: '00:00',
@@ -106,6 +107,12 @@ export class NostrMajlisAddonView extends View {
 
   // Sidebar-widget toggle
   private widgetSwitch: Switch | null = null;
+
+  // Daily Ayah tab
+  private quranSwitch: Switch | null = null;
+  // Bumps on every Daily-Ayah render; an in-flight getDailyAyah whose render
+  // was superseded (or whose view was unmounted mid-await) must not fill.
+  private quranToken = 0;
 
   // Holidays tab: which Gregorian year the table shows, and the calendar-system subscription.
   private holidayYear = new Date().getFullYear();
@@ -162,6 +169,7 @@ export class NostrMajlisAddonView extends View {
         void this.renderSalah();
         this.renderHolidays();
         this.renderDhikr();
+        void this.renderDailyAyah();
       },
     });
 
@@ -179,10 +187,12 @@ export class NostrMajlisAddonView extends View {
           <button class="tab tab--active" data-tab="salah">Salah</button>
           <button class="tab" data-tab="holidays">Holidays</button>
           <button class="tab" data-tab="dhikr">Community Dhikr</button>
+          <button class="tab" data-tab="daily-ayah">Daily Ayah</button>
         </div>
         <div class="tab-content tab-content--active" data-tab-content="salah" data-addon-content="salah"></div>
         <div class="tab-content" data-tab-content="holidays" data-addon-content="holidays"></div>
         <div class="tab-content" data-tab-content="dhikr" data-addon-content="dhikr"></div>
+        <div class="tab-content" data-tab-content="daily-ayah" data-addon-content="daily-ayah"></div>
       </div>
     `;
     this.enableSwitch.setupEventListeners(this.container);
@@ -192,6 +202,7 @@ export class NostrMajlisAddonView extends View {
     void this.renderSalah();
     this.renderHolidays();
     this.renderDhikr();
+    void this.renderDailyAyah();
 
     // Deep-link: open the requested tab (e.g. from a dhikr notification → /addons/nostr-majlis/dhikr).
     // Whitelist the id so a malformed URL falls back to the default (salah) instead of a blank pane.
@@ -426,6 +437,81 @@ export class NostrMajlisAddonView extends View {
       .querySelector('[data-action="create-dhikr"]')
       ?.addEventListener('click', () => new DhikrModal('create').open());
     this.renderDhikrList();
+  }
+
+  // ---------- Daily Ayah tab ----------
+
+  /**
+   * Daily Ayah tab: opt-in switch + today's ayah with the full texts (the
+   * sidebar widget truncates). Served from the same day-cache as the widget.
+   */
+  private async renderDailyAyah(): Promise<void> {
+    const slot = this.container.querySelector(
+      '[data-addon-content="daily-ayah"]'
+    ) as HTMLElement | null;
+    if (!slot) return;
+    // Invalidate any in-flight ayah render (also on the disabled path below).
+    const token = ++this.quranToken;
+    this.quranSwitch?.destroy();
+    this.quranSwitch = null;
+    if (!isNostrMajlisEnabled()) {
+      slot.innerHTML = '';
+      return;
+    }
+
+    this.quranSwitch = new Switch({
+      label: '',
+      checked: getNostrMajlisSettings().quranDaily,
+      onChange: c => {
+        setNostrMajlisSettings({
+          ...getNostrMajlisSettings(),
+          quranDaily: c,
+        });
+        AddonLoader.getInstance()
+          .getRuntime<NostrMajlisRuntime>('nostr-majlis')
+          ?.widget?.refresh();
+        void this.renderDailyAyah();
+      },
+    });
+
+    slot.innerHTML = `
+      <section class="section">
+        <div class="setting">
+          <span class="setting__label">Daily Quran ayah</span>
+          <div class="setting__control">${this.quranSwitch.render()}</div>
+          <p class="setting__desc">Shows one ayah per day in the sidebar widget — Arabic Uthmani text, the English translation (The Clear Quran) and the English tafsir Al-Mukhtasar. Texts load from public static CDNs once per day and are cached on your device.</p>
+        </div>
+      </section>
+      <section class="section" data-el="daily-ayah-view"></section>
+    `;
+    this.quranSwitch.setupEventListeners(slot);
+
+    const view = slot.querySelector(
+      '[data-el="daily-ayah-view"]'
+    ) as HTMLElement | null;
+    if (!view) return;
+    if (!getNostrMajlisSettings().quranDaily) {
+      view.innerHTML = `<p class="setting__desc">Enable the daily ayah to see it here.</p>`;
+      return;
+    }
+
+    view.innerHTML = `<p class="setting__desc pulsate">Loading the daily ayah…</p>`;
+    // NOT guarded by view.isConnected: at construction time this view is still
+    // detached (mounted right after the constructor returns), and an isConnected
+    // check here would discard the filled content and leave the "Loading…"
+    // corpse in the DOM. The token handles superseded renders instead.
+    const ayah = await getDailyAyah();
+    if (this.disposed || token !== this.quranToken) return;
+    if (!ayah) {
+      view.innerHTML = `<p class="setting__desc">The daily ayah could not be loaded. Check your connection — it will retry automatically.</p>`;
+      return;
+    }
+    view.innerHTML = `
+      <h2 class="h4 nm-quran__ref">Quran ${ayah.surah}:${ayah.ayah}</h2>
+      <p class="nm-quran__arabic" dir="rtl" lang="ar">${escapeHtml(ayah.arabic)}</p>
+      ${ayah.english ? `<p class="nm-quran__translation">${escapeHtml(ayah.english)}</p>` : ''}
+      ${ayah.tafsir ? `<h3 class="h4 nm-quran__tafsir-label">Tafsir (Al-Mukhtasar)</h3><p class="nm-quran__tafsir">${escapeHtml(ayah.tafsir)}</p>` : ''}
+    `;
   }
 
   /** Render the table from the current DhikrService state (live, re-rendered on changes). */
@@ -1270,6 +1356,8 @@ export class NostrMajlisAddonView extends View {
     this.disposeHolidayReminders();
     this.widgetSwitch?.destroy();
     this.widgetSwitch = null;
+    this.quranSwitch?.destroy();
+    this.quranSwitch = null;
     this.sourceDD?.destroy();
     this.sourceDD = null;
     this.enableSwitch?.destroy();

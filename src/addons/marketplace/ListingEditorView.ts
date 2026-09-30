@@ -337,7 +337,7 @@ export class ListingEditorView extends View {
       <div class="article-editor__preview">
         ${this.images.length > 0 && this.images[0] ? `<img src="${escapeHtmlAttr(this.images[0])}" alt="${escapeHtml(this.title)}" class="article-editor__preview-image" />` : ''}
         <h1 class="article-editor__preview-title">${escapeHtml(this.title) || 'Untitled'}</h1>
-        ${priceDisplay ? `<div class="listing-card__price" style="font-size: 1.25rem; margin-bottom: 1rem;">${escapeHtml(priceDisplay)}</div>` : ''}
+        ${priceDisplay ? `<div class="timeline-listing-card__price">${escapeHtml(priceDisplay)}</div>` : ''}
         ${this.location ? `<div class="listing-card__location">${escapeHtml(this.location)}</div>` : ''}
         ${this.summary ? `<p class="article-editor__preview-summary">${escapeHtml(this.summary)}</p>` : ''}
         <div class="article-editor__preview-content">${htmlContent}</div>

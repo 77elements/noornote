@@ -156,7 +156,7 @@ export class ListingView extends View {
               <svg width="18" height="18"><use href="#icon-repost"/></svg> Repost
             </button>
             <button class="btn-icon" data-listing-action="quote" title="Quote">
-              <span style="font-size:1.3rem;line-height:1">❝</span> Quote
+              <span class="quote-glyph">❝</span> Quote
             </button>
           </div>
 

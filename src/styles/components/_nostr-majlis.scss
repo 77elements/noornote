@@ -6,6 +6,7 @@
 
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 // The shared .tab-content scrolls internally (height:100% + overflow-y:auto) — meant for
 // fixed-height views. This addon view scrolls at .primary-content, so let the tab content
@@ -49,6 +50,65 @@
   }
 }
 
+// Daily Quran ayah — sidebar widget section + Daily Ayah tab. Paragraph
+// margins come from the global p rule ($gap bottom). Arabic renders
+// right-to-left in the bundled Amiri Quran font (see _fonts.scss) — system
+// fonts render Uthmani Extended-A codepoints as tofu.
+// Separator above the ayah section in the sidebar widget — <hr> with the
+// global rule, tightened margin to sit close to the prayer rows.
+.nm-quran__divider {
+  margin: calc($gap / 2) 0;
+  background: var(--surface-tint);
+}
+
+.nm-quran__ref {
+  color: var(--color-3);
+}
+
+.nm-quran__arabic {
+  font-family: 'Amiri Quran', 'Geeza Pro', 'Noto Naskh Arabic', serif;
+  @include big;
+  text-align: right;
+}
+
+.nm-quran__translation {
+  color: var(--color-5);
+}
+
+// Tafsir sub-heading — real h4; only tightens the global heading margin to
+// sit close to its text.
+.nm-quran__tafsir-label {
+  margin-bottom: calc($gap / 4);
+}
+
+.nm-quran__loading {
+  color: var(--color-3);
+  text-align: center;
+}
+
+// Sidebar widget only: compact English line (smaller than normal text, per
+// _typography.scss %small) with a clamp, plus the "Show tafsir" action.
+.sidebar-widget .nm-quran__translation--clamp {
+  @extend %small;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+// Source reference — right side of the .l-row--split line under the clamped
+// translation; "Show tafsir" (left) matches its font size.
+.sidebar-widget .nm-quran__ref-line {
+  @extend %small;
+  color: var(--color-3);
+}
+
+// "Show tafsir" link — same size as the English translation line; color and
+// hover come from the global link styles.
+.sidebar-widget .nm-quran__hint {
+  @extend %small;
+}
+
 // Community Dhikr: actions table (scrolls horizontally on narrow screens).
 .nm-dhikr-list {
   overflow-x: auto;
@@ -83,7 +143,7 @@
   display: block;
   margin-top: calc($gap / 4);
   color: var(--color-3);
-  font-size: 0.85em;
+  @extend %compact;
   line-height: 1.5;
   white-space: normal;
 }
@@ -107,7 +167,7 @@
     border: 1px solid var(--surface-tint);
     border-radius: $radius-pill;
     color: var(--color-3);
-    font-size: 0.75em;
+    @extend %small;
     vertical-align: middle;
   }
 }

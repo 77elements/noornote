@@ -226,7 +226,7 @@ export class MarketplaceTimelineInjector {
             <svg width="16" height="16"><use href="#icon-repost"/></svg>
           </button>
           <button class="btn-icon" data-listing-action="quote" title="Quote">
-            <span style="font-size:1.3rem;line-height:1">❝</span>
+            <span class="quote-glyph">❝</span>
           </button>
         </div>
       </div>

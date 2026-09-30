@@ -21,6 +21,13 @@ import {
   type DayPrayerTimes,
 } from './activeTimes';
 import { DiyanetService } from './DiyanetService';
+import {
+  getDailyAyah,
+  dateKeyOf,
+  truncateText,
+  WIDGET_TRANSLATION_MAX,
+  type DailyAyah,
+} from './quranDaily';
 import { Router } from '../../services/Router';
 import { escapeHtml } from '../../helpers/escapeHtml';
 
@@ -94,14 +101,29 @@ export class NostrMajlisSidebarWidget {
   private timer: number | null = null;
   private fetching = false;
 
+  // Daily Quran ayah state — survives the 10s re-renders; the fetch itself is
+  // day-cached inside getDailyAyah, we only re-check on date-key change.
+  private quranAyah: DailyAyah | null = null;
+  private quranDateKey = '';
+  private quranLoading = false;
+
   // Delegated so it survives the innerHTML rewrites in update(); removed in teardown().
-  // Any click that is not the in-place re-fetch opens the addon page.
+  // The in-place re-fetch is handled here; "Show tafsir" is a plain link to
+  // the Daily Ayah tab (global anchor handling navigates), any other click
+  // opens the addon page.
   private onClick = (e: MouseEvent): void => {
-    if (
-      (e.target as HTMLElement | null)?.closest('[data-action="nm-refetch"]')
-    ) {
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('[data-action="nm-refetch"]')) {
       e.preventDefault();
       void this.refetch();
+      return;
+    }
+    const link = target?.closest('a');
+    if (link) {
+      // SPA navigation for the widget's own links (e.g. "Show tafsir" →
+      // the Daily Ayah tab); the app does not intercept raw anchors.
+      e.preventDefault();
+      Router.getInstance().navigate(link.getAttribute('href') ?? '');
       return;
     }
     Router.getInstance().navigate('/addons/nostr-majlis');
@@ -175,6 +197,71 @@ export class NostrMajlisSidebarWidget {
     this.el.innerHTML = `
       <div class="sidebar-widget__row sidebar-widget__head"><span>${escapeHtml(data.currentName)}</span><span>time left</span><span>${escapeHtml(data.nextName)}</span></div>
       <div class="sidebar-widget__row sidebar-widget__vals"><span>${clock}</span><span class="${pulsate ? 'pulsate' : ''}">${left}</span><span>${escapeHtml(data.nextTime)}</span></div>
+      <div class="nm-quran" data-el="nm-quran"></div>
+    `;
+    void this.updateQuran();
+  }
+
+  /**
+   * Daily ayah section below the prayer rows. Hidden entirely when the
+   * `quranDaily` setting is off; pulsates while the first fetch runs; falls
+   * back to the last cached ayah inside getDailyAyah when offline.
+   */
+  private async updateQuran(): Promise<void> {
+    if (!this.el) return;
+    const host = this.el.querySelector('[data-el="nm-quran"]');
+    if (!host) return;
+    if (!getNostrMajlisSettings().quranDaily) {
+      host.innerHTML = '';
+      return;
+    }
+
+    const today = dateKeyOf(new Date());
+    if (!this.quranAyah || this.quranDateKey !== today) {
+      if (!this.quranLoading) {
+        host.innerHTML = `<div class="nm-quran__divider"></div><div class="nm-quran__loading pulsate">Loading the daily ayah…</div>`;
+        this.quranLoading = true;
+        try {
+          const ayah = await getDailyAyah();
+          if (ayah) {
+            this.quranAyah = ayah;
+            this.quranDateKey = today;
+          }
+        } finally {
+          this.quranLoading = false;
+        }
+      }
+      if (!this.quranAyah) {
+        // In-flight (quranLoading) → keep the pulsate; fetch settled with
+        // nothing cached → calm unavailable state. getDailyAyah marked the day
+        // as failed, so no retry storm: the next day retries automatically.
+        host.innerHTML = `<div class="nm-quran__divider"></div><div class="nm-quran__loading${this.quranLoading ? ' pulsate' : ''}">${this.quranLoading ? 'Loading the daily ayah…' : 'Daily ayah unavailable — will retry tomorrow.'}</div>`;
+        return;
+      }
+    }
+    this.renderQuran();
+  }
+
+  /**
+   * Render the ayah section: English translation (truncated, clamped) with
+   * the source reference as its own always-visible line below (inside the
+   * clamped paragraph it would be cut off whenever the text runs long), plus
+   * a "Show tafsir" deep-link into the addon's Daily Ayah tab.
+   */
+  private renderQuran(): void {
+    if (!this.el) return;
+    const host = this.el.querySelector('[data-el="nm-quran"]');
+    if (!host || !this.quranAyah) return;
+    const a = this.quranAyah;
+    const ref = `[${a.surah}:${a.ayah}]`;
+
+    host.innerHTML = `
+      <hr class="nm-quran__divider" />
+      ${a.english ? `<p class="nm-quran__translation nm-quran__translation--clamp">${escapeHtml(truncateText(a.english, WIDGET_TRANSLATION_MAX))}</p>` : ''}
+      <div class="l-row--split">
+        <div>${a.tafsir ? `<a class="nm-quran__hint" href="/addons/nostr-majlis/daily-ayah">Show tafsir</a>` : ''}</div>
+        <div><span class="nm-quran__ref-line">${escapeHtml(ref)}</span></div>
+      </div>
     `;
   }
 

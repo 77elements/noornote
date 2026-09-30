@@ -258,6 +258,10 @@ export const StorageKeys = {
   // keys. Set when the user clicks "Ok" on a prayer alert bar so it never re-shows
   // for that prayer today across reloads/restarts. Pruned to today's date only.
   NOSTR_MAJLIS_PRAYERS_ACK: 'noornote_nostr_majlis_prayers_ack_map',
+  // Daily Quran ayah cache — `{ dateKey, ayah }`. Holds the ayah fetched for
+  // `dateKey` (local day); on fetch failure the stored ayah is shown regardless
+  // of its date so the widget section never goes blank.
+  NOSTR_MAJLIS_QURAN_DAILY_CACHE: 'noornote_nostr_majlis_quran_daily_cache_map',
   PETNAMES: 'noornote_petnames_map',
   DATA_SAVER_ENABLED: 'noornote_data_saver_enabled_map',
 

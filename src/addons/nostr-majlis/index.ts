@@ -76,6 +76,8 @@ export interface NostrMajlisSettings {
   holidayReminder: HolidayReminderSettings;
   /** Show the current-prayer / countdown widget in the sidebar. */
   sidebarWidget: boolean;
+  /** Show the daily Quran ayah in the sidebar widget (and the Daily Ayah tab). */
+  quranDaily: boolean;
   /** In-app notifications on community-dhikr activity (new rounds, big commits, completion). */
   dhikrNotifications: boolean;
 }
@@ -92,6 +94,7 @@ const DEFAULT_SETTINGS: NostrMajlisSettings = {
   },
   holidayReminder: { enabled: false, daysBefore: 3 },
   sidebarWidget: false,
+  quranDaily: false,
   dhikrNotifications: true,
 };
 

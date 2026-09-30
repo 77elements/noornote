@@ -386,6 +386,11 @@
 
 // ─── Timeline Listing Card (injected into main timeline) ─────────
 
+// Oversized quotation mark inside the quote .btn-icon (listing card + views).
+.quote-glyph {
+  @include big;
+}
+
 .timeline-listing-card {
   display: flex;
   gap: $gap;
