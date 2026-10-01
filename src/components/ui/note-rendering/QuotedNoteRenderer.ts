@@ -213,6 +213,19 @@ export class QuotedNoteRenderer {
       void this.renderCalendarPreview(naddrRef, container);
       return;
     }
+    // NIP-71 addressable video (34235/34236) → regular quote pipeline. The
+    // fetched event renders through createQuoteBox (video player + title),
+    // mirroring how kind-21/22 quotes render.
+    if (kind === 34235 || kind === 34236) {
+      const skeleton = this.createQuoteSkeleton();
+      container.appendChild(skeleton);
+      void this.fetchAndRenderQuote(
+        { fullMatch: naddrRef, type: 'addr' } as QuotedReference,
+        skeleton,
+        true
+      );
+      return;
+    }
     // Article / Zapstore app / live stream → article-preview renderer.
     if (kind !== undefined && ARTICLE_PREVIEW_KINDS.has(kind)) {
       this.articleRenderer.renderArticlePreview(naddrRef, container);
@@ -440,6 +453,17 @@ export class QuotedNoteRenderer {
               result.event
             );
             skeleton.replaceWith(calendarElement);
+            return;
+          }
+          // NIP-71 addressable video (34235/34236) → regular quote box with
+          // video player + title, same as kind-21/22 quotes.
+          if (result.event.kind === 34235 || result.event.kind === 34236) {
+            const quoteBox = await this.createQuoteBox(
+              result.event,
+              false,
+              depth
+            );
+            skeleton.replaceWith(quoteBox);
             return;
           }
           // Article / Zapstore app / live stream → article-preview renderer.
@@ -780,8 +804,14 @@ export class QuotedNoteRenderer {
       PictureNoteProcessor.prependPictureContent(processedContent, event.tags);
     }
 
-    // For video events (Kind 21/22), extract video from imeta tags and prepend title
-    if (event.kind === 21 || event.kind === 22) {
+    // For video events (Kind 21/22 and addressable 34235/34236), extract
+    // video from imeta tags and prepend title
+    if (
+      event.kind === 21 ||
+      event.kind === 22 ||
+      event.kind === 34235 ||
+      event.kind === 34236
+    ) {
       const { VideoNoteProcessor } = await import(
         '../../../components/ui/note-processing/VideoNoteProcessor'
       );

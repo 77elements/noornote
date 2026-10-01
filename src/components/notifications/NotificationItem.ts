@@ -515,7 +515,8 @@ export class NotificationItem {
       if (kind === 9735) return 'zap';
       if (kind === 1063) return 'file';
       if (kind === 20) return 'picture';
-      if (kind === 21 || kind === 22) return 'video';
+      if (kind === 21 || kind === 22 || kind === 34235 || kind === 34236)
+        return 'video';
       if (kind === 1068) return 'poll';
       if (kind === 9) return 'group chat message';
       if (kind === 30023) return 'article';

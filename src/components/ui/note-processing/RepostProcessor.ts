@@ -60,7 +60,10 @@ export class RepostProcessor {
       );
     } else if (
       originalEvent &&
-      (originalEvent.kind === 21 || originalEvent.kind === 22)
+      (originalEvent.kind === 21 ||
+        originalEvent.kind === 22 ||
+        originalEvent.kind === 34235 ||
+        originalEvent.kind === 34236)
     ) {
       processedContent =
         RepostProcessor.contentProcessor.processContentWithTags(

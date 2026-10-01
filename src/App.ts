@@ -851,6 +851,10 @@ export class App {
         return `/follow-pack/${naddr}`;
       case 30402:
         return `/listing/${naddr}`;
+      case 34235:
+      case 34236:
+        // NIP-71 addressable video — SNV renders it via the video pipeline
+        return `/note/${naddr}`;
       case 30030:
         return `/note/${naddr}`;
       default:

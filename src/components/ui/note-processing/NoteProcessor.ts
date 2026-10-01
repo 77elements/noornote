@@ -74,6 +74,8 @@ export class NoteProcessor {
           return PictureNoteProcessor.process(event);
         case 21:
         case 22:
+        case 34235:
+        case 34236:
           return VideoNoteProcessor.process(event);
         case 1063:
           return FileMetadataProcessor.process(event);
