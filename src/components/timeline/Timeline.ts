@@ -16,6 +16,7 @@ import { RelayConfig } from '../../services/RelayConfig';
 import { AuthService } from '../../services/AuthService';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
 import { RefreshButton } from '../ui/RefreshButton';
+import { webCommentsIncludeViewer } from '../../helpers/webCommentsIncludeViewer';
 import { NnDropdown } from '../ui/NnDropdown';
 import { TimelineStateManager } from './timeline-state/TimelineStateManager';
 import { TimelineLifecycleManager } from './timeline-state/TimelineLifecycleManager';
@@ -562,7 +563,8 @@ export class Timeline extends View {
         this.config.includeReplies,
         relayFilterUrl(this.config),
         this.config.muteExemptPubkey,
-        this.config.applyWordFilter
+        this.config.applyWordFilter,
+        webCommentsIncludeViewer(this.config)
       )) ?? [];
 
     if (newEvents.length > 0) {
@@ -627,7 +629,8 @@ export class Timeline extends View {
       initialDelayMs,
       relayFilterUrl(this.config),
       this.config.muteExemptPubkey,
-      this.config.applyWordFilter
+      this.config.applyWordFilter,
+      webCommentsIncludeViewer(this.config)
     );
   }
 

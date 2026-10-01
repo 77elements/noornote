@@ -25,6 +25,7 @@ import { AppState } from '../AppState';
 import { AuthService } from '../AuthService';
 import { diagLog } from '../DiagnosticLogger';
 import { isDataSaverEnabled } from '../DataSaverService';
+import { webCommentsIncludeViewer } from '../../helpers/webCommentsIncludeViewer';
 import {
   isHideSelfRepostsEnabled,
   getSelfRepostGapSeconds,
@@ -121,6 +122,7 @@ export class FeedOrchestrator extends Orchestrator {
   private pollingSpecificRelay: string | null = null; // Poll only from this relay (for relay-filtered timeline)
   private pollingExemptFromMuteFilter: string | undefined = undefined; // Exempt pubkey for ProfileView
   private pollingApplyWordFilter: boolean = true; // Whether the content word-filter applies (config.applyWordFilter)
+  private pollingIncludeOwnWebComments: boolean = true; // Whether the viewer's own web comments are polled (false in author-scoped feeds — see webCommentsIncludeViewer)
   private lastFoundCount: number = 0;
   private polledEventsCache: NostrEvent[] = []; // Cache for new events found during polling
   private isManualPoll: boolean = false; // Track if this is a manual poll (user clicked link)
@@ -264,7 +266,11 @@ export class FeedOrchestrator extends Orchestrator {
           limit: this.fetchLimit,
         };
         if (explicitUntil !== undefined) wcBounds.until = explicitUntil;
-        const wc = this.webCommentFilter(followingPubkeys, wcBounds);
+        const wc = this.webCommentFilter(
+          followingPubkeys,
+          wcBounds,
+          webCommentsIncludeViewer(request.config)
+        );
         if (wc) filters.push(wc);
       } else {
         const windowSince =
@@ -277,10 +283,14 @@ export class FeedOrchestrator extends Orchestrator {
             since: windowSince,
           },
         ];
-        const wc = this.webCommentFilter(followingPubkeys, {
-          since: windowSince,
-          limit: params.pageSize,
-        });
+        const wc = this.webCommentFilter(
+          followingPubkeys,
+          {
+            since: windowSince,
+            limit: params.pageSize,
+          },
+          webCommentsIncludeViewer(request.config)
+        );
         if (wc) filters.push(wc);
       }
 
@@ -536,11 +546,15 @@ export class FeedOrchestrator extends Orchestrator {
         );
         if (wc) filters.push(wc);
       } else {
-        const wc = this.webCommentFilter(followingPubkeys, {
-          since,
-          until: until - 1,
-          limit: 50,
-        });
+        const wc = this.webCommentFilter(
+          followingPubkeys,
+          {
+            since,
+            until: until - 1,
+            limit: 50,
+          },
+          webCommentsIncludeViewer(request.config)
+        );
         if (wc) filters.push(wc);
       }
 
@@ -1368,7 +1382,8 @@ export class FeedOrchestrator extends Orchestrator {
     delayMs: number = 10000,
     specificRelay: string | null = null,
     exemptFromMuteFilter?: string,
-    applyWordFilter: boolean = true
+    applyWordFilter: boolean = true,
+    includeOwnWebComments: boolean = true
   ): void {
     // Stop any existing polling
     this.stopPolling();
@@ -1380,6 +1395,7 @@ export class FeedOrchestrator extends Orchestrator {
     this.pollingSpecificRelay = specificRelay;
     this.pollingExemptFromMuteFilter = exemptFromMuteFilter;
     this.pollingApplyWordFilter = applyWordFilter;
+    this.pollingIncludeOwnWebComments = includeOwnWebComments;
     this.pollingScheduled = true; // Mark as scheduled immediately
 
     // Track manual poll (user clicked link) vs automatic poll
@@ -1488,11 +1504,15 @@ export class FeedOrchestrator extends Orchestrator {
           limit: this.pollLimit,
         },
       ];
-      const wc = this.webCommentFilter(this.pollingFollowingPubkeys, {
-        since: this.lastCheckedTimestamp + 1,
-        until: now,
-        limit: this.pollLimit,
-      });
+      const wc = this.webCommentFilter(
+        this.pollingFollowingPubkeys,
+        {
+          since: this.lastCheckedTimestamp + 1,
+          until: now,
+          limit: this.pollLimit,
+        },
+        this.pollingIncludeOwnWebComments
+      );
       if (wc) filters.push(wc);
 
       const events = await this.transport.fetch(
@@ -1676,7 +1696,8 @@ export class FeedOrchestrator extends Orchestrator {
     includeReplies: boolean,
     specificRelay: string | null,
     exemptFromMuteFilter: string | undefined,
-    applyWordFilter: boolean
+    applyWordFilter: boolean,
+    includeOwnWebComments: boolean = true
   ): Promise<NostrEvent[]> {
     try {
       const relays = specificRelay
@@ -1733,11 +1754,15 @@ export class FeedOrchestrator extends Orchestrator {
             limit: this.pollLimit,
           },
         ];
-        const wc = this.webCommentFilter(followingPubkeys, {
-          since: window.since,
-          until: window.until,
-          limit: this.pollLimit,
-        });
+        const wc = this.webCommentFilter(
+          followingPubkeys,
+          {
+            since: window.since,
+            until: window.until,
+            limit: this.pollLimit,
+          },
+          includeOwnWebComments
+        );
         if (wc) filters.push(wc);
 
         const windowEvents = await this.transport.fetch(

@@ -34,7 +34,8 @@ export interface TimelineModuleApi {
     delayMs?: number,
     specificRelay?: string | null,
     exemptFromMuteFilter?: string,
-    applyWordFilter?: boolean
+    applyWordFilter?: boolean,
+    includeOwnWebComments?: boolean
   ): void;
   stopPolling(): void;
   getPolledEvents(): NostrEvent[];
@@ -45,7 +46,8 @@ export interface TimelineModuleApi {
     includeReplies: boolean,
     specificRelay: string | null,
     exemptFromMuteFilter: string | undefined,
-    applyWordFilter: boolean
+    applyWordFilter: boolean,
+    includeOwnWebComments?: boolean
   ): Promise<NostrEvent[]>;
 
   // Mute management
