@@ -57,6 +57,7 @@ app.whenReady().then(() => {
   registerKeySignerHandlers();
   registerFileSystemHandlers();
   registerAppHandlers();
+  registerGifHandler();
 
   // CSP — 'unsafe-eval' required by NDK's tseep event emitter (uses new Function())
   // Dev mode additionally needs ws: for Vite HMR
@@ -212,5 +213,66 @@ function registerAppHandlers() {
 
   ipcMain.handle('app:get-version', async () => {
     return app.getVersion();
+  });
+}
+
+// ── GIF Search (gifs.nostr.build) ──
+// The renderer's origin is file:// in production, which the GIF API can never
+// admit — so the request runs HERE (no Origin header) with the API key.
+// Key source: GNB_API_KEY env (GitHub release builds) or
+// ~/.noornote/nostrbuild-gif-key (local dev). Never hardcoded, never sent to
+// the renderer.
+
+const GIF_API_PREFIX = 'https://gifs.nostr.build/api/v1/';
+let gifApiKeyCache = null;
+
+function resolveGifApiKey() {
+  if (gifApiKeyCache !== null) return gifApiKeyCache;
+  if (process.env.GNB_API_KEY) {
+    gifApiKeyCache = process.env.GNB_API_KEY.trim();
+    return gifApiKeyCache;
+  }
+  const fs = require('fs');
+  // 1) Packaged release builds: CI writes electron/gif-api-key.json next to
+  //    this file (never committed). 2) Local dev: the shared key file.
+  try {
+    const packaged = JSON.parse(
+      fs.readFileSync(path.join(__dirname, 'gif-api-key.json'), 'utf8')
+    );
+    if (typeof packaged.key === 'string' && packaged.key) {
+      gifApiKeyCache = packaged.key;
+      return gifApiKeyCache;
+    }
+  } catch {
+    // not packaged or file absent — fall through
+  }
+  try {
+    const keyPath = path.join(app.getPath('home'), '.noornote', 'nostrbuild-gif-key');
+    gifApiKeyCache = fs.readFileSync(keyPath, 'utf8').trim() || '';
+  } catch {
+    gifApiKeyCache = '';
+  }
+  return gifApiKeyCache;
+}
+
+function registerGifHandler() {
+  ipcMain.handle('gif:search', async (_event, url) => {
+    if (typeof url !== 'string' || !url.startsWith(GIF_API_PREFIX)) {
+      return { status: 400, body: JSON.stringify({ error: { code: 'validation', message: 'Invalid GIF API URL' } }) };
+    }
+    const key = resolveGifApiKey();
+    if (!key) {
+      return { status: 403, body: JSON.stringify({ error: { code: 'client_not_registered', message: 'No GIF API key configured' } }) };
+    }
+    try {
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${key}` },
+        signal: AbortSignal.timeout(15000),
+      });
+      const body = await response.text();
+      return { status: response.status, body };
+    } catch (err) {
+      return { status: 503, body: JSON.stringify({ error: { code: 'upstream_unavailable', message: String(err) } }) };
+    }
   });
 }

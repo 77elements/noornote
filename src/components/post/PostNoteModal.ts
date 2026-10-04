@@ -23,6 +23,7 @@ import { AuthGuard } from '../../services/AuthGuard';
 import { RelaySelector } from './RelaySelector';
 import { ClientTagControl } from './ClientTagControl';
 import { PostEditorToolbar } from './PostEditorToolbar';
+import type { GifItem } from '../../services/GifSearchService';
 import { setupPasteUpload } from '../../helpers/pasteUpload';
 import { Switch } from '../ui/Switch';
 import { PollCreator, type PollData } from '../poll/PollCreator';
@@ -363,6 +364,7 @@ export class PostNoteModal {
     this.toolbar = new PostEditorToolbar({
       onMediaUploaded: url => this.handleMediaUploaded(url),
       onEmojiSelected: emoji => this.handleEmojiSelected(emoji),
+      onGifSelected: gif => this.handleGifSelected(gif),
       onPollToggle: () => this.handlePollToggle(),
       onScheduleClick: () => this.handleScheduleClick(),
       textareaSelector: '[data-textarea]',
@@ -641,6 +643,22 @@ export class PostNoteModal {
       this.imageTags.set(url, []);
       this.appendToMediaStrip(url);
     }
+  }
+
+  /**
+   * GIF picked from the gifs.nostr.build picker — same insertion as uploads.
+   * Deliberately NOT registered in the NIP-68 image-tag strip: the GIF's
+   * imeta is emitted at publish time from the GIF meta cache instead
+   * (two imeta tags for one URL would be invalid).
+   */
+  private handleGifSelected(gif: GifItem): void {
+    EditorStateManager.handleMediaUploaded(gif.url, '[data-textarea]', {
+      onContentChange: newContent => {
+        this.content = newContent;
+        this.updatePostButton();
+      },
+      onShowNSFWSwitch: () => this.showNSFWSwitch(),
+    });
   }
 
   /**

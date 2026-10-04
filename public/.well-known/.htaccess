@@ -1,0 +1,6 @@
+# NIP-05 domain ownership proof ( gifs.nostr.build origin auto-approval ):
+# web clients must be able to fetch this file cross-origin.
+<IfModule mod_headers.c>
+  Header set Access-Control-Allow-Origin "*"
+</IfModule>
+ForceType application/json

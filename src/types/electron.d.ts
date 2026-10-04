@@ -49,6 +49,9 @@ interface ElectronAPI {
   // App
   getVersion: () => Promise<string>;
 
+  // GIF search (gifs.nostr.build) — fetched in the main process with the API key
+  gifSearch: (url: string) => Promise<{ status: number; body: string }>;
+
   // Events (return unsubscribe function)
   onDeepLink: (callback: (url: string) => void) => () => void;
   onGlobalShortcut: (callback: (action: string) => void) => () => void;

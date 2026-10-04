@@ -83,3 +83,4 @@ relay/strfry-db/
 relay/*.log
 .glm-comm.md
 .playwright-mcp/
+electron/gif-api-key.json

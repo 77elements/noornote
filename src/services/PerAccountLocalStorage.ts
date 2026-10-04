@@ -287,6 +287,8 @@ export const StorageKeys = {
   PROFILE_MOUNTS: 'noornote_profile_mounts_map',
   LIST_SYNC_MODE: 'noornote_list_sync_mode_map',
   EMOJI_FREQUENTLY_USED: 'noornote_emoji_frequently_used_map',
+  /** Picked-GIF metadata (url → imeta fields) for publish-time NIP-92 tags. */
+  GIF_META_CACHE: 'noornote_gif_meta_cache_map',
   PERSONAL_EMOJI_PACK: 'noornote_personal_emoji_pack_map',
   ARTICLE_NOTIFICATIONS: 'noornote_article_notifications_map',
   NOTIFICATIONS_CACHE_VERSION: 'noornote_notifications_cache_version_map',

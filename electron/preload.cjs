@@ -123,6 +123,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getVersion: () =>
     ipcRenderer.invoke('app:get-version'),
 
+  // ── GIF Search (gifs.nostr.build) ──
+  // Fetched in the main process with the API key; URL must be on the
+  // gifs.nostr.build API prefix (validated in main).
+
+  gifSearch: (url) =>
+    ipcRenderer.invoke('gif:search', url),
+
   // ── Events (Main → Renderer) ──
 
   onDeepLink: (callback) => {

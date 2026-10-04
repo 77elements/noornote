@@ -162,6 +162,18 @@ small, .small {
   @extend %mini;
 }
 
+%tiny {
+  @include scaled-font-size(11px);
+}
+
+@mixin tiny {
+  @include scaled-font-size(11px);
+}
+
+.tiny {
+  @extend %tiny;
+}
+
 // Paragraph styles
 p, li {
   margin-bottom: $gap;

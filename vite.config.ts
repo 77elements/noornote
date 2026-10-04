@@ -180,6 +180,10 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
     __BUILD_DATE__: JSON.stringify(new Date().toISOString()),
     __BUILD_ID__: JSON.stringify(BUILD_ID),
+    // gifs.nostr.build API key — intentionally ONLY set during APK builds
+    // (GNB_API_KEY env, exported by the /apk skill from the local key file).
+    // Never present in web bundles. Electron uses its main process instead.
+    __GNB_API_KEY__: JSON.stringify(process.env.GNB_API_KEY ?? ''),
   },
 
   // Preview server (for production builds)

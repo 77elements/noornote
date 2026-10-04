@@ -17,6 +17,8 @@ import { AuthService } from './AuthService';
 import { NostrTransport } from './transport/NostrTransport';
 import { SystemLogger } from './SystemLogger';
 import { ToastService } from './ToastService';
+import { GifSearchService } from './GifSearchService';
+import { collectGifImetaTags } from '../helpers/gifImeta';
 import type { PollData } from '../components/poll/PollCreator';
 import { RelayConfig } from './RelayConfig';
 import { getTag } from '../helpers/tagUtils';
@@ -292,6 +294,11 @@ export class PostService {
         });
       }
 
+      // GIF imeta tags (NIP-92) — for gifs.nostr.build URLs picked via the
+      // GIF picker (metadata from the per-account cache). No-ops when the
+      // content has no known GIF URLs.
+      this.attachGifImetaTags(content, tags);
+
       // Custom emoji tags (NIP-30) — only when the addon is enabled
       const finalTags = await this.maybeAttachEmojiTags(content, tags);
 
@@ -527,6 +534,9 @@ export class PostService {
         tags.push(...eTags);
         tags.push(...pTags);
       }
+
+      // GIF imeta tags (NIP-92) — same cache-driven path as createPost.
+      this.attachGifImetaTags(content, tags);
 
       // Custom emoji tags (NIP-30) — only when the addon is enabled
       const finalTags = await this.maybeAttachEmojiTags(content, tags);
@@ -783,5 +793,17 @@ export class PostService {
       );
       return tags;
     }
+  }
+
+  /**
+   * Attach NIP-92 `imeta` tags for gifs.nostr.build URLs found in the content
+   * that were picked via the GIF picker (metadata lives in the per-account
+   * cache, written on pick). URL never rewritten, GIF never re-hosted.
+   */
+  private attachGifImetaTags(content: string, tags: string[][]): void {
+    const gifTags = collectGifImetaTags(content, url =>
+      GifSearchService.getInstance().getGifMeta(url)
+    );
+    tags.push(...gifTags);
   }
 }

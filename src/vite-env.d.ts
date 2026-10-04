@@ -36,3 +36,10 @@ interface Window {
 declare const __APP_VERSION__: string;
 declare const __BUILD_DATE__: string;
 declare const __BUILD_ID__: string;
+/**
+ * gifs.nostr.build API key — ONLY defined during APK builds (the /apk skill
+ * exports GNB_API_KEY from ~/.noornote/nostrbuild-gif-key). Must stay empty in
+ * web bundles: the key must never ship in the public web bundle. Empty string
+ * on web/Electron dev — Electron resolves the key in its main process instead.
+ */
+declare const __GNB_API_KEY__: string;

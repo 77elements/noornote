@@ -23,6 +23,7 @@
 import { ModalService } from '../../services/ModalService';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
+import type { GifItem } from '../../services/GifSearchService';
 import { RelayConfig } from '../../services/RelayConfig';
 import { loadEditorRelayConfig } from '../../helpers/editorRelayConfig';
 import { switchComposerTab } from '../../helpers/switchComposerTab';
@@ -407,6 +408,7 @@ export class ReplyModal {
     this.toolbar = new PostEditorToolbar({
       onMediaUploaded: url => this.handleMediaUploaded(url),
       onEmojiSelected: emoji => this.handleEmojiSelected(emoji),
+      onGifSelected: gif => this.handleGifSelected(gif),
       textareaSelector: '[data-textarea]',
       showPoll: false, // No polls in replies
     });
@@ -600,6 +602,14 @@ export class ReplyModal {
       },
       onShowNSFWSwitch: () => this.showNSFWSwitch(),
     });
+  }
+
+  /**
+   * GIF picked from the gifs.nostr.build picker — same insertion as uploads.
+   * The publish-time imeta comes from the GIF meta cache (PostService).
+   */
+  private handleGifSelected(gif: GifItem): void {
+    this.handleMediaUploaded(gif.url);
   }
 
   /**

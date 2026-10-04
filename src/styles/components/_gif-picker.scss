@@ -1,0 +1,161 @@
+/**
+ * GIF Picker Component Styles
+ * Popup/overlay picker for gifs.nostr.build search — mirrors the emoji picker
+ * (overlay + positioned container + search), with a masonry grid built from
+ * CSS multi-columns (block flow, no flex) and API-driven aspect ratios.
+ */
+
+@use 'sass:color';
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
+@use '../base/icons' as *;
+
+// Overlay (backdrop)
+.gif-picker-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  z-index: $z-modal; // opens above the composer modal (same layer as emoji picker)
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+// GIF picker container
+.gif-picker-custom {
+  position: fixed;
+  width: 360px;
+  height: 480px;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto auto;
+  background: $marble-gradient;
+  backdrop-filter: blur(10px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+  border: 1px solid var(--color-3);
+  border-radius: $radius-pill;
+  overflow: hidden;
+  box-shadow: $box-shadow;
+  z-index: $z-modal-top;
+}
+
+// Search input
+.gif-picker-search {
+  width: 100%;
+  padding: $gap;
+  border: none;
+  @extend %small;
+  outline: none;
+}
+
+// Chips row (starters / suggestions) — horizontally scrollable
+.gif-picker-chips {
+  display: grid;
+  grid-auto-flow: column;
+  justify-content: start;
+  gap: calc($gap / 2);
+  padding: 0 $gap calc($gap / 2);
+  overflow-x: auto;
+  @include custom-scrollbar;
+
+  &::-webkit-scrollbar {
+    height: 0;
+  }
+}
+
+.gif-picker-chip {
+  @extend %tiny;
+  padding: calc($gap / 4) calc($gap / 2);
+  border: 1px solid var(--color-3);
+  border-radius: $radius-pill;
+  background: transparent;
+  color: var(--color-5);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background $transition-fast, color $transition-fast;
+
+  &:hover {
+    background: var(--color-4);
+    color: var(--color-1);
+    border-color: var(--color-4);
+  }
+}
+
+// Scrollable grid area
+.gif-picker-grid-container {
+  overflow-y: auto;
+  padding: $gap;
+  @include custom-scrollbar;
+}
+
+// Masonry grid — CSS multi-columns (column-major order is fine for a GIF wall)
+.gif-picker-grid {
+  columns: 2;
+  column-gap: calc($gap / 2);
+}
+
+// Single tile — sized by aspect-ratio from the API before anything loads
+.gif-picker-tile {
+  display: block;
+  width: 100%;
+  margin-bottom: calc($gap / 2);
+  padding: 0;
+  border: none;
+  border-radius: $radius-xl;
+  overflow: hidden;
+  background: var(--color-2); // neutral placeholder (transparent GIFs)
+  cursor: pointer;
+  break-inside: avoid;
+
+  &:focus-visible {
+    outline: 2px solid var(--color-4);
+    outline-offset: -2px; // inset so the ring survives the rounded overflow
+  }
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity $transition-all;
+
+    &.gif-picker-tile-img--loaded {
+      opacity: 1;
+    }
+  }
+}
+
+// Loading / empty / error states
+.gif-picker-state {
+  @extend %compact;
+  color: var(--color-3);
+  text-align: center;
+  padding: $gap * 2 $gap;
+
+  p {
+    margin-bottom: $gap;
+  }
+}
+
+// Required attribution — visible, legible, real link (condition of use)
+.gif-picker-attribution {
+  @extend %mini;
+  color: var(--color-3);
+  text-align: center;
+  padding: calc($gap / 2);
+}
+
+// Responsive adjustments
+@media (max-width: 639px) {
+  .gif-picker-custom {
+    max-width: 100%;
+    height: 420px;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%);
+  }
+}

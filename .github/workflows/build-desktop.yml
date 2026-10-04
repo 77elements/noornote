@@ -76,6 +76,11 @@ jobs:
       - name: Run tests
         run: bun run test
 
+      - name: Write GIF API key (runtime config for Electron main)
+        env:
+          GNB_API_KEY: ${{ secrets.GNB_API_KEY }}
+        run: printf '{"key":"%s"}' "$GNB_API_KEY" > electron/gif-api-key.json
+
       - name: Build frontend
         run: ELECTRON_BUILD=1 bun run build
 

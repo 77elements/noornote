@@ -13,11 +13,15 @@ import type { MediaModuleApi } from '../../modules/media/contracts';
 import { SystemLogger } from '../../services/SystemLogger';
 import { ModalService } from '../../services/ModalService';
 import { EmojiPicker, type CustomEmojiEntry } from '../emoji/EmojiPicker';
+import { GifPicker } from '../gif/GifPicker';
+import type { GifItem } from '../../services/GifSearchService';
 import { isCustomEmojisEnabled } from '../../addons/custom-emojis/index';
 
 export interface PostEditorToolbarConfig {
   onMediaUploaded: (url: string) => void;
   onEmojiSelected: (emoji: string) => void;
+  /** GIF picked from the gifs.nostr.build picker (original URL + metadata). */
+  onGifSelected?: (gif: GifItem) => void;
   onPollToggle?: () => void;
   onScheduleClick?: () => void;
   textareaSelector: string;
@@ -35,6 +39,7 @@ export class PostEditorToolbar {
   private systemLogger: SystemLogger;
   private modalService: ModalService;
   private emojiPicker: EmojiPicker | null = null;
+  private gifPicker: GifPicker | null = null;
   private container: HTMLElement | null = null;
 
   constructor(config: PostEditorToolbarConfig) {
@@ -66,6 +71,7 @@ export class PostEditorToolbar {
         <button class="btn-icon" data-action="emoji" title="Insert emoji">
           <svg width="20" height="20"><use href="#icon-emoji"/></svg>
         </button>
+        ${this.config.onGifSelected ? `<button class="btn-icon" data-action="gif" title="Add a GIF">GIF</button>` : ''}
         ${pollButtonHtml}
         ${scheduleButtonHtml}
       </div>
@@ -102,6 +108,14 @@ export class PostEditorToolbar {
     if (emojiBtn) {
       emojiBtn.addEventListener('click', () => {
         void this.handleEmojiPicker();
+      });
+    }
+
+    // GIF button (only rendered when onGifSelected is configured)
+    const gifBtn = container.querySelector('[data-action="gif"]');
+    if (gifBtn) {
+      gifBtn.addEventListener('click', () => {
+        this.handleGifPicker();
       });
     }
 
@@ -309,11 +323,35 @@ export class PostEditorToolbar {
   }
 
   /**
+   * Handle GIF picker (gifs.nostr.build). Same lifecycle as the emoji picker:
+   * destroy any open instance and create a fresh one for correct positioning.
+   */
+  private handleGifPicker(): void {
+    const gifBtn = this.container?.querySelector(
+      '[data-action="gif"]'
+    ) as HTMLElement | null;
+    if (!gifBtn || !this.config.onGifSelected) return;
+
+    this.gifPicker?.destroy();
+    this.gifPicker = new GifPicker({
+      triggerElement: gifBtn,
+      onSelect: (gif: GifItem) => {
+        this.config.onGifSelected?.(gif);
+        this.gifPicker?.hide();
+      },
+    });
+    this.gifPicker.show();
+  }
+
+  /**
    * Hide emoji picker if open
    */
   public hideEmojiPicker(): void {
     if (this.emojiPicker) {
       this.emojiPicker.hide();
+    }
+    if (this.gifPicker) {
+      this.gifPicker.hide();
     }
   }
 
@@ -324,6 +362,10 @@ export class PostEditorToolbar {
     if (this.emojiPicker) {
       this.emojiPicker.destroy();
       this.emojiPicker = null;
+    }
+    if (this.gifPicker) {
+      this.gifPicker.destroy();
+      this.gifPicker = null;
     }
     this.container = null;
   }
