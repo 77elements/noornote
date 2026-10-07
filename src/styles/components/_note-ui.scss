@@ -528,6 +528,50 @@ html.content-visibility-auto .note-card {
   }
 }
 
+// NIP-5A nsite manifest card (full note shell, content section)
+.note-card--nsite {
+  .nsite-card {
+    display: grid;
+    gap: calc($gap / 2);
+  }
+
+  .nsite-card__title {
+    font-weight: 600;
+  }
+
+  .nsite-card__description {
+    color: var(--color-5);
+  }
+
+  .nsite-card__meta {
+    @extend %small;
+
+    color: var(--color-3);
+  }
+
+  .nsite-card__actions {
+    display: grid;
+    grid-auto-flow: column;
+    justify-content: start;
+    gap: calc($gap / 2);
+  }
+
+  .nsite-card__hash {
+    display: grid;
+    grid-auto-flow: column;
+    justify-content: start;
+    align-items: center;
+    gap: calc($gap / 4);
+
+    .nsite-card__hash-value {
+      @extend %small;
+
+      font-family: monospace;
+      color: var(--color-3);
+    }
+  }
+}
+
 // Right Pane (RSS Mode): compact the timeline (TV) into a scannable list — text clamped to 3
 // lines, no media, no action bar. The note opened in the right pane (scc) stays full. The
 // `layout--rss` marker is set by LayoutService; it otherwise behaves exactly like right-pane.

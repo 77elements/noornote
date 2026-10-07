@@ -16,7 +16,6 @@ import {
   isSatelliteEarthKind,
 } from './SatelliteSiteRenderer';
 import { ArmadaInviteRenderer } from './ArmadaInviteRenderer';
-import { NsiteRenderer, isNsiteManifest } from './NsiteRenderer';
 import { NoteMenu } from '../NoteMenu';
 import { getViewNavigationController } from '../../../services/ViewNavigationController';
 
@@ -30,15 +29,6 @@ export class UnsupportedKindRenderer {
    * Render unsupported kind fallback element
    */
   static render(note: ProcessedNote, _opts: NoteUIOptions): HTMLElement {
-    // NIP-5A nsite manifests (kind 15128 root / kind 35128 named with the
-    // mandatory `path` tags). Checked BEFORE the Satellite branch — kind
-    // 35128 is shared between the two specs, only `path` tells them apart.
-    if (isNsiteManifest(note.rawEvent)) {
-      return UnsupportedKindRenderer.withCardChrome(
-        NsiteRenderer.render(note.rawEvent),
-        note
-      );
-    }
     // Ditto geocache (kind 37516): show a dedicated "open in Ditto" notice
     // instead of a generic "unsupported kind" + njump link.
     if (note.rawEvent.kind === DITTO_GEOCACHE_KIND) {

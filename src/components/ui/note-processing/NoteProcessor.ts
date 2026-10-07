@@ -20,6 +20,7 @@ import { EmojiPackProcessor } from './EmojiPackProcessor';
 import { GitEventProcessor } from './GitEventProcessor';
 import { HighlightProcessor } from './HighlightProcessor';
 import { BadgeAwardProcessor } from './BadgeAwardProcessor';
+import { NsiteProcessor, isNsiteManifest } from './NsiteProcessor';
 import { LiveStreamProcessor } from './LiveStreamProcessor';
 import { ListingProcessor } from './ListingProcessor';
 import { PodcastEpisodeProcessor } from './PodcastEpisodeProcessor';
@@ -99,6 +100,17 @@ export class NoteProcessor {
           return CalendarEventProcessor.process(event);
         case 39089:
           return FollowPackProcessor.process(event);
+        case 15128:
+          // NIP-5A nsite root manifest (see NsiteProcessor for the deliberate
+          // feed-filter exclusion).
+          return NsiteProcessor.process(event);
+        case 35128:
+          // Kind shared with Satellite Earth settings — only NIP-5A manifests
+          // carry the mandatory `path` tags; the rest stays on the unsupported
+          // path (→ SatelliteSiteRenderer notice card).
+          return isNsiteManifest(event)
+            ? NsiteProcessor.process(event)
+            : this.createUnsupportedNote(event, eventId);
         case 30030:
           return EmojiPackProcessor.process(event);
         case 1617:

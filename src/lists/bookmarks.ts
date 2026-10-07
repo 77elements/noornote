@@ -3543,6 +3543,11 @@ export class BookmarkCard {
         'Untitled';
       return `Follow Pack: ${title}`;
     }
+    if (event.kind === 15128 || event.kind === 35128) {
+      const title =
+        event.tags.find(t => t[0] === 'title')?.[1] || 'Nostr website';
+      return `Website: ${title}`;
+    }
     if (event.kind === 30023) {
       const title = event.tags.find(t => t[0] === 'title')?.[1] || 'Untitled';
       return `Article: ${title}`;

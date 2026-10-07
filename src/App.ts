@@ -855,6 +855,11 @@ export class App {
       case 34236:
         // NIP-71 addressable video — SNV renders it via the video pipeline
         return `/note/${naddr}`;
+      case 35128:
+        // NIP-5A named nsite / Satellite Earth settings (kind is shared).
+        // SNV renders both correctly (NoteProcessor → nsite card or
+        // Satellite notice) — never the article renderer.
+        return `/note/${naddr}`;
       case 30030:
         return `/note/${naddr}`;
       default:

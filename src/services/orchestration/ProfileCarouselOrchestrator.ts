@@ -24,6 +24,8 @@ export interface ProfileCarouselContent {
   videos: NostrEvent[];
   /** kind 30402 NIP-99 classified listings */
   listings: NostrEvent[];
+  /** kind 15128 root / 35128 named NIP-5A site manifests (nsites) */
+  nsites: NostrEvent[];
   /** kind 5 deletions by this author — for addressable tombstone filtering */
   deletions: NostrEvent[];
   /** Relays that were queried — consumers use them as naddr/nevent hints. */
@@ -125,6 +127,7 @@ export class ProfileCarouselOrchestrator extends Orchestrator {
       { kinds: articleKinds as number[], authors: [pubkey], limit: 50 },
       { kinds: [21, 22], authors: [pubkey], limit: 50 },
       { kinds: [30402], authors: [pubkey], limit: 50 },
+      { kinds: [15128, 35128], authors: [pubkey], limit: 20 },
       { kinds: [5], authors: [pubkey], limit: 100 },
     ];
 
@@ -132,6 +135,7 @@ export class ProfileCarouselOrchestrator extends Orchestrator {
       articles: [],
       videos: [],
       listings: [],
+      nsites: [],
       deletions: [],
       hintRelays: relays.slice(0, 2),
     };
@@ -166,6 +170,10 @@ export class ProfileCarouselOrchestrator extends Orchestrator {
         case 30402:
           content.listings.push(ev);
           break;
+        case 15128:
+        case 35128:
+          content.nsites.push(ev);
+          break;
         case 5:
           content.deletions.push(ev);
           break;
@@ -178,6 +186,7 @@ export class ProfileCarouselOrchestrator extends Orchestrator {
       articles: content.articles.length,
       videos: content.videos.length,
       listings: content.listings.length,
+      nsites: content.nsites.length,
       deletions: content.deletions.length,
     });
     return content;

@@ -505,6 +505,7 @@ export class NotificationItem {
       if (kind === 30030) return 'emoji pack';
       if (kind === 30311) return 'live stream';
       if (kind === 30402) return 'listing';
+      if (kind === 35128) return 'website';
       if (kind === 30617) return 'git repository';
       if (!isNaN(kind)) return 'event';
     }
@@ -526,6 +527,7 @@ export class NotificationItem {
       if (kind === 30030) return 'emoji pack';
       if (kind === 30311) return 'live stream';
       if (kind === 30402) return 'listing';
+      if (kind === 15128 || kind === 35128) return 'website';
       if (kind === 1617) return 'git patch';
       if (kind === 1618 || kind === 1619) return 'pull request';
       if (kind === 1621) return 'git issue';

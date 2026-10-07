@@ -126,6 +126,7 @@ export class ProfileRuntime implements ModuleRuntime<ProfileModuleApi> {
           articles: [],
           videos: [],
           listings: [],
+          nsites: [],
           deletions: [],
           hintRelays: [],
         }),

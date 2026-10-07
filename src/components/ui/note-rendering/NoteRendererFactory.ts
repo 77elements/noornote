@@ -20,6 +20,7 @@ import { LiveStreamRenderer } from './LiveStreamRenderer';
 import { ListingRenderer } from './ListingRenderer';
 import { GatedNoteRenderer } from './GatedNoteRenderer';
 import { CalendarEventCardRenderer } from './CalendarEventCardRenderer';
+import { NsiteRenderer } from './NsiteRenderer';
 
 export class NoteRendererFactory {
   /**
@@ -54,6 +55,8 @@ export class NoteRendererFactory {
         return LiveStreamRenderer.render(note, options);
       case 'listing':
         return ListingRenderer.render(note, options);
+      case 'nsite':
+        return NsiteRenderer.render(note, options);
       case 'calendar-event':
         return CalendarEventCardRenderer.render(note, options);
       case 'calendar-collection':

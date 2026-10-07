@@ -23,6 +23,7 @@ export interface ProcessedNote {
     | 'emoji-pack'
     | 'live-stream'
     | 'listing'
+    | 'nsite'
     | 'calendar-event'
     | 'calendar-collection'
     | 'premium';

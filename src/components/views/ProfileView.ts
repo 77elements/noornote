@@ -42,6 +42,7 @@ import type { ProfileListsComponent } from '../profile/ProfileListsComponent';
 import { ProfileArticlesCarousel } from '../profile/ProfileArticlesCarousel';
 import { ProfileVideosCarousel } from '../profile/ProfileVideosCarousel';
 import { ProfileListingsCarousel } from '../profile/ProfileListingsCarousel';
+import { ProfileNsitesCarousel } from '../profile/ProfileNsitesCarousel';
 import { isProfileListingsEnabled } from '../../addons/marketplace/index';
 import type { ProfileModuleApi } from '../../modules/profile/contracts';
 import { AddonLoader } from '../../addons/AddonLoader';
@@ -130,6 +131,7 @@ export class ProfileView extends View {
 
   // Videos carousel component
   private videosCarousel: ProfileVideosCarousel | null = null;
+  private nsitesCarousel: ProfileNsitesCarousel | null = null;
   private carouselObservers: IntersectionObserver[] = [];
 
   // Lightning address (for profile zap buttons)
@@ -716,6 +718,7 @@ export class ProfileView extends View {
         <button class="tab" data-tab="videos" type="button">Videos</button>
         <button class="tab" data-tab="products" type="button">Products</button>
         <button class="tab" data-tab="zapstore" type="button">Zapstore</button>
+        <button class="tab" data-tab="websites" type="button">Websites</button>
         <button class="tab" data-tab="calendar" type="button">Calendar</button>
         <button class="tab" data-tab="badges" type="button">Badges</button>
       </div>
@@ -726,6 +729,7 @@ export class ProfileView extends View {
       <div class="profile-videos-mount profile-section" data-section="videos" hidden></div>
       <div class="profile-listings-mount profile-section" data-section="products" hidden></div>
       <div class="profile-zapstore-mount profile-section" data-section="zapstore" hidden></div>
+      <div class="profile-nsites-mount profile-section" data-section="websites" hidden></div>
       <div class="profile-timeline profile-section" data-section="notes">
         <h2 class="profile-timeline-heading visually-hidden">Notes</h2>
       </div>
@@ -1938,6 +1942,7 @@ export class ProfileView extends View {
       { tab: 'videos', loader: () => this.loadVideosCarousel() },
       { tab: 'products', loader: () => this.loadListingsCarousel() },
       { tab: 'zapstore', loader: () => this.loadZapstoreApps() },
+      { tab: 'websites', loader: () => this.loadNsitesCarousel() },
       { tab: 'calendar', loader: () => this.loadCalendarSection() },
       { tab: 'badges', loader: () => this.loadBadgesCarousel() },
     ];
@@ -2200,6 +2205,24 @@ export class ProfileView extends View {
     const element = await this.videosCarousel.render();
     loading.remove();
     videosMount.appendChild(element);
+  }
+
+  /**
+   * Load the user's NIP-5A static websites (nsite manifests) card grid
+   */
+  private async loadNsitesCarousel(): Promise<void> {
+    const nsitesMount = this.container.querySelector('.profile-nsites-mount');
+    if (!nsitesMount) return;
+
+    const loading = this.appendCarouselLoading(
+      nsitesMount,
+      'Websites',
+      'Loading websites…'
+    );
+    this.nsitesCarousel = new ProfileNsitesCarousel(this.pubkey);
+    const element = await this.nsitesCarousel.render();
+    loading.remove();
+    nsitesMount.appendChild(element);
   }
 
   /**
@@ -2490,6 +2513,10 @@ export class ProfileView extends View {
     }
     if (this.videosCarousel) {
       this.videosCarousel.destroy();
+    }
+    if (this.nsitesCarousel) {
+      this.nsitesCarousel.destroy();
+      this.nsitesCarousel = null;
     }
     if (this.listingsCarousel) {
       this.listingsCarousel.destroy();
