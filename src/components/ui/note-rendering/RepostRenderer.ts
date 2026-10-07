@@ -24,6 +24,7 @@ import {
   SatelliteSiteRenderer,
   isSatelliteEarthKind,
 } from './SatelliteSiteRenderer';
+import { isNsiteManifest } from './NsiteRenderer';
 import { ArmadaInviteRenderer } from './ArmadaInviteRenderer';
 import { ARTICLE_PREVIEW_KINDS } from '../../../helpers/addressableKinds';
 import { ArticlePreviewRenderer } from './ArticlePreviewRenderer';
@@ -327,10 +328,14 @@ export class RepostRenderer {
     }
 
     // (1) Satellite Earth NAP kinds (35128 settings / 35129 pages):
-    //     proprietary, no NIP. Same shape.
+    //     proprietary, no NIP. Same shape. Kind 35128 is shared with NIP-5A
+    //     named-site manifests — those carry the mandatory `path` tags and
+    //     fall through to the generic pipeline, which routes them to the
+    //     NsiteRenderer card via UnsupportedKindRenderer (15128 too).
     if (
       innerEvent.kind !== undefined &&
-      isSatelliteEarthKind(innerEvent.kind)
+      isSatelliteEarthKind(innerEvent.kind) &&
+      !isNsiteManifest(innerEvent)
     ) {
       const satelliteContainer = document.createElement('div');
       satelliteContainer.className = 'repost-article-container';

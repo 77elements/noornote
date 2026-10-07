@@ -34,6 +34,12 @@ export interface NoteMenuOptions {
   eventId: string;
   authorPubkey: string;
   rawEvent?: NostrEvent;
+  /**
+   * 'minimal' shows only the data-safe actions (copy ids, view raw JSON) —
+   * no bookmark / mute / report / share, which need kind context the
+   * unsupported-kind fallback cards don't have. Default: 'full'.
+   */
+  mode?: 'full' | 'minimal';
 }
 
 // SVG sprite icon helper — references symbols from index.html sprite sheet
@@ -88,6 +94,34 @@ export class NoteMenu {
     const menu = document.createElement('div');
     menu.className = 'note-menu-dropdown';
     menu.style.display = 'none';
+
+    // Minimal mode: only the actions that need no kind-specific data or
+    // orchestration — used by unsupported-kind fallback cards.
+    if (this.options.mode === 'minimal') {
+      menu.innerHTML = `
+        <button class="note-menu-item" data-action="copy-event-id">
+          ${ICONS.copy}
+          Copy event ID
+        </button>
+
+        <button class="note-menu-item" data-action="copy-user-id">
+          ${ICONS.copy}
+          Copy user ID
+        </button>
+        ${
+          this.options.rawEvent
+            ? `
+        <button class="note-menu-item" data-action="view-raw-event">
+          ${ICONS.code}
+          View raw event
+        </button>
+        `
+            : ''
+        }
+      `;
+      document.body.appendChild(menu);
+      return menu;
+    }
 
     // Check if this is the current user's note
     const authService = AuthService.getInstance();

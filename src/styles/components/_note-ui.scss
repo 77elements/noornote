@@ -488,10 +488,20 @@ html.content-visibility-auto .note-card {
 
 // Unsupported Kind Fallback
 .note-card--unsupported {
+  position: relative;
+  cursor: pointer;
   background: color-mix(in srgb, var(--color-3) 15%, transparent);
   border: 1px dashed var(--surface-tint);
   border-radius: $radius-xl;
   padding: $gap;
+
+  // Minimal 3-dot menu mounted by UnsupportedKindRenderer.withCardChrome —
+  // anchored to the card's top-right corner, above the centered content.
+  > .note-menu-trigger {
+    position: absolute;
+    top: calc($gap / 4);
+    right: calc($gap / 4);
+  }
 }
 
 .video-note-title {
@@ -508,6 +518,13 @@ html.content-visibility-auto .note-card {
   &__message {
     color: $color-3;
     line-height: 1.5;
+  }
+
+  // Small muted line inside the message (nsite file count etc.)
+  &__meta {
+    @extend %small;
+
+    opacity: 0.8;
   }
 }
 
