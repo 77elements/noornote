@@ -920,7 +920,6 @@ export class App {
 
   private async setupDeepLinkHandler(): Promise<void> {
     const platform = PlatformService.getInstance();
-    if (!platform.isElectron) return;
 
     const handleDeepLink = (url: string) => {
       const nip19String = url.startsWith('nostr:') ? url.slice(6) : url;
@@ -931,6 +930,37 @@ export class App {
         );
       }
     };
+
+    if (platform.isCapacitor) {
+      // Android: the manifest's nostr: intent-filter makes the OS offer
+      // NoorNote for NIP-21 links emitted by other apps (notification-only
+      // clients, share sheets). Cold start delivers the URL via getLaunchUrl,
+      // warm start (singleTask → onNewIntent) via appUrlOpen.
+      try {
+        const { App } = await import('@capacitor/app');
+        const launch = await App.getLaunchUrl();
+        if (launch?.url) {
+          this.systemLogger.info(
+            'Deep Link',
+            'Opening nostr link from another app…'
+          );
+          handleDeepLink(launch.url);
+        }
+        void App.addListener('appUrlOpen', data => {
+          if (!data.url) return;
+          this.systemLogger.info(
+            'Deep Link',
+            'Opening nostr link from another app…'
+          );
+          handleDeepLink(data.url);
+        });
+      } catch {
+        // Capacitor App plugin unavailable — expected on web/desktop
+      }
+      return;
+    }
+
+    if (!platform.isElectron) return;
 
     try {
       window.electronAPI!.onDeepLink(url => handleDeepLink(url));
