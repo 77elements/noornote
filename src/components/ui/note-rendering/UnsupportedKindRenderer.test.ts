@@ -18,6 +18,8 @@ import { hexToNpub } from '../../../helpers/nip19';
 import { encodeNevent } from '../../../services/NostrToolsAdapter';
 
 const PUBKEY = 'b'.repeat(64);
+// Deliberately unknown kind for fallback tests — not a real Nostr kind.
+const UNKNOWN_KIND = 99999;
 // NoteProcessor memoizes per event id — every fixture needs a unique id or the
 // cache serves a previous test's note.
 let idCounter = 0;
@@ -123,7 +125,7 @@ function makeEvent(overrides: Partial<NostrEvent> = {}): NostrEvent {
     id: overrides.id ?? nextId(),
     pubkey: PUBKEY,
     created_at: 1700000000,
-    kind: 99999,
+    kind: UNKNOWN_KIND,
     tags: [],
     content: '',
     sig: 'c'.repeat(128),

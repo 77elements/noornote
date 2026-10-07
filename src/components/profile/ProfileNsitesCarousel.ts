@@ -32,26 +32,6 @@ export class ProfileNsitesCarousel {
   private element: HTMLElement;
   private pubkey: string;
   private nsites: NsiteCardData[] = [];
-  private _profileApi: ProfileModuleApi | null = null;
-  private profileApiPromise: Promise<ProfileModuleApi> | null = null;
-
-  /** Boot-race safe: loads the profile module on demand. */
-  private ensureProfileApi(): Promise<ProfileModuleApi> {
-    this.profileApiPromise ??= (async () => {
-      this._profileApi ??=
-        ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
-      if (!this._profileApi) {
-        const api =
-          await ModuleLoader.getInstance().ensure<ProfileModuleApi>('profile');
-        if (!api) {
-          throw new Error('Profile module failed to load');
-        }
-        this._profileApi = api;
-      }
-      return this._profileApi;
-    })();
-    return this.profileApiPromise;
-  }
 
   constructor(pubkey: string) {
     this.pubkey = pubkey;
@@ -79,7 +59,10 @@ export class ProfileNsitesCarousel {
     try {
       // Shared fetch (read + aggregator + outbound relays) via the profile
       // module; reuses the same cached round-trip as the other carousels.
-      const profileApi = await this.ensureProfileApi();
+      // ensure() returns the live API or loads the module on demand.
+      const profileApi =
+        await ModuleLoader.getInstance().ensure<ProfileModuleApi>('profile');
+      if (!profileApi) throw new Error('Profile module failed to load');
       const content = await profileApi.fetchCarouselContent(this.pubkey);
 
       this.nsites = content.nsites
