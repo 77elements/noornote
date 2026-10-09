@@ -15,6 +15,7 @@
 
 import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import {
+  getShowReactionsPubkeys,
   isReactionShownFrom,
   shouldFetchReactions,
 } from '../../helpers/reactionsFeedSetting';
@@ -260,6 +261,11 @@ export class FeedOrchestrator extends Orchestrator {
             kinds: feedKindsFor(request.config?.source.kind),
             limit: params.pageSize,
           },
+          ...this.reactionOverrideFilters(
+            request.config?.source.kind,
+            followingPubkeys,
+            { limit: params.pageSize }
+          ),
         ];
         const wc = this.webCommentFilter(
           followingPubkeys,
@@ -277,7 +283,18 @@ export class FeedOrchestrator extends Orchestrator {
         if (explicitUntil !== undefined) {
           filterObj.until = explicitUntil;
         }
-        filters = [filterObj];
+        filters = [
+          filterObj,
+          ...this.reactionOverrideFilters(
+            request.config?.source.kind,
+            followingPubkeys,
+            {
+              limit: this.fetchLimit,
+              ...(explicitSince !== undefined && { since: explicitSince }),
+              ...(explicitUntil !== undefined && { until: explicitUntil }),
+            }
+          ),
+        ];
         const wcBounds: { since?: number; until?: number; limit: number } = {
           since: explicitSince,
           limit: this.fetchLimit,
@@ -299,6 +316,11 @@ export class FeedOrchestrator extends Orchestrator {
             limit: params.pageSize,
             since: windowSince,
           },
+          ...this.reactionOverrideFilters(
+            request.config?.source.kind,
+            followingPubkeys,
+            { limit: params.pageSize, since: windowSince }
+          ),
         ];
         const wc = this.webCommentFilter(
           followingPubkeys,
@@ -554,7 +576,18 @@ export class FeedOrchestrator extends Orchestrator {
       if (!pureUntil) {
         filterObj.since = since;
       }
-      const filters: NDKFilter<number>[] = [filterObj];
+      const filters: NDKFilter<number>[] = [
+        filterObj,
+        ...this.reactionOverrideFilters(
+          request.config?.source.kind,
+          followingPubkeys,
+          {
+            limit: pureUntil ? params.pageSize : 50,
+            until: until - 1,
+            ...(pureUntil ? {} : { since }),
+          }
+        ),
+      ];
       if (pureUntil) {
         const wc = this.webCommentFilter(
           followingPubkeys,
@@ -974,6 +1007,35 @@ export class FeedOrchestrator extends Orchestrator {
    * Process events: deduplicate, filter replies/muted users, sort by timestamp
    * Consolidates the common event processing pattern used across loadInitialFeed, loadMore, and poll
    */
+
+  /**
+   * Extra kind-7 filters for per-user overridden authors that are NOT in the
+   * follow list (the main `authors` filter only covers follows). Same time
+   * bounds and page size as the base filter so both pages stay in sync.
+   * TV only — profile/tribe feeds never carry reactions.
+   */
+  private reactionOverrideFilters(
+    sourceKind: TimelineConfig['source']['kind'] | undefined,
+    followingPubkeys: string[],
+    bounds: { since?: number; until?: number; limit: number }
+  ): NDKFilter<number>[] {
+    if (sourceKind !== 'following' || !shouldFetchReactions()) return [];
+    const follows = new Set(followingPubkeys);
+    const overridden = getShowReactionsPubkeys().filter(
+      (pk: string) => !follows.has(pk)
+    );
+    if (overridden.length === 0) return [];
+    return [
+      {
+        authors: overridden,
+        kinds: [7],
+        limit: bounds.limit,
+        ...(bounds.since !== undefined && { since: bounds.since }),
+        ...(bounds.until !== undefined && { until: bounds.until }),
+      },
+    ];
+  }
+
   private async processEvents(
     events: NostrEvent[],
     includeReplies: boolean,
@@ -1529,6 +1591,15 @@ export class FeedOrchestrator extends Orchestrator {
           until: now,
           limit: this.pollLimit,
         },
+        ...this.reactionOverrideFilters(
+          'following',
+          this.pollingFollowingPubkeys,
+          {
+            since: this.lastCheckedTimestamp + 1,
+            until: now,
+            limit: this.pollLimit,
+          }
+        ),
       ];
       const wc = this.webCommentFilter(
         this.pollingFollowingPubkeys,
@@ -1779,6 +1850,11 @@ export class FeedOrchestrator extends Orchestrator {
             until: window.until,
             limit: this.pollLimit,
           },
+          ...this.reactionOverrideFilters('following', followingPubkeys, {
+            since: window.since,
+            until: window.until,
+            limit: this.pollLimit,
+          }),
         ];
         const wc = this.webCommentFilter(
           followingPubkeys,

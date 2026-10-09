@@ -72,6 +72,16 @@ export function shouldFetchReactions(): boolean {
   return Object.values(map).some(Boolean);
 }
 
+/** All pubkeys with a per-user override (map keys with true). */
+export function getShowReactionsPubkeys(): string[] {
+  const map =
+    PerAccountLocalStorage.getInstance().get<Record<string, boolean>>(
+      StorageKeys.SHOW_REACTIONS_USERS,
+      {}
+    ) ?? {};
+  return Object.keys(map).filter(pk => map[pk] === true);
+}
+
 /**
  * Keep gate for a single reaction event (the reactor's pubkey decides):
  * global switch on, or this author has the per-user override.

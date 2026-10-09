@@ -35,6 +35,7 @@ import {
   setShowReactionsFor,
   shouldFetchReactions,
   isReactionShownFrom,
+  getShowReactionsPubkeys,
 } from './reactionsFeedSetting';
 
 const PK_A = 'a'.repeat(64);
@@ -81,5 +82,13 @@ describe('reactionsFeedSetting', () => {
     setShowReactionsFor(PK_A, false);
     expect(isShowReactionsFor(PK_A)).toBe(false);
     expect(isShowReactionsFor(PK_B)).toBe(true);
+  });
+
+  it('getShowReactionsPubkeys lists only overridden pubkeys', () => {
+    expect(getShowReactionsPubkeys()).toEqual([]);
+    setShowReactionsFor(PK_A, true);
+    setShowReactionsFor(PK_B, true);
+    setShowReactionsFor(PK_A, false);
+    expect(getShowReactionsPubkeys()).toEqual([PK_B]);
   });
 });
