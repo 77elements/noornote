@@ -15,6 +15,7 @@ import { UserProfileService } from './UserProfileService';
 import { RelayListOrchestrator } from './orchestration/RelayListOrchestrator';
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 import { isDataSaverEnabled } from './DataSaverService';
+import { RelayRateLimitGuard } from './transport/RelayRateLimitGuard';
 
 export type RelayType = 'read' | 'write' | 'inbox';
 
@@ -85,6 +86,10 @@ export class RelayConfig {
 
   /**
    * Get read relays for timeline loading
+   *
+   * Relays currently in rate-limit backoff (RelayRateLimitGuard — relay
+   * complained via NOTICE/CLOSED, or a reconnect storm) are excluded, so
+   * every scheduled poll and fetch skips them until the backoff expires.
    */
   public getReadRelays(): string[] {
     const readRelays = this.getRelaysByType('read').map(relay => relay.url);
@@ -103,7 +108,16 @@ export class RelayConfig {
       }
     }
 
-    return readRelays;
+    return this.filterBackedOff(readRelays);
+  }
+
+  /**
+   * Drop rate-limit-backoff relays from a set. No import cycle: the guard
+   * only pulls DiagnosticLogger + SystemLogger, never RelayConfig.
+   */
+  private filterBackedOff(urls: string[]): string[] {
+    if (urls.length === 0) return urls;
+    return RelayRateLimitGuard.getInstance().filter(urls);
   }
 
   /**
@@ -235,30 +249,33 @@ export class RelayConfig {
     // `forceFull` lets a feature that has explicit informed consent (e.g. the
     // Follower Notification addon's baseline sweep) bypass the Data Saver
     // reduction, so its coverage isn't silently halved on mobile.
-    if (isDataSaverEnabled() && !forceFull) {
-      return [
-        // 'wss://nostr.mom', // disabled: near-duplicate dataset of relay.mostr.pub
-        'wss://nos.lol',
-        // 'wss://relay.ditto.pub', // disabled: +2 exclusive followers and never sends EOSE (times out every fetch)
-        'wss://relay.primal.net',
-        'wss://nostr.oxtr.dev',
-        'wss://nostr21.com',
-        'wss://noornode.nostr1.com/',
-      ];
-    }
-    return [
-      // 'wss://nostr.mom', // disabled: near-duplicate dataset of relay.mostr.pub
-      'wss://relay.snort.social',
-      'wss://nos.lol',
-      // 'wss://relay.ditto.pub', // disabled: +2 exclusive followers and never sends EOSE (times out every fetch)
-      'wss://relay.primal.net',
-      'wss://purplepag.es',
-      'wss://relay.mostr.pub',
-      'wss://relay.zapstore.dev',
-      'wss://nostr.oxtr.dev',
-      'wss://nostr21.com',
-      'wss://noornode.nostr1.com/',
-    ];
+    const set =
+      isDataSaverEnabled() && !forceFull
+        ? [
+            // 'wss://nostr.mom', // disabled: near-duplicate dataset of relay.mostr.pub
+            'wss://nos.lol',
+            // 'wss://relay.ditto.pub', // disabled: +2 exclusive followers and never sends EOSE (times out every fetch)
+            'wss://relay.primal.net',
+            'wss://nostr.oxtr.dev',
+            'wss://nostr21.com',
+            'wss://noornode.nostr1.com/',
+          ]
+        : [
+            // 'wss://nostr.mom', // disabled: near-duplicate dataset of relay.mostr.pub
+            'wss://relay.snort.social',
+            'wss://nos.lol',
+            // 'wss://relay.ditto.pub', // disabled: +2 exclusive followers and never sends EOSE (times out every fetch)
+            'wss://relay.primal.net',
+            'wss://purplepag.es',
+            'wss://relay.mostr.pub',
+            'wss://relay.zapstore.dev',
+            'wss://nostr.oxtr.dev',
+            'wss://nostr21.com',
+            'wss://noornode.nostr1.com/',
+          ];
+    // Rate-limit-backoff relays (e.g. nos.lol told us to slow down) sit out
+    // until their backoff expires.
+    return this.filterBackedOff(set);
   }
 
   /**

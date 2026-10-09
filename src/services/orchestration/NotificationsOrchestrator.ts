@@ -922,6 +922,12 @@ export class NotificationsOrchestrator extends Orchestrator {
     noteId: string,
     kindHint?: number
   ): Promise<NostrEvent | null> {
+    // Cache-first: notification previews frequently reference notes that are
+    // already in NoteService (timeline, thread, earlier views) — a cache hit
+    // costs zero REQs, and concurrent lookups for the same id share one fetch.
+    const cached = NoteService.getInstance().getCachedNote(noteId);
+    if (cached) return cached;
+
     try {
       const kinds =
         typeof kindHint === 'number' && !isNaN(kindHint)
@@ -935,7 +941,11 @@ export class NotificationsOrchestrator extends Orchestrator {
         false,
         'NotifItem'
       );
-      return events[0] || null;
+      const event = events[0] || null;
+      // Register successes so repeat lookups (re-render, other notifications
+      // referencing the same note) never re-fetch.
+      if (event) NoteService.getInstance().registerNote(event);
+      return event;
     } catch (error) {
       console.debug(
         '[NotificationsOrchestrator] Failed to fetch referenced note:',

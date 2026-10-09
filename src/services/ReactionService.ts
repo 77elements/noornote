@@ -87,8 +87,11 @@ export class ReactionService {
     if (!currentUser) return false;
 
     try {
-      const stats = await this.reactionsOrchestrator.getDetailedStats(noteId);
-      return stats.reactionEvents.some(
+      // Batch-aware ensure: coalesces concurrent ISL state checks into one
+      // batched REQ instead of a 4-subscription per-note fetch per card.
+      await this.reactionsOrchestrator.ensureStatsBatched(noteId);
+      const stats = this.reactionsOrchestrator.peekDetailedStats(noteId);
+      return !!stats?.reactionEvents.some(
         event => event.pubkey === currentUser.pubkey
       );
     } catch (_error) {
@@ -116,7 +119,9 @@ export class ReactionService {
     if (!currentUser) return false;
 
     try {
-      const stats = await this.reactionsOrchestrator.getDetailedStats(noteId);
+      await this.reactionsOrchestrator.ensureStatsBatched(noteId);
+      const stats = this.reactionsOrchestrator.peekDetailedStats(noteId);
+      if (!stats) return false;
       const target = normalizeEmoji(emoji);
       return stats.reactionEvents.some(
         event =>

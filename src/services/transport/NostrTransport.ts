@@ -28,6 +28,7 @@ import NDKCacheDexie, {
 import { RelayConfig } from '../RelayConfig';
 import { SystemLogger } from '../SystemLogger';
 import { RelayHealthMonitor } from '../RelayHealthMonitor';
+import { RelayRateLimitGuard, RATE_LIMIT_RE } from './RelayRateLimitGuard';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { PlatformService } from '../PlatformService';
 import { diagLog } from '../DiagnosticLogger';
@@ -39,6 +40,17 @@ export interface SubscriptionCallbacks {
 
 interface SubCloser {
   close: () => void;
+}
+
+/** Stored args of a live subscription — needed to re-issue it after a
+ *  reconnect (NDK does NOT replay subscriptions on reconnect; a live sub
+ *  whose socket dropped stays dead until re-created). */
+interface LiveSubscription {
+  closer: SubCloser;
+  relays: string[];
+  filters: NDKFilter[];
+  callback: (event: NostrEvent, relay: string) => void;
+  onEose?: () => void;
 }
 
 /**
@@ -114,6 +126,38 @@ function relayHost(url: string): string | null {
     return new URL(url).hostname.toLowerCase();
   } catch {
     return null;
+  }
+}
+
+/**
+ * Feed relay CLOSED reasons into the rate-limit guard. NDK emits 'closed'
+ * (relay, reason) on the subscription when a relay sends a CLOSED message
+ * (e.g. "rate-limited: ...") — defensive attach so an emitter mismatch can
+ * never break subscription creation.
+ */
+function attachClosedListener(ndkSub: NDKSubscription): void {
+  try {
+    const emitter = ndkSub as unknown as {
+      on?: (
+        event: string,
+        cb: (relay: unknown, reason: string) => void
+      ) => void;
+    };
+    emitter.on?.('closed', (relay, reason) => {
+      const url =
+        relay && typeof relay === 'object' && 'url' in relay
+          ? String((relay as { url: unknown }).url)
+          : '';
+      if (url && typeof reason === 'string' && RATE_LIMIT_RE.test(reason)) {
+        RelayRateLimitGuard.getInstance().observeRateLimitSignal(
+          url,
+          'closed',
+          reason
+        );
+      }
+    });
+  } catch {
+    /* ignore — guard is advisory */
   }
 }
 
@@ -200,8 +244,7 @@ export class NostrTransport {
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
   private eventBus: TypedEventBus;
-  private subscriptions: Map<string, { closer: SubCloser; relays: string[] }> =
-    new Map();
+  private subscriptions: Map<string, LiveSubscription> = new Map();
   private poolPruneInterval: ReturnType<typeof setInterval> | null = null;
   /** Relays each event was seen on (received from / published to) this session.
    *  Bounded, insertion-ordered — oldest entry evicted past the cap to keep the
@@ -263,6 +306,25 @@ export class NostrTransport {
     this.ndk.relayAuthDefaultPolicy = (relay: NDKRelay, challenge: string) =>
       this.handleRelayAuth(relay, challenge);
 
+    // Relay-friendly rate-limit guard: NOTICE/CLOSED throttle detection,
+    // reconnect-storm breaker, REQ accounting (see RelayRateLimitGuard).
+    // A manual disconnect() is respected by NDK (no auto-reconnect), so the
+    // guard's storm breaker can actually stop an instant-reconnect loop.
+    RelayRateLimitGuard.getInstance().setTransportHooks(
+      url => {
+        const relay = this.ndk.pool.relays.get(url);
+        if (relay && relay.status !== NDKRelayStatus.CONNECTED) {
+          void relay.connect();
+        }
+      },
+      url => {
+        const relay = this.ndk.pool.relays.get(url);
+        if (relay && relay.status === NDKRelayStatus.CONNECTED) {
+          relay.disconnect();
+        }
+      }
+    );
+
     this.systemLogger.info('NostrTransport', 'Transport ready');
 
     // Socket-recovery lifecycle (see recoverConnections): browsers keep
@@ -293,19 +355,30 @@ export class NostrTransport {
   /** Throttle + bookkeeping for socket-recovery passes. */
   private lastRecoveryAt = 0;
   private hiddenAt: number | null = null;
-  private static readonly RECOVERY_THROTTLE_MS = 15_000;
+  private static readonly RECOVERY_THROTTLE_MS = 30_000;
+  /** Per-relay cooldown between recovery rebuilds — bursty triggers (online
+   *  + visibility flapping) must not hammer the same relay. */
+  private recoveryRebuiltAt: Map<string, number> = new Map();
+  private static readonly PER_RELAY_RECOVERY_COOLDOWN_MS = 5 * 60_000;
 
   /**
    * Half-open socket recovery: after system suspend (laptop lid, Android
    * background) or a network switch, sockets can report CONNECTED while the
    * peer is long gone — NDK's own reconnect only fires when IT notices the
-   * drop, which may never happen for a silently dead socket. A recovery pass
-   * force-reconnects every pool socket that believes it is open; NDK then
-   * re-establishes its active subscriptions on each reconnect (same path as
-   * any normal network blip).
+   * drop, which may never happen for a silently dead socket.
    *
-   * Triggered on `online` and on tab-visible-after->30s. Throttled to one
-   * pass per 15s so bursty triggers coalesce.
+   * IMPORTANT (corrects an earlier wrong comment): NDK 3.0.3 does NOT
+   * re-establish subscriptions on reconnect — a live subscription whose
+   * socket dropped stays dead (zombie) until re-created. The transport
+   * handles that via `resubscribeLiveSubsForRelay` on every relay 'connect'
+   * event, which also covers these recovery rebuilds.
+   *
+   * A rebuild pass disconnect+connects only relays that are (a) CONNECTED,
+   * (b) not in rate-limit backoff (never hammer a relay that is already
+   * throttling us), and (c) outside their per-relay cooldown — so bursty
+   * triggers (online + visibility flapping) cannot produce the
+   * "75 reconnects per hour" signature relays ban for. Triggered on
+   * `online` and on tab-visible-after->30s, throttled to one pass per 30s.
    */
   public recoverConnections(reason: 'online' | 'visible'): void {
     const now = Date.now();
@@ -314,9 +387,16 @@ export class NostrTransport {
     }
     this.lastRecoveryAt = now;
 
+    const guard = RelayRateLimitGuard.getInstance();
     let rebuilt = 0;
     for (const relay of this.ndk.pool.relays.values()) {
       if (relay.status !== NDKRelayStatus.CONNECTED) continue;
+      if (guard.isBackedOff(relay.url)) continue;
+      const lastRebuild = this.recoveryRebuiltAt.get(relay.url) ?? 0;
+      if (now - lastRebuild < NostrTransport.PER_RELAY_RECOVERY_COOLDOWN_MS) {
+        continue;
+      }
+      this.recoveryRebuiltAt.set(relay.url, now);
       try {
         relay.disconnect();
         void relay.connect();
@@ -327,6 +407,13 @@ export class NostrTransport {
           error: String(err),
         });
       }
+    }
+
+    // Prune stale cooldown bookkeeping so the map tracks the live pool only.
+    if (this.recoveryRebuiltAt.size > 64) {
+      this.recoveryRebuiltAt.forEach((at, url) => {
+        if (now - at > 30 * 60_000) this.recoveryRebuiltAt.delete(url);
+      });
     }
 
     if (rebuilt > 0) {
@@ -443,17 +530,29 @@ export class NostrTransport {
   }
 
   /**
-   * Setup listeners for NDK relay events (disconnect, connect)
-   * Forwards events to TypedEventBus for ConnectivityService
+   * Setup listeners for NDK relay events (disconnect, connect, notice)
+   * Forwards events to TypedEventBus for ConnectivityService. Feeds the
+   * RelayRateLimitGuard: NOTICEs with throttle wording start backoff,
+   * connect events feed the reconnect-storm window, and every successful
+   * connect re-issues live subscriptions that include this relay (NDK does
+   * NOT replay subscriptions on reconnect — see LiveSubscription).
    */
   private setupRelayEventListeners(): void {
     const setupRelayListeners = (relay: NDKRelay): void => {
+      const guard = RelayRateLimitGuard.getInstance();
+      relay.on('notice', (notice: string) => {
+        if (typeof notice === 'string' && RATE_LIMIT_RE.test(notice)) {
+          guard.observeRateLimitSignal(relay.url, 'notice', notice);
+        }
+      });
       relay.on('disconnect', () => {
         diagLog('relays', 'Relay disconnected', { url: relay.url });
         this.eventBus.emit('relay:error', { url: relay.url });
       });
       relay.on('connect', () => {
         diagLog('relays', 'Relay connected', { url: relay.url });
+        guard.observeConnect(relay.url);
+        this.resubscribeLiveSubsForRelay(relay.url);
         this.eventBus.emit('relay:connected', { url: relay.url });
       });
     };
@@ -470,6 +569,34 @@ export class NostrTransport {
     this.ndk.pool.on('relay:disconnect', (relay: NDKRelay) => {
       this.eventBus.emit('relay:error', { url: relay.url });
     });
+  }
+
+  /**
+   * Re-issue every live subscription that includes the given relay. NDK does
+   * not replay subscriptions after a reconnect — without this, live DM /
+   * notification / SNV-stats streams silently die on socket drops (the
+   * visibility-refresh workaround was previously doing this job by accident).
+   */
+  private resubscribeLiveSubsForRelay(relayUrl: string): void {
+    const stale: Array<[string, LiveSubscription]> = [];
+    this.subscriptions.forEach((sub, subId) => {
+      if (sub.relays.includes(relayUrl)) stale.push([subId, sub]);
+    });
+    for (const [subId, sub] of stale) {
+      try {
+        sub.closer.close();
+      } catch {
+        /* ignore */
+      }
+      this.subscriptions.delete(subId);
+      void this.subscribeLive(
+        sub.relays,
+        sub.filters,
+        subId,
+        sub.callback,
+        sub.onEose
+      );
+    }
   }
 
   public static getInstance(): NostrTransport {
@@ -552,6 +679,8 @@ export class NostrTransport {
     const startTime = Date.now();
     let hasReceivedEvent = false;
 
+    RelayRateLimitGuard.getInstance().countRequest(relays);
+
     // Subscribe using NDK
     const ndkSub = this.ndk.subscribe(
       filters,
@@ -588,6 +717,9 @@ export class NostrTransport {
         },
       }
     );
+
+    // Relay CLOSED messages (e.g. "rate-limited: ...") feed the backoff guard.
+    attachClosedListener(ndkSub);
 
     // Return wrapper that implements SubCloser interface
     return {
@@ -644,10 +776,20 @@ export class NostrTransport {
 
       // Standard fetch using NDK (auto-dedupe, auto-verify)
       // Use ONLY_RELAY when skipCache is true (for relay-specific filtering)
+      //
+      // groupable is intentionally NOT disabled: NDK's grouping fingerprint
+      // includes closeOnEose, so these one-shot fetches (closeOnEose:true) can
+      // never merge with live subscriptions — they only coalesce with OTHER
+      // one-shot fetches whose filter shapes match (values union, since/until
+      // are fingerprint-exact). Concurrent UI bursts (timeline poll +
+      // notifications refresh + thread stages) thus share REQs instead of each
+      // firing one per relay — the burst pattern relays rate-limit on. Costs
+      // at most the 10ms at-most groupable delay.
+      const guard = RelayRateLimitGuard.getInstance();
+      guard.countRequest(relays);
       const fetchPromise = this.ndk.fetchEvents(filters, {
         relayUrls: relays,
         closeOnEose: true,
-        groupable: false,
         cacheUsage: skipCache
           ? NDKSubscriptionCacheUsage.ONLY_RELAY
           : NDKSubscriptionCacheUsage.CACHE_FIRST,
@@ -743,6 +885,9 @@ export class NostrTransport {
     // penalized relays (≥3 failures, 0 successes in 15 min) go last.
     // perRelayUntil is URL-keyed — ordering cannot break pagination cursors.
     relays = RelayHealthMonitor.getInstance().sortByScore(relays);
+    // REQ accounting: pagination rounds count per relay — PV deep scrolls are
+    // exactly the burst profile the accounting should make visible.
+    RelayRateLimitGuard.getInstance().countRequest(relays);
     const dbgStart = Date.now();
     // Per-relay outcome: oldest created_at (this relay's next loadMore cursor),
     // count (to detect exhaustion), eosed, plus state/ms for diagnostics. Each
@@ -1492,6 +1637,8 @@ export class NostrTransport {
       `Listening on ${relays.length} relays`
     );
 
+    RelayRateLimitGuard.getInstance().countRequest(relays);
+
     // Subscribe using NDK (persistent connection)
     const ndkCallbacks: {
       onEvent: (event: NDKEvent, relay?: NDKRelay) => void;
@@ -1519,10 +1666,17 @@ export class NostrTransport {
       ndkCallbacks
     );
 
-    this.subscriptions.set(subId, {
+    // Relay CLOSED messages feed the backoff guard; the stored args let
+    // resubscribeLiveSubsForRelay re-issue this sub after reconnects.
+    attachClosedListener(ndkSub);
+    const record: LiveSubscription = {
       closer: { close: () => ndkSub.stop() },
       relays,
-    });
+      filters,
+      callback,
+    };
+    if (onEose) record.onEose = onEose;
+    this.subscriptions.set(subId, record);
   }
 
   /**

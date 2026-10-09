@@ -341,7 +341,10 @@ export class NotificationItem {
     const eventId = this.options.event.id;
     if (!eventId) return;
 
-    // Fetch stats to get zap events
+    // Fetch stats to get zap events — batch-aware: joins the view-wide
+    // micro-batch, then reads the cache (a second getDetailedStats call is a
+    // pure cache hit, never its own relay round-trip).
+    await this.reactionsApi?.ensureStatsBatched(eventId);
     const stats = await this.reactionsApi?.getDetailedStats(eventId);
 
     if (stats && stats.zapEvents && stats.zapEvents.length > 0) {
@@ -365,11 +368,13 @@ export class NotificationItem {
     const noteId = this.options.event.id;
     if (!noteId) return;
 
-    // Create ISL with the notification event
+    // Create ISL with the notification event. batchStats (not fetchStats):
+    // a whole view of notifications must coalesce into ONE batched stats REQ,
+    // not fire a 4-subscription fetch per item — relays rate-limit that.
     this.isl = new InteractionStatusLine({
       noteId,
       authorPubkey: this.options.event.pubkey,
-      fetchStats: true,
+      batchStats: true,
       isLoggedIn: true,
       originalEvent: this.options.event,
     });

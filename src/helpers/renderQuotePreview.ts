@@ -8,6 +8,7 @@
 
 import { decodeNip19 } from '../services/NostrToolsAdapter';
 import { NostrTransport } from '../services/transport/NostrTransport';
+import { NoteService } from '../services/NoteService';
 import { UserProfileService } from '../services/UserProfileService';
 import { escapeHtml, escapeHtmlAttr } from './escapeHtml';
 import { getTag } from './tagUtils';
@@ -58,20 +59,23 @@ async function renderNeventPreview(
   container: HTMLElement,
   data: NeventData
 ): Promise<HTMLElement> {
-  const transport = NostrTransport.getInstance();
-  const readRelays = transport.getReadRelays();
-  const hintRelays = data.relays || [];
-  const allRelays = [...new Set([...readRelays, ...hintRelays])];
+  // Cache-first via NoteService (LRU + in-flight dedup + one batched
+  // ids:[...] REQ over read+aggregator relays). Hint relays stay as a
+  // fallback for notes that live outside that set.
+  let event = await NoteService.getInstance().getNote(data.id);
 
-  const events = await transport.fetch(
-    allRelays,
-    [{ ids: [data.id], limit: 1 }],
-    5000,
-    false,
-    'renderQuotePreview'
-  );
+  if (!event && data.relays && data.relays.length > 0) {
+    const transport = NostrTransport.getInstance();
+    const events = await transport.fetch(
+      [...new Set(data.relays)],
+      [{ ids: [data.id], limit: 1 }],
+      5000,
+      false,
+      'renderQuotePreview'
+    );
+    event = events[0] ?? null;
+  }
 
-  const event = events[0];
   if (!event) {
     container.innerHTML =
       '<div class="quote-preview__error">Quoted note not found</div>';

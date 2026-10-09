@@ -5,6 +5,7 @@
  */
 
 import { fetchNostrEvents } from './FetchNostrEvents';
+import { NoteService } from './NoteService';
 import { RelayConfig } from './RelayConfig';
 import { UserProfileService } from './UserProfileService';
 
@@ -96,25 +97,30 @@ export class ParentNoteFetcher {
     relayHint: string | null
   ): Promise<ParentAuthorInfo | null> {
     try {
-      // Build relay list: relay hint first, then configured relays
-      const configuredRelays = this.relayConfig.getReadRelays();
-      const relays = relayHint
-        ? [relayHint, ...configuredRelays.filter(r => r !== relayHint)]
-        : configuredRelays;
+      // Cache-first via NoteService: the parent of a reply is very often
+      // already in the LRU (timeline, thread, SNV) — zero REQs. Concurrent
+      // lookups for the same parent dedup into one fetch.
+      let parentEvent = await NoteService.getInstance().getNote(parentEventId);
 
-      // Fetch parent event
-      const result = await fetchNostrEvents({
-        relays,
-        ids: [parentEventId],
-        limit: 1,
-      });
-
-      if (result.events.length === 0) {
-        return null; // Parent not found
+      // Fallback: hint-relay fetch for parents that live outside NoteService's
+      // read+aggregator set (relay hint = relay the reply was seen on).
+      if (!parentEvent && relayHint) {
+        const configuredRelays = this.relayConfig.getReadRelays();
+        const relays = [
+          relayHint,
+          ...configuredRelays.filter(r => r !== relayHint),
+        ];
+        const result = await fetchNostrEvents({
+          relays,
+          ids: [parentEventId],
+          limit: 1,
+        });
+        parentEvent = result.events[0] ?? null;
       }
 
-      const parentEvent = result.events[0];
-      if (!parentEvent) return null;
+      if (!parentEvent) {
+        return null; // Parent not found
+      }
       const parentAuthorPubkey = parentEvent.pubkey;
 
       // Get parent author profile

@@ -60,7 +60,11 @@ export class RepostService {
     if (!currentUser) return false;
 
     try {
-      const stats = await this.reactionsOrchestrator.getDetailedStats(noteId);
+      // Batch-aware ensure — same relay-friendliness as hasUserLiked: one
+      // coalesced batch REQ instead of a per-note subscription burst.
+      await this.reactionsOrchestrator.ensureStatsBatched(noteId);
+      const stats = this.reactionsOrchestrator.peekDetailedStats(noteId);
+      if (!stats) return false;
 
       // Check if any repost event is from the current user
       const userRepost = stats.repostEvents.find(

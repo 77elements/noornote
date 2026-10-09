@@ -33,6 +33,13 @@ export interface ISLConfig {
   authorPubkey?: string; // Optional author pubkey for Hollywood-style logging
   stats?: ISLStats;
   fetchStats?: boolean;
+  /**
+   * Batch-aware stats load (list contexts — notifications, bookmark lists):
+   * coalesces concurrent loads into one batched REQ via ensureStatsBatched
+   * instead of a per-note 4-subscription fetch. Incompatible semantics with
+   * fetchStats — set this INSTEAD of fetchStats in multi-note views.
+   */
+  batchStats?: boolean;
   isLoggedIn?: boolean; // User logged in - enables interactions (default: false)
   originalEvent?: NostrEvent; // Original event for reposting
   onReply?: () => void;
@@ -120,8 +127,10 @@ export class InteractionStatusLine {
       );
     }
 
-    // Fetch stats in background if requested (SNV only)
-    if (config.fetchStats) {
+    // Fetch stats in background if requested (SNV only, or batched in list views)
+    if (config.batchStats) {
+      this.initialFetchPromise = this.fetchStatsBatched();
+    } else if (config.fetchStats) {
       this.initialFetchPromise = this.fetchStats();
     }
 
@@ -211,6 +220,32 @@ export class InteractionStatusLine {
     }
     if (this.repostManager) {
       void this.repostManager.checkRepostedStatus();
+    }
+  }
+
+  /**
+   * Batch-aware stats load (list contexts): joins the orchestrator's micro-
+   * batch window, then reads the filled cache — one batched REQ for the whole
+   * view instead of one 4-subscription fetch per item.
+   */
+  private async fetchStatsBatched(): Promise<void> {
+    try {
+      const reactionsApi =
+        await ModuleLoader.getInstance().ensure<ReactionsModuleApi>(
+          'reactions'
+        );
+      await reactionsApi?.ensureStatsBatched(this.config.noteId);
+      const stats = reactionsApi?.getCachedStats(this.config.noteId);
+      if (!stats) return;
+      this.updateStats({
+        replies: stats.replies,
+        reposts: stats.reposts,
+        quotedReposts: stats.quotedReposts,
+        likes: stats.likes,
+        zaps: stats.zaps,
+      });
+    } catch (error) {
+      console.debug('Failed to load batched interaction stats:', error);
     }
   }
 

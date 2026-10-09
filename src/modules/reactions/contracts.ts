@@ -19,6 +19,11 @@ export interface ReactionsModuleApi {
   getDetailedStats(noteId: string, eventId?: string): Promise<DetailedStats>;
   /** Non-fetching cache read (any freshness) — instant UI, never blocks. */
   peekDetailedStats(noteId: string): DetailedStats | null;
+  /** Batch-aware ensure for per-note state checks: resolves from fresh cache
+   *  instantly, shares in-flight per-note fetches, and otherwise coalesces
+   *  concurrent callers into one batched REQ. Never fires a per-note
+   *  4-subscription fetch for non-article ids. */
+  ensureStatsBatched(noteId: string): Promise<void>;
   updateCachedStats(noteId: string, updates: Partial<InteractionStats>): void;
   clearCache(noteId: string): void;
   startLiveReactions(

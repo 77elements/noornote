@@ -17,9 +17,8 @@ import type { ViewType } from './ViewNavigationController';
 import type { View } from '../components/views/View';
 import { TypedEventBus } from '../core/TypedEventBus';
 import { UserProfileService } from './UserProfileService';
-import { NostrTransport } from './transport/NostrTransport';
+import { NoteService } from './NoteService';
 import { getSccDefaultTab } from '../helpers/sccDefaultTab';
-import { RelayConfig } from './RelayConfig';
 import { decodeNip19 } from './NostrToolsAdapter';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
@@ -40,14 +39,10 @@ export class ViewTabManager {
   private activeTabId: string | null = null;
   private eventBus: TypedEventBus;
   private userProfileService: UserProfileService;
-  private transport: NostrTransport;
-  private relayConfig: RelayConfig;
 
   private constructor() {
     this.eventBus = TypedEventBus.getInstance();
     this.userProfileService = UserProfileService.getInstance();
-    this.transport = NostrTransport.getInstance();
-    this.relayConfig = RelayConfig.getInstance();
   }
 
   public static getInstance(): ViewTabManager {
@@ -403,22 +398,13 @@ export class ViewTabManager {
   }
 
   /**
-   * Fetch note event by ID
+   * Fetch note event by ID — cache-first via NoteService (LRU + concurrent
+   * in-flight dedup + one batched ids:[...] REQ over read+aggregator relays),
+   * so repeated tab builds for the same note cost zero REQs.
    */
   private async fetchNoteEvent(hexId: string): Promise<NostrEvent | null> {
-    const readRelays = this.relayConfig.getReadRelays();
-
     try {
-      const events = await this.transport.fetch(
-        readRelays,
-        [{ ids: [hexId] }],
-        5000, // 5s timeout
-        false,
-        'ViewTabManager'
-      );
-
-      const firstEvent = events[0];
-      return firstEvent !== undefined ? firstEvent : null;
+      return await NoteService.getInstance().getNote(hexId);
     } catch (error) {
       console.debug('Failed to fetch note event:', error);
       return null;

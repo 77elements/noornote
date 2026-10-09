@@ -363,6 +363,102 @@ export class ReactionsOrchestrator extends Orchestrator {
     }
   }
 
+  // ── Micro-batch queue for per-note state checks ─────────────────────────
+  // The ISL like/repost icon state (hasUserLiked / hasUserReposted) used to
+  // call getDetailedStats per mounted card — the "every mounted note fires a
+  // reactions REQ to every read relay" anti-pattern relays ban for (200
+  // REQ/10s per-IP caps). ensureStatsBatched coalesces concurrent checks
+  // within a 75ms window into ONE batchFetchStats round-trip (5 #e-filters
+  // in a single REQ for up to 50 ids), shares in-flight per-note fetches
+  // (SNV), and resolves instantly off fresh cache. Timelines, notifications
+  // and bookmark lists all funnel through here.
+
+  private stateCheckQueue: Array<{ noteId: string; resolve: () => void }> = [];
+  private queuedStateChecks: Map<string, Promise<void>> = new Map();
+  private stateCheckTimer: ReturnType<typeof setTimeout> | null = null;
+  private static readonly STATE_CHECK_DEBOUNCE_MS = 75;
+  private static readonly STATE_CHECK_CHUNK_SIZE = 50;
+
+  /**
+   * Ensure detailed stats exist for a note WITHOUT the per-note
+   * 4-subscription fetch. Cache hit (fresh) resolves immediately; an
+   * in-flight per-note fetch is shared; everything else joins the current
+   * micro-batch window. Articles (addressable ids) can't batch (#a-filters)
+   * and fall through to the regular per-note path.
+   */
+  public ensureStatsBatched(noteId: string): Promise<void> {
+    if (!this.isValidNoteId(noteId)) return Promise.resolve();
+
+    const cached = this.detailedStatsCache.get(noteId);
+    if (cached && Date.now() - cached.lastUpdated < this.cacheDuration) {
+      return Promise.resolve();
+    }
+
+    // An in-flight per-note fetch (SNV etc.) fills the cache — share it
+    // instead of racing a batch REQ against it.
+    const inflight = this.fetchingDetailedStats.get(noteId);
+    if (inflight) return inflight.then(() => undefined);
+
+    if (this.isLongFormArticle(noteId)) {
+      return this.getDetailedStats(
+        noteId,
+        this.articleEventIdCache.get(noteId)
+      ).then(() => undefined);
+    }
+
+    const existing = this.queuedStateChecks.get(noteId);
+    if (existing) return existing;
+
+    const promise = new Promise<void>(resolve => {
+      this.stateCheckQueue.push({ noteId, resolve });
+    });
+    this.queuedStateChecks.set(noteId, promise);
+
+    if (this.stateCheckTimer === null) {
+      this.stateCheckTimer = setTimeout(() => {
+        void this.flushStateCheckQueue();
+      }, ReactionsOrchestrator.STATE_CHECK_DEBOUNCE_MS);
+    }
+
+    return promise;
+  }
+
+  /** Drain the micro-batch window into chunked batchFetchStats calls. */
+  private async flushStateCheckQueue(): Promise<void> {
+    this.stateCheckTimer = null;
+    const entries = this.stateCheckQueue.splice(0);
+    this.queuedStateChecks.clear();
+    if (entries.length === 0) return;
+
+    // Ids that grew an in-flight per-note fetch while queued: share that
+    // fetch instead of double-fetching them in the batch.
+    const batchIds: string[] = [];
+    const inflightWaits: Promise<void>[] = [];
+    for (const { noteId } of entries) {
+      const inflight = this.fetchingDetailedStats.get(noteId);
+      if (inflight) inflightWaits.push(inflight.then(() => undefined));
+      else batchIds.push(noteId);
+    }
+
+    try {
+      for (
+        let i = 0;
+        i < batchIds.length;
+        i += ReactionsOrchestrator.STATE_CHECK_CHUNK_SIZE
+      ) {
+        await this.batchFetchStats(
+          batchIds.slice(i, i + ReactionsOrchestrator.STATE_CHECK_CHUNK_SIZE)
+        );
+      }
+      await Promise.all(inflightWaits);
+    } catch {
+      // Batch failure resolves the waiters anyway — the state check then
+      // reads whatever cache exists and defaults to "not interacted".
+    } finally {
+      entries.forEach(entry => entry.resolve());
+    }
+  }
+
   /**
    * Reset fetch counter (called when entering SNV)
    */
@@ -590,6 +686,59 @@ export class ReactionsOrchestrator extends Orchestrator {
   }
 
   /**
+   * One-shot subscription that closes on the FIRST EOSE (or on the timeout).
+   * Relay-friendly: the previous pattern only closed on the timeout path, so
+   * every stats fetch leaked one open subscription per relay until the next
+   * page reload. Closing on first EOSE is result-neutral — events arriving
+   * after the first relay's EOSE already never made it into the resolved
+   * buckets (the sweep + cache write run synchronously after the await).
+   */
+  private subscribeUntilEose<T>(
+    relays: string[],
+    filters: NDKFilter[],
+    onEvent: (event: NostrEvent) => void,
+    timeoutMs: number,
+    getResult: () => T
+  ): Promise<T> {
+    return new Promise(resolve => {
+      let settled = false;
+      let closer: { close: () => void } | null = null;
+      let timeout: ReturnType<typeof setTimeout> | undefined;
+
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        if (timeout) clearTimeout(timeout);
+        try {
+          closer?.close();
+        } catch {
+          /* ignore */
+        }
+        resolve(getResult());
+      };
+
+      void this.transport
+        .subscribe(relays, filters, {
+          onEvent,
+          onEose: () => finish(),
+        })
+        .then(sub => {
+          if (settled) {
+            try {
+              sub.close();
+            } catch {
+              /* ignore */
+            }
+            return;
+          }
+          closer = sub;
+          timeout = setTimeout(finish, timeoutMs);
+        })
+        .catch(() => finish());
+    });
+  }
+
+  /**
    * Fetch reaction events (kind 7) - returns full events for Analytics Modal
    * Per NIP-25: ALL content values are valid (emojis, +, -, custom emoji)
    *
@@ -605,30 +754,20 @@ export class ReactionsOrchestrator extends Orchestrator {
     const relays = await this.getReactionFetchRelays();
     const filters = this.buildFilters([7], noteId, articleEventId);
 
-    return new Promise(resolve => {
-      let timeout: ReturnType<typeof setTimeout>;
-      void this.transport
-        .subscribe(relays, filters, {
-          onEvent: (event: NostrEvent) => {
-            // Only store one reaction per author (latest one)
-            // Accept ALL reactions per NIP-25 (any emoji or content value)
-            if (!seenAuthors.has(event.pubkey)) {
-              reactions.push(event);
-              seenAuthors.add(event.pubkey);
-            }
-          },
-          onEose: () => {
-            clearTimeout(timeout);
-            resolve(reactions);
-          },
-        })
-        .then(sub => {
-          timeout = setTimeout(() => {
-            sub.close();
-            resolve(reactions);
-          }, 5000);
-        });
-    });
+    return this.subscribeUntilEose(
+      relays,
+      filters,
+      (event: NostrEvent) => {
+        // Only store one reaction per author (latest one)
+        // Accept ALL reactions per NIP-25 (any emoji or content value)
+        if (!seenAuthors.has(event.pubkey)) {
+          reactions.push(event);
+          seenAuthors.add(event.pubkey);
+        }
+      },
+      5000,
+      () => reactions
+    );
   }
 
   /**
@@ -687,28 +826,18 @@ export class ReactionsOrchestrator extends Orchestrator {
     const seen = new Set<string>();
     const filters: NDKFilter[] = [{ kinds: [7], '#e': eventIds }];
 
-    return new Promise(resolve => {
-      let timeout: ReturnType<typeof setTimeout>;
-      void this.transport
-        .subscribe(relays, filters, {
-          onEvent: (event: NostrEvent) => {
-            if (event.id && !seen.has(event.id)) {
-              seen.add(event.id);
-              results.push(event);
-            }
-          },
-          onEose: () => {
-            clearTimeout(timeout);
-            resolve(results);
-          },
-        })
-        .then(sub => {
-          timeout = setTimeout(() => {
-            sub.close();
-            resolve(results);
-          }, 5000);
-        });
-    });
+    return this.subscribeUntilEose(
+      relays,
+      filters,
+      (event: NostrEvent) => {
+        if (event.id && !seen.has(event.id)) {
+          seen.add(event.id);
+          results.push(event);
+        }
+      },
+      5000,
+      () => results
+    );
   }
 
   /**
@@ -747,35 +876,25 @@ export class ReactionsOrchestrator extends Orchestrator {
       filters.push({ kinds: [1], '#q': [noteId] });
     }
 
-    return new Promise(resolve => {
-      let timeout: ReturnType<typeof setTimeout>;
-      void this.transport
-        .subscribe(relays, filters, {
-          onEvent: (event: NostrEvent) => {
-            if (event.kind === 6 || event.kind === 16) {
-              if (!regularAuthors.has(event.pubkey)) {
-                regularAuthors.add(event.pubkey);
-                regular.push(event);
-              }
-            } else if (event.kind === 1) {
-              if (!quotedAuthors.has(event.pubkey)) {
-                quotedAuthors.add(event.pubkey);
-                quoted.push(event);
-              }
-            }
-          },
-          onEose: () => {
-            clearTimeout(timeout);
-            resolve({ regular, quoted });
-          },
-        })
-        .then(sub => {
-          timeout = setTimeout(() => {
-            sub.close();
-            resolve({ regular, quoted });
-          }, 5000);
-        });
-    });
+    return this.subscribeUntilEose(
+      relays,
+      filters,
+      (event: NostrEvent) => {
+        if (event.kind === 6 || event.kind === 16) {
+          if (!regularAuthors.has(event.pubkey)) {
+            regularAuthors.add(event.pubkey);
+            regular.push(event);
+          }
+        } else if (event.kind === 1) {
+          if (!quotedAuthors.has(event.pubkey)) {
+            quotedAuthors.add(event.pubkey);
+            quoted.push(event);
+          }
+        }
+      },
+      5000,
+      () => ({ regular, quoted })
+    );
   }
 
   /**
@@ -804,44 +923,34 @@ export class ReactionsOrchestrator extends Orchestrator {
     // would only show direct replies.
     const filters = this.buildReplyFilters([1, 1111], noteId, articleEventId);
 
-    return new Promise(resolve => {
-      let timeout: ReturnType<typeof setTimeout>;
-      void this.transport
-        .subscribe(relays, filters, {
-          onEvent: (event: NostrEvent) => {
-            if (!event.id || seenReplyIds.has(event.id)) return;
+    return this.subscribeUntilEose(
+      relays,
+      filters,
+      (event: NostrEvent) => {
+        if (!event.id || seenReplyIds.has(event.id)) return;
 
-            // Verify the event actually references our note. Accept both lowercase
-            // (parent — direct reply) and uppercase (root — nested NIP-22 reply) tags.
-            const referencesNote = isArticle
-              ? event.tags.some(
-                  tag =>
-                    ((tag[0] === 'a' || tag[0] === 'A') && tag[1] === noteId) ||
-                    (articleEventId &&
-                      (tag[0] === 'e' || tag[0] === 'E') &&
-                      tag[1] === articleEventId)
-                )
-              : event.tags.some(
-                  tag => (tag[0] === 'e' || tag[0] === 'E') && tag[1] === noteId
-                );
+        // Verify the event actually references our note. Accept both lowercase
+        // (parent — direct reply) and uppercase (root — nested NIP-22 reply) tags.
+        const referencesNote = isArticle
+          ? event.tags.some(
+              tag =>
+                ((tag[0] === 'a' || tag[0] === 'A') && tag[1] === noteId) ||
+                (articleEventId &&
+                  (tag[0] === 'e' || tag[0] === 'E') &&
+                  tag[1] === articleEventId)
+            )
+          : event.tags.some(
+              tag => (tag[0] === 'e' || tag[0] === 'E') && tag[1] === noteId
+            );
 
-            if (referencesNote) {
-              replies.push(event);
-              seenReplyIds.add(event.id);
-            }
-          },
-          onEose: () => {
-            clearTimeout(timeout);
-            resolve(replies);
-          },
-        })
-        .then(sub => {
-          timeout = setTimeout(() => {
-            sub.close();
-            resolve(replies);
-          }, 5000);
-        });
-    });
+        if (referencesNote) {
+          replies.push(event);
+          seenReplyIds.add(event.id);
+        }
+      },
+      5000,
+      () => replies
+    );
   }
 
   /**
@@ -859,31 +968,21 @@ export class ReactionsOrchestrator extends Orchestrator {
     const relays = await this.getReactionFetchRelays();
     const filters = this.buildFilters([9735], noteId, articleEventId);
 
-    return new Promise(resolve => {
-      let timeout: ReturnType<typeof setTimeout>;
-      void this.transport
-        .subscribe(relays, filters, {
-          onEvent: (event: NostrEvent) => {
-            if (!event.id || seenZapIds.has(event.id)) return;
+    return this.subscribeUntilEose(
+      relays,
+      filters,
+      (event: NostrEvent) => {
+        if (!event.id || seenZapIds.has(event.id)) return;
 
-            const bolt11Tag = event.tags.find(tag => tag[0] === 'bolt11');
-            if (bolt11Tag?.[1]) {
-              zaps.push(event);
-              seenZapIds.add(event.id);
-            }
-          },
-          onEose: () => {
-            clearTimeout(timeout);
-            resolve(zaps);
-          },
-        })
-        .then(sub => {
-          timeout = setTimeout(() => {
-            sub.close();
-            resolve(zaps);
-          }, 8000);
-        });
-    });
+        const bolt11Tag = event.tags.find(tag => tag[0] === 'bolt11');
+        if (bolt11Tag?.[1]) {
+          zaps.push(event);
+          seenZapIds.add(event.id);
+        }
+      },
+      8000,
+      () => zaps
+    );
   }
 
   /**
@@ -949,34 +1048,57 @@ export class ReactionsOrchestrator extends Orchestrator {
 
     await new Promise<void>(resolve => {
       const timeout = setTimeout(resolve, 8000);
-      void this.transport.subscribe(relays, filters, {
-        onEvent: (event: NostrEvent) => {
-          // Block filter — deleted interactions never re-enter the buckets
-          if (event.id && this.blockedInteractionIds.has(event.id)) return;
-          const qTag = event.tags.find(
-            tag => tag[0] === 'q' && collectors.has(tag[1]!)
-          );
-          if (qTag) {
-            collectors.get(qTag[1]!)!.quotedEvents.push(event);
+      let settled = false;
+      let closer: { close: () => void } | null = null;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        try {
+          closer?.close();
+        } catch {
+          /* ignore */
+        }
+        resolve();
+      };
+      void this.transport
+        .subscribe(relays, filters, {
+          onEvent: (event: NostrEvent) => {
+            // Block filter — deleted interactions never re-enter the buckets
+            if (event.id && this.blockedInteractionIds.has(event.id)) return;
+            const qTag = event.tags.find(
+              tag => tag[0] === 'q' && collectors.has(tag[1]!)
+            );
+            if (qTag) {
+              collectors.get(qTag[1]!)!.quotedEvents.push(event);
+              return;
+            }
+            const eTag = event.tags.find(
+              tag => tag[0] === 'e' && collectors.has(tag[1]!)
+            );
+            if (!eTag) return;
+            const stats = collectors.get(eTag[1]!)!;
+            if (event.kind === 7) stats.reactionEvents.push(event);
+            else if (event.kind === 6 || event.kind === 16)
+              stats.repostEvents.push(event);
+            else if (event.kind === 1 || event.kind === 1111)
+              stats.replyEvents.push(event);
+            else if (event.kind === 9735) stats.zapEvents.push(event);
+          },
+          onEose: () => finish(),
+        })
+        .then(sub => {
+          if (settled) {
+            try {
+              sub.close();
+            } catch {
+              /* ignore */
+            }
             return;
           }
-          const eTag = event.tags.find(
-            tag => tag[0] === 'e' && collectors.has(tag[1]!)
-          );
-          if (!eTag) return;
-          const stats = collectors.get(eTag[1]!)!;
-          if (event.kind === 7) stats.reactionEvents.push(event);
-          else if (event.kind === 6 || event.kind === 16)
-            stats.repostEvents.push(event);
-          else if (event.kind === 1 || event.kind === 1111)
-            stats.replyEvents.push(event);
-          else if (event.kind === 9735) stats.zapEvents.push(event);
-        },
-        onEose: () => {
-          clearTimeout(timeout);
-          resolve();
-        },
-      });
+          closer = sub;
+        })
+        .catch(finish);
     });
 
     // Remote NIP-09 deletions: sweep the collected interactions so timeline
@@ -1624,6 +1746,17 @@ export class ReactionsOrchestrator extends Orchestrator {
 
     this.detailedStatsCache.clear();
     this.fetchingDetailedStats.clear();
+
+    // Micro-batch queue: resolve waiters (they read empty/default state) and
+    // clear the pending timer so nothing fires post-destroy.
+    if (this.stateCheckTimer !== null) {
+      clearTimeout(this.stateCheckTimer);
+      this.stateCheckTimer = null;
+    }
+    this.stateCheckQueue.forEach(entry => entry.resolve());
+    this.stateCheckQueue = [];
+    this.queuedStateChecks.clear();
+
     this.authorPubkeyCache.clear();
     this.articleEventIdCache.clear();
     super.destroy();
