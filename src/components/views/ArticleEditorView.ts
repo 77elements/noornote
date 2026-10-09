@@ -61,6 +61,15 @@ import { ContentProcessor } from '../../services/ContentProcessor';
 import { QuotedNoteRenderer } from '../ui/note-rendering/QuotedNoteRenderer';
 import { ArticlePreviewRenderer } from '../ui/note-rendering/ArticlePreviewRenderer';
 import { isScheduledPostsEnabled } from '../../addons/scheduled-posts/index';
+import { Switch } from '../ui/Switch';
+import { ToastService } from '../../services/ToastService';
+import { diagLog } from '../../services/DiagnosticLogger';
+import {
+  RECIPE_DISCOVERY_TAG,
+  RECIPE_TEMPLATE_MARKDOWN,
+  RECIPE_TOPIC_SUGGESTIONS,
+  missingRecipeSections,
+} from '../../helpers/recipeTemplate';
 
 type TabMode = 'edit' | 'preview';
 
@@ -111,6 +120,10 @@ export class ArticleEditorView extends View {
   private isDraftMode: boolean = false;
   private editPubkey: string = '';
   private publishedAt: number | null = null;
+  // Recipe mode (zap.cooking-compatible recipe article): injects the
+  // discovery tag on publish and offers the recipe Markdown template.
+  private isRecipeMode: boolean = false;
+  private recipeSwitch: Switch | null = null;
   private fullscreenOverlay: FullscreenOverlay | null = null;
   private previewQuotedRefs: QuotedReference[] = [];
 
@@ -408,6 +421,37 @@ export class ArticleEditorView extends View {
               />
             </div>
 
+            <div class="article-editor__recipe" data-recipe-block>
+              <div data-recipe-switch></div>
+              <p class="form__note">
+                Publish as a recipe: adds the <code>zapcooking</code> tag so
+                recipe clients list this article. Content should follow the
+                recipe template (Details / Ingredients / Directions).
+              </p>
+              <div class="l-row--right">
+                <button
+                  type="button"
+                  class="btn btn--passive btn--mini"
+                  data-action="insert-recipe-template"
+                  disabled
+                >
+                  Insert recipe template
+                </button>
+              </div>
+              <div class="article-editor__recipe-tags" data-recipe-tags hidden>
+                <span class="article-editor__recipe-tags-label">
+                  Discovery tags
+                  <span class="form__note">(click to add to Tags)</span>
+                </span>
+                <div class="article-editor__recipe-chips" data-recipe-chips>
+                  ${RECIPE_TOPIC_SUGGESTIONS.map(
+                    tag =>
+                      `<button type="button" class="btn btn--mini btn--secondary" data-recipe-topic="${escapeHtmlAttr(tag)}">${escapeHtml(tag)}</button>`
+                  ).join('')}
+                </div>
+              </div>
+            </div>
+
             <div class="form__row">
               <label>
                 Published at
@@ -549,6 +593,9 @@ export class ArticleEditorView extends View {
 
     // Field inputs
     this.setupFieldListeners();
+
+    // Recipe mode (zap.cooking-compatible recipe article)
+    this.setupRecipeMode();
 
     // Paste-to-upload into the article body.
     const pasteTarget = this.container.querySelector(
@@ -755,6 +802,106 @@ export class ArticleEditorView extends View {
   }
 
   /**
+   * Recipe mode: switch, template-insert button and discovery-tag chips.
+   * Publishing itself only injects the tag (see submitArticle).
+   */
+  private setupRecipeMode(): void {
+    const host = this.container.querySelector(
+      '[data-recipe-switch]'
+    ) as HTMLElement | null;
+    const insertBtn = this.container.querySelector(
+      '[data-action="insert-recipe-template"]'
+    ) as HTMLButtonElement | null;
+    const tagsBlock = this.container.querySelector(
+      '[data-recipe-tags]'
+    ) as HTMLElement | null;
+    if (!host) return;
+
+    this.recipeSwitch = new Switch({
+      label: 'Recipe (zap.cooking)',
+      checked: this.isRecipeMode,
+      onChange: checked => {
+        this.isRecipeMode = checked;
+        if (insertBtn) insertBtn.disabled = !checked;
+        // Discovery tags only make sense in recipe mode — show/hide.
+        if (tagsBlock) tagsBlock.hidden = !checked;
+      },
+    });
+    host.innerHTML = this.recipeSwitch.render();
+    this.recipeSwitch.setupEventListeners(host);
+
+    insertBtn?.addEventListener('click', () => this.insertRecipeTemplate());
+
+    // Discovery-tag chips: append to the Tags field (single write path —
+    // set value + dispatch input so the field listener updates state).
+    const tagsInput = this.container.querySelector(
+      '[data-field="tags"]'
+    ) as HTMLInputElement | null;
+    const chips = this.container.querySelector('[data-recipe-chips]');
+    chips?.addEventListener('click', e => {
+      const btn = (e.target as HTMLElement).closest(
+        '[data-recipe-topic]'
+      ) as HTMLElement | null;
+      const tag = btn?.dataset.recipeTopic;
+      if (!tag || !tagsInput) return;
+      const current = tagsInput.value
+        .split(',')
+        .map(t => t.trim())
+        .filter(Boolean);
+      if (current.some(t => t.toLowerCase() === tag.toLowerCase())) return;
+      tagsInput.value = [...current, tag].join(', ');
+      tagsInput.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+  }
+
+  /**
+   * Append the recipe Markdown skeleton (Details / Ingredients / Directions)
+   * to the article body at the cursor position.
+   */
+  private insertRecipeTemplate(): void {
+    const textarea = this.container.querySelector(
+      '.article-editor-content'
+    ) as HTMLTextAreaElement | null;
+    if (!textarea) return;
+
+    insertTextAtCursor(textarea, textarea.value, RECIPE_TEMPLATE_MARKDOWN);
+    // Keep state in sync — programmatic inserts don't fire input events.
+    this.content = textarea.value;
+  }
+
+  /**
+   * Recipe-mode extras at publish time: inject the discovery tag into the
+   * topic list and softly remind about what recipe clients expect
+   * (never blocks — the article is valid NIP-23 either way).
+   */
+  private applyRecipeMode(topics: string[], isDraft: boolean): void {
+    if (!this.isRecipeMode) return;
+
+    if (!topics.some(t => t.toLowerCase() === RECIPE_DISCOVERY_TAG)) {
+      topics.push(RECIPE_DISCOVERY_TAG);
+    }
+
+    if (isDraft) return;
+    diagLog('system', 'Publishing article as recipe', {
+      identifier: this.identifier,
+      topics: topics.length,
+    });
+    if (!this.image) {
+      ToastService.show(
+        'Recipe hint: add a cover image — recipe clients expect one.',
+        'warning'
+      );
+    }
+    const missing = missingRecipeSections(this.content);
+    if (missing.length > 0) {
+      ToastService.show(
+        `Recipe hint: add a ${missing.join(' and ')} section so recipe clients can parse it.`,
+        'warning'
+      );
+    }
+  }
+
+  /**
    * Setup field input listeners
    */
   private setupFieldListeners(): void {
@@ -949,6 +1096,8 @@ export class ArticleEditorView extends View {
         '../../addons/scheduled-posts/scheduleArticle'
       );
 
+      this.applyRecipeMode(topics, false);
+
       const naddr = await scheduleArticle({
         title: this.title,
         content: this.content,
@@ -1029,6 +1178,7 @@ export class ArticleEditorView extends View {
         .split(',')
         .map(t => t.trim())
         .filter(Boolean);
+      this.applyRecipeMode(topics, isDraft);
 
       const articleData: ArticleOptions = {
         title: this.title,

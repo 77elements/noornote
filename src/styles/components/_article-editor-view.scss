@@ -187,6 +187,36 @@
       flex: 1;
     }
   }
+
+  // Recipe mode (zap.cooking-compatible recipe article): switch, template
+  // insert and discovery-tag chips below the Tags field.
+  &__recipe {
+    margin-top: $gap;
+    padding-top: $gap;
+    border-top: 1px solid var(--color-2);
+
+    .form__note {
+      margin-top: calc($gap / 4);
+    }
+  }
+
+  &__recipe-tags {
+    margin-top: $gap;
+  }
+
+  &__recipe-tags-label {
+    display: block;
+    margin-bottom: calc($gap / 2);
+    color: var(--color-4);
+  }
+
+  // Chip row: buttons flow inline and wrap like words (natural document
+  // flow — grid auto-fill can't wrap intrinsic-size tracks, flex is banned).
+  &__recipe-chips {
+    .btn {
+      margin: 0 calc($gap / 2) calc($gap / 2) 0;
+    }
+  }
 }
 
 // Distraction-free focus mode overlay — a plain fullscreen layer
