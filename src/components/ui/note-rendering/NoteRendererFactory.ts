@@ -12,6 +12,7 @@ import { ZapReceiptRenderer } from './ZapReceiptRenderer';
 import { UnsupportedKindRenderer } from './UnsupportedKindRenderer';
 import { FollowPackRenderer } from './FollowPackRenderer';
 import { CurationSetRenderer } from './CurationSetRenderer';
+import { ReactionFeedRenderer } from './ReactionFeedRenderer';
 import { GitEventRenderer } from './GitEventRenderer';
 import { HighlightRenderer } from './HighlightRenderer';
 import { PodcastEpisodeRenderer } from './PodcastEpisodeRenderer';
@@ -42,6 +43,8 @@ export class NoteRendererFactory {
         return FollowPackRenderer.render(note, options);
       case 'curation-set':
         return CurationSetRenderer.render(note, options);
+      case 'reaction':
+        return ReactionFeedRenderer.render(note, options);
       case 'git-event':
         return GitEventRenderer.render(note, options);
       case 'highlight':

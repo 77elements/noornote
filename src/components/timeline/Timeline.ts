@@ -135,6 +135,8 @@ export class Timeline extends View {
   private hideSelfRepostsSubscriptionId?: string;
 
   private hideHighlightsSubscriptionId?: string;
+
+  private showReactionsSubscriptionId?: string;
   private noteDeletedSubscriptionId?: string;
   private pullRefreshSubscriptionId?: string;
   private marketplaceToggleSubId?: string;
@@ -316,6 +318,15 @@ export class Timeline extends View {
     // (global switch in Settings → UI, or per-user checkbox in ProfileView)
     this.hideHighlightsSubscriptionId = this.eventBus.on(
       'settings:hide-highlights-changed',
+      async () => {
+        await this.eventHandler.handleRefreshClick();
+      }
+    );
+
+    // Re-fetch when the show-reactions setting is toggled
+    // (global switch in Settings → UI, or per-user checkbox in ProfileView)
+    this.showReactionsSubscriptionId = this.eventBus.on(
+      'settings:show-reactions-changed',
       async () => {
         await this.eventHandler.handleRefreshClick();
       }
@@ -905,6 +916,9 @@ export class Timeline extends View {
     }
     if (this.hideHighlightsSubscriptionId) {
       this.eventBus.off(this.hideHighlightsSubscriptionId);
+    }
+    if (this.showReactionsSubscriptionId) {
+      this.eventBus.off(this.showReactionsSubscriptionId);
     }
     if (this.noteDeletedSubscriptionId) {
       this.eventBus.off(this.noteDeletedSubscriptionId);

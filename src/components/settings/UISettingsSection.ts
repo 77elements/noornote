@@ -7,6 +7,10 @@
  */
 
 import { SettingsSection } from './SettingsSection';
+import {
+  isShowReactionsEnabled,
+  setShowReactionsEnabled,
+} from '../../helpers/reactionsFeedSetting';
 import { Switch } from '../ui/Switch';
 import { NnDropdown } from '../ui/NnDropdown';
 import { ThemeSwitcher } from '../ui/ThemeSwitcher';
@@ -160,6 +164,16 @@ export class UISettingsSection extends SettingsSection {
             <div class="setting__control" id="classic-menu-switch-container"></div>
             <p class="setting__desc">
               Bring back the old, linear navigation.
+            </p>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="setting">
+            <span class="setting__label">Show reactions</span>
+            <div class="setting__control" id="show-reactions-switch-container"></div>
+            <p class="setting__desc">
+              Show the reactions (likes) of people you follow as entries in your timeline. Off by default. Individual users can be enabled from their profile.
             </p>
           </div>
         </section>
@@ -494,6 +508,33 @@ export class UISettingsSection extends SettingsSection {
       this.hideHighlightsSwitch.setupEventListeners(
         hideHighlightsContainer as HTMLElement
       );
+
+      // Initialize Show-Reactions switch (TV feed entries for followed users)
+      const showReactionsContainer = contentContainer.querySelector(
+        '#show-reactions-switch-container'
+      );
+      if (showReactionsContainer) {
+        const showReactionsSwitch = new Switch({
+          label: '',
+          checked: isShowReactionsEnabled(),
+          onChange: checked => {
+            setShowReactionsEnabled(checked);
+            this.eventBus.emit('settings:show-reactions-changed', {
+              shown: checked,
+            });
+            ToastService.show(
+              checked
+                ? 'Reactions from people you follow now appear in your timeline'
+                : 'Reactions hidden from your timeline again',
+              'success'
+            );
+          },
+        });
+        showReactionsContainer.innerHTML = showReactionsSwitch.render();
+        showReactionsSwitch.setupEventListeners(
+          showReactionsContainer as HTMLElement
+        );
+      }
     }
 
     // Initialize SCC Article Excerpt Limit input

@@ -14,6 +14,10 @@
  */
 
 import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
+import {
+  isReactionShownFrom,
+  shouldFetchReactions,
+} from '../../helpers/reactionsFeedSetting';
 import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
 import { OutboundRelaysOrchestrator } from './OutboundRelaysOrchestrator';
@@ -63,6 +67,19 @@ const FEED_KINDS: number[] = [
   1, 6, 16, 20, 21, 22, 1063, 1068, 1617, 1618, 1619, 1621, 1630, 1631, 1632,
   1633, 9802, 30617, 39089, 30030, 30311, 34235, 34236, 30004,
 ];
+
+/**
+ * Kinds for one feed fetch — kind 7 (reactions) joins only in the following
+ * feed and only when the show-reactions setting says so. The setting is read
+ * live (like hide-self-reposts / hide-highlights): the TV config is built
+ * once per view, so a captured flag would go stale until reboot.
+ */
+function feedKindsFor(
+  sourceKind: TimelineConfig['source']['kind'] | undefined
+): number[] {
+  const include = sourceKind === 'following' && shouldFetchReactions();
+  return include ? [...FEED_KINDS, 7] : FEED_KINDS;
+}
 
 export interface FeedLoadRequest {
   followingPubkeys: string[];
@@ -240,7 +257,7 @@ export class FeedOrchestrator extends Orchestrator {
         filters = [
           {
             authors: followingPubkeys,
-            kinds: FEED_KINDS,
+            kinds: feedKindsFor(request.config?.source.kind),
             limit: params.pageSize,
           },
         ];
@@ -253,7 +270,7 @@ export class FeedOrchestrator extends Orchestrator {
       } else if (isTimeRangeMode) {
         const filterObj: NDKFilter<number> = {
           authors: followingPubkeys,
-          kinds: FEED_KINDS,
+          kinds: feedKindsFor(request.config?.source.kind),
           limit: this.fetchLimit,
           since: explicitSince,
         };
@@ -278,7 +295,7 @@ export class FeedOrchestrator extends Orchestrator {
         filters = [
           {
             authors: followingPubkeys,
-            kinds: FEED_KINDS,
+            kinds: feedKindsFor(request.config?.source.kind),
             limit: params.pageSize,
             since: windowSince,
           },
@@ -530,7 +547,7 @@ export class FeedOrchestrator extends Orchestrator {
       const pureUntil = params.pagination === 'until' && !isTimeRangeMode;
       const filterObj: NDKFilter<number> = {
         authors: followingPubkeys,
-        kinds: FEED_KINDS,
+        kinds: feedKindsFor(request.config?.source.kind),
         until: until - 1,
         limit: pureUntil ? params.pageSize : 50,
       };
@@ -781,7 +798,7 @@ export class FeedOrchestrator extends Orchestrator {
     const pageSize = this.resolveFetchParams(request).pageSize;
     const baseFilter: NDKFilter<number> = {
       authors: pubkeys,
-      kinds: FEED_KINDS,
+      kinds: feedKindsFor(request.config?.source.kind),
       limit: pageSize,
     };
     const pvFilters: NDKFilter<number>[] = [baseFilter];
@@ -917,14 +934,17 @@ export class FeedOrchestrator extends Orchestrator {
    */
   private filterReplies(events: NostrEvent[]): NostrEvent[] {
     return events.filter(event => {
-      // Always allow reposts (kind 6), pictures (kind 20), videos (kind 21/22), polls (kind 1068)
+      // Always allow reposts (kind 6), pictures (kind 20), videos (kind 21/22),
+      // polls (kind 1068) and reactions (kind 7 — they wrap a target, they
+      // are not replies)
       if (
         event.kind === 6 ||
         event.kind === 16 ||
         event.kind === 20 ||
         event.kind === 1068 ||
         event.kind === 21 ||
-        event.kind === 22
+        event.kind === 22 ||
+        event.kind === 7
       )
         return true;
 
@@ -987,6 +1007,12 @@ export class FeedOrchestrator extends Orchestrator {
     // Same pipeline position as the mute/word filters, so all timeline
     // surfaces (TV, PV, tribes, relay-filter, time-machine) are covered.
     filteredEvents = this.filterHiddenHighlights(filteredEvents);
+
+    // Reactions (kind 7) enter the feed only via the show-reactions setting;
+    // with the global switch off, keep only per-user overridden authors.
+    filteredEvents = filteredEvents.filter(
+      e => e.kind !== 7 || isReactionShownFrom(e.pubkey)
+    );
 
     // Content word filter (addon) — gated by the config's explicit applyWordFilter
     // flag (false for ProfileView). No longer inferred from the mute exemption.
@@ -1497,7 +1523,7 @@ export class FeedOrchestrator extends Orchestrator {
       // Query for new notes since last check
       const filters: NDKFilter<number>[] = [
         {
-          kinds: FEED_KINDS, // Text notes + reposts + polls (NIP-88)
+          kinds: feedKindsFor('following'), // + kind-7 reactions when enabled
           authors: this.pollingFollowingPubkeys,
           since: this.lastCheckedTimestamp + 1,
           until: now,
@@ -1747,7 +1773,7 @@ export class FeedOrchestrator extends Orchestrator {
       for (const window of windows) {
         const filters: NDKFilter<number>[] = [
           {
-            kinds: FEED_KINDS,
+            kinds: feedKindsFor('following'),
             authors: followingPubkeys,
             since: window.since,
             until: window.until,

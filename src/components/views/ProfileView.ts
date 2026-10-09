@@ -7,6 +7,10 @@
 
 import { View } from './View';
 import {
+  isShowReactionsFor,
+  setShowReactionsFor,
+} from '../../helpers/reactionsFeedSetting';
+import {
   UserProfileService,
   type UserProfile,
 } from '../../services/UserProfileService';
@@ -952,6 +956,13 @@ export class ProfileView extends View {
       </label>
     `;
 
+    const showReactionsCheckbox = `
+      <label class="nn-checkbox" title="Show this user's reactions (likes) as entries in your timeline">
+        <input type="checkbox" id="reactions-toggle" ${isShowReactionsFor(this.pubkey) ? 'checked' : ''} />
+        <span>Show reactions</span>
+      </label>
+    `;
+
     const highlightsCheckbox = `
       <label class="nn-checkbox" title="Hide this user's website highlights and reposts of them from your timelines">
         <input type="checkbox" id="highlights-toggle" ${isHighlightHiddenFor(this.pubkey) ? 'checked' : ''} />
@@ -960,7 +971,11 @@ export class ProfileView extends View {
     `;
 
     return (
-      muteButton + softMuteButton + articleNotifCheckbox + highlightsCheckbox
+      muteButton +
+      softMuteButton +
+      articleNotifCheckbox +
+      showReactionsCheckbox +
+      highlightsCheckbox
     );
   }
 
@@ -1088,6 +1103,35 @@ export class ProfileView extends View {
           freshHighlights.checked
             ? "This user's highlights are now hidden"
             : "This user's highlights are shown again",
+          'success'
+        );
+      });
+    }
+
+    // Setup show-reactions toggle handler — shows this user's reactions
+    // (kind 7) as entries in your main timeline.
+    // Same clone-to-dedup pattern as the checkboxes above.
+    const reactionsCheckbox = this.container.querySelector(
+      '#reactions-toggle'
+    ) as HTMLInputElement;
+    if (reactionsCheckbox) {
+      const freshReactions = reactionsCheckbox.cloneNode(
+        true
+      ) as HTMLInputElement;
+      reactionsCheckbox.parentNode?.replaceChild(
+        freshReactions,
+        reactionsCheckbox
+      );
+      freshReactions.addEventListener('change', () => {
+        setShowReactionsFor(this.pubkey, freshReactions.checked);
+        this.eventBus.emit('settings:show-reactions-changed', {
+          shown: freshReactions.checked,
+          pubkey: this.pubkey,
+        });
+        ToastService.show(
+          freshReactions.checked
+            ? "This user's reactions now appear in your timeline"
+            : "This user's reactions are hidden from your timeline again",
           'success'
         );
       });

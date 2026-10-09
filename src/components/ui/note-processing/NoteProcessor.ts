@@ -25,6 +25,7 @@ import { LiveStreamProcessor } from './LiveStreamProcessor';
 import { ListingProcessor } from './ListingProcessor';
 import { PodcastEpisodeProcessor } from './PodcastEpisodeProcessor';
 import { CurationSetProcessor } from './CurationSetProcessor';
+import { ReactionFeedProcessor } from './ReactionFeedProcessor';
 import { CalendarEventProcessor } from './CalendarEventProcessor';
 
 export class NoteProcessor {
@@ -94,6 +95,9 @@ export class NoteProcessor {
         case 30004:
           // NIP-51 article curation set (e.g. Zap Cooking Recipe Packs).
           return CurationSetProcessor.process(event);
+        case 7:
+          // NIP-25 reaction as a feed entry (show-reactions setting).
+          return ReactionFeedProcessor.process(event);
         case 30402:
           return ListingProcessor.process(event);
         case 30311:

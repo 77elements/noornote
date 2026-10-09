@@ -440,6 +440,8 @@ export interface AppEvents {
   'settings:article-foaf-degree-changed': ArticleFoafDegreeChangedPayload;
   'settings:hide-self-reposts-changed': HideSelfRepostsChangedPayload;
   'settings:hide-highlights-changed': HideHighlightsChangedPayload;
+  /** Show-reactions setting flipped (global switch or per-user PV checkbox) — payload: { shown: boolean; pubkey?: string }. */
+  'settings:show-reactions-changed': { shown: boolean; pubkey?: string };
   /** Classic-Menu switch flipped — payload: { classic: boolean }. */
   'settings:nav-mode-changed': { classic: boolean };
 

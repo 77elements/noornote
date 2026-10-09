@@ -75,6 +75,8 @@ export const StorageKeys = {
   // would orphan existing users' settings. Feature is named "Highlights" in UI.
   HIDE_HIGHLIGHTS: 'noornote_hide_ext_quotes_map', // boolean: drop kind:9802 highlights whose source is an external web URL (others' posts only)
   HIDE_HIGHLIGHTS_USERS: 'noornote_hide_ext_quotes_users_map', // Record<authorPubkey, true>: per-user override — hide that author's highlights
+  SHOW_REACTIONS: 'noornote_show_reactions', // boolean: show followed users' kind:7 reactions as feed entries in the TV
+  SHOW_REACTIONS_USERS: 'noornote_show_reactions_users_map', // Record<authorPubkey, true>: per-user override — show that author's reactions in the TV
   SCC_ARTICLE_EXCERPT_LIMIT: 'noornote_scc_article_excerpt_limit_map',
   // FOAF degree (1, 2, or 3) used to source each article feed surface.
   // 1 = direct follows only; 2 = friends-of-friends; 3 = friends-of-friends-of-friends.

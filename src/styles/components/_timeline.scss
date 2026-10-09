@@ -460,3 +460,33 @@
     border-color: var(--color-4);
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// Reaction feed entries (kind 7 via show-reactions setting — see
+// helpers/reactionsFeedSetting.ts). Notification-style compact row.
+// ─────────────────────────────────────────────────────────────────────────
+.reaction-feed-entry {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: calc($gap / 2);
+  padding: $gap;
+
+  .reaction-feed-entry__avatar {
+    align-self: center;
+  }
+
+  .reaction-feed-entry__text {
+    @extend %small;
+    color: var(--color-3);
+    min-width: 0;
+
+    .reaction-feed-entry__target {
+      color: var(--color-5);
+    }
+
+    .reaction-feed-entry__emoji {
+      margin-left: calc($gap / 4);
+    }
+  }
+}
