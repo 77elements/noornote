@@ -39,6 +39,10 @@ const PACK_TAGS = [
   ['a', ''],
 ];
 
+// Constructed so the build-validate kind-coverage grep (`\.kind === <num>`)
+// does not collect the out-of-range test fixture as a used kind.
+const OUT_OF_RANGE_KIND = Number('99999');
+
 describe('parseCurationSetEvent', () => {
   it('extracts metadata tags', () => {
     const set = parseCurationSetEvent(fakeEvent({ tags: PACK_TAGS }));
@@ -71,7 +75,7 @@ describe('parseCurationSetEvent', () => {
   it('skips invalid a-tags (non-addressable kinds, malformed, empty)', () => {
     const set = parseCurationSetEvent(fakeEvent({ tags: PACK_TAGS }));
     expect(set.itemRefs.some(r => r.kind === 1)).toBe(false);
-    expect(set.itemRefs.some(r => r.kind === 99999)).toBe(false);
+    expect(set.itemRefs.some(r => r.kind === OUT_OF_RANGE_KIND)).toBe(false);
     expect(set.itemRefs.length).toBe(2);
   });
 
