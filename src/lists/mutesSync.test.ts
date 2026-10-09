@@ -23,7 +23,7 @@ function resetRelay(): void {
   cryptoStore.plaintexts.clear();
 }
 
-vi.mock('./relays', () => ({
+vi.mock('./relays', async () => ({
   getTransport: () => ({}),
   getReadRelays: () => [],
   getWriteRelays: () => relay.writeRelays,
@@ -33,39 +33,16 @@ vi.mock('./relays', () => ({
     if (relay.failFetch) throw new Error('relay down');
     return relay.muteEvents;
   },
-  publishEvent: async (event: {
-    kind: number;
-    tags: string[][];
-    content: string;
-  }) => {
-    relay.published.push(event);
-    return new Set(['wss://relay']);
-  },
-  signEvent: async (event: {
-    kind: number;
-    tags: string[][];
-    content: string;
-  }) => ({
-    ...event,
-    id: 'de'.repeat(32),
-    sig: 'ff'.repeat(64),
-  }),
-  encryptContent: async (plaintext: string) => {
-    const ct = `enc:${plaintext}`;
-    cryptoStore.plaintexts.set(ct, plaintext);
-    return ct;
-  },
-  decryptContent: async (ciphertext: string) =>
-    cryptoStore.plaintexts.get(ciphertext) ?? null,
+  ...(await import('./syncRelayTestMock')).makeSyncRelayMockTail(
+    relay,
+    cryptoStore
+  ),
 }));
 
-vi.mock('../services/AuthService', () => ({
-  AuthService: {
-    getInstance: () => ({
-      getCurrentUser: () => ({ pubkey: 'aa'.repeat(32) }),
-    }),
-  },
-}));
+vi.mock('../services/AuthService', async () => {
+  const { makeAuthServiceMock } = await import('./syncRelayTestMock');
+  return makeAuthServiceMock('aa'.repeat(32));
+});
 
 import {
   fetchFromRelays,

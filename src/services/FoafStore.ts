@@ -13,9 +13,9 @@
  * failure the caller simply rebuilds from relays like before.
  */
 
-import { AuthService } from './AuthService';
 import { diagLog } from './DiagnosticLogger';
-import { openDb, type NoorDatabase } from './persistence/NoorDB';
+import { PerAccountStoreDb } from './persistence/PerAccountStoreDb';
+import type { NoorDatabase } from './persistence/NoorDB';
 
 const DB_NAME_PREFIX = 'noornote-foaf-';
 const DB_VERSION = 1;
@@ -31,46 +31,10 @@ export interface FoafPersistedEntry {
 }
 
 class FoafStore {
-  private db: NoorDatabase | null = null;
-  private npub: string | null = null;
-  private initPromise: Promise<NoorDatabase | null> | null = null;
+  private storeDb = new PerAccountStoreDb(DB_NAME_PREFIX, DB_VERSION, STORE);
 
-  /** Open (or re-open for a different account) the per-user DB. Resolves null
-   *  on failure (no user, IndexedDB unavailable/blocked) — callers fall back
-   *  to the relay build path. */
   private async ensureDb(): Promise<NoorDatabase | null> {
-    const npub = AuthService.getInstance().getCurrentUser()?.npub;
-    if (!npub) return null;
-
-    if (this.db?.isOpen && this.npub === npub) return this.db;
-    if (this.db) {
-      // Different account — release the old connection; per-account DB naming
-      // already isolates the data itself.
-      this.db.close();
-      this.db = null;
-    }
-
-    if (this.initPromise && this.npub === npub) return this.initPromise;
-
-    this.npub = npub;
-    const openPromise = openDb(DB_NAME_PREFIX + npub, {
-      version: DB_VERSION,
-      stores: [{ name: STORE }],
-      bestEffort: true,
-    }).then(
-      db => {
-        this.db = db;
-        return db as NoorDatabase | null;
-      },
-      () => null
-    );
-    this.initPromise = openPromise;
-    // In-Flight-Cache nach Abschluss leeren, damit ein versionchange-Close
-    // beim nächsten Zugriff sauber neu öffnet (und ein Failed-Open retried).
-    void openPromise.then(() => {
-      if (this.initPromise === openPromise) this.initPromise = null;
-    });
-    return openPromise;
+    return this.storeDb.ensureDb();
   }
 
   /** Persist one degree's entry. Fire-and-forget, never rejects. */

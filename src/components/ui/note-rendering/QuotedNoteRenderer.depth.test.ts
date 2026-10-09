@@ -84,40 +84,33 @@ vi.mock('../../../components/ui/NoteHeader', () => ({
     destroy(): void {}
   },
 }));
-vi.mock('../../../components/ui/note-features/CollapsibleManager', () => ({
-  CollapsibleManager: {
-    setup: vi.fn(),
-    getInstance: () => ({ register: vi.fn(), unregister: vi.fn() }),
-  },
-}));
-vi.mock('./ArticlePreviewRenderer', () => ({
-  ArticlePreviewRenderer: {
-    getInstance: () => ({
-      renderFromEvent: vi.fn(),
-      renderArticlePreview: vi.fn(),
-    }),
-  },
-}));
-vi.mock('../../../services/orchestration/PollOrchestrator', () => ({
-  PollOrchestrator: { getInstance: () => ({ getPollData: vi.fn() }) },
-}));
-vi.mock('../../../lists/mutes', () => ({
-  MuteOrchestrator: {
-    getInstance: () => ({
-      isMuted: () => ({ public: false, private: false, any: false }),
-    }),
-  },
-  isUserMuted: () => ({ public: false, private: false, any: false }),
-}));
-vi.mock('../../../services/AuthService', () => ({
-  AuthService: {
-    getInstance: () => ({ getCurrentUser: () => ({ pubkey: 'a'.repeat(64) }) }),
-  },
-}));
-vi.mock('./DittoFeatureRenderer', () => ({
-  DittoFeatureRenderer: { render: vi.fn() },
-  DITTO_GEOCACHE_KIND: 30384,
-}));
+vi.mock('../../../components/ui/note-features/CollapsibleManager', async () => {
+  const { collapsibleManagerMock } = await import('../noteTestMocks');
+  return { CollapsibleManager: collapsibleManagerMock };
+});
+vi.mock('./ArticlePreviewRenderer', async () => {
+  const { articlePreviewRendererMock } = await import('../noteTestMocks');
+  return { ArticlePreviewRenderer: articlePreviewRendererMock };
+});
+vi.mock('../../../services/orchestration/PollOrchestrator', async () => {
+  const { pollOrchestratorMock } = await import('../noteTestMocks');
+  return { PollOrchestrator: pollOrchestratorMock };
+});
+vi.mock('../../../lists/mutes', async () => {
+  const { mutesMock } = await import('../noteTestMocks');
+  return mutesMock;
+});
+vi.mock('../../../services/AuthService', async () => {
+  const { authServiceMock64 } = await import('../noteTestMocks');
+  return { AuthService: authServiceMock64 };
+});
+vi.mock('./DittoFeatureRenderer', async () => {
+  const { dittoMock } = await import('../noteTestMocks');
+  return {
+    DittoFeatureRenderer: { render: dittoMock.render },
+    DITTO_GEOCACHE_KIND: dittoMock.DITTO_GEOCACHE_KIND,
+  };
+});
 vi.mock('./SatelliteSiteRenderer', () => ({
   SatelliteSiteRenderer: { render: vi.fn() },
   SATELLITE_SITE_KIND: 30442,

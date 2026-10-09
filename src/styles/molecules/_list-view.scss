@@ -20,32 +20,9 @@
     flex-shrink: 0;
   }
 
-  &__back {
-    display: none; // Hidden on phone (base)
-    flex-shrink: 0;
-    color: var(--color-4);
-
-    @include tablet {
-      display: inline-block; // Show from tablet up
-    }
-
-    svg {
-      display: block;
-    }
-  }
-
-  &__title {
-    @extend %h1;
-    font-weight: 600;
-    color: var(--color-5);
-    margin-bottom: 0;
-  }
+  @include list-page-scaffold;
 
   &__content {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    @include custom-scrollbar;
     padding: $gap;
 
     // List containers

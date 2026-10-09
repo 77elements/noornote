@@ -1,27 +1,18 @@
 /** @vitest-environment jsdom */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 const TEST_PK = 'aa'.repeat(32);
+import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
-vi.mock('./relays', () => ({
-  getTransport: () => ({}),
-  getReadRelays: () => [],
-  getWriteRelays: () => [],
-  getCurrentUserPubkey: () => TEST_PK,
-  requireAuth: () => ({ pubkey: TEST_PK }),
-  fetchEvents: async () => [],
-  publishEvent: async () => new Set<string>(),
-  signEvent: async () => null,
-  encryptContent: async () => '',
-  decryptContent: async () => '',
-}));
+vi.mock('./relays', async () => {
+  const { makeInertRelayMock } = await import('./syncRelayTestMock');
+  return makeInertRelayMock('aa'.repeat(32));
+});
 
-vi.mock('../services/AuthService', () => ({
-  AuthService: {
-    getInstance: () => ({ getCurrentUser: () => ({ pubkey: TEST_PK }) }),
-  },
-}));
+vi.mock('../services/AuthService', async () => {
+  const { makeAuthServiceMock } = await import('./syncRelayTestMock');
+  return makeAuthServiceMock('aa'.repeat(32));
+});
 
 import {
   getMuteItems,

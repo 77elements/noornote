@@ -59,28 +59,15 @@ vi.mock('../../../services/ViewNavigationController', () => ({
   getViewNavigationController: () => ({ openView }),
 }));
 
-vi.mock('../../../services/ContentProcessor', () => ({
-  ContentProcessor: {
-    getInstance: () => ({
-      processContentWithTags: (text: string) => ({
-        text,
-        html: text,
-        media: [],
-        links: [],
-        hashtags: [],
-        quotedReferences: [],
-        bolt11Invoices: [],
-      }),
-      getNonBlockingProfile: () => null,
-    }),
-  },
-}));
+vi.mock('../../../services/ContentProcessor', async () => {
+  const { contentProcessorMock } = await import('../noteTestMocks');
+  return { ContentProcessor: contentProcessorMock };
+});
 
-vi.mock('../../../services/UserProfileService', () => ({
-  UserProfileService: {
-    getInstance: () => ({ getUsername: () => null }),
-  },
-}));
+vi.mock('../../../services/UserProfileService', async () => {
+  const { userProfileServiceMock } = await import('../noteTestMocks');
+  return { UserProfileService: userProfileServiceMock };
+});
 
 vi.mock('../../../services/QuoteNoteFetcher', () => ({
   QuoteNoteFetcher: {

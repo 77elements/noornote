@@ -5,6 +5,7 @@
  */
 
 @use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
 @use 'sass:color';
 @use '../base/typography' as *;
 
@@ -56,38 +57,7 @@
 
 // Menu item
 .dropdown-menu-item {
-  display: flex;
-  align-items: center;
-  gap: calc($gap * 0.75);
-  width: 100%;
-  padding: calc($gap * 0.75) $gap;
-  background: transparent;
-  border: none;
-  border-radius: $radius-xl;
-  color: var(--color-5);
-  text-align: left;
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  svg {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-    opacity: 0.7;
-    transition: opacity 0.15s ease;
-  }
-
-  &:hover {
-    background: color-mix(in srgb, var(--color-2) 80%, white);
-
-    svg {
-      opacity: 1;
-    }
-  }
-
-  &:active {
-    transform: scale(0.98);
-  }
+  @include menu-item-base;
 
   // Danger variant
   &--danger {

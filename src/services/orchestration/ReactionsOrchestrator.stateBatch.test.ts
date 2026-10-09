@@ -22,33 +22,25 @@ vi.mock('../services/DiagnosticLogger', () => ({
   diagLog: vi.fn(),
 }));
 
-vi.mock('../SystemLogger', () => ({
-  SystemLogger: {
-    getInstance: () => ({
-      info: vi.fn(),
-      warn: vi.fn(),
-      error: vi.fn(),
-    }),
-  },
-}));
+vi.mock('../SystemLogger', async () => {
+  const { systemLoggerMock } = await import('./orchestratorTestMocks');
+  return systemLoggerMock;
+});
 
-vi.mock('../RelayConfig', () => ({
-  RelayConfig: {
-    getInstance: () => ({
-      getReadRelays: () => ['wss://relay.test'],
-      getAggregatorRelays: () => [],
-      getWriteRelays: () => ['wss://relay.test'],
-    }),
-  },
-}));
+vi.mock('../RelayConfig', async () => {
+  const { relayConfigMock } = await import('./orchestratorTestMocks');
+  return relayConfigMock;
+});
 
-vi.mock('../UserProfileService', () => ({
-  UserProfileService: { getInstance: () => ({}) },
-}));
+vi.mock('../UserProfileService', async () => {
+  const { userProfileMock } = await import('./orchestratorTestMocks');
+  return userProfileMock;
+});
 
-vi.mock('../../lists/mutes', () => ({
-  isUserMuted: () => ({ public: false, private: false, any: false }),
-}));
+vi.mock('../../lists/mutes', async () => {
+  const { mutesMock } = await import('./orchestratorTestMocks');
+  return mutesMock;
+});
 
 vi.mock('../security/SignatureVerificationService', () => ({
   SignatureVerificationService: {

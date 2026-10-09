@@ -11,7 +11,6 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { getAllFollowedPubkeys } from '../../../lists/follows';
 import { fetchEvents } from '../../../lists/relays';
-import { UserProfileService } from '../../../services/UserProfileService';
 import { Router } from '../../../services/Router';
 import { InfiniteScroll } from '../../ui/InfiniteScroll';
 import { encodeNaddr } from '../../../services/NostrToolsAdapter';
@@ -19,7 +18,7 @@ import { hexToNpub } from '../../../helpers/nip19';
 import { formatTimestamp } from '../../../helpers/formatTimestamp';
 import { escapeHtml, escapeHtmlAttr } from '../../../helpers/escapeHtml';
 import { getTag } from '../../../helpers/tagUtils';
-import { setupUserMentionHandlers } from '../../../helpers/UserMentionHelper';
+import { loadAuthorMention } from '../../../helpers/authorMention';
 import { diagLog } from '../../../services/DiagnosticLogger';
 import { RECIPE_DISCOVERY_TAG } from '../../../helpers/recipeTemplate';
 
@@ -30,7 +29,6 @@ export class SccRecipeFeed {
   private container: HTMLElement;
   private gridEl: HTMLElement;
   private infiniteScroll: InfiniteScroll;
-  private userProfileService: UserProfileService;
   private router: Router;
   private seenIds = new Set<string>();
   /** Coordinate (`kind:pubkey:d`) → newest event seen. Replaceable recipes
@@ -42,7 +40,6 @@ export class SccRecipeFeed {
 
   constructor(container: HTMLElement) {
     this.container = container;
-    this.userProfileService = UserProfileService.getInstance();
     this.router = Router.getInstance();
 
     this.gridEl = document.createElement('div');
@@ -215,27 +212,6 @@ export class SccRecipeFeed {
     card: HTMLElement,
     pubkey: string
   ): Promise<void> {
-    const authorEl = card.querySelector('.author');
-    if (!authorEl) return;
-
-    const npub = hexToNpub(pubkey) || pubkey;
-    try {
-      const profile = await this.userProfileService.getUserProfile(pubkey);
-      const username =
-        profile?.name || profile?.display_name || `${npub.slice(0, 12)}...`;
-      const picture = profile?.picture || '';
-
-      authorEl.innerHTML = `
-        <a href="/profile/${npub}" class="mention-link" data-profile-pubkey="${pubkey}">
-          <img class="profile-pic profile-pic--mini" src="${escapeHtmlAttr(picture)}" alt="" width="18" height="18" loading="lazy" decoding="async" />${escapeHtml(username)}</a>
-      `;
-    } catch {
-      authorEl.innerHTML = `
-        <a href="/profile/${npub}" class="mention-link" data-profile-pubkey="${pubkey}">
-          <img class="profile-pic profile-pic--mini" src="" alt="" width="18" height="18" loading="lazy" decoding="async" />${npub.slice(0, 12)}...</a>
-      `;
-    }
-
-    setupUserMentionHandlers(authorEl as HTMLElement);
+    await loadAuthorMention(card, pubkey);
   }
 }

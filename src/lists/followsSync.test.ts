@@ -68,13 +68,10 @@ vi.mock('./relays', () => ({
   decryptContent: async () => null,
 }));
 
-vi.mock('../services/AuthService', () => ({
-  AuthService: {
-    getInstance: () => ({
-      getCurrentUser: () => ({ pubkey: 'aa'.repeat(32) }),
-    }),
-  },
-}));
+vi.mock('../services/AuthService', async () => {
+  const { makeAuthServiceMock } = await import('./syncRelayTestMock');
+  return makeAuthServiceMock('aa'.repeat(32));
+});
 
 // The follow helpers dynamically import these — mock with a shared store.
 vi.mock('../helpers/encryptPrivateFollows', () => ({

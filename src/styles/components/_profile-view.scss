@@ -520,33 +520,7 @@
 }
 
 .mute-dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: calc($gap / 2);
-  width: 100%;
-  padding: calc($gap / 2) $gap;
-  background: transparent;
-  border: none;
-  color: var(--color-5);
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.2s ease;
-
-  &:first-child {
-    border-radius: $radius-xl $radius-xl 0 0;
-  }
-
-  &:last-child {
-    border-radius: 0 0 $radius-xl $radius-xl;
-  }
-
-  &:only-child {
-    border-radius: $radius-xl;
-  }
-
-  &:hover {
-    background: var(--color-2);
-  }
+  @include compact-dropdown-item;
 
   svg {
     flex-shrink: 0;

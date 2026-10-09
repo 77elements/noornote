@@ -22,12 +22,11 @@ import type {
 import { FoafService } from '../../services/foaf';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import type { ArticleFoafDegreeChangedPayload } from '../../core/events';
-import { UserProfileService } from '../../services/UserProfileService';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
 import { hexToNpub } from '../../helpers/nip19';
 import { formatTimestamp } from '../../helpers/formatTimestamp';
-import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
+import { loadAuthorMention } from '../../helpers/authorMention';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import {
   PerAccountLocalStorage,
@@ -69,7 +68,6 @@ const MAX_FOAF_AUTHORS_PER_SESSION = 500;
 export class ArticleTimeline {
   private readonly config: ArticleTimelineConfig;
   private readonly pageSize: number;
-  private readonly userProfileService = UserProfileService.getInstance();
 
   private element: HTMLElement;
   private articlesContainer: HTMLElement;
@@ -503,28 +501,7 @@ export class ArticleTimeline {
     card: HTMLElement,
     pubkey: string
   ): Promise<void> {
-    const authorEl = card.querySelector('.author');
-    if (!authorEl) return;
-
-    const npub = hexToNpub(pubkey) || pubkey;
-    try {
-      const profile = await this.userProfileService.getUserProfile(pubkey);
-      const username =
-        profile?.name || profile?.display_name || `${npub.slice(0, 12)}...`;
-      const picture = profile?.picture || '';
-
-      authorEl.innerHTML = `
-        <a href="/profile/${npub}" class="mention-link" data-profile-pubkey="${pubkey}">
-          <img class="profile-pic profile-pic--mini" src="${escapeHtmlAttr(picture)}" alt="" width="18" height="18" loading="lazy" decoding="async" />${escapeHtml(username)}</a>
-      `;
-    } catch {
-      authorEl.innerHTML = `
-        <a href="/profile/${npub}" class="mention-link" data-profile-pubkey="${pubkey}">
-          <img class="profile-pic profile-pic--mini" src="" alt="" width="18" height="18" loading="lazy" decoding="async" />${npub.slice(0, 12)}...</a>
-      `;
-    }
-
-    setupUserMentionHandlers(authorEl as HTMLElement);
+    await loadAuthorMention(card, pubkey);
   }
 
   // ─────────────────────────────────────────────────────────────────────────
