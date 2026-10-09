@@ -50,6 +50,7 @@ import { HamburgerBadgeManager } from './managers/HamburgerBadgeManager';
 import { ListViewPartial, type ListType } from './partials/ListViewPartial';
 import { ArticleTimeline } from '../article/ArticleTimeline';
 import { SccMediaFeed } from './partials/SccMediaFeed';
+import { SccRecipeFeed } from './partials/SccRecipeFeed';
 import { ListsMenuPartial } from './partials/ListsMenuPartial';
 import { ListsCountManager } from './managers/ListsCountManager';
 import { NavWheelPartial } from './partials/NavWheelPartial';
@@ -147,6 +148,7 @@ export class MainLayout {
   private sccDefaultDropdown: NnDropdown | null = null;
   private sccArticleFeed: ArticleTimeline | null = null;
   private sccMediaFeed: SccMediaFeed | null = null;
+  private sccRecipeFeed: SccRecipeFeed | null = null;
   private _dayjs: typeof import('dayjs') | null = null;
 
   constructor() {
@@ -1717,6 +1719,7 @@ export class MainLayout {
         { value: 'system-log', label: 'System Logs' },
         { value: 'newest-articles', label: 'Newest Articles' },
         { value: 'media', label: 'Media' },
+        { value: 'recipes', label: 'Recipes' },
       ],
       selectedValue: savedDefault,
       onChange: value => {
@@ -1819,6 +1822,15 @@ export class MainLayout {
       );
       if (contentDiv) {
         this.sccMediaFeed = new SccMediaFeed(contentDiv as HTMLElement);
+      }
+    }
+
+    if (value === 'recipes' && !this.sccRecipeFeed) {
+      const contentDiv = secondaryContent.querySelector(
+        '[data-tab-content="recipes"]'
+      );
+      if (contentDiv) {
+        this.sccRecipeFeed = new SccRecipeFeed(contentDiv as HTMLElement);
       }
     }
 
@@ -2021,6 +2033,8 @@ export class MainLayout {
           </div>
           <div class="tab-content" data-tab-content="media">
             <!-- Article feed will be mounted here -->
+          </div>
+          <div class="tab-content" data-tab-content="recipes">
           </div>
           <!-- List content will be inserted dynamically here -->
         </div>
