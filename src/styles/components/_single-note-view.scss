@@ -4,6 +4,7 @@
  */
 
 @use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
 @use '../base/typography' as *;
 @use '../base/icons' as *;
 
@@ -27,6 +28,40 @@
   // Replies container
   .snv-replies-container {
     margin-top: $gap * 2;
+  }
+
+  // NIP-51 curation set items (kind 30004 — e.g. Zap Cooking Recipe Packs),
+  // mounted between the root card and the replies (see CurationSetItems).
+  .snv-curation-items {
+    margin-top: $gap;
+
+    .curation-items__title {
+      margin-bottom: calc($gap / 2);
+    }
+
+    // Item row: title/author left, forward icon right (grid — no flexbox).
+    .ui-list__item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: calc($gap / 2);
+    }
+
+    .curation-items__info {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: calc($gap / 4);
+      min-width: 0;
+    }
+
+    .curation-items__name {
+      @include text-truncate;
+    }
+
+    .curation-items__author {
+      @extend %small;
+      color: var(--color-3);
+    }
   }
 
   // Footer

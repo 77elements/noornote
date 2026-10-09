@@ -24,6 +24,7 @@ import { NsiteProcessor, isNsiteManifest } from './NsiteProcessor';
 import { LiveStreamProcessor } from './LiveStreamProcessor';
 import { ListingProcessor } from './ListingProcessor';
 import { PodcastEpisodeProcessor } from './PodcastEpisodeProcessor';
+import { CurationSetProcessor } from './CurationSetProcessor';
 import { CalendarEventProcessor } from './CalendarEventProcessor';
 
 export class NoteProcessor {
@@ -90,6 +91,9 @@ export class NoteProcessor {
           return ArticleProcessor.process(event);
         case 30054:
           return PodcastEpisodeProcessor.process(event);
+        case 30004:
+          // NIP-51 article curation set (e.g. Zap Cooking Recipe Packs).
+          return CurationSetProcessor.process(event);
         case 30402:
           return ListingProcessor.process(event);
         case 30311:

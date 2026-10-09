@@ -61,7 +61,7 @@ import type { TimelineConfig } from '../../components/timeline/TimelineConfig';
  */
 const FEED_KINDS: number[] = [
   1, 6, 16, 20, 21, 22, 1063, 1068, 1617, 1618, 1619, 1621, 1630, 1631, 1632,
-  1633, 9802, 30617, 39089, 30030, 30311, 34235, 34236,
+  1633, 9802, 30617, 39089, 30030, 30311, 34235, 34236, 30004,
 ];
 
 export interface FeedLoadRequest {

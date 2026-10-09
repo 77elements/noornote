@@ -284,6 +284,18 @@ export class SingleNoteView extends View {
     repliesContainer.className = 'snv-replies-container';
 
     snvWrapper.appendChild(noteElement);
+    // NIP-51 curation set (kind 30004, e.g. Zap Cooking Recipe Packs): the
+    // SNV is the only place that resolves the referenced items — the feed /
+    // quote card stays light (see CurationSetRenderer).
+    if (event.kind === 30004) {
+      const curationItems = document.createElement('div');
+      curationItems.className = 'snv-curation-items';
+      snvWrapper.appendChild(curationItems);
+      const { mountCurationSetItems } = await import(
+        '../ui/note-rendering/CurationSetItems'
+      );
+      void mountCurationSetItems(event, curationItems);
+    }
     snvWrapper.appendChild(repliesContainer);
     const footer = this.createFooter();
     if (footer) {

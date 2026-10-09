@@ -41,6 +41,7 @@ import { UnsupportedKindRenderer } from './UnsupportedKindRenderer';
 import { GatedNoteRenderer } from './GatedNoteRenderer';
 import { isGatedNoteEvent } from '../../../helpers/gatedNote';
 import { ARTICLE_PREVIEW_KINDS } from '../../../helpers/addressableKinds';
+import { CURATION_SET_KIND } from '../../../helpers/parseCurationSet';
 import {
   parseListingMetadata,
   formatPrice,
@@ -205,6 +206,14 @@ export class QuotedNoteRenderer {
     // Follow pack (kind 39089) → fetch + render via FollowPackRenderer (.nn-card).
     if (kind === 39089) {
       void this.renderFollowPackPreview(naddrRef, container);
+      return;
+    }
+    // NIP-51 curation set (kind 30004 — e.g. Zap Cooking Recipe Packs) →
+    // fetch + light collection card. The referenced items are NOT resolved
+    // here (only the SNV does, via CurationSetItems) — a quoted pack costs
+    // exactly one relay fetch.
+    if (kind === CURATION_SET_KIND) {
+      void this.renderCurationSetPreview(naddrRef, container);
       return;
     }
     // NIP-52 calendar event/collection (31922/31923/31924) → fetch + render
@@ -440,6 +449,13 @@ export class QuotedNoteRenderer {
           if (result.event.kind === 39089) {
             const packElement = await this.buildFollowPackElement(result.event);
             skeleton.replaceWith(packElement);
+            return;
+          }
+          // NIP-51 curation set (kind 30004, e.g. Zap Cooking Recipe Packs)
+          // → light collection card via the CurationSet pipeline.
+          if (result.event.kind === CURATION_SET_KIND) {
+            const setElement = await this.buildCurationSetElement(result.event);
+            skeleton.replaceWith(setElement);
             return;
           }
           // NIP-52 calendar event/collection (31922/31923/31924) → nn-card
@@ -1140,6 +1156,50 @@ export class QuotedNoteRenderer {
     );
     const processedNote = FollowPackProcessor.process(event);
     return FollowPackRenderer.render(processedNote, {
+      collapsible: false,
+      depth: 1,
+    });
+  }
+
+  /**
+   * Render a NIP-51 curation set preview (light .nn-card) from an naddr
+   * reference. Fetches the event, then dispatches it through the standard
+   * CurationSetProcessor + CurationSetRenderer pipeline so the inline quote
+   * box shows the same card as the timeline. Mirrors
+   * {@link renderFollowPackPreview}.
+   */
+  public async renderCurationSetPreview(
+    naddrRef: string,
+    container: Element
+  ): Promise<void> {
+    try {
+      const result =
+        await this.quoteFetcher.fetchQuotedEventWithError(naddrRef);
+      if (result.success && result.event.kind === CURATION_SET_KIND) {
+        const el = await this.buildCurationSetElement(result.event);
+        container.appendChild(el);
+      }
+    } catch {
+      /* silent — container stays empty */
+    }
+  }
+
+  /**
+   * Build the curation-set element via the standard Processor + Renderer pair.
+   * Shared by the naddr quote path ({@link renderCurationSetPreview}) and the
+   * fetched-quote addressable branch in {@link fetchAndRenderQuote}.
+   */
+  private async buildCurationSetElement(
+    event: NostrEvent
+  ): Promise<HTMLElement> {
+    const { CurationSetProcessor } = await import(
+      '../../../components/ui/note-processing/CurationSetProcessor'
+    );
+    const { CurationSetRenderer } = await import(
+      '../../../components/ui/note-rendering/CurationSetRenderer'
+    );
+    const processedNote = CurationSetProcessor.process(event);
+    return CurationSetRenderer.render(processedNote, {
       collapsible: false,
       depth: 1,
     });
