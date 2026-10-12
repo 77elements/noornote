@@ -273,10 +273,17 @@ export class CalendarEventModal {
       const { CalendarPublishService } = await import(
         './CalendarPublishService'
       );
-      await CalendarPublishService.getInstance().publishRSVP(
+      const outcome = await CalendarPublishService.getInstance().publishRSVP(
         this.event,
         status
       );
+      if (!outcome.ok) {
+        ToastService.show(
+          'The response could not be published — no relay accepted it',
+          'error'
+        );
+        return;
+      }
       // Booking slot declined via the generic RSVP bar → clean up the
       // decliner's own booking artifacts (grid import + guest reminder).
       if (

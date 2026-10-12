@@ -15,7 +15,7 @@ import { ModuleLoader } from '../../core/ModuleLoader';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { diagLog } from '../../services/DiagnosticLogger';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
-import { resolveCalendarRelays } from './relays';
+import { resolveCalendarRelays, resolveRSVPRelayTargets } from './relays';
 import {
   buildRecurrenceRule,
   type RecurrenceFrequency,
@@ -35,6 +35,18 @@ import {
 } from '../../helpers/nip52/bookingSlots';
 
 export type RSVPStatusValue = 'accepted' | 'declined' | 'tentative';
+
+/** Relay-level outcome of an RSVP publish — powers post-publish feedback. */
+export interface RSVPPublishOutcome {
+  /** True when at least one relay accepted the RSVP. */
+  ok: boolean;
+  /** Relay URLs that ACKed the event. */
+  acceptedRelays: string[];
+  /** Relay URLs the event was sent to (superset of acceptedRelays). */
+  attemptedRelays: string[];
+  /** attemptedRelays minus acceptedRelays (trailing-slash-normalized diff). */
+  failedRelays: string[];
+}
 
 /** Editable shape used by the editor modal. */
 export interface CalendarEventDraft {
@@ -497,13 +509,22 @@ export class CalendarPublishService {
     };
   }
 
-  /** Publish the current user's RSVP (kind 31925) for an event. */
+  /**
+   * Publish the current user's RSVP (kind 31925) for an event.
+   *
+   * Targets the OWNER's relays too (resolveRSVPRelayTargets): an RSVP is a
+   * directed event — the recipient must be able to find it. Publishing to the
+   * responder's own relays only makes it invisible to owners with a disjoint
+   * relay set (bookings then silently lose collision protection). Never
+   * throws on total failure — returns ok:false so callers show their own
+   * message instead of the generic error handler.
+   */
   public async publishRSVP(
     event: CalendarEventData,
     status: RSVPStatusValue,
     comment = '',
     extraTags: string[][] = []
-  ): Promise<boolean> {
+  ): Promise<RSVPPublishOutcome> {
     const user = this.auth.getCurrentUser();
     if (!user) throw new Error('Not logged in');
 
@@ -523,10 +544,44 @@ export class CalendarPublishService {
     const signed = await this.auth.signEvent(unsigned);
     if (!signed) throw new Error('Signing failed');
 
-    const accepted = await this.transport.publishWithOutbox(signed, {
-      authorPubkeys: [user.pubkey],
+    const attempted = await resolveRSVPRelayTargets(event.pubkey);
+    let acceptedRelays: string[] = [];
+    try {
+      const accepted = await this.transport.publish(attempted, signed);
+      acceptedRelays = [...accepted];
+    } catch (err) {
+      diagLog('relays', 'calendar: RSVP rejected by every relay', {
+        status,
+        attempted: attempted.length,
+        error: String(err),
+      });
+      return {
+        ok: false,
+        acceptedRelays: [],
+        attemptedRelays: attempted,
+        failedRelays: attempted,
+      };
+    }
+
+    // NDK normalizes URLs (trailing slash) — diff on normalized forms so a
+    // relay is not reported as failed when its ACK came back under the
+    // normalized URL.
+    const norm = (url: string) => url.replace(/\/+$/, '');
+    const acceptedSet = new Set(acceptedRelays.map(norm));
+    const failedRelays = attempted.filter(url => !acceptedSet.has(norm(url)));
+
+    diagLog('relays', 'calendar: RSVP published', {
+      status,
+      accepted: acceptedRelays.length,
+      attempted: attempted.length,
+      failed: failedRelays.length,
     });
-    return accepted.size > 0;
+    return {
+      ok: acceptedRelays.length > 0,
+      acceptedRelays,
+      attemptedRelays: attempted,
+      failedRelays,
+    };
   }
 
   /**

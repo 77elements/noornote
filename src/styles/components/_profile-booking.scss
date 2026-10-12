@@ -6,6 +6,7 @@
 
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 .profile-booking__title {
   color: var(--color-5);
@@ -118,4 +119,20 @@
 
 .profile-booking__form-title {
   margin-bottom: calc($gap / 2);
+}
+
+// Post-booking technical details (relay delivery) — collapsed by default.
+.profile-booking__tech {
+  margin-bottom: $gap;
+
+  summary {
+    @extend %small;
+    color: var(--color-3);
+    cursor: pointer;
+    margin-bottom: calc($gap / 2);
+
+    &:hover {
+      color: var(--color-4);
+    }
+  }
 }

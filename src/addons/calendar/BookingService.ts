@@ -86,6 +86,8 @@ export interface BookingOpResult {
   informed: number;
   /** DM attempts that failed. */
   dmFailures: number;
+  /** Relay-level delivery stats for the confirmation's technical details. */
+  delivery?: { accepted: number; attempted: number; failedRelays: string[] };
 }
 
 export interface OwnerSlot {
@@ -495,13 +497,13 @@ export class BookingService {
     const user = this.auth.getCurrentUser();
     if (!user) throw new Error('Sign in to book an appointment');
 
-    const published = await CalendarPublishService.getInstance().publishRSVP(
+    const rsvpOutcome = await CalendarPublishService.getInstance().publishRSVP(
       slot,
       'accepted',
       '',
       participants.map(p => ['p', p])
     );
-    if (!published) {
+    if (!rsvpOutcome.ok) {
       return {
         ok: false,
         detail:
@@ -510,6 +512,11 @@ export class BookingService {
         dmFailures: 0,
       };
     }
+    const delivery = {
+      accepted: rsvpOutcome.acceptedRelays.length,
+      attempted: rsvpOutcome.attemptedRelays.length,
+      failedRelays: rsvpOutcome.failedRelays,
+    };
 
     const lines = [
       `📅 New booking: ${slot.title}`,
@@ -548,6 +555,7 @@ export class BookingService {
         detail: 'Booked — notification module unavailable',
         informed: 0,
         dmFailures: 0,
+        delivery,
       };
     }
     try {
@@ -588,6 +596,7 @@ export class BookingService {
         : 'Booked',
       informed,
       dmFailures,
+      delivery,
     };
   }
 
@@ -604,12 +613,12 @@ export class BookingService {
     const user = this.auth.getCurrentUser();
     if (!user) throw new Error('Sign in to manage your booking');
 
-    const published = await CalendarPublishService.getInstance().publishRSVP(
+    const cancelled = await CalendarPublishService.getInstance().publishRSVP(
       slot,
       'declined',
       reason
     );
-    if (!published) {
+    if (!cancelled.ok) {
       return {
         ok: false,
         detail:

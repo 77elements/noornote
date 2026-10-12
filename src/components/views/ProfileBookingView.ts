@@ -47,6 +47,12 @@ export class ProfileBookingView extends View {
   private selectedDTag: string | null = null;
   private booking = false;
   private bookedSlot: CalendarEventData | null = null;
+  /** Relay stats from the last booking — rendered in the confirmation. */
+  private lastDelivery: {
+    accepted: number;
+    attempted: number;
+    failedRelays: string[];
+  } | null = null;
   private destroyed = false;
   private participantAutocomplete: MentionAutocomplete | null = null;
   /** Page index into `weekStarts()`. */
@@ -556,6 +562,7 @@ export class ProfileBookingView extends View {
       ToastService.show(result.detail, 'error');
     } else {
       this.bookedSlot = slot;
+      this.lastDelivery = result.delivery ?? null;
     }
     this.booking = false;
     this.bookingDTag = null;
@@ -574,6 +581,22 @@ export class ProfileBookingView extends View {
       minute: '2-digit',
       hour12: false,
     });
+    const delivery = this.lastDelivery;
+    const techDetails = delivery
+      ? `
+      <details class="profile-booking__tech">
+        <summary class="profile-booking__tech-summary">Technical details</summary>
+        <p class="form__note">
+          Delivered to ${delivery.accepted} of ${delivery.attempted} relay${
+            delivery.attempted === 1 ? '' : 's'
+          }${
+            delivery.failedRelays.length > 0
+              ? `. Not reached: ${escapeHtml(delivery.failedRelays.join(', '))}`
+              : '.'
+          }
+        </p>
+      </details>`
+      : '';
     this.container.innerHTML = `
       <h1>Booked!</h1>
       <p class="profile-booking__desc">
@@ -584,6 +607,7 @@ export class ProfileBookingView extends View {
         The host received your booking as a private message. Add it to your
         calendar so you don't forget:
       </p>
+      ${techDetails}
       <div class="l-row">
         <button class="btn btn--passive" data-ics>Add to calendar (.ics)</button>
         <button class="btn btn--passive" data-done>Done</button>
