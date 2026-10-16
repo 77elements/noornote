@@ -34,6 +34,17 @@ export class RepostService {
   private transport: NostrTransport;
   private systemLogger: SystemLogger;
   private reactionsOrchestrator: ReactionsOrchestrator;
+  /**
+   * Session-scoped source of truth for own reposts (noteId → {pubkey, eventId}).
+   * The stats cache can lag behind a fresh publish (relay propagation), which
+   * made `hasUserReposted` return false right after reposting — a second click
+   * on the note's repost icon then published a duplicate. This map answers the
+   * question synchronously and survives stats-cache staleness. Keyed by pubkey
+   * so an account switch can't inherit state. The eventId additionally lets
+   * `removeRepost` delete the repost even when the stats cache doesn't know
+   * it yet.
+   */
+  private ownReposts = new Map<string, { pubkey: string; eventId: string }>();
 
   private constructor() {
     this.authService = AuthService.getInstance();
@@ -58,6 +69,14 @@ export class RepostService {
   public async hasUserReposted(noteId: string): Promise<boolean> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) return false;
+
+    // Session-scoped optimistic answer first: a just-published (or just
+    // re-published) own repost is in the map even when the stats cache
+    // still reflects pre-publish relay state.
+    const own = this.ownReposts.get(noteId);
+    if (own && own.pubkey === currentUser.pubkey) {
+      return true;
+    }
 
     try {
       // Batch-aware ensure — same relay-friendliness as hasUserLiked: one
@@ -134,6 +153,15 @@ export class RepostService {
       return { success: false, alreadyReposted: true };
     }
 
+    // Register optimistically BEFORE signing/publishing so concurrent
+    // status checks (fresh note cards mounting mid-publish) see the own
+    // repost immediately. The eventId is filled in after signing; the
+    // entry is removed again on any failure below.
+    this.ownReposts.set(originalEvent.id, {
+      pubkey: currentUser.pubkey,
+      eventId: '',
+    });
+
     try {
       // Build tags array (NIP-18)
       const tags: string[][] = [
@@ -163,8 +191,13 @@ export class RepostService {
       if (!signedEvent) {
         this.systemLogger.error('RepostService', 'Failed to sign repost event');
         ToastService.show('Signierung fehlgeschlagen', 'error');
+        this.ownReposts.delete(originalEvent.id);
         return { success: false, error: 'Signing failed' };
       }
+      this.ownReposts.set(originalEvent.id, {
+        pubkey: currentUser.pubkey,
+        eventId: signedEvent.id,
+      });
 
       // Resolve the reposted-event author's NIP-65 outbox so the
       // repost reaches their inbox-set — combined with any caller-
@@ -190,6 +223,7 @@ export class RepostService {
       return { success: true };
     } catch (error) {
       // Centralized error handling with user notification
+      this.ownReposts.delete(originalEvent.id);
       ErrorService.handle(
         error,
         'RepostService.publishRepost',
@@ -222,6 +256,12 @@ export class RepostService {
       return { success: false, error: 'No relays configured' };
     }
 
+    // Optimistic registration — same rationale as publishRepost.
+    this.ownReposts.set(originalEvent.id, {
+      pubkey: currentUser.pubkey,
+      eventId: '',
+    });
+
     try {
       const tags: string[][] = [
         ['e', originalEvent.id],
@@ -252,8 +292,13 @@ export class RepostService {
       const signedEvent = await this.authService.signEvent(unsignedEvent);
       if (!signedEvent) {
         ToastService.show('Signing failed', 'error');
+        this.ownReposts.delete(originalEvent.id);
         return { success: false, error: 'Signing failed' };
       }
+      this.ownReposts.set(originalEvent.id, {
+        pubkey: currentUser.pubkey,
+        eventId: signedEvent.id,
+      });
 
       await this.transport.publishWithOutbox(signedEvent, {
         authorPubkeys: [originalEvent.pubkey],
@@ -266,6 +311,7 @@ export class RepostService {
       ToastService.show('Repost published', 'success');
       return { success: true };
     } catch (error) {
+      this.ownReposts.delete(originalEvent.id);
       ErrorService.handle(
         error,
         'RepostService.publishGenericRepost',
@@ -300,6 +346,21 @@ export class RepostService {
         .filter(event => event.pubkey === currentUser.pubkey && event.id)
         .map(event => event.id as string);
 
+      // Stats-cache lag guard: a repost published seconds ago may not be in
+      // the stats bucket yet (relay propagation) — without the session map
+      // the removal reported "nothing to delete", succeeded visually, and
+      // the repost stayed live on the relays. The map holds the signed
+      // event id from our own publish, so the deletion can always run.
+      const ownEntry = this.ownReposts.get(noteId);
+      if (
+        ownIds.length === 0 &&
+        ownEntry &&
+        ownEntry.pubkey === currentUser.pubkey &&
+        ownEntry.eventId
+      ) {
+        ownIds.push(ownEntry.eventId);
+      }
+
       if (ownIds.length === 0) {
         return { success: true, removed: 0 };
       }
@@ -313,6 +374,7 @@ export class RepostService {
       if (deleted) {
         this.reactionsOrchestrator.tombstoneInteractions(ownIds);
         this.reactionsOrchestrator.removeInteractionsFromCache(noteId, ownIds);
+        this.ownReposts.delete(noteId);
         diagLog('system', 'Own repost removed via NIP-09', {
           noteId: noteId.slice(0, 16),
           removedEvents: ownIds.length,

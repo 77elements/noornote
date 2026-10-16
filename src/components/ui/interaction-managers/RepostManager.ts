@@ -33,6 +33,14 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
       ModuleLoader.getInstance().getApi<PostsModuleApi>('posts'));
   }
 
+  /**
+   * In-flight guard: while a publish or removal runs, further repost clicks
+   * are ignored. With optimistic UI the icon is green immediately — a second
+   * click would otherwise read as toggle-off and start a NIP-09 deletion
+   * racing the still-running publish.
+   */
+  private publishing = false;
+
   constructor(config: RepostManagerConfig) {
     super(config);
   }
@@ -42,9 +50,13 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
    */
   public async checkInteractionStatus(): Promise<void> {
     try {
-      this.hasInteracted = await (this.postsApi?.hasUserReposted(
+      const reposted = await (this.postsApi?.hasUserReposted(
         this.config.noteId
       ) ?? Promise.resolve(false));
+      // A click that landed while this check was in flight wins — never
+      // overwrite an optimistic flip with the pre-publish snapshot.
+      if (this.publishing) return;
+      this.hasInteracted = reposted;
       if (this.hasInteracted) {
         this.updateButtonState(true);
       }
@@ -109,8 +121,16 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
 
   /**
    * Publish repost to note
+   * Optimistic UI (same pattern as LikeManager.publishReaction): the icon
+   * flips green and the count bumps immediately — the stats REQ, outbox
+   * discovery and publish below can take several seconds. Reverted when
+   * the publish fails.
    */
   private async publishRepost(): Promise<void> {
+    // In-flight guard: a second click while publishing is a no-op.
+    if (this.publishing) return;
+    this.publishing = true;
+
     try {
       const originalEvent = this.config.originalEvent;
 
@@ -130,6 +150,12 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
         return;
       }
 
+      // Optimistic UI: flip BEFORE any relay work, revert on failure.
+      this.hasInteracted = true;
+      this.updateButtonState(true);
+      this.updateStats('repost');
+      this.pulseOnce();
+
       // Kind 1 → standard repost (Kind 6), everything else → generic repost (Kind 16)
       // RepostService resolves own write-relays + author's NIP-65 outbox
       // (Amethyst pattern) internally — no relays passed.
@@ -142,16 +168,41 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
             originalEvent: unwrappedEvent,
           }) ?? Promise.resolve({ success: false }));
 
-      if (result.success) {
-        // Update stats (cache invalidation + optimistic UI update)
-        this.updateStats('repost');
-
-        // Update reposted state and button appearance
-        this.hasInteracted = true;
-        this.updateButtonState(true);
+      if (!result.success) {
+        // alreadyReposted = the service's own-repost bookkeeping found our
+        // repost (session map or stats). The correct UI state is ON — set
+        // it explicitly (this manager may never have flipped optimistically,
+        // e.g. a sibling card's stale mount check). Anything else is a real
+        // failure: revert.
+        const alreadyReposted =
+          'alreadyReposted' in result && result.alreadyReposted === true;
+        if (alreadyReposted) {
+          this.hasInteracted = true;
+          this.updateButtonState(true);
+          // Our optimistic count bump above was wrong — the repost already
+          // existed. Take it back (state stays ON, count goes back).
+          this.updateStats('repost', -1);
+        } else {
+          this.hasInteracted = false;
+          this.updateButtonState(false);
+          this.updateStats('repost', -1);
+          // Service failure paths already toast (ErrorService / validation).
+          // This covers the degraded no-api fallback so every revert has a
+          // visible message without double-toasting.
+          if (!('error' in result) || !result.error) {
+            ToastService.show('Repost failed — display reverted', 'error');
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to publish repost:', error);
+      // Revert optimistic update on error (api failures toast via
+      // ErrorService inside the service — no extra toast here).
+      this.hasInteracted = false;
+      this.updateButtonState(false);
+      this.updateStats('repost', -1);
+    } finally {
+      this.publishing = false;
     }
   }
 
@@ -160,6 +211,10 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
    * Optimistic revert; restored on failure.
    */
   private async removeRepost(): Promise<void> {
+    // In-flight guard: a second click while removing is a no-op.
+    if (this.publishing) return;
+    this.publishing = true;
+
     // Optimistic UI: revert immediately before async deletion
     this.hasInteracted = false;
     this.updateButtonState(false);
@@ -179,6 +234,8 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
       this.hasInteracted = true;
       this.updateButtonState(true);
       this.updateStats('repost', 1);
+    } finally {
+      this.publishing = false;
     }
   }
 
@@ -250,6 +307,24 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
     } else {
       this.button.classList.remove('active');
     }
+  }
+
+  /**
+   * One-shot "it worked" pulse on the repost icon at the optimistic flip
+   * (`.pulse-once` atom, styles/atoms/_pulsate.scss).
+   */
+  private pulseOnce(): void {
+    const btn = this.button;
+    if (!btn) return;
+    btn.classList.remove('pulse-once');
+    // Force a reflow so a repeat click restarts the animation.
+    void btn.offsetWidth;
+    btn.classList.add('pulse-once');
+    btn.addEventListener(
+      'animationend',
+      () => btn.classList.remove('pulse-once'),
+      { once: true }
+    );
   }
 
   /**
