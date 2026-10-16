@@ -1,12 +1,13 @@
-# v1.9.0
+# Release Notes 1.9.1
 
 ## New
-- Recipes on Nostr: publish recipes from the article editor, open shared recipe packs as cards, and browse recipes from your follows in a new side-column tab
-- NIP-5A websites (nsites) fully supported — including a Websites grid on profiles
+
+- **Show reactions in your timeline** (optional): see reactions from people you follow as feed entries — enable globally in settings or per user on their profile. Off by default.
 
 ## Improved
-- Smarter relay handling: respects relay rate limits, fewer disconnects and reconnect storms
-- Android: `nostr:` links can now open directly in NoorNote
+
+- **Reposts respond instantly**: the icon colors right away instead of after several seconds. Double-click no longer creates duplicate reposts, and taking a repost back works reliably.
 
 ## Fixed
-- Unknown event types show a useful card with actions instead of a dead end
+
+- Booking RSVPs now reliably reach event owners whose relays don't overlap with yours.
