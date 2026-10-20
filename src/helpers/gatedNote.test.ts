@@ -10,7 +10,7 @@
 
 import { describe, it, expect } from 'vitest';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { nip19 } from 'nostr-tools';
+import { nip19 } from '../services/NostrToolsAdapter';
 import {
   isGatedNoteEvent,
   getGatedNotePrice,

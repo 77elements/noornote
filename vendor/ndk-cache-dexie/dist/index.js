@@ -38,7 +38,34 @@ __export(index_exports, {
 module.exports = __toCommonJS(index_exports);
 var import_ndk2 = require("@nostr-dev-kit/ndk");
 var import_debug3 = __toESM(require("debug"));
-var import_nostr_tools = require("nostr-tools");
+
+// Inlined from nostr-tools (MIT) — filter.ts, v2.25.2.
+// Behavior-identical copy; do NOT swap for NDK's matchFilter
+// (NDK lowercases #t hashtag values, changing cache behavior).
+function matchFilter(filter, event) {
+  if (filter.ids && filter.ids.indexOf(event.id) === -1) {
+    return false;
+  }
+  if (filter.kinds && filter.kinds.indexOf(event.kind) === -1) {
+    return false;
+  }
+  if (filter.authors && filter.authors.indexOf(event.pubkey) === -1) {
+    return false;
+  }
+  for (let f in filter) {
+    if (f[0] === "#") {
+      let tagName = f.slice(1);
+      let values = filter[`#${tagName}`];
+      if (values && !event.tags.find(([t, v]) => t === f.slice(1) && values.indexOf(v) !== -1))
+        return false;
+    }
+  }
+  if (filter.since && event.created_at < filter.since)
+    return false;
+  if (filter.until && event.created_at > filter.until)
+    return false;
+  return true;
+}
 
 // src/cache-module.ts
 var import_debug = __toESM(require("debug"));
@@ -1061,7 +1088,7 @@ function foundEvents(subscription, events, filter) {
 function foundEvent(subscription, event, relayUrl, filter) {
   try {
     const deserializedEvent = (0, import_ndk2.deserialize)(event.event);
-    if (filter && !(0, import_nostr_tools.matchFilter)(filter, deserializedEvent)) return;
+    if (filter && !matchFilter(filter, deserializedEvent)) return;
     const ndkEvent = new import_ndk2.NDKEvent(void 0, deserializedEvent);
     const relay = relayUrl ? subscription.pool.getRelay(relayUrl, false) : void 0;
     ndkEvent.relay = relay;

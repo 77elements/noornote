@@ -6,29 +6,39 @@
  * @status 100% NDK-based migration
  *
  * ARCHITECTURE NOTE:
- * - All relay operations use NDK (NostrTransport.ts)
- * - Crypto functions imported from nostr-tools (NDK's peer dependency)
- * - NDK uses nostr-tools internally but doesn't re-export crypto functions
- * - This is NOT adding nostr-tools as OUR dependency - it's using NDK's
+ * - All relay/network operations use NDK (NostrTransport.ts) — no
+ *   nostr-tools networking code anywhere in the app.
+ * - nostr-tools IS our own declared dependency (package.json, ^2.25.2),
+ *   used ONLY for pure crypto/encoding: nip04 (NWC compat), nip44,
+ *   finalizeEvent/verifyEvent/getEventHash, ephemeral key generation.
+ *   History: this project started on nostr-tools 1.x for networking;
+ *   the network layer was later fully migrated to NDK. These crypto
+ *   re-exports remain until Phase A replaces them with local modules
+ *   (docs/todos/nostr-tools-removal.md).
+ * - NIP-19 comes from the typed `nostr-tools/nip19` subpath (encoding-only,
+ *   no networking). NDK also re-exports nip19, but its typing is `any`
+ *   (upstream gap), which breaks our type-aware lint gate.
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { hexToBytes, bytesToHex } from '@noble/hashes/utils';
 
-// Low-level crypto functions from nostr-tools (NDK's peer dependency)
-// NDK uses these internally but doesn't expose them in public API
+// Pure-Crypto from nostr-tools — submodules only, never the root import
+// (the root index also exports Relay/SimplePool networking code we must
+// never pull into the bundle). nip19 uses the nip19 subpath rather than
+// NDK's re-export because NDK types it as `any` (upstream typing gap).
 import {
   getPublicKey,
   finalizeEvent,
   verifyEvent,
-  nip04,
-  nip19,
   getEventHash,
   generateSecretKey,
   type UnsignedEvent as NostrToolsUnsignedEvent,
   type Event as NostrToolsEvent,
-} from 'nostr-tools';
+} from 'nostr-tools/pure';
+import * as nip19 from 'nostr-tools/nip19';
 import type { DecodedResult } from 'nostr-tools/nip19';
+import * as nip04 from 'nostr-tools/nip04';
 import * as nip44 from 'nostr-tools/nip44';
 
 // ============= TYPE EXPORTS =============
@@ -166,6 +176,11 @@ export function finalizeEventSigning(
  * Used by NWCService and ZapService
  */
 export { finalizeEvent };
+
+/**
+ * Re-export nip19 for encoding/decoding (npub/nevent/naddr/note/nsec).
+ */
+export { nip19 };
 
 /**
  * Re-export nip04 for NIP-04 encryption/decryption

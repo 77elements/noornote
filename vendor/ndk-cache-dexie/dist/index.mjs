@@ -1,7 +1,34 @@
 // src/index.ts
 import { deserialize, NDKEvent as NDKEvent2, profileFromEvent } from "@nostr-dev-kit/ndk";
 import createDebug3 from "debug";
-import { matchFilter } from "nostr-tools";
+
+// Inlined from nostr-tools (MIT) — filter.ts, v2.25.2.
+// Behavior-identical copy; do NOT swap for NDK's matchFilter
+// (NDK lowercases #t hashtag values, changing cache behavior).
+function matchFilter(filter, event) {
+  if (filter.ids && filter.ids.indexOf(event.id) === -1) {
+    return false;
+  }
+  if (filter.kinds && filter.kinds.indexOf(event.kind) === -1) {
+    return false;
+  }
+  if (filter.authors && filter.authors.indexOf(event.pubkey) === -1) {
+    return false;
+  }
+  for (let f in filter) {
+    if (f[0] === "#") {
+      let tagName = f.slice(1);
+      let values = filter[`#${tagName}`];
+      if (values && !event.tags.find(([t, v]) => t === f.slice(1) && values.indexOf(v) !== -1))
+        return false;
+    }
+  }
+  if (filter.since && event.created_at < filter.since)
+    return false;
+  if (filter.until && event.created_at > filter.until)
+    return false;
+  return true;
+}
 
 // src/cache-module.ts
 import createDebug from "debug";
