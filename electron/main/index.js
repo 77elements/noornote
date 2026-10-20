@@ -4,6 +4,7 @@
  */
 
 import { app, BrowserWindow, globalShortcut, ipcMain, screen, session, shell } from 'electron';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { registerKeySignerHandlers } from './key-signer.js';
@@ -232,7 +233,6 @@ function resolveGifApiKey() {
     gifApiKeyCache = process.env.GNB_API_KEY.trim();
     return gifApiKeyCache;
   }
-  const fs = require('fs');
   // 1) Packaged release builds: CI writes electron/gif-api-key.json next to
   //    this file (never committed). 2) Local dev: the shared key file.
   try {
