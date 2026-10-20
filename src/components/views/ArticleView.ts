@@ -5,6 +5,7 @@
  */
 
 import { View } from './View';
+import { _ } from '../../i18n';
 import { NoteHeader } from '../ui/NoteHeader';
 import { InteractionStatusLine } from '../ui/InteractionStatusLine';
 import { RepliesRenderer } from '../replies/RepliesRenderer';
@@ -103,14 +104,14 @@ export class ArticleView extends View {
       const event = (await api?.fetchAddressableEvent(this.naddrRef)) ?? null;
 
       if (!event || !event.id) {
-        this.showError('Article not found');
+        this.showError(_('Article not found'));
         return;
       }
 
       this.renderArticle(event as NostrEvent & { id: string });
     } catch (_error) {
       console.error('❌ ArticleView: Failed to load article', _error);
-      this.showError('Failed to load article');
+      this.showError(_('Failed to load article'));
     }
   }
 
@@ -267,11 +268,12 @@ export class ArticleView extends View {
       deleteBtn?.addEventListener('click', async () => {
         const { ModalService } = await import('../../services/ModalService');
         const confirmed = await ModalService.getInstance().confirm({
-          title: 'Delete Article',
-          message:
-            'This will send a deletion request to all relays. This cannot be undone.',
-          confirmText: 'Delete',
-          cancelText: 'Cancel',
+          title: _('Delete Article'),
+          message: _(
+            'This will send a deletion request to all relays. This cannot be undone.'
+          ),
+          confirmText: _('Delete'),
+          cancelText: _('Cancel'),
           confirmDestructive: true,
         });
 
@@ -443,7 +445,7 @@ export class ArticleView extends View {
 
       const heading = document.createElement('h2');
       heading.className = 'more-from-this-author__title';
-      heading.textContent = 'Read more from this author';
+      heading.textContent = _('Read more from this author');
       section.appendChild(heading);
 
       const renderer = ArticlePreviewRenderer.getInstance();

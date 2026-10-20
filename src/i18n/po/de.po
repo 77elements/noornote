@@ -581,6 +581,8 @@ msgstr "Zaps"
 #: src/components/modals/NewFolderModal.ts:60
 #: src/components/modals/UnlockNoorSignerModal.ts:68
 #: src/components/modals/ZapModal.ts:148
+#: src/components/views/ArticleView.ts:276
+#: src/components/views/ProfileBookingView.ts:493
 #: src/services/ModalService.ts:188
 #: src/services/ModalService.ts:244
 msgid "Cancel"
@@ -887,23 +889,23 @@ msgstr ""
 msgid "Already following all members"
 msgstr "Du folgst bereits allen Mitgliedern"
 
-#: src/components/views/ZapstoreAppView.ts:387
+#: src/components/views/ZapstoreAppView.ts:385
 msgid "App Info"
 msgstr "App-Info"
 
-#: src/components/views/ZapstoreAppView.ts:113
+#: src/components/views/ZapstoreAppView.ts:112
 msgid "App not found"
 msgstr "App nicht gefunden"
 
-#: src/components/views/ZapstoreAppView.ts:323
+#: src/components/views/ZapstoreAppView.ts:321
 msgid "Certificate"
 msgstr "Zertifikat"
 
-#: src/components/views/ZapstoreAppView.ts:323
+#: src/components/views/ZapstoreAppView.ts:321
 msgid "Copy certificate hash"
 msgstr "Zertifikats-Hash kopieren"
 
-#: src/components/views/ZapstoreAppView.ts:319
+#: src/components/views/ZapstoreAppView.ts:317
 msgid "Copy hash"
 msgstr "Hash kopieren"
 
@@ -917,11 +919,11 @@ msgstr ""
 msgid "Edit List"
 msgstr "Liste bearbeiten"
 
-#: src/components/views/ZapstoreAppView.ts:127
+#: src/components/views/ZapstoreAppView.ts:125
 msgid "Failed to load app"
 msgstr "App konnte nicht geladen werden"
 
-#: src/components/views/ListingReadView.ts:71
+#: src/components/views/ListingReadView.ts:69
 msgid "Failed to load listing"
 msgstr "Anzeige konnte nicht geladen werden"
 
@@ -933,11 +935,11 @@ msgstr "Alle abonnieren"
 msgid "Following %s new people"
 msgstr "Du folgst jetzt %s neuen Personen"
 
-#: src/components/views/ZapstoreAppView.ts:319
+#: src/components/views/ZapstoreAppView.ts:317
 msgid "Hash"
 msgstr "Hash"
 
-#: src/components/views/ZapstoreAppView.ts:282
+#: src/components/views/ZapstoreAppView.ts:280
 msgid "In Zapstore"
 msgstr "Im Zapstore"
 
@@ -945,15 +947,15 @@ msgstr "Im Zapstore"
 msgid "Inactive"
 msgstr "Inaktiv"
 
-#: src/components/views/ZapstoreAppView.ts:351
+#: src/components/views/ZapstoreAppView.ts:349
 msgid "Latest Release"
 msgstr "Neueste Version"
 
-#: src/components/views/ZapstoreAppView.ts:299
+#: src/components/views/ZapstoreAppView.ts:297
 msgid "License"
 msgstr "Lizenz"
 
-#: src/components/views/ListingReadView.ts:64
+#: src/components/views/ListingReadView.ts:63
 msgid "Listing not found"
 msgstr "Anzeige nicht gefunden"
 
@@ -969,7 +971,7 @@ msgstr "Buch wird geladen…"
 msgid "Loading members..."
 msgstr "Lade Mitglieder…"
 
-#: src/components/views/ListingReadView.ts:132
+#: src/components/views/ListingReadView.ts:130
 msgid "Loading..."
 msgstr "Lade…"
 
@@ -997,15 +999,15 @@ msgstr "Navigiere mit ← / → oder klicke auf die Seitenränder"
 msgid "New"
 msgstr "Neu"
 
-#: src/components/views/ZapstoreAppView.ts:295
+#: src/components/views/ZapstoreAppView.ts:293
 msgid "Platform"
 msgstr "Plattform"
 
-#: src/components/views/ZapstoreAppView.ts:412
+#: src/components/views/ZapstoreAppView.ts:410
 msgid "Published by"
 msgstr "Veröffentlicht von"
 
-#: src/components/views/ZapstoreAppView.ts:335
+#: src/components/views/ZapstoreAppView.ts:333
 msgid "Release Date"
 msgstr "Veröffentlicht"
 
@@ -1017,15 +1019,15 @@ msgstr "Reihenfolge zurücksetzen"
 msgid "See Notes"
 msgstr "Notizen ansehen"
 
-#: src/components/views/ZapstoreAppView.ts:315
+#: src/components/views/ZapstoreAppView.ts:313
 msgid "Size"
 msgstr "Größe"
 
-#: src/components/views/ListingReadView.ts:118
+#: src/components/views/ListingReadView.ts:116
 msgid "Sold"
 msgstr "Verkauft"
 
-#: src/components/views/ZapstoreAppView.ts:303
+#: src/components/views/ZapstoreAppView.ts:301
 msgid "Source"
 msgstr "Quelle"
 
@@ -1037,7 +1039,7 @@ msgstr "Tippe auf die Seitenränder oder wische zum Blättern"
 msgid "Theme colors"
 msgstr "Farbschema"
 
-#: src/components/views/EpubReaderView.ts:292
+#: src/components/views/EpubReaderView.ts:291
 msgid ""
 "This book could not be loaded. You can try the download button on the "
 "original post."
@@ -1045,7 +1047,7 @@ msgstr ""
 "Dieses Buch konnte nicht geladen werden. Du kannst den Download-Button im "
 "ursprünglichen Beitrag versuchen."
 
-#: src/components/views/ZapstoreAppView.ts:410
+#: src/components/views/ZapstoreAppView.ts:408
 msgid "Unknown"
 msgstr "Unbekannt"
 
@@ -1053,10 +1055,151 @@ msgstr "Unbekannt"
 msgid "Updated"
 msgstr "Aktualisiert"
 
-#: src/components/views/ZapstoreAppView.ts:311
+#: src/components/views/ZapstoreAppView.ts:309
 msgid "Version Code"
 msgstr "Versionscode"
 
-#: src/components/views/ZapstoreAppView.ts:307
+#: src/components/views/ZapstoreAppView.ts:305
 msgid "Website"
 msgstr "Website"
+
+#: src/components/views/ProfileBookingView.ts:448
+msgid "%s — %s DM(s) failed"
+msgstr "%s — %s DM(s) fehlgeschlagen"
+
+#: src/components/views/ProfileBookingView.ts:205
+msgid "%s does not offer a booking page right now."
+msgstr "%s bietet gerade keine Buchungsseite an."
+
+#: src/components/views/ProfileBookingView.ts:609
+msgid "Add to calendar (.ics)"
+msgstr "Zum Kalender hinzufügen (.ics)"
+
+#: src/components/views/ProfileBookingView.ts:485
+msgid "Additional participants (optional)"
+msgstr "Weitere Teilnehmer (optional)"
+
+#: src/components/views/ArticleView.ts:107
+msgid "Article not found"
+msgstr "Artikel nicht gefunden"
+
+#: src/components/views/ProfileBookingView.ts:207
+msgid "Back to profile"
+msgstr "Zurück zum Profil"
+
+#: src/components/views/ProfileBookingView.ts:187
+#: src/components/views/ProfileBookingView.ts:203
+msgid "Book a meeting"
+msgstr "Meeting buchen"
+
+#: src/components/views/ProfileBookingView.ts:257
+msgid "Book a meeting with %s"
+msgstr "Meeting buchen mit %s"
+
+#: src/components/views/ProfileBookingView.ts:599
+msgid "Booked!"
+msgstr "Gebucht!"
+
+#: src/components/views/ProfileBookingView.ts:495
+msgid "Booking…"
+msgstr "Buche…"
+
+#: src/components/views/ProfileBookingView.ts:495
+msgid "Confirm booking"
+msgstr "Buchung bestätigen"
+
+#: src/components/views/ArticleView.ts:275
+msgid "Delete"
+msgstr "Löschen"
+
+#: src/components/views/ArticleView.ts:271
+msgid "Delete Article"
+msgstr "Artikel löschen"
+
+#: src/components/views/ProfileBookingView.ts:590
+msgid "Delivered to %s of %s relay"
+msgid_plural "Delivered to %s of %s relays"
+msgstr[0] "An %s von %s Relay zugestellt"
+msgstr[1] "An %s von %s Relays zugestellt"
+
+#: src/components/views/ProfileBookingView.ts:610
+msgid "Done"
+msgstr "Fertig"
+
+#: src/components/views/ArticleView.ts:114
+msgid "Failed to load article"
+msgstr "Artikel konnte nicht geladen werden"
+
+#: src/components/views/ProfileBookingView.ts:187
+msgid "Loading availability…"
+msgstr "Lade Verfügbarkeit…"
+
+#: src/components/views/ProfileBookingView.ts:237
+msgid "Next week"
+msgstr "Nächste Woche"
+
+#: src/components/views/ProfileBookingView.ts:250
+msgid "No open slots at the moment — check back later."
+msgstr "Aktuell keine freien Termine — schau später wieder vorbei."
+
+#: src/components/views/ProfileBookingView.ts:489
+msgid ""
+"Nostr users taking part in the meeting — they receive a private message "
+"about this booking."
+msgstr ""
+"Nostr-Nutzer, die am Meeting teilnehmen — sie erhalten eine private "
+"Nachricht zu dieser Buchung."
+
+#: src/components/views/ProfileBookingView.ts:592
+msgid "Not reached: %s"
+msgstr "Nicht erreicht: %s"
+
+#: src/components/views/ProfileBookingView.ts:478
+msgid "Note for %s (optional, sent as a private message)"
+msgstr "Notiz für %s (optional, wird als private Nachricht gesendet)"
+
+#: src/components/views/ProfileBookingView.ts:229
+msgid "Previous week"
+msgstr "Vorherige Woche"
+
+#: src/components/views/ArticleView.ts:448
+msgid "Read more from this author"
+msgstr "Mehr von diesem Autor"
+
+#: src/components/views/ProfileBookingView.ts:471
+msgid "Selected:"
+msgstr "Ausgewählt:"
+
+#: src/components/views/ProfileBookingView.ts:487
+msgid "Tag with @, separate multiple participants with commas"
+msgstr "Mit @ markieren, mehrere Teilnehmer mit Kommas trennen"
+
+#: src/components/views/ProfileBookingView.ts:588
+msgid "Technical details"
+msgstr "Technische Details"
+
+#: src/components/views/ProfileBookingView.ts:480
+msgid "the host"
+msgstr "den Gastgeber"
+
+#: src/components/views/ProfileBookingView.ts:605
+msgid ""
+"The host received your booking as a private message. Add it to your "
+"calendar so you don't forget:"
+msgstr ""
+"Der Gastgeber hat deine Buchung als private Nachricht erhalten. Füge sie "
+"deinem Kalender hinzu, damit du sie nicht vergisst:"
+
+#: src/components/views/ArticleView.ts:272
+msgid "This will send a deletion request to all relays. This cannot be undone."
+msgstr ""
+"Das sendet eine Lösch-Anfrage an alle Relays. Das kann nicht rückgängig "
+"gemacht werden."
+
+#: src/components/views/ProfileBookingView.ts:268
+msgid "times shown in your local timezone"
+msgstr "Zeiten in deiner lokalen Zeitzone"
+
+#: src/components/views/ProfileBookingView.ts:474
+msgid "Your name (optional)"
+msgstr "Dein Name (optional)"

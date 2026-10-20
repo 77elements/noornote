@@ -12,6 +12,7 @@
  */
 
 import { View } from './View';
+import { _, tn } from '../../i18n';
 import { Router } from '../../services/Router';
 import { AuthGuard } from '../../services/AuthGuard';
 import { UserProfileService } from '../../services/UserProfileService';
@@ -182,8 +183,7 @@ export class ProfileBookingView extends View {
   // ========== Rendering ==========
 
   private renderLoading(): void {
-    this.container.innerHTML =
-      '<h1>Book a meeting</h1><div class="pulsate">Loading availability…</div>';
+    this.container.innerHTML = `<h1>${_('Book a meeting')}</h1><div class="pulsate">${_('Loading availability…')}</div>`;
   }
 
   private render(): void {
@@ -199,11 +199,11 @@ export class ProfileBookingView extends View {
     if (this.notFound || !this.config) {
       this.container.innerHTML = `
         <div class="back-padder">
-          <h1>Book a meeting</h1>
+          <h1>${_('Book a meeting')}</h1>
           <p class="form__note">
-            ${escapeHtml(ownerName)} does not offer a booking page right now.
+            ${_('%s does not offer a booking page right now.', escapeHtml(ownerName))}
           </p>
-          <div class="l-row--right"><button class="btn btn--passive" data-back>Back to profile</button></div>
+          <div class="l-row--right"><button class="btn btn--passive" data-back>${_('Back to profile')}</button></div>
       
         </div>
     `;
@@ -225,7 +225,7 @@ export class ProfileBookingView extends View {
       <div class="nn-pager">
         <button class="btn-icon" type="button" data-week-prev ${
           this.weekIndex === 0 ? 'disabled' : ''
-        } aria-label="Previous week">
+        } aria-label="${_('Previous week')}">
           <svg width="18" height="18"><use href="#icon-caret-left"/></svg>
         </button>
         <div class="nn-pager__content">
@@ -233,7 +233,7 @@ export class ProfileBookingView extends View {
         </div>
         <button class="btn-icon" type="button" data-week-next ${
           this.weekIndex >= weekStarts.length - 1 ? 'disabled' : ''
-        } aria-label="Next week">
+        } aria-label="${_('Next week')}">
           <svg width="18" height="18"><use href="#icon-caret-right"/></svg>
         </button>
       </div>
@@ -246,14 +246,14 @@ export class ProfileBookingView extends View {
           )
             .map(day => this.renderDayCell(day))
             .join('')}</div>`
-        : '<p class="form__note">No open slots at the moment — check back later.</p>';
+        : `<p class="form__note">${_('No open slots at the moment — check back later.')}</p>`;
 
     const selectedSlot = this.slots.find(
       s => s.data.dTag === this.selectedDTag && !s.bookedBy
     );
 
     this.container.innerHTML = `
-      <h1>Book a meeting with ${escapeHtml(ownerName)}</h1>
+      <h1>${_('Book a meeting with %s', escapeHtml(ownerName))}</h1>
       ${
         this.config.title
           ? `<p class="profile-booking__title">${escapeHtml(this.config.title)}</p>`
@@ -264,7 +264,7 @@ export class ProfileBookingView extends View {
           ? `<p class="profile-booking__desc">${escapeHtml(this.config.description)}</p>`
           : ''
       }
-      <p class="form__note">times shown in your local timezone</p>
+      <p class="form__note">${_('times shown in your local timezone')}</p>
       ${nav}
       ${grid}
       ${selectedSlot ? this.renderBookingForm(selectedSlot.data) : ''}
@@ -444,7 +444,7 @@ export class ProfileBookingView extends View {
       this.render();
       ToastService.show(
         result.dmFailures
-          ? `${result.detail} — ${result.dmFailures} DM(s) failed`
+          ? _('%s — %s DM(s) failed', result.detail, result.dmFailures)
           : result.detail,
         result.dmFailures ? 'warning' : 'success'
       );
@@ -467,32 +467,34 @@ export class ProfileBookingView extends View {
     return `
       <div class="profile-booking__form" data-booking-form>
         <p class="profile-booking__form-title">
-          Selected: <strong>${escapeHtml(slot.title)}</strong> — ${escapeHtml(when)}
+          ${_('Selected:')} <strong>${escapeHtml(slot.title)}</strong> — ${escapeHtml(when)}
         </p>
         <div class="form__row">
-          <label for="booking-name">Your name (optional)</label>
+          <label for="booking-name">${_('Your name (optional)')}</label>
           <input class="input" id="booking-name" data-form-name maxlength="80" />
         </div>
         <div class="form__row">
-          <label for="booking-note">Note for ${escapeHtml(
-            UserProfileService.getInstance().getUsername(this.ownerPubkey) ||
-              'the host'
-          )} (optional, sent as a private message)</label>
+          <label for="booking-note">${_(
+            'Note for %s (optional, sent as a private message)',
+            escapeHtml(
+              UserProfileService.getInstance().getUsername(this.ownerPubkey) ||
+                _('the host')
+            )
+          )}</label>
           <textarea class="textarea textarea--small" id="booking-note" data-form-note maxlength="500"></textarea>
         </div>
         <div class="form__row">
-          <label for="booking-participants">Additional participants (optional)</label>
+          <label for="booking-participants">${_('Additional participants (optional)')}</label>
           <input class="input" id="booking-participants" data-participants-input maxlength="2000"
-            placeholder="Tag with @, separate multiple participants with commas" />
+            placeholder="${_('Tag with @, separate multiple participants with commas')}" />
           <p class="form__note">
-            Nostr users taking part in the meeting — they receive a private
-            message about this booking.
+            ${_('Nostr users taking part in the meeting — they receive a private message about this booking.')}
           </p>
         </div>
         <div class="l-row--end-pair">
-          <button class="btn btn--passive" data-cancel-book>Cancel</button>
+          <button class="btn btn--passive" data-cancel-book>${_('Cancel')}</button>
           <button class="btn" data-confirm-book ${this.booking ? 'disabled' : ''}>
-            ${this.booking ? 'Booking…' : 'Confirm booking'}
+            ${this.booking ? _('Booking…') : _('Confirm booking')}
           </button>
         </div>
       </div>
@@ -585,32 +587,29 @@ export class ProfileBookingView extends View {
     const techDetails = delivery
       ? `
       <details class="profile-booking__tech">
-        <summary class="profile-booking__tech-summary">Technical details</summary>
+        <summary class="profile-booking__tech-summary">${_('Technical details')}</summary>
         <p class="form__note">
-          Delivered to ${delivery.accepted} of ${delivery.attempted} relay${
-            delivery.attempted === 1 ? '' : 's'
-          }${
+          ${tn('Delivered to %s of %s relay', 'Delivered to %s of %s relays', delivery.attempted, delivery.accepted, delivery.attempted)}${
             delivery.failedRelays.length > 0
-              ? `. Not reached: ${escapeHtml(delivery.failedRelays.join(', '))}`
+              ? ` ${_('Not reached: %s', escapeHtml(delivery.failedRelays.join(', ')))}.`
               : '.'
           }
         </p>
       </details>`
       : '';
     this.container.innerHTML = `
-      <h1>Booked!</h1>
+      <h1>${_('Booked!')}</h1>
       <p class="profile-booking__desc">
         <strong>${escapeHtml(slot.title)}</strong><br />
         ${escapeHtml(when)}
       </p>
       <p class="form__note">
-        The host received your booking as a private message. Add it to your
-        calendar so you don't forget:
+        ${_("The host received your booking as a private message. Add it to your calendar so you don't forget:")}
       </p>
       ${techDetails}
       <div class="l-row">
-        <button class="btn btn--passive" data-ics>Add to calendar (.ics)</button>
-        <button class="btn btn--passive" data-done>Done</button>
+        <button class="btn btn--passive" data-ics>${_('Add to calendar (.ics)')}</button>
+        <button class="btn btn--passive" data-done>${_('Done')}</button>
       </div>
     `;
     this.container

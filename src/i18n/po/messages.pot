@@ -2,6 +2,14 @@ msgid ""
 msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 
+#: src/components/views/ProfileBookingView.ts:448
+msgid "%s — %s DM(s) failed"
+msgstr ""
+
+#: src/components/views/ProfileBookingView.ts:205
+msgid "%s does not offer a booking page right now."
+msgstr ""
+
 #: src/components/modals/SyncConfirmationModal.ts:198
 msgid "%s item in different folders"
 msgid_plural "%s items in different folders"
@@ -23,6 +31,14 @@ msgstr ""
 
 #: src/components/views/AddonsOverviewView.ts:106
 msgid "Active"
+msgstr ""
+
+#: src/components/views/ProfileBookingView.ts:609
+msgid "Add to calendar (.ics)"
+msgstr ""
+
+#: src/components/views/ProfileBookingView.ts:485
+msgid "Additional participants (optional)"
 msgstr ""
 
 #: src/components/views/AddonsOverviewView.ts:220
@@ -58,12 +74,16 @@ msgstr ""
 msgid "And finally, thanks to every user who actively shapes NoorNote with feedback and support."
 msgstr ""
 
-#: src/components/views/ZapstoreAppView.ts:387
+#: src/components/views/ZapstoreAppView.ts:385
 msgid "App Info"
 msgstr ""
 
-#: src/components/views/ZapstoreAppView.ts:113
+#: src/components/views/ZapstoreAppView.ts:112
 msgid "App not found"
+msgstr ""
+
+#: src/components/views/ArticleView.ts:107
+msgid "Article not found"
 msgstr ""
 
 #: src/components/views/ArticleTimelineView.ts:59
@@ -74,8 +94,29 @@ msgstr ""
 msgid "Avatars, images, videos, and audio referenced in Nostr events are loaded directly from whatever URL the author published. Each such load is a direct request from your device to that third-party host."
 msgstr ""
 
+#: src/components/views/ProfileBookingView.ts:207
+msgid "Back to profile"
+msgstr ""
+
 #: src/components/views/AboutView.ts:239
 msgid "Beyond Nostr relays, NoorNote makes network requests to a small set of third-party endpoints to render content correctly. Each request unavoidably exposes your IP address to the receiving service:"
+msgstr ""
+
+#: src/components/views/ProfileBookingView.ts:187
+#: src/components/views/ProfileBookingView.ts:203
+msgid "Book a meeting"
+msgstr ""
+
+#: src/components/views/ProfileBookingView.ts:257
+msgid "Book a meeting with %s"
+msgstr ""
+
+#: src/components/views/ProfileBookingView.ts:599
+msgid "Booked!"
+msgstr ""
+
+#: src/components/views/ProfileBookingView.ts:495
+msgid "Booking…"
 msgstr ""
 
 #: src/components/views/ListsOverviewView.ts:61
@@ -103,12 +144,14 @@ msgstr ""
 #: src/components/modals/NewFolderModal.ts:60
 #: src/components/modals/UnlockNoorSignerModal.ts:68
 #: src/components/modals/ZapModal.ts:148
+#: src/components/views/ArticleView.ts:276
+#: src/components/views/ProfileBookingView.ts:493
 #: src/services/ModalService.ts:188
 #: src/services/ModalService.ts:244
 msgid "Cancel"
 msgstr ""
 
-#: src/components/views/ZapstoreAppView.ts:323
+#: src/components/views/ZapstoreAppView.ts:321
 msgid "Certificate"
 msgstr ""
 
@@ -128,6 +171,10 @@ msgstr ""
 msgid "Confirm"
 msgstr ""
 
+#: src/components/views/ProfileBookingView.ts:495
+msgid "Confirm booking"
+msgstr ""
+
 #: src/components/modals/ImportToNoorSignerModal.ts:92
 msgid "Confirm Password"
 msgstr ""
@@ -136,11 +183,11 @@ msgstr ""
 msgid "Connections to Nostr Relays"
 msgstr ""
 
-#: src/components/views/ZapstoreAppView.ts:323
+#: src/components/views/ZapstoreAppView.ts:321
 msgid "Copy certificate hash"
 msgstr ""
 
-#: src/components/views/ZapstoreAppView.ts:319
+#: src/components/views/ZapstoreAppView.ts:317
 msgid "Copy hash"
 msgstr ""
 
@@ -165,8 +212,26 @@ msgstr ""
 msgid "Data Storage"
 msgstr ""
 
+#: src/components/views/ArticleView.ts:275
+msgid "Delete"
+msgstr ""
+
+#: src/components/views/ArticleView.ts:271
+msgid "Delete Article"
+msgstr ""
+
+#: src/components/views/ProfileBookingView.ts:590
+msgid "Delivered to %s of %s relay"
+msgid_plural "Delivered to %s of %s relays"
+msgstr[0] ""
+msgstr[1] ""
+
 #: src/components/views/AboutView.ts:85
 msgid "DM me on Nostr"
+msgstr ""
+
+#: src/components/views/ProfileBookingView.ts:610
+msgid "Done"
 msgstr ""
 
 #: src/components/modals/UpdateModal.ts:116
@@ -216,11 +281,15 @@ msgstr ""
 msgid "Export DiagLogs"
 msgstr ""
 
-#: src/components/views/ZapstoreAppView.ts:127
+#: src/components/views/ZapstoreAppView.ts:125
 msgid "Failed to load app"
 msgstr ""
 
-#: src/components/views/ListingReadView.ts:71
+#: src/components/views/ArticleView.ts:114
+msgid "Failed to load article"
+msgstr ""
+
+#: src/components/views/ListingReadView.ts:69
 msgid "Failed to load listing"
 msgstr ""
 
@@ -263,7 +332,7 @@ msgstr ""
 msgid "Gregorian calendar"
 msgstr ""
 
-#: src/components/views/ZapstoreAppView.ts:319
+#: src/components/views/ZapstoreAppView.ts:317
 msgid "Hash"
 msgstr ""
 
@@ -287,7 +356,7 @@ msgstr ""
 msgid "Imprint"
 msgstr ""
 
-#: src/components/views/ZapstoreAppView.ts:282
+#: src/components/views/ZapstoreAppView.ts:280
 msgid "In Zapstore"
 msgstr ""
 
@@ -350,11 +419,11 @@ msgstr ""
 msgid "Later"
 msgstr ""
 
-#: src/components/views/ZapstoreAppView.ts:351
+#: src/components/views/ZapstoreAppView.ts:349
 msgid "Latest Release"
 msgstr ""
 
-#: src/components/views/ZapstoreAppView.ts:299
+#: src/components/views/ZapstoreAppView.ts:297
 msgid "License"
 msgstr ""
 
@@ -362,7 +431,7 @@ msgstr ""
 msgid "Like any web host, MyNymbox processes standard server log data when you load the application — typically your IP address, request timestamp, the URL/file requested, browser type, and referrer — for operational and security purposes (e.g. DDoS mitigation, server stability). NoorNote itself does not access or use these logs."
 msgstr ""
 
-#: src/components/views/ListingReadView.ts:64
+#: src/components/views/ListingReadView.ts:63
 msgid "Listing not found"
 msgstr ""
 
@@ -374,6 +443,10 @@ msgstr ""
 msgid "Loading app..."
 msgstr ""
 
+#: src/components/views/ProfileBookingView.ts:187
+msgid "Loading availability…"
+msgstr ""
+
 #: src/components/views/EpubReaderView.ts:261
 msgid "Loading book…"
 msgstr ""
@@ -382,7 +455,7 @@ msgstr ""
 msgid "Loading members..."
 msgstr ""
 
-#: src/components/views/ListingReadView.ts:132
+#: src/components/views/ListingReadView.ts:130
 msgid "Loading..."
 msgstr ""
 
@@ -474,12 +547,20 @@ msgstr ""
 msgid "New Message"
 msgstr ""
 
+#: src/components/views/ProfileBookingView.ts:237
+msgid "Next week"
+msgstr ""
+
 #: src/components/views/AboutView.ts:242
 msgid "NIP-05 verification:"
 msgstr ""
 
 #: src/components/views/NotificationsView.ts:288
 msgid "No notifications yet"
+msgstr ""
+
+#: src/components/views/ProfileBookingView.ts:250
+msgid "No open slots at the moment — check back later."
 msgstr ""
 
 #: src/components/views/AboutView.ts:109
@@ -530,6 +611,18 @@ msgstr ""
 msgid "Nostr relays are operated by third parties. When connecting, your IP address may be logged by the relay operators. The choice of relays is yours and can be configured in the settings."
 msgstr ""
 
+#: src/components/views/ProfileBookingView.ts:489
+msgid "Nostr users taking part in the meeting — they receive a private message about this booking."
+msgstr ""
+
+#: src/components/views/ProfileBookingView.ts:592
+msgid "Not reached: %s"
+msgstr ""
+
+#: src/components/views/ProfileBookingView.ts:478
+msgid "Note for %s (optional, sent as a private message)"
+msgstr ""
+
 #: src/components/views/TimelineView.ts:132
 msgid "Notes - Timeline"
 msgstr ""
@@ -574,7 +667,7 @@ msgstr ""
 msgid "Phone:"
 msgstr ""
 
-#: src/components/views/ZapstoreAppView.ts:295
+#: src/components/views/ZapstoreAppView.ts:293
 msgid "Platform"
 msgstr ""
 
@@ -603,6 +696,10 @@ msgstr ""
 msgid "Please login to view timeline"
 msgstr ""
 
+#: src/components/views/ProfileBookingView.ts:229
+msgid "Previous week"
+msgstr ""
+
 #: src/components/views/SettingsView.ts:48
 msgid "Privacy"
 msgstr ""
@@ -620,8 +717,12 @@ msgstr ""
 msgid "Profile pictures and embedded media:"
 msgstr ""
 
-#: src/components/views/ZapstoreAppView.ts:412
+#: src/components/views/ZapstoreAppView.ts:410
 msgid "Published by"
+msgstr ""
+
+#: src/components/views/ArticleView.ts:448
+msgid "Read more from this author"
 msgstr ""
 
 #: src/components/views/SettingsView.ts:40
@@ -634,7 +735,7 @@ msgid_plural "Relays: %s items, not stored locally"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/components/views/ZapstoreAppView.ts:335
+#: src/components/views/ZapstoreAppView.ts:333
 msgid "Release Date"
 msgstr ""
 
@@ -674,6 +775,10 @@ msgstr ""
 msgid "See Notes"
 msgstr ""
 
+#: src/components/views/ProfileBookingView.ts:471
+msgid "Selected:"
+msgstr ""
+
 #: src/components/modals/DMComposeModal.ts:97
 msgid "Send"
 msgstr ""
@@ -708,7 +813,7 @@ msgstr ""
 msgid "Single Post"
 msgstr ""
 
-#: src/components/views/ZapstoreAppView.ts:315
+#: src/components/views/ZapstoreAppView.ts:313
 msgid "Size"
 msgstr ""
 
@@ -716,11 +821,11 @@ msgstr ""
 msgid "Skip this version"
 msgstr ""
 
-#: src/components/views/ListingReadView.ts:118
+#: src/components/views/ListingReadView.ts:116
 msgid "Sold"
 msgstr ""
 
-#: src/components/views/ZapstoreAppView.ts:303
+#: src/components/views/ZapstoreAppView.ts:301
 msgid "Source"
 msgstr ""
 
@@ -749,8 +854,16 @@ msgstr ""
 msgid "Switching..."
 msgstr ""
 
+#: src/components/views/ProfileBookingView.ts:487
+msgid "Tag with @, separate multiple participants with commas"
+msgstr ""
+
 #: src/components/views/EpubReaderView.ts:45
 msgid "Tap the page edges or swipe to turn pages"
+msgstr ""
+
+#: src/components/views/ProfileBookingView.ts:588
+msgid "Technical details"
 msgstr ""
 
 #: src/components/views/AboutView.ts:205
@@ -773,6 +886,14 @@ msgstr ""
 msgid "The desktop version periodically queries %s to detect new releases. GitHub is operated by GitHub, Inc., 88 Colin P Kelly Jr Street, San Francisco, CA 94107, USA."
 msgstr ""
 
+#: src/components/views/ProfileBookingView.ts:480
+msgid "the host"
+msgstr ""
+
+#: src/components/views/ProfileBookingView.ts:605
+msgid "The host received your booking as a private message. Add it to your calendar so you don't forget:"
+msgstr ""
+
 #: src/components/views/AboutView.ts:221
 msgid "The web version of NoorNote (%s) is hosted by %s (%s)."
 msgstr ""
@@ -789,12 +910,20 @@ msgstr ""
 msgid "This account already exists in NoorSigner"
 msgstr ""
 
-#: src/components/views/EpubReaderView.ts:292
+#: src/components/views/EpubReaderView.ts:291
 msgid "This book could not be loaded. You can try the download button on the original post."
+msgstr ""
+
+#: src/components/views/ArticleView.ts:272
+msgid "This will send a deletion request to all relays. This cannot be undone."
 msgstr ""
 
 #: src/components/views/TimelineView.ts:208
 msgid "Timeline"
+msgstr ""
+
+#: src/components/views/ProfileBookingView.ts:268
+msgid "times shown in your local timezone"
 msgstr ""
 
 #: src/components/modals/DMComposeModal.ts:81
@@ -809,7 +938,7 @@ msgstr ""
 msgid "UI Settings"
 msgstr ""
 
-#: src/components/views/ZapstoreAppView.ts:410
+#: src/components/views/ZapstoreAppView.ts:408
 msgid "Unknown"
 msgstr ""
 
@@ -842,7 +971,7 @@ msgstr ""
 msgid "Version"
 msgstr ""
 
-#: src/components/views/ZapstoreAppView.ts:311
+#: src/components/views/ZapstoreAppView.ts:309
 msgid "Version Code"
 msgstr ""
 
@@ -859,7 +988,7 @@ msgstr ""
 msgid "Web Hosting"
 msgstr ""
 
-#: src/components/views/ZapstoreAppView.ts:307
+#: src/components/views/ZapstoreAppView.ts:305
 msgid "Website"
 msgstr ""
 
@@ -885,6 +1014,10 @@ msgstr ""
 
 #: src/components/views/ListsOverviewView.ts:101
 msgid "Your lists are stored locally and synced to your relays. Pick one to open it."
+msgstr ""
+
+#: src/components/views/ProfileBookingView.ts:474
+msgid "Your name (optional)"
 msgstr ""
 
 #: src/components/views/AboutView.ts:204
