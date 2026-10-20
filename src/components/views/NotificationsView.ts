@@ -4,6 +4,7 @@
  */
 
 import { View } from './View';
+import { _ } from '../../i18n';
 import type {
   NotificationType,
   NotificationEvent,
@@ -284,8 +285,7 @@ export class NotificationsView extends View {
 
     // Show empty state if first batch and no notifications
     if (notifications.length === 0 && this.isInitialLoad()) {
-      list.innerHTML =
-        '<div class="notifications-view__empty">No notifications yet</div>';
+      list.innerHTML = `<div class="notifications-view__empty">${_('No notifications yet')}</div>`;
       this.isLoading = false;
       return;
     }

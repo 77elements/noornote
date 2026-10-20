@@ -12,6 +12,7 @@
  */
 
 import { View } from './View';
+import { _ } from '../../i18n';
 import { Timeline } from '../timeline/Timeline';
 import { LastNotesPerFollow } from '../timeline/LastNotesPerFollow';
 import {
@@ -118,8 +119,7 @@ export class TimelineView extends View {
 
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      this.container.innerHTML =
-        '<div class="timeline-view__error">Please login to view timeline</div>';
+      this.container.innerHTML = `<div class="timeline-view__error">${_('Please login to view timeline')}</div>`;
       this.isRendering = false;
       return;
     }
@@ -129,7 +129,7 @@ export class TimelineView extends View {
     // Accessibility: Page heading for screen readers
     const pageHeading = document.createElement('h1');
     pageHeading.className = 'visually-hidden';
-    pageHeading.textContent = 'Notes - Timeline';
+    pageHeading.textContent = _('Notes - Timeline');
     this.container.appendChild(pageHeading);
 
     // Build tabs: Timeline first, then tribes (async for addon lazy-loading)
@@ -165,7 +165,7 @@ export class TimelineView extends View {
         const editLink = document.createElement('button');
         editLink.className =
           'timeline-view__edit-link btn btn--mini btn--passive';
-        editLink.textContent = 'Edit tribes';
+        editLink.textContent = _('Edit tribes');
         editLink.addEventListener('click', () => {
           this.eventBus.emit('list:open', { listType: 'tribes' });
         });
@@ -205,7 +205,7 @@ export class TimelineView extends View {
     this.tabs.push({
       type: 'timeline',
       id: 'timeline',
-      name: 'Timeline',
+      name: _('Timeline'),
     });
 
     // Fixed second tab: newest note from each followed user, freshest author first.
@@ -213,7 +213,7 @@ export class TimelineView extends View {
     this.tabs.push({
       type: 'last-notes',
       id: 'last-notes',
-      name: 'Last notes per follow',
+      name: _('Last notes per follow'),
     });
 
     // Add tribe tabs (only if addon enabled)

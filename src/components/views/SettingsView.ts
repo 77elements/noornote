@@ -6,6 +6,7 @@
 import { View } from './View';
 import { PlatformService } from '../../services/PlatformService';
 import { Router } from '../../services/Router';
+import { _ } from '../../i18n';
 
 interface SettingsMenuItem {
   label: string;
@@ -13,19 +14,9 @@ interface SettingsMenuItem {
   platform?: 'desktop' | 'desktop-or-capacitor';
 }
 
-const SETTINGS_MENU: SettingsMenuItem[] = [
-  { label: 'UI Settings', route: '/settings/ui' },
-  {
-    label: 'Notification Priorities',
-    route: '/settings/notification-priorities',
-  },
-  { label: 'Relays', route: '/settings/relays' },
-  { label: 'Key Signer', route: '/settings/key-signer', platform: 'desktop' },
-  { label: 'Media', route: '/settings/media' },
-  { label: 'Zaps', route: '/settings/zaps' },
-  { label: 'Privacy', route: '/settings/privacy' },
-  { label: 'Cache', route: '/settings/cache' },
-];
+// NOTE: labels are translated INSIDE render() — `_()` must never run at
+// module scope (the catalog loads in initI18n(), which happens after module
+// evaluation).
 
 export class SettingsView extends View {
   private container: HTMLElement;
@@ -40,7 +31,25 @@ export class SettingsView extends View {
   private render(): void {
     const platform = PlatformService.getInstance();
 
-    const menuItems = SETTINGS_MENU.filter(item => {
+    const settingsMenu: SettingsMenuItem[] = [
+      { label: _('UI Settings'), route: '/settings/ui' },
+      {
+        label: _('Notification Priorities'),
+        route: '/settings/notification-priorities',
+      },
+      { label: _('Relays'), route: '/settings/relays' },
+      {
+        label: _('Key Signer'),
+        route: '/settings/key-signer',
+        platform: 'desktop',
+      },
+      { label: _('Media'), route: '/settings/media' },
+      { label: _('Zaps'), route: '/settings/zaps' },
+      { label: _('Privacy'), route: '/settings/privacy' },
+      { label: _('Cache'), route: '/settings/cache' },
+    ];
+
+    const menuItems = settingsMenu.filter(item => {
       if (!item.platform) return true;
       if (item.platform === 'desktop') return platform.isDesktop;
       if (item.platform === 'desktop-or-capacitor')
@@ -59,7 +68,7 @@ export class SettingsView extends View {
 
     this.container.innerHTML = `
         <div class="back-padder">
-        <h1 class="settings-title">Settings</h1>
+        <h1 class="settings-title">${_('Settings')}</h1>
         <nav class="section">
           ${menuHtml}
         </nav>
@@ -68,7 +77,7 @@ export class SettingsView extends View {
             ? `
         <section class="settings-section diagnostic-export-section" style="text-align: center;">
           <button class="btn btn--medium btn--passive" id="export-diagnostic-logs-btn">
-            Export DiagLogs
+            ${_('Export DiagLogs')}
           </button>
         </section>
         `
@@ -97,7 +106,7 @@ export class SettingsView extends View {
         const { runDiagLogExportFromButton } = await import(
           '../../services/DiagLogExportService'
         );
-        await runDiagLogExportFromButton(btn, 'Export DiagLogs');
+        await runDiagLogExportFromButton(btn, _('Export DiagLogs'));
       });
   }
 

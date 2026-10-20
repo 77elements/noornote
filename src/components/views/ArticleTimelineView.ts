@@ -10,6 +10,7 @@ import { View } from './View';
 import { ArticleTimeline } from '../article/ArticleTimeline';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
 import { TypedEventBus } from '../../core/TypedEventBus';
+import { _ } from '../../i18n';
 import {
   PerAccountLocalStorage,
   StorageKeys,
@@ -23,11 +24,11 @@ import {
 function articleFeedSubtitle(degree: number): string {
   switch (degree) {
     case 2:
-      return 'Long-form content from your 1st and 2nd-degree follows';
+      return _('Long-form content from your 1st and 2nd-degree follows');
     case 3:
-      return 'Long-form content from your 1st, 2nd and 3rd-degree follows';
+      return _('Long-form content from your 1st, 2nd and 3rd-degree follows');
     default:
-      return 'Long-form content from your follows';
+      return _('Long-form content from your follows');
   }
 }
 
@@ -55,7 +56,7 @@ export class ArticleTimelineView extends View {
 
     this.container.innerHTML = `
       <header class="article-timeline-view__header">
-        <h1 class="article-timeline-view__title">Articles</h1>
+        <h1 class="article-timeline-view__title">${_('Articles')}</h1>
         <p class="article-timeline-view__subtitle">${articleFeedSubtitle(degree)}</p>
       </header>
       <div class="article-timeline-view__content"></div>

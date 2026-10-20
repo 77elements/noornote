@@ -6,6 +6,10 @@ msgstr ""
 msgid "About NoorNote"
 msgstr ""
 
+#: src/components/views/ListsOverviewView.ts:78
+msgid "Accounts and threads you have muted."
+msgstr ""
+
 #: src/components/views/AboutView.ts:101
 msgid "All content you create (notes, articles, profile information, etc.) is stored on Nostr relays, not on your device or our servers. NoorNote simply connects to these relays to read and publish your content."
 msgstr ""
@@ -23,6 +27,10 @@ msgstr ""
 msgid "And finally, thanks to every user who actively shapes NoorNote with feedback and support."
 msgstr ""
 
+#: src/components/views/ArticleTimelineView.ts:59
+msgid "Articles"
+msgstr ""
+
 #: src/components/views/AboutView.ts:243
 msgid "Avatars, images, videos, and audio referenced in Nostr events are loaded directly from whatever URL the author published. Each such load is a direct request from your device to that third-party host."
 msgstr ""
@@ -31,8 +39,16 @@ msgstr ""
 msgid "Beyond Nostr relays, NoorNote makes network requests to a small set of third-party endpoints to render content correctly. Each request unavoidably exposes your IP address to the receiving service:"
 msgstr ""
 
+#: src/components/views/ListsOverviewView.ts:61
+msgid "Bookmarks"
+msgstr ""
+
 #: src/components/views/AboutView.ts:138
 msgid "by %s"
+msgstr ""
+
+#: src/components/views/SettingsView.ts:45
+msgid "Cache"
 msgstr ""
 
 #: src/components/views/AboutView.ts:175
@@ -57,6 +73,10 @@ msgstr ""
 msgid "Credits"
 msgstr ""
 
+#: src/components/views/ListsOverviewView.ts:86
+msgid "Curated public follow lists you subscribe to."
+msgstr ""
+
 #: src/components/views/AboutView.ts:169
 #: src/components/views/AboutView.ts:184
 msgid "Data Storage"
@@ -66,8 +86,29 @@ msgstr ""
 msgid "DM me on Nostr"
 msgstr ""
 
+#: src/components/views/TimelineView.ts:169
+msgid "Edit tribes"
+msgstr ""
+
 #: src/components/views/AboutView.ts:76
 msgid "Email:"
+msgstr ""
+
+#: src/components/views/ListsOverviewView.ts:65
+msgid "Enable the Bookmarks addon in Settings → Addons."
+msgstr ""
+
+#: src/components/views/ListsOverviewView.ts:89
+msgid "Enable the Tribes addon in Settings → Addons."
+msgstr ""
+
+#: src/components/views/SettingsView.ts:105
+#: src/components/views/SettingsView.ts:76
+msgid "Export DiagLogs"
+msgstr ""
+
+#: src/components/views/ListsOverviewView.ts:69
+msgid "Follows"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:339
@@ -102,13 +143,17 @@ msgstr ""
 msgid "Imprint"
 msgstr ""
 
+#: src/components/views/SettingsView.ts:41
+msgid "Key Signer"
+msgstr ""
+
 #: src/components/views/AboutView.ts:174
 #: src/components/views/AboutView.ts:189
 #: src/components/views/AboutView.ts:204
 msgid "Key Storage:"
 msgstr ""
 
-#: src/components/settings/UISettingsSection.ts:130
+#: src/components/settings/UISettingsSection.ts:103
 msgid "Language"
 msgstr ""
 
@@ -116,16 +161,44 @@ msgstr ""
 msgid "Language changed"
 msgstr ""
 
+#: src/components/views/TimelineView.ts:217
+msgid "Last notes per follow"
+msgstr ""
+
 #: src/components/views/AboutView.ts:222
 msgid "Like any web host, MyNymbox processes standard server log data when you load the application — typically your IP address, request timestamp, the URL/file requested, browser type, and referrer — for operational and security purposes (e.g. DDoS mitigation, server stability). NoorNote itself does not access or use these logs."
+msgstr ""
+
+#: src/components/views/ListsOverviewView.ts:98
+msgid "Lists"
 msgstr ""
 
 #: src/components/views/AboutView.ts:199
 msgid "Local Data Storage"
 msgstr ""
 
+#: src/components/views/ArticleTimelineView.ts:27
+msgid "Long-form content from your 1st and 2nd-degree follows"
+msgstr ""
+
+#: src/components/views/ArticleTimelineView.ts:29
+msgid "Long-form content from your 1st, 2nd and 3rd-degree follows"
+msgstr ""
+
+#: src/components/views/ArticleTimelineView.ts:31
+msgid "Long-form content from your follows"
+msgstr ""
+
+#: src/components/views/SettingsView.ts:42
+msgid "Media"
+msgstr ""
+
 #: src/components/views/AboutView.ts:234
 msgid "Media proxy:"
+msgstr ""
+
+#: src/components/views/ListsOverviewView.ts:77
+msgid "Muted"
 msgstr ""
 
 #: src/components/views/AboutView.ts:84
@@ -134,6 +207,10 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:242
 msgid "NIP-05 verification:"
+msgstr ""
+
+#: src/components/views/NotificationsView.ts:289
+msgid "No notifications yet"
 msgstr ""
 
 #: src/components/views/AboutView.ts:109
@@ -180,6 +257,14 @@ msgstr ""
 msgid "Nostr relays are operated by third parties. When connecting, your IP address may be logged by the relay operators. The choice of relays is yours and can be configured in the settings."
 msgstr ""
 
+#: src/components/views/TimelineView.ts:133
+msgid "Notes - Timeline"
+msgstr ""
+
+#: src/components/views/SettingsView.ts:37
+msgid "Notification Priorities"
+msgstr ""
+
 #: src/components/views/AboutView.ts:121
 msgid "Open Source"
 msgstr ""
@@ -196,6 +281,14 @@ msgstr ""
 msgid "Phone:"
 msgstr ""
 
+#: src/components/views/TimelineView.ts:123
+msgid "Please login to view timeline"
+msgstr ""
+
+#: src/components/views/SettingsView.ts:44
+msgid "Privacy"
+msgstr ""
+
 #: src/components/views/AboutView.ts:216
 #: src/components/views/AboutView.ts:90
 msgid "Privacy Policy"
@@ -205,12 +298,24 @@ msgstr ""
 msgid "Profile pictures and embedded media:"
 msgstr ""
 
+#: src/components/views/SettingsView.ts:40
+msgid "Relays"
+msgstr ""
+
 #: src/components/views/AboutView.ts:92
 msgid "Responsible Party"
 msgstr ""
 
+#: src/components/views/ListsOverviewView.ts:62
+msgid "Saved notes, sorted into folders."
+msgstr ""
+
 #: src/components/views/AboutView.ts:245
 msgid "Scheduled Posts (optional addon):"
+msgstr ""
+
+#: src/components/views/SettingsView.ts:67
+msgid "Settings"
 msgstr ""
 
 #: src/components/views/AboutView.ts:206
@@ -219,6 +324,10 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:116
 msgid "Since we do not store or process any personal data, the usual GDPR data subject rights do not apply. For questions, you can contact us at %s."
+msgstr ""
+
+#: src/components/views/SingleNoteView.ts:269
+msgid "Single Post"
 msgstr ""
 
 #: src/components/views/AboutView.ts:144
@@ -245,6 +354,10 @@ msgstr ""
 msgid "Temporary data is stored in your device's IndexedDB and localStorage."
 msgstr ""
 
+#: src/components/views/ListsOverviewView.ts:70
+msgid "The accounts you follow, with outbox relays."
+msgstr ""
+
 #: src/components/views/AboutView.ts:231
 msgid "The desktop version periodically queries %s to detect new releases. GitHub is operated by GitHub, Inc., 88 Colin P Kelly Jr Street, San Francisco, CA 94107, USA."
 msgstr ""
@@ -255,6 +368,18 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:225
 msgid "Third country notice:"
+msgstr ""
+
+#: src/components/views/TimelineView.ts:209
+msgid "Timeline"
+msgstr ""
+
+#: src/components/views/ListsOverviewView.ts:85
+msgid "Tribes"
+msgstr ""
+
+#: src/components/views/SettingsView.ts:35
+msgid "UI Settings"
 msgstr ""
 
 #: src/components/views/AboutView.ts:231
@@ -290,6 +415,10 @@ msgstr ""
 msgid "When verifying a user's NIP-05 identifier (e.g. %s), NoorNote sends an HTTP request to %s. The owner of that domain may log the request."
 msgstr ""
 
+#: src/components/views/ListsOverviewView.ts:101
+msgid "Your lists are stored locally and synced to your relays. Pick one to open it."
+msgstr ""
+
 #: src/components/views/AboutView.ts:204
 msgid "Your private key (nsec) is stored in your operating system's keychain (macOS Keychain, Linux Secret Service)."
 msgstr ""
@@ -304,4 +433,8 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:114
 msgid "Your Rights"
+msgstr ""
+
+#: src/components/views/SettingsView.ts:43
+msgid "Zaps"
 msgstr ""

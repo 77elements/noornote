@@ -31,7 +31,7 @@ msgstr "Hijri (Islamic)"
 msgid "Hijri (Islamic) calendar"
 msgstr "Hijri (Islamic) calendar"
 
-#: src/components/settings/UISettingsSection.ts:130
+#: src/components/settings/UISettingsSection.ts:103
 msgid "Language"
 msgstr "Language"
 
@@ -428,3 +428,140 @@ msgstr "Your Rights"
 #: src/components/views/AboutView.ts:206
 msgid "Settings are stored in the %s directory."
 msgstr "Settings are stored in the %s directory."
+
+#: src/components/views/ListsOverviewView.ts:78
+msgid "Accounts and threads you have muted."
+msgstr "Accounts and threads you have muted."
+
+#: src/components/views/ArticleTimelineView.ts:59
+msgid "Articles"
+msgstr "Articles"
+
+#: src/components/views/ListsOverviewView.ts:61
+msgid "Bookmarks"
+msgstr "Bookmarks"
+
+#: src/components/views/SettingsView.ts:45
+msgid "Cache"
+msgstr "Cache"
+
+#: src/components/views/ListsOverviewView.ts:86
+msgid "Curated public follow lists you subscribe to."
+msgstr "Curated public follow lists you subscribe to."
+
+#: src/components/views/TimelineView.ts:169
+msgid "Edit tribes"
+msgstr "Edit tribes"
+
+#: src/components/views/ListsOverviewView.ts:65
+msgid "Enable the Bookmarks addon in Settings → Addons."
+msgstr "Enable the Bookmarks addon in Settings → Addons."
+
+#: src/components/views/ListsOverviewView.ts:89
+msgid "Enable the Tribes addon in Settings → Addons."
+msgstr "Enable the Tribes addon in Settings → Addons."
+
+#: src/components/views/SettingsView.ts:105
+#: src/components/views/SettingsView.ts:76
+msgid "Export DiagLogs"
+msgstr "Export DiagLogs"
+
+#: src/components/views/ListsOverviewView.ts:69
+msgid "Follows"
+msgstr "Follows"
+
+#: src/components/views/SettingsView.ts:41
+msgid "Key Signer"
+msgstr "Key Signer"
+
+#: src/components/views/TimelineView.ts:217
+msgid "Last notes per follow"
+msgstr "Last notes per follow"
+
+#: src/components/views/ListsOverviewView.ts:98
+msgid "Lists"
+msgstr "Lists"
+
+#: src/components/views/ArticleTimelineView.ts:27
+msgid "Long-form content from your 1st and 2nd-degree follows"
+msgstr "Long-form content from your 1st and 2nd-degree follows"
+
+#: src/components/views/ArticleTimelineView.ts:29
+msgid "Long-form content from your 1st, 2nd and 3rd-degree follows"
+msgstr "Long-form content from your 1st, 2nd and 3rd-degree follows"
+
+#: src/components/views/ArticleTimelineView.ts:31
+msgid "Long-form content from your follows"
+msgstr "Long-form content from your follows"
+
+#: src/components/views/SettingsView.ts:42
+msgid "Media"
+msgstr "Media"
+
+#: src/components/views/ListsOverviewView.ts:77
+msgid "Muted"
+msgstr "Muted"
+
+#: src/components/views/NotificationsView.ts:289
+msgid "No notifications yet"
+msgstr "No notifications yet"
+
+#: src/components/views/TimelineView.ts:133
+msgid "Notes - Timeline"
+msgstr "Notes - Timeline"
+
+#: src/components/views/SettingsView.ts:37
+msgid "Notification Priorities"
+msgstr "Notification Priorities"
+
+#: src/components/views/TimelineView.ts:123
+msgid "Please login to view timeline"
+msgstr "Please login to view timeline"
+
+#: src/components/views/SettingsView.ts:44
+msgid "Privacy"
+msgstr "Privacy"
+
+#: src/components/views/SettingsView.ts:40
+msgid "Relays"
+msgstr "Relays"
+
+#: src/components/views/ListsOverviewView.ts:62
+msgid "Saved notes, sorted into folders."
+msgstr "Saved notes, sorted into folders."
+
+#: src/components/views/SettingsView.ts:67
+msgid "Settings"
+msgstr "Settings"
+
+#: src/components/views/SingleNoteView.ts:269
+msgid "Single Post"
+msgstr "Single Post"
+
+#: src/components/views/ListsOverviewView.ts:70
+msgid "The accounts you follow, with outbox relays."
+msgstr "The accounts you follow, with outbox relays."
+
+#: src/components/views/TimelineView.ts:209
+msgid "Timeline"
+msgstr "Timeline"
+
+#: src/components/views/ListsOverviewView.ts:85
+msgid "Tribes"
+msgstr "Tribes"
+
+#: src/components/views/SettingsView.ts:35
+msgid "UI Settings"
+msgstr "UI Settings"
+
+#: src/components/views/ListsOverviewView.ts:101
+msgid ""
+"Your lists are stored locally and synced to your relays. Pick one to open "
+"it."
+msgstr ""
+"Your lists are stored locally and synced to your relays. Pick one to open "
+"it."
+
+#: src/components/views/SettingsView.ts:43
+msgid "Zaps"
+msgstr "Zaps"

@@ -16,6 +16,7 @@
 import { View } from './View';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { TypedEventBus } from '../../core/TypedEventBus';
+import { _ } from '../../i18n';
 import { isBookmarksEnabled } from '../../addons/bookmarks/index';
 import { isTribesEnabled } from '../../addons/tribes/index';
 import type { ListType } from '../layout/partials/ListViewPartial';
@@ -57,35 +58,35 @@ export class ListsOverviewView extends View {
     return [
       {
         id: 'bookmarks',
-        name: 'Bookmarks',
-        description: 'Saved notes, sorted into folders.',
+        name: _('Bookmarks'),
+        description: _('Saved notes, sorted into folders.'),
         icon: 'icon-bookmark-24',
         enabled: bookmarksEnabled,
-        disableHint: 'Enable the Bookmarks addon in Settings → Addons.',
+        disableHint: _('Enable the Bookmarks addon in Settings → Addons.'),
       },
       {
         id: 'follows',
-        name: 'Follows',
-        description: 'The accounts you follow, with outbox relays.',
+        name: _('Follows'),
+        description: _('The accounts you follow, with outbox relays.'),
         icon: 'icon-follows',
         enabled: true,
         disableHint: '',
       },
       {
         id: 'mutes',
-        name: 'Muted',
-        description: 'Accounts and threads you have muted.',
+        name: _('Muted'),
+        description: _('Accounts and threads you have muted.'),
         icon: 'icon-mute-mic',
         enabled: true,
         disableHint: '',
       },
       {
         id: 'tribes',
-        name: 'Tribes',
-        description: 'Curated public follow lists you subscribe to.',
+        name: _('Tribes'),
+        description: _('Curated public follow lists you subscribe to.'),
         icon: 'icon-tribes-circles',
         enabled: tribesEnabled,
-        disableHint: 'Enable the Tribes addon in Settings → Addons.',
+        disableHint: _('Enable the Tribes addon in Settings → Addons.'),
       },
     ];
   }
@@ -94,11 +95,10 @@ export class ListsOverviewView extends View {
     this.container.innerHTML = `
         <div class="back-padder">
         <div class="lists-overview__head l-spread">
-          <h2>Lists</h2>
+          <h2>${_('Lists')}</h2>
         </div>
         <p class="lists-overview__intro">
-          Your lists are stored locally and synced to your relays. Pick one to
-          open it.
+          ${_('Your lists are stored locally and synced to your relays. Pick one to open it.')}
         </p>
         <div class="nn-card-grid-wrap">
           <div class="nn-card-grid lists-overview__grid" data-lists-grid>

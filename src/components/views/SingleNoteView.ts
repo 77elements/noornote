@@ -5,6 +5,7 @@
  */
 
 import { View } from './View';
+import { _ } from '../../i18n';
 import { NoteUI } from '../ui/NoteUI';
 import { ThreadManager } from './managers/ThreadManager';
 import { LiveUpdatesManager } from './managers/LiveUpdatesManager';
@@ -265,7 +266,7 @@ export class SingleNoteView extends View {
     // Accessibility: Page heading for screen readers
     const pageHeading = document.createElement('h1');
     pageHeading.className = 'visually-hidden';
-    pageHeading.textContent = 'Single Post';
+    pageHeading.textContent = _('Single Post');
     this.container.appendChild(pageHeading);
 
     const isUserLoggedIn = this.authService.getCurrentUser() !== null;
