@@ -12,6 +12,7 @@
  */
 
 import { View } from './View';
+import { _ } from '../../i18n';
 import { Router } from '../../services/Router';
 import {
   type VideoOptions,
@@ -129,7 +130,7 @@ export class VideoEditorView extends View {
           <footer class="video-editor__footer">
             ${this.toolbar.render()}
             <div class="video-editor__actions">
-              <button class="btn" data-action="publish" disabled>Publish</button>
+              <button class="btn" data-action="publish" disabled>${_('Publish')}</button>
             </div>
           </footer>
         </div>
@@ -144,28 +145,28 @@ export class VideoEditorView extends View {
     return `
       <div class="video-editor__form">
         <div class="form__row">
-          <label>Video</label>
+          <label>${_('Video')}</label>
           ${this.renderUploadZone()}
         </div>
 
         <div class="form__row">
-          <label for="video-title">Title</label>
+          <label for="video-title">${_('Title')}</label>
           <input
             type="text"
             id="video-title"
             class="input"
-            placeholder="Video title (optional)"
+            placeholder="${_('Video title (optional)')}"
             value="${escapeHtml(this.title)}"
             data-field="title"
           />
         </div>
 
         <div class="form__row">
-          <label for="video-description">Description</label>
+          <label for="video-description">${_('Description')}</label>
           <textarea
             id="video-description"
             class="textarea video-editor-description"
-            placeholder="Describe your video..."
+            placeholder="${_('Describe your video...')}"
             data-field="content"
           >${escapeHtml(this.content)}</textarea>
         </div>
@@ -173,24 +174,24 @@ export class VideoEditorView extends View {
         <section class="nn-ui-toggle">
           <div class="nn-ui-toggle__header">
             <div class="nn-ui-toggle__info">
-              <h2 class="nn-ui-toggle__title">Details</h2>
+              <h2 class="nn-ui-toggle__title">${_('Details')}</h2>
             </div>
-            <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+            <button class="nn-ui-toggle__toggle" aria-label="${_('Toggle section')}">
               <svg width="24" height="24"><use href="#icon-chevron-down"/></svg>
             </button>
           </div>
           <div class="nn-ui-toggle__content">
             <div class="form__row">
-              <label>Thumbnail</label>
+              <label>${_('Thumbnail')}</label>
               <div class="video-editor__thumb-input">
                 <input
                   type="text"
                   class="input"
-                  placeholder="https://... or upload"
+                  placeholder="${_('https://... or upload')}"
                   value="${escapeHtml(this.thumbnailUrl)}"
                   data-field="thumbnailUrl"
                 />
-                <button type="button" class="video-editor__upload-btn" data-action="upload-thumbnail" title="Upload thumbnail">
+                <button type="button" class="video-editor__upload-btn" data-action="upload-thumbnail" title="${_('Upload thumbnail')}">
                   <svg width="18" height="18"><use href="#icon-upload"/></svg>
                 </button>
                 <input type="file" accept="image/*" class="video-editor__thumb-file" data-thumb-file style="display: none;" />
@@ -198,12 +199,12 @@ export class VideoEditorView extends View {
             </div>
 
             <div class="form__row">
-              <label for="video-tags">Tags</label>
+              <label for="video-tags">${_('Tags')}</label>
               <input
                 type="text"
                 id="video-tags"
                 class="input"
-                placeholder="nostr, music, tutorial (comma separated)"
+                placeholder="${_('nostr, music, tutorial (comma separated)')}"
                 value="${escapeHtml(this.tags)}"
                 data-field="tags"
               />
@@ -226,13 +227,13 @@ export class VideoEditorView extends View {
           ></video>
           <div class="video-editor__video-info">
             <span class="video-editor__kind-badge" data-kind="${this.detectedKind}">
-              ${this.detectedKind === 21 ? 'Landscape' : 'Portrait'} (Kind ${this.detectedKind})
+              ${this.detectedKind === 21 ? _('Landscape') : _('Portrait')} (Kind ${this.detectedKind})
             </span>
             ${this.videoDimensions ? `<span class="video-editor__dimensions">${this.videoDimensions.width}x${this.videoDimensions.height}</span>` : ''}
-            <button type="button" class="video-editor__toggle-kind" data-action="toggle-kind" title="Switch orientation">
+            <button type="button" class="video-editor__toggle-kind" data-action="toggle-kind" title="${_('Switch orientation')}">
               <svg width="16" height="16"><use href="#icon-switch-arrows"/></svg>
             </button>
-            <button type="button" class="video-editor__remove-video" data-action="remove-video" title="Remove video">
+            <button type="button" class="video-editor__remove-video" data-action="remove-video" title="${_('Remove video')}">
               <svg width="16" height="16"><use href="#icon-close"/></svg>
             </button>
           </div>
@@ -244,7 +245,7 @@ export class VideoEditorView extends View {
       return `
         <div class="video-editor__upload-zone video-editor__upload-zone--uploading">
           <svg class="spin" width="32" height="32"><use href="#icon-spin-loader"/></svg>
-          <span>Uploading video...</span>
+          <span>${_('Uploading video...')}</span>
         </div>
       `;
     }
@@ -252,7 +253,7 @@ export class VideoEditorView extends View {
     return `
       <div class="video-editor__upload-zone" data-action="upload-video">
         <svg width="32" height="32"><use href="#icon-video"/></svg>
-        <span>Click or drag & drop to upload video</span>
+        <span>${_('Click or drag & drop to upload video')}</span>
         <input type="file" accept="video/*" class="video-editor__video-file" data-video-file style="display: none;" />
       </div>
     `;
@@ -377,7 +378,7 @@ export class VideoEditorView extends View {
       }
 
       if (!this.mediaApi) {
-        ToastService.show('Media module not available', 'error');
+        ToastService.show(_('Media module not available'), 'error');
         return;
       }
 
@@ -387,7 +388,7 @@ export class VideoEditorView extends View {
         this.videoUrl = result.url;
         this.systemLogger.info('VideoEditorView', 'Video uploaded');
       } else {
-        ToastService.show(result.error || 'Video upload failed', 'error');
+        ToastService.show(result.error || _('Video upload failed'), 'error');
       }
     } catch (error) {
       this.systemLogger.error('VideoEditorView', 'Video upload failed:', error);
@@ -518,7 +519,7 @@ export class VideoEditorView extends View {
     const badge = this.container.querySelector('.video-editor__kind-badge');
     if (badge) {
       badge.setAttribute('data-kind', String(this.detectedKind));
-      badge.textContent = `${this.detectedKind === 21 ? 'Landscape' : 'Portrait'} (Kind ${this.detectedKind})`;
+      badge.textContent = `${this.detectedKind === 21 ? _('Landscape') : _('Portrait')} (Kind ${this.detectedKind})`;
     }
   }
 
@@ -565,7 +566,7 @@ export class VideoEditorView extends View {
     ) as HTMLButtonElement;
     const originalText = btn?.textContent || '';
     if (btn) {
-      btn.textContent = 'Publishing...';
+      btn.textContent = _('Publishing...');
     }
 
     try {

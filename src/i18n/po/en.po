@@ -574,7 +574,10 @@ msgstr "Zaps"
 #: src/components/modals/UnlockNoorSignerModal.ts:68
 #: src/components/modals/ZapModal.ts:148
 #: src/components/views/ArticleView.ts:276
-#: src/components/views/ProfileBookingView.ts:493
+#: src/components/views/ConversationView.ts:619
+#: src/components/views/MessagesView.ts:580
+#: src/components/views/MessagesView.ts:786
+#: src/components/views/ProfileBookingView.ts:495
 #: src/services/ModalService.ts:188
 #: src/services/ModalService.ts:244
 msgid "Cancel"
@@ -761,6 +764,7 @@ msgid "Message sent"
 msgstr "Message sent"
 
 #: src/components/modals/DMComposeModal.ts:43
+#: src/components/views/MessagesView.ts:146
 msgid "New Message"
 msgstr "New Message"
 
@@ -1053,19 +1057,19 @@ msgstr "Version Code"
 msgid "Website"
 msgstr "Website"
 
-#: src/components/views/ProfileBookingView.ts:448
+#: src/components/views/ProfileBookingView.ts:447
 msgid "%s — %s DM(s) failed"
 msgstr "%s — %s DM(s) failed"
 
-#: src/components/views/ProfileBookingView.ts:205
+#: src/components/views/ProfileBookingView.ts:204
 msgid "%s does not offer a booking page right now."
 msgstr "%s does not offer a booking page right now."
 
-#: src/components/views/ProfileBookingView.ts:609
+#: src/components/views/ProfileBookingView.ts:611
 msgid "Add to calendar (.ics)"
 msgstr "Add to calendar (.ics)"
 
-#: src/components/views/ProfileBookingView.ts:485
+#: src/components/views/ProfileBookingView.ts:487
 msgid "Additional participants (optional)"
 msgstr "Additional participants (optional)"
 
@@ -1073,32 +1077,33 @@ msgstr "Additional participants (optional)"
 msgid "Article not found"
 msgstr "Article not found"
 
-#: src/components/views/ProfileBookingView.ts:207
+#: src/components/views/ProfileBookingView.ts:206
 msgid "Back to profile"
 msgstr "Back to profile"
 
-#: src/components/views/ProfileBookingView.ts:187
-#: src/components/views/ProfileBookingView.ts:203
+#: src/components/views/ProfileBookingView.ts:186
+#: src/components/views/ProfileBookingView.ts:202
 msgid "Book a meeting"
 msgstr "Book a meeting"
 
-#: src/components/views/ProfileBookingView.ts:257
+#: src/components/views/ProfileBookingView.ts:256
 msgid "Book a meeting with %s"
 msgstr "Book a meeting with %s"
 
-#: src/components/views/ProfileBookingView.ts:599
+#: src/components/views/ProfileBookingView.ts:601
 msgid "Booked!"
 msgstr "Booked!"
 
-#: src/components/views/ProfileBookingView.ts:495
+#: src/components/views/ProfileBookingView.ts:497
 msgid "Booking…"
 msgstr "Booking…"
 
-#: src/components/views/ProfileBookingView.ts:495
+#: src/components/views/ProfileBookingView.ts:497
 msgid "Confirm booking"
 msgstr "Confirm booking"
 
 #: src/components/views/ArticleView.ts:275
+#: src/components/views/MessagesView.ts:579
 msgid "Delete"
 msgstr "Delete"
 
@@ -1106,13 +1111,13 @@ msgstr "Delete"
 msgid "Delete Article"
 msgstr "Delete Article"
 
-#: src/components/views/ProfileBookingView.ts:590
+#: src/components/views/ProfileBookingView.ts:592
 msgid "Delivered to %s of %s relay"
 msgid_plural "Delivered to %s of %s relays"
-msgstr[0] ""
+msgstr[0] "Delivered to %s of %s relay"
 msgstr[1] ""
 
-#: src/components/views/ProfileBookingView.ts:610
+#: src/components/views/ProfileBookingView.ts:612
 msgid "Done"
 msgstr "Done"
 
@@ -1120,19 +1125,19 @@ msgstr "Done"
 msgid "Failed to load article"
 msgstr "Failed to load article"
 
-#: src/components/views/ProfileBookingView.ts:187
+#: src/components/views/ProfileBookingView.ts:186
 msgid "Loading availability…"
 msgstr "Loading availability…"
 
-#: src/components/views/ProfileBookingView.ts:237
+#: src/components/views/ProfileBookingView.ts:236
 msgid "Next week"
 msgstr "Next week"
 
-#: src/components/views/ProfileBookingView.ts:250
+#: src/components/views/ProfileBookingView.ts:249
 msgid "No open slots at the moment — check back later."
 msgstr "No open slots at the moment — check back later."
 
-#: src/components/views/ProfileBookingView.ts:489
+#: src/components/views/ProfileBookingView.ts:491
 msgid ""
 "Nostr users taking part in the meeting — they receive a private message "
 "about this booking."
@@ -1140,15 +1145,15 @@ msgstr ""
 "Nostr users taking part in the meeting — they receive a private message "
 "about this booking."
 
-#: src/components/views/ProfileBookingView.ts:592
+#: src/components/views/ProfileBookingView.ts:594
 msgid "Not reached: %s"
 msgstr "Not reached: %s"
 
-#: src/components/views/ProfileBookingView.ts:478
+#: src/components/views/ProfileBookingView.ts:477
 msgid "Note for %s (optional, sent as a private message)"
 msgstr "Note for %s (optional, sent as a private message)"
 
-#: src/components/views/ProfileBookingView.ts:229
+#: src/components/views/ProfileBookingView.ts:228
 msgid "Previous week"
 msgstr "Previous week"
 
@@ -1156,23 +1161,23 @@ msgstr "Previous week"
 msgid "Read more from this author"
 msgstr "Read more from this author"
 
-#: src/components/views/ProfileBookingView.ts:471
+#: src/components/views/ProfileBookingView.ts:470
 msgid "Selected:"
 msgstr "Selected:"
 
-#: src/components/views/ProfileBookingView.ts:487
+#: src/components/views/ProfileBookingView.ts:489
 msgid "Tag with @, separate multiple participants with commas"
 msgstr "Tag with @, separate multiple participants with commas"
 
-#: src/components/views/ProfileBookingView.ts:588
+#: src/components/views/ProfileBookingView.ts:590
 msgid "Technical details"
 msgstr "Technical details"
 
-#: src/components/views/ProfileBookingView.ts:480
+#: src/components/views/ProfileBookingView.ts:481
 msgid "the host"
 msgstr "the host"
 
-#: src/components/views/ProfileBookingView.ts:605
+#: src/components/views/ProfileBookingView.ts:607
 msgid ""
 "The host received your booking as a private message. Add it to your "
 "calendar so you don't forget:"
@@ -1184,10 +1189,408 @@ msgstr ""
 msgid "This will send a deletion request to all relays. This cannot be undone."
 msgstr "This will send a deletion request to all relays. This cannot be undone."
 
-#: src/components/views/ProfileBookingView.ts:268
+#: src/components/views/ProfileBookingView.ts:267
 msgid "times shown in your local timezone"
 msgstr "times shown in your local timezone"
 
-#: src/components/views/ProfileBookingView.ts:474
+#: src/components/views/ProfileBookingView.ts:473
 msgid "Your name (optional)"
 msgstr "Your name (optional)"
+
+#: src/services/dm/DMExpiration.ts:140
+msgid "%s day"
+msgid_plural "%s days"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/services/dm/DMExpiration.ts:142
+msgid "%s hour"
+msgid_plural "%s hours"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/services/dm/DMExpiration.ts:100
+#: src/services/dm/DMExpiration.ts:101
+#: src/services/dm/DMExpiration.ts:98
+#: src/services/dm/DMExpiration.ts:99
+msgid "%s left"
+msgstr "%s left"
+
+#: src/services/dm/DMExpiration.ts:144
+msgid "%s minute"
+msgid_plural "%s minutes"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/services/dm/DMExpiration.ts:138
+msgid "%s week"
+msgid_plural "%s weeks"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/services/dm/DMExpiration.ts:115
+msgid "⏱ Disappears in %s"
+msgstr "⏱ Disappears in %s"
+
+#: src/services/dm/DMExpiration.ts:117
+msgid "⏱ Disappears in ~%s"
+msgstr "⏱ Disappears in ~%s"
+
+#: src/components/views/MessagesView.ts:770
+msgid "All messages marked as read"
+msgstr "All messages marked as read"
+
+#: src/components/views/MessagesView.ts:776
+msgid "All messages marked as unread"
+msgstr "All messages marked as unread"
+
+#: src/components/views/ConversationView.ts:620
+msgid "Apply"
+msgstr "Apply"
+
+#: src/components/views/VideoEditorView.ts:256
+msgid "Click or drag & drop to upload video"
+msgstr "Click or drag & drop to upload video"
+
+#: src/components/views/ConversationView.ts:922
+#: src/components/views/MessagesView.ts:601
+msgid "Conversation deleted"
+msgstr "Conversation deleted"
+
+#: src/components/views/MessagesView.ts:600
+msgid "Conversation deleted & sender muted"
+msgstr "Conversation deleted & sender muted"
+
+#: src/components/views/ConversationView.ts:525
+msgid "Could not accept"
+msgstr "Could not accept"
+
+#: src/components/views/MessagesView.ts:270
+msgid "Could not load older messages"
+msgstr "Could not load older messages"
+
+#: src/components/views/ConversationView.ts:563
+msgid "Could not reject"
+msgstr "Could not reject"
+
+#: src/components/views/ConversationView.ts:1182
+#: src/components/views/ConversationView.ts:1196
+msgid "Could not send message — please try again"
+msgstr "Could not send message — please try again"
+
+#: src/components/views/ConversationView.ts:500
+msgid "Could not update setting"
+msgstr "Could not update setting"
+
+#: src/components/views/ConversationView.ts:427
+msgid "Custom (%s)"
+msgstr "Custom (%s)"
+
+#: src/components/views/ConversationView.ts:726
+msgid "Custom duration"
+msgstr "Custom duration"
+
+#: src/components/views/ConversationView.ts:428
+msgid "Custom…"
+msgstr "Custom…"
+
+#: src/components/views/ConversationView.ts:612
+msgid "Days"
+msgstr "Days"
+
+#: src/components/views/MessagesView.ts:575
+msgid "Delete & mute"
+msgstr "Delete & mute"
+
+#: src/components/views/MessagesView.ts:543
+msgid "Delete &amp; mute sender"
+msgstr "Delete &amp; mute sender"
+
+#: src/components/views/ConversationView.ts:433
+#: src/components/views/ConversationView.ts:913
+#: src/components/views/MessagesView.ts:543
+#: src/components/views/MessagesView.ts:575
+msgid "Delete conversation"
+msgstr "Delete conversation"
+
+#: src/components/views/MessagesView.ts:577
+msgid ""
+"Delete this conversation and mute %s? They won't appear in your messages "
+"again."
+msgstr ""
+"Delete this conversation and mute %s? They won't appear in your messages "
+"again."
+
+#: src/components/views/MessagesView.ts:578
+msgid "Delete this conversation with %s? It's removed only from this device."
+msgstr "Delete this conversation with %s? It's removed only from this device."
+
+#: src/components/views/ConversationView.ts:914
+msgid "Delete this conversation? It is removed only from this device."
+msgstr "Delete this conversation? It is removed only from this device."
+
+#: src/components/views/VideoEditorView.ts:169
+msgid "Describe your video..."
+msgstr "Describe your video..."
+
+#: src/components/views/VideoEditorView.ts:165
+msgid "Description"
+msgstr "Description"
+
+#: src/components/views/VideoEditorView.ts:177
+msgid "Details"
+msgstr "Details"
+
+#: src/components/views/ConversationView.ts:436
+msgid "Disappearing messages"
+msgstr "Disappearing messages"
+
+#: src/components/views/ConversationView.ts:491
+msgid "Disappearing messages enabled"
+msgstr "Disappearing messages enabled"
+
+#: src/components/views/ConversationView.ts:490
+msgid "Disappearing messages off"
+msgstr "Disappearing messages off"
+
+#: src/components/views/ConversationView.ts:780
+msgid "Disappears in ~%s"
+msgstr "Disappears in ~%s"
+
+#: src/components/views/ConversationView.ts:782
+msgid "Do you accept the time limitation?"
+msgstr "Do you accept the time limitation?"
+
+#: src/components/views/ConversationView.ts:606
+msgid "Duration"
+msgstr "Duration"
+
+#: src/components/views/ConversationView.ts:705
+msgid "Duration must be at least 1 minute."
+msgstr "Duration must be at least 1 minute."
+
+#: src/components/views/ConversationView.ts:709
+msgid "Duration must be at most 1 year."
+msgstr "Duration must be at most 1 year."
+
+#: src/components/views/ConversationView.ts:1214
+#: src/components/views/MessagesView.ts:695
+msgid "Failed to load messages"
+msgstr "Failed to load messages"
+
+#: src/components/views/ConversationView.ts:984
+msgid "Failed to mute user"
+msgstr "Failed to mute user"
+
+#: src/components/views/ConversationView.ts:611
+msgid "Hours"
+msgstr "Hours"
+
+#: src/components/views/VideoEditorView.ts:190
+msgid "https://... or upload"
+msgstr "https://... or upload"
+
+#: src/components/views/VideoEditorView.ts:230
+#: src/components/views/VideoEditorView.ts:522
+msgid "Landscape"
+msgstr "Landscape"
+
+#: src/components/views/MessagesView.ts:257
+#: src/components/views/MessagesView.ts:267
+msgid "Load older messages"
+msgstr "Load older messages"
+
+#: src/components/views/ConversationView.ts:248
+msgid "Loading messages..."
+msgstr "Loading messages..."
+
+#: src/components/views/MessagesView.ts:66
+msgid "Loading more conversations..."
+msgstr "Loading more conversations..."
+
+#: src/components/views/MessagesView.ts:240
+msgid "Loading older messages…"
+msgstr "Loading older messages…"
+
+#: src/components/views/MessagesView.ts:636
+msgid "Mark all read"
+msgstr "Mark all read"
+
+#: src/components/views/MessagesView.ts:640
+msgid "Mark all unread"
+msgstr "Mark all unread"
+
+#: src/components/views/VideoEditorView.ts:381
+msgid "Media module not available"
+msgstr "Media module not available"
+
+#: src/components/views/MessagesView.ts:148
+msgid "Message options"
+msgstr "Message options"
+
+#: src/components/views/MessagesView.ts:143
+msgid "Messages"
+msgstr "Messages"
+
+#: src/components/views/ConversationView.ts:604
+msgid "Messages will disappear after this time. Minimum: 1 minute, maximum: 1 year."
+msgstr "Messages will disappear after this time. Minimum: 1 minute, maximum: 1 year."
+
+#: src/components/views/ConversationView.ts:610
+msgid "Minutes"
+msgstr "Minutes"
+
+#: src/components/views/ConversationView.ts:933
+msgid "Mute user"
+msgstr "Mute user"
+
+#: src/components/views/ConversationView.ts:931
+msgid "Mute user privately"
+msgstr "Mute user privately"
+
+#: src/components/views/ConversationView.ts:933
+msgid "Mute user publicly"
+msgstr "Mute user publicly"
+
+#: src/components/views/ConversationView.ts:786
+msgid "No"
+msgstr "No"
+
+#: src/components/views/MessagesView.ts:480
+msgid "No messages from people you follow"
+msgstr "No messages from people you follow"
+
+#: src/components/views/MessagesView.ts:481
+msgid "No messages from unknown users"
+msgstr "No messages from unknown users"
+
+#: src/components/views/ConversationView.ts:1062
+msgid "No messages yet"
+msgstr "No messages yet"
+
+#: src/components/views/MessagesView.ts:254
+msgid "No older messages"
+msgstr "No older messages"
+
+#: src/components/views/VideoEditorView.ts:207
+msgid "nostr, music, tutorial (comma separated)"
+msgstr "nostr, music, tutorial (comma separated)"
+
+#: src/services/dm/DMExpiration.ts:128
+msgid "Off"
+msgstr "Off"
+
+#: src/components/views/VideoEditorView.ts:230
+#: src/components/views/VideoEditorView.ts:522
+msgid "Portrait"
+msgstr "Portrait"
+
+#: src/components/views/VideoEditorView.ts:133
+msgid "Publish"
+msgstr "Publish"
+
+#: src/components/views/VideoEditorView.ts:569
+msgid "Publishing..."
+msgstr "Publishing..."
+
+#: src/components/views/MessagesView.ts:782
+msgid ""
+"Re-fetch your full message history from the relays. Existing messages are "
+"kept — this only pulls anything missing. May take a moment."
+msgstr ""
+"Re-fetch your full message history from the relays. Existing messages are "
+"kept — this only pulls anything missing. May take a moment."
+
+#: src/components/views/MessagesView.ts:785
+msgid "Re-sync"
+msgstr "Re-sync"
+
+#: src/components/views/MessagesView.ts:644
+#: src/components/views/MessagesView.ts:781
+msgid "Re-sync messages"
+msgstr "Re-sync messages"
+
+#: src/components/views/VideoEditorView.ts:236
+msgid "Remove video"
+msgstr "Remove video"
+
+#: src/components/views/ConversationView.ts:1215
+#: src/components/views/MessagesView.ts:696
+msgid "Retry"
+msgstr "Retry"
+
+#: src/components/views/ConversationView.ts:1063
+msgid "Send a message to start the conversation"
+msgstr "Send a message to start the conversation"
+
+#: src/components/views/ConversationView.ts:1195
+msgid "Signer did not respond — message not sent"
+msgstr "Signer did not respond — message not sent"
+
+#: src/components/views/MessagesView.ts:487
+msgid "Start a conversation by clicking \"New Message\""
+msgstr "Start a conversation by clicking \"New Message\""
+
+#: src/components/views/VideoEditorView.ts:233
+msgid "Switch orientation"
+msgstr "Switch orientation"
+
+#: src/components/views/VideoEditorView.ts:202
+msgid "Tags"
+msgstr "Tags"
+
+#: src/components/views/VideoEditorView.ts:185
+msgid "Thumbnail"
+msgstr "Thumbnail"
+
+#: src/components/views/ConversationView.ts:609
+msgid "Time unit"
+msgstr "Time unit"
+
+#: src/components/views/VideoEditorView.ts:153
+msgid "Title"
+msgstr "Title"
+
+#: src/components/views/VideoEditorView.ts:179
+msgid "Toggle section"
+msgstr "Toggle section"
+
+#: src/components/views/ConversationView.ts:254
+msgid "Type a message..."
+msgstr "Type a message..."
+
+#: src/services/dm/DMExpiration.ts:127
+msgid "Undecided"
+msgstr "Undecided"
+
+#: src/components/views/VideoEditorView.ts:194
+msgid "Upload thumbnail"
+msgstr "Upload thumbnail"
+
+#: src/components/views/VideoEditorView.ts:248
+msgid "Uploading video..."
+msgstr "Uploading video..."
+
+#: src/components/views/ConversationView.ts:243
+msgid "User options"
+msgstr "User options"
+
+#: src/components/views/VideoEditorView.ts:148
+msgid "Video"
+msgstr "Video"
+
+#: src/components/views/VideoEditorView.ts:158
+msgid "Video title (optional)"
+msgstr "Video title (optional)"
+
+#: src/components/views/VideoEditorView.ts:391
+msgid "Video upload failed"
+msgstr "Video upload failed"
+
+#: src/components/views/ConversationView.ts:613
+msgid "Weeks"
+msgstr "Weeks"
+
+#: src/components/views/ConversationView.ts:785
+msgid "Yes"
+msgstr "Yes"

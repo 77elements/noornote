@@ -582,7 +582,10 @@ msgstr "Zaps"
 #: src/components/modals/UnlockNoorSignerModal.ts:68
 #: src/components/modals/ZapModal.ts:148
 #: src/components/views/ArticleView.ts:276
-#: src/components/views/ProfileBookingView.ts:493
+#: src/components/views/ConversationView.ts:619
+#: src/components/views/MessagesView.ts:580
+#: src/components/views/MessagesView.ts:786
+#: src/components/views/ProfileBookingView.ts:495
 #: src/services/ModalService.ts:188
 #: src/services/ModalService.ts:244
 msgid "Cancel"
@@ -771,6 +774,7 @@ msgid "Message sent"
 msgstr "Nachricht gesendet"
 
 #: src/components/modals/DMComposeModal.ts:43
+#: src/components/views/MessagesView.ts:146
 msgid "New Message"
 msgstr "Neue Nachricht"
 
@@ -1063,19 +1067,19 @@ msgstr "Versionscode"
 msgid "Website"
 msgstr "Website"
 
-#: src/components/views/ProfileBookingView.ts:448
+#: src/components/views/ProfileBookingView.ts:447
 msgid "%s — %s DM(s) failed"
 msgstr "%s — %s DM(s) fehlgeschlagen"
 
-#: src/components/views/ProfileBookingView.ts:205
+#: src/components/views/ProfileBookingView.ts:204
 msgid "%s does not offer a booking page right now."
 msgstr "%s bietet gerade keine Buchungsseite an."
 
-#: src/components/views/ProfileBookingView.ts:609
+#: src/components/views/ProfileBookingView.ts:611
 msgid "Add to calendar (.ics)"
 msgstr "Zum Kalender hinzufügen (.ics)"
 
-#: src/components/views/ProfileBookingView.ts:485
+#: src/components/views/ProfileBookingView.ts:487
 msgid "Additional participants (optional)"
 msgstr "Weitere Teilnehmer (optional)"
 
@@ -1083,32 +1087,33 @@ msgstr "Weitere Teilnehmer (optional)"
 msgid "Article not found"
 msgstr "Artikel nicht gefunden"
 
-#: src/components/views/ProfileBookingView.ts:207
+#: src/components/views/ProfileBookingView.ts:206
 msgid "Back to profile"
 msgstr "Zurück zum Profil"
 
-#: src/components/views/ProfileBookingView.ts:187
-#: src/components/views/ProfileBookingView.ts:203
+#: src/components/views/ProfileBookingView.ts:186
+#: src/components/views/ProfileBookingView.ts:202
 msgid "Book a meeting"
 msgstr "Meeting buchen"
 
-#: src/components/views/ProfileBookingView.ts:257
+#: src/components/views/ProfileBookingView.ts:256
 msgid "Book a meeting with %s"
 msgstr "Meeting buchen mit %s"
 
-#: src/components/views/ProfileBookingView.ts:599
+#: src/components/views/ProfileBookingView.ts:601
 msgid "Booked!"
 msgstr "Gebucht!"
 
-#: src/components/views/ProfileBookingView.ts:495
+#: src/components/views/ProfileBookingView.ts:497
 msgid "Booking…"
 msgstr "Buche…"
 
-#: src/components/views/ProfileBookingView.ts:495
+#: src/components/views/ProfileBookingView.ts:497
 msgid "Confirm booking"
 msgstr "Buchung bestätigen"
 
 #: src/components/views/ArticleView.ts:275
+#: src/components/views/MessagesView.ts:579
 msgid "Delete"
 msgstr "Löschen"
 
@@ -1116,13 +1121,13 @@ msgstr "Löschen"
 msgid "Delete Article"
 msgstr "Artikel löschen"
 
-#: src/components/views/ProfileBookingView.ts:590
+#: src/components/views/ProfileBookingView.ts:592
 msgid "Delivered to %s of %s relay"
 msgid_plural "Delivered to %s of %s relays"
 msgstr[0] "An %s von %s Relay zugestellt"
 msgstr[1] "An %s von %s Relays zugestellt"
 
-#: src/components/views/ProfileBookingView.ts:610
+#: src/components/views/ProfileBookingView.ts:612
 msgid "Done"
 msgstr "Fertig"
 
@@ -1130,19 +1135,19 @@ msgstr "Fertig"
 msgid "Failed to load article"
 msgstr "Artikel konnte nicht geladen werden"
 
-#: src/components/views/ProfileBookingView.ts:187
+#: src/components/views/ProfileBookingView.ts:186
 msgid "Loading availability…"
 msgstr "Lade Verfügbarkeit…"
 
-#: src/components/views/ProfileBookingView.ts:237
+#: src/components/views/ProfileBookingView.ts:236
 msgid "Next week"
 msgstr "Nächste Woche"
 
-#: src/components/views/ProfileBookingView.ts:250
+#: src/components/views/ProfileBookingView.ts:249
 msgid "No open slots at the moment — check back later."
 msgstr "Aktuell keine freien Termine — schau später wieder vorbei."
 
-#: src/components/views/ProfileBookingView.ts:489
+#: src/components/views/ProfileBookingView.ts:491
 msgid ""
 "Nostr users taking part in the meeting — they receive a private message "
 "about this booking."
@@ -1150,15 +1155,15 @@ msgstr ""
 "Nostr-Nutzer, die am Meeting teilnehmen — sie erhalten eine private "
 "Nachricht zu dieser Buchung."
 
-#: src/components/views/ProfileBookingView.ts:592
+#: src/components/views/ProfileBookingView.ts:594
 msgid "Not reached: %s"
 msgstr "Nicht erreicht: %s"
 
-#: src/components/views/ProfileBookingView.ts:478
+#: src/components/views/ProfileBookingView.ts:477
 msgid "Note for %s (optional, sent as a private message)"
 msgstr "Notiz für %s (optional, wird als private Nachricht gesendet)"
 
-#: src/components/views/ProfileBookingView.ts:229
+#: src/components/views/ProfileBookingView.ts:228
 msgid "Previous week"
 msgstr "Vorherige Woche"
 
@@ -1166,23 +1171,23 @@ msgstr "Vorherige Woche"
 msgid "Read more from this author"
 msgstr "Mehr von diesem Autor"
 
-#: src/components/views/ProfileBookingView.ts:471
+#: src/components/views/ProfileBookingView.ts:470
 msgid "Selected:"
 msgstr "Ausgewählt:"
 
-#: src/components/views/ProfileBookingView.ts:487
+#: src/components/views/ProfileBookingView.ts:489
 msgid "Tag with @, separate multiple participants with commas"
 msgstr "Mit @ markieren, mehrere Teilnehmer mit Kommas trennen"
 
-#: src/components/views/ProfileBookingView.ts:588
+#: src/components/views/ProfileBookingView.ts:590
 msgid "Technical details"
 msgstr "Technische Details"
 
-#: src/components/views/ProfileBookingView.ts:480
+#: src/components/views/ProfileBookingView.ts:481
 msgid "the host"
 msgstr "den Gastgeber"
 
-#: src/components/views/ProfileBookingView.ts:605
+#: src/components/views/ProfileBookingView.ts:607
 msgid ""
 "The host received your booking as a private message. Add it to your "
 "calendar so you don't forget:"
@@ -1196,10 +1201,411 @@ msgstr ""
 "Das sendet eine Lösch-Anfrage an alle Relays. Das kann nicht rückgängig "
 "gemacht werden."
 
-#: src/components/views/ProfileBookingView.ts:268
+#: src/components/views/ProfileBookingView.ts:267
 msgid "times shown in your local timezone"
 msgstr "Zeiten in deiner lokalen Zeitzone"
 
-#: src/components/views/ProfileBookingView.ts:474
+#: src/components/views/ProfileBookingView.ts:473
 msgid "Your name (optional)"
 msgstr "Dein Name (optional)"
+
+#: src/services/dm/DMExpiration.ts:140
+msgid "%s day"
+msgid_plural "%s days"
+msgstr[0] "%s Tag"
+msgstr[1] "%s Tage"
+
+#: src/services/dm/DMExpiration.ts:142
+msgid "%s hour"
+msgid_plural "%s hours"
+msgstr[0] "%s Stunde"
+msgstr[1] "%s Stunden"
+
+#: src/services/dm/DMExpiration.ts:100
+#: src/services/dm/DMExpiration.ts:101
+#: src/services/dm/DMExpiration.ts:98
+#: src/services/dm/DMExpiration.ts:99
+msgid "%s left"
+msgstr "noch %s"
+
+#: src/services/dm/DMExpiration.ts:144
+msgid "%s minute"
+msgid_plural "%s minutes"
+msgstr[0] "%s Minute"
+msgstr[1] "%s Minuten"
+
+#: src/services/dm/DMExpiration.ts:138
+msgid "%s week"
+msgid_plural "%s weeks"
+msgstr[0] "%s Woche"
+msgstr[1] "%s Wochen"
+
+#: src/services/dm/DMExpiration.ts:115
+msgid "⏱ Disappears in %s"
+msgstr "⏱ Verschwindet in %s"
+
+#: src/services/dm/DMExpiration.ts:117
+msgid "⏱ Disappears in ~%s"
+msgstr "⏱ Verschwindet in ~%s"
+
+#: src/components/views/MessagesView.ts:770
+msgid "All messages marked as read"
+msgstr "Alle Nachrichten als gelesen markiert"
+
+#: src/components/views/MessagesView.ts:776
+msgid "All messages marked as unread"
+msgstr "Alle Nachrichten als ungelesen markiert"
+
+#: src/components/views/ConversationView.ts:620
+msgid "Apply"
+msgstr "Anwenden"
+
+#: src/components/views/VideoEditorView.ts:256
+msgid "Click or drag & drop to upload video"
+msgstr "Klicken oder ziehen & ablegen, um ein Video hochzuladen"
+
+#: src/components/views/ConversationView.ts:922
+#: src/components/views/MessagesView.ts:601
+msgid "Conversation deleted"
+msgstr "Unterhaltung gelöscht"
+
+#: src/components/views/MessagesView.ts:600
+msgid "Conversation deleted & sender muted"
+msgstr "Unterhaltung gelöscht & Absender stummschaltet"
+
+#: src/components/views/ConversationView.ts:525
+msgid "Could not accept"
+msgstr "Konnte nicht angenommen werden"
+
+#: src/components/views/MessagesView.ts:270
+msgid "Could not load older messages"
+msgstr "Ältere Nachrichten konnten nicht geladen werden"
+
+#: src/components/views/ConversationView.ts:563
+msgid "Could not reject"
+msgstr "Konnte nicht abgelehnt werden"
+
+#: src/components/views/ConversationView.ts:1182
+#: src/components/views/ConversationView.ts:1196
+msgid "Could not send message — please try again"
+msgstr "Nachricht konnte nicht gesendet werden — bitte versuche es erneut"
+
+#: src/components/views/ConversationView.ts:500
+msgid "Could not update setting"
+msgstr "Einstellung konnte nicht aktualisiert werden"
+
+#: src/components/views/ConversationView.ts:427
+msgid "Custom (%s)"
+msgstr "Benutzerdefiniert (%s)"
+
+#: src/components/views/ConversationView.ts:726
+msgid "Custom duration"
+msgstr "Benutzerdefinierte Dauer"
+
+#: src/components/views/ConversationView.ts:428
+msgid "Custom…"
+msgstr "Benutzerdefiniert…"
+
+#: src/components/views/ConversationView.ts:612
+msgid "Days"
+msgstr "Tage"
+
+#: src/components/views/MessagesView.ts:575
+msgid "Delete & mute"
+msgstr "Löschen & stummschalten"
+
+#: src/components/views/MessagesView.ts:543
+msgid "Delete &amp; mute sender"
+msgstr "Absender löschen &amp; stummschalten"
+
+#: src/components/views/ConversationView.ts:433
+#: src/components/views/ConversationView.ts:913
+#: src/components/views/MessagesView.ts:543
+#: src/components/views/MessagesView.ts:575
+msgid "Delete conversation"
+msgstr "Unterhaltung löschen"
+
+#: src/components/views/MessagesView.ts:577
+msgid ""
+"Delete this conversation and mute %s? They won't appear in your messages "
+"again."
+msgstr ""
+"Diese Unterhaltung löschen und %s stummschalten? Die Person erscheint nicht "
+"mehr in deinen Nachrichten."
+
+#: src/components/views/MessagesView.ts:578
+msgid "Delete this conversation with %s? It's removed only from this device."
+msgstr "Diese Unterhaltung mit %s löschen? Sie wird nur von diesem Gerät entfernt."
+
+#: src/components/views/ConversationView.ts:914
+msgid "Delete this conversation? It is removed only from this device."
+msgstr "Diese Unterhaltung löschen? Sie wird nur von diesem Gerät entfernt."
+
+#: src/components/views/VideoEditorView.ts:169
+msgid "Describe your video..."
+msgstr "Beschreibe dein Video…"
+
+#: src/components/views/VideoEditorView.ts:165
+msgid "Description"
+msgstr "Beschreibung"
+
+#: src/components/views/VideoEditorView.ts:177
+msgid "Details"
+msgstr "Details"
+
+#: src/components/views/ConversationView.ts:436
+msgid "Disappearing messages"
+msgstr "Vergängliche Nachrichten"
+
+#: src/components/views/ConversationView.ts:491
+msgid "Disappearing messages enabled"
+msgstr "Vergängliche Nachrichten aktiviert"
+
+#: src/components/views/ConversationView.ts:490
+msgid "Disappearing messages off"
+msgstr "Vergängliche Nachrichten aus"
+
+#: src/components/views/ConversationView.ts:780
+msgid "Disappears in ~%s"
+msgstr "Verschwindet in ~%s"
+
+#: src/components/views/ConversationView.ts:782
+msgid "Do you accept the time limitation?"
+msgstr "Akzeptierst du die Zeitbegrenzung?"
+
+#: src/components/views/ConversationView.ts:606
+msgid "Duration"
+msgstr "Dauer"
+
+#: src/components/views/ConversationView.ts:705
+msgid "Duration must be at least 1 minute."
+msgstr "Die Dauer muss mindestens 1 Minute betragen."
+
+#: src/components/views/ConversationView.ts:709
+msgid "Duration must be at most 1 year."
+msgstr "Die Dauer darf höchstens 1 Jahr betragen."
+
+#: src/components/views/ConversationView.ts:1214
+#: src/components/views/MessagesView.ts:695
+msgid "Failed to load messages"
+msgstr "Nachrichten konnten nicht geladen werden"
+
+#: src/components/views/ConversationView.ts:984
+msgid "Failed to mute user"
+msgstr "Nutzer konnte nicht stummgeschaltet werden"
+
+#: src/components/views/ConversationView.ts:611
+msgid "Hours"
+msgstr "Stunden"
+
+#: src/components/views/VideoEditorView.ts:190
+msgid "https://... or upload"
+msgstr "https://… oder hochladen"
+
+#: src/components/views/VideoEditorView.ts:230
+#: src/components/views/VideoEditorView.ts:522
+msgid "Landscape"
+msgstr "Querformat"
+
+#: src/components/views/MessagesView.ts:257
+#: src/components/views/MessagesView.ts:267
+msgid "Load older messages"
+msgstr "Ältere Nachrichten laden"
+
+#: src/components/views/ConversationView.ts:248
+msgid "Loading messages..."
+msgstr "Lade Nachrichten…"
+
+#: src/components/views/MessagesView.ts:66
+msgid "Loading more conversations..."
+msgstr "Lade weitere Unterhaltungen…"
+
+#: src/components/views/MessagesView.ts:240
+msgid "Loading older messages…"
+msgstr "Lade ältere Nachrichten…"
+
+#: src/components/views/MessagesView.ts:636
+msgid "Mark all read"
+msgstr "Alle als gelesen markieren"
+
+#: src/components/views/MessagesView.ts:640
+msgid "Mark all unread"
+msgstr "Alle als ungelesen markieren"
+
+#: src/components/views/VideoEditorView.ts:381
+msgid "Media module not available"
+msgstr "Medien-Modul nicht verfügbar"
+
+#: src/components/views/MessagesView.ts:148
+msgid "Message options"
+msgstr "Nachrichten-Optionen"
+
+#: src/components/views/MessagesView.ts:143
+msgid "Messages"
+msgstr "Nachrichten"
+
+#: src/components/views/ConversationView.ts:604
+msgid "Messages will disappear after this time. Minimum: 1 minute, maximum: 1 year."
+msgstr ""
+"Nachrichten verschwinden nach dieser Zeit. Minimum: 1 Minute, Maximum: 1 "
+"Jahr."
+
+#: src/components/views/ConversationView.ts:610
+msgid "Minutes"
+msgstr "Minuten"
+
+#: src/components/views/ConversationView.ts:933
+msgid "Mute user"
+msgstr "Nutzer stummschalten"
+
+#: src/components/views/ConversationView.ts:931
+msgid "Mute user privately"
+msgstr "Nutzer privat stummschalten"
+
+#: src/components/views/ConversationView.ts:933
+msgid "Mute user publicly"
+msgstr "Nutzer öffentlich stummschalten"
+
+#: src/components/views/ConversationView.ts:786
+msgid "No"
+msgstr "Nein"
+
+#: src/components/views/MessagesView.ts:480
+msgid "No messages from people you follow"
+msgstr "Keine Nachrichten von Personen, denen du folgst"
+
+#: src/components/views/MessagesView.ts:481
+msgid "No messages from unknown users"
+msgstr "Keine Nachrichten von unbekannten Nutzern"
+
+#: src/components/views/ConversationView.ts:1062
+msgid "No messages yet"
+msgstr "Noch keine Nachrichten"
+
+#: src/components/views/MessagesView.ts:254
+msgid "No older messages"
+msgstr "Keine älteren Nachrichten"
+
+#: src/components/views/VideoEditorView.ts:207
+msgid "nostr, music, tutorial (comma separated)"
+msgstr "nostr, musik, tutorial (mit Kommas getrennt)"
+
+#: src/services/dm/DMExpiration.ts:128
+msgid "Off"
+msgstr "Aus"
+
+#: src/components/views/VideoEditorView.ts:230
+#: src/components/views/VideoEditorView.ts:522
+msgid "Portrait"
+msgstr "Hochformat"
+
+#: src/components/views/VideoEditorView.ts:133
+msgid "Publish"
+msgstr "Veröffentlichen"
+
+#: src/components/views/VideoEditorView.ts:569
+msgid "Publishing..."
+msgstr "Veröffentliche…"
+
+#: src/components/views/MessagesView.ts:782
+msgid ""
+"Re-fetch your full message history from the relays. Existing messages are "
+"kept — this only pulls anything missing. May take a moment."
+msgstr ""
+"Rufe deinen vollständigen Nachrichtenverlauf von den Relays ab. Bestehende "
+"Nachrichten bleiben erhalten — es wird nur Fehlendes nachgezogen. Kann "
+"einen Moment dauern."
+
+#: src/components/views/MessagesView.ts:785
+msgid "Re-sync"
+msgstr "Neu synchronisieren"
+
+#: src/components/views/MessagesView.ts:644
+#: src/components/views/MessagesView.ts:781
+msgid "Re-sync messages"
+msgstr "Nachrichten neu synchronisieren"
+
+#: src/components/views/VideoEditorView.ts:236
+msgid "Remove video"
+msgstr "Video entfernen"
+
+#: src/components/views/ConversationView.ts:1215
+#: src/components/views/MessagesView.ts:696
+msgid "Retry"
+msgstr "Erneut versuchen"
+
+#: src/components/views/ConversationView.ts:1063
+msgid "Send a message to start the conversation"
+msgstr "Sende eine Nachricht, um die Unterhaltung zu starten"
+
+#: src/components/views/ConversationView.ts:1195
+msgid "Signer did not respond — message not sent"
+msgstr "Signer hat nicht geantwortet — Nachricht nicht gesendet"
+
+#: src/components/views/MessagesView.ts:487
+msgid "Start a conversation by clicking \"New Message\""
+msgstr "Starte eine Unterhaltung über „Neue Nachricht“"
+
+#: src/components/views/VideoEditorView.ts:233
+msgid "Switch orientation"
+msgstr "Ausrichtung wechseln"
+
+#: src/components/views/VideoEditorView.ts:202
+msgid "Tags"
+msgstr "Tags"
+
+#: src/components/views/VideoEditorView.ts:185
+msgid "Thumbnail"
+msgstr "Vorschaubild"
+
+#: src/components/views/ConversationView.ts:609
+msgid "Time unit"
+msgstr "Zeiteinheit"
+
+#: src/components/views/VideoEditorView.ts:153
+msgid "Title"
+msgstr "Titel"
+
+#: src/components/views/VideoEditorView.ts:179
+msgid "Toggle section"
+msgstr "Bereich umschalten"
+
+#: src/components/views/ConversationView.ts:254
+msgid "Type a message..."
+msgstr "Nachricht schreiben…"
+
+#: src/services/dm/DMExpiration.ts:127
+msgid "Undecided"
+msgstr "Unentschieden"
+
+#: src/components/views/VideoEditorView.ts:194
+msgid "Upload thumbnail"
+msgstr "Vorschaubild hochladen"
+
+#: src/components/views/VideoEditorView.ts:248
+msgid "Uploading video..."
+msgstr "Video wird hochgeladen…"
+
+#: src/components/views/ConversationView.ts:243
+msgid "User options"
+msgstr "Nutzer-Optionen"
+
+#: src/components/views/VideoEditorView.ts:148
+msgid "Video"
+msgstr "Video"
+
+#: src/components/views/VideoEditorView.ts:158
+msgid "Video title (optional)"
+msgstr "Videotitel (optional)"
+
+#: src/components/views/VideoEditorView.ts:391
+msgid "Video upload failed"
+msgstr "Video-Upload fehlgeschlagen"
+
+#: src/components/views/ConversationView.ts:613
+msgid "Weeks"
+msgstr "Wochen"
+
+#: src/components/views/ConversationView.ts:785
+msgid "Yes"
+msgstr "Ja"

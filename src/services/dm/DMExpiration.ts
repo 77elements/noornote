@@ -17,6 +17,8 @@
  * (up to 48h past), so a "7 day" timer honestly lands in ~5–7 days.
  */
 
+import { _, tn } from '../../i18n';
+
 export const DISAPPEARING_OFF = 0;
 /** Sentinel meaning "user has not yet accepted or declined". Always falsy in persistence. */
 export const DISAPPEARING_UNDECIDED: number | undefined = undefined;
@@ -40,6 +42,10 @@ export const DISAPPEARING_PRESETS: readonly DisappearingPreset[] = [
   { seconds: 30 * 86_400, label: '30 days', approxLabel: '~30 days' },
   { seconds: 365 * 86_400, label: '1 year', approxLabel: '~1 year' },
 ] as const;
+
+// Labels above are English msgids — translate at render time via `_()` /
+// `tn()` (labelForDuration/chipLabelForDuration below). Never call `_()` at
+// module scope: the catalog loads in initI18n(), after module evaluation.
 
 /**
  * Compute the absolute wall-clock expiry timestamp (unix seconds) for a
@@ -89,10 +95,10 @@ export function formatRemaining(
   const days = Math.floor(remaining / 86_400);
   const years = Math.floor(remaining / (365 * 86_400));
 
-  if (years >= 1) return `${years}y left`;
-  if (days >= 1) return `${days}d left`;
-  if (hours >= 1) return `${hours}h left`;
-  return `${Math.max(1, minutes)}m left`;
+  if (years >= 1) return _('%s left', `${years}y`);
+  if (days >= 1) return _('%s left', `${days}d`);
+  if (hours >= 1) return _('%s left', `${hours}h`);
+  return _('%s left', `${Math.max(1, minutes)}m`);
 }
 
 /**
@@ -106,9 +112,9 @@ export function chipLabelForDuration(
 ): string {
   if (!isActive(seconds)) return '';
   const preset = DISAPPEARING_PRESETS.find(p => p.seconds === seconds);
-  if (preset) return `⏱ Disappears in ${preset.approxLabel}`;
+  if (preset) return _('⏱ Disappears in %s', preset.approxLabel);
   // Custom value — re-use labelForDuration so the chip and the menu agree.
-  return `⏱ Disappears in ~${labelForDuration(seconds)}`;
+  return _('⏱ Disappears in ~%s', labelForDuration(seconds));
 }
 
 /**
@@ -118,10 +124,10 @@ export function chipLabelForDuration(
  * unit (weeks → days → hours) so the menu shows "3 days" instead of "259200s".
  */
 export function labelForDuration(seconds: number | null | undefined): string {
-  if (isUndecided(seconds)) return 'Undecided';
-  if (isOff(seconds)) return 'Off';
+  if (isUndecided(seconds)) return _('Undecided');
+  if (isOff(seconds)) return _('Off');
   const preset = DISAPPEARING_PRESETS.find(p => p.seconds === seconds);
-  if (preset) return preset.label;
+  if (preset) return _(preset.label);
   // Custom value — decompose.
   const secs = seconds as number;
   const weeks = Math.floor(secs / (7 * 86_400));
@@ -129,13 +135,13 @@ export function labelForDuration(seconds: number | null | undefined): string {
   const hours = Math.floor(secs / 3600);
   const minutes = Math.floor(secs / 60);
   if (weeks >= 1 && secs % (7 * 86_400) === 0)
-    return `${weeks} week${weeks === 1 ? '' : 's'}`;
+    return tn('%s week', '%s weeks', weeks, weeks);
   if (days >= 1 && secs % 86_400 === 0)
-    return `${days} day${days === 1 ? '' : 's'}`;
+    return tn('%s day', '%s days', days, days);
   if (hours >= 1 && secs % 3600 === 0)
-    return `${hours} hour${hours === 1 ? '' : 's'}`;
+    return tn('%s hour', '%s hours', hours, hours);
   if (minutes >= 1 && secs % 60 === 0)
-    return `${minutes} minute${minutes === 1 ? '' : 's'}`;
+    return tn('%s minute', '%s minutes', minutes, minutes);
   // Fallback: non-clean number of seconds (rare).
   return `${secs}s`;
 }

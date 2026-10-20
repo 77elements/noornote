@@ -8,6 +8,7 @@
  */
 
 import { errMessage } from '../../helpers/errorMessage';
+import { _ } from '../../i18n';
 import { View } from './View';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { DMsModuleApi } from '../../modules/dms/contracts';
@@ -62,7 +63,7 @@ export class MessagesView extends View {
     this.router = Router.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
-      loadingMessage: 'Loading more conversations...',
+      loadingMessage: _('Loading more conversations...'),
     });
     this.outsideClickHandler = () => this.closeMenu();
 
@@ -139,12 +140,12 @@ export class MessagesView extends View {
     this.container.innerHTML = `
       <div class="back-padder">
         <div class="messages-view__header progress-bar-container">
-          <h1>Messages</h1>
+          <h1>${_('Messages')}</h1>
           <div class="messages-view__actions">
             <button class="btn btn--medium messages-view__compose-btn">
-              New Message
+              ${_('New Message')}
             </button>
-            <button class="dropdown-menu-trigger messages-view__menu-trigger" aria-label="Message options">
+            <button class="dropdown-menu-trigger messages-view__menu-trigger" aria-label="${_('Message options')}">
               <svg width="16" height="16"><use href="#icon-menu-dots"/></svg>
             </button>
           </div>
@@ -236,7 +237,7 @@ export class MessagesView extends View {
 
     btn.disabled = true;
     if (label) {
-      label.textContent = 'Loading older messages…';
+      label.textContent = _('Loading older messages…');
       label.classList.add('pulsate');
     }
 
@@ -250,10 +251,10 @@ export class MessagesView extends View {
 
       if (label) label.classList.remove('pulsate');
       if (result.reachedEnd) {
-        if (label) label.textContent = 'No older messages';
+        if (label) label.textContent = _('No older messages');
         // Stays disabled — nothing more to load.
       } else {
-        if (label) label.textContent = 'Load older messages';
+        if (label) label.textContent = _('Load older messages');
         btn.disabled = false;
       }
     } catch (error) {
@@ -263,10 +264,10 @@ export class MessagesView extends View {
       );
       if (label) {
         label.classList.remove('pulsate');
-        label.textContent = 'Load older messages';
+        label.textContent = _('Load older messages');
       }
       btn.disabled = false;
-      ToastService.show('Could not load older messages', 'error');
+      ToastService.show(_('Could not load older messages'), 'error');
     }
   }
 
@@ -476,14 +477,14 @@ export class MessagesView extends View {
     if (isInitialLoad && batch.length === 0) {
       const emptyMessage =
         this.activeTab === 'known'
-          ? 'No messages from people you follow'
-          : 'No messages from unknown users';
+          ? _('No messages from people you follow')
+          : _('No messages from unknown users');
 
       list.innerHTML = `
         <div class="messages-view__empty">
           <svg width="48" height="48"><use href="#icon-email"/></svg>
           <p>${emptyMessage}</p>
-          <p class="empty-hint">Start a conversation by clicking "New Message"</p>
+          <p class="empty-hint">${_('Start a conversation by clicking "New Message"')}</p>
         </div>
       `;
       return;
@@ -539,7 +540,7 @@ export class MessagesView extends View {
       `
           : ''
       }
-      <button class="conversation-item__delete" aria-label="${this.activeTab === 'unknown' ? 'Delete &amp; mute sender' : 'Delete conversation'}" title="${this.activeTab === 'unknown' ? 'Delete &amp; mute sender' : 'Delete conversation'}">
+      <button class="conversation-item__delete" aria-label="${this.activeTab === 'unknown' ? `${_('Delete &amp; mute sender')}` : `${_('Delete conversation')}`}" title="${this.activeTab === 'unknown' ? `${_('Delete &amp; mute sender')}` : `${_('Delete conversation')}`}">
         <svg width="18" height="18"><use href="#icon-trash"/></svg>
       </button>
     `;
@@ -571,12 +572,18 @@ export class MessagesView extends View {
     const isUnknown = this.activeTab === 'unknown';
 
     const confirmed = await ModalService.getInstance().confirm({
-      title: isUnknown ? 'Delete & mute' : 'Delete conversation',
+      title: isUnknown ? _('Delete & mute') : _('Delete conversation'),
       message: isUnknown
-        ? `Delete this conversation and mute ${displayName}? They won't appear in your messages again.`
-        : `Delete this conversation with ${displayName}? It's removed only from this device.`,
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
+        ? _(
+            "Delete this conversation and mute %s? They won't appear in your messages again.",
+            displayName
+          )
+        : _(
+            "Delete this conversation with %s? It's removed only from this device.",
+            displayName
+          ),
+      confirmText: _('Delete'),
+      cancelText: _('Cancel'),
       confirmDestructive: true,
     });
     if (!confirmed) return;
@@ -596,8 +603,8 @@ export class MessagesView extends View {
     );
     ToastService.show(
       isUnknown
-        ? 'Conversation deleted & sender muted'
-        : 'Conversation deleted',
+        ? _('Conversation deleted & sender muted')
+        : _('Conversation deleted'),
       'success'
     );
   }
@@ -632,15 +639,15 @@ export class MessagesView extends View {
     menu.innerHTML = `
       <button class="dropdown-menu-item" data-action="mark-all-read">
         <svg width="16" height="16"><use href="#icon-checkmark"/></svg>
-        Mark all read
+        ${_('Mark all read')}
       </button>
       <button class="dropdown-menu-item" data-action="mark-all-unread">
         <svg width="16" height="16"><use href="#icon-circle"/></svg>
-        Mark all unread
+        ${_('Mark all unread')}
       </button>
       <button class="dropdown-menu-item" data-action="resync">
         <svg width="16" height="16"><use href="#icon-sync"/></svg>
-        Re-sync messages
+        ${_('Re-sync messages')}
       </button>
     `;
 
@@ -691,8 +698,8 @@ export class MessagesView extends View {
 
     list.innerHTML = `
       <div class="messages-view__error">
-        <p>Failed to load messages</p>
-        <button class="btn btn--medium" onclick="location.reload()">Retry</button>
+        <p>${_('Failed to load messages')}</p>
+        <button class="btn btn--medium" onclick="location.reload()">${_('Retry')}</button>
       </div>
     `;
   }
@@ -766,22 +773,23 @@ export class MessagesView extends View {
         await this.dmsApi?.markAllAsRead();
         // Immediately update UI (don't wait for event)
         await this.refreshConversationsQuiet();
-        ToastService.show('All messages marked as read', 'success');
+        ToastService.show(_('All messages marked as read'), 'success');
         break;
       case 'mark-all-unread':
         await this.dmsApi?.markAllAsUnread();
         // Immediately update UI (don't wait for event)
         await this.refreshConversationsQuiet();
-        ToastService.show('All messages marked as unread', 'success');
+        ToastService.show(_('All messages marked as unread'), 'success');
         break;
       case 'resync': {
         const { ModalService } = await import('../../services/ModalService');
         const confirmed = await ModalService.getInstance().confirm({
-          title: 'Re-sync messages',
-          message:
-            'Re-fetch your full message history from the relays. Existing messages are kept — this only pulls anything missing. May take a moment.',
-          confirmText: 'Re-sync',
-          cancelText: 'Cancel',
+          title: _('Re-sync messages'),
+          message: _(
+            'Re-fetch your full message history from the relays. Existing messages are kept — this only pulls anything missing. May take a moment.'
+          ),
+          confirmText: _('Re-sync'),
+          cancelText: _('Cancel'),
         });
         if (!confirmed) break;
         // Drive the same progress UI as the initial load; completion resets it

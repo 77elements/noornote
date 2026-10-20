@@ -2,13 +2,25 @@ msgid ""
 msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 
-#: src/components/views/ProfileBookingView.ts:448
+#: src/components/views/ProfileBookingView.ts:447
 msgid "%s — %s DM(s) failed"
 msgstr ""
 
-#: src/components/views/ProfileBookingView.ts:205
+#: src/services/dm/DMExpiration.ts:140
+msgid "%s day"
+msgid_plural "%s days"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/components/views/ProfileBookingView.ts:204
 msgid "%s does not offer a booking page right now."
 msgstr ""
+
+#: src/services/dm/DMExpiration.ts:142
+msgid "%s hour"
+msgid_plural "%s hours"
+msgstr[0] ""
+msgstr[1] ""
 
 #: src/components/modals/SyncConfirmationModal.ts:198
 msgid "%s item in different folders"
@@ -16,9 +28,36 @@ msgid_plural "%s items in different folders"
 msgstr[0] ""
 msgstr[1] ""
 
+#: src/services/dm/DMExpiration.ts:100
+#: src/services/dm/DMExpiration.ts:101
+#: src/services/dm/DMExpiration.ts:98
+#: src/services/dm/DMExpiration.ts:99
+msgid "%s left"
+msgstr ""
+
+#: src/services/dm/DMExpiration.ts:144
+msgid "%s minute"
+msgid_plural "%s minutes"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/services/dm/DMExpiration.ts:138
+msgid "%s week"
+msgid_plural "%s weeks"
+msgstr[0] ""
+msgstr[1] ""
+
 #: src/components/modals/SyncConfirmationModal.ts:311
 #: src/components/modals/SyncConfirmationModal.ts:348
 msgid "+ %s more..."
+msgstr ""
+
+#: src/services/dm/DMExpiration.ts:115
+msgid "⏱ Disappears in %s"
+msgstr ""
+
+#: src/services/dm/DMExpiration.ts:117
+msgid "⏱ Disappears in ~%s"
 msgstr ""
 
 #: src/components/views/AboutView.ts:69
@@ -33,11 +72,11 @@ msgstr ""
 msgid "Active"
 msgstr ""
 
-#: src/components/views/ProfileBookingView.ts:609
+#: src/components/views/ProfileBookingView.ts:611
 msgid "Add to calendar (.ics)"
 msgstr ""
 
-#: src/components/views/ProfileBookingView.ts:485
+#: src/components/views/ProfileBookingView.ts:487
 msgid "Additional participants (optional)"
 msgstr ""
 
@@ -62,6 +101,14 @@ msgstr ""
 msgid "All data remains on your device."
 msgstr ""
 
+#: src/components/views/MessagesView.ts:770
+msgid "All messages marked as read"
+msgstr ""
+
+#: src/components/views/MessagesView.ts:776
+msgid "All messages marked as unread"
+msgstr ""
+
 #: src/components/views/AboutView.ts:194
 msgid "All user data remains in your browser and can be cleared at any time via your browser settings."
 msgstr ""
@@ -82,6 +129,10 @@ msgstr ""
 msgid "App not found"
 msgstr ""
 
+#: src/components/views/ConversationView.ts:620
+msgid "Apply"
+msgstr ""
+
 #: src/components/views/ArticleView.ts:107
 msgid "Article not found"
 msgstr ""
@@ -94,7 +145,7 @@ msgstr ""
 msgid "Avatars, images, videos, and audio referenced in Nostr events are loaded directly from whatever URL the author published. Each such load is a direct request from your device to that third-party host."
 msgstr ""
 
-#: src/components/views/ProfileBookingView.ts:207
+#: src/components/views/ProfileBookingView.ts:206
 msgid "Back to profile"
 msgstr ""
 
@@ -102,20 +153,20 @@ msgstr ""
 msgid "Beyond Nostr relays, NoorNote makes network requests to a small set of third-party endpoints to render content correctly. Each request unavoidably exposes your IP address to the receiving service:"
 msgstr ""
 
-#: src/components/views/ProfileBookingView.ts:187
-#: src/components/views/ProfileBookingView.ts:203
+#: src/components/views/ProfileBookingView.ts:186
+#: src/components/views/ProfileBookingView.ts:202
 msgid "Book a meeting"
 msgstr ""
 
-#: src/components/views/ProfileBookingView.ts:257
+#: src/components/views/ProfileBookingView.ts:256
 msgid "Book a meeting with %s"
 msgstr ""
 
-#: src/components/views/ProfileBookingView.ts:599
+#: src/components/views/ProfileBookingView.ts:601
 msgid "Booked!"
 msgstr ""
 
-#: src/components/views/ProfileBookingView.ts:495
+#: src/components/views/ProfileBookingView.ts:497
 msgid "Booking…"
 msgstr ""
 
@@ -145,7 +196,10 @@ msgstr ""
 #: src/components/modals/UnlockNoorSignerModal.ts:68
 #: src/components/modals/ZapModal.ts:148
 #: src/components/views/ArticleView.ts:276
-#: src/components/views/ProfileBookingView.ts:493
+#: src/components/views/ConversationView.ts:619
+#: src/components/views/MessagesView.ts:580
+#: src/components/views/MessagesView.ts:786
+#: src/components/views/ProfileBookingView.ts:495
 #: src/services/ModalService.ts:188
 #: src/services/ModalService.ts:244
 msgid "Cancel"
@@ -157,6 +211,10 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:155
 msgid "Check for updates"
+msgstr ""
+
+#: src/components/views/VideoEditorView.ts:256
+msgid "Click or drag & drop to upload video"
 msgstr ""
 
 #: src/components/modals/ZapModal.ts:137
@@ -171,7 +229,7 @@ msgstr ""
 msgid "Confirm"
 msgstr ""
 
-#: src/components/views/ProfileBookingView.ts:495
+#: src/components/views/ProfileBookingView.ts:497
 msgid "Confirm booking"
 msgstr ""
 
@@ -183,12 +241,42 @@ msgstr ""
 msgid "Connections to Nostr Relays"
 msgstr ""
 
+#: src/components/views/ConversationView.ts:922
+#: src/components/views/MessagesView.ts:601
+msgid "Conversation deleted"
+msgstr ""
+
+#: src/components/views/MessagesView.ts:600
+msgid "Conversation deleted & sender muted"
+msgstr ""
+
 #: src/components/views/ZapstoreAppView.ts:321
 msgid "Copy certificate hash"
 msgstr ""
 
 #: src/components/views/ZapstoreAppView.ts:317
 msgid "Copy hash"
+msgstr ""
+
+#: src/components/views/ConversationView.ts:525
+msgid "Could not accept"
+msgstr ""
+
+#: src/components/views/MessagesView.ts:270
+msgid "Could not load older messages"
+msgstr ""
+
+#: src/components/views/ConversationView.ts:563
+msgid "Could not reject"
+msgstr ""
+
+#: src/components/views/ConversationView.ts:1182
+#: src/components/views/ConversationView.ts:1196
+msgid "Could not send message — please try again"
+msgstr ""
+
+#: src/components/views/ConversationView.ts:500
+msgid "Could not update setting"
 msgstr ""
 
 #: src/components/modals/NewFolderModal.ts:63
@@ -207,30 +295,106 @@ msgstr ""
 msgid "Current:"
 msgstr ""
 
+#: src/components/views/ConversationView.ts:427
+msgid "Custom (%s)"
+msgstr ""
+
+#: src/components/views/ConversationView.ts:726
+msgid "Custom duration"
+msgstr ""
+
+#: src/components/views/ConversationView.ts:428
+msgid "Custom…"
+msgstr ""
+
 #: src/components/views/AboutView.ts:169
 #: src/components/views/AboutView.ts:184
 msgid "Data Storage"
 msgstr ""
 
+#: src/components/views/ConversationView.ts:612
+msgid "Days"
+msgstr ""
+
 #: src/components/views/ArticleView.ts:275
+#: src/components/views/MessagesView.ts:579
 msgid "Delete"
+msgstr ""
+
+#: src/components/views/MessagesView.ts:575
+msgid "Delete & mute"
+msgstr ""
+
+#: src/components/views/MessagesView.ts:543
+msgid "Delete &amp; mute sender"
 msgstr ""
 
 #: src/components/views/ArticleView.ts:271
 msgid "Delete Article"
 msgstr ""
 
-#: src/components/views/ProfileBookingView.ts:590
+#: src/components/views/ConversationView.ts:433
+#: src/components/views/ConversationView.ts:913
+#: src/components/views/MessagesView.ts:543
+#: src/components/views/MessagesView.ts:575
+msgid "Delete conversation"
+msgstr ""
+
+#: src/components/views/MessagesView.ts:577
+msgid "Delete this conversation and mute %s? They won't appear in your messages again."
+msgstr ""
+
+#: src/components/views/MessagesView.ts:578
+msgid "Delete this conversation with %s? It's removed only from this device."
+msgstr ""
+
+#: src/components/views/ConversationView.ts:914
+msgid "Delete this conversation? It is removed only from this device."
+msgstr ""
+
+#: src/components/views/ProfileBookingView.ts:592
 msgid "Delivered to %s of %s relay"
 msgid_plural "Delivered to %s of %s relays"
 msgstr[0] ""
 msgstr[1] ""
 
+#: src/components/views/VideoEditorView.ts:169
+msgid "Describe your video..."
+msgstr ""
+
+#: src/components/views/VideoEditorView.ts:165
+msgid "Description"
+msgstr ""
+
+#: src/components/views/VideoEditorView.ts:177
+msgid "Details"
+msgstr ""
+
+#: src/components/views/ConversationView.ts:436
+msgid "Disappearing messages"
+msgstr ""
+
+#: src/components/views/ConversationView.ts:491
+msgid "Disappearing messages enabled"
+msgstr ""
+
+#: src/components/views/ConversationView.ts:490
+msgid "Disappearing messages off"
+msgstr ""
+
+#: src/components/views/ConversationView.ts:780
+msgid "Disappears in ~%s"
+msgstr ""
+
 #: src/components/views/AboutView.ts:85
 msgid "DM me on Nostr"
 msgstr ""
 
-#: src/components/views/ProfileBookingView.ts:610
+#: src/components/views/ConversationView.ts:782
+msgid "Do you accept the time limitation?"
+msgstr ""
+
+#: src/components/views/ProfileBookingView.ts:612
 msgid "Done"
 msgstr ""
 
@@ -240,6 +404,18 @@ msgstr ""
 
 #: src/components/views/AddonsOverviewView.ts:75
 msgid "Drag tiles to reorder (on touch: use ▲▼). The order is saved per account."
+msgstr ""
+
+#: src/components/views/ConversationView.ts:606
+msgid "Duration"
+msgstr ""
+
+#: src/components/views/ConversationView.ts:705
+msgid "Duration must be at least 1 minute."
+msgstr ""
+
+#: src/components/views/ConversationView.ts:709
+msgid "Duration must be at most 1 year."
 msgstr ""
 
 #: src/components/views/FollowPackDetailView.ts:220
@@ -291,6 +467,15 @@ msgstr ""
 
 #: src/components/views/ListingReadView.ts:69
 msgid "Failed to load listing"
+msgstr ""
+
+#: src/components/views/ConversationView.ts:1214
+#: src/components/views/MessagesView.ts:695
+msgid "Failed to load messages"
+msgstr ""
+
+#: src/components/views/ConversationView.ts:984
+msgid "Failed to mute user"
 msgstr ""
 
 #: src/components/modals/DMComposeModal.ts:210
@@ -348,6 +533,14 @@ msgstr ""
 msgid "Hire Me"
 msgstr ""
 
+#: src/components/views/ConversationView.ts:611
+msgid "Hours"
+msgstr ""
+
+#: src/components/views/VideoEditorView.ts:190
+msgid "https://... or upload"
+msgstr ""
+
 #: src/components/modals/ImportToNoorSignerModal.ts:180
 msgid "Importing..."
 msgstr ""
@@ -403,6 +596,11 @@ msgstr ""
 msgid "Key successfully imported to NoorSigner"
 msgstr ""
 
+#: src/components/views/VideoEditorView.ts:230
+#: src/components/views/VideoEditorView.ts:522
+msgid "Landscape"
+msgstr ""
+
 #: src/components/settings/UISettingsSection.ts:103
 msgid "Language"
 msgstr ""
@@ -439,11 +637,16 @@ msgstr ""
 msgid "Lists"
 msgstr ""
 
+#: src/components/views/MessagesView.ts:257
+#: src/components/views/MessagesView.ts:267
+msgid "Load older messages"
+msgstr ""
+
 #: src/components/views/ZapstoreAppView.ts:103
 msgid "Loading app..."
 msgstr ""
 
-#: src/components/views/ProfileBookingView.ts:187
+#: src/components/views/ProfileBookingView.ts:186
 msgid "Loading availability…"
 msgstr ""
 
@@ -453,6 +656,18 @@ msgstr ""
 
 #: src/components/views/FollowPackDetailView.ts:129
 msgid "Loading members..."
+msgstr ""
+
+#: src/components/views/ConversationView.ts:248
+msgid "Loading messages..."
+msgstr ""
+
+#: src/components/views/MessagesView.ts:66
+msgid "Loading more conversations..."
+msgstr ""
+
+#: src/components/views/MessagesView.ts:240
+msgid "Loading older messages…"
 msgstr ""
 
 #: src/components/views/ListingReadView.ts:130
@@ -487,12 +702,24 @@ msgstr ""
 msgid "Long-form content from your follows"
 msgstr ""
 
+#: src/components/views/MessagesView.ts:636
+msgid "Mark all read"
+msgstr ""
+
+#: src/components/views/MessagesView.ts:640
+msgid "Mark all unread"
+msgstr ""
+
 #: src/components/modals/ZapModal.ts:280
 msgid "Maximum 1,000,000 Sats per zap"
 msgstr ""
 
 #: src/components/views/SettingsView.ts:46
 msgid "Media"
+msgstr ""
+
+#: src/components/views/VideoEditorView.ts:381
+msgid "Media module not available"
 msgstr ""
 
 #: src/components/views/AboutView.ts:234
@@ -503,8 +730,24 @@ msgstr ""
 msgid "Message"
 msgstr ""
 
+#: src/components/views/MessagesView.ts:148
+msgid "Message options"
+msgstr ""
+
 #: src/components/modals/DMComposeModal.ts:207
 msgid "Message sent"
+msgstr ""
+
+#: src/components/views/MessagesView.ts:143
+msgid "Messages"
+msgstr ""
+
+#: src/components/views/ConversationView.ts:604
+msgid "Messages will disappear after this time. Minimum: 1 minute, maximum: 1 year."
+msgstr ""
+
+#: src/components/views/ConversationView.ts:610
+msgid "Minutes"
 msgstr ""
 
 #: src/components/views/EpubReaderView.ts:54
@@ -521,6 +764,18 @@ msgstr ""
 
 #: src/components/views/AddonsOverviewView.ts:112
 msgid "Move up"
+msgstr ""
+
+#: src/components/views/ConversationView.ts:933
+msgid "Mute user"
+msgstr ""
+
+#: src/components/views/ConversationView.ts:931
+msgid "Mute user privately"
+msgstr ""
+
+#: src/components/views/ConversationView.ts:933
+msgid "Mute user publicly"
 msgstr ""
 
 #: src/components/views/ListsOverviewView.ts:77
@@ -544,10 +799,11 @@ msgid "New Folder"
 msgstr ""
 
 #: src/components/modals/DMComposeModal.ts:43
+#: src/components/views/MessagesView.ts:146
 msgid "New Message"
 msgstr ""
 
-#: src/components/views/ProfileBookingView.ts:237
+#: src/components/views/ProfileBookingView.ts:236
 msgid "Next week"
 msgstr ""
 
@@ -555,11 +811,31 @@ msgstr ""
 msgid "NIP-05 verification:"
 msgstr ""
 
+#: src/components/views/ConversationView.ts:786
+msgid "No"
+msgstr ""
+
+#: src/components/views/MessagesView.ts:480
+msgid "No messages from people you follow"
+msgstr ""
+
+#: src/components/views/MessagesView.ts:481
+msgid "No messages from unknown users"
+msgstr ""
+
+#: src/components/views/ConversationView.ts:1062
+msgid "No messages yet"
+msgstr ""
+
 #: src/components/views/NotificationsView.ts:288
 msgid "No notifications yet"
 msgstr ""
 
-#: src/components/views/ProfileBookingView.ts:250
+#: src/components/views/MessagesView.ts:254
+msgid "No older messages"
+msgstr ""
+
+#: src/components/views/ProfileBookingView.ts:249
 msgid "No open slots at the moment — check back later."
 msgstr ""
 
@@ -611,15 +887,19 @@ msgstr ""
 msgid "Nostr relays are operated by third parties. When connecting, your IP address may be logged by the relay operators. The choice of relays is yours and can be configured in the settings."
 msgstr ""
 
-#: src/components/views/ProfileBookingView.ts:489
+#: src/components/views/ProfileBookingView.ts:491
 msgid "Nostr users taking part in the meeting — they receive a private message about this booking."
 msgstr ""
 
-#: src/components/views/ProfileBookingView.ts:592
+#: src/components/views/VideoEditorView.ts:207
+msgid "nostr, music, tutorial (comma separated)"
+msgstr ""
+
+#: src/components/views/ProfileBookingView.ts:594
 msgid "Not reached: %s"
 msgstr ""
 
-#: src/components/views/ProfileBookingView.ts:478
+#: src/components/views/ProfileBookingView.ts:477
 msgid "Note for %s (optional, sent as a private message)"
 msgstr ""
 
@@ -629,6 +909,10 @@ msgstr ""
 
 #: src/components/views/SettingsView.ts:37
 msgid "Notification Priorities"
+msgstr ""
+
+#: src/services/dm/DMExpiration.ts:128
+msgid "Off"
 msgstr ""
 
 #: src/services/ModalService.ts:243
@@ -696,7 +980,12 @@ msgstr ""
 msgid "Please login to view timeline"
 msgstr ""
 
-#: src/components/views/ProfileBookingView.ts:229
+#: src/components/views/VideoEditorView.ts:230
+#: src/components/views/VideoEditorView.ts:522
+msgid "Portrait"
+msgstr ""
+
+#: src/components/views/ProfileBookingView.ts:228
 msgid "Previous week"
 msgstr ""
 
@@ -717,8 +1006,29 @@ msgstr ""
 msgid "Profile pictures and embedded media:"
 msgstr ""
 
+#: src/components/views/VideoEditorView.ts:133
+msgid "Publish"
+msgstr ""
+
 #: src/components/views/ZapstoreAppView.ts:410
 msgid "Published by"
+msgstr ""
+
+#: src/components/views/VideoEditorView.ts:569
+msgid "Publishing..."
+msgstr ""
+
+#: src/components/views/MessagesView.ts:782
+msgid "Re-fetch your full message history from the relays. Existing messages are kept — this only pulls anything missing. May take a moment."
+msgstr ""
+
+#: src/components/views/MessagesView.ts:785
+msgid "Re-sync"
+msgstr ""
+
+#: src/components/views/MessagesView.ts:644
+#: src/components/views/MessagesView.ts:781
+msgid "Re-sync messages"
 msgstr ""
 
 #: src/components/views/ArticleView.ts:448
@@ -739,6 +1049,10 @@ msgstr[1] ""
 msgid "Release Date"
 msgstr ""
 
+#: src/components/views/VideoEditorView.ts:236
+msgid "Remove video"
+msgstr ""
+
 #: src/components/modals/EditFolderModal.ts:28
 msgid "Rename Folder"
 msgstr ""
@@ -749,6 +1063,11 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:92
 msgid "Responsible Party"
+msgstr ""
+
+#: src/components/views/ConversationView.ts:1215
+#: src/components/views/MessagesView.ts:696
+msgid "Retry"
 msgstr ""
 
 #: src/components/modals/EditFolderModal.ts:66
@@ -775,12 +1094,16 @@ msgstr ""
 msgid "See Notes"
 msgstr ""
 
-#: src/components/views/ProfileBookingView.ts:471
+#: src/components/views/ProfileBookingView.ts:470
 msgid "Selected:"
 msgstr ""
 
 #: src/components/modals/DMComposeModal.ts:97
 msgid "Send"
+msgstr ""
+
+#: src/components/views/ConversationView.ts:1063
+msgid "Send a message to start the conversation"
 msgstr ""
 
 #: src/components/modals/DMComposeModal.ts:98
@@ -799,6 +1122,10 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:206
 msgid "Settings are stored in the %s directory."
+msgstr ""
+
+#: src/components/views/ConversationView.ts:1195
+msgid "Signer did not respond — message not sent"
 msgstr ""
 
 #: src/components/modals/ZapModal.ts:106
@@ -837,9 +1164,17 @@ msgstr ""
 msgid "St. Kitts and Nevis is not covered by an EU adequacy decision (Art. 45 GDPR). Any transfer to MyNymbox's servers takes place on the basis of the derogations of Art. 49 (1) GDPR."
 msgstr ""
 
+#: src/components/views/MessagesView.ts:487
+msgid "Start a conversation by clicking \"New Message\""
+msgstr ""
+
 #: src/components/modals/KeySignerPasswordModal.ts:130
 #: src/components/modals/KeySignerPasswordModal.ts:76
 msgid "Switch Account"
+msgstr ""
+
+#: src/components/views/VideoEditorView.ts:233
+msgid "Switch orientation"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:359
@@ -854,15 +1189,19 @@ msgstr ""
 msgid "Switching..."
 msgstr ""
 
-#: src/components/views/ProfileBookingView.ts:487
+#: src/components/views/ProfileBookingView.ts:489
 msgid "Tag with @, separate multiple participants with commas"
+msgstr ""
+
+#: src/components/views/VideoEditorView.ts:202
+msgid "Tags"
 msgstr ""
 
 #: src/components/views/EpubReaderView.ts:45
 msgid "Tap the page edges or swipe to turn pages"
 msgstr ""
 
-#: src/components/views/ProfileBookingView.ts:588
+#: src/components/views/ProfileBookingView.ts:590
 msgid "Technical details"
 msgstr ""
 
@@ -886,11 +1225,11 @@ msgstr ""
 msgid "The desktop version periodically queries %s to detect new releases. GitHub is operated by GitHub, Inc., 88 Colin P Kelly Jr Street, San Francisco, CA 94107, USA."
 msgstr ""
 
-#: src/components/views/ProfileBookingView.ts:480
+#: src/components/views/ProfileBookingView.ts:481
 msgid "the host"
 msgstr ""
 
-#: src/components/views/ProfileBookingView.ts:605
+#: src/components/views/ProfileBookingView.ts:607
 msgid "The host received your booking as a private message. Add it to your calendar so you don't forget:"
 msgstr ""
 
@@ -918,24 +1257,48 @@ msgstr ""
 msgid "This will send a deletion request to all relays. This cannot be undone."
 msgstr ""
 
+#: src/components/views/VideoEditorView.ts:185
+msgid "Thumbnail"
+msgstr ""
+
+#: src/components/views/ConversationView.ts:609
+msgid "Time unit"
+msgstr ""
+
 #: src/components/views/TimelineView.ts:208
 msgid "Timeline"
 msgstr ""
 
-#: src/components/views/ProfileBookingView.ts:268
+#: src/components/views/ProfileBookingView.ts:267
 msgid "times shown in your local timezone"
+msgstr ""
+
+#: src/components/views/VideoEditorView.ts:153
+msgid "Title"
 msgstr ""
 
 #: src/components/modals/DMComposeModal.ts:81
 msgid "To"
 msgstr ""
 
+#: src/components/views/VideoEditorView.ts:179
+msgid "Toggle section"
+msgstr ""
+
 #: src/components/views/ListsOverviewView.ts:85
 msgid "Tribes"
 msgstr ""
 
+#: src/components/views/ConversationView.ts:254
+msgid "Type a message..."
+msgstr ""
+
 #: src/components/views/SettingsView.ts:35
 msgid "UI Settings"
+msgstr ""
+
+#: src/services/dm/DMExpiration.ts:127
+msgid "Undecided"
 msgstr ""
 
 #: src/components/views/ZapstoreAppView.ts:408
@@ -967,12 +1330,36 @@ msgstr ""
 msgid "Updated"
 msgstr ""
 
+#: src/components/views/VideoEditorView.ts:194
+msgid "Upload thumbnail"
+msgstr ""
+
+#: src/components/views/VideoEditorView.ts:248
+msgid "Uploading video..."
+msgstr ""
+
+#: src/components/views/ConversationView.ts:243
+msgid "User options"
+msgstr ""
+
 #: src/components/views/AboutView.ts:153
 msgid "Version"
 msgstr ""
 
 #: src/components/views/ZapstoreAppView.ts:309
 msgid "Version Code"
+msgstr ""
+
+#: src/components/views/VideoEditorView.ts:148
+msgid "Video"
+msgstr ""
+
+#: src/components/views/VideoEditorView.ts:158
+msgid "Video title (optional)"
+msgstr ""
+
+#: src/components/views/VideoEditorView.ts:391
+msgid "Video upload failed"
 msgstr ""
 
 #: src/components/views/AboutView.ts:209
@@ -992,6 +1379,10 @@ msgstr ""
 msgid "Website"
 msgstr ""
 
+#: src/components/views/ConversationView.ts:613
+msgid "Weeks"
+msgstr ""
+
 #: src/components/views/AboutView.ts:234
 msgid "When loading images embedded in notes, NoorNote may route the request through a proxy operated by us at %s to bypass CORS restrictions of the original image host. The proxy forwards your request to the third-party image host."
 msgstr ""
@@ -1008,6 +1399,10 @@ msgstr ""
 msgid "Write your message..."
 msgstr ""
 
+#: src/components/views/ConversationView.ts:785
+msgid "Yes"
+msgstr ""
+
 #: src/components/modals/UnlockNoorSignerModal.ts:56
 msgid "Your 24-hour trust session has expired. Enter your password to continue."
 msgstr ""
@@ -1016,7 +1411,7 @@ msgstr ""
 msgid "Your lists are stored locally and synced to your relays. Pick one to open it."
 msgstr ""
 
-#: src/components/views/ProfileBookingView.ts:474
+#: src/components/views/ProfileBookingView.ts:473
 msgid "Your name (optional)"
 msgstr ""
 

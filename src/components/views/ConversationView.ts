@@ -8,6 +8,7 @@
  */
 
 import { View } from './View';
+import { _ } from '../../i18n';
 import type { DMsModuleApi } from '../../modules/dms/contracts';
 import type { DMMessage } from '../../services/dm/DMStore';
 import {
@@ -239,18 +240,18 @@ export class ConversationView extends View {
           <span class="chevron-left"></span>
         </button>
         <div class="conversation-view__user"></div>
-        <button class="note-menu-trigger conversation-view__menu-trigger" aria-label="User options">
+        <button class="note-menu-trigger conversation-view__menu-trigger" aria-label="${_('User options')}">
           <svg width="16" height="16"><use href="#icon-menu-dots"/></svg>
         </button>
       </div>
       <div class="conversation-view__messages">
-        <div class="conversation-view__loading">Loading messages...</div>
+        <div class="conversation-view__loading">${_('Loading messages...')}</div>
       </div>
       <div class="conversation-view__disappearing-zone" data-zone="disappearing"></div>
       <div class="conversation-view__input">
         <textarea
           class="textarea conversation-view__textarea"
-          placeholder="Type a message..."
+          placeholder="${_('Type a message...')}"
           rows="1"
         ></textarea>
         <button class="btn btn--medium conversation-view__send-btn" disabled>
@@ -423,16 +424,16 @@ export class ConversationView extends View {
     const customChecked = isCustomActive ? ConversationView.CHECK_ICON : '';
     const customLabel =
       isCustomActive && typeof this.disappearingSeconds === 'number'
-        ? `Custom (${labelForDuration(this.disappearingSeconds)})`
-        : 'Custom…';
+        ? _('Custom (%s)', labelForDuration(this.disappearingSeconds))
+        : _('Custom…');
 
     return `${muteItems}
       <button class="note-menu-item note-menu-item--danger" data-action="delete-conversation">
         <svg width="16" height="16"><use href="#icon-trash"/></svg>
-        Delete conversation
+        ${_('Delete conversation')}
       </button>
       <div class="dropdown-menu-divider"></div>
-      <div class="dropdown-menu-header">Disappearing messages</div>
+      <div class="dropdown-menu-header">${_('Disappearing messages')}</div>
       ${disappearingItems}
       <button class="note-menu-item" data-action="disappear-custom">
         <span class="note-menu-item__icon-spacer"></span>
@@ -486,8 +487,8 @@ export class ConversationView extends View {
       this.removeDisappearingBanner();
       ToastService.show(
         seconds === 0
-          ? 'Disappearing messages off'
-          : 'Disappearing messages enabled',
+          ? _('Disappearing messages off')
+          : _('Disappearing messages enabled'),
         'success'
       );
     } catch (_error) {
@@ -496,7 +497,7 @@ export class ConversationView extends View {
         'Failed to set disappearing:',
         _error
       );
-      ToastService.show('Could not update setting', 'error');
+      ToastService.show(_('Could not update setting'), 'error');
     }
   }
 
@@ -521,7 +522,7 @@ export class ConversationView extends View {
         'Failed to accept peer duration:',
         _error
       );
-      ToastService.show('Could not accept', 'error');
+      ToastService.show(_('Could not accept'), 'error');
     }
   }
 
@@ -559,7 +560,7 @@ export class ConversationView extends View {
         'Failed to reject peer duration:',
         _error
       );
-      ToastService.show('Could not reject', 'error');
+      ToastService.show(_('Could not reject'), 'error');
     }
   }
 
@@ -600,23 +601,23 @@ export class ConversationView extends View {
     const content = document.createElement('div');
     content.className = 'modal-disappearing';
     content.innerHTML = `
-      <p class="form__note">Messages will disappear after this time. Minimum: 1 minute, maximum: 1 year.</p>
+      <p class="form__note">${_('Messages will disappear after this time. Minimum: 1 minute, maximum: 1 year.')}</p>
       <div class="form__row">
-        <label>Duration</label>
+        <label>${_('Duration')}</label>
         <div class="modal-disappearing__row">
           <input type="number" class="input modal-disappearing__value" min="1" max="525600" value="${value}" />
-          <div class="modal-disappearing__units" role="radiogroup" aria-label="Time unit">
-            <button type="button" class="btn btn--mini" data-unit="minutes" role="radio" aria-checked="${unit === 'minutes'}">Minutes</button>
-            <button type="button" class="btn btn--mini" data-unit="hours" role="radio" aria-checked="${unit === 'hours'}">Hours</button>
-            <button type="button" class="btn btn--mini" data-unit="days" role="radio" aria-checked="${unit === 'days'}">Days</button>
-            <button type="button" class="btn btn--mini" data-unit="weeks" role="radio" aria-checked="${unit === 'weeks'}">Weeks</button>
+          <div class="modal-disappearing__units" role="radiogroup" aria-label="${_('Time unit')}">
+            <button type="button" class="btn btn--mini" data-unit="minutes" role="radio" aria-checked="${unit === 'minutes'}">${_('Minutes')}</button>
+            <button type="button" class="btn btn--mini" data-unit="hours" role="radio" aria-checked="${unit === 'hours'}">${_('Hours')}</button>
+            <button type="button" class="btn btn--mini" data-unit="days" role="radio" aria-checked="${unit === 'days'}">${_('Days')}</button>
+            <button type="button" class="btn btn--mini" data-unit="weeks" role="radio" aria-checked="${unit === 'weeks'}">${_('Weeks')}</button>
           </div>
         </div>
       </div>
       <p class="modal-disappearing__error" data-zone="error" hidden></p>
       <div class="l-row l-row--end-pair">
-        <button type="button" class="btn btn--passive modal-disappearing__cancel">Cancel</button>
-        <button type="button" class="btn modal-disappearing__apply">Apply</button>
+        <button type="button" class="btn btn--passive modal-disappearing__cancel">${_('Cancel')}</button>
+        <button type="button" class="btn modal-disappearing__apply">${_('Apply')}</button>
       </div>
     `;
 
@@ -701,11 +702,11 @@ export class ConversationView extends View {
               : WEEK_SECONDS;
       const seconds = Math.round(state.value * unitSeconds);
       if (seconds < MIN_SECONDS) {
-        showError('Duration must be at least 1 minute.');
+        showError(_('Duration must be at least 1 minute.'));
         return;
       }
       if (seconds > MAX_SECONDS) {
-        showError('Duration must be at most 1 year.');
+        showError(_('Duration must be at most 1 year.'));
         return;
       }
       close();
@@ -722,7 +723,7 @@ export class ConversationView extends View {
     });
 
     ModalService.getInstance().show({
-      title: 'Custom duration',
+      title: _('Custom duration'),
       content,
       width: '420px',
       height: 'auto',
@@ -776,13 +777,13 @@ export class ConversationView extends View {
         'conversation-view__disappearing-banner conversation-view__disappearing-banner--request';
       banner.innerHTML = `
         <div class="conversation-view__disappearing-banner-text">
-          ⏱ Disappears in ~${durationLabel}
+          ⏱ ${_('Disappears in ~%s', durationLabel)}
           <br />
-          <span class="conversation-view__disappearing-banner-sub">Do you accept the time limitation?</span>
+          <span class="conversation-view__disappearing-banner-sub">${_('Do you accept the time limitation?')}</span>
         </div>
         <div class="l-row l-row--center">
-          <button type="button" class="btn btn--mini" data-action="accept-disappearing">Yes</button>
-          <button type="button" class="btn btn--passive btn--mini" data-action="decline-disappearing">No</button>
+          <button type="button" class="btn btn--mini" data-action="accept-disappearing">${_('Yes')}</button>
+          <button type="button" class="btn btn--passive btn--mini" data-action="decline-disappearing">${_('No')}</button>
         </div>
       `;
       banner
@@ -909,8 +910,10 @@ export class ConversationView extends View {
   private async confirmDelete(): Promise<void> {
     const { ModalService } = await import('../../services/ModalService');
     const confirmed = await ModalService.getInstance().confirm({
-      title: 'Delete conversation',
-      message: 'Delete this conversation? It is removed only from this device.',
+      title: _('Delete conversation'),
+      message: _(
+        'Delete this conversation? It is removed only from this device.'
+      ),
       confirmText: 'Delete',
       cancelText: 'Cancel',
       confirmDestructive: true,
@@ -918,7 +921,7 @@ export class ConversationView extends View {
     if (!confirmed) return;
 
     await this.dmsApi?.deleteConversation(this.partnerPubkey);
-    ToastService.show('Conversation deleted', 'success');
+    ToastService.show(_('Conversation deleted'), 'success');
     this.router.navigate('/messages');
   }
 
@@ -927,8 +930,9 @@ export class ConversationView extends View {
    */
   private createMuteMenuItems(actions: string[]): string {
     const labels: Record<string, string> = {
-      'mute-privately': 'Mute user privately',
-      'mute-publicly': actions.length > 1 ? 'Mute user publicly' : 'Mute user',
+      'mute-privately': _('Mute user privately'),
+      'mute-publicly':
+        actions.length > 1 ? _('Mute user publicly') : _('Mute user'),
     };
 
     return actions
@@ -979,7 +983,7 @@ export class ConversationView extends View {
         'ConversationView',
         `Failed to mute user: ${String(_error)}`
       );
-      ToastService.show('Failed to mute user', 'error');
+      ToastService.show(_('Failed to mute user'), 'error');
     }
   }
 
@@ -1057,8 +1061,8 @@ export class ConversationView extends View {
     if (this.messages.length === 0) {
       container.innerHTML = `
         <div class="conversation-view__empty">
-          <p>No messages yet</p>
-          <p class="empty-hint">Send a message to start the conversation</p>
+          <p>${_('No messages yet')}</p>
+          <p class="empty-hint">${_('Send a message to start the conversation')}</p>
         </div>
       `;
       return;
@@ -1177,7 +1181,10 @@ export class ConversationView extends View {
       } else {
         textarea.value = content;
         this.systemLogger.error('ConversationView', 'Failed to send message');
-        ToastService.show('Could not send message — please try again', 'error');
+        ToastService.show(
+          _('Could not send message — please try again'),
+          'error'
+        );
       }
     } catch (_error) {
       textarea.value = content;
@@ -1190,8 +1197,8 @@ export class ConversationView extends View {
         _error instanceof Error && _error.name === 'SignerTimeoutError';
       ToastService.show(
         timedOut
-          ? 'Signer did not respond — message not sent'
-          : 'Could not send message — please try again',
+          ? _('Signer did not respond — message not sent')
+          : _('Could not send message — please try again'),
         'error'
       );
     } finally {
@@ -1209,8 +1216,8 @@ export class ConversationView extends View {
 
     container.innerHTML = `
       <div class="conversation-view__error">
-        <p>Failed to load messages</p>
-        <button class="btn btn--medium" onclick="location.reload()">Retry</button>
+        <p>${_('Failed to load messages')}</p>
+        <button class="btn btn--medium" onclick="location.reload()">${_('Retry')}</button>
       </div>
     `;
   }
