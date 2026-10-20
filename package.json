@@ -26,7 +26,8 @@
     "build:static-css": "sass src/styles/static-pages.scss public/static.css --style=compressed --no-source-map",
     "render-banners": "node marketing/banners/generate-pngs.js",
     "postinstall": "patch-package",
-    "prepare": "husky"
+    "prepare": "husky",
+    "typecheck7": "node node_modules/typescript7/bin/tsc --noEmit"
   },
   "keywords": [
     "nostr",
@@ -69,6 +70,7 @@
     "rollup-plugin-visualizer": "^5.9.2",
     "sass-embedded": "^1.105.2",
     "typescript": "^5.2.0",
+    "typescript7": "npm:typescript@^7.0.2",
     "vite": "^8",
     "vite-bundle-analyzer": "^0.7.0",
     "vitest": "^5"
