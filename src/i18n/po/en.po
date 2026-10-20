@@ -573,13 +573,13 @@ msgstr "Zaps"
 #: src/components/modals/NewFolderModal.ts:60
 #: src/components/modals/UnlockNoorSignerModal.ts:68
 #: src/components/modals/ZapModal.ts:148
-#: src/components/views/ArticleView.ts:276
 #: src/components/views/ConversationView.ts:619
-#: src/components/views/MessagesView.ts:580
-#: src/components/views/MessagesView.ts:786
+#: src/components/views/MessagesView.ts:586
+#: src/components/views/MessagesView.ts:792
 #: src/components/views/ProfileBookingView.ts:495
 #: src/services/ModalService.ts:188
-#: src/services/ModalService.ts:244
+#: src/services/ModalService.ts:247
+#: src/services/ModalService.ts:260
 msgid "Cancel"
 msgstr "Cancel"
 
@@ -630,7 +630,7 @@ msgstr "Later"
 msgid "New Folder"
 msgstr "New Folder"
 
-#: src/services/ModalService.ts:243
+#: src/services/ModalService.ts:259
 msgid "OK"
 msgstr "OK"
 
@@ -1073,6 +1073,7 @@ msgstr "Add to calendar (.ics)"
 msgid "Additional participants (optional)"
 msgstr "Additional participants (optional)"
 
+#: src/components/views/ArticleEditorView.ts:209
 #: src/components/views/ArticleView.ts:107
 msgid "Article not found"
 msgstr "Article not found"
@@ -1102,8 +1103,8 @@ msgstr "Booking…"
 msgid "Confirm booking"
 msgstr "Confirm booking"
 
-#: src/components/views/ArticleView.ts:275
-#: src/components/views/MessagesView.ts:579
+#: src/components/views/MessagesView.ts:585
+#: src/services/ModalService.ts:246
 msgid "Delete"
 msgstr "Delete"
 
@@ -1121,6 +1122,7 @@ msgstr[1] ""
 msgid "Done"
 msgstr "Done"
 
+#: src/components/views/ArticleEditorView.ts:242
 #: src/components/views/ArticleView.ts:114
 msgid "Failed to load article"
 msgstr "Failed to load article"
@@ -1157,7 +1159,7 @@ msgstr "Note for %s (optional, sent as a private message)"
 msgid "Previous week"
 msgstr "Previous week"
 
-#: src/components/views/ArticleView.ts:448
+#: src/components/views/ArticleView.ts:442
 msgid "Read more from this author"
 msgstr "Read more from this author"
 
@@ -1185,7 +1187,7 @@ msgstr ""
 "The host received your booking as a private message. Add it to your "
 "calendar so you don't forget:"
 
-#: src/components/views/ArticleView.ts:272
+#: src/services/ModalService.ts:243
 msgid "This will send a deletion request to all relays. This cannot be undone."
 msgstr "This will send a deletion request to all relays. This cannot be undone."
 
@@ -1200,13 +1202,13 @@ msgstr "Your name (optional)"
 #: src/services/dm/DMExpiration.ts:140
 msgid "%s day"
 msgid_plural "%s days"
-msgstr[0] ""
+msgstr[0] "%s day"
 msgstr[1] ""
 
 #: src/services/dm/DMExpiration.ts:142
 msgid "%s hour"
 msgid_plural "%s hours"
-msgstr[0] ""
+msgstr[0] "%s hour"
 msgstr[1] ""
 
 #: src/services/dm/DMExpiration.ts:100
@@ -1219,13 +1221,13 @@ msgstr "%s left"
 #: src/services/dm/DMExpiration.ts:144
 msgid "%s minute"
 msgid_plural "%s minutes"
-msgstr[0] ""
+msgstr[0] "%s minute"
 msgstr[1] ""
 
 #: src/services/dm/DMExpiration.ts:138
 msgid "%s week"
 msgid_plural "%s weeks"
-msgstr[0] ""
+msgstr[0] "%s week"
 msgstr[1] ""
 
 #: src/services/dm/DMExpiration.ts:115
@@ -1236,11 +1238,11 @@ msgstr "⏱ Disappears in %s"
 msgid "⏱ Disappears in ~%s"
 msgstr "⏱ Disappears in ~%s"
 
-#: src/components/views/MessagesView.ts:770
+#: src/components/views/MessagesView.ts:776
 msgid "All messages marked as read"
 msgstr "All messages marked as read"
 
-#: src/components/views/MessagesView.ts:776
+#: src/components/views/MessagesView.ts:782
 msgid "All messages marked as unread"
 msgstr "All messages marked as unread"
 
@@ -1252,12 +1254,12 @@ msgstr "Apply"
 msgid "Click or drag & drop to upload video"
 msgstr "Click or drag & drop to upload video"
 
-#: src/components/views/ConversationView.ts:922
-#: src/components/views/MessagesView.ts:601
+#: src/components/views/ConversationView.ts:924
+#: src/components/views/MessagesView.ts:607
 msgid "Conversation deleted"
 msgstr "Conversation deleted"
 
-#: src/components/views/MessagesView.ts:600
+#: src/components/views/MessagesView.ts:606
 msgid "Conversation deleted & sender muted"
 msgstr "Conversation deleted & sender muted"
 
@@ -1273,8 +1275,8 @@ msgstr "Could not load older messages"
 msgid "Could not reject"
 msgstr "Could not reject"
 
-#: src/components/views/ConversationView.ts:1182
-#: src/components/views/ConversationView.ts:1196
+#: src/components/views/ConversationView.ts:1185
+#: src/components/views/ConversationView.ts:1201
 msgid "Could not send message — please try again"
 msgstr "Could not send message — please try again"
 
@@ -1321,7 +1323,7 @@ msgstr ""
 "Delete this conversation and mute %s? They won't appear in your messages "
 "again."
 
-#: src/components/views/MessagesView.ts:578
+#: src/components/views/MessagesView.ts:581
 msgid "Delete this conversation with %s? It's removed only from this device."
 msgstr "Delete this conversation with %s? It's removed only from this device."
 
@@ -1337,6 +1339,7 @@ msgstr "Describe your video..."
 msgid "Description"
 msgstr "Description"
 
+#: src/components/views/ArticleEditorView.ts:378
 #: src/components/views/VideoEditorView.ts:177
 msgid "Details"
 msgstr "Details"
@@ -1373,12 +1376,12 @@ msgstr "Duration must be at least 1 minute."
 msgid "Duration must be at most 1 year."
 msgstr "Duration must be at most 1 year."
 
-#: src/components/views/ConversationView.ts:1214
-#: src/components/views/MessagesView.ts:695
+#: src/components/views/ConversationView.ts:1219
+#: src/components/views/MessagesView.ts:701
 msgid "Failed to load messages"
 msgstr "Failed to load messages"
 
-#: src/components/views/ConversationView.ts:984
+#: src/components/views/ConversationView.ts:986
 msgid "Failed to mute user"
 msgstr "Failed to mute user"
 
@@ -1386,6 +1389,7 @@ msgstr "Failed to mute user"
 msgid "Hours"
 msgstr "Hours"
 
+#: src/components/views/ArticleEditorView.ts:392
 #: src/components/views/VideoEditorView.ts:190
 msgid "https://... or upload"
 msgstr "https://... or upload"
@@ -1412,11 +1416,11 @@ msgstr "Loading more conversations..."
 msgid "Loading older messages…"
 msgstr "Loading older messages…"
 
-#: src/components/views/MessagesView.ts:636
+#: src/components/views/MessagesView.ts:642
 msgid "Mark all read"
 msgstr "Mark all read"
 
-#: src/components/views/MessagesView.ts:640
+#: src/components/views/MessagesView.ts:646
 msgid "Mark all unread"
 msgstr "Mark all unread"
 
@@ -1440,15 +1444,15 @@ msgstr "Messages will disappear after this time. Minimum: 1 minute, maximum: 1 y
 msgid "Minutes"
 msgstr "Minutes"
 
-#: src/components/views/ConversationView.ts:933
+#: src/components/views/ConversationView.ts:935
 msgid "Mute user"
 msgstr "Mute user"
 
-#: src/components/views/ConversationView.ts:931
+#: src/components/views/ConversationView.ts:933
 msgid "Mute user privately"
 msgstr "Mute user privately"
 
-#: src/components/views/ConversationView.ts:933
+#: src/components/views/ConversationView.ts:935
 msgid "Mute user publicly"
 msgstr "Mute user publicly"
 
@@ -1464,7 +1468,7 @@ msgstr "No messages from people you follow"
 msgid "No messages from unknown users"
 msgstr "No messages from unknown users"
 
-#: src/components/views/ConversationView.ts:1062
+#: src/components/views/ConversationView.ts:1064
 msgid "No messages yet"
 msgstr "No messages yet"
 
@@ -1485,15 +1489,17 @@ msgstr "Off"
 msgid "Portrait"
 msgstr "Portrait"
 
+#: src/components/views/ArticleEditorView.ts:333
 #: src/components/views/VideoEditorView.ts:133
 msgid "Publish"
 msgstr "Publish"
 
+#: src/components/views/ArticleEditorView.ts:1170
 #: src/components/views/VideoEditorView.ts:569
 msgid "Publishing..."
 msgstr "Publishing..."
 
-#: src/components/views/MessagesView.ts:782
+#: src/components/views/MessagesView.ts:788
 msgid ""
 "Re-fetch your full message history from the relays. Existing messages are "
 "kept — this only pulls anything missing. May take a moment."
@@ -1501,12 +1507,12 @@ msgstr ""
 "Re-fetch your full message history from the relays. Existing messages are "
 "kept — this only pulls anything missing. May take a moment."
 
-#: src/components/views/MessagesView.ts:785
+#: src/components/views/MessagesView.ts:791
 msgid "Re-sync"
 msgstr "Re-sync"
 
-#: src/components/views/MessagesView.ts:644
-#: src/components/views/MessagesView.ts:781
+#: src/components/views/MessagesView.ts:650
+#: src/components/views/MessagesView.ts:787
 msgid "Re-sync messages"
 msgstr "Re-sync messages"
 
@@ -1514,16 +1520,16 @@ msgstr "Re-sync messages"
 msgid "Remove video"
 msgstr "Remove video"
 
-#: src/components/views/ConversationView.ts:1215
-#: src/components/views/MessagesView.ts:696
+#: src/components/views/ConversationView.ts:1220
+#: src/components/views/MessagesView.ts:702
 msgid "Retry"
 msgstr "Retry"
 
-#: src/components/views/ConversationView.ts:1063
+#: src/components/views/ConversationView.ts:1065
 msgid "Send a message to start the conversation"
 msgstr "Send a message to start the conversation"
 
-#: src/components/views/ConversationView.ts:1195
+#: src/components/views/ConversationView.ts:1200
 msgid "Signer did not respond — message not sent"
 msgstr "Signer did not respond — message not sent"
 
@@ -1535,6 +1541,7 @@ msgstr "Start a conversation by clicking \"New Message\""
 msgid "Switch orientation"
 msgstr "Switch orientation"
 
+#: src/components/views/ArticleEditorView.ts:414
 #: src/components/views/VideoEditorView.ts:202
 msgid "Tags"
 msgstr "Tags"
@@ -1547,10 +1554,13 @@ msgstr "Thumbnail"
 msgid "Time unit"
 msgstr "Time unit"
 
+#: src/components/views/ArticleEditorView.ts:1341
+#: src/components/views/ArticleEditorView.ts:353
 #: src/components/views/VideoEditorView.ts:153
 msgid "Title"
 msgstr "Title"
 
+#: src/components/views/ArticleEditorView.ts:380
 #: src/components/views/VideoEditorView.ts:179
 msgid "Toggle section"
 msgstr "Toggle section"
@@ -1594,3 +1604,207 @@ msgstr "Weeks"
 #: src/components/views/ConversationView.ts:785
 msgid "Yes"
 msgstr "Yes"
+
+#: src/components/views/ArticleEditorView.ts:899
+msgid " and "
+msgstr " and "
+
+#: src/components/views/ArticleEditorView.ts:1342
+#: src/components/views/ArticleEditorView.ts:358
+msgid "Article title..."
+msgstr "Article title..."
+
+#: src/components/views/ArticleEditorView.ts:471
+msgid "auto-generated, change only if you know what you're doing"
+msgstr "auto-generated, change only if you know what you're doing"
+
+#: src/components/views/ArticleEditorView.ts:311
+msgid "Back"
+msgstr "Back"
+
+#: src/components/views/ArticleEditorView.ts:331
+msgid "beta"
+msgstr "beta"
+
+#: src/components/views/ArticleEditorView.ts:408
+msgid "Brief description of your article..."
+msgstr "Brief description of your article..."
+
+#: src/components/views/ArticleEditorView.ts:443
+msgid "click to add to Tags"
+msgstr "click to add to Tags"
+
+#: src/components/views/ArticleEditorView.ts:1345
+#: src/components/views/ArticleEditorView.ts:365
+msgid "Content (Markdown)"
+msgstr "Content (Markdown)"
+
+#: src/components/views/ArticleEditorView.ts:386
+msgid "Cover Image"
+msgstr "Cover Image"
+
+#: src/components/views/ArticleEditorView.ts:1136
+#: src/components/views/ArticleEditorView.ts:330
+msgid "Delete Draft"
+msgstr "Delete Draft"
+
+#: src/components/views/ArticleEditorView.ts:1008
+msgid "Discard"
+msgstr "Discard"
+
+#: src/components/views/ArticleEditorView.ts:442
+msgid "Discovery tags"
+msgstr "Discovery tags"
+
+#: src/components/views/ArticleEditorView.ts:319
+msgid "Distraction-free writing (Esc to exit)"
+msgstr "Distraction-free writing (Esc to exit)"
+
+#: src/components/views/ArticleEditorView.ts:316
+msgid "Edit"
+msgstr "Edit"
+
+#: src/components/views/ArticleEditorView.ts:310
+msgid "Edit Article"
+msgstr "Edit Article"
+
+#: src/components/views/ArticleEditorView.ts:319
+msgid "Focus mode"
+msgstr "Focus mode"
+
+#: src/components/views/ArticleEditorView.ts:437
+msgid "Insert recipe template"
+msgstr "Insert recipe template"
+
+#: src/components/views/ArticleEditorView.ts:1009
+msgid "Keep Editing"
+msgstr "Keep Editing"
+
+#: src/components/views/ArticleEditorView.ts:190
+msgid "Loading article..."
+msgstr "Loading article..."
+
+#: src/components/views/ArticleEditorView.ts:1229
+msgid "No content yet..."
+msgstr "No content yet..."
+
+#: src/components/views/ArticleEditorView.ts:419
+msgid "nostr, bitcoin, technology (comma separated)"
+msgstr "nostr, bitcoin, technology (comma separated)"
+
+#: src/components/views/ArticleEditorView.ts:490
+msgid "Now (on publish)"
+msgstr "Now (on publish)"
+
+#: src/components/views/ArticleEditorView.ts:462
+msgid "Pick date"
+msgstr "Pick date"
+
+#: src/components/views/ArticleEditorView.ts:317
+msgid "Preview"
+msgstr "Preview"
+
+#: src/components/views/ArticleEditorView.ts:428
+msgid ""
+"Publish as a recipe: adds the <code>zapcooking</code> tag so recipe clients "
+"list this article. Content should follow the recipe template (Details / "
+"Ingredients / Directions)."
+msgstr ""
+"Publish as a recipe: adds the <code>zapcooking</code> tag so recipe clients "
+"list this article. Content should follow the recipe template (Details / "
+"Ingredients / Directions)."
+
+#: src/components/views/ArticleEditorView.ts:456
+#: src/components/views/ArticleEditorView.ts:527
+msgid "Published at"
+msgstr "Published at"
+
+#: src/components/views/ArticleEditorView.ts:820
+msgid "Recipe (zap.cooking)"
+msgstr "Recipe (zap.cooking)"
+
+#: src/components/views/ArticleEditorView.ts:897
+msgid "Recipe hint: add a %s section so recipe clients can parse it."
+msgstr "Recipe hint: add a %s section so recipe clients can parse it."
+
+#: src/components/views/ArticleEditorView.ts:890
+msgid "Recipe hint: add a cover image — recipe clients expect one."
+msgstr "Recipe hint: add a cover image — recipe clients expect one."
+
+#: src/components/views/ArticleEditorView.ts:463
+#: src/components/views/ArticleEditorView.ts:515
+msgid "Reset"
+msgstr "Reset"
+
+#: src/components/views/ArticleEditorView.ts:331
+msgid "Save Draft"
+msgstr "Save Draft"
+
+#: src/components/views/ArticleEditorView.ts:1170
+msgid "Saving..."
+msgstr "Saving..."
+
+#: src/components/views/ArticleEditorView.ts:1078
+msgid "Schedule"
+msgstr "Schedule"
+
+#: src/components/views/ArticleEditorView.ts:1074
+msgid "Schedule Article"
+msgstr "Schedule Article"
+
+#: src/components/views/ArticleEditorView.ts:332
+msgid "Schedule Publish"
+msgstr "Schedule Publish"
+
+#: src/components/views/ArticleEditorView.ts:1090
+msgid "Scheduling..."
+msgstr "Scheduling..."
+
+#: src/components/views/ArticleEditorView.ts:457
+msgid "set a past date for older articles you're re-publishing"
+msgstr "set a past date for older articles you're re-publishing"
+
+#: src/components/views/ArticleEditorView.ts:532
+msgid "Set date"
+msgstr "Set date"
+
+#: src/components/views/ArticleEditorView.ts:470
+msgid "Slug / Identifier"
+msgstr "Slug / Identifier"
+
+#: src/components/views/ArticleEditorView.ts:404
+msgid "Summary"
+msgstr "Summary"
+
+#: src/components/views/ArticleEditorView.ts:480
+msgid ""
+"Unique identifier for this article. Changing this after publishing creates "
+"a new article instead of updating."
+msgstr ""
+"Unique identifier for this article. Changing this after publishing creates "
+"a new article instead of updating."
+
+#: src/components/views/ArticleEditorView.ts:1006
+msgid "Unsaved Changes"
+msgstr "Unsaved Changes"
+
+#: src/components/views/ArticleEditorView.ts:333
+msgid "Update"
+msgstr "Update"
+
+#: src/components/views/ArticleEditorView.ts:396
+msgid "Upload image"
+msgstr "Upload image"
+
+#: src/components/views/ArticleEditorView.ts:310
+msgid "Write Article"
+msgstr "Write Article"
+
+#: src/components/views/ArticleEditorView.ts:1347
+#: src/components/views/ArticleEditorView.ts:370
+msgid "Write your article in Markdown..."
+msgstr "Write your article in Markdown..."
+
+#: src/components/views/ArticleEditorView.ts:1007
+msgid "You have unsaved changes. Discard them?"
+msgstr "You have unsaved changes. Discard them?"

@@ -267,15 +267,9 @@ export class ArticleView extends View {
       );
       deleteBtn?.addEventListener('click', async () => {
         const { ModalService } = await import('../../services/ModalService');
-        const confirmed = await ModalService.getInstance().confirm({
-          title: _('Delete Article'),
-          message: _(
-            'This will send a deletion request to all relays. This cannot be undone.'
-          ),
-          confirmText: _('Delete'),
-          cancelText: _('Cancel'),
-          confirmDestructive: true,
-        });
+        const confirmed = await ModalService.getInstance().confirmNip09Delete(
+          _('Delete Article')
+        );
 
         if (!confirmed) return;
 

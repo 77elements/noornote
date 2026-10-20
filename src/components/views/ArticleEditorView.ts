@@ -14,6 +14,7 @@
  */
 
 import { View } from './View';
+import { _ } from '../../i18n';
 import { Router } from '../../services/Router';
 import { NavigationDispatcher } from '../../services/NavigationDispatcher';
 // ArticleService accessed via articles module API
@@ -186,7 +187,7 @@ export class ArticleEditorView extends View {
         <div class="back-padder">
         <div class="article-view-loading">
           <div class="loading-spinner"></div>
-          <p>Loading article...</p>
+          <p>${_('Loading article...')}</p>
         </div>
     
         </div>
@@ -205,7 +206,7 @@ export class ArticleEditorView extends View {
           'ArticleEditorView',
           'Article not found on relays'
         );
-        this.container.innerHTML = `<div class="article-view-error"><p>Article not found</p></div>`;
+        this.container.innerHTML = `<div class="article-view-error"><p>${_('Article not found')}</p></div>`;
         return;
       }
 
@@ -238,7 +239,7 @@ export class ArticleEditorView extends View {
         'ArticleEditorView',
         `Failed to load article: ${String(error)}`
       );
-      this.container.innerHTML = `<div class="article-view-error"><p>Failed to load article</p></div>`;
+      this.container.innerHTML = `<div class="article-view-error"><p>${_('Failed to load article')}</p></div>`;
     }
   }
 
@@ -306,16 +307,16 @@ export class ArticleEditorView extends View {
     this.container.innerHTML = `
       <div class="article-editor">
         <header class="l-spread">
-          <h1>${this.isEditMode ? 'Edit Article' : 'Write Article'}</h1>
-          <button class="btn btn--passive btn--medium" data-action="back">Back</button>
+          <h1>${this.isEditMode ? _('Edit Article') : _('Write Article')}</h1>
+          <button class="btn btn--passive btn--medium" data-action="back">${_('Back')}</button>
         </header>
 
         <div class="article-editor__toolbar">
           <div class="tabs">
-            <button class="tab tab--active" data-tab="edit">Edit</button>
-            <button class="tab" data-tab="preview">Preview</button>
+            <button class="tab tab--active" data-tab="edit">${_('Edit')}</button>
+            <button class="tab" data-tab="preview">${_('Preview')}</button>
           </div>
-          <button class="btn btn--passive btn--medium" data-action="enter-focus" title="Distraction-free writing (Esc to exit)">Focus mode</button>
+          <button class="btn btn--passive btn--medium" data-action="enter-focus" title="${_('Distraction-free writing (Esc to exit)')}">${_('Focus mode')}</button>
           ${this.relaySelector.render()}
         </div>
 
@@ -326,10 +327,10 @@ export class ArticleEditorView extends View {
         <footer class="article-editor__footer">
           ${this.toolbar.render()}
           <div class="article-editor__actions">
-            ${this.isDraftMode ? '<button class="btn btn--danger btn--medium" data-action="delete-draft">Delete Draft</button>' : ''}
-            <button class="btn btn--passive" data-action="save-draft">Save Draft <span class="form__note">(beta)</span></button>
-            ${isScheduledPostsEnabled() ? '<button class="btn btn--passive" data-action="schedule-publish">Schedule Publish</button>' : ''}
-            <button class="btn" data-action="publish">${this.isEditMode ? 'Update' : 'Publish'}</button>
+            ${this.isDraftMode ? `<button class="btn btn--danger btn--medium" data-action="delete-draft">${_('Delete Draft')}</button>` : ''}
+            <button class="btn btn--passive" data-action="save-draft">${_('Save Draft')} <span class="form__note">(${_('beta')})</span></button>
+            ${isScheduledPostsEnabled() ? `<button class="btn btn--passive" data-action="schedule-publish">${_('Schedule Publish')}</button>` : ''}
+            <button class="btn" data-action="publish">${this.isEditMode ? _('Update') : _('Publish')}</button>
           </div>
         </footer>
       </div>
@@ -349,24 +350,24 @@ export class ArticleEditorView extends View {
     return `
       <div class="article-editor__form">
         <div class="form__row">
-          <label for="article-title">Title</label>
+          <label for="article-title">${_('Title')}</label>
           <input
             type="text"
             id="article-title"
             class="input input--title"
-            placeholder="Article title..."
+            placeholder="${_('Article title...')}"
             value="${escapeHtml(this.title)}"
             data-field="title"
           />
         </div>
 
         <div class="form__row">
-          <label for="article-content">Content (Markdown)</label>
+          <label for="article-content">${_('Content (Markdown)')}</label>
           ${this.mdToolbar.render()}
           <textarea
             id="article-content"
             class="textarea textarea--code textarea--large article-editor-content"
-            placeholder="Write your article in Markdown..."
+            placeholder="${_('Write your article in Markdown...')}"
             data-field="content"
           >${escapeHtml(this.content)}</textarea>
         </div>
@@ -374,25 +375,25 @@ export class ArticleEditorView extends View {
         <section class="nn-ui-toggle">
           <div class="nn-ui-toggle__header">
             <div class="nn-ui-toggle__info">
-              <h2 class="nn-ui-toggle__title">Details</h2>
+              <h2 class="nn-ui-toggle__title">${_('Details')}</h2>
             </div>
-            <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+            <button class="nn-ui-toggle__toggle" aria-label="${_('Toggle section')}">
               <svg width="24" height="24"><use href="#icon-chevron-down"/></svg>
             </button>
           </div>
           <div class="nn-ui-toggle__content">
             <div class="form__row">
-              <label for="article-image">Cover Image</label>
+              <label for="article-image">${_('Cover Image')}</label>
               <div class="article-editor__cover-input">
                 <input
                   type="text"
                   id="article-image"
                   class="input"
-                  placeholder="https://... or upload"
+                  placeholder="${_('https://... or upload')}"
                   value="${escapeHtml(this.image)}"
                   data-field="image"
                 />
-                <button type="button" class="article-editor__upload-btn" data-action="upload-cover" title="Upload image">
+                <button type="button" class="article-editor__upload-btn" data-action="upload-cover" title="${_('Upload image')}">
                   <svg width="18" height="18"><use href="#icon-upload"/></svg>
                 </button>
                 <input type="file" accept="image/*" class="article-editor__cover-file" data-cover-file style="display: none;" />
@@ -400,22 +401,22 @@ export class ArticleEditorView extends View {
             </div>
 
             <div class="form__row">
-              <label for="article-summary">Summary</label>
+              <label for="article-summary">${_('Summary')}</label>
               <textarea
                 id="article-summary"
                 class="textarea textarea--small"
-                placeholder="Brief description of your article..."
+                placeholder="${_('Brief description of your article...')}"
                 data-field="summary"
               >${escapeHtml(this.summary)}</textarea>
             </div>
 
             <div class="form__row">
-              <label for="article-tags">Tags</label>
+              <label for="article-tags">${_('Tags')}</label>
               <input
                 type="text"
                 id="article-tags"
                 class="input"
-                placeholder="nostr, bitcoin, technology (comma separated)"
+                placeholder="${_('nostr, bitcoin, technology (comma separated)')}"
                 value="${escapeHtml(this.tags)}"
                 data-field="tags"
               />
@@ -424,9 +425,7 @@ export class ArticleEditorView extends View {
             <div class="article-editor__recipe" data-recipe-block>
               <div data-recipe-switch></div>
               <p class="form__note">
-                Publish as a recipe: adds the <code>zapcooking</code> tag so
-                recipe clients list this article. Content should follow the
-                recipe template (Details / Ingredients / Directions).
+                ${_('Publish as a recipe: adds the <code>zapcooking</code> tag so recipe clients list this article. Content should follow the recipe template (Details / Ingredients / Directions).')}
               </p>
               <div class="l-row--right">
                 <button
@@ -435,13 +434,13 @@ export class ArticleEditorView extends View {
                   data-action="insert-recipe-template"
                   disabled
                 >
-                  Insert recipe template
+                  ${_('Insert recipe template')}
                 </button>
               </div>
               <div class="article-editor__recipe-tags" data-recipe-tags hidden>
                 <span class="article-editor__recipe-tags-label">
-                  Discovery tags
-                  <span class="form__note">(click to add to Tags)</span>
+                  ${_('Discovery tags')}
+                  <span class="form__note">(${_('click to add to Tags')})</span>
                 </span>
                 <div class="article-editor__recipe-chips" data-recipe-chips>
                   ${RECIPE_TOPIC_SUGGESTIONS.map(
@@ -454,22 +453,22 @@ export class ArticleEditorView extends View {
 
             <div class="form__row">
               <label>
-                Published at
-                <span class="form__note">(set a past date for older articles you're re-publishing)</span>
+                ${_('Published at')}
+                <span class="form__note">(${_("set a past date for older articles you're re-publishing")})</span>
               </label>
               <div class="l-spread">
                 <span data-published-at-label>${this.renderPublishedAtLabel()}</span>
                 <div>
-                  <button type="button" class="btn btn--passive btn--medium" data-action="pick-published-at">Pick date</button>
-                  ${this.publishedAt ? '<button type="button" class="btn btn--passive btn--medium" data-action="clear-published-at">Reset</button>' : ''}
+                  <button type="button" class="btn btn--passive btn--medium" data-action="pick-published-at">${_('Pick date')}</button>
+                  ${this.publishedAt ? `<button type="button" class="btn btn--passive btn--medium" data-action="clear-published-at">${_('Reset')}</button>` : ''}
                 </div>
               </div>
             </div>
 
             <div class="form__row">
               <label for="article-identifier">
-                Slug / Identifier
-                <span class="form__note">(auto-generated, change only if you know what you're doing)</span>
+                ${_('Slug / Identifier')}
+                <span class="form__note">(${_("auto-generated, change only if you know what you're doing")})</span>
               </label>
               <input
                 type="text"
@@ -478,7 +477,7 @@ export class ArticleEditorView extends View {
                 placeholder="my-article-slug"
                 value="${escapeHtml(this.identifier)}"
                 data-field="identifier"
-                title="Unique identifier for this article. Changing this after publishing creates a new article instead of updating."
+                title="${_('Unique identifier for this article. Changing this after publishing creates a new article instead of updating.')}"
               />
             </div>
           </div>
@@ -488,7 +487,7 @@ export class ArticleEditorView extends View {
   }
 
   private renderPublishedAtLabel(): string {
-    if (!this.publishedAt) return '<em>Now (on publish)</em>';
+    if (!this.publishedAt) return `<em>${_('Now (on publish)')}</em>`;
     const date = new Date(this.publishedAt * 1000);
     return date.toLocaleDateString(undefined, {
       year: 'numeric',
@@ -513,7 +512,7 @@ export class ArticleEditorView extends View {
         btn.type = 'button';
         btn.className = 'btn btn--passive btn--medium';
         btn.dataset.action = 'clear-published-at';
-        btn.textContent = 'Reset';
+        btn.textContent = _('Reset');
         btn.addEventListener('click', () => this.handleClearPublishedAt());
         row.appendChild(btn);
       } else if (!this.publishedAt && hasReset) {
@@ -525,12 +524,12 @@ export class ArticleEditorView extends View {
   private async handlePickPublishedAt(): Promise<void> {
     const { pickDate } = await import('../../helpers/datePickerModal');
     const picked = await pickDate({
-      title: 'Published at',
+      title: _('Published at'),
       initial: this.publishedAt
         ? new Date(this.publishedAt * 1000)
         : new Date(),
       max: new Date(),
-      confirmLabel: 'Set date',
+      confirmLabel: _('Set date'),
     });
     if (!picked) return;
     this.publishedAt = Math.floor(picked.getTime() / 1000);
@@ -818,7 +817,7 @@ export class ArticleEditorView extends View {
     if (!host) return;
 
     this.recipeSwitch = new Switch({
-      label: 'Recipe (zap.cooking)',
+      label: _('Recipe (zap.cooking)'),
       checked: this.isRecipeMode,
       onChange: checked => {
         this.isRecipeMode = checked;
@@ -888,14 +887,17 @@ export class ArticleEditorView extends View {
     });
     if (!this.image) {
       ToastService.show(
-        'Recipe hint: add a cover image — recipe clients expect one.',
+        _('Recipe hint: add a cover image — recipe clients expect one.'),
         'warning'
       );
     }
     const missing = missingRecipeSections(this.content);
     if (missing.length > 0) {
       ToastService.show(
-        `Recipe hint: add a ${missing.join(' and ')} section so recipe clients can parse it.`,
+        _(
+          'Recipe hint: add a %s section so recipe clients can parse it.',
+          missing.join(_(' and '))
+        ),
         'warning'
       );
     }
@@ -1001,10 +1003,10 @@ export class ArticleEditorView extends View {
     }
 
     const discard = await ModalService.getInstance().confirm({
-      title: 'Unsaved Changes',
-      message: 'You have unsaved changes. Discard them?',
-      confirmText: 'Discard',
-      cancelText: 'Keep Editing',
+      title: _('Unsaved Changes'),
+      message: _('You have unsaved changes. Discard them?'),
+      confirmText: _('Discard'),
+      cancelText: _('Keep Editing'),
       confirmDestructive: true,
     });
 
@@ -1069,11 +1071,11 @@ export class ArticleEditorView extends View {
 
     const { pickDateTime } = await import('../../helpers/datePickerModal');
     const picked = await pickDateTime({
-      title: 'Schedule Article',
+      title: _('Schedule Article'),
       initial: new Date(Date.now() + 60 * 60 * 1000),
       min: new Date(Date.now() + 60 * 1000),
       max: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      confirmLabel: 'Schedule',
+      confirmLabel: _('Schedule'),
     });
     if (!picked) return;
 
@@ -1085,7 +1087,7 @@ export class ArticleEditorView extends View {
       '[data-action="schedule-publish"]'
     ) as HTMLButtonElement;
     const originalText = btn?.textContent || '';
-    if (btn) btn.textContent = 'Scheduling...';
+    if (btn) btn.textContent = _('Scheduling...');
 
     try {
       const topics = this.tags
@@ -1130,14 +1132,9 @@ export class ArticleEditorView extends View {
   private async handleDeleteDraft(): Promise<void> {
     if (!AuthGuard.requireAuth('delete this draft')) return;
 
-    const confirmed = await ModalService.getInstance().confirm({
-      title: 'Delete Draft',
-      message:
-        'This will send a deletion request to all relays. This cannot be undone.',
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
-      confirmDestructive: true,
-    });
+    const confirmed = await ModalService.getInstance().confirmNip09Delete(
+      _('Delete Draft')
+    );
 
     if (!confirmed) return;
 
@@ -1170,7 +1167,7 @@ export class ArticleEditorView extends View {
     ) as HTMLButtonElement;
     const originalText = btn?.textContent || '';
     if (btn) {
-      btn.textContent = isDraft ? 'Saving...' : 'Publishing...';
+      btn.textContent = isDraft ? _('Saving...') : _('Publishing...');
     }
 
     try {
@@ -1229,7 +1226,7 @@ export class ArticleEditorView extends View {
   private renderMarkdownContent(content: string): string {
     if (!content) {
       this.previewQuotedRefs = [];
-      return '<p class="article-editor__preview-empty">No content yet...</p>';
+      return `<p class="article-editor__preview-empty">${_('No content yet...')}</p>`;
     }
 
     try {
@@ -1341,13 +1338,13 @@ export class ArticleEditorView extends View {
     body.innerHTML = `
       <section class="section">
         <div class="form__row">
-          <label for="focus-title">Title</label>
-          <input type="text" id="focus-title" class="input input--title" placeholder="Article title..." data-focus-field="title" />
+          <label for="focus-title">${_('Title')}</label>
+          <input type="text" id="focus-title" class="input input--title" placeholder="${_('Article title...')}" data-focus-field="title" />
         </div>
         <div class="form__row">
-          <label for="focus-content">Content (Markdown)</label>
+          <label for="focus-content">${_('Content (Markdown)')}</label>
           ${this.focusMdToolbar.render()}
-          <textarea id="focus-content" class="textarea textarea--code textarea--large" placeholder="Write your article in Markdown..." data-focus-field="content"></textarea>
+          <textarea id="focus-content" class="textarea textarea--code textarea--large" placeholder="${_('Write your article in Markdown...')}" data-focus-field="content"></textarea>
         </div>
       </section>
     `;

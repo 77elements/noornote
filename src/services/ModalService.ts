@@ -234,6 +234,22 @@ export class ModalService {
   }
 
   /**
+   * Standard NIP-09 deletion confirmation. Shared by every view that sends a
+   * NIP-09 delete request — one dialog, one place to translate it.
+   */
+  public confirmNip09Delete(title: string): Promise<boolean> {
+    return this.confirm({
+      title,
+      message: _(
+        'This will send a deletion request to all relays. This cannot be undone.'
+      ),
+      confirmText: _('Delete'),
+      cancelText: _('Cancel'),
+      confirmDestructive: true,
+    });
+  }
+
+  /**
    * Show a single-line text-input prompt and resolve with the entered value
    * (trimmed) or null if cancelled. Submits on Enter; cancels on Escape /
    * overlay click. Modal-helper replacement for `window.prompt()`.
