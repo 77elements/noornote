@@ -3,10 +3,12 @@
  * Shows "Unsupported event kind X" with "Open in another client" button
  */
 
+import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { encodeNevent, encodeNaddr } from '../../../services/NostrToolsAdapter';
 import { escapeHtml } from '../../../helpers/escapeHtml';
 import { formatGroupChatContent } from '../../../helpers/formatGroupChatContent';
+import { getTag, getTagValues } from '../../../helpers/tagUtils';
 import {
   DittoFeatureRenderer,
   DITTO_GEOCACHE_KIND,
@@ -23,6 +25,31 @@ import { getViewNavigationController } from '../../../services/ViewNavigationCon
 const ARMADA_INVITE_KIND = 33301;
 /** NIP-29 group chat message — rendered as readable text, not "unsupported". */
 const GROUP_CHAT_KIND = 9;
+/**
+ * Kind 30817 — custom/community NIPs and app capability profiles (NostrHub
+ * "nostrnips" convention): an addressable event whose content is a Markdown
+ * document, `d` tag = NIP identifier. Capability profiles (e.g. NoorNote's own
+ * `d=noornote` event) instead carry `k` tags listing the kinds they support.
+ * Rendered as a titled notice card instead of the bare "unsupported kind"
+ * fallback — NoorNote publishes this kind itself, so it must not look alien.
+ */
+const CUSTOM_NIP_KIND = 30817;
+
+/** Best title for a kind-30817 card: title tag → first markdown heading → d tag. */
+function customNipTitleFromEvent(event: NostrEvent): string {
+  const title = getTag(event.tags, 'title');
+  if (title) return title;
+  const heading = event.content.match(/^#\s+(.+)$/m)?.[1];
+  if (heading?.trim()) return heading.trim();
+  return getTag(event.tags, 'd') || '';
+}
+
+/** Capability profiles declare supported kinds via k tags; NIP documents don't. */
+function customNipLabel(tags: string[][] | undefined): string {
+  return getTagValues(tags, 'k').length > 0
+    ? 'Capability profile'
+    : 'Community NIP';
+}
 
 export class UnsupportedKindRenderer {
   /**
@@ -71,6 +98,35 @@ export class UnsupportedKindRenderer {
         </div>
       `;
       return element;
+    }
+
+    // Kind 30817 (custom/community NIPs + capability profiles): titled notice
+    // card with an njump link — njump renders the markdown document. See the
+    // CUSTOM_NIP_KIND doc comment for the event shape.
+    if (note.rawEvent.kind === CUSTOM_NIP_KIND) {
+      const title = customNipTitleFromEvent(note.rawEvent) || 'Community NIP';
+      const nevent = note.id ? encodeNevent(note.id) : '';
+      const njumpUrl = nevent ? `https://njump.me/${nevent}` : '';
+      const element = document.createElement('div');
+      element.className = 'note-card note-card--unsupported';
+      if (note.id) element.dataset.eventId = note.id;
+      element.innerHTML = `
+        <div class="unsupported-kind">
+          <div class="unsupported-kind__message">
+            ${customNipLabel(note.rawEvent.tags)}: ${escapeHtml(title)}
+          </div>
+          ${
+            njumpUrl
+              ? `
+          <a href="${njumpUrl}" target="_blank" rel="noopener noreferrer" class="btn">
+            ↗ Open in another client
+          </a>
+        `
+              : ''
+          }
+        </div>
+      `;
+      return UnsupportedKindRenderer.withCardChrome(element, note);
     }
 
     const element = document.createElement('div');
@@ -179,6 +235,26 @@ export class UnsupportedKindRenderer {
       // Reconstruct the naddr; ArmadaInviteRenderer.renderFromCoordinate handles it.
       const naddr = encodeNaddr({ kind, pubkey, identifier, relays: [] });
       return ArmadaInviteRenderer.renderFromCoordinate(naddr, undefined);
+    }
+
+    // Kind 30817 coordinate fallback: no event fetched, so no k tags to
+    // detect a capability profile — default to the "Community NIP" label and
+    // use the d identifier as the title.
+    if (kind === CUSTOM_NIP_KIND) {
+      const naddr = encodeNaddr({ kind, pubkey, identifier, relays: [] });
+      const element = document.createElement('div');
+      element.className = 'note-card note-card--unsupported';
+      element.innerHTML = `
+        <div class="unsupported-kind">
+          <div class="unsupported-kind__message">
+            Community NIP: ${escapeHtml(identifier || 'Community NIP')}
+          </div>
+          <a href="https://njump.me/${naddr}" target="_blank" rel="noopener noreferrer" class="btn">
+            ↗ Open in another client
+          </a>
+        </div>
+      `;
+      return element;
     }
 
     const element = document.createElement('div');

@@ -260,6 +260,51 @@ describe('UnsupportedKindRenderer — Satellite card for shared kind 35128', () 
   });
 });
 
+describe('UnsupportedKindRenderer — custom NIP / capability profile (kind 30817)', () => {
+  it('renders a Community NIP card with the title from the first markdown heading', () => {
+    const note = NoteProcessor.process(
+      makeEvent({
+        kind: 30817,
+        tags: [['d', 'my-nip']],
+        content: '# My Custom NIP\n\nSome proposal text.',
+      })
+    );
+    const card = NoteRendererFactory.render(note, OPTS);
+
+    expect(card.textContent).toContain('Community NIP: My Custom NIP');
+    expect(card.textContent).not.toContain('Unsupported event kind');
+  });
+
+  it('labels events with k tags as capability profiles and titles them from the d tag', () => {
+    const note = NoteProcessor.process(
+      makeEvent({
+        kind: 30817,
+        tags: [
+          ['d', 'noornote'],
+          ['k', '1'],
+          ['k', '30023'],
+        ],
+        content: 'NoorNote supports the following kinds…',
+      })
+    );
+    const card = NoteRendererFactory.render(note, OPTS);
+
+    expect(card.textContent).toContain('Capability profile: noornote');
+    expect(card.textContent).not.toContain('Unsupported event kind');
+  });
+
+  it('renders the coordinate fallback with the d identifier as the title', () => {
+    const card = UnsupportedKindRenderer.renderFromCoordinate(
+      30817,
+      PUBKEY,
+      'nip-07'
+    );
+
+    expect(card.textContent).toContain('Community NIP: nip-07');
+    expect(card.querySelector('a[href*="njump.me"]')).not.toBeNull();
+  });
+});
+
 describe('UnsupportedKindRenderer — generic fallback chrome', () => {
   beforeEach(() => {
     openView.mockClear();
