@@ -266,6 +266,11 @@ export class NostrTransport {
       ) as unknown as NDKCacheAdapter,
       enableOutboxModel: false, // Disable for now, can enable later for performance
       autoConnectUserRelays: false, // We manage relays explicitly via RelayConfig
+      // Drop events whose created_at lies further ahead than this (seconds).
+      // Guards against relays/authors publishing with manipulated future
+      // timestamps that would otherwise pin themselves to the top of every
+      // feed. 300s = generous clock-skew tolerance for mobile clients.
+      futureTimestampGrace: 300,
     });
 
     // Offload schnorr signature verification to a Web Worker so it never blocks
