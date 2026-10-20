@@ -15,6 +15,7 @@
  */
 
 import { View } from './View';
+import { _ } from '../../i18n';
 import { Router } from '../../services/Router';
 import { ToastService } from '../../services/ToastService';
 import { escapeHtml } from '../../helpers/escapeHtml';
@@ -60,19 +61,18 @@ export class AddonsOverviewView extends View {
     this.container.innerHTML = `
       <div class="back-padder">
         <div class="addons-overview__head l-spread">
-          <h2>Addons</h2>
+          <h2>${_('Addons')}</h2>
           <div>
             <button class="btn btn--passive btn--mini" data-addons-reset ${hasCustomAddonOrder() ? '' : 'hidden'}>
-              Reset order
+              ${_('Reset order')}
             </button>
           </div>
         </div>
         <p class="addons-overview__intro">
-          Addons are extra functions that build on and enhance your NoorNote
-          experience. Right now, there are ${ADDON_REGISTRY.length} of them.
+          ${_('Addons are extra functions that build on and enhance your NoorNote experience. Right now, there are %s of them.', ADDON_REGISTRY.length)}
         </p>
         <p class="addons-overview__hint">
-          Drag tiles to reorder (on touch: use ▲▼). The order is saved per account.
+          ${_('Drag tiles to reorder (on touch: use ▲▼). The order is saved per account.')}
         </p>
         <div class="nn-card-grid-wrap">
           <div class="nn-card-grid addons-overview__grid" data-addons-grid>
@@ -98,21 +98,21 @@ export class AddonsOverviewView extends View {
             <div class="addon-tile__meta">
               ${
                 status
-                  ? `<span class="addon-tile__status addon-tile__status--${status}">${status === 'new' ? 'New' : 'Updated'}</span>`
+                  ? `<span class="addon-tile__status addon-tile__status--${status}">${status === 'new' ? _('New') : _('Updated')}</span>`
                   : ''
               }
               <span
                 class="addon-tile__led ${enabled ? 'addon-tile__led--on' : 'addon-tile__led--off'}"
-                title="${enabled ? 'Active' : 'Inactive'}"
+                title="${enabled ? _('Active') : _('Inactive')}"
               ></span>
             </div>
           </div>
           <p class="addon-tile__desc">${escapeHtml(a.description)}</p>
           <div class="l-row l-row--right addon-tile__move">
-            <button class="addon-tile__move-btn" data-move="up" aria-label="Move up">
+            <button class="addon-tile__move-btn" data-move="up" aria-label="${_('Move up')}">
               <svg><use href="#icon-caret-up"/></svg>
             </button>
-            <button class="addon-tile__move-btn" data-move="down" aria-label="Move down">
+            <button class="addon-tile__move-btn" data-move="down" aria-label="${_('Move down')}">
               <svg><use href="#icon-caret-down"/></svg>
             </button>
           </div>
@@ -217,7 +217,7 @@ export class AddonsOverviewView extends View {
     const resetBtn = this.container.querySelector('[data-addons-reset]');
     resetBtn?.addEventListener('click', () => {
       resetAddonOrder();
-      ToastService.show('Addon order reset to default', 'success');
+      ToastService.show(_('Addon order reset to default'), 'success');
       this.renderContent();
     });
   }

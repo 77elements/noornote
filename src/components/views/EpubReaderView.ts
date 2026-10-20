@@ -14,6 +14,7 @@
  */
 
 import { View } from './View';
+import { _ } from '../../i18n';
 import {
   EpubReaderService,
   epubPositionKey,
@@ -35,18 +36,28 @@ import { extractEpubFileName } from '../../helpers/epubDetection';
 
 const TOC_MAX_ENTRIES = 500;
 
-/** Footer navigation hint — platform-appropriate input methods */
-const NAV_HINT_DESKTOP = 'Navigate with ← / → or click the page edges';
-const NAV_HINT_MOBILE = 'Tap the page edges or swipe to turn pages';
+/** Footer navigation hint — platform-appropriate input methods.
+ * Translated at use site — `_()` must not run at module scope. */
+function navHintDesktop(): string {
+  return _('Navigate with ← / → or click the page edges');
+}
+function navHintMobile(): string {
+  return _('Tap the page edges or swipe to turn pages');
+}
 
 /** Accessibility mono-mode cycle: theme colors → black on white → white on black */
 const MONO_CYCLE: MonoMode[] = ['off', 'bw', 'wb'];
 
-const MONO_LABELS: Record<MonoMode, string> = {
-  off: 'Theme colors',
-  bw: 'Monochrome: black on white',
-  wb: 'Monochrome: white on black',
-};
+function monoLabel(mode: MonoMode): string {
+  switch (mode) {
+    case 'bw':
+      return _('Monochrome: black on white');
+    case 'wb':
+      return _('Monochrome: white on black');
+    default:
+      return _('Theme colors');
+  }
+}
 
 export class EpubReaderView extends View {
   private container: HTMLElement;
@@ -95,8 +106,8 @@ export class EpubReaderView extends View {
     this.navHint = document.createElement('div');
     this.navHint.className = 'epub-reader__hint';
     this.navHint.textContent = PlatformService.getInstance().isAndroid
-      ? NAV_HINT_MOBILE
-      : NAV_HINT_DESKTOP;
+      ? navHintMobile()
+      : navHintDesktop();
     this.progressLabel = document.createElement('div');
     this.progressLabel.className = 'epub-reader__progress';
     footer.appendChild(this.navHint);
@@ -184,8 +195,8 @@ export class EpubReaderView extends View {
     this.monoMode = mode;
     this.service.setMonoMode(mode);
     if (this.monoButton) {
-      this.monoButton.setAttribute('aria-label', MONO_LABELS[mode]);
-      this.monoButton.title = MONO_LABELS[mode];
+      this.monoButton.setAttribute('aria-label', monoLabel(mode));
+      this.monoButton.title = monoLabel(mode);
     }
     PerAccountLocalStorage.getInstance().set(
       StorageKeys.EPUB_READER_MONO_MODE,
@@ -247,7 +258,7 @@ export class EpubReaderView extends View {
     this.viewport.innerHTML = '';
     const loading = document.createElement('div');
     loading.className = 'epub-reader__loading pulsate';
-    loading.textContent = 'Loading book…';
+    loading.textContent = _('Loading book…');
     this.viewport.appendChild(loading);
 
     try {
@@ -277,8 +288,9 @@ export class EpubReaderView extends View {
       this.viewport.innerHTML = '';
       const error = document.createElement('div');
       error.className = 'epub-reader__error';
-      error.textContent =
-        'This book could not be loaded. You can try the download button on the original post.';
+      error.textContent = _(
+        'This book could not be loaded. You can try the download button on the original post.'
+      );
       this.viewport.appendChild(error);
     }
   }

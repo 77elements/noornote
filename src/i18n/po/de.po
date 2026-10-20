@@ -740,7 +740,7 @@ msgstr "Lokal behalten"
 msgid "Keep relay"
 msgstr "Relay behalten"
 
-#: src/components/modals/ImportToNoorSignerModal.ts:210
+#: src/components/modals/ImportToNoorSignerModal.ts:211
 msgid "Key successfully imported to NoorSigner"
 msgstr "Key erfolgreich in NoorSigner importiert"
 
@@ -838,7 +838,7 @@ msgid "Sending..."
 msgstr "Senden…"
 
 #: src/components/modals/ImportToNoorSignerModal.ts:109
-#: src/components/modals/ImportToNoorSignerModal.ts:223
+#: src/components/modals/ImportToNoorSignerModal.ts:226
 msgid "Set Password"
 msgstr "Passwort festlegen"
 
@@ -846,7 +846,7 @@ msgstr "Passwort festlegen"
 msgid "Silent Zap"
 msgstr "Stiller Zap"
 
-#: src/components/modals/ImportToNoorSignerModal.ts:217
+#: src/components/modals/ImportToNoorSignerModal.ts:220
 msgid "This account already exists in NoorSigner"
 msgstr "Dieses Konto existiert bereits in NoorSigner"
 
@@ -862,3 +862,201 @@ msgstr "Schreibe deine Nachricht…"
 #: src/components/modals/ZapModal.ts:73
 msgid "Zap"
 msgstr "Zap"
+
+#: src/components/views/AddonsOverviewView.ts:106
+msgid "Active"
+msgstr "Aktiv"
+
+#: src/components/views/AddonsOverviewView.ts:220
+msgid "Addon order reset to default"
+msgstr "Addon-Reihenfolge zurückgesetzt"
+
+#: src/components/views/AddonsOverviewView.ts:64
+msgid "Addons"
+msgstr "Addons"
+
+#: src/components/views/AddonsOverviewView.ts:72
+msgid ""
+"Addons are extra functions that build on and enhance your NoorNote "
+"experience. Right now, there are %s of them."
+msgstr ""
+"Addons sind Zusatzfunktionen, die auf NoorNote aufbauen und es erweitern. "
+"Aktuell sind es %s."
+
+#: src/components/views/FollowPackDetailView.ts:249
+msgid "Already following all members"
+msgstr "Du folgst bereits allen Mitgliedern"
+
+#: src/components/views/ZapstoreAppView.ts:387
+msgid "App Info"
+msgstr "App-Info"
+
+#: src/components/views/ZapstoreAppView.ts:113
+msgid "App not found"
+msgstr "App nicht gefunden"
+
+#: src/components/views/ZapstoreAppView.ts:323
+msgid "Certificate"
+msgstr "Zertifikat"
+
+#: src/components/views/ZapstoreAppView.ts:323
+msgid "Copy certificate hash"
+msgstr "Zertifikats-Hash kopieren"
+
+#: src/components/views/ZapstoreAppView.ts:319
+msgid "Copy hash"
+msgstr "Hash kopieren"
+
+#: src/components/views/AddonsOverviewView.ts:75
+msgid "Drag tiles to reorder (on touch: use ▲▼). The order is saved per account."
+msgstr ""
+"Kacheln zum Umsortieren ziehen (am Touchscreen: ▲▼ nutzen). Die Reihenfolge "
+"wird pro Konto gespeichert."
+
+#: src/components/views/FollowPackDetailView.ts:220
+msgid "Edit List"
+msgstr "Liste bearbeiten"
+
+#: src/components/views/ZapstoreAppView.ts:127
+msgid "Failed to load app"
+msgstr "App konnte nicht geladen werden"
+
+#: src/components/views/ListingReadView.ts:71
+msgid "Failed to load listing"
+msgstr "Anzeige konnte nicht geladen werden"
+
+#: src/components/views/FollowPackDetailView.ts:122
+msgid "Follow All"
+msgstr "Alle abonnieren"
+
+#: src/components/views/FollowPackDetailView.ts:261
+msgid "Following %s new people"
+msgstr "Du folgst jetzt %s neuen Personen"
+
+#: src/components/views/ZapstoreAppView.ts:319
+msgid "Hash"
+msgstr "Hash"
+
+#: src/components/views/ZapstoreAppView.ts:282
+msgid "In Zapstore"
+msgstr "Im Zapstore"
+
+#: src/components/views/AddonsOverviewView.ts:106
+msgid "Inactive"
+msgstr "Inaktiv"
+
+#: src/components/views/ZapstoreAppView.ts:351
+msgid "Latest Release"
+msgstr "Neueste Version"
+
+#: src/components/views/ZapstoreAppView.ts:299
+msgid "License"
+msgstr "Lizenz"
+
+#: src/components/views/ListingReadView.ts:64
+msgid "Listing not found"
+msgstr "Anzeige nicht gefunden"
+
+#: src/components/views/ZapstoreAppView.ts:103
+msgid "Loading app..."
+msgstr "Lade App…"
+
+#: src/components/views/EpubReaderView.ts:261
+msgid "Loading book…"
+msgstr "Buch wird geladen…"
+
+#: src/components/views/FollowPackDetailView.ts:129
+msgid "Loading members..."
+msgstr "Lade Mitglieder…"
+
+#: src/components/views/ListingReadView.ts:132
+msgid "Loading..."
+msgstr "Lade…"
+
+#: src/components/views/EpubReaderView.ts:54
+msgid "Monochrome: black on white"
+msgstr "Monochrom: Schwarz auf Weiß"
+
+#: src/components/views/EpubReaderView.ts:56
+msgid "Monochrome: white on black"
+msgstr "Monochrom: Weiß auf Schwarz"
+
+#: src/components/views/AddonsOverviewView.ts:115
+msgid "Move down"
+msgstr "Nach unten"
+
+#: src/components/views/AddonsOverviewView.ts:112
+msgid "Move up"
+msgstr "Nach oben"
+
+#: src/components/views/EpubReaderView.ts:42
+msgid "Navigate with ← / → or click the page edges"
+msgstr "Navigiere mit ← / → oder klicke auf die Seitenränder"
+
+#: src/components/views/AddonsOverviewView.ts:101
+msgid "New"
+msgstr "Neu"
+
+#: src/components/views/ZapstoreAppView.ts:295
+msgid "Platform"
+msgstr "Plattform"
+
+#: src/components/views/ZapstoreAppView.ts:412
+msgid "Published by"
+msgstr "Veröffentlicht von"
+
+#: src/components/views/ZapstoreAppView.ts:335
+msgid "Release Date"
+msgstr "Veröffentlicht"
+
+#: src/components/views/AddonsOverviewView.ts:67
+msgid "Reset order"
+msgstr "Reihenfolge zurücksetzen"
+
+#: src/components/views/FollowPackDetailView.ts:214
+msgid "See Notes"
+msgstr "Notizen ansehen"
+
+#: src/components/views/ZapstoreAppView.ts:315
+msgid "Size"
+msgstr "Größe"
+
+#: src/components/views/ListingReadView.ts:118
+msgid "Sold"
+msgstr "Verkauft"
+
+#: src/components/views/ZapstoreAppView.ts:303
+msgid "Source"
+msgstr "Quelle"
+
+#: src/components/views/EpubReaderView.ts:45
+msgid "Tap the page edges or swipe to turn pages"
+msgstr "Tippe auf die Seitenränder oder wische zum Blättern"
+
+#: src/components/views/EpubReaderView.ts:58
+msgid "Theme colors"
+msgstr "Farbschema"
+
+#: src/components/views/EpubReaderView.ts:292
+msgid ""
+"This book could not be loaded. You can try the download button on the "
+"original post."
+msgstr ""
+"Dieses Buch konnte nicht geladen werden. Du kannst den Download-Button im "
+"ursprünglichen Beitrag versuchen."
+
+#: src/components/views/ZapstoreAppView.ts:410
+msgid "Unknown"
+msgstr "Unbekannt"
+
+#: src/components/views/AddonsOverviewView.ts:101
+msgid "Updated"
+msgstr "Aktualisiert"
+
+#: src/components/views/ZapstoreAppView.ts:311
+msgid "Version Code"
+msgstr "Versionscode"
+
+#: src/components/views/ZapstoreAppView.ts:307
+msgid "Website"
+msgstr "Website"

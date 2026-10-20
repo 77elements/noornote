@@ -11,6 +11,7 @@
  */
 
 import { View } from './View';
+import { _ } from '../../i18n';
 import { AuthService } from '../../services/AuthService';
 import { NostrTransport } from '../../services/transport/NostrTransport';
 import { SystemLogger } from '../../services/SystemLogger';
@@ -99,7 +100,7 @@ export class ZapstoreAppView extends View {
         <div class="back-padder">
         <div class="article-view-loading">
           <div class="loading-spinner"></div>
-          <p>Loading app...</p>
+          <p>${_('Loading app...')}</p>
         </div>
     
         </div>
@@ -108,8 +109,7 @@ export class ZapstoreAppView extends View {
     try {
       const event = await this.fetchEvent();
       if (!event) {
-        this.container.innerHTML =
-          '<div class="article-view-error"><p>App not found</p></div>';
+        this.container.innerHTML = `<div class="article-view-error"><p>${_('App not found')}</p></div>`;
         return;
       }
 
@@ -122,8 +122,7 @@ export class ZapstoreAppView extends View {
         'ZapstoreAppView',
         `Failed to load: ${String(error)}`
       );
-      this.container.innerHTML =
-        '<div class="article-view-error"><p>Failed to load app</p></div>';
+      this.container.innerHTML = `<div class="article-view-error"><p>${_('Failed to load app')}</p></div>`;
     }
   }
 
@@ -278,7 +277,7 @@ export class ZapstoreAppView extends View {
 
     // "In Zapstore" button (Android only)
     const zapstoreButton = isAndroid
-      ? `<a href="https://zapstore.dev/apps/${naddr}" class="btn btn--passive btn--medium zapstore-app__open-btn" target="_blank">In Zapstore</a>`
+      ? `<a href="https://zapstore.dev/apps/${naddr}" class="btn btn--passive btn--medium zapstore-app__open-btn" target="_blank">${_('In Zapstore')}</a>`
       : '';
 
     // App info table
@@ -291,35 +290,35 @@ export class ZapstoreAppView extends View {
       );
     if (app.platform)
       infoRows.push(
-        `<div class="zapstore-app__info-row"><span class="zapstore-app__info-label">Platform</span><span class="zapstore-app__info-value">${escapeHtml(app.platform)}</span></div>`
+        `<div class="zapstore-app__info-row"><span class="zapstore-app__info-label">${_('Platform')}</span><span class="zapstore-app__info-value">${escapeHtml(app.platform)}</span></div>`
       );
     if (app.license)
       infoRows.push(
-        `<div class="zapstore-app__info-row"><span class="zapstore-app__info-label">License</span><span class="zapstore-app__info-value">${escapeHtml(app.license)}</span></div>`
+        `<div class="zapstore-app__info-row"><span class="zapstore-app__info-label">${_('License')}</span><span class="zapstore-app__info-value">${escapeHtml(app.license)}</span></div>`
       );
     if (app.repository)
       infoRows.push(
-        `<div class="zapstore-app__info-row"><span class="zapstore-app__info-label">Source</span><span class="zapstore-app__info-value"><a href="${escapeHtmlAttr(app.repository)}">${escapeHtml(app.repository)}</a></span></div>`
+        `<div class="zapstore-app__info-row"><span class="zapstore-app__info-label">${_('Source')}</span><span class="zapstore-app__info-value"><a href="${escapeHtmlAttr(app.repository)}">${escapeHtml(app.repository)}</a></span></div>`
       );
     if (app.url)
       infoRows.push(
-        `<div class="zapstore-app__info-row"><span class="zapstore-app__info-label">Website</span><span class="zapstore-app__info-value"><a href="${escapeHtmlAttr(app.url)}">${escapeHtml(app.url)}</a></span></div>`
+        `<div class="zapstore-app__info-row"><span class="zapstore-app__info-label">${_('Website')}</span><span class="zapstore-app__info-value"><a href="${escapeHtmlAttr(app.url)}">${escapeHtml(app.url)}</a></span></div>`
       );
     if (release?.versionCode)
       infoRows.push(
-        `<div class="zapstore-app__info-row"><span class="zapstore-app__info-label">Version Code</span><span class="zapstore-app__info-value">${escapeHtml(release.versionCode)}</span></div>`
+        `<div class="zapstore-app__info-row"><span class="zapstore-app__info-label">${_('Version Code')}</span><span class="zapstore-app__info-value">${escapeHtml(release.versionCode)}</span></div>`
       );
     if (release?.fileSize)
       infoRows.push(
-        `<div class="zapstore-app__info-row"><span class="zapstore-app__info-label">Size</span><span class="zapstore-app__info-value">${(release.fileSize / 1024 / 1024).toFixed(1)} MB</span></div>`
+        `<div class="zapstore-app__info-row"><span class="zapstore-app__info-label">${_('Size')}</span><span class="zapstore-app__info-value">${(release.fileSize / 1024 / 1024).toFixed(1)} MB</span></div>`
       );
     if (release?.hash)
       infoRows.push(
-        `<div class="zapstore-app__info-row zapstore-app__info-row--hash"><span class="zapstore-app__info-label">Hash</span><span class="zapstore-app__info-value zapstore-app__hash">${escapeHtml(release.hash)}</span><button class="copy-btn" data-copy="${escapeHtmlAttr(release.hash)}" title="Copy hash">${copyIcon}</button></div>`
+        `<div class="zapstore-app__info-row zapstore-app__info-row--hash"><span class="zapstore-app__info-label">${_('Hash')}</span><span class="zapstore-app__info-value zapstore-app__hash">${escapeHtml(release.hash)}</span><button class="copy-btn" data-copy="${escapeHtmlAttr(release.hash)}" title="${_('Copy hash')}">${copyIcon}</button></div>`
       );
     if (release?.certHash)
       infoRows.push(
-        `<div class="zapstore-app__info-row zapstore-app__info-row--hash"><span class="zapstore-app__info-label">Certificate</span><span class="zapstore-app__info-value zapstore-app__hash">${escapeHtml(release.certHash)}</span><button class="copy-btn" data-copy="${escapeHtmlAttr(release.certHash)}" title="Copy certificate hash">${copyIcon}</button></div>`
+        `<div class="zapstore-app__info-row zapstore-app__info-row--hash"><span class="zapstore-app__info-label">${_('Certificate')}</span><span class="zapstore-app__info-value zapstore-app__hash">${escapeHtml(release.certHash)}</span><button class="copy-btn" data-copy="${escapeHtmlAttr(release.certHash)}" title="${_('Copy certificate hash')}">${copyIcon}</button></div>`
       );
 
     const releaseDate = release?.createdAt
@@ -331,7 +330,7 @@ export class ZapstoreAppView extends View {
       : '';
     if (releaseDate)
       infoRows.push(
-        `<div class="zapstore-app__info-row"><span class="zapstore-app__info-label">Release Date</span><span class="zapstore-app__info-value">${releaseDate}</span></div>`
+        `<div class="zapstore-app__info-row"><span class="zapstore-app__info-label">${_('Release Date')}</span><span class="zapstore-app__info-value">${releaseDate}</span></div>`
       );
 
     // Release notes
@@ -347,7 +346,7 @@ export class ZapstoreAppView extends View {
         .replace(/<\/h1>/g, '</h3>');
       releaseNotesHtml = `
         <section class="zapstore-app__section">
-          <h2>Latest Release</h2>
+          <h2>${_('Latest Release')}</h2>
           <div class="zapstore-app__release-notes">${sanitizedRn}</div>
         </section>`;
     }
@@ -383,7 +382,7 @@ export class ZapstoreAppView extends View {
           infoRows.length > 0
             ? `
         <section class="zapstore-app__section">
-          <h2>App Info</h2>
+          <h2>${_('App Info')}</h2>
           <div class="zapstore-app__info-grid">
             ${infoRows.join('')}
           </div>
@@ -406,9 +405,9 @@ export class ZapstoreAppView extends View {
       const profileService = UserProfileService.getInstance();
       const profiles = await profileService.getUserProfiles([app.pubkey]);
       const profile = profiles.get(app.pubkey);
-      const username = profile?.display_name || profile?.name || 'Unknown';
+      const username = profile?.display_name || profile?.name || _('Unknown');
       const avatarUrl = profile?.picture || '';
-      authorMentionContainer.innerHTML = `Published by ${renderUserMention(app.pubkey, { username, avatarUrl })}`;
+      authorMentionContainer.innerHTML = `${_('Published by')} ${renderUserMention(app.pubkey, { username, avatarUrl })}`;
       setupUserMentionHandlers(authorMentionContainer);
     }
 

@@ -21,6 +21,22 @@ msgstr ""
 msgid "Accounts and threads you have muted."
 msgstr ""
 
+#: src/components/views/AddonsOverviewView.ts:106
+msgid "Active"
+msgstr ""
+
+#: src/components/views/AddonsOverviewView.ts:220
+msgid "Addon order reset to default"
+msgstr ""
+
+#: src/components/views/AddonsOverviewView.ts:64
+msgid "Addons"
+msgstr ""
+
+#: src/components/views/AddonsOverviewView.ts:72
+msgid "Addons are extra functions that build on and enhance your NoorNote experience. Right now, there are %s of them."
+msgstr ""
+
 #: src/components/views/AboutView.ts:101
 msgid "All content you create (notes, articles, profile information, etc.) is stored on Nostr relays, not on your device or our servers. NoorNote simply connects to these relays to read and publish your content."
 msgstr ""
@@ -34,8 +50,20 @@ msgstr ""
 msgid "All user data remains in your browser and can be cleared at any time via your browser settings."
 msgstr ""
 
+#: src/components/views/FollowPackDetailView.ts:249
+msgid "Already following all members"
+msgstr ""
+
 #: src/components/views/AboutView.ts:147
 msgid "And finally, thanks to every user who actively shapes NoorNote with feedback and support."
+msgstr ""
+
+#: src/components/views/ZapstoreAppView.ts:387
+msgid "App Info"
+msgstr ""
+
+#: src/components/views/ZapstoreAppView.ts:113
+msgid "App not found"
 msgstr ""
 
 #: src/components/views/ArticleTimelineView.ts:59
@@ -80,6 +108,10 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
+#: src/components/views/ZapstoreAppView.ts:323
+msgid "Certificate"
+msgstr ""
+
 #: src/components/views/AboutView.ts:155
 msgid "Check for updates"
 msgstr ""
@@ -102,6 +134,14 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:99
 msgid "Connections to Nostr Relays"
+msgstr ""
+
+#: src/components/views/ZapstoreAppView.ts:323
+msgid "Copy certificate hash"
+msgstr ""
+
+#: src/components/views/ZapstoreAppView.ts:319
+msgid "Copy hash"
 msgstr ""
 
 #: src/components/modals/NewFolderModal.ts:63
@@ -131,6 +171,14 @@ msgstr ""
 
 #: src/components/modals/UpdateModal.ts:116
 msgid "Download"
+msgstr ""
+
+#: src/components/views/AddonsOverviewView.ts:75
+msgid "Drag tiles to reorder (on touch: use ▲▼). The order is saved per account."
+msgstr ""
+
+#: src/components/views/FollowPackDetailView.ts:220
+msgid "Edit List"
 msgstr ""
 
 #: src/components/views/TimelineView.ts:168
@@ -168,6 +216,14 @@ msgstr ""
 msgid "Export DiagLogs"
 msgstr ""
 
+#: src/components/views/ZapstoreAppView.ts:127
+msgid "Failed to load app"
+msgstr ""
+
+#: src/components/views/ListingReadView.ts:71
+msgid "Failed to load listing"
+msgstr ""
+
 #: src/components/modals/DMComposeModal.ts:210
 #: src/components/modals/DMComposeModal.ts:215
 msgid "Failed to send message"
@@ -178,6 +234,14 @@ msgid "Files: %s item, not stored locally"
 msgid_plural "Files: %s items, not stored locally"
 msgstr[0] ""
 msgstr[1] ""
+
+#: src/components/views/FollowPackDetailView.ts:122
+msgid "Follow All"
+msgstr ""
+
+#: src/components/views/FollowPackDetailView.ts:261
+msgid "Following %s new people"
+msgstr ""
 
 #: src/components/views/ListsOverviewView.ts:69
 msgid "Follows"
@@ -199,6 +263,10 @@ msgstr ""
 msgid "Gregorian calendar"
 msgstr ""
 
+#: src/components/views/ZapstoreAppView.ts:319
+msgid "Hash"
+msgstr ""
+
 #: src/components/settings/UISettingsSection.ts:340
 msgid "Hijri (Islamic)"
 msgstr ""
@@ -217,6 +285,14 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:72
 msgid "Imprint"
+msgstr ""
+
+#: src/components/views/ZapstoreAppView.ts:282
+msgid "In Zapstore"
+msgstr ""
+
+#: src/components/views/AddonsOverviewView.ts:106
+msgid "Inactive"
 msgstr ""
 
 #: src/components/modals/KeySignerPasswordModal.ts:124
@@ -254,7 +330,7 @@ msgstr ""
 msgid "Key Storage:"
 msgstr ""
 
-#: src/components/modals/ImportToNoorSignerModal.ts:210
+#: src/components/modals/ImportToNoorSignerModal.ts:211
 msgid "Key successfully imported to NoorSigner"
 msgstr ""
 
@@ -274,12 +350,40 @@ msgstr ""
 msgid "Later"
 msgstr ""
 
+#: src/components/views/ZapstoreAppView.ts:351
+msgid "Latest Release"
+msgstr ""
+
+#: src/components/views/ZapstoreAppView.ts:299
+msgid "License"
+msgstr ""
+
 #: src/components/views/AboutView.ts:222
 msgid "Like any web host, MyNymbox processes standard server log data when you load the application — typically your IP address, request timestamp, the URL/file requested, browser type, and referrer — for operational and security purposes (e.g. DDoS mitigation, server stability). NoorNote itself does not access or use these logs."
 msgstr ""
 
+#: src/components/views/ListingReadView.ts:64
+msgid "Listing not found"
+msgstr ""
+
 #: src/components/views/ListsOverviewView.ts:98
 msgid "Lists"
+msgstr ""
+
+#: src/components/views/ZapstoreAppView.ts:103
+msgid "Loading app..."
+msgstr ""
+
+#: src/components/views/EpubReaderView.ts:261
+msgid "Loading book…"
+msgstr ""
+
+#: src/components/views/FollowPackDetailView.ts:129
+msgid "Loading members..."
+msgstr ""
+
+#: src/components/views/ListingReadView.ts:132
+msgid "Loading..."
 msgstr ""
 
 #: src/components/views/AboutView.ts:199
@@ -330,12 +434,36 @@ msgstr ""
 msgid "Message sent"
 msgstr ""
 
+#: src/components/views/EpubReaderView.ts:54
+msgid "Monochrome: black on white"
+msgstr ""
+
+#: src/components/views/EpubReaderView.ts:56
+msgid "Monochrome: white on black"
+msgstr ""
+
+#: src/components/views/AddonsOverviewView.ts:115
+msgid "Move down"
+msgstr ""
+
+#: src/components/views/AddonsOverviewView.ts:112
+msgid "Move up"
+msgstr ""
+
 #: src/components/views/ListsOverviewView.ts:77
 msgid "Muted"
 msgstr ""
 
+#: src/components/views/EpubReaderView.ts:42
+msgid "Navigate with ← / → or click the page edges"
+msgstr ""
+
 #: src/components/views/AboutView.ts:84
 msgid "Need help with your web project? I'm available for hire — design, UX, and development. Sats accepted."
+msgstr ""
+
+#: src/components/views/AddonsOverviewView.ts:101
+msgid "New"
 msgstr ""
 
 #: src/components/modals/NewFolderModal.ts:26
@@ -446,6 +574,10 @@ msgstr ""
 msgid "Phone:"
 msgstr ""
 
+#: src/components/views/ZapstoreAppView.ts:295
+msgid "Platform"
+msgstr ""
+
 #: src/components/modals/ZapModal.ts:66
 msgid "Please connect Lightning Wallet"
 msgstr ""
@@ -488,6 +620,10 @@ msgstr ""
 msgid "Profile pictures and embedded media:"
 msgstr ""
 
+#: src/components/views/ZapstoreAppView.ts:412
+msgid "Published by"
+msgstr ""
+
 #: src/components/views/SettingsView.ts:40
 msgid "Relays"
 msgstr ""
@@ -498,8 +634,16 @@ msgid_plural "Relays: %s items, not stored locally"
 msgstr[0] ""
 msgstr[1] ""
 
+#: src/components/views/ZapstoreAppView.ts:335
+msgid "Release Date"
+msgstr ""
+
 #: src/components/modals/EditFolderModal.ts:28
 msgid "Rename Folder"
+msgstr ""
+
+#: src/components/views/AddonsOverviewView.ts:67
+msgid "Reset order"
 msgstr ""
 
 #: src/components/views/AboutView.ts:92
@@ -526,6 +670,10 @@ msgstr ""
 msgid "Secure Your Key"
 msgstr ""
 
+#: src/components/views/FollowPackDetailView.ts:214
+msgid "See Notes"
+msgstr ""
+
 #: src/components/modals/DMComposeModal.ts:97
 msgid "Send"
 msgstr ""
@@ -536,7 +684,7 @@ msgid "Sending..."
 msgstr ""
 
 #: src/components/modals/ImportToNoorSignerModal.ts:109
-#: src/components/modals/ImportToNoorSignerModal.ts:223
+#: src/components/modals/ImportToNoorSignerModal.ts:226
 msgid "Set Password"
 msgstr ""
 
@@ -560,8 +708,20 @@ msgstr ""
 msgid "Single Post"
 msgstr ""
 
+#: src/components/views/ZapstoreAppView.ts:315
+msgid "Size"
+msgstr ""
+
 #: src/components/modals/UpdateModal.ts:114
 msgid "Skip this version"
+msgstr ""
+
+#: src/components/views/ListingReadView.ts:118
+msgid "Sold"
+msgstr ""
+
+#: src/components/views/ZapstoreAppView.ts:303
+msgid "Source"
 msgstr ""
 
 #: src/components/views/AboutView.ts:144
@@ -589,6 +749,10 @@ msgstr ""
 msgid "Switching..."
 msgstr ""
 
+#: src/components/views/EpubReaderView.ts:45
+msgid "Tap the page edges or swipe to turn pages"
+msgstr ""
+
 #: src/components/views/AboutView.ts:205
 msgid "Temporary data is stored in IndexedDB and localStorage."
 msgstr ""
@@ -613,12 +777,20 @@ msgstr ""
 msgid "The web version of NoorNote (%s) is hosted by %s (%s)."
 msgstr ""
 
+#: src/components/views/EpubReaderView.ts:58
+msgid "Theme colors"
+msgstr ""
+
 #: src/components/views/AboutView.ts:225
 msgid "Third country notice:"
 msgstr ""
 
-#: src/components/modals/ImportToNoorSignerModal.ts:217
+#: src/components/modals/ImportToNoorSignerModal.ts:220
 msgid "This account already exists in NoorSigner"
+msgstr ""
+
+#: src/components/views/EpubReaderView.ts:292
+msgid "This book could not be loaded. You can try the download button on the original post."
 msgstr ""
 
 #: src/components/views/TimelineView.ts:208
@@ -635,6 +807,10 @@ msgstr ""
 
 #: src/components/views/SettingsView.ts:35
 msgid "UI Settings"
+msgstr ""
+
+#: src/components/views/ZapstoreAppView.ts:410
+msgid "Unknown"
 msgstr ""
 
 #: src/components/modals/UnlockNoorSignerModal.ts:136
@@ -658,8 +834,16 @@ msgstr ""
 msgid "Update check:"
 msgstr ""
 
+#: src/components/views/AddonsOverviewView.ts:101
+msgid "Updated"
+msgstr ""
+
 #: src/components/views/AboutView.ts:153
 msgid "Version"
+msgstr ""
+
+#: src/components/views/ZapstoreAppView.ts:311
+msgid "Version Code"
 msgstr ""
 
 #: src/components/views/AboutView.ts:209
@@ -673,6 +857,10 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:219
 msgid "Web Hosting"
+msgstr ""
+
+#: src/components/views/ZapstoreAppView.ts:307
+msgid "Website"
 msgstr ""
 
 #: src/components/views/AboutView.ts:234

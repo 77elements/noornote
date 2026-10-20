@@ -13,6 +13,7 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { View } from './View';
+import { _ } from '../../i18n';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { ArticlesModuleApi } from '../../modules/articles/contracts';
 import { InteractionStatusLine } from '../ui/InteractionStatusLine';
@@ -59,15 +60,13 @@ export class ListingReadView extends View {
         (await articlesApi?.fetchAddressableEvent(this.naddr)) ?? null;
 
       if (!event) {
-        this.container.innerHTML =
-          '<div class="listing-read__error"><p>Listing not found</p></div>';
+        this.container.innerHTML = `<div class="listing-read__error"><p>${_('Listing not found')}</p></div>`;
         return;
       }
 
       this.renderListing(event);
     } catch {
-      this.container.innerHTML =
-        '<div class="listing-read__error"><p>Failed to load listing</p></div>';
+      this.container.innerHTML = `<div class="listing-read__error"><p>${_('Failed to load listing')}</p></div>`;
     }
   }
 
@@ -114,7 +113,7 @@ export class ListingReadView extends View {
         <header class="listing-read__header">
           <h1 class="listing-read__title">${escapeHtml(meta.title)}</h1>
           <div class="listing-read__price">${escapeHtml(priceDisplay)}</div>
-          ${meta.status === 'sold' ? '<span class="badge badge--danger">Sold</span>' : ''}
+          ${meta.status === 'sold' ? `<span class="badge badge--danger">${_('Sold')}</span>` : ''}
           ${
             meta.location
               ? `
@@ -128,7 +127,7 @@ export class ListingReadView extends View {
         </header>
 
         <div class="listing-read__seller user-mention" data-pubkey="${event.pubkey}">
-          <a href="/profile/${npub}" class="mention-link" data-profile-pubkey="${event.pubkey}">Loading...</a>
+          <a href="/profile/${npub}" class="mention-link" data-profile-pubkey="${event.pubkey}">${_('Loading...')}</a>
           <span class="listing-read__date">${formatTimestamp(meta.publishedAt)}</span>
         </div>
 

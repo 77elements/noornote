@@ -5,6 +5,7 @@
  */
 
 import { View } from './View';
+import { _ } from '../../i18n';
 import { Router } from '../../services/Router';
 import { AuthService } from '../../services/AuthService';
 import { ModuleLoader } from '../../core/ModuleLoader';
@@ -118,14 +119,14 @@ export class FollowPackDetailView extends View {
               <span>${pack.userPubkeys.length} people</span>
             </div>
             <div class="follow-packs__detail-actions">
-              ${isLoggedIn ? '<button class="btn follow-packs__btn-follow-all">Follow All</button>' : ''}
+              ${isLoggedIn ? `<button class="btn follow-packs__btn-follow-all">${_('Follow All')}</button>` : ''}
             </div>
           </div>
         </div>
         <div class="follow-packs__detail-author-header"></div>
         <div class="follow-packs__detail-isl"></div>
         <div class="follow-packs__members">
-          <div class="follow-packs__members-loading pulsate">Loading members...</div>
+          <div class="follow-packs__members-loading pulsate">${_('Loading members...')}</div>
         </div>
         <div class="follow-packs__detail-replies"></div>
       </div>
@@ -210,13 +211,13 @@ export class FollowPackDetailView extends View {
       if (isFollowPacksEnabled()) {
         const seeNotesBtn = document.createElement('button');
         seeNotesBtn.className = 'btn btn--passive follow-packs__btn-see-notes';
-        seeNotesBtn.textContent = 'See Notes';
+        seeNotesBtn.textContent = _('See Notes');
         actionsContainer.appendChild(seeNotesBtn);
 
         if (isOwner) {
           const editBtn = document.createElement('button');
           editBtn.className = 'btn btn--secondary follow-packs__btn-edit';
-          editBtn.textContent = 'Edit List';
+          editBtn.textContent = _('Edit List');
           actionsContainer.appendChild(editBtn);
         }
       }
@@ -245,7 +246,7 @@ export class FollowPackDetailView extends View {
 
         if (newFollows.length === 0) {
           const { ToastService } = await import('../../services/ToastService');
-          ToastService.show('Already following all members', 'success');
+          ToastService.show(_('Already following all members'), 'success');
           return;
         }
 
@@ -257,7 +258,7 @@ export class FollowPackDetailView extends View {
 
         const { ToastService } = await import('../../services/ToastService');
         ToastService.show(
-          `Following ${newFollows.length} new people`,
+          _('Following %s new people', newFollows.length),
           'success'
         );
       });
