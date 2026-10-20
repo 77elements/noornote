@@ -47,7 +47,7 @@ msgstr ""
 msgid "by %s"
 msgstr ""
 
-#: src/components/views/SettingsView.ts:45
+#: src/components/views/SettingsView.ts:49
 msgid "Cache"
 msgstr ""
 
@@ -55,6 +55,15 @@ msgstr ""
 #: src/components/views/AboutView.ts:190
 #: src/components/views/AboutView.ts:205
 msgid "Cache:"
+msgstr ""
+
+#: src/components/modals/EditFolderModal.ts:63
+#: src/components/modals/KeySignerPasswordModal.ts:73
+#: src/components/modals/NewFolderModal.ts:60
+#: src/components/modals/UnlockNoorSignerModal.ts:68
+#: src/services/ModalService.ts:188
+#: src/services/ModalService.ts:244
+msgid "Cancel"
 msgstr ""
 
 #: src/components/views/AboutView.ts:155
@@ -65,8 +74,16 @@ msgstr ""
 msgid "Configuration Files:"
 msgstr ""
 
+#: src/services/ModalService.ts:187
+msgid "Confirm"
+msgstr ""
+
 #: src/components/views/AboutView.ts:99
 msgid "Connections to Nostr Relays"
+msgstr ""
+
+#: src/components/modals/NewFolderModal.ts:63
+msgid "Create"
 msgstr ""
 
 #: src/components/views/AboutView.ts:128
@@ -75,6 +92,10 @@ msgstr ""
 
 #: src/components/views/ListsOverviewView.ts:86
 msgid "Curated public follow lists you subscribe to."
+msgstr ""
+
+#: src/components/modals/UpdateModal.ts:100
+msgid "Current:"
 msgstr ""
 
 #: src/components/views/AboutView.ts:169
@@ -86,7 +107,11 @@ msgstr ""
 msgid "DM me on Nostr"
 msgstr ""
 
-#: src/components/views/TimelineView.ts:169
+#: src/components/modals/UpdateModal.ts:116
+msgid "Download"
+msgstr ""
+
+#: src/components/views/TimelineView.ts:168
 msgid "Edit tribes"
 msgstr ""
 
@@ -102,8 +127,22 @@ msgstr ""
 msgid "Enable the Tribes addon in Settings → Addons."
 msgstr ""
 
-#: src/components/views/SettingsView.ts:105
-#: src/components/views/SettingsView.ts:76
+#: src/components/modals/EditFolderModal.ts:57
+#: src/components/modals/NewFolderModal.ts:54
+msgid "Enter folder name..."
+msgstr ""
+
+#: src/components/modals/KeySignerPasswordModal.ts:67
+#: src/components/modals/UnlockNoorSignerModal.ts:62
+msgid "Enter NoorSigner password..."
+msgstr ""
+
+#: src/components/modals/KeySignerPasswordModal.ts:34
+msgid "Enter Password"
+msgstr ""
+
+#: src/components/views/SettingsView.ts:109
+#: src/components/views/SettingsView.ts:80
 msgid "Export DiagLogs"
 msgstr ""
 
@@ -143,7 +182,16 @@ msgstr ""
 msgid "Imprint"
 msgstr ""
 
-#: src/components/views/SettingsView.ts:41
+#: src/components/modals/KeySignerPasswordModal.ts:123
+#: src/components/modals/UnlockNoorSignerModal.ts:127
+msgid "Incorrect password"
+msgstr ""
+
+#: src/components/modals/UpdateModal.ts:97
+msgid "is available"
+msgstr ""
+
+#: src/components/views/SettingsView.ts:42
 msgid "Key Signer"
 msgstr ""
 
@@ -161,8 +209,12 @@ msgstr ""
 msgid "Language changed"
 msgstr ""
 
-#: src/components/views/TimelineView.ts:217
+#: src/components/views/TimelineView.ts:216
 msgid "Last notes per follow"
+msgstr ""
+
+#: src/components/modals/UpdateModal.ts:115
+msgid "Later"
 msgstr ""
 
 #: src/components/views/AboutView.ts:222
@@ -189,7 +241,7 @@ msgstr ""
 msgid "Long-form content from your follows"
 msgstr ""
 
-#: src/components/views/SettingsView.ts:42
+#: src/components/views/SettingsView.ts:46
 msgid "Media"
 msgstr ""
 
@@ -205,11 +257,15 @@ msgstr ""
 msgid "Need help with your web project? I'm available for hire — design, UX, and development. Sats accepted."
 msgstr ""
 
+#: src/components/modals/NewFolderModal.ts:26
+msgid "New Folder"
+msgstr ""
+
 #: src/components/views/AboutView.ts:242
 msgid "NIP-05 verification:"
 msgstr ""
 
-#: src/components/views/NotificationsView.ts:289
+#: src/components/views/NotificationsView.ts:288
 msgid "No notifications yet"
 msgstr ""
 
@@ -257,12 +313,16 @@ msgstr ""
 msgid "Nostr relays are operated by third parties. When connecting, your IP address may be logged by the relay operators. The choice of relays is yours and can be configured in the settings."
 msgstr ""
 
-#: src/components/views/TimelineView.ts:133
+#: src/components/views/TimelineView.ts:132
 msgid "Notes - Timeline"
 msgstr ""
 
 #: src/components/views/SettingsView.ts:37
 msgid "Notification Priorities"
+msgstr ""
+
+#: src/services/ModalService.ts:243
+msgid "OK"
 msgstr ""
 
 #: src/components/views/AboutView.ts:121
@@ -281,11 +341,16 @@ msgstr ""
 msgid "Phone:"
 msgstr ""
 
-#: src/components/views/TimelineView.ts:123
+#: src/components/modals/KeySignerPasswordModal.ts:100
+#: src/components/modals/UnlockNoorSignerModal.ts:95
+msgid "Please enter your password"
+msgstr ""
+
+#: src/components/views/TimelineView.ts:122
 msgid "Please login to view timeline"
 msgstr ""
 
-#: src/components/views/SettingsView.ts:44
+#: src/components/views/SettingsView.ts:48
 msgid "Privacy"
 msgstr ""
 
@@ -302,8 +367,16 @@ msgstr ""
 msgid "Relays"
 msgstr ""
 
+#: src/components/modals/EditFolderModal.ts:28
+msgid "Rename Folder"
+msgstr ""
+
 #: src/components/views/AboutView.ts:92
 msgid "Responsible Party"
+msgstr ""
+
+#: src/components/modals/EditFolderModal.ts:66
+msgid "Save"
 msgstr ""
 
 #: src/components/views/ListsOverviewView.ts:62
@@ -314,7 +387,7 @@ msgstr ""
 msgid "Scheduled Posts (optional addon):"
 msgstr ""
 
-#: src/components/views/SettingsView.ts:67
+#: src/components/views/SettingsView.ts:71
 msgid "Settings"
 msgstr ""
 
@@ -330,6 +403,10 @@ msgstr ""
 msgid "Single Post"
 msgstr ""
 
+#: src/components/modals/UpdateModal.ts:114
+msgid "Skip this version"
+msgstr ""
+
 #: src/components/views/AboutView.ts:144
 msgid "Special thanks to %s for inventing the Nostr protocol, and to all %s authors and other Nostr devs for the inspiration."
 msgstr ""
@@ -338,8 +415,21 @@ msgstr ""
 msgid "St. Kitts and Nevis is not covered by an EU adequacy decision (Art. 45 GDPR). Any transfer to MyNymbox's servers takes place on the basis of the derogations of Art. 49 (1) GDPR."
 msgstr ""
 
+#: src/components/modals/KeySignerPasswordModal.ts:128
+#: src/components/modals/KeySignerPasswordModal.ts:76
+msgid "Switch Account"
+msgstr ""
+
 #: src/components/settings/UISettingsSection.ts:359
 msgid "Switched to %s"
+msgstr ""
+
+#: src/components/modals/KeySignerPasswordModal.ts:61
+msgid "Switching to:"
+msgstr ""
+
+#: src/components/modals/KeySignerPasswordModal.ts:105
+msgid "Switching..."
 msgstr ""
 
 #: src/components/views/AboutView.ts:205
@@ -370,7 +460,7 @@ msgstr ""
 msgid "Third country notice:"
 msgstr ""
 
-#: src/components/views/TimelineView.ts:209
+#: src/components/views/TimelineView.ts:208
 msgid "Timeline"
 msgstr ""
 
@@ -380,6 +470,23 @@ msgstr ""
 
 #: src/components/views/SettingsView.ts:35
 msgid "UI Settings"
+msgstr ""
+
+#: src/components/modals/UnlockNoorSignerModal.ts:134
+#: src/components/modals/UnlockNoorSignerModal.ts:71
+msgid "Unlock"
+msgstr ""
+
+#: src/components/modals/UnlockNoorSignerModal.ts:32
+msgid "Unlock NoorSigner"
+msgstr ""
+
+#: src/components/modals/UnlockNoorSignerModal.ts:100
+msgid "Unlocking..."
+msgstr ""
+
+#: src/components/modals/UpdateModal.ts:74
+msgid "Update Available"
 msgstr ""
 
 #: src/components/views/AboutView.ts:231
@@ -415,6 +522,10 @@ msgstr ""
 msgid "When verifying a user's NIP-05 identifier (e.g. %s), NoorNote sends an HTTP request to %s. The owner of that domain may log the request."
 msgstr ""
 
+#: src/components/modals/UnlockNoorSignerModal.ts:56
+msgid "Your 24-hour trust session has expired. Enter your password to continue."
+msgstr ""
+
 #: src/components/views/ListsOverviewView.ts:101
 msgid "Your lists are stored locally and synced to your relays. Pick one to open it."
 msgstr ""
@@ -435,6 +546,6 @@ msgstr ""
 msgid "Your Rights"
 msgstr ""
 
-#: src/components/views/SettingsView.ts:43
+#: src/components/views/SettingsView.ts:47
 msgid "Zaps"
 msgstr ""

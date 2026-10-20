@@ -451,7 +451,7 @@ msgstr "Artikel"
 msgid "Bookmarks"
 msgstr "Lesezeichen"
 
-#: src/components/views/SettingsView.ts:45
+#: src/components/views/SettingsView.ts:49
 msgid "Cache"
 msgstr "Cache"
 
@@ -459,7 +459,7 @@ msgstr "Cache"
 msgid "Curated public follow lists you subscribe to."
 msgstr "Kuratierte öffentliche Follower-Listen, die du abonniert hast."
 
-#: src/components/views/TimelineView.ts:169
+#: src/components/views/TimelineView.ts:168
 msgid "Edit tribes"
 msgstr "Tribes bearbeiten"
 
@@ -471,8 +471,8 @@ msgstr "Aktiviere das Lesezeichen-Addon in Einstellungen → Addons."
 msgid "Enable the Tribes addon in Settings → Addons."
 msgstr "Aktiviere das Tribes-Addon in Einstellungen → Addons."
 
-#: src/components/views/SettingsView.ts:105
-#: src/components/views/SettingsView.ts:76
+#: src/components/views/SettingsView.ts:109
+#: src/components/views/SettingsView.ts:80
 msgid "Export DiagLogs"
 msgstr "DiagLogs exportieren"
 
@@ -480,11 +480,11 @@ msgstr "DiagLogs exportieren"
 msgid "Follows"
 msgstr "Abonniert"
 
-#: src/components/views/SettingsView.ts:41
+#: src/components/views/SettingsView.ts:42
 msgid "Key Signer"
 msgstr "Key-Signer"
 
-#: src/components/views/TimelineView.ts:217
+#: src/components/views/TimelineView.ts:216
 msgid "Last notes per follow"
 msgstr "Neueste Notizen pro Follow"
 
@@ -504,7 +504,7 @@ msgstr "Langtexte von deinen Follows 1., 2. und 3. Grades"
 msgid "Long-form content from your follows"
 msgstr "Langtexte von deinen Follows"
 
-#: src/components/views/SettingsView.ts:42
+#: src/components/views/SettingsView.ts:46
 msgid "Media"
 msgstr "Medien"
 
@@ -512,11 +512,11 @@ msgstr "Medien"
 msgid "Muted"
 msgstr "Stummgeschaltet"
 
-#: src/components/views/NotificationsView.ts:289
+#: src/components/views/NotificationsView.ts:288
 msgid "No notifications yet"
 msgstr "Noch keine Benachrichtigungen"
 
-#: src/components/views/TimelineView.ts:133
+#: src/components/views/TimelineView.ts:132
 msgid "Notes - Timeline"
 msgstr "Notizen – Timeline"
 
@@ -524,11 +524,11 @@ msgstr "Notizen – Timeline"
 msgid "Notification Priorities"
 msgstr "Benachrichtigungs-Prioritäten"
 
-#: src/components/views/TimelineView.ts:123
+#: src/components/views/TimelineView.ts:122
 msgid "Please login to view timeline"
 msgstr "Bitte melde dich an, um die Timeline zu sehen"
 
-#: src/components/views/SettingsView.ts:44
+#: src/components/views/SettingsView.ts:48
 msgid "Privacy"
 msgstr "Privatsphäre"
 
@@ -540,7 +540,7 @@ msgstr "Relays"
 msgid "Saved notes, sorted into folders."
 msgstr "Gespeicherte Notizen, in Ordnern sortiert."
 
-#: src/components/views/SettingsView.ts:67
+#: src/components/views/SettingsView.ts:71
 msgid "Settings"
 msgstr "Einstellungen"
 
@@ -552,7 +552,7 @@ msgstr "Einzelner Beitrag"
 msgid "The accounts you follow, with outbox relays."
 msgstr "Die Konten, denen du folgst, mit Outbox-Relays."
 
-#: src/components/views/TimelineView.ts:209
+#: src/components/views/TimelineView.ts:208
 msgid "Timeline"
 msgstr "Timeline"
 
@@ -570,6 +570,119 @@ msgid ""
 "it."
 msgstr ""
 
-#: src/components/views/SettingsView.ts:43
+#: src/components/views/SettingsView.ts:47
 msgid "Zaps"
 msgstr "Zaps"
+
+#: src/components/modals/EditFolderModal.ts:63
+#: src/components/modals/KeySignerPasswordModal.ts:73
+#: src/components/modals/NewFolderModal.ts:60
+#: src/components/modals/UnlockNoorSignerModal.ts:68
+#: src/services/ModalService.ts:188
+#: src/services/ModalService.ts:244
+msgid "Cancel"
+msgstr "Abbrechen"
+
+#: src/services/ModalService.ts:187
+msgid "Confirm"
+msgstr "Bestätigen"
+
+#: src/components/modals/NewFolderModal.ts:63
+msgid "Create"
+msgstr "Erstellen"
+
+#: src/components/modals/UpdateModal.ts:100
+msgid "Current:"
+msgstr "Aktuell:"
+
+#: src/components/modals/UpdateModal.ts:116
+msgid "Download"
+msgstr "Herunterladen"
+
+#: src/components/modals/EditFolderModal.ts:57
+#: src/components/modals/NewFolderModal.ts:54
+msgid "Enter folder name..."
+msgstr "Ordnernamen eingeben…"
+
+#: src/components/modals/KeySignerPasswordModal.ts:67
+#: src/components/modals/UnlockNoorSignerModal.ts:62
+msgid "Enter NoorSigner password..."
+msgstr "NoorSigner-Passwort eingeben…"
+
+#: src/components/modals/KeySignerPasswordModal.ts:34
+msgid "Enter Password"
+msgstr "Passwort eingeben"
+
+#: src/components/modals/KeySignerPasswordModal.ts:123
+#: src/components/modals/UnlockNoorSignerModal.ts:127
+msgid "Incorrect password"
+msgstr "Falsches Passwort"
+
+#: src/components/modals/UpdateModal.ts:97
+msgid "is available"
+msgstr "ist verfügbar"
+
+#: src/components/modals/UpdateModal.ts:115
+msgid "Later"
+msgstr "Später"
+
+#: src/components/modals/NewFolderModal.ts:26
+msgid "New Folder"
+msgstr "Neuer Ordner"
+
+#: src/services/ModalService.ts:243
+msgid "OK"
+msgstr "OK"
+
+#: src/components/modals/KeySignerPasswordModal.ts:100
+#: src/components/modals/UnlockNoorSignerModal.ts:95
+msgid "Please enter your password"
+msgstr "Bitte gib dein Passwort ein"
+
+#: src/components/modals/EditFolderModal.ts:28
+msgid "Rename Folder"
+msgstr "Ordner umbenennen"
+
+#: src/components/modals/EditFolderModal.ts:66
+msgid "Save"
+msgstr "Speichern"
+
+#: src/components/modals/UpdateModal.ts:114
+msgid "Skip this version"
+msgstr "Diese Version überspringen"
+
+#: src/components/modals/KeySignerPasswordModal.ts:128
+#: src/components/modals/KeySignerPasswordModal.ts:76
+msgid "Switch Account"
+msgstr "Konto wechseln"
+
+#: src/components/modals/KeySignerPasswordModal.ts:61
+msgid "Switching to:"
+msgstr "Wechsel zu:"
+
+#: src/components/modals/KeySignerPasswordModal.ts:105
+msgid "Switching..."
+msgstr "Wechsle…"
+
+#: src/components/modals/UnlockNoorSignerModal.ts:134
+#: src/components/modals/UnlockNoorSignerModal.ts:71
+msgid "Unlock"
+msgstr "Entsperren"
+
+#: src/components/modals/UnlockNoorSignerModal.ts:32
+msgid "Unlock NoorSigner"
+msgstr "NoorSigner entsperren"
+
+#: src/components/modals/UnlockNoorSignerModal.ts:100
+msgid "Unlocking..."
+msgstr "Entsperre…"
+
+#: src/components/modals/UpdateModal.ts:74
+msgid "Update Available"
+msgstr "Update verfügbar"
+
+#: src/components/modals/UnlockNoorSignerModal.ts:56
+msgid "Your 24-hour trust session has expired. Enter your password to continue."
+msgstr ""
+"Deine 24-Stunden-Vertrauenssitzung ist abgelaufen. Gib dein Passwort ein, "
+"um fortzufahren."

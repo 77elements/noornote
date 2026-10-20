@@ -7,6 +7,7 @@
 import { ModalService } from '../../services/ModalService';
 import { PlatformService } from '../../services/PlatformService';
 import { ModuleLoader } from '../../core/ModuleLoader';
+import { _ } from '../../i18n';
 import type {
   SettingsModuleApi,
   UpdateInfo,
@@ -70,7 +71,7 @@ export class UpdateModal {
     const content = this.renderContent(update);
 
     this.modalService.show({
-      title: 'Update Available',
+      title: _('Update Available'),
       content,
       width: '480px',
       height: 'auto',
@@ -93,10 +94,10 @@ export class UpdateModal {
     container.innerHTML = `
       <div style="padding: 1rem;">
         <p style="margin-bottom: 1rem; text-align: center;">
-          <strong>v${update.version}</strong> is available
+          <strong>v${update.version}</strong> ${_('is available')}
           ${releaseDate ? `<span style="opacity: 0.6;"> (${releaseDate})</span>` : ''}
           <br>
-          <span style="opacity: 0.6;">Current: v${__APP_VERSION__}</span>
+          <span style="opacity: 0.6;">${_('Current:')} v${__APP_VERSION__}</span>
         </p>
 
         ${
@@ -110,9 +111,9 @@ export class UpdateModal {
         }
 
         <div style="display: flex; gap: 0.75rem; justify-content: center;">
-          <button class="btn btn--passive" id="update-skip-btn">Skip this version</button>
-          <button class="btn btn--passive" id="update-later-btn">Later</button>
-          <button class="btn" id="update-download-btn">Download</button>
+          <button class="btn btn--passive" id="update-skip-btn">${_('Skip this version')}</button>
+          <button class="btn btn--passive" id="update-later-btn">${_('Later')}</button>
+          <button class="btn" id="update-download-btn">${_('Download')}</button>
         </div>
       </div>
     `;

@@ -5,6 +5,7 @@
 
 import { errMessage } from '../../helpers/errorMessage';
 import { ModalService } from '../../services/ModalService';
+import { _ } from '../../i18n';
 import { KeySignerClient } from '../../services/KeySignerClient';
 
 export interface UnlockNoorSignerModalOptions {
@@ -28,7 +29,7 @@ export class UnlockNoorSignerModal {
     const content = this.renderContent();
 
     this.modalService.show({
-      title: 'Unlock NoorSigner',
+      title: _('Unlock NoorSigner'),
       content,
       width: '400px',
       showCloseButton: true,
@@ -52,22 +53,22 @@ export class UnlockNoorSignerModal {
     container.innerHTML = `
       <div class="keysigner-password-modal__content">
         <p class="keysigner-password-modal__account">
-          Your 24-hour trust session has expired. Enter your password to continue.
+          ${_('Your 24-hour trust session has expired. Enter your password to continue.')}
         </p>
         <input
           type="password"
           id="unlock-ns-password-input"
           class="input"
-          placeholder="Enter NoorSigner password..."
+          placeholder="${_('Enter NoorSigner password...')}"
           autocomplete="off"
         />
         <p class="keysigner-password-modal__error" id="unlock-ns-password-error" style="display: none;"></p>
         <div class="l-row l-row--end-pair">
           <button type="button" class="btn btn--passive" id="unlock-ns-cancel-btn">
-            Cancel
+            ${_('Cancel')}
           </button>
           <button type="button" class="btn" id="unlock-ns-submit-btn">
-            Unlock
+            ${_('Unlock')}
           </button>
         </div>
       </div>
@@ -91,12 +92,12 @@ export class UnlockNoorSignerModal {
 
       const password = input.value;
       if (!password) {
-        this.showError('Please enter your password');
+        this.showError(_('Please enter your password'));
         return;
       }
 
       this.isSubmitting = true;
-      submitBtn.textContent = 'Unlocking...';
+      submitBtn.textContent = _('Unlocking...');
       submitBtn.setAttribute('disabled', 'true');
       errorEl.style.display = 'none';
 
@@ -123,14 +124,16 @@ export class UnlockNoorSignerModal {
         const isPasswordError =
           errorMessage.includes('invalid_password') ||
           errorMessage.includes('Invalid password');
-        this.showError(isPasswordError ? 'Incorrect password' : errorMessage);
+        this.showError(
+          isPasswordError ? _('Incorrect password') : errorMessage
+        );
         // Re-prepare daemon for next attempt (previous process consumed)
         this.keySignerClient.prepareDaemonForUnlock().catch(() => {});
         input.value = '';
         input.focus();
       } finally {
         this.isSubmitting = false;
-        submitBtn.textContent = 'Unlock';
+        submitBtn.textContent = _('Unlock');
         submitBtn.removeAttribute('disabled');
       }
     };

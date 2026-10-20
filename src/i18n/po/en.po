@@ -441,7 +441,7 @@ msgstr "Articles"
 msgid "Bookmarks"
 msgstr "Bookmarks"
 
-#: src/components/views/SettingsView.ts:45
+#: src/components/views/SettingsView.ts:49
 msgid "Cache"
 msgstr "Cache"
 
@@ -449,7 +449,7 @@ msgstr "Cache"
 msgid "Curated public follow lists you subscribe to."
 msgstr "Curated public follow lists you subscribe to."
 
-#: src/components/views/TimelineView.ts:169
+#: src/components/views/TimelineView.ts:168
 msgid "Edit tribes"
 msgstr "Edit tribes"
 
@@ -461,8 +461,8 @@ msgstr "Enable the Bookmarks addon in Settings → Addons."
 msgid "Enable the Tribes addon in Settings → Addons."
 msgstr "Enable the Tribes addon in Settings → Addons."
 
-#: src/components/views/SettingsView.ts:105
-#: src/components/views/SettingsView.ts:76
+#: src/components/views/SettingsView.ts:109
+#: src/components/views/SettingsView.ts:80
 msgid "Export DiagLogs"
 msgstr "Export DiagLogs"
 
@@ -470,11 +470,11 @@ msgstr "Export DiagLogs"
 msgid "Follows"
 msgstr "Follows"
 
-#: src/components/views/SettingsView.ts:41
+#: src/components/views/SettingsView.ts:42
 msgid "Key Signer"
 msgstr "Key Signer"
 
-#: src/components/views/TimelineView.ts:217
+#: src/components/views/TimelineView.ts:216
 msgid "Last notes per follow"
 msgstr "Last notes per follow"
 
@@ -494,7 +494,7 @@ msgstr "Long-form content from your 1st, 2nd and 3rd-degree follows"
 msgid "Long-form content from your follows"
 msgstr "Long-form content from your follows"
 
-#: src/components/views/SettingsView.ts:42
+#: src/components/views/SettingsView.ts:46
 msgid "Media"
 msgstr "Media"
 
@@ -502,11 +502,11 @@ msgstr "Media"
 msgid "Muted"
 msgstr "Muted"
 
-#: src/components/views/NotificationsView.ts:289
+#: src/components/views/NotificationsView.ts:288
 msgid "No notifications yet"
 msgstr "No notifications yet"
 
-#: src/components/views/TimelineView.ts:133
+#: src/components/views/TimelineView.ts:132
 msgid "Notes - Timeline"
 msgstr "Notes - Timeline"
 
@@ -514,11 +514,11 @@ msgstr "Notes - Timeline"
 msgid "Notification Priorities"
 msgstr "Notification Priorities"
 
-#: src/components/views/TimelineView.ts:123
+#: src/components/views/TimelineView.ts:122
 msgid "Please login to view timeline"
 msgstr "Please login to view timeline"
 
-#: src/components/views/SettingsView.ts:44
+#: src/components/views/SettingsView.ts:48
 msgid "Privacy"
 msgstr "Privacy"
 
@@ -530,7 +530,7 @@ msgstr "Relays"
 msgid "Saved notes, sorted into folders."
 msgstr "Saved notes, sorted into folders."
 
-#: src/components/views/SettingsView.ts:67
+#: src/components/views/SettingsView.ts:71
 msgid "Settings"
 msgstr "Settings"
 
@@ -542,7 +542,7 @@ msgstr "Single Post"
 msgid "The accounts you follow, with outbox relays."
 msgstr "The accounts you follow, with outbox relays."
 
-#: src/components/views/TimelineView.ts:209
+#: src/components/views/TimelineView.ts:208
 msgid "Timeline"
 msgstr "Timeline"
 
@@ -562,6 +562,117 @@ msgstr ""
 "Your lists are stored locally and synced to your relays. Pick one to open "
 "it."
 
-#: src/components/views/SettingsView.ts:43
+#: src/components/views/SettingsView.ts:47
 msgid "Zaps"
 msgstr "Zaps"
+
+#: src/components/modals/EditFolderModal.ts:63
+#: src/components/modals/KeySignerPasswordModal.ts:73
+#: src/components/modals/NewFolderModal.ts:60
+#: src/components/modals/UnlockNoorSignerModal.ts:68
+#: src/services/ModalService.ts:188
+#: src/services/ModalService.ts:244
+msgid "Cancel"
+msgstr "Cancel"
+
+#: src/services/ModalService.ts:187
+msgid "Confirm"
+msgstr "Confirm"
+
+#: src/components/modals/NewFolderModal.ts:63
+msgid "Create"
+msgstr "Create"
+
+#: src/components/modals/UpdateModal.ts:100
+msgid "Current:"
+msgstr "Current:"
+
+#: src/components/modals/UpdateModal.ts:116
+msgid "Download"
+msgstr "Download"
+
+#: src/components/modals/EditFolderModal.ts:57
+#: src/components/modals/NewFolderModal.ts:54
+msgid "Enter folder name..."
+msgstr "Enter folder name..."
+
+#: src/components/modals/KeySignerPasswordModal.ts:67
+#: src/components/modals/UnlockNoorSignerModal.ts:62
+msgid "Enter NoorSigner password..."
+msgstr "Enter NoorSigner password..."
+
+#: src/components/modals/KeySignerPasswordModal.ts:34
+msgid "Enter Password"
+msgstr "Enter Password"
+
+#: src/components/modals/KeySignerPasswordModal.ts:123
+#: src/components/modals/UnlockNoorSignerModal.ts:127
+msgid "Incorrect password"
+msgstr "Incorrect password"
+
+#: src/components/modals/UpdateModal.ts:97
+msgid "is available"
+msgstr "is available"
+
+#: src/components/modals/UpdateModal.ts:115
+msgid "Later"
+msgstr "Later"
+
+#: src/components/modals/NewFolderModal.ts:26
+msgid "New Folder"
+msgstr "New Folder"
+
+#: src/services/ModalService.ts:243
+msgid "OK"
+msgstr "OK"
+
+#: src/components/modals/KeySignerPasswordModal.ts:100
+#: src/components/modals/UnlockNoorSignerModal.ts:95
+msgid "Please enter your password"
+msgstr "Please enter your password"
+
+#: src/components/modals/EditFolderModal.ts:28
+msgid "Rename Folder"
+msgstr "Rename Folder"
+
+#: src/components/modals/EditFolderModal.ts:66
+msgid "Save"
+msgstr "Save"
+
+#: src/components/modals/UpdateModal.ts:114
+msgid "Skip this version"
+msgstr "Skip this version"
+
+#: src/components/modals/KeySignerPasswordModal.ts:128
+#: src/components/modals/KeySignerPasswordModal.ts:76
+msgid "Switch Account"
+msgstr "Switch Account"
+
+#: src/components/modals/KeySignerPasswordModal.ts:61
+msgid "Switching to:"
+msgstr "Switching to:"
+
+#: src/components/modals/KeySignerPasswordModal.ts:105
+msgid "Switching..."
+msgstr "Switching..."
+
+#: src/components/modals/UnlockNoorSignerModal.ts:134
+#: src/components/modals/UnlockNoorSignerModal.ts:71
+msgid "Unlock"
+msgstr "Unlock"
+
+#: src/components/modals/UnlockNoorSignerModal.ts:32
+msgid "Unlock NoorSigner"
+msgstr "Unlock NoorSigner"
+
+#: src/components/modals/UnlockNoorSignerModal.ts:100
+msgid "Unlocking..."
+msgstr "Unlocking..."
+
+#: src/components/modals/UpdateModal.ts:74
+msgid "Update Available"
+msgstr "Update Available"
+
+#: src/components/modals/UnlockNoorSignerModal.ts:56
+msgid "Your 24-hour trust session has expired. Enter your password to continue."
+msgstr "Your 24-hour trust session has expired. Enter your password to continue."

@@ -5,6 +5,7 @@
 
 import { errMessage } from '../../helpers/errorMessage';
 import { ModalService } from '../../services/ModalService';
+import { _ } from '../../i18n';
 import { KeySignerClient } from '../../services/KeySignerClient';
 
 export interface KeySignerPasswordModalOptions {
@@ -30,7 +31,7 @@ export class KeySignerPasswordModal {
     const content = this.renderContent();
 
     this.modalService.show({
-      title: 'Enter Password',
+      title: _('Enter Password'),
       content,
       width: '400px',
       showCloseButton: true,
@@ -57,22 +58,22 @@ export class KeySignerPasswordModal {
     container.innerHTML = `
       <div class="keysigner-password-modal__content">
         <p class="keysigner-password-modal__account">
-          Switching to: <strong>${displayName}</strong>
+          ${_('Switching to:')} <strong>${displayName}</strong>
         </p>
         <input
           type="password"
           id="keysigner-password-input"
           class="input"
-          placeholder="Enter NoorSigner password..."
+          placeholder="${_('Enter NoorSigner password...')}"
           autocomplete="off"
         />
         <p class="keysigner-password-modal__error" id="keysigner-password-error" style="display: none;"></p>
         <div class="l-row l-row--end-pair">
           <button type="button" class="btn btn--passive" id="keysigner-password-cancel-btn">
-            Cancel
+            ${_('Cancel')}
           </button>
           <button type="button" class="btn" id="keysigner-password-submit-btn">
-            Switch Account
+            ${_('Switch Account')}
           </button>
         </div>
       </div>
@@ -96,12 +97,12 @@ export class KeySignerPasswordModal {
 
       const password = input.value;
       if (!password) {
-        this.showError('Please enter your password');
+        this.showError(_('Please enter your password'));
         return;
       }
 
       this.isSubmitting = true;
-      submitBtn.textContent = 'Switching...';
+      submitBtn.textContent = _('Switching...');
       submitBtn.setAttribute('disabled', 'true');
       errorEl.style.display = 'none';
 
@@ -119,12 +120,14 @@ export class KeySignerPasswordModal {
           errorMessage.includes('invalid password') ||
           errorMessage.includes('corrupted') ||
           errorMessage.includes('decrypt');
-        this.showError(isPasswordError ? 'Incorrect password' : errorMessage);
+        this.showError(
+          isPasswordError ? _('Incorrect password') : errorMessage
+        );
         input.value = '';
         input.focus();
       } finally {
         this.isSubmitting = false;
-        submitBtn.textContent = 'Switch Account';
+        submitBtn.textContent = _('Switch Account');
         submitBtn.removeAttribute('disabled');
       }
     };

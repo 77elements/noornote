@@ -4,6 +4,7 @@
  */
 
 import { ModalService } from '../../services/ModalService';
+import { _ } from '../../i18n';
 
 export interface NewFolderModalOptions {
   onConfirm: (folderName: string) => void;
@@ -22,7 +23,7 @@ export class NewFolderModal {
     const content = this.renderContent();
 
     this.modalService.show({
-      title: 'New Folder',
+      title: _('New Folder'),
       content,
       width: '400px',
       showCloseButton: true,
@@ -50,16 +51,16 @@ export class NewFolderModal {
           type="text"
           id="new-folder-input"
           class="input new-folder-input"
-          placeholder="Enter folder name..."
+          placeholder="${_('Enter folder name...')}"
           maxlength="50"
           autocomplete="off"
         />
         <div class="new-folder-modal__actions">
           <button type="button" class="btn btn--passive" id="new-folder-cancel-btn">
-            Cancel
+            ${_('Cancel')}
           </button>
           <button type="button" class="btn" id="new-folder-confirm-btn">
-            Create
+            ${_('Create')}
           </button>
         </div>
       </div>

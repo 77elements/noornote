@@ -5,6 +5,7 @@
 
 import { ModalService } from '../../services/ModalService';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { _ } from '../../i18n';
 
 export interface EditFolderModalOptions {
   currentName: string;
@@ -24,7 +25,7 @@ export class EditFolderModal {
     const content = this.renderContent();
 
     this.modalService.show({
-      title: 'Rename Folder',
+      title: _('Rename Folder'),
       content,
       width: '400px',
       showCloseButton: true,
@@ -53,16 +54,16 @@ export class EditFolderModal {
           id="edit-folder-input"
           class="input"
           value="${escapeHtml(this.options.currentName)}"
-          placeholder="Enter folder name..."
+          placeholder="${_('Enter folder name...')}"
           maxlength="50"
           autocomplete="off"
         />
         <div class="edit-folder-modal__actions">
           <button type="button" class="btn btn--passive" id="edit-folder-cancel-btn">
-            Cancel
+            ${_('Cancel')}
           </button>
           <button type="button" class="btn" id="edit-folder-save-btn">
-            Save
+            ${_('Save')}
           </button>
         </div>
       </div>

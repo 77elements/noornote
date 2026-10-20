@@ -5,6 +5,7 @@
  */
 
 import { escapeHtml } from '../helpers/escapeHtml';
+import { _ } from '../i18n';
 import { OverlayStack, type OverlayHandle } from './OverlayStack';
 
 export interface ModalConfig {
@@ -183,8 +184,8 @@ export class ModalService {
    */
   public confirm(config: ConfirmConfig): Promise<boolean> {
     return new Promise(resolve => {
-      const confirmText = config.confirmText || 'Confirm';
-      const cancelText = config.cancelText || 'Cancel';
+      const confirmText = config.confirmText || _('Confirm');
+      const cancelText = config.cancelText || _('Cancel');
       const confirmClass = config.confirmDestructive
         ? 'btn-danger'
         : 'btn-primary';
@@ -239,8 +240,8 @@ export class ModalService {
    */
   public prompt(config: PromptConfig): Promise<string | null> {
     return new Promise(resolve => {
-      const confirmText = config.confirmText || 'OK';
-      const cancelText = config.cancelText || 'Cancel';
+      const confirmText = config.confirmText || _('OK');
+      const cancelText = config.cancelText || _('Cancel');
 
       const content = document.createElement('div');
       content.className = 'modal-prompt';
