@@ -7,27 +7,27 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/components/settings/UISettingsSection.ts:341
+#: src/components/settings/UISettingsSection.ts:339
 msgid "Gregorian"
 msgstr "Gregorianisch"
 
-#: src/components/settings/UISettingsSection.ts:343
+#: src/components/settings/UISettingsSection.ts:341
 msgid "Gregorian + Hijri"
 msgstr "Gregorianisch + Hijri"
 
-#: src/components/settings/UISettingsSection.ts:357
+#: src/components/settings/UISettingsSection.ts:355
 msgid "Gregorian + Hijri calendars"
 msgstr "Gregorianischer + Hijri-Kalender"
 
-#: src/components/settings/UISettingsSection.ts:355
+#: src/components/settings/UISettingsSection.ts:353
 msgid "Gregorian calendar"
 msgstr "Gregorianischer Kalender"
 
-#: src/components/settings/UISettingsSection.ts:342
+#: src/components/settings/UISettingsSection.ts:340
 msgid "Hijri (Islamic)"
 msgstr "Hijri (islamisch)"
 
-#: src/components/settings/UISettingsSection.ts:356
+#: src/components/settings/UISettingsSection.ts:354
 msgid "Hijri (Islamic) calendar"
 msgstr "Hijri-Kalender (islamisch)"
 
@@ -39,6 +39,402 @@ msgstr "Sprache"
 msgid "Language changed"
 msgstr "Sprache geändert"
 
-#: src/components/settings/UISettingsSection.ts:360
+#: src/components/settings/UISettingsSection.ts:359
 msgid "Switched to %s"
 msgstr "Umgestellt auf %s"
+
+#: src/components/views/AboutView.ts:69
+msgid "About NoorNote"
+msgstr "Über NoorNote"
+
+#: src/components/views/AboutView.ts:101
+msgid ""
+"All content you create (notes, articles, profile information, etc.) is "
+"stored on Nostr relays, not on your device or our servers. NoorNote simply "
+"connects to these relays to read and publish your content."
+msgstr ""
+"Alle Inhalte, die du erstellst (Notizen, Artikel, Profilinformationen "
+"etc.), werden auf Nostr-Relays gespeichert — nicht auf deinem Gerät oder "
+"unseren Servern. NoorNote verbindet sich lediglich mit diesen Relays, um "
+"deine Inhalte zu lesen und zu veröffentlichen."
+
+#: src/components/views/AboutView.ts:178
+#: src/components/views/AboutView.ts:209
+msgid "All data remains on your device."
+msgstr "Alle Daten verbleiben auf deinem Gerät."
+
+#: src/components/views/AboutView.ts:194
+msgid ""
+"All user data remains in your browser and can be cleared at any time via "
+"your browser settings."
+msgstr ""
+"Alle Nutzerdaten verbleiben in deinem Browser und lassen sich jederzeit "
+"über deine Browsereinstellungen löschen."
+
+#: src/components/views/AboutView.ts:147
+msgid ""
+"And finally, thanks to every user who actively shapes NoorNote with "
+"feedback and support."
+msgstr ""
+"Und zuletzt: Danke an jeden Nutzer, der NoorNote aktiv mit Feedback und "
+"Unterstützung mitgestaltet."
+
+#: src/components/views/AboutView.ts:243
+msgid ""
+"Avatars, images, videos, and audio referenced in Nostr events are loaded "
+"directly from whatever URL the author published. Each such load is a direct "
+"request from your device to that third-party host."
+msgstr ""
+"Avatare, Bilder, Videos und Audio, die in Nostr-Events referenziert sind, "
+"werden direkt von der URL geladen, die der Autor veröffentlicht hat. Jeder "
+"solche Abruf ist eine direkte Anfrage von deinem Gerät an diesen "
+"Drittanbieter-Host."
+
+#: src/components/views/AboutView.ts:239
+msgid ""
+"Beyond Nostr relays, NoorNote makes network requests to a small set of "
+"third-party endpoints to render content correctly. Each request unavoidably "
+"exposes your IP address to the receiving service:"
+msgstr ""
+"Über die Nostr-Relays hinaus stellt NoorNote Netzwerkanfragen an eine "
+"kleine Anzahl von Endpunkten Dritter, um Inhalte korrekt darzustellen. Jede "
+"Anfrage legt deine IP-Adresse unvermeidlich gegenüber dem empfangenden "
+"Dienst offen:"
+
+#: src/components/views/AboutView.ts:138
+msgid "by %s"
+msgstr "von %s"
+
+#: src/components/views/AboutView.ts:175
+#: src/components/views/AboutView.ts:190
+#: src/components/views/AboutView.ts:205
+msgid "Cache:"
+msgstr "Cache:"
+
+#: src/components/views/AboutView.ts:155
+msgid "Check for updates"
+msgstr "Nach Updates suchen"
+
+#: src/components/views/AboutView.ts:206
+msgid "Configuration Files:"
+msgstr "Konfigurationsdateien:"
+
+#: src/components/views/AboutView.ts:99
+msgid "Connections to Nostr Relays"
+msgstr "Verbindungen zu Nostr-Relays"
+
+#: src/components/views/AboutView.ts:128
+msgid "Credits"
+msgstr "Danksagungen"
+
+#: src/components/views/AboutView.ts:169
+#: src/components/views/AboutView.ts:184
+msgid "Data Storage"
+msgstr "Datenspeicherung"
+
+#: src/components/views/AboutView.ts:85
+msgid "DM me on Nostr"
+msgstr "Schreib mir auf Nostr"
+
+#: src/components/views/AboutView.ts:76
+msgid "Email:"
+msgstr "E-Mail:"
+
+#: src/components/views/AboutView.ts:82
+msgid "Hire Me"
+msgstr "Engagieren Sie mich"
+
+#: src/components/views/AboutView.ts:72
+msgid "Imprint"
+msgstr "Impressum"
+
+#: src/components/views/AboutView.ts:174
+#: src/components/views/AboutView.ts:189
+#: src/components/views/AboutView.ts:204
+msgid "Key Storage:"
+msgstr "Schlüsselspeicher:"
+
+#: src/components/views/AboutView.ts:222
+msgid ""
+"Like any web host, MyNymbox processes standard server log data when you "
+"load the application — typically your IP address, request timestamp, the "
+"URL/file requested, browser type, and referrer — for operational and "
+"security purposes (e.g. DDoS mitigation, server stability). NoorNote itself "
+"does not access or use these logs."
+msgstr ""
+"Wie jeder Webhost verarbeitet MyNymbox bei Aufruf der Anwendung übliche "
+"Server-Logdaten — typischerweise deine IP-Adresse, den Anfrage-Zeitstempel, "
+"die angeforderte URL/Datei, den Browsertyp und den Referrer — für Betriebs- "
+"und Sicherheitszwecke (z. B. DDoS-Abwehr, Serverstabilität). NoorNote "
+"selbst greift nicht auf diese Logs zu und nutzt sie nicht."
+
+#: src/components/views/AboutView.ts:199
+msgid "Local Data Storage"
+msgstr "Lokale Datenspeicherung"
+
+#: src/components/views/AboutView.ts:234
+msgid "Media proxy:"
+msgstr "Medien-Proxy:"
+
+#: src/components/views/AboutView.ts:84
+msgid ""
+"Need help with your web project? I'm available for hire — design, UX, and "
+"development. Sats accepted."
+msgstr ""
+"Brauchst du Unterstützung für dein Webprojekt? Ich bin verfügbar für "
+"Aufträge — Design, UX und Entwicklung. Bezahlung in Sats möglich."
+
+#: src/components/views/AboutView.ts:242
+msgid "NIP-05 verification:"
+msgstr "NIP-05-Verifizierung:"
+
+#: src/components/views/AboutView.ts:109
+msgid "No Tracking or Analytics by NoorNote"
+msgstr "Kein Tracking oder Analytics durch NoorNote"
+
+#: src/components/views/AboutView.ts:191
+msgid "No User-Data Storage on Our Server:"
+msgstr "Keine Nutzerdaten-Speicherung auf unserem Server:"
+
+#: src/components/views/AboutView.ts:159
+msgid "NoorNote - A Nostr Client"
+msgstr "NoorNote – Ein Nostr-Client"
+
+#: src/components/views/AboutView.ts:123
+msgid ""
+"NoorNote and NoorSigner are free and open source software, released under "
+"the %s."
+msgstr ""
+"NoorNote und NoorSigner sind freie Open-Source-Software, veröffentlicht "
+"unter der %s."
+
+#: src/components/views/AboutView.ts:111
+msgid ""
+"NoorNote does not use any analytics services, tracking pixels, marketing "
+"cookies, or telemetry. We do not collect, log, or transmit any usage data "
+"to ourselves. The third-party connections described above are inherent to "
+"rendering content and providing the service — they are not telemetry, and "
+"no identifier beyond a standard HTTP request (IP, User-Agent) is sent."
+msgstr ""
+"NoorNote verwendet keine Analyse-Dienste, Tracking-Pixel, Marketing-Cookies "
+"oder Telemetrie. Wir erfassen, protokollieren oder übertragen keinerlei "
+"Nutzungsdaten an uns. Die oben beschriebenen Verbindungen zu Drittanbietern "
+"sind der Darstellung von Inhalten und der Bereitstellung des Dienstes "
+"inhärent — sie sind keine Telemetrie, und es wird kein Identifier über "
+"einen standardmäßigen HTTP-Request (IP, User-Agent) hinaus gesendet."
+
+#: src/components/views/AboutView.ts:129
+msgid "NoorNote integrates third-party open-source work. Thanks to:"
+msgstr "NoorNote integriert Open-Source-Arbeit Dritter. Danke an:"
+
+#: src/components/views/AboutView.ts:201
+msgid ""
+"NoorNote is a desktop application that stores all data locally on your "
+"device:"
+msgstr ""
+
+#: src/components/views/AboutView.ts:171
+msgid "NoorNote is a mobile app that stores all data locally on your device:"
+msgstr ""
+"NoorNote ist eine mobile App, die alle Daten lokal auf deinem Gerät "
+"speichert:"
+
+#: src/components/views/AboutView.ts:186
+msgid "NoorNote is a web application. All data stays in your browser:"
+msgstr "NoorNote ist eine Web-Anwendung. Alle Daten bleiben in deinem Browser:"
+
+#: src/components/views/AboutView.ts:154
+msgid "NoorNote v%s"
+msgstr "NoorNote v%s"
+
+#: src/components/views/AboutView.ts:104
+msgid ""
+"Nostr relays are operated by third parties. When connecting, your IP "
+"address may be logged by the relay operators. The choice of relays is yours "
+"and can be configured in the settings."
+msgstr ""
+"Nostr-Relays werden von Dritten betrieben. Beim Verbinden kann deine "
+"IP-Adresse von den Relay-Betreibern protokolliert werden. Die Wahl der "
+"Relays liegt bei dir und lässt sich in den Einstellungen konfigurieren."
+
+#: src/components/views/AboutView.ts:121
+msgid "Open Source"
+msgstr "Open Source"
+
+#: src/components/views/AboutView.ts:237
+msgid "Other Third-Party Connections"
+msgstr "Weitere Verbindungen zu Drittanbietern"
+
+#: src/components/views/AboutView.ts:191
+msgid ""
+"Our web host serves the static application bundle. We do not store, "
+"process, or have access to any user data on the server itself."
+msgstr ""
+"Unser Webhost liefert lediglich das statische Anwendungspaket aus. Wir "
+"speichern, verarbeiten oder haben Zugriff auf keinerlei Nutzerdaten auf dem "
+"Server selbst."
+
+#: src/components/views/AboutView.ts:77
+msgid "Phone:"
+msgstr "Telefon:"
+
+#: src/components/views/AboutView.ts:216
+#: src/components/views/AboutView.ts:90
+msgid "Privacy Policy"
+msgstr "Datenschutzerklärung"
+
+#: src/components/views/AboutView.ts:243
+msgid "Profile pictures and embedded media:"
+msgstr "Profilbilder und eingebettete Medien:"
+
+#: src/components/views/AboutView.ts:92
+msgid "Responsible Party"
+msgstr "Verantwortliche Stelle"
+
+#: src/components/views/AboutView.ts:245
+msgid "Scheduled Posts (optional addon):"
+msgstr "Geplante Beiträge (optionales Addon):"
+
+#: src/components/views/AboutView.ts:116
+msgid ""
+"Since we do not store or process any personal data, the usual GDPR data "
+"subject rights do not apply. For questions, you can contact us at %s."
+msgstr ""
+"Da wir keine personenbezogenen Daten speichern oder verarbeiten, gelten die "
+"üblichen DSGVO-Betroffenenrechte nicht. Bei Fragen kannst du uns unter %s "
+"kontaktieren."
+
+#: src/components/views/AboutView.ts:144
+msgid ""
+"Special thanks to %s for inventing the Nostr protocol, and to all %s "
+"authors and other Nostr devs for the inspiration."
+msgstr ""
+"Besonderer Dank an %s für die Erfindung des Nostr-Protokolls sowie an alle "
+"%s-Autoren und weitere Nostr-Entwickler für die Inspiration."
+
+#: src/components/views/AboutView.ts:225
+msgid ""
+"St. Kitts and Nevis is not covered by an EU adequacy decision (Art. 45 "
+"GDPR). Any transfer to MyNymbox's servers takes place on the basis of the "
+"derogations of Art. 49 (1) GDPR."
+msgstr ""
+"St. Kitts und Nevis ist von einem EU-Angemessenheitsbeschluss nicht erfasst "
+"(Art. 45 DSGVO). Eine Übermittlung an die Server von MyNymbox erfolgt auf "
+"Grundlage der Ausnahmen des Art. 49 (1) DSGVO."
+
+#: src/components/views/AboutView.ts:205
+msgid "Temporary data is stored in IndexedDB and localStorage."
+msgstr "Temporäre Daten werden in IndexedDB und localStorage gespeichert."
+
+#: src/components/views/AboutView.ts:190
+msgid "Temporary data is stored in your browser's IndexedDB and localStorage."
+msgstr ""
+"Temporäre Daten werden in IndexedDB und localStorage deines Browsers "
+"gespeichert."
+
+#: src/components/views/AboutView.ts:175
+msgid "Temporary data is stored in your device's IndexedDB and localStorage."
+msgstr ""
+"Temporäre Daten werden in IndexedDB und localStorage deines Geräts "
+"gespeichert."
+
+#: src/components/views/AboutView.ts:231
+msgid ""
+"The desktop version periodically queries %s to detect new releases. GitHub "
+"is operated by GitHub, Inc., 88 Colin P Kelly Jr Street, San Francisco, CA "
+"94107, USA."
+msgstr ""
+"Die Desktop-Version fragt periodisch %s ab, um neue Releases zu erkennen. "
+"GitHub wird betrieben von GitHub, Inc., 88 Colin P Kelly Jr Street, San "
+"Francisco, CA 94107, USA."
+
+#: src/components/views/AboutView.ts:221
+msgid "The web version of NoorNote (%s) is hosted by %s (%s)."
+msgstr "Die Web-Version von NoorNote (%s) wird von %s betrieben (%s)."
+
+#: src/components/views/AboutView.ts:225
+msgid "Third country notice:"
+msgstr "Hinweis zu Drittlandübermittlung:"
+
+#: src/components/views/AboutView.ts:231
+msgid "Update check:"
+msgstr "Update-Prüfung:"
+
+#: src/components/views/AboutView.ts:153
+msgid "Version"
+msgstr "Version"
+
+#: src/components/views/AboutView.ts:209
+msgid "We have no access to this data."
+msgstr "Wir haben keinen Zugriff auf diese Daten."
+
+#: src/components/views/AboutView.ts:178
+#: src/components/views/AboutView.ts:194
+msgid "We have no access to your data."
+msgstr "Wir haben keinen Zugriff auf deine Daten."
+
+#: src/components/views/AboutView.ts:219
+msgid "Web Hosting"
+msgstr "Webhosting"
+
+#: src/components/views/AboutView.ts:234
+msgid ""
+"When loading images embedded in notes, NoorNote may route the request "
+"through a proxy operated by us at %s to bypass CORS restrictions of the "
+"original image host. The proxy forwards your request to the third-party "
+"image host."
+msgstr ""
+"Beim Laden von in Notizen eingebetteten Bildern kann NoorNote die Anfrage "
+"über einen von uns betriebenen Proxy unter %s leiten, um "
+"CORS-Beschränkungen des ursprünglichen Bild-Hosts zu umgehen. Der Proxy "
+"leitet deine Anfrage an den Drittanbieter-Bild-Host weiter."
+
+#: src/components/views/AboutView.ts:245
+msgid ""
+"When the Scheduled Posts addon is enabled, your scheduled events are "
+"temporarily stored on a service operated by us at %s until their scheduled "
+"release time."
+msgstr ""
+"Wenn das Addon „Geplante Beiträge“ aktiviert ist, werden deine geplanten "
+"Events vorübergehend auf einem von uns betriebenen Dienst unter %s "
+"gespeichert, bis zu ihrem geplanten Veröffentlichungszeitpunkt."
+
+#: src/components/views/AboutView.ts:242
+msgid ""
+"When verifying a user's NIP-05 identifier (e.g. %s), NoorNote sends an HTTP "
+"request to %s. The owner of that domain may log the request."
+msgstr ""
+"Bei der Verifizierung einer NIP-05-Kennung (z. B. %s) sendet NoorNote einen "
+"HTTP-Request an %s. Der Besitzer der Domain kann die Anfrage protokollieren."
+
+#: src/components/views/AboutView.ts:204
+msgid ""
+"Your private key (nsec) is stored in your operating system's keychain "
+"(macOS Keychain, Linux Secret Service)."
+msgstr ""
+"Dein privater Schlüssel (nsec) wird im Schlüsselbund deines Betriebssystems "
+"gespeichert (macOS Keychain, Linux Secret Service)."
+
+#: src/components/views/AboutView.ts:174
+msgid ""
+"Your private key is managed by Amber (NIP-55 signer) and never shared with "
+"NoorNote."
+msgstr ""
+"Dein privater Schlüssel wird von Amber (NIP-55-Signer) verwaltet und "
+"niemals mit NoorNote geteilt."
+
+#: src/components/views/AboutView.ts:189
+msgid ""
+"Your private key is managed by your browser extension (e.g. Sidecar) and "
+"never shared with NoorNote or our server."
+msgstr ""
+"Dein privater Schlüssel wird von deiner Browser-Erweiterung (z. B. Sidecar) "
+"verwaltet und niemals mit NoorNote oder unserem Server geteilt."
+
+#: src/components/views/AboutView.ts:114
+msgid "Your Rights"
+msgstr "Deine Rechte"
+
+#: src/components/views/AboutView.ts:206
+msgid "Settings are stored in the %s directory."
+msgstr "Einstellungen werden im Verzeichnis %s gespeichert."

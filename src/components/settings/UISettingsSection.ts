@@ -100,6 +100,16 @@ export class UISettingsSection extends SettingsSection {
     return `
         <section class="section">
           <div class="setting">
+            <span class="setting__label">${_('Language')}</span>
+            <div class="setting__control language-dropdown-container"></div>
+            <ul class="setting__desc">
+              <li><strong>Deutsch:</strong> pilot translation (partial — untranslated text stays English)</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="setting">
             <span class="setting__label">Theme</span>
             <div class="setting__control" id="theme-switcher-mount"></div>
           </div>
@@ -121,16 +131,6 @@ export class UISettingsSection extends SettingsSection {
               <li><strong>Right Pane:</strong> Views open as tabs in the right pane, timeline stays visible in main pane</li>
               <li><strong>Wide Mode:</strong> Views replace the timeline, right pane is hidden for maximum content space</li>
               <li><strong>Phone:</strong> Single-column layout (390px width) for phone development and testing</li>
-            </ul>
-          </div>
-        </section>
-
-        <section class="section">
-          <div class="setting">
-            <span class="setting__label">${_('Language')}</span>
-            <div class="setting__control language-dropdown-container"></div>
-            <ul class="setting__desc">
-              <li><strong>Deutsch:</strong> pilot translation (partial — untranslated text stays English)</li>
             </ul>
           </div>
         </section>
