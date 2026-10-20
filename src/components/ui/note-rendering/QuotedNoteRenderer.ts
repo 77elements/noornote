@@ -42,6 +42,7 @@ import { GatedNoteRenderer } from './GatedNoteRenderer';
 import { isGatedNoteEvent } from '../../../helpers/gatedNote';
 import { ARTICLE_PREVIEW_KINDS } from '../../../helpers/addressableKinds';
 import { CURATION_SET_KIND } from '../../../helpers/parseCurationSet';
+import { BOOKMARK_SET_KIND } from '../../../helpers/parseBookmarkList';
 import {
   parseListingMetadata,
   formatPrice,
@@ -214,6 +215,14 @@ export class QuotedNoteRenderer {
     // exactly one relay fetch.
     if (kind === CURATION_SET_KIND) {
       void this.renderCurationSetPreview(naddrRef, container);
+      return;
+    }
+    // NIP-51 categorized bookmark list (kind 30003 — NoorNote bookmark
+    // folders; third parties like ZapTrax publish playlists on it) →
+    // fetch + card with title, item count and inline player for `r`-tag
+    // audio URLs.
+    if (kind === BOOKMARK_SET_KIND) {
+      void this.renderBookmarkListPreview(naddrRef, container);
       return;
     }
     // NIP-52 calendar event/collection (31922/31923/31924) → fetch + render
@@ -456,6 +465,15 @@ export class QuotedNoteRenderer {
           if (result.event.kind === CURATION_SET_KIND) {
             const setElement = await this.buildCurationSetElement(result.event);
             skeleton.replaceWith(setElement);
+            return;
+          }
+          // NIP-51 categorized bookmark list (kind 30003 — bookmark folders,
+          // ZapTrax playlists) → card via the BookmarkList pipeline.
+          if (result.event.kind === BOOKMARK_SET_KIND) {
+            const listElement = await this.buildBookmarkListElement(
+              result.event
+            );
+            skeleton.replaceWith(listElement);
             return;
           }
           // NIP-52 calendar event/collection (31922/31923/31924) → nn-card
@@ -1200,6 +1218,51 @@ export class QuotedNoteRenderer {
     );
     const processedNote = CurationSetProcessor.process(event);
     return CurationSetRenderer.render(processedNote, {
+      collapsible: false,
+      depth: 1,
+    });
+  }
+
+  /**
+   * Render a NIP-51 categorized bookmark list (kind 30003) preview from an
+   * naddr reference — fetches the event, then dispatches it through the
+   * BookmarkListProcessor + BookmarkListRenderer pipeline. On fetch failure
+   * the shared unsupported-coordinate fallback stays in place (never an
+   * empty quote box).
+   */
+  public async renderBookmarkListPreview(
+    naddrRef: string,
+    container: Element
+  ): Promise<void> {
+    try {
+      const result =
+        await this.quoteFetcher.fetchQuotedEventWithError(naddrRef);
+      if (result.success && result.event.kind === BOOKMARK_SET_KIND) {
+        container.appendChild(
+          await this.buildBookmarkListElement(result.event)
+        );
+      }
+    } catch {
+      /* silent — container stays empty */
+    }
+  }
+
+  /**
+   * Build the bookmark-list element via the standard Processor + Renderer
+   * pair. Shared by the naddr quote path ({@link renderBookmarkListPreview})
+   * and the fetched-quote addressable branch in {@link fetchAndRenderQuote}.
+   */
+  private async buildBookmarkListElement(
+    event: NostrEvent
+  ): Promise<HTMLElement> {
+    const { BookmarkListProcessor } = await import(
+      '../../../components/ui/note-processing/BookmarkListProcessor'
+    );
+    const { BookmarkListRenderer } = await import(
+      '../../../components/ui/note-rendering/BookmarkListRenderer'
+    );
+    const processedNote = BookmarkListProcessor.process(event);
+    return BookmarkListRenderer.render(processedNote, {
       collapsible: false,
       depth: 1,
     });

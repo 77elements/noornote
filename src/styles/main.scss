@@ -132,6 +132,7 @@
 @use 'components/nostr-majlis';
 @use 'components/epub-reader';
 @use 'components/podcast-episode';
+@use 'components/bookmark-list';
 
 // Add-Ons
 @use '../addons/marketplace/marketplace';

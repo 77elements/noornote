@@ -3557,6 +3557,14 @@ export class BookmarkCard {
         event.tags.find(t => t[0] === 'title')?.[1] || 'Untitled collection';
       return `Collection: ${title}`;
     }
+    if (event.kind === 30003) {
+      const title =
+        event.tags.find(t => t[0] === 'title')?.[1] ||
+        event.tags.find(t => t[0] === 'd')?.[1] ||
+        'Untitled list';
+      const isPlaylist = event.tags.some(t => t[0] === 'track-title');
+      return isPlaylist ? `Playlist: ${title}` : `Bookmark list: ${title}`;
+    }
     if (event.kind === 30054) {
       const title = event.tags.find(t => t[0] === 'title')?.[1] || 'Untitled';
       return `Podcast: ${title}`;

@@ -505,6 +505,7 @@ export class NotificationItem {
       const kind = parseInt(aTag[1].split(':')[0] || '');
       if (kind === 30023) return 'article';
       if (kind === 30004) return 'collection';
+      if (kind === 30003) return 'bookmark list';
       if (kind === 30054) return 'podcast episode';
       if (kind === 32267) return 'app on Zapstore';
       if (kind === 39089) return 'follow pack';
@@ -528,6 +529,7 @@ export class NotificationItem {
       if (kind === 9) return 'group chat message';
       if (kind === 30023) return 'article';
       if (kind === 30004) return 'collection';
+      if (kind === 30003) return 'bookmark list';
       if (kind === 30054) return 'podcast episode';
       if (kind === 32267) return 'app on Zapstore';
       if (kind === 39089) return 'follow pack';

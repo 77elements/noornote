@@ -25,6 +25,7 @@ import { LiveStreamProcessor } from './LiveStreamProcessor';
 import { ListingProcessor } from './ListingProcessor';
 import { PodcastEpisodeProcessor } from './PodcastEpisodeProcessor';
 import { CurationSetProcessor } from './CurationSetProcessor';
+import { BookmarkListProcessor } from './BookmarkListProcessor';
 import { ReactionFeedProcessor } from './ReactionFeedProcessor';
 import { CalendarEventProcessor } from './CalendarEventProcessor';
 
@@ -95,6 +96,11 @@ export class NoteProcessor {
         case 30004:
           // NIP-51 article curation set (e.g. Zap Cooking Recipe Packs).
           return CurationSetProcessor.process(event);
+        case 30003:
+          // NIP-51 categorized bookmark list — NoorNote's own bookmark
+          // folders share this kind; third parties (ZapTrax) publish
+          // playlists on it. Card shows metadata + inline player only.
+          return BookmarkListProcessor.process(event);
         case 7:
           // NIP-25 reaction as a feed entry (show-reactions setting).
           return ReactionFeedProcessor.process(event);

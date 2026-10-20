@@ -17,6 +17,7 @@ export interface ProcessedNote {
     | 'unsupported'
     | 'follow-pack'
     | 'curation-set'
+    | 'bookmark-list'
     | 'reaction'
     | 'podcast-episode'
     | 'git-event'
