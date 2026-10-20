@@ -179,6 +179,8 @@ export interface ViewTabLabelUpdatedPayload {
 
 export interface SearchStartPayload {
   query: string;
+  /** True = search ONLY local caches (no relay/Primal request — private). */
+  localOnly?: boolean;
 }
 
 export interface HashtagSearchStartPayload {

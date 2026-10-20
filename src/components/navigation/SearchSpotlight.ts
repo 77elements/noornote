@@ -15,6 +15,11 @@ import type {
 import { hexToNpub } from '../../helpers/nip19';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { resolveNip05 } from '../../helpers/Nip05Resolver';
+import { Tooltip } from '../ui/Tooltip';
+import {
+  PerAccountLocalStorage,
+  StorageKeys,
+} from '../../services/PerAccountLocalStorage';
 
 /** Prefixes that bypass user search (the user clearly wants direct navigation, not a name match) */
 const SPECIAL_INPUT_PREFIXES = [
@@ -58,6 +63,8 @@ export class SearchSpotlight {
   /** Debounce timer for user search */
   private searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
   private currentSearchController: AbortController | null = null;
+  /** Tooltip dispose handle for the local-caches checkbox */
+  private tooltipDispose: (() => void) | null = null;
 
   /** Current user search results */
   private userResults: UserSearchResult[] = [];
@@ -106,6 +113,10 @@ export class SearchSpotlight {
             Forward
             <span class="chevron-right"></span>
           </button>
+          <label class="nn-checkbox search-spotlight__local-toggle">
+            <input type="checkbox" id="local-search-only" />
+            <span>Search only in local caches</span>
+          </label>
         </div>
         <div class="search-spotlight__user-suggestions"></div>
         <div class="search-spotlight__suggestions"></div>
@@ -166,6 +177,31 @@ export class SearchSpotlight {
     this.userSuggestionsElement = this.element.querySelector(
       '.search-spotlight__user-suggestions'
     );
+
+    // "Search only in local caches" toggle — persists per account; when on,
+    // the search runs ONLY against local indexes (no relay/Primal request).
+    const localToggle = this.element.querySelector(
+      '#local-search-only'
+    ) as HTMLInputElement | null;
+    if (localToggle) {
+      localToggle.checked = PerAccountLocalStorage.getInstance().get<boolean>(
+        StorageKeys.LOCAL_SEARCH_ONLY,
+        false
+      );
+      localToggle.addEventListener('change', () => {
+        PerAccountLocalStorage.getInstance().set(
+          StorageKeys.LOCAL_SEARCH_ONLY,
+          localToggle.checked
+        );
+      });
+      const label = localToggle.closest('.search-spotlight__local-toggle');
+      if (label) {
+        this.tooltipDispose = Tooltip.attach(
+          label as HTMLElement,
+          'Your search request is not sent to any relays and is therefore private'
+        );
+      }
+    }
 
     // URL suggestions element
     this.suggestionsElement = this.element.querySelector(
@@ -390,10 +426,16 @@ export class SearchSpotlight {
           return;
         }
       }
-      this.eventBus.emit('globalSearch:start', { query: input });
+      this.eventBus.emit('globalSearch:start', {
+        query: input,
+        localOnly: this.isLocalSearchOnly(),
+      });
     } else {
       // No route resolved - treat as full-text search
-      this.eventBus.emit('globalSearch:start', { query: input });
+      this.eventBus.emit('globalSearch:start', {
+        query: input,
+        localOnly: this.isLocalSearchOnly(),
+      });
     }
 
     this.close();
@@ -626,7 +668,16 @@ export class SearchSpotlight {
         capture: true,
       });
     }
+    this.tooltipDispose?.();
     this.cancelPendingSearch();
     this.element.remove();
+  }
+
+  /** Whether the "Search only in local caches" toggle is currently on. */
+  private isLocalSearchOnly(): boolean {
+    return (
+      this.element.querySelector<HTMLInputElement>('#local-search-only')
+        ?.checked ?? false
+    );
   }
 }

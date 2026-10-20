@@ -393,6 +393,62 @@ export class DMStore {
   /**
    * Get messages for a conversation (paginated)
    */
+  /**
+   * All stored messages (for LocalSearchService's DM index build). Messages
+   * of locally soft-deleted conversations are filtered exactly like
+   * getMessages: everything up to the conversation's deletedAt stays hidden.
+   */
+  public async getAllMessages(): Promise<DMMessage[]> {
+    await this.init();
+
+    return this.db!.withTransaction(
+      [MESSAGES_STORE, CONVERSATIONS_STORE],
+      'readonly',
+      tx =>
+        new Promise<DMMessage[]>((resolve, reject) => {
+          const convRequest = tx.objectStore(CONVERSATIONS_STORE).getAll();
+          const msgRequest = tx.objectStore(MESSAGES_STORE).getAll();
+
+          let cutoffs = new Map<string, number>();
+          convRequest.onsuccess = () => {
+            cutoffs = new Map(
+              ((convRequest.result as DMConversation[]) ?? [])
+                .filter(c => c.deletedAt)
+                .map(c => [c.pubkey, c.deletedAt || 0])
+            );
+          };
+
+          msgRequest.onsuccess = () => {
+            const all = (msgRequest.result as DMMessage[]) ?? [];
+            resolve(
+              all.filter(
+                m => m.createdAt > (cutoffs.get(m.conversationWith) ?? 0)
+              )
+            );
+          };
+          msgRequest.onerror = () =>
+            reject(msgRequest.error ?? new Error('IndexedDB request failed'));
+        })
+    );
+  }
+
+  /** Exact single-message lookup by rumor event id (for search hit resolution). */
+  public async getMessageById(id: string): Promise<DMMessage | null> {
+    await this.init();
+    return this.db!.withTransaction(
+      [MESSAGES_STORE],
+      'readonly',
+      tx =>
+        new Promise<DMMessage | null>((resolve, reject) => {
+          const request = tx.objectStore(MESSAGES_STORE).get(id);
+          request.onsuccess = () =>
+            resolve((request.result as DMMessage | undefined) ?? null);
+          request.onerror = () =>
+            reject(request.error ?? new Error('IndexedDB request failed'));
+        })
+    );
+  }
+
   public async getMessages(
     partnerPubkey: string,
     limit: number = 50,

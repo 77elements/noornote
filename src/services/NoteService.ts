@@ -174,6 +174,15 @@ export class NoteService {
   }
 
   /**
+   * All events currently held in the LRU (LRU order is NOT touched —
+   * iteration does not count as access). Used by LocalSearchService for the
+   * initial index population on service creation.
+   */
+  public getAllCachedEvents(): NostrEvent[] {
+    return Array.from(this.cache.entries(), ([, value]) => value.event);
+  }
+
+  /**
    * Resolve the relay-set for cross-event lookups (bookmark resolution,
    * quote / e-tag resolution, deep-link by event-id, …). We don't know
    * the event's author in advance — Outbound-by-pubkey is therefore

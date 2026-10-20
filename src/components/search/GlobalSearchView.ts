@@ -12,6 +12,12 @@ import { SearchResultsView, SearchResultsConfig } from './SearchResultsView';
 import { Router } from '../../services/Router';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { SystemLogger } from '../../services/SystemLogger';
+import { LocalSearchService } from '../../services/LocalSearchService';
+import type { DMMessage } from '../../services/dm/DMStore';
+import { UserProfileService } from '../../services/UserProfileService';
+import { formatTimestamp } from '../../helpers/formatTimestamp';
+import { hexToNpub } from '../../helpers/nip19';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { encodeNevent } from '../../services/NostrToolsAdapter';
 import {
   deactivateAllTabs,
@@ -46,6 +52,8 @@ export class GlobalSearchView {
   private oldestTimestamp: number | null = null;
   private hasMore: boolean = true;
   private isProfileSearch: boolean = false; // Track if this is profile search (no pagination)
+  private isLocalSearch: boolean = false; // Local-caches-only mode (Spotlight toggle)
+  private currentDmResults: DMMessage[] = [];
   private currentHashtag: string = ''; // Track current hashtag for subscribe button (Phase 2)
 
   /** Set by MainLayout: invoked whenever the search tab activates/closes so the
@@ -84,11 +92,14 @@ export class GlobalSearchView {
    * Setup event listeners
    */
   private setupEventListeners(): void {
-    // Listen for global search start (NIP-50 relay search)
+    // Listen for global search start (NIP-50 relay search, or local-caches-only)
     this.eventBusSubscriptions.push(
-      this.eventBus.on('globalSearch:start', (data: { query: string }) => {
-        void this.performGlobalSearch(data.query);
-      })
+      this.eventBus.on(
+        'globalSearch:start',
+        (data: { query: string; localOnly?: boolean }) => {
+          void this.performGlobalSearch(data.query, data.localOnly);
+        }
+      )
     );
 
     // Listen for hashtag search start (NIP-50 relay search for hashtags)
@@ -115,17 +126,21 @@ export class GlobalSearchView {
           // Re-filter current results
           const filtered = await this.filterMutedUsers(this.currentResults);
           this.currentResults = filtered;
-          this.renderResults();
+          void this.renderResults();
         }
       })
     );
   }
 
   /**
-   * Perform global search (NIP-50 relay, no auto-load)
+   * Perform global search — NIP-50 relay by default, or the local indexes
+   * when the Spotlight's "Search only in local caches" toggle is on.
    */
-  private async performGlobalSearch(query: string): Promise<void> {
-    await this.executeSearch(query, '');
+  private async performGlobalSearch(
+    query: string,
+    localOnly?: boolean
+  ): Promise<void> {
+    await this.executeSearch(query, '', localOnly === true);
   }
 
   /**
@@ -138,13 +153,33 @@ export class GlobalSearchView {
   /**
    * Execute search with given query and optional hashtag context
    */
-  private async executeSearch(query: string, hashtag: string): Promise<void> {
+  private async executeSearch(
+    query: string,
+    hashtag: string,
+    localOnly: boolean = false
+  ): Promise<void> {
     if (this.isSearching) return;
 
     this.resetSearchState(query, hashtag);
+    this.isLocalSearch = localOnly;
+    this.currentDmResults = [];
     this.showLoading();
 
     try {
+      if (localOnly) {
+        // Local-caches-only mode: MiniSearch over the NoteService LRU stream
+        // + DMStore plaintext. NO relay/Primal request leaves the device.
+        const { notes, dms } = await LocalSearchService.getInstance().search(
+          query,
+          50
+        );
+        this.currentResults = await this.filterMutedUsers(notes);
+        this.currentDmResults = dms;
+        this.hasMore = false;
+        void this.renderResults();
+        return;
+      }
+
       const results =
         (await this.searchApi?.search({
           query,
@@ -164,7 +199,7 @@ export class GlobalSearchView {
         );
       }
 
-      this.renderResults();
+      void this.renderResults();
     } catch (error) {
       this.systemLogger.error('GlobalSearchView', 'Search failed:', error);
       this.showError('Search failed. Please try again.');
@@ -181,6 +216,8 @@ export class GlobalSearchView {
     this.currentHashtag = hashtag;
     this.isSearching = true;
     this.currentResults = [];
+    this.currentDmResults = [];
+    this.isLocalSearch = false;
     this.oldestTimestamp = null;
     this.hasMore = true;
     this.isProfileSearch = false;
@@ -223,9 +260,11 @@ export class GlobalSearchView {
    * Load more results (for InfiniteScroll - only for global search)
    */
   private async loadMoreResults(): Promise<void> {
-    // Don't paginate profile search results (already loaded all)
+    // Don't paginate profile search results (already loaded all) and don't
+    // paginate local search (the whole local index is already shown).
     if (
       this.isProfileSearch ||
+      this.isLocalSearch ||
       this.isSearching ||
       !this.hasMore ||
       !this.oldestTimestamp
@@ -309,18 +348,24 @@ export class GlobalSearchView {
   /**
    * Render search results
    */
-  private renderResults(): void {
+  private async renderResults(): Promise<void> {
     this.clearSearchResultsView();
 
     const isHashtagSearch = this.currentQuery.startsWith('#');
-    const title = isHashtagSearch
-      ? `Posts tagged ${this.currentQuery}`
-      : `Search Results: "${this.currentQuery}"`;
+    const title = this.isLocalSearch
+      ? `Local Search: "${this.currentQuery}"`
+      : isHashtagSearch
+        ? `Posts tagged ${this.currentQuery}`
+        : `Search Results: "${this.currentQuery}"`;
+
+    const meta = this.isLocalSearch
+      ? `${this.currentResults.length} note${this.currentResults.length !== 1 ? 's' : ''} · ${this.currentDmResults.length} message${this.currentDmResults.length !== 1 ? 's' : ''} from local caches`
+      : `${this.currentResults.length} result${this.currentResults.length !== 1 ? 's' : ''} found`;
 
     const config: SearchResultsConfig = {
       title,
       searchTerms: this.currentQuery,
-      meta: `${this.currentResults.length} result${this.currentResults.length !== 1 ? 's' : ''} found`,
+      meta,
     };
     if (this.currentHashtag) {
       config.hashtag = this.currentHashtag;
@@ -332,7 +377,75 @@ export class GlobalSearchView {
     });
 
     this.searchResultsView.render(this.currentResults);
-    this.container.appendChild(this.searchResultsView.getElement());
+    const viewElement = this.searchResultsView.getElement();
+    this.container.appendChild(viewElement);
+
+    const dmSection = await this.buildDmResultsSection();
+    if (dmSection) {
+      this.container.appendChild(dmSection);
+    }
+  }
+
+  /**
+   * DM hit rows for local search (decrypted plaintext from DMStore) — reuses
+   * the MessagesView conversation-item classes; rows are async-upgraded with
+   * profile names/avatars like the conversation list. Click opens the DMV.
+   */
+  private async buildDmResultsSection(): Promise<HTMLElement | null> {
+    if (!this.isLocalSearch || this.currentDmResults.length === 0) return null;
+
+    const section = document.createElement('div');
+    section.className = 'local-search-dm-results';
+    section.innerHTML = '<h3>Messages</h3>';
+
+    const list = document.createElement('div');
+    list.className = 'ui-list';
+    section.appendChild(list);
+
+    const profiles = UserProfileService.getInstance();
+    for (const message of this.currentDmResults) {
+      const item = document.createElement('div');
+      item.className =
+        'ui-list__item ui-list__item--clickable conversation-item';
+      item.dataset.pubkey = message.conversationWith;
+
+      const fallbackName = `${message.conversationWith.slice(0, 8)}...`;
+      let displayName = fallbackName;
+      let avatarUrl = '';
+      try {
+        const profile = await profiles.getUserProfile(message.conversationWith);
+        if (profile) {
+          displayName = profile.display_name || profile.name || fallbackName;
+          avatarUrl = profile.picture || '';
+        }
+      } catch (_err) {
+        // Keep fallback values
+      }
+
+      const avatarHtml = avatarUrl
+        ? `<div class="user-mention conversation-item__avatar" data-pubkey="${escapeHtmlAttr(message.conversationWith)}"><img class="conversation-item__avatar-img" src="${escapeHtmlAttr(avatarUrl)}" alt="" /></div>`
+        : `<div class="user-mention conversation-item__avatar-placeholder" data-pubkey="${escapeHtmlAttr(message.conversationWith)}">${escapeHtml(displayName.charAt(0).toUpperCase())}</div>`;
+
+      item.innerHTML = `
+        <div class="conversation-item__user">
+          ${avatarHtml}
+          <div class="conversation-item__content">
+            <div class="conversation-item__header">
+              <span class="user-mention conversation-item__name" data-pubkey="${escapeHtmlAttr(message.conversationWith)}">${escapeHtml(displayName)}</span>
+              <span class="conversation-item__time">${escapeHtml(formatTimestamp(message.createdAt))}</span>
+            </div>
+            <div class="conversation-item__preview">${escapeHtml(message.content)}</div>
+          </div>
+        </div>
+      `;
+
+      item.addEventListener('click', () => {
+        const npub = hexToNpub(message.conversationWith);
+        this.router.navigate(`/messages/${npub || message.conversationWith}`);
+      });
+      list.appendChild(item);
+    }
+    return section;
   }
 
   /**

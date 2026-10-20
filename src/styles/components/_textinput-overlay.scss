@@ -198,8 +198,7 @@
 }
 
 // SearchResultsView - Results display
-.search-results {
-  padding: 0; // No padding on phone
+.search-results {  padding: 0; // No padding on phone
 
   @include tablet {
     padding: $gap;
@@ -266,5 +265,15 @@
     &:hover {
       text-decoration: underline;
     }
+  }
+}
+
+// Local search DM hits (LocalSearchService) — GlobalSearchView appends this
+// section below .search-results; rows reuse .conversation-item (dm-views).
+.local-search-dm-results {
+  margin: $gap;
+
+  h3 {
+    margin: 0 0 calc($gap / 2);
   }
 }
