@@ -5,6 +5,7 @@
  */
 
 import { ModalService } from '../../services/ModalService';
+import { _ } from '../../i18n';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { ZapsModuleApi } from '../../modules/zaps/contracts';
 import { ToastService } from '../../services/ToastService';
@@ -62,14 +63,14 @@ export class ZapModal {
    */
   public async show(): Promise<void> {
     if (!this.zapsApi?.isPaymentAvailable()) {
-      ToastService.show('Please connect Lightning Wallet', 'error');
+      ToastService.show(_('Please connect Lightning Wallet'), 'error');
       return;
     }
 
     const content = await this.renderContent();
 
     this.modalService.show({
-      title: 'Zap',
+      title: _('Zap'),
       content,
       width: '450px',
       height: 'auto',
@@ -102,7 +103,7 @@ export class ZapModal {
     // Silent Zap switch: throwaway-key Anonymous mode. Always available — works
     // with every signer (NIP-07/46/55/nsec) and every zap target (note/profile/article).
     this.silentSwitch = new Switch({
-      label: 'Silent Zap',
+      label: _('Silent Zap'),
       checked: false,
       id: 'zap-silent-switch',
       onChange: checked => {
@@ -133,7 +134,7 @@ export class ZapModal {
             type="text"
             id="zap-comment"
             class="input zap-modal__input"
-            placeholder="Comment (optional)"
+            placeholder="${_('Comment (optional)')}"
             maxlength="280"
             value="${defaults.comment}"
           />
@@ -144,10 +145,10 @@ export class ZapModal {
             ${this.silentSwitch.render()}
           </div>
           <div class="zap-modal__buttons">
-            <button type="button" class="btn btn--passive" id="zap-cancel-btn">Cancel</button>
+            <button type="button" class="btn btn--passive" id="zap-cancel-btn">${_('Cancel')}</button>
             <button type="button" class="btn" id="zap-send-btn">
-              <span class="btn__text">Zap</span>
-              <span class="btn__loading" style="display: none;">Sending...</span>
+              <span class="btn__text">${_('Zap')}</span>
+              <span class="btn__loading" style="display: none;">${_('Sending...')}</span>
             </button>
           </div>
         </div>
@@ -270,13 +271,13 @@ export class ZapModal {
 
     // Validate amount
     if (!amount || amount < 1) {
-      ToastService.show('Please enter a valid amount (min. 1 Sat)', 'error');
+      ToastService.show(_('Please enter a valid amount (min. 1 Sat)'), 'error');
       amountInput.focus();
       return;
     }
 
     if (amount > 1000000) {
-      ToastService.show('Maximum 1,000,000 Sats per zap', 'error');
+      ToastService.show(_('Maximum 1,000,000 Sats per zap'), 'error');
       amountInput.focus();
       return;
     }

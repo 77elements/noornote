@@ -8,6 +8,7 @@
  */
 
 import { ModalService } from '../../services/ModalService';
+import { _ } from '../../i18n';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { DMsModuleApi } from '../../modules/dms/contracts';
 import { ToastService } from '../../services/ToastService';
@@ -39,7 +40,7 @@ export class DMComposeModal {
     const content = this.createContent();
 
     this.modalService.show({
-      title: 'New Message',
+      title: _('New Message'),
       content,
       width: '500px',
       height: 'auto',
@@ -64,7 +65,7 @@ export class DMComposeModal {
 
     // Create UserSearchInput for recipient
     this.userSearchInput = new UserSearchInput({
-      placeholder: 'Search by name or paste npub...',
+      placeholder: _('Search by name or paste npub...'),
       onUserSelected: () => {
         // Focus textarea when user is selected
         const textarea = container.querySelector(
@@ -77,24 +78,24 @@ export class DMComposeModal {
     container.innerHTML = `
       <div class="dm-compose-modal__content">
         <div class="dm-compose-modal__field">
-          <label class="dm-compose-modal__label">To</label>
+          <label class="dm-compose-modal__label">${_('To')}</label>
           <div class="dm-compose-modal__recipient"></div>
         </div>
 
         <div class="dm-compose-modal__field">
-          <label class="dm-compose-modal__label">Message</label>
+          <label class="dm-compose-modal__label">${_('Message')}</label>
           <textarea
             class="textarea dm-compose-modal__textarea"
-            placeholder="Write your message..."
+            placeholder="${_('Write your message...')}"
             rows="4"
           ></textarea>
         </div>
 
         <div class="dm-compose-modal__actions">
-          <button type="button" class="btn btn--passive dm-compose-modal__cancel">Cancel</button>
+          <button type="button" class="btn btn--passive dm-compose-modal__cancel">${_('Cancel')}</button>
           <button type="button" class="btn dm-compose-modal__send" disabled>
-            <span class="btn__text">Send</span>
-            <span class="btn__loading" style="display: none;">Sending...</span>
+            <span class="btn__text">${_('Send')}</span>
+            <span class="btn__loading" style="display: none;">${_('Sending...')}</span>
           </button>
         </div>
       </div>
@@ -203,15 +204,15 @@ export class DMComposeModal {
         (await this.dmsApi?.sendMessage(recipientPubkey, content)) ?? false;
 
       if (success) {
-        ToastService.show('Message sent', 'success');
+        ToastService.show(_('Message sent'), 'success');
         this.modalService.hide();
       } else {
-        ToastService.show('Failed to send message', 'error');
+        ToastService.show(_('Failed to send message'), 'error');
         this.isSending = false;
         this.setLoadingState(sendBtn, false);
       }
     } catch (error) {
-      ToastService.show('Failed to send message', 'error');
+      ToastService.show(_('Failed to send message'), 'error');
       this.isSending = false;
       this.setLoadingState(sendBtn, false);
     }

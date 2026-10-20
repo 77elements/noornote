@@ -574,10 +574,13 @@ msgstr ""
 msgid "Zaps"
 msgstr "Zaps"
 
+#: src/components/modals/DMComposeModal.ts:95
 #: src/components/modals/EditFolderModal.ts:63
+#: src/components/modals/ImportToNoorSignerModal.ts:106
 #: src/components/modals/KeySignerPasswordModal.ts:73
 #: src/components/modals/NewFolderModal.ts:60
 #: src/components/modals/UnlockNoorSignerModal.ts:68
+#: src/components/modals/ZapModal.ts:148
 #: src/services/ModalService.ts:188
 #: src/services/ModalService.ts:244
 msgid "Cancel"
@@ -613,8 +616,8 @@ msgstr "NoorSigner-Passwort eingeben…"
 msgid "Enter Password"
 msgstr "Passwort eingeben"
 
-#: src/components/modals/KeySignerPasswordModal.ts:123
-#: src/components/modals/UnlockNoorSignerModal.ts:127
+#: src/components/modals/KeySignerPasswordModal.ts:124
+#: src/components/modals/UnlockNoorSignerModal.ts:128
 msgid "Incorrect password"
 msgstr "Falsches Passwort"
 
@@ -651,7 +654,7 @@ msgstr "Speichern"
 msgid "Skip this version"
 msgstr "Diese Version überspringen"
 
-#: src/components/modals/KeySignerPasswordModal.ts:128
+#: src/components/modals/KeySignerPasswordModal.ts:130
 #: src/components/modals/KeySignerPasswordModal.ts:76
 msgid "Switch Account"
 msgstr "Konto wechseln"
@@ -664,7 +667,7 @@ msgstr "Wechsel zu:"
 msgid "Switching..."
 msgstr "Wechsle…"
 
-#: src/components/modals/UnlockNoorSignerModal.ts:134
+#: src/components/modals/UnlockNoorSignerModal.ts:136
 #: src/components/modals/UnlockNoorSignerModal.ts:71
 msgid "Unlock"
 msgstr "Entsperren"
@@ -686,3 +689,176 @@ msgid "Your 24-hour trust session has expired. Enter your password to continue."
 msgstr ""
 "Deine 24-Stunden-Vertrauenssitzung ist abgelaufen. Gib dein Passwort ein, "
 "um fortzufahren."
+
+#: src/components/modals/SyncConfirmationModal.ts:198
+msgid "%s item in different folders"
+msgid_plural "%s items in different folders"
+msgstr[0] "%s Element in unterschiedlichen Ordnern"
+msgstr[1] "%s Elemente in unterschiedlichen Ordnern"
+
+#: src/components/modals/SyncConfirmationModal.ts:311
+#: src/components/modals/SyncConfirmationModal.ts:348
+msgid "+ %s more..."
+msgstr "+ %s weitere…"
+
+#: src/components/modals/ZapModal.ts:137
+msgid "Comment (optional)"
+msgstr "Kommentar (optional)"
+
+#: src/components/modals/ImportToNoorSignerModal.ts:92
+msgid "Confirm Password"
+msgstr "Passwort bestätigen"
+
+#: src/components/modals/DMComposeModal.ts:210
+#: src/components/modals/DMComposeModal.ts:215
+msgid "Failed to send message"
+msgstr "Nachricht konnte nicht gesendet werden"
+
+#: src/components/modals/SyncConfirmationModal.ts:204
+msgid "Files: %s item, not stored locally"
+msgid_plural "Files: %s items, not stored locally"
+msgstr[0] "Dateien: %s Element, nicht lokal gespeichert"
+msgstr[1] "Dateien: %s Elemente, nicht lokal gespeichert"
+
+#: src/components/modals/ImportToNoorSignerModal.ts:180
+msgid "Importing..."
+msgstr "Importiere…"
+
+#: src/components/modals/ImportToNoorSignerModal.ts:153
+msgid "Invalid format — must start with nsec1"
+msgstr "Ungültiges Format — muss mit nsec1 beginnen"
+
+#: src/components/modals/SyncConfirmationModal.ts:279
+msgid "Keep all"
+msgstr "Alle behalten"
+
+#: src/components/modals/SyncConfirmationModal.ts:285
+msgid "Keep local"
+msgstr "Lokal behalten"
+
+#: src/components/modals/SyncConfirmationModal.ts:282
+msgid "Keep relay"
+msgstr "Relay behalten"
+
+#: src/components/modals/ImportToNoorSignerModal.ts:210
+msgid "Key successfully imported to NoorSigner"
+msgstr "Key erfolgreich in NoorSigner importiert"
+
+#: src/components/modals/SyncConfirmationModal.ts:188
+msgid "Locally: + %s item, not in the files"
+msgid_plural "Locally: + %s items, not in the files"
+msgstr[0] "Lokal: + %s Element, nicht in den Dateien"
+msgstr[1] "Lokal: + %s Elemente, nicht in den Dateien"
+
+#: src/components/modals/SyncConfirmationModal.ts:193
+msgid "Locally: + %s item, not in the relays"
+msgid_plural "Locally: + %s items, not in the relays"
+msgstr[0] "Lokal: + %s Element, nicht in den Relays"
+msgstr[1] "Lokal: + %s Elemente, nicht in den Relays"
+
+#: src/components/modals/ZapModal.ts:280
+msgid "Maximum 1,000,000 Sats per zap"
+msgstr "Maximal 1.000.000 Sats pro Zap"
+
+#: src/components/modals/DMComposeModal.ts:86
+msgid "Message"
+msgstr "Nachricht"
+
+#: src/components/modals/DMComposeModal.ts:207
+msgid "Message sent"
+msgstr "Nachricht gesendet"
+
+#: src/components/modals/DMComposeModal.ts:43
+msgid "New Message"
+msgstr "Neue Nachricht"
+
+#: src/components/modals/ImportToNoorSignerModal.ts:60
+msgid ""
+"NoorSigner will securely store your private key with password encryption. "
+"You'll use this password to unlock your account."
+msgstr ""
+
+#: src/components/modals/SyncConfirmationModal.ts:267
+msgid "Other differences"
+msgstr "Weitere Unterschiede"
+
+#: src/components/modals/ImportToNoorSignerModal.ts:81
+msgid "Password (min. 8 characters)"
+msgstr "Passwort (min. 8 Zeichen)"
+
+#: src/components/modals/ImportToNoorSignerModal.ts:167
+msgid "Password must be at least 8 characters"
+msgstr "Das Passwort muss mindestens 8 Zeichen lang sein"
+
+#: src/components/modals/ImportToNoorSignerModal.ts:173
+msgid "Passwords do not match"
+msgstr "Passwörter stimmen nicht überein"
+
+#: src/components/modals/ZapModal.ts:66
+msgid "Please connect Lightning Wallet"
+msgstr "Bitte verbinde eine Lightning-Wallet"
+
+#: src/components/modals/ImportToNoorSignerModal.ts:161
+msgid "Please enter a password"
+msgstr "Bitte gib ein Passwort ein"
+
+#: src/components/modals/ZapModal.ts:274
+msgid "Please enter a valid amount (min. 1 Sat)"
+msgstr "Bitte gib einen gültigen Betrag ein (min. 1 Sat)"
+
+#: src/components/modals/ImportToNoorSignerModal.ts:148
+msgid "Please enter your private key (nsec)"
+msgstr "Bitte gib deinen Private Key (nsec) ein"
+
+#: src/components/modals/ImportToNoorSignerModal.ts:67
+msgid "Private Key (nsec)"
+msgstr "Private Key (nsec)"
+
+#: src/components/modals/SyncConfirmationModal.ts:209
+msgid "Relays: %s item, not stored locally"
+msgid_plural "Relays: %s items, not stored locally"
+msgstr[0] "Relays: %s Element, nicht lokal gespeichert"
+msgstr[1] "Relays: %s Elemente, nicht lokal gespeichert"
+
+#: src/components/modals/DMComposeModal.ts:68
+msgid "Search by name or paste npub..."
+msgstr "Nach Name suchen oder npub einfügen…"
+
+#: src/components/modals/ImportToNoorSignerModal.ts:36
+msgid "Secure Your Key"
+msgstr "Sichere deinen Key"
+
+#: src/components/modals/DMComposeModal.ts:97
+msgid "Send"
+msgstr "Senden"
+
+#: src/components/modals/DMComposeModal.ts:98
+#: src/components/modals/ZapModal.ts:151
+msgid "Sending..."
+msgstr "Senden…"
+
+#: src/components/modals/ImportToNoorSignerModal.ts:109
+#: src/components/modals/ImportToNoorSignerModal.ts:223
+msgid "Set Password"
+msgstr "Passwort festlegen"
+
+#: src/components/modals/ZapModal.ts:106
+msgid "Silent Zap"
+msgstr "Stiller Zap"
+
+#: src/components/modals/ImportToNoorSignerModal.ts:217
+msgid "This account already exists in NoorSigner"
+msgstr "Dieses Konto existiert bereits in NoorSigner"
+
+#: src/components/modals/DMComposeModal.ts:81
+msgid "To"
+msgstr "An"
+
+#: src/components/modals/DMComposeModal.ts:89
+msgid "Write your message..."
+msgstr "Schreibe deine Nachricht…"
+
+#: src/components/modals/ZapModal.ts:150
+#: src/components/modals/ZapModal.ts:73
+msgid "Zap"
+msgstr "Zap"

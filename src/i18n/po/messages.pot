@@ -2,6 +2,17 @@ msgid ""
 msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 
+#: src/components/modals/SyncConfirmationModal.ts:198
+msgid "%s item in different folders"
+msgid_plural "%s items in different folders"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/components/modals/SyncConfirmationModal.ts:311
+#: src/components/modals/SyncConfirmationModal.ts:348
+msgid "+ %s more..."
+msgstr ""
+
 #: src/components/views/AboutView.ts:69
 msgid "About NoorNote"
 msgstr ""
@@ -57,10 +68,13 @@ msgstr ""
 msgid "Cache:"
 msgstr ""
 
+#: src/components/modals/DMComposeModal.ts:95
 #: src/components/modals/EditFolderModal.ts:63
+#: src/components/modals/ImportToNoorSignerModal.ts:106
 #: src/components/modals/KeySignerPasswordModal.ts:73
 #: src/components/modals/NewFolderModal.ts:60
 #: src/components/modals/UnlockNoorSignerModal.ts:68
+#: src/components/modals/ZapModal.ts:148
 #: src/services/ModalService.ts:188
 #: src/services/ModalService.ts:244
 msgid "Cancel"
@@ -70,12 +84,20 @@ msgstr ""
 msgid "Check for updates"
 msgstr ""
 
+#: src/components/modals/ZapModal.ts:137
+msgid "Comment (optional)"
+msgstr ""
+
 #: src/components/views/AboutView.ts:206
 msgid "Configuration Files:"
 msgstr ""
 
 #: src/services/ModalService.ts:187
 msgid "Confirm"
+msgstr ""
+
+#: src/components/modals/ImportToNoorSignerModal.ts:92
+msgid "Confirm Password"
 msgstr ""
 
 #: src/components/views/AboutView.ts:99
@@ -146,6 +168,17 @@ msgstr ""
 msgid "Export DiagLogs"
 msgstr ""
 
+#: src/components/modals/DMComposeModal.ts:210
+#: src/components/modals/DMComposeModal.ts:215
+msgid "Failed to send message"
+msgstr ""
+
+#: src/components/modals/SyncConfirmationModal.ts:204
+msgid "Files: %s item, not stored locally"
+msgid_plural "Files: %s items, not stored locally"
+msgstr[0] ""
+msgstr[1] ""
+
 #: src/components/views/ListsOverviewView.ts:69
 msgid "Follows"
 msgstr ""
@@ -178,17 +211,37 @@ msgstr ""
 msgid "Hire Me"
 msgstr ""
 
+#: src/components/modals/ImportToNoorSignerModal.ts:180
+msgid "Importing..."
+msgstr ""
+
 #: src/components/views/AboutView.ts:72
 msgid "Imprint"
 msgstr ""
 
-#: src/components/modals/KeySignerPasswordModal.ts:123
-#: src/components/modals/UnlockNoorSignerModal.ts:127
+#: src/components/modals/KeySignerPasswordModal.ts:124
+#: src/components/modals/UnlockNoorSignerModal.ts:128
 msgid "Incorrect password"
+msgstr ""
+
+#: src/components/modals/ImportToNoorSignerModal.ts:153
+msgid "Invalid format — must start with nsec1"
 msgstr ""
 
 #: src/components/modals/UpdateModal.ts:97
 msgid "is available"
+msgstr ""
+
+#: src/components/modals/SyncConfirmationModal.ts:279
+msgid "Keep all"
+msgstr ""
+
+#: src/components/modals/SyncConfirmationModal.ts:285
+msgid "Keep local"
+msgstr ""
+
+#: src/components/modals/SyncConfirmationModal.ts:282
+msgid "Keep relay"
 msgstr ""
 
 #: src/components/views/SettingsView.ts:42
@@ -199,6 +252,10 @@ msgstr ""
 #: src/components/views/AboutView.ts:189
 #: src/components/views/AboutView.ts:204
 msgid "Key Storage:"
+msgstr ""
+
+#: src/components/modals/ImportToNoorSignerModal.ts:210
+msgid "Key successfully imported to NoorSigner"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:103
@@ -229,6 +286,18 @@ msgstr ""
 msgid "Local Data Storage"
 msgstr ""
 
+#: src/components/modals/SyncConfirmationModal.ts:188
+msgid "Locally: + %s item, not in the files"
+msgid_plural "Locally: + %s items, not in the files"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/components/modals/SyncConfirmationModal.ts:193
+msgid "Locally: + %s item, not in the relays"
+msgid_plural "Locally: + %s items, not in the relays"
+msgstr[0] ""
+msgstr[1] ""
+
 #: src/components/views/ArticleTimelineView.ts:27
 msgid "Long-form content from your 1st and 2nd-degree follows"
 msgstr ""
@@ -241,12 +310,24 @@ msgstr ""
 msgid "Long-form content from your follows"
 msgstr ""
 
+#: src/components/modals/ZapModal.ts:280
+msgid "Maximum 1,000,000 Sats per zap"
+msgstr ""
+
 #: src/components/views/SettingsView.ts:46
 msgid "Media"
 msgstr ""
 
 #: src/components/views/AboutView.ts:234
 msgid "Media proxy:"
+msgstr ""
+
+#: src/components/modals/DMComposeModal.ts:86
+msgid "Message"
+msgstr ""
+
+#: src/components/modals/DMComposeModal.ts:207
+msgid "Message sent"
 msgstr ""
 
 #: src/components/views/ListsOverviewView.ts:77
@@ -259,6 +340,10 @@ msgstr ""
 
 #: src/components/modals/NewFolderModal.ts:26
 msgid "New Folder"
+msgstr ""
+
+#: src/components/modals/DMComposeModal.ts:43
+msgid "New Message"
 msgstr ""
 
 #: src/components/views/AboutView.ts:242
@@ -309,6 +394,10 @@ msgstr ""
 msgid "NoorNote v%s"
 msgstr ""
 
+#: src/components/modals/ImportToNoorSignerModal.ts:60
+msgid "NoorSigner will securely store your private key with password encryption. You'll use this password to unlock your account."
+msgstr ""
+
 #: src/components/views/AboutView.ts:104
 msgid "Nostr relays are operated by third parties. When connecting, your IP address may be logged by the relay operators. The choice of relays is yours and can be configured in the settings."
 msgstr ""
@@ -329,6 +418,10 @@ msgstr ""
 msgid "Open Source"
 msgstr ""
 
+#: src/components/modals/SyncConfirmationModal.ts:267
+msgid "Other differences"
+msgstr ""
+
 #: src/components/views/AboutView.ts:237
 msgid "Other Third-Party Connections"
 msgstr ""
@@ -337,13 +430,41 @@ msgstr ""
 msgid "Our web host serves the static application bundle. We do not store, process, or have access to any user data on the server itself."
 msgstr ""
 
+#: src/components/modals/ImportToNoorSignerModal.ts:81
+msgid "Password (min. 8 characters)"
+msgstr ""
+
+#: src/components/modals/ImportToNoorSignerModal.ts:167
+msgid "Password must be at least 8 characters"
+msgstr ""
+
+#: src/components/modals/ImportToNoorSignerModal.ts:173
+msgid "Passwords do not match"
+msgstr ""
+
 #: src/components/views/AboutView.ts:77
 msgid "Phone:"
+msgstr ""
+
+#: src/components/modals/ZapModal.ts:66
+msgid "Please connect Lightning Wallet"
+msgstr ""
+
+#: src/components/modals/ImportToNoorSignerModal.ts:161
+msgid "Please enter a password"
+msgstr ""
+
+#: src/components/modals/ZapModal.ts:274
+msgid "Please enter a valid amount (min. 1 Sat)"
 msgstr ""
 
 #: src/components/modals/KeySignerPasswordModal.ts:100
 #: src/components/modals/UnlockNoorSignerModal.ts:95
 msgid "Please enter your password"
+msgstr ""
+
+#: src/components/modals/ImportToNoorSignerModal.ts:148
+msgid "Please enter your private key (nsec)"
 msgstr ""
 
 #: src/components/views/TimelineView.ts:122
@@ -359,6 +480,10 @@ msgstr ""
 msgid "Privacy Policy"
 msgstr ""
 
+#: src/components/modals/ImportToNoorSignerModal.ts:67
+msgid "Private Key (nsec)"
+msgstr ""
+
 #: src/components/views/AboutView.ts:243
 msgid "Profile pictures and embedded media:"
 msgstr ""
@@ -366,6 +491,12 @@ msgstr ""
 #: src/components/views/SettingsView.ts:40
 msgid "Relays"
 msgstr ""
+
+#: src/components/modals/SyncConfirmationModal.ts:209
+msgid "Relays: %s item, not stored locally"
+msgid_plural "Relays: %s items, not stored locally"
+msgstr[0] ""
+msgstr[1] ""
 
 #: src/components/modals/EditFolderModal.ts:28
 msgid "Rename Folder"
@@ -387,12 +518,38 @@ msgstr ""
 msgid "Scheduled Posts (optional addon):"
 msgstr ""
 
+#: src/components/modals/DMComposeModal.ts:68
+msgid "Search by name or paste npub..."
+msgstr ""
+
+#: src/components/modals/ImportToNoorSignerModal.ts:36
+msgid "Secure Your Key"
+msgstr ""
+
+#: src/components/modals/DMComposeModal.ts:97
+msgid "Send"
+msgstr ""
+
+#: src/components/modals/DMComposeModal.ts:98
+#: src/components/modals/ZapModal.ts:151
+msgid "Sending..."
+msgstr ""
+
+#: src/components/modals/ImportToNoorSignerModal.ts:109
+#: src/components/modals/ImportToNoorSignerModal.ts:223
+msgid "Set Password"
+msgstr ""
+
 #: src/components/views/SettingsView.ts:71
 msgid "Settings"
 msgstr ""
 
 #: src/components/views/AboutView.ts:206
 msgid "Settings are stored in the %s directory."
+msgstr ""
+
+#: src/components/modals/ZapModal.ts:106
+msgid "Silent Zap"
 msgstr ""
 
 #: src/components/views/AboutView.ts:116
@@ -415,7 +572,7 @@ msgstr ""
 msgid "St. Kitts and Nevis is not covered by an EU adequacy decision (Art. 45 GDPR). Any transfer to MyNymbox's servers takes place on the basis of the derogations of Art. 49 (1) GDPR."
 msgstr ""
 
-#: src/components/modals/KeySignerPasswordModal.ts:128
+#: src/components/modals/KeySignerPasswordModal.ts:130
 #: src/components/modals/KeySignerPasswordModal.ts:76
 msgid "Switch Account"
 msgstr ""
@@ -460,8 +617,16 @@ msgstr ""
 msgid "Third country notice:"
 msgstr ""
 
+#: src/components/modals/ImportToNoorSignerModal.ts:217
+msgid "This account already exists in NoorSigner"
+msgstr ""
+
 #: src/components/views/TimelineView.ts:208
 msgid "Timeline"
+msgstr ""
+
+#: src/components/modals/DMComposeModal.ts:81
+msgid "To"
 msgstr ""
 
 #: src/components/views/ListsOverviewView.ts:85
@@ -472,7 +637,7 @@ msgstr ""
 msgid "UI Settings"
 msgstr ""
 
-#: src/components/modals/UnlockNoorSignerModal.ts:134
+#: src/components/modals/UnlockNoorSignerModal.ts:136
 #: src/components/modals/UnlockNoorSignerModal.ts:71
 msgid "Unlock"
 msgstr ""
@@ -522,6 +687,10 @@ msgstr ""
 msgid "When verifying a user's NIP-05 identifier (e.g. %s), NoorNote sends an HTTP request to %s. The owner of that domain may log the request."
 msgstr ""
 
+#: src/components/modals/DMComposeModal.ts:89
+msgid "Write your message..."
+msgstr ""
+
 #: src/components/modals/UnlockNoorSignerModal.ts:56
 msgid "Your 24-hour trust session has expired. Enter your password to continue."
 msgstr ""
@@ -544,6 +713,11 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:114
 msgid "Your Rights"
+msgstr ""
+
+#: src/components/modals/ZapModal.ts:150
+#: src/components/modals/ZapModal.ts:73
+msgid "Zap"
 msgstr ""
 
 #: src/components/views/SettingsView.ts:47

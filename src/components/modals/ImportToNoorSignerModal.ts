@@ -4,6 +4,7 @@
  */
 
 import { errMessage } from '../../helpers/errorMessage';
+import { _ } from '../../i18n';
 import { ModalService } from '../../services/ModalService';
 import { KeySignerClient } from '../../services/KeySignerClient';
 import { ToastService } from '../../services/ToastService';
@@ -32,7 +33,7 @@ export class ImportToNoorSignerModal {
     const content = this.renderContent();
 
     this.modalService.show({
-      title: 'Secure Your Key',
+      title: _('Secure Your Key'),
       content,
       width: '450px',
       showCloseButton: true,
@@ -56,15 +57,14 @@ export class ImportToNoorSignerModal {
     container.innerHTML = `
       <div class="import-noorsigner-modal__content">
         <p class="import-noorsigner-modal__intro">
-          NoorSigner will securely store your private key with password encryption.
-          You'll use this password to unlock your account.
+          ${_("NoorSigner will securely store your private key with password encryption. You'll use this password to unlock your account.")}
         </p>
 
         ${
           this.options.showNsecInput
             ? `
         <div class="import-noorsigner-modal__field">
-          <label for="import-nsec-input">Private Key (nsec)</label>
+          <label for="import-nsec-input">${_('Private Key (nsec)')}</label>
           <input
             type="password"
             id="import-nsec-input"
@@ -78,7 +78,7 @@ export class ImportToNoorSignerModal {
         }
 
         <div class="import-noorsigner-modal__field">
-          <label for="import-password-input">Password (min. 8 characters)</label>
+          <label for="import-password-input">${_('Password (min. 8 characters)')}</label>
           <input
             type="password"
             id="import-password-input"
@@ -89,7 +89,7 @@ export class ImportToNoorSignerModal {
         </div>
 
         <div class="import-noorsigner-modal__field">
-          <label for="import-password-confirm">Confirm Password</label>
+          <label for="import-password-confirm">${_('Confirm Password')}</label>
           <input
             type="password"
             id="import-password-confirm"
@@ -103,10 +103,10 @@ export class ImportToNoorSignerModal {
 
         <div class="import-noorsigner-modal__actions">
           <button type="button" class="btn btn--passive" id="import-password-cancel-btn">
-            Cancel
+            ${_('Cancel')}
           </button>
           <button type="button" class="btn" id="import-password-submit-btn">
-            Set Password
+            ${_('Set Password')}
           </button>
         </div>
       </div>
@@ -145,12 +145,12 @@ export class ImportToNoorSignerModal {
       // Validate nsec if user input
       if (this.options.showNsecInput) {
         if (!nsec) {
-          this.showError('Please enter your private key (nsec)');
+          this.showError(_('Please enter your private key (nsec)'));
           nsecInput?.focus();
           return;
         }
         if (!nsec.startsWith('nsec1')) {
-          this.showError('Invalid format — must start with nsec1');
+          this.showError(_('Invalid format — must start with nsec1'));
           nsecInput?.focus();
           return;
         }
@@ -158,26 +158,26 @@ export class ImportToNoorSignerModal {
 
       // Validate password
       if (!password) {
-        this.showError('Please enter a password');
+        this.showError(_('Please enter a password'));
         passwordInput.focus();
         return;
       }
 
       if (password.length < 8) {
-        this.showError('Password must be at least 8 characters');
+        this.showError(_('Password must be at least 8 characters'));
         passwordInput.focus();
         return;
       }
 
       if (password !== confirm) {
-        this.showError('Passwords do not match');
+        this.showError(_('Passwords do not match'));
         confirmInput.value = '';
         confirmInput.focus();
         return;
       }
 
       this.isSubmitting = true;
-      submitBtn.textContent = 'Importing...';
+      submitBtn.textContent = _('Importing...');
       submitBtn.setAttribute('disabled', 'true');
       errorEl.style.display = 'none';
 
@@ -207,20 +207,23 @@ export class ImportToNoorSignerModal {
         }
 
         this.modalService.hide();
-        ToastService.show('Key successfully imported to NoorSigner', 'success');
+        ToastService.show(
+          _('Key successfully imported to NoorSigner'),
+          'success'
+        );
         this.options.onSuccess(result);
       } catch (error) {
         const errorMessage = errMessage(error);
         console.error('Import failed:', errorMessage);
 
         if (errorMessage.includes('account already exists')) {
-          this.showError('This account already exists in NoorSigner');
+          this.showError(_('This account already exists in NoorSigner'));
         } else {
           this.showError(`Import failed: ${errorMessage}`);
         }
       } finally {
         this.isSubmitting = false;
-        submitBtn.textContent = 'Set Password';
+        submitBtn.textContent = _('Set Password');
         submitBtn.removeAttribute('disabled');
       }
     };

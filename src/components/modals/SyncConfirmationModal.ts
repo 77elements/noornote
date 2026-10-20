@@ -4,6 +4,7 @@
  * Shows diff (added/removed/moved items) and asks user whether to only add new ones or accept changes
  */
 
+import { _, tn } from '../../i18n';
 import { ModalService } from '../../services/ModalService';
 import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
 import { diagLog } from '../../services/DiagnosticLogger';
@@ -181,7 +182,35 @@ export class SyncConfirmationModal<T> {
     const snapshotDetails = this.options.snapshotDetails || [];
     const hasSnapshotDetails = snapshotDetails.length > 0;
 
-    const sourceUp = sourceLabel.charAt(0).toUpperCase() + sourceLabel.slice(1);
+    // Titles built here (not inline) so each variant is a distinct, extractable
+    // msgid — `_()`/`tn()` need literal msgids, and the source kind differs.
+    const removedTitle = isFileSync
+      ? tn(
+          'Locally: + %s item, not in the files',
+          'Locally: + %s items, not in the files',
+          removed.length
+        )
+      : tn(
+          'Locally: + %s item, not in the relays',
+          'Locally: + %s items, not in the relays',
+          removed.length
+        );
+    const movedTitle = tn(
+      '%s item in different folders',
+      '%s items in different folders',
+      movedCount
+    );
+    const addedTitle = isFileSync
+      ? tn(
+          'Files: %s item, not stored locally',
+          'Files: %s items, not stored locally',
+          added.length
+        )
+      : tn(
+          'Relays: %s item, not stored locally',
+          'Relays: %s items, not stored locally',
+          added.length
+        );
 
     container.innerHTML = `
       <div class="sync-confirmation-modal__content">
@@ -190,8 +219,8 @@ export class SyncConfirmationModal<T> {
             ? `
           <div class="sync-confirmation-modal__section">
             <h2 class="sync-confirmation-modal__section-title">
-              Locally: + ${removed.length} item${removed.length > 1 ? 's' : ''}, not in the ${sourceLabel}s
-            </h3>
+              ${removedTitle}
+            </h2>
             <div class="sync-confirmation-modal__list">
               ${this.renderItems(this.resolvedRemovedItems)}
             </div>
@@ -205,8 +234,8 @@ export class SyncConfirmationModal<T> {
             ? `
           <div class="sync-confirmation-modal__section">
             <h2 class="sync-confirmation-modal__section-title">
-              ${movedCount} item${movedCount > 1 ? 's' : ''} in different folders
-            </h3>
+              ${movedTitle}
+            </h2>
             <div class="sync-confirmation-modal__list">
               ${this.renderMovedItems(this.resolvedMovedItems, sourceLabel)}
             </div>
@@ -220,8 +249,8 @@ export class SyncConfirmationModal<T> {
             ? `
           <div class="sync-confirmation-modal__section">
             <h2 class="sync-confirmation-modal__section-title">
-              ${sourceUp}s: ${added.length} item${added.length > 1 ? 's' : ''}, not stored locally
-            </h3>
+              ${addedTitle}
+            </h2>
             <div class="sync-confirmation-modal__list">
               ${this.renderItems(this.resolvedAddedItems)}
             </div>
@@ -235,8 +264,8 @@ export class SyncConfirmationModal<T> {
             ? `
           <div class="sync-confirmation-modal__section">
             <h2 class="sync-confirmation-modal__section-title">
-              Other differences
-            </h3>
+              ${_('Other differences')}
+            </h2>
             <div class="sync-confirmation-modal__list">
               ${snapshotDetails.map(d => `<div class="sync-confirmation-modal__item">${escapeHtml(d)}</div>`).join('')}
             </div>
@@ -247,13 +276,13 @@ export class SyncConfirmationModal<T> {
 
         <div class="sync-confirmation-modal__actions">
           <button type="button" class="btn btn--success" id="sync-keep-btn">
-            Keep all
+            ${_('Keep all')}
           </button>
           <button type="button" class="btn btn--primary" id="sync-relay-btn">
-            Keep relay
+            ${_('Keep relay')}
           </button>
           <button type="button" class="btn btn--passive" id="sync-local-btn">
-            Keep local
+            ${_('Keep local')}
           </button>
         </div>
       </div>
@@ -279,7 +308,7 @@ export class SyncConfirmationModal<T> {
       .join('');
 
     if (remaining > 0) {
-      html += `<div class="sync-confirmation-modal__item sync-confirmation-modal__item--more">+ ${remaining} more...</div>`;
+      html += `<div class="sync-confirmation-modal__item sync-confirmation-modal__item--more">${_('+ %s more...', remaining)}</div>`;
     }
 
     return html;
@@ -316,7 +345,7 @@ export class SyncConfirmationModal<T> {
       .join('');
 
     if (remaining > 0) {
-      html += `<div class="sync-confirmation-modal__item sync-confirmation-modal__item--more">+ ${remaining} more...</div>`;
+      html += `<div class="sync-confirmation-modal__item sync-confirmation-modal__item--more">${_('+ %s more...', remaining)}</div>`;
     }
 
     return html;
