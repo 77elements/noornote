@@ -53,7 +53,8 @@ export class TimelineRuntime implements ModuleRuntime<TimelineModuleApi> {
         specificRelay,
         exemptFromMuteFilter,
         applyWordFilter,
-        includeOwnWebComments
+        includeOwnWebComments,
+        sourceKind
       ) =>
         orch?.startPolling(
           followingPubkeys,
@@ -64,7 +65,8 @@ export class TimelineRuntime implements ModuleRuntime<TimelineModuleApi> {
           specificRelay ?? null,
           exemptFromMuteFilter,
           applyWordFilter ?? true,
-          includeOwnWebComments ?? true
+          includeOwnWebComments ?? true,
+          sourceKind
         ),
       stopPolling: () => orch?.stopPolling(),
       getPolledEvents: () => orch?.getPolledEvents() ?? [],
@@ -77,7 +79,8 @@ export class TimelineRuntime implements ModuleRuntime<TimelineModuleApi> {
         specificRelay,
         exemptFromMuteFilter,
         applyWordFilter,
-        includeOwnWebComments
+        includeOwnWebComments,
+        sourceKind
       ) =>
         orch?.pollOnce(
           followingPubkeys,
@@ -86,7 +89,8 @@ export class TimelineRuntime implements ModuleRuntime<TimelineModuleApi> {
           specificRelay,
           exemptFromMuteFilter,
           applyWordFilter,
-          includeOwnWebComments ?? true
+          includeOwnWebComments ?? true,
+          sourceKind
         ) ?? Promise.resolve([]),
 
       // Mute management

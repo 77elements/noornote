@@ -141,6 +141,8 @@ export class FeedOrchestrator extends Orchestrator {
   private pollingExemptFromMuteFilter: string | undefined = undefined; // Exempt pubkey for ProfileView
   private pollingApplyWordFilter: boolean = true; // Whether the content word-filter applies (config.applyWordFilter)
   private pollingIncludeOwnWebComments: boolean = true; // Whether the viewer's own web comments are polled (false in author-scoped feeds — see webCommentsIncludeViewer)
+  private pollingSourceKind: TimelineConfig['source']['kind'] | undefined =
+    undefined; // The polling view's source kind — kind-7 reactions join the poll filters ONLY for the following feed (TV)
   private lastFoundCount: number = 0;
   private polledEventsCache: NostrEvent[] = []; // Cache for new events found during polling
   private isManualPoll: boolean = false; // Track if this is a manual poll (user clicked link)
@@ -1461,6 +1463,9 @@ export class FeedOrchestrator extends Orchestrator {
    * @param includeReplies - Whether to include reply notes
    * @param delayMs - Delay before starting polling (default: 10000ms)
    * @param specificRelay - Optional: Only poll from this relay (for relay-filtered timeline)
+   * @param sourceKind - The polling view's source kind (from TimelineConfig). Kind-7
+   *   reactions join the poll filters ONLY for the following feed (TV) — a profile
+   *   view polls its author without reactions even when the setting is on.
    */
   public startPolling(
     followingPubkeys: string[],
@@ -1471,12 +1476,14 @@ export class FeedOrchestrator extends Orchestrator {
     specificRelay: string | null = null,
     exemptFromMuteFilter?: string,
     applyWordFilter: boolean = true,
-    includeOwnWebComments: boolean = true
+    includeOwnWebComments: boolean = true,
+    sourceKind?: TimelineConfig['source']['kind']
   ): void {
     // Stop any existing polling
     this.stopPolling();
 
     this.pollingFollowingPubkeys = followingPubkeys;
+    this.pollingSourceKind = sourceKind;
     this.lastCheckedTimestamp = lastLoadedTimestamp;
     this.newNotesCallback = callback;
     this.pollingIncludeReplies = includeReplies;
@@ -1585,14 +1592,14 @@ export class FeedOrchestrator extends Orchestrator {
       // Query for new notes since last check
       const filters: NDKFilter<number>[] = [
         {
-          kinds: feedKindsFor('following'), // + kind-7 reactions when enabled
+          kinds: feedKindsFor(this.pollingSourceKind), // + kind-7 reactions when enabled (following feed only)
           authors: this.pollingFollowingPubkeys,
           since: this.lastCheckedTimestamp + 1,
           until: now,
           limit: this.pollLimit,
         },
         ...this.reactionOverrideFilters(
-          'following',
+          this.pollingSourceKind,
           this.pollingFollowingPubkeys,
           {
             since: this.lastCheckedTimestamp + 1,
@@ -1794,7 +1801,8 @@ export class FeedOrchestrator extends Orchestrator {
     specificRelay: string | null,
     exemptFromMuteFilter: string | undefined,
     applyWordFilter: boolean,
-    includeOwnWebComments: boolean = true
+    includeOwnWebComments: boolean = true,
+    sourceKind?: TimelineConfig['source']['kind']
   ): Promise<NostrEvent[]> {
     try {
       const relays = specificRelay
@@ -1844,13 +1852,13 @@ export class FeedOrchestrator extends Orchestrator {
       for (const window of windows) {
         const filters: NDKFilter<number>[] = [
           {
-            kinds: feedKindsFor('following'),
+            kinds: feedKindsFor(sourceKind), // + kind-7 reactions when enabled (following feed only)
             authors: followingPubkeys,
             since: window.since,
             until: window.until,
             limit: this.pollLimit,
           },
-          ...this.reactionOverrideFilters('following', followingPubkeys, {
+          ...this.reactionOverrideFilters(sourceKind, followingPubkeys, {
             since: window.since,
             until: window.until,
             limit: this.pollLimit,

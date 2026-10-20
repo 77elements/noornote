@@ -65,7 +65,8 @@ export class TimelineLifecycleManager {
     loadTrigger: HTMLElement | null,
     selectedRelay: string | null = null,
     exemptFromMuteFilter?: string,
-    applyWordFilter: boolean = true
+    applyWordFilter: boolean = true,
+    sourceKind?: 'following' | 'authors'
   ): void {
     // Restart polling if we have events
     if (newestTimestamp > 0) {
@@ -77,7 +78,9 @@ export class TimelineLifecycleManager {
         60000,
         selectedRelay,
         exemptFromMuteFilter,
-        applyWordFilter
+        applyWordFilter,
+        undefined,
+        sourceKind
       );
     }
 

@@ -35,7 +35,9 @@ export interface TimelineModuleApi {
     specificRelay?: string | null,
     exemptFromMuteFilter?: string,
     applyWordFilter?: boolean,
-    includeOwnWebComments?: boolean
+    includeOwnWebComments?: boolean,
+    /** The view's source kind — kind-7 reactions join the poll only for the following feed (TV). */
+    sourceKind?: 'following' | 'authors'
   ): void;
   stopPolling(): void;
   getPolledEvents(): NostrEvent[];
@@ -47,7 +49,9 @@ export interface TimelineModuleApi {
     specificRelay: string | null,
     exemptFromMuteFilter: string | undefined,
     applyWordFilter: boolean,
-    includeOwnWebComments?: boolean
+    includeOwnWebComments?: boolean,
+    /** The view's source kind — kind-7 reactions join the poll only for the following feed (TV). */
+    sourceKind?: 'following' | 'authors'
   ): Promise<NostrEvent[]>;
 
   // Mute management

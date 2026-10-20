@@ -575,7 +575,8 @@ export class Timeline extends View {
         relayFilterUrl(this.config),
         this.config.muteExemptPubkey,
         this.config.applyWordFilter,
-        webCommentsIncludeViewer(this.config)
+        webCommentsIncludeViewer(this.config),
+        this.config.source.kind
       )) ?? [];
 
     if (newEvents.length > 0) {
@@ -641,7 +642,8 @@ export class Timeline extends View {
       relayFilterUrl(this.config),
       this.config.muteExemptPubkey,
       this.config.applyWordFilter,
-      webCommentsIncludeViewer(this.config)
+      webCommentsIncludeViewer(this.config),
+      this.config.source.kind
     );
   }
 
@@ -889,7 +891,8 @@ export class Timeline extends View {
       loadTrigger,
       relayFilterUrl(this.config),
       this.config.muteExemptPubkey, // Don't filter profile user's notes in ProfileView
-      this.config.applyWordFilter
+      this.config.applyWordFilter,
+      this.config.source.kind
     );
 
     // Schedule "Look for new notes" link visibility
