@@ -308,6 +308,10 @@ export interface CalendarSystemChangedPayload {
   system: string;
 }
 
+export interface LanguageChangedPayload {
+  locale: string;
+}
+
 export interface PostTruncationChangedPayload {
   disabled: boolean;
 }
@@ -437,6 +441,7 @@ export interface AppEvents {
   'layout:changed': LayoutChangedPayload;
   'font-size:changed': FontSizeChangedPayload;
   'settings:calendar-system-changed': CalendarSystemChangedPayload;
+  'settings:language-changed': LanguageChangedPayload;
   'settings:post-truncation-changed': PostTruncationChangedPayload;
   'settings:scc-excerpt-limit-changed': SccExcerptLimitChangedPayload;
   'settings:article-foaf-degree-changed': ArticleFoafDegreeChangedPayload;

@@ -67,6 +67,9 @@ export const StorageKeys = {
   // Calendar system preference (per-account)
   CALENDAR_SYSTEM: 'noornote_calendar_system_map',
 
+  // UI language (per-account) — i18n catalog selection, see src/i18n/
+  LANGUAGE: 'noornote_language_map',
+
   // UI preferences (per-account)
   DISABLE_POST_TRUNCATION: 'noornote_disable_post_truncation_map',
   HIDE_SELF_REPOSTS: 'noornote_hide_self_reposts_map', // boolean: drop kind:6/16 reposts where the reposter is the original author

@@ -1,0 +1,44 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: NoorNote\n"
+"Language: de\n"
+"mime-version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/components/settings/UISettingsSection.ts:341
+msgid "Gregorian"
+msgstr "Gregorianisch"
+
+#: src/components/settings/UISettingsSection.ts:343
+msgid "Gregorian + Hijri"
+msgstr "Gregorianisch + Hijri"
+
+#: src/components/settings/UISettingsSection.ts:357
+msgid "Gregorian + Hijri calendars"
+msgstr "Gregorianischer + Hijri-Kalender"
+
+#: src/components/settings/UISettingsSection.ts:355
+msgid "Gregorian calendar"
+msgstr "Gregorianischer Kalender"
+
+#: src/components/settings/UISettingsSection.ts:342
+msgid "Hijri (Islamic)"
+msgstr "Hijri (islamisch)"
+
+#: src/components/settings/UISettingsSection.ts:356
+msgid "Hijri (Islamic) calendar"
+msgstr "Hijri-Kalender (islamisch)"
+
+#: src/components/settings/UISettingsSection.ts:130
+msgid "Language"
+msgstr "Sprache"
+
+#: src/components/settings/UISettingsSection.ts:319
+msgid "Language changed"
+msgstr "Sprache geändert"
+
+#: src/components/settings/UISettingsSection.ts:360
+msgid "Switched to %s"
+msgstr "Umgestellt auf %s"

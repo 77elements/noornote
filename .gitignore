@@ -84,3 +84,7 @@ relay/*.log
 .glm-comm.md
 .playwright-mcp/
 electron/gif-api-key.json
+
+# i18n — compiled catalogs are build artifacts (sources: src/i18n/po/*.po)
+src/i18n/locales/*.json
+!src/i18n/locales/.gitkeep

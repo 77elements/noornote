@@ -1,0 +1,39 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+
+#: src/components/settings/UISettingsSection.ts:341
+msgid "Gregorian"
+msgstr ""
+
+#: src/components/settings/UISettingsSection.ts:343
+msgid "Gregorian + Hijri"
+msgstr ""
+
+#: src/components/settings/UISettingsSection.ts:357
+msgid "Gregorian + Hijri calendars"
+msgstr ""
+
+#: src/components/settings/UISettingsSection.ts:355
+msgid "Gregorian calendar"
+msgstr ""
+
+#: src/components/settings/UISettingsSection.ts:342
+msgid "Hijri (Islamic)"
+msgstr ""
+
+#: src/components/settings/UISettingsSection.ts:356
+msgid "Hijri (Islamic) calendar"
+msgstr ""
+
+#: src/components/settings/UISettingsSection.ts:130
+msgid "Language"
+msgstr ""
+
+#: src/components/settings/UISettingsSection.ts:319
+msgid "Language changed"
+msgstr ""
+
+#: src/components/settings/UISettingsSection.ts:360
+msgid "Switched to %s"
+msgstr ""

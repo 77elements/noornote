@@ -42,6 +42,7 @@ window.addEventListener('unhandledrejection', event => {
 });
 
 import { App } from './App';
+import { initI18n } from './i18n';
 import { AuthService } from './services/AuthService';
 import { UserProfileService } from './services/UserProfileService';
 import { SystemLogger } from './services/SystemLogger';
@@ -138,6 +139,9 @@ async function init(): Promise<void> {
   try {
     // Initialize crash logging FIRST (before anything else can fail)
     await CrashLogger.init();
+
+    // Initialize i18n (language setting + catalog preloading) before any UI
+    await initI18n();
 
     // Initialize the main application
     const app = new App();

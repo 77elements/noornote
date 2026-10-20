@@ -41,6 +41,7 @@ import {
 } from '../../helpers/navModeSetting';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { SettingsModuleApi } from '../../modules/settings/contracts';
+import { _, availableLanguages, getUiLocale, setUiLocale } from '../../i18n';
 
 export class UISettingsSection extends SettingsSection {
   private storage: PerAccountLocalStorage;
@@ -54,6 +55,7 @@ export class UISettingsSection extends SettingsSection {
   private contentVisibilitySwitch: Switch | null = null;
   private clientTagSwitch: Switch | null = null;
   private calendarDropdown: NnDropdown | null = null;
+  private languageDropdown: NnDropdown | null = null;
   private autoUpdateSwitch: Switch | null = null;
   private articleFeedFoafMainDropdown: NnDropdown | null = null;
   private articleFeedFoafSccDropdown: NnDropdown | null = null;
@@ -119,6 +121,16 @@ export class UISettingsSection extends SettingsSection {
               <li><strong>Right Pane:</strong> Views open as tabs in the right pane, timeline stays visible in main pane</li>
               <li><strong>Wide Mode:</strong> Views replace the timeline, right pane is hidden for maximum content space</li>
               <li><strong>Phone:</strong> Single-column layout (390px width) for phone development and testing</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="setting">
+            <span class="setting__label">${_('Language')}</span>
+            <div class="setting__control language-dropdown-container"></div>
+            <ul class="setting__desc">
+              <li><strong>Deutsch:</strong> pilot translation (partial — untranslated text stays English)</li>
             </ul>
           </div>
         </section>
@@ -291,6 +303,27 @@ export class UISettingsSection extends SettingsSection {
       fontSizeMount.appendChild(this.fontSizeSwitcher.getElement());
     }
 
+    // UI language dropdown (i18n — see src/i18n/)
+    const languageDropdownContainer = contentContainer.querySelector(
+      '.language-dropdown-container'
+    );
+    if (languageDropdownContainer) {
+      this.languageDropdown = new NnDropdown({
+        options: availableLanguages().map(lang => ({
+          value: lang.code,
+          label: lang.nativeName,
+        })),
+        selectedValue: getUiLocale(),
+        onChange: value => {
+          void setUiLocale(value);
+          ToastService.show(_('Language changed'), 'success');
+        },
+        className: 'language-dropdown',
+      });
+
+      languageDropdownContainer.appendChild(this.languageDropdown.getElement());
+    }
+
     // Calendar system dropdown
     const calendarDropdownContainer = contentContainer.querySelector(
       '.calendar-system-dropdown-container'
@@ -303,9 +336,9 @@ export class UISettingsSection extends SettingsSection {
 
       this.calendarDropdown = new NnDropdown({
         options: [
-          { value: 'gregorian', label: 'Gregorian' },
-          { value: 'hijri', label: 'Hijri (Islamic)' },
-          { value: 'both', label: 'Gregorian + Hijri' },
+          { value: 'gregorian', label: _('Gregorian') },
+          { value: 'hijri', label: _('Hijri (Islamic)') },
+          { value: 'both', label: _('Gregorian + Hijri') },
         ],
         selectedValue: calendarSystem,
         onChange: value => {
@@ -317,13 +350,13 @@ export class UISettingsSection extends SettingsSection {
           });
 
           const labels = {
-            gregorian: 'Gregorian calendar',
-            hijri: 'Hijri (Islamic) calendar',
-            both: 'Gregorian + Hijri calendars',
+            gregorian: _('Gregorian calendar'),
+            hijri: _('Hijri (Islamic) calendar'),
+            both: _('Gregorian + Hijri calendars'),
           };
 
           ToastService.show(
-            `Switched to ${labels[value as keyof typeof labels]}`,
+            _('Switched to %s', labels[value as keyof typeof labels]),
             'success'
           );
         },
@@ -751,6 +784,11 @@ export class UISettingsSection extends SettingsSection {
     if (this.calendarDropdown) {
       this.calendarDropdown.destroy();
       this.calendarDropdown = null;
+    }
+
+    if (this.languageDropdown) {
+      this.languageDropdown.destroy();
+      this.languageDropdown = null;
     }
 
     if (this.articleFeedFoafMainDropdown) {
