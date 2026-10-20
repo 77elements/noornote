@@ -80,28 +80,52 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
       },
       output: {
-        manualChunks: {
+        // Vite 8 (Rolldown) only supports the function form of manualChunks.
+        // Module-id → chunk mapping equivalent to the previous object form;
+        // matches are ordered, most specific first. App code (no node_modules)
+        // returns undefined and lands in the default chunks.
+        manualChunks(id: string): string | undefined {
+          if (!id.includes('node_modules')) return undefined;
           // Nostr protocol
-          'nostr-tools': ['nostr-tools'],
-          // NDK core
-          ndk: ['@nostr-dev-kit/ndk'],
+          if (id.includes('node_modules/nostr-tools/')) return 'nostr-tools';
+          // NDK core (NOT the vendored cache adapter — that stays with app code)
+          if (id.includes('node_modules/@nostr-dev-kit/ndk/')) return 'ndk';
           // IndexedDB (Dexie)
-          dexie: ['dexie'],
-          // Crypto primitives (@noble, @scure) used by nostr-tools + NDK
-          crypto: ['@noble/hashes', '@noble/ciphers', '@scure/base', '@scure/bip32', '@scure/bip39'],
+          if (id.includes('node_modules/dexie/')) return 'dexie';
           // Note: @noble/curves is huge and only needed for NIP-44 decrypt on login.
           // Splitting it out keeps the main `crypto` chunk (used early) leaner —
           // the curve math loads in parallel instead of blocking initial decrypt.
-          'noble-curves': ['@noble/curves'],
+          if (id.includes('node_modules/@noble/curves/')) return 'noble-curves';
+          // Crypto primitives (@noble, @scure) used by nostr-tools + NDK
+          if (
+            id.includes('node_modules/@noble/hashes/') ||
+            id.includes('node_modules/@noble/ciphers/') ||
+            id.includes('node_modules/@scure/base/') ||
+            id.includes('node_modules/@scure/bip32/') ||
+            id.includes('node_modules/@scure/bip39/')
+          ) {
+            return 'crypto';
+          }
           // Calendar / date (dayjs + Hijri)
-          calendar: ['dayjs', '@calidy/dayjs-calendarsystems', '@calidy/dayjs-calendarsystems/calendarSystems/HijriCalendarSystem'],
+          if (
+            id.includes('node_modules/dayjs/') ||
+            id.includes('node_modules/@calidy/dayjs-calendarsystems/')
+          ) {
+            return 'calendar';
+          }
           // Markdown rendering — pulled out of main so ArticleView / ArticleEditorView /
           // ListingEditorView / ZapstoreAppView / helpers/processFootnotes load these
           // in parallel instead of bloating the App-Shell chunk.
-          markdown: ['marked', 'dompurify'],
+          if (
+            id.includes('node_modules/marked/') ||
+            id.includes('node_modules/dompurify/')
+          ) {
+            return 'markdown';
+          }
           // QR code generation — only used in AuthComponent (login) + QRCodeModal,
           // both relatively rare paths. Isolating keeps main leaner.
-          qrcode: ['qrcode'],
+          if (id.includes('node_modules/qrcode/')) return 'qrcode';
+          return undefined;
         },
         // Asset naming for caching
         chunkFileNames: 'assets/js/[name]-[hash].js',
@@ -111,7 +135,11 @@ export default defineConfig({
       // Suppress warnings for intentional mixed dynamic/static imports
       // These are used for code-splitting, lazy loading, and circular dependency avoidance
       onwarn(warning, warn) {
-        // Suppress "is dynamically imported by ... but also statically imported" warnings
+        // Rolldown (Vite 8) code for "dynamically imported but also statically imported"
+        if (warning.code === 'INEFFECTIVE_DYNAMIC_IMPORT') {
+          return;
+        }
+        // Legacy Rollup wording of the same pattern (kept until Vite 7 support is dropped)
         if (warning.code === 'PLUGIN_WARNING' &&
             warning.message?.includes('dynamically imported') &&
             warning.message?.includes('statically imported')) {

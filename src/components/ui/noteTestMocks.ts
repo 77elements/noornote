@@ -11,22 +11,28 @@
  *   });
  */
 
-import { vi } from 'vitest';
+import { vi, type Mock } from 'vitest';
 
+// Explicit `Mock` annotations: vitest 5's inferred vi.fn() types reference an
+// internal chunk file, which breaks declaration portability (TS2742/TS2883)
+// under both TS 5.9 and TS 7.
 export const collapsibleManagerMock = {
-  setup: vi.fn(),
-  getInstance: () => ({ register: vi.fn(), unregister: vi.fn() }),
+  setup: vi.fn() as Mock,
+  getInstance: () => ({
+    register: vi.fn() as Mock,
+    unregister: vi.fn() as Mock,
+  }),
 };
 
 export const articlePreviewRendererMock = {
   getInstance: () => ({
-    renderFromEvent: vi.fn(),
-    renderArticlePreview: vi.fn(),
+    renderFromEvent: vi.fn() as Mock,
+    renderArticlePreview: vi.fn() as Mock,
   }),
 };
 
 export const pollOrchestratorMock = {
-  getInstance: () => ({ getPollData: vi.fn() }),
+  getInstance: () => ({ getPollData: vi.fn() as Mock }),
 };
 
 export const mutesMock = {
@@ -42,7 +48,10 @@ export const authServiceMock64 = {
   getInstance: () => ({ getCurrentUser: () => ({ pubkey: 'a'.repeat(64) }) }),
 };
 
-export const dittoMock = { render: vi.fn(), DITTO_GEOCACHE_KIND: 30384 };
+export const dittoMock = {
+  render: vi.fn() as Mock,
+  DITTO_GEOCACHE_KIND: 30384,
+};
 
 export const contentProcessorMock = {
   getInstance: () => ({

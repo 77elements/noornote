@@ -122,7 +122,7 @@ describe('ReminderHub (Desktop/Web — isCapacitor false)', () => {
     await hub.osNotifyNow({ title: 't', body: 'b', osWhen: 'unfocused' });
     expect(fired).toHaveLength(0);
     vi.unstubAllGlobals();
-    (document.hasFocus as ReturnType<typeof vi.spyOn>).mockRestore();
+    vi.restoreAllMocks();
   });
 });
 

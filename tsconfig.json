@@ -22,14 +22,13 @@
     "allowUnreachableCode": false,
 
     /* Path Mapping */
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@components/*": ["src/components/*"],
-      "@services/*": ["src/services/*"],
-      "@helpers/*": ["src/helpers/*"],
-      "@state/*": ["src/state/*"],
-      "@types/*": ["src/types/*"]
+      "@/*": ["./src/*"],
+      "@components/*": ["./src/components/*"],
+      "@services/*": ["./src/services/*"],
+      "@helpers/*": ["./src/helpers/*"],
+      "@state/*": ["./src/state/*"],
+      "@types/*": ["./src/types/*"]
     },
 
     /* Emit */
