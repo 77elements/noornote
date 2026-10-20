@@ -25,7 +25,9 @@ interface ElectronAPI {
   readFile: (filePath: string) => Promise<ArrayBuffer>;
   fsExists: (filePath: string) => Promise<boolean>;
   fsMkdir: (dirPath: string) => Promise<void>;
-  readDir: (dirPath: string) => Promise<Array<{ name: string; isDirectory: boolean; isFile: boolean }>>;
+  readDir: (
+    dirPath: string
+  ) => Promise<Array<{ name: string; isDirectory: boolean; isFile: boolean }>>;
   fsRemove: (filePath: string) => Promise<void>;
   writeFile: (filePath: string, data: Uint8Array) => Promise<void>;
   fsAppendFile: (filePath: string, contents: string) => Promise<void>;
@@ -36,7 +38,11 @@ interface ElectronAPI {
   getAppDataDir: () => Promise<string>;
 
   // Dialog
-  saveFileDialog: (options?: { defaultPath?: string; filters?: Array<{ name: string; extensions: string[] }>; title?: string }) => Promise<string | null>;
+  saveFileDialog: (options?: {
+    defaultPath?: string;
+    filters?: Array<{ name: string; extensions: string[] }>;
+    title?: string;
+  }) => Promise<string | null>;
 
   // Shell
   openExternal: (url: string) => Promise<void>;
