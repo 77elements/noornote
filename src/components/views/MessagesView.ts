@@ -12,7 +12,7 @@ import { View } from './View';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { DMsModuleApi } from '../../modules/dms/contracts';
 import type { DMConversation } from '../../services/dm/DMStore';
-import { UserProfileService } from '../../services/UserProfileService';
+import { buildConversationItem } from '../ui/ConversationItem';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { Router } from '../../services/Router';
 import { SystemLogger } from '../../services/SystemLogger';
@@ -23,9 +23,7 @@ import {
   setupTabClickHandlers,
   switchTabWithContent,
 } from '../../helpers/TabsHelper';
-import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { ProgressBarHelper } from '../../helpers/ProgressBarHelper';
-import { formatTimestamp } from '../../helpers/formatTimestamp';
 import { DMComposeModal } from '../modals/DMComposeModal';
 
 const BATCH_SIZE = 15;
@@ -39,7 +37,6 @@ export class MessagesView extends View {
     return (this._dmsApi ??=
       ModuleLoader.getInstance().getApi<DMsModuleApi>('dms'));
   }
-  private userProfileService: UserProfileService;
   private eventBus: TypedEventBus;
   private router: Router;
   private systemLogger: SystemLogger;
@@ -61,7 +58,6 @@ export class MessagesView extends View {
 
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--messages';
-    this.userProfileService = UserProfileService.getInstance();
     this.eventBus = TypedEventBus.getInstance();
     this.router = Router.getInstance();
     this.systemLogger = SystemLogger.getInstance();
@@ -519,58 +515,23 @@ export class MessagesView extends View {
   }
 
   /**
-   * Render a single conversation item
+   * Render a single conversation item — the shared row skeleton comes from
+   * buildConversationItem; this adds the unread state, delete button and
+   * click handlers.
    */
   private async renderConversationItem(
     conversation: DMConversation
   ): Promise<HTMLElement> {
-    const item = document.createElement('div');
-    item.className = 'ui-list__item ui-list__item--clickable conversation-item';
-    item.dataset.pubkey = conversation.pubkey;
+    const { element: item, displayName } = await buildConversationItem({
+      pubkey: conversation.pubkey,
+      preview: conversation.lastMessagePreview,
+      timestamp: conversation.lastMessageAt,
+    });
     if (conversation.unreadCount > 0) {
       item.classList.add('ui-list__item--unread', 'conversation-item--unread');
     }
 
-    // Fetch profile info (with fallback)
-    const fallbackName = `${conversation.pubkey.slice(0, 8)}...`;
-    let displayName = fallbackName;
-    let avatarUrl = '';
-
-    try {
-      const profile = await this.userProfileService.getUserProfile(
-        conversation.pubkey
-      );
-      if (profile) {
-        displayName = profile.display_name || profile.name || fallbackName;
-        avatarUrl = profile.picture || '';
-      }
-    } catch (_err) {
-      // Use fallback values
-    }
-
-    // Format timestamp
-    const timeAgo = formatTimestamp(conversation.lastMessageAt);
-
-    // Avatar: use image if available, otherwise letter placeholder
-    // Wrap in user-mention for hover card support
-    const avatarHtml = avatarUrl
-      ? `<div class="user-mention conversation-item__avatar" data-pubkey="${conversation.pubkey}"><img class="conversation-item__avatar-img" src="${escapeHtmlAttr(avatarUrl)}" alt="" /></div>`
-      : `<div class="user-mention conversation-item__avatar-placeholder" data-pubkey="${conversation.pubkey}">${displayName.charAt(0).toUpperCase()}</div>`;
-
-    // Only avatar and name trigger hover card
-    item.innerHTML = `
-      <div class="conversation-item__user">
-        ${avatarHtml}
-        <div class="conversation-item__content">
-          <div class="conversation-item__header">
-            <span class="user-mention conversation-item__name" data-pubkey="${conversation.pubkey}">${escapeHtml(displayName)}</span>
-            ${timeAgo}
-          </div>
-          <div class="conversation-item__preview">
-            ${escapeHtml(conversation.lastMessagePreview)}
-          </div>
-        </div>
-      </div>
+    item.innerHTML += `
       ${
         conversation.unreadCount > 0
           ? `

@@ -12,44 +12,21 @@
  * (no singleton, no transport/NDK, no IDB).
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import * as feedHarness from './feedOrchestratorTestHarness';
 
 const AUTHOR = 'a'.repeat(64);
-const RELAY = 'wss://relay.test';
 
-const { transportFetch, shouldFetchReactions } = vi.hoisted(() => ({
-  transportFetch: vi.fn(() => [] as unknown[]),
+const { shouldFetchReactions } = vi.hoisted(() => ({
   shouldFetchReactions: vi.fn(() => true),
 }));
 
-vi.mock('../transport/NostrTransport', () => ({
-  NostrTransport: {
-    getInstance: () => ({
-      fetch: transportFetch,
-      getReadRelays: () => [RELAY],
-    }),
-  },
-}));
+vi.mock('../transport/NostrTransport', () => feedHarness.transportModule());
 
-vi.mock('../AuthService', () => ({
-  AuthService: {
-    getInstance: () => ({ getCurrentUser: () => ({ pubkey: AUTHOR }) }),
-  },
-}));
+vi.mock('../AuthService', () => feedHarness.authServiceModule());
 
-vi.mock('../SystemLogger', () => ({
-  SystemLogger: {
-    getInstance: () => ({
-      info: vi.fn(),
-      warn: vi.fn(),
-      error: vi.fn(),
-      success: vi.fn(),
-    }),
-  },
-}));
+vi.mock('../SystemLogger', () => feedHarness.systemLoggerModule());
 
-vi.mock('../DiagnosticLogger', () => ({
-  diagLog: vi.fn(),
-}));
+vi.mock('../DiagnosticLogger', () => feedHarness.diagnosticLoggerModule());
 
 vi.mock('../../helpers/reactionsFeedSetting', () => ({
   shouldFetchReactions,
@@ -58,52 +35,17 @@ vi.mock('../../helpers/reactionsFeedSetting', () => ({
 }));
 
 import { FeedOrchestrator } from './FeedOrchestrator';
+import {
+  allFilters,
+  feedTestState,
+  makeOrchestrator,
+  RELAY,
+} from './feedOrchestratorTestHarness';
 
-type MockFn = ReturnType<typeof vi.fn>;
+// Harness reads this lazily on getCurrentUser()
+feedTestState.currentUser = AUTHOR;
 
-interface InjectableOrchestrator extends FeedOrchestrator {
-  transport: { fetch: MockFn };
-  muteOrchestrator: Record<string, unknown>;
-  noteService: Record<string, unknown>;
-  systemLogger: Record<string, unknown>;
-  relayDiscovery: Record<string, unknown>;
-  pollLimit: number;
-}
-
-function makeOrchestrator(): InjectableOrchestrator {
-  const orch = Object.create(
-    FeedOrchestrator.prototype
-  ) as InjectableOrchestrator;
-  orch.transport = { fetch: transportFetch };
-  orch.muteOrchestrator = {
-    getMutedUsers: () => new Set<string>(),
-    isMuted: () => ({ public: false, private: false }),
-  };
-  orch.noteService = {};
-  orch.systemLogger = {
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    success: vi.fn(),
-  };
-  orch.relayDiscovery = { getProfileRelays: () => [RELAY] };
-  orch.pollLimit = 50;
-  return orch;
-}
-
-interface CapturedFilter {
-  kinds?: number[];
-  authors?: string[];
-}
-
-/** All captured filters across every fetch of the last pollOnce run. */
-function allFilters(): CapturedFilter[] {
-  const calls = transportFetch.mock.calls as unknown as [
-    string[],
-    CapturedFilter[],
-  ][];
-  return calls.flatMap(call => call[1]);
-}
+const transportFetch = feedTestState.transportFetch;
 
 beforeEach(() => {
   transportFetch.mockClear();
@@ -113,7 +55,7 @@ beforeEach(() => {
 
 describe('FeedOrchestrator pollOnce show-reactions scope wiring', () => {
   it('author-scoped view (PV): no kind-7 filter even with the setting on', async () => {
-    const orch = makeOrchestrator();
+    const orch = makeOrchestrator(FeedOrchestrator);
     const now = Math.floor(Date.now() / 1000);
     await orch.pollOnce(
       [AUTHOR],
@@ -129,7 +71,7 @@ describe('FeedOrchestrator pollOnce show-reactions scope wiring', () => {
   });
 
   it('following feed (TV): kind-7 filter present with the setting on', async () => {
-    const orch = makeOrchestrator();
+    const orch = makeOrchestrator(FeedOrchestrator);
     const now = Math.floor(Date.now() / 1000);
     await orch.pollOnce(
       [AUTHOR],
@@ -145,7 +87,7 @@ describe('FeedOrchestrator pollOnce show-reactions scope wiring', () => {
   });
 
   it('legacy callers without a source kind get no kind-7 filter', async () => {
-    const orch = makeOrchestrator();
+    const orch = makeOrchestrator(FeedOrchestrator);
     const now = Math.floor(Date.now() / 1000);
     await orch.pollOnce([AUTHOR], now - 60, true, RELAY, undefined, true);
     expect(allFilters().some(f => f.kinds?.includes(7))).toBe(false);

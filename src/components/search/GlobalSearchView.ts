@@ -14,10 +14,8 @@ import { TypedEventBus } from '../../core/TypedEventBus';
 import { SystemLogger } from '../../services/SystemLogger';
 import { LocalSearchService } from '../../services/LocalSearchService';
 import type { DMMessage } from '../../services/dm/DMStore';
-import { UserProfileService } from '../../services/UserProfileService';
-import { formatTimestamp } from '../../helpers/formatTimestamp';
+import { buildConversationItem } from '../ui/ConversationItem';
 import { hexToNpub } from '../../helpers/nip19';
-import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { encodeNevent } from '../../services/NostrToolsAdapter';
 import {
   deactivateAllTabs,
@@ -402,42 +400,12 @@ export class GlobalSearchView {
     list.className = 'ui-list';
     section.appendChild(list);
 
-    const profiles = UserProfileService.getInstance();
     for (const message of this.currentDmResults) {
-      const item = document.createElement('div');
-      item.className =
-        'ui-list__item ui-list__item--clickable conversation-item';
-      item.dataset.pubkey = message.conversationWith;
-
-      const fallbackName = `${message.conversationWith.slice(0, 8)}...`;
-      let displayName = fallbackName;
-      let avatarUrl = '';
-      try {
-        const profile = await profiles.getUserProfile(message.conversationWith);
-        if (profile) {
-          displayName = profile.display_name || profile.name || fallbackName;
-          avatarUrl = profile.picture || '';
-        }
-      } catch (_err) {
-        // Keep fallback values
-      }
-
-      const avatarHtml = avatarUrl
-        ? `<div class="user-mention conversation-item__avatar" data-pubkey="${escapeHtmlAttr(message.conversationWith)}"><img class="conversation-item__avatar-img" src="${escapeHtmlAttr(avatarUrl)}" alt="" /></div>`
-        : `<div class="user-mention conversation-item__avatar-placeholder" data-pubkey="${escapeHtmlAttr(message.conversationWith)}">${escapeHtml(displayName.charAt(0).toUpperCase())}</div>`;
-
-      item.innerHTML = `
-        <div class="conversation-item__user">
-          ${avatarHtml}
-          <div class="conversation-item__content">
-            <div class="conversation-item__header">
-              <span class="user-mention conversation-item__name" data-pubkey="${escapeHtmlAttr(message.conversationWith)}">${escapeHtml(displayName)}</span>
-              <span class="conversation-item__time">${escapeHtml(formatTimestamp(message.createdAt))}</span>
-            </div>
-            <div class="conversation-item__preview">${escapeHtml(message.content)}</div>
-          </div>
-        </div>
-      `;
+      const { element: item } = await buildConversationItem({
+        pubkey: message.conversationWith,
+        preview: message.content,
+        timestamp: message.createdAt,
+      });
 
       item.addEventListener('click', () => {
         const npub = hexToNpub(message.conversationWith);
