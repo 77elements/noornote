@@ -13,6 +13,8 @@
  * @used-by ArticleEditorView, NoteTakingView
  */
 
+import { _ } from '../../i18n';
+
 export interface MarkdownToolbarOptions {
   /** Returns the textarea this toolbar operates on (resolved lazily per action). */
   getTextarea: () => HTMLTextAreaElement | null;
@@ -49,19 +51,19 @@ export class MarkdownToolbar {
   public render(): string {
     return `
       <div class="md-toolbar">
-        <button type="button" class="btn-icon" data-md-action="heading" title="Heading">
+        <button type="button" class="btn-icon" data-md-action="heading" title="${_('Heading')}">
           <svg width="16" height="16"><use href="#icon-heading"/></svg>
         </button>
-        <button type="button" class="btn-icon" data-md-action="bold" title="Bold">
+        <button type="button" class="btn-icon" data-md-action="bold" title="${_('Bold')}">
           <svg width="16" height="16"><use href="#icon-bold"/></svg>
         </button>
-        <button type="button" class="btn-icon" data-md-action="italic" title="Italic">
+        <button type="button" class="btn-icon" data-md-action="italic" title="${_('Italic')}">
           <svg width="16" height="16"><use href="#icon-italic"/></svg>
         </button>
-        <button type="button" class="btn-icon" data-md-action="quote" title="Quote">
+        <button type="button" class="btn-icon" data-md-action="quote" title="${_('Quote')}">
           <svg width="16" height="16"><use href="#icon-quote"/></svg>
         </button>
-        <button type="button" class="btn-icon" data-md-action="image" title="Insert Image">
+        <button type="button" class="btn-icon" data-md-action="image" title="${_('Insert Image')}">
           <svg width="16" height="16"><use href="#icon-image"/></svg>
         </button>
         <input type="file" accept="image/*" class="md-toolbar__file-input" data-md-file-input style="display: none;" />

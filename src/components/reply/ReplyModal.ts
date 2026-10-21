@@ -20,6 +20,7 @@
  * - Only available for kind:1 parent events
  */
 
+import { _ } from '../../i18n';
 import { ModalService } from '../../services/ModalService';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
@@ -174,7 +175,7 @@ export class ReplyModal {
     const modalContent = this.renderContent();
 
     this.modalService.show({
-      title: 'Reply',
+      title: _('Reply'),
       content: modalContent,
       width: '700px',
       height: 'auto',
@@ -385,7 +386,7 @@ export class ReplyModal {
       return `
         <textarea
           class="textarea"
-          placeholder="Write your reply..."
+          placeholder="${_('Write your reply...')}"
           data-textarea
         >${this.content}</textarea>
       `;
@@ -419,7 +420,7 @@ export class ReplyModal {
       selectedRelays: this.selectedRelays,
     });
     const isPostDisabled = !validation.isValid;
-    const buttonLabel = 'Reply';
+    const buttonLabel = _('Reply');
 
     return `
       <div class="l-row l-row--split">
@@ -428,8 +429,8 @@ export class ReplyModal {
           <div class="post-note-options" id="reply-note-options-container"></div>
         </div>
         <div>
-          <button class="btn btn--passive" data-action="save-draft">Save draft</button>
-          <button class="btn btn--passive" data-action="cancel">Cancel</button>
+          <button class="btn btn--passive" data-action="save-draft">${_('Save draft')}</button>
+          <button class="btn btn--passive" data-action="cancel">${_('Cancel')}</button>
           <button class="btn" data-action="post" ${isPostDisabled ? 'disabled' : ''}>${buttonLabel}</button>
         </div>
       </div>
@@ -505,7 +506,7 @@ export class ReplyModal {
 
     // Switch ON = show in timeline (Kind:1), Switch OFF = hide from timeline (Kind:1111)
     this.commentSwitch = new Switch({
-      label: 'Show in my timeline',
+      label: _('Show in my timeline'),
       checked: !this.isComment,
       onChange: checked => {
         this.isComment = !checked;
@@ -565,7 +566,7 @@ export class ReplyModal {
   private updatePostButton(): void {
     const btn = document.querySelector('[data-action="post"]');
     if (btn) {
-      btn.textContent = 'Reply';
+      btn.textContent = _('Reply');
     }
     EditorStateManager.updatePostButton(
       '[data-action="post"]',
@@ -573,8 +574,8 @@ export class ReplyModal {
       this.selectedRelays
     );
     const btnAfter = document.querySelector('[data-action="post"]');
-    if (btnAfter && btnAfter.textContent !== 'Reply') {
-      btnAfter.textContent = 'Reply';
+    if (btnAfter && btnAfter.textContent !== _('Reply')) {
+      btnAfter.textContent = _('Reply');
     }
   }
 
@@ -691,7 +692,7 @@ export class ReplyModal {
       modalContainer.style.display = 'none';
     }
 
-    const loadingId = ToastService.loading('Waiting for signer approval…');
+    const loadingId = ToastService.loading(_('Waiting for signer approval…'));
     try {
       this.systemLogger.info(
         'ReplyModal',
@@ -747,7 +748,7 @@ export class ReplyModal {
       draftType: 'reply',
       fallbackContent: this.content,
       ...(this.parentEvent?.id ? { parentEventId: this.parentEvent.id } : {}),
-      contextLabel: 'Reply',
+      contextLabel: _('Reply'),
     });
   }
 
@@ -766,10 +767,10 @@ export class ReplyModal {
       fallbackContent: this.content,
       modalContainer,
       originalDisplay,
-      restoreLabel: 'Reply',
-      fallbackReason: 'Reply could not be published',
+      restoreLabel: _('Reply'),
+      fallbackReason: _('Reply could not be published'),
       ...(this.parentEvent?.id ? { parentEventId: this.parentEvent.id } : {}),
-      contextLabel: 'Reply',
+      contextLabel: _('Reply'),
       onOpenDrafts: () => this.switchTab('drafts'),
       error,
     });

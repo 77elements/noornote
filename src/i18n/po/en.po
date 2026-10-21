@@ -575,6 +575,8 @@ msgstr "Zaps"
 #: src/components/modals/NewFolderModal.ts:60
 #: src/components/modals/UnlockNoorSignerModal.ts:68
 #: src/components/modals/ZapModal.ts:148
+#: src/components/post/PostNoteModal.ts:399
+#: src/components/reply/ReplyModal.ts:433
 #: src/components/views/ConversationView.ts:619
 #: src/components/views/MessagesView.ts:586
 #: src/components/views/MessagesView.ts:792
@@ -829,7 +831,7 @@ msgid "Secure Your Key"
 msgstr "Secure Your Key"
 
 #: src/components/modals/DMComposeModal.ts:97
-#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:330
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:334
 msgid "Send"
 msgstr "Send"
 
@@ -970,7 +972,7 @@ msgid "Loading members..."
 msgstr "Loading members..."
 
 #: src/components/ui/AccountSwitcher.ts:101
-#: src/components/ui/AccountSwitcher.ts:196
+#: src/components/ui/AccountSwitcher.ts:195
 #: src/components/ui/note-features/PollRenderer.ts:73
 #: src/components/ui/ReplyIndicator.ts:49
 #: src/components/ui/UserStatus.ts:42
@@ -1135,7 +1137,7 @@ msgstr[1] ""
 msgid "Done"
 msgstr "Done"
 
-#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:578
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:582
 #: src/components/views/ArticleEditorView.ts:242
 #: src/components/views/ArticleView.ts:114
 msgid "Failed to load article"
@@ -1260,6 +1262,7 @@ msgstr "All messages marked as read"
 msgid "All messages marked as unread"
 msgstr "All messages marked as unread"
 
+#: src/components/post/PostNoteModal.ts:719
 #: src/components/views/ConversationView.ts:620
 msgid "Apply"
 msgstr "Apply"
@@ -1474,6 +1477,7 @@ msgstr "Mute user privately"
 msgid "Mute user publicly"
 msgstr "Mute user publicly"
 
+#: src/components/post/PostNoteModal.ts:998
 #: src/components/views/ConversationView.ts:786
 msgid "No"
 msgstr "No"
@@ -1619,6 +1623,7 @@ msgstr "Video upload failed"
 msgid "Weeks"
 msgstr "Weeks"
 
+#: src/components/post/PostNoteModal.ts:997
 #: src/components/views/ConversationView.ts:785
 msgid "Yes"
 msgstr "Yes"
@@ -1763,6 +1768,10 @@ msgstr "Save Draft"
 msgid "Saving..."
 msgstr "Saving..."
 
+#: src/components/post/PostNoteModal.ts:1037
+#: src/components/post/PostNoteModal.ts:388
+#: src/components/post/PostNoteModal.ts:456
+#: src/components/post/PostNoteModal.ts:475
 #: src/components/views/ArticleEditorView.ts:1078
 msgid "Schedule"
 msgstr "Schedule"
@@ -2219,6 +2228,14 @@ msgstr "Removed from bookmarks"
 msgid "Removed from private bookmarks"
 msgstr "Removed from private bookmarks"
 
+#: src/components/reply/ReplyModal.ts:178
+#: src/components/reply/ReplyModal.ts:423
+#: src/components/reply/ReplyModal.ts:569
+#: src/components/reply/ReplyModal.ts:577
+#: src/components/reply/ReplyModal.ts:578
+#: src/components/reply/ReplyModal.ts:751
+#: src/components/reply/ReplyModal.ts:770
+#: src/components/reply/ReplyModal.ts:773
 #: src/components/ui/InteractionStatusLine.ts:321
 msgid "Reply"
 msgstr "Reply"
@@ -2332,7 +2349,7 @@ msgstr[1] ""
 msgid "Added to your calendar grid"
 msgstr "Added to your calendar grid"
 
-#: src/components/ui/UploadProgressOverlay.ts:123
+#: src/components/ui/UploadProgressOverlay.ts:125
 msgid "Already well-compressed — uploading original"
 msgstr "Already well-compressed — uploading original"
 
@@ -2352,7 +2369,7 @@ msgstr "App"
 msgid "Article"
 msgstr "Article"
 
-#: src/components/ui/UploadProgressOverlay.ts:109
+#: src/components/ui/UploadProgressOverlay.ts:110
 msgid "audio"
 msgstr "audio"
 
@@ -2380,11 +2397,11 @@ msgstr "Commenting on"
 msgid "Community invite"
 msgstr "Community invite"
 
-#: src/components/ui/UploadProgressOverlay.ts:126
+#: src/components/ui/UploadProgressOverlay.ts:130
 msgid "Compressed: %s → %s (%s% smaller)"
 msgstr "Compressed: %s → %s (%s% smaller)"
 
-#: src/components/ui/UploadProgressOverlay.ts:110
+#: src/components/ui/UploadProgressOverlay.ts:112
 msgid "Compressing %s file…"
 msgstr "Compressing %s file…"
 
@@ -2392,7 +2409,7 @@ msgstr "Compressing %s file…"
 msgid "Copy invite link"
 msgstr "Copy invite link"
 
-#: src/components/ui/note-rendering/EmojiPackRenderer.ts:123
+#: src/components/ui/note-rendering/EmojiPackRenderer.ts:128
 msgid "Could not add emojis"
 msgstr "Could not add emojis"
 
@@ -2428,7 +2445,7 @@ msgstr "Encrypted"
 msgid "Encrypted community"
 msgstr "Encrypted community"
 
-#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:190
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:193
 msgid "ENDED"
 msgstr "ENDED"
 
@@ -2488,7 +2505,7 @@ msgstr "Invalid repost (no event reference)"
 msgid "Listing"
 msgstr "Listing"
 
-#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:190
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:191
 msgid "LIVE"
 msgstr "LIVE"
 
@@ -2513,15 +2530,16 @@ msgstr "Marketplace"
 msgid "Missing secret"
 msgstr "Missing secret"
 
-#: src/components/ui/MoveDropdown.ts:102
+#: src/components/ui/MoveDropdown.ts:105
 msgid "Move to"
 msgstr "Move to"
 
-#: src/components/ui/MoveDropdown.ts:67
-#: src/components/ui/MoveDropdown.ts:68
+#: src/components/ui/MoveDropdown.ts:69
+#: src/components/ui/MoveDropdown.ts:71
 msgid "Move to..."
 msgstr "Move to..."
 
+#: src/components/post/PostNoteModal.ts:1258
 #: src/components/ui/note-features/NIP88PollRenderer.ts:112
 msgid "Multiple choice allowed"
 msgstr "Multiple choice allowed"
@@ -2554,7 +2572,7 @@ msgstr "Open page →"
 msgid "Open Wallet Balance"
 msgstr "Open Wallet Balance"
 
-#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:190
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:194
 msgid "PLANNED"
 msgstr "PLANNED"
 
@@ -2590,7 +2608,7 @@ msgstr "Quoted repost — open to view"
 msgid "Removed from your calendar"
 msgstr "Removed from your calendar"
 
-#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:324
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:328
 msgid "Send a message…"
 msgstr "Send a message…"
 
@@ -2663,11 +2681,11 @@ msgstr "Unlock on fanfares.io"
 msgid "Unsubscribed from calendar"
 msgstr "Unsubscribed from calendar"
 
-#: src/components/ui/note-rendering/CurationSetItems.ts:87
+#: src/components/ui/note-rendering/CurationSetItems.ts:89
 msgid "Untitled"
 msgstr "Untitled"
 
-#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:534
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:538
 msgid "Untitled App"
 msgstr "Untitled App"
 
@@ -2675,31 +2693,31 @@ msgstr "Untitled App"
 msgid "Untitled Stream"
 msgstr "Untitled Stream"
 
-#: src/components/ui/UploadProgressOverlay.ts:149
+#: src/components/ui/UploadProgressOverlay.ts:158
 msgid "Uploaded"
 msgstr "Uploaded"
 
-#: src/components/ui/UploadProgressOverlay.ts:140
+#: src/components/ui/UploadProgressOverlay.ts:149
 msgid "Uploading to media server…"
 msgstr "Uploading to media server…"
 
-#: src/components/ui/UploadProgressOverlay.ts:109
+#: src/components/ui/UploadProgressOverlay.ts:110
 msgid "video"
 msgstr "video"
 
-#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:198
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:202
 msgid "View details"
 msgstr "View details"
 
-#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:197
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:201
 msgid "View on zap.stream"
 msgstr "View on zap.stream"
 
-#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:193
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:197
 msgid "Watch live"
 msgstr "Watch live"
 
-#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:196
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:200
 msgid "Watch recording"
 msgstr "Watch recording"
 
@@ -2707,6 +2725,130 @@ msgstr "Watch recording"
 msgid "Zap Receipt"
 msgstr "Zap Receipt"
 
-#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:438
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:442
 msgid "Zap Stream"
 msgstr "Zap Stream"
+
+#: src/components/post/PostNoteModal.ts:720
+msgid "Applying..."
+msgstr "Applying..."
+
+#: src/components/ui/MarkdownToolbar.ts:57
+msgid "Bold"
+msgstr "Bold"
+
+#: src/components/post/PostNoteModal.ts:417
+msgid "Clear"
+msgstr "Clear"
+
+#: src/components/post/PostNoteModal.ts:1006
+msgid "Draft saved"
+msgstr "Draft saved"
+
+#: src/components/ui/MarkdownToolbar.ts:54
+msgid "Heading"
+msgstr "Heading"
+
+#: src/components/ui/MarkdownToolbar.ts:66
+msgid "Insert Image"
+msgstr "Insert Image"
+
+#: src/components/ui/MarkdownToolbar.ts:60
+msgid "Italic"
+msgstr "Italic"
+
+#: src/components/post/PostNoteModal.ts:996
+msgid "Keep this unsent note in your drafts?"
+msgstr "Keep this unsent note in your drafts?"
+
+#: src/components/post/PostNoteModal.ts:189
+msgid "New Highlight"
+msgstr "New Highlight"
+
+#: src/components/post/PostNoteModal.ts:189
+msgid "New Note"
+msgstr "New Note"
+
+#: src/components/post/PostNoteModal.ts:1184
+msgid "Note could not be published"
+msgstr "Note could not be published"
+
+#: src/components/post/PostNoteModal.ts:729
+#: src/components/post/PostNoteModal.ts:756
+msgid "Only 50 tags permitted"
+msgstr "Only 50 tags permitted"
+
+#: src/components/post/PostNoteModal.ts:1037
+#: src/components/post/PostNoteModal.ts:389
+#: src/components/post/PostNoteModal.ts:456
+msgid "Post"
+msgstr "Post"
+
+#: src/components/post/PostNoteModal.ts:1224
+#: src/components/post/PostNoteModal.ts:1232
+#: src/components/post/PostNoteModal.ts:386
+msgid "Post Highlight"
+msgstr "Post Highlight"
+
+#: src/components/ui/MarkdownToolbar.ts:63
+msgid "Quote"
+msgstr "Quote"
+
+#: src/components/reply/ReplyModal.ts:771
+msgid "Reply could not be published"
+msgstr "Reply could not be published"
+
+#: src/components/post/PostNoteModal.ts:995
+msgid "Save as draft?"
+msgstr "Save as draft?"
+
+#: src/components/post/PostNoteModal.ts:398
+#: src/components/reply/ReplyModal.ts:432
+msgid "Save draft"
+msgstr "Save draft"
+
+#: src/components/post/PostNoteModal.ts:471
+msgid "Schedule Post"
+msgstr "Schedule Post"
+
+#: src/components/reply/ReplyModal.ts:509
+msgid "Show in my timeline"
+msgstr "Show in my timeline"
+
+#: src/components/post/PostNoteModal.ts:718
+msgid "Tag different users, separate by comma"
+msgstr "Tag different users, separate by comma"
+
+#: src/components/post/PostNoteModal.ts:677
+#: src/components/post/PostNoteModal.ts:717
+msgid "Tag users"
+msgstr "Tag users"
+
+#: src/components/post/PostNoteModal.ts:677
+msgid "Tag users in this image"
+msgstr "Tag users in this image"
+
+#: src/components/post/PostNoteModal.ts:723
+msgid "Tagged users will be publicly visible"
+msgstr "Tagged users will be publicly visible"
+
+#: src/components/post/PostNoteModal.ts:1038
+#: src/components/reply/ReplyModal.ts:695
+msgid "Waiting for signer approval…"
+msgstr "Waiting for signer approval…"
+
+#: src/components/post/PostNoteModal.ts:340
+msgid "What's on your mind?"
+msgstr "What's on your mind?"
+
+#: src/components/post/PostNoteModal.ts:416
+msgid "Will be published on"
+msgstr "Will be published on"
+
+#: src/components/reply/ReplyModal.ts:389
+msgid "Write your reply..."
+msgstr "Write your reply..."
+
+#: src/components/post/PostNoteModal.ts:339
+msgid "Write your thoughts about this highlight (optional)…"
+msgstr "Write your thoughts about this highlight (optional)…"

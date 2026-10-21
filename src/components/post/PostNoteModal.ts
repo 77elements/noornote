@@ -11,6 +11,7 @@
  * Architecture: Uses modular sub-components for maintainability
  */
 
+import { _ } from '../../i18n';
 import { ModalService } from '../../services/ModalService';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
@@ -185,7 +186,7 @@ export class PostNoteModal {
     const modalContent = this.renderContent();
 
     this.modalService.show({
-      title: this.highlightSource ? 'New Highlight' : 'New Note',
+      title: this.highlightSource ? _('New Highlight') : _('New Note'),
       content: modalContent,
       width: '650px',
       height: 'auto',
@@ -335,8 +336,8 @@ export class PostNoteModal {
   private renderEditor(): string {
     if (this.currentTab === 'edit') {
       const placeholder = this.highlightSource
-        ? 'Write your thoughts about this highlight (optional)…'
-        : "What's on your mind?";
+        ? _('Write your thoughts about this highlight (optional)…')
+        : _("What's on your mind?");
       return `
         <textarea
           class="textarea"
@@ -382,10 +383,10 @@ export class PostNoteModal {
         }).isValid;
 
     const postButtonLabel = this.highlightSource
-      ? 'Post Highlight'
+      ? _('Post Highlight')
       : this.scheduledAt !== null
-        ? 'Schedule'
-        : 'Post';
+        ? _('Schedule')
+        : _('Post');
     return `
       <div class="l-row l-row--split">
         <div>
@@ -394,8 +395,8 @@ export class PostNoteModal {
           <div class="post-note-schedule-hint" id="post-note-schedule-hint">${this.renderScheduleHintHtml()}</div>
         </div>
         <div>
-          ${this.highlightSource ? '' : '<button class="btn btn--passive" data-action="save-draft">Save draft</button>'}
-          <button class="btn btn--passive" data-action="cancel">Cancel</button>
+          ${this.highlightSource ? '' : `<button class="btn btn--passive" data-action="save-draft">${_('Save draft')}</button>`}
+          <button class="btn btn--passive" data-action="cancel">${_('Cancel')}</button>
           <button class="btn" data-action="post" ${isValid ? '' : 'disabled'}>${postButtonLabel}</button>
         </div>
       </div>
@@ -412,8 +413,8 @@ export class PostNoteModal {
       <span class="post-note-schedule-hint__icon">
         <svg width="14" height="14"><use href="#icon-calendar"/></svg>
       </span>
-      <span class="post-note-schedule-hint__text">Will be published on ${escapeHtml(when)}</span>
-      <button type="button" class="post-note-schedule-hint__clear" data-action="clear-schedule">Clear</button>
+      <span class="post-note-schedule-hint__text">${_('Will be published on')} ${escapeHtml(when)}</span>
+      <button type="button" class="post-note-schedule-hint__clear" data-action="clear-schedule">${_('Clear')}</button>
     `;
   }
 
@@ -452,7 +453,7 @@ export class PostNoteModal {
       '[data-action="post"]'
     ) as HTMLButtonElement | null;
     if (!btn) return;
-    btn.textContent = this.scheduledAt !== null ? 'Schedule' : 'Post';
+    btn.textContent = this.scheduledAt !== null ? _('Schedule') : _('Post');
   }
 
   /**
@@ -467,11 +468,11 @@ export class PostNoteModal {
       '.post-note-toolbar [data-action="schedule"]'
     ) as HTMLElement | null;
     const picked = await pickDateTime({
-      title: 'Schedule Post',
+      title: _('Schedule Post'),
       initial,
       min: new Date(Date.now() + 60 * 1000),
       max: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      confirmLabel: 'Schedule',
+      confirmLabel: _('Schedule'),
       ...(anchorEl ? { anchorEl } : {}),
     });
     if (!picked) return;
@@ -673,7 +674,7 @@ export class PostNoteModal {
     thumb.dataset.imageUrl = url;
     thumb.innerHTML = `
       <img class="post-note-modal__media-thumb-img" src="${escapeHtml(url)}" alt="" loading="lazy">
-      <button type="button" class="post-note-modal__tag-btn" data-tag-url="${escapeHtml(url)}" title="Tag users in this image" aria-label="Tag users">
+      <button type="button" class="post-note-modal__tag-btn" data-tag-url="${escapeHtml(url)}" title="${_('Tag users in this image')}" aria-label="${_('Tag users')}">
         <svg width="14" height="14"><use href="#icon-tag"/></svg>
         <span class="post-note-modal__tag-badge is-hidden" data-tag-badge>0</span>
       </button>
@@ -713,19 +714,19 @@ export class PostNoteModal {
     const component = new ProfileSearchComponent({
       sizeVariant: 'compact-modal',
       triggerIconId: 'icon-tag',
-      triggerTitle: 'Tag users',
-      placeholder: 'Tag different users, separate by comma',
-      buttonText: 'Apply',
-      buttonLoadingText: 'Applying...',
+      triggerTitle: _('Tag users'),
+      placeholder: _('Tag different users, separate by comma'),
+      buttonText: _('Apply'),
+      buttonLoadingText: _('Applying...'),
       buttonClass: 'btn-small btn-passive',
       statusEnabled: false,
-      privacyHint: 'Tagged users will be publicly visible',
+      privacyHint: _('Tagged users will be publicly visible'),
       chipMode: true,
       initialChips: (this.imageTags.get(url) ?? []).map(e => ({ ...e })),
       onChipsChange: chips => {
         // Hard cap (UI guard before publish — also enforced in PostService).
         if (chips.length > PostNoteModal.MAX_TAGS_PER_IMAGE) {
-          ToastService.show('Only 50 tags permitted', 'error');
+          ToastService.show(_('Only 50 tags permitted'), 'error');
           // Trim back to the cap so the user sees the limit enforced.
           const trimmed = chips.slice(0, PostNoteModal.MAX_TAGS_PER_IMAGE);
           this.imageTags.set(url, trimmed);
@@ -752,7 +753,7 @@ export class PostNoteModal {
           (this.imageTags.get(url) ?? []).length >
           PostNoteModal.MAX_TAGS_PER_IMAGE
         ) {
-          ToastService.show('Only 50 tags permitted', 'error');
+          ToastService.show(_('Only 50 tags permitted'), 'error');
           return;
         }
         helpers.collapse();
@@ -991,10 +992,10 @@ export class PostNoteModal {
     this.cleanup();
     this.modalService.hide();
     const save = await this.modalService.confirm({
-      title: 'Save as draft?',
-      message: 'Keep this unsent note in your drafts?',
-      confirmText: 'Yes',
-      cancelText: 'No',
+      title: _('Save as draft?'),
+      message: _('Keep this unsent note in your drafts?'),
+      confirmText: _('Yes'),
+      cancelText: _('No'),
     });
     if (save) {
       NoteDraftService.getInstance().add({
@@ -1002,7 +1003,7 @@ export class PostNoteModal {
         content,
         failed: false,
       });
-      ToastService.show('Draft saved', 'success');
+      ToastService.show(_('Draft saved'), 'success');
     }
   }
 
@@ -1033,8 +1034,8 @@ export class PostNoteModal {
       modalContainer.style.display = 'none';
     }
 
-    const postLabel = this.scheduledAt !== null ? 'Schedule' : 'Post';
-    const loadingId = ToastService.loading('Waiting for signer approval…');
+    const postLabel = this.scheduledAt !== null ? _('Schedule') : _('Post');
+    const loadingId = ToastService.loading(_('Waiting for signer approval…'));
     try {
       const quotedRefs = extractQuotedReferences(this.content);
       let quotedEvent:
@@ -1180,7 +1181,7 @@ export class PostNoteModal {
       modalContainer,
       originalDisplay,
       restoreLabel: label,
-      fallbackReason: 'Note could not be published',
+      fallbackReason: _('Note could not be published'),
       onOpenDrafts: () => this.switchTab('drafts'),
       error,
     });
@@ -1220,7 +1221,7 @@ export class PostNoteModal {
         ModalEventHandlerManager.restoreAfterError(
           modalContainer,
           originalDisplay,
-          'Post Highlight'
+          _('Post Highlight')
         );
       }
     } catch (error) {
@@ -1228,7 +1229,7 @@ export class PostNoteModal {
       ModalEventHandlerManager.restoreAfterError(
         modalContainer,
         originalDisplay,
-        'Post Highlight'
+        _('Post Highlight')
       );
     }
   }
@@ -1254,7 +1255,7 @@ export class PostNoteModal {
     const metaItems: string[] = [];
     if (this.pollData.multipleChoice) {
       metaItems.push(
-        '<span class="nip88-poll__meta-item">Multiple choice allowed</span>'
+        `<span class="nip88-poll__meta-item">${_('Multiple choice allowed')}</span>`
       );
     }
     if (this.pollData.endDate) {
