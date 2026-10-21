@@ -64,6 +64,14 @@ msgstr ""
 msgid "⏱ Disappears in ~%s"
 msgstr ""
 
+#: src/components/views/ProfileView.ts:1443
+msgid "⚠️ Public label, stored in your contact list (NIP-02). Anyone who reads your follow list can see it."
+msgstr ""
+
+#: src/components/views/ProfileView.ts:1492
+msgid "🔒 Encrypted note about this user. Only you can decrypt and read it."
+msgstr ""
+
 #: src/components/views/AboutView.ts:69
 msgid "About NoorNote"
 msgstr ""
@@ -76,8 +84,20 @@ msgstr ""
 msgid "Active"
 msgstr ""
 
+#: src/components/views/ProfileView.ts:1480
+msgid "Add private note"
+msgstr ""
+
 #: src/components/views/ProfileBookingView.ts:611
 msgid "Add to calendar (.ics)"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:1007
+msgid "Add to Tribe"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:1771
+msgid "Added to tribe \"%s\""
 msgstr ""
 
 #: src/components/views/ProfileBookingView.ts:487
@@ -137,6 +157,10 @@ msgstr ""
 msgid "Apply"
 msgstr ""
 
+#: src/components/views/ProfileView.ts:956
+msgid "Article alerts"
+msgstr ""
+
 #: src/components/views/ArticleEditorView.ts:209
 #: src/components/views/ArticleView.ts:107
 msgid "Article not found"
@@ -148,6 +172,8 @@ msgid "Article title..."
 msgstr ""
 
 #: src/components/views/ArticleTimelineView.ts:59
+#: src/components/views/ProfileView.ts:2233
+#: src/components/views/ProfileView.ts:722
 msgid "Articles"
 msgstr ""
 
@@ -159,12 +185,22 @@ msgstr ""
 msgid "Avatars, images, videos, and audio referenced in Nostr events are loaded directly from whatever URL the author published. Each such load is a direct request from your device to that third-party host."
 msgstr ""
 
+#: src/components/views/ProfileView.ts:1397
+#: src/components/views/ProfileView.ts:679
+msgid "Award Badge"
+msgstr ""
+
 #: src/components/views/ArticleEditorView.ts:311
 msgid "Back"
 msgstr ""
 
 #: src/components/views/ProfileBookingView.ts:206
 msgid "Back to profile"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:2145
+#: src/components/views/ProfileView.ts:728
+msgid "Badges"
 msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:331
@@ -177,6 +213,7 @@ msgstr ""
 
 #: src/components/views/ProfileBookingView.ts:186
 #: src/components/views/ProfileBookingView.ts:202
+#: src/components/views/ProfileView.ts:676
 msgid "Book a meeting"
 msgstr ""
 
@@ -200,6 +237,10 @@ msgstr ""
 msgid "Brief description of your article..."
 msgstr ""
 
+#: src/components/views/ProfileView.ts:2188
+msgid "by"
+msgstr ""
+
 #: src/components/views/AboutView.ts:138
 msgid "by %s"
 msgstr ""
@@ -212,6 +253,11 @@ msgstr ""
 #: src/components/views/AboutView.ts:190
 #: src/components/views/AboutView.ts:205
 msgid "Cache:"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:2079
+#: src/components/views/ProfileView.ts:727
+msgid "Calendar"
 msgstr ""
 
 #: src/components/modals/DMComposeModal.ts:95
@@ -237,6 +283,10 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:155
 msgid "Check for updates"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:1640
+msgid "Choose a tribe"
 msgstr ""
 
 #: src/components/views/VideoEditorView.ts:256
@@ -285,12 +335,20 @@ msgstr ""
 msgid "Conversation deleted & sender muted"
 msgstr ""
 
+#: src/components/views/ProfileView.ts:704
+msgid "Copied!"
+msgstr ""
+
 #: src/components/views/ZapstoreAppView.ts:321
 msgid "Copy certificate hash"
 msgstr ""
 
 #: src/components/views/ZapstoreAppView.ts:317
 msgid "Copy hash"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:669
+msgid "Copy npub"
 msgstr ""
 
 #: src/components/views/ConversationView.ts:525
@@ -475,6 +533,10 @@ msgstr ""
 msgid "Duration must be at most 1 year."
 msgstr ""
 
+#: src/components/views/ProfileView.ts:1447
+msgid "e.g. Bob from work"
+msgstr ""
+
 #: src/components/views/ArticleEditorView.ts:316
 msgid "Edit"
 msgstr ""
@@ -487,8 +549,16 @@ msgstr ""
 msgid "Edit List"
 msgstr ""
 
+#: src/components/views/ProfileView.ts:1480
+msgid "Edit private note"
+msgstr ""
+
 #: src/components/views/TimelineView.ts:168
 msgid "Edit tribes"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:898
+msgid "Edit your profile"
 msgstr ""
 
 #: src/components/views/AboutView.ts:76
@@ -520,6 +590,10 @@ msgstr ""
 #: src/components/views/SettingsView.ts:109
 #: src/components/views/SettingsView.ts:80
 msgid "Export DiagLogs"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:1774
+msgid "Failed to add to tribe"
 msgstr ""
 
 #: src/components/views/ZapstoreAppView.ts:125
@@ -563,12 +637,28 @@ msgstr ""
 msgid "Follow All"
 msgstr ""
 
+#: src/components/views/ProfileView.ts:662
+msgid "Followers"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:658
+msgid "Following"
+msgstr ""
+
 #: src/components/views/FollowPackDetailView.ts:261
 msgid "Following %s new people"
 msgstr ""
 
 #: src/components/views/ListsOverviewView.ts:69
 msgid "Follows"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:635
+msgid "Follows you"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:954
+msgid "Get notified when this user posts a new article"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:339
@@ -587,8 +677,16 @@ msgstr ""
 msgid "Gregorian calendar"
 msgstr ""
 
+#: src/components/views/ProfileView.ts:636
+msgid "Has muted you"
+msgstr ""
+
 #: src/components/views/ZapstoreAppView.ts:317
 msgid "Hash"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:968
+msgid "Hide this user's website highlights and reposts of them from your timelines"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:340
@@ -641,8 +739,16 @@ msgstr ""
 msgid "Invalid format — must start with nsec1"
 msgstr ""
 
+#: src/components/views/ProfileView.ts:345
+msgid "Invalid profile ID"
+msgstr ""
+
 #: src/components/modals/UpdateModal.ts:97
 msgid "is available"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:536
+msgid "Joined Nostr on %s"
 msgstr ""
 
 #: src/components/modals/SyncConfirmationModal.ts:279
@@ -704,6 +810,10 @@ msgstr ""
 msgid "License"
 msgstr ""
 
+#: src/components/views/ProfileView.ts:694
+msgid "Lightning QR Code"
+msgstr ""
+
 #: src/components/views/AboutView.ts:222
 msgid "Like any web host, MyNymbox processes standard server log data when you load the application — typically your IP address, request timestamp, the URL/file requested, browser type, and referrer — for operational and security purposes (e.g. DDoS mitigation, server stability). NoorNote itself does not access or use these logs."
 msgstr ""
@@ -727,6 +837,10 @@ msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:190
 msgid "Loading article..."
+msgstr ""
+
+#: src/components/views/ProfileView.ts:2234
+msgid "Loading articles…"
 msgstr ""
 
 #: src/components/views/ProfileBookingView.ts:186
@@ -753,7 +867,20 @@ msgstr ""
 msgid "Loading older messages…"
 msgstr ""
 
+#: src/components/views/ProfileView.ts:353
+msgid "Loading profile..."
+msgstr ""
+
+#: src/components/views/ProfileView.ts:2252
+msgid "Loading videos…"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:2270
+msgid "Loading websites…"
+msgstr ""
+
 #: src/components/views/ListingReadView.ts:130
+#: src/components/views/ProfileView.ts:534
 msgid "Loading..."
 msgstr ""
 
@@ -898,6 +1025,10 @@ msgstr ""
 msgid "No"
 msgstr ""
 
+#: src/components/views/ProfileView.ts:1354
+msgid "No badges created yet. Create one in Addons → Badges."
+msgstr ""
+
 #: src/components/views/ArticleEditorView.ts:1229
 msgid "No content yet..."
 msgstr ""
@@ -928,6 +1059,10 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:109
 msgid "No Tracking or Analytics by NoorNote"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:1632
+msgid "No tribes found. Create a tribe first in the Tribe view."
 msgstr ""
 
 #: src/components/views/AboutView.ts:191
@@ -994,6 +1129,11 @@ msgstr ""
 msgid "Note for %s (optional, sent as a private message)"
 msgstr ""
 
+#: src/components/views/ProfileView.ts:721
+#: src/components/views/ProfileView.ts:739
+msgid "Notes"
+msgstr ""
+
 #: src/components/views/TimelineView.ts:132
 msgid "Notes - Timeline"
 msgstr ""
@@ -1006,12 +1146,20 @@ msgstr ""
 msgid "Now (on publish)"
 msgstr ""
 
+#: src/components/views/ProfileView.ts:672
+msgid "npub QR Code"
+msgstr ""
+
 #: src/services/dm/DMExpiration.ts:128
 msgid "Off"
 msgstr ""
 
 #: src/services/ModalService.ts:259
 msgid "OK"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:991
+msgid "Only suppresses notifications from this user's interactions with your notes"
 msgstr ""
 
 #: src/components/views/AboutView.ts:121
@@ -1103,6 +1251,18 @@ msgstr ""
 
 #: src/components/modals/ImportToNoorSignerModal.ts:67
 msgid "Private Key (nsec)"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:1491
+msgid "Private Note"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:724
+msgid "Products"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:1875
+msgid "Profile module not available"
 msgstr ""
 
 #: src/components/views/AboutView.ts:243
@@ -1241,6 +1401,10 @@ msgstr ""
 msgid "Search by name or paste npub..."
 msgstr ""
 
+#: src/components/views/ProfileView.ts:1898
+msgid "Search failed: %s"
+msgstr ""
+
 #: src/components/modals/ImportToNoorSignerModal.ts:36
 msgid "Secure Your Key"
 msgstr ""
@@ -1261,6 +1425,10 @@ msgstr ""
 msgid "Send a message to start the conversation"
 msgstr ""
 
+#: src/components/views/ProfileView.ts:685
+msgid "Send message"
+msgstr ""
+
 #: src/components/modals/DMComposeModal.ts:98
 #: src/components/modals/ZapModal.ts:151
 msgid "Sending..."
@@ -1279,12 +1447,28 @@ msgstr ""
 msgid "Set Password"
 msgstr ""
 
+#: src/components/views/ProfileView.ts:1442
+msgid "Set Petname"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:1553
+msgid "Set status…"
+msgstr ""
+
 #: src/components/views/SettingsView.ts:71
 msgid "Settings"
 msgstr ""
 
 #: src/components/views/AboutView.ts:206
 msgid "Settings are stored in the %s directory."
+msgstr ""
+
+#: src/components/views/ProfileView.ts:963
+msgid "Show reactions"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:961
+msgid "Show this user's reactions (likes) as entries in your timeline"
 msgstr ""
 
 #: src/components/views/ConversationView.ts:1200
@@ -1313,6 +1497,24 @@ msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:470
 msgid "Slug / Identifier"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:1161
+#: src/components/views/ProfileView.ts:990
+msgid "Soft mute"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:1165
+msgid "Soft mute lifted"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:1161
+#: src/components/views/ProfileView.ts:990
+msgid "Soft muted"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:1164
+msgid "Soft muted — their interactions no longer notify you"
 msgstr ""
 
 #: src/components/views/ListingReadView.ts:116
@@ -1346,6 +1548,10 @@ msgstr ""
 
 #: src/components/views/VideoEditorView.ts:233
 msgid "Switch orientation"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:685
+msgid "Switch to NoorSigner or browser extension to send messages"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:359
@@ -1425,6 +1631,22 @@ msgstr ""
 msgid "This book could not be loaded. You can try the download button on the original post."
 msgstr ""
 
+#: src/components/views/ProfileView.ts:1105
+msgid "This user's highlights are now hidden"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:1106
+msgid "This user's highlights are shown again"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:1135
+msgid "This user's reactions are hidden from your timeline again"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:1134
+msgid "This user's reactions now appear in your timeline"
+msgstr ""
+
 #: src/services/ModalService.ts:243
 msgid "This will send a deletion request to all relays. This cannot be undone."
 msgstr ""
@@ -1460,8 +1682,16 @@ msgstr ""
 msgid "Toggle section"
 msgstr ""
 
+#: src/components/views/ProfileView.ts:1740
+msgid "Tribe not found"
+msgstr ""
+
 #: src/components/views/ListsOverviewView.ts:85
 msgid "Tribes"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:970
+msgid "Turn off Highlights"
 msgstr ""
 
 #: src/components/views/ConversationView.ts:254
@@ -1529,6 +1759,10 @@ msgstr ""
 msgid "Uploading video..."
 msgstr ""
 
+#: src/components/views/ProfileView.ts:1752
+msgid "User is already in tribe \"%s\""
+msgstr ""
+
 #: src/components/views/ConversationView.ts:243
 msgid "User options"
 msgstr ""
@@ -1553,6 +1787,11 @@ msgstr ""
 msgid "Video upload failed"
 msgstr ""
 
+#: src/components/views/ProfileView.ts:2251
+#: src/components/views/ProfileView.ts:723
+msgid "Videos"
+msgstr ""
+
 #: src/components/views/AboutView.ts:209
 msgid "We have no access to this data."
 msgstr ""
@@ -1570,6 +1809,11 @@ msgstr ""
 msgid "Website"
 msgstr ""
 
+#: src/components/views/ProfileView.ts:2269
+#: src/components/views/ProfileView.ts:726
+msgid "Websites"
+msgstr ""
+
 #: src/components/views/ConversationView.ts:613
 msgid "Weeks"
 msgstr ""
@@ -1584,6 +1828,10 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:242
 msgid "When verifying a user's NIP-05 identifier (e.g. %s), NoorNote sends an HTTP request to %s. The owner of that domain may log the request."
+msgstr ""
+
+#: src/components/views/ProfileView.ts:1496
+msgid "Write anything you want to remember about this user…"
 msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:310
@@ -1638,6 +1886,10 @@ msgstr ""
 #: src/components/modals/ZapModal.ts:150
 #: src/components/modals/ZapModal.ts:73
 msgid "Zap"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:697
+msgid "Zap this user"
 msgstr ""
 
 #: src/components/views/SettingsView.ts:47

@@ -434,6 +434,8 @@ msgid "Accounts and threads you have muted."
 msgstr "Accounts and threads you have muted."
 
 #: src/components/views/ArticleTimelineView.ts:59
+#: src/components/views/ProfileView.ts:2233
+#: src/components/views/ProfileView.ts:722
 msgid "Articles"
 msgstr "Articles"
 
@@ -966,6 +968,7 @@ msgid "Loading members..."
 msgstr "Loading members..."
 
 #: src/components/views/ListingReadView.ts:130
+#: src/components/views/ProfileView.ts:534
 msgid "Loading..."
 msgstr "Loading..."
 
@@ -1084,6 +1087,7 @@ msgstr "Back to profile"
 
 #: src/components/views/ProfileBookingView.ts:186
 #: src/components/views/ProfileBookingView.ts:202
+#: src/components/views/ProfileView.ts:676
 msgid "Book a meeting"
 msgstr "Book a meeting"
 
@@ -1808,3 +1812,255 @@ msgstr "Write your article in Markdown..."
 #: src/components/views/ArticleEditorView.ts:1007
 msgid "You have unsaved changes. Discard them?"
 msgstr "You have unsaved changes. Discard them?"
+
+#: src/components/views/ProfileView.ts:1443
+msgid ""
+"⚠️ Public label, stored in your contact list (NIP-02). Anyone who reads "
+"your follow list can see it."
+msgstr ""
+"⚠️ Public label, stored in your contact list (NIP-02). Anyone who reads "
+"your follow list can see it."
+
+#: src/components/views/ProfileView.ts:1492
+msgid "🔒 Encrypted note about this user. Only you can decrypt and read it."
+msgstr "🔒 Encrypted note about this user. Only you can decrypt and read it."
+
+#: src/components/views/ProfileView.ts:1480
+msgid "Add private note"
+msgstr "Add private note"
+
+#: src/components/views/ProfileView.ts:1007
+msgid "Add to Tribe"
+msgstr "Add to Tribe"
+
+#: src/components/views/ProfileView.ts:1771
+msgid "Added to tribe \"%s\""
+msgstr "Added to tribe \"%s\""
+
+#: src/components/views/ProfileView.ts:956
+msgid "Article alerts"
+msgstr "Article alerts"
+
+#: src/components/views/ProfileView.ts:1397
+#: src/components/views/ProfileView.ts:679
+msgid "Award Badge"
+msgstr "Award Badge"
+
+#: src/components/views/ProfileView.ts:2145
+#: src/components/views/ProfileView.ts:728
+msgid "Badges"
+msgstr "Badges"
+
+#: src/components/views/ProfileView.ts:2188
+msgid "by"
+msgstr "by"
+
+#: src/components/views/ProfileView.ts:2079
+#: src/components/views/ProfileView.ts:727
+msgid "Calendar"
+msgstr "Calendar"
+
+#: src/components/views/ProfileView.ts:1640
+msgid "Choose a tribe"
+msgstr "Choose a tribe"
+
+#: src/components/views/ProfileView.ts:704
+msgid "Copied!"
+msgstr "Copied!"
+
+#: src/components/views/ProfileView.ts:669
+msgid "Copy npub"
+msgstr "Copy npub"
+
+#: src/components/views/ProfileView.ts:1447
+msgid "e.g. Bob from work"
+msgstr "e.g. Bob from work"
+
+#: src/components/views/ProfileView.ts:1480
+msgid "Edit private note"
+msgstr "Edit private note"
+
+#: src/components/views/ProfileView.ts:898
+msgid "Edit your profile"
+msgstr "Edit your profile"
+
+#: src/components/views/ProfileView.ts:1774
+msgid "Failed to add to tribe"
+msgstr "Failed to add to tribe"
+
+#: src/components/views/ProfileView.ts:662
+msgid "Followers"
+msgstr "Followers"
+
+#: src/components/views/ProfileView.ts:658
+msgid "Following"
+msgstr "Following"
+
+#: src/components/views/ProfileView.ts:635
+msgid "Follows you"
+msgstr "Follows you"
+
+#: src/components/views/ProfileView.ts:954
+msgid "Get notified when this user posts a new article"
+msgstr "Get notified when this user posts a new article"
+
+#: src/components/views/ProfileView.ts:636
+msgid "Has muted you"
+msgstr "Has muted you"
+
+#: src/components/views/ProfileView.ts:968
+msgid "Hide this user's website highlights and reposts of them from your timelines"
+msgstr "Hide this user's website highlights and reposts of them from your timelines"
+
+#: src/components/views/ProfileView.ts:345
+msgid "Invalid profile ID"
+msgstr "Invalid profile ID"
+
+#: src/components/views/ProfileView.ts:536
+msgid "Joined Nostr on %s"
+msgstr "Joined Nostr on %s"
+
+#: src/components/views/ProfileView.ts:694
+msgid "Lightning QR Code"
+msgstr "Lightning QR Code"
+
+#: src/components/views/ProfileView.ts:2234
+msgid "Loading articles…"
+msgstr "Loading articles…"
+
+#: src/components/views/ProfileView.ts:353
+msgid "Loading profile..."
+msgstr "Loading profile..."
+
+#: src/components/views/ProfileView.ts:2252
+msgid "Loading videos…"
+msgstr "Loading videos…"
+
+#: src/components/views/ProfileView.ts:2270
+msgid "Loading websites…"
+msgstr "Loading websites…"
+
+#: src/components/views/ProfileView.ts:1354
+msgid "No badges created yet. Create one in Addons → Badges."
+msgstr "No badges created yet. Create one in Addons → Badges."
+
+#: src/components/views/ProfileView.ts:1632
+msgid "No tribes found. Create a tribe first in the Tribe view."
+msgstr "No tribes found. Create a tribe first in the Tribe view."
+
+#: src/components/views/ProfileView.ts:721
+#: src/components/views/ProfileView.ts:739
+msgid "Notes"
+msgstr "Notes"
+
+#: src/components/views/ProfileView.ts:672
+msgid "npub QR Code"
+msgstr "npub QR Code"
+
+#: src/components/views/ProfileView.ts:991
+msgid "Only suppresses notifications from this user's interactions with your notes"
+msgstr "Only suppresses notifications from this user's interactions with your notes"
+
+#: src/components/views/ProfileView.ts:1491
+msgid "Private Note"
+msgstr "Private Note"
+
+#: src/components/views/ProfileView.ts:724
+msgid "Products"
+msgstr "Products"
+
+#: src/components/views/ProfileView.ts:1875
+msgid "Profile module not available"
+msgstr "Profile module not available"
+
+#: src/components/views/ProfileView.ts:1898
+msgid "Search failed: %s"
+msgstr "Search failed: %s"
+
+#: src/components/views/ProfileView.ts:685
+msgid "Send message"
+msgstr "Send message"
+
+#: src/components/views/ProfileView.ts:1442
+msgid "Set Petname"
+msgstr "Set Petname"
+
+#: src/components/views/ProfileView.ts:1553
+msgid "Set status…"
+msgstr "Set status…"
+
+#: src/components/views/ProfileView.ts:963
+msgid "Show reactions"
+msgstr "Show reactions"
+
+#: src/components/views/ProfileView.ts:961
+msgid "Show this user's reactions (likes) as entries in your timeline"
+msgstr "Show this user's reactions (likes) as entries in your timeline"
+
+#: src/components/views/ProfileView.ts:1161
+#: src/components/views/ProfileView.ts:990
+msgid "Soft mute"
+msgstr "Soft mute"
+
+#: src/components/views/ProfileView.ts:1165
+msgid "Soft mute lifted"
+msgstr "Soft mute lifted"
+
+#: src/components/views/ProfileView.ts:1161
+#: src/components/views/ProfileView.ts:990
+msgid "Soft muted"
+msgstr "Soft muted"
+
+#: src/components/views/ProfileView.ts:1164
+msgid "Soft muted — their interactions no longer notify you"
+msgstr "Soft muted — their interactions no longer notify you"
+
+#: src/components/views/ProfileView.ts:685
+msgid "Switch to NoorSigner or browser extension to send messages"
+msgstr "Switch to NoorSigner or browser extension to send messages"
+
+#: src/components/views/ProfileView.ts:1105
+msgid "This user's highlights are now hidden"
+msgstr "This user's highlights are now hidden"
+
+#: src/components/views/ProfileView.ts:1106
+msgid "This user's highlights are shown again"
+msgstr "This user's highlights are shown again"
+
+#: src/components/views/ProfileView.ts:1135
+msgid "This user's reactions are hidden from your timeline again"
+msgstr "This user's reactions are hidden from your timeline again"
+
+#: src/components/views/ProfileView.ts:1134
+msgid "This user's reactions now appear in your timeline"
+msgstr "This user's reactions now appear in your timeline"
+
+#: src/components/views/ProfileView.ts:1740
+msgid "Tribe not found"
+msgstr "Tribe not found"
+
+#: src/components/views/ProfileView.ts:970
+msgid "Turn off Highlights"
+msgstr "Turn off Highlights"
+
+#: src/components/views/ProfileView.ts:1752
+msgid "User is already in tribe \"%s\""
+msgstr "User is already in tribe \"%s\""
+
+#: src/components/views/ProfileView.ts:2251
+#: src/components/views/ProfileView.ts:723
+msgid "Videos"
+msgstr "Videos"
+
+#: src/components/views/ProfileView.ts:2269
+#: src/components/views/ProfileView.ts:726
+msgid "Websites"
+msgstr "Websites"
+
+#: src/components/views/ProfileView.ts:1496
+msgid "Write anything you want to remember about this user…"
+msgstr "Write anything you want to remember about this user…"
+
+#: src/components/views/ProfileView.ts:697
+msgid "Zap this user"
+msgstr "Zap this user"

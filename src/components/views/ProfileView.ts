@@ -6,6 +6,7 @@
  */
 
 import { View } from './View';
+import { _ } from '../../i18n';
 import {
   isShowReactionsFor,
   setShowReactionsFor,
@@ -341,7 +342,7 @@ export class ProfileView extends View {
    */
   private async render(): Promise<void> {
     if (!this.pubkey) {
-      this.showError('Invalid profile ID');
+      this.showError(_('Invalid profile ID'));
       return;
     }
 
@@ -349,7 +350,7 @@ export class ProfileView extends View {
     this.container.innerHTML = `
       <div class="profile-loading">
         <div class="loading-spinner"></div>
-        <p>Loading profile...</p>
+        <p>${_('Loading profile...')}</p>
       </div>
     `;
 
@@ -530,9 +531,9 @@ export class ProfileView extends View {
     const joinedEl = this.container.querySelector('#profile-joined-date');
     if (joinedEl) {
       if (this.isLoadingJoinedDate) {
-        joinedEl.textContent = 'Loading...';
+        joinedEl.textContent = _('Loading...');
       } else if (this.joinedDate) {
-        joinedEl.textContent = `Joined Nostr on ${this.joinedDate}`;
+        joinedEl.textContent = _('Joined Nostr on %s', this.joinedDate);
       } else {
         joinedEl.textContent = '';
       }
@@ -631,8 +632,8 @@ export class ProfileView extends View {
         <div class="profile-info">
           <div class="profile-avatar-wrapper">
             <img src="${escapeHtmlAttr(picture)}" alt="${escapeHtml(displayName)}" class="profile-pic profile-pic--big" />
-            ${this.followsYou ? '<span class="badge badge--green">Follows you</span>' : ''}
-            ${this.mutedYou ? '<span class="badge badge--red">Has muted you</span>' : ''}
+            ${this.followsYou ? `<span class="badge badge--green">${_('Follows you')}</span>` : ''}
+            ${this.mutedYou ? `<span class="badge badge--red">${_('Has muted you')}</span>` : ''}
           </div>
 
           <div class="profile-meta">
@@ -654,34 +655,34 @@ export class ProfileView extends View {
             <div class="profile-stats">
               <div class="stat-item stat-item--clickable" id="following-count-link">
                 <strong>${this.followingCount.toLocaleString('en-US')}</strong>
-                <span>Following</span>
+                <span>${_('Following')}</span>
               </div>
               <div class="stat-item stat-item--clickable" id="followers-count-link">
                 <strong id="followers-count">${this.followerCount ? this.followerCount.toLocaleString('en-US') : '...'}</strong>
-                <span>Followers</span>
+                <span>${_('Followers')}</span>
               </div>
             </div>
 
             <div class="profile-joined-date" id="profile-joined-date"></div>
 
             <div class="profile-npub">
-              <button class="copy-btn" data-copy="${escapeHtml(this.npub)}" title="Copy npub">
+              <button class="copy-btn" data-copy="${escapeHtml(this.npub)}" title="${_('Copy npub')}">
                 <svg width="18" height="18"><use href="#icon-copy-24"/></svg>
               </button>
-              <button class="qr-btn" title="npub QR Code">
+              <button class="qr-btn" title="${_('npub QR Code')}">
                 <svg width="18" height="18"><use href="#icon-qr-code"/></svg>
               </button>
               ${this.renderTribeButton()}
-              <button class="profile-book-btn" title="Book a meeting" style="display:none">
+              <button class="profile-book-btn" title="${_('Book a meeting')}" style="display:none">
                 <svg width="18" height="18"><use href="#icon-calendar"/></svg>
               </button>
-              <button class="profile-badge-btn" title="Award Badge" style="display:none">
+              <button class="profile-badge-btn" title="${_('Award Badge')}" style="display:none">
                 <svg width="18" height="18"><use href="#icon-badge"/></svg>
               </button>
               ${
                 !isOwnProfile
                   ? `
-              <button class="profile-dm-btn"${isBunker ? ' disabled' : ''} title="${isBunker ? 'Switch to NoorSigner or browser extension to send messages' : 'Send message'}">
+              <button class="profile-dm-btn"${isBunker ? ' disabled' : ''} title="${isBunker ? _('Switch to NoorSigner or browser extension to send messages') : _('Send message')}">
                 <svg width="18" height="18"><use href="#icon-message"/></svg>
               </button>
               `
@@ -690,17 +691,17 @@ export class ProfileView extends View {
               ${
                 lud16 && !isOwnProfile
                   ? `
-              <button class="lightning-qr-btn" title="Lightning QR Code">
+              <button class="lightning-qr-btn" title="${_('Lightning QR Code')}">
                 <svg width="18" height="18"><use href="#icon-lightning-qr"/></svg>
               </button>
-              <button class="profile-zap-btn" title="Zap this user">
+              <button class="profile-zap-btn" title="${_('Zap this user')}">
                 <svg width="18" height="18"><use href="#icon-lightning-filled"/></svg>
               </button>
               `
                   : ''
               }
               <div class="textinput-overlay-mount"></div>
-              <span class="copy-feedback">Copied!</span>
+              <span class="copy-feedback">${_('Copied!')}</span>
             </div>
 
             <div class="profile-actions">
@@ -717,14 +718,14 @@ export class ProfileView extends View {
       </div>
 
       <div class="profile-tabs tabs tabs--scrollable">
-        <button class="tab tab--active" data-tab="notes" type="button">Notes</button>
-        <button class="tab" data-tab="articles" type="button">Articles</button>
-        <button class="tab" data-tab="videos" type="button">Videos</button>
-        <button class="tab" data-tab="products" type="button">Products</button>
+        <button class="tab tab--active" data-tab="notes" type="button">${_('Notes')}</button>
+        <button class="tab" data-tab="articles" type="button">${_('Articles')}</button>
+        <button class="tab" data-tab="videos" type="button">${_('Videos')}</button>
+        <button class="tab" data-tab="products" type="button">${_('Products')}</button>
         <button class="tab" data-tab="zapstore" type="button">Zapstore</button>
-        <button class="tab" data-tab="websites" type="button">Websites</button>
-        <button class="tab" data-tab="calendar" type="button">Calendar</button>
-        <button class="tab" data-tab="badges" type="button">Badges</button>
+        <button class="tab" data-tab="websites" type="button">${_('Websites')}</button>
+        <button class="tab" data-tab="calendar" type="button">${_('Calendar')}</button>
+        <button class="tab" data-tab="badges" type="button">${_('Badges')}</button>
       </div>
 
       <div class="profile-badges-mount profile-section" data-section="badges" hidden></div>
@@ -735,7 +736,7 @@ export class ProfileView extends View {
       <div class="profile-zapstore-mount profile-section" data-section="zapstore" hidden></div>
       <div class="profile-nsites-mount profile-section" data-section="websites" hidden></div>
       <div class="profile-timeline profile-section" data-section="notes">
-        <h2 class="profile-timeline-heading visually-hidden">Notes</h2>
+        <h2 class="profile-timeline-heading visually-hidden">${_('Notes')}</h2>
       </div>
     `;
 
@@ -894,7 +895,7 @@ export class ProfileView extends View {
     }
 
     return `
-      <button class="btn" data-action="edit-profile" title="Edit your profile">
+      <button class="btn" data-action="edit-profile" title="${_('Edit your profile')}">
         <svg width="16" height="16"><use href="#icon-edit"/></svg>
         Edit Profile
       </button>
@@ -950,23 +951,23 @@ export class ProfileView extends View {
       articlesApi?.isSubscribedToArticleNotifications(this.pubkey) ?? false;
 
     const articleNotifCheckbox = `
-      <label class="nn-checkbox" title="Get notified when this user posts a new article">
+      <label class="nn-checkbox" title="${_('Get notified when this user posts a new article')}">
         <input type="checkbox" id="article-notif-toggle" ${isSubscribed ? 'checked' : ''} />
-        <span>Article alerts</span>
+        <span>${_('Article alerts')}</span>
       </label>
     `;
 
     const showReactionsCheckbox = `
-      <label class="nn-checkbox" title="Show this user's reactions (likes) as entries in your timeline">
+      <label class="nn-checkbox" title="${_("Show this user's reactions (likes) as entries in your timeline")}">
         <input type="checkbox" id="reactions-toggle" ${isShowReactionsFor(this.pubkey) ? 'checked' : ''} />
-        <span>Show reactions</span>
+        <span>${_('Show reactions')}</span>
       </label>
     `;
 
     const highlightsCheckbox = `
-      <label class="nn-checkbox" title="Hide this user's website highlights and reposts of them from your timelines">
+      <label class="nn-checkbox" title="${_("Hide this user's website highlights and reposts of them from your timelines")}">
         <input type="checkbox" id="highlights-toggle" ${isHighlightHiddenFor(this.pubkey) ? 'checked' : ''} />
-        <span>Turn off Highlights</span>
+        <span>${_('Turn off Highlights')}</span>
       </label>
     `;
 
@@ -986,8 +987,8 @@ export class ProfileView extends View {
    */
   private renderSoftMuteButton(): string {
     const isSoftMuted = SoftMuteService.getInstance().isSoftMuted(this.pubkey);
-    const label = isSoftMuted ? 'Soft muted' : 'Soft mute';
-    return `<button class="btn btn--passive soft-mute-btn" data-action="soft-mute" title="Only suppresses notifications from this user's interactions with your notes">${label}</button>`;
+    const label = isSoftMuted ? _('Soft muted') : _('Soft mute');
+    return `<button class="btn btn--passive soft-mute-btn" data-action="soft-mute" title="${_("Only suppresses notifications from this user's interactions with your notes")}">${label}</button>`;
   }
 
   /**
@@ -1003,7 +1004,7 @@ export class ProfileView extends View {
     }
 
     return `
-      <button class="tribe-btn" title="Add to Tribe" style="display:none">
+      <button class="tribe-btn" title="${_('Add to Tribe')}" style="display:none">
         <svg width="16" height="16"><use href="#icon-tribe-profile"/></svg>
       </button>
       <div class="tribe-dropdown-mount"></div>
@@ -1101,8 +1102,8 @@ export class ProfileView extends View {
         });
         ToastService.show(
           freshHighlights.checked
-            ? "This user's highlights are now hidden"
-            : "This user's highlights are shown again",
+            ? _("This user's highlights are now hidden")
+            : _("This user's highlights are shown again"),
           'success'
         );
       });
@@ -1130,8 +1131,8 @@ export class ProfileView extends View {
         });
         ToastService.show(
           freshReactions.checked
-            ? "This user's reactions now appear in your timeline"
-            : "This user's reactions are hidden from your timeline again",
+            ? _("This user's reactions now appear in your timeline")
+            : _("This user's reactions are hidden from your timeline again"),
           'success'
         );
       });
@@ -1157,11 +1158,11 @@ export class ProfileView extends View {
     btn.addEventListener('click', () => {
       SoftMuteService.getInstance().toggleSoftMute(this.pubkey);
       const muted = SoftMuteService.getInstance().isSoftMuted(this.pubkey);
-      btn.textContent = muted ? 'Soft muted' : 'Soft mute';
+      btn.textContent = muted ? _('Soft muted') : _('Soft mute');
       ToastService.show(
         muted
-          ? 'Soft muted — their interactions no longer notify you'
-          : 'Soft mute lifted',
+          ? _('Soft muted — their interactions no longer notify you')
+          : _('Soft mute lifted'),
         'success'
       );
     });
@@ -1350,7 +1351,7 @@ export class ProfileView extends View {
 
         if (defs.length === 0) {
           ToastService.show(
-            'No badges created yet. Create one in Addons → Badges.',
+            _('No badges created yet. Create one in Addons → Badges.'),
             'info'
           );
           return;
@@ -1393,7 +1394,7 @@ export class ProfileView extends View {
         });
 
         ModalService.getInstance().show({
-          title: 'Award Badge',
+          title: _('Award Badge'),
           content,
           width: '360px',
           height: 'auto',
@@ -1438,11 +1439,12 @@ export class ProfileView extends View {
           const { ModalService } = await import('../../services/ModalService');
           const current = getFollowPetname(this.pubkey) ?? '';
           const result = await ModalService.getInstance().prompt({
-            title: 'Set Petname',
-            message:
-              '⚠️ Public label, stored in your contact list (NIP-02). Anyone who reads your follow list can see it.',
+            title: _('Set Petname'),
+            message: _(
+              '⚠️ Public label, stored in your contact list (NIP-02). Anyone who reads your follow list can see it.'
+            ),
             defaultValue: current,
-            placeholder: 'e.g. Bob from work',
+            placeholder: _('e.g. Bob from work'),
             allowEmpty: true,
           });
           if (result === null) return;
@@ -1475,7 +1477,7 @@ export class ProfileView extends View {
         const note = service.getPetname(this.pubkey);
         const filled = !!note;
         noteEl.classList.toggle('profile-petname-note--filled', filled);
-        noteEl.title = filled ? 'Edit private note' : 'Add private note';
+        noteEl.title = filled ? _('Edit private note') : _('Add private note');
         noteEl.innerHTML =
           '<svg width="18" height="18"><use href="#icon-note"/></svg>';
       };
@@ -1486,11 +1488,14 @@ export class ProfileView extends View {
         const { ModalService } = await import('../../services/ModalService');
         const current = service.getPetname(this.pubkey) ?? '';
         const result = await ModalService.getInstance().prompt({
-          title: 'Private Note',
-          message:
-            '🔒 Encrypted note about this user. Only you can decrypt and read it.',
+          title: _('Private Note'),
+          message: _(
+            '🔒 Encrypted note about this user. Only you can decrypt and read it.'
+          ),
           defaultValue: current,
-          placeholder: 'Write anything you want to remember about this user…',
+          placeholder: _(
+            'Write anything you want to remember about this user…'
+          ),
           allowEmpty: true,
           multiline: true,
         });
@@ -1547,7 +1552,7 @@ export class ProfileView extends View {
           const input = document.createElement('input');
           input.type = 'text';
           input.className = 'input profile-status__input';
-          input.placeholder = 'Set status…';
+          input.placeholder = _('Set status…');
           input.maxLength = 140;
 
           let done = false;
@@ -1626,7 +1631,7 @@ export class ProfileView extends View {
 
       if (tribeFolders.length === 0) {
         ToastService.show(
-          'No tribes found. Create a tribe first in the Tribe view.',
+          _('No tribes found. Create a tribe first in the Tribe view.'),
           'info'
         );
         return;
@@ -1634,7 +1639,7 @@ export class ProfileView extends View {
 
       // Build dropdown options with placeholder first
       const options = [
-        { value: '', label: 'Choose a tribe' },
+        { value: '', label: _('Choose a tribe') },
         ...tribeFolders.map(folder => ({
           value: folder.id,
           label: folder.name,
@@ -1734,7 +1739,7 @@ export class ProfileView extends View {
       // Get folder details
       const folder = tribes.getFolder(folderId);
       if (!folder) {
-        ToastService.show('Tribe not found', 'error');
+        ToastService.show(_('Tribe not found'), 'error');
         return;
       }
 
@@ -1745,7 +1750,10 @@ export class ProfileView extends View {
       );
 
       if (isInThisTribe) {
-        ToastService.show(`User is already in tribe "${folder.name}"`, 'info');
+        ToastService.show(
+          _('User is already in tribe "%s"', folder.name),
+          'info'
+        );
         return;
       }
 
@@ -1762,10 +1770,10 @@ export class ProfileView extends View {
       // (addMember calls setMembers which emits, but being explicit for safety)
       this.eventBus.emit('tribe:updated');
 
-      ToastService.show(`Added to tribe "${folder.name}"`, 'success');
+      ToastService.show(_('Added to tribe "%s"', folder.name), 'success');
     } catch (error) {
       console.error('Failed to add to tribe:', error);
-      ToastService.show('Failed to add to tribe', 'error');
+      ToastService.show(_('Failed to add to tribe'), 'error');
     } finally {
       // Cleanup dropdown
       this.cleanupTribeDropdown();
@@ -1866,7 +1874,7 @@ export class ProfileView extends View {
         if (!searchTerms) return;
         const profileApi = this.profileModuleApi;
         if (!profileApi) {
-          helpers.showStatus('Profile module not available', 'error');
+          helpers.showStatus(_('Profile module not available'), 'error');
           return;
         }
 
@@ -1889,7 +1897,7 @@ export class ProfileView extends View {
           helpers.collapse();
         } catch (error) {
           console.error('[ProfileSearch] Search failed:', error);
-          helpers.showStatus(`Search failed: ${String(error)}`, 'error');
+          helpers.showStatus(_('Search failed: %s', String(error)), 'error');
           helpers.setButtonState('idle');
         }
       },
@@ -2069,8 +2077,7 @@ export class ProfileView extends View {
 
       const section = document.createElement('div');
       section.className = 'profile-calendar-carousel section';
-      section.innerHTML =
-        '<h2>Calendar</h2><div class="profile-calendar-carousel__list"></div>';
+      section.innerHTML = `<h2>${_('Calendar')}</h2><div class="profile-calendar-carousel__list"></div>`;
       mount.appendChild(section);
 
       const list = section.querySelector('.profile-calendar-carousel__list')!;
@@ -2135,8 +2142,7 @@ export class ProfileView extends View {
 
     const section = document.createElement('div');
     section.className = 'profile-badges-carousel section';
-    section.innerHTML =
-      '<h2>Badges</h2><div class="profile-badges-carousel__list"></div>';
+    section.innerHTML = `<h2>${_('Badges')}</h2><div class="profile-badges-carousel__list"></div>`;
     badgesMount.appendChild(section);
 
     const list = section.querySelector('.profile-badges-carousel__list')!;
@@ -2179,7 +2185,7 @@ export class ProfileView extends View {
         content.innerHTML = `
           <div>${imgHtml}</div>
           ${capturedDef.description ? `<p>${escapeHtml(capturedDef.description)}</p>` : ''}
-          <p>by <a href="/profile/${issuerNpub}" class="mention-link">${escapeHtml(issuerName)}</a></p>
+          <p>${_('by')} <a href="/profile/${issuerNpub}" class="mention-link">${escapeHtml(issuerName)}</a></p>
         `;
         ModalService.getInstance().show({
           title: capturedDef.name,
@@ -2224,8 +2230,8 @@ export class ProfileView extends View {
 
     const loading = this.appendCarouselLoading(
       articlesMount,
-      'Articles',
-      'Loading articles…'
+      _('Articles'),
+      _('Loading articles…')
     );
     this.articlesCarousel = new ProfileArticlesCarousel(this.pubkey);
     const element = await this.articlesCarousel.render();
@@ -2242,8 +2248,8 @@ export class ProfileView extends View {
 
     const loading = this.appendCarouselLoading(
       videosMount,
-      'Videos',
-      'Loading videos…'
+      _('Videos'),
+      _('Loading videos…')
     );
     this.videosCarousel = new ProfileVideosCarousel(this.pubkey);
     const element = await this.videosCarousel.render();
@@ -2260,8 +2266,8 @@ export class ProfileView extends View {
 
     const loading = this.appendCarouselLoading(
       nsitesMount,
-      'Websites',
-      'Loading websites…'
+      _('Websites'),
+      _('Loading websites…')
     );
     this.nsitesCarousel = new ProfileNsitesCarousel(this.pubkey);
     const element = await this.nsitesCarousel.render();
