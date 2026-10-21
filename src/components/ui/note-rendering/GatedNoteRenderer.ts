@@ -10,6 +10,7 @@
  * delegated to fanfares.io (external CTA).
  */
 
+import { _ } from '../../../i18n';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { NoteStructureBuilder } from './NoteStructureBuilder';
@@ -29,7 +30,7 @@ function buildCtaHtml(event: NostrEvent): string {
   const price = getGatedNotePrice(event) ?? 0;
   const url = buildFanfaresUrl(event);
   if (!url) return '';
-  return `<div class="gated-note__cta"><span class="badge badge--warning">⚡ ${formatNumberWithCommas(price)} sats</span><a class="btn btn--medium" href="${escapeHtmlAttr(url)}" target="_blank" rel="noopener noreferrer" data-gated-cta>Unlock on fanfares.io&nbsp;↗</a></div>`;
+  return `<div class="gated-note__cta"><span class="badge badge--warning">⚡ ${formatNumberWithCommas(price)} sats</span><a class="btn btn--medium" href="${escapeHtmlAttr(url)}" target="_blank" rel="noopener noreferrer" data-gated-cta>${_('Unlock on fanfares.io')}&nbsp;↗</a></div>`;
 }
 
 /** Teaser body — CTA lines stripped (the CTA lives in the badge/link above).

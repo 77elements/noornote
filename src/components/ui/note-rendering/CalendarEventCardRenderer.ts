@@ -5,6 +5,7 @@
  * chunk lazy).
  */
 
+import { _ } from '../../../i18n';
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { NoteHeader } from '../NoteHeader';
 import { AuthService } from '../../../services/AuthService';
@@ -132,11 +133,11 @@ export class CalendarEventCardRenderer {
       </div>
       <div class="l-row--split calendar-card__split">
         <div class="calendar-card__info">
-          <h3>${escapeHtml(parsed?.title || '(Untitled event)')}</h3>
+          <h3>${escapeHtml(parsed?.title || _('(Untitled event)'))}</h3>
           <div class="meta">${escapeHtml(
             parsed
               ? formatWhen(parsed.startMs, parsed.endMs, parsed.allDay)
-              : 'Calendar event'
+              : _('Calendar event')
           )}</div>
           ${parsed?.locations.length ? `<div class="meta">${escapeHtml(parsed.locations.join(', '))}</div>` : ''}
         </div>
@@ -178,10 +179,10 @@ export class CalendarEventCardRenderer {
             e.stopPropagation();
             if (data.isEventSaved(coordinate)) {
               data.unsaveEvent(coordinate);
-              ToastService.show('Removed from your calendar', 'success');
+              ToastService.show(_('Removed from your calendar'), 'success');
             } else {
               data.saveEvent(coordinate);
-              ToastService.show('Added to your calendar grid', 'success');
+              ToastService.show(_('Added to your calendar grid'), 'success');
             }
             refresh();
             TypedEventBus.getInstance().emit('calendar:saved-changed', {});
@@ -204,7 +205,7 @@ export class CalendarEventCardRenderer {
     const isOwn = AuthService.getInstance().isCurrentUser(event.pubkey);
     const body = `
       <div class="nn-card__content">
-        <h3>${escapeHtml(parsed?.title || 'Calendar')}</h3>
+        <h3>${escapeHtml(parsed?.title || _('Calendar'))}</h3>
         <div class="meta">Event calendar · ${parsed?.eventRefs.length ?? 0} events</div>
         ${
           isOwn || !coordinate
@@ -239,11 +240,11 @@ export class CalendarEventCardRenderer {
             e.stopPropagation();
             if (data.isCollectionSubscribed(coordinate)) {
               data.unsubscribeFromCollection(coordinate);
-              ToastService.show('Unsubscribed from calendar', 'success');
+              ToastService.show(_('Unsubscribed from calendar'), 'success');
             } else {
               data.subscribeToCollection(coordinate);
               ToastService.show(
-                'Subscribed — events added to your calendar grid',
+                _('Subscribed — events added to your calendar grid'),
                 'success'
               );
             }

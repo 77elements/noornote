@@ -5,6 +5,8 @@
  * depend on this entirely, and desktop users get it as an explicit alternative.
  */
 
+import { _ } from '../../i18n';
+
 export interface MoveTarget {
   id: string;
   label: string;
@@ -62,8 +64,11 @@ export class MoveDropdown {
     this.button = document.createElement('button');
     this.button.className =
       'btn btn--mini btn--secondary move-dropdown__trigger';
-    this.button.setAttribute('aria-label', options.ariaLabel || 'Move to...');
-    this.button.title = 'Move to...';
+    this.button.setAttribute(
+      'aria-label',
+      options.ariaLabel || _('Move to...')
+    );
+    this.button.title = _('Move to...');
     this.button.innerHTML = `<svg width="14" height="14"><use href="#icon-move"/></svg>`;
 
     this.boundClose = (e: MouseEvent) => {
@@ -97,7 +102,7 @@ export class MoveDropdown {
 
     const header = document.createElement('div');
     header.className = 'move-dropdown__header';
-    header.textContent = 'Move to';
+    header.textContent = _('Move to');
     this.dropdown.appendChild(header);
 
     this.targets.forEach(target => {

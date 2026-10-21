@@ -12,6 +12,7 @@
  * native long-press selection collides with system selection handles.
  */
 
+import { _ } from '../../i18n';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { AuthService } from '../../services/AuthService';
@@ -145,7 +146,7 @@ export class TextSelectionToolbar {
     btn.type = 'button';
     btn.className = 'btn btn--mini text-selection-toolbar';
     btn.style.display = 'none';
-    btn.innerHTML = `<svg width="14" height="14"><use href="#icon-highlight"/></svg><span>Post highlight</span>`;
+    btn.innerHTML = `<svg width="14" height="14"><use href="#icon-highlight"/></svg><span>${_('Post highlight')}</span>`;
 
     // Prevent the click on the button from clearing the selection before we
     // can read it on click.
@@ -170,7 +171,7 @@ export class TextSelectionToolbar {
     const event = postsApi?.getCachedNote(this.pending.eventId) ?? null;
     if (!event) {
       ToastService.show(
-        'Could not resolve source note. Please reload and try again.',
+        _('Could not resolve source note. Please reload and try again.'),
         'error'
       );
       this.hide();

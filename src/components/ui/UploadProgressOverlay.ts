@@ -19,6 +19,7 @@
  * service emits an UploadStatus event.
  */
 
+import { _ } from '../../i18n';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import type { UploadStatus } from '../../services/media/compression-types';
 import { UPLOAD_STATUS_EVENT } from '../../core/events';
@@ -100,13 +101,15 @@ export class UploadProgressOverlay {
     this.root.classList.remove('upload-progress-overlay--hidden');
     const batchSuffix =
       status.totalFiles && status.totalFiles > 1
-        ? ` (${(status.fileIndex ?? 0) + 1} of ${status.totalFiles})`
+        ? ` (${(status.fileIndex ?? 0) + 1} ${_('of')} ${status.totalFiles})`
         : '';
 
     switch (status.phase) {
       case 'compressing': {
-        const kindLabel = status.mediaKind === 'video' ? 'video' : 'audio';
-        message.textContent = `Compressing ${kindLabel} file…${batchSuffix}`;
+        const kindLabel =
+          status.mediaKind === 'video' ? _('video') : _('audio');
+        message.textContent =
+          _('Compressing %s file…', kindLabel) + batchSuffix;
         message.classList.add('pulsate');
         percentEl.textContent = `${Math.round(status.percent)}%`;
         barWrap.classList.remove('upload-progress-overlay__bar--hidden');
@@ -119,10 +122,17 @@ export class UploadProgressOverlay {
         const comp = status.compressedBytes ?? 0;
         if (comp >= orig) {
           // Compression ran but didn't help — original is uploaded.
-          message.textContent = 'Already well-compressed — uploading original';
+          message.textContent = _(
+            'Already well-compressed — uploading original'
+          );
         } else {
           const reduction = Math.round((1 - comp / orig) * 100);
-          message.textContent = `Compressed: ${formatBytes(orig)} → ${formatBytes(comp)} (${reduction}% smaller)`;
+          message.textContent = _(
+            'Compressed: %s → %s (%s% smaller)',
+            formatBytes(orig),
+            formatBytes(comp),
+            String(reduction)
+          );
         }
         message.classList.remove('pulsate');
         percentEl.textContent = '';
@@ -136,7 +146,7 @@ export class UploadProgressOverlay {
         break;
       }
       case 'uploading': {
-        message.textContent = `Uploading to media server…${batchSuffix}`;
+        message.textContent = _('Uploading to media server…') + batchSuffix;
         message.classList.add('pulsate');
         percentEl.textContent = `${Math.round(status.percent)}%`;
         barWrap.classList.remove('upload-progress-overlay__bar--hidden');
@@ -145,7 +155,7 @@ export class UploadProgressOverlay {
         break;
       }
       case 'uploaded': {
-        message.textContent = 'Uploaded';
+        message.textContent = _('Uploaded');
         message.classList.remove('pulsate');
         percentEl.textContent = '';
         barWrap.classList.add('upload-progress-overlay__bar--hidden');

@@ -6,6 +6,7 @@
  * are updated across all views (TV, SNV, PV) via TypedEventBus
  */
 
+import { _ } from '../../../i18n';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { PollData } from '../../poll/PollCreator';
 import { ModuleLoader } from '../../../core/ModuleLoader';
@@ -108,7 +109,7 @@ export class NIP88PollRenderer {
       if (pollData.multipleChoice) {
         const multiLabel = document.createElement('span');
         multiLabel.className = 'nip88-poll__meta-item';
-        multiLabel.textContent = 'Multiple choice allowed';
+        multiLabel.textContent = _('Multiple choice allowed');
         metaDiv.appendChild(multiLabel);
       }
 
@@ -329,7 +330,7 @@ export class NIP88PollRenderer {
    */
   private static renderOptionLabel(label: string): string {
     if (isImageUrl(label)) {
-      return `<img src="${escapeHtmlAttr(label)}" alt="Poll option" class="nip88-poll__option-image" loading="lazy">`;
+      return `<img src="${escapeHtmlAttr(label)}" alt="${_('Poll option')}" class="nip88-poll__option-image" loading="lazy">`;
     }
     return escapeHtml(label);
   }

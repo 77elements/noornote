@@ -4,6 +4,7 @@
  * Clickable to navigate to parent note
  */
 
+import { _ } from '../../i18n';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { SingleNoteModuleApi } from '../../modules/single-note/contracts';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
@@ -45,7 +46,7 @@ export class ReplyIndicator {
     indicator.innerHTML = `
       Reply to
       <img class="reply-avatar" src="" alt="" />
-      <span class="reply-username">Loading...</span>
+      <span class="reply-username">${_('Loading...')}</span>
     `;
 
     return indicator;
@@ -68,7 +69,7 @@ export class ReplyIndicator {
         ) as HTMLImageElement;
         const usernameEl = this.element.querySelector('.reply-username');
         if (avatarEl) avatarEl.remove();
-        if (usernameEl) usernameEl.textContent = '[Note not found]';
+        if (usernameEl) usernameEl.textContent = _('[Note not found]');
         return;
       }
 
@@ -103,7 +104,7 @@ export class ReplyIndicator {
       ) as HTMLImageElement;
       const usernameEl = this.element.querySelector('.reply-username');
       if (avatarEl) avatarEl.remove();
-      if (usernameEl) usernameEl.textContent = '[Error loading]';
+      if (usernameEl) usernameEl.textContent = _('[Error loading]');
     }
   }
 

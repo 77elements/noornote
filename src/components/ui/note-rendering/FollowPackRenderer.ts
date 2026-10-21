@@ -3,6 +3,7 @@
  * Card: cover image, title + member count, "Open Follow Pack" button, ISL.
  */
 
+import { _ } from '../../../i18n';
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { NoteHeader } from '../NoteHeader';
 import { parseFollowPackEvent } from '../../../helpers/parseFollowPack';
@@ -51,7 +52,7 @@ export class FollowPackRenderer {
     appendPackHint(
       element,
       'follow-pack-hint',
-      buildPackHintLines(pack, 'Follow pack was updated', {
+      buildPackHintLines(pack, _('Follow pack was updated'), {
         getSnapshot: getFollowPackSnapshot,
         setSnapshot: setFollowPackSnapshot,
         snapshotFrom: snapshotFromPack,

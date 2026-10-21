@@ -3,6 +3,7 @@
  * Displays zap information in a visually distinct card
  */
 
+import { _ } from '../../../i18n';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { UserProfileService } from '../../../services/UserProfileService';
@@ -40,7 +41,7 @@ export class ZapReceiptRenderer {
     // Get sender and recipient mentions
     const senderMention = zapData.senderPubkey
       ? ZapReceiptRenderer.mentionHtml(zapData.senderPubkey)
-      : '<span class="zap-receipt__anonymous">Anonymous</span>';
+      : `<span class="zap-receipt__anonymous">${_('Anonymous')}</span>`;
     const recipientMention = ZapReceiptRenderer.mentionHtml(
       zapData.recipientPubkey
     );
@@ -123,7 +124,7 @@ export class ZapReceiptRenderer {
     const senderPubkey = card.dataset.senderPubkey;
     const senderHtml = senderPubkey
       ? ZapReceiptRenderer.mentionHtml(senderPubkey)
-      : '<span class="zap-receipt__anonymous">Anonymous</span>';
+      : `<span class="zap-receipt__anonymous">${_('Anonymous')}</span>`;
     details.innerHTML = `${reactionsHtml}<span class="zap-receipt__arrow">→</span>${senderHtml}`;
 
     // The new mention links need hover cards + click navigation.
@@ -135,7 +136,7 @@ export class ZapReceiptRenderer {
    */
   private static mentionHtml(pubkey: string): string {
     const profile = ZapReceiptRenderer.profileService.getCachedProfile(pubkey);
-    const name = profile?.display_name || profile?.name || 'Unknown';
+    const name = profile?.display_name || profile?.name || _('Unknown');
     const avatar = profile?.picture || '';
     return renderUserMention(
       pubkey,
@@ -158,8 +159,8 @@ export class ZapReceiptRenderer {
     element.innerHTML = `
       <div class="zap-receipt zap-receipt--error">
         <span class="zap-receipt__icon">⚡</span>
-        <span class="zap-receipt__text">Zap Receipt</span>
-        <small>Could not parse zap data</small>
+        <span class="zap-receipt__text">${_('Zap Receipt')}</span>
+        <small>${_('Could not parse zap data')}</small>
       </div>
     `;
 

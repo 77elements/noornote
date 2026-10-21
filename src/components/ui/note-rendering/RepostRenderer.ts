@@ -11,6 +11,7 @@
  * reposts automatically without touching this file.
  */
 
+import { _ } from '../../../i18n';
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { UserProfileService } from '../../../services/UserProfileService';
@@ -105,7 +106,7 @@ export class RepostRenderer {
     const reposterNpub = reposterPubkey ? hexToNpub(reposterPubkey) || '' : '';
     const reposterName = reposterPubkey
       ? RepostRenderer.userProfileService.getDisplayName(reposterPubkey)
-      : 'Unknown';
+      : _('Unknown');
     const reposterPicture = reposterPubkey
       ? RepostRenderer.userProfileService.getDisplayPicture(reposterPubkey)
       : '';
@@ -252,7 +253,7 @@ export class RepostRenderer {
       errorDiv.className = 'repost-error';
       errorDiv.innerHTML = `
         <span class="error-icon">⚠️</span>
-        <span class="error-text">Invalid repost (no event reference)</span>
+        <span class="error-text">${_('Invalid repost (no event reference)')}</span>
       `;
       repostDiv.appendChild(errorDiv);
       return;
@@ -263,7 +264,7 @@ export class RepostRenderer {
     placeholderDiv.innerHTML = `
       <div class="loading-content">
         <span class="loading-spinner">⏳</span>
-        <span class="loading-text">Loading reposted note...</span>
+        <span class="loading-text">${_('Loading reposted note...')}</span>
       </div>
     `;
     repostDiv.appendChild(placeholderDiv);
@@ -290,7 +291,7 @@ export class RepostRenderer {
         placeholderDiv.innerHTML = `
             <div class="repost-error">
               <span class="error-icon">⚠️</span>
-              <span class="error-text">Could not load reposted note</span>
+              <span class="error-text">${_('Could not load reposted note')}</span>
             </div>
           `;
         return;

@@ -4,6 +4,7 @@
  * Card click → SNV (consistent with all other note kinds). Explicit button → gitworkshop.dev.
  */
 
+import { _ } from '../../../i18n';
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { NoteHeader } from '../NoteHeader';
 import { InteractionStatusLine } from '../InteractionStatusLine';
@@ -140,53 +141,53 @@ export class GitEventRenderer {
           GitEventRenderer.extractPatchSubject(event.content) ||
           subjectTag?.[1] ||
           '(untitled patch)';
-        return { label: 'Git Patch', icon: '🩹', title };
+        return { label: _('Git Patch'), icon: '🩹', title };
       }
       case 1618:
         return {
-          label: 'Pull Request',
+          label: _('Pull Request'),
           icon: '🔀',
           title: subjectTag?.[1] || '(untitled PR)',
         };
       case 1619:
         return {
-          label: 'Pull Request Update',
+          label: _('Pull Request Update'),
           icon: '🔀',
           title: subjectTag?.[1] || '(PR update)',
         };
       case 1621:
         return {
-          label: 'Git Issue',
+          label: _('Git Issue'),
           icon: '🐛',
           title: subjectTag?.[1] || '(untitled issue)',
         };
       case 1630:
         return {
-          label: 'Status: Open',
+          label: _('Status: Open'),
           icon: '🟢',
-          title: subjectTag?.[1] || 'Status update',
+          title: subjectTag?.[1] || _('Status update'),
         };
       case 1631:
         return {
-          label: 'Status: Applied/Merged',
+          label: _('Status: Applied/Merged'),
           icon: '✅',
-          title: subjectTag?.[1] || 'Status update',
+          title: subjectTag?.[1] || _('Status update'),
         };
       case 1632:
         return {
-          label: 'Status: Closed',
+          label: _('Status: Closed'),
           icon: '⛔',
-          title: subjectTag?.[1] || 'Status update',
+          title: subjectTag?.[1] || _('Status update'),
         };
       case 1633:
         return {
-          label: 'Status: Draft',
+          label: _('Status: Draft'),
           icon: '📝',
-          title: subjectTag?.[1] || 'Status update',
+          title: subjectTag?.[1] || _('Status update'),
         };
       case 30617:
         return {
-          label: 'Git Repository',
+          label: _('Git Repository'),
           icon: '📦',
           title: nameTag?.[1] || '(unnamed repo)',
           ...(descTag?.[1] ? { subtitle: descTag[1] } : {}),

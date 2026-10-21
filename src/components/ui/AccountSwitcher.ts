@@ -5,6 +5,7 @@
  * Uses nn-dropdown CSS classes for consistent styling.
  */
 
+import { _ } from '../../i18n';
 import {
   UserProfileService,
   UserProfile,
@@ -97,7 +98,7 @@ export class AccountSwitcher {
     container.innerHTML = `
       <button class="nn-dropdown__trigger" type="button">
         <span class="account-switcher__indicator"></span>
-        <span class="nn-dropdown__label">Loading...</span>
+        <span class="nn-dropdown__label">${_('Loading...')}</span>
         <span class="nn-dropdown__arrow" aria-hidden="true"></span>
       </button>
     `;
@@ -191,8 +192,7 @@ export class AccountSwitcher {
     window.addEventListener('resize', this.repositionMenu);
 
     // Show loading
-    menu.innerHTML =
-      '<li class="nn-dropdown__item" style="opacity: 0.5;">Loading...</li>';
+    menu.innerHTML = `<li class="nn-dropdown__item" style="opacity: 0.5;">${_('Loading...')}</li>`;
 
     await this.populateMenu(menu);
 

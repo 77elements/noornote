@@ -15,6 +15,7 @@
  * addon boundary is enforced once at the renderer layer.
  */
 
+import { _ } from '../../../i18n';
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { NoteStructureBuilder } from './NoteStructureBuilder';
 import { ArticlePreviewRenderer } from './ArticlePreviewRenderer';
@@ -60,9 +61,7 @@ export class LiveStreamRenderer {
     card.innerHTML = `
       <div class="live-stream-card__content">
         <p class="live-stream-card__hint">
-          Activate the
-          <a class="live-stream-card__hint-link" href="/addons/live-streams-player">Live Streams Player</a>
-          addon to see this live stream.
+          ${_('Activate the <a class="live-stream-card__hint-link" href="/addons/live-streams-player">Live Streams Player</a> addon to see this live stream.')}
         </p>
       </div>
     `;

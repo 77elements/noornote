@@ -4,6 +4,7 @@
  * Mounted in .user-login-bar before AccountSwitcher.
  */
 
+import { _ } from '../../i18n';
 import { FontSizeService } from '../../services/FontSizeService';
 import { TypedEventBus } from '../../core/TypedEventBus';
 
@@ -29,9 +30,9 @@ export class FontSizeSwitcher {
     const container = document.createElement('div');
     container.className = 'font-size-switcher';
     container.innerHTML = `
-      <span class="font-size-switcher__label">Font Size</span>
-      <button class="btn btn--secondary btn--square font-size-switcher__btn--decrease" type="button" title="Decrease font size">&minus;</button>
-      <button class="btn btn--secondary btn--square font-size-switcher__btn--increase" type="button" title="Increase font size">+</button>
+      <span class="font-size-switcher__label">${_('Font Size')}</span>
+      <button class="btn btn--secondary btn--square font-size-switcher__btn--decrease" type="button" title="${_('Decrease font size')}">&minus;</button>
+      <button class="btn btn--secondary btn--square font-size-switcher__btn--increase" type="button" title="${_('Increase font size')}">+</button>
     `;
 
     container

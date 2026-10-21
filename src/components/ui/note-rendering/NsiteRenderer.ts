@@ -20,6 +20,7 @@
  * no automatic fetch (privacy: zero outbound calls).
  */
 
+import { _ } from '../../../i18n';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { NoteStructureBuilder } from './NoteStructureBuilder';
@@ -63,7 +64,7 @@ export class NsiteRenderer {
   }
 
   private static buildCardHtml(event: NostrEvent): string {
-    const title = getTag(event.tags, 'title')?.trim() || 'Nostr website';
+    const title = getTag(event.tags, 'title')?.trim() || _('Nostr website');
     const description = getTag(event.tags, 'description')?.trim();
     const source = getTag(event.tags, 'source')?.trim();
     const aggregateHash = event.tags.find(t => t[0] === 'x')?.[1];
@@ -83,7 +84,7 @@ export class NsiteRenderer {
           }
           ${
             source && /^https?:\/\//.test(source)
-              ? `<a href="${escapeHtmlAttr(source)}" target="_blank" rel="noopener noreferrer" class="btn btn--passive btn--medium">Source code ↗</a>`
+              ? `<a href="${escapeHtmlAttr(source)}" target="_blank" rel="noopener noreferrer" class="btn btn--passive btn--medium">${_('Source code ↗')}</a>`
               : ''
           }
         </div>
@@ -114,7 +115,7 @@ export class NsiteRenderer {
       if (!hash) return;
       const clipboard = ClipboardActionsService.getInstance();
       void clipboard
-        .copyText(hash, 'Site hash')
+        .copyText(hash, _('Site hash'))
         .then(ok => {
           if (ok) clipboard.addVisualFeedback(copyBtn);
         })

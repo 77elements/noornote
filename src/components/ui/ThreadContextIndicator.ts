@@ -8,6 +8,7 @@
  * Replaces/extends ReplyIndicator with full thread context
  */
 
+import { _ } from '../../i18n';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import {
   type SingleNoteModuleApi,
@@ -89,7 +90,7 @@ export class ThreadContextIndicator {
     } catch (_error) {
       console.error('Failed to load thread context:', _error);
       this.element.innerHTML = `
-        <div class="thread-context-error">Failed to load thread context</div>
+        <div class="thread-context-error">${_('Failed to load thread context')}</div>
       `;
     }
   }
@@ -158,7 +159,7 @@ export class ThreadContextIndicator {
       ? extractZapperPubkey({ pubkey, tags, kind } as NostrEvent)
       : pubkey;
     const profile = await this.userProfileService.getUserProfile(avatarPubkey);
-    const displayName = profile.display_name || profile.name || 'Anonymous';
+    const displayName = profile.display_name || profile.name || _('Anonymous');
     const avatarUrl = profile.picture || '';
 
     // Addressable parents (kind 30000+) get a kind-aware label from tags
@@ -186,16 +187,16 @@ export class ThreadContextIndicator {
       const titleTag =
         tags.find(t => t[0] === 'title')?.[1] ||
         tags.find(t => t[0] === 'name')?.[1] ||
-        '(untitled)';
+        _('(untitled)');
       const label =
         kind === 30023
-          ? 'Article'
+          ? _('Article')
           : kind === 30402
-            ? 'Listing'
+            ? _('Listing')
             : kind === 32267
-              ? 'App'
+              ? _('App')
               : kind === 39089
-                ? 'Follow Pack'
+                ? _('Follow Pack')
                 : `Kind ${kind}`;
       previewHtml = `<strong>${escapeHtmlAttr(label)}:</strong> ${escapeHtmlAttr(titleTag)}`;
 

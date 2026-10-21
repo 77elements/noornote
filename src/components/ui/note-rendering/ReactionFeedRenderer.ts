@@ -10,6 +10,7 @@
  * No ISL — the interaction lives on the target note.
  */
 
+import { _ } from '../../../i18n';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { UserProfileService } from '../../../services/UserProfileService';
@@ -36,7 +37,7 @@ export class ReactionFeedRenderer {
       <p class="reaction-feed-entry__text">
         <a href="/profile/${hexToNpub(event.pubkey)}" class="mention-link" data-profile-pubkey="${event.pubkey}" data-role="reaction-author">…</a>
         reacted to
-        <span class="reaction-feed-entry__target pulsate" data-role="reaction-target">Loading…</span>
+        <span class="reaction-feed-entry__target pulsate" data-role="reaction-target">${_('Loading…')}</span>
         <span class="reaction-feed-entry__emoji">${escapeHtml(emoji)}</span>
       </p>
     `;

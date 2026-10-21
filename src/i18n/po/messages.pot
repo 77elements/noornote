@@ -6,6 +6,22 @@ msgstr ""
 msgid " and "
 msgstr ""
 
+#: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:136
+msgid "(Untitled event)"
+msgstr ""
+
+#: src/components/ui/ThreadContextIndicator.ts:190
+msgid "(untitled)"
+msgstr ""
+
+#: src/components/ui/ReplyIndicator.ts:107
+msgid "[Error loading]"
+msgstr ""
+
+#: src/components/ui/ReplyIndicator.ts:72
+msgid "[Note not found]"
+msgstr ""
+
 #: src/components/views/ProfileBookingView.ts:447
 msgid "%s — %s DM(s) failed"
 msgstr ""
@@ -80,6 +96,10 @@ msgstr ""
 msgid "Accounts and threads you have muted."
 msgstr ""
 
+#: src/components/ui/note-rendering/LiveStreamRenderer.ts:64
+msgid "Activate the <a class=\"live-stream-card__hint-link\" href=\"/addons/live-streams-player\">Live Streams Player</a> addon to see this live stream."
+msgstr ""
+
 #: src/components/views/AddonsOverviewView.ts:106
 msgid "Active"
 msgstr ""
@@ -97,9 +117,19 @@ msgstr ""
 msgid "Add to calendar (.ics)"
 msgstr ""
 
+#: src/components/ui/note-rendering/EmojiPackRenderer.ts:107
+msgid "Add to Collection"
+msgstr ""
+
 #: src/components/views/ProfileView.ts:1007
 msgid "Add to Tribe"
 msgstr ""
+
+#: src/components/ui/note-rendering/EmojiPackRenderer.ts:119
+msgid "Added %s custom emoji to your collection"
+msgid_plural "Added %s custom emojis to your collection"
+msgstr[0] ""
+msgstr[1] ""
 
 #: src/components/ui/InteractionStatusLine.ts:529
 #: src/components/ui/NoteMenu.ts:742
@@ -112,6 +142,10 @@ msgstr ""
 
 #: src/components/views/ProfileView.ts:1773
 msgid "Added to tribe \"%s\""
+msgstr ""
+
+#: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:185
+msgid "Added to your calendar grid"
 msgstr ""
 
 #: src/components/views/ProfileBookingView.ts:487
@@ -155,12 +189,28 @@ msgstr ""
 msgid "Already following all members"
 msgstr ""
 
+#: src/components/ui/UploadProgressOverlay.ts:123
+msgid "Already well-compressed — uploading original"
+msgstr ""
+
 #: src/components/ui/InteractionStatusLine.ts:291
 msgid "Analytics"
 msgstr ""
 
 #: src/components/views/AboutView.ts:147
 msgid "And finally, thanks to every user who actively shapes NoorNote with feedback and support."
+msgstr ""
+
+#: src/components/ui/note-rendering/ZapReceiptRenderer.ts:127
+#: src/components/ui/note-rendering/ZapReceiptRenderer.ts:44
+#: src/components/ui/ThreadContextIndicator.ts:162
+#: src/components/ui/UserStatus.ts:104
+#: src/components/ui/UserStatus.ts:92
+msgid "Anonymous"
+msgstr ""
+
+#: src/components/ui/ThreadContextIndicator.ts:197
+msgid "App"
 msgstr ""
 
 #: src/components/views/ZapstoreAppView.ts:385
@@ -173,6 +223,10 @@ msgstr ""
 
 #: src/components/views/ConversationView.ts:620
 msgid "Apply"
+msgstr ""
+
+#: src/components/ui/ThreadContextIndicator.ts:193
+msgid "Article"
 msgstr ""
 
 #: src/components/views/ProfileView.ts:956
@@ -197,6 +251,10 @@ msgstr ""
 #: src/components/views/ProfileView.ts:2233
 #: src/components/views/ProfileView.ts:722
 msgid "Articles"
+msgstr ""
+
+#: src/components/ui/UploadProgressOverlay.ts:109
+msgid "audio"
 msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:471
@@ -256,6 +314,10 @@ msgstr ""
 msgid "Bookmark"
 msgstr ""
 
+#: src/components/ui/note-rendering/BookmarkListRenderer.ts:70
+msgid "Bookmark list"
+msgstr ""
+
 #: src/components/views/ListsOverviewView.ts:61
 msgid "Bookmarks"
 msgstr ""
@@ -282,9 +344,14 @@ msgstr ""
 msgid "Cache:"
 msgstr ""
 
+#: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:208
 #: src/components/views/ProfileView.ts:2080
 #: src/components/views/ProfileView.ts:727
 msgid "Calendar"
+msgstr ""
+
+#: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:140
+msgid "Calendar event"
 msgstr ""
 
 #: src/components/modals/DMComposeModal.ts:95
@@ -306,6 +373,14 @@ msgstr ""
 
 #: src/components/views/ZapstoreAppView.ts:321
 msgid "Certificate"
+msgstr ""
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:377
+msgid "channel"
+msgstr ""
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:377
+msgid "channels"
 msgstr ""
 
 #: src/components/views/AboutView.ts:155
@@ -330,6 +405,22 @@ msgstr ""
 
 #: src/components/modals/ZapModal.ts:137
 msgid "Comment (optional)"
+msgstr ""
+
+#: src/components/ui/note-rendering/WebCommentCard.ts:50
+msgid "Commenting on"
+msgstr ""
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:397
+msgid "Community invite"
+msgstr ""
+
+#: src/components/ui/UploadProgressOverlay.ts:126
+msgid "Compressed: %s → %s (%s% smaller)"
+msgstr ""
+
+#: src/components/ui/UploadProgressOverlay.ts:110
+msgid "Compressing %s file…"
 msgstr ""
 
 #: src/components/views/AboutView.ts:206
@@ -382,6 +473,10 @@ msgstr ""
 msgid "Copy hash"
 msgstr ""
 
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:417
+msgid "Copy invite link"
+msgstr ""
+
 #: src/components/ui/NoteMenu.ts:514
 msgid "Copy link"
 msgstr ""
@@ -398,12 +493,28 @@ msgstr ""
 msgid "Could not accept"
 msgstr ""
 
+#: src/components/ui/note-rendering/EmojiPackRenderer.ts:123
+msgid "Could not add emojis"
+msgstr ""
+
 #: src/components/views/MessagesView.ts:270
 msgid "Could not load older messages"
 msgstr ""
 
+#: src/components/ui/note-rendering/RepostRenderer.ts:294
+msgid "Could not load reposted note"
+msgstr ""
+
+#: src/components/ui/note-rendering/ZapReceiptRenderer.ts:163
+msgid "Could not parse zap data"
+msgstr ""
+
 #: src/components/views/ConversationView.ts:563
 msgid "Could not reject"
+msgstr ""
+
+#: src/components/ui/TextSelectionToolbar.ts:174
+msgid "Could not resolve source note. Please reload and try again."
 msgstr ""
 
 #: src/components/views/ConversationView.ts:1185
@@ -454,6 +565,14 @@ msgstr ""
 
 #: src/components/views/ConversationView.ts:612
 msgid "Days"
+msgstr ""
+
+#: src/components/ui/FontSizeSwitcher.ts:34
+msgid "Decrease font size"
+msgstr ""
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:384
+msgid "Decrypting…"
 msgstr ""
 
 #: src/components/views/MessagesView.ts:585
@@ -584,6 +703,7 @@ msgstr ""
 msgid "e.g. Bob from work"
 msgstr ""
 
+#: src/components/ui/note-rendering/EmojiPackRenderer.ts:97
 #: src/components/views/ArticleEditorView.ts:316
 msgid "Edit"
 msgstr ""
@@ -612,12 +732,28 @@ msgstr ""
 msgid "Email:"
 msgstr ""
 
+#: src/components/ui/note-rendering/EmojiPackRenderer.ts:62
+msgid "Emoji set was updated"
+msgstr ""
+
 #: src/components/views/ListsOverviewView.ts:65
 msgid "Enable the Bookmarks addon in Settings → Addons."
 msgstr ""
 
 #: src/components/views/ListsOverviewView.ts:89
 msgid "Enable the Tribes addon in Settings → Addons."
+msgstr ""
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:369
+msgid "Encrypted"
+msgstr ""
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:356
+msgid "Encrypted community"
+msgstr ""
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:190
+msgid "ENDED"
 msgstr ""
 
 #: src/components/modals/EditFolderModal.ts:57
@@ -632,6 +768,10 @@ msgstr ""
 
 #: src/components/modals/KeySignerPasswordModal.ts:34
 msgid "Enter Password"
+msgstr ""
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:368
+msgid "Expired"
 msgstr ""
 
 #: src/components/views/SettingsView.ts:109
@@ -651,6 +791,7 @@ msgstr ""
 msgid "Failed to load app"
 msgstr ""
 
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:578
 #: src/components/views/ArticleEditorView.ts:242
 #: src/components/views/ArticleView.ts:114
 msgid "Failed to load article"
@@ -663,6 +804,18 @@ msgstr ""
 #: src/components/views/ConversationView.ts:1219
 #: src/components/views/MessagesView.ts:701
 msgid "Failed to load messages"
+msgstr ""
+
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1049
+msgid "Failed to load quoted note"
+msgstr ""
+
+#: src/components/ui/ThreadContextIndicator.ts:93
+msgid "Failed to load thread context"
+msgstr ""
+
+#: src/components/ui/note-features/PollRenderer.ts:133
+msgid "Failed to load votes"
 msgstr ""
 
 #: src/components/ui/NoteMenu.ts:624
@@ -702,6 +855,14 @@ msgstr ""
 msgid "Follow All"
 msgstr ""
 
+#: src/components/ui/ThreadContextIndicator.ts:199
+msgid "Follow Pack"
+msgstr ""
+
+#: src/components/ui/note-rendering/FollowPackRenderer.ts:55
+msgid "Follow pack was updated"
+msgstr ""
+
 #: src/components/views/ProfileView.ts:662
 msgid "Followers"
 msgstr ""
@@ -722,8 +883,24 @@ msgstr ""
 msgid "Follows you"
 msgstr ""
 
+#: src/components/ui/FontSizeSwitcher.ts:33
+msgid "Font Size"
+msgstr ""
+
 #: src/components/views/ProfileView.ts:954
 msgid "Get notified when this user posts a new article"
+msgstr ""
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:160
+msgid "Git Issue"
+msgstr ""
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:144
+msgid "Git Patch"
+msgstr ""
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:190
+msgid "Git Repository"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:339
@@ -783,6 +960,10 @@ msgstr ""
 msgid "Imprint"
 msgstr ""
 
+#: src/components/ui/note-rendering/CurationSetItems.ts:35
+msgid "In this collection"
+msgstr ""
+
 #: src/components/views/ZapstoreAppView.ts:280
 msgid "In Zapstore"
 msgstr ""
@@ -794,6 +975,10 @@ msgstr ""
 #: src/components/modals/KeySignerPasswordModal.ts:124
 #: src/components/modals/UnlockNoorSignerModal.ts:128
 msgid "Incorrect password"
+msgstr ""
+
+#: src/components/ui/FontSizeSwitcher.ts:35
+msgid "Increase font size"
 msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:437
@@ -810,6 +995,10 @@ msgstr ""
 
 #: src/components/views/ProfileView.ts:345
 msgid "Invalid profile ID"
+msgstr ""
+
+#: src/components/ui/note-rendering/RepostRenderer.ts:256
+msgid "Invalid repost (no event reference)"
 msgstr ""
 
 #: src/components/modals/UpdateModal.ts:97
@@ -895,12 +1084,20 @@ msgstr ""
 msgid "Link"
 msgstr ""
 
+#: src/components/ui/ThreadContextIndicator.ts:195
+msgid "Listing"
+msgstr ""
+
 #: src/components/views/ListingReadView.ts:63
 msgid "Listing not found"
 msgstr ""
 
 #: src/components/views/ListsOverviewView.ts:98
 msgid "Lists"
+msgstr ""
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:190
+msgid "LIVE"
 msgstr ""
 
 #: src/components/views/MessagesView.ts:257
@@ -928,6 +1125,10 @@ msgstr ""
 msgid "Loading book…"
 msgstr ""
 
+#: src/components/ui/note-rendering/CurationSetItems.ts:43
+msgid "Loading items…"
+msgstr ""
+
 #: src/components/views/FollowPackDetailView.ts:129
 msgid "Loading members..."
 msgstr ""
@@ -948,6 +1149,10 @@ msgstr ""
 msgid "Loading profile..."
 msgstr ""
 
+#: src/components/ui/note-rendering/RepostRenderer.ts:267
+msgid "Loading reposted note..."
+msgstr ""
+
 #: src/components/views/ProfileView.ts:2252
 msgid "Loading videos…"
 msgstr ""
@@ -956,9 +1161,18 @@ msgstr ""
 msgid "Loading websites…"
 msgstr ""
 
+#: src/components/ui/AccountSwitcher.ts:101
+#: src/components/ui/AccountSwitcher.ts:196
+#: src/components/ui/note-features/PollRenderer.ts:73
+#: src/components/ui/ReplyIndicator.ts:49
+#: src/components/ui/UserStatus.ts:42
 #: src/components/views/ListingReadView.ts:130
 #: src/components/views/ProfileView.ts:534
 msgid "Loading..."
+msgstr ""
+
+#: src/components/ui/note-rendering/ReactionFeedRenderer.ts:40
+msgid "Loading…"
 msgstr ""
 
 #: src/components/views/AboutView.ts:199
@@ -995,6 +1209,11 @@ msgstr ""
 
 #: src/components/views/MessagesView.ts:646
 msgid "Mark all unread"
+msgstr ""
+
+#: src/components/ui/note-rendering/ListingRenderer.ts:62
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1365
+msgid "Marketplace"
 msgstr ""
 
 #: src/components/modals/ZapModal.ts:280
@@ -1037,6 +1256,10 @@ msgstr ""
 msgid "Minutes"
 msgstr ""
 
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:366
+msgid "Missing secret"
+msgstr ""
+
 #: src/components/views/EpubReaderView.ts:54
 msgid "Monochrome: black on white"
 msgstr ""
@@ -1049,8 +1272,21 @@ msgstr ""
 msgid "Move down"
 msgstr ""
 
+#: src/components/ui/MoveDropdown.ts:102
+msgid "Move to"
+msgstr ""
+
+#: src/components/ui/MoveDropdown.ts:67
+#: src/components/ui/MoveDropdown.ts:68
+msgid "Move to..."
+msgstr ""
+
 #: src/components/views/AddonsOverviewView.ts:112
 msgid "Move up"
+msgstr ""
+
+#: src/components/ui/note-features/NIP88PollRenderer.ts:112
+msgid "Multiple choice allowed"
 msgstr ""
 
 #: src/components/ui/NoteMenu.ts:262
@@ -1205,6 +1441,10 @@ msgstr ""
 msgid "Nostr users taking part in the meeting — they receive a private message about this booking."
 msgstr ""
 
+#: src/components/ui/note-rendering/NsiteRenderer.ts:67
+msgid "Nostr website"
+msgstr ""
+
 #: src/components/views/ArticleEditorView.ts:419
 msgid "nostr, bitcoin, technology (comma separated)"
 msgstr ""
@@ -1217,8 +1457,16 @@ msgstr ""
 msgid "Not reached: %s"
 msgstr ""
 
+#: src/components/ui/note-factories/FallbackElementFactory.ts:26
+msgid "Note can't be rendered"
+msgstr ""
+
 #: src/components/views/ProfileBookingView.ts:477
 msgid "Note for %s (optional, sent as a private message)"
+msgstr ""
+
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1001
+msgid "Note from a user you've muted"
 msgstr ""
 
 #: src/components/ui/interaction-managers/RepostManager.ts:139
@@ -1255,6 +1503,10 @@ msgstr ""
 msgid "npub QR Code"
 msgstr ""
 
+#: src/components/ui/UploadProgressOverlay.ts:104
+msgid "of"
+msgstr ""
+
 #: src/services/dm/DMExpiration.ts:128
 msgid "Off"
 msgstr ""
@@ -1267,8 +1519,20 @@ msgstr ""
 msgid "Only suppresses notifications from this user's interactions with your notes"
 msgstr ""
 
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:415
+msgid "Open in Armada"
+msgstr ""
+
+#: src/components/ui/note-rendering/WebCommentCard.ts:52
+msgid "Open page →"
+msgstr ""
+
 #: src/components/views/AboutView.ts:121
 msgid "Open Source"
+msgstr ""
+
+#: src/components/ui/WalletBalanceDisplay.ts:108
+msgid "Open Wallet Balance"
 msgstr ""
 
 #: src/components/modals/SyncConfirmationModal.ts:267
@@ -1303,8 +1567,16 @@ msgstr ""
 msgid "Pick date"
 msgstr ""
 
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:190
+msgid "PLANNED"
+msgstr ""
+
 #: src/components/views/ZapstoreAppView.ts:293
 msgid "Platform"
+msgstr ""
+
+#: src/components/ui/note-rendering/BookmarkListRenderer.ts:70
+msgid "Playlist"
 msgstr ""
 
 #: src/components/modals/ZapModal.ts:66
@@ -1332,9 +1604,17 @@ msgstr ""
 msgid "Please login to view timeline"
 msgstr ""
 
+#: src/components/ui/note-features/NIP88PollRenderer.ts:333
+msgid "Poll option"
+msgstr ""
+
 #: src/components/views/VideoEditorView.ts:230
 #: src/components/views/VideoEditorView.ts:522
 msgid "Portrait"
+msgstr ""
+
+#: src/components/ui/TextSelectionToolbar.ts:149
+msgid "Post highlight"
 msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:317
@@ -1405,8 +1685,24 @@ msgstr ""
 msgid "Publishing..."
 msgstr ""
 
+#: src/components/ui/note-rendering/GitEventRenderer.ts:148
+msgid "Pull Request"
+msgstr ""
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:154
+msgid "Pull Request Update"
+msgstr ""
+
+#: src/components/ui/note-factories/FallbackElementFactory.ts:49
+msgid "Quoted note (max depth reached)"
+msgstr ""
+
 #: src/components/ui/InteractionStatusLine.ts:314
 msgid "Quoted Repost"
+msgstr ""
+
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1064
+msgid "Quoted repost — open to view"
 msgstr ""
 
 #: src/components/ui/NoteMenu.ts:562
@@ -1479,6 +1775,10 @@ msgstr ""
 
 #: src/components/ui/NoteMenu.ts:734
 msgid "Removed from private bookmarks"
+msgstr ""
+
+#: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:182
+msgid "Removed from your calendar"
 msgstr ""
 
 #: src/components/modals/EditFolderModal.ts:28
@@ -1581,11 +1881,16 @@ msgid "Selected:"
 msgstr ""
 
 #: src/components/modals/DMComposeModal.ts:97
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:330
 msgid "Send"
 msgstr ""
 
 #: src/components/views/ConversationView.ts:1065
 msgid "Send a message to start the conversation"
+msgstr ""
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:324
+msgid "Send a message…"
 msgstr ""
 
 #: src/components/views/ProfileView.ts:685
@@ -1636,12 +1941,30 @@ msgstr ""
 msgid "Share Note"
 msgstr ""
 
+#: src/components/ui/note-features/CollapsibleManager.ts:144
+msgid "Show Less"
+msgstr ""
+
+#: src/components/ui/note-features/CollapsibleManager.ts:131
+#: src/components/ui/note-features/CollapsibleManager.ts:144
+#: src/components/ui/note-features/CollapsibleManager.ts:189
+msgid "Show More"
+msgstr ""
+
 #: src/components/views/ProfileView.ts:963
 msgid "Show reactions"
 msgstr ""
 
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1002
+msgid "Show temporarily"
+msgstr ""
+
 #: src/components/views/ProfileView.ts:961
 msgid "Show this user's reactions (likes) as entries in your timeline"
+msgstr ""
+
+#: src/components/ui/UserStatus.ts:44
+msgid "Sign Out"
 msgstr ""
 
 #: src/components/views/ConversationView.ts:1200
@@ -1658,6 +1981,10 @@ msgstr ""
 
 #: src/components/views/SingleNoteView.ts:269
 msgid "Single Post"
+msgstr ""
+
+#: src/components/ui/note-rendering/NsiteRenderer.ts:118
+msgid "Site hash"
 msgstr ""
 
 #: src/components/views/ZapstoreAppView.ts:313
@@ -1698,6 +2025,10 @@ msgstr ""
 msgid "Source"
 msgstr ""
 
+#: src/components/ui/note-rendering/NsiteRenderer.ts:87
+msgid "Source code ↗"
+msgstr ""
+
 #: src/components/views/AboutView.ts:144
 msgid "Special thanks to %s for inventing the Nostr protocol, and to all %s authors and other Nostr devs for the inspiration."
 msgstr ""
@@ -1710,8 +2041,35 @@ msgstr ""
 msgid "Start a conversation by clicking \"New Message\""
 msgstr ""
 
+#: src/components/ui/note-rendering/GitEventRenderer.ts:168
+#: src/components/ui/note-rendering/GitEventRenderer.ts:174
+#: src/components/ui/note-rendering/GitEventRenderer.ts:180
+#: src/components/ui/note-rendering/GitEventRenderer.ts:186
+msgid "Status update"
+msgstr ""
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:172
+msgid "Status: Applied/Merged"
+msgstr ""
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:178
+msgid "Status: Closed"
+msgstr ""
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:184
+msgid "Status: Draft"
+msgstr ""
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:166
+msgid "Status: Open"
+msgstr ""
+
 #: src/components/ui/NoteMenu.ts:269
 msgid "Stop article notifications"
+msgstr ""
+
+#: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:247
+msgid "Subscribed — events added to your calendar grid"
 msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:404
@@ -1867,9 +2225,17 @@ msgstr ""
 msgid "To"
 msgstr ""
 
+#: src/components/ui/WalletBalanceDisplay.ts:119
+msgid "Toggle balance visibility"
+msgstr ""
+
 #: src/components/views/ArticleEditorView.ts:380
 #: src/components/views/VideoEditorView.ts:179
 msgid "Toggle section"
+msgstr ""
+
+#: src/components/ui/WalletBalanceDisplay.ts:119
+msgid "Toggle visibility"
 msgstr ""
 
 #: src/components/views/ProfileView.ts:1742
@@ -1900,6 +2266,8 @@ msgstr ""
 msgid "Unique identifier for this article. Changing this after publishing creates a new article instead of updating."
 msgstr ""
 
+#: src/components/ui/note-rendering/RepostRenderer.ts:109
+#: src/components/ui/note-rendering/ZapReceiptRenderer.ts:139
 #: src/components/views/ZapstoreAppView.ts:408
 msgid "Unknown"
 msgstr ""
@@ -1913,6 +2281,10 @@ msgstr ""
 msgid "Unlock NoorSigner"
 msgstr ""
 
+#: src/components/ui/note-rendering/GatedNoteRenderer.ts:33
+msgid "Unlock on fanfares.io"
+msgstr ""
+
 #: src/components/modals/UnlockNoorSignerModal.ts:100
 msgid "Unlocking..."
 msgstr ""
@@ -1923,6 +2295,22 @@ msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:1006
 msgid "Unsaved Changes"
+msgstr ""
+
+#: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:243
+msgid "Unsubscribed from calendar"
+msgstr ""
+
+#: src/components/ui/note-rendering/CurationSetItems.ts:87
+msgid "Untitled"
+msgstr ""
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:534
+msgid "Untitled App"
+msgstr ""
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:172
+msgid "Untitled Stream"
 msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:333
@@ -1947,6 +2335,14 @@ msgstr ""
 
 #: src/components/views/VideoEditorView.ts:194
 msgid "Upload thumbnail"
+msgstr ""
+
+#: src/components/ui/UploadProgressOverlay.ts:149
+msgid "Uploaded"
+msgstr ""
+
+#: src/components/ui/UploadProgressOverlay.ts:140
+msgid "Uploading to media server…"
 msgstr ""
 
 #: src/components/views/VideoEditorView.ts:248
@@ -1977,6 +2373,10 @@ msgstr ""
 msgid "Version Code"
 msgstr ""
 
+#: src/components/ui/UploadProgressOverlay.ts:109
+msgid "video"
+msgstr ""
+
 #: src/components/views/VideoEditorView.ts:148
 msgid "Video"
 msgstr ""
@@ -1994,8 +2394,24 @@ msgstr ""
 msgid "Videos"
 msgstr ""
 
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:198
+msgid "View details"
+msgstr ""
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:197
+msgid "View on zap.stream"
+msgstr ""
+
 #: src/components/ui/NoteMenu.ts:227
 msgid "View raw event"
+msgstr ""
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:193
+msgid "Watch live"
+msgstr ""
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:196
+msgid "Watch recording"
 msgstr ""
 
 #: src/components/views/AboutView.ts:209
@@ -2102,6 +2518,14 @@ msgstr ""
 #: src/components/modals/ZapModal.ts:73
 #: src/components/ui/InteractionStatusLine.ts:326
 msgid "Zap"
+msgstr ""
+
+#: src/components/ui/note-rendering/ZapReceiptRenderer.ts:162
+msgid "Zap Receipt"
+msgstr ""
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:438
+msgid "Zap Stream"
 msgstr ""
 
 #: src/components/views/ProfileView.ts:697

@@ -3,6 +3,7 @@
  * Shows current user info with username instead of npub
  */
 
+import { _ } from '../../i18n';
 import {
   UserProfileService,
   UserProfile,
@@ -38,9 +39,9 @@ export class UserStatus {
     container.innerHTML = `
       <div class="user-info">
         <span class="user-indicator">●</span>
-        <span class="user-display">Loading...</span>
+        <span class="user-display">${_('Loading...')}</span>
       </div>
-      <button class="btn btn--mini" type="button" data-action="logout">Sign Out</button>
+      <button class="btn btn--mini" type="button" data-action="logout">${_('Sign Out')}</button>
     `;
 
     // Setup logout button
@@ -88,7 +89,7 @@ export class UserStatus {
 
     const userDisplay = this.element.querySelector('.user-display');
     if (userDisplay) {
-      const displayName = extractDisplayName(this.profile) || 'Anonymous';
+      const displayName = extractDisplayName(this.profile) || _('Anonymous');
       userDisplay.textContent = displayName;
     }
   }
@@ -100,7 +101,7 @@ export class UserStatus {
     const userDisplay = this.element.querySelector('.user-display');
     if (userDisplay) {
       // Never show raw npub/hex (User-Display-Rule) — fall back to a neutral label
-      userDisplay.textContent = 'Anonymous';
+      userDisplay.textContent = _('Anonymous');
     }
   }
 

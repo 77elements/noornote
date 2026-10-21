@@ -52,7 +52,7 @@ msgid ""
 "All content you create (notes, articles, profile information, etc.) is "
 "stored on Nostr relays, not on your device or our servers. NoorNote simply "
 "connects to these relays to read and publish your content."
-msgstr ""
+msgstr "Alle Inhalte, die du erstellst (Notizen, Artikel, Profilinformationen usw.), werden auf Nostr-Relays gespeichert, nicht auf deinem Gerät oder unseren Servern. NoorNote verbindet sich nur mit diesen Relays, um deine Inhalte zu lesen und zu veröffentlichen."
 "Alle Inhalte, die du erstellst (Notizen, Artikel, Profilinformationen "
 "etc.), werden auf Nostr-Relays gespeichert — nicht auf deinem Gerät oder "
 "unseren Servern. NoorNote verbindet sich lediglich mit diesen Relays, um "
@@ -67,7 +67,7 @@ msgstr "Alle Daten verbleiben auf deinem Gerät."
 msgid ""
 "All user data remains in your browser and can be cleared at any time via "
 "your browser settings."
-msgstr ""
+msgstr "Alle Nutzerdaten bleiben in deinem Browser und können jederzeit über die Browsereinstellungen gelöscht werden."
 "Alle Nutzerdaten verbleiben in deinem Browser und lassen sich jederzeit "
 "über deine Browsereinstellungen löschen."
 
@@ -75,7 +75,7 @@ msgstr ""
 msgid ""
 "And finally, thanks to every user who actively shapes NoorNote with "
 "feedback and support."
-msgstr ""
+msgstr "Und zuletzt Dank an alle Nutzer, die NoorNote durch Feedback und Unterstützung aktiv mitgestalten."
 "Und zuletzt: Danke an jeden Nutzer, der NoorNote aktiv mit Feedback und "
 "Unterstützung mitgestaltet."
 
@@ -84,7 +84,7 @@ msgid ""
 "Avatars, images, videos, and audio referenced in Nostr events are loaded "
 "directly from whatever URL the author published. Each such load is a direct "
 "request from your device to that third-party host."
-msgstr ""
+msgstr "Avatare, Bilder, Videos und Audio, die in Nostr-Events referenziert sind, werden direkt von der URL geladen, die der Autor veröffentlicht hat. Jeder solche Ladevorgang ist eine direkte Anfrage von deinem Gerät an diesen Drittanbieter-Host."
 "Avatare, Bilder, Videos und Audio, die in Nostr-Events referenziert sind, "
 "werden direkt von der URL geladen, die der Autor veröffentlicht hat. Jeder "
 "solche Abruf ist eine direkte Anfrage von deinem Gerät an diesen "
@@ -95,7 +95,7 @@ msgid ""
 "Beyond Nostr relays, NoorNote makes network requests to a small set of "
 "third-party endpoints to render content correctly. Each request unavoidably "
 "exposes your IP address to the receiving service:"
-msgstr ""
+msgstr "Neben den Nostr-Relays stellt NoorNote Netzwerkanfragen an eine kleine Anzahl von Endpunkten Dritter, um Inhalte korrekt darzustellen. Jede Anfrage legt deine IP-Adresse zwangsläufig gegenüber dem empfangenden Dienst offen:"
 "Über die Nostr-Relays hinaus stellt NoorNote Netzwerkanfragen an eine "
 "kleine Anzahl von Endpunkten Dritter, um Inhalte korrekt darzustellen. Jede "
 "Anfrage legt deine IP-Adresse unvermeidlich gegenüber dem empfangenden "
@@ -161,7 +161,7 @@ msgid ""
 "URL/file requested, browser type, and referrer — for operational and "
 "security purposes (e.g. DDoS mitigation, server stability). NoorNote itself "
 "does not access or use these logs."
-msgstr ""
+msgstr "Wie jeder Webhost verarbeitet MyNymbox beim Laden der Anwendung Standard-Server-Logdaten — typischerweise deine IP-Adresse, den Anfrage-Zeitstempel, die angeforderte URL/Datei, den Browsertyp und den Referrer — zu Betriebs- und Sicherheitszwecken (z. B. DDoS-Abwehr, Serverstabilität). NoorNote selbst greift nicht auf diese Logs zu."
 "Wie jeder Webhost verarbeitet MyNymbox bei Aufruf der Anwendung übliche "
 "Server-Logdaten — typischerweise deine IP-Adresse, den Anfrage-Zeitstempel, "
 "die angeforderte URL/Datei, den Browsertyp und den Referrer — für Betriebs- "
@@ -180,7 +180,7 @@ msgstr "Medien-Proxy:"
 msgid ""
 "Need help with your web project? I'm available for hire — design, UX, and "
 "development. Sats accepted."
-msgstr ""
+msgstr "Brauchst du Hilfe für dein Webprojekt? Ich bin buchbar — Design, UX und Entwicklung. Sats willkommen."
 "Brauchst du Unterstützung für dein Webprojekt? Ich bin verfügbar für "
 "Aufträge — Design, UX und Entwicklung. Bezahlung in Sats möglich."
 
@@ -204,7 +204,7 @@ msgstr "NoorNote – Ein Nostr-Client"
 msgid ""
 "NoorNote and NoorSigner are free and open source software, released under "
 "the %s."
-msgstr ""
+msgstr "NoorNote und NoorSigner sind freie Open-Source-Software, veröffentlicht unter der %s."
 "NoorNote und NoorSigner sind freie Open-Source-Software, veröffentlicht "
 "unter der %s."
 
@@ -215,7 +215,7 @@ msgid ""
 "to ourselves. The third-party connections described above are inherent to "
 "rendering content and providing the service — they are not telemetry, and "
 "no identifier beyond a standard HTTP request (IP, User-Agent) is sent."
-msgstr ""
+msgstr "NoorNote verwendet keine Analyse-Dienste, Tracking-Pixel, Marketing-Cookies oder Telemetrie. Wir erfassen, protokollieren und übertragen keinerlei Nutzungsdaten. Die oben beschriebenen Verbindungen zu Drittdiensten sind für die Darstellung von Inhalten und die Bereitstellung des Dienstes unvermeidbar — es ist keine Telemetrie, und es wird keine Kennung über eine Standard-HTTP-Anfrage (IP, User-Agent) hinaus gesendet."
 "NoorNote verwendet keine Analyse-Dienste, Tracking-Pixel, Marketing-Cookies "
 "oder Telemetrie. Wir erfassen, protokollieren oder übertragen keinerlei "
 "Nutzungsdaten an uns. Die oben beschriebenen Verbindungen zu Drittanbietern "
@@ -231,13 +231,13 @@ msgstr "NoorNote integriert Open-Source-Arbeit Dritter. Danke an:"
 msgid ""
 "NoorNote is a desktop application that stores all data locally on your "
 "device:"
-msgstr ""
+msgstr "NoorNote ist eine Desktop-Anwendung, die alle Daten lokal auf deinem Gerät speichert:"
 "NoorNote ist eine Desktop-App, die alle Daten lokal auf deinem Gerät "
 "speichert:"
 
 #: src/components/views/AboutView.ts:171
 msgid "NoorNote is a mobile app that stores all data locally on your device:"
-msgstr ""
+msgstr "NoorNote ist eine mobile App, die alle Daten lokal auf deinem Gerät speichert:"
 "NoorNote ist eine mobile App, die alle Daten lokal auf deinem Gerät "
 "speichert:"
 
@@ -254,7 +254,7 @@ msgid ""
 "Nostr relays are operated by third parties. When connecting, your IP "
 "address may be logged by the relay operators. The choice of relays is yours "
 "and can be configured in the settings."
-msgstr ""
+msgstr "Nostr-Relays werden von Dritten betrieben. Beim Verbinden kann deine IP-Adresse von den Relay-Betreibern protokolliert werden. Die Wahl der Relays liegt bei dir und lässt sich in den Einstellungen konfigurieren."
 "Nostr-Relays werden von Dritten betrieben. Beim Verbinden kann deine "
 "IP-Adresse von den Relay-Betreibern protokolliert werden. Die Wahl der "
 "Relays liegt bei dir und lässt sich in den Einstellungen konfigurieren."
@@ -271,7 +271,7 @@ msgstr "Weitere Verbindungen zu Drittanbietern"
 msgid ""
 "Our web host serves the static application bundle. We do not store, "
 "process, or have access to any user data on the server itself."
-msgstr ""
+msgstr "Unser Webhost liefert das statische Anwendungspaket aus. Wir speichern und verarbeiten keine Nutzerdaten und haben auf dem Server selbst keinen Zugriff darauf."
 "Unser Webhost liefert lediglich das statische Anwendungspaket aus. Wir "
 "speichern, verarbeiten oder haben Zugriff auf keinerlei Nutzerdaten auf dem "
 "Server selbst."
@@ -301,7 +301,7 @@ msgstr "Geplante Beiträge (optionales Addon):"
 msgid ""
 "Since we do not store or process any personal data, the usual GDPR data "
 "subject rights do not apply. For questions, you can contact us at %s."
-msgstr ""
+msgstr "Da wir keine personenbezogenen Daten speichern oder verarbeiten, gelten die üblichen Betroffenenrechte der DSGVO nicht. Bei Fragen erreichst du uns unter %s."
 "Da wir keine personenbezogenen Daten speichern oder verarbeiten, gelten die "
 "üblichen DSGVO-Betroffenenrechte nicht. Bei Fragen kannst du uns unter %s "
 "kontaktieren."
@@ -310,7 +310,7 @@ msgstr ""
 msgid ""
 "Special thanks to %s for inventing the Nostr protocol, and to all %s "
 "authors and other Nostr devs for the inspiration."
-msgstr ""
+msgstr "Besonderer Dank an %s für die Erfindung des Nostr-Protokolls sowie an alle %s-Autoren und anderen Nostr-Entwickler für die Inspiration."
 "Besonderer Dank an %s für die Erfindung des Nostr-Protokolls sowie an alle "
 "%s-Autoren und weitere Nostr-Entwickler für die Inspiration."
 
@@ -319,7 +319,7 @@ msgid ""
 "St. Kitts and Nevis is not covered by an EU adequacy decision (Art. 45 "
 "GDPR). Any transfer to MyNymbox's servers takes place on the basis of the "
 "derogations of Art. 49 (1) GDPR."
-msgstr ""
+msgstr "St. Kitts und Nevis unterliegt keinem EU-Angemessenheitsbeschluss (Art. 45 DSGVO). Jede Übertragung an die Server von MyNymbox erfolgt auf Grundlage der Ausnahmen des Art. 49 (1) DSGVO."
 "St. Kitts und Nevis ist von einem EU-Angemessenheitsbeschluss nicht erfasst "
 "(Art. 45 DSGVO). Eine Übermittlung an die Server von MyNymbox erfolgt auf "
 "Grundlage der Ausnahmen des Art. 49 (1) DSGVO."
@@ -330,13 +330,13 @@ msgstr "Temporäre Daten werden in IndexedDB und localStorage gespeichert."
 
 #: src/components/views/AboutView.ts:190
 msgid "Temporary data is stored in your browser's IndexedDB and localStorage."
-msgstr ""
+msgstr "Temporäre Daten werden in der IndexedDB und im localStorage deines Browsers gespeichert."
 "Temporäre Daten werden in der IndexedDB und im localStorage deines Browsers "
 "gespeichert."
 
 #: src/components/views/AboutView.ts:175
 msgid "Temporary data is stored in your device's IndexedDB and localStorage."
-msgstr ""
+msgstr "Temporäre Daten werden in der IndexedDB und im localStorage deines Geräts gespeichert."
 "Temporäre Daten werden in der IndexedDB und im localStorage deines Geräts "
 "gespeichert."
 
@@ -345,7 +345,7 @@ msgid ""
 "The desktop version periodically queries %s to detect new releases. GitHub "
 "is operated by GitHub, Inc., 88 Colin P Kelly Jr Street, San Francisco, CA "
 "94107, USA."
-msgstr ""
+msgstr "Die Desktop-Version fragt periodisch %s ab, um neue Releases zu erkennen. GitHub wird von GitHub, Inc., 88 Colin P Kelly Jr Street, San Francisco, CA 94107, USA betrieben."
 "Die Desktop-Version fragt periodisch %s ab, um neue Releases zu erkennen. "
 "GitHub wird betrieben von GitHub, Inc., 88 Colin P Kelly Jr Street, San "
 "Francisco, CA 94107, USA."
@@ -385,7 +385,7 @@ msgid ""
 "through a proxy operated by us at %s to bypass CORS restrictions of the "
 "original image host. The proxy forwards your request to the third-party "
 "image host."
-msgstr ""
+msgstr "Beim Laden von in Notizen eingebetteten Bildern leitet NoorNote die Anfrage ggf. über einen von uns betriebenen Proxy unter %s, um CORS-Einschränkungen des ursprünglichen Bild-Hosts zu umgehen. Der Proxy leitet deine Anfrage an den Drittanbieter-Bild-Host weiter."
 "Beim Laden von in Notizen eingebetteten Bildern kann NoorNote die Anfrage "
 "über einen von uns betriebenen Proxy unter %s leiten, um "
 "CORS-Beschränkungen des ursprünglichen Bild-Hosts zu umgehen. Der Proxy "
@@ -396,7 +396,7 @@ msgid ""
 "When the Scheduled Posts addon is enabled, your scheduled events are "
 "temporarily stored on a service operated by us at %s until their scheduled "
 "release time."
-msgstr ""
+msgstr "Wenn das Scheduled-Posts-Addon aktiviert ist, werden deine geplanten Events bis zu ihrem geplanten Veröffentlichungszeitpunkt vorübergehend auf einem von uns betriebenen Dienst unter %s gespeichert."
 "Wenn das Addon „Geplante Beiträge“ aktiviert ist, werden deine geplanten "
 "Events vorübergehend auf einem von uns betriebenen Dienst unter %s "
 "gespeichert, bis zu ihrem geplanten Veröffentlichungszeitpunkt."
@@ -405,7 +405,7 @@ msgstr ""
 msgid ""
 "When verifying a user's NIP-05 identifier (e.g. %s), NoorNote sends an HTTP "
 "request to %s. The owner of that domain may log the request."
-msgstr ""
+msgstr "Bei der Überprüfung einer NIP-05-Kennung (z. B. %s) sendet NoorNote eine HTTP-Anfrage an %s. Der Inhaber der Domain kann die Anfrage protokollieren."
 "Bei der Verifizierung einer NIP-05-Kennung (z. B. %s) sendet NoorNote einen "
 "HTTP-Request an %s. Der Besitzer der Domain kann die Anfrage protokollieren."
 
@@ -413,7 +413,7 @@ msgstr ""
 msgid ""
 "Your private key (nsec) is stored in your operating system's keychain "
 "(macOS Keychain, Linux Secret Service)."
-msgstr ""
+msgstr "Dein privater Schlüssel (nsec) wird im Schlüsselbund deines Betriebssystems gespeichert (macOS Keychain, Linux Secret Service)."
 "Dein privater Schlüssel (nsec) wird im Schlüsselbund deines Betriebssystems "
 "gespeichert (macOS Keychain, Linux Secret Service)."
 
@@ -421,7 +421,7 @@ msgstr ""
 msgid ""
 "Your private key is managed by Amber (NIP-55 signer) and never shared with "
 "NoorNote."
-msgstr ""
+msgstr "Dein privater Schlüssel wird von Amber (NIP-55-Signer) verwaltet und niemals mit NoorNote geteilt."
 "Dein privater Schlüssel wird von Amber (NIP-55-Signer) verwaltet und "
 "niemals mit NoorNote geteilt."
 
@@ -429,7 +429,7 @@ msgstr ""
 msgid ""
 "Your private key is managed by your browser extension (e.g. Sidecar) and "
 "never shared with NoorNote or our server."
-msgstr ""
+msgstr "Dein privater Schlüssel wird von deiner Browser-Erweiterung (z. B. Sidecar) verwaltet und niemals mit NoorNote oder unserem Server geteilt."
 "Dein privater Schlüssel wird von deiner Browser-Erweiterung (z. B. Sidecar) "
 "verwaltet und niemals mit NoorNote oder unserem Server geteilt."
 
@@ -572,7 +572,7 @@ msgstr "UI-Einstellungen"
 msgid ""
 "Your lists are stored locally and synced to your relays. Pick one to open "
 "it."
-msgstr ""
+msgstr "Deine Listen werden lokal gespeichert und mit deinen Relays synchronisiert. Wähle eine aus, um sie zu öffnen."
 "Deine Listen werden lokal gespeichert und mit deinen Relays synchronisiert. "
 "Wähle eine aus, um sie zu öffnen."
 
@@ -697,7 +697,7 @@ msgstr "Update verfügbar"
 
 #: src/components/modals/UnlockNoorSignerModal.ts:56
 msgid "Your 24-hour trust session has expired. Enter your password to continue."
-msgstr ""
+msgstr "Deine 24-Stunden-Vertrauenssitzung ist abgelaufen. Gib dein Passwort ein, um fortzufahren."
 "Deine 24-Stunden-Vertrauenssitzung ist abgelaufen. Gib dein Passwort ein, "
 "um fortzufahren."
 
@@ -788,7 +788,7 @@ msgstr "Neue Nachricht"
 msgid ""
 "NoorSigner will securely store your private key with password encryption. "
 "You'll use this password to unlock your account."
-msgstr ""
+msgstr "NoorSigner speichert deinen privaten Schlüssel sicher mit Passwortverschlüsselung. Mit diesem Passwort entsperren du dein Konto."
 "NoorSigner speichert deinen privaten Schlüssel sicher mit "
 "Passwort-Verschlüsselung. Dieses Passwort verwendest du, um dein Konto zu "
 "entsperren."
@@ -844,6 +844,7 @@ msgid "Secure Your Key"
 msgstr "Sichere deinen Key"
 
 #: src/components/modals/DMComposeModal.ts:97
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:330
 msgid "Send"
 msgstr "Senden"
 
@@ -895,7 +896,7 @@ msgstr "Addons"
 msgid ""
 "Addons are extra functions that build on and enhance your NoorNote "
 "experience. Right now, there are %s of them."
-msgstr ""
+msgstr "Addons sind Zusatzfunktionen, die deine NoorNote-Erfahrung erweitern. Derzeit gibt es %s davon."
 "Addons sind Zusatzfunktionen, die auf NoorNote aufbauen und es erweitern. "
 "Aktuell sind es %s."
 
@@ -925,7 +926,7 @@ msgstr "Hash kopieren"
 
 #: src/components/views/AddonsOverviewView.ts:75
 msgid "Drag tiles to reorder (on touch: use ▲▼). The order is saved per account."
-msgstr ""
+msgstr "Kacheln zum Neuanordnen ziehen (bei Touch: ▲▼ verwenden). Die Reihenfolge wird pro Konto gespeichert."
 "Ziehe Kacheln zum Neuanordnen (bei Touch: ▲▼ verwenden). Die Reihenfolge "
 "wird pro Konto gespeichert."
 
@@ -985,6 +986,11 @@ msgstr "Buch wird geladen…"
 msgid "Loading members..."
 msgstr "Lade Mitglieder…"
 
+#: src/components/ui/AccountSwitcher.ts:101
+#: src/components/ui/AccountSwitcher.ts:196
+#: src/components/ui/note-features/PollRenderer.ts:73
+#: src/components/ui/ReplyIndicator.ts:49
+#: src/components/ui/UserStatus.ts:42
 #: src/components/views/ListingReadView.ts:130
 #: src/components/views/ProfileView.ts:534
 msgid "Loading..."
@@ -1058,10 +1064,12 @@ msgstr "Farbschema"
 msgid ""
 "This book could not be loaded. You can try the download button on the "
 "original post."
-msgstr ""
+msgstr "Dieses Buch konnte nicht geladen werden. Du kannst die Download-Schaltfläche im Original-Beitrag versuchen."
 "Dieses Buch konnte nicht geladen werden. Du kannst den Download-Button im "
 "ursprünglichen Beitrag versuchen."
 
+#: src/components/ui/note-rendering/RepostRenderer.ts:109
+#: src/components/ui/note-rendering/ZapReceiptRenderer.ts:139
 #: src/components/views/ZapstoreAppView.ts:408
 msgid "Unknown"
 msgstr "Unbekannt"
@@ -1144,6 +1152,7 @@ msgstr[1] "An %s von %s Relays zugestellt"
 msgid "Done"
 msgstr "Fertig"
 
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:578
 #: src/components/views/ArticleEditorView.ts:242
 #: src/components/views/ArticleView.ts:114
 msgid "Failed to load article"
@@ -1165,7 +1174,7 @@ msgstr "Aktuell keine freien Termine — schau später wieder vorbei."
 msgid ""
 "Nostr users taking part in the meeting — they receive a private message "
 "about this booking."
-msgstr ""
+msgstr "Nostr-Nutzer, die am Meeting teilnehmen — sie erhalten eine private Nachricht zu dieser Buchung."
 "Nostr-Nutzer, die am Meeting teilnehmen — sie erhalten eine private "
 "Nachricht zu dieser Buchung."
 
@@ -1205,13 +1214,13 @@ msgstr "den Gastgeber"
 msgid ""
 "The host received your booking as a private message. Add it to your "
 "calendar so you don't forget:"
-msgstr ""
+msgstr "Der Gastgeber hat deine Buchung als private Nachricht erhalten. Füge sie deinem Kalender hinzu, damit du sie nicht vergisst:"
 "Der Gastgeber hat deine Buchung als private Nachricht erhalten. Füge sie "
 "deinem Kalender hinzu, damit du sie nicht vergisst:"
 
 #: src/services/ModalService.ts:243
 msgid "This will send a deletion request to all relays. This cannot be undone."
-msgstr ""
+msgstr "Das sendet eine Löschanfrage an alle Relays. Dies kann nicht rückgängig gemacht werden."
 "Das sendet eine Löschanfrage an alle Relays. Dies kann nicht rückgängig "
 "gemacht werden."
 
@@ -1343,7 +1352,7 @@ msgstr "Unterhaltung löschen"
 msgid ""
 "Delete this conversation and mute %s? They won't appear in your messages "
 "again."
-msgstr ""
+msgstr "Diese Unterhaltung löschen und %s stummschalten? Die Person erscheint danach nicht mehr in deinen Nachrichten."
 "Diese Unterhaltung löschen und %s stummschalten? Die Person erscheint nicht "
 "mehr in deinen Nachrichten."
 
@@ -1463,7 +1472,7 @@ msgstr "Nachrichten"
 
 #: src/components/views/ConversationView.ts:604
 msgid "Messages will disappear after this time. Minimum: 1 minute, maximum: 1 year."
-msgstr ""
+msgstr "Nachrichten verschwinden nach dieser Zeit. Minimum: 1 Minute, Maximum: 1 Jahr."
 "Nach dieser Zeit verschwinden Nachrichten. Minimum: 1 Minute, Maximum: 1 "
 "Jahr."
 
@@ -1533,7 +1542,7 @@ msgstr "Veröffentliche…"
 msgid ""
 "Re-fetch your full message history from the relays. Existing messages are "
 "kept — this only pulls anything missing. May take a moment."
-msgstr ""
+msgstr "Deinen vollständigen Nachrichtenverlauf erneut von den Relays abrufen. Vorhandene Nachrichten bleiben erhalten — es wird nur alles Fehlende nachgeladen. Kann einen Moment dauern."
 "Rufe deinen vollständigen Nachrichtenverlauf von den Relays ab. Bestehende "
 "Nachrichten bleiben erhalten — es wird nur Fehlendes nachgezogen. Kann "
 "einen Moment dauern."
@@ -1691,6 +1700,7 @@ msgstr "Discovery-Tags"
 msgid "Distraction-free writing (Esc to exit)"
 msgstr "Ablenkungsfreies Schreiben (Esc zum Verlassen)"
 
+#: src/components/ui/note-rendering/EmojiPackRenderer.ts:97
 #: src/components/views/ArticleEditorView.ts:316
 msgid "Edit"
 msgstr "Bearbeiten"
@@ -1740,7 +1750,7 @@ msgid ""
 "Publish as a recipe: adds the <code>zapcooking</code> tag so recipe clients "
 "list this article. Content should follow the recipe template (Details / "
 "Ingredients / Directions)."
-msgstr ""
+msgstr "Als Rezept veröffentlichen: Fügt das <code>zapcooking</code>-Tag hinzu, damit Rezept-Clients diesen Artikel auflisten. Der Inhalt sollte der Rezept-Vorlage folgen (Details / Zutaten / Zubereitung)."
 "Als Rezept veröffentlichen: Fügt das Tag <code>zapcooking</code> hinzu, "
 "damit Rezept-Clients diesen Artikel auflisten. Der Inhalt sollte der "
 "Rezeptvorlage folgen (Details / Zutaten / Zubereitung)."
@@ -1756,7 +1766,7 @@ msgstr "Rezept (zap.cooking)"
 
 #: src/components/views/ArticleEditorView.ts:897
 msgid "Recipe hint: add a %s section so recipe clients can parse it."
-msgstr ""
+msgstr "Rezept-Hinweis: Füge einen %s-Abschnitt hinzu, damit Rezept-Clients ihn parsen können."
 "Rezept-Hinweis: Füge einen %s-Abschnitt hinzu, damit Rezept-Clients ihn "
 "parsen können."
 
@@ -1813,7 +1823,7 @@ msgstr "Zusammenfassung"
 msgid ""
 "Unique identifier for this article. Changing this after publishing creates "
 "a new article instead of updating."
-msgstr ""
+msgstr "Eindeutige Kennung für diesen Artikel. Eine Änderung nach der Veröffentlichung erstellt einen neuen Artikel, statt zu aktualisieren."
 "Eindeutiger Bezeichner für diesen Artikel. Eine Änderung nach der "
 "Veröffentlichung erzeugt einen neuen Artikel statt zu aktualisieren."
 
@@ -1846,13 +1856,13 @@ msgstr "Du hast ungespeicherte Änderungen. Verwerfen?"
 msgid ""
 "⚠️ Public label, stored in your contact list (NIP-02). Anyone who reads "
 "your follow list can see it."
-msgstr ""
+msgstr "⚠️ Öffentliches Label, in deiner Kontaktliste gespeichert (NIP-02). Jeder, der deine Follow-Liste liest, kann es sehen."
 "⚠️ Öffentliches Label, in deiner Kontaktliste (NIP-02) gespeichert. Jeder, "
 "der deine Follower-Liste liest, kann es sehen."
 
 #: src/components/views/ProfileView.ts:1492
 msgid "🔒 Encrypted note about this user. Only you can decrypt and read it."
-msgstr ""
+msgstr "🔒 Verschlüsselte Notiz über diesen Nutzer. Nur du kannst sie entschlüsseln und lesen."
 "🔒 Verschlüsselte Notiz über diesen User. Nur du kannst sie entschlüsseln "
 "und lesen."
 
@@ -1886,6 +1896,7 @@ msgstr "Abzeichen"
 msgid "by"
 msgstr "von"
 
+#: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:208
 #: src/components/views/ProfileView.ts:2080
 #: src/components/views/ProfileView.ts:727
 msgid "Calendar"
@@ -1941,7 +1952,7 @@ msgstr "Hat dich stummgeschaltet"
 
 #: src/components/views/ProfileView.ts:968
 msgid "Hide this user's website highlights and reposts of them from your timelines"
-msgstr ""
+msgstr "Website-Highlights dieses Nutzers und Reposts davon aus deinen Timelines ausblenden"
 "Website-Highlights dieses Nutzers und Reposts davon aus deinen Timelines "
 "ausblenden"
 
@@ -1992,7 +2003,7 @@ msgstr "npub-QR-Code"
 
 #: src/components/views/ProfileView.ts:991
 msgid "Only suppresses notifications from this user's interactions with your notes"
-msgstr ""
+msgstr "Unterdrückt nur Benachrichtigungen zu Interaktionen dieses Nutzers mit deinen Notizen"
 "Unterdrückt nur Benachrichtigungen über Interaktionen dieses Nutzers mit "
 "deinen Notizen"
 
@@ -2048,13 +2059,13 @@ msgstr "Soft-Mute aktiv"
 
 #: src/components/views/ProfileView.ts:1164
 msgid "Soft muted — their interactions no longer notify you"
-msgstr ""
+msgstr "Weich stummgeschaltet — Interaktionen dieser Person benachrichtigen dich nicht mehr"
 "Soft-Mute aktiv — Interaktionen dieses Nutzers benachrichtigen dich nicht "
 "mehr"
 
 #: src/components/views/ProfileView.ts:685
 msgid "Switch to NoorSigner or browser extension to send messages"
-msgstr ""
+msgstr "Wechsle zu NoorSigner oder einer Browser-Erweiterung, um Nachrichten zu senden"
 "Wechsle zu NoorSigner oder einer Browser-Erweiterung, um Nachrichten zu "
 "senden"
 
@@ -2314,3 +2325,419 @@ msgstr "Du kannst deine eigenen Notizen nicht zappen"
 #: src/components/ui/NoteMenu.ts:678
 msgid "You will be notified about new articles"
 msgstr "Du wirst über neue Artikel benachrichtigt"
+
+#: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:136
+msgid "(Untitled event)"
+msgstr "(Unbenanntes Ereignis)"
+
+#: src/components/ui/ThreadContextIndicator.ts:190
+msgid "(untitled)"
+msgstr "(unbetitelt)"
+
+#: src/components/ui/ReplyIndicator.ts:107
+msgid "[Error loading]"
+msgstr "[Fehler beim Laden]"
+
+#: src/components/ui/ReplyIndicator.ts:72
+msgid "[Note not found]"
+msgstr "[Notiz nicht gefunden]"
+
+#: src/components/ui/note-rendering/LiveStreamRenderer.ts:64
+msgid ""
+"Activate the <a class=\"live-stream-card__hint-link\" "
+"href=\"/addons/live-streams-player\">Live Streams Player</a> addon to see "
+"this live stream."
+msgstr "Aktiviere das <a class=\"live-stream-card__hint-link\" href=\"/addons/live-streams-player\">Live Streams Player</a>-Addon, um diesen Livestream zu sehen."
+
+#: src/components/ui/note-rendering/EmojiPackRenderer.ts:107
+msgid "Add to Collection"
+msgstr "Zur Sammlung hinzufügen"
+
+#: src/components/ui/note-rendering/EmojiPackRenderer.ts:119
+msgid "Added %s custom emoji to your collection"
+msgid_plural "Added %s custom emojis to your collection"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:185
+msgid "Added to your calendar grid"
+msgstr "Zu deinem Kalender hinzugefügt"
+
+#: src/components/ui/UploadProgressOverlay.ts:123
+msgid "Already well-compressed — uploading original"
+msgstr "Bereits gut komprimiert — Original wird hochgeladen"
+
+#: src/components/ui/note-rendering/ZapReceiptRenderer.ts:127
+#: src/components/ui/note-rendering/ZapReceiptRenderer.ts:44
+#: src/components/ui/ThreadContextIndicator.ts:162
+#: src/components/ui/UserStatus.ts:104
+#: src/components/ui/UserStatus.ts:92
+msgid "Anonymous"
+msgstr "Anonym"
+
+#: src/components/ui/ThreadContextIndicator.ts:197
+msgid "App"
+msgstr "App"
+
+#: src/components/ui/ThreadContextIndicator.ts:193
+msgid "Article"
+msgstr "Artikel"
+
+#: src/components/ui/UploadProgressOverlay.ts:109
+msgid "audio"
+msgstr "Audio"
+
+#: src/components/ui/note-rendering/BookmarkListRenderer.ts:70
+msgid "Bookmark list"
+msgstr "Lesezeichenliste"
+
+#: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:140
+msgid "Calendar event"
+msgstr "Kalenderevent"
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:377
+msgid "channel"
+msgstr "Kanal"
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:377
+msgid "channels"
+msgstr "Kanäle"
+
+#: src/components/ui/note-rendering/WebCommentCard.ts:50
+msgid "Commenting on"
+msgstr "Kommentiert zu"
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:397
+msgid "Community invite"
+msgstr "Community-Einladung"
+
+#: src/components/ui/UploadProgressOverlay.ts:126
+msgid "Compressed: %s → %s (%s% smaller)"
+msgstr "Komprimiert: %s → %s (%s % kleiner)"
+
+#: src/components/ui/UploadProgressOverlay.ts:110
+msgid "Compressing %s file…"
+msgstr "%s-Datei wird komprimiert…"
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:417
+msgid "Copy invite link"
+msgstr "Einladungslink kopieren"
+
+#: src/components/ui/note-rendering/EmojiPackRenderer.ts:123
+msgid "Could not add emojis"
+msgstr "Emojis konnten nicht hinzugefügt werden"
+
+#: src/components/ui/note-rendering/RepostRenderer.ts:294
+msgid "Could not load reposted note"
+msgstr "Repostete Notiz konnte nicht geladen werden"
+
+#: src/components/ui/note-rendering/ZapReceiptRenderer.ts:163
+msgid "Could not parse zap data"
+msgstr "Zap-Daten konnten nicht geparst werden"
+
+#: src/components/ui/TextSelectionToolbar.ts:174
+msgid "Could not resolve source note. Please reload and try again."
+msgstr "Quellnotiz konnte nicht aufgelöst werden. Bitte neu laden und erneut versuchen."
+
+#: src/components/ui/FontSizeSwitcher.ts:34
+msgid "Decrease font size"
+msgstr "Schriftgröße verkleinern"
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:384
+msgid "Decrypting…"
+msgstr "Entschlüsseln…"
+
+#: src/components/ui/note-rendering/EmojiPackRenderer.ts:62
+msgid "Emoji set was updated"
+msgstr "Emoji-Set wurde aktualisiert"
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:369
+msgid "Encrypted"
+msgstr "Verschlüsselt"
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:356
+msgid "Encrypted community"
+msgstr "Verschlüsselte Community"
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:190
+msgid "ENDED"
+msgstr "BEENDET"
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:368
+msgid "Expired"
+msgstr "Abgelaufen"
+
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1049
+msgid "Failed to load quoted note"
+msgstr "Zitierte Notiz konnte nicht geladen werden"
+
+#: src/components/ui/ThreadContextIndicator.ts:93
+msgid "Failed to load thread context"
+msgstr "Thread-Kontext konnte nicht geladen werden"
+
+#: src/components/ui/note-features/PollRenderer.ts:133
+msgid "Failed to load votes"
+msgstr "Stimmen konnten nicht geladen werden"
+
+#: src/components/ui/ThreadContextIndicator.ts:199
+msgid "Follow Pack"
+msgstr "Follow-Pack"
+
+#: src/components/ui/note-rendering/FollowPackRenderer.ts:55
+msgid "Follow pack was updated"
+msgstr "Follow-Pack wurde aktualisiert"
+
+#: src/components/ui/FontSizeSwitcher.ts:33
+msgid "Font Size"
+msgstr "Schriftgröße"
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:160
+msgid "Git Issue"
+msgstr "Git Issue"
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:144
+msgid "Git Patch"
+msgstr "Git-Patch"
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:190
+msgid "Git Repository"
+msgstr "Git-Repository"
+
+#: src/components/ui/note-rendering/CurationSetItems.ts:35
+msgid "In this collection"
+msgstr "In dieser Sammlung"
+
+#: src/components/ui/FontSizeSwitcher.ts:35
+msgid "Increase font size"
+msgstr "Schriftgröße vergrößern"
+
+#: src/components/ui/note-rendering/RepostRenderer.ts:256
+msgid "Invalid repost (no event reference)"
+msgstr "Ungültiger Repost (keine Event-Referenz)"
+
+#: src/components/ui/ThreadContextIndicator.ts:195
+msgid "Listing"
+msgstr "Listing"
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:190
+msgid "LIVE"
+msgstr "LIVE"
+
+#: src/components/ui/note-rendering/CurationSetItems.ts:43
+msgid "Loading items…"
+msgstr "Elemente werden geladen…"
+
+#: src/components/ui/note-rendering/RepostRenderer.ts:267
+msgid "Loading reposted note..."
+msgstr "Repostete Notiz wird geladen…"
+
+#: src/components/ui/note-rendering/ReactionFeedRenderer.ts:40
+msgid "Loading…"
+msgstr "Lädt…"
+
+#: src/components/ui/note-rendering/ListingRenderer.ts:62
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1365
+msgid "Marketplace"
+msgstr "Marktplatz"
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:366
+msgid "Missing secret"
+msgstr "Secret fehlt"
+
+#: src/components/ui/MoveDropdown.ts:102
+msgid "Move to"
+msgstr "Verschieben nach"
+
+#: src/components/ui/MoveDropdown.ts:67
+#: src/components/ui/MoveDropdown.ts:68
+msgid "Move to..."
+msgstr "Verschieben nach…"
+
+#: src/components/ui/note-features/NIP88PollRenderer.ts:112
+msgid "Multiple choice allowed"
+msgstr "Mehrfachauswahl erlaubt"
+
+#: src/components/ui/note-rendering/NsiteRenderer.ts:67
+msgid "Nostr website"
+msgstr "Nostr-Website"
+
+#: src/components/ui/note-factories/FallbackElementFactory.ts:26
+msgid "Note can't be rendered"
+msgstr "Notiz kann nicht dargestellt werden"
+
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1001
+msgid "Note from a user you've muted"
+msgstr "Notiz von einem stummgeschalteten Nutzer"
+
+#: src/components/ui/UploadProgressOverlay.ts:104
+msgid "of"
+msgstr "von"
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:415
+msgid "Open in Armada"
+msgstr "In Armada öffnen"
+
+#: src/components/ui/note-rendering/WebCommentCard.ts:52
+msgid "Open page →"
+msgstr "Seite öffnen →"
+
+#: src/components/ui/WalletBalanceDisplay.ts:108
+msgid "Open Wallet Balance"
+msgstr "Wallet-Guthaben öffnen"
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:190
+msgid "PLANNED"
+msgstr "GEPLANT"
+
+#: src/components/ui/note-rendering/BookmarkListRenderer.ts:70
+msgid "Playlist"
+msgstr "Playlist"
+
+#: src/components/ui/note-features/NIP88PollRenderer.ts:333
+msgid "Poll option"
+msgstr "Umfrageoption"
+
+#: src/components/ui/TextSelectionToolbar.ts:149
+msgid "Post highlight"
+msgstr "Highlight posten"
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:148
+msgid "Pull Request"
+msgstr "Pull Request"
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:154
+msgid "Pull Request Update"
+msgstr "Pull-Request-Update"
+
+#: src/components/ui/note-factories/FallbackElementFactory.ts:49
+msgid "Quoted note (max depth reached)"
+msgstr "Zitierte Notiz (maximale Tiefe erreicht)"
+
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1064
+msgid "Quoted repost — open to view"
+msgstr "Zitierter Repost — zum Ansehen öffnen"
+
+#: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:182
+msgid "Removed from your calendar"
+msgstr "Aus deinem Kalender entfernt"
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:324
+msgid "Send a message…"
+msgstr "Nachricht senden…"
+
+#: src/components/ui/note-features/CollapsibleManager.ts:144
+msgid "Show Less"
+msgstr "Weniger anzeigen"
+
+#: src/components/ui/note-features/CollapsibleManager.ts:131
+#: src/components/ui/note-features/CollapsibleManager.ts:144
+#: src/components/ui/note-features/CollapsibleManager.ts:189
+msgid "Show More"
+msgstr "Mehr anzeigen"
+
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1002
+msgid "Show temporarily"
+msgstr "Vorübergehend anzeigen"
+
+#: src/components/ui/UserStatus.ts:44
+msgid "Sign Out"
+msgstr "Abmelden"
+
+#: src/components/ui/note-rendering/NsiteRenderer.ts:118
+msgid "Site hash"
+msgstr "Site-Hash"
+
+#: src/components/ui/note-rendering/NsiteRenderer.ts:87
+msgid "Source code ↗"
+msgstr "Quellcode ↗"
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:168
+#: src/components/ui/note-rendering/GitEventRenderer.ts:174
+#: src/components/ui/note-rendering/GitEventRenderer.ts:180
+#: src/components/ui/note-rendering/GitEventRenderer.ts:186
+msgid "Status update"
+msgstr "Status-Update"
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:172
+msgid "Status: Applied/Merged"
+msgstr "Status: Angewendet/Gemerged"
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:178
+msgid "Status: Closed"
+msgstr "Status: Geschlossen"
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:184
+msgid "Status: Draft"
+msgstr "Status: Entwurf"
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:166
+msgid "Status: Open"
+msgstr "Status: Offen"
+
+#: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:247
+msgid "Subscribed — events added to your calendar grid"
+msgstr "Abonniert — Events zu deinem Kalender hinzugefügt"
+
+#: src/components/ui/WalletBalanceDisplay.ts:119
+msgid "Toggle balance visibility"
+msgstr "Guthaben-Anzeige umschalten"
+
+#: src/components/ui/WalletBalanceDisplay.ts:119
+msgid "Toggle visibility"
+msgstr "Sichtbarkeit umschalten"
+
+#: src/components/ui/note-rendering/GatedNoteRenderer.ts:33
+msgid "Unlock on fanfares.io"
+msgstr "Auf fanfares.io freischalten"
+
+#: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:243
+msgid "Unsubscribed from calendar"
+msgstr "Vom Kalender abgemeldet"
+
+#: src/components/ui/note-rendering/CurationSetItems.ts:87
+msgid "Untitled"
+msgstr "Unbetitelt"
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:534
+msgid "Untitled App"
+msgstr "Unbetitelte App"
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:172
+msgid "Untitled Stream"
+msgstr "Unbetitelter Stream"
+
+#: src/components/ui/UploadProgressOverlay.ts:149
+msgid "Uploaded"
+msgstr "Hochgeladen"
+
+#: src/components/ui/UploadProgressOverlay.ts:140
+msgid "Uploading to media server…"
+msgstr "Wird zum Medienserver hochgeladen…"
+
+#: src/components/ui/UploadProgressOverlay.ts:109
+msgid "video"
+msgstr "Video"
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:198
+msgid "View details"
+msgstr "Details ansehen"
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:197
+msgid "View on zap.stream"
+msgstr "Auf zap.stream ansehen"
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:193
+msgid "Watch live"
+msgstr "Live ansehen"
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:196
+msgid "Watch recording"
+msgstr "Aufzeichnung ansehen"
+
+#: src/components/ui/note-rendering/ZapReceiptRenderer.ts:162
+msgid "Zap Receipt"
+msgstr "Zap-Beleg"
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:438
+msgid "Zap Stream"
+msgstr "Stream zappen"

@@ -4,6 +4,7 @@
  * offers "Add to Collection" (import into your personal pack) or "Edit" (own pack).
  */
 
+import { _, tn } from '../../../i18n';
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { NoteHeader } from '../NoteHeader';
 import { parseEmojiPackEvent } from '../../../helpers/parseEmojiPack';
@@ -58,7 +59,7 @@ export class EmojiPackRenderer {
     appendPackHint(
       element,
       'emoji-pack-hint',
-      buildPackHintLines(pack, 'Emoji set was updated', {
+      buildPackHintLines(pack, _('Emoji set was updated'), {
         getSnapshot: getEmojiPackSnapshot,
         setSnapshot: setEmojiPackSnapshot,
         snapshotFrom: snapshotFromEmojiPack,
@@ -93,7 +94,7 @@ export class EmojiPackRenderer {
         const btn = document.createElement('button');
         btn.className = 'btn btn--passive btn--mini';
         btn.type = 'button';
-        btn.textContent = 'Edit';
+        btn.textContent = _('Edit');
         btn.addEventListener('click', e => {
           e.stopPropagation();
           Router.getInstance().navigate('/addons/custom-emojis');
@@ -103,7 +104,7 @@ export class EmojiPackRenderer {
         const btn = document.createElement('button');
         btn.className = 'btn btn--mini';
         btn.type = 'button';
-        btn.textContent = 'Add to Collection';
+        btn.textContent = _('Add to Collection');
         btn.addEventListener('click', async e => {
           e.stopPropagation();
           btn.disabled = true;
@@ -115,11 +116,16 @@ export class EmojiPackRenderer {
               pack.emojis
             );
             ToastService.show(
-              `Added ${count} custom emoji${count === 1 ? '' : 's'} to your collection`,
+              tn(
+                'Added %s custom emoji to your collection',
+                'Added %s custom emojis to your collection',
+                count,
+                count
+              ),
               'success'
             );
           } catch {
-            ToastService.show('Could not add emojis', 'error');
+            ToastService.show(_('Could not add emojis'), 'error');
             btn.disabled = false;
           }
         });

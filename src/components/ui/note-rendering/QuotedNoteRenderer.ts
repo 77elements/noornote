@@ -4,6 +4,7 @@
  * Used by both NoteUI and SingleNoteView
  */
 
+import { _ } from '../../../i18n';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { encodeNevent, decodeNip19 } from '../../../services/NostrToolsAdapter';
 import { NoteHeader } from '../../../components/ui/NoteHeader';
@@ -997,8 +998,8 @@ export class QuotedNoteRenderer {
       <div class="quote-muted__content">
         <span class="quote-muted__icon">🔇</span>
         <div class="quote-muted__text">
-          <p>Note from a user you've muted</p>
-          <button class="quote-muted__show-btn" data-event-id="${eventId}">Show temporarily</button>
+          <p>${_("Note from a user you've muted")}</p>
+          <button class="quote-muted__show-btn" data-event-id="${eventId}">${_('Show temporarily')}</button>
         </div>
       </div>
     `;
@@ -1045,7 +1046,7 @@ export class QuotedNoteRenderer {
     // NO whitespace to prevent invisible text nodes
     errorDiv.innerHTML = `<div class="quote-error-content"><span class="error-icon">⚠️</span><span class="error-text">${escapeHtml(
       (error instanceof Error ? error.message : '') ||
-        'Failed to load quoted note'
+        _('Failed to load quoted note')
     )}</span></div>`;
     return errorDiv;
   }
@@ -1060,7 +1061,7 @@ export class QuotedNoteRenderer {
     const placeholder = document.createElement('div');
     placeholder.className = 'quote-depth-cap';
     placeholder.dataset.quoteRef = ref.fullMatch;
-    placeholder.innerHTML = `<div class="quote-depth-cap__content"><span class="quote-depth-cap__icon">📄</span><span class="quote-depth-cap__text">Quoted repost — open to view</span></div>`;
+    placeholder.innerHTML = `<div class="quote-depth-cap__content"><span class="quote-depth-cap__icon">📄</span><span class="quote-depth-cap__text">${_('Quoted repost — open to view')}</span></div>`;
 
     placeholder.addEventListener('click', e => {
       // Inviolable media-click rule: media inside the placeholder must never
@@ -1361,7 +1362,7 @@ export class QuotedNoteRenderer {
       <div class="timeline-listing-card__body">
         <div class="timeline-listing-card__seller" data-pubkey="${event.pubkey}">
           <a href="#" class="mention-link" data-profile-pubkey="${event.pubkey}">…</a>
-          <span class="timeline-listing-card__badge">Marketplace</span>
+          <span class="timeline-listing-card__badge">${_('Marketplace')}</span>
         </div>
         <h3 class="timeline-listing-card__title">${escapeHtml(meta.title)}</h3>
         <div class="timeline-listing-card__price">${escapeHtml(priceDisplay)}</div>

@@ -8,6 +8,7 @@
  * stays light, so a quoted pack costs exactly one relay fetch.
  */
 
+import { _ } from '../../../i18n';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import {
   parseCurationSetEvent,
@@ -31,7 +32,7 @@ export async function mountCurationSetItems(
   if (set.itemRefs.length === 0) return;
 
   container.innerHTML = `
-    <h2 class="curation-items__title">In this collection</h2>
+    <h2 class="curation-items__title">${_('In this collection')}</h2>
     <div class="ui-list" data-role="curation-items"></div>
   `;
   const list = container.querySelector('[data-role="curation-items"]');
@@ -39,7 +40,7 @@ export async function mountCurationSetItems(
 
   const loading = document.createElement('div');
   loading.className = 'ui-list__item pulsate';
-  loading.textContent = 'Loading items…';
+  loading.textContent = _('Loading items…');
   list.appendChild(loading);
 
   const articlesApi =
@@ -83,7 +84,9 @@ function buildItemRow(row: {
 }): HTMLElement {
   const { naddr, item, ref } = row;
   const title =
-    item?.tags.find(t => t[0] === 'title')?.[1] || ref.identifier || 'Untitled';
+    item?.tags.find(t => t[0] === 'title')?.[1] ||
+    ref.identifier ||
+    _('Untitled');
   const author = item
     ? UserProfileService.getInstance().getUsername(item.pubkey)
     : undefined;

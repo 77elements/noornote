@@ -4,6 +4,7 @@
  * Extracts from: NoteUI.createErrorNoteElement() and createMaxDepthElement()
  */
 
+import { _ } from '../../../i18n';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { Router } from '../../../services/Router';
 import { encodeNevent } from '../../../services/NostrToolsAdapter';
@@ -22,7 +23,7 @@ export class FallbackElementFactory {
       <div class="note-error">
         <div class="error-header">
           <span class="error-icon">⚠️</span>
-          <span class="error-message">Note can't be rendered</span>
+          <span class="error-message">${_("Note can't be rendered")}</span>
         </div>
         <div class="error-details">
           <small>ID: ${eventId?.slice(0, 12) ?? 'unknown'}... | Kind: ${event.kind}</small>
@@ -45,7 +46,7 @@ export class FallbackElementFactory {
     maxDepthDiv.innerHTML = `
       <div class="max-depth-content">
         <span class="depth-icon">📄</span>
-        <span class="depth-text">Quoted note (max depth reached)</span>
+        <span class="depth-text">${_('Quoted note (max depth reached)')}</span>
         <small class="depth-id">ID: ${eventId?.slice(0, 12) ?? 'unknown'}...</small>
       </div>
     `;

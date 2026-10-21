@@ -10,6 +10,7 @@
  * the check as late-loading content (images, videos) changes the height.
  */
 
+import { _ } from '../../../i18n';
 import {
   PerAccountLocalStorage,
   StorageKeys,
@@ -127,7 +128,7 @@ export class CollapsibleManager {
     const showMoreBtn = document.createElement('button');
     showMoreBtn.className = 'btn btn--passive btn--show-more';
     showMoreBtn.setAttribute('data-action', 'show-more');
-    showMoreBtn.textContent = 'Show More';
+    showMoreBtn.textContent = _('Show More');
     showMoreBtn.style.display = 'none';
 
     if (excludedChild) {
@@ -140,7 +141,7 @@ export class CollapsibleManager {
       e.stopPropagation();
       const collapsed = wrapper.classList.toggle('is-collapsed');
       wrapper.classList.toggle('is-expanded', !collapsed);
-      showMoreBtn.textContent = collapsed ? 'Show More' : 'Show Less';
+      showMoreBtn.textContent = collapsed ? _('Show More') : _('Show Less');
     });
 
     pendingMeasurements.set(contentRoot, { wrapper, btn: showMoreBtn });
@@ -185,7 +186,7 @@ export class CollapsibleManager {
     if (overflowing) {
       btnEl.style.display = 'block';
       wrapperEl.classList.add('is-collapsed');
-      btnEl.textContent = 'Show More';
+      btnEl.textContent = _('Show More');
     } else {
       btnEl.style.display = 'none';
       wrapperEl.classList.remove('is-collapsed');

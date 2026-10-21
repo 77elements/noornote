@@ -8,6 +8,7 @@
  * for polls inside quotes.
  */
 
+import { _ } from '../../../i18n';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { ModuleLoader } from '../../../core/ModuleLoader';
 import { escapeHtml } from '../../../helpers/escapeHtml';
@@ -69,7 +70,7 @@ export class PollRenderer {
       optionBtn.innerHTML = `
         <span class="poll-option-text">${escapeHtml(option.label)}</span>
         <span class="poll-option-stats">
-          <span class="poll-option-count">Loading...</span>
+          <span class="poll-option-count">${_('Loading...')}</span>
         </span>
       `;
       pollContainer.appendChild(optionBtn);
@@ -129,7 +130,7 @@ export class PollRenderer {
   /** Show the per-option error state. */
   static markFailed(pollContainer: HTMLElement): void {
     pollContainer.querySelectorAll('.poll-option-count').forEach(countSpan => {
-      countSpan.textContent = 'Failed to load votes';
+      countSpan.textContent = _('Failed to load votes');
     });
   }
 }

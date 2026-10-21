@@ -12,6 +12,7 @@
  * a fingerprinting / IP-leak surface (see docs/todos/web-comments.md privacy gate).
  */
 
+import { _ } from '../../../i18n';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { extractWebRef } from '../../../helpers/webContentTags';
 import {
@@ -46,9 +47,9 @@ export function renderWebCommentCard(event: NostrEvent): HTMLElement | null {
   card.innerHTML = `
     <div class="web-comment-card__media web-comment-card__media--empty">💬</div>
     <div class="web-comment-card__content">
-      <span class="web-comment-card__kicker">Commenting on</span>
+      <span class="web-comment-card__kicker">${_('Commenting on')}</span>
       <h3 class="web-comment-card__title">${escapeHtml(domain || url)}</h3>
-      <a class="btn btn--mini web-comment-card__open" href="${escapeHtmlAttr(url)}" target="_blank" rel="noopener noreferrer">Open page →</a>
+      <a class="btn btn--mini web-comment-card__open" href="${escapeHtmlAttr(url)}" target="_blank" rel="noopener noreferrer">${_('Open page →')}</a>
     </div>
   `;
 

@@ -5,6 +5,7 @@
  * Detail view (gallery, buy, edit) lives in the marketplace addon's ListingView.
  */
 
+import { _ } from '../../../i18n';
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { NoteHeader } from '../NoteHeader';
 import { InteractionStatusLine } from '../InteractionStatusLine';
@@ -58,7 +59,7 @@ export class ListingRenderer {
       }
       <div class="timeline-listing-card__body">
         <div class="timeline-listing-card__seller">
-          <span class="timeline-listing-card__badge">Marketplace</span>
+          <span class="timeline-listing-card__badge">${_('Marketplace')}</span>
           ${meta.location ? `<span class="timeline-listing-card__location">${escapeHtml(meta.location)}</span>` : ''}
         </div>
         <h3 class="timeline-listing-card__title">${escapeHtml(meta.title)}</h3>

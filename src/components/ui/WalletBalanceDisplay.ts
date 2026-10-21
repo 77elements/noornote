@@ -3,6 +3,7 @@
  * Displays Lightning wallet balance in Sats and EUR with toggle visibility
  */
 
+import { _ } from '../../i18n';
 import { NWCService } from '../../services/NWCService';
 import { Router } from '../../services/Router';
 import { SystemLogger } from '../../services/SystemLogger';
@@ -104,7 +105,7 @@ export class WalletBalanceDisplay {
   private createElement(): HTMLElement {
     const container = document.createElement('div');
     container.className = 'sidebar-widget';
-    container.title = 'Open Wallet Balance';
+    container.title = _('Open Wallet Balance');
     container.addEventListener('click', this.onWidgetClick);
     container.innerHTML = `
       <div class="sidebar-widget__cols">
@@ -115,7 +116,7 @@ export class WalletBalanceDisplay {
         <span class="wallet-balance-right">
           <span class="wallet-balance-fiat-amount">--</span>
         </span>
-        <button class="wallet-balance-toggle" title="Toggle visibility" aria-label="Toggle balance visibility">
+        <button class="wallet-balance-toggle" title="${_('Toggle visibility')}" aria-label="${_('Toggle balance visibility')}">
           <svg class="eye-icon eye-open"><use href="#icon-eye-open"/></svg>
           <svg class="eye-icon eye-closed" style="display: none;"><use href="#icon-eye-closed"/></svg>
         </button>

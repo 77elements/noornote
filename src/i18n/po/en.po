@@ -829,6 +829,7 @@ msgid "Secure Your Key"
 msgstr "Secure Your Key"
 
 #: src/components/modals/DMComposeModal.ts:97
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:330
 msgid "Send"
 msgstr "Send"
 
@@ -968,6 +969,11 @@ msgstr "Loading book…"
 msgid "Loading members..."
 msgstr "Loading members..."
 
+#: src/components/ui/AccountSwitcher.ts:101
+#: src/components/ui/AccountSwitcher.ts:196
+#: src/components/ui/note-features/PollRenderer.ts:73
+#: src/components/ui/ReplyIndicator.ts:49
+#: src/components/ui/UserStatus.ts:42
 #: src/components/views/ListingReadView.ts:130
 #: src/components/views/ProfileView.ts:534
 msgid "Loading..."
@@ -1045,6 +1051,8 @@ msgstr ""
 "This book could not be loaded. You can try the download button on the "
 "original post."
 
+#: src/components/ui/note-rendering/RepostRenderer.ts:109
+#: src/components/ui/note-rendering/ZapReceiptRenderer.ts:139
 #: src/components/views/ZapstoreAppView.ts:408
 msgid "Unknown"
 msgstr "Unknown"
@@ -1127,6 +1135,7 @@ msgstr[1] ""
 msgid "Done"
 msgstr "Done"
 
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:578
 #: src/components/views/ArticleEditorView.ts:242
 #: src/components/views/ArticleView.ts:114
 msgid "Failed to load article"
@@ -1669,6 +1678,7 @@ msgstr "Discovery tags"
 msgid "Distraction-free writing (Esc to exit)"
 msgstr "Distraction-free writing (Esc to exit)"
 
+#: src/components/ui/note-rendering/EmojiPackRenderer.ts:97
 #: src/components/views/ArticleEditorView.ts:316
 msgid "Edit"
 msgstr "Edit"
@@ -1860,6 +1870,7 @@ msgstr "Badges"
 msgid "by"
 msgstr "by"
 
+#: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:208
 #: src/components/views/ProfileView.ts:2080
 #: src/components/views/ProfileView.ts:727
 msgid "Calendar"
@@ -2280,3 +2291,422 @@ msgstr "You cannot zap your own notes"
 #: src/components/ui/NoteMenu.ts:678
 msgid "You will be notified about new articles"
 msgstr "You will be notified about new articles"
+
+#: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:136
+msgid "(Untitled event)"
+msgstr "(Untitled event)"
+
+#: src/components/ui/ThreadContextIndicator.ts:190
+msgid "(untitled)"
+msgstr "(untitled)"
+
+#: src/components/ui/ReplyIndicator.ts:107
+msgid "[Error loading]"
+msgstr "[Error loading]"
+
+#: src/components/ui/ReplyIndicator.ts:72
+msgid "[Note not found]"
+msgstr "[Note not found]"
+
+#: src/components/ui/note-rendering/LiveStreamRenderer.ts:64
+msgid ""
+"Activate the <a class=\"live-stream-card__hint-link\" "
+"href=\"/addons/live-streams-player\">Live Streams Player</a> addon to see "
+"this live stream."
+msgstr ""
+"Activate the <a class=\"live-stream-card__hint-link\" "
+"href=\"/addons/live-streams-player\">Live Streams Player</a> addon to see "
+"this live stream."
+
+#: src/components/ui/note-rendering/EmojiPackRenderer.ts:107
+msgid "Add to Collection"
+msgstr "Add to Collection"
+
+#: src/components/ui/note-rendering/EmojiPackRenderer.ts:119
+msgid "Added %s custom emoji to your collection"
+msgid_plural "Added %s custom emojis to your collection"
+msgstr[0] "Added %s custom emoji to your collection"
+msgstr[1] ""
+
+#: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:185
+msgid "Added to your calendar grid"
+msgstr "Added to your calendar grid"
+
+#: src/components/ui/UploadProgressOverlay.ts:123
+msgid "Already well-compressed — uploading original"
+msgstr "Already well-compressed — uploading original"
+
+#: src/components/ui/note-rendering/ZapReceiptRenderer.ts:127
+#: src/components/ui/note-rendering/ZapReceiptRenderer.ts:44
+#: src/components/ui/ThreadContextIndicator.ts:162
+#: src/components/ui/UserStatus.ts:104
+#: src/components/ui/UserStatus.ts:92
+msgid "Anonymous"
+msgstr "Anonymous"
+
+#: src/components/ui/ThreadContextIndicator.ts:197
+msgid "App"
+msgstr "App"
+
+#: src/components/ui/ThreadContextIndicator.ts:193
+msgid "Article"
+msgstr "Article"
+
+#: src/components/ui/UploadProgressOverlay.ts:109
+msgid "audio"
+msgstr "audio"
+
+#: src/components/ui/note-rendering/BookmarkListRenderer.ts:70
+msgid "Bookmark list"
+msgstr "Bookmark list"
+
+#: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:140
+msgid "Calendar event"
+msgstr "Calendar event"
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:377
+msgid "channel"
+msgstr "channel"
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:377
+msgid "channels"
+msgstr "channels"
+
+#: src/components/ui/note-rendering/WebCommentCard.ts:50
+msgid "Commenting on"
+msgstr "Commenting on"
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:397
+msgid "Community invite"
+msgstr "Community invite"
+
+#: src/components/ui/UploadProgressOverlay.ts:126
+msgid "Compressed: %s → %s (%s% smaller)"
+msgstr "Compressed: %s → %s (%s% smaller)"
+
+#: src/components/ui/UploadProgressOverlay.ts:110
+msgid "Compressing %s file…"
+msgstr "Compressing %s file…"
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:417
+msgid "Copy invite link"
+msgstr "Copy invite link"
+
+#: src/components/ui/note-rendering/EmojiPackRenderer.ts:123
+msgid "Could not add emojis"
+msgstr "Could not add emojis"
+
+#: src/components/ui/note-rendering/RepostRenderer.ts:294
+msgid "Could not load reposted note"
+msgstr "Could not load reposted note"
+
+#: src/components/ui/note-rendering/ZapReceiptRenderer.ts:163
+msgid "Could not parse zap data"
+msgstr "Could not parse zap data"
+
+#: src/components/ui/TextSelectionToolbar.ts:174
+msgid "Could not resolve source note. Please reload and try again."
+msgstr "Could not resolve source note. Please reload and try again."
+
+#: src/components/ui/FontSizeSwitcher.ts:34
+msgid "Decrease font size"
+msgstr "Decrease font size"
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:384
+msgid "Decrypting…"
+msgstr "Decrypting…"
+
+#: src/components/ui/note-rendering/EmojiPackRenderer.ts:62
+msgid "Emoji set was updated"
+msgstr "Emoji set was updated"
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:369
+msgid "Encrypted"
+msgstr "Encrypted"
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:356
+msgid "Encrypted community"
+msgstr "Encrypted community"
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:190
+msgid "ENDED"
+msgstr "ENDED"
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:368
+msgid "Expired"
+msgstr "Expired"
+
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1049
+msgid "Failed to load quoted note"
+msgstr "Failed to load quoted note"
+
+#: src/components/ui/ThreadContextIndicator.ts:93
+msgid "Failed to load thread context"
+msgstr "Failed to load thread context"
+
+#: src/components/ui/note-features/PollRenderer.ts:133
+msgid "Failed to load votes"
+msgstr "Failed to load votes"
+
+#: src/components/ui/ThreadContextIndicator.ts:199
+msgid "Follow Pack"
+msgstr "Follow Pack"
+
+#: src/components/ui/note-rendering/FollowPackRenderer.ts:55
+msgid "Follow pack was updated"
+msgstr "Follow pack was updated"
+
+#: src/components/ui/FontSizeSwitcher.ts:33
+msgid "Font Size"
+msgstr "Font Size"
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:160
+msgid "Git Issue"
+msgstr "Git Issue"
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:144
+msgid "Git Patch"
+msgstr "Git Patch"
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:190
+msgid "Git Repository"
+msgstr "Git Repository"
+
+#: src/components/ui/note-rendering/CurationSetItems.ts:35
+msgid "In this collection"
+msgstr "In this collection"
+
+#: src/components/ui/FontSizeSwitcher.ts:35
+msgid "Increase font size"
+msgstr "Increase font size"
+
+#: src/components/ui/note-rendering/RepostRenderer.ts:256
+msgid "Invalid repost (no event reference)"
+msgstr "Invalid repost (no event reference)"
+
+#: src/components/ui/ThreadContextIndicator.ts:195
+msgid "Listing"
+msgstr "Listing"
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:190
+msgid "LIVE"
+msgstr "LIVE"
+
+#: src/components/ui/note-rendering/CurationSetItems.ts:43
+msgid "Loading items…"
+msgstr "Loading items…"
+
+#: src/components/ui/note-rendering/RepostRenderer.ts:267
+msgid "Loading reposted note..."
+msgstr "Loading reposted note..."
+
+#: src/components/ui/note-rendering/ReactionFeedRenderer.ts:40
+msgid "Loading…"
+msgstr "Loading…"
+
+#: src/components/ui/note-rendering/ListingRenderer.ts:62
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1365
+msgid "Marketplace"
+msgstr "Marketplace"
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:366
+msgid "Missing secret"
+msgstr "Missing secret"
+
+#: src/components/ui/MoveDropdown.ts:102
+msgid "Move to"
+msgstr "Move to"
+
+#: src/components/ui/MoveDropdown.ts:67
+#: src/components/ui/MoveDropdown.ts:68
+msgid "Move to..."
+msgstr "Move to..."
+
+#: src/components/ui/note-features/NIP88PollRenderer.ts:112
+msgid "Multiple choice allowed"
+msgstr "Multiple choice allowed"
+
+#: src/components/ui/note-rendering/NsiteRenderer.ts:67
+msgid "Nostr website"
+msgstr "Nostr website"
+
+#: src/components/ui/note-factories/FallbackElementFactory.ts:26
+msgid "Note can't be rendered"
+msgstr "Note can't be rendered"
+
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1001
+msgid "Note from a user you've muted"
+msgstr "Note from a user you've muted"
+
+#: src/components/ui/UploadProgressOverlay.ts:104
+msgid "of"
+msgstr "of"
+
+#: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:415
+msgid "Open in Armada"
+msgstr "Open in Armada"
+
+#: src/components/ui/note-rendering/WebCommentCard.ts:52
+msgid "Open page →"
+msgstr "Open page →"
+
+#: src/components/ui/WalletBalanceDisplay.ts:108
+msgid "Open Wallet Balance"
+msgstr "Open Wallet Balance"
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:190
+msgid "PLANNED"
+msgstr "PLANNED"
+
+#: src/components/ui/note-rendering/BookmarkListRenderer.ts:70
+msgid "Playlist"
+msgstr "Playlist"
+
+#: src/components/ui/note-features/NIP88PollRenderer.ts:333
+msgid "Poll option"
+msgstr "Poll option"
+
+#: src/components/ui/TextSelectionToolbar.ts:149
+msgid "Post highlight"
+msgstr "Post highlight"
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:148
+msgid "Pull Request"
+msgstr "Pull Request"
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:154
+msgid "Pull Request Update"
+msgstr "Pull Request Update"
+
+#: src/components/ui/note-factories/FallbackElementFactory.ts:49
+msgid "Quoted note (max depth reached)"
+msgstr "Quoted note (max depth reached)"
+
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1064
+msgid "Quoted repost — open to view"
+msgstr "Quoted repost — open to view"
+
+#: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:182
+msgid "Removed from your calendar"
+msgstr "Removed from your calendar"
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:324
+msgid "Send a message…"
+msgstr "Send a message…"
+
+#: src/components/ui/note-features/CollapsibleManager.ts:144
+msgid "Show Less"
+msgstr "Show Less"
+
+#: src/components/ui/note-features/CollapsibleManager.ts:131
+#: src/components/ui/note-features/CollapsibleManager.ts:144
+#: src/components/ui/note-features/CollapsibleManager.ts:189
+msgid "Show More"
+msgstr "Show More"
+
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1002
+msgid "Show temporarily"
+msgstr "Show temporarily"
+
+#: src/components/ui/UserStatus.ts:44
+msgid "Sign Out"
+msgstr "Sign Out"
+
+#: src/components/ui/note-rendering/NsiteRenderer.ts:118
+msgid "Site hash"
+msgstr "Site hash"
+
+#: src/components/ui/note-rendering/NsiteRenderer.ts:87
+msgid "Source code ↗"
+msgstr "Source code ↗"
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:168
+#: src/components/ui/note-rendering/GitEventRenderer.ts:174
+#: src/components/ui/note-rendering/GitEventRenderer.ts:180
+#: src/components/ui/note-rendering/GitEventRenderer.ts:186
+msgid "Status update"
+msgstr "Status update"
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:172
+msgid "Status: Applied/Merged"
+msgstr "Status: Applied/Merged"
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:178
+msgid "Status: Closed"
+msgstr "Status: Closed"
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:184
+msgid "Status: Draft"
+msgstr "Status: Draft"
+
+#: src/components/ui/note-rendering/GitEventRenderer.ts:166
+msgid "Status: Open"
+msgstr "Status: Open"
+
+#: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:247
+msgid "Subscribed — events added to your calendar grid"
+msgstr "Subscribed — events added to your calendar grid"
+
+#: src/components/ui/WalletBalanceDisplay.ts:119
+msgid "Toggle balance visibility"
+msgstr "Toggle balance visibility"
+
+#: src/components/ui/WalletBalanceDisplay.ts:119
+msgid "Toggle visibility"
+msgstr "Toggle visibility"
+
+#: src/components/ui/note-rendering/GatedNoteRenderer.ts:33
+msgid "Unlock on fanfares.io"
+msgstr "Unlock on fanfares.io"
+
+#: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:243
+msgid "Unsubscribed from calendar"
+msgstr "Unsubscribed from calendar"
+
+#: src/components/ui/note-rendering/CurationSetItems.ts:87
+msgid "Untitled"
+msgstr "Untitled"
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:534
+msgid "Untitled App"
+msgstr "Untitled App"
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:172
+msgid "Untitled Stream"
+msgstr "Untitled Stream"
+
+#: src/components/ui/UploadProgressOverlay.ts:149
+msgid "Uploaded"
+msgstr "Uploaded"
+
+#: src/components/ui/UploadProgressOverlay.ts:140
+msgid "Uploading to media server…"
+msgstr "Uploading to media server…"
+
+#: src/components/ui/UploadProgressOverlay.ts:109
+msgid "video"
+msgstr "video"
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:198
+msgid "View details"
+msgstr "View details"
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:197
+msgid "View on zap.stream"
+msgstr "View on zap.stream"
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:193
+msgid "Watch live"
+msgstr "Watch live"
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:196
+msgid "Watch recording"
+msgstr "Watch recording"
+
+#: src/components/ui/note-rendering/ZapReceiptRenderer.ts:162
+msgid "Zap Receipt"
+msgstr "Zap Receipt"
+
+#: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:438
+msgid "Zap Stream"
+msgstr "Zap Stream"

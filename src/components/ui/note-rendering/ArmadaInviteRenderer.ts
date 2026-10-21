@@ -25,6 +25,7 @@
  * transport calls here.
  */
 
+import { _ } from '../../../i18n';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { escapeHtml, escapeHtmlAttr } from '../../../helpers/escapeHtml';
 import { decodeInviteFragment } from '../../../helpers/armada/decodeInviteFragment';
@@ -352,7 +353,7 @@ export class ArmadaInviteRenderer {
     preview?: ArmadaInvitePreview;
   }): string {
     const { state, name, openUrl, preview } = opts;
-    const safeName = escapeHtml(name || 'Encrypted community');
+    const safeName = escapeHtml(name || _('Encrypted community'));
     const safeUrl = escapeHtmlAttr(openUrl);
 
     // Channel-count line: shown only when we actually decrypted it.
@@ -362,10 +363,10 @@ export class ArmadaInviteRenderer {
         <svg width="12" height="12"><use href="#icon-lock"/></svg>
         <span>${
           state === 'missing-secret' || state === 'incomplete'
-            ? 'Missing secret'
+            ? _('Missing secret')
             : state === 'expired'
-              ? 'Expired'
-              : 'Encrypted'
+              ? _('Expired')
+              : _('Encrypted')
         }</span>
       </span>
     `);
@@ -373,14 +374,14 @@ export class ArmadaInviteRenderer {
       metaBits.push(`
         <span class="armada-invite__meta-bit">
           <svg width="12" height="12"><use href="#icon-grid-dots"/></svg>
-          <span>${preview.channelCount} ${preview.channelCount === 1 ? 'channel' : 'channels'}</span>
+          <span>${preview.channelCount} ${preview.channelCount === 1 ? _('channel') : _('channels')}</span>
         </span>
       `);
     }
 
     const nameBlock =
       state === 'loading'
-        ? `<span class="armada-invite__name pulsate">Decrypting…</span>`
+        ? `<span class="armada-invite__name pulsate">${_('Decrypting…')}</span>`
         : `<span class="armada-invite__name">${safeName}</span>`;
 
     const iconBlock = preview?.icon
@@ -393,7 +394,7 @@ export class ArmadaInviteRenderer {
         <div class="armada-invite__eyebrow">
           <span class="armada-invite__brand">Armada</span>
           <span class="armada-invite__sep">·</span>
-          <span class="armada-invite__kind">Community invite</span>
+          <span class="armada-invite__kind">${_('Community invite')}</span>
         </div>
         <div class="armada-invite__row">
           <div class="armada-invite__icon">
@@ -411,9 +412,9 @@ export class ArmadaInviteRenderer {
               ? `
             <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="btn armada-invite__open">
               <svg width="14" height="14"><use href="#icon-share-link"/></svg>
-              <span>Open in Armada</span>
+              <span>${_('Open in Armada')}</span>
             </a>
-            <button type="button" class="btn-icon armada-invite__copy" data-armada-copy aria-label="Copy invite link">
+            <button type="button" class="btn-icon armada-invite__copy" data-armada-copy aria-label="${_('Copy invite link')}">
               <svg class="armada-invite__copy-icon" width="16" height="16"><use href="#icon-copy"/></svg>
               <svg class="armada-invite__copy-check" width="16" height="16"><use href="#icon-checkmark"/></svg>
             </button>

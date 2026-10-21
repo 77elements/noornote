@@ -10,6 +10,7 @@
  * here. Click opens the SNV (naddr).
  */
 
+import { _ } from '../../../i18n';
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { NoteHeader } from '../NoteHeader';
 import {
@@ -66,7 +67,7 @@ export class BookmarkListRenderer {
       </div>
       <div class="nn-card__content">
         <h3>${escapeHtml(list.title)}</h3>
-        <div class="meta">${escapeHtml(list.isPlaylist ? 'Playlist' : 'Bookmark list')} · ${escapeHtml(countLabel)}</div>
+        <div class="meta">${escapeHtml(list.isPlaylist ? _('Playlist') : _('Bookmark list'))} · ${escapeHtml(countLabel)}</div>
         ${list.isPlaylist ? BookmarkListRenderer.buildPlayerHtml(list) : ''}
       </div>
     `;

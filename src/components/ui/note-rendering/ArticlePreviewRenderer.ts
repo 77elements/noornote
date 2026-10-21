@@ -4,6 +4,7 @@
  * Used by QuoteRenderer and OriginalNoteRenderer when encountering naddr references
  */
 
+import { _ } from '../../../i18n';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { ModuleLoader } from '../../../core/ModuleLoader';
 import type { ArticlesModuleApi } from '../../../modules/articles/contracts';
@@ -168,7 +169,7 @@ export class ArticlePreviewRenderer {
   ): HTMLElement {
     const tags = event.tags;
     const getTag = (name: string) => tags.find(t => t[0] === name)?.[1] || '';
-    const title = getTag('title') || 'Untitled Stream';
+    const title = getTag('title') || _('Untitled Stream');
     const summary = getTag('summary');
     const image = getTag('image');
     const status = getLiveStreamStatus(event); // 'live' | 'planned' | 'ended' (with NIP-53 staleness guard)
@@ -186,15 +187,19 @@ export class ArticlePreviewRenderer {
         : fallbackUrl;
 
     const statusLabel =
-      status === 'live' ? 'LIVE' : status === 'ended' ? 'ENDED' : 'PLANNED';
+      status === 'live'
+        ? _('LIVE')
+        : status === 'ended'
+          ? _('ENDED')
+          : _('PLANNED');
     const watchLabel =
       status === 'live'
-        ? 'Watch live'
+        ? _('Watch live')
         : status === 'ended'
           ? recording
-            ? 'Watch recording'
-            : 'View on zap.stream'
-          : 'View details';
+            ? _('Watch recording')
+            : _('View on zap.stream')
+          : _('View details');
 
     const card = document.createElement('div');
     card.className = `live-stream-card live-stream-card--${status}`;
@@ -320,13 +325,13 @@ export class ArticlePreviewRenderer {
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'input live-stream-card__chat-input';
-    input.placeholder = 'Send a message…';
+    input.placeholder = _('Send a message…');
     input.maxLength = 500;
 
     const sendBtn = document.createElement('button');
     sendBtn.className = 'btn btn--mini live-stream-card__chat-send';
     sendBtn.type = 'button';
-    sendBtn.textContent = 'Send';
+    sendBtn.textContent = _('Send');
 
     wrapper.appendChild(input);
     wrapper.appendChild(sendBtn);
@@ -434,7 +439,7 @@ export class ArticlePreviewRenderer {
     zapBtn.setAttribute('data-action', 'stream-zap');
     zapBtn.innerHTML = `
       <span class="isl-icon"><svg width="18" height="18"><use href="#icon-zap"/></svg></span>
-      <span>Zap Stream</span>
+      <span>${_('Zap Stream')}</span>
     `;
 
     wrapper.appendChild(zapBtn);
@@ -530,7 +535,7 @@ export class ArticlePreviewRenderer {
   ): HTMLElement {
     const tags = event.tags;
     const getTag = (name: string) => tags.find(t => t[0] === name)?.[1] || '';
-    const name = getTag('name') || 'Untitled App';
+    const name = getTag('name') || _('Untitled App');
     const summary = getTag('summary');
     const icon = getTag('icon');
 
@@ -574,7 +579,7 @@ export class ArticlePreviewRenderer {
     errorDiv.innerHTML = `
       <div class="article-error-content">
         <span class="error-icon">⚠️</span>
-        <span class="error-text">Failed to load article</span>
+        <span class="error-text">${_('Failed to load article')}</span>
       </div>
     `;
     return errorDiv;
