@@ -84,6 +84,11 @@ msgstr ""
 msgid "Active"
 msgstr ""
 
+#: src/components/ui/NoteMenu.ts:219
+#: src/components/ui/NoteMenu.ts:783
+msgid "Add author to Tribe"
+msgstr ""
+
 #: src/components/views/ProfileView.ts:1480
 msgid "Add private note"
 msgstr ""
@@ -96,7 +101,16 @@ msgstr ""
 msgid "Add to Tribe"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1771
+#: src/components/ui/InteractionStatusLine.ts:529
+#: src/components/ui/NoteMenu.ts:742
+msgid "Added to bookmarks"
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:742
+msgid "Added to private bookmarks"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:1773
 msgid "Added to tribe \"%s\""
 msgstr ""
 
@@ -141,6 +155,10 @@ msgstr ""
 msgid "Already following all members"
 msgstr ""
 
+#: src/components/ui/InteractionStatusLine.ts:291
+msgid "Analytics"
+msgstr ""
+
 #: src/components/views/AboutView.ts:147
 msgid "And finally, thanks to every user who actively shapes NoorNote with feedback and support."
 msgstr ""
@@ -164,6 +182,10 @@ msgstr ""
 #: src/components/views/ArticleEditorView.ts:209
 #: src/components/views/ArticleView.ts:107
 msgid "Article not found"
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:682
+msgid "Article notifications disabled"
 msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:1342
@@ -229,6 +251,11 @@ msgstr ""
 msgid "Booking…"
 msgstr ""
 
+#: src/components/ui/InteractionStatusLine.ts:298
+#: src/components/ui/NoteMenu.ts:164
+msgid "Bookmark"
+msgstr ""
+
 #: src/components/views/ListsOverviewView.ts:61
 msgid "Bookmarks"
 msgstr ""
@@ -255,7 +282,7 @@ msgstr ""
 msgid "Cache:"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:2079
+#: src/components/views/ProfileView.ts:2080
 #: src/components/views/ProfileView.ts:727
 msgid "Calendar"
 msgstr ""
@@ -285,7 +312,7 @@ msgstr ""
 msgid "Check for updates"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1640
+#: src/components/views/ProfileView.ts:1642
 msgid "Choose a tribe"
 msgstr ""
 
@@ -295,6 +322,10 @@ msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:443
 msgid "click to add to Tags"
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:521
+msgid "Close"
 msgstr ""
 
 #: src/components/modals/ZapModal.ts:137
@@ -343,12 +374,24 @@ msgstr ""
 msgid "Copy certificate hash"
 msgstr ""
 
+#: src/components/ui/NoteMenu.ts:204
+msgid "Copy event ID"
+msgstr ""
+
 #: src/components/views/ZapstoreAppView.ts:317
 msgid "Copy hash"
 msgstr ""
 
+#: src/components/ui/NoteMenu.ts:514
+msgid "Copy link"
+msgstr ""
+
 #: src/components/views/ProfileView.ts:669
 msgid "Copy npub"
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:209
+msgid "Copy user ID"
 msgstr ""
 
 #: src/components/views/ConversationView.ts:525
@@ -440,6 +483,10 @@ msgstr ""
 #: src/components/views/ArticleEditorView.ts:1136
 #: src/components/views/ArticleEditorView.ts:330
 msgid "Delete Draft"
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:244
+msgid "Delete note"
 msgstr ""
 
 #: src/components/views/MessagesView.ts:577
@@ -592,7 +639,11 @@ msgstr ""
 msgid "Export DiagLogs"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1774
+#: src/components/ui/NoteMenu.ts:835
+msgid "Failed to add author to tribe"
+msgstr ""
+
+#: src/components/views/ProfileView.ts:1776
 msgid "Failed to add to tribe"
 msgstr ""
 
@@ -614,13 +665,27 @@ msgstr ""
 msgid "Failed to load messages"
 msgstr ""
 
+#: src/components/ui/NoteMenu.ts:624
 #: src/components/views/ConversationView.ts:986
 msgid "Failed to mute user"
+msgstr ""
+
+#: src/components/ui/interaction-managers/RepostManager.ts:296
+msgid "Failed to open editor"
 msgstr ""
 
 #: src/components/modals/DMComposeModal.ts:210
 #: src/components/modals/DMComposeModal.ts:215
 msgid "Failed to send message"
+msgstr ""
+
+#: src/components/ui/InteractionStatusLine.ts:536
+#: src/components/ui/NoteMenu.ts:752
+msgid "Failed to update bookmark"
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:658
+msgid "Failed to update thread mute"
 msgstr ""
 
 #: src/components/modals/SyncConfirmationModal.ts:204
@@ -735,6 +800,10 @@ msgstr ""
 msgid "Insert recipe template"
 msgstr ""
 
+#: src/components/ui/interaction-managers/RepostManager.ts:281
+msgid "Invalid event"
+msgstr ""
+
 #: src/components/modals/ImportToNoorSignerModal.ts:153
 msgid "Invalid format — must start with nsec1"
 msgstr ""
@@ -814,8 +883,16 @@ msgstr ""
 msgid "Lightning QR Code"
 msgstr ""
 
+#: src/components/ui/InteractionStatusLine.ts:333
+msgid "Like"
+msgstr ""
+
 #: src/components/views/AboutView.ts:222
 msgid "Like any web host, MyNymbox processes standard server log data when you load the application — typically your IP address, request timestamp, the URL/file requested, browser type, and referrer — for operational and security purposes (e.g. DDoS mitigation, server stability). NoorNote itself does not access or use these logs."
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:547
+msgid "Link"
 msgstr ""
 
 #: src/components/views/ListingReadView.ts:63
@@ -976,14 +1053,21 @@ msgstr ""
 msgid "Move up"
 msgstr ""
 
+#: src/components/ui/NoteMenu.ts:262
+msgid "Mute thread"
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:197
 #: src/components/views/ConversationView.ts:935
 msgid "Mute user"
 msgstr ""
 
+#: src/components/ui/NoteMenu.ts:187
 #: src/components/views/ConversationView.ts:933
 msgid "Mute user privately"
 msgstr ""
 
+#: src/components/ui/NoteMenu.ts:191
 #: src/components/views/ConversationView.ts:935
 msgid "Mute user publicly"
 msgstr ""
@@ -1061,12 +1145,20 @@ msgstr ""
 msgid "No Tracking or Analytics by NoorNote"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1632
+#: src/components/views/ProfileView.ts:1634
 msgid "No tribes found. Create a tribe first in the Tribe view."
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:769
+msgid "No tribes found. Create a tribe first."
 msgstr ""
 
 #: src/components/views/AboutView.ts:191
 msgid "No User-Data Storage on Our Server:"
+msgstr ""
+
+#: src/components/ui/interaction-managers/LikeManager.ts:158
+msgid "No write relays configured"
 msgstr ""
 
 #: src/components/views/AboutView.ts:159
@@ -1129,6 +1221,15 @@ msgstr ""
 msgid "Note for %s (optional, sent as a private message)"
 msgstr ""
 
+#: src/components/ui/interaction-managers/RepostManager.ts:139
+#: src/components/ui/interaction-managers/RepostManager.ts:251
+msgid "Note not found"
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:85
+msgid "Note options"
+msgstr ""
+
 #: src/components/views/ProfileView.ts:721
 #: src/components/views/ProfileView.ts:739
 msgid "Notes"
@@ -1140,6 +1241,10 @@ msgstr ""
 
 #: src/components/views/SettingsView.ts:37
 msgid "Notification Priorities"
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:269
+msgid "Notify on new articles"
 msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:490
@@ -1249,6 +1354,10 @@ msgstr ""
 msgid "Privacy Policy"
 msgstr ""
 
+#: src/components/ui/NoteMenu.ts:158
+msgid "Private Bookmark"
+msgstr ""
+
 #: src/components/modals/ImportToNoorSignerModal.ts:67
 msgid "Private Key (nsec)"
 msgstr ""
@@ -1261,12 +1370,16 @@ msgstr ""
 msgid "Products"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1875
+#: src/components/views/ProfileView.ts:1877
 msgid "Profile module not available"
 msgstr ""
 
 #: src/components/views/AboutView.ts:243
 msgid "Profile pictures and embedded media:"
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:154
+msgid "Public Bookmark"
 msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:333
@@ -1290,6 +1403,14 @@ msgstr ""
 #: src/components/views/ArticleEditorView.ts:1170
 #: src/components/views/VideoEditorView.ts:569
 msgid "Publishing..."
+msgstr ""
+
+#: src/components/ui/InteractionStatusLine.ts:314
+msgid "Quoted Repost"
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:562
+msgid "Raw event data not available"
 msgstr ""
 
 #: src/components/views/MessagesView.ts:788
@@ -1335,12 +1456,50 @@ msgstr[1] ""
 msgid "Release Date"
 msgstr ""
 
+#: src/components/ui/NoteMenu.ts:164
+msgid "Remove Bookmark"
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:158
+msgid "Remove Private Bookmark"
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:154
+msgid "Remove Public Bookmark"
+msgstr ""
+
 #: src/components/views/VideoEditorView.ts:236
 msgid "Remove video"
 msgstr ""
 
+#: src/components/ui/InteractionStatusLine.ts:526
+#: src/components/ui/NoteMenu.ts:735
+msgid "Removed from bookmarks"
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:734
+msgid "Removed from private bookmarks"
+msgstr ""
+
 #: src/components/modals/EditFolderModal.ts:28
 msgid "Rename Folder"
+msgstr ""
+
+#: src/components/ui/InteractionStatusLine.ts:321
+msgid "Reply"
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:253
+msgid "Report"
+msgstr ""
+
+#: src/components/ui/InteractionStatusLine.ts:309
+#: src/components/ui/InteractionStatusLine.ts:394
+msgid "Repost"
+msgstr ""
+
+#: src/components/ui/interaction-managers/RepostManager.ts:194
+msgid "Repost failed — display reverted"
 msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:463
@@ -1401,7 +1560,7 @@ msgstr ""
 msgid "Search by name or paste npub..."
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1898
+#: src/components/views/ProfileView.ts:1900
 msgid "Search failed: %s"
 msgstr ""
 
@@ -1411,6 +1570,10 @@ msgstr ""
 
 #: src/components/views/FollowPackDetailView.ts:214
 msgid "See Notes"
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:786
+msgid "Select a tribe to add this author to:"
 msgstr ""
 
 #: src/components/views/ProfileBookingView.ts:470
@@ -1451,7 +1614,7 @@ msgstr ""
 msgid "Set Petname"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1553
+#: src/components/views/ProfileView.ts:1555
 msgid "Set status…"
 msgstr ""
 
@@ -1461,6 +1624,16 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:206
 msgid "Settings are stored in the %s directory."
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:234
+#: src/components/ui/NoteMenu.ts:500
+msgid "Share article"
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:234
+#: src/components/ui/NoteMenu.ts:500
+msgid "Share Note"
 msgstr ""
 
 #: src/components/views/ProfileView.ts:963
@@ -1535,6 +1708,10 @@ msgstr ""
 
 #: src/components/views/MessagesView.ts:487
 msgid "Start a conversation by clicking \"New Message\""
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:269
+msgid "Stop article notifications"
 msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:404
@@ -1631,6 +1808,11 @@ msgstr ""
 msgid "This book could not be loaded. You can try the download button on the original post."
 msgstr ""
 
+#: src/components/ui/interaction-managers/ZapManager.ts:125
+#: src/components/ui/interaction-managers/ZapManager.ts:187
+msgid "This user has no Lightning wallet configured"
+msgstr ""
+
 #: src/components/views/ProfileView.ts:1105
 msgid "This user's highlights are now hidden"
 msgstr ""
@@ -1649,6 +1831,14 @@ msgstr ""
 
 #: src/services/ModalService.ts:243
 msgid "This will send a deletion request to all relays. This cannot be undone."
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:650
+msgid "Thread muted"
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:647
+msgid "Thread unmuted"
 msgstr ""
 
 #: src/components/views/VideoEditorView.ts:185
@@ -1682,7 +1872,7 @@ msgstr ""
 msgid "Toggle section"
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1740
+#: src/components/views/ProfileView.ts:1742
 msgid "Tribe not found"
 msgstr ""
 
@@ -1727,6 +1917,10 @@ msgstr ""
 msgid "Unlocking..."
 msgstr ""
 
+#: src/components/ui/NoteMenu.ts:262
+msgid "Unmute thread"
+msgstr ""
+
 #: src/components/views/ArticleEditorView.ts:1006
 msgid "Unsaved Changes"
 msgstr ""
@@ -1759,8 +1953,16 @@ msgstr ""
 msgid "Uploading video..."
 msgstr ""
 
-#: src/components/views/ProfileView.ts:1752
+#: src/components/views/ProfileView.ts:1754
 msgid "User is already in tribe \"%s\""
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:605
+msgid "User muted privately"
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:605
+msgid "User muted publicly"
 msgstr ""
 
 #: src/components/views/ConversationView.ts:243
@@ -1790,6 +1992,10 @@ msgstr ""
 #: src/components/views/ProfileView.ts:2251
 #: src/components/views/ProfileView.ts:723
 msgid "Videos"
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:227
+msgid "View raw event"
 msgstr ""
 
 #: src/components/views/AboutView.ts:209
@@ -1851,8 +2057,17 @@ msgstr ""
 msgid "Yes"
 msgstr ""
 
+#: src/components/ui/interaction-managers/ZapManager.ts:113
+#: src/components/ui/interaction-managers/ZapManager.ts:195
+msgid "You cannot zap your own notes"
+msgstr ""
+
 #: src/components/views/ArticleEditorView.ts:1007
 msgid "You have unsaved changes. Discard them?"
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:678
+msgid "You will be notified about new articles"
 msgstr ""
 
 #: src/components/modals/UnlockNoorSignerModal.ts:56
@@ -1885,6 +2100,7 @@ msgstr ""
 
 #: src/components/modals/ZapModal.ts:150
 #: src/components/modals/ZapModal.ts:73
+#: src/components/ui/InteractionStatusLine.ts:326
 msgid "Zap"
 msgstr ""
 

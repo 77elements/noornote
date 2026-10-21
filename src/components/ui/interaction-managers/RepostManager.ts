@@ -9,6 +9,7 @@
 import { ModuleLoader } from '../../../core/ModuleLoader';
 import type { PostsModuleApi } from '../../../modules/posts/contracts';
 import { RelayConfig } from '../../../services/RelayConfig';
+import { _ } from '../../../i18n';
 import { ToastService } from '../../../services/ToastService';
 import { PostNoteModal } from '../../post/PostNoteModal';
 import { getRepostsOriginalEvent } from '../../../helpers/getRepostsOriginalEvent';
@@ -135,7 +136,7 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
       const originalEvent = this.config.originalEvent;
 
       if (!originalEvent) {
-        ToastService.show('Note not found', 'error');
+        ToastService.show(_('Note not found'), 'error');
         return;
       }
 
@@ -190,7 +191,7 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
           // This covers the degraded no-api fallback so every revert has a
           // visible message without double-toasting.
           if (!('error' in result) || !result.error) {
-            ToastService.show('Repost failed — display reverted', 'error');
+            ToastService.show(_('Repost failed — display reverted'), 'error');
           }
         }
       }
@@ -247,7 +248,7 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
       const originalEvent = this.config.originalEvent;
 
       if (!originalEvent) {
-        ToastService.show('Note not found', 'error');
+        ToastService.show(_('Note not found'), 'error');
         return;
       }
 
@@ -277,7 +278,7 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
         // For regular notes, use nevent encoding
         const eventId = unwrappedEvent.id;
         if (!eventId) {
-          ToastService.show('Invalid event', 'error');
+          ToastService.show(_('Invalid event'), 'error');
           return;
         }
         const { encodeNevent } = await import('../../../helpers/encodeNevent');
@@ -292,7 +293,7 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
       PostNoteModal.getInstance().show(reference);
     } catch (error) {
       console.error('Failed to open quoted repost editor:', error);
-      ToastService.show('Failed to open editor', 'error');
+      ToastService.show(_('Failed to open editor'), 'error');
     }
   }
 

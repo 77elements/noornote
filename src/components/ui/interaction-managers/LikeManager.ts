@@ -9,6 +9,7 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { RelayConfig } from '../../../services/RelayConfig';
 import { ToastService } from '../../../services/ToastService';
+import { _ } from '../../../i18n';
 import { EmojiPicker, type CustomEmojiEntry } from '../../emoji/EmojiPicker';
 import { isCustomEmojisEnabled } from '../../../addons/custom-emojis/index';
 import {
@@ -154,7 +155,7 @@ export class LikeManager extends BaseInteractionManager<LikeManagerConfig> {
         // Revert optimistic update
         this.hasInteracted = false;
         this.updateButtonState(false);
-        ToastService.show('No write relays configured', 'error');
+        ToastService.show(_('No write relays configured'), 'error');
         return;
       }
 

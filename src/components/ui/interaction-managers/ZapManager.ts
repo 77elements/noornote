@@ -9,6 +9,7 @@
 import { AuthGuard } from '../../../services/AuthGuard';
 import { AuthService } from '../../../services/AuthService';
 import { ModuleLoader } from '../../../core/ModuleLoader';
+import { _ } from '../../../i18n';
 import type { ZapsModuleApi } from '../../../modules/zaps/contracts';
 import { ToastService } from '../../../services/ToastService';
 import type { ReactionsModuleApi } from '../../../modules/reactions/contracts';
@@ -109,7 +110,7 @@ export class ZapManager {
     const currentUser = this.authService.getCurrentUser();
     if (currentUser && this.config.authorPubkey === currentUser.pubkey) {
       this.canReceiveZaps = false;
-      this.disableZapButton('You cannot zap your own notes');
+      this.disableZapButton(_('You cannot zap your own notes'));
       return;
     }
 
@@ -120,7 +121,9 @@ export class ZapManager {
 
       if (!profile || (!profile.lud16 && !profile.lud06 && !profile.nip05)) {
         this.canReceiveZaps = false;
-        this.disableZapButton('This user has no Lightning wallet configured');
+        this.disableZapButton(
+          _('This user has no Lightning wallet configured')
+        );
       }
     } catch (error) {
       // On error, leave button enabled (fail open)
@@ -180,13 +183,16 @@ export class ZapManager {
    */
   private checkCanZap(): boolean {
     if (!this.canReceiveZaps) {
-      ToastService.show('This user has no Lightning wallet configured', 'info');
+      ToastService.show(
+        _('This user has no Lightning wallet configured'),
+        'info'
+      );
       return false;
     }
 
     const currentUser = this.authService.getCurrentUser();
     if (currentUser && this.config.authorPubkey === currentUser.pubkey) {
-      ToastService.show('You cannot zap your own notes', 'info');
+      ToastService.show(_('You cannot zap your own notes'), 'info');
       return false;
     }
     return true;

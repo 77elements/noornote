@@ -11,6 +11,7 @@ import {
   encodeNevent,
 } from '../../services/NostrToolsAdapter';
 import { ModuleLoader } from '../../core/ModuleLoader';
+import { _ } from '../../i18n';
 import type { TimelineModuleApi } from '../../modules/timeline/contracts';
 import type { NotificationsModuleApi } from '../../modules/notifications/contracts';
 import { RawEventModal } from '../raw-event/RawEventModal';
@@ -81,7 +82,7 @@ export class NoteMenu {
   private createTrigger(): HTMLElement {
     const trigger = document.createElement('button');
     trigger.className = 'note-menu-trigger';
-    trigger.setAttribute('aria-label', 'Note options');
+    trigger.setAttribute('aria-label', _('Note options'));
     trigger.innerHTML = `<svg width="16" height="16"><use href="#icon-menu-dots"/></svg>`;
 
     return trigger;
@@ -150,17 +151,17 @@ export class NoteMenu {
         ? `
         <button class="note-menu-item" data-action="bookmark-public">
           ${ICONS.bookmark}
-          ${isPublicBookmarked ? 'Remove Public Bookmark' : 'Public Bookmark'}
+          ${isPublicBookmarked ? _('Remove Public Bookmark') : _('Public Bookmark')}
         </button>
         <button class="note-menu-item" data-action="bookmark-private">
           ${ICONS.bookmark}
-          ${isPrivateBookmarked ? 'Remove Private Bookmark' : 'Private Bookmark'}
+          ${isPrivateBookmarked ? _('Remove Private Bookmark') : _('Private Bookmark')}
         </button>
       `
         : `
         <button class="note-menu-item" data-action="bookmark-public">
           ${ICONS.bookmark}
-          ${isPublicBookmarked ? 'Remove Bookmark' : 'Bookmark'}
+          ${isPublicBookmarked ? _('Remove Bookmark') : _('Bookmark')}
         </button>
       `;
     }
@@ -183,29 +184,29 @@ export class NoteMenu {
       ? `
       <button class="note-menu-item note-menu-item--danger" data-action="mute-user-privately">
         ${ICONS.mute}
-        Mute user privately
+        ${_('Mute user privately')}
       </button>
       <button class="note-menu-item note-menu-item--danger" data-action="mute-user-publicly">
         ${ICONS.mute}
-        Mute user publicly
+        ${_('Mute user publicly')}
       </button>
     `
       : `
       <button class="note-menu-item note-menu-item--danger" data-action="mute-user-publicly">
         ${ICONS.mute}
-        Mute user
+        ${_('Mute user')}
       </button>
     `;
 
     menu.innerHTML = `
       <button class="note-menu-item" data-action="copy-event-id">
         ${ICONS.copy}
-        Copy event ID
+        ${_('Copy event ID')}
       </button>
 
       <button class="note-menu-item" data-action="copy-user-id">
         ${ICONS.copy}
-        Copy user ID
+        ${_('Copy user ID')}
       </button>
 
       ${bookmarkButtons}
@@ -215,7 +216,7 @@ export class NoteMenu {
           ? `
         <button class="note-menu-item" data-action="add-author-to-tribe">
           ${ICONS.tribe}
-          Add author to Tribe
+          ${_('Add author to Tribe')}
         </button>
       `
           : ''
@@ -223,14 +224,14 @@ export class NoteMenu {
 
       <button class="note-menu-item" data-action="view-raw-event">
         ${ICONS.code}
-        View raw event
+        ${_('View raw event')}
       </button>
 
       <div class="note-menu-divider"></div>
 
       <button class="note-menu-item" data-action="share-note">
         ${ICONS.share}
-        ${this.options.rawEvent?.kind === 30023 ? 'Share article' : 'Share Note'}
+        ${this.options.rawEvent?.kind === 30023 ? _('Share article') : _('Share Note')}
       </button>
 
       <div class="note-menu-divider"></div>
@@ -240,7 +241,7 @@ export class NoteMenu {
           ? `
         <button class="note-menu-item note-menu-item--danger" data-action="delete-note">
           ${ICONS.trash}
-          Delete note
+          ${_('Delete note')}
         </button>
         <div class="note-menu-divider"></div>
       `
@@ -249,7 +250,7 @@ export class NoteMenu {
 
       <button class="note-menu-item note-menu-item--danger" data-action="report">
         ${ICONS.report}
-        Report
+        ${_('Report')}
       </button>
 
       ${muteUserButtons}
@@ -258,14 +259,14 @@ export class NoteMenu {
 
       <button class="note-menu-item note-menu-item--warning" data-action="toggle-mute-thread">
         ${ICONS.muteThread}
-        ${isThreadMuted ? 'Unmute thread' : 'Mute thread'}
+        ${isThreadMuted ? _('Unmute thread') : _('Mute thread')}
       </button>
 
       <div class="note-menu-divider"></div>
 
       <button class="note-menu-item" data-action="toggle-article-notifications">
         ${ICONS.notification}
-        ${isSubscribedToArticles ? 'Stop article notifications' : 'Notify on new articles'}
+        ${isSubscribedToArticles ? _('Stop article notifications') : _('Notify on new articles')}
       </button>
     `;
 
@@ -496,7 +497,7 @@ export class NoteMenu {
 
     const modalService = ModalService.getInstance();
     modalService.show({
-      title: rawEvent?.kind === 30023 ? 'Share article' : 'Share Note',
+      title: rawEvent?.kind === 30023 ? _('Share article') : _('Share Note'),
       content: `
         <div class="share-link-modal">
           <div class="share-link-modal__row">
@@ -510,14 +511,14 @@ export class NoteMenu {
               type="button"
               class="btn-icon share-link-modal__copy"
               data-share-copy
-              aria-label="Copy link"
+              aria-label="${_('Copy link')}"
             >
               <svg class="share-link-modal__copy-icon" width="16" height="16"><use href="#icon-copy"/></svg>
               <svg class="share-link-modal__copy-check" width="16" height="16"><use href="#icon-checkmark"/></svg>
             </button>
           </div>
           <div class="l-row--right">
-            <button class="btn btn--passive" data-share-close>Close</button>
+            <button class="btn btn--passive" data-share-close>${_('Close')}</button>
           </div>
         </div>
       `,
@@ -543,7 +544,7 @@ export class NoteMenu {
       copyBtn?.addEventListener('click', async () => {
         const copied = await ClipboardActionsService.getInstance().copyText(
           shareUrl,
-          'Link'
+          _('Link')
         );
         if (copied) copyBtn.setAttribute('data-share-copied', '');
       });
@@ -558,7 +559,7 @@ export class NoteMenu {
   private viewRawEvent(): void {
     if (!this.options.rawEvent) {
       console.debug('Raw event not available');
-      ToastService.show('Raw event data not available', 'error');
+      ToastService.show(_('Raw event data not available'), 'error');
       return;
     }
 
@@ -601,7 +602,7 @@ export class NoteMenu {
     try {
       await muteOrch.muteUser(this.options.authorPubkey, isPrivate);
       ToastService.show(
-        isPrivate ? 'User muted privately' : 'User muted publicly',
+        isPrivate ? _('User muted privately') : _('User muted publicly'),
         'success'
       );
 
@@ -620,7 +621,7 @@ export class NoteMenu {
         `Failed to mute user ${isPrivate ? 'privately' : 'publicly'}:`,
         error
       );
-      ToastService.show('Failed to mute user', 'error');
+      ToastService.show(_('Failed to mute user'), 'error');
     }
   }
 
@@ -643,10 +644,10 @@ export class NoteMenu {
 
       if (isCurrentlyMuted) {
         await muteOrch.unmuteThread(this.options.eventId);
-        ToastService.show('Thread unmuted', 'success');
+        ToastService.show(_('Thread unmuted'), 'success');
       } else {
         await muteOrch.muteThread(this.options.eventId, false); // false = public
-        ToastService.show('Thread muted', 'success');
+        ToastService.show(_('Thread muted'), 'success');
       }
 
       // Notify UI to refresh
@@ -654,7 +655,7 @@ export class NoteMenu {
       eventBus.emit('mute:updated');
     } catch (error) {
       console.error('Failed to toggle thread mute:', error);
-      ToastService.show('Failed to update thread mute', 'error');
+      ToastService.show(_('Failed to update thread mute'), 'error');
     }
   }
 
@@ -673,9 +674,12 @@ export class NoteMenu {
       false;
 
     if (isNowSubscribed) {
-      ToastService.show('You will be notified about new articles', 'success');
+      ToastService.show(
+        _('You will be notified about new articles'),
+        'success'
+      );
     } else {
-      ToastService.show('Article notifications disabled', 'success');
+      ToastService.show(_('Article notifications disabled'), 'success');
     }
   }
 
@@ -727,15 +731,15 @@ export class NoteMenu {
         await bookmarkOrch.removeBookmark(eventIdToBookmark, isPrivate);
         ToastService.show(
           isPrivate
-            ? 'Removed from private bookmarks'
-            : 'Removed from bookmarks',
+            ? _('Removed from private bookmarks')
+            : _('Removed from bookmarks'),
           'success'
         );
       } else {
         // Add bookmark
         await bookmarkOrch.addBookmark(eventIdToBookmark, isPrivate);
         ToastService.show(
-          isPrivate ? 'Added to private bookmarks' : 'Added to bookmarks',
+          isPrivate ? _('Added to private bookmarks') : _('Added to bookmarks'),
           'success'
         );
       }
@@ -745,7 +749,7 @@ export class NoteMenu {
       eventBus.emit('bookmark:updated');
     } catch (error) {
       console.error('Failed to toggle bookmark:', error);
-      ToastService.show('Failed to update bookmark', 'error');
+      ToastService.show(_('Failed to update bookmark'), 'error');
     }
   }
 
@@ -762,7 +766,7 @@ export class NoteMenu {
     const tribeFolders = tribes.getFolders();
 
     if (tribeFolders.length === 0) {
-      ToastService.show('No tribes found. Create a tribe first.', 'info');
+      ToastService.show(_('No tribes found. Create a tribe first.'), 'info');
       return;
     }
 
@@ -776,10 +780,10 @@ export class NoteMenu {
 
     const modalService = ModalService.getInstance();
     modalService.show({
-      title: 'Add author to Tribe',
+      title: _('Add author to Tribe'),
       content: `
         <div style="padding: 1rem 0;">
-          <p style="margin-bottom: 1rem;">Select a tribe to add this author to:</p>
+          <p style="margin-bottom: 1rem;">${_('Select a tribe to add this author to:')}</p>
           <div class="tribe-selection-list">
             ${tribeListHtml}
           </div>
@@ -828,7 +832,7 @@ export class NoteMenu {
       ToastService.show(`Author added to ${tribeName}`, 'success');
     } catch (error) {
       console.error('Failed to add author to tribe:', error);
-      ToastService.show('Failed to add author to tribe', 'error');
+      ToastService.show(_('Failed to add author to tribe'), 'error');
     }
   }
 

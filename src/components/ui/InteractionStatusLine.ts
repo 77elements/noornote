@@ -5,6 +5,7 @@
  */
 
 import { ModuleLoader } from '../../core/ModuleLoader';
+import { _ } from '../../i18n';
 import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
 import type { ZapsModuleApi } from '../../modules/zaps/contracts';
 import { AuthGuard } from '../../services/AuthGuard';
@@ -287,14 +288,14 @@ export class InteractionStatusLine {
     container.dataset.noteId = this.config.noteId;
 
     const analyticsHtml = this.config.onAnalytics
-      ? `<button class="isl-action isl-analytics" type="button" data-action="analytics" title="Analytics">
+      ? `<button class="isl-action isl-analytics" type="button" data-action="analytics" title="${_('Analytics')}">
            <span class="isl-icon"><svg width="18" height="18"><use href="#icon-trending-up"/></svg></span>
          </button>`
       : '';
 
     // Public bookmark toggle (addon-gated). Private bookmarks stay in the note menu.
     const bookmarkHtml = isBookmarksEnabled()
-      ? `<button class="isl-action isl-bookmark" type="button" data-action="bookmark" title="Bookmark">
+      ? `<button class="isl-action isl-bookmark" type="button" data-action="bookmark" title="${_('Bookmark')}">
            <span class="isl-icon"><svg width="18" height="18"><use href="#icon-bookmark-24"/></svg></span>
          </button>`
       : '';
@@ -305,31 +306,31 @@ export class InteractionStatusLine {
     const repostQuoteHtml = isMobile
       ? ''
       : `
-      <button class="isl-action isl-repost" type="button" data-action="repost" title="Repost">
+      <button class="isl-action isl-repost" type="button" data-action="repost" title="${_('Repost')}">
         <span class="isl-icon"><svg width="18" height="18"><use href="#icon-repost"/></svg></span>
         <span class="isl-count">${formatCount(this.stats.reposts)}</span>
       </button>
 
-      <button class="isl-action isl-quote" type="button" data-action="quote" title="Quoted Repost">
+      <button class="isl-action isl-quote" type="button" data-action="quote" title="${_('Quoted Repost')}">
         <span class="isl-icon">❝</span>
         <span class="isl-count">${formatCount(this.stats.quotedReposts)}</span>
       </button>
     `;
 
     container.innerHTML = `
-      <button class="isl-action isl-reply" type="button" data-action="reply" title="Reply">
+      <button class="isl-action isl-reply" type="button" data-action="reply" title="${_('Reply')}">
         <span class="isl-icon"><svg width="18" height="18"><use href="#icon-thread-bubble"/></svg></span>
         <span class="isl-count">${formatCount(this.stats.replies)}</span>
       </button>
 
-      <button class="isl-action isl-zap" type="button" data-action="zap" title="Zap">
+      <button class="isl-action isl-zap" type="button" data-action="zap" title="${_('Zap')}">
         <span class="isl-icon"><svg width="18" height="18"><use href="#icon-zap"/></svg></span>
         <span class="isl-count">${formatCount(this.stats.zaps)}</span>
       </button>
 
       ${repostQuoteHtml}
 
-      <button class="isl-action isl-like" type="button" data-action="like" title="Like">
+      <button class="isl-action isl-like" type="button" data-action="like" title="${_('Like')}">
         <span class="isl-icon">♡</span>
         <span class="isl-count">${formatCount(this.stats.likes)}</span>
       </button>
@@ -390,7 +391,7 @@ export class InteractionStatusLine {
     const menuEl = this.repostMenu.getElement();
     const trigger = menuEl.querySelector('.nn-dropdown__trigger');
     if (trigger) {
-      trigger.setAttribute('title', 'Repost');
+      trigger.setAttribute('title', _('Repost'));
       trigger.innerHTML =
         '<span class="isl-icon"><svg width="18" height="18"><use href="#icon-repost"/></svg></span>';
       // Lets the RepostManager reflect the "already reposted" state on the icon.
@@ -522,17 +523,17 @@ export class InteractionStatusLine {
 
       if (status.public) {
         await orch.removeBookmark(this.config.noteId, false);
-        ToastService.show('Removed from bookmarks', 'success');
+        ToastService.show(_('Removed from bookmarks'), 'success');
       } else {
         await orch.addBookmark(this.config.noteId, false);
-        ToastService.show('Added to bookmarks', 'success');
+        ToastService.show(_('Added to bookmarks'), 'success');
       }
 
       // Notify the bookmarks list + every other ISL/menu showing this note.
       TypedEventBus.getInstance().emit('bookmark:updated');
     } catch (error) {
       console.error('Failed to toggle bookmark:', error);
-      ToastService.show('Failed to update bookmark', 'error');
+      ToastService.show(_('Failed to update bookmark'), 'error');
     }
   }
 

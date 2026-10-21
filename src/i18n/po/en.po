@@ -860,6 +860,7 @@ msgstr "Write your message..."
 
 #: src/components/modals/ZapModal.ts:150
 #: src/components/modals/ZapModal.ts:73
+#: src/components/ui/InteractionStatusLine.ts:326
 msgid "Zap"
 msgstr "Zap"
 
@@ -1385,6 +1386,7 @@ msgstr "Duration must be at most 1 year."
 msgid "Failed to load messages"
 msgstr "Failed to load messages"
 
+#: src/components/ui/NoteMenu.ts:624
 #: src/components/views/ConversationView.ts:986
 msgid "Failed to mute user"
 msgstr "Failed to mute user"
@@ -1448,14 +1450,17 @@ msgstr "Messages will disappear after this time. Minimum: 1 minute, maximum: 1 y
 msgid "Minutes"
 msgstr "Minutes"
 
+#: src/components/ui/NoteMenu.ts:197
 #: src/components/views/ConversationView.ts:935
 msgid "Mute user"
 msgstr "Mute user"
 
+#: src/components/ui/NoteMenu.ts:187
 #: src/components/views/ConversationView.ts:933
 msgid "Mute user privately"
 msgstr "Mute user privately"
 
+#: src/components/ui/NoteMenu.ts:191
 #: src/components/views/ConversationView.ts:935
 msgid "Mute user publicly"
 msgstr "Mute user publicly"
@@ -1833,7 +1838,7 @@ msgstr "Add private note"
 msgid "Add to Tribe"
 msgstr "Add to Tribe"
 
-#: src/components/views/ProfileView.ts:1771
+#: src/components/views/ProfileView.ts:1773
 msgid "Added to tribe \"%s\""
 msgstr "Added to tribe \"%s\""
 
@@ -1855,12 +1860,12 @@ msgstr "Badges"
 msgid "by"
 msgstr "by"
 
-#: src/components/views/ProfileView.ts:2079
+#: src/components/views/ProfileView.ts:2080
 #: src/components/views/ProfileView.ts:727
 msgid "Calendar"
 msgstr "Calendar"
 
-#: src/components/views/ProfileView.ts:1640
+#: src/components/views/ProfileView.ts:1642
 msgid "Choose a tribe"
 msgstr "Choose a tribe"
 
@@ -1884,7 +1889,7 @@ msgstr "Edit private note"
 msgid "Edit your profile"
 msgstr "Edit your profile"
 
-#: src/components/views/ProfileView.ts:1774
+#: src/components/views/ProfileView.ts:1776
 msgid "Failed to add to tribe"
 msgstr "Failed to add to tribe"
 
@@ -1944,7 +1949,7 @@ msgstr "Loading websites…"
 msgid "No badges created yet. Create one in Addons → Badges."
 msgstr "No badges created yet. Create one in Addons → Badges."
 
-#: src/components/views/ProfileView.ts:1632
+#: src/components/views/ProfileView.ts:1634
 msgid "No tribes found. Create a tribe first in the Tribe view."
 msgstr "No tribes found. Create a tribe first in the Tribe view."
 
@@ -1969,11 +1974,11 @@ msgstr "Private Note"
 msgid "Products"
 msgstr "Products"
 
-#: src/components/views/ProfileView.ts:1875
+#: src/components/views/ProfileView.ts:1877
 msgid "Profile module not available"
 msgstr "Profile module not available"
 
-#: src/components/views/ProfileView.ts:1898
+#: src/components/views/ProfileView.ts:1900
 msgid "Search failed: %s"
 msgstr "Search failed: %s"
 
@@ -1985,7 +1990,7 @@ msgstr "Send message"
 msgid "Set Petname"
 msgstr "Set Petname"
 
-#: src/components/views/ProfileView.ts:1553
+#: src/components/views/ProfileView.ts:1555
 msgid "Set status…"
 msgstr "Set status…"
 
@@ -2035,7 +2040,7 @@ msgstr "This user's reactions are hidden from your timeline again"
 msgid "This user's reactions now appear in your timeline"
 msgstr "This user's reactions now appear in your timeline"
 
-#: src/components/views/ProfileView.ts:1740
+#: src/components/views/ProfileView.ts:1742
 msgid "Tribe not found"
 msgstr "Tribe not found"
 
@@ -2043,7 +2048,7 @@ msgstr "Tribe not found"
 msgid "Turn off Highlights"
 msgstr "Turn off Highlights"
 
-#: src/components/views/ProfileView.ts:1752
+#: src/components/views/ProfileView.ts:1754
 msgid "User is already in tribe \"%s\""
 msgstr "User is already in tribe \"%s\""
 
@@ -2064,3 +2069,214 @@ msgstr "Write anything you want to remember about this user…"
 #: src/components/views/ProfileView.ts:697
 msgid "Zap this user"
 msgstr "Zap this user"
+
+#: src/components/ui/NoteMenu.ts:219
+#: src/components/ui/NoteMenu.ts:783
+msgid "Add author to Tribe"
+msgstr "Add author to Tribe"
+
+#: src/components/ui/InteractionStatusLine.ts:529
+#: src/components/ui/NoteMenu.ts:742
+msgid "Added to bookmarks"
+msgstr "Added to bookmarks"
+
+#: src/components/ui/NoteMenu.ts:742
+msgid "Added to private bookmarks"
+msgstr "Added to private bookmarks"
+
+#: src/components/ui/InteractionStatusLine.ts:291
+msgid "Analytics"
+msgstr "Analytics"
+
+#: src/components/ui/NoteMenu.ts:682
+msgid "Article notifications disabled"
+msgstr "Article notifications disabled"
+
+#: src/components/ui/InteractionStatusLine.ts:298
+#: src/components/ui/NoteMenu.ts:164
+msgid "Bookmark"
+msgstr "Bookmark"
+
+#: src/components/ui/NoteMenu.ts:521
+msgid "Close"
+msgstr "Close"
+
+#: src/components/ui/NoteMenu.ts:204
+msgid "Copy event ID"
+msgstr "Copy event ID"
+
+#: src/components/ui/NoteMenu.ts:514
+msgid "Copy link"
+msgstr "Copy link"
+
+#: src/components/ui/NoteMenu.ts:209
+msgid "Copy user ID"
+msgstr "Copy user ID"
+
+#: src/components/ui/NoteMenu.ts:244
+msgid "Delete note"
+msgstr "Delete note"
+
+#: src/components/ui/NoteMenu.ts:835
+msgid "Failed to add author to tribe"
+msgstr "Failed to add author to tribe"
+
+#: src/components/ui/interaction-managers/RepostManager.ts:296
+msgid "Failed to open editor"
+msgstr "Failed to open editor"
+
+#: src/components/ui/InteractionStatusLine.ts:536
+#: src/components/ui/NoteMenu.ts:752
+msgid "Failed to update bookmark"
+msgstr "Failed to update bookmark"
+
+#: src/components/ui/NoteMenu.ts:658
+msgid "Failed to update thread mute"
+msgstr "Failed to update thread mute"
+
+#: src/components/ui/interaction-managers/RepostManager.ts:281
+msgid "Invalid event"
+msgstr "Invalid event"
+
+#: src/components/ui/InteractionStatusLine.ts:333
+msgid "Like"
+msgstr "Like"
+
+#: src/components/ui/NoteMenu.ts:547
+msgid "Link"
+msgstr "Link"
+
+#: src/components/ui/NoteMenu.ts:262
+msgid "Mute thread"
+msgstr "Mute thread"
+
+#: src/components/ui/NoteMenu.ts:769
+msgid "No tribes found. Create a tribe first."
+msgstr "No tribes found. Create a tribe first."
+
+#: src/components/ui/interaction-managers/LikeManager.ts:158
+msgid "No write relays configured"
+msgstr "No write relays configured"
+
+#: src/components/ui/interaction-managers/RepostManager.ts:139
+#: src/components/ui/interaction-managers/RepostManager.ts:251
+msgid "Note not found"
+msgstr "Note not found"
+
+#: src/components/ui/NoteMenu.ts:85
+msgid "Note options"
+msgstr "Note options"
+
+#: src/components/ui/NoteMenu.ts:269
+msgid "Notify on new articles"
+msgstr "Notify on new articles"
+
+#: src/components/ui/NoteMenu.ts:158
+msgid "Private Bookmark"
+msgstr "Private Bookmark"
+
+#: src/components/ui/NoteMenu.ts:154
+msgid "Public Bookmark"
+msgstr "Public Bookmark"
+
+#: src/components/ui/InteractionStatusLine.ts:314
+msgid "Quoted Repost"
+msgstr "Quoted Repost"
+
+#: src/components/ui/NoteMenu.ts:562
+msgid "Raw event data not available"
+msgstr "Raw event data not available"
+
+#: src/components/ui/NoteMenu.ts:164
+msgid "Remove Bookmark"
+msgstr "Remove Bookmark"
+
+#: src/components/ui/NoteMenu.ts:158
+msgid "Remove Private Bookmark"
+msgstr "Remove Private Bookmark"
+
+#: src/components/ui/NoteMenu.ts:154
+msgid "Remove Public Bookmark"
+msgstr "Remove Public Bookmark"
+
+#: src/components/ui/InteractionStatusLine.ts:526
+#: src/components/ui/NoteMenu.ts:735
+msgid "Removed from bookmarks"
+msgstr "Removed from bookmarks"
+
+#: src/components/ui/NoteMenu.ts:734
+msgid "Removed from private bookmarks"
+msgstr "Removed from private bookmarks"
+
+#: src/components/ui/InteractionStatusLine.ts:321
+msgid "Reply"
+msgstr "Reply"
+
+#: src/components/ui/NoteMenu.ts:253
+msgid "Report"
+msgstr "Report"
+
+#: src/components/ui/InteractionStatusLine.ts:309
+#: src/components/ui/InteractionStatusLine.ts:394
+msgid "Repost"
+msgstr "Repost"
+
+#: src/components/ui/interaction-managers/RepostManager.ts:194
+msgid "Repost failed — display reverted"
+msgstr "Repost failed — display reverted"
+
+#: src/components/ui/NoteMenu.ts:786
+msgid "Select a tribe to add this author to:"
+msgstr "Select a tribe to add this author to:"
+
+#: src/components/ui/NoteMenu.ts:234
+#: src/components/ui/NoteMenu.ts:500
+msgid "Share article"
+msgstr "Share article"
+
+#: src/components/ui/NoteMenu.ts:234
+#: src/components/ui/NoteMenu.ts:500
+msgid "Share Note"
+msgstr "Share Note"
+
+#: src/components/ui/NoteMenu.ts:269
+msgid "Stop article notifications"
+msgstr "Stop article notifications"
+
+#: src/components/ui/interaction-managers/ZapManager.ts:125
+#: src/components/ui/interaction-managers/ZapManager.ts:187
+msgid "This user has no Lightning wallet configured"
+msgstr "This user has no Lightning wallet configured"
+
+#: src/components/ui/NoteMenu.ts:650
+msgid "Thread muted"
+msgstr "Thread muted"
+
+#: src/components/ui/NoteMenu.ts:647
+msgid "Thread unmuted"
+msgstr "Thread unmuted"
+
+#: src/components/ui/NoteMenu.ts:262
+msgid "Unmute thread"
+msgstr "Unmute thread"
+
+#: src/components/ui/NoteMenu.ts:605
+msgid "User muted privately"
+msgstr "User muted privately"
+
+#: src/components/ui/NoteMenu.ts:605
+msgid "User muted publicly"
+msgstr "User muted publicly"
+
+#: src/components/ui/NoteMenu.ts:227
+msgid "View raw event"
+msgstr "View raw event"
+
+#: src/components/ui/interaction-managers/ZapManager.ts:113
+#: src/components/ui/interaction-managers/ZapManager.ts:195
+msgid "You cannot zap your own notes"
+msgstr "You cannot zap your own notes"
+
+#: src/components/ui/NoteMenu.ts:678
+msgid "You will be notified about new articles"
+msgstr "You will be notified about new articles"
