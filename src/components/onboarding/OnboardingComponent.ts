@@ -10,6 +10,7 @@ import { Router } from '../../services/Router';
 import { setupCarouselNavigation } from '../../helpers/CarouselHelper';
 import { getImageViewer } from '../ui/ImageViewer';
 import { PublicTimelineComponent } from './PublicTimelineComponent';
+import { _ } from '../../i18n';
 
 export class OnboardingComponent {
   private router: Router;
@@ -34,41 +35,41 @@ export class OnboardingComponent {
       <div class="view-content view-content--onboarding">
         <!-- HERO SECTION (Banner 02 - Benefits) -->
         <section class="welcome-hero">
-          <h1 class="welcome-hero__headline">Your voice.<br><em>Unstoppable.</em></h1>
-          <p class="welcome-hero__tagline">NoorNote is social media built on open protocol - no company controls it.</p>
+          <h1 class="welcome-hero__headline">${_('Your voice.<br><em>Unstoppable.</em>')}</h1>
+          <p class="welcome-hero__tagline">${_('NoorNote is social media built on open protocol - no company controls it.')}</p>
 
           <div class="welcome-hero__benefits">
             <div class="welcome-hero__benefit">
               <div class="welcome-hero__benefit-icon">🛡️</div>
-              <div class="welcome-hero__benefit-title">Can't be censored</div>
-              <span class="welcome-hero__badge">structurally impossible</span>
-              <div class="welcome-hero__benefit-desc">Your posts live on decentralized relays. No single entity can remove them.</div>
+              <div class="welcome-hero__benefit-title">${_("Can't be censored")}</div>
+              <span class="welcome-hero__badge">${_('structurally impossible')}</span>
+              <div class="welcome-hero__benefit-desc">${_('Your posts live on decentralized relays. No single entity can remove them.')}</div>
             </div>
             <div class="welcome-hero__benefit">
               <div class="welcome-hero__benefit-icon">🔑</div>
-              <div class="welcome-hero__benefit-title">Can't be deleted</div>
-              <span class="welcome-hero__badge">you hold the keys</span>
-              <div class="welcome-hero__benefit-desc">Your account is a cryptographic key. Nobody can suspend, ban, or take it away.</div>
+              <div class="welcome-hero__benefit-title">${_("Can't be deleted")}</div>
+              <span class="welcome-hero__badge">${_('you hold the keys')}</span>
+              <div class="welcome-hero__benefit-desc">${_('Your account is a cryptographic key. Nobody can suspend, ban, or take it away.')}</div>
             </div>
             <div class="welcome-hero__benefit">
               <div class="welcome-hero__benefit-icon">⚡</div>
-              <div class="welcome-hero__benefit-title">Earn with every post</div>
-              <span class="welcome-hero__badge">instant, no middleman</span>
-              <div class="welcome-hero__benefit-desc">Receive Bitcoin tips (Zaps) directly. No platform cut, no payout threshold.</div>
+              <div class="welcome-hero__benefit-title">${_('Earn with every post')}</div>
+              <span class="welcome-hero__badge">${_('instant, no middleman')}</span>
+              <div class="welcome-hero__benefit-desc">${_('Receive Bitcoin tips (Zaps) directly. No platform cut, no payout threshold.')}</div>
             </div>
           </div>
 
           <div class="welcome-hero__cta">
-            <button class="btn btn--large" data-action="new-to-nostr">Create my account</button>
-            <button class="btn btn--large btn--passive" data-action="has-key">I already have a key</button>
+            <button class="btn btn--large" data-action="new-to-nostr">${_('Create my account')}</button>
+            <button class="btn btn--large btn--passive" data-action="has-key">${_('I already have a key')}</button>
           </div>
-          <p class="welcome-hero__note">Ready in 2 minutes. No email. No phone number.</p>
+          <p class="welcome-hero__note">${_('Ready in 2 minutes. No email. No phone number.')}</p>
         </section>
 
         <!-- PUBLIC TIMELINE -->
         <section class="public-timeline">
           <div class="public-timeline__header">
-            <h2>See what's happening on Nostr</h2>
+            <h2>${_("See what's happening on Nostr")}</h2>
             <div class="public-timeline__refresh-slot"></div>
           </div>
           <div class="public-timeline__container"></div>
@@ -138,7 +139,7 @@ export class OnboardingComponent {
     const onboardingTab = document.createElement('button');
     onboardingTab.className = 'tab tab--active';
     onboardingTab.dataset.tab = 'welcome-onboarding';
-    onboardingTab.textContent = 'Get Started';
+    onboardingTab.textContent = _('Get Started');
     sccTabs.prepend(onboardingTab);
 
     // Deactivate system-log tab
@@ -155,43 +156,43 @@ export class OnboardingComponent {
       'tab-content tab-content--active scc-onboarding';
     onboardingContent.dataset.tabContent = 'welcome-onboarding';
     onboardingContent.innerHTML = `
-      <h3 class="scc-onboarding__title">What is Nostr?</h3>
+      <h3 class="scc-onboarding__title">${_('What is Nostr?')}</h3>
       <div class="scc-onboarding__carousel">
         <div class="nn-carousel">
           <div class="nn-carousel-slides">
             <div class="nn-carousel-slide active" data-slide="0">
-              <img src="/images/nostr-illustration.jpeg" alt="How Nostr works" class="nn-carousel-image" />
-              <p class="mini" style="text-align: right; margin-top: 0;">Nostr illustration by @awayuki</p>
-              <p><strong>Nostr</strong> stands for "Notes and Other Stuff Transmitted by Relays". It's a simple, open protocol that enables truly decentralized social networking.</p>
+              <img src="/images/nostr-illustration.jpeg" alt="${_('How Nostr works')}" class="nn-carousel-image" />
+              <p class="mini" style="text-align: right; margin-top: 0;">${_('Nostr illustration by @awayuki')}</p>
+              <p>${_('<strong>Nostr</strong> stands for "Notes and Other Stuff Transmitted by Relays". It\'s a simple, open protocol that enables truly decentralized social networking.')}</p>
             </div>
             <div class="nn-carousel-slide" data-slide="1">
-              <h3>Relays: The Network</h3>
-              <p>Unlike traditional platforms, Nostr doesn't have a central server. Instead, it uses <strong>relays</strong>, independent servers that store and forward your messages.</p>
-              <p>You can connect to multiple relays at once. If one goes down, your content lives on through others. No single point of failure.</p>
+              <h3>${_('Relays: The Network')}</h3>
+              <p>${_("Unlike traditional platforms, Nostr doesn't have a central server. Instead, it uses <strong>relays</strong>, independent servers that store and forward your messages.")}</p>
+              <p>${_('You can connect to multiple relays at once. If one goes down, your content lives on through others. No single point of failure.')}</p>
             </div>
             <div class="nn-carousel-slide" data-slide="2">
-              <h3>Keys: Your Identity</h3>
-              <p>Your identity on Nostr is a <strong>cryptographic key pair</strong>:</p>
+              <h3>${_('Keys: Your Identity')}</h3>
+              <p>${_('Your identity on Nostr is a <strong>cryptographic key pair</strong>')}:</p>
               <ul>
-                <li><strong>Public key (npub)</strong>, your username, shareable with anyone</li>
-                <li><strong>Private key (nsec)</strong>, your password, never share this!</li>
+                <li>${_('<strong>Public key (npub)</strong>, your username, shareable with anyone')}</li>
+                <li>${_('<strong>Private key (nsec)</strong>, your password, never share this!')}</li>
               </ul>
-              <p>You own your identity. No company can ban you or delete your account.</p>
+              <p>${_('You own your identity. No company can ban you or delete your account.')}</p>
             </div>
             <div class="nn-carousel-slide" data-slide="3">
-              <h3>Why Nostr?</h3>
+              <h3>${_('Why Nostr?')}</h3>
               <ul>
-                <li><strong>Censorship-resistant</strong>, no central authority can silence you</li>
-                <li><strong>Portable identity</strong>, take your followers anywhere</li>
-                <li><strong>Interoperable</strong>, use any client you like</li>
-                <li><strong>Simple</strong>, built on proven cryptography</li>
+                <li>${_('<strong>Censorship-resistant</strong>, no central authority can silence you')}</li>
+                <li>${_('<strong>Portable identity</strong>, take your followers anywhere')}</li>
+                <li>${_('<strong>Interoperable</strong>, use any client you like')}</li>
+                <li>${_('<strong>Simple</strong>, built on proven cryptography')}</li>
               </ul>
             </div>
           </div>
           <div class="nn-pager">
-            <button class="btn-icon" type="button" data-action="prev-slide" disabled aria-label="Previous"><svg width="20" height="20"><use href="#icon-caret-left"/></svg></button>
+            <button class="btn-icon" type="button" data-action="prev-slide" disabled aria-label="${_('Previous')}"><svg width="20" height="20"><use href="#icon-caret-left"/></svg></button>
             <span class="nn-pager__dots"></span>
-            <button class="btn-icon" type="button" data-action="next-slide" aria-label="Next"><svg width="20" height="20"><use href="#icon-caret-right"/></svg></button>
+            <button class="btn-icon" type="button" data-action="next-slide" aria-label="${_('Next')}"><svg width="20" height="20"><use href="#icon-caret-right"/></svg></button>
           </div>
         </div>
       </div>

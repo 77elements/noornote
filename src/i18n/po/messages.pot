@@ -76,6 +76,38 @@ msgstr ""
 msgid "+ %s more..."
 msgstr ""
 
+#: src/components/onboarding/OnboardingComponent.ts:185
+msgid "<strong>Censorship-resistant</strong>, no central authority can silence you"
+msgstr ""
+
+#: src/components/onboarding/OnboardingComponent.ts:187
+msgid "<strong>Interoperable</strong>, use any client you like"
+msgstr ""
+
+#: src/components/onboarding/WelcomeInterstitials.ts:64
+msgid "<strong>NoorNote</strong> is built on <em>Nostr</em>, an open protocol where your account is a cryptographic key that you own. Your posts are distributed across independent servers worldwide. No company runs it. No one can shut it down."
+msgstr ""
+
+#: src/components/onboarding/OnboardingComponent.ts:166
+msgid "<strong>Nostr</strong> stands for \"Notes and Other Stuff Transmitted by Relays\". It's a simple, open protocol that enables truly decentralized social networking."
+msgstr ""
+
+#: src/components/onboarding/OnboardingComponent.ts:186
+msgid "<strong>Portable identity</strong>, take your followers anywhere"
+msgstr ""
+
+#: src/components/onboarding/OnboardingComponent.ts:178
+msgid "<strong>Private key (nsec)</strong>, your password, never share this!"
+msgstr ""
+
+#: src/components/onboarding/OnboardingComponent.ts:177
+msgid "<strong>Public key (npub)</strong>, your username, shareable with anyone"
+msgstr ""
+
+#: src/components/onboarding/OnboardingComponent.ts:188
+msgid "<strong>Simple</strong>, built on proven cryptography"
+msgstr ""
+
 #: src/services/dm/DMExpiration.ts:115
 msgid "⏱ Disappears in %s"
 msgstr ""
@@ -282,7 +314,7 @@ msgstr ""
 msgid "Applying..."
 msgstr ""
 
-#: src/components/settings/RelaySettingsSection.ts:441
+#: src/components/settings/RelaySettingsSection.ts:444
 msgid "Are you sure you want to remove this relay?"
 msgstr ""
 
@@ -441,7 +473,7 @@ msgstr ""
 msgid "Cache"
 msgstr ""
 
-#: src/components/settings/CacheSettingsSection.ts:470
+#: src/components/settings/CacheSettingsSection.ts:473
 msgid "Cache cleared successfully. Reloading..."
 msgstr ""
 
@@ -465,6 +497,14 @@ msgstr ""
 msgid "Calendar event"
 msgstr ""
 
+#: src/components/onboarding/OnboardingComponent.ts:44
+msgid "Can't be censored"
+msgstr ""
+
+#: src/components/onboarding/OnboardingComponent.ts:50
+msgid "Can't be deleted"
+msgstr ""
+
 #: src/components/modals/DMComposeModal.ts:95
 #: src/components/modals/EditFolderModal.ts:63
 #: src/components/modals/ImportToNoorSignerModal.ts:106
@@ -477,8 +517,8 @@ msgstr ""
 #: src/components/settings/CacheSettingsSection.ts:373
 #: src/components/settings/ListSettingsSection.ts:325
 #: src/components/settings/ListSettingsSection.ts:367
-#: src/components/settings/PrivacySettingsSection.ts:268
-#: src/components/settings/RelaySettingsSection.ts:447
+#: src/components/settings/PrivacySettingsSection.ts:270
+#: src/components/settings/RelaySettingsSection.ts:450
 #: src/components/views/ConversationView.ts:619
 #: src/components/views/MessagesView.ts:586
 #: src/components/views/MessagesView.ts:792
@@ -517,11 +557,11 @@ msgstr ""
 msgid "Clear All & Reload"
 msgstr ""
 
-#: src/components/settings/CacheSettingsSection.ts:450
+#: src/components/settings/CacheSettingsSection.ts:453
 msgid "Clear All Cache & Reload?"
 msgstr ""
 
-#: src/components/settings/CacheSettingsSection.ts:455
+#: src/components/settings/CacheSettingsSection.ts:458
 msgid "Clear Cache & Reload"
 msgstr ""
 
@@ -533,19 +573,19 @@ msgstr ""
 msgid "Clear Selected"
 msgstr ""
 
-#: src/components/settings/CacheSettingsSection.ts:414
+#: src/components/settings/CacheSettingsSection.ts:417
 msgid "Clear Selected Cache Tables?"
 msgstr ""
 
-#: src/components/settings/CacheSettingsSection.ts:416
+#: src/components/settings/CacheSettingsSection.ts:419
 msgid "Clear Tables"
 msgstr ""
 
-#: src/components/settings/PrivacySettingsSection.ts:263
+#: src/components/settings/PrivacySettingsSection.ts:265
 msgid "Clear your private follow list"
 msgstr ""
 
-#: src/components/settings/PrivacySettingsSection.ts:263
+#: src/components/settings/PrivacySettingsSection.ts:265
 msgid "Clear your public follow list"
 msgstr ""
 
@@ -709,6 +749,10 @@ msgstr ""
 msgid "Create"
 msgstr ""
 
+#: src/components/onboarding/OnboardingComponent.ts:63
+msgid "Create my account"
+msgstr ""
+
 #: src/components/views/AboutView.ts:128
 msgid "Credits"
 msgstr ""
@@ -750,7 +794,7 @@ msgstr ""
 msgid "Decrease font size"
 msgstr ""
 
-#: src/components/settings/PrivacySettingsSection.ts:261
+#: src/components/settings/PrivacySettingsSection.ts:263
 msgid "Decrypt all your current private follows (kind:30000)"
 msgstr ""
 
@@ -938,6 +982,14 @@ msgstr ""
 msgid "e.g. Bob from work"
 msgstr ""
 
+#: src/components/onboarding/WelcomeInterstitials.ts:61
+msgid "Earn Bitcoin"
+msgstr ""
+
+#: src/components/onboarding/OnboardingComponent.ts:56
+msgid "Earn with every post"
+msgstr ""
+
 #: src/components/settings/ListSettingsSection.ts:142
 #: src/components/settings/ListSettingsSection.ts:210
 msgid "Easy Mode"
@@ -992,7 +1044,7 @@ msgstr ""
 msgid "Enable the Tribes addon in Settings → Addons."
 msgstr ""
 
-#: src/components/settings/PrivacySettingsSection.ts:261
+#: src/components/settings/PrivacySettingsSection.ts:263
 msgid "Encrypt all your current public follows (kind:3)"
 msgstr ""
 
@@ -1047,11 +1099,19 @@ msgstr ""
 msgid "Every 60 seconds"
 msgstr ""
 
-#: src/components/settings/PrivacySettingsSection.ts:253
+#: src/components/onboarding/WelcomeInterstitials.ts:24
+msgid "Every other platform"
+msgstr ""
+
+#: src/components/onboarding/WelcomeInterstitials.ts:80
+msgid "Every post can earn you <strong>real money</strong>.<br>No creator fund. No minimum followers. No gatekeepers."
+msgstr ""
+
+#: src/components/settings/PrivacySettingsSection.ts:255
 msgid "Everyone will be able to see who you follow after this operation."
 msgstr ""
 
-#: src/components/settings/CacheSettingsSection.ts:453
+#: src/components/settings/CacheSettingsSection.ts:456
 msgid "Excludes: Unpublished events and decrypted messages (protected from accidental deletion)."
 msgstr ""
 
@@ -1072,11 +1132,11 @@ msgstr ""
 msgid "Failed to add to tribe"
 msgstr ""
 
-#: src/components/settings/CacheSettingsSection.ts:479
+#: src/components/settings/CacheSettingsSection.ts:482
 msgid "Failed to clear cache"
 msgstr ""
 
-#: src/components/settings/CacheSettingsSection.ts:438
+#: src/components/settings/CacheSettingsSection.ts:441
 msgid "Failed to clear cache tables"
 msgstr ""
 
@@ -1120,7 +1180,7 @@ msgstr ""
 msgid "Failed to open editor"
 msgstr ""
 
-#: src/components/settings/RelaySettingsSection.ts:586
+#: src/components/settings/RelaySettingsSection.ts:589
 msgid "Failed to save relay settings"
 msgstr ""
 
@@ -1196,11 +1256,11 @@ msgstr ""
 msgid "Follows"
 msgstr ""
 
-#: src/components/settings/PrivacySettingsSection.ts:297
+#: src/components/settings/PrivacySettingsSection.ts:299
 msgid "Follows migrated to private list"
 msgstr ""
 
-#: src/components/settings/PrivacySettingsSection.ts:298
+#: src/components/settings/PrivacySettingsSection.ts:300
 msgid "Follows migrated to public list"
 msgstr ""
 
@@ -1226,6 +1286,14 @@ msgstr ""
 
 #: src/components/views/ProfileView.ts:954
 msgid "Get notified when this user posts a new article"
+msgstr ""
+
+#: src/components/onboarding/WelcomeInterstitials.ts:79
+msgid "Get paid.<br><em>Not played.</em>"
+msgstr ""
+
+#: src/components/onboarding/OnboardingComponent.ts:142
+msgid "Get Started"
 msgstr ""
 
 #: src/components/ui/note-rendering/GitEventRenderer.ts:160
@@ -1308,9 +1376,17 @@ msgstr ""
 msgid "Hours"
 msgstr ""
 
+#: src/components/onboarding/OnboardingComponent.ts:164
+msgid "How Nostr works"
+msgstr ""
+
 #: src/components/views/ArticleEditorView.ts:392
 #: src/components/views/VideoEditorView.ts:190
 msgid "https://... or upload"
+msgstr ""
+
+#: src/components/onboarding/OnboardingComponent.ts:64
+msgid "I already have a key"
 msgstr ""
 
 #: src/components/settings/ListSettingsSection.ts:326
@@ -1368,6 +1444,10 @@ msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:437
 msgid "Insert recipe template"
+msgstr ""
+
+#: src/components/onboarding/OnboardingComponent.ts:57
+msgid "instant, no middleman"
 msgstr ""
 
 #: src/components/settings/CacheSettingsSection.ts:340
@@ -1446,6 +1526,10 @@ msgstr ""
 
 #: src/components/modals/ImportToNoorSignerModal.ts:211
 msgid "Key successfully imported to NoorSigner"
+msgstr ""
+
+#: src/components/onboarding/OnboardingComponent.ts:174
+msgid "Keys: Your Identity"
 msgstr ""
 
 #: src/components/views/VideoEditorView.ts:230
@@ -1570,6 +1654,10 @@ msgstr ""
 msgid "Loading more conversations..."
 msgstr ""
 
+#: src/components/onboarding/PublicTimelineComponent.ts:78
+msgid "Loading more notes..."
+msgstr ""
+
 #: src/components/views/MessagesView.ts:240
 msgid "Loading older messages…"
 msgstr ""
@@ -1612,7 +1700,7 @@ msgstr ""
 msgid "Local Data Storage"
 msgstr ""
 
-#: src/components/settings/RelaySettingsSection.ts:545
+#: src/components/settings/RelaySettingsSection.ts:548
 msgid "Local Relay"
 msgstr ""
 
@@ -1722,15 +1810,15 @@ msgstr ""
 msgid "Messages will disappear after this time. Minimum: 1 minute, maximum: 1 year."
 msgstr ""
 
-#: src/components/settings/PrivacySettingsSection.ts:269
+#: src/components/settings/PrivacySettingsSection.ts:271
 msgid "Migrate"
 msgstr ""
 
-#: src/components/settings/PrivacySettingsSection.ts:305
+#: src/components/settings/PrivacySettingsSection.ts:307
 msgid "Migration error: %s"
 msgstr ""
 
-#: src/components/settings/PrivacySettingsSection.ts:301
+#: src/components/settings/PrivacySettingsSection.ts:303
 msgid "Migration failed"
 msgstr ""
 
@@ -1885,6 +1973,10 @@ msgstr ""
 msgid "New Note"
 msgstr ""
 
+#: src/components/onboarding/OnboardingComponent.ts:195
+msgid "Next"
+msgstr ""
+
 #: src/components/views/ProfileBookingView.ts:236
 msgid "Next week"
 msgstr ""
@@ -1902,12 +1994,28 @@ msgstr ""
 msgid "No"
 msgstr ""
 
+#: src/components/onboarding/WelcomeInterstitials.ts:59
+msgid "No account bans"
+msgstr ""
+
 #: src/components/views/ProfileView.ts:1354
 msgid "No badges created yet. Create one in Addons → Badges."
 msgstr ""
 
+#: src/components/onboarding/WelcomeInterstitials.ts:58
+msgid "No censorship"
+msgstr ""
+
+#: src/components/onboarding/WelcomeInterstitials.ts:40
+msgid "No company, no single point of failure"
+msgstr ""
+
 #: src/components/views/ArticleEditorView.ts:1229
 msgid "No content yet..."
+msgstr ""
+
+#: src/components/onboarding/WelcomeInterstitials.ts:60
+msgid "No data collection"
 msgstr ""
 
 #: src/components/views/MessagesView.ts:480
@@ -1920,6 +2028,10 @@ msgstr ""
 
 #: src/components/views/ConversationView.ts:1064
 msgid "No messages yet"
+msgstr ""
+
+#: src/components/onboarding/PublicTimelineComponent.ts:128
+msgid "No notes found yet."
 msgstr ""
 
 #: src/components/views/NotificationsView.ts:288
@@ -1986,6 +2098,10 @@ msgstr ""
 msgid "NoorNote is a web application. All data stays in your browser:"
 msgstr ""
 
+#: src/components/onboarding/OnboardingComponent.ts:39
+msgid "NoorNote is social media built on open protocol - no company controls it."
+msgstr ""
+
 #: src/components/settings/ListSettingsSection.ts:144
 msgid "NoorNote syncs automatically: changes are saved to a local backup immediately, then published to relays. On startup it restores from backup or relays if needed."
 msgstr ""
@@ -2014,6 +2130,10 @@ msgstr ""
 msgid "Normal Priority"
 msgstr ""
 
+#: src/components/onboarding/OnboardingComponent.ts:165
+msgid "Nostr illustration by @awayuki"
+msgstr ""
+
 #: src/components/views/AboutView.ts:104
 msgid "Nostr relays are operated by third parties. When connecting, your IP address may be logged by the relay operators. The choice of relays is yours and can be configured in the settings."
 msgstr ""
@@ -2036,6 +2156,10 @@ msgstr ""
 
 #: src/components/settings/NotificationPrioritySection.ts:93
 msgid "Nostrord"
+msgstr ""
+
+#: src/components/onboarding/WelcomeInterstitials.ts:20
+msgid "Not \"won't.\" Structurally impossible."
 msgstr ""
 
 #: src/components/settings/PrivacySettingsSection.ts:134
@@ -2231,7 +2355,7 @@ msgstr ""
 msgid "Please log in to migrate follow lists"
 msgstr ""
 
-#: src/components/settings/RelaySettingsSection.ts:482
+#: src/components/settings/RelaySettingsSection.ts:485
 msgid "Please log in to save relay settings"
 msgstr ""
 
@@ -2239,7 +2363,7 @@ msgstr ""
 msgid "Please login to view timeline"
 msgstr ""
 
-#: src/components/settings/CacheSettingsSection.ts:407
+#: src/components/settings/CacheSettingsSection.ts:408
 msgid "Please select at least one table to clear"
 msgstr ""
 
@@ -2268,8 +2392,24 @@ msgstr ""
 msgid "Post Highlight"
 msgstr ""
 
+#: src/components/onboarding/WelcomeInterstitials.ts:94
+msgid "posts deleted by social media platforms last year alone."
+msgstr ""
+
+#: src/components/onboarding/WelcomeInterstitials.ts:96
+msgid "Posts deleted on NoorNote?<br><em>Zero. Ever.</em>"
+msgstr ""
+
+#: src/components/onboarding/WelcomeInterstitials.ts:37
+msgid "Posts live on decentralized relays"
+msgstr ""
+
 #: src/components/views/ArticleEditorView.ts:317
 msgid "Preview"
+msgstr ""
+
+#: src/components/onboarding/OnboardingComponent.ts:193
+msgid "Previous"
 msgstr ""
 
 #: src/components/views/ProfileBookingView.ts:228
@@ -2461,6 +2601,14 @@ msgstr ""
 msgid "Read more from this author"
 msgstr ""
 
+#: src/components/onboarding/OnboardingComponent.ts:66
+msgid "Ready in 2 minutes. No email. No phone number."
+msgstr ""
+
+#: src/components/onboarding/OnboardingComponent.ts:58
+msgid "Receive Bitcoin tips (Zaps) directly. No platform cut, no payout threshold."
+msgstr ""
+
 #: src/components/views/ArticleEditorView.ts:820
 msgid "Recipe (zap.cooking)"
 msgstr ""
@@ -2478,7 +2626,7 @@ msgstr ""
 msgid "Recovery options:"
 msgstr ""
 
-#: src/components/settings/RelaySettingsSection.ts:584
+#: src/components/settings/RelaySettingsSection.ts:587
 msgid "Relay settings saved"
 msgstr ""
 
@@ -2486,7 +2634,7 @@ msgstr ""
 msgid "Relay Status"
 msgstr ""
 
-#: src/components/settings/RelaySettingsSection.ts:377
+#: src/components/settings/RelaySettingsSection.ts:378
 msgid "Relay URL must start with wss:// or ws://"
 msgstr ""
 
@@ -2500,11 +2648,15 @@ msgid_plural "Relays: %s items, not stored locally"
 msgstr[0] ""
 msgstr[1] ""
 
+#: src/components/onboarding/OnboardingComponent.ts:169
+msgid "Relays: The Network"
+msgstr ""
+
 #: src/components/views/ZapstoreAppView.ts:333
 msgid "Release Date"
 msgstr ""
 
-#: src/components/settings/RelaySettingsSection.ts:448
+#: src/components/settings/RelaySettingsSection.ts:451
 msgid "Remove"
 msgstr ""
 
@@ -2524,7 +2676,7 @@ msgstr ""
 msgid "Remove relay"
 msgstr ""
 
-#: src/components/settings/RelaySettingsSection.ts:438
+#: src/components/settings/RelaySettingsSection.ts:441
 msgid "Remove Relay"
 msgstr ""
 
@@ -2726,6 +2878,10 @@ msgstr ""
 msgid "See Notes"
 msgstr ""
 
+#: src/components/onboarding/OnboardingComponent.ts:72
+msgid "See what's happening on Nostr"
+msgstr ""
+
 #: src/components/ui/NoteMenu.ts:786
 msgid "Select a tribe to add this author to:"
 msgstr ""
@@ -2873,6 +3029,10 @@ msgstr ""
 msgid "Slug / Identifier"
 msgstr ""
 
+#: src/components/onboarding/WelcomeInterstitials.ts:19
+msgid "Social Media that <em>can't</em> betray you."
+msgstr ""
+
 #: src/components/views/ProfileView.ts:1161
 #: src/components/views/ProfileView.ts:990
 msgid "Soft mute"
@@ -2954,19 +3114,23 @@ msgstr ""
 msgid "Store signatures in cache (increases storage usage)."
 msgstr ""
 
-#: src/components/settings/PrivacySettingsSection.ts:262
+#: src/components/settings/PrivacySettingsSection.ts:264
 msgid "Store them in a private follow list (kind:30000)"
 msgstr ""
 
-#: src/components/settings/PrivacySettingsSection.ts:262
+#: src/components/settings/PrivacySettingsSection.ts:264
 msgid "Store them in a public follow list (kind:3)"
+msgstr ""
+
+#: src/components/onboarding/OnboardingComponent.ts:45
+msgid "structurally impossible"
 msgstr ""
 
 #: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:247
 msgid "Subscribed — events added to your calendar grid"
 msgstr ""
 
-#: src/components/settings/CacheSettingsSection.ts:430
+#: src/components/settings/CacheSettingsSection.ts:433
 msgid "Successfully cleared %s cache table(s)"
 msgstr ""
 
@@ -3085,6 +3249,30 @@ msgstr ""
 msgid "These actions are irreversible and will result in data loss. Only use if you have corrupted data that prevents normal operation."
 msgstr ""
 
+#: src/components/onboarding/WelcomeInterstitials.ts:27
+msgid "They can censor your posts"
+msgstr ""
+
+#: src/components/onboarding/WelcomeInterstitials.ts:26
+msgid "They can delete your account"
+msgstr ""
+
+#: src/components/onboarding/WelcomeInterstitials.ts:30
+msgid "They can shut down tomorrow"
+msgstr ""
+
+#: src/components/onboarding/WelcomeInterstitials.ts:28
+msgid "They own your audience"
+msgstr ""
+
+#: src/components/onboarding/WelcomeInterstitials.ts:56
+msgid "They promise freedom.<br>We made it <em>impossible</em><br>to take it away."
+msgstr ""
+
+#: src/components/onboarding/WelcomeInterstitials.ts:29
+msgid "They sell your data"
+msgstr ""
+
 #: src/components/views/AboutView.ts:225
 msgid "Third country notice:"
 msgstr ""
@@ -3114,7 +3302,7 @@ msgstr ""
 msgid "This operation is irreversible without using the reverse migration tool."
 msgstr ""
 
-#: src/components/settings/RelaySettingsSection.ts:387
+#: src/components/settings/RelaySettingsSection.ts:390
 msgid "This relay is already in your list"
 msgstr ""
 
@@ -3139,11 +3327,11 @@ msgstr ""
 msgid "This user's reactions now appear in your timeline"
 msgstr ""
 
-#: src/components/settings/CacheSettingsSection.ts:415
+#: src/components/settings/CacheSettingsSection.ts:418
 msgid "This will clear %s table(s): %s."
 msgstr ""
 
-#: src/components/settings/CacheSettingsSection.ts:451
+#: src/components/settings/CacheSettingsSection.ts:454
 msgid "This will clear all safe cache tables and reload the app."
 msgstr ""
 
@@ -3167,7 +3355,7 @@ msgstr ""
 msgid "This will send a deletion request to all relays. This cannot be undone."
 msgstr ""
 
-#: src/components/settings/PrivacySettingsSection.ts:259
+#: src/components/settings/PrivacySettingsSection.ts:261
 msgid "This will:"
 msgstr ""
 
@@ -3193,6 +3381,10 @@ msgstr ""
 
 #: src/components/views/TimelineView.ts:208
 msgid "Timeline"
+msgstr ""
+
+#: src/components/onboarding/PublicTimelineComponent.ts:91
+msgid "Timeline coming soon."
 msgstr ""
 
 #: src/components/settings/MarketplaceSettingsSection.ts:88
@@ -3275,6 +3467,10 @@ msgstr ""
 #: src/components/ui/note-rendering/ZapReceiptRenderer.ts:139
 #: src/components/views/ZapstoreAppView.ts:408
 msgid "Unknown"
+msgstr ""
+
+#: src/components/onboarding/OnboardingComponent.ts:170
+msgid "Unlike traditional platforms, Nostr doesn't have a central server. Instead, it uses <strong>relays</strong>, independent servers that store and forward your messages."
 msgstr ""
 
 #: src/components/modals/UnlockNoorSignerModal.ts:136
@@ -3444,7 +3640,7 @@ msgstr ""
 msgid "Waiting for signer approval…"
 msgstr ""
 
-#: src/components/settings/PrivacySettingsSection.ts:265
+#: src/components/settings/PrivacySettingsSection.ts:267
 msgid "Warning:"
 msgstr ""
 
@@ -3482,6 +3678,10 @@ msgstr ""
 msgid "Weeks"
 msgstr ""
 
+#: src/components/onboarding/OnboardingComponent.ts:159
+msgid "What is Nostr?"
+msgstr ""
+
 #: src/components/post/PostNoteModal.ts:340
 msgid "What's on your mind?"
 msgstr ""
@@ -3496,6 +3696,10 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:242
 msgid "When verifying a user's NIP-05 identifier (e.g. %s), NoorNote sends an HTTP request to %s. The owner of that domain may log the request."
+msgstr ""
+
+#: src/components/onboarding/OnboardingComponent.ts:183
+msgid "Why Nostr?"
 msgstr ""
 
 #: src/components/post/PostNoteModal.ts:416
@@ -3536,6 +3740,10 @@ msgstr ""
 msgid "Yes"
 msgstr ""
 
+#: src/components/onboarding/OnboardingComponent.ts:171
+msgid "You can connect to multiple relays at once. If one goes down, your content lives on through others. No single point of failure."
+msgstr ""
+
 #: src/components/ui/interaction-managers/ZapManager.ts:113
 #: src/components/ui/interaction-managers/ZapManager.ts:195
 msgid "You cannot zap your own notes"
@@ -3545,8 +3753,16 @@ msgstr ""
 msgid "You have unsaved changes. Discard them?"
 msgstr ""
 
-#: src/components/settings/RelaySettingsSection.ts:496
+#: src/components/onboarding/OnboardingComponent.ts:51
+msgid "you hold the keys"
+msgstr ""
+
+#: src/components/settings/RelaySettingsSection.ts:499
 msgid "You need at least one read-relay and one write-relay configured."
+msgstr ""
+
+#: src/components/onboarding/OnboardingComponent.ts:180
+msgid "You own your identity. No company can ban you or delete your account."
 msgstr ""
 
 #: src/components/ui/NoteMenu.ts:678
@@ -3557,8 +3773,24 @@ msgstr ""
 msgid "Your 24-hour trust session has expired. Enter your password to continue."
 msgstr ""
 
+#: src/components/onboarding/OnboardingComponent.ts:52
+msgid "Your account is a cryptographic key. Nobody can suspend, ban, or take it away."
+msgstr ""
+
+#: src/components/onboarding/WelcomeInterstitials.ts:36
+msgid "Your account is a key you own"
+msgstr ""
+
 #: src/components/settings/ListSettingsSection.ts:303
 msgid "Your follow list is critical!"
+msgstr ""
+
+#: src/components/onboarding/WelcomeInterstitials.ts:38
+msgid "Your followers belong to you"
+msgstr ""
+
+#: src/components/onboarding/OnboardingComponent.ts:175
+msgid "Your identity on Nostr is a <strong>cryptographic key pair</strong>"
 msgstr ""
 
 #: src/components/views/ListsOverviewView.ts:101
@@ -3567,6 +3799,10 @@ msgstr ""
 
 #: src/components/views/ProfileBookingView.ts:473
 msgid "Your name (optional)"
+msgstr ""
+
+#: src/components/onboarding/OnboardingComponent.ts:46
+msgid "Your posts live on decentralized relays. No single entity can remove them."
 msgstr ""
 
 #: src/components/views/AboutView.ts:204
@@ -3587,6 +3823,10 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:114
 msgid "Your Rights"
+msgstr ""
+
+#: src/components/onboarding/OnboardingComponent.ts:38
+msgid "Your voice.<br><em>Unstoppable.</em>"
 msgstr ""
 
 #: src/components/modals/ZapModal.ts:150
@@ -3627,4 +3867,8 @@ msgstr ""
 #: src/components/settings/NotificationPrioritySection.ts:79
 #: src/components/views/SettingsView.ts:47
 msgid "Zaps"
+msgstr ""
+
+#: src/components/onboarding/WelcomeInterstitials.ts:39
+msgid "Zero tracking, zero data collection"
 msgstr ""

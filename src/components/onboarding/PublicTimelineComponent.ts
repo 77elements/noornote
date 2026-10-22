@@ -17,6 +17,7 @@ import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { NoteUI } from '../ui/NoteUI';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
 import { RefreshButton } from '../ui/RefreshButton';
+import { _ } from '../../i18n';
 import {
   createConfrontationInterstitial,
   createBoldMinimalInterstitial,
@@ -74,7 +75,7 @@ export class PublicTimelineComponent {
     this.container.appendChild(this.noteContainer);
 
     this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
-      loadingMessage: 'Loading more notes...',
+      loadingMessage: _('Loading more notes...'),
     });
 
     this.infiniteScroll.observe(this.noteContainer);
@@ -86,8 +87,7 @@ export class PublicTimelineComponent {
    */
   private async loadInitial(): Promise<void> {
     if (CURATED_PUBKEYS.length === 0) {
-      this.noteContainer.innerHTML =
-        '<p class="public-timeline__empty">Timeline coming soon.</p>';
+      this.noteContainer.innerHTML = `<p class="public-timeline__empty">${_('Timeline coming soon.')}</p>`;
       return;
     }
 
@@ -123,8 +123,7 @@ export class PublicTimelineComponent {
         this.renderNotes(filtered);
         this.startPolling();
       } else {
-        this.noteContainer.innerHTML =
-          '<p class="public-timeline__empty">No notes found yet.</p>';
+        this.noteContainer.innerHTML = `<p class="public-timeline__empty">${_('No notes found yet.')}</p>`;
       }
     } catch (error) {
       console.error('[PublicTimeline] Initial load failed:', error);
