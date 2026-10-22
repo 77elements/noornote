@@ -25,51 +25,12 @@ import {
   isGroupChatsEnabled,
   isArmadaEnabled,
 } from '../../addons/group-chats/index';
+import { _ } from '../../i18n';
 
 interface NotificationTypeInfo {
   type: string;
   label: string;
 }
-
-const NOTIFICATION_TYPES: NotificationTypeInfo[] = [
-  { type: 'reply', label: 'Replies' },
-  { type: 'thread-reply', label: 'Thread Replies' },
-  { type: 'quote', label: 'Quotes' },
-  { type: 'zap', label: 'Zaps' },
-  { type: 'zap-reply', label: 'Zap Reply' },
-  { type: 'mention', label: 'Mentions' },
-  { type: 'image-tag', label: 'Image Tags' },
-  { type: 'repost', label: 'Reposts' },
-  { type: 'reaction', label: 'Reactions' },
-  { type: 'article', label: 'Articles' },
-  { type: 'mutual_new', label: 'New Mutuals' },
-  { type: 'mutual_unfollow', label: 'Mutual Unfollows' },
-  { type: 'follower_new', label: 'New Followers' },
-  { type: 'hashtag', label: 'Hashtags' },
-  { type: 'dhikr_round', label: 'Dhikr Round' },
-  { type: 'dhikr_commit', label: 'Dhikr Committed' },
-  { type: 'dhikr_complete', label: 'Dhikr Complete' },
-  { type: 'group-chats', label: 'Nostrord' },
-  { type: 'armada', label: 'Armada' },
-];
-
-const PRIORITY_LABELS: Record<
-  NotificationPriority,
-  { title: string; description: string }
-> = {
-  1: {
-    title: 'High Priority',
-    description: 'Pulsing badge - important notifications',
-  },
-  2: {
-    title: 'Normal Priority',
-    description: 'Solid badge - regular notifications',
-  },
-  3: {
-    title: 'Low Priority',
-    description: 'Hollow badge - background notifications',
-  },
-};
 
 export class NotificationPrioritySection extends SettingsSection {
   private storage: PerAccountLocalStorage;
@@ -108,6 +69,59 @@ export class NotificationPrioritySection extends SettingsSection {
   }
 
   /**
+   * Notification type list (labels resolved at render time, after i18n init)
+   */
+  private getNotificationTypes(): NotificationTypeInfo[] {
+    return [
+      { type: 'reply', label: _('Replies') },
+      { type: 'thread-reply', label: _('Thread Replies') },
+      { type: 'quote', label: _('Quotes') },
+      { type: 'zap', label: _('Zaps') },
+      { type: 'zap-reply', label: _('Zap Reply') },
+      { type: 'mention', label: _('Mentions') },
+      { type: 'image-tag', label: _('Image Tags') },
+      { type: 'repost', label: _('Reposts') },
+      { type: 'reaction', label: _('Reactions') },
+      { type: 'article', label: _('Articles') },
+      { type: 'mutual_new', label: _('New Mutuals') },
+      { type: 'mutual_unfollow', label: _('Mutual Unfollows') },
+      { type: 'follower_new', label: _('New Followers') },
+      { type: 'hashtag', label: _('Hashtags') },
+      { type: 'dhikr_round', label: _('Dhikr Round') },
+      { type: 'dhikr_commit', label: _('Dhikr Committed') },
+      { type: 'dhikr_complete', label: _('Dhikr Complete') },
+      { type: 'group-chats', label: _('Nostrord') },
+      { type: 'armada', label: _('Armada') },
+    ];
+  }
+
+  /**
+   * Priority zone heading (resolved at render time, after i18n init)
+   */
+  private getPriorityLabels(priority: NotificationPriority): {
+    title: string;
+    description: string;
+  } {
+    switch (priority) {
+      case 1:
+        return {
+          title: _('High Priority'),
+          description: _('Pulsing badge - important notifications'),
+        };
+      case 2:
+        return {
+          title: _('Normal Priority'),
+          description: _('Solid badge - regular notifications'),
+        };
+      default:
+        return {
+          title: _('Low Priority'),
+          description: _('Hollow badge - background notifications'),
+        };
+    }
+  }
+
+  /**
    * Save priorities to storage
    */
   private savePriorities(): void {
@@ -133,7 +147,7 @@ export class NotificationPrioritySection extends SettingsSection {
     return `
         <section class="section">
           <div class="form__info">
-            <p>Drag notification types between priority levels to customize your badge indicator.</p>
+            <p>${_('Drag notification types between priority levels to customize your badge indicator.')}</p>
           </div>
 
           ${this.renderPriorityZone(1)}
@@ -142,10 +156,10 @@ export class NotificationPrioritySection extends SettingsSection {
 
           <div class="l-row l-row--end-pair">
             <button class="btn btn--passive" data-action="reset-priorities">
-              Reset to Defaults
+              ${_('Reset to Defaults')}
             </button>
             <button class="btn btn--primary" data-action="save-priorities" ${this.hasUnsavedChanges ? '' : 'disabled'}>
-              Save
+              ${_('Save')}
             </button>
           </div>
         </section>
@@ -156,7 +170,7 @@ export class NotificationPrioritySection extends SettingsSection {
    * Render a priority drop zone
    */
   private renderPriorityZone(priority: NotificationPriority): string {
-    const { title, description } = PRIORITY_LABELS[priority];
+    const { title, description } = this.getPriorityLabels(priority);
     const items = this.getItemsForPriority(priority);
 
     return `
@@ -185,7 +199,7 @@ export class NotificationPrioritySection extends SettingsSection {
     const dhikrEnabled = isNostrMajlisEnabled();
     const groupChatsEnabled = isGroupChatsEnabled();
     const armadaEnabled = isArmadaEnabled();
-    return NOTIFICATION_TYPES.filter(item => {
+    return this.getNotificationTypes().filter(item => {
       if (item.type.startsWith('dhikr_') && !dhikrEnabled) return false;
       if (item.type === 'group-chats' && !groupChatsEnabled) return false;
       if (item.type === 'armada' && !armadaEnabled) return false;
@@ -253,11 +267,14 @@ export class NotificationPrioritySection extends SettingsSection {
       const currentPriority = this.priorities[type];
       const targets: MoveTarget[] = ([1, 2, 3] as NotificationPriority[])
         .filter(p => p !== currentPriority)
-        .map(p => ({ id: String(p), label: PRIORITY_LABELS[p].title }));
+        .map(p => ({
+          id: String(p),
+          label: this.getPriorityLabels(p).title,
+        }));
 
       const dropdown = new MoveDropdown({
         targets,
-        ariaLabel: `Move ${type}`,
+        ariaLabel: _('Move notification type'),
         onSelect: targetId => {
           this.priorities[type] = parseInt(
             targetId,
@@ -526,7 +543,7 @@ export class NotificationPrioritySection extends SettingsSection {
     this.savePriorities();
     this.hasUnsavedChanges = false;
     this.rerender();
-    ToastService.show('Notification priorities saved', 'success');
+    ToastService.show(_('Notification priorities saved'), 'success');
   }
 
   /**

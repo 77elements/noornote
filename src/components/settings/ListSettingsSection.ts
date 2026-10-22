@@ -25,6 +25,7 @@ import {
   setListSyncMode,
   type ListSyncMode,
 } from '../../helpers/ListSyncMode';
+import { _ } from '../../i18n';
 
 export class ListSettingsSection extends SettingsSection {
   private currentMode: ListSyncMode;
@@ -64,17 +65,17 @@ export class ListSettingsSection extends SettingsSection {
         }
         if (contentZone) this.renderAdvancedContent(contentZone, checked);
         const label = checked
-          ? 'Advanced List Management enabled'
-          : 'Advanced List Management disabled (Easy Mode)';
+          ? _('Advanced List Management enabled')
+          : _('Advanced List Management disabled (Easy Mode)');
         ToastService.show(label, 'success');
       },
     });
 
     contentContainer.innerHTML = `
       <div class="setting">
-        <span class="setting__label">Enable Advanced List Management</span>
+        <span class="setting__label">${_('Enable Advanced List Management')}</span>
         <div class="setting__control">${this.enableSwitch.render()}</div>
-        <p class="setting__desc">Switch between Easy Mode (automatic sync) and Manual Mode (action buttons in every list to control sync from/to relays and local backups). Also unlocks the Danger Zone for resetting corrupted list data.</p>
+        <p class="setting__desc">${_('Switch between Easy Mode (automatic sync) and Manual Mode (action buttons in every list to control sync from/to relays and local backups). Also unlocks the Danger Zone for resetting corrupted list data.')}</p>
       </div>
     `;
     this.enableSwitch.setupEventListeners(contentContainer);
@@ -128,63 +129,63 @@ export class ListSettingsSection extends SettingsSection {
   private renderContent(): string {
     return `
         <div class="list-settings__mode-selector">
-          <h4 class="subsection-title">Synchronisation Mode</h4>
+          <h4 class="subsection-title">${_('Synchronisation Mode')}</h4>
 
           <div class="mode-options">
             <label class="nn-checkbox nn-checkbox--label-left nn-checkbox--with-desc">
-              <span class="setting__label">Manual Mode</span>
+              <span class="setting__label">${_('Manual Mode')}</span>
               <input type="radio" name="list-sync-mode" value="manual" ${this.currentMode === 'manual' ? 'checked' : ''} />
-              <p class="nn-checkbox__desc">Manage sync manually with action buttons in each list. You decide when to sync from relays, publish to relays, or save backups.</p>
+              <p class="nn-checkbox__desc">${_('Manage sync manually with action buttons in each list. You decide when to sync from relays, publish to relays, or save backups.')}</p>
             </label>
 
             <label class="nn-checkbox nn-checkbox--label-left nn-checkbox--with-desc">
-              <span class="setting__label">Easy Mode</span>
+              <span class="setting__label">${_('Easy Mode')}</span>
               <input type="radio" name="list-sync-mode" value="easy" ${this.currentMode === 'easy' ? 'checked' : ''} />
-              <p class="nn-checkbox__desc">NoorNote syncs automatically: changes are saved to a local backup immediately, then published to relays. On startup it restores from backup or relays if needed.</p>
+              <p class="nn-checkbox__desc">${_('NoorNote syncs automatically: changes are saved to a local backup immediately, then published to relays. On startup it restores from backup or relays if needed.')}</p>
             </label>
           </div>
         </div>
 
         <!-- Danger Zone -->
         <div class="danger-zone">
-          <h4 class="subsection-title">Danger Zone</h4>
+          <h4 class="subsection-title">${_('Danger Zone')}</h4>
 
           <div class="danger-zone__warning">
             <svg width="20" height="20"><use href="#icon-warning"/></svg>
-            <p>These actions are irreversible and will result in data loss. Only use if you have corrupted data that prevents normal operation.</p>
+            <p>${_('These actions are irreversible and will result in data loss. Only use if you have corrupted data that prevents normal operation.')}</p>
           </div>
 
           <div class="danger-zone__actions">
             <div class="danger-zone__action">
               <div class="danger-zone__action-info">
-                <h4>Reset Tribes</h4>
-                <p>Delete all tribe data (folders and members). Use if tribe tabs are broken or you can't delete a tribe.</p>
+                <h4>${_('Reset Tribes')}</h4>
+                <p>${_("Delete all tribe data (folders and members). Use if tribe tabs are broken or you can't delete a tribe.")}</p>
               </div>
-              <button class="btn btn--danger" data-action="reset-tribes">Reset Tribes</button>
+              <button class="btn btn--danger" data-action="reset-tribes">${_('Reset Tribes')}</button>
             </div>
 
             <div class="danger-zone__action">
               <div class="danger-zone__action-info">
-                <h4>Reset Bookmarks</h4>
-                <p>Delete all bookmark data (items and folders).</p>
+                <h4>${_('Reset Bookmarks')}</h4>
+                <p>${_('Delete all bookmark data (items and folders).')}</p>
               </div>
-              <button class="btn btn--danger" data-action="reset-bookmarks">Reset Bookmarks</button>
+              <button class="btn btn--danger" data-action="reset-bookmarks">${_('Reset Bookmarks')}</button>
             </div>
 
             <div class="danger-zone__action">
               <div class="danger-zone__action-info">
-                <h4>Reset Mutes</h4>
-                <p>Delete your mute list (muted users and threads).</p>
+                <h4>${_('Reset Mutes')}</h4>
+                <p>${_('Delete your mute list (muted users and threads).')}</p>
               </div>
-              <button class="btn btn--danger" data-action="reset-mutes">Reset Mutes</button>
+              <button class="btn btn--danger" data-action="reset-mutes">${_('Reset Mutes')}</button>
             </div>
 
             <div class="danger-zone__action">
               <div class="danger-zone__action-info">
-                <h4>Reset Follows</h4>
-                <p>Delete your follow list. <strong>Make a backup first!</strong></p>
+                <h4>${_('Reset Follows')}</h4>
+                <p>${_('Delete your follow list. <strong>Make a backup first!</strong>')}</p>
               </div>
-              <button class="btn btn--danger" data-action="reset-follows">Reset Follows</button>
+              <button class="btn btn--danger" data-action="reset-follows">${_('Reset Follows')}</button>
             </div>
           </div>
         </div>
@@ -206,8 +207,8 @@ export class ListSettingsSection extends SettingsSection {
 
         setListSyncMode(this.currentMode);
         const modeLabel =
-          this.currentMode === 'easy' ? 'Easy Mode' : 'Manual Mode';
-        ToastService.show(`List sync: ${modeLabel} enabled`, 'success');
+          this.currentMode === 'easy' ? _('Easy Mode') : _('Manual Mode');
+        ToastService.show(_('List sync: %s enabled', modeLabel), 'success');
       });
     });
 
@@ -238,14 +239,14 @@ export class ListSettingsSection extends SettingsSection {
    */
   private confirmResetTribes(): void {
     this.showResetModal({
-      title: 'Reset Tribes?',
-      listName: 'tribes',
+      title: _('Reset Tribes?'),
+      listName: _('tribes'),
       warningHtml: `
-        <p>This will delete <strong>all your tribe data</strong> including:</p>
+        <p>${_('This will delete <strong>all your tribe data</strong> including:')}</p>
         <ul>
-          <li>All tribe folders</li>
-          <li>All tribe members</li>
-          <li>Tribe timeline tabs</li>
+          <li>${_('All tribe folders')}</li>
+          <li>${_('All tribe members')}</li>
+          <li>${_('Tribe timeline tabs')}</li>
         </ul>
       `,
       onConfirm: () => this.resetTribes(),
@@ -257,14 +258,14 @@ export class ListSettingsSection extends SettingsSection {
    */
   private confirmResetBookmarks(): void {
     this.showResetModal({
-      title: 'Reset Bookmarks?',
-      listName: 'bookmarks',
+      title: _('Reset Bookmarks?'),
+      listName: _('bookmarks'),
       warningHtml: `
-        <p>This will delete <strong>all your bookmark data</strong> including:</p>
+        <p>${_('This will delete <strong>all your bookmark data</strong> including:')}</p>
         <ul>
-          <li>All bookmarked notes</li>
-          <li>All custom bookmarks (URLs)</li>
-          <li>All bookmark folders</li>
+          <li>${_('All bookmarked notes')}</li>
+          <li>${_('All custom bookmarks (URLs)')}</li>
+          <li>${_('All bookmark folders')}</li>
         </ul>
       `,
       onConfirm: () => this.resetBookmarks(),
@@ -276,15 +277,15 @@ export class ListSettingsSection extends SettingsSection {
    */
   private confirmResetMutes(): void {
     this.showResetModal({
-      title: 'Reset Mutes?',
-      listName: 'mutes',
+      title: _('Reset Mutes?'),
+      listName: _('mutes'),
       warningHtml: `
-        <p>This will delete <strong>your entire mute list</strong> including:</p>
+        <p>${_('This will delete <strong>your entire mute list</strong> including:')}</p>
         <ul>
-          <li>All muted users</li>
-          <li>All muted threads</li>
+          <li>${_('All muted users')}</li>
+          <li>${_('All muted threads')}</li>
         </ul>
-        <p style="margin-top: 0.5rem;">Muted users will appear in your timeline again.</p>
+        <p style="margin-top: 0.5rem;">${_('Muted users will appear in your timeline again.')}</p>
       `,
       onConfirm: () => this.resetMutes(),
     });
@@ -295,34 +296,34 @@ export class ListSettingsSection extends SettingsSection {
    */
   private confirmResetFollows(): void {
     this.modalService.show({
-      title: 'Reset Follows? (Critical)',
+      title: _('Reset Follows? (Critical)'),
       content: `
         <div class="danger-zone-modal">
           <div class="danger-zone-modal__warning danger-zone-modal__warning--critical">
-            <strong>Your follow list is critical!</strong> This determines who appears in your timeline.
+            <strong>${_('Your follow list is critical!')}</strong> ${_('This determines who appears in your timeline.')}
           </div>
 
-          <p style="margin: 1rem 0;"><strong>Before you continue, make a backup:</strong></p>
+          <p style="margin: 1rem 0;"><strong>${_('Before you continue, make a backup:')}</strong></p>
           <ol style="margin: 0 0 1rem 1.5rem; line-height: 1.6;">
-            <li>Visit <a href="https://follows.nostr.com/" target="_blank">follows.nostr.com</a> in your browser</li>
-            <li>This automatically saves your contacts</li>
-            <li>Then come back and reset</li>
+            <li>${_('Visit <a href="https://follows.nostr.com/" target="_blank">follows.nostr.com</a> in your browser')}</li>
+            <li>${_('This automatically saves your contacts')}</li>
+            <li>${_('Then come back and reset')}</li>
           </ol>
 
-          <p style="margin-bottom: 1rem;">This will delete <strong>all your follows</strong> from local storage.</p>
+          <p style="margin-bottom: 1rem;">${_('This will delete <strong>all your follows</strong> from local storage.')}</p>
 
           <div class="danger-zone-modal__recovery">
-            <strong>Recovery options:</strong>
+            <strong>${_('Recovery options:')}</strong>
             <ul style="margin: 0.5rem 0 0 1.5rem;">
-              <li>If you synced to relays before: Go to List Settings → Manual Mode → "Sync from relays"</li>
-              <li>If you used follows.nostr.com: Visit the site again to restore</li>
-              <li>Otherwise: <strong>Data is lost forever</strong></li>
+              <li>${_('If you synced to relays before: Go to List Settings → Manual Mode → "Sync from relays"')}</li>
+              <li>${_('If you used follows.nostr.com: Visit the site again to restore')}</li>
+              <li>${_('Otherwise: <strong>Data is lost forever</strong>')}</li>
             </ul>
           </div>
 
           <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem;">
-            <button class="btn" data-action="cancel">Cancel</button>
-            <button class="btn btn--danger" data-action="confirm">I Made a Backup, Reset Follows</button>
+            <button class="btn" data-action="cancel">${_('Cancel')}</button>
+            <button class="btn btn--danger" data-action="confirm">${_('I Made a Backup, Reset Follows')}</button>
           </div>
         </div>
       `,
@@ -351,20 +352,20 @@ export class ListSettingsSection extends SettingsSection {
           ${options.warningHtml}
 
           <div class="danger-zone-modal__recovery">
-            <strong>Recovery options:</strong>
+            <strong>${_('Recovery options:')}</strong>
             <ul style="margin: 0.5rem 0 0 1.5rem;">
-              <li>If you synced your ${options.listName} to relays before: Go to List Settings → Switch to Manual Mode → "Sync from relays"</li>
-              <li>Otherwise: <strong>Data is lost forever</strong></li>
+              <li>${_('If you synced your %s to relays before: Go to List Settings → Switch to Manual Mode → "Sync from relays"', options.listName)}</li>
+              <li>${_('Otherwise: <strong>Data is lost forever</strong>')}</li>
             </ul>
           </div>
 
           <div class="danger-zone-modal__warning">
-            This action cannot be undone.
+            ${_('This action cannot be undone.')}
           </div>
 
           <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem;">
-            <button class="btn" data-action="cancel">Cancel</button>
-            <button class="btn btn--danger" data-action="confirm">Reset ${options.listName.charAt(0).toUpperCase() + options.listName.slice(1)}</button>
+            <button class="btn" data-action="cancel">${_('Cancel')}</button>
+            <button class="btn btn--danger" data-action="confirm">${_('Reset %s', options.listName)}</button>
           </div>
         </div>
       `,
@@ -405,7 +406,7 @@ export class ListSettingsSection extends SettingsSection {
     storage.remove(StorageKeys.TRIBE_MEMBER_ASSIGNMENTS);
     storage.remove(StorageKeys.TRIBE_ROOT_ORDER);
 
-    ToastService.show('Tribes reset. Reloading...', 'success');
+    ToastService.show(_('Tribes reset. Reloading...'), 'success');
     setTimeout(() => window.location.reload(), 1000);
   }
 
@@ -419,7 +420,7 @@ export class ListSettingsSection extends SettingsSection {
     storage.remove(StorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS);
     storage.remove(StorageKeys.BOOKMARK_ROOT_ORDER);
 
-    ToastService.show('Bookmarks reset. Reloading...', 'success');
+    ToastService.show(_('Bookmarks reset. Reloading...'), 'success');
     setTimeout(() => window.location.reload(), 1000);
   }
 
@@ -429,7 +430,7 @@ export class ListSettingsSection extends SettingsSection {
   private resetMutes(): void {
     PerAccountLocalStorage.getInstance().remove(StorageKeys.MUTES);
 
-    ToastService.show('Mutes reset. Reloading...', 'success');
+    ToastService.show(_('Mutes reset. Reloading...'), 'success');
     setTimeout(() => window.location.reload(), 1000);
   }
 
@@ -439,7 +440,7 @@ export class ListSettingsSection extends SettingsSection {
   private resetFollows(): void {
     PerAccountLocalStorage.getInstance().remove(StorageKeys.FOLLOWS);
 
-    ToastService.show('Follows reset. Reloading...', 'success');
+    ToastService.show(_('Follows reset. Reloading...'), 'success');
     setTimeout(() => window.location.reload(), 1000);
   }
 

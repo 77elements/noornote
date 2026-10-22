@@ -27,6 +27,7 @@ import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { NostrTransport } from '../../services/transport/NostrTransport';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { _ } from '../../i18n';
 
 interface LocalRelaySettings {
   enabled: boolean;
@@ -204,7 +205,7 @@ export class RelaySettingsSection extends SettingsSection {
     return `
         <section class="section">
           <div class="relay-health-summary" id="relay-health-summary">
-            <div class="health-summary-loading">Loading relay health status...</div>
+            <div class="health-summary-loading">${_('Loading relay health status...')}</div>
           </div>
         </section>
 
@@ -216,17 +217,11 @@ export class RelaySettingsSection extends SettingsSection {
               placeholder="wss://relay.example.com"
               id="new-relay-url"
             />
-            <button class="btn btn--medium" id="add-relay-btn">Add Relay</button>
+            <button class="btn btn--medium" id="add-relay-btn">${_('Add Relay')}</button>
           </div>
 
           <p class="form__note">
-            Your relays are your sovereignty surface. <strong>Read</strong> = where NoorNote
-            looks for content, <strong>Write</strong> = where your own events are stored,
-            <strong>DM Inbox</strong> = where others can reach you with NIP-17 messages.
-            When switching to a smaller (or fully private) write-set, publish the new
-            relay list <em>first</em>, then disable the old relays — otherwise other
-            clients can't follow the move. NoorNote automatically rebroadcasts your
-            profile and follow-list to any newly-added write-relay.
+            ${_("Your relays are your sovereignty surface. <strong>Read</strong> = where NoorNote looks for content, <strong>Write</strong> = where your own events are stored, <strong>DM Inbox</strong> = where others can reach you with NIP-17 messages. When switching to a smaller (or fully private) write-set, publish the new relay list <em>first</em>, then disable the old relays — otherwise other clients can't follow the move. NoorNote automatically rebroadcasts your profile and follow-list to any newly-added write-relay.")}
           </p>
 
           <div class="relay-list">
@@ -245,7 +240,7 @@ export class RelaySettingsSection extends SettingsSection {
     warnings: string[];
   }): string {
     if (summary.total === 0) {
-      return '<div class="health-summary-empty">No relays configured</div>';
+      return `<div class="health-summary-empty">${_('No relays configured')}</div>`;
     }
 
     const healthPercentage = Math.round(
@@ -261,7 +256,7 @@ export class RelaySettingsSection extends SettingsSection {
     return `
       <div class="health-summary-status">
         <span class="badge badge--${healthClass === 'good' ? 'green' : healthClass === 'warning' ? 'warning' : 'danger'}">
-          ${summary.healthy}/${summary.total} relays healthy (${healthPercentage}%)
+          ${_('%s/%s relays healthy (%s%)', summary.healthy, summary.total, healthPercentage)}
         </span>
       </div>
       ${
@@ -307,25 +302,25 @@ export class RelaySettingsSection extends SettingsSection {
               data-type="read"
               data-url="${relay.url}"
             >
-              Read
+              ${_('Read')}
             </button>
             <button
               class="btn ${relay.types.includes('write') ? '' : 'btn--passive'}"
               data-type="write"
               data-url="${relay.url}"
             >
-              Write
+              ${_('Write')}
             </button>
             <button
               class="btn ${relay.types.includes('inbox') ? '' : 'btn--passive'}"
               data-type="inbox"
               data-url="${relay.url}"
             >
-              DM Inbox
+              ${_('DM Inbox')}
             </button>
           </div>
 
-          <button class="relay-remove-btn" data-url="${relay.url}" aria-label="Remove relay">
+          <button class="relay-remove-btn" data-url="${relay.url}" aria-label="${_('Remove relay')}">
             <svg width="18" height="18"><use href="#icon-delete-extended"/></svg>
           </button>
         </div>
@@ -379,7 +374,10 @@ export class RelaySettingsSection extends SettingsSection {
     if (!url) return;
 
     if (!url.startsWith('wss://') && !url.startsWith('ws://')) {
-      ToastService.show('Relay URL must start with wss:// or ws://', 'error');
+      ToastService.show(
+        _('Relay URL must start with wss:// or ws://'),
+        'error'
+      );
       return;
     }
 
@@ -389,7 +387,7 @@ export class RelaySettingsSection extends SettingsSection {
       r.url.replace(/\/$/, '')
     );
     if (normalizedExisting.includes(url)) {
-      ToastService.show('This relay is already in your list', 'error');
+      ToastService.show(_('This relay is already in your list'), 'error');
       return;
     }
 
@@ -440,17 +438,17 @@ export class RelaySettingsSection extends SettingsSection {
     if (!url) return;
 
     this.modalService.show({
-      title: 'Remove Relay',
+      title: _('Remove Relay'),
       content: `
         <div style="padding: 1rem 0;">
-          <p>Are you sure you want to remove this relay?</p>
+          <p>${_('Are you sure you want to remove this relay?')}</p>
           <p class="form__note">
             <strong>${url}</strong>
           </p>
         </div>
         <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem;">
-          <button class="btn" data-action="cancel">Cancel</button>
-          <button class="btn btn--danger" data-action="confirm">Remove</button>
+          <button class="btn" data-action="cancel">${_('Cancel')}</button>
+          <button class="btn btn--danger" data-action="confirm">${_('Remove')}</button>
         </div>
       `,
       width: '500px',
@@ -484,7 +482,7 @@ export class RelaySettingsSection extends SettingsSection {
   private async saveAndPublish(): Promise<void> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      ToastService.show('Please log in to save relay settings', 'error');
+      ToastService.show(_('Please log in to save relay settings'), 'error');
       return;
     }
 
@@ -498,7 +496,7 @@ export class RelaySettingsSection extends SettingsSection {
       const hasWrite = this.tempRelays.some(r => r.types.includes('write'));
       if (!hasRead || !hasWrite) {
         ToastService.show(
-          'You need at least one read-relay and one write-relay configured.',
+          _('You need at least one read-relay and one write-relay configured.'),
           'error'
         );
         return;
@@ -547,7 +545,7 @@ export class RelaySettingsSection extends SettingsSection {
 
         this.relayConfig.addRelay({
           url: this.localRelaySettings.url,
-          name: 'Local Relay',
+          name: _('Local Relay'),
           types: ['write', 'inbox'],
           isPaid: false,
           requiresAuth: false,
@@ -586,9 +584,9 @@ export class RelaySettingsSection extends SettingsSection {
           });
       }
 
-      ToastService.show('Relay settings saved', 'success');
+      ToastService.show(_('Relay settings saved'), 'success');
     } catch (error) {
-      ToastService.show('Failed to save relay settings', 'error');
+      ToastService.show(_('Failed to save relay settings'), 'error');
       console.error('[RelaySettings] Save error:', error);
     }
   }

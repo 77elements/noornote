@@ -17,6 +17,7 @@ import {
 } from '../../services/PerAccountLocalStorage';
 import { KeychainStorage } from '../../services/KeychainStorage';
 import { ToastService } from '../../services/ToastService';
+import { _ } from '../../i18n';
 
 interface ZapDefaults {
   amount: number;
@@ -141,15 +142,15 @@ export class NWCSettingsSection extends SettingsSection {
         <div class="zap-wallet-status">
             <span class="wallet-icon">⚡</span>
             <div class="wallet-connected-info">
-              <span class="wallet-connected-text">Lightning Wallet Connected</span>
+              <span class="wallet-connected-text">${_('Lightning Wallet Connected')}</span>
               ${lightningAddress ? `<span class="wallet-ln-address">${lightningAddress}</span>` : ''}
             </div>
-            <button class="btn" id="nwc-disconnect-btn">Disconnect</button>
+            <button class="btn" id="nwc-disconnect-btn">${_('Disconnect')}</button>
         </div>
       `
       : `
         <div class="setting">
-          <span class="setting__label">NWC String</span>
+          <span class="setting__label">${_('NWC String')}</span>
           <div class="setting__control setting__control--stretch">
             <input
               type="password"
@@ -158,25 +159,25 @@ export class NWCSettingsSection extends SettingsSection {
               placeholder="nostr+walletconnect://..."
             />
           </div>
-          <p class="setting__desc">Connect your Lightning wallet via Nostr Wallet Connect (NWC) to send zaps.</p>
+          <p class="setting__desc">${_('Connect your Lightning wallet via Nostr Wallet Connect (NWC) to send zaps.')}</p>
         </div>
         <div class="l-row l-row--center">
-          <button class="btn" id="nwc-connect-btn">Connect Wallet</button>
+          <button class="btn" id="nwc-connect-btn">${_('Connect Wallet')}</button>
         </div>
       `;
 
     // Zap defaults section (always visible)
     const zapDefaultsSection = `
-        <h2 class="subsection-title">Zap Settings</h3>
+        <h2 class="subsection-title">${_('Zap Settings')}</h3>
 
         <div class="setting" id="quick-zap-switch-container">
-          <span class="setting__label">Quick Zap</span>
+          <span class="setting__label">${_('Quick Zap')}</span>
           <div class="setting__control" id="quick-zap-switch-mount"></div>
-          <p class="setting__desc">Single click sends zap with default amount. When disabled, click opens zap dialog.</p>
+          <p class="setting__desc">${_('Single click sends zap with default amount. When disabled, click opens zap dialog.')}</p>
         </div>
 
         <div class="form__row form__row--oneline">
-          <label for="zap-default-amount">Default Amount (sats):</label>
+          <label for="zap-default-amount">${_('Default Amount (sats):')}</label>
           <input
             type="number"
             id="zap-default-amount"
@@ -186,18 +187,18 @@ export class NWCSettingsSection extends SettingsSection {
         </div>
 
         <div class="form__row form__row--oneline">
-          <label for="zap-default-comment">Default Comment (optional):</label>
+          <label for="zap-default-comment">${_('Default Comment (optional):')}</label>
           <input
             type="text"
             id="zap-default-comment"
-            placeholder="Great post!"
+            placeholder="${_('Great post!')}"
             value="${this.zapDefaults.comment}"
             maxlength="200"
           />
         </div>
 
         <div class="setting">
-          <span class="setting__label">Fiat Currency</span>
+          <span class="setting__label">${_('Fiat Currency')}</span>
           <div class="setting__control" id="fiat-currency-dropdown-mount"></div>
         </div>
     `;
@@ -230,7 +231,7 @@ export class NWCSettingsSection extends SettingsSection {
       onChange: checked => {
         storage.set(StorageKeys.QUICK_ZAP_ENABLED, checked);
         ToastService.show(
-          checked ? 'Quick zap enabled' : 'Quick zap disabled',
+          checked ? _('Quick zap enabled') : _('Quick zap disabled'),
           'success'
         );
       },
@@ -261,7 +262,7 @@ export class NWCSettingsSection extends SettingsSection {
       onChange: async value => {
         this.fiatCurrencySettings.currency = value;
         await this.saveFiatCurrencySettings();
-        ToastService.show('Fiat currency saved', 'success');
+        ToastService.show(_('Fiat currency saved'), 'success');
       },
     });
 
@@ -290,13 +291,13 @@ export class NWCSettingsSection extends SettingsSection {
       connectBtn?.addEventListener('click', async () => {
         const connectionString = connectionInput?.value.trim();
         if (!connectionString) {
-          ToastService.show('Please enter NWC connection string', 'error');
+          ToastService.show(_('Please enter NWC connection string'), 'error');
           return;
         }
 
         // Show loading state
         (connectBtn as HTMLButtonElement).disabled = true;
-        (connectBtn as HTMLButtonElement).textContent = 'Connecting...';
+        (connectBtn as HTMLButtonElement).textContent = _('Connecting...');
 
         // Attempt connection
         const success = await this.nwcService.connect(connectionString);
@@ -312,7 +313,7 @@ export class NWCSettingsSection extends SettingsSection {
         } else {
           // Re-enable button on failure
           (connectBtn as HTMLButtonElement).disabled = false;
-          (connectBtn as HTMLButtonElement).textContent = 'Connect Wallet';
+          (connectBtn as HTMLButtonElement).textContent = _('Connect Wallet');
         }
       });
     } else {
@@ -339,12 +340,12 @@ export class NWCSettingsSection extends SettingsSection {
     const saveAmount = async () => {
       const amount = parseInt(amountInput?.value || '21', 10);
       if (amount < 1) {
-        ToastService.show('Amount must be at least 1 sat', 'error');
+        ToastService.show(_('Amount must be at least 1 sat'), 'error');
         return;
       }
       this.zapDefaults.amount = amount;
       await this.saveZapDefaults();
-      ToastService.show('Zap defaults saved', 'success');
+      ToastService.show(_('Zap defaults saved'), 'success');
     };
     amountInput?.addEventListener('blur', saveAmount);
     amountInput?.addEventListener('keydown', e => {
@@ -358,7 +359,7 @@ export class NWCSettingsSection extends SettingsSection {
     const saveComment = async () => {
       this.zapDefaults.comment = commentInput?.value || '';
       await this.saveZapDefaults();
-      ToastService.show('Zap defaults saved', 'success');
+      ToastService.show(_('Zap defaults saved'), 'success');
     };
     commentInput?.addEventListener('blur', saveComment);
     commentInput?.addEventListener('keydown', e => {

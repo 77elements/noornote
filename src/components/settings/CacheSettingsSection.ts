@@ -13,6 +13,7 @@ import { ModalService } from '../../services/ModalService';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { NotificationsModuleApi } from '../../modules/notifications/contracts';
 import { PlatformService } from '../../services/PlatformService';
+import { _ } from '../../i18n';
 
 interface NDKCacheConfig {
   profileCacheSize: number;
@@ -92,23 +93,23 @@ export class CacheSettingsSection extends SettingsSection {
 
     return `
         <section class="section">
-          <h2 class="subsection-title">Clear Cache Data</h3>
+          <h2 class="subsection-title">${_('Clear Cache Data')}</h3>
           <div class="form__info">
-            <p>Select which cache tables to clear. This action cannot be undone.</p>
+            <p>${_('Select which cache tables to clear. This action cannot be undone.')}</p>
           </div>
 
           <div class="nn-checkbox-group">
             <label class="nn-checkbox">
               <input type="checkbox" value="events" />
-              <span>Events</span>
+              <span>${_('Events')}</span>
             </label>
             <label class="nn-checkbox">
               <input type="checkbox" value="profiles" />
-              <span>Profiles</span>
+              <span>${_('Profiles')}</span>
             </label>
             <label class="nn-checkbox">
               <input type="checkbox" value="eventTags" />
-              <span>Event Tags</span>
+              <span>${_('Event Tags')}</span>
             </label>
             <label class="nn-checkbox">
               <input type="checkbox" value="nip05" />
@@ -116,17 +117,17 @@ export class CacheSettingsSection extends SettingsSection {
             </label>
             <label class="nn-checkbox">
               <input type="checkbox" value="lnurl" />
-              <span>Lightning Addresses</span>
+              <span>${_('Lightning Addresses')}</span>
             </label>
             <label class="nn-checkbox">
               <input type="checkbox" value="relayStatus" />
-              <span>Relay Status</span>
+              <span>${_('Relay Status')}</span>
             </label>
           </div>
 
           <div class="l-row l-row--right">
-            <button class="btn btn--danger" id="clear-selected-btn">Clear Selected</button>
-            <button class="btn btn--danger" id="clear-all-btn">Clear All & Reload</button>
+            <button class="btn btn--danger" id="clear-selected-btn">${_('Clear Selected')}</button>
+            <button class="btn btn--danger" id="clear-all-btn">${_('Clear All & Reload')}</button>
           </div>
         </section>
 
@@ -134,9 +135,9 @@ export class CacheSettingsSection extends SettingsSection {
           isDesktop
             ? `
         <section class="section">
-          <h2 class="subsection-title">Notifications Cache</h3>
+          <h2 class="subsection-title">${_('Notifications Cache')}</h3>
           <div class="form__row form__row--oneline">
-            <label for="notifications-cache-size">Cache Size</label>
+            <label for="notifications-cache-size">${_('Cache Size')}</label>
             <input
               type="number"
               id="notifications-cache-size"
@@ -146,17 +147,17 @@ export class CacheSettingsSection extends SettingsSection {
               step="10"
             />
           </div>
-          <p class="form__note">Maximum notifications to keep in localStorage (10-1000).</p>
+          <p class="form__note">${_('Maximum notifications to keep in localStorage (10-1000).')}</p>
         </section>
 
         <section class="section">
-          <h2 class="subsection-title">NDK Cache Configuration</h3>
+          <h2 class="subsection-title">${_('NDK Cache Configuration')}</h3>
           <div class="form__info">
-            <p>Configure NDK cache sizes. Changes require app reload to take effect.</p>
+            <p>${_('Configure NDK cache sizes. Changes require app reload to take effect.')}</p>
           </div>
 
           <div class="form__row form__row--oneline">
-            <label for="profile-cache-size">Profile Cache Size</label>
+            <label for="profile-cache-size">${_('Profile Cache Size')}</label>
             <input
               type="number"
               id="profile-cache-size"
@@ -168,7 +169,7 @@ export class CacheSettingsSection extends SettingsSection {
           </div>
 
           <div class="form__row form__row--oneline">
-            <label for="event-cache-size">Event Cache Size</label>
+            <label for="event-cache-size">${_('Event Cache Size')}</label>
             <input
               type="number"
               id="event-cache-size"
@@ -180,7 +181,7 @@ export class CacheSettingsSection extends SettingsSection {
           </div>
 
           <div class="form__row form__row--oneline">
-            <label for="event-tags-cache-size">Event Tags Cache Size</label>
+            <label for="event-tags-cache-size">${_('Event Tags Cache Size')}</label>
             <input
               type="number"
               id="event-tags-cache-size"
@@ -192,7 +193,7 @@ export class CacheSettingsSection extends SettingsSection {
           </div>
 
           <div class="form__row form__row--oneline">
-            <label for="zapper-cache-size">Zapper Cache Size</label>
+            <label for="zapper-cache-size">${_('Zapper Cache Size')}</label>
             <input
               type="number"
               id="zapper-cache-size"
@@ -204,7 +205,7 @@ export class CacheSettingsSection extends SettingsSection {
           </div>
 
           <div class="form__row form__row--oneline">
-            <label for="nip05-cache-size">NIP-05 Cache Size</label>
+            <label for="nip05-cache-size">${_('NIP-05 Cache Size')}</label>
             <input
               type="number"
               id="nip05-cache-size"
@@ -221,9 +222,9 @@ export class CacheSettingsSection extends SettingsSection {
               id="save-sig"
               ${config.saveSig ? 'checked' : ''}
             />
-            <span>Save Event Signatures</span>
+            <span>${_('Save Event Signatures')}</span>
           </label>
-          <p class="form__note">Store signatures in cache (increases storage usage).</p>
+          <p class="form__note">${_('Store signatures in cache (increases storage usage).')}</p>
         </section>
         `
             : ''
@@ -243,7 +244,7 @@ export class CacheSettingsSection extends SettingsSection {
       const val = parseInt(notifInput.value, 10);
       if (isNaN(val) || val < 10 || val > 1000) {
         ToastService.show(
-          'Invalid notifications cache size (10-1000)',
+          _('Invalid notifications cache size (10-1000)'),
           'error'
         );
         return;
@@ -251,7 +252,7 @@ export class CacheSettingsSection extends SettingsSection {
       ModuleLoader.getInstance()
         .getApi<NotificationsModuleApi>('notifications')
         ?.setCacheLimit(val);
-      ToastService.show('Notifications cache size saved', 'success');
+      ToastService.show(_('Notifications cache size saved'), 'success');
     };
     notifInput?.addEventListener('blur', saveNotifCache);
     notifInput?.addEventListener('keydown', e => {
@@ -271,7 +272,7 @@ export class CacheSettingsSection extends SettingsSection {
       if (!config) return;
       this.saveConfig(config);
       ToastService.show(
-        'Saved. Reload app for changes to take effect.',
+        _('Saved. Reload app for changes to take effect.'),
         'success'
       );
     };
@@ -336,7 +337,7 @@ export class CacheSettingsSection extends SettingsSection {
       isInvalidSize(zapperCacheSize, 50) ||
       isInvalidSize(nip05CacheSize, 100)
     ) {
-      ToastService.show('Invalid cache size values', 'error');
+      ToastService.show(_('Invalid cache size values'), 'error');
       return null;
     }
 
@@ -366,10 +367,10 @@ export class CacheSettingsSection extends SettingsSection {
       content: `
         <div style="padding: 1rem 0;">
           ${bodyHtml}
-          <p style="color: var(--color-red);">This action cannot be undone.</p>
+          <p style="color: var(--color-red);">${_('This action cannot be undone.')}</p>
         </div>
         <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem;">
-          <button class="btn" data-action="cancel">Cancel</button>
+          <button class="btn" data-action="cancel">${_('Cancel')}</button>
           <button class="btn btn--danger" data-action="confirm">${confirmLabel}</button>
         </div>
       `,
@@ -403,16 +404,19 @@ export class CacheSettingsSection extends SettingsSection {
     ) as NodeListOf<HTMLInputElement>;
 
     if (checkboxes.length === 0) {
-      ToastService.show('Please select at least one table to clear', 'warning');
+      ToastService.show(
+        _('Please select at least one table to clear'),
+        'warning'
+      );
       return;
     }
 
     const tableNames = Array.from(checkboxes).map(cb => cb.value);
 
     this.showConfirmationModal(
-      'Clear Selected Cache Tables?',
-      `<p style="margin-bottom: 1rem;">This will clear ${tableNames.length} table(s): ${tableNames.join(', ')}.</p>`,
-      'Clear Tables',
+      _('Clear Selected Cache Tables?'),
+      `<p style="margin-bottom: 1rem;">${_('This will clear %s table(s): %s.', tableNames.length, tableNames.join(', '))}</p>`,
+      _('Clear Tables'),
       async () => {
         try {
           const { db } = await import('@nostr-dev-kit/ndk-cache-dexie');
@@ -426,7 +430,7 @@ export class CacheSettingsSection extends SettingsSection {
 
           checkboxes.forEach(cb => (cb.checked = false));
           ToastService.show(
-            `Successfully cleared ${tableNames.length} cache table(s)`,
+            _('Successfully cleared %s cache table(s)', tableNames.length),
             'success'
           );
         } catch (error) {
@@ -434,7 +438,7 @@ export class CacheSettingsSection extends SettingsSection {
             error,
             'CacheSettingsSection.handleClearSelected',
             true,
-            'Failed to clear cache tables'
+            _('Failed to clear cache tables')
           );
         }
       }
@@ -446,12 +450,12 @@ export class CacheSettingsSection extends SettingsSection {
    */
   private handleClearAll(): void {
     this.showConfirmationModal(
-      'Clear All Cache & Reload?',
-      `<p style="margin-bottom: 1rem;">This will clear all safe cache tables and reload the app.</p>
+      _('Clear All Cache & Reload?'),
+      `<p style="margin-bottom: 1rem;">${_('This will clear all safe cache tables and reload the app.')}</p>
        <p class="small">
-         Excludes: Unpublished events and decrypted messages (protected from accidental deletion).
+         ${_('Excludes: Unpublished events and decrypted messages (protected from accidental deletion).')}
        </p>`,
-      'Clear Cache & Reload',
+      _('Clear Cache & Reload'),
       async () => {
         try {
           const { db } = await import('@nostr-dev-kit/ndk-cache-dexie');
@@ -466,7 +470,7 @@ export class CacheSettingsSection extends SettingsSection {
           ]);
 
           ToastService.show(
-            'Cache cleared successfully. Reloading...',
+            _('Cache cleared successfully. Reloading...'),
             'success'
           );
           setTimeout(() => window.location.reload(), 1000);
@@ -475,7 +479,7 @@ export class CacheSettingsSection extends SettingsSection {
             error,
             'CacheSettingsSection.handleClearAll',
             true,
-            'Failed to clear cache'
+            _('Failed to clear cache')
           );
         }
       }

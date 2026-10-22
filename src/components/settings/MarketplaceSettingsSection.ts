@@ -23,6 +23,7 @@ import {
 } from '../../addons/marketplace/index';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
+import { _ } from '../../i18n';
 
 export class MarketplaceSettingsSection extends SettingsSection {
   private marketplaceSwitch: Switch | null = null;
@@ -52,7 +53,7 @@ export class MarketplaceSettingsSection extends SettingsSection {
         bus.emit('marketplace:toggle', { enabled: checked });
         this.updateTimelineVisibility(contentContainer);
         ToastService.show(
-          checked ? 'Marketplace enabled' : 'Marketplace disabled',
+          checked ? _('Marketplace enabled') : _('Marketplace disabled'),
           'success'
         );
       },
@@ -65,8 +66,8 @@ export class MarketplaceSettingsSection extends SettingsSection {
         setProfileListingsEnabled(checked);
         ToastService.show(
           checked
-            ? 'Products carousel enabled on profiles'
-            : 'Products carousel hidden on profiles',
+            ? _('Products carousel enabled on profiles')
+            : _('Products carousel hidden on profiles'),
           'success'
         );
       },
@@ -82,7 +83,9 @@ export class MarketplaceSettingsSection extends SettingsSection {
         });
         this.updateFrequencyVisibility(contentContainer);
         ToastService.show(
-          checked ? 'Timeline listings enabled' : 'Timeline listings disabled',
+          checked
+            ? _('Timeline listings enabled')
+            : _('Timeline listings disabled'),
           'success'
         );
       },
@@ -90,27 +93,27 @@ export class MarketplaceSettingsSection extends SettingsSection {
 
     const currentFreq = getTimelineListingFrequency();
     const freqOptions: Array<[ListingFrequency, string]> = [
-      ['rare', 'Rare (every 60 min)'],
-      ['moderate', 'Moderate (every 30 min)'],
-      ['frequent', 'Frequent (every 15 min)'],
-      ['more-frequent', 'More Frequent (every 5 min)'],
-      ['realtime', 'Every 60 seconds'],
+      ['rare', _('Rare (every 60 min)')],
+      ['moderate', _('Moderate (every 30 min)')],
+      ['frequent', _('Frequent (every 15 min)')],
+      ['more-frequent', _('More Frequent (every 5 min)')],
+      ['realtime', _('Every 60 seconds')],
     ];
 
     contentContainer.innerHTML = `
       <div class="setting">
-        <span class="setting__label">Enable Marketplace</span>
+        <span class="setting__label">${_('Enable Marketplace')}</span>
         <div class="setting__control">${this.marketplaceSwitch.render()}</div>
       </div>
 
       <div class="marketplace-timeline-settings${marketplaceEnabled ? '' : ' is-hidden'}">
         <div class="setting">
-          <span class="setting__label">Show user's products on the profile page</span>
+          <span class="setting__label">${_("Show user's products on the profile page")}</span>
           <div class="setting__control">${this.profileListingsSwitch.render()}</div>
         </div>
 
         <div class="setting">
-          <span class="setting__label">Show listings from people I follow in my timeline</span>
+          <span class="setting__label">${_('Show listings from people I follow in my timeline')}</span>
           <div class="setting__control">${this.timelineSwitch.render()}</div>
         </div>
 
@@ -142,14 +145,14 @@ export class MarketplaceSettingsSection extends SettingsSection {
             .value as ListingFrequency;
           setTimelineListingFrequency(value);
           const labels: Record<ListingFrequency, string> = {
-            rare: 'Rare (60 min)',
-            moderate: 'Moderate (30 min)',
-            frequent: 'Frequent (15 min)',
-            'more-frequent': 'More Frequent (5 min)',
-            realtime: 'Every 60 seconds',
+            rare: _('Rare (60 min)'),
+            moderate: _('Moderate (30 min)'),
+            frequent: _('Frequent (15 min)'),
+            'more-frequent': _('More Frequent (5 min)'),
+            realtime: _('Every 60 seconds'),
           };
           ToastService.show(
-            `Listing frequency: ${labels[value] || value}`,
+            _('Listing frequency: %s', labels[value] || value),
             'success'
           );
         });

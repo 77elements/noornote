@@ -433,6 +433,7 @@ msgstr "Settings are stored in the %s directory."
 msgid "Accounts and threads you have muted."
 msgstr "Accounts and threads you have muted."
 
+#: src/components/settings/NotificationPrioritySection.ts:85
 #: src/components/views/ArticleTimelineView.ts:59
 #: src/components/views/ProfileView.ts:2233
 #: src/components/views/ProfileView.ts:722
@@ -564,6 +565,7 @@ msgstr ""
 "Your lists are stored locally and synced to your relays. Pick one to open "
 "it."
 
+#: src/components/settings/NotificationPrioritySection.ts:79
 #: src/components/views/SettingsView.ts:47
 msgid "Zaps"
 msgstr "Zaps"
@@ -577,6 +579,11 @@ msgstr "Zaps"
 #: src/components/modals/ZapModal.ts:148
 #: src/components/post/PostNoteModal.ts:399
 #: src/components/reply/ReplyModal.ts:433
+#: src/components/settings/CacheSettingsSection.ts:373
+#: src/components/settings/ListSettingsSection.ts:325
+#: src/components/settings/ListSettingsSection.ts:367
+#: src/components/settings/PrivacySettingsSection.ts:268
+#: src/components/settings/RelaySettingsSection.ts:447
 #: src/components/views/ConversationView.ts:619
 #: src/components/views/MessagesView.ts:586
 #: src/components/views/MessagesView.ts:792
@@ -648,6 +655,7 @@ msgid "Rename Folder"
 msgstr "Rename Folder"
 
 #: src/components/modals/EditFolderModal.ts:66
+#: src/components/settings/NotificationPrioritySection.ts:162
 msgid "Save"
 msgstr "Save"
 
@@ -1582,6 +1590,7 @@ msgstr "Time unit"
 msgid "Title"
 msgstr "Title"
 
+#: src/components/settings/SettingsSection.ts:43
 #: src/components/views/ArticleEditorView.ts:380
 #: src/components/views/VideoEditorView.ts:179
 msgid "Toggle section"
@@ -2852,3 +2861,1045 @@ msgstr "Write your reply..."
 #: src/components/post/PostNoteModal.ts:339
 msgid "Write your thoughts about this highlight (optional)…"
 msgstr "Write your thoughts about this highlight (optional)…"
+
+#: src/components/settings/RelaySettingsSection.ts:259
+msgid "%s/%s relays healthy (%s%)"
+msgstr "%s/%s relays healthy (%s%)"
+
+#: src/components/settings/RelaySettingsSection.ts:220
+msgid "Add Relay"
+msgstr "Add Relay"
+
+#: src/components/settings/PrivacySettingsSection.ts:111
+msgid ""
+"Adds a note icon next to each profile where you can store an encrypted, "
+"private note about that user (NIP-78). Notes are NIP-44 self-encrypted — "
+"only you can read them, and they are never published unencrypted. This is "
+"separate from public petnames, which live in your contact list and are "
+"visible to everyone."
+msgstr ""
+"Adds a note icon next to each profile where you can store an encrypted, "
+"private note about that user (NIP-78). Notes are NIP-44 self-encrypted — "
+"only you can read them, and they are never published unencrypted. This is "
+"separate from public petnames, which live in your contact list and are "
+"visible to everyone."
+
+#: src/components/settings/ListSettingsSection.ts:69
+msgid "Advanced List Management disabled (Easy Mode)"
+msgstr "Advanced List Management disabled (Easy Mode)"
+
+#: src/components/settings/ListSettingsSection.ts:68
+msgid "Advanced List Management enabled"
+msgstr "Advanced List Management enabled"
+
+#: src/components/settings/ListSettingsSection.ts:268
+msgid "All bookmark folders"
+msgstr "All bookmark folders"
+
+#: src/components/settings/ListSettingsSection.ts:266
+msgid "All bookmarked notes"
+msgstr "All bookmarked notes"
+
+#: src/components/settings/ListSettingsSection.ts:267
+msgid "All custom bookmarks (URLs)"
+msgstr "All custom bookmarks (URLs)"
+
+#: src/components/settings/ListSettingsSection.ts:286
+msgid "All muted threads"
+msgstr "All muted threads"
+
+#: src/components/settings/ListSettingsSection.ts:285
+msgid "All muted users"
+msgstr "All muted users"
+
+#: src/components/settings/ListSettingsSection.ts:247
+msgid "All tribe folders"
+msgstr "All tribe folders"
+
+#: src/components/settings/ListSettingsSection.ts:248
+msgid "All tribe members"
+msgstr "All tribe members"
+
+#: src/components/settings/NWCSettingsSection.ts:343
+msgid "Amount must be at least 1 sat"
+msgstr "Amount must be at least 1 sat"
+
+#: src/components/settings/RelaySettingsSection.ts:441
+msgid "Are you sure you want to remove this relay?"
+msgstr "Are you sure you want to remove this relay?"
+
+#: src/components/settings/NotificationPrioritySection.ts:94
+msgid "Armada"
+msgstr "Armada"
+
+#: src/components/settings/KeySignerSection.ts:62
+msgid "Automatically start NoorSigner key signer when you log in to your computer."
+msgstr "Automatically start NoorSigner key signer when you log in to your computer."
+
+#: src/components/settings/KeySignerSection.ts:109
+msgid "Autostart disabled"
+msgstr "Autostart disabled"
+
+#: src/components/settings/KeySignerSection.ts:106
+msgid "Autostart enabled"
+msgstr "Autostart enabled"
+
+#: src/components/settings/ListSettingsSection.ts:306
+msgid "Before you continue, make a backup:"
+msgstr "Before you continue, make a backup:"
+
+#: src/components/settings/PrivacySettingsSection.ts:134
+msgid "Beta Feature:"
+msgstr "Beta Feature:"
+
+#: src/components/settings/PrivacySettingsSection.ts:81
+msgid "Bookmark List"
+msgstr "Bookmark List"
+
+#: src/components/settings/ListSettingsSection.ts:262
+#: src/components/settings/PrivacySettingsSection.ts:82
+msgid "bookmarks"
+msgstr "bookmarks"
+
+#: src/components/settings/ListSettingsSection.ts:423
+msgid "Bookmarks reset. Reloading..."
+msgstr "Bookmarks reset. Reloading..."
+
+#: src/components/settings/CacheSettingsSection.ts:470
+msgid "Cache cleared successfully. Reloading..."
+msgstr "Cache cleared successfully. Reloading..."
+
+#: src/components/settings/CacheSettingsSection.ts:140
+msgid "Cache Size"
+msgstr "Cache Size"
+
+#: src/components/settings/CacheSettingsSection.ts:130
+msgid "Clear All & Reload"
+msgstr "Clear All & Reload"
+
+#: src/components/settings/CacheSettingsSection.ts:450
+msgid "Clear All Cache & Reload?"
+msgstr "Clear All Cache & Reload?"
+
+#: src/components/settings/CacheSettingsSection.ts:455
+msgid "Clear Cache & Reload"
+msgstr "Clear Cache & Reload"
+
+#: src/components/settings/CacheSettingsSection.ts:96
+msgid "Clear Cache Data"
+msgstr "Clear Cache Data"
+
+#: src/components/settings/CacheSettingsSection.ts:129
+msgid "Clear Selected"
+msgstr "Clear Selected"
+
+#: src/components/settings/CacheSettingsSection.ts:414
+msgid "Clear Selected Cache Tables?"
+msgstr "Clear Selected Cache Tables?"
+
+#: src/components/settings/CacheSettingsSection.ts:416
+msgid "Clear Tables"
+msgstr "Clear Tables"
+
+#: src/components/settings/PrivacySettingsSection.ts:263
+msgid "Clear your private follow list"
+msgstr "Clear your private follow list"
+
+#: src/components/settings/PrivacySettingsSection.ts:263
+msgid "Clear your public follow list"
+msgstr "Clear your public follow list"
+
+#: src/components/settings/CacheSettingsSection.ts:156
+msgid "Configure NDK cache sizes. Changes require app reload to take effect."
+msgstr "Configure NDK cache sizes. Changes require app reload to take effect."
+
+#: src/components/settings/NWCSettingsSection.ts:165
+#: src/components/settings/NWCSettingsSection.ts:316
+msgid "Connect Wallet"
+msgstr "Connect Wallet"
+
+#: src/components/settings/NWCSettingsSection.ts:162
+msgid "Connect your Lightning wallet via Nostr Wallet Connect (NWC) to send zaps."
+msgstr "Connect your Lightning wallet via Nostr Wallet Connect (NWC) to send zaps."
+
+#: src/components/settings/NWCSettingsSection.ts:300
+msgid "Connecting..."
+msgstr "Connecting..."
+
+#: src/components/settings/ListSettingsSection.ts:151
+msgid "Danger Zone"
+msgstr "Danger Zone"
+
+#: src/components/settings/PrivacySettingsSection.ts:261
+msgid "Decrypt all your current private follows (kind:30000)"
+msgstr "Decrypt all your current private follows (kind:30000)"
+
+#: src/components/settings/NWCSettingsSection.ts:180
+msgid "Default Amount (sats):"
+msgstr "Default Amount (sats):"
+
+#: src/components/settings/NWCSettingsSection.ts:190
+msgid "Default Comment (optional):"
+msgstr "Default Comment (optional):"
+
+#: src/components/settings/ListSettingsSection.ts:170
+msgid "Delete all bookmark data (items and folders)."
+msgstr "Delete all bookmark data (items and folders)."
+
+#: src/components/settings/ListSettingsSection.ts:162
+msgid ""
+"Delete all tribe data (folders and members). Use if tribe tabs are broken "
+"or you can't delete a tribe."
+msgstr ""
+"Delete all tribe data (folders and members). Use if tribe tabs are broken "
+"or you can't delete a tribe."
+
+#: src/components/settings/ListSettingsSection.ts:186
+msgid "Delete your follow list. <strong>Make a backup first!</strong>"
+msgstr "Delete your follow list. <strong>Make a backup first!</strong>"
+
+#: src/components/settings/ListSettingsSection.ts:178
+msgid "Delete your mute list (muted users and threads)."
+msgstr "Delete your mute list (muted users and threads)."
+
+#: src/components/settings/NotificationPrioritySection.ts:91
+msgid "Dhikr Committed"
+msgstr "Dhikr Committed"
+
+#: src/components/settings/NotificationPrioritySection.ts:92
+msgid "Dhikr Complete"
+msgstr "Dhikr Complete"
+
+#: src/components/settings/NotificationPrioritySection.ts:90
+msgid "Dhikr Round"
+msgstr "Dhikr Round"
+
+#: src/components/settings/NWCSettingsSection.ts:148
+msgid "Disconnect"
+msgstr "Disconnect"
+
+#: src/components/settings/RelaySettingsSection.ts:319
+msgid "DM Inbox"
+msgstr "DM Inbox"
+
+#: src/components/settings/NotificationPrioritySection.ts:150
+msgid ""
+"Drag notification types between priority levels to customize your badge "
+"indicator."
+msgstr ""
+"Drag notification types between priority levels to customize your badge "
+"indicator."
+
+#: src/components/settings/ListSettingsSection.ts:142
+#: src/components/settings/ListSettingsSection.ts:210
+msgid "Easy Mode"
+msgstr "Easy Mode"
+
+#: src/components/settings/ListSettingsSection.ts:76
+msgid "Enable Advanced List Management"
+msgstr "Enable Advanced List Management"
+
+#: src/components/settings/MarketplaceSettingsSection.ts:105
+msgid "Enable Marketplace"
+msgstr "Enable Marketplace"
+
+#: src/components/settings/PrivacySettingsSection.ts:261
+msgid "Encrypt all your current public follows (kind:3)"
+msgstr "Encrypt all your current public follows (kind:3)"
+
+#: src/components/settings/PrivacySettingsSection.ts:231
+msgid "Encryption method set to %s"
+msgstr "Encryption method set to %s"
+
+#: src/components/settings/CacheSettingsSection.ts:172
+msgid "Event Cache Size"
+msgstr "Event Cache Size"
+
+#: src/components/settings/CacheSettingsSection.ts:112
+msgid "Event Tags"
+msgstr "Event Tags"
+
+#: src/components/settings/CacheSettingsSection.ts:184
+msgid "Event Tags Cache Size"
+msgstr "Event Tags Cache Size"
+
+#: src/components/settings/CacheSettingsSection.ts:104
+msgid "Events"
+msgstr "Events"
+
+#: src/components/settings/MarketplaceSettingsSection.ts:100
+#: src/components/settings/MarketplaceSettingsSection.ts:152
+msgid "Every 60 seconds"
+msgstr "Every 60 seconds"
+
+#: src/components/settings/PrivacySettingsSection.ts:253
+msgid "Everyone will be able to see who you follow after this operation."
+msgstr "Everyone will be able to see who you follow after this operation."
+
+#: src/components/settings/CacheSettingsSection.ts:453
+msgid ""
+"Excludes: Unpublished events and decrypted messages (protected from "
+"accidental deletion)."
+msgstr ""
+"Excludes: Unpublished events and decrypted messages (protected from "
+"accidental deletion)."
+
+#: src/components/settings/CacheSettingsSection.ts:479
+msgid "Failed to clear cache"
+msgstr "Failed to clear cache"
+
+#: src/components/settings/CacheSettingsSection.ts:438
+msgid "Failed to clear cache tables"
+msgstr "Failed to clear cache tables"
+
+#: src/components/settings/RelaySettingsSection.ts:586
+msgid "Failed to save relay settings"
+msgstr "Failed to save relay settings"
+
+#: src/components/settings/KeySignerSection.ts:113
+msgid "Failed to toggle autostart"
+msgstr "Failed to toggle autostart"
+
+#: src/components/settings/NWCSettingsSection.ts:201
+msgid "Fiat Currency"
+msgstr "Fiat Currency"
+
+#: src/components/settings/NWCSettingsSection.ts:265
+msgid "Fiat currency saved"
+msgstr "Fiat currency saved"
+
+#: src/components/settings/PrivacySettingsSection.ts:67
+msgid "follow lists"
+msgstr "follow lists"
+
+#: src/components/settings/PrivacySettingsSection.ts:66
+msgid "Follow Lists"
+msgstr "Follow Lists"
+
+#: src/components/settings/PrivacySettingsSection.ts:297
+msgid "Follows migrated to private list"
+msgstr "Follows migrated to private list"
+
+#: src/components/settings/PrivacySettingsSection.ts:298
+msgid "Follows migrated to public list"
+msgstr "Follows migrated to public list"
+
+#: src/components/settings/ListSettingsSection.ts:443
+msgid "Follows reset. Reloading..."
+msgstr "Follows reset. Reloading..."
+
+#: src/components/settings/MarketplaceSettingsSection.ts:150
+msgid "Frequent (15 min)"
+msgstr "Frequent (15 min)"
+
+#: src/components/settings/MarketplaceSettingsSection.ts:98
+msgid "Frequent (every 15 min)"
+msgstr "Frequent (every 15 min)"
+
+#: src/components/settings/NWCSettingsSection.ts:194
+msgid "Great post!"
+msgstr "Great post!"
+
+#: src/components/settings/KeySignerSection.ts:68
+msgid ""
+"Handle key signer prompts through NoorNote instead of opening a terminal "
+"window."
+msgstr ""
+"Handle key signer prompts through NoorNote instead of opening a terminal "
+"window."
+
+#: src/components/settings/NotificationPrioritySection.ts:89
+msgid "Hashtags"
+msgstr "Hashtags"
+
+#: src/components/settings/NotificationPrioritySection.ts:108
+msgid "High Priority"
+msgstr "High Priority"
+
+#: src/components/settings/NotificationPrioritySection.ts:119
+msgid "Hollow badge - background notifications"
+msgstr "Hollow badge - background notifications"
+
+#: src/components/settings/ListSettingsSection.ts:326
+msgid "I Made a Backup, Reset Follows"
+msgstr "I Made a Backup, Reset Follows"
+
+#: src/components/settings/ListSettingsSection.ts:318
+msgid ""
+"If you synced to relays before: Go to List Settings → Manual Mode → \"Sync "
+"from relays\""
+msgstr ""
+"If you synced to relays before: Go to List Settings → Manual Mode → \"Sync "
+"from relays\""
+
+#: src/components/settings/ListSettingsSection.ts:357
+msgid ""
+"If you synced your %s to relays before: Go to List Settings → Switch to "
+"Manual Mode → \"Sync from relays\""
+msgstr ""
+"If you synced your %s to relays before: Go to List Settings → Switch to "
+"Manual Mode → \"Sync from relays\""
+
+#: src/components/settings/ListSettingsSection.ts:319
+msgid "If you used follows.nostr.com: Visit the site again to restore"
+msgstr "If you used follows.nostr.com: Visit the site again to restore"
+
+#: src/components/settings/NotificationPrioritySection.ts:82
+msgid "Image Tags"
+msgstr "Image Tags"
+
+#: src/components/settings/CacheSettingsSection.ts:340
+msgid "Invalid cache size values"
+msgstr "Invalid cache size values"
+
+#: src/components/settings/CacheSettingsSection.ts:247
+msgid "Invalid notifications cache size (10-1000)"
+msgstr "Invalid notifications cache size (10-1000)"
+
+#: src/components/settings/KeySignerSection.ts:52
+msgid "Key Signer Running"
+msgstr "Key Signer Running"
+
+#: src/components/settings/KeySignerSection.ts:52
+msgid "Key Signer Stopped"
+msgstr "Key Signer Stopped"
+
+#: src/components/settings/KeySignerSection.ts:60
+msgid "Launch key signer on system startup"
+msgstr "Launch key signer on system startup"
+
+#: src/components/settings/CacheSettingsSection.ts:120
+msgid "Lightning Addresses"
+msgstr "Lightning Addresses"
+
+#: src/components/settings/NWCSettingsSection.ts:145
+msgid "Lightning Wallet Connected"
+msgstr "Lightning Wallet Connected"
+
+#: src/components/settings/ListSettingsSection.ts:211
+msgid "List sync: %s enabled"
+msgstr "List sync: %s enabled"
+
+#: src/components/settings/MarketplaceSettingsSection.ts:155
+msgid "Listing frequency: %s"
+msgstr "Listing frequency: %s"
+
+#: src/components/settings/RelaySettingsSection.ts:208
+msgid "Loading relay health status..."
+msgstr "Loading relay health status..."
+
+#: src/components/settings/RelaySettingsSection.ts:545
+msgid "Local Relay"
+msgstr "Local Relay"
+
+#: src/components/settings/NotificationPrioritySection.ts:118
+msgid "Low Priority"
+msgstr "Low Priority"
+
+#: src/components/settings/KeySignerSection.ts:66
+msgid "Manage NoorSigner via NoorNote"
+msgstr "Manage NoorSigner via NoorNote"
+
+#: src/components/settings/ListSettingsSection.ts:138
+msgid ""
+"Manage sync manually with action buttons in each list. You decide when to "
+"sync from relays, publish to relays, or save backups."
+msgstr ""
+"Manage sync manually with action buttons in each list. You decide when to "
+"sync from relays, publish to relays, or save backups."
+
+#: src/components/settings/ListSettingsSection.ts:136
+#: src/components/settings/ListSettingsSection.ts:210
+msgid "Manual Mode"
+msgstr "Manual Mode"
+
+#: src/components/settings/MarketplaceSettingsSection.ts:56
+msgid "Marketplace disabled"
+msgstr "Marketplace disabled"
+
+#: src/components/settings/MarketplaceSettingsSection.ts:56
+msgid "Marketplace enabled"
+msgstr "Marketplace enabled"
+
+#: src/components/settings/CacheSettingsSection.ts:150
+msgid "Maximum notifications to keep in localStorage (10-1000)."
+msgstr "Maximum notifications to keep in localStorage (10-1000)."
+
+#: src/components/settings/NotificationPrioritySection.ts:81
+msgid "Mentions"
+msgstr "Mentions"
+
+#: src/components/settings/PrivacySettingsSection.ts:269
+msgid "Migrate"
+msgstr "Migrate"
+
+#: src/components/settings/PrivacySettingsSection.ts:305
+msgid "Migration error: %s"
+msgstr "Migration error: %s"
+
+#: src/components/settings/PrivacySettingsSection.ts:301
+msgid "Migration failed"
+msgstr "Migration failed"
+
+#: src/components/settings/MarketplaceSettingsSection.ts:149
+msgid "Moderate (30 min)"
+msgstr "Moderate (30 min)"
+
+#: src/components/settings/MarketplaceSettingsSection.ts:97
+msgid "Moderate (every 30 min)"
+msgstr "Moderate (every 30 min)"
+
+#: src/components/settings/MarketplaceSettingsSection.ts:151
+msgid "More Frequent (5 min)"
+msgstr "More Frequent (5 min)"
+
+#: src/components/settings/MarketplaceSettingsSection.ts:99
+msgid "More Frequent (every 5 min)"
+msgstr "More Frequent (every 5 min)"
+
+#: src/components/settings/PrivacySettingsSection.ts:249
+msgid "Move Follows to Private List"
+msgstr "Move Follows to Private List"
+
+#: src/components/settings/PrivacySettingsSection.ts:250
+msgid "Move Follows to Public List"
+msgstr "Move Follows to Public List"
+
+#: src/components/settings/NotificationPrioritySection.ts:277
+msgid "Move notification type"
+msgstr "Move notification type"
+
+#: src/components/settings/PrivacySettingsSection.ts:96
+msgid "Mute List"
+msgstr "Mute List"
+
+#: src/components/settings/ListSettingsSection.ts:288
+msgid "Muted users will appear in your timeline again."
+msgstr "Muted users will appear in your timeline again."
+
+#: src/components/settings/ListSettingsSection.ts:281
+#: src/components/settings/PrivacySettingsSection.ts:97
+msgid "mutes"
+msgstr "mutes"
+
+#: src/components/settings/ListSettingsSection.ts:433
+msgid "Mutes reset. Reloading..."
+msgstr "Mutes reset. Reloading..."
+
+#: src/components/settings/NotificationPrioritySection.ts:87
+msgid "Mutual Unfollows"
+msgstr "Mutual Unfollows"
+
+#: src/components/settings/CacheSettingsSection.ts:154
+msgid "NDK Cache Configuration"
+msgstr "NDK Cache Configuration"
+
+#: src/components/settings/NotificationPrioritySection.ts:88
+msgid "New Followers"
+msgstr "New Followers"
+
+#: src/components/settings/NotificationPrioritySection.ts:86
+msgid "New Mutuals"
+msgstr "New Mutuals"
+
+#: src/components/settings/CacheSettingsSection.ts:208
+msgid "NIP-05 Cache Size"
+msgstr "NIP-05 Cache Size"
+
+#: src/components/settings/RelaySettingsSection.ts:243
+msgid "No relays configured"
+msgstr "No relays configured"
+
+#: src/components/settings/ListSettingsSection.ts:144
+msgid ""
+"NoorNote syncs automatically: changes are saved to a local backup "
+"immediately, then published to relays. On startup it restores from backup "
+"or relays if needed."
+msgstr ""
+"NoorNote syncs automatically: changes are saved to a local backup "
+"immediately, then published to relays. On startup it restores from backup "
+"or relays if needed."
+
+#: src/components/settings/KeySignerSection.ts:77
+msgid ""
+"NoorSigner key signer is not running. Start it by logging in with "
+"NoorSigner."
+msgstr ""
+"NoorSigner key signer is not running. Start it by logging in with "
+"NoorSigner."
+
+#: src/components/settings/KeySignerSection.ts:146
+msgid "NoorSigner managed via NoorNote"
+msgstr "NoorSigner managed via NoorNote"
+
+#: src/components/settings/KeySignerSection.ts:147
+msgid "NoorSigner uses terminal mode"
+msgstr "NoorSigner uses terminal mode"
+
+#: src/components/settings/NotificationPrioritySection.ts:113
+msgid "Normal Priority"
+msgstr "Normal Priority"
+
+#: src/components/settings/NotificationPrioritySection.ts:93
+msgid "Nostrord"
+msgstr "Nostrord"
+
+#: src/components/settings/PrivacySettingsSection.ts:134
+msgid ""
+"Not all Nostr clients support NIP-51 yet. If you use other clients that "
+"don't support NIP-51, you won't be able to see your private %s."
+msgstr ""
+"Not all Nostr clients support NIP-51 yet. If you use other clients that "
+"don't support NIP-51, you won't be able to see your private %s."
+
+#: src/components/settings/NotificationPrioritySection.ts:546
+msgid "Notification priorities saved"
+msgstr "Notification priorities saved"
+
+#: src/components/settings/CacheSettingsSection.ts:138
+msgid "Notifications Cache"
+msgstr "Notifications Cache"
+
+#: src/components/settings/CacheSettingsSection.ts:255
+msgid "Notifications cache size saved"
+msgstr "Notifications cache size saved"
+
+#: src/components/settings/NWCSettingsSection.ts:153
+msgid "NWC String"
+msgstr "NWC String"
+
+#: src/components/settings/ListSettingsSection.ts:320
+#: src/components/settings/ListSettingsSection.ts:358
+msgid "Otherwise: <strong>Data is lost forever</strong>"
+msgstr "Otherwise: <strong>Data is lost forever</strong>"
+
+#: src/components/settings/PrivacySettingsSection.ts:109
+msgid "petnames"
+msgstr "petnames"
+
+#: src/components/settings/NWCSettingsSection.ts:294
+msgid "Please enter NWC connection string"
+msgstr "Please enter NWC connection string"
+
+#: src/components/settings/PrivacySettingsSection.ts:243
+msgid "Please log in to migrate follow lists"
+msgstr "Please log in to migrate follow lists"
+
+#: src/components/settings/RelaySettingsSection.ts:482
+msgid "Please log in to save relay settings"
+msgstr "Please log in to save relay settings"
+
+#: src/components/settings/CacheSettingsSection.ts:407
+msgid "Please select at least one table to clear"
+msgstr "Please select at least one table to clear"
+
+#: src/components/settings/PrivacySettingsSection.ts:180
+msgid "Private %s disabled"
+msgstr "Private %s disabled"
+
+#: src/components/settings/PrivacySettingsSection.ts:179
+msgid "Private %s enabled"
+msgstr "Private %s enabled"
+
+#: src/components/settings/PrivacySettingsSection.ts:84
+msgid ""
+"Private bookmarks (NIP-51) allow you to bookmark notes without publicly "
+"revealing what you bookmarked. Your bookmarks are encrypted and only you "
+"can see them."
+msgstr ""
+"Private bookmarks (NIP-51) allow you to bookmark notes without publicly "
+"revealing what you bookmarked. Your bookmarks are encrypted and only you "
+"can see them."
+
+#: src/components/settings/PrivacySettingsSection.ts:69
+msgid ""
+"Private follow lists (NIP-51) allow you to follow users without publicly "
+"revealing who you follow. Your follow list is encrypted and only you can "
+"see it."
+msgstr ""
+"Private follow lists (NIP-51) allow you to follow users without publicly "
+"revealing who you follow. Your follow list is encrypted and only you can "
+"see it."
+
+#: src/components/settings/PrivacySettingsSection.ts:99
+msgid ""
+"Private mutes (NIP-51) allow you to mute users without publicly revealing "
+"who you muted. Your mute list is encrypted and only you can see it."
+msgstr ""
+"Private mutes (NIP-51) allow you to mute users without publicly revealing "
+"who you muted. Your mute list is encrypted and only you can see it."
+
+#: src/components/settings/PrivacySettingsSection.ts:110
+msgid "Private petnames"
+msgstr "Private petnames"
+
+#: src/components/settings/PrivacySettingsSection.ts:108
+msgid "Private Petnames"
+msgstr "Private Petnames"
+
+#: src/components/settings/MarketplaceSettingsSection.ts:69
+msgid "Products carousel enabled on profiles"
+msgstr "Products carousel enabled on profiles"
+
+#: src/components/settings/MarketplaceSettingsSection.ts:70
+msgid "Products carousel hidden on profiles"
+msgstr "Products carousel hidden on profiles"
+
+#: src/components/settings/CacheSettingsSection.ts:160
+msgid "Profile Cache Size"
+msgstr "Profile Cache Size"
+
+#: src/components/settings/CacheSettingsSection.ts:108
+msgid "Profiles"
+msgstr "Profiles"
+
+#: src/components/settings/NotificationPrioritySection.ts:109
+msgid "Pulsing badge - important notifications"
+msgstr "Pulsing badge - important notifications"
+
+#: src/components/settings/NWCSettingsSection.ts:174
+msgid "Quick Zap"
+msgstr "Quick Zap"
+
+#: src/components/settings/NWCSettingsSection.ts:234
+msgid "Quick zap disabled"
+msgstr "Quick zap disabled"
+
+#: src/components/settings/NWCSettingsSection.ts:234
+msgid "Quick zap enabled"
+msgstr "Quick zap enabled"
+
+#: src/components/settings/NotificationPrioritySection.ts:78
+msgid "Quotes"
+msgstr "Quotes"
+
+#: src/components/settings/MarketplaceSettingsSection.ts:148
+msgid "Rare (60 min)"
+msgstr "Rare (60 min)"
+
+#: src/components/settings/MarketplaceSettingsSection.ts:96
+msgid "Rare (every 60 min)"
+msgstr "Rare (every 60 min)"
+
+#: src/components/settings/NotificationPrioritySection.ts:84
+msgid "Reactions"
+msgstr "Reactions"
+
+#: src/components/settings/RelaySettingsSection.ts:305
+msgid "Read"
+msgstr "Read"
+
+#: src/components/settings/ListSettingsSection.ts:316
+#: src/components/settings/ListSettingsSection.ts:355
+msgid "Recovery options:"
+msgstr "Recovery options:"
+
+#: src/components/settings/RelaySettingsSection.ts:584
+msgid "Relay settings saved"
+msgstr "Relay settings saved"
+
+#: src/components/settings/CacheSettingsSection.ts:124
+msgid "Relay Status"
+msgstr "Relay Status"
+
+#: src/components/settings/RelaySettingsSection.ts:377
+msgid "Relay URL must start with wss:// or ws://"
+msgstr "Relay URL must start with wss:// or ws://"
+
+#: src/components/settings/RelaySettingsSection.ts:448
+msgid "Remove"
+msgstr "Remove"
+
+#: src/components/settings/RelaySettingsSection.ts:323
+msgid "Remove relay"
+msgstr "Remove relay"
+
+#: src/components/settings/RelaySettingsSection.ts:438
+msgid "Remove Relay"
+msgstr "Remove Relay"
+
+#: src/components/settings/NotificationPrioritySection.ts:76
+msgid "Replies"
+msgstr "Replies"
+
+#: src/components/settings/NotificationPrioritySection.ts:83
+msgid "Reposts"
+msgstr "Reposts"
+
+#: src/components/settings/ListSettingsSection.ts:368
+msgid "Reset %s"
+msgstr "Reset %s"
+
+#: src/components/settings/ListSettingsSection.ts:169
+#: src/components/settings/ListSettingsSection.ts:172
+msgid "Reset Bookmarks"
+msgstr "Reset Bookmarks"
+
+#: src/components/settings/ListSettingsSection.ts:261
+msgid "Reset Bookmarks?"
+msgstr "Reset Bookmarks?"
+
+#: src/components/settings/ListSettingsSection.ts:185
+#: src/components/settings/ListSettingsSection.ts:188
+msgid "Reset Follows"
+msgstr "Reset Follows"
+
+#: src/components/settings/ListSettingsSection.ts:299
+msgid "Reset Follows? (Critical)"
+msgstr "Reset Follows? (Critical)"
+
+#: src/components/settings/ListSettingsSection.ts:177
+#: src/components/settings/ListSettingsSection.ts:180
+msgid "Reset Mutes"
+msgstr "Reset Mutes"
+
+#: src/components/settings/ListSettingsSection.ts:280
+msgid "Reset Mutes?"
+msgstr "Reset Mutes?"
+
+#: src/components/settings/NotificationPrioritySection.ts:159
+msgid "Reset to Defaults"
+msgstr "Reset to Defaults"
+
+#: src/components/settings/ListSettingsSection.ts:161
+#: src/components/settings/ListSettingsSection.ts:164
+msgid "Reset Tribes"
+msgstr "Reset Tribes"
+
+#: src/components/settings/ListSettingsSection.ts:242
+msgid "Reset Tribes?"
+msgstr "Reset Tribes?"
+
+#: src/components/settings/CacheSettingsSection.ts:225
+msgid "Save Event Signatures"
+msgstr "Save Event Signatures"
+
+#: src/components/settings/CacheSettingsSection.ts:275
+msgid "Saved. Reload app for changes to take effect."
+msgstr "Saved. Reload app for changes to take effect."
+
+#: src/components/settings/CacheSettingsSection.ts:98
+msgid "Select which cache tables to clear. This action cannot be undone."
+msgstr "Select which cache tables to clear. This action cannot be undone."
+
+#: src/components/settings/MarketplaceSettingsSection.ts:116
+msgid "Show listings from people I follow in my timeline"
+msgstr "Show listings from people I follow in my timeline"
+
+#: src/components/settings/MarketplaceSettingsSection.ts:111
+msgid "Show user's products on the profile page"
+msgstr "Show user's products on the profile page"
+
+#: src/components/settings/NWCSettingsSection.ts:176
+msgid ""
+"Single click sends zap with default amount. When disabled, click opens zap "
+"dialog."
+msgstr ""
+"Single click sends zap with default amount. When disabled, click opens zap "
+"dialog."
+
+#: src/components/settings/NotificationPrioritySection.ts:114
+msgid "Solid badge - regular notifications"
+msgstr "Solid badge - regular notifications"
+
+#: src/components/settings/KeySignerSection.ts:72
+msgid "Stop Key Signer & Logout"
+msgstr "Stop Key Signer & Logout"
+
+#: src/components/settings/CacheSettingsSection.ts:227
+msgid "Store signatures in cache (increases storage usage)."
+msgstr "Store signatures in cache (increases storage usage)."
+
+#: src/components/settings/PrivacySettingsSection.ts:262
+msgid "Store them in a private follow list (kind:30000)"
+msgstr "Store them in a private follow list (kind:30000)"
+
+#: src/components/settings/PrivacySettingsSection.ts:262
+msgid "Store them in a public follow list (kind:3)"
+msgstr "Store them in a public follow list (kind:3)"
+
+#: src/components/settings/CacheSettingsSection.ts:430
+msgid "Successfully cleared %s cache table(s)"
+msgstr "Successfully cleared %s cache table(s)"
+
+#: src/components/settings/ListSettingsSection.ts:78
+msgid ""
+"Switch between Easy Mode (automatic sync) and Manual Mode (action buttons "
+"in every list to control sync from/to relays and local backups). Also "
+"unlocks the Danger Zone for resetting corrupted list data."
+msgstr ""
+"Switch between Easy Mode (automatic sync) and Manual Mode (action buttons "
+"in every list to control sync from/to relays and local backups). Also "
+"unlocks the Danger Zone for resetting corrupted list data."
+
+#: src/components/settings/ListSettingsSection.ts:132
+msgid "Synchronisation Mode"
+msgstr "Synchronisation Mode"
+
+#: src/components/settings/ListSettingsSection.ts:310
+msgid "Then come back and reset"
+msgstr "Then come back and reset"
+
+#: src/components/settings/ListSettingsSection.ts:155
+msgid ""
+"These actions are irreversible and will result in data loss. Only use if "
+"you have corrupted data that prevents normal operation."
+msgstr ""
+"These actions are irreversible and will result in data loss. Only use if "
+"you have corrupted data that prevents normal operation."
+
+#: src/components/settings/CacheSettingsSection.ts:370
+#: src/components/settings/ListSettingsSection.ts:363
+msgid "This action cannot be undone."
+msgstr "This action cannot be undone."
+
+#: src/components/settings/ListSettingsSection.ts:309
+msgid "This automatically saves your contacts"
+msgstr "This automatically saves your contacts"
+
+#: src/components/settings/ListSettingsSection.ts:303
+msgid "This determines who appears in your timeline."
+msgstr "This determines who appears in your timeline."
+
+#: src/components/settings/PrivacySettingsSection.ts:252
+msgid "This operation is irreversible without using the reverse migration tool."
+msgstr "This operation is irreversible without using the reverse migration tool."
+
+#: src/components/settings/RelaySettingsSection.ts:387
+msgid "This relay is already in your list"
+msgstr "This relay is already in your list"
+
+#: src/components/settings/CacheSettingsSection.ts:415
+msgid "This will clear %s table(s): %s."
+msgstr "This will clear %s table(s): %s."
+
+#: src/components/settings/CacheSettingsSection.ts:451
+msgid "This will clear all safe cache tables and reload the app."
+msgstr "This will clear all safe cache tables and reload the app."
+
+#: src/components/settings/ListSettingsSection.ts:264
+msgid "This will delete <strong>all your bookmark data</strong> including:"
+msgstr "This will delete <strong>all your bookmark data</strong> including:"
+
+#: src/components/settings/ListSettingsSection.ts:313
+msgid "This will delete <strong>all your follows</strong> from local storage."
+msgstr "This will delete <strong>all your follows</strong> from local storage."
+
+#: src/components/settings/ListSettingsSection.ts:245
+msgid "This will delete <strong>all your tribe data</strong> including:"
+msgstr "This will delete <strong>all your tribe data</strong> including:"
+
+#: src/components/settings/ListSettingsSection.ts:283
+msgid "This will delete <strong>your entire mute list</strong> including:"
+msgstr "This will delete <strong>your entire mute list</strong> including:"
+
+#: src/components/settings/PrivacySettingsSection.ts:259
+msgid "This will:"
+msgstr "This will:"
+
+#: src/components/settings/NotificationPrioritySection.ts:77
+msgid "Thread Replies"
+msgstr "Thread Replies"
+
+#: src/components/settings/MarketplaceSettingsSection.ts:88
+msgid "Timeline listings disabled"
+msgstr "Timeline listings disabled"
+
+#: src/components/settings/MarketplaceSettingsSection.ts:87
+msgid "Timeline listings enabled"
+msgstr "Timeline listings enabled"
+
+#: src/components/settings/ListSettingsSection.ts:249
+msgid "Tribe timeline tabs"
+msgstr "Tribe timeline tabs"
+
+#: src/components/settings/ListSettingsSection.ts:243
+msgid "tribes"
+msgstr "tribes"
+
+#: src/components/settings/ListSettingsSection.ts:409
+msgid "Tribes reset. Reloading..."
+msgstr "Tribes reset. Reloading..."
+
+#: src/components/settings/PrivacySettingsSection.ts:83
+msgid "Use private bookmarks (NIP-51)"
+msgstr "Use private bookmarks (NIP-51)"
+
+#: src/components/settings/PrivacySettingsSection.ts:68
+msgid "Use private follow lists (NIP-51)"
+msgstr "Use private follow lists (NIP-51)"
+
+#: src/components/settings/PrivacySettingsSection.ts:98
+msgid "Use private mutes (NIP-51)"
+msgstr "Use private mutes (NIP-51)"
+
+#: src/components/settings/PrivacySettingsSection.ts:87
+msgid "View Bookmarks"
+msgstr "View Bookmarks"
+
+#: src/components/settings/PrivacySettingsSection.ts:72
+msgid "View Follows"
+msgstr "View Follows"
+
+#: src/components/settings/PrivacySettingsSection.ts:102
+msgid "View Muted Users"
+msgstr "View Muted Users"
+
+#: src/components/settings/ListSettingsSection.ts:308
+msgid ""
+"Visit <a href=\"https://follows.nostr.com/\" "
+"target=\"_blank\">follows.nostr.com</a> in your browser"
+msgstr ""
+"Visit <a href=\"https://follows.nostr.com/\" "
+"target=\"_blank\">follows.nostr.com</a> in your browser"
+
+#: src/components/settings/PrivacySettingsSection.ts:265
+msgid "Warning:"
+msgstr "Warning:"
+
+#: src/components/settings/RelaySettingsSection.ts:312
+msgid "Write"
+msgstr "Write"
+
+#: src/components/settings/RelaySettingsSection.ts:496
+msgid "You need at least one read-relay and one write-relay configured."
+msgstr "You need at least one read-relay and one write-relay configured."
+
+#: src/components/settings/ListSettingsSection.ts:303
+msgid "Your follow list is critical!"
+msgstr "Your follow list is critical!"
+
+#: src/components/settings/RelaySettingsSection.ts:224
+msgid ""
+"Your relays are your sovereignty surface. <strong>Read</strong> = where "
+"NoorNote looks for content, <strong>Write</strong> = where your own events "
+"are stored, <strong>DM Inbox</strong> = where others can reach you with "
+"NIP-17 messages. When switching to a smaller (or fully private) write-set, "
+"publish the new relay list <em>first</em>, then disable the old relays — "
+"otherwise other clients can't follow the move. NoorNote automatically "
+"rebroadcasts your profile and follow-list to any newly-added write-relay."
+msgstr ""
+"Your relays are your sovereignty surface. <strong>Read</strong> = where "
+"NoorNote looks for content, <strong>Write</strong> = where your own events "
+"are stored, <strong>DM Inbox</strong> = where others can reach you with "
+"NIP-17 messages. When switching to a smaller (or fully private) write-set, "
+"publish the new relay list <em>first</em>, then disable the old relays — "
+"otherwise other clients can't follow the move. NoorNote automatically "
+"rebroadcasts your profile and follow-list to any newly-added write-relay."
+
+#: src/components/settings/NWCSettingsSection.ts:348
+#: src/components/settings/NWCSettingsSection.ts:362
+msgid "Zap defaults saved"
+msgstr "Zap defaults saved"
+
+#: src/components/settings/NotificationPrioritySection.ts:80
+msgid "Zap Reply"
+msgstr "Zap Reply"
+
+#: src/components/settings/NWCSettingsSection.ts:171
+msgid "Zap Settings"
+msgstr "Zap Settings"
+
+#: src/components/settings/CacheSettingsSection.ts:196
+msgid "Zapper Cache Size"
+msgstr "Zapper Cache Size"

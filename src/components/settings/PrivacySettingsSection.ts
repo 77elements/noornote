@@ -17,6 +17,7 @@ import { ModalService } from '../../services/ModalService';
 import { ToastService } from '../../services/ToastService';
 import { Switch } from '../ui/Switch';
 import { TypedEventBus } from '../../core/TypedEventBus';
+import { _ } from '../../i18n';
 type ListType = 'follows' | 'bookmarks' | 'mutes' | 'petnames';
 
 interface PrivacySectionConfig {
@@ -62,12 +63,13 @@ export class PrivacySettingsSection extends SettingsSection {
     return [
       {
         id: 'follows',
-        title: 'Follow Lists',
-        listName: 'follow lists',
-        switchLabel: 'Use private follow lists (NIP-51)',
-        description:
-          'Private follow lists (NIP-51) allow you to follow users without publicly revealing who you follow. Your follow list is encrypted and only you can see it.',
-        viewButtonLabel: 'View Follows',
+        title: _('Follow Lists'),
+        listName: _('follow lists'),
+        switchLabel: _('Use private follow lists (NIP-51)'),
+        description: _(
+          'Private follow lists (NIP-51) allow you to follow users without publicly revealing who you follow. Your follow list is encrypted and only you can see it.'
+        ),
+        viewButtonLabel: _('View Follows'),
         isEnabled: () => this.followListOrch.isPrivateFollowsEnabled(),
         setEnabled: enabled =>
           this.followListOrch.setPrivateFollowsEnabled(enabled),
@@ -76,12 +78,13 @@ export class PrivacySettingsSection extends SettingsSection {
         ? [
             {
               id: 'bookmarks' as const,
-              title: 'Bookmark List',
-              listName: 'bookmarks',
-              switchLabel: 'Use private bookmarks (NIP-51)',
-              description:
-                'Private bookmarks (NIP-51) allow you to bookmark notes without publicly revealing what you bookmarked. Your bookmarks are encrypted and only you can see them.',
-              viewButtonLabel: 'View Bookmarks',
+              title: _('Bookmark List'),
+              listName: _('bookmarks'),
+              switchLabel: _('Use private bookmarks (NIP-51)'),
+              description: _(
+                'Private bookmarks (NIP-51) allow you to bookmark notes without publicly revealing what you bookmarked. Your bookmarks are encrypted and only you can see them.'
+              ),
+              viewButtonLabel: _('View Bookmarks'),
               isEnabled: () => this.bookmarkOrch.isPrivateBookmarksEnabled(),
               setEnabled: (enabled: boolean) =>
                 this.bookmarkOrch.setPrivateBookmarksEnabled(enabled),
@@ -90,22 +93,24 @@ export class PrivacySettingsSection extends SettingsSection {
         : []),
       {
         id: 'mutes',
-        title: 'Mute List',
-        listName: 'mutes',
-        switchLabel: 'Use private mutes (NIP-51)',
-        description:
-          'Private mutes (NIP-51) allow you to mute users without publicly revealing who you muted. Your mute list is encrypted and only you can see it.',
-        viewButtonLabel: 'View Muted Users',
+        title: _('Mute List'),
+        listName: _('mutes'),
+        switchLabel: _('Use private mutes (NIP-51)'),
+        description: _(
+          'Private mutes (NIP-51) allow you to mute users without publicly revealing who you muted. Your mute list is encrypted and only you can see it.'
+        ),
+        viewButtonLabel: _('View Muted Users'),
         isEnabled: () => this.muteOrch.isPrivateMutesEnabled(),
         setEnabled: enabled => this.muteOrch.setPrivateMutesEnabled(enabled),
       },
       {
         id: 'petnames',
-        title: 'Private Petnames',
-        listName: 'petnames',
-        switchLabel: 'Private petnames',
-        description:
-          'Adds a note icon next to each profile where you can store an encrypted, private note about that user (NIP-78). Notes are NIP-44 self-encrypted — only you can read them, and they are never published unencrypted. This is separate from public petnames, which live in your contact list and are visible to everyone.',
+        title: _('Private Petnames'),
+        listName: _('petnames'),
+        switchLabel: _('Private petnames'),
+        description: _(
+          'Adds a note icon next to each profile where you can store an encrypted, private note about that user (NIP-78). Notes are NIP-44 self-encrypted — only you can read them, and they are never published unencrypted. This is separate from public petnames, which live in your contact list and are visible to everyone.'
+        ),
         betaWarning: false,
         isEnabled: () => this.petnameService.isPrivateNotesEnabled(),
         setEnabled: enabled =>
@@ -126,7 +131,7 @@ export class PrivacySettingsSection extends SettingsSection {
     const warning =
       config.betaWarning === false
         ? ''
-        : `<p class="setting__desc ${config.id}-warning"><strong>Beta Feature:</strong> Not all Nostr clients support NIP-51 yet. If you use other clients that don't support NIP-51, you won't be able to see your private ${config.listName}.</p>`;
+        : `<p class="setting__desc ${config.id}-warning"><strong>${_('Beta Feature:')}</strong> ${_("Not all Nostr clients support NIP-51 yet. If you use other clients that don't support NIP-51, you won't be able to see your private %s.", config.listName)}</p>`;
     const viewButton = config.viewButtonLabel
       ? `<div class="l-row l-row--right">
           <button class="btn btn--medium" id="view-${config.id}-btn">${config.viewButtonLabel}</button>
@@ -170,7 +175,9 @@ export class PrivacySettingsSection extends SettingsSection {
         config.setEnabled(checked);
         this.handleSectionToggle(contentContainer, config.id, checked);
         ToastService.show(
-          `Private ${config.listName} ${checked ? 'enabled' : 'disabled'}`,
+          checked
+            ? _('Private %s enabled', config.listName)
+            : _('Private %s disabled', config.listName),
           'success'
         );
       },
@@ -221,7 +228,7 @@ export class PrivacySettingsSection extends SettingsSection {
         const method = target.value as 'nip04' | 'nip44';
         this.muteOrch.setEncryptionMethod(method);
         ToastService.show(
-          `Encryption method set to ${method.toUpperCase()}`,
+          _('Encryption method set to %s', method.toUpperCase()),
           'success'
         );
       });
@@ -233,37 +240,35 @@ export class PrivacySettingsSection extends SettingsSection {
   ): Promise<void> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      ToastService.show('Please log in to migrate follow lists', 'error');
+      ToastService.show(_('Please log in to migrate follow lists'), 'error');
       return;
     }
 
     const isToPrivate = direction === 'private';
     const title = isToPrivate
-      ? 'Move Follows to Private List'
-      : 'Move Follows to Public List';
+      ? _('Move Follows to Private List')
+      : _('Move Follows to Public List');
     const warning = isToPrivate
-      ? 'This operation is irreversible without using the reverse migration tool.'
-      : 'Everyone will be able to see who you follow after this operation.';
-    const sourceKind = isToPrivate ? 'kind:3' : 'kind:30000';
-    const targetKind = isToPrivate ? 'kind:30000' : 'kind:3';
-    const sourceType = isToPrivate ? 'public' : 'private';
-    const targetType = isToPrivate ? 'private' : 'public';
+      ? _(
+          'This operation is irreversible without using the reverse migration tool.'
+        )
+      : _('Everyone will be able to see who you follow after this operation.');
 
     this.modalService.show({
       title,
       content: `
         <div style="padding: 1rem 0;">
-          <p>This will:</p>
+          <p>${_('This will:')}</p>
           <ul style="margin: 1rem 0; padding-left: 1.5rem;">
-            <li>${isToPrivate ? 'Encrypt' : 'Decrypt'} all your current ${sourceType} follows (${sourceKind})</li>
-            <li>Store them in a ${targetType} follow list (${targetKind})</li>
-            <li>Clear your ${sourceType} follow list</li>
+            <li>${isToPrivate ? _('Encrypt all your current public follows (kind:3)') : _('Decrypt all your current private follows (kind:30000)')}</li>
+            <li>${isToPrivate ? _('Store them in a private follow list (kind:30000)') : _('Store them in a public follow list (kind:3)')}</li>
+            <li>${isToPrivate ? _('Clear your public follow list') : _('Clear your private follow list')}</li>
           </ul>
-          <p><strong>Warning:</strong> ${warning}</p>
+          <p><strong>${_('Warning:')}</strong> ${warning}</p>
         </div>
         <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem;">
-          <button class="btn" data-action="cancel">Cancel</button>
-          <button class="btn" data-action="confirm">Migrate</button>
+          <button class="btn" data-action="cancel">${_('Cancel')}</button>
+          <button class="btn" data-action="confirm">${_('Migrate')}</button>
         </div>
       `,
       width: '500px',
@@ -290,14 +295,16 @@ export class PrivacySettingsSection extends SettingsSection {
               : this.followListOrch.migrateToPublic.bind(this.followListOrch);
 
             const success = await migrateMethod(currentUser.pubkey);
-            const message = `Follows migrated to ${targetType} list`;
+            const message = isToPrivate
+              ? _('Follows migrated to private list')
+              : _('Follows migrated to public list');
 
             ToastService.show(
-              success ? message : 'Migration failed',
+              success ? message : _('Migration failed'),
               success ? 'success' : 'error'
             );
           } catch (error) {
-            ToastService.show(`Migration error: ${String(error)}`, 'error');
+            ToastService.show(_('Migration error: %s', String(error)), 'error');
           }
         });
     }, 0);

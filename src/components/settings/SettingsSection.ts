@@ -6,6 +6,8 @@
  * @pattern Each section is self-contained with its own mount/unmount logic
  */
 
+import { _ } from '../../i18n';
+
 export abstract class SettingsSection {
   protected container: HTMLElement;
   protected sectionId: string;
@@ -38,7 +40,7 @@ export abstract class SettingsSection {
             <h2 class="nn-ui-toggle__title">${title}</h2>
             <p class="nn-ui-toggle__description">${description}</p>
           </div>
-          <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+          <button class="nn-ui-toggle__toggle" aria-label="${_('Toggle section')}">
             <svg width="24" height="24"><use href="#icon-chevron-down"/></svg>
           </button>
         </div>

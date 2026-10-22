@@ -11,6 +11,7 @@ import { KeySignerClient } from '../../services/KeySignerClient';
 import { AuthService } from '../../services/AuthService';
 import { ToastService } from '../../services/ToastService';
 import { Switch } from '../ui/Switch';
+import { _ } from '../../i18n';
 
 const SILENT_MODE_KEY = 'noorsigner_silent_mode';
 
@@ -48,7 +49,7 @@ export class KeySignerSection extends SettingsSection {
           <div class="key-signer-status">
             <div class="status-indicator ${isRunning ? 'status-running' : 'status-stopped'}">
               <span class="status-dot"></span>
-              <span class="status-text">${isRunning ? 'Key Signer Running' : 'Key Signer Stopped'}</span>
+              <span class="status-text">${isRunning ? _('Key Signer Running') : _('Key Signer Stopped')}</span>
             </div>
           </div>
 
@@ -56,24 +57,24 @@ export class KeySignerSection extends SettingsSection {
             isRunning
               ? `
             <div class="setting">
-              <span class="setting__label">Launch key signer on system startup</span>
+              <span class="setting__label">${_('Launch key signer on system startup')}</span>
               <div class="setting__control" id="autostart-switch-container"></div>
-              <p class="setting__desc">Automatically start NoorSigner key signer when you log in to your computer.</p>
+              <p class="setting__desc">${_('Automatically start NoorSigner key signer when you log in to your computer.')}</p>
             </div>
 
             <div class="setting">
-              <span class="setting__label">Manage NoorSigner via NoorNote</span>
+              <span class="setting__label">${_('Manage NoorSigner via NoorNote')}</span>
               <div class="setting__control" id="silent-mode-switch-container"></div>
-              <p class="setting__desc">Handle key signer prompts through NoorNote instead of opening a terminal window.</p>
+              <p class="setting__desc">${_('Handle key signer prompts through NoorNote instead of opening a terminal window.')}</p>
             </div>
 
             <div class="l-row l-row--right">
-              <button class="btn" id="stop-daemon-btn">Stop Key Signer & Logout</button>
+              <button class="btn" id="stop-daemon-btn">${_('Stop Key Signer & Logout')}</button>
             </div>
           `
               : `
             <div class="key-signer-info">
-              <p>NoorSigner key signer is not running. Start it by logging in with NoorSigner.</p>
+              <p>${_('NoorSigner key signer is not running. Start it by logging in with NoorSigner.')}</p>
             </div>
           `
           }
@@ -102,14 +103,14 @@ export class KeySignerSection extends SettingsSection {
             try {
               if (checked) {
                 await this.keySignerClient.enableAutostart();
-                ToastService.show('Autostart enabled', 'success');
+                ToastService.show(_('Autostart enabled'), 'success');
               } else {
                 await this.keySignerClient.disableAutostart();
-                ToastService.show('Autostart disabled', 'success');
+                ToastService.show(_('Autostart disabled'), 'success');
               }
             } catch (error) {
               console.error('Failed to toggle autostart:', error);
-              ToastService.show('Failed to toggle autostart', 'error');
+              ToastService.show(_('Failed to toggle autostart'), 'error');
 
               // Refresh section to reflect actual state
               const parentContainer = contentContainer.closest(
@@ -142,8 +143,8 @@ export class KeySignerSection extends SettingsSection {
             localStorage.setItem(SILENT_MODE_KEY, String(checked));
             ToastService.show(
               checked
-                ? 'NoorSigner managed via NoorNote'
-                : 'NoorSigner uses terminal mode',
+                ? _('NoorSigner managed via NoorNote')
+                : _('NoorSigner uses terminal mode'),
               'success'
             );
           },
