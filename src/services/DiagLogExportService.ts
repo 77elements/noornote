@@ -108,7 +108,7 @@ export async function runDiagLogExportFromButton(
   restingLabel: string
 ): Promise<void> {
   btn.disabled = true;
-  btn.textContent = 'Exporting...';
+  btn.textContent = _('Exporting...');
   try {
     const { DiagnosticLogger } = await import('./DiagnosticLogger');
     const { ToastService } = await import('./ToastService');

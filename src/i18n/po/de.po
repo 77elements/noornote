@@ -455,6 +455,7 @@ msgstr "Einstellungen werden im Verzeichnis %s gespeichert."
 msgid "Accounts and threads you have muted."
 msgstr "Konten und Threads, die du stummgeschaltet hast."
 
+#: src/components/layout/MainLayout.ts:1919
 #: src/components/settings/NotificationPrioritySection.ts:85
 #: src/components/views/ArticleTimelineView.ts:59
 #: src/components/views/ProfileView.ts:2233
@@ -486,6 +487,8 @@ msgstr "Aktiviere das Lesezeichen-Addon in Einstellungen → Addons."
 msgid "Enable the Tribes addon in Settings → Addons."
 msgstr "Aktiviere das Tribes-Addon in Einstellungen → Addons."
 
+#: src/components/layout/MainLayout.ts:1779
+#: src/components/layout/MainLayout.ts:2026
 #: src/components/views/SettingsView.ts:109
 #: src/components/views/SettingsView.ts:80
 msgid "Export DiagLogs"
@@ -519,6 +522,7 @@ msgstr "Langtexte von deinen Follows 1., 2. und 3. Grades"
 msgid "Long-form content from your follows"
 msgstr "Langtexte von deinen Follows"
 
+#: src/components/layout/MainLayout.ts:1722
 #: src/components/views/SettingsView.ts:46
 msgid "Media"
 msgstr "Medien"
@@ -555,6 +559,7 @@ msgstr "Relays"
 msgid "Saved notes, sorted into folders."
 msgstr "Gespeicherte Notizen, in Ordnern sortiert."
 
+#: src/components/layout/MainLayout.ts:1933
 #: src/components/views/SettingsView.ts:71
 msgid "Settings"
 msgstr "Einstellungen"
@@ -567,6 +572,7 @@ msgstr "Einzelner Beitrag"
 msgid "The accounts you follow, with outbox relays."
 msgstr "Die Konten, denen du folgst, mit Outbox-Relays."
 
+#: src/components/layout/MainLayout.ts:1898
 #: src/components/views/TimelineView.ts:208
 msgid "Timeline"
 msgstr "Timeline"
@@ -629,6 +635,8 @@ msgstr "Erstellen"
 msgid "Current:"
 msgstr "Aktuell:"
 
+#: src/components/layout/MainLayout.ts:1945
+#: src/components/layout/MainLayout.ts:1955
 #: src/components/modals/UpdateModal.ts:116
 msgid "Download"
 msgstr "Herunterladen"
@@ -910,6 +918,7 @@ msgstr "Aktiv"
 msgid "Addon order reset to default"
 msgstr "Addon-Reihenfolge zurückgesetzt"
 
+#: src/components/layout/MainLayout.ts:2637
 #: src/components/views/AddonsOverviewView.ts:64
 msgid "Addons"
 msgstr "Addons"
@@ -1399,6 +1408,7 @@ msgstr "Beschreibe dein Video…"
 msgid "Description"
 msgstr "Beschreibung"
 
+#: src/components/layout/MainLayout.ts:2015
 #: src/components/views/ArticleEditorView.ts:378
 #: src/components/views/VideoEditorView.ts:177
 msgid "Details"
@@ -1493,6 +1503,7 @@ msgstr "Medien-Modul nicht verfügbar"
 msgid "Message options"
 msgstr "Nachrichten-Optionen"
 
+#: src/components/layout/MainLayout.ts:1926
 #: src/components/views/MessagesView.ts:143
 msgid "Messages"
 msgstr "Nachrichten"
@@ -1591,6 +1602,7 @@ msgstr "Nachrichten neu synchronisieren"
 msgid "Remove video"
 msgstr "Video entfernen"
 
+#: src/components/system/OfflineOverlay.ts:49
 #: src/components/views/ConversationView.ts:1220
 #: src/components/views/MessagesView.ts:702
 msgid "Retry"
@@ -1657,6 +1669,7 @@ msgstr "Video wird hochgeladen…"
 msgid "User options"
 msgstr "Nutzer-Optionen"
 
+#: src/components/layout/MainLayout.ts:1985
 #: src/components/views/VideoEditorView.ts:148
 msgid "Video"
 msgstr "Video"
@@ -1692,6 +1705,7 @@ msgstr "Artikeltitel…"
 msgid "auto-generated, change only if you know what you're doing"
 msgstr "automatisch generiert, nur ändern, wenn du weißt, was du tust"
 
+#: src/components/navigation/SearchSpotlight.ts:111
 #: src/components/views/ArticleEditorView.ts:311
 msgid "Back"
 msgstr "Zurück"
@@ -1980,6 +1994,7 @@ msgstr "Hinzufügen zum Tribe fehlgeschlagen"
 msgid "Followers"
 msgstr "Follower"
 
+#: src/components/navigation/SearchSpotlight.ts:366
 #: src/components/onboarding/AccountSetupWizard.ts:2778
 #: src/components/views/ProfileView.ts:658
 msgid "Following"
@@ -2436,6 +2451,7 @@ msgstr "Zu deinem Kalender hinzugefügt"
 msgid "Already well-compressed — uploading original"
 msgstr "Bereits gut komprimiert — Original wird hochgeladen"
 
+#: src/components/navigation/SearchSpotlight.ts:363
 #: src/components/ui/note-rendering/ZapReceiptRenderer.ts:127
 #: src/components/ui/note-rendering/ZapReceiptRenderer.ts:44
 #: src/components/ui/ThreadContextIndicator.ts:162
@@ -2448,6 +2464,7 @@ msgstr "Anonym"
 msgid "App"
 msgstr "App"
 
+#: src/components/layout/MainLayout.ts:1981
 #: src/components/ui/ThreadContextIndicator.ts:193
 msgid "Article"
 msgstr "Artikel"
@@ -4953,11 +4970,11 @@ msgstr "Authentifizierung fehlgeschlagen. Bitte melde dich erneut an."
 msgid "Comment"
 msgstr "Kommentar"
 
-#: src/services/MediaUploadService.ts:283
+#: src/services/MediaUploadService.ts:286
 msgid "Compression failed, uploading original."
 msgstr "Komprimierung fehlgeschlagen, Original wird hochgeladen."
 
-#: src/services/MediaUploadService.ts:226
+#: src/services/MediaUploadService.ts:227
 msgid "Compression unavailable, uploading original."
 msgstr "Komprimierung nicht verfügbar, Original wird hochgeladen."
 
@@ -5192,3 +5209,207 @@ msgstr "Zum Reposten musst du angemeldet sein"
 #: src/services/UpdateCheckService.ts:118
 msgid "You are on the latest version"
 msgstr "Du bist auf der neuesten Version"
+
+#: src/components/shared/SyncStatusBadge.ts:84
+msgid "(%s follow)"
+msgid_plural "(%s follows)"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/components/navigation/SearchSpotlight.ts:386
+msgid "(loading…)"
+msgstr "(lädt…)"
+
+#: src/components/layout/MainLayout.ts:2272
+msgid "A terminal window will open. There:"
+msgstr "Ein Terminalfenster öffnet sich. Dort:"
+
+#: src/components/layout/MainLayout.ts:2292
+msgid "Add Account"
+msgstr "Konto hinzufügen"
+
+#: src/components/layout/MainLayout.ts:2079
+msgid "App updated."
+msgstr "App aktualisiert."
+
+#: src/components/layout/MainLayout.ts:3002
+#: src/components/layout/MainLayout.ts:892
+msgid "Back to timeline"
+msgstr "Zurück zur Timeline"
+
+#: src/components/layout/MainLayout.ts:2277
+msgid "Close the terminal"
+msgstr "Schließe das Terminal"
+
+#: src/components/layout/MainLayout.ts:1167
+#: src/components/layout/MainLayout.ts:1881
+msgid "Collapse sidebar"
+msgstr "Sidebar einklappen"
+
+#: src/components/layout/MainLayout.ts:2278
+msgid "Come back here and log in with NoorSigner"
+msgstr "Komme hierher zurück und melde dich mit NoorSigner an"
+
+#: src/components/layout/MainLayout.ts:2157
+msgid "Data Saver"
+msgstr "Datensparmodus"
+
+#: src/components/navigation/SearchSpotlight.ts:103
+msgid "Enter URL path (e.g., /profile, /note/...)"
+msgstr "URL-Pfad eingeben (z. B. /profile, /note/…)"
+
+#: src/components/layout/MainLayout.ts:1167
+msgid "Expand sidebar"
+msgstr "Sidebar ausklappen"
+
+#: src/services/DiagLogExportService.ts:111
+msgid "Exporting..."
+msgstr "Wird exportiert…"
+
+#: src/components/navigation/SearchSpotlight.ts:114
+msgid "Forward"
+msgstr "Vor"
+
+#: src/components/navigation/SearchSpotlight.ts:109
+msgid "Go Back (Cmd+←)"
+msgstr "Zurück (Cmd+←)"
+
+#: src/components/navigation/SearchSpotlight.ts:113
+msgid "Go Forward (Cmd+→)"
+msgstr "Vor (Cmd+→)"
+
+#: src/components/layout/MainLayout.ts:1868
+msgid "Navigation"
+msgstr "Navigation"
+
+#: src/components/layout/MainLayout.ts:1971
+msgid "New Post"
+msgstr "Neuer Beitrag"
+
+#: src/components/layout/MainLayout.ts:1721
+msgid "Newest Articles"
+msgstr "Neueste Artikel"
+
+#: src/components/system/OfflineOverlay.ts:46
+msgid "No Internet Connection"
+msgstr "Keine Internetverbindung"
+
+#: src/components/navigation/SearchSpotlight.ts:535
+msgid "No recent URLs"
+msgstr "Keine aktuellen URLs"
+
+#: src/components/layout/MainLayout.ts:1977
+msgid "Note"
+msgstr "Notiz"
+
+#: src/components/layout/MainLayout.ts:1912
+msgid "Notifications"
+msgstr "Benachrichtigungen"
+
+#: src/components/layout/MainLayout.ts:2280
+msgid "OK, got it"
+msgstr "OK, verstanden"
+
+#: src/components/layout/MainLayout.ts:1861
+msgid "Open menu"
+msgstr "Menü öffnen"
+
+#: src/components/layout/MainLayout.ts:2275
+msgid "Paste the nsec of the new account"
+msgstr "Füge den nsec des neuen Kontos ein"
+
+#: src/components/system/OfflineOverlay.ts:47
+msgid "Please check your network connection and try again."
+msgstr "Bitte prüfe deine Netzwerkverbindung und versuche es erneut."
+
+#: src/components/layout/MainLayout.ts:1989
+msgid "Product"
+msgstr "Produkt"
+
+#: src/components/layout/MainLayout.ts:1905
+msgid "Profile"
+msgstr "Profil"
+
+#: src/components/layout/MainLayout.ts:885
+msgid "Profile: %s"
+msgstr "Profil: %s"
+
+#: src/components/layout/MainLayout.ts:1723
+msgid "Recipes"
+msgstr "Rezepte"
+
+#: src/components/layout/MainLayout.ts:2080
+msgid "Reload"
+msgstr "Neu laden"
+
+#: src/components/layout/MainLayout.ts:1896
+#: src/components/layout/MainLayout.ts:1899
+#: src/components/layout/MainLayout.ts:1903
+#: src/components/layout/MainLayout.ts:1906
+#: src/components/layout/MainLayout.ts:1917
+#: src/components/layout/MainLayout.ts:1920
+msgid "Scroll to top"
+msgstr "Nach oben scrollen"
+
+#: src/components/layout/MainLayout.ts:1876
+#: src/components/layout/MainLayout.ts:1877
+#: src/components/layout/MainLayout.ts:1939
+msgid "Search"
+msgstr "Suche"
+
+#: src/components/navigation/SearchSpotlight.ts:119
+msgid "Search only in local caches"
+msgstr "Nur in lokalen Caches suchen"
+
+#: src/components/navigation/SearchSpotlight.ts:234
+msgid "Search: (npub / nevent / username / full text)"
+msgstr "Suche: (npub / nevent / Benutzername / Volltext)"
+
+#: src/components/layout/MainLayout.ts:886
+msgid "Search: %s"
+msgstr "Suche: %s"
+
+#: src/components/navigation/SearchSpotlight.ts:353
+msgid "Searching..."
+msgstr "Suche…"
+
+#: src/components/layout/MainLayout.ts:2276
+msgid "Set a password for this account"
+msgstr "Lege ein Passwort für dieses Konto fest"
+
+#: src/components/layout/MainLayout.ts:1959
+msgid "Sign in"
+msgstr "Anmelden"
+
+#: src/components/layout/MainLayout.ts:1963
+msgid "Sign out"
+msgstr "Abmelden"
+
+#: src/components/shared/SyncStatusBadge.ts:99
+msgid "Sync failed%s"
+msgstr "Sync fehlgeschlagen%s"
+
+#: src/components/shared/SyncStatusBadge.ts:89
+msgid "Synced %s%s"
+msgstr "Synchronisiert %s%s"
+
+#: src/components/shared/SyncStatusBadge.ts:76
+msgid "Syncing follow list..."
+msgstr "Folgelist wird synchronisiert…"
+
+#: src/components/layout/MainLayout.ts:1720
+msgid "System Logs"
+msgstr "System-Logs"
+
+#: src/components/navigation/SearchSpotlight.ts:352
+#: src/components/navigation/SearchSpotlight.ts:386
+msgid "Users"
+msgstr "Nutzer"
+
+#: src/components/layout/MainLayout.ts:1888
+msgid "Welcome"
+msgstr "Willkommen"
+
+#: src/components/navigation/SearchSpotlight.ts:202
+msgid "Your search request is not sent to any relays and is therefore private"
+msgstr "Deine Suchanfrage wird an keine Relays gesendet und ist daher privat"

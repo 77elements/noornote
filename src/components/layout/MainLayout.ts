@@ -5,6 +5,7 @@
 
 import { GLOBAL_KEY_HAS_KEY } from '../../helpers/globalStorageKeys';
 import { AuthComponent } from '../auth/AuthComponent';
+import { _ } from '../../i18n';
 
 /** Shared param type for the dynamically-imported ExternalFollowListManager. */
 type ExternalFollowListManagerType =
@@ -881,14 +882,14 @@ export class MainLayout {
       searchType === 'hashtag'
         ? `#${query}`
         : searchType === 'profile'
-          ? `Profile: ${query}`
-          : `Search: ${query}`;
+          ? _('Profile: %s', query)
+          : _('Search: %s', query);
 
     // Create back button with direct event handler
     const backBtn = document.createElement('button');
     backBtn.type = 'button';
     backBtn.className = 'btn-icon search-view-primary__back';
-    backBtn.title = 'Back to timeline';
+    backBtn.title = _('Back to timeline');
     backBtn.innerHTML = `
       <svg width="24" height="24"><use href="#icon-back"/></svg>
     `;
@@ -1163,7 +1164,7 @@ export class MainLayout {
         collapsed ? '#icon-chevron-right' : '#icon-chevron-left'
       );
     if (toggle) {
-      toggle.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+      toggle.title = collapsed ? _('Expand sidebar') : _('Collapse sidebar');
       toggle.setAttribute('aria-label', toggle.title);
     }
 
@@ -1716,10 +1717,10 @@ export class MainLayout {
 
     this.sccDefaultDropdown = new NnDropdown({
       options: [
-        { value: 'system-log', label: 'System Logs' },
-        { value: 'newest-articles', label: 'Newest Articles' },
-        { value: 'media', label: 'Media' },
-        { value: 'recipes', label: 'Recipes' },
+        { value: 'system-log', label: _('System Logs') },
+        { value: 'newest-articles', label: _('Newest Articles') },
+        { value: 'media', label: _('Media') },
+        { value: 'recipes', label: _('Recipes') },
       ],
       selectedValue: savedDefault,
       onChange: value => {
@@ -1775,7 +1776,7 @@ export class MainLayout {
       const { runDiagLogExportFromButton } = await import(
         '../../services/DiagLogExportService'
       );
-      await runDiagLogExportFromButton(diagExportBtn, 'Export DiagLogs');
+      await runDiagLogExportFromButton(diagExportBtn, _('Export DiagLogs'));
     });
   }
 
@@ -1857,14 +1858,14 @@ export class MainLayout {
     layout.className = 'main-layout';
     layout.innerHTML = `
       <header class="mobile-header">
-        <button class="mobile-header__hamburger" aria-label="Open menu">
+        <button class="mobile-header__hamburger" aria-label="${_('Open menu')}">
           <svg width="24" height="24"><use href="#icon-menu-bars"/></svg>
           <span class="hamburger-badge"></span>
         </button>
         <span class="nn-logo">NoorNote</span>
       </header>
       <div class="sidebar-overlay"></div>
-      <aside class="sidebar" aria-label="Navigation">
+      <aside class="sidebar" aria-label="${_('Navigation')}">
         <div class="sidebar-content">
           <div class="sidebar-scrollable">
             <div class="sidebar-header">
@@ -1872,19 +1873,19 @@ export class MainLayout {
               <button
                 class="icon-btn sidebar-search-btn"
                 type="button"
-                aria-label="Search"
-                title="Search"
+                aria-label="${_('Search')}"
+                title="${_('Search')}"
               >
                 <svg><use href="#icon-search"/></svg>
               </button>
-              <button class="sidebar-collapse-toggle" type="button" aria-label="Collapse sidebar" title="Collapse sidebar">
+              <button class="sidebar-collapse-toggle" type="button" aria-label="${_('Collapse sidebar')}" title="${_('Collapse sidebar')}">
                 <svg class="sidebar-collapse-toggle__icon"><use href="#icon-chevron-left"/></svg>
               </button>
             </div>
             <div class="sidebar-welcome-link">
               <a href="/welcome" class="primary-nav__link primary-nav__link--welcome">
                 <svg class="primary-nav__item-icon"><use href="#icon-home"/></svg>
-                <span class="primary-nav__item-desc">Welcome</span>
+                <span class="primary-nav__item-desc">${_('Welcome')}</span>
               </a>
             </div>
             <div class="sidebar-widget-container wallet-balance-container">
@@ -1892,56 +1893,56 @@ export class MainLayout {
             </div>
             <ul class="primary-nav">
             <li>
-              <a href="/" class="primary-nav__link primary-nav__link--timeline" title="Scroll to top">
+              <a href="/" class="primary-nav__link primary-nav__link--timeline" title="${_('Scroll to top')}">
                 <svg class="primary-nav__item-icon"><use href="#icon-home"/></svg>
-                <span class="primary-nav__item-desc">Timeline</span>
-                <svg class="scroll-to-top-btn" data-scroll-view="timeline" style="display: none;" role="button" aria-label="Scroll to top" tabindex="0"><use href="#icon-scroll-to-top"/></svg>
+                <span class="primary-nav__item-desc">${_('Timeline')}</span>
+                <svg class="scroll-to-top-btn" data-scroll-view="timeline" style="display: none;" role="button" aria-label="${_('Scroll to top')}" tabindex="0"><use href="#icon-scroll-to-top"/></svg>
               </a>
             </li>
             <li>
-              <a href="/profile" class="primary-nav__link primary-nav__link--timeline primary-nav__link--profile" title="Scroll to top">
+              <a href="/profile" class="primary-nav__link primary-nav__link--timeline primary-nav__link--profile" title="${_('Scroll to top')}">
                 <svg class="primary-nav__item-icon"><use href="#icon-profile"/></svg>
-                <span class="primary-nav__item-desc">Profile</span>
-                <svg class="scroll-to-top-btn" data-scroll-view="profile" style="display: none;" role="button" aria-label="Scroll to top" tabindex="0"><use href="#icon-scroll-to-top"/></svg>
+                <span class="primary-nav__item-desc">${_('Profile')}</span>
+                <svg class="scroll-to-top-btn" data-scroll-view="profile" style="display: none;" role="button" aria-label="${_('Scroll to top')}" tabindex="0"><use href="#icon-scroll-to-top"/></svg>
               </a>
             </li>
             <li>
               <a href="/notifications" class="primary-nav__link primary-nav__link--notifications">
                 <svg class="primary-nav__item-icon"><use href="#icon-notifications"/></svg>
-                <span class="primary-nav__item-desc">Notifications</span>
+                <span class="primary-nav__item-desc">${_('Notifications')}</span>
                 <span class="notifications-badge"></span>
               </a>
             </li>
             <li>
-              <a href="/articles" class="primary-nav__link primary-nav__link--articles" title="Scroll to top">
+              <a href="/articles" class="primary-nav__link primary-nav__link--articles" title="${_('Scroll to top')}">
                 <svg class="primary-nav__item-icon"><use href="#icon-articles"/></svg>
-                <span class="primary-nav__item-desc">Articles</span>
-                <svg class="scroll-to-top-btn" data-scroll-view="articles" style="display: none;" role="button" aria-label="Scroll to top" tabindex="0"><use href="#icon-scroll-to-top"/></svg>
+                <span class="primary-nav__item-desc">${_('Articles')}</span>
+                <svg class="scroll-to-top-btn" data-scroll-view="articles" style="display: none;" role="button" aria-label="${_('Scroll to top')}" tabindex="0"><use href="#icon-scroll-to-top"/></svg>
               </a>
             </li>
             <li>
               <a href="/messages" class="primary-nav__link primary-nav__link--messages">
                 <svg class="primary-nav__item-icon"><use href="#icon-email"/></svg>
-                <span class="primary-nav__item-desc">Messages</span>
+                <span class="primary-nav__item-desc">${_('Messages')}</span>
                 <span class="badge badge--green dm-badge" style="display: none"></span>
               </a>
             </li>
             <li>
               <a href="/settings" class="primary-nav__link primary-nav__link--settings">
                 <svg class="primary-nav__item-icon"><use href="#icon-settings"/></svg>
-                <span class="primary-nav__item-desc">Settings</span>
+                <span class="primary-nav__item-desc">${_('Settings')}</span>
               </a>
             </li>
             <li>
               <a href="#" class="primary-nav__link primary-nav__link--search">
                 <svg class="primary-nav__item-icon"><use href="#icon-search"/></svg>
-                <span class="primary-nav__item-desc">Search</span>
+                <span class="primary-nav__item-desc">${_('Search')}</span>
               </a>
             </li>
             <li>
               <a href="/download/" class="primary-nav__link primary-nav__link--download">
                 <svg class="primary-nav__item-icon"><use href="#icon-download"/></svg>
-                <span class="primary-nav__item-desc">Download</span>
+                <span class="primary-nav__item-desc">${_('Download')}</span>
               </a>
             </li>
           </ul>
@@ -1951,15 +1952,15 @@ export class MainLayout {
             <div class="l-row--split sidebar-logout">
               <button type="button" class="btn btn--passive btn--mini sidebar-download-btn" data-action="sidebar-download">
                 <svg class="primary-nav__item-icon"><use href="#icon-download"/></svg>
-                Download
+                ${_('Download')}
               </button>
               <button type="button" class="btn btn--passive btn--mini sidebar-logout__signin" data-action="sidebar-login">
                 <svg class="primary-nav__item-icon sidebar-logout__signin-icon"><use href="#icon-logout"/></svg>
-                Sign in
+                ${_('Sign in')}
               </button>
               <button type="button" class="btn btn--passive btn--mini sidebar-logout__signout" data-action="sidebar-logout">
                 <svg class="primary-nav__item-icon"><use href="#icon-logout"/></svg>
-                Sign out
+                ${_('Sign out')}
               </button>
             </div>
             <div class="current-datetime-display">--</div>
@@ -1967,25 +1968,25 @@ export class MainLayout {
           <div class="new-post-dropup">
             <button class="btn btn--new-post">
               <svg width="24" height="24"><use href="#icon-plus"/></svg>
-              New Post
+              ${_('New Post')}
               <span class="dropup-arrow" aria-hidden="true"></span>
             </button>
             <div class="new-post-dropup__menu">
               <button class="new-post-dropup__item" data-action="new-note">
                 <svg width="24" height="24"><use href="#icon-edit"/></svg>
-                Note
+                ${_('Note')}
               </button>
               <button class="new-post-dropup__item" data-action="new-article">
                 <svg width="24" height="24"><use href="#icon-articles-full"/></svg>
-                Article
+                ${_('Article')}
               </button>
               <button class="new-post-dropup__item" data-action="new-video">
                 <svg width="24" height="24"><use href="#icon-video"/></svg>
-                Video
+                ${_('Video')}
               </button>
               <button class="new-post-dropup__item new-post-dropup__item--product" data-action="new-product" style="display: none;">
                 <svg width="24" height="24"><use href="#icon-shopping-bag"/></svg>
-                Product
+                ${_('Product')}
               </button>
             </div>
           </div>
@@ -2011,7 +2012,7 @@ export class MainLayout {
         </div>
       </div>
 
-      <aside class="secondary-content" aria-label="Details">
+      <aside class="secondary-content" aria-label="${_('Details')}">
         <div class="user-login-bar">
           <!-- User status will be mounted here -->
         </div>
@@ -2022,7 +2023,7 @@ export class MainLayout {
           </div>
           <div class="scc-tab-strip__action">
             <!-- DiagLog export button: visible only when SCC itself is visible (CSS hides on phone/wide) -->
-            <button class="btn btn--mini btn--passive" id="scc-diag-export-btn" type="button" aria-label="Export DiagLogs">Export DiagLogs</button>
+            <button class="btn btn--mini btn--passive" id="scc-diag-export-btn" type="button" aria-label="${_('Export DiagLogs')}">${_('Export DiagLogs')}</button>
           </div>
         </div>
         <div class="secondary-content-body">
@@ -2075,8 +2076,8 @@ export class MainLayout {
     const banner = document.createElement('div');
     banner.className = 'web-update-banner';
     banner.innerHTML = `
-      <span class="web-update-banner__text">App updated.</span>
-      <button type="button" class="btn btn--mini web-update-banner__reload">Reload</button>
+      <span class="web-update-banner__text">${_('App updated.')}</span>
+      <button type="button" class="btn btn--mini web-update-banner__reload">${_('Reload')}</button>
     `;
     banner
       .querySelector('.web-update-banner__reload')
@@ -2153,7 +2154,7 @@ export class MainLayout {
     const dataSaverMount = this.element.querySelector('.data-saver-toggle');
     if (dataSaverMount && PlatformService.getInstance().isAndroid) {
       const sw = new Switch({
-        label: 'Data Saver',
+        label: _('Data Saver'),
         checked: isDataSaverEnabled(),
         onChange: checked => {
           setDataSaverEnabled(checked);
@@ -2268,15 +2269,15 @@ export class MainLayout {
     const content = document.createElement('div');
     content.innerHTML = `
       <p style="margin-bottom: 1rem;">
-        A terminal window will open. There:
+        ${_('A terminal window will open. There:')}
       </p>
       <ol style="margin-bottom: 1.5rem; padding-left: 1.5rem;">
-        <li>Paste the nsec of the new account</li>
-        <li>Set a password for this account</li>
-        <li>Close the terminal</li>
-        <li>Come back here and log in with NoorSigner</li>
+        <li>${_('Paste the nsec of the new account')}</li>
+        <li>${_('Set a password for this account')}</li>
+        <li>${_('Close the terminal')}</li>
+        <li>${_('Come back here and log in with NoorSigner')}</li>
       </ol>
-      <button class="btn" data-action="confirm-add-account">OK, got it</button>
+      <button class="btn" data-action="confirm-add-account">${_('OK, got it')}</button>
     `;
 
     const confirmBtn = content.querySelector(
@@ -2288,7 +2289,7 @@ export class MainLayout {
     });
 
     modalService.show({
-      title: 'Add Account',
+      title: _('Add Account'),
       content,
       width: '400px',
       height: 'auto',
@@ -2633,7 +2634,7 @@ export class MainLayout {
     li.innerHTML = `
       <a href="/addons" class="primary-nav__link primary-nav__link--addons">
         <svg class="primary-nav__item-icon"><use href="#icon-addons"/></svg>
-        <span class="primary-nav__item-desc">Addons</span>
+        <span class="primary-nav__item-desc">${_('Addons')}</span>
       </a>
     `;
 
@@ -2998,7 +2999,7 @@ export class MainLayout {
     const backBtn = document.createElement('button');
     backBtn.type = 'button';
     backBtn.className = 'btn-icon list-view-primary__back';
-    backBtn.title = 'Back to timeline';
+    backBtn.title = _('Back to timeline');
     backBtn.innerHTML = `
       <svg width="24" height="24"><use href="#icon-back"/></svg>
     `;

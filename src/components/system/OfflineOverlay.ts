@@ -8,6 +8,7 @@
 
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { ConnectivityService } from '../../services/ConnectivityService';
+import { _ } from '../../i18n';
 
 export class OfflineOverlay {
   private static instance: OfflineOverlay;
@@ -42,10 +43,10 @@ export class OfflineOverlay {
         <div class="offline-overlay__icon">
           <svg width="64" height="64"><use href="#icon-wifi-off"/></svg>
         </div>
-        <h2 class="offline-overlay__title">No Internet Connection</h2>
-        <p class="offline-overlay__message">Please check your network connection and try again.</p>
+        <h2 class="offline-overlay__title">${_('No Internet Connection')}</h2>
+        <p class="offline-overlay__message">${_('Please check your network connection and try again.')}</p>
         <button class="offline-overlay__retry btn btn-primary">
-          <span class="offline-overlay__retry-text">Retry</span>
+          <span class="offline-overlay__retry-text">${_('Retry')}</span>
           <span class="offline-overlay__retry-spinner"></span>
         </button>
       </div>

@@ -16,6 +16,7 @@ import { hexToNpub } from '../../helpers/nip19';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { resolveNip05 } from '../../helpers/Nip05Resolver';
 import { Tooltip } from '../ui/Tooltip';
+import { _ } from '../../i18n';
 import {
   PerAccountLocalStorage,
   StorageKeys,
@@ -99,23 +100,23 @@ export class SearchSpotlight {
           <input
             type="text"
             class="input input--monospace"
-            placeholder="Enter URL path (e.g., /profile, /note/...)"
+            placeholder="${_('Enter URL path (e.g., /profile, /note/...)')}"
             autocomplete="off"
             spellcheck="false"
           />
         </div>
         <div class="search-spotlight__controls">
-          <button class="search-spotlight__btn search-spotlight__btn--back" title="Go Back (Cmd+ArrowLeft)" disabled>
+          <button class="search-spotlight__btn search-spotlight__btn--back" title="${_('Go Back (Cmd+←)')}" disabled>
             <span class="chevron-left"></span>
-            Back
+            ${_('Back')}
           </button>
-          <button class="search-spotlight__btn search-spotlight__btn--forward" title="Go Forward (Cmd+ArrowRight)" disabled>
-            Forward
+          <button class="search-spotlight__btn search-spotlight__btn--forward" title="${_('Go Forward (Cmd+→)')}" disabled>
+            ${_('Forward')}
             <span class="chevron-right"></span>
           </button>
           <label class="nn-checkbox search-spotlight__local-toggle">
             <input type="checkbox" id="local-search-only" />
-            <span>Search only in local caches</span>
+            <span>${_('Search only in local caches')}</span>
           </label>
         </div>
         <div class="search-spotlight__user-suggestions"></div>
@@ -198,7 +199,9 @@ export class SearchSpotlight {
       if (label) {
         this.tooltipDispose = Tooltip.attach(
           label as HTMLElement,
-          'Your search request is not sent to any relays and is therefore private'
+          _(
+            'Your search request is not sent to any relays and is therefore private'
+          )
         );
       }
     }
@@ -228,8 +231,9 @@ export class SearchSpotlight {
     // Set placeholder
     if (this.inputElement) {
       this.inputElement.value = '';
-      this.inputElement.placeholder =
-        'Search: (npub / nevent / username / full text)';
+      this.inputElement.placeholder = _(
+        'Search: (npub / nevent / username / full text)'
+      );
       this.inputElement.focus();
     }
 
@@ -345,8 +349,8 @@ export class SearchSpotlight {
     if (this.userResults.length === 0) {
       this.userSuggestionsElement.innerHTML = this.isSearchingUsers
         ? `<div class="search-spotlight__user-section">
-            <div class="search-spotlight__user-header">Users</div>
-            <div class="search-spotlight__user-loading pulsate">Searching...</div>
+            <div class="search-spotlight__user-header">${_('Users')}</div>
+            <div class="search-spotlight__user-loading pulsate">${_('Searching...')}</div>
           </div>`
         : '';
       return;
@@ -356,10 +360,10 @@ export class SearchSpotlight {
     const usersHtml = this.userResults
       .slice(0, 8)
       .map((user, index) => {
-        const displayName = user.displayName || user.name || 'Anonymous';
+        const displayName = user.displayName || user.name || _('Anonymous');
         const picture = user.picture || '';
         const followBadge = user.isFollowing
-          ? '<span class="badge badge--accent">Following</span>'
+          ? `<span class="badge badge--accent">${_('Following')}</span>`
           : '';
 
         return `
@@ -379,7 +383,7 @@ export class SearchSpotlight {
 
     this.userSuggestionsElement.innerHTML = `
       <div class="search-spotlight__user-section">
-        <div class="search-spotlight__user-header">Users${this.isSearchingUsers ? ' <span class="pulsate">(loading…)</span>' : ''}</div>
+        <div class="search-spotlight__user-header">${_('Users')}${this.isSearchingUsers ? ` <span class="pulsate">${_('(loading…)')}</span>` : ''}</div>
         ${usersHtml}
       </div>
     `;
@@ -527,8 +531,7 @@ export class SearchSpotlight {
 
     // Render suggestions
     if (suggestions.length === 0) {
-      this.suggestionsElement.innerHTML =
-        '<div class="search-spotlight__empty">No recent URLs</div>';
+      this.suggestionsElement.innerHTML = `<div class="search-spotlight__empty">${_('No recent URLs')}</div>`;
       return;
     }
 
