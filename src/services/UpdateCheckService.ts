@@ -6,6 +6,7 @@
 
 import { compareVersions } from '../helpers/compareVersions';
 import { PlatformService } from './PlatformService';
+import { _ } from '../i18n';
 
 declare const __APP_VERSION__: string;
 
@@ -114,11 +115,11 @@ export class UpdateCheckService {
         this.updatePresenter?.(update);
       } else {
         const { ToastService } = await import('./ToastService');
-        ToastService.show('You are on the latest version', 'success');
+        ToastService.show(_('You are on the latest version'), 'success');
       }
     } catch {
       const { ToastService } = await import('./ToastService');
-      ToastService.show('Failed to check for updates', 'error');
+      ToastService.show(_('Failed to check for updates'), 'error');
     } finally {
       button.disabled = false;
       button.textContent = originalText;

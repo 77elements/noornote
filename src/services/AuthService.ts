@@ -32,6 +32,7 @@ import { BunkerSignerManager } from './managers/BunkerSignerManager';
 import { NostrConnectSignerManager } from './managers/NostrConnectSignerManager';
 import { KeySignerConnectionManager } from './managers/KeySignerConnectionManager';
 import { AmberSignerManager } from './managers/AmberSignerManager';
+import { _ } from '../i18n';
 import type {
   Nip46BaseManager,
   NostrConnectSession,
@@ -289,7 +290,7 @@ export class AuthService {
         'Auth',
         'Login with Remote Signer: successful'
       );
-      ToastService.show('Login with Remote Signer: successful', 'success');
+      ToastService.show(_('Login with Remote Signer: successful'), 'success');
     }
     return result;
   }
@@ -315,7 +316,7 @@ export class AuthService {
           'Auth',
           'Login with Remote Signer (QR): successful'
         );
-        ToastService.show('Connected to remote signer', 'success');
+        ToastService.show(_('Connected to remote signer'), 'success');
       }
       return result;
     };
@@ -766,11 +767,11 @@ export class AuthService {
           await keySigner.stopDaemon();
           console.debug('[AuthService] NoorSigner daemon stopped');
           const { ToastService } = await import('./ToastService');
-          ToastService.show('Key signer stopped', 'success');
+          ToastService.show(_('Key signer stopped'), 'success');
         } catch (error) {
           console.debug('[AuthService] Failed to stop daemon:', error);
           const { ToastService } = await import('./ToastService');
-          ToastService.show('Failed to stop key signer', 'error');
+          ToastService.show(_('Failed to stop key signer'), 'error');
         }
       }
       this.keySignerManager.clear();
@@ -878,7 +879,7 @@ export class AuthService {
         });
 
         modalService.show({
-          title: 'Quit NoorNote & Key Signer?',
+          title: _('Quit NoorNote & Key Signer?'),
           content,
           width: '450px',
           height: 'auto',

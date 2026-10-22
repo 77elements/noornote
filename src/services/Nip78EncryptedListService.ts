@@ -21,6 +21,7 @@ import { PerAccountLocalStorage } from './PerAccountLocalStorage';
 import { ToastService } from './ToastService';
 import { diagLog } from './DiagnosticLogger';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { _ } from '../i18n';
 
 const NIP78_KIND = 30078;
 
@@ -123,7 +124,7 @@ export abstract class Nip78EncryptedListService {
 
       const signed = await this.auth.signEvent(unsigned);
       if (!signed) {
-        ToastService.show('Signing failed', 'error');
+        ToastService.show(_('Signing failed'), 'error');
         return;
       }
 

@@ -28,6 +28,7 @@ import { AuthService } from './AuthService';
 import { TypedEventBus } from '../core/TypedEventBus';
 import { errMessage } from '../helpers/errorMessage';
 import { SignatureVerificationService } from './security/SignatureVerificationService';
+import { _ } from '../i18n';
 
 export type NWCConnectionState =
   | 'disconnected'
@@ -344,7 +345,7 @@ export class NWCService {
 
       if (!isValid) {
         this.setStateForCurrentUser('error');
-        ToastService.show('Wallet connection failed', 'error');
+        ToastService.show(_('Wallet connection failed'), 'error');
         return false;
       }
 
@@ -360,7 +361,7 @@ export class NWCService {
         'Connected to NWC wallet:',
         connection.walletPubkey.slice(0, 8)
       );
-      ToastService.show('Lightning Wallet connected', 'success');
+      ToastService.show(_('Lightning Wallet connected'), 'success');
 
       return true;
     } catch (_error) {
@@ -494,7 +495,7 @@ export class NWCService {
     }
 
     this.systemLogger.info('NWCService', 'Disconnected from NWC wallet');
-    ToastService.show('Lightning Wallet disconnected', 'info');
+    ToastService.show(_('Lightning Wallet disconnected'), 'info');
   }
 
   /**

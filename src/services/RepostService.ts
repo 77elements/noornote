@@ -17,6 +17,7 @@ import { ReactionsOrchestrator } from './orchestration/ReactionsOrchestrator';
 import { DeletionService } from './DeletionService';
 import { diagLog } from './DiagnosticLogger';
 import { getTag } from '../helpers/tagUtils';
+import { _ } from '../i18n';
 
 export interface RepostOptions {
   /** Note to repost (full event) */
@@ -119,7 +120,7 @@ export class RepostService {
         'RepostService',
         'Cannot publish repost: User not authenticated'
       );
-      ToastService.show('Du musst eingeloggt sein, um zu reposten', 'error');
+      ToastService.show(_('You must be logged in to repost'), 'error');
       return { success: false, error: 'Not authenticated' };
     }
 
@@ -129,7 +130,7 @@ export class RepostService {
         'RepostService',
         'Cannot publish repost: Missing original event'
       );
-      ToastService.show('Invalid note data', 'error');
+      ToastService.show(_('Invalid note data'), 'error');
       return { success: false, error: 'Invalid note data' };
     }
 
@@ -138,7 +139,7 @@ export class RepostService {
         'RepostService',
         'Cannot publish repost: No write-relays configured'
       );
-      ToastService.show('Keine Relays konfiguriert', 'error');
+      ToastService.show(_('No relays configured'), 'error');
       return { success: false, error: 'No relays configured' };
     }
 
@@ -149,7 +150,7 @@ export class RepostService {
         'RepostService',
         `User has already reposted note ${originalEvent.id.slice(0, 8)}...`
       );
-      ToastService.show('Du hast diesen Note schon reposted', 'info');
+      ToastService.show(_('You have already reposted this note'), 'info');
       return { success: false, alreadyReposted: true };
     }
 
@@ -190,7 +191,7 @@ export class RepostService {
 
       if (!signedEvent) {
         this.systemLogger.error('RepostService', 'Failed to sign repost event');
-        ToastService.show('Signierung fehlgeschlagen', 'error');
+        ToastService.show(_('Signing failed'), 'error');
         this.ownReposts.delete(originalEvent.id);
         return { success: false, error: 'Signing failed' };
       }
@@ -218,7 +219,7 @@ export class RepostService {
       );
 
       // Show success toast to user
-      ToastService.show('Repost published successfully', 'success');
+      ToastService.show(_('Repost published successfully'), 'success');
 
       return { success: true };
     } catch (error) {
@@ -245,14 +246,14 @@ export class RepostService {
 
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      ToastService.show('Not authenticated', 'error');
+      ToastService.show(_('Not authenticated'), 'error');
       return { success: false, error: 'Not authenticated' };
     }
     if (!originalEvent?.id) {
       return { success: false, error: 'Invalid input' };
     }
     if (this.transport.getWriteRelays().length === 0) {
-      ToastService.show('Keine Relays konfiguriert', 'error');
+      ToastService.show(_('No relays configured'), 'error');
       return { success: false, error: 'No relays configured' };
     }
 
@@ -291,7 +292,7 @@ export class RepostService {
 
       const signedEvent = await this.authService.signEvent(unsignedEvent);
       if (!signedEvent) {
-        ToastService.show('Signing failed', 'error');
+        ToastService.show(_('Signing failed'), 'error');
         this.ownReposts.delete(originalEvent.id);
         return { success: false, error: 'Signing failed' };
       }
@@ -308,7 +309,7 @@ export class RepostService {
         'RepostService',
         `Generic repost (kind ${originalEvent.kind}) published`
       );
-      ToastService.show('Repost published', 'success');
+      ToastService.show(_('Repost published'), 'success');
       return { success: true };
     } catch (error) {
       this.ownReposts.delete(originalEvent.id);

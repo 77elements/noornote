@@ -9,6 +9,7 @@
 import { TypedEventBus } from '../core/TypedEventBus';
 import { ToastService } from './ToastService';
 import { RelayHealthMonitor } from './RelayHealthMonitor';
+import { _ } from '../i18n';
 
 export class ConnectivityService {
   private static instance: ConnectivityService;
@@ -115,7 +116,7 @@ export class ConnectivityService {
    */
   private handleWentOffline(): void {
     // Show immediate toast warning
-    ToastService.show('Internet connection lost', 'warning', 5000);
+    ToastService.show(_('Internet connection lost'), 'warning', 5000);
 
     // Start timer for overlay (120 seconds)
     this.clearOfflineTimer();
@@ -134,7 +135,7 @@ export class ConnectivityService {
   private handleCameOnline(): void {
     this.clearOfflineTimer();
     this.resetRelayErrorCount();
-    ToastService.show('Internet connection established', 'success');
+    ToastService.show(_('Internet connection established'), 'success');
   }
 
   /**

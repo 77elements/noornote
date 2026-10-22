@@ -23,6 +23,7 @@ import { PlatformService } from './PlatformService';
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 import { diagLog } from './DiagnosticLogger';
 import { TypedEventBus } from '../core/TypedEventBus';
+import { _ } from '../i18n';
 
 export type ZapPaymentState = 'verifying' | 'succeeded';
 
@@ -209,7 +210,7 @@ export class ZapService {
     if (this.nwcService.isConnected()) return null;
     if (await this.tryEnableWebLN()) return null;
 
-    ToastService.show('Please connect Lightning Wallet', 'error');
+    ToastService.show(_('Please connect Lightning Wallet'), 'error');
     return { success: false, error: 'No payment method available' };
   }
 
@@ -312,14 +313,14 @@ export class ZapService {
     // Step 1: Get LNURL from author's profile
     const lnurl = await this.getLNURLFromProfile(request.authorPubkey);
     if (!lnurl) {
-      ToastService.show('User cannot receive zaps', 'error');
+      ToastService.show(_('User cannot receive zaps'), 'error');
       return { success: false, error: 'No LNURL found in profile' };
     }
 
     // Step 2: Create zap request event (kind 9734)
     const zapRequestEvent = await this.createZapRequestEvent(request, lnurl);
     if (!zapRequestEvent) {
-      ToastService.show('Failed to create zap request', 'error');
+      ToastService.show(_('Failed to create zap request'), 'error');
       return { success: false, error: 'Failed to create zap request event' };
     }
 
@@ -330,7 +331,7 @@ export class ZapService {
       request.amount
     );
     if (!invoice) {
-      ToastService.show('Failed to fetch invoice', 'error');
+      ToastService.show(_('Failed to fetch invoice'), 'error');
       return { success: false, error: 'Failed to fetch invoice' };
     }
 
@@ -379,7 +380,7 @@ export class ZapService {
         'Payment failed',
         paymentResult.error
       );
-      ToastService.show('Payment failed', 'error');
+      ToastService.show(_('Payment failed'), 'error');
       return {
         success: false,
         error: paymentResult.error || 'Payment failed',
@@ -396,7 +397,7 @@ export class ZapService {
     this.trackZap(request, invoice, 'succeeded');
 
     // Show success immediately (don't wait for receipt)
-    ToastService.show(`${request.amount} sats zapped`, 'success');
+    ToastService.show(_('%s sats zapped', request.amount), 'success');
 
     // Background receipt watch — purely cosmetic: upgrades the local zap row
     // with sender metadata once the zapper publishes the receipt. Receipts are

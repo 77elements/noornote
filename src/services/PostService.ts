@@ -23,6 +23,7 @@ import type { PollData } from '../components/poll/PollCreator';
 import { RelayConfig } from './RelayConfig';
 import { getTag } from '../helpers/tagUtils';
 import { extractZapperPubkey } from '../helpers/zapUtils';
+import { _ } from '../i18n';
 
 export interface PostOptions {
   /** Note content (plain text) */
@@ -455,7 +456,7 @@ export class PostService {
         `Highlight published to ${relays.length} relay(s): ${signedEvent.id?.slice(0, 8)}...`
       );
 
-      ToastService.show('Highlight posted successfully!', 'success');
+      ToastService.show(_('Highlight posted successfully!'), 'success');
 
       return true;
     } catch (error) {
@@ -513,7 +514,7 @@ export class PostService {
 
     const isComment = asComment === true;
     const kind = isComment ? 1111 : 1;
-    const label = isComment ? 'Comment' : 'Reply';
+    const label = isComment ? _('Comment') : _('Reply');
 
     try {
       // Build tags array
@@ -576,7 +577,7 @@ export class PostService {
       );
 
       // Show success toast to user
-      ToastService.show(`${label} posted successfully!`, 'success');
+      ToastService.show(_('%s posted successfully!', label), 'success');
 
       return signedEvent;
     } catch (error) {

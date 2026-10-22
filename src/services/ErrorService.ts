@@ -14,6 +14,7 @@ import { ToastService } from './ToastService';
 import { SystemLogger } from './SystemLogger';
 import { CrashLogger } from './CrashLogger';
 import { diagLog } from './DiagnosticLogger';
+import { _ } from '../i18n';
 
 export class ErrorService {
   private static instance: ErrorService;
@@ -141,7 +142,7 @@ export class ErrorService {
       return new Error(error);
     }
 
-    return new Error('An unknown error occurred');
+    return new Error(_('An unknown error occurred'));
   }
 
   /**
@@ -152,25 +153,25 @@ export class ErrorService {
 
     // Network errors
     if (message.includes('fetch') || message.includes('network')) {
-      return 'Network error. Please check your connection.';
+      return _('Network error. Please check your connection.');
     }
 
     // Timeout errors
     if (message.includes('timeout')) {
-      return 'Request timed out. Please try again.';
+      return _('Request timed out. Please try again.');
     }
 
     // Authentication errors
     if (message.includes('auth') || message.includes('login')) {
-      return 'Authentication failed. Please log in again.';
+      return _('Authentication failed. Please log in again.');
     }
 
     // Relay errors
     if (message.includes('relay')) {
-      return 'Failed to connect to relay. Please try again.';
+      return _('Failed to connect to relay. Please try again.');
     }
 
     // Generic fallback
-    return error.message || 'An error occurred. Please try again.';
+    return error.message || _('An error occurred. Please try again.');
   }
 }

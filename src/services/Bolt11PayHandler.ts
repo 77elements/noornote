@@ -10,6 +10,7 @@
 import { NWCService } from './NWCService';
 import { ToastService } from './ToastService';
 import { ErrorService } from './ErrorService';
+import { _ } from '../i18n';
 
 let initialized = false;
 
@@ -43,7 +44,7 @@ export function initBolt11PayHandler(): void {
       btn.textContent = 'Paid ✓';
       btn.classList.remove('loading');
       btn.classList.add('bolt11-invoice__pay--paid');
-      ToastService.show('Payment sent', 'success');
+      ToastService.show(_('Payment sent'), 'success');
     } catch (err) {
       btn.disabled = false;
       btn.textContent = originalText;

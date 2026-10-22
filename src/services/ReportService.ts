@@ -21,6 +21,7 @@ import { AuthGuard } from './AuthGuard';
 import { ErrorService } from './ErrorService';
 import { ToastService } from './ToastService';
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
+import { _ } from '../i18n';
 
 export type ReportType =
   | 'nudity'
@@ -92,7 +93,7 @@ export class ReportService {
         'ReportService',
         'Cannot create report: Missing reportedPubkey'
       );
-      ToastService.show('Invalid user data', 'error');
+      ToastService.show(_('Invalid user data'), 'error');
       return { success: false, error: 'Invalid user data' };
     }
 
@@ -102,7 +103,7 @@ export class ReportService {
         'ReportService',
         'Report already submitted (duplicate)'
       );
-      ToastService.show('Du hast dies bereits gemeldet', 'info');
+      ToastService.show(_('You have already reported this'), 'info');
       return { success: false, error: 'Already reported' };
     }
 
@@ -139,7 +140,7 @@ export class ReportService {
 
       if (!signedEvent) {
         this.systemLogger.error('ReportService', 'Failed to sign report event');
-        ToastService.show('Signierung fehlgeschlagen', 'error');
+        ToastService.show(_('Signing failed'), 'error');
         return { success: false, error: 'Signing failed' };
       }
 
@@ -148,7 +149,7 @@ export class ReportService {
 
       if (writeRelays.length === 0) {
         this.systemLogger.error('ReportService', 'No write relays configured');
-        ToastService.show('Keine Relays konfiguriert', 'error');
+        ToastService.show(_('No relays configured'), 'error');
         return { success: false, error: 'No relays configured' };
       }
 
@@ -163,7 +164,7 @@ export class ReportService {
       this.storeReport(reportedPubkey, type, reportedEventId);
 
       // Show success toast
-      ToastService.show('Report eingereicht', 'success');
+      ToastService.show(_('Report submitted'), 'success');
 
       return { success: true };
     } catch (error) {

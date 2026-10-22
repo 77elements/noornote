@@ -17,6 +17,7 @@ import { DeletionService } from './DeletionService';
 import { buildReactionTags } from '../helpers/reactionTags';
 import { diagLog } from './DiagnosticLogger';
 import { TypedEventBus } from '../core/TypedEventBus';
+import { _ } from '../i18n';
 
 export interface ReactionOptions {
   /** Note ID to react to. For non-addressable events this is the hex event-id;
@@ -163,7 +164,7 @@ export class ReactionService {
         'ReactionService',
         'Cannot publish reaction: User not authenticated'
       );
-      ToastService.show('You must be logged in to like', 'error');
+      ToastService.show(_('You must be logged in to like'), 'error');
       return { success: false, error: 'Not authenticated' };
     }
 
@@ -173,7 +174,7 @@ export class ReactionService {
         'ReactionService',
         'Cannot publish reaction: Missing noteId or authorPubkey'
       );
-      ToastService.show('Invalid note data', 'error');
+      ToastService.show(_('Invalid note data'), 'error');
       return { success: false, error: 'Invalid note data' };
     }
 
@@ -182,7 +183,7 @@ export class ReactionService {
         'ReactionService',
         'Cannot publish reaction: No write-relays configured'
       );
-      ToastService.show('No relays configured', 'error');
+      ToastService.show(_('No relays configured'), 'error');
       return { success: false, error: 'No relays configured' };
     }
 
@@ -218,7 +219,7 @@ export class ReactionService {
           'ReactionService',
           'Failed to sign reaction event'
         );
-        ToastService.show('Signing failed', 'error');
+        ToastService.show(_('Signing failed'), 'error');
         return { success: false, error: 'Signing failed' };
       }
 

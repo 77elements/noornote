@@ -12,6 +12,7 @@ import { SystemLogger } from './SystemLogger';
 import { ErrorService } from './ErrorService';
 import { ToastService } from './ToastService';
 import { diagLog } from './DiagnosticLogger';
+import { _ } from '../i18n';
 
 export interface LiveChatMessageOptions {
   /** Addressable ID of the stream: "30311:<pubkey>:<d>" */
@@ -48,7 +49,7 @@ export class LiveChatService {
 
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      ToastService.show('You must be logged in to chat', 'error');
+      ToastService.show(_('You must be logged in to chat'), 'error');
       return { success: false, error: 'Not authenticated' };
     }
 
@@ -58,12 +59,12 @@ export class LiveChatService {
     }
 
     if (!addressableId) {
-      ToastService.show('Invalid stream', 'error');
+      ToastService.show(_('Invalid stream'), 'error');
       return { success: false, error: 'Invalid addressableId' };
     }
 
     if (!relays || relays.length === 0) {
-      ToastService.show('No relays configured', 'error');
+      ToastService.show(_('No relays configured'), 'error');
       return { success: false, error: 'No relays configured' };
     }
 
@@ -84,7 +85,7 @@ export class LiveChatService {
       const signedEvent = await this.authService.signEvent(unsignedEvent);
 
       if (!signedEvent) {
-        ToastService.show('Signing failed', 'error');
+        ToastService.show(_('Signing failed'), 'error');
         return { success: false, error: 'Signing failed' };
       }
 
@@ -124,7 +125,7 @@ export class LiveChatService {
         missed,
       });
 
-      ToastService.show('Message sent', 'success');
+      ToastService.show(_('Message sent'), 'success');
 
       return { success: true };
     } catch (error) {

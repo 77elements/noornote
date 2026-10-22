@@ -12,6 +12,7 @@ import { SystemLogger } from './SystemLogger';
 import { ErrorService } from './ErrorService';
 import { ToastService } from './ToastService';
 import { encodeNevent } from './NostrToolsAdapter';
+import { _ } from '../i18n';
 
 export interface VideoOptions {
   /** Uploaded video URL */
@@ -84,7 +85,7 @@ export class VideoService {
         'VideoService',
         'Cannot publish video: No video URL'
       );
-      ToastService.show('Please upload a video first', 'error');
+      ToastService.show(_('Please upload a video first'), 'error');
       return null;
     }
 
@@ -93,7 +94,7 @@ export class VideoService {
         'VideoService',
         'Cannot publish video: No relays specified'
       );
-      ToastService.show('Please select at least one relay', 'error');
+      ToastService.show(_('Please select at least one relay'), 'error');
       return null;
     }
 
@@ -159,7 +160,7 @@ export class VideoService {
         `${kindLabel} video published to ${relays.length} relay(s): ${signedEvent.id?.slice(0, 8)}...`
       );
 
-      ToastService.show('Video published successfully!', 'success');
+      ToastService.show(_('Video published successfully!'), 'success');
 
       return encodeNevent(
         signedEvent.id!,

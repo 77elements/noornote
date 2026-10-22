@@ -9,6 +9,7 @@
 import { hexToNpub } from '../helpers/nip19';
 import { encodeNevent } from './NostrToolsAdapter';
 import { ToastService } from './ToastService';
+import { _ } from '../i18n';
 
 export class ClipboardActionsService {
   private static instance: ClipboardActionsService;
@@ -44,13 +45,13 @@ export class ClipboardActionsService {
       await navigator.clipboard.writeText(nevent);
 
       if (showToast) {
-        ToastService.show('Event ID copied', 'success');
+        ToastService.show(_('Event ID copied'), 'success');
       }
 
       return true;
     } catch (error) {
       console.error('Failed to copy event ID:', error);
-      ToastService.show('Failed to copy event ID', 'error');
+      ToastService.show(_('Failed to copy event ID'), 'error');
       return false;
     }
   }
@@ -73,13 +74,13 @@ export class ClipboardActionsService {
       await navigator.clipboard.writeText(npub);
 
       if (showToast) {
-        ToastService.show('User ID copied', 'success');
+        ToastService.show(_('User ID copied'), 'success');
       }
 
       return true;
     } catch (error) {
       console.error('Failed to copy user ID:', error);
-      ToastService.show('Failed to copy user ID', 'error');
+      ToastService.show(_('Failed to copy user ID'), 'error');
       return false;
     }
   }
@@ -92,20 +93,20 @@ export class ClipboardActionsService {
    */
   public async copyText(
     text: string,
-    label: string = 'Text',
+    label: string = _('Text'),
     showToast: boolean = true
   ): Promise<boolean> {
     try {
       await navigator.clipboard.writeText(text);
 
       if (showToast) {
-        ToastService.show(`${label} copied`, 'success');
+        ToastService.show(_('%s copied', label), 'success');
       }
 
       return true;
     } catch (error) {
       console.error(`Failed to copy ${label}:`, error);
-      ToastService.show(`Failed to copy ${label}`, 'error');
+      ToastService.show(_('Failed to copy %s', label), 'error');
       return false;
     }
   }

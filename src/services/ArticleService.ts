@@ -13,6 +13,7 @@ import { SystemLogger } from './SystemLogger';
 import { ErrorService } from './ErrorService';
 import { ToastService } from './ToastService';
 import { encodeNaddr } from './NostrToolsAdapter';
+import { _ } from '../i18n';
 
 export interface ArticleOptions {
   /** Article title */
@@ -101,7 +102,7 @@ export class ArticleService {
         'ArticleService',
         'Cannot create article: Title is empty'
       );
-      ToastService.show('Title is required', 'error');
+      ToastService.show(_('Title is required'), 'error');
       return null;
     }
 
@@ -110,7 +111,7 @@ export class ArticleService {
         'ArticleService',
         'Cannot create article: Content is empty'
       );
-      ToastService.show('Content is required', 'error');
+      ToastService.show(_('Content is required'), 'error');
       return null;
     }
 
@@ -119,7 +120,7 @@ export class ArticleService {
         'ArticleService',
         'Cannot create article: Identifier is empty'
       );
-      ToastService.show('Identifier/slug is required', 'error');
+      ToastService.show(_('Identifier/slug is required'), 'error');
       return null;
     }
 
@@ -128,7 +129,7 @@ export class ArticleService {
         'ArticleService',
         'Cannot create article: No relays specified'
       );
-      ToastService.show('Please select at least one relay', 'error');
+      ToastService.show(_('Please select at least one relay'), 'error');
       return null;
     }
 
@@ -196,8 +197,8 @@ export class ArticleService {
       // Show success toast
       ToastService.show(
         isDraft
-          ? 'Draft saved successfully!'
-          : 'Article published successfully!',
+          ? _('Draft saved successfully!')
+          : _('Article published successfully!'),
         'success'
       );
 

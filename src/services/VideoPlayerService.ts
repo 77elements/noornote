@@ -18,6 +18,7 @@
 import { PlatformService } from './PlatformService';
 import { ToastService } from './ToastService';
 import { downloadMedia } from '../helpers/downloadMedia';
+import { _ } from '../i18n';
 
 export class VideoPlayerService {
   private static instance: VideoPlayerService | null = null;
@@ -90,7 +91,7 @@ export class VideoPlayerService {
       try {
         await downloadMedia(src, fileName);
       } catch {
-        ToastService.show('Failed to save video', 'error');
+        ToastService.show(_('Failed to save video'), 'error');
       }
     });
 

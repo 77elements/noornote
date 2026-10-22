@@ -21,6 +21,7 @@ import { ToastService } from './ToastService';
 import { SystemLogger } from './SystemLogger';
 import { diagLog } from './DiagnosticLogger';
 import { LRUCache, getCacheSize } from '../helpers/LRUCache';
+import { _ } from '../i18n';
 
 const NIP38_KIND = 30315;
 const STATUS_TYPE = 'general';
@@ -109,7 +110,7 @@ export class UserStatusService {
       const signed = await this.auth.signEvent(unsigned);
       if (!signed) {
         this.cache.set(user.pubkey, previous);
-        ToastService.show('Signing failed', 'error');
+        ToastService.show(_('Signing failed'), 'error');
         return false;
       }
 
@@ -127,7 +128,7 @@ export class UserStatusService {
       diagLog('system', 'UserStatusService publish failed', {
         error: String(error),
       });
-      ToastService.show('Failed to save status', 'error');
+      ToastService.show(_('Failed to save status'), 'error');
       return false;
     }
   }

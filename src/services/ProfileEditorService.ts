@@ -13,6 +13,7 @@ import { SystemLogger } from './SystemLogger';
 import { ErrorService } from './ErrorService';
 import { ToastService } from './ToastService';
 import { RelayConfig } from './RelayConfig';
+import { _ } from '../i18n';
 
 /**
  * Profile metadata fields (NIP-01)
@@ -194,7 +195,7 @@ export class ProfileEditorService {
       );
 
       // Show success toast
-      ToastService.show('Profile updated successfully!', 'success');
+      ToastService.show(_('Profile updated successfully!'), 'success');
 
       return signedEvent;
     } catch (error) {

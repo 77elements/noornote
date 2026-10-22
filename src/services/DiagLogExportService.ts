@@ -10,6 +10,7 @@
 import { zipSync } from 'fflate';
 import { PlatformService } from './PlatformService';
 import { SystemLogger } from './SystemLogger';
+import { _ } from '../i18n';
 
 const logger = SystemLogger.getInstance();
 const platform = PlatformService.getInstance();
@@ -115,7 +116,7 @@ export async function runDiagLogExportFromButton(
 
     if (!status.initialized && !platform.isCapacitor && !platform.isBrowser) {
       const reason = status.error || 'Logger not initialized';
-      ToastService.show(`DiagLog: ${reason}`, 'error', 8000);
+      ToastService.show(_('DiagLog: %s', reason), 'error', 8000);
       return;
     }
 
@@ -128,7 +129,7 @@ export async function runDiagLogExportFromButton(
     }
 
     if (success) {
-      ToastService.show('Logs exported', 'success');
+      ToastService.show(_('Logs exported'), 'success');
     } else {
       const debugInfo = lastExportDebugInfo;
       ToastService.show(
@@ -139,7 +140,7 @@ export async function runDiagLogExportFromButton(
     }
   } catch (error) {
     const { ToastService } = await import('./ToastService');
-    ToastService.show(`Import error: ${String(error)}`, 'error', 15000);
+    ToastService.show(_('Import error: %s', String(error)), 'error', 15000);
   } finally {
     btn.disabled = false;
     btn.textContent = restingLabel;

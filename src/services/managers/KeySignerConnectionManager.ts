@@ -9,6 +9,7 @@
 import { KeySignerClient } from '../KeySignerClient';
 import { PlatformService } from '../PlatformService';
 import { SystemLogger } from '../SystemLogger';
+import { _ } from '../../i18n';
 
 export interface KeySignerAuthResult {
   success: boolean;
@@ -339,7 +340,7 @@ export class KeySignerConnectionManager {
             this.onDaemonLost?.();
 
             const { ToastService } = await import('../ToastService');
-            ToastService.show('KeySigner daemon connection lost', 'error');
+            ToastService.show(_('KeySigner daemon connection lost'), 'error');
           }
         } else {
           if (this.daemonFailureCount > 0) {
@@ -409,7 +410,7 @@ export class KeySignerConnectionManager {
       const modalService = ModalService.getInstance();
 
       const confirmed = await modalService.confirm({
-        title: 'Stop NoorSigner Daemon?',
+        title: _('Stop NoorSigner Daemon?'),
         message:
           'Do you want to stop the NoorSigner daemon process? This will end all active signing sessions.',
         confirmText: 'Stop Daemon',
@@ -431,7 +432,7 @@ export class KeySignerConnectionManager {
           `Failed to stop daemon: ${String(_error)}`
         );
         const { ToastService } = await import('../ToastService');
-        ToastService.show('Failed to stop daemon', 'error');
+        ToastService.show(_('Failed to stop daemon'), 'error');
         return false;
       }
     } catch (_error) {

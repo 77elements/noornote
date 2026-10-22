@@ -37,6 +37,7 @@ import {
   type UploadStatus,
 } from './media/compression-types';
 import { UPLOAD_STATUS_EVENT } from '../core/events';
+import { _ } from '../i18n';
 
 interface MediaServerSettings {
   url: string;
@@ -222,7 +223,10 @@ export class MediaUploadService {
         reason: 'chunk-load-failed',
         error: String(err),
       });
-      ToastService.show('Compression unavailable, uploading original.', 'info');
+      ToastService.show(
+        _('Compression unavailable, uploading original.'),
+        'info'
+      );
       return file;
     }
 
@@ -279,7 +283,7 @@ export class MediaUploadService {
         kind: mediaKind,
         error: String(err),
       });
-      ToastService.show('Compression failed, uploading original.', 'info');
+      ToastService.show(_('Compression failed, uploading original.'), 'info');
       return file;
     }
 
