@@ -45,6 +45,7 @@ import {
 } from '../../helpers/profile-field-helpers';
 import { setupCarouselNavigation } from '../../helpers/CarouselHelper';
 import { getImageViewer } from '../ui/ImageViewer';
+import { _, tn } from '../../i18n';
 
 const platform = PlatformService.getInstance();
 
@@ -1506,7 +1507,7 @@ export class AccountSetupWizard {
     // Cancel button — always visible on all steps
     const cancelBtn = document.createElement('button');
     cancelBtn.className = 'btn btn--large btn--passive';
-    cancelBtn.textContent = 'Cancel';
+    cancelBtn.textContent = _('Cancel');
     cancelBtn.addEventListener('click', () => this.cancelWizard());
     navLeft.appendChild(cancelBtn);
 
@@ -1514,7 +1515,7 @@ export class AccountSetupWizard {
       // Restart button (only show after first step)
       const restartBtn = document.createElement('button');
       restartBtn.className = 'btn btn--large btn--passive';
-      restartBtn.textContent = 'Restart';
+      restartBtn.textContent = _('Restart');
       restartBtn.addEventListener('click', () => this.restartWizard());
       navLeft.appendChild(restartBtn);
     }
@@ -1522,7 +1523,7 @@ export class AccountSetupWizard {
     if (showSkip) {
       const skipBtn = document.createElement('button');
       skipBtn.className = 'btn btn--large btn--passive';
-      skipBtn.textContent = 'Skip';
+      skipBtn.textContent = _('Skip');
       skipBtn.addEventListener('click', () => this.goToNextStep());
       navLeft.appendChild(skipBtn);
     }
@@ -1651,11 +1652,12 @@ export class AccountSetupWizard {
   private async confirmSkipWallet(): Promise<boolean> {
     const { ModalService } = await import('../../services/ModalService');
     return ModalService.getInstance().confirm({
-      title: 'Set Up Wallet Later?',
-      message:
-        'A Lightning wallet lets you send and receive Zaps. You can set one up anytime later in Settings, but we recommend starting with a working wallet so you can zap right away.',
-      confirmText: 'Skip for now',
-      cancelText: 'Go back',
+      title: _('Set Up Wallet Later?'),
+      message: _(
+        'A Lightning wallet lets you send and receive Zaps. You can set one up anytime later in Settings, but we recommend starting with a working wallet so you can zap right away.'
+      ),
+      confirmText: _('Skip for now'),
+      cancelText: _('Go back'),
     });
   }
 
@@ -1665,10 +1667,10 @@ export class AccountSetupWizard {
 
     const content = document.createElement('div');
     content.innerHTML = `
-      <p>Are you sure? All your inputs and your keypair will be discarded.</p>
+      <p>${_('Are you sure? All your inputs and your keypair will be discarded.')}</p>
       <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
-        <button class="btn btn--passive" data-action="no">No, don't cancel</button>
-        <button class="btn" data-action="yes">Yes</button>
+        <button class="btn btn--passive" data-action="no">${_("No, don't cancel")}</button>
+        <button class="btn" data-action="yes">${_('Yes')}</button>
       </div>
     `;
 
@@ -1724,7 +1726,7 @@ export class AccountSetupWizard {
       });
 
     modalService.show({
-      title: 'Cancel Setup',
+      title: _('Cancel Setup'),
       content,
       width: '400px',
       height: 'auto',
@@ -1765,7 +1767,7 @@ export class AccountSetupWizard {
   private createKeypairStep(): WizardStep {
     return {
       id: 'keypair',
-      title: 'Keypair',
+      title: _('Keypair'),
       required: true,
       render: () => {
         // Generate keypair if not already done
@@ -1785,31 +1787,33 @@ export class AccountSetupWizard {
         const el = document.createElement('div');
         this.renderStepHeader(
           el,
-          'Your Nostr Identity',
-          'Your Nostr identity is a cryptographic key pair. The private key (nsec) is your password. The public key (npub) is your username.'
+          _('Your Nostr Identity'),
+          _(
+            'Your Nostr identity is a cryptographic key pair. The private key (nsec) is your password. The public key (npub) is your username.'
+          )
         );
 
         el.innerHTML += `
           <div class="wizard-keypair-display">
             <div class="wizard-keypair-item wizard-keypair-item--critical">
-              <label>Private Key (nsec) - KEEP THIS SECRET!</label>
+              <label>${_('Private Key (nsec) - KEEP THIS SECRET!')}</label>
               <div class="wizard-input-row">
                 <input type="text" class="input input--monospace" value="${this.currentKeypair.nsec}" readonly data-key="nsec" />
-                <button class="btn btn--large" data-action="copy-nsec">Copy</button>
+                <button class="btn btn--large" data-action="copy-nsec">${_('Copy')}</button>
               </div>
             </div>
 
             <div class="wizard-keypair-item">
-              <label>Public Key (npub) - Your username</label>
+              <label>${_('Public Key (npub) - Your username')}</label>
               <div class="wizard-input-row">
                 <input type="text" class="input input--monospace" value="${this.currentKeypair.npub}" readonly data-key="npub" />
-                <button class="btn btn--large" data-action="copy-npub">Copy</button>
+                <button class="btn btn--large" data-action="copy-npub">${_('Copy')}</button>
               </div>
             </div>
           </div>
 
           <div class="wizard-keypair-actions">
-            <button class="btn btn--passive" data-action="regenerate">Regenerate Keys</button>
+            <button class="btn btn--passive" data-action="regenerate">${_('Regenerate Keys')}</button>
           </div>
         `;
 
@@ -1837,9 +1841,9 @@ export class AccountSetupWizard {
         if (this.currentKeypair) {
           try {
             await navigator.clipboard.writeText(this.currentKeypair.nsec);
-            ToastService.show('nsec copied to clipboard', 'success');
+            ToastService.show(_('nsec copied to clipboard'), 'success');
           } catch {
-            ToastService.show('Failed to copy', 'error');
+            ToastService.show(_('Failed to copy'), 'error');
           }
         }
       });
@@ -1850,9 +1854,9 @@ export class AccountSetupWizard {
         if (this.currentKeypair) {
           try {
             await navigator.clipboard.writeText(this.currentKeypair.npub);
-            ToastService.show('npub copied to clipboard', 'success');
+            ToastService.show(_('npub copied to clipboard'), 'success');
           } catch {
-            ToastService.show('Failed to copy', 'error');
+            ToastService.show(_('Failed to copy'), 'error');
           }
         }
       });
@@ -1882,7 +1886,7 @@ export class AccountSetupWizard {
         if (nsecInput) nsecInput.value = this.currentKeypair.nsec;
         if (npubInput) npubInput.value = this.currentKeypair.npub;
 
-        ToastService.show('New keypair generated', 'success');
+        ToastService.show(_('New keypair generated'), 'success');
       });
 
     // Keypair is already generated, enable Next button
@@ -1897,35 +1901,36 @@ export class AccountSetupWizard {
   private createBackupStep(): WizardStep {
     return {
       id: 'backup',
-      title: 'Backup',
+      title: _('Backup'),
       required: true,
       render: () => {
         const el = document.createElement('div');
 
         this.renderStepHeader(
           el,
-          'Save Your Backup',
-          'Download a backup of your keypair. If you lose this, you lose access forever. You will paste this nsec into Sidecar in the next step.'
+          _('Save Your Backup'),
+          _(
+            'Download a backup of your keypair. If you lose this, you lose access forever. You will paste this nsec into Sidecar in the next step.'
+          )
         );
 
         el.innerHTML += `
           <div class="wizard-backup-warning">
-            <p><strong>There is no password recovery.</strong></p>
-            <p>If you lose your private key, you lose access to your account forever.
-            No one can help you recover it, not even us.</p>
+            <p><strong>${_('There is no password recovery.')}</strong></p>
+            <p>${_('If you lose your private key, you lose access to your account forever. No one can help you recover it, not even us.')}</p>
           </div>
 
           <div class="wizard-extension-action">
             <button class="btn btn--large" data-action="download-backup">
-              Download Backup
+              ${_('Download Backup')}
             </button>
-            <p class="wizard-hint">Save this file in a secure location</p>
+            <p class="wizard-hint">${_('Save this file in a secure location')}</p>
           </div>
 
           <div class="wizard-backup-confirmation">
             <label class="checkbox-label">
               <input type="checkbox" data-action="confirm-backup" ${this.backupConfirmed ? 'checked' : ''} />
-              <span>I have downloaded and saved my backup</span>
+              <span>${_('I have downloaded and saved my backup')}</span>
             </label>
           </div>
         `;
@@ -2001,7 +2006,7 @@ IMPORTANT:
 
         if (filePath) {
           await window.electronAPI!.writeTextFile(filePath, content);
-          ToastService.show('Backup saved', 'success');
+          ToastService.show(_('Backup saved'), 'success');
         }
       } else if ('showSaveFilePicker' in window) {
         // Web: File System Access API
@@ -2015,7 +2020,7 @@ IMPORTANT:
         const writable = await handle.createWritable();
         await writable.write(content);
         await writable.close();
-        ToastService.show('Backup saved', 'success');
+        ToastService.show(_('Backup saved'), 'success');
       } else {
         // Fallback: Direct download
         const blob = new Blob([content], { type: 'text/plain' });
@@ -2027,11 +2032,11 @@ IMPORTANT:
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        ToastService.show('Backup saved to Downloads folder', 'success');
+        ToastService.show(_('Backup saved to Downloads folder'), 'success');
       }
     } catch (error) {
       console.error('Failed to save backup:', error);
-      ToastService.show('Failed to save backup', 'error');
+      ToastService.show(_('Failed to save backup'), 'error');
     }
   }
 
@@ -2047,26 +2052,28 @@ IMPORTANT:
         const el = document.createElement('div');
         this.renderStepHeader(
           el,
-          'Secure Your Key with NoorSigner',
-          'NoorSigner is a local key manager that runs on your machine. Your private key never leaves your computer.'
+          _('Secure Your Key with NoorSigner'),
+          _(
+            'NoorSigner is a local key manager that runs on your machine. Your private key never leaves your computer.'
+          )
         );
 
         el.innerHTML += `
           <div class="wizard-info-box">
-            <p>Your nsec will be securely stored by NoorSigner:</p>
+            <p>${_('Your nsec will be securely stored by NoorSigner:')}</p>
             <ul>
-              <li>Encrypted with AES-256</li>
-              <li>Stored locally at <code>~/.noorsigner/accounts/</code></li>
-              <li>Never transmitted over the internet</li>
-              <li>You'll set a password to unlock it</li>
+              <li>${_('Encrypted with AES-256')}</li>
+              <li>${_('Stored locally at <code>~/.noorsigner/accounts/</code>')}</li>
+              <li>${_('Never transmitted over the internet')}</li>
+              <li>${_("You'll set a password to unlock it")}</li>
             </ul>
           </div>
 
           <div class="wizard-extension-action">
             <button class="btn btn--large" data-action="import-noorsigner">
-              Import to NoorSigner
+              ${_('Import to NoorSigner')}
             </button>
-            <p class="wizard-hint">You'll set a password in the next dialog</p>
+            <p class="wizard-hint">${_("You'll set a password in the next dialog")}</p>
           </div>
 
           <div class="wizard-status" data-status></div>
@@ -2116,16 +2123,16 @@ IMPORTANT:
                   result.pubkey,
                   true
                 );
-                ToastService.show('Logged in!', 'success');
+                ToastService.show(_('Logged in!'), 'success');
                 this.updateNextButtonState(true);
                 // Auto-advance to next step
                 this.goToNextStep();
               } else {
                 if (statusEl)
-                  statusEl.textContent = result.error || 'Login failed';
+                  statusEl.textContent = result.error || _('Login failed');
               }
             } catch (error) {
-              if (statusEl) statusEl.textContent = 'Login failed';
+              if (statusEl) statusEl.textContent = _('Login failed');
             }
           },
           onCancel: () => {},
@@ -2147,61 +2154,63 @@ IMPORTANT:
         const el = document.createElement('div');
         this.renderStepHeader(
           el,
-          'Set up Sidecar',
-          'Sidecar is a browser extension that keeps your key encrypted on this device and signs events for you, so no website ever sees your nsec.'
+          _('Set up Sidecar'),
+          _(
+            'Sidecar is a browser extension that keeps your key encrypted on this device and signs events for you, so no website ever sees your nsec.'
+          )
         );
 
         el.innerHTML += `
           <div class="wizard-extension-action">
             <a href="https://chromewebstore.google.com/detail/sidecar-a-classy-nostr-si/moimlikilhheabdafocpmneehpblhiln" target="_blank" rel="noopener noreferrer" class="btn btn--large">
-              Install Sidecar
+              ${_('Install Sidecar')}
             </a>
-            <p class="wizard-hint">Opens the Chrome Web Store in a new tab</p>
+            <p class="wizard-hint">${_('Opens the Chrome Web Store in a new tab')}</p>
           </div>
 
           <div class="nn-carousel nn-carousel--sidecar">
             <div class="nn-carousel-slides">
               <div class="nn-carousel-slide active" data-slide="0">
-                <img src="/images/sidecar/sidecar-01.png" alt="Add Sidecar to Chrome" class="nn-carousel-image" />
-                <p class="nn-carousel-caption">Click <strong>"Add to Chrome"</strong> to install Sidecar</p>
+                <img src="/images/sidecar/sidecar-01.png" alt="${_('Add Sidecar to Chrome')}" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">${_('Click <strong>"Add to Chrome"</strong> to install Sidecar')}</p>
               </div>
               <div class="nn-carousel-slide" data-slide="1">
-                <img src="/images/sidecar/sidecar-02.png" alt="Sidecar installed" class="nn-carousel-image" />
-                <p class="nn-carousel-caption">Installed, your Nostr signer is ready</p>
+                <img src="/images/sidecar/sidecar-02.png" alt="${_('Sidecar installed')}" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">${_('Installed, your Nostr signer is ready')}</p>
               </div>
               <div class="nn-carousel-slide" data-slide="2">
-                <img src="/images/sidecar/sidecar-03.png" alt="Pin Sidecar" class="nn-carousel-image" />
-                <p class="nn-carousel-caption">Open the <strong>puzzle-piece menu</strong> and pin Sidecar</p>
+                <img src="/images/sidecar/sidecar-03.png" alt="${_('Pin Sidecar')}" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">${_('Open the <strong>puzzle-piece menu</strong> and pin Sidecar')}</p>
               </div>
               <div class="nn-carousel-slide" data-slide="3">
-                <img src="/images/sidecar/sidecar-04.png" alt="Sidecar pinned" class="nn-carousel-image" />
-                <p class="nn-carousel-caption">Sidecar now stays in your toolbar</p>
+                <img src="/images/sidecar/sidecar-04.png" alt="${_('Sidecar pinned')}" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">${_('Sidecar now stays in your toolbar')}</p>
               </div>
               <div class="nn-carousel-slide" data-slide="4">
-                <img src="/images/sidecar/sidecar-05.png" alt="Set a PIN" class="nn-carousel-image" />
-                <p class="nn-carousel-caption">Click it, set a <strong>PIN or passphrase</strong> (min. 4 characters), then <strong>"Create keystore"</strong></p>
+                <img src="/images/sidecar/sidecar-05.png" alt="${_('Set a PIN')}" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">${_('Click it, set a <strong>PIN or passphrase</strong> (min. 4 characters), then <strong>"Create keystore"</strong>')}</p>
               </div>
               <div class="nn-carousel-slide" data-slide="5">
-                <img src="/images/sidecar/sidecar-06.png" alt="Import nsec" class="nn-carousel-image" />
-                <p class="nn-carousel-caption">Click <strong>"Import nsec"</strong></p>
+                <img src="/images/sidecar/sidecar-06.png" alt="${_('Import nsec')}" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">${_('Click <strong>"Import nsec"</strong>')}</p>
               </div>
               <div class="nn-carousel-slide" data-slide="6">
-                <img src="/images/sidecar/sidecar-07.png" alt="Paste nsec" class="nn-carousel-image" />
-                <p class="nn-carousel-caption">Paste your <strong>nsec</strong>, copied in step 1 or from your backup file</p>
+                <img src="/images/sidecar/sidecar-07.png" alt="${_('Paste nsec')}" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">${_('Paste your <strong>nsec</strong>, copied in step 1 or from your backup file')}</p>
               </div>
               <div class="nn-carousel-slide" data-slide="7">
-                <img src="/images/sidecar/sidecar-08.png" alt="Import account" class="nn-carousel-image" />
-                <p class="nn-carousel-caption">Sidecar loads your profile, click <strong>"Import account"</strong></p>
+                <img src="/images/sidecar/sidecar-08.png" alt="${_('Import account')}" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">${_('Sidecar loads your profile, click <strong>"Import account"</strong>')}</p>
               </div>
               <div class="nn-carousel-slide" data-slide="8">
-                <img src="/images/sidecar/sidecar-09.png" alt="Sidecar ready" class="nn-carousel-image" />
-                <p class="nn-carousel-caption">Done. Your identity is in Sidecar, now log in to NoorNote</p>
+                <img src="/images/sidecar/sidecar-09.png" alt="${_('Sidecar ready')}" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">${_('Done. Your identity is in Sidecar, now log in to NoorNote')}</p>
               </div>
             </div>
             <div class="nn-pager">
-              <button class="btn-icon" type="button" data-action="prev-slide" disabled aria-label="Previous"><svg width="20" height="20"><use href="#icon-caret-left"/></svg></button>
+              <button class="btn-icon" type="button" data-action="prev-slide" disabled aria-label="${_('Previous')}"><svg width="20" height="20"><use href="#icon-caret-left"/></svg></button>
               <span class="nn-pager__dots"></span>
-              <button class="btn-icon" type="button" data-action="next-slide" aria-label="Next"><svg width="20" height="20"><use href="#icon-caret-right"/></svg></button>
+              <button class="btn-icon" type="button" data-action="next-slide" aria-label="${_('Next')}"><svg width="20" height="20"><use href="#icon-caret-right"/></svg></button>
             </div>
           </div>
         `;
@@ -2250,22 +2259,24 @@ IMPORTANT:
   private createLoginStep(): WizardStep {
     return {
       id: 'login',
-      title: 'Login',
+      title: _('Login'),
       required: true,
       render: () => {
         const el = document.createElement('div');
         this.renderStepHeader(
           el,
-          'Login',
-          'Everything is set up! Click below to log in with your new account.'
+          _('Login'),
+          _(
+            'Everything is set up! Click below to log in with your new account.'
+          )
         );
 
         el.innerHTML += `
           <div class="wizard-extension-action">
             <button class="btn btn--large" data-action="login-extension">
-              Login with Extension
+              ${_('Login with Extension')}
             </button>
-            <p class="wizard-hint">Sidecar will ask you to confirm</p>
+            <p class="wizard-hint">${_('Sidecar will ask you to confirm')}</p>
           </div>
 
           <div class="wizard-status" data-status></div>
@@ -2296,7 +2307,7 @@ IMPORTANT:
     if (loginBtn) {
       loginBtn.addEventListener('click', async () => {
         loginBtn.disabled = true;
-        loginBtn.textContent = 'Connecting...';
+        loginBtn.textContent = _('Connecting...');
 
         try {
           const result = await this.authService.authenticate();
@@ -2310,19 +2321,20 @@ IMPORTANT:
             );
 
             localStorage.setItem(GLOBAL_KEY_HAS_KEY, 'true');
-            ToastService.show('Logged in!', 'success');
+            ToastService.show(_('Logged in!'), 'success');
             this.updateNextButtonState(true);
             // Auto-advance to next step
             this.goToNextStep();
           } else {
-            if (statusEl) statusEl.textContent = result.error || 'Login failed';
+            if (statusEl)
+              statusEl.textContent = result.error || _('Login failed');
             loginBtn.disabled = false;
-            loginBtn.textContent = 'Login with Extension';
+            loginBtn.textContent = _('Login with Extension');
           }
         } catch (error) {
-          if (statusEl) statusEl.textContent = 'Login failed';
+          if (statusEl) statusEl.textContent = _('Login failed');
           loginBtn.disabled = false;
-          loginBtn.textContent = 'Login with Extension';
+          loginBtn.textContent = _('Login with Extension');
         }
       });
     }
@@ -2333,14 +2345,16 @@ IMPORTANT:
   private createUsernameStep(): WizardStep {
     return {
       id: 'username',
-      title: 'Username',
+      title: _('Username'),
       required: true,
       render: () => {
         const el = document.createElement('div');
         this.renderStepHeader(
           el,
-          'Choose a Username',
-          'Your username is how others will find and mention you. Pick one of these or type your own.'
+          _('Choose a Username'),
+          _(
+            'Your username is how others will find and mention you. Pick one of these or type your own.'
+          )
         );
 
         // Suggestion chips
@@ -2378,7 +2392,7 @@ IMPORTANT:
         // Suggest more button
         const suggestBtn = document.createElement('button');
         suggestBtn.className = 'btn btn--passive wizard-username-regenerate';
-        suggestBtn.textContent = 'Suggest more usernames';
+        suggestBtn.textContent = _('Suggest more usernames');
         suggestBtn.addEventListener('click', () => renderChips());
         el.appendChild(suggestBtn);
 
@@ -2422,14 +2436,14 @@ IMPORTANT:
   private createAvatarStep(): WizardStep {
     return {
       id: 'avatar',
-      title: 'Avatar',
+      title: _('Avatar'),
       required: true,
       render: () => {
         const el = document.createElement('div');
         this.renderStepHeader(
           el,
-          'Add a Profile Picture',
-          'Upload your own or choose one below.'
+          _('Add a Profile Picture'),
+          _('Upload your own or choose one below.')
         );
 
         // Upload section
@@ -2456,7 +2470,7 @@ IMPORTANT:
 
         const divider = document.createElement('div');
         divider.className = 'auth-divider';
-        divider.innerHTML = '<span>or choose one</span>';
+        divider.innerHTML = `<span>${_('or choose one')}</span>`;
         el.appendChild(divider);
 
         // DiceBear avatar grid
@@ -2472,7 +2486,7 @@ IMPORTANT:
         // Regenerate button
         const regenBtn = document.createElement('button');
         regenBtn.className = 'btn btn--passive wizard-avatar-regenerate';
-        regenBtn.textContent = 'Show different avatars';
+        regenBtn.textContent = _('Show different avatars');
         regenBtn.addEventListener('click', () => {
           this.avatarChoices = generateRandomAvatars(8);
           this.renderAvatarGrid(grid);
@@ -2496,7 +2510,7 @@ IMPORTANT:
       const avatarBtn = document.createElement('button');
       avatarBtn.className = 'wizard-default-avatar';
       if (this.profileData.picture === url) avatarBtn.classList.add('active');
-      avatarBtn.innerHTML = `<img src="${url}" alt="Avatar" />`;
+      avatarBtn.innerHTML = `<img src="${url}" alt="${_('Avatar')}" />`;
       avatarBtn.addEventListener('click', () => {
         this.profileData.picture = url;
         this.updateNextButtonState(true);
@@ -2518,14 +2532,16 @@ IMPORTANT:
   private createBioStep(): WizardStep {
     return {
       id: 'bio',
-      title: 'Bio',
+      title: _('Bio'),
       required: false,
       render: () => {
         const el = document.createElement('div');
         this.renderStepHeader(
           el,
-          'Tell Us About Yourself',
-          'A short bio helps others get to know you. You can always change this later.'
+          _('Tell Us About Yourself'),
+          _(
+            'A short bio helps others get to know you. You can always change this later.'
+          )
         );
 
         const bioField = renderBioField(this.profileData.about || '');
@@ -2537,12 +2553,12 @@ IMPORTANT:
         const inboxInfo = document.createElement('div');
         inboxInfo.className = 'wizard-info-box wizard-inbox-info';
         inboxInfo.innerHTML = `
-          <strong>Your DM inbox relays</strong>
+          <strong>${_('Your DM inbox relays')}</strong>
           <p>
             <span class="wizard-inbox-info__relay">relay.0xchat.com</span>
             <span class="wizard-inbox-info__relay">auth.nostr1.com</span>
           </p>
-          <p class="wizard-inbox-info__note">Changeable anytime under Settings &rarr; Relays.</p>
+          <p class="wizard-inbox-info__note">${_('Changeable anytime under Settings &rarr; Relays.')}</p>
         `;
         el.appendChild(inboxInfo);
 
@@ -2563,7 +2579,7 @@ IMPORTANT:
   private createFollowPacksStep(): WizardStep {
     return {
       id: 'follow-packs',
-      title: 'Follow',
+      title: _('Follow'),
       required: false,
       render: () => {
         const el = document.createElement('div');
@@ -2584,19 +2600,21 @@ IMPORTANT:
 
   private renderPackGrid(el: HTMLElement): void {
     const heading = document.createElement('h2');
-    heading.textContent = 'Find People to Follow';
+    heading.textContent = _('Find People to Follow');
     el.appendChild(heading);
 
     const intro = document.createElement('p');
     intro.className = 'wizard-intro';
-    intro.textContent =
-      'Time to fill your timeline with interesting content. Browse the packs below and follow the people that interest you.';
+    intro.textContent = _(
+      'Time to fill your timeline with interesting content. Browse the packs below and follow the people that interest you.'
+    );
     el.appendChild(intro);
 
     const subIntro = document.createElement('p');
     subIntro.className = 'wizard-intro';
-    subIntro.innerHTML =
-      "<em>This is just a start, you'll discover more accounts over time.</em>";
+    subIntro.innerHTML = _(
+      "<em>This is just a start, you'll discover more accounts over time.</em>"
+    );
     el.appendChild(subIntro);
 
     // Duplicate the wizard navigation above the (potentially long) pack list
@@ -2608,7 +2626,11 @@ IMPORTANT:
     if (this.followedPubkeys.size > 0) {
       const badge = document.createElement('p');
       badge.className = 'wizard-follow-count';
-      badge.textContent = `Following ${this.followedPubkeys.size} account${this.followedPubkeys.size !== 1 ? 's' : ''}`;
+      badge.textContent = tn(
+        'Following %s account',
+        'Following %s accounts',
+        this.followedPubkeys.size
+      );
       el.appendChild(badge);
     }
 
@@ -2616,7 +2638,7 @@ IMPORTANT:
     grid.className = 'follow-packs__grid nn-card-grid';
 
     if (!this.followPacksLoaded) {
-      grid.innerHTML = '<p class="wizard-intro">Loading follow packs...</p>';
+      grid.innerHTML = `<p class="wizard-intro">${_('Loading follow packs...')}</p>`;
       el.appendChild(grid);
       void this.fetchFollowPacks().then(() => {
         this.renderPackCards(grid);
@@ -2628,8 +2650,9 @@ IMPORTANT:
 
     const credit = document.createElement('p');
     credit.className = 'small';
-    credit.innerHTML =
-      'Follow Packs by <a href="https://github.com/callebtc/following.space" target="_blank" rel="noopener">calle\'s following.space</a>';
+    credit.innerHTML = _(
+      'Follow Packs by <a href="https://github.com/callebtc/following.space" target="_blank" rel="noopener">calle\'s following.space</a>'
+    );
     el.appendChild(credit);
   }
 
@@ -2637,8 +2660,7 @@ IMPORTANT:
     grid.innerHTML = '';
 
     if (this.followPacks.length === 0) {
-      grid.innerHTML =
-        '<p class="wizard-intro">No follow packs found. You can skip this step and find people later.</p>';
+      grid.innerHTML = `<p class="wizard-intro">${_('No follow packs found. You can skip this step and find people later.')}</p>`;
       return;
     }
 
@@ -2670,7 +2692,7 @@ IMPORTANT:
       content.innerHTML = `
         <h3>${escapeHtml(pack.title)}</h3>
         <div class="meta">
-          <span>${pack.userPubkeys.length} users</span>
+          <span>${tn('%s user', '%s users', pack.userPubkeys.length)}</span>
         </div>
       `;
       card.appendChild(content);
@@ -2686,7 +2708,7 @@ IMPORTANT:
     // Back button
     const backBtn = document.createElement('button');
     backBtn.className = 'btn btn--passive';
-    backBtn.textContent = 'Back to packs';
+    backBtn.textContent = _('Back to packs');
     backBtn.addEventListener('click', () => {
       this.followPackView = 'grid';
       this.selectedPackIndex = -1;
@@ -2719,8 +2741,8 @@ IMPORTANT:
     const followAllBtn = document.createElement('button');
     followAllBtn.className = `btn btn--large ${allFollowed ? 'btn--passive' : ''}`;
     followAllBtn.textContent = allFollowed
-      ? 'Following All'
-      : `Follow All (${pack.userPubkeys.length})`;
+      ? _('Following All')
+      : _('Follow All (%s)', pack.userPubkeys.length);
     if (!allFollowed) {
       followAllBtn.addEventListener('click', () => {
         pack.userPubkeys.forEach(pk => this.followedPubkeys.add(pk));
@@ -2753,7 +2775,7 @@ IMPORTANT:
 
       const followBtn = document.createElement('button');
       followBtn.className = `btn btn--medium follow-packs__member-action-btn ${isFollowed ? 'btn--passive' : ''}`;
-      followBtn.textContent = isFollowed ? 'Following' : 'Follow';
+      followBtn.textContent = isFollowed ? _('Following') : _('Follow');
       followBtn.addEventListener('click', e => {
         e.stopPropagation();
         if (isFollowed) {
@@ -2848,14 +2870,16 @@ IMPORTANT:
 
     return {
       id: 'lightning',
-      title: 'Wallet',
+      title: _('Wallet'),
       required: true,
       render: () => {
         const el = document.createElement('div');
         this.renderStepHeader(
           el,
-          'Lightning Wallet',
-          'Set up a Lightning wallet to send and receive Bitcoin tips (Zaps) on Nostr. This is optional, you can set it up later in Settings.'
+          _('Lightning Wallet'),
+          _(
+            'Set up a Lightning wallet to send and receive Bitcoin tips (Zaps) on Nostr. This is optional, you can set it up later in Settings.'
+          )
         );
 
         // Already configured?
@@ -2863,7 +2887,7 @@ IMPORTANT:
           const done = document.createElement('div');
           done.className = 'wizard-lightning-done';
           done.innerHTML = `
-            <p class="wizard-intro">Lightning address configured: <strong>${escapeHtml(this.profileData.lud16)}</strong></p>
+            <p class="wizard-intro">${_('Lightning address configured: <strong>%s</strong>', escapeHtml(this.profileData.lud16))}</p>
           `;
           el.appendChild(done);
           return el;
@@ -2873,15 +2897,15 @@ IMPORTANT:
         const openSection = document.createElement('div');
         openSection.className = 'wizard-lightning-section';
         openSection.innerHTML = `
-          <p><strong>How it works:</strong></p>
+          <p><strong>${_('How it works:')}</strong></p>
           <ol class="wizard-lightning-steps">
-            <li>Open <a href="https://rizful.com" target="_blank" rel="noopener">rizful.com</a></li>
-            <li>Create an account at <a href="https://rizful.com/create-account" target="_blank" rel="noopener">rizful.com/create-account</a></li>
-            <li>Wait for the confirmation email and click "Verify your account" in it</li>
-            <li>You'll land on the Rizful verification page. Confirm by clicking "Verify Account" there</li>
-            <li>Come back here and click the "Open Rizful" button below</li>
+            <li>${_('Open <a href="https://rizful.com" target="_blank" rel="noopener">rizful.com</a>')}</li>
+            <li>${_('Create an account at <a href="https://rizful.com/create-account" target="_blank" rel="noopener">rizful.com/create-account</a>')}</li>
+            <li>${_('Wait for the confirmation email and click "Verify your account" in it')}</li>
+            <li>${_('You\'ll land on the Rizful verification page. Confirm by clicking "Verify Account" there')}</li>
+            <li>${_('Come back here and click the "Open Rizful" button below')}</li>
           </ol>
-          <button class="btn btn--large" data-action="open-rizful">Open Rizful</button>
+          <button class="btn btn--large" data-action="open-rizful">${_('Open Rizful')}</button>
         `;
         el.appendChild(openSection);
 
@@ -2905,7 +2929,7 @@ IMPORTANT:
                 );
               }
             } catch {
-              ToastService.show('Could not open browser', 'error');
+              ToastService.show(_('Could not open browser'), 'error');
             }
           });
 
@@ -2913,10 +2937,10 @@ IMPORTANT:
         const codeSection = document.createElement('div');
         codeSection.className = 'wizard-lightning-section';
         codeSection.innerHTML = `
-          <p><strong>Step 2:</strong> Paste your one-time code from Rizful below.</p>
+          <p><strong>${_('Step 2:')}</strong> ${_('Paste your one-time code from Rizful below.')}</p>
           <div class="wizard-relay-add">
-            <input type="text" class="input" id="wizard-rizful-code" placeholder="Paste one-time code" />
-            <button class="btn btn--large" data-action="redeem-code">Connect</button>
+            <input type="text" class="input" id="wizard-rizful-code" placeholder="${_('Paste one-time code')}" />
+            <button class="btn btn--large" data-action="redeem-code">${_('Connect')}</button>
           </div>
           <div class="wizard-lightning-status" data-lightning-status></div>
         `;
@@ -2937,19 +2961,19 @@ IMPORTANT:
           ) as HTMLInputElement;
           const code = codeInput?.value.trim();
           if (!code) {
-            ToastService.show('Please enter a code', 'error');
+            ToastService.show(_('Please enter a code'), 'error');
             return;
           }
 
           const user = this.authService.getCurrentUser();
           if (!user) {
-            ToastService.show('Not logged in', 'error');
+            ToastService.show(_('Not logged in'), 'error');
             return;
           }
 
           redeemInProgress = true;
           redeemBtn.disabled = true;
-          redeemBtn.textContent = 'Connecting...';
+          redeemBtn.textContent = _('Connecting...');
           statusEl.textContent = '';
 
           try {
@@ -2983,13 +3007,19 @@ IMPORTANT:
             // Set lud16 in profile data
             this.profileData.lud16 = data.lightning_address;
 
-            statusEl.innerHTML = `Connected! Your Lightning address: <strong>${escapeHtml(data.lightning_address)}</strong>`;
+            statusEl.innerHTML = _(
+              'Connected! Your Lightning address: <strong>%s</strong>',
+              escapeHtml(data.lightning_address)
+            );
             statusEl.classList.add('wizard-lightning-status--success');
           } catch (error) {
-            statusEl.textContent = `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+            statusEl.textContent = _(
+              'Failed: %s',
+              error instanceof Error ? error.message : 'Unknown error'
+            );
             statusEl.classList.add('wizard-lightning-status--error');
             redeemBtn.disabled = false;
-            redeemBtn.textContent = 'Connect';
+            redeemBtn.textContent = _('Connect');
           } finally {
             redeemInProgress = false;
           }
@@ -3006,28 +3036,28 @@ IMPORTANT:
   private createDoneStep(): WizardStep {
     return {
       id: 'done',
-      title: 'Done',
+      title: _('Done'),
       required: false,
       render: () => {
         const el = document.createElement('div');
         el.className = 'wizard-done';
 
         el.innerHTML = `
-          <h1>You're All Set!</h1>
+          <h1>${_("You're All Set!")}</h1>
           <div class="wizard-done-preview">
             <div class="wizard-done-avatar" style="background-image: url('${escapeCssUrl(this.profileData.picture || '')}')"></div>
             <h3>${escapeHtml(this.profileData.name || '')}</h3>
             <p class="wizard-done-username">@${escapeHtml(this.profileData.name || '')}</p>
             ${this.profileData.about ? `<p class="wizard-done-bio">${escapeHtml(this.profileData.about)}</p>` : ''}
-            <p class="wizard-done-bio">${this.selectedRelays.length} relay${this.selectedRelays.length !== 1 ? 's' : ''}, ${this.inboxRelays.filter(r => r.selected).length} inbox relay${this.inboxRelays.filter(r => r.selected).length !== 1 ? 's' : ''}</p>
-            ${this.followedPubkeys.size > 0 ? `<p class="wizard-done-bio">Following ${this.followedPubkeys.size} account${this.followedPubkeys.size !== 1 ? 's' : ''}</p>` : ''}
+            <p class="wizard-done-bio">${tn('%s relay', '%s relays', this.selectedRelays.length)}, ${tn('%s inbox relay', '%s inbox relays', this.inboxRelays.filter(r => r.selected).length)}</p>
+            ${this.followedPubkeys.size > 0 ? `<p class="wizard-done-bio">${tn('Following %s account', 'Following %s accounts', this.followedPubkeys.size)}</p>` : ''}
             ${this.profileData.lud16 ? `<p class="wizard-done-bio">⚡ ${escapeHtml(this.profileData.lud16)}</p>` : ''}
           </div>
           <div class="wizard-nav l-row--split" style="border-top: none;">
             <button class="btn btn--large btn--passive" data-wizard-action="prev"><</button>
             <button class="btn btn--large" data-wizard-action="finish"${this.publishing ? ' disabled' : ''}>
-              <span data-finish-text>Save & Go to Timeline</span>
-              <span data-finish-spinner style="display: none;">Publishing...</span>
+              <span data-finish-text>${_('Save & Go to Timeline')}</span>
+              <span data-finish-spinner style="display: none;">${_('Publishing...')}</span>
             </button>
           </div>
         `;
@@ -3070,7 +3100,7 @@ IMPORTANT:
 
     try {
       // 1. Publish profile (Kind-0)
-      this.updateFinishStatus(finishSpinner, 'Publishing profile...');
+      this.updateFinishStatus(finishSpinner, _('Publishing profile...'));
       const result = await (this.profileApi?.updateProfile(this.profileData) ??
         Promise.resolve(null));
       if (!result) {
@@ -3079,18 +3109,22 @@ IMPORTANT:
       }
 
       // 2. Publish relay list (Kind-10002)
-      this.updateFinishStatus(finishSpinner, 'Setting up relays...');
+      this.updateFinishStatus(finishSpinner, _('Setting up relays...'));
       await this.publishRelayList();
 
       // 3. Publish DM inbox relay list (Kind-10050)
-      this.updateFinishStatus(finishSpinner, 'Setting up DM inbox...');
+      this.updateFinishStatus(finishSpinner, _('Setting up DM inbox...'));
       await this.publishInboxRelayList();
 
       // 4. Apply follows
       if (this.followedPubkeys.size > 0) {
         this.updateFinishStatus(
           finishSpinner,
-          `Following ${this.followedPubkeys.size} accounts...`
+          `${tn(
+            'Following %s account',
+            'Following %s accounts',
+            this.followedPubkeys.size
+          )}…`
         );
         const { followUser } = await import('../../lists/follows');
         this.followedPubkeys.forEach(pubkey => followUser(pubkey, false));
@@ -3124,12 +3158,12 @@ IMPORTANT:
       this.storage.remove(StorageKeys.NEEDS_PROFILE_SETUP);
       this.clearProgress();
 
-      ToastService.show('Profile published!', 'success');
+      ToastService.show(_('Profile published!'), 'success');
 
       this.destroy();
       this.router.navigate('/');
     } catch (error) {
-      ToastService.show(`Failed to publish: ${String(error)}`, 'error');
+      ToastService.show(_('Failed to publish: %s', String(error)), 'error');
       this.resetFinishButton(finishBtn, finishText, finishSpinner);
     }
   }

@@ -599,6 +599,7 @@ msgstr "Zaps"
 #: src/components/modals/NewFolderModal.ts:60
 #: src/components/modals/UnlockNoorSignerModal.ts:68
 #: src/components/modals/ZapModal.ts:148
+#: src/components/onboarding/AccountSetupWizard.ts:1510
 #: src/components/post/PostNoteModal.ts:399
 #: src/components/reply/ReplyModal.ts:433
 #: src/components/settings/CacheSettingsSection.ts:373
@@ -1102,6 +1103,7 @@ msgid "Version Code"
 msgstr "Versionscode"
 
 #: src/components/views/ZapstoreAppView.ts:305
+#: src/helpers/profile-field-helpers.ts:56
 msgid "Website"
 msgstr "Website"
 
@@ -1167,6 +1169,7 @@ msgid_plural "Delivered to %s of %s relays"
 msgstr[0] "An %s von %s Relay zugestellt"
 msgstr[1] "An %s von %s Relays zugestellt"
 
+#: src/components/onboarding/AccountSetupWizard.ts:3018
 #: src/components/views/ProfileBookingView.ts:612
 msgid "Done"
 msgstr "Fertig"
@@ -1558,6 +1561,7 @@ msgstr "Hochformat"
 msgid "Publish"
 msgstr "Veröffentlichen"
 
+#: src/components/onboarding/AccountSetupWizard.ts:3039
 #: src/components/views/ArticleEditorView.ts:1170
 #: src/components/views/VideoEditorView.ts:569
 msgid "Publishing..."
@@ -1667,6 +1671,7 @@ msgstr "Video-Upload fehlgeschlagen"
 msgid "Weeks"
 msgstr "Wochen"
 
+#: src/components/onboarding/AccountSetupWizard.ts:1673
 #: src/components/post/PostNoteModal.ts:997
 #: src/components/views/ConversationView.ts:785
 msgid "Yes"
@@ -1973,6 +1978,7 @@ msgstr "Hinzufügen zum Tribe fehlgeschlagen"
 msgid "Followers"
 msgstr "Follower"
 
+#: src/components/onboarding/AccountSetupWizard.ts:2765
 #: src/components/views/ProfileView.ts:658
 msgid "Following"
 msgstr "Folgt"
@@ -3094,6 +3100,8 @@ msgstr ""
 "Verbinde dein Lightning-Wallet über Nostr Wallet Connect (NWC), um Zaps zu "
 "senden."
 
+#: src/components/onboarding/AccountSetupWizard.ts:2300
+#: src/components/onboarding/AccountSetupWizard.ts:2961
 #: src/components/settings/NWCSettingsSection.ts:300
 msgid "Connecting..."
 msgstr "Verbinde…"
@@ -3987,7 +3995,9 @@ msgstr "Zapper-Cache-Größe"
 
 #: src/components/onboarding/OnboardingComponent.ts:185
 msgid "<strong>Censorship-resistant</strong>, no central authority can silence you"
-msgstr "<strong>Zensurresistent</strong>, keine zentrale Autorität kann dich zum Schweigen bringen"
+msgstr ""
+"<strong>Zensurresistent</strong>, keine zentrale Autorität kann dich zum "
+"Schweigen bringen"
 
 #: src/components/onboarding/OnboardingComponent.ts:187
 msgid "<strong>Interoperable</strong>, use any client you like"
@@ -3999,14 +4009,21 @@ msgid ""
 "where your account is a cryptographic key that you own. Your posts are "
 "distributed across independent servers worldwide. No company runs it. No "
 "one can shut it down."
-msgstr "<strong>NoorNote</strong> baut auf <em>Nostr</em> auf, einem offenen Protokoll, bei dem dein Konto ein kryptografischer Schlüssel ist, der dir gehört. Deine Beiträge sind auf unabhängigen Servern weltweit verteilt. Kein Unternehmen betreibt es. Niemand kann es abschalten."
+msgstr ""
+"<strong>NoorNote</strong> baut auf <em>Nostr</em> auf, einem offenen "
+"Protokoll, bei dem dein Konto ein kryptografischer Schlüssel ist, der dir "
+"gehört. Deine Beiträge sind auf unabhängigen Servern weltweit verteilt. "
+"Kein Unternehmen betreibt es. Niemand kann es abschalten."
 
 #: src/components/onboarding/OnboardingComponent.ts:166
 msgid ""
 "<strong>Nostr</strong> stands for \"Notes and Other Stuff Transmitted by "
 "Relays\". It's a simple, open protocol that enables truly decentralized "
 "social networking."
-msgstr "<strong>Nostr</strong> steht für „Notes and Other Stuff Transmitted by Relays“. Es ist ein einfaches, offenes Protokoll, das wirklich dezentrales Social Networking ermöglicht."
+msgstr ""
+"<strong>Nostr</strong> steht für „Notes and Other Stuff Transmitted by "
+"Relays“. Es ist ein einfaches, offenes Protokoll, das wirklich dezentrales "
+"Social Networking ermöglicht."
 
 #: src/components/onboarding/OnboardingComponent.ts:186
 msgid "<strong>Portable identity</strong>, take your followers anywhere"
@@ -4052,7 +4069,9 @@ msgstr "Jede andere Plattform"
 msgid ""
 "Every post can earn you <strong>real money</strong>.<br>No creator fund. No "
 "minimum followers. No gatekeepers."
-msgstr "Jeder Beitrag kann dir <strong>echtes Geld</strong> einbringen.<br>Kein Creator-Fonds. Keine Follower-Mindestzahl. Keine Gatekeeper."
+msgstr ""
+"Jeder Beitrag kann dir <strong>echtes Geld</strong> einbringen.<br>Kein "
+"Creator-Fonds. Keine Follower-Mindestzahl. Keine Gatekeeper."
 
 #: src/components/onboarding/WelcomeInterstitials.ts:79
 msgid "Get paid.<br><em>Not played.</em>"
@@ -4082,6 +4101,7 @@ msgstr "Keys: Deine Identität"
 msgid "Loading more notes..."
 msgstr "Weitere Beiträge werden geladen…"
 
+#: src/components/onboarding/AccountSetupWizard.ts:2205
 #: src/components/onboarding/OnboardingComponent.ts:195
 msgid "Next"
 msgstr "Weiter"
@@ -4102,13 +4122,15 @@ msgstr "Kein Unternehmen, kein Single Point of Failure"
 msgid "No data collection"
 msgstr "Keine Datensammlung"
 
-#: src/components/onboarding/PublicTimelineComponent.ts:128
+#: src/components/onboarding/PublicTimelineComponent.ts:126
 msgid "No notes found yet."
 msgstr "Noch keine Beiträge gefunden."
 
 #: src/components/onboarding/OnboardingComponent.ts:39
 msgid "NoorNote is social media built on open protocol - no company controls it."
-msgstr "NoorNote ist Social Media auf offenem Protokoll — kein Unternehmen kontrolliert es."
+msgstr ""
+"NoorNote ist Social Media auf offenem Protokoll — kein Unternehmen "
+"kontrolliert es."
 
 #: src/components/onboarding/OnboardingComponent.ts:165
 msgid "Nostr illustration by @awayuki"
@@ -4120,7 +4142,9 @@ msgstr "Nicht „will nicht“ — strukturell unmöglich."
 
 #: src/components/onboarding/WelcomeInterstitials.ts:94
 msgid "posts deleted by social media platforms last year alone."
-msgstr "Beiträge, die Social-Media-Plattformen allein im letzten Jahr gelöscht haben."
+msgstr ""
+"Beiträge, die Social-Media-Plattformen allein im letzten Jahr gelöscht "
+"haben."
 
 #: src/components/onboarding/WelcomeInterstitials.ts:96
 msgid "Posts deleted on NoorNote?<br><em>Zero. Ever.</em>"
@@ -4130,6 +4154,7 @@ msgstr "Beiträge gelöscht auf NoorNote?<br><em>Null. Nie.</em>"
 msgid "Posts live on decentralized relays"
 msgstr "Beiträge leben auf dezentralen Relays"
 
+#: src/components/onboarding/AccountSetupWizard.ts:2203
 #: src/components/onboarding/OnboardingComponent.ts:193
 msgid "Previous"
 msgstr "Zurück"
@@ -4140,7 +4165,9 @@ msgstr "In 2 Minuten bereit. Keine E-Mail. Keine Telefonnummer."
 
 #: src/components/onboarding/OnboardingComponent.ts:58
 msgid "Receive Bitcoin tips (Zaps) directly. No platform cut, no payout threshold."
-msgstr "Bitcoin-Trinkgelder (Zaps) direkt empfangen. Keine Plattformgebühr, keine Auszahlungsschwelle."
+msgstr ""
+"Bitcoin-Trinkgelder (Zaps) direkt empfangen. Keine Plattformgebühr, keine "
+"Auszahlungsschwelle."
 
 #: src/components/onboarding/OnboardingComponent.ts:169
 msgid "Relays: The Network"
@@ -4176,13 +4203,15 @@ msgstr "Sie besitzen dein Publikum"
 
 #: src/components/onboarding/WelcomeInterstitials.ts:56
 msgid "They promise freedom.<br>We made it <em>impossible</em><br>to take it away."
-msgstr "Sie versprechen Freiheit.<br>Wir haben es <em>unmöglich</em> gemacht,<br>sie dir wegzunehmen."
+msgstr ""
+"Sie versprechen Freiheit.<br>Wir haben es <em>unmöglich</em> "
+"gemacht,<br>sie dir wegzunehmen."
 
 #: src/components/onboarding/WelcomeInterstitials.ts:29
 msgid "They sell your data"
 msgstr "Sie verkaufen deine Daten"
 
-#: src/components/onboarding/PublicTimelineComponent.ts:91
+#: src/components/onboarding/PublicTimelineComponent.ts:90
 msgid "Timeline coming soon."
 msgstr "Timeline kommt bald."
 
@@ -4191,7 +4220,10 @@ msgid ""
 "Unlike traditional platforms, Nostr doesn't have a central server. Instead, "
 "it uses <strong>relays</strong>, independent servers that store and forward "
 "your messages."
-msgstr "Anders als traditionelle Plattformen hat Nostr keinen zentralen Server. Stattdessen nutzt es <strong>Relays</strong>, unabhängige Server, die deine Nachrichten speichern und weiterleiten."
+msgstr ""
+"Anders als traditionelle Plattformen hat Nostr keinen zentralen Server. "
+"Stattdessen nutzt es <strong>Relays</strong>, unabhängige Server, die deine "
+"Nachrichten speichern und weiterleiten."
 
 #: src/components/onboarding/OnboardingComponent.ts:159
 msgid "What is Nostr?"
@@ -4205,7 +4237,9 @@ msgstr "Warum Nostr?"
 msgid ""
 "You can connect to multiple relays at once. If one goes down, your content "
 "lives on through others. No single point of failure."
-msgstr "Du kannst dich mit mehreren Relays gleichzeitig verbinden. Fällt eines aus, lebt dein Inhalt in den anderen weiter. Kein Single Point of Failure."
+msgstr ""
+"Du kannst dich mit mehreren Relays gleichzeitig verbinden. Fällt eines aus, "
+"lebt dein Inhalt in den anderen weiter. Kein Single Point of Failure."
 
 #: src/components/onboarding/OnboardingComponent.ts:51
 msgid "you hold the keys"
@@ -4213,13 +4247,17 @@ msgstr "du besitzt die Schlüssel"
 
 #: src/components/onboarding/OnboardingComponent.ts:180
 msgid "You own your identity. No company can ban you or delete your account."
-msgstr "Du besitzt deine Identität. Kein Unternehmen kann dich sperren oder dein Konto löschen."
+msgstr ""
+"Du besitzt deine Identität. Kein Unternehmen kann dich sperren oder dein "
+"Konto löschen."
 
 #: src/components/onboarding/OnboardingComponent.ts:52
 msgid ""
 "Your account is a cryptographic key. Nobody can suspend, ban, or take it "
 "away."
-msgstr "Dein Konto ist ein kryptografischer Schlüssel. Niemand kann ihn sperren, verbannen oder wegnehmen."
+msgstr ""
+"Dein Konto ist ein kryptografischer Schlüssel. Niemand kann ihn sperren, "
+"verbannen oder wegnehmen."
 
 #: src/components/onboarding/WelcomeInterstitials.ts:36
 msgid "Your account is a key you own"
@@ -4231,11 +4269,15 @@ msgstr "Deine Follower gehören dir"
 
 #: src/components/onboarding/OnboardingComponent.ts:175
 msgid "Your identity on Nostr is a <strong>cryptographic key pair</strong>"
-msgstr "Deine Identität auf Nostr ist ein <strong>kryptografisches Schlüsselpaar</strong>"
+msgstr ""
+"Deine Identität auf Nostr ist ein <strong>kryptografisches "
+"Schlüsselpaar</strong>"
 
 #: src/components/onboarding/OnboardingComponent.ts:46
 msgid "Your posts live on decentralized relays. No single entity can remove them."
-msgstr "Deine Beiträge leben auf dezentralen Relays. Keine einzelne Instanz kann sie entfernen."
+msgstr ""
+"Deine Beiträge leben auf dezentralen Relays. Keine einzelne Instanz kann "
+"sie entfernen."
 
 #: src/components/onboarding/OnboardingComponent.ts:38
 msgid "Your voice.<br><em>Unstoppable.</em>"
@@ -4244,3 +4286,583 @@ msgstr "Deine Stimme.<br><em>Unaufhaltsam.</em>"
 #: src/components/onboarding/WelcomeInterstitials.ts:39
 msgid "Zero tracking, zero data collection"
 msgstr "Kein Tracking, keine Datensammlung"
+
+#: src/components/onboarding/AccountSetupWizard.ts:3031
+msgid "%s inbox relay"
+msgid_plural "%s inbox relays"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:3031
+msgid "%s relay"
+msgid_plural "%s relays"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2682
+msgid "%s user"
+msgid_plural "%s users"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2601
+msgid "<em>This is just a start, you'll discover more accounts over time.</em>"
+msgstr "<em>Das ist erst der Anfang — mit der Zeit entdeckst du weitere Konten.</em>"
+
+#: src/components/onboarding/AccountSetupWizard.ts:1656
+msgid ""
+"A Lightning wallet lets you send and receive Zaps. You can set one up "
+"anytime later in Settings, but we recommend starting with a working wallet "
+"so you can zap right away."
+msgstr "Ein Lightning-Wallet erlaubt dir, Zaps zu senden und zu empfangen. Du kannst es jederzeit später in den Einstellungen einrichten, aber wir empfehlen, mit einem funktionierenden Wallet zu starten, damit du sofort zappen kannst."
+
+#: src/components/onboarding/AccountSetupWizard.ts:2530
+msgid "A short bio helps others get to know you. You can always change this later."
+msgstr "Eine kurze Bio hilft anderen, dich kennenzulernen. Du kannst sie jederzeit später ändern."
+
+#: src/components/onboarding/AccountSetupWizard.ts:2433
+msgid "Add a Profile Picture"
+msgstr "Profilbild hinzufügen"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2166
+msgid "Add Sidecar to Chrome"
+msgstr "Sidecar zu Chrome hinzufügen"
+
+#: src/components/onboarding/AccountSetupWizard.ts:1670
+msgid "Are you sure? All your inputs and your keypair will be discarded."
+msgstr "Bist du sicher? Alle deine Eingaben und dein Schlüsselpaar werden verworfen."
+
+#: src/components/onboarding/AccountSetupWizard.ts:2427
+#: src/components/onboarding/AccountSetupWizard.ts:2501
+msgid "Avatar"
+msgstr "Avatar"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2698
+msgid "Back to packs"
+msgstr "Zurück zu den Packs"
+
+#: src/components/onboarding/AccountSetupWizard.ts:1902
+msgid "Backup"
+msgstr "Backup"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2005
+#: src/components/onboarding/AccountSetupWizard.ts:2019
+msgid "Backup saved"
+msgstr "Backup gespeichert"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2031
+msgid "Backup saved to Downloads folder"
+msgstr "Backup im Downloads-Ordner gespeichert"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2523
+#: src/helpers/profile-field-helpers.ts:48
+msgid "Bio"
+msgstr "Bio"
+
+#: src/components/onboarding/AccountSetupWizard.ts:1729
+msgid "Cancel Setup"
+msgstr "Einrichtung abbrechen"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2547
+msgid "Changeable anytime under Settings &rarr; Relays."
+msgstr "Jederzeit änderbar unter Einstellungen &rarr; Relays."
+
+#: src/components/onboarding/AccountSetupWizard.ts:2344
+msgid "Choose a Username"
+msgstr "Wähle einen Benutzernamen"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2167
+msgid "Click <strong>\"Add to Chrome\"</strong> to install Sidecar"
+msgstr "Klicke auf <strong>„Zu Chrome hinzufügen“</strong>, um Sidecar zu installieren"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2187
+msgid "Click <strong>\"Import nsec\"</strong>"
+msgstr "Klicke auf <strong>„nsec importieren“</strong>"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2183
+msgid ""
+"Click it, set a <strong>PIN or passphrase</strong> (min. 4 characters), "
+"then <strong>\"Create keystore\"</strong>"
+msgstr "Klicke darauf, lege eine <strong>PIN oder Passphrase</strong> fest (min. 4 Zeichen), dann <strong>„Keystore erstellen“</strong>"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2891
+msgid "Come back here and click the \"Open Rizful\" button below"
+msgstr "Komme hierher zurück und klicke unten auf „Rizful öffnen“"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2928
+#: src/components/onboarding/AccountSetupWizard.ts:3001
+msgid "Connect"
+msgstr "Verbinden"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2995
+msgid "Connected! Your Lightning address: <strong>%s</strong>"
+msgstr "Verbunden! Deine Lightning-Adresse: <strong>%s</strong>"
+
+#: src/components/onboarding/AccountSetupWizard.ts:1800
+#: src/components/onboarding/AccountSetupWizard.ts:1808
+msgid "Copy"
+msgstr "Kopieren"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2917
+msgid "Could not open browser"
+msgstr "Browser konnte nicht geöffnet werden"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2888
+msgid ""
+"Create an account at <a href=\"https://rizful.com/create-account\" "
+"target=\"_blank\" rel=\"noopener\">rizful.com/create-account</a>"
+msgstr "Erstelle ein Konto unter <a href=\"https://rizful.com/create-account\" target=\"_blank\" rel=\"noopener\">rizful.com/create-account</a>"
+
+#: src/helpers/profile-field-helpers.ts:40
+msgid "Display Name"
+msgstr "Anzeigename"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2199
+msgid "Done. Your identity is in Sidecar, now log in to NoorNote"
+msgstr "Fertig. Deine Identität ist in Sidecar — melde dich jetzt bei NoorNote an"
+
+#: src/components/onboarding/AccountSetupWizard.ts:1910
+msgid ""
+"Download a backup of your keypair. If you lose this, you lose access "
+"forever. You will paste this nsec into Sidecar in the next step."
+msgstr "Lade ein Backup deines Schlüsselpaars herunter. Wenn du es verlierst, verlierst du für immer den Zugang. Diesen nsec fügst du im nächsten Schritt in Sidecar ein."
+
+#: src/components/onboarding/AccountSetupWizard.ts:1921
+msgid "Download Backup"
+msgstr "Backup herunterladen"
+
+#: src/helpers/profile-field-helpers.ts:75
+msgid "Email format (user@domain.com) or LNURL"
+msgstr "E-Mail-Format (user@domain.com) oder LNURL"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2059
+msgid "Encrypted with AES-256"
+msgstr "Verschlüsselt mit AES-256"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2261
+msgid "Everything is set up! Click below to log in with your new account."
+msgstr "Alles ist eingerichtet! Klicke unten, um dich mit deinem neuen Konto anzumelden."
+
+#: src/components/onboarding/AccountSetupWizard.ts:1844
+#: src/components/onboarding/AccountSetupWizard.ts:1857
+msgid "Failed to copy"
+msgstr "Kopieren fehlgeschlagen"
+
+#: src/components/onboarding/AccountSetupWizard.ts:3141
+msgid "Failed to publish: %s"
+msgstr "Veröffentlichen fehlgeschlagen: %s"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2035
+msgid "Failed to save backup"
+msgstr "Backup konnte nicht gespeichert werden"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2998
+msgid "Failed: %s"
+msgstr "Fehlgeschlagen: %s"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2589
+msgid "Find People to Follow"
+msgstr "Finde Leute zum Folgen"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2568
+#: src/components/onboarding/AccountSetupWizard.ts:2765
+msgid "Follow"
+msgstr "Folgen"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2732
+msgid "Follow All (%s)"
+msgstr "Allen folgen (%s)"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2639
+msgid ""
+"Follow Packs by <a href=\"https://github.com/callebtc/following.space\" "
+"target=\"_blank\" rel=\"noopener\">calle's following.space</a>"
+msgstr "Follow-Packs von <a href=\"https://github.com/callebtc/following.space\" target=\"_blank\" rel=\"noopener\">calle's following.space</a>"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2615
+#: src/components/onboarding/AccountSetupWizard.ts:3032
+#: src/components/onboarding/AccountSetupWizard.ts:3102
+msgid "Following %s account"
+msgid_plural "Following %s accounts"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2731
+msgid "Following All"
+msgstr "Allen gefolgt"
+
+#: src/components/onboarding/AccountSetupWizard.ts:1660
+msgid "Go back"
+msgstr "Zurück"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2885
+msgid "How it works:"
+msgstr "So funktioniert es:"
+
+#: src/components/onboarding/AccountSetupWizard.ts:1929
+msgid "I have downloaded and saved my backup"
+msgstr "Ich habe mein Backup heruntergeladen und gespeichert"
+
+#: src/components/onboarding/AccountSetupWizard.ts:1916
+msgid ""
+"If you lose your private key, you lose access to your account forever. No "
+"one can help you recover it, not even us."
+msgstr "Wenn du deinen Private Key verlierst, verlierst du für immer den Zugang zu deinem Konto. Niemand kann dir bei der Wiederherstellung helfen, nicht einmal wir."
+
+#: src/components/onboarding/AccountSetupWizard.ts:2194
+msgid "Import account"
+msgstr "Konto importieren"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2186
+msgid "Import nsec"
+msgstr "nsec importieren"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2068
+msgid "Import to NoorSigner"
+msgstr "In NoorSigner importieren"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2158
+msgid "Install Sidecar"
+msgstr "Sidecar installieren"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2171
+msgid "Installed, your Nostr signer is ready"
+msgstr "Installiert — dein Nostr-Signer ist bereit"
+
+#: src/components/onboarding/AccountSetupWizard.ts:1770
+msgid "Keypair"
+msgstr "Schlüsselpaar"
+
+#: src/helpers/profile-field-helpers.ts:73
+msgid "Lightning Address"
+msgstr "Lightning-Adresse"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2875
+msgid "Lightning address configured: <strong>%s</strong>"
+msgstr "Lightning-Adresse konfiguriert: <strong>%s</strong>"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2866
+msgid "Lightning Wallet"
+msgstr "Lightning-Wallet"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2627
+msgid "Loading follow packs..."
+msgstr "Follow-Packs werden geladen…"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2120
+#: src/components/onboarding/AccountSetupWizard.ts:2314
+msgid "Logged in!"
+msgstr "Angemeldet!"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2254
+#: src/components/onboarding/AccountSetupWizard.ts:2260
+msgid "Login"
+msgstr "Anmeldung"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2126
+#: src/components/onboarding/AccountSetupWizard.ts:2129
+#: src/components/onboarding/AccountSetupWizard.ts:2320
+#: src/components/onboarding/AccountSetupWizard.ts:2325
+msgid "Login failed"
+msgstr "Anmeldung fehlgeschlagen"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2267
+#: src/components/onboarding/AccountSetupWizard.ts:2322
+#: src/components/onboarding/AccountSetupWizard.ts:2327
+msgid "Login with Extension"
+msgstr "Mit Erweiterung anmelden"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2061
+msgid "Never transmitted over the internet"
+msgstr "Wird nie über das Internet übertragen"
+
+#: src/components/onboarding/AccountSetupWizard.ts:1887
+msgid "New keypair generated"
+msgstr "Neues Schlüsselpaar erzeugt"
+
+#: src/helpers/profile-field-helpers.ts:64
+msgid "NIP-05 Identifier"
+msgstr "NIP-05-Identifikator"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2650
+msgid "No follow packs found. You can skip this step and find people later."
+msgstr "Keine Follow-Packs gefunden. Du kannst diesen Schritt überspringen und später Leute finden."
+
+#: src/components/onboarding/AccountSetupWizard.ts:1672
+msgid "No, don't cancel"
+msgstr "Nein, nicht abbrechen"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2052
+msgid ""
+"NoorSigner is a local key manager that runs on your machine. Your private "
+"key never leaves your computer."
+msgstr "NoorSigner ist ein lokaler Schlüssel-Manager, der auf deinem Rechner läuft. Dein Private Key verlässt deinen Computer nie."
+
+#: src/components/onboarding/AccountSetupWizard.ts:2955
+msgid "Not logged in"
+msgstr "Nicht angemeldet"
+
+#: src/components/onboarding/AccountSetupWizard.ts:1855
+msgid "npub copied to clipboard"
+msgstr "npub in die Zwischenablage kopiert"
+
+#: src/components/onboarding/AccountSetupWizard.ts:1842
+msgid "nsec copied to clipboard"
+msgstr "nsec in die Zwischenablage kopiert"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2887
+msgid ""
+"Open <a href=\"https://rizful.com\" target=\"_blank\" "
+"rel=\"noopener\">rizful.com</a>"
+msgstr "Öffne <a href=\"https://rizful.com\" target=\"_blank\" rel=\"noopener\">rizful.com</a>"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2893
+msgid "Open Rizful"
+msgstr "Rizful öffnen"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2175
+msgid "Open the <strong>puzzle-piece menu</strong> and pin Sidecar"
+msgstr "Öffne das <strong>Puzzle-Menü</strong> und pinne Sidecar an"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2160
+msgid "Opens the Chrome Web Store in a new tab"
+msgstr "Öffnet den Chrome Web Store in einem neuen Tab"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2461
+msgid "or choose one"
+msgstr "oder wähle eines"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2190
+msgid "Paste nsec"
+msgstr "nsec einfügen"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2927
+msgid "Paste one-time code"
+msgstr "Einmalcode einfügen"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2191
+msgid "Paste your <strong>nsec</strong>, copied in step 1 or from your backup file"
+msgstr "Füge deinen <strong>nsec</strong> ein, kopiert in Schritt 1 oder aus deiner Backup-Datei"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2925
+msgid "Paste your one-time code from Rizful below."
+msgstr "Füge unten deinen Einmalcode von Rizful ein."
+
+#: src/components/onboarding/AccountSetupWizard.ts:2174
+msgid "Pin Sidecar"
+msgstr "Sidecar anpinnen"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2949
+msgid "Please enter a code"
+msgstr "Bitte gib einen Code ein"
+
+#: src/components/onboarding/AccountSetupWizard.ts:1797
+msgid "Private Key (nsec) - KEEP THIS SECRET!"
+msgstr "Private Key (nsec) — GEHEIM HALTEN!"
+
+#: src/components/onboarding/AccountSetupWizard.ts:3136
+msgid "Profile published!"
+msgstr "Profil veröffentlicht!"
+
+#: src/components/onboarding/AccountSetupWizard.ts:1805
+msgid "Public Key (npub) - Your username"
+msgstr "Public Key (npub) — dein Benutzername"
+
+#: src/components/onboarding/AccountSetupWizard.ts:3082
+msgid "Publishing profile..."
+msgstr "Profil wird veröffentlicht…"
+
+#: src/components/onboarding/AccountSetupWizard.ts:1814
+msgid "Regenerate Keys"
+msgstr "Neue Schlüssel erzeugen"
+
+#: src/components/onboarding/AccountSetupWizard.ts:1518
+msgid "Restart"
+msgstr "Neu starten"
+
+#: src/components/onboarding/AccountSetupWizard.ts:3038
+msgid "Save & Go to Timeline"
+msgstr "Speichern & zur Timeline"
+
+#: src/components/onboarding/AccountSetupWizard.ts:1923
+msgid "Save this file in a secure location"
+msgstr "Speichere diese Datei an einem sicheren Ort"
+
+#: src/components/onboarding/AccountSetupWizard.ts:1909
+msgid "Save Your Backup"
+msgstr "Sichere dein Backup"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2051
+msgid "Secure Your Key with NoorSigner"
+msgstr "Sichere deinen Schlüssel mit NoorSigner"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2182
+msgid "Set a PIN"
+msgstr "PIN festlegen"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2867
+msgid ""
+"Set up a Lightning wallet to send and receive Bitcoin tips (Zaps) on Nostr. "
+"This is optional, you can set it up later in Settings."
+msgstr "Richte ein Lightning-Wallet ein, um Bitcoin-Trinkgelder (Zaps) auf Nostr zu senden und zu empfangen. Das ist optional — du kannst es später in den Einstellungen einrichten."
+
+#: src/components/onboarding/AccountSetupWizard.ts:2151
+msgid "Set up Sidecar"
+msgstr "Sidecar einrichten"
+
+#: src/components/onboarding/AccountSetupWizard.ts:1655
+msgid "Set Up Wallet Later?"
+msgstr "Wallet später einrichten?"
+
+#: src/components/onboarding/AccountSetupWizard.ts:3095
+msgid "Setting up DM inbox..."
+msgstr "DM-Posteingang wird eingerichtet…"
+
+#: src/components/onboarding/AccountSetupWizard.ts:3091
+msgid "Setting up relays..."
+msgstr "Relays werden eingerichtet…"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2477
+msgid "Show different avatars"
+msgstr "Andere Avatare zeigen"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2170
+msgid "Sidecar installed"
+msgstr "Sidecar installiert"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2152
+msgid ""
+"Sidecar is a browser extension that keeps your key encrypted on this device "
+"and signs events for you, so no website ever sees your nsec."
+msgstr "Sidecar ist eine Browser-Erweiterung, die deinen Schlüssel verschlüsselt auf diesem Gerät hält und Events für dich signiert — keine Webseite sieht jemals deinen nsec."
+
+#: src/components/onboarding/AccountSetupWizard.ts:2195
+msgid "Sidecar loads your profile, click <strong>\"Import account\"</strong>"
+msgstr "Sidecar lädt dein Profil — klicke auf <strong>„Konto importieren“</strong>"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2179
+msgid "Sidecar now stays in your toolbar"
+msgstr "Sidecar bleibt jetzt in deiner Symbolleiste"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2178
+msgid "Sidecar pinned"
+msgstr "Sidecar angepinnt"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2198
+msgid "Sidecar ready"
+msgstr "Sidecar bereit"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2269
+msgid "Sidecar will ask you to confirm"
+msgstr "Sidecar bittet dich zur Bestätigung"
+
+#: src/components/onboarding/AccountSetupWizard.ts:1526
+msgid "Skip"
+msgstr "Überspringen"
+
+#: src/components/onboarding/AccountSetupWizard.ts:1659
+msgid "Skip for now"
+msgstr "Vorerst überspringen"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2925
+msgid "Step 2:"
+msgstr "Schritt 2:"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2060
+msgid "Stored locally at <code>~/.noorsigner/accounts/</code>"
+msgstr "Lokal gespeichert unter <code>~/.noorsigner/accounts/</code>"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2383
+msgid "Suggest more usernames"
+msgstr "Weitere Benutzernamen vorschlagen"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2529
+msgid "Tell Us About Yourself"
+msgstr "Erzähl von dir"
+
+#: src/helpers/profile-field-helpers.ts:49
+msgid "Tell us about yourself..."
+msgstr "Erzähl uns von dir…"
+
+#: src/components/onboarding/AccountSetupWizard.ts:1915
+msgid "There is no password recovery."
+msgstr "Es gibt keine Passwort-Wiederherstellung."
+
+#: src/components/onboarding/AccountSetupWizard.ts:2594
+msgid ""
+"Time to fill your timeline with interesting content. Browse the packs below "
+"and follow the people that interest you."
+msgstr "Zeit, deine Timeline mit interessanten Inhalten zu füllen. Stöbere in den Packs unten und folge den Leuten, die dich interessieren."
+
+#: src/components/onboarding/AccountSetupWizard.ts:2434
+msgid "Upload your own or choose one below."
+msgstr "Lade dein eigenes hoch oder wähle unten eines."
+
+#: src/helpers/profile-field-helpers.ts:33
+msgid "username"
+msgstr "benutzername"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2338
+#: src/helpers/profile-field-helpers.ts:32
+msgid "Username"
+msgstr "Benutzername"
+
+#: src/helpers/profile-field-helpers.ts:66
+msgid ""
+"Verification identifier(s), comma-separated (user@domain.com, "
+"user@other.com)"
+msgstr "Verifizierungs-Identifikator(en), durch Komma getrennt (user@domain.com, user@other.com)"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2889
+msgid "Wait for the confirmation email and click \"Verify your account\" in it"
+msgstr "Warte auf die Bestätigungs-E-Mail und klicke darin auf „Verify your account“"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2860
+msgid "Wallet"
+msgstr "Wallet"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2890
+msgid ""
+"You'll land on the Rizful verification page. Confirm by clicking \"Verify "
+"Account\" there"
+msgstr "Du landest auf der Rizful-Verifizierungsseite. Bestätige dort mit einem Klick auf „Verify Account“"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2070
+msgid "You'll set a password in the next dialog"
+msgstr "Im nächsten Dialog legst du ein Passwort fest"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2062
+msgid "You'll set a password to unlock it"
+msgstr "Du legst ein Passwort zum Entsperren fest"
+
+#: src/components/onboarding/AccountSetupWizard.ts:3025
+msgid "You're All Set!"
+msgstr "Du bist startklar!"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2542
+msgid "Your DM inbox relays"
+msgstr "Deine DM-Posteingangs-Relays"
+
+#: src/helpers/profile-field-helpers.ts:41
+msgid "Your full name"
+msgstr "Dein vollständiger Name"
+
+#: src/components/onboarding/AccountSetupWizard.ts:1790
+msgid "Your Nostr Identity"
+msgstr "Deine Nostr-Identität"
+
+#: src/components/onboarding/AccountSetupWizard.ts:1791
+msgid ""
+"Your Nostr identity is a cryptographic key pair. The private key (nsec) is "
+"your password. The public key (npub) is your username."
+msgstr "Deine Nostr-Identität ist ein kryptografisches Schlüsselpaar. Der Private Key (nsec) ist dein Passwort. Der Public Key (npub) ist dein Benutzername."
+
+#: src/components/onboarding/AccountSetupWizard.ts:2057
+msgid "Your nsec will be securely stored by NoorSigner:"
+msgstr "Dein nsec wird sicher von NoorSigner gespeichert:"
+
+#: src/components/onboarding/AccountSetupWizard.ts:2345
+msgid ""
+"Your username is how others will find and mention you. Pick one of these or "
+"type your own."
+msgstr "Über deinen Benutzernamen finden und erwähnen dich andere. Wähle einen Vorschlag oder tippe deinen eigenen."

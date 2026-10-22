@@ -42,6 +42,12 @@ msgid_plural "%s hours"
 msgstr[0] ""
 msgstr[1] ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:3031
+msgid "%s inbox relay"
+msgid_plural "%s inbox relays"
+msgstr[0] ""
+msgstr[1] ""
+
 #: src/components/modals/SyncConfirmationModal.ts:198
 msgid "%s item in different folders"
 msgid_plural "%s items in different folders"
@@ -61,6 +67,18 @@ msgid_plural "%s minutes"
 msgstr[0] ""
 msgstr[1] ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:3031
+msgid "%s relay"
+msgid_plural "%s relays"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2682
+msgid "%s user"
+msgid_plural "%s users"
+msgstr[0] ""
+msgstr[1] ""
+
 #: src/services/dm/DMExpiration.ts:138
 msgid "%s week"
 msgid_plural "%s weeks"
@@ -74,6 +92,10 @@ msgstr ""
 #: src/components/modals/SyncConfirmationModal.ts:311
 #: src/components/modals/SyncConfirmationModal.ts:348
 msgid "+ %s more..."
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2601
+msgid "<em>This is just a start, you'll discover more accounts over time.</em>"
 msgstr ""
 
 #: src/components/onboarding/OnboardingComponent.ts:185
@@ -124,6 +146,14 @@ msgstr ""
 msgid "🔒 Encrypted note about this user. Only you can decrypt and read it."
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:1656
+msgid "A Lightning wallet lets you send and receive Zaps. You can set one up anytime later in Settings, but we recommend starting with a working wallet so you can zap right away."
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2530
+msgid "A short bio helps others get to know you. You can always change this later."
+msgstr ""
+
 #: src/components/views/AboutView.ts:69
 msgid "About NoorNote"
 msgstr ""
@@ -140,6 +170,10 @@ msgstr ""
 msgid "Active"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2433
+msgid "Add a Profile Picture"
+msgstr ""
+
 #: src/components/ui/NoteMenu.ts:219
 #: src/components/ui/NoteMenu.ts:783
 msgid "Add author to Tribe"
@@ -151,6 +185,10 @@ msgstr ""
 
 #: src/components/settings/RelaySettingsSection.ts:220
 msgid "Add Relay"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2166
+msgid "Add Sidecar to Chrome"
 msgstr ""
 
 #: src/components/views/ProfileBookingView.ts:611
@@ -318,6 +356,10 @@ msgstr ""
 msgid "Are you sure you want to remove this relay?"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:1670
+msgid "Are you sure? All your inputs and your keypair will be discarded."
+msgstr ""
+
 #: src/components/settings/NotificationPrioritySection.ts:94
 msgid "Armada"
 msgstr ""
@@ -371,6 +413,11 @@ msgstr ""
 msgid "Autostart enabled"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2427
+#: src/components/onboarding/AccountSetupWizard.ts:2501
+msgid "Avatar"
+msgstr ""
+
 #: src/components/views/AboutView.ts:243
 msgid "Avatars, images, videos, and audio referenced in Nostr events are loaded directly from whatever URL the author published. Each such load is a direct request from your device to that third-party host."
 msgstr ""
@@ -384,8 +431,25 @@ msgstr ""
 msgid "Back"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2698
+msgid "Back to packs"
+msgstr ""
+
 #: src/components/views/ProfileBookingView.ts:206
 msgid "Back to profile"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:1902
+msgid "Backup"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2005
+#: src/components/onboarding/AccountSetupWizard.ts:2019
+msgid "Backup saved"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2031
+msgid "Backup saved to Downloads folder"
 msgstr ""
 
 #: src/components/views/ProfileView.ts:2145
@@ -407,6 +471,11 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:239
 msgid "Beyond Nostr relays, NoorNote makes network requests to a small set of third-party endpoints to render content correctly. Each request unavoidably exposes your IP address to the receiving service:"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2523
+#: src/helpers/profile-field-helpers.ts:48
+msgid "Bio"
 msgstr ""
 
 #: src/components/ui/MarkdownToolbar.ts:57
@@ -512,6 +581,7 @@ msgstr ""
 #: src/components/modals/NewFolderModal.ts:60
 #: src/components/modals/UnlockNoorSignerModal.ts:68
 #: src/components/modals/ZapModal.ts:148
+#: src/components/onboarding/AccountSetupWizard.ts:1510
 #: src/components/post/PostNoteModal.ts:399
 #: src/components/reply/ReplyModal.ts:433
 #: src/components/settings/CacheSettingsSection.ts:373
@@ -529,8 +599,16 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:1729
+msgid "Cancel Setup"
+msgstr ""
+
 #: src/components/views/ZapstoreAppView.ts:321
 msgid "Certificate"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2547
+msgid "Changeable anytime under Settings &rarr; Relays."
 msgstr ""
 
 #: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:377
@@ -547,6 +625,10 @@ msgstr ""
 
 #: src/components/views/ProfileView.ts:1642
 msgid "Choose a tribe"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2344
+msgid "Choose a Username"
 msgstr ""
 
 #: src/components/post/PostNoteModal.ts:417
@@ -589,6 +671,18 @@ msgstr ""
 msgid "Clear your public follow list"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2167
+msgid "Click <strong>\"Add to Chrome\"</strong> to install Sidecar"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2187
+msgid "Click <strong>\"Import nsec\"</strong>"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2183
+msgid "Click it, set a <strong>PIN or passphrase</strong> (min. 4 characters), then <strong>\"Create keystore\"</strong>"
+msgstr ""
+
 #: src/components/views/VideoEditorView.ts:256
 msgid "Click or drag & drop to upload video"
 msgstr ""
@@ -599,6 +693,10 @@ msgstr ""
 
 #: src/components/ui/NoteMenu.ts:521
 msgid "Close"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2891
+msgid "Come back here and click the \"Open Rizful\" button below"
 msgstr ""
 
 #: src/components/modals/ZapModal.ts:137
@@ -641,6 +739,11 @@ msgstr ""
 msgid "Confirm Password"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2928
+#: src/components/onboarding/AccountSetupWizard.ts:3001
+msgid "Connect"
+msgstr ""
+
 #: src/components/settings/NWCSettingsSection.ts:165
 #: src/components/settings/NWCSettingsSection.ts:316
 msgid "Connect Wallet"
@@ -650,6 +753,12 @@ msgstr ""
 msgid "Connect your Lightning wallet via Nostr Wallet Connect (NWC) to send zaps."
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2995
+msgid "Connected! Your Lightning address: <strong>%s</strong>"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2300
+#: src/components/onboarding/AccountSetupWizard.ts:2961
 #: src/components/settings/NWCSettingsSection.ts:300
 msgid "Connecting..."
 msgstr ""
@@ -674,6 +783,11 @@ msgstr ""
 
 #: src/components/views/ProfileView.ts:704
 msgid "Copied!"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:1800
+#: src/components/onboarding/AccountSetupWizard.ts:1808
+msgid "Copy"
 msgstr ""
 
 #: src/components/views/ZapstoreAppView.ts:321
@@ -720,6 +834,10 @@ msgstr ""
 msgid "Could not load reposted note"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2917
+msgid "Could not open browser"
+msgstr ""
+
 #: src/components/ui/note-rendering/ZapReceiptRenderer.ts:163
 msgid "Could not parse zap data"
 msgstr ""
@@ -747,6 +865,10 @@ msgstr ""
 
 #: src/components/modals/NewFolderModal.ts:63
 msgid "Create"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2888
+msgid "Create an account at <a href=\"https://rizful.com/create-account\" target=\"_blank\" rel=\"noopener\">rizful.com/create-account</a>"
 msgstr ""
 
 #: src/components/onboarding/OnboardingComponent.ts:63
@@ -930,6 +1052,10 @@ msgstr ""
 msgid "Discovery tags"
 msgstr ""
 
+#: src/helpers/profile-field-helpers.ts:40
+msgid "Display Name"
+msgstr ""
+
 #: src/components/views/ArticleEditorView.ts:319
 msgid "Distraction-free writing (Esc to exit)"
 msgstr ""
@@ -946,12 +1072,25 @@ msgstr ""
 msgid "Do you accept the time limitation?"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:3018
 #: src/components/views/ProfileBookingView.ts:612
 msgid "Done"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2199
+msgid "Done. Your identity is in Sidecar, now log in to NoorNote"
+msgstr ""
+
 #: src/components/modals/UpdateModal.ts:116
 msgid "Download"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:1910
+msgid "Download a backup of your keypair. If you lose this, you lose access forever. You will paste this nsec into Sidecar in the next step."
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:1921
+msgid "Download Backup"
 msgstr ""
 
 #: src/components/post/PostNoteModal.ts:1006
@@ -1020,6 +1159,10 @@ msgstr ""
 msgid "Edit your profile"
 msgstr ""
 
+#: src/helpers/profile-field-helpers.ts:75
+msgid "Email format (user@domain.com) or LNURL"
+msgstr ""
+
 #: src/components/views/AboutView.ts:76
 msgid "Email:"
 msgstr ""
@@ -1054,6 +1197,10 @@ msgstr ""
 
 #: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:356
 msgid "Encrypted community"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2059
+msgid "Encrypted with AES-256"
 msgstr ""
 
 #: src/components/settings/PrivacySettingsSection.ts:231
@@ -1111,6 +1258,10 @@ msgstr ""
 msgid "Everyone will be able to see who you follow after this operation."
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2261
+msgid "Everything is set up! Click below to log in with your new account."
+msgstr ""
+
 #: src/components/settings/CacheSettingsSection.ts:456
 msgid "Excludes: Unpublished events and decrypted messages (protected from accidental deletion)."
 msgstr ""
@@ -1138,6 +1289,11 @@ msgstr ""
 
 #: src/components/settings/CacheSettingsSection.ts:441
 msgid "Failed to clear cache tables"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:1844
+#: src/components/onboarding/AccountSetupWizard.ts:1857
+msgid "Failed to copy"
 msgstr ""
 
 #: src/components/views/ZapstoreAppView.ts:125
@@ -1180,6 +1336,14 @@ msgstr ""
 msgid "Failed to open editor"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:3141
+msgid "Failed to publish: %s"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2035
+msgid "Failed to save backup"
+msgstr ""
+
 #: src/components/settings/RelaySettingsSection.ts:589
 msgid "Failed to save relay settings"
 msgstr ""
@@ -1202,6 +1366,10 @@ msgstr ""
 msgid "Failed to update thread mute"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2998
+msgid "Failed: %s"
+msgstr ""
+
 #: src/components/settings/NWCSettingsSection.ts:201
 msgid "Fiat Currency"
 msgstr ""
@@ -1216,12 +1384,25 @@ msgid_plural "Files: %s items, not stored locally"
 msgstr[0] ""
 msgstr[1] ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2589
+msgid "Find People to Follow"
+msgstr ""
+
 #: src/components/views/ArticleEditorView.ts:319
 msgid "Focus mode"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2568
+#: src/components/onboarding/AccountSetupWizard.ts:2765
+msgid "Follow"
+msgstr ""
+
 #: src/components/views/FollowPackDetailView.ts:122
 msgid "Follow All"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2732
+msgid "Follow All (%s)"
 msgstr ""
 
 #: src/components/settings/PrivacySettingsSection.ts:67
@@ -1240,16 +1421,33 @@ msgstr ""
 msgid "Follow pack was updated"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2639
+msgid "Follow Packs by <a href=\"https://github.com/callebtc/following.space\" target=\"_blank\" rel=\"noopener\">calle's following.space</a>"
+msgstr ""
+
 #: src/components/views/ProfileView.ts:662
 msgid "Followers"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2765
 #: src/components/views/ProfileView.ts:658
 msgid "Following"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2615
+#: src/components/onboarding/AccountSetupWizard.ts:3032
+#: src/components/onboarding/AccountSetupWizard.ts:3102
+msgid "Following %s account"
+msgid_plural "Following %s accounts"
+msgstr[0] ""
+msgstr[1] ""
+
 #: src/components/views/FollowPackDetailView.ts:261
 msgid "Following %s new people"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2731
+msgid "Following All"
 msgstr ""
 
 #: src/components/views/ListsOverviewView.ts:69
@@ -1306,6 +1504,10 @@ msgstr ""
 
 #: src/components/ui/note-rendering/GitEventRenderer.ts:190
 msgid "Git Repository"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:1660
+msgid "Go back"
 msgstr ""
 
 #: src/components/settings/NWCSettingsSection.ts:194
@@ -1376,6 +1578,10 @@ msgstr ""
 msgid "Hours"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2885
+msgid "How it works:"
+msgstr ""
+
 #: src/components/onboarding/OnboardingComponent.ts:164
 msgid "How Nostr works"
 msgstr ""
@@ -1389,8 +1595,16 @@ msgstr ""
 msgid "I already have a key"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:1929
+msgid "I have downloaded and saved my backup"
+msgstr ""
+
 #: src/components/settings/ListSettingsSection.ts:326
 msgid "I Made a Backup, Reset Follows"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:1916
+msgid "If you lose your private key, you lose access to your account forever. No one can help you recover it, not even us."
 msgstr ""
 
 #: src/components/settings/ListSettingsSection.ts:318
@@ -1407,6 +1621,18 @@ msgstr ""
 
 #: src/components/settings/NotificationPrioritySection.ts:82
 msgid "Image Tags"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2194
+msgid "Import account"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2186
+msgid "Import nsec"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2068
+msgid "Import to NoorSigner"
 msgstr ""
 
 #: src/components/modals/ImportToNoorSignerModal.ts:180
@@ -1444,6 +1670,14 @@ msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:437
 msgid "Insert recipe template"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2158
+msgid "Install Sidecar"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2171
+msgid "Installed, your Nostr signer is ready"
 msgstr ""
 
 #: src/components/onboarding/OnboardingComponent.ts:57
@@ -1528,6 +1762,10 @@ msgstr ""
 msgid "Key successfully imported to NoorSigner"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:1770
+msgid "Keypair"
+msgstr ""
+
 #: src/components/onboarding/OnboardingComponent.ts:174
 msgid "Keys: Your Identity"
 msgstr ""
@@ -1565,12 +1803,24 @@ msgstr ""
 msgid "License"
 msgstr ""
 
+#: src/helpers/profile-field-helpers.ts:73
+msgid "Lightning Address"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2875
+msgid "Lightning address configured: <strong>%s</strong>"
+msgstr ""
+
 #: src/components/settings/CacheSettingsSection.ts:120
 msgid "Lightning Addresses"
 msgstr ""
 
 #: src/components/views/ProfileView.ts:694
 msgid "Lightning QR Code"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2866
+msgid "Lightning Wallet"
 msgstr ""
 
 #: src/components/settings/NWCSettingsSection.ts:145
@@ -1636,6 +1886,10 @@ msgstr ""
 
 #: src/components/views/EpubReaderView.ts:261
 msgid "Loading book…"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2627
+msgid "Loading follow packs..."
 msgstr ""
 
 #: src/components/ui/note-rendering/CurationSetItems.ts:43
@@ -1715,6 +1969,29 @@ msgid "Locally: + %s item, not in the relays"
 msgid_plural "Locally: + %s items, not in the relays"
 msgstr[0] ""
 msgstr[1] ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2120
+#: src/components/onboarding/AccountSetupWizard.ts:2314
+msgid "Logged in!"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2254
+#: src/components/onboarding/AccountSetupWizard.ts:2260
+msgid "Login"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2126
+#: src/components/onboarding/AccountSetupWizard.ts:2129
+#: src/components/onboarding/AccountSetupWizard.ts:2320
+#: src/components/onboarding/AccountSetupWizard.ts:2325
+msgid "Login failed"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2267
+#: src/components/onboarding/AccountSetupWizard.ts:2322
+#: src/components/onboarding/AccountSetupWizard.ts:2327
+msgid "Login with Extension"
+msgstr ""
 
 #: src/components/views/ArticleTimelineView.ts:27
 msgid "Long-form content from your 1st and 2nd-degree follows"
@@ -1944,6 +2221,10 @@ msgstr ""
 msgid "Need help with your web project? I'm available for hire — design, UX, and development. Sats accepted."
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2061
+msgid "Never transmitted over the internet"
+msgstr ""
+
 #: src/components/views/AddonsOverviewView.ts:101
 msgid "New"
 msgstr ""
@@ -1960,6 +2241,10 @@ msgstr ""
 msgid "New Highlight"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:1887
+msgid "New keypair generated"
+msgstr ""
+
 #: src/components/modals/DMComposeModal.ts:43
 #: src/components/views/MessagesView.ts:146
 msgid "New Message"
@@ -1973,6 +2258,7 @@ msgstr ""
 msgid "New Note"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2205
 #: src/components/onboarding/OnboardingComponent.ts:195
 msgid "Next"
 msgstr ""
@@ -1983,6 +2269,10 @@ msgstr ""
 
 #: src/components/settings/CacheSettingsSection.ts:208
 msgid "NIP-05 Cache Size"
+msgstr ""
+
+#: src/helpers/profile-field-helpers.ts:64
+msgid "NIP-05 Identifier"
 msgstr ""
 
 #: src/components/views/AboutView.ts:242
@@ -2018,6 +2308,10 @@ msgstr ""
 msgid "No data collection"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2650
+msgid "No follow packs found. You can skip this step and find people later."
+msgstr ""
+
 #: src/components/views/MessagesView.ts:480
 msgid "No messages from people you follow"
 msgstr ""
@@ -2030,7 +2324,7 @@ msgstr ""
 msgid "No messages yet"
 msgstr ""
 
-#: src/components/onboarding/PublicTimelineComponent.ts:128
+#: src/components/onboarding/PublicTimelineComponent.ts:126
 msgid "No notes found yet."
 msgstr ""
 
@@ -2068,6 +2362,10 @@ msgstr ""
 
 #: src/components/ui/interaction-managers/LikeManager.ts:158
 msgid "No write relays configured"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:1672
+msgid "No, don't cancel"
 msgstr ""
 
 #: src/components/views/AboutView.ts:159
@@ -2108,6 +2406,10 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:154
 msgid "NoorNote v%s"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2052
+msgid "NoorSigner is a local key manager that runs on your machine. Your private key never leaves your computer."
 msgstr ""
 
 #: src/components/settings/KeySignerSection.ts:77
@@ -2164,6 +2466,10 @@ msgstr ""
 
 #: src/components/settings/PrivacySettingsSection.ts:134
 msgid "Not all Nostr clients support NIP-51 yet. If you use other clients that don't support NIP-51, you won't be able to see your private %s."
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2955
+msgid "Not logged in"
 msgstr ""
 
 #: src/components/views/ProfileBookingView.ts:594
@@ -2228,8 +2534,16 @@ msgstr ""
 msgid "Now (on publish)"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:1855
+msgid "npub copied to clipboard"
+msgstr ""
+
 #: src/components/views/ProfileView.ts:672
 msgid "npub QR Code"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:1842
+msgid "nsec copied to clipboard"
 msgstr ""
 
 #: src/components/settings/NWCSettingsSection.ts:153
@@ -2257,6 +2571,10 @@ msgstr ""
 msgid "Only suppresses notifications from this user's interactions with your notes"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2887
+msgid "Open <a href=\"https://rizful.com\" target=\"_blank\" rel=\"noopener\">rizful.com</a>"
+msgstr ""
+
 #: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:415
 msgid "Open in Armada"
 msgstr ""
@@ -2265,12 +2583,28 @@ msgstr ""
 msgid "Open page →"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2893
+msgid "Open Rizful"
+msgstr ""
+
 #: src/components/views/AboutView.ts:121
 msgid "Open Source"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2175
+msgid "Open the <strong>puzzle-piece menu</strong> and pin Sidecar"
+msgstr ""
+
 #: src/components/ui/WalletBalanceDisplay.ts:108
 msgid "Open Wallet Balance"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2160
+msgid "Opens the Chrome Web Store in a new tab"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2461
+msgid "or choose one"
 msgstr ""
 
 #: src/components/modals/SyncConfirmationModal.ts:267
@@ -2302,6 +2636,22 @@ msgstr ""
 msgid "Passwords do not match"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2190
+msgid "Paste nsec"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2927
+msgid "Paste one-time code"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2191
+msgid "Paste your <strong>nsec</strong>, copied in step 1 or from your backup file"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2925
+msgid "Paste your one-time code from Rizful below."
+msgstr ""
+
 #: src/components/settings/PrivacySettingsSection.ts:109
 msgid "petnames"
 msgstr ""
@@ -2312,6 +2662,10 @@ msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:462
 msgid "Pick date"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2174
+msgid "Pin Sidecar"
 msgstr ""
 
 #: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:194
@@ -2328,6 +2682,10 @@ msgstr ""
 
 #: src/components/modals/ZapModal.ts:66
 msgid "Please connect Lightning Wallet"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2949
+msgid "Please enter a code"
 msgstr ""
 
 #: src/components/modals/ImportToNoorSignerModal.ts:161
@@ -2408,6 +2766,7 @@ msgstr ""
 msgid "Preview"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2203
 #: src/components/onboarding/OnboardingComponent.ts:193
 msgid "Previous"
 msgstr ""
@@ -2447,6 +2806,10 @@ msgstr ""
 
 #: src/components/modals/ImportToNoorSignerModal.ts:67
 msgid "Private Key (nsec)"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:1797
+msgid "Private Key (nsec) - KEEP THIS SECRET!"
 msgstr ""
 
 #: src/components/settings/PrivacySettingsSection.ts:99
@@ -2489,12 +2852,20 @@ msgstr ""
 msgid "Profile pictures and embedded media:"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:3136
+msgid "Profile published!"
+msgstr ""
+
 #: src/components/settings/CacheSettingsSection.ts:108
 msgid "Profiles"
 msgstr ""
 
 #: src/components/ui/NoteMenu.ts:154
 msgid "Public Bookmark"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:1805
+msgid "Public Key (npub) - Your username"
 msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:333
@@ -2515,6 +2886,11 @@ msgstr ""
 msgid "Published by"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:3082
+msgid "Publishing profile..."
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:3039
 #: src/components/views/ArticleEditorView.ts:1170
 #: src/components/views/VideoEditorView.ts:569
 msgid "Publishing..."
@@ -2624,6 +3000,10 @@ msgstr ""
 #: src/components/settings/ListSettingsSection.ts:316
 #: src/components/settings/ListSettingsSection.ts:355
 msgid "Recovery options:"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:1814
+msgid "Regenerate Keys"
 msgstr ""
 
 #: src/components/settings/RelaySettingsSection.ts:587
@@ -2795,6 +3175,10 @@ msgstr ""
 msgid "Responsible Party"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:1518
+msgid "Restart"
+msgstr ""
+
 #: src/components/views/ConversationView.ts:1220
 #: src/components/views/MessagesView.ts:702
 msgid "Retry"
@@ -2803,6 +3187,10 @@ msgstr ""
 #: src/components/modals/EditFolderModal.ts:66
 #: src/components/settings/NotificationPrioritySection.ts:162
 msgid "Save"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:3038
+msgid "Save & Go to Timeline"
 msgstr ""
 
 #: src/components/post/PostNoteModal.ts:995
@@ -2820,6 +3208,14 @@ msgstr ""
 
 #: src/components/settings/CacheSettingsSection.ts:225
 msgid "Save Event Signatures"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:1923
+msgid "Save this file in a secure location"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:1909
+msgid "Save Your Backup"
 msgstr ""
 
 #: src/components/views/ListsOverviewView.ts:62
@@ -2874,6 +3270,10 @@ msgstr ""
 msgid "Secure Your Key"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2051
+msgid "Secure Your Key with NoorSigner"
+msgstr ""
+
 #: src/components/views/FollowPackDetailView.ts:214
 msgid "See Notes"
 msgstr ""
@@ -2920,6 +3320,10 @@ msgstr ""
 msgid "set a past date for older articles you're re-publishing"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2182
+msgid "Set a PIN"
+msgstr ""
+
 #: src/components/views/ArticleEditorView.ts:532
 msgid "Set date"
 msgstr ""
@@ -2935,6 +3339,26 @@ msgstr ""
 
 #: src/components/views/ProfileView.ts:1555
 msgid "Set status…"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2867
+msgid "Set up a Lightning wallet to send and receive Bitcoin tips (Zaps) on Nostr. This is optional, you can set it up later in Settings."
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2151
+msgid "Set up Sidecar"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:1655
+msgid "Set Up Wallet Later?"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:3095
+msgid "Setting up DM inbox..."
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:3091
+msgid "Setting up relays..."
 msgstr ""
 
 #: src/components/views/SettingsView.ts:71
@@ -2953,6 +3377,10 @@ msgstr ""
 #: src/components/ui/NoteMenu.ts:234
 #: src/components/ui/NoteMenu.ts:500
 msgid "Share Note"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2477
+msgid "Show different avatars"
 msgstr ""
 
 #: src/components/reply/ReplyModal.ts:509
@@ -2989,6 +3417,34 @@ msgstr ""
 msgid "Show user's products on the profile page"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2170
+msgid "Sidecar installed"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2152
+msgid "Sidecar is a browser extension that keeps your key encrypted on this device and signs events for you, so no website ever sees your nsec."
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2195
+msgid "Sidecar loads your profile, click <strong>\"Import account\"</strong>"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2179
+msgid "Sidecar now stays in your toolbar"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2178
+msgid "Sidecar pinned"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2198
+msgid "Sidecar ready"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2269
+msgid "Sidecar will ask you to confirm"
+msgstr ""
+
 #: src/components/ui/UserStatus.ts:44
 msgid "Sign Out"
 msgstr ""
@@ -3019,6 +3475,14 @@ msgstr ""
 
 #: src/components/views/ZapstoreAppView.ts:313
 msgid "Size"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:1526
+msgid "Skip"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:1659
+msgid "Skip for now"
 msgstr ""
 
 #: src/components/modals/UpdateModal.ts:114
@@ -3102,6 +3566,10 @@ msgstr ""
 msgid "Status: Open"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2925
+msgid "Step 2:"
+msgstr ""
+
 #: src/components/ui/NoteMenu.ts:269
 msgid "Stop article notifications"
 msgstr ""
@@ -3122,6 +3590,10 @@ msgstr ""
 msgid "Store them in a public follow list (kind:3)"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2060
+msgid "Stored locally at <code>~/.noorsigner/accounts/</code>"
+msgstr ""
+
 #: src/components/onboarding/OnboardingComponent.ts:45
 msgid "structurally impossible"
 msgstr ""
@@ -3132,6 +3604,10 @@ msgstr ""
 
 #: src/components/settings/CacheSettingsSection.ts:433
 msgid "Successfully cleared %s cache table(s)"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2383
+msgid "Suggest more usernames"
 msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:404
@@ -3205,6 +3681,14 @@ msgstr ""
 msgid "Technical details"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2529
+msgid "Tell Us About Yourself"
+msgstr ""
+
+#: src/helpers/profile-field-helpers.ts:49
+msgid "Tell us about yourself..."
+msgstr ""
+
 #: src/components/views/AboutView.ts:205
 msgid "Temporary data is stored in IndexedDB and localStorage."
 msgstr ""
@@ -3243,6 +3727,10 @@ msgstr ""
 
 #: src/components/settings/ListSettingsSection.ts:310
 msgid "Then come back and reset"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:1915
+msgid "There is no password recovery."
 msgstr ""
 
 #: src/components/settings/ListSettingsSection.ts:155
@@ -3375,6 +3863,10 @@ msgstr ""
 msgid "Thumbnail"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2594
+msgid "Time to fill your timeline with interesting content. Browse the packs below and follow the people that interest you."
+msgstr ""
+
 #: src/components/views/ConversationView.ts:609
 msgid "Time unit"
 msgstr ""
@@ -3383,7 +3875,7 @@ msgstr ""
 msgid "Timeline"
 msgstr ""
 
-#: src/components/onboarding/PublicTimelineComponent.ts:91
+#: src/components/onboarding/PublicTimelineComponent.ts:90
 msgid "Timeline coming soon."
 msgstr ""
 
@@ -3538,6 +4030,10 @@ msgstr ""
 msgid "Upload thumbnail"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2434
+msgid "Upload your own or choose one below."
+msgstr ""
+
 #: src/components/ui/UploadProgressOverlay.ts:158
 msgid "Uploaded"
 msgstr ""
@@ -3576,6 +4072,19 @@ msgstr ""
 
 #: src/components/views/ConversationView.ts:243
 msgid "User options"
+msgstr ""
+
+#: src/helpers/profile-field-helpers.ts:33
+msgid "username"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2338
+#: src/helpers/profile-field-helpers.ts:32
+msgid "Username"
+msgstr ""
+
+#: src/helpers/profile-field-helpers.ts:66
+msgid "Verification identifier(s), comma-separated (user@domain.com, user@other.com)"
 msgstr ""
 
 #: src/components/views/AboutView.ts:153
@@ -3635,9 +4144,17 @@ msgstr ""
 msgid "Visit <a href=\"https://follows.nostr.com/\" target=\"_blank\">follows.nostr.com</a> in your browser"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2889
+msgid "Wait for the confirmation email and click \"Verify your account\" in it"
+msgstr ""
+
 #: src/components/post/PostNoteModal.ts:1038
 #: src/components/reply/ReplyModal.ts:695
 msgid "Waiting for signer approval…"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2860
+msgid "Wallet"
 msgstr ""
 
 #: src/components/settings/PrivacySettingsSection.ts:267
@@ -3666,6 +4183,7 @@ msgid "Web Hosting"
 msgstr ""
 
 #: src/components/views/ZapstoreAppView.ts:305
+#: src/helpers/profile-field-helpers.ts:56
 msgid "Website"
 msgstr ""
 
@@ -3735,6 +4253,7 @@ msgstr ""
 msgid "Write your thoughts about this highlight (optional)…"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:1673
 #: src/components/post/PostNoteModal.ts:997
 #: src/components/views/ConversationView.ts:785
 msgid "Yes"
@@ -3769,6 +4288,22 @@ msgstr ""
 msgid "You will be notified about new articles"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2890
+msgid "You'll land on the Rizful verification page. Confirm by clicking \"Verify Account\" there"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2070
+msgid "You'll set a password in the next dialog"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2062
+msgid "You'll set a password to unlock it"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:3025
+msgid "You're All Set!"
+msgstr ""
+
 #: src/components/modals/UnlockNoorSignerModal.ts:56
 msgid "Your 24-hour trust session has expired. Enter your password to continue."
 msgstr ""
@@ -3781,12 +4316,20 @@ msgstr ""
 msgid "Your account is a key you own"
 msgstr ""
 
+#: src/components/onboarding/AccountSetupWizard.ts:2542
+msgid "Your DM inbox relays"
+msgstr ""
+
 #: src/components/settings/ListSettingsSection.ts:303
 msgid "Your follow list is critical!"
 msgstr ""
 
 #: src/components/onboarding/WelcomeInterstitials.ts:38
 msgid "Your followers belong to you"
+msgstr ""
+
+#: src/helpers/profile-field-helpers.ts:41
+msgid "Your full name"
 msgstr ""
 
 #: src/components/onboarding/OnboardingComponent.ts:175
@@ -3799,6 +4342,18 @@ msgstr ""
 
 #: src/components/views/ProfileBookingView.ts:473
 msgid "Your name (optional)"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:1790
+msgid "Your Nostr Identity"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:1791
+msgid "Your Nostr identity is a cryptographic key pair. The private key (nsec) is your password. The public key (npub) is your username."
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2057
+msgid "Your nsec will be securely stored by NoorSigner:"
 msgstr ""
 
 #: src/components/onboarding/OnboardingComponent.ts:46
@@ -3823,6 +4378,10 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:114
 msgid "Your Rights"
+msgstr ""
+
+#: src/components/onboarding/AccountSetupWizard.ts:2345
+msgid "Your username is how others will find and mention you. Pick one of these or type your own."
 msgstr ""
 
 #: src/components/onboarding/OnboardingComponent.ts:38

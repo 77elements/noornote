@@ -5,6 +5,7 @@
  */
 
 import { escapeHtmlAttr } from './escapeHtml';
+import { _ } from '../i18n';
 
 /**
  * Create a .form-group element with label + input/textarea + optional hint
@@ -28,31 +29,31 @@ function createFormGroup(config: {
 export function renderUsernameField(value: string): HTMLElement {
   return createFormGroup({
     id: 'name',
-    label: 'Username',
-    inputHtml: `<input type="text" id="name" name="name" class="input" value="${escapeHtmlAttr(value)}" placeholder="username" data-input="name" />`,
+    label: _('Username'),
+    inputHtml: `<input type="text" id="name" name="name" class="input" value="${escapeHtmlAttr(value)}" placeholder="${_('username')}" data-input="name" />`,
   });
 }
 
 export function renderDisplayNameField(value: string): HTMLElement {
   return createFormGroup({
     id: 'display_name',
-    label: 'Display Name',
-    inputHtml: `<input type="text" id="display_name" name="display_name" class="input" value="${escapeHtmlAttr(value)}" placeholder="Your full name" data-input="display_name" />`,
+    label: _('Display Name'),
+    inputHtml: `<input type="text" id="display_name" name="display_name" class="input" value="${escapeHtmlAttr(value)}" placeholder="${_('Your full name')}" data-input="display_name" />`,
   });
 }
 
 export function renderBioField(value: string): HTMLElement {
   return createFormGroup({
     id: 'about',
-    label: 'Bio',
-    inputHtml: `<textarea id="about" name="about" class="textarea textarea--small" rows="3" placeholder="Tell us about yourself..." data-input="about">${escapeHtmlAttr(value)}</textarea>`,
+    label: _('Bio'),
+    inputHtml: `<textarea id="about" name="about" class="textarea textarea--small" rows="3" placeholder="${_('Tell us about yourself...')}" data-input="about">${escapeHtmlAttr(value)}</textarea>`,
   });
 }
 
 export function renderWebsiteField(value: string): HTMLElement {
   return createFormGroup({
     id: 'website',
-    label: 'Website',
+    label: _('Website'),
     inputHtml: `<input type="text" id="website" name="website" class="input" value="${escapeHtmlAttr(value)}" placeholder="https://example.com" data-input="website" />`,
   });
 }
@@ -60,17 +61,19 @@ export function renderWebsiteField(value: string): HTMLElement {
 export function renderNip05Field(value: string): HTMLElement {
   return createFormGroup({
     id: 'nip05',
-    label: 'NIP-05 Identifier',
+    label: _('NIP-05 Identifier'),
     inputHtml: `<input type="text" id="nip05" name="nip05" class="input" value="${escapeHtmlAttr(value)}" placeholder="user@domain.com" data-input="nip05" />`,
-    hint: 'Verification identifier(s), comma-separated (user@domain.com, user@other.com)',
+    hint: _(
+      'Verification identifier(s), comma-separated (user@domain.com, user@other.com)'
+    ),
   });
 }
 
 export function renderLightningField(value: string): HTMLElement {
   return createFormGroup({
     id: 'lud16',
-    label: 'Lightning Address',
+    label: _('Lightning Address'),
     inputHtml: `<input type="text" id="lud16" name="lud16" class="input" value="${escapeHtmlAttr(value)}" placeholder="user@getalby.com" data-input="lud16" />`,
-    hint: 'Email format (user@domain.com) or LNURL',
+    hint: _('Email format (user@domain.com) or LNURL'),
   });
 }
