@@ -4653,6 +4653,7 @@ msgid "Find People to Follow"
 msgstr "Find People to Follow"
 
 #: src/addons/analytics/AnalyticsAddonView.ts:240
+#: src/components/follow-packs/renderFollowPackMembers.ts:65
 #: src/components/follow-packs/renderFollowPackMembers.ts:84
 #: src/components/onboarding/AccountSetupWizard.ts:2582
 #: src/components/onboarding/AccountSetupWizard.ts:2778
@@ -10608,6 +10609,7 @@ msgstr "Tribe renamed"
 msgid "Type @ to search your follows"
 msgstr "Type @ to search your follows"
 
+#: src/components/follow-packs/renderFollowPackMembers.ts:65
 #: src/components/follow-packs/renderFollowPackMembers.ts:96
 #: src/lists/follows.ts:1426
 #: src/lists/follows.ts:2358

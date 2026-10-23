@@ -3948,6 +3948,7 @@ msgid "Folder renamed"
 msgstr ""
 
 #: src/addons/analytics/AnalyticsAddonView.ts:240
+#: src/components/follow-packs/renderFollowPackMembers.ts:65
 #: src/components/follow-packs/renderFollowPackMembers.ts:84
 #: src/components/onboarding/AccountSetupWizard.ts:2582
 #: src/components/onboarding/AccountSetupWizard.ts:2778
@@ -9937,6 +9938,7 @@ msgstr ""
 msgid "Unexpected error during NoorSigner authentication"
 msgstr ""
 
+#: src/components/follow-packs/renderFollowPackMembers.ts:65
 #: src/components/follow-packs/renderFollowPackMembers.ts:96
 #: src/lists/follows.ts:1426
 #: src/lists/follows.ts:2358

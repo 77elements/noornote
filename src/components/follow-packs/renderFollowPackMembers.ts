@@ -62,7 +62,7 @@ export async function renderFollowPackMembers(
         </div>
       </div>
       <button class="follow-packs__member-action-btn btn ${isFollowing ? 'btn--passive ' : ''}btn--medium"
-              data-pubkey="${pubkey}">${isFollowing ? 'Unfollow' : 'Follow'}</button>
+              data-pubkey="${pubkey}">${isFollowing ? _('Unfollow') : _('Follow')}</button>
     `;
 
     item
