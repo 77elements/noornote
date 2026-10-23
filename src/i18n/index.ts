@@ -119,6 +119,20 @@ export function getUiLocale(): string {
 }
 
 /**
+ * Locale-aware number formatting for user-facing counts (followers, sats,
+ * cache sizes …). Uses the active UI locale, so `1,500` (en) vs `1.500` (de)
+ * follows the language the user picked. Falls back to `'en'` like everything
+ * else before `initI18n()` ran.
+ */
+export function formatNumber(value: number): string {
+  try {
+    return value.toLocaleString(currentLocale);
+  } catch {
+    return value.toLocaleString('en');
+  }
+}
+
+/**
  * Pure state switch (no storage, no events). Used by the async bootstrap
  * path and directly by tests to inject catalogs.
  */

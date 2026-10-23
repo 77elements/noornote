@@ -8,7 +8,7 @@
  * - Modular and reusable
  */
 
-import { _ } from '../../i18n';
+import { _, tn } from '../../i18n';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { MediaModuleApi } from '../../modules/media/contracts';
 import { SystemLogger } from '../../services/SystemLogger';
@@ -222,7 +222,7 @@ export class PostEditorToolbar {
           const errorMessages = failures.map(r => r.error).join('<br>');
           this.modalService.show({
             title: _('Some Uploads Failed'),
-            content: `<p>${_('%s file(s) failed:', failures.length)}</p><p style="font-size: 0.9rem;">${errorMessages}</p>`,
+            content: `<p>${tn('1 file failed:', '%s files failed:', failures.length)}</p><p style="font-size: 0.9rem;">${errorMessages}</p>`,
             showCloseButton: true,
           });
         }

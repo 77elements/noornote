@@ -831,7 +831,7 @@ export class MediaUploadService {
     try {
       const currentUser = this.authService.getCurrentUser();
       if (!currentUser) {
-        const errorMsg = 'Please log in to upload files';
+        const errorMsg = _('Please log in to upload files');
         ToastService.show(errorMsg, 'error');
         return this.errorResult(errorMsg);
       }
@@ -842,7 +842,7 @@ export class MediaUploadService {
       // we wouldn't accept anyway.
       const typeCheck = this.validateFileType(file);
       if (!typeCheck.valid) {
-        ToastService.show(typeCheck.error || 'Invalid file', 'error');
+        ToastService.show(typeCheck.error || _('Invalid file'), 'error');
         return this.errorResult(typeCheck.error || 'Invalid file');
       }
 
@@ -867,7 +867,7 @@ export class MediaUploadService {
       // point of pre-upload compression is to make oversized media uploadable.
       const sizeCheck = this.validateFileSize(fileToUpload, settings);
       if (!sizeCheck.valid) {
-        ToastService.show(sizeCheck.error || 'File too large', 'error');
+        ToastService.show(sizeCheck.error || _('File too large'), 'error');
         return this.errorResult(sizeCheck.error || 'File too large');
       }
 
@@ -914,8 +914,8 @@ export class MediaUploadService {
 
       ToastService.show(
         result.success
-          ? 'File uploaded successfully!'
-          : result.error || 'Upload failed',
+          ? _('File uploaded successfully!')
+          : result.error || _('Upload failed'),
         result.success ? 'success' : 'error'
       );
 

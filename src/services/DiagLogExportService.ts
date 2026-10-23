@@ -133,7 +133,7 @@ export async function runDiagLogExportFromButton(
     } else {
       const debugInfo = lastExportDebugInfo;
       ToastService.show(
-        exportError || debugInfo || 'export returned false',
+        exportError || debugInfo || _('Export failed'),
         'error',
         15000
       );

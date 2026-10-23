@@ -639,10 +639,12 @@ export class BookingService {
       ok: true,
       detail:
         informed > 0
-          ? _(
-              'Booking cancelled — host and %s participant(s) informed',
-              String(informed - 1)
-            )
+          ? informed - 1 === 1
+            ? _('Booking cancelled — host and 1 participant informed')
+            : _(
+                'Booking cancelled — host and %s participants informed',
+                String(informed - 1)
+              )
           : _('Booking cancelled'),
       informed,
       dmFailures,
@@ -781,7 +783,9 @@ export class BookingService {
     return {
       ok: true,
       detail: informed
-        ? _('Booking cancelled — %s recipient(s) informed', String(informed))
+        ? informed === 1
+          ? _('Booking cancelled — 1 recipient informed')
+          : _('Booking cancelled — %s recipients informed', String(informed))
         : _('Booking cancelled'),
       informed,
       dmFailures,
@@ -873,7 +877,9 @@ export class BookingService {
     return {
       ok: true,
       detail: informed
-        ? _('Booking cancelled — %s recipient(s) informed', String(informed))
+        ? informed === 1
+          ? _('Booking cancelled — 1 recipient informed')
+          : _('Booking cancelled — %s recipients informed', String(informed))
         : _('Booking cancelled'),
       informed,
       dmFailures,

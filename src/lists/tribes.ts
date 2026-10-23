@@ -2726,11 +2726,13 @@ export class TribeManager {
     const itemCount = this.getActualFolderItemCount(folderId);
     const message =
       itemCount > 0
-        ? _(
-            'Delete tribe "%s"? %s member(s) will be deleted.',
-            folder.name,
-            itemCount
-          )
+        ? itemCount === 1
+          ? _('Delete tribe "%s"? 1 member will be deleted.', folder.name)
+          : _(
+              'Delete tribe "%s"? %s members will be deleted.',
+              folder.name,
+              itemCount
+            )
         : _('Delete tribe "%s"?', folder.name);
 
     this.modalService.show({

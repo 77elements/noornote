@@ -444,7 +444,9 @@ export class ProfileBookingView extends View {
       this.render();
       ToastService.show(
         result.dmFailures
-          ? _('%s — %s DM(s) failed', result.detail, result.dmFailures)
+          ? result.dmFailures === 1
+            ? _('%s — 1 DM failed', result.detail)
+            : _('%s — %s DMs failed', result.detail, result.dmFailures)
           : result.detail,
         result.dmFailures ? 'warning' : 'success'
       );

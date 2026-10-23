@@ -7,7 +7,7 @@
 
 import { escapeHtmlAttr } from './escapeHtml';
 import type { Bolt11Match } from './extractBolt11';
-import { _ } from '../i18n';
+import { _, formatNumber } from '../i18n';
 
 export function replaceBolt11Placeholders(
   html: string,
@@ -39,5 +39,5 @@ function renderBolt11Card(match: Bolt11Match): string {
 }
 
 function formatSats(sats: number): string {
-  return sats.toLocaleString('en-US');
+  return formatNumber(sats);
 }

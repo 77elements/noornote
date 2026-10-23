@@ -6,6 +6,7 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { resolveReactionEmoji } from './formatCustomEmojis';
+import { formatNumber } from '../i18n';
 
 /**
  * Parsed zap request data extracted from a Kind 9735 event's description tag
@@ -138,7 +139,7 @@ export function getZapAmountSats(zapEvent: { tags: string[][] }): number {
  * Example: 1500 -> "1,500", 1000000 -> "1,000,000"
  */
 export function formatNumberWithCommas(num: number): string {
-  return num.toLocaleString('en-US');
+  return formatNumber(num);
 }
 
 /**

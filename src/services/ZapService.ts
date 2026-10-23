@@ -295,7 +295,9 @@ export class ZapService {
       const isTimeout = errorMessage.includes('timeout');
 
       ToastService.show(
-        isTimeout ? 'Zap timeout - please try again' : 'Could not zap note',
+        isTimeout
+          ? _('Zap timeout - please try again')
+          : _('Could not zap note'),
         'error'
       );
 

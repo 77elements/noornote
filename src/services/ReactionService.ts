@@ -244,7 +244,7 @@ export class ReactionService {
       // Show success toast to user
       const isZapTarget = targetEvent?.kind === 9735;
       ToastService.show(
-        `${isZapTarget ? 'Reacted' : 'Liked'}: ${emoji}`,
+        `${_(isZapTarget ? 'Reacted' : 'Liked')}: ${emoji}`,
         'success'
       );
 

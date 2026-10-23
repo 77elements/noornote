@@ -526,7 +526,7 @@ export class CalendarEventModal {
       ToastService.show(
         result.ok
           ? result.dmFailures
-            ? `${result.detail} — ${_('failed DM(s): %s', String(result.dmFailures))}`
+            ? `${result.detail} — ${result.dmFailures === 1 ? _('failed DM: 1') : _('failed DMs: %s', String(result.dmFailures))}`
             : _('Booking cancelled — guest and participants informed')
           : result.detail,
         result.ok && !result.dmFailures ? 'success' : 'warning'

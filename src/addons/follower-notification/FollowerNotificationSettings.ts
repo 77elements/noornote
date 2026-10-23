@@ -8,7 +8,7 @@ import { AddonLoader } from '../AddonLoader';
 import { UserIdentity } from '../../components/shared/UserIdentity';
 import { formatTimeAgo } from '../../helpers/formatTimeAgo';
 import { escapeHtml } from '../../helpers/escapeHtml';
-import { _, tn } from '../../i18n';
+import { _, tn, formatNumber } from '../../i18n';
 import {
   FollowerSnapshotStorage,
   DEFAULT_RECENCY_DAYS,
@@ -139,11 +139,11 @@ export class FollowerNotificationSettings extends SettingsSection {
         : warmingUp
           ? _(
               'Calibrating baseline (%s followers)…',
-              followerCount.toLocaleString('en-US')
+              formatNumber(followerCount)
             )
           : _(
               'Watching %s followers for changes.',
-              followerCount.toLocaleString('en-US')
+              formatNumber(followerCount)
             );
 
     const lastCheckText = lastCheck

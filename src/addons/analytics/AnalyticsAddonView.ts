@@ -34,7 +34,7 @@ import {
   type EngagementUnit,
   type TopPostEntry,
 } from './analyticsLogic';
-import { _ } from '../../i18n';
+import { _, formatNumber } from '../../i18n';
 
 /** One stat tile: label + value slot, mapped to a metric key. */
 interface TileSpec {
@@ -611,9 +611,7 @@ export class AnalyticsAddonView extends View {
     if (!el) return;
     const valueSlot = el.querySelector('.analytics-tile__value');
     if (!valueSlot) return;
-    const formatted = tile.format
-      ? tile.format(value)
-      : value.toLocaleString('en-US');
+    const formatted = tile.format ? tile.format(value) : formatNumber(value);
     valueSlot.className = 'analytics-tile__value';
     valueSlot.textContent = formatted;
   }
@@ -754,7 +752,7 @@ export class AnalyticsAddonView extends View {
     const valueSlot = el.querySelector('.analytics-tile__value');
     if (!valueSlot) return;
     valueSlot.className = 'analytics-tile__value pulsate';
-    valueSlot.textContent = `${count.toLocaleString('en-US')}+`;
+    valueSlot.textContent = `${formatNumber(count)}+`;
   }
 
   /** Refresh forces a full run (heals deletion drift via since-cursor reset). */

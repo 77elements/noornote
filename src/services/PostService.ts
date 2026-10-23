@@ -332,8 +332,8 @@ export class PostService {
       // Show success toast to user
       ToastService.show(
         kind === 1068
-          ? 'Poll posted successfully!'
-          : 'Note posted successfully!',
+          ? _('Poll posted successfully!')
+          : _('Note posted successfully!'),
         'success'
       );
 

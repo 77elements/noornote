@@ -631,14 +631,14 @@ msgstr "Zaps"
 #: src/components/views/MessagesView.ts:586
 #: src/components/views/MessagesView.ts:792
 #: src/components/views/ProfileBookingView.ts:326
-#: src/components/views/ProfileBookingView.ts:495
+#: src/components/views/ProfileBookingView.ts:497
 #: src/helpers/datePickerModal.ts:189
 #: src/helpers/datePickerModal.ts:331
 #: src/helpers/datePickerModal.ts:90
 #: src/lists/bookmarks.ts:3774
 #: src/lists/bookmarks.ts:3938
-#: src/lists/tribes.ts:2743
-#: src/lists/tribes.ts:2946
+#: src/lists/tribes.ts:2745
+#: src/lists/tribes.ts:2948
 #: src/services/AuthService.ts:838
 #: src/services/ModalService.ts:188
 #: src/services/ModalService.ts:247
@@ -1169,19 +1169,15 @@ msgstr "Version Code"
 msgid "Website"
 msgstr "Website"
 
-#: src/components/views/ProfileBookingView.ts:447
-msgid "%s — %s DM(s) failed"
-msgstr "%s — %s DM(s) failed"
-
 #: src/components/views/ProfileBookingView.ts:204
 msgid "%s does not offer a booking page right now."
 msgstr "%s does not offer a booking page right now."
 
-#: src/components/views/ProfileBookingView.ts:611
+#: src/components/views/ProfileBookingView.ts:613
 msgid "Add to calendar (.ics)"
 msgstr "Add to calendar (.ics)"
 
-#: src/components/views/ProfileBookingView.ts:487
+#: src/components/views/ProfileBookingView.ts:489
 msgid "Additional participants (optional)"
 msgstr "Additional participants (optional)"
 
@@ -1205,15 +1201,15 @@ msgstr "Book a meeting"
 msgid "Book a meeting with %s"
 msgstr "Book a meeting with %s"
 
-#: src/components/views/ProfileBookingView.ts:601
+#: src/components/views/ProfileBookingView.ts:603
 msgid "Booked!"
 msgstr "Booked!"
 
-#: src/components/views/ProfileBookingView.ts:497
+#: src/components/views/ProfileBookingView.ts:499
 msgid "Booking…"
 msgstr "Booking…"
 
-#: src/components/views/ProfileBookingView.ts:497
+#: src/components/views/ProfileBookingView.ts:499
 msgid "Confirm booking"
 msgstr "Confirm booking"
 
@@ -1231,7 +1227,7 @@ msgstr "Confirm booking"
 #: src/addons/note-taking/NoteEditorModal.ts:364
 #: src/components/views/ArticleView.ts:160
 #: src/components/views/MessagesView.ts:585
-#: src/lists/tribes.ts:2744
+#: src/lists/tribes.ts:2746
 #: src/services/ModalService.ts:246
 msgid "Delete"
 msgstr "Delete"
@@ -1240,14 +1236,14 @@ msgstr "Delete"
 msgid "Delete Article"
 msgstr "Delete Article"
 
-#: src/components/views/ProfileBookingView.ts:592
+#: src/components/views/ProfileBookingView.ts:594
 msgid "Delivered to %s of %s relay"
 msgid_plural "Delivered to %s of %s relays"
 msgstr[0] "Delivered to %s of %s relay"
 msgstr[1] ""
 
 #: src/components/onboarding/AccountSetupWizard.ts:3039
-#: src/components/views/ProfileBookingView.ts:612
+#: src/components/views/ProfileBookingView.ts:614
 msgid "Done"
 msgstr "Done"
 
@@ -1269,7 +1265,7 @@ msgstr "Next week"
 msgid "No open slots at the moment — check back later."
 msgstr "No open slots at the moment — check back later."
 
-#: src/components/views/ProfileBookingView.ts:491
+#: src/components/views/ProfileBookingView.ts:493
 msgid ""
 "Nostr users taking part in the meeting — they receive a private message "
 "about this booking."
@@ -1277,11 +1273,11 @@ msgstr ""
 "Nostr users taking part in the meeting — they receive a private message "
 "about this booking."
 
-#: src/components/views/ProfileBookingView.ts:594
+#: src/components/views/ProfileBookingView.ts:596
 msgid "Not reached: %s"
 msgstr "Not reached: %s"
 
-#: src/components/views/ProfileBookingView.ts:477
+#: src/components/views/ProfileBookingView.ts:479
 msgid "Note for %s (optional, sent as a private message)"
 msgstr "Note for %s (optional, sent as a private message)"
 
@@ -1293,23 +1289,23 @@ msgstr "Previous week"
 msgid "Read more from this author"
 msgstr "Read more from this author"
 
-#: src/components/views/ProfileBookingView.ts:470
+#: src/components/views/ProfileBookingView.ts:472
 msgid "Selected:"
 msgstr "Selected:"
 
-#: src/components/views/ProfileBookingView.ts:489
+#: src/components/views/ProfileBookingView.ts:491
 msgid "Tag with @, separate multiple participants with commas"
 msgstr "Tag with @, separate multiple participants with commas"
 
-#: src/components/views/ProfileBookingView.ts:590
+#: src/components/views/ProfileBookingView.ts:592
 msgid "Technical details"
 msgstr "Technical details"
 
-#: src/components/views/ProfileBookingView.ts:481
+#: src/components/views/ProfileBookingView.ts:483
 msgid "the host"
 msgstr "the host"
 
-#: src/components/views/ProfileBookingView.ts:607
+#: src/components/views/ProfileBookingView.ts:609
 msgid ""
 "The host received your booking as a private message. Add it to your "
 "calendar so you don't forget:"
@@ -1325,7 +1321,7 @@ msgstr "This will send a deletion request to all relays. This cannot be undone."
 msgid "times shown in your local timezone"
 msgstr "times shown in your local timezone"
 
-#: src/components/views/ProfileBookingView.ts:473
+#: src/components/views/ProfileBookingView.ts:475
 msgid "Your name (optional)"
 msgstr "Your name (optional)"
 
@@ -3210,7 +3206,7 @@ msgstr "bookmarks"
 msgid "Bookmarks reset. Reloading..."
 msgstr "Bookmarks reset. Reloading..."
 
-#: src/components/settings/CacheSettingsSection.ts:473
+#: src/components/settings/CacheSettingsSection.ts:477
 msgid "Cache cleared successfully. Reloading..."
 msgstr "Cache cleared successfully. Reloading..."
 
@@ -3222,11 +3218,11 @@ msgstr "Cache Size"
 msgid "Clear All & Reload"
 msgstr "Clear All & Reload"
 
-#: src/components/settings/CacheSettingsSection.ts:453
+#: src/components/settings/CacheSettingsSection.ts:457
 msgid "Clear All Cache & Reload?"
 msgstr "Clear All Cache & Reload?"
 
-#: src/components/settings/CacheSettingsSection.ts:458
+#: src/components/settings/CacheSettingsSection.ts:462
 msgid "Clear Cache & Reload"
 msgstr "Clear Cache & Reload"
 
@@ -3385,7 +3381,7 @@ msgstr "Every 60 seconds"
 msgid "Everyone will be able to see who you follow after this operation."
 msgstr "Everyone will be able to see who you follow after this operation."
 
-#: src/components/settings/CacheSettingsSection.ts:456
+#: src/components/settings/CacheSettingsSection.ts:460
 msgid ""
 "Excludes: Unpublished events and decrypted messages (protected from "
 "accidental deletion)."
@@ -3393,11 +3389,11 @@ msgstr ""
 "Excludes: Unpublished events and decrypted messages (protected from "
 "accidental deletion)."
 
-#: src/components/settings/CacheSettingsSection.ts:482
+#: src/components/settings/CacheSettingsSection.ts:486
 msgid "Failed to clear cache"
 msgstr "Failed to clear cache"
 
-#: src/components/settings/CacheSettingsSection.ts:441
+#: src/components/settings/CacheSettingsSection.ts:445
 msgid "Failed to clear cache tables"
 msgstr "Failed to clear cache tables"
 
@@ -3997,10 +3993,6 @@ msgstr "Store them in a private follow list (kind:30000)"
 msgid "Store them in a public follow list (kind:3)"
 msgstr "Store them in a public follow list (kind:3)"
 
-#: src/components/settings/CacheSettingsSection.ts:433
-msgid "Successfully cleared %s cache table(s)"
-msgstr "Successfully cleared %s cache table(s)"
-
 #: src/components/settings/ListSettingsSection.ts:78
 msgid ""
 "Switch between Easy Mode (automatic sync) and Manual Mode (action buttons "
@@ -4048,11 +4040,7 @@ msgstr "This operation is irreversible without using the reverse migration tool.
 msgid "This relay is already in your list"
 msgstr "This relay is already in your list"
 
-#: src/components/settings/CacheSettingsSection.ts:418
-msgid "This will clear %s table(s): %s."
-msgstr "This will clear %s table(s): %s."
-
-#: src/components/settings/CacheSettingsSection.ts:454
+#: src/components/settings/CacheSettingsSection.ts:458
 msgid "This will clear all safe cache tables and reload the app."
 msgstr "This will clear all safe cache tables and reload the app."
 
@@ -5110,7 +5098,7 @@ msgstr "%s copied"
 msgid "%s posted successfully!"
 msgstr "%s posted successfully!"
 
-#: src/services/ZapService.ts:400
+#: src/services/ZapService.ts:402
 msgid "%s sats zapped"
 msgstr "%s sats zapped"
 
@@ -5183,11 +5171,11 @@ msgstr "Failed to copy event ID"
 msgid "Failed to copy user ID"
 msgstr "Failed to copy user ID"
 
-#: src/services/ZapService.ts:323
+#: src/services/ZapService.ts:325
 msgid "Failed to create zap request"
 msgstr "Failed to create zap request"
 
-#: src/services/ZapService.ts:334
+#: src/services/ZapService.ts:336
 msgid "Failed to fetch invoice"
 msgstr "Failed to fetch invoice"
 
@@ -5274,7 +5262,7 @@ msgstr "Network error. Please check your connection."
 msgid "Not authenticated"
 msgstr "Not authenticated"
 
-#: src/services/ZapService.ts:383
+#: src/services/ZapService.ts:385
 msgid "Payment failed"
 msgstr "Payment failed"
 
@@ -5345,7 +5333,7 @@ msgstr "Text"
 msgid "Title is required"
 msgstr "Title is required"
 
-#: src/services/ZapService.ts:316
+#: src/services/ZapService.ts:318
 msgid "User cannot receive zaps"
 msgstr "User cannot receive zaps"
 
@@ -5791,11 +5779,11 @@ msgid_plural "%s posts"
 msgstr[0] "%s post"
 msgstr[1] ""
 
-#: src/addons/analytics/AnalyticsAddonView.ts:653
+#: src/addons/analytics/AnalyticsAddonView.ts:651
 msgid "%s sats earned"
 msgstr "%s sats earned"
 
-#: src/addons/analytics/AnalyticsAddonView.ts:660
+#: src/addons/analytics/AnalyticsAddonView.ts:658
 msgid "%s sats sent"
 msgstr "%s sats sent"
 
@@ -6086,24 +6074,15 @@ msgstr "Booked appointment — guest:"
 msgid "Booked by %s"
 msgstr "Booked by %s"
 
-#: src/addons/calendar/BookingService.ts:646
-#: src/addons/calendar/BookingService.ts:785
-#: src/addons/calendar/BookingService.ts:877
+#: src/addons/calendar/BookingService.ts:648
+#: src/addons/calendar/BookingService.ts:789
+#: src/addons/calendar/BookingService.ts:883
 msgid "Booking cancelled"
 msgstr "Booking cancelled"
-
-#: src/addons/calendar/BookingService.ts:784
-#: src/addons/calendar/BookingService.ts:876
-msgid "Booking cancelled — %s recipient(s) informed"
-msgstr "Booking cancelled — %s recipient(s) informed"
 
 #: src/addons/calendar/CalendarEventModal.ts:530
 msgid "Booking cancelled — guest and participants informed"
 msgstr "Booking cancelled — guest and participants informed"
-
-#: src/addons/calendar/BookingService.ts:642
-msgid "Booking cancelled — host and %s participant(s) informed"
-msgstr "Booking cancelled — host and %s participant(s) informed"
 
 #: src/addons/calendar/BookingManager.ts:217
 msgid "Booking config failed: %s"
@@ -6826,7 +6805,7 @@ msgstr "End date (optional, exclusive)"
 msgid "Ends (optional)"
 msgstr "Ends (optional)"
 
-#: src/addons/analytics/AnalyticsAddonView.ts:645
+#: src/addons/analytics/AnalyticsAddonView.ts:643
 msgid "engagement"
 msgstr "engagement"
 
@@ -6916,11 +6895,6 @@ msgstr "Export calendar (.ics)"
 #: src/addons/addonI18n.ts:22
 msgid "Extended Follows"
 msgstr "Extended Follows"
-
-#: src/addons/calendar/BookingManager.ts:428
-#: src/addons/calendar/CalendarEventModal.ts:529
-msgid "failed DM(s): %s"
-msgstr "failed DM(s): %s"
 
 #: src/addons/badges/BadgeService.ts:206
 msgid "Failed to accept badge"
@@ -7298,7 +7272,7 @@ msgstr "Keep off"
 msgid "Last checked %s."
 msgstr "Last checked %s."
 
-#: src/addons/analytics/AnalyticsAddonView.ts:794
+#: src/addons/analytics/AnalyticsAddonView.ts:792
 msgid "Last updated %s"
 msgstr "Last updated %s"
 
@@ -7312,7 +7286,7 @@ msgstr ""
 "(the slots are regular NIP-52 calendar events); bookings arrive as a "
 "private message. Page:"
 
-#: src/addons/analytics/AnalyticsAddonView.ts:646
+#: src/addons/analytics/AnalyticsAddonView.ts:644
 msgid "likes"
 msgstr "likes"
 
@@ -7558,7 +7532,7 @@ msgstr "No changes detected yet."
 msgid "No custom emojis yet. Add your first one above."
 msgstr "No custom emojis yet. Add your first one above."
 
-#: src/addons/analytics/AnalyticsAddonView.ts:675
+#: src/addons/analytics/AnalyticsAddonView.ts:673
 msgid "No data yet — run a Refresh."
 msgstr "No data yet — run a Refresh."
 
@@ -8046,7 +8020,7 @@ msgstr "Read state reset — all bookmarks unread"
 msgid "Reason (optional)"
 msgstr "Reason (optional)"
 
-#: src/addons/calendar/BookingService.ts:845
+#: src/addons/calendar/BookingService.ts:849
 msgid "Reason:"
 msgstr "Reason:"
 
@@ -8070,7 +8044,7 @@ msgid "Recent changes (%s)"
 msgstr "Recent changes (%s)"
 
 #: src/addons/analytics/AnalyticsAddonView.ts:396
-#: src/addons/analytics/AnalyticsAddonView.ts:778
+#: src/addons/analytics/AnalyticsAddonView.ts:776
 #: src/components/timeline/LastNotesPerFollow.ts:135
 #: src/components/timeline/Timeline.ts:412
 msgid "Refresh"
@@ -8080,7 +8054,7 @@ msgstr "Refresh"
 msgid "Refresh rate"
 msgstr "Refresh rate"
 
-#: src/addons/analytics/AnalyticsAddonView.ts:778
+#: src/addons/analytics/AnalyticsAddonView.ts:776
 msgid "Refreshing…"
 msgstr "Refreshing…"
 
@@ -8155,7 +8129,7 @@ msgstr "Removed \"%s\" from filter"
 msgid "Repeat"
 msgstr "Repeat"
 
-#: src/addons/analytics/AnalyticsAddonView.ts:646
+#: src/addons/analytics/AnalyticsAddonView.ts:644
 msgid "replies"
 msgstr "replies"
 
@@ -8163,7 +8137,7 @@ msgstr "replies"
 msgid "Reposts & quotes"
 msgstr "Reposts & quotes"
 
-#: src/addons/analytics/AnalyticsAddonView.ts:646
+#: src/addons/analytics/AnalyticsAddonView.ts:644
 msgid "reposts/quotes"
 msgstr "reposts/quotes"
 
@@ -8647,7 +8621,7 @@ msgstr ""
 "The cancellation could not be published — no relay accepted it. Check your "
 "connection and try again."
 
-#: src/addons/calendar/BookingService.ts:745
+#: src/addons/calendar/BookingService.ts:747
 msgid ""
 "The cancellation was not accepted by any relay. Check your connection and "
 "try again."
@@ -8655,7 +8629,7 @@ msgstr ""
 "The cancellation was not accepted by any relay. Check your connection and "
 "try again."
 
-#: src/addons/calendar/BookingService.ts:838
+#: src/addons/calendar/BookingService.ts:842
 msgid "The cancellation was not accepted by any relay. Try again."
 msgstr "The cancellation was not accepted by any relay. Try again."
 
@@ -8679,7 +8653,7 @@ msgstr ""
 msgid "The guest and all participants will be informed by DM."
 msgstr "The guest and all participants will be informed by DM."
 
-#: src/addons/calendar/BookingService.ts:845
+#: src/addons/calendar/BookingService.ts:849
 msgid "The host cancelled the booking \"%s\""
 msgstr "The host cancelled the booking \"%s\""
 
@@ -8838,6 +8812,7 @@ msgstr "Updating..."
 #: src/addons/badges/BadgesView.ts:143
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:289
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:292
+#: src/services/MediaUploadService.ts:918
 msgid "Upload failed"
 msgstr "Upload failed"
 
@@ -8906,7 +8881,7 @@ msgstr ""
 "When you follow someone, the app saves their current name and profile "
 "picture"
 
-#: src/addons/calendar/BookingService.ts:845
+#: src/addons/calendar/BookingService.ts:849
 msgid "When:"
 msgstr "When:"
 
@@ -8995,9 +8970,9 @@ msgstr "Your scheduled posts"
 msgid "Your slots"
 msgstr "Your slots"
 
-#: src/addons/analytics/AnalyticsAddonView.ts:646
-#: src/addons/analytics/AnalyticsAddonView.ts:653
-#: src/addons/analytics/AnalyticsAddonView.ts:660
+#: src/addons/analytics/AnalyticsAddonView.ts:644
+#: src/addons/analytics/AnalyticsAddonView.ts:651
+#: src/addons/analytics/AnalyticsAddonView.ts:658
 msgid "zaps"
 msgstr "zaps"
 
@@ -9882,7 +9857,7 @@ msgstr "Loading recipes..."
 msgid "Known"
 msgstr "Known"
 
-#: src/lists/tribes.ts:2930
+#: src/lists/tribes.ts:2932
 msgid "@alice, @bob, @charlie..."
 msgstr "@alice, @bob, @charlie..."
 
@@ -9915,11 +9890,11 @@ msgstr[1] ""
 msgid "🔒 Private"
 msgstr "🔒 Private"
 
-#: src/lists/tribes.ts:2949
+#: src/lists/tribes.ts:2951
 msgid "Add Members"
 msgstr "Add Members"
 
-#: src/lists/tribes.ts:2956
+#: src/lists/tribes.ts:2958
 msgid "Add Members to Tribe"
 msgstr "Add Members to Tribe"
 
@@ -9928,7 +9903,7 @@ msgstr "Add Members to Tribe"
 msgid "Add private note"
 msgstr "Add private note"
 
-#: src/lists/tribes.ts:3062
+#: src/lists/tribes.ts:3064
 msgid "Added %s member"
 msgid_plural "Added %s members"
 msgstr[0] "Added %s member"
@@ -9938,7 +9913,7 @@ msgstr[1] ""
 msgid "All loaded"
 msgstr "All loaded"
 
-#: src/lists/tribes.ts:3235
+#: src/lists/tribes.ts:3237
 msgid "Already up to date with relays"
 msgstr "Already up to date with relays"
 
@@ -9971,17 +9946,13 @@ msgstr "Closed"
 msgid "Content unavailable"
 msgstr "Content unavailable"
 
-#: src/lists/tribes.ts:2737
+#: src/lists/tribes.ts:2739
 msgid "Delete Tribe"
 msgstr "Delete Tribe"
 
-#: src/lists/tribes.ts:2734
+#: src/lists/tribes.ts:2736
 msgid "Delete tribe \"%s\"?"
 msgstr "Delete tribe \"%s\"?"
-
-#: src/lists/tribes.ts:2729
-msgid "Delete tribe \"%s\"? %s member(s) will be deleted."
-msgstr "Delete tribe \"%s\"? %s member(s) will be deleted."
 
 #: src/components/profile/ProfileArticlesCarousel.ts:203
 #: src/lists/bookmarks.ts:3652
@@ -9996,7 +9967,7 @@ msgstr "Easy Mode: Changes are automatically synced to and from relays."
 msgid "Easy Mode: Changes are automatically synced to your local backup and relays."
 msgstr "Easy Mode: Changes are automatically synced to your local backup and relays."
 
-#: src/lists/tribes.ts:3479
+#: src/lists/tribes.ts:3481
 msgid "Edit ›"
 msgstr "Edit ›"
 
@@ -10008,7 +9979,7 @@ msgstr "Edit bookmark"
 msgid "Edit Bookmark"
 msgstr "Edit Bookmark"
 
-#: src/lists/tribes.ts:3074
+#: src/lists/tribes.ts:3076
 msgid "Failed to add members"
 msgstr "Failed to add members"
 
@@ -10024,7 +9995,7 @@ msgstr "Failed to create folder"
 msgid "Failed to delete folder"
 msgstr "Failed to delete folder"
 
-#: src/lists/tribes.ts:2846
+#: src/lists/tribes.ts:2848
 msgid "Failed to delete tribe"
 msgstr "Failed to delete tribe"
 
@@ -10060,7 +10031,7 @@ msgstr "Failed to load tribes"
 msgid "Failed to move bookmark"
 msgstr "Failed to move bookmark"
 
-#: src/lists/tribes.ts:2892
+#: src/lists/tribes.ts:2894
 msgid "Failed to move member"
 msgstr "Failed to move member"
 
@@ -10068,7 +10039,7 @@ msgstr "Failed to move member"
 #: src/lists/follows.ts:1857
 #: src/lists/mutes.ts:1587
 #: src/lists/mutes.ts:1987
-#: src/lists/tribes.ts:3253
+#: src/lists/tribes.ts:3255
 msgid "Failed to publish to relays"
 msgstr "Failed to publish to relays"
 
@@ -10095,7 +10066,7 @@ msgstr "Failed to save"
 
 #: src/lists/bookmarks.ts:5368
 #: src/lists/mutes.ts:1602
-#: src/lists/tribes.ts:3271
+#: src/lists/tribes.ts:3273
 msgid "Failed to save to file"
 msgstr "Failed to save to file"
 
@@ -10103,7 +10074,7 @@ msgstr "Failed to save to file"
 #: src/lists/follows.ts:1842
 #: src/lists/mutes.ts:1577
 #: src/lists/mutes.ts:1976
-#: src/lists/tribes.ts:3239
+#: src/lists/tribes.ts:3241
 msgid "Failed to sync from relays"
 msgstr "Failed to sync from relays"
 
@@ -10131,7 +10102,7 @@ msgstr "Failed to unmute user"
 #: src/lists/follows.ts:1771
 #: src/lists/mutes.ts:1530
 #: src/lists/mutes.ts:1929
-#: src/lists/tribes.ts:3128
+#: src/lists/tribes.ts:3130
 msgid "Fetching from relays..."
 msgstr "Fetching from relays..."
 
@@ -10147,7 +10118,7 @@ msgstr "File is empty. Use \"Sync from Relays\" to restore your tribes."
 #: src/lists/follows.ts:1967
 #: src/lists/mutes.ts:1673
 #: src/lists/mutes.ts:2073
-#: src/lists/tribes.ts:3390
+#: src/lists/tribes.ts:3392
 msgid "File is identical to current list"
 msgstr "File is identical to current list"
 
@@ -10262,8 +10233,8 @@ msgstr "Local follows pushed to relays"
 msgid "Local mutes pushed to relays"
 msgstr "Local mutes pushed to relays"
 
-#: src/lists/tribes.ts:3204
-#: src/lists/tribes.ts:3368
+#: src/lists/tribes.ts:3206
+#: src/lists/tribes.ts:3370
 msgid "Local tribes pushed to relays"
 msgstr "Local tribes pushed to relays"
 
@@ -10295,11 +10266,11 @@ msgstr "Member"
 msgid "Member removed"
 msgstr "Member removed"
 
-#: src/lists/tribes.ts:2926
+#: src/lists/tribes.ts:2928
 msgid "Members (@username, comma-separated)"
 msgstr "Members (@username, comma-separated)"
 
-#: src/lists/tribes.ts:2863
+#: src/lists/tribes.ts:2865
 msgid "Members must be in a tribe"
 msgstr "Members must be in a tribe"
 
@@ -10311,11 +10282,11 @@ msgstr "Merged %s from file and synced to relays"
 msgid "Merged %s new follows and synced to relays"
 msgstr "Merged %s new follows and synced to relays"
 
-#: src/lists/tribes.ts:3344
+#: src/lists/tribes.ts:3346
 msgid "Merged and synced to file + relays"
 msgstr "Merged and synced to file + relays"
 
-#: src/lists/tribes.ts:3178
+#: src/lists/tribes.ts:3180
 msgid "Merged and synced to relays"
 msgstr "Merged and synced to relays"
 
@@ -10327,7 +10298,7 @@ msgstr "Merged bookmarks and synced to relays"
 msgid "Move bookmark"
 msgstr "Move bookmark"
 
-#: src/lists/tribes.ts:2888
+#: src/lists/tribes.ts:2890
 msgid "Moved to %s"
 msgstr "Moved to %s"
 
@@ -10378,7 +10349,7 @@ msgstr "No followers found"
 msgid "No follows yet"
 msgstr "No follows yet"
 
-#: src/lists/tribes.ts:3070
+#: src/lists/tribes.ts:3072
 msgid "No members added"
 msgstr "No members added"
 
@@ -10394,15 +10365,15 @@ msgstr "No muted users or threads"
 msgid "No tribe members yet"
 msgstr "No tribe members yet"
 
-#: src/lists/tribes.ts:2940
+#: src/lists/tribes.ts:2942
 msgid "No tribes available"
 msgstr "No tribes available"
 
-#: src/lists/tribes.ts:3446
+#: src/lists/tribes.ts:3448
 msgid "No tribes found. Create one in the sidebar."
 msgstr "No tribes found. Create one in the sidebar."
 
-#: src/lists/tribes.ts:3028
+#: src/lists/tribes.ts:3030
 msgid "No valid npubs or mentions found."
 msgstr "No valid npubs or mentions found."
 
@@ -10431,11 +10402,11 @@ msgstr "Optional description..."
 msgid "Picture"
 msgstr "Picture"
 
-#: src/lists/tribes.ts:2990
+#: src/lists/tribes.ts:2992
 msgid "Please enter members and select a tribe"
 msgstr "Please enter members and select a tribe"
 
-#: src/lists/tribes.ts:3123
+#: src/lists/tribes.ts:3125
 msgid "Please log in first"
 msgstr "Please log in first"
 
@@ -10443,7 +10414,7 @@ msgstr "Please log in first"
 msgid "Please log in to view your mute list."
 msgstr "Please log in to view your mute list."
 
-#: src/lists/tribes.ts:3438
+#: src/lists/tribes.ts:3440
 msgid "Please login to view tribes"
 msgstr "Please login to view tribes"
 
@@ -10455,7 +10426,7 @@ msgstr "Poll: %s"
 msgid "Profile of a user you have muted"
 msgstr "Profile of a user you have muted"
 
-#: src/lists/tribes.ts:3250
+#: src/lists/tribes.ts:3252
 msgid "Published to relays"
 msgstr "Published to relays"
 
@@ -10463,7 +10434,7 @@ msgstr "Published to relays"
 #: src/lists/follows.ts:1851
 #: src/lists/mutes.ts:1583
 #: src/lists/mutes.ts:1982
-#: src/lists/tribes.ts:3248
+#: src/lists/tribes.ts:3250
 msgid "Publishing to relays..."
 msgstr "Publishing to relays..."
 
@@ -10471,11 +10442,11 @@ msgstr "Publishing to relays..."
 #: src/lists/follows.ts:1909
 #: src/lists/mutes.ts:1626
 #: src/lists/mutes.ts:2027
-#: src/lists/tribes.ts:3303
+#: src/lists/tribes.ts:3305
 msgid "Reading from file..."
 msgstr "Reading from file..."
 
-#: src/lists/tribes.ts:3661
+#: src/lists/tribes.ts:3663
 msgid "Remove member"
 msgstr "Remove member"
 
@@ -10522,7 +10493,7 @@ msgstr "Save to File"
 msgid "Saved successfully"
 msgstr "Saved successfully"
 
-#: src/lists/tribes.ts:3268
+#: src/lists/tribes.ts:3270
 msgid "Saved to file"
 msgstr "Saved to file"
 
@@ -10531,7 +10502,7 @@ msgid "Saved to local file"
 msgstr "Saved to local file"
 
 #: src/lists/mutes.ts:1593
-#: src/lists/tribes.ts:3262
+#: src/lists/tribes.ts:3264
 msgid "Saving to file..."
 msgstr "Saving to file..."
 
@@ -10579,11 +10550,11 @@ msgid "Synced from relays"
 msgstr "Synced from relays"
 
 #: src/lists/follows.ts:1808
-#: src/lists/tribes.ts:3191
+#: src/lists/tribes.ts:3193
 msgid "Synced from relays (added %s, removed %s)"
 msgstr "Synced from relays (added %s, removed %s)"
 
-#: src/lists/tribes.ts:2869
+#: src/lists/tribes.ts:2871
 msgid "Target tribe not found"
 msgstr "Target tribe not found"
 
@@ -10610,15 +10581,15 @@ msgid "Threads you muted to stop notifications from replies."
 msgstr "Threads you muted to stop notifications from replies."
 
 #: src/lists/tribes.ts:2387
-#: src/lists/tribes.ts:2938
+#: src/lists/tribes.ts:2940
 msgid "Tribe"
 msgstr "Tribe"
 
-#: src/lists/tribes.ts:2903
+#: src/lists/tribes.ts:2905
 msgid "Tribe created"
 msgstr "Tribe created"
 
-#: src/lists/tribes.ts:2813
+#: src/lists/tribes.ts:2815
 msgid "Tribe deleted"
 msgstr "Tribe deleted"
 
@@ -10626,7 +10597,7 @@ msgstr "Tribe deleted"
 msgid "Tribe renamed"
 msgstr "Tribe renamed"
 
-#: src/lists/tribes.ts:2934
+#: src/lists/tribes.ts:2936
 msgid "Type @ to search your follows"
 msgstr "Type @ to search your follows"
 
@@ -11019,10 +10990,6 @@ msgid "%s change detected"
 msgid_plural "%s changes detected"
 msgstr[0] "%s change detected"
 msgstr[1] ""
-
-#: src/components/post/PostEditorToolbar.ts:225
-msgid "%s file(s) failed:"
-msgstr "%s file(s) failed:"
 
 #: src/components/ui/note-rendering/FollowPackRenderer.ts:74
 msgid "%s people"
@@ -11621,6 +11588,112 @@ msgid ""
 msgstr ""
 "You could shower this note with a thousand emojis, but you'll need an "
 "account first."
+
+#: src/components/views/ProfileBookingView.ts:449
+msgid "%s — %s DMs failed"
+msgstr "%s — %s DMs failed"
+
+#: src/components/views/ProfileBookingView.ts:448
+msgid "%s — 1 DM failed"
+msgstr "%s — 1 DM failed"
+
+#: src/components/post/PostEditorToolbar.ts:225
+msgid "1 file failed:"
+msgid_plural "%s files failed:"
+msgstr[0] "1 file failed:"
+msgstr[1] ""
+
+#: src/addons/calendar/BookingService.ts:788
+#: src/addons/calendar/BookingService.ts:882
+msgid "Booking cancelled — %s recipients informed"
+msgstr "Booking cancelled — %s recipients informed"
+
+#: src/addons/calendar/BookingService.ts:787
+#: src/addons/calendar/BookingService.ts:881
+msgid "Booking cancelled — 1 recipient informed"
+msgstr "Booking cancelled — 1 recipient informed"
+
+#: src/addons/calendar/BookingService.ts:644
+msgid "Booking cancelled — host and %s participants informed"
+msgstr "Booking cancelled — host and %s participants informed"
+
+#: src/addons/calendar/BookingService.ts:643
+msgid "Booking cancelled — host and 1 participant informed"
+msgstr "Booking cancelled — host and 1 participant informed"
+
+#: src/lists/tribes.ts:2731
+msgid "Delete tribe \"%s\"? %s members will be deleted."
+msgstr "Delete tribe \"%s\"? %s members will be deleted."
+
+#: src/lists/tribes.ts:2730
+msgid "Delete tribe \"%s\"? 1 member will be deleted."
+msgstr "Delete tribe \"%s\"? 1 member will be deleted."
+
+#: src/addons/calendar/BookingManager.ts:428
+#: src/addons/calendar/CalendarEventModal.ts:529
+msgid "failed DM: 1"
+msgstr "failed DM: 1"
+
+#: src/addons/calendar/BookingManager.ts:428
+#: src/addons/calendar/CalendarEventModal.ts:529
+msgid "failed DMs: %s"
+msgstr "failed DMs: %s"
+
+#: src/components/settings/CacheSettingsSection.ts:433
+msgid "Successfully cleared 1 cache table"
+msgid_plural "Successfully cleared %s cache tables"
+msgstr[0] "Successfully cleared 1 cache table"
+msgstr[1] ""
+
+#: src/components/settings/CacheSettingsSection.ts:418
+msgid "This will clear 1 table: %s."
+msgid_plural "This will clear %s tables: %s."
+msgstr[0] "This will clear 1 table: %s."
+msgstr[1] ""
+
+#: src/services/ZapService.ts:300
+msgid "Could not zap note"
+msgstr "Could not zap note"
+
+#: src/services/DeletionService.ts:176
+msgid "Deletion request sent successfully"
+msgstr "Deletion request sent successfully"
+
+#: src/services/DiagLogExportService.ts:136
+msgid "Export failed"
+msgstr "Export failed"
+
+#: src/services/MediaUploadService.ts:870
+msgid "File too large"
+msgstr "File too large"
+
+#: src/services/MediaUploadService.ts:917
+msgid "File uploaded successfully!"
+msgstr "File uploaded successfully!"
+
+#: src/services/MediaUploadService.ts:845
+msgid "Invalid file"
+msgstr "Invalid file"
+
+#: src/services/managers/KeySignerConnectionManager.ts:373
+msgid "KeySigner connection unstable - logged out"
+msgstr "KeySigner connection unstable - logged out"
+
+#: src/services/PostService.ts:336
+msgid "Note posted successfully!"
+msgstr "Note posted successfully!"
+
+#: src/services/MediaUploadService.ts:834
+msgid "Please log in to upload files"
+msgstr "Please log in to upload files"
+
+#: src/services/PostService.ts:335
+msgid "Poll posted successfully!"
+msgstr "Poll posted successfully!"
+
+#: src/services/ZapService.ts:299
+msgid "Zap timeout - please try again"
+msgstr "Zap timeout - please try again"
 
 #: src/addons/note-taking/NoteEditorModal.ts:362
 #: src/addons/note-taking/NoteEditorModal.ts:85

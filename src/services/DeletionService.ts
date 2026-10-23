@@ -19,6 +19,7 @@ import { SystemLogger } from './SystemLogger';
 import { ErrorService } from './ErrorService';
 import { BroadcastDeleteService } from './BroadcastDeleteService';
 import { ToastService } from './ToastService';
+import { _ } from '../i18n';
 
 export interface DeletionOptions {
   /** Event ID(s) to delete (regular events) */
@@ -172,7 +173,7 @@ export class DeletionService {
       // Show success toast to user (suppressed in silent mode — caller shows its own status)
       if (!silent)
         ToastService.show(
-          successMessage ?? 'Deletion request sent successfully',
+          successMessage ?? _('Deletion request sent successfully'),
           'success'
         );
 

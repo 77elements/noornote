@@ -370,7 +370,7 @@ export class KeySignerConnectionManager {
 
             const { ToastService } = await import('../ToastService');
             ToastService.show(
-              'KeySigner connection unstable - logged out',
+              _('KeySigner connection unstable - logged out'),
               'error'
             );
           }

@@ -6,7 +6,7 @@
  */
 
 import { View } from './View';
-import { _ } from '../../i18n';
+import { _, formatNumber } from '../../i18n';
 import {
   isShowReactionsFor,
   setShowReactionsFor,
@@ -456,12 +456,12 @@ export class ProfileView extends View {
       if (this.isLoadingFollowers) {
         followerEl.textContent =
           this.followerCount > 0
-            ? `${this.followerCount.toLocaleString('en-US')}+`
+            ? `${formatNumber(this.followerCount)}+`
             : '...';
         followerEl.classList.add('pulsate');
       } else {
         // Final count, no pulse, no "+"
-        followerEl.textContent = this.followerCount.toLocaleString('en-US');
+        followerEl.textContent = formatNumber(this.followerCount);
         followerEl.classList.remove('pulsate');
       }
     }
@@ -656,11 +656,11 @@ export class ProfileView extends View {
 
             <div class="profile-stats">
               <div class="stat-item stat-item--clickable" id="following-count-link">
-                <strong>${this.followingCount.toLocaleString('en-US')}</strong>
+                <strong>${formatNumber(this.followingCount)}</strong>
                 <span>${_('Following')}</span>
               </div>
               <div class="stat-item stat-item--clickable" id="followers-count-link">
-                <strong id="followers-count">${this.followerCount ? this.followerCount.toLocaleString('en-US') : '...'}</strong>
+                <strong id="followers-count">${this.followerCount ? formatNumber(this.followerCount) : '...'}</strong>
                 <span>${_('Followers')}</span>
               </div>
             </div>

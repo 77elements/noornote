@@ -425,7 +425,7 @@ export class BookingManager {
       this.render();
       ToastService.show(
         result.dmFailures
-          ? `${result.detail} — ${_('failed DM(s): %s', String(result.dmFailures))}`
+          ? `${result.detail} — ${result.dmFailures === 1 ? _('failed DM: 1') : _('failed DMs: %s', String(result.dmFailures))}`
           : result.detail,
         result.dmFailures ? 'warning' : 'success'
       );

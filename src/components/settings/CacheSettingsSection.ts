@@ -13,7 +13,7 @@ import { ModalService } from '../../services/ModalService';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { NotificationsModuleApi } from '../../modules/notifications/contracts';
 import { PlatformService } from '../../services/PlatformService';
-import { _ } from '../../i18n';
+import { _, tn } from '../../i18n';
 
 interface NDKCacheConfig {
   profileCacheSize: number;
@@ -415,7 +415,7 @@ export class CacheSettingsSection extends SettingsSection {
 
     this.showConfirmationModal(
       _('Clear Selected Cache Tables?'),
-      `<p style="margin-bottom: 1rem;">${_('This will clear %s table(s): %s.', tableNames.length, tableNames.join(', '))}</p>`,
+      `<p style="margin-bottom: 1rem;">${tn('This will clear 1 table: %s.', 'This will clear %s tables: %s.', tableNames.length, tableNames.join(', '))}</p>`,
       _('Clear Tables'),
       async () => {
         try {
@@ -430,7 +430,11 @@ export class CacheSettingsSection extends SettingsSection {
 
           checkboxes.forEach(cb => (cb.checked = false));
           ToastService.show(
-            _('Successfully cleared %s cache table(s)', tableNames.length),
+            tn(
+              'Successfully cleared 1 cache table',
+              'Successfully cleared %s cache tables',
+              tableNames.length
+            ),
             'success'
           );
         } catch (error) {
