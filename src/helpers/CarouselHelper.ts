@@ -21,6 +21,7 @@
 
 import { escapeHtmlAttr } from './escapeHtml';
 import { addSwipeSupport } from './addSwipeSupport';
+import { _ } from '../i18n';
 
 export interface CarouselSlide {
   /** Plain text only — rendered via textContent. Never pass HTML from untrusted sources. */
@@ -333,10 +334,10 @@ export function createScrollCarousel(
         showNav
           ? `
         <div class="nn-scroll-carousel__nav">
-          <button class="btn btn--square-sm nn-scroll-carousel__nav-btn nn-scroll-carousel__nav-btn--prev" aria-label="Previous">
+          <button class="btn btn--square-sm nn-scroll-carousel__nav-btn nn-scroll-carousel__nav-btn--prev" aria-label="${_('Previous')}">
             <span class="carousel-chevron-left" aria-hidden="true"></span>
           </button>
-          <button class="btn btn--square-sm nn-scroll-carousel__nav-btn nn-scroll-carousel__nav-btn--next" aria-label="Next">
+          <button class="btn btn--square-sm nn-scroll-carousel__nav-btn nn-scroll-carousel__nav-btn--next" aria-label="${_('Next')}">
             <span class="carousel-chevron-right" aria-hidden="true"></span>
           </button>
         </div>

@@ -28,17 +28,17 @@ export interface ComputedTimes {
 
 /** Calculation-method source keys (Fajr/Isha twilight angles differ). */
 export const CALC_METHODS: { value: string; label: string }[] = [
-  { value: 'MuslimWorldLeague', label: 'Muslim World League' },
-  { value: 'NorthAmerica', label: 'ISNA (North America)' },
-  { value: 'Egyptian', label: 'Egyptian General Authority' },
-  { value: 'UmmAlQura', label: 'Umm al-Qura (Makkah)' },
-  { value: 'Karachi', label: 'Karachi' },
-  { value: 'Tehran', label: 'Tehran (Jafari)' },
-  { value: 'Dubai', label: 'Dubai' },
-  { value: 'Kuwait', label: 'Kuwait' },
-  { value: 'Qatar', label: 'Qatar' },
-  { value: 'Singapore', label: 'Singapore (MUIS)' },
-  { value: 'MoonsightingCommittee', label: 'Moonsighting Committee' },
+  { value: 'MuslimWorldLeague', label: 'Muslim World League' }, // i18n-ok
+  { value: 'NorthAmerica', label: 'ISNA (North America)' }, // i18n-ok
+  { value: 'Egyptian', label: 'Egyptian General Authority' }, // i18n-ok
+  { value: 'UmmAlQura', label: 'Umm al-Qura (Makkah)' }, // i18n-ok
+  { value: 'Karachi', label: 'Karachi' }, // i18n-ok
+  { value: 'Tehran', label: 'Tehran (Jafari)' }, // i18n-ok
+  { value: 'Dubai', label: 'Dubai' }, // i18n-ok
+  { value: 'Kuwait', label: 'Kuwait' }, // i18n-ok
+  { value: 'Qatar', label: 'Qatar' }, // i18n-ok
+  { value: 'Singapore', label: 'Singapore (MUIS)' }, // i18n-ok
+  { value: 'MoonsightingCommittee', label: 'Moonsighting Committee' }, // i18n-ok
 ];
 
 const FACTORIES: Record<string, () => CalculationParameters> = {

@@ -75,12 +75,12 @@ const PRAYERS: [keyof ComputedTimes, string][] = [
   ['isha', 'Isha'],
 ];
 const SOURCE_OPTIONS: DropdownOption[] = [
-  { value: 'diyanet', label: 'Diyanet (official, online)' },
+  { value: 'diyanet', label: 'Diyanet (official, online)' }, // i18n-ok
   ...CALC_METHODS,
 ];
 const MADHAB_OPTIONS: DropdownOption[] = [
-  { value: 'shafi', label: 'Standard (Shafi / Maliki / Hanbali)' },
-  { value: 'hanafi', label: 'Hanafi' },
+  { value: 'shafi', label: 'Standard (Shafi / Maliki / Hanbali)' }, // i18n-ok
+  { value: 'hanafi', label: 'Hanafi' }, // i18n-ok
 ];
 const REMINDER_PRAYERS: [keyof ReminderPrayers, string][] = [
   ['fajr', 'Fajr'],

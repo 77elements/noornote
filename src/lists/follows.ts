@@ -2141,7 +2141,7 @@ export class FollowListManager {
             ${_('Sort by:')}
             <a href="#" class="follows-sort-controls__sort-date follows-sort-controls__link--disabled ${this.currentSort === 'date' ? 'active' : ''}">${_('Date')}</a>
             /
-            <a href="#" class="follows-sort-controls__sort-zaps follows-sort-controls__link--disabled ${this.currentSort !== 'date' ? 'active' : ''}">Zaps</a>
+            <a href="#" class="follows-sort-controls__sort-zaps follows-sort-controls__link--disabled ${this.currentSort !== 'date' ? 'active' : ''}">${_('Zaps')}</a>
           </span>
           `
               : ''

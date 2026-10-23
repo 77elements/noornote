@@ -1873,14 +1873,14 @@ export class MainLayout {
           <svg width="24" height="24"><use href="#icon-menu-bars"/></svg>
           <span class="hamburger-badge"></span>
         </button>
-        <span class="nn-logo">NoorNote</span>
+        <span class="nn-logo">NoorNote</span> <!-- i18n-ok brand -->
       </header>
       <div class="sidebar-overlay"></div>
       <aside class="sidebar" aria-label="${_('Navigation')}">
         <div class="sidebar-content">
           <div class="sidebar-scrollable">
             <div class="sidebar-header">
-              <span class="nn-logo">NoorNote</span>
+              <span class="nn-logo">NoorNote</span> <!-- i18n-ok brand -->
               <button
                 class="icon-btn sidebar-search-btn"
                 type="button"
@@ -2537,8 +2537,7 @@ export class MainLayout {
       'gregorian'
     );
     const version = `v${__APP_VERSION__}`;
-    const aboutLink =
-      '<a href="/about" class="primary-nav__link--about">About</a>';
+    const aboutLink = `<a href="/about" class="primary-nav__link--about">${_('About')}</a>`;
 
     // Format date based on calendar system
     let dateString = '';

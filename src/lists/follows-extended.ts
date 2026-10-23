@@ -18,7 +18,7 @@ import {
   type MutualState,
 } from '../services/FollowVerificationService';
 import { MutualChangeDetector } from '../services/MutualChangeDetector';
-import { _ } from '../i18n';
+import { _, tn } from '../i18n';
 import { MutualChangeStorage } from './MutualChangeStorage';
 import { ZapStatsService } from '../services/ZapStatsService';
 import { TypedEventBus } from '../core/TypedEventBus';
@@ -311,7 +311,7 @@ export class FollowsExtendedFeatures {
     ) as HTMLElement;
 
     if (checkLink) {
-      checkLink.textContent = 'Checking...';
+      checkLink.textContent = _('Checking...');
       (checkLink as HTMLElement).style.pointerEvents = 'none';
     }
 
@@ -333,7 +333,7 @@ export class FollowsExtendedFeatures {
       );
 
       if (lastCheckSpan) {
-        lastCheckSpan.textContent = 'Last: Just now';
+        lastCheckSpan.textContent = _('Last: Just now');
       }
 
       if (result.isFirstCheck) {
@@ -352,7 +352,7 @@ export class FollowsExtendedFeatures {
     } finally {
       progressBar?.complete();
       if (checkLink) {
-        checkLink.textContent = 'Check for changes';
+        checkLink.textContent = _('Check for changes');
         (checkLink as HTMLElement).style.pointerEvents = '';
       }
     }
@@ -395,9 +395,9 @@ export class FollowsExtendedFeatures {
     modal.innerHTML = `
       <div class="mutual-changes-modal__backdrop"></div>
       <div class="mutual-changes-modal__content">
-        <h3>Mutual Changes Detected</h3>
+        <h3>${_('Mutual Changes Detected')}</h3>
         <p class="mutual-changes-modal__summary">
-          ${result.totalChanges} ${result.totalChanges === 1 ? 'change' : 'changes'} detected
+          ${tn('%s change detected', '%s changes detected', result.totalChanges)}
         </p>
 
         ${
@@ -443,8 +443,8 @@ export class FollowsExtendedFeatures {
         }
 
         <div class="mutual-changes-modal__actions">
-          <button class="btn btn--primary mutual-changes-modal__mark-seen">Mark as Seen</button>
-          <button class="btn btn--passive mutual-changes-modal__close">Close</button>
+          <button class="btn btn--primary mutual-changes-modal__mark-seen">${_('Mark as Seen')}</button>
+          <button class="btn btn--passive mutual-changes-modal__close">${_('Close')}</button>
         </div>
       </div>
     `;

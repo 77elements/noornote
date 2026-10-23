@@ -413,7 +413,7 @@ export class ProfileView extends View {
       await this.mountTimeline();
     } catch (_error) {
       console.error('❌ PV: Failed to load profile', _error);
-      this.showError('Failed to load profile');
+      this.showError(_('Failed to load profile'));
     }
   }
 
@@ -724,7 +724,7 @@ export class ProfileView extends View {
         <button class="tab" data-tab="articles" type="button">${_('Articles')}</button>
         <button class="tab" data-tab="videos" type="button">${_('Videos')}</button>
         <button class="tab" data-tab="products" type="button">${_('Products')}</button>
-        <button class="tab" data-tab="zapstore" type="button">Zapstore</button>
+        <button class="tab" data-tab="zapstore" type="button">Zapstore</button> <!-- i18n-ok brand -->
         <button class="tab" data-tab="websites" type="button">${_('Websites')}</button>
         <button class="tab" data-tab="calendar" type="button">${_('Calendar')}</button>
         <button class="tab" data-tab="badges" type="button">${_('Badges')}</button>

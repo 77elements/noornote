@@ -268,7 +268,7 @@ export class ProfileBookingView extends View {
       ${nav}
       ${grid}
       ${selectedSlot ? this.renderBookingForm(selectedSlot.data) : ''}
-      <div class="l-row--right"><button class="btn btn--passive" data-back>Back to profile</button></div>
+      <div class="l-row--right"><button class="btn btn--passive" data-back>${_('Back to profile')}</button></div>
     `;
 
     this.wireNav(weekStarts);
@@ -315,15 +315,15 @@ export class ProfileBookingView extends View {
           if (this.cancelDTag === slot.data.dTag) {
             return `
             <div class="profile-booking__cancel-form">
-              <input class="input input--mini" data-cancel-reason placeholder="Reason (optional)" maxlength="200" />
+              <input class="input input--mini" data-cancel-reason placeholder="${_('Reason (optional)')}" maxlength="200" />
               <div class="profile-booking__cancel-actions">
-                <button class="btn btn--mini" data-cancel-confirm="${escapeHtmlAttr(slot.data.dTag)}">Confirm</button>
-                <button class="btn btn--passive btn--mini" data-cancel-abort>Keep</button>
+                <button class="btn btn--mini" data-cancel-confirm="${escapeHtmlAttr(slot.data.dTag)}">${_('Confirm')}</button>
+                <button class="btn btn--passive btn--mini" data-cancel-abort>${_('Keep')}</button>
               </div>
             </div>`;
           }
           return `<span class="profile-booking__slot-booked"><span>${escapeHtml(time)}</span>
-            <a href="#" class="profile-booking__cancel-link" data-cancel-booked="${escapeHtmlAttr(slot.data.dTag)}">Cancel</a></span>`;
+            <a href="#" class="profile-booking__cancel-link" data-cancel-booked="${escapeHtmlAttr(slot.data.dTag)}">${_('Cancel')}</a></span>`;
         }
         const selected = this.selectedDTag === slot.data.dTag;
         return `<a href="#" class="profile-booking__slot-link${

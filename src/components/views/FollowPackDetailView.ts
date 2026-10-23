@@ -53,7 +53,7 @@ export class FollowPackDetailView extends View {
         <div class="back-padder">
         <div class="article-view-loading">
           <div class="loading-spinner"></div>
-          <p>Loading follow pack...</p>
+          <p>${_('Loading follow pack...')}</p>
         </div>
     
         </div>
@@ -62,8 +62,7 @@ export class FollowPackDetailView extends View {
     try {
       const event = await this.fetchEvent();
       if (!event) {
-        this.container.innerHTML =
-          '<div class="article-view-error"><p>Follow pack not found</p></div>';
+        this.container.innerHTML = `<div class="article-view-error"><p>${_('Follow pack not found')}</p></div>`;
         return;
       }
 
@@ -73,8 +72,7 @@ export class FollowPackDetailView extends View {
         'FollowPackDetailView',
         `Failed to load: ${String(error)}`
       );
-      this.container.innerHTML =
-        '<div class="article-view-error"><p>Failed to load follow pack</p></div>';
+      this.container.innerHTML = `<div class="article-view-error"><p>${_('Failed to load follow pack')}</p></div>`;
     }
   }
 
@@ -111,7 +109,7 @@ export class FollowPackDetailView extends View {
               <span class="follow-packs__detail-author-mention"></span>
               ${
                 isLoggedIn
-                  ? `<button class="follow-packs__dm-btn btn-icon" title="Send DM">
+                  ? `<button class="follow-packs__dm-btn btn-icon" title="${_('Send DM')}">
                 <svg width="16" height="16"><use href="#icon-email"/></svg>
               </button>`
                   : ''

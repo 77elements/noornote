@@ -7,6 +7,7 @@
 import QRCode from 'qrcode';
 import { ModalService } from '../../services/ModalService';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { _ } from '../../i18n';
 
 export class QRCodeModal {
   private static instance: QRCodeModal | null = null;
@@ -33,7 +34,7 @@ export class QRCodeModal {
     // Show loading state first
     const loadingContent = this.renderLoadingContent();
     this.modalService.show({
-      title: 'Profile QR Code',
+      title: _('Profile QR Code'),
       content: loadingContent,
       width: '400px',
       height: 'auto',
@@ -54,7 +55,7 @@ export class QRCodeModal {
 
       // Update modal with QR code
       this.modalService.show({
-        title: 'Profile QR Code',
+        title: _('Profile QR Code'),
         content: qrContent,
         width: '400px',
         height: 'auto',
@@ -67,7 +68,7 @@ export class QRCodeModal {
 
       // Update modal with error
       this.modalService.show({
-        title: 'Profile QR Code',
+        title: _('Profile QR Code'),
         content: errorContent,
         width: '400px',
         height: 'auto',
@@ -82,7 +83,7 @@ export class QRCodeModal {
     return `
       <div class="modal__loading">
         <div class="loading-spinner"></div>
-        <p>Generating QR code...</p>
+        <p>${_('Generating QR code...')}</p>
       </div>
     `;
   }
@@ -111,7 +112,7 @@ export class QRCodeModal {
       <div class="qrcode-modal__qr-container">
         <img src="${qrCodeDataUrl}" alt="QR Code for ${escapeHtml(npub)}" class="qrcode-modal__qr-image" />
         <p class="qrcode-modal__npub-text">${escapeHtml(shortNpub)}</p>
-        <p class="qrcode-modal__instruction">Scan for npub</p>
+        <p class="qrcode-modal__instruction">${_('Scan for npub')}</p>
       </div>
     `;
 
@@ -124,7 +125,7 @@ export class QRCodeModal {
   public async showLightning(lud16: string): Promise<void> {
     const loadingContent = this.renderLoadingContent();
     this.modalService.show({
-      title: 'Lightning QR Code',
+      title: _('Lightning QR Code'),
       content: loadingContent,
       width: '400px',
       height: 'auto',
@@ -146,12 +147,12 @@ export class QRCodeModal {
         <div class="qrcode-modal__qr-container">
           <img src="${qrCodeDataUrl}" alt="Lightning QR Code" class="qrcode-modal__qr-image" />
           <p class="qrcode-modal__npub-text">${escapeHtml(lud16)}</p>
-          <p class="qrcode-modal__instruction">Scan with Lightning wallet</p>
+          <p class="qrcode-modal__instruction">${_('Scan with Lightning wallet')}</p>
         </div>
       `;
 
       this.modalService.show({
-        title: 'Lightning QR Code',
+        title: _('Lightning QR Code'),
         content: container,
         width: '400px',
         height: 'auto',
@@ -159,8 +160,8 @@ export class QRCodeModal {
     } catch (error) {
       console.error('Failed to generate Lightning QR code:', error);
       this.modalService.show({
-        title: 'Lightning QR Code',
-        content: this.renderErrorContent('Failed to generate QR code'),
+        title: _('Lightning QR Code'),
+        content: this.renderErrorContent(_('Failed to generate QR code')),
         width: '400px',
         height: 'auto',
       });

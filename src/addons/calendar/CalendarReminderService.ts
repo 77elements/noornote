@@ -51,14 +51,14 @@ export interface LeadOption {
 
 /** Single source of truth for reminder lead choices (minutes). */
 export const LEAD_OPTIONS: LeadOption[] = [
-  { value: '10', label: '10 min before' },
-  { value: '30', label: '30 min before' },
-  { value: '60', label: '1 hour before' },
-  { value: '120', label: '2 hours before' },
-  { value: '1440', label: '1 day before' },
-  { value: '4320', label: '3 days before' },
-  { value: '10080', label: '1 week before' },
-  { value: '0', label: 'Never' },
+  { value: '10', label: '10 min before' }, // i18n-ok (translated at use site: LEAD_OPTIONS.map)
+  { value: '30', label: '30 min before' }, // i18n-ok (translated at use site: LEAD_OPTIONS.map)
+  { value: '60', label: '1 hour before' }, // i18n-ok (translated at use site: LEAD_OPTIONS.map)
+  { value: '120', label: '2 hours before' }, // i18n-ok (translated at use site: LEAD_OPTIONS.map)
+  { value: '1440', label: '1 day before' }, // i18n-ok (translated at use site: LEAD_OPTIONS.map)
+  { value: '4320', label: '3 days before' }, // i18n-ok (translated at use site: LEAD_OPTIONS.map)
+  { value: '10080', label: '1 week before' }, // i18n-ok (translated at use site: LEAD_OPTIONS.map)
+  { value: '0', label: 'Never' }, // i18n-ok (translated at use site: LEAD_OPTIONS.map)
 ];
 
 /** Humanize a lead in minutes: "in 10 min" / "in 2 h" / "in 1 day" / "in 1 week". */
@@ -326,7 +326,7 @@ export class CalendarReminderService {
     // OS notification on top (desktop path — web Notification API; the hub
     // applies the unfocused rule). On Capacitor the scan never runs.
     void ReminderHub.getInstance().osNotifyNow({
-      title: 'NoorNote — Calendar',
+      title: _('NoorNote — Calendar'),
       body: _('%s starts %s', title, when),
       timeoutAfterMs: TIMEOUT_AFTER_MS,
       osWhen: 'unfocused',

@@ -52,19 +52,17 @@ export class SccMediaFeed {
   private async loadInitial(): Promise<void> {
     const follows = getAllFollowedPubkeys();
     if (follows.length === 0) {
-      this.gridEl.innerHTML =
-        '<p class="media-feed__empty">Follow users to see their media here.</p>';
+      this.gridEl.innerHTML = `<p class="media-feed__empty">${_('Follow users to see their media here.')}</p>`;
       return;
     }
 
-    this.gridEl.innerHTML = '<p class="pulsate">Loading media...</p>';
+    this.gridEl.innerHTML = `<p class="pulsate">${_('Loading media...')}</p>`;
 
     const items = await this.fetchMedia(follows);
     this.gridEl.innerHTML = '';
 
     if (items.length === 0) {
-      this.gridEl.innerHTML =
-        '<p class="media-feed__empty">No media from your follows yet.</p>';
+      this.gridEl.innerHTML = `<p class="media-feed__empty">${_('No media from your follows yet.')}</p>`;
       return;
     }
 

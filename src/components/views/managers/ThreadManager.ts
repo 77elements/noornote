@@ -31,6 +31,7 @@ import {
   type ThreadNode,
 } from '../../../helpers/threadTree';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { _ } from '../../../i18n';
 
 export interface ThreadManagerConfig {
   noteId: string;
@@ -124,7 +125,7 @@ export class ThreadManager {
     repliesContainer.innerHTML = `
       <div class="snv-replies__loading">
         <div class="loading-spinner"></div>
-        <p>Loading replies...</p>
+        <p>${_('Loading replies...')}</p>
       </div>
     `;
 
@@ -150,7 +151,7 @@ export class ThreadManager {
       if (replies.length === 0 && filteredQuotedReposts.length === 0) {
         repliesContainer.innerHTML = `
           <div class="snv-replies__empty">
-            <p>No replies or quotes yet</p>
+            <p>${_('No replies or quotes yet')}</p>
           </div>
         `;
         return;
@@ -190,7 +191,7 @@ export class ThreadManager {
       );
       repliesContainer.innerHTML = `
         <div class="snv-replies__error">
-          <p>Failed to load replies</p>
+          <p>${_('Failed to load replies')}</p>
         </div>
       `;
     }

@@ -115,7 +115,7 @@ export class PrivateCalendarService {
     if (!latest) {
       await this.publishList(
         {
-          title: 'Private',
+          title: 'Private', // i18n-ok
           description: '',
           eventRefs: [],
         },
@@ -123,7 +123,7 @@ export class PrivateCalendarService {
       );
       this.list = {
         id: DEFAULT_PRIVATE_LIST_ID,
-        title: 'Private',
+        title: 'Private', // i18n-ok
         description: '',
         createdAt: Math.floor(Date.now() / 1000),
         eventRefs: [],
@@ -266,7 +266,7 @@ export class PrivateCalendarService {
     };
     const list = this.list ?? {
       id: DEFAULT_PRIVATE_LIST_ID,
-      title: 'Private',
+      title: 'Private', // i18n-ok
       description: '',
       createdAt: 0,
       eventRefs: [],
@@ -354,7 +354,7 @@ export class PrivateCalendarService {
       this.list ??
       ({
         id: DEFAULT_PRIVATE_LIST_ID,
-        title: 'Private',
+        title: 'Private', // i18n-ok
         description: '',
         createdAt: 0,
         eventRefs: [],

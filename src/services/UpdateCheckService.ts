@@ -106,7 +106,7 @@ export class UpdateCheckService {
   public async checkManually(button: HTMLButtonElement): Promise<void> {
     const originalText = button.textContent || '';
     button.disabled = true;
-    button.textContent = 'Checking...';
+    button.textContent = _('Checking...');
 
     try {
       const update = await this.checkForUpdate();

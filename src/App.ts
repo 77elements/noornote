@@ -34,6 +34,7 @@ import { ModuleLoader } from './core/ModuleLoader';
 import { registerCoreModules } from './core/registerModules';
 import { decodeNip19 } from './services/NostrToolsAdapter';
 import { hexToNpub } from './helpers/nip19';
+import { _ } from './i18n';
 
 /** Maps viewName to the AppState key that stores the route parameter */
 const VIEW_PARAM_STATE_KEY: Record<string, string> = {
@@ -986,7 +987,7 @@ export class App {
       }
 
       const shouldStopDaemon = await ModalService.getInstance().confirm({
-        title: 'Stop NoorSigner Daemon?',
+        title: _('Stop NoorSigner Daemon?'),
         message:
           'The NoorSigner daemon is currently running. Do you want to stop it when closing the app?',
         confirmText: 'Stop Daemon',

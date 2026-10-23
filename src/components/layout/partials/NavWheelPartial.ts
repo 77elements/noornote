@@ -18,6 +18,7 @@
  */
 
 import { viewClassToWheelItem } from '../../../helpers/navModeSetting';
+import { _ } from '../../../i18n';
 
 export type WheelItemId =
   | 'timeline'
@@ -55,60 +56,60 @@ interface WheelItemDef {
 
 const ITEMS: WheelItemDef[] = [
   {
-    id: 'timeline',
-    label: 'Timeline',
+    id: 'timeline', // i18n-ok (translated at use site: item.label → _(item.label))
+    label: 'Timeline', // i18n-ok (translated at use site: _(item.label))
     icon: 'icon-home',
     angle: -90,
     route: '/',
   },
   {
-    id: 'profile',
-    label: 'Profile',
+    id: 'profile', // i18n-ok (translated at use site: item.label → _(item.label))
+    label: 'Profile', // i18n-ok (translated at use site: _(item.label))
     icon: 'icon-profile',
     angle: -45,
     route: '/profile',
   },
   {
-    id: 'notifications',
-    label: 'Notifications',
+    id: 'notifications', // i18n-ok (translated at use site: item.label → _(item.label))
+    label: 'Notifications', // i18n-ok (translated at use site: _(item.label))
     icon: 'icon-notifications',
     angle: 0,
     badge: 'notifications',
     route: '/notifications',
   },
   {
-    id: 'articles',
-    label: 'Articles',
+    id: 'articles', // i18n-ok (translated at use site: item.label → _(item.label))
+    label: 'Articles', // i18n-ok (translated at use site: _(item.label))
     icon: 'icon-articles',
     angle: 45,
     route: '/articles',
   },
   {
-    id: 'messages',
-    label: 'Messages',
+    id: 'messages', // i18n-ok (translated at use site: item.label → _(item.label))
+    label: 'Messages', // i18n-ok (translated at use site: _(item.label))
     icon: 'icon-email',
     angle: 90,
     badge: 'dm',
     route: '/messages',
   },
   {
-    id: 'lists',
-    label: 'Lists',
+    id: 'lists', // i18n-ok (translated at use site: item.label → _(item.label))
+    label: 'Lists', // i18n-ok (translated at use site: _(item.label))
     icon: 'icon-folder',
     angle: 135,
     badge: 'bookmarks-unread',
     route: '/lists',
   },
   {
-    id: 'settings',
-    label: 'Settings',
+    id: 'settings', // i18n-ok (translated at use site: item.label → _(item.label))
+    label: 'Settings', // i18n-ok (translated at use site: _(item.label))
     icon: 'icon-settings',
     angle: 180,
     route: '/settings',
   },
   {
-    id: 'addons',
-    label: 'Addons',
+    id: 'addons', // i18n-ok (translated at use site: item.label → _(item.label))
+    label: 'Addons', // i18n-ok (translated at use site: _(item.label))
     icon: 'icon-addons',
     angle: 225,
     route: '/addons',
@@ -128,7 +129,7 @@ export class NavWheelPartial {
   public createElement(): HTMLElement {
     const nav = document.createElement('nav');
     nav.className = 'nn-wheel';
-    nav.setAttribute('aria-label', 'Main navigation');
+    nav.setAttribute('aria-label', _('Main navigation'));
 
     nav.innerHTML = `
       <span class="nn-wheel__center" aria-hidden="true">
@@ -162,11 +163,11 @@ export class NavWheelPartial {
         data-wheel-item="${item.id}"
         data-wheel-route="${item.route}"
         style="--a: ${item.angle}deg"
-        title="${item.label}"
-        aria-label="${item.label}"
+        title="${_(item.label)}"
+        aria-label="${_(item.label)}"
       >
         <svg class="nn-wheel__icon"><use href="#${item.icon}"/></svg>
-        <span class="nn-wheel__label">${item.label}</span>
+        <span class="nn-wheel__label">${_(item.label)}</span>
         ${badge}
       </button>
     `;

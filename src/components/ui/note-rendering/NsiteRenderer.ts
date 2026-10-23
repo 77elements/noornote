@@ -92,7 +92,7 @@ export class NsiteRenderer {
           aggregateHash
             ? `<div class="nsite-card__hash">
                 <span class="nsite-card__hash-value">${escapeHtml(aggregateHash.slice(0, 16))}…</span>
-                <button class="btn-icon nsite-card__hash-copy" data-hash="${escapeHtmlAttr(aggregateHash)}" aria-label="Copy site hash" title="Copy full aggregate hash">
+                <button class="btn-icon nsite-card__hash-copy" data-hash="${escapeHtmlAttr(aggregateHash)}" aria-label="${_('Copy site hash')}" title="${_('Copy full aggregate hash')}">
                   <svg width="14" height="14"><use href="#icon-copy"/></svg>
                 </button>
               </div>`

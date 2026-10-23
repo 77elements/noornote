@@ -71,7 +71,7 @@ export class AboutView extends View {
           <section class="about-section">
             <h2>${_('Imprint')}</h2>
             <p><strong>[ mslm dvlpmnt ]</strong></p>
-            <p>Am Engeldorfer Berg 11<br>50997 Cologne<br>Germany</p>
+            <p>Am Engeldorfer Berg 11<br>50997 Cologne<br>Germany</p> // i18n-ok (legal address / company name)
             <p>
               ${_('Email:')} <a href="mailto:contact@mslmdvlpmnt.com">contact@mslmdvlpmnt.com</a><br>
               ${_('Phone:')} +49 1577 2456227
@@ -214,7 +214,7 @@ export class AboutView extends View {
     if (!this.platform.isBrowser) return '';
     const appLink = `<a href="https://noornote.app" rel="noopener noreferrer">noornote.app</a>`;
     const privacyLink = `<a href="https://mynymbox.io/privacypolicy" rel="noopener noreferrer">${_('Privacy Policy')}</a>`;
-    const hostBlock = `<strong>Mynymbox Hosting LLC</strong>, Hamilton Development, Unit B, Charlestown, Nevis, West Indies, St. Kitts and Nevis`;
+    const hostBlock = `<strong>Mynymbox Hosting LLC</strong>, Hamilton Development, Unit B, Charlestown, Nevis, West Indies, St. Kitts and Nevis`; // i18n-ok (legal address / company name)
     return `
       <h3>${_('Web Hosting')}</h3>
       <p>

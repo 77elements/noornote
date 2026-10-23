@@ -14,6 +14,7 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { NoteProcessor } from '../components/ui/note-processing/NoteProcessor';
 import { replaceMediaPlaceholders } from './renderMediaContent';
 import { replaceBolt11Placeholders } from './renderBolt11';
+import { _ } from '../i18n';
 
 export interface PreviewOptions {
   content: string;
@@ -38,7 +39,7 @@ export interface PreviewOptions {
  */
 export function renderPostPreview(options: PreviewOptions): string {
   if (!options.content.trim()) {
-    return '<p class="post-note-preview-empty">Nothing to preview yet...</p>';
+    return `<p class="post-note-preview-empty">${_('Nothing to preview yet...')}</p>`;
   }
 
   // Create mock Nostr event for processing.

@@ -69,8 +69,8 @@ export class FolderCard {
         showMount
           ? `
         <div class="mounts">
-          <label class="mount" data-mount="profile" title="Show this folder inline on your Profile View">
-            <span>Profile</span>
+          <label class="mount" data-mount="profile" title="${_('Show this folder inline on your Profile View')}">
+            <span>${_('Profile')}</span>
             <input type="checkbox" ${isMounted ? 'checked' : ''} />
           </label>
         </div>

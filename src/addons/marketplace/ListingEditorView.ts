@@ -39,10 +39,11 @@ const CURRENCY_OPTIONS = ['USD', 'EUR', 'GBP', 'BTC', 'SAT'].map(c => ({
   label: c,
 }));
 const FREQUENCY_OPTIONS = [
-  { value: '', label: 'One-time' },
-  { value: 'hour', label: 'per hour' },
-  { value: 'day', label: 'per day' },
-  { value: 'month', label: 'per month' },
+  // i18n-ok (translated at use site: FREQUENCY_OPTIONS.map)
+  { value: '', label: 'One-time' }, // i18n-ok (translated at use site: FREQUENCY_OPTIONS.map)
+  { value: 'hour', label: 'per hour' }, // i18n-ok (translated at use site: FREQUENCY_OPTIONS.map)
+  { value: 'day', label: 'per day' }, // i18n-ok (translated at use site: FREQUENCY_OPTIONS.map)
+  { value: 'month', label: 'per month' }, // i18n-ok (translated at use site: FREQUENCY_OPTIONS.map)
   { value: 'year', label: 'per year' },
 ];
 
@@ -120,8 +121,7 @@ export class ListingEditorView extends View {
    * Load existing listing for edit mode
    */
   private async loadExistingListing(): Promise<void> {
-    this.container.innerHTML =
-      '<div class="marketplace-timeline__empty pulsate"><p>Loading listing...</p></div>';
+    this.container.innerHTML = `<div class="marketplace-timeline__empty pulsate"><p>${_('Loading listing...')}</p></div>`;
 
     try {
       const articlesApi =
@@ -130,8 +130,7 @@ export class ListingEditorView extends View {
         (await articlesApi?.fetchAddressableEvent(this.editNaddr!)) ?? null;
 
       if (!event) {
-        this.container.innerHTML =
-          '<div class="marketplace-timeline__error"><p>Listing not found</p></div>';
+        this.container.innerHTML = `<div class="marketplace-timeline__error"><p>${_('Listing not found')}</p></div>`;
         return;
       }
 
@@ -289,7 +288,7 @@ export class ListingEditorView extends View {
 
             <div class="form__row">
               <label for="listing-location">${_('Location')}</label>
-              <input type="text" id="listing-location" class="input" placeholder="Berlin, DE" value="${escapeHtml(this.location)}" data-field="location" />
+              <input type="text" id="listing-location" class="input" placeholder="Berlin, DE" <!-- i18n-ok example value --> value="${escapeHtml(this.location)}" data-field="location" />
             </div>
 
             <div class="form__row">

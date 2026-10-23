@@ -20,6 +20,7 @@ import { encodeNaddr } from '../../services/NostrToolsAdapter';
 import { hexToNpub } from '../../helpers/nip19';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { getTag } from '../../helpers/tagUtils';
+import { _ } from '../../i18n';
 
 export class MarketplaceTimelineInjector {
   private static instance: MarketplaceTimelineInjector;
@@ -215,17 +216,17 @@ export class MarketplaceTimelineInjector {
       }
       <div class="timeline-listing-card__body">
         <div class="timeline-listing-card__seller" data-pubkey="${event.pubkey}">
-          <a href="#" class="mention-link" data-profile-pubkey="${event.pubkey}">Loading...</a>
-          <span class="timeline-listing-card__badge">Marketplace</span>
+          <a href="#" class="mention-link" data-profile-pubkey="${event.pubkey}">${_('Loading...')}</a>
+          <span class="timeline-listing-card__badge">${_('Marketplace')}</span>
         </div>
         <h3 class="timeline-listing-card__title">${escapeHtml(meta.title)}</h3>
         <div class="timeline-listing-card__price">${escapeHtml(priceDisplay)}</div>
         ${meta.summary ? `<p class="timeline-listing-card__summary">${escapeHtml(meta.summary.slice(0, 120))}${meta.summary.length > 120 ? '...' : ''}</p>` : ''}
         <div class="timeline-listing-card__actions">
-          <button class="btn-icon" data-listing-action="repost" title="Repost">
+          <button class="btn-icon" data-listing-action="repost" title="${_('Repost')}">
             <svg width="16" height="16"><use href="#icon-repost"/></svg>
           </button>
-          <button class="btn-icon" data-listing-action="quote" title="Quote">
+          <button class="btn-icon" data-listing-action="quote" title="${_('Quote')}">
             <span class="quote-glyph">❝</span>
           </button>
         </div>

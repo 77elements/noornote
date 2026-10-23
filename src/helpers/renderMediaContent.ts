@@ -75,6 +75,7 @@ export type { MediaContent } from '../components/ui/types/NoteTypes';
 import type { MediaContent } from '../components/ui/types/NoteTypes';
 import { hexToNpub } from './nip19';
 import { npubToUsername } from './npubToUsername';
+import { _ } from '../i18n';
 
 /**
  * Extract YouTube video ID from URL
@@ -105,9 +106,9 @@ function renderEpubCard(item: MediaContent): string {
   const safeUrl = safeHttpUrl(item.url);
   const downloadHref = safeUrl ? escapeHtmlAttr(safeUrl) : '';
   const download = safeUrl
-    ? `<a href="${downloadHref}" target="_blank" rel="noopener noreferrer" class="btn btn--mini btn--passive epub-book-card__download">Download Epub File</a>`
-    : `<span class="btn btn--mini btn--disabled epub-book-card__download">Download Epub File</span>`;
-  return `<div class="epub-book-card${canRead ? ' epub-book-card--readable' : ''}" data-epub-url="${escapeHtmlAttr(item.url)}"${item.hash ? ` data-epub-hash="${escapeHtmlAttr(item.hash)}"` : ''}${canRead ? ' role="button" tabindex="0" aria-label="Read this book"' : ''}><span class="epub-book-card__icon" aria-hidden="true"><svg width="18" height="18"><use href="#icon-book-open"/></svg></span><span class="epub-book-card__info"><span class="epub-book-card__title">${escapeHtml(fileName)}</span><span class="epub-book-card__meta">${canRead ? 'Click to read · EPUB' : 'EPUB'}</span></span></div>${download}`;
+    ? `<a href="${downloadHref}" target="_blank" rel="noopener noreferrer" class="btn btn--mini btn--passive epub-book-card__download">${_('Download Epub File')}</a>`
+    : `<span class="btn btn--mini btn--disabled epub-book-card__download">${_('Download Epub File')}</span>`;
+  return `<div class="epub-book-card${canRead ? ' epub-book-card--readable' : ''}" data-epub-url="${escapeHtmlAttr(item.url)}"${item.hash ? ` data-epub-hash="${escapeHtmlAttr(item.hash)}"` : ''}${canRead ? ` role="button" tabindex="0" aria-label="${_('Read this book')}"` : ''}><span class="epub-book-card__icon" aria-hidden="true"><svg width="18" height="18"><use href="#icon-book-open"/></svg></span><span class="epub-book-card__info"><span class="epub-book-card__title">${escapeHtml(fileName)}</span><span class="epub-book-card__meta">${canRead ? _('Click to read · EPUB') : 'EPUB'}</span></span></div>${download}`;
 }
 
 /**
@@ -141,7 +142,7 @@ export function renderSingleMedia(
       const videoId = getYouTubeVideoId(item.url);
       if (videoId) {
         const safeId = escapeHtmlAttr(videoId);
-        return `<div class="youtube-embed-wrapper"><div class="youtube-embed"><iframe src="https://www.youtube.com/embed/${safeId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><a href="https://www.youtube.com/watch?v=${safeId}" class="youtube-external-link">Watch on YouTube</a></div>`;
+        return `<div class="youtube-embed-wrapper"><div class="youtube-embed"><iframe src="https://www.youtube.com/embed/${safeId}" title="${_('YouTube video player')}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><a href="https://www.youtube.com/watch?v=${safeId}" class="youtube-external-link">${_('Watch on YouTube')}</a></div>`;
       }
       return renderVideo(item, index);
     }
@@ -188,7 +189,7 @@ function renderImageTagline(item: MediaContent): string {
   const visible = names.join(', ');
   const escapedFull = escapeHtmlAttr(visible);
   const pubkeysAttr = escapeHtmlAttr(item.taggedPubkeys.join(','));
-  return `<div class="note-media__tagline" data-full-list="${escapedFull}" data-tagged-pubkeys="${pubkeysAttr}" tabindex="0" role="button" aria-label="Tagged users: ${escapedFull}">${escapeHtml(visible)}</div>`;
+  return `<div class="note-media__tagline" data-full-list="${escapedFull}" data-tagged-pubkeys="${pubkeysAttr}" tabindex="0" role="button" aria-label="${_('Tagged users:')} ${escapedFull}">${escapeHtml(visible)}</div>`;
 }
 
 /**
@@ -242,7 +243,7 @@ export function renderMediaContent(
           const ytId = getYouTubeVideoId(item.url);
           if (ytId) {
             const safeId = escapeHtmlAttr(ytId);
-            return `<div class="youtube-embed-wrapper"><div class="youtube-embed"><iframe src="https://www.youtube.com/embed/${safeId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><a href="https://www.youtube.com/watch?v=${safeId}" class="youtube-external-link">Watch on YouTube</a></div>`;
+            return `<div class="youtube-embed-wrapper"><div class="youtube-embed"><iframe src="https://www.youtube.com/embed/${safeId}" title="${_('YouTube video player')}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><a href="https://www.youtube.com/watch?v=${safeId}" class="youtube-external-link">${_('Watch on YouTube')}</a></div>`;
           }
           return renderVideo(item, index);
         }

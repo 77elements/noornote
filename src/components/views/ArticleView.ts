@@ -87,7 +87,7 @@ export class ArticleView extends View {
         <div class="back-padder">
         <div class="article-view-loading">
           <div class="loading-spinner"></div>
-          <p>Loading article...</p>
+          <p>${_('Loading article...')}</p>
         </div>
     
         </div>
@@ -153,11 +153,11 @@ export class ArticleView extends View {
               isOwnArticle
                 ? `
               <div class="article-title-row__actions">
-                <button class="btn btn--medium btn--passive" data-action="edit-article" title="Edit article">
+                <button class="btn btn--medium btn--passive" data-action="edit-article" title="${_('Edit article')}">
                   <svg width="14" height="14"><use href="#icon-edit"/></svg>
                   Edit
                 </button>
-                <button class="btn btn--medium btn--danger" data-action="delete-article" title="Delete article">Delete</button>
+                <button class="btn btn--medium btn--danger" data-action="delete-article" title="${_('Delete article')}">${_('Delete')}</button>
               </div>
             `
                 : ''

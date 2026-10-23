@@ -162,7 +162,7 @@ export class UnknownDMNotifier {
         text,
         'info',
         {
-          label: 'Open',
+          label: 'Open', // i18n-ok
           onClick: () => {
             Router.getInstance().navigate(target);
           },

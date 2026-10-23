@@ -116,7 +116,7 @@ export class VideoEditorView extends View {
               <svg width="24" height="24"><use href="#icon-back"/></svg>
               Back
             </button>
-            <h1 class="video-editor__title">Post Video</h1>
+            <h1 class="video-editor__title">${_('Post Video')}</h1>
           </header>
 
           <div class="video-editor__toolbar">

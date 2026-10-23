@@ -242,8 +242,8 @@ export class CalendarGridView {
         <button class="tab${this.mode === 'list' ? ' tab--active' : ''}" data-tab="list" type="button">${_('List')}</button>
       </div>
       <div class="l-row--right calendar-addon__toolbar-actions">
-        <button class="btn btn--passive btn--mini" type="button" data-action="calendars">Calendars</button>
-        <button class="btn btn--mini" type="button" data-action="new">+ New Event</button>
+        <button class="btn btn--passive btn--mini" type="button" data-action="calendars">${_('Calendars')}</button>
+        <button class="btn btn--mini" type="button" data-action="new">${_('+ New Event')}</button>
       </div>
     `;
     this.container.appendChild(toolbar);
@@ -299,8 +299,8 @@ export class CalendarGridView {
           invite.message || invite.coordinate
         )}</span>
         <span class="l-row">
-          <button class="btn btn--success btn--mini" type="button" data-action="accept">Accept</button>
-          <button class="btn btn--passive btn--mini" type="button" data-action="dismiss">Dismiss</button>
+          <button class="btn btn--success btn--mini" type="button" data-action="accept">${_('Accept')}</button>
+          <button class="btn btn--passive btn--mini" type="button" data-action="dismiss">${_('Dismiss')}</button>
         </span>
       `;
       row
@@ -431,8 +431,8 @@ export class CalendarGridView {
       }`;
       row.innerHTML = `
         <span class="calendar-addon__list-date">${escapeHtml(this.formatListDate(entry.occurrenceStartMs))}</span>
-        <span class="calendar-addon__list-title">${entry.event.isPrivate ? '🔒 ' : ''}${escapeHtml(entry.event.title || '(Untitled event)')}</span>
-        <span class="calendar-addon__list-meta">${booked ? '<span class="badge badge--success">Booked</span> · ' : ''}${escapeHtml(this.timeLabel(entry))}</span>
+        <span class="calendar-addon__list-title">${entry.event.isPrivate ? '🔒 ' : ''}${escapeHtml(entry.event.title || _('(Untitled event)'))}</span>
+        <span class="calendar-addon__list-meta">${booked ? `<span class="badge badge--success">${_('Booked')}</span> · ` : ''}${escapeHtml(this.timeLabel(entry))}</span>
       `;
       row.addEventListener('click', () => this.openDetail(entry));
       list.appendChild(row);
@@ -454,7 +454,7 @@ export class CalendarGridView {
       : entry.event.title || '(Untitled event)';
     chip.innerHTML = compact
       ? escapeHtml(entry.event.title || '(Untitled)')
-      : `<span class="calendar-addon__chip-time">${escapeHtml(this.timeLabel(entry))}</span><span>${escapeHtml(entry.event.title || '(Untitled event)')}</span>`;
+      : `<span class="calendar-addon__chip-time">${escapeHtml(this.timeLabel(entry))}</span><span>${escapeHtml(entry.event.title || _('(Untitled event)'))}</span>`;
     chip.addEventListener('click', e => {
       e.stopPropagation();
       this.openDetail(entry);

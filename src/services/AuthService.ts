@@ -827,16 +827,16 @@ export class AuthService {
         <div style="margin-bottom: 1.5rem;">
           <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin-bottom: 0.75rem;">
             <input type="checkbox" id="quit-signer-checkbox" ${lastPreference ? 'checked' : ''}>
-            <span>Quit Key Signer as well?</span>
+            <span>${_('Quit Key Signer as well?')}</span>
           </label>
           <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
             <input type="checkbox" id="remember-checkbox">
-            <span>Remember and don't ask again</span>
+            <span>${_("Remember and don't ask again")}</span>
           </label>
         </div>
         <div style="display: flex; gap: 1rem; justify-content: center;">
-          <button class="btn btn--passive" data-action="cancel">Cancel</button>
-          <button class="btn" data-action="quit" style="min-width: 200px;">Quit NoorNote</button>
+          <button class="btn btn--passive" data-action="cancel">${_('Cancel')}</button>
+          <button class="btn" data-action="quit" style="min-width: 200px;">${_('Quit NoorNote')}</button>
         </div>
       `;
 

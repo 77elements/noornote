@@ -9,6 +9,7 @@ import { Router } from './Router';
 import { escapeHtml } from '../helpers/escapeHtml';
 import { diagLog } from './DiagnosticLogger';
 import { PlatformService } from './PlatformService';
+import { _ } from '../i18n';
 
 export type LogLevel = 'info' | 'debug' | 'warn' | 'error' | 'success';
 export type LogCategory = 'global' | 'page';
@@ -144,14 +145,14 @@ export class SystemLogger {
     container.className = 'system-logger';
     container.innerHTML = `
       <div class="system-logger__global debug-section">
-        <h3 class="system-logger__global-header heading--sidebar-subheading h4">Global</h3>
-        <div class="system-logger__global-content" tabindex="0" role="log" aria-label="Global logs">
+        <h3 class="system-logger__global-header heading--sidebar-subheading h4">${_('Global')}</h3>
+        <div class="system-logger__global-content" tabindex="0" role="log" aria-label="${_('Global logs')}">
           <div class="system-logger__global-logs"></div>
         </div>
       </div>
       <div class="system-logger__page debug-section">
-        <h3 class="system-logger__page-header heading--sidebar-subheading h4">Local</h3>
-        <div class="system-logger__page-content" tabindex="0" role="log" aria-label="Local logs">
+        <h3 class="system-logger__page-header heading--sidebar-subheading h4">${_('Local')}</h3>
+        <div class="system-logger__page-content" tabindex="0" role="log" aria-label="${_('Local logs')}">
           <div class="system-logger__page-logs"></div>
         </div>
       </div>

@@ -83,7 +83,7 @@ export class ImportToNoorSignerModal {
             type="password"
             id="import-password-input"
             class="input"
-            placeholder="Enter password..."
+            placeholder="${_('Enter password...')}"
             autocomplete="new-password"
           />
         </div>
@@ -94,7 +94,7 @@ export class ImportToNoorSignerModal {
             type="password"
             id="import-password-confirm"
             class="input"
-            placeholder="Confirm password..."
+            placeholder="${_('Confirm password...')}"
             autocomplete="new-password"
           />
         </div>

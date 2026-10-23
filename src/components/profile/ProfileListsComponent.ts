@@ -24,6 +24,7 @@ import {
 import { AuthService } from '../../services/AuthService';
 import { Router } from '../../services/Router';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { _ } from '../../i18n';
 
 const MAX_ITEMS_COLLAPSED = 3;
 
@@ -221,7 +222,7 @@ export class ProfileListsComponent {
         ${
           this.isOwnProfile
             ? `
-          <button class="profile-list-drag-handle" title="Drag to reorder">
+          <button class="profile-list-drag-handle" title="${_('Drag to reorder')}">
             <svg width="12" height="12"><use href="#icon-grid-dots"/></svg>
           </button>
         `

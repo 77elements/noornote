@@ -392,7 +392,7 @@ export class ArmadaInviteRenderer {
       <div class="armada-invite__glow" aria-hidden="true"></div>
       <div class="armada-invite__body">
         <div class="armada-invite__eyebrow">
-          <span class="armada-invite__brand">Armada</span>
+          <span class="armada-invite__brand">Armada</span> // i18n-ok (brand)
           <span class="armada-invite__sep">·</span>
           <span class="armada-invite__kind">${_('Community invite')}</span>
         </div>

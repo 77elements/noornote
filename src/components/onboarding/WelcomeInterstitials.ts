@@ -31,7 +31,7 @@ export function createConfrontationInterstitial(): HTMLElement {
         </ul>
       </div>
       <div class="welcome-interstitial__side welcome-interstitial__side--us">
-        <div class="welcome-interstitial__label">NoorNote</div>
+        <div class="welcome-interstitial__label">NoorNote</div> // i18n-ok (brand)
         <ul>
           <li>${_('Your account is a key you own')}</li>
           <li>${_('Posts live on decentralized relays')}</li>

@@ -8,6 +8,8 @@
  * - Clean URL display (removes wss:// prefix)
  */
 
+import { _ } from '../../i18n';
+
 export interface RelaySelectorConfig {
   availableRelays: string[];
   selectedRelays: Set<string>;
@@ -49,7 +51,7 @@ export class RelaySelector {
 
     return `
       <div class="post-note-relay-selector">
-        <label class="relay-selector-label">Post to:</label>
+        <label class="relay-selector-label">${_('Post to:')}</label>
         <div class="nn-dropdown nn-dropdown--multi">
           <button class="nn-dropdown__trigger" type="button" ${this.config.isTestMode ? 'disabled' : ''}>
             <span class="nn-dropdown__label">${this.getSelectionText()}</span>

@@ -113,7 +113,7 @@ export class CacheSettingsSection extends SettingsSection {
             </label>
             <label class="nn-checkbox">
               <input type="checkbox" value="nip05" />
-              <span>NIP-05</span>
+              <span>NIP-05</span> <!-- technical term — i18n-ok -->
             </label>
             <label class="nn-checkbox">
               <input type="checkbox" value="lnurl" />

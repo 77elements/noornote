@@ -20,6 +20,7 @@ import {
 } from '../../helpers/UserMentionHelper';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { _ } from '../../i18n';
 
 export interface UserSearchInputOptions {
   /** Placeholder text for input */
@@ -304,7 +305,7 @@ export class UserSearchInput {
       const message = this.isSearching ? 'Searching...' : 'No users found';
       this.dropdownElement.innerHTML = `
         <div class="search-spotlight__user-section">
-          <div class="search-spotlight__user-header">Users</div>
+          <div class="search-spotlight__user-header">${_('Users')}</div>
           <div class="search-spotlight__user-loading">${message}</div>
         </div>
       `;
@@ -318,7 +319,7 @@ export class UserSearchInput {
         const displayName = user.displayName || user.name || 'Anonymous';
         const picture = user.picture || '';
         const followBadge = user.isFollowing
-          ? '<span class="badge badge--accent">Following</span>'
+          ? `<span class="badge badge--accent">${_('Following')}</span>`
           : '';
         const selectedClass =
           index === this.selectedIndex
@@ -393,7 +394,7 @@ export class UserSearchInput {
       this.selectedUserElement.innerHTML = `
         <div class="user-search-input__chip">
           ${renderUserMention(user.pubkey, { username: displayName, avatarUrl })}
-          <button class="user-search-input__clear" type="button" title="Remove">×</button>
+          <button class="user-search-input__clear" type="button" title="${_('Remove')}">×</button>
         </div>
       `;
       this.selectedUserElement.style.display = 'block';

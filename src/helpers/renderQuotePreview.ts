@@ -12,14 +12,14 @@ import { NoteService } from '../services/NoteService';
 import { UserProfileService } from '../services/UserProfileService';
 import { escapeHtml, escapeHtmlAttr } from './escapeHtml';
 import { getTag } from './tagUtils';
+import { _ } from '../i18n';
 
 export async function renderQuotePreview(
   nostrRef: string
 ): Promise<HTMLElement> {
   const container = document.createElement('div');
   container.className = 'quote-preview';
-  container.innerHTML =
-    '<div class="quote-preview__loading">Loading quoted note...</div>';
+  container.innerHTML = `<div class="quote-preview__loading">${_('Loading quoted note...')}</div>`;
 
   try {
     const cleanRef = nostrRef.replace(/^nostr:/, '');
@@ -36,8 +36,7 @@ export async function renderQuotePreview(
     throw new Error(`Unsupported reference type: ${decoded.type}`);
   } catch (error) {
     console.debug('Failed to render quote preview:', error);
-    container.innerHTML =
-      '<div class="quote-preview__error">Failed to load quoted note</div>';
+    container.innerHTML = `<div class="quote-preview__error">${_('Failed to load quoted note')}</div>`;
     return container;
   }
 }
@@ -77,8 +76,7 @@ async function renderNeventPreview(
   }
 
   if (!event) {
-    container.innerHTML =
-      '<div class="quote-preview__error">Quoted note not found</div>';
+    container.innerHTML = `<div class="quote-preview__error">${_('Quoted note not found')}</div>`;
     return container;
   }
 
@@ -120,8 +118,7 @@ async function renderNaddrPreview(
 
   const event = events[0];
   if (!event) {
-    container.innerHTML =
-      '<div class="quote-preview__error">Quoted note not found</div>';
+    container.innerHTML = `<div class="quote-preview__error">${_('Quoted note not found')}</div>`;
     return container;
   }
 
@@ -153,7 +150,7 @@ async function renderNaddrPreview(
       <div class="timeline-listing-card__body">
         <div class="timeline-listing-card__seller">
           <span>${escapeHtml(authorName)}</span>
-          <span class="timeline-listing-card__badge">Marketplace</span>
+          <span class="timeline-listing-card__badge">${_('Marketplace')}</span>
         </div>
         <h3 class="timeline-listing-card__title">${escapeHtml(meta.title)}</h3>
         <div class="timeline-listing-card__price">${escapeHtml(priceDisplay)}</div>

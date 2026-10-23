@@ -28,9 +28,9 @@ const RSVP_ACTIONS_RAW: Array<{
   label: string;
   css: string;
 }> = [
-  { status: 'accepted', label: 'Going', css: 'btn--success' },
-  { status: 'tentative', label: 'Maybe', css: 'btn--passive' },
-  { status: 'declined', label: "Can't go", css: 'btn--danger' },
+  { status: 'accepted', label: 'Going', css: 'btn--success' }, // i18n-ok (translated at use site: RSVP_ACTIONS_RAW.map)
+  { status: 'tentative', label: 'Maybe', css: 'btn--passive' }, // i18n-ok (translated at use site: RSVP_ACTIONS_RAW.map)
+  { status: 'declined', label: "Can't go", css: 'btn--danger' }, // i18n-ok (translated at use site: RSVP_ACTIONS_RAW.map)
 ];
 /** Translated at use time (module const may not call _()). */
 const rsvpActions = () =>
@@ -85,7 +85,7 @@ export class CalendarEventModal {
       }
       ${
         this.event.locations.length
-          ? `<div class="calendar-addon-detail__row"><strong>Where:</strong> ${escapeHtml(this.event.locations.join(', '))}</div>`
+          ? `<div class="calendar-addon-detail__row"><strong>${_('Where:')}</strong> ${escapeHtml(this.event.locations.join(', '))}</div>`
           : ''
       }
       ${
@@ -95,7 +95,7 @@ export class CalendarEventModal {
       }
       ${
         this.event.participants.length
-          ? `<p class="calendar-addon-detail__row"><strong>Participants:</strong> ${escapeHtml(
+          ? `<p class="calendar-addon-detail__row"><strong>${_('Participants:')}</strong> ${escapeHtml(
               this.event.participants
                 .slice(0, 12)
                 .map(pk => npubToUsername(encodeNpub(pk)))

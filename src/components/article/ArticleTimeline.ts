@@ -519,7 +519,7 @@ export class ArticleTimeline {
         <div class="article-timeline__empty">
           <svg width="48" height="48"><use href="#icon-articles"/></svg>
           <p>${_('No articles found')}</p>
-          <span>Long-form articles will appear here</span>
+          <span>${_('Long-form articles will appear here')}</span>
         </div>
       `;
     } else {

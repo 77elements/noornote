@@ -238,7 +238,7 @@ export class EpubReaderView extends View {
       '<svg width="18" height="18" aria-hidden="true"><use href="#icon-book-open"/></svg>';
     const label = document.createElement('span');
     label.className = 'media-placeholder__label';
-    label.textContent = 'Data Saver is on — tap to load book';
+    label.textContent = _('Data Saver is on — tap to load book');
     placeholder.appendChild(icon);
     placeholder.appendChild(label);
     placeholder.addEventListener('click', onTap);

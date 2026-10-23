@@ -24,6 +24,7 @@ import {
 } from '../../helpers/TabsHelper';
 import { getSccDefaultTab } from '../../helpers/sccDefaultTab';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { _ } from '../../i18n';
 
 export class GlobalSearchView {
   private container: HTMLElement;
@@ -200,7 +201,7 @@ export class GlobalSearchView {
       void this.renderResults();
     } catch (error) {
       this.systemLogger.error('GlobalSearchView', 'Search failed:', error);
-      this.showError('Search failed. Please try again.');
+      this.showError(_('Search failed. Please try again.'));
     } finally {
       this.isSearching = false;
     }
@@ -327,7 +328,7 @@ export class GlobalSearchView {
 
     this.container.innerHTML = `
       <div class="infinite-scroll-loading" style="display: flex;">
-        <p>Searching...</p>
+        <p>${_('Searching...')}</p>
       </div>
     `;
   }
@@ -394,7 +395,7 @@ export class GlobalSearchView {
 
     const section = document.createElement('div');
     section.className = 'local-search-dm-results';
-    section.innerHTML = '<h3>Messages</h3>';
+    section.innerHTML = `<h3>${_('Messages')}</h3>`;
 
     const list = document.createElement('div');
     list.className = 'ui-list';

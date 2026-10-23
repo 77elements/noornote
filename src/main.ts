@@ -173,9 +173,9 @@ async function init(): Promise<void> {
     if (appElement) {
       appElement.innerHTML = `
         <div class="error-screen">
-          <h2>Failed to load Noornote</h2>
-          <p>Please refresh the page to try again.</p>
-          <button onclick="window.location.reload()">Refresh</button>
+          <h2>Failed to load Noornote</h2> <!-- i18n-ok: pre-i18n boot error screen -->
+          <p>Please refresh the page to try again.</p> <!-- i18n-ok -->
+          <button onclick="window.location.reload()">Refresh</button> <!-- i18n-ok -->
         </div>
       `;
     }

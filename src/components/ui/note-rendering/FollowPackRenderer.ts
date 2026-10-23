@@ -71,8 +71,8 @@ export class FollowPackRenderer {
       </div>
       <div class="nn-card__content">
         <h3>${escapeHtml(pack.title)}</h3>
-        <div class="meta">${pack.userPubkeys.length} people</div>
-        <button class="btn btn--passive btn--mini" type="button" data-action="open-pack">Open Follow Pack</button>
+        <div class="meta">${_('%s people', pack.userPubkeys.length)}</div>
+        <button class="btn btn--passive btn--mini" type="button" data-action="open-pack">${_('Open Follow Pack')}</button>
       </div>
     `;
 

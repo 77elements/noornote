@@ -10,6 +10,7 @@ import {
 } from '../../services/NoteDraftService';
 import { formatTimeAgo } from '../../helpers/formatTimeAgo';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { _ } from '../../i18n';
 
 export interface DraftsListCallbacks {
   /** Reopen the draft in the appropriate composer. */
@@ -27,7 +28,7 @@ function truncate(text: string, max = 140): string {
 export function renderDraftsList(): string {
   const drafts = NoteDraftService.getInstance().list();
   if (drafts.length === 0) {
-    return `<div class="note-drafts__empty">No drafts yet</div>`;
+    return `<div class="note-drafts__empty">${_('No drafts yet')}</div>`;
   }
 
   const items = drafts
@@ -38,13 +39,13 @@ export function renderDraftsList(): string {
         <div class="note-draft__main">
           <div class="note-draft__meta">
             <span class="note-draft__time">${escapeHtml(formatTimeAgo(d.createdAt))}</span>
-            ${d.failed ? `<span class="badge badge--danger">Failed</span>` : ''}
+            ${d.failed ? `<span class="badge badge--danger">${_('Failed')}</span>` : ''}
             ${d.contextLabel ? `<span class="note-draft__context">${escapeHtml(d.contextLabel)}</span>` : ''}
           </div>
-          <div class="note-draft__text">${text || '<em>(empty)</em>'}</div>
+          <div class="note-draft__text">${text || `<em>${_('(empty)')}</em>`}</div>
           ${d.failed && d.failureReason ? `<div class="note-draft__reason">${escapeHtml(d.failureReason)}</div>` : ''}
         </div>
-        <button class="btn-icon note-draft__delete" data-draft-delete aria-label="Delete draft">
+        <button class="btn-icon note-draft__delete" data-draft-delete aria-label="${_('Delete draft')}">
           <svg width="18" height="18"><use href="#icon-trash"/></svg>
         </button>
       </div>

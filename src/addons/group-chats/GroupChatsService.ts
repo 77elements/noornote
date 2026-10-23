@@ -41,11 +41,11 @@ interface GroupRef {
 
 /** Poll interval options offered in settings (milliseconds). 30 min is the default. */
 export const GROUP_CHATS_INTERVAL_OPTIONS = [
-  { value: 5 * 60 * 1000, label: 'Every 5 minutes' },
-  { value: 15 * 60 * 1000, label: 'Every 15 minutes' },
-  { value: 30 * 60 * 1000, label: 'Every 30 minutes' },
-  { value: 60 * 60 * 1000, label: 'Every 60 minutes' },
-  { value: 180 * 60 * 1000, label: 'Every 180 minutes' },
+  { value: 5 * 60 * 1000, label: 'Every 5 minutes' }, // i18n-ok
+  { value: 15 * 60 * 1000, label: 'Every 15 minutes' }, // i18n-ok
+  { value: 30 * 60 * 1000, label: 'Every 30 minutes' }, // i18n-ok
+  { value: 60 * 60 * 1000, label: 'Every 60 minutes' }, // i18n-ok
+  { value: 180 * 60 * 1000, label: 'Every 180 minutes' }, // i18n-ok
 ];
 export const GROUP_CHATS_DEFAULT_INTERVAL_MS = 30 * 60 * 1000;
 

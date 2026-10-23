@@ -11,6 +11,7 @@
  */
 
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { _ } from '../../i18n';
 
 export interface ClientTagControlConfig {
   /** Initial value (empty for a fresh composer) */
@@ -41,7 +42,7 @@ export class ClientTagControl {
           type="text"
           class="post-note-client-tag__input"
           data-client-tag-input
-          placeholder="Client tag"
+          placeholder="${_('Client tag')}"
           maxlength="64"
           value="${escapeHtml(this.value)}"
         />
@@ -49,8 +50,8 @@ export class ClientTagControl {
           type="button"
           class="btn-icon post-note-client-tag__toggle"
           data-client-tag-toggle
-          title="Set a custom client tag for this post"
-          aria-label="Custom client tag"
+          title="${_('Set a custom client tag for this post')}"
+          aria-label="${_('Custom client tag')}"
         >
           <svg width="18" height="18"><use href="#icon-tag"/></svg>
         </button>

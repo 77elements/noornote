@@ -58,12 +58,11 @@ export class SccRecipeFeed {
   private async loadInitial(): Promise<void> {
     const follows = getAllFollowedPubkeys();
     if (follows.length === 0) {
-      this.gridEl.innerHTML =
-        '<p class="scc-article-feed__empty">Follow users to see their recipes here.</p>';
+      this.gridEl.innerHTML = `<p class="scc-article-feed__empty">${_('Follow users to see their recipes here.')}</p>`;
       return;
     }
 
-    this.gridEl.innerHTML = '<p class="pulsate">Loading recipes...</p>';
+    this.gridEl.innerHTML = `<p class="pulsate">${_('Loading recipes...')}</p>`;
 
     const recipes = await this.fetchRecipes(follows);
     this.gridEl.innerHTML = '';
@@ -74,8 +73,7 @@ export class SccRecipeFeed {
     });
 
     if (recipes.length === 0) {
-      this.gridEl.innerHTML =
-        '<p class="scc-article-feed__empty">No recipes from your follows yet.</p>';
+      this.gridEl.innerHTML = `<p class="scc-article-feed__empty">${_('No recipes from your follows yet.')}</p>`;
       return;
     }
 

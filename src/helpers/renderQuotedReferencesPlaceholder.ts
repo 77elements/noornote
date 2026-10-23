@@ -11,6 +11,8 @@
  * // => '<div class="note-quotes"><div class="quoted-note-container">...</div></div>'
  */
 
+import { _ } from '../i18n';
+
 export interface QuotedReference {
   type: string;
   id: string;
@@ -33,7 +35,7 @@ export function renderQuotedReferencesPlaceholder(
         </div>
         <div class="quoted-note-content">
           <div class="quoted-note-placeholder">
-            <p><em>Loading quoted content...</em></p>
+            <p><em>${_('Loading quoted content...')}</em></p>
             <small>ID: ${ref.id.slice(0, 12)}...</small>
           </div>
         </div>

@@ -7,6 +7,7 @@
 
 import { escapeHtmlAttr } from './escapeHtml';
 import type { Bolt11Match } from './extractBolt11';
+import { _ } from '../i18n';
 
 export function replaceBolt11Placeholders(
   html: string,
@@ -30,10 +31,10 @@ function renderBolt11Card(match: Bolt11Match): string {
   return `<div class="bolt11-invoice" data-invoice="${invoiceAttr}">
     <div class="bolt11-invoice__header">
       <svg class="bolt11-invoice__icon" width="20" height="20"><use href="#icon-zap"/></svg>
-      <span class="bolt11-invoice__label">Lightning Invoice</span>
+      <span class="bolt11-invoice__label">${_('Lightning Invoice')}</span>
     </div>
     <div class="bolt11-invoice__amount">${amountStr} sats</div>
-    <button class="btn bolt11-invoice__pay" type="button">Pay</button>
+    <button class="btn bolt11-invoice__pay" type="button">${_('Pay')}</button>
   </div>`;
 }
 

@@ -105,7 +105,7 @@ export class SingleNoteView extends View {
     this.container.innerHTML = `
       <div class="snv-loading">
         <div class="loading-spinner"></div>
-        <p>Loading note...</p>
+        <p>${_('Loading note...')}</p>
       </div>
     `;
 
@@ -119,14 +119,14 @@ export class SingleNoteView extends View {
       }
 
       if (!event) {
-        this.showError('Note not found');
+        this.showError(_('Note not found'));
         return;
       }
 
       void this.renderNote(event);
     } catch (error) {
       this.systemLogger.error('SNV', `Failed to load note: ${String(error)}`);
-      this.showError('Failed to load note');
+      this.showError(_('Failed to load note'));
     }
   }
 
@@ -255,7 +255,7 @@ export class SingleNoteView extends View {
       if (original === event) {
         // No source found at all — surface as "Original note not found"
         // rather than rendering the empty repost shell.
-        this.showError('Original note not found');
+        this.showError(_('Original note not found'));
         return;
       }
       event = original;

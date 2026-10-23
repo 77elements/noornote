@@ -6,6 +6,7 @@
 
 import { ModalService } from '../services/ModalService';
 import { Router } from '../services/Router';
+import { _ } from '../i18n';
 
 const POST_LOGIN_REDIRECT_KEY = 'noornote_post_login_redirect';
 
@@ -19,27 +20,27 @@ export interface LoggedOutModalOptions {
 const MODAL_MESSAGES: Record<string, { icon: string; text: string }> = {
   like: {
     icon: '💜',
-    text: "You could shower this note with a thousand emojis, but you'll need an account first.",
+    text: "You could shower this note with a thousand emojis, but you'll need an account first.", // i18n-ok (translated at use site: _(msg.text))
   },
   zap: {
     icon: '⚡',
-    text: "Real money for real posts. Set up an account and a wallet, and you're in business.",
+    text: "Real money for real posts. Set up an account and a wallet, and you're in business.", // i18n-ok (translated at use site: _(msg.text))
   },
   repost: {
     icon: '🔁',
-    text: 'Spreading the word? Love the energy. Just need you to log in first.',
+    text: 'Spreading the word? Love the energy. Just need you to log in first.', // i18n-ok (translated at use site: _(msg.text))
   },
   reply: {
     icon: '💬',
-    text: "Got something to say? We're all ears - right after you create an account.",
+    text: "Got something to say? We're all ears - right after you create an account.", // i18n-ok (translated at use site: _(msg.text))
   },
   bookmark: {
     icon: '🔖',
-    text: "Want to save this for later? Create an account and it's yours forever.",
+    text: "Want to save this for later? Create an account and it's yours forever.", // i18n-ok (translated at use site: _(msg.text))
   },
   dm: {
     icon: '✉️',
-    text: "Want to drop them a private message? Encrypted, peer-to-peer — but you'll need a key first.",
+    text: "Want to drop them a private message? Encrypted, peer-to-peer — but you'll need a key first.", // i18n-ok (translated at use site: _(msg.text))
   },
 };
 
@@ -58,12 +59,12 @@ export function showLoggedOutReactionModal(
   content.className = 'logged-out-modal';
   content.innerHTML = `
     <div class="logged-out-modal__icon">${msg.icon}</div>
-    <p class="logged-out-modal__text">${msg.text}</p>
+    <p class="logged-out-modal__text">${_(msg.text)}</p>
     <div class="logged-out-modal__actions">
-      <button class="btn btn--large logged-out-modal__create">Create my account</button>
-      <button class="btn btn--passive logged-out-modal__login">I already have a key</button>
+      <button class="btn btn--large logged-out-modal__create">${_('Create my account')}</button>
+      <button class="btn btn--passive logged-out-modal__login">${_('I already have a key')}</button>
     </div>
-    <p class="logged-out-modal__note">Ready in 2 minutes. No email. No phone number.</p>
+    <p class="logged-out-modal__note">${_('Ready in 2 minutes. No email. No phone number.')}</p>
   `;
 
   const stashRedirect = (): void => {
@@ -100,4 +101,27 @@ export function showLoggedOutReactionModal(
     content,
     width: '420px',
   });
+}
+
+/**
+ * Literal anchors — MODAL_MESSAGES texts are data (extractor can't see
+ * them); these unused `_()` calls register every text in the catalog.
+ */
+export function loggedOutModalAnchors(): string[] {
+  return [
+    _(
+      "You could shower this note with a thousand emojis, but you'll need an account first."
+    ),
+    _(
+      "Real money for real posts. Set up an account and a wallet, and you're in business."
+    ),
+    _('Spreading the word? Love the energy. Just need you to log in first.'),
+    _(
+      "Got something to say? We're all ears - right after you create an account."
+    ),
+    _("Want to save this for later? Create an account and it's yours forever."),
+    _(
+      "Want to drop them a private message? Encrypted, peer-to-peer — but you'll need a key first."
+    ),
+  ];
 }

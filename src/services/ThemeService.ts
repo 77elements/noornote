@@ -21,15 +21,15 @@ export interface ThemeOption {
 }
 
 export const THEMES: ThemeOption[] = [
-  { id: 'noor-jadid', label: 'Noor jadīd' },
-  { id: 'default', label: 'Deep Purple' },
-  { id: 'bright-superman', label: 'Bright Superman' },
-  { id: 'code-bunker', label: 'Code Bunker' },
-  { id: 'soft-lilac', label: 'Soft Lilac' },
-  { id: 't-low', label: 'T-Low' },
-  { id: 'dark-symbiote', label: 'Dark Symbiote' },
-  { id: 'neon-harley', label: 'Neon Harley' },
-  { id: 'wake-up-neo', label: 'Wake up Neo' },
+  { id: 'noor-jadid', label: 'Noor jadīd' }, // i18n-ok
+  { id: 'default', label: 'Deep Purple' }, // i18n-ok
+  { id: 'bright-superman', label: 'Bright Superman' }, // i18n-ok
+  { id: 'code-bunker', label: 'Code Bunker' }, // i18n-ok
+  { id: 'soft-lilac', label: 'Soft Lilac' }, // i18n-ok
+  { id: 't-low', label: 'T-Low' }, // i18n-ok
+  { id: 'dark-symbiote', label: 'Dark Symbiote' }, // i18n-ok
+  { id: 'neon-harley', label: 'Neon Harley' }, // i18n-ok
+  { id: 'wake-up-neo', label: 'Wake up Neo' }, // i18n-ok
 ];
 
 // Shipped default for 1.0. Used when the user has never picked a theme.

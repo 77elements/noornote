@@ -2935,7 +2935,7 @@ export class TribeManager {
         </div>
 
         <div class="form-group">
-          <label for="tribe-select">Tribe</label>
+          <label for="tribe-select">${_('Tribe')}</label>
           <select id="tribe-select" class="input">
             ${allTribes.length === 0 ? `<option value="">${_('No tribes available')}</option>` : tribeOptions}
           </select>

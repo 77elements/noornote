@@ -12,6 +12,7 @@ import { AuthGuard } from '../../services/AuthGuard';
 import { ToastService } from '../../services/ToastService';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { SystemLogger } from '../../services/SystemLogger';
+import { _ } from '../../i18n';
 
 export interface ReportModalOptions {
   /** User pubkey being reported */
@@ -61,7 +62,7 @@ export class ReportModal {
     const content = this.renderContent(options);
 
     this.modalService.show({
-      title: 'Report Content',
+      title: _('Report Content'),
       content,
       width: '500px',
       showCloseButton: true,
@@ -88,14 +89,16 @@ export class ReportModal {
 
     // Report info
     const reportInfoHtml = options.reportedEventId
-      ? `<p class="report-modal__info">You are reporting a specific note by <strong>${escapeHtml(username)}</strong>.</p>`
-      : `<p class="report-modal__info">You are reporting user <strong>${escapeHtml(username)}</strong>.</p>`;
+      ? `<p class="report-modal__info">${_('You are reporting a specific note by')} <strong>${escapeHtml(username)}</strong>.</p>`
+      : `<p class="report-modal__info">${_('You are reporting user')} <strong>${escapeHtml(username)}</strong>.</p>`;
 
     // Report types list
     const reportTypesHtml = reportTypes
       .map(type => {
-        const label = this.postsApi?.getReportTypeLabel(type) ?? '';
-        const description = this.postsApi?.getReportTypeDescription(type) ?? '';
+        const label = _(this.postsApi?.getReportTypeLabel(type) ?? '');
+        const description = _(
+          this.postsApi?.getReportTypeDescription(type) ?? ''
+        );
 
         return `
         <label class="report-modal__option">
@@ -113,17 +116,17 @@ export class ReportModal {
       ${reportInfoHtml}
 
       <div class="report-modal__section">
-        <h3 class="report-modal__section-title">Select report reason</h3>
+        <h3 class="report-modal__section-title">${_('Select report reason')}</h3>
         <div class="report-modal__options">
           ${reportTypesHtml}
         </div>
       </div>
 
       <div class="report-modal__section">
-        <h3 class="report-modal__section-title">Additional details (optional)</h3>
+        <h3 class="report-modal__section-title">${_('Additional details (optional)')}</h3>
         <textarea
           class="textarea report-modal__textarea"
-          placeholder="Provide additional context for your report..."
+          placeholder="${_('Provide additional context for your report...')}"
           maxlength="500"
           rows="4"
         ></textarea>
@@ -133,8 +136,8 @@ export class ReportModal {
       </div>
 
       <div class="report-modal__actions">
-        <button class="btn btn--cancel" type="button">Cancel</button>
-        <button class="btn btn--danger btn--submit" type="button" disabled>Submit Report</button>
+        <button class="btn btn--cancel" type="button">${_('Cancel')}</button>
+        <button class="btn btn--danger btn--submit" type="button" disabled>${_('Submit Report')}</button>
       </div>
 
       <div class="report-modal__notice">
@@ -221,7 +224,7 @@ export class ReportModal {
     // Disable button and show loading state
     if (submitBtn) {
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Submitting...';
+      submitBtn.textContent = _('Submitting...');
     }
 
     try {
@@ -254,7 +257,7 @@ export class ReportModal {
         // Re-enable button
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.textContent = 'Submit Report';
+          submitBtn.textContent = _('Submit Report');
         }
       }
     } catch (error) {
@@ -266,7 +269,7 @@ export class ReportModal {
       // Re-enable button
       if (submitBtn) {
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Submit Report';
+        submitBtn.textContent = _('Submit Report');
       }
     }
   }

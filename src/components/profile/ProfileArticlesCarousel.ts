@@ -28,6 +28,7 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { dedupeByCoordinateWithTombstones } from '../../helpers/addressableDedupe';
 import { extractDisplayName } from '../../helpers/extractDisplayName';
+import { _ } from '../../i18n';
 
 interface ArticleCardData {
   event: NostrEvent;
@@ -199,7 +200,7 @@ export class ProfileArticlesCarousel {
       });
 
       const draftBadge = isDraft
-        ? '<span class="badge badge--warning badge--overlay">Draft</span>'
+        ? `<span class="badge badge--warning badge--overlay">${_('Draft')}</span>`
         : '';
 
       const mediaHtml = metadata.image

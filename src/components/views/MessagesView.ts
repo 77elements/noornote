@@ -170,7 +170,7 @@ export class MessagesView extends View {
           </div>
           <div class="tab-content" data-tab-content="unknown">
             <div class="messages-view__list" data-list="unknown">
-              <div class="messages-view__loading">Loading messages...</div>
+              <div class="messages-view__loading">${_('Loading messages...')}</div>
             </div>
           </div>
         </div>
@@ -680,12 +680,12 @@ export class MessagesView extends View {
 
     this.container.innerHTML = `
       <div class="messages-view__header">
-        <h1>Messages</h1>
+        <h1>${_('Messages')}</h1>
       </div>
       <div class="messages-view__empty">
         <svg width="48" height="48"><use href="#icon-email"/></svg>
-        <p>Direct messages are not available with Bunker URL login</p>
-        <p class="empty-hint">Your remote signer does not support NIP-44 encryption required for private messages. Use a browser extension or NoorSigner for full DM access.</p>
+        <p>${_('Direct messages are not available with Bunker URL login')}</p>
+        <p class="empty-hint">${_('Your remote signer does not support NIP-44 encryption required for private messages. Use a browser extension or NoorSigner for full DM access.')}</p>
       </div>
     `;
   }

@@ -105,7 +105,7 @@ export class NoteHeader {
       if (this.options.rawEvent?.kind === 1111) {
         const commentMarker = document.createElement('span');
         commentMarker.className = 'note-header__nip22-marker';
-        commentMarker.textContent = 'Kind:1111';
+        commentMarker.textContent = 'Kind:1111'; // i18n-ok (technical kind marker)
         if (handleEl) handleEl.after(commentMarker);
         else infoEl.appendChild(commentMarker);
       }

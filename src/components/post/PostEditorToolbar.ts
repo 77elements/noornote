@@ -168,9 +168,8 @@ export class PostEditorToolbar {
       if (!api) {
         this.systemLogger.error('PostEditorToolbar', 'Media module not loaded');
         this.modalService.show({
-          title: 'Upload Failed',
-          content:
-            '<p>Media module is not available. Please try again later.</p>',
+          title: _('Upload Failed'),
+          content: `<p>${_('Media module is not available. Please try again later.')}</p>`,
           showCloseButton: true,
         });
         return;
@@ -195,8 +194,8 @@ export class PostEditorToolbar {
             `Upload failed: ${result.error}`
           );
           this.modalService.show({
-            title: 'Upload Failed',
-            content: `<p>${result.error || 'Unknown error occurred'}</p>`,
+            title: _('Upload Failed'),
+            content: `<p>${result.error || _('Unknown error occurred')}</p>`,
             showCloseButton: true,
           });
         }
@@ -222,8 +221,8 @@ export class PostEditorToolbar {
         if (failures.length > 0) {
           const errorMessages = failures.map(r => r.error).join('<br>');
           this.modalService.show({
-            title: 'Some Uploads Failed',
-            content: `<p>${failures.length} file(s) failed:</p><p style="font-size: 0.9rem;">${errorMessages}</p>`,
+            title: _('Some Uploads Failed'),
+            content: `<p>${_('%s file(s) failed:', failures.length)}</p><p style="font-size: 0.9rem;">${errorMessages}</p>`,
             showCloseButton: true,
           });
         }
@@ -235,8 +234,8 @@ export class PostEditorToolbar {
         `Upload error: ${String(error)}`
       );
       this.modalService.show({
-        title: 'Upload Failed',
-        content: '<p>Upload failed. Please try again.</p>',
+        title: _('Upload Failed'),
+        content: `<p>${_('Upload failed. Please try again.')}</p>`,
         showCloseButton: true,
       });
     } finally {

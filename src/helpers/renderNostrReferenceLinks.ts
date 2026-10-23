@@ -20,6 +20,7 @@ import { NOSTR_EVENT_REF_REGEX } from './extractQuotedReferences';
 import { decodeNip19 } from '../services/NostrToolsAdapter';
 import { UserProfileService } from '../services/UserProfileService';
 import { escapeHtml } from './escapeHtml';
+import { _ } from '../i18n';
 
 /** SNV href for any reference — bare bech32 (nostr: prefix stripped). */
 function snvHref(fullMatch: string): string {
@@ -42,10 +43,11 @@ function authorSuffix(pubkey: string | undefined): string {
 
 /** Human label for an naddr target kind. */
 function naddrLabel(kind: number): { icon: string; label: string } {
-  if (kind === 30023) return { icon: 'icon-article', label: 'Article' };
-  if (kind === 30311) return { icon: 'icon-note', label: 'Live stream' };
-  if (kind === 32267) return { icon: 'icon-note', label: 'App' };
-  return { icon: 'icon-note', label: 'Event' };
+  // i18n-ok (translated at use site: _(label) in refLink)
+  if (kind === 30023) return { icon: 'icon-article', label: 'Article' }; // i18n-ok (translated at use site: _(label) in refLink)
+  if (kind === 30311) return { icon: 'icon-note', label: 'Live stream' }; // i18n-ok (translated at use site: _(label) in refLink)
+  if (kind === 32267) return { icon: 'icon-note', label: 'App' }; // i18n-ok (translated at use site: _(label) in refLink)
+  return { icon: 'icon-note', label: 'Event' }; // i18n-ok (translated at use site: _(label) in refLink)
 }
 
 function refLink(fullMatch: string, icon: string, label: string): string {
@@ -68,7 +70,11 @@ export function renderNostrReferenceLinks(html: string): string {
           pubkey?: string;
         };
         const { icon, label } = naddrLabel(data.kind);
-        return refLink(fullMatch, icon, `${label}${authorSuffix(data.pubkey)}`);
+        return refLink(
+          fullMatch,
+          icon,
+          `${_(label)}${authorSuffix(data.pubkey)}`
+        );
       }
       if (decoded.type === 'nevent') {
         const data = decoded.data as { author?: string };

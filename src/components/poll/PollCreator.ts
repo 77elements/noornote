@@ -11,6 +11,7 @@
  */
 
 import { Switch } from '../ui/Switch';
+import { _ } from '../../i18n';
 
 export interface PollOption {
   id: string;
@@ -60,8 +61,8 @@ export class PollCreator {
     return `
       <div class="poll-creator">
         <div class="poll-creator__header">
-          <span class="poll-creator__title">Poll Configuration</span>
-          <button class="poll-creator__remove" data-action="remove-poll" type="button">Remove Poll</button>
+          <span class="poll-creator__title">${_('Poll Configuration')}</span>
+          <button class="poll-creator__remove" data-action="remove-poll" type="button">${_('Remove Poll')}</button>
         </div>
 
         <div class="poll-creator__options">
@@ -72,7 +73,7 @@ export class PollCreator {
               <input
                 type="text"
                 class="input"
-                placeholder="Option ${index + 1}"
+                placeholder="${_('Option')} ${index + 1}"
                 value="${option.label}"
                 data-option-input="${option.id}"
                 maxlength="100"
@@ -85,7 +86,7 @@ export class PollCreator {
                   data-action="remove-option"
                   data-option-id="${option.id}"
                   type="button"
-                  title="Remove option"
+                  title="${_('Remove option')}"
                 >×</button>
               `
                   : ''
@@ -118,12 +119,12 @@ export class PollCreator {
           </div>
 
           <details class="poll-creator__advanced">
-            <summary class="poll-creator__advanced-toggle">Advanced Options</summary>
+            <summary class="poll-creator__advanced-toggle">${_('Advanced Options')}</summary>
             <div class="poll-creator__advanced-content">
               <div class="poll-creator__setting">
                 <label class="poll-creator__setting-label">
-                  Relay URLs (optional, comma-separated)
-                  <span class="poll-creator__hint">Usually not needed - uses your default relays</span>
+                  ${_('Relay URLs (optional, comma-separated)')}
+                  <span class="poll-creator__hint">${_('Usually not needed - uses your default relays')}</span>
                 </label>
                 <input
                   type="text"
@@ -140,8 +141,8 @@ export class PollCreator {
         <div class="poll-creator__notice">
           <span class="poll-creator__notice-icon">⚠</span>
           <div class="poll-creator__notice-text">
-            <strong>This is a poll note.</strong><br>
-            Unlike regular notes, polls are not widely supported and may not display on other clients.
+            <strong>${_('This is a poll note.')}</strong><br>
+            ${_('Unlike regular notes, polls are not widely supported and may not display on other clients.')}
           </div>
         </div>
       </div>
@@ -160,7 +161,7 @@ export class PollCreator {
     );
     if (switchContainer) {
       this.multipleChoiceSwitch = new Switch({
-        label: 'Allow multiple choices',
+        label: _('Allow multiple choices'),
         checked: this.multipleChoice,
         onChange: checked => {
           this.multipleChoice = checked;

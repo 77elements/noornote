@@ -37,9 +37,9 @@ export interface DisappearingPreset {
  * the "Off" entry is always first.
  */
 export const DISAPPEARING_PRESETS: readonly DisappearingPreset[] = [
-  { seconds: 0, label: 'Off', approxLabel: 'Off' },
-  { seconds: 7 * 86_400, label: '7 days', approxLabel: '~7 days' },
-  { seconds: 30 * 86_400, label: '30 days', approxLabel: '~30 days' },
+  { seconds: 0, label: 'Off', approxLabel: 'Off' }, // i18n-ok
+  { seconds: 7 * 86_400, label: '7 days', approxLabel: '~7 days' }, // i18n-ok
+  { seconds: 30 * 86_400, label: '30 days', approxLabel: '~30 days' }, // i18n-ok
   { seconds: 365 * 86_400, label: '1 year', approxLabel: '~1 year' },
 ] as const;
 
@@ -112,7 +112,7 @@ export function chipLabelForDuration(
 ): string {
   if (!isActive(seconds)) return '';
   const preset = DISAPPEARING_PRESETS.find(p => p.seconds === seconds);
-  if (preset) return _('⏱ Disappears in %s', preset.approxLabel);
+  if (preset) return _('⏱ Disappears in %s', _(preset.approxLabel));
   // Custom value — re-use labelForDuration so the chip and the menu agree.
   return _('⏱ Disappears in ~%s', labelForDuration(seconds));
 }

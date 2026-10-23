@@ -106,15 +106,15 @@ export class NotificationItem {
       this.options.type === 'thread-reply' ||
       this.options.type === 'zap-reply';
     const contextHtml = needsContext
-      ? '<div class="thread-context-item"><span class="thread-context-content">Loading...</span></div>'
+      ? `<div class="thread-context-item"><span class="thread-context-content">${_('Loading...')}</span></div>`
       : '';
 
     // For badge-award notifications, add Accept/Decline buttons
     const badgeFooterHtml =
       this.options.type === 'badge-award'
         ? `<div class="notification-item__footer">
-          <button class="btn btn--mini btn--success" data-action="accept-badge">Accept</button>
-          <button class="btn btn--mini btn--secondary" data-action="decline-badge">Decline</button>
+          <button class="btn btn--mini btn--success" data-action="accept-badge">${_('Accept')}</button>
+          <button class="btn btn--mini btn--secondary" data-action="decline-badge">${_('Decline')}</button>
         </div>`
         : '';
 
@@ -163,16 +163,15 @@ export class NotificationItem {
         identityContainer.remove();
       } else if (this.options.type === 'poll_vote') {
         // NIP-88 votes: don't expose the voter — show neutral "Someone" instead.
-        identityContainer.innerHTML =
-          '<span class="notification-item__anonymous">Someone</span>';
+        identityContainer.innerHTML = `<span class="notification-item__anonymous">${_('Someone')}</span>`;
       } else if (this.isAnonymousZap()) {
         // Anonymous zap: the embedded pubkey is an ephemeral throwaway, so we
         // don't render it. Lock icon + "Someone" makes the secret nature
         // obvious; the actual npub is only available via diagnostic logs.
         identityContainer.innerHTML =
-          '<span class="notification-item__anonymous">' +
+          `<span class="notification-item__anonymous">` +
           '<svg width="14" height="14" aria-hidden="true"><use href="#icon-lock"></use></svg>' +
-          'Someone</span>';
+          `${_('Someone')}</span>`;
       } else {
         const authorPubkey = this.getAuthorPubkey();
         this.userIdentity = new UserIdentity({
@@ -221,8 +220,7 @@ export class NotificationItem {
           '.notification-item__footer'
         );
         if (footer)
-          footer.innerHTML =
-            '<span style="color: var(--color-6)">Accepted</span>';
+          footer.innerHTML = `<span style="color: var(--color-6)">${_('Accepted')}</span>`;
       }
     });
 
@@ -232,8 +230,7 @@ export class NotificationItem {
         '.notification-item__footer'
       );
       if (footer)
-        footer.innerHTML =
-          '<span style="color: var(--color-3)">Declined</span>';
+        footer.innerHTML = `<span style="color: var(--color-3)">${_('Declined')}</span>`;
     });
   }
 

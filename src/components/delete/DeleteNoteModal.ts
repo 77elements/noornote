@@ -9,6 +9,7 @@ import { ModuleLoader } from '../../core/ModuleLoader';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
+import { _ } from '../../i18n';
 
 export interface DeleteNoteModalOptions {
   /** Event ID to delete */
@@ -47,7 +48,7 @@ export class DeleteNoteModal {
     const content = this.renderContent();
 
     this.modalService.show({
-      title: 'Delete Note',
+      title: _('Delete Note'),
       content,
       width: '500px',
       showCloseButton: true,

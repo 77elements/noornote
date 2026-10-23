@@ -68,7 +68,7 @@ export class AuthComponent {
             <span class="user-indicator">○</span>
             <span class="user-display">${_('Not logged in')}</span>
           </div>
-          <button class="btn btn--mini" type="button" data-action="show-login">Login</button>
+          <button class="btn btn--mini" type="button" data-action="show-login">${_('Login')}</button>
         </div>
       `;
     }
@@ -651,17 +651,17 @@ export class AuthComponent {
 
     const bunkerUri = bunkerInput.value.trim();
     if (!bunkerUri) {
-      this.showError('Please enter a bunker:// URI');
+      this.showError(_('Please enter a bunker:// URI'));
       return;
     }
     if (!bunkerUri.startsWith('bunker://')) {
-      this.showError('Invalid bunker URI. Must start with bunker://');
+      this.showError(_('Invalid bunker URI. Must start with bunker://'));
       return;
     }
 
-    const originalText = 'Connect';
+    const originalText = _('Connect');
     bunkerBtn.disabled = true;
-    bunkerBtn.textContent = 'Connecting...';
+    bunkerBtn.textContent = _('Connecting...');
 
     try {
       const result = await this.authService.authenticateWithBunker(bunkerUri);
@@ -670,12 +670,12 @@ export class AuthComponent {
         this.handleLoginSuccess(result.npub, result.pubkey, 'bunker');
       } else {
         this.systemLogger.error('Auth', 'Bunker login failed');
-        this.showError(result.error || 'Bunker connection failed');
+        this.showError(result.error || _('Bunker connection failed'));
         this.resetButton(bunkerBtn, originalText);
       }
     } catch (error) {
       console.error('Bunker login error:', error);
-      this.showError('Unexpected error during bunker connection');
+      this.showError(_('Unexpected error during bunker connection'));
       this.resetButton(bunkerBtn, originalText);
     }
   }

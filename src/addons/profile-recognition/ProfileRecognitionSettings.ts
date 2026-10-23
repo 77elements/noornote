@@ -25,27 +25,31 @@ const WINDOW_OPTIONS = [
   },
   {
     value: 7,
-    label: '7 Days',
-    description: 'Show for 1 week after profile changes',
-  },
+    label: '7 Days', // i18n-ok (translated at use site: WINDOW_OPTIONS.map)
+    description: 'Show for 1 week after profile changes', // i18n-ok (translated at use site: WINDOW_OPTIONS.map)
+  }, // i18n-ok (translated at use site: WINDOW_OPTIONS.map)
   {
-    value: 30,
-    label: '30 Days',
-    description: 'Show for 1 month after profile changes',
-  },
+    // i18n-ok (translated at use site: WINDOW_OPTIONS.map)
+    value: 30, // i18n-ok (translated at use site: WINDOW_OPTIONS.map)
+    label: '30 Days', // i18n-ok (translated at use site: WINDOW_OPTIONS.map)
+    description: 'Show for 1 month after profile changes', // i18n-ok (translated at use site: WINDOW_OPTIONS.map)
+  }, // i18n-ok (translated at use site: WINDOW_OPTIONS.map)
   {
-    value: 90,
-    label: '90 Days (Default)',
-    description: 'Show for 3 months after profile changes',
-  },
+    // i18n-ok (translated at use site: WINDOW_OPTIONS.map)
+    value: 90, // i18n-ok (translated at use site: WINDOW_OPTIONS.map)
+    label: '90 Days (Default)', // i18n-ok (translated at use site: WINDOW_OPTIONS.map)
+    description: 'Show for 3 months after profile changes', // i18n-ok (translated at use site: WINDOW_OPTIONS.map)
+  }, // i18n-ok (translated at use site: WINDOW_OPTIONS.map)
   {
-    value: -1,
-    label: 'Always',
-    description: 'Always show profile change indicators',
-  },
-];
-
+    // i18n-ok (translated at use site: WINDOW_OPTIONS.map)
+    value: -1, // i18n-ok (translated at use site: WINDOW_OPTIONS.map)
+    label: 'Always', // i18n-ok (translated at use site: WINDOW_OPTIONS.map)
+    description: 'Always show profile change indicators', // i18n-ok (translated at use site: WINDOW_OPTIONS.map)
+  }, // i18n-ok (translated at use site: WINDOW_OPTIONS.map)
+]; // i18n-ok (translated at use site: WINDOW_OPTIONS.map)
+// i18n-ok (translated at use site: WINDOW_OPTIONS.map)
 export class ProfileRecognitionSettings extends SettingsSection {
+  // i18n-ok (translated at use site: WINDOW_OPTIONS.map)
   private enableSwitch: Switch | null = null;
 
   constructor() {

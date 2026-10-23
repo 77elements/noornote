@@ -25,6 +25,7 @@ import { encodeNevent } from '../../services/NostrToolsAdapter';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { Router } from '../../services/Router';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { _ } from '../../i18n';
 
 export interface RepliesRendererOptions {
   /** Container element to render replies into */
@@ -86,7 +87,7 @@ export class RepliesRenderer {
     this.container.innerHTML = `
       <div class="snv-replies__loading">
         <div class="loading-spinner"></div>
-        <p>Loading replies...</p>
+        <p>${_('Loading replies...')}</p>
       </div>
     `;
 
@@ -132,7 +133,7 @@ export class RepliesRenderer {
       if (replies.length === 0 && quotedReposts.length === 0) {
         this.container.innerHTML = `
           <div class="snv-replies__empty">
-            <p>No replies or quotes yet</p>
+            <p>${_('No replies or quotes yet')}</p>
           </div>
         `;
         return;
@@ -188,7 +189,7 @@ export class RepliesRenderer {
       console.error('Failed to load replies:', error);
       this.container.innerHTML = `
         <div class="snv-replies__error">
-          <p>Failed to load replies. Please try again.</p>
+          <p>${_('Failed to load replies. Please try again.')}</p>
         </div>
       `;
     }

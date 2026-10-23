@@ -18,6 +18,7 @@ import {
 } from '../../services/GifSearchService';
 import { escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { gifFormatToMime, type GifMeta } from '../../helpers/gifImeta';
+import { _ } from '../../i18n';
 
 export interface GifPickerOptions {
   /** Callback when a GIF is picked (receives the ORIGINAL url + metadata). */
@@ -493,7 +494,7 @@ export class GifPicker {
     if (showRetry) {
       const retry = document.createElement('button');
       retry.className = 'btn btn--passive btn--mini';
-      retry.textContent = 'Retry';
+      retry.textContent = _('Retry');
       retry.addEventListener('click', () => {
         void this.runSearch(this.searchInput?.value || STARTER_QUERIES[0]!);
       });

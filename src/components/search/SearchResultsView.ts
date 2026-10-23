@@ -117,7 +117,7 @@ export class SearchResultsView {
     if (results.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'search-results__empty';
-      empty.textContent = 'No matching notes found.';
+      empty.textContent = _('No matching notes found.');
       this.container.appendChild(empty);
     } else {
       this.listElement = document.createElement('div');

@@ -25,6 +25,7 @@ import { SystemLogger } from '../../services/SystemLogger';
 import { ImageUploader } from './ImageUploader';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { _ } from '../../i18n';
 
 export class ProfileEditModal {
   private static instance: ProfileEditModal;
@@ -103,7 +104,7 @@ export class ProfileEditModal {
     this.saving = false;
 
     this.modalService.show({
-      title: 'Edit Profile',
+      title: _('Edit Profile'),
       content: this.renderContent(),
       width: '600px',
       showCloseButton: true,
@@ -169,45 +170,45 @@ export class ProfileEditModal {
     return `
       <form class="profile-edit-form" data-form>
         <div class="form-group">
-          <label for="display_name">Display Name</label>
+          <label for="display_name">${_('Display Name')}</label>
           <input
             type="text"
             id="display_name"
             name="display_name"
             class="input"
             value="${escapeHtml(this.currentProfile.display_name || '')}"
-            placeholder="Your full name"
+            placeholder="${_('Your full name')}"
             data-input="display_name"
           />
         </div>
 
         <div class="form-group">
-          <label for="name">Username</label>
+          <label for="name">${_('Username')}</label>
           <input
             type="text"
             id="name"
             name="name"
             class="input"
             value="${escapeHtml(this.currentProfile.name || '')}"
-            placeholder="username"
+            placeholder="${_('username')}"
             data-input="name"
           />
         </div>
 
         <div class="form-group">
-          <label for="about">Bio</label>
+          <label for="about">${_('Bio')}</label>
           <textarea
             id="about"
             name="about"
             class="textarea textarea--small"
             rows="3"
-            placeholder="Tell us about yourself..."
+            placeholder="${_('Tell us about yourself...')}"
             data-input="about"
           >${escapeHtml(this.currentProfile.about || '')}</textarea>
         </div>
 
         <div class="form-group">
-          <label for="website">Website</label>
+          <label for="website">${_('Website')}</label>
           <input
             type="text"
             id="website"
@@ -220,7 +221,7 @@ export class ProfileEditModal {
         </div>
 
         <div class="form-group">
-          <label for="nip05">NIP-05 Identifier</label>
+          <label for="nip05">${_('NIP-05 Identifier')}</label>
           <input
             type="text"
             id="nip05"
@@ -230,11 +231,11 @@ export class ProfileEditModal {
             placeholder="user@domain.com"
             data-input="nip05"
           />
-          <small class="form-hint">Verification identifier(s), comma-separated (user@domain.com, user@other.com)</small>
+          <small class="form-hint">${_('Verification identifier(s), comma-separated (user@domain.com, user@other.com)')}</small>
         </div>
 
         <div class="form-group">
-          <label for="lud16">Lightning Address</label>
+          <label for="lud16">${_('Lightning Address')}</label>
           <input
             type="text"
             id="lud16"
@@ -244,7 +245,7 @@ export class ProfileEditModal {
             placeholder="user@getalby.com"
             data-input="lud16"
           />
-          <small class="form-hint">Email format (user@domain.com) or LNURL</small>
+          <small class="form-hint">${_('Email format (user@domain.com) or LNURL')}</small>
         </div>
       </form>
     `;
@@ -253,10 +254,10 @@ export class ProfileEditModal {
   private renderActions(): string {
     return `
       <div class="profile-edit-actions">
-        <button class="btn btn--passive" data-action="cancel">Cancel</button>
+        <button class="btn btn--passive" data-action="cancel">${_('Cancel')}</button>
         <button class="btn" data-action="save" disabled>
-          <span data-save-text>Sync to Relays</span>
-          <span data-save-spinner style="display: none;">Saving...</span>
+          <span data-save-text>${_('Sync to Relays')}</span>
+          <span data-save-spinner style="display: none;">${_('Saving...')}</span>
         </button>
       </div>
     `;

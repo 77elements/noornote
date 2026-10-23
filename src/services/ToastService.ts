@@ -11,6 +11,7 @@
  */
 
 import { escapeHtml } from '../helpers/escapeHtml';
+import { _ } from '../i18n';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -175,14 +176,14 @@ export class ToastService {
       : 'toast__message';
 
     const actionHtml = options.action
-      ? `<button class="btn btn--passive btn--mini toast__action">${escapeHtml(options.action.label)}</button>`
+      ? `<button class="btn btn--passive btn--mini toast__action">${escapeHtml(_(options.action.label))}</button>`
       : '';
 
     toast.innerHTML = `
       <div class="toast__icon">${iconHtml}</div>
       <div class="${messageClass}" data-toast-message>${escapeHtml(options.message)}</div>
       ${actionHtml}
-      <button class="toast__close" aria-label="Close">×</button>
+      <button class="toast__close" aria-label="${_('Close')}">×</button>
     `;
 
     // Action button handler

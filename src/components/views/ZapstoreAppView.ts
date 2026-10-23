@@ -286,7 +286,7 @@ export class ZapstoreAppView extends View {
     const infoRows: string[] = [];
     if (app.identifier)
       infoRows.push(
-        `<div class="zapstore-app__info-row"><span class="zapstore-app__info-label">App ID</span><span class="zapstore-app__info-value">${escapeHtml(app.identifier)}</span></div>`
+        `<div class="zapstore-app__info-row"><span class="zapstore-app__info-label">${_('App ID')}</span><span class="zapstore-app__info-value">${escapeHtml(app.identifier)}</span></div>`
       );
     if (app.platform)
       infoRows.push(

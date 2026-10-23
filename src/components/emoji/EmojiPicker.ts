@@ -10,6 +10,7 @@ import {
   StorageKeys,
 } from '../../services/PerAccountLocalStorage';
 import { escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { _ } from '../../i18n';
 
 // Handle both default and named export patterns
 const emojilib: Record<string, string[]> =
@@ -464,7 +465,7 @@ export class EmojiPicker {
 
     const titleEl = document.createElement('div');
     titleEl.className = 'emoji-picker-category-title';
-    titleEl.textContent = 'Custom';
+    titleEl.textContent = _('Custom');
     section.appendChild(titleEl);
 
     const grid = document.createElement('div');

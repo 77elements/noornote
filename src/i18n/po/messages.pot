@@ -29,6 +29,7 @@ msgid "(Audio)"
 msgstr ""
 
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:198
+#: src/components/post/DraftsListUI.ts:45
 msgid "(empty)"
 msgstr ""
 
@@ -53,6 +54,8 @@ msgid "(Repost)"
 msgstr ""
 
 #: src/addons/calendar/CalendarEventModal.ts:175
+#: src/addons/calendar/CalendarGridView.ts:434
+#: src/addons/calendar/CalendarGridView.ts:457
 #: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:136
 msgid "(Untitled event)"
 msgstr ""
@@ -85,6 +88,12 @@ msgstr ""
 msgid "%s · %s sats"
 msgstr ""
 
+#: src/lists/follows-extended.ts:400
+msgid "%s change detected"
+msgid_plural "%s changes detected"
+msgstr[0] ""
+msgstr[1] ""
+
 #: src/addons/group-chats/GroupChatsSettings.ts:29
 msgid "%s channel tracked"
 msgid_plural "%s channels tracked"
@@ -100,7 +109,7 @@ msgid "%s d ago"
 msgstr ""
 
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:210
-#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:188
+#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:192
 #: src/services/dm/DMExpiration.ts:140
 msgid "%s day"
 msgid_plural "%s days"
@@ -131,7 +140,7 @@ msgstr ""
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:65
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:169
 #: src/addons/note-taking/NoteTakingAddonView.ts:43
-#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:102
+#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:106
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:52
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:43
 #: src/components/settings/MediaServerSection.ts:760
@@ -175,7 +184,7 @@ msgstr ""
 msgid "%s enabled — add communities below"
 msgstr ""
 
-#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:96
+#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:100
 msgid "%s enabled (90 days)"
 msgstr ""
 
@@ -202,6 +211,10 @@ msgid "%s event published to your relays"
 msgid_plural "%s events published to your relays"
 msgstr[0] ""
 msgstr[1] ""
+
+#: src/components/post/PostEditorToolbar.ts:225
+msgid "%s file(s) failed:"
+msgstr ""
 
 #: src/helpers/formatTimeAgo.ts:18
 msgid "%s h ago"
@@ -281,11 +294,11 @@ msgstr ""
 msgid "%s new"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:716
+#: src/components/notifications/NotificationItem.ts:713
 msgid "%s new messages in %s"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:691
+#: src/components/notifications/NotificationItem.ts:688
 msgid "%s new posts tagged #%s"
 msgstr ""
 
@@ -294,6 +307,10 @@ msgid "%s outside"
 msgid_plural "%s outside"
 msgstr[0] ""
 msgstr[1] ""
+
+#: src/components/ui/note-rendering/FollowPackRenderer.ts:74
+msgid "%s people"
+msgstr ""
 
 #: src/addons/follow-packs/FollowPackManager.ts:1064
 msgid "%s people added to your follows"
@@ -332,11 +349,11 @@ msgstr ""
 msgid "%s sats zapped"
 msgstr ""
 
-#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:185
+#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:189
 msgid "%s set to %s"
 msgstr ""
 
-#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:184
+#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:188
 msgid "%s set to Always"
 msgstr ""
 
@@ -387,6 +404,10 @@ msgstr ""
 
 #: src/lists/list-header.ts:41
 msgid "+ New"
+msgstr ""
+
+#: src/addons/calendar/CalendarGridView.ts:246
+msgid "+ New Event"
 msgstr ""
 
 #: src/addons/calendar/CalendarCollectionsModal.ts:44
@@ -510,7 +531,7 @@ msgstr ""
 msgid "A description for this follow list..."
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:730
+#: src/components/notifications/NotificationItem.ts:727
 msgid "A dhikr reached its goal"
 msgstr ""
 
@@ -526,7 +547,7 @@ msgstr ""
 msgid "A Lightning wallet lets you send and receive Zaps. You can set one up anytime later in Settings, but we recommend starting with a working wallet so you can zap right away."
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:703
+#: src/components/notifications/NotificationItem.ts:700
 msgid "a Nostrord group"
 msgstr ""
 
@@ -538,8 +559,21 @@ msgstr ""
 msgid "A terminal window will open. There:"
 msgstr ""
 
+#: src/components/layout/MainLayout.ts:2540
+msgid "About"
+msgstr ""
+
 #: src/components/views/AboutView.ts:69
 msgid "About NoorNote"
+msgstr ""
+
+#: src/addons/calendar/CalendarGridView.ts:302
+#: src/components/notifications/NotificationItem.ts:116
+msgid "Accept"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:223
+msgid "Accepted"
 msgstr ""
 
 #: src/components/views/ListsOverviewView.ts:78
@@ -550,7 +584,7 @@ msgstr ""
 msgid "Activate the <a class=\"live-stream-card__hint-link\" href=\"/addons/live-streams-player\">Live Streams Player</a> addon to see this live stream."
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:219
+#: src/addons/marketplace/ListingEditorView.ts:218
 #: src/components/views/AddonsOverviewView.ts:110
 msgid "Active"
 msgstr ""
@@ -651,7 +685,7 @@ msgstr ""
 msgid "Add to Tribe"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:259
+#: src/addons/marketplace/ListingEditorView.ts:258
 msgid "Add URL"
 msgstr ""
 
@@ -697,6 +731,10 @@ msgstr ""
 msgid "Added to your calendar grid"
 msgstr ""
 
+#: src/components/report/ReportModal.ts:126
+msgid "Additional details (optional)"
+msgstr ""
+
 #: src/components/views/ProfileBookingView.ts:487
 msgid "Additional participants (optional)"
 msgstr ""
@@ -709,7 +747,7 @@ msgstr ""
 msgid "Addon order reset to default"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2648
+#: src/components/layout/MainLayout.ts:2647
 #: src/components/views/AddonsOverviewView.ts:68
 msgid "Addons"
 msgstr ""
@@ -734,7 +772,11 @@ msgstr ""
 msgid "Advanced List Management enabled"
 msgstr ""
 
-#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:156
+#: src/components/poll/PollCreator.ts:122
+msgid "Advanced Options"
+msgstr ""
+
+#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:160
 msgid "After the window expires, the blinking stops (you have adapted to their new profile)"
 msgstr ""
 
@@ -815,7 +857,11 @@ msgstr ""
 msgid "All user data remains in your browser and can be cleared at any time via your browser settings."
 msgstr ""
 
-#: src/components/views/FollowPackDetailView.ts:249
+#: src/components/poll/PollCreator.ts:164
+msgid "Allow multiple choices"
+msgstr ""
+
+#: src/components/views/FollowPackDetailView.ts:247
 msgid "Already following all members"
 msgstr ""
 
@@ -851,7 +897,7 @@ msgstr ""
 msgid "Amount must be at least 1 sat"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:713
+#: src/components/notifications/NotificationItem.ts:710
 msgid "an Armada community"
 msgstr ""
 
@@ -896,6 +942,10 @@ msgstr ""
 
 #: src/components/ui/ThreadContextIndicator.ts:197
 msgid "App"
+msgstr ""
+
+#: src/components/views/ZapstoreAppView.ts:289
+msgid "App ID"
 msgstr ""
 
 #: src/components/views/ZapstoreAppView.ts:385
@@ -1056,7 +1106,7 @@ msgstr ""
 msgid "Author excluded"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:315
+#: src/addons/marketplace/ListingEditorView.ts:314
 msgid "auto-generated"
 msgstr ""
 
@@ -1064,7 +1114,7 @@ msgstr ""
 msgid "auto-generated, change only if you know what you're doing"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:315
+#: src/addons/marketplace/ListingEditorView.ts:314
 msgid "auto-generated, do not change"
 msgstr ""
 
@@ -1106,11 +1156,11 @@ msgstr ""
 msgid "Award Badge"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:724
+#: src/components/notifications/NotificationItem.ts:721
 msgid "awarded you a badge"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:187
+#: src/addons/marketplace/ListingEditorView.ts:186
 #: src/components/navigation/SearchSpotlight.ts:111
 #: src/components/views/ArticleEditorView.ts:311
 msgid "Back"
@@ -1127,6 +1177,7 @@ msgid "Back to packs"
 msgstr ""
 
 #: src/components/views/ProfileBookingView.ts:206
+#: src/components/views/ProfileBookingView.ts:271
 msgid "Back to profile"
 msgstr ""
 
@@ -1134,7 +1185,7 @@ msgstr ""
 msgid "Back to root"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:3005
+#: src/components/layout/MainLayout.ts:3004
 #: src/components/layout/MainLayout.ts:903
 msgid "Back to timeline"
 msgstr ""
@@ -1222,6 +1273,7 @@ msgid "Beyond Nostr relays, NoorNote makes network requests to a small set of th
 msgstr ""
 
 #: src/components/onboarding/AccountSetupWizard.ts:2535
+#: src/components/profile/ProfileEditModal.ts:199
 #: src/helpers/profile-field-helpers.ts:48
 msgid "Bio"
 msgstr ""
@@ -1262,6 +1314,10 @@ msgstr ""
 
 #: src/addons/calendar/CalendarEventModal.ts:229
 msgid "booked"
+msgstr ""
+
+#: src/addons/calendar/CalendarGridView.ts:435
+msgid "Booked"
 msgstr ""
 
 #: src/addons/calendar/CalendarEventModal.ts:238
@@ -1398,7 +1454,7 @@ msgstr ""
 msgid "Both calendars side-by-side"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:287
+#: src/addons/marketplace/ListingEditorView.ts:286
 msgid "Brief description for listing cards..."
 msgstr ""
 
@@ -1443,6 +1499,10 @@ msgstr ""
 #: src/addons/bulk-delete/BulkDeleteView.ts:130
 #: src/addons/bulk-delete/BulkDeleteView.ts:140
 msgid "Bulk delete"
+msgstr ""
+
+#: src/components/auth/AuthComponent.ts:673
+msgid "Bunker connection failed"
 msgstr ""
 
 #: src/components/auth/AuthComponent.ts:183
@@ -1511,6 +1571,10 @@ msgstr ""
 msgid "Calendar name"
 msgstr ""
 
+#: src/addons/calendar/CalendarGridView.ts:245
+msgid "Calendars"
+msgstr ""
+
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:140
 msgid "Calibrating baseline (%s followers)…"
 msgstr ""
@@ -1540,7 +1604,9 @@ msgstr ""
 #: src/components/modals/ZapModal.ts:148
 #: src/components/onboarding/AccountSetupWizard.ts:1510
 #: src/components/post/PostNoteModal.ts:399
+#: src/components/profile/ProfileEditModal.ts:257
 #: src/components/reply/ReplyModal.ts:433
+#: src/components/report/ReportModal.ts:139
 #: src/components/settings/CacheSettingsSection.ts:373
 #: src/components/settings/ListSettingsSection.ts:325
 #: src/components/settings/ListSettingsSection.ts:367
@@ -1549,6 +1615,7 @@ msgstr ""
 #: src/components/views/ConversationView.ts:619
 #: src/components/views/MessagesView.ts:586
 #: src/components/views/MessagesView.ts:792
+#: src/components/views/ProfileBookingView.ts:326
 #: src/components/views/ProfileBookingView.ts:495
 #: src/helpers/datePickerModal.ts:189
 #: src/helpers/datePickerModal.ts:331
@@ -1557,6 +1624,7 @@ msgstr ""
 #: src/lists/bookmarks.ts:3938
 #: src/lists/tribes.ts:2743
 #: src/lists/tribes.ts:2946
+#: src/services/AuthService.ts:838
 #: src/services/ModalService.ts:188
 #: src/services/ModalService.ts:247
 #: src/services/ModalService.ts:260
@@ -1611,6 +1679,7 @@ msgid "Chat in invite-only groups and follow Armada communities."
 msgstr ""
 
 #: src/lists/follows-extended.ts:258
+#: src/lists/follows-extended.ts:355
 msgid "Check for changes"
 msgstr ""
 
@@ -1631,6 +1700,11 @@ msgstr ""
 msgid "checking…"
 msgstr ""
 
+#: src/lists/follows-extended.ts:314
+#: src/services/UpdateCheckService.ts:109
+msgid "Checking..."
+msgstr ""
+
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:258
 msgid "Checking…"
 msgstr ""
@@ -1643,7 +1717,7 @@ msgstr ""
 msgid "Choose a Username"
 msgstr ""
 
-#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:146
+#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:150
 msgid "Choose how long to show these recognition cues after a profile change:"
 msgstr ""
 
@@ -1732,8 +1806,24 @@ msgstr ""
 msgid "click to add to Tags"
 msgstr ""
 
+#: src/helpers/renderMediaContent.ts:111
+msgid "Click to read · EPUB"
+msgstr ""
+
+#: src/components/post/ClientTagControl.ts:45
+msgid "Client tag"
+msgstr ""
+
+#: src/components/ui/ImageViewer.ts:221
 #: src/components/ui/NoteMenu.ts:521
+#: src/lists/follows-extended.ts:447
+#: src/services/ToastService.ts:186
 msgid "Close"
+msgstr ""
+
+#: src/components/ui/ImageViewer.ts:221
+#: src/services/ModalService.ts:96
+msgid "Close (ESC)"
 msgstr ""
 
 #: src/components/layout/MainLayout.ts:2288
@@ -1833,6 +1923,7 @@ msgstr ""
 msgid "Configure NDK cache sizes. Changes require app reload to take effect."
 msgstr ""
 
+#: src/components/views/ProfileBookingView.ts:320
 #: src/helpers/datePickerModal.ts:71
 #: src/services/ModalService.ts:187
 msgid "Confirm"
@@ -1846,11 +1937,16 @@ msgstr ""
 msgid "Confirm Password"
 msgstr ""
 
+#: src/components/modals/ImportToNoorSignerModal.ts:97
+msgid "Confirm password..."
+msgstr ""
+
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:87
 msgid "Conflicts with Data Saver"
 msgstr ""
 
 #: src/components/auth/AuthComponent.ts:187
+#: src/components/auth/AuthComponent.ts:662
 #: src/components/onboarding/AccountSetupWizard.ts:2943
 #: src/components/onboarding/AccountSetupWizard.ts:3022
 msgid "Connect"
@@ -1873,6 +1969,7 @@ msgstr ""
 msgid "Connected! Your Lightning address: <strong>%s</strong>"
 msgstr ""
 
+#: src/components/auth/AuthComponent.ts:664
 #: src/components/onboarding/AccountSetupWizard.ts:2310
 #: src/components/onboarding/AccountSetupWizard.ts:2976
 #: src/components/settings/NWCSettingsSection.ts:300
@@ -1948,6 +2045,10 @@ msgstr ""
 msgid "Copy event ID"
 msgstr ""
 
+#: src/components/ui/note-rendering/NsiteRenderer.ts:95
+msgid "Copy full aggregate hash"
+msgstr ""
+
 #: src/components/views/ZapstoreAppView.ts:317
 msgid "Copy hash"
 msgstr ""
@@ -1965,6 +2066,10 @@ msgstr ""
 msgid "Copy npub"
 msgstr ""
 
+#: src/components/ui/note-rendering/NsiteRenderer.ts:95
+msgid "Copy site hash"
+msgstr ""
+
 #: src/components/ui/NoteMenu.ts:209
 msgid "Copy user ID"
 msgstr ""
@@ -1979,6 +2084,10 @@ msgstr ""
 
 #: src/components/ui/note-rendering/EmojiPackRenderer.ts:128
 msgid "Could not add emojis"
+msgstr ""
+
+#: src/components/relay-browser/RelayBrowser.ts:306
+msgid "Could not connect to relay"
 msgstr ""
 
 #: src/addons/calendar/CalendarEventEditor.ts:546
@@ -2125,6 +2234,7 @@ msgid "Create Follow Pack"
 msgstr ""
 
 #: src/components/onboarding/OnboardingComponent.ts:63
+#: src/helpers/LoggedOutModals.ts:64
 msgid "Create my account"
 msgstr ""
 
@@ -2162,8 +2272,16 @@ msgstr ""
 msgid "Current:"
 msgstr ""
 
+#: src/components/emoji/EmojiPicker.ts:468
+msgid "Custom"
+msgstr ""
+
 #: src/components/views/ConversationView.ts:427
 msgid "Custom (%s)"
+msgstr ""
+
+#: src/components/post/ClientTagControl.ts:54
+msgid "Custom client tag"
 msgstr ""
 
 #: src/components/views/ConversationView.ts:726
@@ -2213,6 +2331,10 @@ msgstr ""
 msgid "Data Saver"
 msgstr ""
 
+#: src/components/views/EpubReaderView.ts:241
+msgid "Data Saver is on — tap to load book"
+msgstr ""
+
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:88
 msgid "Data Saver is on. To find followers reliably this addon ignores it for its scan: a one-time pull of all your followers’ contact lists (a few MB), then small background checks every few hours. Enable anyway?"
 msgstr ""
@@ -2249,9 +2371,17 @@ msgstr ""
 msgid "Days before"
 msgstr ""
 
+#: src/components/notifications/NotificationItem.ts:117
+msgid "Decline"
+msgstr ""
+
 #: src/addons/calendar/CalendarEventModal.ts:245
 #: src/addons/calendar/CalendarEventModal.ts:394
 msgid "declined"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:233
+msgid "Declined"
 msgstr ""
 
 #: src/components/ui/FontSizeSwitcher.ts:34
@@ -2323,6 +2453,7 @@ msgstr ""
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:587
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:663
 #: src/addons/note-taking/NoteEditorModal.ts:364
+#: src/components/views/ArticleView.ts:160
 #: src/components/views/MessagesView.ts:585
 #: src/lists/tribes.ts:2744
 #: src/services/ModalService.ts:246
@@ -2350,6 +2481,10 @@ msgstr ""
 msgid "Delete all tribe data (folders and members). Use if tribe tabs are broken or you can't delete a tribe."
 msgstr ""
 
+#: src/components/views/ArticleView.ts:160
+msgid "Delete article"
+msgstr ""
+
 #: src/components/views/ArticleView.ts:271
 msgid "Delete Article"
 msgstr ""
@@ -2363,6 +2498,10 @@ msgstr ""
 
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:661
 msgid "Delete dhikr"
+msgstr ""
+
+#: src/components/post/DraftsListUI.ts:48
+msgid "Delete draft"
 msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:1136
@@ -2401,6 +2540,10 @@ msgstr ""
 
 #: src/components/ui/NoteMenu.ts:244
 msgid "Delete note"
+msgstr ""
+
+#: src/components/delete/DeleteNoteModal.ts:51
+msgid "Delete Note"
 msgstr ""
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:206
@@ -2483,7 +2626,7 @@ msgid_plural "Delivered to %s of %s relays"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/addons/marketplace/ListingEditorView.ts:272
+#: src/addons/marketplace/ListingEditorView.ts:271
 msgid "Describe your product..."
 msgstr ""
 
@@ -2502,7 +2645,7 @@ msgstr ""
 msgid "Description"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:271
+#: src/addons/marketplace/ListingEditorView.ts:270
 msgid "Description (Markdown)"
 msgstr ""
 
@@ -2510,7 +2653,7 @@ msgstr ""
 msgid "Description (optional)"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:278
+#: src/addons/marketplace/ListingEditorView.ts:277
 #: src/components/layout/MainLayout.ts:2026
 #: src/components/views/ArticleEditorView.ts:378
 #: src/components/views/VideoEditorView.ts:177
@@ -2564,6 +2707,10 @@ msgstr ""
 msgid "Diagrams"
 msgstr ""
 
+#: src/components/views/MessagesView.ts:687
+msgid "Direct messages are not available with Bunker URL login"
+msgstr ""
+
 #: src/components/settings/UISettingsSection.ts:205
 msgid "Disable post truncation"
 msgstr ""
@@ -2614,6 +2761,11 @@ msgstr ""
 msgid "Discovery tags"
 msgstr ""
 
+#: src/addons/calendar/CalendarGridView.ts:303
+msgid "Dismiss"
+msgstr ""
+
+#: src/components/profile/ProfileEditModal.ts:173
 #: src/helpers/profile-field-helpers.ts:40
 msgid "Display Name"
 msgstr ""
@@ -2658,6 +2810,7 @@ msgstr ""
 #: src/components/layout/MainLayout.ts:1956
 #: src/components/layout/MainLayout.ts:1966
 #: src/components/modals/UpdateModal.ts:116
+#: src/components/ui/ImageViewer.ts:215
 msgid "Download"
 msgstr ""
 
@@ -2673,10 +2826,16 @@ msgstr ""
 msgid "Download Backup"
 msgstr ""
 
+#: src/helpers/renderMediaContent.ts:109
+#: src/helpers/renderMediaContent.ts:110
+msgid "Download Epub File"
+msgstr ""
+
 #: src/addons/calendar/CalendarImportExport.ts:108
 msgid "Download your whole calendar as one .ics file."
 msgstr ""
 
+#: src/components/profile/ProfileArticlesCarousel.ts:203
 #: src/lists/bookmarks.ts:3652
 msgid "Draft"
 msgstr ""
@@ -2695,6 +2854,10 @@ msgstr ""
 
 #: src/components/views/AddonsOverviewView.ts:79
 msgid "Drag tiles to reorder (on touch: use ▲▼). The order is saved per account."
+msgstr ""
+
+#: src/components/profile/ProfileListsComponent.ts:225
+msgid "Drag to reorder"
 msgstr ""
 
 #: src/components/views/ConversationView.ts:606
@@ -2771,7 +2934,7 @@ msgstr ""
 #: src/addons/badges/BadgesView.ts:377
 #: src/addons/calendar/CalendarCollectionsModal.ts:60
 #: src/addons/calendar/CalendarEventModal.ts:120
-#: src/addons/marketplace/ListingEditorView.ts:192
+#: src/addons/marketplace/ListingEditorView.ts:191
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:584
 #: src/components/ui/note-rendering/EmojiPackRenderer.ts:97
 #: src/components/views/ArticleEditorView.ts:316
@@ -2785,6 +2948,10 @@ msgstr ""
 
 #: src/addons/nostr-majlis/DhikrModal.ts:99
 msgid "edit a dhikr"
+msgstr ""
+
+#: src/components/views/ArticleView.ts:156
+msgid "Edit article"
 msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:310
@@ -2820,7 +2987,7 @@ msgid "Edit Follow Pack"
 msgstr ""
 
 #: src/addons/follow-packs/FollowPackManager.ts:326
-#: src/components/views/FollowPackDetailView.ts:220
+#: src/components/views/FollowPackDetailView.ts:218
 msgid "Edit List"
 msgstr ""
 
@@ -2828,7 +2995,7 @@ msgstr ""
 msgid "Edit listing"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:186
+#: src/addons/marketplace/ListingEditorView.ts:185
 msgid "Edit Listing"
 msgstr ""
 
@@ -2842,6 +3009,10 @@ msgstr ""
 msgid "Edit private note"
 msgstr ""
 
+#: src/components/profile/ProfileEditModal.ts:107
+msgid "Edit Profile"
+msgstr ""
+
 #: src/components/views/TimelineView.ts:168
 msgid "Edit tribes"
 msgstr ""
@@ -2850,10 +3021,11 @@ msgstr ""
 msgid "Edit your profile"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:297
+#: src/addons/marketplace/ListingEditorView.ts:296
 msgid "electronics, vintage (comma separated)"
 msgstr ""
 
+#: src/components/profile/ProfileEditModal.ts:248
 #: src/helpers/profile-field-helpers.ts:77
 msgid "Email format (user@domain.com) or LNURL"
 msgstr ""
@@ -2946,7 +3118,7 @@ msgstr ""
 msgid "Enable Note taking"
 msgstr ""
 
-#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:131
+#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:135
 msgid "Enable Profile Recognition"
 msgstr ""
 
@@ -3050,12 +3222,20 @@ msgstr ""
 msgid "Enter Password"
 msgstr ""
 
+#: src/components/modals/ImportToNoorSignerModal.ts:86
+msgid "Enter password..."
+msgstr ""
+
 #: src/components/navigation/SearchSpotlight.ts:103
 msgid "Enter URL path (e.g., /profile, /note/...)"
 msgstr ""
 
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:86
 msgid "Enter word to filter"
+msgstr ""
+
+#: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:100
+msgid "Error"
 msgstr ""
 
 #: src/components/settings/CacheSettingsSection.ts:172
@@ -3192,6 +3372,10 @@ msgstr ""
 msgid "Extension handles signing"
 msgstr ""
 
+#: src/components/post/DraftsListUI.ts:42
+msgid "Failed"
+msgstr ""
+
 #: src/addons/calendar/BookingManager.ts:428
 #: src/addons/calendar/CalendarEventModal.ts:529
 msgid "failed DM(s): %s"
@@ -3299,6 +3483,10 @@ msgstr ""
 msgid "Failed to follow user"
 msgstr ""
 
+#: src/components/qrcode/QRCodeModal.ts:164
+msgid "Failed to generate QR code"
+msgstr ""
+
 #: src/lists/follows.ts:2955
 msgid "Failed to load"
 msgstr ""
@@ -3321,11 +3509,15 @@ msgstr ""
 msgid "Failed to load bookmarks"
 msgstr ""
 
+#: src/components/views/FollowPackDetailView.ts:75
+msgid "Failed to load follow pack"
+msgstr ""
+
 #: src/lists/follows.ts:2210
 msgid "Failed to load follows"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:160
+#: src/addons/marketplace/ListingEditorView.ts:159
 #: src/addons/marketplace/ListingView.ts:367
 #: src/components/views/ListingReadView.ts:69
 msgid "Failed to load listing"
@@ -3345,12 +3537,29 @@ msgstr ""
 msgid "Failed to load mute list"
 msgstr ""
 
+#: src/components/views/SingleNoteView.ts:129
+msgid "Failed to load note"
+msgstr ""
+
 #: src/addons/follow-packs/FollowPackManager.ts:1024
 msgid "Failed to load notes"
 msgstr ""
 
+#: src/components/views/ProfileView.ts:416
+msgid "Failed to load profile"
+msgstr ""
+
 #: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1049
+#: src/helpers/renderQuotePreview.ts:39
 msgid "Failed to load quoted note"
+msgstr ""
+
+#: src/components/views/managers/ThreadManager.ts:194
+msgid "Failed to load replies"
+msgstr ""
+
+#: src/components/replies/RepliesRenderer.ts:192
+msgid "Failed to load replies. Please try again."
 msgstr ""
 
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:160
@@ -3641,6 +3850,7 @@ msgid "Folder renamed"
 msgstr ""
 
 #: src/addons/analytics/AnalyticsAddonView.ts:240
+#: src/components/follow-packs/renderFollowPackMembers.ts:84
 #: src/components/onboarding/AccountSetupWizard.ts:2582
 #: src/components/onboarding/AccountSetupWizard.ts:2778
 #: src/lists/follows.ts:3194
@@ -3649,7 +3859,7 @@ msgid "Follow"
 msgstr ""
 
 #: src/addons/follow-packs/FollowPackManager.ts:324
-#: src/components/views/FollowPackDetailView.ts:122
+#: src/components/views/FollowPackDetailView.ts:120
 msgid "Follow All"
 msgstr ""
 
@@ -3667,6 +3877,10 @@ msgstr ""
 
 #: src/components/ui/ThreadContextIndicator.ts:199
 msgid "Follow Pack"
+msgstr ""
+
+#: src/components/views/FollowPackDetailView.ts:65
+msgid "Follow pack not found"
 msgstr ""
 
 #: src/addons/follow-packs/FollowPackManager.ts:863
@@ -3687,11 +3901,25 @@ msgstr ""
 
 #: src/addons/addonI18n.ts:30
 #: src/addons/follow-packs/FollowPacksView.ts:21
+#: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:143
 msgid "Follow Packs"
 msgstr ""
 
 #: src/components/onboarding/AccountSetupWizard.ts:2653
 msgid "Follow Packs by <a href=\"https://github.com/callebtc/following.space\" target=\"_blank\" rel=\"noopener\">calle's following.space</a>"
+msgstr ""
+
+#: src/components/timeline/LastNotesPerFollow.ts:148
+#: src/components/timeline/Timeline.ts:425
+msgid "Follow some users or check your relay connections."
+msgstr ""
+
+#: src/components/layout/partials/SccMediaFeed.ts:55
+msgid "Follow users to see their media here."
+msgstr ""
+
+#: src/components/layout/partials/SccRecipeFeed.ts:61
+msgid "Follow users to see their recipes here."
 msgstr ""
 
 #: src/lists/follows.ts:3247
@@ -3720,6 +3948,7 @@ msgstr ""
 
 #: src/components/navigation/SearchSpotlight.ts:366
 #: src/components/onboarding/AccountSetupWizard.ts:2778
+#: src/components/user-search/UserSearchInput.ts:322
 #: src/components/views/ProfileView.ts:660
 msgid "Following"
 msgstr ""
@@ -3732,7 +3961,7 @@ msgid_plural "Following %s accounts"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/components/views/FollowPackDetailView.ts:261
+#: src/components/views/FollowPackDetailView.ts:259
 msgid "Following %s new people"
 msgstr ""
 
@@ -3808,6 +4037,7 @@ msgid "From"
 msgstr ""
 
 #: src/components/auth/AuthComponent.ts:170
+#: src/components/qrcode/QRCodeModal.ts:86
 msgid "Generating QR code..."
 msgstr ""
 
@@ -3848,6 +4078,14 @@ msgstr ""
 msgid "Git Repository"
 msgstr ""
 
+#: src/services/SystemLogger.ts:148
+msgid "Global"
+msgstr ""
+
+#: src/services/SystemLogger.ts:149
+msgid "Global logs"
+msgstr ""
+
 #: src/components/onboarding/AccountSetupWizard.ts:1660
 msgid "Go back"
 msgstr ""
@@ -3863,6 +4101,10 @@ msgstr ""
 #: src/addons/calendar/CalendarEventModal.ts:245
 #: src/addons/calendar/CalendarEventModal.ts:394
 msgid "going"
+msgstr ""
+
+#: src/helpers/LoggedOutModals.ts:119
+msgid "Got something to say? We're all ears - right after you create an account."
 msgstr ""
 
 #: src/components/settings/NWCSettingsSection.ts:194
@@ -3939,8 +4181,12 @@ msgstr ""
 msgid "Heading"
 msgstr ""
 
-#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:133
+#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:137
 msgid "Helps you recognize people you follow even after they change their name or profile picture. When someone you follow changes their profile, the app shows visual cues (blinking profile pictures) so you remember who they are."
+msgstr ""
+
+#: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:135
+msgid "Here are some suggestions to get you started. Just hover your mouse over a profile pic (or tap on it) to follow a user. Find more under Addons → "
 msgstr ""
 
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:553
@@ -3999,7 +4245,7 @@ msgstr ""
 msgid "Highlight: %s"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:720
+#: src/components/notifications/NotificationItem.ts:717
 msgid "highlighted your %s"
 msgstr ""
 
@@ -4043,7 +4289,7 @@ msgstr ""
 msgid "Hours"
 msgstr ""
 
-#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:152
+#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:156
 msgid "How it works"
 msgstr ""
 
@@ -4064,7 +4310,7 @@ msgstr ""
 msgid "https://..."
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:258
+#: src/addons/marketplace/ListingEditorView.ts:257
 #: src/components/views/ArticleEditorView.ts:392
 #: src/components/views/VideoEditorView.ts:190
 msgid "https://... or upload"
@@ -4075,6 +4321,7 @@ msgid "https://example.com/celebrate.gif"
 msgstr ""
 
 #: src/components/onboarding/OnboardingComponent.ts:64
+#: src/helpers/LoggedOutModals.ts:65
 msgid "I already have a key"
 msgstr ""
 
@@ -4095,7 +4342,7 @@ msgstr ""
 msgid "Identifier/slug is required"
 msgstr ""
 
-#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:155
+#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:159
 msgid "If they change their profile within your selected window, their picture will blink between old and new"
 msgstr ""
 
@@ -4140,7 +4387,7 @@ msgstr ""
 msgid "Image URL"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:241
+#: src/addons/marketplace/ListingEditorView.ts:240
 msgid "Images"
 msgstr ""
 
@@ -4237,7 +4484,7 @@ msgstr ""
 msgid "inactive"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:221
+#: src/addons/marketplace/ListingEditorView.ts:220
 #: src/components/views/AddonsOverviewView.ts:110
 msgid "Inactive"
 msgstr ""
@@ -4275,7 +4522,7 @@ msgstr ""
 msgid "instant, no middleman"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:732
+#: src/components/notifications/NotificationItem.ts:729
 msgid "interacted with your %s"
 msgstr ""
 
@@ -4285,6 +4532,10 @@ msgstr ""
 
 #: src/services/ConnectivityService.ts:119
 msgid "Internet connection lost"
+msgstr ""
+
+#: src/components/auth/AuthComponent.ts:658
+msgid "Invalid bunker URI. Must start with bunker://"
 msgstr ""
 
 #: src/components/settings/CacheSettingsSection.ts:340
@@ -4336,7 +4587,7 @@ msgstr ""
 msgid "is available"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:698
+#: src/components/notifications/NotificationItem.ts:695
 msgid "is now following you"
 msgstr ""
 
@@ -4362,6 +4613,7 @@ msgstr ""
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:910
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:228
+#: src/components/views/ProfileBookingView.ts:321
 msgid "Keep"
 msgstr ""
 
@@ -4460,6 +4712,10 @@ msgstr ""
 msgid "Last: %s"
 msgstr ""
 
+#: src/lists/follows-extended.ts:336
+msgid "Last: Just now"
+msgstr ""
+
 #: src/components/modals/UpdateModal.ts:115
 msgid "Later"
 msgstr ""
@@ -4499,6 +4755,7 @@ msgstr ""
 msgid "License"
 msgstr ""
 
+#: src/components/profile/ProfileEditModal.ts:238
 #: src/helpers/profile-field-helpers.ts:75
 msgid "Lightning Address"
 msgstr ""
@@ -4511,6 +4768,13 @@ msgstr ""
 msgid "Lightning Addresses"
 msgstr ""
 
+#: src/helpers/renderBolt11.ts:34
+msgid "Lightning Invoice"
+msgstr ""
+
+#: src/components/qrcode/QRCodeModal.ts:128
+#: src/components/qrcode/QRCodeModal.ts:155
+#: src/components/qrcode/QRCodeModal.ts:163
 #: src/components/views/ProfileView.ts:696
 msgid "Lightning QR Code"
 msgstr ""
@@ -4603,6 +4867,7 @@ msgstr ""
 msgid "Listing frequency: %s"
 msgstr ""
 
+#: src/addons/marketplace/ListingEditorView.ts:133
 #: src/addons/marketplace/ListingView.ts:354
 #: src/components/views/ListingReadView.ts:63
 msgid "Listing not found"
@@ -4648,6 +4913,7 @@ msgid "Loading app..."
 msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:190
+#: src/components/views/ArticleView.ts:90
 msgid "Loading article..."
 msgstr ""
 
@@ -4680,6 +4946,10 @@ msgstr ""
 msgid "Loading events…"
 msgstr ""
 
+#: src/components/views/FollowPackDetailView.ts:56
+msgid "Loading follow pack..."
+msgstr ""
+
 #: src/components/onboarding/AccountSetupWizard.ts:2641
 msgid "Loading follow packs..."
 msgstr ""
@@ -4702,27 +4972,35 @@ msgstr ""
 msgid "Loading items…"
 msgstr ""
 
+#: src/addons/marketplace/ListingEditorView.ts:124
 #: src/addons/marketplace/ListingView.ts:52
 msgid "Loading listing..."
 msgstr ""
 
 #: src/components/layout/partials/SccMediaFeed.ts:45
+#: src/components/layout/partials/SccMediaFeed.ts:59
 msgid "Loading media..."
 msgstr ""
 
 #: src/addons/follow-packs/FollowPackManager.ts:377
 #: src/addons/follow-packs/FollowPackManager.ts:615
-#: src/components/views/FollowPackDetailView.ts:129
+#: src/components/views/FollowPackDetailView.ts:127
 msgid "Loading members..."
 msgstr ""
 
 #: src/components/views/ConversationView.ts:248
 #: src/components/views/MessagesView.ts:168
+#: src/components/views/MessagesView.ts:173
 msgid "Loading messages..."
 msgstr ""
 
 #: src/components/views/MessagesView.ts:66
 msgid "Loading more conversations..."
+msgstr ""
+
+#: src/components/timeline/LastNotesPerFollow.ts:143
+#: src/components/timeline/Timeline.ts:420
+msgid "Loading more events..."
 msgstr ""
 
 #: src/lists/follows.ts:2198
@@ -4762,6 +5040,10 @@ msgstr ""
 msgid "Loading mute list..."
 msgstr ""
 
+#: src/components/views/SingleNoteView.ts:108
+msgid "Loading note..."
+msgstr ""
+
 #: src/addons/follow-packs/FollowPackManager.ts:982
 msgid "Loading notes..."
 msgstr ""
@@ -4774,12 +5056,26 @@ msgstr ""
 msgid "Loading profile..."
 msgstr ""
 
+#: src/helpers/renderQuotedReferencesPlaceholder.ts:38
+msgid "Loading quoted content..."
+msgstr ""
+
+#: src/helpers/renderQuotePreview.ts:22
+msgid "Loading quoted note..."
+msgstr ""
+
 #: src/components/layout/partials/SccRecipeFeed.ts:51
+#: src/components/layout/partials/SccRecipeFeed.ts:65
 msgid "Loading recipes..."
 msgstr ""
 
 #: src/components/settings/RelaySettingsSection.ts:208
 msgid "Loading relay health status..."
+msgstr ""
+
+#: src/components/replies/RepliesRenderer.ts:90
+#: src/components/views/managers/ThreadManager.ts:128
+msgid "Loading replies..."
 msgstr ""
 
 #: src/components/ui/note-rendering/RepostRenderer.ts:267
@@ -4834,6 +5130,8 @@ msgstr ""
 
 #: src/addons/marketplace/ListingView.ts:123
 #: src/addons/marketplace/MarketplaceTimeline.ts:357
+#: src/addons/marketplace/MarketplaceTimelineInjector.ts:219
+#: src/components/notifications/NotificationItem.ts:109
 #: src/components/ui/AccountSwitcher.ts:101
 #: src/components/ui/AccountSwitcher.ts:195
 #: src/components/ui/note-features/PollRenderer.ts:73
@@ -4855,6 +5153,10 @@ msgstr ""
 msgid "Loading…"
 msgstr ""
 
+#: src/services/SystemLogger.ts:154
+msgid "Local"
+msgstr ""
+
 #: src/lists/bookmarks.ts:5320
 #: src/lists/bookmarks.ts:5473
 msgid "Local bookmarks pushed to relays"
@@ -4867,6 +5169,10 @@ msgstr ""
 #: src/lists/follows.ts:1819
 #: src/lists/follows.ts:1950
 msgid "Local follows pushed to relays"
+msgstr ""
+
+#: src/services/SystemLogger.ts:155
+msgid "Local logs"
 msgstr ""
 
 #: src/lists/mutes.ts:1563
@@ -4902,7 +5208,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: src/addons/calendar/CalendarEventEditor.ts:131
-#: src/addons/marketplace/ListingEditorView.ts:291
+#: src/addons/marketplace/ListingEditorView.ts:290
 msgid "Location"
 msgstr ""
 
@@ -4940,6 +5246,7 @@ msgstr ""
 msgid "Logged in!"
 msgstr ""
 
+#: src/components/auth/AuthComponent.ts:71
 #: src/components/onboarding/AccountSetupWizard.ts:2262
 #: src/components/onboarding/AccountSetupWizard.ts:2268
 msgid "Login"
@@ -4966,6 +5273,10 @@ msgstr ""
 msgid "Logs exported"
 msgstr ""
 
+#: src/components/article/ArticleTimeline.ts:522
+msgid "Long-form articles will appear here"
+msgstr ""
+
 #: src/components/views/ArticleTimelineView.ts:27
 msgid "Long-form content from your 1st and 2nd-degree follows"
 msgstr ""
@@ -4986,6 +5297,10 @@ msgstr ""
 msgid "Looking for existing dhikrs…"
 msgstr ""
 
+#: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:130
+msgid "Looks like you're not following anyone yet."
+msgstr ""
+
 #: src/components/settings/MediaServerSection.ts:484
 msgid "Low (smallest size)"
 msgstr ""
@@ -4996,6 +5311,10 @@ msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:633
 msgid "Main article feed: %s"
+msgstr ""
+
+#: src/components/layout/partials/NavWheelPartial.ts:132
+msgid "Main navigation"
 msgstr ""
 
 #: src/lists/mutes.ts:1318
@@ -5036,10 +5355,16 @@ msgstr ""
 msgid "Mark as read"
 msgstr ""
 
+#: src/lists/follows-extended.ts:446
+msgid "Mark as Seen"
+msgstr ""
+
 #: src/addons/addonI18n.ts:28
 #: src/addons/marketplace/MarketplaceAddonView.ts:34
+#: src/addons/marketplace/MarketplaceTimelineInjector.ts:220
 #: src/components/ui/note-rendering/ListingRenderer.ts:62
 #: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1365
+#: src/helpers/renderQuotePreview.ts:153
 msgid "Marketplace"
 msgstr ""
 
@@ -5084,6 +5409,10 @@ msgstr ""
 #: src/components/layout/MainLayout.ts:1733
 #: src/components/views/SettingsView.ts:46
 msgid "Media"
+msgstr ""
+
+#: src/components/post/PostEditorToolbar.ts:172
+msgid "Media module is not available. Please try again later."
 msgstr ""
 
 #: src/addons/badges/BadgesView.ts:128
@@ -5137,7 +5466,7 @@ msgstr ""
 msgid "Memory optimization enabled"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:662
+#: src/components/notifications/NotificationItem.ts:659
 msgid "mentioned you in %s"
 msgstr ""
 
@@ -5180,7 +5509,9 @@ msgid "Message sent"
 msgstr ""
 
 #: src/components/layout/MainLayout.ts:1937
+#: src/components/search/GlobalSearchView.ts:398
 #: src/components/views/MessagesView.ts:143
+#: src/components/views/MessagesView.ts:683
 msgid "Messages"
 msgstr ""
 
@@ -5355,6 +5686,10 @@ msgstr ""
 msgid "Mutual"
 msgstr ""
 
+#: src/lists/follows-extended.ts:398
+msgid "Mutual Changes Detected"
+msgstr ""
+
 #: src/components/settings/NotificationPrioritySection.ts:87
 msgid "Mutual Unfollows"
 msgstr ""
@@ -5408,7 +5743,7 @@ msgstr ""
 msgid "New"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:717
+#: src/components/notifications/NotificationItem.ts:714
 msgid "New activity in %s"
 msgstr ""
 
@@ -5444,7 +5779,7 @@ msgstr ""
 msgid "New keypair generated"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:186
+#: src/addons/marketplace/ListingEditorView.ts:185
 msgid "New Listing"
 msgstr ""
 
@@ -5471,7 +5806,7 @@ msgstr ""
 msgid "New Post"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:690
+#: src/components/notifications/NotificationItem.ts:687
 msgid "New post tagged #%s"
 msgstr ""
 
@@ -5486,7 +5821,12 @@ msgstr ""
 #: src/addons/calendar/CalendarGridView.ts:233
 #: src/components/onboarding/AccountSetupWizard.ts:2213
 #: src/components/onboarding/OnboardingComponent.ts:195
+#: src/helpers/CarouselHelper.ts:340
 msgid "Next"
+msgstr ""
+
+#: src/components/ui/ImageViewer.ts:250
+msgid "Next image"
 msgstr ""
 
 #: src/components/views/ProfileBookingView.ts:236
@@ -5501,6 +5841,7 @@ msgstr ""
 msgid "NIP-05 Cache Size"
 msgstr ""
 
+#: src/components/profile/ProfileEditModal.ts:224
 #: src/helpers/profile-field-helpers.ts:64
 msgid "NIP-05 Identifier"
 msgstr ""
@@ -5590,8 +5931,16 @@ msgstr ""
 msgid "No dhikr actions yet. Create the first one."
 msgstr ""
 
+#: src/components/post/DraftsListUI.ts:31
+msgid "No drafts yet"
+msgstr ""
+
 #: src/addons/calendar/CalendarCollectionsModal.ts:51
 msgid "No event calendars yet. Create one and add your public events to it."
+msgstr ""
+
+#: src/components/timeline/Timeline.ts:424
+msgid "No events found"
 msgstr ""
 
 #: src/addons/calendar/CalendarImportExport.ts:316
@@ -5646,6 +5995,14 @@ msgstr ""
 msgid "No listings yet"
 msgstr ""
 
+#: src/components/search/SearchResultsView.ts:120
+msgid "No matching notes found."
+msgstr ""
+
+#: src/components/layout/partials/SccMediaFeed.ts:65
+msgid "No media from your follows yet."
+msgstr ""
+
 #: src/lists/tribes.ts:3070
 msgid "No members added"
 msgstr ""
@@ -5673,6 +6030,14 @@ msgstr ""
 
 #: src/lists/mutes.ts:1854
 msgid "No muted users or threads"
+msgstr ""
+
+#: src/components/timeline/LastNotesPerFollow.ts:147
+msgid "No notes found"
+msgstr ""
+
+#: src/components/relay-browser/RelayBrowser.ts:296
+msgid "No notes found on this relay"
 msgstr ""
 
 #: src/components/onboarding/PublicTimelineComponent.ts:126
@@ -5735,6 +6100,10 @@ msgstr ""
 msgid "No recent URLs"
 msgstr ""
 
+#: src/components/layout/partials/SccRecipeFeed.ts:76
+msgid "No recipes from your follows yet."
+msgstr ""
+
 #: src/addons/badges/BadgesView.ts:303
 msgid "No recipients yet"
 msgstr ""
@@ -5746,6 +6115,11 @@ msgstr ""
 #: src/services/RepostService.ts:142
 #: src/services/RepostService.ts:256
 msgid "No relays configured"
+msgstr ""
+
+#: src/components/replies/RepliesRenderer.ts:136
+#: src/components/views/managers/ThreadManager.ts:154
+msgid "No replies or quotes yet"
 msgstr ""
 
 #: src/components/analytics/AnalyticsModal.ts:372
@@ -5840,6 +6214,10 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:159
 msgid "NoorNote - A Nostr Client"
+msgstr ""
+
+#: src/addons/calendar/CalendarReminderService.ts:329
+msgid "NoorNote — Calendar"
 msgstr ""
 
 #: src/addons/note-taking/NoteTakingReminderService.ts:145
@@ -6015,6 +6393,7 @@ msgstr ""
 
 #: src/components/ui/interaction-managers/RepostManager.ts:139
 #: src/components/ui/interaction-managers/RepostManager.ts:251
+#: src/components/views/SingleNoteView.ts:122
 msgid "Note not found"
 msgstr ""
 
@@ -6056,6 +6435,10 @@ msgstr ""
 
 #: src/addons/note-taking/NoteTakingView.ts:195
 msgid "Nothing found for “%s”."
+msgstr ""
+
+#: src/helpers/renderPostPreview.ts:42
+msgid "Nothing to preview yet..."
 msgstr ""
 
 #: src/addons/note-taking/NoteTakingBackup.ts:129
@@ -6152,7 +6535,7 @@ msgstr ""
 msgid "Only 50 tags permitted"
 msgstr ""
 
-#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:157
+#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:161
 msgid "Only applies to people you follow (not everyone you see)"
 msgstr ""
 
@@ -6178,6 +6561,14 @@ msgstr ""
 
 #: src/addons/btc-price/BtcPriceSidebarWidget.ts:88
 msgid "Open BTC Price"
+msgstr ""
+
+#: src/components/post/composerShared.ts:124
+msgid "Open drafts"
+msgstr ""
+
+#: src/components/ui/note-rendering/FollowPackRenderer.ts:75
+msgid "Open Follow Pack"
 msgstr ""
 
 #: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:415
@@ -6224,6 +6615,10 @@ msgstr ""
 msgid "Opens the Chrome Web Store in a new tab"
 msgstr ""
 
+#: src/components/poll/PollCreator.ts:76
+msgid "Option"
+msgstr ""
+
 #: src/lists/bookmarks.ts:3745
 #: src/lists/bookmarks.ts:3929
 msgid "Optional description..."
@@ -6246,6 +6641,10 @@ msgstr ""
 #: src/components/settings/MediaServerSection.ts:493
 #: src/components/settings/MediaServerSection.ts:499
 msgid "Original"
+msgstr ""
+
+#: src/components/views/SingleNoteView.ts:258
+msgid "Original note not found"
 msgstr ""
 
 #: src/addons/analytics/AnalyticsAddonView.ts:232
@@ -6289,8 +6688,16 @@ msgstr ""
 msgid "Pack not found"
 msgstr ""
 
+#: src/services/Bolt11PayHandler.ts:44
+msgid "Paid ✓"
+msgstr ""
+
 #: src/addons/calendar/CalendarEventEditor.ts:135
 msgid "Participants (private invites)"
+msgstr ""
+
+#: src/addons/calendar/CalendarEventModal.ts:98
+msgid "Participants:"
 msgstr ""
 
 #: src/components/modals/ImportToNoorSignerModal.ts:81
@@ -6331,6 +6738,14 @@ msgstr ""
 
 #: src/components/onboarding/AccountSetupWizard.ts:2940
 msgid "Paste your one-time code from Rizful below."
+msgstr ""
+
+#: src/helpers/renderBolt11.ts:37
+msgid "Pay"
+msgstr ""
+
+#: src/services/Bolt11PayHandler.ts:39
+msgid "Paying…"
 msgstr ""
 
 #: src/services/ZapService.ts:383
@@ -6435,6 +6850,10 @@ msgstr ""
 msgid "Please connect Lightning Wallet"
 msgstr ""
 
+#: src/components/auth/AuthComponent.ts:654
+msgid "Please enter a bunker:// URI"
+msgstr ""
+
 #: src/addons/calendar/CalendarCollectionsModal.ts:226
 msgid "Please enter a calendar name"
 msgstr ""
@@ -6537,6 +6956,10 @@ msgstr ""
 msgid "Poll"
 msgstr ""
 
+#: src/components/poll/PollCreator.ts:64
+msgid "Poll Configuration"
+msgstr ""
+
 #: src/components/ui/note-features/NIP88PollRenderer.ts:333
 msgid "Poll option"
 msgstr ""
@@ -6566,6 +6989,10 @@ msgstr ""
 msgid "Post Highlight"
 msgstr ""
 
+#: src/components/post/RelaySelector.ts:54
+msgid "Post to:"
+msgstr ""
+
 #: src/components/settings/UISettingsSection.ts:424
 msgid "Post truncation disabled - all posts will be shown in full"
 msgstr ""
@@ -6574,7 +7001,11 @@ msgstr ""
 msgid "Post truncation enabled"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:685
+#: src/components/views/VideoEditorView.ts:119
+msgid "Post Video"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:682
 msgid "posted a new article"
 msgstr ""
 
@@ -6618,7 +7049,7 @@ msgstr ""
 msgid "Prayer times, dhikr and holiday reminders."
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:193
+#: src/addons/marketplace/ListingEditorView.ts:192
 #: src/components/views/ArticleEditorView.ts:317
 msgid "Preview"
 msgstr ""
@@ -6626,7 +7057,12 @@ msgstr ""
 #: src/addons/calendar/CalendarGridView.ts:227
 #: src/components/onboarding/AccountSetupWizard.ts:2211
 #: src/components/onboarding/OnboardingComponent.ts:193
+#: src/helpers/CarouselHelper.ts:337
 msgid "Previous"
+msgstr ""
+
+#: src/components/ui/ImageViewer.ts:245
+msgid "Previous image"
 msgstr ""
 
 #: src/components/views/ProfileBookingView.ts:228
@@ -6637,7 +7073,7 @@ msgstr ""
 msgid "Previous year"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:232
+#: src/addons/marketplace/ListingEditorView.ts:231
 msgid "Price *"
 msgstr ""
 
@@ -6720,7 +7156,7 @@ msgstr ""
 msgid "Product"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:228
+#: src/addons/marketplace/ListingEditorView.ts:227
 msgid "Product name..."
 msgstr ""
 
@@ -6737,6 +7173,7 @@ msgstr ""
 msgid "Products carousel hidden on profiles"
 msgstr ""
 
+#: src/components/bookmarks/FolderCard.ts:73
 #: src/components/layout/MainLayout.ts:1916
 msgid "Profile"
 msgstr ""
@@ -6761,11 +7198,17 @@ msgstr ""
 msgid "Profile published!"
 msgstr ""
 
+#: src/components/qrcode/QRCodeModal.ts:37
+#: src/components/qrcode/QRCodeModal.ts:58
+#: src/components/qrcode/QRCodeModal.ts:71
+msgid "Profile QR Code"
+msgstr ""
+
 #: src/addons/addonI18n.ts:26
-#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:102
-#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:184
-#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:187
-#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:96
+#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:100
+#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:106
+#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:188
+#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:191
 #: src/addons/profile-recognition/ProfileRecognitionView.ts:16
 msgid "Profile Recognition"
 msgstr ""
@@ -6784,6 +7227,10 @@ msgstr ""
 
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:568
 msgid "Progress"
+msgstr ""
+
+#: src/components/report/ReportModal.ts:129
+msgid "Provide additional context for your report..."
 msgstr ""
 
 #: src/components/ui/NoteMenu.ts:154
@@ -6832,7 +7279,7 @@ msgstr ""
 msgid "Publish imports"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:205
+#: src/addons/marketplace/ListingEditorView.ts:204
 msgid "Publish Listing"
 msgstr ""
 
@@ -6878,7 +7325,7 @@ msgid "Publishing to relays..."
 msgstr ""
 
 #: src/addons/follow-packs/FollowPackManager.ts:773
-#: src/addons/marketplace/ListingEditorView.ts:686
+#: src/addons/marketplace/ListingEditorView.ts:685
 #: src/components/onboarding/AccountSetupWizard.ts:3060
 #: src/components/views/ArticleEditorView.ts:1170
 #: src/components/views/VideoEditorView.ts:569
@@ -6921,18 +7368,32 @@ msgstr ""
 msgid "Quick zap enabled"
 msgstr ""
 
+#: src/services/AuthService.ts:830
+msgid "Quit Key Signer as well?"
+msgstr ""
+
+#: src/services/AuthService.ts:839
+msgid "Quit NoorNote"
+msgstr ""
+
 #: src/services/AuthService.ts:882
 msgid "Quit NoorNote & Key Signer?"
 msgstr ""
 
 #: src/addons/marketplace/ListingView.ts:159
 #: src/addons/marketplace/ListingView.ts:160
+#: src/addons/marketplace/MarketplaceTimelineInjector.ts:229
 #: src/components/ui/MarkdownToolbar.ts:63
 msgid "Quote"
 msgstr ""
 
 #: src/components/ui/note-factories/FallbackElementFactory.ts:49
 msgid "Quoted note (max depth reached)"
+msgstr ""
+
+#: src/helpers/renderQuotePreview.ts:121
+#: src/helpers/renderQuotePreview.ts:79
+msgid "Quoted note not found"
 msgstr ""
 
 #: src/components/ui/InteractionStatusLine.ts:314
@@ -6980,6 +7441,10 @@ msgstr ""
 msgid "Rare (every 60 min)"
 msgstr ""
 
+#: src/components/raw-event/RawEventModal.ts:40
+msgid "Raw Event"
+msgstr ""
+
 #: src/components/ui/NoteMenu.ts:562
 msgid "Raw event data not available"
 msgstr ""
@@ -7001,7 +7466,7 @@ msgstr ""
 msgid "Re-sync messages"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:672
+#: src/components/notifications/NotificationItem.ts:669
 msgid "reacted to your %s"
 msgstr ""
 
@@ -7034,6 +7499,10 @@ msgstr ""
 msgid "Read state reset — all bookmarks unread"
 msgstr ""
 
+#: src/helpers/renderMediaContent.ts:111
+msgid "Read this book"
+msgstr ""
+
 #: src/lists/bookmarks.ts:5393
 #: src/lists/follows.ts:1909
 #: src/lists/mutes.ts:1626
@@ -7043,11 +7512,17 @@ msgid "Reading from file..."
 msgstr ""
 
 #: src/components/onboarding/OnboardingComponent.ts:66
+#: src/helpers/LoggedOutModals.ts:67
 msgid "Ready in 2 minutes. No email. No phone number."
+msgstr ""
+
+#: src/helpers/LoggedOutModals.ts:115
+msgid "Real money for real posts. Set up an account and a wallet, and you're in business."
 msgstr ""
 
 #: src/addons/calendar/BookingManager.ts:401
 #: src/addons/calendar/CalendarEventModal.ts:514
+#: src/components/views/ProfileBookingView.ts:318
 msgid "Reason (optional)"
 msgstr ""
 
@@ -7095,6 +7570,8 @@ msgstr ""
 
 #: src/addons/analytics/AnalyticsAddonView.ts:396
 #: src/addons/analytics/AnalyticsAddonView.ts:778
+#: src/components/timeline/LastNotesPerFollow.ts:135
+#: src/components/timeline/Timeline.ts:412
 msgid "Refresh"
 msgstr ""
 
@@ -7131,6 +7608,10 @@ msgstr ""
 msgid "Relay URL must start with wss:// or ws://"
 msgstr ""
 
+#: src/components/poll/PollCreator.ts:126
+msgid "Relay URLs (optional, comma-separated)"
+msgstr ""
+
 #: src/components/views/SettingsView.ts:40
 msgid "Relays"
 msgstr ""
@@ -7151,6 +7632,10 @@ msgstr ""
 
 #: src/components/layout/MainLayout.ts:2091
 msgid "Reload"
+msgstr ""
+
+#: src/services/AuthService.ts:834
+msgid "Remember and don't ask again"
 msgstr ""
 
 #: src/addons/calendar/CalendarEventEditor.ts:144
@@ -7186,9 +7671,11 @@ msgstr ""
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:98
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:222
 #: src/addons/follow-packs/FollowPackManager.ts:724
-#: src/addons/marketplace/ListingEditorView.ts:249
-#: src/addons/marketplace/ListingEditorView.ts:602
+#: src/addons/marketplace/ListingEditorView.ts:248
+#: src/addons/marketplace/ListingEditorView.ts:601
+#: src/components/profile/ProfileSearchComponent.ts:308
 #: src/components/settings/RelaySettingsSection.ts:451
+#: src/components/user-search/UserSearchInput.ts:397
 msgid "Remove"
 msgstr ""
 
@@ -7221,6 +7708,14 @@ msgstr ""
 
 #: src/lists/tribes.ts:3661
 msgid "Remove member"
+msgstr ""
+
+#: src/components/poll/PollCreator.ts:89
+msgid "Remove option"
+msgstr ""
+
+#: src/components/poll/PollCreator.ts:65
+msgid "Remove Poll"
 msgstr ""
 
 #: src/components/ui/NoteMenu.ts:158
@@ -7277,15 +7772,15 @@ msgstr ""
 msgid "Repeat"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:666
+#: src/components/notifications/NotificationItem.ts:663
 msgid "replied to %s that mentioned you"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:664
+#: src/components/notifications/NotificationItem.ts:661
 msgid "replied to your %s"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:668
+#: src/components/notifications/NotificationItem.ts:665
 msgid "replied to your zap"
 msgstr ""
 
@@ -7341,12 +7836,17 @@ msgstr ""
 msgid "Report"
 msgstr ""
 
+#: src/components/report/ReportModal.ts:65
+msgid "Report Content"
+msgstr ""
+
 #: src/services/ReportService.ts:167
 msgid "Report submitted"
 msgstr ""
 
 #: src/addons/marketplace/ListingView.ts:156
 #: src/addons/marketplace/ListingView.ts:157
+#: src/addons/marketplace/MarketplaceTimelineInjector.ts:226
 #: src/components/ui/InteractionStatusLine.ts:309
 #: src/components/ui/InteractionStatusLine.ts:394
 msgid "Repost"
@@ -7364,7 +7864,7 @@ msgstr ""
 msgid "Repost published successfully"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:670
+#: src/components/notifications/NotificationItem.ts:667
 msgid "reposted your %s"
 msgstr ""
 
@@ -7472,6 +7972,10 @@ msgstr ""
 msgid "Reset Tribes?"
 msgstr ""
 
+#: src/components/ui/ImageViewer.ts:212
+msgid "Reset Zoom"
+msgstr ""
+
 #: src/addons/group-chats/GroupChatsSettings.ts:339
 msgid "Resolving…"
 msgstr ""
@@ -7518,7 +8022,10 @@ msgid "Restored from file (added %s, removed %s)"
 msgstr ""
 
 #: src/addons/marketplace/MarketplaceTimeline.ts:458
+#: src/components/gif/GifPicker.ts:497
+#: src/components/relay-browser/RelayBrowser.ts:308
 #: src/components/system/OfflineOverlay.ts:49
+#: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:102
 #: src/components/views/ConversationView.ts:1220
 #: src/components/views/MessagesView.ts:702
 msgid "Retry"
@@ -7662,6 +8169,7 @@ msgstr ""
 msgid "Saving to file..."
 msgstr ""
 
+#: src/components/profile/ProfileEditModal.ts:260
 #: src/components/views/ArticleEditorView.ts:1170
 #: src/lists/bookmarks.ts:5359
 #: src/lists/follows.ts:1866
@@ -7669,8 +8177,16 @@ msgstr ""
 msgid "Saving..."
 msgstr ""
 
+#: src/components/qrcode/QRCodeModal.ts:115
+msgid "Scan for npub"
+msgstr ""
+
 #: src/components/auth/AuthComponent.ts:172
 msgid "Scan with Amber or other mobile signer"
+msgstr ""
+
+#: src/components/qrcode/QRCodeModal.ts:150
+msgid "Scan with Lightning wallet"
 msgstr ""
 
 #: src/components/post/PostNoteModal.ts:1037
@@ -7773,6 +8289,10 @@ msgstr ""
 msgid "Search failed: %s"
 msgstr ""
 
+#: src/components/search/GlobalSearchView.ts:204
+msgid "Search failed. Please try again."
+msgstr ""
+
 #: src/addons/bulk-delete/BulkDeleteView.ts:469
 msgid "Search is not available right now"
 msgstr ""
@@ -7818,6 +8338,7 @@ msgid "Searching your posts…"
 msgstr ""
 
 #: src/components/navigation/SearchSpotlight.ts:353
+#: src/components/search/GlobalSearchView.ts:331
 msgid "Searching..."
 msgstr ""
 
@@ -7839,7 +8360,7 @@ msgid "See more"
 msgstr ""
 
 #: src/addons/follow-packs/FollowPackManager.ts:325
-#: src/components/views/FollowPackDetailView.ts:214
+#: src/components/views/FollowPackDetailView.ts:212
 msgid "See Notes"
 msgstr ""
 
@@ -7891,6 +8412,10 @@ msgstr ""
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:976
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:996
 msgid "Select region…"
+msgstr ""
+
+#: src/components/report/ReportModal.ts:119
+msgid "Select report reason"
 msgstr ""
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:198
@@ -7956,6 +8481,7 @@ msgid "Send a message…"
 msgstr ""
 
 #: src/addons/follow-packs/FollowPackManager.ts:318
+#: src/components/views/FollowPackDetailView.ts:112
 msgid "Send DM"
 msgstr ""
 
@@ -8003,6 +8529,10 @@ msgstr ""
 
 #: src/addons/note-taking/NoteEditorModal.ts:144
 msgid "Set"
+msgstr ""
+
+#: src/components/post/ClientTagControl.ts:53
+msgid "Set a custom client tag for this post"
 msgstr ""
 
 #: src/components/layout/MainLayout.ts:2287
@@ -8070,12 +8600,17 @@ msgid "Settings are stored in the %s directory."
 msgstr ""
 
 #: src/addons/follow-packs/FollowPackManager.ts:236
+#: src/components/ui/ImageViewer.ts:218
 msgid "Share"
 msgstr ""
 
 #: src/components/ui/NoteMenu.ts:234
 #: src/components/ui/NoteMenu.ts:500
 msgid "Share article"
+msgstr ""
+
+#: src/components/ui/ImageViewer.ts:218
+msgid "Share as Quote"
 msgstr ""
 
 #: src/addons/calendar/CalendarEventEditor.ts:109
@@ -8189,6 +8724,10 @@ msgstr ""
 msgid "Show the reactions (likes) of people you follow as entries in your timeline. Off by default. Individual users can be enabled from their profile."
 msgstr ""
 
+#: src/components/bookmarks/FolderCard.ts:72
+msgid "Show this folder inline on your Profile View"
+msgstr ""
+
 #: src/components/views/ProfileView.ts:963
 msgid "Show this user's reactions (likes) as entries in your timeline"
 msgstr ""
@@ -8290,7 +8829,7 @@ msgstr ""
 msgid "Silent Zap"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:676
+#: src/components/notifications/NotificationItem.ts:673
 msgid "silently zapped your %s"
 msgstr ""
 
@@ -8352,7 +8891,7 @@ msgstr ""
 msgid "Slug (unique identifier)"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:314
+#: src/addons/marketplace/ListingEditorView.ts:313
 #: src/components/views/ArticleEditorView.ts:470
 msgid "Slug / Identifier"
 msgstr ""
@@ -8383,7 +8922,7 @@ msgstr ""
 msgid "Soft muted — their interactions no longer notify you"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:220
+#: src/addons/marketplace/ListingEditorView.ts:219
 #: src/addons/marketplace/ListingView.ts:106
 #: src/addons/marketplace/MarketplaceTimeline.ts:333
 #: src/components/views/ListingReadView.ts:116
@@ -8394,15 +8933,24 @@ msgstr ""
 msgid "Solid badge - regular notifications"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:728
+#: src/components/post/PostEditorToolbar.ts:224
+msgid "Some Uploads Failed"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:725
 msgid "Somebody committed to a dhikr"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:726
+#: src/components/notifications/NotificationItem.ts:723
 msgid "Somebody started a new dhikr"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:706
+#: src/components/notifications/NotificationItem.ts:166
+#: src/components/notifications/NotificationItem.ts:174
+msgid "Someone"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:703
 msgid "Someone posted to %s"
 msgstr ""
 
@@ -8423,6 +8971,10 @@ msgstr ""
 msgid "Special thanks to %s for inventing the Nostr protocol, and to all %s authors and other Nostr devs for the inspiration."
 msgstr ""
 
+#: src/helpers/LoggedOutModals.ts:118
+msgid "Spreading the word? Love the energy. Just need you to log in first."
+msgstr ""
+
 #: src/components/views/AboutView.ts:225
 msgid "St. Kitts and Nevis is not covered by an EU adequacy decision (Art. 45 GDPR). Any transfer to MyNymbox's servers takes place on the basis of the derogations of Art. 49 (1) GDPR."
 msgstr ""
@@ -8439,7 +8991,7 @@ msgstr ""
 msgid "Start date"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:696
+#: src/components/notifications/NotificationItem.ts:693
 msgid "started following you back!"
 msgstr ""
 
@@ -8447,7 +8999,7 @@ msgstr ""
 msgid "Starts"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:304
+#: src/addons/marketplace/ListingEditorView.ts:303
 msgid "Status"
 msgstr ""
 
@@ -8491,11 +9043,12 @@ msgstr ""
 msgid "Stop Key Signer & Logout"
 msgstr ""
 
+#: src/App.ts:990
 #: src/services/managers/KeySignerConnectionManager.ts:413
 msgid "Stop NoorSigner Daemon?"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:694
+#: src/components/notifications/NotificationItem.ts:691
 msgid "stopped following you back"
 msgstr ""
 
@@ -8535,6 +9088,16 @@ msgstr ""
 msgid "Submit"
 msgstr ""
 
+#: src/components/report/ReportModal.ts:140
+#: src/components/report/ReportModal.ts:260
+#: src/components/report/ReportModal.ts:272
+msgid "Submit Report"
+msgstr ""
+
+#: src/components/report/ReportModal.ts:227
+msgid "Submitting..."
+msgstr ""
+
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:77
 msgid "Subscribe to any hashtag or word and get notified when someone posts a note containing it."
 msgstr ""
@@ -8555,7 +9118,7 @@ msgstr ""
 msgid "Suggest more usernames"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:286
+#: src/addons/marketplace/ListingEditorView.ts:285
 #: src/components/views/ArticleEditorView.ts:404
 msgid "Summary"
 msgstr ""
@@ -8628,6 +9191,7 @@ msgstr ""
 msgid "Sync read bookmarks across relays"
 msgstr ""
 
+#: src/components/profile/ProfileEditModal.ts:259
 #: src/helpers/ListSyncMode.ts:144
 #: src/lists/mutes.ts:1323
 msgid "Sync to Relays"
@@ -8690,11 +9254,15 @@ msgstr ""
 msgid "Tagged users will be publicly visible"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:722
+#: src/helpers/renderMediaContent.ts:192
+msgid "Tagged users:"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:719
 msgid "tagged you in an image"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:296
+#: src/addons/marketplace/ListingEditorView.ts:295
 #: src/components/views/ArticleEditorView.ts:414
 #: src/components/views/VideoEditorView.ts:202
 msgid "Tags"
@@ -8724,6 +9292,7 @@ msgstr ""
 msgid "Tell Us About Yourself"
 msgstr ""
 
+#: src/components/profile/ProfileEditModal.ts:205
 #: src/helpers/profile-field-helpers.ts:49
 msgid "Tell us about yourself..."
 msgstr ""
@@ -8748,7 +9317,7 @@ msgstr ""
 msgid "The accounts you follow, with outbox relays."
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:712
+#: src/components/notifications/NotificationItem.ts:709
 msgid "the Armada community \"%s\""
 msgstr ""
 
@@ -8796,7 +9365,7 @@ msgstr ""
 msgid "The host received your booking as a private message. Add it to your calendar so you don't forget:"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:702
+#: src/components/notifications/NotificationItem.ts:699
 msgid "the Nostrord group \"%s\""
 msgstr ""
 
@@ -8898,6 +9467,10 @@ msgstr ""
 msgid "this event"
 msgstr ""
 
+#: src/components/poll/PollCreator.ts:144
+msgid "This is a poll note."
+msgstr ""
+
 #: src/helpers/ListSyncMode.ts:154
 msgid "This list is stored in 3 places: on your hard drive - in the NoorNote app - on the relays. You can use the buttons up there to control how the list stays synced across those three."
 msgstr ""
@@ -8908,6 +9481,10 @@ msgstr ""
 
 #: src/components/settings/RelaySettingsSection.ts:390
 msgid "This relay is already in your list"
+msgstr ""
+
+#: src/components/relay-browser/RelayBrowser.ts:297
+msgid "This relay may be empty or not responding"
 msgstr ""
 
 #: src/addons/calendar/CalendarImportExport.ts:462
@@ -9048,6 +9625,10 @@ msgstr ""
 msgid "Timeline listings enabled"
 msgstr ""
 
+#: src/components/timeline/LastNotesPerFollow.ts:188
+msgid "Timeline not ready. Please try again."
+msgstr ""
+
 #: src/components/views/ProfileBookingView.ts:267
 msgid "times shown in your local timezone"
 msgstr ""
@@ -9065,7 +9646,7 @@ msgstr ""
 msgid "Title"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:227
+#: src/addons/marketplace/ListingEditorView.ts:226
 msgid "Title *"
 msgstr ""
 
@@ -9091,7 +9672,7 @@ msgstr ""
 msgid "Toggle balance visibility"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:280
+#: src/addons/marketplace/ListingEditorView.ts:279
 #: src/components/settings/SettingsSection.ts:43
 #: src/components/views/ArticleEditorView.ts:380
 #: src/components/views/VideoEditorView.ts:179
@@ -9127,6 +9708,7 @@ msgid "Tracks which bookmarks you have opened and syncs the read-state across yo
 msgstr ""
 
 #: src/lists/tribes.ts:2387
+#: src/lists/tribes.ts:2938
 msgid "Tribe"
 msgstr ""
 
@@ -9200,10 +9782,15 @@ msgstr ""
 msgid "Undecided"
 msgstr ""
 
+#: src/components/auth/AuthComponent.ts:678
+msgid "Unexpected error during bunker connection"
+msgstr ""
+
 #: src/components/auth/AuthComponent.ts:544
 msgid "Unexpected error during NoorSigner authentication"
 msgstr ""
 
+#: src/components/follow-packs/renderFollowPackMembers.ts:96
 #: src/lists/follows.ts:1426
 #: src/lists/follows.ts:2358
 #: src/lists/follows.ts:3214
@@ -9239,6 +9826,14 @@ msgstr ""
 #: src/components/views/MessagesView.ts:160
 #: src/components/views/ZapstoreAppView.ts:408
 msgid "Unknown"
+msgstr ""
+
+#: src/components/post/PostEditorToolbar.ts:198
+msgid "Unknown error occurred"
+msgstr ""
+
+#: src/components/poll/PollCreator.ts:145
+msgid "Unlike regular notes, polls are not widely supported and may not display on other clients."
 msgstr ""
 
 #: src/components/onboarding/OnboardingComponent.ts:170
@@ -9289,7 +9884,7 @@ msgstr ""
 msgid "Unsubscribed from calendar"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:344
+#: src/addons/marketplace/ListingEditorView.ts:343
 #: src/components/article/ArticleTimeline.ts:450
 #: src/components/ui/note-rendering/CurationSetItems.ts:89
 msgid "Untitled"
@@ -9334,7 +9929,7 @@ msgstr ""
 msgid "Update Follow Pack"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:205
+#: src/addons/marketplace/ListingEditorView.ts:204
 msgid "Update Listing"
 msgstr ""
 
@@ -9342,7 +9937,7 @@ msgstr ""
 msgid "Updated"
 msgstr ""
 
-#: src/addons/marketplace/ListingEditorView.ts:686
+#: src/addons/marketplace/ListingEditorView.ts:685
 msgid "Updating..."
 msgstr ""
 
@@ -9353,8 +9948,18 @@ msgstr ""
 msgid "Upload failed"
 msgstr ""
 
+#: src/components/post/PostEditorToolbar.ts:171
+#: src/components/post/PostEditorToolbar.ts:197
+#: src/components/post/PostEditorToolbar.ts:237
+msgid "Upload Failed"
+msgstr ""
+
+#: src/components/post/PostEditorToolbar.ts:238
+msgid "Upload failed. Please try again."
+msgstr ""
+
 #: src/addons/follow-packs/FollowPackManager.ts:492
-#: src/addons/marketplace/ListingEditorView.ts:262
+#: src/addons/marketplace/ListingEditorView.ts:261
 #: src/components/views/ArticleEditorView.ts:396
 msgid "Upload image"
 msgstr ""
@@ -9460,18 +10065,25 @@ msgstr ""
 msgid "User unmuted"
 msgstr ""
 
+#: src/components/profile/ProfileEditModal.ts:193
 #: src/helpers/profile-field-helpers.ts:33
 msgid "username"
 msgstr ""
 
 #: src/components/onboarding/AccountSetupWizard.ts:2348
+#: src/components/profile/ProfileEditModal.ts:186
 #: src/helpers/profile-field-helpers.ts:32
 msgid "Username"
 msgstr ""
 
 #: src/components/navigation/SearchSpotlight.ts:352
 #: src/components/navigation/SearchSpotlight.ts:386
+#: src/components/user-search/UserSearchInput.ts:308
 msgid "Users"
+msgstr ""
+
+#: src/components/poll/PollCreator.ts:127
+msgid "Usually not needed - uses your default relays"
 msgstr ""
 
 #: src/addons/calendar/BookingManager.ts:373
@@ -9486,6 +10098,7 @@ msgstr ""
 msgid "Vacation to"
 msgstr ""
 
+#: src/components/profile/ProfileEditModal.ts:234
 #: src/helpers/profile-field-helpers.ts:66
 msgid "Verification identifier(s), comma-separated (user@domain.com, user@other.com)"
 msgstr ""
@@ -9588,7 +10201,7 @@ msgstr ""
 msgid "Visit <a href=\"https://follows.nostr.com/\" target=\"_blank\">follows.nostr.com</a> in your browser"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:683
+#: src/components/notifications/NotificationItem.ts:680
 msgid "voted on your poll"
 msgstr ""
 
@@ -9632,12 +10245,25 @@ msgstr ""
 msgid "Wallet not connected"
 msgstr ""
 
+#: src/helpers/LoggedOutModals.ts:123
+msgid "Want to drop them a private message? Encrypted, peer-to-peer — but you'll need a key first."
+msgstr ""
+
+#: src/helpers/LoggedOutModals.ts:122
+msgid "Want to save this for later? Create an account and it's yours forever."
+msgstr ""
+
 #: src/components/settings/PrivacySettingsSection.ts:267
 msgid "Warning:"
 msgstr ""
 
 #: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:197
 msgid "Watch live"
+msgstr ""
+
+#: src/helpers/renderMediaContent.ts:145
+#: src/helpers/renderMediaContent.ts:246
+msgid "Watch on YouTube"
 msgstr ""
 
 #: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:200
@@ -9661,6 +10287,7 @@ msgstr ""
 msgid "Web Hosting"
 msgstr ""
 
+#: src/components/profile/ProfileEditModal.ts:211
 #: src/components/views/ZapstoreAppView.ts:305
 #: src/helpers/profile-field-helpers.ts:56
 msgid "Website"
@@ -9743,12 +10370,16 @@ msgstr ""
 msgid "When verifying a user's NIP-05 identifier (e.g. %s), NoorNote sends an HTTP request to %s. The owner of that domain may log the request."
 msgstr ""
 
-#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:154
+#: src/addons/profile-recognition/ProfileRecognitionSettings.ts:158
 msgid "When you follow someone, the app saves their current name and profile picture"
 msgstr ""
 
 #: src/addons/calendar/BookingService.ts:845
 msgid "When:"
+msgstr ""
+
+#: src/addons/calendar/CalendarEventModal.ts:88
+msgid "Where:"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:230
@@ -9831,6 +10462,14 @@ msgstr ""
 msgid "You are on the latest version"
 msgstr ""
 
+#: src/components/report/ReportModal.ts:92
+msgid "You are reporting a specific note by"
+msgstr ""
+
+#: src/components/report/ReportModal.ts:93
+msgid "You are reporting user"
+msgstr ""
+
 #: src/components/onboarding/OnboardingComponent.ts:171
 msgid "You can connect to multiple relays at once. If one goes down, your content lives on through others. No single point of failure."
 msgstr ""
@@ -9838,6 +10477,10 @@ msgstr ""
 #: src/components/ui/interaction-managers/ZapManager.ts:113
 #: src/components/ui/interaction-managers/ZapManager.ts:195
 msgid "You cannot zap your own notes"
+msgstr ""
+
+#: src/helpers/LoggedOutModals.ts:112
+msgid "You could shower this note with a thousand emojis, but you'll need an account first."
 msgstr ""
 
 #: src/services/ReportService.ts:106
@@ -9880,8 +10523,8 @@ msgstr ""
 msgid "You own your identity. No company can ban you or delete your account."
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:705
-#: src/components/notifications/NotificationItem.ts:714
+#: src/components/notifications/NotificationItem.ts:702
+#: src/components/notifications/NotificationItem.ts:711
 msgid "You posted to %s"
 msgstr ""
 
@@ -9957,6 +10600,7 @@ msgstr ""
 msgid "Your followers belong to you"
 msgstr ""
 
+#: src/components/profile/ProfileEditModal.ts:180
 #: src/helpers/profile-field-helpers.ts:41
 msgid "Your full name"
 msgstr ""
@@ -10021,6 +10665,10 @@ msgstr ""
 msgid "Your relays are your sovereignty surface. <strong>Read</strong> = where NoorNote looks for content, <strong>Write</strong> = where your own events are stored, <strong>DM Inbox</strong> = where others can reach you with NIP-17 messages. When switching to a smaller (or fully private) write-set, publish the new relay list <em>first</em>, then disable the old relays — otherwise other clients can't follow the move. NoorNote automatically rebroadcasts your profile and follow-list to any newly-added write-relay."
 msgstr ""
 
+#: src/components/views/MessagesView.ts:688
+msgid "Your remote signer does not support NIP-44 encryption required for private messages. Use a browser extension or NoorSigner for full DM access."
+msgstr ""
+
 #: src/components/views/AboutView.ts:114
 msgid "Your Rights"
 msgstr ""
@@ -10043,6 +10691,11 @@ msgstr ""
 
 #: src/components/onboarding/OnboardingComponent.ts:38
 msgid "Your voice.<br><em>Unstoppable.</em>"
+msgstr ""
+
+#: src/helpers/renderMediaContent.ts:145
+#: src/helpers/renderMediaContent.ts:246
+msgid "YouTube video player"
 msgstr ""
 
 #: src/components/modals/ZapModal.ts:150
@@ -10076,7 +10729,7 @@ msgstr ""
 msgid "Zap this user"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:677
+#: src/components/notifications/NotificationItem.ts:674
 msgid "zapped your %s"
 msgstr ""
 
@@ -10095,6 +10748,7 @@ msgstr ""
 #: src/components/settings/NotificationPrioritySection.ts:79
 #: src/components/views/NotificationsView.ts:118
 #: src/components/views/SettingsView.ts:47
+#: src/lists/follows.ts:2144
 msgid "Zaps"
 msgstr ""
 
@@ -10131,6 +10785,14 @@ msgstr ""
 msgid "Zero tracking, zero data collection"
 msgstr ""
 
+#: src/components/ui/ImageViewer.ts:209
+msgid "Zoom In"
+msgstr ""
+
+#: src/components/ui/ImageViewer.ts:206
+msgid "Zoom Out"
+msgstr ""
+
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"
 msgid "To"
@@ -10153,252 +10815,252 @@ msgctxt "note-taking"
 msgid "Notes"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:581
+#: src/components/notifications/NotificationItem.ts:578
 msgctxt "notif-acc"
 msgid "app on Zapstore"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:565
+#: src/components/notifications/NotificationItem.ts:562
 msgctxt "notif-acc"
 msgid "article"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:573
+#: src/components/notifications/NotificationItem.ts:570
 msgctxt "notif-acc"
 msgid "bookmark list"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:569
+#: src/components/notifications/NotificationItem.ts:566
 msgctxt "notif-acc"
 msgid "collection"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:563
+#: src/components/notifications/NotificationItem.ts:560
 msgctxt "notif-acc"
 msgid "comment"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:589
+#: src/components/notifications/NotificationItem.ts:586
 msgctxt "notif-acc"
 msgid "emoji pack"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:637
+#: src/components/notifications/NotificationItem.ts:634
 msgctxt "notif-acc"
 msgid "event"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:609
+#: src/components/notifications/NotificationItem.ts:606
 msgctxt "notif-acc"
 msgid "file"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:585
+#: src/components/notifications/NotificationItem.ts:582
 msgctxt "notif-acc"
 msgid "follow pack"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:629
+#: src/components/notifications/NotificationItem.ts:626
 msgctxt "notif-acc"
 msgid "git issue"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:621
+#: src/components/notifications/NotificationItem.ts:618
 msgctxt "notif-acc"
 msgid "git patch"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:601
+#: src/components/notifications/NotificationItem.ts:598
 msgctxt "notif-acc"
 msgid "git repository"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:633
+#: src/components/notifications/NotificationItem.ts:630
 msgctxt "notif-acc"
 msgid "git status update"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:617
+#: src/components/notifications/NotificationItem.ts:614
 msgctxt "notif-acc"
 msgid "group chat message"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:595
+#: src/components/notifications/NotificationItem.ts:592
 msgctxt "notif-acc"
 msgid "listing"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:593
+#: src/components/notifications/NotificationItem.ts:590
 msgctxt "notif-acc"
 msgid "live stream"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:635
+#: src/components/notifications/NotificationItem.ts:632
 msgctxt "notif-acc"
 msgid "note"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:611
+#: src/components/notifications/NotificationItem.ts:608
 msgctxt "notif-acc"
 msgid "picture"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:577
+#: src/components/notifications/NotificationItem.ts:574
 msgctxt "notif-acc"
 msgid "podcast episode"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:561
+#: src/components/notifications/NotificationItem.ts:558
 msgctxt "notif-acc"
 msgid "poll"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:625
+#: src/components/notifications/NotificationItem.ts:622
 msgctxt "notif-acc"
 msgid "pull request"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:605
+#: src/components/notifications/NotificationItem.ts:602
 msgctxt "notif-acc"
 msgid "reaction"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:613
+#: src/components/notifications/NotificationItem.ts:610
 msgctxt "notif-acc"
 msgid "video"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:597
+#: src/components/notifications/NotificationItem.ts:594
 msgctxt "notif-acc"
 msgid "website"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:607
+#: src/components/notifications/NotificationItem.ts:604
 msgctxt "notif-acc"
 msgid "zap"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:580
+#: src/components/notifications/NotificationItem.ts:577
 msgctxt "notif-dat"
 msgid "app on Zapstore"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:565
+#: src/components/notifications/NotificationItem.ts:562
 msgctxt "notif-dat"
 msgid "article"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:572
+#: src/components/notifications/NotificationItem.ts:569
 msgctxt "notif-dat"
 msgid "bookmark list"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:568
+#: src/components/notifications/NotificationItem.ts:565
 msgctxt "notif-dat"
 msgid "collection"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:563
+#: src/components/notifications/NotificationItem.ts:560
 msgctxt "notif-dat"
 msgid "comment"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:588
+#: src/components/notifications/NotificationItem.ts:585
 msgctxt "notif-dat"
 msgid "emoji pack"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:637
+#: src/components/notifications/NotificationItem.ts:634
 msgctxt "notif-dat"
 msgid "event"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:609
+#: src/components/notifications/NotificationItem.ts:606
 msgctxt "notif-dat"
 msgid "file"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:584
+#: src/components/notifications/NotificationItem.ts:581
 msgctxt "notif-dat"
 msgid "follow pack"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:628
+#: src/components/notifications/NotificationItem.ts:625
 msgctxt "notif-dat"
 msgid "git issue"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:620
+#: src/components/notifications/NotificationItem.ts:617
 msgctxt "notif-dat"
 msgid "git patch"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:600
+#: src/components/notifications/NotificationItem.ts:597
 msgctxt "notif-dat"
 msgid "git repository"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:632
+#: src/components/notifications/NotificationItem.ts:629
 msgctxt "notif-dat"
 msgid "git status update"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:616
+#: src/components/notifications/NotificationItem.ts:613
 msgctxt "notif-dat"
 msgid "group chat message"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:595
+#: src/components/notifications/NotificationItem.ts:592
 msgctxt "notif-dat"
 msgid "listing"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:592
+#: src/components/notifications/NotificationItem.ts:589
 msgctxt "notif-dat"
 msgid "live stream"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:635
+#: src/components/notifications/NotificationItem.ts:632
 msgctxt "notif-dat"
 msgid "note"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:611
+#: src/components/notifications/NotificationItem.ts:608
 msgctxt "notif-dat"
 msgid "picture"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:576
+#: src/components/notifications/NotificationItem.ts:573
 msgctxt "notif-dat"
 msgid "podcast episode"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:561
+#: src/components/notifications/NotificationItem.ts:558
 msgctxt "notif-dat"
 msgid "poll"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:624
+#: src/components/notifications/NotificationItem.ts:621
 msgctxt "notif-dat"
 msgid "pull request"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:604
+#: src/components/notifications/NotificationItem.ts:601
 msgctxt "notif-dat"
 msgid "reaction"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:613
+#: src/components/notifications/NotificationItem.ts:610
 msgctxt "notif-dat"
 msgid "video"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:597
+#: src/components/notifications/NotificationItem.ts:594
 msgctxt "notif-dat"
 msgid "website"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:607
+#: src/components/notifications/NotificationItem.ts:604
 msgctxt "notif-dat"
 msgid "zap"
 msgstr ""

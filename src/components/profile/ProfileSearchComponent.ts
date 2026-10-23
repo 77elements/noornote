@@ -27,6 +27,7 @@
 import { errMessage } from '../../helpers/errorMessage';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { npubToHex } from '../../helpers/nip19';
+import { _ } from '../../i18n';
 
 export type ProfileSearchSizeVariant = 'inline-icon-row' | 'compact-modal';
 
@@ -304,7 +305,7 @@ export class ProfileSearchComponent {
         chip => `
       <span class="textinput-overlay__chip mention-link mention-link--bg">
         <span class="textinput-overlay__chip-name">${escapeHtml(chip.username)}</span>
-        <button type="button" class="textinput-overlay__chip-remove" data-chip-remove="${escapeHtmlAttr(chip.pubkey)}" aria-label="Remove ${escapeHtmlAttr(chip.username)}">×</button>
+        <button type="button" class="textinput-overlay__chip-remove" data-chip-remove="${escapeHtmlAttr(chip.pubkey)}" aria-label="${_('Remove')} ${escapeHtmlAttr(chip.username)}">×</button>
       </span>
     `
       )

@@ -7,6 +7,7 @@
 import { createNoteSkeleton } from '../../../helpers/createSkeleton';
 import { NoteUI } from '../../ui/NoteUI';
 import { Router } from '../../../services/Router';
+import { _ } from '../../../i18n';
 
 /** Remove note-cards from container, cleaning up NoteUI internals first */
 function removeNoteCards(container: HTMLElement): void {
@@ -96,9 +97,9 @@ export class TimelineUIStateHandler {
       const errorDiv = document.createElement('div');
       errorDiv.className = 'timeline-error';
       errorDiv.innerHTML = `
-        <h3>Error</h3>
+        <h3>${_('Error')}</h3>
         <p>${message}</p>
-        <button onclick="window.location.reload()">Retry</button>
+        <button onclick="window.location.reload()">${_('Retry')}</button>
       `;
 
       // Insert before load trigger
@@ -126,18 +127,20 @@ export class TimelineUIStateHandler {
 
     const title = document.createElement('p');
     title.className = 'timeline-curated-banner__title';
-    title.textContent = "Looks like you're not following anyone yet.";
+    title.textContent = _("Looks like you're not following anyone yet.");
 
     const text = document.createElement('p');
     text.className = 'timeline-curated-banner__text';
     text.append(
-      'Here are some suggestions to get you started. Just hover your mouse over a profile pic (or tap on it) to follow a user. Find more under Addons → '
+      _(
+        'Here are some suggestions to get you started. Just hover your mouse over a profile pic (or tap on it) to follow a user. Find more under Addons → '
+      )
     );
 
     const link = document.createElement('a');
     link.href = '/addons/follow-packs';
     link.className = 'timeline-curated-banner__link';
-    link.textContent = 'Follow Packs';
+    link.textContent = _('Follow Packs');
     link.addEventListener('click', e => {
       e.preventDefault();
       Router.getInstance().navigate('/addons/follow-packs');

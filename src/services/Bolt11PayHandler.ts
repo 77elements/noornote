@@ -36,12 +36,12 @@ export function initBolt11PayHandler(): void {
 
     const originalText = btn.textContent;
     btn.disabled = true;
-    btn.textContent = 'Paying…';
+    btn.textContent = _('Paying…');
     btn.classList.add('loading');
 
     try {
       await payInvoice(invoice);
-      btn.textContent = 'Paid ✓';
+      btn.textContent = _('Paid ✓');
       btn.classList.remove('loading');
       btn.classList.add('bolt11-invoice__pay--paid');
       ToastService.show(_('Payment sent'), 'success');

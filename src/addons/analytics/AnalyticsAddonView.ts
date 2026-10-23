@@ -77,55 +77,55 @@ const quotientFormat = (v: number): string =>
 const ROWS: RowSpec[] = [
   {
     row: 'posts',
-    title: 'Content',
+    title: 'Content', // i18n-ok
     tiles: [
       {
         tile: 'originals',
-        label: 'Original notes',
+        label: 'Original notes', // i18n-ok
         collector: 'posts',
         metric: 'originals',
       },
       {
         tile: 'replies-kind1',
-        label: 'Replies (kind 1)',
+        label: 'Replies (kind 1)', // i18n-ok
         collector: 'posts',
         metric: 'repliesKind1',
       },
       {
         tile: 'comments-1111',
-        label: 'Comments (kind 1111)',
+        label: 'Comments (kind 1111)', // i18n-ok
         collector: 'posts',
         metric: 'comments1111',
       },
       {
         tile: 'replies-total',
-        label: 'Replies + Comments',
+        label: 'Replies + Comments', // i18n-ok
         collector: 'posts',
         metric: 'repliesTotal',
       },
       {
         tile: 'posts-quotient',
-        label: 'Originals : Replies',
+        label: 'Originals : Replies', // i18n-ok
         collector: 'posts',
         metric: 'quotient',
         format: quotientFormat,
       },
       {
         tile: 'articles',
-        label: 'Articles',
+        label: 'Articles', // i18n-ok
         collector: 'content',
         metric: 'articles',
         newLine: true,
       },
       {
         tile: 'videos',
-        label: 'Video posts',
+        label: 'Video posts', // i18n-ok
         collector: 'content',
         metric: 'videos',
       },
       {
         tile: 'listings',
-        label: 'Products',
+        label: 'Products', // i18n-ok
         collector: 'content',
         metric: 'listings',
       },
@@ -133,17 +133,17 @@ const ROWS: RowSpec[] = [
   },
   {
     row: 'follow',
-    title: 'Follow',
+    title: 'Follow', // i18n-ok
     tiles: [
       {
         tile: 'follows',
-        label: 'Follows',
+        label: 'Follows', // i18n-ok
         collector: 'follow',
         metric: 'follows',
       },
       {
         tile: 'followers',
-        label: 'Followers',
+        label: 'Followers', // i18n-ok
         collector: 'follow',
         metric: 'followers',
       },
@@ -151,38 +151,38 @@ const ROWS: RowSpec[] = [
   },
   {
     row: 'zaps',
-    title: 'Zaps',
+    title: 'Zaps', // i18n-ok
     note: 'Sent zaps are best effort — zaps from wallets that omit the P tag on receipts may be missing.',
     tiles: [
       {
         tile: 'zaps-sent-count',
-        label: 'Zaps sent',
+        label: 'Zaps sent', // i18n-ok
         collector: 'zaps',
         metric: 'sentCount',
       },
       {
         tile: 'zaps-received-count',
-        label: 'Zaps received',
+        label: 'Zaps received', // i18n-ok
         collector: 'zaps',
         metric: 'receivedCount',
       },
       {
         tile: 'zaps-sent-sats',
-        label: 'Sent',
+        label: 'Sent', // i18n-ok
         collector: 'zaps',
         metric: 'sentSats',
         format: v => `${formatSatsCompact(v)} sats`,
       },
       {
         tile: 'zaps-received-sats',
-        label: 'Received',
+        label: 'Received', // i18n-ok
         collector: 'zaps',
         metric: 'receivedSats',
         format: v => `${formatSatsCompact(v)} sats`,
       },
       {
         tile: 'zaps-ratio',
-        label: 'Sent : Received',
+        label: 'Sent : Received', // i18n-ok
         collector: 'zaps',
         metric: 'satsRatio',
         format: quotientFormat,
@@ -191,29 +191,29 @@ const ROWS: RowSpec[] = [
   },
   {
     row: 'engagement',
-    title: 'Engagement',
+    title: 'Engagement', // i18n-ok
     tiles: [
       {
         tile: 'replies-received',
-        label: 'Replies received',
+        label: 'Replies received', // i18n-ok
         collector: 'engagement',
         metric: 'repliesReceived',
       },
       {
         tile: 'reposts-received',
-        label: 'Reposts',
+        label: 'Reposts', // i18n-ok
         collector: 'engagement',
         metric: 'repostsReceived',
       },
       {
         tile: 'quotes-received',
-        label: 'Quoted reposts',
+        label: 'Quoted reposts', // i18n-ok
         collector: 'engagement',
         metric: 'quotesReceived',
       },
       {
         tile: 'likes-received',
-        label: 'Likes',
+        label: 'Likes', // i18n-ok
         collector: 'engagement',
         metric: 'likesReceived',
       },

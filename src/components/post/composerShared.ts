@@ -28,6 +28,7 @@ import { MentionAutocomplete } from '../mentions/MentionAutocomplete';
 import { renderPostPreview } from '../../helpers/renderPostPreview';
 import { stripTrackingParams } from '../../helpers/stripTrackingParams';
 import { SystemLogger } from '../../services/SystemLogger';
+import { _ } from '../../i18n';
 
 /** "Drafts" tab label with count badge (badge only when count > 0). */
 export function composerDraftsTabLabel(): string {
@@ -120,7 +121,7 @@ export function composerPostFailure(opts: {
   updateComposerDraftsBadge(opts.modalScope);
 
   ToastService.showWithAction(`Failed to post: ${reason}`, 'error', {
-    label: 'Open drafts',
+    label: _('Open drafts'),
     onClick: opts.onOpenDrafts,
   });
 }

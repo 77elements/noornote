@@ -18,6 +18,7 @@ import { hexToNpub } from '../../helpers/nip19';
 import { npubToUsername } from '../../helpers/npubToUsername';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { sortMemberRowsByActivity } from './memberActivitySort';
+import { _ } from '../../i18n';
 
 export async function renderFollowPackMembers(
   pack: FollowPack,
@@ -80,7 +81,7 @@ export async function renderFollowPackMembers(
 
       if (alreadyFollowing) {
         setFollowItems(currentFollows.filter(f => f.pubkey !== pubkey));
-        actionBtn.textContent = 'Follow';
+        actionBtn.textContent = _('Follow');
         actionBtn.classList.remove('btn--passive');
       } else {
         setFollowItems([
@@ -92,7 +93,7 @@ export async function renderFollowPackMembers(
             addedAt: Math.floor(Date.now() / 1000),
           },
         ]);
-        actionBtn.textContent = 'Unfollow';
+        actionBtn.textContent = _('Unfollow');
         actionBtn.classList.add('btn--passive');
       }
     });

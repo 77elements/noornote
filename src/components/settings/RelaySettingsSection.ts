@@ -221,7 +221,7 @@ export class RelaySettingsSection extends SettingsSection {
           </div>
 
           <p class="form__note">
-            ${_("Your relays are your sovereignty surface. <strong>Read</strong> = where NoorNote looks for content, <strong>Write</strong> = where your own events are stored, <strong>DM Inbox</strong> = where others can reach you with NIP-17 messages. When switching to a smaller (or fully private) write-set, publish the new relay list <em>first</em>, then disable the old relays — otherwise other clients can't follow the move. NoorNote automatically rebroadcasts your profile and follow-list to any newly-added write-relay.")}
+            ${_("Your relays are your sovereignty surface. <strong>Read</strong> = where NoorNote looks for content, <strong>Write</strong> = where your own events are stored, <strong>DM Inbox</strong> = where others can reach you with NIP-17 messages. When switching to a smaller (or fully private) write-set, publish the new relay list <em>first</em>, then disable the old relays — otherwise other clients can't follow the move. NoorNote automatically rebroadcasts your profile and follow-list to any newly-added write-relay.")} // i18n-ok (part of translated paragraph msgid above)
           </p>
 
           <div class="relay-list">

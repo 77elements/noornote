@@ -293,8 +293,8 @@ export class RelayBrowser {
     this.notesContainer.innerHTML = `
       <div class="relay-browser__empty">
         <svg width="48" height="48"><use href="#icon-search-clock"/></svg>
-        <p>No notes found on this relay</p>
-        <span>This relay may be empty or not responding</span>
+        <p>${_('No notes found on this relay')}</p>
+        <span>${_('This relay may be empty or not responding')}</span>
       </div>
     `;
   }
@@ -303,9 +303,9 @@ export class RelayBrowser {
     this.notesContainer.innerHTML = `
       <div class="relay-browser__error">
         <svg width="48" height="48"><use href="#icon-close"/></svg>
-        <p>Could not connect to relay</p>
+        <p>${_('Could not connect to relay')}</p>
         <span>${escapeHtml(this.relayUrl)}</span>
-        <button class="btn btn--passive relay-browser__retry" data-action="retry">Retry</button>
+        <button class="btn btn--passive relay-browser__retry" data-action="retry">${_('Retry')}</button>
       </div>
     `;
 

@@ -1429,7 +1429,7 @@ export class AccountSetupWizard {
     // Logo
     const logo = document.createElement('div');
     logo.className = 'wizard-logo';
-    logo.innerHTML = '<span class="nn-logo">NoorNote</span>';
+    logo.innerHTML = '<span class="nn-logo">NoorNote</span>'; // i18n-ok (brand)
     this.container.appendChild(logo);
 
     // Inner content wrapper (max-width centered)
@@ -1486,7 +1486,7 @@ export class AccountSetupWizard {
             : i === currentContentIndex
               ? 'active'
               : 'upcoming';
-        return `<div class="wizard-progress-dot wizard-progress-dot--${state}" title="${step.title}"></div>`;
+        return `<div class="wizard-progress-dot wizard-progress-dot--${state}" title="${_(step.title)}"></div>`;
       })
       .join('<div class="wizard-progress-line"></div>');
 
@@ -2046,7 +2046,7 @@ IMPORTANT:
   private createNoorSignerImportStep(): WizardStep {
     return {
       id: 'noorsigner',
-      title: 'NoorSigner',
+      title: 'NoorSigner', // i18n-ok (brand)
       required: true,
       render: () => {
         const el = document.createElement('div');
@@ -2148,7 +2148,7 @@ IMPORTANT:
   private createSidecarStep(): WizardStep {
     return {
       id: 'sidecar',
-      title: 'Sidecar',
+      title: 'Sidecar', // i18n-ok (technical name)
       required: true,
       render: () => {
         const el = document.createElement('div');

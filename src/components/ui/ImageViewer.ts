@@ -16,6 +16,7 @@ import { downloadMedia } from '../../helpers/downloadMedia';
 import { OverlayStack, type OverlayHandle } from '../../services/OverlayStack';
 import { PlatformService } from '../../services/PlatformService';
 import { addSwipeSupport } from '../../helpers/addSwipeSupport';
+import { _ } from '../../i18n';
 
 export interface ImageViewerOptions {
   images: string[]; // Array of image URLs
@@ -202,22 +203,22 @@ export class ImageViewer {
       <div class="image-viewer__background"></div>
       <div class="image-viewer__content">
         <div class="image-viewer__controls">
-          <button class="btn btn--square-lg image-viewer__btn--zoom-out" title="Zoom Out" aria-label="Zoom Out">
+          <button class="btn btn--square-lg image-viewer__btn--zoom-out" title="${_('Zoom Out')}" aria-label="${_('Zoom Out')}">
             <svg width="20" height="20"><use href="#icon-zoom-out"/></svg>
           </button>
-          <button class="btn btn--square-lg image-viewer__btn--zoom-in" title="Zoom In" aria-label="Zoom In">
+          <button class="btn btn--square-lg image-viewer__btn--zoom-in" title="${_('Zoom In')}" aria-label="${_('Zoom In')}">
             <svg width="20" height="20"><use href="#icon-zoom-in"/></svg>
           </button>
-          <button class="btn btn--square-lg image-viewer__btn--reset" title="Reset Zoom" aria-label="Reset Zoom">
+          <button class="btn btn--square-lg image-viewer__btn--reset" title="${_('Reset Zoom')}" aria-label="${_('Reset Zoom')}">
             <svg width="20" height="20"><use href="#icon-reset-zoom"/></svg>
           </button>
-          <button class="btn btn--square-lg image-viewer__btn--download" title="Download" aria-label="Download">
+          <button class="btn btn--square-lg image-viewer__btn--download" title="${_('Download')}" aria-label="${_('Download')}">
             <svg width="20" height="20"><use href="#icon-download"/></svg>
           </button>
-          <button class="btn btn--square-lg image-viewer__btn--share" title="Share as Quote" aria-label="Share">
+          <button class="btn btn--square-lg image-viewer__btn--share" title="${_('Share as Quote')}" aria-label="${_('Share')}">
             <svg width="20" height="20"><use href="#icon-share"/></svg>
           </button>
-          <button class="btn btn--square-lg image-viewer__btn--close" title="Close (ESC)" aria-label="Close">
+          <button class="btn btn--square-lg image-viewer__btn--close" title="${_('Close (ESC)')}" aria-label="${_('Close')}">
             <svg width="20" height="20"><use href="#icon-close"/></svg>
           </button>
         </div>
@@ -241,12 +242,12 @@ export class ImageViewer {
   private renderNavigation(): string {
     return `
       <button class="image-viewer__nav image-viewer__nav--prev ${this.currentIndex === 0 ? 'disabled' : ''}"
-              aria-label="Previous image"
+              aria-label="${_('Previous image')}"
               ${this.currentIndex === 0 ? 'disabled' : ''}>
         <svg width="24" height="24"><use href="#icon-chevron-left"/></svg>
       </button>
       <button class="image-viewer__nav image-viewer__nav--next ${this.currentIndex === this.images.length - 1 ? 'disabled' : ''}"
-              aria-label="Next image"
+              aria-label="${_('Next image')}"
               ${this.currentIndex === this.images.length - 1 ? 'disabled' : ''}>
         <svg width="24" height="24"><use href="#icon-chevron-right"/></svg>
       </button>

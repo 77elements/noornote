@@ -38,13 +38,13 @@ import {
 import { _ } from '../../i18n';
 
 const REPEAT_OPTIONS_RAW: DropdownOption[] = [
-  { value: 'none', label: 'Does not repeat' },
-  { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'weekdays', label: 'Every weekday (Mon–Fri)' },
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'quarterly', label: 'Every 3 months' },
-  { value: 'yearly', label: 'Yearly' },
+  { value: 'none', label: 'Does not repeat' }, // i18n-ok (translated at use site: repeatOptions()/Switch._(label))
+  { value: 'daily', label: 'Daily' }, // i18n-ok (translated at use site: repeatOptions()/Switch._(label))
+  { value: 'weekly', label: 'Weekly' }, // i18n-ok (translated at use site: repeatOptions()/Switch._(label))
+  { value: 'weekdays', label: 'Every weekday (Mon–Fri)' }, // i18n-ok (translated at use site: repeatOptions()/Switch._(label))
+  { value: 'monthly', label: 'Monthly' }, // i18n-ok (translated at use site: repeatOptions()/Switch._(label))
+  { value: 'quarterly', label: 'Every 3 months' }, // i18n-ok (translated at use site: repeatOptions()/Switch._(label))
+  { value: 'yearly', label: 'Yearly' }, // i18n-ok (translated at use site: repeatOptions()/Switch._(label))
 ];
 /** Translated at use time (module const may not call _()). */
 const repeatOptions = (): DropdownOption[] =>
@@ -189,7 +189,7 @@ export class CalendarEventEditor {
 
     // All-day switch.
     this.allDaySwitch = new Switch({
-      label: 'All-day event',
+      label: 'All-day event', // i18n-ok (translated at use site: repeatOptions()/Switch._(label))
       checked: draft.allDay,
       onChange: checked => this.toggleAllDay(content, checked),
     });
@@ -202,7 +202,7 @@ export class CalendarEventEditor {
     // events cannot be converted — different kinds on the wire).
     if (!this.existing) {
       this.privateSwitch = new Switch({
-        label: 'Private (encrypted)',
+        label: 'Private (encrypted)', // i18n-ok (translated at use site: repeatOptions()/Switch._(label))
         checked: false,
         onChange: checked => {
           this.isPrivate = checked;

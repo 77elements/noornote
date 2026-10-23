@@ -1,3 +1,5 @@
+import { _ } from '../../i18n';
+
 /**
  * Switch Component
  * Reusable toggle switch with label
@@ -43,7 +45,7 @@ export class Switch {
     return `
       <div class="switch-container">
         <label class="switch-label">
-          <span class="switch-text">${this.config.label}</span>
+          <span class="switch-text">${_(this.config.label)}</span>
           <div class="switch-toggle">
             <input
               type="checkbox"

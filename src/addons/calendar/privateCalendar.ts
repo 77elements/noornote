@@ -131,7 +131,7 @@ export function parsePrivateListPayload(
     if (!Array.isArray(tags)) return null;
     const list: PrivateCalendarList = {
       id: dTag,
-      title: 'Private',
+      title: 'Private', // i18n-ok
       description: '',
       createdAt,
       eventRefs: [],

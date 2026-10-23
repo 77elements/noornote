@@ -8,6 +8,7 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { ModalService } from '../../services/ModalService';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { toPlainNostrEvent } from '../../helpers/toPlainNostrEvent';
+import { _ } from '../../i18n';
 
 export class RawEventModal {
   private static instance: RawEventModal | null = null;
@@ -36,7 +37,7 @@ export class RawEventModal {
     const content = this.renderContent(plainEvent);
 
     this.modalService.show({
-      title: 'Raw Event',
+      title: _('Raw Event'),
       content,
       width: '800px',
       height: '80vh',

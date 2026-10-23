@@ -125,12 +125,24 @@ def main() -> int:
     hits: list[tuple[Path, int, str, str]] = []
     for path in iter_files():
         src = path.read_text(encoding="utf-8")
-        for lineno, line in enumerate(src.splitlines(), 1):
+        lines = src.splitlines()
+        for i, line in enumerate(lines):
+            lineno = i + 1
             # Skip import lines and comments.
             stripped = line.strip()
             if stripped.startswith("//") or stripped.startswith("*"):
                 continue
+            if "i18n-ok" in line:
+                continue  # explicitly marked as intentional (brand/anchored/data-level)
             for kind, pat in PATTERNS:
+                # Tag bodies are often parts of already-translated literals
+                # (e.g. `_('<strong>NoorNote</strong> is built on …')`) —
+                # skip when this or the previous line already wraps with _().
+                if kind == "tag-body" and (
+                    re.search(r"\b_\(?'", line)
+                    or (i > 0 and re.search(r"_\(\s*$", lines[i - 1]))
+                ):
+                    continue
                 for m in pat.finditer(line):
                     val = m.group(1)
                     if not is_candidate(val):

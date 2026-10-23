@@ -93,7 +93,7 @@ export class ModalService {
 
     // Build close button HTML
     const closeButtonHtml = showCloseButton
-      ? '<button class="modal__close" title="Close (ESC)">×</button>'
+      ? `<button class="modal__close" title="${_('Close (ESC)')}">×</button>`
       : '';
 
     // Render modal structure

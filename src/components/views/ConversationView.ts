@@ -409,7 +409,7 @@ export class ConversationView extends View {
       return `
         <button class="note-menu-item" data-action="disappear" data-seconds="${p.seconds}">
           <span class="note-menu-item__icon-spacer"></span>
-          ${p.label}
+          ${_(p.label)}
           ${checked}
         </button>
       `;

@@ -409,7 +409,7 @@ export class Timeline extends View {
           <!-- Custom dropdown will be mounted here -->
         </div>
         <div class="timeline-controls">
-          <button class="btn btn--refresh" type="button" data-action="refresh">Refresh</button>
+          <button class="btn btn--refresh" type="button" data-action="refresh">${_('Refresh')}</button>
         </div>
       </div>
 
@@ -417,12 +417,12 @@ export class Timeline extends View {
 
       <div class="timeline-loading" style="display: none;">
         <div class="loading-spinner"></div>
-        <p>Loading more events...</p>
+        <p>${_('Loading more events...')}</p>
       </div>
 
       <div class="timeline-empty" style="display: none;">
-        <h3>No events found</h3>
-        <p>Follow some users or check your relay connections.</p>
+        <h3>${_('No events found')}</h3>
+        <p>${_('Follow some users or check your relay connections.')}</p>
       </div>
     `;
 
