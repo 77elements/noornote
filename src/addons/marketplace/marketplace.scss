@@ -142,7 +142,7 @@
 // `data-status="sold"` is set by JS instead of a CSS class — JS hooks
 // belong on data-* attributes per app convention. Keeps `.nn-card`
 // usable as a pure styling class.
-.nn-card[data-status="sold"] {
+.nn-card[data-status='sold'] {
   opacity: 0.7;
 }
 
@@ -303,7 +303,10 @@
     margin-bottom: $gap;
 
     // Markdown content styles
-    h1, h2, h3, h4 {
+    h1,
+    h2,
+    h3,
+    h4 {
       color: var(--color-5);
       margin-top: calc($gap * 1.5);
       margin-bottom: calc($gap / 2);
@@ -313,7 +316,8 @@
       margin-bottom: $gap;
     }
 
-    ul, ol {
+    ul,
+    ol {
       padding-left: calc($gap * 1.5);
       margin-bottom: $gap;
     }

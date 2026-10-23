@@ -11,6 +11,7 @@ import { Switch } from '../../components/ui/Switch';
 import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { _ } from '../../i18n';
 import {
   isContentWordFilterEnabled,
   setContentWordFilterEnabled,
@@ -44,8 +45,8 @@ export class ContentWordFilterSettings extends SettingsSection {
         bus.emit('content-word-filter:toggle', { enabled: checked });
         ToastService.show(
           checked
-            ? 'Content Word Filter enabled'
-            : 'Content Word Filter disabled',
+            ? _('%s enabled', _('Word Filter'))
+            : _('%s disabled', _('Word Filter')),
           'success'
         );
       },
@@ -54,9 +55,9 @@ export class ContentWordFilterSettings extends SettingsSection {
     const switchWrapper = document.createElement('div');
     switchWrapper.innerHTML = `
       <div class="setting">
-        <span class="setting__label">Enable Word Filter</span>
+        <span class="setting__label">${_('Enable Word Filter')}</span>
         <div class="setting__control">${this.enableSwitch.render()}</div>
-        <p class="setting__desc">Hide notes containing specific words from all timelines. Manage your blocked words below.</p>
+        <p class="setting__desc">${_('Hide notes containing specific words from all timelines. Manage your blocked words below.')}</p>
       </div>
     `;
     contentContainer.appendChild(switchWrapper);
@@ -82,8 +83,8 @@ function renderWordList(contentEl: HTMLElement): void {
 
   contentEl.innerHTML = `
     <div class="form__row form__row--oneline" style="margin-bottom: calc(var(--gap, 1rem) / 2)">
-      <input type="text" class="input" placeholder="Enter word to filter" data-action="word-input" />
-      <button class="btn btn--medium" data-action="add-word">Add</button>
+      <input type="text" class="input" placeholder="${_('Enter word to filter')}" data-action="word-input" />
+      <button class="btn btn--medium" data-action="add-word">${_('Add')}</button>
     </div>
     ${
       words.length > 0
@@ -94,14 +95,14 @@ function renderWordList(contentEl: HTMLElement): void {
             word => `
           <div class="ui-list__item" style="display: flex; justify-content: space-between; align-items: center;">
             <span>${escapeHtml(word)}</span>
-            <button class="btn btn--mini btn--danger" data-action="remove-word" data-word="${escapeHtmlAttr(word)}">Remove</button>
+            <button class="btn btn--mini btn--danger" data-action="remove-word" data-word="${escapeHtmlAttr(word)}">${_('Remove')}</button>
           </div>
         `
           )
           .join('')}
       </div>
     `
-        : '<p class="muted">No filter words yet.</p>'
+        : `<p class="muted">${_('No filter words yet.')}</p>`
     }
   `;
 
@@ -112,7 +113,7 @@ function renderWordList(contentEl: HTMLElement): void {
       if (!word) return;
       const updated = getFilterWords().filter(w => w !== word);
       setFilterWords(updated);
-      ToastService.show(`Removed "${word}" from filter`, 'success');
+      ToastService.show(_('Removed "%s" from filter', word), 'success');
       renderWordList(contentEl);
       bindInputHandler(contentEl);
     });
@@ -132,14 +133,17 @@ function bindInputHandler(contentEl: HTMLElement): void {
 
     const current = getFilterWords();
     if (current.includes(word)) {
-      ToastService.show(`"${word}" is already in the filter list`, 'warning');
+      ToastService.show(
+        _('"%s" is already in the filter list', word),
+        'warning'
+      );
       input.value = '';
       return;
     }
 
     setFilterWords([...current, word]);
     input.value = '';
-    ToastService.show(`Added "${word}" to filter`, 'success');
+    ToastService.show(_('Added "%s" to filter', word), 'success');
     renderWordList(contentEl);
     bindInputHandler(contentEl);
   };

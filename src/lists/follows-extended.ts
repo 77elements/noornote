@@ -18,6 +18,7 @@ import {
   type MutualState,
 } from '../services/FollowVerificationService';
 import { MutualChangeDetector } from '../services/MutualChangeDetector';
+import { _ } from '../i18n';
 import { MutualChangeStorage } from './MutualChangeStorage';
 import { ZapStatsService } from '../services/ZapStatsService';
 import { TypedEventBus } from '../core/TypedEventBus';
@@ -187,11 +188,11 @@ export class FollowsExtendedFeatures {
   public renderMutualBadge(state: MutualState): string {
     switch (state) {
       case 'follows':
-        return `<span class="mutual-badge mutual-badge--yes">Mutual</span>`;
+        return `<span class="mutual-badge mutual-badge--yes">${_('Mutual')}</span>`;
       case 'does-not-follow':
-        return `<span class="mutual-badge mutual-badge--no">Not following back</span>`;
+        return `<span class="mutual-badge mutual-badge--no">${_('Not following back')}</span>`;
       default:
-        return `<span class="mutual-badge mutual-badge--checking">checking…</span>`;
+        return `<span class="mutual-badge mutual-badge--checking">${_('checking…')}</span>`;
     }
   }
 
@@ -200,18 +201,18 @@ export class FollowsExtendedFeatures {
    */
   public renderZapBadge(pubkey: string): string {
     if (!this.zapStatsLoaded) {
-      return `<span class="zap-stats-badge zap-stats-badge--loading" data-pubkey="${pubkey}">Zaps: Loading...</span>`;
+      return `<span class="zap-stats-badge zap-stats-badge--loading" data-pubkey="${pubkey}">${_('Zaps: Loading...')}</span>`;
     }
 
     const stats = this.zapStatsService.getStats(pubkey);
     if (!stats) {
-      return `<span class="zap-stats-badge" data-pubkey="${pubkey}">Zaps: In (0) 0 | Out (0) 0</span>`;
+      return `<span class="zap-stats-badge" data-pubkey="${pubkey}">${_('Zaps: In (%s) %s | Out (%s) %s', 0, 0, 0, 0)}</span>`;
     }
 
     const inSats = this.zapStatsService.formatSats(stats.incomingSats);
     const outSats = this.zapStatsService.formatSats(stats.outgoingSats);
 
-    return `<span class="zap-stats-badge" data-pubkey="${pubkey}">Zaps: In (${stats.incomingCount}) ${inSats} | Out (${stats.outgoingCount}) ${outSats}</span>`;
+    return `<span class="zap-stats-badge" data-pubkey="${pubkey}">${_('Zaps: In (%s) %s | Out (%s) %s', stats.incomingCount, inSats, stats.outgoingCount, outSats)}</span>`;
   }
 
   /**
@@ -227,13 +228,19 @@ export class FollowsExtendedFeatures {
       badge.classList.remove('zap-stats-badge--loading');
 
       if (!stats) {
-        badge.textContent = 'Zaps: In (0) 0 | Out (0) 0';
+        badge.textContent = _('Zaps: In (%s) %s | Out (%s) %s', 0, 0, 0, 0);
         return;
       }
 
       const inSats = this.zapStatsService.formatSats(stats.incomingSats);
       const outSats = this.zapStatsService.formatSats(stats.outgoingSats);
-      badge.textContent = `Zaps: In (${stats.incomingCount}) ${inSats} | Out (${stats.outgoingCount}) ${outSats}`;
+      badge.textContent = _(
+        'Zaps: In (%s) %s | Out (%s) %s',
+        stats.incomingCount,
+        inSats,
+        stats.outgoingCount,
+        outSats
+      );
     });
   }
 
@@ -244,12 +251,12 @@ export class FollowsExtendedFeatures {
     const lastCheckTimestamp = this.mutualChangeStorage.getLastCheckTimestamp();
     const lastCheckText = lastCheckTimestamp
       ? formatTimeAgo(lastCheckTimestamp)
-      : 'Never';
+      : _('Never');
 
     return `
       <div class="follows-check-changes">
-        <a href="#" class="follows-check-changes__link">Check for changes</a>
-        <span class="follows-check-changes__last-check">Last: ${lastCheckText}</span>
+        <a href="#" class="follows-check-changes__link">${_('Check for changes')}</a>
+        <span class="follows-check-changes__last-check">${_('Last: %s', lastCheckText)}</span>
       </div>
     `;
   }
@@ -262,7 +269,7 @@ export class FollowsExtendedFeatures {
       totalFollowing === 0
         ? 0
         : Math.round((this.mutualCount / totalFollowing) * 100);
-    return `Following: ${totalFollowing} | Mutuals: <span class="mutual-count">${this.mutualCount}</span> (<span class="mutual-percentage">${percentage}</span>%)`;
+    return `${_('Following: %s', totalFollowing)} | ${_('Mutuals:')} <span class="mutual-count">${this.mutualCount}</span> (<span class="mutual-percentage">${percentage}</span>%)`;
   }
 
   /**

@@ -16,6 +16,7 @@ import { NnDropdown } from '../../components/ui/NnDropdown';
 import { ToastService } from '../../services/ToastService';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { formatTimeAgo } from '../../helpers/formatTimeAgo';
+import { _ } from '../../i18n';
 
 const PAGE_SIZE = 20;
 
@@ -41,8 +42,9 @@ export class WalletTransactionList {
 
     this.element = document.createElement('div');
     this.element.className = 'wallet-tx-list';
-    this.element.innerHTML =
-      '<p class="wallet-tx-list__placeholder pulsate">Loading transactions…</p>';
+    this.element.innerHTML = `<p class="wallet-tx-list__placeholder pulsate">${_(
+      'Loading transactions…'
+    )}</p>`;
 
     this.onNwcRestored = () => {
       this.offset = 0;
@@ -72,8 +74,7 @@ export class WalletTransactionList {
     if (this.destroyed) return;
 
     if (!this.nwcService.isConnected()) {
-      this.element.innerHTML =
-        '<p class="wallet-tx-list__placeholder">Wallet not connected</p>';
+      this.element.innerHTML = `<p class="wallet-tx-list__placeholder">${_('Wallet not connected')}</p>`;
       return;
     }
 
@@ -91,8 +92,7 @@ export class WalletTransactionList {
     } catch (err) {
       this.systemLogger.error('WalletTransactionList', 'Failed to load:', err);
       if (!this.destroyed) {
-        this.element.innerHTML =
-          '<p class="wallet-tx-list__placeholder">Failed to load transactions</p>';
+        this.element.innerHTML = `<p class="wallet-tx-list__placeholder">${_('Failed to load transactions')}</p>`;
       }
     }
   }
@@ -106,7 +106,7 @@ export class WalletTransactionList {
 
     // Balance summary — currency dropdown first (same preference as Settings → NWC)
     let html = `<div class="setting wallet-currency-setting" data-wallet-currency-mount>
-      <span class="setting__label">Fiat Currency</span>
+      <span class="setting__label">${_('Fiat Currency')}</span>
       <div class="setting__control"></div>
     </div>`;
     html += `<div class="wallet-tx-balance">`;
@@ -119,7 +119,7 @@ export class WalletTransactionList {
     html += `</div>`;
 
     if (transactions.length === 0) {
-      html += '<p class="wallet-tx-list__placeholder">No transactions yet</p>';
+      html += `<p class="wallet-tx-list__placeholder">${_('No transactions yet')}</p>`;
       this.element.innerHTML = html;
       void this.setupCurrencyDropdown();
       return;
@@ -144,7 +144,7 @@ export class WalletTransactionList {
         () => {
           void this.loadMore();
         },
-        { loadingMessage: 'Loading more transactions…' }
+        { loadingMessage: _('Loading more transactions…') }
       );
       this.infiniteScroll.observe(this.listEl);
     }
@@ -249,8 +249,8 @@ export class WalletTransactionList {
       desc = tx.description
         ? escapeHtml(tx.description)
         : isIncoming
-          ? 'Received'
-          : 'Sent';
+          ? _('Received')
+          : _('Sent');
     }
 
     return `
@@ -353,7 +353,7 @@ export class WalletTransactionList {
             detail: { currency: code },
           })
         );
-        ToastService.show('Fiat currency saved', 'success');
+        ToastService.show(_('Fiat currency saved'), 'success');
       },
     });
     if (this.destroyed) {

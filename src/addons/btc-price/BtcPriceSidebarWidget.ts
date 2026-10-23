@@ -16,6 +16,7 @@ import { ExchangeRateService } from '../../services/ExchangeRateService';
 import { KeychainStorage } from '../../services/KeychainStorage';
 import { Router } from '../../services/Router';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { _ } from '../../i18n';
 
 export interface BtcPriceWidgetOptions {
   /** Lazily resolve the mount element (the sidebar slot may not exist yet). */
@@ -84,7 +85,7 @@ export class BtcPriceSidebarWidget {
       if (!container) return;
       this.el = document.createElement('div');
       this.el.className = 'sidebar-widget';
-      this.el.title = 'Open BTC Price';
+      this.el.title = _('Open BTC Price');
       this.el.addEventListener('click', this.onClick);
       container.appendChild(this.el);
       this.el.innerHTML =
@@ -175,8 +176,7 @@ export class BtcPriceSidebarWidget {
   private renderRate(rate: number | null): void {
     if (!this.el) return; // torn down mid-fetch
     if (rate === null) {
-      this.el.innerHTML =
-        '<div class="sidebar-widget__empty">Price unavailable</div>';
+      this.el.innerHTML = `<div class="sidebar-widget__empty">${_('Price unavailable')}</div>`;
       return;
     }
     const svc = ExchangeRateService.getInstance();
@@ -186,7 +186,7 @@ export class BtcPriceSidebarWidget {
       <div class="sidebar-widget__cols">
         <span class="sidebar-widget__label">1 BTC</span>
         <span>${amount} ${symbol}</span>
-        <button type="button" class="sidebar-widget__refresh" data-action="btc-refresh" title="Refresh rate" aria-label="Refresh rate"${this.isRefreshLocked() ? ' disabled' : ''}><svg><use href="#icon-sync"/></svg></button>
+        <button type="button" class="sidebar-widget__refresh" data-action="btc-refresh" title="${_('Refresh rate')}" aria-label="${_('Refresh rate')}"${this.isRefreshLocked() ? ' disabled' : ''}><svg><use href="#icon-sync"/></svg></button>
       </div>`;
     this.syncRefreshButton();
   }

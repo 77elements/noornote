@@ -13,6 +13,7 @@ import { ToastService } from '../../services/ToastService';
 import { AuthService } from '../../services/AuthService';
 import { isNoteTakingEnabled, setNoteTakingEnabled } from './index';
 import { NoteTakingView } from './NoteTakingView';
+import { _ } from '../../i18n';
 
 export class NoteTakingAddonView extends View {
   private container: HTMLElement;
@@ -37,7 +38,9 @@ export class NoteTakingAddonView extends View {
           enabled: checked,
         });
         ToastService.show(
-          checked ? 'Note taking enabled' : 'Note taking disabled',
+          checked
+            ? _('%s enabled', _('Note taking'))
+            : _('%s disabled', _('Note taking')),
           'success'
         );
         this.renderBoard();
@@ -46,12 +49,12 @@ export class NoteTakingAddonView extends View {
 
     this.container.innerHTML = `
       <div class="back-padder">
-        <h1>Note taking</h1>
+        <h1>${_('Note taking')}</h1>
         <section class="section">
           <div class="setting">
-            <span class="setting__label">Enable Note taking</span>
+            <span class="setting__label">${_('Enable Note taking')}</span>
             <div class="setting__control">${this.enableSwitch.render()}</div>
-            <p class="setting__desc">Encrypted, offline-first notes. Your notes are NIP-44 self-encrypted and synced privately across your devices via Nostr relays, so only ciphertext ever leaves this device.</p>
+            <p class="setting__desc">${_('Encrypted, offline-first notes. Your notes are NIP-44 self-encrypted and synced privately across your devices via Nostr relays, so only ciphertext ever leaves this device.')}</p>
           </div>
         </section>
         <div data-addon-content="note-board"></div>

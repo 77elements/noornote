@@ -5,6 +5,7 @@ import {
 } from './ContentWordFilterSettings';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { isContentWordFilterEnabled } from './index';
+import { _ } from '../../i18n';
 
 export class WordFilterAddonView extends View {
   private container: HTMLElement;
@@ -19,7 +20,7 @@ export class WordFilterAddonView extends View {
       'view-content view-content--addon view-content--addon-wordfilter';
     this.container.innerHTML = `
       <div class="back-padder">
-        <h1>Word Filter</h1>
+        <h1>${_('Word Filter')}</h1>
         <section class="section" id="content-word-filter-settings-content"></section>
         <div data-addon-content="wordfilter"></div>
       </div>

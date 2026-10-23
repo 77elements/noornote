@@ -18,6 +18,7 @@ import { Router } from '../../services/Router';
 import { ModalService } from '../../services/ModalService';
 import { AuthGuard } from '../../services/AuthGuard';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { _ } from '../../i18n';
 import {
   parseBolt11Amount,
   formatNumberWithCommas,
@@ -39,10 +40,14 @@ import {
 
 // Shared modal dimensions for consistent sizing
 const MODAL_CONFIG = {
-  title: 'Analytics',
   width: '40%',
   height: '40%',
 } as const;
+
+/** Modal config with runtime-translated title (`_()` never at module level). */
+function modalConfig(): { title: string; width: string; height: string } {
+  return { ...MODAL_CONFIG, title: _('Analytics') };
+}
 
 export class AnalyticsModal {
   private static instance: AnalyticsModal | null = null;
@@ -88,7 +93,7 @@ export class AnalyticsModal {
 
     // Show loading state first
     this.modalService.show({
-      ...MODAL_CONFIG,
+      ...modalConfig(),
       content: this.renderLoadingContent(),
     });
 
@@ -97,8 +102,8 @@ export class AnalyticsModal {
       const stats = await this.reactionsApi?.getDetailedStats(noteId);
       if (!stats) {
         this.modalService.show({
-          ...MODAL_CONFIG,
-          content: this.renderErrorContent('Reactions module not available'),
+          ...modalConfig(),
+          content: this.renderErrorContent(_('Reactions module not available')),
         });
         return;
       }
@@ -107,13 +112,13 @@ export class AnalyticsModal {
         noteId,
         rawEvent
       );
-      this.modalService.show({ ...MODAL_CONFIG, content: statsContent });
+      this.modalService.show({ ...modalConfig(), content: statsContent });
       this.updateISLInDOM(noteId, stats);
     } catch (error) {
       console.error('Failed to fetch analytics:', error);
       this.modalService.show({
-        ...MODAL_CONFIG,
-        content: this.renderErrorContent('Failed to load analytics data'),
+        ...modalConfig(),
+        content: this.renderErrorContent(_('Failed to load analytics data')),
       });
     }
   }
@@ -125,7 +130,7 @@ export class AnalyticsModal {
     return `
       <div class="modal__loading">
         <div class="loading-spinner"></div>
-        <p>Loading analytics data...</p>
+        <p>${_('Loading analytics data...')}</p>
       </div>
     `;
   }
@@ -234,7 +239,9 @@ export class AnalyticsModal {
     pubkey: string,
     profileMap: Map<string, UserMentionProfile>
   ): UserMentionProfile {
-    return profileMap.get(pubkey) || { username: 'Anonymous', avatarUrl: '' };
+    return (
+      profileMap.get(pubkey) || { username: _('Anonymous'), avatarUrl: '' }
+    );
   }
 
   /**
@@ -271,7 +278,7 @@ export class AnalyticsModal {
           profile.display_name ||
           profile.name ||
           profile.username ||
-          'Anonymous';
+          _('Anonymous');
         const avatarUrl = profile.picture || '';
         profileMap.set(pubkey, { username, avatarUrl });
       })
@@ -301,7 +308,7 @@ export class AnalyticsModal {
     const seenOnRelays = timelineApi?.getEventRelays(noteId) ?? [];
     const seenOnSection =
       seenOnRelays.length > 0
-        ? `<div class="analytics-modal__seen-on">Seen on ${escapeHtml(seenOnRelays.map(formatRelayUrl).join(', '))}</div>`
+        ? `<div class="analytics-modal__seen-on">${_('Seen on %s', escapeHtml(seenOnRelays.map(formatRelayUrl).join(', ')))}</div>`
         : '';
 
     // Extract client tag if available
@@ -310,7 +317,7 @@ export class AnalyticsModal {
     );
     const clientName = clientTag?.[1] || null;
     const clientSection = clientName
-      ? `<div class="analytics-modal__client">via ${escapeHtml(clientName)}</div>`
+      ? `<div class="analytics-modal__client">${_('via %s', escapeHtml(clientName))}</div>`
       : '';
 
     // Create container element
@@ -360,7 +367,10 @@ export class AnalyticsModal {
     profileMap: Map<string, UserMentionProfile>
   ): string {
     if (replyEvents.length === 0) {
-      return this.renderEmptySection('Replies (0)', 'No replies yet');
+      return this.renderEmptySection(
+        _('Replies (%s)', replyEvents.length),
+        _('No replies yet')
+      );
     }
 
     const userLinks = replyEvents
@@ -370,7 +380,7 @@ export class AnalyticsModal {
       })
       .join(' ');
 
-    return this.renderSection(`Replies (${replyEvents.length})`, userLinks);
+    return this.renderSection(_('Replies (%s)', replyEvents.length), userLinks);
   }
 
   /**
@@ -381,7 +391,10 @@ export class AnalyticsModal {
     profileMap: Map<string, UserMentionProfile>
   ): string {
     if (zapEvents.length === 0) {
-      return this.renderEmptySection('Zaps (0): 0 Sats', 'No zaps yet');
+      return this.renderEmptySection(
+        _('Zaps (%s): %s Sats', zapEvents.length, '0'),
+        _('No zaps yet')
+      );
     }
 
     let totalSats = 0;
@@ -410,7 +423,11 @@ export class AnalyticsModal {
       .join('');
 
     return this.renderSection(
-      `Zaps (${zapEvents.length}): ${formatNumberWithCommas(totalSats)} Sats`,
+      _(
+        'Zaps (%s): %s Sats',
+        zapEvents.length,
+        formatNumberWithCommas(totalSats)
+      ),
       zapItems,
       'analytics-modal__zap-list'
     );
@@ -424,7 +441,10 @@ export class AnalyticsModal {
     profileMap: Map<string, UserMentionProfile>
   ): string {
     if (repostEvents.length === 0) {
-      return this.renderEmptySection('Reposts (0)', 'No reposts yet');
+      return this.renderEmptySection(
+        _('Reposts (%s)', repostEvents.length),
+        _('No reposts yet')
+      );
     }
 
     const userLinks = repostEvents
@@ -434,7 +454,10 @@ export class AnalyticsModal {
       })
       .join(' ');
 
-    return this.renderSection(`Reposts (${repostEvents.length})`, userLinks);
+    return this.renderSection(
+      _('Reposts (%s)', repostEvents.length),
+      userLinks
+    );
   }
 
   /**
@@ -446,8 +469,8 @@ export class AnalyticsModal {
   ): string {
     if (quotedEvents.length === 0) {
       return this.renderEmptySection(
-        'Quoted Reposts (0)',
-        'No quoted reposts yet'
+        _('Quoted Reposts (%s)', quotedEvents.length),
+        _('No quoted reposts yet')
       );
     }
 
@@ -459,7 +482,7 @@ export class AnalyticsModal {
       .join(' ');
 
     return this.renderSection(
-      `Quoted Reposts (${quotedEvents.length})`,
+      _('Quoted Reposts (%s)', quotedEvents.length),
       userLinks
     );
   }
@@ -471,11 +494,14 @@ export class AnalyticsModal {
    */
   private renderLikesSection(reactionEvents: NostrEvent[]): string {
     if (reactionEvents.length === 0) {
-      return this.renderEmptySection('Likes (0)', 'No likes yet');
+      return this.renderEmptySection(
+        _('Likes (%s)', reactionEvents.length),
+        _('No likes yet')
+      );
     }
     return `
       <div class="analytics-modal__section">
-        <h2>Likes (${reactionEvents.length})</h2>
+        <h2>${_('Likes (%s)', reactionEvents.length)}</h2>
         <div class="analytics-modal__separator"></div>
         <div class="analytics-modal__likes-tree" data-likes-body></div>
       </div>
@@ -525,7 +551,7 @@ export class AnalyticsModal {
       toggle.type = 'button';
       toggle.textContent = '>';
       toggle.setAttribute('aria-expanded', 'false');
-      toggle.setAttribute('title', 'Show reactions to this reaction');
+      toggle.setAttribute('title', _('Show reactions to this reaction'));
       const toggleThread = () => {
         const open = node.classList.toggle('reaction-node--open');
         toggle.setAttribute('aria-expanded', String(open));

@@ -14,6 +14,7 @@ import type { NoteRecord } from './NoteTakingStore';
 import { NoteEditorModal } from './NoteEditorModal';
 import { isAccentColor } from './noteColors';
 import { backupNotes, restoreNotes } from './NoteTakingBackup';
+import { _, tp } from '../../i18n';
 
 export class NoteTakingView extends View {
   private container: HTMLElement;
@@ -32,20 +33,20 @@ export class NoteTakingView extends View {
     this.container.className = 'note-taking';
     this.container.innerHTML = `
       <div class="note-taking__toolbar">
-        <button type="button" class="btn-icon" data-action="sync" title="Sync now" aria-label="Sync now">
+        <button type="button" class="btn-icon" data-action="sync" title="${_('Sync now')}" aria-label="${_('Sync now')}">
           <svg width="18" height="18"><use href="#icon-sync"/></svg>
         </button>
-        <a href="#" data-action="backup">Backup notes</a>
-        <a href="#" data-action="restore">Restore notes</a>
-        <input type="search" class="input note-taking__search-input" placeholder="Search notes…" aria-label="Search notes" />
+        <a href="#" data-action="backup">${_('Backup notes')}</a>
+        <a href="#" data-action="restore">${_('Restore notes')}</a>
+        <input type="search" class="input note-taking__search-input" placeholder="${_('Search notes…')}" aria-label="${_('Search notes')}" />
         <button type="button" class="btn" data-action="new-note">
           <svg width="16" height="16"><use href="#icon-plus"/></svg>
-          New note
+          ${_('New note')}
         </button>
       </div>
       <div class="tabs note-taking__views">
-        <button type="button" class="tab tab--active" data-view="active">Notes</button>
-        <button type="button" class="tab" data-view="archived">Archive</button>
+        <button type="button" class="tab tab--active" data-view="active">${tp('note-taking', 'Notes')}</button>
+        <button type="button" class="tab" data-view="archived">${_('Archive')}</button>
       </div>
       <div class="note-taking__filters" data-note-taking-filters></div>
       <div class="note-taking__board" data-note-board></div>
@@ -125,7 +126,7 @@ export class NoteTakingView extends View {
   private async syncNow(): Promise<void> {
     await NoteTakingSyncService.getInstance().syncAll();
     await this.load();
-    ToastService.show('Notes synced', 'success');
+    ToastService.show(_('Notes synced'), 'success');
   }
 
   /**
@@ -190,26 +191,26 @@ export class NoteTakingView extends View {
       let head: string;
       let sub: string;
       if (searching) {
-        head = 'No notes match your search';
-        sub = `Nothing found for “${escapeHtml(this.searchQuery.trim())}”.`;
+        head = _('No notes match your search');
+        sub = _('Nothing found for “%s”.', escapeHtml(this.searchQuery.trim()));
       } else if (this.activeLabel) {
-        head = 'No notes with this label';
-        sub = 'Pick another label or “All”.';
+        head = _('No notes with this label');
+        sub = _('Pick another label or “%s”.', _('All'));
       } else if (this.view === 'archived') {
-        head = 'No archived notes';
-        sub = 'Archive a note to tuck it away here.';
+        head = _('No archived notes');
+        sub = _('Archive a note to tuck it away here.');
       } else {
-        head = 'No notes yet';
-        sub = 'Tap “New note” to write your first encrypted note.';
+        head = _('No notes yet');
+        sub = _('Tap “%s” to write your first encrypted note.', _('New note'));
       }
 
       const info = isPlainEmpty
         ? `
         <div class="note-taking__empty-info">
-          <p>Note taking is built for your own <strong>private, local</strong> use. Your notes are <strong>never published</strong> to the network.</p>
-          <p>Relay sync is only a <strong>backup</strong> and keeps your NoorNote devices in sync. Every note is encrypted with <strong>NIP-44 using your own key</strong>, so only ciphertext ever leaves this device.</p>
-          <p>Deleting a note <strong>physically overwrites</strong> its content on the relays. It is not a deletion request they might ignore.</p>
-          <p>In short: your notes stay safe, encrypted, and yours.</p>
+          <p>${_('Note taking is built for your own <strong>private, local</strong> use. Your notes are <strong>never published</strong> to the network.')}</p>
+          <p>${_('Relay sync is only a <strong>backup</strong> and keeps your NoorNote devices in sync. Every note is encrypted with <strong>NIP-44 using your own key</strong>, so only ciphertext ever leaves this device.')}</p>
+          <p>${_('Deleting a note <strong>physically overwrites</strong> its content on the relays. It is not a deletion request they might ignore.')}</p>
+          <p>${_('In short: your notes stay safe, encrypted, and yours.')}</p>
         </div>`
         : '';
 
@@ -264,7 +265,7 @@ export class NoteTakingView extends View {
           'note-taking-card__content--open'
         );
         content.classList.toggle('note-taking-card__content--clamp', !expanded);
-        btn.textContent = expanded ? 'Show less' : 'See more';
+        btn.textContent = expanded ? _('Show less') : _('See more');
       });
     });
   }
@@ -297,7 +298,7 @@ export class NoteTakingView extends View {
       return;
     }
     el.innerHTML = `
-      <button type="button" class="note-taking-filter${this.activeLabel === null ? ' is-active' : ''}" data-label="">All</button>
+      <button type="button" class="note-taking-filter${this.activeLabel === null ? ' is-active' : ''}" data-label="">${_('All')}</button>
       ${labels.map(l => `<button type="button" class="note-taking-filter${this.activeLabel === l ? ' is-active' : ''}" data-label="${escapeHtmlAttr(l)}">${escapeHtml(l)}</button>`).join('')}
     `;
     el.querySelectorAll('.note-taking-filter').forEach(btn => {
@@ -342,14 +343,14 @@ export class NoteTakingView extends View {
           ${note.body ? `<div class="note-taking-card__body">${escapeHtml(note.body)}</div>` : ''}
           ${checklist}
         </div>
-        ${isLong ? '<button type="button" class="btn btn--mini note-taking-card__more">See more</button>' : ''}`
+        ${isLong ? `<button type="button" class="btn btn--mini note-taking-card__more">${_('See more')}</button>` : ''}`
       : '';
     const colored = isAccentColor(note.color);
     const colorClass = colored ? ` note-taking-color-${note.color}` : '';
     // In global search the result set spans both views, so flag archived hits.
     const archivedBadge =
       searching && note.archived
-        ? '<span class="note-taking-card__archived-badge">Archived</span>'
+        ? `<span class="note-taking-card__archived-badge">${_('Archived')}</span>`
         : '';
     return `
       <div class="note-taking-card${note.pinned ? ' note-taking-card--pinned' : ''}${colorClass}" data-note-id="${escapeHtmlAttr(note.id)}">

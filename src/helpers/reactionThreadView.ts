@@ -13,6 +13,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { _ } from '../i18n';
 import type { ReactionsModuleApi } from '../modules/reactions/contracts';
 import { NnDropdown } from '../components/ui/NnDropdown';
 import { AuthGuard } from '../services/AuthGuard';
@@ -302,7 +303,7 @@ function buildNodeRow(
     toggle.type = 'button';
     toggle.textContent = '>';
     toggle.setAttribute('aria-expanded', 'false');
-    toggle.setAttribute('title', 'Show reactions to this reaction');
+    toggle.setAttribute('title', _('Show reactions to this reaction'));
     const toggleThread = () => {
       const open = node.classList.toggle('reaction-node--open');
       toggle.setAttribute('aria-expanded', String(open));

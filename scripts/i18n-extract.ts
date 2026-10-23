@@ -115,13 +115,10 @@ function mergeIntoPo(lang: string, path: string, isReference: boolean): void {
       }
     } else {
       bucket[msgid] = {
+        ...(ctx ? { msgctxt: ctx } : {}),
         msgid,
         ...(potMsg.msgid_plural ? { msgid_plural: potMsg.msgid_plural } : {}),
-        msgstr: potMsg.msgid_plural
-          ? ['', '']
-          : isReference
-            ? [msgid]
-            : [''],
+        msgstr: potMsg.msgid_plural ? ['', ''] : isReference ? [msgid] : [''],
         comments: {
           reference: potMsg.comments?.reference ?? '',
           extracted: potMsg.comments?.extracted,

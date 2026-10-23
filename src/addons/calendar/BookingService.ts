@@ -23,6 +23,7 @@ import { NostrTransport } from '../../services/transport/NostrTransport';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { DMsModuleApi } from '../../modules/dms/contracts';
 import { diagLog } from '../../services/DiagnosticLogger';
+import { _ } from '../../i18n';
 import { encodeNpub } from '../../services/NostrToolsAdapter';
 import { resolveCalendarRelays } from './relays';
 import { UserProfileService } from '../../services/UserProfileService';
@@ -159,8 +160,8 @@ export class BookingService {
         const records = this.getMyBookings().filter(r => r.startMs > now);
         return records.map((r, index) => ({
           id: REMINDER_ID_BASE_GUEST + index,
-          title: r.title || 'Appointment',
-          body: 'Your booked meeting starts now.',
+          title: r.title || _('Appointment'),
+          body: _('Your booked meeting starts now.'),
           fireAt: r.startMs,
           allowWhileIdle: true,
         }));
@@ -506,8 +507,9 @@ export class BookingService {
     if (!rsvpOutcome.ok) {
       return {
         ok: false,
-        detail:
-          'The booking could not be published — no relay accepted it. Check your connection and try again.',
+        detail: _(
+          'The booking could not be published — no relay accepted it. Check your connection and try again.'
+        ),
         informed: 0,
         dmFailures: 0,
       };
@@ -621,8 +623,9 @@ export class BookingService {
     if (!cancelled.ok) {
       return {
         ok: false,
-        detail:
-          'The cancellation could not be published — no relay accepted it. Check your connection and try again.',
+        detail: _(
+          'The cancellation could not be published — no relay accepted it. Check your connection and try again.'
+        ),
         informed: 0,
         dmFailures: 0,
       };
@@ -636,8 +639,11 @@ export class BookingService {
       ok: true,
       detail:
         informed > 0
-          ? `Booking cancelled — host and ${informed - 1} participant(s) informed`
-          : 'Booking cancelled',
+          ? _(
+              'Booking cancelled — host and %s participant(s) informed',
+              String(informed - 1)
+            )
+          : _('Booking cancelled'),
       informed,
       dmFailures,
     };
@@ -736,8 +742,9 @@ export class BookingService {
     if (!deleted) {
       return {
         ok: false,
-        detail:
-          'The cancellation was not accepted by any relay. Check your connection and try again.',
+        detail: _(
+          'The cancellation was not accepted by any relay. Check your connection and try again.'
+        ),
         informed: 0,
         dmFailures: 0,
       };
@@ -774,8 +781,8 @@ export class BookingService {
     return {
       ok: true,
       detail: informed
-        ? `Booking cancelled — ${informed} recipient(s) informed`
-        : 'Booking cancelled',
+        ? _('Booking cancelled — %s recipient(s) informed', String(informed))
+        : _('Booking cancelled'),
       informed,
       dmFailures,
     };
@@ -828,14 +835,14 @@ export class BookingService {
     if (!deleted) {
       return {
         ok: false,
-        detail: 'The cancellation was not accepted by any relay. Try again.',
+        detail: _('The cancellation was not accepted by any relay. Try again.'),
         informed: 0,
         dmFailures: 0,
       };
     }
 
     const dms = ModuleLoader.getInstance().getApi<DMsModuleApi>('dms');
-    const note = `❌ The host cancelled the booking "${event.title}"\nWhen: ${new Date(event.startMs).toUTCString()}\nReason: ${reason.trim() || '—'}`;
+    const note = `❌ ${_('The host cancelled the booking "%s"', event.title)}\n${_('When:')} ${new Date(event.startMs).toUTCString()}\n${_('Reason:')} ${reason.trim() || '—'}`;
     let informed = 0;
     let dmFailures = 0;
     if (dms) {
@@ -866,8 +873,8 @@ export class BookingService {
     return {
       ok: true,
       detail: informed
-        ? `Booking cancelled — ${informed} recipient(s) informed`
-        : 'Booking cancelled',
+        ? _('Booking cancelled — %s recipient(s) informed', String(informed))
+        : _('Booking cancelled'),
       informed,
       dmFailures,
     };

@@ -35,8 +35,9 @@ import {
   generateDTag,
   type CalendarEventDraft,
 } from './CalendarPublishService';
+import { _ } from '../../i18n';
 
-const REPEAT_OPTIONS: DropdownOption[] = [
+const REPEAT_OPTIONS_RAW: DropdownOption[] = [
   { value: 'none', label: 'Does not repeat' },
   { value: 'daily', label: 'Daily' },
   { value: 'weekly', label: 'Weekly' },
@@ -45,6 +46,9 @@ const REPEAT_OPTIONS: DropdownOption[] = [
   { value: 'quarterly', label: 'Every 3 months' },
   { value: 'yearly', label: 'Yearly' },
 ];
+/** Translated at use time (module const may not call _()). */
+const repeatOptions = (): DropdownOption[] =>
+  REPEAT_OPTIONS_RAW.map(o => ({ ...o, label: _(o.label) }));
 
 function toDatetimeLocal(ms: number): string {
   // Local-time rendering for <input type="datetime-local">.
@@ -91,8 +95,8 @@ export class CalendarEventEditor {
     const draft = this.initialDraft();
     content.innerHTML = `
       <div class="form__row">
-        <label for="cal-editor-title">Title</label>
-        <input id="cal-editor-title" class="input input--title" type="text" maxlength="200" placeholder="Event title" value="${escapeHtmlAttr(draft.title)}" />
+        <label for="cal-editor-title">${_('Title')}</label>
+        <input id="cal-editor-title" class="input input--title" type="text" maxlength="200" placeholder="${_('Event title')}" value="${escapeHtmlAttr(draft.title)}" />
       </div>
       <div class="form__row">
         <div id="cal-editor-allday"></div>
@@ -102,61 +106,63 @@ export class CalendarEventEditor {
       </div>
       <div class="form__row" data-public-only${this.isPrivate ? ' hidden' : ''}>
         <label class="nn-checkbox nn-checkbox--label-left calendar-editor__share">
-          <span class="setting__label">Share in TL</span>
+          <span class="setting__label">${_('Share in TL')}</span>
           <input type="checkbox" id="cal-editor-share" />
         </label>
-        <p class="form__note" data-editor-note-share>Publishes a timeline note linking to this event right after saving.</p>
+        <p class="form__note" data-editor-note-share>${_('Publishes a timeline note linking to this event right after saving.')}</p>
       </div>
       <div class="form__row" data-when="timed">
-        <label for="cal-editor-start">Starts</label>
+        <label for="cal-editor-start">${_('Starts')}</label>
         <input id="cal-editor-start" class="input" type="datetime-local" />
       </div>
       <div class="form__row" data-when="timed">
-        <label for="cal-editor-end">Ends (optional)</label>
+        <label for="cal-editor-end">${_('Ends (optional)')}</label>
         <input id="cal-editor-end" class="input" type="datetime-local" />
       </div>
       <div class="form__row" data-when="allday" hidden>
-        <label for="cal-editor-start-date">Start date</label>
+        <label for="cal-editor-start-date">${_('Start date')}</label>
         <input id="cal-editor-start-date" class="datepicker" type="date" />
       </div>
       <div class="form__row" data-when="allday" hidden>
-        <label for="cal-editor-end-date">End date (optional, exclusive)</label>
+        <label for="cal-editor-end-date">${_('End date (optional, exclusive)')}</label>
         <input id="cal-editor-end-date" class="datepicker" type="date" />
       </div>
       <div class="form__row">
-        <label for="cal-editor-location">Location</label>
-        <input id="cal-editor-location" class="input" type="text" maxlength="300" placeholder="Address, link, room…" value="${escapeHtmlAttr(draft.location)}" />
+        <label for="cal-editor-location">${_('Location')}</label>
+        <input id="cal-editor-location" class="input" type="text" maxlength="300" placeholder="${_('Address, link, room…')}" value="${escapeHtmlAttr(draft.location)}" />
       </div>
       <div class="form__row" data-private-only hidden>
-        <label for="cal-editor-participants">Participants (private invites)</label>
-        <input id="cal-editor-participants" class="input" type="text" placeholder="npub or hex pubkey, comma-separated" value="${escapeHtmlAttr((this.existing?.participants ?? []).join(', '))}" />
-        <p class="form__note" data-editor-note>They receive an encrypted invitation containing the event's view key.</p>
+        <label for="cal-editor-participants">${_('Participants (private invites)')}</label>
+        <input id="cal-editor-participants" class="input" type="text" placeholder="${_('npub or hex pubkey, comma-separated')}" value="${escapeHtmlAttr((this.existing?.participants ?? []).join(', '))}" />
+        <p class="form__note" data-editor-note>${_("They receive an encrypted invitation containing the event's view key.")}</p>
       </div>
       <div class="form__row">
-        <label>Repeat</label>
+        <label>${_('Repeat')}</label>
         <div id="cal-editor-repeat"></div>
       </div>
       <div class="form__row">
-        <label>Remind me</label>
+        <label>${_('Remind me')}</label>
         <div id="cal-editor-remind"></div>
         <p class="form__note" data-editor-note-remind></p>
       </div>
       <div class="form__row">
-        <label for="cal-editor-desc">Description</label>
-        <textarea id="cal-editor-desc" class="textarea textarea--small" maxlength="5000" placeholder="Details (visible to everyone — this is a public event)">${escapeHtmlAttr(draft.description)}</textarea>
+        <label for="cal-editor-desc">${_('Description')}</label>
+        <textarea id="cal-editor-desc" class="textarea textarea--small" maxlength="5000" placeholder="${_('Details (visible to everyone — this is a public event)')}">${escapeHtmlAttr(draft.description)}</textarea>
       </div>
       <p class="form__note" data-editor-note>${
         this.isPrivate
-          ? 'Private event: NIP-44-encrypted, only readable by you. Syncs across your devices via your relays.'
-          : 'Public event: everyone on Nostr can read it.'
+          ? _(
+              'Private event: NIP-44-encrypted, only readable by you. Syncs across your devices via your relays.'
+            )
+          : _('Public event: everyone on Nostr can read it.')
       }</p>
       <div class="calendar-addon-editor__actions l-row--end-pair">
         ${
           this.existing
-            ? '<button class="btn btn--danger btn--medium" type="button" data-action="delete">Delete</button>'
+            ? `<button class="btn btn--danger btn--medium" type="button" data-action="delete">${_('Delete')}</button>`
             : ''
         }
-        <button class="btn btn--medium" type="button" data-action="save">${this.existing ? 'Save changes' : 'Create event'}</button>
+        <button class="btn btn--medium" type="button" data-action="save">${this.existing ? _('Save changes') : _('Create event')}</button>
       </div>
     `;
 
@@ -205,8 +211,10 @@ export class CalendarEventEditor {
             content.querySelector<HTMLParagraphElement>('[data-editor-note]');
           if (note) {
             note.textContent = checked
-              ? 'Private event: NIP-44-encrypted, only readable by you. Syncs across your devices via your relays.'
-              : 'Public event: everyone on Nostr can read it.';
+              ? _(
+                  'Private event: NIP-44-encrypted, only readable by you. Syncs across your devices via your relays.'
+                )
+              : _('Public event: everyone on Nostr can read it.');
           }
         },
       });
@@ -219,14 +227,13 @@ export class CalendarEventEditor {
     } else if (this.isPrivate) {
       const privateSlot = content.querySelector('#cal-editor-private');
       if (privateSlot) {
-        privateSlot.innerHTML =
-          '<span class="badge">Private (encrypted)</span>';
+        privateSlot.innerHTML = `<span class="badge">${_('Private (encrypted)')}</span>`;
       }
     }
 
     // Repeat dropdown.
     this.repeatDropdown = new NnDropdown({
-      options: REPEAT_OPTIONS,
+      options: repeatOptions(),
       selectedValue: this.repeatValue ?? 'none',
       width: '100%',
       onChange: value => {
@@ -252,10 +259,13 @@ export class CalendarEventEditor {
           value: 'default',
           label:
             defaultLead === 0
-              ? 'Calendar default (never)'
-              : `Calendar default (${humanizeLeadMinutes(defaultLead).replace(/^in /, '')})`,
+              ? _('Calendar default (never)')
+              : _(
+                  'Calendar default (%s)',
+                  humanizeLeadMinutes(defaultLead).replace(/^in /, '')
+                ),
         },
-        ...LEAD_OPTIONS,
+        ...LEAD_OPTIONS.map(o => ({ ...o, label: _(o.label) })),
       ],
       selectedValue: this.remindValue,
       width: '100%',
@@ -280,7 +290,7 @@ export class CalendarEventEditor {
       });
 
     ModalService.getInstance().show({
-      title: this.existing ? 'Edit event' : 'New calendar event',
+      title: this.existing ? _('Edit event') : _('New calendar event'),
       content,
       width: '520px',
       onClose: () => this.destroy(),
@@ -413,11 +423,11 @@ export class CalendarEventEditor {
   private async save(content: HTMLElement): Promise<void> {
     const draft = this.readDraft(content);
     if (!draft.title.trim()) {
-      ToastService.show('Please enter a title', 'warning');
+      ToastService.show(_('Please enter a title'), 'warning');
       return;
     }
     if (!Number.isFinite(draft.startMs)) {
-      ToastService.show('Please pick a valid start', 'warning');
+      ToastService.show(_('Please pick a valid start'), 'warning');
       return;
     }
 
@@ -477,11 +487,11 @@ export class CalendarEventEditor {
             pubkey: signed.pubkey,
             dTag: draft.dTag,
           });
-          ToastService.show('Shared in timeline', 'success');
+          ToastService.show(_('Shared in timeline'), 'success');
         }
       }
       ToastService.show(
-        this.existing ? 'Event updated' : 'Event published',
+        this.existing ? _('Event updated') : _('Event published'),
         'success'
       );
       ModalService.getInstance().hide();
@@ -491,7 +501,7 @@ export class CalendarEventEditor {
         error,
         'CalendarEventEditor.save',
         true,
-        'Could not save the event'
+        _('Could not save the event')
       );
       saveBtn.disabled = false;
     }
@@ -500,9 +510,13 @@ export class CalendarEventEditor {
   private async remove(): Promise<void> {
     if (!this.existing) return;
     const confirmed = await ModalService.getInstance().confirm({
-      title: 'Delete event',
-      message: `Delete "${this.existing.title || 'this event'}"${this.isPrivate ? '' : ' for everyone'}? A deletion request is published to relays.`,
-      confirmText: 'Delete',
+      title: _('Delete event'),
+      message: _(
+        'Delete "%s"%s? A deletion request is published to relays.',
+        this.existing.title || _('this event'),
+        this.isPrivate ? '' : ` ${_('for everyone')}`
+      ),
+      confirmText: _('Delete'),
       confirmDestructive: true,
     });
     if (!confirmed) return;
@@ -518,10 +532,10 @@ export class CalendarEventEditor {
             await import('./CalendarPublishService')
           ).CalendarPublishService.getInstance().deleteEvent(this.existing);
       if (!ok) {
-        ToastService.show('Deletion was not acknowledged', 'warning');
+        ToastService.show(_('Deletion was not acknowledged'), 'warning');
         return;
       }
-      ToastService.show('Event deleted', 'success');
+      ToastService.show(_('Event deleted'), 'success');
       ModalService.getInstance().hide();
       this.onSaved();
     } catch (error) {
@@ -529,7 +543,7 @@ export class CalendarEventEditor {
         error,
         'CalendarEventEditor.remove',
         true,
-        'Could not delete the event'
+        _('Could not delete the event')
       );
     }
   }

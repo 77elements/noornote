@@ -18,6 +18,7 @@ import {
 } from './EmojiService';
 import { UserSearchInput } from '../../components/user-search/UserSearchInput';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { _, tn } from '../../i18n';
 
 export class CustomEmojisSettings extends SettingsSection {
   private enableSwitch: Switch | null = null;
@@ -46,7 +47,9 @@ export class CustomEmojisSettings extends SettingsSection {
         // listeners (CustomEmojisView etc.) keep working.
         this.eventBus.emit('custom-emojis:addon-toggle', { enabled: checked });
         ToastService.show(
-          checked ? 'Custom Emojis enabled' : 'Custom Emojis disabled',
+          checked
+            ? _('%s enabled', _('Custom Emojis'))
+            : _('%s disabled', _('Custom Emojis')),
           'success'
         );
         if (checked && this.currentContentZone) {
@@ -57,9 +60,9 @@ export class CustomEmojisSettings extends SettingsSection {
 
     contentContainer.innerHTML = `
       <div class="setting">
-        <span class="setting__label">Enable Custom Emojis</span>
+        <span class="setting__label">${_('Enable Custom Emojis')}</span>
         <div class="setting__control">${this.enableSwitch.render()}</div>
-        <p class="setting__desc">Add animated GIFs and custom images as personal emojis. Use them as reactions or in your posts via <code>:shortcode:</code>. Other Nostr clients that support NIP-30 will display them too.</p>
+        <p class="setting__desc">${_('Add animated GIFs and custom images as personal emojis. Use them as reactions or in your posts via <code>:shortcode:</code>. Other Nostr clients that support NIP-30 will display them too.')}</p>
       </div>
     `;
     this.enableSwitch.setupEventListeners(contentContainer);
@@ -101,33 +104,33 @@ export class CustomEmojisSettings extends SettingsSection {
 
   private async renderContentZone(zone: HTMLElement): Promise<void> {
     zone.innerHTML = `
-      <h2>My Emojis</h2>
-      <p class="custom-emojis__hint">Add custom emojis below. Each shortcode can be used as <code>:shortcode:</code> in posts and reactions.</p>
+      <h2>${_('My Emojis')}</h2>
+      <p class="custom-emojis__hint">${_('Add custom emojis below. Each shortcode can be used as <code>:shortcode:</code> in posts and reactions.')}</p>
 
       <form class="custom-emojis__add-form" data-add-form>
         <div class="form__row">
-          <label for="custom-emoji-shortcode">Shortcode</label>
-          <input type="text" id="custom-emoji-shortcode" class="input" data-shortcode-input placeholder="celebrate" autocomplete="off" />
+          <label for="custom-emoji-shortcode">${_('Shortcode')}</label>
+          <input type="text" id="custom-emoji-shortcode" class="input" data-shortcode-input placeholder="${_('celebrate')}" autocomplete="off" />
         </div>
         <div class="form__row">
-          <label for="custom-emoji-url">Image URL</label>
-          <input type="url" id="custom-emoji-url" class="input" data-url-input placeholder="https://example.com/celebrate.gif" autocomplete="off" />
+          <label for="custom-emoji-url">${_('Image URL')}</label>
+          <input type="url" id="custom-emoji-url" class="input" data-url-input placeholder="${_('https://example.com/celebrate.gif')}" autocomplete="off" />
         </div>
         <div class="l-row l-row--split">
           <div>
-            <button type="button" class="btn btn--passive" data-upload-btn>Upload image…</button>
+            <button type="button" class="btn btn--passive" data-upload-btn>${_('Upload image…')}</button>
             <input type="file" accept="image/*" style="display:none;" data-file-input />
             <span class="custom-emojis__upload-status" data-upload-status></span>
           </div>
-          <button type="submit" class="btn">Add Emoji</button>
+          <button type="submit" class="btn">${_('Add Emoji')}</button>
         </div>
       </form>
 
       <div class="custom-emojis__list-mount"></div>
 
       <section class="section">
-        <h2>Import from another user</h2>
-        <p class="custom-emojis__hint">Show the custom emojis of another user and import any of them into your personal pack.</p>
+        <h2>${_('Import from another user')}</h2>
+        <p class="custom-emojis__hint">${_('Show the custom emojis of another user and import any of them into your personal pack.')}</p>
         <div class="custom-emojis__browse-input-mount"></div>
         <div class="custom-emojis__browse-results-mount"></div>
       </section>
@@ -159,7 +162,7 @@ export class CustomEmojisSettings extends SettingsSection {
     if (browseInputMount) {
       this.userSearchInput?.destroy();
       this.userSearchInput = new UserSearchInput({
-        placeholder: 'Show me the Custom Emojis of this user…',
+        placeholder: _('Show me the Custom Emojis of this user…'),
         onUserSelected: pubkey => {
           void this.handleBrowseUser(pubkey, zone);
         },
@@ -188,7 +191,7 @@ export class CustomEmojisSettings extends SettingsSection {
     const emojis = EmojiService.getInstance().getEmojis();
 
     if (emojis.length === 0) {
-      mount.innerHTML = `<p class="custom-emojis__empty">No custom emojis yet. Add your first one above.</p>`;
+      mount.innerHTML = `<p class="custom-emojis__empty">${_('No custom emojis yet. Add your first one above.')}</p>`;
       return;
     }
 
@@ -216,7 +219,7 @@ export class CustomEmojisSettings extends SettingsSection {
       <div class="ui-list__item custom-emojis__row">
         <img class="custom-emoji" src="${safeUrl}" alt=":${safeCode}:" loading="lazy" />
         <span class="custom-emojis__code">:${safeCode}:</span>
-        <button type="button" class="btn btn--passive btn--medium" data-remove-shortcode="${safeCode}">Remove</button>
+        <button type="button" class="btn btn--passive btn--medium" data-remove-shortcode="${safeCode}">${_('Remove')}</button>
       </div>
     `;
   }
@@ -233,7 +236,7 @@ export class CustomEmojisSettings extends SettingsSection {
     const code = codeInput.value.trim();
     const url = urlInput.value.trim();
     if (!code || !url) {
-      ToastService.show('Shortcode and URL are required', 'error');
+      ToastService.show(_('Shortcode and URL are required'), 'error');
       return;
     }
 
@@ -241,7 +244,7 @@ export class CustomEmojisSettings extends SettingsSection {
       await EmojiService.getInstance().addEmoji(code, url);
       codeInput.value = '';
       urlInput.value = '';
-      ToastService.show(`Added :${code}:`, 'success');
+      ToastService.show(_('Added :%s:', code), 'success');
     } catch (err) {
       ToastService.show((err as Error).message, 'error');
     }
@@ -257,12 +260,12 @@ export class CustomEmojisSettings extends SettingsSection {
     if (!urlInput) return;
 
     if (!file.type.startsWith('image/')) {
-      ToastService.show('Please select an image file', 'error');
+      ToastService.show(_('Please select an image file'), 'error');
       return;
     }
 
     if (status) {
-      status.textContent = 'Uploading…';
+      status.textContent = _('Uploading…');
       status.classList.add('pulsate');
     }
 
@@ -272,7 +275,7 @@ export class CustomEmojisSettings extends SettingsSection {
       const mediaApi =
         await ModuleLoader.getInstance().ensure<MediaApi>('media');
       if (!mediaApi) {
-        ToastService.show('Media module not available', 'error');
+        ToastService.show(_('Media module not available'), 'error');
         return;
       }
       const result = await mediaApi.uploadFile(file);
@@ -283,10 +286,10 @@ export class CustomEmojisSettings extends SettingsSection {
           'success'
         );
       } else {
-        ToastService.show(result.error || 'Upload failed', 'error');
+        ToastService.show(result.error || _('Upload failed'), 'error');
       }
     } catch (err) {
-      ToastService.show((err as Error).message || 'Upload failed', 'error');
+      ToastService.show((err as Error).message || _('Upload failed'), 'error');
     } finally {
       if (status) {
         status.textContent = '';
@@ -298,7 +301,7 @@ export class CustomEmojisSettings extends SettingsSection {
   private async handleRemove(shortcode: string): Promise<void> {
     try {
       await EmojiService.getInstance().removeEmoji(shortcode);
-      ToastService.show(`Removed :${shortcode}:`, 'success');
+      ToastService.show(_('Removed :%s:', shortcode), 'success');
     } catch (err) {
       ToastService.show((err as Error).message, 'error');
     }
@@ -315,13 +318,13 @@ export class CustomEmojisSettings extends SettingsSection {
     ) as HTMLElement | null;
     if (!mount) return;
 
-    mount.innerHTML = `<p class="custom-emojis__hint pulsate">Fetching emoji packs…</p>`;
+    mount.innerHTML = `<p class="custom-emojis__hint pulsate">${_('Fetching emoji packs…')}</p>`;
 
     try {
       const packs = await EmojiService.getInstance().fetchUserPacks(pubkey);
       this.renderBrowseResults(mount, packs);
     } catch (err) {
-      mount.innerHTML = `<p class="custom-emojis__empty">Failed to fetch emoji packs: ${escapeHtml((err as Error).message)}</p>`;
+      mount.innerHTML = `<p class="custom-emojis__empty">${_('Failed to fetch emoji packs: %s', escapeHtml((err as Error).message))}</p>`;
     }
   }
 
@@ -330,7 +333,7 @@ export class CustomEmojisSettings extends SettingsSection {
     packs: RemoteEmojiPack[]
   ): void {
     if (packs.length === 0) {
-      mount.innerHTML = `<p class="custom-emojis__empty">This user has no custom emoji packs.</p>`;
+      mount.innerHTML = `<p class="custom-emojis__empty">${_('This user has no custom emoji packs.')}</p>`;
       return;
     }
 
@@ -340,7 +343,7 @@ export class CustomEmojisSettings extends SettingsSection {
       <div class="custom-emojis__remote-pack" data-pack-index="${packIdx}">
         <div class="l-spread">
           <h3>${escapeHtml(pack.name)} <small>(${pack.emojis.length})</small></h3>
-          <button class="btn btn--passive btn--medium" data-import-all="${packIdx}">Import all</button>
+          <button class="btn btn--passive btn--medium" data-import-all="${packIdx}">${_('Import all')}</button>
         </div>
         <div class="custom-emojis__remote-grid">
           ${pack.emojis
@@ -381,8 +384,8 @@ export class CustomEmojisSettings extends SettingsSection {
               await EmojiService.getInstance().importEmoji(emoji);
             const msg =
               finalCode === emoji.shortcode
-                ? `Imported :${finalCode}:`
-                : `Imported as :${finalCode}: (shortcode collision)`;
+                ? _('Imported :%s:', finalCode)
+                : _('Imported as :%s: (shortcode collision)', finalCode);
             ToastService.show(msg, 'success');
           } catch (err) {
             ToastService.show((err as Error).message, 'error');
@@ -401,20 +404,24 @@ export class CustomEmojisSettings extends SettingsSection {
           const pack = packs[pIdx];
           if (!pack) return;
           btn.disabled = true;
-          btn.textContent = 'Importing…';
+          btn.textContent = _('Importing…');
           try {
             const count = await EmojiService.getInstance().importPack(
               pack.emojis
             );
             ToastService.show(
-              `Imported ${count} emoji${count === 1 ? '' : 's'} from "${pack.name}"`,
+              _(
+                'Imported %s from "%s"',
+                tn('%s emoji', '%s emojis', count, String(count)),
+                pack.name
+              ),
               'success'
             );
           } catch (err) {
             ToastService.show((err as Error).message, 'error');
           } finally {
             btn.disabled = false;
-            btn.textContent = 'Import all';
+            btn.textContent = _('Import all');
           }
         });
       });

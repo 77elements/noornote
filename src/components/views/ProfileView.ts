@@ -166,6 +166,8 @@ export class ProfileView extends View {
 
   // nn-tooltip disposers for the header icon row
   private tooltipDisposers: Array<() => void> = [];
+  /** Disposer for the petname-note tooltip (re-attached on each render()). */
+  private petnoteTooltipDispose: (() => void) | null = null;
 
   constructor(npub: string) {
     super(); // Call View base class constructor
@@ -1210,13 +1212,20 @@ export class ProfileView extends View {
       '.lightning-qr-btn',
       '.profile-zap-btn',
       '.soft-mute-btn',
+      // Checkbox labels in the mute row still carry native titles — convert
+      // them too (loop skips elements without a title attribute).
+      '.profile-actions .nn-checkbox',
     ];
     selectors.forEach(sel => {
-      const el = this.container.querySelector(sel) as HTMLElement | null;
-      const label = el?.getAttribute('title');
-      if (!el || !label) return;
-      el.removeAttribute('title');
-      this.tooltipDisposers.push(Tooltip.attach(el, label));
+      // querySelectorAll: some selectors (e.g. the mute-row checkbox labels)
+      // match several elements — every match gets its own tooltip.
+      this.container.querySelectorAll(sel).forEach(node => {
+        const el = node as HTMLElement;
+        const label = el.getAttribute('title');
+        if (!label) return;
+        el.removeAttribute('title');
+        this.tooltipDisposers.push(Tooltip.attach(el, label));
+      });
     });
   }
 
@@ -1477,7 +1486,14 @@ export class ProfileView extends View {
         const note = service.getPetname(this.pubkey);
         const filled = !!note;
         noteEl.classList.toggle('profile-petname-note--filled', filled);
-        noteEl.title = filled ? _('Edit private note') : _('Add private note');
+        // nn-tooltip instead of a native title: the element renders late (after
+        // PetnameService import), so attachIconTooltips() never sees it. Dispose
+        // any previous attachment before re-attaching (render() re-runs).
+        const label = filled
+          ? _('Edit private note')
+          : _('Add private note. Only readable by you under this npub.');
+        this.petnoteTooltipDispose?.();
+        this.petnoteTooltipDispose = Tooltip.attach(noteEl, label);
         noteEl.innerHTML =
           '<svg width="18" height="18"><use href="#icon-note"/></svg>';
       };
@@ -2531,6 +2547,8 @@ export class ProfileView extends View {
     // Detach header icon tooltips
     this.tooltipDisposers.forEach(dispose => dispose());
     this.tooltipDisposers = [];
+    this.petnoteTooltipDispose?.();
+    this.petnoteTooltipDispose = null;
 
     // Cleanup profile subscription
     this.profileUnsubscribe?.();

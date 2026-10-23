@@ -9,6 +9,7 @@
 
 import { View } from '../../components/views/View';
 import { CustomEmojisSettings } from './CustomEmojisSettings';
+import { _ } from '../../i18n';
 
 export class CustomEmojisView extends View {
   private container: HTMLElement;
@@ -21,7 +22,7 @@ export class CustomEmojisView extends View {
       'view-content view-content--addon view-content--addon-custom-emojis';
     this.container.innerHTML = `
       <div class="back-padder">
-        <h1>Custom Emojis</h1>
+        <h1>${_('Custom Emojis')}</h1>
         <section class="section" id="custom-emojis-settings-content"></section>
         <div data-addon-content="custom-emojis"></div>
       </div>

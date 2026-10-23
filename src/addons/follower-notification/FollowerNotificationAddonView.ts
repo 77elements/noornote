@@ -1,5 +1,6 @@
 import { View } from '../../components/views/View';
 import { FollowerNotificationSettings } from './FollowerNotificationSettings';
+import { _ } from '../../i18n';
 
 export class FollowerNotificationAddonView extends View {
   private container: HTMLElement;
@@ -12,7 +13,7 @@ export class FollowerNotificationAddonView extends View {
       'view-content view-content--addon view-content--addon-follower-notification';
     this.container.innerHTML = `
       <div class="back-padder">
-        <h1>Follower Notification</h1>
+        <h1>${_('Follower Notification')}</h1>
         <section class="section" id="follower-notification-settings-content"></section>
         <div data-addon-content="follower-notification"></div>
       </div>

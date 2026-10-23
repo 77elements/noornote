@@ -32,6 +32,7 @@ import {
   getCurrentUserPubkey,
 } from './relays';
 import { PerAccountLocalStorage } from '../services/PerAccountLocalStorage';
+import { _ } from '../i18n';
 import { SystemLogger } from '../services/SystemLogger';
 import {
   temporaryUnmute,
@@ -694,7 +695,7 @@ export async function restoreFromFile(): Promise<void> {
       'Restore aborted: file empty but browser has items'
     );
     throw new Error(
-      'File is empty. Use "Sync from Relays" to restore your mutes.'
+      _('File is empty. Use "Sync from Relays" to restore your mutes.')
     );
   }
 
@@ -1313,24 +1314,24 @@ export class MuteListView extends View {
   public async render(): Promise<HTMLElement> {
     this.container.innerHTML = `
       <div class="mute-list-header">
-        <h2>Mute List</h2>
-        <p class="mute-list-description">Manage muted users and threads. Muted content won't appear in your timeline or notifications.</p>
+        <h2>${_('Mute List')}</h2>
+        <p class="mute-list-description">${_("Manage muted users and threads. Muted content won't appear in your timeline or notifications.")}</p>
 
         <div class="mute-list-actions">
           <div class="mute-list-actions__group">
-            <button class="btn btn--mini" id="sync-from-relays-btn">Sync from Relays</button>
-            <button class="btn btn--mini" id="sync-to-relays-btn">Sync to Relays</button>
+            <button class="btn btn--mini" id="sync-from-relays-btn">${_('Sync from Relays')}</button>
+            <button class="btn btn--mini" id="sync-to-relays-btn">${_('Sync to Relays')}</button>
           </div>
 
           <div class="mute-list-actions__group">
-            <button class="btn btn--mini btn--passive" id="save-to-file-btn">Save to File</button>
-            <button class="btn btn--mini btn--passive" id="restore-from-file-btn">Restore from File</button>
+            <button class="btn btn--mini btn--passive" id="save-to-file-btn">${_('Save to File')}</button>
+            <button class="btn btn--mini btn--passive" id="restore-from-file-btn">${_('Restore from File')}</button>
           </div>
         </div>
       </div>
 
       <div class="mute-list-content" id="mute-list-content">
-        <div class="mute-list-loading">Loading mute list...</div>
+        <div class="mute-list-loading">${_('Loading mute list...')}</div>
       </div>
     `;
 
@@ -1356,7 +1357,7 @@ export class MuteListView extends View {
   private async loadMuteList(): Promise<void> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      this.renderError('Please log in to view your mute list.');
+      this.renderError(_('Please log in to view your mute list.'));
       return;
     }
 
@@ -1396,8 +1397,8 @@ export class MuteListView extends View {
       content.innerHTML = `
         <div class="mute-list-empty">
           <svg width="48" height="48"><use href="#icon-mute-large"/></svg>
-          <h3>No Muted Content</h3>
-          <p>You haven't muted anyone or any threads yet.</p>
+          <h3>${_('No Muted Content')}</h3>
+          <p>${_("You haven't muted anyone or any threads yet.")}</p>
         </div>
       `;
       return;
@@ -1431,7 +1432,7 @@ export class MuteListView extends View {
                 <img class="profile-pic profile-pic--mini" src="${escapeHtmlAttr(avatarUrl)}" alt="${escapeHtmlAttr(username)}" width="18" height="18" loading="lazy" decoding="async" />${escapeHtml(username)}</a></span>${lockIcon}
           </div>
           <button class="btn btn--passive btn--medium unmute-user-btn" data-pubkey="${pubkey}">
-            Unmute
+            ${_('Unmute')}
           </button>
         </div>
       `;
@@ -1443,7 +1444,7 @@ export class MuteListView extends View {
         <div class="mute-list-section__header">
           <h3 class="mute-list-section__title">
             <svg width="16" height="16"><use href="#icon-user-16"/></svg>
-            Muted Users
+            ${_('Muted Users')}
             <span class="mute-list-section__count">${this.mutedUsers.length}</span>
           </h3>
         </div>
@@ -1471,7 +1472,7 @@ export class MuteListView extends View {
             <span class="mute-list-item__event-id" title="${eventId}">${shortId}${lockIcon}</span>
           </div>
           <button class="btn btn--passive btn--medium unmute-thread-btn" data-event-id="${eventId}">
-            Unmute
+            ${_('Unmute')}
           </button>
         </div>
       `;
@@ -1483,10 +1484,10 @@ export class MuteListView extends View {
         <div class="mute-list-section__header">
           <h3 class="mute-list-section__title">
             <svg width="16" height="16"><use href="#icon-thread-bubble"/></svg>
-            Muted Threads
+            ${_('Muted Threads')}
             <span class="mute-list-section__count">${this.mutedThreads.length}</span>
           </h3>
-          <p class="mute-list-section__description">Threads you muted to stop notifications from replies.</p>
+          <p class="mute-list-section__description">${_('Threads you muted to stop notifications from replies.')}</p>
         </div>
         <div class="mute-list-items">
           ${threadItems}
@@ -1526,7 +1527,7 @@ export class MuteListView extends View {
 
   private async handleSyncFromRelays(): Promise<void> {
     try {
-      ToastService.show('Fetching from relays...', 'info');
+      ToastService.show(_('Fetching from relays...'), 'info');
       const result = await this.adapter.syncFromRelays();
 
       if (result.requiresConfirmation) {
@@ -1559,7 +1560,7 @@ export class MuteListView extends View {
           },
           onLocal: async () => {
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-            ToastService.show('Local mutes pushed to relays', 'success');
+            ToastService.show(_('Local mutes pushed to relays'), 'success');
             await this.loadMuteList();
           },
         });
@@ -1573,32 +1574,32 @@ export class MuteListView extends View {
         await this.loadMuteList();
       }
     } catch {
-      ToastService.show('Failed to sync from relays', 'error');
+      ToastService.show(_('Failed to sync from relays'), 'error');
     }
   }
 
   private async handleSyncToRelays(): Promise<void> {
     try {
-      ToastService.show('Publishing to relays...', 'info');
+      ToastService.show(_('Publishing to relays...'), 'info');
       await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-      ToastService.show('Mute list published successfully', 'success');
+      ToastService.show(_('Mute list published successfully'), 'success');
     } catch {
-      ToastService.show('Failed to publish to relays', 'error');
+      ToastService.show(_('Failed to publish to relays'), 'error');
     }
   }
 
   private async handleSaveToFile(): Promise<void> {
     try {
-      ToastService.show('Saving to file...', 'info');
+      ToastService.show(_('Saving to file...'), 'info');
       const browserItems = this.adapter.getBrowserItems();
       if (PlatformService.getInstance().isDesktop) {
         await this.adapter.setFileItems(browserItems);
       } else {
         downloadAsJson(browserItems, 'mutes');
       }
-      ToastService.show('Saved to local file', 'success');
+      ToastService.show(_('Saved to local file'), 'success');
     } catch {
-      ToastService.show('Failed to save to file', 'error');
+      ToastService.show(_('Failed to save to file'), 'error');
     }
   }
 
@@ -1622,7 +1623,7 @@ export class MuteListView extends View {
         };
       } else {
         // Desktop: Read from local file
-        ToastService.show('Reading from file...', 'info');
+        ToastService.show(_('Reading from file...'), 'info');
         result = await this.adapter.syncFromFile();
       }
 
@@ -1656,7 +1657,7 @@ export class MuteListView extends View {
           },
           onLocal: async () => {
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-            ToastService.show('Local mutes pushed to relays', 'success');
+            ToastService.show(_('Local mutes pushed to relays'), 'success');
             await this.loadMuteList();
           },
         });
@@ -1669,7 +1670,7 @@ export class MuteListView extends View {
         );
         await this.loadMuteList();
       } else {
-        ToastService.show('File is identical to current list', 'info');
+        ToastService.show(_('File is identical to current list'), 'info');
       }
     } catch (error) {
       ToastService.show(
@@ -1682,7 +1683,7 @@ export class MuteListView extends View {
   private async handleUnmuteUser(pubkey: string): Promise<void> {
     try {
       await this.muteOrch.unmuteUserCompletely(pubkey);
-      ToastService.show('User unmuted', 'success');
+      ToastService.show(_('User unmuted'), 'success');
 
       this.mutedUsers = this.mutedUsers.filter(u => u.pubkey !== pubkey);
       this.renderMuteList();
@@ -1699,14 +1700,14 @@ export class MuteListView extends View {
 
       TypedEventBus.getInstance().emit('mute:updated');
     } catch {
-      ToastService.show('Failed to unmute user', 'error');
+      ToastService.show(_('Failed to unmute user'), 'error');
     }
   }
 
   private async handleUnmuteThread(eventId: string): Promise<void> {
     try {
       await this.muteOrch.unmuteThread(eventId);
-      ToastService.show('Thread unmuted', 'success');
+      ToastService.show(_('Thread unmuted'), 'success');
 
       this.mutedThreads = this.mutedThreads.filter(t => t.eventId !== eventId);
       this.renderMuteList();
@@ -1714,7 +1715,7 @@ export class MuteListView extends View {
       eventBus.emit('mute:thread:updated', { eventId });
       eventBus.emit('mute:updated');
     } catch {
-      ToastService.show('Failed to unmute thread', 'error');
+      ToastService.show(_('Failed to unmute thread'), 'error');
     }
   }
 
@@ -1838,7 +1839,7 @@ export class MuteListManager {
 
   public async renderListTab(content: HTMLElement): Promise<void> {
     content.innerHTML = `
-      <div class="mute-list-loading">Loading mute list...</div>
+      <div class="mute-list-loading">${_('Loading mute list...')}</div>
     `;
 
     try {
@@ -1850,7 +1851,7 @@ export class MuteListManager {
       if (!hasUsers && !hasThreads) {
         content.innerHTML = `${renderListSyncButtons()}
           <div class="list-empty">
-            <p>No muted users or threads</p>
+            <p>${_('No muted users or threads')}</p>
           </div>
         `;
         this.bindSyncButtons(content);
@@ -1863,7 +1864,7 @@ export class MuteListManager {
         html += `
           <div class="mute-section">
             <div class="mute-section__header l-spread">
-              <h2 class="small">Muted Users</h2>
+              <h2 class="small">${_('Muted Users')}</h2>
               <span class="badge">${this.allItemsWithProfiles.length}</span>
             </div>
             <div class="mutes-list mutes-list--users"></div>
@@ -1875,7 +1876,7 @@ export class MuteListManager {
         html += `
           <div class="mute-section">
             <div class="mute-section__header l-spread">
-              <h2 class="small">Muted Threads</h2>
+              <h2 class="small">${_('Muted Threads')}</h2>
               <span class="badge">${this.mutedThreads.length}</span>
             </div>
             <div class="mutes-list mutes-list--threads"></div>
@@ -1907,7 +1908,7 @@ export class MuteListManager {
       console.error('Failed to load mute list:', error);
       content.innerHTML = `
         <div class="list-error">
-          <p>Failed to load mute list</p>
+          <p>${_('Failed to load mute list')}</p>
         </div>
       `;
     }
@@ -1925,7 +1926,7 @@ export class MuteListManager {
 
   private async handleSyncFromRelays(container: HTMLElement): Promise<void> {
     try {
-      ToastService.show('Fetching from relays...', 'info');
+      ToastService.show(_('Fetching from relays...'), 'info');
       const result = await this.adapter.syncFromRelays();
 
       if (result.requiresConfirmation) {
@@ -1957,7 +1958,7 @@ export class MuteListManager {
           },
           onLocal: async () => {
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-            ToastService.show('Local mutes pushed to relays', 'success');
+            ToastService.show(_('Local mutes pushed to relays'), 'success');
             await this.renderListTab(container);
           },
         });
@@ -1972,34 +1973,34 @@ export class MuteListManager {
       }
     } catch (error) {
       console.error('Failed to sync from relays:', error);
-      ToastService.show('Failed to sync from relays', 'error');
+      ToastService.show(_('Failed to sync from relays'), 'error');
     }
   }
 
   private async handleSyncToRelays(): Promise<void> {
     try {
-      ToastService.show('Publishing to relays...', 'info');
+      ToastService.show(_('Publishing to relays...'), 'info');
       await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-      ToastService.show('Mute List published successfully', 'success');
+      ToastService.show(_('Mute List published successfully'), 'success');
     } catch (error) {
       console.error('Failed to publish to relays:', error);
-      ToastService.show('Failed to publish to relays', 'error');
+      ToastService.show(_('Failed to publish to relays'), 'error');
     }
   }
 
   private async handleSaveToFile(): Promise<void> {
     try {
-      ToastService.show('Saving...', 'info');
+      ToastService.show(_('Saving...'), 'info');
       const browserItems = this.adapter.getBrowserItems();
       if (PlatformService.getInstance().isDesktop) {
         await this.adapter.setFileItems(browserItems);
       } else {
         downloadAsJson(browserItems, 'mutes');
       }
-      ToastService.show('Saved successfully', 'success');
+      ToastService.show(_('Saved successfully'), 'success');
     } catch (error) {
       console.error('Failed to save to file:', error);
-      ToastService.show('Failed to save', 'error');
+      ToastService.show(_('Failed to save'), 'error');
     }
   }
 
@@ -2023,7 +2024,7 @@ export class MuteListManager {
         };
       } else {
         // Desktop: Read from local file
-        ToastService.show('Reading from file...', 'info');
+        ToastService.show(_('Reading from file...'), 'info');
         result = await this.adapter.syncFromFile();
       }
 
@@ -2056,7 +2057,7 @@ export class MuteListManager {
           },
           onLocal: async () => {
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-            ToastService.show('Local mutes pushed to relays', 'success');
+            ToastService.show(_('Local mutes pushed to relays'), 'success');
             await this.renderListTab(container);
           },
         });
@@ -2069,7 +2070,7 @@ export class MuteListManager {
         );
         await this.renderListTab(container);
       } else {
-        ToastService.show('File is identical to current list', 'info');
+        ToastService.show(_('File is identical to current list'), 'info');
       }
     } catch (error) {
       console.error('Failed to restore from file:', error);
@@ -2097,7 +2098,7 @@ export class MuteListManager {
           <div class="mute-item__info">
             <div class="mute-item__username">
               ${escapeHtml(username)}
-              ${item.status.private ? '<span class="private-badge">🔒 Private</span>' : ''}
+              ${item.status.private ? `<span class="private-badge">${_('🔒 Private')}</span>` : ''}
             </div>
           </div>
         </div>
@@ -2132,7 +2133,7 @@ export class MuteListManager {
         ? thread.content.length > 80
           ? `${thread.content.slice(0, 80)}...`
           : thread.content
-        : 'Content unavailable';
+        : _('Content unavailable');
 
       const threadDiv = document.createElement('div');
       threadDiv.className = 'ui-list__item mute-item mute-item--thread';
@@ -2180,7 +2181,7 @@ export class MuteListManager {
 
     try {
       await this.muteOrch.unmuteUserCompletely(item.pubkey);
-      ToastService.show('User unmuted', 'success');
+      ToastService.show(_('User unmuted'), 'success');
 
       itemElement.remove();
       this.allItemsWithProfiles = this.allItemsWithProfiles.filter(
@@ -2200,7 +2201,7 @@ export class MuteListManager {
       this.eventBus.emit('mute:updated');
     } catch (error) {
       console.error('Failed to unmute user:', error);
-      ToastService.show('Failed to unmute user', 'error');
+      ToastService.show(_('Failed to unmute user'), 'error');
     }
   }
 
@@ -2210,7 +2211,7 @@ export class MuteListManager {
   ): Promise<void> {
     try {
       await this.muteOrch.unmuteThread(eventId);
-      ToastService.show('Thread unmuted', 'success');
+      ToastService.show(_('Thread unmuted'), 'success');
 
       itemElement.remove();
       this.mutedThreads = this.mutedThreads.filter(t => t.eventId !== eventId);
@@ -2219,7 +2220,7 @@ export class MuteListManager {
       this.eventBus.emit('mute:updated');
     } catch (error) {
       console.error('Failed to unmute thread:', error);
-      ToastService.show('Failed to unmute thread', 'error');
+      ToastService.show(_('Failed to unmute thread'), 'error');
     }
   }
 
@@ -2356,7 +2357,7 @@ export class ProfileMuteManager {
       onMuted();
     } catch (error) {
       console.error('Failed to mute user:', error);
-      ToastService.show('Failed to mute user', 'error');
+      ToastService.show(_('Failed to mute user'), 'error');
     }
   }
 
@@ -2376,11 +2377,11 @@ export class ProfileMuteManager {
       <div class="profile-muted">
         <div class="profile-muted__content">
           <span class="profile-muted__icon">🔇</span>
-          <h2>Profile of a user you have muted</h2>
-          <p>You've muted ${escapeHtmlFn(username)}.</p>
+          <h2>${_('Profile of a user you have muted')}</h2>
+          <p>${_("You've muted %s.", escapeHtmlFn(username))}</p>
           <div class="profile-muted__actions">
             <button class="btn profile-muted__unmute" data-pubkey="${this.targetPubkey}">
-              Unmute
+              ${_('Unmute')}
             </button>
           </div>
         </div>
@@ -2401,11 +2402,11 @@ export class ProfileMuteManager {
 
         try {
           await this.muteOrch.unmuteUserCompletely(this.targetPubkey);
-          ToastService.show('User unmuted', 'success');
+          ToastService.show(_('User unmuted'), 'success');
           onUnmuted();
         } catch (error) {
           console.error('Failed to unmute user:', error);
-          ToastService.show('Failed to unmute user', 'error');
+          ToastService.show(_('Failed to unmute user'), 'error');
         }
       });
     }

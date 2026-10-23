@@ -5,6 +5,7 @@
  */
 
 import { escapeHtml } from '../helpers/escapeHtml';
+import { _ } from '../i18n';
 
 export interface DropdownItem {
   action: string; // data-action value, e.g. 'new-folder'
@@ -36,8 +37,8 @@ export function renderListHeader(
 
   const dropdownBlock = `
       <div class="nn-dropdown" data-list-header-dropdown>
-        <button class="nn-dropdown__trigger" type="button" title="Create new">
-          <span class="nn-dropdown__label">+ New</span>
+        <button class="nn-dropdown__trigger" type="button" title="${_('Create new')}">
+          <span class="nn-dropdown__label">${_('+ New')}</span>
           <span class="nn-dropdown__arrow" aria-hidden="true"></span>
         </button>
         <ul class="nn-dropdown__menu" role="listbox">

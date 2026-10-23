@@ -13,6 +13,7 @@ import { ToastService } from '../../services/ToastService';
 import { ErrorService } from '../../services/ErrorService';
 import { AuthGuard } from '../../services/AuthGuard';
 import { diagLog } from '../../services/DiagnosticLogger';
+import { _ } from '../../i18n';
 
 export interface BadgeDefinitionInput {
   slug: string;
@@ -80,7 +81,7 @@ export class BadgeService {
     try {
       const signedEvent = await this.authService.signEvent(unsignedEvent);
       if (!signedEvent) {
-        ToastService.show('Signing failed', 'error');
+        ToastService.show(_('Signing failed'), 'error');
         return false;
       }
       await this.transport.publishContent(signedEvent);
@@ -88,7 +89,7 @@ export class BadgeService {
         slug: input.slug,
         name: input.name,
       });
-      ToastService.show('Badge created', 'success');
+      ToastService.show(_('Badge created'), 'success');
       void this.fetchOwnDefinitions();
       return true;
     } catch (error) {
@@ -96,7 +97,7 @@ export class BadgeService {
         error,
         'BadgeService.createBadgeDefinition',
         true,
-        'Failed to create badge'
+        _('Failed to create badge')
       );
       return false;
     }
@@ -126,7 +127,7 @@ export class BadgeService {
     try {
       const signedEvent = await this.authService.signEvent(unsignedEvent);
       if (!signedEvent) {
-        ToastService.show('Signing failed', 'error');
+        ToastService.show(_('Signing failed'), 'error');
         return false;
       }
       await this.transport.publishContent(signedEvent);
@@ -134,14 +135,14 @@ export class BadgeService {
         coordinate,
         recipients: recipientPubkeys.length,
       });
-      ToastService.show('Badge awarded', 'success');
+      ToastService.show(_('Badge awarded'), 'success');
       return true;
     } catch (error) {
       ErrorService.handle(
         error,
         'BadgeService.awardBadge',
         true,
-        'Failed to award badge'
+        _('Failed to award badge')
       );
       return false;
     }
@@ -190,19 +191,19 @@ export class BadgeService {
     try {
       const signedEvent = await this.authService.signEvent(unsignedEvent);
       if (!signedEvent) {
-        ToastService.show('Signing failed', 'error');
+        ToastService.show(_('Signing failed'), 'error');
         return false;
       }
       await this.transport.publishEverywhere(signedEvent);
       diagLog('system', 'Badge accepted', { badgeCoordinate, awardEventId });
-      ToastService.show('Badge accepted', 'success');
+      ToastService.show(_('Badge accepted'), 'success');
       return true;
     } catch (error) {
       ErrorService.handle(
         error,
         'BadgeService.acceptBadge',
         true,
-        'Failed to accept badge'
+        _('Failed to accept badge')
       );
       return false;
     }
@@ -235,14 +236,14 @@ export class BadgeService {
       const success = await (ModuleLoader.getInstance()
         .getApi<import('../../modules/posts/contracts').PostsModuleApi>('posts')
         ?.deleteEvent(awardEventId) ?? Promise.resolve(false));
-      if (success) ToastService.show('Badge revoked', 'success');
+      if (success) ToastService.show(_('Badge revoked'), 'success');
       return success;
     } catch (error) {
       ErrorService.handle(
         error,
         'BadgeService.revokeAward',
         true,
-        'Failed to revoke badge'
+        _('Failed to revoke badge')
       );
       return false;
     }

@@ -19,6 +19,7 @@ import { hexToNpub } from '../../helpers/nip19';
 import { formatTimestamp } from '../../helpers/formatTimestamp';
 import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { _ } from '../../i18n';
 
 export class MarketplaceTimeline {
   private element: HTMLElement;
@@ -53,7 +54,7 @@ export class MarketplaceTimeline {
     ) as HTMLElement;
 
     this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
-      loadingMessage: 'Loading more listings...',
+      loadingMessage: _('Loading more listings...'),
     });
 
     void this.initialize();
@@ -66,8 +67,8 @@ export class MarketplaceTimeline {
       <div class="marketplace-timeline__sticky-header">
         <header class="marketplace-view__header">
           <div class="l-row l-row--right">
-            <a href="/my-listings" class="btn btn--passive btn--medium marketplace-view__dashboard-btn" style="display: none;">Dashboard</a>
-            <a href="/write-listing" class="btn btn--medium marketplace-view__add-btn" style="display: none;">Add Product</a>
+            <a href="/my-listings" class="btn btn--passive btn--medium marketplace-view__dashboard-btn" style="display: none;">${_('Dashboard')}</a>
+            <a href="/write-listing" class="btn btn--medium marketplace-view__add-btn" style="display: none;">${_('Add Product')}</a>
           </div>
         </header>
         <div class="marketplace-timeline__filters"></div>
@@ -236,7 +237,7 @@ export class MarketplaceTimeline {
       .slice(0, 12);
 
     this.filterBar.innerHTML = `
-      <button class="marketplace-filter__chip ${!this.activeTag ? 'marketplace-filter__chip--active' : ''}" data-filter-tag="">All</button>
+      <button class="marketplace-filter__chip ${!this.activeTag ? 'marketplace-filter__chip--active' : ''}" data-filter-tag="">${_('All')}</button>
       ${sorted
         .map(
           ([tag, count]) => `
@@ -328,7 +329,9 @@ export class MarketplaceTimeline {
     const firstImage = meta.images[0] || '';
 
     const soldBadge =
-      meta.status === 'sold' ? '<span class="sold-badge">Sold</span>' : '';
+      meta.status === 'sold'
+        ? `<span class="sold-badge">${_('Sold')}</span>`
+        : '';
     card.innerHTML = `
       ${
         firstImage
@@ -351,7 +354,7 @@ export class MarketplaceTimeline {
         ${meta.location ? `<div class="location">${escapeHtml(meta.location)}</div>` : ''}
         <div class="meta">
           <span class="author user-mention" data-pubkey="${event.pubkey}">
-            <a href="#" class="mention-link" data-profile-pubkey="${event.pubkey}">Loading...</a>
+            <a href="#" class="mention-link" data-profile-pubkey="${event.pubkey}">${_('Loading...')}</a>
           </span>
           <span class="date">${formatTimestamp(meta.publishedAt)}</span>
         </div>
@@ -442,8 +445,8 @@ export class MarketplaceTimeline {
     this.listingsContainer.innerHTML = `
       <div class="marketplace-timeline__empty">
         <svg width="48" height="48"><use href="#icon-shopping-bag"/></svg>
-        <p>No listings found</p>
-        <span>Marketplace listings will appear here</span>
+        <p>${_('No listings found')}</p>
+        <span>${_('Marketplace listings will appear here')}</span>
       </div>
     `;
   }
@@ -451,8 +454,8 @@ export class MarketplaceTimeline {
   private showError(): void {
     this.listingsContainer.innerHTML = `
       <div class="marketplace-timeline__error">
-        <p>Failed to load listings</p>
-        <button class="btn btn--passive" data-action="retry">Retry</button>
+        <p>${_('Failed to load listings')}</p>
+        <button class="btn btn--passive" data-action="retry">${_('Retry')}</button>
       </div>
     `;
 

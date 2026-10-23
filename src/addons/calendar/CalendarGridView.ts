@@ -20,6 +20,7 @@ import {
 } from '../../helpers/nip52/parser';
 import { getOccurrencesInRange } from '../../helpers/nip52/recurrence';
 import type { CalendarInvite } from './CalendarInviteService';
+import { _ } from '../../i18n';
 
 type GridMode = 'month' | 'week' | 'list';
 
@@ -136,14 +137,14 @@ export class CalendarGridView {
     try {
       const { CalendarInviteService } = await import('./CalendarInviteService');
       await CalendarInviteService.getInstance().acceptInvite(invite);
-      ToastService.show('Invitation accepted', 'success');
+      ToastService.show(_('Invitation accepted'), 'success');
       this.invites = this.invites.filter(
         candidate => candidate.wrapId !== invite.wrapId
       );
       this.render();
       void this.load();
     } catch {
-      ToastService.show('Could not accept invitation', 'error');
+      ToastService.show(_('Could not accept invitation'), 'error');
     }
   }
 
@@ -223,22 +224,22 @@ export class CalendarGridView {
     toolbar.innerHTML = `
       <div class="calendar-addon__toolbar-nav">
         <div class="nn-pager">
-          <button class="btn-icon" type="button" data-action="prev" aria-label="Previous">
+          <button class="btn-icon" type="button" data-action="prev" aria-label="${_('Previous')}">
             <svg width="20" height="20"><use href="#icon-caret-left"/></svg>
           </button>
           <div class="nn-pager__content">
-            <button class="btn btn--passive btn--mini" type="button" data-action="today">Today</button>
+            <button class="btn btn--passive btn--mini" type="button" data-action="today">${_('Today')}</button>
           </div>
-          <button class="btn-icon" type="button" data-action="next" aria-label="Next">
+          <button class="btn-icon" type="button" data-action="next" aria-label="${_('Next')}">
             <svg width="20" height="20"><use href="#icon-caret-up"/></svg>
           </button>
         </div>
         <span class="calendar-addon__range">${escapeHtml(this.rangeLabel())}</span>
       </div>
       <div class="tabs calendar-addon__tabs">
-        <button class="tab${this.mode === 'month' ? ' tab--active' : ''}" data-tab="month" type="button">Month</button>
-        <button class="tab${this.mode === 'week' ? ' tab--active' : ''}" data-tab="week" type="button">Week</button>
-        <button class="tab${this.mode === 'list' ? ' tab--active' : ''}" data-tab="list" type="button">List</button>
+        <button class="tab${this.mode === 'month' ? ' tab--active' : ''}" data-tab="month" type="button">${_('Month')}</button>
+        <button class="tab${this.mode === 'week' ? ' tab--active' : ''}" data-tab="week" type="button">${_('Week')}</button>
+        <button class="tab${this.mode === 'list' ? ' tab--active' : ''}" data-tab="list" type="button">${_('List')}</button>
       </div>
       <div class="l-row--right calendar-addon__toolbar-actions">
         <button class="btn btn--passive btn--mini" type="button" data-action="calendars">Calendars</button>
@@ -327,7 +328,7 @@ export class CalendarGridView {
     if (this.loading && this.entries.length === 0) {
       const loading = document.createElement('div');
       loading.className = 'calendar-addon__loading pulsate';
-      loading.textContent = 'Loading calendar…';
+      loading.textContent = _('Loading calendar…');
       target.appendChild(loading);
       return;
     }
@@ -339,8 +340,9 @@ export class CalendarGridView {
     if (this.uniqueEvents().length === 0 && !this.loading) {
       const empty = document.createElement('div');
       empty.className = 'calendar-addon__empty';
-      empty.textContent =
-        'No events yet. Create one — or find a public event calendar and hit Subscribe to fill your grid.';
+      empty.textContent = _(
+        'No events yet. Create one — or find a public event calendar and hit Subscribe to fill your grid.'
+      );
       target.appendChild(empty);
     }
   }
@@ -349,7 +351,7 @@ export class CalendarGridView {
     const grid = document.createElement('div');
     grid.className = 'calendar-addon__month';
     grid.innerHTML = WEEKDAY_LABELS.map(
-      label => `<div class="calendar-addon__weekday">${label}</div>`
+      label => `<div class="calendar-addon__weekday">${_(label)}</div>`
     ).join('');
 
     const [start, end] = this.monthRange();
@@ -372,7 +374,7 @@ export class CalendarGridView {
       if (total > 3) {
         const more = document.createElement('span');
         more.className = 'calendar-addon__more';
-        more.textContent = `+${total - 3} more`;
+        more.textContent = _('+%s more', String(total - 3));
         chips.appendChild(more);
       }
       cell.appendChild(chips);
@@ -397,7 +399,7 @@ export class CalendarGridView {
       const col = document.createElement('div');
       col.className = 'calendar-addon__week-col';
       const isToday = day.getTime() === this.startOfDay(new Date()).getTime();
-      col.innerHTML = `<div class="calendar-addon__weekday${isToday ? ' calendar-addon__weekday--today' : ''}">${WEEKDAY_LABELS[i]} ${day.getDate()}</div>`;
+      col.innerHTML = `<div class="calendar-addon__weekday${isToday ? ' calendar-addon__weekday--today' : ''}">${_(WEEKDAY_LABELS[i] ?? '')} ${day.getDate()}</div>`;
       const chips = document.createElement('div');
       chips.className = 'calendar-addon__chips';
       for (const entry of byDay.get(day.getTime()) ?? []) {
@@ -580,7 +582,7 @@ export class CalendarGridView {
         d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
       return `${fmt(weekStart)} – ${fmt(weekEnd)}`;
     }
-    return 'Upcoming';
+    return _('Upcoming');
   }
 
   private startOfDay(date: Date): Date {
@@ -593,7 +595,7 @@ export class CalendarGridView {
 
   private timeLabel(entry: GridEntry): string {
     const { event } = entry;
-    if (event.allDay) return 'All day';
+    if (event.allDay) return _('All day');
     const start = new Date(entry.occurrenceStartMs).toLocaleTimeString(
       undefined,
       {

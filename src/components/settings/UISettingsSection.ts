@@ -90,11 +90,11 @@ export class UISettingsSection extends SettingsSection {
     const hideSelfReposts = isHideSelfRepostsEnabled();
     const currentGap = getSelfRepostGap();
     const gapOptions: Array<[SelfRepostGap, string]> = [
-      ['3d', '3 days'],
-      ['1w', '1 week'],
-      ['3mo', '3 months'],
-      ['1y', '1 year'],
-      ['all', 'All self-reposts (any age)'],
+      ['3d', _('3 days')],
+      ['1w', _('1 week')],
+      ['3mo', _('3 months')],
+      ['1y', _('1 year')],
+      ['all', _('All self-reposts (any age)')],
     ];
 
     return `
@@ -103,59 +103,59 @@ export class UISettingsSection extends SettingsSection {
             <span class="setting__label">${_('Language')}</span>
             <div class="setting__control language-dropdown-container"></div>
             <ul class="setting__desc">
-              <li><strong>Deutsch:</strong> pilot translation (partial — untranslated text stays English)</li>
+              <li><strong>Deutsch:</strong> ${_('pilot translation (partial — untranslated text stays English)')}</li>
             </ul>
           </div>
         </section>
 
         <section class="section">
           <div class="setting">
-            <span class="setting__label">Theme</span>
+            <span class="setting__label">${_('Theme')}</span>
             <div class="setting__control" id="theme-switcher-mount"></div>
           </div>
         </section>
 
         <section class="section">
           <div class="setting">
-            <span class="setting__label">Font Size</span>
+            <span class="setting__label">${_('Font Size')}</span>
             <div class="setting__control" id="font-size-switcher-mount"></div>
           </div>
         </section>
 
         <section class="section">
           <div class="setting">
-            <span class="setting__label">Layout Mode</span>
+            <span class="setting__label">${_('Layout Mode')}</span>
             <div class="setting__control layout-mode-dropdown-container"></div>
             <ul class="setting__desc">
-              <li><strong>Default:</strong> Views replace the timeline in the main pane, right pane shows System Logger</li>
-              <li><strong>Right Pane:</strong> Views open as tabs in the right pane, timeline stays visible in main pane</li>
-              <li><strong>Wide Mode:</strong> Views replace the timeline, right pane is hidden for maximum content space</li>
-              <li><strong>Phone:</strong> Single-column layout (390px width) for phone development and testing</li>
+              <li><strong>${_('Default')}:</strong> ${_('Views replace the timeline in the main pane, right pane shows System Logger')}</li>
+              <li><strong>${_('Right Pane')}:</strong> ${_('Views open as tabs in the right pane, timeline stays visible in main pane')}</li>
+              <li><strong>${_('Wide Mode')}:</strong> ${_('Views replace the timeline, right pane is hidden for maximum content space')}</li>
+              <li><strong>${_('Phone')}:</strong> ${_('Single-column layout (390px width) for phone development and testing')}</li>
             </ul>
           </div>
         </section>
 
         <section class="section">
           <div class="setting">
-            <span class="setting__label">Date Format</span>
+            <span class="setting__label">${_('Date Format')}</span>
             <div class="setting__control calendar-system-dropdown-container"></div>
             <ul class="setting__desc">
-              <li><strong>Gregorian:</strong> Standard Western calendar (e.g., "30. Oct. 2024")</li>
-              <li><strong>Hijri:</strong> Islamic calendar (e.g., "26. Rabi' ath-Thani 1446")</li>
-              <li><strong>Gregorian + Hijri:</strong> Both calendars side-by-side</li>
+              <li><strong>${_('Gregorian')}:</strong> ${_('Standard Western calendar (e.g., "30. Oct. 2024")')}</li>
+              <li><strong>${_('Hijri')}:</strong> ${_('Islamic calendar (e.g., "26. Rabi\' ath-Thani 1446")')}</li>
+              <li><strong>${_('Gregorian + Hijri')}:</strong> ${_('Both calendars side-by-side')}</li>
             </ul>
           </div>
         </section>
 
         <section class="section">
           <div class="setting">
-            <span class="setting__label">Hide self-reposts</span>
+            <span class="setting__label">${_('Hide self-reposts')}</span>
             <div class="setting__control" id="hide-self-reposts-switch-container"></div>
             <p class="setting__desc">
-              When enabled, reposts of a user's own notes are hidden from your timeline. Reposts of other people's notes are unaffected.
+              ${_("When enabled, reposts of a user's own notes are hidden from your timeline. Reposts of other people's notes are unaffected.")}
             </p>
             <div class="self-repost-gap${hideSelfReposts ? '' : ' is-hidden'}" id="self-repost-gap-selector">
-              <span class="setting__label">Disable self-reposts younger than:</span>
+              <span class="setting__label">${_('Disable self-reposts younger than:')}</span>
               ${gapOptions
                 .map(
                   ([value, label]) => `
@@ -172,95 +172,89 @@ export class UISettingsSection extends SettingsSection {
 
         <section class="section">
           <div class="setting">
-            <span class="setting__label">Classic Menu</span>
+            <span class="setting__label">${_('Classic Menu')}</span>
             <div class="setting__control" id="classic-menu-switch-container"></div>
             <p class="setting__desc">
-              Bring back the old, linear navigation.
+              ${_('Bring back the old, linear navigation.')}
             </p>
           </div>
         </section>
 
         <section class="section">
           <div class="setting">
-            <span class="setting__label">Show reactions</span>
+            <span class="setting__label">${_('Show reactions')}</span>
             <div class="setting__control" id="show-reactions-switch-container"></div>
             <p class="setting__desc">
-              Show the reactions (likes) of people you follow as entries in your timeline. Off by default. Individual users can be enabled from their profile.
+              ${_('Show the reactions (likes) of people you follow as entries in your timeline. Off by default. Individual users can be enabled from their profile.')}
             </p>
           </div>
         </section>
 
         <section class="section">
           <div class="setting">
-            <span class="setting__label">Hide highlights</span>
+            <span class="setting__label">${_('Hide highlights')}</span>
             <div class="setting__control" id="hide-highlights-switch-container"></div>
             <p class="setting__desc">
-              When enabled, highlight posts by others that quote an external website (kind 9802 with a web source) are hidden from your timelines, including pure reposts of them. Your own highlights stay visible. Individual users can be hidden from their profile.
+              ${_('When enabled, highlight posts by others that quote an external website (kind 9802 with a web source) are hidden from your timelines, including pure reposts of them. Your own highlights stay visible. Individual users can be hidden from their profile.')}
             </p>
           </div>
         </section>
 
         <section class="section">
           <div class="setting">
-            <span class="setting__label">Disable post truncation</span>
+            <span class="setting__label">${_('Disable post truncation')}</span>
             <div class="setting__control" id="post-truncation-switch-container"></div>
             <p class="setting__desc">
-              When enabled, long posts will always be displayed in full without "Show More" buttons.
+              ${_('When enabled, long posts will always be displayed in full without "Show More" buttons.')}
             </p>
           </div>
         </section>
 
         <section class="section">
           <div class="setting">
-            <span class="setting__label">Article excerpt limit in secondary content column</span>
+            <span class="setting__label">${_('Article excerpt limit in secondary content column')}</span>
             <div class="setting__control">
               <input type="number" class="input" id="scc-excerpt-limit-input" min="50" max="1000" step="10" style="width: 80px" />
             </div>
             <p class="setting__desc">
-              Maximum number of characters for article excerpts in the side column. Default: 200.
+              ${_('Maximum number of characters for article excerpts in the side column. Default: 200.')}
             </p>
           </div>
         </section>
 
         <section class="section">
           <div class="setting">
-            <span class="setting__label">Article feed source — main view</span>
+            <span class="setting__label">${_('Article feed source — main view')}</span>
             <div class="setting__control article-foaf-main-dropdown-container"></div>
             <p class="setting__desc">
-              Whose articles appear in <strong>/articles</strong>. Higher degrees broaden the
-              feed beyond your direct follows but take longer to build and include authors you
-              may not know.
+              ${_('Whose articles appear in <strong>/articles</strong>. Higher degrees broaden the feed beyond your direct follows but take longer to build and include authors you may not know.')}
             </p>
           </div>
           <div class="setting">
-            <span class="setting__label">Article feed source — secondary column</span>
+            <span class="setting__label">${_('Article feed source — secondary column')}</span>
             <div class="setting__control article-foaf-scc-dropdown-container"></div>
             <p class="setting__desc">
-              Whose articles appear in the side column's "Newest Articles" tab. Same degree
-              meaning as above; you can pick a narrower degree here to keep the side panel
-              focused on closer contacts.
+              ${_('Whose articles appear in the side column\'s "Newest Articles" tab. Same degree meaning as above; you can pick a narrower degree here to keep the side panel focused on closer contacts.')}
             </p>
           </div>
         </section>
 
         <section class="section">
           <div class="setting">
-            <span class="setting__label">Memory optimization (experimental)</span>
+            <span class="setting__label">${_('Memory optimization (experimental)')}</span>
             <div class="setting__control" id="content-visibility-switch-container"></div>
             <p class="setting__desc">
-              Skips rendering of off-screen notes (CSS <code>content-visibility: auto</code>).
-              Significantly reduces memory usage on long timelines, especially on Linux.
-              May cause minor scrollbar jumps when scrolling fast — disable if it bothers you.
+              ${_('Skips rendering of off-screen notes (CSS <code>content-visibility: auto</code>). Significantly reduces memory usage on long timelines, especially on Linux. May cause minor scrollbar jumps when scrolling fast — disable if it bothers you.')}
             </p>
           </div>
         </section>
 
         <section class="section">
           <div class="setting">
-            <span class="setting__label">Sign posts with "via NoorNote"</span>
+            <span class="setting__label">${_('Sign posts with "via NoorNote"')}</span>
             <div class="setting__control" id="client-tag-switch-container"></div>
             <p class="setting__desc">
-              When enabled, every event you publish carries a <code>client</code> tag identifying NoorNote. Other Nostr clients display this as "via NoorNote" next to your posts.
+              ${_('When enabled, every event you publish carries a <code>client</code> tag identifying NoorNote. Other Nostr clients display this as "via NoorNote" next to your posts.')}
             </p>
           </div>
         </section>
@@ -270,11 +264,11 @@ export class UISettingsSection extends SettingsSection {
             ? `
         <section class="section">
           <div class="setting">
-            <span class="setting__label">Automatically check for updates</span>
+            <span class="setting__label">${_('Automatically check for updates')}</span>
             <div class="setting__control" id="auto-update-switch-container"></div>
           </div>
           <div class="l-row l-row--center">
-            <button class="btn btn--mini" id="check-update-now-btn">Check now</button>
+            <button class="btn btn--mini" id="check-update-now-btn">${_('Check now')}</button>
           </div>
         </section>
         `
@@ -375,11 +369,11 @@ export class UISettingsSection extends SettingsSection {
 
       this.layoutModeDropdown = new NnDropdown({
         options: [
-          { value: 'default', label: 'Default' },
-          { value: 'right-pane', label: 'Right Pane' },
-          { value: 'right-pane-rss', label: 'Right Pane (RSS Mode)' },
-          { value: 'wide', label: 'Wide Mode' },
-          { value: 'phone', label: 'Phone' },
+          { value: 'default', label: _('Default') },
+          { value: 'right-pane', label: _('Right Pane') },
+          { value: 'right-pane-rss', label: _('Right Pane (RSS Mode)') },
+          { value: 'wide', label: _('Wide Mode') },
+          { value: 'phone', label: _('Phone') },
         ],
         selectedValue: currentMode,
         onChange: async value => {
@@ -387,14 +381,14 @@ export class UISettingsSection extends SettingsSection {
           await this.layoutService.setMode(mode);
 
           const labels: Record<LayoutMode, string> = {
-            default: 'Default layout mode',
-            'right-pane': 'Right pane mode (views as tabs)',
-            'right-pane-rss': 'Right pane RSS mode (compact timeline)',
-            wide: 'Wide mode (hide right pane)',
-            phone: 'Phone layout (390px width)',
+            default: _('Default layout mode'),
+            'right-pane': _('Right pane mode (views as tabs)'),
+            'right-pane-rss': _('Right pane RSS mode (compact timeline)'),
+            wide: _('Wide mode (hide right pane)'),
+            phone: _('Phone layout (390px width)'),
           };
 
-          ToastService.show(`Switched to ${labels[mode]}`, 'success');
+          ToastService.show(_('Switched to %s', labels[mode]), 'success');
         },
         className: 'layout-mode-dropdown',
       });
@@ -427,8 +421,8 @@ export class UISettingsSection extends SettingsSection {
 
           ToastService.show(
             checked
-              ? 'Post truncation disabled - all posts will be shown in full'
-              : 'Post truncation enabled',
+              ? _('Post truncation disabled - all posts will be shown in full')
+              : _('Post truncation enabled'),
             'success'
           );
         },
@@ -452,7 +446,9 @@ export class UISettingsSection extends SettingsSection {
           setClassicMenuEnabled(checked);
           this.eventBus.emit('settings:nav-mode-changed', { classic: checked });
           ToastService.show(
-            checked ? 'Classic menu active' : 'Circular navigation active',
+            checked
+              ? _('Classic menu active')
+              : _('Circular navigation active'),
             'success'
           );
         },
@@ -481,8 +477,8 @@ export class UISettingsSection extends SettingsSection {
           });
           ToastService.show(
             checked
-              ? 'Self-reposts hidden from timeline'
-              : 'Self-reposts shown again',
+              ? _('Self-reposts hidden from timeline')
+              : _('Self-reposts shown again'),
             'success'
           );
         },
@@ -493,11 +489,11 @@ export class UISettingsSection extends SettingsSection {
       );
 
       const gapLabels: Record<SelfRepostGap, string> = {
-        '3d': '3 days',
-        '1w': '1 week',
-        '3mo': '3 months',
-        '1y': '1 year',
-        all: 'all',
+        '3d': _('3 days'),
+        '1w': _('1 week'),
+        '3mo': _('3 months'),
+        '1y': _('1 year'),
+        all: _('all'),
       };
       contentContainer
         .querySelectorAll('input[name="self-repost-gap"]')
@@ -510,8 +506,8 @@ export class UISettingsSection extends SettingsSection {
             });
             ToastService.show(
               value === 'all'
-                ? 'Hiding all self-reposts'
-                : `Hiding self-reposts younger than ${gapLabels[value]}`,
+                ? _('Hiding all self-reposts')
+                : _('Hiding self-reposts younger than %s', gapLabels[value]),
               'success'
             );
           });
@@ -532,7 +528,9 @@ export class UISettingsSection extends SettingsSection {
             hidden: checked,
           });
           ToastService.show(
-            checked ? "Others' highlights hidden" : 'Highlights shown again',
+            checked
+              ? _("Others' highlights hidden")
+              : _('Highlights shown again'),
             'success'
           );
         },
@@ -557,8 +555,10 @@ export class UISettingsSection extends SettingsSection {
             });
             ToastService.show(
               checked
-                ? 'Reactions from people you follow now appear in your timeline'
-                : 'Reactions hidden from your timeline again',
+                ? _(
+                    'Reactions from people you follow now appear in your timeline'
+                  )
+                : _('Reactions hidden from your timeline again'),
               'success'
             );
           },
@@ -591,7 +591,7 @@ export class UISettingsSection extends SettingsSection {
           limit: val,
         });
         ToastService.show(
-          `Article excerpt limit set to ${val} characters`,
+          _('Article excerpt limit set to %s characters', val),
           'success'
         );
       });
@@ -599,17 +599,17 @@ export class UISettingsSection extends SettingsSection {
 
     // Article feed FOAF-degree dropdowns (main + scc)
     const foafOptions = [
-      { value: '1', label: 'Degree 1 — Direct follows' },
-      { value: '2', label: 'Degree 2 — Friends of friends' },
+      { value: '1', label: _('Degree 1 — Direct follows') },
+      { value: '2', label: _('Degree 2 — Friends of friends') },
       {
         value: '3',
-        label: 'Degree 3 — Friends of friends of friends (slow to build)',
+        label: _('Degree 3 — Friends of friends of friends (slow to build)'),
       },
     ];
     const foafLabels: Record<string, string> = {
-      '1': 'Degree 1 (direct follows)',
-      '2': 'Degree 2 (friends of friends)',
-      '3': 'Degree 3 (friends of friends of friends)',
+      '1': _('Degree 1 (direct follows)'),
+      '2': _('Degree 2 (friends of friends)'),
+      '3': _('Degree 3 (friends of friends of friends)'),
     };
 
     const mainFoafContainer = contentContainer.querySelector(
@@ -630,7 +630,7 @@ export class UISettingsSection extends SettingsSection {
             degree,
           });
           ToastService.show(
-            `Main article feed: ${foafLabels[value] ?? value}`,
+            _('Main article feed: %s', foafLabels[value] ?? value),
             'success'
           );
         },
@@ -659,7 +659,7 @@ export class UISettingsSection extends SettingsSection {
             degree,
           });
           ToastService.show(
-            `Side column articles: ${foafLabels[value] ?? value}`,
+            _('Side column articles: %s', foafLabels[value] ?? value),
             'success'
           );
         },
@@ -691,8 +691,8 @@ export class UISettingsSection extends SettingsSection {
           );
           ToastService.show(
             checked
-              ? 'Memory optimization enabled'
-              : 'Memory optimization disabled',
+              ? _('Memory optimization enabled')
+              : _('Memory optimization disabled'),
             'success'
           );
         },
@@ -719,8 +719,8 @@ export class UISettingsSection extends SettingsSection {
               setClientTagEnabled(checked);
               ToastService.show(
                 checked
-                  ? 'Posts will be signed with "via NoorNote"'
-                  : 'Posts will be signed without client tag',
+                  ? _('Posts will be signed with "via NoorNote"')
+                  : _('Posts will be signed without client tag'),
                 'success'
               );
             },
@@ -756,8 +756,8 @@ export class UISettingsSection extends SettingsSection {
           settingsApi.setAutoCheckEnabled(checked);
           ToastService.show(
             checked
-              ? 'Auto-update check enabled'
-              : 'Auto-update check disabled',
+              ? _('Auto-update check enabled')
+              : _('Auto-update check disabled'),
             'success'
           );
         },

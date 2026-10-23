@@ -153,11 +153,11 @@ export class MessagesView extends View {
         <div class="messages-view__tabs">
           <div class="tabs">
             <button class="tab tab--active" data-tab="known">
-              Known
+              ${_('Known')}
               <span class="badge" data-badge="known" style="display: none;"></span>
             </button>
             <button class="tab" data-tab="unknown">
-              Unknown
+              ${_('Unknown')}
               <span class="badge" data-badge="unknown" style="display: none;"></span>
             </button>
           </div>
@@ -165,7 +165,7 @@ export class MessagesView extends View {
         <div class="messages-view__content">
           <div class="tab-content tab-content--active" data-tab-content="known">
             <div class="messages-view__list" data-list="known">
-              <div class="messages-view__loading">Loading messages...</div>
+              <div class="messages-view__loading">${_('Loading messages...')}</div>
             </div>
           </div>
           <div class="tab-content" data-tab-content="unknown">
@@ -176,7 +176,7 @@ export class MessagesView extends View {
         </div>
         <div class="messages-view__load-older">
           <button class="btn btn--medium messages-view__load-older-btn">
-            <span class="messages-view__load-older-label">Load older messages</span>
+            <span class="messages-view__load-older-label">${_('Load older messages')}</span>
           </button>
         </div>
       </div>

@@ -5,6 +5,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { _ } from '../../i18n';
 import { formatTimestamp } from '../../helpers/formatTimestamp';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
@@ -132,7 +133,7 @@ export class SearchResultsView {
       // Setup InfiniteScroll if callback provided
       if (this.callbacks.onLoadMore) {
         this.infiniteScroll = new InfiniteScroll(this.callbacks.onLoadMore, {
-          loadingMessage: 'Fetching more results from Relays...',
+          loadingMessage: _('Fetching more results from Relays...'),
         });
         this.infiniteScroll.observe(this.listElement);
       }

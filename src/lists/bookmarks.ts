@@ -15,6 +15,7 @@
  */
 
 import { errMessage } from '../helpers/errorMessage';
+import { _, tn } from '../i18n';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { SystemLogger } from '../services/SystemLogger';
 import { TypedEventBus } from '../core/TypedEventBus';
@@ -1948,7 +1949,7 @@ export function removeBookmarkFolderTombstone(folderName: string): void {
 // tombstone map. The thin wrappers keep the original call-site names unchanged.
 const BOOKMARK_DELETION_CONFIG: DeletionRecordConfig = {
   dTag: 'noornote:bookmark-deletions',
-  alt: 'NoorNote deleted bookmark folders',
+  alt: _('NoorNote deleted bookmark folders'),
   logLabel: 'bookmark-deletions',
   getLocalTombstones: getBookmarkTombstones,
   setLocalTombstones: setBookmarkTombstones,
@@ -2934,7 +2935,7 @@ function getBookmarkSnapshotDiffInfo(
     const bSet = new Set(bItems);
     const newItems = [...bSet].filter(id => !aSet.has(id));
     const removedItems = [...aSet].filter(id => !bSet.has(id));
-    const label = folderName || 'Root';
+    const label = folderName || _('Root');
     if (newItems.length > 0) {
       hasContentDiff = true;
       details.push(`${label}: ${newItems.length} new item(s) from relay`);
@@ -3177,7 +3178,7 @@ export class BookmarkCard {
       const profile = await this.userProfileService.getUserProfile(
         event.pubkey
       );
-      const username = profile?.name || 'Anonymous';
+      const username = profile?.name || _('Anonymous');
       const profilePic = profile?.picture || '';
       const snippet = this.getEventSnippet(event);
       const timeAgo = formatBookmarkTimestamp(event.created_at);
@@ -3198,7 +3199,7 @@ export class BookmarkCard {
             <span class="timestamp">${timeAgo}</span>
             <div class="actions">
               <span class="move"></span>
-              <button class="delete" aria-label="Remove bookmark" title="Remove bookmark">
+              <button class="delete" aria-label="${_('Remove bookmark')}" title="${_('Remove bookmark')}">
                 ${ICON_TRASH_16}
               </button>
             </div>
@@ -3233,15 +3234,15 @@ export class BookmarkCard {
         }
         isContentHtml = true;
       } else if (type === 't' && value) {
-        displayLabel = 'Hashtag';
+        displayLabel = _('Hashtag');
         displayContent = `#${value}`;
       } else if (type === 'a' && value) {
         const isListing = value.startsWith('30402:');
         const isLiveStream = value.startsWith('30311:');
         displayLabel = isListing
-          ? 'Listing'
+          ? _('Listing')
           : isLiveStream
-            ? 'Live Stream'
+            ? _('Live Stream')
             : 'Address';
         if (description) {
           displayContent =
@@ -3257,7 +3258,7 @@ export class BookmarkCard {
         // truncated id; the async load below replaces it with the real snippet
         // (title, content, picture, time) once the event resolves. The SNV
         // reverse-lookup does the same thing when the user clicks through.
-        displayLabel = 'Note';
+        displayLabel = _('Note');
         displayContent = `${id.slice(0, 12)}…`;
       } else {
         displayLabel = 'Note not found';
@@ -3283,13 +3284,13 @@ export class BookmarkCard {
               ${
                 type === 'r'
                   ? `
-                <button class="btn btn--mini edit" aria-label="Edit bookmark" title="Edit bookmark">
-                  Edit
+                <button class="btn btn--mini edit" aria-label="${_('Edit bookmark')}" title="${_('Edit bookmark')}">
+                  ${_('Edit')}
                 </button>
               `
                   : ''
               }
-              <button class="delete" aria-label="Remove bookmark" title="Remove bookmark">
+              <button class="delete" aria-label="${_('Remove bookmark')}" title="${_('Remove bookmark')}">
                 ${ICON_TRASH_16}
               </button>
             </div>
@@ -3356,7 +3357,7 @@ export class BookmarkCard {
       const profile = await this.userProfileService.getUserProfile(
         event.pubkey
       );
-      const username = profile?.name || 'Anonymous';
+      const username = profile?.name || _('Anonymous');
       const profilePic = profile?.picture || '';
       const snippet = this.getEventSnippet(event);
       const timeAgo = formatBookmarkTimestamp(event.created_at);
@@ -3508,7 +3509,7 @@ export class BookmarkCard {
     ) {
       const dropdown = new MoveDropdown({
         targets: this.options.moveTargets,
-        ariaLabel: 'Move bookmark',
+        ariaLabel: _('Move bookmark'),
         onSelect: targetId => this.options.onMove!(id, targetId),
       });
       moveMount.appendChild(dropdown.getElement());
@@ -3603,21 +3604,21 @@ export class BookmarkCard {
     }
     if (event.kind === 20) {
       const s = this.getTextSnippet(event.content, 100);
-      return s === '(No text content)' ? 'Picture' : s;
+      return s === '(No text content)' ? _('Picture') : s;
     }
     if (event.kind === 1068) {
       const question = (event.content || '').trim();
       const snippet =
         question.length > 80 ? `${question.slice(0, 80)}...` : question;
-      return snippet ? `Poll: ${snippet}` : 'Poll';
+      return snippet ? _('Poll: %s', snippet) : _('Poll');
     }
     if (event.kind === 9802) {
       const text = (event.content || '').trim();
       const snippet = text.length > 80 ? `${text.slice(0, 80)}...` : text;
-      return snippet ? `Highlight: ${snippet}` : 'Highlight';
+      return snippet ? _('Highlight: %s', snippet) : _('Highlight');
     }
     if (event.kind === 30617) {
-      const name = event.tags.find(t => t[0] === 'name')?.[1] || 'Repo';
+      const name = event.tags.find(t => t[0] === 'name')?.[1] || _('Repo');
       return `Git Repository: ${name}`;
     }
     if (
@@ -3631,7 +3632,7 @@ export class BookmarkCard {
         event.kind === 1617
           ? 'Git Patch'
           : event.kind === 1621
-            ? 'Git Issue'
+            ? _('Git Issue')
             : 'Pull Request';
       return subject ? `${label}: ${subject}` : label;
     }
@@ -3643,12 +3644,12 @@ export class BookmarkCard {
     ) {
       const status =
         event.kind === 1630
-          ? 'Open'
+          ? _('Open')
           : event.kind === 1631
             ? 'Applied/Merged'
             : event.kind === 1632
-              ? 'Closed'
-              : 'Draft';
+              ? _('Closed')
+              : _('Draft');
       return `Git Status: ${status}`;
     }
     if (event.kind === 35128 || event.kind === 35129) {
@@ -3699,7 +3700,7 @@ export class NewBookmarkModal {
     const content = this.renderContent();
 
     this.modalService.show({
-      title: 'New Bookmark',
+      title: _('New Bookmark'),
       content,
       width: '450px',
       showCloseButton: true,
@@ -3730,39 +3731,39 @@ export class NewBookmarkModal {
             type="url"
             id="new-bookmark-url-input"
             class="input"
-            placeholder="https://..."
+            placeholder="${_('https://...')}"
             autocomplete="off"
           />
         </div>
 
         <div class="form-group">
-          <label for="new-bookmark-description-input">Description</label>
+          <label for="new-bookmark-description-input">${_('Description')}</label>
           <input
             type="text"
             id="new-bookmark-description-input"
             class="input"
-            placeholder="Optional description..."
+            placeholder="${_('Optional description...')}"
             maxlength="200"
             autocomplete="off"
           />
         </div>
 
         <div class="form-group">
-          <label for="new-bookmark-folder-select">Save to</label>
+          <label for="new-bookmark-folder-select">${_('Save to')}</label>
           <select id="new-bookmark-folder-select" class="input">
-            <option value="">Root Level</option>
+            <option value="">${_('Root Level')}</option>
             ${folders.map(f => `<option value="${f.id}">${escapeHtml(f.name)}</option>`).join('')}
-            <option value="__new__">+ Create new folder...</option>
+            <option value="__new__">${_('+ Create new folder...')}</option>
           </select>
         </div>
 
         <div class="form-group new-bookmark-modal__new-folder-group" style="display: none;">
-          <label for="new-bookmark-folder-name-input">New folder name</label>
+          <label for="new-bookmark-folder-name-input">${_('New folder name')}</label>
           <input
             type="text"
             id="new-bookmark-folder-name-input"
             class="input"
-            placeholder="Enter folder name..."
+            placeholder="${_('Enter folder name...')}"
             maxlength="50"
             autocomplete="off"
           />
@@ -3770,10 +3771,10 @@ export class NewBookmarkModal {
 
         <div class="new-bookmark-modal__actions">
           <button type="button" class="btn btn--passive" id="new-bookmark-cancel-btn">
-            Cancel
+            ${_('Cancel')}
           </button>
           <button type="button" class="btn" id="new-bookmark-save-btn">
-            Save
+            ${_('Save')}
           </button>
         </div>
       </div>
@@ -3883,7 +3884,7 @@ export class EditBookmarkModal {
     const content = this.renderContent();
 
     this.modalService.show({
-      title: 'Edit Bookmark',
+      title: _('Edit Bookmark'),
       content,
       width: '450px',
       showCloseButton: true,
@@ -3913,19 +3914,19 @@ export class EditBookmarkModal {
             type="url"
             id="edit-bookmark-url-input"
             class="input"
-            placeholder="https://..."
+            placeholder="${_('https://...')}"
             value="${escapeHtml(this.options.url)}"
             autocomplete="off"
           />
         </div>
 
         <div class="form-group">
-          <label for="edit-bookmark-description-input">Description</label>
+          <label for="edit-bookmark-description-input">${_('Description')}</label>
           <input
             type="text"
             id="edit-bookmark-description-input"
             class="input"
-            placeholder="Optional description..."
+            placeholder="${_('Optional description...')}"
             value="${escapeHtml(this.options.description)}"
             maxlength="200"
             autocomplete="off"
@@ -3934,10 +3935,10 @@ export class EditBookmarkModal {
 
         <div class="edit-bookmark-modal__actions">
           <button type="button" class="btn btn--passive" id="edit-bookmark-cancel-btn">
-            Cancel
+            ${_('Cancel')}
           </button>
           <button type="button" class="btn" id="edit-bookmark-save-btn">
-            Save
+            ${_('Save')}
           </button>
         </div>
       </div>
@@ -4302,14 +4303,14 @@ export class BookmarkManager {
     if (!currentUser) {
       container.innerHTML = `
         <div class="bookmarks-empty-state">
-          <p>Log in to see your bookmarks</p>
+          <p>${_('Log in to see your bookmarks')}</p>
         </div>
       `;
       return;
     }
 
     container.innerHTML = `
-      <div class="bookmarks-loading">Loading bookmarks...</div>
+      <div class="bookmarks-loading">${_('Loading bookmarks...')}</div>
     `;
 
     try {
@@ -4319,7 +4320,7 @@ export class BookmarkManager {
       console.error('Failed to render bookmarks:', error);
       container.innerHTML = `
         <div class="bookmarks-empty-state">
-          <p>Failed to load bookmarks</p>
+          <p>${_('Failed to load bookmarks')}</p>
         </div>
       `;
     }
@@ -4465,7 +4466,7 @@ export class BookmarkManager {
   }
 
   private renderHeader(folder: { id: string; name: string } | null): string {
-    const title = folder ? folder.name : 'Bookmarks';
+    const title = folder ? folder.name : _('Bookmarks');
 
     // "Mark as read" (unread feature) — only with the read-sync toggle on.
     let headerActionsHtml = '';
@@ -4476,7 +4477,7 @@ export class BookmarkManager {
     if (readSyncOn) {
       const unread = getUnreadBookmarkCount();
       const passive = unread === 0;
-      headerActionsHtml = `<button class="btn btn--medium${passive ? ' btn--passive' : ''}" data-action="mark-read"${passive ? ' disabled' : ''}>Mark as read</button>`;
+      headerActionsHtml = `<button class="btn btn--medium${passive ? ' btn--passive' : ''}" data-action="mark-read"${passive ? ' disabled' : ''}>${_('Mark as read')}</button>`;
     }
 
     return renderListHeader(
@@ -4485,12 +4486,12 @@ export class BookmarkManager {
         {
           action: 'new-folder',
           icon: '<svg width="16" height="16"><use href="#icon-folder"/></svg>',
-          label: 'Folder',
+          label: _('Folder'),
         },
         {
           action: 'new-bookmark',
           icon: '<svg width="16" height="16"><use href="#icon-bookmark-link"/></svg>',
-          label: 'Bookmark',
+          label: _('Bookmark'),
         },
       ],
       headerActionsHtml
@@ -4501,7 +4502,7 @@ export class BookmarkManager {
     folder: { id: string; name: string } | null
   ): string {
     if (!folder) return '';
-    return renderListBreadcrumb('Bookmarks', folder.name);
+    return renderListBreadcrumb(_('Bookmarks'), folder.name);
   }
 
   private async renderGridContent(grid: HTMLElement): Promise<void> {
@@ -4574,7 +4575,7 @@ export class BookmarkManager {
     ) {
       grid.innerHTML = `
         <div class="bookmarks-empty-state" style="grid-column: 1 / -1;">
-          <p>No bookmarks yet</p>
+          <p>${_('No bookmarks yet')}</p>
         </div>
       `;
     }
@@ -4601,7 +4602,7 @@ export class BookmarkManager {
     const allFolders = this.folderService.getFolders();
     const moveTargets: Array<{ id: string; label: string }> = [];
     if (currentFolderId !== '') {
-      moveTargets.push({ id: '', label: 'Root' });
+      moveTargets.push({ id: '', label: _('Root') });
     }
     for (const f of allFolders) {
       if (f.id !== currentFolderId) {
@@ -4763,7 +4764,7 @@ export class BookmarkManager {
 
       this.bookmarksCache.delete(eventId);
 
-      ToastService.show('Bookmark removed', 'success');
+      ToastService.show(_('Bookmark removed'), 'success');
 
       // Reliable propagation: republish parent set IMMEDIATELY, bypassing the 2.5s debounce.
       // Per docs/features/lists.md "Reliable deletion publish" — every user-triggered delete
@@ -4788,7 +4789,7 @@ export class BookmarkManager {
       }
     } catch (error) {
       console.error('Failed to delete bookmark:', error);
-      ToastService.show('Failed to remove bookmark', 'error');
+      ToastService.show(_('Failed to remove bookmark'), 'error');
     }
   }
 
@@ -4850,11 +4851,11 @@ export class BookmarkManager {
             }
           }
 
-          ToastService.show('Bookmark updated', 'success');
+          ToastService.show(_('Bookmark updated'), 'success');
           this.refreshCurrentView();
         } catch (error) {
           console.error('Failed to update bookmark:', error);
-          ToastService.show('Failed to update bookmark', 'error');
+          ToastService.show(_('Failed to update bookmark'), 'error');
         }
       },
     });
@@ -4936,11 +4937,11 @@ export class BookmarkManager {
             }
           }
 
-          ToastService.show('Folder renamed', 'success');
+          ToastService.show(_('Folder renamed'), 'success');
           this.refreshCurrentView();
         } catch (error) {
           console.error('Failed to rename folder:', error);
-          ToastService.show('Failed to rename folder', 'error');
+          ToastService.show(_('Failed to rename folder'), 'error');
         }
       },
     });
@@ -5017,11 +5018,14 @@ export class BookmarkManager {
         }
       }
 
-      ToastService.show('Folder deleted, bookmarks moved to root', 'success');
+      ToastService.show(
+        _('Folder deleted, bookmarks moved to root'),
+        'success'
+      );
       this.refreshCurrentView();
     } catch (error) {
       console.error('Failed to delete folder:', error);
-      ToastService.show('Failed to delete folder', 'error');
+      ToastService.show(_('Failed to delete folder'), 'error');
     }
   }
 
@@ -5079,12 +5083,12 @@ export class BookmarkManager {
         const countEl = folderCard?.querySelector('.folder-card__count');
         if (countEl) {
           const newCount = this.getActualFolderItemCount(targetFolderId);
-          countEl.textContent = `${newCount} ${newCount === 1 ? 'item' : 'items'}`;
+          countEl.textContent = tn('%s item', '%s items', newCount);
         }
       }
     } catch (error) {
       console.error('Failed to move bookmark:', error);
-      ToastService.show('Failed to move bookmark', 'error');
+      ToastService.show(_('Failed to move bookmark'), 'error');
     }
   }
 
@@ -5106,7 +5110,7 @@ export class BookmarkManager {
           this.eventBus.emit('bookmark:updated');
         } catch (error) {
           console.error('Failed to create folder:', error);
-          ToastService.show('Failed to create folder', 'error');
+          ToastService.show(_('Failed to create folder'), 'error');
         }
       },
     });
@@ -5145,7 +5149,7 @@ export class BookmarkManager {
 
           const currentItems = this.adapter.getBrowserItems();
           if (currentItems.some(b => b.id === url)) {
-            ToastService.show('This URL is already bookmarked', 'info');
+            ToastService.show(_('This URL is already bookmarked'), 'info');
             return;
           }
           this.adapter.setBrowserItems([...currentItems, bookmarkItem]);
@@ -5169,14 +5173,14 @@ export class BookmarkManager {
             this.folderService.addToRootOrder('bookmark', url);
           }
 
-          ToastService.show('Bookmark created', 'success');
+          ToastService.show(_('Bookmark created'), 'success');
 
           this.eventBus.emit('bookmark:updated');
 
           this.refreshCurrentView();
         } catch (error) {
           console.error('Failed to create bookmark:', error);
-          ToastService.show('Failed to create bookmark', 'error');
+          ToastService.show(_('Failed to create bookmark'), 'error');
         }
       },
     });
@@ -5247,7 +5251,7 @@ export class BookmarkManager {
 
   private async handleSyncFromRelays(container: HTMLElement): Promise<void> {
     try {
-      ToastService.show('Fetching from relays...', 'info');
+      ToastService.show(_('Fetching from relays...'), 'info');
 
       const result = await this.syncFromRelays();
 
@@ -5299,7 +5303,7 @@ export class BookmarkManager {
             mergeFromRelays();
             await this.syncToRelays();
             ToastService.show(
-              'Merged bookmarks and synced to relays',
+              _('Merged bookmarks and synced to relays'),
               'success'
             );
             await this.loadBookmarks();
@@ -5307,13 +5311,13 @@ export class BookmarkManager {
           },
           onRelay: async () => {
             fullOverwriteFromRelays();
-            ToastService.show('Synced from relays', 'success');
+            ToastService.show(_('Synced from relays'), 'success');
             await this.loadBookmarks();
             void this.renderCurrentView(container);
           },
           onLocal: async () => {
             await this.syncToRelays();
-            ToastService.show('Local bookmarks pushed to relays', 'success');
+            ToastService.show(_('Local bookmarks pushed to relays'), 'success');
             await this.loadBookmarks();
             void this.renderCurrentView(container);
           },
@@ -5322,23 +5326,23 @@ export class BookmarkManager {
         await modal.show();
       } else {
         mergeFromRelays();
-        ToastService.show('Synced from relays', 'success');
+        ToastService.show(_('Synced from relays'), 'success');
         await this.loadBookmarks();
         void this.renderCurrentView(container);
       }
     } catch (error) {
       console.error('Failed to sync from relays:', error);
-      ToastService.show('Failed to sync from relays', 'error');
+      ToastService.show(_('Failed to sync from relays'), 'error');
     }
   }
 
   private async handleSyncToRelays(): Promise<void> {
     try {
       diagLog('lists', 'handleSyncToRelays: button pressed');
-      ToastService.show('Publishing to relays...', 'info');
+      ToastService.show(_('Publishing to relays...'), 'info');
       await this.syncToRelays();
       diagLog('lists', 'handleSyncToRelays: success');
-      ToastService.show('Bookmarks published successfully', 'success');
+      ToastService.show(_('Bookmarks published successfully'), 'success');
     } catch (error) {
       const msg = errMessage(error);
       diagLog('lists', 'handleSyncToRelays: FAILED', {
@@ -5346,22 +5350,22 @@ export class BookmarkManager {
         stack: error instanceof Error ? error.stack : undefined,
       });
       console.error('Failed to publish to relays:', error);
-      ToastService.show('Failed to publish to relays', 'error');
+      ToastService.show(_('Failed to publish to relays'), 'error');
     }
   }
 
   private async handleSaveToFile(): Promise<void> {
     try {
-      ToastService.show('Saving...', 'info');
+      ToastService.show(_('Saving...'), 'info');
       if (PlatformService.getInstance().isDesktop) {
         await this.saveToFile();
       } else {
         downloadAsJson(this.adapter.getBrowserItems(), 'bookmarks');
       }
-      ToastService.show('Saved successfully', 'success');
+      ToastService.show(_('Saved successfully'), 'success');
     } catch (error) {
       console.error('Failed to save to file:', error);
-      ToastService.show('Failed to save to file', 'error');
+      ToastService.show(_('Failed to save to file'), 'error');
     }
   }
 
@@ -5386,7 +5390,7 @@ export class BookmarkManager {
         };
       } else {
         // Desktop: Read from local file
-        ToastService.show('Reading from file...', 'info');
+        ToastService.show(_('Reading from file...'), 'info');
         result = await this.syncFromFile();
       }
 
@@ -5466,7 +5470,7 @@ export class BookmarkManager {
           },
           onLocal: async () => {
             await this.syncToRelays();
-            ToastService.show('Local bookmarks pushed to relays', 'success');
+            ToastService.show(_('Local bookmarks pushed to relays'), 'success');
             await this.loadBookmarks();
             void this.renderCurrentView(container);
           },
@@ -5481,7 +5485,7 @@ export class BookmarkManager {
         await this.loadBookmarks();
         void this.renderCurrentView(container);
       } else {
-        ToastService.show('File is identical to current list', 'info');
+        ToastService.show(_('File is identical to current list'), 'info');
       }
     } catch (error) {
       console.error('Failed to restore from file:', error);

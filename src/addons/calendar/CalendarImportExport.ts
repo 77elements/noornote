@@ -29,6 +29,7 @@ import {
 } from './CalendarPublishService';
 import { CalendarDataService } from './CalendarDataService';
 import { TypedEventBus } from '../../core/TypedEventBus';
+import { _, tn } from '../../i18n';
 import { diagLog } from '../../services/DiagnosticLogger';
 
 export class CalendarImportExportManager {
@@ -56,15 +57,13 @@ export class CalendarImportExportManager {
 
     this.element.innerHTML = `
       <div class="calendar-io__import">
-        <h3>Import</h3>
+        <h3>${_('Import')}</h3>
         <p class="form__note">
-          Import a Google Calendar or any .ics export — events are previewed
-          first and imported to this device. Publishing them to your relays is
-          a separate step afterwards.
+          ${_('Import a Google Calendar or any .ics export — events are previewed first and imported to this device. Publishing them to your relays is a separate step afterwards.')}
         </p>
         <div class="l-row--center calendar-io__actions">
           <button class="btn btn--large btn--passive" data-io-import>
-            <svg width="20" height="20"><use href="#icon-upload"/></svg> Import .ics file
+            <svg width="20" height="20"><use href="#icon-upload"/></svg> ${_('Import .ics file')}
           </button>
           <input type="file" accept=".ics,text/calendar" data-io-file style="display: none" />
         </div>
@@ -72,14 +71,14 @@ export class CalendarImportExportManager {
         ${
           hasFile
             ? `<div class="calendar-io__range form__row form__row--oneline">
-                <label class="calendar-io__range-label" for="io-range-from">Range</label>
+                <label class="calendar-io__range-label" for="io-range-from">${_('Range')}</label>
                 <input class="input datepicker" type="date" id="io-range-from" data-io-range-from value="${rangeDefaults.from}" />
                 <span>–</span>
                 <input class="input datepicker" type="date" data-io-range-to value="${rangeDefaults.to}" />
               </div>
               <div data-io-preview></div>
               <div class="l-row--right">
-                <button class="btn" data-io-import-local disabled>Import to my calendar</button>
+                <button class="btn" data-io-import-local disabled>${_('Import to my calendar')}</button>
               </div>`
             : ''
         }
@@ -87,61 +86,54 @@ export class CalendarImportExportManager {
       ${
         draftsCount > 0
           ? `<div class="calendar-io__pending">
-              <h3>Publish imports</h3>
+              <h3>${_('Publish imports')}</h3>
               <p class="form__note">
-                ${draftsCount} imported ${draftsCount === 1 ? 'event is' : 'events are'}
-                on this device only — they appear in your calendar locally, but
-                your relays don't have them yet.
+                ${tn("%s imported event is on this device only — it appears in your calendar locally, but your relays don't have it yet.", "%s imported events are on this device only — they appear in your calendar locally, but your relays don't have them yet.", draftsCount, String(draftsCount))}
               </p>
               <div class="l-row--center calendar-io__actions">
                 <button class="btn btn--large btn--passive" data-io-publish-drafts ${
                   this.publishing ? 'disabled' : ''
                 }>
                   <svg width="20" height="20"><use href="#icon-upload"/></svg>
-                  ${this.publishing ? 'Publishing…' : `Publish ${draftsCount} ${draftsCount === 1 ? 'event' : 'events'}`}
+                  ${this.publishing ? _('Publishing…') : tn('Publish %s event', 'Publish %s events', draftsCount, String(draftsCount))}
                 </button>
                 <button class="btn btn--passive" data-io-discard-drafts ${
                   this.publishing ? 'disabled' : ''
-                }>Discard</button>
+                }>${_('Discard')}</button>
               </div>
             </div>`
           : ''
       }
-      <h3>Export</h3>
-      <p class="form__note">Download your whole calendar as one .ics file.</p>
+      <h3>${_('Export')}</h3>
+      <p class="form__note">${_('Download your whole calendar as one .ics file.')}</p>
       <div class="l-row--center calendar-io__actions">
         <button class="btn btn--large btn--passive" data-io-export>
-          <svg width="20" height="20"><use href="#icon-download"/></svg> Export calendar (.ics)
+          <svg width="20" height="20"><use href="#icon-download"/></svg> ${_('Export calendar (.ics)')}
         </button>
       </div>
       ${
         this.pendingResetCount !== null
           ? `<div class="calendar-io__reset">
-              <h3>Reset</h3>
+              <h3>${_('Reset')}</h3>
               <p class="form__note">
-                Your calendar was cleared on this device. ${this.pendingResetCount}
-                ${this.pendingResetCount === 1 ? 'item still' : 'items still'} on
-                your relays — publishing the deletions makes the wipe permanent.
-                Until then, reloading this page brings everything back.
+                ${_('Your calendar was cleared on this device. %s still on your relays — publishing the deletions makes the wipe permanent. Until then, reloading this page brings everything back.', tn('%s item is', '%s items are', this.pendingResetCount, String(this.pendingResetCount)))}
               </p>
               <div class="l-row--center calendar-io__actions">
                 <button class="btn btn--danger" data-io-publish-reset ${
                   this.wiping ? 'disabled' : ''
                 }>
                   <svg width="20" height="20"><use href="#icon-trash"/></svg>
-                  ${this.wiping ? 'Publishing…' : 'Publish deletions'}
+                  ${this.wiping ? _('Publishing…') : _('Publish deletions')}
                 </button>
               </div>
             </div>`
-          : `<h3>Reset</h3>
+          : `<h3>${_('Reset')}</h3>
             <p class="form__note">
-              Clears your calendar on this device only — events, booking slots,
-              saved and private events. Like unsaved changes in a desktop app:
-              your relays still have everything until you publish the wipe.
+              ${_('Clears your calendar on this device only — events, booking slots, saved and private events. Like unsaved changes in a desktop app: your relays still have everything until you publish the wipe.')}
             </p>
             <div class="l-row--center calendar-io__actions">
               <button class="btn btn--danger" data-io-reset>
-                <svg width="20" height="20"><use href="#icon-trash"/></svg> Reset calendar
+                <svg width="20" height="20"><use href="#icon-trash"/></svg> ${_('Reset calendar')}
               </button>
             </div>`
       }
@@ -220,10 +212,11 @@ export class CalendarImportExportManager {
   private async resetLocal(): Promise<void> {
     const { ModalService } = await import('../../services/ModalService');
     const ok = await ModalService.getInstance().confirm({
-      title: 'Reset calendar?',
-      message:
-        'This clears your whole calendar on this device: events, booking slots, saved and private events. Nothing is deleted on your relays yet — click "Publish deletions" afterwards to make the wipe permanent, or reload the page to bring everything back.',
-      confirmText: 'Reset locally',
+      title: _('Reset calendar?'),
+      message: _(
+        'This clears your whole calendar on this device: events, booking slots, saved and private events. Nothing is deleted on your relays yet — click "Publish deletions" afterwards to make the wipe permanent, or reload the page to bring everything back.'
+      ),
+      confirmText: _('Reset locally'),
       confirmDestructive: true,
     });
     if (!ok || this.destroyed) return;
@@ -237,7 +230,7 @@ export class CalendarImportExportManager {
     PrivateCalendarService.getInstance().clearLocal();
 
     this.pendingResetCount = count;
-    ToastService.show('Calendar cleared on this device', 'success');
+    ToastService.show(_('Calendar cleared on this device'), 'success');
     this.render();
   }
 
@@ -251,14 +244,18 @@ export class CalendarImportExportManager {
         await CalendarPublishService.getInstance().wipeCalendarFromRelays();
       if (this.destroyed) return;
       this.pendingResetCount = null;
-      ToastService.show(`${deleted} items deleted from your relays`, 'success');
+      ToastService.show(
+        _('Deleted %s items from your relays', String(deleted)),
+        'success'
+      );
       TypedEventBus.getInstance().emit('calendar:saved-changed', {});
     } catch (err) {
       if (this.destroyed) return;
       ToastService.show(
-        `Publishing the deletions failed: ${
+        _(
+          'Publishing the deletions failed: %s',
           err instanceof Error ? err.message : String(err)
-        }`,
+        ),
         'error'
       );
     }
@@ -316,8 +313,10 @@ export class CalendarImportExportManager {
     const preview = this.element.querySelector('[data-io-preview]');
     if (!preview) return;
     if (inRange.length === 0) {
-      preview.innerHTML = `<p class="form__note">No events in the selected range${
-        outOfRange ? ` (${outOfRange} outside)` : ''
+      preview.innerHTML = `<p class="form__note">${_('No events in the selected range')}${
+        outOfRange
+          ? ` (${tn('%s outside', '%s outside', outOfRange, String(outOfRange))})`
+          : ''
       }.</p>`;
       return;
     }
@@ -359,7 +358,7 @@ export class CalendarImportExportManager {
     if (this.inRange.length === 0) return;
     const pubkey = AuthService.getInstance().getCurrentUser()?.pubkey;
     if (!pubkey) {
-      ToastService.show('Not logged in', 'error');
+      ToastService.show(_('Not logged in'), 'error');
       return;
     }
     const models = this.inRange.map(candidate =>
@@ -376,7 +375,12 @@ export class CalendarImportExportManager {
     this.imported = [];
     this.inRange = [];
     ToastService.show(
-      `${models.length} events imported to this device`,
+      tn(
+        '%s event imported to this device',
+        '%s events imported to this device',
+        models.length,
+        String(models.length)
+      ),
       'success'
     );
     TypedEventBus.getInstance().emit('calendar:saved-changed', {});
@@ -398,7 +402,9 @@ export class CalendarImportExportManager {
     const publishedCoords: string[] = [];
     let failed = 0;
     for (const [index, model] of drafts.entries()) {
-      this.setPendingStatus(`Publishing ${index + 1}/${drafts.length}…`);
+      this.setPendingStatus(
+        _('Publishing %s…', `${index + 1}/${drafts.length}`)
+      );
       try {
         await publishService.publishEventModel(model);
         publishedCoords.push(model.coordinate);
@@ -416,12 +422,21 @@ export class CalendarImportExportManager {
     this.render();
     if (failed > 0) {
       ToastService.show(
-        `Publishing finished: ${publishedCoords.length} published, ${failed} failed (still staged)`,
+        _(
+          'Publishing finished: %s published, %s failed (still staged)',
+          String(publishedCoords.length),
+          String(failed)
+        ),
         'warning'
       );
     } else {
       ToastService.show(
-        `${publishedCoords.length} events published to your relays`,
+        tn(
+          '%s event published to your relays',
+          '%s events published to your relays',
+          publishedCoords.length,
+          String(publishedCoords.length)
+        ),
         'success'
       );
     }
@@ -443,16 +458,19 @@ export class CalendarImportExportManager {
     if (drafts.length === 0) return;
     const { ModalService } = await import('../../services/ModalService');
     const ok = await ModalService.getInstance().confirm({
-      title: 'Discard imported events?',
-      message: `This removes the ${drafts.length} locally imported ${
-        drafts.length === 1 ? 'event' : 'events'
-      } from this device. They were never published, so nothing is lost on your relays.`,
-      confirmText: 'Discard',
+      title: _('Discard imported events?'),
+      message: tn(
+        'This removes the %s locally imported event from this device. It was never published, so nothing is lost on your relays.',
+        'This removes the %s locally imported events from this device. They were never published, so nothing is lost on your relays.',
+        drafts.length,
+        String(drafts.length)
+      ),
+      confirmText: _('Discard'),
       confirmDestructive: true,
     });
     if (!ok || this.destroyed) return;
     dataService.removeDrafts(drafts.map(draft => draft.coordinate));
-    ToastService.show('Imported events discarded', 'success');
+    ToastService.show(_('Imported events discarded'), 'success');
     TypedEventBus.getInstance().emit('calendar:saved-changed', {});
     this.render();
   }
@@ -460,7 +478,7 @@ export class CalendarImportExportManager {
   private exportCalendar(): void {
     const events = CalendarDataService.getInstance().getCachedEvents();
     if (events.length === 0) {
-      ToastService.show('No events to export', 'info');
+      ToastService.show(_('No events to export'), 'info');
       return;
     }
     const ics = calendarEventsToICS(events);
@@ -471,7 +489,15 @@ export class CalendarImportExportManager {
     link.download = 'noornote-calendar.ics';
     link.click();
     URL.revokeObjectURL(url);
-    ToastService.show(`Exported ${events.length} events`, 'success');
+    ToastService.show(
+      tn(
+        '%s event exported',
+        '%s events exported',
+        events.length,
+        String(events.length)
+      ),
+      'success'
+    );
   }
 
   public destroy(): void {

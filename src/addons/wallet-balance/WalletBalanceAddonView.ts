@@ -12,6 +12,7 @@ import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
 import { isWalletBalanceEnabled, setWalletBalanceEnabled } from './index';
 import type { WalletTransactionList } from './WalletTransactionList';
+import { _ } from '../../i18n';
 
 export class WalletBalanceAddonView extends View {
   private container: HTMLElement;
@@ -37,7 +38,9 @@ export class WalletBalanceAddonView extends View {
           enabled: checked,
         });
         ToastService.show(
-          checked ? 'Wallet Balance enabled' : 'Wallet Balance disabled',
+          checked
+            ? _('%s enabled', _('Wallet Balance'))
+            : _('%s disabled', _('Wallet Balance')),
           'success'
         );
         if (checked) void this.mountTxList();
@@ -47,12 +50,12 @@ export class WalletBalanceAddonView extends View {
 
     this.container.innerHTML = `
       <div class="back-padder">
-        <h1>Wallet Balance</h1>
+        <h1>${_('Wallet Balance')}</h1>
         <section class="section">
           <div class="setting">
-            <span class="setting__label">Enable Wallet Balance</span>
+            <span class="setting__label">${_('Enable Wallet Balance')}</span>
             <div class="setting__control"></div>
-            <p class="setting__desc">Show your Lightning wallet balance in the sidebar with fiat conversion.</p>
+            <p class="setting__desc">${_('Show your Lightning wallet balance in the sidebar with fiat conversion.')}</p>
           </div>
         </section>
         <div data-addon-content="wallet-balance"></div>

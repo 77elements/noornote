@@ -1,5 +1,6 @@
 import { View } from '../../components/views/View';
 import { ProfileRecognitionSettings } from './ProfileRecognitionSettings';
+import { _ } from '../../i18n';
 
 export class ProfileRecognitionView extends View {
   private container: HTMLElement;
@@ -12,7 +13,7 @@ export class ProfileRecognitionView extends View {
       'view-content view-content--addon view-content--addon-profile-recognition';
     this.container.innerHTML = `
       <div class="back-padder">
-        <h1>Profile Recognition</h1>
+        <h1>${_('Profile Recognition')}</h1>
         <section class="section" id="profile-recognition-settings-content"></section>
         <div data-addon-content="profile-recognition"></div>
       </div>

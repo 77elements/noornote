@@ -23,6 +23,7 @@ import {
 } from './index';
 import type { BtcPriceSidebarWidget } from './BtcPriceSidebarWidget';
 import type { BtcPriceRuntime } from './runtime';
+import { _ } from '../../i18n';
 
 export class BtcPriceAddonView extends View {
   private container: HTMLElement;
@@ -50,7 +51,9 @@ export class BtcPriceAddonView extends View {
           enabled: checked,
         });
         ToastService.show(
-          checked ? 'BTC Price enabled' : 'BTC Price disabled',
+          checked
+            ? _('%s enabled', _('BTC Price'))
+            : _('%s disabled', _('BTC Price')),
           'success'
         );
         if (checked) void this.mountContent();
@@ -60,12 +63,12 @@ export class BtcPriceAddonView extends View {
 
     this.container.innerHTML = `
       <div class="back-padder">
-        <h1>BTC Price</h1>
+        <h1>${_('BTC Price')}</h1>
         <section class="section">
           <div class="setting">
-            <span class="setting__label">Enable BTC Price</span>
+            <span class="setting__label">${_('Enable BTC Price')}</span>
             <div class="setting__control"></div>
-            <p class="setting__desc">Show the current Bitcoin exchange rate on this page and — via the switch below — as a widget in the sidebar.</p>
+            <p class="setting__desc">${_('Show the current Bitcoin exchange rate on this page and — via the switch below — as a widget in the sidebar.')}</p>
           </div>
         </section>
         <div data-addon-content="btc-price"></div>
@@ -99,14 +102,14 @@ export class BtcPriceAddonView extends View {
       <div class="btc-price-display"></div>
       <section class="section">
         <div class="setting">
-          <span class="setting__label">Show BTC Sidebar Widget</span>
+          <span class="setting__label">${_('Show BTC Sidebar Widget')}</span>
           <div class="setting__control" data-btc-sidebar-switch-mount></div>
-          <p class="setting__desc">Show the "1 BTC = …" rate line in the sidebar.</p>
+          <p class="setting__desc">${_('Show the "1 BTC = …" rate line in the sidebar.')}</p>
         </div>
         <div class="setting">
-          <span class="setting__label">Fiat Currency</span>
+          <span class="setting__label">${_('Fiat Currency')}</span>
           <div class="setting__control" data-btc-currency-mount></div>
-          <p class="setting__desc">Shared with Zaps and the Wallet Balance addon — changing it updates everywhere.</p>
+          <p class="setting__desc">${_('Shared with Zaps and the Wallet Balance addon — changing it updates everywhere.')}</p>
         </div>
       </section>
     `;
@@ -169,7 +172,7 @@ export class BtcPriceAddonView extends View {
             detail: { currency: code },
           })
         );
-        ToastService.show('Fiat currency saved', 'success');
+        ToastService.show(_('Fiat currency saved'), 'success');
       },
     });
     mount.appendChild(this.currencyDropdown.getElement());

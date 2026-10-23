@@ -89,6 +89,17 @@ import { HIJRI_MONTHS } from '../../helpers/formatTimestamp';
 // Global type declaration for Vite environment variable
 declare const __APP_VERSION__: string;
 
+/** Translated tab/page title for a list type (resolved at render time). */
+function listTitle(listType: ListType): string {
+  const label = {
+    bookmarks: _('Bookmarks'),
+    follows: _('Follows'),
+    mutes: _('Muted'),
+    tribes: _('Tribes'),
+  }[listType];
+  return _('List: %s', label);
+}
+
 export class MainLayout {
   private element: HTMLElement;
   private systemLogger: SystemLogger;
@@ -2007,7 +2018,7 @@ export class MainLayout {
       <div class="nn-back-bar" data-back-bar>
         <div class="l-row--right">
           <button class="btn btn--passive btn--mini" type="button" data-back-bar-button>
-            ← Back
+            ${_('← Back')}
           </button>
         </div>
       </div>
@@ -2839,14 +2850,6 @@ export class MainLayout {
     }
   }
 
-  /** Tab titles for the four own list types. */
-  private static readonly LIST_TITLES: Record<ListType, string> = {
-    bookmarks: 'List: Bookmarks',
-    follows: 'List: Follows',
-    mutes: 'List: Muted',
-    tribes: 'List: Tribes',
-  };
-
   /**
    * Resolve the manager for a list type. All four share the renderListTab
    * contract. Returns null (and logs) when no manager is mounted.
@@ -2897,7 +2900,7 @@ export class MainLayout {
     // Create new list view
     this.currentListView = new ListViewPartial({
       type: listType,
-      title: MainLayout.LIST_TITLES[listType],
+      title: listTitle(listType),
       onClose: () => this.closeListTab(),
       onRender: container => {
         // Use custom render callback if provided, otherwise delegate to manager
@@ -2993,7 +2996,7 @@ export class MainLayout {
 
     const titleEl = document.createElement('h1');
     titleEl.className = 'list-view-primary__title';
-    titleEl.textContent = MainLayout.LIST_TITLES[listType];
+    titleEl.textContent = listTitle(listType);
 
     // Create back button with direct event handler
     const backBtn = document.createElement('button');

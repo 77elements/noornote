@@ -4,6 +4,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { _, tp } from '../../i18n';
 import type { NotificationType } from '../../services/orchestration/NotificationsOrchestrator';
 import { UserProfileService } from '../../services/UserProfileService';
 import { Router } from '../../services/Router';
@@ -489,141 +490,246 @@ export class NotificationItem {
    * Falls back to "event" when target kind is known but not specially handled,
    * so we never lie about the target type.
    */
-  private getTargetLabel(): string {
+  private getTargetLabel(dative = false): string {
     // Mentions: target IS the mentioning event itself — use its own kind.
     // (Interactions like reactions/zaps target a referenced event via a-/k-tag, handled below.)
     if (this.options.type === 'mention') {
       const k = this.options.event.kind;
-      if (k === 20) return 'picture';
-      if (k === 21 || k === 22) return 'video';
-      if (k === 1063) return 'file';
-      if (k === 1068) return 'poll';
-      if (k === 1111) return 'comment';
+      if (k === 20) return this.targetNP('picture', dative);
+      if (k === 21 || k === 22) return this.targetNP('video', dative);
+      if (k === 1063) return this.targetNP('file', dative);
+      if (k === 1068) return this.targetNP('poll', dative);
+      if (k === 1111) return this.targetNP('comment', dative);
     }
     const aTag = this.options.event.tags.find((t: string[]) => t[0] === 'a');
     if (aTag?.[1]) {
       const kind = parseInt(aTag[1].split(':')[0] || '');
-      if (kind === 30023) return 'article';
-      if (kind === 30004) return 'collection';
-      if (kind === 30003) return 'bookmark list';
-      if (kind === 30054) return 'podcast episode';
-      if (kind === 32267) return 'app on Zapstore';
-      if (kind === 39089) return 'follow pack';
-      if (kind === 30030) return 'emoji pack';
-      if (kind === 30311) return 'live stream';
-      if (kind === 30402) return 'listing';
-      if (kind === 35128) return 'website';
-      if (kind === 30617) return 'git repository';
-      if (!isNaN(kind)) return 'event';
+      if (kind === 30023) return this.targetNP('article', dative);
+      if (kind === 30004) return this.targetNP('collection', dative);
+      if (kind === 30003) return this.targetNP('bookmark list', dative);
+      if (kind === 30054) return this.targetNP('podcast episode', dative);
+      if (kind === 32267) return this.targetNP('app on Zapstore', dative);
+      if (kind === 39089) return this.targetNP('follow pack', dative);
+      if (kind === 30030) return this.targetNP('emoji pack', dative);
+      if (kind === 30311) return this.targetNP('live stream', dative);
+      if (kind === 30402) return this.targetNP('listing', dative);
+      if (kind === 35128) return this.targetNP('website', dative);
+      if (kind === 30617) return this.targetNP('git repository', dative);
+      if (!isNaN(kind)) return this.targetNP('event', dative);
     }
     const kTag = this.options.event.tags.find((t: string[]) => t[0] === 'k');
     if (kTag?.[1]) {
       const kind = parseInt(kTag[1]);
-      if (kind === 7) return 'reaction';
-      if (kind === 9735) return 'zap';
-      if (kind === 1063) return 'file';
-      if (kind === 20) return 'picture';
+      if (kind === 7) return this.targetNP('reaction', dative);
+      if (kind === 9735) return this.targetNP('zap', dative);
+      if (kind === 1063) return this.targetNP('file', dative);
+      if (kind === 20) return this.targetNP('picture', dative);
       if (kind === 21 || kind === 22 || kind === 34235 || kind === 34236)
-        return 'video';
-      if (kind === 1068) return 'poll';
-      if (kind === 9) return 'group chat message';
-      if (kind === 30023) return 'article';
-      if (kind === 30004) return 'collection';
-      if (kind === 30003) return 'bookmark list';
-      if (kind === 30054) return 'podcast episode';
-      if (kind === 32267) return 'app on Zapstore';
-      if (kind === 39089) return 'follow pack';
-      if (kind === 30030) return 'emoji pack';
-      if (kind === 30311) return 'live stream';
-      if (kind === 30402) return 'listing';
-      if (kind === 15128 || kind === 35128) return 'website';
-      if (kind === 1617) return 'git patch';
-      if (kind === 1618 || kind === 1619) return 'pull request';
-      if (kind === 1621) return 'git issue';
+        return this.targetNP('video', dative);
+      if (kind === 1068) return this.targetNP('poll', dative);
+      if (kind === 9) return this.targetNP('group chat message', dative);
+      if (kind === 30023) return this.targetNP('article', dative);
+      if (kind === 30004) return this.targetNP('collection', dative);
+      if (kind === 30003) return this.targetNP('bookmark list', dative);
+      if (kind === 30054) return this.targetNP('podcast episode', dative);
+      if (kind === 32267) return this.targetNP('app on Zapstore', dative);
+      if (kind === 39089) return this.targetNP('follow pack', dative);
+      if (kind === 30030) return this.targetNP('emoji pack', dative);
+      if (kind === 30311) return this.targetNP('live stream', dative);
+      if (kind === 30402) return this.targetNP('listing', dative);
+      if (kind === 15128 || kind === 35128)
+        return this.targetNP('website', dative);
+      if (kind === 1617) return this.targetNP('git patch', dative);
+      if (kind === 1618 || kind === 1619)
+        return this.targetNP('pull request', dative);
+      if (kind === 1621) return this.targetNP('git issue', dative);
       if (kind === 1630 || kind === 1631 || kind === 1632 || kind === 1633)
-        return 'git status update';
-      if (kind === 30617) return 'git repository';
-      if (!isNaN(kind)) return 'event';
+        return this.targetNP('git status update', dative);
+      if (kind === 30617) return this.targetNP('git repository', dative);
+      if (!isNaN(kind)) return this.targetNP('event', dative);
     }
-    return 'note';
+    return this.targetNP('note', dative);
+  }
+
+  /**
+   * Target noun phrase for notifications. msgids are bare English nouns;
+   * msgctxt 'notif-acc' (possessive accusative) / 'notif-dat' (dative).
+   */
+  private targetNP(noun: string, dative: boolean): string {
+    switch (noun) {
+      case 'poll':
+        return dative ? tp('notif-dat', 'poll') : tp('notif-acc', 'poll');
+      case 'comment':
+        return dative ? tp('notif-dat', 'comment') : tp('notif-acc', 'comment');
+      case 'article':
+        return dative ? tp('notif-dat', 'article') : tp('notif-acc', 'article');
+      case 'collection':
+        return dative
+          ? tp('notif-dat', 'collection')
+          : tp('notif-acc', 'collection');
+      case 'bookmark list':
+        return dative
+          ? tp('notif-dat', 'bookmark list')
+          : tp('notif-acc', 'bookmark list');
+      case 'podcast episode':
+        return dative
+          ? tp('notif-dat', 'podcast episode')
+          : tp('notif-acc', 'podcast episode');
+      case 'app on Zapstore':
+        return dative
+          ? tp('notif-dat', 'app on Zapstore')
+          : tp('notif-acc', 'app on Zapstore');
+      case 'follow pack':
+        return dative
+          ? tp('notif-dat', 'follow pack')
+          : tp('notif-acc', 'follow pack');
+      case 'emoji pack':
+        return dative
+          ? tp('notif-dat', 'emoji pack')
+          : tp('notif-acc', 'emoji pack');
+      case 'live stream':
+        return dative
+          ? tp('notif-dat', 'live stream')
+          : tp('notif-acc', 'live stream');
+      case 'listing':
+        return dative ? tp('notif-dat', 'listing') : tp('notif-acc', 'listing');
+      case 'website':
+        return dative ? tp('notif-dat', 'website') : tp('notif-acc', 'website');
+      case 'git repository':
+        return dative
+          ? tp('notif-dat', 'git repository')
+          : tp('notif-acc', 'git repository');
+      case 'reaction':
+        return dative
+          ? tp('notif-dat', 'reaction')
+          : tp('notif-acc', 'reaction');
+      case 'zap':
+        return dative ? tp('notif-dat', 'zap') : tp('notif-acc', 'zap');
+      case 'file':
+        return dative ? tp('notif-dat', 'file') : tp('notif-acc', 'file');
+      case 'picture':
+        return dative ? tp('notif-dat', 'picture') : tp('notif-acc', 'picture');
+      case 'video':
+        return dative ? tp('notif-dat', 'video') : tp('notif-acc', 'video');
+      case 'group chat message':
+        return dative
+          ? tp('notif-dat', 'group chat message')
+          : tp('notif-acc', 'group chat message');
+      case 'git patch':
+        return dative
+          ? tp('notif-dat', 'git patch')
+          : tp('notif-acc', 'git patch');
+      case 'pull request':
+        return dative
+          ? tp('notif-dat', 'pull request')
+          : tp('notif-acc', 'pull request');
+      case 'git issue':
+        return dative
+          ? tp('notif-dat', 'git issue')
+          : tp('notif-acc', 'git issue');
+      case 'git status update':
+        return dative
+          ? tp('notif-dat', 'git status update')
+          : tp('notif-acc', 'git status update');
+      case 'note':
+        return dative ? tp('notif-dat', 'note') : tp('notif-acc', 'note');
+      default:
+        return dative ? tp('notif-dat', 'event') : tp('notif-acc', 'event');
+    }
   }
 
   /**
    * Get action text based on notification type
    */
   private getActionText(type: NotificationType): string {
-    const target = this.getTargetLabel();
+    // Dative form for "in %s" phrases (mention/thread-reply)
+    const target = this.getTargetLabel(
+      type === 'mention' ||
+        type === 'thread-reply' ||
+        type === 'dhikr_round' ||
+        type === 'dhikr_commit' ||
+        type === 'dhikr_complete' ||
+        !(
+          type === 'reply' ||
+          type === 'repost' ||
+          type === 'reaction' ||
+          type === 'zap' ||
+          type === 'highlight'
+        )
+    );
     switch (type) {
       case 'mention':
-        return `mentioned you in a ${target}`;
+        return _('mentioned you in %s', target);
       case 'reply':
-        return `replied to your ${target}`;
+        return _('replied to your %s', target);
       case 'thread-reply':
-        return `replied to a ${target} that mentioned you`;
+        return _('replied to %s that mentioned you', target);
       case 'zap-reply':
-        return 'replied to your zap';
+        return _('replied to your zap');
       case 'repost':
-        return `reposted your ${target}`;
+        return _('reposted your %s', target);
       case 'reaction':
-        return `reacted to your ${target}`;
+        return _('reacted to your %s', target);
       case 'zap': {
         const amount = this.getZapAmount();
-        const verb = this.isAnonymousZap() ? 'silently zapped' : 'zapped';
+        const text = this.isAnonymousZap()
+          ? _('silently zapped your %s', target)
+          : _('zapped your %s', target);
         return amount
-          ? `${verb} your ${target} <span class="notification-item__zap-amount">${amount.toLocaleString()} sats</span>`
-          : `${verb} your ${target}`;
+          ? `${text}: <span class="notification-item__zap-amount">${amount.toLocaleString()} sats</span>`
+          : text;
       }
       case 'poll_vote':
-        return 'voted on your poll';
+        return _('voted on your poll');
       case 'article':
-        return 'posted a new article';
+        return _('posted a new article');
       case 'hashtag': {
         const hashtag = this.options.meta?.hashtag || 'unknown';
         const count = this.options.meta?.count || 1;
         return count === 1
-          ? `New post tagged #${hashtag}`
-          : `${count} new posts tagged #${hashtag}`;
+          ? _('New post tagged #%s', hashtag)
+          : _('%s new posts tagged #%s', count, hashtag);
       }
       case 'mutual_unfollow':
-        return 'stopped following you back';
+        return _('stopped following you back');
       case 'mutual_new':
-        return 'started following you back!';
+        return _('started following you back!');
       case 'follower_new':
-        return 'is now following you';
+        return _('is now following you');
       case 'nostrord': {
         const name = this.options.meta?.groupName;
         const where = name
-          ? `the Nostrord group "${name}"`
-          : 'a Nostrord group';
+          ? _('the Nostrord group "%s"', name)
+          : _('a Nostrord group');
         return this.options.meta?.isOwn
-          ? `You posted to ${where}`
-          : `Someone posted to ${where}`;
+          ? _('You posted to %s', where)
+          : _('Someone posted to %s', where);
       }
       case 'armada': {
         const name = this.options.meta?.groupName;
         const count = this.options.meta?.count;
         const where = name
-          ? `the Armada community "${name}"`
-          : 'an Armada community';
-        if (this.options.meta?.isOwn) return `You posted to ${where}`;
+          ? _('the Armada community "%s"', name)
+          : _('an Armada community');
+        if (this.options.meta?.isOwn) return _('You posted to %s', where);
         if (typeof count === 'number' && count > 1)
-          return `${count} new messages in ${where}`;
-        return `New activity in ${where}`;
+          return _('%s new messages in %s', count, where);
+        return _('New activity in %s', where);
       }
       case 'highlight':
-        return `highlighted your ${target}`;
+        return _('highlighted your %s', target);
       case 'image-tag':
-        return 'tagged you in an image';
+        return _('tagged you in an image');
       case 'badge-award':
-        return 'awarded you a badge';
+        return _('awarded you a badge');
       case 'dhikr_round':
-        return 'Somebody started a new dhikr';
+        return _('Somebody started a new dhikr');
       case 'dhikr_commit':
-        return 'Somebody committed to a dhikr';
+        return _('Somebody committed to a dhikr');
       case 'dhikr_complete':
-        return 'A dhikr reached its goal';
+        return _('A dhikr reached its goal');
       default:
-        return `interacted with your ${target}`;
+        return _('interacted with your %s', target);
     }
   }
 

@@ -22,6 +22,12 @@ import { ArmadaCommunityRegistry } from './armada/ArmadaCommunityRegistry';
 import { resolveInvitePreview } from './armada/resolveInvitePreview';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { decryptArmadaImage } from '../../helpers/armada/decryptArmadaImage';
+import { _, tn } from '../../i18n';
+
+/** "%s channel(s) tracked" with plural handling (used twice below). */
+function tnNChannels(count: number): string {
+  return tn('%s channel tracked', '%s channels tracked', count, String(count));
+}
 
 export class GroupChatsSettings extends SettingsSection {
   private enableSwitch: Switch | null = null;
@@ -70,18 +76,14 @@ export class GroupChatsSettings extends SettingsSection {
 
     contentContainer.innerHTML = `
       <div class="setting">
-        <span class="setting__label">Enable Nostrord <span class="form__note">(beta)</span></span>
+        <span class="setting__label">${_('Enable Nostrord')} <span class="form__note">(${_('beta')})</span></span>
         <div class="setting__control">${this.enableSwitch.render()}</div>
-        <p class="setting__desc">Get a heads-up when one of your Nostrord (NIP-29) groups comes alive.
-          NoorNote checks your groups on a schedule and, if anything was posted in that window, drops a
-          single low-priority notification per group. A quiet group stays quiet.</p>
+        <p class="setting__desc">${_('Get a heads-up when one of your Nostrord (NIP-29) groups comes alive. NoorNote checks your groups on a schedule and, if anything was posted in that window, drops a single low-priority notification per group. A quiet group stays quiet.')}</p>
       </div>
       <div class="setting">
-        <span class="setting__label">Enable Armada <span class="form__note">(beta)</span></span>
+        <span class="setting__label">${_('Enable Armada')} <span class="form__note">(${_('beta')})</span></span>
         <div class="setting__control">${this.armadaSwitch.render()}</div>
-        <p class="setting__desc">Armada communities are end-to-end encrypted (Concord protocol).
-          Unlike Nostrord, there is no public membership list — you need to add each community
-          manually by pasting its invite link below.</p>
+        <p class="setting__desc">${_('Armada communities are end-to-end encrypted (Concord protocol). Unlike Nostrord, there is no public membership list — you need to add each community manually by pasting its invite link below.')}</p>
       </div>
     `;
     this.enableSwitch.setupEventListeners(contentContainer);
@@ -98,7 +100,9 @@ export class GroupChatsSettings extends SettingsSection {
     setGroupChatsEnabled(checked);
     this.eventBus.emit('group-chats:addon-toggle', { enabled: checked });
     ToastService.show(
-      checked ? 'Nostrord enabled' : 'Nostrord disabled',
+      checked
+        ? _('%s enabled', _('Nostrord'))
+        : _('%s disabled', _('Nostrord')),
       'success'
     );
     this.renderPanel(isGroupChatsEnabled() || isArmadaEnabled());
@@ -109,7 +113,9 @@ export class GroupChatsSettings extends SettingsSection {
     setArmadaEnabled(checked);
     this.eventBus.emit('armada:addon-toggle', { enabled: checked });
     ToastService.show(
-      checked ? 'Armada enabled — add communities below' : 'Armada disabled',
+      checked
+        ? _('%s enabled — add communities below', _('Armada'))
+        : _('%s disabled', _('Armada')),
       'success'
     );
     this.renderPanel(isGroupChatsEnabled() || isArmadaEnabled());
@@ -143,7 +149,7 @@ export class GroupChatsSettings extends SettingsSection {
     const optionsHtml = GROUP_CHATS_INTERVAL_OPTIONS.map(
       option => `
       <label class="nn-checkbox nn-checkbox--label-left">
-        <span class="setting__label">${option.label}</span>
+        <span class="setting__label">${_(option.label)}</span>
         <input
           type="radio"
           name="group-chats-interval"
@@ -161,8 +167,8 @@ export class GroupChatsSettings extends SettingsSection {
         this.storage.set(StorageKeys.GROUP_CHATS_NOTIFY_OWN_POSTS, checked);
         ToastService.show(
           checked
-            ? 'GroupChats: your own posts included'
-            : 'GroupChats: your own posts excluded',
+            ? _('GroupChats: your own posts included')
+            : _('GroupChats: your own posts excluded'),
           'success'
         );
       },
@@ -171,20 +177,16 @@ export class GroupChatsSettings extends SettingsSection {
     this.contentZone.innerHTML = `
       <section class="section group-chats-settings">
         <div class="setting">
-          <label class="setting__label">Check frequency for all supported group clients</label>
-          <p class="setting__desc">How often to look for new activity across all your enabled group chat
-            providers (GroupChats, Armada, and future ones). This window is also the quiet period: after one
-            notification, the same group won't notify again until the next check.</p>
+          <label class="setting__label">${_('Check frequency for all supported group clients')}</label>
+          <p class="setting__desc">${_("How often to look for new activity across all your enabled group chat providers (GroupChats, Armada, and future ones). This window is also the quiet period: after one notification, the same group won't notify again until the next check.")}</p>
           <div class="mode-options">
             ${optionsHtml}
           </div>
         </div>
         <div class="setting">
-          <span class="setting__label">Notify me about my own posts</span>
+          <span class="setting__label">${_('Notify me about my own posts')}</span>
           <div class="setting__control">${this.notifyOwnSwitch.render()}</div>
-          <p class="setting__desc">Also get the heads-up when you post to a group yourself — a handy
-            cross-device confirmation that your message went through. Turn off to only hear about others.
-            Applies to every enabled provider.</p>
+          <p class="setting__desc">${_('Also get the heads-up when you post to a group yourself — a handy cross-device confirmation that your message went through. Turn off to only hear about others. Applies to every enabled provider.')}</p>
         </div>
       </section>
     `;
@@ -202,10 +204,16 @@ export class GroupChatsSettings extends SettingsSection {
             );
           rt?.service?.setPollingInterval(intervalMs);
           rt?.armadaService?.setPollingInterval(intervalMs);
-          const label =
-            GROUP_CHATS_INTERVAL_OPTIONS.find(o => o.value === intervalMs)
-              ?.label ?? 'updated';
-          ToastService.show(`Group Chats: ${label.toLowerCase()}`, 'success');
+          ToastService.show(
+            _(
+              'Group Chats: %s',
+              _(
+                GROUP_CHATS_INTERVAL_OPTIONS.find(o => o.value === intervalMs)
+                  ?.label ?? 'updated'
+              )
+            ),
+            'success'
+          );
         });
       });
 
@@ -226,16 +234,16 @@ export class GroupChatsSettings extends SettingsSection {
 
     const listHtml =
       communities.length === 0
-        ? `<p class="form__note">No tracked communities yet. Paste an Armada invite link below to start tracking activity.</p>`
+        ? `<p class="form__note">${_('No tracked communities yet. Paste an Armada invite link below to start tracking activity.')}</p>`
         : `<ul class="ui-list tracked-armada-communities">${communities
             .map(c => {
               const channelCount = c.channels?.length ?? 0;
               const status =
                 channelCount > 0
-                  ? `${channelCount} ${channelCount === 1 ? 'channel' : 'channels'} tracked`
+                  ? tnNChannels(channelCount)
                   : c.controlPk
-                    ? 'active (control plane only)'
-                    : 'inactive';
+                    ? _('active (control plane only)')
+                    : _('inactive');
               return `
             <li class="ui-list__item" data-armada-community="${escapeHtmlAttr(c.naddr)}">
               <div class="armada-community-row">
@@ -246,7 +254,7 @@ export class GroupChatsSettings extends SettingsSection {
                   <span class="armada-community-row__name">${escapeHtml(c.name)}</span>
                   <span class="armada-community-row__meta">${status}</span>
                 </div>
-                <button class="btn-icon armada-community-row__remove" data-armada-remove aria-label="Remove community">
+                <button class="btn-icon armada-community-row__remove" data-armada-remove aria-label="${escapeHtmlAttr(_('Remove community'))}">
                   <svg width="16" height="16"><use href="#icon-close"/></svg>
                 </button>
               </div>
@@ -257,18 +265,16 @@ export class GroupChatsSettings extends SettingsSection {
     this.armadaZone.innerHTML = `
       <section class="section armada-communities">
         <div class="setting">
-          <label class="setting__label">Tracked Armada communities</label>
-          <p class="setting__desc">Communities you track for activity notifications. NoorNote decrypts the public
-            preview locally and discovers your channels automatically — your invite fragment never leaves your device.</p>
+          <label class="setting__label">${_('Tracked Armada communities')}</label>
+          <p class="setting__desc">${_('Communities you track for activity notifications. NoorNote decrypts the public preview locally and discovers your channels automatically — your invite fragment never leaves your device.')}</p>
           ${listHtml}
         </div>
         <div class="setting">
-          <label class="setting__label">Add community</label>
-          <p class="setting__desc">Paste your Armada invite link (the full <code>armada.buzz/invite/…#…</code> URL).
-            NoorNote decrypts the community, reads its channel list from the control plane, and starts tracking.</p>
+          <label class="setting__label">${_('Add community')}</label>
+          <p class="setting__desc">${_('Paste your Armada invite link (the full <code>armada.buzz/invite/…#…</code> URL). NoorNote decrypts the community, reads its channel list from the control plane, and starts tracking.')}</p>
           <div class="l-row--split">
             <input type="text" class="input armada-add-input" placeholder="https://armada.buzz/invite/naddr1…#…" data-armada-add-input />
-            <button class="btn armada-add-btn" data-armada-add>Add</button>
+            <button class="btn armada-add-btn" data-armada-add>${_('Add')}</button>
           </div>
         </div>
       </section>
@@ -324,13 +330,13 @@ export class GroupChatsSettings extends SettingsSection {
     const trimmed = rawInput.trim();
     if (!trimmed || !trimmed.includes('/invite/')) {
       ToastService.show(
-        'Paste the armada.buzz invite link (must contain /invite/).',
+        _('Paste the armada.buzz invite link (must contain /invite/).'),
         'error'
       );
       return;
     }
     btn.disabled = true;
-    btn.textContent = 'Resolving…';
+    btn.textContent = _('Resolving…');
     try {
       // Resolve invite → bundle decrypt → control-plane channel discovery
       const result = await resolveInvitePreview(trimmed);
@@ -343,7 +349,7 @@ export class GroupChatsSettings extends SettingsSection {
       );
       if (existing) {
         ToastService.show(
-          `"${existing.name}" is already being tracked.`,
+          _('"%s" is already being tracked.', existing.name),
           'success'
         );
         return;
@@ -352,22 +358,22 @@ export class GroupChatsSettings extends SettingsSection {
       const community = result.community;
       ArmadaCommunityRegistry.getInstance().add(community);
       const note = community.channels?.length
-        ? ` — ${community.channels.length} ${community.channels.length === 1 ? 'channel' : 'channels'} discovered`
+        ? ` — ${tnNChannels(community.channels.length).replace(_('tracked'), _('discovered'))}`
         : '';
-      ToastService.show(`Tracking "${community.name}"${note}`, 'success');
+      ToastService.show(_('Tracking "%s"', community.name) + note, 'success');
       this.renderArmadaCommunities(true);
     } catch {
-      ToastService.show('Could not resolve the invite link.', 'error');
+      ToastService.show(_('Could not resolve the invite link.'), 'error');
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Add';
+      btn.textContent = _('Add');
     }
   }
 
   private handleRemoveCommunity(naddr: string): void {
     const removed = ArmadaCommunityRegistry.getInstance().remove(naddr);
     if (removed) {
-      ToastService.show('Community removed', 'success');
+      ToastService.show(_('Community removed'), 'success');
       this.renderArmadaCommunities(true);
     }
   }

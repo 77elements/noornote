@@ -28,6 +28,7 @@ import {
 import { CalendarDataService } from './CalendarDataService';
 import { getOccurrencesInRange } from '../../helpers/nip52/recurrence';
 import type { CalendarEventData } from '../../helpers/nip52/parser';
+import { _ } from '../../i18n';
 
 const POLL_INTERVAL_MS = 30 * 1000;
 /** Default lead time in minutes (10) when no addon/event override is set. */
@@ -264,7 +265,7 @@ export class CalendarReminderService {
         seen.add(key);
         specs.push({
           id: ID_BASE + specs.length,
-          title: event.title || 'Calendar event',
+          title: event.title || _('Calendar event'),
           body: this.nativeBody(occurrenceStart, event.allDay),
           fireAt,
           timeoutAfterMs: TIMEOUT_AFTER_MS,
@@ -281,7 +282,7 @@ export class CalendarReminderService {
       day: 'numeric',
       month: 'short',
     });
-    if (allDay) return `${date}, all day`;
+    if (allDay) return `${date}, ${_('all day')}`;
     const time = new Date(occurrenceStart).toLocaleTimeString(undefined, {
       hour: '2-digit',
       minute: '2-digit',
@@ -308,7 +309,7 @@ export class CalendarReminderService {
   }
 
   private fire(event: CalendarEventData, leadMin: number, key: string): void {
-    const title = event.title || 'Calendar event';
+    const title = event.title || _('Calendar event');
     const when = humanizeLeadMinutes(leadMin);
     diagLog('system', 'calendar: reminder fired', {
       dTag: event.dTag,
@@ -316,7 +317,7 @@ export class CalendarReminderService {
     });
 
     AlertBarService.getInstance().show({
-      text: `${title} starts ${when}`,
+      text: _('%s starts %s', title, when),
       // "Ok" acknowledges PERSISTENTLY — the reminder never comes back for
       // this occurrence (even after reload / app restart).
       onOk: () => this.acknowledge(key),
@@ -326,7 +327,7 @@ export class CalendarReminderService {
     // applies the unfocused rule). On Capacitor the scan never runs.
     void ReminderHub.getInstance().osNotifyNow({
       title: 'NoorNote — Calendar',
-      body: `${title} starts ${when}`,
+      body: _('%s starts %s', title, when),
       timeoutAfterMs: TIMEOUT_AFTER_MS,
       osWhen: 'unfocused',
     });

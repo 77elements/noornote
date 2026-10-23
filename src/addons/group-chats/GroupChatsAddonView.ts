@@ -1,5 +1,6 @@
 import { View } from '../../components/views/View';
 import { GroupChatsSettings } from './GroupChatsSettings';
+import { _ } from '../../i18n';
 
 export class GroupChatsAddonView extends View {
   private container: HTMLElement;
@@ -16,7 +17,7 @@ export class GroupChatsAddonView extends View {
       'view-content view-content--addon view-content--addon-group-chats';
     this.container.innerHTML = `
       <div class="back-padder">
-        <h1>Group Chats</h1>
+        <h1>${_('Group Chats')}</h1>
         <p class="form__note">
           Heads-up notifications when your group chat communities come alive.
           Currently supports Nostrord (NIP-29) and Armada (Concord).

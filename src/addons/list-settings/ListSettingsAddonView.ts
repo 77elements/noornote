@@ -1,5 +1,6 @@
 import { View } from '../../components/views/View';
 import { ListSettingsSection } from '../../components/settings/ListSettingsSection';
+import { _ } from '../../i18n';
 
 export class ListSettingsAddonView extends View {
   private container: HTMLElement;
@@ -12,7 +13,7 @@ export class ListSettingsAddonView extends View {
       'view-content view-content--addon view-content--addon-list-settings';
     this.container.innerHTML = `
       <div class="back-padder">
-        <h1>List Sync Mode</h1>
+        <h1>${_('List Sync Mode')}</h1>
         <section class="section" id="list-settings-content"></section>
         <div data-addon-content="list-settings"></div>
       </div>

@@ -15,6 +15,7 @@ import { AuthService } from '../../services/AuthService';
 import { SystemLogger } from '../../services/SystemLogger';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { isScheduledPostsEnabled, setScheduledPostsEnabled } from './index';
+import { _ } from '../../i18n';
 import {
   ScheduledPostService,
   type ScheduledPost,
@@ -46,7 +47,9 @@ export class ScheduledPostsAddonView extends View {
           enabled: checked,
         });
         ToastService.show(
-          checked ? 'Scheduled Posts enabled' : 'Scheduled Posts disabled',
+          checked
+            ? _('%s enabled', _('Scheduled Posts'))
+            : _('%s disabled', _('Scheduled Posts')),
           'success'
         );
         if (checked) this.mountList();
@@ -56,12 +59,12 @@ export class ScheduledPostsAddonView extends View {
 
     this.container.innerHTML = `
       <div class="back-padder">
-        <h1>Scheduled Posts</h1>
+        <h1>${_('Scheduled Posts')}</h1>
         <section class="section">
           <div class="setting">
-            <span class="setting__label">Enable Scheduled Posts</span>
+            <span class="setting__label">${_('Enable Scheduled Posts')}</span>
             <div class="setting__control"></div>
-            <p class="setting__desc">Schedule notes and articles to be published at a later date and time. Your fully signed event is held by a NoorNote-operated Deno service and published to your chosen relays at the scheduled moment. No private keys leave your device.</p>
+            <p class="setting__desc">${_('Schedule notes and articles to be published at a later date and time. Your fully signed event is held by a NoorNote-operated Deno service and published to your chosen relays at the scheduled moment. No private keys leave your device.')}</p>
           </div>
         </section>
         <div data-addon-content="scheduled-posts"></div>
@@ -122,7 +125,7 @@ export class ScheduledPostsAddonView extends View {
   private mountList(): void {
     if (!this.contentEl) return;
     this.contentEl.innerHTML = `
-      <h2>Your scheduled posts</h2>
+      <h2>${_('Your scheduled posts')}</h2>
       <div class="ui-list" data-list></div>
     `;
     void this.loadAndRenderList();
@@ -154,7 +157,7 @@ export class ScheduledPostsAddonView extends View {
         `Failed to load list: ${String(err)}`
       );
       this.posts = [];
-      ToastService.show('Failed to load scheduled posts', 'error');
+      ToastService.show(_('Failed to load scheduled posts'), 'error');
     } finally {
       this.loading = false;
       this.renderList();
@@ -168,12 +171,12 @@ export class ScheduledPostsAddonView extends View {
     if (!list) return;
 
     if (this.loading) {
-      list.innerHTML = `<div class="scheduled-post__empty pulsate">Loading scheduled posts...</div>`;
+      list.innerHTML = `<div class="scheduled-post__empty pulsate">${_('Loading scheduled posts...')}</div>`;
       return;
     }
 
     if (this.posts.length === 0) {
-      list.innerHTML = `<div class="scheduled-post__empty">No scheduled posts yet.</div>`;
+      list.innerHTML = `<div class="scheduled-post__empty">${_('No scheduled posts yet.')}</div>`;
       return;
     }
 
@@ -184,7 +187,7 @@ export class ScheduledPostsAddonView extends View {
   private renderRow(p: ScheduledPost): string {
     const when = new Date(p.publishAt * 1000).toLocaleString();
     const kindLabel =
-      p.kind === 30023 ? 'Article' : p.kind === 1068 ? 'Poll' : 'Note';
+      p.kind === 30023 ? _('Article') : p.kind === 1068 ? _('Poll') : _('Note');
     const preview = p.content.length >= 100 ? `${p.content}…` : p.content;
     return `
       <div class="ui-list__item scheduled-post" data-id="${escapeHtml(p.id)}">
@@ -192,9 +195,9 @@ export class ScheduledPostsAddonView extends View {
           <span class="scheduled-post__when">${escapeHtml(when)}</span>
           <span class="scheduled-post__kind">${kindLabel}</span>
         </div>
-        <div class="scheduled-post__preview">${escapeHtml(preview || '(empty)')}</div>
+        <div class="scheduled-post__preview">${escapeHtml(preview || _('(empty)'))}</div>
         <div class="scheduled-post__actions">
-          <button class="btn btn--passive btn--medium" data-action="cancel">Cancel</button>
+          <button class="btn btn--passive btn--medium" data-action="cancel">${_('Cancel')}</button>
         </div>
       </div>
     `;
@@ -217,11 +220,12 @@ export class ScheduledPostsAddonView extends View {
 
   private async handleCancel(id: string): Promise<void> {
     const confirmed = await ModalService.getInstance().confirm({
-      title: 'Cancel Scheduled Post',
-      message:
-        'This will permanently remove the scheduled post. The event will not be published.',
-      confirmText: 'Cancel Post',
-      cancelText: 'Keep',
+      title: _('Cancel Scheduled Post'),
+      message: _(
+        'This will permanently remove the scheduled post. The event will not be published.'
+      ),
+      confirmText: _('Cancel Post'),
+      cancelText: _('Keep'),
       confirmDestructive: true,
     });
     if (!confirmed) return;
@@ -229,7 +233,7 @@ export class ScheduledPostsAddonView extends View {
     const auth = AuthService.getInstance();
     const user = auth.getCurrentUser();
     if (!user) {
-      ToastService.show('Not authenticated', 'error');
+      ToastService.show(_('Not authenticated'), 'error');
       return;
     }
 
@@ -242,7 +246,7 @@ export class ScheduledPostsAddonView extends View {
         pubkey: user.pubkey,
       });
       if (!challenge) {
-        ToastService.show('Failed to sign cancel challenge', 'error');
+        ToastService.show(_('Failed to sign cancel challenge'), 'error');
         return;
       }
       await ScheduledPostService.getInstance().cancel(
@@ -255,7 +259,7 @@ export class ScheduledPostsAddonView extends View {
       this.posts = this.posts.filter(p => p.id !== id);
       this.renderList();
       TypedEventBus.getInstance().emit('scheduled-posts:changed');
-      ToastService.show('Scheduled post cancelled', 'success');
+      ToastService.show(_('Scheduled post cancelled'), 'success');
     } catch (err) {
       SystemLogger.getInstance().warn(
         'ScheduledPostsAddonView',

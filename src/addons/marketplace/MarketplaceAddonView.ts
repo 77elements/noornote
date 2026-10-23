@@ -15,6 +15,7 @@ import { MarketplaceSettingsSection } from '../../components/settings/Marketplac
 import { MarketplaceTimeline } from './MarketplaceTimeline';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { isMarketplaceEnabled } from './index';
+import { _ } from '../../i18n';
 
 export class MarketplaceAddonView extends View {
   private container: HTMLElement;
@@ -30,7 +31,7 @@ export class MarketplaceAddonView extends View {
       'view-content view-content--addon view-content--addon-marketplace';
     this.container.innerHTML = `
       <div class="back-padder">
-        <h1>Marketplace</h1>
+        <h1>${_('Marketplace')}</h1>
         <section class="section" id="marketplace-settings-content"></section>
         <div data-addon-content="marketplace"></div>
       </div>

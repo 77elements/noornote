@@ -17,6 +17,7 @@
  */
 
 import dayjs from 'dayjs';
+import { getUiLocale } from '../i18n';
 import calendarSystems from '@calidy/dayjs-calendarsystems';
 import HijriCalendarSystem from '@calidy/dayjs-calendarsystems/calendarSystems/HijriCalendarSystem';
 import {
@@ -278,7 +279,7 @@ function formatBothDates(
  */
 function formatTime(date: Date): string {
   try {
-    return date.toLocaleTimeString('de-DE', {
+    return date.toLocaleTimeString(getUiLocale(), {
       hour: '2-digit',
       minute: '2-digit',
     });
@@ -295,7 +296,7 @@ function formatTime(date: Date): string {
  */
 function getMonthShort(date: Date): string {
   try {
-    return date.toLocaleString('en-US', { month: 'short' });
+    return date.toLocaleString(getUiLocale(), { month: 'short' });
   } catch {
     // Fallback: Manual month names if Intl is unavailable
     const months = [

@@ -5,6 +5,7 @@ import { Switch } from '../../components/ui/Switch';
 import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { _ } from '../../i18n';
 
 export class BadgesView extends View {
   private container: HTMLElement;
@@ -31,41 +32,41 @@ export class BadgesView extends View {
 
     this.container.innerHTML = `
       <div class="back-padder">
-        <h1>Badges</h1>
+        <h1>${_('Badges')}</h1>
         <section class="section" data-role="toggle-section"></section>
         ${
           enabled
             ? `
         <section class="section">
-          <h2>Create Badge</h2>
+          <h2>${_('Create Badge')}</h2>
           <div class="form__row">
-            <label>Slug (unique identifier)</label>
-            <input class="input" type="text" data-field="slug" placeholder="e.g. early-supporter" />
+            <label>${_('Slug (unique identifier)')}</label>
+            <input class="input" type="text" data-field="slug" placeholder="${_('e.g. early-supporter')}" />
           </div>
           <div class="form__row">
-            <label>Name</label>
-            <input class="input" type="text" data-field="name" placeholder="e.g. Early Supporter" />
+            <label>${_('Name')}</label>
+            <input class="input" type="text" data-field="name" placeholder="${_('e.g. Early Supporter')}" />
           </div>
           <div class="form__row">
-            <label>Description</label>
-            <textarea class="textarea textarea--small" data-field="description" placeholder="What this badge represents…"></textarea>
+            <label>${_('Description')}</label>
+            <textarea class="textarea textarea--small" data-field="description" placeholder="${_('What this badge represents…')}"></textarea>
           </div>
           <div class="form__row">
-            <label>Image URL</label>
+            <label>${_('Image URL')}</label>
             <input class="input" type="text" data-field="imageUrl" placeholder="https://…/badge.png" />
           </div>
           <div class="l-row--split">
             <div>
-              <button type="button" class="btn btn--passive" data-action="upload-image">Upload image…</button>
+              <button type="button" class="btn btn--passive" data-action="upload-image">${_('Upload image…')}</button>
               <input type="file" accept="image/*" style="display:none" data-role="file-input" />
               <span data-role="upload-status"></span>
             </div>
-            <button class="btn" data-action="create-badge">Save to Badge Gallery</button>
+            <button class="btn" data-action="create-badge">${_('Save to Badge Gallery')}</button>
           </div>
         </section>
         <section class="section">
-          <h2>Your Badge Gallery</h2>
-          <div data-role="gallery" class="pulsate">Loading…</div>
+          <h2>${_('Your Badge Gallery')}</h2>
+          <div data-role="gallery" class="pulsate">${_('Loading…')}</div>
         </section>
         `
             : ''
@@ -77,7 +78,7 @@ export class BadgesView extends View {
       '[data-role="toggle-section"]'
     )!;
     const sw = new Switch({
-      label: 'Enable Badges',
+      label: _('Enable Badges'),
       checked: enabled,
       onChange: checked => {
         setBadgesEnabled(checked);
@@ -108,14 +109,14 @@ export class BadgesView extends View {
       const file = fileInput.files?.[0];
       if (!file) return;
       if (!file.type.startsWith('image/')) {
-        ToastService.show('Please select an image file', 'error');
+        ToastService.show(_('Please select an image file'), 'error');
         return;
       }
       const status = this.container.querySelector(
         '[data-role="upload-status"]'
       ) as HTMLElement | null;
       if (status) {
-        status.textContent = 'Uploading…';
+        status.textContent = _('Uploading…');
         status.classList.add('pulsate');
       }
       try {
@@ -124,7 +125,7 @@ export class BadgesView extends View {
         const mediaApi =
           await ModuleLoader.getInstance().ensure<MediaApi>('media');
         if (!mediaApi) {
-          ToastService.show('Media module not available', 'error');
+          ToastService.show(_('Media module not available'), 'error');
           return;
         }
         const result = await mediaApi.uploadFile(file);
@@ -133,12 +134,15 @@ export class BadgesView extends View {
             '[data-field="imageUrl"]'
           ) as HTMLInputElement | null;
           if (urlInput) urlInput.value = result.url;
-          ToastService.show('Image uploaded', 'success');
+          ToastService.show(_('Image uploaded'), 'success');
         } else {
-          ToastService.show(result.error || 'Upload failed', 'error');
+          ToastService.show(result.error || _('Upload failed'), 'error');
         }
       } catch (err) {
-        ToastService.show((err as Error).message || 'Upload failed', 'error');
+        ToastService.show(
+          (err as Error).message || _('Upload failed'),
+          'error'
+        );
       } finally {
         if (status) {
           status.textContent = '';
@@ -169,7 +173,7 @@ export class BadgesView extends View {
       )?.value.trim();
 
       if (!slug || !name) {
-        ToastService.show('Slug and Name are required', 'error');
+        ToastService.show(_('Slug and Name are required'), 'error');
         return;
       }
 
@@ -222,8 +226,7 @@ export class BadgesView extends View {
 
     const defs = await this.badgeService.fetchOwnDefinitions();
     if (defs.length === 0) {
-      galleryEl.innerHTML =
-        '<p style="color: var(--color-3)">No badges created yet.</p>';
+      galleryEl.innerHTML = `<p style="color: var(--color-3)">${_('No badges created yet.')}</p>`;
       galleryEl.classList.remove('pulsate');
       return;
     }
@@ -267,7 +270,7 @@ export class BadgesView extends View {
           >('posts')
           ?.deleteByCoordinates([coordinate]) ?? Promise.resolve(false));
         if (success) {
-          ToastService.show('Badge deleted', 'success');
+          ToastService.show(_('Badge deleted'), 'success');
           void this.loadGallery();
         }
       });
@@ -297,8 +300,7 @@ export class BadgesView extends View {
       if (!awardeesMount) continue;
 
       if (awards.length === 0) {
-        awardeesMount.innerHTML =
-          '<span style="color:var(--color-3)">No recipients yet</span>';
+        awardeesMount.innerHTML = `<span style="color:var(--color-3)">${_('No recipients yet')}</span>`;
         continue;
       }
 
@@ -310,7 +312,7 @@ export class BadgesView extends View {
           const name = profileService.getDisplayName(pk);
           const awardId = award.id ?? '';
           entries.push(
-            `<span>${escapeHtml(name)} <a href="#" class="badge-revoke-link" data-award-id="${escapeHtmlAttr(awardId)}">Revoke</a></span>`
+            `<span>${escapeHtml(name)} <a href="#" class="badge-revoke-link" data-award-id="${escapeHtmlAttr(awardId)}">${_('Revoke')}</a></span>`
           );
         }
       }
@@ -368,12 +370,12 @@ export class BadgesView extends View {
       <div class="badge-award__info">
         <div class="badge-award__name">${escapeHtml(def.name)}</div>
         ${def.description ? `<div class="badge-award__desc">${escapeHtml(def.description)}</div>` : ''}
-        <div class="badge-award__awardees">slug: ${escapeHtml(def.slug)}</div>
-        <div class="badge-award__recipients" data-awardees-slug="${escapeHtmlAttr(def.slug)}"><span class="pulsate">Loading…</span></div>
+        <div class="badge-award__awardees">${_('slug')}: ${escapeHtml(def.slug)}</div>
+        <div class="badge-award__recipients" data-awardees-slug="${escapeHtmlAttr(def.slug)}"><span class="pulsate">${_('Loading…')}</span></div>
       </div>
       <div>
-        <button class="btn btn--mini btn--passive" data-action="edit-badge" data-slug="${escapeHtmlAttr(def.slug)}">Edit</button>
-        <button class="btn btn--mini btn--danger" data-action="delete-badge" data-slug="${escapeHtmlAttr(def.slug)}">Delete</button>
+        <button class="btn btn--mini btn--passive" data-action="edit-badge" data-slug="${escapeHtmlAttr(def.slug)}">${_('Edit')}</button>
+        <button class="btn btn--mini btn--danger" data-action="delete-badge" data-slug="${escapeHtmlAttr(def.slug)}">${_('Delete')}</button>
       </div>
     </div>`;
   }

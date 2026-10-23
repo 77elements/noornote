@@ -8,7 +8,7 @@
  */
 
 import { View } from './View';
-import { _ } from '../../i18n';
+import { _, getUiLocale } from '../../i18n';
 import type { DMsModuleApi } from '../../modules/dms/contracts';
 import type { DMMessage } from '../../services/dm/DMStore';
 import {
@@ -1229,17 +1229,19 @@ export class ConversationView extends View {
     const date = new Date(timestamp * 1000);
     const now = new Date();
     const isToday = date.toDateString() === now.toDateString();
+    const locale = getUiLocale();
 
-    const timeStr = date.toLocaleTimeString('en-US', {
+    const timeStr = date.toLocaleTimeString(locale, {
       hour: '2-digit',
       minute: '2-digit',
+      hour12: false,
     });
 
     if (isToday) {
       return timeStr;
     }
 
-    const dateStr = date.toLocaleDateString('en-US', {
+    const dateStr = date.toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric',
       year: 'numeric',

@@ -54,6 +54,7 @@ import {
 } from './CityDataService';
 import { CALC_METHODS, computeTimes, type ComputedTimes } from './SalahService';
 import { getDailyAyah } from './quranDaily';
+import { _, tn } from '../../i18n';
 
 const PICK = '__pick__';
 const MAJLIS_TABS: string[] = ['salah', 'holidays', 'dhikr', 'daily-ayah'];
@@ -163,7 +164,9 @@ export class NostrMajlisAddonView extends View {
           enabled: checked,
         });
         ToastService.show(
-          checked ? 'Nostr-Majlis enabled' : 'Nostr-Majlis disabled',
+          checked
+            ? _('%s enabled', _('Nostr-Majlis'))
+            : _('%s disabled', _('Nostr-Majlis')),
           'success'
         );
         void this.renderSalah();
@@ -175,19 +178,19 @@ export class NostrMajlisAddonView extends View {
 
     this.container.innerHTML = `
       <div class="back-padder">
-        <h1>Nostr-Majlis</h1>
+        <h1>${_('Nostr-Majlis')}</h1>
         <section class="section">
           <div class="setting">
-            <span class="setting__label">Enable Nostr-Majlis</span>
+            <span class="setting__label">${_('Enable Nostr-Majlis')}</span>
             <div class="setting__control">${this.enableSwitch.render()}</div>
-            <p class="setting__desc">Islamic features for NoorNote: prayer times (Salah), Islamic holidays, and community dhikr. Pick Diyanet for official times, or a calculation method computed on your device.</p>
+            <p class="setting__desc">${_('Islamic features for NoorNote: prayer times (Salah), Islamic holidays, and community dhikr. Pick Diyanet for official times, or a calculation method computed on your device.')}</p>
           </div>
         </section>
         <div class="tabs tabs--scrollable" data-el="majlis-tabs" hidden>
-          <button class="tab tab--active" data-tab="salah">Salah</button>
-          <button class="tab" data-tab="holidays">Holidays</button>
-          <button class="tab" data-tab="dhikr">Community Dhikr</button>
-          <button class="tab" data-tab="daily-ayah">Daily Ayah</button>
+          <button class="tab tab--active" data-tab="salah">${_('Salah')}</button>
+          <button class="tab" data-tab="holidays">${_('Holidays')}</button>
+          <button class="tab" data-tab="dhikr">${_('Community Dhikr')}</button>
+          <button class="tab" data-tab="daily-ayah">${_('Daily Ayah')}</button>
         </div>
         <div class="tab-content tab-content--active" data-tab-content="salah" data-addon-content="salah"></div>
         <div class="tab-content" data-tab-content="holidays" data-addon-content="holidays"></div>
@@ -284,7 +287,7 @@ export class NostrMajlisAddonView extends View {
           ?.widget?.refresh();
       },
     });
-    host.innerHTML = `<h2 class="h4">Sidebar Widget</h2><div class="setting"><span class="setting__label">Display sidebar widget</span><div class="setting__control">${this.widgetSwitch.render()}</div><p class="setting__desc">Shows the current prayer and the time left until the next one in the sidebar.</p></div>`;
+    host.innerHTML = `<h2 class="h4">${_('Sidebar Widget')}</h2><div class="setting"><span class="setting__label">${_('Display sidebar widget')}</span><div class="setting__control">${this.widgetSwitch.render()}</div><p class="setting__desc">${_('Shows the current prayer and the time left until the next one in the sidebar.')}</p></div>`;
     this.widgetSwitch.setupEventListeners(host);
   }
 
@@ -307,10 +310,10 @@ export class NostrMajlisAddonView extends View {
         <h2 class="h4" data-el="holiday-year"></h2>
         <div class="ui-list nm-holidays" data-el="holiday-table"></div>
         <div class="l-row--split">
-          <button class="btn btn--passive" data-action="prev-year">Previous year</button>
-          <button class="btn btn--passive" data-action="next-year">Next year</button>
+          <button class="btn btn--passive" data-action="prev-year">${_('Previous year')}</button>
+          <button class="btn btn--passive" data-action="next-year">${_('Next year')}</button>
         </div>
-        <p class="setting__desc">Dates are calculated (Umm al-Qura calendar); local moon-sighting may shift Ramadan and the Eids by a day.</p>
+        <p class="setting__desc">${_('Dates are calculated (Umm al-Qura calendar); local moon-sighting may shift Ramadan and the Eids by a day.')}</p>
       </section>
       <section class="section" data-el="holiday-reminders"></section>
     `;
@@ -352,9 +355,9 @@ export class NostrMajlisAddonView extends View {
       },
     });
 
-    let html = `<h2 class="h4">Reminder Settings</h2><div class="setting"><span class="setting__label">Holiday reminders</span><div class="setting__control">${this.holidaySwitch.render()}</div><p class="setting__desc">Notifies you ahead of each holiday, through the same channels as the prayer reminders.</p></div>`;
+    let html = `<h2 class="h4">${_('Reminder Settings')}</h2><div class="setting"><span class="setting__label">${_('Holiday reminders')}</span><div class="setting__control">${this.holidaySwitch.render()}</div><p class="setting__desc">${_('Notifies you ahead of each holiday, through the same channels as the prayer reminders.')}</p></div>`;
     if (hr.enabled) {
-      html += `<div class="setting"><span class="setting__label">Days before</span><div class="setting__control" data-control="holiday-days"></div></div>`;
+      html += `<div class="setting"><span class="setting__label">${_('Days before')}</span><div class="setting__control" data-control="holiday-days"></div></div>`;
     }
     host.innerHTML = html;
     this.holidaySwitch.setupEventListeners(host);
@@ -363,7 +366,7 @@ export class NostrMajlisAddonView extends View {
       this.holidayDaysDD = new NnDropdown({
         options: [1, 3, 7, 10].map(n => ({
           value: String(n),
-          label: `${n} day${n === 1 ? '' : 's'} before`,
+          label: tn('%s day before', '%s days before', n, String(n)),
         })),
         selectedValue: String(hr.daysBefore),
         width: '100%',
@@ -414,7 +417,7 @@ export class NostrMajlisAddonView extends View {
     }
 
     this.notifySwitch = new Switch({
-      label: 'Notify on activity',
+      label: _('Notify on activity'),
       checked: getNostrMajlisSettings().dhikrNotifications,
       onChange: checked =>
         setNostrMajlisSettings({
@@ -427,7 +430,7 @@ export class NostrMajlisAddonView extends View {
       <section class="section">
         <div class="l-row--split">
           <div>${this.notifySwitch.render()}</div>
-          <div><button class="btn btn--primary" data-action="create-dhikr">Create new dhikr</button></div>
+          <div><button class="btn btn--primary" data-action="create-dhikr">${_('Create new dhikr')}</button></div>
         </div>
         <div class="nm-dhikr-list" data-el="dhikr-list"></div>
       </section>
@@ -477,9 +480,9 @@ export class NostrMajlisAddonView extends View {
     slot.innerHTML = `
       <section class="section">
         <div class="setting">
-          <span class="setting__label">Daily Quran ayah</span>
+          <span class="setting__label">${_('Daily Quran ayah')}</span>
           <div class="setting__control">${this.quranSwitch.render()}</div>
-          <p class="setting__desc">Shows one ayah per day in the sidebar widget — Arabic Uthmani text, the English translation (The Clear Quran) and the English tafsir Al-Mukhtasar. Texts load from public static CDNs once per day and are cached on your device.</p>
+          <p class="setting__desc">${_('Shows one ayah per day in the sidebar widget — Arabic Uthmani text, the English translation (The Clear Quran) and the English tafsir Al-Mukhtasar. Texts load from public static CDNs once per day and are cached on your device.')}</p>
         </div>
       </section>
       <section class="section" data-el="daily-ayah-view"></section>
@@ -491,11 +494,11 @@ export class NostrMajlisAddonView extends View {
     ) as HTMLElement | null;
     if (!view) return;
     if (!getNostrMajlisSettings().quranDaily) {
-      view.innerHTML = `<p class="setting__desc">Enable the daily ayah to see it here.</p>`;
+      view.innerHTML = `<p class="setting__desc">${_('Enable the daily ayah to see it here.')}</p>`;
       return;
     }
 
-    view.innerHTML = `<p class="setting__desc pulsate">Loading the daily ayah…</p>`;
+    view.innerHTML = `<p class="setting__desc pulsate">${_('Loading the daily ayah…')}</p>`;
     // NOT guarded by view.isConnected: at construction time this view is still
     // detached (mounted right after the constructor returns), and an isConnected
     // check here would discard the filled content and leave the "Loading…"
@@ -503,14 +506,14 @@ export class NostrMajlisAddonView extends View {
     const ayah = await getDailyAyah();
     if (this.disposed || token !== this.quranToken) return;
     if (!ayah) {
-      view.innerHTML = `<p class="setting__desc">The daily ayah could not be loaded. Check your connection — it will retry automatically.</p>`;
+      view.innerHTML = `<p class="setting__desc">${_('The daily ayah could not be loaded. Check your connection — it will retry automatically.')}</p>`;
       return;
     }
     view.innerHTML = `
-      <h2 class="h4 nm-quran__ref">Quran ${ayah.surah}:${ayah.ayah}</h2>
+      <h2 class="h4 nm-quran__ref">${_('Quran')} ${ayah.surah}:${ayah.ayah}</h2>
       <p class="nm-quran__arabic" dir="rtl" lang="ar">${escapeHtml(ayah.arabic)}</p>
       ${ayah.english ? `<p class="nm-quran__translation">${escapeHtml(ayah.english)}</p>` : ''}
-      ${ayah.tafsir ? `<h3 class="h4 nm-quran__tafsir-label">Tafsir (Al-Mukhtasar)</h3><p class="nm-quran__tafsir">${escapeHtml(ayah.tafsir)}</p>` : ''}
+      ${ayah.tafsir ? `<h3 class="h4 nm-quran__tafsir-label">${_('Tafsir (Al-Mukhtasar)')}</h3><p class="nm-quran__tafsir">${escapeHtml(ayah.tafsir)}</p>` : ''}
     `;
   }
 
@@ -527,8 +530,8 @@ export class NostrMajlisAddonView extends View {
     if (rounds.length === 0) {
       host.innerHTML =
         svc && svc.isLoaded()
-          ? `<p class="setting__desc">No dhikr actions yet. Create the first one.</p>`
-          : `<p class="setting__desc pulsate">Looking for existing dhikrs…</p>`;
+          ? `<p class="setting__desc">${_('No dhikr actions yet. Create the first one.')}</p>`
+          : `<p class="setting__desc pulsate">${_('Looking for existing dhikrs…')}</p>`;
       return;
     }
 
@@ -546,8 +549,8 @@ export class NostrMajlisAddonView extends View {
         const phrase = `${escapeHtml(r.phrase)}${complete ? ' 🎉' : ''}${r.description ? `<span class="nm-dhikr__desc">${escapeHtml(r.description)}</span>` : ''}`;
         const action = complete
           ? '✅'
-          : `<button class="btn btn--passive btn--mini" data-action="commit" data-addr="${escapeHtml(r.addr)}">Commit</button>`;
-        const flags = `${hidden ? '<span class="nm-dhikr__flag">hidden</span>' : ''}${banned ? '<span class="nm-dhikr__flag">excluded</span>' : ''}`;
+          : `<button class="btn btn--passive btn--mini" data-action="commit" data-addr="${escapeHtml(r.addr)}">${_('Commit')}</button>`;
+        const flags = `${hidden ? `<span class="nm-dhikr__flag">${_('hidden')}</span>` : ''}${banned ? `<span class="nm-dhikr__flag">${_('excluded')}</span>` : ''}`;
         return `<tr class="${hidden || banned ? 'is-moderated' : ''}">
         <td>${phrase}</td>
         <td>${author}${flags}</td>
@@ -562,7 +565,7 @@ export class NostrMajlisAddonView extends View {
 
     host.innerHTML = `
       <table class="nm-dhikr">
-        <thead><tr><th>Dhikr</th><th>Author</th><th>Count</th><th>Date</th><th>Progress</th><th></th>${isAdmin ? '<th>Moderation</th>' : ''}</tr></thead>
+        <thead><tr><th>${_('Dhikr')}</th><th>${_('Author')}</th><th>${_('Count')}</th><th>${_('Date')}</th><th>${_('Progress')}</th><th></th>${isAdmin ? `<th>${_('Moderation')}</th>` : ''}</tr></thead>
         <tbody>${rows}</tbody>
       </table>
     `;
@@ -578,13 +581,13 @@ export class NostrMajlisAddonView extends View {
   ): string {
     const addr = escapeHtml(r.addr);
     const pk = escapeHtml(r.author);
-    const edit = `<button class="btn btn--passive btn--mini" data-action="edit" data-addr="${addr}">Edit</button>`;
+    const edit = `<button class="btn btn--passive btn--mini" data-action="edit" data-addr="${addr}">${_('Edit')}</button>`;
     const hide = hidden
-      ? `<button class="btn btn--passive btn--mini" data-action="unhide" data-addr="${addr}">Un-hide</button>`
-      : `<button class="btn btn--passive btn--mini" data-action="hide" data-addr="${addr}">Delete</button>`;
+      ? `<button class="btn btn--passive btn--mini" data-action="unhide" data-addr="${addr}">${_('Un-hide')}</button>`
+      : `<button class="btn btn--passive btn--mini" data-action="hide" data-addr="${addr}">${_('Delete')}</button>`;
     const ban = banned
-      ? `<button class="btn btn--passive btn--mini" data-action="unban" data-pubkey="${pk}">Re-include</button>`
-      : `<button class="btn btn--passive btn--mini" data-action="ban" data-pubkey="${pk}">Exclude author</button>`;
+      ? `<button class="btn btn--passive btn--mini" data-action="unban" data-pubkey="${pk}">${_('Re-include')}</button>`
+      : `<button class="btn btn--passive btn--mini" data-action="ban" data-pubkey="${pk}">${_('Exclude author')}</button>`;
     return `<div class="nm-dhikr__actions">${edit}${hide}${ban}</div>`;
   }
 
@@ -655,25 +658,32 @@ export class NostrMajlisAddonView extends View {
   private async confirmHide(svc: DhikrService, addr: string): Promise<void> {
     if (!addr) return;
     const ok = await ModalService.getInstance().confirm({
-      title: 'Delete dhikr',
-      message: 'Hide this dhikr from everyone? You can un-hide it later.',
-      confirmText: 'Delete',
+      title: _('Delete dhikr'),
+      message: _('Hide this dhikr from everyone? You can un-hide it later.'),
+      confirmText: _('Delete'),
       confirmDestructive: true,
     });
-    if (ok) await this.runModeration(() => svc.hideRound(addr), 'Dhikr hidden');
+    if (ok)
+      await this.runModeration(() => svc.hideRound(addr), _('Dhikr hidden'));
   }
 
   private async confirmBan(svc: DhikrService, pubkey: string): Promise<void> {
     if (!pubkey) return;
     const name = UserProfileService.getInstance().getDisplayName(pubkey);
     const ok = await ModalService.getInstance().confirm({
-      title: 'Exclude author',
-      message: `Exclude ${name}? Their dhikrs disappear and all their submissions stop counting.`,
-      confirmText: 'Exclude',
+      title: _('Exclude author'),
+      message: _(
+        'Exclude %s? Their dhikrs disappear and all their submissions stop counting.',
+        name
+      ),
+      confirmText: _('Exclude'),
       confirmDestructive: true,
     });
     if (ok)
-      await this.runModeration(() => svc.banAuthor(pubkey), 'Author excluded');
+      await this.runModeration(
+        () => svc.banAuthor(pubkey),
+        _('Author excluded')
+      );
   }
 
   /** Run a moderation write with a uniform success/error toast (the list re-renders via the bus). */
@@ -685,7 +695,7 @@ export class NostrMajlisAddonView extends View {
       await action();
       if (successMsg) ToastService.show(successMsg, 'success');
     } catch {
-      ToastService.show('Could not update moderation', 'error');
+      ToastService.show(_('Could not update moderation'), 'error');
     }
   }
 
@@ -723,7 +733,7 @@ export class NostrMajlisAddonView extends View {
     const maxYear = now.getFullYear() + 10;
     this.holidayYear = Math.min(maxYear, Math.max(minYear, this.holidayYear));
 
-    yearEl.textContent = `Holidays ${this.holidayYear}`;
+    yearEl.textContent = _('Holidays %s', String(this.holidayYear));
 
     const todayMid = new Date(
       now.getFullYear(),
@@ -763,7 +773,7 @@ export class NostrMajlisAddonView extends View {
     ) as HTMLElement | null;
     const source = getNostrMajlisSettings().source;
     panel.innerHTML = `
-      <div class="setting"><span class="setting__label">Source</span><div class="setting__control" data-control="source"></div></div>
+      <div class="setting"><span class="setting__label">${_('Source')}</span><div class="setting__control" data-control="source"></div></div>
       <div data-el="picker"></div>
     `;
     if (result)
@@ -774,10 +784,10 @@ export class NostrMajlisAddonView extends View {
     `;
 
     this.sourceDD = new NnDropdown({
-      options: SOURCE_OPTIONS,
+      options: SOURCE_OPTIONS.map(o => ({ ...o, label: _(o.label) })),
       selectedValue: source,
       searchable: true,
-      searchPlaceholder: 'Search source…',
+      searchPlaceholder: _('Search source…'),
       width: '100%',
       onChange: value => {
         setNostrMajlisSettings({ ...getNostrMajlisSettings(), source: value });
@@ -815,7 +825,7 @@ export class NostrMajlisAddonView extends View {
     const times = t ?? ZERO;
     timesEl.innerHTML = `<div class="ui-list times">${PRAYERS.map(
       ([k, name]) =>
-        `<div class="ui-list__item"><span class="setting__label">${name}</span><span>${escapeHtml(times[k])}</span></div>`
+        `<div class="ui-list__item"><span class="setting__label">${_(name)}</span><span>${escapeHtml(times[k])}</span></div>`
     ).join('')}</div>`;
   }
 
@@ -826,7 +836,8 @@ export class NostrMajlisAddonView extends View {
     const timesEl = this.container.querySelector(
       '[data-el="times"]'
     ) as HTMLElement | null;
-    if (locEl) locEl.textContent = 'Select your location to see prayer times.';
+    if (locEl)
+      locEl.textContent = _('Select your location to see prayer times.');
     if (timesEl) timesEl.innerHTML = '';
   }
 
@@ -836,14 +847,14 @@ export class NostrMajlisAddonView extends View {
     const token = ++this.renderToken;
     const picker = this.picker();
     if (picker)
-      picker.innerHTML = `<p class="setting__desc pulsate">Loading…</p>`;
+      picker.innerHTML = `<p class="setting__desc pulsate">${_('Loading…')}</p>`;
 
     let countries: DiyanetPlace[];
     try {
       countries = await DiyanetService.getInstance().getCountries();
     } catch {
       if (token === this.renderToken && picker)
-        picker.innerHTML = `<p class="setting__desc">Could not reach the Diyanet service. Check your connection and reopen this page.</p>`;
+        picker.innerHTML = `<p class="setting__desc">${_('Could not reach the Diyanet service. Check your connection and reopen this page.')}</p>`;
       return;
     }
     if (this.stale(token) || !this.picker()) return;
@@ -857,36 +868,36 @@ export class NostrMajlisAddonView extends View {
     this.dDistricts = [];
 
     this.picker()!.innerHTML = `
-      <div class="setting"><span class="setting__label">Country</span><div class="setting__control" data-control="d-country"></div></div>
-      <div class="setting"><span class="setting__label">Region</span><div class="setting__control" data-control="d-region"></div></div>
-      <div class="setting"><span class="setting__label">District</span><div class="setting__control" data-control="d-district"></div></div>
+      <div class="setting"><span class="setting__label">${_('Country')}</span><div class="setting__control" data-control="d-country"></div></div>
+      <div class="setting"><span class="setting__label">${_('Region')}</span><div class="setting__control" data-control="d-region"></div></div>
+      <div class="setting"><span class="setting__label">${_('District')}</span><div class="setting__control" data-control="d-district"></div></div>
     `;
     const actions = this.container.querySelector(
       '[data-el="actions"]'
     ) as HTMLElement | null;
     if (actions)
-      actions.innerHTML = `<div class="l-row--right"><button class="btn btn--passive" data-action="fetch">Fetch Prayer Times</button></div>`;
+      actions.innerHTML = `<div class="l-row--right"><button class="btn btn--passive" data-action="fetch">${_('Fetch Prayer Times')}</button></div>`;
     actions
       ?.querySelector('[data-action="fetch"]')
       ?.addEventListener('click', () => void this.onFetch());
 
     this.mountCtl(
       'd-country',
-      this.optionList(this.dCountries, 'Select country…'),
+      this.optionList(this.dCountries, _('Select country…')),
       this.dUlke,
       true,
       v => void this.onDCountry(v)
     );
     this.mountCtl(
       'd-region',
-      this.optionList(this.dRegions, 'Select region…'),
+      this.optionList(this.dRegions, _('Select region…')),
       this.dSehir,
       false,
       v => void this.onDRegion(v)
     );
     this.mountCtl(
       'd-district',
-      this.optionList(this.dDistricts, 'Select district…'),
+      this.optionList(this.dDistricts, _('Select district…')),
       this.dIlce,
       false,
       v => void this.onDDistrict(v)
@@ -912,7 +923,7 @@ export class NostrMajlisAddonView extends View {
       options,
       selectedValue: selected,
       searchable: searchable || options.length > 12,
-      searchPlaceholder: 'Search…',
+      searchPlaceholder: _('Search…'),
       width: '100%',
       onChange,
     });
@@ -931,7 +942,7 @@ export class NostrMajlisAddonView extends View {
       this.dSehir = sehirId;
       this.mountCtl(
         'd-region',
-        this.optionList(this.dRegions, 'Select region…'),
+        this.optionList(this.dRegions, _('Select region…')),
         this.dSehir,
         false,
         v => void this.onDRegion(v)
@@ -942,7 +953,7 @@ export class NostrMajlisAddonView extends View {
       this.dIlce = ilceId;
       this.mountCtl(
         'd-district',
-        this.optionList(this.dDistricts, 'Select district…'),
+        this.optionList(this.dDistricts, _('Select district…')),
         this.dIlce,
         false,
         v => void this.onDDistrict(v)
@@ -962,14 +973,14 @@ export class NostrMajlisAddonView extends View {
     this.clearDiyanetLocation();
     this.mountCtl(
       'd-region',
-      this.optionList([], 'Select region…'),
+      this.optionList([], _('Select region…')),
       PICK,
       false,
       v => void this.onDRegion(v)
     );
     this.mountCtl(
       'd-district',
-      this.optionList([], 'Select district…'),
+      this.optionList([], _('Select district…')),
       PICK,
       false,
       v => void this.onDDistrict(v)
@@ -982,13 +993,13 @@ export class NostrMajlisAddonView extends View {
       if (this.stale(token)) return;
       this.mountCtl(
         'd-region',
-        this.optionList(this.dRegions, 'Select region…'),
+        this.optionList(this.dRegions, _('Select region…')),
         PICK,
         false,
         v => void this.onDRegion(v)
       );
     } catch {
-      ToastService.show('Could not load regions', 'error');
+      ToastService.show(_('Could not load regions'), 'error');
     }
   }
 
@@ -999,7 +1010,7 @@ export class NostrMajlisAddonView extends View {
     this.clearDiyanetLocation();
     this.mountCtl(
       'd-district',
-      this.optionList([], 'Select district…'),
+      this.optionList([], _('Select district…')),
       PICK,
       false,
       v => void this.onDDistrict(v)
@@ -1013,13 +1024,13 @@ export class NostrMajlisAddonView extends View {
       if (this.stale(token)) return;
       this.mountCtl(
         'd-district',
-        this.optionList(this.dDistricts, 'Select district…'),
+        this.optionList(this.dDistricts, _('Select district…')),
         PICK,
         false,
         v => void this.onDDistrict(v)
       );
     } catch {
-      ToastService.show('Could not load districts', 'error');
+      ToastService.show(_('Could not load districts'), 'error');
     }
   }
 
@@ -1067,7 +1078,7 @@ export class NostrMajlisAddonView extends View {
     let today = svc.cachedToday(ilceId);
     if (!today && svc.cachedRows(ilceId).length === 0) {
       locEl.textContent = label;
-      timesEl.innerHTML = `<p class="setting__desc pulsate">Fetching times…</p>`;
+      timesEl.innerHTML = `<p class="setting__desc pulsate">${_('Fetching times…')}</p>`;
       try {
         await svc.fetchAndCacheTimes(ilceId);
       } catch {
@@ -1078,13 +1089,13 @@ export class NostrMajlisAddonView extends View {
     }
     locEl.textContent = today
       ? `${label} — ${today.date}`
-      : `${label} — no times cached, tap “Fetch Prayer Times”`;
+      : `${label} — ${_('no times cached, tap “Fetch Prayer Times”')}`;
     this.renderTimes(timesEl, today);
   }
 
   private async onFetch(): Promise<void> {
     if (this.dIlce === PICK) {
-      ToastService.show('Pick a district first', 'error');
+      ToastService.show(_('Pick a district first'), 'error');
       return;
     }
     const btn = this.container.querySelector(
@@ -1092,19 +1103,19 @@ export class NostrMajlisAddonView extends View {
     ) as HTMLButtonElement | null;
     if (btn) {
       btn.disabled = true;
-      btn.textContent = 'Fetching…';
+      btn.textContent = _('Fetching…');
       btn.classList.add('pulsate');
     }
     try {
       await DiyanetService.getInstance().fetchAndCacheTimes(this.dIlce);
       await this.showDiyanetTimes(this.dIlce, this.renderToken);
-      ToastService.show('Prayer times updated', 'success');
+      ToastService.show(_('Prayer times updated'), 'success');
     } catch {
-      ToastService.show('Could not fetch prayer times', 'error');
+      ToastService.show(_('Could not fetch prayer times'), 'error');
     } finally {
       if (btn) {
         btn.disabled = false;
-        btn.textContent = 'Fetch Prayer Times';
+        btn.textContent = _('Fetch Prayer Times');
         btn.classList.remove('pulsate');
       }
     }
@@ -1116,13 +1127,13 @@ export class NostrMajlisAddonView extends View {
     const token = ++this.renderToken;
     const picker = this.picker();
     if (picker)
-      picker.innerHTML = `<p class="setting__desc pulsate">Loading…</p>`;
+      picker.innerHTML = `<p class="setting__desc pulsate">${_('Loading…')}</p>`;
     let data: CityData;
     try {
       data = await loadCityData();
     } catch {
       if (token === this.renderToken && picker)
-        picker.innerHTML = `<p class="setting__desc">Could not load city data.</p>`;
+        picker.innerHTML = `<p class="setting__desc">${_('Could not load city data.')}</p>`;
       return;
     }
     if (this.stale(token) || !this.picker()) return;
@@ -1138,16 +1149,16 @@ export class NostrMajlisAddonView extends View {
     if (actions) actions.innerHTML = ''; // no fetch button for calc
 
     this.picker()!.innerHTML = `
-      <div class="setting"><span class="setting__label">Country</span><div class="setting__control" data-control="g-country"></div></div>
-      <div class="setting"><span class="setting__label">Region</span><div class="setting__control" data-control="g-region"></div></div>
-      <div class="setting"><span class="setting__label">City</span><div class="setting__control" data-control="g-city"></div></div>
-      <div class="setting"><span class="setting__label">Asr madhab</span><div class="setting__control" data-control="g-madhab"></div></div>
+      <div class="setting"><span class="setting__label">${_('Country')}</span><div class="setting__control" data-control="g-country"></div></div>
+      <div class="setting"><span class="setting__label">${_('Region')}</span><div class="setting__control" data-control="g-region"></div></div>
+      <div class="setting"><span class="setting__label">${_('City')}</span><div class="setting__control" data-control="g-city"></div></div>
+      <div class="setting"><span class="setting__label">${_('Asr madhab')}</span><div class="setting__control" data-control="g-madhab"></div></div>
     `;
     this.mountCtl(
       'g-country',
       this.optionList(
         data.countries.map(([id, name]) => ({ id, name })),
-        'Select country…'
+        _('Select country…')
       ),
       this.gCc,
       true,
@@ -1160,7 +1171,9 @@ export class NostrMajlisAddonView extends View {
   }
 
   private mountGRegion(method: string): void {
-    const opts: DropdownOption[] = [{ value: PICK, label: 'Select region…' }];
+    const opts: DropdownOption[] = [
+      { value: PICK, label: _('Select region…') },
+    ];
     if (this.cityData && this.gCc !== PICK)
       opts.push(...regionOptions(this.cityData, this.gCc));
     this.mountCtl('g-region', opts, this.gA1, false, v =>
@@ -1170,7 +1183,7 @@ export class NostrMajlisAddonView extends View {
 
   private mountGCity(method: string): void {
     const ready = this.cityData && this.gCc !== PICK && this.gA1 !== PICK;
-    const opts: DropdownOption[] = [{ value: PICK, label: 'Select city…' }];
+    const opts: DropdownOption[] = [{ value: PICK, label: _('Select city…') }];
     let selected = PICK;
     if (ready) {
       opts.push(...cityOptions(this.cityData!, this.gCc, this.gA1));
@@ -1195,7 +1208,7 @@ export class NostrMajlisAddonView extends View {
   private mountGMadhab(method: string): void {
     this.mountCtl(
       'g-madhab',
-      MADHAB_OPTIONS,
+      MADHAB_OPTIONS.map(o => ({ ...o, label: _(o.label) })),
       getNostrMajlisSettings().madhab,
       false,
       v => {
@@ -1244,7 +1257,7 @@ export class NostrMajlisAddonView extends View {
     if (!locEl || !timesEl) return;
     const s = getNostrMajlisSettings();
     if (!s.calcCity) {
-      locEl.textContent = 'Select your city to see prayer times.';
+      locEl.textContent = _('Select your city to see prayer times.');
       timesEl.innerHTML = '';
       return;
     }
@@ -1275,9 +1288,9 @@ export class NostrMajlisAddonView extends View {
       },
     });
 
-    let html = `<h2 class="h4">Reminder Settings</h2><div class="setting"><span class="setting__label">Prayer reminders</span><div class="setting__control">${this.masterSwitch.render()}</div><p class="setting__desc">Shows a banner before each prayer while NoorNote is open.</p></div>`;
+    let html = `<h2 class="h4">${_('Reminder Settings')}</h2><div class="setting"><span class="setting__label">${_('Prayer reminders')}</span><div class="setting__control">${this.masterSwitch.render()}</div><p class="setting__desc">${_('Shows a banner before each prayer while NoorNote is open.')}</p></div>`;
     if (r.enabled) {
-      html += `<div class="setting"><span class="setting__label">Minutes before</span><div class="setting__control" data-control="offset"></div></div>`;
+      html += `<div class="setting"><span class="setting__label">${_('Minutes before')}</span><div class="setting__control" data-control="offset"></div></div>`;
       for (const [key, name] of REMINDER_PRAYERS) {
         const sw = new Switch({
           label: '',
@@ -1294,7 +1307,7 @@ export class NostrMajlisAddonView extends View {
           },
         });
         this.praySwitches.push(sw);
-        html += `<div class="setting"><span class="setting__label">${name}</span><div class="setting__control">${sw.render()}</div></div>`;
+        html += `<div class="setting"><span class="setting__label">${_(name)}</span><div class="setting__control">${sw.render()}</div></div>`;
       }
     }
     host.innerHTML = html;

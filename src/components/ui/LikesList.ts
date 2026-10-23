@@ -11,6 +11,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { _ } from '../../i18n';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
 import { resolveReactionEmoji } from '../../helpers/formatCustomEmojis';
@@ -176,7 +177,7 @@ export class LikesList {
         toggle.type = 'button';
         toggle.textContent = '>';
         toggle.setAttribute('aria-expanded', 'false');
-        toggle.setAttribute('title', 'Show reactions to this reaction');
+        toggle.setAttribute('title', _('Show reactions to this reaction'));
         const toggleThread = () => {
           const open = badgeRow.classList.toggle('likes-list__badge-row--open');
           toggle.setAttribute('aria-expanded', String(open));

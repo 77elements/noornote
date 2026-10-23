@@ -6,6 +6,7 @@
  * @used-by SettingsView
  */
 
+import { _ } from '../../i18n';
 import { SettingsSection } from './SettingsSection';
 import { Switch } from '../ui/Switch';
 import { NnDropdown } from '../ui/NnDropdown';
@@ -224,13 +225,12 @@ export class MediaServerSection extends SettingsSection {
   private renderExifStripCritical(): string {
     return `
         <div class="setting">
-          <span class="setting__label">Strip location & identity (EXIF)</span>
+          <span class="setting__label">${_('Strip location & identity (EXIF)')}</span>
           <div class="setting__control" id="strip-exif-critical-mount"></div>
           <p class="setting__desc">
-            When uploading JPEG images, removes: GPS coordinates, GPS altitude, GPS timestamp,
-            GPS direction, GPS destination; Artist, Copyright, OwnerName, CameraOwnerName,
-            BodySerialNumber, LensSerialNumber, ImageUniqueID; Windows XP tags
-            (Title, Author, Comment, Keywords, Subject).
+            ${_(
+              'When uploading JPEG images, removes: GPS coordinates, GPS altitude, GPS timestamp, GPS direction, GPS destination; Artist, Copyright, OwnerName, CameraOwnerName, BodySerialNumber, LensSerialNumber, ImageUniqueID; Windows XP tags (Title, Author, Comment, Keywords, Subject).'
+            )}
           </p>
         </div>
     `;
@@ -239,13 +239,12 @@ export class MediaServerSection extends SettingsSection {
   private renderExifStripMedium(): string {
     return `
         <div class="setting">
-          <span class="setting__label">Strip timestamps & maker blob (EXIF)</span>
+          <span class="setting__label">${_('Strip timestamps & maker blob (EXIF)')}</span>
           <div class="setting__control" id="strip-exif-medium-mount"></div>
           <p class="setting__desc">
-            When uploading JPEG images, removes: DateTime, DateTimeOriginal, DateTimeDigitized,
-            OffsetTime / OffsetTimeOriginal / OffsetTimeDigitized (timezone),
-            SubSecTime / SubSecTimeOriginal / SubSecTimeDigitized; MakerNote
-            (vendor-specific binary blob, may contain serials or internal IDs).
+            ${_(
+              'When uploading JPEG images, removes: DateTime, DateTimeOriginal, DateTimeDigitized, OffsetTime / OffsetTimeOriginal / OffsetTimeDigitized (timezone), SubSecTime / SubSecTimeOriginal / SubSecTimeDigitized; MakerNote (vendor-specific binary blob, may contain serials or internal IDs).'
+            )}
           </p>
         </div>
     `;
@@ -254,11 +253,10 @@ export class MediaServerSection extends SettingsSection {
   private renderExifStripWeak(): string {
     return `
         <div class="setting">
-          <span class="setting__label">Strip device info (EXIF)</span>
+          <span class="setting__label">${_('Strip device info (EXIF)')}</span>
           <div class="setting__control" id="strip-exif-weak-mount"></div>
           <p class="setting__desc">
-            When uploading JPEG images, removes: Make, Model, LensMake, LensModel,
-            Software, HostComputer.
+            ${_('When uploading JPEG images, removes: Make, Model, LensMake, LensModel, Software, HostComputer.')}
           </p>
         </div>
     `;
@@ -270,27 +268,27 @@ export class MediaServerSection extends SettingsSection {
     );
     return `
         <div class="setting">
-          <span class="setting__label">Image Compression</span>
+          <span class="setting__label">${_('Image Compression')}</span>
           <div class="setting__control" id="compress-image-switch-mount"></div>
           <p class="setting__desc">
-            Images are resized and re-encoded as JPEG locally before upload, reducing file size and
-            saving CDN bandwidth. EXIF metadata is preserved verbatim — no privacy fields are
-            stripped at this layer.
+            ${_(
+              'Images are resized and re-encoded as JPEG locally before upload, reducing file size and saving CDN bandwidth. EXIF metadata is preserved verbatim — no privacy fields are stripped at this layer.'
+            )}
           </p>
         </div>
 
         <div class="setting" id="compress-image-quality-row">
-          <span class="setting__label">Quality</span>
+          <span class="setting__label">${_('Quality')}</span>
           <div class="setting__control" id="compress-image-quality-mount"></div>
         </div>
 
         <div class="setting" id="compress-image-resolution-row">
-          <span class="setting__label">Max resolution</span>
+          <span class="setting__label">${_('Max resolution')}</span>
           <div class="setting__control" id="compress-image-resolution-mount"></div>
         </div>
 
         <div class="form__row form__row--oneline" id="compress-image-min-size-row">
-          <label for="compression-image-min-size-input">Skip compression for files below</label>
+          <label for="compression-image-min-size-input">${_('Skip compression for files below')}</label>
           <input
             type="text"
             class="input"
@@ -307,26 +305,27 @@ export class MediaServerSection extends SettingsSection {
     );
     return `
         <div class="setting">
-          <span class="setting__label">Video Compression</span>
+          <span class="setting__label">${_('Video Compression')}</span>
           <div class="setting__control" id="compress-video-switch-mount"></div>
           <p class="setting__desc">
-            Videos are compressed locally using your device's hardware encoder (WebCodecs) before
-            upload — your video never leaves your device until upload.
+            ${_(
+              "Videos are compressed locally using your device's hardware encoder (WebCodecs) before upload — your video never leaves your device until upload."
+            )}
           </p>
         </div>
 
         <div class="setting" id="compress-video-quality-row">
-          <span class="setting__label">Quality</span>
+          <span class="setting__label">${_('Quality')}</span>
           <div class="setting__control" id="compress-video-quality-mount"></div>
         </div>
 
         <div class="setting" id="compress-video-resolution-row">
-          <span class="setting__label">Max resolution</span>
+          <span class="setting__label">${_('Max resolution')}</span>
           <div class="setting__control" id="compress-video-resolution-mount"></div>
         </div>
 
         <div class="form__row form__row--oneline" id="compress-video-min-size-row">
-          <label for="compression-video-min-size-input">Skip compression for files below</label>
+          <label for="compression-video-min-size-input">${_('Skip compression for files below')}</label>
           <input
             type="text"
             class="input"
@@ -343,20 +342,20 @@ export class MediaServerSection extends SettingsSection {
     );
     return `
         <div class="setting">
-          <span class="setting__label">Audio Compression</span>
+          <span class="setting__label">${_('Audio Compression')}</span>
           <div class="setting__control" id="compress-audio-switch-mount"></div>
           <p class="setting__desc">
-            Audio files are compressed locally before upload using a hardware-supported codec.
+            ${_('Audio files are compressed locally before upload using a hardware-supported codec.')}
           </p>
         </div>
 
         <div class="setting" id="compress-audio-quality-row">
-          <span class="setting__label">Quality</span>
+          <span class="setting__label">${_('Quality')}</span>
           <div class="setting__control" id="compress-audio-quality-mount"></div>
         </div>
 
         <div class="form__row form__row--oneline" id="compress-audio-min-size-row">
-          <label for="compression-audio-min-size-input">Skip compression for files below</label>
+          <label for="compression-audio-min-size-input">${_('Skip compression for files below')}</label>
           <input
             type="text"
             class="input"
@@ -373,13 +372,13 @@ export class MediaServerSection extends SettingsSection {
   private renderMediaServer(): string {
     return `
         <div class="setting">
-          <span class="setting__label">Media Server</span>
+          <span class="setting__label">${_('Media Server')}</span>
           <div class="setting__control" id="media-server-dropdown-mount"></div>
-          <p class="setting__desc">Choose where to upload images, videos, and other media files. Noornote supports both Blossom and NIP-96 protocols.</p>
+          <p class="setting__desc">${_('Choose where to upload images, videos, and other media files. Noornote supports both Blossom and NIP-96 protocols.')}</p>
         </div>
 
         <div class="media-server-custom ${!MediaServerSection.POPULAR_SERVERS.some(s => s.url === this.mediaServerSettings.url) ? '' : 'hidden'}" id="custom-server-section">
-          <label for="custom-media-server-url">Custom Server URL:</label>
+          <label for="custom-media-server-url">${_('Custom Server URL:')}</label>
           <input
             type="text"
             id="custom-media-server-url"
@@ -398,9 +397,9 @@ export class MediaServerSection extends SettingsSection {
   private renderSensitiveMedia(): string {
     return `
         <div class="setting">
-          <span class="setting__label">Sensitive Media</span>
+          <span class="setting__label">${_('Sensitive Media')}</span>
           <div class="setting__control" id="sensitive-media-switch-container"></div>
-          <p class="setting__desc">Control how sensitive content (NSFW) is displayed. When disabled, NSFW images and videos will be blurred.</p>
+          <p class="setting__desc">${_('Control how sensitive content (NSFW) is displayed. When disabled, NSFW images and videos will be blurred.')}</p>
         </div>
     `;
   }
@@ -415,9 +414,26 @@ export class MediaServerSection extends SettingsSection {
     if (!mount) return;
 
     const popularServers = MediaServerSection.POPULAR_SERVERS;
+    // Display names mapped at use-site with literal `_()` calls (extractor
+    // needs literals; the static POPULAR_SERVERS names stay English fallbacks).
+    const serverNames: Record<string, string> = {
+      'https://nostr.build': _(
+        'nostr.build (Most popular, NIP-96, free: 20 MiB)'
+      ),
+      'https://blossom.nostr.build': _(
+        'blossom.nostr.build (Blossom, free: 20 MiB)'
+      ),
+      'https://blossom.band': _('blossom.band (Blossom, free: 20 MiB)'),
+      'https://blossom.primal.net': _(
+        'blossom.primal.net (Blossom, free: 20 MiB)'
+      ),
+    };
     const options = [
-      ...popularServers.map(s => ({ value: s.url, label: s.name })),
-      { value: 'custom', label: 'Custom...' },
+      ...popularServers.map(s => ({
+        value: s.url,
+        label: serverNames[s.url] ?? s.name,
+      })),
+      { value: 'custom', label: _('Custom...') },
     ];
 
     const isCustom = !popularServers.some(
@@ -445,7 +461,7 @@ export class MediaServerSection extends SettingsSection {
           this.mediaServerSettings.maxFileSize = selectedServer?.maxFileSize;
 
           this.saveMediaServerSettings();
-          ToastService.show('Media server saved', 'success');
+          ToastService.show(_('Media server saved'), 'success');
         }
       },
     });
@@ -465,22 +481,22 @@ export class MediaServerSection extends SettingsSection {
 
   private bindCompressionListeners(contentContainer: HTMLElement): void {
     const qualityOptions = [
-      { value: 'low', label: 'Low (smallest size)' },
-      { value: 'medium', label: 'Medium (recommended)' },
-      { value: 'high', label: 'High' },
-      { value: 'ultra', label: 'Ultra (near-zero quality loss)' },
+      { value: 'low', label: _('Low (smallest size)') },
+      { value: 'medium', label: _('Medium (recommended)') },
+      { value: 'high', label: _('High') },
+      { value: 'ultra', label: _('Ultra (near-zero quality loss)') },
     ];
     const resolutionOptions = [
       { value: '480', label: '480p' },
-      { value: '720', label: '720p (HD)' },
-      { value: '1080', label: '1080p (Full HD)' },
-      { value: '0', label: 'Original' },
+      { value: '720', label: _('720p (HD)') },
+      { value: '1080', label: _('1080p (Full HD)') },
+      { value: '0', label: _('Original') },
     ];
     const imageResolutionOptions = [
       { value: '720', label: '720 px' },
       { value: '1024', label: '1024 px' },
       { value: '1280', label: '1280 px' },
-      { value: '0', label: 'Original' },
+      { value: '0', label: _('Original') },
     ];
 
     // ---- Video toggle + detail rows
@@ -518,8 +534,8 @@ export class MediaServerSection extends SettingsSection {
           setVideoDetailVisible(checked);
           ToastService.show(
             checked
-              ? 'Video compression enabled'
-              : 'Video compression disabled',
+              ? _('Video compression enabled')
+              : _('Video compression disabled'),
             'success'
           );
         },
@@ -583,8 +599,8 @@ export class MediaServerSection extends SettingsSection {
           setAudioDetailVisible(checked);
           ToastService.show(
             checked
-              ? 'Audio compression enabled'
-              : 'Audio compression disabled',
+              ? _('Audio compression enabled')
+              : _('Audio compression disabled'),
             'success'
           );
         },
@@ -641,8 +657,8 @@ export class MediaServerSection extends SettingsSection {
           setImageDetailVisible(checked);
           ToastService.show(
             checked
-              ? 'Image compression enabled'
-              : 'Image compression disabled',
+              ? _('Image compression enabled')
+              : _('Image compression disabled'),
             'success'
           );
         },
@@ -739,7 +755,9 @@ export class MediaServerSection extends SettingsSection {
           this.compressionSettings.image.stripExifCritical = checked;
           this.saveCompressionSettings();
           ToastService.show(
-            `Location & identity stripping ${checked ? 'enabled' : 'disabled'}`,
+            checked
+              ? _('%s enabled', _('Location & identity stripping'))
+              : _('%s disabled', _('Location & identity stripping')),
             'success'
           );
         },
@@ -759,7 +777,9 @@ export class MediaServerSection extends SettingsSection {
           this.compressionSettings.image.stripExifMedium = checked;
           this.saveCompressionSettings();
           ToastService.show(
-            `Timestamps & maker blob stripping ${checked ? 'enabled' : 'disabled'}`,
+            checked
+              ? _('%s enabled', _('Timestamps & maker blob stripping'))
+              : _('%s disabled', _('Timestamps & maker blob stripping')),
             'success'
           );
         },
@@ -779,7 +799,9 @@ export class MediaServerSection extends SettingsSection {
           this.compressionSettings.image.stripExifWeak = checked;
           this.saveCompressionSettings();
           ToastService.show(
-            `Device info stripping ${checked ? 'enabled' : 'disabled'}`,
+            checked
+              ? _('%s enabled', _('Device info stripping'))
+              : _('%s disabled', _('Device info stripping')),
             'success'
           );
         },
@@ -801,12 +823,15 @@ export class MediaServerSection extends SettingsSection {
       const url = customInput?.value.trim();
       if (!url) return;
       if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        ToastService.show('URL must start with http:// or https://', 'error');
+        ToastService.show(
+          _('URL must start with http:// or https://'),
+          'error'
+        );
         return;
       }
       this.mediaServerSettings.url = url;
       this.saveMediaServerSettings();
-      ToastService.show('Media server saved', 'success');
+      ToastService.show(_('Media server saved'), 'success');
     };
 
     customInput?.addEventListener('blur', saveCustomUrl);
@@ -825,7 +850,7 @@ export class MediaServerSection extends SettingsSection {
     if (!switchContainer) return;
 
     const nsfwSwitch = new Switch({
-      label: 'Display sensitive media',
+      label: _('Display sensitive media'),
       checked: this.sensitiveMediaSettings.displayNSFW,
       onChange: checked => {
         this.sensitiveMediaSettings.displayNSFW = checked;
@@ -839,8 +864,8 @@ export class MediaServerSection extends SettingsSection {
 
         ToastService.show(
           checked
-            ? 'Sensitive media will be shown'
-            : 'Sensitive media will be blurred',
+            ? _('Sensitive media will be shown')
+            : _('Sensitive media will be blurred'),
           'success'
         );
       },

@@ -30,6 +30,7 @@ import {
 } from './quranDaily';
 import { Router } from '../../services/Router';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { _ } from '../../i18n';
 
 // Sunrise IS a period boundary: Fajr lasts only until sunrise, then we are in the
 // "Sunrise" period until Dhuhr (no obligatory prayer, but the correct current label).
@@ -153,7 +154,7 @@ export class NostrMajlisSidebarWidget {
     if (!this.el) {
       this.el = document.createElement('div');
       this.el.className = 'sidebar-widget';
-      this.el.title = 'Open Nostr Majlis';
+      this.el.title = _('Open Nostr Majlis');
       this.el.addEventListener('click', this.onClick);
       this.container.appendChild(this.el);
     }
@@ -174,9 +175,9 @@ export class NostrMajlisSidebarWidget {
       // Diyanet can run out (rolling window); offer an in-place re-fetch. Calc sources can't.
       const refetch =
         activeDiyanetIlceId() !== null
-          ? `<button type="button" class="sidebar-widget__refetch" data-action="nm-refetch">Fetch times again</button>`
+          ? `<button type="button" class="sidebar-widget__refetch" data-action="nm-refetch">${_('Fetch times again')}</button>`
           : '';
-      this.el.innerHTML = `<div class="sidebar-widget__empty">Prayer times not set</div>${refetch}`;
+      this.el.innerHTML = `<div class="sidebar-widget__empty">${_('Prayer times not set')}</div>${refetch}`;
       return;
     }
 
@@ -195,7 +196,7 @@ export class NostrMajlisSidebarWidget {
       data.countdownMin <= r.offsetMin;
 
     this.el.innerHTML = `
-      <div class="sidebar-widget__row sidebar-widget__head"><span>${escapeHtml(data.currentName)}</span><span>time left</span><span>${escapeHtml(data.nextName)}</span></div>
+      <div class="sidebar-widget__row sidebar-widget__head"><span>${escapeHtml(data.currentName)}</span><span>${_('time left')}</span><span>${escapeHtml(data.nextName)}</span></div>
       <div class="sidebar-widget__row sidebar-widget__vals"><span>${clock}</span><span class="${pulsate ? 'pulsate' : ''}">${left}</span><span>${escapeHtml(data.nextTime)}</span></div>
       <div class="nm-quran" data-el="nm-quran"></div>
     `;
@@ -219,7 +220,7 @@ export class NostrMajlisSidebarWidget {
     const today = dateKeyOf(new Date());
     if (!this.quranAyah || this.quranDateKey !== today) {
       if (!this.quranLoading) {
-        host.innerHTML = `<div class="nm-quran__divider"></div><div class="nm-quran__loading pulsate">Loading the daily ayah…</div>`;
+        host.innerHTML = `<div class="nm-quran__divider"></div><div class="nm-quran__loading pulsate">${_('Loading the daily ayah…')}</div>`;
         this.quranLoading = true;
         try {
           const ayah = await getDailyAyah();
@@ -235,7 +236,7 @@ export class NostrMajlisSidebarWidget {
         // In-flight (quranLoading) → keep the pulsate; fetch settled with
         // nothing cached → calm unavailable state. getDailyAyah marked the day
         // as failed, so no retry storm: the next day retries automatically.
-        host.innerHTML = `<div class="nm-quran__divider"></div><div class="nm-quran__loading${this.quranLoading ? ' pulsate' : ''}">${this.quranLoading ? 'Loading the daily ayah…' : 'Daily ayah unavailable — will retry tomorrow.'}</div>`;
+        host.innerHTML = `<div class="nm-quran__divider"></div><div class="nm-quran__loading${this.quranLoading ? ' pulsate' : ''}">${this.quranLoading ? _('Loading the daily ayah…') : _('Daily ayah unavailable — will retry tomorrow.')}</div>`;
         return;
       }
     }
@@ -259,7 +260,7 @@ export class NostrMajlisSidebarWidget {
       <hr class="nm-quran__divider" />
       ${a.english ? `<p class="nm-quran__translation nm-quran__translation--clamp">${escapeHtml(truncateText(a.english, WIDGET_TRANSLATION_MAX))}</p>` : ''}
       <div class="l-row--split">
-        <div>${a.tafsir ? `<a class="nm-quran__hint" href="/addons/nostr-majlis/daily-ayah">Show tafsir</a>` : ''}</div>
+        <div>${a.tafsir ? `<a class="nm-quran__hint" href="/addons/nostr-majlis/daily-ayah">${_('Show tafsir')}</a>` : ''}</div>
         <div><span class="nm-quran__ref-line">${escapeHtml(ref)}</span></div>
       </div>
     `;
@@ -270,7 +271,7 @@ export class NostrMajlisSidebarWidget {
     const ilceId = activeDiyanetIlceId();
     if (!ilceId || this.fetching || !this.el) return;
     this.fetching = true;
-    this.el.innerHTML = `<div class="sidebar-widget__empty pulsate">Fetching times…</div>`;
+    this.el.innerHTML = `<div class="sidebar-widget__empty pulsate">${_('Fetching times…')}</div>`;
     try {
       await DiyanetService.getInstance().fetchAndCacheTimes(ilceId);
     } catch {

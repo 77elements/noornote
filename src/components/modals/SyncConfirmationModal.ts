@@ -91,7 +91,7 @@ export class SyncConfirmationModal<T> {
       this.resolvePromise = resolve;
 
       this.modalService.show({
-        title: `⚠️ Sync ${this.options.listType}`,
+        title: `⚠️ ${_('Sync')} ${_(this.options.listType)}`,
         content,
         width: '550px',
         height: '600px',

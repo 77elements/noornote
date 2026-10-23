@@ -19,6 +19,7 @@ import {
   type CalendarCollectionData,
   type CalendarEventData,
 } from '../../helpers/nip52/parser';
+import { _ } from '../../i18n';
 
 export class CalendarCollectionDetailModal {
   private destroyed = false;
@@ -38,13 +39,13 @@ export class CalendarCollectionDetailModal {
     content.innerHTML = `
       ${this.collection.description ? `<p class="calendar-addon-detail__desc">${escapeHtml(this.collection.description)}</p>` : ''}
       <div class="calendar-addon-detail__rsvp" data-slot="events">
-        <div class="calendar-addon-detail__rsvp-loading pulsate">Loading events…</div>
+        <div class="calendar-addon-detail__rsvp-loading pulsate">${_('Loading events…')}</div>
       </div>
       <div class="calendar-addon-detail__actions l-row--split">
         <div class="l-row">
           ${
             isOwn
-              ? '<button class="btn btn--passive btn--medium" type="button" data-action="edit">Edit calendar</button>'
+              ? `<button class="btn btn--passive btn--medium" type="button" data-action="edit">${_('Edit calendar')}</button>`
               : `<button class="btn ${
                   CalendarDataService.getInstance().isCollectionSubscribed(
                     this.collection.coordinate
@@ -67,7 +68,7 @@ export class CalendarCollectionDetailModal {
     `;
 
     ModalService.getInstance().show({
-      title: this.collection.title || 'Event calendar',
+      title: this.collection.title || _('Event calendar'),
       content,
       width: '560px',
     });
@@ -126,8 +127,7 @@ export class CalendarCollectionDetailModal {
     } catch (error) {
       if (this.destroyed || !slot.isConnected) return;
       ErrorService.handle(error, 'CalendarCollectionDetailModal.loadEvents');
-      slot.innerHTML =
-        '<div class="calendar-collections__empty">Events could not be loaded.</div>';
+      slot.innerHTML = `<div class="calendar-collections__empty">${_('Events could not be loaded.')}</div>`;
     }
   }
 
@@ -136,8 +136,7 @@ export class CalendarCollectionDetailModal {
     events: CalendarEventData[]
   ): void {
     if (events.length === 0) {
-      slot.innerHTML =
-        '<div class="calendar-collections__empty">This calendar has no events yet.</div>';
+      slot.innerHTML = `<div class="calendar-collections__empty">${_('This calendar has no events yet.')}</div>`;
       return;
     }
     slot.innerHTML = `
@@ -180,7 +179,7 @@ export class CalendarCollectionDetailModal {
     const subscribed = data.isCollectionSubscribed(coordinate);
     if (subscribed) {
       data.unsubscribeFromCollection(coordinate);
-      ToastService.show('Unsubscribed from calendar', 'success');
+      ToastService.show(_('Unsubscribed from calendar'), 'success');
     } else {
       data.subscribeToCollection(coordinate);
       ToastService.show(

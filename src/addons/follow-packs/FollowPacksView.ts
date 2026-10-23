@@ -3,6 +3,7 @@ import { FollowPacksSettings } from './FollowPacksSettings';
 import { FollowPackManager } from './FollowPackManager';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { isFollowPacksEnabled } from './index';
+import { _ } from '../../i18n';
 
 export class FollowPacksView extends View {
   private container: HTMLElement;
@@ -17,7 +18,7 @@ export class FollowPacksView extends View {
       'view-content view-content--addon view-content--addon-follow-packs';
     this.container.innerHTML = `
       <div class="back-padder">
-        <h1>Follow Packs</h1>
+        <h1>${_('Follow Packs')}</h1>
         <section class="section" id="follow-packs-settings-content"></section>
         <div data-addon-content="follow-packs"></div>
       </div>

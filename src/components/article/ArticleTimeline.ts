@@ -14,6 +14,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { _ } from '../../i18n';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type {
   ArticlesModuleApi,
@@ -104,7 +105,7 @@ export class ArticleTimeline {
     ) as HTMLElement;
 
     this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
-      loadingMessage: 'Loading articles...',
+      loadingMessage: _('Loading articles...'),
       rootMargin: '300px',
     });
 
@@ -446,7 +447,7 @@ export class ArticleTimeline {
           : ''
       }
       <div class="nn-card__content">
-        <${titleTag} class="${titleClass}">${escapeHtml(metadata.title || 'Untitled')}</${titleTag}>
+        <${titleTag} class="${titleClass}">${escapeHtml(metadata.title || _('Untitled'))}</${titleTag}>
         ${summaryHtml}
         <div class="nn-card__meta">
           <span class="author user-mention" data-pubkey="${event.pubkey}">
@@ -509,8 +510,7 @@ export class ArticleTimeline {
   // ─────────────────────────────────────────────────────────────────────────
 
   private showLoading(): void {
-    this.articlesContainer.innerHTML =
-      '<p class="pulsate">Loading articles...</p>';
+    this.articlesContainer.innerHTML = `<p class="pulsate">${_('Loading articles...')}</p>`;
   }
 
   private showEmpty(): void {
@@ -518,13 +518,12 @@ export class ArticleTimeline {
       this.articlesContainer.innerHTML = `
         <div class="article-timeline__empty">
           <svg width="48" height="48"><use href="#icon-articles"/></svg>
-          <p>No articles found</p>
+          <p>${_('No articles found')}</p>
           <span>Long-form articles will appear here</span>
         </div>
       `;
     } else {
-      this.articlesContainer.innerHTML =
-        '<p class="scc-article-feed__empty">No articles from your follows yet.</p>';
+      this.articlesContainer.innerHTML = `<p class="scc-article-feed__empty">${_('No articles from your follows yet.')}</p>`;
     }
   }
 }

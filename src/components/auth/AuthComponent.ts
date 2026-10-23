@@ -6,6 +6,7 @@
  */
 
 import { GLOBAL_KEY_HAS_KEY } from '../../helpers/globalStorageKeys';
+import { _ } from '../../i18n';
 import { errMessage } from '../../helpers/errorMessage';
 import { AuthService } from '../../services/AuthService';
 import { SystemLogger } from '../../services/SystemLogger';
@@ -65,7 +66,7 @@ export class AuthComponent {
         <div class="user-status">
           <div class="user-info">
             <span class="user-indicator">○</span>
-            <span class="user-display">Not logged in</span>
+            <span class="user-display">${_('Not logged in')}</span>
           </div>
           <button class="btn btn--mini" type="button" data-action="show-login">Login</button>
         </div>
@@ -129,7 +130,9 @@ export class AuthComponent {
     // Check if adding account (from AccountSwitcher)
     const isAddingAccount =
       sessionStorage.getItem('noornote_add_account') === 'true';
-    const pageTitle = isAddingAccount ? 'Add Account' : 'Welcome to NoorNote';
+    const pageTitle = isAddingAccount
+      ? _('Add Account')
+      : _('Welcome to NoorNote');
 
     primaryContent.innerHTML = `
       <div class="view-content view-content--login">
@@ -138,38 +141,38 @@ export class AuthComponent {
         <section class="auth-section auth-section--primary">
           <div class="auth-primary-action ${!isDesktop ? 'hidden' : ''}">
             <button class="btn btn--large" data-action="use-key-signer">
-              🔑 Use NoorSigner
+              🔑 ${_('Use NoorSigner')}
             </button>
-            <p class="auth-hint">Secure local key signer</p>
+            <p class="auth-hint">${_('Secure local key signer')}</p>
           </div>
           <div class="auth-primary-action ${!showAmber ? 'hidden' : ''}">
             <button class="btn btn--large" data-action="use-amber" ${amberStartsDisabled ? 'disabled' : ''}>
-              🔑 Use Amber
+              🔑 ${_('Use Amber')}
             </button>
-            <p class="auth-hint">NIP-55 Android signer</p>
+            <p class="auth-hint">${_('NIP-55 Android signer')}</p>
           </div>
           <div class="auth-primary-action ${!showBrowserExtBig ? 'hidden' : ''}">
             <button class="btn btn--large" data-action="use-browser-ext-signer">
-              🔑 Use Browser extension
+              🔑 ${_('Use Browser extension')}
             </button>
-            <p class="auth-hint">Extension handles signing</p>
+            <p class="auth-hint">${_('Extension handles signing')}</p>
           </div>
         </section>
 
         <div class="auth-divider">
-          <span>or</span>
+          <span>${_('or')}</span>
         </div>
 
         <section class="auth-section">
-          <h2>Remote Signer</h2>
+          <h2>${_('Remote Signer')}</h2>
           <div class="auth-nostrconnect ${isMobileLayout ? 'hidden' : ''}" data-container="nostrconnect">
             <div class="auth-nostrconnect__qr" data-container="nostrconnect-qr">
-              <div class="auth-nostrconnect__loading">Generating QR code...</div>
+              <div class="auth-nostrconnect__loading">${_('Generating QR code...')}</div>
             </div>
-            <p class="auth-hint">Scan with Amber or other mobile signer</p>
-            <p class="auth-nostrconnect__status" data-status="nostrconnect">Waiting for connection...</p>
+            <p class="auth-hint">${_('Scan with Amber or other mobile signer')}</p>
+            <p class="auth-nostrconnect__status" data-status="nostrconnect">${_('Waiting for connection...')}</p>
           </div>
-          <p class="auth-nostrconnect__status ${!amberStartsDisabled ? 'hidden' : ''}" data-status="nostrconnect-mobile">Waiting for connection…</p>
+          <p class="auth-nostrconnect__status ${!amberStartsDisabled ? 'hidden' : ''}" data-status="nostrconnect-mobile">${_('Waiting for connection…')}</p>
           <div class="auth-divider auth-divider--small ${isMobileLayout ? 'hidden' : ''}">
             <span>${isMobileLayout ? '' : 'or '}enter bunker:// URI</span>
           </div>
@@ -177,32 +180,32 @@ export class AuthComponent {
             <input
               type="text"
               class="input input--monospace"
-              placeholder="bunker://..."
+              placeholder="${_('bunker://...')}"
               data-input="bunker"
               autocomplete="off"
             />
-            <button class="btn" data-action="connect-bunker">Connect</button>
+            <button class="btn" data-action="connect-bunker">${_('Connect')}</button>
           </div>
         </section>
 
         <div class="auth-divider ${showBrowserExtSmall ? '' : 'hidden'}">
-          <span>or</span>
+          <span>${_('or')}</span>
         </div>
         <p class="auth-hint ${showBrowserExtSmall ? '' : 'hidden'}" style="text-align: center;">
-          <a href="#" data-action="use-browser-ext-signer">Use Browser extension</a>
-          (e.g. Alby on mobile Firefox)
+          <a href="#" data-action="use-browser-ext-signer">${_('Use Browser extension')}</a>
+          (${_('e.g. Alby on mobile Firefox')})
         </p>
 
         <div class="auth-divider">
-          <span>or</span>
+          <span>${_('or')}</span>
         </div>
 
         <p class="auth-hint" style="text-align: center;">
-          <a href="#" data-action="create-account">Create a new Nostr account</a>
+          <a href="#" data-action="create-account">${_('Create a new Nostr account')}</a>
         </p>
 
         <p class="auth-hint ${!isDesktop ? 'hidden' : ''}" style="text-align: center;">
-          <a href="#" data-action="import-to-noorsigner">Import existing key to NoorSigner</a>
+          <a href="#" data-action="import-to-noorsigner">${_('Import existing key to NoorSigner')}</a>
         </p>
       </div>
     `;
@@ -267,19 +270,23 @@ export class AuthComponent {
         this.handleLoginSuccess(result.npub, result.pubkey, 'nostrconnect');
       } else if (result.error !== 'Cancelled') {
         if (statusEl)
-          statusEl.textContent = 'Connection failed. Reload to try again.';
+          statusEl.textContent = _('Connection failed. Reload to try again.');
         if (statusElMobile)
-          statusElMobile.textContent =
-            'Connection failed. Reload to try again.';
+          statusElMobile.textContent = _(
+            'Connection failed. Reload to try again.'
+          );
       }
     } catch (error) {
       const msg = errMessage(error);
       this.systemLogger.warn('Auth', `NostrConnect init failed: ${msg}`);
       if (qrContainer)
-        qrContainer.innerHTML = '<p class="auth-hint">QR code unavailable</p>';
+        qrContainer.innerHTML = _(
+          '<p class="auth-hint">QR code unavailable</p>'
+        );
       if (statusElMobile)
-        statusElMobile.textContent =
-          'Connection unavailable. Reload to try again.';
+        statusElMobile.textContent = _(
+          'Connection unavailable. Reload to try again.'
+        );
     }
   }
 
@@ -422,7 +429,7 @@ export class AuthComponent {
               );
             } else {
               this.showError(
-                retryResult.error || 'Authentication failed after unlock'
+                retryResult.error || _('Authentication failed after unlock')
               );
             }
           },
@@ -473,9 +480,9 @@ export class AuthComponent {
     ) as HTMLButtonElement;
     if (!keySignerBtn) return;
 
-    const originalText = '🔑 Use NoorSigner';
+    const originalText = _('🔑 Use NoorSigner');
     keySignerBtn.disabled = true;
-    keySignerBtn.textContent = 'Launching daemon...';
+    keySignerBtn.textContent = _('Launching daemon...');
 
     // Add cancel button
     const authSection = keySignerBtn.closest('.auth-section');
@@ -485,7 +492,7 @@ export class AuthComponent {
     if (authSection) {
       cancelBtn = document.createElement('button');
       cancelBtn.className = 'btn btn--passive';
-      cancelBtn.textContent = 'Cancel';
+      cancelBtn.textContent = _('Cancel');
       cancelBtn.style.marginTop = '0.5rem';
       cancelBtn.setAttribute('data-action', 'cancel-keysigner');
       authSection.querySelector('.auth-primary-action')?.appendChild(cancelBtn);
@@ -501,10 +508,10 @@ export class AuthComponent {
     try {
       setTimeout(() => {
         if (
-          keySignerBtn.textContent === 'Launching daemon...' &&
+          keySignerBtn.textContent === _('Launching daemon...') &&
           !userCancelled
         ) {
-          keySignerBtn.textContent = '⏳ Waiting for password...';
+          keySignerBtn.textContent = _('⏳ Waiting for password...');
         }
       }, 2000);
 
@@ -529,12 +536,12 @@ export class AuthComponent {
         this.handleLoginSuccess(result.npub, result.pubkey, 'NoorSigner');
       } else {
         this.systemLogger.error('Auth', 'NoorSigner login failed');
-        this.showError(result.error || 'NoorSigner authentication failed');
+        this.showError(result.error || _('NoorSigner authentication failed'));
         this.resetButton(keySignerBtn, originalText);
       }
     } catch (error) {
       console.error('NoorSigner login error:', error);
-      this.showError('Unexpected error during NoorSigner authentication');
+      this.showError(_('Unexpected error during NoorSigner authentication'));
       this.resetButton(keySignerBtn, originalText);
       cancelBtn?.remove();
     }
@@ -560,23 +567,24 @@ export class AuthComponent {
     // background via the nostrconnect subscription.
     if (!PlatformService.getInstance().isCapacitor) {
       if (!this.nostrConnectUri) {
-        this.showError('Connection not ready yet — try again in a moment.');
+        this.showError(_('Connection not ready yet — try again in a moment.'));
         return;
       }
       const statusElMobile = document.querySelector(
         '[data-status="nostrconnect-mobile"]'
       );
       if (statusElMobile)
-        statusElMobile.textContent =
-          'Opening Amber… approve there, then come back.';
+        statusElMobile.textContent = _(
+          'Opening Amber… approve there, then come back.'
+        );
       window.location.href = this.nostrConnectUri;
       return;
     }
 
     // Capacitor APK branch — synchronous plugin path.
-    const originalText = '🔑 Use Amber';
+    const originalText = _('🔑 Use Amber');
     amberBtn.disabled = true;
-    amberBtn.textContent = 'Opening Amber...';
+    amberBtn.textContent = _('Opening Amber...');
 
     try {
       const result = await this.authService.authenticateWithAmber();
@@ -584,14 +592,14 @@ export class AuthComponent {
       if (result.success && result.npub && result.pubkey) {
         this.handleLoginSuccess(result.npub, result.pubkey, 'Amber');
       } else {
-        this.showError(result.error || 'Amber authentication failed');
+        this.showError(result.error || _('Amber authentication failed'));
         this.resetButton(amberBtn, originalText);
       }
     } catch (error) {
       const msg = errMessage(error);
       console.error(`ERROR: ${msg}`);
       console.error('Amber login error:', msg);
-      this.showError(`Amber error: ${msg}`);
+      this.showError(`${_('Amber error:')} ${msg}`);
       this.resetButton(amberBtn, originalText);
     }
   }
@@ -608,7 +616,7 @@ export class AuthComponent {
 
     const originalText = '🔑 Use Browser extension';
     browserExtBtn.disabled = true;
-    browserExtBtn.textContent = 'Waiting Extension';
+    browserExtBtn.textContent = _('Waiting Extension');
 
     try {
       const result = await this.authService.authenticate();

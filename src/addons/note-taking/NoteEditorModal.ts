@@ -15,6 +15,7 @@ import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { NoteTakingService } from './NoteTakingService';
 import type { NoteChecklistItem, NoteRecord } from './NoteTakingStore';
 import { NOTE_COLORS } from './noteColors';
+import { _, tp } from '../../i18n';
 
 export interface NoteEditorOptions {
   /** Existing note to edit, or undefined for a new note. */
@@ -51,17 +52,17 @@ export class NoteEditorModal {
     });
 
     content.innerHTML = `
-      <input type="text" class="input note-taking-editor__title" placeholder="Title" value="${escapeHtmlAttr(note?.title ?? '')}" />
+      <input type="text" class="input note-taking-editor__title" placeholder="${_('Title')}" value="${escapeHtmlAttr(note?.title ?? '')}" />
       ${this.toolbar.render()}
-      <textarea class="textarea note-taking-editor__body" placeholder="Take a note…">${escapeHtml(note?.body ?? '')}</textarea>
+      <textarea class="textarea note-taking-editor__body" placeholder="${_('Take a note…')}">${escapeHtml(note?.body ?? '')}</textarea>
       <div class="note-taking-editor__checklist" data-checklist></div>
       <button type="button" class="note-taking-editor__add-item" data-add-item>
         <svg width="14" height="14"><use href="#icon-plus"/></svg>
-        List item (i.e. todos)
+        ${_('List item (i.e. todos)')}
       </button>
       <div class="note-taking-editor__labels">
         <div class="note-taking-editor__label-chips" data-label-chips></div>
-        <input type="text" class="input note-taking-editor__label-input" placeholder="Add label and press Enter…" data-label-input />
+        <input type="text" class="input note-taking-editor__label-input" placeholder="${_('Add label and press Enter…')}" data-label-input />
       </div>
       <div class="note-taking-editor__colors" data-colors>
         ${NOTE_COLORS.map(c => `<button type="button" class="note-taking-swatch note-taking-color-${c}${c === this.color ? ' is-active' : ''}" data-color="${c}" title="${c}" aria-label="${c} color"></button>`).join('')}
@@ -69,26 +70,26 @@ export class NoteEditorModal {
       <div class="note-taking-editor__reminder-hint" data-reminder-hint></div>
       <div class="note-taking-editor__actions l-row--split">
         <div>
-          <button type="button" class="btn-icon note-taking-editor__pin${this.pinned ? ' is-active' : ''}" title="Pin to top" aria-label="Pin to top">
+          <button type="button" class="btn-icon note-taking-editor__pin${this.pinned ? ' is-active' : ''}" title="${_('Pin to top')}" aria-label="${_('Pin to top')}">
             <svg width="18" height="18"><use href="#icon-bookmark"/></svg>
           </button>
-          <button type="button" class="btn-icon note-taking-editor__reminder${this.reminderAt ? ' is-active' : ''}" title="Set reminder" aria-label="Set reminder">
+          <button type="button" class="btn-icon note-taking-editor__reminder${this.reminderAt ? ' is-active' : ''}" title="${_('Set reminder')}" aria-label="${_('Set reminder')}">
             <svg width="18" height="18"><use href="#icon-calendar"/></svg>
           </button>
           ${
             note
               ? `
-          <button type="button" class="btn-icon note-taking-editor__archive${this.archived ? ' is-active' : ''}" title="${this.archived ? 'Unarchive' : 'Archive'}" aria-label="${this.archived ? 'Unarchive' : 'Archive'}">
+          <button type="button" class="btn-icon note-taking-editor__archive${this.archived ? ' is-active' : ''}" title="${this.archived ? _('Unarchive') : _('Archive')}" aria-label="${this.archived ? _('Unarchive') : _('Archive')}">
             <svg width="18" height="18"><use href="#icon-folder"/></svg>
           </button>
-          <button type="button" class="btn-icon note-taking-editor__delete" title="Delete note" aria-label="Delete note">
+          <button type="button" class="btn-icon note-taking-editor__delete" title="${tp('note-taking', 'Delete note')}" aria-label="${tp('note-taking', 'Delete note')}">
             <svg width="18" height="18"><use href="#icon-trash"/></svg>
           </button>`
               : ''
           }
         </div>
         <div>
-          <button type="button" class="btn note-taking-editor__save">Save</button>
+          <button type="button" class="btn note-taking-editor__save">${_('Save')}</button>
         </div>
       </div>
     `;
@@ -122,7 +123,7 @@ export class NoteEditorModal {
     archiveBtn?.addEventListener('click', () => {
       this.archived = !this.archived;
       archiveBtn.classList.toggle('is-active', this.archived);
-      const label = this.archived ? 'Unarchive' : 'Archive';
+      const label = this.archived ? _('Unarchive') : _('Archive');
       archiveBtn.title = label;
       archiveBtn.setAttribute('aria-label', label);
       archiveBtn.blur();
@@ -135,12 +136,12 @@ export class NoteEditorModal {
     reminderBtn.addEventListener('click', async () => {
       const { pickDateTime } = await import('../../helpers/datePickerModal');
       const picked = await pickDateTime({
-        title: 'Set reminder',
+        title: _('Set reminder'),
         initial: this.reminderAt
           ? new Date(this.reminderAt * 1000)
           : new Date(Date.now() + 60 * 60 * 1000),
         min: new Date(Date.now() + 60 * 1000),
-        confirmLabel: 'Set',
+        confirmLabel: _('Set'),
         anchorEl: reminderBtn,
       });
       reminderBtn.blur();
@@ -197,7 +198,7 @@ export class NoteEditorModal {
       ?.addEventListener('click', () => this.handleSave(content));
 
     ModalService.getInstance().show({
-      title: note ? 'Edit note' : 'New note',
+      title: note ? _('Edit note') : _('New note'),
       content,
       width: '600px',
       onClose: () => {
@@ -221,8 +222,8 @@ export class NoteEditorModal {
     row.className = 'note-taking-checklist-row';
     row.innerHTML = `
       <input type="checkbox" class="note-taking-checklist-row__check"${item.checked ? ' checked' : ''} />
-      <input type="text" class="input note-taking-checklist-row__text" placeholder="List item" value="${escapeHtmlAttr(item.text)}" />
-      <button type="button" class="btn-icon note-taking-checklist-row__remove" aria-label="Remove item">
+      <input type="text" class="input note-taking-checklist-row__text" placeholder="${_('List item')}" value="${escapeHtmlAttr(item.text)}" />
+      <button type="button" class="btn-icon note-taking-checklist-row__remove" aria-label="${_('Remove item')}">
         <svg width="14" height="14"><use href="#icon-close"/></svg>
       </button>
     `;
@@ -248,7 +249,7 @@ export class NoteEditorModal {
     chip.className = 'note-taking-label-chip';
     chip.innerHTML = `
       <span class="note-taking-label-chip__text">${escapeHtml(label)}</span>
-      <button type="button" class="note-taking-label-chip__remove" aria-label="Remove label">
+      <button type="button" class="note-taking-label-chip__remove" aria-label="${_('Remove label')}">
         <svg width="12" height="12"><use href="#icon-close"/></svg>
       </button>
     `;
@@ -298,8 +299,8 @@ export class NoteEditorModal {
     }
     const when = new Date(this.reminderAt * 1000).toLocaleString();
     hint.innerHTML = `
-      <span>Reminder: ${escapeHtml(when)}</span>
-      <button type="button" class="note-taking-editor__reminder-clear" data-reminder-clear>Clear</button>
+      <span>${_('Reminder: %s', escapeHtml(when))}</span>
+      <button type="button" class="note-taking-editor__reminder-clear" data-reminder-clear>${_('Clear')}</button>
     `;
     hint
       .querySelector('[data-reminder-clear]')
@@ -352,16 +353,16 @@ export class NoteEditorModal {
 
     ModalService.getInstance().hide();
     this.opts.onChanged();
-    ToastService.show('Note saved', 'success');
+    ToastService.show(_('Note saved'), 'success');
   }
 
   private async handleDelete(): Promise<void> {
     if (!this.opts.note) return;
     const confirmed = await ModalService.getInstance().confirm({
-      title: 'Delete note',
-      message: 'Delete this note? This removes it from this device.',
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
+      title: tp('note-taking', 'Delete note'),
+      message: _('Delete this note? This removes it from this device.'),
+      confirmText: _('Delete'),
+      cancelText: _('Cancel'),
       confirmDestructive: true,
     });
     if (!confirmed) return;
@@ -369,7 +370,7 @@ export class NoteEditorModal {
     await NoteTakingService.getInstance().deleteNote(this.opts.note.id);
     ModalService.getInstance().hide();
     this.opts.onChanged();
-    ToastService.show('Note deleted', 'success');
+    ToastService.show(_('Note deleted'), 'success');
   }
 
   private async uploadImage(file: File): Promise<string | null> {

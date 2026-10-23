@@ -14,6 +14,7 @@ import {
   StorageKeys,
 } from '../../services/PerAccountLocalStorage';
 import { TypedEventBus } from '../../core/TypedEventBus';
+import { _, tn } from '../../i18n';
 
 // Window values: 0 = disabled, -1 = always, or number of days
 const WINDOW_OPTIONS = [
@@ -91,10 +92,16 @@ export class ProfileRecognitionSettings extends SettingsSection {
       onChange: checked => {
         if (checked) {
           this.saveWindow(90);
-          ToastService.show('Profile Recognition enabled (90 days)', 'success');
+          ToastService.show(
+            _('%s enabled (90 days)', _('Profile Recognition')),
+            'success'
+          );
         } else {
           this.saveWindow(0);
-          ToastService.show('Profile Recognition disabled', 'success');
+          ToastService.show(
+            _('%s disabled', _('Profile Recognition')),
+            'success'
+          );
         }
         // Show/hide options in content zone
         const options = parentContainer.querySelector(
@@ -108,7 +115,7 @@ export class ProfileRecognitionSettings extends SettingsSection {
       const isChecked = option.value === currentWindow;
       return `
         <label class="nn-checkbox nn-checkbox--label-left">
-          <span class="setting__label">${option.label}</span>
+          <span class="setting__label">${_(option.label)}</span>
           <input
             type="radio"
             name="profile-recognition-window"
@@ -121,9 +128,9 @@ export class ProfileRecognitionSettings extends SettingsSection {
 
     contentContainer.innerHTML = `
       <div class="setting">
-        <span class="setting__label">Enable Profile Recognition</span>
+        <span class="setting__label">${_('Enable Profile Recognition')}</span>
         <div class="setting__control">${this.enableSwitch.render()}</div>
-        <p class="setting__desc">Helps you recognize people you follow even after they change their name or profile picture. When someone you follow changes their profile, the app shows visual cues (blinking profile pictures) so you remember who they are.</p>
+        <p class="setting__desc">${_('Helps you recognize people you follow even after they change their name or profile picture. When someone you follow changes their profile, the app shows visual cues (blinking profile pictures) so you remember who they are.')}</p>
       </div>
     `;
 
@@ -136,18 +143,18 @@ export class ProfileRecognitionSettings extends SettingsSection {
     if (contentZone) {
       contentZone.innerHTML = `
         <div class="profile-recognition-options" style="${enabled ? '' : 'display: none'}">
-          <p>Choose how long to show these recognition cues after a profile change:</p>
+          <p>${_('Choose how long to show these recognition cues after a profile change:')}</p>
 
           <div class="mode-options">
             ${optionsHtml}
           </div>
 
-          <h2>How it works</h2>
+          <h2>${_('How it works')}</h2>
           <ul>
-            <li>When you follow someone, the app saves their current name and profile picture</li>
-            <li>If they change their profile within your selected window, their picture will blink between old and new</li>
-            <li>After the window expires, the blinking stops (you've adapted to their new profile)</li>
-            <li>Only applies to people you follow (not everyone you see)</li>
+            <li>${_('When you follow someone, the app saves their current name and profile picture')}</li>
+            <li>${_('If they change their profile within your selected window, their picture will blink between old and new')}</li>
+            <li>${_('After the window expires, the blinking stops (you have adapted to their new profile)')}</li>
+            <li>${_('Only applies to people you follow (not everyone you see)')}</li>
           </ul>
         </div>
       `;
@@ -174,8 +181,12 @@ export class ProfileRecognitionSettings extends SettingsSection {
 
           const message =
             value === -1
-              ? 'Profile Recognition set to Always'
-              : `Profile Recognition set to ${value} day${value > 1 ? 's' : ''}`;
+              ? _('%s set to Always', _('Profile Recognition'))
+              : _(
+                  '%s set to %s',
+                  _('Profile Recognition'),
+                  tn('%s day', '%s days', value, String(value))
+                );
           ToastService.show(message, 'success');
         }
       });

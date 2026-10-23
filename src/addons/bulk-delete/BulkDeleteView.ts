@@ -25,7 +25,7 @@ import { ModalService } from '../../services/ModalService';
 import { AuthService } from '../../services/AuthService';
 import { SystemLogger } from '../../services/SystemLogger';
 import { ModuleLoader } from '../../core/ModuleLoader';
-import { escapeHtml } from '../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { encodeNevent } from '../../helpers/encodeNevent';
 import { truncateNoteContent } from '../../helpers/truncateNoteContent';
 import { extractMedia } from '../../helpers/extractMedia';
@@ -43,6 +43,7 @@ import type { ProfileModuleApi } from '../../modules/profile/contracts';
 import type { SingleNoteModuleApi } from '../../modules/single-note/contracts';
 import type { BroadcastProgress } from '../../services/BroadcastDeleteService';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { _, tn } from '../../i18n';
 
 /** Selected notes are deleted in chunks of this many NIP-09 e-tags per kind:5. */
 const CHUNK_SIZE = 100;
@@ -124,7 +125,9 @@ export class BulkDeleteView extends View {
           enabled: checked,
         });
         ToastService.show(
-          checked ? 'Bulk delete enabled' : 'Bulk delete disabled',
+          checked
+            ? _('%s enabled', _('Bulk delete'))
+            : _('%s disabled', _('Bulk delete')),
           'success'
         );
         if (checked) this.mountContent();
@@ -134,12 +137,12 @@ export class BulkDeleteView extends View {
 
     this.container.innerHTML = `
       <div class="back-padder">
-        <h1>Bulk delete</h1>
+        <h1>${_('Bulk delete')}</h1>
         <section class="section">
           <div class="setting">
-            <span class="setting__label">Enable Bulk delete</span>
+            <span class="setting__label">${_('Enable Bulk delete')}</span>
             <div class="setting__control"></div>
-            <p class="setting__desc">Pick a time range or search your own posts, then select them and delete in bulk. Each deletion is a NIP-09 request broadcast to relays in the background — relays may honor it or not. Deletion is not guaranteed and cannot be undone.</p>
+            <p class="setting__desc">${_('Pick a time range or search your own posts, then select them and delete in bulk. Each deletion is a NIP-09 request broadcast to relays in the background — relays may honor it or not. Deletion is not guaranteed and cannot be undone.')}</p>
           </div>
         </section>
         <div data-addon-content="bulk-delete"></div>
@@ -191,16 +194,16 @@ export class BulkDeleteView extends View {
     if (!this.contentEl) return;
     this.contentEl.innerHTML = `
       <div class="l-row--right bulk-delete__bar">
-        <button class="btn" data-action="pick-search">Select by search term</button>
-        <button class="btn" data-action="pick-range">Select time range</button>
+        <button class="btn" data-action="pick-search">${_('Select by search term')}</button>
+        <button class="btn" data-action="pick-range">${_('Select time range')}</button>
       </div>
       <div class="l-row--split bulk-delete__range-row">
         <span class="bulk-delete__range" data-range></span>
-        <a href="#" data-action="select-all">Select all visible</a>
+        <a href="#" data-action="select-all">${_('Select all visible')}</a>
       </div>
       <div class="ui-list" data-list></div>
       <div class="bulk-delete__footer" data-footer hidden>
-        <button class="btn btn--danger" data-action="delete-selected" disabled>Delete selected (0)</button>
+        <button class="btn btn--danger" data-action="delete-selected" disabled>${_('Delete selected (%s)', '0')}</button>
         <div class="bulk-delete__progress" data-progress></div>
       </div>
     `;
@@ -423,8 +426,8 @@ export class BulkDeleteView extends View {
 
   private async handlePickRange(): Promise<void> {
     const result = await pickDateRange({
-      title: 'Select Time Range',
-      confirmLabel: 'Show Notes',
+      title: _('Select Time Range'),
+      confirmLabel: _('Show Notes'),
     });
     if (!result) return;
     this.range = result;
@@ -463,7 +466,7 @@ export class BulkDeleteView extends View {
     const profileApi =
       ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
     if (!pubkey || !profileApi) {
-      ToastService.show('Search is not available right now', 'error');
+      ToastService.show(_('Search is not available right now'), 'error');
       return;
     }
 
@@ -494,7 +497,7 @@ export class BulkDeleteView extends View {
         'BulkDeleteView',
         `Search failed: ${String(err)}`
       );
-      ToastService.show('Search failed', 'error');
+      ToastService.show(_('Search failed'), 'error');
       this.searchBase = [];
     }
 
@@ -576,7 +579,7 @@ export class BulkDeleteView extends View {
           'BulkDeleteView',
           `Failed to load notes: ${String(err)}`
         );
-        ToastService.show('Failed to load your notes', 'error');
+        ToastService.show(_('Failed to load your notes'), 'error');
         this.notes = [];
         this.hasMore = false;
         break;
@@ -649,7 +652,7 @@ export class BulkDeleteView extends View {
       return;
     }
     this.infiniteScroll = new InfiniteScroll(() => void this.handleLoadMore(), {
-      loadingMessage: 'Loading more notes...',
+      loadingMessage: _('Loading more notes...'),
     });
     this.infiniteScroll.observe(list);
     if (!this.hasMore) this.infiniteScroll.pause();
@@ -664,7 +667,7 @@ export class BulkDeleteView extends View {
 
     // No filter active → default view, nothing to reset.
     if (this.searchTerms === null && !this.range) {
-      el.textContent = 'Your recent posts';
+      el.textContent = _('Your recent posts');
       return;
     }
 
@@ -672,15 +675,19 @@ export class BulkDeleteView extends View {
     let label: string;
     if (this.searchTerms !== null) {
       const rangePart = this.range
-        ? ` · ${fmt(this.range.since)} to ${fmt(this.range.until)}`
+        ? ` · ${fmt(this.range.since)} ${_('to')} ${fmt(this.range.until)}`
         : '';
-      label = `Search “${this.searchTerms}”${rangePart}`;
+      label = `${_('Search “%s”', this.searchTerms)}${rangePart}`;
     } else {
-      label = `Your posts from ${fmt(this.range!.since)} to ${fmt(this.range!.until)}`;
+      label = _(
+        'Your posts from %s to %s',
+        fmt(this.range!.since),
+        fmt(this.range!.until)
+      );
     }
     el.innerHTML =
       `${escapeHtml(label)} ` +
-      `<a href="#" data-action="reset-filters" class="bulk-delete__reset" title="Reset filters">Reset</a>`;
+      `<a href="#" data-action="reset-filters" class="bulk-delete__reset" title="${escapeHtmlAttr(_('Reset filters'))}">${_('Reset')}</a>`;
   }
 
   private renderList(): void {
@@ -695,8 +702,8 @@ export class BulkDeleteView extends View {
     if (this.loading && this.notes.length === 0) {
       const msg =
         this.searchTerms !== null
-          ? 'Searching your posts…'
-          : 'Loading your notes...';
+          ? _('Searching your posts…')
+          : _('Loading your notes...');
       list.innerHTML = `<div class="bulk-delete__empty pulsate">${msg}</div>`;
       if (footer) footer.hidden = true;
       return;
@@ -704,10 +711,10 @@ export class BulkDeleteView extends View {
     if (this.notes.length === 0) {
       const msg =
         this.searchTerms !== null
-          ? 'No posts match your search.'
+          ? _('No posts match your search.')
           : this.range
-            ? 'No posts found in this range.'
-            : 'No posts found.';
+            ? _('No posts found in this range.')
+            : _('No posts found.');
       list.innerHTML = `<div class="bulk-delete__empty">${msg}</div>`;
       if (footer) footer.hidden = true;
       return;
@@ -744,7 +751,7 @@ export class BulkDeleteView extends View {
         <span class="bulk-delete__text" data-open="${escapeHtml(nevent)}">${escapeHtml(this.preview(ev))}</span>
         <span class="bulk-delete__date">${escapeHtml(date)}</span>
         <span class="nn-checkbox bulk-delete__select">
-          <input type="checkbox" data-select data-id="${escapeHtml(id)}" aria-label="Select for deletion"${checked} />
+          <input type="checkbox" data-select data-id="${escapeHtml(id)}" aria-label="${escapeHtmlAttr(_('Select for deletion'))}"${checked} />
         </span>
       </div>
     `;
@@ -753,7 +760,7 @@ export class BulkDeleteView extends View {
   /** One-line, text-flattened preview. Media-only posts show (Image)/(Video). */
   private preview(ev: NostrEvent): string {
     // Reposts embed the original event's JSON as content — never show that raw.
-    if (ev.kind === 6 || ev.kind === 16) return '(Repost)';
+    if (ev.kind === 6 || ev.kind === 16) return _('(Repost)');
 
     const content = ev.content || '';
     const media = extractMedia(content);
@@ -769,11 +776,15 @@ export class BulkDeleteView extends View {
 
     if (media.length > 0) {
       const t = media[0]!.type;
-      return t === 'video' ? '(Video)' : t === 'audio' ? '(Audio)' : '(Image)';
+      return t === 'video'
+        ? _('(Video)')
+        : t === 'audio'
+          ? _('(Audio)')
+          : _('(Image)');
     }
     // No text, no media — label by kind so the row is never blank.
-    if (ev.kind === 30023) return '(Article)';
-    return '(no text)';
+    if (ev.kind === 30023) return _('(Article)');
+    return _('(no text)');
   }
 
   private get allSelected(): boolean {
@@ -802,8 +813,8 @@ export class BulkDeleteView extends View {
     const link = this.contentEl?.querySelector('[data-action="select-all"]');
     if (link)
       link.textContent = this.allSelected
-        ? 'Unselect all visible'
-        : 'Select all visible';
+        ? _('Unselect all visible')
+        : _('Select all visible');
   }
 
   /**
@@ -818,16 +829,16 @@ export class BulkDeleteView extends View {
       container.className = 'date-range-selector';
       container.innerHTML = `
         <div class="form__row">
-          <input type="text" class="input" data-search-input placeholder="Search terms..." value="${escapeHtml(initial)}" />
+          <input type="text" class="input" data-search-input placeholder="${_('Search terms...')}" value="${escapeHtml(initial)}" />
         </div>
         <div class="date-range-selector__actions">
-          <button class="btn btn--secondary" data-search-cancel>Cancel</button>
-          <button class="btn" data-search-confirm>Search</button>
+          <button class="btn btn--secondary" data-search-cancel>${_('Cancel')}</button>
+          <button class="btn" data-search-confirm>${_('Search')}</button>
         </div>
       `;
 
       modalService.show({
-        title: 'Search your posts',
+        title: _('Search your posts'),
         content: container,
         width: '380px',
         height: 'auto',
@@ -875,7 +886,7 @@ export class BulkDeleteView extends View {
     ) as HTMLButtonElement | null;
     if (!btn) return;
     const n = this.selected.size;
-    btn.textContent = `Delete selected (${n})`;
+    btn.textContent = _('Delete selected (%s)', String(n));
     btn.disabled = n === 0 || this.dispatching;
     this.updateSelectAllLabel();
   }
@@ -885,15 +896,18 @@ export class BulkDeleteView extends View {
     if (ids.length === 0 || this.dispatching) return;
     const postsApi = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
     if (!postsApi) {
-      ToastService.show('Posts module not ready', 'error');
+      ToastService.show(_('Posts module not ready'), 'error');
       return;
     }
 
     const confirmed = await ModalService.getInstance().confirm({
-      title: 'Delete selected posts',
-      message: `Send a deletion request for ${ids.length} post${ids.length === 1 ? '' : 's'}? This broadcasts a NIP-09 request to relays and cannot be undone. Relays may or may not honor it.`,
-      confirmText: 'Delete',
-      cancelText: 'Keep',
+      title: _('Delete selected posts'),
+      message: _(
+        'Send a deletion request for %s? This broadcasts a NIP-09 request to relays and cannot be undone. Relays may or may not honor it.',
+        tn('%s post', '%s posts', ids.length, String(ids.length))
+      ),
+      confirmText: _('Delete'),
+      cancelText: _('Keep'),
       confirmDestructive: true,
     });
     if (!confirmed) return;
@@ -1002,14 +1016,14 @@ export class BulkDeleteView extends View {
     if (firstPassRunning) {
       const head =
         this.deleteNoteCount > 0
-          ? `<p class="bulk-delete__progress-head pulsate">Deleting ${this.deleteNoteCount} post${this.deleteNoteCount === 1 ? '' : 's'}…</p>`
-          : `<p class="bulk-delete__progress-head pulsate">Broadcasting deletion in the background…</p>`;
+          ? `<p class="bulk-delete__progress-head pulsate">${_('Deleting %s…', tn('%s post', '%s posts', this.deleteNoteCount, String(this.deleteNoteCount)))}</p>`
+          : `<p class="bulk-delete__progress-head pulsate">${_('Broadcasting deletion in the background…')}</p>`;
       let relayLine = '';
       if (this.lastHost && s) {
         const dotClass = this.lastHost.ok
           ? 'bulk-delete__dot--success'
           : 'bulk-delete__dot--error';
-        relayLine = `<p class="bulk-delete__progress-relay">Sending request to ${escapeHtml(this.lastHost.host)} (${s.contacted}/${s.total})<span class="bulk-delete__dot ${dotClass}"></span></p>`;
+        relayLine = `<p class="bulk-delete__progress-relay">${_('Sending request to %s (%s/%s)', escapeHtml(this.lastHost.host), String(s.contacted), String(s.total))}<span class="bulk-delete__dot ${dotClass}"></span></p>`;
       }
       el.innerHTML = head + relayLine;
       return;
@@ -1017,12 +1031,12 @@ export class BulkDeleteView extends View {
 
     // First pass done for a delete this view started → closure (dead relays still retry silently).
     if (s && this.deleteNoteCount > 0) {
-      el.innerHTML = `<p class="bulk-delete__progress-head">Deletion broadcast sent.</p>`;
+      el.innerHTML = `<p class="bulk-delete__progress-head">${_('Deletion broadcast sent.')}</p>`;
       return;
     }
 
     el.innerHTML = this.justCompleted
-      ? `<p class="bulk-delete__progress-head">Deletion broadcast complete.</p>`
+      ? `<p class="bulk-delete__progress-head">${_('Deletion broadcast complete.')}</p>`
       : '';
   }
 }

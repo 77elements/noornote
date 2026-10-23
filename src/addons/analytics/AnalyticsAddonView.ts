@@ -34,6 +34,7 @@ import {
   type EngagementUnit,
   type TopPostEntry,
 } from './analyticsLogic';
+import { _ } from '../../i18n';
 
 /** One stat tile: label + value slot, mapped to a metric key. */
 interface TileSpec {
@@ -69,6 +70,9 @@ const quotientFormat = (v: number): string =>
  * "Content" (user directive 2026-08-29). The 'content' collector still feeds
  * its tiles via `analytics:section-ready`; rows may span multiple collectors.
  * Tiles whose metric is not collected yet keep their loading state.
+ *
+ * Labels are plain data — translated at render time (translateRowSpecs) so the
+ * i18n catalog is loaded when they surface.
  */
 const ROWS: RowSpec[] = [
   {
@@ -217,8 +221,60 @@ const ROWS: RowSpec[] = [
   },
 ];
 
-const LOADING_HTML =
+/**
+ * Literal label anchors — the row specs store msgids as data, so the
+ * extractor cannot see them. These literal `_()` calls register every
+ * analytics label in the catalog; the values are unused.
+ */
+export function analyticsLabelAnchors(): string[] {
+  return [
+    _('Content'),
+    _('Original notes'),
+    _('Replies (kind 1)'),
+    _('Comments (kind 1111)'),
+    _('Replies + Comments'),
+    _('Originals : Replies'),
+    _('Articles'),
+    _('Video posts'),
+    _('Products'),
+    _('Follow'),
+    _('Follows'),
+    _('Followers'),
+    _('Zaps'),
+    _('Zaps sent'),
+    _('Zaps received'),
+    _('Sent'),
+    _('Received'),
+    _('Sent : Received'),
+    _('Engagement'),
+    _('Replies received'),
+    _('Reposts'),
+    _('Quoted reposts'),
+    _('Likes'),
+    _(
+      'Sent zaps are best effort — zaps from wallets that omit the P tag on receipts may be missing.'
+    ),
+  ];
+}
+
+/** Deep-translate a row spec's title/note/labels (called per render). */
+function translateRowSpecs(rows: RowSpec[]): RowSpec[] {
+  return rows.map(row => {
+    const translated: RowSpec = {
+      ...row,
+      title: _(row.title),
+      tiles: row.tiles.map(tile => ({ ...tile, label: _(tile.label) })),
+    };
+    if (row.note !== undefined) translated.note = _(row.note);
+    return translated;
+  });
+}
+
+const LOADING_HTML_RAW =
   '<span class="analytics-tile__value analytics-tile__value--loading pulsate">Loading…</span>';
+/** Translate the loading placeholder at use time (module const stays English). */
+const loadingHtml = (): string =>
+  LOADING_HTML_RAW.replace('>Loading…<', `>${_('Loading…')}<`);
 
 export class AnalyticsAddonView extends View {
   private container: HTMLElement;
@@ -248,7 +304,9 @@ export class AnalyticsAddonView extends View {
           enabled: checked,
         });
         ToastService.show(
-          checked ? 'Analytics enabled' : 'Analytics disabled',
+          checked
+            ? _('%s enabled', _('Analytics'))
+            : _('%s disabled', _('Analytics')),
           'success'
         );
         this.renderContentZone();
@@ -257,18 +315,18 @@ export class AnalyticsAddonView extends View {
 
     this.container.innerHTML = `
       <div class="back-padder">
-        <h1>Analytics</h1>
+        <h1>${_('Analytics')}</h1>
         <section class="section">
           <div class="setting">
-            <span class="setting__label">Enable Analytics</span>
+            <span class="setting__label">${_('Enable Analytics')}</span>
             <div class="setting__control">${this.enableSwitch.render()}</div>
-            <p class="setting__desc">Your personal Nostr stats — posts and replies, follows, content, zaps and engagement. Data is gathered relay-friendly, cached per account and refreshed incrementally. Counts cover your entire history — all-time, not a fixed window, as far as relay retention allows.</p>
+            <p class="setting__desc">${_('Your personal Nostr stats — posts and replies, follows, content, zaps and engagement. Data is gathered relay-friendly, cached per account and refreshed incrementally. Counts cover your entire history — all-time, not a fixed window, as far as relay retention allows.')}</p>
           </div>
         </section>
         <div class="tabs tabs--scrollable" data-el="analytics-tabs" hidden>
-          <button class="tab tab--active" data-tab="overview">Overview</button>
-          <button class="tab" data-tab="top-posts">Top Posts</button>
-          <button class="tab" data-tab="diagrams">Diagrams</button>
+          <button class="tab tab--active" data-tab="overview">${_('Overview')}</button>
+          <button class="tab" data-tab="top-posts">${_('Top Posts')}</button>
+          <button class="tab" data-tab="diagrams">${_('Diagrams')}</button>
         </div>
         <div class="tab-content tab-content--active" data-tab-content="overview" data-addon-content="overview"></div>
         <div class="tab-content" data-tab-content="top-posts" data-addon-content="top-posts"></div>
@@ -319,8 +377,7 @@ export class AnalyticsAddonView extends View {
 
     if (!isAnalyticsEnabled()) {
       if (tabsBar) tabsBar.hidden = true;
-      const note =
-        '<p class="form__note">Enable Analytics to see your stats.</p>';
+      const note = `<p class="form__note">${_('Enable Analytics to see your stats.')}</p>`;
       overview.innerHTML = note;
       topZone.innerHTML = note;
       diagrams.innerHTML = note;
@@ -330,23 +387,22 @@ export class AnalyticsAddonView extends View {
 
     // Complete skeleton, immediately — this is the whole point. Wrapped in a
     // <section> so the `.tab-content > section` padding rule applies uniformly
-    // across all tabs.
+    // across all tabs. ROWS is translated here (catalog is loaded at render).
+    const rows = translateRowSpecs(ROWS);
     let html = '<section><div class="analytics">';
     html +=
       '<div class="l-row--right analytics__meta">' +
-      '<span class="small pulsate" data-analytics-updated>Loading…</span>' +
-      '<button type="button" class="btn btn--passive btn--mini" data-analytics-refresh>Refresh</button>' +
+      `<span class="small pulsate" data-analytics-updated>${_('Loading…')}</span>` +
+      `<button type="button" class="btn btn--passive btn--mini" data-analytics-refresh>${_('Refresh')}</button>` +
       '</div>';
-    for (const row of ROWS) {
+    for (const row of rows) {
       html += `<section class="analytics__row" data-analytics-row="${row.row}">`;
       html += `<h2 class="analytics__row-title">${row.title}</h2>`;
       html += '<div class="analytics-tiles">';
       for (const tile of row.tiles) {
         html +=
           `<div class="analytics-tile${tile.newLine ? ' analytics-tile--row-break' : ''}" data-tile="${tile.tile}">` +
-          `<span class="analytics-tile__label small">${tile.label}</span>${
-            LOADING_HTML
-          }</div>`;
+          `<span class="analytics-tile__label small">${tile.label}</span>${loadingHtml()}</div>`;
       }
       html += '</div>';
       if (row.note) {
@@ -360,30 +416,30 @@ export class AnalyticsAddonView extends View {
     topZone.innerHTML = `
       <section class="analytics__row" data-analytics-row="top-posts">
         <ul class="ui-list" data-top-posts-list>
-          <li class="ui-list__item"><span class="small pulsate">Ranking your posts…</span></li>
+          <li class="ui-list__item"><span class="small pulsate">${_('Ranking your posts…')}</span></li>
         </ul>
       </section>`;
 
     diagrams.innerHTML = `
       <section class="analytics__row" data-analytics-row="engagement-timeline">
-        <h2 class="analytics__row-title">Engagement over time</h2>
-        <p class="form__note">Received engagement per bucket — replies, zaps, reposts, quotes and likes combined, same components as the Top Posts ranking. Hover a bar for the breakdown.</p>
+        <h2 class="analytics__row-title">${_('Engagement over time')}</h2>
+        <p class="form__note">${_('Received engagement per bucket — replies, zaps, reposts, quotes and likes combined, same components as the Top Posts ranking. Hover a bar for the breakdown.')}</p>
         <div class="analytics-chart" data-engagement-chart>
-          <p class="form__note pulsate">Building your engagement curve…</p>
+          <p class="form__note pulsate">${_('Building your engagement curve…')}</p>
         </div>
       </section>
       <section class="analytics__row" data-analytics-row="zaps-earned">
-        <h2 class="analytics__row-title">Zaps earned</h2>
-        <p class="form__note">Sats received per month, last 12 months — older receipts rarely survive relay retention. Hover a bar for details.</p>
+        <h2 class="analytics__row-title">${_('Zaps earned')}</h2>
+        <p class="form__note">${_('Sats received per month, last 12 months — older receipts rarely survive relay retention. Hover a bar for details.')}</p>
         <div class="analytics-chart" data-zaps-earned-chart>
-          <p class="form__note pulsate">Building…</p>
+          <p class="form__note pulsate">${_('Building…')}</p>
         </div>
       </section>
       <section class="analytics__row" data-analytics-row="zaps-sent">
-        <h2 class="analytics__row-title">Zaps sent</h2>
-        <p class="form__note">Sats sent per month, last 12 months — best effort (wallets without the P tag may be missing).</p>
+        <h2 class="analytics__row-title">${_('Zaps sent')}</h2>
+        <p class="form__note">${_('Sats sent per month, last 12 months — best effort (wallets without the P tag may be missing).')}</p>
         <div class="analytics-chart" data-zaps-sent-chart>
-          <p class="form__note pulsate">Building…</p>
+          <p class="form__note pulsate">${_('Building…')}</p>
         </div>
       </section>`;
 
@@ -461,8 +517,9 @@ export class AnalyticsAddonView extends View {
     const notice = document.createElement('p');
     notice.className = 'form__note analytics__first-run';
     notice.setAttribute('data-analytics-first-run', '');
-    notice.textContent =
-      'First initial run — gathering your data from relays. This takes a moment; subsequent visits load instantly from cache and refresh incrementally.';
+    notice.textContent = _(
+      'First initial run — gathering your data from relays. This takes a moment; subsequent visits load instantly from cache and refresh incrementally.'
+    );
     const skeleton = zone.querySelector('.analytics');
     if (skeleton) {
       skeleton.before(notice);
@@ -496,39 +553,37 @@ export class AnalyticsAddonView extends View {
     );
     if (!list) return;
     if (!posts.length) {
-      list.innerHTML =
-        '<li class="ui-list__item"><span class="small">No own posts found yet.</span></li>';
+      list.innerHTML = `<li class="ui-list__item"><span class="small">${_('No own posts found yet.')}</span></li>`;
       return;
     }
     list.innerHTML = posts
       .slice(0, 10)
       .map((p, i) => {
         const snippet = escapeHtml(
-          (p.content.replace(/\s+/g, ' ').trim() || '(no text content)').slice(
-            0,
-            160
-          )
+          (
+            p.content.replace(/\s+/g, ' ').trim() || _('(no text content)')
+          ).slice(0, 160)
         );
         const stats = [
           {
             icon: 'icon-reply',
-            label: 'Replies',
+            label: _('Replies'),
             value: String(p.replies),
           },
           {
             icon: 'icon-zap',
             label:
               p.zapSats > 0
-                ? `Zaps · ${formatSatsCompact(p.zapSats)} sats`
-                : 'Zaps',
+                ? _('%s · %s sats', 'Zaps', formatSatsCompact(p.zapSats))
+                : _('Zaps'),
             value: String(p.zaps),
           },
           {
             icon: 'icon-repost',
-            label: 'Reposts & quotes',
+            label: _('Reposts & quotes'),
             value: String(p.reposts + p.quotes),
           },
-          { icon: 'icon-heart', label: 'Likes', value: String(p.likes) },
+          { icon: 'icon-heart', label: _('Likes'), value: String(p.likes) },
         ]
           .map(
             s =>
@@ -587,22 +642,22 @@ export class AnalyticsAddonView extends View {
       aux.timeline,
       engagementScore,
       b =>
-        `${label(b)} — ${engagementScore(b)} engagement ` +
-        `(${b.replies} replies, ${b.zaps} zaps, ${b.reposts + b.quotes} reposts/quotes, ${b.likes} likes)`
+        `${label(b)} — ${engagementScore(b)} ${_('engagement')} ` +
+        `(${b.replies} ${_('replies')}, ${b.zaps} ${_('zaps')}, ${b.reposts + b.quotes} ${_('reposts/quotes')}, ${b.likes} ${_('likes')})`
     );
     this.paintBarChart(
       '[data-zaps-earned-chart]',
       aux.zapsEarnedTimeline ?? [],
       b => b.zapSats,
       b =>
-        `${label(b)} — ${formatSatsCompact(b.zapSats)} sats earned (${b.zaps} zaps)`
+        `${label(b)} — ${_('%s sats earned', formatSatsCompact(b.zapSats))} (${b.zaps} ${_('zaps')})`
     );
     this.paintBarChart(
       '[data-zaps-sent-chart]',
       aux.sentZapsTimeline ?? [],
       b => b.zapSats,
       b =>
-        `${label(b)} — ${formatSatsCompact(b.zapSats)} sats sent (${b.zaps} zaps)`
+        `${label(b)} — ${_('%s sats sent', formatSatsCompact(b.zapSats))} (${b.zaps} ${_('zaps')})`
     );
   }
 
@@ -617,8 +672,7 @@ export class AnalyticsAddonView extends View {
     if (!chart) return;
 
     if (!timeline.length) {
-      chart.innerHTML =
-        '<p class="form__note">No data yet — run a Refresh.</p>';
+      chart.innerHTML = `<p class="form__note">${_('No data yet — run a Refresh.')}</p>`;
       return;
     }
 
@@ -721,7 +775,7 @@ export class AnalyticsAddonView extends View {
     );
     if (!btn) return;
     btn.disabled = running;
-    btn.textContent = running ? 'Refreshing…' : 'Refresh';
+    btn.textContent = running ? _('Refreshing…') : _('Refresh');
     btn.classList.toggle('pulsate', running);
   }
 
@@ -737,7 +791,7 @@ export class AnalyticsAddonView extends View {
     const newest = mergeWithExisting ? Math.max(current, fetchedAt) : fetchedAt;
     if (!newest) return;
     el.setAttribute('data-ts', String(newest));
-    el.textContent = `Last updated ${formatTimeAgo(newest)}`;
+    el.textContent = _('Last updated %s', formatTimeAgo(newest));
     el.classList.remove('pulsate');
   }
 

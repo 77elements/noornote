@@ -1,5 +1,6 @@
 import { View } from '../../components/views/View';
 import { HashtagSubscriptionsSettings } from './HashtagSubscriptionsSettings';
+import { _ } from '../../i18n';
 
 export class HashtagSubscriptionsAddonView extends View {
   private container: HTMLElement;
@@ -12,7 +13,7 @@ export class HashtagSubscriptionsAddonView extends View {
       'view-content view-content--addon view-content--addon-hashtag-subscriptions';
     this.container.innerHTML = `
       <div class="back-padder">
-        <h1>Hashtag Subscriptions</h1>
+        <h1>${_('Hashtag Subscriptions')}</h1>
         <section class="section" id="hashtag-subscriptions-settings-content"></section>
         <div data-addon-content="hashtag-subscriptions"></div>
       </div>

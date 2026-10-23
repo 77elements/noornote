@@ -10,6 +10,8 @@ import { SettingsSection } from '../../components/settings/SettingsSection';
 import { Switch } from '../../components/ui/Switch';
 import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
+import { _ } from '../../i18n';
+import { escapeHtmlAttr } from '../../helpers/escapeHtml';
 import {
   isHashtagSubscriptionsEnabled,
   setHashtagSubscriptionsEnabled,
@@ -54,9 +56,15 @@ export class HashtagSubscriptionsSettings extends SettingsSection {
         });
         if (checked) {
           await this.loadService();
-          ToastService.show('Hashtag Subscriptions enabled', 'success');
+          ToastService.show(
+            _('%s enabled', _('Hashtag Subscriptions')),
+            'success'
+          );
         } else {
-          ToastService.show('Hashtag Subscriptions disabled', 'success');
+          ToastService.show(
+            _('%s disabled', _('Hashtag Subscriptions')),
+            'success'
+          );
         }
         if (contentZone) this.renderContent(contentZone, checked);
       },
@@ -64,9 +72,9 @@ export class HashtagSubscriptionsSettings extends SettingsSection {
 
     contentContainer.innerHTML = `
       <div class="setting">
-        <span class="setting__label">Enable Hashtag Subscriptions</span>
+        <span class="setting__label">${_('Enable Hashtag Subscriptions')}</span>
         <div class="setting__control">${this.enableSwitch.render()}</div>
-        <p class="setting__desc">Subscribe to any hashtag or word and get notified when someone posts a note containing it.</p>
+        <p class="setting__desc">${_('Subscribe to any hashtag or word and get notified when someone posts a note containing it.')}</p>
       </div>
     `;
     this.enableSwitch.setupEventListeners(contentContainer);
@@ -111,9 +119,9 @@ export class HashtagSubscriptionsSettings extends SettingsSection {
           type="text"
           class="input"
           data-subscription-input
-          placeholder="Enter hashtag (without #)"
+          placeholder="${_('Enter hashtag (without #)')}"
         />
-        <button class="btn btn--medium hashtag-search-btn">Search</button>
+        <button class="btn btn--medium hashtag-search-btn">${_('Search')}</button>
       </div>
       <div class="hashtag-subscriptions-list ui-list"></div>
     `;
@@ -153,8 +161,7 @@ export class HashtagSubscriptionsSettings extends SettingsSection {
     const subscriptions = this.hashtagService.getAllSubscriptions();
 
     if (subscriptions.length === 0) {
-      listContainer.innerHTML =
-        '<p class="muted">No hashtag subscriptions yet</p>';
+      listContainer.innerHTML = `<p class="muted">${_('No hashtag subscriptions yet')}</p>`;
       return;
     }
 
@@ -165,8 +172,8 @@ export class HashtagSubscriptionsSettings extends SettingsSection {
         <span class="subscription-hashtag">#${hashtag}</span>
         <div class="subscription-actions">
           <div class="switch-container">
-            <label class="switch-label" title="Also search for '${hashtag}' without #">
-              <span class="switch-text">also ${hashtag}</span>
+            <label class="switch-label" title="${escapeHtmlAttr(_('Also search for "%s" without #', hashtag))}">
+              <span class="switch-text">${_('also %s', hashtag)}</span>
               <div class="switch-toggle">
                 <input
                   type="checkbox"
@@ -180,7 +187,7 @@ export class HashtagSubscriptionsSettings extends SettingsSection {
             </label>
           </div>
           <button class="btn btn--mini btn--danger" data-action="unsubscribe-hashtag" data-hashtag="${hashtag}">
-            Unsubscribe
+            ${_('Unsubscribe')}
           </button>
         </div>
       </div>
@@ -208,8 +215,8 @@ export class HashtagSubscriptionsSettings extends SettingsSection {
           if (hashtag) {
             this.hashtagService?.setIncludeWithoutHash(hashtag, target.checked);
             const msg = target.checked
-              ? `Now also searching for "${hashtag}" without #`
-              : `Only searching for #${hashtag}`;
+              ? _('Now also searching for "%s" without #', hashtag)
+              : _('Only searching for #%s', hashtag);
             ToastService.show(msg, 'success');
           }
         });

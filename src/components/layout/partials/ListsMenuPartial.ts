@@ -10,6 +10,7 @@ import type { ListType } from './ListViewPartial';
 import { isBookmarksEnabled } from '../../../addons/bookmarks/index';
 import { isTribesEnabled } from '../../../addons/tribes/index';
 import { RailFlyout } from '../../../helpers/RailFlyout';
+import { _ } from '../../../i18n';
 
 export interface ListsMenuConfig {
   onListClick: (listType: ListType) => void; // Callback when a list link is clicked
@@ -35,32 +36,32 @@ export class ListsMenuPartial {
     li.innerHTML = `
       <button class="primary-nav__accordion-trigger">
         <svg width="24" height="24"><use href="#icon-hamburger"/></svg>
-        Lists
+        ${_('Lists')}
       </button>
       <ul class="primary-nav__submenu">
         <li class="bookmarks-item" style="${isBookmarksEnabled() ? '' : 'display: none;'}">
           <a href="#" class="primary-nav__sublink" data-list-type="bookmarks">
             <svg class="primary-nav__sublink-icon"><use href="#icon-bookmark-24"/></svg>
-            <span class="primary-nav__sublink-desc">Bookmarks</span>
+            <span class="primary-nav__sublink-desc">${_('Bookmarks')}</span>
             <span class="primary-nav__sublink-count" data-list-count="bookmarks" style="display: none;"></span>
           </a>
         </li>
         <li>
           <a href="#" class="primary-nav__sublink" data-list-type="follows">
             <svg class="primary-nav__sublink-icon"><use href="#icon-follows"/></svg>
-            <span class="primary-nav__sublink-desc">Follows</span>
+            <span class="primary-nav__sublink-desc">${_('Follows')}</span>
           </a>
         </li>
         <li>
           <a href="#" class="primary-nav__sublink" data-list-type="mutes">
             <svg class="primary-nav__sublink-icon"><use href="#icon-mute-mic"/></svg>
-            <span class="primary-nav__sublink-desc">Muted</span>
+            <span class="primary-nav__sublink-desc">${_('Muted')}</span>
           </a>
         </li>
         <li class="tribes-item" style="${isTribesEnabled() ? '' : 'display: none;'}">
           <a href="#" class="primary-nav__sublink" data-list-type="tribes">
             <svg class="primary-nav__sublink-icon"><use href="#icon-tribes-circles"/></svg>
-            <span class="primary-nav__sublink-desc">Tribes</span>
+            <span class="primary-nav__sublink-desc">${_('Tribes')}</span>
           </a>
         </li>
       </ul>

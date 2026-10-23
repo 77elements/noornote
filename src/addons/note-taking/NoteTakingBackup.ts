@@ -20,6 +20,7 @@ import {
 import { NoteTakingService } from './NoteTakingService';
 import { NoteTakingSyncService } from './NoteTakingSyncService';
 import type { NotePayload } from './NoteTakingStore';
+import { _ } from '../../i18n';
 
 const BACKUP_FILE = 'note-taking-backup.json';
 
@@ -34,7 +35,7 @@ interface NoteBackup {
 export async function backupNotes(): Promise<void> {
   const user = AuthService.getInstance().getCurrentUser();
   if (!user) {
-    ToastService.show('Log in to back up notes', 'error');
+    ToastService.show(_('Log in to back up notes'), 'error');
     return;
   }
 
@@ -52,15 +53,18 @@ export async function backupNotes(): Promise<void> {
     if (PlatformService.getInstance().isDesktop) {
       await writeJsonFile(BACKUP_FILE, bundle);
       ToastService.show(
-        `Backed up ${notes.length} notes to ~/.noornote`,
+        _('Backed up %s notes to ~/.noornote', String(notes.length)),
         'success'
       );
     } else {
       downloadAsJson(bundle, 'notes');
-      ToastService.show(`Backed up ${notes.length} notes`, 'success');
+      ToastService.show(
+        _('Backed up %s notes', String(notes.length)),
+        'success'
+      );
     }
   } catch (_error) {
-    ToastService.show('Backup failed', 'error');
+    ToastService.show(_('Backup failed'), 'error');
   }
 }
 
@@ -75,7 +79,7 @@ export async function backupNotes(): Promise<void> {
 export async function restoreNotes(): Promise<number> {
   const user = AuthService.getInstance().getCurrentUser();
   if (!user) {
-    ToastService.show('Log in to restore notes', 'error');
+    ToastService.show(_('Log in to restore notes'), 'error');
     return 0;
   }
 
@@ -87,14 +91,14 @@ export async function restoreNotes(): Promise<number> {
   }
 
   if (!bundle || !Array.isArray(bundle.notes)) {
-    ToastService.show('No valid backup found', 'error');
+    ToastService.show(_('No valid backup found'), 'error');
     return 0;
   }
 
   // The backup is plaintext on disk; refuse a file from another account so we
   // never import + re-encrypt + republish someone else's notes under this key.
   if (bundle.pubkey && bundle.pubkey !== user.pubkey) {
-    ToastService.show('Backup belongs to a different account', 'error');
+    ToastService.show(_('Backup belongs to a different account'), 'error');
     return 0;
   }
 
@@ -118,10 +122,13 @@ export async function restoreNotes(): Promise<number> {
   }
 
   if (restored > 0) {
-    ToastService.show(`Restored ${restored} notes`, 'success');
+    ToastService.show(_('Restored %s notes', String(restored)), 'success');
     void NoteTakingSyncService.getInstance().syncAll();
   } else {
-    ToastService.show('Nothing to restore (notes already up to date)', 'info');
+    ToastService.show(
+      _('Nothing to restore (notes already up to date)'),
+      'info'
+    );
   }
   return restored;
 }

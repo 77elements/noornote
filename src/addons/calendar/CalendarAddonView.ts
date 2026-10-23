@@ -20,6 +20,7 @@ import { isCalendarEnabled, setCalendarEnabled } from './index';
 import { CalendarGridView } from './CalendarGridView';
 import { BookingManager } from './BookingManager';
 import { CalendarImportExportManager } from './CalendarImportExport';
+import { _ } from '../../i18n';
 import {
   CalendarReminderService,
   LEAD_OPTIONS,
@@ -51,7 +52,9 @@ export class CalendarAddonView extends View {
           enabled: checked,
         });
         ToastService.show(
-          checked ? 'Calendar enabled' : 'Calendar disabled',
+          checked
+            ? _('%s enabled', _('Calendar'))
+            : _('%s disabled', _('Calendar')),
           'success'
         );
         this.renderGrid();
@@ -61,22 +64,22 @@ export class CalendarAddonView extends View {
 
     this.container.innerHTML = `
       <div class="back-padder">
-        <h1>Calendar</h1>
+        <h1>${_('Calendar')}</h1>
         <section class="section">
           <div class="setting">
-            <span class="setting__label">Enable Calendar</span>
+            <span class="setting__label">${_('Enable Calendar')}</span>
             <div class="setting__control">${this.enableSwitch.render()}</div>
-            <p class="setting__desc">Your personal calendar on Nostr: keep your own appointments in month, week and list views, subscribe to public event calendars you're interested in, and add private events that only you can see. With reminders — and when you join someone's event, you can let them know you're coming.</p>
+            <p class="setting__desc">${_("Your personal calendar on Nostr: keep your own appointments in month, week and list views, subscribe to public event calendars you're interested in, and add private events that only you can see. With reminders — and when you join someone's event, you can let them know you're coming.")}</p>
           </div>
           <div class="setting">
-            <span class="setting__label">Remind me before events start</span>
+            <span class="setting__label">${_('Remind me before events start')}</span>
             <div class="setting__control" data-slot="reminder-lead"></div>
-            <p class="setting__desc">Default reminder lead for all events. Reminders stay local to this device — nothing is published. Single events can override this in their editor.</p>
+            <p class="setting__desc">${_('Default reminder lead for all events. Reminders stay local to this device — nothing is published. Single events can override this in their editor.')}</p>
           </div>
         </section>
         <div class="tabs" data-el="calendar-tabs">
-          <button class="tab tab--active" data-tab="personal">Personal calendar</button>
-          <button class="tab" data-tab="booking">Booking Calendar</button>
+          <button class="tab tab--active" data-tab="personal">${_('Personal calendar')}</button>
+          <button class="tab" data-tab="booking">${_('Booking Calendar')}</button>
         </div>
         <div class="tab-content tab-content--active" data-tab-content="personal">
           <div data-addon-content="calendar-grid"></div>
@@ -127,12 +130,12 @@ export class CalendarAddonView extends View {
     this.leadDropdown?.destroy();
     const service = CalendarReminderService.getInstance();
     this.leadDropdown = new NnDropdown({
-      options: LEAD_OPTIONS,
+      options: LEAD_OPTIONS.map(o => ({ ...o, label: _(o.label) })),
       selectedValue: String(service.getDefaultLeadMin()),
       width: '100%',
       onChange: value => {
         service.setDefaultLeadMin(Number(value));
-        ToastService.show('Reminder default updated', 'success');
+        ToastService.show(_('Reminder default updated'), 'success');
       },
     });
     slot.appendChild(this.leadDropdown.getElement());

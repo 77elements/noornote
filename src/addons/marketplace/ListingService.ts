@@ -12,6 +12,7 @@ import { NostrTransport } from '../../services/transport/NostrTransport';
 import { SystemLogger } from '../../services/SystemLogger';
 import { ErrorService } from '../../services/ErrorService';
 import { ToastService } from '../../services/ToastService';
+import { _ } from '../../i18n';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
 
 export interface ListingOptions {
@@ -68,22 +69,22 @@ export class ListingService {
     }
 
     if (!title?.trim()) {
-      ToastService.show('Title is required', 'error');
+      ToastService.show(_('Title is required'), 'error');
       return null;
     }
 
     if (!price?.trim() || !priceCurrency?.trim()) {
-      ToastService.show('Price and currency are required', 'error');
+      ToastService.show(_('Price and currency are required'), 'error');
       return null;
     }
 
     if (!identifier?.trim()) {
-      ToastService.show('Identifier is required', 'error');
+      ToastService.show(_('Identifier is required'), 'error');
       return null;
     }
 
     if (!relays?.length) {
-      ToastService.show('Please select at least one relay', 'error');
+      ToastService.show(_('Please select at least one relay'), 'error');
       return null;
     }
 
@@ -149,7 +150,7 @@ export class ListingService {
         `Listing published to ${relays.length} relay(s): ${signedEvent.id?.slice(0, 8)}...`
       );
 
-      ToastService.show('Listing published successfully!', 'success');
+      ToastService.show(_('Listing published successfully!'), 'success');
 
       return encodeNaddr({
         kind: 30402,
@@ -162,7 +163,7 @@ export class ListingService {
         error,
         'ListingService.publishListing',
         true,
-        'Failed to publish listing. Please try again.'
+        _('Failed to publish listing. Please try again.')
       );
       return null;
     }

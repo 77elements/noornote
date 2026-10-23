@@ -8,6 +8,7 @@
 
 import { ICON_TRASH_14 } from '../../helpers/svgIcons';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { _, tn } from '../../i18n';
 
 export interface FolderData {
   id: string; // d-tag identifier
@@ -50,10 +51,10 @@ export class FolderCard {
 
     card.innerHTML = `
       <div class="actions">
-        <button class="edit" aria-label="Rename folder" title="Rename folder">
+        <button class="edit" aria-label="${_('Rename folder')}" title="${_('Rename folder')}">
           <svg width="14" height="14"><use href="#icon-pencil-16"/></svg>
         </button>
-        <button class="delete" aria-label="Delete folder" title="Delete folder (items move to root)">
+        <button class="delete" aria-label="${_('Delete folder')}" title="${_('Delete folder (items move to root)')}">
           ${ICON_TRASH_14}
         </button>
       </div>
@@ -62,7 +63,7 @@ export class FolderCard {
           <svg width="24" height="24"><use href="#icon-folder-24"/></svg>
         </div>
         <h3>${escapeHtml(name)}</h3>
-        <div class="count">${itemCount} ${itemCount === 1 ? 'item' : 'items'}</div>
+        <div class="count">${tn('%s item', '%s items', itemCount)}</div>
       </div>
       ${
         showMount
@@ -176,7 +177,7 @@ export class FolderCard {
     this.data.itemCount = count;
     const countEl = this.element?.querySelector('.count');
     if (countEl) {
-      countEl.textContent = `${count} ${count === 1 ? 'item' : 'items'}`;
+      countEl.textContent = tn('%s item', '%s items', count);
     }
   }
 

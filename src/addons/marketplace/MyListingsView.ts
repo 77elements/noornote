@@ -19,6 +19,7 @@ import { encodeNaddr } from '../../services/NostrToolsAdapter';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { getTag } from '../../helpers/tagUtils';
+import { _ } from '../../i18n';
 
 export class MyListingsView extends View {
   private container: HTMLElement;
@@ -46,15 +47,15 @@ export class MyListingsView extends View {
           <div class="marketplace-timeline__sticky-header">
             <header class="marketplace-view__header">
               <div class="marketplace-view__header-row">
-                <h1 class="marketplace-view__title">My Listings</h1>
+                <h1 class="marketplace-view__title">${_('My Listings')}</h1>
                 <div class="marketplace-view__header-actions">
-                  <button class="btn btn--medium btn--passive" data-action="back-to-marketplace">← Back to Marketplace</button>
-                  <button class="btn btn--medium" data-action="add-product">Add Product</button>
+                  <button class="btn btn--medium btn--passive" data-action="back-to-marketplace">← ${_('Back to Marketplace')}</button>
+                  <button class="btn btn--medium" data-action="add-product">${_('Add Product')}</button>
                 </div>
               </div>
             </header>
           </div>
-          <div class="my-listings__list pulsate">Loading your listings...</div>
+          <div class="my-listings__list pulsate">${_('Loading your listings...')}</div>
         </div>
     
         </div>
@@ -119,8 +120,7 @@ export class MyListingsView extends View {
         'Failed to load listings:',
         error
       );
-      listContainer.innerHTML =
-        '<div class="marketplace-timeline__error"><p>Failed to load listings</p></div>';
+      listContainer.innerHTML = `<div class="marketplace-timeline__error"><p>${_('Failed to load listings')}</p></div>`;
       listContainer.classList.remove('pulsate');
     }
   }
@@ -132,8 +132,8 @@ export class MyListingsView extends View {
       listContainer.innerHTML = `
         <div class="marketplace-timeline__empty">
           <svg width="48" height="48"><use href="#icon-shopping-bag"/></svg>
-          <p>No listings yet</p>
-          <span>Create your first product listing</span>
+          <p>${_('No listings yet')}</p>
+          <span>${_('Create your first product listing')}</span>
         </div>
       `;
       return;
@@ -186,14 +186,14 @@ export class MyListingsView extends View {
         <div class="my-listings__info">
           <span class="my-listings__title">${escapeHtml(meta.title)}</span>
           <span class="my-listings__price">${escapeHtml(priceDisplay)}</span>
-          <span class="${statusClass}">${meta.status.charAt(0).toUpperCase() + meta.status.slice(1)}</span>
+          <span class="${statusClass}">${_(meta.status.charAt(0).toUpperCase() + meta.status.slice(1))}</span>
         </div>
       </div>
       <div class="my-listings__actions">
-        <button class="btn-icon" data-action="edit" title="Edit listing">
+        <button class="btn-icon" data-action="edit" title="${_('Edit listing')}">
           <svg width="16" height="16"><use href="#icon-edit"/></svg>
         </button>
-        <button class="btn-icon" data-action="delete" title="Delete listing">
+        <button class="btn-icon" data-action="delete" title="${_('Delete listing')}">
           <svg width="16" height="16"><use href="#icon-delete"/></svg>
         </button>
       </div>
@@ -235,12 +235,13 @@ export class MyListingsView extends View {
     const { ModalService } = await import('../../services/ModalService');
 
     const confirmed = await ModalService.getInstance().confirm({
-      title: 'Delete Listing',
-      message:
-        'This will send a deletion request to relays. Deletion is not guaranteed — relays may choose to ignore deletion requests.',
-      confirmText: 'Delete',
+      title: _('Delete Listing'),
+      message: _(
+        'This will send a deletion request to relays. Deletion is not guaranteed — relays may choose to ignore deletion requests.'
+      ),
+      confirmText: _('Delete'),
       confirmDestructive: true,
-      cancelText: 'Cancel',
+      cancelText: _('Cancel'),
     });
 
     if (!confirmed) return;
@@ -254,7 +255,7 @@ export class MyListingsView extends View {
 
       if (success) {
         rowEl.remove();
-        ToastService.show('Listing deletion requested', 'success');
+        ToastService.show(_('Listing deletion requested'), 'success');
 
         // If no more listings, show empty state
         const listContainer =
@@ -264,11 +265,11 @@ export class MyListingsView extends View {
           this.renderListings(listContainer as HTMLElement);
         }
       } else {
-        ToastService.show('Failed to delete listing', 'error');
+        ToastService.show(_('Failed to delete listing'), 'error');
       }
     } catch (error) {
       this.systemLogger.error('MyListingsView', 'Delete failed:', error);
-      ToastService.show('Failed to delete listing', 'error');
+      ToastService.show(_('Failed to delete listing'), 'error');
     }
   }
 

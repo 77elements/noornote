@@ -17,6 +17,7 @@ import { encodeNaddr } from '../../services/NostrToolsAdapter';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { diagLog } from '../../services/DiagnosticLogger';
 import { ScheduledPostService } from './ScheduledPostService';
+import { _ } from '../../i18n';
 
 export interface ScheduleArticleOptions {
   title: string;
@@ -58,33 +59,33 @@ export async function scheduleArticle(
   }
 
   if (!title || title.trim().length === 0) {
-    ToastService.show('Title is required', 'error');
+    ToastService.show(_('Title is required'), 'error');
     return null;
   }
   if (!content || content.trim().length === 0) {
-    ToastService.show('Content is required', 'error');
+    ToastService.show(_('Content is required'), 'error');
     return null;
   }
   if (!identifier || identifier.trim().length === 0) {
-    ToastService.show('Identifier/slug is required', 'error');
+    ToastService.show(_('Identifier/slug is required'), 'error');
     return null;
   }
   if (!relays || relays.length === 0) {
-    ToastService.show('Please select at least one relay', 'error');
+    ToastService.show(_('Please select at least one relay'), 'error');
     return null;
   }
 
   const now = Math.floor(Date.now() / 1000);
   if (scheduledAt <= now + MIN_DELAY_S) {
     ToastService.show(
-      'Scheduled time must be at least 1 minute in the future',
+      _('Scheduled time must be at least 1 minute in the future'),
       'error'
     );
     return null;
   }
   if (scheduledAt > now + MAX_DELAY_S) {
     ToastService.show(
-      'Scheduled time cannot be more than 30 days in the future',
+      _('Scheduled time cannot be more than 30 days in the future'),
       'error'
     );
     return null;
@@ -137,7 +138,7 @@ export async function scheduleArticle(
 
     TypedEventBus.getInstance().emit('scheduled-posts:changed');
     const when = new Date(scheduledAt * 1000).toLocaleString();
-    ToastService.show(`Article scheduled for ${when}`, 'success');
+    ToastService.show(_('Article scheduled for %s', when), 'success');
 
     return encodeNaddr({
       kind,
@@ -150,7 +151,7 @@ export async function scheduleArticle(
       error,
       'scheduleArticle',
       true,
-      'Failed to schedule article. Please try again.'
+      _('Failed to schedule article. Please try again.')
     );
     return null;
   }

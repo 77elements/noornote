@@ -23,6 +23,7 @@ import {
   type ReminderSpec,
 } from '../../services/notifications/ReminderHub';
 import { NoteTakingService } from './NoteTakingService';
+import { _, tp } from '../../i18n';
 
 const POLL_INTERVAL_MS = 30 * 1000;
 const NAMESPACE = 'note-taking';
@@ -98,8 +99,8 @@ export class NoteTakingReminderService {
       if (specs.length >= POOL_SIZE) break;
       specs.push({
         id: ID_BASE + specs.length,
-        title: 'Note reminder',
-        body: note.title || note.body.slice(0, 80) || 'Note',
+        title: _('Note reminder'),
+        body: note.title || note.body.slice(0, 80) || tp('note-taking', 'Note'),
         fireAt,
         timeoutAfterMs: TIMEOUT_AFTER_MS,
         allowWhileIdle: true,
@@ -125,7 +126,11 @@ export class NoteTakingReminderService {
         !this.shown.has(note.id)
       ) {
         this.shown.add(note.id);
-        this.fire(hub, note.id, note.title || note.body || 'Note');
+        this.fire(
+          hub,
+          note.id,
+          note.title || note.body || tp('note-taking', 'Note')
+        );
       }
     }
   }
@@ -137,7 +142,7 @@ export class NoteTakingReminderService {
     // Capacitor: the OS notification REPLACES the in-app AlertBar (NostrMajlis
     // pattern — no double-up). Desktop/Web: AlertBar + OS when unfocused.
     void hub.osNotifyNow({
-      title: 'NoorNote — Note reminder',
+      title: _('NoorNote — Note reminder'),
       body: preview,
       timeoutAfterMs: TIMEOUT_AFTER_MS,
       osWhen: hub.isCapacitor ? 'always' : 'unfocused',

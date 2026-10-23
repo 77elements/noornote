@@ -15,6 +15,7 @@ import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { Tooltip } from '../../components/ui/Tooltip';
 import { generateDTag } from './CalendarPublishService';
 import { CalendarDataService } from './CalendarDataService';
+import { _, tn } from '../../i18n';
 import type {
   CalendarCollectionData,
   CalendarEventData,
@@ -29,7 +30,7 @@ export class CalendarCollectionsModal {
     this.renderList(content);
 
     ModalService.getInstance().show({
-      title: 'Your event calendars',
+      title: _('Your event calendars'),
       content,
       width: '520px',
     });
@@ -40,25 +41,24 @@ export class CalendarCollectionsModal {
       CalendarDataService.getInstance().getCachedCollections();
     content.innerHTML = `
       <div class="l-row--right calendar-collections__new">
-        <button class="btn btn--mini" type="button" data-action="new">+ New event calendar</button>
+        <button class="btn btn--mini" type="button" data-action="new">${_('+ New event calendar')}</button>
       </div>
       <div class="ui-list" data-slot="list"></div>
     `;
 
     const list = content.querySelector('[data-slot="list"]')!;
     if (collections.length === 0) {
-      list.innerHTML =
-        '<div class="calendar-collections__empty">No event calendars yet. Create one and add your public events to it.</div>';
+      list.innerHTML = `<div class="calendar-collections__empty">${_('No event calendars yet. Create one and add your public events to it.')}</div>`;
     }
     for (const collection of collections) {
       const row = document.createElement('div');
       row.className = 'ui-list__item calendar-collections__row';
       row.innerHTML = `
-        <span class="calendar-collections__title">${escapeHtml(collection.title || 'Untitled calendar')}</span>
-        <span class="calendar-collections__meta">${collection.eventRefs.length} events</span>
+        <span class="calendar-collections__title">${escapeHtml(collection.title || _('Untitled calendar'))}</span>
+        <span class="calendar-collections__meta">${tn('%s event', '%s events', collection.eventRefs.length, String(collection.eventRefs.length))}</span>
         <span class="l-row">
-          <button class="btn btn--passive btn--mini" type="button" data-action="edit">Edit</button>
-          <button class="btn btn--danger btn--mini" type="button" data-action="delete">Delete</button>
+          <button class="btn btn--passive btn--mini" type="button" data-action="edit">${_('Edit')}</button>
+          <button class="btn btn--danger btn--mini" type="button" data-action="delete">${_('Delete')}</button>
         </span>
       `;
       row
@@ -85,9 +85,12 @@ export class CalendarCollectionsModal {
 
   private async remove(collection: CalendarCollectionData): Promise<void> {
     const confirmed = await ModalService.getInstance().confirm({
-      title: 'Delete event calendar',
-      message: `Delete the calendar "${collection.title || 'Untitled calendar'}"? Subscribers keep their events, but it will no longer exist as a calendar.`,
-      confirmText: 'Delete',
+      title: _('Delete event calendar'),
+      message: _(
+        'Delete the calendar "%s"? Subscribers keep their events, but it will no longer exist as a calendar.',
+        collection.title || _('Untitled calendar')
+      ),
+      confirmText: _('Delete'),
       confirmDestructive: true,
     });
     if (!confirmed) return;
@@ -98,10 +101,10 @@ export class CalendarCollectionsModal {
       const ok =
         await CalendarPublishService.getInstance().deleteCollection(collection);
       if (!ok) {
-        ToastService.show('Deletion was not acknowledged', 'warning');
+        ToastService.show(_('Deletion was not acknowledged'), 'warning');
         return;
       }
-      ToastService.show('Event calendar deleted', 'success');
+      ToastService.show(_('Event calendar deleted'), 'success');
       ModalService.getInstance().hide();
       this.onChanged();
     } catch (error) {
@@ -109,7 +112,7 @@ export class CalendarCollectionsModal {
         error,
         'CalendarCollectionsModal.remove',
         true,
-        'Could not delete the event calendar'
+        _('Could not delete the event calendar')
       );
     }
   }
@@ -135,24 +138,24 @@ export class CalendarCollectionEditorModal {
     const selectable = this.selectableEvents();
     content.innerHTML = `
       <div class="form__row">
-        <label for="cal-col-title">Calendar name</label>
+        <label for="cal-col-title">${_('Calendar name')}</label>
         <input id="cal-col-title" class="input input--title" type="text" maxlength="120"
-          placeholder="e.g. My meetups 2026" value="${escapeHtmlAttr(this.existing?.title ?? '')}" />
+          placeholder="${_('e.g. My meetups 2026')}" value="${escapeHtmlAttr(this.existing?.title ?? '')}" />
       </div>
       <div class="calendar-collection-editor__events">
-        <span class="setting__label">Add public events</span>
-        <p class="form__note">Pick from the events currently in your grid. Subscribers get all of them and any future changes.</p>
+        <span class="setting__label">${_('Add public events')}</span>
+        <p class="form__note">${_('Pick from the events currently in your grid. Subscribers get all of them and any future changes.')}</p>
         <div class="ui-list calendar-collections__pick-list" data-slot="events">
           ${
             selectable.length === 0
-              ? '<div class="calendar-collections__empty">No public events in your grid yet — create an event first.</div>'
+              ? `<div class="calendar-collections__empty">${_('No public events in your grid yet — create an event first.')}</div>`
               : ''
           }
         </div>
       </div>
       <div class="calendar-addon-editor__actions l-row--end-pair">
-        <button class="btn btn--passive btn--medium" type="button" data-action="cancel">Cancel</button>
-        <button class="btn btn--medium" type="button" data-action="save">${this.existing ? 'Save changes' : 'Publish calendar'}</button>
+        <button class="btn btn--passive btn--medium" type="button" data-action="cancel">${_('Cancel')}</button>
+        <button class="btn btn--medium" type="button" data-action="save">${this.existing ? _('Save changes') : _('Publish calendar')}</button>
       </div>
     `;
 
@@ -187,7 +190,7 @@ export class CalendarCollectionEditorModal {
       ?.addEventListener('click', () => void this.save(content));
 
     ModalService.getInstance().show({
-      title: this.existing ? 'Edit event calendar' : 'New event calendar',
+      title: this.existing ? _('Edit event calendar') : _('New event calendar'),
       content,
       width: '520px',
       onClose: () => this.dispose(),
@@ -220,7 +223,7 @@ export class CalendarCollectionEditorModal {
     const title =
       content.querySelector<HTMLInputElement>('#cal-col-title')!.value;
     if (!title.trim()) {
-      ToastService.show('Please enter a calendar name', 'warning');
+      ToastService.show(_('Please enter a calendar name'), 'warning');
       return;
     }
     try {
@@ -234,7 +237,9 @@ export class CalendarCollectionEditorModal {
         eventRefs: [...this.selected],
       });
       ToastService.show(
-        this.existing ? 'Event calendar updated' : 'Event calendar published',
+        this.existing
+          ? _('Event calendar updated')
+          : _('Event calendar published'),
         'success'
       );
       ModalService.getInstance().hide();
@@ -244,7 +249,7 @@ export class CalendarCollectionEditorModal {
         error,
         'CalendarCollectionEditorModal.save',
         true,
-        'Could not save the event calendar'
+        _('Could not save the event calendar')
       );
     }
   }

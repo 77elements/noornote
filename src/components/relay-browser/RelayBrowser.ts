@@ -7,6 +7,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { _ } from '../../i18n';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
 import type { RelayBrowserModuleApi } from '../../modules/relay-browser/contracts';
@@ -52,7 +53,7 @@ export class RelayBrowser {
     ) as HTMLElement;
 
     this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
-      loadingMessage: 'Loading more notes...',
+      loadingMessage: _('Loading more notes...'),
     });
 
     void this.initialize();

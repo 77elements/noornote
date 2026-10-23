@@ -35,6 +35,8 @@ import { TypedEventBus } from '../core/TypedEventBus';
 import type { AppEventName } from '../core/events';
 import { ToastService } from '../services/ToastService';
 import { escapeHtml } from '../helpers/escapeHtml';
+import { _ } from '../i18n';
+import { translateAddonName, translateAddonDescription } from './addonI18n';
 
 export interface AddonToggleViewOptions {
   /** Addon id (used for view-content class suffix) */
@@ -81,7 +83,9 @@ export class AddonToggleView extends View {
           );
         }
         ToastService.show(
-          checked ? `${this.opts.name} enabled` : `${this.opts.name} disabled`,
+          checked
+            ? _('%s enabled', translateAddonName(this.opts.id))
+            : _('%s disabled', translateAddonName(this.opts.id)),
           'success'
         );
       },
@@ -89,12 +93,12 @@ export class AddonToggleView extends View {
 
     this.container.innerHTML = `
       <div class="back-padder">
-        <h1>${escapeHtml(this.opts.name)}</h1>
+        <h1>${escapeHtml(translateAddonName(this.opts.id))}</h1>
         <section class="section">
           <div class="setting">
-            <span class="setting__label">Enable ${escapeHtml(this.opts.name)}</span>
+            <span class="setting__label">${_('Enable %s', translateAddonName(this.opts.id))}</span>
             <div class="setting__control">${this.enableSwitch.render()}</div>
-            <p class="setting__desc">${escapeHtml(this.opts.description)}</p>
+            <p class="setting__desc">${escapeHtml(translateAddonDescription(this.opts.id))}</p>
           </div>
         </section>
       </div>

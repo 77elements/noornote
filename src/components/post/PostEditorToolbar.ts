@@ -8,6 +8,7 @@
  * - Modular and reusable
  */
 
+import { _ } from '../../i18n';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { MediaModuleApi } from '../../modules/media/contracts';
 import { SystemLogger } from '../../services/SystemLogger';
@@ -54,10 +55,10 @@ export class PostEditorToolbar {
   public render(): string {
     const showPoll = this.config.showPoll !== false; // Default: true
     const pollButtonHtml = showPoll
-      ? `<button class="btn-icon" data-action="poll" title="Create poll">POLL</button>`
+      ? `<button class="btn-icon" data-action="poll" title="${_('Create poll')}">POLL</button>`
       : '';
     const scheduleButtonHtml = this.config.showSchedule
-      ? `<button class="btn-icon" data-action="schedule" title="Schedule post">
+      ? `<button class="btn-icon" data-action="schedule" title="${_('Schedule post')}">
           <svg width="20" height="20"><use href="#icon-calendar"/></svg>
         </button>`
       : '';
@@ -65,13 +66,13 @@ export class PostEditorToolbar {
     return `
       <div class="post-note-toolbar">
         <input type="file" accept="image/*,video/*,audio/*" multiple style="display: none;" data-file-input />
-        <button class="btn-icon" data-action="upload" title="Upload media">
+        <button class="btn-icon" data-action="upload" title="${_('Upload media')}">
           <svg width="20" height="20"><use href="#icon-upload"/></svg>
         </button>
-        <button class="btn-icon" data-action="emoji" title="Insert emoji">
+        <button class="btn-icon" data-action="emoji" title="${_('Insert emoji')}">
           <svg width="20" height="20"><use href="#icon-emoji"/></svg>
         </button>
-        ${this.config.onGifSelected ? `<button class="btn-icon" data-action="gif" title="Add a GIF">GIF</button>` : ''}
+        ${this.config.onGifSelected ? `<button class="btn-icon" data-action="gif" title="${_('Add a GIF')}">GIF</button>` : ''}
         ${pollButtonHtml}
         ${scheduleButtonHtml}
       </div>

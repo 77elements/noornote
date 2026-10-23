@@ -18,6 +18,7 @@ import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { diagLog } from '../../services/DiagnosticLogger';
 import { ScheduledPostService } from './ScheduledPostService';
+import { _ } from '../../i18n';
 
 export interface ScheduleNoteOptions {
   content: string;
@@ -77,14 +78,14 @@ export async function scheduleNote(
   const now = Math.floor(Date.now() / 1000);
   if (scheduledAt <= now + MIN_DELAY_S) {
     ToastService.show(
-      'Scheduled time must be at least 1 minute in the future',
+      _('Scheduled time must be at least 1 minute in the future'),
       'error'
     );
     return false;
   }
   if (scheduledAt > now + MAX_DELAY_S) {
     ToastService.show(
-      'Scheduled time cannot be more than 30 days in the future',
+      _('Scheduled time cannot be more than 30 days in the future'),
       'error'
     );
     return false;
@@ -197,14 +198,14 @@ export async function scheduleNote(
 
     TypedEventBus.getInstance().emit('scheduled-posts:changed');
     const when = new Date(scheduledAt * 1000).toLocaleString();
-    ToastService.show(`Scheduled for ${when}`, 'success');
+    ToastService.show(_('Scheduled for %s', when), 'success');
     return true;
   } catch (error) {
     ErrorService.handle(
       error,
       'scheduleNote',
       true,
-      'Failed to schedule post. Please try again.'
+      _('Failed to schedule post. Please try again.')
     );
     return false;
   }

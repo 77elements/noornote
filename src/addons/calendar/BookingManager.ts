@@ -24,6 +24,7 @@ import { Switch } from '../../components/ui/Switch';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { encodeNpub } from '../../services/NostrToolsAdapter';
 import { BookingService, type OwnerSlot } from './BookingService';
+import { _ } from '../../i18n';
 import type {
   BookingConfig,
   BookingVacationRange,
@@ -188,7 +189,7 @@ export class BookingManager {
     ) as HTMLButtonElement | null;
     if (btn) {
       btn.disabled = true;
-      btn.textContent = 'Publishing…';
+      btn.textContent = _('Publishing…');
     }
     try {
       const service = BookingService.getInstance();
@@ -196,8 +197,12 @@ export class BookingManager {
       const { published, deleted } = await service.rebuildSlots(config);
       ToastService.show(
         config.enabled
-          ? `Booking page updated — ${published} slots published, ${deleted} removed`
-          : 'Booking page disabled — published slots removed',
+          ? _(
+              'Booking page updated — %s slots published, %s removed',
+              String(published),
+              String(deleted)
+            )
+          : _('Booking page disabled — published slots removed'),
         'success'
       );
       // Do NOT re-fetch the config from relays here: propagation lag would
@@ -209,12 +214,15 @@ export class BookingManager {
       await this.refreshSlots();
     } catch (err) {
       ToastService.show(
-        `Booking config failed: ${err instanceof Error ? err.message : String(err)}`,
+        _(
+          'Booking config failed: %s',
+          err instanceof Error ? err.message : String(err)
+        ),
         'error'
       );
       if (btn) {
         btn.disabled = false;
-        btn.textContent = 'Save & publish slots';
+        btn.textContent = _('Save & publish slots');
       }
     }
   }
@@ -227,14 +235,14 @@ export class BookingManager {
       this.element.querySelector('[data-vacation-to]') as HTMLInputElement
     )?.value;
     if (!from || !to) {
-      ToastService.show('Pick a from and to date first', 'info');
+      ToastService.show(_('Pick a from and to date first'), 'info');
       return;
     }
     const startMs = fromLocalDateStr(from, this.config.tzOffsetMinutes);
     // `to` is inclusive in the UI; make the range cover that whole owner-local day.
     const endMs = fromLocalDateStr(to, this.config.tzOffsetMinutes) + DAY;
     if (endMs <= startMs) {
-      ToastService.show('The vacation end must be after the start', 'error');
+      ToastService.show(_('The vacation end must be after the start'), 'error');
       return;
     }
     const range: BookingVacationRange = { startMs, endMs };
@@ -256,7 +264,7 @@ export class BookingManager {
         (day, index) => `
         <div class="booking-manager__day" data-day-row="${index}">
           <label class="nn-checkbox nn-checkbox--label-left nn-checkbox--small booking-manager__day-label">
-            <span>${WEEKDAY_LABELS[index]}</span>
+            <span>${_(WEEKDAY_LABELS[index] ?? '')}</span>
             <input type="checkbox" data-day-enabled="${index}" ${day.enabled ? 'checked' : ''} />
           </label>
           <input class="input input--mini" type="time" data-day-start="${index}" value="${minutesToTime(day.startMinute)}" />
@@ -267,9 +275,9 @@ export class BookingManager {
       .join('');
 
     const slotList = this.loading
-      ? '<div class="pulsate">Loading slots…</div>'
+      ? `<div class="pulsate">${_('Loading slots…')}</div>`
       : this.slots.length === 0
-        ? '<p class="form__note">No slots published yet. Save the config to generate them.</p>'
+        ? `<p class="form__note">${_('No slots published yet. Save the config to generate them.')}</p>`
         : `<div class="ui-list">${this.slots
             .map(slot => {
               // Absolute date+time in the viewer's locale — formatTimestamp()
@@ -285,12 +293,15 @@ export class BookingManager {
               // Busy state: deletion/DMs in flight for this slot.
               const cancelling = this.cancellingDTag === slot.data.dTag;
               const booked = cancelling
-                ? '<span class="pulsate">Cancelling…</span>'
+                ? `<span class="pulsate">${_('Cancelling…')}</span>`
                 : slot.bookedBy
-                  ? `<span class="badge badge--green">Booked by ${escapeHtml(
-                      UserProfileService.getInstance().getUsername(
-                        slot.bookedBy
-                      ) || 'guest'
+                  ? `<span class="badge badge--green">${_(
+                      'Booked by %s',
+                      escapeHtml(
+                        UserProfileService.getInstance().getUsername(
+                          slot.bookedBy
+                        ) || _('guest')
+                      )
                     )}</span>
                    ${
                      slot.participants.length
@@ -299,8 +310,8 @@ export class BookingManager {
                    }
                    <button class="btn btn--passive btn--mini" data-cancel-booking="${escapeHtmlAttr(
                      slot.data.dTag
-                   )}">Cancel</button>`
-                  : '<span class="badge badge--accent">Free</span>';
+                   )}">${_('Cancel')}</button>`
+                  : `<span class="badge badge--accent">${_('Free')}</span>`;
               return `<div class="ui-list__item">
                 <span>${escapeHtml(when)}</span>
                 ${booked}
@@ -315,63 +326,61 @@ export class BookingManager {
               <span>${escapeHtml(toLocalDateStr(v.startMs, c.tzOffsetMinutes))} → ${escapeHtml(
                 toLocalDateStr(v.endMs - DAY, c.tzOffsetMinutes)
               )}</span>
-              <button class="btn btn--passive btn--mini" data-vacation-remove="${index}">Remove</button>
+              <button class="btn btn--passive btn--mini" data-vacation-remove="${index}">${_('Remove')}</button>
             </div>`
           )
           .join('')}</div>`
-      : '<p class="form__note">No vacation ranges.</p>';
+      : `<p class="form__note">${_('No vacation ranges.')}</p>`;
 
     this.element.innerHTML = `
-      <h2>Booking page</h2>
+      <h2>${_('Booking page')}</h2>
       <p class="form__note">
-        Let people book appointments in your free time. Your availability is public
-        (the slots are regular NIP-52 calendar events); bookings arrive as a private
-        message. Page: <a href="/profile/${escapeHtmlAttr(npub)}/book" data-booking-link>${escapeHtmlAttr(bookingUrl)}</a>
-        <button class="btn-icon" data-booking-copy title="Copy link">
+        ${_('Let people book appointments in your free time. Your availability is public (the slots are regular NIP-52 calendar events); bookings arrive as a private message. Page:')} <a href="/profile/${escapeHtmlAttr(npub)}/book" data-booking-link>${escapeHtmlAttr(bookingUrl)}</a>
+        <button class="btn-icon" data-booking-copy title="${escapeHtmlAttr(_('Copy link'))}">
           <svg width="18" height="18"><use href="#icon-copy-24"/></svg>
         </button>
       </p>
       <div class="form__row form__row--oneline">
-        <span class="setting__label">Enable booking page</span>
+        <span class="setting__label">${_('Enable booking page')}</span>
         <div class="setting__control" data-slot="booking-enabled"></div>
       </div>
       <div class="form__row">
-        <label for="booking-title">Appointment title</label>
+        <label for="booking-title">${_('Appointment title')}</label>
         <input class="input" id="booking-title" data-booking-title value="${escapeHtmlAttr(c.title)}" maxlength="120" />
       </div>
       <div class="form__row">
-        <label for="booking-desc">Description</label>
+        <label for="booking-desc">${_('Description')}</label>
         <textarea class="textarea textarea--small" id="booking-desc" data-booking-desc maxlength="1000">${escapeHtml(c.description)}</textarea>
       </div>
       <div class="form__row form__row--oneline">
-        <label>Slot length</label>
+        <label>${_('Slot length')}</label>
         <div data-slot="dropdown-slot-minutes"></div>
       </div>
       <div class="form__row form__row--oneline">
-        <label>Buffer between slots</label>
+        <label>${_('Buffer between slots')}</label>
         <div data-slot="dropdown-buffer"></div>
       </div>
       <div class="form__row form__row--oneline">
-        <label>Minimum notice</label>
+        <label>${_('Minimum notice')}</label>
         <div data-slot="dropdown-lead"></div>
       </div>
       <div class="form__row form__row--oneline">
-        <label>Bookable window</label>
+        <label>${_('Bookable window')}</label>
         <div data-slot="dropdown-horizon"></div>
       </div>
-      <h3>Weekly availability</h3>
+      <h3>${_('Weekly availability')}</h3>
       <div class="booking-manager__week">${dayRows}</div>
-      <h3>Vacation</h3>
+      <h3>${_('Vacation')}</h3>
       ${vacations}
       <div class="l-row booking-manager__vacation-add">
-        <input class="input datepicker" type="date" data-vacation-from aria-label="Vacation from" />
-        <input class="input datepicker" type="date" data-vacation-to aria-label="Vacation to" />
-        <button class="btn btn--passive" data-vacation-add>Add</button>
+        <input class="input datepicker" type="date" data-vacation-from aria-label="${escapeHtmlAttr(_('Vacation from'))}" />
+        <input class="input datepicker" type="date" data-vacation-to aria-label="${escapeHtmlAttr(_('Vacation to'))}" />
+        <button class="btn btn--passive" data-vacation-add>${_('Add')}</button>
       </div>
       <div class="l-row--right">
-        <button class="btn" data-booking-save>Save &amp; publish slots</button>
+        <button class="btn" data-booking-save>${_('Save & publish slots')}</button>
       </div>
-      <h3>Your slots</h3>
+      <h3>${_('Your slots')}</h3>
       ${slotList}
     `;
 
@@ -387,12 +396,12 @@ export class BookingManager {
     if (!slot || !slot.bookedBy) return;
     const { ModalService } = await import('../../services/ModalService');
     const reason = await ModalService.getInstance().prompt({
-      title: 'Cancel booking',
-      message: 'The guest and all participants will be informed by DM.',
-      placeholder: 'Reason (optional)',
+      title: _('Cancel booking'),
+      message: _('The guest and all participants will be informed by DM.'),
+      placeholder: _('Reason (optional)'),
       multiline: true,
       allowEmpty: true,
-      confirmText: 'Cancel booking',
+      confirmText: _('Cancel booking'),
     });
     if (reason === null) return;
     // Busy state on the affected row: pulsating placeholder instead of the
@@ -416,7 +425,7 @@ export class BookingManager {
       this.render();
       ToastService.show(
         result.dmFailures
-          ? `${result.detail} — ${result.dmFailures} DM(s) failed`
+          ? `${result.detail} — ${_('failed DM(s): %s', String(result.dmFailures))}`
           : result.detail,
         result.dmFailures ? 'warning' : 'success'
       );
@@ -472,7 +481,7 @@ export class BookingManager {
         selector: '[data-slot="dropdown-slot-minutes"]',
         options: [15, 20, 30, 45, 60, 90].map(m => ({
           value: String(m),
-          label: `${m} minutes`,
+          label: _('%s minutes', String(m)),
         })),
         selected: String(this.config.slotMinutes),
         apply: value => {
@@ -483,7 +492,7 @@ export class BookingManager {
         selector: '[data-slot="dropdown-buffer"]',
         options: [0, 5, 10, 15, 30].map(m => ({
           value: String(m),
-          label: `${m} minutes`,
+          label: _('%s minutes', String(m)),
         })),
         selected: String(this.config.bufferMinutes),
         apply: value => {
@@ -494,7 +503,7 @@ export class BookingManager {
         selector: '[data-slot="dropdown-lead"]',
         options: [0, 1, 2, 4, 12, 24, 48].map(h => ({
           value: String(h),
-          label: `${h} hours`,
+          label: _('%s hours', String(h)),
         })),
         selected: String(this.config.minLeadHours),
         apply: value => {
@@ -505,7 +514,7 @@ export class BookingManager {
         selector: '[data-slot="dropdown-horizon"]',
         options: [14, 28, 56, 90].map(d => ({
           value: String(d),
-          label: `${d} days`,
+          label: _('%s days', String(d)),
         })),
         selected: String(this.config.horizonDays),
         apply: value => {
@@ -541,7 +550,7 @@ export class BookingManager {
       const link =
         this.element.querySelector('[data-booking-link]')?.textContent ?? '';
       void navigator.clipboard.writeText(link);
-      ToastService.show('Booking page link copied', 'success');
+      ToastService.show(_('Booking page link copied'), 'success');
     });
 
     // Keep the "to" time ahead of the "from" time: when the user moves the
@@ -589,11 +598,11 @@ export class BookingManager {
               <span>${escapeHtml(toLocalDateStr(v.startMs, tz))} → ${escapeHtml(
                 toLocalDateStr(v.endMs - DAY, tz)
               )}</span>
-              <button class="btn btn--passive btn--mini" data-vacation-remove="${index}">Remove</button>
+              <button class="btn btn--passive btn--mini" data-vacation-remove="${index}">${_('Remove')}</button>
             </div>`
           )
           .join('')}</div>`
-      : '<p class="form__note">No vacation ranges.</p>';
+      : `<p class="form__note">${_('No vacation ranges.')}</p>`;
     this.element.querySelectorAll('[data-vacation-remove]').forEach(btn =>
       btn.addEventListener('click', () => {
         const index = Number((btn as HTMLElement).dataset.vacationRemove);

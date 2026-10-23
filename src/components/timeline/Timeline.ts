@@ -5,6 +5,7 @@
  */
 
 import { View } from '../views/View';
+import { _ } from '../../i18n';
 import type {
   NewNotesInfo,
   FeedLoadRequest,
@@ -165,7 +166,7 @@ export class Timeline extends View {
     this.eventBus = TypedEventBus.getInstance();
     this.element = this.createElement();
     this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
-      loadingMessage: 'Loading more notes...',
+      loadingMessage: _('Loading more notes...'),
       // Prefetch the next page ~3-4 posts before the user hits the very last
       // loaded note, so new posts are already there instead of forcing a stop at
       // the end. The default 200px is < half a card and effectively only fires at
@@ -524,7 +525,7 @@ export class Timeline extends View {
     const link = document.createElement('a');
     link.className = 'timeline-look-for-notes-link';
     link.href = '#';
-    link.textContent = 'Look for new notes';
+    link.textContent = _('Look for new notes');
     link.style.display = 'none'; // Hidden by default
 
     link.addEventListener('click', e => {

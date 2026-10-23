@@ -28,6 +28,10 @@ import {
   reorderAddonIds,
 } from '../../addons/addonOrder';
 import { getAddonEnabled } from '../../addons/addonFlags';
+import {
+  translateAddonName,
+  translateAddonDescription,
+} from '../../addons/addonI18n';
 import { ADDON_REGISTRY, type AddonRegistryEntry } from '../../addons/registry';
 
 // JS selection via data attributes only (scss rule: CSS classes are for
@@ -94,7 +98,7 @@ export class AddonsOverviewView extends View {
       <div class="nn-card addon-tile" data-addon-id="${escapeHtml(a.id)}">
         <div class="nn-card__content">
           <div class="addon-tile__head l-spread">
-            <h3>${escapeHtml(a.name)}</h3>
+            <h3>${escapeHtml(translateAddonName(a.id))}</h3>
             <div class="addon-tile__meta">
               ${
                 status
@@ -107,7 +111,7 @@ export class AddonsOverviewView extends View {
               ></span>
             </div>
           </div>
-          <p class="addon-tile__desc">${escapeHtml(a.description)}</p>
+          <p class="addon-tile__desc">${escapeHtml(translateAddonDescription(a.id))}</p>
           <div class="l-row l-row--right addon-tile__move">
             <button class="addon-tile__move-btn" data-move="up" aria-label="${_('Move up')}">
               <svg><use href="#icon-caret-up"/></svg>

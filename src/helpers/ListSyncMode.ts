@@ -8,6 +8,7 @@
 
 import { TypedEventBus } from '../core/TypedEventBus';
 import { ToastService } from '../services/ToastService';
+import { _ } from '../i18n';
 import { PlatformService } from '../services/PlatformService';
 import {
   PerAccountLocalStorage,
@@ -79,8 +80,8 @@ export function bindSwitchSyncModeLink(
     link.addEventListener('click', e => {
       e.preventDefault();
       const newMode = switchSyncMode();
-      const modeLabel = newMode === 'easy' ? 'Easy Mode' : 'Manual Mode';
-      ToastService.show(`Switched to ${modeLabel}`, 'success');
+      const modeLabel = newMode === 'easy' ? _('Easy Mode') : _('Manual Mode');
+      ToastService.show(_('Switched to %s', modeLabel), 'success');
       onSwitch();
     });
   });
@@ -119,14 +120,16 @@ export function renderListSyncButtons(): string {
 
   if (mode === 'easy') {
     const syncText = isDesktop
-      ? 'Easy Mode: Changes are automatically synced to your local backup and relays.'
-      : 'Easy Mode: Changes are automatically synced to and from relays.';
+      ? _(
+          'Easy Mode: Changes are automatically synced to your local backup and relays.'
+        )
+      : _('Easy Mode: Changes are automatically synced to and from relays.');
 
     return `
       <p class="list-sync-info list-sync-info--easy">
         ${syncText}
         <br>
-        <a href="#" class="save-to-file-btn">Backup list to file</a> | <a href="#" class="switch-sync-mode-link">Switch to manual mode</a>
+        <a href="#" class="save-to-file-btn">${_('Backup list to file')}</a> | <a href="#" class="switch-sync-mode-link">${_('Switch to manual mode')}</a>
       </p>
     `;
   }
@@ -135,20 +138,20 @@ export function renderListSyncButtons(): string {
   return `
     <div class="list-sync-controls">
       <button class="btn btn--mini btn--passive sync-from-relays-btn">
-        Sync from Relays
+        ${_('Sync from Relays')}
       </button>
       <button class="btn btn--mini btn--passive sync-to-relays-btn">
-        Sync to Relays
+        ${_('Sync to Relays')}
       </button>
       <button class="btn btn--mini btn--passive save-to-file-btn">
-        Save to File
+        ${_('Save to File')}
       </button>
       <button class="btn btn--mini btn--passive restore-from-file-btn">
-        Restore from File
+        ${_('Restore from File')}
       </button>
     </div>
     <p class="list-sync-info">
-      This list is stored in 3 places: on your hard drive - in the NoorNote app - on the relays. You can use the buttons up there to control how the list stays synced across those three. <a href="#" class="switch-sync-mode-link">Switch to easy mode</a>
+      ${_('This list is stored in 3 places: on your hard drive - in the NoorNote app - on the relays. You can use the buttons up there to control how the list stays synced across those three.')} <a href="#" class="switch-sync-mode-link">${_('Switch to easy mode')}</a>
     </p>
   `;
 }

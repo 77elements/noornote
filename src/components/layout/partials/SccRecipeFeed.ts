@@ -9,6 +9,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { _ } from '../../../i18n';
 import { getAllFollowedPubkeys } from '../../../lists/follows';
 import { fetchEvents } from '../../../lists/relays';
 import { Router } from '../../../services/Router';
@@ -47,7 +48,7 @@ export class SccRecipeFeed {
     this.container.appendChild(this.gridEl);
 
     this.infiniteScroll = new InfiniteScroll(() => this.loadMore(), {
-      loadingMessage: 'Loading recipes...',
+      loadingMessage: _('Loading recipes...'),
       rootMargin: '400px',
     });
 

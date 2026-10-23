@@ -54,7 +54,7 @@ export class NotificationsView extends View {
     this.eventBus = TypedEventBus.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
-      loadingMessage: 'Loading more notifications...',
+      loadingMessage: _('Loading more notifications...'),
     });
 
     this.render();
@@ -109,14 +109,14 @@ export class NotificationsView extends View {
   private render(): void {
     this.container.innerHTML = `
       <div class="notifications-view__header">
-        <h1>Notifications</h1>
+        <h1>${_('Notifications')}</h1>
       </div>
       <div id="notifications-tabs" class="tabs tabs--scrollable">
-        <button class="tab tab--active" data-tab="all">All</button>
-        <button class="tab" data-tab="mentions">Mentions</button>
-        <button class="tab" data-tab="reactions">Reactions</button>
-        <button class="tab" data-tab="zaps">Zaps</button>
-        <button class="tab" data-tab="replies">Replies</button>
+        <button class="tab tab--active" data-tab="all">${_('All')}</button>
+        <button class="tab" data-tab="mentions">${_('Mentions')}</button>
+        <button class="tab" data-tab="reactions">${_('Reactions')}</button>
+        <button class="tab" data-tab="zaps">${_('Zaps')}</button>
+        <button class="tab" data-tab="replies">${_('Replies')}</button>
       </div>
       <div class="notifications-view__content">
         <div class="notifications-view__list"></div>

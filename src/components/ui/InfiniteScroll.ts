@@ -5,6 +5,8 @@
  * Includes integrated loading indicator with pulsing animation
  */
 
+import { _ } from '../../i18n';
+
 export interface InfiniteScrollConfig {
   rootMargin?: string;
   threshold?: number;
@@ -28,7 +30,7 @@ export class InfiniteScroll {
       rootMargin: config.rootMargin || '200px',
       threshold: config.threshold || 0,
       debounceMs: config.debounceMs || 300,
-      loadingMessage: config.loadingMessage || 'Loading more...',
+      loadingMessage: config.loadingMessage || _('Loading more...'),
       showLoadingIndicator: config.showLoadingIndicator !== false, // default true
     };
   }

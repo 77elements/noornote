@@ -1,4 +1,5 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { _ } from '../../../i18n';
 import { getAllFollowedPubkeys } from '../../../lists/follows';
 import { fetchEvents } from '../../../lists/relays';
 import { PictureNoteProcessor } from '../../ui/note-processing/PictureNoteProcessor';
@@ -41,7 +42,7 @@ export class SccMediaFeed {
     this.container.appendChild(this.gridEl);
 
     this.infiniteScroll = new InfiniteScroll(() => this.loadMore(), {
-      loadingMessage: 'Loading media...',
+      loadingMessage: _('Loading media...'),
       rootMargin: '400px',
     });
 

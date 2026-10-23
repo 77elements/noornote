@@ -31,6 +31,7 @@ import {
   createEditorRelaySelector,
 } from '../../components/post/editorChrome';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { _ } from '../../i18n';
 import { NnDropdown } from '../../components/ui/NnDropdown';
 
 const CURRENCY_OPTIONS = ['USD', 'EUR', 'GBP', 'BTC', 'SAT'].map(c => ({
@@ -156,8 +157,7 @@ export class ListingEditorView extends View {
         'Failed to load listing:',
         error
       );
-      this.container.innerHTML =
-        '<div class="marketplace-timeline__error"><p>Failed to load listing</p></div>';
+      this.container.innerHTML = `<div class="marketplace-timeline__error"><p>${_('Failed to load listing')}</p></div>`;
     }
   }
 
@@ -183,14 +183,14 @@ export class ListingEditorView extends View {
         <div class="back-padder">
         <div class="article-editor">
           <header class="l-spread">
-            <h1>${this.isEditMode ? 'Edit Listing' : 'New Listing'}</h1>
-            <button class="btn btn--passive btn--medium" data-action="back">Back</button>
+            <h1>${this.isEditMode ? _('Edit Listing') : _('New Listing')}</h1>
+            <button class="btn btn--passive btn--medium" data-action="back">${_('Back')}</button>
           </header>
 
           <div class="article-editor__toolbar">
             <div class="tabs">
-              <button class="tab tab--active" data-tab="edit">Edit</button>
-              <button class="tab" data-tab="preview">Preview</button>
+              <button class="tab tab--active" data-tab="edit">${_('Edit')}</button>
+              <button class="tab" data-tab="preview">${_('Preview')}</button>
             </div>
             ${this.relaySelector.render()}
           </div>
@@ -202,7 +202,7 @@ export class ListingEditorView extends View {
           <footer class="article-editor__footer">
             ${this.toolbar.render()}
             <div class="article-editor__actions">
-              <button class="btn" data-action="publish">${this.isEditMode ? 'Update Listing' : 'Publish Listing'}</button>
+              <button class="btn" data-action="publish">${this.isEditMode ? _('Update Listing') : _('Publish Listing')}</button>
             </div>
           </footer>
         </div>
@@ -215,16 +215,21 @@ export class ListingEditorView extends View {
 
   private renderEditMode(): string {
     const statusOptions = ['active', 'sold', 'inactive'];
+    const statusLabels: Record<string, string> = {
+      active: _('Active'),
+      sold: _('Sold'),
+      inactive: _('Inactive'),
+    };
 
     return `
       <div class="article-editor__form">
         <div class="form__row">
-          <label for="listing-title">Title *</label>
-          <input type="text" id="listing-title" class="input input--title" placeholder="Product name..." value="${escapeHtml(this.title)}" data-field="title" />
+          <label for="listing-title">${_('Title *')}</label>
+          <input type="text" id="listing-title" class="input input--title" placeholder="${_('Product name...')}" value="${escapeHtml(this.title)}" data-field="title" />
         </div>
 
         <div class="form__row">
-          <label for="listing-price">Price *</label>
+          <label for="listing-price">${_('Price *')}</label>
           <div class="listing-editor__price-row">
             <input type="text" id="listing-price" class="input" placeholder="50" value="${escapeHtml(this.price)}" data-field="price" style="flex: 1;" />
             <div data-currency-mount class="listing-editor__currency-select"></div>
@@ -233,7 +238,7 @@ export class ListingEditorView extends View {
         </div>
 
         <div class="form__row">
-          <label for="listing-image-url">Images</label>
+          <label for="listing-image-url">${_('Images')}</label>
           <div class="listing-editor__images">
             <div class="listing-editor__image-list">
               ${this.images
@@ -241,7 +246,7 @@ export class ListingEditorView extends View {
                   (url, i) => `
                 <div class="listing-editor__image-item" data-index="${i}">
                   <img src="${escapeHtmlAttr(url)}" alt="" />
-                  <button type="button" class="btn-icon listing-editor__image-remove" data-remove-image="${i}" title="Remove">
+                  <button type="button" class="btn-icon listing-editor__image-remove" data-remove-image="${i}" title="${_('Remove')}">
                     <svg width="14" height="14"><use href="#icon-close"/></svg>
                   </button>
                 </div>
@@ -250,11 +255,11 @@ export class ListingEditorView extends View {
                 .join('')}
             </div>
             <div class="listing-editor__image-add">
-              <input type="text" id="listing-image-url" class="input" placeholder="https://... or upload" data-field="image-url" />
-              <button type="button" class="btn-icon" data-action="add-image-url" title="Add URL">
+              <input type="text" id="listing-image-url" class="input" placeholder="${_('https://... or upload')}" data-field="image-url" />
+              <button type="button" class="btn-icon" data-action="add-image-url" title="${_('Add URL')}">
                 <svg width="18" height="18"><use href="#icon-plus"/></svg>
               </button>
-              <button type="button" class="btn-icon" data-action="upload-image" title="Upload image">
+              <button type="button" class="btn-icon" data-action="upload-image" title="${_('Upload image')}">
                 <svg width="18" height="18"><use href="#icon-upload"/></svg>
               </button>
               <input type="file" accept="image/*" data-image-file style="display: none;" />
@@ -263,42 +268,42 @@ export class ListingEditorView extends View {
         </div>
 
         <div class="form__row">
-          <label for="listing-content">Description (Markdown)</label>
-          <textarea id="listing-content" class="textarea textarea--large listing-editor-content" placeholder="Describe your product..." data-field="content">${escapeHtml(this.content)}</textarea>
+          <label for="listing-content">${_('Description (Markdown)')}</label>
+          <textarea id="listing-content" class="textarea textarea--large listing-editor-content" placeholder="${_('Describe your product...')}" data-field="content">${escapeHtml(this.content)}</textarea>
         </div>
 
         <section class="nn-ui-toggle">
           <div class="nn-ui-toggle__header">
             <div class="nn-ui-toggle__info">
-              <h2 class="nn-ui-toggle__title">Details</h2>
+              <h2 class="nn-ui-toggle__title">${_('Details')}</h2>
             </div>
-            <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+            <button class="nn-ui-toggle__toggle" aria-label="${_('Toggle section')}">
               <svg width="24" height="24"><use href="#icon-chevron-down"/></svg>
             </button>
           </div>
           <div class="nn-ui-toggle__content">
             <div class="form__row">
-              <label for="listing-summary">Summary</label>
-              <textarea id="listing-summary" class="textarea textarea--small" placeholder="Brief description for listing cards..." data-field="summary">${escapeHtml(this.summary)}</textarea>
+              <label for="listing-summary">${_('Summary')}</label>
+              <textarea id="listing-summary" class="textarea textarea--small" placeholder="${_('Brief description for listing cards...')}" data-field="summary">${escapeHtml(this.summary)}</textarea>
             </div>
 
             <div class="form__row">
-              <label for="listing-location">Location</label>
+              <label for="listing-location">${_('Location')}</label>
               <input type="text" id="listing-location" class="input" placeholder="Berlin, DE" value="${escapeHtml(this.location)}" data-field="location" />
             </div>
 
             <div class="form__row">
-              <label for="listing-tags">Tags</label>
-              <input type="text" id="listing-tags" class="input" placeholder="electronics, vintage (comma separated)" value="${escapeHtml(this.tags)}" data-field="tags" />
+              <label for="listing-tags">${_('Tags')}</label>
+              <input type="text" id="listing-tags" class="input" placeholder="${_('electronics, vintage (comma separated)')}" value="${escapeHtml(this.tags)}" data-field="tags" />
             </div>
 
             ${
               this.isEditMode
                 ? `
               <div class="form__row">
-                <label for="listing-status">Status</label>
+                <label for="listing-status">${_('Status')}</label>
                 <select id="listing-status" class="input" data-field="status">
-                  ${statusOptions.map(s => `<option value="${s}" ${this.status === s ? 'selected' : ''}>${s.charAt(0).toUpperCase() + s.slice(1)}</option>`).join('')}
+                  ${statusOptions.map(s => `<option value="${s}" ${this.status === s ? 'selected' : ''}>${statusLabels[s] || s}</option>`).join('')}
                 </select>
               </div>
             `
@@ -306,8 +311,8 @@ export class ListingEditorView extends View {
             }
 
             <div class="form__row">
-              <label for="listing-identifier">Slug / Identifier</label>
-              <span class="form__note">(auto-generated${this.isEditMode ? ', do not change' : ''})</span>
+              <label for="listing-identifier">${_('Slug / Identifier')}</label>
+              <span class="form__note">(${this.isEditMode ? _('auto-generated, do not change') : _('auto-generated')})</span>
               <input type="text" id="listing-identifier" class="input" value="${escapeHtml(this.identifier)}" data-field="identifier" ${this.isEditMode ? 'disabled' : ''} />
             </div>
           </div>
@@ -336,7 +341,7 @@ export class ListingEditorView extends View {
     return `
       <div class="article-editor__preview">
         ${this.images.length > 0 && this.images[0] ? `<img src="${escapeHtmlAttr(this.images[0])}" alt="${escapeHtml(this.title)}" class="article-editor__preview-image" />` : ''}
-        <h1 class="article-editor__preview-title">${escapeHtml(this.title) || 'Untitled'}</h1>
+        <h1 class="article-editor__preview-title">${escapeHtml(this.title) || _('Untitled')}</h1>
         ${priceDisplay ? `<div class="timeline-listing-card__price">${escapeHtml(priceDisplay)}</div>` : ''}
         ${this.location ? `<div class="listing-card__location">${escapeHtml(this.location)}</div>` : ''}
         ${this.summary ? `<p class="article-editor__preview-summary">${escapeHtml(this.summary)}</p>` : ''}
@@ -495,7 +500,7 @@ export class ListingEditorView extends View {
     );
     if (frequencyMount) {
       this.frequencyDropdown = new NnDropdown({
-        options: FREQUENCY_OPTIONS,
+        options: FREQUENCY_OPTIONS.map(o => ({ ...o, label: _(o.label) })),
         selectedValue: this.priceFrequency,
         onChange: value => {
           this.priceFrequency = value;
@@ -594,7 +599,7 @@ export class ListingEditorView extends View {
         (url, i) => `
       <div class="listing-editor__image-item" data-index="${i}">
         <img src="${escapeHtmlAttr(url)}" alt="" />
-        <button type="button" class="btn-icon listing-editor__image-remove" data-remove-image="${i}" title="Remove">
+        <button type="button" class="btn-icon listing-editor__image-remove" data-remove-image="${i}" title="${_('Remove')}">
           <svg width="14" height="14"><use href="#icon-close"/></svg>
         </button>
       </div>
@@ -678,7 +683,7 @@ export class ListingEditorView extends View {
     ) as HTMLButtonElement;
     const originalText = btn?.textContent || '';
     if (btn)
-      btn.textContent = this.isEditMode ? 'Updating...' : 'Publishing...';
+      btn.textContent = this.isEditMode ? _('Updating...') : _('Publishing...');
 
     try {
       const topics = this.tags

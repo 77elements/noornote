@@ -10,6 +10,7 @@ import { ErrorService } from '../../services/ErrorService';
 import { ToastService } from '../../services/ToastService';
 import { AuthService } from '../../services/AuthService';
 import { TypedEventBus } from '../../core/TypedEventBus';
+import { _ } from '../../i18n';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { convertLineBreaks } from '../../helpers/convertLineBreaks';
 import { npubToUsername } from '../../helpers/npubToUsername';
@@ -22,7 +23,7 @@ import { UserProfileService } from '../../services/UserProfileService';
 import type { CalendarEventData } from '../../helpers/nip52/parser';
 import type { RSVPStatusValue } from './CalendarPublishService';
 
-const RSVP_ACTIONS: Array<{
+const RSVP_ACTIONS_RAW: Array<{
   status: RSVPStatusValue;
   label: string;
   css: string;
@@ -31,6 +32,9 @@ const RSVP_ACTIONS: Array<{
   { status: 'tentative', label: 'Maybe', css: 'btn--passive' },
   { status: 'declined', label: "Can't go", css: 'btn--danger' },
 ];
+/** Translated at use time (module const may not call _()). */
+const rsvpActions = () =>
+  RSVP_ACTIONS_RAW.map(a => ({ ...a, label: _(a.label) }));
 
 export class CalendarEventModal {
   private destroyed = false;
@@ -96,7 +100,7 @@ export class CalendarEventModal {
                 .slice(0, 12)
                 .map(pk => npubToUsername(encodeNpub(pk)))
                 .join(', ')
-            )}${this.event.participants.length > 12 ? ` and ${this.event.participants.length - 12} more` : ''}</p>`
+            )}${this.event.participants.length > 12 ? ` ${_('and %s more', String(this.event.participants.length - 12))}` : ''}</p>`
           : ''
       }
       ${
@@ -106,26 +110,26 @@ export class CalendarEventModal {
       }
       ${
         this.event.isPrivate
-          ? '<div class="calendar-addon-detail__row"><span class="badge badge--accent">Private — encrypted</span></div><div class="calendar-addon-detail__rsvp" data-slot="private-rsvp"><div class="calendar-addon-detail__rsvp-loading pulsate">Loading responses…</div></div>'
+          ? `<div class="calendar-addon-detail__row"><span class="badge badge--accent">${_('Private — encrypted')}</span></div><div class="calendar-addon-detail__rsvp" data-slot="private-rsvp"><div class="calendar-addon-detail__rsvp-loading pulsate">${_('Loading responses…')}</div></div>`
           : '<div class="calendar-addon-detail__rsvp" data-slot="rsvp"></div>'
       }
       <div class="calendar-addon-detail__actions l-row--split">
         <div class="l-row">
           ${
             isOwn
-              ? `<button class="btn btn--passive btn--medium" type="button" data-action="edit">Edit</button>
-          <button class="btn btn--danger btn--medium" type="button" data-action="delete">Delete</button>
-          <button class="btn btn--passive btn--medium" type="button" data-action="share">Share in TL</button>`
+              ? `<button class="btn btn--passive btn--medium" type="button" data-action="edit">${_('Edit')}</button>
+          <button class="btn btn--danger btn--medium" type="button" data-action="delete">${_('Delete')}</button>
+          <button class="btn btn--passive btn--medium" type="button" data-action="share">${_('Share in TL')}</button>`
               : this.event.isPrivate
                 ? ''
                 : `<button class="btn ${this.saved ? 'btn--danger' : 'btn--passive'} btn--medium" type="button" data-action="save-toggle">
-              ${this.saved ? 'Remove' : '+ Add to my cal'}
+              ${this.saved ? _('Remove') : _('+ Add to my cal')}
             </button>
-          <button class="btn btn--passive btn--medium" type="button" data-action="share">Share in TL</button>`
+          <button class="btn btn--passive btn--medium" type="button" data-action="share">${_('Share in TL')}</button>`
           }
         </div>
         <div class="l-row">
-          <button class="btn btn--passive btn--medium" type="button" data-action="ics">Download .ics</button>
+          <button class="btn btn--passive btn--medium" type="button" data-action="ics">${_('Download .ics')}</button>
         </div>
       </div>
     `;
@@ -135,13 +139,13 @@ export class CalendarEventModal {
       ?.addEventListener('click', () => {
         try {
           downloadCalendarEventICS(this.event);
-          ToastService.show('Calendar file downloaded', 'success');
+          ToastService.show(_('Calendar file downloaded'), 'success');
         } catch (error) {
           ErrorService.handle(
             error,
             'CalendarEventModal.exportICS',
             true,
-            'Could not export event'
+            _('Could not export event')
           );
         }
       });
@@ -168,7 +172,7 @@ export class CalendarEventModal {
       });
 
     ModalService.getInstance().show({
-      title: this.event.title || '(Untitled event)',
+      title: this.event.title || _('(Untitled event)'),
       content,
       width: '560px',
     });
@@ -194,8 +198,7 @@ export class CalendarEventModal {
     } catch (error) {
       if (this.destroyed || !slot.isConnected) return;
       ErrorService.handle(error, 'CalendarEventModal.fetchRSVPs');
-      slot.innerHTML =
-        '<div class="calendar-addon-detail__rsvp-empty">Responses could not be loaded.</div>';
+      slot.innerHTML = `<div class="calendar-addon-detail__rsvp-empty">${_('Responses could not be loaded.')}</div>`;
     }
   }
 
@@ -223,34 +226,36 @@ export class CalendarEventModal {
       if (titleEl && !titleEl.querySelector('.nn-booked-suffix')) {
         titleEl.insertAdjacentHTML(
           'beforeend',
-          ' <span class="nn-booked-suffix">- booked</span>'
+          ` <span class="nn-booked-suffix">- ${_('booked')}</span>`
         );
       }
       if (slot.querySelector('.calendar-addon-detail__booked-banner')) return;
       const guestName =
         UserProfileService.getInstance().getUsername(summary.acceptedBy[0]!) ||
-        'a guest';
+        _('a guest');
       slot.insertAdjacentHTML(
         'afterbegin',
-        `<div class="calendar-addon-detail__booked-banner">✓ Booked appointment — guest: ${escapeHtml(guestName)}</div>`
+        `<div class="calendar-addon-detail__booked-banner">✓ ${_('Booked appointment — guest:')} ${escapeHtml(guestName)}</div>`
       );
     }
 
     const total = summary.accepted + summary.declined + summary.tentative;
     const counts =
       total > 0
-        ? `${summary.accepted} going · ${summary.tentative} maybe · ${summary.declined} declined`
-        : 'No responses yet';
+        ? `${summary.accepted} ${_('going')} · ${summary.tentative} ${_('maybe')} · ${summary.declined} ${_('declined')}`
+        : _('No responses yet');
 
     slot.innerHTML = `
       <div class="calendar-addon-detail__rsvp-buttons">
-        ${RSVP_ACTIONS.map(
-          action => `
+        ${rsvpActions()
+          .map(
+            action => `
         <button class="btn btn--passive btn--mini" type="button" data-rsvp="${action.status}"
           ${summary.mine === action.status ? 'disabled' : ''}>
           ${summary.mine === action.status ? '✓ ' : ''}${action.label}
         </button>`
-        ).join('')}
+          )
+          .join('')}
       </div>
       <div class="calendar-addon-detail__rsvp-counts">${escapeHtml(counts)}</div>
     `;
@@ -279,7 +284,7 @@ export class CalendarEventModal {
       );
       if (!outcome.ok) {
         ToastService.show(
-          'The response could not be published — no relay accepted it',
+          _('The response could not be published — no relay accepted it'),
           'error'
         );
         return;
@@ -292,7 +297,7 @@ export class CalendarEventModal {
       ) {
         await this.cleanupBookingParticipation();
       }
-      ToastService.show('Response published', 'success');
+      ToastService.show(_('Response published'), 'success');
       const summary =
         await CalendarPublishService.getInstance().fetchRSVPSummary(this.event);
       if (!this.destroyed && slot.isConnected)
@@ -302,7 +307,7 @@ export class CalendarEventModal {
         error,
         'CalendarEventModal.sendRSVP',
         true,
-        'Could not publish your response'
+        _('Could not publish your response')
       );
     }
   }
@@ -349,8 +354,7 @@ export class CalendarEventModal {
     } catch (error) {
       if (this.destroyed || !slot.isConnected) return;
       ErrorService.handle(error, 'CalendarEventModal.fetchPrivateRSVPs');
-      slot.innerHTML =
-        '<div class="calendar-addon-detail__rsvp-empty">Responses could not be loaded.</div>';
+      slot.innerHTML = `<div class="calendar-addon-detail__rsvp-empty">${_('Responses could not be loaded.')}</div>`;
     }
   }
 
@@ -375,18 +379,20 @@ export class CalendarEventModal {
 
     slot.innerHTML = `
       <div class="calendar-addon-detail__rsvp-buttons">
-        ${RSVP_ACTIONS.map(
-          action => `
+        ${rsvpActions()
+          .map(
+            action => `
         <button class="btn btn--passive btn--mini" type="button" data-rsvp="${action.status}"
           ${mine === action.status ? 'disabled' : ''}>
           ${mine === action.status ? '✓ ' : ''}${action.label}
         </button>`
-        ).join('')}
+          )
+          .join('')}
       </div>
       <div class="calendar-addon-detail__rsvp-counts">${
         total > 0
-          ? `${escapeHtml(String(counts.accepted))} going · ${escapeHtml(String(counts.tentative))} maybe · ${escapeHtml(String(counts.declined))} declined`
-          : 'No responses yet'
+          ? `${escapeHtml(String(counts.accepted))} ${_('going')} · ${escapeHtml(String(counts.tentative))} ${_('maybe')} · ${escapeHtml(String(counts.declined))} ${_('declined')}`
+          : _('No responses yet')
       }</div>
     `;
 
@@ -410,7 +416,7 @@ export class CalendarEventModal {
         this.event,
         status
       );
-      ToastService.show('Response published', 'success');
+      ToastService.show(_('Response published'), 'success');
       const records =
         await CalendarInviteService.getInstance().fetchPrivateRSVPs(this.event);
       if (!this.destroyed && slot.isConnected) {
@@ -421,7 +427,7 @@ export class CalendarEventModal {
         error,
         'CalendarEventModal.sendPrivateRSVP',
         true,
-        'Could not publish your response'
+        _('Could not publish your response')
       );
     }
   }
@@ -465,26 +471,26 @@ export class CalendarEventModal {
 
     if (this.saved) {
       const confirmed = await ModalService.getInstance().confirm({
-        title: 'Remove from your calendar',
+        title: _('Remove from your calendar'),
         message: `Remove "${this.event.title || 'this event'}" from your calendar grid? The event itself stays untouched.`,
-        confirmText: 'Remove',
+        confirmText: _('Remove'),
         confirmDestructive: true,
       });
       if (!confirmed) return;
       data.unsaveEvent(coordinate);
       this.saved = false;
-      ToastService.show('Removed from your calendar', 'success');
+      ToastService.show(_('Removed from your calendar'), 'success');
     } else {
       data.saveEvent(coordinate);
       this.saved = true;
-      ToastService.show('Added to your calendar grid', 'success');
+      ToastService.show(_('Added to your calendar grid'), 'success');
     }
 
     const btn = content.querySelector<HTMLButtonElement>(
       '[data-action="save-toggle"]'
     );
     if (btn) {
-      btn.textContent = this.saved ? 'Remove' : '+ Add to my cal';
+      btn.textContent = this.saved ? _('Remove') : _('+ Add to my cal');
       btn.classList.toggle('btn--danger', this.saved);
       btn.classList.toggle('btn--passive', !this.saved);
     }
@@ -501,13 +507,14 @@ export class CalendarEventModal {
         '../../services/ModalService'
       );
       const reason = await ModalSvc.getInstance().prompt({
-        title: 'Cancel booking',
-        message:
-          'The guest and all participants will be informed about the cancellation by DM.',
-        placeholder: 'Reason (optional)',
+        title: _('Cancel booking'),
+        message: _(
+          'The guest and all participants will be informed about the cancellation by DM.'
+        ),
+        placeholder: _('Reason (optional)'),
         multiline: true,
         allowEmpty: true,
-        confirmText: 'Cancel booking',
+        confirmText: _('Cancel booking'),
       });
       if (reason === null) return;
       const { BookingService } = await import('./BookingService');
@@ -519,8 +526,8 @@ export class CalendarEventModal {
       ToastService.show(
         result.ok
           ? result.dmFailures
-            ? `${result.detail} — ${result.dmFailures} DM(s) failed`
-            : 'Booking cancelled — guest and participants informed'
+            ? `${result.detail} — ${_('failed DM(s): %s', String(result.dmFailures))}`
+            : _('Booking cancelled — guest and participants informed')
           : result.detail,
         result.ok && !result.dmFailures ? 'success' : 'warning'
       );
@@ -532,9 +539,13 @@ export class CalendarEventModal {
     }
 
     const confirmed = await ModalService.getInstance().confirm({
-      title: 'Delete event',
-      message: `Delete "${this.event.title || 'this event'}"${this.event.isPrivate ? '' : ' for everyone'}? A deletion request is published to relays.`,
-      confirmText: 'Delete',
+      title: _('Delete event'),
+      message: _(
+        'Delete "%s"%s? A deletion request is published to relays.',
+        this.event.title || _('this event'),
+        this.event.isPrivate ? '' : ` ${_('for everyone')}`
+      ),
+      confirmText: _('Delete'),
       confirmDestructive: true,
     });
     if (!confirmed) return;
@@ -553,7 +564,7 @@ export class CalendarEventModal {
         );
         await CalendarPublishService.getInstance().deleteEvent(this.event);
       }
-      ToastService.show('Event deleted', 'success');
+      ToastService.show(_('Event deleted'), 'success');
       ModalService.getInstance().hide();
       this.onSaved?.();
     } catch (error) {
@@ -561,7 +572,7 @@ export class CalendarEventModal {
         error,
         'CalendarEventModal.remove',
         true,
-        'Could not delete the event'
+        _('Could not delete the event')
       );
     }
   }
@@ -576,7 +587,7 @@ export class CalendarEventModal {
   }
 
   private timeLabel(): string {
-    if (this.event.allDay) return 'All day';
+    if (this.event.allDay) return _('All day');
     const duration =
       (this.event.endMs ?? this.event.startMs) - this.event.startMs;
     const start = new Date(this.occurrenceStartMs).toLocaleTimeString(

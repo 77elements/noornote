@@ -23,6 +23,7 @@ import {
   mergeByKey,
 } from './storage';
 import { setupGridDragDrop } from '../helpers/gridDragDrop';
+import { _, tn } from '../i18n';
 import {
   renderListHeader,
   renderListBreadcrumb,
@@ -943,7 +944,7 @@ export async function restoreFromFile(): Promise<void> {
         `Restore aborted: file empty but browser has ${browserMembers.length} members`
       );
       throw new Error(
-        'File is empty. Use "Sync from Relays" to restore your tribes.'
+        _('File is empty. Use "Sync from Relays" to restore your tribes.')
       );
     }
   }
@@ -1771,7 +1772,7 @@ export function removeTribeTombstone(tribeName: string): void {
 // binding so both lists behave the same. The thin wrappers keep call-site names local.
 const TRIBE_DELETION_CONFIG: DeletionRecordConfig = {
   dTag: 'noornote:tribe-deletions',
-  alt: 'NoorNote deleted tribes',
+  alt: _('NoorNote deleted tribes'),
   logLabel: 'tribe-deletions',
   getLocalTombstones: getTribeTombstones,
   setLocalTombstones: setTribeTombstones,
@@ -2225,7 +2226,7 @@ export class TribeManager {
     if (!currentUser) {
       container.innerHTML = `
         <div class="tribes-empty-state">
-          <p>Log in to see your tribes</p>
+          <p>${_('Log in to see your tribes')}</p>
         </div>
       `;
       return;
@@ -2233,7 +2234,7 @@ export class TribeManager {
 
     // Show loading
     container.innerHTML = `
-      <div class="tribes-loading">Loading tribes...</div>
+      <div class="tribes-loading">${_('Loading tribes...')}</div>
     `;
 
     try {
@@ -2246,7 +2247,7 @@ export class TribeManager {
       console.error('Failed to render tribes:', error);
       container.innerHTML = `
         <div class="tribes-empty-state">
-          <p>Failed to load tribes</p>
+          <p>${_('Failed to load tribes')}</p>
         </div>
       `;
     }
@@ -2378,24 +2379,24 @@ export class TribeManager {
   }
 
   private renderHeader(folder: TribeFolder | undefined): string {
-    const title = folder ? folder.name : 'Tribes';
+    const title = folder ? folder.name : _('Tribes');
     return renderListHeader(title, [
       {
         action: 'new-tribe',
         icon: '<svg width="16" height="16"><use href="#icon-folder"/></svg>',
-        label: 'Tribe',
+        label: _('Tribe'),
       },
       {
         action: 'new-member',
         icon: '<svg width="16" height="16"><use href="#icon-tribe"/></svg>',
-        label: 'Member',
+        label: _('Member'),
       },
     ]);
   }
 
   private renderBreadcrumb(folder: TribeFolder | undefined): string {
     if (!folder) return '';
-    return renderListBreadcrumb('Tribes', folder.name);
+    return renderListBreadcrumb(_('Tribes'), folder.name);
   }
 
   /**
@@ -2459,7 +2460,7 @@ export class TribeManager {
     if (grid.children.length === 0) {
       grid.innerHTML = `
         <div class="tribes-empty-state" style="grid-column: 1 / -1;">
-          <p>No tribe members yet</p>
+          <p>${_('No tribe members yet')}</p>
         </div>
       `;
     }
@@ -2624,7 +2625,7 @@ export class TribeManager {
       removeMember(pubkey);
       this.membersCache.delete(pubkey);
 
-      ToastService.show('Member removed', 'success');
+      ToastService.show(_('Member removed'), 'success');
       this.rerenderCurrentView();
 
       // Reliable propagation: republish parent tribe set IMMEDIATELY, bypassing debounce.
@@ -2648,7 +2649,7 @@ export class TribeManager {
       }
     } catch (error) {
       console.error('Failed to delete member:', error);
-      ToastService.show('Failed to remove member', 'error');
+      ToastService.show(_('Failed to remove member'), 'error');
     }
   }
 
@@ -2707,7 +2708,7 @@ export class TribeManager {
         removeTribeTombstone(newName);
 
         renameFolder(folderId, newName);
-        ToastService.show('Tribe renamed', 'success');
+        ToastService.show(_('Tribe renamed'), 'success');
         this.rerenderCurrentView();
       },
     });
@@ -2725,18 +2726,22 @@ export class TribeManager {
     const itemCount = this.getActualFolderItemCount(folderId);
     const message =
       itemCount > 0
-        ? `Delete tribe "${folder.name}"? ${itemCount} member(s) will be deleted.`
-        : `Delete tribe "${folder.name}"?`;
+        ? _(
+            'Delete tribe "%s"? %s member(s) will be deleted.',
+            folder.name,
+            itemCount
+          )
+        : _('Delete tribe "%s"?', folder.name);
 
     this.modalService.show({
-      title: 'Delete Tribe',
+      title: _('Delete Tribe'),
       content: `
         <div style="padding: 1rem 0;">
           <p>${message}</p>
         </div>
         <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem;">
-          <button class="btn" data-action="cancel">Cancel</button>
-          <button class="btn btn--danger" data-action="confirm">Delete</button>
+          <button class="btn" data-action="cancel">${_('Cancel')}</button>
+          <button class="btn btn--danger" data-action="confirm">${_('Delete')}</button>
         </div>
       `,
       width: '400px',
@@ -2805,7 +2810,7 @@ export class TribeManager {
           // Delete folder
           deleteFolder(folderId);
 
-          ToastService.show('Tribe deleted', 'success');
+          ToastService.show(_('Tribe deleted'), 'success');
 
           if (this.currentFolderId === folderId) {
             this.currentFolderId = '';
@@ -2838,7 +2843,7 @@ export class TribeManager {
           }
         } catch (error) {
           console.error('Failed to delete tribe:', error);
-          ToastService.show('Failed to delete tribe', 'error');
+          ToastService.show(_('Failed to delete tribe'), 'error');
           this.modalService.hide();
         }
       });
@@ -2855,13 +2860,13 @@ export class TribeManager {
     try {
       // Tribes: Members must always be in a folder, never at root
       if (targetFolderId === '') {
-        ToastService.show('Members must be in a tribe', 'error');
+        ToastService.show(_('Members must be in a tribe'), 'error');
         return;
       }
 
       const targetFolder = getFolder(targetFolderId);
       if (!targetFolder) {
-        ToastService.show('Target tribe not found', 'error');
+        ToastService.show(_('Target tribe not found'), 'error');
         return;
       }
 
@@ -2880,11 +2885,11 @@ export class TribeManager {
       });
       setMembers(updatedItems);
 
-      ToastService.show(`Moved to ${targetFolder.name}`, 'success');
+      ToastService.show(_('Moved to %s', targetFolder.name), 'success');
       this.rerenderCurrentView();
     } catch (error) {
       console.error('Failed to move member:', error);
-      ToastService.show('Failed to move member', 'error');
+      ToastService.show(_('Failed to move member'), 'error');
     }
   }
 
@@ -2895,7 +2900,7 @@ export class TribeManager {
     const modal = new NewFolderModal({
       onConfirm: (name: string) => {
         createFolder(name);
-        ToastService.show('Tribe created', 'success');
+        ToastService.show(_('Tribe created'), 'success');
         this.rerenderCurrentView();
       },
     });
@@ -2918,37 +2923,37 @@ export class TribeManager {
     container.innerHTML = `
       <div class="new-bookmark-modal__content">
         <div class="form-group">
-          <label for="tribe-member-input">Members (@username, comma-separated)</label>
+          <label for="tribe-member-input">${_('Members (@username, comma-separated)')}</label>
           <textarea
             id="tribe-member-input"
             class="input"
-            placeholder="@alice, @bob, @charlie..."
+            placeholder="${_('@alice, @bob, @charlie...')}"
             rows="3"
             autocomplete="off"
           ></textarea>
-          <p style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--color-text-secondary);">Type @ to search your follows</p>
+          <p style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--color-text-secondary);">${_('Type @ to search your follows')}</p>
         </div>
 
         <div class="form-group">
           <label for="tribe-select">Tribe</label>
           <select id="tribe-select" class="input">
-            ${allTribes.length === 0 ? '<option value="">No tribes available</option>' : tribeOptions}
+            ${allTribes.length === 0 ? `<option value="">${_('No tribes available')}</option>` : tribeOptions}
           </select>
         </div>
 
         <div class="new-bookmark-modal__actions">
           <button type="button" class="btn btn--passive" id="tribe-member-cancel-btn">
-            Cancel
+            ${_('Cancel')}
           </button>
           <button type="button" class="btn" id="tribe-member-save-btn" ${allTribes.length === 0 ? 'disabled' : ''}>
-            Add Members
+            ${_('Add Members')}
           </button>
         </div>
       </div>
     `;
 
     this.modalService.show({
-      title: 'Add Members to Tribe',
+      title: _('Add Members to Tribe'),
       content: container,
       width: '450px',
       showCloseButton: true,
@@ -2981,7 +2986,10 @@ export class TribeManager {
         const inputValue = input?.value.trim();
 
         if (!selectedTribeId || !inputValue) {
-          ToastService.show('Please enter members and select a tribe', 'error');
+          ToastService.show(
+            _('Please enter members and select a tribe'),
+            'error'
+          );
           return;
         }
 
@@ -3017,7 +3025,7 @@ export class TribeManager {
       const pubkeys = extractPubkeysFromText(inputValue);
 
       if (pubkeys.length === 0) {
-        ToastService.show('No valid npubs or mentions found.', 'error');
+        ToastService.show(_('No valid npubs or mentions found.'), 'error');
         return;
       }
 
@@ -3050,17 +3058,20 @@ export class TribeManager {
           }
         }
 
-        ToastService.show(`Added ${added} member(s)`, 'success');
+        ToastService.show(
+          tn('Added %s member', 'Added %s members', added),
+          'success'
+        );
 
         if (this.currentFolderId === tribeId || this.currentFolderId === '') {
           this.rerenderCurrentView();
         }
       } else {
-        ToastService.show('No members added', 'error');
+        ToastService.show(_('No members added'), 'error');
       }
     } catch (error) {
       console.error('Failed to add members:', error);
-      ToastService.show('Failed to add members', 'error');
+      ToastService.show(_('Failed to add members'), 'error');
     }
   }
 
@@ -3109,12 +3120,12 @@ export class TribeManager {
   private async handleSyncFromRelays(container: HTMLElement): Promise<void> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      ToastService.show('Please log in first', 'error');
+      ToastService.show(_('Please log in first'), 'error');
       return;
     }
 
     try {
-      ToastService.show('Fetching from relays...', 'info');
+      ToastService.show(_('Fetching from relays...'), 'info');
       const result = await this.syncFromRelays();
 
       if (result.requiresConfirmation) {
@@ -3164,7 +3175,7 @@ export class TribeManager {
             }
 
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-            ToastService.show('Merged and synced to relays', 'success');
+            ToastService.show(_('Merged and synced to relays'), 'success');
             this.membersCache.clear();
             await this.loadMembers();
             await this.renderCurrentView(container);
@@ -3177,7 +3188,11 @@ export class TribeManager {
               result.categories
             );
             ToastService.show(
-              `Synced from relays (added ${result.diff.added.length}, removed ${result.diff.removed.length})`,
+              _(
+                'Synced from relays (added %s, removed %s)',
+                result.diff.added.length,
+                result.diff.removed.length
+              ),
               'success'
             );
             this.membersCache.clear();
@@ -3186,7 +3201,7 @@ export class TribeManager {
           },
           onLocal: async () => {
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-            ToastService.show('Local tribes pushed to relays', 'success');
+            ToastService.show(_('Local tribes pushed to relays'), 'success');
             this.membersCache.clear();
             await this.loadMembers();
             await this.renderCurrentView(container);
@@ -3217,11 +3232,11 @@ export class TribeManager {
         this.membersCache.clear();
         await this.loadMembers();
         await this.renderCurrentView(container);
-        ToastService.show('Already up to date with relays', 'info');
+        ToastService.show(_('Already up to date with relays'), 'info');
       }
     } catch (error) {
       console.error('Sync from relays failed:', error);
-      ToastService.show('Failed to sync from relays', 'error');
+      ToastService.show(_('Failed to sync from relays'), 'error');
     }
   }
 
@@ -3230,12 +3245,12 @@ export class TribeManager {
    */
   private async handleSyncToRelays(): Promise<void> {
     try {
-      ToastService.show('Publishing to relays...', 'info');
+      ToastService.show(_('Publishing to relays...'), 'info');
       await publishToRelays();
-      ToastService.show('Published to relays', 'success');
+      ToastService.show(_('Published to relays'), 'success');
     } catch (error) {
       console.error('Publish to relays failed:', error);
-      ToastService.show('Failed to publish to relays', 'error');
+      ToastService.show(_('Failed to publish to relays'), 'error');
     }
   }
 
@@ -3244,16 +3259,16 @@ export class TribeManager {
    */
   private async handleSaveToFile(): Promise<void> {
     try {
-      ToastService.show('Saving to file...', 'info');
+      ToastService.show(_('Saving to file...'), 'info');
       if (PlatformService.getInstance().isDesktop) {
         await saveToFile();
       } else {
         downloadAsJson(this.adapter.getBrowserItems(), 'tribes');
       }
-      ToastService.show('Saved to file', 'success');
+      ToastService.show(_('Saved to file'), 'success');
     } catch (error) {
       console.error('Save to file failed:', error);
-      ToastService.show('Failed to save to file', 'error');
+      ToastService.show(_('Failed to save to file'), 'error');
     }
   }
 
@@ -3285,7 +3300,7 @@ export class TribeManager {
         };
       } else {
         // Desktop: Read from local file
-        ToastService.show('Reading from file...', 'info');
+        ToastService.show(_('Reading from file...'), 'info');
         result = await this.syncFromFile();
       }
 
@@ -3325,7 +3340,10 @@ export class TribeManager {
             const mergedItems = this.adapter.getBrowserItems();
             await this.adapter.setFileItems(mergedItems);
             await this.adapter.publishToRelays(mergedItems);
-            ToastService.show('Merged and synced to file + relays', 'success');
+            ToastService.show(
+              _('Merged and synced to file + relays'),
+              'success'
+            );
             this.membersCache.clear();
             await this.loadMembers();
             await this.renderCurrentView(container);
@@ -3347,7 +3365,7 @@ export class TribeManager {
           },
           onLocal: async () => {
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-            ToastService.show('Local tribes pushed to relays', 'success');
+            ToastService.show(_('Local tribes pushed to relays'), 'success');
             this.membersCache.clear();
             await this.loadMembers();
             await this.renderCurrentView(container);
@@ -3369,7 +3387,7 @@ export class TribeManager {
         await this.loadMembers();
         await this.renderCurrentView(container);
       } else {
-        ToastService.show('File is identical to current list', 'info');
+        ToastService.show(_('File is identical to current list'), 'info');
       }
     } catch (error) {
       console.error('Restore from file failed:', error);
@@ -3417,8 +3435,7 @@ export class TribeView extends View {
     // Get current user
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      this.container.innerHTML =
-        '<div class="tribe-view__error">Please login to view tribes</div>';
+      this.container.innerHTML = `<div class="tribe-view__error">${_('Please login to view tribes')}</div>`;
       return;
     }
 
@@ -3426,8 +3443,7 @@ export class TribeView extends View {
     this.currentTribes = getFoldersInRootOrder();
 
     if (this.currentTribes.length === 0 || !this.currentTribes[0]) {
-      this.container.innerHTML =
-        '<div class="tribe-view__error">No tribes found. Create one in the sidebar.</div>';
+      this.container.innerHTML = `<div class="tribe-view__error">${_('No tribes found. Create one in the sidebar.')}</div>`;
       return;
     }
 
@@ -3460,7 +3476,7 @@ export class TribeView extends View {
     // Edit link
     const editLink = document.createElement('button');
     editLink.className = 'tribe-view__edit-link';
-    editLink.textContent = 'Edit ›';
+    editLink.textContent = _('Edit ›');
     editLink.addEventListener('click', () => {
       eventBus.emit('list:open', { listType: 'tribes' });
     });
@@ -3642,7 +3658,7 @@ export class TribeMemberCard {
         </div>
         <div class="actions">
           <span class="move"></span>
-          <button class="delete" aria-label="Remove member" title="Remove member">
+          <button class="delete" aria-label="${_('Remove member')}" title="${_('Remove member')}">
             ${ICON_TRASH_16}
           </button>
         </div>

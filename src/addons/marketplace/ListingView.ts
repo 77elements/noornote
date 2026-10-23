@@ -26,6 +26,7 @@ import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
 import { getTag } from '../../helpers/tagUtils';
 import { RelayConfig } from '../../services/RelayConfig';
+import { _ } from '../../i18n';
 
 const BOOKMARK_SVG_OUTLINE = `<svg class="listing-view__bookmark-icon" width="22" height="22"><use href="#icon-bookmark-24"/></svg>`;
 const BOOKMARK_SVG_FILLED = `<svg class="listing-view__bookmark-icon listing-view__bookmark-icon--active" width="22" height="22"><use href="#icon-bookmark-24-filled"/></svg>`;
@@ -48,7 +49,7 @@ export class ListingView extends View {
         <div class="back-padder">
         <div class="listing-view__loading">
           <div class="listing-view__loading-spinner"></div>
-          <p>Loading listing...</p>
+          <p>${_('Loading listing...')}</p>
         </div>
     
         </div>
@@ -102,7 +103,7 @@ export class ListingView extends View {
           <div class="listing-view__header">
             <h1 class="listing-view__title">${escapeHtml(meta.title)}</h1>
             <div class="listing-view__price">${escapeHtml(priceDisplay)}</div>
-            ${meta.status === 'sold' ? '<span class="listing-view__sold-badge">Sold</span>' : ''}
+            ${meta.status === 'sold' ? `<span class="listing-view__sold-badge">${_('Sold')}</span>` : ''}
           </div>
 
           ${
@@ -117,16 +118,16 @@ export class ListingView extends View {
           }
 
           <div class="listing-view__seller">
-            <span class="listing-view__seller-label">Seller</span>
+            <span class="listing-view__seller-label">${_('Seller')}</span>
             <span class="listing-view__seller-name user-mention" data-pubkey="${event.pubkey}">
-              <a href="/profile/${npub}" class="mention-link" data-profile-pubkey="${event.pubkey}">Loading...</a>
+              <a href="/profile/${npub}" class="mention-link" data-profile-pubkey="${event.pubkey}">${_('Loading...')}</a>
             </span>
             <span class="listing-view__date">${formatTimestamp(meta.publishedAt)}</span>
           </div>
 
           <div class="listing-view__actions">
-            <button class="btn btn--primary listing-view__contact-btn" data-pubkey="${event.pubkey}">Contact Seller</button>
-            <button class="listing-view__bookmark-btn${bookmarkedNow ? ' listing-view__bookmark-btn--active' : ''}" data-a-tag="${escapeHtmlAttr(aTagValue)}" data-description="${escapeHtmlAttr(bookmarkDescription)}" aria-label="Bookmark listing" title="${bookmarkedNow ? 'Remove bookmark' : 'Bookmark listing'}" style="${isBookmarksEnabled() ? '' : 'display:none'}">
+            <button class="btn btn--primary listing-view__contact-btn" data-pubkey="${event.pubkey}">${_('Contact Seller')}</button>
+            <button class="listing-view__bookmark-btn${bookmarkedNow ? ' listing-view__bookmark-btn--active' : ''}" data-a-tag="${escapeHtmlAttr(aTagValue)}" data-description="${escapeHtmlAttr(bookmarkDescription)}" aria-label="${_('Bookmark listing')}" title="${bookmarkedNow ? _('Remove bookmark') : _('Bookmark listing')}" style="${isBookmarksEnabled() ? '' : 'display:none'}">
               ${bookmarkedNow ? BOOKMARK_SVG_FILLED : BOOKMARK_SVG_OUTLINE}
             </button>
           </div>
@@ -152,16 +153,16 @@ export class ListingView extends View {
           }
 
           <div class="listing-view__share">
-            <button class="btn-icon" data-listing-action="repost" title="Repost">
-              <svg width="18" height="18"><use href="#icon-repost"/></svg> Repost
+            <button class="btn-icon" data-listing-action="repost" title="${_('Repost')}">
+              <svg width="18" height="18"><use href="#icon-repost"/></svg> ${_('Repost')}
             </button>
-            <button class="btn-icon" data-listing-action="quote" title="Quote">
-              <span class="quote-glyph">❝</span> Quote
+            <button class="btn-icon" data-listing-action="quote" title="${_('Quote')}">
+              <span class="quote-glyph">❝</span> ${_('Quote')}
             </button>
           </div>
 
           <div class="listing-view__reviews" data-listing-reviews>
-            <p class="pulsate">Loading reviews…</p>
+            <p class="pulsate">${_('Loading reviews…')}</p>
           </div>
 
           <div class="listing-view__comments" data-listing-comments></div>
@@ -277,7 +278,7 @@ export class ListingView extends View {
     const authService = AuthService.getInstance();
     const currentUser = authService.getCurrentUser();
     if (!currentUser) {
-      ToastService.show('Log in to bookmark listings', 'info');
+      ToastService.show(_('Log in to bookmark listings'), 'info');
       return;
     }
 
@@ -296,14 +297,14 @@ export class ListingView extends View {
         await removeBookmark(aTagValue);
         btn.classList.remove('listing-view__bookmark-btn--active');
         btn.innerHTML = BOOKMARK_SVG_OUTLINE;
-        btn.title = 'Bookmark listing';
-        ToastService.show('Bookmark removed', 'success');
+        btn.title = _('Bookmark listing');
+        ToastService.show(_('Bookmark removed'), 'success');
       } else {
         await addBookmark(aTagValue, false, '', 'a', description);
         btn.classList.add('listing-view__bookmark-btn--active');
         btn.innerHTML = BOOKMARK_SVG_FILLED;
-        btn.title = 'Remove bookmark';
-        ToastService.show('Listing bookmarked', 'success');
+        btn.title = _('Remove bookmark');
+        ToastService.show(_('Listing bookmarked'), 'success');
       }
 
       // Check actual state to be safe
@@ -316,7 +317,7 @@ export class ListingView extends View {
 
       TypedEventBus.getInstance().emit('bookmark:updated');
     } catch {
-      ToastService.show('Failed to update bookmark', 'error');
+      ToastService.show(_('Failed to update bookmark'), 'error');
     }
   }
 
@@ -350,8 +351,8 @@ export class ListingView extends View {
   private showNotFound(): void {
     this.container.innerHTML = `
       <div class="listing-view__not-found">
-        <p>Listing not found</p>
-        <button class="btn btn--medium btn--passive" data-action="back">← Back to Marketplace</button>
+        <p>${_('Listing not found')}</p>
+        <button class="btn btn--medium btn--passive" data-action="back">← ${_('Back to Marketplace')}</button>
       </div>
     `;
     const backBtn = this.container.querySelector('[data-action="back"]');
@@ -363,8 +364,8 @@ export class ListingView extends View {
   private showError(): void {
     this.container.innerHTML = `
       <div class="listing-view__error">
-        <p>Failed to load listing</p>
-        <button class="btn btn--medium btn--passive" data-action="back">← Back to Marketplace</button>
+        <p>${_('Failed to load listing')}</p>
+        <button class="btn btn--medium btn--passive" data-action="back">← ${_('Back to Marketplace')}</button>
       </div>
     `;
     const backBtn = this.container.querySelector('[data-action="back"]');
@@ -421,7 +422,7 @@ export class ListingView extends View {
       }
 
       reviewsContainer.innerHTML = `
-        <h2 class="h3 listing-view__reviews-header">Reviews & Quotes (${reviews.length})</h2>
+        <h2 class="h3 listing-view__reviews-header">${_('Reviews & Quotes (%s)', String(reviews.length))}</h2>
         <div class="listing-view__reviews-list"></div>
       `;
 
@@ -441,7 +442,8 @@ export class ListingView extends View {
         if (!review.id) continue;
 
         const profile = await profileService.getUserProfile(review.pubkey);
-        const username = profile?.display_name || profile?.name || 'Anonymous';
+        const username =
+          profile?.display_name || profile?.name || _('Anonymous');
         const nevent = encodeNevent(review.id, [], review.pubkey);
 
         // Strip nostr references from content for cleaner display
@@ -457,7 +459,7 @@ export class ListingView extends View {
 
         const header = document.createElement('div');
         header.className = 'snv-quoted-repost__header';
-        header.innerHTML = `<a href="/note/nostr:${escapeHtml(nevent)}" class="snv-quoted-repost__link"><strong>${escapeHtml(username)}</strong> quoted this listing:</a>`;
+        header.innerHTML = `<a href="/note/nostr:${escapeHtml(nevent)}" class="snv-quoted-repost__link"><strong>${escapeHtml(username)}</strong> ${_('quoted this listing:')}</a>`;
         header.querySelector('a')?.addEventListener('click', e => {
           e.preventDefault();
           e.stopPropagation();

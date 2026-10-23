@@ -7,6 +7,8 @@
  * @used-by BookmarkSecondaryManager
  */
 
+import { _ } from '../../i18n';
+
 export interface UpNavigatorOptions {
   onClick: () => void;
   onDrop: (bookmarkId: string) => Promise<void>;
@@ -24,7 +26,7 @@ export class UpNavigator {
     const card = document.createElement('div');
     card.className = 'nn-card';
     card.dataset.upNav = '';
-    card.title = 'Up to root level';
+    card.title = _('Up to root level');
 
     card.innerHTML = `
       <div class="nn-card__content">
@@ -32,7 +34,7 @@ export class UpNavigator {
           <svg width="24" height="24"><use href="#icon-corner-up-left"/></svg>
         </div>
         <div class="label">..</div>
-        <div class="hint">Back to root</div>
+        <div class="hint">${_('Back to root')}</div>
       </div>
     `;
 

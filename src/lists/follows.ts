@@ -17,6 +17,7 @@
  */
 
 import { StorageKeys, now, deduplicateByPubkey, mergeByKey } from './storage';
+import { _, tn } from '../i18n';
 import {
   readJsonFile,
   writeJsonFile,
@@ -1316,7 +1317,10 @@ export class ProfileFollowManager {
     if (!currentUser) return;
 
     if (isSyncing) {
-      ToastService.show('Still syncing follow list. Please wait.', 'warning');
+      ToastService.show(
+        _('Still syncing follow list. Please wait.'),
+        'warning'
+      );
       return;
     }
 
@@ -1334,7 +1338,7 @@ export class ProfileFollowManager {
 
     try {
       followBtn.disabled = true;
-      followBtn.textContent = 'Following...';
+      followBtn.textContent = _('Following...');
 
       followUser(this.targetPubkey, type === 'private');
 
@@ -1343,12 +1347,14 @@ export class ProfileFollowManager {
       onStateChange();
 
       ToastService.show(
-        `Followed ${type === 'public' ? 'publicly' : 'privately'} (local)`,
+        type === 'public'
+          ? _('Followed publicly (local)')
+          : _('Followed privately (local)'),
         'success'
       );
     } catch (error) {
       console.error('Failed to follow:', error);
-      ToastService.show('Failed to follow user', 'error');
+      ToastService.show(_('Failed to follow user'), 'error');
 
       followBtn.disabled = false;
       followBtn.innerHTML = originalHTML;
@@ -1369,7 +1375,10 @@ export class ProfileFollowManager {
     if (!currentUser) return;
 
     if (isSyncing) {
-      ToastService.show('Still syncing follow list. Please wait.', 'warning');
+      ToastService.show(
+        _('Still syncing follow list. Please wait.'),
+        'warning'
+      );
       return;
     }
 
@@ -1380,7 +1389,7 @@ export class ProfileFollowManager {
 
     try {
       followBtn.disabled = true;
-      followBtn.textContent = 'Unfollowing...';
+      followBtn.textContent = _('Unfollowing...');
 
       unfollowUser(this.targetPubkey);
 
@@ -1388,7 +1397,7 @@ export class ProfileFollowManager {
       // No manual emit: unfollowUser → setFollowItems already emits follow:updated.
       onStateChange();
 
-      ToastService.show('Unfollowed successfully (local)', 'success');
+      ToastService.show(_('Unfollowed successfully (local)'), 'success');
 
       // Reliable propagation: republish follow list IMMEDIATELY, bypassing debounce.
       diagLog('lists', 'immediate publish after unfollow — start', {
@@ -1411,10 +1420,10 @@ export class ProfileFollowManager {
       }
     } catch (error) {
       console.error('Failed to unfollow:', error);
-      ToastService.show('Failed to unfollow user', 'error');
+      ToastService.show(_('Failed to unfollow user'), 'error');
 
       followBtn.disabled = false;
-      followBtn.textContent = 'Unfollow';
+      followBtn.textContent = _('Unfollow');
     }
   }
 }
@@ -1759,7 +1768,7 @@ export class FollowListManager {
    */
   private async handleSyncFromRelays(container: HTMLElement): Promise<void> {
     try {
-      ToastService.show('Fetching from relays...', 'info');
+      ToastService.show(_('Fetching from relays...'), 'info');
       const result = await this.syncFromRelays();
 
       if (result.requiresConfirmation) {
@@ -1781,7 +1790,10 @@ export class FollowListManager {
             );
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
             ToastService.show(
-              `Merged ${result.diff.added.length} new follows and synced to relays`,
+              _(
+                'Merged %s new follows and synced to relays',
+                result.diff.added.length
+              ),
               'success'
             );
             await this.renderListTab(container);
@@ -1793,14 +1805,18 @@ export class FollowListManager {
               result.relayContentWasEmpty
             );
             ToastService.show(
-              `Synced from relays (added ${result.diff.added.length}, removed ${result.diff.removed.length})`,
+              _(
+                'Synced from relays (added %s, removed %s)',
+                result.diff.added.length,
+                result.diff.removed.length
+              ),
               'success'
             );
             await this.renderListTab(container);
           },
           onLocal: async () => {
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-            ToastService.show('Local follows pushed to relays', 'success');
+            ToastService.show(_('Local follows pushed to relays'), 'success');
             await this.renderListTab(container);
           },
         });
@@ -1812,14 +1828,18 @@ export class FollowListManager {
           result.relayContentWasEmpty
         );
         ToastService.show(
-          `Synced ${result.diff.added.length} new follow${result.diff.added.length !== 1 ? 's' : ''} from relays`,
+          tn(
+            'Synced %s new follow from relays',
+            'Synced %s new follows from relays',
+            result.diff.added.length
+          ),
           'success'
         );
         await this.renderListTab(container);
       }
     } catch (error) {
       console.error('Failed to sync from relays:', error);
-      ToastService.show('Failed to sync from relays', 'error');
+      ToastService.show(_('Failed to sync from relays'), 'error');
     }
   }
 
@@ -1828,13 +1848,13 @@ export class FollowListManager {
    */
   private async handleSyncToRelays(): Promise<void> {
     try {
-      ToastService.show('Publishing to relays...', 'info');
+      ToastService.show(_('Publishing to relays...'), 'info');
       const browserItems = this.adapter.getBrowserItems();
       await this.adapter.publishToRelays(browserItems);
-      ToastService.show('Follows published successfully', 'success');
+      ToastService.show(_('Follows published successfully'), 'success');
     } catch (error) {
       console.error('Failed to publish to relays:', error);
-      ToastService.show('Failed to publish to relays', 'error');
+      ToastService.show(_('Failed to publish to relays'), 'error');
     }
   }
 
@@ -1843,7 +1863,7 @@ export class FollowListManager {
    */
   private async handleSaveToFile(): Promise<void> {
     try {
-      ToastService.show('Saving...', 'info');
+      ToastService.show(_('Saving...'), 'info');
       const browserItems = this.adapter.getBrowserItems();
 
       if (PlatformService.getInstance().isDesktop) {
@@ -1851,10 +1871,10 @@ export class FollowListManager {
       } else {
         downloadAsJson(browserItems, 'follows');
       }
-      ToastService.show('Saved successfully', 'success');
+      ToastService.show(_('Saved successfully'), 'success');
     } catch (error) {
       console.error('Failed to save to file:', error);
-      ToastService.show('Failed to save', 'error');
+      ToastService.show(_('Failed to save'), 'error');
     }
   }
 
@@ -1886,7 +1906,7 @@ export class FollowListManager {
         };
       } else {
         // Desktop: Read from local file
-        ToastService.show('Reading from file...', 'info');
+        ToastService.show(_('Reading from file...'), 'info');
         result = await this.syncFromFile();
       }
 
@@ -1905,7 +1925,10 @@ export class FollowListManager {
             this.applySyncFromFile('merge', result.fileItems);
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
             ToastService.show(
-              `Merged ${result.diff.added.length} from file and synced to relays`,
+              _(
+                'Merged %s from file and synced to relays',
+                result.diff.added.length
+              ),
               'success'
             );
             await this.renderListTab(container);
@@ -1913,14 +1936,18 @@ export class FollowListManager {
           onRelay: async () => {
             this.applySyncFromFile('overwrite', result.fileItems);
             ToastService.show(
-              `Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`,
+              _(
+                'Restored from file (added %s, removed %s)',
+                result.diff.added.length,
+                result.diff.removed.length
+              ),
               'success'
             );
             await this.renderListTab(container);
           },
           onLocal: async () => {
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-            ToastService.show('Local follows pushed to relays', 'success');
+            ToastService.show(_('Local follows pushed to relays'), 'success');
             await this.renderListTab(container);
           },
         });
@@ -1928,16 +1955,20 @@ export class FollowListManager {
       } else if (result.diff.added.length > 0) {
         this.applySyncFromFile('overwrite', result.fileItems);
         ToastService.show(
-          `Restored ${result.diff.added.length} item${result.diff.added.length > 1 ? 's' : ''} from file`,
+          tn(
+            'Restored %s item from file',
+            'Restored %s items from file',
+            result.diff.added.length
+          ),
           'success'
         );
         await this.renderListTab(container);
       } else {
-        ToastService.show('File is identical to current list', 'info');
+        ToastService.show(_('File is identical to current list'), 'info');
       }
     } catch (error) {
       console.error('Failed to restore from file:', error);
-      ToastService.show(`Failed to restore: ${String(error)}`, 'error');
+      ToastService.show(_('Failed to restore: %s', String(error)), 'error');
     }
   }
 
@@ -2060,7 +2091,7 @@ export class FollowListManager {
       if (!currentUser) {
         container.innerHTML = `
           <div class="follows-list-empty-state">
-            <p>Log in to see your follows</p>
+            <p>${_('Log in to see your follows')}</p>
           </div>
         `;
         return;
@@ -2069,7 +2100,7 @@ export class FollowListManager {
       // Show loading state
       container.innerHTML = `
         <div class="follows-list-loading">
-          Loading follows...
+          ${_('Loading follows...')}
         </div>
       `;
 
@@ -2079,7 +2110,7 @@ export class FollowListManager {
       if (itemsWithProfiles.length === 0) {
         container.innerHTML = `${this.renderControlButtons()}
           <div class="follows-list-empty-state">
-            <p>No follows yet</p>
+            <p>${_('No follows yet')}</p>
           </div>
         `;
         this.bindSyncButtons(container);
@@ -2097,18 +2128,18 @@ export class FollowListManager {
         ${this.renderControlButtons()}
         <div class="follows-header l-spread">
           <h2 class="small follows-stats">
-            Following: ${this.totalFollowing}${this.extended ? ' | Mutuals: <span class="mutual-count">...</span> (<span class="mutual-percentage">...</span>%)' : ''}
+            ${_('Following: %s', this.totalFollowing)}${this.extended ? ` | ${_('Mutuals:')} <span class="mutual-count">...</span> (<span class="mutual-percentage">...</span>%)` : ''}
           </h2>
           ${this.extended?.renderCheckForChangesHtml() ?? ''}
         </div>
         <div class="follows-sort-controls">
-          <a href="#" class="follows-sort-controls__load-all">Load all</a>
+          <a href="#" class="follows-sort-controls__load-all">${_('Load all')}</a>
           ${
             this.extended
               ? `
           <span class="follows-sort-controls__sort">
-            Sort by:
-            <a href="#" class="follows-sort-controls__sort-date follows-sort-controls__link--disabled ${this.currentSort === 'date' ? 'active' : ''}">Date</a>
+            ${_('Sort by:')}
+            <a href="#" class="follows-sort-controls__sort-date follows-sort-controls__link--disabled ${this.currentSort === 'date' ? 'active' : ''}">${_('Date')}</a>
             /
             <a href="#" class="follows-sort-controls__sort-zaps follows-sort-controls__link--disabled ${this.currentSort !== 'date' ? 'active' : ''}">Zaps</a>
           </span>
@@ -2117,14 +2148,14 @@ export class FollowListManager {
           }
           <input type="text"
                  class="follows-sort-controls__search ${this.isFullyLoaded ? '' : 'follows-sort-controls__search--disabled'}"
-                 placeholder="Filter by name..."
+                 placeholder="${_('Filter by name...')}"
                  ${this.isFullyLoaded ? '' : 'disabled'} />
           ${
             this.extended
               ? `
           <label class="nn-checkbox nn-checkbox--small" data-non-mutuals>
             <input type="checkbox" data-non-mutuals-toggle ${this.showOnlyNonMutuals ? 'checked' : ''} ${this.isFullyLoaded ? '' : 'disabled'}>
-            Non-mutuals only
+            ${_('Non-mutuals only')}
           </label>
           `
               : ''
@@ -2164,7 +2195,7 @@ export class FollowListManager {
       // Setup infinite scroll if there are more items
       if (this.hasMore) {
         this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
-          loadingMessage: 'Loading more follows...',
+          loadingMessage: _('Loading more follows...'),
         });
         this.infiniteScroll.observe(list as HTMLElement);
       }
@@ -2176,7 +2207,7 @@ export class FollowListManager {
       console.error('Failed to render follows:', error);
       container.innerHTML = `
         <div class="follows-list-empty-state">
-          <p>Failed to load follows</p>
+          <p>${_('Failed to load follows')}</p>
         </div>
       `;
     }
@@ -2313,8 +2344,8 @@ export class FollowListManager {
           <div class="follow-item__username">
             ${escapeHtml(username)}
             ${!item.isPrivate ? `<span class="follow-item__petname-edit" data-role="petname-edit">${item.petname ? `(${escapeHtml(item.petname)})` : '(+)'}</span>` : ''}
-            ${notesEnabled ? `<span class="follow-item__note${hasNote ? ' follow-item__note--filled' : ''}" data-role="petname-note" title="${hasNote ? 'Edit private note' : 'Add private note'}"><svg width="16" height="16"><use href="#icon-note"/></svg></span>` : ''}
-            ${item.isPrivate ? '<span class="private-badge">🔒 Private</span>' : ''}
+            ${notesEnabled ? `<span class="follow-item__note${hasNote ? ' follow-item__note--filled' : ''}" data-role="petname-note" title="${hasNote ? _('Edit private note') : _('Add private note')}"><svg width="16" height="16"><use href="#icon-note"/></svg></span>` : ''}
+            ${item.isPrivate ? `<span class="private-badge">${_('🔒 Private')}</span>` : ''}
             ${this.renderArticleNotifLabel(item.pubkey)}
           </div>
           <div class="follow-item__badges">
@@ -2324,7 +2355,7 @@ export class FollowListManager {
         </div>
       </div>
       <button class="follow-item__unfollow-btn btn btn--passive btn--medium" data-pubkey="${item.pubkey}">
-        Unfollow
+        ${_('Unfollow')}
       </button>
     `;
 
@@ -2352,11 +2383,12 @@ export class FollowListManager {
       const { ModalService } = await import('../services/ModalService');
       const current = getFollowPetname(item.pubkey) ?? '';
       const result = await ModalService.getInstance().prompt({
-        title: 'Set Petname',
-        message:
-          '⚠️ Public label, stored in your contact list (NIP-02). Anyone who reads your follow list can see it.',
+        title: _('Set Petname'),
+        message: _(
+          '⚠️ Public label, stored in your contact list (NIP-02). Anyone who reads your follow list can see it.'
+        ),
         defaultValue: current,
-        placeholder: 'e.g. Bob from work',
+        placeholder: _('e.g. Bob from work'),
         allowEmpty: true,
       });
       if (result === null) return;
@@ -2380,11 +2412,12 @@ export class FollowListManager {
       const service = PetnameService.getInstance();
       const current = service.getPetname(item.pubkey) ?? '';
       const result = await ModalService.getInstance().prompt({
-        title: 'Private Note',
-        message:
-          '🔒 Encrypted note about this user. Only you can decrypt and read it.',
+        title: _('Private Note'),
+        message: _(
+          '🔒 Encrypted note about this user. Only you can decrypt and read it.'
+        ),
         defaultValue: current,
-        placeholder: 'Write anything you want to remember about this user…',
+        placeholder: _('Write anything you want to remember about this user…'),
         allowEmpty: true,
         multiline: true,
       });
@@ -2393,7 +2426,7 @@ export class FollowListManager {
       await service.setPetname(item.pubkey, trimmed);
       const el = noteEdit as HTMLElement;
       el.classList.toggle('follow-item__note--filled', !!trimmed);
-      el.title = trimmed ? 'Edit private note' : 'Add private note';
+      el.title = trimmed ? _('Edit private note') : _('Add private note');
     });
 
     return followItemDiv;
@@ -2476,7 +2509,7 @@ export class FollowListManager {
       this.adapter.setBrowserItems(updatedItems);
       this.isLocalMutation = false;
 
-      ToastService.show('Unfollowed user', 'success');
+      ToastService.show(_('Unfollowed successfully'), 'success');
 
       // Optimistic in-place removal — no list reload.
       itemElement.remove();
@@ -2502,7 +2535,7 @@ export class FollowListManager {
     } catch (error) {
       this.isLocalMutation = false;
       console.error('Failed to unfollow user:', error);
-      ToastService.show('Failed to unfollow user', 'error');
+      ToastService.show(_('Failed to unfollow user'), 'error');
     }
   }
 
@@ -2585,7 +2618,7 @@ export class FollowListManager {
       '.follows-sort-controls__load-all'
     );
     if (loadAllLink) {
-      loadAllLink.textContent = 'Loading...';
+      loadAllLink.textContent = _('Loading...');
       loadAllLink.classList.add('follows-sort-controls__load-all--loading');
     }
 
@@ -2625,7 +2658,7 @@ export class FollowListManager {
 
     // Update UI
     if (loadAllLink) {
-      loadAllLink.textContent = 'All loaded';
+      loadAllLink.textContent = _('All loaded');
       loadAllLink.classList.remove('follows-sort-controls__load-all--loading');
       loadAllLink.classList.add('follows-sort-controls__load-all--done');
     }
@@ -2749,10 +2782,15 @@ interface UserListSource {
 }
 
 const FOLLOWS_SOURCE: UserListSource = {
-  loadingLabel: 'Loading follows...',
-  emptyLabel: "This user doesn't follow anyone yet",
+  loadingLabel: _('Loading follows...'),
+  emptyLabel: _("This user doesn't follow anyone yet"),
   describe: (name, count) =>
-    `<strong>${escapeHtml(name)}</strong> follows ${count} ${count === 1 ? 'user' : 'users'}`,
+    tn(
+      '<strong>%s</strong> follows %s user',
+      '<strong>%s</strong> follows %s users',
+      count,
+      escapeHtml(name)
+    ),
   load: async (targetPubkey, onBatch) => {
     const pubkeys =
       await UserService.getInstance().getUserFollowing(targetPubkey);
@@ -2761,10 +2799,15 @@ const FOLLOWS_SOURCE: UserListSource = {
 };
 
 const FOLLOWERS_SOURCE: UserListSource = {
-  loadingLabel: 'Loading followers...',
-  emptyLabel: 'No followers found',
+  loadingLabel: _('Loading followers...'),
+  emptyLabel: _('No followers found'),
   describe: (name, count) =>
-    `${count} ${count === 1 ? 'user follows' : 'users follow'} <strong>${escapeHtml(name)}</strong>`,
+    tn(
+      '%s user follows <strong>%s</strong>',
+      '%s users follow <strong>%s</strong>',
+      count,
+      escapeHtml(name)
+    ),
   load: (targetPubkey, onBatch) =>
     FollowerCountService.getInstance()
       .streamFollowerList(targetPubkey, onBatch)
@@ -2845,7 +2888,7 @@ export class ExternalFollowListManager {
     // Show loading state
     container.innerHTML = `
       <div class="follows-list-loading">
-        ${escapeHtml(this.source.loadingLabel)}
+        ${this.source.loadingLabel}
       </div>
     `;
 
@@ -2865,10 +2908,10 @@ export class ExternalFollowListManager {
           <div class="external-follows-stats">${this.source.describe(this.targetName, 0)}</div>
           <input type="text"
                  class="external-follows-search"
-                 placeholder="Filter by name..." />
+                 placeholder="${_('Filter by name...')}" />
         </div>
         <div class="follows-list external-follows-list">
-          <div class="follows-list-loading">${escapeHtml(this.source.loadingLabel)}</div>
+          <div class="follows-list-loading">${this.source.loadingLabel}</div>
         </div>
       `;
 
@@ -2909,7 +2952,7 @@ export class ExternalFollowListManager {
       console.error('Failed to load external user list:', error);
       container.innerHTML = `
         <div class="follows-list-empty-state">
-          <p>Failed to load</p>
+          <p>${_('Failed to load')}</p>
         </div>
       `;
     }
@@ -2983,7 +3026,7 @@ export class ExternalFollowListManager {
 
     if (!this.infiniteScroll && this.currentOffset > 0) {
       this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
-        loadingMessage: 'Loading more...',
+        loadingMessage: _('Loading more...'),
       });
       this.infiniteScroll.observe(list);
     }
@@ -3004,7 +3047,7 @@ export class ExternalFollowListManager {
       if (this.containerElement) {
         this.containerElement.innerHTML = `
           <div class="follows-list-empty-state">
-            <p>${escapeHtml(this.source.emptyLabel)}</p>
+            <p>${this.source.emptyLabel}</p>
           </div>
         `;
       }
@@ -3148,7 +3191,7 @@ export class ExternalFollowListManager {
     const btn = document.createElement('button');
     btn.className = 'external-follow-item__follow-btn btn btn--medium';
     btn.dataset.pubkey = item.pubkey;
-    btn.textContent = 'Follow';
+    btn.textContent = _('Follow');
     btn.addEventListener('click', async e => {
       e.stopPropagation();
       await this.handleFollow(item, btn);
@@ -3168,7 +3211,7 @@ export class ExternalFollowListManager {
     btn.className =
       'external-follow-item__unfollow-btn btn btn--medium btn--passive';
     btn.dataset.pubkey = item.pubkey;
-    btn.textContent = 'Unfollow';
+    btn.textContent = _('Unfollow');
     btn.addEventListener('click', async e => {
       e.stopPropagation();
       await this.handleUnfollow(item, btn);
@@ -3190,7 +3233,7 @@ export class ExternalFollowListManager {
 
     try {
       followBtn.disabled = true;
-      followBtn.textContent = 'Following...';
+      followBtn.textContent = _('Following...');
 
       // Set state BEFORE followUser: followUser → setFollowItems emits
       // follow:updated synchronously, which runs syncItemButtons. With the state
@@ -3201,13 +3244,13 @@ export class ExternalFollowListManager {
 
       followBtn.replaceWith(this.createUnfollowButton(item));
 
-      ToastService.show('Followed (local)', 'success');
+      ToastService.show(_('Followed (local)'), 'success');
     } catch (error) {
       console.error('Failed to follow:', error);
-      ToastService.show('Failed to follow', 'error');
+      ToastService.show(_('Failed to follow'), 'error');
       item.isFollowedByMe = false;
       followBtn.disabled = false;
-      followBtn.textContent = 'Follow';
+      followBtn.textContent = _('Follow');
     }
   }
 
@@ -3223,7 +3266,7 @@ export class ExternalFollowListManager {
 
     try {
       unfollowBtn.disabled = true;
-      unfollowBtn.textContent = 'Unfollowing...';
+      unfollowBtn.textContent = _('Unfollowing...');
 
       // Set state BEFORE unfollowUser for the same reason as handleFollow:
       // unfollowUser emits follow:updated synchronously; syncItemButtons must
@@ -3233,13 +3276,13 @@ export class ExternalFollowListManager {
 
       unfollowBtn.replaceWith(this.createFollowButton(item));
 
-      ToastService.show('Unfollowed (local)', 'success');
+      ToastService.show(_('Unfollowed (local)'), 'success');
     } catch (error) {
       console.error('Failed to unfollow:', error);
-      ToastService.show('Failed to unfollow', 'error');
+      ToastService.show(_('Failed to unfollow'), 'error');
       item.isFollowedByMe = true;
       unfollowBtn.disabled = false;
-      unfollowBtn.textContent = 'Unfollow';
+      unfollowBtn.textContent = _('Unfollow');
     }
   }
 

@@ -9,6 +9,8 @@ import { Switch } from '../../components/ui/Switch';
 import { isFollowPacksEnabled, setFollowPacksEnabled } from './index';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
+import { _ } from '../../i18n';
+import { translateAddonName } from '../addonI18n';
 
 export class FollowPacksSettings extends SettingsSection {
   private enableSwitch: Switch | null = null;
@@ -32,7 +34,9 @@ export class FollowPacksSettings extends SettingsSection {
         bus.emit('follow-packs:addon-toggle', { enabled: checked });
         bus.emit('follow-packs:toggle', { enabled: checked });
         ToastService.show(
-          checked ? 'Follow Packs enabled' : 'Follow Packs disabled',
+          checked
+            ? _('%s enabled', translateAddonName('follow-packs'))
+            : _('%s disabled', translateAddonName('follow-packs')),
           'success'
         );
       },
@@ -40,9 +44,9 @@ export class FollowPacksSettings extends SettingsSection {
 
     contentContainer.innerHTML = `
       <div class="setting">
-        <span class="setting__label">Enable Follow Packs</span>
+        <span class="setting__label">${_('Enable Follow Packs')}</span>
         <div class="setting__control">${this.enableSwitch.render()}</div>
-        <p class="setting__desc">Discover and share curated lists of Nostr users to follow. Find the users that are most interesting to you or create your own lists.</p>
+        <p class="setting__desc">${_('Discover and share curated lists of Nostr users to follow. Find the users that are most interesting to you or create your own lists.')}</p>
       </div>
     `;
     this.enableSwitch.setupEventListeners(contentContainer);

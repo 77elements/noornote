@@ -22,6 +22,7 @@ import {
   type BookmarkReadSyncFrequency,
 } from './index';
 import { TypedEventBus } from '../../core/TypedEventBus';
+import { _ } from '../../i18n';
 
 const FREQUENCY_OPTIONS: Array<[BookmarkReadSyncFrequency, string]> = [
   ['rare', 'Rare (every 60 min)'],
@@ -66,7 +67,7 @@ export class BookmarksAddonView extends View {
           enabled: checked,
         });
         ToastService.show(
-          checked ? 'Bookmarks enabled' : 'Bookmarks disabled',
+          checked ? _('Bookmarks enabled') : _('Bookmarks disabled'),
           'success'
         );
         // Keep the read-state sync in step with the addon lifecycle.
@@ -100,8 +101,8 @@ export class BookmarksAddonView extends View {
         TypedEventBus.getInstance().emit('bookmark:updated');
         ToastService.show(
           checked
-            ? 'Bookmark read-state sync enabled'
-            : 'Bookmark read-state sync disabled',
+            ? _('Bookmark read-state sync enabled')
+            : _('Bookmark read-state sync disabled'),
           'success'
         );
       },
@@ -110,7 +111,7 @@ export class BookmarksAddonView extends View {
     const freqOptions = FREQUENCY_OPTIONS.map(
       ([value, label]) => `
         <label class="nn-checkbox nn-checkbox--label-left">
-          <span class="setting__label">${label}</span>
+          <span class="setting__label">${_(label)}</span>
           <input type="radio" name="bookmarks-read-freq" value="${value}" ${frequency === value ? 'checked' : ''} />
         </label>
       `
@@ -118,37 +119,34 @@ export class BookmarksAddonView extends View {
 
     this.container.innerHTML = `
       <div class="back-padder">
-        <h1>Bookmarks</h1>
+        <h1>${_('Bookmarks')}</h1>
         <section class="section">
           <div class="setting">
-            <span class="setting__label">Enable Bookmarks</span>
+            <span class="setting__label">${_('Enable Bookmarks')}</span>
             <div class="setting__control">${this.enableSwitch.render()}</div>
             <p class="setting__desc">
-              Save notes and links to bookmark folders with drag-and-drop organization.
+              ${_('Save notes and links to bookmark folders with drag-and-drop organization.')}
             </p>
           </div>
 
           <div class="bookmarks-read-sync${bookmarksEnabled ? '' : ' is-hidden'}">
             <div class="setting">
-              <span class="setting__label">Sync read bookmarks across relays</span>
+              <span class="setting__label">${_('Sync read bookmarks across relays')}</span>
               <div class="setting__control">${this.syncSwitch.render()}</div>
               <p class="setting__desc">
-                Tracks which bookmarks you have opened and syncs the read-state
-                across your devices (encrypted, only visible to you). When off,
-                the sidebar shows the plain bookmark total.
+                ${_('Tracks which bookmarks you have opened and syncs the read-state across your devices (encrypted, only visible to you). When off, the sidebar shows the plain bookmark total.')}
               </p>
             </div>
 
             <div class="frequency-selector${readSyncEnabled ? '' : ' is-hidden'}">
-              <p class="setting__label">Sync frequency</p>
+              <p class="setting__label">${_('Sync frequency')}</p>
               ${freqOptions}
               <div class="setting">
                 <div class="setting__control">
-                  <button class="btn btn--medium" data-action="reset-read-state">Reset read state</button>
+                  <button class="btn btn--medium" data-action="reset-read-state">${_('Reset read state')}</button>
                 </div>
                 <p class="setting__desc">
-                  Marks ALL bookmarks as unread again (also on your other devices
-                  after their next sync).
+                  ${_('Marks ALL bookmarks as unread again (also on your other devices after their next sync).')}
                 </p>
               </div>
             </div>
@@ -167,7 +165,7 @@ export class BookmarksAddonView extends View {
           const value = radio.value as BookmarkReadSyncFrequency;
           setReadSyncFrequency(value);
           ToastService.show(
-            `Sync frequency: ${FREQUENCY_LABELS[value] || value}`,
+            _('Sync frequency: %s', _(FREQUENCY_LABELS[value] || value)),
             'success'
           );
         });
@@ -178,10 +176,11 @@ export class BookmarksAddonView extends View {
       ?.addEventListener('click', () => {
         void ModalService.getInstance()
           .confirm({
-            title: 'Reset read state',
-            message:
-              'Mark ALL bookmarks as unread again? Your other devices will pick this up on their next sync.',
-            confirmText: 'Reset',
+            title: _('Reset read state'),
+            message: _(
+              'Mark ALL bookmarks as unread again? Your other devices will pick this up on their next sync.'
+            ),
+            confirmText: _('Reset'),
             confirmDestructive: true,
           })
           .then(confirmed => {
@@ -190,13 +189,13 @@ export class BookmarksAddonView extends View {
               .reset()
               .then(() =>
                 ToastService.show(
-                  'Read state reset — all bookmarks unread',
+                  _('Read state reset — all bookmarks unread'),
                   'success'
                 )
               )
               .catch(error =>
                 ToastService.show(
-                  `Reset failed: ${String(error)}`,
+                  _('Reset failed: %s', String(error)),
                   'error',
                   8000
                 )

@@ -8,6 +8,7 @@ import { AddonLoader } from '../AddonLoader';
 import { UserIdentity } from '../../components/shared/UserIdentity';
 import { formatTimeAgo } from '../../helpers/formatTimeAgo';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { _, tn } from '../../i18n';
 import {
   FollowerSnapshotStorage,
   DEFAULT_RECENCY_DAYS,
@@ -53,10 +54,9 @@ export class FollowerNotificationSettings extends SettingsSection {
 
     contentContainer.innerHTML = `
       <div class="setting">
-        <span class="setting__label">Enable Follower Notification</span>
+        <span class="setting__label">${_('Enable Follower Notification')}</span>
         <div class="setting__control">${this.enableSwitch.render()}</div>
-        <p class="setting__desc">Get notified when someone new follows you. Checks every 3 hours in the
-          background; each new follower is verified against their own contact list, so there are no false alarms.</p>
+        <p class="setting__desc">${_('Get notified when someone new follows you. Checks every 3 hours in the background; each new follower is verified against their own contact list, so there are no false alarms.')}</p>
       </div>
     `;
     this.enableSwitch.setupEventListeners(contentContainer);
@@ -84,13 +84,12 @@ export class FollowerNotificationSettings extends SettingsSection {
   private async handleToggle(checked: boolean): Promise<void> {
     if (checked && isDataSaverEnabled()) {
       const proceed = await ModalService.getInstance().confirm({
-        title: 'Conflicts with Data Saver',
-        message:
-          'Data Saver is on. To find followers reliably this addon ignores it for its scan: a ' +
-          'one-time pull of all your followers’ contact lists (a few MB), then small background ' +
-          'checks every few hours. Enable anyway?',
-        confirmText: 'Enable anyway',
-        cancelText: 'Keep off',
+        title: _('Conflicts with Data Saver'),
+        message: _(
+          'Data Saver is on. To find followers reliably this addon ignores it for its scan: a one-time pull of all your followers’ contact lists (a few MB), then small background checks every few hours. Enable anyway?'
+        ),
+        confirmText: _('Enable anyway'),
+        cancelText: _('Keep off'),
       });
       if (!proceed) {
         this.enableSwitch?.setChecked(false);
@@ -104,8 +103,8 @@ export class FollowerNotificationSettings extends SettingsSection {
     });
     ToastService.show(
       checked
-        ? 'Follower Notification enabled'
-        : 'Follower Notification disabled',
+        ? _('%s enabled', _('Follower Notification'))
+        : _('%s disabled', _('Follower Notification')),
       'success'
     );
     this.renderPanel(checked);
@@ -136,13 +135,19 @@ export class FollowerNotificationSettings extends SettingsSection {
 
     const statusText =
       followerCount === null
-        ? 'No baseline yet — the first check runs a few minutes after start.'
+        ? _('No baseline yet — the first check runs a few minutes after start.')
         : warmingUp
-          ? `Calibrating baseline (${followerCount.toLocaleString('en-US')} followers)…`
-          : `Watching ${followerCount.toLocaleString('en-US')} followers for changes.`;
+          ? _(
+              'Calibrating baseline (%s followers)…',
+              followerCount.toLocaleString('en-US')
+            )
+          : _(
+              'Watching %s followers for changes.',
+              followerCount.toLocaleString('en-US')
+            );
 
     const lastCheckText = lastCheck
-      ? `Last checked ${formatTimeAgo(lastCheck)}.`
+      ? _('Last checked %s.', formatTimeAgo(lastCheck))
       : '';
     const recencyDays = this.storage.getRecencyDays();
 
@@ -154,26 +159,26 @@ export class FollowerNotificationSettings extends SettingsSection {
             <p class="form__note follower-notification__last-check">${escapeHtml(lastCheckText)}</p>
           </div>
           <div>
-            <button class="btn" data-action="check-now">Check now</button>
+            <button class="btn" data-action="check-now">${_('Check now')}</button>
           </div>
         </div>
         <div class="setting follower-notification__recency">
-          <label class="setting__label" for="fn-recency-input">Count a follow as &quot;new&quot; for (days)</label>
+          <label class="setting__label" for="fn-recency-input">${_('Count a follow as &quot;new&quot; for (days)')}</label>
           <div class="setting__control">
             <input class="input" id="fn-recency-input" type="number" min="1" max="365" step="1" value="${recencyDays}" data-action="recency" />
           </div>
-          <p class="setting__desc">A follower whose contact list (including you) was last published longer ago than this is treated as a long-standing follower discovered late — added to the baseline silently, no notification.</p>
+          <p class="setting__desc">${_('A follower whose contact list (including you) was last published longer ago than this is treated as a long-standing follower discovered late — added to the baseline silently, no notification.')}</p>
         </div>
         ${
           changes.length > 0
             ? `
           <div class="l-spread follower-notification__changes-head">
-            <strong>Recent changes (${changes.length})</strong>
-            <button class="btn btn--passive btn--mini" data-action="mark-seen">Mark all seen</button>
+            <strong>${_('Recent changes (%s)', String(changes.length))}</strong>
+            <button class="btn btn--passive btn--mini" data-action="mark-seen">${_('Mark all seen')}</button>
           </div>
           <div class="ui-list follower-notification__list"></div>
         `
-            : `<p class="form__note">No changes detected yet.</p>`
+            : `<p class="form__note">${_('No changes detected yet.')}</p>`
         }
       </section>
     `;
@@ -200,7 +205,10 @@ export class FollowerNotificationSettings extends SettingsSection {
       recencyInput.value = String(days);
       this.storage.setRecencyDays(days);
       ToastService.show(
-        `New-follower window: ${days} day${days === 1 ? '' : 's'}`,
+        _(
+          'New-follower window: %s',
+          tn('%s day', '%s days', days, String(days))
+        ),
         'success'
       );
     });
@@ -230,7 +238,7 @@ export class FollowerNotificationSettings extends SettingsSection {
     const label = document.createElement('span');
     label.className =
       'follower-notification__tag follower-notification__tag--new';
-    label.textContent = 'now follows you';
+    label.textContent = _('now follows you');
     row.appendChild(label);
 
     return row;
@@ -240,14 +248,14 @@ export class FollowerNotificationSettings extends SettingsSection {
     const service = this.getService();
     if (!service) {
       ToastService.show(
-        'Addon is still starting up — try again in a moment',
+        _('Addon is still starting up — try again in a moment'),
         'info'
       );
       return;
     }
     btn.disabled = true;
     const original = btn.textContent;
-    btn.textContent = 'Checking…';
+    btn.textContent = _('Checking…');
     btn.classList.add('pulsate');
     try {
       await service.runCheck();

@@ -17,6 +17,7 @@
  */
 
 import { View } from '../views/View';
+import { _ } from '../../i18n';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import { UserService } from '../../services/UserService';
 import { AuthService } from '../../services/AuthService';
@@ -82,7 +83,7 @@ export class LastNotesPerFollow extends View {
     this.scrollPositionManager = new ScrollPositionManager(this.element);
 
     this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
-      loadingMessage: 'Loading more…',
+      loadingMessage: _('Loading more…'),
       rootMargin: '0px 0px 1200px 0px',
     });
 

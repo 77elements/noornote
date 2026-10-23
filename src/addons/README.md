@@ -25,7 +25,7 @@ Every addon that wants to participate in true lazy-loading has a `runtime.ts` ex
 
 ```ts
 // src/addons/<id>/runtime.ts
-import { HeavyService } from './HeavyService';  // static — only pulled into this chunk
+import { HeavyService } from './HeavyService'; // static — only pulled into this chunk
 import type { AddonContext, AddonRuntime } from '../AddonLoader';
 
 export class MyAddonRuntime implements AddonRuntime {
@@ -39,7 +39,7 @@ export class MyAddonRuntime implements AddonRuntime {
 
   async destroy(): Promise<void> {
     if (!this.service) return;
-    this.service.destroy();   // see destroy contract below
+    this.service.destroy(); // see destroy contract below
     this.service = null;
   }
 }
@@ -50,6 +50,7 @@ export default new MyAddonRuntime();
 ## Core code accessing a runtime
 
 Core code **never** statically imports heavy addon modules. It imports:
+
 1. The cheap flag accessor from `<id>/index.ts` (if needed at all).
 2. The runtime class as a **type-only import** (erased at build time).
 3. The runtime instance through `AddonLoader.getRuntime<T>(id)`.
@@ -94,8 +95,8 @@ The `<id>` is the registry id in `registry.ts`. For addons that had a legacy eve
 
 ```ts
 const bus = EventBus.getInstance();
-bus.emit('<id>:addon-toggle', { enabled: checked });  // AddonLoader
-bus.emit('<id>:toggle', { enabled: checked });        // legacy
+bus.emit('<id>:addon-toggle', { enabled: checked }); // AddonLoader
+bus.emit('<id>:toggle', { enabled: checked }); // legacy
 ```
 
 ## No-op runtimes
