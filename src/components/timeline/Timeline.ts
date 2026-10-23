@@ -435,9 +435,9 @@ export class Timeline extends View {
   private setupViewDropdown(): void {
     // Build dropdown options: Latest, Latest+Replies, Time Range, then user's relays (no aggregators)
     const baseOptions = [
-      { value: 'latest', label: 'Latest' },
-      { value: 'latest-replies', label: 'Latest + Replies' },
-      { value: 'time-range', label: 'Time Range' },
+      { value: 'latest', label: _('Latest') },
+      { value: 'latest-replies', label: _('Latest + Replies') },
+      { value: 'time-range', label: _('Time Range') },
     ];
 
     // Get user-configured read relays (excludes aggregator relays)

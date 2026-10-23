@@ -6,6 +6,7 @@
 
 import { UserProfileService } from '../../services/UserProfileService';
 import { escapeCssUrl } from '../../helpers/escapeHtml';
+import { _ } from '../../i18n';
 
 export interface RefreshButtonOptions {
   newNotesCount: number;
@@ -75,7 +76,7 @@ export class RefreshButton {
   private async updateContent(): Promise<void> {
     // Update text
     if (this.textSpan) {
-      this.textSpan.textContent = `${this.newNotesCount} new`;
+      this.textSpan.textContent = _('%s new', this.newNotesCount);
     }
 
     // Update avatars

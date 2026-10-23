@@ -277,6 +277,10 @@ msgstr[1] ""
 msgid "%s minutes"
 msgstr ""
 
+#: src/components/ui/RefreshButton.ts:79
+msgid "%s new"
+msgstr ""
+
 #: src/components/notifications/NotificationItem.ts:716
 msgid "%s new messages in %s"
 msgstr ""
@@ -1546,6 +1550,9 @@ msgstr ""
 #: src/components/views/MessagesView.ts:586
 #: src/components/views/MessagesView.ts:792
 #: src/components/views/ProfileBookingView.ts:495
+#: src/helpers/datePickerModal.ts:189
+#: src/helpers/datePickerModal.ts:331
+#: src/helpers/datePickerModal.ts:90
 #: src/lists/bookmarks.ts:3774
 #: src/lists/bookmarks.ts:3938
 #: src/lists/tribes.ts:2743
@@ -1826,6 +1833,7 @@ msgstr ""
 msgid "Configure NDK cache sizes. Changes require app reload to take effect."
 msgstr ""
 
+#: src/helpers/datePickerModal.ts:71
 #: src/services/ModalService.ts:187
 msgid "Confirm"
 msgstr ""
@@ -2215,12 +2223,18 @@ msgid "Data Storage"
 msgstr ""
 
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:568
+#: src/helpers/datePickerModal.ts:321
+#: src/helpers/datePickerModal.ts:84
 #: src/lists/follows.ts:2142
 msgid "Date"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:140
 msgid "Date Format"
+msgstr ""
+
+#: src/helpers/datePickerModal.ts:126
+msgid "Date is out of range."
 msgstr ""
 
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:316
@@ -3789,6 +3803,10 @@ msgstr ""
 msgid "Frequent (every 15 min)"
 msgstr ""
 
+#: src/helpers/datePickerModal.ts:179
+msgid "From"
+msgstr ""
+
 #: src/components/auth/AuthComponent.ts:170
 msgid "Generating QR code..."
 msgstr ""
@@ -4273,6 +4291,10 @@ msgstr ""
 msgid "Invalid cache size values"
 msgstr ""
 
+#: src/helpers/datePickerModal.ts:413
+msgid "Invalid date or time."
+msgstr ""
+
 #: src/components/ui/interaction-managers/RepostManager.ts:281
 msgid "Invalid event"
 msgstr ""
@@ -4440,6 +4462,16 @@ msgstr ""
 
 #: src/components/modals/UpdateModal.ts:115
 msgid "Later"
+msgstr ""
+
+#: src/components/timeline/LastNotesPerFollow.ts:107
+#: src/components/timeline/Timeline.ts:438
+msgid "Latest"
+msgstr ""
+
+#: src/components/timeline/LastNotesPerFollow.ts:108
+#: src/components/timeline/Timeline.ts:439
+msgid "Latest + Replies"
 msgstr ""
 
 #: src/components/views/ZapstoreAppView.ts:349
@@ -6334,6 +6366,10 @@ msgstr ""
 msgid "Phone:"
 msgstr ""
 
+#: src/helpers/datePickerModal.ts:70
+msgid "Pick a date"
+msgstr ""
+
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1098
 msgid "Pick a district first"
 msgstr ""
@@ -6464,6 +6500,10 @@ msgstr ""
 msgid "Please pick a valid start"
 msgstr ""
 
+#: src/helpers/datePickerModal.ts:120
+msgid "Please select a date."
+msgstr ""
+
 #: src/addons/badges/BadgesView.ts:112
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:263
 msgid "Please select an image file"
@@ -6478,6 +6518,14 @@ msgstr ""
 
 #: src/components/settings/CacheSettingsSection.ts:408
 msgid "Please select at least one table to clear"
+msgstr ""
+
+#: src/helpers/datePickerModal.ts:230
+msgid "Please select both dates."
+msgstr ""
+
+#: src/helpers/datePickerModal.ts:408
+msgid "Please select date and time."
 msgstr ""
 
 #: src/services/VideoService.ts:88
@@ -7630,6 +7678,7 @@ msgstr ""
 #: src/components/post/PostNoteModal.ts:456
 #: src/components/post/PostNoteModal.ts:475
 #: src/components/views/ArticleEditorView.ts:1078
+#: src/helpers/datePickerModal.ts:304
 msgid "Schedule"
 msgstr ""
 
@@ -7849,6 +7898,7 @@ msgid "Select time range"
 msgstr ""
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:429
+#: src/helpers/datePickerModal.ts:162
 msgid "Select Time Range"
 msgstr ""
 
@@ -7862,6 +7912,14 @@ msgstr ""
 
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:840
 msgid "Select your location to see prayer times."
+msgstr ""
+
+#: src/helpers/datePickerModal.ts:417
+msgid "Selected time is too early."
+msgstr ""
+
+#: src/helpers/datePickerModal.ts:421
+msgid "Selected time is too far in the future."
 msgstr ""
 
 #: src/components/views/ProfileBookingView.ts:470
@@ -8088,6 +8146,7 @@ msgid "Show More"
 msgstr ""
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:430
+#: src/helpers/datePickerModal.ts:163
 msgid "Show Notes"
 msgstr ""
 
@@ -8952,8 +9011,16 @@ msgstr ""
 msgid "Thumbnail"
 msgstr ""
 
+#: src/helpers/datePickerModal.ts:325
+msgid "Time"
+msgstr ""
+
 #: src/addons/nostr-majlis/NostrMajlisSidebarWidget.ts:199
 msgid "time left"
+msgstr ""
+
+#: src/components/timeline/Timeline.ts:440
+msgid "Time Range"
 msgstr ""
 
 #: src/components/onboarding/AccountSetupWizard.ts:2608
@@ -10062,6 +10129,11 @@ msgstr ""
 
 #: src/components/onboarding/WelcomeInterstitials.ts:39
 msgid "Zero tracking, zero data collection"
+msgstr ""
+
+#: src/helpers/datePickerModal.ts:183
+msgctxt "date-range"
+msgid "To"
 msgstr ""
 
 #: src/addons/note-taking/NoteEditorModal.ts:362

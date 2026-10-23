@@ -10,6 +10,7 @@
  */
 
 import { ModalService } from '../services/ModalService';
+import { _, tp } from '../i18n';
 
 export interface DateRangeResult {
   since: number; // Unix timestamp, start of from-day (00:00:00)
@@ -66,8 +67,8 @@ export function formatDateRangeLabel(since: number, until: number): string {
  */
 export function pickDate(options: PickDateOptions = {}): Promise<Date | null> {
   const modalService = ModalService.getInstance();
-  const title = options.title ?? 'Pick a date';
-  const confirmLabel = options.confirmLabel ?? 'Confirm';
+  const title = options.title ?? _('Pick a date');
+  const confirmLabel = options.confirmLabel ?? _('Confirm');
   const initial = options.initial ?? new Date();
   const maxAttr = options.max
     ? ` max="${formatDateForInput(options.max)}"`
@@ -80,13 +81,13 @@ export function pickDate(options: PickDateOptions = {}): Promise<Date | null> {
     container.innerHTML = `
       <div class="date-range-selector__fields">
         <label class="date-range-selector__field">
-          <span class="date-range-selector__label">Date</span>
+          <span class="date-range-selector__label">${_('Date')}</span>
           <input type="date" class="datepicker" data-pick-date value="${formatDateForInput(initial)}"${maxAttr} />
         </label>
       </div>
       <div class="date-range-selector__error" data-pick-error style="display: none;"></div>
       <div class="date-range-selector__actions">
-        <button class="btn btn--secondary" data-pick-cancel>Cancel</button>
+        <button class="btn btn--secondary" data-pick-cancel>${_('Cancel')}</button>
         <button class="btn" data-pick-confirm>${confirmLabel}</button>
       </div>
     `;
@@ -116,13 +117,13 @@ export function pickDate(options: PickDateOptions = {}): Promise<Date | null> {
       ) as HTMLElement;
       const confirm = (): void => {
         if (!input.value) {
-          errorEl.textContent = 'Please select a date.';
+          errorEl.textContent = _('Please select a date.');
           errorEl.style.display = 'block';
           return;
         }
         const picked = new Date(`${input.value}T12:00:00`);
         if (options.max && picked > options.max) {
-          errorEl.textContent = 'Date is out of range.';
+          errorEl.textContent = _('Date is out of range.');
           errorEl.style.display = 'block';
           return;
         }
@@ -158,8 +159,8 @@ export function pickDateRange(
   options: PickDateRangeOptions = {}
 ): Promise<DateRangeResult | null> {
   const modalService = ModalService.getInstance();
-  const title = options.title ?? 'Select Time Range';
-  const confirmLabel = options.confirmLabel ?? 'Show Notes';
+  const title = options.title ?? _('Select Time Range');
+  const confirmLabel = options.confirmLabel ?? _('Show Notes');
   const today = new Date();
   const defaultFrom = new Date();
   defaultFrom.setDate(today.getDate() - 3);
@@ -175,17 +176,17 @@ export function pickDateRange(
     container.innerHTML = `
       <div class="date-range-selector__fields">
         <label class="date-range-selector__field">
-          <span class="date-range-selector__label">From</span>
+          <span class="date-range-selector__label">${_('From')}</span>
           <input type="date" class="datepicker" data-range-from value="${fromStr}" max="${todayStr}" />
         </label>
         <label class="date-range-selector__field">
-          <span class="date-range-selector__label">To</span>
+          <span class="date-range-selector__label">${tp('date-range', 'To')}</span>
           <input type="date" class="datepicker" data-range-to value="${toStr}" max="${todayStr}" />
         </label>
       </div>
       <div class="date-range-selector__error" data-range-error style="display: none;"></div>
       <div class="date-range-selector__actions">
-        <button class="btn btn--secondary" data-range-cancel>Cancel</button>
+        <button class="btn btn--secondary" data-range-cancel>${_('Cancel')}</button>
         <button class="btn" data-range-confirm>${confirmLabel}</button>
       </div>
     `;
@@ -226,7 +227,7 @@ export function pickDateRange(
         const fromVal = fromInput?.value;
         const toVal = toInput?.value;
         if (!fromVal || !toVal) {
-          showError('Please select both dates.');
+          showError(_('Please select both dates.'));
           return;
         }
         const fromDate = new Date(`${fromVal}T00:00:00`);
@@ -300,7 +301,7 @@ export interface PickDateTimeOptions {
 export function pickDateTime(
   options: PickDateTimeOptions = {}
 ): Promise<Date | null> {
-  const confirmLabel = options.confirmLabel ?? 'Schedule';
+  const confirmLabel = options.confirmLabel ?? _('Schedule');
   const initial = options.initial ?? new Date(Date.now() + 60 * 60 * 1000);
   const minAttrDate = options.min
     ? ` min="${formatDateForInput(options.min)}"`
@@ -317,17 +318,17 @@ export function pickDateTime(
       <div class="date-range-selector">
         <div class="date-range-selector__fields">
           <label class="date-range-selector__field">
-            <span class="date-range-selector__label">Date</span>
+            <span class="date-range-selector__label">${_('Date')}</span>
             <input type="date" class="datepicker" data-pick-date value="${formatDateForInput(initial)}"${minAttrDate}${maxAttrDate} />
           </label>
           <label class="date-range-selector__field">
-            <span class="date-range-selector__label">Time</span>
+            <span class="date-range-selector__label">${_('Time')}</span>
             <input type="time" class="datepicker" data-pick-time value="${formatTimeForInput(initial)}" />
           </label>
         </div>
         <div class="date-range-selector__error" data-pick-error style="display: none;"></div>
         <div class="date-range-selector__actions">
-          <button class="btn btn--secondary" data-pick-cancel>Cancel</button>
+          <button class="btn btn--secondary" data-pick-cancel>${_('Cancel')}</button>
           <button class="btn" data-pick-confirm>${confirmLabel}</button>
         </div>
       </div>
@@ -404,20 +405,20 @@ export function pickDateTime(
       const dVal = dateInput?.value;
       const tVal = timeInput?.value;
       if (!dVal || !tVal) {
-        showError('Please select date and time.');
+        showError(_('Please select date and time.'));
         return;
       }
       const picked = new Date(`${dVal}T${tVal}:00`);
       if (Number.isNaN(picked.getTime())) {
-        showError('Invalid date or time.');
+        showError(_('Invalid date or time.'));
         return;
       }
       if (options.min && picked < options.min) {
-        showError('Selected time is too early.');
+        showError(_('Selected time is too early.'));
         return;
       }
       if (options.max && picked > options.max) {
-        showError('Selected time is too far in the future.');
+        showError(_('Selected time is too far in the future.'));
         return;
       }
       picked.setSeconds(0, 0);

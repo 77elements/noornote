@@ -628,6 +628,9 @@ msgstr "Zaps"
 #: src/components/views/MessagesView.ts:586
 #: src/components/views/MessagesView.ts:792
 #: src/components/views/ProfileBookingView.ts:495
+#: src/helpers/datePickerModal.ts:189
+#: src/helpers/datePickerModal.ts:331
+#: src/helpers/datePickerModal.ts:90
 #: src/lists/bookmarks.ts:3774
 #: src/lists/bookmarks.ts:3938
 #: src/lists/tribes.ts:2743
@@ -638,6 +641,7 @@ msgstr "Zaps"
 msgid "Cancel"
 msgstr "Cancel"
 
+#: src/helpers/datePickerModal.ts:71
 #: src/services/ModalService.ts:187
 msgid "Confirm"
 msgstr "Confirm"
@@ -1921,6 +1925,7 @@ msgstr "Saving..."
 #: src/components/post/PostNoteModal.ts:456
 #: src/components/post/PostNoteModal.ts:475
 #: src/components/views/ArticleEditorView.ts:1078
+#: src/helpers/datePickerModal.ts:304
 msgid "Schedule"
 msgstr "Schedule"
 
@@ -6400,6 +6405,8 @@ msgstr ""
 "small background checks every few hours. Enable anyway?"
 
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:568
+#: src/helpers/datePickerModal.ts:321
+#: src/helpers/datePickerModal.ts:84
 #: src/lists/follows.ts:2142
 msgid "Date"
 msgstr "Date"
@@ -8315,6 +8322,7 @@ msgid "Select time range"
 msgstr "Select time range"
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:429
+#: src/helpers/datePickerModal.ts:162
 msgid "Select Time Range"
 msgstr "Select Time Range"
 
@@ -8413,6 +8421,7 @@ msgid "Show me the Custom Emojis of this user…"
 msgstr "Show me the Custom Emojis of this user…"
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:430
+#: src/helpers/datePickerModal.ts:163
 msgid "Show Notes"
 msgstr "Show Notes"
 
@@ -10869,6 +10878,64 @@ msgstr "Waiting for connection…"
 msgid "Welcome to NoorNote"
 msgstr "Welcome to NoorNote"
 
+#: src/components/ui/RefreshButton.ts:79
+msgid "%s new"
+msgstr "%s new"
+
+#: src/components/timeline/LastNotesPerFollow.ts:107
+#: src/components/timeline/Timeline.ts:438
+msgid "Latest"
+msgstr "Latest"
+
+#: src/components/timeline/LastNotesPerFollow.ts:108
+#: src/components/timeline/Timeline.ts:439
+msgid "Latest + Replies"
+msgstr "Latest + Replies"
+
+#: src/components/timeline/Timeline.ts:440
+msgid "Time Range"
+msgstr "Time Range"
+
+#: src/helpers/datePickerModal.ts:126
+msgid "Date is out of range."
+msgstr "Date is out of range."
+
+#: src/helpers/datePickerModal.ts:179
+msgid "From"
+msgstr "From"
+
+#: src/helpers/datePickerModal.ts:413
+msgid "Invalid date or time."
+msgstr "Invalid date or time."
+
+#: src/helpers/datePickerModal.ts:70
+msgid "Pick a date"
+msgstr "Pick a date"
+
+#: src/helpers/datePickerModal.ts:120
+msgid "Please select a date."
+msgstr "Please select a date."
+
+#: src/helpers/datePickerModal.ts:230
+msgid "Please select both dates."
+msgstr "Please select both dates."
+
+#: src/helpers/datePickerModal.ts:408
+msgid "Please select date and time."
+msgstr "Please select date and time."
+
+#: src/helpers/datePickerModal.ts:417
+msgid "Selected time is too early."
+msgstr "Selected time is too early."
+
+#: src/helpers/datePickerModal.ts:421
+msgid "Selected time is too far in the future."
+msgstr "Selected time is too far in the future."
+
+#: src/helpers/datePickerModal.ts:325
+msgid "Time"
+msgstr "Time"
+
 #: src/addons/note-taking/NoteEditorModal.ts:362
 #: src/addons/note-taking/NoteEditorModal.ts:85
 msgctxt "note-taking"
@@ -11135,3 +11202,8 @@ msgstr "website"
 msgctxt "notif-dat"
 msgid "zap"
 msgstr "zap"
+
+#: src/helpers/datePickerModal.ts:183
+msgctxt "date-range"
+msgid "To"
+msgstr "To"

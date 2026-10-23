@@ -104,8 +104,8 @@ export class LastNotesPerFollow extends View {
   private setupViewDropdown(): void {
     this.viewDropdown = new NnDropdown({
       options: [
-        { value: 'latest', label: 'Latest' },
-        { value: 'latest-replies', label: 'Latest + Replies' },
+        { value: 'latest', label: _('Latest') },
+        { value: 'latest-replies', label: _('Latest + Replies') },
       ],
       selectedValue: getSavedFeedMode(),
       onChange: (value: string) => {

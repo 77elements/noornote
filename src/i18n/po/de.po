@@ -460,6 +460,9 @@ msgstr ""
 #: src/components/views/MessagesView.ts:586
 #: src/components/views/MessagesView.ts:792
 #: src/components/views/ProfileBookingView.ts:495
+#: src/helpers/datePickerModal.ts:189
+#: src/helpers/datePickerModal.ts:331
+#: src/helpers/datePickerModal.ts:90
 #: src/lists/bookmarks.ts:3774
 #: src/lists/bookmarks.ts:3938
 #: src/lists/tribes.ts:2743
@@ -470,6 +473,7 @@ msgstr ""
 msgid "Cancel"
 msgstr "Abbrechen"
 
+#: src/helpers/datePickerModal.ts:71
 #: src/services/ModalService.ts:187
 msgid "Confirm"
 msgstr "Bestätigen"
@@ -1668,6 +1672,7 @@ msgstr "Speichern…"
 #: src/components/post/PostNoteModal.ts:456
 #: src/components/post/PostNoteModal.ts:475
 #: src/components/views/ArticleEditorView.ts:1078
+#: src/helpers/datePickerModal.ts:304
 msgid "Schedule"
 msgstr "Planen"
 
@@ -5847,6 +5852,8 @@ msgstr ""
 "Stunden. Trotzdem aktivieren?"
 
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:568
+#: src/helpers/datePickerModal.ts:321
+#: src/helpers/datePickerModal.ts:84
 #: src/lists/follows.ts:2142
 msgid "Date"
 msgstr "Datum"
@@ -7628,6 +7635,7 @@ msgid "Select time range"
 msgstr "Zeitraum wählen"
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:429
+#: src/helpers/datePickerModal.ts:162
 msgid "Select Time Range"
 msgstr "Zeitraum wählen"
 
@@ -7713,6 +7721,7 @@ msgid "Show me the Custom Emojis of this user…"
 msgstr "Zeig mir die eigenen Emojis dieses Benutzers …"
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:430
+#: src/helpers/datePickerModal.ts:163
 msgid "Show Notes"
 msgstr "Beiträge anzeigen"
 
@@ -10979,6 +10988,69 @@ msgstr "Warte auf Verbindung…"
 #: src/components/auth/AuthComponent.ts:135
 msgid "Welcome to NoorNote"
 msgstr "Willkommen bei NoorNote"
+
+#: src/components/ui/RefreshButton.ts:79
+msgid "%s new"
+msgstr "%s neu"
+
+#: src/components/timeline/LastNotesPerFollow.ts:107
+#: src/components/timeline/Timeline.ts:438
+msgid "Latest"
+msgstr "Neueste"
+
+#: src/components/timeline/LastNotesPerFollow.ts:108
+#: src/components/timeline/Timeline.ts:439
+msgid "Latest + Replies"
+msgstr "Neueste + Antworten"
+
+#: src/components/timeline/Timeline.ts:440
+msgid "Time Range"
+msgstr "Zeitraum"
+
+#: src/helpers/datePickerModal.ts:126
+msgid "Date is out of range."
+msgstr "Datum liegt außerhalb des Bereichs."
+
+#: src/helpers/datePickerModal.ts:179
+msgid "From"
+msgstr "Von"
+
+#: src/helpers/datePickerModal.ts:413
+msgid "Invalid date or time."
+msgstr "Ungültiges Datum oder Uhrzeit."
+
+#: src/helpers/datePickerModal.ts:70
+msgid "Pick a date"
+msgstr "Datum wählen"
+
+#: src/helpers/datePickerModal.ts:120
+msgid "Please select a date."
+msgstr "Bitte ein Datum wählen."
+
+#: src/helpers/datePickerModal.ts:230
+msgid "Please select both dates."
+msgstr "Bitte beide Daten wählen."
+
+#: src/helpers/datePickerModal.ts:408
+msgid "Please select date and time."
+msgstr "Bitte Datum und Uhrzeit wählen."
+
+#: src/helpers/datePickerModal.ts:417
+msgid "Selected time is too early."
+msgstr "Gewählte Zeit ist zu früh."
+
+#: src/helpers/datePickerModal.ts:421
+msgid "Selected time is too far in the future."
+msgstr "Gewählte Zeit liegt zu weit in der Zukunft."
+
+#: src/helpers/datePickerModal.ts:325
+msgid "Time"
+msgstr "Uhrzeit"
+
+#: src/helpers/datePickerModal.ts:183
+msgctxt "date-range"
+msgid "To"
+msgstr "Bis"
 
 #: src/addons/note-taking/NoteEditorModal.ts:362
 #: src/addons/note-taking/NoteEditorModal.ts:85
