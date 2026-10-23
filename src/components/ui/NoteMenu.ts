@@ -829,7 +829,7 @@ export class NoteMenu {
         tribeFolderId
       );
 
-      ToastService.show(`Author added to ${tribeName}`, 'success');
+      ToastService.show(_('Author added to %s', tribeName), 'success');
     } catch (error) {
       console.error('Failed to add author to tribe:', error);
       ToastService.show(_('Failed to add author to tribe'), 'error');

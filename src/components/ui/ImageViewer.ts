@@ -141,7 +141,7 @@ export class ImageViewer {
     try {
       await downloadMedia(imageUrl, defaultFileName);
     } catch {
-      ToastService.show('Failed to save image', 'error');
+      ToastService.show(_('Failed to save image'), 'error');
     }
   }
 
@@ -156,7 +156,7 @@ export class ImageViewer {
    */
   private async share(): Promise<void> {
     if (!this.sourceEvent) {
-      ToastService.show('Cannot share: Image source not available', 'error');
+      ToastService.show(_('Cannot share: Image source not available'), 'error');
       return;
     }
 
@@ -189,7 +189,7 @@ export class ImageViewer {
       this.close();
     } catch (error) {
       console.error('Failed to share image:', error);
-      ToastService.show('Failed to open share editor', 'error');
+      ToastService.show(_('Failed to open share editor'), 'error');
     }
   }
 

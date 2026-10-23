@@ -15,6 +15,7 @@ import { escapeCssUrl } from '../../helpers/escapeHtml';
 import type { MediaModuleApi } from '../../modules/media/contracts';
 import { SystemLogger } from '../../services/SystemLogger';
 import { ToastService } from '../../services/ToastService';
+import { _ } from '../../i18n';
 
 export interface ImageUploaderConfig {
   /** Current image URL (optional) */
@@ -135,7 +136,7 @@ export class ImageUploader {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      ToastService.show('Please select an image file', 'error');
+      ToastService.show(_('Please select an image file'), 'error');
       return;
     }
 
@@ -179,7 +180,7 @@ export class ImageUploader {
       }
     } catch (error) {
       this.systemLogger.error('ImageUploader', 'Upload error:', error);
-      ToastService.show('Upload failed. Please try again.', 'error');
+      ToastService.show(_('Upload failed. Please try again.'), 'error');
     } finally {
       this.uploading = false;
       this.restoreIcon();

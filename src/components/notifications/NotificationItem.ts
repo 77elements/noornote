@@ -293,17 +293,17 @@ export class NotificationItem {
             toggleLink.classList.add(
               'notification-item__footer-link--subscribe'
             );
-            ToastService.show(`Unsubscribed from #${hashtag}`, 'success');
+            ToastService.show(_('Unsubscribed from #%s', hashtag), 'success');
           } else {
             hashtagService.subscribe(hashtag);
-            toggleLink.textContent = `Unsubscribe from #${hashtag}`;
+            toggleLink.textContent = _('Unsubscribe from #%s', hashtag);
             toggleLink.classList.remove(
               'notification-item__footer-link--subscribe'
             );
             toggleLink.classList.add(
               'notification-item__footer-link--unsubscribe'
             );
-            ToastService.show(`Subscribed to #${hashtag}`, 'success');
+            ToastService.show(_('Subscribed to #%s', hashtag), 'success');
           }
         }
       });

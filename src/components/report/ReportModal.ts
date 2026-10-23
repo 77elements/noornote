@@ -209,7 +209,7 @@ export class ReportModal {
       'input[name="report-type"]:checked'
     ) as HTMLInputElement;
     if (!selectedRadio) {
-      ToastService.show('Please select a report reason', 'error');
+      ToastService.show(_('Please select a report reason'), 'error');
       return;
     }
 

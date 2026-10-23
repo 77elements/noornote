@@ -1570,6 +1570,7 @@ msgstr "Mark all unread"
 
 #: src/addons/badges/BadgesView.ts:128
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:278
+#: src/addons/follow-packs/FollowPackManager.ts:553
 #: src/components/views/VideoEditorView.ts:381
 msgid "Media module not available"
 msgstr "Media module not available"
@@ -1931,7 +1932,7 @@ msgstr "Save Draft"
 
 #: src/components/profile/ProfileEditModal.ts:260
 #: src/components/views/ArticleEditorView.ts:1170
-#: src/lists/bookmarks.ts:5359
+#: src/lists/bookmarks.ts:5362
 #: src/lists/follows.ts:1866
 #: src/lists/mutes.ts:1993
 msgid "Saving..."
@@ -2351,7 +2352,7 @@ msgstr "Failed to open editor"
 #: src/addons/marketplace/ListingView.ts:320
 #: src/components/ui/InteractionStatusLine.ts:536
 #: src/components/ui/NoteMenu.ts:752
-#: src/lists/bookmarks.ts:4858
+#: src/lists/bookmarks.ts:4861
 msgid "Failed to update bookmark"
 msgstr "Failed to update bookmark"
 
@@ -2986,6 +2987,7 @@ msgstr "Bold"
 msgid "Clear"
 msgstr "Clear"
 
+#: src/components/post/composerShared.ts:79
 #: src/components/post/PostNoteModal.ts:1006
 msgid "Draft saved"
 msgstr "Draft saved"
@@ -6118,7 +6120,7 @@ msgid "Bookmark read-state sync enabled"
 msgstr "Bookmark read-state sync enabled"
 
 #: src/addons/marketplace/ListingView.ts:301
-#: src/lists/bookmarks.ts:4767
+#: src/lists/bookmarks.ts:4770
 msgid "Bookmark removed"
 msgstr "Bookmark removed"
 
@@ -7857,6 +7859,7 @@ msgstr "Please pick a valid start"
 
 #: src/addons/badges/BadgesView.ts:112
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:263
+#: src/components/profile/ImageUploader.ts:139
 msgid "Please select an image file"
 msgstr "Please select an image file"
 
@@ -9863,7 +9866,7 @@ msgstr "@alice, @bob, @charlie..."
 
 #: src/components/bookmarks/FolderCard.ts:180
 #: src/components/bookmarks/FolderCard.ts:66
-#: src/lists/bookmarks.ts:5086
+#: src/lists/bookmarks.ts:5089
 msgid "%s item"
 msgid_plural "%s items"
 msgstr[0] "%s item"
@@ -9921,15 +9924,15 @@ msgstr "Already up to date with relays"
 msgid "Backup list to file"
 msgstr "Backup list to file"
 
-#: src/lists/bookmarks.ts:5176
+#: src/lists/bookmarks.ts:5179
 msgid "Bookmark created"
 msgstr "Bookmark created"
 
-#: src/lists/bookmarks.ts:4854
+#: src/lists/bookmarks.ts:4857
 msgid "Bookmark updated"
 msgstr "Bookmark updated"
 
-#: src/lists/bookmarks.ts:5345
+#: src/lists/bookmarks.ts:5348
 msgid "Bookmarks published successfully"
 msgstr "Bookmarks published successfully"
 
@@ -9983,15 +9986,15 @@ msgstr "Edit Bookmark"
 msgid "Failed to add members"
 msgstr "Failed to add members"
 
-#: src/lists/bookmarks.ts:5183
+#: src/lists/bookmarks.ts:5186
 msgid "Failed to create bookmark"
 msgstr "Failed to create bookmark"
 
-#: src/lists/bookmarks.ts:5113
+#: src/lists/bookmarks.ts:5116
 msgid "Failed to create folder"
 msgstr "Failed to create folder"
 
-#: src/lists/bookmarks.ts:5028
+#: src/lists/bookmarks.ts:5031
 msgid "Failed to delete folder"
 msgstr "Failed to delete folder"
 
@@ -10027,7 +10030,7 @@ msgstr "Failed to load mute list"
 msgid "Failed to load tribes"
 msgstr "Failed to load tribes"
 
-#: src/lists/bookmarks.ts:5091
+#: src/lists/bookmarks.ts:5094
 msgid "Failed to move bookmark"
 msgstr "Failed to move bookmark"
 
@@ -10035,7 +10038,7 @@ msgstr "Failed to move bookmark"
 msgid "Failed to move member"
 msgstr "Failed to move member"
 
-#: src/lists/bookmarks.ts:5353
+#: src/lists/bookmarks.ts:5356
 #: src/lists/follows.ts:1857
 #: src/lists/mutes.ts:1587
 #: src/lists/mutes.ts:1987
@@ -10043,7 +10046,7 @@ msgstr "Failed to move member"
 msgid "Failed to publish to relays"
 msgstr "Failed to publish to relays"
 
-#: src/lists/bookmarks.ts:4792
+#: src/lists/bookmarks.ts:4795
 msgid "Failed to remove bookmark"
 msgstr "Failed to remove bookmark"
 
@@ -10051,11 +10054,12 @@ msgstr "Failed to remove bookmark"
 msgid "Failed to remove member"
 msgstr "Failed to remove member"
 
-#: src/lists/bookmarks.ts:4944
+#: src/lists/bookmarks.ts:4947
 msgid "Failed to rename folder"
 msgstr "Failed to rename folder"
 
 #: src/lists/follows.ts:1971
+#: src/lists/mutes.ts:2077
 msgid "Failed to restore: %s"
 msgstr "Failed to restore: %s"
 
@@ -10064,13 +10068,13 @@ msgstr "Failed to restore: %s"
 msgid "Failed to save"
 msgstr "Failed to save"
 
-#: src/lists/bookmarks.ts:5368
+#: src/lists/bookmarks.ts:5371
 #: src/lists/mutes.ts:1602
 #: src/lists/tribes.ts:3273
 msgid "Failed to save to file"
 msgstr "Failed to save to file"
 
-#: src/lists/bookmarks.ts:5335
+#: src/lists/bookmarks.ts:5338
 #: src/lists/follows.ts:1842
 #: src/lists/mutes.ts:1577
 #: src/lists/mutes.ts:1976
@@ -10098,7 +10102,7 @@ msgstr "Failed to unmute thread"
 msgid "Failed to unmute user"
 msgstr "Failed to unmute user"
 
-#: src/lists/bookmarks.ts:5254
+#: src/lists/bookmarks.ts:5257
 #: src/lists/follows.ts:1771
 #: src/lists/mutes.ts:1530
 #: src/lists/mutes.ts:1929
@@ -10114,7 +10118,7 @@ msgstr "File is empty. Use \"Sync from Relays\" to restore your mutes."
 msgid "File is empty. Use \"Sync from Relays\" to restore your tribes."
 msgstr "File is empty. Use \"Sync from Relays\" to restore your tribes."
 
-#: src/lists/bookmarks.ts:5488
+#: src/lists/bookmarks.ts:5491
 #: src/lists/follows.ts:1967
 #: src/lists/mutes.ts:1673
 #: src/lists/mutes.ts:2073
@@ -10131,11 +10135,11 @@ msgstr "Filter by name..."
 msgid "Folder"
 msgstr "Folder"
 
-#: src/lists/bookmarks.ts:5022
+#: src/lists/bookmarks.ts:5025
 msgid "Folder deleted, bookmarks moved to root"
 msgstr "Folder deleted, bookmarks moved to root"
 
-#: src/lists/bookmarks.ts:4940
+#: src/lists/bookmarks.ts:4943
 msgid "Folder renamed"
 msgstr "Folder renamed"
 
@@ -10216,8 +10220,8 @@ msgstr "Loading mute list..."
 msgid "Loading tribes..."
 msgstr "Loading tribes..."
 
-#: src/lists/bookmarks.ts:5320
-#: src/lists/bookmarks.ts:5473
+#: src/lists/bookmarks.ts:5323
+#: src/lists/bookmarks.ts:5476
 msgid "Local bookmarks pushed to relays"
 msgstr "Local bookmarks pushed to relays"
 
@@ -10290,7 +10294,7 @@ msgstr "Merged and synced to file + relays"
 msgid "Merged and synced to relays"
 msgstr "Merged and synced to relays"
 
-#: src/lists/bookmarks.ts:5306
+#: src/lists/bookmarks.ts:5309
 msgid "Merged bookmarks and synced to relays"
 msgstr "Merged bookmarks and synced to relays"
 
@@ -10298,6 +10302,7 @@ msgstr "Merged bookmarks and synced to relays"
 msgid "Move bookmark"
 msgstr "Move bookmark"
 
+#: src/lists/bookmarks.ts:5073
 #: src/lists/tribes.ts:2890
 msgid "Moved to %s"
 msgstr "Moved to %s"
@@ -10430,7 +10435,7 @@ msgstr "Profile of a user you have muted"
 msgid "Published to relays"
 msgstr "Published to relays"
 
-#: src/lists/bookmarks.ts:5342
+#: src/lists/bookmarks.ts:5345
 #: src/lists/follows.ts:1851
 #: src/lists/mutes.ts:1583
 #: src/lists/mutes.ts:1982
@@ -10438,7 +10443,7 @@ msgstr "Published to relays"
 msgid "Publishing to relays..."
 msgstr "Publishing to relays..."
 
-#: src/lists/bookmarks.ts:5393
+#: src/lists/bookmarks.ts:5396
 #: src/lists/follows.ts:1909
 #: src/lists/mutes.ts:1626
 #: src/lists/mutes.ts:2027
@@ -10487,7 +10492,9 @@ msgstr "Save to"
 msgid "Save to File"
 msgstr "Save to File"
 
-#: src/lists/bookmarks.ts:5365
+#: src/helpers/downloadMedia.ts:21
+#: src/helpers/downloadMedia.ts:39
+#: src/lists/bookmarks.ts:5368
 #: src/lists/follows.ts:1874
 #: src/lists/mutes.ts:2000
 msgid "Saved successfully"
@@ -10544,8 +10551,8 @@ msgid_plural "Synced %s new follows from relays"
 msgstr[0] "Synced %s new follow from relays"
 msgstr[1] ""
 
-#: src/lists/bookmarks.ts:5314
-#: src/lists/bookmarks.ts:5329
+#: src/lists/bookmarks.ts:5317
+#: src/lists/bookmarks.ts:5332
 msgid "Synced from relays"
 msgstr "Synced from relays"
 
@@ -10568,7 +10575,7 @@ msgstr ""
 "on the relays. You can use the buttons up there to control how the list "
 "stays synced across those three."
 
-#: src/lists/bookmarks.ts:5152
+#: src/lists/bookmarks.ts:5155
 msgid "This URL is already bookmarked"
 msgstr "This URL is already bookmarked"
 
@@ -11508,6 +11515,7 @@ msgid "Upload Failed"
 msgstr "Upload Failed"
 
 #: src/components/post/PostEditorToolbar.ts:238
+#: src/components/profile/ImageUploader.ts:183
 msgid "Upload failed. Please try again."
 msgstr "Upload failed. Please try again."
 
@@ -11694,6 +11702,86 @@ msgstr "Poll posted successfully!"
 #: src/services/ZapService.ts:299
 msgid "Zap timeout - please try again"
 msgstr "Zap timeout - please try again"
+
+#: src/lists/bookmarks.ts:4684
+msgid "\"%s\" mounted to profile"
+msgstr "\"%s\" mounted to profile"
+
+#: src/lists/bookmarks.ts:4687
+msgid "\"%s\" unmounted from profile"
+msgstr "\"%s\" unmounted from profile"
+
+#: src/components/delete/DeleteNoteModal.ts:138
+msgid "An error occurred while deleting the note"
+msgstr "An error occurred while deleting the note"
+
+#: src/components/ui/NoteMenu.ts:832
+msgid "Author added to %s"
+msgstr "Author added to %s"
+
+#: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:268
+msgid "Cancel failed: %s"
+msgstr "Cancel failed: %s"
+
+#: src/components/ui/ImageViewer.ts:159
+msgid "Cannot share: Image source not available"
+msgstr "Cannot share: Image source not available"
+
+#: src/lists/follows-extended.ts:465
+msgid "Changes marked as seen"
+msgstr "Changes marked as seen"
+
+#: src/lists/follows-extended.ts:351
+msgid "Failed to check for changes"
+msgstr "Failed to check for changes"
+
+#: src/components/ui/ImageViewer.ts:192
+msgid "Failed to open share editor"
+msgstr "Failed to open share editor"
+
+#: src/components/ui/ImageViewer.ts:144
+msgid "Failed to save image"
+msgstr "Failed to save image"
+
+#: src/components/delete/DeleteNoteModal.ts:133
+msgid "Failed to send deletion request"
+msgstr "Failed to send deletion request"
+
+#: src/addons/follow-packs/FollowPackManager.ts:563
+msgid "Failed to upload image"
+msgstr "Failed to upload image"
+
+#: src/lists/bookmarks.ts:5111
+msgid "Folder \"%s\" created"
+msgstr "Folder \"%s\" created"
+
+#: src/lists/follows-extended.ts:345
+msgid "No changes detected"
+msgstr "No changes detected"
+
+#: src/components/post/composerShared.ts:69
+msgid "Nothing to save"
+msgstr "Nothing to save"
+
+#: src/components/report/ReportModal.ts:212
+msgid "Please select a report reason"
+msgstr "Please select a report reason"
+
+#: src/components/follow-packs/memberActivitySort.ts:103
+msgid "Sorting members by recent activity…"
+msgstr "Sorting members by recent activity…"
+
+#: src/components/notifications/NotificationItem.ts:306
+msgid "Subscribed to #%s"
+msgstr "Subscribed to #%s"
+
+#: src/components/notifications/NotificationItem.ts:299
+msgid "Unsubscribe from #%s"
+msgstr "Unsubscribe from #%s"
+
+#: src/components/notifications/NotificationItem.ts:296
+msgid "Unsubscribed from #%s"
+msgstr "Unsubscribed from #%s"
 
 #: src/addons/note-taking/NoteEditorModal.ts:362
 #: src/addons/note-taking/NoteEditorModal.ts:85

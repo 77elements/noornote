@@ -265,7 +265,7 @@ export class ScheduledPostsAddonView extends View {
         'ScheduledPostsAddonView',
         `Cancel failed: ${String(err)}`
       );
-      ToastService.show(`Cancel failed: ${String(err)}`, 'error');
+      ToastService.show(_('Cancel failed: %s', String(err)), 'error');
     }
   }
 }

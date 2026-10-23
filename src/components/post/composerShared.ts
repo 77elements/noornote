@@ -66,7 +66,7 @@ export function saveComposerDraft(opts: {
   ) as HTMLTextAreaElement | null;
   const content = (textarea ? textarea.value : opts.fallbackContent).trim();
   if (!content) {
-    ToastService.show('Nothing to save', 'info');
+    ToastService.show(_('Nothing to save'), 'info');
     return;
   }
   NoteDraftService.getInstance().add({
@@ -76,7 +76,7 @@ export function saveComposerDraft(opts: {
     ...(opts.parentEventId ? { parentEventId: opts.parentEventId } : {}),
     ...(opts.contextLabel ? { contextLabel: opts.contextLabel } : {}),
   });
-  ToastService.show('Draft saved', 'success');
+  ToastService.show(_('Draft saved'), 'success');
   updateComposerDraftsBadge(opts.modalScope);
 }
 

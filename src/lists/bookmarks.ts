@@ -4681,9 +4681,12 @@ export class BookmarkManager {
     }
 
     if (result.mounted) {
-      ToastService.show(`"${folderName}" mounted to profile`, 'success');
+      ToastService.show(_('"%s" mounted to profile', folderName), 'success');
     } else {
-      ToastService.show(`"${folderName}" unmounted from profile`, 'success');
+      ToastService.show(
+        _('"%s" unmounted from profile', folderName),
+        'success'
+      );
     }
 
     this.profileMountsOrch.publishToRelays().catch(err => {
@@ -5067,7 +5070,7 @@ export class BookmarkManager {
 
       const targetName =
         targetFolderId === '' ? 'root' : targetFolder?.name || 'folder';
-      ToastService.show(`Moved to ${targetName}`, 'success');
+      ToastService.show(_('Moved to %s', targetName), 'success');
 
       this.eventBus.emit('bookmark:updated');
 
@@ -5105,7 +5108,7 @@ export class BookmarkManager {
             grid.insertBefore(card, grid.firstChild);
           }
 
-          ToastService.show(`Folder "${name}" created`, 'success');
+          ToastService.show(_('Folder "%s" created', name), 'success');
 
           this.eventBus.emit('bookmark:updated');
         } catch (error) {

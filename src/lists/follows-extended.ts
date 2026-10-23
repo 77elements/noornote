@@ -342,13 +342,13 @@ export class FollowsExtendedFeatures {
           'info'
         );
       } else if (result.totalChanges === 0) {
-        ToastService.show('No changes detected', 'success');
+        ToastService.show(_('No changes detected'), 'success');
       } else {
         void this.showChangesModal(container, result);
       }
     } catch (error) {
       console.error('Failed to check for changes:', error);
-      ToastService.show('Failed to check for changes', 'error');
+      ToastService.show(_('Failed to check for changes'), 'error');
     } finally {
       progressBar?.complete();
       if (checkLink) {
@@ -462,7 +462,7 @@ export class FollowsExtendedFeatures {
       ?.addEventListener('click', async () => {
         await this.mutualChangeDetector.markAsSeen();
         closeModal();
-        ToastService.show('Changes marked as seen', 'success');
+        ToastService.show(_('Changes marked as seen'), 'success');
       });
 
     modal

@@ -18,6 +18,7 @@ import { fetchEvents } from '../../lists/relays';
 import { ToastService } from '../../services/ToastService';
 import { diagLog } from '../../services/DiagnosticLogger';
 import { formatTimeAgo } from '../../helpers/formatTimeAgo';
+import { _ } from '../../i18n';
 
 /** Only content activity counts — a new post or reply (both kind:1). */
 const ACTIVITY_KINDS = [1];
@@ -99,7 +100,7 @@ export async function sortMemberRowsByActivity(
   // Reorder only when the order actually changes (warm-cache re-open may match).
   if (!items.every((el, i) => el === sorted[i])) {
     if (fetched)
-      ToastService.show('Sorting members by recent activity…', 'info');
+      ToastService.show(_('Sorting members by recent activity…'), 'info');
     for (const el of sorted) list.appendChild(el);
   }
 

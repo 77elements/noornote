@@ -130,11 +130,14 @@ export class DeleteNoteModal {
         const eventBus = TypedEventBus.getInstance();
         eventBus.emit('note:deleted', { eventId: this.currentOptions.eventId });
       } else {
-        ToastService.show('Failed to send deletion request', 'error');
+        ToastService.show(_('Failed to send deletion request'), 'error');
       }
     } catch (error) {
       console.error('Failed to delete note:', error);
-      ToastService.show('An error occurred while deleting the note', 'error');
+      ToastService.show(
+        _('An error occurred while deleting the note'),
+        'error'
+      );
     }
   }
 }

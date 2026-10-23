@@ -1,5 +1,6 @@
 import { PlatformService } from '../services/PlatformService';
 import { ToastService } from '../services/ToastService';
+import { _ } from '../i18n';
 
 const platform = PlatformService.getInstance();
 
@@ -17,7 +18,7 @@ export async function downloadMedia(
       const response = await fetch(url);
       const data = new Uint8Array(await response.arrayBuffer());
       await window.electronAPI!.writeFile(filePath, data);
-      ToastService.show('Saved successfully', 'success');
+      ToastService.show(_('Saved successfully'), 'success');
     }
   } else if (platform.isCapacitor) {
     // Capacitor Android: Filesystem plugin
@@ -35,7 +36,7 @@ export async function downloadMedia(
       data: base64,
       directory: Directory.Documents,
     });
-    ToastService.show('Saved successfully', 'success');
+    ToastService.show(_('Saved successfully'), 'success');
   } else {
     // Web: blob download
     const response = await fetch(url);

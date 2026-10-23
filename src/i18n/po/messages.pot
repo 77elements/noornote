@@ -14,6 +14,14 @@ msgstr ""
 msgid "\"%s\" is already in the filter list"
 msgstr ""
 
+#: src/lists/bookmarks.ts:4684
+msgid "\"%s\" mounted to profile"
+msgstr ""
+
+#: src/lists/bookmarks.ts:4687
+msgid "\"%s\" unmounted from profile"
+msgstr ""
+
 #: src/components/shared/SyncStatusBadge.ts:84
 msgid "(%s follow)"
 msgid_plural "(%s follows)"
@@ -244,7 +252,7 @@ msgstr[1] ""
 
 #: src/components/bookmarks/FolderCard.ts:180
 #: src/components/bookmarks/FolderCard.ts:66
-#: src/lists/bookmarks.ts:5086
+#: src/lists/bookmarks.ts:5089
 msgid "%s item"
 msgid_plural "%s items"
 msgstr[0] ""
@@ -907,6 +915,10 @@ msgstr ""
 msgid "an Armada community"
 msgstr ""
 
+#: src/components/delete/DeleteNoteModal.ts:138
+msgid "An error occurred while deleting the note"
+msgstr ""
+
 #: src/services/ErrorService.ts:175
 msgid "An error occurred. Please try again."
 msgstr ""
@@ -1106,6 +1118,10 @@ msgstr ""
 
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:568
 msgid "Author"
+msgstr ""
+
+#: src/components/ui/NoteMenu.ts:832
+msgid "Author added to %s"
 msgstr ""
 
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:685
@@ -1400,7 +1416,7 @@ msgstr ""
 msgid "Bookmark"
 msgstr ""
 
-#: src/lists/bookmarks.ts:5176
+#: src/lists/bookmarks.ts:5179
 msgid "Bookmark created"
 msgstr ""
 
@@ -1426,11 +1442,11 @@ msgid "Bookmark read-state sync enabled"
 msgstr ""
 
 #: src/addons/marketplace/ListingView.ts:301
-#: src/lists/bookmarks.ts:4767
+#: src/lists/bookmarks.ts:4770
 msgid "Bookmark removed"
 msgstr ""
 
-#: src/lists/bookmarks.ts:4854
+#: src/lists/bookmarks.ts:4857
 msgid "Bookmark updated"
 msgstr ""
 
@@ -1457,7 +1473,7 @@ msgstr ""
 msgid "Bookmarks enabled"
 msgstr ""
 
-#: src/lists/bookmarks.ts:5345
+#: src/lists/bookmarks.ts:5348
 msgid "Bookmarks published successfully"
 msgstr ""
 
@@ -1653,6 +1669,10 @@ msgstr ""
 msgid "Cancel booking"
 msgstr ""
 
+#: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:268
+msgid "Cancel failed: %s"
+msgstr ""
+
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:227
 msgid "Cancel Post"
 msgstr ""
@@ -1669,6 +1689,10 @@ msgstr ""
 msgid "Cancelling…"
 msgstr ""
 
+#: src/components/ui/ImageViewer.ts:159
+msgid "Cannot share: Image source not available"
+msgstr ""
+
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:113
 msgid "celebrate"
 msgstr ""
@@ -1679,6 +1703,10 @@ msgstr ""
 
 #: src/components/onboarding/AccountSetupWizard.ts:2561
 msgid "Changeable anytime under Settings &rarr; Relays."
+msgstr ""
+
+#: src/lists/follows-extended.ts:465
+msgid "Changes marked as seen"
 msgstr ""
 
 #: src/components/ui/note-rendering/ArmadaInviteRenderer.ts:377
@@ -2867,6 +2895,7 @@ msgstr ""
 msgid "Draft"
 msgstr ""
 
+#: src/components/post/composerShared.ts:79
 #: src/components/post/PostNoteModal.ts:1006
 msgid "Draft saved"
 msgstr ""
@@ -3437,6 +3466,10 @@ msgstr ""
 msgid "Failed to award badge"
 msgstr ""
 
+#: src/lists/follows-extended.ts:351
+msgid "Failed to check for changes"
+msgstr ""
+
 #: src/services/UpdateCheckService.ts:122
 msgid "Failed to check for updates"
 msgstr ""
@@ -3474,11 +3507,11 @@ msgstr ""
 msgid "Failed to create badge"
 msgstr ""
 
-#: src/lists/bookmarks.ts:5183
+#: src/lists/bookmarks.ts:5186
 msgid "Failed to create bookmark"
 msgstr ""
 
-#: src/lists/bookmarks.ts:5113
+#: src/lists/bookmarks.ts:5116
 msgid "Failed to create folder"
 msgstr ""
 
@@ -3486,7 +3519,7 @@ msgstr ""
 msgid "Failed to create zap request"
 msgstr ""
 
-#: src/lists/bookmarks.ts:5028
+#: src/lists/bookmarks.ts:5031
 msgid "Failed to delete folder"
 msgstr ""
 
@@ -3622,7 +3655,7 @@ msgstr ""
 msgid "Failed to load your notes"
 msgstr ""
 
-#: src/lists/bookmarks.ts:5091
+#: src/lists/bookmarks.ts:5094
 msgid "Failed to move bookmark"
 msgstr ""
 
@@ -3640,6 +3673,10 @@ msgstr ""
 msgid "Failed to open editor"
 msgstr ""
 
+#: src/components/ui/ImageViewer.ts:192
+msgid "Failed to open share editor"
+msgstr ""
+
 #: src/addons/marketplace/ListingService.ts:166
 msgid "Failed to publish listing. Please try again."
 msgstr ""
@@ -3648,7 +3685,7 @@ msgstr ""
 msgid "Failed to publish pack"
 msgstr ""
 
-#: src/lists/bookmarks.ts:5353
+#: src/lists/bookmarks.ts:5356
 #: src/lists/follows.ts:1857
 #: src/lists/mutes.ts:1587
 #: src/lists/mutes.ts:1987
@@ -3660,7 +3697,7 @@ msgstr ""
 msgid "Failed to publish: %s"
 msgstr ""
 
-#: src/lists/bookmarks.ts:4792
+#: src/lists/bookmarks.ts:4795
 msgid "Failed to remove bookmark"
 msgstr ""
 
@@ -3668,11 +3705,12 @@ msgstr ""
 msgid "Failed to remove member"
 msgstr ""
 
-#: src/lists/bookmarks.ts:4944
+#: src/lists/bookmarks.ts:4947
 msgid "Failed to rename folder"
 msgstr ""
 
 #: src/lists/follows.ts:1971
+#: src/lists/mutes.ts:2077
 msgid "Failed to restore: %s"
 msgstr ""
 
@@ -3689,6 +3727,10 @@ msgstr ""
 msgid "Failed to save backup"
 msgstr ""
 
+#: src/components/ui/ImageViewer.ts:144
+msgid "Failed to save image"
+msgstr ""
+
 #: src/components/settings/RelaySettingsSection.ts:589
 msgid "Failed to save relay settings"
 msgstr ""
@@ -3697,7 +3739,7 @@ msgstr ""
 msgid "Failed to save status"
 msgstr ""
 
-#: src/lists/bookmarks.ts:5368
+#: src/lists/bookmarks.ts:5371
 #: src/lists/mutes.ts:1602
 #: src/lists/tribes.ts:3273
 msgid "Failed to save to file"
@@ -3713,6 +3755,10 @@ msgstr ""
 
 #: src/addons/scheduled-posts/scheduleNote.ts:208
 msgid "Failed to schedule post. Please try again."
+msgstr ""
+
+#: src/components/delete/DeleteNoteModal.ts:133
+msgid "Failed to send deletion request"
 msgstr ""
 
 #: src/components/modals/DMComposeModal.ts:210
@@ -3741,7 +3787,7 @@ msgstr ""
 msgid "Failed to stop key signer"
 msgstr ""
 
-#: src/lists/bookmarks.ts:5335
+#: src/lists/bookmarks.ts:5338
 #: src/lists/follows.ts:1842
 #: src/lists/mutes.ts:1577
 #: src/lists/mutes.ts:1976
@@ -3776,12 +3822,16 @@ msgstr ""
 #: src/addons/marketplace/ListingView.ts:320
 #: src/components/ui/InteractionStatusLine.ts:536
 #: src/components/ui/NoteMenu.ts:752
-#: src/lists/bookmarks.ts:4858
+#: src/lists/bookmarks.ts:4861
 msgid "Failed to update bookmark"
 msgstr ""
 
 #: src/components/ui/NoteMenu.ts:658
 msgid "Failed to update thread mute"
+msgstr ""
+
+#: src/addons/follow-packs/FollowPackManager.ts:563
+msgid "Failed to upload image"
 msgstr ""
 
 #: src/components/onboarding/AccountSetupWizard.ts:3016
@@ -3801,7 +3851,7 @@ msgstr ""
 msgid "Fetching emoji packs…"
 msgstr ""
 
-#: src/lists/bookmarks.ts:5254
+#: src/lists/bookmarks.ts:5257
 #: src/lists/follows.ts:1771
 #: src/lists/mutes.ts:1530
 #: src/lists/mutes.ts:1929
@@ -3842,7 +3892,7 @@ msgstr ""
 msgid "File is empty. Use \"Sync from Relays\" to restore your tribes."
 msgstr ""
 
-#: src/lists/bookmarks.ts:5488
+#: src/lists/bookmarks.ts:5491
 #: src/lists/follows.ts:1967
 #: src/lists/mutes.ts:1673
 #: src/lists/mutes.ts:2073
@@ -3885,11 +3935,15 @@ msgstr ""
 msgid "Folder"
 msgstr ""
 
-#: src/lists/bookmarks.ts:5022
+#: src/lists/bookmarks.ts:5111
+msgid "Folder \"%s\" created"
+msgstr ""
+
+#: src/lists/bookmarks.ts:5025
 msgid "Folder deleted, bookmarks moved to root"
 msgstr ""
 
-#: src/lists/bookmarks.ts:4940
+#: src/lists/bookmarks.ts:4943
 msgid "Folder renamed"
 msgstr ""
 
@@ -5209,8 +5263,8 @@ msgstr ""
 msgid "Local"
 msgstr ""
 
-#: src/lists/bookmarks.ts:5320
-#: src/lists/bookmarks.ts:5473
+#: src/lists/bookmarks.ts:5323
+#: src/lists/bookmarks.ts:5476
 msgid "Local bookmarks pushed to relays"
 msgstr ""
 
@@ -5469,6 +5523,7 @@ msgstr ""
 
 #: src/addons/badges/BadgesView.ts:128
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:278
+#: src/addons/follow-packs/FollowPackManager.ts:553
 #: src/components/views/VideoEditorView.ts:381
 msgid "Media module not available"
 msgstr ""
@@ -5543,7 +5598,7 @@ msgstr ""
 msgid "Merged and synced to relays"
 msgstr ""
 
-#: src/lists/bookmarks.ts:5306
+#: src/lists/bookmarks.ts:5309
 msgid "Merged bookmarks and synced to relays"
 msgstr ""
 
@@ -5664,6 +5719,7 @@ msgstr ""
 msgid "Move up"
 msgstr ""
 
+#: src/lists/bookmarks.ts:5073
 #: src/lists/tribes.ts:2890
 msgid "Moved to %s"
 msgstr ""
@@ -5953,6 +6009,10 @@ msgstr ""
 
 #: src/components/onboarding/WelcomeInterstitials.ts:58
 msgid "No censorship"
+msgstr ""
+
+#: src/lists/follows-extended.ts:345
+msgid "No changes detected"
 msgstr ""
 
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:181
@@ -6501,6 +6561,10 @@ msgstr ""
 msgid "Nothing to restore (notes already up to date)"
 msgstr ""
 
+#: src/components/post/composerShared.ts:69
+msgid "Nothing to save"
+msgstr ""
+
 #: src/components/views/SettingsView.ts:37
 msgid "Notification Priorities"
 msgstr ""
@@ -6983,8 +7047,13 @@ msgstr ""
 msgid "Please select a date."
 msgstr ""
 
+#: src/components/report/ReportModal.ts:212
+msgid "Please select a report reason"
+msgstr ""
+
 #: src/addons/badges/BadgesView.ts:112
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:263
+#: src/components/profile/ImageUploader.ts:139
 msgid "Please select an image file"
 msgstr ""
 
@@ -7380,7 +7449,7 @@ msgstr ""
 msgid "Publishing the deletions failed: %s"
 msgstr ""
 
-#: src/lists/bookmarks.ts:5342
+#: src/lists/bookmarks.ts:5345
 #: src/lists/follows.ts:1851
 #: src/lists/mutes.ts:1583
 #: src/lists/mutes.ts:1982
@@ -7567,7 +7636,7 @@ msgstr ""
 msgid "Read this book"
 msgstr ""
 
-#: src/lists/bookmarks.ts:5393
+#: src/lists/bookmarks.ts:5396
 #: src/lists/follows.ts:1909
 #: src/lists/mutes.ts:1626
 #: src/lists/mutes.ts:2027
@@ -8210,7 +8279,9 @@ msgstr ""
 msgid "Saved notes, sorted into folders."
 msgstr ""
 
-#: src/lists/bookmarks.ts:5365
+#: src/helpers/downloadMedia.ts:21
+#: src/helpers/downloadMedia.ts:39
+#: src/lists/bookmarks.ts:5368
 #: src/lists/follows.ts:1874
 #: src/lists/mutes.ts:2000
 msgid "Saved successfully"
@@ -8235,7 +8306,7 @@ msgstr ""
 
 #: src/components/profile/ProfileEditModal.ts:260
 #: src/components/views/ArticleEditorView.ts:1170
-#: src/lists/bookmarks.ts:5359
+#: src/lists/bookmarks.ts:5362
 #: src/lists/follows.ts:1866
 #: src/lists/mutes.ts:1993
 msgid "Saving..."
@@ -9022,6 +9093,10 @@ msgstr ""
 msgid "Sort by:"
 msgstr ""
 
+#: src/components/follow-packs/memberActivitySort.ts:103
+msgid "Sorting members by recent activity…"
+msgstr ""
+
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:776
 #: src/components/views/ZapstoreAppView.ts:301
 msgid "Source"
@@ -9174,6 +9249,10 @@ msgstr ""
 msgid "Subscribed — events added to your calendar grid"
 msgstr ""
 
+#: src/components/notifications/NotificationItem.ts:306
+msgid "Subscribed to #%s"
+msgstr ""
+
 #: src/components/settings/CacheSettingsSection.ts:433
 msgid "Successfully cleared 1 cache table"
 msgid_plural "Successfully cleared %s cache tables"
@@ -9273,8 +9352,8 @@ msgstr[1] ""
 msgid "Synced %s%s"
 msgstr ""
 
-#: src/lists/bookmarks.ts:5314
-#: src/lists/bookmarks.ts:5329
+#: src/lists/bookmarks.ts:5317
+#: src/lists/bookmarks.ts:5332
 msgid "Synced from relays"
 msgstr ""
 
@@ -9559,7 +9638,7 @@ msgid_plural "This removes the %s locally imported events from this device. They
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/lists/bookmarks.ts:5152
+#: src/lists/bookmarks.ts:5155
 msgid "This URL is already bookmarked"
 msgstr ""
 
@@ -9947,6 +10026,14 @@ msgstr ""
 msgid "Unsubscribe"
 msgstr ""
 
+#: src/components/notifications/NotificationItem.ts:299
+msgid "Unsubscribe from #%s"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:296
+msgid "Unsubscribed from #%s"
+msgstr ""
+
 #: src/addons/calendar/CalendarCollectionDetailModal.ts:182
 #: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:243
 msgid "Unsubscribed from calendar"
@@ -10024,6 +10111,7 @@ msgid "Upload Failed"
 msgstr ""
 
 #: src/components/post/PostEditorToolbar.ts:238
+#: src/components/profile/ImageUploader.ts:183
 msgid "Upload failed. Please try again."
 msgstr ""
 

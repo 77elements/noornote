@@ -550,7 +550,7 @@ export class FollowPackManager {
           const mediaApi =
             ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
           if (!mediaApi) {
-            ToastService.show('Media module not available', 'error');
+            ToastService.show(_('Media module not available'), 'error');
             return;
           }
           const result = await mediaApi.uploadFile(file);
@@ -560,7 +560,7 @@ export class FollowPackManager {
             this.updateCoverPreview(wrapper);
           }
         } catch {
-          ToastService.show('Failed to upload image', 'error');
+          ToastService.show(_('Failed to upload image'), 'error');
         }
         coverUploadBtn.disabled = false;
         coverUploadBtn.innerHTML = originalHTML;

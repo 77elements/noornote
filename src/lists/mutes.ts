@@ -2074,7 +2074,7 @@ export class MuteListManager {
       }
     } catch (error) {
       console.error('Failed to restore from file:', error);
-      ToastService.show(`Failed to restore: ${String(error)}`, 'error');
+      ToastService.show(_('Failed to restore: %s', String(error)), 'error');
     }
   }
 
