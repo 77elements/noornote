@@ -7517,6 +7517,7 @@ msgstr ""
 #: src/addons/marketplace/ListingView.ts:159
 #: src/addons/marketplace/ListingView.ts:160
 #: src/addons/marketplace/MarketplaceTimelineInjector.ts:229
+#: src/components/ui/InteractionStatusLine.ts:376
 #: src/components/ui/MarkdownToolbar.ts:63
 msgid "Quote"
 msgstr ""
@@ -7982,6 +7983,7 @@ msgstr ""
 #: src/addons/marketplace/ListingView.ts:157
 #: src/addons/marketplace/MarketplaceTimelineInjector.ts:226
 #: src/components/ui/InteractionStatusLine.ts:309
+#: src/components/ui/InteractionStatusLine.ts:372
 #: src/components/ui/InteractionStatusLine.ts:394
 msgid "Repost"
 msgstr ""

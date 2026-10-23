@@ -369,11 +369,11 @@ export class InteractionStatusLine {
       options: [
         {
           value: 'repost',
-          label: `Repost<span class="isl-count">${this.formatMenuCount(this.stats.reposts)}</span>`,
+          label: `${_('Repost')}<span class="isl-count">${this.formatMenuCount(this.stats.reposts)}</span>`,
         },
         {
           value: 'quote',
-          label: `Quote<span class="isl-count">${this.formatMenuCount(this.stats.quotedReposts)}</span>`,
+          label: `${_('Quote')}<span class="isl-count">${this.formatMenuCount(this.stats.quotedReposts)}</span>`,
         },
       ],
       selectedValue: '',
