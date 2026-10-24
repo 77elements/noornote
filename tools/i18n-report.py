@@ -6,7 +6,7 @@ Compares de.po against messages.pot:
   - missing:      msgids in the pot that have no entry at all
   - orphaned:     entries in de.po that no longer exist in the pot
                   (stale — source string changed/removed)
-  - duplicates:   same msgid appearing more than once (pot side)
+  - duplicates:   same (msgctxt, msgid) pair appearing more than once (pot side)
 
 Usage:
     python3 tools/i18n-report.py [--pot src/i18n/po/messages.pot] [--po src/i18n/po/de.po]
@@ -51,8 +51,11 @@ def main() -> int:
         )
     ]
 
-    id_counts = Counter(e.msgid for e in pot)
-    duplicates = sorted(m for m, c in id_counts.items() if c > 1)
+    # Duplicate = same (msgctxt, msgid) pair appearing more than once.
+    # Same msgid with DIFFERENT msgctxt is legitimate gettext usage (verb/noun
+    # or per-case distinctions) and must NOT be flagged.
+    key_counts = Counter((e.msgctxt, e.msgid) for e in pot)
+    duplicates = sorted(m for m, c in key_counts.items() if c > 1)
 
     print(f"pot entries: {len(pot_ids)}")
     print(f"translated:  {len(pot_ids) - len(missing) - len(untranslated)}")
@@ -68,8 +71,8 @@ def main() -> int:
         ctx, msgid = o
         print(f"  x {(ctx + ':') if ctx else ''}{msgid[:90]}")
     print(f"duplicates in pot: {len(duplicates)}")
-    for d in duplicates[:15]:
-        print(f"  ! {d[:90]}  (x{id_counts[d]})")
+    for ctx, d in duplicates[:15]:
+        print(f"  ! {(ctx + ':') if ctx else ''}{d[:90]}  (x{key_counts[(ctx, d)]})")
 
     return 0
 

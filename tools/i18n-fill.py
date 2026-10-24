@@ -15,8 +15,13 @@ Table format (JSON):
 
 Usage:
     python3 tools/i18n-fill.py --table fills.json [--po src/i18n/po/de.po] [--compile]
+    python3 tools/i18n-fill.py --table mt.json --fuzzy   # WP8b: mark as MT draft
 
 --compile runs `bun run i18n:compile` after a successful fill.
+--fuzzy marks every entry this run FILLED as `#, fuzzy` (gettext "needs
+human review"). The compile step drops fuzzy entries, so the runtime falls
+back to the English msgid until a reviewer un-fuzzies them. Use this for
+machine-translation drafts (WP8b); never for reviewed translations.
 """
 
 from __future__ import annotations
@@ -41,6 +46,11 @@ def main() -> int:
     ap.add_argument("--table", required=True, help="JSON file with translations")
     ap.add_argument("--po", default="src/i18n/po/de.po", help="target .po file")
     ap.add_argument("--compile", action="store_true", help="run i18n:compile after fill")
+    ap.add_argument(
+        "--fuzzy",
+        action="store_true",
+        help="mark every filled entry as '#, fuzzy' (MT draft, needs human review)",
+    )
     args = ap.parse_args()
 
     po_path = ROOT / args.po
@@ -51,6 +61,14 @@ def main() -> int:
     missed: list[str] = []
     plural_filled: list[str] = []
     ctx_filled: list[str] = []
+    fuzzy_marked: list[str] = []
+
+    def mark_fuzzy(entry: polib.POEntry, label: str) -> None:
+        if not args.fuzzy:
+            return
+        if "fuzzy" not in entry.flags:
+            entry.flags.append("fuzzy")
+        fuzzy_marked.append(label)
 
     for key, value in table.items():
         ctx: str | None = None
@@ -59,6 +77,9 @@ def main() -> int:
         if key.startswith("#"):
             msgid = key[1:]
             ctx, _, msgid = msgid.partition(":")
+        if msgid.startswith("*"):
+            # documented plural-prefix form: "*msgid": ["sg", "pl"]
+            msgid = msgid[1:]
         if isinstance(value, list):
             plural = True
 
@@ -72,6 +93,7 @@ def main() -> int:
                 continue
             entry.msgstr_plural = {0: value[0], 1: value[1]}
             plural_filled.append(msgid)
+            mark_fuzzy(entry, key)
         else:
             if entry.msgstr.strip():
                 continue  # already translated — never overwrite
@@ -80,6 +102,7 @@ def main() -> int:
                 ctx_filled.append(f"{ctx}:{msgid}")
             else:
                 filled.append(msgid)
+            mark_fuzzy(entry, f"{ctx}:{msgid}" if ctx else msgid)
 
     po.save(str(po_path))
 
@@ -94,6 +117,10 @@ def main() -> int:
         print(f"msgctxt:     {len(ctx_filled)}")
         for m in ctx_filled:
             print(f"  + {m}")
+    if fuzzy_marked:
+        print(f"fuzzy (MT):  {len(fuzzy_marked)}")
+        for m in fuzzy_marked:
+            print(f"  ~ {m}")
     if missed:
         print(f"MISSED:      {len(missed)}  (not found / wrong shape)")
         for m in missed:
