@@ -19,7 +19,7 @@
 
     .user-indicator {
       @extend %small;
-      margin-right: 5px;
+      margin-inline-end: 5px;
       color: var(--color-6); // Soft mint green status indicator
     }
 

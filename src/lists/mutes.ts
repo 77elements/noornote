@@ -2275,7 +2275,7 @@ export class ProfileMuteManager {
         <div class="mute-dropdown-container">
           <button class="btn btn--passive mute-btn-dropdown" id="mute-btn-dropdown">
             Mute
-            <svg width="12" height="12" style="margin-left: 4px;"><use href="#icon-chevron-down"/></svg>
+            <svg width="12" height="12" style="margin-inline-start: 4px;"><use href="#icon-chevron-down"/></svg>
           </button>
           <div class="mute-dropdown-menu" id="mute-dropdown-menu">
             <button class="mute-dropdown-item" data-action="mute-public">

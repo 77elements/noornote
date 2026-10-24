@@ -486,7 +486,7 @@
     }
 
     .reaction-feed-entry__emoji {
-      margin-left: calc($gap / 4);
+      margin-inline-start: calc($gap / 4);
     }
   }
 }

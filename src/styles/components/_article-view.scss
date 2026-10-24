@@ -126,7 +126,7 @@
   // Lists (future enhancement)
   ul, ol {
     margin: $gap 0;
-    padding-left: calc($gap * 2);
+    padding-inline-start: calc($gap * 2);
   }
 
   li {
@@ -135,8 +135,8 @@
 
   // Blockquotes (future enhancement)
   blockquote {
-    border-left: 4px solid var(--color-4);
-    padding-left: $gap;
+    border-inline-start: 4px solid var(--color-4);
+    padding-inline-start: $gap;
     margin: $gap 0;
     color: var(--color-5);
     font-style: italic;
@@ -152,7 +152,7 @@
   th, td {
     border: 1px solid var(--color-2);
     padding: calc($gap / 2);
-    text-align: left;
+    text-align: start;
     vertical-align: top;
   }
 
@@ -206,7 +206,7 @@
     color: var(--color-5);
 
     ol {
-      padding-left: calc($gap * 1.5);
+      padding-inline-start: calc($gap * 1.5);
       margin: 0;
     }
 
@@ -226,7 +226,7 @@
     .footnote-backref {
       color: var(--color-4);
       text-decoration: none;
-      margin-left: 0.3em;
+      margin-inline-start: 0.3em;
 
       &:hover {
         text-decoration: underline;

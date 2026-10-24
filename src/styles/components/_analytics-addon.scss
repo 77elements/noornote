@@ -23,7 +23,7 @@
   margin-bottom: $gap;
 
   [data-analytics-updated] {
-    margin-right: calc($gap / 2);
+    margin-inline-end: calc($gap / 2);
   }
 }
 
@@ -113,7 +113,7 @@
 // Top-Posts list — the global ul padding-left (base/_typography.scss) is
 // neutralized so items sit flush with the pane edge.
 [data-addon-content='top-posts'] .ui-list {
-  padding-left: 0;
+  padding-inline-start: 0;
 }
 
 .analytics-top__rank {

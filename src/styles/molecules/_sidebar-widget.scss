@@ -34,9 +34,9 @@
     align-items: center;
     gap: calc($gap / 2);
 
-    > span:first-child { text-align: left; }
+    > span:first-child { text-align: start; }
     > span:nth-child(2) { text-align: center; }
-    > span:last-child { text-align: right; }
+    > span:last-child { text-align: end; }
   }
 
   // Label left, value + action (e.g. refresh icon) right — the BTC price line.
@@ -55,11 +55,11 @@
     gap: calc($gap / 2);
 
     > :first-child {
-      text-align: left;
+      text-align: start;
     }
 
     > :nth-child(2) {
-      text-align: right;
+      text-align: end;
     }
 
     > :last-child {

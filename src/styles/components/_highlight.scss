@@ -15,8 +15,8 @@
 
   &__quote {
     margin: $gap 0;
-    padding-left: $gap;
-    border-left: calc($gap / 4) solid var(--color-4);
+    padding-inline-start: $gap;
+    border-inline-start: calc($gap / 4) solid var(--color-4);
     font-style: italic;
     color: var(--color-5);
   }
@@ -39,7 +39,7 @@
   z-index: 1000;
 
   > svg {
-    margin-right: calc($gap / 4);
+    margin-inline-end: calc($gap / 4);
     vertical-align: middle;
   }
 }

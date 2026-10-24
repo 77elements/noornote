@@ -122,7 +122,7 @@ html.content-visibility-auto .note-card {
     }
 
     .thread-context-ellipsis {
-      text-align: left;
+      text-align: start;
       color: var(--color-3);
       @extend %h4;
       line-height: 1;
@@ -161,12 +161,12 @@ html.content-visibility-auto .note-card {
   // Thin band with a dim left accent line (no background pill) — the Noor jadÄ«d
   // thread-context language, reused across TV, SNV and notifications.
   padding: calc($gap / 8) 0 calc($gap / 8) calc($gap * 0.75);
-  border-left: 2px solid var(--color-2);
+  border-inline-start: 2px solid var(--color-2);
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    border-left-color: var(--color-3);
+    border-inline-start-color: var(--color-3);
 
     .thread-context-content {
       color: var(--color-5);
@@ -259,7 +259,7 @@ html.content-visibility-auto .note-card {
   border: 1px solid color-mix(in srgb, var(--color-4) 20%, transparent);
   border-radius: $radius-xl;
   color: var(--color-5);
-  text-align: left;
+  text-align: start;
   cursor: not-allowed;
   transition: all 0.2s ease;
   overflow: hidden;
@@ -475,8 +475,8 @@ html.content-visibility-auto .note-card {
   &__message {
     color: var(--color-5);
     font-style: italic;
-    padding-left: calc($gap / 2);
-    border-left: 2px solid color-mix(in srgb, var(--color-4) 50%, transparent);
+    padding-inline-start: calc($gap / 2);
+    border-inline-start: 2px solid color-mix(in srgb, var(--color-4) 50%, transparent);
     margin-top: calc($gap / 4);
   }
 

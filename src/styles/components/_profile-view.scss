@@ -332,7 +332,7 @@
 // Private encrypted notes (NIP-78) — note icon next to the public petname.
 // Empty: peach (--color-5). With content: warning orange.
 .profile-petname-note {
-  margin-left: calc($gap / 2);
+  margin-inline-start: calc($gap / 2);
   color: var(--color-5);
   cursor: pointer;
 

@@ -58,7 +58,7 @@
 }
 
 .messages-view__menu-trigger {
-  margin-left: 0;
+  margin-inline-start: 0;
 }
 
 .messages-view__content {
@@ -184,7 +184,7 @@
     @extend %small;
     color: var(--color-3);
     flex-shrink: 0;
-    margin-left: $gap;
+    margin-inline-start: $gap;
   }
 
   &__preview {
@@ -268,7 +268,7 @@
 }
 
 .conversation-view__menu-trigger {
-  margin-left: auto;
+  margin-inline-start: auto;
 }
 
 .conversation-view__messages {
@@ -468,7 +468,7 @@
 }
 
 .note-menu-item__check {
-  margin-left: auto;
+  margin-inline-start: auto;
   color: var(--color-6);
 }
 
@@ -486,7 +486,7 @@
 
   &__value {
     width: 80px;
-    text-align: right;
+    text-align: end;
   }
 
   // Segmented unit toggle: three .btn .btn--mini buttons in a grid row.
@@ -508,7 +508,7 @@
    ================================ */
 
 .primary-nav .badge {
-  margin-left: auto;
+  margin-inline-start: auto;
 }
 
 /* ================================
@@ -601,7 +601,7 @@
     background: var(--color-2);
     border-radius: $radius-full;
     padding: calc($gap / 4) calc($gap / 2);
-    padding-right: calc($gap / 4);
+    padding-inline-end: calc($gap / 4);
 
     .mention-link {
       padding: 2px 4px;

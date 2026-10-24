@@ -69,7 +69,7 @@
   // Settings-specific action area
   &__actions {
     margin-top: $gap;
-    text-align: right;
+    text-align: end;
 
     &:last-child {
       margin-bottom: 0;
@@ -216,14 +216,14 @@
   @extend %small;
   color: var(--color-3);
   font-weight: 400;
-  margin-left: calc($gap / 4);
+  margin-inline-start: calc($gap / 4);
 }
 
 .relay-controls {
   display: flex;
   align-items: center;
   gap: calc($gap / 2);
-  padding-left: $gap;
+  padding-inline-start: $gap;
 }
 
 .relay-types {
@@ -319,8 +319,8 @@
 
 .compression-detail {
   margin: calc($gap / 2) 0 $gap calc($gap * 1.5);
-  padding-left: $gap;
-  border-left: 2px solid var(--color-2);
+  padding-inline-start: $gap;
+  border-inline-start: 2px solid var(--color-2);
   display: flex;
   flex-direction: column;
   gap: calc($gap / 2);
@@ -588,7 +588,7 @@
 #cache-settings {
   // Right-align number inputs
   input[type="number"] {
-    text-align: right;
+    text-align: end;
     max-width: 120px;
   }
 }

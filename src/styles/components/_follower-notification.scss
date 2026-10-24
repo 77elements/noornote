@@ -30,8 +30,8 @@
 
   &__tag {
     // Sits at the end of the .ui-list__item row (which already lays out its children).
-    margin-left: auto;
-    padding-left: calc($gap / 2);
+    margin-inline-start: auto;
+    padding-inline-start: calc($gap / 2);
     font-size: 0.85em;
     white-space: nowrap;
 

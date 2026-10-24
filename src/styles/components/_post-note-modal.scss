@@ -20,7 +20,7 @@
 .quote-preview {
   margin: $gap 0;
   padding: $gap;
-  border-left: 3px solid var(--color-4);
+  border-inline-start: 3px solid var(--color-4);
   border-radius: $radius-xl;
   max-width: 100%;
 
@@ -65,7 +65,7 @@
   min-width: 0;
   // The client-tag control (to its left) owns the margin-left:auto that pushes
   // this group to the right; here we only need a small gap from that icon.
-  margin-left: $gap;
+  margin-inline-start: $gap;
 }
 
 .relay-selector-label {
@@ -80,7 +80,7 @@
   // Push to the right so the icon sits just left of the relay selector.
   // The relay selector keeps its own margin-left:auto, so the two stay adjacent
   // and the field unfolds leftward into the free space toward the title.
-  margin-left: auto;
+  margin-inline-start: auto;
 
   &__input {
     // Collapsed by default: takes no space, only the icon shows.
@@ -117,7 +117,7 @@
     padding: calc($gap / 4) calc($gap / 2);
     border-color: var(--color-3);
     opacity: 1;
-    margin-right: calc($gap / 4);
+    margin-inline-end: calc($gap / 4);
   }
 
   // A value is set → highlight the icon so the user sees the override is active.

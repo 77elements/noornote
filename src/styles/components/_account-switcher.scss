@@ -23,7 +23,7 @@
     height: 6px;
     border-radius: $radius-full;
     background-color: $color-6;
-    margin-left: calc($gap / 2);
+    margin-inline-start: calc($gap / 2);
     vertical-align: middle;
   }
 
@@ -32,7 +32,7 @@
     width: 16px;
     display: inline-block;
     text-align: center;
-    margin-right: calc($gap / 2);
+    margin-inline-end: calc($gap / 2);
   }
 
   // Danger item (sign out)

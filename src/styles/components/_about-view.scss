@@ -40,7 +40,7 @@
 
   ul {
     margin: calc($gap / 2) 0;
-    padding-left: $gap * 1.5;
+    padding-inline-start: $gap * 1.5;
 
     li {
       color: var(--color-5);
@@ -96,7 +96,7 @@
   border-top: 1px solid var(--surface-tint);
 
   > :nth-child(4) {
-    text-align: right;
+    text-align: end;
   }
 }
 

@@ -78,7 +78,7 @@
 
 .isl-count {
   font-weight: 500;
-  text-align: left;
+  text-align: start;
 }
 
 // Like: swap to a filled heart on hover (the accent colour comes from
@@ -102,7 +102,7 @@
   width: 34px;
   height: 34px;
   padding: 0;
-  margin-left: auto;
+  margin-inline-start: auto;
 
   &:hover {
     color: var(--color-4);
@@ -113,7 +113,7 @@
 // (margin-left:auto). The bookmark then hugs it at the right with the row gap,
 // instead of flexbox splitting the free space across both auto margins.
 .isl-analytics + .isl-bookmark {
-  margin-left: 0;
+  margin-inline-start: 0;
 }
 
 // Active state (user has already interacted) — same single magenta accent.
@@ -150,7 +150,7 @@
   }
 
   .badge--warning {
-    margin-left: calc($gap / 4);
+    margin-inline-start: calc($gap / 4);
   }
 }
 

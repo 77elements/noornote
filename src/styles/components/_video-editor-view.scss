@@ -128,7 +128,7 @@
   }
 
   &__remove-video {
-    margin-left: auto;
+    margin-inline-start: auto;
 
     &:hover {
       color: var(--color-error, #e53e3e);

@@ -98,5 +98,5 @@
   grid-template-columns: 1fr auto;
   gap: calc($gap / 2);
   margin-top: calc($gap / 4);
-  padding-left: calc(2.5rem + #{$gap});
+  padding-inline-start: calc(2.5rem + #{$gap});
 }

@@ -43,7 +43,7 @@
 }
 
 .calendar-addon__toolbar-actions .btn + .btn {
-  margin-left: calc($gap / 2);
+  margin-inline-start: calc($gap / 2);
 }
 
 .calendar-addon__loading,
@@ -131,7 +131,7 @@
 
   display: block;
   width: 100%;
-  text-align: left;
+  text-align: start;
   padding: calc($gap / 16) calc($gap / 4);
   font-size: 0.78em;
   color: var(--color-5);
@@ -172,7 +172,7 @@
 .calendar-addon__more {
   font-size: 0.75em;
   color: var(--color-3);
-  padding-left: calc($gap / 4);
+  padding-inline-start: calc($gap / 4);
 }
 
 /* --- Week grid --- */
@@ -202,7 +202,7 @@
   align-items: center;
   gap: calc($gap / 2);
   width: 100%;
-  text-align: left;
+  text-align: start;
 }
 
 .calendar-addon__list-date {
@@ -299,7 +299,7 @@
 }
 
 .calendar-addon-detail__actions .btn + .btn {
-  margin-left: calc($gap / 2);
+  margin-inline-start: calc($gap / 2);
 }
 
 /* --- RSVP bar (phase 2) --- */

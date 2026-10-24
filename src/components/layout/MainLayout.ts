@@ -2282,7 +2282,7 @@ export class MainLayout {
       <p style="margin-bottom: 1rem;">
         ${_('A terminal window will open. There:')}
       </p>
-      <ol style="margin-bottom: 1.5rem; padding-left: 1.5rem;">
+      <ol style="margin-bottom: 1.5rem; padding-inline-start: 1.5rem;">
         <li>${_('Paste the nsec of the new account')}</li>
         <li>${_('Set a password for this account')}</li>
         <li>${_('Close the terminal')}</li>

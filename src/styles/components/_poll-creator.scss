@@ -203,7 +203,7 @@
     &::before {
       content: '▶';
       display: inline-block;
-      margin-right: calc($gap / 4);
+      margin-inline-end: calc($gap / 4);
       transition: transform 0.2s ease;
     }
 

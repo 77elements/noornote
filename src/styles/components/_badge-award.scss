@@ -73,7 +73,7 @@
   @extend %mini;
   color: $color-red;
   cursor: pointer;
-  margin-left: calc($gap / 4);
+  margin-inline-start: calc($gap / 4);
 }
 
 // Inline badge card used by QuotedNoteRenderer for embedded kind:8 references.

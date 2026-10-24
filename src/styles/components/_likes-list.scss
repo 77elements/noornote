@@ -105,7 +105,7 @@
     display: inline-block;
     height: 22px;
     line-height: 22px;
-    margin-left: calc($gap / 4); // 0.25rem
+    margin-inline-start: calc($gap / 4); // 0.25rem
     font-weight: 600;
     color: var(--color-5);
   }

@@ -37,7 +37,7 @@
     font-weight: 400;
     @extend %small;
     color: var(--color-3);
-    margin-left: calc($gap / 2);
+    margin-inline-start: calc($gap / 2);
   }
 
   // Preview mode
@@ -106,8 +106,8 @@
     }
 
     blockquote {
-      border-left: 3px solid var(--color-4);
-      padding-left: $gap;
+      border-inline-start: 3px solid var(--color-4);
+      padding-inline-start: $gap;
       margin: 0 0 $gap;
       color: var(--color-5);
       font-style: italic;
@@ -115,7 +115,7 @@
 
     ul, ol {
       margin: 0 0 $gap;
-      padding-left: $gap * 1.5;
+      padding-inline-start: $gap * 1.5;
     }
 
     li {
@@ -138,7 +138,7 @@
     th, td {
       border: 1px solid var(--color-2);
       padding: calc($gap / 2);
-      text-align: left;
+      text-align: start;
       vertical-align: top;
     }
 

@@ -26,11 +26,11 @@
 
   // Trigger link (initial state)
   &__trigger {
-    text-align: right;
+    text-align: end;
     background: $alpha-heavy;
     padding: 4px 8px;
     border-radius: $radius-xl;
-    margin-right: 10px;
+    margin-inline-end: 10px;
   }
 
   &__link {
@@ -150,7 +150,7 @@
   padding: $gap;
   min-width: 310px;
   box-shadow: $box-shadow;
-  margin-right: 10px;
+  margin-inline-end: 10px;
 
   @include mobile-down {
     min-width: 260px;

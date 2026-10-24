@@ -84,6 +84,22 @@ html.layout--wide .main-layout {
 // ========================================
 // Layout Mode: Phone (single column with drawer)
 // ========================================
+
+// RTL (WP10): COMPOUND selector — dir sits ON the html element, so a
+// descendant form (`[dir='rtl'] html.layout--phone …`) can never match.
+// Drawer hugs the right edge and hides off-screen right; the --open
+// override needs ≥ specificity to win back visibility.
+html[dir='rtl'].layout--phone .main-layout .sidebar {
+  left: auto;
+  right: 0;
+  border-radius: $radius-xl 0 0 $radius-xl;
+  transform: translateX(100%);
+}
+
+html[dir='rtl'].layout--phone .main-layout .sidebar--open {
+  transform: translateX(0);
+}
+
 html.layout--phone {
   .mobile-header {
     display: flex;
@@ -269,7 +285,7 @@ html.layout--phone {
 
     @include desktop {
       .tab-content {
-        padding-right: calc($gap / 2);
+        padding-inline-end: calc($gap / 2);
       }
     }
   }

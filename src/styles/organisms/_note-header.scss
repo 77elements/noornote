@@ -53,7 +53,7 @@
 .note-header__timestamp::before,
 .note-header__client::before {
   content: '·';
-  margin-right: calc($gap / 4);
+  margin-inline-end: calc($gap / 4);
   color: var(--color-3);
 }
 

@@ -48,7 +48,7 @@
 .l-row {}
 
 .l-row--right {
-  text-align: right;
+  text-align: end;
 }
 
 .l-row--center {
@@ -75,7 +75,7 @@
   }
 
   > :last-child {
-    margin-left: auto;
+    margin-inline-start: auto;
     display: flex;
     align-items: center;
     gap: calc($gap / 2);

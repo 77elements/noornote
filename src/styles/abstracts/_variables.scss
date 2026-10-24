@@ -223,7 +223,7 @@ $transition-colors: color $transition-fast, background-color $transition-fast, b
   &::after {
     content: '›';
     font-size: 0.75em;
-    margin-left: -0.1em;
+    margin-inline-start: -0.1em;
   }
 }
 

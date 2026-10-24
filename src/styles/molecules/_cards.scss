@@ -216,6 +216,6 @@
 
   .date::before {
     content: '·';
-    margin-right: calc($gap / 4);
+    margin-inline-end: calc($gap / 4);
   }
 }

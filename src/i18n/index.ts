@@ -132,6 +132,72 @@ export function formatNumber(value: number): string {
   }
 }
 
+// ── RTL preview (QA affordance for RTL readiness, WP10) ──────
+
+const RTL_PREVIEW_KEY = 'noornote_rtl_preview';
+
+/**
+ * Force `dir="rtl"` on `<html>` regardless of the active locale, so layout
+ * mirroring can be verified without an RTL catalog (pseudo-locale testing,
+ * see docs/todos/internationalization.md §7.6). Dev/QA only — never shown
+ * in the language dropdown.
+ *
+ * Device-level QA flag in plain localStorage on purpose: NOT per-user data,
+ * so PerAccountLocalStorage would be the wrong tool (same pattern as the
+ * update-check flag).
+ *
+ * Console: `window.__setRtl(true)` / `window.__setRtl(false)` / read state
+ * with `window.__setRtl()`. Boot: `?rtl=1` sets the flag, `?rtl=0` clears it.
+ * Survives reloads until cleared.
+ */
+export function setRtlPreview(on?: boolean): boolean {
+  if (typeof on === 'boolean') {
+    try {
+      if (on) localStorage.setItem(RTL_PREVIEW_KEY, '1');
+      else localStorage.removeItem(RTL_PREVIEW_KEY);
+    } catch {
+      // storage unavailable — preview simply won't persist
+    }
+    if (typeof document !== 'undefined') {
+      document.documentElement.dir = effectiveDir(currentLocale);
+    }
+  }
+  return rtlPreviewActive();
+}
+
+/** Whether the RTL preview flag is currently set. */
+function rtlPreviewActive(): boolean {
+  try {
+    return (
+      typeof localStorage !== 'undefined' &&
+      localStorage.getItem(RTL_PREVIEW_KEY) === '1'
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Effective text direction: `dirFor(locale)`, overridden to `'rtl'` while
+ * the RTL preview flag is set. The optional second parameter exists for
+ * tests (explicit flag wins over storage).
+ */
+export function effectiveDir(
+  locale: string,
+  rtlPreview?: boolean
+): 'ltr' | 'rtl' {
+  if (rtlPreview ?? rtlPreviewActive()) return 'rtl';
+  return dirFor(locale);
+}
+
+/** `?rtl=1` enables the RTL preview flag, `?rtl=0` clears it. */
+function applyRtlBootParam(): void {
+  if (typeof location === 'undefined') return;
+  const param = new URLSearchParams(location.search).get('rtl');
+  if (param === '1') setRtlPreview(true);
+  else if (param === '0') setRtlPreview(false);
+}
+
 /**
  * Pure state switch (no storage, no events). Used by the async bootstrap
  * path and directly by tests to inject catalogs.
@@ -144,7 +210,7 @@ export function applyLocaleState(
   currentCatalog = catalog;
   if (typeof document !== 'undefined') {
     document.documentElement.lang = locale;
-    document.documentElement.dir = dirFor(locale);
+    document.documentElement.dir = effectiveDir(locale);
   }
 }
 
@@ -153,10 +219,15 @@ export function applyLocaleState(
  * needed, apply html lang/dir. Re-runs on `user:login` (per-account setting).
  */
 export async function initI18n(): Promise<void> {
+  applyRtlBootParam();
   await applyStoredLocale();
 
   if (!initialized) {
     initialized = true;
+    // Dev/QA helper — see setRtlPreview().
+    if (typeof window !== 'undefined') {
+      (window as unknown as Record<string, unknown>).__setRtl = setRtlPreview;
+    }
     const { TypedEventBus } = await import('../core/TypedEventBus');
     TypedEventBus.getInstance().on('user:login', () => {
       void applyStoredLocale();

@@ -259,7 +259,7 @@ export class PrivacySettingsSection extends SettingsSection {
       content: `
         <div style="padding: 1rem 0;">
           <p>${_('This will:')}</p>
-          <ul style="margin: 1rem 0; padding-left: 1.5rem;">
+          <ul style="margin: 1rem 0; padding-inline-start: 1.5rem;">
             <li>${isToPrivate ? _('Encrypt all your current public follows (kind:3)') : _('Decrypt all your current private follows (kind:30000)')}</li>
             <li>${isToPrivate ? _('Store them in a private follow list (kind:30000)') : _('Store them in a public follow list (kind:3)')}</li>
             <li>${isToPrivate ? _('Clear your public follow list') : _('Clear your private follow list')}</li>

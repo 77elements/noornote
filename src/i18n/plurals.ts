@@ -128,8 +128,17 @@ export function normalizeLocale(locale: string): string {
   return 'en';
 }
 
+/**
+ * Text direction for a locale — resolves like `pluralIndex` by primary
+ * subtag so `ar-SA` inherits the `ar` entry's direction once an RTL
+ * language is registered in LANGUAGES. Unknown locales are LTR.
+ */
 export function dirFor(locale: string): 'ltr' | 'rtl' {
-  return LANGUAGES[locale]?.dir ?? 'ltr';
+  const lower = locale.toLowerCase();
+  if (LANGUAGES[lower]) return LANGUAGES[lower].dir;
+  const primary = LANGUAGES[primarySubtag(lower)];
+  if (primary) return primary.dir;
+  return 'ltr';
 }
 
 /** Gettext plural-form index for a count in the given locale. */

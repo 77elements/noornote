@@ -46,7 +46,7 @@
     border: 1px solid var(--color-2);
     border-radius: $radius-xl;
     color: var(--color-6);
-    text-align: left;
+    text-align: start;
     cursor: pointer;
     transition: all 0.2s ease;
     overflow: hidden;
@@ -99,7 +99,7 @@
 
   &__option-count {
     min-width: 4rem;
-    text-align: right;
+    text-align: end;
   }
 
   &__option-percentage {
@@ -122,7 +122,7 @@
   &__footer {
     margin-top: calc($gap / 2);
     color: var(--color-3);
-    text-align: right;
+    text-align: end;
   }
 
   // Preview mode (in PostNoteModal)

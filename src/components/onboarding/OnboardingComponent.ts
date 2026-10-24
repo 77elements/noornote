@@ -162,7 +162,7 @@ export class OnboardingComponent {
           <div class="nn-carousel-slides">
             <div class="nn-carousel-slide active" data-slide="0">
               <img src="/images/nostr-illustration.jpeg" alt="${_('How Nostr works')}" class="nn-carousel-image" />
-              <p class="mini" style="text-align: right; margin-top: 0;">${_('Nostr illustration by @awayuki')}</p>
+              <p class="mini" style="text-align: end; margin-top: 0;">${_('Nostr illustration by @awayuki')}</p>
               <p>${_('<strong>Nostr</strong> stands for "Notes and Other Stuff Transmitted by Relays". It\'s a simple, open protocol that enables truly decentralized social networking.')}</p>
             </div>
             <div class="nn-carousel-slide" data-slide="1">

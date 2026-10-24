@@ -13,7 +13,7 @@
   &__label {
     @extend %small;
     color: var(--color-3);
-    margin-right: calc($gap / 4);
+    margin-inline-end: calc($gap / 4);
     white-space: nowrap;
   }
 

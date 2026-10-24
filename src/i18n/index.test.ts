@@ -3,7 +3,15 @@
  * Catalogs are injected directly — no storage, no JSON chunks needed.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
-import { _, tn, tp, tnp, applyLocaleState, getUiLocale } from './index';
+import {
+  _,
+  tn,
+  tp,
+  tnp,
+  applyLocaleState,
+  getUiLocale,
+  effectiveDir,
+} from './index';
 import { setCatalog, clearCatalogs, type Catalog } from './catalog';
 import { pluralIndex, normalizeLocale, dirFor } from './plurals';
 
@@ -175,5 +183,16 @@ describe('plural formulas', () => {
   it('reports direction per language', () => {
     expect(dirFor('en')).toBe('ltr');
     expect(dirFor('unknown')).toBe('ltr');
+    expect(dirFor('de-DE')).toBe('ltr'); // falls back to the primary subtag
+    expect(dirFor('de_DE')).toBe('ltr'); // underscore form also resolves
+  });
+
+  it('overrides direction while the RTL preview flag is set', () => {
+    // Second parameter = explicit preview flag (storage-independent).
+    expect(effectiveDir('en', true)).toBe('rtl');
+    expect(effectiveDir('de', true)).toBe('rtl');
+    expect(effectiveDir('en', false)).toBe('ltr');
+    // Without the flag it defers to dirFor (storage read guarded for node).
+    expect(effectiveDir('en')).toBe('ltr');
   });
 });

@@ -71,7 +71,7 @@ a {
 // Unstyled container on purpose; only the children get flow fixes.
 .nostr-ref-link svg {
   display: inline-block;
-  margin-right: 0.25rem;
+  margin-inline-end: 0.25rem;
 }
 
 .nostr-ref-link span {

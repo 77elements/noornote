@@ -118,7 +118,7 @@
     background: color-mix(in srgb, var(--color-6) 10%, transparent);
 
     td:first-child {
-      border-left: 3px solid var(--color-6);
+      border-inline-start: 3px solid var(--color-6);
     }
   }
 
@@ -152,7 +152,7 @@
     display: inline-block;
     width: 8px;
     height: 8px;
-    margin-left: calc($gap / 4);
+    margin-inline-start: calc($gap / 4);
     border-radius: $radius-full;
     vertical-align: middle;
 

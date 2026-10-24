@@ -15,7 +15,7 @@
   justify-content: center;
   width: 26px;
   height: 26px;
-  margin-left: auto; // Push to right
+  margin-inline-start: auto; // Push to right
   padding: 0;
   background: transparent;
   border: none;
@@ -97,7 +97,7 @@
 .note-header__menu-container {
   display: inline-flex;
   align-items: center;
-  margin-left: auto;
+  margin-inline-start: auto;
 }
 
 // Responsive adjustments

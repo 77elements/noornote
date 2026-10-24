@@ -18,7 +18,7 @@
 
   &__warning {
     padding: $gap;
-    border-left: 3px solid var(--color-4);
+    border-inline-start: 3px solid var(--color-4);
   }
 
   &__message {

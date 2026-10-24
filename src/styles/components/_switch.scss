@@ -53,6 +53,11 @@
       transform: translateX(20px);
     }
   }
+
+  // RTL (WP10): the knob travels the other way.
+  [dir='rtl'] &:checked + .switch-slider::before {
+    transform: translateX(-20px);
+  }
 }
 
 // Slider (the toggle track and knob)
@@ -73,7 +78,10 @@
     position: absolute;
     height: 18px;
     width: 18px;
-    left: 3px;
+    // Logical inset: LTR knob rests left, RTL knob rests right — so the
+    // checked transform (±20px, see .switch-input) slides toward the far
+    // edge in both directions (WP10).
+    inset-inline-start: 3px;
     bottom: 3px;
     background: $color-white;
     border-radius: $radius-full;

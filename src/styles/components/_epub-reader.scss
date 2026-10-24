@@ -96,7 +96,7 @@
   // Monochrome accessibility toggle — sits LEFT of the TOC dropdown,
   // 0.5rem away from it (requirement in docs/todos/epub-reader.md)
   &__mono-btn {
-    margin-right: 0.5rem;
+    margin-inline-end: 0.5rem;
     border-radius: $radius-full;
     display: inline-flex;
     align-items: center;

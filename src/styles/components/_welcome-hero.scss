@@ -420,7 +420,7 @@
   @include compact;
   line-height: 1.7;
   color: color-mix(in srgb, var(--color-5) 55%, transparent);
-  text-align: left;
+  text-align: start;
   max-width: 600px;
   margin: 0 auto;
 

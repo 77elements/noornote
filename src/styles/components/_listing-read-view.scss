@@ -51,7 +51,7 @@
 
     svg {
       vertical-align: -0.2em;
-      margin-right: calc($gap / 4);
+      margin-inline-end: calc($gap / 4);
     }
   }
 
@@ -59,7 +59,7 @@
     margin-bottom: $gap;
 
     .listing-read__date {
-      margin-left: calc($gap / 2);
+      margin-inline-start: calc($gap / 2);
       color: var(--color-3);
       @extend %small;
     }

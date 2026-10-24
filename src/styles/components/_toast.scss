@@ -18,6 +18,18 @@
   gap: calc($gap / 2);
   pointer-events: none;
   max-width: 400px;
+
+  // RTL (WP10): mirror the stack to the top-left corner. Mobile keeps the
+  // symmetric left+right stretch, so only the desktop anchor flips.
+  [dir='rtl'] & {
+    right: auto;
+    left: $gap;
+
+    @media (max-width: 768px) {
+      right: calc($gap / 2);
+      left: calc($gap / 2);
+    }
+  }
 }
 
 // Individual toast
@@ -36,9 +48,11 @@
   min-width: 280px;
   max-width: 400px;
 
-  // Animation states
+  // Animation states. The slide direction is a custom property so RTL only
+  // has to flip one variable (WP10): LTR slides in from the right edge,
+  // RTL from the left edge (the container sits top-left there).
   opacity: 0;
-  transform: translateX(100%);
+  transform: translateX(var(--toast-slide, 100%));
   transition: all 0.3s ease;
 
   &--visible {
@@ -48,12 +62,16 @@
 
   &--hiding {
     opacity: 0;
-    transform: translateX(100%);
+    transform: translateX(var(--toast-slide, 100%));
+  }
+
+  [dir='rtl'] & {
+    --toast-slide: -100%;
   }
 
   // Type variants
   &--success {
-    border-left: 4px solid var(--color-6);
+    border-inline-start: 4px solid var(--color-6);
 
     .toast__icon {
       color: var(--color-6);
@@ -62,7 +80,7 @@
   }
 
   &--error {
-    border-left: 4px solid $color-red;
+    border-inline-start: 4px solid $color-red;
 
     .toast__icon {
       color: $color-red;
@@ -71,7 +89,7 @@
   }
 
   &--warning {
-    border-left: 4px solid $color-warning;
+    border-inline-start: 4px solid $color-warning;
 
     .toast__icon {
       color: $color-warning;
@@ -80,7 +98,7 @@
   }
 
   &--info {
-    border-left: 4px solid var(--color-4); // Pink
+    border-inline-start: 4px solid var(--color-4); // Pink
 
     .toast__icon {
       color: var(--color-4);

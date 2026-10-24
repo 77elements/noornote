@@ -19,9 +19,9 @@
 
   &__children {
     display: none;
-    margin-left: $gap;
-    padding-left: calc($gap / 2);
-    border-left: 1px solid var(--color-3);
+    margin-inline-start: $gap;
+    padding-inline-start: calc($gap / 2);
+    border-inline-start: 1px solid var(--color-3);
   }
 
   &--open > &__children {
@@ -36,7 +36,7 @@
     width: 1em;
     height: 22px;
     line-height: 22px;
-    margin-right: calc($gap / -2); // -0.5rem
+    margin-inline-end: calc($gap / -2); // -0.5rem
     color: var(--color-4);
     font-weight: 700;
     cursor: pointer;

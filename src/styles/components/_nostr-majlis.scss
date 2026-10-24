@@ -29,7 +29,7 @@
 
   > span:last-child {
     justify-self: end;
-    text-align: right;
+    text-align: end;
   }
 }
 
@@ -68,7 +68,7 @@
 .nm-quran__arabic {
   font-family: 'Amiri Quran', 'Geeza Pro', 'Noto Naskh Arabic', serif;
   @include big;
-  text-align: right;
+  text-align: end;
 }
 
 .nm-quran__translation {
@@ -121,7 +121,7 @@
 
   th,
   td {
-    text-align: left;
+    text-align: start;
     padding: calc($gap / 2);
     border-bottom: 1px solid var(--surface-tint);
     white-space: nowrap;
@@ -162,7 +162,7 @@
 
   &__flag {
     display: inline-block;
-    margin-left: calc($gap / 3);
+    margin-inline-start: calc($gap / 3);
     padding: 0 calc($gap / 2);
     border: 1px solid var(--surface-tint);
     border-radius: $radius-pill;

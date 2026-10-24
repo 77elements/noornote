@@ -106,7 +106,7 @@
       vertical-align: text-bottom;
 
       &:first-child {
-        margin-right: calc($gap / 2);
+        margin-inline-end: calc($gap / 2);
       }
     }
 
@@ -148,7 +148,7 @@
       background: none;
       border: none;
       color: var(--color-5);
-      text-align: left;
+      text-align: start;
       cursor: pointer;
       transition: $transition-colors;
       border-radius: $radius-xl;
@@ -163,11 +163,11 @@
         display: inline-block;
 
         &:not(.primary-nav__accordion-icon) {
-          margin-right: calc($gap / 2);
+          margin-inline-end: calc($gap / 2);
         }
 
         &.primary-nav__accordion-icon {
-          margin-right: calc($gap / 4);
+          margin-inline-end: calc($gap / 4);
           transition: transform 0.2s ease;
         }
       }

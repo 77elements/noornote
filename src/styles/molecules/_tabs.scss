@@ -99,7 +99,7 @@
 
   // Badge spacing (styles in _badges.scss)
   .badge {
-    margin-left: calc($gap / 2);
+    margin-inline-start: calc($gap / 2);
   }
 }
 

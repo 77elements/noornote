@@ -68,7 +68,7 @@
 .article-notif-label {
   @extend %mini;
   color: var(--color-3);
-  margin-left: calc($gap / 4);
+  margin-inline-start: calc($gap / 4);
 }
 
 // Sort controls
@@ -181,7 +181,7 @@
   height: 8px;
   background-color: $color-success;
   border-radius: $radius-full;
-  margin-left: 4px;
+  margin-inline-start: 4px;
   animation: dot-pulse 2s ease-in-out infinite;
 }
 

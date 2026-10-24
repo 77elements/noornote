@@ -1229,7 +1229,7 @@ export class ProfileFollowManager {
       <div class="follow-dropdown-container">
         <button class="btn" id="follow-btn-dropdown">
           Follow
-          <svg width="12" height="12" style="margin-left: 4px;"><use href="#icon-chevron-down"/></svg>
+          <svg width="12" height="12" style="margin-inline-start: 4px;"><use href="#icon-chevron-down"/></svg>
         </button>
         <div class="follow-dropdown-menu" id="follow-dropdown-menu">
           <button class="follow-dropdown-item" data-action="follow-public">

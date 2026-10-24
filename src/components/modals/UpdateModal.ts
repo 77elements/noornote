@@ -44,7 +44,8 @@ function renderMarkdown(text: string): string {
       html += `<h4 style="margin: 0.75rem 0 0.25rem; font-size: 13px; opacity: 0.8;">${escapeHtml(trimmed.slice(3))}</h4>`;
     } else if (trimmed.startsWith('- ')) {
       if (!inList) {
-        html += '<ul style="margin: 0.25rem 0; padding-left: 1.25rem;">';
+        html +=
+          '<ul style="margin: 0.25rem 0; padding-inline-start: 1.25rem;">';
         inList = true;
       }
       html += `<li style="font-size: 13px; line-height: 1.5;">${escapeHtml(trimmed.slice(2))}</li>`;

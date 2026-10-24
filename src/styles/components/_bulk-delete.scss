@@ -21,7 +21,7 @@
 
 // Inline "reset filters" affordance shown next to any active filter label.
 .bulk-delete__reset {
-  margin-left: calc($gap / 2);
+  margin-inline-start: calc($gap / 2);
   color: var(--color-4);
   font-weight: 600;
   text-decoration: none;
@@ -95,7 +95,7 @@
   display: inline-block;
   width: 8px;
   height: 8px;
-  margin-left: calc($gap / 4);
+  margin-inline-start: calc($gap / 4);
   border-radius: $radius-full;
   vertical-align: middle;
 

@@ -56,7 +56,7 @@
   margin: 0;
   @extend %small;
   color: var(--color-3);
-  text-align: left;
+  text-align: start;
 
   &--easy {
     padding: $gap 0;

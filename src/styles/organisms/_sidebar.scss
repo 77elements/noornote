@@ -98,7 +98,7 @@ html.classic-nav .sidebar-header {
     right: 0;
     top: 50%;
     transform: translateY(-50%);
-    margin-left: 0;
+    margin-inline-start: 0;
   }
 }
 
@@ -194,7 +194,7 @@ html.sidebar-collapsed:not(.layout--phone) {
     gap: calc($gap / 2);
 
     > .btn--mini {
-      margin-left: 0;
+      margin-inline-start: 0;
       padding: calc($gap / 2);
       font-size: 0;
       gap: 0;
@@ -337,7 +337,7 @@ html.sidebar-collapsed:not(.layout--phone) {
     font-family: inherit;
     cursor: pointer;
     transition: $transition-colors;
-    text-align: left;
+    text-align: start;
 
     svg {
       width: 18px;
