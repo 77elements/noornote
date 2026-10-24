@@ -7,7 +7,9 @@ Counterpart to i18n-sheet-export.py — see docs/todos/internationalization.md
   - placeholder check: `%s` / `%N$s` count must match the English source
   - plural rows need BOTH forms filled
   - formula cells (`=…`) are rejected — read as text, never evaluated
-  - unknown keys (po changed since export) are skipped with a warning
+  - unknown keys are added from the pot when possible (po lagging behind
+    the extract — the translation is kept, a later `i18n:extract` merge
+    normalizes the entry); otherwise rejected with a warning
   - duplicates within the sheet are rejected
 
 Merge rules (gettext-safe):
@@ -112,6 +114,15 @@ def main() -> int:
         return 1
     po = polib.pofile(str(po_path), wrap_width=79)
 
+    # Pot fallback: keys the po lacks (extract not run since the string was
+    # added) are added from the pot so a filled translation is not lost; a
+    # later `i18n:extract` merge normalizes occurrences/headers.
+    pot_path = PO_DIR / "messages.pot"
+    pot_map: dict[tuple[str | None, str], polib.POEntry] = {}
+    if pot_path.exists():
+        pot = polib.pofile(str(pot_path), wrap_width=79)
+        pot_map = {(e.msgctxt, e.msgid): e for e in pot if not e.obsolete}
+
     rows = read_rows(Path(args.sheet))
     if not rows:
         print("sheet has no data rows")
@@ -121,6 +132,7 @@ def main() -> int:
     unfuzzied: list[str] = []
     skipped_final: list[str] = []
     skipped_empty = 0
+    added_from_pot = 0
     invalid: list[str] = []
     seen: set[tuple[str | None, str]] = set()
 
@@ -149,8 +161,17 @@ def main() -> int:
 
         entry = po.find(key, msgctxt=ctx)
         if entry is None or entry.obsolete:
-            invalid.append(f"{sheet_row}: unknown key (catalog changed since export?)")
-            continue
+            pot_entry = pot_map.get((ctx, key))
+            if pot_entry is None:
+                invalid.append(f"{sheet_row}: unknown key (catalog changed since export?)")
+                continue
+            entry = polib.POEntry(
+                msgid=pot_entry.msgid,
+                msgid_plural=pot_entry.msgid_plural or None,
+                msgctxt=pot_entry.msgctxt or None,
+            )
+            po.append(entry)
+            added_from_pot += 1
 
         is_plural_entry = bool(entry.msgid_plural)
         if is_plural_entry:
@@ -195,6 +216,8 @@ def main() -> int:
     print(f"unfuzzied (MT):  {len(unfuzzied)}")
     print(f"left empty:      {skipped_empty}")
     print(f"already final:   {len(skipped_final)} (never overwritten)")
+    if added_from_pot:
+        print(f"added from pot:  {added_from_pot} (po lagged — run i18n:extract to sync)")
     if invalid:
         print(f"INVALID ({len(invalid)}) — fix these and re-import:")
         for line in invalid:

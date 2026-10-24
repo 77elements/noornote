@@ -22,8 +22,12 @@ Sheet layout (row 1 = header, data from row 2):
 Default scope: untranslated + fuzzy entries only (the work list).
 `--all` exports every entry including already-final translations.
 
-If `src/i18n/po/<lang>.po` does not exist yet, it is bootstrapped from the
-pot automatically (msginit equivalent, Language header set).
+The sheet is built from the **pot** (source of truth) with the po as a
+translation-state overlay: strings added to the pot since the last
+`i18n:extract` are still exported (marked by the report), and stale
+po-only entries are skipped. If `src/i18n/po/<lang>.po` does not exist
+yet, it is bootstrapped from the pot automatically (msginit equivalent,
+Language header set).
 
 Usage:
     python3 tools/i18n-sheet-export.py --lang ar [--all] [--out file.xlsx]
@@ -62,6 +66,14 @@ HEADERS = [
 FILL_FILL = PatternFill("solid", fgColor="FFF2CC")  # light yellow
 HEADER_FONT = Font(bold=True)
 WRAP = Alignment(wrap_text=True, vertical="top")
+
+
+def load_pot() -> polib.POFile:
+    """Load the template — the source of truth for which strings exist."""
+    pot_path = PO_DIR / "messages.pot"
+    if not pot_path.exists():
+        raise SystemExit("messages.pot not found — run `bun run i18n:extract` first")
+    return polib.pofile(str(pot_path), wrap_width=79)
 
 
 def load_de_reference() -> dict[tuple[str | None, str], polib.POEntry]:
@@ -163,13 +175,32 @@ def main() -> int:
         return 1
 
     po, bootstrapped = bootstrap_po_if_missing(args.lang)
+    pot = load_pot()
     de_ref = load_de_reference()
+
+    # The pot is the source of truth for what exists; the po is an overlay
+    # for translation state. Iterating the pot (not the po) means strings
+    # added since the last `i18n:extract` still reach the sheet, and stale
+    # po-only entries are skipped instead of wasting translator work.
+    po_map = {(e.msgctxt, e.msgid): e for e in po if not e.obsolete}
+    pot_keys = {(e.msgctxt, e.msgid) for e in pot if not e.obsolete}
+    stale_in_po = sum(
+        1 for e in po if not e.obsolete and (e.msgctxt, e.msgid) not in pot_keys
+    )
 
     rows: list[dict[str, str]] = []
     skipped_final = 0
-    for entry in po:
-        if entry.obsolete:
+    fresh_from_pot = 0
+    for pot_entry in pot:
+        if pot_entry.obsolete:
             continue
+        entry = po_map.get((pot_entry.msgctxt, pot_entry.msgid))
+        if entry is None:
+            # po lags behind the pot (extract not run since this string was
+            # added) — export the untranslated pot shell rather than silently
+            # dropping the string
+            entry = pot_entry
+            fresh_from_pot += 1
         final = not needs_work(entry)
         if final and not args.all:
             skipped_final += 1
@@ -206,6 +237,10 @@ def main() -> int:
     print(f"exported: {len(rows)} rows ({len(rows) - plural_count} singular, {plural_count} plural)")
     if bootstrapped:
         print(f"bootstrapped new catalog: src/i18n/po/{args.lang}.po (from pot)")
+    if fresh_from_pot:
+        print(f"new in pot, missing from po (run i18n:extract to sync): {fresh_from_pot}")
+    if stale_in_po:
+        print(f"stale po entries skipped, no longer in pot (run i18n:extract): {stale_in_po}")
     if skipped_final:
         print(f"skipped already-final entries: {skipped_final} (--all to include)")
     print(f"file: {out_path}")
