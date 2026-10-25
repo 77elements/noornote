@@ -663,6 +663,7 @@ export class Timeline extends View {
 
     // Show skeleton loaders immediately (better UX than spinner)
     this.uiStateHandler.showSkeletonLoaders(5);
+    this.uiStateHandler.hideEmptyState();
 
     try {
       // Wait for auth to be fully initialized (session restore, NIP-46, etc.)
@@ -738,6 +739,11 @@ export class Timeline extends View {
       // Hide skeletons and render actual events
       this.uiStateHandler.hideSkeletonLoaders();
       this.renderer.renderEvents();
+      // 0 notes (e.g. fresh profile with no posts) → empty state instead of
+      // a blank section (renderEvents only ever HIDES the empty state).
+      if (result.events.length === 0) {
+        this.uiStateHandler.showEmptyState();
+      }
 
       // Batch-fetch ISL stats for rendered notes (non-blocking)
       void this.islStatsUpdater.fetchAndUpdateStats(result.events);
