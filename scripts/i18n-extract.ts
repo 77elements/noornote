@@ -21,11 +21,15 @@ const POT_PATH = join(PO_DIR, 'messages.pot');
 const PLURAL_FORMS: Record<string, string> = {
   en: 'nplurals=2; plural=(n != 1);',
   de: 'nplurals=2; plural=(n != 1);',
+  // fr po handed out directly (Poedit round) — must stay registered so the
+  // extract merge keeps touching fr.po and preserves the correct formula
+  fr: 'nplurals=2; plural=(n > 1);',
 };
 
 const NATIVE_NAMES: Record<string, string> = {
   en: 'English',
   de: 'German',
+  fr: 'French',
 };
 
 // ── Extract ──────────────────────────────────────────────────
