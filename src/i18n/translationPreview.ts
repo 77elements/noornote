@@ -17,14 +17,26 @@ import { parsePo } from './poParser';
 const TRIGGER_WORD = 'i18n';
 const PREVIEW_KEY = 'noornote_i18n_preview_po';
 
+// Dynamic, fire-and-forget: a static DiagnosticLogger import would pull the
+// AuthService graph into this boot-time module (see index.ts header note).
+function logPreview(msg: string, data?: unknown): void {
+  void import('../services/DiagnosticLogger').then(m =>
+    m.diagLog('system', msg, data)
+  );
+}
+
 /** Store the po for the rest of this session (applied on next boot). */
 export function storePoPreview(poText: string): void {
   sessionStorage.setItem(PREVIEW_KEY, poText);
+  logPreview('Translation preview stored — reload will apply it', {
+    bytes: poText.length,
+  });
 }
 
 /** Remove the session preview (next boot uses the stored language again). */
 export function clearPoPreview(): void {
   sessionStorage.removeItem(PREVIEW_KEY);
+  logPreview('Translation preview removed');
 }
 
 /** True while a session preview po is stored. */
@@ -48,6 +60,11 @@ export function applyPoPreviewAtBoot(): boolean {
   // not gated on LANGUAGES (only the Settings dropdown is). dirFor/plural
   // formulas resolve by language family and work for any locale.
   applyLocaleState(parsed.lang ?? 'preview', parsed.catalog);
+  logPreview('Translation preview active for this session', {
+    lang: parsed.lang ?? 'unknown',
+    total: parsed.stats.total,
+    translated: parsed.stats.translated,
+  });
   return true;
 }
 
