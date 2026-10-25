@@ -169,7 +169,11 @@ export default defineConfig({
 
     // Minification
     minify: 'esbuild',
-    cssMinify: true,
+    // 'esbuild' (not lightningcss default): lightningcss dedupes
+    // -webkit-backdrop-filter as an alias and drops the standard
+    // backdrop-filter property — Chromium/Firefox ignore the -webkit- alias,
+    // killing the blur on all marble-glass surfaces in production builds.
+    cssMinify: 'esbuild',
   },
 
   // CSS configuration
