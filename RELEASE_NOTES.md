@@ -1,13 +1,19 @@
-# Release Notes 1.9.1
+# Release Notes 1.9.2
 
 ## New
 
-- **Show reactions in your timeline** (optional): see reactions from people you follow as feed entries — enable globally in settings or per user on their profile. Off by default.
+- **NoorNote speaks German**: switch the entire UI to German in Settings → Interface. English stays the default until you choose — nothing changes on its own.
+- **Local full-text search**: search your notes and DMs instantly, entirely on your device. Optional "only local caches" mode in the search spotlight.
 
 ## Improved
 
-- **Reposts respond instantly**: the icon colors right away instead of after several seconds. Double-click no longer creates duplicate reposts, and taking a repost back works reliably.
+- Profiles without posts load instantly instead of waiting on relays.
 
 ## Fixed
 
-- Booking RSVPs now reliably reach event owners whose relays don't overlap with yours.
+- GIF search on desktop.
+- Notes with manipulated future timestamps can no longer jump to the top of your feeds.
+
+## Under the hood
+
+- Electron 44 (security backports), Vite 8, faster feed internals — and the groundwork for community translations.
