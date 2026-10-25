@@ -11839,50 +11839,55 @@ msgstr "#%s abmelden"
 msgid "Unsubscribed from #%s"
 msgstr "#%s abgemeldet"
 
-#: src/components/modals/TranslationPreviewModal.ts:89
+#: src/components/modals/TranslationPreviewModal.ts:120
 msgid "%s fuzzy (preview shows them anyway)"
 msgstr "%s fuzzy (Vorschau zeigt sie trotzdem)"
 
-#: src/components/modals/TranslationPreviewModal.ts:87
+#: src/components/modals/TranslationPreviewModal.ts:117
 msgid "%s of %s strings translated"
 msgstr "%s von %s Strings übersetzt"
 
-#: src/components/modals/TranslationPreviewModal.ts:91
+#: src/components/modals/TranslationPreviewModal.ts:123
 msgid "%s untranslated (shown in English)"
 msgstr "%s unübersetzt (Englisch wird angezeigt)"
 
-#: src/components/modals/TranslationPreviewModal.ts:77
-msgid "Applied for this session — reload the app to reset."
-msgstr "Für diese Sitzung angewendet — App neu laden setzt zurück."
-
-#: src/components/modals/TranslationPreviewModal.ts:30
-msgid "Apply to this session"
-msgstr "Für diese Sitzung anwenden"
-
-#: src/components/modals/TranslationPreviewModal.ts:86
+#: src/components/modals/TranslationPreviewModal.ts:116
 msgid "Language:"
 msgstr "Sprache:"
 
-#: src/components/modals/TranslationPreviewModal.ts:22
-msgid ""
-"Load a .po file to see your translations in the running app. Nothing is "
-"saved — reloading the app resets to your saved language."
-msgstr ""
-"Lade eine .po-Datei, um deine Übersetzungen in der laufenden App zu sehen. "
-"Nichts wird gespeichert — ein Neuladen der App setzt auf deine gespeicherte "
-"Sprache zurück."
-
-#: src/components/modals/TranslationPreviewModal.ts:63
+#: src/components/modals/TranslationPreviewModal.ts:83
 msgid "Not a valid .po file"
 msgstr "Keine gültige .po-Datei"
 
-#: src/components/modals/TranslationPreviewModal.ts:25
+#: src/components/modals/TranslationPreviewModal.ts:33
 msgid "PO file"
 msgstr "PO-Datei"
 
-#: src/components/modals/TranslationPreviewModal.ts:35
+#: src/components/modals/TranslationPreviewModal.ts:50
 msgid "Translation Preview"
 msgstr "Übersetzungs-Vorschau"
+
+#: src/components/modals/TranslationPreviewModal.ts:107
+msgid "A preview is active — it survives reloads."
+msgstr "Eine Vorschau ist aktiv — sie überlebt Neuladen."
+
+#: src/components/modals/TranslationPreviewModal.ts:38
+msgid "Apply and reload"
+msgstr "Anwenden und neu laden"
+
+#: src/components/modals/TranslationPreviewModal.ts:30
+msgid ""
+"Load a .po file to see your translations in the running app. The preview "
+"lasts for this app session (it survives reloads) and overrides your saved "
+"language until you remove it."
+msgstr ""
+"Lade eine .po-Datei, um deine Übersetzungen in der laufenden App zu sehen. "
+"Die Vorschau gilt für diese App-Sitzung (überlebt Neuladen) und überschreibt"
+" deine gespeicherte Sprache, bis du sie entfernst."
+
+#: src/components/modals/TranslationPreviewModal.ts:43
+msgid "Remove loaded .po file"
+msgstr "Geladene .po-Datei entfernen"
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"

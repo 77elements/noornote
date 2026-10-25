@@ -11787,49 +11787,55 @@ msgstr "Unsubscribe from #%s"
 msgid "Unsubscribed from #%s"
 msgstr "Unsubscribed from #%s"
 
-#: src/components/modals/TranslationPreviewModal.ts:89
+#: src/components/modals/TranslationPreviewModal.ts:120
 msgid "%s fuzzy (preview shows them anyway)"
 msgstr "%s fuzzy (preview shows them anyway)"
 
-#: src/components/modals/TranslationPreviewModal.ts:87
+#: src/components/modals/TranslationPreviewModal.ts:117
 msgid "%s of %s strings translated"
 msgstr "%s of %s strings translated"
 
-#: src/components/modals/TranslationPreviewModal.ts:91
+#: src/components/modals/TranslationPreviewModal.ts:123
 msgid "%s untranslated (shown in English)"
 msgstr "%s untranslated (shown in English)"
 
-#: src/components/modals/TranslationPreviewModal.ts:77
-msgid "Applied for this session — reload the app to reset."
-msgstr "Applied for this session — reload the app to reset."
-
-#: src/components/modals/TranslationPreviewModal.ts:30
-msgid "Apply to this session"
-msgstr "Apply to this session"
-
-#: src/components/modals/TranslationPreviewModal.ts:86
+#: src/components/modals/TranslationPreviewModal.ts:116
 msgid "Language:"
 msgstr "Language:"
 
-#: src/components/modals/TranslationPreviewModal.ts:22
-msgid ""
-"Load a .po file to see your translations in the running app. Nothing is "
-"saved — reloading the app resets to your saved language."
-msgstr ""
-"Load a .po file to see your translations in the running app. Nothing is "
-"saved — reloading the app resets to your saved language."
-
-#: src/components/modals/TranslationPreviewModal.ts:63
+#: src/components/modals/TranslationPreviewModal.ts:83
 msgid "Not a valid .po file"
 msgstr "Not a valid .po file"
 
-#: src/components/modals/TranslationPreviewModal.ts:25
+#: src/components/modals/TranslationPreviewModal.ts:33
 msgid "PO file"
 msgstr "PO file"
 
-#: src/components/modals/TranslationPreviewModal.ts:35
+#: src/components/modals/TranslationPreviewModal.ts:50
 msgid "Translation Preview"
 msgstr "Translation Preview"
+
+#: src/components/modals/TranslationPreviewModal.ts:107
+msgid "A preview is active — it survives reloads."
+msgstr "A preview is active — it survives reloads."
+
+#: src/components/modals/TranslationPreviewModal.ts:38
+msgid "Apply and reload"
+msgstr "Apply and reload"
+
+#: src/components/modals/TranslationPreviewModal.ts:30
+msgid ""
+"Load a .po file to see your translations in the running app. The preview "
+"lasts for this app session (it survives reloads) and overrides your saved "
+"language until you remove it."
+msgstr ""
+"Load a .po file to see your translations in the running app. The preview "
+"lasts for this app session (it survives reloads) and overrides your saved "
+"language until you remove it."
+
+#: src/components/modals/TranslationPreviewModal.ts:43
+msgid "Remove loaded .po file"
+msgstr "Remove loaded .po file"
 
 #: src/addons/note-taking/NoteEditorModal.ts:362
 #: src/addons/note-taking/NoteEditorModal.ts:85

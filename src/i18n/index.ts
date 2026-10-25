@@ -220,7 +220,13 @@ export function applyLocaleState(
  */
 export async function initI18n(): Promise<void> {
   applyRtlBootParam();
-  await applyStoredLocale();
+  // Session translation preview (WP13 workbench) — if a po was loaded via
+  // the "i18n" trigger, apply it INSTEAD of the stored locale, before any
+  // view (incl. cached singletons + sidebar) reads `_()`.
+  const { applyPoPreviewAtBoot } = await import('./translationPreview');
+  if (!applyPoPreviewAtBoot()) {
+    await applyStoredLocale();
+  }
 
   if (!initialized) {
     initialized = true;

@@ -224,7 +224,7 @@ msgid_plural "%s events published to your relays"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/components/modals/TranslationPreviewModal.ts:89
+#: src/components/modals/TranslationPreviewModal.ts:120
 msgid "%s fuzzy (preview shows them anyway)"
 msgstr ""
 
@@ -314,7 +314,7 @@ msgstr ""
 msgid "%s new posts tagged #%s"
 msgstr ""
 
-#: src/components/modals/TranslationPreviewModal.ts:87
+#: src/components/modals/TranslationPreviewModal.ts:117
 msgid "%s of %s strings translated"
 msgstr ""
 
@@ -378,7 +378,7 @@ msgstr ""
 msgid "%s starts %s"
 msgstr ""
 
-#: src/components/modals/TranslationPreviewModal.ts:91
+#: src/components/modals/TranslationPreviewModal.ts:123
 msgid "%s untranslated (shown in English)"
 msgstr ""
 
@@ -575,6 +575,10 @@ msgstr ""
 
 #: src/components/notifications/NotificationItem.ts:700
 msgid "a Nostrord group"
+msgstr ""
+
+#: src/components/modals/TranslationPreviewModal.ts:107
+msgid "A preview is active — it survives reloads."
 msgstr ""
 
 #: src/components/onboarding/AccountSetupWizard.ts:2542
@@ -990,17 +994,13 @@ msgstr ""
 msgid "App updated."
 msgstr ""
 
-#: src/components/modals/TranslationPreviewModal.ts:77
-msgid "Applied for this session — reload the app to reset."
-msgstr ""
-
 #: src/components/post/PostNoteModal.ts:719
 #: src/components/views/ConversationView.ts:620
 msgid "Apply"
 msgstr ""
 
-#: src/components/modals/TranslationPreviewModal.ts:30
-msgid "Apply to this session"
+#: src/components/modals/TranslationPreviewModal.ts:38
+msgid "Apply and reload"
 msgstr ""
 
 #: src/components/post/PostNoteModal.ts:720
@@ -4823,7 +4823,7 @@ msgstr ""
 msgid "Language changed"
 msgstr ""
 
-#: src/components/modals/TranslationPreviewModal.ts:86
+#: src/components/modals/TranslationPreviewModal.ts:116
 msgid "Language:"
 msgstr ""
 
@@ -5025,8 +5025,8 @@ msgstr ""
 msgid "Live Streams Player"
 msgstr ""
 
-#: src/components/modals/TranslationPreviewModal.ts:22
-msgid "Load a .po file to see your translations in the running app. Nothing is saved — reloading the app resets to your saved language."
+#: src/components/modals/TranslationPreviewModal.ts:30
+msgid "Load a .po file to see your translations in the running app. The preview lasts for this app session (it survives reloads) and overrides your saved language until you remove it."
 msgstr ""
 
 #: src/lists/follows.ts:2136
@@ -6482,7 +6482,7 @@ msgstr ""
 msgid "Not \"won't.\" Structurally impossible."
 msgstr ""
 
-#: src/components/modals/TranslationPreviewModal.ts:63
+#: src/components/modals/TranslationPreviewModal.ts:83
 msgid "Not a valid .po file"
 msgstr ""
 
@@ -7113,7 +7113,7 @@ msgstr ""
 msgid "Please upload a video first"
 msgstr ""
 
-#: src/components/modals/TranslationPreviewModal.ts:25
+#: src/components/modals/TranslationPreviewModal.ts:33
 msgid "PO file"
 msgstr ""
 
@@ -7875,6 +7875,10 @@ msgstr ""
 
 #: src/addons/note-taking/NoteEditorModal.ts:252
 msgid "Remove label"
+msgstr ""
+
+#: src/components/modals/TranslationPreviewModal.ts:43
+msgid "Remove loaded .po file"
 msgstr ""
 
 #: src/lists/tribes.ts:3663
@@ -9893,7 +9897,7 @@ msgstr ""
 msgid "Tracks which bookmarks you have opened and syncs the read-state across your devices (encrypted, only visible to you). When off, the sidebar shows the plain bookmark total."
 msgstr ""
 
-#: src/components/modals/TranslationPreviewModal.ts:35
+#: src/components/modals/TranslationPreviewModal.ts:50
 msgid "Translation Preview"
 msgstr ""
 
