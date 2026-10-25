@@ -253,11 +253,12 @@ async function storedLocale(): Promise<string> {
     StorageKeys.LANGUAGE,
     ''
   );
-  if (stored) return normalizeLocale(stored);
-  if (typeof navigator !== 'undefined') {
-    return normalizeLocale(navigator.language);
-  }
-  return 'en';
+  // No system-locale auto-detection: without an explicit user choice the UI
+  // stays English. Auto-detecting `navigator.language` would switch existing
+  // users to German (or any other registered language) the moment this
+  // version ships — never do that. A language question belongs in onboarding
+  // (WP12), where the user answers explicitly.
+  return stored ? normalizeLocale(stored) : 'en';
 }
 
 /**
