@@ -4116,7 +4116,7 @@ msgid ""
 msgstr ""
 
 #: src/components/timeline/LastNotesPerFollow.ts:148
-#: src/components/timeline/Timeline.ts:425
+#: src/components/timeline/Timeline.ts:432
 msgid "Follow some users or check your relay connections."
 msgstr ""
 
@@ -4972,12 +4972,12 @@ msgid "Later"
 msgstr ""
 
 #: src/components/timeline/LastNotesPerFollow.ts:107
-#: src/components/timeline/Timeline.ts:438
+#: src/components/timeline/Timeline.ts:446
 msgid "Latest"
 msgstr ""
 
 #: src/components/timeline/LastNotesPerFollow.ts:108
-#: src/components/timeline/Timeline.ts:439
+#: src/components/timeline/Timeline.ts:447
 msgid "Latest + Replies"
 msgstr "Récents + Réponses"
 
@@ -5548,7 +5548,7 @@ msgstr ""
 msgid "Long-form content from your follows"
 msgstr ""
 
-#: src/components/timeline/Timeline.ts:528
+#: src/components/timeline/Timeline.ts:536
 msgid "Look for new notes"
 msgstr ""
 
@@ -6216,7 +6216,7 @@ msgstr ""
 msgid "No event calendars yet. Create one and add your public events to it."
 msgstr ""
 
-#: src/components/timeline/Timeline.ts:424
+#: src/components/timeline/Timeline.ts:427
 msgid "No events found"
 msgstr ""
 
@@ -6312,6 +6312,7 @@ msgid "No muted users or threads"
 msgstr ""
 
 #: src/components/timeline/LastNotesPerFollow.ts:147
+#: src/components/timeline/Timeline.ts:426
 msgid "No notes found"
 msgstr ""
 
@@ -10062,7 +10063,7 @@ msgstr ""
 msgid "time left"
 msgstr ""
 
-#: src/components/timeline/Timeline.ts:440
+#: src/components/timeline/Timeline.ts:448
 msgid "Time Range"
 msgstr ""
 
@@ -11419,6 +11420,10 @@ msgstr ""
 
 #: src/components/modals/TranslationPreviewModal.ts:43
 msgid "Remove loaded .po file"
+msgstr ""
+
+#: src/components/timeline/Timeline.ts:431
+msgid "Nothing published here yet — or not available on your relays."
 msgstr ""
 
 #: src/helpers/datePickerModal.ts:183

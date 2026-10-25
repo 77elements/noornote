@@ -874,8 +874,7 @@ export class FeedOrchestrator extends Orchestrator {
         perRelayUntil,
         15000,
         'FeedOrch-PV',
-        false,
-        true // emptyQuorumExit: author-scoped empty answer is definitive
+        false
       );
       for (const e of events) {
         if (e.id) pager.fetched.set(e.id, e);
@@ -906,24 +905,6 @@ export class FeedOrchestrator extends Orchestrator {
       }
 
       const stillActive = relays.some(r => !pager.done.has(r));
-
-      // PV fast path (0-post profiles): a round with zero events where
-      // responsive relays positively EOSEd empty is definitive for an
-      // author-scoped query — don't spend further full timeouts re-asking
-      // stragglers (previously: up to 2 extra 15 s rounds for one hanging
-      // relay). Retire everything so the empty state shows immediately.
-      // Trade-off (accepted): if the ONLY copies of an author's posts lived
-      // on a relay that hangs, we now conclude empty instead of waiting.
-      const positiveEmpty =
-        newlyEmitted.length === 0 &&
-        active.some(r => {
-          const info = perRelay[r];
-          return info?.eosed && info.count === 0;
-        });
-      if (positiveEmpty) {
-        active.forEach(r => pager.done.add(r));
-        break;
-      }
       // Dense frontier: complete coverage reaches down to the deepest point every
       // still-active relay has fetched. With none left, reveal everything.
       const newFrontier = frontierCandidates.length

@@ -8991,7 +8991,7 @@ msgstr "Zaps earned"
 msgid "Zaps sent"
 msgstr "Zaps sent"
 
-#: src/components/timeline/Timeline.ts:528
+#: src/components/timeline/Timeline.ts:536
 msgid "Look for new notes"
 msgstr "Look for new notes"
 
@@ -10943,16 +10943,16 @@ msgid "%s new"
 msgstr "%s new"
 
 #: src/components/timeline/LastNotesPerFollow.ts:107
-#: src/components/timeline/Timeline.ts:438
+#: src/components/timeline/Timeline.ts:446
 msgid "Latest"
 msgstr "Latest"
 
 #: src/components/timeline/LastNotesPerFollow.ts:108
-#: src/components/timeline/Timeline.ts:439
+#: src/components/timeline/Timeline.ts:447
 msgid "Latest + Replies"
 msgstr "Latest + Replies"
 
-#: src/components/timeline/Timeline.ts:440
+#: src/components/timeline/Timeline.ts:448
 msgid "Time Range"
 msgstr "Time Range"
 
@@ -11183,7 +11183,7 @@ msgid "Follow pack not found"
 msgstr "Follow pack not found"
 
 #: src/components/timeline/LastNotesPerFollow.ts:148
-#: src/components/timeline/Timeline.ts:425
+#: src/components/timeline/Timeline.ts:432
 msgid "Follow some users or check your relay connections."
 msgstr "Follow some users or check your relay connections."
 
@@ -11289,7 +11289,7 @@ msgstr "Next image"
 msgid "No drafts yet"
 msgstr "No drafts yet"
 
-#: src/components/timeline/Timeline.ts:424
+#: src/components/timeline/Timeline.ts:427
 msgid "No events found"
 msgstr "No events found"
 
@@ -11302,6 +11302,7 @@ msgid "No media from your follows yet."
 msgstr "No media from your follows yet."
 
 #: src/components/timeline/LastNotesPerFollow.ts:147
+#: src/components/timeline/Timeline.ts:426
 msgid "No notes found"
 msgstr "No notes found"
 
@@ -11836,6 +11837,10 @@ msgstr ""
 #: src/components/modals/TranslationPreviewModal.ts:43
 msgid "Remove loaded .po file"
 msgstr "Remove loaded .po file"
+
+#: src/components/timeline/Timeline.ts:431
+msgid "Nothing published here yet — or not available on your relays."
+msgstr "Nothing published here yet — or not available on your relays."
 
 #: src/addons/note-taking/NoteEditorModal.ts:362
 #: src/addons/note-taking/NoteEditorModal.ts:85

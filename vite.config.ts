@@ -16,7 +16,10 @@ function buildIdPlugin(): PluginOption {
     closeBundle() {
       const distDir = resolve(__dirname, 'dist');
       mkdirSync(distDir, { recursive: true });
-      writeFileSync(resolve(distDir, 'version.json'), JSON.stringify({ id: BUILD_ID }));
+      writeFileSync(
+        resolve(distDir, 'version.json'),
+        JSON.stringify({ id: BUILD_ID })
+      );
     },
   };
 }
@@ -38,31 +41,32 @@ export default defineConfig({
     },
     // Prevent browser caching of assets in dev mode
     headers: {
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-      'Pragma': 'no-cache',
-      'Expires': '0',
+      'Cache-Control':
+        'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+      Pragma: 'no-cache',
+      Expires: '0',
     },
     // Proxy for media uploads to bypass CORS in development
     proxy: {
       '/proxy/blossom.nostr.build': {
         target: 'https://blossom.nostr.build',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/proxy\/blossom\.nostr\.build/, ''),
+        rewrite: path => path.replace(/^\/proxy\/blossom\.nostr\.build/, ''),
       },
       '/proxy/nostr.build': {
         target: 'https://nostr.build',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/proxy\/nostr\.build/, ''),
+        rewrite: path => path.replace(/^\/proxy\/nostr\.build/, ''),
       },
       '/proxy/blossom.band': {
         target: 'https://blossom.band',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/proxy\/blossom\.band/, ''),
+        rewrite: path => path.replace(/^\/proxy\/blossom\.band/, ''),
       },
       '/proxy/blossom.primal.net': {
         target: 'https://blossom.primal.net',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/proxy\/blossom\.primal\.net/, ''),
+        rewrite: path => path.replace(/^\/proxy\/blossom\.primal\.net/, ''),
       },
     },
   },
@@ -140,9 +144,11 @@ export default defineConfig({
           return;
         }
         // Legacy Rollup wording of the same pattern (kept until Vite 7 support is dropped)
-        if (warning.code === 'PLUGIN_WARNING' &&
-            warning.message?.includes('dynamically imported') &&
-            warning.message?.includes('statically imported')) {
+        if (
+          warning.code === 'PLUGIN_WARNING' &&
+          warning.message?.includes('dynamically imported') &&
+          warning.message?.includes('statically imported')
+        ) {
           return;
         }
         // Suppress eval warnings from external packages (tseep)
@@ -197,12 +203,16 @@ export default defineConfig({
   plugins: [
     buildIdPlugin(),
     // Bundle analyzer for development
-    ...(process.env.ANALYZE ? [visualizer({
-      filename: 'dist/bundle-analysis.html',
-      open: true,
-      gzipSize: true,
-      brotliSize: true,
-    }) as PluginOption] : []),
+    ...(process.env.ANALYZE
+      ? [
+          visualizer({
+            filename: 'dist/bundle-analysis.html',
+            open: true,
+            gzipSize: true,
+            brotliSize: true,
+          }) as PluginOption,
+        ]
+      : []),
   ],
 
   envPrefix: ['VITE_'],

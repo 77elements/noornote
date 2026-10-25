@@ -876,8 +876,7 @@ export class NostrTransport {
     timeout: number = 5000,
     caller: string = '',
     perRelayUntil?: Record<string, number>,
-    waitForAll: boolean = false,
-    emptyQuorumExit: boolean = false
+    waitForAll: boolean = false
   ): Promise<{
     events: NostrEvent[];
     perRelay: Record<
@@ -947,18 +946,6 @@ export class NostrTransport {
       // result waiting until the hard timeout, so we never flash empty early.
       const QUORUM = Math.max(1, Math.ceil(relays.length * 0.6));
       const GRACE_MS = 1000;
-
-      // Positive-empty evidence (opt-in, PV): every relay that ANSWERED did so
-      // with EOSE and zero events. For an author-scoped query that is a
-      // definitive "no events here" — pending stragglers don't block it, but
-      // relays that errored (no EOSE) provide no evidence and do.
-      const answeredEosedEmpty = (): boolean => {
-        if (events.size > 0) return false;
-        return relays.every(u => {
-          const r = perRelay[u]!;
-          return r.state === 'pending' || r.eosed;
-        });
-      };
 
       const finish = () => {
         if (done) return;
@@ -1035,10 +1022,13 @@ export class NostrTransport {
         // events) need completeness over speed: skip the quorum early-exit so a
         // slow-but-complete relay isn't cut off by fast-but-partial ones. Still
         // bounded by all-settled (above) and the hard timeout.
-        if (!waitForAll && settledRelays >= QUORUM && !graceTimer) {
-          if (events.size > 0 || (emptyQuorumExit && answeredEosedEmpty())) {
-            graceTimer = setTimeout(finish, GRACE_MS);
-          }
+        if (
+          !waitForAll &&
+          settledRelays >= QUORUM &&
+          events.size > 0 &&
+          !graceTimer
+        ) {
+          graceTimer = setTimeout(finish, GRACE_MS);
         }
       };
 
@@ -1130,8 +1120,7 @@ export class NostrTransport {
     perRelayUntil: Record<string, number>,
     timeout: number = 5000,
     caller: string = '',
-    waitForAll: boolean = false,
-    emptyQuorumExit: boolean = false
+    waitForAll: boolean = false
   ): Promise<{
     events: NostrEvent[];
     perRelay: Record<
@@ -1145,8 +1134,7 @@ export class NostrTransport {
       timeout,
       caller,
       perRelayUntil,
-      waitForAll,
-      emptyQuorumExit
+      waitForAll
     );
   }
 

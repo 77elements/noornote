@@ -421,8 +421,16 @@ export class Timeline extends View {
       </div>
 
       <div class="timeline-empty" style="display: none;">
-        <h3>${_('No events found')}</h3>
-        <p>${_('Follow some users or check your relay connections.')}</p>
+        <h3>${
+          this.config.source.kind === 'authors'
+            ? _('No notes found')
+            : _('No events found')
+        }</h3>
+        <p>${
+          this.config.source.kind === 'authors'
+            ? _('Nothing published here yet — or not available on your relays.')
+            : _('Follow some users or check your relay connections.')
+        }</p>
       </div>
     `;
 
