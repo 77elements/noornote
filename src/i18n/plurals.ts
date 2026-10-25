@@ -97,7 +97,8 @@ export interface LanguageMeta {
   dir: 'ltr' | 'rtl';
 }
 
-/** Available UI languages. A language needs a compiled catalog chunk to work. */
+/** Available UI languages. A language needs a compiled catalog chunk to show
+ *  its own strings — entries without one fall back to English at runtime. */
 export const LANGUAGES: Record<string, LanguageMeta> = {
   en: { nativeName: 'English', dir: 'ltr' },
   de: { nativeName: 'Deutsch', dir: 'ltr' },
