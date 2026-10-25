@@ -1,4 +1,4 @@
-# Release Notes 1.9.2
+# Release Notes 1.9.3
 
 ## New
 
@@ -9,8 +9,10 @@
 
 - Profiles without posts load instantly instead of waiting on relays.
 
-## Fixed
+## Fixed in 1.9.3
 
+- Dropdowns, menus and toasts are readable again (transparent-glass regression from 1.9.2).
+- Profiles no longer show a false "No events found" while relays are still loading.
 - GIF search on desktop.
 - Notes with manipulated future timestamps can no longer jump to the top of your feeds.
 
