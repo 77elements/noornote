@@ -656,13 +656,13 @@ msgstr "Confirm"
 msgid "Create"
 msgstr "Create"
 
-#: src/components/modals/UpdateModal.ts:100
+#: src/components/modals/UpdateModal.ts:101
 msgid "Current:"
 msgstr "Current:"
 
 #: src/components/layout/MainLayout.ts:1956
 #: src/components/layout/MainLayout.ts:1966
-#: src/components/modals/UpdateModal.ts:116
+#: src/components/modals/UpdateModal.ts:117
 #: src/components/ui/ImageViewer.ts:215
 msgid "Download"
 msgstr "Download"
@@ -687,11 +687,11 @@ msgstr "Enter Password"
 msgid "Incorrect password"
 msgstr "Incorrect password"
 
-#: src/components/modals/UpdateModal.ts:97
+#: src/components/modals/UpdateModal.ts:98
 msgid "is available"
 msgstr "is available"
 
-#: src/components/modals/UpdateModal.ts:115
+#: src/components/modals/UpdateModal.ts:116
 msgid "Later"
 msgstr "Later"
 
@@ -720,7 +720,7 @@ msgstr "Rename Folder"
 msgid "Save"
 msgstr "Save"
 
-#: src/components/modals/UpdateModal.ts:114
+#: src/components/modals/UpdateModal.ts:115
 msgid "Skip this version"
 msgstr "Skip this version"
 
@@ -750,7 +750,7 @@ msgstr "Unlock NoorSigner"
 msgid "Unlocking..."
 msgstr "Unlocking..."
 
-#: src/components/modals/UpdateModal.ts:74
+#: src/components/modals/UpdateModal.ts:75
 msgid "Update Available"
 msgstr "Update Available"
 
@@ -11786,6 +11786,50 @@ msgstr "Unsubscribe from #%s"
 #: src/components/notifications/NotificationItem.ts:296
 msgid "Unsubscribed from #%s"
 msgstr "Unsubscribed from #%s"
+
+#: src/components/modals/TranslationPreviewModal.ts:89
+msgid "%s fuzzy (preview shows them anyway)"
+msgstr "%s fuzzy (preview shows them anyway)"
+
+#: src/components/modals/TranslationPreviewModal.ts:87
+msgid "%s of %s strings translated"
+msgstr "%s of %s strings translated"
+
+#: src/components/modals/TranslationPreviewModal.ts:91
+msgid "%s untranslated (shown in English)"
+msgstr "%s untranslated (shown in English)"
+
+#: src/components/modals/TranslationPreviewModal.ts:77
+msgid "Applied for this session — reload the app to reset."
+msgstr "Applied for this session — reload the app to reset."
+
+#: src/components/modals/TranslationPreviewModal.ts:30
+msgid "Apply to this session"
+msgstr "Apply to this session"
+
+#: src/components/modals/TranslationPreviewModal.ts:86
+msgid "Language:"
+msgstr "Language:"
+
+#: src/components/modals/TranslationPreviewModal.ts:22
+msgid ""
+"Load a .po file to see your translations in the running app. Nothing is "
+"saved — reloading the app resets to your saved language."
+msgstr ""
+"Load a .po file to see your translations in the running app. Nothing is "
+"saved — reloading the app resets to your saved language."
+
+#: src/components/modals/TranslationPreviewModal.ts:63
+msgid "Not a valid .po file"
+msgstr "Not a valid .po file"
+
+#: src/components/modals/TranslationPreviewModal.ts:25
+msgid "PO file"
+msgstr "PO file"
+
+#: src/components/modals/TranslationPreviewModal.ts:35
+msgid "Translation Preview"
+msgstr "Translation Preview"
 
 #: src/addons/note-taking/NoteEditorModal.ts:362
 #: src/addons/note-taking/NoteEditorModal.ts:85

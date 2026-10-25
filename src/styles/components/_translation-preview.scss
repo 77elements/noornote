@@ -1,0 +1,11 @@
+/**
+ * Translation Preview modal (WP13 workbench) — session-only .po preview.
+ */
+
+@use '../abstracts/variables' as *;
+
+.translation-preview-modal__status {
+  margin: $gap 0;
+  white-space: pre-line; // status lines are joined with \n
+  color: var(--color-3);
+}

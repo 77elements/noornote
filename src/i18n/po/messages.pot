@@ -224,6 +224,10 @@ msgid_plural "%s events published to your relays"
 msgstr[0] ""
 msgstr[1] ""
 
+#: src/components/modals/TranslationPreviewModal.ts:89
+msgid "%s fuzzy (preview shows them anyway)"
+msgstr ""
+
 #: src/helpers/formatTimeAgo.ts:18
 msgid "%s h ago"
 msgstr ""
@@ -310,6 +314,10 @@ msgstr ""
 msgid "%s new posts tagged #%s"
 msgstr ""
 
+#: src/components/modals/TranslationPreviewModal.ts:87
+msgid "%s of %s strings translated"
+msgstr ""
+
 #: src/addons/calendar/CalendarImportExport.ts:318
 msgid "%s outside"
 msgid_plural "%s outside"
@@ -368,6 +376,10 @@ msgstr ""
 #: src/addons/calendar/CalendarReminderService.ts:320
 #: src/addons/calendar/CalendarReminderService.ts:330
 msgid "%s starts %s"
+msgstr ""
+
+#: src/components/modals/TranslationPreviewModal.ts:91
+msgid "%s untranslated (shown in English)"
 msgstr ""
 
 #: src/components/onboarding/AccountSetupWizard.ts:2695
@@ -978,9 +990,17 @@ msgstr ""
 msgid "App updated."
 msgstr ""
 
+#: src/components/modals/TranslationPreviewModal.ts:77
+msgid "Applied for this session — reload the app to reset."
+msgstr ""
+
 #: src/components/post/PostNoteModal.ts:719
 #: src/components/views/ConversationView.ts:620
 msgid "Apply"
+msgstr ""
+
+#: src/components/modals/TranslationPreviewModal.ts:30
+msgid "Apply to this session"
 msgstr ""
 
 #: src/components/post/PostNoteModal.ts:720
@@ -2315,7 +2335,7 @@ msgstr ""
 msgid "Curated public follow lists you subscribe to."
 msgstr ""
 
-#: src/components/modals/UpdateModal.ts:100
+#: src/components/modals/UpdateModal.ts:101
 msgid "Current:"
 msgstr ""
 
@@ -2864,7 +2884,7 @@ msgstr ""
 
 #: src/components/layout/MainLayout.ts:1956
 #: src/components/layout/MainLayout.ts:1966
-#: src/components/modals/UpdateModal.ts:116
+#: src/components/modals/UpdateModal.ts:117
 #: src/components/ui/ImageViewer.ts:215
 msgid "Download"
 msgstr ""
@@ -4686,7 +4706,7 @@ msgstr ""
 msgid "Invitation accepted"
 msgstr ""
 
-#: src/components/modals/UpdateModal.ts:97
+#: src/components/modals/UpdateModal.ts:98
 msgid "is available"
 msgstr ""
 
@@ -4803,6 +4823,10 @@ msgstr ""
 msgid "Language changed"
 msgstr ""
 
+#: src/components/modals/TranslationPreviewModal.ts:86
+msgid "Language:"
+msgstr ""
+
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:150
 msgid "Last checked %s."
 msgstr ""
@@ -4823,7 +4847,7 @@ msgstr ""
 msgid "Last: Just now"
 msgstr ""
 
-#: src/components/modals/UpdateModal.ts:115
+#: src/components/modals/UpdateModal.ts:116
 msgid "Later"
 msgstr ""
 
@@ -4999,6 +5023,10 @@ msgstr ""
 
 #: src/addons/addonI18n.ts:42
 msgid "Live Streams Player"
+msgstr ""
+
+#: src/components/modals/TranslationPreviewModal.ts:22
+msgid "Load a .po file to see your translations in the running app. Nothing is saved — reloading the app resets to your saved language."
 msgstr ""
 
 #: src/lists/follows.ts:2136
@@ -6454,6 +6482,10 @@ msgstr ""
 msgid "Not \"won't.\" Structurally impossible."
 msgstr ""
 
+#: src/components/modals/TranslationPreviewModal.ts:63
+msgid "Not a valid .po file"
+msgstr ""
+
 #: src/components/settings/PrivacySettingsSection.ts:134
 msgid "Not all Nostr clients support NIP-51 yet. If you use other clients that don't support NIP-51, you won't be able to see your private %s."
 msgstr ""
@@ -7079,6 +7111,10 @@ msgstr ""
 
 #: src/services/VideoService.ts:88
 msgid "Please upload a video first"
+msgstr ""
+
+#: src/components/modals/TranslationPreviewModal.ts:25
+msgid "PO file"
 msgstr ""
 
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:190
@@ -9009,7 +9045,7 @@ msgstr ""
 msgid "Skip for now"
 msgstr ""
 
-#: src/components/modals/UpdateModal.ts:114
+#: src/components/modals/UpdateModal.ts:115
 msgid "Skip this version"
 msgstr ""
 
@@ -9857,6 +9893,10 @@ msgstr ""
 msgid "Tracks which bookmarks you have opened and syncs the read-state across your devices (encrypted, only visible to you). When off, the sidebar shows the plain bookmark total."
 msgstr ""
 
+#: src/components/modals/TranslationPreviewModal.ts:35
+msgid "Translation Preview"
+msgstr ""
+
 #: src/lists/tribes.ts:2387
 #: src/lists/tribes.ts:2940
 msgid "Tribe"
@@ -10074,7 +10114,7 @@ msgstr ""
 msgid "Update"
 msgstr ""
 
-#: src/components/modals/UpdateModal.ts:74
+#: src/components/modals/UpdateModal.ts:75
 msgid "Update Available"
 msgstr ""
 

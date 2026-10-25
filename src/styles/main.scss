@@ -55,6 +55,7 @@
 @use 'components/mute-list-view';
 @use 'components/interaction-status-line';
 @use 'components/bolt11-invoice';
+@use 'components/translation-preview';
 @use 'components/live-stream-card';
 @use 'components/user-identity';
 @use 'components/sync-status-badge';
@@ -67,8 +68,8 @@
 @use 'components/modal';
 @use 'components/analytics-modal';
 @use 'components/qrcode-modal';
-  @use 'components/raw-event-modal';
-  @use 'components/share-link-modal';
+@use 'components/raw-event-modal';
+@use 'components/share-link-modal';
 @use 'components/report-modal';
 @use 'components/delete-note-modal';
 @use 'components/zap-modal';

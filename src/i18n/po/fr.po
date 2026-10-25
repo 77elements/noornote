@@ -11374,6 +11374,48 @@ msgstr ""
 msgid "Zoom Out"
 msgstr ""
 
+#: src/components/modals/TranslationPreviewModal.ts:89
+msgid "%s fuzzy (preview shows them anyway)"
+msgstr ""
+
+#: src/components/modals/TranslationPreviewModal.ts:87
+msgid "%s of %s strings translated"
+msgstr ""
+
+#: src/components/modals/TranslationPreviewModal.ts:91
+msgid "%s untranslated (shown in English)"
+msgstr ""
+
+#: src/components/modals/TranslationPreviewModal.ts:77
+msgid "Applied for this session — reload the app to reset."
+msgstr ""
+
+#: src/components/modals/TranslationPreviewModal.ts:30
+msgid "Apply to this session"
+msgstr ""
+
+#: src/components/modals/TranslationPreviewModal.ts:86
+msgid "Language:"
+msgstr ""
+
+#: src/components/modals/TranslationPreviewModal.ts:22
+msgid ""
+"Load a .po file to see your translations in the running app. Nothing is "
+"saved — reloading the app resets to your saved language."
+msgstr ""
+
+#: src/components/modals/TranslationPreviewModal.ts:63
+msgid "Not a valid .po file"
+msgstr ""
+
+#: src/components/modals/TranslationPreviewModal.ts:25
+msgid "PO file"
+msgstr ""
+
+#: src/components/modals/TranslationPreviewModal.ts:35
+msgid "Translation Preview"
+msgstr ""
+
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"
 msgid "To"

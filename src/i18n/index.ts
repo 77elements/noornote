@@ -227,6 +227,12 @@ export async function initI18n(): Promise<void> {
     // Dev/QA helper — see setRtlPreview().
     if (typeof window !== 'undefined') {
       (window as unknown as Record<string, unknown>).__setRtl = setRtlPreview;
+      // Translation workbench (WP13): type "i18n" outside form fields to
+      // load a .po file into the running app (session-only preview).
+      const { registerI18nPreviewTrigger } = await import(
+        './translationPreview'
+      );
+      registerI18nPreviewTrigger();
     }
     const { TypedEventBus } = await import('../core/TypedEventBus');
     TypedEventBus.getInstance().on('user:login', () => {

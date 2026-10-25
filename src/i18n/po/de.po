@@ -473,13 +473,13 @@ msgstr "Bestätigen"
 msgid "Create"
 msgstr "Erstellen"
 
-#: src/components/modals/UpdateModal.ts:100
+#: src/components/modals/UpdateModal.ts:101
 msgid "Current:"
 msgstr "Aktuell:"
 
 #: src/components/layout/MainLayout.ts:1956
 #: src/components/layout/MainLayout.ts:1966
-#: src/components/modals/UpdateModal.ts:116
+#: src/components/modals/UpdateModal.ts:117
 #: src/components/ui/ImageViewer.ts:215
 msgid "Download"
 msgstr "Download"
@@ -503,11 +503,11 @@ msgstr "Passwort eingeben"
 msgid "Incorrect password"
 msgstr "Falsches Passwort"
 
-#: src/components/modals/UpdateModal.ts:97
+#: src/components/modals/UpdateModal.ts:98
 msgid "is available"
 msgstr "ist verfügbar"
 
-#: src/components/modals/UpdateModal.ts:115
+#: src/components/modals/UpdateModal.ts:116
 msgid "Later"
 msgstr "Später"
 
@@ -535,7 +535,7 @@ msgstr "Ordner umbenennen"
 msgid "Save"
 msgstr "Speichern"
 
-#: src/components/modals/UpdateModal.ts:114
+#: src/components/modals/UpdateModal.ts:115
 msgid "Skip this version"
 msgstr "Diese Version überspringen"
 
@@ -565,7 +565,7 @@ msgstr "NoorSigner entsperren"
 msgid "Unlocking..."
 msgstr "Entsperre…"
 
-#: src/components/modals/UpdateModal.ts:74
+#: src/components/modals/UpdateModal.ts:75
 msgid "Update Available"
 msgstr "Update verfügbar"
 
@@ -11838,6 +11838,51 @@ msgstr "#%s abmelden"
 #: src/components/notifications/NotificationItem.ts:296
 msgid "Unsubscribed from #%s"
 msgstr "#%s abgemeldet"
+
+#: src/components/modals/TranslationPreviewModal.ts:89
+msgid "%s fuzzy (preview shows them anyway)"
+msgstr "%s fuzzy (Vorschau zeigt sie trotzdem)"
+
+#: src/components/modals/TranslationPreviewModal.ts:87
+msgid "%s of %s strings translated"
+msgstr "%s von %s Strings übersetzt"
+
+#: src/components/modals/TranslationPreviewModal.ts:91
+msgid "%s untranslated (shown in English)"
+msgstr "%s unübersetzt (Englisch wird angezeigt)"
+
+#: src/components/modals/TranslationPreviewModal.ts:77
+msgid "Applied for this session — reload the app to reset."
+msgstr "Für diese Sitzung angewendet — App neu laden setzt zurück."
+
+#: src/components/modals/TranslationPreviewModal.ts:30
+msgid "Apply to this session"
+msgstr "Für diese Sitzung anwenden"
+
+#: src/components/modals/TranslationPreviewModal.ts:86
+msgid "Language:"
+msgstr "Sprache:"
+
+#: src/components/modals/TranslationPreviewModal.ts:22
+msgid ""
+"Load a .po file to see your translations in the running app. Nothing is "
+"saved — reloading the app resets to your saved language."
+msgstr ""
+"Lade eine .po-Datei, um deine Übersetzungen in der laufenden App zu sehen. "
+"Nichts wird gespeichert — ein Neuladen der App setzt auf deine gespeicherte "
+"Sprache zurück."
+
+#: src/components/modals/TranslationPreviewModal.ts:63
+msgid "Not a valid .po file"
+msgstr "Keine gültige .po-Datei"
+
+#: src/components/modals/TranslationPreviewModal.ts:25
+msgid "PO file"
+msgstr "PO-Datei"
+
+#: src/components/modals/TranslationPreviewModal.ts:35
+msgid "Translation Preview"
+msgstr "Übersetzungs-Vorschau"
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"
