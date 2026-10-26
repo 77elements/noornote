@@ -1,21 +1,17 @@
-# Release Notes 1.9.3
+# Release Notes 1.9.4
 
 ## New
 
-- **NoorNote speaks German**: switch the entire UI to German in Settings → Interface. English stays the default until you choose — nothing changes on its own.
-- **Local full-text search**: search your notes and DMs instantly, entirely on your device. Optional "only local caches" mode in the search spotlight.
+- **The global Back button can be switched off**: if the button at the bottom edge bothers you, disable it in Settings → Interface. Default stays on — nothing changes unless you touch the switch.
 
 ## Improved
 
-- Profiles without posts load instantly instead of waiting on relays.
+- More breathing room at the bottom of content views (40 → 48 px), including the article editor, which previously ended flush at the edge.
 
-## Fixed in 1.9.3
+## Fixed in 1.9.4
 
-- Dropdowns, menus and toasts are readable again (transparent-glass regression from 1.9.2).
-- Profiles no longer show a false "No events found" while relays are still loading.
-- GIF search on desktop.
-- Notes with manipulated future timestamps can no longer jump to the top of your feeds.
+- The reply composer's timeline switch showed a wrong German label ("Neues Highlight").
 
 ## Under the hood
 
-- Electron 44 (security backports), Vite 8, faster feed internals — and the groundwork for community translations.
+- Build hygiene: silenced Sass deprecation warnings, shared error-message helper, new profile-load regression tests.
