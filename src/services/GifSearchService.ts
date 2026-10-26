@@ -24,6 +24,7 @@
 
 import { PlatformService } from './PlatformService';
 import { diagLog } from './DiagnosticLogger';
+import { errMessage } from '../helpers/errorMessage';
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 import {
   isGifMediaUrl,
@@ -219,7 +220,7 @@ export class GifSearchService {
       store.set(StorageKeys.GIF_META_CACHE, Object.fromEntries(trimmed));
     } catch (error) {
       diagLog('system', 'gif_meta_cache_write_failed', {
-        message: error instanceof Error ? error.message : String(error),
+        message: errMessage(error),
       });
     }
   }
@@ -366,7 +367,7 @@ export class GifSearchService {
       return new GifSearchError('network', 'Request aborted');
     }
     diagLog('system', 'gif_search_failed', {
-      message: error instanceof Error ? error.message : String(error),
+      message: errMessage(error),
     });
     // In browsers, 403/503 answered before CORS headers reach us as a bare
     // network error — the guide says to treat that as "unavailable, retry later".
