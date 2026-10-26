@@ -2708,7 +2708,7 @@ msgstr "Diese nicht gesendete Notiz in deinen Entwürfen behalten?"
 
 #: src/components/reply/ReplyModal.ts:509
 msgid "Show in my timeline"
-msgstr "Neues Highlight"
+msgstr "In meiner Timeline zeigen"
 
 #: src/components/post/PostNoteModal.ts:718
 msgid "Tag different users, separate by comma"
