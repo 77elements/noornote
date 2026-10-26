@@ -305,6 +305,7 @@ export class ArticleEditorView extends View {
     });
 
     this.container.innerHTML = `
+      <div class="back-padder">
       <div class="article-editor">
         <header class="l-spread">
           <h1>${this.isEditMode ? _('Edit Article') : _('Write Article')}</h1>
@@ -333,6 +334,7 @@ export class ArticleEditorView extends View {
             <button class="btn" data-action="publish">${this.isEditMode ? _('Update') : _('Publish')}</button>
           </div>
         </footer>
+      </div>
       </div>
     `;
 
