@@ -335,6 +335,10 @@ export interface HideHighlightsChangedPayload {
   hidden: boolean;
 }
 
+export interface BackBarChangedPayload {
+  enabled: boolean;
+}
+
 export interface PublishFailedAllPayload {
   event: NostrEvent;
   /** The relay set the publish originally targeted. */
@@ -451,6 +455,8 @@ export interface AppEvents {
   'settings:show-reactions-changed': { shown: boolean; pubkey?: string };
   /** Classic-Menu switch flipped — payload: { classic: boolean }. */
   'settings:nav-mode-changed': { classic: boolean };
+  /** Back-Bar switch flipped — payload: { enabled: boolean }. */
+  'settings:back-bar-changed': BackBarChangedPayload;
 
   // ── View Tabs ──────────────────────────────
   'view-tab:opened': ViewTabOpenedPayload;

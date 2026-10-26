@@ -32,6 +32,10 @@ import {
   type SelfRepostGap,
 } from '../../helpers/selfRepostSetting';
 import {
+  isBackBarEnabled,
+  setBackBarEnabled,
+} from '../../helpers/backBarSetting';
+import {
   isHideHighlightsEnabled,
   setHideHighlightsEnabled,
 } from '../../helpers/highlightSetting';
@@ -51,6 +55,7 @@ export class UISettingsSection extends SettingsSection {
   private postTruncationSwitch: Switch | null = null;
   private hideSelfRepostsSwitch: Switch | null = null;
   private classicMenuSwitch: Switch | null = null;
+  private backBarSwitch: Switch | null = null;
   private hideHighlightsSwitch: Switch | null = null;
   private contentVisibilitySwitch: Switch | null = null;
   private clientTagSwitch: Switch | null = null;
@@ -176,6 +181,16 @@ export class UISettingsSection extends SettingsSection {
             <div class="setting__control" id="classic-menu-switch-container"></div>
             <p class="setting__desc">
               ${_('Bring back the old, linear navigation.')}
+            </p>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="setting">
+            <span class="setting__label">${_('Global Back Button')}</span>
+            <div class="setting__control" id="back-bar-switch-container"></div>
+            <p class="setting__desc">
+              ${_('Show the Back button at the bottom of the content column.')}
             </p>
           </div>
         </section>
@@ -457,6 +472,27 @@ export class UISettingsSection extends SettingsSection {
       this.classicMenuSwitch.setupEventListeners(
         classicMenuContainer as HTMLElement
       );
+    }
+
+    // Initialize Global Back Button switch (bar visible = default)
+    const backBarContainer = contentContainer.querySelector(
+      '#back-bar-switch-container'
+    );
+    if (backBarContainer) {
+      this.backBarSwitch = new Switch({
+        label: '',
+        checked: isBackBarEnabled(),
+        onChange: checked => {
+          setBackBarEnabled(checked);
+          this.eventBus.emit('settings:back-bar-changed', { enabled: checked });
+          ToastService.show(
+            checked ? _('Back button shown') : _('Back button hidden'),
+            'success'
+          );
+        },
+      });
+      backBarContainer.innerHTML = this.backBarSwitch.render();
+      this.backBarSwitch.setupEventListeners(backBarContainer as HTMLElement);
     }
 
     // Initialize Hide Self-Reposts switch + gap selector

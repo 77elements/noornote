@@ -91,6 +91,9 @@ export const StorageKeys = {
   // Navigation mode (per-account): false (default) = circular nav wheel in the
   // sidebar, true = the classic linear menu list. See helpers/navModeSetting.ts.
   CLASSIC_MENU: 'noornote_classic_menu_map',
+  // Global back bar (per-account): true (default) = show the .nn-back-bar Back
+  // button above the primary content bottom edge. See helpers/backBarSetting.ts.
+  BACK_BAR_ENABLED: 'noornote_back_bar_enabled_map',
 
   // Privacy (per-account)
   CLIENT_TAG_ENABLED: 'noornote_client_tag_enabled_map', // boolean opt-in: add a `client` tag to signed events

@@ -7,42 +7,42 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "mime-version: 1.0\n"
 
-#: src/components/settings/UISettingsSection.ts:143
-#: src/components/settings/UISettingsSection.ts:333
+#: src/components/settings/UISettingsSection.ts:148
+#: src/components/settings/UISettingsSection.ts:348
 msgid "Gregorian"
 msgstr "Gregorianisch"
 
-#: src/components/settings/UISettingsSection.ts:145
-#: src/components/settings/UISettingsSection.ts:335
+#: src/components/settings/UISettingsSection.ts:150
+#: src/components/settings/UISettingsSection.ts:350
 msgid "Gregorian + Hijri"
 msgstr "Gregorianisch + Hijri"
 
-#: src/components/settings/UISettingsSection.ts:349
+#: src/components/settings/UISettingsSection.ts:364
 msgid "Gregorian + Hijri calendars"
 msgstr "Gregorianischer + Hijri-Kalender"
 
-#: src/components/settings/UISettingsSection.ts:347
+#: src/components/settings/UISettingsSection.ts:362
 msgid "Gregorian calendar"
 msgstr "Gregorianischer Kalender"
 
-#: src/components/settings/UISettingsSection.ts:334
+#: src/components/settings/UISettingsSection.ts:349
 msgid "Hijri (Islamic)"
 msgstr "Hijri (islamisch)"
 
-#: src/components/settings/UISettingsSection.ts:348
+#: src/components/settings/UISettingsSection.ts:363
 msgid "Hijri (Islamic) calendar"
 msgstr "Hijri (islamischer) Kalender"
 
-#: src/components/settings/UISettingsSection.ts:103
+#: src/components/settings/UISettingsSection.ts:108
 msgid "Language"
 msgstr "Sprache"
 
-#: src/components/settings/UISettingsSection.ts:313
+#: src/components/settings/UISettingsSection.ts:328
 msgid "Language changed"
 msgstr "Sprache geändert"
 
-#: src/components/settings/UISettingsSection.ts:353
-#: src/components/settings/UISettingsSection.ts:391
+#: src/components/settings/UISettingsSection.ts:368
+#: src/components/settings/UISettingsSection.ts:406
 #: src/helpers/ListSyncMode.ts:84
 msgid "Switched to %s"
 msgstr "Gewechselt zu %s"
@@ -278,7 +278,7 @@ msgid "Accounts and threads you have muted."
 msgstr "Konten und Threads, die du stummgeschaltet hast."
 
 #: src/addons/analytics/AnalyticsAddonView.ts:237
-#: src/components/layout/MainLayout.ts:1930
+#: src/components/layout/MainLayout.ts:1939
 #: src/components/settings/NotificationPrioritySection.ts:85
 #: src/components/views/ArticleTimelineView.ts:59
 #: src/components/views/ProfileView.ts:2249
@@ -288,7 +288,7 @@ msgstr "Artikel"
 
 #: src/addons/addonI18n.ts:18
 #: src/addons/bookmarks/BookmarksAddonView.ts:122
-#: src/components/layout/MainLayout.ts:95
+#: src/components/layout/MainLayout.ts:96
 #: src/components/layout/partials/ListsMenuPartial.ts:45
 #: src/components/views/ListsOverviewView.ts:61
 #: src/lists/bookmarks.ts:4469
@@ -316,15 +316,15 @@ msgstr "Aktiviere das Lesezeichen-Addon in Einstellungen → Addons."
 msgid "Enable the Tribes addon in Settings → Addons."
 msgstr "Aktiviere das Tribes-Addon in Einstellungen → Addons."
 
-#: src/components/layout/MainLayout.ts:1790
-#: src/components/layout/MainLayout.ts:2037
+#: src/components/layout/MainLayout.ts:1799
+#: src/components/layout/MainLayout.ts:2046
 #: src/components/views/SettingsView.ts:109
 #: src/components/views/SettingsView.ts:80
 msgid "Export DiagLogs"
 msgstr "DiagLogs exportieren"
 
 #: src/addons/analytics/AnalyticsAddonView.ts:241
-#: src/components/layout/MainLayout.ts:96
+#: src/components/layout/MainLayout.ts:97
 #: src/components/layout/partials/ListsMenuPartial.ts:52
 #: src/components/views/ListsOverviewView.ts:69
 msgid "Follows"
@@ -355,12 +355,12 @@ msgstr "Langtexte von deinen Follows 1., 2. und 3. Grades"
 msgid "Long-form content from your follows"
 msgstr "Langtexte von deinen Follows"
 
-#: src/components/layout/MainLayout.ts:1733
+#: src/components/layout/MainLayout.ts:1742
 #: src/components/views/SettingsView.ts:46
 msgid "Media"
 msgstr "Medien"
 
-#: src/components/layout/MainLayout.ts:97
+#: src/components/layout/MainLayout.ts:98
 #: src/components/layout/partials/ListsMenuPartial.ts:58
 #: src/components/views/ListsOverviewView.ts:77
 msgid "Muted"
@@ -394,7 +394,7 @@ msgstr "Relays"
 msgid "Saved notes, sorted into folders."
 msgstr "Gespeicherte Notizen, in Ordnern sortiert."
 
-#: src/components/layout/MainLayout.ts:1944
+#: src/components/layout/MainLayout.ts:1953
 #: src/components/views/SettingsView.ts:71
 msgid "Settings"
 msgstr "Einstellungen"
@@ -407,13 +407,13 @@ msgstr "Einzelner Beitrag"
 msgid "The accounts you follow, with outbox relays."
 msgstr "Die Konten, denen du folgst, mit Outbox-Relays."
 
-#: src/components/layout/MainLayout.ts:1909
+#: src/components/layout/MainLayout.ts:1918
 #: src/components/views/TimelineView.ts:208
 msgid "Timeline"
 msgstr "Timeline"
 
 #: src/addons/addonI18n.ts:20
-#: src/components/layout/MainLayout.ts:98
+#: src/components/layout/MainLayout.ts:99
 #: src/components/layout/partials/ListsMenuPartial.ts:64
 #: src/components/views/ListsOverviewView.ts:85
 #: src/lists/tribes.ts:2382
@@ -491,8 +491,8 @@ msgstr "Erstellen"
 msgid "Current:"
 msgstr "Aktuell:"
 
-#: src/components/layout/MainLayout.ts:1956
-#: src/components/layout/MainLayout.ts:1966
+#: src/components/layout/MainLayout.ts:1965
+#: src/components/layout/MainLayout.ts:1975
 #: src/components/modals/UpdateModal.ts:117
 #: src/components/ui/ImageViewer.ts:215
 msgid "Download"
@@ -759,7 +759,7 @@ msgstr "Aktiv"
 msgid "Addon order reset to default"
 msgstr "Addon-Reihenfolge zurückgesetzt"
 
-#: src/components/layout/MainLayout.ts:2647
+#: src/components/layout/MainLayout.ts:2656
 #: src/components/views/AddonsOverviewView.ts:68
 msgid "Addons"
 msgstr "Addons"
@@ -1238,8 +1238,8 @@ msgid "Description"
 msgstr "Beschreibung"
 
 #: src/addons/marketplace/ListingEditorView.ts:277
-#: src/components/layout/MainLayout.ts:2026
-#: src/components/views/ArticleEditorView.ts:378
+#: src/components/layout/MainLayout.ts:2035
+#: src/components/views/ArticleEditorView.ts:380
 #: src/components/views/VideoEditorView.ts:177
 msgid "Details"
 msgstr "Details"
@@ -1292,7 +1292,7 @@ msgid "Hours"
 msgstr "Stunden"
 
 #: src/addons/marketplace/ListingEditorView.ts:257
-#: src/components/views/ArticleEditorView.ts:392
+#: src/components/views/ArticleEditorView.ts:394
 #: src/components/views/VideoEditorView.ts:190
 msgid "https://... or upload"
 msgstr "https://… oder hochladen"
@@ -1341,7 +1341,7 @@ msgstr "Medien-Modul nicht verfügbar"
 msgid "Message options"
 msgstr "Nachrichten-Optionen"
 
-#: src/components/layout/MainLayout.ts:1937
+#: src/components/layout/MainLayout.ts:1946
 #: src/components/search/GlobalSearchView.ts:398
 #: src/components/views/MessagesView.ts:143
 #: src/components/views/MessagesView.ts:683
@@ -1399,7 +1399,7 @@ msgstr "nostr, musik, tutorial (mit Kommas getrennt)"
 msgid "Portrait"
 msgstr "Hochformat"
 
-#: src/components/views/ArticleEditorView.ts:333
+#: src/components/views/ArticleEditorView.ts:334
 #: src/components/views/VideoEditorView.ts:133
 msgid "Publish"
 msgstr "Veröffentlichen"
@@ -1407,7 +1407,7 @@ msgstr "Veröffentlichen"
 #: src/addons/follow-packs/FollowPackManager.ts:773
 #: src/addons/marketplace/ListingEditorView.ts:685
 #: src/components/onboarding/AccountSetupWizard.ts:3060
-#: src/components/views/ArticleEditorView.ts:1170
+#: src/components/views/ArticleEditorView.ts:1172
 #: src/components/views/VideoEditorView.ts:569
 msgid "Publishing..."
 msgstr "Veröffentliche…"
@@ -1457,7 +1457,7 @@ msgid "Switch orientation"
 msgstr "Ausrichtung wechseln"
 
 #: src/addons/marketplace/ListingEditorView.ts:295
-#: src/components/views/ArticleEditorView.ts:414
+#: src/components/views/ArticleEditorView.ts:416
 #: src/components/views/VideoEditorView.ts:202
 msgid "Tags"
 msgstr "Tags"
@@ -1472,15 +1472,15 @@ msgstr "Zeiteinheit"
 
 #: src/addons/calendar/CalendarEventEditor.ts:98
 #: src/addons/note-taking/NoteEditorModal.ts:55
-#: src/components/views/ArticleEditorView.ts:1341
-#: src/components/views/ArticleEditorView.ts:353
+#: src/components/views/ArticleEditorView.ts:1343
+#: src/components/views/ArticleEditorView.ts:355
 #: src/components/views/VideoEditorView.ts:153
 msgid "Title"
 msgstr "Titel"
 
 #: src/addons/marketplace/ListingEditorView.ts:279
 #: src/components/settings/SettingsSection.ts:43
-#: src/components/views/ArticleEditorView.ts:380
+#: src/components/views/ArticleEditorView.ts:382
 #: src/components/views/VideoEditorView.ts:179
 msgid "Toggle section"
 msgstr "Bereich umschalten"
@@ -1505,7 +1505,7 @@ msgstr "Video wird hochgeladen…"
 msgid "User options"
 msgstr "Nutzer-Optionen"
 
-#: src/components/layout/MainLayout.ts:1996
+#: src/components/layout/MainLayout.ts:2005
 #: src/components/views/VideoEditorView.ts:148
 msgid "Video"
 msgstr "Video"
@@ -1528,65 +1528,65 @@ msgstr "Wochen"
 msgid "Yes"
 msgstr "Ja"
 
-#: src/components/views/ArticleEditorView.ts:899
+#: src/components/views/ArticleEditorView.ts:901
 msgid " and "
 msgstr " und "
 
-#: src/components/views/ArticleEditorView.ts:1342
-#: src/components/views/ArticleEditorView.ts:358
+#: src/components/views/ArticleEditorView.ts:1344
+#: src/components/views/ArticleEditorView.ts:360
 msgid "Article title..."
 msgstr "Artikeltitel…"
 
-#: src/components/views/ArticleEditorView.ts:471
+#: src/components/views/ArticleEditorView.ts:473
 msgid "auto-generated, change only if you know what you're doing"
 msgstr "automatisch generiert, nur ändern, wenn du weißt, was du tust"
 
 #: src/addons/marketplace/ListingEditorView.ts:186
 #: src/components/navigation/SearchSpotlight.ts:111
-#: src/components/views/ArticleEditorView.ts:311
+#: src/components/views/ArticleEditorView.ts:312
 msgid "Back"
 msgstr "Zurück"
 
 #: src/addons/group-chats/GroupChatsSettings.ts:79
 #: src/addons/group-chats/GroupChatsSettings.ts:84
-#: src/components/views/ArticleEditorView.ts:331
+#: src/components/views/ArticleEditorView.ts:332
 msgid "beta"
 msgstr "Beta"
 
-#: src/components/views/ArticleEditorView.ts:408
+#: src/components/views/ArticleEditorView.ts:410
 msgid "Brief description of your article..."
 msgstr "Kurze Beschreibung deines Artikels…"
 
-#: src/components/views/ArticleEditorView.ts:443
+#: src/components/views/ArticleEditorView.ts:445
 msgid "click to add to Tags"
 msgstr "klicken, um zu Tags hinzuzufügen"
 
-#: src/components/views/ArticleEditorView.ts:1345
-#: src/components/views/ArticleEditorView.ts:365
+#: src/components/views/ArticleEditorView.ts:1347
+#: src/components/views/ArticleEditorView.ts:367
 msgid "Content (Markdown)"
 msgstr "Inhalt (Markdown)"
 
 #: src/addons/follow-packs/FollowPackManager.ts:487
-#: src/components/views/ArticleEditorView.ts:386
+#: src/components/views/ArticleEditorView.ts:388
 msgid "Cover Image"
 msgstr "Titelbild"
 
-#: src/components/views/ArticleEditorView.ts:1136
-#: src/components/views/ArticleEditorView.ts:330
+#: src/components/views/ArticleEditorView.ts:1138
+#: src/components/views/ArticleEditorView.ts:331
 msgid "Delete Draft"
 msgstr "Entwurf löschen"
 
 #: src/addons/calendar/CalendarImportExport.ts:102
 #: src/addons/calendar/CalendarImportExport.ts:468
-#: src/components/views/ArticleEditorView.ts:1008
+#: src/components/views/ArticleEditorView.ts:1010
 msgid "Discard"
 msgstr "Verwerfen"
 
-#: src/components/views/ArticleEditorView.ts:442
+#: src/components/views/ArticleEditorView.ts:444
 msgid "Discovery tags"
 msgstr "Discovery-Tags"
 
-#: src/components/views/ArticleEditorView.ts:319
+#: src/components/views/ArticleEditorView.ts:320
 msgid "Distraction-free writing (Esc to exit)"
 msgstr "Ablenkungsfreies Schreiben (Esc zum Verlassen)"
 
@@ -1596,24 +1596,24 @@ msgstr "Ablenkungsfreies Schreiben (Esc zum Verlassen)"
 #: src/addons/marketplace/ListingEditorView.ts:191
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:584
 #: src/components/ui/note-rendering/EmojiPackRenderer.ts:97
-#: src/components/views/ArticleEditorView.ts:316
+#: src/components/views/ArticleEditorView.ts:317
 #: src/lists/bookmarks.ts:3288
 msgid "Edit"
 msgstr "Bearbeiten"
 
-#: src/components/views/ArticleEditorView.ts:310
+#: src/components/views/ArticleEditorView.ts:311
 msgid "Edit Article"
 msgstr "Artikel bearbeiten"
 
-#: src/components/views/ArticleEditorView.ts:319
+#: src/components/views/ArticleEditorView.ts:320
 msgid "Focus mode"
 msgstr "Fokusmodus"
 
-#: src/components/views/ArticleEditorView.ts:437
+#: src/components/views/ArticleEditorView.ts:439
 msgid "Insert recipe template"
 msgstr "Rezeptvorlage einfügen"
 
-#: src/components/views/ArticleEditorView.ts:1009
+#: src/components/views/ArticleEditorView.ts:1011
 msgid "Keep Editing"
 msgstr "Bearbeiten fortsetzen"
 
@@ -1622,28 +1622,28 @@ msgstr "Bearbeiten fortsetzen"
 msgid "Loading article..."
 msgstr "Artikel wird geladen…"
 
-#: src/components/views/ArticleEditorView.ts:1229
+#: src/components/views/ArticleEditorView.ts:1231
 msgid "No content yet..."
 msgstr "Noch kein Inhalt…"
 
-#: src/components/views/ArticleEditorView.ts:419
+#: src/components/views/ArticleEditorView.ts:421
 msgid "nostr, bitcoin, technology (comma separated)"
 msgstr "nostr, bitcoin, technologie (durch Komma getrennt)"
 
-#: src/components/views/ArticleEditorView.ts:490
+#: src/components/views/ArticleEditorView.ts:492
 msgid "Now (on publish)"
 msgstr "Jetzt (bei Veröffentlichung)"
 
-#: src/components/views/ArticleEditorView.ts:462
+#: src/components/views/ArticleEditorView.ts:464
 msgid "Pick date"
 msgstr "Datum wählen"
 
 #: src/addons/marketplace/ListingEditorView.ts:192
-#: src/components/views/ArticleEditorView.ts:317
+#: src/components/views/ArticleEditorView.ts:318
 msgid "Preview"
 msgstr "Vorschau"
 
-#: src/components/views/ArticleEditorView.ts:428
+#: src/components/views/ArticleEditorView.ts:430
 msgid ""
 "Publish as a recipe: adds the <code>zapcooking</code> tag so recipe clients "
 "list this article. Content should follow the recipe template (Details / "
@@ -1653,11 +1653,11 @@ msgstr ""
 "damit Rezept-Clients diesen Artikel auflisten. Der Inhalt sollte der "
 "Rezeptvorlage folgen (Details / Zutaten / Zubereitung)."
 
-#: src/components/views/ArticleEditorView.ts:820
+#: src/components/views/ArticleEditorView.ts:822
 msgid "Recipe (zap.cooking)"
 msgstr "Rezept (zap.cooking)"
 
-#: src/components/views/ArticleEditorView.ts:897
+#: src/components/views/ArticleEditorView.ts:899
 msgid "Recipe hint: add a %s section so recipe clients can parse it."
 msgstr ""
 "Rezept-Hinweis: Füge einen %s-Abschnitt hinzu, damit Rezept-Clients ihn "
@@ -1667,17 +1667,17 @@ msgstr ""
 #: src/addons/bulk-delete/BulkDeleteView.ts:690
 #: src/addons/calendar/CalendarImportExport.ts:117
 #: src/addons/calendar/CalendarImportExport.ts:130
-#: src/components/views/ArticleEditorView.ts:463
-#: src/components/views/ArticleEditorView.ts:515
+#: src/components/views/ArticleEditorView.ts:465
+#: src/components/views/ArticleEditorView.ts:517
 msgid "Reset"
 msgstr "Zurücksetzen"
 
-#: src/components/views/ArticleEditorView.ts:331
+#: src/components/views/ArticleEditorView.ts:332
 msgid "Save Draft"
 msgstr "Entwurf speichern"
 
 #: src/components/profile/ProfileEditModal.ts:260
-#: src/components/views/ArticleEditorView.ts:1170
+#: src/components/views/ArticleEditorView.ts:1172
 #: src/lists/bookmarks.ts:5362
 #: src/lists/follows.ts:1866
 #: src/lists/mutes.ts:1993
@@ -1688,37 +1688,37 @@ msgstr "Speichern…"
 #: src/components/post/PostNoteModal.ts:388
 #: src/components/post/PostNoteModal.ts:456
 #: src/components/post/PostNoteModal.ts:475
-#: src/components/views/ArticleEditorView.ts:1078
+#: src/components/views/ArticleEditorView.ts:1080
 #: src/helpers/datePickerModal.ts:304
 msgid "Schedule"
 msgstr "Planen"
 
-#: src/components/views/ArticleEditorView.ts:1074
+#: src/components/views/ArticleEditorView.ts:1076
 msgid "Schedule Article"
 msgstr "Artikel planen"
 
-#: src/components/views/ArticleEditorView.ts:332
+#: src/components/views/ArticleEditorView.ts:333
 msgid "Schedule Publish"
 msgstr "Veröffentlichung planen"
 
-#: src/components/views/ArticleEditorView.ts:1090
+#: src/components/views/ArticleEditorView.ts:1092
 msgid "Scheduling..."
 msgstr "Wird geplant…"
 
-#: src/components/views/ArticleEditorView.ts:457
+#: src/components/views/ArticleEditorView.ts:459
 msgid "set a past date for older articles you're re-publishing"
 msgstr "vergangenes Datum für ältere Artikel, die du erneut veröffentlichst"
 
-#: src/components/views/ArticleEditorView.ts:532
+#: src/components/views/ArticleEditorView.ts:534
 msgid "Set date"
 msgstr "Datum festlegen"
 
 #: src/addons/marketplace/ListingEditorView.ts:285
-#: src/components/views/ArticleEditorView.ts:404
+#: src/components/views/ArticleEditorView.ts:406
 msgid "Summary"
 msgstr "Zusammenfassung"
 
-#: src/components/views/ArticleEditorView.ts:480
+#: src/components/views/ArticleEditorView.ts:482
 msgid ""
 "Unique identifier for this article. Changing this after publishing creates "
 "a new article instead of updating."
@@ -1726,26 +1726,26 @@ msgstr ""
 "Eindeutiger Bezeichner für diesen Artikel. Eine Änderung nach der "
 "Veröffentlichung erzeugt einen neuen Artikel statt zu aktualisieren."
 
-#: src/components/views/ArticleEditorView.ts:333
+#: src/components/views/ArticleEditorView.ts:334
 msgid "Update"
 msgstr "Aktualisieren"
 
 #: src/addons/follow-packs/FollowPackManager.ts:492
 #: src/addons/marketplace/ListingEditorView.ts:261
-#: src/components/views/ArticleEditorView.ts:396
+#: src/components/views/ArticleEditorView.ts:398
 msgid "Upload image"
 msgstr "Bild hochladen"
 
-#: src/components/views/ArticleEditorView.ts:310
+#: src/components/views/ArticleEditorView.ts:311
 msgid "Write Article"
 msgstr "Artikel schreiben"
 
-#: src/components/views/ArticleEditorView.ts:1347
-#: src/components/views/ArticleEditorView.ts:370
+#: src/components/views/ArticleEditorView.ts:1349
+#: src/components/views/ArticleEditorView.ts:372
 msgid "Write your article in Markdown..."
 msgstr "Schreibe deinen Artikel in Markdown…"
 
-#: src/components/views/ArticleEditorView.ts:1007
+#: src/components/views/ArticleEditorView.ts:1009
 msgid "You have unsaved changes. Discard them?"
 msgstr "Du hast ungespeicherte Änderungen. Verwerfen?"
 
@@ -1907,7 +1907,7 @@ msgstr "Petname festlegen"
 msgid "Set status…"
 msgstr "Status setzen…"
 
-#: src/components/settings/UISettingsSection.ts:185
+#: src/components/settings/UISettingsSection.ts:200
 #: src/components/views/ProfileView.ts:965
 msgid "Show reactions"
 msgstr "Reaktionen anzeigen"
@@ -2239,7 +2239,7 @@ msgid "App"
 msgstr "App"
 
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:190
-#: src/components/layout/MainLayout.ts:1992
+#: src/components/layout/MainLayout.ts:2001
 #: src/components/ui/ThreadContextIndicator.ts:193
 msgid "Article"
 msgstr "Artikel"
@@ -2349,7 +2349,7 @@ msgstr "Follow-Pack"
 msgid "Follow pack was updated"
 msgstr "Follow-Pack wurde aktualisiert"
 
-#: src/components/settings/UISettingsSection.ts:120
+#: src/components/settings/UISettingsSection.ts:125
 #: src/components/ui/FontSizeSwitcher.ts:33
 msgid "Font Size"
 msgstr "Schriftgröße"
@@ -4905,38 +4905,38 @@ msgstr[1] "(%s Folgungen)"
 msgid "(loading…)"
 msgstr "(lädt…)"
 
-#: src/components/layout/MainLayout.ts:2283
+#: src/components/layout/MainLayout.ts:2292
 msgid "A terminal window will open. There:"
 msgstr "Ein Terminalfenster öffnet sich. Dort:"
 
 #: src/components/auth/AuthComponent.ts:134
-#: src/components/layout/MainLayout.ts:2303
+#: src/components/layout/MainLayout.ts:2312
 msgid "Add Account"
 msgstr "Konto hinzufügen"
 
-#: src/components/layout/MainLayout.ts:2090
+#: src/components/layout/MainLayout.ts:2099
 msgid "App updated."
 msgstr "App aktualisiert."
 
-#: src/components/layout/MainLayout.ts:3004
-#: src/components/layout/MainLayout.ts:903
+#: src/components/layout/MainLayout.ts:3013
+#: src/components/layout/MainLayout.ts:906
 msgid "Back to timeline"
 msgstr "Zurück zur Timeline"
 
-#: src/components/layout/MainLayout.ts:2288
+#: src/components/layout/MainLayout.ts:2297
 msgid "Close the terminal"
 msgstr "Schließe das Terminal"
 
-#: src/components/layout/MainLayout.ts:1178
-#: src/components/layout/MainLayout.ts:1892
+#: src/components/layout/MainLayout.ts:1187
+#: src/components/layout/MainLayout.ts:1901
 msgid "Collapse sidebar"
 msgstr "Sidebar einklappen"
 
-#: src/components/layout/MainLayout.ts:2289
+#: src/components/layout/MainLayout.ts:2298
 msgid "Come back here and log in with NoorSigner"
 msgstr "Komme hierher zurück und melde dich mit NoorSigner an"
 
-#: src/components/layout/MainLayout.ts:2168
+#: src/components/layout/MainLayout.ts:2177
 msgid "Data Saver"
 msgstr "Datensparmodus"
 
@@ -4944,7 +4944,7 @@ msgstr "Datensparmodus"
 msgid "Enter URL path (e.g., /profile, /note/...)"
 msgstr "URL-Pfad eingeben (z. B. /profile, /note/…)"
 
-#: src/components/layout/MainLayout.ts:1178
+#: src/components/layout/MainLayout.ts:1187
 msgid "Expand sidebar"
 msgstr "Sidebar ausklappen"
 
@@ -4964,15 +4964,15 @@ msgstr "Zurück (Cmd+←)"
 msgid "Go Forward (Cmd+→)"
 msgstr "Vor (Cmd+→)"
 
-#: src/components/layout/MainLayout.ts:1879
+#: src/components/layout/MainLayout.ts:1888
 msgid "Navigation"
 msgstr "Navigation"
 
-#: src/components/layout/MainLayout.ts:1982
+#: src/components/layout/MainLayout.ts:1991
 msgid "New Post"
 msgstr "Neuer Beitrag"
 
-#: src/components/layout/MainLayout.ts:1732
+#: src/components/layout/MainLayout.ts:1741
 msgid "Newest Articles"
 msgstr "Neueste Artikel"
 
@@ -4985,25 +4985,25 @@ msgid "No recent URLs"
 msgstr "Keine aktuellen URLs"
 
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:190
-#: src/components/layout/MainLayout.ts:1988
+#: src/components/layout/MainLayout.ts:1997
 #: src/lists/bookmarks.ts:3261
 msgid "Note"
 msgstr "Notiz"
 
-#: src/components/layout/MainLayout.ts:1923
+#: src/components/layout/MainLayout.ts:1932
 #: src/components/views/NotificationsView.ts:112
 msgid "Notifications"
 msgstr "Mitteilungen"
 
-#: src/components/layout/MainLayout.ts:2291
+#: src/components/layout/MainLayout.ts:2300
 msgid "OK, got it"
 msgstr "OK, verstanden"
 
-#: src/components/layout/MainLayout.ts:1872
+#: src/components/layout/MainLayout.ts:1881
 msgid "Open menu"
 msgstr "Menü öffnen"
 
-#: src/components/layout/MainLayout.ts:2286
+#: src/components/layout/MainLayout.ts:2295
 msgid "Paste the nsec of the new account"
 msgstr "Füge den nsec des neuen Kontos ein"
 
@@ -5011,41 +5011,41 @@ msgstr "Füge den nsec des neuen Kontos ein"
 msgid "Please check your network connection and try again."
 msgstr "Bitte prüfe deine Netzwerkverbindung und versuche es erneut."
 
-#: src/components/layout/MainLayout.ts:2000
+#: src/components/layout/MainLayout.ts:2009
 msgid "Product"
 msgstr "Produkt"
 
 #: src/components/bookmarks/FolderCard.ts:73
-#: src/components/layout/MainLayout.ts:1916
+#: src/components/layout/MainLayout.ts:1925
 msgid "Profile"
 msgstr "Profil"
 
-#: src/components/layout/MainLayout.ts:896
+#: src/components/layout/MainLayout.ts:899
 msgid "Profile: %s"
 msgstr "Profil: %s"
 
-#: src/components/layout/MainLayout.ts:1734
+#: src/components/layout/MainLayout.ts:1743
 msgid "Recipes"
 msgstr "Rezepte"
 
-#: src/components/layout/MainLayout.ts:2091
+#: src/components/layout/MainLayout.ts:2100
 msgid "Reload"
 msgstr "Neu laden"
 
-#: src/components/layout/MainLayout.ts:1907
-#: src/components/layout/MainLayout.ts:1910
-#: src/components/layout/MainLayout.ts:1914
-#: src/components/layout/MainLayout.ts:1917
-#: src/components/layout/MainLayout.ts:1928
-#: src/components/layout/MainLayout.ts:1931
+#: src/components/layout/MainLayout.ts:1916
+#: src/components/layout/MainLayout.ts:1919
+#: src/components/layout/MainLayout.ts:1923
+#: src/components/layout/MainLayout.ts:1926
+#: src/components/layout/MainLayout.ts:1937
+#: src/components/layout/MainLayout.ts:1940
 msgid "Scroll to top"
 msgstr "Nach oben scrollen"
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:836
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:124
-#: src/components/layout/MainLayout.ts:1887
-#: src/components/layout/MainLayout.ts:1888
-#: src/components/layout/MainLayout.ts:1950
+#: src/components/layout/MainLayout.ts:1896
+#: src/components/layout/MainLayout.ts:1897
+#: src/components/layout/MainLayout.ts:1959
 msgid "Search"
 msgstr "Suche"
 
@@ -5057,7 +5057,7 @@ msgstr "Nur in lokalen Caches suchen"
 msgid "Search: (npub / nevent / username / full text)"
 msgstr "Suche: (npub / nevent / Benutzername / Volltext)"
 
-#: src/components/layout/MainLayout.ts:897
+#: src/components/layout/MainLayout.ts:900
 msgid "Search: %s"
 msgstr "Suche: %s"
 
@@ -5066,15 +5066,15 @@ msgstr "Suche: %s"
 msgid "Searching..."
 msgstr "Suche…"
 
-#: src/components/layout/MainLayout.ts:2287
+#: src/components/layout/MainLayout.ts:2296
 msgid "Set a password for this account"
 msgstr "Lege ein Passwort für dieses Konto fest"
 
-#: src/components/layout/MainLayout.ts:1970
+#: src/components/layout/MainLayout.ts:1979
 msgid "Sign in"
 msgstr "Anmelden"
 
-#: src/components/layout/MainLayout.ts:1974
+#: src/components/layout/MainLayout.ts:1983
 msgid "Sign out"
 msgstr "Logout"
 
@@ -5082,7 +5082,7 @@ msgstr "Logout"
 msgid "Syncing follow list..."
 msgstr "Folgelist wird synchronisiert…"
 
-#: src/components/layout/MainLayout.ts:1731
+#: src/components/layout/MainLayout.ts:1740
 msgid "System Logs"
 msgstr "System-Logs"
 
@@ -5092,7 +5092,7 @@ msgstr "System-Logs"
 msgid "Users"
 msgstr "Nutzer"
 
-#: src/components/layout/MainLayout.ts:1899
+#: src/components/layout/MainLayout.ts:1908
 msgid "Welcome"
 msgstr "Willkommen"
 
@@ -5327,8 +5327,8 @@ msgstr "+ Neuer Ereigniskalender"
 msgid "+%s more"
 msgstr "+%s weitere"
 
-#: src/components/settings/UISettingsSection.ts:493
-#: src/components/settings/UISettingsSection.ts:94
+#: src/components/settings/UISettingsSection.ts:529
+#: src/components/settings/UISettingsSection.ts:99
 msgid "1 week"
 msgstr "1 Woche"
 
@@ -5408,7 +5408,7 @@ msgstr ""
 "Nach Ablauf des Zeitfensters hört das Blinken auf (du hast dich an das neue "
 "Profil gewöhnt)"
 
-#: src/components/settings/UISettingsSection.ts:496
+#: src/components/settings/UISettingsSection.ts:532
 msgid "all"
 msgstr "alle"
 
@@ -5421,7 +5421,7 @@ msgstr "ganztägig"
 msgid "All day"
 msgstr "Ganztägig"
 
-#: src/components/settings/UISettingsSection.ts:97
+#: src/components/settings/UISettingsSection.ts:102
 msgid "All self-reposts (any age)"
 msgstr "Alle eigenen Reposts (jedes Alter)"
 
@@ -5458,7 +5458,7 @@ msgstr ""
 "musst jede Community manuell hinzufügen, indem du ihren Einladungslink "
 "unten einfügst."
 
-#: src/components/settings/UISettingsSection.ts:215
+#: src/components/settings/UISettingsSection.ts:230
 msgid "Article excerpt limit in secondary content column"
 msgstr "Artikel-Kurzfassungs-Limit in der sekundären Inhaltsspalte"
 
@@ -5478,7 +5478,7 @@ msgstr "automatisch generiert"
 msgid "auto-generated, do not change"
 msgstr "automatisch generiert, nicht ändern"
 
-#: src/components/settings/UISettingsSection.ts:760
+#: src/components/settings/UISettingsSection.ts:796
 msgid "Auto-update check disabled"
 msgstr "Automatische Update-Prüfung deaktiviert"
 
@@ -5592,7 +5592,7 @@ msgstr "Bookmarks deaktiviert"
 msgid "Bookmarks enabled"
 msgstr "Bookmarks aktiviert"
 
-#: src/components/settings/UISettingsSection.ts:145
+#: src/components/settings/UISettingsSection.ts:150
 msgid "Both calendars side-by-side"
 msgstr "Beide Kalender nebeneinander"
 
@@ -5679,7 +5679,7 @@ msgid "Check frequency for all supported group clients"
 msgstr "Prüffrequenz für alle unterstützten Gruppen-Clients"
 
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:162
-#: src/components/settings/UISettingsSection.ts:271
+#: src/components/settings/UISettingsSection.ts:286
 msgid "Check now"
 msgstr "Jetzt prüfen"
 
@@ -5701,7 +5701,7 @@ msgstr ""
 "Wähle, wo Bilder, Videos und andere Mediendateien hochgeladen werden. "
 "NoorNote unterstützt sowohl das Blossom- als auch das NIP-96-Protokoll."
 
-#: src/components/settings/UISettingsSection.ts:175
+#: src/components/settings/UISettingsSection.ts:180
 msgid "Classic Menu"
 msgstr "Klassisches Menü"
 
@@ -5906,7 +5906,7 @@ msgstr ""
 msgid "Date"
 msgstr "Datum"
 
-#: src/components/settings/UISettingsSection.ts:140
+#: src/components/settings/UISettingsSection.ts:145
 msgid "Date Format"
 msgstr "Datumsformat"
 
@@ -5915,8 +5915,8 @@ msgstr "Datumsformat"
 msgid "declined"
 msgstr "abgelehnt"
 
-#: src/components/settings/UISettingsSection.ts:130
-#: src/components/settings/UISettingsSection.ts:372
+#: src/components/settings/UISettingsSection.ts:135
+#: src/components/settings/UISettingsSection.ts:387
 msgid "Default"
 msgstr "Standard"
 
@@ -6025,7 +6025,7 @@ msgstr "Dhikr aktualisiert"
 msgid "Diagrams"
 msgstr "Diagramme"
 
-#: src/components/settings/UISettingsSection.ts:205
+#: src/components/settings/UISettingsSection.ts:220
 msgid "Disable post truncation"
 msgstr "Beitrags-Kürzung deaktivieren"
 
@@ -6528,7 +6528,7 @@ msgstr ""
 msgid "hidden"
 msgstr "ausgeblendet"
 
-#: src/components/settings/UISettingsSection.ts:195
+#: src/components/settings/UISettingsSection.ts:210
 msgid "Hide highlights"
 msgstr "Highlights ausblenden"
 
@@ -6655,7 +6655,7 @@ msgstr "Ausgeschaltet lassen"
 msgid "Known"
 msgstr "Bekannt"
 
-#: src/components/settings/UISettingsSection.ts:127
+#: src/components/settings/UISettingsSection.ts:132
 msgid "Layout Mode"
 msgstr "Layout-Modus"
 
@@ -7137,8 +7137,8 @@ msgstr "Periodisch neue Beiträge für deine Hashtags abrufen."
 msgid "Personal calendar"
 msgstr "Persönlicher Kalender"
 
-#: src/components/settings/UISettingsSection.ts:133
-#: src/components/settings/UISettingsSection.ts:376
+#: src/components/settings/UISettingsSection.ts:138
+#: src/components/settings/UISettingsSection.ts:391
 msgid "Phone"
 msgstr "Telefon"
 
@@ -7166,7 +7166,7 @@ msgstr ""
 "Wähle aus den Ereignissen, die gerade in deinem Raster sind. Abonnenten "
 "erhalten alle und künftige Änderungen."
 
-#: src/components/settings/UISettingsSection.ts:106
+#: src/components/settings/UISettingsSection.ts:111
 msgid "pilot translation (partial — untranslated text stays English)"
 msgstr "Pilot-Übersetzung (unvollständig — unübersetzter Text bleibt Englisch)"
 
@@ -7197,7 +7197,7 @@ msgstr "Bitte eine Bilddatei auswählen"
 msgid "Poll"
 msgstr "Umfrage"
 
-#: src/components/settings/UISettingsSection.ts:424
+#: src/components/settings/UISettingsSection.ts:439
 msgid "Post truncation disabled - all posts will be shown in full"
 msgstr "Beitrags-Kürzung deaktiviert — alle Beiträge werden vollständig angezeigt"
 
@@ -7532,8 +7532,8 @@ msgstr "Rezensionen & Zitate (%s)"
 msgid "Revoke"
 msgstr "Entziehen"
 
-#: src/components/settings/UISettingsSection.ts:131
-#: src/components/settings/UISettingsSection.ts:373
+#: src/components/settings/UISettingsSection.ts:136
+#: src/components/settings/UISettingsSection.ts:388
 msgid "Right Pane"
 msgstr "Rechter Bereich"
 
@@ -7699,7 +7699,7 @@ msgstr "Wähle deine Stadt, um Gebetszeiten zu sehen."
 msgid "Select your location to see prayer times."
 msgstr "Wähle deinen Standort, um Gebetszeiten zu sehen."
 
-#: src/components/settings/UISettingsSection.ts:480
+#: src/components/settings/UISettingsSection.ts:516
 msgid "Self-reposts hidden from timeline"
 msgstr "Eigene Reposts aus der Timeline ausgeblendet"
 
@@ -7805,7 +7805,7 @@ msgstr ""
 "Zeige die eigenen Emojis eines anderen Benutzers und importiere beliebige "
 "in dein persönliches Pack."
 
-#: src/components/settings/UISettingsSection.ts:188
+#: src/components/settings/UISettingsSection.ts:203
 msgid ""
 "Show the reactions (likes) of people you follow as entries in your "
 "timeline. Off by default. Individual users can be enabled from their "
@@ -7843,7 +7843,7 @@ msgstr ""
 "Zeigt das aktuelle Gebet und die verbleibende Zeit bis zum nächsten in der "
 "Sidebar."
 
-#: src/components/settings/UISettingsSection.ts:662
+#: src/components/settings/UISettingsSection.ts:698
 msgid "Side column articles: %s"
 msgstr "Artikel der Seitenspalte: %s"
 
@@ -7955,7 +7955,7 @@ msgstr "der Nostrord-Gruppe „%s“"
 msgid "The vacation end must be after the start"
 msgstr "Das Urlaubs-Ende muss nach dem Start liegen"
 
-#: src/components/settings/UISettingsSection.ts:113
+#: src/components/settings/UISettingsSection.ts:118
 msgid "Theme"
 msgstr "Theme"
 
@@ -8148,7 +8148,7 @@ msgstr "Wöchentliche Verfügbarkeit"
 msgid "What this badge represents…"
 msgstr "Was dieses Badge bedeutet …"
 
-#: src/components/settings/UISettingsSection.ts:257
+#: src/components/settings/UISettingsSection.ts:272
 msgid ""
 "When enabled, every event you publish carries a <code>client</code> tag "
 "identifying NoorNote. Other Nostr clients display this as \"via NoorNote\" "
@@ -8162,7 +8162,7 @@ msgstr ""
 msgid "When:"
 msgstr "Wann:"
 
-#: src/components/settings/UISettingsSection.ts:230
+#: src/components/settings/UISettingsSection.ts:245
 msgid ""
 "Whose articles appear in <strong>/articles</strong>. Higher degrees broaden "
 "the feed beyond your direct follows but take longer to build and include "
@@ -8310,8 +8310,8 @@ msgstr ""
 "🔒 Verschlüsselte Notiz über diesen Benutzer. Nur du kannst sie "
 "entschlüsseln und lesen."
 
-#: src/components/settings/UISettingsSection.ts:495
-#: src/components/settings/UISettingsSection.ts:96
+#: src/components/settings/UISettingsSection.ts:101
+#: src/components/settings/UISettingsSection.ts:531
 msgid "1 year"
 msgstr "1 Jahr"
 
@@ -8319,13 +8319,13 @@ msgstr "1 Jahr"
 msgid "1080p (Full HD)"
 msgstr "1080p (Full HD)"
 
-#: src/components/settings/UISettingsSection.ts:492
-#: src/components/settings/UISettingsSection.ts:93
+#: src/components/settings/UISettingsSection.ts:528
+#: src/components/settings/UISettingsSection.ts:98
 msgid "3 days"
 msgstr "3 Tage"
 
-#: src/components/settings/UISettingsSection.ts:494
-#: src/components/settings/UISettingsSection.ts:95
+#: src/components/settings/UISettingsSection.ts:100
+#: src/components/settings/UISettingsSection.ts:530
 msgid "3 months"
 msgstr "3 Monate"
 
@@ -8446,15 +8446,15 @@ msgstr ""
 msgid "Appointment"
 msgstr "Termin"
 
-#: src/components/settings/UISettingsSection.ts:594
+#: src/components/settings/UISettingsSection.ts:630
 msgid "Article excerpt limit set to %s characters"
 msgstr "Artikel-Kurzfassungs-Limit auf %s Zeichen gesetzt"
 
-#: src/components/settings/UISettingsSection.ts:227
+#: src/components/settings/UISettingsSection.ts:242
 msgid "Article feed source — main view"
 msgstr "Artikel-Feed-Quelle — Hauptansicht"
 
-#: src/components/settings/UISettingsSection.ts:234
+#: src/components/settings/UISettingsSection.ts:249
 msgid "Article feed source — secondary column"
 msgstr "Artikel-Feed-Quelle — sekundäre Spalte"
 
@@ -8486,11 +8486,11 @@ msgstr ""
 msgid "Author"
 msgstr "Autor"
 
-#: src/components/settings/UISettingsSection.ts:759
+#: src/components/settings/UISettingsSection.ts:795
 msgid "Auto-update check enabled"
 msgstr "Automatische Update-Prüfung aktiviert"
 
-#: src/components/settings/UISettingsSection.ts:267
+#: src/components/settings/UISettingsSection.ts:282
 msgid "Automatically check for updates"
 msgstr "Automatisch nach Updates suchen"
 
@@ -8554,7 +8554,7 @@ msgstr "Buchbares Zeitfenster"
 msgid "Brief description for listing cards..."
 msgstr "Kurze Beschreibung für Listing-Karten …"
 
-#: src/components/settings/UISettingsSection.ts:178
+#: src/components/settings/UISettingsSection.ts:183
 msgid "Bring back the old, linear navigation."
 msgstr "Bring die alte, lineare Navigation zurück."
 
@@ -8570,7 +8570,7 @@ msgstr "Stöbere in kuratierten Follow-Packs, erstelle und teile eigene."
 msgid "by %s"
 msgstr "von %s"
 
-#: src/components/settings/UISettingsSection.ts:451
+#: src/components/settings/UISettingsSection.ts:466
 msgid "Circular navigation active"
 msgstr "Kreisende Navigation aktiv"
 
@@ -8578,7 +8578,7 @@ msgstr "Kreisende Navigation aktiv"
 msgid "City"
 msgstr "Stadt"
 
-#: src/components/settings/UISettingsSection.ts:450
+#: src/components/settings/UISettingsSection.ts:465
 msgid "Classic menu active"
 msgstr "Klassisches Menü aktiv"
 
@@ -8655,7 +8655,7 @@ msgstr "Tage vorher"
 msgid "Decrease font size"
 msgstr "Schriftgröße verkleinern"
 
-#: src/components/settings/UISettingsSection.ts:384
+#: src/components/settings/UISettingsSection.ts:399
 msgid "Default layout mode"
 msgstr "Standard-Layout-Modus"
 
@@ -8668,27 +8668,27 @@ msgstr ""
 "lokal auf diesem Gerät — nichts wird veröffentlicht. Einzelne Termine "
 "können dies in ihrem Editor überschreiben."
 
-#: src/components/settings/UISettingsSection.ts:602
+#: src/components/settings/UISettingsSection.ts:638
 msgid "Degree 1 — Direct follows"
 msgstr "Grad 1 — Direkte Folgungen"
 
-#: src/components/settings/UISettingsSection.ts:610
+#: src/components/settings/UISettingsSection.ts:646
 msgid "Degree 1 (direct follows)"
 msgstr "Grad 1 (direkte Folgungen)"
 
-#: src/components/settings/UISettingsSection.ts:603
+#: src/components/settings/UISettingsSection.ts:639
 msgid "Degree 2 — Friends of friends"
 msgstr "Grad 2 — Freunde von Folgungen"
 
-#: src/components/settings/UISettingsSection.ts:611
+#: src/components/settings/UISettingsSection.ts:647
 msgid "Degree 2 (friends of friends)"
 msgstr "Grad 2 (Freunde von Folgungen)"
 
-#: src/components/settings/UISettingsSection.ts:606
+#: src/components/settings/UISettingsSection.ts:642
 msgid "Degree 3 — Friends of friends of friends (slow to build)"
 msgstr "Grad 3 — Freunde von Freunden von Folgungen (langsam im Aufbau)"
 
-#: src/components/settings/UISettingsSection.ts:612
+#: src/components/settings/UISettingsSection.ts:648
 msgid "Degree 3 (friends of friends of friends)"
 msgstr "Grad 3 (Freunde von Freunden von Folgungen)"
 
@@ -8719,7 +8719,7 @@ msgstr "Dhikr"
 msgid "Dhikr created"
 msgstr "Dhikr erstellt"
 
-#: src/components/settings/UISettingsSection.ts:158
+#: src/components/settings/UISettingsSection.ts:163
 msgid "Disable self-reposts younger than:"
 msgstr "Eigene Reposts jünger als ausblenden:"
 
@@ -8801,7 +8801,7 @@ msgstr ""
 "Blendet Notes mit bestimmten Wörtern aus allen Timelines aus. Verwalte "
 "deine blockierten Wörter unten."
 
-#: src/components/settings/UISettingsSection.ts:152
+#: src/components/settings/UISettingsSection.ts:157
 msgid "Hide self-reposts"
 msgstr "Eigene Reposts ausblenden"
 
@@ -8819,11 +8819,11 @@ msgstr ""
 msgid "Hide timeline notes containing words on your filter list."
 msgstr "Blendet Timeline-Notes aus, die Wörter aus deiner Filterliste enthalten."
 
-#: src/components/settings/UISettingsSection.ts:509
+#: src/components/settings/UISettingsSection.ts:545
 msgid "Hiding all self-reposts"
 msgstr "Alle eigenen Reposts werden ausgeblendet"
 
-#: src/components/settings/UISettingsSection.ts:510
+#: src/components/settings/UISettingsSection.ts:546
 msgid "Hiding self-reposts younger than %s"
 msgstr "Eigene Reposts jünger als %s werden ausgeblendet"
 
@@ -8835,11 +8835,11 @@ msgstr "Hoch"
 msgid "highlighted your %s"
 msgstr "hat %s als Highlight markiert"
 
-#: src/components/settings/UISettingsSection.ts:533
+#: src/components/settings/UISettingsSection.ts:569
 msgid "Highlights shown again"
 msgstr "Highlights wieder eingeblendet"
 
-#: src/components/settings/UISettingsSection.ts:144
+#: src/components/settings/UISettingsSection.ts:149
 msgid "Hijri"
 msgstr "Hijri"
 
@@ -8915,7 +8915,7 @@ msgstr "Einladung angenommen"
 msgid "is now following you"
 msgstr "folgt dir jetzt"
 
-#: src/components/settings/UISettingsSection.ts:144
+#: src/components/settings/UISettingsSection.ts:149
 msgid "Islamic calendar (e.g., \"26. Rabi' ath-Thani 1446\")"
 msgstr "Islamischer Kalender (z. B. „26. Rabi' ath-Thani 1446“)"
 
@@ -9020,7 +9020,7 @@ msgstr "Bestehende Dhikrs werden gesucht …"
 msgid "Low (smallest size)"
 msgstr "Niedrig (kleinste Größe)"
 
-#: src/components/settings/UISettingsSection.ts:633
+#: src/components/settings/UISettingsSection.ts:669
 msgid "Main article feed: %s"
 msgstr "Haupt-Artikel-Feed: %s"
 
@@ -9036,7 +9036,7 @@ msgstr ""
 msgid "Mark all seen"
 msgstr "Alle als gesehen markieren"
 
-#: src/components/settings/UISettingsSection.ts:220
+#: src/components/settings/UISettingsSection.ts:235
 msgid ""
 "Maximum number of characters for article excerpts in the side column. "
 "Default: 200."
@@ -9062,15 +9062,15 @@ msgstr "Media-Server gespeichert"
 msgid "Medium (recommended)"
 msgstr "Mittel (empfohlen)"
 
-#: src/components/settings/UISettingsSection.ts:244
+#: src/components/settings/UISettingsSection.ts:259
 msgid "Memory optimization (experimental)"
 msgstr "Speicher-Optimierung (experimentell)"
 
-#: src/components/settings/UISettingsSection.ts:695
+#: src/components/settings/UISettingsSection.ts:731
 msgid "Memory optimization disabled"
 msgstr "Speicher-Optimierung deaktiviert"
 
-#: src/components/settings/UISettingsSection.ts:694
+#: src/components/settings/UISettingsSection.ts:730
 msgid "Memory optimization enabled"
 msgstr "Speicher-Optimierung aktiviert"
 
@@ -9207,7 +9207,7 @@ msgstr "Open Source"
 msgid "Other differences"
 msgstr "Andere Unterschiede"
 
-#: src/components/settings/UISettingsSection.ts:532
+#: src/components/settings/UISettingsSection.ts:568
 msgid "Others' highlights hidden"
 msgstr "Highlights anderer ausgeblendet"
 
@@ -9219,7 +9219,7 @@ msgstr "Übersicht"
 msgid "Paste your one-time code from Rizful below."
 msgstr "Füge deinen Einmalcode von Rizful unten ein."
 
-#: src/components/settings/UISettingsSection.ts:388
+#: src/components/settings/UISettingsSection.ts:403
 msgid "Phone layout (390px width)"
 msgstr "Telefon-Layout (390px Breite)"
 
@@ -9239,7 +9239,7 @@ msgstr "Wähle zuerst Von- und Bis-Datum"
 msgid "Pin to top"
 msgstr "Oben anpinnen"
 
-#: src/components/settings/UISettingsSection.ts:425
+#: src/components/settings/UISettingsSection.ts:440
 msgid "Post truncation enabled"
 msgstr "Beitrags-Kürzung aktiviert"
 
@@ -9251,11 +9251,11 @@ msgstr "hat einen neuen Artikel veröffentlicht"
 msgid "Posts module not ready"
 msgstr "Beiträge-Modul nicht bereit"
 
-#: src/components/settings/UISettingsSection.ts:722
+#: src/components/settings/UISettingsSection.ts:758
 msgid "Posts will be signed with \"via NoorNote\""
 msgstr "Beiträge werden mit „via NoorNote“ signiert"
 
-#: src/components/settings/UISettingsSection.ts:723
+#: src/components/settings/UISettingsSection.ts:759
 msgid "Posts will be signed without client tag"
 msgstr "Beiträge werden ohne Client-Tag signiert"
 
@@ -9295,8 +9295,8 @@ msgstr "Private Notiz"
 msgid "Private petnames"
 msgstr "Private Petnames"
 
-#: src/components/views/ArticleEditorView.ts:456
-#: src/components/views/ArticleEditorView.ts:527
+#: src/components/views/ArticleEditorView.ts:458
+#: src/components/views/ArticleEditorView.ts:529
 msgid "Published at"
 msgstr "Veröffentlicht am"
 
@@ -9313,13 +9313,13 @@ msgstr "hat dieses Listing zitiert:"
 msgid "Re-sync"
 msgstr "Neu synchronisieren"
 
-#: src/components/settings/UISettingsSection.ts:558
+#: src/components/settings/UISettingsSection.ts:594
 msgid "Reactions from people you follow now appear in your timeline"
 msgstr ""
 "Reaktionen von Menschen, denen du folgst, erscheinen jetzt in deiner "
 "Timeline"
 
-#: src/components/settings/UISettingsSection.ts:561
+#: src/components/settings/UISettingsSection.ts:597
 msgid "Reactions hidden from your timeline again"
 msgstr "Reaktionen wieder aus deiner Timeline ausgeblendet"
 
@@ -9327,7 +9327,7 @@ msgstr "Reaktionen wieder aus deiner Timeline ausgeblendet"
 msgid "Reactions module not available"
 msgstr "Reaktionen-Modul nicht verfügbar"
 
-#: src/components/views/ArticleEditorView.ts:890
+#: src/components/views/ArticleEditorView.ts:892
 msgid "Recipe hint: add a cover image — recipe clients expect one."
 msgstr "Rezept-Hinweis: füge ein Titelbild hinzu — Rezept-Clients erwarten eines."
 
@@ -9360,15 +9360,15 @@ msgstr "Reposts (%s)"
 msgid "Reposts & quotes"
 msgstr "Reposts & Zitate"
 
-#: src/components/settings/UISettingsSection.ts:374
+#: src/components/settings/UISettingsSection.ts:389
 msgid "Right Pane (RSS Mode)"
 msgstr "Rechter Bereich (RSS-Modus)"
 
-#: src/components/settings/UISettingsSection.ts:385
+#: src/components/settings/UISettingsSection.ts:400
 msgid "Right pane mode (views as tabs)"
 msgstr "Rechtsbereich-Modus (Views als Tabs)"
 
-#: src/components/settings/UISettingsSection.ts:386
+#: src/components/settings/UISettingsSection.ts:401
 msgid "Right pane RSS mode (compact timeline)"
 msgstr "Rechtsbereich-RSS-Modus (kompakte Timeline)"
 
@@ -9401,7 +9401,7 @@ msgstr "Alle sichtbaren auswählen"
 msgid "Select by search term"
 msgstr "Nach Suchbegriff auswählen"
 
-#: src/components/settings/UISettingsSection.ts:481
+#: src/components/settings/UISettingsSection.ts:517
 msgid "Self-reposts shown again"
 msgstr "Eigene Reposts wieder eingeblendet"
 
@@ -9455,7 +9455,7 @@ msgstr "Zeige dein Lightning-Wallet-Guthaben in der Sidebar mit Fiat-Umrechnung.
 msgid "Sidebar Widget"
 msgstr "Sidebar-Widget"
 
-#: src/components/settings/UISettingsSection.ts:254
+#: src/components/settings/UISettingsSection.ts:269
 msgid "Sign posts with \"via NoorNote\""
 msgstr "Beiträge mit „via NoorNote“ signieren"
 
@@ -9463,7 +9463,7 @@ msgstr "Beiträge mit „via NoorNote“ signieren"
 msgid "silently zapped your %s"
 msgstr "hat anonym %s gezappt"
 
-#: src/components/settings/UISettingsSection.ts:133
+#: src/components/settings/UISettingsSection.ts:138
 msgid "Single-column layout (390px width) for phone development and testing"
 msgstr "Einspaltiges Layout (390px Breite) für Telefon-Entwicklung und Tests"
 
@@ -9477,7 +9477,7 @@ msgstr "Site-Hash"
 msgid "Skip compression for files below"
 msgstr "Komprimierung überspringen für Dateien unter"
 
-#: src/components/settings/UISettingsSection.ts:247
+#: src/components/settings/UISettingsSection.ts:262
 msgid ""
 "Skips rendering of off-screen notes (CSS <code>content-visibility: "
 "auto</code>). Significantly reduces memory usage on long timelines, "
@@ -9498,7 +9498,7 @@ msgid "slug"
 msgstr "Slug"
 
 #: src/addons/marketplace/ListingEditorView.ts:313
-#: src/components/views/ArticleEditorView.ts:470
+#: src/components/views/ArticleEditorView.ts:472
 msgid "Slug / Identifier"
 msgstr "Slug / Kennung"
 
@@ -9541,7 +9541,7 @@ msgstr ""
 "(Art. 45 DSGVO). Eine Übermittlung an die Server von MyNymbox erfolgt auf "
 "Grundlage der Ausnahmen des Art. 49 (1) DSGVO."
 
-#: src/components/settings/UISettingsSection.ts:143
+#: src/components/settings/UISettingsSection.ts:148
 msgid "Standard Western calendar (e.g., \"30. Oct. 2024\")"
 msgstr "Standard-Westernder Kalender (z. B. „30. Okt. 2024“)"
 
@@ -9697,7 +9697,7 @@ msgstr "Entarchivieren"
 msgid "Unknown"
 msgstr "Unbekannt"
 
-#: src/components/views/ArticleEditorView.ts:1006
+#: src/components/views/ArticleEditorView.ts:1008
 msgid "Unsaved Changes"
 msgstr "Ungespeicherte Änderungen"
 
@@ -9741,19 +9741,19 @@ msgstr ""
 "Geräts komprimiert (WebCodecs) — dein Video verlässt dein Gerät erst beim "
 "Upload."
 
-#: src/components/settings/UISettingsSection.ts:131
+#: src/components/settings/UISettingsSection.ts:136
 msgid "Views open as tabs in the right pane, timeline stays visible in main pane"
 msgstr ""
 "Views öffnen sich als Tabs im rechten Bereich, die Timeline bleibt im "
 "Hauptbereich sichtbar"
 
-#: src/components/settings/UISettingsSection.ts:130
+#: src/components/settings/UISettingsSection.ts:135
 msgid "Views replace the timeline in the main pane, right pane shows System Logger"
 msgstr ""
 "Views ersetzen die Timeline im Hauptbereich, der rechte Bereich zeigt den "
 "System-Logger"
 
-#: src/components/settings/UISettingsSection.ts:132
+#: src/components/settings/UISettingsSection.ts:137
 msgid "Views replace the timeline, right pane is hidden for maximum content space"
 msgstr ""
 "Views ersetzen die Timeline, der rechte Bereich ist für maximalen Platz "
@@ -9782,7 +9782,7 @@ msgstr "Wallet nicht verbunden"
 msgid "Warning:"
 msgstr "Warnung:"
 
-#: src/components/settings/UISettingsSection.ts:198
+#: src/components/settings/UISettingsSection.ts:213
 msgid ""
 "When enabled, highlight posts by others that quote an external website "
 "(kind 9802 with a web source) are hidden from your timelines, including "
@@ -9794,7 +9794,7 @@ msgstr ""
 "inklusive reiner Reposts davon. Deine eigenen Highlights bleiben sichtbar. "
 "Einzelne Benutzer kannst du über deren Profil ausblenden."
 
-#: src/components/settings/UISettingsSection.ts:208
+#: src/components/settings/UISettingsSection.ts:223
 msgid ""
 "When enabled, long posts will always be displayed in full without \"Show "
 "More\" buttons."
@@ -9802,7 +9802,7 @@ msgstr ""
 "Aktiviert werden lange Beiträge immer vollständig ohne „Mehr "
 "anzeigen“-Buttons dargestellt."
 
-#: src/components/settings/UISettingsSection.ts:155
+#: src/components/settings/UISettingsSection.ts:160
 msgid ""
 "When enabled, reposts of a user's own notes are hidden from your timeline. "
 "Reposts of other people's notes are unaffected."
@@ -9870,7 +9870,7 @@ msgstr ""
 "Wenn du jemandem folgst, speichert die App dessen aktuellen Namen und "
 "Profilbild"
 
-#: src/components/settings/UISettingsSection.ts:237
+#: src/components/settings/UISettingsSection.ts:252
 msgid ""
 "Whose articles appear in the side column's \"Newest Articles\" tab. Same "
 "degree meaning as above; you can pick a narrower degree here to keep the "
@@ -9880,12 +9880,12 @@ msgstr ""
 "Gleiche Grad-Bedeutung wie oben; wähle hier einen engeren Grad, um die "
 "Seitenspalte auf nähere Kontakte zu fokussieren."
 
-#: src/components/settings/UISettingsSection.ts:132
-#: src/components/settings/UISettingsSection.ts:375
+#: src/components/settings/UISettingsSection.ts:137
+#: src/components/settings/UISettingsSection.ts:390
 msgid "Wide Mode"
 msgstr "Breitmodus"
 
-#: src/components/settings/UISettingsSection.ts:387
+#: src/components/settings/UISettingsSection.ts:402
 msgid "Wide mode (hide right pane)"
 msgstr "Breitmodus (rechten Bereich ausblenden)"
 
@@ -10803,7 +10803,7 @@ msgstr "Ordner löschen"
 msgid "Delete folder (items move to root)"
 msgstr "Ordner löschen (Einträge wandern nach Hauptebene)"
 
-#: src/components/layout/MainLayout.ts:100
+#: src/components/layout/MainLayout.ts:101
 msgid "List: %s"
 msgstr "Liste: %s"
 
@@ -10874,7 +10874,7 @@ msgstr "Zaps: Eing. (%s) %s | Ausg. (%s) %s"
 msgid "Zaps: Loading..."
 msgstr "Zaps: Laden …"
 
-#: src/components/layout/MainLayout.ts:2021
+#: src/components/layout/MainLayout.ts:2030
 msgid "← Back"
 msgstr "← Zurück"
 
@@ -11148,7 +11148,7 @@ msgstr "%s Konten"
 msgid "+ New Event"
 msgstr "+ Neues Event"
 
-#: src/components/layout/MainLayout.ts:2540
+#: src/components/layout/MainLayout.ts:2549
 msgid "About"
 msgstr "Über"
 
@@ -11986,7 +11986,25 @@ msgstr "Geladene .po-Datei entfernen"
 
 #: src/components/timeline/Timeline.ts:431
 msgid "Nothing published here yet — or not available on your relays."
-msgstr "Hier wurde noch nichts veröffentlicht — oder ist auf deinen Relays nicht verfügbar."
+msgstr ""
+"Hier wurde noch nichts veröffentlicht — oder ist auf deinen Relays nicht "
+"verfügbar."
+
+#: src/components/settings/UISettingsSection.ts:489
+msgid "Back button hidden"
+msgstr ""
+
+#: src/components/settings/UISettingsSection.ts:489
+msgid "Back button shown"
+msgstr ""
+
+#: src/components/settings/UISettingsSection.ts:190
+msgid "Global Back Button"
+msgstr ""
+
+#: src/components/settings/UISettingsSection.ts:193
+msgid "Show the Back button at the bottom of the content column."
+msgstr ""
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"

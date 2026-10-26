@@ -56,6 +56,7 @@ import { ListsMenuPartial } from './partials/ListsMenuPartial';
 import { ListsCountManager } from './managers/ListsCountManager';
 import { NavWheelPartial } from './partials/NavWheelPartial';
 import { applyNavMode, isNavWheelActive } from '../../helpers/navModeSetting';
+import { isBackBarEnabled } from '../../helpers/backBarSetting';
 import {
   deactivateAllTabs,
   switchTabWithContent,
@@ -121,6 +122,8 @@ export class MainLayout {
 
   /** Re-evaluates back-bar visibility on router:history-changed. */
   private backBarHistoryHandler: EventListener | null = null;
+  /** TypedEventBus subscription id for settings:back-bar-changed. */
+  private backBarSettingSubId: string | null = null;
   private mentionClickHandler: ((e: MouseEvent) => void) | null = null;
   private globalSearchView: GlobalSearchView | null = null;
   private bookmarkManager: BookmarkManager | null = null;
@@ -973,6 +976,12 @@ export class MainLayout {
       'router:history-changed',
       this.backBarHistoryHandler
     );
+
+    // React instantly to the UI-settings toggle (no reload)
+    this.backBarSettingSubId = this.eventBus.on(
+      'settings:back-bar-changed',
+      () => this.updateBackBar()
+    );
     this.updateBackBar();
   }
 
@@ -980,7 +989,7 @@ export class MainLayout {
     const bar = this.element.querySelector('[data-back-bar]');
     bar?.classList.toggle(
       'nn-back-bar--visible',
-      Router.getInstance().canGoBack()
+      isBackBarEnabled() && Router.getInstance().canGoBack()
     );
   }
 
@@ -3160,6 +3169,11 @@ export class MainLayout {
         this.backBarHistoryHandler
       );
       this.backBarHistoryHandler = null;
+    }
+
+    if (this.backBarSettingSubId) {
+      this.eventBus.off(this.backBarSettingSubId);
+      this.backBarSettingSubId = null;
     }
 
     if (this.mentionClickHandler) {
