@@ -256,6 +256,12 @@ export class QuotedNoteRenderer {
       void this.renderGitRepoPreview(naddrRef, container);
       return;
     }
+    // NIP-58 badge definition (kind 30009) → inline badge card (fetch + render
+    // from the self-contained tags, mirroring the Git-repo preview pattern).
+    if (kind === 30009) {
+      void this.renderBadgeDefinitionPreview(naddrRef, container);
+      return;
+    }
     // Any other addressable kind → shared unsupported fallback (no article card).
     container.appendChild(
       UnsupportedKindRenderer.renderFromCoordinate(
@@ -291,6 +297,30 @@ export class QuotedNoteRenderer {
             collapsible: false,
             depth: 1,
           })
+        );
+      }
+    } catch {
+      /* silent — container stays empty */
+    }
+  }
+
+  /**
+   * Fetch a NIP-58 badge definition by naddr and render it as an inline badge
+   * card. Falls back silently — the container stays empty on failure.
+   */
+  public async renderBadgeDefinitionPreview(
+    naddrRef: string,
+    container: Element
+  ): Promise<void> {
+    try {
+      const result =
+        await this.quoteFetcher.fetchQuotedEventWithError(naddrRef);
+      if (result.success && result.event.kind === 30009) {
+        const { BadgeDefinitionRenderer } = await import(
+          '../../../components/ui/note-rendering/BadgeDefinitionRenderer'
+        );
+        container.appendChild(
+          BadgeDefinitionRenderer.renderInlineCard(result.event)
         );
       }
     } catch {
@@ -475,6 +505,17 @@ export class QuotedNoteRenderer {
               result.event
             );
             skeleton.replaceWith(listElement);
+            return;
+          }
+          // NIP-58 badge definition (kind 30009) → inline badge card
+          // (self-contained — name/image/description live in the event tags).
+          if (result.event.kind === 30009) {
+            const { BadgeDefinitionRenderer } = await import(
+              '../../../components/ui/note-rendering/BadgeDefinitionRenderer'
+            );
+            skeleton.replaceWith(
+              BadgeDefinitionRenderer.renderInlineCard(result.event)
+            );
             return;
           }
           // NIP-52 calendar event/collection (31922/31923/31924) → nn-card

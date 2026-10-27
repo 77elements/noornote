@@ -20,6 +20,7 @@ import { EmojiPackProcessor } from './EmojiPackProcessor';
 import { GitEventProcessor } from './GitEventProcessor';
 import { HighlightProcessor } from './HighlightProcessor';
 import { BadgeAwardProcessor } from './BadgeAwardProcessor';
+import { BadgeDefinitionProcessor } from './BadgeDefinitionProcessor';
 import { NsiteProcessor, isNsiteManifest } from './NsiteProcessor';
 import { LiveStreamProcessor } from './LiveStreamProcessor';
 import { ListingProcessor } from './ListingProcessor';
@@ -74,6 +75,9 @@ export class NoteProcessor {
           return RepostProcessor.process(event);
         case 8:
           return BadgeAwardProcessor.process(event);
+        case 30009:
+          // NIP-58 badge definition (self-contained addressable metadata).
+          return BadgeDefinitionProcessor.process(event);
         case 20:
           return PictureNoteProcessor.process(event);
         case 21:

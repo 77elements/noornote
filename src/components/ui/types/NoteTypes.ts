@@ -23,6 +23,7 @@ export interface ProcessedNote {
     | 'git-event'
     | 'highlight'
     | 'badge-award'
+    | 'badge-definition'
     | 'emoji-pack'
     | 'live-stream'
     | 'listing'
@@ -64,7 +65,13 @@ export interface ProcessedNote {
   badgeData?: {
     coordinate: string;
     slug: string;
-    awardees: string[];
+    /** kind 8 only: awardee pubkeys. */
+    awardees?: string[];
+    /** kind 30009 only: self-contained definition data (from tags). */
+    name?: string;
+    description?: string;
+    image?: string;
+    thumb?: string;
   };
 }
 

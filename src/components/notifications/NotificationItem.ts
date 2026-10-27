@@ -512,6 +512,7 @@ export class NotificationItem {
       if (kind === 30402) return this.targetNP('listing', dative);
       if (kind === 35128) return this.targetNP('website', dative);
       if (kind === 30617) return this.targetNP('git repository', dative);
+      if (kind === 30009) return this.targetNP('badge', dative);
       if (!isNaN(kind)) return this.targetNP('event', dative);
     }
     const kTag = this.options.event.tags.find((t: string[]) => t[0] === 'k');
@@ -543,6 +544,7 @@ export class NotificationItem {
       if (kind === 1630 || kind === 1631 || kind === 1632 || kind === 1633)
         return this.targetNP('git status update', dative);
       if (kind === 30617) return this.targetNP('git repository', dative);
+      if (kind === 30009) return this.targetNP('badge', dative);
       if (!isNaN(kind)) return this.targetNP('event', dative);
     }
     return this.targetNP('note', dative);
@@ -596,6 +598,8 @@ export class NotificationItem {
         return dative
           ? tp('notif-dat', 'git repository')
           : tp('notif-acc', 'git repository');
+      case 'badge':
+        return dative ? tp('notif-dat', 'badge') : tp('notif-acc', 'badge');
       case 'reaction':
         return dative
           ? tp('notif-dat', 'reaction')

@@ -13,6 +13,7 @@ import { UserProfileService } from '../../../services/UserProfileService';
 import { hexToNpub } from '../../../helpers/nip19';
 import { escapeHtml, escapeHtmlAttr } from '../../../helpers/escapeHtml';
 import { ModuleLoader } from '../../../core/ModuleLoader';
+import { _, tn } from '../../../i18n';
 import type { ProfileModuleApi } from '../../../modules/profile/contracts';
 
 export class BadgeAwardRenderer {
@@ -29,20 +30,18 @@ export class BadgeAwardRenderer {
 
     const badgeData = note.badgeData;
     if (badgeData) {
+      const awardees = badgeData.awardees ?? [];
       const body = element.querySelector('.event-content');
       if (body) {
         body.innerHTML = BadgeAwardRenderer.buildSkeletonHtml(
           badgeData.slug,
-          badgeData.awardees
+          awardees
         );
         BadgeAwardRenderer.upgradeWithDefinition(
           body as HTMLElement,
           badgeData.coordinate
         );
-        BadgeAwardRenderer.upgradeAwardeeNames(
-          body as HTMLElement,
-          badgeData.awardees
-        );
+        BadgeAwardRenderer.upgradeAwardeeNames(body as HTMLElement, awardees);
       }
     }
 
@@ -72,17 +71,21 @@ export class BadgeAwardRenderer {
 
   private static buildSkeletonHtml(slug: string, awardees: string[]): string {
     const awardeeCount = awardees.length;
-    const countLabel =
-      awardeeCount === 1 ? '1 recipient' : `${awardeeCount} recipients`;
+    const countLabel = tn('%s recipient', '%s recipients', awardeeCount);
 
-    return `<div class="badge-award">
-      <div class="badge-award__thumb"></div>
-      <div class="badge-award__info">
-        <div class="badge-award__name">${escapeHtml(slug)}</div>
-        <div class="badge-award__desc"></div>
-        <div class="badge-award__awardees">${escapeHtml(countLabel)}</div>
-      </div>
-    </div>`;
+    // NOTE: whitespace-free markup — .event-content uses white-space:pre-wrap,
+    // so newlines between tags would render as extra line boxes and stretch
+    // the card.
+    return [
+      '<div class="badge-award">',
+      '<div class="badge-award__thumb"></div>',
+      '<div class="badge-award__info">',
+      `<div class="badge-award__name">${escapeHtml(slug)}</div>`,
+      '<div class="badge-award__desc"></div>',
+      `<div class="badge-award__awardees">${escapeHtml(countLabel)}</div>`,
+      '</div>',
+      '</div>',
+    ].join('');
   }
 
   private static upgradeWithDefinition(
@@ -133,7 +136,10 @@ export class BadgeAwardRenderer {
               profile,
               def.issuerPubkey
             );
-            issuerEl.innerHTML = `by <a href="/profile/${issuerNpub}" class="mention-link" data-profile-pubkey="${def.issuerPubkey}">${escapeHtml(issuerName)}</a>`;
+            issuerEl.innerHTML = _(
+              'by %s',
+              `<a href="/profile/${issuerNpub}" class="mention-link" data-profile-pubkey="${def.issuerPubkey}">${escapeHtml(issuerName)}</a>`
+            );
             nameDisplay.insertAdjacentElement('afterend', issuerEl);
           }
         }
@@ -172,8 +178,8 @@ export class BadgeAwardRenderer {
           }
         }
         const remaining = awardees.length - MAX_SHOWN;
-        if (remaining > 0) parts.push(`+${remaining} more`);
-        awardeesEl.innerHTML = `Awarded to ${parts.join(', ')}`;
+        if (remaining > 0) parts.push(_('+%s more', String(remaining)));
+        awardeesEl.innerHTML = _('Awarded to %s', parts.join(', '));
       })
       .catch(() => {
         /* keep count-only fallback */

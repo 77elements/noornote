@@ -18,6 +18,7 @@ import { GitEventRenderer } from './GitEventRenderer';
 import { HighlightRenderer } from './HighlightRenderer';
 import { PodcastEpisodeRenderer } from './PodcastEpisodeRenderer';
 import { BadgeAwardRenderer } from './BadgeAwardRenderer';
+import { BadgeDefinitionRenderer } from './BadgeDefinitionRenderer';
 import { EmojiPackRenderer } from './EmojiPackRenderer';
 import { LiveStreamRenderer } from './LiveStreamRenderer';
 import { ListingRenderer } from './ListingRenderer';
@@ -58,6 +59,8 @@ export class NoteRendererFactory {
         return GatedNoteRenderer.render(note, options);
       case 'badge-award':
         return BadgeAwardRenderer.render(note, options);
+      case 'badge-definition':
+        return BadgeDefinitionRenderer.render(note, options);
       case 'emoji-pack':
         return EmojiPackRenderer.render(note, options);
       case 'live-stream':

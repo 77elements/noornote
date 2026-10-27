@@ -56,6 +56,14 @@
     margin-top: calc($gap / 4);
   }
 
+  &__kicker {
+    @extend %mini;
+    color: var(--color-4);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: calc($gap / 8);
+  }
+
   &__awardees {
     @extend %small;
     color: var(--color-3);
