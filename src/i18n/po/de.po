@@ -11992,19 +11992,19 @@ msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:489
 msgid "Back button hidden"
-msgstr ""
+msgstr "Zurück-Button ausgeblendet"
 
 #: src/components/settings/UISettingsSection.ts:489
 msgid "Back button shown"
-msgstr ""
+msgstr "Zurück-Button eingeblendet"
 
 #: src/components/settings/UISettingsSection.ts:190
 msgid "Global Back Button"
-msgstr ""
+msgstr "Globaler Zurück-Button"
 
 #: src/components/settings/UISettingsSection.ts:193
 msgid "Show the Back button at the bottom of the content column."
-msgstr ""
+msgstr "Zeigt den Zurück-Button unten in der Inhaltsspalte an."
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"
