@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { buildThreadTree, extractReplyParentId } from './threadTree';
+import {
+  buildThreadTree,
+  extractReplyParentId,
+  isReplyToNote,
+} from './threadTree';
 
 function makeReply(id: string, tags: string[][], kind: number = 1): NostrEvent {
   return {
@@ -103,5 +107,70 @@ describe('buildThreadTree', () => {
     expect(tree).toHaveLength(1);
     expect(tree[0]!.event.id).toBe('k1');
     expect(tree[0]!.children[0]!.event.id).toBe('k2');
+  });
+});
+
+describe('isReplyToNote', () => {
+  const ROOT = '1b07d8ab';
+
+  it('kind:1 with lowercase root e-tag matches', () => {
+    const reply = makeReply('r1', [
+      ['e', ROOT, '', 'root'],
+      ['e', 'parent', '', 'reply'],
+    ]);
+    expect(isReplyToNote(reply, ROOT)).toBe(true);
+  });
+
+  it('kind:1 without a matching e-tag does not match', () => {
+    const reply = makeReply('r2', [['e', 'other']]);
+    expect(isReplyToNote(reply, ROOT)).toBe(false);
+  });
+
+  it('kind:1111 top-level comment matches via lowercase e', () => {
+    const comment = makeReply(
+      'c1',
+      [
+        ['e', ROOT],
+        ['k', '1'],
+      ],
+      1111
+    );
+    expect(isReplyToNote(comment, ROOT)).toBe(true);
+  });
+
+  it('kind:1111 nested comment matches via uppercase E root tag', () => {
+    // Nested comment: lowercase 'e' points at the parent comment, only 'E'
+    // still references the root note (NIP-22).
+    const nested = makeReply(
+      'c2',
+      [
+        ['E', ROOT],
+        ['K', '1'],
+        ['e', 'parentCommentId'],
+        ['k', '1111'],
+      ],
+      1111
+    );
+    expect(isReplyToNote(nested, ROOT)).toBe(true);
+  });
+
+  it('kind:1 with only an uppercase E tag does not match (kind gate)', () => {
+    const reply = makeReply('r3', [['E', ROOT]]);
+    expect(isReplyToNote(reply, ROOT)).toBe(false);
+  });
+
+  it('addressable root matches via lowercase a and uppercase A', () => {
+    const coord = '30023:abc:def';
+    const legacy = makeReply('r4', [['a', coord, '', 'reply']]);
+    const comment = makeReply(
+      'c3',
+      [
+        ['A', coord],
+        ['K', '30023'],
+      ],
+      1111
+    );
+    expect(isReplyToNote(legacy, coord)).toBe(true);
+    expect(isReplyToNote(comment, coord)).toBe(true);
   });
 });

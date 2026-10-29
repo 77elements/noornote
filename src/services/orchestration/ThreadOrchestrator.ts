@@ -25,6 +25,7 @@ import { AuthService } from '../AuthService';
 import { SystemLogger } from '../SystemLogger';
 import { diagLog } from '../DiagnosticLogger';
 import { LRUCache, getCacheSize } from '../../helpers/LRUCache';
+import { isReplyToNote } from '../../helpers/threadTree';
 
 export interface ThreadContextItem {
   eventId: string;
@@ -137,6 +138,16 @@ export class ThreadOrchestrator extends Orchestrator {
       ? [{ kinds: [1, 1111], '#A': [noteId] }]
       : [];
 
+    // NIP-22 nested comments: their lowercase 'e' points at the parent
+    // comment, only uppercase 'E' still references the root (hex roots —
+    // addressable roots are already covered by #A). kind:1 replies keep a
+    // lowercase root e-tag on every descendant (NIP-10), so they are fully
+    // covered by filterLowerA; without the #E fetch a comment thread renders
+    // flat — only top-level comments appear.
+    const filterUpperE: NDKFilter[] = isAddressable
+      ? []
+      : [{ kinds: [1111], '#E': [noteId] }];
+
     const allReplies = new Map<string, NostrEvent>();
 
     // Stage 1: Read relays
@@ -153,6 +164,17 @@ export class ThreadOrchestrator extends Orchestrator {
             5000,
             false,
             'ThreadOrch-A'
+          )
+        );
+      }
+      if (filterUpperE.length > 0) {
+        fetches.push(
+          this.transport.fetch(
+            relays,
+            filterUpperE,
+            5000,
+            false,
+            'ThreadOrch-E'
           )
         );
       }
@@ -199,6 +221,17 @@ export class ThreadOrchestrator extends Orchestrator {
             )
           );
         }
+        if (filterUpperE.length > 0) {
+          outFetches.push(
+            this.transport.fetch(
+              outboundRelays,
+              filterUpperE,
+              8000,
+              true,
+              'ThreadOrch-E'
+            )
+          );
+        }
         const outboundEvents = (await Promise.all(outFetches)).flat();
         const countBefore = allReplies.size;
         outboundEvents.forEach(e => {
@@ -222,7 +255,7 @@ export class ThreadOrchestrator extends Orchestrator {
 
     // Filter and sort
     let actualReplies = Array.from(allReplies.values()).filter(event =>
-      this.isActualReply(event, noteId)
+      isReplyToNote(event, noteId)
     );
 
     const currentUser = this.authService.getCurrentUser();
@@ -245,16 +278,7 @@ export class ThreadOrchestrator extends Orchestrator {
   }
 
   private isActualReply(event: NostrEvent, noteId: string): boolean {
-    const isAddressable = noteId.includes(':');
-    if (isAddressable) {
-      // NIP-01 uses lowercase 'a', NIP-22 uses uppercase 'A' for root scope
-      const tags = event.tags.filter(
-        tag => (tag[0] === 'a' || tag[0] === 'A') && tag[1] === noteId
-      );
-      return tags.length > 0;
-    }
-    const tags = event.tags.filter(tag => tag[0] === 'e' && tag[1] === noteId);
-    return tags.length > 0;
+    return isReplyToNote(event, noteId);
   }
 
   /**
@@ -670,7 +694,9 @@ export class ThreadOrchestrator extends Orchestrator {
     const isAddressable = noteId.includes(':');
 
     // Addressable events (NIP-33, kinds 30000–39999) are referenced via #a /
-    // #A tags by NIP-22 comments and legacy replies; hex ids use #e.
+    // #A tags by NIP-22 comments and legacy replies; hex ids use #e — and
+    // nested NIP-22 comments additionally #E (their lowercase 'e' points at
+    // the parent comment, not the root).
     const filters: NDKFilter[] = isAddressable
       ? [
           {
@@ -688,6 +714,11 @@ export class ThreadOrchestrator extends Orchestrator {
           {
             kinds: [1, 1111],
             '#e': [noteId],
+            since: Math.floor(Date.now() / 1000),
+          },
+          {
+            kinds: [1111],
+            '#E': [noteId],
             since: Math.floor(Date.now() / 1000),
           },
         ];

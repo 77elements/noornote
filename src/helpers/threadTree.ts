@@ -39,6 +39,29 @@ export function extractReplyParentId(reply: NostrEvent): string | null {
 }
 
 /**
+ * Whether `event` is a reply/comment to the note identified by `noteId`
+ * (hex id or addressable coordinate). NIP-10 kind:1 replies match via the
+ * lowercase 'e' tag; NIP-22 kind:1111 comments additionally match via the
+ * uppercase 'E' root-scope tag — nested comments point their lowercase 'e'
+ * at the parent comment, so only 'E' still ties them to the root note.
+ */
+export function isReplyToNote(event: NostrEvent, noteId: string): boolean {
+  if (noteId.includes(':')) {
+    // NIP-01 uses lowercase 'a', NIP-22 uses uppercase 'A' for root scope
+    return event.tags.some(
+      tag => (tag[0] === 'a' || tag[0] === 'A') && tag[1] === noteId
+    );
+  }
+  if (event.tags.some(tag => tag[0] === 'e' && tag[1] === noteId)) {
+    return true;
+  }
+  return (
+    event.kind === 1111 &&
+    event.tags.some(tag => tag[0] === 'E' && tag[1] === noteId)
+  );
+}
+
+/**
  * Build the nested reply tree: events whose parent is the root note (or has
  * no parent in the set) become roots; everything else nests under its parent.
  */
