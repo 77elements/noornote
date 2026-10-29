@@ -2689,7 +2689,7 @@ msgstr "Posten"
 #: src/components/post/PostNoteModal.ts:1038
 #: src/components/reply/ReplyModal.ts:695
 msgid "Waiting for signer approval…"
-msgstr "Highlight posten"
+msgstr "Warte auf Signer-Freigabe…"
 
 #: src/components/post/PostNoteModal.ts:340
 msgid "What's on your mind?"
