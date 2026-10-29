@@ -34,6 +34,7 @@ import { ModuleLoader } from '../../../core/ModuleLoader';
 import type { SingleNoteModuleApi } from '../../../modules/single-note/contracts';
 import { MuteOrchestrator } from '../../../lists/mutes';
 import { AuthService } from '../../../services/AuthService';
+import { diagLog } from '../../../services/DiagnosticLogger';
 import { escapeHtmlAttr } from '../../../helpers/escapeHtml';
 import { hexToNpub } from '../../../helpers/nip19';
 import { encodeNevent } from '../../../services/NostrToolsAdapter';
@@ -288,6 +289,14 @@ export class RepostRenderer {
       ]) ?? Promise.resolve(null)
     ).then(originalEvent => {
       if (!originalEvent) {
+        // This is the "reposted note itself didn't resolve" leg of the chain —
+        // without this log a user-visible repost error box has no trace in the
+        // diag logs (the orchestrator only logs when IT owns the failure).
+        diagLog('relays', 'Repost inner fetch failed', {
+          ref: originalRef.id.slice(0, 8),
+          reposter: reposterPubkey.slice(0, 8),
+          hasRelayHint: Boolean(originalRef.relayHint),
+        });
         placeholderDiv.innerHTML = `
             <div class="repost-error">
               <span class="error-icon">⚠️</span>

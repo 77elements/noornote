@@ -16,7 +16,19 @@ export type QuoteFetchError =
 
 export type QuoteFetchResult =
   | { success: true; event: NostrEvent }
-  | { success: false; error: QuoteFetchError };
+  | {
+      success: false;
+      error: QuoteFetchError;
+      /**
+       * Miss flavor (QuoteOrchestrator pipeline): true when a pre-outbound
+       * stage ended in the hard transport timeout rather than a clean
+       * EOSE-empty answer. A timed-out miss is NOT proof the relays carry
+       * nothing — the renderer's recovery uses this to re-run the FULL
+       * pipeline (stage 2 hits the NDK cache the orphaned subscription
+       * filled) instead of the outbound-only retry.
+       */
+      timedOut?: boolean;
+    };
 
 export class QuoteNoteFetcher {
   private static instance: QuoteNoteFetcher;
@@ -61,27 +73,33 @@ export class QuoteNoteFetcher {
    * Fetch event with detailed error result (delegates to QuoteOrchestrator).
    * `parentAuthorPubkey` see {@link fetchQuotedEvent}.
    * `outboundOnly` see {@link fetchQuotedEvent}.
+   * `bypassNegativeCache` — run the full pipeline even when a recent negative
+   * entry exists (see QuoteOrchestrator.fetchQuotedEventDetailed). Used by the
+   * timeout-flavored recovery retry.
    */
   public async fetchQuotedEventWithError(
     nostrRef: string,
     parentAuthorPubkey?: string,
-    outboundOnly: boolean = false
+    outboundOnly: boolean = false,
+    bypassNegativeCache: boolean = false
   ): Promise<QuoteFetchResult> {
     try {
-      const event = await this.orchestrator.fetchQuotedEvent(
+      const outcome = await this.orchestrator.fetchQuotedEventDetailed(
         nostrRef,
         undefined,
         parentAuthorPubkey ? [parentAuthorPubkey] : [],
-        outboundOnly
+        outboundOnly,
+        bypassNegativeCache
       );
 
-      if (event) {
-        return { success: true, event };
+      if (outcome.event) {
+        return { success: true, event: outcome.event };
       }
 
       // Not found
       return {
         success: false,
+        timedOut: outcome.timedOut,
         error: {
           type: 'not_found',
           message: 'Note not found on any relays',

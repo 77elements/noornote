@@ -22,6 +22,7 @@ import { replaceMediaPlaceholders } from '../../../helpers/renderMediaContent';
 import { replaceBolt11Placeholders } from '../../../helpers/renderBolt11';
 import { Router } from '../../../services/Router';
 import { getViewNavigationController } from '../../../services/ViewNavigationController';
+import { diagLog } from '../../../services/DiagnosticLogger';
 import { RENDERABLE_KINDS, GIT_EVENT_KINDS } from '../../../types/nostr';
 import { PollRenderer } from '../note-features/PollRenderer';
 import { MuteOrchestrator } from '../../../lists/mutes';
@@ -677,24 +678,39 @@ export class QuotedNoteRenderer {
         // The retry attempt failed too — the note really isn't reachable right
         // now. Show the final error UI. Without this branch the second failure
         // would schedule a third attempt and we'd never converge.
+        diagLog('relays', 'Quote recovery: final attempt failed', {
+          ref:
+            QuotedNoteRenderer.extractEventIdFromRef(ref)?.slice(0, 8) ??
+            ref.fullMatch.slice(0, 24),
+          timedOut: result.timedOut ?? false,
+        });
         skeleton.replaceWith(this.createQuoteError(result.error));
       } else {
         // First failure: instead of freezing on a "not found" box, leave the
         // skeleton in place and try to recover via (a) the global note:cached
         // event — fired by NoteService whenever any path lands the note in the
-        // LRU — and (b) a single outboundOnly retry against the now-warm
-        // outbound relays. The error UI is shown only if neither path delivers
-        // within the recovery window.
+        // LRU — and (b) a single retry against the relays that can still
+        // change their answer. The error UI is shown only if neither path
+        // delivers within the recovery window.
         this.scheduleQuoteRecovery(
           ref,
           skeleton,
           enableCollapsible,
           parentAuthorPubkey,
           result.error,
-          depth
+          depth,
+          result.timedOut ?? false
         );
       }
     } catch (error) {
+      // Unexpected exception (not a pipeline miss) — the skeleton is removed
+      // silently, so without this log the vanished quote would be undiagnosable.
+      diagLog('relays', 'Quote render failed unexpectedly', {
+        ref:
+          QuotedNoteRenderer.extractEventIdFromRef(ref)?.slice(0, 8) ??
+          ref.fullMatch.slice(0, 24),
+        error: String(error),
+      });
       console.error(`❌ Quote fetch failed:`, error);
       skeleton.remove();
     }
@@ -704,9 +720,15 @@ export class QuotedNoteRenderer {
    * Wait for a previously-unresolved quote to arrive via any of:
    *   1. A `note:cached` event from NoteService (background feed subscription,
    *      a parallel fetch, an NDK subscription that resolved late, …).
-   *   2. A single outboundOnly retry after 8 s — by then the outbound relays
-   *      (notably a bridge relay like mostr.pub the quoter used) have usually
-   *      finished their first TLS handshake of the session and EOSE properly.
+   *   2. A single retry after 8 s, with the mode picked by the miss flavor:
+   *      - clean EOSE-empty miss → outboundOnly retry (the read relays and
+   *        indexer set genuinely carry nothing; the outbound relays — notably
+   *        a bridge relay like mostr.pub the quoter used — have by then
+   *        finished their first TLS handshake of the session and EOSE properly).
+   *      - timeout-flavored miss → FULL pipeline retry. The first attempt's
+   *        stages expired mid-flight, they proved nothing, and the NDK cache
+   *        now very likely holds the note the orphaned subscription received
+   *        seconds later (stage 2 runs CACHE_FIRST, so it resolves instantly).
    *
    * If neither delivers within 60 s, the final error UI replaces the skeleton.
    * All three timers (listener, retry, fail) are de-registered on any
@@ -719,7 +741,8 @@ export class QuotedNoteRenderer {
     enableCollapsible: boolean,
     parentAuthorPubkey: string | undefined,
     error: QuoteFetchError,
-    depth: number = 1
+    depth: number = 1,
+    timedOut: boolean = false
   ): void {
     let resolved = false;
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
@@ -728,6 +751,7 @@ export class QuotedNoteRenderer {
 
     const eventBus = TypedEventBus.getInstance();
     const eventId = QuotedNoteRenderer.extractEventIdFromRef(ref);
+    const shortRef = eventId ? eventId.slice(0, 8) : ref.fullMatch.slice(0, 24);
 
     const cleanup = (): void => {
       resolved = true;
@@ -750,6 +774,12 @@ export class QuotedNoteRenderer {
     // node would do nothing visible and leak the new element.
     const isAlive = (): boolean => !resolved && skeleton.isConnected;
 
+    diagLog('relays', 'Quote recovery scheduled', {
+      ref: shortRef,
+      timedOut,
+      depth,
+    });
+
     // Path 1: subscribe to note:cached for this id. NoteService fires it
     // whenever ANY code path adds the note to the LRU — feed subscriptions,
     // parallel orchestrator fetches, even unrelated lookups. This is the
@@ -764,6 +794,9 @@ export class QuotedNoteRenderer {
           }
           if (data.eventId === eventId) {
             cleanup();
+            diagLog('relays', 'Quote recovery: note:cached rescue', {
+              ref: shortRef,
+            });
             // Cache-first Stage 0 will resolve instantly.
             void this.fetchAndRenderQuote(
               ref,
@@ -778,18 +811,22 @@ export class QuotedNoteRenderer {
       );
     }
 
-    // Path 2: scheduled outboundOnly retry. The initial fetch already proved
-    // the user's read relays and the indexer set carry nothing (cold or
-    // EOSE-empty); re-running those stages only burns identical timeouts.
-    // Stage 3 with the now-warm outbound sockets is the one path whose result
-    // actually changes on a second attempt.
+    // Path 2: scheduled retry — mode by miss flavor (see doc comment above).
+    // Timeout flavor: bypassNegativeCache=true, otherwise the first attempt's
+    // own negative entry would short-circuit the retry before stage 2 gets a
+    // chance to hit the NDK cache.
     retryTimer = setTimeout(() => {
       if (!isAlive()) {
         cleanup();
         return;
       }
       void this.quoteFetcher
-        .fetchQuotedEventWithError(ref.fullMatch, parentAuthorPubkey, true)
+        .fetchQuotedEventWithError(
+          ref.fullMatch,
+          parentAuthorPubkey,
+          !timedOut,
+          timedOut
+        )
         .then(result => {
           if (!isAlive()) {
             cleanup();
@@ -797,6 +834,10 @@ export class QuotedNoteRenderer {
           }
           if (result.success) {
             cleanup();
+            diagLog('relays', 'Quote recovery: retry succeeded', {
+              ref: shortRef,
+              mode: timedOut ? 'full' : 'outbound',
+            });
             void this.fetchAndRenderQuote(
               ref,
               skeleton,
@@ -822,6 +863,10 @@ export class QuotedNoteRenderer {
         return;
       }
       cleanup();
+      diagLog('relays', 'Quote recovery exhausted', {
+        ref: shortRef,
+        timedOut,
+      });
       skeleton.replaceWith(this.createQuoteError(error));
     }, 60000);
   }

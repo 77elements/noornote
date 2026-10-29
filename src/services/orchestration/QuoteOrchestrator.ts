@@ -24,6 +24,19 @@ import { RelayConfig } from '../RelayConfig';
 import { SystemLogger } from '../SystemLogger';
 import { diagLog } from '../DiagnosticLogger';
 
+/**
+ * Result of a full quote-fetch pipeline. `timedOut` is the miss flavor: when a
+ * pre-outbound stage ended in the hard transport timeout, "not found" is NOT
+ * proof that the relays carry nothing — the NDK subscription kept running and
+ * a late-arriving event may have landed in the NDK cache since. Consumers
+ * (QuotedNoteRenderer recovery) use this to retry the FULL pipeline instead of
+ * outbound-only.
+ */
+export interface QuoteFetchOutcome {
+  event: NostrEvent | null;
+  timedOut: boolean;
+}
+
 export class QuoteOrchestrator extends Orchestrator {
   private static instance: QuoteOrchestrator;
   private transport: NostrTransport;
@@ -34,15 +47,17 @@ export class QuoteOrchestrator extends Orchestrator {
   private systemLogger: SystemLogger;
 
   /** In-flight fetches to prevent duplicate requests */
-  private fetchingQuotes: Map<string, Promise<NostrEvent | null>> = new Map();
+  private fetchingQuotes: Map<string, Promise<QuoteFetchOutcome>> = new Map();
 
   /**
    * Negative cache: refs whose full pipeline came up empty, with the timestamp
-   * of the failure. Prevents re-running the entire ~30s stage cascade on every
-   * re-render of a feed containing an unfetchable quote. Entries expire after
+   * of the failure and the miss flavor (clean EOSE-empty vs. hard timeout).
+   * Prevents re-running the entire ~30s stage cascade on every re-render of a
+   * feed containing an unfetchable quote. Entries expire after
    * NEGATIVE_CACHE_TTL and are cleared on success.
    */
-  private failedQuoteFetches: Map<string, number> = new Map();
+  private failedQuoteFetches: Map<string, { at: number; timedOut: boolean }> =
+    new Map();
   private static readonly NEGATIVE_CACHE_TTL = 15 * 60 * 1000;
 
   private constructor() {
@@ -94,6 +109,33 @@ export class QuoteOrchestrator extends Orchestrator {
     extraOutboundPubkeys: string[] = [],
     outboundOnly: boolean = false
   ): Promise<NostrEvent | null> {
+    return (
+      await this.fetchQuotedEventDetailed(
+        nostrRef,
+        authorHint,
+        extraOutboundPubkeys,
+        outboundOnly
+      )
+    ).event;
+  }
+
+  /**
+   * {@link fetchQuotedEvent} with the miss flavor attached (see
+   * {@link QuoteFetchOutcome}).
+   *
+   * @param bypassNegativeCache - Run the full pipeline even when a recent
+   *                    negative entry exists. Used by the renderer's
+   *                    timeout-flavored recovery retry: a timed-out cascade
+   *                    proved nothing about the relays, so the retry must not
+   *                    be short-circuited by its own negative entry.
+   */
+  public async fetchQuotedEventDetailed(
+    nostrRef: string,
+    authorHint?: string,
+    extraOutboundPubkeys: string[] = [],
+    outboundOnly: boolean = false,
+    bypassNegativeCache: boolean = false
+  ): Promise<QuoteFetchOutcome> {
     // If already fetching, wait for that request (deduplication).
     // NOTE: outboundOnly retries intentionally bypass dedup — they must run
     // even while an earlier normal fetch is in-flight, otherwise the retry
@@ -103,26 +145,12 @@ export class QuoteOrchestrator extends Orchestrator {
       return this.fetchingQuotes.get(nostrRef)!;
     }
 
-    // Negative cache: a recent full-pipeline miss means the ref is (currently)
-    // unfetchable — skip the ~30s stage cascade. Explicit outboundOnly retries
-    // bypass this, so a user-driven retry always gets a fresh attempt.
-    if (!outboundOnly) {
-      const failedAt = this.failedQuoteFetches.get(nostrRef);
-      if (
-        failedAt !== undefined &&
-        Date.now() - failedAt < QuoteOrchestrator.NEGATIVE_CACHE_TTL
-      ) {
-        diagLog('relays', 'QuoteOrchestrator: negative cache hit', {
-          ref: nostrRef.slice(0, 24),
-        });
-        return null;
-      }
-    }
-
     // Check if this is an naddr (addressable event)
     if (this.isNaddrReference(nostrRef)) {
       // Delegate to LongFormOrchestrator
-      const fetchPromise = this.longFormOrch.fetchAddressableEvent(nostrRef);
+      const fetchPromise = this.longFormOrch
+        .fetchAddressableEvent(nostrRef)
+        .then(event => ({ event, timedOut: false }) as QuoteFetchOutcome);
       this.fetchingQuotes.set(nostrRef, fetchPromise);
 
       try {
@@ -143,7 +171,34 @@ export class QuoteOrchestrator extends Orchestrator {
         'QuoteOrchestrator',
         `Invalid reference format: ${nostrRef.slice(0, 20)}...`
       );
-      return null;
+      return { event: null, timedOut: false };
+    }
+
+    // NoteService cache BEFORE the negative cache: the note:cached recovery
+    // path re-enters here after the note arrived via some other door — a
+    // negative-cache short-circuit at this point would turn that rescue into
+    // an error box even though the note is sitting in the LRU.
+    const cached = this.noteService.getCachedNote(eventId);
+    if (cached) {
+      return { event: cached, timedOut: false };
+    }
+
+    // Negative cache: a recent full-pipeline miss means the ref is (currently)
+    // unfetchable — skip the ~30s stage cascade. Explicit outboundOnly retries
+    // and bypassNegativeCache retries get a fresh attempt. The stored miss
+    // flavor rides along so re-renders pick the matching retry strategy.
+    if (!outboundOnly && !bypassNegativeCache) {
+      const failed = this.failedQuoteFetches.get(nostrRef);
+      if (
+        failed !== undefined &&
+        Date.now() - failed.at < QuoteOrchestrator.NEGATIVE_CACHE_TTL
+      ) {
+        diagLog('relays', 'QuoteOrchestrator: negative cache hit', {
+          ref: nostrRef.slice(0, 24),
+          timedOut: failed.timedOut,
+        });
+        return { event: null, timedOut: failed.timedOut };
+      }
     }
 
     // Prefer the author embedded in the reference (nevent.author) over the
@@ -162,11 +217,14 @@ export class QuoteOrchestrator extends Orchestrator {
 
     try {
       const result = await fetchPromise;
-      if (result) {
+      if (result.event) {
         // Success clears the negative entry; a miss refreshes the timestamp.
         this.failedQuoteFetches.delete(nostrRef);
       } else if (!outboundOnly) {
-        this.failedQuoteFetches.set(nostrRef, Date.now());
+        this.failedQuoteFetches.set(nostrRef, {
+          at: Date.now(),
+          timedOut: result.timedOut,
+        });
         this.pruneFailedQuoteCache();
       }
       return result;
@@ -181,8 +239,8 @@ export class QuoteOrchestrator extends Orchestrator {
   private pruneFailedQuoteCache(): void {
     if (this.failedQuoteFetches.size <= 500) return;
     const now = Date.now();
-    for (const [ref, ts] of this.failedQuoteFetches) {
-      if (now - ts >= QuoteOrchestrator.NEGATIVE_CACHE_TTL) {
+    for (const [ref, entry] of this.failedQuoteFetches) {
+      if (now - entry.at >= QuoteOrchestrator.NEGATIVE_CACHE_TTL) {
         this.failedQuoteFetches.delete(ref);
       }
     }
@@ -284,14 +342,14 @@ export class QuoteOrchestrator extends Orchestrator {
     author: string | null = null,
     extraOutboundPubkeys: string[] = [],
     outboundOnly: boolean = false
-  ): Promise<NostrEvent | null> {
+  ): Promise<QuoteFetchOutcome> {
     const shortId = eventId.slice(0, 8);
 
     // Stage 0: Check NoteService cache first (always — cache may have filled
     // since the previous attempt via a feed subscription or a parallel fetch).
     const cached = this.noteService.getCachedNote(eventId);
     if (cached) {
-      return cached;
+      return { event: cached, timedOut: false };
     }
 
     const filter: NDKFilter = { ids: [eventId], limit: 1 };
@@ -300,26 +358,40 @@ export class QuoteOrchestrator extends Orchestrator {
     // walked through with cold / EOSE-empty results, re-running them only
     // burns the same timeouts again. Stage 3 (outbound) is the one whose
     // relays are now warm — that's where the retry should spend its budget.
-    // stage2Completed tracks whether stage 2 returned normally (no throw):
-    // a clean stage-2 pass over the standard set means stage 3 must not
-    // re-ask the same relays when discovery offers nothing new (NDK dedupe
-    // answers instantly-empty). After a stage-2 THROW a stage-3 retry over
-    // the same relays is still legitimate (transport may have reconnected).
+    // stage2Completed tracks whether stage 2 returned a clean answer (EOSE
+    // reached, no throw): a clean stage-2 pass over the standard set means
+    // stage 3 must not re-ask the same relays when discovery offers nothing
+    // new (NDK dedupe answers instantly-empty). After a stage-2 THROW or
+    // TIMEOUT a stage-3 retry over the same relays is still legitimate — a
+    // timeout is not an answer, the transport window just expired while the
+    // NDK subscription kept running.
     let stage2Completed = false;
+    // Miss flavor: any pre-outbound stage that ended in the hard transport
+    // timeout. The renderer's recovery uses this to re-run the FULL pipeline
+    // (the NDK cache now very likely holds the late-arriving note) instead of
+    // outbound-only.
+    let timedOut = false;
     if (!outboundOnly) {
       // Stage 1: Try relay hints first (highest priority)
       if (relayHints.length > 0) {
         try {
-          const events = await this.transport.fetch(
+          const stage1 = await this.transport.fetchWithMeta(
             relayHints,
             [filter],
             5000,
             false,
             'QuoteOrch'
           );
-          if (events[0]) {
-            this.noteService.registerNote(events[0]);
-            return events[0];
+          if (stage1.events[0]) {
+            this.noteService.registerNote(stage1.events[0]);
+            return { event: stage1.events[0], timedOut: false };
+          }
+          if (stage1.timedOut) {
+            timedOut = true;
+            diagLog('relays', 'QuoteOrchestrator: stage 1 (hints) timed out', {
+              eventId: shortId,
+              relays: relayHints,
+            });
           }
         } catch (error) {
           diagLog('relays', 'QuoteOrchestrator: stage 1 (hints) failed', {
@@ -331,17 +403,24 @@ export class QuoteOrchestrator extends Orchestrator {
 
       // Stage 2: Try standard relays
       try {
-        const events = await this.transport.fetch(
+        const stage2 = await this.transport.fetchWithMeta(
           this.transport.getReadRelays(),
           [filter],
           5000,
           false,
           'QuoteOrch'
         );
-        stage2Completed = true;
-        if (events[0]) {
-          this.noteService.registerNote(events[0]);
-          return events[0];
+        stage2Completed = !stage2.timedOut;
+        if (stage2.timedOut) {
+          timedOut = true;
+          diagLog('relays', 'QuoteOrchestrator: stage 2 (standard) timed out', {
+            eventId: shortId,
+            relays: this.transport.getReadRelays(),
+          });
+        }
+        if (stage2.events[0]) {
+          this.noteService.registerNote(stage2.events[0]);
+          return { event: stage2.events[0], timedOut: false };
         }
       } catch (error) {
         diagLog('relays', 'QuoteOrchestrator: stage 2 (standard) failed', {
@@ -360,21 +439,29 @@ export class QuoteOrchestrator extends Orchestrator {
           .getMetadataRelays()
           .filter(r => !standardSet.has(r));
         if (indexerRelays.length > 0) {
-          const events = await this.transport.fetch(
+          const stage25 = await this.transport.fetchWithMeta(
             indexerRelays,
             [filter],
             6000,
             true,
             'QuoteOrch'
           );
-          if (events[0]) {
+          if (stage25.events[0]) {
             diagLog(
               'relays',
               'QuoteOrchestrator: indexer fallback found quote',
               { eventId: shortId }
             );
-            this.noteService.registerNote(events[0]);
-            return events[0];
+            this.noteService.registerNote(stage25.events[0]);
+            return { event: stage25.events[0], timedOut: false };
+          }
+          if (stage25.timedOut) {
+            timedOut = true;
+            diagLog(
+              'relays',
+              'QuoteOrchestrator: stage 2.5 (indexer) timed out',
+              { eventId: shortId, relays: indexerRelays }
+            );
           }
         }
       } catch (error) {
@@ -417,8 +504,9 @@ export class QuoteOrchestrator extends Orchestrator {
             outboundPubkeyCount: outboundPubkeys.length,
             hasHints: relayHints.length > 0,
             outboundOnly,
+            timedOut,
           });
-          return null;
+          return { event: null, timedOut };
         }
 
         // Retry path: longer timeout — outbound relays (especially a bridge
@@ -448,7 +536,7 @@ export class QuoteOrchestrator extends Orchestrator {
             { eventId: shortId, outboundOnly }
           );
           this.noteService.registerNote(events[0]);
-          return events[0];
+          return { event: events[0], timedOut: false };
         }
         diagLog('relays', 'QuoteOrchestrator: stage 3 returned empty', {
           eventId: shortId,
@@ -474,8 +562,9 @@ export class QuoteOrchestrator extends Orchestrator {
       outboundPubkeyCount: outboundPubkeys.length,
       hasHints: relayHints.length > 0,
       outboundOnly,
+      timedOut,
     });
-    return null;
+    return { event: null, timedOut };
   }
 
   // Orchestrator interface implementations (required by base class)

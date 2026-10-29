@@ -753,6 +753,40 @@ export class NostrTransport {
     skipCache: boolean = false,
     caller: string = ''
   ): Promise<NostrEvent[]> {
+    return (await this.fetchCore(relays, filters, timeout, skipCache, caller))
+      .events;
+  }
+
+  /**
+   * Fetch with timeout telemetry: identical to {@link fetch}, but reports
+   * whether an empty result came from the hard timeout instead of a clean
+   * EOSE-empty answer. A timeout is NOT proof that the relays carry nothing —
+   * the NDK subscription keeps running in the background and late-arriving
+   * events still land in the NDK cache. Callers use this to pick the right
+   * retry strategy (QuoteOrchestrator quote recovery).
+   */
+  public async fetchWithMeta(
+    relays: string[],
+    filters: NDKFilter[],
+    timeout: number = 5000,
+    skipCache: boolean = false,
+    caller: string = ''
+  ): Promise<{ events: NostrEvent[]; timedOut: boolean }> {
+    return this.fetchCore(relays, filters, timeout, skipCache, caller);
+  }
+
+  /**
+   * Shared core of fetch/fetchWithMeta. Never throws — errors (including the
+   * internal 'Fetch timeout' rejection) are logged and reported through the
+   * `timedOut` flag, preserving the historic fetch() contract of returning [].
+   */
+  private async fetchCore(
+    relays: string[],
+    filters: NDKFilter[],
+    timeout: number,
+    skipCache: boolean,
+    caller: string
+  ): Promise<{ events: NostrEvent[]; timedOut: boolean }> {
     try {
       await this.ensureConnected();
 
@@ -764,7 +798,8 @@ export class NostrTransport {
       );
 
       if (hasSearchField) {
-        return this.fetchWithSearch(relays, filters, timeout);
+        const events = await this.fetchWithSearch(relays, filters, timeout);
+        return { events, timedOut: false };
       }
 
       // Ensure all relay URLs are in the NDK pool (NDK won't connect to unknown relays via relayUrls)
@@ -801,11 +836,13 @@ export class NostrTransport {
       });
 
       // Apply timeout to prevent indefinite hangs on disconnected relays
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Fetch timeout')), timeout)
-      );
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('Fetch timeout')), timeout);
+      });
 
       const eventSet = await Promise.race([fetchPromise, timeoutPromise]);
+      if (timer) clearTimeout(timer);
 
       // Convert Set<NDKEvent> to Array<NostrEvent>
       const events = Array.from(eventSet).map(ndkEvent => {
@@ -828,8 +865,12 @@ export class NostrTransport {
           .flat(),
         eventCount: events.length,
       });
-      return events;
+      return { events, timedOut: false };
     } catch (error) {
+      // A 'Fetch timeout' means our window expired while the NDK subscription
+      // was still running — not that the relays are empty (see fetchWithMeta).
+      const timedOut =
+        error instanceof Error && error.message === 'Fetch timeout';
       diagLog('relays', 'Fetch failed', {
         caller,
         relayCount: relays.length,
@@ -837,12 +878,13 @@ export class NostrTransport {
           .map(f => f.kinds || f.ids?.map(() => 'id-lookup') || ['unknown'])
           .flat(),
         error: String(error),
+        timedOut,
       });
       this.systemLogger.error(
         'NostrTransport',
         'Failed to fetch events from relays'
       );
-      return [];
+      return { events: [], timedOut };
     }
   }
 
