@@ -1188,11 +1188,18 @@ export class NostrTransport {
    *   the background (no abort). Useful for latency-sensitive paths like NIP-17
    *   DMs where a single relay-ACK already guarantees deliverability while we
    *   still want maximum redundancy.
+   * @param opts.bestEffort — marks a non-critical extra round (relay hints to
+   *   the original author's outbox, fired AFTER the primary publish already
+   *   succeeded). Best-effort failures are reported as a calm warn ("extra
+   *   copies didn't arrive") instead of the scary "Publish failed" error, and
+   *   do NOT emit `publish:failed-all` — the event is already out, and
+   *   queueing it for retry would only produce duplicate copies.
    */
   public async publish(
     relays: string[],
     event: NostrEvent,
-    requiredRelayCount?: number
+    requiredRelayCount?: number,
+    opts?: { bestEffort?: boolean }
   ): Promise<Set<string>> {
     await this.ensureConnected();
 
@@ -1249,14 +1256,17 @@ export class NostrTransport {
         kind: event.kind,
       });
 
-      if (successful > 0) {
+      // Best-effort rounds stay out of the System Log on success — the user
+      // was already told the main story ("Delivered to 6 of 6 relays"); a
+      // second "Delivered to 1 of 3" line for background copies is noise.
+      if (successful > 0 && !opts?.bestEffort) {
         this.systemLogger.success(
           'NostrTransport',
           `Delivered to ${successful} of ${relays.length} relays`
         );
       }
 
-      if (failed > 0 && successful > 0) {
+      if (failed > 0 && successful > 0 && !opts?.bestEffort) {
         this.systemLogger.warn(
           'NostrTransport',
           `${failed} relay${failed > 1 ? 's' : ''} didn't respond`
@@ -1265,14 +1275,21 @@ export class NostrTransport {
 
       // Only throw if ALL relays failed
       if (successful === 0) {
-        this.systemLogger.error(
-          'NostrTransport',
-          'Delivery failed — no relays responded'
-        );
-        // M6.1: hand the signed event to the offline publish queue (via the
-        // event bus — the transport must not import the queue service, which
-        // itself calls back into the transport for retries).
-        this.eventBus.emit('publish:failed-all', { event, relays });
+        if (opts?.bestEffort) {
+          this.systemLogger.warn(
+            'NostrTransport',
+            "Extra relays didn't respond — your content is already delivered"
+          );
+        } else {
+          this.systemLogger.error(
+            'NostrTransport',
+            'Delivery failed — no relays responded'
+          );
+          // M6.1: hand the signed event to the offline publish queue (via the
+          // event bus — the transport must not import the queue service, which
+          // itself calls back into the transport for retries).
+          this.eventBus.emit('publish:failed-all', { event, relays });
+        }
         throw new Error(`Failed to publish to any relay`);
       }
 
@@ -1300,7 +1317,14 @@ export class NostrTransport {
         error: String(error),
         ...(Object.keys(perRelayErrors).length > 0 ? { perRelayErrors } : {}),
       });
-      this.systemLogger.error('NostrTransport', 'Publish failed');
+      if (opts?.bestEffort) {
+        this.systemLogger.warn(
+          'NostrTransport',
+          "Extra relays didn't respond — your content is already delivered"
+        );
+      } else {
+        this.systemLogger.error('NostrTransport', 'Publish failed');
+      }
       throw error;
     }
   }
@@ -1460,13 +1484,15 @@ export class NostrTransport {
     // any concurrent pool mutation that might confuse NDK's per-relay
     // publish accounting. Best-effort fire-and-forget.
     if (safeHints.length > 0) {
-      void this.publish(safeHints, event, 1).catch(err => {
-        diagLog('relays', 'Hint-publish failed (non-fatal)', {
-          kind: event.kind,
-          hintCount: safeHints.length,
-          error: String(err),
-        });
-      });
+      void this.publish(safeHints, event, 1, { bestEffort: true }).catch(
+        err => {
+          diagLog('relays', 'Hint-publish failed (non-fatal)', {
+            kind: event.kind,
+            hintCount: safeHints.length,
+            error: String(err),
+          });
+        }
+      );
     }
 
     return accepted;
