@@ -63,10 +63,14 @@ import type { TimelineConfig } from '../../components/timeline/TimelineConfig';
  * episodes via kind-1 notes quoting the episode (which renders the episode
  * preview card); adding bare episodes here would duplicate that. Episodes
  * surface through quotes, the SNV and notifications instead.
+ *
+ * Includes 33331 (SNO — Simple Nostr Objects, DECK-0003 draft): display-only
+ * support — the canvas viewer card renders inline; NoorNote does not author
+ * SNO objects.
  */
 const FEED_KINDS: number[] = [
   1, 6, 16, 20, 21, 22, 1063, 1068, 1617, 1618, 1619, 1621, 1630, 1631, 1632,
-  1633, 9802, 30617, 39089, 30030, 30311, 34235, 34236, 30004,
+  1633, 9802, 30617, 39089, 30030, 30311, 34235, 34236, 30004, 33331,
 ];
 
 /**

@@ -1,0 +1,93 @@
+/**
+ * SNO — Simple Nostr Objects (kind 33331, DECK-0003 draft).
+ * Card block inside a note: canvas stage + name/alt meta line.
+ * See docs/todos (kinds checklist, /kinds skill).
+ */
+
+@use '../abstracts/variables' as *;
+@use '../base/typography' as *;
+
+.sno {
+  margin: $gap 0;
+
+  &--loading {
+    margin: $gap 0;
+  }
+}
+
+.sno__loading {
+  @extend %small;
+  font-style: italic;
+  color: var(--color-3);
+}
+
+.sno__stage {
+  position: relative;
+  width: 100%;
+  // Viewport-ish aspect for the interactive viewer; keeps feed cards uniform.
+  height: 280px;
+  border-radius: $radius-xl;
+  background: var(--color-2);
+  overflow: hidden;
+
+  &--loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  canvas.sno__canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+}
+
+.sno__meta {
+  @extend %small;
+  display: flex;
+  align-items: center;
+  gap: calc($gap / 2);
+  margin-top: calc($gap / 2);
+  color: var(--color-3);
+
+  .sno__kicker {
+    font-weight: 600;
+  }
+
+  .sno__name {
+    color: var(--color-1);
+    font-weight: 600;
+  }
+}
+
+.sno__alt {
+  @extend %small;
+  margin-top: calc($gap / 4);
+  color: var(--color-3);
+}
+
+.sno__link {
+  @extend %small;
+  display: inline-block;
+  margin-top: calc($gap / 2);
+  color: var(--color-4);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.sno__error {
+  @extend %small;
+  padding: $gap;
+  border-radius: $radius-xl;
+  background: var(--color-2);
+  color: var(--color-3);
+}

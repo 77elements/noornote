@@ -17,6 +17,7 @@ import { ReactionFeedRenderer } from './ReactionFeedRenderer';
 import { GitEventRenderer } from './GitEventRenderer';
 import { HighlightRenderer } from './HighlightRenderer';
 import { PodcastEpisodeRenderer } from './PodcastEpisodeRenderer';
+import { SnoRenderer } from './SnoRenderer';
 import { BadgeAwardRenderer } from './BadgeAwardRenderer';
 import { BadgeDefinitionRenderer } from './BadgeDefinitionRenderer';
 import { EmojiPackRenderer } from './EmojiPackRenderer';
@@ -55,6 +56,8 @@ export class NoteRendererFactory {
         return HighlightRenderer.render(note, options);
       case 'podcast-episode':
         return PodcastEpisodeRenderer.render(note, options);
+      case 'sno-object':
+        return SnoRenderer.render(note, options);
       case 'premium':
         return GatedNoteRenderer.render(note, options);
       case 'badge-award':

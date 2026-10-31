@@ -30,6 +30,7 @@ export interface ProcessedNote {
     | 'nsite'
     | 'calendar-event'
     | 'calendar-collection'
+    | 'sno-object'
     | 'premium';
   timestamp: number;
   author: {
@@ -73,6 +74,8 @@ export interface ProcessedNote {
     image?: string;
     thumb?: string;
   };
+  /** kind 33331 only: parsed SNO geometry (DECK-0003) + name/alt tags. */
+  snoData?: import('../note-processing/SnoProcessor').SnoData;
 }
 
 export interface ZapReceiptData {

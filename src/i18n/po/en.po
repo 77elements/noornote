@@ -435,12 +435,12 @@ msgstr "Your Rights"
 msgid "Settings are stored in the %s directory."
 msgstr "Settings are stored in the %s directory."
 
-#: src/components/views/ListsOverviewView.ts:78
+#: src/components/views/ListsOverviewView.ts:86
 msgid "Accounts and threads you have muted."
 msgstr "Accounts and threads you have muted."
 
 #: src/addons/analytics/AnalyticsAddonView.ts:237
-#: src/components/layout/MainLayout.ts:1939
+#: src/components/layout/MainLayout.ts:1941
 #: src/components/settings/NotificationPrioritySection.ts:85
 #: src/components/views/ArticleTimelineView.ts:59
 #: src/components/views/ProfileView.ts:2249
@@ -452,9 +452,9 @@ msgstr "Articles"
 #: src/addons/bookmarks/BookmarksAddonView.ts:122
 #: src/components/layout/MainLayout.ts:96
 #: src/components/layout/partials/ListsMenuPartial.ts:45
-#: src/components/views/ListsOverviewView.ts:61
-#: src/lists/bookmarks.ts:4476
-#: src/lists/bookmarks.ts:4512
+#: src/components/views/ListsOverviewView.ts:69
+#: src/lists/bookmarks.ts:4480
+#: src/lists/bookmarks.ts:4516
 msgid "Bookmarks"
 msgstr "Bookmarks"
 
@@ -462,7 +462,7 @@ msgstr "Bookmarks"
 msgid "Cache"
 msgstr "Cache"
 
-#: src/components/views/ListsOverviewView.ts:86
+#: src/components/views/ListsOverviewView.ts:94
 msgid "Curated public follow lists you subscribe to."
 msgstr "Curated public follow lists you subscribe to."
 
@@ -470,16 +470,16 @@ msgstr "Curated public follow lists you subscribe to."
 msgid "Edit tribes"
 msgstr "Edit tribes"
 
-#: src/components/views/ListsOverviewView.ts:65
+#: src/components/views/ListsOverviewView.ts:73
 msgid "Enable the Bookmarks addon in Settings → Addons."
 msgstr "Enable the Bookmarks addon in Settings → Addons."
 
-#: src/components/views/ListsOverviewView.ts:89
+#: src/components/views/ListsOverviewView.ts:97
 msgid "Enable the Tribes addon in Settings → Addons."
 msgstr "Enable the Tribes addon in Settings → Addons."
 
-#: src/components/layout/MainLayout.ts:1799
-#: src/components/layout/MainLayout.ts:2046
+#: src/components/layout/MainLayout.ts:1801
+#: src/components/layout/MainLayout.ts:2048
 #: src/components/views/SettingsView.ts:109
 #: src/components/views/SettingsView.ts:80
 msgid "Export DiagLogs"
@@ -488,7 +488,7 @@ msgstr "Export DiagLogs"
 #: src/addons/analytics/AnalyticsAddonView.ts:241
 #: src/components/layout/MainLayout.ts:97
 #: src/components/layout/partials/ListsMenuPartial.ts:52
-#: src/components/views/ListsOverviewView.ts:69
+#: src/components/views/ListsOverviewView.ts:77
 msgid "Follows"
 msgstr "Follows"
 
@@ -501,7 +501,7 @@ msgid "Last notes per follow"
 msgstr "Last notes per follow"
 
 #: src/components/layout/partials/ListsMenuPartial.ts:39
-#: src/components/views/ListsOverviewView.ts:98
+#: src/components/views/ListsOverviewView.ts:106
 msgid "Lists"
 msgstr "Lists"
 
@@ -517,14 +517,14 @@ msgstr "Long-form content from your 1st, 2nd and 3rd-degree follows"
 msgid "Long-form content from your follows"
 msgstr "Long-form content from your follows"
 
-#: src/components/layout/MainLayout.ts:1742
+#: src/components/layout/MainLayout.ts:1744
 #: src/components/views/SettingsView.ts:46
 msgid "Media"
 msgstr "Media"
 
 #: src/components/layout/MainLayout.ts:98
 #: src/components/layout/partials/ListsMenuPartial.ts:58
-#: src/components/views/ListsOverviewView.ts:77
+#: src/components/views/ListsOverviewView.ts:85
 msgid "Muted"
 msgstr "Muted"
 
@@ -552,11 +552,11 @@ msgstr "Privacy"
 msgid "Relays"
 msgstr "Relays"
 
-#: src/components/views/ListsOverviewView.ts:62
+#: src/components/views/ListsOverviewView.ts:70
 msgid "Saved notes, sorted into folders."
 msgstr "Saved notes, sorted into folders."
 
-#: src/components/layout/MainLayout.ts:1953
+#: src/components/layout/MainLayout.ts:1955
 #: src/components/views/SettingsView.ts:71
 msgid "Settings"
 msgstr "Settings"
@@ -565,11 +565,11 @@ msgstr "Settings"
 msgid "Single Post"
 msgstr "Single Post"
 
-#: src/components/views/ListsOverviewView.ts:70
+#: src/components/views/ListsOverviewView.ts:78
 msgid "The accounts you follow, with outbox relays."
 msgstr "The accounts you follow, with outbox relays."
 
-#: src/components/layout/MainLayout.ts:1918
+#: src/components/layout/MainLayout.ts:1920
 #: src/components/views/TimelineView.ts:208
 msgid "Timeline"
 msgstr "Timeline"
@@ -577,7 +577,7 @@ msgstr "Timeline"
 #: src/addons/addonI18n.ts:20
 #: src/components/layout/MainLayout.ts:99
 #: src/components/layout/partials/ListsMenuPartial.ts:64
-#: src/components/views/ListsOverviewView.ts:85
+#: src/components/views/ListsOverviewView.ts:93
 #: src/lists/tribes.ts:2382
 #: src/lists/tribes.ts:2399
 msgid "Tribes"
@@ -587,7 +587,7 @@ msgstr "Tribes"
 msgid "UI Settings"
 msgstr "UI Settings"
 
-#: src/components/views/ListsOverviewView.ts:101
+#: src/components/views/ListsOverviewView.ts:109
 msgid ""
 "Your lists are stored locally and synced to your relays. Pick one to open "
 "it."
@@ -637,8 +637,8 @@ msgstr "Zaps"
 #: src/helpers/datePickerModal.ts:189
 #: src/helpers/datePickerModal.ts:331
 #: src/helpers/datePickerModal.ts:90
-#: src/lists/bookmarks.ts:3781
-#: src/lists/bookmarks.ts:3945
+#: src/lists/bookmarks.ts:3785
+#: src/lists/bookmarks.ts:3949
 #: src/lists/tribes.ts:2745
 #: src/lists/tribes.ts:2948
 #: src/services/AuthService.ts:838
@@ -662,8 +662,8 @@ msgstr "Create"
 msgid "Current:"
 msgstr "Current:"
 
-#: src/components/layout/MainLayout.ts:1965
-#: src/components/layout/MainLayout.ts:1975
+#: src/components/layout/MainLayout.ts:1967
+#: src/components/layout/MainLayout.ts:1977
 #: src/components/modals/UpdateModal.ts:117
 #: src/components/ui/ImageViewer.ts:215
 msgid "Download"
@@ -671,7 +671,7 @@ msgstr "Download"
 
 #: src/components/modals/EditFolderModal.ts:57
 #: src/components/modals/NewFolderModal.ts:54
-#: src/lists/bookmarks.ts:3773
+#: src/lists/bookmarks.ts:3777
 msgid "Enter folder name..."
 msgstr "Enter folder name..."
 
@@ -717,8 +717,8 @@ msgstr "Rename Folder"
 #: src/addons/note-taking/NoteEditorModal.ts:92
 #: src/components/modals/EditFolderModal.ts:66
 #: src/components/settings/NotificationPrioritySection.ts:162
-#: src/lists/bookmarks.ts:3784
-#: src/lists/bookmarks.ts:3948
+#: src/lists/bookmarks.ts:3788
+#: src/lists/bookmarks.ts:3952
 msgid "Save"
 msgstr "Save"
 
@@ -950,7 +950,7 @@ msgstr "Active"
 msgid "Addon order reset to default"
 msgstr "Addon order reset to default"
 
-#: src/components/layout/MainLayout.ts:2656
+#: src/components/layout/MainLayout.ts:2658
 #: src/components/views/AddonsOverviewView.ts:68
 msgid "Addons"
 msgstr "Addons"
@@ -1150,7 +1150,7 @@ msgstr ""
 
 #: src/addons/follow-packs/FollowPackManager.ts:246
 #: src/addons/follow-packs/FollowPackManager.ts:393
-#: src/components/ui/note-rendering/RepostRenderer.ts:109
+#: src/components/ui/note-rendering/RepostRenderer.ts:110
 #: src/components/ui/note-rendering/ZapReceiptRenderer.ts:139
 #: src/components/views/MessagesView.ts:160
 #: src/components/views/ZapstoreAppView.ts:408
@@ -1472,13 +1472,13 @@ msgstr "Describe your video..."
 #: src/addons/follow-packs/FollowPackManager.ts:507
 #: src/addons/nostr-majlis/DhikrModal.ts:71
 #: src/components/views/VideoEditorView.ts:165
-#: src/lists/bookmarks.ts:3747
-#: src/lists/bookmarks.ts:3931
+#: src/lists/bookmarks.ts:3751
+#: src/lists/bookmarks.ts:3935
 msgid "Description"
 msgstr "Description"
 
 #: src/addons/marketplace/ListingEditorView.ts:277
-#: src/components/layout/MainLayout.ts:2035
+#: src/components/layout/MainLayout.ts:2037
 #: src/components/views/ArticleEditorView.ts:380
 #: src/components/views/VideoEditorView.ts:177
 msgid "Details"
@@ -1581,7 +1581,7 @@ msgstr "Media module not available"
 msgid "Message options"
 msgstr "Message options"
 
-#: src/components/layout/MainLayout.ts:1946
+#: src/components/layout/MainLayout.ts:1948
 #: src/components/search/GlobalSearchView.ts:398
 #: src/components/views/MessagesView.ts:143
 #: src/components/views/MessagesView.ts:683
@@ -1754,7 +1754,7 @@ msgstr "Uploading video..."
 msgid "User options"
 msgstr "User options"
 
-#: src/components/layout/MainLayout.ts:2005
+#: src/components/layout/MainLayout.ts:2007
 #: src/components/views/VideoEditorView.ts:148
 msgid "Video"
 msgstr "Video"
@@ -1934,7 +1934,7 @@ msgstr "Save Draft"
 
 #: src/components/profile/ProfileEditModal.ts:260
 #: src/components/views/ArticleEditorView.ts:1172
-#: src/lists/bookmarks.ts:5369
+#: src/lists/bookmarks.ts:5373
 #: src/lists/follows.ts:1866
 #: src/lists/mutes.ts:1993
 msgid "Saving..."
@@ -2315,7 +2315,7 @@ msgstr "Article notifications disabled"
 
 #: src/components/ui/InteractionStatusLine.ts:298
 #: src/components/ui/NoteMenu.ts:164
-#: src/lists/bookmarks.ts:4501
+#: src/lists/bookmarks.ts:4505
 msgid "Bookmark"
 msgstr "Bookmark"
 
@@ -2354,7 +2354,7 @@ msgstr "Failed to open editor"
 #: src/addons/marketplace/ListingView.ts:320
 #: src/components/ui/InteractionStatusLine.ts:536
 #: src/components/ui/NoteMenu.ts:752
-#: src/lists/bookmarks.ts:4868
+#: src/lists/bookmarks.ts:4872
 msgid "Failed to update bookmark"
 msgstr "Failed to update bookmark"
 
@@ -2592,7 +2592,7 @@ msgid "App"
 msgstr "App"
 
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:190
-#: src/components/layout/MainLayout.ts:2001
+#: src/components/layout/MainLayout.ts:2003
 #: src/components/ui/ThreadContextIndicator.ts:193
 msgid "Article"
 msgstr "Article"
@@ -2643,7 +2643,7 @@ msgstr "Copy invite link"
 msgid "Could not add emojis"
 msgstr "Could not add emojis"
 
-#: src/components/ui/note-rendering/RepostRenderer.ts:294
+#: src/components/ui/note-rendering/RepostRenderer.ts:303
 msgid "Could not load reposted note"
 msgstr "Could not load reposted note"
 
@@ -2683,7 +2683,7 @@ msgstr "ENDED"
 msgid "Expired"
 msgstr "Expired"
 
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1090
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1179
 #: src/helpers/renderQuotePreview.ts:39
 msgid "Failed to load quoted note"
 msgstr "Failed to load quoted note"
@@ -2710,7 +2710,7 @@ msgid "Font Size"
 msgstr "Font Size"
 
 #: src/components/ui/note-rendering/GitEventRenderer.ts:160
-#: src/lists/bookmarks.ts:3642
+#: src/lists/bookmarks.ts:3646
 msgid "Git Issue"
 msgstr "Git Issue"
 
@@ -2730,7 +2730,7 @@ msgstr "In this collection"
 msgid "Increase font size"
 msgstr "Increase font size"
 
-#: src/components/ui/note-rendering/RepostRenderer.ts:256
+#: src/components/ui/note-rendering/RepostRenderer.ts:257
 msgid "Invalid repost (no event reference)"
 msgstr "Invalid repost (no event reference)"
 
@@ -2747,7 +2747,7 @@ msgstr "LIVE"
 msgid "Loading items…"
 msgstr "Loading items…"
 
-#: src/components/ui/note-rendering/RepostRenderer.ts:267
+#: src/components/ui/note-rendering/RepostRenderer.ts:268
 msgid "Loading reposted note..."
 msgstr "Loading reposted note..."
 
@@ -2765,7 +2765,7 @@ msgstr "Loading…"
 #: src/addons/marketplace/MarketplaceAddonView.ts:34
 #: src/addons/marketplace/MarketplaceTimelineInjector.ts:220
 #: src/components/ui/note-rendering/ListingRenderer.ts:62
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1406
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1495
 #: src/helpers/renderQuotePreview.ts:153
 msgid "Marketplace"
 msgstr "Marketplace"
@@ -2796,7 +2796,7 @@ msgstr "Nostr website"
 msgid "Note can't be rendered"
 msgstr "Note can't be rendered"
 
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1042
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1131
 msgid "Note from a user you've muted"
 msgstr "Note from a user you've muted"
 
@@ -2844,7 +2844,7 @@ msgstr "Pull Request Update"
 msgid "Quoted note (max depth reached)"
 msgstr "Quoted note (max depth reached)"
 
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1105
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1194
 msgid "Quoted repost — open to view"
 msgstr "Quoted repost — open to view"
 
@@ -2867,7 +2867,7 @@ msgstr "Show Less"
 msgid "Show More"
 msgstr "Show More"
 
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1043
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1132
 msgid "Show temporarily"
 msgstr "Show temporarily"
 
@@ -5390,38 +5390,38 @@ msgstr[1] ""
 msgid "(loading…)"
 msgstr "(loading…)"
 
-#: src/components/layout/MainLayout.ts:2292
+#: src/components/layout/MainLayout.ts:2294
 msgid "A terminal window will open. There:"
 msgstr "A terminal window will open. There:"
 
 #: src/components/auth/AuthComponent.ts:134
-#: src/components/layout/MainLayout.ts:2312
+#: src/components/layout/MainLayout.ts:2314
 msgid "Add Account"
 msgstr "Add Account"
 
-#: src/components/layout/MainLayout.ts:2099
+#: src/components/layout/MainLayout.ts:2101
 msgid "App updated."
 msgstr "App updated."
 
-#: src/components/layout/MainLayout.ts:3013
+#: src/components/layout/MainLayout.ts:3015
 #: src/components/layout/MainLayout.ts:906
 msgid "Back to timeline"
 msgstr "Back to timeline"
 
-#: src/components/layout/MainLayout.ts:2297
+#: src/components/layout/MainLayout.ts:2299
 msgid "Close the terminal"
 msgstr "Close the terminal"
 
-#: src/components/layout/MainLayout.ts:1187
-#: src/components/layout/MainLayout.ts:1901
+#: src/components/layout/MainLayout.ts:1189
+#: src/components/layout/MainLayout.ts:1903
 msgid "Collapse sidebar"
 msgstr "Collapse sidebar"
 
-#: src/components/layout/MainLayout.ts:2298
+#: src/components/layout/MainLayout.ts:2300
 msgid "Come back here and log in with NoorSigner"
 msgstr "Come back here and log in with NoorSigner"
 
-#: src/components/layout/MainLayout.ts:2177
+#: src/components/layout/MainLayout.ts:2179
 msgid "Data Saver"
 msgstr "Data Saver"
 
@@ -5429,7 +5429,7 @@ msgstr "Data Saver"
 msgid "Enter URL path (e.g., /profile, /note/...)"
 msgstr "Enter URL path (e.g., /profile, /note/...)"
 
-#: src/components/layout/MainLayout.ts:1187
+#: src/components/layout/MainLayout.ts:1189
 msgid "Expand sidebar"
 msgstr "Expand sidebar"
 
@@ -5449,15 +5449,15 @@ msgstr "Go Back (Cmd+←)"
 msgid "Go Forward (Cmd+→)"
 msgstr "Go Forward (Cmd+→)"
 
-#: src/components/layout/MainLayout.ts:1888
+#: src/components/layout/MainLayout.ts:1890
 msgid "Navigation"
 msgstr "Navigation"
 
-#: src/components/layout/MainLayout.ts:1991
+#: src/components/layout/MainLayout.ts:1993
 msgid "New Post"
 msgstr "New Post"
 
-#: src/components/layout/MainLayout.ts:1741
+#: src/components/layout/MainLayout.ts:1743
 msgid "Newest Articles"
 msgstr "Newest Articles"
 
@@ -5470,25 +5470,25 @@ msgid "No recent URLs"
 msgstr "No recent URLs"
 
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:190
-#: src/components/layout/MainLayout.ts:1997
+#: src/components/layout/MainLayout.ts:1999
 #: src/lists/bookmarks.ts:3261
 msgid "Note"
 msgstr "Note"
 
-#: src/components/layout/MainLayout.ts:1932
+#: src/components/layout/MainLayout.ts:1934
 #: src/components/views/NotificationsView.ts:112
 msgid "Notifications"
 msgstr "Notifications"
 
-#: src/components/layout/MainLayout.ts:2300
+#: src/components/layout/MainLayout.ts:2302
 msgid "OK, got it"
 msgstr "OK, got it"
 
-#: src/components/layout/MainLayout.ts:1881
+#: src/components/layout/MainLayout.ts:1883
 msgid "Open menu"
 msgstr "Open menu"
 
-#: src/components/layout/MainLayout.ts:2295
+#: src/components/layout/MainLayout.ts:2297
 msgid "Paste the nsec of the new account"
 msgstr "Paste the nsec of the new account"
 
@@ -5496,12 +5496,12 @@ msgstr "Paste the nsec of the new account"
 msgid "Please check your network connection and try again."
 msgstr "Please check your network connection and try again."
 
-#: src/components/layout/MainLayout.ts:2009
+#: src/components/layout/MainLayout.ts:2011
 msgid "Product"
 msgstr "Product"
 
 #: src/components/bookmarks/FolderCard.ts:73
-#: src/components/layout/MainLayout.ts:1925
+#: src/components/layout/MainLayout.ts:1927
 msgid "Profile"
 msgstr "Profile"
 
@@ -5509,28 +5509,28 @@ msgstr "Profile"
 msgid "Profile: %s"
 msgstr "Profile: %s"
 
-#: src/components/layout/MainLayout.ts:1743
+#: src/components/layout/MainLayout.ts:1745
 msgid "Recipes"
 msgstr "Recipes"
 
-#: src/components/layout/MainLayout.ts:2100
+#: src/components/layout/MainLayout.ts:2102
 msgid "Reload"
 msgstr "Reload"
 
-#: src/components/layout/MainLayout.ts:1916
-#: src/components/layout/MainLayout.ts:1919
-#: src/components/layout/MainLayout.ts:1923
-#: src/components/layout/MainLayout.ts:1926
-#: src/components/layout/MainLayout.ts:1937
-#: src/components/layout/MainLayout.ts:1940
+#: src/components/layout/MainLayout.ts:1918
+#: src/components/layout/MainLayout.ts:1921
+#: src/components/layout/MainLayout.ts:1925
+#: src/components/layout/MainLayout.ts:1928
+#: src/components/layout/MainLayout.ts:1939
+#: src/components/layout/MainLayout.ts:1942
 msgid "Scroll to top"
 msgstr "Scroll to top"
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:836
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:124
-#: src/components/layout/MainLayout.ts:1896
-#: src/components/layout/MainLayout.ts:1897
-#: src/components/layout/MainLayout.ts:1959
+#: src/components/layout/MainLayout.ts:1898
+#: src/components/layout/MainLayout.ts:1899
+#: src/components/layout/MainLayout.ts:1961
 msgid "Search"
 msgstr "Search"
 
@@ -5551,15 +5551,15 @@ msgstr "Search: %s"
 msgid "Searching..."
 msgstr "Searching..."
 
-#: src/components/layout/MainLayout.ts:2296
+#: src/components/layout/MainLayout.ts:2298
 msgid "Set a password for this account"
 msgstr "Set a password for this account"
 
-#: src/components/layout/MainLayout.ts:1979
+#: src/components/layout/MainLayout.ts:1981
 msgid "Sign in"
 msgstr "Sign in"
 
-#: src/components/layout/MainLayout.ts:1983
+#: src/components/layout/MainLayout.ts:1985
 msgid "Sign out"
 msgstr "Sign out"
 
@@ -5575,7 +5575,7 @@ msgstr "Synced %s%s"
 msgid "Syncing follow list..."
 msgstr "Syncing follow list..."
 
-#: src/components/layout/MainLayout.ts:1740
+#: src/components/layout/MainLayout.ts:1742
 msgid "System Logs"
 msgstr "System Logs"
 
@@ -5585,7 +5585,7 @@ msgstr "System Logs"
 msgid "Users"
 msgstr "Users"
 
-#: src/components/layout/MainLayout.ts:1908
+#: src/components/layout/MainLayout.ts:1910
 msgid "Welcome"
 msgstr "Welcome"
 
@@ -6126,7 +6126,7 @@ msgid "Bookmark read-state sync enabled"
 msgstr "Bookmark read-state sync enabled"
 
 #: src/addons/marketplace/ListingView.ts:301
-#: src/lists/bookmarks.ts:4777
+#: src/lists/bookmarks.ts:4781
 msgid "Bookmark removed"
 msgstr "Bookmark removed"
 
@@ -7870,7 +7870,7 @@ msgid "Please select an image file"
 msgstr "Please select an image file"
 
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:190
-#: src/lists/bookmarks.ts:3620
+#: src/lists/bookmarks.ts:3624
 msgid "Poll"
 msgstr "Poll"
 
@@ -9697,124 +9697,124 @@ msgstr "Wide Mode"
 msgid "Wide mode (hide right pane)"
 msgstr "Wide mode (hide right pane)"
 
-#: src/components/notifications/NotificationItem.ts:717
+#: src/components/notifications/NotificationItem.ts:723
 msgid "%s new messages in %s"
 msgstr "%s new messages in %s"
 
-#: src/components/notifications/NotificationItem.ts:692
+#: src/components/notifications/NotificationItem.ts:698
 msgid "%s new posts tagged #%s"
 msgstr "%s new posts tagged #%s"
 
-#: src/components/notifications/NotificationItem.ts:731
+#: src/components/notifications/NotificationItem.ts:737
 msgid "A dhikr reached its goal"
 msgstr "A dhikr reached its goal"
 
-#: src/components/notifications/NotificationItem.ts:704
+#: src/components/notifications/NotificationItem.ts:710
 msgid "a Nostrord group"
 msgstr "a Nostrord group"
 
-#: src/components/notifications/NotificationItem.ts:714
+#: src/components/notifications/NotificationItem.ts:720
 msgid "an Armada community"
 msgstr "an Armada community"
 
-#: src/components/notifications/NotificationItem.ts:725
+#: src/components/notifications/NotificationItem.ts:731
 msgid "awarded you a badge"
 msgstr "awarded you a badge"
 
-#: src/components/notifications/NotificationItem.ts:721
+#: src/components/notifications/NotificationItem.ts:727
 msgid "highlighted your %s"
 msgstr "highlighted your %s"
 
-#: src/components/notifications/NotificationItem.ts:733
+#: src/components/notifications/NotificationItem.ts:739
 msgid "interacted with your %s"
 msgstr "interacted with your %s"
 
-#: src/components/notifications/NotificationItem.ts:699
+#: src/components/notifications/NotificationItem.ts:705
 msgid "is now following you"
 msgstr "is now following you"
 
-#: src/components/notifications/NotificationItem.ts:718
+#: src/components/notifications/NotificationItem.ts:724
 msgid "New activity in %s"
 msgstr "New activity in %s"
 
-#: src/components/notifications/NotificationItem.ts:691
+#: src/components/notifications/NotificationItem.ts:697
 msgid "New post tagged #%s"
 msgstr "New post tagged #%s"
 
-#: src/components/notifications/NotificationItem.ts:686
+#: src/components/notifications/NotificationItem.ts:692
 msgid "posted a new article"
 msgstr "posted a new article"
 
-#: src/components/notifications/NotificationItem.ts:673
+#: src/components/notifications/NotificationItem.ts:679
 msgid "reacted to your %s"
 msgstr "reacted to your %s"
 
-#: src/components/notifications/NotificationItem.ts:665
+#: src/components/notifications/NotificationItem.ts:671
 msgid "replied to your %s"
 msgstr "replied to your %s"
 
-#: src/components/notifications/NotificationItem.ts:669
+#: src/components/notifications/NotificationItem.ts:675
 msgid "replied to your zap"
 msgstr "replied to your zap"
 
-#: src/components/notifications/NotificationItem.ts:671
+#: src/components/notifications/NotificationItem.ts:677
 msgid "reposted your %s"
 msgstr "reposted your %s"
 
-#: src/components/notifications/NotificationItem.ts:677
+#: src/components/notifications/NotificationItem.ts:683
 msgid "silently zapped your %s"
 msgstr "silently zapped your %s"
 
-#: src/components/notifications/NotificationItem.ts:729
+#: src/components/notifications/NotificationItem.ts:735
 msgid "Somebody committed to a dhikr"
 msgstr "Somebody committed to a dhikr"
 
-#: src/components/notifications/NotificationItem.ts:727
+#: src/components/notifications/NotificationItem.ts:733
 msgid "Somebody started a new dhikr"
 msgstr "Somebody started a new dhikr"
 
-#: src/components/notifications/NotificationItem.ts:707
+#: src/components/notifications/NotificationItem.ts:713
 msgid "Someone posted to %s"
 msgstr "Someone posted to %s"
 
-#: src/components/notifications/NotificationItem.ts:697
+#: src/components/notifications/NotificationItem.ts:703
 msgid "started following you back!"
 msgstr "started following you back!"
 
-#: src/components/notifications/NotificationItem.ts:695
+#: src/components/notifications/NotificationItem.ts:701
 msgid "stopped following you back"
 msgstr "stopped following you back"
 
-#: src/components/notifications/NotificationItem.ts:723
+#: src/components/notifications/NotificationItem.ts:729
 msgid "tagged you in an image"
 msgstr "tagged you in an image"
 
-#: src/components/notifications/NotificationItem.ts:713
+#: src/components/notifications/NotificationItem.ts:719
 msgid "the Armada community \"%s\""
 msgstr "the Armada community \"%s\""
 
-#: src/components/notifications/NotificationItem.ts:703
+#: src/components/notifications/NotificationItem.ts:709
 msgid "the Nostrord group \"%s\""
 msgstr "the Nostrord group \"%s\""
 
-#: src/components/notifications/NotificationItem.ts:684
+#: src/components/notifications/NotificationItem.ts:690
 msgid "voted on your poll"
 msgstr "voted on your poll"
 
-#: src/components/notifications/NotificationItem.ts:706
-#: src/components/notifications/NotificationItem.ts:715
+#: src/components/notifications/NotificationItem.ts:712
+#: src/components/notifications/NotificationItem.ts:721
 msgid "You posted to %s"
 msgstr "You posted to %s"
 
-#: src/components/notifications/NotificationItem.ts:678
+#: src/components/notifications/NotificationItem.ts:684
 msgid "zapped your %s"
 msgstr "zapped your %s"
 
-#: src/components/notifications/NotificationItem.ts:663
+#: src/components/notifications/NotificationItem.ts:669
 msgid "mentioned you in %s"
 msgstr "mentioned you in %s"
 
-#: src/components/notifications/NotificationItem.ts:667
+#: src/components/notifications/NotificationItem.ts:673
 msgid "replied to %s that mentioned you"
 msgstr "replied to %s that mentioned you"
 
@@ -9872,7 +9872,7 @@ msgstr "@alice, @bob, @charlie..."
 
 #: src/components/bookmarks/FolderCard.ts:180
 #: src/components/bookmarks/FolderCard.ts:66
-#: src/lists/bookmarks.ts:5096
+#: src/lists/bookmarks.ts:5100
 msgid "%s item"
 msgid_plural "%s items"
 msgstr[0] "%s item"
@@ -9884,7 +9884,7 @@ msgid_plural "%s users follow <strong>%s</strong>"
 msgstr[0] "%s user follows <strong>%s</strong>"
 msgstr[1] ""
 
-#: src/lists/bookmarks.ts:3763
+#: src/lists/bookmarks.ts:3767
 msgid "+ Create new folder..."
 msgstr "+ Create new folder..."
 
@@ -9930,15 +9930,15 @@ msgstr "Already up to date with relays"
 msgid "Backup list to file"
 msgstr "Backup list to file"
 
-#: src/lists/bookmarks.ts:5186
+#: src/lists/bookmarks.ts:5190
 msgid "Bookmark created"
 msgstr "Bookmark created"
 
-#: src/lists/bookmarks.ts:4864
+#: src/lists/bookmarks.ts:4868
 msgid "Bookmark updated"
 msgstr "Bookmark updated"
 
-#: src/lists/bookmarks.ts:5355
+#: src/lists/bookmarks.ts:5359
 msgid "Bookmarks published successfully"
 msgstr "Bookmarks published successfully"
 
@@ -9947,7 +9947,7 @@ msgstr "Bookmarks published successfully"
 msgid "Check for changes"
 msgstr "Check for changes"
 
-#: src/lists/bookmarks.ts:3658
+#: src/lists/bookmarks.ts:3662
 msgid "Closed"
 msgstr "Closed"
 
@@ -9964,7 +9964,7 @@ msgid "Delete tribe \"%s\"?"
 msgstr "Delete tribe \"%s\"?"
 
 #: src/components/profile/ProfileArticlesCarousel.ts:203
-#: src/lists/bookmarks.ts:3659
+#: src/lists/bookmarks.ts:3663
 msgid "Draft"
 msgstr "Draft"
 
@@ -9984,7 +9984,7 @@ msgstr "Edit ›"
 msgid "Edit bookmark"
 msgstr "Edit bookmark"
 
-#: src/lists/bookmarks.ts:3894
+#: src/lists/bookmarks.ts:3898
 msgid "Edit Bookmark"
 msgstr "Edit Bookmark"
 
@@ -9992,15 +9992,15 @@ msgstr "Edit Bookmark"
 msgid "Failed to add members"
 msgstr "Failed to add members"
 
-#: src/lists/bookmarks.ts:5193
+#: src/lists/bookmarks.ts:5197
 msgid "Failed to create bookmark"
 msgstr "Failed to create bookmark"
 
-#: src/lists/bookmarks.ts:5123
+#: src/lists/bookmarks.ts:5127
 msgid "Failed to create folder"
 msgstr "Failed to create folder"
 
-#: src/lists/bookmarks.ts:5038
+#: src/lists/bookmarks.ts:5042
 msgid "Failed to delete folder"
 msgstr "Failed to delete folder"
 
@@ -10020,7 +10020,7 @@ msgstr "Failed to follow user"
 msgid "Failed to load"
 msgstr "Failed to load"
 
-#: src/lists/bookmarks.ts:4330
+#: src/lists/bookmarks.ts:4334
 msgid "Failed to load bookmarks"
 msgstr "Failed to load bookmarks"
 
@@ -10036,7 +10036,7 @@ msgstr "Failed to load mute list"
 msgid "Failed to load tribes"
 msgstr "Failed to load tribes"
 
-#: src/lists/bookmarks.ts:5101
+#: src/lists/bookmarks.ts:5105
 msgid "Failed to move bookmark"
 msgstr "Failed to move bookmark"
 
@@ -10044,7 +10044,7 @@ msgstr "Failed to move bookmark"
 msgid "Failed to move member"
 msgstr "Failed to move member"
 
-#: src/lists/bookmarks.ts:5363
+#: src/lists/bookmarks.ts:5367
 #: src/lists/follows.ts:1857
 #: src/lists/mutes.ts:1587
 #: src/lists/mutes.ts:1987
@@ -10052,7 +10052,7 @@ msgstr "Failed to move member"
 msgid "Failed to publish to relays"
 msgstr "Failed to publish to relays"
 
-#: src/lists/bookmarks.ts:4802
+#: src/lists/bookmarks.ts:4806
 msgid "Failed to remove bookmark"
 msgstr "Failed to remove bookmark"
 
@@ -10060,7 +10060,7 @@ msgstr "Failed to remove bookmark"
 msgid "Failed to remove member"
 msgstr "Failed to remove member"
 
-#: src/lists/bookmarks.ts:4954
+#: src/lists/bookmarks.ts:4958
 msgid "Failed to rename folder"
 msgstr "Failed to rename folder"
 
@@ -10074,13 +10074,13 @@ msgstr "Failed to restore: %s"
 msgid "Failed to save"
 msgstr "Failed to save"
 
-#: src/lists/bookmarks.ts:5378
+#: src/lists/bookmarks.ts:5382
 #: src/lists/mutes.ts:1602
 #: src/lists/tribes.ts:3273
 msgid "Failed to save to file"
 msgstr "Failed to save to file"
 
-#: src/lists/bookmarks.ts:5345
+#: src/lists/bookmarks.ts:5349
 #: src/lists/follows.ts:1842
 #: src/lists/mutes.ts:1577
 #: src/lists/mutes.ts:1976
@@ -10108,7 +10108,7 @@ msgstr "Failed to unmute thread"
 msgid "Failed to unmute user"
 msgstr "Failed to unmute user"
 
-#: src/lists/bookmarks.ts:5264
+#: src/lists/bookmarks.ts:5268
 #: src/lists/follows.ts:1771
 #: src/lists/mutes.ts:1530
 #: src/lists/mutes.ts:1929
@@ -10124,7 +10124,7 @@ msgstr "File is empty. Use \"Sync from Relays\" to restore your mutes."
 msgid "File is empty. Use \"Sync from Relays\" to restore your tribes."
 msgstr "File is empty. Use \"Sync from Relays\" to restore your tribes."
 
-#: src/lists/bookmarks.ts:5498
+#: src/lists/bookmarks.ts:5502
 #: src/lists/follows.ts:1967
 #: src/lists/mutes.ts:1673
 #: src/lists/mutes.ts:2073
@@ -10137,15 +10137,15 @@ msgstr "File is identical to current list"
 msgid "Filter by name..."
 msgstr "Filter by name..."
 
-#: src/lists/bookmarks.ts:4496
+#: src/lists/bookmarks.ts:4500
 msgid "Folder"
 msgstr "Folder"
 
-#: src/lists/bookmarks.ts:5032
+#: src/lists/bookmarks.ts:5036
 msgid "Folder deleted, bookmarks moved to root"
 msgstr "Folder deleted, bookmarks moved to root"
 
-#: src/lists/bookmarks.ts:4950
+#: src/lists/bookmarks.ts:4954
 msgid "Folder renamed"
 msgstr "Folder renamed"
 
@@ -10179,16 +10179,16 @@ msgstr "Follows published successfully"
 msgid "Hashtag"
 msgstr "Hashtag"
 
-#: src/lists/bookmarks.ts:3625
+#: src/lists/bookmarks.ts:3629
 msgid "Highlight"
 msgstr "Highlight"
 
-#: src/lists/bookmarks.ts:3625
+#: src/lists/bookmarks.ts:3629
 msgid "Highlight: %s"
 msgstr "Highlight: %s"
 
-#: src/lists/bookmarks.ts:3741
-#: src/lists/bookmarks.ts:3924
+#: src/lists/bookmarks.ts:3745
+#: src/lists/bookmarks.ts:3928
 msgid "https://..."
 msgstr "https://..."
 
@@ -10204,7 +10204,7 @@ msgstr "Live Stream"
 msgid "Load all"
 msgstr "Load all"
 
-#: src/lists/bookmarks.ts:4320
+#: src/lists/bookmarks.ts:4324
 msgid "Loading bookmarks..."
 msgstr "Loading bookmarks..."
 
@@ -10226,8 +10226,8 @@ msgstr "Loading mute list..."
 msgid "Loading tribes..."
 msgstr "Loading tribes..."
 
-#: src/lists/bookmarks.ts:5330
-#: src/lists/bookmarks.ts:5483
+#: src/lists/bookmarks.ts:5334
+#: src/lists/bookmarks.ts:5487
 msgid "Local bookmarks pushed to relays"
 msgstr "Local bookmarks pushed to relays"
 
@@ -10248,7 +10248,7 @@ msgstr "Local mutes pushed to relays"
 msgid "Local tribes pushed to relays"
 msgstr "Local tribes pushed to relays"
 
-#: src/lists/bookmarks.ts:4313
+#: src/lists/bookmarks.ts:4317
 msgid "Log in to see your bookmarks"
 msgstr "Log in to see your bookmarks"
 
@@ -10300,7 +10300,7 @@ msgstr "Merged and synced to file + relays"
 msgid "Merged and synced to relays"
 msgstr "Merged and synced to relays"
 
-#: src/lists/bookmarks.ts:5316
+#: src/lists/bookmarks.ts:5320
 msgid "Merged bookmarks and synced to relays"
 msgstr "Merged bookmarks and synced to relays"
 
@@ -10308,7 +10308,7 @@ msgstr "Merged bookmarks and synced to relays"
 msgid "Move bookmark"
 msgstr "Move bookmark"
 
-#: src/lists/bookmarks.ts:5080
+#: src/lists/bookmarks.ts:5084
 #: src/lists/tribes.ts:2890
 msgid "Moved to %s"
 msgstr "Moved to %s"
@@ -10340,15 +10340,15 @@ msgstr "Mutuals:"
 msgid "Never"
 msgstr "Never"
 
-#: src/lists/bookmarks.ts:3710
+#: src/lists/bookmarks.ts:3714
 msgid "New Bookmark"
 msgstr "New Bookmark"
 
-#: src/lists/bookmarks.ts:3768
+#: src/lists/bookmarks.ts:3772
 msgid "New folder name"
 msgstr "New folder name"
 
-#: src/lists/bookmarks.ts:4585
+#: src/lists/bookmarks.ts:4589
 msgid "No bookmarks yet"
 msgstr "No bookmarks yet"
 
@@ -10400,16 +10400,16 @@ msgstr "NoorNote deleted bookmark folders"
 msgid "NoorNote deleted tribes"
 msgstr "NoorNote deleted tribes"
 
-#: src/lists/bookmarks.ts:3654
+#: src/lists/bookmarks.ts:3658
 msgid "Open"
 msgstr "Open"
 
-#: src/lists/bookmarks.ts:3752
-#: src/lists/bookmarks.ts:3936
+#: src/lists/bookmarks.ts:3756
+#: src/lists/bookmarks.ts:3940
 msgid "Optional description..."
 msgstr "Optional description..."
 
-#: src/lists/bookmarks.ts:3614
+#: src/lists/bookmarks.ts:3618
 msgid "Picture"
 msgstr "Picture"
 
@@ -10429,7 +10429,7 @@ msgstr "Please log in to view your mute list."
 msgid "Please login to view tribes"
 msgstr "Please login to view tribes"
 
-#: src/lists/bookmarks.ts:3620
+#: src/lists/bookmarks.ts:3624
 msgid "Poll: %s"
 msgstr "Poll: %s"
 
@@ -10441,7 +10441,7 @@ msgstr "Profile of a user you have muted"
 msgid "Published to relays"
 msgstr "Published to relays"
 
-#: src/lists/bookmarks.ts:5352
+#: src/lists/bookmarks.ts:5356
 #: src/lists/follows.ts:1851
 #: src/lists/mutes.ts:1583
 #: src/lists/mutes.ts:1982
@@ -10449,7 +10449,7 @@ msgstr "Published to relays"
 msgid "Publishing to relays..."
 msgstr "Publishing to relays..."
 
-#: src/lists/bookmarks.ts:5403
+#: src/lists/bookmarks.ts:5407
 #: src/lists/follows.ts:1909
 #: src/lists/mutes.ts:1626
 #: src/lists/mutes.ts:2027
@@ -10461,7 +10461,7 @@ msgstr "Reading from file..."
 msgid "Remove member"
 msgstr "Remove member"
 
-#: src/lists/bookmarks.ts:3628
+#: src/lists/bookmarks.ts:3632
 msgid "Repo"
 msgstr "Repo"
 
@@ -10481,15 +10481,15 @@ msgid "Restored from file (added %s, removed %s)"
 msgstr "Restored from file (added %s, removed %s)"
 
 #: src/lists/bookmarks.ts:2938
-#: src/lists/bookmarks.ts:4612
+#: src/lists/bookmarks.ts:4616
 msgid "Root"
 msgstr "Root"
 
-#: src/lists/bookmarks.ts:3761
+#: src/lists/bookmarks.ts:3765
 msgid "Root Level"
 msgstr "Root Level"
 
-#: src/lists/bookmarks.ts:3759
+#: src/lists/bookmarks.ts:3763
 msgid "Save to"
 msgstr "Save to"
 
@@ -10500,7 +10500,7 @@ msgstr "Save to File"
 
 #: src/helpers/downloadMedia.ts:21
 #: src/helpers/downloadMedia.ts:39
-#: src/lists/bookmarks.ts:5375
+#: src/lists/bookmarks.ts:5379
 #: src/lists/follows.ts:1874
 #: src/lists/mutes.ts:2000
 msgid "Saved successfully"
@@ -10557,8 +10557,8 @@ msgid_plural "Synced %s new follows from relays"
 msgstr[0] "Synced %s new follow from relays"
 msgstr[1] ""
 
-#: src/lists/bookmarks.ts:5324
-#: src/lists/bookmarks.ts:5339
+#: src/lists/bookmarks.ts:5328
+#: src/lists/bookmarks.ts:5343
 msgid "Synced from relays"
 msgstr "Synced from relays"
 
@@ -10581,7 +10581,7 @@ msgstr ""
 "on the relays. You can use the buttons up there to control how the list "
 "stays synced across those three."
 
-#: src/lists/bookmarks.ts:5162
+#: src/lists/bookmarks.ts:5166
 msgid "This URL is already bookmarked"
 msgstr "This URL is already bookmarked"
 
@@ -10684,7 +10684,7 @@ msgstr "+ New"
 msgid "Create new"
 msgstr "Create new"
 
-#: src/lists/bookmarks.ts:4487
+#: src/lists/bookmarks.ts:4491
 msgid "Mark as read"
 msgstr "Mark as read"
 
@@ -10739,7 +10739,7 @@ msgstr "Zaps: In (%s) %s | Out (%s) %s"
 msgid "Zaps: Loading..."
 msgstr "Zaps: Loading..."
 
-#: src/components/layout/MainLayout.ts:2030
+#: src/components/layout/MainLayout.ts:2032
 msgid "← Back"
 msgstr "← Back"
 
@@ -11013,7 +11013,7 @@ msgstr "%s people"
 msgid "+ New Event"
 msgstr "+ New Event"
 
-#: src/components/layout/MainLayout.ts:2549
+#: src/components/layout/MainLayout.ts:2551
 msgid "About"
 msgstr "About"
 
@@ -11711,11 +11711,11 @@ msgstr "Poll posted successfully!"
 msgid "Zap timeout - please try again"
 msgstr "Zap timeout - please try again"
 
-#: src/lists/bookmarks.ts:4691
+#: src/lists/bookmarks.ts:4695
 msgid "\"%s\" mounted to profile"
 msgstr "\"%s\" mounted to profile"
 
-#: src/lists/bookmarks.ts:4694
+#: src/lists/bookmarks.ts:4698
 msgid "\"%s\" unmounted from profile"
 msgstr "\"%s\" unmounted from profile"
 
@@ -11759,7 +11759,7 @@ msgstr "Failed to send deletion request"
 msgid "Failed to upload image"
 msgstr "Failed to upload image"
 
-#: src/lists/bookmarks.ts:5118
+#: src/lists/bookmarks.ts:5122
 msgid "Folder \"%s\" created"
 msgstr "Folder \"%s\" created"
 
@@ -11868,12 +11868,28 @@ msgstr "Badge"
 #: src/components/ui/note-rendering/BadgeAwardRenderer.ts:74
 msgid "%s recipient"
 msgid_plural "%s recipients"
-msgstr[0] ""
+msgstr[0] "%s recipient"
 msgstr[1] ""
 
 #: src/components/ui/note-rendering/BadgeAwardRenderer.ts:182
 msgid "Awarded to %s"
 msgstr "Awarded to %s"
+
+#: src/components/ui/note-processing/SnoProcessor.ts:82
+msgid "3D object"
+msgstr "3D object"
+
+#: src/components/ui/note-processing/SnoProcessor.ts:76
+msgid "Malformed 3D object"
+msgstr "Malformed 3D object"
+
+#: src/components/ui/note-processing/SnoProcessor.ts:100
+msgid "See model on snocrash.art"
+msgstr "See model on snocrash.art"
+
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:349
+msgid "Loading 3D model…"
+msgstr "Loading 3D model…"
 
 #: src/addons/note-taking/NoteEditorModal.ts:362
 #: src/addons/note-taking/NoteEditorModal.ts:85
@@ -11892,265 +11908,275 @@ msgctxt "note-taking"
 msgid "Notes"
 msgstr "Notes"
 
-#: src/components/notifications/NotificationItem.ts:580
+#: src/components/notifications/NotificationItem.ts:582
 msgctxt "notif-acc"
 msgid "app on Zapstore"
 msgstr "app on Zapstore"
 
-#: src/components/notifications/NotificationItem.ts:564
+#: src/components/notifications/NotificationItem.ts:566
 msgctxt "notif-acc"
 msgid "article"
 msgstr "article"
 
-#: src/components/notifications/NotificationItem.ts:572
+#: src/components/notifications/NotificationItem.ts:574
 msgctxt "notif-acc"
 msgid "bookmark list"
 msgstr "bookmark list"
 
-#: src/components/notifications/NotificationItem.ts:568
+#: src/components/notifications/NotificationItem.ts:570
 msgctxt "notif-acc"
 msgid "collection"
 msgstr "collection"
 
-#: src/components/notifications/NotificationItem.ts:562
+#: src/components/notifications/NotificationItem.ts:564
 msgctxt "notif-acc"
 msgid "comment"
 msgstr "comment"
 
-#: src/components/notifications/NotificationItem.ts:588
+#: src/components/notifications/NotificationItem.ts:590
 msgctxt "notif-acc"
 msgid "emoji pack"
 msgstr "emoji pack"
 
-#: src/components/notifications/NotificationItem.ts:638
+#: src/components/notifications/NotificationItem.ts:644
 msgctxt "notif-acc"
 msgid "event"
 msgstr "event"
 
-#: src/components/notifications/NotificationItem.ts:610
+#: src/components/notifications/NotificationItem.ts:616
 msgctxt "notif-acc"
 msgid "file"
 msgstr "file"
 
-#: src/components/notifications/NotificationItem.ts:584
+#: src/components/notifications/NotificationItem.ts:586
 msgctxt "notif-acc"
 msgid "follow pack"
 msgstr "follow pack"
 
-#: src/components/notifications/NotificationItem.ts:630
+#: src/components/notifications/NotificationItem.ts:636
 msgctxt "notif-acc"
 msgid "git issue"
 msgstr "git issue"
 
-#: src/components/notifications/NotificationItem.ts:622
+#: src/components/notifications/NotificationItem.ts:628
 msgctxt "notif-acc"
 msgid "git patch"
 msgstr "git patch"
 
-#: src/components/notifications/NotificationItem.ts:600
+#: src/components/notifications/NotificationItem.ts:602
 msgctxt "notif-acc"
 msgid "git repository"
 msgstr "git repository"
 
-#: src/components/notifications/NotificationItem.ts:634
+#: src/components/notifications/NotificationItem.ts:640
 msgctxt "notif-acc"
 msgid "git status update"
 msgstr "git status update"
+
+#: src/components/notifications/NotificationItem.ts:624
+msgctxt "notif-acc"
+msgid "group chat message"
+msgstr "group chat message"
+
+#: src/components/notifications/NotificationItem.ts:596
+msgctxt "notif-acc"
+msgid "listing"
+msgstr "listing"
+
+#: src/components/notifications/NotificationItem.ts:594
+msgctxt "notif-acc"
+msgid "live stream"
+msgstr "live stream"
+
+#: src/components/notifications/NotificationItem.ts:642
+msgctxt "notif-acc"
+msgid "note"
+msgstr "note"
 
 #: src/components/notifications/NotificationItem.ts:618
 msgctxt "notif-acc"
-msgid "group chat message"
-msgstr "group chat message"
-
-#: src/components/notifications/NotificationItem.ts:594
-msgctxt "notif-acc"
-msgid "listing"
-msgstr "listing"
-
-#: src/components/notifications/NotificationItem.ts:592
-msgctxt "notif-acc"
-msgid "live stream"
-msgstr "live stream"
-
-#: src/components/notifications/NotificationItem.ts:636
-msgctxt "notif-acc"
-msgid "note"
-msgstr "note"
-
-#: src/components/notifications/NotificationItem.ts:612
-msgctxt "notif-acc"
 msgid "picture"
 msgstr "picture"
 
-#: src/components/notifications/NotificationItem.ts:576
+#: src/components/notifications/NotificationItem.ts:578
 msgctxt "notif-acc"
 msgid "podcast episode"
 msgstr "podcast episode"
 
-#: src/components/notifications/NotificationItem.ts:560
+#: src/components/notifications/NotificationItem.ts:562
 msgctxt "notif-acc"
 msgid "poll"
 msgstr "poll"
 
-#: src/components/notifications/NotificationItem.ts:626
+#: src/components/notifications/NotificationItem.ts:632
 msgctxt "notif-acc"
 msgid "pull request"
 msgstr "pull request"
 
-#: src/components/notifications/NotificationItem.ts:606
+#: src/components/notifications/NotificationItem.ts:612
 msgctxt "notif-acc"
 msgid "reaction"
 msgstr "reaction"
 
-#: src/components/notifications/NotificationItem.ts:614
+#: src/components/notifications/NotificationItem.ts:620
 msgctxt "notif-acc"
 msgid "video"
 msgstr "video"
 
-#: src/components/notifications/NotificationItem.ts:596
+#: src/components/notifications/NotificationItem.ts:598
 msgctxt "notif-acc"
 msgid "website"
 msgstr "website"
 
-#: src/components/notifications/NotificationItem.ts:608
+#: src/components/notifications/NotificationItem.ts:614
 msgctxt "notif-acc"
 msgid "zap"
 msgstr "zap"
 
-#: src/components/notifications/NotificationItem.ts:602
+#: src/components/notifications/NotificationItem.ts:604
 msgctxt "notif-acc"
 msgid "badge"
 msgstr "badge"
 
-#: src/components/notifications/NotificationItem.ts:579
+#: src/components/notifications/NotificationItem.ts:608
+msgctxt "notif-acc"
+msgid "3D object"
+msgstr "3D object"
+
+#: src/components/notifications/NotificationItem.ts:581
 msgctxt "notif-dat"
 msgid "app on Zapstore"
 msgstr "app on Zapstore"
 
-#: src/components/notifications/NotificationItem.ts:564
+#: src/components/notifications/NotificationItem.ts:566
 msgctxt "notif-dat"
 msgid "article"
 msgstr "article"
 
-#: src/components/notifications/NotificationItem.ts:571
+#: src/components/notifications/NotificationItem.ts:573
 msgctxt "notif-dat"
 msgid "bookmark list"
 msgstr "bookmark list"
 
-#: src/components/notifications/NotificationItem.ts:567
+#: src/components/notifications/NotificationItem.ts:569
 msgctxt "notif-dat"
 msgid "collection"
 msgstr "collection"
 
-#: src/components/notifications/NotificationItem.ts:562
+#: src/components/notifications/NotificationItem.ts:564
 msgctxt "notif-dat"
 msgid "comment"
 msgstr "comment"
 
-#: src/components/notifications/NotificationItem.ts:587
+#: src/components/notifications/NotificationItem.ts:589
 msgctxt "notif-dat"
 msgid "emoji pack"
 msgstr "emoji pack"
 
-#: src/components/notifications/NotificationItem.ts:638
+#: src/components/notifications/NotificationItem.ts:644
 msgctxt "notif-dat"
 msgid "event"
 msgstr "event"
 
-#: src/components/notifications/NotificationItem.ts:610
+#: src/components/notifications/NotificationItem.ts:616
 msgctxt "notif-dat"
 msgid "file"
 msgstr "file"
 
-#: src/components/notifications/NotificationItem.ts:583
+#: src/components/notifications/NotificationItem.ts:585
 msgctxt "notif-dat"
 msgid "follow pack"
 msgstr "follow pack"
 
-#: src/components/notifications/NotificationItem.ts:629
+#: src/components/notifications/NotificationItem.ts:635
 msgctxt "notif-dat"
 msgid "git issue"
 msgstr "git issue"
 
-#: src/components/notifications/NotificationItem.ts:621
+#: src/components/notifications/NotificationItem.ts:627
 msgctxt "notif-dat"
 msgid "git patch"
 msgstr "git patch"
 
-#: src/components/notifications/NotificationItem.ts:599
+#: src/components/notifications/NotificationItem.ts:601
 msgctxt "notif-dat"
 msgid "git repository"
 msgstr "git repository"
 
-#: src/components/notifications/NotificationItem.ts:633
+#: src/components/notifications/NotificationItem.ts:639
 msgctxt "notif-dat"
 msgid "git status update"
 msgstr "git status update"
 
-#: src/components/notifications/NotificationItem.ts:617
+#: src/components/notifications/NotificationItem.ts:623
 msgctxt "notif-dat"
 msgid "group chat message"
 msgstr "group chat message"
 
-#: src/components/notifications/NotificationItem.ts:594
+#: src/components/notifications/NotificationItem.ts:596
 msgctxt "notif-dat"
 msgid "listing"
 msgstr "listing"
 
-#: src/components/notifications/NotificationItem.ts:591
+#: src/components/notifications/NotificationItem.ts:593
 msgctxt "notif-dat"
 msgid "live stream"
 msgstr "live stream"
 
-#: src/components/notifications/NotificationItem.ts:636
+#: src/components/notifications/NotificationItem.ts:642
 msgctxt "notif-dat"
 msgid "note"
 msgstr "note"
 
-#: src/components/notifications/NotificationItem.ts:612
+#: src/components/notifications/NotificationItem.ts:618
 msgctxt "notif-dat"
 msgid "picture"
 msgstr "picture"
 
-#: src/components/notifications/NotificationItem.ts:575
+#: src/components/notifications/NotificationItem.ts:577
 msgctxt "notif-dat"
 msgid "podcast episode"
 msgstr "podcast episode"
 
-#: src/components/notifications/NotificationItem.ts:560
+#: src/components/notifications/NotificationItem.ts:562
 msgctxt "notif-dat"
 msgid "poll"
 msgstr "poll"
 
-#: src/components/notifications/NotificationItem.ts:625
+#: src/components/notifications/NotificationItem.ts:631
 msgctxt "notif-dat"
 msgid "pull request"
 msgstr "pull request"
 
-#: src/components/notifications/NotificationItem.ts:605
+#: src/components/notifications/NotificationItem.ts:611
 msgctxt "notif-dat"
 msgid "reaction"
 msgstr "reaction"
 
-#: src/components/notifications/NotificationItem.ts:614
+#: src/components/notifications/NotificationItem.ts:620
 msgctxt "notif-dat"
 msgid "video"
 msgstr "video"
 
-#: src/components/notifications/NotificationItem.ts:596
+#: src/components/notifications/NotificationItem.ts:598
 msgctxt "notif-dat"
 msgid "website"
 msgstr "website"
 
-#: src/components/notifications/NotificationItem.ts:608
+#: src/components/notifications/NotificationItem.ts:614
 msgctxt "notif-dat"
 msgid "zap"
 msgstr "zap"
 
-#: src/components/notifications/NotificationItem.ts:602
+#: src/components/notifications/NotificationItem.ts:604
 msgctxt "notif-dat"
 msgid "badge"
 msgstr "badge"
+
+#: src/components/notifications/NotificationItem.ts:607
+msgctxt "notif-dat"
+msgid "3D object"
+msgstr "3D object"
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"

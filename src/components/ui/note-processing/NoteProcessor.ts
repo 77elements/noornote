@@ -25,6 +25,7 @@ import { NsiteProcessor, isNsiteManifest } from './NsiteProcessor';
 import { LiveStreamProcessor } from './LiveStreamProcessor';
 import { ListingProcessor } from './ListingProcessor';
 import { PodcastEpisodeProcessor } from './PodcastEpisodeProcessor';
+import { SnoProcessor } from './SnoProcessor';
 import { CurationSetProcessor } from './CurationSetProcessor';
 import { BookmarkListProcessor } from './BookmarkListProcessor';
 import { ReactionFeedProcessor } from './ReactionFeedProcessor';
@@ -97,6 +98,9 @@ export class NoteProcessor {
           return ArticleProcessor.process(event);
         case 30054:
           return PodcastEpisodeProcessor.process(event);
+        case 33331:
+          // SNO "Simple Nostr Objects" (DECK-0003 draft): self-contained 3D model.
+          return SnoProcessor.process(event);
         case 30004:
           // NIP-51 article curation set (e.g. Zap Cooking Recipe Packs).
           return CurationSetProcessor.process(event);

@@ -263,6 +263,12 @@ export class QuotedNoteRenderer {
       void this.renderBadgeDefinitionPreview(naddrRef, container);
       return;
     }
+    // SNO 3D object (kind 33331, DECK-0003) → fetch + render the canvas
+    // viewer, mirroring the Git-repo/badge-definition preview pattern.
+    if (kind === 33331) {
+      void this.renderSnoPreview(naddrRef, container);
+      return;
+    }
     // Any other addressable kind → shared unsupported fallback (no article card).
     container.appendChild(
       UnsupportedKindRenderer.renderFromCoordinate(
@@ -326,6 +332,44 @@ export class QuotedNoteRenderer {
       }
     } catch {
       /* silent — container stays empty */
+    }
+  }
+
+  /**
+   * Fetch a SNO 3D object (kind 33331) by naddr and render it with the canvas
+   * viewer. Shows an italic pulsating "Loading 3D model…" placeholder while
+   * the fetch runs; falls back silently (placeholder removed) on failure.
+   */
+  public async renderSnoPreview(
+    naddrRef: string,
+    container: Element
+  ): Promise<void> {
+    const loading = document.createElement('div');
+    loading.className = 'sno sno--loading';
+    loading.innerHTML = `<div class="sno__stage sno__stage--loading"><span class="sno__loading pulsate">${_('Loading 3D model…')}</span></div>`;
+    container.appendChild(loading);
+    try {
+      const result =
+        await this.quoteFetcher.fetchQuotedEventWithError(naddrRef);
+      if (result.success && result.event.kind === 33331) {
+        const { SnoProcessor } = await import(
+          '../../../components/ui/note-processing/SnoProcessor'
+        );
+        const { SnoRenderer } = await import(
+          '../../../components/ui/note-rendering/SnoRenderer'
+        );
+        const processedNote = SnoProcessor.process(result.event);
+        loading.replaceWith(
+          SnoRenderer.render(processedNote, {
+            collapsible: false,
+            depth: 1,
+          })
+        );
+        return;
+      }
+      loading.remove();
+    } catch {
+      loading.remove();
     }
   }
 

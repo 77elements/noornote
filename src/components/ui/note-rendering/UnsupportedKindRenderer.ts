@@ -18,11 +18,14 @@ import {
   isSatelliteEarthKind,
 } from './SatelliteSiteRenderer';
 import { ArmadaInviteRenderer } from './ArmadaInviteRenderer';
+import { SnoRenderer } from './SnoRenderer';
 import { NoteMenu } from '../NoteMenu';
 import { getViewNavigationController } from '../../../services/ViewNavigationController';
 
 /** Armada / Concord encrypted community invite bundle (CORD-05). */
 const ARMADA_INVITE_KIND = 33301;
+/** SNO "Simple Nostr Objects" (DECK-0003 draft) — self-contained 3D model. */
+const SNO_OBJECT_KIND = 33331;
 /** NIP-29 group chat message — rendered as readable text, not "unsupported". */
 const GROUP_CHAT_KIND = 9;
 /**
@@ -75,6 +78,13 @@ export class UnsupportedKindRenderer {
     // on the raw event, so this is the static "Encrypted community" card.
     if (note.rawEvent.kind === ARMADA_INVITE_KIND) {
       return ArmadaInviteRenderer.renderFromEvent(note.rawEvent);
+    }
+    // SNO 3D object (kind 33331): QuotedNoteRenderer routes every fetched
+    // addressable kind that has no dedicated quote branch here — the note is
+    // fully processed, so hand it to the real renderer instead of the
+    // "unsupported" fallback.
+    if (note.rawEvent.kind === SNO_OBJECT_KIND) {
+      return SnoRenderer.render(note, _opts);
     }
     // NIP-29 group chat message (lives on group relays, not renderable here):
     // show the message text with a "Group chat" prefix instead of a bare

@@ -34,6 +34,8 @@ interface NoteInstances {
   header: NoteHeader;
   isl?: InteractionStatusLine;
   islNoteId?: string;
+  /** Extra teardown hooks registered by renderers that mount their own dynamic DOM (e.g. the SNO canvas viewer). */
+  detachers?: (() => void)[];
 }
 const instancesByElement: WeakMap<HTMLElement, NoteInstances> = new WeakMap();
 
@@ -391,6 +393,18 @@ export class NoteStructureBuilder {
   }
 
   /**
+   * Register extra teardown for a card's own dynamic DOM. `element` must be
+   * the structural note element returned by `build()`; hooks run when that
+   * card subtree is removed (see cleanupElement).
+   */
+  static registerDetacher(element: HTMLElement, detach: () => void): void {
+    const instances = instancesByElement.get(element);
+    if (!instances) return;
+    instances.detachers ??= [];
+    instances.detachers.push(detach);
+  }
+
+  /**
    * Destroy the header/ISL instances for every note element inside `root`
    * (including `root` itself). Scoped to the DOM subtree being removed, so a
    * card that shares a note id with another, still-visible card is never
@@ -408,6 +422,7 @@ export class NoteStructureBuilder {
       if (!instances) continue;
 
       instances.header.destroy();
+      instances.detachers?.forEach(detach => detach());
       if (instances.isl) {
         instances.isl.destroy();
         if (instances.islNoteId) {
