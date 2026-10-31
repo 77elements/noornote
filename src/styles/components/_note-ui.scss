@@ -194,14 +194,15 @@ html.content-visibility-auto .note-card {
       white-space: pre-wrap;
     }
 
-    // Custom emojis (NIP-30) — render at original size in note bodies,
-    // only scaled down if wider than the card. Reactions keep their own
+    // Custom emojis (NIP-30) — rendered at 2em so details stay visible
+    // (source images are large, e.g. 3x webp). Reactions keep their own
     // 1.4em size (scoped under .likes-list__emoji).
     .custom-emoji {
       display: inline-block;
-      max-width: 100%;
-      height: auto;
-      vertical-align: middle;
+      width: 2em;
+      height: 2em;
+      object-fit: contain;
+      vertical-align: -0.5em; // optical baseline alignment with text
       margin: 0 0.05em;
     }
   }
