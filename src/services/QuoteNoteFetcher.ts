@@ -76,18 +76,26 @@ export class QuoteNoteFetcher {
    * `bypassNegativeCache` — run the full pipeline even when a recent negative
    * entry exists (see QuoteOrchestrator.fetchQuotedEventDetailed). Used by the
    * timeout-flavored recovery retry.
+   * `extraOutboundPubkeys` — additional stage-3 outbound candidates, typically
+   * the quoted event's author taken from the parent's `q`/`p` tags (see
+   * QuotedReference.authorHints). Needed for bare `note1…` quotes that embed
+   * neither author nor relay hints: without the quoted author's relays the
+   * cross-relay quote is unfetchable.
    */
   public async fetchQuotedEventWithError(
     nostrRef: string,
     parentAuthorPubkey?: string,
     outboundOnly: boolean = false,
-    bypassNegativeCache: boolean = false
+    bypassNegativeCache: boolean = false,
+    extraOutboundPubkeys: string[] = []
   ): Promise<QuoteFetchResult> {
     try {
       const outcome = await this.orchestrator.fetchQuotedEventDetailed(
         nostrRef,
         undefined,
-        parentAuthorPubkey ? [parentAuthorPubkey] : [],
+        parentAuthorPubkey
+          ? [parentAuthorPubkey, ...extraOutboundPubkeys]
+          : extraOutboundPubkeys,
         outboundOnly,
         bypassNegativeCache
       );

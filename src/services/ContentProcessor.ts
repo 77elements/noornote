@@ -11,7 +11,11 @@ import { unwrapGitLinks } from '../helpers/unwrapGitLinks';
 import { unwrapArmadaInviteLinks } from '../helpers/unwrapArmadaInviteLinks';
 import { extractLinks, type LinkPreview } from '../helpers/extractLinks';
 import { extractHashtags } from '../helpers/extractHashtags';
-import { extractQuotedReferences } from '../helpers/extractQuotedReferences';
+import {
+  extractQuotedReferences,
+  enrichQuoteAuthorHints,
+  type QuotedReference as ExtractedQuotedReference,
+} from '../helpers/extractQuotedReferences';
 import { escapeHtml } from '../helpers/escapeHtml';
 import { linkifyUrls } from '../helpers/linkifyUrls';
 import { formatHashtags } from '../helpers/formatHashtags';
@@ -33,17 +37,13 @@ import type {
 } from '../addons/profile-recognition/profileBlinking';
 import { LRUCache, getCacheSize } from '../helpers/LRUCache';
 
-export interface QuotedReference {
+/**
+ * Single source of truth lives in extractQuotedReferences (with the
+ * `authorHints` outbound candidates added there — see its doc comment).
+ */
+export type QuotedReference = ExtractedQuotedReference & {
   type: 'event' | 'note' | 'addr';
-  id: string;
-  fullMatch: string;
-  /**
-   * Armada invite unlock fragment (without leading `#`). Present only for
-   * kind 33301 naddr refs whose URL carried a `#fragment` through
-   * unwrapArmadaInviteLinks — see extractQuotedReferences.
-   */
-  fragment?: string;
-}
+};
 
 export interface ProcessedContent {
   text: string;
@@ -143,6 +143,7 @@ export class ContentProcessor {
       fullMatch: ref.fullMatch,
       ...(ref.fragment ? { fragment: ref.fragment } : {}),
     }));
+    enrichQuoteAuthorHints(quotedReferences, tags);
 
     // NON-BLOCKING: Trigger profile fetch for ALL p-tags in background
     const mentionTags = tags.filter(tag => tag[0] === 'p');

@@ -406,7 +406,10 @@ export class QuotedNoteRenderer {
       // recovery re-render still walks the full cache-first pipeline.
       const result = await this.quoteFetcher.fetchQuotedEventWithError(
         ref.fullMatch,
-        parentAuthorPubkey
+        parentAuthorPubkey,
+        false,
+        false,
+        ref.authorHints ?? []
       );
 
       if (result.success) {
@@ -869,7 +872,8 @@ export class QuotedNoteRenderer {
           ref.fullMatch,
           parentAuthorPubkey,
           !timedOut,
-          timedOut
+          timedOut,
+          ref.authorHints ?? []
         )
         .then(result => {
           if (!isAlive()) {

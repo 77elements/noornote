@@ -9,7 +9,10 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { extractQuotedReferences } from './extractQuotedReferences';
+import {
+  extractQuotedReferences,
+  enrichQuoteAuthorHints,
+} from './extractQuotedReferences';
 import { unwrapStreamLinks } from './unwrapStreamLinks';
 import {
   encodeNevent,
@@ -108,5 +111,74 @@ describe('extractQuotedReferences', () => {
     const refs = extractQuotedReferences(`${naddr}#BAHcYKk`);
     expect(refs).toHaveLength(1);
     expect(refs[0].fragment).toBe('BAHcYKk');
+  });
+});
+
+/**
+ * 2026-11: quoted-repost case that failed to resolve in production. A bare
+ * `nostr:note1…` quote embeds neither author nor relay hints, so the quote
+ * pipeline's outbound fallback only knew the quoter's relays — but the quoted
+ * event lives on the quoted author's write relays. The author is sitting in
+ * the parent's `q`/`p` tags; enrichQuoteAuthorHints must surface it.
+ */
+describe('enrichQuoteAuthorHints', () => {
+  const QUOTED_ID = 'c'.repeat(64);
+  const QUOTED_AUTHOR =
+    'a0e73529e04b4970a185e864b89e7d6e1ed148fdf08381b540ac020a742c62d5';
+  const QUOTER =
+    '30e0a129606706a5c10530224cab84f4f6624b1f1b8418ac651c5156cf2e0194';
+
+  it('bare note1 + NIP-18 q tag with author element → hint from q[3]', () => {
+    const refs = extractQuotedReferences(`look nostr:${noteEncode(QUOTED_ID)}`);
+    enrichQuoteAuthorHints(refs, [
+      ['q', QUOTED_ID, 'wss://relay.example', QUOTED_AUTHOR],
+      ['p', QUOTED_AUTHOR],
+    ]);
+    expect(refs[0].authorHints).toEqual([QUOTED_AUTHOR]);
+  });
+
+  it('bare note1 + author-less q tag → fallback to parent p tags', () => {
+    const refs = extractQuotedReferences(`look ${noteEncode(QUOTED_ID)}`);
+    enrichQuoteAuthorHints(refs, [
+      ['e', QUOTED_ID, '', 'mention'],
+      ['p', QUOTED_AUTHOR],
+      ['q', QUOTED_ID],
+    ]);
+    expect(refs[0].authorHints).toEqual([QUOTED_AUTHOR]);
+  });
+
+  it('nevent with embedded author is left alone (orchestrator prefers it)', () => {
+    const refs = extractQuotedReferences(
+      `look ${encodeNevent(QUOTED_ID, [], QUOTED_AUTHOR)}`
+    );
+    enrichQuoteAuthorHints(refs, [['p', QUOTER]]);
+    expect(refs[0].authorHints).toBeUndefined();
+  });
+
+  it('author-less nevent gets the p-tag fallback like bare refs', () => {
+    const refs = extractQuotedReferences(`look ${encodeNevent(QUOTED_ID)}`);
+    enrichQuoteAuthorHints(refs, [['p', QUOTED_AUTHOR]]);
+    expect(refs[0].authorHints).toEqual([QUOTED_AUTHOR]);
+  });
+
+  it('ambiguous pairing (several q tags) falls back to the p-tag union', () => {
+    const idA = 'd'.repeat(64);
+    const refs = extractQuotedReferences(
+      `a ${noteEncode(QUOTED_ID)} b ${noteEncode(idA)}`
+    );
+    enrichQuoteAuthorHints(refs, [
+      ['q', QUOTED_ID],
+      ['q', idA],
+      ['p', QUOTED_AUTHOR],
+      ['p', QUOTER],
+    ]);
+    expect(refs[0].authorHints).toEqual([QUOTED_AUTHOR, QUOTER]);
+    expect(refs[1].authorHints).toEqual([QUOTED_AUTHOR, QUOTER]);
+  });
+
+  it('no q/p tags in parent → no hints', () => {
+    const refs = extractQuotedReferences(`look ${noteEncode(QUOTED_ID)}`);
+    enrichQuoteAuthorHints(refs, [['t', 'nostr']]);
+    expect(refs[0].authorHints).toBeUndefined();
   });
 });
