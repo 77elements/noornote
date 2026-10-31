@@ -12055,12 +12055,17 @@ msgid ""
 "— each connected relay uses one per tab. NoorNote connects your %s most "
 "important relays first (your own before fallback relays)."
 msgstr ""
+"Browser teilen sich ein Limit von etwa %s gleichzeitigen Verbindungen über "
+"alle Tabs — jedes verbundene Relay belegt eines pro Tab. NoorNote verbindet "
+"zuerst deine %s wichtigsten Relays (eigene vor Fallback-Relays)."
 
 #: src/components/settings/RelaySettingsSection.ts:224
 msgid ""
 "The desktop app has no browser relay connection limit, for a better "
 "following feed experience."
 msgstr ""
+"Die Desktop-App hat kein Relay-Verbindungslimit des Browsers — für ein "
+"besseres Erlebnis im Following-Feed."
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"
