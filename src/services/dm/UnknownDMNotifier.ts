@@ -26,6 +26,9 @@
  *     event that leaked through any future gate hole as "live" but is already
  *     read (relay replay / post-eviction backlog of read conversations) is
  *     ignored here — a toast must never claim unread messages that aren't.
+ *  3. Follow gate is awaited (isFollowing), never isFollowingSync: the sync
+ *     variant skips init(), so a live arrival before the first badge/tab call
+ *     read an empty follow set and classified every sender as unknown.
  *
  * Dedup: one count contribution per conversation while that conversation still
  * has unread messages. The remembered pubkey is cleared on `dm:read` (fired by
@@ -95,7 +98,7 @@ export class UnknownDMNotifier {
   private subscribe(): void {
     this.subscriptionIds.push(
       this.eventBus.on('dm:new-message', (payload: DMNewMessagePayload) => {
-        this.handleNewMessage(payload);
+        void this.handleNewMessage(payload);
       }),
       this.eventBus.on('dm:read', ({ partnerPubkey }) => {
         // Conversation was opened / marked read — re-arm for the next message.
@@ -112,16 +115,13 @@ export class UnknownDMNotifier {
     );
   }
 
-  private handleNewMessage({
+  private async handleNewMessage({
     message,
     conversationWith,
     wasUnread,
-  }: DMNewMessagePayload): void {
+  }: DMNewMessagePayload): Promise<void> {
     // Outgoing echoes (own messages) are not interesting here.
     if (message.isMine) return;
-    // Only surface senders the user does not follow. Known-sender messages
-    // are already visible in the default "Known" tab.
-    if (this.followCheckService.isFollowingSync(conversationWith)) return;
     // Read-anchor verdict from DMStore: explicitly-read arrivals (replayed
     // backlog of read conversations) must never be claimed as unread. Filter
     // only on explicit false — undefined means "predate the flag", keep the
@@ -129,8 +129,20 @@ export class UnknownDMNotifier {
     if (wasUnread === false) return;
     // One count contribution per conversation within the current unread cycle —
     // a burst of N messages from the SAME sender bumps the count once, not N×.
+    // Reserve synchronously BEFORE the async follow check below: the await
+    // yields the event loop, and without the reservation a rapid same-sender
+    // burst would double-count. Entries parked here for followed senders are
+    // harmless — they only gate toasting and are cleared on dm:read,
+    // dm:all-read and logout.
     if (this.toastedConvs.has(conversationWith)) return;
     this.toastedConvs.add(conversationWith);
+    // Only surface senders the user does not follow. Known-sender messages
+    // are already visible in the default "Known" tab and only bump the badge
+    // diode. Awaited (NOT isFollowingSync): the sync variant reads the
+    // in-memory set without bootstrapping it, so a live message arriving
+    // before the first badge/tab call saw an empty set and classified every
+    // sender as unknown.
+    if (await this.followCheckService.isFollowing(conversationWith)) return;
 
     this.burstCount++;
     this.armBurstWindow();

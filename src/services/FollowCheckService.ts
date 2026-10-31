@@ -11,15 +11,21 @@
 
 import { FollowStorageAdapter } from '../lists/follows';
 import { AuthService } from './AuthService';
+import { TypedEventBus } from '../core/TypedEventBus';
 
 export class FollowCheckService {
   private static instance: FollowCheckService;
   private followAdapter: FollowStorageAdapter;
   private authService: AuthService;
+  private eventBus = TypedEventBus.getInstance();
 
   // In-memory set for O(1) lookups
   private followedPubkeys: Set<string> = new Set();
   private initialized: boolean = false;
+
+  /** Subscription id for 'follow:updated' — re-subscribed per account cycle
+   *  (init) and torn down in clear() so it never leaks across accounts. */
+  private followUpdatedSubId: string | null = null;
 
   private constructor() {
     this.followAdapter = new FollowStorageAdapter();
@@ -62,6 +68,27 @@ export class FollowCheckService {
     }
 
     this.initialized = true;
+
+    // Keep the in-memory set fresh: any follow-list write goes through
+    // setFollowItems() which emits 'follow:updated'. Without this the set
+    // goes stale until the next init()/refresh() call.
+    if (this.followUpdatedSubId === null) {
+      this.followUpdatedSubId = this.eventBus.on('follow:updated', () =>
+        this.rebuildFromBrowser()
+      );
+    }
+  }
+
+  /** Rebuild the in-memory set from browser storage (synchronous, cheap —
+   *  localStorage read only). No-op before init(): init() reads browser
+   *  storage directly (with file fallback), so an early rebuild could only
+   *  skip that fallback. */
+  private rebuildFromBrowser(): void {
+    if (!this.initialized) return;
+    this.followedPubkeys.clear();
+    for (const item of this.followAdapter.getBrowserItems()) {
+      this.followedPubkeys.add(item.pubkey);
+    }
   }
 
   /**
@@ -110,6 +137,10 @@ export class FollowCheckService {
    * Clear cache (call on logout)
    */
   public clear(): void {
+    if (this.followUpdatedSubId !== null) {
+      this.eventBus.off(this.followUpdatedSubId);
+      this.followUpdatedSubId = null;
+    }
     this.followedPubkeys.clear();
     this.initialized = false;
   }
