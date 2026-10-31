@@ -19,6 +19,8 @@ import {
 } from './SatelliteSiteRenderer';
 import { ArmadaInviteRenderer } from './ArmadaInviteRenderer';
 import { SnoRenderer } from './SnoRenderer';
+import { MusicTrackRenderer } from './MusicTrackRenderer';
+import { MusicPlaylistRenderer } from './MusicPlaylistRenderer';
 import { NoteMenu } from '../NoteMenu';
 import { getViewNavigationController } from '../../../services/ViewNavigationController';
 
@@ -85,6 +87,15 @@ export class UnsupportedKindRenderer {
     // "unsupported" fallback.
     if (note.rawEvent.kind === SNO_OBJECT_KIND) {
       return SnoRenderer.render(note, _opts);
+    }
+    // Music track (kind 36787) / playlist (kind 34139): same pattern as SNO —
+    // NoteProcessor already classified the event, so render the real card
+    // instead of the "unsupported" fallback (podtunes/nostria convention).
+    if (note.rawEvent.kind === 36787) {
+      return MusicTrackRenderer.render(note, _opts);
+    }
+    if (note.rawEvent.kind === 34139) {
+      return MusicPlaylistRenderer.render(note, _opts);
     }
     // NIP-29 group chat message (lives on group relays, not renderable here):
     // show the message text with a "Group chat" prefix instead of a bare

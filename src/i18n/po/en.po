@@ -628,7 +628,7 @@ msgstr "Zaps"
 #: src/components/settings/ListSettingsSection.ts:325
 #: src/components/settings/ListSettingsSection.ts:367
 #: src/components/settings/PrivacySettingsSection.ts:270
-#: src/components/settings/RelaySettingsSection.ts:450
+#: src/components/settings/RelaySettingsSection.ts:480
 #: src/components/views/ConversationView.ts:619
 #: src/components/views/MessagesView.ts:586
 #: src/components/views/MessagesView.ts:792
@@ -2683,7 +2683,7 @@ msgstr "ENDED"
 msgid "Expired"
 msgstr "Expired"
 
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1179
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1232
 #: src/helpers/renderQuotePreview.ts:39
 msgid "Failed to load quoted note"
 msgstr "Failed to load quoted note"
@@ -2765,7 +2765,7 @@ msgstr "Loading…"
 #: src/addons/marketplace/MarketplaceAddonView.ts:34
 #: src/addons/marketplace/MarketplaceTimelineInjector.ts:220
 #: src/components/ui/note-rendering/ListingRenderer.ts:62
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1495
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1548
 #: src/helpers/renderQuotePreview.ts:153
 msgid "Marketplace"
 msgstr "Marketplace"
@@ -2796,7 +2796,7 @@ msgstr "Nostr website"
 msgid "Note can't be rendered"
 msgstr "Note can't be rendered"
 
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1131
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1184
 msgid "Note from a user you've muted"
 msgstr "Note from a user you've muted"
 
@@ -2821,6 +2821,8 @@ msgid "PLANNED"
 msgstr "PLANNED"
 
 #: src/components/ui/note-rendering/BookmarkListRenderer.ts:70
+#: src/components/ui/note-rendering/MusicPlaylistRenderer.ts:69
+#: src/components/ui/note-rendering/MusicPlaylistRenderer.ts:70
 msgid "Playlist"
 msgstr "Playlist"
 
@@ -2844,7 +2846,7 @@ msgstr "Pull Request Update"
 msgid "Quoted note (max depth reached)"
 msgstr "Quoted note (max depth reached)"
 
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1194
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1247
 msgid "Quoted repost — open to view"
 msgstr "Quoted repost — open to view"
 
@@ -2867,7 +2869,7 @@ msgstr "Show Less"
 msgid "Show More"
 msgstr "Show More"
 
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1132
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1185
 msgid "Show temporarily"
 msgstr "Show temporarily"
 
@@ -3107,11 +3109,11 @@ msgstr "Write your reply..."
 msgid "Write your thoughts about this highlight (optional)…"
 msgstr "Write your thoughts about this highlight (optional)…"
 
-#: src/components/settings/RelaySettingsSection.ts:259
+#: src/components/settings/RelaySettingsSection.ts:289
 msgid "%s/%s relays healthy (%s%)"
 msgstr "%s/%s relays healthy (%s%)"
 
-#: src/components/settings/RelaySettingsSection.ts:220
+#: src/components/settings/RelaySettingsSection.ts:250
 msgid "Add Relay"
 msgstr "Add Relay"
 
@@ -3169,7 +3171,7 @@ msgstr "All tribe members"
 msgid "Amount must be at least 1 sat"
 msgstr "Amount must be at least 1 sat"
 
-#: src/components/settings/RelaySettingsSection.ts:444
+#: src/components/settings/RelaySettingsSection.ts:474
 msgid "Are you sure you want to remove this relay?"
 msgstr "Are you sure you want to remove this relay?"
 
@@ -3328,7 +3330,7 @@ msgstr "Dhikr Round"
 msgid "Disconnect"
 msgstr "Disconnect"
 
-#: src/components/settings/RelaySettingsSection.ts:319
+#: src/components/settings/RelaySettingsSection.ts:349
 msgid "DM Inbox"
 msgstr "DM Inbox"
 
@@ -3403,7 +3405,7 @@ msgstr "Failed to clear cache"
 msgid "Failed to clear cache tables"
 msgstr "Failed to clear cache tables"
 
-#: src/components/settings/RelaySettingsSection.ts:589
+#: src/components/settings/RelaySettingsSection.ts:619
 msgid "Failed to save relay settings"
 msgstr "Failed to save relay settings"
 
@@ -3539,11 +3541,11 @@ msgstr "List sync: %s enabled"
 msgid "Listing frequency: %s"
 msgstr "Listing frequency: %s"
 
-#: src/components/settings/RelaySettingsSection.ts:208
+#: src/components/settings/RelaySettingsSection.ts:237
 msgid "Loading relay health status..."
 msgstr "Loading relay health status..."
 
-#: src/components/settings/RelaySettingsSection.ts:548
+#: src/components/settings/RelaySettingsSection.ts:578
 msgid "Local Relay"
 msgstr "Local Relay"
 
@@ -3664,7 +3666,7 @@ msgstr "New Mutuals"
 msgid "NIP-05 Cache Size"
 msgstr "NIP-05 Cache Size"
 
-#: src/components/settings/RelaySettingsSection.ts:243
+#: src/components/settings/RelaySettingsSection.ts:273
 #: src/services/LiveChatService.ts:67
 #: src/services/ReactionService.ts:186
 #: src/services/ReportService.ts:152
@@ -3750,7 +3752,7 @@ msgstr "Please enter NWC connection string"
 msgid "Please log in to migrate follow lists"
 msgstr "Please log in to migrate follow lists"
 
-#: src/components/settings/RelaySettingsSection.ts:485
+#: src/components/settings/RelaySettingsSection.ts:515
 msgid "Please log in to save relay settings"
 msgstr "Please log in to save relay settings"
 
@@ -3851,7 +3853,7 @@ msgstr "Rare (every 60 min)"
 msgid "Reactions"
 msgstr "Reactions"
 
-#: src/components/settings/RelaySettingsSection.ts:305
+#: src/components/settings/RelaySettingsSection.ts:335
 msgid "Read"
 msgstr "Read"
 
@@ -3860,7 +3862,7 @@ msgstr "Read"
 msgid "Recovery options:"
 msgstr "Recovery options:"
 
-#: src/components/settings/RelaySettingsSection.ts:587
+#: src/components/settings/RelaySettingsSection.ts:617
 msgid "Relay settings saved"
 msgstr "Relay settings saved"
 
@@ -3868,7 +3870,7 @@ msgstr "Relay settings saved"
 msgid "Relay Status"
 msgstr "Relay Status"
 
-#: src/components/settings/RelaySettingsSection.ts:378
+#: src/components/settings/RelaySettingsSection.ts:408
 msgid "Relay URL must start with wss:// or ws://"
 msgstr "Relay URL must start with wss:// or ws://"
 
@@ -3883,16 +3885,16 @@ msgstr "Relay URL must start with wss:// or ws://"
 #: src/addons/marketplace/ListingEditorView.ts:248
 #: src/addons/marketplace/ListingEditorView.ts:601
 #: src/components/profile/ProfileSearchComponent.ts:308
-#: src/components/settings/RelaySettingsSection.ts:451
+#: src/components/settings/RelaySettingsSection.ts:481
 #: src/components/user-search/UserSearchInput.ts:397
 msgid "Remove"
 msgstr "Remove"
 
-#: src/components/settings/RelaySettingsSection.ts:323
+#: src/components/settings/RelaySettingsSection.ts:353
 msgid "Remove relay"
 msgstr "Remove relay"
 
-#: src/components/settings/RelaySettingsSection.ts:441
+#: src/components/settings/RelaySettingsSection.ts:471
 msgid "Remove Relay"
 msgstr "Remove Relay"
 
@@ -4042,7 +4044,7 @@ msgstr "This determines who appears in your timeline."
 msgid "This operation is irreversible without using the reverse migration tool."
 msgstr "This operation is irreversible without using the reverse migration tool."
 
-#: src/components/settings/RelaySettingsSection.ts:390
+#: src/components/settings/RelaySettingsSection.ts:420
 msgid "This relay is already in your list"
 msgstr "This relay is already in your list"
 
@@ -4130,11 +4132,11 @@ msgstr ""
 msgid "Warning:"
 msgstr "Warning:"
 
-#: src/components/settings/RelaySettingsSection.ts:312
+#: src/components/settings/RelaySettingsSection.ts:342
 msgid "Write"
 msgstr "Write"
 
-#: src/components/settings/RelaySettingsSection.ts:499
+#: src/components/settings/RelaySettingsSection.ts:529
 msgid "You need at least one read-relay and one write-relay configured."
 msgstr "You need at least one read-relay and one write-relay configured."
 
@@ -4142,7 +4144,7 @@ msgstr "You need at least one read-relay and one write-relay configured."
 msgid "Your follow list is critical!"
 msgstr "Your follow list is critical!"
 
-#: src/components/settings/RelaySettingsSection.ts:224
+#: src/components/settings/RelaySettingsSection.ts:254
 msgid ""
 "Your relays are your sovereignty surface. <strong>Read</strong> = where "
 "NoorNote looks for content, <strong>Write</strong> = where your own events "
@@ -11887,9 +11889,35 @@ msgstr "Malformed 3D object"
 msgid "See model on snocrash.art"
 msgstr "See model on snocrash.art"
 
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:349
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:355
 msgid "Loading 3D model…"
 msgstr "Loading 3D model…"
+
+#: src/components/settings/RelaySettingsSection.ts:223
+msgid ""
+"Browsers share a limit of about %s simultaneous connections across all tabs "
+"— each connected relay uses one per tab. NoorNote connects your %s most "
+"important relays first (your own before fallback relays)."
+msgstr ""
+"Browsers share a limit of about %s simultaneous connections across all tabs "
+"— each connected relay uses one per tab. NoorNote connects your %s most "
+"important relays first (your own before fallback relays)."
+
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:393
+msgid "Loading music…"
+msgstr "Loading music…"
+
+#: src/components/ui/note-rendering/MusicTrackRenderer.ts:71
+msgid "Music track"
+msgstr "Music track"
+
+#: src/components/settings/RelaySettingsSection.ts:224
+msgid ""
+"The desktop app has no browser relay connection limit, for a better "
+"following feed experience."
+msgstr ""
+"The desktop app has no browser relay connection limit, for a better "
+"following feed experience."
 
 #: src/addons/note-taking/NoteEditorModal.ts:362
 #: src/addons/note-taking/NoteEditorModal.ts:85

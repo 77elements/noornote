@@ -30,6 +30,8 @@ export interface ProcessedNote {
     | 'nsite'
     | 'calendar-event'
     | 'calendar-collection'
+    | 'music-track'
+    | 'music-playlist'
     | 'sno-object'
     | 'premium';
   timestamp: number;
@@ -76,6 +78,10 @@ export interface ProcessedNote {
   };
   /** kind 33331 only: parsed SNO geometry (DECK-0003) + name/alt tags. */
   snoData?: import('../note-processing/SnoProcessor').SnoData;
+  /** kind 36787 only: parsed music track metadata. */
+  musicTrack?: import('../../../helpers/parseMusicTrack').MusicTrackData;
+  /** kind 34139 only: parsed playlist header + track references. */
+  musicPlaylist?: import('../../../helpers/parseMusicTrack').MusicPlaylistData;
 }
 
 export interface ZapReceiptData {

@@ -269,6 +269,12 @@ export class QuotedNoteRenderer {
       void this.renderSnoPreview(naddrRef, container);
       return;
     }
+    // Music track (36787) / playlist (34139) → fetch + render the music
+    // card (podtunes/nostria convention), mirroring the Git-repo pattern.
+    if (kind === 36787 || kind === 34139) {
+      void this.renderMusicPreview(naddrRef, container);
+      return;
+    }
     // Any other addressable kind → shared unsupported fallback (no article card).
     container.appendChild(
       UnsupportedKindRenderer.renderFromCoordinate(
@@ -366,6 +372,47 @@ export class QuotedNoteRenderer {
           })
         );
         return;
+      }
+      loading.remove();
+    } catch {
+      loading.remove();
+    }
+  }
+
+  /**
+   * Fetch a music track (36787) / playlist (34139) by naddr and render it as
+   * a music card via the standard Processor + Renderer pair (mirrors the
+   * SNO preview). Falls back silently — the container stays empty on failure.
+   */
+  public async renderMusicPreview(
+    naddrRef: string,
+    container: Element
+  ): Promise<void> {
+    const loading = document.createElement('div');
+    loading.className = 'note-card note-card--bookmark-list';
+    loading.innerHTML = `<div class="nn-card bookmark-list"><div class="nn-card__content"><div class="meta">${_('Loading music…')}</div></div></div>`;
+    container.appendChild(loading);
+    try {
+      const result =
+        await this.quoteFetcher.fetchQuotedEventWithError(naddrRef);
+      if (result.success) {
+        const { NoteProcessor } = await import(
+          '../../../components/ui/note-processing/NoteProcessor'
+        );
+        const processedNote = NoteProcessor.process(result.event);
+        if (
+          processedNote.type === 'music-track' ||
+          processedNote.type === 'music-playlist'
+        ) {
+          const { NoteRendererFactory } = await import('./NoteRendererFactory');
+          loading.replaceWith(
+            NoteRendererFactory.render(processedNote, {
+              collapsible: false,
+              depth: 1,
+            })
+          );
+          return;
+        }
       }
       loading.remove();
     } catch {

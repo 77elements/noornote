@@ -28,6 +28,8 @@ import { PodcastEpisodeProcessor } from './PodcastEpisodeProcessor';
 import { SnoProcessor } from './SnoProcessor';
 import { CurationSetProcessor } from './CurationSetProcessor';
 import { BookmarkListProcessor } from './BookmarkListProcessor';
+import { MusicTrackProcessor } from './MusicTrackProcessor';
+import { MusicPlaylistProcessor } from './MusicPlaylistProcessor';
 import { ReactionFeedProcessor } from './ReactionFeedProcessor';
 import { CalendarEventProcessor } from './CalendarEventProcessor';
 
@@ -109,6 +111,14 @@ export class NoteProcessor {
           // folders share this kind; third parties (ZapTrax) publish
           // playlists on it. Card shows metadata + inline player only.
           return BookmarkListProcessor.process(event);
+        case 36787:
+          // Music track (podtunes/nostria/Wavlake convention, registry of
+          // kinds "36787 | Music Tracks"). Self-contained tag metadata.
+          return MusicTrackProcessor.process(event);
+        case 34139:
+          // Music playlist — references 36787 tracks via `a` tags; the
+          // renderer resolves them lazily.
+          return MusicPlaylistProcessor.process(event);
         case 7:
           // NIP-25 reaction as a feed entry (show-reactions setting).
           return ReactionFeedProcessor.process(event);

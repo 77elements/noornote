@@ -13,6 +13,8 @@ import { UnsupportedKindRenderer } from './UnsupportedKindRenderer';
 import { FollowPackRenderer } from './FollowPackRenderer';
 import { CurationSetRenderer } from './CurationSetRenderer';
 import { BookmarkListRenderer } from './BookmarkListRenderer';
+import { MusicTrackRenderer } from './MusicTrackRenderer';
+import { MusicPlaylistRenderer } from './MusicPlaylistRenderer';
 import { ReactionFeedRenderer } from './ReactionFeedRenderer';
 import { GitEventRenderer } from './GitEventRenderer';
 import { HighlightRenderer } from './HighlightRenderer';
@@ -48,6 +50,10 @@ export class NoteRendererFactory {
         return CurationSetRenderer.render(note, options);
       case 'bookmark-list':
         return BookmarkListRenderer.render(note, options);
+      case 'music-track':
+        return MusicTrackRenderer.render(note, options);
+      case 'music-playlist':
+        return MusicPlaylistRenderer.render(note, options);
       case 'reaction':
         return ReactionFeedRenderer.render(note, options);
       case 'git-event':
