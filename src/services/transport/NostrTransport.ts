@@ -29,6 +29,7 @@ import { RelayConfig } from '../RelayConfig';
 import { SystemLogger } from '../SystemLogger';
 import { RelayHealthMonitor } from '../RelayHealthMonitor';
 import { RelayRateLimitGuard, RATE_LIMIT_RE } from './RelayRateLimitGuard';
+import { installSharedRelaySockets } from './SharedRelaySocket';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { PlatformService } from '../PlatformService';
 import { diagLog } from '../DiagnosticLogger';
@@ -256,6 +257,11 @@ export class NostrTransport {
     this.relayConfig = RelayConfig.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.eventBus = TypedEventBus.getInstance();
+
+    // Route relay sockets through the multiplexer SharedWorker in browsers so
+    // all tabs share one WebSocket per relay (browser socket-budget guard).
+    // No-op on Electron/Capacitor and where SharedWorker is unavailable.
+    installSharedRelaySockets();
 
     // Initialize NDK with Dexie cache (using config from localStorage)
     const cacheConfig = getNDKCacheConfig();

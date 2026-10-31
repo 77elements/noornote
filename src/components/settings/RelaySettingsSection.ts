@@ -16,9 +16,11 @@
 import { SettingsSection } from './SettingsSection';
 import {
   RelayConfig,
+  BROWSER_MAX_READ_RELAYS,
   type RelayInfo,
   type RelayType,
 } from '../../services/RelayConfig';
+import { PlatformService } from '../../services/PlatformService';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { SettingsModuleApi } from '../../modules/settings/contracts';
 import { AuthService } from '../../services/AuthService';
@@ -199,6 +201,33 @@ export class RelaySettingsSection extends SettingsSection {
   }
 
   /**
+   * Browser connection-budget hint. Web clients share a global WebSocket
+   * budget across all tabs (~255 in Chromium, ~200 in Firefox) — every
+   * connected relay costs one socket per tab, and NoorNote caps connected
+   * read relays accordingly. The Electron desktop app has one window and
+   * no cap. Rendered only outside Electron; shows the cap status when it
+   * actually applies (configured > cap).
+   */
+  private renderConnectionBudgetHint(): string {
+    const platform = PlatformService.getInstance();
+    if (platform.isElectron) return '';
+
+    const readRelayCount = this.relayConfig
+      .getRelaysByType('read')
+      .filter(relay => relay.isActive).length;
+    const capped = readRelayCount > BROWSER_MAX_READ_RELAYS;
+
+    return `
+        <section class="section">
+          <p class="form__note">
+            ${_('Browsers share a limit of about %s simultaneous connections across all tabs — each connected relay uses one per tab. NoorNote connects your %s most important relays first (your own before fallback relays).', String(BROWSER_MAX_READ_RELAYS), String(Math.min(readRelayCount, BROWSER_MAX_READ_RELAYS)))}
+            ${capped ? _('The desktop app has no browser relay connection limit, for a better following feed experience.') : ''}
+          </p>
+        </section>
+    `;
+  }
+
+  /**
    * Render relay settings content
    */
   private renderContent(): string {
@@ -209,6 +238,7 @@ export class RelaySettingsSection extends SettingsSection {
           </div>
         </section>
 
+        ${this.renderConnectionBudgetHint()}
         <section class="section">
           <div class="relay-add-form">
             <input

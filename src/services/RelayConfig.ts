@@ -16,8 +16,18 @@ import { RelayListOrchestrator } from './orchestration/RelayListOrchestrator';
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 import { isDataSaverEnabled } from './DataSaverService';
 import { RelayRateLimitGuard } from './transport/RelayRateLimitGuard';
+import { PlatformService } from './PlatformService';
+import { diagLog } from './DiagnosticLogger';
+import { BROWSER_MAX_READ_RELAYS, capReadRelays } from './relayReadCap';
 
 export type RelayType = 'read' | 'write' | 'inbox';
+
+/**
+ * Browser environments share a global WebSocket budget across ALL tabs
+ * (~255 in Chromium, ~200 in Firefox) — see `relayReadCap.ts`. Re-exported
+ * here so relay consumers (e.g. the settings UI) need only RelayConfig.
+ */
+export { BROWSER_MAX_READ_RELAYS, capReadRelays } from './relayReadCap';
 
 export interface RelayInfo {
   url: string;
@@ -108,7 +118,28 @@ export class RelayConfig {
       }
     }
 
-    return this.filterBackedOff(readRelays);
+    // Backoff first, then the browser-connection cap — a relay going into
+    // backoff frees its slot for the next in line.
+    const withoutBackoff = this.filterBackedOff(readRelays);
+    const cap = this.readRelayCap();
+    const capped = capReadRelays(withoutBackoff, cap);
+    if (capped.length < withoutBackoff.length) {
+      diagLog('relays', 'Read relays capped for browser socket budget', {
+        configured: withoutBackoff.length,
+        connected: capped.length,
+        cap,
+      });
+    }
+    return capped;
+  }
+
+  /**
+   * Browser connection cap, or null on Electron (single window, no shared
+   * browser socket budget — the full configured set connects).
+   */
+  private readRelayCap(): number | null {
+    const platform = PlatformService.getInstance();
+    return platform.isElectron ? null : BROWSER_MAX_READ_RELAYS;
   }
 
   /**
