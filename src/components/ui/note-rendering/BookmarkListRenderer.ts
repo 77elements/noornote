@@ -15,7 +15,6 @@ import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { NoteHeader } from '../NoteHeader';
 import {
   parseBookmarkSetEvent,
-  formatTrackDuration,
   isPlayableUrl,
   BOOKMARK_SET_KIND,
 } from '../../../helpers/parseBookmarkList';
@@ -24,6 +23,7 @@ import { encodeNaddr } from '../../../services/NostrToolsAdapter';
 import { getViewNavigationController } from '../../../services/ViewNavigationController';
 import { escapeHtml, escapeHtmlAttr } from '../../../helpers/escapeHtml';
 import { appendPackISL } from './packCardShared';
+import { buildMusicPlayerHtml, wireMusicPlayer } from './musicPlayerShared';
 
 export class BookmarkListRenderer {
   static render(note: ProcessedNote, _opts: NoteUIOptions): HTMLElement {
@@ -73,7 +73,7 @@ export class BookmarkListRenderer {
     `;
 
     if (list.isPlaylist) {
-      BookmarkListRenderer.wirePlayer(card);
+      wireMusicPlayer(card);
     }
 
     // Route through the central controller so the SNV opens in the right
@@ -99,51 +99,18 @@ export class BookmarkListRenderer {
     return element;
   }
 
-  /** Player + track rows. Refs are escaped; playback URLs validated via safeHttpUrl. */
+  /** Player + track rows via the shared music player (kind-30003 variant). */
   private static buildPlayerHtml(
     list: ReturnType<typeof parseBookmarkSetEvent>
   ): string {
-    const rows = list.tracks
-      .map((track, index) => {
-        const playable = isPlayableUrl(track.ref);
-        const duration = track.durationSec
-          ? formatTrackDuration(track.durationSec)
-          : '';
-        const label = [track.title, track.artist].filter(Boolean).join(' — ');
-        return `
-        <li class="bookmark-list__track${playable ? ' bookmark-list__track--playable' : ''}"
-            data-ref="${escapeHtmlAttr(track.ref)}">
-          <span class="bookmark-list__track-index">${index + 1}</span>
-          <span class="bookmark-list__track-title">${escapeHtml(label || track.ref)}</span>
-          ${duration ? `<span class="bookmark-list__track-duration">${escapeHtml(duration)}</span>` : ''}
-        </li>`;
-      })
-      .join('');
-    return `
-      <audio class="bookmark-list__player" controls preload="none"></audio>
-      <ol class="bookmark-list__tracks">${rows}</ol>
-    `;
-  }
-
-  /** Click a track row → load its URL into the shared player and play. */
-  private static wirePlayer(card: HTMLElement): void {
-    const player = card.querySelector<HTMLAudioElement>(
-      '.bookmark-list__player'
+    return buildMusicPlayerHtml(
+      list.tracks.map((track, index) => ({
+        ref: track.ref,
+        title: track.title,
+        artist: track.artist,
+        durationSec: track.durationSec,
+        indexLabel: String(index + 1),
+      }))
     );
-    if (!player) return;
-    card
-      .querySelector('.bookmark-list__tracks')
-      ?.addEventListener('click', e => {
-        const row = (e.target as HTMLElement).closest<HTMLElement>(
-          '.bookmark-list__track--playable'
-        );
-        if (!row) return;
-        const url = row.dataset.ref ?? '';
-        if (!isPlayableUrl(url)) return;
-        if (player.getAttribute('src') !== url) {
-          player.setAttribute('src', url);
-        }
-        void player.play();
-      });
   }
 }

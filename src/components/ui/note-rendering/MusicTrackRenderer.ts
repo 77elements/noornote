@@ -21,6 +21,7 @@ import { encodeNaddr } from '../../../services/NostrToolsAdapter';
 import { getViewNavigationController } from '../../../services/ViewNavigationController';
 import { escapeHtml, escapeHtmlAttr } from '../../../helpers/escapeHtml';
 import { appendPackISL } from './packCardShared';
+import { buildMusicPlayerHtml, wireMusicPlayer } from './musicPlayerShared';
 
 export class MusicTrackRenderer {
   static render(note: ProcessedNote, _opts: NoteUIOptions): HTMLElement {
@@ -73,7 +74,7 @@ export class MusicTrackRenderer {
       </div>
     `;
 
-    if (playable) MusicTrackRenderer.wirePlayer(card);
+    if (playable) wireMusicPlayer(card);
 
     // Route through the central controller so the SNV opens in the right
     // pane in right-pane mode. Links/buttons/player controls never navigate.
@@ -95,43 +96,15 @@ export class MusicTrackRenderer {
     return element;
   }
 
-  /** Audio element + one track row (same structure as the playlist card). */
+  /** Audio element + one track row via the shared music player. */
   private static buildPlayerHtml(data: MusicTrackData): string {
-    const duration = data.durationSec
-      ? formatTrackDuration(data.durationSec)
-      : '';
-    return `
-      <audio class="bookmark-list__player" controls preload="none"></audio>
-      <ol class="bookmark-list__tracks">
-        <li class="bookmark-list__track bookmark-list__track--playable"
-            data-ref="${escapeHtmlAttr(data.url)}">
-          <span class="bookmark-list__track-index">▶</span>
-          <span class="bookmark-list__track-title">${escapeHtml(data.title)}</span>
-          ${duration ? `<span class="bookmark-list__track-duration">${escapeHtml(duration)}</span>` : ''}
-        </li>
-      </ol>
-    `;
-  }
-
-  /** Click a track row → load its URL into the shared player and play. */
-  static wirePlayer(card: HTMLElement): void {
-    const player = card.querySelector<HTMLAudioElement>(
-      '.bookmark-list__player'
-    );
-    if (!player) return;
-    card
-      .querySelector('.bookmark-list__tracks')
-      ?.addEventListener('click', e => {
-        const row = (e.target as HTMLElement).closest<HTMLElement>(
-          '.bookmark-list__track--playable'
-        );
-        if (!row) return;
-        const url = row.dataset.ref ?? '';
-        if (!isPlayableUrl(url)) return;
-        if (player.getAttribute('src') !== url) {
-          player.setAttribute('src', url);
-        }
-        void player.play();
-      });
+    return buildMusicPlayerHtml([
+      {
+        ref: data.url,
+        title: data.title,
+        durationSec: data.durationSec,
+        indexLabel: '▶',
+      },
+    ]);
   }
 }

@@ -11,10 +11,7 @@
 import { _ } from '../../../i18n';
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { NoteHeader } from '../NoteHeader';
-import {
-  formatTrackDuration,
-  isPlayableUrl,
-} from '../../../helpers/parseBookmarkList';
+import { isPlayableUrl } from '../../../helpers/parseBookmarkList';
 import {
   MUSIC_PLAYLIST_KIND,
   MUSIC_TRACK_KIND,
@@ -26,7 +23,7 @@ import { getViewNavigationController } from '../../../services/ViewNavigationCon
 import { escapeHtml, escapeHtmlAttr } from '../../../helpers/escapeHtml';
 import { getTag } from '../../../helpers/tagUtils';
 import { appendPackISL } from './packCardShared';
-import { MusicTrackRenderer } from './MusicTrackRenderer';
+import { buildMusicTrackRowHtml, wireMusicPlayer } from './musicPlayerShared';
 
 export class MusicPlaylistRenderer {
   static render(note: ProcessedNote, _opts: NoteUIOptions): HTMLElement {
@@ -74,7 +71,7 @@ export class MusicPlaylistRenderer {
     `;
 
     if (refs.length > 0) {
-      MusicTrackRenderer.wirePlayer(card);
+      wireMusicPlayer(card);
       void MusicPlaylistRenderer.loadTracks(card, refs);
     }
 
@@ -138,34 +135,37 @@ export class MusicPlaylistRenderer {
         });
         const result = await fetcher.fetchQuotedEventWithError(naddr);
         if (!result.success) return;
-        const row = MusicPlaylistRenderer.buildRow(result.event);
+        const row = MusicPlaylistRenderer.buildRow(result.event, index);
         if (!row) return;
         card.querySelector(`[data-slot="${index}"]`)?.replaceWith(row);
       })
     );
   }
 
-  /** Build a playable track row from a fetched kind-36787 event (or null). */
-  private static buildRow(event: { tags: string[][] }): HTMLElement | null {
+  /**
+   * Build a track row from a fetched kind-36787 event via the shared music
+   * player (or null when the event carries no title/url at all). Rows keep
+   * their a-tag position number so the list stays ordered after lazy fill.
+   */
+  private static buildRow(
+    event: { tags: string[][] },
+    index: number
+  ): HTMLElement | null {
     const title = getTag(event.tags, 'title') || getTag(event.tags, 'd') || '';
     const url = getTag(event.tags, 'url');
     if (!title && !url) return null;
     const durationSec = Number(getTag(event.tags, 'duration'));
-    const duration =
-      Number.isFinite(durationSec) && durationSec > 0
-        ? formatTrackDuration(Math.round(durationSec))
-        : '';
-    const playable = isPlayableUrl(url);
-    const li = document.createElement('li');
-    li.className = playable
-      ? 'bookmark-list__track bookmark-list__track--playable'
-      : 'bookmark-list__track';
-    li.dataset.ref = url;
-    li.innerHTML = `
-      <span class="bookmark-list__track-index">▶</span>
-      <span class="bookmark-list__track-title">${escapeHtml(title)}</span>
-      ${duration ? `<span class="bookmark-list__track-duration">${escapeHtml(duration)}</span>` : ''}
-    `;
-    return li;
+    const html = buildMusicTrackRowHtml({
+      ref: url,
+      title,
+      durationSec:
+        Number.isFinite(durationSec) && durationSec > 0
+          ? Math.round(durationSec)
+          : undefined,
+      indexLabel: String(index + 1),
+    });
+    const tpl = document.createElement('template');
+    tpl.innerHTML = html.trim();
+    return (tpl.content.firstElementChild as HTMLElement) ?? null;
   }
 }

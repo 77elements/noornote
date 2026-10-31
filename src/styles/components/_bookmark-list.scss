@@ -1,7 +1,15 @@
 // Bookmark list card (kind 30003 — NIP-51 bookmark lists / ZapTrax playlists).
 // The card shell reuses .nn-card chrome; only the player + track list are new.
+// The shell also covers the music cards (kinds 36787/34139) that reuse it.
 
 @use '../abstracts/variables' as *;
+
+// Their markup is built from template literals whose newlines would render
+// as blank lines inside a quoting note (`.event-content.has-long-content`
+// is white-space: pre-wrap) — the card manages spacing via margins only.
+.note-card--bookmark-list {
+  white-space: normal;
+}
 
 .bookmark-list__player {
   width: 100%;
