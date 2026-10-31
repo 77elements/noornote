@@ -376,6 +376,12 @@ export interface AppEvents {
   'tribe:updated': void;
   'list:open': ListOpenPayload;
   'list-sync-mode:changed': ListSyncModeChangedPayload;
+  /** The /lists overview tile grid is mounted and in the DOM. Emitted from
+   *  ListsOverviewView.resume() — AFTER router:view-changed, which fires
+   *  before the async view factory appends the fresh tiles. Consumers that
+   *  paint into the overview (ListsCountManager's bookmark unread diode)
+   *  must re-sync on this event, not on router:view-changed. */
+  'lists:overview-mounted': void;
 
   // ── Notifications ──────────────────────────
   'notifications:badge-update': void;

@@ -1025,8 +1025,10 @@ export class MainLayout {
     // Wheel counterpart (wheel has its own viewClass→item mapping)
     this.navWheel?.setActive(viewClass);
 
-    // The /lists overview tile is built fresh on every visit — re-sync its
-    // bookmark unread diode now that the span exists.
+    // The nav wheel's Lists diode lives in this persistent DOM, so this
+    // pre-mount moment is fine for it. The /lists overview tile is NOT — it
+    // is built fresh by an async factory AFTER this event; its diode
+    // re-syncs via 'lists:overview-mounted' (ListsOverviewView.resume()).
     if (viewClass === 'lov') void this.listsCountManager?.updateCounts();
   }
 

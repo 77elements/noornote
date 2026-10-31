@@ -48,6 +48,14 @@ export class ListsOverviewView extends View {
     return this.container;
   }
 
+  /** Post-mount hook (ViewMountingService → onViewMount): the container is
+   *  in the DOM here. router:view-changed fired earlier — BEFORE the async
+   *  factory appended this view — so consumers painting into the fresh
+   *  tiles (bookmark unread diode) re-sync on this event instead. */
+  public override resume(): void {
+    TypedEventBus.getInstance().emit('lists:overview-mounted');
+  }
+
   public destroy(): void {
     this.container.innerHTML = '';
   }

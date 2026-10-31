@@ -41,7 +41,11 @@ export class ListsCountManager {
       this.eventBus.on('bookmark:updated', () => void this.updateCounts()),
       this.eventBus.on('bookmark:read', () => void this.updateCounts()),
       this.eventBus.on('user:login', () => void this.updateCounts()),
-      this.eventBus.on('user:logout', () => void this.updateCounts())
+      this.eventBus.on('user:logout', () => void this.updateCounts()),
+      // The /lists tile grid is built fresh per visit and mounted AFTER
+      // router:view-changed (async view factory) — this is the only moment
+      // the freshly-created diode span reliably exists.
+      this.eventBus.on('lists:overview-mounted', () => void this.updateCounts())
     );
 
     void this.updateCounts();
