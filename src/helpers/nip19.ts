@@ -56,6 +56,41 @@ export function hexToNpub(hex: string): string | null {
 }
 
 /**
+ * Decode a NIP-19 event reference (nevent/note) into its hex event id plus any
+ * relay hints carried in the payload. Relay hints are the publisher's statement
+ * of where the event is most likely still retrievable — fetchers should try
+ * them first and fall back to the user's own read relays.
+ *
+ * Accepts raw hex ids (passthrough, no hints) and never throws: undecodable
+ * input falls through so callers can decide how to handle it.
+ *
+ * @param noteId - nevent1…/note1… reference or raw 64-char hex event id
+ * @returns Hex event id and relay hint URLs (possibly empty)
+ */
+export function decodeEventReference(noteId: string): {
+  id: string;
+  relays: string[];
+} {
+  try {
+    if (noteId.startsWith('nevent1')) {
+      const decoded = decodeNip19(noteId);
+      if (decoded.type === 'nevent') {
+        const data = decoded.data as { id: string; relays?: string[] };
+        return { id: data.id, relays: data.relays ?? [] };
+      }
+    } else if (noteId.startsWith('note1')) {
+      const decoded = decodeNip19(noteId);
+      if (decoded.type === 'note') {
+        return { id: decoded.data as string, relays: [] };
+      }
+    }
+  } catch {
+    // Undecodable reference — fall through to raw passthrough.
+  }
+  return { id: noteId, relays: [] };
+}
+
+/**
  * Convert hex private key to nsec (bech32) format
  *
  * @param hex - Hex-encoded private key

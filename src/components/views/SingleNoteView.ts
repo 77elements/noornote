@@ -27,11 +27,8 @@ import { AppState } from '../../services/AppState';
 import { Router } from '../../services/Router';
 import { NavigationDispatcher } from '../../services/NavigationDispatcher';
 import { TypedEventBus } from '../../core/TypedEventBus';
-import {
-  decodeNip19,
-  encodeNpub,
-  encodeNevent,
-} from '../../services/NostrToolsAdapter';
+import { encodeNpub, encodeNevent } from '../../services/NostrToolsAdapter';
+import { decodeEventReference } from '../../helpers/nip19';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 export class SingleNoteView extends View {
@@ -110,12 +107,16 @@ export class SingleNoteView extends View {
     `;
 
     try {
-      const event = this.noteId.startsWith('naddr1')
-        ? await this.fetchAddressable(this.noteId)
-        : await this.fetchNote(this.decodeNoteId(this.noteId));
+      let event: NostrEvent | null;
+      if (this.noteId.startsWith('naddr1')) {
+        event = await this.fetchAddressable(this.noteId);
+      } else {
+        const decoded = decodeEventReference(this.noteId);
+        event = await this.fetchNote(decoded.id, decoded.relays);
+      }
 
       if (event && !this.noteId.startsWith('naddr1')) {
-        this.canonicalizeUrl(this.decodeNoteId(this.noteId));
+        this.canonicalizeUrl(event.id ?? decodeEventReference(this.noteId).id);
       }
 
       if (!event) {
@@ -128,21 +129,6 @@ export class SingleNoteView extends View {
       this.systemLogger.error('SNV', `Failed to load note: ${String(error)}`);
       this.showError(_('Failed to load note'));
     }
-  }
-
-  private decodeNoteId(noteId: string): string {
-    if (noteId.startsWith('nevent1')) {
-      const decoded = decodeNip19(noteId);
-      if (decoded.type === 'nevent') {
-        return decoded.data.id;
-      }
-    } else if (noteId.startsWith('note1')) {
-      const decoded = decodeNip19(noteId);
-      if (decoded.type === 'note') {
-        return decoded.data as string;
-      }
-    }
-    return noteId;
   }
 
   /**
@@ -188,13 +174,35 @@ export class SingleNoteView extends View {
     return event;
   }
 
-  private async fetchNote(noteId: string): Promise<NostrEvent | null> {
+  private async fetchNote(
+    noteId: string,
+    hintRelays: string[] = []
+  ): Promise<NostrEvent | null> {
     // Cache-first: a note already loaded by a feed (e.g. the Bulk Delete list, or
     // the timeline) resolves instantly from the NoteService LRU and doesn't depend
     // on the read relays still carrying it — old notes often aren't there anymore.
     let event: NostrEvent | null =
       this.singleNoteApi?.getCachedNote(noteId) ?? null;
 
+    // Stage 1: Relay hints from the nevent itself. They name the relays where
+    // the author's client saw the event — old notes often live ONLY there,
+    // because generic read relays drop events they never subscribed to.
+    if (!event && hintRelays.length > 0) {
+      const result = await fetchNostrEvents({
+        relays: hintRelays,
+        ids: [noteId],
+        limit: 1,
+      });
+      event = result.events[0] ?? null;
+      if (event) {
+        this.systemLogger.info(
+          'SNV',
+          `Found via relay hint (${hintRelays[0]})`
+        );
+      }
+    }
+
+    // Stage 2: the user's own read relays.
     if (!event) {
       const result = await fetchNostrEvents({
         relays: this.relayConfig.getReadRelays(),
