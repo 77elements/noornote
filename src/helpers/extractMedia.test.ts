@@ -42,3 +42,50 @@ describe('extractMedia — glued URL handling', () => {
     expect(images[1]!.url).toContain('db1098741be620378');
   });
 });
+
+describe('extractMedia — BUD-10 blossom URIs', () => {
+  const HELLO_HASH =
+    '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824';
+
+  it('extracts a bare blossom URI as image media with parsed info', () => {
+    const media = extractMedia(`look: blossom:${HELLO_HASH}.png`);
+    expect(media).toHaveLength(1);
+    expect(media[0]!.type).toBe('image');
+    expect(media[0]!.url).toBe(`blossom:${HELLO_HASH}.png`);
+    expect(media[0]!.originalUrl).toBe(`blossom:${HELLO_HASH}.png`);
+    expect(media[0]!.blossom?.hash).toBe(HELLO_HASH);
+    expect(media[0]!.blossom?.ext).toBe('png');
+    expect(media[0]!.blossom?.servers).toEqual([]);
+  });
+
+  it('parses xs/as/sz hints into the blossom info', () => {
+    const uri = `blossom:${HELLO_HASH}.mp4?xs=cdn.example.com&as=${'a'.repeat(64)}&sz=123`;
+    const media = extractMedia(uri);
+    expect(media).toHaveLength(1);
+    expect(media[0]!.type).toBe('video');
+    expect(media[0]!.blossom?.servers).toEqual(['https://cdn.example.com']);
+    expect(media[0]!.blossom?.authors).toEqual(['a'.repeat(64)]);
+    expect(media[0]!.blossom?.size).toBe(123);
+  });
+
+  it('does NOT extract the xs=https hint as a separate media URL', () => {
+    const media = extractMedia(
+      `blossom:${HELLO_HASH}.png?xs=img.example.com/pic.jpg`
+    );
+    expect(media).toHaveLength(1);
+    expect(media[0]!.blossom).toBeDefined();
+  });
+
+  it('tolerates the blossom:// double-slash form', () => {
+    const media = extractMedia(`blossom://${HELLO_HASH}.webp`);
+    expect(media).toHaveLength(1);
+    expect(media[0]!.type).toBe('image');
+  });
+
+  it('maps extensions to render types', () => {
+    expect(extractMedia(`blossom:${HELLO_HASH}.mp4`)[0]!.type).toBe('video');
+    expect(extractMedia(`blossom:${HELLO_HASH}.mp3`)[0]!.type).toBe('audio');
+    expect(extractMedia(`blossom:${HELLO_HASH}.epub`)[0]!.type).toBe('epub');
+    expect(extractMedia(`blossom:${HELLO_HASH}.bin`)[0]!.type).toBe('image');
+  });
+});

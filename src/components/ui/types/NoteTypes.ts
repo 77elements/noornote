@@ -102,6 +102,12 @@ export interface MediaContent {
   taggedPubkeys?: string[];
   /** EPUB only: SHA-256 of the file (NIP-92 imeta `x`) — stable key for reading progress */
   hash?: string;
+  /**
+   * BUD-10 only: parsed `blossom:` URI the media was extracted from. `url`
+   * holds the raw URI (not fetchable by <img>/<video>); rendering goes through
+   * the async BlossomResolver (see renderMediaContent's .blossom-media mount).
+   */
+  blossom?: import('../../../helpers/blossomUri').BlossomUriInfo;
 }
 
 export interface LinkPreview {

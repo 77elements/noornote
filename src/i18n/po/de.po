@@ -1050,7 +1050,7 @@ msgid_plural "Delivered to %s of %s relays"
 msgstr[0] "An %s von %s Relay zugestellt"
 msgstr[1] "An %s von %s Relays zugestellt"
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:645
+#: src/addons/feedback-board/FeedbackBoardService.ts:641
 #: src/components/onboarding/AccountSetupWizard.ts:3039
 #: src/components/views/ProfileBookingView.ts:614
 msgid "Done"
@@ -4682,7 +4682,7 @@ msgstr "Mit Remote Signer verbunden"
 msgid "Content is required"
 msgstr "Inhalt ist erforderlich"
 
-#: src/services/DiagLogExportService.ts:119
+#: src/services/DiagLogExportService.ts:70
 msgid "DiagLog: %s"
 msgstr "DiagLog: %s"
 
@@ -4747,7 +4747,7 @@ msgstr "Highlight veröffentlicht!"
 msgid "Identifier/slug is required"
 msgstr "Identifikator/Slug ist erforderlich"
 
-#: src/services/DiagLogExportService.ts:143
+#: src/services/DiagLogExportService.ts:94
 msgid "Import error: %s"
 msgstr "Importfehler: %s"
 
@@ -4792,7 +4792,7 @@ msgstr "Lightning-Wallet getrennt"
 msgid "Login with Remote Signer: successful"
 msgstr "Anmeldung mit Remote Signer erfolgreich"
 
-#: src/services/DiagLogExportService.ts:132
+#: src/services/DiagLogExportService.ts:83
 msgid "Logs exported"
 msgstr "Logs exportiert"
 
@@ -4861,7 +4861,7 @@ msgstr "Zeitüberschreitung der Anfrage. Bitte versuche es erneut."
 msgid "Signing failed"
 msgstr "Signierung fehlgeschlagen"
 
-#: src/App.ts:997
+#: src/App.ts:998
 #: src/services/managers/KeySignerConnectionManager.ts:413
 msgid "Stop NoorSigner Daemon?"
 msgstr "NoorSigner-Daemon stoppen?"
@@ -4969,7 +4969,7 @@ msgstr "URL-Pfad eingeben (z. B. /profile, /note/…)"
 msgid "Expand sidebar"
 msgstr "Sidebar ausklappen"
 
-#: src/services/DiagLogExportService.ts:111
+#: src/services/DiagLogExportService.ts:62
 msgid "Exporting..."
 msgstr "Wird exportiert…"
 
@@ -6739,6 +6739,7 @@ msgstr "Listing wird geladen …"
 
 #: src/components/layout/partials/SccMediaFeed.ts:45
 #: src/components/layout/partials/SccMediaFeed.ts:59
+#: src/helpers/renderMediaContent.ts:531
 msgid "Loading media..."
 msgstr "Lade Medien …"
 
@@ -11221,7 +11222,7 @@ msgstr "Kalender"
 msgid "Checking..."
 msgstr "Prüfe..."
 
-#: src/helpers/renderMediaContent.ts:111
+#: src/helpers/renderMediaContent.ts:116
 msgid "Click to read · EPUB"
 msgstr "Zum Lesen klicken · EPUB"
 
@@ -11290,8 +11291,8 @@ msgstr "Private Mitteilungen sind mit Bunker-URL-Login nicht verfügbar"
 msgid "Dismiss"
 msgstr "Ablehnen"
 
-#: src/helpers/renderMediaContent.ts:109
-#: src/helpers/renderMediaContent.ts:110
+#: src/helpers/renderMediaContent.ts:114
+#: src/helpers/renderMediaContent.ts:115
 msgid "Download Epub File"
 msgstr "EPUB-Datei herunterladen"
 
@@ -11572,7 +11573,7 @@ msgstr "Zitierte Note nicht gefunden"
 msgid "Raw Event"
 msgstr "Raw-Event"
 
-#: src/helpers/renderMediaContent.ts:111
+#: src/helpers/renderMediaContent.ts:116
 msgid "Read this book"
 msgstr "Dieses Buch lesen"
 
@@ -11647,7 +11648,7 @@ msgstr "Meldung absenden"
 msgid "Submitting..."
 msgstr "Sende..."
 
-#: src/helpers/renderMediaContent.ts:192
+#: src/helpers/renderMediaContent.ts:199
 msgid "Tagged users:"
 msgstr "Markierte Konten:"
 
@@ -11694,8 +11695,8 @@ msgstr "Upload fehlgeschlagen. Bitte erneut versuchen."
 msgid "Usually not needed - uses your default relays"
 msgstr "Meist nicht nötig — nutzt deine Standard-Relays"
 
-#: src/helpers/renderMediaContent.ts:145
-#: src/helpers/renderMediaContent.ts:246
+#: src/helpers/renderMediaContent.ts:152
+#: src/helpers/renderMediaContent.ts:257
 msgid "Watch on YouTube"
 msgstr "Auf YouTube ansehen"
 
@@ -11720,8 +11721,8 @@ msgstr ""
 "NIP-44-Verschlüsselung nicht. Nutze eine Browser-Erweiterung oder "
 "NoorSigner für vollen DM-Zugriff."
 
-#: src/helpers/renderMediaContent.ts:145
-#: src/helpers/renderMediaContent.ts:246
+#: src/helpers/renderMediaContent.ts:152
+#: src/helpers/renderMediaContent.ts:257
 msgid "YouTube video player"
 msgstr "YouTube-Video-Player"
 
@@ -11845,7 +11846,7 @@ msgstr "Note konnte nicht gezappt werden"
 msgid "Deletion request sent successfully"
 msgstr "Löschanfrage erfolgreich gesendet"
 
-#: src/services/DiagLogExportService.ts:136
+#: src/services/DiagLogExportService.ts:87
 msgid "Export failed"
 msgstr "Export fehlgeschlagen"
 
@@ -12106,7 +12107,7 @@ msgstr "Ticket archivieren"
 msgid "Archived tickets stay visible to you only. Archive \"%s\"?"
 msgstr "Archivierte Tickets sind nur noch für dich sichtbar. „%s“ archivieren?"
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:641
+#: src/addons/feedback-board/FeedbackBoardService.ts:637
 msgid "Backlog"
 msgstr "Backlog"
 
@@ -12126,7 +12127,7 @@ msgstr "Feedback-Board aktivieren"
 msgid "Feedback Board"
 msgstr "Feedback-Board"
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:643
+#: src/addons/feedback-board/FeedbackBoardService.ts:639
 msgid "In Progress"
 msgstr "In Arbeit"
 
@@ -12151,7 +12152,7 @@ msgstr "Neues Ticket"
 msgid "No archived tickets yet."
 msgstr "Noch keine archivierten Tickets."
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:684
+#: src/addons/feedback-board/FeedbackBoardService.ts:680
 msgid "Only readable in NoorNote."
 msgstr "Nur in NoorNote lesbar."
 
@@ -12214,7 +12215,7 @@ msgstr "Wunsch"
 msgid "Withdraw Ticket"
 msgstr "Ticket zurückziehen"
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:647
+#: src/addons/feedback-board/FeedbackBoardService.ts:643
 #: src/addons/feedback-board/FeedbackBoardView.ts:207
 msgid "Withdrawn"
 msgstr "Zurückgezogen"
@@ -12266,6 +12267,14 @@ msgid ""
 msgstr ""
 "Das Ticket und alle Kommentare werden von Relays entfernt, die NIP-09 "
 "umsetzen. Kopien können bestehen bleiben. Löschen?"
+
+#: src/helpers/renderMediaContent.ts:641
+msgid "Media unavailable"
+msgstr "Medien nicht verfügbar"
+
+#: src/helpers/renderMediaContent.ts:530
+msgid "Tap to load media"
+msgstr "Tippen, um Medien zu laden"
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"

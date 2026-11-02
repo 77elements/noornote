@@ -1922,7 +1922,7 @@ msgstr ""
 msgid "click to add to Tags"
 msgstr ""
 
-#: src/helpers/renderMediaContent.ts:111
+#: src/helpers/renderMediaContent.ts:116
 msgid "Click to read · EPUB"
 msgstr ""
 
@@ -2857,7 +2857,7 @@ msgstr ""
 msgid "Dhikr updated"
 msgstr ""
 
-#: src/services/DiagLogExportService.ts:119
+#: src/services/DiagLogExportService.ts:70
 msgid "DiagLog: %s"
 msgstr ""
 
@@ -2958,7 +2958,7 @@ msgstr ""
 msgid "Do you accept the time limitation?"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:645
+#: src/addons/feedback-board/FeedbackBoardService.ts:641
 #: src/components/onboarding/AccountSetupWizard.ts:3039
 #: src/components/views/ProfileBookingView.ts:614
 msgid "Done"
@@ -2989,8 +2989,8 @@ msgstr ""
 msgid "Download Backup"
 msgstr ""
 
-#: src/helpers/renderMediaContent.ts:109
-#: src/helpers/renderMediaContent.ts:110
+#: src/helpers/renderMediaContent.ts:114
+#: src/helpers/renderMediaContent.ts:115
 msgid "Download Epub File"
 msgstr ""
 
@@ -3533,11 +3533,11 @@ msgstr ""
 msgid "Export DiagLogs"
 msgstr ""
 
-#: src/services/DiagLogExportService.ts:136
+#: src/services/DiagLogExportService.ts:87
 msgid "Export failed"
 msgstr ""
 
-#: src/services/DiagLogExportService.ts:111
+#: src/services/DiagLogExportService.ts:62
 msgid "Exporting..."
 msgstr ""
 
@@ -4670,7 +4670,7 @@ msgstr ""
 msgid "Import all"
 msgstr ""
 
-#: src/services/DiagLogExportService.ts:143
+#: src/services/DiagLogExportService.ts:94
 msgid "Import error: %s"
 msgstr ""
 
@@ -5252,8 +5252,9 @@ msgstr ""
 
 #: src/components/layout/partials/SccMediaFeed.ts:45
 #: src/components/layout/partials/SccMediaFeed.ts:59
+#: src/helpers/renderMediaContent.ts:531
 msgid "Loading media..."
-msgstr ""
+msgstr "Chargement du média…"
 
 #: src/addons/follow-packs/FollowPackManager.ts:377
 #: src/addons/follow-packs/FollowPackManager.ts:615
@@ -5542,7 +5543,7 @@ msgstr ""
 msgid "Login with Remote Signer: successful"
 msgstr ""
 
-#: src/services/DiagLogExportService.ts:132
+#: src/services/DiagLogExportService.ts:83
 msgid "Logs exported"
 msgstr ""
 
@@ -7877,7 +7878,7 @@ msgstr ""
 msgid "Read state reset — all bookmarks unread"
 msgstr ""
 
-#: src/helpers/renderMediaContent.ts:111
+#: src/helpers/renderMediaContent.ts:116
 msgid "Read this book"
 msgstr ""
 
@@ -9480,7 +9481,7 @@ msgstr ""
 msgid "Stop Key Signer & Logout"
 msgstr ""
 
-#: src/App.ts:997
+#: src/App.ts:998
 #: src/services/managers/KeySignerConnectionManager.ts:413
 msgid "Stop NoorSigner Daemon?"
 msgstr ""
@@ -9702,7 +9703,7 @@ msgstr ""
 msgid "Tagged users will be publicly visible"
 msgstr ""
 
-#: src/helpers/renderMediaContent.ts:192
+#: src/helpers/renderMediaContent.ts:199
 msgid "Tagged users:"
 msgstr ""
 
@@ -10779,8 +10780,8 @@ msgstr ""
 msgid "Watch live"
 msgstr ""
 
-#: src/helpers/renderMediaContent.ts:145
-#: src/helpers/renderMediaContent.ts:246
+#: src/helpers/renderMediaContent.ts:152
+#: src/helpers/renderMediaContent.ts:257
 msgid "Watch on YouTube"
 msgstr ""
 
@@ -11290,8 +11291,8 @@ msgstr ""
 msgid "Your voice.<br><em>Unstoppable.</em>"
 msgstr ""
 
-#: src/helpers/renderMediaContent.ts:145
-#: src/helpers/renderMediaContent.ts:246
+#: src/helpers/renderMediaContent.ts:152
+#: src/helpers/renderMediaContent.ts:257
 msgid "YouTube video player"
 msgstr ""
 
@@ -11534,7 +11535,7 @@ msgstr ""
 msgid "Archived tickets stay visible to you only. Archive \"%s\"?"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:641
+#: src/addons/feedback-board/FeedbackBoardService.ts:637
 msgid "Backlog"
 msgstr ""
 
@@ -11554,7 +11555,7 @@ msgstr ""
 msgid "Feedback Board"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:643
+#: src/addons/feedback-board/FeedbackBoardService.ts:639
 msgid "In Progress"
 msgstr ""
 
@@ -11579,7 +11580,7 @@ msgstr ""
 msgid "No archived tickets yet."
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:684
+#: src/addons/feedback-board/FeedbackBoardService.ts:680
 msgid "Only readable in NoorNote."
 msgstr ""
 
@@ -11642,7 +11643,7 @@ msgstr ""
 msgid "Withdraw Ticket"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:647
+#: src/addons/feedback-board/FeedbackBoardService.ts:643
 #: src/addons/feedback-board/FeedbackBoardView.ts:207
 msgid "Withdrawn"
 msgstr ""
@@ -11692,6 +11693,14 @@ msgid ""
 "The ticket and all its comments will be removed from relays that honor "
 "NIP-09. Copies may persist elsewhere. Delete \"%s\"?"
 msgstr ""
+
+#: src/helpers/renderMediaContent.ts:641
+msgid "Media unavailable"
+msgstr "Média indisponible"
+
+#: src/helpers/renderMediaContent.ts:530
+msgid "Tap to load media"
+msgstr "Touchez pour charger le média"
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"

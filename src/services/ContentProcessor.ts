@@ -5,6 +5,7 @@
  */
 
 import { extractMediaWithImeta } from '../helpers/extractMedia';
+import { BLOSSOM_URI_REGEX } from '../helpers/blossomUri';
 import { extractBolt11, type Bolt11Match } from '../helpers/extractBolt11';
 import { unwrapStreamLinks } from '../helpers/unwrapStreamLinks';
 import { unwrapGitLinks } from '../helpers/unwrapGitLinks';
@@ -132,7 +133,9 @@ export class ContentProcessor {
     text = unwrapGitLinks(text);
 
     const media = extractMediaWithImeta(text, tags);
-    const links = extractLinks(text);
+    // BUD-10: a blossom URI's `xs=https://…` server hints must not surface as
+    // separate link previews.
+    const links = extractLinks(text.replace(BLOSSOM_URI_REGEX, ''));
     const hashtags = extractHashtags(text);
     const quotedRefs = extractQuotedReferences(text);
     const bolt11Invoices = extractBolt11(text);

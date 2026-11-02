@@ -20,6 +20,8 @@ import { Tooltip } from '../components/ui/Tooltip';
 import { UserProfileService } from '../services/UserProfileService';
 import { Router } from '../services/Router';
 import { extractEpubFileName, isEpubReaderSupported } from './epubDetection';
+import { parseBlossomUri, type BlossomUriInfo } from './blossomUri';
+import { BlossomResolver } from '../services/BlossomResolver';
 
 /**
  * Render a tap-to-load placeholder (Data Saver mode).
@@ -120,6 +122,8 @@ export function renderSingleMedia(
   index: number,
   isNSFW = false
 ): string {
+  if (item.blossom) return renderBlossomPlaceholder(item, index, isNSFW);
+
   if (item.type === 'epub') return renderEpubCard(item);
 
   if (isDataSaverEnabled())
@@ -220,6 +224,10 @@ export function renderMediaContent(
 
   const mediaHtml = mediaArray
     .map((item, index) => {
+      // BUD-10 blossom URIs always render as resolution placeholders — the
+      // URI itself is not fetchable by <img>/<video>.
+      if (item.blossom) return renderBlossomPlaceholder(item, index, isNSFW);
+
       // EPUB cards are lightweight (no fetch) — render them in Data Saver too
       if (dataSaver && item.type !== 'epub')
         return renderPlaceholder(
@@ -498,6 +506,207 @@ export function initMediaPlaceholderHandler(): void {
 
     placeholder.replaceWith(el);
   });
+}
+
+/**
+ * Render a BUD-10 blossom URI as a resolution placeholder. The URI itself is
+ * not fetchable by <img>/<video> — BlossomResolver turns it into a concrete
+ * server URL (xs hints → author kind:10063 lists → own server), then
+ * `mountBlossomMedia()` swaps this placeholder for the real element.
+ *
+ * The placeholder reuses the `.media-placeholder` look; `data-blossom-uri`
+ * routes handling to initBlossomMediaHandler (initMediaPlaceholderHandler
+ * bails on the missing data-src).
+ */
+function renderBlossomPlaceholder(
+  item: MediaContent,
+  index: number,
+  isNSFW = false
+): string {
+  const typeHint = item.type === 'epub' ? 'image' : item.type;
+  const label = isDataSaverEnabled()
+    ? _('Tap to load media')
+    : _('Loading media...');
+  return `<div class="media-placeholder media-placeholder--blossom blossom-media" data-blossom-uri="${escapeHtmlAttr(item.url)}" data-type="${typeHint}" data-index="${index}"${isNSFW ? ' data-nsfw="true"' : ''}><span class="media-placeholder__icon" aria-hidden="true">🖼</span><span class="media-placeholder__label">${escapeHtml(label)}</span></div>`;
+}
+
+/**
+ * Global handler for BUD-10 blossom media placeholders.
+ * - Data Saver OFF: resolve when the placeholder nears the viewport.
+ * - Data Saver ON: resolve on tap (delegated click, capture phase — same
+ *   contract as initMediaPlaceholderHandler).
+ * Resolution failures leave a calm "unavailable" label instead of a broken
+ * image. Call once at app startup.
+ */
+export function initBlossomMediaHandler(): void {
+  let observer: IntersectionObserver | null = null;
+
+  const resolveAndMount = (placeholder: HTMLElement): void => {
+    if (placeholder.dataset.blossomState) return;
+    placeholder.dataset.blossomState = 'resolving';
+    void mountBlossomMedia(placeholder);
+  };
+
+  observer = new IntersectionObserver(
+    entries => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const el = entry.target as HTMLElement;
+        observer!.unobserve(el);
+        if (isDataSaverEnabled()) continue; // tap-to-load covers this
+        resolveAndMount(el);
+      }
+    },
+    { rootMargin: '300px' }
+  );
+
+  const register = (root: HTMLElement): void => {
+    const placeholders = (
+      root.classList?.contains('blossom-media')
+        ? [root]
+        : Array.from(root.querySelectorAll('.blossom-media'))
+    ) as HTMLElement[];
+    for (const el of placeholders) {
+      if (el.dataset.blossomObserved) continue;
+      el.dataset.blossomObserved = '1';
+      if (isDataSaverEnabled()) continue;
+      observer!.observe(el);
+    }
+  };
+  register(document.body);
+
+  // Feed re-renders insert new placeholders constantly.
+  new MutationObserver(mutations => {
+    for (const mutation of mutations) {
+      for (const node of mutation.addedNodes) {
+        if (node instanceof HTMLElement) register(node);
+      }
+    }
+  }).observe(document.body, { childList: true, subtree: true });
+
+  // Data Saver tap-to-load (capture phase, before note-card navigation).
+  document.body.addEventListener(
+    'click',
+    e => {
+      const placeholder = (e.target as HTMLElement).closest(
+        '.blossom-media'
+      ) as HTMLElement | null;
+      if (!placeholder) return;
+      e.preventDefault();
+      e.stopPropagation();
+      resolveAndMount(placeholder);
+    },
+    true
+  );
+}
+
+/**
+ * Resolve one `.blossom-media` placeholder's URI and replace it with the real
+ * media element. Never throws — leaves a calm error state on failure.
+ */
+async function mountBlossomMedia(placeholder: HTMLElement): Promise<void> {
+  const uri = placeholder.dataset.blossomUri;
+  if (!uri) return;
+  const info: BlossomUriInfo | null = parseBlossomUri(uri);
+  if (!info) {
+    placeholder.dataset.blossomState = 'error';
+    return;
+  }
+
+  // The surrounding .note-media container may carry the note author — used as
+  // an `as` hint when the URI itself has none.
+  const authorHint =
+    placeholder.closest('.note-media')?.getAttribute('data-author-pubkey') ??
+    undefined;
+
+  let resolution = null;
+  try {
+    resolution = await BlossomResolver.getInstance().resolve(
+      info,
+      authorHint ? { authorHint } : undefined
+    );
+  } catch {
+    resolution = null;
+  }
+
+  // The placeholder may have been torn down (feed re-render) while resolving.
+  if (!placeholder.isConnected) return;
+
+  if (!resolution) {
+    placeholder.dataset.blossomState = 'error';
+    placeholder.querySelector('.media-placeholder__icon')?.remove();
+    const label = placeholder.querySelector('.media-placeholder__label');
+    if (label) label.textContent = _('Media unavailable');
+    return;
+  }
+
+  placeholder.dataset.blossomState = 'resolved';
+  const index = Number(placeholder.dataset.index ?? '0');
+
+  const type = resolution.type;
+
+  if (type === 'video') {
+    const wrap = document.createElement('div');
+    wrap.className = 'note-video-wrap';
+    wrap.dataset.videoSrc = resolution.contentUrl;
+    wrap.dataset.index = String(index);
+    wrap.innerHTML =
+      '<span class="note-video-wrap__play" aria-hidden="true">▶</span>';
+    placeholder.replaceWith(wrap);
+    return;
+  }
+
+  if (type === 'audio') {
+    const audio = document.createElement('audio');
+    audio.src = resolution.contentUrl;
+    audio.controls = true;
+    audio.preload = 'metadata';
+    audio.className = 'note-audio';
+    placeholder.replaceWith(audio);
+    return;
+  }
+
+  if (type === 'epub') {
+    // Reuse the standard EPUB card, pointed at the resolved https URL so the
+    // reader (and the download button) fetch a fetchable address. The blob
+    // hash doubles as a stable reading-progress key.
+    placeholder.replaceWith(
+      renderEpubCard({
+        type: 'epub',
+        url: resolution.contentUrl,
+        hash: info.hash,
+      })
+    );
+    return;
+  }
+
+  // Image: hash-verified object URL — wire it into the lightbox gallery data.
+  const img = document.createElement('img');
+  img.src = resolution.contentUrl;
+  img.alt = '';
+  img.loading = 'lazy';
+  img.className = 'note-image note-image--clickable';
+  if (placeholder.dataset.nsfw === 'true') {
+    img.classList.add('note-image--nsfw-blur');
+  }
+  img.dataset.imageIndex = String(index);
+  const container = placeholder.closest('.note-media');
+  if (container) {
+    const attr = container.getAttribute('data-image-urls');
+    if (attr) {
+      try {
+        const urls = JSON.parse(decodeURIComponent(attr)) as string[];
+        urls[index] = resolution.contentUrl;
+        container.setAttribute(
+          'data-image-urls',
+          encodeURIComponent(JSON.stringify(urls))
+        );
+      } catch {
+        /* gallery attr stays stale — image still displays */
+      }
+    }
+  }
+  placeholder.replaceWith(img);
 }
 
 /**

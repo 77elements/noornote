@@ -118,6 +118,7 @@ export class App {
         m.initMediaPlaceholderHandler();
         m.initImageTaglineTooltips();
         m.initEpubCardHandler();
+        m.initBlossomMediaHandler();
       })
       .catch(err =>
         console.debug('[App] renderMediaContent init failed:', err)

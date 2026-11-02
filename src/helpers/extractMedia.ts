@@ -14,6 +14,11 @@
 export type { MediaContent } from '../components/ui/types/NoteTypes';
 import type { MediaContent } from '../components/ui/types/NoteTypes';
 import { EPUB_MIME, EPUB_URL_REGEX } from './epubDetection';
+import {
+  BLOSSOM_URI_REGEX,
+  buildUriInfo,
+  renderTypeForExt,
+} from './blossomUri';
 
 /**
  * Extract the clean media URL from a full URL that may contain query/tracking params.
@@ -61,6 +66,25 @@ export function splitGluedMediaUrls(text: string): string {
 export function extractMedia(text: string): MediaContent[] {
   text = splitGluedMediaUrls(text);
   const media: MediaContent[] = [];
+
+  // BUD-10 blossom URIs — extracted FIRST and removed from the text the
+  // http(s) scans below run on, so their `xs=https://…` query hints can't be
+  // picked up as separate media URLs.
+  BLOSSOM_URI_REGEX.lastIndex = 0;
+  const blossomMatches = text.match(BLOSSOM_URI_REGEX) || [];
+  let httpScanText = text;
+  for (const rawMatch of blossomMatches) {
+    const info = buildUriInfo(rawMatch);
+    if (!info) continue;
+    httpScanText = httpScanText.replace(rawMatch, '');
+    media.push({
+      type: renderTypeForExt(info.ext),
+      url: info.raw,
+      originalUrl: rawMatch,
+      blossom: info,
+    });
+  }
+  text = httpScanText;
 
   const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
   const videoExts = ['mp4', 'webm', 'mov', 'avi'];
