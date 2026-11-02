@@ -5,7 +5,7 @@
   "homepage": "https://noornote.app",
   "app": {
     "name": "NoorNote",
-    "about": "Privacy-first Nostr client for desktop (macOS/Linux), Android and web. Feeds, articles, DMs, zaps, marketplace, lists and tribes \u2014 your keys, your relays, no analytics.",
+    "about": "Privacy-first Nostr client for desktop (macOS/Linux), Android and web. Feeds, articles, DMs, zaps, marketplace, lists and tribes — your keys, your relays, no analytics.",
     "picture": "https://noornote.app/favicon.png",
     "website": "https://noornote.app",
     "handlers": {
@@ -351,6 +351,14 @@
     [
       "39089",
       "Follow Pack"
+    ],
+    [
+      "39100",
+      "Feedback Board Ticket"
+    ],
+    [
+      "39101",
+      "Feedback Board Action"
     ]
   ]
 }

@@ -1,0 +1,209 @@
+/**
+ * Feedback Board addon — public Kanban board (Backlog / WIP / Done).
+ * Grid-only layout (no flexbox), $gap-based spacing, palette via var(--color-N).
+ */
+
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
+
+.feedback-board {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $gap;
+  margin-bottom: $gap;
+
+  @include tablet {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.feedback-board__actions {
+  margin-bottom: $gap;
+}
+
+.feedback-board__col {
+  background: var(--color-1);
+  border: 1px solid var(--color-2);
+  border-radius: $radius-xl;
+  padding: $gap;
+}
+
+.feedback-board__col-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  margin-bottom: calc($gap / 2);
+
+  h2 {
+    margin: 0;
+  }
+}
+
+.feedback-board__cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: calc($gap / 2);
+}
+
+.feedback-board__card {
+  background: var(--color-2);
+  border-radius: $radius-xl;
+  padding: calc($gap / 2) $gap;
+  cursor: pointer;
+  transition: $transition-colors;
+
+  &:hover {
+    background: color-mix(in srgb, var(--color-2) 85%, var(--color-5));
+  }
+
+  &--withdrawn {
+    opacity: 0.55;
+  }
+}
+
+.feedback-board__card-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  margin-bottom: $gap;
+}
+
+.feedback-board__card-author {
+  @extend %small;
+  color: var(--color-3);
+  font-weight: 500;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+    color: var(--color-4);
+  }
+
+  &--dev {
+    color: var(--color-4);
+  }
+}
+
+.feedback-board__card-time {
+  @extend %small;
+  color: var(--color-3);
+}
+
+.feedback-board__card-type {
+  @extend %small;
+  color: var(--color-6);
+  font-weight: 600;
+  margin-bottom: $gap;
+}
+
+.feedback-board__card-title {
+  @extend %h5;
+  color: var(--color-5);
+  margin: 0 0 $gap;
+}
+
+.feedback-board__card-snippet {
+  @extend %small;
+  color: var(--color-3);
+  margin: 0 0 $gap;
+}
+
+.feedback-board__card-meta {
+  .badge,
+  .btn {
+    margin-right: calc($gap / 2);
+  }
+}
+
+.feedback-board__card-comments {
+  @extend %small;
+  color: var(--color-3);
+}
+
+// Detail modal
+.feedback-board__detail-desc {
+  white-space: pre-line;
+}
+
+.feedback-board__comments {
+  margin-bottom: $gap;
+}
+
+.feedback-board__comment {
+  border-left: 2px solid var(--color-2);
+  padding-left: $gap;
+
+  .feedback-board__comment-text {
+    margin-bottom: 0;
+  }
+}
+
+// Per-item delete button, rendered INSIDE the text block it removes
+// (detail-desc = the original post, comment-text = one comment) so its
+// target is unambiguous.
+.feedback-board__inline-delete {
+  @include small;
+
+  margin-left: calc($gap / 2);
+  padding: 0 calc($gap / 2);
+  color: var(--color-4);
+  background: none;
+  border: 1px solid var(--color-2);
+  border-radius: $radius-pill;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover {
+    border-color: var(--color-4);
+  }
+}
+
+.feedback-board__comment-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  margin-bottom: calc($gap / 4);
+}
+
+.feedback-board__move-row {
+  margin-top: 2rem;
+
+  // Label and target buttons on ONE line (grid, not flex).
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: calc($gap / 2);
+
+  &.form__row label:not(.switch-label) {
+    line-height: 22px;
+    margin-bottom: 0;
+    color: var(--color-5);
+  }
+}
+
+.feedback-board__move {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, max-content));
+  justify-content: start;
+  gap: calc($gap / 2);
+
+  // Compact pills — shrink-to-fit so several fit on one line.
+  .btn {
+    width: auto;
+    padding-inline: calc($gap / 2);
+    white-space: nowrap;
+  }
+}
+
+.feedback-board__archive-info {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: calc($gap / 2);
+}
+
+.feedback-board__loading,
+.feedback-board__error {
+  color: var(--color-3);
+}

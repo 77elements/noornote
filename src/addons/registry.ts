@@ -195,6 +195,14 @@ export const ADDON_REGISTRY: AddonRegistryEntry[] = [
     viewId: 'addon-calendar',
     description:
       'NIP-52 calendar events with RSVPs, reminders and private events.',
+  },
+  {
+    id: 'feedback-board',
+    name: 'Feedback Board',
+    route: '/addons/feedback-board',
+    viewId: 'addon-feedback-board',
+    description:
+      'A public Kanban board between users and the developer — file wishes and bugs, follow progress.',
     status: 'new',
   },
 ];

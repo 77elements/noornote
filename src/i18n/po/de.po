@@ -436,6 +436,7 @@ msgstr ""
 #: src/addons/bulk-delete/BulkDeleteView.ts:835
 #: src/addons/calendar/BookingManager.ts:313
 #: src/addons/calendar/CalendarCollectionsModal.ts:157
+#: src/addons/feedback-board/FeedbackBoardView.ts:343
 #: src/addons/follow-packs/FollowPackManager.ts:465
 #: src/addons/marketplace/MyListingsView.ts:244
 #: src/addons/note-taking/NoteEditorModal.ts:365
@@ -856,7 +857,7 @@ msgstr "Buch wird geladen…"
 msgid "Loading music…"
 msgstr "Musik wird geladen…"
 
-#: src/components/ui/note-rendering/MusicTrackRenderer.ts:71
+#: src/components/ui/note-rendering/MusicTrackRenderer.ts:72
 msgid "Music track"
 msgstr "Musiktitel"
 
@@ -1024,6 +1025,10 @@ msgstr "Buchung bestätigen"
 #: src/addons/calendar/CalendarEventEditor.ts:519
 #: src/addons/calendar/CalendarEventModal.ts:121
 #: src/addons/calendar/CalendarEventModal.ts:548
+#: src/addons/feedback-board/FeedbackBoardView.ts:453
+#: src/addons/feedback-board/FeedbackBoardView.ts:533
+#: src/addons/feedback-board/FeedbackBoardView.ts:616
+#: src/addons/feedback-board/FeedbackBoardView.ts:658
 #: src/addons/marketplace/MyListingsView.ts:242
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:587
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:663
@@ -1045,6 +1050,7 @@ msgid_plural "Delivered to %s of %s relays"
 msgstr[0] "An %s von %s Relay zugestellt"
 msgstr[1] "An %s von %s Relays zugestellt"
 
+#: src/addons/feedback-board/FeedbackBoardService.ts:645
 #: src/components/onboarding/AccountSetupWizard.ts:3039
 #: src/components/views/ProfileBookingView.ts:614
 msgid "Done"
@@ -1237,6 +1243,7 @@ msgstr "Beschreibe dein Video…"
 #: src/addons/badges/BadgesView.ts:51
 #: src/addons/calendar/BookingManager.ts:352
 #: src/addons/calendar/CalendarEventEditor.ts:149
+#: src/addons/feedback-board/FeedbackBoardView.ts:338
 #: src/addons/follow-packs/FollowPackManager.ts:507
 #: src/addons/nostr-majlis/DhikrModal.ts:71
 #: src/components/views/VideoEditorView.ts:165
@@ -1479,6 +1486,7 @@ msgid "Time unit"
 msgstr "Zeiteinheit"
 
 #: src/addons/calendar/CalendarEventEditor.ts:98
+#: src/addons/feedback-board/FeedbackBoardView.ts:330
 #: src/addons/note-taking/NoteEditorModal.ts:55
 #: src/components/views/ArticleEditorView.ts:1343
 #: src/components/views/ArticleEditorView.ts:355
@@ -1486,6 +1494,7 @@ msgstr "Zeiteinheit"
 msgid "Title"
 msgstr "Titel"
 
+#: src/addons/feedback-board/FeedbackBoardView.ts:234
 #: src/addons/marketplace/ListingEditorView.ts:279
 #: src/components/settings/SettingsSection.ts:43
 #: src/components/views/ArticleEditorView.ts:382
@@ -2336,7 +2345,7 @@ msgstr "BEENDET"
 msgid "Expired"
 msgstr "Abgelaufen"
 
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1232
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1230
 #: src/helpers/renderQuotePreview.ts:39
 msgid "Failed to load quoted note"
 msgstr "Zitierte Notiz konnte nicht geladen werden"
@@ -2418,7 +2427,7 @@ msgstr "Lädt…"
 #: src/addons/marketplace/MarketplaceAddonView.ts:34
 #: src/addons/marketplace/MarketplaceTimelineInjector.ts:220
 #: src/components/ui/note-rendering/ListingRenderer.ts:62
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1548
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1546
 #: src/helpers/renderQuotePreview.ts:153
 msgid "Marketplace"
 msgstr "Marktplatz"
@@ -2427,6 +2436,7 @@ msgstr "Marktplatz"
 msgid "Missing secret"
 msgstr "Secret fehlt"
 
+#: src/addons/feedback-board/FeedbackBoardView.ts:435
 #: src/components/ui/MoveDropdown.ts:105
 msgid "Move to"
 msgstr "Verschieben nach"
@@ -2449,7 +2459,7 @@ msgstr "Nostr-Website"
 msgid "Note can't be rendered"
 msgstr "Notiz kann nicht dargestellt werden"
 
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1184
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1182
 msgid "Note from a user you've muted"
 msgstr "Notiz von einem stummgeschalteten Nutzer"
 
@@ -2474,8 +2484,8 @@ msgid "PLANNED"
 msgstr "GEPLANT"
 
 #: src/components/ui/note-rendering/BookmarkListRenderer.ts:70
-#: src/components/ui/note-rendering/MusicPlaylistRenderer.ts:69
-#: src/components/ui/note-rendering/MusicPlaylistRenderer.ts:70
+#: src/components/ui/note-rendering/MusicPlaylistRenderer.ts:67
+#: src/components/ui/note-rendering/MusicPlaylistRenderer.ts:68
 msgid "Playlist"
 msgstr "Playlist"
 
@@ -2499,7 +2509,7 @@ msgstr "Pull-Request-Update"
 msgid "Quoted note (max depth reached)"
 msgstr "Zitierte Notiz (maximale Tiefe erreicht)"
 
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1247
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1245
 msgid "Quoted repost — open to view"
 msgstr "Zitierter Repost — zum Ansehen öffnen"
 
@@ -2522,7 +2532,7 @@ msgstr "Weniger anzeigen"
 msgid "Show More"
 msgstr "Mehr anzeigen"
 
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1185
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1183
 msgid "Show temporarily"
 msgstr "Vorübergehend anzeigen"
 
@@ -4650,6 +4660,7 @@ msgstr "Artikel erfolgreich veröffentlicht!"
 msgid "Authentication failed. Please log in again."
 msgstr "Authentifizierung fehlgeschlagen. Bitte melde dich erneut an."
 
+#: src/addons/feedback-board/FeedbackBoardView.ts:466
 #: src/services/PostService.ts:517
 msgid "Comment"
 msgstr "Kommentar"
@@ -4850,7 +4861,7 @@ msgstr "Zeitüberschreitung der Anfrage. Bitte versuche es erneut."
 msgid "Signing failed"
 msgstr "Signierung fehlgeschlagen"
 
-#: src/App.ts:990
+#: src/App.ts:997
 #: src/services/managers/KeySignerConnectionManager.ts:413
 msgid "Stop NoorSigner Daemon?"
 msgstr "NoorSigner-Daemon stoppen?"
@@ -5444,6 +5455,9 @@ msgstr "einer Armada-Community"
 msgid "Appointment title"
 msgstr "Termin-Titel"
 
+#: src/addons/feedback-board/FeedbackBoardView.ts:209
+#: src/addons/feedback-board/FeedbackBoardView.ts:232
+#: src/addons/feedback-board/FeedbackBoardView.ts:304
 #: src/addons/note-taking/NoteEditorModal.ts:126
 #: src/addons/note-taking/NoteEditorModal.ts:82
 #: src/addons/note-taking/NoteTakingView.ts:49
@@ -12066,6 +12080,192 @@ msgid ""
 msgstr ""
 "Die Desktop-App hat kein Relay-Verbindungslimit des Browsers — für ein "
 "besseres Erlebnis im Following-Feed."
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:68
+msgid ""
+"A public board between you and the developer: file wishes and bugs, follow "
+"their progress, get a DM on every update. Tickets are public Nostr events."
+msgstr ""
+"Ein öffentliches Board zwischen dir und dem Entwickler: Wünsche und Bugs "
+"einreichen, den Fortschritt verfolgen, bei jedem Update eine DM bekommen. "
+"Tickets sind öffentliche Nostr-Events."
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:391
+msgid "A title is required."
+msgstr "Ein Titel ist erforderlich."
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:462
+msgid "Add comment"
+msgstr "Kommentar hinzufügen"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:300
+msgid "Archive ticket"
+msgstr "Ticket archivieren"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:301
+msgid "Archived tickets stay visible to you only. Archive \"%s\"?"
+msgstr "Archivierte Tickets sind nur noch für dich sichtbar. „%s“ archivieren?"
+
+#: src/addons/feedback-board/FeedbackBoardService.ts:641
+msgid "Backlog"
+msgstr "Backlog"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:185
+msgid "Bug"
+msgstr "Bug"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:700
+msgid "Comment sent"
+msgstr "Kommentar gesendet"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:66
+msgid "Enable Feedback Board"
+msgstr "Feedback-Board aktivieren"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:95
+msgid "Feedback Board"
+msgstr "Feedback-Board"
+
+#: src/addons/feedback-board/FeedbackBoardService.ts:643
+msgid "In Progress"
+msgstr "In Arbeit"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:137
+msgid "Loading board…"
+msgstr "Board wird geladen…"
+
+#: src/addons/feedback-board/FeedbackBoardService.ts:473
+msgid "New comment on \"%s\": %s"
+msgstr "Neuer Kommentar zu „%s“: %s"
+
+#: src/addons/feedback-board/FeedbackBoardService.ts:432
+msgid "New feedback board ticket: \"%s\""
+msgstr "Neues Feedback-Board-Ticket: „%s“"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:170
+#: src/addons/feedback-board/FeedbackBoardView.ts:369
+msgid "New Ticket"
+msgstr "Neues Ticket"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:239
+msgid "No archived tickets yet."
+msgstr "Noch keine archivierten Tickets."
+
+#: src/addons/feedback-board/FeedbackBoardService.ts:684
+msgid "Only readable in NoorNote."
+msgstr "Nur in NoorNote lesbar."
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:344
+msgid "Post Ticket"
+msgstr "Ticket veröffentlichen"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:312
+#: src/addons/feedback-board/FeedbackBoardView.ts:316
+#: src/addons/feedback-board/FeedbackBoardView.ts:401
+#: src/addons/feedback-board/FeedbackBoardView.ts:405
+#: src/addons/feedback-board/FeedbackBoardView.ts:552
+#: src/addons/feedback-board/FeedbackBoardView.ts:556
+#: src/addons/feedback-board/FeedbackBoardView.ts:582
+#: src/addons/feedback-board/FeedbackBoardView.ts:585
+#: src/addons/feedback-board/FeedbackBoardView.ts:664
+#: src/addons/feedback-board/FeedbackBoardView.ts:668
+#: src/addons/feedback-board/FeedbackBoardView.ts:692
+#: src/addons/feedback-board/FeedbackBoardView.ts:697
+msgid "Publishing failed — try again."
+msgstr "Veröffentlichen fehlgeschlagen — versuch es erneut."
+
+#: src/addons/feedback-board/FeedbackBoardService.ts:522
+msgid "Status update for \"%s\": %s"
+msgstr "Status-Update für „%s“: %s"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:141
+msgid "The board could not be loaded — check your connection."
+msgstr "Das Board konnte nicht geladen werden — prüfe deine Verbindung."
+
+#: src/addons/feedback-board/FeedbackBoardService.ts:553
+msgid "Ticket \"%s\" was archived"
+msgstr "Ticket „%s“ wurde archiviert"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:322
+msgid "Ticket archived"
+msgstr "Ticket archiviert"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:412
+msgid "Ticket posted to the board"
+msgstr "Ticket wurde gepostet"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:588
+msgid "Ticket updated"
+msgstr "Ticket aktualisiert"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:340
+msgid "Tickets are public Nostr events — do not include private data."
+msgstr "Tickets sind öffentliche Nostr-Events — keine privaten Daten eintragen."
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:334
+msgid "Type"
+msgstr "Typ"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:184
+msgid "Wish"
+msgstr "Wunsch"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:446
+msgid "Withdraw Ticket"
+msgstr "Ticket zurückziehen"
+
+#: src/addons/feedback-board/FeedbackBoardService.ts:647
+#: src/addons/feedback-board/FeedbackBoardView.ts:207
+msgid "Withdrawn"
+msgstr "Zurückgezogen"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:208
+msgid "%s comment"
+msgid_plural "%s comments"
+msgstr[0] "%s Kommentar"
+msgstr[1] "%s Kommentare"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:161
+msgid "%s ticket"
+msgid_plural "%s tickets"
+msgstr[0] "%s Ticket"
+msgstr[1] "%s Tickets"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:529
+msgid "Delete ticket"
+msgstr "Ticket löschen"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:565
+msgid "Ticket deleted"
+msgstr "Ticket gelöscht"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:186
+msgid "Question"
+msgstr "Frage"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:187
+msgid "Refinement"
+msgstr "Verfeinerung"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:671
+msgid "Comment deleted"
+msgstr "Kommentar gelöscht"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:654
+msgid "Delete comment"
+msgstr "Kommentar löschen"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:655
+msgid "The comment will be removed from relays that honor NIP-09. Delete it?"
+msgstr "Der Kommentar wird von Relays entfernt, die NIP-09 umsetzen. Löschen?"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:530
+msgid ""
+"The ticket and all its comments will be removed from relays that honor "
+"NIP-09. Copies may persist elsewhere. Delete \"%s\"?"
+msgstr ""
+"Das Ticket und alle Kommentare werden von Relays entfernt, die NIP-09 "
+"umsetzen. Kopien können bestehen bleiben. Löschen?"
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"

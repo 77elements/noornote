@@ -163,6 +163,8 @@ export const StorageKeys = {
   // global fallback key in follower-notification/index.ts ('noornote_follower_notification_enabled'),
   // and the global setItem("true") clobbers the per-account map — every later set() then throws
   // "Cannot create property … on boolean true", silently breaking the enable/disable toggle.
+  // Feedback Board addon (per-account enable flag, same _map rule as above)
+  FEEDBACK_BOARD_ENABLED: 'noornote_feedback_board_enabled_map',
   FOLLOWER_NOTIFICATION_ENABLED: 'noornote_follower_notification_enabled_map',
   FOLLOWER_SNAPSHOT: 'noornote_follower_snapshot_map',
   FOLLOWER_PENDING_SNAPSHOT: 'noornote_follower_pending_snapshot_map',

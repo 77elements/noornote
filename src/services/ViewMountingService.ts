@@ -593,6 +593,17 @@ export class ViewMountingService {
           },
         };
 
+      case 'addon-feedback-board':
+        return {
+          factory: async () => {
+            const { FeedbackBoardAddonView } = await import(
+              '../addons/feedback-board/FeedbackBoardView'
+            );
+            const view = new FeedbackBoardAddonView();
+            return { element: view.getElement(), view };
+          },
+        };
+
       case 'addon-hashtag-subscriptions':
         return {
           factory: async () => {

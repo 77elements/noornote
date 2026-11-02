@@ -546,6 +546,7 @@ export interface AppEvents {
   'follow-packs:addon-toggle': AddonTogglePayload;
   'follow-packs:toggle': AddonTogglePayload;
   'follower-notification:addon-toggle': AddonTogglePayload;
+  'feedback-board:addon-toggle': AddonTogglePayload;
   'hashtag-subscriptions:addon-toggle': AddonTogglePayload;
   'live-streams-player:addon-toggle': AddonTogglePayload;
   'marketplace:addon-toggle': AddonTogglePayload;

@@ -654,6 +654,13 @@ export class App {
       true
     );
     this.registerRoute(
+      '/addons/feedback-board',
+      'addon-feedback-board',
+      'addon-feedback-board',
+      'adv',
+      true
+    );
+    this.registerRoute(
       '/addons/hashtag-subscriptions',
       'addon-hashtag-subscriptions',
       'addon-hashtag-subscriptions',

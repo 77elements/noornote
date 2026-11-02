@@ -1044,6 +1044,9 @@ msgstr ""
 msgid "Appointment title"
 msgstr ""
 
+#: src/addons/feedback-board/FeedbackBoardView.ts:209
+#: src/addons/feedback-board/FeedbackBoardView.ts:232
+#: src/addons/feedback-board/FeedbackBoardView.ts:304
 #: src/addons/note-taking/NoteEditorModal.ts:126
 #: src/addons/note-taking/NoteEditorModal.ts:82
 #: src/addons/note-taking/NoteTakingView.ts:49
@@ -1683,6 +1686,7 @@ msgstr ""
 #: src/addons/bulk-delete/BulkDeleteView.ts:835
 #: src/addons/calendar/BookingManager.ts:313
 #: src/addons/calendar/CalendarCollectionsModal.ts:157
+#: src/addons/feedback-board/FeedbackBoardView.ts:343
 #: src/addons/follow-packs/FollowPackManager.ts:465
 #: src/addons/marketplace/MyListingsView.ts:244
 #: src/addons/note-taking/NoteEditorModal.ts:365
@@ -1959,6 +1963,7 @@ msgstr ""
 msgid "Come back here and log in with NoorSigner"
 msgstr ""
 
+#: src/addons/feedback-board/FeedbackBoardView.ts:466
 #: src/services/PostService.ts:517
 msgid "Comment"
 msgstr ""
@@ -2581,6 +2586,10 @@ msgstr ""
 #: src/addons/calendar/CalendarEventEditor.ts:519
 #: src/addons/calendar/CalendarEventModal.ts:121
 #: src/addons/calendar/CalendarEventModal.ts:548
+#: src/addons/feedback-board/FeedbackBoardView.ts:453
+#: src/addons/feedback-board/FeedbackBoardView.ts:533
+#: src/addons/feedback-board/FeedbackBoardView.ts:616
+#: src/addons/feedback-board/FeedbackBoardView.ts:658
 #: src/addons/marketplace/MyListingsView.ts:242
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:587
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:663
@@ -2785,6 +2794,7 @@ msgstr ""
 #: src/addons/badges/BadgesView.ts:51
 #: src/addons/calendar/BookingManager.ts:352
 #: src/addons/calendar/CalendarEventEditor.ts:149
+#: src/addons/feedback-board/FeedbackBoardView.ts:338
 #: src/addons/follow-packs/FollowPackManager.ts:507
 #: src/addons/nostr-majlis/DhikrModal.ts:71
 #: src/components/views/VideoEditorView.ts:165
@@ -2948,6 +2958,7 @@ msgstr ""
 msgid "Do you accept the time limitation?"
 msgstr ""
 
+#: src/addons/feedback-board/FeedbackBoardService.ts:645
 #: src/components/onboarding/AccountSetupWizard.ts:3039
 #: src/components/views/ProfileBookingView.ts:614
 msgid "Done"
@@ -3724,7 +3735,7 @@ msgstr ""
 msgid "Failed to load profile"
 msgstr ""
 
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1232
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1230
 #: src/helpers/renderQuotePreview.ts:39
 msgid "Failed to load quoted note"
 msgstr ""
@@ -5631,7 +5642,7 @@ msgstr ""
 #: src/addons/marketplace/MarketplaceAddonView.ts:34
 #: src/addons/marketplace/MarketplaceTimelineInjector.ts:220
 #: src/components/ui/note-rendering/ListingRenderer.ts:62
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1548
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1546
 #: src/helpers/renderQuotePreview.ts:153
 msgid "Marketplace"
 msgstr ""
@@ -5872,6 +5883,7 @@ msgstr ""
 msgid "Move notification type"
 msgstr ""
 
+#: src/addons/feedback-board/FeedbackBoardView.ts:435
 #: src/components/ui/MoveDropdown.ts:105
 msgid "Move to"
 msgstr ""
@@ -6697,7 +6709,7 @@ msgstr ""
 msgid "Note for %s (optional, sent as a private message)"
 msgstr ""
 
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1184
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1182
 msgid "Note from a user you've muted"
 msgstr ""
 
@@ -7173,8 +7185,8 @@ msgid "Play NIP-53 live streams inline in the timeline."
 msgstr ""
 
 #: src/components/ui/note-rendering/BookmarkListRenderer.ts:70
-#: src/components/ui/note-rendering/MusicPlaylistRenderer.ts:69
-#: src/components/ui/note-rendering/MusicPlaylistRenderer.ts:70
+#: src/components/ui/note-rendering/MusicPlaylistRenderer.ts:67
+#: src/components/ui/note-rendering/MusicPlaylistRenderer.ts:68
 msgid "Playlist"
 msgstr ""
 
@@ -7764,7 +7776,7 @@ msgstr ""
 msgid "Quoted Repost"
 msgstr ""
 
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1247
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1245
 msgid "Quoted repost — open to view"
 msgstr ""
 
@@ -9093,7 +9105,7 @@ msgstr ""
 msgid "Show tafsir"
 msgstr ""
 
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1185
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1183
 msgid "Show temporarily"
 msgstr ""
 
@@ -9468,7 +9480,7 @@ msgstr ""
 msgid "Stop Key Signer & Logout"
 msgstr ""
 
-#: src/App.ts:990
+#: src/App.ts:997
 #: src/services/managers/KeySignerConnectionManager.ts:413
 msgid "Stop NoorSigner Daemon?"
 msgstr ""
@@ -10113,6 +10125,7 @@ msgid "Timestamps & maker blob stripping"
 msgstr ""
 
 #: src/addons/calendar/CalendarEventEditor.ts:98
+#: src/addons/feedback-board/FeedbackBoardView.ts:330
 #: src/addons/note-taking/NoteEditorModal.ts:55
 #: src/components/views/ArticleEditorView.ts:1343
 #: src/components/views/ArticleEditorView.ts:355
@@ -10146,6 +10159,7 @@ msgstr ""
 msgid "Toggle balance visibility"
 msgstr ""
 
+#: src/addons/feedback-board/FeedbackBoardView.ts:234
 #: src/addons/marketplace/ListingEditorView.ts:279
 #: src/components/settings/SettingsSection.ts:43
 #: src/components/views/ArticleEditorView.ts:382
@@ -11488,7 +11502,7 @@ msgstr ""
 msgid "Loading music…"
 msgstr ""
 
-#: src/components/ui/note-rendering/MusicTrackRenderer.ts:71
+#: src/components/ui/note-rendering/MusicTrackRenderer.ts:72
 msgid "Music track"
 msgstr ""
 
@@ -11496,6 +11510,187 @@ msgstr ""
 msgid ""
 "The desktop app has no browser relay connection limit, for a better "
 "following feed experience."
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:68
+msgid ""
+"A public board between you and the developer: file wishes and bugs, follow "
+"their progress, get a DM on every update. Tickets are public Nostr events."
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:391
+msgid "A title is required."
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:462
+msgid "Add comment"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:300
+msgid "Archive ticket"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:301
+msgid "Archived tickets stay visible to you only. Archive \"%s\"?"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardService.ts:641
+msgid "Backlog"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:185
+msgid "Bug"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:700
+msgid "Comment sent"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:66
+msgid "Enable Feedback Board"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:95
+msgid "Feedback Board"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardService.ts:643
+msgid "In Progress"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:137
+msgid "Loading board…"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardService.ts:473
+msgid "New comment on \"%s\": %s"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardService.ts:432
+msgid "New feedback board ticket: \"%s\""
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:170
+#: src/addons/feedback-board/FeedbackBoardView.ts:369
+msgid "New Ticket"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:239
+msgid "No archived tickets yet."
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardService.ts:684
+msgid "Only readable in NoorNote."
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:344
+msgid "Post Ticket"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:312
+#: src/addons/feedback-board/FeedbackBoardView.ts:316
+#: src/addons/feedback-board/FeedbackBoardView.ts:401
+#: src/addons/feedback-board/FeedbackBoardView.ts:405
+#: src/addons/feedback-board/FeedbackBoardView.ts:552
+#: src/addons/feedback-board/FeedbackBoardView.ts:556
+#: src/addons/feedback-board/FeedbackBoardView.ts:582
+#: src/addons/feedback-board/FeedbackBoardView.ts:585
+#: src/addons/feedback-board/FeedbackBoardView.ts:664
+#: src/addons/feedback-board/FeedbackBoardView.ts:668
+#: src/addons/feedback-board/FeedbackBoardView.ts:692
+#: src/addons/feedback-board/FeedbackBoardView.ts:697
+msgid "Publishing failed — try again."
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardService.ts:522
+msgid "Status update for \"%s\": %s"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:141
+msgid "The board could not be loaded — check your connection."
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardService.ts:553
+msgid "Ticket \"%s\" was archived"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:322
+msgid "Ticket archived"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:412
+msgid "Ticket posted to the board"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:588
+msgid "Ticket updated"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:340
+msgid "Tickets are public Nostr events — do not include private data."
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:334
+msgid "Type"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:184
+msgid "Wish"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:446
+msgid "Withdraw Ticket"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardService.ts:647
+#: src/addons/feedback-board/FeedbackBoardView.ts:207
+msgid "Withdrawn"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:208
+msgid "%s comment"
+msgid_plural "%s comments"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:161
+msgid "%s ticket"
+msgid_plural "%s tickets"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:529
+msgid "Delete ticket"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:565
+msgid "Ticket deleted"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:186
+msgid "Question"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:187
+msgid "Refinement"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:671
+msgid "Comment deleted"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:654
+msgid "Delete comment"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:655
+msgid "The comment will be removed from relays that honor NIP-09. Delete it?"
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:530
+msgid ""
+"The ticket and all its comments will be removed from relays that honor "
+"NIP-09. Copies may persist elsewhere. Delete \"%s\"?"
 msgstr ""
 
 #: src/helpers/datePickerModal.ts:183
