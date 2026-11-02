@@ -259,8 +259,8 @@
   }
 }
 
-// Copy button (standalone)
-.copy-btn {
+// Icon-button base shared by copy/QR/zap/DM/badge/tribe buttons.
+@mixin profile-icon-btn-base {
   background: var(--color-2);
   border: 1px solid var(--color-3);
   border-radius: $radius-xl;
@@ -282,6 +282,11 @@
     background: var(--color-3);
     border-color: var(--color-4);
   }
+}
+
+// Copy button (standalone)
+.copy-btn {
+  @include profile-icon-btn-base;
 
   &.copied {
     background: var(--bg-accent);
@@ -300,27 +305,7 @@
 
 // QR button (standalone)
 .qr-btn {
-  background: var(--color-2);
-  border: 1px solid var(--color-3);
-  border-radius: $radius-xl;
-  padding: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  svg {
-    width: 14px;
-    height: 14px;
-    color: var(--color-5);
-    transition: color 0.2s ease;
-  }
-
-  &:hover {
-    background: var(--color-3);
-    border-color: var(--color-4);
-  }
+  @include profile-icon-btn-base;
 }
 
 // Lightning QR + Profile Zap + DM buttons (analog zu .qr-btn)
@@ -350,27 +335,7 @@
 .profile-zap-btn,
 .profile-dm-btn,
 .profile-badge-btn {
-  background: var(--color-2);
-  border: 1px solid var(--color-3);
-  border-radius: $radius-xl;
-  padding: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  svg {
-    width: 14px;
-    height: 14px;
-    color: var(--color-5);
-    transition: color 0.2s ease;
-  }
-
-  &:hover {
-    background: var(--color-3);
-    border-color: var(--color-4);
-  }
+  @include profile-icon-btn-base;
 
   &:disabled {
     opacity: 0.5;
@@ -389,27 +354,7 @@
 
 // Tribe button (analog zu .copy-btn/.qr-btn)
 .tribe-btn {
-  background: var(--color-2);
-  border: 1px solid var(--color-3);
-  border-radius: $radius-xl;
-  padding: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  svg {
-    width: 14px;
-    height: 14px;
-    color: var(--color-5);
-    transition: color 0.2s ease;
-  }
-
-  &:hover {
-    background: var(--color-3);
-    border-color: var(--color-4);
-  }
+  @include profile-icon-btn-base;
 }
 
 // Tribe dropdown mount (absolute positioning to avoid layout shift)

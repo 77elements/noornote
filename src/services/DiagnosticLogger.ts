@@ -24,6 +24,13 @@
  */
 
 import { PlatformService } from './PlatformService';
+import {
+  getCapFs,
+  platformHomeDir,
+  platformReadDir,
+  platformReadFile,
+  platformReadTextFile,
+} from './platformFileIO';
 import { AuthService } from './AuthService';
 import { diagWebStore } from './DiagWebStore';
 
@@ -86,17 +93,10 @@ function supportsWebLogs(): boolean {
 }
 
 // ===== Platform FS wrappers =====
-// Capacitor: single lazy-loaded import, all ops use Directory.Data
-let _capFsMod: typeof import('@capacitor/filesystem') | null = null;
-async function getCapFs() {
-  if (!_capFsMod) _capFsMod = await import('@capacitor/filesystem');
-  return _capFsMod;
-}
-
-async function platformHomeDir(): Promise<string> {
-  if (platform.isElectron) return window.electronAPI!.getHomeDir();
-  throw new Error('platformHomeDir: not available');
-}
+// Capacitor: single lazy-loaded import, all ops use Directory.Data.
+// Shared primitives (homeDir/readDir/readTextFile/readFile/getCapFs) live in
+// `platformFileIO.ts`; logger-specific write/append/truncate/rename/remove
+// wrappers remain here.
 
 async function platformMkdir(dirPath: string): Promise<void> {
   if (platform.isElectron) return window.electronAPI!.fsMkdir(dirPath);
@@ -109,54 +109,6 @@ async function platformMkdir(dirPath: string): Promise<void> {
     });
     return;
   }
-}
-
-async function platformReadDir(
-  dirPath: string
-): Promise<Array<{ name: string; isFile: boolean }>> {
-  if (platform.isElectron) return window.electronAPI!.readDir(dirPath);
-  if (platform.isCapacitor) {
-    const { Filesystem, Directory } = await getCapFs();
-    const result = await Filesystem.readdir({
-      path: dirPath,
-      directory: Directory.Data,
-    });
-    return result.files.map(f => ({ name: f.name, isFile: f.type === 'file' }));
-  }
-  throw new Error('platformReadDir: not available');
-}
-
-async function platformReadTextFile(filePath: string): Promise<string> {
-  if (platform.isElectron) return window.electronAPI!.readTextFile(filePath);
-  if (platform.isCapacitor) {
-    const { Filesystem, Directory, Encoding } = await getCapFs();
-    const result = await Filesystem.readFile({
-      path: filePath,
-      directory: Directory.Data,
-      encoding: Encoding.UTF8,
-    });
-    return result.data as string;
-  }
-  throw new Error('platformReadTextFile: not available');
-}
-
-async function platformReadFile(filePath: string): Promise<Uint8Array> {
-  if (platform.isElectron) {
-    const buf = await window.electronAPI!.readFile(filePath);
-    return new Uint8Array(buf);
-  }
-  if (platform.isCapacitor) {
-    const { Filesystem, Directory } = await getCapFs();
-    const result = await Filesystem.readFile({
-      path: filePath,
-      directory: Directory.Data,
-    });
-    const binary = atob(result.data as string);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    return bytes;
-  }
-  throw new Error('platformReadFile: not available');
 }
 
 async function platformWriteFile(

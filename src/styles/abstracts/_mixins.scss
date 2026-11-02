@@ -335,3 +335,53 @@
     padding: $gap;
   }
 }
+
+// ========================================
+// Form/Onboarding Fragment Mixins
+// ========================================
+
+// Green success/confirmation box — used by account-setup wizard and web
+// onboarding for "key saved / account created" panels.
+@mixin success-box {
+  background: $bg-success;
+  border: 1px solid $color-success;
+  border-radius: $radius-xl;
+  padding: $gap * 1.5;
+  margin: $gap * 1.5 0;
+  color: $color-success;
+
+  p {
+    margin: 0;
+
+    &:not(:last-child) {
+      margin-bottom: calc($gap / 2);
+    }
+  }
+
+  code {
+    background: $bg-success;
+    padding: 2px 6px;
+    border-radius: $radius-xl;
+  }
+}
+
+// One keypair row (label + value) in a key-backup step; `--critical` modifier
+// marks the Nsec row.
+@mixin keypair-item {
+  background: var(--color-1);
+  border: 1px solid var(--color-3);
+  border-radius: $radius-xl;
+  padding: $gap;
+
+  label {
+    display: block;
+    margin-bottom: calc($gap / 2);
+    color: var(--color-5);
+    font-weight: 500;
+  }
+
+  &--critical {
+    border-color: var(--color-4);
+    background: var(--bg-accent);
+  }
+}
