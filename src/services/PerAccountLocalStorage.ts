@@ -463,7 +463,22 @@ export class PerAccountLocalStorage {
    */
   public setForPubkey<T>(key: StorageKey, pubkey: string, value: T): void {
     const mapStr = localStorage.getItem(key);
-    const map = mapStr ? (JSON.parse(mapStr) as Record<string, T>) : {};
+    let map: Record<string, T> = {};
+    if (mapStr) {
+      try {
+        map = JSON.parse(mapStr) as Record<string, T>;
+      } catch (e) {
+        // Corrupt stored JSON (e.g. torn write from a second tab racing the
+        // read-modify-write): the map is unrecoverable — start fresh instead
+        // of throwing on EVERY subsequent write for this key. The new value
+        // overwrites the corrupt entry, so this self-heals on the first set.
+        console.error(
+          `PerAccountLocalStorage: corrupt JSON for ${key}, resetting map`,
+          e
+        );
+        map = {};
+      }
+    }
     map[pubkey] = value;
     localStorage.setItem(key, JSON.stringify(map));
   }

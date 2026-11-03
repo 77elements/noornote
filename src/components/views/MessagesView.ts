@@ -33,7 +33,21 @@ import { DMComposeModal } from '../modals/DMComposeModal';
 
 const BATCH_SIZE = 15;
 
+/** Session-persisted last active tab — back-navigation from a conversation
+ *  remounts this view and must land in the tab the user came from. */
+const TAB_STORAGE_KEY = 'noornote_messages_tab';
+
 type TabFilter = 'known' | 'unknown';
+
+function readInitialTab(): TabFilter {
+  try {
+    return sessionStorage.getItem(TAB_STORAGE_KEY) === 'unknown'
+      ? 'unknown'
+      : 'known';
+  } catch {
+    return 'known';
+  }
+}
 
 export class MessagesView extends View {
   private container: HTMLElement;
@@ -52,7 +66,7 @@ export class MessagesView extends View {
   private infiniteScroll: InfiniteScroll;
   private menuOpen: boolean = false;
   private outsideClickHandler: () => void;
-  private activeTab: TabFilter = 'known';
+  private activeTab: TabFilter = readInitialTab();
   private subscriptionIds: string[] = [];
   private progressBar: ProgressBarHelper | null = null;
   private isFetchingDMs: boolean = false;
@@ -61,6 +75,8 @@ export class MessagesView extends View {
   private selectedUnknown: Set<string> = new Set();
   /** Disposer for the spam-mode button tooltip. */
   private spamTooltipDisposer: (() => void) | null = null;
+  /** Coalescing timer for dm:badge-update bursts (see setupEventListeners). */
+  private badgeRefreshTimer: number | null = null;
 
   constructor() {
     super();
@@ -78,6 +94,9 @@ export class MessagesView extends View {
     this.render();
     this.setupEventListeners();
     this.setupInfiniteScroll();
+    // Sync the spam button with the persisted initial tab (its template
+    // default is hidden; a mount landing on 'unknown' must show it).
+    this.updateSpamButton();
 
     // IMPORTANT: Setup event listeners BEFORE loadInitialData()
     // because dmService.start() may emit events immediately if already running
@@ -108,14 +127,20 @@ export class MessagesView extends View {
     // Call loadInitialData AFTER event listeners are setup
     void this.loadInitialData();
 
-    // Listen for badge updates (mark all read/unread) - only update badges, not full refresh
+    // Listen for badge updates (mark all read/unread) - only update badges, not full refresh.
+    // Coalesced: a burst of badge-update events (bulk delete fires one per
+    // conversation; a spam wave fires one per arrival) must produce ONE
+    // refresh, not N overlapping ones — they reset the list concurrently and
+    // starve it (stuck "Loading messages...").
     this.subscriptionIds.push(
       this.eventBus.on('dm:badge-update', () => {
-        // Only refresh if we're not currently fetching
-        if (!this.isFetchingDMs) {
+        if (this.badgeRefreshTimer !== null) return;
+        this.badgeRefreshTimer = window.setTimeout(() => {
+          this.badgeRefreshTimer = null;
+          if (this.isFetchingDMs) return;
           void this.updateBadgeCounts();
           void this.refreshConversationsQuiet();
-        }
+        }, 400);
       })
     );
 
@@ -163,23 +188,23 @@ export class MessagesView extends View {
         </div>
         <div class="messages-view__tabs">
           <div class="tabs">
-            <button class="tab tab--active" data-tab="known">
+            <button class="tab${this.activeTab === 'known' ? ' tab--active' : ''}" data-tab="known">
               ${_('Known')}
               <span class="badge" data-badge="known" style="display: none;"></span>
             </button>
-            <button class="tab" data-tab="unknown">
+            <button class="tab${this.activeTab === 'unknown' ? ' tab--active' : ''}" data-tab="unknown">
               ${_('Unknown')}
               <span class="badge" data-badge="unknown" style="display: none;"></span>
             </button>
           </div>
         </div>
         <div class="messages-view__content">
-          <div class="tab-content tab-content--active" data-tab-content="known">
+          <div class="tab-content${this.activeTab === 'known' ? ' tab-content--active' : ''}" data-tab-content="known">
             <div class="messages-view__list" data-list="known">
               <div class="messages-view__loading">${_('Loading messages...')}</div>
             </div>
           </div>
-          <div class="tab-content" data-tab-content="unknown">
+          <div class="tab-content${this.activeTab === 'unknown' ? ' tab-content--active' : ''}" data-tab-content="unknown">
             <div class="messages-view__bulk-bar l-row--split" data-bulk-bar hidden>
               <a href="#" data-action="select-all-loaded">${_('Select all visible')}</a>
               <button class="btn btn--danger btn--medium" data-action="delete-selected" disabled>
@@ -330,6 +355,13 @@ export class MessagesView extends View {
     if (this.activeTab === tab) return;
 
     this.activeTab = tab;
+    // Persist so remounting (e.g. back-navigation from a conversation) lands
+    // in the tab the user left from, not a reset 'known'.
+    try {
+      sessionStorage.setItem(TAB_STORAGE_KEY, tab);
+    } catch {
+      /* storage unavailable — tab simply resets on remount */
+    }
 
     // Selection and controls are Unknown-tab-only; drop them on tab change.
     this.clearBulkSelection();
@@ -606,21 +638,27 @@ export class MessagesView extends View {
     `;
 
     // Unknown-tab bulk selection: leading checkbox, survives quiet re-renders
-    // via the selectedUnknown set. Clicks must not open the conversation —
-    // stopPropagation on click so the row's open-conversation handler never
-    // sees it.
+    // via the selectedUnknown set. Added AFTER the innerHTML += above (re-
+    // parsing wipes listeners). Rule: clicking the checkbox toggles selection
+    // ONLY; every other click on the row opens the DM. Enforced twice — the
+    // wrapper swallows clicks (label click + label-forwarded synthetic input
+    // click) and the row handler below ignores anything originating inside
+    // the wrapper.
     if (this.activeTab === 'unknown') {
       const checked = this.selectedUnknown.has(conversation.pubkey);
       item.insertAdjacentHTML(
         'afterbegin',
-        `<span class="nn-checkbox conversation-item__select">
+        `<label class="nn-checkbox nn-checkbox--compact conversation-item__select">
           <input type="checkbox" data-conv-select data-pubkey="${escapeHtmlAttr(conversation.pubkey)}" aria-label="${_('Select conversation for deletion')}"${checked ? ' checked' : ''} />
-        </span>`
+        </label>`
       );
-      const checkbox = item.querySelector(
+      const wrapper = item.querySelector(
+        '.conversation-item__select'
+      ) as HTMLElement | null;
+      const checkbox = wrapper?.querySelector(
         'input[data-conv-select]'
       ) as HTMLInputElement | null;
-      checkbox?.addEventListener('click', e => e.stopPropagation());
+      wrapper?.addEventListener('click', e => e.stopPropagation());
       checkbox?.addEventListener('change', () => {
         if (checkbox.checked) this.selectedUnknown.add(conversation.pubkey);
         else this.selectedUnknown.delete(conversation.pubkey);
@@ -628,8 +666,17 @@ export class MessagesView extends View {
       });
     }
 
-    // Click handler to open conversation
-    item.addEventListener('click', () => {
+    // Click handler to open conversation — but never when the click originated
+    // inside the bulk-select checkbox. Belt-and-suspenders next to the
+    // wrapper's stopPropagation: the label-forwarded synthetic click and any
+    // future event-path quirk are caught by this target check too.
+    item.addEventListener('click', e => {
+      if (
+        (e.target as HTMLElement | null)?.closest?.(
+          '.conversation-item__select'
+        )
+      )
+        return;
       this.openConversation(conversation.pubkey);
     });
 
@@ -1036,6 +1083,10 @@ export class MessagesView extends View {
     }
     this.infiniteScroll.destroy();
     this.progressBar?.reset();
+    if (this.badgeRefreshTimer !== null) {
+      clearTimeout(this.badgeRefreshTimer);
+      this.badgeRefreshTimer = null;
+    }
     this.subscriptionIds.forEach(id => this.eventBus.off(id));
     this.subscriptionIds = [];
   }

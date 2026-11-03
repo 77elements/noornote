@@ -15,6 +15,7 @@ import type { MainLayout } from '../components/layout/MainLayout';
 import { Router } from './Router';
 import { ViewLifecycleManager } from './ViewLifecycleManager';
 import { SystemLogger } from './SystemLogger';
+import { _ } from '../i18n';
 
 type ViewFactory = (
   param?: string
@@ -78,14 +79,41 @@ export class ViewMountingService {
     if (!config) return;
     if (config.requiresParam && !param) return;
 
-    const result = await config.factory(param);
-    if (!result) return;
-    const { element, view } = result;
-    primaryContent.appendChild(element);
+    try {
+      const result = await config.factory(param);
+      if (!result) return;
+      const { element, view } = result;
+      primaryContent.appendChild(element);
 
-    if (view) {
-      this.viewLifecycleManager.onViewMount(view);
+      if (view) {
+        this.viewLifecycleManager.onViewMount(view);
+      }
+    } catch (error) {
+      // A view that throws during construction/render must not die as an
+      // unhandled rejection with a blank pane — render an error screen so
+      // navigation keeps working and the failure is visible to the user.
+      this.systemLogger.error(
+        'ViewMountingService',
+        `The ${viewType} view failed to load. Please reload the page.`
+      );
+      console.error(`ViewMountingService: ${viewType} view failed:`, error);
+      primaryContent.appendChild(this.renderViewError());
     }
+  }
+
+  /** Fallback screen for views that crashed during mount. */
+  private renderViewError(): HTMLElement {
+    const el = document.createElement('div');
+    el.className = 'messages-view__error';
+    el.innerHTML = `
+      <p>${_('This view failed to load. Please reload the page.')}</p>
+    `;
+    const retry = document.createElement('button');
+    retry.className = 'btn btn--medium';
+    retry.textContent = _('Retry');
+    retry.addEventListener('click', () => location.reload());
+    el.appendChild(retry);
+    return el;
   }
 
   public destroyTimelineCache(): void {

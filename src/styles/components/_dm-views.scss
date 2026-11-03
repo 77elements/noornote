@@ -74,11 +74,29 @@
   align-items: center;
 }
 
-// Leading bulk-select checkbox on Unknown-tab conversation rows. The row is
-// an existing flex container; keep the checkbox from being squished by long
-// names/previews (new child, layout itself untouched).
-.conversation-item__select {
+// Leading bulk-select checkbox on Unknown-tab conversation rows. The shared
+// .nn-checkbox is a full-width settings row (big padding, section bg, hover);
+// the compact modifier shrinks it to a bare checkbox — but keeps a generous
+// padded hit area around it: clicks anywhere in that area toggle the checkbox
+// (label behavior) and never reach the row's open-conversation handler.
+.nn-checkbox--compact.conversation-item__select {
+  padding: calc($gap / 2) calc($gap / 2) calc($gap / 2) 0;
+  margin: calc($gap / -2) 0;
+  background: none;
+  border-radius: 0;
   flex-shrink: 0;
+
+  &:hover {
+    background: none;
+  }
+
+  // Phone: horizontal footprint is scarce — keep the vertical hit area but
+  // pull the checkbox left into the row's own padding and slim the right
+  // padding, so it eats far less of the row width.
+  @include mobile-down {
+    padding: calc($gap / 2) calc($gap / 4) calc($gap / 2) 0;
+    margin-left: calc($gap / -1.5);
+  }
 }
 
 .messages-view__content {

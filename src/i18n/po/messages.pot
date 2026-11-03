@@ -312,11 +312,11 @@ msgstr ""
 msgid "%s new"
 msgstr ""
 
-#: src/services/dm/DMToastNotifier.ts:224
+#: src/services/dm/DMToastNotifier.ts:223
 msgid "%s new messages from known senders"
 msgstr ""
 
-#: src/services/dm/DMToastNotifier.ts:223
+#: src/services/dm/DMToastNotifier.ts:222
 msgid "%s new messages from unknown senders"
 msgstr ""
 
@@ -328,7 +328,7 @@ msgstr ""
 msgid "%s new posts tagged #%s"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:746
+#: src/components/views/MessagesView.ts:796
 msgid "%s of %s conversations deleted"
 msgstr ""
 
@@ -902,11 +902,11 @@ msgstr ""
 msgid "All loaded"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:983
+#: src/components/views/MessagesView.ts:1033
 msgid "All messages marked as read"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:989
+#: src/components/views/MessagesView.ts:1039
 msgid "All messages marked as unread"
 msgstr ""
 
@@ -1753,9 +1753,9 @@ msgstr ""
 #: src/components/settings/PrivacySettingsSection.ts:270
 #: src/components/settings/RelaySettingsSection.ts:480
 #: src/components/views/ConversationView.ts:619
-#: src/components/views/MessagesView.ts:667
-#: src/components/views/MessagesView.ts:712
-#: src/components/views/MessagesView.ts:999
+#: src/components/views/MessagesView.ts:1049
+#: src/components/views/MessagesView.ts:713
+#: src/components/views/MessagesView.ts:758
 #: src/components/views/ProfileBookingView.ts:326
 #: src/components/views/ProfileBookingView.ts:497
 #: src/helpers/datePickerModal.ts:189
@@ -2182,15 +2182,15 @@ msgid "Control how sensitive content (NSFW) is displayed. When disabled, NSFW im
 msgstr ""
 
 #: src/components/views/ConversationView.ts:924
-#: src/components/views/MessagesView.ts:688
+#: src/components/views/MessagesView.ts:734
 msgid "Conversation deleted"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:687
+#: src/components/views/MessagesView.ts:733
 msgid "Conversation deleted & sender muted"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:743
+#: src/components/views/MessagesView.ts:793
 msgid "Conversations deleted & senders muted"
 msgstr ""
 
@@ -2281,7 +2281,7 @@ msgstr ""
 msgid "Could not load districts"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:320
+#: src/components/views/MessagesView.ts:344
 msgid "Could not load older messages"
 msgstr ""
 
@@ -2628,8 +2628,8 @@ msgstr ""
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:663
 #: src/addons/note-taking/NoteEditorModal.ts:364
 #: src/components/views/ArticleView.ts:160
-#: src/components/views/MessagesView.ts:666
-#: src/components/views/MessagesView.ts:711
+#: src/components/views/MessagesView.ts:712
+#: src/components/views/MessagesView.ts:757
 #: src/lists/tribes.ts:2746
 #: src/services/ModalService.ts:246
 msgid "Delete"
@@ -2640,15 +2640,15 @@ msgstr ""
 msgid "Delete \"%s\"%s? A deletion request is published to relays."
 msgstr ""
 
-#: src/components/views/MessagesView.ts:656
+#: src/components/views/MessagesView.ts:702
 msgid "Delete & mute"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:601
+#: src/components/views/MessagesView.ts:632
 msgid "Delete &amp; mute sender"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:705
+#: src/components/views/MessagesView.ts:751
 msgid "Delete %s conversation and mute its sender? It won't appear in your messages again."
 msgid_plural "Delete %s conversations and mute their senders? They won't appear in your messages again."
 msgstr[0] ""
@@ -2676,8 +2676,8 @@ msgstr ""
 
 #: src/components/views/ConversationView.ts:433
 #: src/components/views/ConversationView.ts:913
-#: src/components/views/MessagesView.ts:601
-#: src/components/views/MessagesView.ts:656
+#: src/components/views/MessagesView.ts:632
+#: src/components/views/MessagesView.ts:702
 msgid "Delete conversation"
 msgstr ""
 
@@ -2733,12 +2733,12 @@ msgstr ""
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:206
 #: src/addons/bulk-delete/BulkDeleteView.ts:889
-#: src/components/views/MessagesView.ts:184
-#: src/components/views/MessagesView.ts:762
+#: src/components/views/MessagesView.ts:208
+#: src/components/views/MessagesView.ts:812
 msgid "Delete selected (%s)"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:704
+#: src/components/views/MessagesView.ts:750
 msgid "Delete selected conversations"
 msgstr ""
 
@@ -2750,11 +2750,11 @@ msgstr ""
 msgid "Delete the calendar \"%s\"? Subscribers keep their events, but it will no longer exist as a calendar."
 msgstr ""
 
-#: src/components/views/MessagesView.ts:658
+#: src/components/views/MessagesView.ts:704
 msgid "Delete this conversation and mute %s? They won't appear in your messages again."
 msgstr ""
 
-#: src/components/views/MessagesView.ts:662
+#: src/components/views/MessagesView.ts:708
 msgid "Delete this conversation with %s? It's removed only from this device."
 msgstr ""
 
@@ -2911,7 +2911,7 @@ msgstr ""
 msgid "Diagrams"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:894
+#: src/components/views/MessagesView.ts:944
 msgid "Direct messages are not available with Bunker URL login"
 msgstr ""
 
@@ -3752,7 +3752,7 @@ msgid "Failed to load listings"
 msgstr ""
 
 #: src/components/views/ConversationView.ts:1219
-#: src/components/views/MessagesView.ts:908
+#: src/components/views/MessagesView.ts:958
 msgid "Failed to load messages"
 msgstr ""
 
@@ -4952,7 +4952,7 @@ msgstr ""
 msgid "KeySigner daemon connection lost"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:165
+#: src/components/views/MessagesView.ts:189
 msgid "Known"
 msgstr ""
 
@@ -5179,9 +5179,9 @@ msgstr ""
 msgid "Load all"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:194
-#: src/components/views/MessagesView.ts:307
-#: src/components/views/MessagesView.ts:317
+#: src/components/views/MessagesView.ts:218
+#: src/components/views/MessagesView.ts:331
+#: src/components/views/MessagesView.ts:341
 msgid "Load older messages"
 msgstr ""
 
@@ -5279,12 +5279,12 @@ msgid "Loading members..."
 msgstr ""
 
 #: src/components/views/ConversationView.ts:248
-#: src/components/views/MessagesView.ts:177
-#: src/components/views/MessagesView.ts:188
+#: src/components/views/MessagesView.ts:201
+#: src/components/views/MessagesView.ts:212
 msgid "Loading messages..."
 msgstr ""
 
-#: src/components/views/MessagesView.ts:72
+#: src/components/views/MessagesView.ts:90
 msgid "Loading more conversations..."
 msgstr ""
 
@@ -5342,7 +5342,7 @@ msgstr ""
 msgid "Loading notes..."
 msgstr ""
 
-#: src/components/views/MessagesView.ts:290
+#: src/components/views/MessagesView.ts:314
 msgid "Loading older messages…"
 msgstr ""
 
@@ -5637,7 +5637,7 @@ msgstr ""
 msgid "Mark ALL bookmarks as unread again? Your other devices will pick this up on their next sync."
 msgstr ""
 
-#: src/components/views/MessagesView.ts:849
+#: src/components/views/MessagesView.ts:899
 msgid "Mark all read"
 msgstr ""
 
@@ -5645,7 +5645,7 @@ msgstr ""
 msgid "Mark all seen"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:853
+#: src/components/views/MessagesView.ts:903
 msgid "Mark all unread"
 msgstr ""
 
@@ -5802,7 +5802,7 @@ msgstr ""
 msgid "Message"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:157
+#: src/components/views/MessagesView.ts:181
 msgid "Message options"
 msgstr ""
 
@@ -5813,8 +5813,8 @@ msgstr ""
 
 #: src/components/layout/MainLayout.ts:1948
 #: src/components/search/GlobalSearchView.ts:398
-#: src/components/views/MessagesView.ts:149
-#: src/components/views/MessagesView.ts:890
+#: src/components/views/MessagesView.ts:173
+#: src/components/views/MessagesView.ts:940
 msgid "Messages"
 msgstr ""
 
@@ -6101,15 +6101,15 @@ msgid "New Listing"
 msgstr ""
 
 #: src/components/modals/DMComposeModal.ts:43
-#: src/components/views/MessagesView.ts:155
+#: src/components/views/MessagesView.ts:179
 msgid "New Message"
 msgstr ""
 
-#: src/services/dm/DMToastNotifier.ts:259
+#: src/services/dm/DMToastNotifier.ts:258
 msgid "New message from %s"
 msgstr ""
 
-#: src/services/dm/DMToastNotifier.ts:257
+#: src/services/dm/DMToastNotifier.ts:256
 msgid "New message from an unknown sender"
 msgstr ""
 
@@ -6350,11 +6350,11 @@ msgstr ""
 msgid "No members yet"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:538
+#: src/components/views/MessagesView.ts:569
 msgid "No messages from people you follow"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:539
+#: src/components/views/MessagesView.ts:570
 msgid "No messages from unknown users"
 msgstr ""
 
@@ -6399,7 +6399,7 @@ msgstr ""
 msgid "No notifications yet"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:304
+#: src/components/views/MessagesView.ts:328
 msgid "No older messages"
 msgstr ""
 
@@ -7851,7 +7851,7 @@ msgstr ""
 msgid "Raw event data not available"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:995
+#: src/components/views/MessagesView.ts:1045
 msgid "Re-fetch your full message history from the relays. Existing messages are kept — this only pulls anything missing. May take a moment."
 msgstr ""
 
@@ -7859,12 +7859,12 @@ msgstr ""
 msgid "Re-include"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:998
+#: src/components/views/MessagesView.ts:1048
 msgid "Re-sync"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:857
-#: src/components/views/MessagesView.ts:994
+#: src/components/views/MessagesView.ts:1044
+#: src/components/views/MessagesView.ts:907
 msgid "Re-sync messages"
 msgstr ""
 
@@ -8438,7 +8438,8 @@ msgstr ""
 #: src/components/system/OfflineOverlay.ts:49
 #: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:102
 #: src/components/views/ConversationView.ts:1220
-#: src/components/views/MessagesView.ts:909
+#: src/components/views/MessagesView.ts:959
+#: src/services/ViewMountingService.ts:113
 msgid "Retry"
 msgstr ""
 
@@ -8795,8 +8796,8 @@ msgstr ""
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:202
 #: src/addons/bulk-delete/BulkDeleteView.ts:817
-#: src/components/views/MessagesView.ts:182
-#: src/components/views/MessagesView.ts:774
+#: src/components/views/MessagesView.ts:206
+#: src/components/views/MessagesView.ts:824
 msgid "Select all visible"
 msgstr ""
 
@@ -8808,7 +8809,7 @@ msgstr ""
 msgid "Select city…"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:615
+#: src/components/views/MessagesView.ts:649
 msgid "Select conversation for deletion"
 msgstr ""
 
@@ -9252,7 +9253,7 @@ msgstr ""
 msgid "Signing failed"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:237
+#: src/components/views/MessagesView.ts:261
 msgid "Silences alerts for new messages from unknown senders. Stays on for 24 h, then turns off automatically."
 msgstr ""
 
@@ -9402,20 +9403,20 @@ msgstr ""
 msgid "Source code ↗"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:152
-#: src/components/views/MessagesView.ts:814
+#: src/components/views/MessagesView.ts:176
+#: src/components/views/MessagesView.ts:864
 msgid "Spam mode"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:814
+#: src/components/views/MessagesView.ts:864
 msgid "Spam mode active"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:230
+#: src/components/views/MessagesView.ts:254
 msgid "Spam mode disabled"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:229
+#: src/components/views/MessagesView.ts:253
 msgid "Spam mode enabled — alerts off for 24 h"
 msgstr ""
 
@@ -9435,7 +9436,7 @@ msgstr ""
 msgid "Standard Western calendar (e.g., \"30. Oct. 2024\")"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:545
+#: src/components/views/MessagesView.ts:576
 msgid "Start a conversation by clicking \"New Message\""
 msgstr ""
 
@@ -10008,6 +10009,10 @@ msgstr ""
 msgid "This user's reactions now appear in your timeline"
 msgstr ""
 
+#: src/services/ViewMountingService.ts:109
+msgid "This view failed to load. Please reload the page."
+msgstr ""
+
 #: src/components/settings/CacheSettingsSection.ts:418
 msgid "This will clear 1 table: %s."
 msgid_plural "This will clear %s tables: %s."
@@ -10342,7 +10347,7 @@ msgstr ""
 #: src/addons/follow-packs/FollowPackManager.ts:393
 #: src/components/ui/note-rendering/RepostRenderer.ts:110
 #: src/components/ui/note-rendering/ZapReceiptRenderer.ts:139
-#: src/components/views/MessagesView.ts:169
+#: src/components/views/MessagesView.ts:193
 #: src/components/views/ZapstoreAppView.ts:408
 msgid "Unknown"
 msgstr ""
@@ -10391,7 +10396,7 @@ msgid "Unsaved Changes"
 msgstr ""
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:816
-#: src/components/views/MessagesView.ts:773
+#: src/components/views/MessagesView.ts:823
 msgid "Unselect all visible"
 msgstr ""
 
@@ -11208,7 +11213,7 @@ msgstr ""
 msgid "Your relays are your sovereignty surface. <strong>Read</strong> = where NoorNote looks for content, <strong>Write</strong> = where your own events are stored, <strong>DM Inbox</strong> = where others can reach you with NIP-17 messages. When switching to a smaller (or fully private) write-set, publish the new relay list <em>first</em>, then disable the old relays — otherwise other clients can't follow the move. NoorNote automatically rebroadcasts your profile and follow-list to any newly-added write-relay."
 msgstr ""
 
-#: src/components/views/MessagesView.ts:895
+#: src/components/views/MessagesView.ts:945
 msgid "Your remote signer does not support NIP-44 encryption required for private messages. Use a browser extension or NoorSigner for full DM access."
 msgstr ""
 
