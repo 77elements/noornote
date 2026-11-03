@@ -46,7 +46,7 @@ type MuteListManager = import('../../lists/mutes').MuteListManager;
 type TribeManager = import('../../lists/tribes').TribeManager;
 import { NotificationsBadgeManager } from './managers/NotificationsBadgeManager';
 import { DMBadgeManager } from './managers/DMBadgeManager';
-import { UnknownDMNotifier } from '../../services/dm/UnknownDMNotifier';
+import { DMToastNotifier } from '../../services/dm/DMToastNotifier';
 import { HamburgerBadgeManager } from './managers/HamburgerBadgeManager';
 import { ListViewPartial, type ListType } from './partials/ListViewPartial';
 import { ArticleTimeline } from '../article/ArticleTimeline';
@@ -290,11 +290,11 @@ export class MainLayout {
       this.setupBadgeManagers();
     });
 
-    // Initialize UnknownDMNotifier — toasts on incoming DMs from senders the
-    // user does not follow (would otherwise only be visible in the Unknown tab).
+    // Initialize DMToastNotifier — toasts on incoming DMs (unknown senders
+    // land in the Unknown tab; known senders only bump the sidebar diode).
     // Singleton with reset(); instance lives for the lifetime of this MainLayout.
-    UnknownDMNotifier.reset();
-    UnknownDMNotifier.getInstance();
+    DMToastNotifier.reset();
+    DMToastNotifier.getInstance();
 
     // Initialize HamburgerBadgeManager (phone mode notification dot)
     const hamburgerBadgeElement = this.element.querySelector(

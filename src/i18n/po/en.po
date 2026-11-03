@@ -561,7 +561,7 @@ msgstr "Saved notes, sorted into folders."
 msgid "Settings"
 msgstr "Settings"
 
-#: src/components/views/SingleNoteView.ts:269
+#: src/components/views/SingleNoteView.ts:277
 msgid "Single Post"
 msgstr "Single Post"
 
@@ -631,8 +631,9 @@ msgstr "Zaps"
 #: src/components/settings/PrivacySettingsSection.ts:270
 #: src/components/settings/RelaySettingsSection.ts:480
 #: src/components/views/ConversationView.ts:619
-#: src/components/views/MessagesView.ts:586
-#: src/components/views/MessagesView.ts:792
+#: src/components/views/MessagesView.ts:667
+#: src/components/views/MessagesView.ts:712
+#: src/components/views/MessagesView.ts:999
 #: src/components/views/ProfileBookingView.ts:326
 #: src/components/views/ProfileBookingView.ts:497
 #: src/helpers/datePickerModal.ts:189
@@ -841,7 +842,7 @@ msgid "Message sent"
 msgstr "Message sent"
 
 #: src/components/modals/DMComposeModal.ts:43
-#: src/components/views/MessagesView.ts:146
+#: src/components/views/MessagesView.ts:155
 msgid "New Message"
 msgstr "New Message"
 
@@ -1153,7 +1154,7 @@ msgstr ""
 #: src/addons/follow-packs/FollowPackManager.ts:393
 #: src/components/ui/note-rendering/RepostRenderer.ts:110
 #: src/components/ui/note-rendering/ZapReceiptRenderer.ts:139
-#: src/components/views/MessagesView.ts:160
+#: src/components/views/MessagesView.ts:169
 #: src/components/views/ZapstoreAppView.ts:408
 msgid "Unknown"
 msgstr "Unknown"
@@ -1233,7 +1234,8 @@ msgstr "Confirm booking"
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:663
 #: src/addons/note-taking/NoteEditorModal.ts:364
 #: src/components/views/ArticleView.ts:160
-#: src/components/views/MessagesView.ts:585
+#: src/components/views/MessagesView.ts:666
+#: src/components/views/MessagesView.ts:711
 #: src/lists/tribes.ts:2746
 #: src/services/ModalService.ts:246
 msgid "Delete"
@@ -1374,11 +1376,11 @@ msgstr "⏱ Disappears in %s"
 msgid "⏱ Disappears in ~%s"
 msgstr "⏱ Disappears in ~%s"
 
-#: src/components/views/MessagesView.ts:776
+#: src/components/views/MessagesView.ts:983
 msgid "All messages marked as read"
 msgstr "All messages marked as read"
 
-#: src/components/views/MessagesView.ts:782
+#: src/components/views/MessagesView.ts:989
 msgid "All messages marked as unread"
 msgstr "All messages marked as unread"
 
@@ -1392,11 +1394,11 @@ msgid "Click or drag & drop to upload video"
 msgstr "Click or drag & drop to upload video"
 
 #: src/components/views/ConversationView.ts:924
-#: src/components/views/MessagesView.ts:607
+#: src/components/views/MessagesView.ts:688
 msgid "Conversation deleted"
 msgstr "Conversation deleted"
 
-#: src/components/views/MessagesView.ts:606
+#: src/components/views/MessagesView.ts:687
 msgid "Conversation deleted & sender muted"
 msgstr "Conversation deleted & sender muted"
 
@@ -1404,7 +1406,7 @@ msgstr "Conversation deleted & sender muted"
 msgid "Could not accept"
 msgstr "Could not accept"
 
-#: src/components/views/MessagesView.ts:270
+#: src/components/views/MessagesView.ts:320
 msgid "Could not load older messages"
 msgstr "Could not load older messages"
 
@@ -1437,22 +1439,22 @@ msgstr "Custom…"
 msgid "Days"
 msgstr "Days"
 
-#: src/components/views/MessagesView.ts:575
+#: src/components/views/MessagesView.ts:656
 msgid "Delete & mute"
 msgstr "Delete & mute"
 
-#: src/components/views/MessagesView.ts:543
+#: src/components/views/MessagesView.ts:601
 msgid "Delete &amp; mute sender"
 msgstr "Delete &amp; mute sender"
 
 #: src/components/views/ConversationView.ts:433
 #: src/components/views/ConversationView.ts:913
-#: src/components/views/MessagesView.ts:543
-#: src/components/views/MessagesView.ts:575
+#: src/components/views/MessagesView.ts:601
+#: src/components/views/MessagesView.ts:656
 msgid "Delete conversation"
 msgstr "Delete conversation"
 
-#: src/components/views/MessagesView.ts:577
+#: src/components/views/MessagesView.ts:658
 msgid ""
 "Delete this conversation and mute %s? They won't appear in your messages "
 "again."
@@ -1460,7 +1462,7 @@ msgstr ""
 "Delete this conversation and mute %s? They won't appear in your messages "
 "again."
 
-#: src/components/views/MessagesView.ts:581
+#: src/components/views/MessagesView.ts:662
 msgid "Delete this conversation with %s? It's removed only from this device."
 msgstr "Delete this conversation with %s? It's removed only from this device."
 
@@ -1524,7 +1526,7 @@ msgid "Duration must be at most 1 year."
 msgstr "Duration must be at most 1 year."
 
 #: src/components/views/ConversationView.ts:1219
-#: src/components/views/MessagesView.ts:701
+#: src/components/views/MessagesView.ts:908
 msgid "Failed to load messages"
 msgstr "Failed to load messages"
 
@@ -1549,31 +1551,31 @@ msgstr "https://... or upload"
 msgid "Landscape"
 msgstr "Landscape"
 
-#: src/components/views/MessagesView.ts:179
-#: src/components/views/MessagesView.ts:257
-#: src/components/views/MessagesView.ts:267
+#: src/components/views/MessagesView.ts:194
+#: src/components/views/MessagesView.ts:307
+#: src/components/views/MessagesView.ts:317
 msgid "Load older messages"
 msgstr "Load older messages"
 
 #: src/components/views/ConversationView.ts:248
-#: src/components/views/MessagesView.ts:168
-#: src/components/views/MessagesView.ts:173
+#: src/components/views/MessagesView.ts:177
+#: src/components/views/MessagesView.ts:188
 msgid "Loading messages..."
 msgstr "Loading messages..."
 
-#: src/components/views/MessagesView.ts:66
+#: src/components/views/MessagesView.ts:72
 msgid "Loading more conversations..."
 msgstr "Loading more conversations..."
 
-#: src/components/views/MessagesView.ts:240
+#: src/components/views/MessagesView.ts:290
 msgid "Loading older messages…"
 msgstr "Loading older messages…"
 
-#: src/components/views/MessagesView.ts:642
+#: src/components/views/MessagesView.ts:849
 msgid "Mark all read"
 msgstr "Mark all read"
 
-#: src/components/views/MessagesView.ts:646
+#: src/components/views/MessagesView.ts:853
 msgid "Mark all unread"
 msgstr "Mark all unread"
 
@@ -1584,14 +1586,14 @@ msgstr "Mark all unread"
 msgid "Media module not available"
 msgstr "Media module not available"
 
-#: src/components/views/MessagesView.ts:148
+#: src/components/views/MessagesView.ts:157
 msgid "Message options"
 msgstr "Message options"
 
 #: src/components/layout/MainLayout.ts:1948
 #: src/components/search/GlobalSearchView.ts:398
-#: src/components/views/MessagesView.ts:143
-#: src/components/views/MessagesView.ts:683
+#: src/components/views/MessagesView.ts:149
+#: src/components/views/MessagesView.ts:890
 msgid "Messages"
 msgstr "Messages"
 
@@ -1623,11 +1625,11 @@ msgstr "Mute user publicly"
 msgid "No"
 msgstr "No"
 
-#: src/components/views/MessagesView.ts:480
+#: src/components/views/MessagesView.ts:538
 msgid "No messages from people you follow"
 msgstr "No messages from people you follow"
 
-#: src/components/views/MessagesView.ts:481
+#: src/components/views/MessagesView.ts:539
 msgid "No messages from unknown users"
 msgstr "No messages from unknown users"
 
@@ -1635,7 +1637,7 @@ msgstr "No messages from unknown users"
 msgid "No messages yet"
 msgstr "No messages yet"
 
-#: src/components/views/MessagesView.ts:254
+#: src/components/views/MessagesView.ts:304
 msgid "No older messages"
 msgstr "No older messages"
 
@@ -1665,7 +1667,7 @@ msgstr "Publish"
 msgid "Publishing..."
 msgstr "Publishing..."
 
-#: src/components/views/MessagesView.ts:788
+#: src/components/views/MessagesView.ts:995
 msgid ""
 "Re-fetch your full message history from the relays. Existing messages are "
 "kept — this only pulls anything missing. May take a moment."
@@ -1673,12 +1675,12 @@ msgstr ""
 "Re-fetch your full message history from the relays. Existing messages are "
 "kept — this only pulls anything missing. May take a moment."
 
-#: src/components/views/MessagesView.ts:791
+#: src/components/views/MessagesView.ts:998
 msgid "Re-sync"
 msgstr "Re-sync"
 
-#: src/components/views/MessagesView.ts:650
-#: src/components/views/MessagesView.ts:787
+#: src/components/views/MessagesView.ts:857
+#: src/components/views/MessagesView.ts:994
 msgid "Re-sync messages"
 msgstr "Re-sync messages"
 
@@ -1692,7 +1694,7 @@ msgstr "Remove video"
 #: src/components/system/OfflineOverlay.ts:49
 #: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:102
 #: src/components/views/ConversationView.ts:1220
-#: src/components/views/MessagesView.ts:702
+#: src/components/views/MessagesView.ts:909
 msgid "Retry"
 msgstr "Retry"
 
@@ -1704,7 +1706,7 @@ msgstr "Send a message to start the conversation"
 msgid "Signer did not respond — message not sent"
 msgstr "Signer did not respond — message not sent"
 
-#: src/components/views/MessagesView.ts:487
+#: src/components/views/MessagesView.ts:545
 msgid "Start a conversation by clicking \"New Message\""
 msgstr "Start a conversation by clicking \"New Message\""
 
@@ -2397,7 +2399,7 @@ msgstr "No write relays configured"
 
 #: src/components/ui/interaction-managers/RepostManager.ts:139
 #: src/components/ui/interaction-managers/RepostManager.ts:251
-#: src/components/views/SingleNoteView.ts:122
+#: src/components/views/SingleNoteView.ts:123
 msgid "Note not found"
 msgstr "Note not found"
 
@@ -6533,6 +6535,8 @@ msgstr "Delete many of your notes at once via NIP-09 requests."
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:206
 #: src/addons/bulk-delete/BulkDeleteView.ts:889
+#: src/components/views/MessagesView.ts:184
+#: src/components/views/MessagesView.ts:762
 msgid "Delete selected (%s)"
 msgstr "Delete selected (%s)"
 
@@ -8348,6 +8352,8 @@ msgstr "See more"
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:202
 #: src/addons/bulk-delete/BulkDeleteView.ts:817
+#: src/components/views/MessagesView.ts:182
+#: src/components/views/MessagesView.ts:774
 msgid "Select all visible"
 msgstr "Select all visible"
 
@@ -8803,6 +8809,7 @@ msgid "Unarchive"
 msgstr "Unarchive"
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:816
+#: src/components/views/MessagesView.ts:773
 msgid "Unselect all visible"
 msgstr "Unselect all visible"
 
@@ -9858,7 +9865,7 @@ msgstr "Fetching more results from Relays..."
 
 #: src/components/layout/partials/SccMediaFeed.ts:45
 #: src/components/layout/partials/SccMediaFeed.ts:59
-#: src/helpers/renderMediaContent.ts:531
+#: src/helpers/renderMediaContent.ts:529
 msgid "Loading media..."
 msgstr "Loading media..."
 
@@ -9879,7 +9886,7 @@ msgstr "Loading more…"
 msgid "Loading recipes..."
 msgstr "Loading recipes..."
 
-#: src/components/views/MessagesView.ts:156
+#: src/components/views/MessagesView.ts:165
 msgid "Known"
 msgstr "Known"
 
@@ -11076,7 +11083,7 @@ msgstr "Calendars"
 msgid "Checking..."
 msgstr "Checking..."
 
-#: src/helpers/renderMediaContent.ts:116
+#: src/helpers/renderMediaContent.ts:113
 msgid "Click to read · EPUB"
 msgstr "Click to read · EPUB"
 
@@ -11137,7 +11144,7 @@ msgstr "Delete draft"
 msgid "Delete Note"
 msgstr "Delete Note"
 
-#: src/components/views/MessagesView.ts:687
+#: src/components/views/MessagesView.ts:894
 msgid "Direct messages are not available with Bunker URL login"
 msgstr "Direct messages are not available with Bunker URL login"
 
@@ -11145,8 +11152,8 @@ msgstr "Direct messages are not available with Bunker URL login"
 msgid "Dismiss"
 msgstr "Dismiss"
 
-#: src/helpers/renderMediaContent.ts:114
-#: src/helpers/renderMediaContent.ts:115
+#: src/helpers/renderMediaContent.ts:111
+#: src/helpers/renderMediaContent.ts:112
 msgid "Download Epub File"
 msgstr "Download Epub File"
 
@@ -11182,7 +11189,7 @@ msgstr "Failed to generate QR code"
 msgid "Failed to load follow pack"
 msgstr "Failed to load follow pack"
 
-#: src/components/views/SingleNoteView.ts:129
+#: src/components/views/SingleNoteView.ts:130
 msgid "Failed to load note"
 msgstr "Failed to load note"
 
@@ -11252,7 +11259,7 @@ msgstr "Loading follow pack..."
 msgid "Loading more events..."
 msgstr "Loading more events..."
 
-#: src/components/views/SingleNoteView.ts:108
+#: src/components/views/SingleNoteView.ts:105
 msgid "Loading note..."
 msgstr "Loading note..."
 
@@ -11359,7 +11366,7 @@ msgstr "Open Follow Pack"
 msgid "Option"
 msgstr "Option"
 
-#: src/components/views/SingleNoteView.ts:258
+#: src/components/views/SingleNoteView.ts:266
 msgid "Original note not found"
 msgstr "Original note not found"
 
@@ -11426,7 +11433,7 @@ msgstr "Quoted note not found"
 msgid "Raw Event"
 msgstr "Raw Event"
 
-#: src/helpers/renderMediaContent.ts:116
+#: src/helpers/renderMediaContent.ts:113
 msgid "Read this book"
 msgstr "Read this book"
 
@@ -11501,7 +11508,7 @@ msgstr "Submit Report"
 msgid "Submitting..."
 msgstr "Submitting..."
 
-#: src/helpers/renderMediaContent.ts:199
+#: src/helpers/renderMediaContent.ts:196
 msgid "Tagged users:"
 msgstr "Tagged users:"
 
@@ -11548,8 +11555,8 @@ msgstr "Upload failed. Please try again."
 msgid "Usually not needed - uses your default relays"
 msgstr "Usually not needed - uses your default relays"
 
-#: src/helpers/renderMediaContent.ts:152
-#: src/helpers/renderMediaContent.ts:257
+#: src/helpers/renderMediaContent.ts:149
+#: src/helpers/renderMediaContent.ts:254
 msgid "Watch on YouTube"
 msgstr "Watch on YouTube"
 
@@ -11565,7 +11572,7 @@ msgstr "You are reporting a specific note by"
 msgid "You are reporting user"
 msgstr "You are reporting user"
 
-#: src/components/views/MessagesView.ts:688
+#: src/components/views/MessagesView.ts:895
 msgid ""
 "Your remote signer does not support NIP-44 encryption required for private "
 "messages. Use a browser extension or NoorSigner for full DM access."
@@ -11573,8 +11580,8 @@ msgstr ""
 "Your remote signer does not support NIP-44 encryption required for private "
 "messages. Use a browser extension or NoorSigner for full DM access."
 
-#: src/helpers/renderMediaContent.ts:152
-#: src/helpers/renderMediaContent.ts:257
+#: src/helpers/renderMediaContent.ts:149
+#: src/helpers/renderMediaContent.ts:254
 msgid "YouTube video player"
 msgstr "YouTube video player"
 
@@ -12119,13 +12126,82 @@ msgstr ""
 "The ticket and all its comments will be removed from relays that honor "
 "NIP-09. Copies may persist elsewhere. Delete \"%s\"?"
 
-#: src/helpers/renderMediaContent.ts:641
+#: src/helpers/renderMediaContent.ts:639
 msgid "Media unavailable"
 msgstr "Media unavailable"
 
-#: src/helpers/renderMediaContent.ts:530
+#: src/helpers/renderMediaContent.ts:528
 msgid "Tap to load media"
 msgstr "Tap to load media"
+
+#: src/components/views/MessagesView.ts:746
+msgid "%s of %s conversations deleted"
+msgstr "%s of %s conversations deleted"
+
+#: src/components/views/MessagesView.ts:743
+msgid "Conversations deleted & senders muted"
+msgstr "Conversations deleted & senders muted"
+
+#: src/components/views/MessagesView.ts:705
+msgid ""
+"Delete %s conversation and mute its sender? It won't appear in your "
+"messages again."
+msgid_plural ""
+"Delete %s conversations and mute their senders? They won't appear in your "
+"messages again."
+msgstr[0] ""
+"Delete %s conversation and mute its sender? It won't appear in your "
+"messages again."
+msgstr[1] ""
+
+#: src/components/views/MessagesView.ts:704
+msgid "Delete selected conversations"
+msgstr "Delete selected conversations"
+
+#: src/components/views/MessagesView.ts:615
+msgid "Select conversation for deletion"
+msgstr "Select conversation for deletion"
+
+#: src/components/views/MessagesView.ts:152
+#: src/components/views/MessagesView.ts:814
+msgid "Spam mode"
+msgstr "Spam mode"
+
+#: src/components/views/MessagesView.ts:814
+msgid "Spam mode active"
+msgstr "Spam mode active"
+
+#: src/components/views/MessagesView.ts:230
+msgid "Spam mode disabled"
+msgstr "Spam mode disabled"
+
+#: src/components/views/MessagesView.ts:229
+msgid "Spam mode enabled — alerts off for 24 h"
+msgstr "Spam mode enabled — alerts off for 24 h"
+
+#: src/components/views/MessagesView.ts:237
+msgid ""
+"Silences alerts for new messages from unknown senders. Stays on for 24 h, "
+"then turns off automatically."
+msgstr ""
+"Silences alerts for new messages from unknown senders. Stays on for 24 h, "
+"then turns off automatically."
+
+#: src/services/dm/DMToastNotifier.ts:224
+msgid "%s new messages from known senders"
+msgstr "%s new messages from known senders"
+
+#: src/services/dm/DMToastNotifier.ts:223
+msgid "%s new messages from unknown senders"
+msgstr "%s new messages from unknown senders"
+
+#: src/services/dm/DMToastNotifier.ts:259
+msgid "New message from %s"
+msgstr "New message from %s"
+
+#: src/services/dm/DMToastNotifier.ts:257
+msgid "New message from an unknown sender"
+msgstr "New message from an unknown sender"
 
 #: src/addons/note-taking/NoteEditorModal.ts:362
 #: src/addons/note-taking/NoteEditorModal.ts:85

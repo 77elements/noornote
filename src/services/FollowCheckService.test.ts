@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-/** Regression tests for the UnknownDMNotifier "toast for followed senders"
+/** Regression tests for the DMToastNotifier "toast for followed senders"
  *  bug: FollowCheckService's in-memory set went stale (or was never
  *  bootstrapped) because nothing subscribed it to 'follow:updated'. */
 

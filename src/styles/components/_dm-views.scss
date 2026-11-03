@@ -61,6 +61,26 @@
   margin-inline-start: 0;
 }
 
+// Spam-mode toggle (Unknown tab). Active state = .btn--danger from atoms.
+.messages-view__spam-btn {
+  white-space: nowrap;
+}
+
+// Bulk-selection bar above the Unknown list (l-row--split: link left,
+// delete button right).
+.messages-view__bulk-bar {
+  margin-top: $gap;
+  margin-bottom: $gap;
+  align-items: center;
+}
+
+// Leading bulk-select checkbox on Unknown-tab conversation rows. The row is
+// an existing flex container; keep the checkbox from being squished by long
+// names/previews (new child, layout itself untouched).
+.conversation-item__select {
+  flex-shrink: 0;
+}
+
 .messages-view__content {
   flex: 1;
   // Note: Scrolling handled by parent .primary-content

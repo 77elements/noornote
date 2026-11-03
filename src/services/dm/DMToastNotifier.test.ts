@@ -1,7 +1,14 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockBus, mockToast, mockFollowFn, mockRouter } = vi.hoisted(() => {
+const {
+  mockBus,
+  mockToast,
+  mockFollowFn,
+  mockRouter,
+  mockStore,
+  mockCurrentPath,
+} = vi.hoisted(() => {
   const handlers = new Map<string, (payload: unknown) => void>();
   const mockFollowFn = vi.fn(async () => false);
   return {
@@ -21,7 +28,23 @@ const { mockBus, mockToast, mockFollowFn, mockRouter } = vi.hoisted(() => {
       dismiss: vi.fn(),
     },
     mockFollowFn,
-    mockRouter: { getInstance: () => ({ navigate: vi.fn() }) },
+    mockRouter: {
+      getInstance: () => ({
+        navigate: vi.fn(),
+        getCurrentPath: () => mockCurrentPath.value,
+      }),
+    },
+    mockCurrentPath: { value: '' },
+    mockStore: {
+      data: new Map<string, unknown>(),
+      get: vi.fn(
+        (key: string, defaultValue: unknown) =>
+          mockStore.data.get(key) ?? defaultValue
+      ),
+      set: vi.fn((key: string, value: unknown) => {
+        mockStore.data.set(key, value);
+      }),
+    },
   };
 });
 
@@ -32,10 +55,25 @@ vi.mock('../FollowCheckService', () => ({
     getInstance: () => ({ isFollowing: mockFollowFn }),
   },
 }));
+vi.mock('../UserProfileService', () => ({
+  UserProfileService: {
+    getInstance: () => ({
+      getUserProfile: vi.fn(async () => ({
+        display_name: 'Alice',
+        name: 'alice',
+        picture: '',
+      })),
+    }),
+  },
+}));
 vi.mock('../Router', () => ({ Router: mockRouter }));
 vi.mock('../DiagnosticLogger', () => ({ diagLog: vi.fn() }));
+vi.mock('../PerAccountLocalStorage', () => ({
+  PerAccountLocalStorage: { getInstance: () => mockStore },
+  StorageKeys: { DM_SPAM_MODE_UNTIL: 'noornote_dm_spam_mode_until_map' },
+}));
 
-import { UnknownDMNotifier } from './UnknownDMNotifier';
+import { DMToastNotifier } from './DMToastNotifier';
 import type { DMMessage } from './DMStore';
 
 const mkMessage = (overrides: Partial<DMMessage> = {}): DMMessage =>
@@ -57,13 +95,15 @@ const emit = (name: string, payload: unknown) =>
 /** Flush microtasks + timers so the async dm:new-message handler settles. */
 const flush = () => new Promise(resolve => setTimeout(resolve, 0));
 
-describe('UnknownDMNotifier — wasUnread read-anchor filter', () => {
+describe('DMToastNotifier — wasUnread read-anchor filter', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockStore.data.clear();
+    mockCurrentPath.value = '';
     mockFollowFn.mockImplementation(async () => false);
-    UnknownDMNotifier.reset();
+    DMToastNotifier.reset();
     // Instantiate (registers bus handlers) — tests assert via mockBus
-    void UnknownDMNotifier.getInstance();
+    void DMToastNotifier.getInstance();
   });
 
   it('ignores explicitly-read arrivals (wasUnread: false) — no toast for replayed read backlog', async () => {
@@ -173,8 +213,26 @@ describe('UnknownDMNotifier — wasUnread read-anchor filter', () => {
     expect(mockToast.showWithAction).not.toHaveBeenCalled();
   });
 
-  it('still ignores followed senders (async follow gate)', async () => {
+  it('toasts followed senders on the known track with their display name (async follow gate)', async () => {
     mockFollowFn.mockResolvedValue(true);
+    emit('dm:new-message', {
+      message: mkMessage(),
+      conversationWith: 'sender-a',
+      wasUnread: true,
+    });
+    await flush();
+
+    expect(mockToast.showWithAction).toHaveBeenCalledTimes(1);
+    expect(mockToast.showWithAction).toHaveBeenCalledWith(
+      'New message from Alice',
+      'info',
+      expect.anything(),
+      expect.any(Number)
+    );
+  });
+
+  it('does not toast for the conversation the user is currently viewing', async () => {
+    mockCurrentPath.value = '/messages/sender-a';
     emit('dm:new-message', {
       message: mkMessage(),
       conversationWith: 'sender-a',
@@ -208,5 +266,96 @@ describe('UnknownDMNotifier — wasUnread read-anchor filter', () => {
       expect.anything(),
       expect.any(Number)
     );
+  });
+});
+
+describe('DMToastNotifier — spam-attack shield', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockStore.data.clear();
+    mockCurrentPath.value = '';
+    mockFollowFn.mockImplementation(async () => false);
+    DMToastNotifier.reset();
+    void DMToastNotifier.getInstance();
+  });
+
+  it('shows no toast while the spam mode is engaged', async () => {
+    DMToastNotifier.setSpamMode(true);
+    emit('dm:new-message', {
+      message: mkMessage(),
+      conversationWith: 'sender-a',
+      wasUnread: true,
+    });
+    await flush();
+
+    expect(DMToastNotifier.isSpamModeActive()).toBe(true);
+    expect(mockToast.showWithAction).not.toHaveBeenCalled();
+  });
+
+  it('known senders still toast while the spam mode is engaged (shield is unknown-only)', async () => {
+    DMToastNotifier.setSpamMode(true);
+    mockFollowFn.mockResolvedValue(true);
+    emit('dm:new-message', {
+      message: mkMessage(),
+      conversationWith: 'sender-a',
+      wasUnread: true,
+    });
+    await flush();
+
+    expect(mockToast.showWithAction).toHaveBeenCalledTimes(1);
+    expect(mockToast.showWithAction).toHaveBeenCalledWith(
+      'New message from Alice',
+      'info',
+      expect.anything(),
+      expect.any(Number)
+    );
+  });
+
+  it('dismisses a visible toast the moment the shield engages', async () => {
+    emit('dm:new-message', {
+      message: mkMessage(),
+      conversationWith: 'sender-a',
+      wasUnread: true,
+    });
+    await flush();
+    expect(mockToast.showWithAction).toHaveBeenCalledTimes(1);
+
+    DMToastNotifier.setSpamMode(true);
+    expect(mockToast.dismiss).toHaveBeenCalledWith('toast-1');
+  });
+
+  it('toasts again once the persisted shield has expired', async () => {
+    // Simulate a shield engaged 25 h ago → expiry lies in the past.
+    mockStore.data.set(
+      'noornote_dm_spam_mode_until_map',
+      Date.now() - 25 * 60 * 60 * 1000
+    );
+    DMToastNotifier.reset();
+    void DMToastNotifier.getInstance();
+
+    expect(DMToastNotifier.isSpamModeActive()).toBe(false);
+    emit('dm:new-message', {
+      message: mkMessage(),
+      conversationWith: 'sender-a',
+      wasUnread: true,
+    });
+    await flush();
+
+    expect(mockToast.showWithAction).toHaveBeenCalledTimes(1);
+  });
+
+  it('disengaging re-arms the notifier immediately', async () => {
+    DMToastNotifier.setSpamMode(true);
+    DMToastNotifier.setSpamMode(false);
+
+    expect(DMToastNotifier.isSpamModeActive()).toBe(false);
+    emit('dm:new-message', {
+      message: mkMessage(),
+      conversationWith: 'sender-a',
+      wasUnread: true,
+    });
+    await flush();
+
+    expect(mockToast.showWithAction).toHaveBeenCalledTimes(1);
   });
 });

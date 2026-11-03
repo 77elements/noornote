@@ -8,7 +8,7 @@
  */
 
 import { errMessage } from '../../helpers/errorMessage';
-import { _ } from '../../i18n';
+import { _, tn } from '../../i18n';
 import { View } from './View';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { DMsModuleApi } from '../../modules/dms/contracts';
@@ -17,6 +17,8 @@ import { buildConversationItem } from '../ui/ConversationItem';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { Router } from '../../services/Router';
 import { SystemLogger } from '../../services/SystemLogger';
+import { DMToastNotifier } from '../../services/dm/DMToastNotifier';
+import { Tooltip } from '../ui/Tooltip';
 import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
 import { ToastService } from '../../services/ToastService';
@@ -53,6 +55,10 @@ export class MessagesView extends View {
   private progressBar: ProgressBarHelper | null = null;
   private isFetchingDMs: boolean = false;
   private menuElement: HTMLElement | null = null;
+  /** Unknown-tab bulk selection: pubkeys of loaded conversations ticked for delete & mute. */
+  private selectedUnknown: Set<string> = new Set();
+  /** Disposer for the spam-mode button tooltip. */
+  private spamTooltipDisposer: (() => void) | null = null;
 
   constructor() {
     super();
@@ -142,6 +148,9 @@ export class MessagesView extends View {
         <div class="messages-view__header progress-bar-container">
           <h1>${_('Messages')}</h1>
           <div class="messages-view__actions">
+            <button class="btn btn--medium messages-view__spam-btn" data-spam-btn hidden>
+              ${_('Spam mode')}
+            </button>
             <button class="btn btn--medium messages-view__compose-btn">
               ${_('New Message')}
             </button>
@@ -169,6 +178,12 @@ export class MessagesView extends View {
             </div>
           </div>
           <div class="tab-content" data-tab-content="unknown">
+            <div class="messages-view__bulk-bar l-row--split" data-bulk-bar hidden>
+              <a href="#" data-action="select-all-loaded">${_('Select all visible')}</a>
+              <button class="btn btn--danger btn--medium" data-action="delete-selected" disabled>
+                ${_('Delete selected (%s)', '0')}
+              </button>
+            </div>
             <div class="messages-view__list" data-list="unknown">
               <div class="messages-view__loading">${_('Loading messages...')}</div>
             </div>
@@ -200,6 +215,41 @@ export class MessagesView extends View {
       '.messages-view__compose-btn'
     );
     composeBtn?.addEventListener('click', () => this.openComposeModal());
+
+    // Spam-attack shield toggle (Unknown tab only)
+    const spamBtn = this.container.querySelector(
+      '[data-spam-btn]'
+    ) as HTMLButtonElement | null;
+    spamBtn?.addEventListener('click', () => {
+      const engage = !DMToastNotifier.isSpamModeActive();
+      DMToastNotifier.setSpamMode(engage);
+      this.updateSpamButton();
+      ToastService.show(
+        engage
+          ? _('Spam mode enabled — alerts off for 24 h')
+          : _('Spam mode disabled'),
+        'success'
+      );
+    });
+    if (spamBtn) {
+      this.spamTooltipDisposer = Tooltip.attach(
+        spamBtn,
+        _(
+          'Silences alerts for new messages from unknown senders. Stays on for 24 h, then turns off automatically.'
+        )
+      );
+    }
+
+    // Bulk selection bar (Unknown tab only)
+    this.container
+      .querySelector('[data-action="select-all-loaded"]')
+      ?.addEventListener('click', e => {
+        e.preventDefault();
+        this.toggleSelectAllLoaded();
+      });
+    this.container
+      .querySelector('[data-action="delete-selected"]')
+      ?.addEventListener('click', () => void this.handleDeleteSelected());
 
     // Setup menu trigger
     const menuTrigger = this.container.querySelector(
@@ -278,6 +328,14 @@ export class MessagesView extends View {
     if (this.activeTab === tab) return;
 
     this.activeTab = tab;
+
+    // Selection and controls are Unknown-tab-only; drop them on tab change.
+    this.clearBulkSelection();
+    this.updateSpamButton();
+    const bulkBar = this.container.querySelector(
+      '[data-bulk-bar]'
+    ) as HTMLElement | null;
+    if (bulkBar) bulkBar.hidden = tab !== 'unknown';
 
     // Update tab UI and content using TabsHelper
     switchTabWithContent(this.container, tab);
@@ -545,6 +603,29 @@ export class MessagesView extends View {
       </button>
     `;
 
+    // Unknown-tab bulk selection: leading checkbox, survives quiet re-renders
+    // via the selectedUnknown set. Clicks must not open the conversation —
+    // stopPropagation on click so the row's open-conversation handler never
+    // sees it.
+    if (this.activeTab === 'unknown') {
+      const checked = this.selectedUnknown.has(conversation.pubkey);
+      item.insertAdjacentHTML(
+        'afterbegin',
+        `<span class="nn-checkbox conversation-item__select">
+          <input type="checkbox" data-conv-select data-pubkey="${conversation.pubkey}" aria-label="${_('Select conversation for deletion')}"${checked ? ' checked' : ''} />
+        </span>`
+      );
+      const checkbox = item.querySelector(
+        'input[data-conv-select]'
+      ) as HTMLInputElement | null;
+      checkbox?.addEventListener('click', e => e.stopPropagation());
+      checkbox?.addEventListener('change', () => {
+        if (checkbox.checked) this.selectedUnknown.add(conversation.pubkey);
+        else this.selectedUnknown.delete(conversation.pubkey);
+        this.updateBulkBar();
+      });
+    }
+
     // Click handler to open conversation
     item.addEventListener('click', () => {
       this.openConversation(conversation.pubkey);
@@ -607,6 +688,132 @@ export class MessagesView extends View {
         : _('Conversation deleted'),
       'success'
     );
+  }
+
+  /**
+   * Bulk delete for the Unknown (spam) tab: delete & mute every selected
+   * conversation. Same semantics as the per-row "Delete & mute sender" —
+   * one call per conversation, local purge + private mute.
+   */
+  private async handleDeleteSelected(): Promise<void> {
+    const pubkeys = [...this.selectedUnknown];
+    if (pubkeys.length === 0) return;
+
+    const { ModalService } = await import('../../services/ModalService');
+    const confirmed = await ModalService.getInstance().confirm({
+      title: _('Delete selected conversations'),
+      message: tn(
+        "Delete %s conversation and mute its sender? It won't appear in your messages again.",
+        "Delete %s conversations and mute their senders? They won't appear in your messages again.",
+        pubkeys.length,
+        String(pubkeys.length)
+      ),
+      confirmText: _('Delete'),
+      cancelText: _('Cancel'),
+      confirmDestructive: true,
+    });
+    if (!confirmed) return;
+
+    let failed = 0;
+    const deleted: string[] = [];
+    for (const pubkey of pubkeys) {
+      try {
+        await this.dmsApi?.deleteAndMute(pubkey);
+        deleted.push(pubkey);
+      } catch (error) {
+        failed++;
+        this.systemLogger.warn(
+          'MessagesView',
+          `Bulk delete failed for ${pubkey.slice(0, 8)}…: ${errMessage(error)}`
+        );
+      }
+    }
+
+    // Optimistically remove the successfully deleted rows from the DOM.
+    deleted.forEach(pk => {
+      this.container
+        .querySelector(`.conversation-item[data-pubkey="${pk}"]`)
+        ?.remove();
+      this.conversations = this.conversations.filter(c => c.pubkey !== pk);
+      this.selectedUnknown.delete(pk);
+    });
+    this.updateBulkBar();
+
+    if (failed === 0) {
+      ToastService.show(_('Conversations deleted & senders muted'), 'success');
+    } else {
+      ToastService.show(
+        _(
+          '%s of %s conversations deleted',
+          String(deleted.length),
+          String(pubkeys.length)
+        ),
+        'warning'
+      );
+    }
+  }
+
+  /** Reflect the current selection state in the bulk bar controls. */
+  private updateBulkBar(): void {
+    const btn = this.container.querySelector(
+      '[data-action="delete-selected"]'
+    ) as HTMLButtonElement | null;
+    if (btn) {
+      btn.textContent = _(
+        'Delete selected (%s)',
+        String(this.selectedUnknown.size)
+      );
+      btn.disabled = this.selectedUnknown.size === 0;
+    }
+    const link = this.container.querySelector(
+      '[data-action="select-all-loaded"]'
+    );
+    if (link)
+      link.textContent = this.allLoadedSelected
+        ? _('Unselect all visible')
+        : _('Select all visible');
+  }
+
+  private get allLoadedSelected(): boolean {
+    return (
+      this.conversations.length > 0 &&
+      this.conversations.every(c => this.selectedUnknown.has(c.pubkey))
+    );
+  }
+
+  /** Select / unselect every currently LOADED conversation in the Unknown tab. */
+  private toggleSelectAllLoaded(): void {
+    const checked = !this.allLoadedSelected;
+    if (checked) {
+      this.conversations.forEach(c => this.selectedUnknown.add(c.pubkey));
+    } else {
+      this.selectedUnknown.clear();
+    }
+    this.container
+      .querySelectorAll<HTMLInputElement>('input[data-conv-select]')
+      .forEach(cb => {
+        cb.checked = checked;
+      });
+    this.updateBulkBar();
+  }
+
+  /** Drop the bulk selection and re-sync the controls. */
+  private clearBulkSelection(): void {
+    this.selectedUnknown.clear();
+    this.updateBulkBar();
+  }
+
+  /** Spam-mode toggle: visible only in the Unknown tab, danger-styled when active. */
+  private updateSpamButton(): void {
+    const btn = this.container.querySelector(
+      '[data-spam-btn]'
+    ) as HTMLButtonElement | null;
+    if (!btn) return;
+    btn.hidden = this.activeTab !== 'unknown';
+    const active = DMToastNotifier.isSpamModeActive();
+    btn.textContent = active ? _('Spam mode active') : _('Spam mode');
+    btn.classList.toggle('btn--danger', active);
+    btn.classList.toggle('btn--medium', !active);
   }
 
   /**
@@ -814,6 +1021,8 @@ export class MessagesView extends View {
    */
   public destroy(): void {
     this.closeMenu();
+    this.spamTooltipDisposer?.();
+    this.spamTooltipDisposer = null;
     // Remove menu from DOM
     if (this.menuElement) {
       this.menuElement.remove();

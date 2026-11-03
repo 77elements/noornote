@@ -399,7 +399,7 @@ msgstr "Gespeicherte Notizen, in Ordnern sortiert."
 msgid "Settings"
 msgstr "Einstellungen"
 
-#: src/components/views/SingleNoteView.ts:269
+#: src/components/views/SingleNoteView.ts:277
 msgid "Single Post"
 msgstr "Einzelner Beitrag"
 
@@ -460,8 +460,9 @@ msgstr ""
 #: src/components/settings/PrivacySettingsSection.ts:270
 #: src/components/settings/RelaySettingsSection.ts:480
 #: src/components/views/ConversationView.ts:619
-#: src/components/views/MessagesView.ts:586
-#: src/components/views/MessagesView.ts:792
+#: src/components/views/MessagesView.ts:667
+#: src/components/views/MessagesView.ts:712
+#: src/components/views/MessagesView.ts:999
 #: src/components/views/ProfileBookingView.ts:326
 #: src/components/views/ProfileBookingView.ts:497
 #: src/helpers/datePickerModal.ts:189
@@ -653,7 +654,7 @@ msgid "Message sent"
 msgstr "Nachricht gesendet"
 
 #: src/components/modals/DMComposeModal.ts:43
-#: src/components/views/MessagesView.ts:146
+#: src/components/views/MessagesView.ts:155
 msgid "New Message"
 msgstr "Neue Nachricht"
 
@@ -1034,7 +1035,8 @@ msgstr "Buchung bestätigen"
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:663
 #: src/addons/note-taking/NoteEditorModal.ts:364
 #: src/components/views/ArticleView.ts:160
-#: src/components/views/MessagesView.ts:585
+#: src/components/views/MessagesView.ts:666
+#: src/components/views/MessagesView.ts:711
 #: src/lists/tribes.ts:2746
 #: src/services/ModalService.ts:246
 msgid "Delete"
@@ -1159,7 +1161,7 @@ msgstr "⏱ Verschwindet in %s"
 msgid "⏱ Disappears in ~%s"
 msgstr "⏱ Verschwindet in ~%s"
 
-#: src/components/views/MessagesView.ts:776
+#: src/components/views/MessagesView.ts:983
 msgid "All messages marked as read"
 msgstr "Alle Nachrichten als gelesen markiert"
 
@@ -1172,7 +1174,7 @@ msgstr "Anwenden"
 msgid "Click or drag & drop to upload video"
 msgstr "Klicken oder ziehen & ablegen, um ein Video hochzuladen"
 
-#: src/components/views/MessagesView.ts:606
+#: src/components/views/MessagesView.ts:687
 msgid "Conversation deleted & sender muted"
 msgstr "Unterhaltung gelöscht & Absender stummschaltet"
 
@@ -1209,22 +1211,22 @@ msgstr "Benutzerdefiniert…"
 msgid "Days"
 msgstr "Tage"
 
-#: src/components/views/MessagesView.ts:575
+#: src/components/views/MessagesView.ts:656
 msgid "Delete & mute"
 msgstr "Löschen & stummschalten"
 
-#: src/components/views/MessagesView.ts:543
+#: src/components/views/MessagesView.ts:601
 msgid "Delete &amp; mute sender"
 msgstr "Absender löschen &amp; stummschalten"
 
 #: src/components/views/ConversationView.ts:433
 #: src/components/views/ConversationView.ts:913
-#: src/components/views/MessagesView.ts:543
-#: src/components/views/MessagesView.ts:575
+#: src/components/views/MessagesView.ts:601
+#: src/components/views/MessagesView.ts:656
 msgid "Delete conversation"
 msgstr "Unterhaltung löschen"
 
-#: src/components/views/MessagesView.ts:577
+#: src/components/views/MessagesView.ts:658
 msgid ""
 "Delete this conversation and mute %s? They won't appear in your messages "
 "again."
@@ -1292,7 +1294,7 @@ msgid "Duration must be at most 1 year."
 msgstr "Die Dauer darf höchstens 1 Jahr betragen."
 
 #: src/components/views/ConversationView.ts:1219
-#: src/components/views/MessagesView.ts:701
+#: src/components/views/MessagesView.ts:908
 msgid "Failed to load messages"
 msgstr "Nachrichten konnten nicht geladen werden"
 
@@ -1317,31 +1319,31 @@ msgstr "https://… oder hochladen"
 msgid "Landscape"
 msgstr "Querformat"
 
-#: src/components/views/MessagesView.ts:179
-#: src/components/views/MessagesView.ts:257
-#: src/components/views/MessagesView.ts:267
+#: src/components/views/MessagesView.ts:194
+#: src/components/views/MessagesView.ts:307
+#: src/components/views/MessagesView.ts:317
 msgid "Load older messages"
 msgstr "Ältere Nachrichten laden"
 
 #: src/components/views/ConversationView.ts:248
-#: src/components/views/MessagesView.ts:168
-#: src/components/views/MessagesView.ts:173
+#: src/components/views/MessagesView.ts:177
+#: src/components/views/MessagesView.ts:188
 msgid "Loading messages..."
 msgstr "Lade Nachrichten…"
 
-#: src/components/views/MessagesView.ts:66
+#: src/components/views/MessagesView.ts:72
 msgid "Loading more conversations..."
 msgstr "Lade weitere Unterhaltungen…"
 
-#: src/components/views/MessagesView.ts:240
+#: src/components/views/MessagesView.ts:290
 msgid "Loading older messages…"
 msgstr "Lade ältere Nachrichten…"
 
-#: src/components/views/MessagesView.ts:642
+#: src/components/views/MessagesView.ts:849
 msgid "Mark all read"
 msgstr "Alle als gelesen markieren"
 
-#: src/components/views/MessagesView.ts:646
+#: src/components/views/MessagesView.ts:853
 msgid "Mark all unread"
 msgstr "Alle als ungelesen markieren"
 
@@ -1352,14 +1354,14 @@ msgstr "Alle als ungelesen markieren"
 msgid "Media module not available"
 msgstr "Medien-Modul nicht verfügbar"
 
-#: src/components/views/MessagesView.ts:148
+#: src/components/views/MessagesView.ts:157
 msgid "Message options"
 msgstr "Nachrichten-Optionen"
 
 #: src/components/layout/MainLayout.ts:1948
 #: src/components/search/GlobalSearchView.ts:398
-#: src/components/views/MessagesView.ts:143
-#: src/components/views/MessagesView.ts:683
+#: src/components/views/MessagesView.ts:149
+#: src/components/views/MessagesView.ts:890
 msgid "Messages"
 msgstr "Nachrichten"
 
@@ -1389,11 +1391,11 @@ msgstr "Nutzer öffentlich stummschalten"
 msgid "No"
 msgstr "Nein"
 
-#: src/components/views/MessagesView.ts:480
+#: src/components/views/MessagesView.ts:538
 msgid "No messages from people you follow"
 msgstr "Keine Nachrichten von Personen, denen du folgst"
 
-#: src/components/views/MessagesView.ts:481
+#: src/components/views/MessagesView.ts:539
 msgid "No messages from unknown users"
 msgstr "Keine Nachrichten von unbekannten Nutzern"
 
@@ -1401,7 +1403,7 @@ msgstr "Keine Nachrichten von unbekannten Nutzern"
 msgid "No messages yet"
 msgstr "Noch keine Nachrichten"
 
-#: src/components/views/MessagesView.ts:254
+#: src/components/views/MessagesView.ts:304
 msgid "No older messages"
 msgstr "Keine älteren Nachrichten"
 
@@ -1427,7 +1429,7 @@ msgstr "Veröffentlichen"
 msgid "Publishing..."
 msgstr "Veröffentliche…"
 
-#: src/components/views/MessagesView.ts:788
+#: src/components/views/MessagesView.ts:995
 msgid ""
 "Re-fetch your full message history from the relays. Existing messages are "
 "kept — this only pulls anything missing. May take a moment."
@@ -1436,8 +1438,8 @@ msgstr ""
 "Nachrichten bleiben erhalten — es wird nur Fehlendes nachgezogen. Kann "
 "einen Moment dauern."
 
-#: src/components/views/MessagesView.ts:650
-#: src/components/views/MessagesView.ts:787
+#: src/components/views/MessagesView.ts:857
+#: src/components/views/MessagesView.ts:994
 msgid "Re-sync messages"
 msgstr "Nachrichten neu synchronisieren"
 
@@ -1451,7 +1453,7 @@ msgstr "Video entfernen"
 #: src/components/system/OfflineOverlay.ts:49
 #: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:102
 #: src/components/views/ConversationView.ts:1220
-#: src/components/views/MessagesView.ts:702
+#: src/components/views/MessagesView.ts:909
 msgid "Retry"
 msgstr "Erneut versuchen"
 
@@ -1463,7 +1465,7 @@ msgstr "Sende eine Nachricht, um die Unterhaltung zu starten"
 msgid "Signer did not respond — message not sent"
 msgstr "Signer hat nicht geantwortet — Nachricht nicht gesendet"
 
-#: src/components/views/MessagesView.ts:487
+#: src/components/views/MessagesView.ts:545
 msgid "Start a conversation by clicking \"New Message\""
 msgstr "Starte eine Unterhaltung über „Neue Nachricht“"
 
@@ -2052,7 +2054,7 @@ msgstr "Keine Schreib-Relays konfiguriert"
 
 #: src/components/ui/interaction-managers/RepostManager.ts:139
 #: src/components/ui/interaction-managers/RepostManager.ts:251
-#: src/components/views/SingleNoteView.ts:122
+#: src/components/views/SingleNoteView.ts:123
 msgid "Note not found"
 msgstr "Notiz nicht gefunden"
 
@@ -5968,6 +5970,8 @@ msgstr "Lösche viele deiner Notizen auf einmal via NIP-09-Anfragen."
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:206
 #: src/addons/bulk-delete/BulkDeleteView.ts:889
+#: src/components/views/MessagesView.ts:184
+#: src/components/views/MessagesView.ts:762
 msgid "Delete selected (%s)"
 msgstr "Auswahl löschen (%s)"
 
@@ -6676,7 +6680,7 @@ msgstr "Behalten"
 msgid "Keep off"
 msgstr "Ausgeschaltet lassen"
 
-#: src/components/views/MessagesView.ts:156
+#: src/components/views/MessagesView.ts:165
 msgid "Known"
 msgstr "Bekannt"
 
@@ -6739,7 +6743,7 @@ msgstr "Listing wird geladen …"
 
 #: src/components/layout/partials/SccMediaFeed.ts:45
 #: src/components/layout/partials/SccMediaFeed.ts:59
-#: src/helpers/renderMediaContent.ts:531
+#: src/helpers/renderMediaContent.ts:529
 msgid "Loading media..."
 msgstr "Lade Medien …"
 
@@ -8091,6 +8095,7 @@ msgid "Ultra (near-zero quality loss)"
 msgstr "Ultra (nahezu kein Qualitätsverlust)"
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:816
+#: src/components/views/MessagesView.ts:773
 msgid "Unselect all visible"
 msgstr "Alle sichtbaren abwählen"
 
@@ -8429,7 +8434,7 @@ msgstr "Alle"
 msgid "All data remains on your device."
 msgstr "Alle Daten bleiben auf deinem Gerät."
 
-#: src/components/views/MessagesView.ts:782
+#: src/components/views/MessagesView.ts:989
 msgid "All messages marked as unread"
 msgstr "Alle Nachrichten als ungelesen markiert"
 
@@ -8636,7 +8641,7 @@ msgid "Connecting..."
 msgstr "Verbindung wird hergestellt …"
 
 #: src/components/views/ConversationView.ts:924
-#: src/components/views/MessagesView.ts:607
+#: src/components/views/MessagesView.ts:688
 msgid "Conversation deleted"
 msgstr "Unterhaltung gelöscht"
 
@@ -8644,7 +8649,7 @@ msgstr "Unterhaltung gelöscht"
 msgid "Could not accept invitation"
 msgstr "Einladung konnte nicht angenommen werden"
 
-#: src/components/views/MessagesView.ts:270
+#: src/components/views/MessagesView.ts:320
 msgid "Could not load older messages"
 msgstr "Ältere Nachrichten konnten nicht geladen werden"
 
@@ -8729,7 +8734,7 @@ msgstr "„%s“%s löschen? Eine Löschanfrage wird an Relays veröffentlicht."
 msgid "Delete dhikr"
 msgstr "Dhikr löschen"
 
-#: src/components/views/MessagesView.ts:581
+#: src/components/views/MessagesView.ts:662
 msgid "Delete this conversation with %s? It's removed only from this device."
 msgstr "Diese Unterhaltung mit %s löschen? Sie wird nur von diesem Gerät entfernt."
 
@@ -9337,7 +9342,7 @@ msgstr "Zitierte Reposts (%s)"
 msgid "quoted this listing:"
 msgstr "hat dieses Listing zitiert:"
 
-#: src/components/views/MessagesView.ts:791
+#: src/components/views/MessagesView.ts:998
 msgid "Re-sync"
 msgstr "Neu synchronisieren"
 
@@ -9422,6 +9427,8 @@ msgstr "Geplanter Beitrag abgebrochen"
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:202
 #: src/addons/bulk-delete/BulkDeleteView.ts:817
+#: src/components/views/MessagesView.ts:182
+#: src/components/views/MessagesView.ts:774
 msgid "Select all visible"
 msgstr "Alle sichtbaren auswählen"
 
@@ -9720,7 +9727,7 @@ msgstr "Entarchivieren"
 #: src/addons/follow-packs/FollowPackManager.ts:393
 #: src/components/ui/note-rendering/RepostRenderer.ts:110
 #: src/components/ui/note-rendering/ZapReceiptRenderer.ts:139
-#: src/components/views/MessagesView.ts:160
+#: src/components/views/MessagesView.ts:169
 #: src/components/views/ZapstoreAppView.ts:408
 msgid "Unknown"
 msgstr "Unbekannt"
@@ -11222,7 +11229,7 @@ msgstr "Kalender"
 msgid "Checking..."
 msgstr "Prüfe..."
 
-#: src/helpers/renderMediaContent.ts:116
+#: src/helpers/renderMediaContent.ts:113
 msgid "Click to read · EPUB"
 msgstr "Zum Lesen klicken · EPUB"
 
@@ -11283,7 +11290,7 @@ msgstr "Entwurf löschen"
 msgid "Delete Note"
 msgstr "Note löschen"
 
-#: src/components/views/MessagesView.ts:687
+#: src/components/views/MessagesView.ts:894
 msgid "Direct messages are not available with Bunker URL login"
 msgstr "Private Mitteilungen sind mit Bunker-URL-Login nicht verfügbar"
 
@@ -11291,8 +11298,8 @@ msgstr "Private Mitteilungen sind mit Bunker-URL-Login nicht verfügbar"
 msgid "Dismiss"
 msgstr "Ablehnen"
 
-#: src/helpers/renderMediaContent.ts:114
-#: src/helpers/renderMediaContent.ts:115
+#: src/helpers/renderMediaContent.ts:111
+#: src/helpers/renderMediaContent.ts:112
 msgid "Download Epub File"
 msgstr "EPUB-Datei herunterladen"
 
@@ -11328,7 +11335,7 @@ msgstr "QR-Code konnte nicht erzeugt werden"
 msgid "Failed to load follow pack"
 msgstr "Follow-Pack konnte nicht geladen werden"
 
-#: src/components/views/SingleNoteView.ts:129
+#: src/components/views/SingleNoteView.ts:130
 msgid "Failed to load note"
 msgstr "Note konnte nicht geladen werden"
 
@@ -11399,7 +11406,7 @@ msgstr "Lade Follow-Pack..."
 msgid "Loading more events..."
 msgstr "Lade weitere Events..."
 
-#: src/components/views/SingleNoteView.ts:108
+#: src/components/views/SingleNoteView.ts:105
 msgid "Loading note..."
 msgstr "Lade Note..."
 
@@ -11506,7 +11513,7 @@ msgstr "Follow-Pack öffnen"
 msgid "Option"
 msgstr "Option"
 
-#: src/components/views/SingleNoteView.ts:258
+#: src/components/views/SingleNoteView.ts:266
 msgid "Original note not found"
 msgstr "Original-Note nicht gefunden"
 
@@ -11573,7 +11580,7 @@ msgstr "Zitierte Note nicht gefunden"
 msgid "Raw Event"
 msgstr "Raw-Event"
 
-#: src/helpers/renderMediaContent.ts:116
+#: src/helpers/renderMediaContent.ts:113
 msgid "Read this book"
 msgstr "Dieses Buch lesen"
 
@@ -11648,7 +11655,7 @@ msgstr "Meldung absenden"
 msgid "Submitting..."
 msgstr "Sende..."
 
-#: src/helpers/renderMediaContent.ts:199
+#: src/helpers/renderMediaContent.ts:196
 msgid "Tagged users:"
 msgstr "Markierte Konten:"
 
@@ -11695,8 +11702,8 @@ msgstr "Upload fehlgeschlagen. Bitte erneut versuchen."
 msgid "Usually not needed - uses your default relays"
 msgstr "Meist nicht nötig — nutzt deine Standard-Relays"
 
-#: src/helpers/renderMediaContent.ts:152
-#: src/helpers/renderMediaContent.ts:257
+#: src/helpers/renderMediaContent.ts:149
+#: src/helpers/renderMediaContent.ts:254
 msgid "Watch on YouTube"
 msgstr "Auf YouTube ansehen"
 
@@ -11712,7 +11719,7 @@ msgstr "Du meldest eine bestimmte Note von"
 msgid "You are reporting user"
 msgstr "Du meldest den Nutzer"
 
-#: src/components/views/MessagesView.ts:688
+#: src/components/views/MessagesView.ts:895
 msgid ""
 "Your remote signer does not support NIP-44 encryption required for private "
 "messages. Use a browser extension or NoorSigner for full DM access."
@@ -11721,8 +11728,8 @@ msgstr ""
 "NIP-44-Verschlüsselung nicht. Nutze eine Browser-Erweiterung oder "
 "NoorSigner für vollen DM-Zugriff."
 
-#: src/helpers/renderMediaContent.ts:152
-#: src/helpers/renderMediaContent.ts:257
+#: src/helpers/renderMediaContent.ts:149
+#: src/helpers/renderMediaContent.ts:254
 msgid "YouTube video player"
 msgstr "YouTube-Video-Player"
 
@@ -12268,13 +12275,84 @@ msgstr ""
 "Das Ticket und alle Kommentare werden von Relays entfernt, die NIP-09 "
 "umsetzen. Kopien können bestehen bleiben. Löschen?"
 
-#: src/helpers/renderMediaContent.ts:641
+#: src/helpers/renderMediaContent.ts:639
 msgid "Media unavailable"
 msgstr "Medien nicht verfügbar"
 
-#: src/helpers/renderMediaContent.ts:530
+#: src/helpers/renderMediaContent.ts:528
 msgid "Tap to load media"
 msgstr "Tippen, um Medien zu laden"
+
+#: src/components/views/MessagesView.ts:746
+msgid "%s of %s conversations deleted"
+msgstr "%s von %s Unterhaltungen gelöscht"
+
+#: src/components/views/MessagesView.ts:743
+msgid "Conversations deleted & senders muted"
+msgstr "Unterhaltungen gelöscht & Absender stummschaltet"
+
+#: src/components/views/MessagesView.ts:705
+msgid ""
+"Delete %s conversation and mute its sender? It won't appear in your "
+"messages again."
+msgid_plural ""
+"Delete %s conversations and mute their senders? They won't appear in your "
+"messages again."
+msgstr[0] ""
+"%s Unterhaltung löschen und ihren Absender stummschalten? Sie erscheint "
+"danach nicht mehr in deinen Nachrichten."
+msgstr[1] ""
+"%s Unterhaltungen löschen und ihre Absender stummschalten? Sie erscheinen "
+"danach nicht mehr in deinen Nachrichten."
+
+#: src/components/views/MessagesView.ts:704
+msgid "Delete selected conversations"
+msgstr "Ausgewählte Unterhaltungen löschen"
+
+#: src/components/views/MessagesView.ts:615
+msgid "Select conversation for deletion"
+msgstr "Unterhaltung zum Löschen auswählen"
+
+#: src/components/views/MessagesView.ts:152
+#: src/components/views/MessagesView.ts:814
+msgid "Spam mode"
+msgstr "Spam-Modus"
+
+#: src/components/views/MessagesView.ts:814
+msgid "Spam mode active"
+msgstr "Spam-Modus aktiv"
+
+#: src/components/views/MessagesView.ts:230
+msgid "Spam mode disabled"
+msgstr "Spam-Modus deaktiviert"
+
+#: src/components/views/MessagesView.ts:229
+msgid "Spam mode enabled — alerts off for 24 h"
+msgstr "Spam-Modus aktiviert — Alarme 24 h aus"
+
+#: src/components/views/MessagesView.ts:237
+msgid ""
+"Silences alerts for new messages from unknown senders. Stays on for 24 h, "
+"then turns off automatically."
+msgstr ""
+"Unterdrückt Hinweise auf neue Nachrichten von unbekannten Sendern. Bleibt "
+"24 h aktiv und schaltet sich dann automatisch aus."
+
+#: src/services/dm/DMToastNotifier.ts:224
+msgid "%s new messages from known senders"
+msgstr "%s neue Nachrichten von bekannten Sendern"
+
+#: src/services/dm/DMToastNotifier.ts:223
+msgid "%s new messages from unknown senders"
+msgstr "%s neue Nachrichten von unbekannten Sendern"
+
+#: src/services/dm/DMToastNotifier.ts:259
+msgid "New message from %s"
+msgstr "Neue Nachricht von %s"
+
+#: src/services/dm/DMToastNotifier.ts:257
+msgid "New message from an unknown sender"
+msgstr "Neue Nachricht von unbekanntem Sender"
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"

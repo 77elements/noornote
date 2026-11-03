@@ -134,6 +134,10 @@ export const StorageKeys = {
   // (off / 7d / 30d / 1y) rehydrates and outgoing messages stay correctly tagged.
   // Value semantics: undefined/missing = undecided, 0 = off, >0 = seconds.
   DM_DISAPPEARING_SETTINGS: 'noornote_dm_disappearing_settings_map',
+  // Spam-attack shield (per-account) — wall-clock ms timestamp until which
+  // DMToastNotifier suppresses "new message from unknown sender" toasts.
+  // 0 / missing = off. Auto-expires after 24 h (see DMToastNotifier).
+  DM_SPAM_MODE_UNTIL: 'noornote_dm_spam_mode_until_map',
 
   // Notification priority settings (per-account)
   NOTIFICATION_PRIORITIES: 'noornote_notification_priorities_map',

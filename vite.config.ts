@@ -14,7 +14,7 @@ function buildIdPlugin(): PluginOption {
     name: 'noornote-build-id',
     apply: 'build',
     closeBundle() {
-      const distDir = resolve(__dirname, 'dist');
+      const distDir = resolve(import.meta.dirname, 'dist');
       mkdirSync(distDir, { recursive: true });
       writeFileSync(
         resolve(distDir, 'version.json'),
@@ -81,7 +81,7 @@ export default defineConfig({
     // Bundle size optimization
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
+        main: resolve(import.meta.dirname, 'index.html'),
       },
       output: {
         // Vite 8 (Rolldown) only supports the function form of manualChunks.
@@ -190,12 +190,12 @@ export default defineConfig({
   // TypeScript path resolution
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
-      '@components': resolve(__dirname, 'src/components'),
-      '@services': resolve(__dirname, 'src/services'),
-      '@helpers': resolve(__dirname, 'src/helpers'),
-      '@state': resolve(__dirname, 'src/state'),
-      '@types': resolve(__dirname, 'src/types'),
+      '@': resolve(import.meta.dirname, 'src'),
+      '@components': resolve(import.meta.dirname, 'src/components'),
+      '@services': resolve(import.meta.dirname, 'src/services'),
+      '@helpers': resolve(import.meta.dirname, 'src/helpers'),
+      '@state': resolve(import.meta.dirname, 'src/state'),
+      '@types': resolve(import.meta.dirname, 'src/types'),
     },
   },
 

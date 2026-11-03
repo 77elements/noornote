@@ -1198,7 +1198,7 @@ export class DMService {
    *  2. `isFetchingHistorical` — explicit historical fetches never notify.
    *  3. `wasUnread` — DMStore's read-anchor verdict. Even a genuinely-live
    *     arrival that the store classified as already-read (replay of a read
-   *     conversation) carries wasUnread:false so consumers (UnknownDMNotifier)
+   *     conversation) carries wasUnread:false so consumers (DMToastNotifier)
    *     never present it as a new unread message.
    */
   private async storeAndEmit(

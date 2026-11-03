@@ -106,7 +106,7 @@ export class ToastService {
    * Update the message text of an existing toast and reset its auto-dismiss
    * timer. Returns false if the toast no longer exists (already dismissed), so
    * callers can fall back to showing a fresh toast. Used by aggregating callers
-   * (e.g. UnknownDMNotifier) that collapse a burst into a single rolling toast.
+   * (e.g. DMToastNotifier) that collapse a burst into a single rolling toast.
    */
   public static updateMessage(id: string, message: string): boolean {
     return ToastService.getInstance().updateToastMessage(id, message);
