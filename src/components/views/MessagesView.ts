@@ -8,6 +8,7 @@
  */
 
 import { errMessage } from '../../helpers/errorMessage';
+import { escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { _, tn } from '../../i18n';
 import { View } from './View';
 import { ModuleLoader } from '../../core/ModuleLoader';
@@ -17,6 +18,7 @@ import { buildConversationItem } from '../ui/ConversationItem';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { Router } from '../../services/Router';
 import { SystemLogger } from '../../services/SystemLogger';
+import { diagLog } from '../../services/DiagnosticLogger';
 import { DMToastNotifier } from '../../services/dm/DMToastNotifier';
 import { Tooltip } from '../ui/Tooltip';
 import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
@@ -612,7 +614,7 @@ export class MessagesView extends View {
       item.insertAdjacentHTML(
         'afterbegin',
         `<span class="nn-checkbox conversation-item__select">
-          <input type="checkbox" data-conv-select data-pubkey="${conversation.pubkey}" aria-label="${_('Select conversation for deletion')}"${checked ? ' checked' : ''} />
+          <input type="checkbox" data-conv-select data-pubkey="${escapeHtmlAttr(conversation.pubkey)}" aria-label="${_('Select conversation for deletion')}"${checked ? ' checked' : ''} />
         </span>`
       );
       const checkbox = item.querySelector(
@@ -722,9 +724,13 @@ export class MessagesView extends View {
         deleted.push(pubkey);
       } catch (error) {
         failed++;
+        diagLog('dms', 'Bulk delete of a conversation failed', {
+          pubkey,
+          error: errMessage(error),
+        });
         this.systemLogger.warn(
           'MessagesView',
-          `Bulk delete failed for ${pubkey.slice(0, 8)}…: ${errMessage(error)}`
+          'Bulk delete: a conversation could not be deleted. Try again later.'
         );
       }
     }
