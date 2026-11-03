@@ -1,4 +1,9 @@
-# Release Notes 1.9.7 — compact (GitHub Release / Update Modal)
+# Release Notes 1.9.8 — compact (GitHub Release / Update Modal)
+
+## Hotfix
+
+- **Fixed**: Messages freezing on "Loading messages..." with a dead tab switch after returning from a conversation.
+- **Fixed**: Notifications view could fail to load with a stuck badge when a corrupted storage entry was present — it now recovers automatically.
 
 ## DMs
 
