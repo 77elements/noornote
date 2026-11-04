@@ -244,6 +244,14 @@
   }
 }
 
+// DM badge — same hide-by-default contract as .notifications-badge above:
+// shown via JS only when a Known unread count (or the SP hint) exists.
+// Guards the boot window where the badge exists but no count was computed
+// yet — without it an empty green circle flashes during the startup DM fetch.
+.dm-badge {
+  display: none;
+}
+
 // Notifications badge (green dot) — shared by the classic nav and the nav
 // wheel (the wheel's buttons sit outside .primary-nav, so this must not be
 // nested there).

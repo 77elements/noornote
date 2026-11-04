@@ -24,6 +24,9 @@ export class DMBadgeManager {
     this.authService = AuthService.getInstance();
 
     this.setupEventListeners();
+    // Paint the current state immediately — the constructor runs on boot and
+    // on nav-mode switches, before the first DM event fires.
+    void this.updateBadgeCount();
   }
 
   private setupEventListeners(): void {

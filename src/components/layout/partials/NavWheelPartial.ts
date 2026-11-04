@@ -149,7 +149,7 @@ export class NavWheelPartial {
       badge = '<span class="notifications-badge nn-wheel__badge"></span>';
     } else if (item.badge === 'dm') {
       badge =
-        '<span class="badge badge--green dm-badge nn-wheel__badge"></span>';
+        '<span class="badge badge--green dm-badge nn-wheel__badge" style="display: none"></span>';
     } else if (item.badge === 'bookmarks-unread') {
       // Unread-bookmark diode (same chrome as the notifications badge);
       // driven by ListsCountManager via data-list-unread.
