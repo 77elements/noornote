@@ -9,6 +9,7 @@
 import { TypedEventBus } from '../../../core/TypedEventBus';
 import { AuthService } from '../../../services/AuthService';
 import { ModuleLoader } from '../../../core/ModuleLoader';
+import { DMToastNotifier } from '../../../services/dm/DMToastNotifier';
 import type { DMsModuleApi } from '../../../modules/dms/contracts';
 
 export class DMBadgeManager {
@@ -43,25 +44,43 @@ export class DMBadgeManager {
 
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      this.badgeElement.style.display = 'none';
+      this.hide();
       return;
     }
 
     try {
       const dmsApi = ModuleLoader.getInstance().getApi<DMsModuleApi>('dms');
-      const unreadCount = await (dmsApi?.getUnreadCount() ??
-        Promise.resolve(0));
+      const counts = await (dmsApi?.getUnreadCountsSplit() ??
+        Promise.resolve({ known: 0, unknown: 0, total: 0 }));
 
-      if (unreadCount > 0) {
+      // Only Known unread shows as a number. Unknown-only unread surfaces as
+      // the low-key "SP" hint — deliberately not numeric, a spam wave must
+      // not inflate the counter. While the spam-mode shield is up, unknown-DM
+      // signals are muted entirely: no toast, no "SP" hint.
+      const spamMuted = DMToastNotifier.isSpamModeActive();
+      if (counts.known > 0) {
         this.badgeElement.textContent =
-          unreadCount > 99 ? '99+' : unreadCount.toString();
-        this.badgeElement.style.display = 'inline-flex';
+          counts.known > 99 ? '99+' : counts.known.toString();
+        this.badgeElement.classList.remove('dm-badge--spam');
+        this.show();
+      } else if (counts.unknown > 0 && !spamMuted) {
+        this.badgeElement.textContent = 'SP';
+        this.badgeElement.classList.add('dm-badge--spam');
+        this.show();
       } else {
-        this.badgeElement.style.display = 'none';
+        this.hide();
       }
     } catch {
-      this.badgeElement.style.display = 'none';
+      this.hide();
     }
+  }
+
+  private show(): void {
+    if (this.badgeElement) this.badgeElement.style.display = 'inline-flex';
+  }
+
+  private hide(): void {
+    if (this.badgeElement) this.badgeElement.style.display = 'none';
   }
 
   public destroy(): void {

@@ -29,25 +29,16 @@ import {
   switchTabWithContent,
 } from '../../helpers/TabsHelper';
 import { ProgressBarHelper } from '../../helpers/ProgressBarHelper';
+import {
+  clearDmTabIfLeaving,
+  persistDmTab,
+  readInitialDmTab,
+} from '../../helpers/DmTabPersistence';
 import { DMComposeModal } from '../modals/DMComposeModal';
 
 const BATCH_SIZE = 15;
 
-/** Session-persisted last active tab — back-navigation from a conversation
- *  remounts this view and must land in the tab the user came from. */
-const TAB_STORAGE_KEY = 'noornote_messages_tab';
-
 type TabFilter = 'known' | 'unknown';
-
-function readInitialTab(): TabFilter {
-  try {
-    return sessionStorage.getItem(TAB_STORAGE_KEY) === 'unknown'
-      ? 'unknown'
-      : 'known';
-  } catch {
-    return 'known';
-  }
-}
 
 export class MessagesView extends View {
   private container: HTMLElement;
@@ -66,7 +57,7 @@ export class MessagesView extends View {
   private infiniteScroll: InfiniteScroll;
   private menuOpen: boolean = false;
   private outsideClickHandler: () => void;
-  private activeTab: TabFilter = readInitialTab();
+  private activeTab: TabFilter = readInitialDmTab();
   private subscriptionIds: string[] = [];
   private progressBar: ProgressBarHelper | null = null;
   private isFetchingDMs: boolean = false;
@@ -251,6 +242,9 @@ export class MessagesView extends View {
       const engage = !DMToastNotifier.isSpamModeActive();
       DMToastNotifier.setSpamMode(engage);
       this.updateSpamButton();
+      // The diode's "SP" hint is an unknown-DM signal too — refresh it so the
+      // badge reacts to the shield immediately, not on the next message burst.
+      this.eventBus.emit('dm:badge-update');
       ToastService.show(
         engage
           ? _('Spam mode enabled, alerts off for 24 h')
@@ -357,11 +351,7 @@ export class MessagesView extends View {
     this.activeTab = tab;
     // Persist so remounting (e.g. back-navigation from a conversation) lands
     // in the tab the user left from, not a reset 'known'.
-    try {
-      sessionStorage.setItem(TAB_STORAGE_KEY, tab);
-    } catch {
-      /* storage unavailable — tab simply resets on remount */
-    }
+    persistDmTab(tab);
 
     // Selection and controls are Unknown-tab-only; drop them on tab change.
     this.clearBulkSelection();
@@ -1076,6 +1066,9 @@ export class MessagesView extends View {
     this.closeMenu();
     this.spamTooltipDisposer?.();
     this.spamTooltipDisposer = null;
+    // Leaving the DM section resets the persisted tab (next fresh entry lands
+    // on Known); list ↔ conversation navigation keeps it.
+    clearDmTabIfLeaving(this.router.getCurrentPath());
     // Remove menu from DOM
     if (this.menuElement) {
       this.menuElement.remove();

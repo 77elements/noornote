@@ -33,6 +33,7 @@ import { QuotedNoteRenderer } from '../ui/note-rendering/QuotedNoteRenderer';
 import { replaceMediaPlaceholders } from '../../helpers/renderMediaContent';
 import { replaceBolt11Placeholders } from '../../helpers/renderBolt11';
 import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
+import { clearDmTabIfLeaving } from '../../helpers/DmTabPersistence';
 import { UserIdentity } from '../shared/UserIdentity';
 import { npubToHex } from '../../helpers/nip19';
 
@@ -1262,6 +1263,9 @@ export class ConversationView extends View {
    */
   public destroy(): void {
     this.closeMenu();
+    // Leaving the DM section resets the persisted Known/Unknown tab (next
+    // fresh entry lands on Known); list ↔ conversation navigation keeps it.
+    clearDmTabIfLeaving(this.router.getCurrentPath());
     if (this.menuElement) {
       this.menuElement.remove();
       this.menuElement = null;

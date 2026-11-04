@@ -39,6 +39,15 @@
   color: var(--color-1);
 }
 
+// DM badge "SP" hint (unknown-DM spam pending, no known unread): smaller type
+// inside the same green pill than a count — deliberately lower-key, a spam
+// wave must never look like important mail.
+.badge--green.dm-badge--spam {
+  font-size: 0.625rem;
+  padding: 0 3px;
+  min-width: 16px;
+}
+
 // Red (solid pill, status "bad" — e.g. "Has muted you"). Mirrors badge--green
 // geometry so it reads as its red counterpart next to the avatar.
 .badge--red {
