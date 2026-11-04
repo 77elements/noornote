@@ -94,6 +94,11 @@ export class FeedbackBoardService {
   private pendingDeletedComments = new Set<string>();
   /** Optimistically created cards — shown until the relays catch up. */
   private pendingTickets = new Map<string, FeedbackTicket>();
+  /**
+   * Last fully loaded board state — painted instantly on re-open while a
+   * background refresh reconciles it (stale-while-revalidate).
+   */
+  private cachedState: FeedbackBoardState | null = null;
 
   private constructor() {
     this.authService = AuthService.getInstance();
@@ -124,12 +129,24 @@ export class FeedbackBoardService {
   }
 
   /**
+   * Last fully loaded board state — rendered instantly on re-open while the
+   * background refresh reconciles it (stale-while-revalidate).
+   */
+  public getCachedBoard(): FeedbackBoardState | null {
+    return this.cachedState;
+  }
+
+  /**
    * Fetch the full public board (board + cards + comments + deletions) and
    * reduce it to state. Archived cards come back with `archived: true` — the
    * renderer decides visibility (dev-only archive section). Every fetch is
    * scoped to our board address, so foreign boards never enter the addon.
+   * When `onFirstBatch` is given it is called with the cards-only snapshot
+   * right after the first relay batch so the view can paint progressively.
    */
-  public async loadBoard(): Promise<FeedbackBoardState> {
+  public async loadBoard(
+    onFirstBatch?: (state: FeedbackBoardState) => void
+  ): Promise<FeedbackBoardState> {
     const relays = this.relayConfig.getReadRelays();
 
     // Batch 1: board definition + all cards of our board.
@@ -162,6 +179,20 @@ export class FeedbackBoardService {
     if (!boardEvent) this.ensureBoard();
     const cardEvents = first.filter(e => e.kind === FEEDBACK_CARD_KIND);
     const { tickets, cardEvents: versionsByD } = foldCards(cardEvents);
+
+    // Progressive hydration: once the cards are in, the board is usable —
+    // comments and deletion reconciliation continue in the background. The
+    // caller renders this snapshot immediately; overlays are applied so
+    // optimistic actions never flicker (the consumption branches are
+    // skipped — the final pass below settles them against the full state).
+    if (onFirstBatch) {
+      const partialComments = new Map<string, FeedbackComment[]>();
+      this.applyOverlays(tickets, partialComments, false);
+      onFirstBatch({
+        tickets: this.sortedTickets(tickets),
+        comments: partialComments,
+      });
+    }
 
     // Batch 2: NIP-22 comments matched via coordinates and event ids (a card
     // can be known under its author's coordinate AND the dev's republish).
@@ -225,6 +256,32 @@ export class FeedbackBoardService {
     }
     applyDeletions(deletions, tickets, versionsByD, comments);
 
+    this.applyOverlays(tickets, comments, true);
+
+    const state = { tickets: this.sortedTickets(tickets), comments };
+    this.cachedState = state;
+    return state;
+  }
+
+  /** Tickets sorted newest first (the state shape the view renders). */
+  private sortedTickets(
+    tickets: Map<string, FeedbackTicket>
+  ): FeedbackTicket[] {
+    return [...tickets.values()].sort((a, b) => b.createdAt - a.createdAt);
+  }
+
+  /**
+   * Apply the local overlays on top of a relay state snapshot. Called twice
+   * per board load: once for the progressive first-batch render (`final`
+   * false — consumption branches are skipped so the overlay is settled only
+   * against the complete relay state) and once for the final pass (`final`
+   * true — entries the relay state has caught up with are dropped).
+   */
+  private applyOverlays(
+    tickets: Map<string, FeedbackTicket>,
+    comments: Map<string, FeedbackComment[]>,
+    final: boolean
+  ): void {
     for (const ticket of tickets.values()) {
       // Apply the local overlay; drop entries the relay state has caught up
       // with.
@@ -249,7 +306,7 @@ export class FeedbackBoardService {
           (comments.get(ticket.dTag) ?? []).map(c => c.eventId)
         );
         const stillPending = pending.filter(c => !relayIds.has(c.eventId));
-        if (stillPending.length === 0) {
+        if (final && stillPending.length === 0) {
           this.pendingComments.delete(ticket.dTag);
         } else {
           comments.set(
@@ -262,15 +319,17 @@ export class FeedbackBoardService {
       }
     }
 
-    // Overlay entries whose target is gone from the relay state (either the
-    // deletion is now relay-verified or the comment vanished entirely) are
-    // no longer needed.
-    const outputCommentIds = new Set(
-      [...comments.values()].flat().map(c => c.eventId)
-    );
-    for (const id of this.pendingDeletedComments) {
-      if (!outputCommentIds.has(id)) {
-        this.pendingDeletedComments.delete(id);
+    if (final) {
+      // Overlay entries whose target is gone from the relay state (either the
+      // deletion is now relay-verified or the comment vanished entirely) are
+      // no longer needed.
+      const outputCommentIds = new Set(
+        [...comments.values()].flat().map(c => c.eventId)
+      );
+      for (const id of this.pendingDeletedComments) {
+        if (!outputCommentIds.has(id)) {
+          this.pendingDeletedComments.delete(id);
+        }
       }
     }
 
@@ -288,11 +347,6 @@ export class FeedbackBoardService {
         tickets.set(dTag, pendingTicket);
       }
     }
-
-    const list = [...tickets.values()].sort(
-      (a, b) => b.createdAt - a.createdAt
-    );
-    return { tickets: list, comments };
   }
 
   /**

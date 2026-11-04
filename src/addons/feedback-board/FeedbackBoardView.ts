@@ -175,11 +175,32 @@ export class FeedbackBoardAddonView extends View {
 
   private async refresh(): Promise<void> {
     if (!this.boardZone) return;
-    this.boardZone.innerHTML = `<p class="feedback-board__loading pulsate">${_('Loading board…')}</p>`;
+    // Stale-while-revalidate: paint the last known state immediately and
+    // reconcile it in the background. The loading indicator stays for the
+    // cold load only.
+    const cached = this.service.getCachedBoard();
+    if (cached) {
+      this.state = cached;
+      this.renderBoard();
+    } else {
+      this.boardZone.innerHTML = `<p class="feedback-board__loading pulsate">${_('Loading board…')}</p>`;
+    }
     try {
-      this.state = await this.service.loadBoard();
+      // Progressive hydration only on the cold path: a cached paint already
+      // shows the full state, an intermediate cards-only render would flash
+      // the comments away.
+      this.state = await this.service.loadBoard(
+        cached
+          ? undefined
+          : partial => {
+              this.state = partial;
+              this.renderBoard();
+            }
+      );
     } catch (error) {
-      this.boardZone.innerHTML = `<p class="feedback-board__error">${_('The board could not be loaded — check your connection.')}</p>`;
+      if (!cached) {
+        this.boardZone.innerHTML = `<p class="feedback-board__error">${_('The board could not be loaded — check your connection.')}</p>`;
+      }
       ErrorService.handle(error, 'feedback-board', false);
       return;
     }
