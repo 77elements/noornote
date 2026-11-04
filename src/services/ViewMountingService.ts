@@ -623,11 +623,12 @@ export class ViewMountingService {
 
       case 'addon-feedback-board':
         return {
-          factory: async () => {
+          factory: async param => {
             const { FeedbackBoardAddonView } = await import(
               '../addons/feedback-board/FeedbackBoardView'
             );
             const view = new FeedbackBoardAddonView();
+            if (param) void view.openDeepLink(param);
             return { element: view.getElement(), view };
           },
         };

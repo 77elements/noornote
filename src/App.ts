@@ -655,6 +655,14 @@ export class App {
       true
     );
     this.registerRoute(
+      '/addons/feedback-board/:naddr',
+      'addon-feedback-board',
+      'addon-feedback-board',
+      'adv',
+      true,
+      params => params.naddr
+    );
+    this.registerRoute(
       '/addons/feedback-board',
       'addon-feedback-board',
       'addon-feedback-board',
@@ -860,6 +868,10 @@ export class App {
         return `/follow-pack/${naddr}`;
       case 30402:
         return `/listing/${naddr}`;
+      case 30302:
+        // Feedback Board ticket — deep link straight into the addon page and
+        // the ticket modal for the naddr's d-tag (see FeedbackBoardView).
+        return `/addons/feedback-board/${naddr}`;
       case 34235:
       case 34236:
         // NIP-71 addressable video — SNV renders it via the video pipeline

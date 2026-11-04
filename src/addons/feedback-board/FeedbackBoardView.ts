@@ -19,6 +19,10 @@ import { escapeHtml } from '../../helpers/escapeHtml';
 import { formatTimeAgo } from '../../helpers/formatTimeAgo';
 import { npubToUsername } from '../../helpers/npubToUsername';
 import { hexToNpub } from '../../helpers/nip19';
+import { capRelayHints } from '../../helpers/capRelayHints';
+import { encodeNaddr, decodeNip19 } from '../../services/NostrToolsAdapter';
+import { ClipboardActionsService } from '../../services/ClipboardActionsService';
+import { RelayConfig } from '../../services/RelayConfig';
 import { _, tn } from '../../i18n';
 import {
   FeedbackBoardService,
@@ -27,6 +31,7 @@ import {
   type FeedbackComment,
 } from './FeedbackBoardService';
 import {
+  FEEDBACK_CARD_KIND,
   FEEDBACK_COLUMNS,
   FEEDBACK_TICKET_TYPES,
   type FeedbackTicket,
@@ -83,6 +88,8 @@ export class FeedbackBoardAddonView extends View {
   private boardZone: HTMLElement | null = null;
   private service: FeedbackBoardService;
   private state: FeedbackBoardState | null = null;
+  private openCardMenu: HTMLElement | null = null;
+  private cardMenuOutsideHandler: (() => void) | null = null;
   private typeDropdown: NnDropdown | null = null;
 
   constructor() {
@@ -131,6 +138,39 @@ export class FeedbackBoardAddonView extends View {
   private usernameFor(pubkey: string): string {
     const npub = hexToNpub(pubkey) ?? '';
     return npubToUsername(npub);
+  }
+
+  /**
+   * Open the ticket modal for a naddr deep link (/addons/feedback-board/:naddr). Decodes
+   * the naddr, ensures the board state is loaded, finds the matching ticket
+   * and opens the modal. Silently ignores invalid or non-board naddrs.
+   */
+  public async openDeepLink(naddr: string): Promise<void> {
+    try {
+      const decoded = decodeNip19(naddr);
+      if (decoded.type !== 'naddr') return;
+      const data = decoded.data as {
+        kind: number;
+        pubkey: string;
+        identifier: string;
+      };
+      if (data.kind !== FEEDBACK_CARD_KIND) return;
+
+      // The constructor kicks off refresh() only when the addon is enabled;
+      // make sure the board state is available before searching for the
+      // ticket.
+      if (!this.state) {
+        await this.refresh();
+      }
+      const ticket = this.state?.tickets.find(
+        t => t.dTag === data.identifier && t.authorPubkey === data.pubkey
+      );
+      if (ticket) {
+        void this.openTicketModal(ticket);
+      }
+    } catch {
+      // Invalid naddr — silently ignore.
+    }
   }
 
   private async refresh(): Promise<void> {
@@ -194,6 +234,129 @@ export class FeedbackBoardAddonView extends View {
     return type ? (labels[type] ?? '') : '';
   }
 
+  /**
+   * Card context menu (3-dot): Copy Permalink (naddr — kanbanstr-compatible),
+   * Copy event ID, and the NIP-09 delete (dev or original author only).
+   */
+  private toggleCardMenu(trigger: HTMLElement, ticket: FeedbackTicket): void {
+    this.closeCardMenu();
+
+    const isAuthor = this.service.currentPubkey() === ticket.authorPubkey;
+    const canDelete = this.service.isDev() || isAuthor;
+
+    const menu = document.createElement('div');
+    menu.className = 'note-menu-dropdown';
+    menu.dataset.dTag = ticket.dTag;
+
+    const items: string[] = [
+      `<button class="note-menu-item" data-action="copy-permalink">
+        <svg width="16" height="16"><use href="#icon-link"/></svg>
+        ${_('Copy Permalink')}
+      </button>`,
+      `<button class="note-menu-item" data-action="copy-event-id">
+        <svg width="16" height="16"><use href="#icon-copy"/></svg>
+        ${_('Copy event ID')}
+      </button>`,
+    ];
+
+    if (canDelete) {
+      items.push(`<button class="note-menu-item note-menu-item--danger" data-action="delete">
+        <svg width="16" height="16"><use href="#icon-trash"/></svg>
+        ${_('Delete')}
+      </button>`);
+    }
+
+    menu.innerHTML = items.join('');
+
+    this.menuItemHandler = (action: string) => {
+      switch (action) {
+        case 'copy-permalink': {
+          // Full URL (not bare naddr) so pasting into a browser address bar
+          // opens the ticket via the /addons/feedback-board/:naddr route.
+          const naddr = encodeNaddr({
+            kind: FEEDBACK_CARD_KIND,
+            pubkey: ticket.authorPubkey,
+            identifier: ticket.dTag,
+            relays: this.cardRelayHints(),
+          });
+          void ClipboardActionsService.getInstance().copyText(
+            `${window.location.origin}/addons/feedback-board/${naddr}`,
+            _('Permalink')
+          );
+          break;
+        }
+        case 'copy-event-id': {
+          void ClipboardActionsService.getInstance().copyEventId(
+            ticket.eventId,
+            ticket.authorPubkey,
+            this.cardRelayHints()
+          );
+          break;
+        }
+        case 'delete': {
+          void this.confirmDelete(ticket);
+          break;
+        }
+      }
+    };
+
+    menu.addEventListener('click', e => {
+      const item = (e.target as HTMLElement).closest<HTMLElement>(
+        '.note-menu-item'
+      );
+      if (item?.dataset.action) {
+        this.menuItemHandler?.(item.dataset.action);
+        this.closeCardMenu();
+      }
+    });
+
+    document.body.appendChild(menu);
+    this.openCardMenu = menu;
+
+    // Outside click closes the menu (registered on next tick so the opening
+    // click doesn't hit it).
+    this.cardMenuOutsideHandler = () => this.closeCardMenu();
+    setTimeout(() => {
+      document.addEventListener('click', this.cardMenuOutsideHandler!);
+    }, 0);
+
+    const triggerRect = trigger.getBoundingClientRect();
+    const menuRect = menu.getBoundingClientRect();
+    let top = triggerRect.bottom + 4;
+    let left = triggerRect.right - menuRect.width;
+    if (top + menuRect.height > window.innerHeight) {
+      top = triggerRect.top - menuRect.height - 4;
+    }
+    if (left < 0) left = triggerRect.left;
+    menu.style.position = 'fixed';
+    menu.style.top = `${top}px`;
+    menu.style.left = `${left}px`;
+    menu.style.zIndex = '1000';
+  }
+
+  private menuItemHandler: ((action: string) => void) | null = null;
+
+  /**
+   * Relay hints for copied naddr/nevent links: the user's write relays,
+   * capped. Without hints foreign clients (kanbanstr) can't resolve the
+   * event — the relays carry the actual data.
+   */
+  private cardRelayHints(): string[] {
+    return capRelayHints([], RelayConfig.getInstance().getWriteRelays());
+  }
+
+  private closeCardMenu(): void {
+    if (this.cardMenuOutsideHandler) {
+      document.removeEventListener('click', this.cardMenuOutsideHandler);
+      this.cardMenuOutsideHandler = null;
+    }
+    if (this.openCardMenu) {
+      this.openCardMenu.remove();
+      this.openCardMenu = null;
+      this.menuItemHandler = null;
+    }
+  }
+
   private renderCard(ticket: FeedbackTicket, isDev: boolean): string {
     const comments = this.service.getComments(this.state!, ticket.dTag);
     const withdrawn = ticket.status === 'withdrawn';
@@ -204,6 +367,7 @@ export class FeedbackBoardAddonView extends View {
         <div class="feedback-board__card-head">
           <a class="feedback-board__card-author" href="/profile/${hexToNpub(ticket.authorPubkey)}">${escapeHtml(this.usernameFor(ticket.authorPubkey))}</a>
           <span class="feedback-board__card-time">${formatTimeAgo(ticket.createdAt * 1000)}</span>
+          <button class="note-menu-trigger" data-card-menu-trigger aria-label="${_('Card options')}"><svg width="16" height="16"><use href="#icon-menu-dots"/></svg></button>
         </div>
         ${typeLabel ? `<div class="feedback-board__card-type">${typeLabel}</div>` : ''}
         <h2 class="feedback-board__card-title">${escapeHtml(ticket.title)}</h2>
@@ -274,6 +438,17 @@ export class FeedbackBoardAddonView extends View {
           if (target.closest('[data-card-action="archive"]')) return;
           // Author links navigate via the global internal-link handler.
           if (target.closest('a')) return;
+          // The 3-dot trigger opens the card menu instead of the modal.
+          const menuTrigger = target.closest<HTMLElement>(
+            '[data-card-menu-trigger]'
+          );
+          if (menuTrigger) {
+            event.stopPropagation();
+            const dTag = card.dataset.ticket;
+            const ticket = this.state?.tickets.find(t => t.dTag === dTag);
+            if (ticket) this.toggleCardMenu(menuTrigger, ticket);
+            return;
+          }
           const dTag = card.dataset.ticket;
           const ticket = this.state?.tickets.find(t => t.dTag === dTag);
           if (ticket) void this.openTicketModal(ticket);
@@ -467,16 +642,9 @@ export class FeedbackBoardAddonView extends View {
         ? `<div class="l-row--right feedback-board__move-row"><button class="btn btn--passive btn--mini" data-move="withdrawn">${_('Withdraw Ticket')}</button></div>`
         : '';
 
-    // The author may delete their own ticket (inline in the description);
-    // the dev may delete any ticket. Comments are deleted per comment.
-    const canDeleteTicket = isDev || isAuthor;
-    const ticketDeleteBtn = canDeleteTicket
-      ? `<button class="feedback-board__inline-delete" data-delete-ticket>${_('Delete')}</button>`
-      : '';
-
     const content = document.createElement('div');
     content.innerHTML = `
-      <p class="feedback-board__detail-desc">${escapeHtml(ticket.description)}${ticketDeleteBtn}</p>
+      <p class="feedback-board__detail-desc">${escapeHtml(ticket.description)}</p>
       <div class="feedback-board__comments">${commentsHtml}</div>
       ${moveControls}
       <div class="form__row">
@@ -496,9 +664,6 @@ export class FeedbackBoardAddonView extends View {
           this.moveTicket(ticket, target);
         });
       });
-    content
-      .querySelector('[data-delete-ticket]')
-      ?.addEventListener('click', () => void this.confirmDelete(ticket));
     // Delegation on the modal content: the comment list is re-rendered
     // optimistically, per-button listeners would be lost on refresh.
     content.addEventListener('click', event => {

@@ -81,9 +81,15 @@
 
 .feedback-board__card-head {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr auto auto;
   align-items: baseline;
+  column-gap: calc($gap / 2);
   margin-bottom: $gap;
+
+  .note-menu-trigger {
+    align-self: center;
+    margin: 0;
+  }
 }
 
 .feedback-board__card-author {
