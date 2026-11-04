@@ -153,7 +153,7 @@ export abstract class Nip46BaseManager {
     const elapsed = Date.now() - this.circuitOpenSince;
     if (elapsed < CIRCUIT_COOLDOWN_MS) {
       const remaining = Math.ceil((CIRCUIT_COOLDOWN_MS - elapsed) / 1000);
-      throw new Error(`Remote signer unreachable — retrying in ${remaining}s`);
+      throw new Error(`Remote signer unreachable, retrying in ${remaining}s`);
     }
 
     // Cooldown elapsed — allow retry
@@ -283,7 +283,7 @@ export abstract class Nip46BaseManager {
       } catch (err) {
         this.openCircuit();
         throw new Error(
-          'Remote signer not responding — please check that it is running'
+          'Remote signer not responding, please check that it is running'
         );
       }
     }

@@ -445,8 +445,8 @@ export class ProfileBookingView extends View {
       ToastService.show(
         result.dmFailures
           ? result.dmFailures === 1
-            ? _('%s — 1 DM failed', result.detail)
-            : _('%s — %s DMs failed', result.detail, result.dmFailures)
+            ? _('%s, 1 DM failed', result.detail)
+            : _('%s, %s DMs failed', result.detail, result.dmFailures)
           : result.detail,
         result.dmFailures ? 'warning' : 'success'
       );
@@ -469,7 +469,7 @@ export class ProfileBookingView extends View {
     return `
       <div class="profile-booking__form" data-booking-form>
         <p class="profile-booking__form-title">
-          ${_('Selected:')} <strong>${escapeHtml(slot.title)}</strong> — ${escapeHtml(when)}
+          ${_('Selected:')} <strong>${escapeHtml(slot.title)}</strong>, ${escapeHtml(when)}
         </p>
         <div class="form__row">
           <label for="booking-name">${_('Your name (optional)')}</label>

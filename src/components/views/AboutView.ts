@@ -81,7 +81,7 @@ export class AboutView extends View {
           <section class="about-section">
             <h2>${_('Hire Me')}</h2>
             <p>
-              ${_("Need help with your web project? I'm available for hire — design, UX, and development. Sats accepted.")}<br>
+              ${_("Need help with your web project? I'm available for hire, design, UX, and development. Sats accepted.")}<br>
               <a href="https://mslmdvlpmnt.com/" rel="noopener noreferrer">mslmdvlpmnt.com</a> · <a href="/profile/npub175nul9cvufswwsnpy99lvyhg7ad9nkccxhkhusznxfkr7e0zxthql9g6w0">${_('DM me on Nostr')}</a>
             </p>
           </section>

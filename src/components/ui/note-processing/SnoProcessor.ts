@@ -73,7 +73,7 @@ export class SnoProcessor {
     if (snoData.error || !snoData.object) {
       return (
         `<div class="sno" data-sno-state="error">` +
-        `<div class="sno__error">${_('Malformed 3D object')} — ${escapeHtml(snoData.error || '')}</div>` +
+        `<div class="sno__error">${_('Malformed 3D object')}, ${escapeHtml(snoData.error || '')}</div>` +
         `</div>`
       );
     }

@@ -20,6 +20,7 @@ import { formatTimeAgo } from '../../helpers/formatTimeAgo';
 import { npubToUsername } from '../../helpers/npubToUsername';
 import { hexToNpub } from '../../helpers/nip19';
 import { capRelayHints } from '../../helpers/capRelayHints';
+import { formatSatsCompact } from '../../helpers/zapUtils';
 import { encodeNaddr, decodeNip19 } from '../../services/NostrToolsAdapter';
 import { ClipboardActionsService } from '../../services/ClipboardActionsService';
 import { RelayConfig } from '../../services/RelayConfig';
@@ -33,10 +34,12 @@ import {
 import {
   FEEDBACK_CARD_KIND,
   FEEDBACK_COLUMNS,
+  FEEDBACK_DEV_PUBKEY,
   FEEDBACK_TICKET_TYPES,
   type FeedbackTicket,
   type FeedbackTicketStatus,
   type FeedbackTicketType,
+  cardAddress,
 } from './feedbackBoardConstants';
 import { isFeedbackBoardEnabled, setFeedbackBoardEnabled } from './index';
 
@@ -88,6 +91,8 @@ export class FeedbackBoardAddonView extends View {
   private boardZone: HTMLElement | null = null;
   private service: FeedbackBoardService;
   private state: FeedbackBoardState | null = null;
+  /** Total sats zapped per ticket d-tag (zap badge on each card). */
+  private zapTotals = new Map<string, number>();
   private openCardMenu: HTMLElement | null = null;
   private cardMenuOutsideHandler: (() => void) | null = null;
   private typeDropdown: NnDropdown | null = null;
@@ -205,6 +210,17 @@ export class FeedbackBoardAddonView extends View {
       return;
     }
     this.renderBoard();
+    // Zap badges are a nice-to-have: fetch after the board paints and patch
+    // them in place (non-blocking, best effort on failure).
+    if (this.service.currentPubkey()) {
+      void this.service
+        .fetchZapTotals(this.state.tickets)
+        .then(totals => {
+          this.zapTotals = totals;
+          for (const dTag of totals.keys()) this.updateZapBadge(dTag);
+        })
+        .catch(() => undefined);
+    }
   }
 
   private renderBoard(): void {
@@ -382,6 +398,7 @@ export class FeedbackBoardAddonView extends View {
     const comments = this.service.getComments(this.state!, ticket.dTag);
     const withdrawn = ticket.status === 'withdrawn';
     const typeLabel = this.typeLabel(ticket.type);
+    const zapTotal = this.zapTotals.get(ticket.dTag) ?? 0;
     return `
       <div class="feedback-board__card${withdrawn ? ' feedback-board__card--withdrawn' : ''}"
            data-ticket="${escapeHtml(ticket.dTag)}">
@@ -393,10 +410,15 @@ export class FeedbackBoardAddonView extends View {
         ${typeLabel ? `<div class="feedback-board__card-type">${typeLabel}</div>` : ''}
         <h2 class="feedback-board__card-title">${escapeHtml(ticket.title)}</h2>
         ${ticket.description ? `<p class="feedback-board__card-snippet">${escapeHtml(ticket.description.slice(0, 120))}</p>` : ''}
-        <div class="feedback-board__card-meta">
-          ${withdrawn ? `<span class="badge badge--warning">${_('Withdrawn')}</span>` : ''}
-          <span class="feedback-board__card-comments">${tn('%s comment', '%s comments', comments.length)}</span>
-          ${isDev && ticket.status === 'done' ? `<button class="btn btn--mini btn--passive" data-card-action="archive">${_('Archive')}</button>` : ''}
+        <div class="feedback-board__card-meta l-row--split">
+          <div>
+            ${this.service.currentPubkey() ? `<button class="feedback-board__zap" data-card-action="zap" title="${_('Zap the developer')}"><svg width="14" height="14"><use href="#icon-zap"/></svg><span class="feedback-board__zap-total" data-zap-total${zapTotal ? '' : ' hidden'}>${zapTotal ? formatSatsCompact(zapTotal) : ''}</span></button>` : ''}
+            ${withdrawn ? `<span class="badge badge--warning">${_('Withdrawn')}</span>` : ''}
+          </div>
+          <div>
+            <span class="feedback-board__card-comments">${tn('%s comment', '%s comments', comments.length)}</span>
+            ${isDev && ticket.status === 'done' ? `<button class="btn btn--mini btn--passive" data-card-action="archive">${_('Archive')}</button>` : ''}
+          </div>
         </div>
       </div>
     `;
@@ -455,8 +477,9 @@ export class FeedbackBoardAddonView extends View {
       .forEach(card => {
         card.addEventListener('click', event => {
           const target = event.target as HTMLElement;
-          // The dev's inline archive button must not open the detail modal.
-          if (target.closest('[data-card-action="archive"]')) return;
+          // The dev's inline archive button and the zap button must not open
+          // the detail modal (both have their own listeners).
+          if (target.closest('[data-card-action]')) return;
           // Author links navigate via the global internal-link handler.
           if (target.closest('a')) return;
           // The 3-dot trigger opens the card menu instead of the modal.
@@ -489,6 +512,18 @@ export class FeedbackBoardAddonView extends View {
         });
       });
 
+    root
+      .querySelectorAll<HTMLButtonElement>('[data-card-action="zap"]')
+      .forEach(button => {
+        button.addEventListener('click', event => {
+          event.stopPropagation();
+          const dTag = (event.target as HTMLElement).closest<HTMLElement>(
+            '[data-ticket]'
+          )?.dataset.ticket;
+          const ticket = this.state?.tickets.find(t => t.dTag === dTag);
+          if (ticket) void this.openZapModal(ticket);
+        });
+      });
     // Ticket rows inside the archive list also open the detail modal.
     root
       .querySelectorAll<HTMLElement>('.feedback-board__archive .ui-list__item')
@@ -539,6 +574,43 @@ export class FeedbackBoardAddonView extends View {
     ticket.archivedAt = Math.floor(Date.now() / 1000);
     ToastService.show(_('Ticket archived'), 'success');
     this.renderBoard();
+  }
+
+  /**
+   * Zap the developer for a ticket (kanbanstr parity). Sats go to the dev
+   * account; the `a` tag references the card's author coordinate (the event
+   * that always exists), ZapModal handles amount presets, comment and the
+   * Silent Zap switch. ZapModal is dynamically imported so the addon chunk
+   * stays lean.
+   */
+  private async openZapModal(ticket: FeedbackTicket): Promise<void> {
+    const { ZapModal } = await import('../../components/modals/ZapModal');
+    const zapModal = new ZapModal({
+      noteId: cardAddress(ticket.authorPubkey, ticket.dTag),
+      authorPubkey: FEEDBACK_DEV_PUBKEY,
+      articleEventId: ticket.eventId,
+      onZapSent: amount => {
+        // Optimistic: the badge shows the new total immediately; the next
+        // board refresh reconciles against the actual kind-9735 receipts.
+        this.zapTotals.set(
+          ticket.dTag,
+          (this.zapTotals.get(ticket.dTag) ?? 0) + amount
+        );
+        this.updateZapBadge(ticket.dTag);
+      },
+    });
+    void zapModal.show();
+  }
+
+  /** Paint one card's zap badge from zapTotals (targeted DOM update). */
+  private updateZapBadge(dTag: string): void {
+    const total = this.zapTotals.get(dTag) ?? 0;
+    const badge = this.boardZone?.querySelector<HTMLElement>(
+      `[data-ticket="${CSS.escape(dTag)}"] [data-zap-total]`
+    );
+    if (!badge) return;
+    badge.textContent = total ? formatSatsCompact(total) : '';
+    badge.hidden = !total;
   }
 
   private openNewTicketModal(): void {

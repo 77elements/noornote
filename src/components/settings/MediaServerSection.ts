@@ -272,7 +272,7 @@ export class MediaServerSection extends SettingsSection {
           <div class="setting__control" id="compress-image-switch-mount"></div>
           <p class="setting__desc">
             ${_(
-              'Images are resized and re-encoded as JPEG locally before upload, reducing file size and saving CDN bandwidth. EXIF metadata is preserved verbatim — no privacy fields are stripped at this layer.'
+              'Images are resized and re-encoded as JPEG locally before upload, reducing file size and saving CDN bandwidth. EXIF metadata is preserved verbatim, no privacy fields are stripped at this layer.'
             )}
           </p>
         </div>
@@ -309,7 +309,7 @@ export class MediaServerSection extends SettingsSection {
           <div class="setting__control" id="compress-video-switch-mount"></div>
           <p class="setting__desc">
             ${_(
-              "Videos are compressed locally using your device's hardware encoder (WebCodecs) before upload — your video never leaves your device until upload."
+              "Videos are compressed locally using your device's hardware encoder (WebCodecs) before upload, your video never leaves your device until upload."
             )}
           </p>
         </div>

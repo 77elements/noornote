@@ -220,7 +220,7 @@ export class RelaySettingsSection extends SettingsSection {
     return `
         <section class="section">
           <p class="form__note">
-            ${_('Browsers share a limit of about %s simultaneous connections across all tabs — each connected relay uses one per tab. NoorNote connects your %s most important relays first (your own before fallback relays).', String(BROWSER_MAX_READ_RELAYS), String(Math.min(readRelayCount, BROWSER_MAX_READ_RELAYS)))}
+            ${_('Browsers share a limit of about %s simultaneous connections across all tabs, each connected relay uses one per tab. NoorNote connects your %s most important relays first (your own before fallback relays).', String(BROWSER_MAX_READ_RELAYS), String(Math.min(readRelayCount, BROWSER_MAX_READ_RELAYS)))}
             ${capped ? _('The desktop app has no browser relay connection limit, for a better following feed experience.') : ''}
           </p>
         </section>
@@ -251,7 +251,7 @@ export class RelaySettingsSection extends SettingsSection {
           </div>
 
           <p class="form__note">
-            ${_("Your relays are your sovereignty surface. <strong>Read</strong> = where NoorNote looks for content, <strong>Write</strong> = where your own events are stored, <strong>DM Inbox</strong> = where others can reach you with NIP-17 messages. When switching to a smaller (or fully private) write-set, publish the new relay list <em>first</em>, then disable the old relays — otherwise other clients can't follow the move. NoorNote automatically rebroadcasts your profile and follow-list to any newly-added write-relay.")} // i18n-ok (part of translated paragraph msgid above)
+            ${_("Your relays are your sovereignty surface. <strong>Read</strong> = where NoorNote looks for content, <strong>Write</strong> = where your own events are stored, <strong>DM Inbox</strong> = where others can reach you with NIP-17 messages. When switching to a smaller (or fully private) write-set, publish the new relay list <em>first</em>, then disable the old relays, otherwise other clients can't follow the move. NoorNote automatically rebroadcasts your profile and follow-list to any newly-added write-relay.")} // i18n-ok (part of translated paragraph msgid above)
           </p>
 
           <div class="relay-list">

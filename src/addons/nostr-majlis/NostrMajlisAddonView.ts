@@ -1088,8 +1088,8 @@ export class NostrMajlisAddonView extends View {
       today = svc.cachedToday(ilceId);
     }
     locEl.textContent = today
-      ? `${label} — ${today.date}`
-      : `${label} — ${_('no times cached, tap “Fetch Prayer Times”')}`;
+      ? `${label}, ${today.date}`
+      : `${label}, ${_('no times cached, tap “Fetch Prayer Times”')}`;
     this.renderTimes(timesEl, today);
   }
 

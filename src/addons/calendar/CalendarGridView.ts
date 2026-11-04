@@ -341,7 +341,7 @@ export class CalendarGridView {
       const empty = document.createElement('div');
       empty.className = 'calendar-addon__empty';
       empty.textContent = _(
-        'No events yet. Create one — or find a public event calendar and hit Subscribe to fill your grid.'
+        'No events yet. Create one, or find a public event calendar and hit Subscribe to fill your grid.'
       );
       target.appendChild(empty);
     }
@@ -450,7 +450,7 @@ export class CalendarGridView {
       this.bookedDTags.has(entry.event.dTag);
     chip.className = `calendar-addon__chip${entry.event.allDay ? ' calendar-addon__chip--allday' : ''}${entry.event.isPrivate ? ' calendar-addon__chip--private' : ''}${booked ? ' calendar-addon__chip--booked' : ''}`;
     chip.title = booked
-      ? `Booked — ${entry.event.title || '(Untitled event)'}`
+      ? `Booked, ${entry.event.title || '(Untitled event)'}`
       : entry.event.title || '(Untitled event)';
     chip.innerHTML = compact
       ? escapeHtml(entry.event.title || '(Untitled)')

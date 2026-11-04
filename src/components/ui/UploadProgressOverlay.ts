@@ -123,7 +123,7 @@ export class UploadProgressOverlay {
         if (comp >= orig) {
           // Compression ran but didn't help — original is uploaded.
           message.textContent = _(
-            'Already well-compressed — uploading original'
+            'Already well-compressed, uploading original'
           );
         } else {
           const reduction = Math.round((1 - comp / orig) * 100);

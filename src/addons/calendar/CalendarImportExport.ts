@@ -88,7 +88,7 @@ export class CalendarImportExportManager {
           ? `<div class="calendar-io__pending">
               <h3>${_('Publish imports')}</h3>
               <p class="form__note">
-                ${tn("%s imported event is on this device only — it appears in your calendar locally, but your relays don't have it yet.", "%s imported events are on this device only — they appear in your calendar locally, but your relays don't have them yet.", draftsCount, String(draftsCount))}
+                ${tn("%s imported event is on this device only, it appears in your calendar locally, but your relays don't have it yet.", "%s imported events are on this device only, they appear in your calendar locally, but your relays don't have them yet.", draftsCount, String(draftsCount))}
               </p>
               <div class="l-row--center calendar-io__actions">
                 <button class="btn btn--large btn--passive" data-io-publish-drafts ${
@@ -116,7 +116,7 @@ export class CalendarImportExportManager {
           ? `<div class="calendar-io__reset">
               <h3>${_('Reset')}</h3>
               <p class="form__note">
-                ${_('Your calendar was cleared on this device. %s still on your relays — publishing the deletions makes the wipe permanent. Until then, reloading this page brings everything back.', tn('%s item is', '%s items are', this.pendingResetCount, String(this.pendingResetCount)))}
+                ${_('Your calendar was cleared on this device. %s still on your relays, publishing the deletions makes the wipe permanent. Until then, reloading this page brings everything back.', tn('%s item is', '%s items are', this.pendingResetCount, String(this.pendingResetCount)))}
               </p>
               <div class="l-row--center calendar-io__actions">
                 <button class="btn btn--danger" data-io-publish-reset ${
@@ -214,7 +214,7 @@ export class CalendarImportExportManager {
     const ok = await ModalService.getInstance().confirm({
       title: _('Reset calendar?'),
       message: _(
-        'This clears your whole calendar on this device: events, booking slots, saved and private events. Nothing is deleted on your relays yet — click "Publish deletions" afterwards to make the wipe permanent, or reload the page to bring everything back.'
+        'This clears your whole calendar on this device: events, booking slots, saved and private events. Nothing is deleted on your relays yet, click "Publish deletions" afterwards to make the wipe permanent, or reload the page to bring everything back.'
       ),
       confirmText: _('Reset locally'),
       confirmDestructive: true,

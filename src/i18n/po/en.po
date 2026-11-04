@@ -157,20 +157,6 @@ msgstr "Imprint"
 msgid "Key Storage:"
 msgstr "Key Storage:"
 
-#: src/components/views/AboutView.ts:222
-msgid ""
-"Like any web host, MyNymbox processes standard server log data when you "
-"load the application - typically your IP address, request timestamp, the "
-"URL/file requested, browser type, and referrer - for operational and "
-"security purposes (e.g. DDoS mitigation, server stability). NoorNote itself "
-"does not access or use these logs."
-msgstr ""
-"Like any web host, MyNymbox processes standard server log data when you "
-"load the application - typically your IP address, request timestamp, the "
-"URL/file requested, browser type, and referrer - for operational and "
-"security purposes (e.g. DDoS mitigation, server stability). NoorNote itself "
-"does not access or use these logs."
-
 #: src/components/views/AboutView.ts:199
 msgid "Local Data Storage"
 msgstr "Local Data Storage"
@@ -178,14 +164,6 @@ msgstr "Local Data Storage"
 #: src/components/views/AboutView.ts:234
 msgid "Media proxy:"
 msgstr "Media proxy:"
-
-#: src/components/views/AboutView.ts:84
-msgid ""
-"Need help with your web project? I'm available for hire - design, UX, and "
-"development. Sats accepted."
-msgstr ""
-"Need help with your web project? I'm available for hire - design, UX, and "
-"development. Sats accepted."
 
 #: src/components/views/AboutView.ts:242
 msgid "NIP-05 verification:"
@@ -210,20 +188,6 @@ msgid ""
 msgstr ""
 "NoorNote and NoorSigner are free and open source software, released under "
 "the %s."
-
-#: src/components/views/AboutView.ts:111
-msgid ""
-"NoorNote does not use any analytics services, tracking pixels, marketing "
-"cookies, or telemetry. We do not collect, log, or transmit any usage data "
-"to ourselves. The third-party connections described above are inherent to "
-"rendering content and providing the service - they are not telemetry, and "
-"no identifier beyond a standard HTTP request (IP, User-Agent) is sent."
-msgstr ""
-"NoorNote does not use any analytics services, tracking pixels, marketing "
-"cookies, or telemetry. We do not collect, log, or transmit any usage data "
-"to ourselves. The third-party connections described above are inherent to "
-"rendering content and providing the service - they are not telemetry, and "
-"no identifier beyond a standard HTTP request (IP, User-Agent) is sent."
 
 #: src/components/views/AboutView.ts:129
 msgid "NoorNote integrates third-party open-source work. Thanks to:"
@@ -607,7 +571,7 @@ msgstr "Zaps"
 #: src/addons/bulk-delete/BulkDeleteView.ts:835
 #: src/addons/calendar/BookingManager.ts:313
 #: src/addons/calendar/CalendarCollectionsModal.ts:157
-#: src/addons/feedback-board/FeedbackBoardView.ts:363
+#: src/addons/feedback-board/FeedbackBoardView.ts:633
 #: src/addons/follow-packs/FollowPackManager.ts:465
 #: src/addons/marketplace/MyListingsView.ts:244
 #: src/addons/note-taking/NoteEditorModal.ts:365
@@ -795,10 +759,6 @@ msgstr[1] ""
 #: src/components/modals/ImportToNoorSignerModal.ts:180
 msgid "Importing..."
 msgstr "Importing..."
-
-#: src/components/modals/ImportToNoorSignerModal.ts:153
-msgid "Invalid format - must start with nsec1"
-msgstr "Invalid format - must start with nsec1"
 
 #: src/components/modals/SyncConfirmationModal.ts:279
 msgid "Keep all"
@@ -1225,10 +1185,10 @@ msgstr "Confirm booking"
 #: src/addons/calendar/CalendarEventEditor.ts:519
 #: src/addons/calendar/CalendarEventModal.ts:121
 #: src/addons/calendar/CalendarEventModal.ts:548
-#: src/addons/feedback-board/FeedbackBoardView.ts:472
-#: src/addons/feedback-board/FeedbackBoardView.ts:552
-#: src/addons/feedback-board/FeedbackBoardView.ts:635
-#: src/addons/feedback-board/FeedbackBoardView.ts:677
+#: src/addons/feedback-board/FeedbackBoardView.ts:302
+#: src/addons/feedback-board/FeedbackBoardView.ts:812
+#: src/addons/feedback-board/FeedbackBoardView.ts:895
+#: src/addons/feedback-board/FeedbackBoardView.ts:937
 #: src/addons/marketplace/MyListingsView.ts:242
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:587
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:663
@@ -1251,7 +1211,7 @@ msgid_plural "Delivered to %s of %s relays"
 msgstr[0] "Delivered to %s of %s relay"
 msgstr[1] ""
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:572
+#: src/addons/feedback-board/FeedbackBoardService.ts:630
 #: src/components/onboarding/AccountSetupWizard.ts:3039
 #: src/components/views/ProfileBookingView.ts:614
 msgid "Done"
@@ -1270,18 +1230,6 @@ msgstr "Loading availability…"
 #: src/components/views/ProfileBookingView.ts:236
 msgid "Next week"
 msgstr "Next week"
-
-#: src/components/views/ProfileBookingView.ts:249
-msgid "No open slots at the moment - check back later."
-msgstr "No open slots at the moment - check back later."
-
-#: src/components/views/ProfileBookingView.ts:493
-msgid ""
-"Nostr users taking part in the meeting - they receive a private message "
-"about this booking."
-msgstr ""
-"Nostr users taking part in the meeting - they receive a private message "
-"about this booking."
 
 #: src/components/views/ProfileBookingView.ts:596
 msgid "Not reached: %s"
@@ -1414,11 +1362,6 @@ msgstr "Could not load older messages"
 msgid "Could not reject"
 msgstr "Could not reject"
 
-#: src/components/views/ConversationView.ts:1185
-#: src/components/views/ConversationView.ts:1201
-msgid "Could not send message - please try again"
-msgstr "Could not send message - please try again"
-
 #: src/components/views/ConversationView.ts:500
 msgid "Could not update setting"
 msgstr "Could not update setting"
@@ -1477,7 +1420,7 @@ msgstr "Describe your video..."
 #: src/addons/badges/BadgesView.ts:51
 #: src/addons/calendar/BookingManager.ts:352
 #: src/addons/calendar/CalendarEventEditor.ts:149
-#: src/addons/feedback-board/FeedbackBoardView.ts:358
+#: src/addons/feedback-board/FeedbackBoardView.ts:628
 #: src/addons/follow-packs/FollowPackManager.ts:507
 #: src/addons/nostr-majlis/DhikrModal.ts:71
 #: src/components/views/VideoEditorView.ts:165
@@ -1667,14 +1610,6 @@ msgstr "Publish"
 msgid "Publishing..."
 msgstr "Publishing..."
 
-#: src/components/views/MessagesView.ts:1048
-msgid ""
-"Re-fetch your full message history from the relays. Existing messages are "
-"kept - this only pulls anything missing. May take a moment."
-msgstr ""
-"Re-fetch your full message history from the relays. Existing messages are "
-"kept - this only pulls anything missing. May take a moment."
-
 #: src/components/views/MessagesView.ts:1051
 msgid "Re-sync"
 msgstr "Re-sync"
@@ -1703,10 +1638,6 @@ msgstr "Retry"
 msgid "Send a message to start the conversation"
 msgstr "Send a message to start the conversation"
 
-#: src/components/views/ConversationView.ts:1200
-msgid "Signer did not respond - message not sent"
-msgstr "Signer did not respond - message not sent"
-
 #: src/components/views/MessagesView.ts:579
 msgid "Start a conversation by clicking \"New Message\""
 msgstr "Start a conversation by clicking \"New Message\""
@@ -1730,7 +1661,7 @@ msgid "Time unit"
 msgstr "Time unit"
 
 #: src/addons/calendar/CalendarEventEditor.ts:98
-#: src/addons/feedback-board/FeedbackBoardView.ts:350
+#: src/addons/feedback-board/FeedbackBoardView.ts:620
 #: src/addons/note-taking/NoteEditorModal.ts:55
 #: src/components/views/ArticleEditorView.ts:1343
 #: src/components/views/ArticleEditorView.ts:355
@@ -1738,7 +1669,7 @@ msgstr "Time unit"
 msgid "Title"
 msgstr "Title"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:254
+#: src/addons/feedback-board/FeedbackBoardView.ts:463
 #: src/addons/marketplace/ListingEditorView.ts:279
 #: src/components/settings/SettingsSection.ts:43
 #: src/components/views/ArticleEditorView.ts:382
@@ -1926,10 +1857,6 @@ msgstr "Recipe (zap.cooking)"
 #: src/components/views/ArticleEditorView.ts:899
 msgid "Recipe hint: add a %s section so recipe clients can parse it."
 msgstr "Recipe hint: add a %s section so recipe clients can parse it."
-
-#: src/components/views/ArticleEditorView.ts:892
-msgid "Recipe hint: add a cover image - recipe clients expect one."
-msgstr "Recipe hint: add a cover image - recipe clients expect one."
 
 #: src/addons/bookmarks/BookmarksAddonView.ts:183
 #: src/addons/bulk-delete/BulkDeleteView.ts:690
@@ -2243,10 +2170,6 @@ msgstr "Soft mute lifted"
 msgid "Soft muted"
 msgstr "Soft muted"
 
-#: src/components/views/ProfileView.ts:1166
-msgid "Soft muted - their interactions no longer notify you"
-msgstr "Soft muted - their interactions no longer notify you"
-
 #: src/components/views/ProfileView.ts:687
 msgid "Switch to NoorSigner or browser extension to send messages"
 msgstr "Switch to NoorSigner or browser extension to send messages"
@@ -2338,6 +2261,7 @@ msgstr "Bookmark"
 msgid "Close"
 msgstr "Close"
 
+#: src/addons/feedback-board/FeedbackBoardView.ts:295
 #: src/components/ui/NoteMenu.ts:204
 msgid "Copy event ID"
 msgstr "Copy event ID"
@@ -2475,10 +2399,6 @@ msgstr "Report"
 msgid "Repost"
 msgstr "Repost"
 
-#: src/components/ui/interaction-managers/RepostManager.ts:194
-msgid "Repost failed - display reverted"
-msgstr "Repost failed - display reverted"
-
 #: src/components/ui/NoteMenu.ts:786
 msgid "Select a tribe to add this author to:"
 msgstr "Select a tribe to add this author to:"
@@ -2580,10 +2500,6 @@ msgstr[1] ""
 #: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:185
 msgid "Added to your calendar grid"
 msgstr "Added to your calendar grid"
-
-#: src/components/ui/UploadProgressOverlay.ts:125
-msgid "Already well-compressed - uploading original"
-msgstr "Already well-compressed - uploading original"
 
 #: src/addons/marketplace/ListingView.ts:446
 #: src/components/analytics/AnalyticsModal.ts:243
@@ -2786,7 +2702,7 @@ msgstr "Marketplace"
 msgid "Missing secret"
 msgstr "Missing secret"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:454
+#: src/addons/feedback-board/FeedbackBoardView.ts:724
 #: src/components/ui/MoveDropdown.ts:105
 msgid "Move to"
 msgstr "Move to"
@@ -2859,10 +2775,6 @@ msgstr "Pull Request Update"
 msgid "Quoted note (max depth reached)"
 msgstr "Quoted note (max depth reached)"
 
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1245
-msgid "Quoted repost - open to view"
-msgstr "Quoted repost - open to view"
-
 #: src/addons/calendar/CalendarEventModal.ts:482
 #: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:182
 msgid "Removed from your calendar"
@@ -2920,10 +2832,6 @@ msgstr "Status: Draft"
 #: src/components/ui/note-rendering/GitEventRenderer.ts:166
 msgid "Status: Open"
 msgstr "Status: Open"
-
-#: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:247
-msgid "Subscribed - events added to your calendar grid"
-msgstr "Subscribed - events added to your calendar grid"
 
 #: src/components/ui/WalletBalanceDisplay.ts:119
 msgid "Toggle balance visibility"
@@ -3129,20 +3037,6 @@ msgstr "%s/%s relays healthy (%s%)"
 #: src/components/settings/RelaySettingsSection.ts:250
 msgid "Add Relay"
 msgstr "Add Relay"
-
-#: src/components/settings/PrivacySettingsSection.ts:111
-msgid ""
-"Adds a note icon next to each profile where you can store an encrypted, "
-"private note about that user (NIP-78). Notes are NIP-44 self-encrypted - "
-"only you can read them, and they are never published unencrypted. This is "
-"separate from public petnames, which live in your contact list and are "
-"visible to everyone."
-msgstr ""
-"Adds a note icon next to each profile where you can store an encrypted, "
-"private note about that user (NIP-78). Notes are NIP-44 self-encrypted - "
-"only you can read them, and they are never published unencrypted. This is "
-"separate from public petnames, which live in your contact list and are "
-"visible to everyone."
 
 #: src/components/settings/ListSettingsSection.ts:69
 msgid "Advanced List Management disabled (Easy Mode)"
@@ -4157,24 +4051,6 @@ msgstr "You need at least one read-relay and one write-relay configured."
 msgid "Your follow list is critical!"
 msgstr "Your follow list is critical!"
 
-#: src/components/settings/RelaySettingsSection.ts:254
-msgid ""
-"Your relays are your sovereignty surface. <strong>Read</strong> = where "
-"NoorNote looks for content, <strong>Write</strong> = where your own events "
-"are stored, <strong>DM Inbox</strong> = where others can reach you with "
-"NIP-17 messages. When switching to a smaller (or fully private) write-set, "
-"publish the new relay list <em>first</em>, then disable the old relays - "
-"otherwise other clients can't follow the move. NoorNote automatically "
-"rebroadcasts your profile and follow-list to any newly-added write-relay."
-msgstr ""
-"Your relays are your sovereignty surface. <strong>Read</strong> = where "
-"NoorNote looks for content, <strong>Write</strong> = where your own events "
-"are stored, <strong>DM Inbox</strong> = where others can reach you with "
-"NIP-17 messages. When switching to a smaller (or fully private) write-set, "
-"publish the new relay list <em>first</em>, then disable the old relays - "
-"otherwise other clients can't follow the move. NoorNote automatically "
-"rebroadcasts your profile and follow-list to any newly-added write-relay."
-
 #: src/components/settings/NWCSettingsSection.ts:348
 #: src/components/settings/NWCSettingsSection.ts:362
 msgid "Zap defaults saved"
@@ -5140,7 +5016,7 @@ msgstr "Article published successfully!"
 msgid "Authentication failed. Please log in again."
 msgstr "Authentication failed. Please log in again."
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:485
+#: src/addons/feedback-board/FeedbackBoardView.ts:748
 #: src/services/PostService.ts:517
 msgid "Comment"
 msgstr "Comment"
@@ -5341,7 +5217,7 @@ msgstr "Request timed out. Please try again."
 msgid "Signing failed"
 msgstr "Signing failed"
 
-#: src/App.ts:998
+#: src/App.ts:1010
 #: src/services/managers/KeySignerConnectionManager.ts:413
 msgid "Stop NoorSigner Daemon?"
 msgstr "Stop NoorSigner Daemon?"
@@ -5720,10 +5596,6 @@ msgstr[1] ""
 msgid "%s enabled"
 msgstr "%s enabled"
 
-#: src/addons/group-chats/GroupChatsSettings.ts:117
-msgid "%s enabled - add communities below"
-msgstr "%s enabled - add communities below"
-
 #: src/addons/profile-recognition/ProfileRecognitionSettings.ts:100
 msgid "%s enabled (90 days)"
 msgstr "%s enabled (90 days)"
@@ -5755,18 +5627,6 @@ msgstr[1] ""
 #: src/addons/calendar/BookingManager.ts:506
 msgid "%s hours"
 msgstr "%s hours"
-
-#: src/addons/calendar/CalendarImportExport.ts:91
-msgid ""
-"%s imported event is on this device only - it appears in your calendar "
-"locally, but your relays don't have it yet."
-msgid_plural ""
-"%s imported events are on this device only - they appear in your calendar "
-"locally, but your relays don't have them yet."
-msgstr[0] ""
-"%s imported event is on this device only - it appears in your calendar "
-"locally, but your relays don't have it yet."
-msgstr[1] ""
 
 #: src/addons/calendar/CalendarImportExport.ts:119
 msgid "%s item is"
@@ -5841,16 +5701,6 @@ msgstr "+%s more"
 msgid "A description for this follow list..."
 msgstr "A description for this follow list..."
 
-#: src/addons/follower-notification/FollowerNotificationSettings.ts:170
-msgid ""
-"A follower whose contact list (including you) was last published longer ago "
-"than this is treated as a long-standing follower discovered late - added to "
-"the baseline silently, no notification."
-msgstr ""
-"A follower whose contact list (including you) was last published longer ago "
-"than this is treated as a long-standing follower discovered late - added to "
-"the baseline silently, no notification."
-
 #: src/addons/calendar/CalendarEventModal.ts:235
 msgid "a guest"
 msgstr "a guest"
@@ -5922,10 +5772,6 @@ msgstr "Added :%s:"
 msgid "Added \"%s\" to filter"
 msgstr "Added \"%s\" to filter"
 
-#: src/addons/follower-notification/FollowerNotificationSettings.ts:251
-msgid "Addon is still starting up - try again in a moment"
-msgstr "Addon is still starting up - try again in a moment"
-
 #: src/addons/calendar/CalendarEventEditor.ts:132
 msgid "Address, link, room…"
 msgstr "Address, link, room…"
@@ -5958,16 +5804,6 @@ msgstr "All day"
 msgid "also %s"
 msgstr "also %s"
 
-#: src/addons/group-chats/GroupChatsSettings.ts:189
-msgid ""
-"Also get the heads-up when you post to a group yourself - a handy "
-"cross-device confirmation that your message went through. Turn off to only "
-"hear about others. Applies to every enabled provider."
-msgstr ""
-"Also get the heads-up when you post to a group yourself - a handy "
-"cross-device confirmation that your message went through. Turn off to only "
-"hear about others. Applies to every enabled provider."
-
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:175
 msgid "Also search for \"%s\" without #"
 msgstr "Also search for \"%s\" without #"
@@ -5984,9 +5820,9 @@ msgstr "Appointment"
 msgid "Appointment title"
 msgstr "Appointment title"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:214
-#: src/addons/feedback-board/FeedbackBoardView.ts:252
-#: src/addons/feedback-board/FeedbackBoardView.ts:324
+#: src/addons/feedback-board/FeedbackBoardView.ts:420
+#: src/addons/feedback-board/FeedbackBoardView.ts:461
+#: src/addons/feedback-board/FeedbackBoardView.ts:557
 #: src/addons/note-taking/NoteEditorModal.ts:126
 #: src/addons/note-taking/NoteEditorModal.ts:82
 #: src/addons/note-taking/NoteTakingView.ts:49
@@ -6000,16 +5836,6 @@ msgstr "Archive a note to tuck it away here."
 #: src/addons/note-taking/NoteTakingView.ts:353
 msgid "Archived"
 msgstr "Archived"
-
-#: src/addons/group-chats/GroupChatsSettings.ts:86
-msgid ""
-"Armada communities are end-to-end encrypted (Concord protocol). Unlike "
-"Nostrord, there is no public membership list - you need to add each "
-"community manually by pasting its invite link below."
-msgstr ""
-"Armada communities are end-to-end encrypted (Concord protocol). Unlike "
-"Nostrord, there is no public membership list - you need to add each "
-"community manually by pasting its invite link below."
 
 #: src/addons/scheduled-posts/scheduleArticle.ts:141
 msgid "Article scheduled for %s"
@@ -6093,10 +5919,6 @@ msgstr "Bookable window"
 msgid "booked"
 msgstr "booked"
 
-#: src/addons/calendar/CalendarEventModal.ts:238
-msgid "Booked appointment - guest:"
-msgstr "Booked appointment - guest:"
-
 #: src/addons/calendar/BookingManager.ts:298
 msgid "Booked by %s"
 msgstr "Booked by %s"
@@ -6107,10 +5929,6 @@ msgstr "Booked by %s"
 msgid "Booking cancelled"
 msgstr "Booking cancelled"
 
-#: src/addons/calendar/CalendarEventModal.ts:530
-msgid "Booking cancelled - guest and participants informed"
-msgstr "Booking cancelled - guest and participants informed"
-
 #: src/addons/calendar/BookingManager.ts:217
 msgid "Booking config failed: %s"
 msgstr "Booking config failed: %s"
@@ -6119,17 +5937,9 @@ msgstr "Booking config failed: %s"
 msgid "Booking page"
 msgstr "Booking page"
 
-#: src/addons/calendar/BookingManager.ts:205
-msgid "Booking page disabled - published slots removed"
-msgstr "Booking page disabled - published slots removed"
-
 #: src/addons/calendar/BookingManager.ts:553
 msgid "Booking page link copied"
 msgstr "Booking page link copied"
-
-#: src/addons/calendar/BookingManager.ts:200
-msgid "Booking page updated - %s slots published, %s removed"
-msgstr "Booking page updated - %s slots published, %s removed"
 
 #: src/addons/marketplace/ListingView.ts:130
 #: src/addons/marketplace/ListingView.ts:300
@@ -6268,16 +6078,6 @@ msgstr "Choose how long to show these recognition cues after a profile change:"
 msgid "City"
 msgstr "City"
 
-#: src/addons/calendar/CalendarImportExport.ts:132
-msgid ""
-"Clears your calendar on this device only - events, booking slots, saved and "
-"private events. Like unsaved changes in a desktop app: your relays still "
-"have everything until you publish the wipe."
-msgstr ""
-"Clears your calendar on this device only - events, booking slots, saved and "
-"private events. Like unsaved changes in a desktop app: your relays still "
-"have everything until you publish the wipe."
-
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:552
 msgid "Commit"
 msgstr "Commit"
@@ -6289,16 +6089,6 @@ msgstr "commit to a dhikr"
 #: src/addons/nostr-majlis/DhikrModal.ts:94
 msgid "Commit to this dhikr"
 msgstr "Commit to this dhikr"
-
-#: src/addons/group-chats/GroupChatsSettings.ts:269
-msgid ""
-"Communities you track for activity notifications. NoorNote decrypts the "
-"public preview locally and discovers your channels automatically - your "
-"invite fragment never leaves your device."
-msgstr ""
-"Communities you track for activity notifications. NoorNote decrypts the "
-"public preview locally and discovers your channels automatically - your "
-"invite fragment never leaves your device."
 
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:192
 msgid "Community Dhikr"
@@ -6450,10 +6240,6 @@ msgstr "Custom Emojis"
 msgid "Daily Ayah"
 msgstr "Daily Ayah"
 
-#: src/addons/nostr-majlis/NostrMajlisSidebarWidget.ts:239
-msgid "Daily ayah unavailable - will retry tomorrow."
-msgstr "Daily ayah unavailable - will retry tomorrow."
-
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:483
 msgid "Daily Quran ayah"
 msgstr "Daily Quran ayah"
@@ -6495,14 +6281,6 @@ msgstr "Days before"
 #: src/addons/calendar/CalendarEventModal.ts:394
 msgid "declined"
 msgstr "declined"
-
-#: src/addons/calendar/CalendarAddonView.ts:77
-msgid ""
-"Default reminder lead for all events. Reminders stay local to this device - "
-"nothing is published. Single events can override this in their editor."
-msgstr ""
-"Default reminder lead for all events. Reminders stay local to this device - "
-"nothing is published. Single events can override this in their editor."
 
 #: src/addons/calendar/CalendarEventEditor.ts:514
 #: src/addons/calendar/CalendarEventModal.ts:543
@@ -6597,10 +6375,6 @@ msgstr "Description (Markdown)"
 #: src/addons/nostr-majlis/DhikrModal.ts:57
 msgid "Description (optional)"
 msgstr "Description (optional)"
-
-#: src/addons/calendar/CalendarEventEditor.ts:150
-msgid "Details (visible to everyone - this is a public event)"
-msgstr "Details (visible to everyone - this is a public event)"
 
 #: src/addons/nostr-majlis/DhikrModal.ts:53
 #: src/addons/nostr-majlis/DhikrModal.ts:65
@@ -7026,14 +6800,6 @@ msgstr "Fetching times…"
 msgid "Fetching…"
 msgstr "Fetching…"
 
-#: src/addons/analytics/AnalyticsAddonView.ts:520
-msgid ""
-"First initial run - gathering your data from relays. This takes a moment; "
-"subsequent visits load instantly from cache and refresh incrementally."
-msgstr ""
-"First initial run - gathering your data from relays. This takes a moment; "
-"subsequent visits load instantly from cache and refresh incrementally."
-
 #: src/addons/follow-packs/FollowPackManager.ts:863
 msgid "Follow Pack published"
 msgstr "Follow Pack published"
@@ -7221,16 +6987,6 @@ msgstr "Import"
 #: src/addons/calendar/CalendarImportExport.ts:66
 msgid "Import .ics file"
 msgstr "Import .ics file"
-
-#: src/addons/calendar/CalendarImportExport.ts:62
-msgid ""
-"Import a Google Calendar or any .ics export - events are previewed first "
-"and imported to this device. Publishing them to your relays is a separate "
-"step afterwards."
-msgstr ""
-"Import a Google Calendar or any .ics export - events are previewed first "
-"and imported to this device. Publishing them to your relays is a separate "
-"step afterwards."
 
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:346
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:424
@@ -7537,10 +7293,6 @@ msgstr "Next year"
 msgid "NIP-52 calendar events with RSVPs, reminders and private events."
 msgstr "NIP-52 calendar events with RSVPs, reminders and private events."
 
-#: src/addons/addonI18n.ts:86
-msgid "NIP-99 classified listings - browse, publish and manage your own."
-msgstr "NIP-99 classified listings - browse, publish and manage your own."
-
 #: src/addons/note-taking/NoteTakingView.ts:200
 msgid "No archived notes"
 msgstr "No archived notes"
@@ -7549,10 +7301,6 @@ msgstr "No archived notes"
 msgid "No badges created yet."
 msgstr "No badges created yet."
 
-#: src/addons/follower-notification/FollowerNotificationSettings.ts:138
-msgid "No baseline yet - the first check runs a few minutes after start."
-msgstr "No baseline yet - the first check runs a few minutes after start."
-
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:181
 msgid "No changes detected yet."
 msgstr "No changes detected yet."
@@ -7560,10 +7308,6 @@ msgstr "No changes detected yet."
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:194
 msgid "No custom emojis yet. Add your first one above."
 msgstr "No custom emojis yet. Add your first one above."
-
-#: src/addons/analytics/AnalyticsAddonView.ts:673
-msgid "No data yet - run a Refresh."
-msgstr "No data yet - run a Refresh."
 
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:533
 msgid "No dhikr actions yet. Create the first one."
@@ -7580,14 +7324,6 @@ msgstr "No events in the selected range"
 #: src/addons/calendar/CalendarImportExport.ts:481
 msgid "No events to export"
 msgstr "No events to export"
-
-#: src/addons/calendar/CalendarGridView.ts:343
-msgid ""
-"No events yet. Create one - or find a public event calendar and hit "
-"Subscribe to fill your grid."
-msgstr ""
-"No events yet. Create one - or find a public event calendar and hit "
-"Subscribe to fill your grid."
 
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:105
 msgid "No filter words yet."
@@ -7642,10 +7378,6 @@ msgstr "No posts found."
 msgid "No posts match your search."
 msgstr "No posts match your search."
 
-#: src/addons/calendar/CalendarCollectionsModal.ts:151
-msgid "No public events in your grid yet - create an event first."
-msgstr "No public events in your grid yet - create an event first."
-
 #: src/addons/follow-packs/FollowPackManager.ts:1003
 msgid "No recent notes from this pack"
 msgstr "No recent notes from this pack"
@@ -7691,10 +7423,6 @@ msgstr "No vacation ranges."
 #: src/addons/note-taking/NoteTakingBackup.ts:94
 msgid "No valid backup found"
 msgstr "No valid backup found"
-
-#: src/addons/note-taking/NoteTakingReminderService.ts:145
-msgid "NoorNote - Note reminder"
-msgstr "NoorNote - Note reminder"
 
 #: src/addons/addonI18n.ts:52
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:168
@@ -7790,10 +7518,6 @@ msgstr "Open BTC Price"
 msgid "Open Nostr Majlis"
 msgstr "Open Nostr Majlis"
 
-#: src/addons/addonI18n.ts:70
-msgid "Organize notes, articles and links in bookmark folders - private or public."
-msgstr "Organize notes, articles and links in bookmark folders - private or public."
-
 #: src/addons/analytics/AnalyticsAddonView.ts:327
 msgid "Overview"
 msgstr "Overview"
@@ -7839,18 +7563,6 @@ msgstr "Pick a district first"
 #: src/addons/calendar/BookingManager.ts:238
 msgid "Pick a from and to date first"
 msgstr "Pick a from and to date first"
-
-#: src/addons/bulk-delete/BulkDeleteView.ts:145
-msgid ""
-"Pick a time range or search your own posts, then select them and delete in "
-"bulk. Each deletion is a NIP-09 request broadcast to relays in the "
-"background - relays may honor it or not. Deletion is not guaranteed and "
-"cannot be undone."
-msgstr ""
-"Pick a time range or search your own posts, then select them and delete in "
-"bulk. Each deletion is a NIP-09 request broadcast to relays in the "
-"background - relays may honor it or not. Deletion is not guaranteed and "
-"cannot be undone."
 
 #: src/addons/note-taking/NoteTakingView.ts:198
 msgid "Pick another label or “%s”."
@@ -7930,10 +7642,6 @@ msgstr "Price and currency are required"
 #: src/addons/btc-price/BtcPriceSidebarWidget.ts:179
 msgid "Price unavailable"
 msgstr "Price unavailable"
-
-#: src/addons/calendar/CalendarEventModal.ts:113
-msgid "Private - encrypted"
-msgstr "Private - encrypted"
 
 #: src/addons/calendar/CalendarEventEditor.ts:230
 msgid "Private (encrypted)"
@@ -8040,10 +7748,6 @@ msgstr "Ranking your posts…"
 msgid "Re-include"
 msgstr "Re-include"
 
-#: src/addons/bookmarks/BookmarksAddonView.ts:192
-msgid "Read state reset - all bookmarks unread"
-msgstr "Read state reset - all bookmarks unread"
-
 #: src/addons/calendar/BookingManager.ts:401
 #: src/addons/calendar/CalendarEventModal.ts:514
 #: src/components/views/ProfileBookingView.ts:318
@@ -8058,16 +7762,6 @@ msgstr "Reason:"
 #: src/addons/wallet-balance/WalletTransactionList.ts:252
 msgid "Received"
 msgstr "Received"
-
-#: src/addons/analytics/AnalyticsAddonView.ts:426
-msgid ""
-"Received engagement per bucket - replies, zaps, reposts, quotes and likes "
-"combined, same components as the Top Posts ranking. Hover a bar for the "
-"breakdown."
-msgstr ""
-"Received engagement per bucket - replies, zaps, reposts, quotes and likes "
-"combined, same components as the Top Posts ranking. Hover a bar for the "
-"breakdown."
 
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:176
 msgid "Recent changes (%s)"
@@ -8229,22 +7923,6 @@ msgstr "Revoke"
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:190
 msgid "Salah"
 msgstr "Salah"
-
-#: src/addons/analytics/AnalyticsAddonView.ts:433
-msgid ""
-"Sats received per month, last 12 months - older receipts rarely survive "
-"relay retention. Hover a bar for details."
-msgstr ""
-"Sats received per month, last 12 months - older receipts rarely survive "
-"relay retention. Hover a bar for details."
-
-#: src/addons/analytics/AnalyticsAddonView.ts:440
-msgid ""
-"Sats sent per month, last 12 months - best effort (wallets without the P "
-"tag may be missing)."
-msgstr ""
-"Sats sent per month, last 12 months - best effort (wallets without the P "
-"tag may be missing)."
 
 #: src/addons/calendar/BookingManager.ts:225
 #: src/addons/calendar/BookingManager.ts:381
@@ -8468,14 +8146,6 @@ msgstr "Share this pack to your timeline"
 msgid "Shared in timeline"
 msgstr "Shared in timeline"
 
-#: src/addons/btc-price/BtcPriceAddonView.ts:112
-msgid ""
-"Shared with Zaps and the Wallet Balance addon - changing it updates "
-"everywhere."
-msgstr ""
-"Shared with Zaps and the Wallet Balance addon - changing it updates "
-"everywhere."
-
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:112
 msgid "Shortcode"
 msgstr "Shortcode"
@@ -8509,14 +8179,6 @@ msgstr "Show tafsir"
 msgid "Show the \"1 BTC = …\" rate line in the sidebar."
 msgstr "Show the \"1 BTC = …\" rate line in the sidebar."
 
-#: src/addons/btc-price/BtcPriceAddonView.ts:71
-msgid ""
-"Show the current Bitcoin exchange rate on this page and - via the switch "
-"below - as a widget in the sidebar."
-msgstr ""
-"Show the current Bitcoin exchange rate on this page and - via the switch "
-"below - as a widget in the sidebar."
-
 #: src/addons/addonI18n.ts:120
 msgid "Show the current Bitcoin price in the sidebar."
 msgstr "Show the current Bitcoin price in the sidebar."
@@ -8540,18 +8202,6 @@ msgstr "Show your NIP-60 Lightning wallet balance in the sidebar."
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1291
 msgid "Shows a banner before each prayer while NoorNote is open."
 msgstr "Shows a banner before each prayer while NoorNote is open."
-
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:485
-msgid ""
-"Shows one ayah per day in the sidebar widget - Arabic Uthmani text, the "
-"English translation (The Clear Quran) and the English tafsir Al-Mukhtasar. "
-"Texts load from public static CDNs once per day and are cached on your "
-"device."
-msgstr ""
-"Shows one ayah per day in the sidebar widget - Arabic Uthmani text, the "
-"English translation (The Clear Quran) and the English tafsir Al-Mukhtasar. "
-"Texts load from public static CDNs once per day and are cached on your "
-"device."
 
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:290
 msgid ""
@@ -8637,22 +8287,6 @@ msgstr "Take a note…"
 msgid "Tap “%s” to write your first encrypted note."
 msgstr "Tap “%s” to write your first encrypted note."
 
-#: src/addons/calendar/BookingService.ts:510
-msgid ""
-"The booking could not be published - no relay accepted it. Check your "
-"connection and try again."
-msgstr ""
-"The booking could not be published - no relay accepted it. Check your "
-"connection and try again."
-
-#: src/addons/calendar/BookingService.ts:626
-msgid ""
-"The cancellation could not be published - no relay accepted it. Check your "
-"connection and try again."
-msgstr ""
-"The cancellation could not be published - no relay accepted it. Check your "
-"connection and try again."
-
 #: src/addons/calendar/BookingService.ts:747
 msgid ""
 "The cancellation was not accepted by any relay. Check your connection and "
@@ -8664,14 +8298,6 @@ msgstr ""
 #: src/addons/calendar/BookingService.ts:842
 msgid "The cancellation was not accepted by any relay. Try again."
 msgstr "The cancellation was not accepted by any relay. Try again."
-
-#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:509
-msgid ""
-"The daily ayah could not be loaded. Check your connection - it will retry "
-"automatically."
-msgstr ""
-"The daily ayah could not be loaded. Check your connection - it will retry "
-"automatically."
 
 #: src/addons/calendar/CalendarEventModal.ts:511
 msgid ""
@@ -8689,10 +8315,6 @@ msgstr "The guest and all participants will be informed by DM."
 msgid "The host cancelled the booking \"%s\""
 msgstr "The host cancelled the booking \"%s\""
 
-#: src/addons/calendar/CalendarEventModal.ts:287
-msgid "The response could not be published - no relay accepted it"
-msgstr "The response could not be published - no relay accepted it"
-
 #: src/addons/calendar/BookingManager.ts:245
 msgid "The vacation end must be after the start"
 msgstr "The vacation end must be after the start"
@@ -8704,18 +8326,6 @@ msgstr "They receive an encrypted invitation containing the event's view key."
 #: src/addons/calendar/CalendarCollectionDetailModal.ts:139
 msgid "This calendar has no events yet."
 msgstr "This calendar has no events yet."
-
-#: src/addons/calendar/CalendarImportExport.ts:216
-msgid ""
-"This clears your whole calendar on this device: events, booking slots, "
-"saved and private events. Nothing is deleted on your relays yet - click "
-"\"Publish deletions\" afterwards to make the wipe permanent, or reload the "
-"page to bring everything back."
-msgstr ""
-"This clears your whole calendar on this device: events, booking slots, "
-"saved and private events. Nothing is deleted on your relays yet - click "
-"\"Publish deletions\" afterwards to make the wipe permanent, or reload the "
-"page to bring everything back."
 
 #: src/addons/calendar/CalendarEventEditor.ts:516
 #: src/addons/calendar/CalendarEventModal.ts:545
@@ -8745,14 +8355,6 @@ msgid ""
 msgstr ""
 "This will permanently remove the scheduled post. The event will not be "
 "published."
-
-#: src/addons/marketplace/MyListingsView.ts:239
-msgid ""
-"This will send a deletion request to relays. Deletion is not guaranteed - "
-"relays may choose to ignore deletion requests."
-msgstr ""
-"This will send a deletion request to relays. Deletion is not guaranteed - "
-"relays may choose to ignore deletion requests."
 
 #: src/addons/nostr-majlis/NostrMajlisSidebarWidget.ts:199
 msgid "time left"
@@ -8941,16 +8543,6 @@ msgstr "Your Badge Gallery"
 msgid "Your booked meeting starts now."
 msgstr "Your booked meeting starts now."
 
-#: src/addons/calendar/CalendarImportExport.ts:119
-msgid ""
-"Your calendar was cleared on this device. %s still on your relays - "
-"publishing the deletions makes the wipe permanent. Until then, reloading "
-"this page brings everything back."
-msgstr ""
-"Your calendar was cleared on this device. %s still on your relays - "
-"publishing the deletions makes the wipe permanent. Until then, reloading "
-"this page brings everything back."
-
 #: src/addons/nostr-majlis/DhikrModal.ts:75
 msgid "Your count"
 msgstr "Your count"
@@ -8962,30 +8554,6 @@ msgstr "Your dhikr was submitted"
 #: src/addons/calendar/CalendarCollectionsModal.ts:33
 msgid "Your event calendars"
 msgstr "Your event calendars"
-
-#: src/addons/calendar/CalendarAddonView.ts:72
-msgid ""
-"Your personal calendar on Nostr: keep your own appointments in month, week "
-"and list views, subscribe to public event calendars you're interested in, "
-"and add private events that only you can see. With reminders - and when you "
-"join someone's event, you can let them know you're coming."
-msgstr ""
-"Your personal calendar on Nostr: keep your own appointments in month, week "
-"and list views, subscribe to public event calendars you're interested in, "
-"and add private events that only you can see. With reminders - and when you "
-"join someone's event, you can let them know you're coming."
-
-#: src/addons/analytics/AnalyticsAddonView.ts:323
-msgid ""
-"Your personal Nostr stats - posts and replies, follows, content, zaps and "
-"engagement. Data is gathered relay-friendly, cached per account and "
-"refreshed incrementally. Counts cover your entire history - all-time, not a "
-"fixed window, as far as relay retention allows."
-msgstr ""
-"Your personal Nostr stats - posts and replies, follows, content, zaps and "
-"engagement. Data is gathered relay-friendly, cached per account and "
-"refreshed incrementally. Counts cover your entire history - all-time, not a "
-"fixed window, as far as relay retention allows."
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:682
 msgid "Your posts from %s to %s"
@@ -9161,14 +8729,6 @@ msgstr "Article excerpt limit in secondary content column"
 msgid "Article excerpt limit set to %s characters"
 msgstr "Article excerpt limit set to %s characters"
 
-#: src/components/settings/UISettingsSection.ts:242
-msgid "Article feed source - main view"
-msgstr "Article feed source - main view"
-
-#: src/components/settings/UISettingsSection.ts:249
-msgid "Article feed source - secondary column"
-msgstr "Article feed source - secondary column"
-
 #: src/components/settings/MediaServerSection.ts:345
 msgid "Audio Compression"
 msgstr "Audio Compression"
@@ -9270,25 +8830,13 @@ msgstr "Default"
 msgid "Default layout mode"
 msgstr "Default layout mode"
 
-#: src/components/settings/UISettingsSection.ts:638
-msgid "Degree 1 - Direct follows"
-msgstr "Degree 1 - Direct follows"
-
 #: src/components/settings/UISettingsSection.ts:646
 msgid "Degree 1 (direct follows)"
 msgstr "Degree 1 (direct follows)"
 
-#: src/components/settings/UISettingsSection.ts:639
-msgid "Degree 2 - Friends of friends"
-msgstr "Degree 2 - Friends of friends"
-
 #: src/components/settings/UISettingsSection.ts:647
 msgid "Degree 2 (friends of friends)"
 msgstr "Degree 2 (friends of friends)"
-
-#: src/components/settings/UISettingsSection.ts:642
-msgid "Degree 3 - Friends of friends of friends (slow to build)"
-msgstr "Degree 3 - Friends of friends of friends (slow to build)"
 
 #: src/components/settings/UISettingsSection.ts:648
 msgid "Degree 3 (friends of friends of friends)"
@@ -9350,16 +8898,6 @@ msgstr "Image compression disabled"
 #: src/components/settings/MediaServerSection.ts:660
 msgid "Image compression enabled"
 msgstr "Image compression enabled"
-
-#: src/components/settings/MediaServerSection.ts:274
-msgid ""
-"Images are resized and re-encoded as JPEG locally before upload, reducing "
-"file size and saving CDN bandwidth. EXIF metadata is preserved verbatim - "
-"no privacy fields are stripped at this layer."
-msgstr ""
-"Images are resized and re-encoded as JPEG locally before upload, reducing "
-"file size and saving CDN bandwidth. EXIF metadata is preserved verbatim - "
-"no privacy fields are stripped at this layer."
 
 #: src/components/settings/UISettingsSection.ts:149
 msgid "Islamic calendar (e.g., \"26. Rabi' ath-Thani 1446\")"
@@ -9441,10 +8979,6 @@ msgstr "Phone"
 #: src/components/settings/UISettingsSection.ts:403
 msgid "Phone layout (390px width)"
 msgstr "Phone layout (390px width)"
-
-#: src/components/settings/UISettingsSection.ts:111
-msgid "pilot translation (partial - untranslated text stays English)"
-msgstr "pilot translation (partial - untranslated text stays English)"
 
 #: src/components/settings/UISettingsSection.ts:439
 msgid "Post truncation disabled - all posts will be shown in full"
@@ -9541,18 +9075,6 @@ msgstr "Single-column layout (390px width) for phone development and testing"
 msgid "Skip compression for files below"
 msgstr "Skip compression for files below"
 
-#: src/components/settings/UISettingsSection.ts:262
-msgid ""
-"Skips rendering of off-screen notes (CSS <code>content-visibility: "
-"auto</code>). Significantly reduces memory usage on long timelines, "
-"especially on Linux. May cause minor scrollbar jumps when scrolling fast - "
-"disable if it bothers you."
-msgstr ""
-"Skips rendering of off-screen notes (CSS <code>content-visibility: "
-"auto</code>). Significantly reduces memory usage on long timelines, "
-"especially on Linux. May cause minor scrollbar jumps when scrolling fast - "
-"disable if it bothers you."
-
 #: src/components/settings/UISettingsSection.ts:148
 msgid "Standard Western calendar (e.g., \"30. Oct. 2024\")"
 msgstr "Standard Western calendar (e.g., \"30. Oct. 2024\")"
@@ -9597,16 +9119,6 @@ msgstr "Video compression disabled"
 #: src/components/settings/MediaServerSection.ts:537
 msgid "Video compression enabled"
 msgstr "Video compression enabled"
-
-#: src/components/settings/MediaServerSection.ts:311
-msgid ""
-"Videos are compressed locally using your device's hardware encoder "
-"(WebCodecs) before upload - your video never leaves your device until "
-"upload."
-msgstr ""
-"Videos are compressed locally using your device's hardware encoder "
-"(WebCodecs) before upload - your video never leaves your device until "
-"upload."
 
 #: src/components/settings/UISettingsSection.ts:136
 msgid "Views open as tabs in the right pane, timeline stays visible in main pane"
@@ -10808,14 +10320,6 @@ msgstr "Replies received"
 msgid "Sent : Received"
 msgstr "Sent : Received"
 
-#: src/addons/analytics/AnalyticsAddonView.ts:254
-msgid ""
-"Sent zaps are best effort - zaps from wallets that omit the P tag on "
-"receipts may be missing."
-msgstr ""
-"Sent zaps are best effort - zaps from wallets that omit the P tag on "
-"receipts may be missing."
-
 #: src/addons/analytics/AnalyticsAddonView.ts:238
 msgid "Video posts"
 msgstr "Video posts"
@@ -10864,10 +10368,6 @@ msgstr "bunker://..."
 #: src/components/auth/AuthComponent.ts:275
 msgid "Connection failed. Reload to try again."
 msgstr "Connection failed. Reload to try again."
-
-#: src/components/auth/AuthComponent.ts:570
-msgid "Connection not ready yet - try again in a moment."
-msgstr "Connection not ready yet - try again in a moment."
 
 #: src/components/auth/AuthComponent.ts:287
 msgid "Connection unavailable. Reload to try again."
@@ -11121,10 +10621,6 @@ msgstr "Custom"
 msgid "Custom client tag"
 msgstr "Custom client tag"
 
-#: src/components/views/EpubReaderView.ts:241
-msgid "Data Saver is on - tap to load book"
-msgstr "Data Saver is on - tap to load book"
-
 #: src/components/notifications/NotificationItem.ts:117
 msgid "Decline"
 msgstr "Decline"
@@ -11346,10 +10842,6 @@ msgstr "No recipes from your follows yet."
 #: src/components/views/managers/ThreadManager.ts:154
 msgid "No replies or quotes yet"
 msgstr "No replies or quotes yet"
-
-#: src/addons/calendar/CalendarReminderService.ts:329
-msgid "NoorNote - Calendar"
-msgstr "NoorNote - Calendar"
 
 #: src/helpers/renderPostPreview.ts:42
 msgid "Nothing to preview yet..."
@@ -11610,14 +11102,6 @@ msgstr ""
 msgid "Spreading the word? Love the energy. Just need you to log in first."
 msgstr "Spreading the word? Love the energy. Just need you to log in first."
 
-#: src/helpers/LoggedOutModals.ts:123
-msgid ""
-"Want to drop them a private message? Encrypted, peer-to-peer - but you'll "
-"need a key first."
-msgstr ""
-"Want to drop them a private message? Encrypted, peer-to-peer - but you'll "
-"need a key first."
-
 #: src/helpers/LoggedOutModals.ts:122
 msgid "Want to save this for later? Create an account and it's yours forever."
 msgstr "Want to save this for later? Create an account and it's yours forever."
@@ -11630,37 +11114,11 @@ msgstr ""
 "You could shower this note with a thousand emojis, but you'll need an "
 "account first."
 
-#: src/components/views/ProfileBookingView.ts:449
-msgid "%s - %s DMs failed"
-msgstr "%s - %s DMs failed"
-
-#: src/components/views/ProfileBookingView.ts:448
-msgid "%s - 1 DM failed"
-msgstr "%s - 1 DM failed"
-
 #: src/components/post/PostEditorToolbar.ts:225
 msgid "1 file failed:"
 msgid_plural "%s files failed:"
 msgstr[0] "1 file failed:"
 msgstr[1] ""
-
-#: src/addons/calendar/BookingService.ts:788
-#: src/addons/calendar/BookingService.ts:882
-msgid "Booking cancelled - %s recipients informed"
-msgstr "Booking cancelled - %s recipients informed"
-
-#: src/addons/calendar/BookingService.ts:787
-#: src/addons/calendar/BookingService.ts:881
-msgid "Booking cancelled - 1 recipient informed"
-msgstr "Booking cancelled - 1 recipient informed"
-
-#: src/addons/calendar/BookingService.ts:644
-msgid "Booking cancelled - host and %s participants informed"
-msgstr "Booking cancelled - host and %s participants informed"
-
-#: src/addons/calendar/BookingService.ts:643
-msgid "Booking cancelled - host and 1 participant informed"
-msgstr "Booking cancelled - host and 1 participant informed"
 
 #: src/lists/tribes.ts:2731
 msgid "Delete tribe \"%s\"? %s members will be deleted."
@@ -11816,19 +11274,19 @@ msgstr "Unsubscribe from #%s"
 msgid "Unsubscribed from #%s"
 msgstr "Unsubscribed from #%s"
 
-#: src/components/modals/TranslationPreviewModal.ts:120
+#: src/components/modals/TranslationPreviewModal.ts:117
 msgid "%s fuzzy (preview shows them anyway)"
 msgstr "%s fuzzy (preview shows them anyway)"
 
-#: src/components/modals/TranslationPreviewModal.ts:117
+#: src/components/modals/TranslationPreviewModal.ts:114
 msgid "%s of %s strings translated"
 msgstr "%s of %s strings translated"
 
-#: src/components/modals/TranslationPreviewModal.ts:123
+#: src/components/modals/TranslationPreviewModal.ts:120
 msgid "%s untranslated (shown in English)"
 msgstr "%s untranslated (shown in English)"
 
-#: src/components/modals/TranslationPreviewModal.ts:116
+#: src/components/modals/TranslationPreviewModal.ts:113
 msgid "Language:"
 msgstr "Language:"
 
@@ -11843,10 +11301,6 @@ msgstr "PO file"
 #: src/components/modals/TranslationPreviewModal.ts:50
 msgid "Translation Preview"
 msgstr "Translation Preview"
-
-#: src/components/modals/TranslationPreviewModal.ts:107
-msgid "A preview is active - it survives reloads."
-msgstr "A preview is active - it survives reloads."
 
 #: src/components/modals/TranslationPreviewModal.ts:38
 msgid "Apply and reload"
@@ -11865,10 +11319,6 @@ msgstr ""
 #: src/components/modals/TranslationPreviewModal.ts:43
 msgid "Remove loaded .po file"
 msgstr "Remove loaded .po file"
-
-#: src/components/timeline/Timeline.ts:431
-msgid "Nothing published here yet - or not available on your relays."
-msgstr "Nothing published here yet - or not available on your relays."
 
 #: src/components/settings/UISettingsSection.ts:489
 msgid "Back button hidden"
@@ -11916,16 +11366,6 @@ msgstr "See model on snocrash.art"
 msgid "Loading 3D model…"
 msgstr "Loading 3D model…"
 
-#: src/components/settings/RelaySettingsSection.ts:223
-msgid ""
-"Browsers share a limit of about %s simultaneous connections across all tabs "
-"- each connected relay uses one per tab. NoorNote connects your %s most "
-"important relays first (your own before fallback relays)."
-msgstr ""
-"Browsers share a limit of about %s simultaneous connections across all tabs "
-"- each connected relay uses one per tab. NoorNote connects your %s most "
-"important relays first (your own before fallback relays)."
-
 #: src/components/ui/note-rendering/QuotedNoteRenderer.ts:393
 msgid "Loading music…"
 msgstr "Loading music…"
@@ -11942,7 +11382,7 @@ msgstr ""
 "The desktop app has no browser relay connection limit, for a better "
 "following feed experience."
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:69
+#: src/addons/feedback-board/FeedbackBoardView.ts:77
 msgid ""
 "A public board between you and the developer: file wishes and bugs, follow "
 "their progress, get a DM on every update. Tickets are public Nostr events."
@@ -11950,169 +11390,150 @@ msgstr ""
 "A public board between you and the developer: file wishes and bugs, follow "
 "their progress, get a DM on every update. Tickets are public Nostr events."
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:411
+#: src/addons/feedback-board/FeedbackBoardView.ts:681
 msgid "A title is required."
 msgstr "A title is required."
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:481
+#: src/addons/feedback-board/FeedbackBoardView.ts:744
 msgid "Add comment"
 msgstr "Add comment"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:320
+#: src/addons/feedback-board/FeedbackBoardView.ts:553
 msgid "Archive ticket"
 msgstr "Archive ticket"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:321
+#: src/addons/feedback-board/FeedbackBoardView.ts:554
 msgid "Archived tickets stay visible to you only. Archive \"%s\"?"
 msgstr "Archived tickets stay visible to you only. Archive \"%s\"?"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:190
+#: src/addons/feedback-board/FeedbackBoardView.ts:267
 msgid "Bug"
 msgstr "Bug"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:719
+#: src/addons/feedback-board/FeedbackBoardView.ts:979
 msgid "Comment sent"
 msgstr "Comment sent"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:67
+#: src/addons/feedback-board/FeedbackBoardView.ts:75
 msgid "Enable Feedback Board"
 msgstr "Enable Feedback Board"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:96
+#: src/addons/feedback-board/FeedbackBoardView.ts:108
 msgid "Feedback Board"
 msgstr "Feedback Board"
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:570
+#: src/addons/feedback-board/FeedbackBoardService.ts:628
 msgid "In Progress"
 msgstr "In Progress"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:138
+#: src/addons/feedback-board/FeedbackBoardView.ts:191
 msgid "Loading board…"
 msgstr "Loading board…"
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:547
+#: src/addons/feedback-board/FeedbackBoardService.ts:605
 msgid "New comment on \"%s\": %s"
 msgstr "New comment on \"%s\": %s"
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:365
+#: src/addons/feedback-board/FeedbackBoardService.ts:423
 msgid "New feedback board ticket: \"%s\""
 msgstr "New feedback board ticket: \"%s\""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:173
-#: src/addons/feedback-board/FeedbackBoardView.ts:389
+#: src/addons/feedback-board/FeedbackBoardView.ts:250
+#: src/addons/feedback-board/FeedbackBoardView.ts:659
 msgid "New Ticket"
 msgstr "New Ticket"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:259
+#: src/addons/feedback-board/FeedbackBoardView.ts:468
 msgid "No archived tickets yet."
 msgstr "No archived tickets yet."
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:612
+#: src/addons/feedback-board/FeedbackBoardService.ts:675
 msgid "Only readable in NoorNote."
 msgstr "Only readable in NoorNote."
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:364
+#: src/addons/feedback-board/FeedbackBoardView.ts:634
 msgid "Post Ticket"
 msgstr "Post Ticket"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:332
-#: src/addons/feedback-board/FeedbackBoardView.ts:336
-#: src/addons/feedback-board/FeedbackBoardView.ts:421
-#: src/addons/feedback-board/FeedbackBoardView.ts:425
-#: src/addons/feedback-board/FeedbackBoardView.ts:571
-#: src/addons/feedback-board/FeedbackBoardView.ts:575
-#: src/addons/feedback-board/FeedbackBoardView.ts:601
-#: src/addons/feedback-board/FeedbackBoardView.ts:604
-#: src/addons/feedback-board/FeedbackBoardView.ts:683
-#: src/addons/feedback-board/FeedbackBoardView.ts:687
-#: src/addons/feedback-board/FeedbackBoardView.ts:711
-#: src/addons/feedback-board/FeedbackBoardView.ts:716
-msgid "Publishing failed - try again."
-msgstr "Publishing failed - try again."
-
-#: src/addons/feedback-board/FeedbackBoardService.ts:406
+#: src/addons/feedback-board/FeedbackBoardService.ts:464
 msgid "Status update for \"%s\": %s"
 msgstr "Status update for \"%s\": %s"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:142
-msgid "The board could not be loaded - check your connection."
-msgstr "The board could not be loaded - check your connection."
-
-#: src/addons/feedback-board/FeedbackBoardService.ts:437
+#: src/addons/feedback-board/FeedbackBoardService.ts:495
 msgid "Ticket \"%s\" was archived"
 msgstr "Ticket \"%s\" was archived"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:342
+#: src/addons/feedback-board/FeedbackBoardView.ts:575
 msgid "Ticket archived"
 msgstr "Ticket archived"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:432
+#: src/addons/feedback-board/FeedbackBoardView.ts:702
 msgid "Ticket posted to the board"
 msgstr "Ticket posted to the board"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:607
+#: src/addons/feedback-board/FeedbackBoardView.ts:867
 msgid "Ticket updated"
 msgstr "Ticket updated"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:354
+#: src/addons/feedback-board/FeedbackBoardView.ts:624
 msgid "Type"
 msgstr "Type"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:189
+#: src/addons/feedback-board/FeedbackBoardView.ts:266
 msgid "Wish"
 msgstr "Wish"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:465
+#: src/addons/feedback-board/FeedbackBoardView.ts:735
 msgid "Withdraw Ticket"
 msgstr "Withdraw Ticket"
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:574
-#: src/addons/feedback-board/FeedbackBoardView.ts:212
-#: src/addons/feedback-board/FeedbackBoardView.ts:229
+#: src/addons/feedback-board/FeedbackBoardService.ts:632
+#: src/addons/feedback-board/FeedbackBoardView.ts:416
+#: src/addons/feedback-board/FeedbackBoardView.ts:438
 msgid "Withdrawn"
 msgstr "Withdrawn"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:213
+#: src/addons/feedback-board/FeedbackBoardView.ts:419
 msgid "%s comment"
 msgid_plural "%s comments"
 msgstr[0] "%s comment"
 msgstr[1] ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:164
+#: src/addons/feedback-board/FeedbackBoardView.ts:241
 msgid "%s ticket"
 msgid_plural "%s tickets"
 msgstr[0] "%s ticket"
 msgstr[1] ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:548
+#: src/addons/feedback-board/FeedbackBoardView.ts:808
 msgid "Delete ticket"
 msgstr "Delete ticket"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:584
+#: src/addons/feedback-board/FeedbackBoardView.ts:844
 msgid "Ticket deleted"
 msgstr "Ticket deleted"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:191
+#: src/addons/feedback-board/FeedbackBoardView.ts:268
 msgid "Question"
 msgstr "Question"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:192
+#: src/addons/feedback-board/FeedbackBoardView.ts:269
 msgid "Refinement"
 msgstr "Refinement"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:690
+#: src/addons/feedback-board/FeedbackBoardView.ts:950
 msgid "Comment deleted"
 msgstr "Comment deleted"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:673
+#: src/addons/feedback-board/FeedbackBoardView.ts:933
 msgid "Delete comment"
 msgstr "Delete comment"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:674
+#: src/addons/feedback-board/FeedbackBoardView.ts:934
 msgid "The comment will be removed from relays that honor NIP-09. Delete it?"
 msgstr "The comment will be removed from relays that honor NIP-09. Delete it?"
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:549
+#: src/addons/feedback-board/FeedbackBoardView.ts:809
 msgid ""
 "The ticket and all its comments will be removed from relays that honor "
 "NIP-09. Copies may persist elsewhere. Delete \"%s\"?"
@@ -12169,10 +11590,6 @@ msgstr "Spam mode active"
 msgid "Spam mode disabled"
 msgstr "Spam mode disabled"
 
-#: src/components/views/MessagesView.ts:256
-msgid "Spam mode enabled - alerts off for 24 h"
-msgstr "Spam mode enabled - alerts off for 24 h"
-
 #: src/components/views/MessagesView.ts:264
 msgid ""
 "Silences alerts for new messages from unknown senders. Stays on for 24 h, "
@@ -12201,25 +11618,623 @@ msgstr "New message from an unknown sender"
 msgid "This view failed to load. Please reload the page."
 msgstr "This view failed to load. Please reload the page."
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:175
-msgid ""
-"Tickets are public - visible in every Nostr client (kanbanstr-compatible), "
-"not only in NoorNote."
-msgstr ""
-"Tickets are public - visible in every Nostr client (kanbanstr-compatible), "
-"not only in NoorNote."
-
-#: src/addons/feedback-board/FeedbackBoardView.ts:360
-msgid ""
-"Tickets are public Nostr events - visible in every Nostr client "
-"(kanbanstr-compatible), not only in NoorNote. Do not include private data."
-msgstr ""
-"Tickets are public Nostr events - visible in every Nostr client "
-"(kanbanstr-compatible), not only in NoorNote. Do not include private data."
-
-#: src/addons/feedback-board/FeedbackBoardService.ts:568
+#: src/addons/feedback-board/FeedbackBoardService.ts:626
 msgid "To Do"
 msgstr "To Do"
+
+#: src/addons/follower-notification/FollowerNotificationSettings.ts:170
+msgid ""
+"A follower whose contact list (including you) was last published longer ago "
+"than this is treated as a long-standing follower discovered late, added to "
+"the baseline silently, no notification."
+msgstr ""
+"A follower whose contact list (including you) was last published longer ago "
+"than this is treated as a long-standing follower discovered late, added to "
+"the baseline silently, no notification."
+
+#: src/components/modals/TranslationPreviewModal.ts:106
+msgid "A preview is active, it survives reloads."
+msgstr "A preview is active, it survives reloads."
+
+#: src/addons/follower-notification/FollowerNotificationSettings.ts:251
+msgid "Addon is still starting up, try again in a moment"
+msgstr "Addon is still starting up, try again in a moment"
+
+#: src/addons/group-chats/GroupChatsSettings.ts:189
+msgid ""
+"Also get the heads-up when you post to a group yourself, a handy "
+"cross-device confirmation that your message went through. Turn off to only "
+"hear about others. Applies to every enabled provider."
+msgstr ""
+"Also get the heads-up when you post to a group yourself, a handy "
+"cross-device confirmation that your message went through. Turn off to only "
+"hear about others. Applies to every enabled provider."
+
+#: src/addons/group-chats/GroupChatsSettings.ts:86
+msgid ""
+"Armada communities are end-to-end encrypted (Concord protocol). Unlike "
+"Nostrord, there is no public membership list, you need to add each "
+"community manually by pasting its invite link below."
+msgstr ""
+"Armada communities are end-to-end encrypted (Concord protocol). Unlike "
+"Nostrord, there is no public membership list, you need to add each "
+"community manually by pasting its invite link below."
+
+#: src/components/settings/UISettingsSection.ts:242
+msgid "Article feed source, main view"
+msgstr "Article feed source, main view"
+
+#: src/components/settings/UISettingsSection.ts:249
+msgid "Article feed source, secondary column"
+msgstr "Article feed source, secondary column"
+
+#: src/addons/calendar/CalendarEventModal.ts:238
+msgid "Booked appointment, guest:"
+msgstr "Booked appointment, guest:"
+
+#: src/addons/calendar/BookingService.ts:787
+#: src/addons/calendar/BookingService.ts:881
+msgid "Booking cancelled, 1 recipient informed"
+msgstr "Booking cancelled, 1 recipient informed"
+
+#: src/addons/calendar/CalendarEventModal.ts:530
+msgid "Booking cancelled, guest and participants informed"
+msgstr "Booking cancelled, guest and participants informed"
+
+#: src/addons/calendar/BookingService.ts:643
+msgid "Booking cancelled, host and 1 participant informed"
+msgstr "Booking cancelled, host and 1 participant informed"
+
+#: src/addons/calendar/BookingManager.ts:205
+msgid "Booking page disabled, published slots removed"
+msgstr "Booking page disabled, published slots removed"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:408
+msgid "Card options"
+msgstr "Card options"
+
+#: src/addons/calendar/CalendarImportExport.ts:132
+msgid ""
+"Clears your calendar on this device only, events, booking slots, saved and "
+"private events. Like unsaved changes in a desktop app: your relays still "
+"have everything until you publish the wipe."
+msgstr ""
+"Clears your calendar on this device only, events, booking slots, saved and "
+"private events. Like unsaved changes in a desktop app: your relays still "
+"have everything until you publish the wipe."
+
+#: src/addons/group-chats/GroupChatsSettings.ts:269
+msgid ""
+"Communities you track for activity notifications. NoorNote decrypts the "
+"public preview locally and discovers your channels automatically, your "
+"invite fragment never leaves your device."
+msgstr ""
+"Communities you track for activity notifications. NoorNote decrypts the "
+"public preview locally and discovers your channels automatically, your "
+"invite fragment never leaves your device."
+
+#: src/components/auth/AuthComponent.ts:570
+msgid "Connection not ready yet, try again in a moment."
+msgstr "Connection not ready yet, try again in a moment."
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:291
+msgid "Copy Permalink"
+msgstr "Copy Permalink"
+
+#: src/components/views/ConversationView.ts:1185
+#: src/components/views/ConversationView.ts:1201
+msgid "Could not send message, please try again"
+msgstr "Could not send message, please try again"
+
+#: src/addons/nostr-majlis/NostrMajlisSidebarWidget.ts:239
+msgid "Daily ayah unavailable, will retry tomorrow."
+msgstr "Daily ayah unavailable, will retry tomorrow."
+
+#: src/components/views/EpubReaderView.ts:241
+msgid "Data Saver is on, tap to load book"
+msgstr "Data Saver is on, tap to load book"
+
+#: src/addons/calendar/CalendarAddonView.ts:77
+msgid ""
+"Default reminder lead for all events. Reminders stay local to this device, "
+"nothing is published. Single events can override this in their editor."
+msgstr ""
+"Default reminder lead for all events. Reminders stay local to this device, "
+"nothing is published. Single events can override this in their editor."
+
+#: src/components/settings/UISettingsSection.ts:638
+msgid "Degree 1, Direct follows"
+msgstr "Degree 1, Direct follows"
+
+#: src/components/settings/UISettingsSection.ts:639
+msgid "Degree 2, Friends of friends"
+msgstr "Degree 2, Friends of friends"
+
+#: src/components/settings/UISettingsSection.ts:642
+msgid "Degree 3, Friends of friends of friends (slow to build)"
+msgstr "Degree 3, Friends of friends of friends (slow to build)"
+
+#: src/addons/calendar/CalendarEventEditor.ts:150
+msgid "Details (visible to everyone, this is a public event)"
+msgstr "Details (visible to everyone, this is a public event)"
+
+#: src/addons/calendar/CalendarImportExport.ts:62
+msgid ""
+"Import a Google Calendar or any .ics export, events are previewed first and "
+"imported to this device. Publishing them to your relays is a separate step "
+"afterwards."
+msgstr ""
+"Import a Google Calendar or any .ics export, events are previewed first and "
+"imported to this device. Publishing them to your relays is a separate step "
+"afterwards."
+
+#: src/components/modals/ImportToNoorSignerModal.ts:153
+msgid "Invalid format, must start with nsec1"
+msgstr "Invalid format, must start with nsec1"
+
+#: src/components/views/AboutView.ts:222
+msgid ""
+"Like any web host, MyNymbox processes standard server log data when you "
+"load the application, typically your IP address, request timestamp, the "
+"URL/file requested, browser type, and referrer, for operational and "
+"security purposes (e.g. DDoS mitigation, server stability). NoorNote itself "
+"does not access or use these logs."
+msgstr ""
+"Like any web host, MyNymbox processes standard server log data when you "
+"load the application, typically your IP address, request timestamp, the "
+"URL/file requested, browser type, and referrer, for operational and "
+"security purposes (e.g. DDoS mitigation, server stability). NoorNote itself "
+"does not access or use these logs."
+
+#: src/addons/follower-notification/FollowerNotificationSettings.ts:138
+msgid "No baseline yet, the first check runs a few minutes after start."
+msgstr "No baseline yet, the first check runs a few minutes after start."
+
+#: src/addons/analytics/AnalyticsAddonView.ts:673
+msgid "No data yet, run a Refresh."
+msgstr "No data yet, run a Refresh."
+
+#: src/components/views/ProfileBookingView.ts:249
+msgid "No open slots at the moment, check back later."
+msgstr "No open slots at the moment, check back later."
+
+#: src/addons/calendar/CalendarCollectionsModal.ts:151
+msgid "No public events in your grid yet, create an event first."
+msgstr "No public events in your grid yet, create an event first."
+
+#: src/components/views/AboutView.ts:111
+msgid ""
+"NoorNote does not use any analytics services, tracking pixels, marketing "
+"cookies, or telemetry. We do not collect, log, or transmit any usage data "
+"to ourselves. The third-party connections described above are inherent to "
+"rendering content and providing the service, they are not telemetry, and no "
+"identifier beyond a standard HTTP request (IP, User-Agent) is sent."
+msgstr ""
+"NoorNote does not use any analytics services, tracking pixels, marketing "
+"cookies, or telemetry. We do not collect, log, or transmit any usage data "
+"to ourselves. The third-party connections described above are inherent to "
+"rendering content and providing the service, they are not telemetry, and no "
+"identifier beyond a standard HTTP request (IP, User-Agent) is sent."
+
+#: src/addons/calendar/CalendarReminderService.ts:329
+msgid "NoorNote, Calendar"
+msgstr "NoorNote, Calendar"
+
+#: src/addons/note-taking/NoteTakingReminderService.ts:145
+msgid "NoorNote, Note reminder"
+msgstr "NoorNote, Note reminder"
+
+#: src/components/views/ProfileBookingView.ts:493
+msgid ""
+"Nostr users taking part in the meeting, they receive a private message "
+"about this booking."
+msgstr ""
+"Nostr users taking part in the meeting, they receive a private message "
+"about this booking."
+
+#: src/components/timeline/Timeline.ts:431
+msgid "Nothing published here yet, or not available on your relays."
+msgstr "Nothing published here yet, or not available on your relays."
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:321
+msgid "Permalink"
+msgstr "Permalink"
+
+#: src/addons/bulk-delete/BulkDeleteView.ts:145
+msgid ""
+"Pick a time range or search your own posts, then select them and delete in "
+"bulk. Each deletion is a NIP-09 request broadcast to relays in the "
+"background, relays may honor it or not. Deletion is not guaranteed and "
+"cannot be undone."
+msgstr ""
+"Pick a time range or search your own posts, then select them and delete in "
+"bulk. Each deletion is a NIP-09 request broadcast to relays in the "
+"background, relays may honor it or not. Deletion is not guaranteed and "
+"cannot be undone."
+
+#: src/components/settings/UISettingsSection.ts:111
+msgid "pilot translation (partial, untranslated text stays English)"
+msgstr "pilot translation (partial, untranslated text stays English)"
+
+#: src/addons/calendar/CalendarEventModal.ts:113
+msgid "Private, encrypted"
+msgstr "Private, encrypted"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:565
+#: src/addons/feedback-board/FeedbackBoardView.ts:569
+#: src/addons/feedback-board/FeedbackBoardView.ts:691
+#: src/addons/feedback-board/FeedbackBoardView.ts:695
+#: src/addons/feedback-board/FeedbackBoardView.ts:831
+#: src/addons/feedback-board/FeedbackBoardView.ts:835
+#: src/addons/feedback-board/FeedbackBoardView.ts:861
+#: src/addons/feedback-board/FeedbackBoardView.ts:864
+#: src/addons/feedback-board/FeedbackBoardView.ts:943
+#: src/addons/feedback-board/FeedbackBoardView.ts:947
+#: src/addons/feedback-board/FeedbackBoardView.ts:971
+#: src/addons/feedback-board/FeedbackBoardView.ts:976
+msgid "Publishing failed, try again."
+msgstr "Publishing failed, try again."
+
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1245
+msgid "Quoted repost, open to view"
+msgstr "Quoted repost, open to view"
+
+#: src/addons/bookmarks/BookmarksAddonView.ts:192
+msgid "Read state reset, all bookmarks unread"
+msgstr "Read state reset, all bookmarks unread"
+
+#: src/addons/analytics/AnalyticsAddonView.ts:426
+msgid ""
+"Received engagement per bucket, replies, zaps, reposts, quotes and likes "
+"combined, same components as the Top Posts ranking. Hover a bar for the "
+"breakdown."
+msgstr ""
+"Received engagement per bucket, replies, zaps, reposts, quotes and likes "
+"combined, same components as the Top Posts ranking. Hover a bar for the "
+"breakdown."
+
+#: src/components/views/ArticleEditorView.ts:892
+msgid "Recipe hint: add a cover image, recipe clients expect one."
+msgstr "Recipe hint: add a cover image, recipe clients expect one."
+
+#: src/components/ui/interaction-managers/RepostManager.ts:194
+msgid "Repost failed, display reverted"
+msgstr "Repost failed, display reverted"
+
+#: src/addons/analytics/AnalyticsAddonView.ts:433
+msgid ""
+"Sats received per month, last 12 months, older receipts rarely survive "
+"relay retention. Hover a bar for details."
+msgstr ""
+"Sats received per month, last 12 months, older receipts rarely survive "
+"relay retention. Hover a bar for details."
+
+#: src/addons/analytics/AnalyticsAddonView.ts:440
+msgid ""
+"Sats sent per month, last 12 months, best effort (wallets without the P tag "
+"may be missing)."
+msgstr ""
+"Sats sent per month, last 12 months, best effort (wallets without the P tag "
+"may be missing)."
+
+#: src/addons/btc-price/BtcPriceAddonView.ts:112
+msgid ""
+"Shared with Zaps and the Wallet Balance addon, changing it updates "
+"everywhere."
+msgstr ""
+"Shared with Zaps and the Wallet Balance addon, changing it updates "
+"everywhere."
+
+#: src/addons/btc-price/BtcPriceAddonView.ts:71
+msgid ""
+"Show the current Bitcoin exchange rate on this page and, via the switch "
+"below, as a widget in the sidebar."
+msgstr ""
+"Show the current Bitcoin exchange rate on this page and, via the switch "
+"below, as a widget in the sidebar."
+
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:485
+msgid ""
+"Shows one ayah per day in the sidebar widget, Arabic Uthmani text, the "
+"English translation (The Clear Quran) and the English tafsir Al-Mukhtasar. "
+"Texts load from public static CDNs once per day and are cached on your "
+"device."
+msgstr ""
+"Shows one ayah per day in the sidebar widget, Arabic Uthmani text, the "
+"English translation (The Clear Quran) and the English tafsir Al-Mukhtasar. "
+"Texts load from public static CDNs once per day and are cached on your "
+"device."
+
+#: src/components/views/ConversationView.ts:1200
+msgid "Signer did not respond, message not sent"
+msgstr "Signer did not respond, message not sent"
+
+#: src/components/settings/UISettingsSection.ts:262
+msgid ""
+"Skips rendering of off-screen notes (CSS <code>content-visibility: "
+"auto</code>). Significantly reduces memory usage on long timelines, "
+"especially on Linux. May cause minor scrollbar jumps when scrolling fast, "
+"disable if it bothers you."
+msgstr ""
+"Skips rendering of off-screen notes (CSS <code>content-visibility: "
+"auto</code>). Significantly reduces memory usage on long timelines, "
+"especially on Linux. May cause minor scrollbar jumps when scrolling fast, "
+"disable if it bothers you."
+
+#: src/components/views/ProfileView.ts:1166
+msgid "Soft muted, their interactions no longer notify you"
+msgstr "Soft muted, their interactions no longer notify you"
+
+#: src/components/views/MessagesView.ts:256
+msgid "Spam mode enabled, alerts off for 24 h"
+msgstr "Spam mode enabled, alerts off for 24 h"
+
+#: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:247
+msgid "Subscribed, events added to your calendar grid"
+msgstr "Subscribed, events added to your calendar grid"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:207
+msgid "The board could not be loaded, check your connection."
+msgstr "The board could not be loaded, check your connection."
+
+#: src/addons/nostr-majlis/NostrMajlisAddonView.ts:509
+msgid ""
+"The daily ayah could not be loaded. Check your connection, it will retry "
+"automatically."
+msgstr ""
+"The daily ayah could not be loaded. Check your connection, it will retry "
+"automatically."
+
+#: src/addons/calendar/CalendarEventModal.ts:287
+msgid "The response could not be published, no relay accepted it"
+msgstr "The response could not be published, no relay accepted it"
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:630
+msgid ""
+"Tickets are public Nostr events, visible in every Nostr client "
+"(kanbanstr-compatible), not only in NoorNote. Do not include private data."
+msgstr ""
+"Tickets are public Nostr events, visible in every Nostr client "
+"(kanbanstr-compatible), not only in NoorNote. Do not include private data."
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:252
+msgid ""
+"Tickets are public, visible in every Nostr client (kanbanstr-compatible), "
+"not only in NoorNote."
+msgstr ""
+"Tickets are public, visible in every Nostr client (kanbanstr-compatible), "
+"not only in NoorNote."
+
+#: src/addons/analytics/AnalyticsAddonView.ts:323
+msgid ""
+"Your personal Nostr stats, posts and replies, follows, content, zaps and "
+"engagement. Data is gathered relay-friendly, cached per account and "
+"refreshed incrementally. Counts cover your entire history, all-time, not a "
+"fixed window, as far as relay retention allows."
+msgstr ""
+"Your personal Nostr stats, posts and replies, follows, content, zaps and "
+"engagement. Data is gathered relay-friendly, cached per account and "
+"refreshed incrementally. Counts cover your entire history, all-time, not a "
+"fixed window, as far as relay retention allows."
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:415
+msgid "Zap the developer"
+msgstr "Zap the developer"
+
+#: src/addons/group-chats/GroupChatsSettings.ts:117
+msgid "%s enabled, add communities below"
+msgstr "%s enabled, add communities below"
+
+#: src/addons/calendar/CalendarImportExport.ts:91
+msgid ""
+"%s imported event is on this device only, it appears in your calendar "
+"locally, but your relays don't have it yet."
+msgid_plural ""
+"%s imported events are on this device only, they appear in your calendar "
+"locally, but your relays don't have them yet."
+msgstr[0] ""
+"%s imported event is on this device only, it appears in your calendar "
+"locally, but your relays don't have it yet."
+msgstr[1] ""
+
+#: src/components/views/ProfileBookingView.ts:449
+msgid "%s, %s DMs failed"
+msgstr "%s, %s DMs failed"
+
+#: src/components/views/ProfileBookingView.ts:448
+msgid "%s, 1 DM failed"
+msgstr "%s, 1 DM failed"
+
+#: src/components/settings/PrivacySettingsSection.ts:111
+msgid ""
+"Adds a note icon next to each profile where you can store an encrypted, "
+"private note about that user (NIP-78). Notes are NIP-44 self-encrypted, "
+"only you can read them, and they are never published unencrypted. This is "
+"separate from public petnames, which live in your contact list and are "
+"visible to everyone."
+msgstr ""
+"Adds a note icon next to each profile where you can store an encrypted, "
+"private note about that user (NIP-78). Notes are NIP-44 self-encrypted, "
+"only you can read them, and they are never published unencrypted. This is "
+"separate from public petnames, which live in your contact list and are "
+"visible to everyone."
+
+#: src/components/ui/UploadProgressOverlay.ts:125
+msgid "Already well-compressed, uploading original"
+msgstr "Already well-compressed, uploading original"
+
+#: src/addons/calendar/BookingService.ts:788
+#: src/addons/calendar/BookingService.ts:882
+msgid "Booking cancelled, %s recipients informed"
+msgstr "Booking cancelled, %s recipients informed"
+
+#: src/addons/calendar/BookingService.ts:644
+msgid "Booking cancelled, host and %s participants informed"
+msgstr "Booking cancelled, host and %s participants informed"
+
+#: src/addons/calendar/BookingManager.ts:200
+msgid "Booking page updated, %s slots published, %s removed"
+msgstr "Booking page updated, %s slots published, %s removed"
+
+#: src/components/settings/RelaySettingsSection.ts:223
+msgid ""
+"Browsers share a limit of about %s simultaneous connections across all "
+"tabs, each connected relay uses one per tab. NoorNote connects your %s most "
+"important relays first (your own before fallback relays)."
+msgstr ""
+"Browsers share a limit of about %s simultaneous connections across all "
+"tabs, each connected relay uses one per tab. NoorNote connects your %s most "
+"important relays first (your own before fallback relays)."
+
+#: src/addons/analytics/AnalyticsAddonView.ts:520
+msgid ""
+"First initial run, gathering your data from relays. This takes a moment; "
+"subsequent visits load instantly from cache and refresh incrementally."
+msgstr ""
+"First initial run, gathering your data from relays. This takes a moment; "
+"subsequent visits load instantly from cache and refresh incrementally."
+
+#: src/components/settings/MediaServerSection.ts:274
+msgid ""
+"Images are resized and re-encoded as JPEG locally before upload, reducing "
+"file size and saving CDN bandwidth. EXIF metadata is preserved verbatim, no "
+"privacy fields are stripped at this layer."
+msgstr ""
+"Images are resized and re-encoded as JPEG locally before upload, reducing "
+"file size and saving CDN bandwidth. EXIF metadata is preserved verbatim, no "
+"privacy fields are stripped at this layer."
+
+#: src/addons/addonI18n.ts:86
+msgid "NIP-99 classified listings, browse, publish and manage your own."
+msgstr "NIP-99 classified listings, browse, publish and manage your own."
+
+#: src/addons/calendar/CalendarGridView.ts:343
+msgid ""
+"No events yet. Create one, or find a public event calendar and hit "
+"Subscribe to fill your grid."
+msgstr ""
+"No events yet. Create one, or find a public event calendar and hit "
+"Subscribe to fill your grid."
+
+#: src/addons/addonI18n.ts:70
+msgid "Organize notes, articles and links in bookmark folders, private or public."
+msgstr "Organize notes, articles and links in bookmark folders, private or public."
+
+#: src/components/views/MessagesView.ts:1048
+msgid ""
+"Re-fetch your full message history from the relays. Existing messages are "
+"kept, this only pulls anything missing. May take a moment."
+msgstr ""
+"Re-fetch your full message history from the relays. Existing messages are "
+"kept, this only pulls anything missing. May take a moment."
+
+#: src/addons/analytics/AnalyticsAddonView.ts:254
+msgid ""
+"Sent zaps are best effort, zaps from wallets that omit the P tag on "
+"receipts may be missing."
+msgstr ""
+"Sent zaps are best effort, zaps from wallets that omit the P tag on "
+"receipts may be missing."
+
+#: src/addons/calendar/BookingService.ts:510
+msgid ""
+"The booking could not be published, no relay accepted it. Check your "
+"connection and try again."
+msgstr ""
+"The booking could not be published, no relay accepted it. Check your "
+"connection and try again."
+
+#: src/addons/calendar/BookingService.ts:626
+msgid ""
+"The cancellation could not be published, no relay accepted it. Check your "
+"connection and try again."
+msgstr ""
+"The cancellation could not be published, no relay accepted it. Check your "
+"connection and try again."
+
+#: src/addons/calendar/CalendarImportExport.ts:216
+msgid ""
+"This clears your whole calendar on this device: events, booking slots, "
+"saved and private events. Nothing is deleted on your relays yet, click "
+"\"Publish deletions\" afterwards to make the wipe permanent, or reload the "
+"page to bring everything back."
+msgstr ""
+"This clears your whole calendar on this device: events, booking slots, "
+"saved and private events. Nothing is deleted on your relays yet, click "
+"\"Publish deletions\" afterwards to make the wipe permanent, or reload the "
+"page to bring everything back."
+
+#: src/addons/marketplace/MyListingsView.ts:239
+msgid ""
+"This will send a deletion request to relays. Deletion is not guaranteed, "
+"relays may choose to ignore deletion requests."
+msgstr ""
+"This will send a deletion request to relays. Deletion is not guaranteed, "
+"relays may choose to ignore deletion requests."
+
+#: src/components/settings/MediaServerSection.ts:311
+msgid ""
+"Videos are compressed locally using your device's hardware encoder "
+"(WebCodecs) before upload, your video never leaves your device until upload."
+msgstr ""
+"Videos are compressed locally using your device's hardware encoder "
+"(WebCodecs) before upload, your video never leaves your device until upload."
+
+#: src/addons/calendar/CalendarImportExport.ts:119
+msgid ""
+"Your calendar was cleared on this device. %s still on your relays, "
+"publishing the deletions makes the wipe permanent. Until then, reloading "
+"this page brings everything back."
+msgstr ""
+"Your calendar was cleared on this device. %s still on your relays, "
+"publishing the deletions makes the wipe permanent. Until then, reloading "
+"this page brings everything back."
+
+#: src/components/views/AboutView.ts:84
+msgid ""
+"Need help with your web project? I'm available for hire, design, UX, and "
+"development. Sats accepted."
+msgstr ""
+"Need help with your web project? I'm available for hire, design, UX, and "
+"development. Sats accepted."
+
+#: src/helpers/LoggedOutModals.ts:123
+msgid ""
+"Want to drop them a private message? Encrypted, peer-to-peer, but you'll "
+"need a key first."
+msgstr ""
+"Want to drop them a private message? Encrypted, peer-to-peer, but you'll "
+"need a key first."
+
+#: src/addons/calendar/CalendarAddonView.ts:72
+msgid ""
+"Your personal calendar on Nostr: keep your own appointments in month, week "
+"and list views, subscribe to public event calendars you're interested in, "
+"and add private events that only you can see. With reminders, and when you "
+"join someone's event, you can let them know you're coming."
+msgstr ""
+"Your personal calendar on Nostr: keep your own appointments in month, week "
+"and list views, subscribe to public event calendars you're interested in, "
+"and add private events that only you can see. With reminders, and when you "
+"join someone's event, you can let them know you're coming."
+
+#: src/components/settings/RelaySettingsSection.ts:254
+msgid ""
+"Your relays are your sovereignty surface. <strong>Read</strong> = where "
+"NoorNote looks for content, <strong>Write</strong> = where your own events "
+"are stored, <strong>DM Inbox</strong> = where others can reach you with "
+"NIP-17 messages. When switching to a smaller (or fully private) write-set, "
+"publish the new relay list <em>first</em>, then disable the old relays, "
+"otherwise other clients can't follow the move. NoorNote automatically "
+"rebroadcasts your profile and follow-list to any newly-added write-relay."
+msgstr ""
+"Your relays are your sovereignty surface. <strong>Read</strong> = where "
+"NoorNote looks for content, <strong>Write</strong> = where your own events "
+"are stored, <strong>DM Inbox</strong> = where others can reach you with "
+"NIP-17 messages. When switching to a smaller (or fully private) write-set, "
+"publish the new relay list <em>first</em>, then disable the old relays, "
+"otherwise other clients can't follow the move. NoorNote automatically "
+"rebroadcasts your profile and follow-list to any newly-added write-relay."
 
 #: src/addons/note-taking/NoteEditorModal.ts:362
 #: src/addons/note-taking/NoteEditorModal.ts:85

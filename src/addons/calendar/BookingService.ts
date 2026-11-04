@@ -142,7 +142,7 @@ export class BookingService {
           .map((s, index) => ({
             id: REMINDER_ID_BASE_OWNER + index,
             title: s.data.title || 'Appointment',
-            body: `Your booked meeting starts now — guest: ${
+            body: `Your booked meeting starts now, guest: ${
               UserProfileService.getInstance().getUsername(s.bookedBy!) ||
               'guest'
             }`,
@@ -508,7 +508,7 @@ export class BookingService {
       return {
         ok: false,
         detail: _(
-          'The booking could not be published — no relay accepted it. Check your connection and try again.'
+          'The booking could not be published, no relay accepted it. Check your connection and try again.'
         ),
         informed: 0,
         dmFailures: 0,
@@ -554,7 +554,7 @@ export class BookingService {
       });
       return {
         ok: true,
-        detail: 'Booked — notification module unavailable',
+        detail: 'Booked, notification module unavailable',
         informed: 0,
         dmFailures: 0,
         delivery,
@@ -594,7 +594,7 @@ export class BookingService {
     return {
       ok: true,
       detail: dmFailures
-        ? `Booked — ${informed} DM(s) sent, ${dmFailures} failed`
+        ? `Booked, ${informed} DM(s) sent, ${dmFailures} failed`
         : 'Booked',
       informed,
       dmFailures,
@@ -624,7 +624,7 @@ export class BookingService {
       return {
         ok: false,
         detail: _(
-          'The cancellation could not be published — no relay accepted it. Check your connection and try again.'
+          'The cancellation could not be published, no relay accepted it. Check your connection and try again.'
         ),
         informed: 0,
         dmFailures: 0,
@@ -642,7 +642,7 @@ export class BookingService {
           ? informed - 1 === 1
             ? _('Booking cancelled, host and 1 participant informed')
             : _(
-                'Booking cancelled — host and %s participants informed',
+                'Booking cancelled, host and %s participants informed',
                 String(informed - 1)
               )
           : _('Booking cancelled'),
@@ -674,7 +674,7 @@ export class BookingService {
       `When: ${new Date(slot.startMs).toUTCString()}`,
       record?.guestName ? `Name: ${record.guestName}` : null,
       record?.note ? `Note: ${record.note}` : null,
-      `Reason: ${reason.trim() || '—'}`,
+      `Reason: ${reason.trim() || '-'}`,
       `By: ${encodeNpub(user.pubkey)}`,
     ]
       .filter((line): line is string => line !== null)
@@ -785,7 +785,7 @@ export class BookingService {
       detail: informed
         ? informed === 1
           ? _('Booking cancelled, 1 recipient informed')
-          : _('Booking cancelled — %s recipients informed', String(informed))
+          : _('Booking cancelled, %s recipients informed', String(informed))
         : _('Booking cancelled'),
       informed,
       dmFailures,
@@ -879,7 +879,7 @@ export class BookingService {
       detail: informed
         ? informed === 1
           ? _('Booking cancelled, 1 recipient informed')
-          : _('Booking cancelled — %s recipients informed', String(informed))
+          : _('Booking cancelled, %s recipients informed', String(informed))
         : _('Booking cancelled'),
       informed,
       dmFailures,

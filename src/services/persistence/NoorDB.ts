@@ -113,7 +113,7 @@ export async function openPerAccountDb(
   const npub = AuthService.getInstance().getCurrentUser()?.npub;
   if (!npub) {
     throw new Error(
-      `NoorDB: cannot open per-account db "${slug}" — no current user`
+      `NoorDB: cannot open per-account db "${slug}", no current user`
     );
   }
   return openDb(perAccountDbName(slug, npub), definition, { perAccount: true });

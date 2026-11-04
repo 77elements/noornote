@@ -121,7 +121,7 @@ export function loggedOutModalAnchors(): string[] {
     ),
     _("Want to save this for later? Create an account and it's yours forever."),
     _(
-      "Want to drop them a private message? Encrypted, peer-to-peer — but you'll need a key first."
+      "Want to drop them a private message? Encrypted, peer-to-peer, but you'll need a key first."
     ),
   ];
 }

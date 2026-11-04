@@ -198,7 +198,7 @@ export class BookingManager {
       ToastService.show(
         config.enabled
           ? _(
-              'Booking page updated — %s slots published, %s removed',
+              'Booking page updated, %s slots published, %s removed',
               String(published),
               String(deleted)
             )
@@ -425,7 +425,7 @@ export class BookingManager {
       this.render();
       ToastService.show(
         result.dmFailures
-          ? `${result.detail} — ${result.dmFailures === 1 ? _('failed DM: 1') : _('failed DMs: %s', String(result.dmFailures))}`
+          ? `${result.detail}, ${result.dmFailures === 1 ? _('failed DM: 1') : _('failed DMs: %s', String(result.dmFailures))}`
           : result.detail,
         result.dmFailures ? 'warning' : 'success'
       );

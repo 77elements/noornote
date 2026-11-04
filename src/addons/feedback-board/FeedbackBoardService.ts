@@ -30,6 +30,7 @@ import { RelayConfig } from '../../services/RelayConfig';
 import { diagLog } from '../../services/DiagnosticLogger';
 import { SystemLogger } from '../../services/SystemLogger';
 import { errMessage } from '../../helpers/errorMessage';
+import { getZapAmountSats } from '../../helpers/zapUtils';
 import { _ } from '../../i18n';
 import {
   FEEDBACK_BOARD_KIND,
@@ -669,9 +670,12 @@ export class FeedbackBoardService {
     const recipient = isDevPubkey(current.pubkey)
       ? ticket.authorPubkey
       : FEEDBACK_DEV_PUBKEY;
+    // Acting on a ticket the dev authored would DM the dev about their own
+    // action — skip it.
+    if (recipient === current.pubkey) return;
     await this.sendDM(
       recipient,
-      `${reason} — ${_('Only readable in NoorNote.')}`
+      `${reason}, ${_('Only readable in NoorNote.')}`
     );
   }
 
@@ -845,5 +849,47 @@ export class FeedbackBoardService {
       this.systemLogger.error('FeedbackBoard', 'Publishing failed — try again');
       return null;
     }
+  }
+
+  /**
+   * Total sats zapped per ticket (zap badge on each card, kanbanstr parity).
+   * One batched kind-9735 fetch across all card coordinates; a receipt
+   * mirrors the zap request's `a` tag, so sums de-aggregate by splitting it.
+   * Best effort: a failed fetch just yields an empty map, the caller renders
+   * the badge only for tickets with a total.
+   */
+  public async fetchZapTotals(
+    tickets: FeedbackTicket[]
+  ): Promise<Map<string, number>> {
+    const totals = new Map<string, number>();
+    if (!tickets.length) return totals;
+    try {
+      const events = await this.transport.fetchDirect(
+        this.relayConfig.getReadRelays(),
+        [
+          {
+            kinds: [9735] as unknown as NDKKind[],
+            '#a': tickets.map(t => cardAddress(t.authorPubkey, t.dTag)),
+            limit: 500,
+          },
+        ],
+        5000,
+        'feedback-board-zap-totals'
+      );
+      const seen = new Set<string>();
+      for (const event of events) {
+        if (!event.id || seen.has(event.id)) continue;
+        seen.add(event.id);
+        const dTag = event.tags.find(t => t[0] === 'a')?.[1]?.split(':')[2];
+        if (!dTag) continue;
+        totals.set(dTag, (totals.get(dTag) ?? 0) + getZapAmountSats(event));
+      }
+    } catch (error) {
+      this.systemLogger.warn(
+        'FeedbackBoard',
+        `Zap totals fetch failed: ${errMessage(error)}`
+      );
+    }
+    return totals;
   }
 }

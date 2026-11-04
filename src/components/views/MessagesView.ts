@@ -1046,7 +1046,7 @@ export class MessagesView extends View {
         const confirmed = await ModalService.getInstance().confirm({
           title: _('Re-sync messages'),
           message: _(
-            'Re-fetch your full message history from the relays. Existing messages are kept — this only pulls anything missing. May take a moment.'
+            'Re-fetch your full message history from the relays. Existing messages are kept, this only pulls anything missing. May take a moment.'
           ),
           confirmText: _('Re-sync'),
           cancelText: _('Cancel'),

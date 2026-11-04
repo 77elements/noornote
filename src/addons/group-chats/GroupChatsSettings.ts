@@ -114,7 +114,7 @@ export class GroupChatsSettings extends SettingsSection {
     this.eventBus.emit('armada:addon-toggle', { enabled: checked });
     ToastService.show(
       checked
-        ? _('%s enabled — add communities below', _('Armada'))
+        ? _('%s enabled, add communities below', _('Armada'))
         : _('%s disabled', _('Armada')),
       'success'
     );
@@ -358,7 +358,7 @@ export class GroupChatsSettings extends SettingsSection {
       const community = result.community;
       ArmadaCommunityRegistry.getInstance().add(community);
       const note = community.channels?.length
-        ? ` — ${tnNChannels(community.channels.length).replace(_('tracked'), _('discovered'))}`
+        ? `, ${tnNChannels(community.channels.length).replace(_('tracked'), _('discovered'))}`
         : '';
       ToastService.show(_('Tracking "%s"', community.name) + note, 'success');
       this.renderArmadaCommunities(true);

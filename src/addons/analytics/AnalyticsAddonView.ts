@@ -61,7 +61,7 @@ interface RowSpec {
 
 /** Format "1 : x.y" quotients; Infinity (replies without originals) → "—". */
 const quotientFormat = (v: number): string =>
-  Number.isFinite(v) ? `1 : ${v.toFixed(1)}` : '—';
+  Number.isFinite(v) ? `1 : ${v.toFixed(1)}` : '-';
 
 /**
  * The four metric rows (content (posts+articles/videos/products) / follow /
@@ -152,7 +152,7 @@ const ROWS: RowSpec[] = [
   {
     row: 'zaps',
     title: 'Zaps', // i18n-ok
-    note: 'Sent zaps are best effort — zaps from wallets that omit the P tag on receipts may be missing.',
+    note: 'Sent zaps are best effort, zaps from wallets that omit the P tag on receipts may be missing.',
     tiles: [
       {
         tile: 'zaps-sent-count',
@@ -252,7 +252,7 @@ export function analyticsLabelAnchors(): string[] {
     _('Quoted reposts'),
     _('Likes'),
     _(
-      'Sent zaps are best effort — zaps from wallets that omit the P tag on receipts may be missing.'
+      'Sent zaps are best effort, zaps from wallets that omit the P tag on receipts may be missing.'
     ),
   ];
 }
@@ -518,7 +518,7 @@ export class AnalyticsAddonView extends View {
     notice.className = 'form__note analytics__first-run';
     notice.setAttribute('data-analytics-first-run', '');
     notice.textContent = _(
-      'First initial run — gathering your data from relays. This takes a moment; subsequent visits load instantly from cache and refresh incrementally.'
+      'First initial run, gathering your data from relays. This takes a moment; subsequent visits load instantly from cache and refresh incrementally.'
     );
     const skeleton = zone.querySelector('.analytics');
     if (skeleton) {
@@ -640,7 +640,7 @@ export class AnalyticsAddonView extends View {
       aux.timeline,
       engagementScore,
       b =>
-        `${label(b)} — ${engagementScore(b)} ${_('engagement')} ` +
+        `${label(b)}, ${engagementScore(b)} ${_('engagement')} ` +
         `(${b.replies} ${_('replies')}, ${b.zaps} ${_('zaps')}, ${b.reposts + b.quotes} ${_('reposts/quotes')}, ${b.likes} ${_('likes')})`
     );
     this.paintBarChart(
@@ -648,14 +648,14 @@ export class AnalyticsAddonView extends View {
       aux.zapsEarnedTimeline ?? [],
       b => b.zapSats,
       b =>
-        `${label(b)} — ${_('%s sats earned', formatSatsCompact(b.zapSats))} (${b.zaps} ${_('zaps')})`
+        `${label(b)}, ${_('%s sats earned', formatSatsCompact(b.zapSats))} (${b.zaps} ${_('zaps')})`
     );
     this.paintBarChart(
       '[data-zaps-sent-chart]',
       aux.sentZapsTimeline ?? [],
       b => b.zapSats,
       b =>
-        `${label(b)} — ${_('%s sats sent', formatSatsCompact(b.zapSats))} (${b.zaps} ${_('zaps')})`
+        `${label(b)}, ${_('%s sats sent', formatSatsCompact(b.zapSats))} (${b.zaps} ${_('zaps')})`
     );
   }
 

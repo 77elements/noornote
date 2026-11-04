@@ -68,7 +68,7 @@ export function translateAddonDescription(id: string): string {
   switch (id) {
     case 'bookmarks':
       return _(
-        'Organize notes, articles and links in bookmark folders — private or public.'
+        'Organize notes, articles and links in bookmark folders, private or public.'
       );
     case 'tribes':
       return _(
@@ -84,7 +84,7 @@ export function translateAddonDescription(id: string): string {
       return _('Blink the avatars of profiles you already interacted with.');
     case 'marketplace':
       return _(
-        'NIP-99 classified listings — browse, publish and manage your own.'
+        'NIP-99 classified listings, browse, publish and manage your own.'
       );
     case 'follow-packs':
       return _('Browse, create and share curated follow packs.');

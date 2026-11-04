@@ -109,7 +109,7 @@ export class PrivacySettingsSection extends SettingsSection {
         listName: _('petnames'),
         switchLabel: _('Private petnames'),
         description: _(
-          'Adds a note icon next to each profile where you can store an encrypted, private note about that user (NIP-78). Notes are NIP-44 self-encrypted — only you can read them, and they are never published unencrypted. This is separate from public petnames, which live in your contact list and are visible to everyone.'
+          'Adds a note icon next to each profile where you can store an encrypted, private note about that user (NIP-78). Notes are NIP-44 self-encrypted, only you can read them, and they are never published unencrypted. This is separate from public petnames, which live in your contact list and are visible to everyone.'
         ),
         betaWarning: false,
         isEnabled: () => this.petnameService.isPrivateNotesEnabled(),

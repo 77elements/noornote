@@ -132,11 +132,35 @@
   margin: 0 0 $gap;
 }
 
-.feedback-board__card-meta {
-  .badge,
-  .btn {
-    margin-right: calc($gap / 2);
+.feedback-board__zap {
+  display: inline-grid;
+  grid-auto-flow: column;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  background: transparent;
+  border: none;
+  border-radius: $radius-xl;
+  color: var(--color-3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  svg {
+    pointer-events: none;
   }
+
+  &:hover {
+    color: var(--color-4);
+    background: var(--bg-accent);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.feedback-board__zap-total {
+  @extend %small;
 }
 
 .feedback-board__card-comments {

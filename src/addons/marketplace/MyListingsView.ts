@@ -237,7 +237,7 @@ export class MyListingsView extends View {
     const confirmed = await ModalService.getInstance().confirm({
       title: _('Delete Listing'),
       message: _(
-        'This will send a deletion request to relays. Deletion is not guaranteed — relays may choose to ignore deletion requests.'
+        'This will send a deletion request to relays. Deletion is not guaranteed, relays may choose to ignore deletion requests.'
       ),
       confirmText: _('Delete'),
       confirmDestructive: true,

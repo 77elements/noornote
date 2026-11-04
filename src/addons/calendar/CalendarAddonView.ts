@@ -69,7 +69,7 @@ export class CalendarAddonView extends View {
           <div class="setting">
             <span class="setting__label">${_('Enable Calendar')}</span>
             <div class="setting__control">${this.enableSwitch.render()}</div>
-            <p class="setting__desc">${_("Your personal calendar on Nostr: keep your own appointments in month, week and list views, subscribe to public event calendars you're interested in, and add private events that only you can see. With reminders — and when you join someone's event, you can let them know you're coming.")}</p>
+            <p class="setting__desc">${_("Your personal calendar on Nostr: keep your own appointments in month, week and list views, subscribe to public event calendars you're interested in, and add private events that only you can see. With reminders, and when you join someone's event, you can let them know you're coming.")}</p>
           </div>
           <div class="setting">
             <span class="setting__label">${_('Remind me before events start')}</span>

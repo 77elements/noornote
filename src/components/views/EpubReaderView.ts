@@ -279,7 +279,7 @@ export class EpubReaderView extends View {
       this.applyStoredMonoMode();
       SystemLogger.getInstance().success(
         'Reader',
-        `Book ready — ${this.fileName}`
+        `Book ready, ${this.fileName}`
       );
     } catch (err) {
       if (this.destroyed) return;
