@@ -1,16 +1,14 @@
-# Release Notes 1.9.8 — compact (GitHub Release / Update Modal)
+# Release Notes 1.9.9 — compact (GitHub Release / Update Modal)
 
-## Hotfix
+## Feedback Board
 
-- **Fixed**: Messages freezing on "Loading messages..." with a dead tab switch after returning from a conversation.
-- **Fixed**: Notifications view could fail to load with a stuck badge when a corrupted storage entry was present — it now recovers automatically.
+- **Kanbanstr compatibility**: The existing Feedback Board has been made compatible with Kanbanstr (NIP-100).
 
 ## DMs
 
-- **Spam-attack defense**: New "Spam mode" in the Unknown tab silences unknown-sender alerts for 24 h, and new bulk-selection checkboxes let you delete & mute many spam DMs at once.
-- **Louder message alerts**: Incoming DM toasts now also appear for people you follow — with the sender's name, and a direct "Open" button.
+- **Finer-grained notification management**: notifications are now handled much more granularly while "Spam Mode" is active — alerts from known senders still come through, only unknown-sender spam is silenced, and the DM badge shows a small "SP" hint instead of counting spam up.
 
-## Media
+## Fixes
 
-- **Blossom URIs (BUD-10)**: Note media references using blossom: URIs now resolve, with SHA-256 content verification.
-- **Better note resolution**: Quoted and referenced notes are fetched via their relay hints first, so more quotes resolve on the first try.
+- Fixed the empty DM badge circle flashing at startup while messages are being fetched.
+- Text polish: consistent punctuation across all UI languages.
