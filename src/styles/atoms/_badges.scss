@@ -44,7 +44,7 @@
 // wave must never look like important mail.
 .badge--green.dm-badge--spam {
   font-size: 0.625rem;
-  padding: 0 3px;
+  padding: 0 calc($gap / 4);
   min-width: 16px;
 }
 

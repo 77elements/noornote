@@ -67,7 +67,7 @@ export class DMBadgeManager {
         this.badgeElement.classList.remove('dm-badge--spam');
         this.show();
       } else if (counts.unknown > 0 && !spamMuted) {
-        this.badgeElement.textContent = 'SP';
+        this.badgeElement.textContent = 'SP'; // i18n-ok — language-neutral abbreviation, like the 99+ cap
         this.badgeElement.classList.add('dm-badge--spam');
         this.show();
       } else {
