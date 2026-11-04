@@ -1,6 +1,7 @@
 /**
- * Feedback Board addon view — public Kanban board (Backlog / WIP / Done)
- * between NoorNote users and the developer. See docs/todos/feedback-board.md.
+ * Feedback Board addon view — public Kanban board (To Do / In Progress / Done)
+ * between NoorNote users and the developer, kanbanstr-compatible (NIP-100
+ * draft). See docs/todos/feedback-board.md.
  *
  * Pattern B addon view: enable-switch section + feature UI mounted into
  * div[data-addon-content="feedback-board"].
@@ -148,7 +149,9 @@ export class FeedbackBoardAddonView extends View {
   private renderBoard(): void {
     if (!this.boardZone || !this.state) return;
     const isDev = this.service.isDev();
-    const active = this.state.tickets.filter(t => !t.archived);
+    const live = this.state.tickets.filter(t => !t.archived);
+    const active = live.filter(t => t.status !== 'withdrawn');
+    const withdrawn = live.filter(t => t.status === 'withdrawn');
     const archived = this.state.tickets.filter(t => t.archived);
 
     const columns = FEEDBACK_COLUMNS.map(status => {
@@ -169,7 +172,9 @@ export class FeedbackBoardAddonView extends View {
       <div class="l-row--right feedback-board__actions">
         <button class="btn btn--medium" data-board-action="new-ticket">${_('New Ticket')}</button>
       </div>
+      <p class="feedback-board__notice">${_('Tickets are public — visible in every Nostr client (kanbanstr-compatible), not only in NoorNote.')}</p>
       <div class="feedback-board">${columns.join('')}</div>
+      ${withdrawn.length ? this.renderWithdrawn(withdrawn) : ''}
       ${isDev ? this.renderArchive(archived) : ''}
     `;
 
@@ -208,6 +213,23 @@ export class FeedbackBoardAddonView extends View {
           <span class="feedback-board__card-comments">${tn('%s comment', '%s comments', comments.length)}</span>
           ${isDev && ticket.status === 'done' ? `<button class="btn btn--mini btn--passive" data-card-action="archive">${_('Archive')}</button>` : ''}
         </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Withdrawn cards are not a column (no `col` entry on the board event —
+   * foreign clients would park them in "unknown"). They render dimmed below
+   * the board for every viewer, like before.
+   */
+  private renderWithdrawn(withdrawn: FeedbackTicket[]): string {
+    const cards = withdrawn
+      .map(t => this.renderCard(t, this.service.isDev()))
+      .join('');
+    return `
+      <div class="feedback-board__withdrawn" data-withdrawn>
+        <h2 class="h6">${_('Withdrawn')} (${withdrawn.length})</h2>
+        <div class="feedback-board__cards">${cards}</div>
       </div>
     `;
   }
@@ -337,7 +359,7 @@ export class FeedbackBoardAddonView extends View {
       <div class="form__row">
         <label for="fb-ticket-desc">${_('Description')}</label>
         <textarea id="fb-ticket-desc" class="textarea" rows="5" maxlength="2000"></textarea>
-        <p class="form__note">${_('Tickets are public Nostr events — do not include private data.')}</p>
+        <p class="form__note">${_('Tickets are public Nostr events — visible in every Nostr client (kanbanstr-compatible), not only in NoorNote. Do not include private data.')}</p>
       </div>
       <div class="l-row--end-pair">
         <button class="btn btn--passive btn--medium" data-cancel>${_('Cancel')}</button>
@@ -416,8 +438,7 @@ export class FeedbackBoardAddonView extends View {
 
   private async openTicketModal(ticket: FeedbackTicket): Promise<void> {
     const isDev = this.service.isDev();
-    const currentUserPubkey =
-      this.service['authService'].getCurrentUser()?.pubkey ?? '';
+    const currentUserPubkey = this.service.currentPubkey();
     const isAuthor = currentUserPubkey === ticket.authorPubkey;
     // Viewer context for the per-item delete buttons (post vs. comments).
     const viewer = { isDev, pubkey: currentUserPubkey };
@@ -686,7 +707,7 @@ export class FeedbackBoardAddonView extends View {
   ): void {
     const viewer = {
       isDev: this.service.isDev(),
-      pubkey: this.service['authService'].getCurrentUser()?.pubkey ?? '',
+      pubkey: this.service.currentPubkey(),
     };
     const accepted = this.service.addComment(ticket, text, () => {
       ToastService.show(_('Publishing failed — try again.'), 'error');

@@ -881,11 +881,11 @@ msgstr ""
 msgid "All loaded"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:1033
+#: src/components/views/MessagesView.ts:1036
 msgid "All messages marked as read"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:1039
+#: src/components/views/MessagesView.ts:1042
 msgid "All messages marked as unread"
 msgstr ""
 
@@ -1044,9 +1044,9 @@ msgstr ""
 msgid "Appointment title"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:209
-#: src/addons/feedback-board/FeedbackBoardView.ts:232
-#: src/addons/feedback-board/FeedbackBoardView.ts:304
+#: src/addons/feedback-board/FeedbackBoardView.ts:214
+#: src/addons/feedback-board/FeedbackBoardView.ts:252
+#: src/addons/feedback-board/FeedbackBoardView.ts:324
 #: src/addons/note-taking/NoteEditorModal.ts:126
 #: src/addons/note-taking/NoteEditorModal.ts:82
 #: src/addons/note-taking/NoteTakingView.ts:49
@@ -1686,7 +1686,7 @@ msgstr ""
 #: src/addons/bulk-delete/BulkDeleteView.ts:835
 #: src/addons/calendar/BookingManager.ts:313
 #: src/addons/calendar/CalendarCollectionsModal.ts:157
-#: src/addons/feedback-board/FeedbackBoardView.ts:343
+#: src/addons/feedback-board/FeedbackBoardView.ts:363
 #: src/addons/follow-packs/FollowPackManager.ts:465
 #: src/addons/marketplace/MyListingsView.ts:244
 #: src/addons/note-taking/NoteEditorModal.ts:365
@@ -1710,9 +1710,9 @@ msgstr ""
 #: src/components/settings/PrivacySettingsSection.ts:270
 #: src/components/settings/RelaySettingsSection.ts:480
 #: src/components/views/ConversationView.ts:619
-#: src/components/views/MessagesView.ts:1049
-#: src/components/views/MessagesView.ts:713
-#: src/components/views/MessagesView.ts:758
+#: src/components/views/MessagesView.ts:1052
+#: src/components/views/MessagesView.ts:716
+#: src/components/views/MessagesView.ts:761
 #: src/components/views/ProfileBookingView.ts:326
 #: src/components/views/ProfileBookingView.ts:497
 #: src/helpers/datePickerModal.ts:189
@@ -1964,7 +1964,7 @@ msgstr ""
 msgid "Come back here and log in with NoorSigner"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:466
+#: src/addons/feedback-board/FeedbackBoardView.ts:485
 #: src/services/PostService.ts:517
 msgid "Comment"
 msgstr ""
@@ -2143,11 +2143,11 @@ msgid ""
 msgstr ""
 
 #: src/components/views/ConversationView.ts:924
-#: src/components/views/MessagesView.ts:734
+#: src/components/views/MessagesView.ts:737
 msgid "Conversation deleted"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:733
+#: src/components/views/MessagesView.ts:736
 msgid "Conversation deleted & sender muted"
 msgstr ""
 
@@ -2238,7 +2238,7 @@ msgstr ""
 msgid "Could not load districts"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:344
+#: src/components/views/MessagesView.ts:347
 msgid "Could not load older messages"
 msgstr ""
 
@@ -2587,17 +2587,17 @@ msgstr ""
 #: src/addons/calendar/CalendarEventEditor.ts:519
 #: src/addons/calendar/CalendarEventModal.ts:121
 #: src/addons/calendar/CalendarEventModal.ts:548
-#: src/addons/feedback-board/FeedbackBoardView.ts:453
-#: src/addons/feedback-board/FeedbackBoardView.ts:533
-#: src/addons/feedback-board/FeedbackBoardView.ts:616
-#: src/addons/feedback-board/FeedbackBoardView.ts:658
+#: src/addons/feedback-board/FeedbackBoardView.ts:472
+#: src/addons/feedback-board/FeedbackBoardView.ts:552
+#: src/addons/feedback-board/FeedbackBoardView.ts:635
+#: src/addons/feedback-board/FeedbackBoardView.ts:677
 #: src/addons/marketplace/MyListingsView.ts:242
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:587
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:663
 #: src/addons/note-taking/NoteEditorModal.ts:364
 #: src/components/views/ArticleView.ts:160
-#: src/components/views/MessagesView.ts:712
-#: src/components/views/MessagesView.ts:757
+#: src/components/views/MessagesView.ts:715
+#: src/components/views/MessagesView.ts:760
 #: src/lists/tribes.ts:2746
 #: src/services/ModalService.ts:246
 msgid "Delete"
@@ -2608,11 +2608,11 @@ msgstr ""
 msgid "Delete \"%s\"%s? A deletion request is published to relays."
 msgstr ""
 
-#: src/components/views/MessagesView.ts:702
+#: src/components/views/MessagesView.ts:705
 msgid "Delete & mute"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:632
+#: src/components/views/MessagesView.ts:635
 msgid "Delete &amp; mute sender"
 msgstr ""
 
@@ -2636,8 +2636,8 @@ msgstr ""
 
 #: src/components/views/ConversationView.ts:433
 #: src/components/views/ConversationView.ts:913
-#: src/components/views/MessagesView.ts:632
-#: src/components/views/MessagesView.ts:702
+#: src/components/views/MessagesView.ts:635
+#: src/components/views/MessagesView.ts:705
 msgid "Delete conversation"
 msgstr ""
 
@@ -2693,8 +2693,8 @@ msgstr ""
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:206
 #: src/addons/bulk-delete/BulkDeleteView.ts:889
-#: src/components/views/MessagesView.ts:208
-#: src/components/views/MessagesView.ts:812
+#: src/components/views/MessagesView.ts:211
+#: src/components/views/MessagesView.ts:815
 msgid "Delete selected (%s)"
 msgstr ""
 
@@ -2708,13 +2708,13 @@ msgid ""
 "longer exist as a calendar."
 msgstr ""
 
-#: src/components/views/MessagesView.ts:704
+#: src/components/views/MessagesView.ts:707
 msgid ""
 "Delete this conversation and mute %s? They won't appear in your messages "
 "again."
 msgstr ""
 
-#: src/components/views/MessagesView.ts:708
+#: src/components/views/MessagesView.ts:711
 msgid "Delete this conversation with %s? It's removed only from this device."
 msgstr ""
 
@@ -2798,7 +2798,7 @@ msgstr ""
 #: src/addons/badges/BadgesView.ts:51
 #: src/addons/calendar/BookingManager.ts:352
 #: src/addons/calendar/CalendarEventEditor.ts:149
-#: src/addons/feedback-board/FeedbackBoardView.ts:338
+#: src/addons/feedback-board/FeedbackBoardView.ts:358
 #: src/addons/follow-packs/FollowPackManager.ts:507
 #: src/addons/nostr-majlis/DhikrModal.ts:71
 #: src/components/views/VideoEditorView.ts:165
@@ -2869,7 +2869,7 @@ msgstr ""
 msgid "Diagrams"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:944
+#: src/components/views/MessagesView.ts:947
 msgid "Direct messages are not available with Bunker URL login"
 msgstr ""
 
@@ -2962,7 +2962,7 @@ msgstr ""
 msgid "Do you accept the time limitation?"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:641
+#: src/addons/feedback-board/FeedbackBoardService.ts:572
 #: src/components/onboarding/AccountSetupWizard.ts:3039
 #: src/components/views/ProfileBookingView.ts:614
 msgid "Done"
@@ -3719,7 +3719,7 @@ msgid "Failed to load listings"
 msgstr ""
 
 #: src/components/views/ConversationView.ts:1219
-#: src/components/views/MessagesView.ts:958
+#: src/components/views/MessagesView.ts:961
 msgid "Failed to load messages"
 msgstr ""
 
@@ -4948,7 +4948,7 @@ msgstr ""
 msgid "KeySigner daemon connection lost"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:189
+#: src/components/views/MessagesView.ts:192
 msgid "Known"
 msgstr ""
 
@@ -5175,9 +5175,9 @@ msgstr ""
 msgid "Load all"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:218
-#: src/components/views/MessagesView.ts:331
-#: src/components/views/MessagesView.ts:341
+#: src/components/views/MessagesView.ts:221
+#: src/components/views/MessagesView.ts:334
+#: src/components/views/MessagesView.ts:344
 msgid "Load older messages"
 msgstr ""
 
@@ -5267,8 +5267,8 @@ msgid "Loading members..."
 msgstr ""
 
 #: src/components/views/ConversationView.ts:248
-#: src/components/views/MessagesView.ts:201
-#: src/components/views/MessagesView.ts:212
+#: src/components/views/MessagesView.ts:204
+#: src/components/views/MessagesView.ts:215
 msgid "Loading messages..."
 msgstr ""
 
@@ -5326,7 +5326,7 @@ msgstr ""
 msgid "Loading notes..."
 msgstr ""
 
-#: src/components/views/MessagesView.ts:314
+#: src/components/views/MessagesView.ts:317
 msgid "Loading older messages…"
 msgstr ""
 
@@ -5623,7 +5623,7 @@ msgid ""
 "their next sync."
 msgstr ""
 
-#: src/components/views/MessagesView.ts:899
+#: src/components/views/MessagesView.ts:902
 msgid "Mark all read"
 msgstr ""
 
@@ -5631,7 +5631,7 @@ msgstr ""
 msgid "Mark all seen"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:903
+#: src/components/views/MessagesView.ts:906
 msgid "Mark all unread"
 msgstr ""
 
@@ -5788,7 +5788,7 @@ msgstr ""
 msgid "Message"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:181
+#: src/components/views/MessagesView.ts:184
 msgid "Message options"
 msgstr ""
 
@@ -5799,8 +5799,8 @@ msgstr ""
 
 #: src/components/layout/MainLayout.ts:1948
 #: src/components/search/GlobalSearchView.ts:398
-#: src/components/views/MessagesView.ts:173
-#: src/components/views/MessagesView.ts:940
+#: src/components/views/MessagesView.ts:176
+#: src/components/views/MessagesView.ts:943
 msgid "Messages"
 msgstr ""
 
@@ -5888,7 +5888,7 @@ msgstr ""
 msgid "Move notification type"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:435
+#: src/addons/feedback-board/FeedbackBoardView.ts:454
 #: src/components/ui/MoveDropdown.ts:105
 msgid "Move to"
 msgstr ""
@@ -6077,7 +6077,7 @@ msgid "New Listing"
 msgstr ""
 
 #: src/components/modals/DMComposeModal.ts:43
-#: src/components/views/MessagesView.ts:179
+#: src/components/views/MessagesView.ts:182
 msgid "New Message"
 msgstr ""
 
@@ -6311,11 +6311,11 @@ msgstr ""
 msgid "No members yet"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:569
+#: src/components/views/MessagesView.ts:572
 msgid "No messages from people you follow"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:570
+#: src/components/views/MessagesView.ts:573
 msgid "No messages from unknown users"
 msgstr ""
 
@@ -6360,7 +6360,7 @@ msgstr ""
 msgid "No notifications yet"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:328
+#: src/components/views/MessagesView.ts:331
 msgid "No older messages"
 msgstr ""
 
@@ -7830,7 +7830,7 @@ msgstr ""
 msgid "Raw event data not available"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:1045
+#: src/components/views/MessagesView.ts:1048
 msgid ""
 "Re-fetch your full message history from the relays. Existing messages are "
 "kept — this only pulls anything missing. May take a moment."
@@ -7840,12 +7840,12 @@ msgstr ""
 msgid "Re-include"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:1048
+#: src/components/views/MessagesView.ts:1051
 msgid "Re-sync"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:1044
-#: src/components/views/MessagesView.ts:907
+#: src/components/views/MessagesView.ts:1047
+#: src/components/views/MessagesView.ts:910
 msgid "Re-sync messages"
 msgstr ""
 
@@ -8419,7 +8419,7 @@ msgstr ""
 #: src/components/system/OfflineOverlay.ts:49
 #: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:102
 #: src/components/views/ConversationView.ts:1220
-#: src/components/views/MessagesView.ts:959
+#: src/components/views/MessagesView.ts:962
 #: src/services/ViewMountingService.ts:113
 msgid "Retry"
 msgstr ""
@@ -8781,8 +8781,8 @@ msgstr ""
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:202
 #: src/addons/bulk-delete/BulkDeleteView.ts:817
-#: src/components/views/MessagesView.ts:206
-#: src/components/views/MessagesView.ts:824
+#: src/components/views/MessagesView.ts:209
+#: src/components/views/MessagesView.ts:827
 msgid "Select all visible"
 msgstr ""
 
@@ -9428,7 +9428,7 @@ msgstr ""
 msgid "Standard Western calendar (e.g., \"30. Oct. 2024\")"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:576
+#: src/components/views/MessagesView.ts:579
 msgid "Start a conversation by clicking \"New Message\""
 msgstr ""
 
@@ -10133,7 +10133,7 @@ msgid "Timestamps & maker blob stripping"
 msgstr ""
 
 #: src/addons/calendar/CalendarEventEditor.ts:98
-#: src/addons/feedback-board/FeedbackBoardView.ts:330
+#: src/addons/feedback-board/FeedbackBoardView.ts:350
 #: src/addons/note-taking/NoteEditorModal.ts:55
 #: src/components/views/ArticleEditorView.ts:1343
 #: src/components/views/ArticleEditorView.ts:355
@@ -10167,7 +10167,7 @@ msgstr ""
 msgid "Toggle balance visibility"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:234
+#: src/addons/feedback-board/FeedbackBoardView.ts:254
 #: src/addons/marketplace/ListingEditorView.ts:279
 #: src/components/settings/SettingsSection.ts:43
 #: src/components/views/ArticleEditorView.ts:382
@@ -10325,7 +10325,7 @@ msgstr ""
 #: src/addons/follow-packs/FollowPackManager.ts:393
 #: src/components/ui/note-rendering/RepostRenderer.ts:110
 #: src/components/ui/note-rendering/ZapReceiptRenderer.ts:139
-#: src/components/views/MessagesView.ts:193
+#: src/components/views/MessagesView.ts:196
 #: src/components/views/ZapstoreAppView.ts:408
 msgid "Unknown"
 msgstr ""
@@ -10379,7 +10379,7 @@ msgid "Unsaved Changes"
 msgstr ""
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:816
-#: src/components/views/MessagesView.ts:823
+#: src/components/views/MessagesView.ts:826
 msgid "Unselect all visible"
 msgstr ""
 
@@ -11267,7 +11267,7 @@ msgid ""
 "rebroadcasts your profile and follow-list to any newly-added write-relay."
 msgstr ""
 
-#: src/components/views/MessagesView.ts:945
+#: src/components/views/MessagesView.ts:948
 msgid ""
 "Your remote signer does not support NIP-44 encryption required for private "
 "messages. Use a browser extension or NoorSigner for full DM access."
@@ -11521,182 +11521,175 @@ msgid ""
 "following feed experience."
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:68
+#: src/addons/feedback-board/FeedbackBoardView.ts:69
 msgid ""
 "A public board between you and the developer: file wishes and bugs, follow "
 "their progress, get a DM on every update. Tickets are public Nostr events."
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:391
+#: src/addons/feedback-board/FeedbackBoardView.ts:411
 msgid "A title is required."
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:462
+#: src/addons/feedback-board/FeedbackBoardView.ts:481
 msgid "Add comment"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:300
+#: src/addons/feedback-board/FeedbackBoardView.ts:320
 msgid "Archive ticket"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:301
+#: src/addons/feedback-board/FeedbackBoardView.ts:321
 msgid "Archived tickets stay visible to you only. Archive \"%s\"?"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:637
-msgid "Backlog"
-msgstr ""
-
-#: src/addons/feedback-board/FeedbackBoardView.ts:185
+#: src/addons/feedback-board/FeedbackBoardView.ts:190
 msgid "Bug"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:700
+#: src/addons/feedback-board/FeedbackBoardView.ts:719
 msgid "Comment sent"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:66
+#: src/addons/feedback-board/FeedbackBoardView.ts:67
 msgid "Enable Feedback Board"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:95
+#: src/addons/feedback-board/FeedbackBoardView.ts:96
 msgid "Feedback Board"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:639
+#: src/addons/feedback-board/FeedbackBoardService.ts:570
 msgid "In Progress"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:137
+#: src/addons/feedback-board/FeedbackBoardView.ts:138
 msgid "Loading board…"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:473
+#: src/addons/feedback-board/FeedbackBoardService.ts:547
 msgid "New comment on \"%s\": %s"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:432
+#: src/addons/feedback-board/FeedbackBoardService.ts:365
 msgid "New feedback board ticket: \"%s\""
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:170
-#: src/addons/feedback-board/FeedbackBoardView.ts:369
+#: src/addons/feedback-board/FeedbackBoardView.ts:173
+#: src/addons/feedback-board/FeedbackBoardView.ts:389
 msgid "New Ticket"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:239
+#: src/addons/feedback-board/FeedbackBoardView.ts:259
 msgid "No archived tickets yet."
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:680
+#: src/addons/feedback-board/FeedbackBoardService.ts:612
 msgid "Only readable in NoorNote."
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:344
+#: src/addons/feedback-board/FeedbackBoardView.ts:364
 msgid "Post Ticket"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:312
-#: src/addons/feedback-board/FeedbackBoardView.ts:316
-#: src/addons/feedback-board/FeedbackBoardView.ts:401
-#: src/addons/feedback-board/FeedbackBoardView.ts:405
-#: src/addons/feedback-board/FeedbackBoardView.ts:552
-#: src/addons/feedback-board/FeedbackBoardView.ts:556
-#: src/addons/feedback-board/FeedbackBoardView.ts:582
-#: src/addons/feedback-board/FeedbackBoardView.ts:585
-#: src/addons/feedback-board/FeedbackBoardView.ts:664
-#: src/addons/feedback-board/FeedbackBoardView.ts:668
-#: src/addons/feedback-board/FeedbackBoardView.ts:692
-#: src/addons/feedback-board/FeedbackBoardView.ts:697
+#: src/addons/feedback-board/FeedbackBoardView.ts:332
+#: src/addons/feedback-board/FeedbackBoardView.ts:336
+#: src/addons/feedback-board/FeedbackBoardView.ts:421
+#: src/addons/feedback-board/FeedbackBoardView.ts:425
+#: src/addons/feedback-board/FeedbackBoardView.ts:571
+#: src/addons/feedback-board/FeedbackBoardView.ts:575
+#: src/addons/feedback-board/FeedbackBoardView.ts:601
+#: src/addons/feedback-board/FeedbackBoardView.ts:604
+#: src/addons/feedback-board/FeedbackBoardView.ts:683
+#: src/addons/feedback-board/FeedbackBoardView.ts:687
+#: src/addons/feedback-board/FeedbackBoardView.ts:711
+#: src/addons/feedback-board/FeedbackBoardView.ts:716
 msgid "Publishing failed — try again."
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:522
+#: src/addons/feedback-board/FeedbackBoardService.ts:406
 msgid "Status update for \"%s\": %s"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:141
+#: src/addons/feedback-board/FeedbackBoardView.ts:142
 msgid "The board could not be loaded — check your connection."
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:553
+#: src/addons/feedback-board/FeedbackBoardService.ts:437
 msgid "Ticket \"%s\" was archived"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:322
+#: src/addons/feedback-board/FeedbackBoardView.ts:342
 msgid "Ticket archived"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:412
+#: src/addons/feedback-board/FeedbackBoardView.ts:432
 msgid "Ticket posted to the board"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:588
+#: src/addons/feedback-board/FeedbackBoardView.ts:607
 msgid "Ticket updated"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:340
-msgid "Tickets are public Nostr events — do not include private data."
-msgstr ""
-
-#: src/addons/feedback-board/FeedbackBoardView.ts:334
+#: src/addons/feedback-board/FeedbackBoardView.ts:354
 msgid "Type"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:184
+#: src/addons/feedback-board/FeedbackBoardView.ts:189
 msgid "Wish"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:446
+#: src/addons/feedback-board/FeedbackBoardView.ts:465
 msgid "Withdraw Ticket"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:643
-#: src/addons/feedback-board/FeedbackBoardView.ts:207
+#: src/addons/feedback-board/FeedbackBoardService.ts:574
+#: src/addons/feedback-board/FeedbackBoardView.ts:212
+#: src/addons/feedback-board/FeedbackBoardView.ts:229
 msgid "Withdrawn"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:208
+#: src/addons/feedback-board/FeedbackBoardView.ts:213
 msgid "%s comment"
 msgid_plural "%s comments"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:161
+#: src/addons/feedback-board/FeedbackBoardView.ts:164
 msgid "%s ticket"
 msgid_plural "%s tickets"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:529
+#: src/addons/feedback-board/FeedbackBoardView.ts:548
 msgid "Delete ticket"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:565
+#: src/addons/feedback-board/FeedbackBoardView.ts:584
 msgid "Ticket deleted"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:186
+#: src/addons/feedback-board/FeedbackBoardView.ts:191
 msgid "Question"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:187
+#: src/addons/feedback-board/FeedbackBoardView.ts:192
 msgid "Refinement"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:671
+#: src/addons/feedback-board/FeedbackBoardView.ts:690
 msgid "Comment deleted"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:654
+#: src/addons/feedback-board/FeedbackBoardView.ts:673
 msgid "Delete comment"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:655
+#: src/addons/feedback-board/FeedbackBoardView.ts:674
 msgid "The comment will be removed from relays that honor NIP-09. Delete it?"
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardView.ts:530
+#: src/addons/feedback-board/FeedbackBoardView.ts:549
 msgid ""
 "The ticket and all its comments will be removed from relays that honor "
 "NIP-09. Copies may persist elsewhere. Delete \"%s\"?"
@@ -11710,15 +11703,15 @@ msgstr "Média indisponible"
 msgid "Tap to load media"
 msgstr "Touchez pour charger le média"
 
-#: src/components/views/MessagesView.ts:796
+#: src/components/views/MessagesView.ts:799
 msgid "%s of %s conversations deleted"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:793
+#: src/components/views/MessagesView.ts:796
 msgid "Conversations deleted & senders muted"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:751
+#: src/components/views/MessagesView.ts:754
 msgid ""
 "Delete %s conversation and mute its sender? It won't appear in your "
 "messages again."
@@ -11728,32 +11721,32 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/components/views/MessagesView.ts:750
+#: src/components/views/MessagesView.ts:753
 msgid "Delete selected conversations"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:649
+#: src/components/views/MessagesView.ts:652
 msgid "Select conversation for deletion"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:176
-#: src/components/views/MessagesView.ts:864
+#: src/components/views/MessagesView.ts:179
+#: src/components/views/MessagesView.ts:867
 msgid "Spam mode"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:864
+#: src/components/views/MessagesView.ts:867
 msgid "Spam mode active"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:254
+#: src/components/views/MessagesView.ts:257
 msgid "Spam mode disabled"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:253
+#: src/components/views/MessagesView.ts:256
 msgid "Spam mode enabled — alerts off for 24 h"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:261
+#: src/components/views/MessagesView.ts:264
 msgid ""
 "Silences alerts for new messages from unknown senders. Stays on for 24 h, "
 "then turns off automatically."
@@ -11778,6 +11771,22 @@ msgstr "Nouveau message d'un expéditeur inconnu"
 #: src/services/ViewMountingService.ts:109
 msgid "This view failed to load. Please reload the page."
 msgstr "Cette vue n'a pas pu être chargée. Veuillez recharger la page."
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:175
+msgid ""
+"Tickets are public — visible in every Nostr client (kanbanstr-compatible), "
+"not only in NoorNote."
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardView.ts:360
+msgid ""
+"Tickets are public Nostr events — visible in every Nostr client "
+"(kanbanstr-compatible), not only in NoorNote. Do not include private data."
+msgstr ""
+
+#: src/addons/feedback-board/FeedbackBoardService.ts:568
+msgid "To Do"
+msgstr ""
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"

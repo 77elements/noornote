@@ -1,5 +1,5 @@
 /**
- * Feedback Board addon — public Kanban board (Backlog / WIP / Done).
+ * Feedback Board addon — public Kanban board (To Do / In Progress / Done).
  * Grid-only layout (no flexbox), $gap-based spacing, palette via var(--color-N).
  */
 
@@ -19,7 +19,24 @@
 }
 
 .feedback-board__actions {
+  margin-bottom: calc($gap / 2);
+}
+
+// Public-visibility notice (board header + create modal): tickets are public
+// Nostr events, not NoorNote-only.
+.feedback-board__notice {
+  @extend %small;
+  color: var(--color-3);
   margin-bottom: $gap;
+}
+
+// Withdrawn cards — not a column, dimmed strip below the board grid.
+.feedback-board__withdrawn {
+  margin-bottom: $gap;
+
+  h2 {
+    margin: 0 0 calc($gap / 2);
+  }
 }
 
 .feedback-board__col {

@@ -292,6 +292,14 @@
       "App-specific Data"
     ],
     [
+      "30301",
+      "Kanban Board (NIP-100 draft)"
+    ],
+    [
+      "30302",
+      "Kanban Card (NIP-100 draft)"
+    ],
+    [
       "30311",
       "Live Event"
     ],
@@ -345,20 +353,11 @@
     ],
     [
       "35128",
-      "35129",
       "Satellite Earth site page"
     ],
     [
       "39089",
       "Follow Pack"
-    ],
-    [
-      "39100",
-      "Feedback Board Ticket"
-    ],
-    [
-      "39101",
-      "Feedback Board Action"
     ]
   ]
 }

@@ -1,63 +1,67 @@
 /**
- * Feedback Board service — public ticket board between users and the developer.
+ * Feedback Board service — public kanbanstr-compatible ticket board
+ * (NIP-100 draft: kinds 30301 board / 30302 card, NIP-22 kind-1111 comments)
+ * between users and the developer. See docs/todos/feedback-board.md.
  *
- * Storage model (public by design, see docs/todos/feedback-board.md):
- *  - kind 39100: the ticket, published by its author (addressable via d-tag).
- *  - kind 39101: an action on a ticket (comment / status / archive), published
- *    by whoever acts. Status changes and archiving are ACTION events, never
- *    edits of the author's ticket event — the author stays the sole owner of
- *    the 39100 event.
+ * Storage model (public by design):
+ *  - kind 30301: the board definition, owned by the dev account. The board
+ *    address `30301:<dev>:noornote-feedback` is the addon's namespace marker —
+ *    only cards whose `a` tag references it are fetched and shown.
+ *  - kind 30302: a ticket card, published by its author. Status moves, edits
+ *    and archiving are republishes of the card with the same `d` (NIP-100
+ *    fold: latest event by the board creator or the original author wins).
+ *    Every publisher carries the current values forward, so the fold is a
+ *    simple latest-wins over eligible events (see feedbackBoardReducer).
+ *  - kind 1111: NIP-22 comments, append-only — they can never be overwritten
+ *    by a later event (the bug class that killed comments in the legacy
+ *    replaceable 39101 model).
+ *  - kind 5: NIP-09 deletions (ticket + comment thread / single comment).
  *
- * Every action DMs the other side (dev ↔ ticket author) via the existing
- * NIP-17 path in DMService. The DM is a pointer; the board content is public.
+ * Every action DMs the other side (dev ↔ ticket author) via the dms module
+ * API. The DM is a pointer; the board content is public.
  */
 
-import { NostrEvent, type NDKKind } from '@nostr-dev-kit/ndk';
+import { NostrEvent, type NDKFilter, type NDKKind } from '@nostr-dev-kit/ndk';
 import { AuthService } from '../../services/AuthService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { DMsModuleApi } from '../../modules/dms/contracts';
 import { NostrTransport } from '../../services/transport/NostrTransport';
 import { RelayConfig } from '../../services/RelayConfig';
-import { DMService } from '../../services/dm/DMService';
 import { diagLog } from '../../services/DiagnosticLogger';
 import { SystemLogger } from '../../services/SystemLogger';
 import { errMessage } from '../../helpers/errorMessage';
-import { getTag } from '../../helpers/tagUtils';
 import { _ } from '../../i18n';
 import {
-  FEEDBACK_ACTION_KIND,
+  FEEDBACK_BOARD_KIND,
+  FEEDBACK_BOARD_DTAG,
+  FEEDBACK_CARD_KIND,
+  FEEDBACK_COMMENT_KIND,
   FEEDBACK_DELETE_KIND,
   FEEDBACK_DEV_PUBKEY,
   FEEDBACK_DTAG_PREFIX,
-  FEEDBACK_STATUSES,
-  FEEDBACK_TICKET_KIND,
-  FEEDBACK_TICKET_TYPES,
-  type FeedbackActionType,
+  boardAddress,
+  cardAddress,
+  statusToS,
   type FeedbackTicket,
   type FeedbackTicketStatus,
   type FeedbackTicketType,
-  parseTicketAddress,
-  ticketAddress,
 } from './feedbackBoardConstants';
+import {
+  applyDeletions,
+  buildComments,
+  cardCoordinates,
+  foldCards,
+  type FeedbackBoardState,
+  type FeedbackComment,
+} from './feedbackBoardReducer';
 
-export interface FeedbackComment {
-  eventId: string;
-  pubkey: string;
-  content: string;
-  createdAt: number;
-}
-
-export interface FeedbackBoardState {
-  tickets: FeedbackTicket[];
-  comments: Map<string, FeedbackComment[]>;
-}
+export type {
+  FeedbackBoardState,
+  FeedbackComment,
+} from './feedbackBoardReducer';
 
 export function isDevPubkey(pubkey: string | undefined): boolean {
   return !!pubkey && pubkey === FEEDBACK_DEV_PUBKEY;
-}
-
-/** getTag wrapper that reports missing tags as undefined instead of ''. */
-function firstTag(event: NostrEvent, name: string): string | undefined {
-  const value = getTag(event.tags, name);
-  return value === '' ? undefined : value;
 }
 
 export class FeedbackBoardService {
@@ -66,20 +70,20 @@ export class FeedbackBoardService {
   private transport: NostrTransport;
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
-  private seenActionEventIds = new Set<string>();
   /**
-   * Local overlay for just-published actions. Relay propagation is slower than
-   * the board refresh that follows a publish — the overlay applies the actor's
-   * own action immediately and is dropped once the relay state matches.
+   * Local overlay for just-published moves. Relay propagation is slower than
+   * the board refresh that follows a publish — the overlay applies the
+   * actor's own action immediately and is dropped once the relay state
+   * matches.
    */
   private pendingStatus = new Map<string, FeedbackTicketStatus>();
   private pendingArchived = new Set<string>();
   private pendingComments = new Map<string, FeedbackComment[]>();
-  private lastPublishedActionId = '';
+  private lastPublishedCommentId = '';
   /**
-   * Tickets hidden via local overlay after an optimistic NIP-09 delete.
+   * Cards hidden via local overlay after an optimistic NIP-09 delete.
    * Entries stay until the session ends — a relay that ignores NIP-09 keeps
-   * returning the ticket event, and the overlay keeps hiding it here.
+   * returning the card event, and the overlay keeps hiding it here.
    */
   private pendingDeleted = new Set<string>();
   /**
@@ -88,7 +92,7 @@ export class FeedbackBoardService {
    * on the relay side.
    */
   private pendingDeletedComments = new Set<string>();
-  /** Optimistically created tickets — shown until the relays catch up. */
+  /** Optimistically created cards — shown until the relays catch up. */
   private pendingTickets = new Map<string, FeedbackTicket>();
 
   private constructor() {
@@ -114,113 +118,116 @@ export class FeedbackBoardService {
     return isDevPubkey(this.authService.getCurrentUser()?.pubkey);
   }
 
+  /** Current user's pubkey (the view must not reach into authService). */
+  public currentPubkey(): string {
+    return this.authService.getCurrentUser()?.pubkey ?? '';
+  }
+
   /**
-   * Fetch the full public board (tickets + actions) and reduce it to state.
-   * Archived tickets come back with `archived: true` — the renderer decides
-   * visibility (dev-only archive section).
+   * Fetch the full public board (board + cards + comments + deletions) and
+   * reduce it to state. Archived cards come back with `archived: true` — the
+   * renderer decides visibility (dev-only archive section). Every fetch is
+   * scoped to our board address, so foreign boards never enter the addon.
    */
   public async loadBoard(): Promise<FeedbackBoardState> {
     const relays = this.relayConfig.getReadRelays();
-    const events = await this.transport.fetchDirect(
+
+    // Batch 1: board definition + all cards of our board.
+    const first = await this.transport.fetchDirect(
       relays,
       [
         {
-          kinds: [
-            FEEDBACK_TICKET_KIND,
-            FEEDBACK_ACTION_KIND,
-          ] as unknown as NDKKind[],
+          kinds: [FEEDBACK_BOARD_KIND] as unknown as NDKKind[],
+          authors: [FEEDBACK_DEV_PUBKEY],
+          limit: 5,
+        },
+        {
+          kinds: [FEEDBACK_CARD_KIND] as unknown as NDKKind[],
+          '#a': [boardAddress()],
           limit: 500,
         },
       ],
       10000,
       'feedback-board',
       // Wait for every relay to EOSE — a first-relay return regularly missed
-      // archive/status action events stored on slower relays, which made the
-      // board state flicker between refreshes.
+      // archive/status events stored on slower relays, which made the board
+      // state flicker between refreshes.
       true
     );
 
-    const tickets = new Map<string, FeedbackTicket>();
-    const actions: NostrEvent[] = [];
+    const boardEvent = first.find(e => e.kind === FEEDBACK_BOARD_KIND);
+    // Dev's client provisions the board event when it is missing (detached) —
+    // cards work either way; the 30301 event makes the board discoverable
+    // for kanbanstr and compatible clients.
+    if (!boardEvent) this.ensureBoard();
+    const cardEvents = first.filter(e => e.kind === FEEDBACK_CARD_KIND);
+    const { tickets, cardEvents: versionsByD } = foldCards(cardEvents);
 
-    for (const event of events) {
-      if (event.kind === FEEDBACK_TICKET_KIND) {
-        const ticket = this.parseTicket(event);
-        if (ticket) {
-          // Addressable semantics: newest event per d-tag wins.
-          const existing = tickets.get(ticket.dTag);
-          if (!existing || ticket.createdAt >= existing.createdAt) {
-            tickets.set(ticket.dTag, ticket);
-          }
-        }
-      } else if (event.kind === FEEDBACK_ACTION_KIND) {
-        actions.push(event);
-      }
+    // Batch 2: NIP-22 comments matched via coordinates and event ids (a card
+    // can be known under its author's coordinate AND the dev's republish).
+    const coords = cardCoordinates(versionsByD);
+    const cardIds = [...versionsByD.values()]
+      .flat()
+      .map(e => e.id)
+      .filter((id): id is string => !!id);
+    const commentFilters: NDKFilter[] = [];
+    if (coords.length) {
+      commentFilters.push({
+        kinds: [FEEDBACK_COMMENT_KIND] as unknown as NDKKind[],
+        '#A': coords,
+        limit: 500,
+      });
     }
-
-    const comments = new Map<string, FeedbackComment[]>();
-    const statusActions = new Map<string, NostrEvent>();
-    const archiveActions = new Map<string, NostrEvent>();
-
-    for (const action of actions) {
-      const address = firstTag(action, 'a');
-      if (!address) continue;
-      const ref = parseTicketAddress(address);
-      // Actions referencing unknown tickets are ignored.
-      if (!ref || !tickets.has(ref.dTag)) continue;
-
-      const ticket = tickets.get(ref.dTag)!;
-      const type = firstTag(action, 'type');
-      const actor = action.pubkey;
-      const actorIsDev = isDevPubkey(actor);
-      const actorIsAuthor = actor === ticket.authorPubkey;
-      const isNewer = (prev: NostrEvent | undefined) =>
-        !prev || action.created_at >= prev.created_at;
-
-      if (type === 'comment') {
-        const list = comments.get(ref.dTag) ?? [];
-        list.push({
-          eventId: action.id ?? '',
-          pubkey: actor,
-          content: action.content,
-          createdAt: action.created_at,
-        });
-        comments.set(ref.dTag, list);
-      } else if (
-        type === 'status' &&
-        actorIsDev &&
-        isNewer(statusActions.get(ref.dTag))
-      ) {
-        // Only the dev moves tickets between columns.
-        statusActions.set(ref.dTag, action);
-      } else if (
-        type === 'status' &&
-        actorIsAuthor &&
-        firstTag(action, 'status') === 'withdrawn' &&
-        isNewer(statusActions.get(ref.dTag))
-      ) {
-        // The author may only withdraw their own ticket.
-        statusActions.set(ref.dTag, action);
-      } else if (type === 'archive' && actorIsDev) {
-        archiveActions.set(ref.dTag, action);
-      }
+    if (cardIds.length) {
+      commentFilters.push({
+        kinds: [FEEDBACK_COMMENT_KIND] as unknown as NDKKind[],
+        '#e': cardIds,
+        limit: 500,
+      });
     }
+    let commentEvents: NostrEvent[] = [];
+    if (commentFilters.length) {
+      commentEvents = await this.transport.fetchDirect(
+        relays,
+        commentFilters,
+        10000,
+        'feedback-board-comments',
+        true
+      );
+    }
+    const comments = buildComments(commentEvents, versionsByD);
+
+    // Batch 3: NIP-09 deletion requests referencing our cards or comments.
+    // Our deletes always tag `e` (target event id), so `#e` is a precise,
+    // small filter.
+    const ticketIds = [...tickets.values()]
+      .flatMap(t => [t.eventId, t.devEventId])
+      .filter((id): id is string => !!id);
+    const commentIds = [...comments.values()]
+      .flat()
+      .map(c => c.eventId)
+      .filter(Boolean);
+    let deletions: NostrEvent[] = [];
+    if (ticketIds.length || commentIds.length) {
+      deletions = await this.transport.fetchDirect(
+        relays,
+        [
+          {
+            kinds: [FEEDBACK_DELETE_KIND as unknown as NDKKind],
+            '#e': [...ticketIds, ...commentIds],
+            limit: 500,
+          },
+        ],
+        8000,
+        'feedback-board-deletes',
+        true
+      );
+    }
+    applyDeletions(deletions, tickets, versionsByD, comments);
 
     for (const ticket of tickets.values()) {
-      const statusAction = statusActions.get(ticket.dTag);
-      if (statusAction) {
-        const status = firstTag(statusAction, 'status');
-        if (status && (FEEDBACK_STATUSES as string[]).includes(status)) {
-          ticket.status = status as FeedbackTicketStatus;
-        }
-      }
-      const archiveAction = archiveActions.get(ticket.dTag);
-      ticket.archived = !!archiveAction;
-      if (archiveAction) {
-        ticket.archivedAt = archiveAction.created_at;
-      }
-
-      // Apply the local overlay; drop entries the relay state has caught up with.
+      // Apply the local overlay; drop entries the relay state has caught up
+      // with.
       const pendingStatus = this.pendingStatus.get(ticket.dTag);
       if (pendingStatus) {
         if (pendingStatus === ticket.status) {
@@ -255,67 +262,6 @@ export class FeedbackBoardService {
       }
     }
 
-    // Track seen action events so follow-up fetches never double-notify.
-    for (const action of actions) {
-      if (action.id) this.seenActionEventIds.add(action.id);
-    }
-
-    // NIP-09 deletion requests referencing our tickets or comments. Our
-    // deletes always tag `e` (target event id), so `#e` is a precise, small
-    // filter.
-    const ticketIds = [...tickets.values()].map(t => t.eventId).filter(Boolean);
-    const commentIds = [...comments.values()]
-      .flat()
-      .map(c => c.eventId)
-      .filter(Boolean);
-    if (ticketIds.length || commentIds.length) {
-      const deletions = await this.transport.fetchDirect(
-        relays,
-        [
-          {
-            kinds: [FEEDBACK_DELETE_KIND as unknown as NDKKind],
-            '#e': [...ticketIds, ...commentIds],
-            limit: 500,
-          },
-        ],
-        8000,
-        'feedback-board-deletes',
-        true
-      );
-      for (const deletion of deletions) {
-        // Every `e` ref is checked against its target: tickets may be
-        // deleted by their author or the dev, comments by their writer or
-        // the dev.
-        const eRefs = deletion.tags
-          .filter(t => t[0] === 'e' && t[1])
-          .map(t => t[1]);
-        for (const eRef of eRefs) {
-          const target = [...tickets.values()].find(t => t.eventId === eRef);
-          if (target) {
-            if (
-              deletion.pubkey === target.authorPubkey ||
-              isDevPubkey(deletion.pubkey)
-            ) {
-              tickets.delete(target.dTag);
-            }
-            continue;
-          }
-          for (const [dTag, list] of comments) {
-            const removed = list.find(c => c.eventId === eRef);
-            if (!removed) continue;
-            if (
-              deletion.pubkey === removed.pubkey ||
-              isDevPubkey(deletion.pubkey)
-            ) {
-              list.splice(list.indexOf(removed), 1);
-              if (!list.length) comments.delete(dTag);
-            }
-            break;
-          }
-        }
-      }
-    }
-
     // Overlay entries whose target is gone from the relay state (either the
     // deletion is now relay-verified or the comment vanished entirely) are
     // no longer needed.
@@ -333,8 +279,8 @@ export class FeedbackBoardService {
       tickets.delete(dTag);
     }
 
-    // Optimistically created tickets — shown until the relay state catches
-    // up, then the overlay entry is dropped.
+    // Optimistically created cards — shown until the relay state catches up,
+    // then the overlay entry is dropped.
     for (const [dTag, pendingTicket] of this.pendingTickets) {
       if (tickets.has(dTag)) {
         this.pendingTickets.delete(dTag);
@@ -349,39 +295,32 @@ export class FeedbackBoardService {
     return { tickets: list, comments };
   }
 
-  private parseTicket(event: NostrEvent): FeedbackTicket | null {
-    const dTag = firstTag(event, 'd');
-    if (!dTag || !dTag.startsWith(FEEDBACK_DTAG_PREFIX)) return null;
-
-    const content = event.content ?? '';
-    const newlineIndex = content.indexOf('\n');
-    const title = (
-      newlineIndex === -1 ? content : content.slice(0, newlineIndex)
-    ).trim();
-    const description =
-      newlineIndex === -1 ? '' : content.slice(newlineIndex + 1).trim();
-    if (!title) return null;
-
-    const type = firstTag(event, 't') as FeedbackTicketType | undefined;
-    const status = firstTag(event, 'status');
-
-    const ticket: FeedbackTicket = {
-      dTag,
-      eventId: event.id ?? '',
-      authorPubkey: event.pubkey,
-      title,
-      description,
-      createdAt: event.created_at,
-      status:
-        status && (FEEDBACK_STATUSES as string[]).includes(status)
-          ? (status as FeedbackTicketStatus)
-          : 'backlog',
-      archived: false,
-    };
-    if (type && (FEEDBACK_TICKET_TYPES as string[]).includes(type)) {
-      ticket.type = type;
-    }
-    return ticket;
+  /**
+   * The dev's client provisions the board event on first visit. Detached —
+   * the board works without it (cards reference the well-known address);
+   * the 30301 event makes the board discoverable for kanbanstr and friends.
+   */
+  public ensureBoard(): void {
+    if (!this.isDev()) return;
+    void (async () => {
+      const event = await this.publish(FEEDBACK_BOARD_KIND, '', [
+        ['d', FEEDBACK_BOARD_DTAG],
+        ['title', 'NoorNote Feedback'],
+        [
+          'description',
+          'Public feedback board for the NoorNote Nostr client — file wishes and bugs, follow their progress.',
+        ],
+        ['alt', 'A public feedback board for the NoorNote Nostr client'],
+        ['col', 'todo', 'To Do', '0'],
+        ['col', 'in-progress', 'In Progress', '1'],
+        ['col', 'done', 'Done', '2'],
+      ]);
+      if (event) {
+        diagLog('system', 'Feedback board definition published', {
+          kind: FEEDBACK_BOARD_KIND,
+        });
+      }
+    })();
   }
 
   /**
@@ -406,32 +345,28 @@ export class FeedbackBoardService {
       title,
       description,
       createdAt: Math.floor(Date.now() / 1000),
-      status: 'backlog',
+      status: 'todo',
       archived: false,
       type,
     };
     this.pendingTickets.set(dTag, localTicket);
 
     void (async () => {
-      const event = await this.publish(
-        FEEDBACK_TICKET_KIND,
-        `${title}\n\n${description}`,
-        [
-          ['d', dTag],
-          ['status', 'backlog'],
-          ['t', type],
-        ]
+      const event = await this.publishCard(
+        dTag,
+        localTicket.title,
+        localTicket.description,
+        localTicket.type,
+        statusToS('todo'),
+        false
       );
       if (event) {
         localTicket.eventId = event.id ?? '';
         diagLog('system', 'Feedback ticket created', { dTag, type });
-        const parsed = this.parseTicket(event);
-        if (parsed) {
-          await this.notifyOtherSide(
-            parsed,
-            _('New feedback board ticket: "%s"').replace('%s', parsed.title)
-          );
-        }
+        await this.notifyOtherSide(
+          localTicket,
+          _('New feedback board ticket: "%s"').replace('%s', localTicket.title)
+        );
       } else {
         this.pendingTickets.delete(dTag);
         onRollback();
@@ -441,59 +376,11 @@ export class FeedbackBoardService {
     return localTicket;
   }
 
-  /** Comment on a ticket (any logged-in user incl. dev) — optimistic. */
-  public addComment(
-    ticket: FeedbackTicket,
-    text: string,
-    onRollback: () => void
-  ): boolean {
-    const current = this.authService.getCurrentUser();
-    if (!current) return false;
-
-    // Optimistic entry with a temp id; replaced by the real event id once
-    // signed so the relay-catchup dedup in loadBoard keeps working.
-    const tempId = `local-${Date.now()}`;
-    const entry: FeedbackComment = {
-      eventId: tempId,
-      pubkey: current.pubkey,
-      content: text,
-      createdAt: Math.floor(Date.now() / 1000),
-    };
-    this.pendingComments.set(ticket.dTag, [
-      ...(this.pendingComments.get(ticket.dTag) ?? []),
-      entry,
-    ]);
-
-    void (async () => {
-      const ok = await this.publishAction(ticket, 'comment', text, undefined);
-      if (ok) {
-        entry.eventId = this.lastPublishedActionId;
-        await this.notifyOtherSide(
-          ticket,
-          _('New comment on "%s": %s')
-            .replace('%s', ticket.title)
-            .replace('%s', text.slice(0, 80))
-        );
-      } else {
-        // Drop the optimistic entry — the view's rollback reverts the UI.
-        const list = this.pendingComments.get(ticket.dTag) ?? [];
-        this.pendingComments.set(
-          ticket.dTag,
-          list.filter(c => c.eventId !== tempId)
-        );
-        onRollback();
-      }
-    })();
-
-    return true;
-  }
-
   /**
-   * Change the ticket status — optimistic. The move is applied instantly via
-   * the local overlay (no fetch, no relay wait); the publish runs detached.
-   * If the relay confirmation fails (no acks / 15 s timeout), the overlay
-   * entry is dropped and onRollback fires so the view can revert the card.
-   * Dev may move freely; the author may only withdraw their own ticket.
+   * Move a card (dev: any status) or withdraw it (author: own card, status
+   * withdrawn) — optimistic. The move is a full card republish with the same
+   * `d` and a new `s` tag; title/description/type are carried forward so the
+   * fold keeps the author's content.
    */
   public setStatus(
     ticket: FeedbackTicket,
@@ -511,7 +398,7 @@ export class FeedbackBoardService {
     this.pendingStatus.set(ticket.dTag, status);
 
     void (async () => {
-      const ok = await this.publishAction(ticket, 'status', '', status);
+      const ok = await this.republish(ticket, { status });
       if (ok) {
         diagLog('system', 'Feedback ticket status changed', {
           dTag: ticket.dTag,
@@ -533,8 +420,8 @@ export class FeedbackBoardService {
   }
 
   /**
-   * Archive a ticket (dev only) — optimistic, like setStatus. The overlay
-   * hides it instantly; rollback restores if the publish fails.
+   * Archive a ticket (dev only) — optimistic, like setStatus. The republish
+   * carries the `archived` tag and the current `s` value forward.
    */
   public archiveTicket(
     ticket: FeedbackTicket,
@@ -545,7 +432,7 @@ export class FeedbackBoardService {
     this.pendingArchived.add(ticket.dTag);
 
     void (async () => {
-      const ok = await this.publishAction(ticket, 'archive', '', undefined);
+      const ok = await this.republish(ticket, { archived: true });
       if (ok) {
         diagLog('system', 'Feedback ticket archived', { dTag: ticket.dTag });
         await this.notifyOtherSide(
@@ -562,12 +449,11 @@ export class FeedbackBoardService {
   }
 
   /**
-   * Delete a ticket via NIP-09 (kind 5) — optimistic, like setStatus. The
-   * author may delete their own ticket, the dev may delete any ticket. The
-   * delete event tags `a` (address) + `e` for the ticket AND one `e` per
-   * comment, so relays honoring NIP-09 also drop the comment thread — no
-   * orphaned comments left behind. The read side of loadBoard picks kind-5
-   * events up and filters ticket and comments out.
+   * Delete a ticket via NIP-09 (kind 5) — optimistic. The author may delete
+   * their own ticket, the dev may delete any ticket. The delete event tags
+   * `a` (the card coordinate) + `e` for the author's and the dev's versions
+   * AND one `e` per comment, so relays honoring NIP-09 also drop the comment
+   * thread — no orphaned comments left behind.
    */
   public deleteTicket(
     ticket: FeedbackTicket,
@@ -584,8 +470,9 @@ export class FeedbackBoardService {
 
     void (async () => {
       const event = await this.publish(FEEDBACK_DELETE_KIND, '', [
-        ['a', ticketAddress(ticket.authorPubkey, ticket.dTag)],
+        ['a', cardAddress(ticket.authorPubkey, ticket.dTag)],
         ['e', ticket.eventId],
+        ...(ticket.devEventId ? [['e', ticket.devEventId]] : []),
         ...commentEventIds.map(id => ['e', id]),
       ] as string[][]);
       if (event) {
@@ -602,7 +489,7 @@ export class FeedbackBoardService {
   /**
    * Delete a single comment via NIP-09 (kind 5) — optimistic. The comment's
    * writer or the dev may delete it; the delete event tags only `e` (the
-   * comment event id), so the original ticket stays untouched.
+   * comment event id), so the original card stays untouched.
    */
   public deleteComment(
     comment: FeedbackComment,
@@ -631,11 +518,58 @@ export class FeedbackBoardService {
     return true;
   }
 
+  /** Comment on a ticket (any logged-in user incl. dev) — optimistic. */
+  public addComment(
+    ticket: FeedbackTicket,
+    text: string,
+    onRollback: () => void
+  ): boolean {
+    const current = this.authService.getCurrentUser();
+    if (!current) return false;
+
+    // Optimistic entry with a temp id; replaced by the real event id once
+    // signed so the relay-catchup dedup in loadBoard keeps working.
+    const tempId = `local-${Date.now()}`;
+    const entry: FeedbackComment = {
+      eventId: tempId,
+      pubkey: current.pubkey,
+      content: text,
+      createdAt: Math.floor(Date.now() / 1000),
+    };
+    this.pendingComments.set(ticket.dTag, [
+      ...(this.pendingComments.get(ticket.dTag) ?? []),
+      entry,
+    ]);
+
+    void (async () => {
+      const event = await this.publishComment(ticket, text);
+      if (event) {
+        entry.eventId = this.lastPublishedCommentId;
+        await this.notifyOtherSide(
+          ticket,
+          _('New comment on "%s": %s')
+            .replace('%s', ticket.title)
+            .replace('%s', text.slice(0, 80))
+        );
+      } else {
+        // Drop the optimistic entry — the view's rollback reverts the UI.
+        const list = this.pendingComments.get(ticket.dTag) ?? [];
+        this.pendingComments.set(
+          ticket.dTag,
+          list.filter(c => c.eventId !== tempId)
+        );
+        onRollback();
+      }
+    })();
+
+    return true;
+  }
+
   public statusLabel(status: FeedbackTicketStatus): string {
     switch (status) {
-      case 'backlog':
-        return _('Backlog');
-      case 'wip':
+      case 'todo':
+        return _('To Do');
+      case 'in-progress':
         return _('In Progress');
       case 'done':
         return _('Done');
@@ -644,10 +578,6 @@ export class FeedbackBoardService {
     }
   }
 
-  /**
-   * The other side of the actor: dev acts → author gets the DM,
-   * anyone else acts → dev gets the DM.
-   */
   /**
    * Comments for a ticket — relay state plus optimistic pending entries, so a
    * just-written comment is visible in every state snapshot immediately.
@@ -662,9 +592,19 @@ export class FeedbackBoardService {
     const pending = this.pendingComments.get(dTag) ?? [];
     if (!pending.length) return relay;
     const relayIds = new Set(relay.map(c => c.eventId));
-    return [...relay, ...pending.filter(c => !relayIds.has(c.eventId))];
+    // Chronological ascending (oldest top, newest bottom — like kind:1 note
+    // threads). Re-sort the merge: a laggy relay can return someone else's
+    // newer comment between two optimistic entries.
+    return [...relay, ...pending.filter(c => !relayIds.has(c.eventId))].sort(
+      (a, b) => a.createdAt - b.createdAt
+    );
   }
 
+  /**
+   * The other side of the actor: dev acts → author gets the DM,
+   * anyone else acts → dev gets the DM. Routed through the dms module API
+   * (addons never import decoupled services directly).
+   */
   private async notifyOtherSide(
     ticket: FeedbackTicket,
     reason: string
@@ -682,19 +622,17 @@ export class FeedbackBoardService {
   }
 
   /**
-   * NIP-17 DM via the existing DMService pipeline. Arrival already triggers
-   * the standard in-app notification (toast + sidebar badge) on the recipient
-   * — the DM is both the notification and the pointer to the board.
+   * NIP-17 DM via the dms module API. Arrival already triggers the standard
+   * in-app notification (toast + sidebar badge) on the recipient — the DM is
+   * both the notification and the pointer to the board.
    */
   private async sendDM(
     recipientPubkey: string,
     content: string
   ): Promise<void> {
     try {
-      const ok = await DMService.getInstance().sendMessage(
-        recipientPubkey,
-        content
-      );
+      const dms = ModuleLoader.getInstance().getApi<DMsModuleApi>('dms');
+      const ok = (await dms?.sendMessage(recipientPubkey, content)) ?? false;
       if (!ok) {
         diagLog('system', 'Feedback board DM failed', {
           to: recipientPubkey.slice(0, 8),
@@ -707,34 +645,100 @@ export class FeedbackBoardService {
     }
   }
 
-  private async publishAction(
-    ticket: FeedbackTicket,
-    type: FeedbackActionType,
-    content: string,
-    status: FeedbackTicketStatus | undefined
-  ): Promise<boolean> {
-    const current = this.authService.getCurrentUser();
-    if (!current) return false;
-
-    const otherSide = isDevPubkey(current.pubkey)
-      ? ticket.authorPubkey
-      : FEEDBACK_DEV_PUBKEY;
-
+  /**
+   * Publish a fresh card (create). Tags per NIP-100: `d`, `title`,
+   * `description`, `alt`, `s` (column name), `a` (board address), `t` (type).
+   * Content carries `<title>\n\n<description>` as fallback for clients that
+   * don't read the tags.
+   */
+  private async publishCard(
+    dTag: string,
+    title: string,
+    description: string,
+    type: FeedbackTicketType | undefined,
+    status: string,
+    archived: boolean
+  ): Promise<NostrEvent | null> {
     const tags: string[][] = [
-      ['a', ticketAddress(ticket.authorPubkey, ticket.dTag)],
-      ['e', ticket.eventId],
-      ['type', type],
-      ['p', otherSide],
+      ['d', dTag],
+      ['title', title],
+      ['description', description],
+      ['alt', 'A feedback ticket on the NoorNote feedback board'],
+      ['s', status],
+      ['a', boardAddress()],
+      // NIP-100 assignee: the dev handles every ticket on this board. Always
+      // emitted fresh (constant value) — republishes need no carry-forward.
+      ['p', FEEDBACK_DEV_PUBKEY],
     ];
-    if (status) {
-      tags.push(['status', status]);
-    }
-    const event = await this.publish(FEEDBACK_ACTION_KIND, content, tags);
-    if (event?.id) {
-      this.seenActionEventIds.add(event.id);
-      this.lastPublishedActionId = event.id;
-    }
+    if (type) tags.push(['t', type]);
+    if (archived) tags.push(['archived', '1']);
+    return this.publish(FEEDBACK_CARD_KIND, `${title}\n\n${description}`, tags);
+  }
+
+  /**
+   * Republish an existing card with the same `d` (NIP-100 edit semantics).
+   * Everything not overridden is carried forward from the folded state so a
+   * move never wipes the author's text and an edit never resets the status.
+   */
+  private async republish(
+    ticket: FeedbackTicket,
+    overrides: { status?: FeedbackTicketStatus; archived?: boolean }
+  ): Promise<boolean> {
+    const event = await this.publishCard(
+      ticket.dTag,
+      ticket.title,
+      ticket.description,
+      ticket.type,
+      statusToS(overrides.status ?? ticket.status),
+      overrides.archived ?? ticket.archived
+    );
     return !!event;
+  }
+
+  /**
+   * NIP-22 comment on a card: root and parent are the card itself, so both
+   * the addressable (`A`/`a`) and the event-id (`E`/`e`) reference forms are
+   * included — for every version of the card we know (the author's original
+   * coordinate and the dev's republish coordinate), so the comment matches
+   * no matter which version a client folded.
+   */
+  private async publishComment(
+    ticket: FeedbackTicket,
+    text: string
+  ): Promise<NostrEvent | null> {
+    const current = this.authService.getCurrentUser();
+    if (!current) return null;
+
+    const coords = new Set<string>([
+      cardAddress(ticket.authorPubkey, ticket.dTag),
+    ]);
+    if (ticket.devEventId) {
+      coords.add(cardAddress(FEEDBACK_DEV_PUBKEY, ticket.dTag));
+    }
+    const tags: string[][] = [];
+    for (const coord of coords) {
+      tags.push(['A', coord]);
+      tags.push(['a', coord]);
+    }
+    tags.push(['K', String(FEEDBACK_CARD_KIND)]);
+    tags.push(['k', String(FEEDBACK_CARD_KIND)]);
+    // Reference every version of the card we know (author's + dev's).
+    for (const id of [ticket.eventId, ticket.devEventId]) {
+      if (id) {
+        tags.push(['E', id]);
+        tags.push(['e', id]);
+      }
+    }
+    if (ticket.authorPubkey) {
+      tags.push(['P', ticket.authorPubkey]);
+      tags.push(['p', ticket.authorPubkey]);
+    }
+
+    const event = await this.publish(FEEDBACK_COMMENT_KIND, text, tags);
+    if (event?.id) {
+      this.lastPublishedCommentId = event.id;
+    }
+    return event;
   }
 
   private async publish(

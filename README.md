@@ -197,6 +197,7 @@ If the app crashes, check the log files:
 | [NIP-96](https://github.com/nostr-protocol/nips/blob/master/96.md) | HTTP file storage | - |
 | [NIP-98](https://github.com/nostr-protocol/nips/blob/master/98.md) | HTTP auth | 27235 |
 | [NIP-99](https://github.com/nostr-protocol/nips/blob/master/99.md) | Classified listings (marketplace) | 30402 |
+| [NIP-100 (draft)](https://github.com/vivganes/kanbanstr/blob/main/NIP-100.md) | Multi-user Kanban boards (feedback board addon, kanbanstr-compatible) | 30301, 30302 |
 
 **Other event kinds** (not tied to a numbered NIP — community specs, third-party APIs, NoorNote-internal):
 
@@ -224,7 +225,7 @@ If the app crashes, check the log files:
 - **Satellite Earth site page** — kind `35128` / kind `35129`, proprietary [Satellite Earth](https://satellite.earth) events (NAP protocol: 35128 site settings, 35129 site page); rendered as a notice card linking to the naddr on njump. Kind `35128` is shared with NIP-5A named-site manifests — NoorNote tells them apart by the NIP-5A-mandatory `path` tags
 - **Armada community invite** — kind `33301`, [Concord CORD-05](https://github.com/concord-protocol/concord) encrypted-community invite bundle (addressable, content NIP-44-encrypted). Recognised inside note text via `armada.buzz/invite/<naddr>#<fragment>` URLs and bare `nostr:naddr1…` quotes; when the URL fragment is present, the public preview (community name, icon, channel count) is decrypted locally and rendered as an invite card with an "Open in Armada" action.
 - **Gated premium note (Fanfares / NIP-108-2.0)** — kind `1` with `encrypted` (AES-256-GCM) and `price` (sats) tags; NoorNote detects these Fanfares-style gated notes (NIP-108-2.0 evolution) and renders a gated card instead of recursing into the encrypted payload.
-- **Feedback Board (NoorNote-internal)** — kinds `39100` (ticket, published by its author, `d`-tag carries the ticket id) and `39101` (action event — comment, status change or archive, published by whoever acts and referencing the ticket via `a`-tag). Power the Feedback Board addon's public Kanban board (Backlog / WIP / Done); status moves and archiving are action events by the developer account, so the ticket event stays under the author's control. Each action also sends the other side a NIP-17 DM pointing back to the board.
+- **Feedback Board (NIP-100 draft)** — kinds `30301` (Kanban board definition, owned by the developer account, `d=noornote-feedback`) and `30302` (Kanban card / ticket, published by its author and referenced to the board via the `a` tag). Power the Feedback Board addon's public Kanban board (To Do / In Progress / Done), compatible with [kanbanstr](https://github.com/vivganes/kanbanstr) and other NIP-100 clients; status moves, edits and archiving are card republishes with the same `d` tag (NIP-100 fold semantics), comments are NIP-22 kind `1111` events. Each action also sends the other side a NIP-17 DM pointing back to the board.
 - **SNO — Simple Nostr Objects** — kind `33331`, [DECK-0003](https://github.com/arkin0x/cyberspace) community draft (sender tool: snocrash.art): self-contained 3D model in the event content (integer-lattice vertices, palette colours, triangle faces; `solid`/`points`/`lines` modes). Rendered with NoorNote's own Canvas-2D viewer (drag to rotate, wheel to zoom) — display-only, no authoring.
 
 ## Build from Source
