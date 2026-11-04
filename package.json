@@ -103,6 +103,7 @@
     "dompurify": "^3.4.17",
     "emojilib": "^4.0.2",
     "fflate": "^0.8.2",
+    "light-bolt11-decoder": "^3.2.0",
     "foliate-js": "^1.0.1",
     "hls.js": "^1.7.3",
     "marked": "^16.4.0",

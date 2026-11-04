@@ -23,6 +23,9 @@ import { PlatformService } from './PlatformService';
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 import { diagLog } from './DiagnosticLogger';
 import { TypedEventBus } from '../core/TypedEventBus';
+import { decodeBolt11 } from '../helpers/bolt11Decode';
+import { sha256 } from '@noble/hashes/sha2';
+import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils';
 import { _ } from '../i18n';
 
 export type ZapPaymentState = 'verifying' | 'succeeded';
@@ -326,7 +329,7 @@ export class ZapService {
       return { success: false, error: 'Failed to create zap request event' };
     }
 
-    // Step 3: Fetch invoice from LNURL callback
+    // Step 3: Fetch invoice from LNURL callback (amount + origin verified)
     const invoice = await this.fetchInvoice(
       lnurl,
       zapRequestEvent,
@@ -773,7 +776,11 @@ export class ZapService {
   ): Promise<string | null> {
     try {
       const amountMillisats = amountSats * 1000;
-      const nostrParam = encodeURIComponent(JSON.stringify(zapRequestEvent));
+      // The exact JSON string we send to the server. Per NIP-57 the invoice's
+      // description is "this zap request note and this note only", so this
+      // same string is what the invoice's description hash must commit to.
+      const nostrJson = JSON.stringify(zapRequestEvent);
+      const nostrParam = encodeURIComponent(nostrJson);
       const separator = lnurl.includes('?') ? '&' : '?';
       const callbackUrl = `${lnurl}${separator}amount=${amountMillisats}&nostr=${nostrParam}`;
 
@@ -798,8 +805,74 @@ export class ZapService {
         throw new Error('No invoice (pr) in LNURL response');
       }
 
+      // ── NIP-57 payment-safety verification ──────────────────────
+      // The `pr` invoice comes from a third-party (potentially malicious)
+      // server. Never pay it blind: verify the amount and the invoice's
+      // binding to this zap request before handing it to the wallet.
+      const decoded = decodeBolt11(data.pr);
+      if (!decoded) {
+        throw new Error('LNURL returned an unparseable invoice');
+      }
+
+      // 1. Amount check: the invoice embeds its own amount — the `amount=`
+      //    callback parameter is only a request. A malicious server could
+      //    otherwise return an invoice for ANY amount and it would be paid.
+      //    Hard rule: never pay more than requested. Some wallets return an
+      //    amountless invoice (the wallet then decides), which we accept —
+      //    the description-hash check below still binds it to our request.
+      if (
+        decoded.amountMsats !== null &&
+        decoded.amountMsats > amountMillisats
+      ) {
+        this.systemLogger.error(
+          'ZapService',
+          'Invoice amount exceeds requested — refusing to overpay',
+          {
+            requestedMsats: amountMillisats,
+            invoiceMsats: decoded.amountMsats,
+          }
+        );
+        throw new Error(`Invoice amount exceeds requested ${amountSats} sats`);
+      }
+      if (
+        decoded.amountMsats !== null &&
+        decoded.amountMsats < amountMillisats
+      ) {
+        // Wallets returning shorter invoices usually round to sat precision.
+        // Warn (paying less than a full zap just shows a smaller zap), don't refuse.
+        this.systemLogger.warn('ZapService', 'Invoice under requested amount', {
+          requestedMsats: amountMillisats,
+          invoiceMsats: decoded.amountMsats,
+        });
+      }
+
+      // 2. Origin check (NIP-57 §6 / Appendix E): the invoice's description
+      //    hash must equal SHA-256 of the zap request JSON we sent. Proves
+      //    the invoice was minted for THIS zap request (blocks invoice
+      //    substitution by a malicious callback server).
+      if (!decoded.descriptionHash) {
+        throw new Error('Invoice has no description hash');
+      }
+      if (
+        bytesToHex(sha256(utf8ToBytes(nostrJson))) !== decoded.descriptionHash
+      ) {
+        this.systemLogger.error(
+          'ZapService',
+          'Invoice description hash does not match zap request — refusing to pay'
+        );
+        throw new Error('Invoice does not match zap request');
+      }
+      // ─────────────────────────────────────────────────────────────
+
       return data.pr;
-    } catch {
+    } catch (error) {
+      // Log before swallowing: the caller only shows a generic toast, so
+      // verification failures must be diagnosable from the logs.
+      this.systemLogger.error(
+        'ZapService',
+        'Failed to fetch/verify invoice',
+        error
+      );
       return null;
     }
   }
