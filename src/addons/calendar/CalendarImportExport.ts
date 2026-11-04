@@ -59,7 +59,7 @@ export class CalendarImportExportManager {
       <div class="calendar-io__import">
         <h3>${_('Import')}</h3>
         <p class="form__note">
-          ${_('Import a Google Calendar or any .ics export — events are previewed first and imported to this device. Publishing them to your relays is a separate step afterwards.')}
+          ${_('Import a Google Calendar or any .ics export, events are previewed first and imported to this device. Publishing them to your relays is a separate step afterwards.')}
         </p>
         <div class="l-row--center calendar-io__actions">
           <button class="btn btn--large btn--passive" data-io-import>
@@ -129,7 +129,7 @@ export class CalendarImportExportManager {
             </div>`
           : `<h3>${_('Reset')}</h3>
             <p class="form__note">
-              ${_('Clears your calendar on this device only — events, booking slots, saved and private events. Like unsaved changes in a desktop app: your relays still have everything until you publish the wipe.')}
+              ${_('Clears your calendar on this device only, events, booking slots, saved and private events. Like unsaved changes in a desktop app: your relays still have everything until you publish the wipe.')}
             </p>
             <div class="l-row--center calendar-io__actions">
               <button class="btn btn--danger" data-io-reset>

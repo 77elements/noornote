@@ -1163,7 +1163,7 @@ export class ProfileView extends View {
       btn.textContent = muted ? _('Soft muted') : _('Soft mute');
       ToastService.show(
         muted
-          ? _('Soft muted — their interactions no longer notify you')
+          ? _('Soft muted, their interactions no longer notify you')
           : _('Soft mute lifted'),
         'success'
       );

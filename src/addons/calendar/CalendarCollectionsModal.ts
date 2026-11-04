@@ -148,7 +148,7 @@ export class CalendarCollectionEditorModal {
         <div class="ui-list calendar-collections__pick-list" data-slot="events">
           ${
             selectable.length === 0
-              ? `<div class="calendar-collections__empty">${_('No public events in your grid yet — create an event first.')}</div>`
+              ? `<div class="calendar-collections__empty">${_('No public events in your grid yet, create an event first.')}</div>`
               : ''
           }
         </div>

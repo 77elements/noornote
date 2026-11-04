@@ -236,7 +236,7 @@ export class NostrMajlisSidebarWidget {
         // In-flight (quranLoading) → keep the pulsate; fetch settled with
         // nothing cached → calm unavailable state. getDailyAyah marked the day
         // as failed, so no retry storm: the next day retries automatically.
-        host.innerHTML = `<div class="nm-quran__divider"></div><div class="nm-quran__loading${this.quranLoading ? ' pulsate' : ''}">${this.quranLoading ? _('Loading the daily ayah…') : _('Daily ayah unavailable — will retry tomorrow.')}</div>`;
+        host.innerHTML = `<div class="nm-quran__divider"></div><div class="nm-quran__loading${this.quranLoading ? ' pulsate' : ''}">${this.quranLoading ? _('Loading the daily ayah…') : _('Daily ayah unavailable, will retry tomorrow.')}</div>`;
         return;
       }
     }

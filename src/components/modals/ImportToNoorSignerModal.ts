@@ -150,7 +150,7 @@ export class ImportToNoorSignerModal {
           return;
         }
         if (!nsec.startsWith('nsec1')) {
-          this.showError(_('Invalid format — must start with nsec1'));
+          this.showError(_('Invalid format, must start with nsec1'));
           nsecInput?.focus();
           return;
         }

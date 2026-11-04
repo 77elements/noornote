@@ -326,7 +326,7 @@ export class CalendarReminderService {
     // OS notification on top (desktop path — web Notification API; the hub
     // applies the unfocused rule). On Capacitor the scan never runs.
     void ReminderHub.getInstance().osNotifyNow({
-      title: _('NoorNote — Calendar'),
+      title: _('NoorNote, Calendar'),
       body: _('%s starts %s', title, when),
       timeoutAfterMs: TIMEOUT_AFTER_MS,
       osWhen: 'unfocused',

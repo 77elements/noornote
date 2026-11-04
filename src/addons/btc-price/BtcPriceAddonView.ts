@@ -68,7 +68,7 @@ export class BtcPriceAddonView extends View {
           <div class="setting">
             <span class="setting__label">${_('Enable BTC Price')}</span>
             <div class="setting__control"></div>
-            <p class="setting__desc">${_('Show the current Bitcoin exchange rate on this page and — via the switch below — as a widget in the sidebar.')}</p>
+            <p class="setting__desc">${_('Show the current Bitcoin exchange rate on this page and, via the switch below, as a widget in the sidebar.')}</p>
           </div>
         </section>
         <div data-addon-content="btc-price"></div>
@@ -109,7 +109,7 @@ export class BtcPriceAddonView extends View {
         <div class="setting">
           <span class="setting__label">${_('Fiat Currency')}</span>
           <div class="setting__control" data-btc-currency-mount></div>
-          <p class="setting__desc">${_('Shared with Zaps and the Wallet Balance addon — changing it updates everywhere.')}</p>
+          <p class="setting__desc">${_('Shared with Zaps and the Wallet Balance addon, changing it updates everywhere.')}</p>
         </div>
       </section>
     `;

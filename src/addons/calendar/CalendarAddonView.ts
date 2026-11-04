@@ -74,7 +74,7 @@ export class CalendarAddonView extends View {
           <div class="setting">
             <span class="setting__label">${_('Remind me before events start')}</span>
             <div class="setting__control" data-slot="reminder-lead"></div>
-            <p class="setting__desc">${_('Default reminder lead for all events. Reminders stay local to this device — nothing is published. Single events can override this in their editor.')}</p>
+            <p class="setting__desc">${_('Default reminder lead for all events. Reminders stay local to this device, nothing is published. Single events can override this in their editor.')}</p>
           </div>
         </section>
         <div class="tabs" data-el="calendar-tabs">

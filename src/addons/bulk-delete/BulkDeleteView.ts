@@ -142,7 +142,7 @@ export class BulkDeleteView extends View {
           <div class="setting">
             <span class="setting__label">${_('Enable Bulk delete')}</span>
             <div class="setting__control"></div>
-            <p class="setting__desc">${_('Pick a time range or search your own posts, then select them and delete in bulk. Each deletion is a NIP-09 request broadcast to relays in the background — relays may honor it or not. Deletion is not guaranteed and cannot be undone.')}</p>
+            <p class="setting__desc">${_('Pick a time range or search your own posts, then select them and delete in bulk. Each deletion is a NIP-09 request broadcast to relays in the background, relays may honor it or not. Deletion is not guaranteed and cannot be undone.')}</p>
           </div>
         </section>
         <div data-addon-content="bulk-delete"></div>

@@ -191,7 +191,7 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
           // This covers the degraded no-api fallback so every revert has a
           // visible message without double-toasting.
           if (!('error' in result) || !result.error) {
-            ToastService.show(_('Repost failed — display reverted'), 'error');
+            ToastService.show(_('Repost failed, display reverted'), 'error');
           }
         }
       }

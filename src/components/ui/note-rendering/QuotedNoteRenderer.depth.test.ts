@@ -208,7 +208,7 @@ describe('QuotedNoteRenderer depth cap (nested QR chains)', () => {
     expect(document.body.querySelector('.quote-skeleton')).toBeNull();
     const cap = document.body.querySelector('.quote-depth-cap')!;
     expect(cap).not.toBeNull();
-    expect(cap.textContent).toContain('Quoted repost — open to view');
+    expect(cap.textContent).toContain('Quoted repost, open to view');
     // No invented IDs/hex in the placeholder
     expect(cap.textContent).not.toContain('nevent1');
   });

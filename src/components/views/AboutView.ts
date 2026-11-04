@@ -108,7 +108,7 @@ export class AboutView extends View {
 
             <h3>${_('No Tracking or Analytics by NoorNote')}</h3>
             <p>
-              ${_('NoorNote does not use any analytics services, tracking pixels, marketing cookies, or telemetry. We do not collect, log, or transmit any usage data to ourselves. The third-party connections described above are inherent to rendering content and providing the service — they are not telemetry, and no identifier beyond a standard HTTP request (IP, User-Agent) is sent.')}
+              ${_('NoorNote does not use any analytics services, tracking pixels, marketing cookies, or telemetry. We do not collect, log, or transmit any usage data to ourselves. The third-party connections described above are inherent to rendering content and providing the service, they are not telemetry, and no identifier beyond a standard HTTP request (IP, User-Agent) is sent.')}
             </p>
 
             <h3>${_('Your Rights')}</h3>
@@ -219,7 +219,7 @@ export class AboutView extends View {
       <h3>${_('Web Hosting')}</h3>
       <p>
         ${_('The web version of NoorNote (%s) is hosted by %s (%s).', appLink, hostBlock, privacyLink)}
-        ${_('Like any web host, MyNymbox processes standard server log data when you load the application — typically your IP address, request timestamp, the URL/file requested, browser type, and referrer — for operational and security purposes (e.g. DDoS mitigation, server stability). NoorNote itself does not access or use these logs.')}
+        ${_('Like any web host, MyNymbox processes standard server log data when you load the application, typically your IP address, request timestamp, the URL/file requested, browser type, and referrer, for operational and security purposes (e.g. DDoS mitigation, server stability). NoorNote itself does not access or use these logs.')}
       </p>
       <p>
         <strong>${_('Third country notice:')}</strong> ${_("St. Kitts and Nevis is not covered by an EU adequacy decision (Art. 45 GDPR). Any transfer to MyNymbox's servers takes place on the basis of the derogations of Art. 49 (1) GDPR.")}

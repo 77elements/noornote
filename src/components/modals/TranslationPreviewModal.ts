@@ -103,10 +103,7 @@ export class TranslationPreviewModal {
 
     // Surface an already-active preview so the translator knows the state.
     if (isPoPreviewActive()) {
-      ToastService.show(
-        _('A preview is active — it survives reloads.'),
-        'info'
-      );
+      ToastService.show(_('A preview is active, it survives reloads.'), 'info');
     }
   }
 

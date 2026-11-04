@@ -1182,7 +1182,7 @@ export class ConversationView extends View {
         textarea.value = content;
         this.systemLogger.error('ConversationView', 'Failed to send message');
         ToastService.show(
-          _('Could not send message — please try again'),
+          _('Could not send message, please try again'),
           'error'
         );
       }
@@ -1197,8 +1197,8 @@ export class ConversationView extends View {
         _error instanceof Error && _error.name === 'SignerTimeoutError';
       ToastService.show(
         timedOut
-          ? _('Signer did not respond — message not sent')
-          : _('Could not send message — please try again'),
+          ? _('Signer did not respond, message not sent')
+          : _('Could not send message, please try again'),
         'error'
       );
     } finally {

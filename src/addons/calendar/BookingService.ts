@@ -640,7 +640,7 @@ export class BookingService {
       detail:
         informed > 0
           ? informed - 1 === 1
-            ? _('Booking cancelled — host and 1 participant informed')
+            ? _('Booking cancelled, host and 1 participant informed')
             : _(
                 'Booking cancelled — host and %s participants informed',
                 String(informed - 1)
@@ -784,7 +784,7 @@ export class BookingService {
       ok: true,
       detail: informed
         ? informed === 1
-          ? _('Booking cancelled — 1 recipient informed')
+          ? _('Booking cancelled, 1 recipient informed')
           : _('Booking cancelled — %s recipients informed', String(informed))
         : _('Booking cancelled'),
       informed,
@@ -878,7 +878,7 @@ export class BookingService {
       ok: true,
       detail: informed
         ? informed === 1
-          ? _('Booking cancelled — 1 recipient informed')
+          ? _('Booking cancelled, 1 recipient informed')
           : _('Booking cancelled — %s recipients informed', String(informed))
         : _('Booking cancelled'),
       informed,

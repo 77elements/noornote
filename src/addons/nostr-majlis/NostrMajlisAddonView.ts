@@ -482,7 +482,7 @@ export class NostrMajlisAddonView extends View {
         <div class="setting">
           <span class="setting__label">${_('Daily Quran ayah')}</span>
           <div class="setting__control">${this.quranSwitch.render()}</div>
-          <p class="setting__desc">${_('Shows one ayah per day in the sidebar widget — Arabic Uthmani text, the English translation (The Clear Quran) and the English tafsir Al-Mukhtasar. Texts load from public static CDNs once per day and are cached on your device.')}</p>
+          <p class="setting__desc">${_('Shows one ayah per day in the sidebar widget, Arabic Uthmani text, the English translation (The Clear Quran) and the English tafsir Al-Mukhtasar. Texts load from public static CDNs once per day and are cached on your device.')}</p>
         </div>
       </section>
       <section class="section" data-el="daily-ayah-view"></section>
@@ -506,7 +506,7 @@ export class NostrMajlisAddonView extends View {
     const ayah = await getDailyAyah();
     if (this.disposed || token !== this.quranToken) return;
     if (!ayah) {
-      view.innerHTML = `<p class="setting__desc">${_('The daily ayah could not be loaded. Check your connection — it will retry automatically.')}</p>`;
+      view.innerHTML = `<p class="setting__desc">${_('The daily ayah could not be loaded. Check your connection, it will retry automatically.')}</p>`;
       return;
     }
     view.innerHTML = `

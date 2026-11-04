@@ -142,7 +142,7 @@ export class NoteTakingReminderService {
     // Capacitor: the OS notification REPLACES the in-app AlertBar (NostrMajlis
     // pattern — no double-up). Desktop/Web: AlertBar + OS when unfocused.
     void hub.osNotifyNow({
-      title: _('NoorNote — Note reminder'),
+      title: _('NoorNote, Note reminder'),
       body: preview,
       timeoutAfterMs: TIMEOUT_AFTER_MS,
       osWhen: hub.isCapacitor ? 'always' : 'unfocused',

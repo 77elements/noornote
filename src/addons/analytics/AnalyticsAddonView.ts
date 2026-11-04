@@ -320,7 +320,7 @@ export class AnalyticsAddonView extends View {
           <div class="setting">
             <span class="setting__label">${_('Enable Analytics')}</span>
             <div class="setting__control">${this.enableSwitch.render()}</div>
-            <p class="setting__desc">${_('Your personal Nostr stats — posts and replies, follows, content, zaps and engagement. Data is gathered relay-friendly, cached per account and refreshed incrementally. Counts cover your entire history — all-time, not a fixed window, as far as relay retention allows.')}</p>
+            <p class="setting__desc">${_('Your personal Nostr stats, posts and replies, follows, content, zaps and engagement. Data is gathered relay-friendly, cached per account and refreshed incrementally. Counts cover your entire history, all-time, not a fixed window, as far as relay retention allows.')}</p>
           </div>
         </section>
         <div class="tabs tabs--scrollable" data-el="analytics-tabs" hidden>
@@ -423,21 +423,21 @@ export class AnalyticsAddonView extends View {
     diagrams.innerHTML = `
       <section class="analytics__row" data-analytics-row="engagement-timeline">
         <h2 class="analytics__row-title">${_('Engagement over time')}</h2>
-        <p class="form__note">${_('Received engagement per bucket — replies, zaps, reposts, quotes and likes combined, same components as the Top Posts ranking. Hover a bar for the breakdown.')}</p>
+        <p class="form__note">${_('Received engagement per bucket, replies, zaps, reposts, quotes and likes combined, same components as the Top Posts ranking. Hover a bar for the breakdown.')}</p>
         <div class="analytics-chart" data-engagement-chart>
           <p class="form__note pulsate">${_('Building your engagement curve…')}</p>
         </div>
       </section>
       <section class="analytics__row" data-analytics-row="zaps-earned">
         <h2 class="analytics__row-title">${_('Zaps earned')}</h2>
-        <p class="form__note">${_('Sats received per month, last 12 months — older receipts rarely survive relay retention. Hover a bar for details.')}</p>
+        <p class="form__note">${_('Sats received per month, last 12 months, older receipts rarely survive relay retention. Hover a bar for details.')}</p>
         <div class="analytics-chart" data-zaps-earned-chart>
           <p class="form__note pulsate">${_('Building…')}</p>
         </div>
       </section>
       <section class="analytics__row" data-analytics-row="zaps-sent">
         <h2 class="analytics__row-title">${_('Zaps sent')}</h2>
-        <p class="form__note">${_('Sats sent per month, last 12 months — best effort (wallets without the P tag may be missing).')}</p>
+        <p class="form__note">${_('Sats sent per month, last 12 months, best effort (wallets without the P tag may be missing).')}</p>
         <div class="analytics-chart" data-zaps-sent-chart>
           <p class="form__note pulsate">${_('Building…')}</p>
         </div>
@@ -670,7 +670,7 @@ export class AnalyticsAddonView extends View {
     if (!chart) return;
 
     if (!timeline.length) {
-      chart.innerHTML = `<p class="form__note">${_('No data yet — run a Refresh.')}</p>`;
+      chart.innerHTML = `<p class="form__note">${_('No data yet, run a Refresh.')}</p>`;
       return;
     }
 

@@ -1242,7 +1242,7 @@ export class QuotedNoteRenderer {
     const placeholder = document.createElement('div');
     placeholder.className = 'quote-depth-cap';
     placeholder.dataset.quoteRef = ref.fullMatch;
-    placeholder.innerHTML = `<div class="quote-depth-cap__content"><span class="quote-depth-cap__icon">📄</span><span class="quote-depth-cap__text">${_('Quoted repost — open to view')}</span></div>`;
+    placeholder.innerHTML = `<div class="quote-depth-cap__content"><span class="quote-depth-cap__icon">📄</span><span class="quote-depth-cap__text">${_('Quoted repost, open to view')}</span></div>`;
 
     placeholder.addEventListener('click', e => {
       // Inviolable media-click rule: media inside the placeholder must never

@@ -199,7 +199,7 @@ export class FeedbackBoardAddonView extends View {
       );
     } catch (error) {
       if (!cached) {
-        this.boardZone.innerHTML = `<p class="feedback-board__error">${_('The board could not be loaded — check your connection.')}</p>`;
+        this.boardZone.innerHTML = `<p class="feedback-board__error">${_('The board could not be loaded, check your connection.')}</p>`;
       }
       ErrorService.handle(error, 'feedback-board', false);
       return;
@@ -233,7 +233,7 @@ export class FeedbackBoardAddonView extends View {
       <div class="l-row--right feedback-board__actions">
         <button class="btn btn--medium" data-board-action="new-ticket">${_('New Ticket')}</button>
       </div>
-      <p class="feedback-board__notice">${_('Tickets are public — visible in every Nostr client (kanbanstr-compatible), not only in NoorNote.')}</p>
+      <p class="feedback-board__notice">${_('Tickets are public, visible in every Nostr client (kanbanstr-compatible), not only in NoorNote.')}</p>
       <div class="feedback-board">${columns.join('')}</div>
       ${withdrawn.length ? this.renderWithdrawn(withdrawn) : ''}
       ${isDev ? this.renderArchive(archived) : ''}
@@ -527,11 +527,11 @@ export class FeedbackBoardAddonView extends View {
     const accepted = this.service.archiveTicket(ticket, () => {
       ticket.archived = false;
       delete ticket.archivedAt;
-      ToastService.show(_('Publishing failed — try again.'), 'error');
+      ToastService.show(_('Publishing failed, try again.'), 'error');
       this.renderBoard();
     });
     if (!accepted) {
-      ToastService.show(_('Publishing failed — try again.'), 'error');
+      ToastService.show(_('Publishing failed, try again.'), 'error');
       return;
     }
 
@@ -555,7 +555,7 @@ export class FeedbackBoardAddonView extends View {
       <div class="form__row">
         <label for="fb-ticket-desc">${_('Description')}</label>
         <textarea id="fb-ticket-desc" class="textarea" rows="5" maxlength="2000"></textarea>
-        <p class="form__note">${_('Tickets are public Nostr events — visible in every Nostr client (kanbanstr-compatible), not only in NoorNote. Do not include private data.')}</p>
+        <p class="form__note">${_('Tickets are public Nostr events, visible in every Nostr client (kanbanstr-compatible), not only in NoorNote. Do not include private data.')}</p>
       </div>
       <div class="l-row--end-pair">
         <button class="btn btn--passive btn--medium" data-cancel>${_('Cancel')}</button>
@@ -616,11 +616,11 @@ export class FeedbackBoardAddonView extends View {
           t => t.dTag !== ticket?.dTag
         );
       }
-      ToastService.show(_('Publishing failed — try again.'), 'error');
+      ToastService.show(_('Publishing failed, try again.'), 'error');
       this.renderBoard();
     });
     if (!ticket) {
-      ToastService.show(_('Publishing failed — try again.'), 'error');
+      ToastService.show(_('Publishing failed, try again.'), 'error');
       return;
     }
 
@@ -756,11 +756,11 @@ export class FeedbackBoardAddonView extends View {
         this.state.tickets.push(ticket);
         this.state.tickets.sort((a, b) => b.createdAt - a.createdAt);
       }
-      ToastService.show(_('Publishing failed — try again.'), 'error');
+      ToastService.show(_('Publishing failed, try again.'), 'error');
       this.renderBoard();
     });
     if (!accepted) {
-      ToastService.show(_('Publishing failed — try again.'), 'error');
+      ToastService.show(_('Publishing failed, try again.'), 'error');
       return;
     }
 
@@ -786,10 +786,10 @@ export class FeedbackBoardAddonView extends View {
     const previous = ticket.status;
     const accepted = this.service.setStatus(ticket, target, () => {
       this.applyLocalStatus(ticket.dTag, previous);
-      ToastService.show(_('Publishing failed — try again.'), 'error');
+      ToastService.show(_('Publishing failed, try again.'), 'error');
     });
     if (!accepted) {
-      ToastService.show(_('Publishing failed — try again.'), 'error');
+      ToastService.show(_('Publishing failed, try again.'), 'error');
       return;
     }
     ToastService.show(_('Ticket updated'), 'success');
@@ -868,11 +868,11 @@ export class FeedbackBoardAddonView extends View {
     if (!confirmed) return;
 
     const accepted = this.service.deleteComment(comment, () => {
-      ToastService.show(_('Publishing failed — try again.'), 'error');
+      ToastService.show(_('Publishing failed, try again.'), 'error');
       this.refreshModalComments(listEl, dTag, viewer);
     });
     if (!accepted) {
-      ToastService.show(_('Publishing failed — try again.'), 'error');
+      ToastService.show(_('Publishing failed, try again.'), 'error');
       return;
     }
     ToastService.show(_('Comment deleted'), 'success');
@@ -896,12 +896,12 @@ export class FeedbackBoardAddonView extends View {
       pubkey: this.service.currentPubkey(),
     };
     const accepted = this.service.addComment(ticket, text, () => {
-      ToastService.show(_('Publishing failed — try again.'), 'error');
+      ToastService.show(_('Publishing failed, try again.'), 'error');
       this.refreshModalComments(listEl, ticket.dTag, viewer);
       this.renderBoard();
     });
     if (!accepted) {
-      ToastService.show(_('Publishing failed — try again.'), 'error');
+      ToastService.show(_('Publishing failed, try again.'), 'error');
       return;
     }
     ToastService.show(_('Comment sent'), 'success');

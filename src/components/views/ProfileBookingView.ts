@@ -246,7 +246,7 @@ export class ProfileBookingView extends View {
           )
             .map(day => this.renderDayCell(day))
             .join('')}</div>`
-        : `<p class="form__note">${_('No open slots at the moment — check back later.')}</p>`;
+        : `<p class="form__note">${_('No open slots at the moment, check back later.')}</p>`;
 
     const selectedSlot = this.slots.find(
       s => s.data.dTag === this.selectedDTag && !s.bookedBy
@@ -490,7 +490,7 @@ export class ProfileBookingView extends View {
           <input class="input" id="booking-participants" data-participants-input maxlength="2000"
             placeholder="${_('Tag with @, separate multiple participants with commas')}" />
           <p class="form__note">
-            ${_('Nostr users taking part in the meeting — they receive a private message about this booking.')}
+            ${_('Nostr users taking part in the meeting, they receive a private message about this booking.')}
           </p>
         </div>
         <div class="l-row--end-pair">

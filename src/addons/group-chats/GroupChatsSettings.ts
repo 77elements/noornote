@@ -83,7 +83,7 @@ export class GroupChatsSettings extends SettingsSection {
       <div class="setting">
         <span class="setting__label">${_('Enable Armada')} <span class="form__note">(${_('beta')})</span></span>
         <div class="setting__control">${this.armadaSwitch.render()}</div>
-        <p class="setting__desc">${_('Armada communities are end-to-end encrypted (Concord protocol). Unlike Nostrord, there is no public membership list — you need to add each community manually by pasting its invite link below.')}</p>
+        <p class="setting__desc">${_('Armada communities are end-to-end encrypted (Concord protocol). Unlike Nostrord, there is no public membership list, you need to add each community manually by pasting its invite link below.')}</p>
       </div>
     `;
     this.enableSwitch.setupEventListeners(contentContainer);
@@ -186,7 +186,7 @@ export class GroupChatsSettings extends SettingsSection {
         <div class="setting">
           <span class="setting__label">${_('Notify me about my own posts')}</span>
           <div class="setting__control">${this.notifyOwnSwitch.render()}</div>
-          <p class="setting__desc">${_('Also get the heads-up when you post to a group yourself — a handy cross-device confirmation that your message went through. Turn off to only hear about others. Applies to every enabled provider.')}</p>
+          <p class="setting__desc">${_('Also get the heads-up when you post to a group yourself, a handy cross-device confirmation that your message went through. Turn off to only hear about others. Applies to every enabled provider.')}</p>
         </div>
       </section>
     `;
@@ -266,7 +266,7 @@ export class GroupChatsSettings extends SettingsSection {
       <section class="section armada-communities">
         <div class="setting">
           <label class="setting__label">${_('Tracked Armada communities')}</label>
-          <p class="setting__desc">${_('Communities you track for activity notifications. NoorNote decrypts the public preview locally and discovers your channels automatically — your invite fragment never leaves your device.')}</p>
+          <p class="setting__desc">${_('Communities you track for activity notifications. NoorNote decrypts the public preview locally and discovers your channels automatically, your invite fragment never leaves your device.')}</p>
           ${listHtml}
         </div>
         <div class="setting">

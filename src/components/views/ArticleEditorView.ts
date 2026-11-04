@@ -889,7 +889,7 @@ export class ArticleEditorView extends View {
     });
     if (!this.image) {
       ToastService.show(
-        _('Recipe hint: add a cover image — recipe clients expect one.'),
+        _('Recipe hint: add a cover image, recipe clients expect one.'),
         'warning'
       );
     }

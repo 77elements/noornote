@@ -189,7 +189,7 @@ export class BookmarksAddonView extends View {
               .reset()
               .then(() =>
                 ToastService.show(
-                  _('Read state reset — all bookmarks unread'),
+                  _('Read state reset, all bookmarks unread'),
                   'success'
                 )
               )

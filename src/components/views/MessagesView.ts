@@ -253,7 +253,7 @@ export class MessagesView extends View {
       this.updateSpamButton();
       ToastService.show(
         engage
-          ? _('Spam mode enabled — alerts off for 24 h')
+          ? _('Spam mode enabled, alerts off for 24 h')
           : _('Spam mode disabled'),
         'success'
       );

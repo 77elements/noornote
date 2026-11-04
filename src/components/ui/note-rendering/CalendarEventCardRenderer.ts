@@ -244,7 +244,7 @@ export class CalendarEventCardRenderer {
             } else {
               data.subscribeToCollection(coordinate);
               ToastService.show(
-                _('Subscribed — events added to your calendar grid'),
+                _('Subscribed, events added to your calendar grid'),
                 'success'
               );
             }

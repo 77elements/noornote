@@ -202,7 +202,7 @@ export class BookingManager {
               String(published),
               String(deleted)
             )
-          : _('Booking page disabled — published slots removed'),
+          : _('Booking page disabled, published slots removed'),
         'success'
       );
       // Do NOT re-fetch the config from relays here: propagation lag would

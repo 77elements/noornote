@@ -135,7 +135,7 @@ export class FollowerNotificationSettings extends SettingsSection {
 
     const statusText =
       followerCount === null
-        ? _('No baseline yet — the first check runs a few minutes after start.')
+        ? _('No baseline yet, the first check runs a few minutes after start.')
         : warmingUp
           ? _(
               'Calibrating baseline (%s followers)…',
@@ -167,7 +167,7 @@ export class FollowerNotificationSettings extends SettingsSection {
           <div class="setting__control">
             <input class="input" id="fn-recency-input" type="number" min="1" max="365" step="1" value="${recencyDays}" data-action="recency" />
           </div>
-          <p class="setting__desc">${_('A follower whose contact list (including you) was last published longer ago than this is treated as a long-standing follower discovered late — added to the baseline silently, no notification.')}</p>
+          <p class="setting__desc">${_('A follower whose contact list (including you) was last published longer ago than this is treated as a long-standing follower discovered late, added to the baseline silently, no notification.')}</p>
         </div>
         ${
           changes.length > 0
@@ -248,7 +248,7 @@ export class FollowerNotificationSettings extends SettingsSection {
     const service = this.getService();
     if (!service) {
       ToastService.show(
-        _('Addon is still starting up — try again in a moment'),
+        _('Addon is still starting up, try again in a moment'),
         'info'
       );
       return;

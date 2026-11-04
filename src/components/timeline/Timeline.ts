@@ -428,7 +428,7 @@ export class Timeline extends View {
         }</h3>
         <p>${
           this.config.source.kind === 'authors'
-            ? _('Nothing published here yet — or not available on your relays.')
+            ? _('Nothing published here yet, or not available on your relays.')
             : _('Follow some users or check your relay connections.')
         }</p>
       </div>

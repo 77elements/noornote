@@ -567,7 +567,7 @@ export class AuthComponent {
     // background via the nostrconnect subscription.
     if (!PlatformService.getInstance().isCapacitor) {
       if (!this.nostrConnectUri) {
-        this.showError(_('Connection not ready yet — try again in a moment.'));
+        this.showError(_('Connection not ready yet, try again in a moment.'));
         return;
       }
       const statusElMobile = document.querySelector(

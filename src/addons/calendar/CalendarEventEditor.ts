@@ -147,7 +147,7 @@ export class CalendarEventEditor {
       </div>
       <div class="form__row">
         <label for="cal-editor-desc">${_('Description')}</label>
-        <textarea id="cal-editor-desc" class="textarea textarea--small" maxlength="5000" placeholder="${_('Details (visible to everyone — this is a public event)')}">${escapeHtmlAttr(draft.description)}</textarea>
+        <textarea id="cal-editor-desc" class="textarea textarea--small" maxlength="5000" placeholder="${_('Details (visible to everyone, this is a public event)')}">${escapeHtmlAttr(draft.description)}</textarea>
       </div>
       <p class="form__note" data-editor-note>${
         this.isPrivate

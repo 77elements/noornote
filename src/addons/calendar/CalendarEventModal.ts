@@ -110,7 +110,7 @@ export class CalendarEventModal {
       }
       ${
         this.event.isPrivate
-          ? `<div class="calendar-addon-detail__row"><span class="badge badge--accent">${_('Private — encrypted')}</span></div><div class="calendar-addon-detail__rsvp" data-slot="private-rsvp"><div class="calendar-addon-detail__rsvp-loading pulsate">${_('Loading responses…')}</div></div>`
+          ? `<div class="calendar-addon-detail__row"><span class="badge badge--accent">${_('Private, encrypted')}</span></div><div class="calendar-addon-detail__rsvp" data-slot="private-rsvp"><div class="calendar-addon-detail__rsvp-loading pulsate">${_('Loading responses…')}</div></div>`
           : '<div class="calendar-addon-detail__rsvp" data-slot="rsvp"></div>'
       }
       <div class="calendar-addon-detail__actions l-row--split">
@@ -235,7 +235,7 @@ export class CalendarEventModal {
         _('a guest');
       slot.insertAdjacentHTML(
         'afterbegin',
-        `<div class="calendar-addon-detail__booked-banner">✓ ${_('Booked appointment — guest:')} ${escapeHtml(guestName)}</div>`
+        `<div class="calendar-addon-detail__booked-banner">✓ ${_('Booked appointment, guest:')} ${escapeHtml(guestName)}</div>`
       );
     }
 
@@ -284,7 +284,7 @@ export class CalendarEventModal {
       );
       if (!outcome.ok) {
         ToastService.show(
-          _('The response could not be published — no relay accepted it'),
+          _('The response could not be published, no relay accepted it'),
           'error'
         );
         return;
@@ -527,7 +527,7 @@ export class CalendarEventModal {
         result.ok
           ? result.dmFailures
             ? `${result.detail} — ${result.dmFailures === 1 ? _('failed DM: 1') : _('failed DMs: %s', String(result.dmFailures))}`
-            : _('Booking cancelled — guest and participants informed')
+            : _('Booking cancelled, guest and participants informed')
           : result.detail,
         result.ok && !result.dmFailures ? 'success' : 'warning'
       );

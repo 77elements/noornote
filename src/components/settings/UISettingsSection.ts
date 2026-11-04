@@ -108,7 +108,7 @@ export class UISettingsSection extends SettingsSection {
             <span class="setting__label">${_('Language')}</span>
             <div class="setting__control language-dropdown-container"></div>
             <ul class="setting__desc">
-              <li><strong>Deutsch:</strong> ${_('pilot translation (partial — untranslated text stays English)')}</li>
+              <li><strong>Deutsch:</strong> ${_('pilot translation (partial, untranslated text stays English)')}</li>
             </ul>
           </div>
         </section>
@@ -239,14 +239,14 @@ export class UISettingsSection extends SettingsSection {
 
         <section class="section">
           <div class="setting">
-            <span class="setting__label">${_('Article feed source — main view')}</span>
+            <span class="setting__label">${_('Article feed source, main view')}</span>
             <div class="setting__control article-foaf-main-dropdown-container"></div>
             <p class="setting__desc">
               ${_('Whose articles appear in <strong>/articles</strong>. Higher degrees broaden the feed beyond your direct follows but take longer to build and include authors you may not know.')}
             </p>
           </div>
           <div class="setting">
-            <span class="setting__label">${_('Article feed source — secondary column')}</span>
+            <span class="setting__label">${_('Article feed source, secondary column')}</span>
             <div class="setting__control article-foaf-scc-dropdown-container"></div>
             <p class="setting__desc">
               ${_('Whose articles appear in the side column\'s "Newest Articles" tab. Same degree meaning as above; you can pick a narrower degree here to keep the side panel focused on closer contacts.')}
@@ -259,7 +259,7 @@ export class UISettingsSection extends SettingsSection {
             <span class="setting__label">${_('Memory optimization (experimental)')}</span>
             <div class="setting__control" id="content-visibility-switch-container"></div>
             <p class="setting__desc">
-              ${_('Skips rendering of off-screen notes (CSS <code>content-visibility: auto</code>). Significantly reduces memory usage on long timelines, especially on Linux. May cause minor scrollbar jumps when scrolling fast — disable if it bothers you.')}
+              ${_('Skips rendering of off-screen notes (CSS <code>content-visibility: auto</code>). Significantly reduces memory usage on long timelines, especially on Linux. May cause minor scrollbar jumps when scrolling fast, disable if it bothers you.')}
             </p>
           </div>
         </section>
@@ -635,11 +635,11 @@ export class UISettingsSection extends SettingsSection {
 
     // Article feed FOAF-degree dropdowns (main + scc)
     const foafOptions = [
-      { value: '1', label: _('Degree 1 — Direct follows') },
-      { value: '2', label: _('Degree 2 — Friends of friends') },
+      { value: '1', label: _('Degree 1, Direct follows') },
+      { value: '2', label: _('Degree 2, Friends of friends') },
       {
         value: '3',
-        label: _('Degree 3 — Friends of friends of friends (slow to build)'),
+        label: _('Degree 3, Friends of friends of friends (slow to build)'),
       },
     ];
     const foafLabels: Record<string, string> = {
