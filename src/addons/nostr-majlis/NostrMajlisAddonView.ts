@@ -7,7 +7,7 @@
  *    fetched + persistently cached; a "Fetch Prayer Times" button appends the next ~30 days.
  *  - a calculation method (MWL, ISNA, …): GeoNames Country->Region->City + Asr madhab,
  *    computed locally (offline).
- * A separate Reminders section configures the in-app AlertBar reminders. Selection persists.
+ * A separate Reminders section configures the in-app reminder toasts. Selection persists.
  * See docs/todos/muslims-addon.md.
  */
 

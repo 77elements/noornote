@@ -2,7 +2,7 @@
  * NostrMajlisReminderService - in-app prayer reminders (Electron / Web).
  *
  * Polls every 30s; when the device-local time enters [prayer − offset, prayer) for an
- * enabled prayer, it shows the core AlertBar once (deduped per day+prayer). When the window
+ * enabled prayer, it shows a persistent alert toast once (deduped per day+prayer). When the window
  * is NOT focused it additionally fires an OS notification (same web Notification API in both
  * the Electron renderer and the browser), so the reminder surfaces even when NoorNote is in
  * the background / minimised. OS notifications auto-close (prayer: 10 min after the prayer
@@ -19,7 +19,7 @@
  * displayed times.
  */
 
-import { AlertBarService } from '../../services/AlertBarService';
+import { ToastService } from '../../services/ToastService';
 import { ReminderHub } from '../../services/notifications/ReminderHub';
 import { Router } from '../../services/Router';
 import { diagLog } from '../../services/DiagnosticLogger';
@@ -129,12 +129,17 @@ export class NostrMajlisReminderService {
         at: times[key],
         remaining,
       });
-      AlertBarService.getInstance().show({
-        text: `${name} prayer in ${remaining} min (${times[key]})`,
-        onTextClick: () =>
-          Router.getInstance().navigate('/addons/nostr-majlis'),
-        onOk: () => this.ackPrayer(dedup, dateStr),
-      });
+      ToastService.alert(
+        `${name} prayer in ${remaining} min (${times[key]})`,
+        () => this.ackPrayer(dedup, dateStr),
+        {
+          action: {
+            label: 'Open',
+            onClick: () =>
+              Router.getInstance().navigate('/addons/nostr-majlis'),
+          },
+        }
+      );
       this.notifyOs(name, times[key], remaining);
     }
   }
@@ -188,11 +193,11 @@ export class NostrMajlisReminderService {
         holiday: rem.key,
         daysBefore: days,
       });
-      AlertBarService.getInstance().show({
-        text,
-        onTextClick: () =>
-          Router.getInstance().navigate('/addons/nostr-majlis'),
-        onOk: () => this.ackHoliday(dedup),
+      ToastService.alert(text, () => this.ackHoliday(dedup), {
+        action: {
+          label: 'Open',
+          onClick: () => Router.getInstance().navigate('/addons/nostr-majlis'),
+        },
       });
       if (
         typeof Notification !== 'undefined' &&
@@ -261,7 +266,7 @@ export class NostrMajlisReminderService {
   }
 
   /**
-   * Background OS notification — only when the window isn't focused (else the AlertBar is
+   * Background OS notification — only when the window isn't focused (else the alert toast is
    * enough). Auto-closes 10 min after the prayer time: `remaining` is minutes to the prayer
    * at fire time, so the close delay is `remaining + PRAYER_LINGER_MIN`.
    */

@@ -3,11 +3,11 @@
  *
  *  - Capacitor / Android: notes with a due-soon reminder are natively
  *    SCHEDULED as OS-level notifications (fire even when the app is closed).
- *  - Desktop / Web: 30s scan; due reminders raise the core AlertBar (Ok clears
- *    the reminder, Snooze reschedules it) plus an OS notification when the
- *    window is not focused.
+ *  - Desktop / Web: 30s scan; due reminders raise a persistent alert toast
+ *    (Ok clears the reminder) plus an OS notification when the window is not
+ *    focused.
  *
- * A click on the AlertBar text jumps to the board and pulses the note's card.
+ * The toast's "Open" action jumps to the board and pulses the note's card.
  * Owned by the addon runtime — destroy() clears the timer, cancels the native
  * namespace and resets the singleton (account-switch contract).
  *
@@ -16,7 +16,7 @@
  */
 
 import { Router } from '../../services/Router';
-import { AlertBarService } from '../../services/AlertBarService';
+import { ToastService } from '../../services/ToastService';
 import { diagLog } from '../../services/DiagnosticLogger';
 import {
   ReminderHub,
@@ -139,8 +139,8 @@ export class NoteTakingReminderService {
     const preview = label.length > 80 ? `${label.slice(0, 80)}…` : label;
     diagLog('system', 'note-taking: reminder fired', { id: id.slice(0, 8) });
 
-    // Capacitor: the OS notification REPLACES the in-app AlertBar (NostrMajlis
-    // pattern — no double-up). Desktop/Web: AlertBar + OS when unfocused.
+    // Capacitor: the OS notification REPLACES the in-app alert toast (NostrMajlis
+    // pattern — no double-up). Desktop/Web: alert toast + OS when unfocused.
     void hub.osNotifyNow({
       title: _('NoorNote, Note reminder'),
       body: preview,
@@ -154,21 +154,21 @@ export class NoteTakingReminderService {
       return;
     }
 
-    AlertBarService.getInstance().show({
-      text: `Reminder: ${preview}`,
-      onTextClick: () => {
-        this.service.setHighlight(id);
-        Router.getInstance().navigate('/addons/note-taking');
-      },
-      onOk: () => {
+    ToastService.alert(
+      `Reminder: ${preview}`,
+      () => {
         this.shown.delete(id);
         void this.service.updateNote(id, { reminderAt: 0 });
       },
-      onSnooze: minutes => {
-        this.shown.delete(id);
-        const next = Math.floor(Date.now() / 1000) + minutes * 60;
-        void this.service.updateNote(id, { reminderAt: next });
-      },
-    });
+      {
+        action: {
+          label: 'Open',
+          onClick: () => {
+            this.service.setHighlight(id);
+            Router.getInstance().navigate('/addons/note-taking');
+          },
+        },
+      }
+    );
   }
 }

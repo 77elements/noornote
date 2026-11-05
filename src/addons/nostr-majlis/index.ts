@@ -70,7 +70,7 @@ export interface NostrMajlisSettings {
   diyanetLocation: DiyanetLocation | null;
   /** Location for the calculation sources. */
   calcCity: CalcCity | null;
-  /** In-app prayer reminders (AlertBar) while the app is open. */
+  /** In-app prayer reminders (alert toasts) while the app is open. */
   reminders: ReminderSettings;
   /** Reminders for Islamic holidays (M2). */
   holidayReminder: HolidayReminderSettings;

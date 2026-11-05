@@ -31,6 +31,11 @@ export interface ToastOptions {
   persistent?: boolean;
   /** Inline action button (e.g. "Open drafts"). */
   action?: ToastAction;
+  /** Alert mode: persistent, no close (×) button, shows an "Ok" button that
+   *  is the ONLY way to dismiss (plus the optional secondary `action`). */
+  alert?: boolean;
+  /** Called when the alert-mode "Ok" button is clicked (before dismissal). */
+  onOk?: () => void;
 }
 
 export class ToastService {
@@ -96,6 +101,29 @@ export class ToastService {
   }
 
   /**
+   * Show a persistent alert toast that stays on screen until the user clicks
+   * "Ok". No auto-dismiss, no close (×) button — "Ok" is the only way to
+   * dismiss it. An optional secondary action (e.g. "Open") can be rendered
+   * next to the "Ok" button. Later toasts stack ABOVE this one, so normal
+   * transient feedback remains visible while the alert persists.
+   * Returns its id (programmatically dismissible via ToastService.dismiss).
+   */
+  public static alert(
+    message: string,
+    onOk?: () => void,
+    options?: { type?: ToastType; action?: ToastAction }
+  ): string {
+    const toastOptions: ToastOptions = {
+      message,
+      type: options?.type ?? 'warning',
+      alert: true,
+    };
+    if (onOk) toastOptions.onOk = onOk;
+    if (options?.action) toastOptions.action = options.action;
+    return ToastService.getInstance().showToast(toastOptions);
+  }
+
+  /**
    * Dismiss a specific toast by id
    */
   public static dismiss(id: string): void {
@@ -140,15 +168,17 @@ export class ToastService {
     const toast = this.createToastElement(options, toastId);
 
     this.activeToasts.set(toastId, toast);
-    this.container.appendChild(toast);
+    // Prepend so new toasts stack ABOVE existing ones (e.g. above a persistent
+    // alert toast the user hasn't acknowledged yet).
+    this.container.prepend(toast);
 
     // Trigger animation after DOM insertion
     setTimeout(() => {
       toast.classList.add('toast--visible');
     }, 10);
 
-    // Auto-remove after duration (unless loading/persistent)
-    if (!options.loading && !options.persistent) {
+    // Auto-remove after duration (unless loading/persistent/alert)
+    if (!options.loading && !options.persistent && !options.alert) {
       const duration = options.duration || 4000;
       const timer = window.setTimeout(() => this.hideToast(toastId), duration);
       this.dismissTimers.set(toastId, { timer, duration });
@@ -179,17 +209,34 @@ export class ToastService {
       ? `<button class="btn btn--passive btn--mini toast__action">${escapeHtml(_(options.action.label))}</button>`
       : '';
 
+    // Alert mode: "Ok" is the only dismissal control — no close (×) button.
+    const okHtml = options.alert
+      ? `<button class="btn btn--passive btn--mini toast__action" data-toast-ok>Ok</button>`
+      : '';
+    const closeHtml = options.alert
+      ? ''
+      : `<button class="toast__close" aria-label="${_('Close')}">×</button>`;
+
     toast.innerHTML = `
       <div class="toast__icon">${iconHtml}</div>
       <div class="${messageClass}" data-toast-message>${escapeHtml(options.message)}</div>
       ${actionHtml}
-      <button class="toast__close" aria-label="${_('Close')}">×</button>
+      ${okHtml}
+      ${closeHtml}
     `;
 
     // Action button handler
     if (options.action) {
       toast.querySelector('.toast__action')?.addEventListener('click', () => {
         options.action!.onClick();
+        this.hideToast(toastId);
+      });
+    }
+
+    // Alert "Ok" button handler
+    if (options.alert) {
+      toast.querySelector('[data-toast-ok]')?.addEventListener('click', () => {
+        options.onOk?.();
         this.hideToast(toastId);
       });
     }
