@@ -641,6 +641,17 @@ export class ZapService {
 
       // CRITICAL: Check for Nostr support (NIP-57 requirement)
       if (body.allowsNostr && body.nostrPubkey && body.callback) {
+        // The callback URL receives the full signed zap request (pubkey,
+        // amount, relays, target). Over http:// that becomes plaintext on
+        // the wire and lands in server/proxy logs. Require https here; the
+        // preimage/secret leak is a zappability decision for the wallet.
+        if (!body.callback.startsWith('https://')) {
+          this.systemLogger.warn(
+            'ZapService',
+            'LNURL callback is not https — refusing to send zap request'
+          );
+          return null;
+        }
         return { callback: body.callback, lnurl };
       }
 
