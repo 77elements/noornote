@@ -5,16 +5,16 @@
  *  - Capacitor / Android: upcoming events are natively SCHEDULED as OS-level
  *    notifications (they fire even when the app is closed) — namespace
  *    'calendar', occurrence-aware over NIP-52R recurrences, re-built on data
- *    refresh and app resume. The in-app AlertBar is skipped there (the OS
+ *    refresh and app resume. The in-app alert toast is skipped there (the OS
  *    notification also shows in the foreground — no double-up).
  *  - Desktop / Web: 30s scan over the cache; due reminders raise the core
- *    AlertBar plus an OS notification when the window is not focused.
+ *    alert toast plus an OS notification when the window is not focused.
  *
  * Local only: no server, no push. Owned by the addon runtime — destroy()
  * cancels the namespace (native pending notifications included).
  */
 
-import { AlertBarService } from '../../services/AlertBarService';
+import { ToastService } from '../../services/ToastService';
 import {
   PerAccountLocalStorage,
   StorageKeys,
@@ -316,12 +316,11 @@ export class CalendarReminderService {
       leadMinutes: leadMin,
     });
 
-    AlertBarService.getInstance().show({
-      text: _('%s starts %s', title, when),
+    ToastService.alert(_('%s starts %s', title, when), () =>
       // "Ok" acknowledges PERSISTENTLY — the reminder never comes back for
       // this occurrence (even after reload / app restart).
-      onOk: () => this.acknowledge(key),
-    });
+      this.acknowledge(key)
+    );
 
     // OS notification on top (desktop path — web Notification API; the hub
     // applies the unfocused rule). On Capacitor the scan never runs.

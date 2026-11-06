@@ -10,7 +10,7 @@
  *    NotificationCompat.setTimeoutAfter) and can be cancelled per namespace.
  *  - Desktop / Web: `osNotifyNow` fires the web Notification API (permission
  *    gated, optional focus check). Native scheduling is a no-op here — the
- *    caller keeps its scan/AlertBar loop.
+ *    caller keeps its scan/reminder-toast loop.
  *
  * Namespaces: every consumer registers exactly one namespace with a fixed ID
  * pool (idBase + poolSize). Pools are the collision guard between addons —

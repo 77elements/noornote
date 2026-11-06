@@ -7,7 +7,7 @@
  *
  * Reminder split by platform:
  *  - Capacitor (Android): native scheduled local notifications (fire when app closed / asleep).
- *  - Electron / Web: the in-app AlertBar poll (only meaningful while the app is open).
+ *  - Electron / Web: the in-app reminder poll (only meaningful while the app is open).
  * They are mutually exclusive so a reminder never fires twice on the same device.
  * See docs/todos/muslims-addon.md.
  */

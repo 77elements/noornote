@@ -24,7 +24,7 @@ export class NoteTakingRuntime implements AddonRuntime {
     await NoteTakingService.getInstance().init();
     // Registers the publish-on-change hook + runs the initial relay sync.
     void NoteTakingSyncService.getInstance().start();
-    // Local reminder scheduler (fires the core AlertBar when a reminder is due).
+    // Local reminder scheduler (fires a persistent alert toast when a reminder is due).
     NoteTakingReminderService.getInstance().start();
     diagLog('system', 'note-taking: runtime init', {
       npub: ctx.npub?.slice(0, 12),

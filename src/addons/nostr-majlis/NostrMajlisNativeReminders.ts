@@ -10,7 +10,7 @@
  * Specs (unchanged behavior):
  *   - prayers:  [prayer − offset] for the next few days,
  *   - holidays: N days before each upcoming Islamic holiday.
- * On Capacitor this REPLACES the AlertBar (the OS notification also shows in
+ * On Capacitor this REPLACES the in-app alert toast (the OS notification also shows in
  * the foreground), so they don't double up. No-op on Electron / Web (the
  * NostrMajlisReminderService scan handles those platforms).
  *

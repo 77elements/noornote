@@ -10,7 +10,7 @@
 .mobile-header {
   display: none;
   position: fixed;
-  top: var(--alert-bar-h, 0); // sit below the AlertBar when one is shown
+  top: 0;
   left: 0;
   right: 0;
   height: 60px;

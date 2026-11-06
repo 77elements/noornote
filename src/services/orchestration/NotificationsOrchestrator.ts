@@ -72,6 +72,10 @@ export interface NotificationEvent {
     count?: number;
     groupName?: string;
     isOwn?: boolean;
+    /** True when the group window contained a p tag on the user or a reply to their post. */
+    isMention?: boolean;
+    /** How many mention/reply events the window contained. */
+    mentionCount?: number;
     groupRelay?: string;
     communityUrl?: string;
   }; // hashtag + group-chats + armada notifications
@@ -280,6 +284,8 @@ export class NotificationsOrchestrator extends Orchestrator {
         groupName: string;
         mine?: boolean;
         groupRelay?: string;
+        mention?: boolean;
+        mentionCount?: number;
       }) => {
         this.handleNostrordNotification(data);
       }
@@ -1705,6 +1711,8 @@ export class NotificationsOrchestrator extends Orchestrator {
     groupName: string;
     mine?: boolean;
     groupRelay?: string;
+    mention?: boolean;
+    mentionCount?: number;
   }): void {
     const notification: NotificationEvent = {
       event: data.event,
@@ -1713,6 +1721,10 @@ export class NotificationsOrchestrator extends Orchestrator {
       meta: {
         groupName: data.groupName,
         isOwn: data.mine === true,
+        isMention: data.mention === true,
+        ...(data.mentionCount !== undefined
+          ? { mentionCount: data.mentionCount }
+          : {}),
         ...(data.groupRelay ? { groupRelay: data.groupRelay } : {}),
       },
     };
