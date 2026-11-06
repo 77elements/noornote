@@ -44,6 +44,10 @@ export interface NotificationItemOptions {
     count?: number;
     groupName?: string;
     isOwn?: boolean;
+    /** True when the group window contained a p tag on the user or a reply to their post. */
+    isMention?: boolean;
+    /** How many mention/reply events the window contained. */
+    mentionCount?: number;
     groupRelay?: string;
     communityUrl?: string;
   };
@@ -708,6 +712,12 @@ export class NotificationItem {
         const where = name
           ? _('the Nostrord group "%s"', name)
           : _('a Nostrord group');
+        if (this.options.meta?.isMention) {
+          const n = this.options.meta?.mentionCount || 1;
+          return n > 1
+            ? _('%s new mentions/replies in %s', n, where)
+            : _('mentioned or replied to you in %s', where);
+        }
         return this.options.meta?.isOwn
           ? _('You posted to %s', where)
           : _('Someone posted to %s', where);

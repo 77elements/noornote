@@ -249,6 +249,10 @@ export interface NostrordNotificationNewPayload {
   mine?: boolean;
   /** Bare host of the group's relay (e.g. "groups.0xchat.com") for the Nostrord web-client link. */
   groupRelay?: string;
+  /** True when the window contained a p tag on the user or a reply to one of their posts. */
+  mention?: boolean;
+  /** How many mention/reply events the window contained (for count phrasing). */
+  mentionCount?: number;
 }
 
 // ── Armada (Concord encrypted-community activity) ────────────

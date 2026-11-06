@@ -30,6 +30,7 @@ import {
 } from '../../services/PerAccountLocalStorage';
 import { diagLog } from '../../services/DiagnosticLogger';
 import { GroupChatsGroupClient } from './GroupChatsGroupClient';
+import { classifyActivity } from './activity';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 interface GroupRef {
@@ -211,7 +212,26 @@ export class GroupChatsService {
             e => (notifyOwn || e.pubkey !== me) && e.created_at > anchor
           );
 
-          if (fresh.length > 0) {
+          // Mentions/replies first: a tag on the user (or a reply to one of
+          // their posts) is the signal worth interrupting for, so it gets its
+          // own notification INSTEAD of the generic activity one — one ping
+          // per group per window either way, never both.
+          const others = groupEvents.filter(
+            e => e.pubkey !== me && e.created_at > anchor
+          );
+          const { mentions, replies } = classifyActivity(others, me);
+          const highlightCount = mentions.length + replies.length;
+
+          if (highlightCount > 0) {
+            this.notify(g, nowSeconds, false, true, highlightCount);
+            diagLog('addons', 'group-chats: mention/reply', {
+              groupId: g.groupId,
+              mentions: mentions.length,
+              replies: replies.length,
+            });
+            // Advance only to what we actually read — never to `now`.
+            anchors[g.groupId] = Math.max(anchor, newestSeen);
+          } else if (fresh.length > 0) {
             const mineOnly = fresh.every(e => e.pubkey === me);
             this.notify(g, nowSeconds, mineOnly);
             diagLog('addons', 'group-chats: fresh activity', {
@@ -323,8 +343,16 @@ export class GroupChatsService {
    * Emit one in-app notification for a group that saw activity in this window.
    * `mine` marks a window whose fresh posts were all authored by the user (own-post heads-up),
    * so the UI can phrase it as "You posted to …" instead of "Someone posted to …".
+   * `mention` + `mentionCount` mark a window containing a p tag on the user or a reply
+   * to one of their posts — the orchestrator phrases those as "mentioned/replied to you".
    */
-  private notify(g: GroupRef, nowSeconds: number, mine: boolean): void {
+  private notify(
+    g: GroupRef,
+    nowSeconds: number,
+    mine: boolean,
+    mention = false,
+    mentionCount = 0
+  ): void {
     const groupName = this.groupName(g);
     const groupRelay = g.relayUrl.replace(/^wss?:\/\//, ''); // bare host for the web-client deep link
     const event: NostrEvent = {
@@ -339,12 +367,16 @@ export class GroupChatsService {
     diagLog('addons', 'nostrord: group activity notification', {
       groupId: g.groupId,
       mine,
+      mention,
+      mentionCount,
     });
     this.eventBus.emit('nostrord-notification:new', {
       event,
       groupName,
       mine,
       groupRelay,
+      mention,
+      mentionCount,
     });
   }
 
