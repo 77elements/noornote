@@ -4,4 +4,10 @@
 
 .note-card--git {
   margin: 1rem 0;
+
+  // The card is structured UI (meta/h3/button), but it renders inside
+  // .event-content whose has-long-content rule sets white-space: pre-wrap.
+  // Inherited, that turns the template's indent newlines between block
+  // children into anonymous 1-line boxes — huge gaps. Reset it.
+  white-space: normal;
 }
