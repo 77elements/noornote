@@ -20,6 +20,7 @@
  */
 
 import { ToastService } from '../../services/ToastService';
+import { tp } from '../../i18n';
 import { ReminderHub } from '../../services/notifications/ReminderHub';
 import { Router } from '../../services/Router';
 import { diagLog } from '../../services/DiagnosticLogger';
@@ -134,7 +135,7 @@ export class NostrMajlisReminderService {
         () => this.ackPrayer(dedup, dateStr),
         {
           action: {
-            label: 'Open',
+            label: tp('action', 'Open'),
             onClick: () =>
               Router.getInstance().navigate('/addons/nostr-majlis'),
           },
@@ -195,7 +196,7 @@ export class NostrMajlisReminderService {
       });
       ToastService.alert(text, () => this.ackHoliday(dedup), {
         action: {
-          label: 'Open',
+          label: tp('action', 'Open'),
           onClick: () => Router.getInstance().navigate('/addons/nostr-majlis'),
         },
       });

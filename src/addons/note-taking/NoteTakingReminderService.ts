@@ -162,7 +162,7 @@ export class NoteTakingReminderService {
       },
       {
         action: {
-          label: 'Open',
+          label: tp('action', 'Open'),
           onClick: () => {
             this.service.setHighlight(id);
             Router.getInstance().navigate('/addons/note-taking');

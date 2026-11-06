@@ -202,6 +202,7 @@ If the app crashes, check the log files:
 **Other event kinds** (not tied to a numbered NIP — community specs, third-party APIs, NoorNote-internal):
 
 - **Blossom upload auth** — kind `24242`, signed-event upload authorization for [Blossom](https://github.com/hzrd149/blossom)-style media servers
+- **Blossom server list** — kind `10063` (BUD-03): a user's preferred Blossom media servers; read when resolving upload targets and `blossom:` URIs
 - **Capability profile** — kind `30817`, community-authored "NIP"-style capability profile, published via `/publish-nip` (Markdown body + `k`-tags listing supported kinds)
 - **Zap request in event description** — kind `9798` (relay-controlled): some events embed a NIP-57 zap request in their description field; NoorNote reads it when rendering zap context (analytics, notification details)
 - **Booking availability config** — kind `30078` (NIP-78 application-specific data, `d=noornote-booking`), public JSON config for the calendar booking feature: weekly availability rules, slot length, buffer, lead time, bookable window and vacation ranges. Bookable slots themselves are regular kind `31923` calendar events (`t=booking`); bookings are accepted kind `31925` RSVPs, and the guest sends the host a NIP-17 DM with the summary

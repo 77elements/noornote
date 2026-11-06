@@ -286,11 +286,11 @@ msgstr ""
 msgid "%s new"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:723
+#: src/components/notifications/NotificationItem.ts:733
 msgid "%s new messages in %s"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:698
+#: src/components/notifications/NotificationItem.ts:702
 msgid "%s new posts tagged #%s"
 msgstr ""
 
@@ -337,7 +337,7 @@ msgstr ""
 msgid "%s sats sent"
 msgstr ""
 
-#: src/services/ZapService.ts:402
+#: src/services/ZapService.ts:405
 msgid "%s sats zapped"
 msgstr ""
 
@@ -349,8 +349,8 @@ msgstr ""
 msgid "%s set to Always"
 msgstr ""
 
-#: src/addons/calendar/CalendarReminderService.ts:320
-#: src/addons/calendar/CalendarReminderService.ts:330
+#: src/addons/calendar/CalendarReminderService.ts:319
+#: src/addons/calendar/CalendarReminderService.ts:329
 msgid "%s starts %s"
 msgstr ""
 
@@ -426,8 +426,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: src/components/onboarding/OnboardingComponent.ts:185
-msgid ""
-"<strong>Censorship-resistant</strong>, no central authority can silence you"
+msgid "<strong>Censorship-resistant</strong>, no central authority can silence you"
 msgstr ""
 
 #: src/components/onboarding/OnboardingComponent.ts:187
@@ -436,10 +435,10 @@ msgstr ""
 
 #: src/components/onboarding/WelcomeInterstitials.ts:64
 msgid ""
-"<strong>NoorNote</strong> is built on <em>Nostr</em>, an open protocol where "
-"your account is a cryptographic key that you own. Your posts are distributed "
-"across independent servers worldwide. No company runs it. No one can shut it "
-"down."
+"<strong>NoorNote</strong> is built on <em>Nostr</em>, an open protocol "
+"where your account is a cryptographic key that you own. Your posts are "
+"distributed across independent servers worldwide. No company runs it. No "
+"one can shut it down."
 msgstr ""
 
 #: src/components/onboarding/OnboardingComponent.ts:166
@@ -458,8 +457,7 @@ msgid "<strong>Private key (nsec)</strong>, your password, never share this!"
 msgstr ""
 
 #: src/components/onboarding/OnboardingComponent.ts:177
-msgid ""
-"<strong>Public key (npub)</strong>, your username, shareable with anyone"
+msgid "<strong>Public key (npub)</strong>, your username, shareable with anyone"
 msgstr ""
 
 #: src/components/onboarding/OnboardingComponent.ts:188
@@ -481,8 +479,8 @@ msgstr ""
 #: src/components/views/ProfileView.ts:1452
 #: src/lists/follows.ts:2387
 msgid ""
-"⚠️ Public label, stored in your contact list (NIP-02). Anyone who reads your "
-"follow list can see it."
+"⚠️ Public label, stored in your contact list (NIP-02). Anyone who reads "
+"your follow list can see it."
 msgstr ""
 
 #: src/components/auth/AuthComponent.ts:585
@@ -541,7 +539,7 @@ msgstr ""
 msgid "A description for this follow list..."
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:737
+#: src/components/notifications/NotificationItem.ts:747
 msgid "A dhikr reached its goal"
 msgstr ""
 
@@ -556,13 +554,12 @@ msgid ""
 "so you can zap right away."
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:710
+#: src/components/notifications/NotificationItem.ts:714
 msgid "a Nostrord group"
 msgstr ""
 
 #: src/components/onboarding/AccountSetupWizard.ts:2542
-msgid ""
-"A short bio helps others get to know you. You can always change this later."
+msgid "A short bio helps others get to know you. You can always change this later."
 msgstr ""
 
 #: src/components/layout/MainLayout.ts:2294
@@ -578,11 +575,11 @@ msgid "About NoorNote"
 msgstr ""
 
 #: src/addons/calendar/CalendarGridView.ts:302
-#: src/components/notifications/NotificationItem.ts:116
+#: src/components/notifications/NotificationItem.ts:120
 msgid "Accept"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:223
+#: src/components/notifications/NotificationItem.ts:227
 msgid "Accepted"
 msgstr ""
 
@@ -592,8 +589,9 @@ msgstr ""
 
 #: src/components/ui/note-rendering/LiveStreamRenderer.ts:64
 msgid ""
-"Activate the <a class=\"live-stream-card__hint-link\" href=\"/addons/live-"
-"streams-player\">Live Streams Player</a> addon to see this live stream."
+"Activate the <a class=\"live-stream-card__hint-link\" "
+"href=\"/addons/live-streams-player\">Live Streams Player</a> addon to see "
+"this live stream."
 msgstr ""
 
 #: src/addons/marketplace/ListingEditorView.ts:218
@@ -629,8 +627,8 @@ msgstr ""
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:65
 msgid ""
 "Add animated GIFs and custom images as personal emojis. Use them as "
-"reactions or in your posts via <code>:shortcode:</code>. Other Nostr clients "
-"that support NIP-30 will display them too."
+"reactions or in your posts via <code>:shortcode:</code>. Other Nostr "
+"clients that support NIP-30 will display them too."
 msgstr ""
 
 #: src/components/ui/NoteMenu.ts:219
@@ -644,8 +642,8 @@ msgstr ""
 
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:108
 msgid ""
-"Add custom emojis below. Each shortcode can be used as <code>:shortcode:</"
-"code> in posts and reactions."
+"Add custom emojis below. Each shortcode can be used as "
+"<code>:shortcode:</code> in posts and reactions."
 msgstr ""
 
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:125
@@ -841,11 +839,11 @@ msgstr ""
 msgid "All loaded"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:1036
+#: src/components/views/MessagesView.ts:1026
 msgid "All messages marked as read"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:1042
+#: src/components/views/MessagesView.ts:1032
 msgid "All messages marked as unread"
 msgstr ""
 
@@ -907,7 +905,7 @@ msgstr ""
 msgid "Amount must be at least 1 sat"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:720
+#: src/components/notifications/NotificationItem.ts:730
 msgid "an Armada community"
 msgstr ""
 
@@ -938,8 +936,8 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:147
 msgid ""
-"And finally, thanks to every user who actively shapes NoorNote with feedback "
-"and support."
+"And finally, thanks to every user who actively shapes NoorNote with "
+"feedback and support."
 msgstr ""
 
 #: src/addons/marketplace/ListingView.ts:446
@@ -977,7 +975,7 @@ msgid "App updated."
 msgstr ""
 
 #: src/components/post/PostNoteModal.ts:719
-#: src/components/views/ConversationView.ts:620
+#: src/components/views/ConversationView.ts:621
 msgid "Apply"
 msgstr ""
 
@@ -1144,8 +1142,7 @@ msgid "Automatically check for updates"
 msgstr ""
 
 #: src/components/settings/KeySignerSection.ts:62
-msgid ""
-"Automatically start NoorSigner key signer when you log in to your computer."
+msgid "Automatically start NoorSigner key signer when you log in to your computer."
 msgstr ""
 
 #: src/components/settings/KeySignerSection.ts:109
@@ -1173,7 +1170,7 @@ msgstr ""
 msgid "Award Badge"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:731
+#: src/components/notifications/NotificationItem.ts:741
 msgid "awarded you a badge"
 msgstr ""
 
@@ -1287,8 +1284,8 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:239
 msgid ""
-"Beyond Nostr relays, NoorNote makes network requests to a small set of third-"
-"party endpoints to render content correctly. Each request unavoidably "
+"Beyond Nostr relays, NoorNote makes network requests to a small set of "
+"third-party endpoints to render content correctly. Each request unavoidably "
 "exposes your IP address to the receiving service:"
 msgstr ""
 
@@ -1610,10 +1607,10 @@ msgstr ""
 #: src/components/settings/ListSettingsSection.ts:367
 #: src/components/settings/PrivacySettingsSection.ts:270
 #: src/components/settings/RelaySettingsSection.ts:480
-#: src/components/views/ConversationView.ts:619
-#: src/components/views/MessagesView.ts:1052
-#: src/components/views/MessagesView.ts:716
-#: src/components/views/MessagesView.ts:761
+#: src/components/views/ConversationView.ts:620
+#: src/components/views/MessagesView.ts:1042
+#: src/components/views/MessagesView.ts:706
+#: src/components/views/MessagesView.ts:751
 #: src/components/views/ProfileBookingView.ts:326
 #: src/components/views/ProfileBookingView.ts:497
 #: src/helpers/datePickerModal.ts:189
@@ -1805,8 +1802,8 @@ msgstr ""
 
 #: src/components/onboarding/AccountSetupWizard.ts:2191
 msgid ""
-"Click it, set a <strong>PIN or passphrase</strong> (min. 4 characters), then "
-"<strong>\"Create keystore\"</strong>"
+"Click it, set a <strong>PIN or passphrase</strong> (min. 4 characters), "
+"then <strong>\"Create keystore\"</strong>"
 msgstr ""
 
 #: src/components/views/VideoEditorView.ts:256
@@ -1828,7 +1825,7 @@ msgstr ""
 #: src/components/ui/ImageViewer.ts:221
 #: src/components/ui/NoteMenu.ts:521
 #: src/lists/follows-extended.ts:447
-#: src/services/ToastService.ts:186
+#: src/services/ToastService.ts:218
 msgid "Close"
 msgstr ""
 
@@ -1966,8 +1963,7 @@ msgid "Connect Wallet"
 msgstr ""
 
 #: src/components/settings/NWCSettingsSection.ts:162
-msgid ""
-"Connect your Lightning wallet via Nostr Wallet Connect (NWC) to send zaps."
+msgid "Connect your Lightning wallet via Nostr Wallet Connect (NWC) to send zaps."
 msgstr ""
 
 #: src/services/AuthService.ts:319
@@ -2026,12 +2022,12 @@ msgid ""
 "images and videos will be blurred."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:924
-#: src/components/views/MessagesView.ts:737
+#: src/components/views/ConversationView.ts:925
+#: src/components/views/MessagesView.ts:727
 msgid "Conversation deleted"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:736
+#: src/components/views/MessagesView.ts:726
 msgid "Conversation deleted & sender muted"
 msgstr ""
 
@@ -2082,7 +2078,7 @@ msgstr ""
 msgid "Copy user ID"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:525
+#: src/components/views/ConversationView.ts:526
 msgid "Could not accept"
 msgstr ""
 
@@ -2123,7 +2119,7 @@ msgstr ""
 msgid "Could not load districts"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:347
+#: src/components/views/MessagesView.ts:341
 msgid "Could not load older messages"
 msgstr ""
 
@@ -2158,7 +2154,7 @@ msgid ""
 "page."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:563
+#: src/components/views/ConversationView.ts:564
 msgid "Could not reject"
 msgstr ""
 
@@ -2182,11 +2178,11 @@ msgstr ""
 msgid "Could not update moderation"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:500
+#: src/components/views/ConversationView.ts:501
 msgid "Could not update setting"
 msgstr ""
 
-#: src/services/ZapService.ts:300
+#: src/services/ZapService.ts:303
 msgid "Could not zap note"
 msgstr ""
 
@@ -2287,7 +2283,7 @@ msgstr ""
 msgid "Custom"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:427
+#: src/components/views/ConversationView.ts:428
 msgid "Custom (%s)"
 msgstr ""
 
@@ -2295,7 +2291,7 @@ msgstr ""
 msgid "Custom client tag"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:726
+#: src/components/views/ConversationView.ts:727
 msgid "Custom duration"
 msgstr ""
 
@@ -2314,7 +2310,7 @@ msgstr ""
 msgid "Custom..."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:428
+#: src/components/views/ConversationView.ts:429
 msgid "Custom…"
 msgstr ""
 
@@ -2371,7 +2367,7 @@ msgid ""
 "Ramadan and the Eids by a day."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:612
+#: src/components/views/ConversationView.ts:613
 msgid "Days"
 msgstr ""
 
@@ -2379,7 +2375,7 @@ msgstr ""
 msgid "Days before"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:117
+#: src/components/notifications/NotificationItem.ts:121
 msgid "Decline"
 msgstr ""
 
@@ -2388,7 +2384,7 @@ msgstr ""
 msgid "declined"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:233
+#: src/components/notifications/NotificationItem.ts:237
 msgid "Declined"
 msgstr ""
 
@@ -2450,8 +2446,8 @@ msgstr ""
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:663
 #: src/addons/note-taking/NoteEditorModal.ts:364
 #: src/components/views/ArticleView.ts:160
-#: src/components/views/MessagesView.ts:715
-#: src/components/views/MessagesView.ts:760
+#: src/components/views/MessagesView.ts:705
+#: src/components/views/MessagesView.ts:750
 #: src/lists/tribes.ts:2746
 #: src/services/ModalService.ts:246
 msgid "Delete"
@@ -2462,11 +2458,11 @@ msgstr ""
 msgid "Delete \"%s\"%s? A deletion request is published to relays."
 msgstr ""
 
-#: src/components/views/MessagesView.ts:705
+#: src/components/views/MessagesView.ts:695
 msgid "Delete & mute"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:635
+#: src/components/views/MessagesView.ts:625
 msgid "Delete &amp; mute sender"
 msgstr ""
 
@@ -2476,8 +2472,8 @@ msgstr ""
 
 #: src/components/settings/ListSettingsSection.ts:162
 msgid ""
-"Delete all tribe data (folders and members). Use if tribe tabs are broken or "
-"you can't delete a tribe."
+"Delete all tribe data (folders and members). Use if tribe tabs are broken "
+"or you can't delete a tribe."
 msgstr ""
 
 #: src/components/views/ArticleView.ts:160
@@ -2488,10 +2484,10 @@ msgstr ""
 msgid "Delete Article"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:433
-#: src/components/views/ConversationView.ts:913
-#: src/components/views/MessagesView.ts:635
-#: src/components/views/MessagesView.ts:705
+#: src/components/views/ConversationView.ts:434
+#: src/components/views/ConversationView.ts:914
+#: src/components/views/MessagesView.ts:625
+#: src/components/views/MessagesView.ts:695
 msgid "Delete conversation"
 msgstr ""
 
@@ -2547,8 +2543,8 @@ msgstr ""
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:206
 #: src/addons/bulk-delete/BulkDeleteView.ts:889
-#: src/components/views/MessagesView.ts:211
-#: src/components/views/MessagesView.ts:815
+#: src/components/views/MessagesView.ts:202
+#: src/components/views/MessagesView.ts:805
 msgid "Delete selected (%s)"
 msgstr ""
 
@@ -2562,17 +2558,17 @@ msgid ""
 "longer exist as a calendar."
 msgstr ""
 
-#: src/components/views/MessagesView.ts:707
+#: src/components/views/MessagesView.ts:697
 msgid ""
 "Delete this conversation and mute %s? They won't appear in your messages "
 "again."
 msgstr ""
 
-#: src/components/views/MessagesView.ts:711
+#: src/components/views/MessagesView.ts:701
 msgid "Delete this conversation with %s? It's removed only from this device."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:914
+#: src/components/views/ConversationView.ts:915
 msgid "Delete this conversation? It is removed only from this device."
 msgstr ""
 
@@ -2719,7 +2715,7 @@ msgstr ""
 msgid "Diagrams"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:947
+#: src/components/views/MessagesView.ts:937
 msgid "Direct messages are not available with Bunker URL login"
 msgstr ""
 
@@ -2731,19 +2727,19 @@ msgstr ""
 msgid "Disable self-reposts younger than:"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:436
+#: src/components/views/ConversationView.ts:437
 msgid "Disappearing messages"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:491
+#: src/components/views/ConversationView.ts:492
 msgid "Disappearing messages enabled"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:490
+#: src/components/views/ConversationView.ts:491
 msgid "Disappearing messages off"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:780
+#: src/components/views/ConversationView.ts:781
 msgid "Disappears in ~%s"
 msgstr ""
 
@@ -2808,7 +2804,7 @@ msgstr ""
 msgid "DM me on Nostr"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:782
+#: src/components/views/ConversationView.ts:783
 msgid "Do you accept the time limitation?"
 msgstr ""
 
@@ -2873,23 +2869,22 @@ msgid ""
 msgstr ""
 
 #: src/components/views/AddonsOverviewView.ts:79
-msgid ""
-"Drag tiles to reorder (on touch: use ▲▼). The order is saved per account."
+msgid "Drag tiles to reorder (on touch: use ▲▼). The order is saved per account."
 msgstr ""
 
 #: src/components/profile/ProfileListsComponent.ts:225
 msgid "Drag to reorder"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:606
+#: src/components/views/ConversationView.ts:607
 msgid "Duration"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:705
+#: src/components/views/ConversationView.ts:706
 msgid "Duration must be at least 1 minute."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:709
+#: src/components/views/ConversationView.ts:710
 msgid "Duration must be at most 1 year."
 msgstr ""
 
@@ -2949,8 +2944,7 @@ msgid "Easy Mode: Changes are automatically synced to and from relays."
 msgstr ""
 
 #: src/helpers/ListSyncMode.ts:123
-msgid ""
-"Easy Mode: Changes are automatically synced to your local backup and relays."
+msgid "Easy Mode: Changes are automatically synced to your local backup and relays."
 msgstr ""
 
 #: src/addons/badges/BadgesView.ts:377
@@ -3348,8 +3342,7 @@ msgid "Exclude"
 msgstr ""
 
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:675
-msgid ""
-"Exclude %s? Their dhikrs disappear and all their submissions stop counting."
+msgid "Exclude %s? Their dhikrs disappear and all their submissions stop counting."
 msgstr ""
 
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:590
@@ -3489,7 +3482,7 @@ msgstr ""
 msgid "Failed to create folder"
 msgstr ""
 
-#: src/services/ZapService.ts:325
+#: src/services/ZapService.ts:328
 msgid "Failed to create zap request"
 msgstr ""
 
@@ -3510,7 +3503,7 @@ msgstr ""
 msgid "Failed to fetch emoji packs: %s"
 msgstr ""
 
-#: src/services/ZapService.ts:336
+#: src/services/ZapService.ts:339
 msgid "Failed to fetch invoice"
 msgstr ""
 
@@ -3571,8 +3564,8 @@ msgstr ""
 msgid "Failed to load listings"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:1219
-#: src/components/views/MessagesView.ts:961
+#: src/components/views/ConversationView.ts:1220
+#: src/components/views/MessagesView.ts:951
 msgid "Failed to load messages"
 msgstr ""
 
@@ -3638,7 +3631,7 @@ msgid "Failed to move member"
 msgstr ""
 
 #: src/components/ui/NoteMenu.ts:624
-#: src/components/views/ConversationView.ts:986
+#: src/components/views/ConversationView.ts:987
 #: src/lists/mutes.ts:2360
 msgid "Failed to mute user"
 msgstr ""
@@ -4127,8 +4120,8 @@ msgstr ""
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:59
 msgid ""
 "Get notified when someone new follows you. Checks every 3 hours in the "
-"background; each new follower is verified against their own contact list, so "
-"there are no false alarms."
+"background; each new follower is verified against their own contact list, "
+"so there are no false alarms."
 msgstr ""
 
 #: src/components/views/ProfileView.ts:956
@@ -4182,8 +4175,7 @@ msgid "going"
 msgstr ""
 
 #: src/helpers/LoggedOutModals.ts:119
-msgid ""
-"Got something to say? We're all ears - right after you create an account."
+msgid "Got something to say? We're all ears - right after you create an account."
 msgstr ""
 
 #: src/components/settings/NWCSettingsSection.ts:194
@@ -4285,8 +4277,8 @@ msgstr ""
 
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:60
 msgid ""
-"Hide notes containing specific words from all timelines. Manage your blocked "
-"words below."
+"Hide notes containing specific words from all timelines. Manage your "
+"blocked words below."
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:157
@@ -4298,8 +4290,7 @@ msgid "Hide this dhikr from everyone? You can un-hide it later."
 msgstr ""
 
 #: src/components/views/ProfileView.ts:970
-msgid ""
-"Hide this user's website highlights and reposts of them from your timelines"
+msgid "Hide this user's website highlights and reposts of them from your timelines"
 msgstr ""
 
 #: src/addons/addonI18n.ts:102
@@ -4334,7 +4325,7 @@ msgstr ""
 msgid "Highlight: %s"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:727
+#: src/components/notifications/NotificationItem.ts:737
 msgid "highlighted your %s"
 msgstr ""
 
@@ -4374,7 +4365,7 @@ msgstr ""
 msgid "Hollow badge - background notifications"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:611
+#: src/components/views/ConversationView.ts:612
 msgid "Hours"
 msgstr ""
 
@@ -4437,8 +4428,8 @@ msgstr ""
 
 #: src/addons/profile-recognition/ProfileRecognitionSettings.ts:159
 msgid ""
-"If they change their profile within your selected window, their picture will "
-"blink between old and new"
+"If they change their profile within your selected window, their picture "
+"will blink between old and new"
 msgstr ""
 
 #: src/components/onboarding/AccountSetupWizard.ts:1920
@@ -4615,7 +4606,7 @@ msgstr ""
 msgid "instant, no middleman"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:739
+#: src/components/notifications/NotificationItem.ts:749
 msgid "interacted with your %s"
 msgstr ""
 
@@ -4680,7 +4671,7 @@ msgstr ""
 msgid "is available"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:705
+#: src/components/notifications/NotificationItem.ts:709
 msgid "is now following you"
 msgstr ""
 
@@ -4779,7 +4770,7 @@ msgstr ""
 msgid "KeySigner daemon connection lost"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:192
+#: src/components/views/MessagesView.ts:183
 msgid "Known"
 msgstr ""
 
@@ -4850,8 +4841,8 @@ msgstr ""
 #: src/addons/calendar/BookingManager.ts:338
 msgid ""
 "Let people book appointments in your free time. Your availability is public "
-"(the slots are regular NIP-52 calendar events); bookings arrive as a private "
-"message. Page:"
+"(the slots are regular NIP-52 calendar events); bookings arrive as a "
+"private message. Page:"
 msgstr ""
 
 #: src/components/views/ZapstoreAppView.ts:297
@@ -4997,9 +4988,9 @@ msgstr ""
 msgid "Load all"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:221
-#: src/components/views/MessagesView.ts:334
-#: src/components/views/MessagesView.ts:344
+#: src/components/views/MessagesView.ts:212
+#: src/components/views/MessagesView.ts:328
+#: src/components/views/MessagesView.ts:338
 msgid "Load older messages"
 msgstr ""
 
@@ -5088,13 +5079,13 @@ msgstr "Chargement du média…"
 msgid "Loading members..."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:248
-#: src/components/views/MessagesView.ts:204
-#: src/components/views/MessagesView.ts:215
+#: src/components/views/ConversationView.ts:249
+#: src/components/views/MessagesView.ts:195
+#: src/components/views/MessagesView.ts:206
 msgid "Loading messages..."
 msgstr ""
 
-#: src/components/views/MessagesView.ts:90
+#: src/components/views/MessagesView.ts:81
 msgid "Loading more conversations..."
 msgstr ""
 
@@ -5148,7 +5139,7 @@ msgstr ""
 msgid "Loading notes..."
 msgstr ""
 
-#: src/components/views/MessagesView.ts:317
+#: src/components/views/MessagesView.ts:311
 msgid "Loading older messages…"
 msgstr ""
 
@@ -5231,7 +5222,7 @@ msgstr ""
 #: src/addons/marketplace/ListingView.ts:123
 #: src/addons/marketplace/MarketplaceTimeline.ts:357
 #: src/addons/marketplace/MarketplaceTimelineInjector.ts:219
-#: src/components/notifications/NotificationItem.ts:109
+#: src/components/notifications/NotificationItem.ts:113
 #: src/components/ui/AccountSwitcher.ts:101
 #: src/components/ui/AccountSwitcher.ts:195
 #: src/components/ui/note-features/PollRenderer.ts:73
@@ -5445,7 +5436,7 @@ msgid ""
 "their next sync."
 msgstr ""
 
-#: src/components/views/MessagesView.ts:902
+#: src/components/views/MessagesView.ts:892
 msgid "Mark all read"
 msgstr ""
 
@@ -5453,7 +5444,7 @@ msgstr ""
 msgid "Mark all seen"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:906
+#: src/components/views/MessagesView.ts:896
 msgid "Mark all unread"
 msgstr ""
 
@@ -5577,7 +5568,7 @@ msgstr ""
 msgid "Memory optimization enabled"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:669
+#: src/components/notifications/NotificationItem.ts:673
 msgid "mentioned you in %s"
 msgstr ""
 
@@ -5610,7 +5601,7 @@ msgstr ""
 msgid "Message"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:184
+#: src/components/views/MessagesView.ts:175
 msgid "Message options"
 msgstr ""
 
@@ -5621,14 +5612,13 @@ msgstr ""
 
 #: src/components/layout/MainLayout.ts:1948
 #: src/components/search/GlobalSearchView.ts:398
-#: src/components/views/MessagesView.ts:176
-#: src/components/views/MessagesView.ts:943
+#: src/components/views/MessagesView.ts:167
+#: src/components/views/MessagesView.ts:933
 msgid "Messages"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:604
-msgid ""
-"Messages will disappear after this time. Minimum: 1 minute, maximum: 1 year."
+#: src/components/views/ConversationView.ts:605
+msgid "Messages will disappear after this time. Minimum: 1 minute, maximum: 1 year."
 msgstr ""
 
 #: src/components/settings/PrivacySettingsSection.ts:271
@@ -5647,7 +5637,7 @@ msgstr ""
 msgid "Minimum notice"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:610
+#: src/components/views/ConversationView.ts:611
 msgid "Minutes"
 msgstr ""
 
@@ -5753,17 +5743,17 @@ msgid "Mute thread"
 msgstr ""
 
 #: src/components/ui/NoteMenu.ts:197
-#: src/components/views/ConversationView.ts:935
+#: src/components/views/ConversationView.ts:936
 msgid "Mute user"
 msgstr ""
 
 #: src/components/ui/NoteMenu.ts:187
-#: src/components/views/ConversationView.ts:933
+#: src/components/views/ConversationView.ts:934
 msgid "Mute user privately"
 msgstr ""
 
 #: src/components/ui/NoteMenu.ts:191
-#: src/components/views/ConversationView.ts:935
+#: src/components/views/ConversationView.ts:936
 msgid "Mute user publicly"
 msgstr ""
 
@@ -5853,7 +5843,7 @@ msgstr ""
 msgid "New"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:724
+#: src/components/notifications/NotificationItem.ts:734
 msgid "New activity in %s"
 msgstr ""
 
@@ -5894,7 +5884,7 @@ msgid "New Listing"
 msgstr ""
 
 #: src/components/modals/DMComposeModal.ts:43
-#: src/components/views/MessagesView.ts:182
+#: src/components/views/MessagesView.ts:173
 msgid "New Message"
 msgstr ""
 
@@ -5916,7 +5906,7 @@ msgstr ""
 msgid "New Post"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:697
+#: src/components/notifications/NotificationItem.ts:701
 msgid "New post tagged #%s"
 msgstr ""
 
@@ -5969,7 +5959,7 @@ msgid "NIP-55 Android signer"
 msgstr ""
 
 #: src/components/post/PostNoteModal.ts:998
-#: src/components/views/ConversationView.ts:786
+#: src/components/views/ConversationView.ts:787
 msgid "No"
 msgstr ""
 
@@ -6110,15 +6100,15 @@ msgstr ""
 msgid "No members yet"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:572
+#: src/components/views/MessagesView.ts:562
 msgid "No messages from people you follow"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:573
+#: src/components/views/MessagesView.ts:563
 msgid "No messages from unknown users"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:1064
+#: src/components/views/ConversationView.ts:1065
 msgid "No messages yet"
 msgstr ""
 
@@ -6159,7 +6149,7 @@ msgstr ""
 msgid "No notifications yet"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:331
+#: src/components/views/MessagesView.ts:325
 msgid "No older messages"
 msgstr ""
 
@@ -6342,15 +6332,14 @@ msgid "NoorNote is a web application. All data stays in your browser:"
 msgstr ""
 
 #: src/components/onboarding/OnboardingComponent.ts:39
-msgid ""
-"NoorNote is social media built on open protocol - no company controls it."
+msgid "NoorNote is social media built on open protocol - no company controls it."
 msgstr ""
 
 #: src/components/settings/ListSettingsSection.ts:144
 msgid ""
 "NoorNote syncs automatically: changes are saved to a local backup "
-"immediately, then published to relays. On startup it restores from backup or "
-"relays if needed."
+"immediately, then published to relays. On startup it restores from backup "
+"or relays if needed."
 msgstr ""
 
 #: src/components/views/AboutView.ts:154
@@ -6369,7 +6358,8 @@ msgstr ""
 
 #: src/components/settings/KeySignerSection.ts:77
 msgid ""
-"NoorSigner key signer is not running. Start it by logging in with NoorSigner."
+"NoorSigner key signer is not running. Start it by logging in with "
+"NoorSigner."
 msgstr ""
 
 #: src/components/settings/KeySignerSection.ts:146
@@ -6396,9 +6386,9 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:104
 msgid ""
-"Nostr relays are operated by third parties. When connecting, your IP address "
-"may be logged by the relay operators. The choice of relays is yours and can "
-"be configured in the settings."
+"Nostr relays are operated by third parties. When connecting, your IP "
+"address may be logged by the relay operators. The choice of relays is yours "
+"and can be configured in the settings."
 msgstr ""
 
 #: src/components/ui/note-rendering/NsiteRenderer.ts:67
@@ -6651,8 +6641,7 @@ msgid "Only searching for #%s"
 msgstr ""
 
 #: src/components/views/ProfileView.ts:993
-msgid ""
-"Only suppresses notifications from this user's interactions with your notes"
+msgid "Only suppresses notifications from this user's interactions with your notes"
 msgstr ""
 
 #: src/addons/follow-packs/FollowPackManager.ts:895
@@ -6780,8 +6769,8 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:191
 msgid ""
-"Our web host serves the static application bundle. We do not store, process, "
-"or have access to any user data on the server itself."
+"Our web host serves the static application bundle. We do not store, "
+"process, or have access to any user data on the server itself."
 msgstr ""
 
 #: src/addons/analytics/AnalyticsAddonView.ts:327
@@ -6837,8 +6826,7 @@ msgid "Paste the nsec of the new account"
 msgstr ""
 
 #: src/components/onboarding/AccountSetupWizard.ts:2199
-msgid ""
-"Paste your <strong>nsec</strong>, copied in step 1 or from your backup file"
+msgid "Paste your <strong>nsec</strong>, copied in step 1 or from your backup file"
 msgstr ""
 
 #: src/addons/group-chats/GroupChatsSettings.ts:274
@@ -6860,7 +6848,7 @@ msgstr ""
 msgid "Paying…"
 msgstr ""
 
-#: src/services/ZapService.ts:385
+#: src/services/ZapService.ts:388
 msgid "Payment failed"
 msgstr ""
 
@@ -6915,8 +6903,8 @@ msgstr ""
 
 #: src/addons/calendar/CalendarCollectionsModal.ts:147
 msgid ""
-"Pick from the events currently in your grid. Subscribers get all of them and "
-"any future changes."
+"Pick from the events currently in your grid. Subscribers get all of them "
+"and any future changes."
 msgstr ""
 
 #: src/lists/bookmarks.ts:3618
@@ -6954,7 +6942,7 @@ msgid "Please check your network connection and try again."
 msgstr ""
 
 #: src/components/modals/ZapModal.ts:66
-#: src/services/ZapService.ts:213
+#: src/services/ZapService.ts:216
 msgid "Please connect Lightning Wallet"
 msgstr ""
 
@@ -7126,7 +7114,7 @@ msgstr ""
 msgid "Post Video"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:692
+#: src/components/notifications/NotificationItem.ts:696
 msgid "posted a new article"
 msgstr ""
 
@@ -7234,8 +7222,8 @@ msgstr ""
 #: src/components/settings/PrivacySettingsSection.ts:84
 msgid ""
 "Private bookmarks (NIP-51) allow you to bookmark notes without publicly "
-"revealing what you bookmarked. Your bookmarks are encrypted and only you can "
-"see them."
+"revealing what you bookmarked. Your bookmarks are encrypted and only you "
+"can see them."
 msgstr ""
 
 #: src/addons/calendar/CalendarEventEditor.ts:154
@@ -7248,8 +7236,8 @@ msgstr ""
 #: src/components/settings/PrivacySettingsSection.ts:69
 msgid ""
 "Private follow lists (NIP-51) allow you to follow users without publicly "
-"revealing who you follow. Your follow list is encrypted and only you can see "
-"it."
+"revealing who you follow. Your follow list is encrypted and only you can "
+"see it."
 msgstr ""
 
 #: src/components/modals/ImportToNoorSignerModal.ts:67
@@ -7580,16 +7568,16 @@ msgstr ""
 msgid "Re-include"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:1051
+#: src/components/views/MessagesView.ts:1041
 msgid "Re-sync"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:1047
-#: src/components/views/MessagesView.ts:910
+#: src/components/views/MessagesView.ts:1037
+#: src/components/views/MessagesView.ts:900
 msgid "Re-sync messages"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:679
+#: src/components/notifications/NotificationItem.ts:683
 msgid "reacted to your %s"
 msgstr ""
 
@@ -7652,8 +7640,7 @@ msgid "Reason:"
 msgstr ""
 
 #: src/components/onboarding/OnboardingComponent.ts:58
-msgid ""
-"Receive Bitcoin tips (Zaps) directly. No platform cut, no payout threshold."
+msgid "Receive Bitcoin tips (Zaps) directly. No platform cut, no payout threshold."
 msgstr ""
 
 #: src/addons/analytics/AnalyticsAddonView.ts:247
@@ -7716,9 +7703,9 @@ msgstr ""
 
 #: src/addons/note-taking/NoteTakingView.ts:211
 msgid ""
-"Relay sync is only a <strong>backup</strong> and keeps your NoorNote devices "
-"in sync. Every note is encrypted with <strong>NIP-44 using your own key</"
-"strong>, so only ciphertext ever leaves this device."
+"Relay sync is only a <strong>backup</strong> and keeps your NoorNote "
+"devices in sync. Every note is encrypted with <strong>NIP-44 using your own "
+"key</strong>, so only ciphertext ever leaves this device."
 msgstr ""
 
 #: src/components/settings/RelaySettingsSection.ts:408
@@ -7889,15 +7876,15 @@ msgstr ""
 msgid "Repeat"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:673
+#: src/components/notifications/NotificationItem.ts:677
 msgid "replied to %s that mentioned you"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:671
+#: src/components/notifications/NotificationItem.ts:675
 msgid "replied to your %s"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:675
+#: src/components/notifications/NotificationItem.ts:679
 msgid "replied to your zap"
 msgstr ""
 
@@ -7978,7 +7965,7 @@ msgstr ""
 msgid "Repost published successfully"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:677
+#: src/components/notifications/NotificationItem.ts:681
 msgid "reposted your %s"
 msgstr ""
 
@@ -8140,8 +8127,8 @@ msgstr ""
 #: src/components/relay-browser/RelayBrowser.ts:308
 #: src/components/system/OfflineOverlay.ts:49
 #: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:102
-#: src/components/views/ConversationView.ts:1220
-#: src/components/views/MessagesView.ts:962
+#: src/components/views/ConversationView.ts:1221
+#: src/components/views/MessagesView.ts:952
 #: src/services/ViewMountingService.ts:113
 msgid "Retry"
 msgstr ""
@@ -8225,8 +8212,7 @@ msgid "Save Event Signatures"
 msgstr ""
 
 #: src/addons/bookmarks/BookmarksAddonView.ts:128
-msgid ""
-"Save notes and links to bookmark folders with drag-and-drop organization."
+msgid "Save notes and links to bookmark folders with drag-and-drop organization."
 msgstr ""
 
 #: src/components/onboarding/AccountSetupWizard.ts:1927
@@ -8319,9 +8305,9 @@ msgstr ""
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:67
 msgid ""
 "Schedule notes and articles to be published at a later date and time. Your "
-"fully signed event is held by a NoorNote-operated Deno service and published "
-"to your chosen relays at the scheduled moment. No private keys leave your "
-"device."
+"fully signed event is held by a NoorNote-operated Deno service and "
+"published to your chosen relays at the scheduled moment. No private keys "
+"leave your device."
 msgstr ""
 
 #: src/components/post/PostEditorToolbar.ts:61
@@ -8492,8 +8478,8 @@ msgstr ""
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:202
 #: src/addons/bulk-delete/BulkDeleteView.ts:817
-#: src/components/views/MessagesView.ts:209
-#: src/components/views/MessagesView.ts:827
+#: src/components/views/MessagesView.ts:200
+#: src/components/views/MessagesView.ts:817
 msgid "Select all visible"
 msgstr ""
 
@@ -8590,7 +8576,7 @@ msgid ""
 "and cannot be undone. Relays may or may not honor it."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:1065
+#: src/components/views/ConversationView.ts:1066
 msgid "Send a message to start the conversation"
 msgstr ""
 
@@ -8832,8 +8818,9 @@ msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:203
 msgid ""
-"Show the reactions (likes) of people you follow as entries in your timeline. "
-"Off by default. Individual users can be enabled from their profile."
+"Show the reactions (likes) of people you follow as entries in your "
+"timeline. Off by default. Individual users can be enabled from their "
+"profile."
 msgstr ""
 
 #: src/components/bookmarks/FolderCard.ts:72
@@ -8862,7 +8849,8 @@ msgstr ""
 
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:290
 msgid ""
-"Shows the current prayer and the time left until the next one in the sidebar."
+"Shows the current prayer and the time left until the next one in the "
+"sidebar."
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:698
@@ -8936,7 +8924,7 @@ msgstr ""
 msgid "Silent Zap"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:683
+#: src/components/notifications/NotificationItem.ts:687
 msgid "silently zapped your %s"
 msgstr ""
 
@@ -9040,20 +9028,20 @@ msgstr ""
 msgid "Some Uploads Failed"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:735
+#: src/components/notifications/NotificationItem.ts:745
 msgid "Somebody committed to a dhikr"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:733
+#: src/components/notifications/NotificationItem.ts:743
 msgid "Somebody started a new dhikr"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:166
-#: src/components/notifications/NotificationItem.ts:174
+#: src/components/notifications/NotificationItem.ts:170
+#: src/components/notifications/NotificationItem.ts:178
 msgid "Someone"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:713
+#: src/components/notifications/NotificationItem.ts:723
 msgid "Someone posted to %s"
 msgstr ""
 
@@ -9076,8 +9064,8 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:144
 msgid ""
-"Special thanks to %s for inventing the Nostr protocol, and to all %s authors "
-"and other Nostr devs for the inspiration."
+"Special thanks to %s for inventing the Nostr protocol, and to all %s "
+"authors and other Nostr devs for the inspiration."
 msgstr ""
 
 #: src/helpers/LoggedOutModals.ts:118
@@ -9095,7 +9083,7 @@ msgstr ""
 msgid "Standard Western calendar (e.g., \"30. Oct. 2024\")"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:579
+#: src/components/views/MessagesView.ts:569
 msgid "Start a conversation by clicking \"New Message\""
 msgstr ""
 
@@ -9103,7 +9091,7 @@ msgstr ""
 msgid "Start date"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:703
+#: src/components/notifications/NotificationItem.ts:707
 msgid "started following you back!"
 msgstr ""
 
@@ -9160,7 +9148,7 @@ msgstr ""
 msgid "Stop NoorSigner Daemon?"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:701
+#: src/components/notifications/NotificationItem.ts:705
 msgid "stopped following you back"
 msgstr ""
 
@@ -9220,7 +9208,7 @@ msgstr ""
 msgid "Subscribe to shared follow lists and follow curated groups in one go."
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:306
+#: src/components/notifications/NotificationItem.ts:310
 msgid "Subscribed to #%s"
 msgstr ""
 
@@ -9246,9 +9234,9 @@ msgstr ""
 
 #: src/components/settings/ListSettingsSection.ts:78
 msgid ""
-"Switch between Easy Mode (automatic sync) and Manual Mode (action buttons in "
-"every list to control sync from/to relays and local backups). Also unlocks "
-"the Danger Zone for resetting corrupted list data."
+"Switch between Easy Mode (automatic sync) and Manual Mode (action buttons "
+"in every list to control sync from/to relays and local backups). Also "
+"unlocks the Danger Zone for resetting corrupted list data."
 msgstr ""
 
 #: src/components/views/VideoEditorView.ts:233
@@ -9377,7 +9365,7 @@ msgstr ""
 msgid "Tagged users:"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:729
+#: src/components/notifications/NotificationItem.ts:739
 msgid "tagged you in an image"
 msgstr ""
 
@@ -9436,7 +9424,7 @@ msgstr ""
 msgid "The accounts you follow, with outbox relays."
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:719
+#: src/components/notifications/NotificationItem.ts:729
 msgid "the Armada community \"%s\""
 msgstr ""
 
@@ -9459,7 +9447,8 @@ msgstr ""
 
 #: src/addons/calendar/CalendarEventModal.ts:511
 msgid ""
-"The guest and all participants will be informed about the cancellation by DM."
+"The guest and all participants will be informed about the cancellation by "
+"DM."
 msgstr ""
 
 #: src/addons/calendar/BookingManager.ts:400
@@ -9476,11 +9465,11 @@ msgstr ""
 
 #: src/components/views/ProfileBookingView.ts:609
 msgid ""
-"The host received your booking as a private message. Add it to your calendar "
-"so you don't forget:"
+"The host received your booking as a private message. Add it to your "
+"calendar so you don't forget:"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:709
+#: src/components/notifications/NotificationItem.ts:713
 msgid "the Nostrord group \"%s\""
 msgstr ""
 
@@ -9510,8 +9499,8 @@ msgstr ""
 
 #: src/components/settings/ListSettingsSection.ts:155
 msgid ""
-"These actions are irreversible and will result in data loss. Only use if you "
-"have corrupted data that prevents normal operation."
+"These actions are irreversible and will result in data loss. Only use if "
+"you have corrupted data that prevents normal operation."
 msgstr ""
 
 #: src/components/onboarding/WelcomeInterstitials.ts:27
@@ -9531,8 +9520,7 @@ msgid "They own your audience"
 msgstr ""
 
 #: src/components/onboarding/WelcomeInterstitials.ts:56
-msgid ""
-"They promise freedom.<br>We made it <em>impossible</em><br>to take it away."
+msgid "They promise freedom.<br>We made it <em>impossible</em><br>to take it away."
 msgstr ""
 
 #: src/addons/calendar/CalendarEventEditor.ts:137
@@ -9591,8 +9579,7 @@ msgid ""
 msgstr ""
 
 #: src/components/settings/PrivacySettingsSection.ts:252
-msgid ""
-"This operation is irreversible without using the reverse migration tool."
+msgid "This operation is irreversible without using the reverse migration tool."
 msgstr ""
 
 #: src/components/settings/RelaySettingsSection.ts:420
@@ -9726,7 +9713,7 @@ msgid ""
 "and follow the people that interest you."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:609
+#: src/components/views/ConversationView.ts:610
 msgid "Time unit"
 msgstr ""
 
@@ -9812,8 +9799,7 @@ msgid "Top Posts"
 msgstr ""
 
 #: src/addons/addonI18n.ts:78
-msgid ""
-"Track follows, unfollows and profile changes beyond the plain follow list."
+msgid "Track follows, unfollows and profile changes beyond the plain follow list."
 msgstr ""
 
 #: src/addons/group-chats/GroupChatsSettings.ts:361
@@ -9885,7 +9871,7 @@ msgstr ""
 msgid "Type @ to search your follows"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:254
+#: src/components/views/ConversationView.ts:255
 msgid "Type a message..."
 msgstr ""
 
@@ -9946,15 +9932,15 @@ msgstr ""
 
 #: src/components/views/ArticleEditorView.ts:482
 msgid ""
-"Unique identifier for this article. Changing this after publishing creates a "
-"new article instead of updating."
+"Unique identifier for this article. Changing this after publishing creates "
+"a new article instead of updating."
 msgstr ""
 
 #: src/addons/follow-packs/FollowPackManager.ts:246
 #: src/addons/follow-packs/FollowPackManager.ts:393
 #: src/components/ui/note-rendering/RepostRenderer.ts:110
 #: src/components/ui/note-rendering/ZapReceiptRenderer.ts:139
-#: src/components/views/MessagesView.ts:196
+#: src/components/views/MessagesView.ts:187
 #: src/components/views/ZapstoreAppView.ts:408
 msgid "Unknown"
 msgstr ""
@@ -10008,7 +9994,7 @@ msgid "Unsaved Changes"
 msgstr ""
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:816
-#: src/components/views/MessagesView.ts:826
+#: src/components/views/MessagesView.ts:816
 msgid "Unselect all visible"
 msgstr ""
 
@@ -10016,11 +10002,11 @@ msgstr ""
 msgid "Unsubscribe"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:299
+#: src/components/notifications/NotificationItem.ts:303
 msgid "Unsubscribe from #%s"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:296
+#: src/components/notifications/NotificationItem.ts:300
 msgid "Unsubscribed from #%s"
 msgstr ""
 
@@ -10178,7 +10164,7 @@ msgstr ""
 msgid "Use your own NIP-30 custom emojis in notes and reactions."
 msgstr ""
 
-#: src/services/ZapService.ts:318
+#: src/services/ZapService.ts:321
 msgid "User cannot receive zaps"
 msgstr ""
 
@@ -10202,7 +10188,7 @@ msgstr ""
 msgid "User muted publicly"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:243
+#: src/components/views/ConversationView.ts:244
 msgid "User options"
 msgstr ""
 
@@ -10248,7 +10234,8 @@ msgstr ""
 #: src/components/profile/ProfileEditModal.ts:234
 #: src/helpers/profile-field-helpers.ts:66
 msgid ""
-"Verification identifier(s), comma-separated (user@domain.com, user@other.com)"
+"Verification identifier(s), comma-separated (user@domain.com, "
+"user@other.com)"
 msgstr ""
 
 #: src/components/views/AboutView.ts:153
@@ -10330,18 +10317,15 @@ msgid "View raw event"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:136
-msgid ""
-"Views open as tabs in the right pane, timeline stays visible in main pane"
+msgid "Views open as tabs in the right pane, timeline stays visible in main pane"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:135
-msgid ""
-"Views replace the timeline in the main pane, right pane shows System Logger"
+msgid "Views replace the timeline in the main pane, right pane shows System Logger"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:137
-msgid ""
-"Views replace the timeline, right pane is hidden for maximum content space"
+msgid "Views replace the timeline, right pane is hidden for maximum content space"
 msgstr ""
 
 #: src/components/settings/ListSettingsSection.ts:308
@@ -10350,7 +10334,7 @@ msgid ""
 "target=\"_blank\">follows.nostr.com</a> in your browser"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:690
+#: src/components/notifications/NotificationItem.ts:694
 msgid "voted on your poll"
 msgstr ""
 
@@ -10451,7 +10435,7 @@ msgstr ""
 msgid "Weekly availability"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:613
+#: src/components/views/ConversationView.ts:614
 msgid "Weeks"
 msgstr ""
 
@@ -10484,10 +10468,10 @@ msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:213
 msgid ""
-"When enabled, highlight posts by others that quote an external website (kind "
-"9802 with a web source) are hidden from your timelines, including pure "
-"reposts of them. Your own highlights stay visible. Individual users can be "
-"hidden from their profile."
+"When enabled, highlight posts by others that quote an external website "
+"(kind 9802 with a web source) are hidden from your timelines, including "
+"pure reposts of them. Your own highlights stay visible. Individual users "
+"can be hidden from their profile."
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:223
@@ -10521,8 +10505,9 @@ msgstr ""
 msgid ""
 "When uploading JPEG images, removes: DateTime, DateTimeOriginal, "
 "DateTimeDigitized, OffsetTime / OffsetTimeOriginal / OffsetTimeDigitized "
-"(timezone), SubSecTime / SubSecTimeOriginal / SubSecTimeDigitized; MakerNote "
-"(vendor-specific binary blob, may contain serials or internal IDs)."
+"(timezone), SubSecTime / SubSecTimeOriginal / SubSecTimeDigitized; "
+"MakerNote (vendor-specific binary blob, may contain serials or internal "
+"IDs)."
 msgstr ""
 
 #: src/components/settings/MediaServerSection.ts:231
@@ -10547,7 +10532,8 @@ msgstr ""
 
 #: src/addons/profile-recognition/ProfileRecognitionSettings.ts:158
 msgid ""
-"When you follow someone, the app saves their current name and profile picture"
+"When you follow someone, the app saves their current name and profile "
+"picture"
 msgstr ""
 
 #: src/addons/calendar/BookingService.ts:849
@@ -10632,7 +10618,7 @@ msgstr ""
 
 #: src/components/onboarding/AccountSetupWizard.ts:1673
 #: src/components/post/PostNoteModal.ts:997
-#: src/components/views/ConversationView.ts:785
+#: src/components/views/ConversationView.ts:786
 msgid "Yes"
 msgstr ""
 
@@ -10709,8 +10695,8 @@ msgstr ""
 msgid "You own your identity. No company can ban you or delete your account."
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:712
-#: src/components/notifications/NotificationItem.ts:721
+#: src/components/notifications/NotificationItem.ts:722
+#: src/components/notifications/NotificationItem.ts:731
 msgid "You posted to %s"
 msgstr ""
 
@@ -10741,8 +10727,7 @@ msgid "You've muted %s."
 msgstr ""
 
 #: src/components/modals/UnlockNoorSignerModal.ts:56
-msgid ""
-"Your 24-hour trust session has expired. Enter your password to continue."
+msgid "Your 24-hour trust session has expired. Enter your password to continue."
 msgstr ""
 
 #: src/components/onboarding/OnboardingComponent.ts:52
@@ -10798,7 +10783,8 @@ msgstr ""
 
 #: src/components/views/ListsOverviewView.ts:109
 msgid ""
-"Your lists are stored locally and synced to your relays. Pick one to open it."
+"Your lists are stored locally and synced to your relays. Pick one to open "
+"it."
 msgstr ""
 
 #: src/components/views/ProfileBookingView.ts:475
@@ -10824,14 +10810,13 @@ msgid "Your posts from %s to %s"
 msgstr ""
 
 #: src/components/onboarding/OnboardingComponent.ts:46
-msgid ""
-"Your posts live on decentralized relays. No single entity can remove them."
+msgid "Your posts live on decentralized relays. No single entity can remove them."
 msgstr ""
 
 #: src/components/views/AboutView.ts:204
 msgid ""
-"Your private key (nsec) is stored in your operating system's keychain (macOS "
-"Keychain, Linux Secret Service)."
+"Your private key (nsec) is stored in your operating system's keychain "
+"(macOS Keychain, Linux Secret Service)."
 msgstr ""
 
 #: src/components/views/AboutView.ts:174
@@ -10850,7 +10835,7 @@ msgstr ""
 msgid "Your recent posts"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:948
+#: src/components/views/MessagesView.ts:938
 msgid ""
 "Your remote signer does not support NIP-44 encryption required for private "
 "messages. Use a browser extension or NoorSigner for full DM access."
@@ -10918,11 +10903,11 @@ msgstr ""
 msgid "Zap this user"
 msgstr ""
 
-#: src/services/ZapService.ts:299
+#: src/services/ZapService.ts:302
 msgid "Zap timeout - please try again"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:684
+#: src/components/notifications/NotificationItem.ts:688
 msgid "zapped your %s"
 msgstr ""
 
@@ -11152,7 +11137,7 @@ msgstr ""
 msgid "No archived tickets yet."
 msgstr ""
 
-#: src/addons/feedback-board/FeedbackBoardService.ts:675
+#: src/addons/feedback-board/FeedbackBoardService.ts:678
 msgid "Only readable in NoorNote."
 msgstr ""
 
@@ -11252,46 +11237,46 @@ msgstr "Média indisponible"
 msgid "Tap to load media"
 msgstr "Touchez pour charger le média"
 
-#: src/components/views/MessagesView.ts:799
+#: src/components/views/MessagesView.ts:789
 msgid "%s of %s conversations deleted"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:796
+#: src/components/views/MessagesView.ts:786
 msgid "Conversations deleted & senders muted"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:754
+#: src/components/views/MessagesView.ts:744
 msgid ""
-"Delete %s conversation and mute its sender? It won't appear in your messages "
-"again."
+"Delete %s conversation and mute its sender? It won't appear in your "
+"messages again."
 msgid_plural ""
 "Delete %s conversations and mute their senders? They won't appear in your "
 "messages again."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/components/views/MessagesView.ts:753
+#: src/components/views/MessagesView.ts:743
 msgid "Delete selected conversations"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:652
+#: src/components/views/MessagesView.ts:642
 msgid "Select conversation for deletion"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:179
-#: src/components/views/MessagesView.ts:867
+#: src/components/views/MessagesView.ts:170
+#: src/components/views/MessagesView.ts:857
 msgid "Spam mode"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:867
+#: src/components/views/MessagesView.ts:857
 msgid "Spam mode active"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:257
+#: src/components/views/MessagesView.ts:251
 msgid "Spam mode disabled"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:264
+#: src/components/views/MessagesView.ts:258
 msgid ""
 "Silences alerts for new messages from unknown senders. Stays on for 24 h, "
 "then turns off automatically."
@@ -11338,16 +11323,16 @@ msgstr ""
 
 #: src/addons/group-chats/GroupChatsSettings.ts:189
 msgid ""
-"Also get the heads-up when you post to a group yourself, a handy cross-"
-"device confirmation that your message went through. Turn off to only hear "
-"about others. Applies to every enabled provider."
+"Also get the heads-up when you post to a group yourself, a handy "
+"cross-device confirmation that your message went through. Turn off to only "
+"hear about others. Applies to every enabled provider."
 msgstr ""
 
 #: src/addons/group-chats/GroupChatsSettings.ts:86
 msgid ""
 "Armada communities are end-to-end encrypted (Concord protocol). Unlike "
-"Nostrord, there is no public membership list, you need to add each community "
-"manually by pasting its invite link below."
+"Nostrord, there is no public membership list, you need to add each "
+"community manually by pasting its invite link below."
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:242
@@ -11405,8 +11390,8 @@ msgstr ""
 msgid "Copy Permalink"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:1185
-#: src/components/views/ConversationView.ts:1201
+#: src/components/views/ConversationView.ts:1186
+#: src/components/views/ConversationView.ts:1202
 msgid "Could not send message, please try again"
 msgstr ""
 
@@ -11453,11 +11438,11 @@ msgstr ""
 
 #: src/components/views/AboutView.ts:222
 msgid ""
-"Like any web host, MyNymbox processes standard server log data when you load "
-"the application, typically your IP address, request timestamp, the URL/file "
-"requested, browser type, and referrer, for operational and security purposes "
-"(e.g. DDoS mitigation, server stability). NoorNote itself does not access or "
-"use these logs."
+"Like any web host, MyNymbox processes standard server log data when you "
+"load the application, typically your IP address, request timestamp, the "
+"URL/file requested, browser type, and referrer, for operational and "
+"security purposes (e.g. DDoS mitigation, server stability). NoorNote itself "
+"does not access or use these logs."
 msgstr ""
 
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:138
@@ -11479,13 +11464,13 @@ msgstr ""
 #: src/components/views/AboutView.ts:111
 msgid ""
 "NoorNote does not use any analytics services, tracking pixels, marketing "
-"cookies, or telemetry. We do not collect, log, or transmit any usage data to "
-"ourselves. The third-party connections described above are inherent to "
+"cookies, or telemetry. We do not collect, log, or transmit any usage data "
+"to ourselves. The third-party connections described above are inherent to "
 "rendering content and providing the service, they are not telemetry, and no "
 "identifier beyond a standard HTTP request (IP, User-Agent) is sent."
 msgstr ""
 
-#: src/addons/calendar/CalendarReminderService.ts:329
+#: src/addons/calendar/CalendarReminderService.ts:328
 msgid "NoorNote, Calendar"
 msgstr ""
 
@@ -11495,8 +11480,8 @@ msgstr ""
 
 #: src/components/views/ProfileBookingView.ts:493
 msgid ""
-"Nostr users taking part in the meeting, they receive a private message about "
-"this booking."
+"Nostr users taking part in the meeting, they receive a private message "
+"about this booking."
 msgstr ""
 
 #: src/components/timeline/Timeline.ts:431
@@ -11563,8 +11548,8 @@ msgstr ""
 
 #: src/addons/analytics/AnalyticsAddonView.ts:433
 msgid ""
-"Sats received per month, last 12 months, older receipts rarely survive relay "
-"retention. Hover a bar for details."
+"Sats received per month, last 12 months, older receipts rarely survive "
+"relay retention. Hover a bar for details."
 msgstr ""
 
 #: src/addons/analytics/AnalyticsAddonView.ts:440
@@ -11593,23 +11578,23 @@ msgid ""
 "device."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:1200
+#: src/components/views/ConversationView.ts:1201
 msgid "Signer did not respond, message not sent"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:262
 msgid ""
-"Skips rendering of off-screen notes (CSS <code>content-visibility: auto</"
-"code>). Significantly reduces memory usage on long timelines, especially on "
-"Linux. May cause minor scrollbar jumps when scrolling fast, disable if it "
-"bothers you."
+"Skips rendering of off-screen notes (CSS <code>content-visibility: "
+"auto</code>). Significantly reduces memory usage on long timelines, "
+"especially on Linux. May cause minor scrollbar jumps when scrolling fast, "
+"disable if it bothers you."
 msgstr ""
 
 #: src/components/views/ProfileView.ts:1166
 msgid "Soft muted, their interactions no longer notify you"
 msgstr ""
 
-#: src/components/views/MessagesView.ts:256
+#: src/components/views/MessagesView.ts:250
 msgid "Spam mode enabled, alerts off for 24 h"
 msgstr ""
 
@@ -11633,8 +11618,8 @@ msgstr ""
 
 #: src/addons/feedback-board/FeedbackBoardView.ts:630
 msgid ""
-"Tickets are public Nostr events, visible in every Nostr client (kanbanstr-"
-"compatible), not only in NoorNote. Do not include private data."
+"Tickets are public Nostr events, visible in every Nostr client "
+"(kanbanstr-compatible), not only in NoorNote. Do not include private data."
 msgstr ""
 
 #: src/addons/feedback-board/FeedbackBoardView.ts:252
@@ -11680,8 +11665,8 @@ msgstr ""
 #: src/components/settings/PrivacySettingsSection.ts:111
 msgid ""
 "Adds a note icon next to each profile where you can store an encrypted, "
-"private note about that user (NIP-78). Notes are NIP-44 self-encrypted, only "
-"you can read them, and they are never published unencrypted. This is "
+"private note about that user (NIP-78). Notes are NIP-44 self-encrypted, "
+"only you can read them, and they are never published unencrypted. This is "
 "separate from public petnames, which live in your contact list and are "
 "visible to everyone."
 msgstr ""
@@ -11705,8 +11690,8 @@ msgstr ""
 
 #: src/components/settings/RelaySettingsSection.ts:223
 msgid ""
-"Browsers share a limit of about %s simultaneous connections across all tabs, "
-"each connected relay uses one per tab. NoorNote connects your %s most "
+"Browsers share a limit of about %s simultaneous connections across all "
+"tabs, each connected relay uses one per tab. NoorNote connects your %s most "
 "important relays first (your own before fallback relays)."
 msgstr ""
 
@@ -11729,16 +11714,15 @@ msgstr ""
 
 #: src/addons/calendar/CalendarGridView.ts:343
 msgid ""
-"No events yet. Create one, or find a public event calendar and hit Subscribe "
-"to fill your grid."
+"No events yet. Create one, or find a public event calendar and hit "
+"Subscribe to fill your grid."
 msgstr ""
 
 #: src/addons/addonI18n.ts:70
-msgid ""
-"Organize notes, articles and links in bookmark folders, private or public."
+msgid "Organize notes, articles and links in bookmark folders, private or public."
 msgstr ""
 
-#: src/components/views/MessagesView.ts:1048
+#: src/components/views/MessagesView.ts:1038
 msgid ""
 "Re-fetch your full message history from the relays. Existing messages are "
 "kept, this only pulls anything missing. May take a moment."
@@ -11746,8 +11730,8 @@ msgstr ""
 
 #: src/addons/analytics/AnalyticsAddonView.ts:254
 msgid ""
-"Sent zaps are best effort, zaps from wallets that omit the P tag on receipts "
-"may be missing."
+"Sent zaps are best effort, zaps from wallets that omit the P tag on "
+"receipts may be missing."
 msgstr ""
 
 #: src/addons/calendar/BookingService.ts:510
@@ -11764,10 +11748,10 @@ msgstr ""
 
 #: src/addons/calendar/CalendarImportExport.ts:216
 msgid ""
-"This clears your whole calendar on this device: events, booking slots, saved "
-"and private events. Nothing is deleted on your relays yet, click \"Publish "
-"deletions\" afterwards to make the wipe permanent, or reload the page to "
-"bring everything back."
+"This clears your whole calendar on this device: events, booking slots, "
+"saved and private events. Nothing is deleted on your relays yet, click "
+"\"Publish deletions\" afterwards to make the wipe permanent, or reload the "
+"page to bring everything back."
 msgstr ""
 
 #: src/addons/marketplace/MyListingsView.ts:239
@@ -11820,6 +11804,14 @@ msgid ""
 "rebroadcasts your profile and follow-list to any newly-added write-relay."
 msgstr ""
 
+#: src/components/notifications/NotificationItem.ts:718
+msgid "%s new mentions/replies in %s"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:719
+msgid "mentioned or replied to you in %s"
+msgstr ""
+
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"
 msgid "To"
@@ -11842,272 +11834,279 @@ msgctxt "note-taking"
 msgid "Notes"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:582
+#: src/components/notifications/NotificationItem.ts:586
 msgctxt "notif-acc"
 msgid "app on Zapstore"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:566
-msgctxt "notif-acc"
-msgid "article"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:574
-msgctxt "notif-acc"
-msgid "bookmark list"
 msgstr ""
 
 #: src/components/notifications/NotificationItem.ts:570
 msgctxt "notif-acc"
-msgid "collection"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:564
-msgctxt "notif-acc"
-msgid "comment"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:590
-msgctxt "notif-acc"
-msgid "emoji pack"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:644
-msgctxt "notif-acc"
-msgid "event"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:616
-msgctxt "notif-acc"
-msgid "file"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:586
-msgctxt "notif-acc"
-msgid "follow pack"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:636
-msgctxt "notif-acc"
-msgid "git issue"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:628
-msgctxt "notif-acc"
-msgid "git patch"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:602
-msgctxt "notif-acc"
-msgid "git repository"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:640
-msgctxt "notif-acc"
-msgid "git status update"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:624
-msgctxt "notif-acc"
-msgid "group chat message"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:596
-msgctxt "notif-acc"
-msgid "listing"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:594
-msgctxt "notif-acc"
-msgid "live stream"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:642
-msgctxt "notif-acc"
-msgid "note"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:618
-msgctxt "notif-acc"
-msgid "picture"
+msgid "article"
 msgstr ""
 
 #: src/components/notifications/NotificationItem.ts:578
 msgctxt "notif-acc"
-msgid "podcast episode"
+msgid "bookmark list"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:562
+#: src/components/notifications/NotificationItem.ts:574
 msgctxt "notif-acc"
-msgid "poll"
+msgid "collection"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:568
+msgctxt "notif-acc"
+msgid "comment"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:594
+msgctxt "notif-acc"
+msgid "emoji pack"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:648
+msgctxt "notif-acc"
+msgid "event"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:620
+msgctxt "notif-acc"
+msgid "file"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:590
+msgctxt "notif-acc"
+msgid "follow pack"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:640
+msgctxt "notif-acc"
+msgid "git issue"
 msgstr ""
 
 #: src/components/notifications/NotificationItem.ts:632
 msgctxt "notif-acc"
-msgid "pull request"
+msgid "git patch"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:612
+#: src/components/notifications/NotificationItem.ts:606
 msgctxt "notif-acc"
-msgid "reaction"
+msgid "git repository"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:620
+#: src/components/notifications/NotificationItem.ts:644
 msgctxt "notif-acc"
-msgid "video"
+msgid "git status update"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:628
+msgctxt "notif-acc"
+msgid "group chat message"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:600
+msgctxt "notif-acc"
+msgid "listing"
 msgstr ""
 
 #: src/components/notifications/NotificationItem.ts:598
 msgctxt "notif-acc"
+msgid "live stream"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:646
+msgctxt "notif-acc"
+msgid "note"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:622
+msgctxt "notif-acc"
+msgid "picture"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:582
+msgctxt "notif-acc"
+msgid "podcast episode"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:566
+msgctxt "notif-acc"
+msgid "poll"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:636
+msgctxt "notif-acc"
+msgid "pull request"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:616
+msgctxt "notif-acc"
+msgid "reaction"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:624
+msgctxt "notif-acc"
+msgid "video"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:602
+msgctxt "notif-acc"
 msgid "website"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:614
+#: src/components/notifications/NotificationItem.ts:618
 msgctxt "notif-acc"
 msgid "zap"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:604
-msgctxt "notif-acc"
-msgid "badge"
 msgstr ""
 
 #: src/components/notifications/NotificationItem.ts:608
 msgctxt "notif-acc"
+msgid "badge"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:612
+msgctxt "notif-acc"
 msgid "3D object"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:581
-msgctxt "notif-dat"
-msgid "app on Zapstore"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:566
-msgctxt "notif-dat"
-msgid "article"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:573
-msgctxt "notif-dat"
-msgid "bookmark list"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:569
-msgctxt "notif-dat"
-msgid "collection"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:564
-msgctxt "notif-dat"
-msgid "comment"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:589
-msgctxt "notif-dat"
-msgid "emoji pack"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:644
-msgctxt "notif-dat"
-msgid "event"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:616
-msgctxt "notif-dat"
-msgid "file"
 msgstr ""
 
 #: src/components/notifications/NotificationItem.ts:585
 msgctxt "notif-dat"
-msgid "follow pack"
+msgid "app on Zapstore"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:635
+#: src/components/notifications/NotificationItem.ts:570
 msgctxt "notif-dat"
-msgid "git issue"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:627
-msgctxt "notif-dat"
-msgid "git patch"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:601
-msgctxt "notif-dat"
-msgid "git repository"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:639
-msgctxt "notif-dat"
-msgid "git status update"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:623
-msgctxt "notif-dat"
-msgid "group chat message"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:596
-msgctxt "notif-dat"
-msgid "listing"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:593
-msgctxt "notif-dat"
-msgid "live stream"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:642
-msgctxt "notif-dat"
-msgid "note"
-msgstr ""
-
-#: src/components/notifications/NotificationItem.ts:618
-msgctxt "notif-dat"
-msgid "picture"
+msgid "article"
 msgstr ""
 
 #: src/components/notifications/NotificationItem.ts:577
 msgctxt "notif-dat"
-msgid "podcast episode"
+msgid "bookmark list"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:562
+#: src/components/notifications/NotificationItem.ts:573
 msgctxt "notif-dat"
-msgid "poll"
+msgid "collection"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:631
+#: src/components/notifications/NotificationItem.ts:568
 msgctxt "notif-dat"
-msgid "pull request"
+msgid "comment"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:611
+#: src/components/notifications/NotificationItem.ts:593
 msgctxt "notif-dat"
-msgid "reaction"
+msgid "emoji pack"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:648
+msgctxt "notif-dat"
+msgid "event"
 msgstr ""
 
 #: src/components/notifications/NotificationItem.ts:620
 msgctxt "notif-dat"
+msgid "file"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:589
+msgctxt "notif-dat"
+msgid "follow pack"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:639
+msgctxt "notif-dat"
+msgid "git issue"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:631
+msgctxt "notif-dat"
+msgid "git patch"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:605
+msgctxt "notif-dat"
+msgid "git repository"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:643
+msgctxt "notif-dat"
+msgid "git status update"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:627
+msgctxt "notif-dat"
+msgid "group chat message"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:600
+msgctxt "notif-dat"
+msgid "listing"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:597
+msgctxt "notif-dat"
+msgid "live stream"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:646
+msgctxt "notif-dat"
+msgid "note"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:622
+msgctxt "notif-dat"
+msgid "picture"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:581
+msgctxt "notif-dat"
+msgid "podcast episode"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:566
+msgctxt "notif-dat"
+msgid "poll"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:635
+msgctxt "notif-dat"
+msgid "pull request"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:615
+msgctxt "notif-dat"
+msgid "reaction"
+msgstr ""
+
+#: src/components/notifications/NotificationItem.ts:624
+msgctxt "notif-dat"
 msgid "video"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:598
+#: src/components/notifications/NotificationItem.ts:602
 msgctxt "notif-dat"
 msgid "website"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:614
+#: src/components/notifications/NotificationItem.ts:618
 msgctxt "notif-dat"
 msgid "zap"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:604
+#: src/components/notifications/NotificationItem.ts:608
 msgctxt "notif-dat"
 msgid "badge"
 msgstr ""
 
-#: src/components/notifications/NotificationItem.ts:607
+#: src/components/notifications/NotificationItem.ts:611
 msgctxt "notif-dat"
 msgid "3D object"
+msgstr ""
+
+#: src/addons/nostr-majlis/NostrMajlisReminderService.ts:138
+#: src/addons/nostr-majlis/NostrMajlisReminderService.ts:199
+#: src/addons/note-taking/NoteTakingReminderService.ts:165
+msgctxt "action"
+msgid "Open"
 msgstr ""
