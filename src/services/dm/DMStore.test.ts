@@ -47,6 +47,7 @@ import { DMStore, type DMMessage } from './DMStore';
 const ME_LEGACY = 'a'.repeat(64);
 const ME_UNREAD = 'c'.repeat(64);
 const ME_PURGE = 'd'.repeat(64);
+const ME_TOMB = 'e'.repeat(64);
 const PARTNER = 'b'.repeat(64);
 
 function msg(
@@ -192,5 +193,31 @@ describe('DMStore on NoorDB', () => {
 
     expect(await store.getMessages(PARTNER)).toEqual([]);
     expect(await store.getConversation(PARTNER)).toBeNull();
+  });
+
+  it('writes a tombstone on purge so a backlog replay cannot resurrect the sender', async () => {
+    await store.init(ME_TOMB);
+
+    await store.saveMessage(msg({ id: 'p1', wrapId: 'wp1', createdAt: 1_000 }));
+    expect(await store.isTombstoned(PARTNER)).toBe(false);
+
+    await store.purgeConversation(PARTNER);
+
+    expect(await store.isTombstoned(PARTNER)).toBe(true);
+    expect(await store.getTombstonedPubkeys()).toEqual([PARTNER]);
+
+    // The resurrection path from the field bug: the relay backlog replays the
+    // purged wrap under a NEW wrapId after the purge wiped the old dedup ids —
+    // the store itself accepts it (the DMService gate must drop it), so the
+    // tombstone query has to stay answerable across re-inits.
+    store.close();
+    store = DMStore.getInstance();
+    await store.init(ME_TOMB);
+    expect(await store.isTombstoned(PARTNER)).toBe(true);
+
+    // Explicit unblock (user unmutes the sender) clears the tombstone.
+    await store.clearTombstone(PARTNER);
+    expect(await store.isTombstoned(PARTNER)).toBe(false);
+    expect(await store.getTombstonedPubkeys()).toEqual([]);
   });
 });
