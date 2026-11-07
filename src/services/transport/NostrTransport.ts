@@ -524,7 +524,11 @@ export class NostrTransport {
       let closed = 0;
       for (const url of prunable) {
         if (toClose <= 0) break;
-        relays.get(url)?.disconnect();
+        const relay = relays.get(url);
+        // disconnect() leaves a pending reconnect timer running, so an evicted
+        // relay keeps reconnecting forever. Clear it first.
+        relay?.connectivity?.resetReconnectionState?.();
+        relay?.disconnect();
         pool.removeRelay(url);
         toClose--;
         closed++;
