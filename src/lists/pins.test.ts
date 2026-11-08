@@ -13,7 +13,13 @@ vi.mock('../services/EventBus', () => ({
   EventBus: { getInstance: vi.fn(() => ({ on: vi.fn(() => 'sub') })) },
 }));
 vi.mock('../core/TypedEventBus', () => ({
-  TypedEventBus: { getInstance: vi.fn(() => ({ emit: vi.fn() })) },
+  TypedEventBus: {
+    getInstance: vi.fn(() => ({
+      emit: vi.fn(),
+      on: vi.fn(() => 'sub'),
+      off: vi.fn(),
+    })),
+  },
 }));
 vi.mock('../services/SystemLogger', () => ({
   SystemLogger: {

@@ -16,6 +16,7 @@
 import { ToastService } from '../../services/ToastService';
 import { AuthService } from '../../services/AuthService';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { errMessage } from '../../helpers/errorMessage';
 import { calendarEventsToICS } from '../../helpers/nip52/icsExport';
 import {
   parseICSCalendar,
@@ -252,10 +253,7 @@ export class CalendarImportExportManager {
     } catch (err) {
       if (this.destroyed) return;
       ToastService.show(
-        _(
-          'Publishing the deletions failed: %s',
-          err instanceof Error ? err.message : String(err)
-        ),
+        _('Publishing the deletions failed: %s', errMessage(err)),
         'error'
       );
     }
@@ -283,10 +281,7 @@ export class CalendarImportExportManager {
       );
     } catch (err) {
       this.imported = [];
-      this.setStatus(
-        `Could not read the file: ${err instanceof Error ? err.message : String(err)}`,
-        false
-      );
+      this.setStatus(`Could not read the file: ${errMessage(err)}`, false);
     }
     this.render();
   }

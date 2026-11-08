@@ -18,6 +18,7 @@
 import { ToastService } from '../../services/ToastService';
 import { AuthService } from '../../services/AuthService';
 import { UserProfileService } from '../../services/UserProfileService';
+import { errMessage } from '../../helpers/errorMessage';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { NnDropdown } from '../../components/ui/NnDropdown';
 import { Switch } from '../../components/ui/Switch';
@@ -214,10 +215,7 @@ export class BookingManager {
       await this.refreshSlots();
     } catch (err) {
       ToastService.show(
-        _(
-          'Booking config failed: %s',
-          err instanceof Error ? err.message : String(err)
-        ),
+        _('Booking config failed: %s', errMessage(err)),
         'error'
       );
       if (btn) {

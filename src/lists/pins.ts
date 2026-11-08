@@ -10,7 +10,6 @@
  */
 
 import { TypedEventBus } from '../core/TypedEventBus';
-import { EventBus } from '../services/EventBus';
 import {
   fetchEvents,
   getCurrentUserPubkey,
@@ -147,7 +146,7 @@ export function clearPinCache(): void {
 }
 
 // Account switch / logout: the cached pin belongs to the previous user.
-EventBus.getInstance().on('user:logout', () => clearPinCache());
+TypedEventBus.getInstance().on('user:logout', () => clearPinCache());
 
 function diagCache(pubkey: string): void {
   logger.info('pins.ts', `Pin cache updated for ${pubkey.slice(0, 8)}`, {

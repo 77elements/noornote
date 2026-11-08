@@ -18,6 +18,7 @@
 
 import type { NDKFilter, NostrEvent } from '@nostr-dev-kit/ndk';
 import { NostrTransport } from './transport/NostrTransport';
+import { errMessage } from '../helpers/errorMessage';
 import { RelayConfig } from './RelayConfig';
 import { RelayListOrchestrator } from './orchestration/RelayListOrchestrator';
 import { AuthService } from './AuthService';
@@ -137,7 +138,7 @@ export abstract class RemoteKindVerdictService<TVerdict> {
         this.logTag
       );
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = errMessage(err);
       const reason: 'timeout' | 'error' = msg.toLowerCase().includes('timeout')
         ? 'timeout'
         : 'error';
