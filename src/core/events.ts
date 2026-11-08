@@ -468,6 +468,8 @@ export interface AppEvents {
   'settings:nav-mode-changed': { classic: boolean };
   /** Back-Bar switch flipped — payload: { enabled: boolean }. */
   'settings:back-bar-changed': BackBarChangedPayload;
+  /** Focus-UI switch flipped — payload: { enabled: boolean }. */
+  'settings:focus-ui-changed': { enabled: boolean };
 
   // ── View Tabs ──────────────────────────────
   'view-tab:opened': ViewTabOpenedPayload;

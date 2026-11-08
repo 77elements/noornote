@@ -1,0 +1,22 @@
+// Focus Shell (v2) — the mount layer for the Focus UI.
+//
+// While `html.ui--focus` is set, the classic interface chrome is hidden and
+// the empty single-column shell owns the screen. The shell itself starts
+// bare (no content, no styling beyond the frame) — everything inside gets
+// built step by step (docs/todos/v2-focus-ui.md). Colors are NOT touched:
+// the shell stays transparent and inherits the theme like the body does.
+
+@use '../abstracts/variables' as *;
+
+html.ui--focus {
+  // Classic chrome: fully out of the way while the shell is active.
+  .main-layout {
+    display: none;
+  }
+}
+
+.focus-shell {
+  width: 100%;
+  min-height: 100vh;
+  padding: $gap; // TEMP: hosts the temporary Focus-UI switch until settings get their place
+}

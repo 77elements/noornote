@@ -56,6 +56,7 @@ import { ListsMenuPartial } from './partials/ListsMenuPartial';
 import { ListsCountManager } from './managers/ListsCountManager';
 import { NavWheelPartial } from './partials/NavWheelPartial';
 import { applyNavMode, isNavWheelActive } from '../../helpers/navModeSetting';
+import { applyFocusUi } from '../../helpers/focusUiSetting';
 import {
   isWhatsNewDismissed,
   setWhatsNewDismissed,
@@ -279,6 +280,9 @@ export class MainLayout {
   private initializeManagers(): void {
     // Navigation mode gate: `classic-nav` on <html> decides wheel vs. list.
     applyNavMode();
+
+    // Focus UI gate: `ui--focus` on <html> decides classic vs. v2 shell.
+    applyFocusUi();
 
     // Lazy-load list managers (they pull in heavy deps)
     void this.loadListManagers();

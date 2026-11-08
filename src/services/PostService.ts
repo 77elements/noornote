@@ -846,7 +846,7 @@ export class PostService {
 
       ToastService.show(
         _(
-          'None of the selected relays support NIP-40 (expiration) — the note may be stored permanently.'
+          'None of the selected relays support NIP-40 (expiration), the note may be stored permanently.'
         ),
         'warning'
       );

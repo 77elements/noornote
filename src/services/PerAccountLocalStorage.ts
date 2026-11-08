@@ -92,6 +92,10 @@ export const StorageKeys = {
   // Navigation mode (per-account): false (default) = circular nav wheel in the
   // sidebar, true = the classic linear menu list. See helpers/navModeSetting.ts.
   CLASSIC_MENU: 'noornote_classic_menu_map',
+  // Focus UI (per-account): false (default) = classic interface, true = v2
+  // Focus Shell. While on, the classic layout modes have no effect.
+  // See helpers/focusUiSetting.ts.
+  FOCUS_UI: 'noornote_focus_ui_map',
   // Global back bar (per-account): true (default) = show the .nn-back-bar Back
   // button above the primary content bottom edge. See helpers/backBarSetting.ts.
   BACK_BAR_ENABLED: 'noornote_back_bar_enabled_map',
