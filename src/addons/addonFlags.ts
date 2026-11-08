@@ -22,7 +22,7 @@ import { isFollowerNotificationEnabled } from './follower-notification/index';
 import { isGroupChatsEnabled } from './group-chats/index';
 import { isHashtagSubscriptionsEnabled } from './hashtag-subscriptions/index';
 import { isListSettingsEnabled } from './list-settings/index';
-import { isLiveStreamsPlayerEnabled } from './live-streams-player/index';
+import { isLiveStreamsEnabled } from './live-streams/index';
 import { isMarketplaceEnabled } from './marketplace/index';
 import { isNostrMajlisEnabled } from './nostr-majlis/index';
 import { isNoteTakingEnabled } from './note-taking/index';
@@ -61,8 +61,8 @@ export function getAddonEnabled(id: string): boolean {
       return isHashtagSubscriptionsEnabled();
     case 'list-settings':
       return isListSettingsEnabled();
-    case 'live-streams-player':
-      return isLiveStreamsPlayerEnabled();
+    case 'live-streams':
+      return isLiveStreamsEnabled();
     case 'marketplace':
       return isMarketplaceEnabled();
     case 'nostr-majlis':

@@ -16,7 +16,7 @@ import {
   escapeCssUrl,
   safeHttpUrl,
 } from '../../../helpers/escapeHtml';
-import { isLiveStreamsPlayerEnabled } from '../../../addons/live-streams-player/index';
+import { isLiveStreamsEnabled } from '../../../addons/live-streams/index';
 import { getAddressableIdentifier } from '../../../helpers/getAddressableIdentifier';
 import { getLiveStreamHost } from '../../../helpers/getLiveStreamHost';
 import { getLiveStreamStatus } from '../../../helpers/getLiveStreamStatus';
@@ -228,7 +228,7 @@ export class ArticlePreviewRenderer {
 
     // Addon: Live Streams Player — inline HLS playback.
     // Only for currently-live streams with a streaming URL.
-    if (status === 'live' && streaming && isLiveStreamsPlayerEnabled()) {
+    if (status === 'live' && streaming && isLiveStreamsEnabled()) {
       void this.upgradeToInlinePlayer(card, streaming, image);
     }
 
@@ -246,7 +246,7 @@ export class ArticlePreviewRenderer {
           (url): url is string =>
             typeof url === 'string' && url.startsWith('ws')
         );
-        if (isLiveStreamsPlayerEnabled()) {
+        if (isLiveStreamsEnabled()) {
           this.attachStreamChatInput(card, addressableId, streamRelays);
         }
         this.attachStreamZapButton(card, addressableId, hostPubkey, event.id);
@@ -409,11 +409,11 @@ export class ArticlePreviewRenderer {
       if (watchBtn) watchBtn.style.display = 'none';
 
       const { mountPlayer } = await import(
-        '../../../addons/live-streams-player/player'
+        '../../../addons/live-streams/player'
       );
       await mountPlayer(playerEl, { streamUrl, poster });
     } catch (err) {
-      console.debug('[LiveStreamsPlayer] Failed to mount inline player:', err);
+      console.debug('[LiveStreams] Failed to mount inline player:', err);
     }
   }
 

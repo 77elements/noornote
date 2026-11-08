@@ -233,7 +233,13 @@ export const StorageKeys = {
   WALLET_BALANCE_ADDON_ENABLED: 'noornote_wallet_balance_addon_enabled_map',
   BTC_PRICE_ENABLED: 'noornote_btc_price_enabled_map',
   BTC_PRICE_SIDEBAR_WIDGET: 'noornote_btc_price_sidebar_widget_map',
+  // Live Streams addon: new key since the 2026-11 rename; the old
+  // LIVE_STREAMS_PLAYER_ENABLED key is kept as a migration fallback (see
+  // src/addons/live-streams/index.ts) — never delete it.
+  LIVE_STREAMS_ENABLED: 'noornote_live_streams_enabled_map',
   LIVE_STREAMS_PLAYER_ENABLED: 'noornote_live_streams_player_enabled_map',
+  LIVE_STREAMS_SIDEBAR_WIDGET: 'noornote_live_streams_sidebar_widget_map',
+  LIVE_STREAMS_PINNED: 'noornote_live_streams_pinned_map',
   BADGES_ENABLED: 'noornote_badges_enabled_map',
   BULK_DELETE_ENABLED: 'noornote_bulk_delete_enabled_map',
   NOTE_TAKING_ENABLED: 'noornote_note_taking_enabled_map',

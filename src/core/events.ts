@@ -553,7 +553,8 @@ export interface AppEvents {
   'follower-notification:addon-toggle': AddonTogglePayload;
   'feedback-board:addon-toggle': AddonTogglePayload;
   'hashtag-subscriptions:addon-toggle': AddonTogglePayload;
-  'live-streams-player:addon-toggle': AddonTogglePayload;
+  'live-streams:addon-toggle': AddonTogglePayload;
+  'live-streams:background-player': { pinned: boolean };
   'marketplace:addon-toggle': AddonTogglePayload;
   'note-taking:addon-toggle': AddonTogglePayload;
   'nostr-majlis:addon-toggle': AddonTogglePayload;
