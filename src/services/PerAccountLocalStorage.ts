@@ -240,6 +240,9 @@ export const StorageKeys = {
   LIVE_STREAMS_PLAYER_ENABLED: 'noornote_live_streams_player_enabled_map',
   LIVE_STREAMS_SIDEBAR_WIDGET: 'noornote_live_streams_sidebar_widget_map',
   LIVE_STREAMS_PINNED: 'noornote_live_streams_pinned_map',
+  // What's New sidebar widget: dismissed version string ("1.10.0") — the
+  // widget reappears automatically when the app version changes.
+  WHATS_NEW_DISMISSED: 'noornote_whats_new_dismissed_map',
   BADGES_ENABLED: 'noornote_badges_enabled_map',
   BULK_DELETE_ENABLED: 'noornote_bulk_delete_enabled_map',
   NOTE_TAKING_ENABLED: 'noornote_note_taking_enabled_map',

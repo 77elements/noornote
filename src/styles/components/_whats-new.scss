@@ -1,0 +1,30 @@
+// What's New sidebar widget — "What's new in v{version}" link to the static
+// /whats-new/ page, with an x-button to dismiss it for the current version
+// (per account, via src/helpers/whatsNew.ts). Sits between the nav wheel and
+// the welcome link in the sidebar. Uses the shared .sidebar-widget chrome
+// (molecules/_sidebar-widget.scss); only the extras live here.
+@use '../abstracts/variables' as *;
+
+[data-sidebar-widget='whats-new'] .sidebar-widget {
+  cursor: pointer;
+}
+
+.sidebar-whats-new {
+  // Two children only (link + dismiss) — the shared __cols template has a
+  // third 20px column for optional action icons; collapse it here.
+  .sidebar-widget__cols {
+    grid-template-columns: 1fr 20px;
+  }
+
+  &__link {
+    color: inherit;
+    text-decoration: none;
+
+    span {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+}

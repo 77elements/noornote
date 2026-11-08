@@ -391,6 +391,17 @@ export class ViewMountingService {
           },
         };
 
+      case 'whats-new':
+        return {
+          factory: async () => {
+            const { WhatsNewView } = await import(
+              '../components/views/WhatsNewView'
+            );
+            const view = new WhatsNewView();
+            return { element: view.getElement() };
+          },
+        };
+
       case 'write-article':
         return {
           factory: async () => {

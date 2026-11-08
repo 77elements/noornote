@@ -410,6 +410,7 @@ export class App {
     this.registerRoute('/login', 'login', 'not-logged-in', 'login-view');
     this.registerRoute('/setup', 'setup', 'profile-setup', 'setup-view');
     this.registerRoute('/about', 'about', 'about', 'abv');
+    this.registerRoute('/whats-new', 'whats-new', 'whats-new', 'wnv');
     this.registerRoute('/articles', 'articles', 'articles', 'atv');
 
     // Parameterized routes (public)
