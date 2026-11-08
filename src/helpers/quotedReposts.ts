@@ -109,6 +109,37 @@ export function mergeChronologicalComments(
 }
 
 /**
+ * Whether this comment is a DIRECT (top-level) reply by the note's author.
+ */
+export function isAuthorTopLevelReply(
+  comment: ThreadComment,
+  noteAuthor: string | undefined
+): boolean {
+  return (
+    !!noteAuthor &&
+    comment.type === 'reply' &&
+    comment.node.depth === 0 &&
+    comment.node.event.pubkey === noteAuthor
+  );
+}
+
+/**
+ * Twitter-style author pin: the note author's DIRECT (top-level) replies are
+ * moved to the top of the comment list (chronological among themselves), so a
+ * late correction isn't buried under dozens of later replies. Applies for
+ * EVERY viewer — Nostr notes are immutable, so the author's only way to
+ * correct an existing note is a self-reply, and followers must see it first.
+ */
+export function pinAuthorReplies(
+  comments: ThreadComment[],
+  noteAuthor: string | undefined
+): ThreadComment[] {
+  const pinned = comments.filter(c => isAuthorTopLevelReply(c, noteAuthor));
+  if (pinned.length === 0) return comments;
+  return [...pinned, ...comments.filter(c => !pinned.includes(c))];
+}
+
+/**
  * Render a thread node recursively (depth-first, pre-order) into the
  * container. `createReplyElement` builds the DOM element for one event at
  * the given depth.

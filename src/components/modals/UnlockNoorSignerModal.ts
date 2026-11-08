@@ -107,8 +107,7 @@ export class UnlockNoorSignerModal {
         try {
           await this.keySignerClient.submitDaemonPassword(password);
         } catch (prepError) {
-          const msg =
-            prepError instanceof Error ? prepError.message : String(prepError);
+          const msg = errMessage(prepError);
           if (msg.includes('No daemon process')) {
             // Process died or wasn't prepared — restart and retry
             await this.keySignerClient.prepareDaemonForUnlock();

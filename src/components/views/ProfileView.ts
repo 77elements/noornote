@@ -39,6 +39,8 @@ import { npubToUsername } from '../../helpers/npubToUsername';
 import { ContentProcessor } from '../../services/ContentProcessor';
 import { ClipboardActionsService } from '../../services/ClipboardActionsService';
 import { Router } from '../../services/Router';
+import { NoteUI } from '../ui/NoteUI';
+import { RelayConfig } from '../../services/RelayConfig';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { AuthGuard } from '../../services/AuthGuard';
 import { ModuleLoader } from '../../core/ModuleLoader';
@@ -216,6 +218,7 @@ export class ProfileView extends View {
 
     // Live updates when bookmark folder mount state changes (Profile checkbox)
     this.setupProfileMountsChangeListener();
+    this.setupPinChangeListener();
 
     // No more async recognition-load dance — the addon runtime is owned by
     // AddonLoader and looked up fresh via getRecognitionRuntime() at use time.
@@ -328,6 +331,18 @@ export class ProfileView extends View {
   }
 
   /**
+   * Re-render the pinned-note slot when the viewed user's pin changed
+   * (pin/unpin from the note menu — possibly on another note or device).
+   */
+  private setupPinChangeListener(): void {
+    const id = this.eventBus.on('pin:updated', (data: { pubkey: string }) => {
+      if (data.pubkey !== this.pubkey) return;
+      void this.mountPinnedNote();
+    });
+    this.eventBusSubscriptions.push(id);
+  }
+
+  /**
    * Refresh profile data (after edit)
    */
   private async refreshProfile(): Promise<void> {
@@ -411,6 +426,9 @@ export class ProfileView extends View {
 
       // Mount timeline with author filter
       await this.mountTimeline();
+
+      // Pinned note above the notes feed (own pin list, kind 10001)
+      void this.mountPinnedNote();
     } catch (_error) {
       console.error('❌ PV: Failed to load profile', _error);
       this.showError(_('Failed to load profile'));
@@ -737,6 +755,7 @@ export class ProfileView extends View {
       <div class="profile-listings-mount profile-section" data-section="products" hidden></div>
       <div class="profile-zapstore-mount profile-section" data-section="zapstore" hidden></div>
       <div class="profile-nsites-mount profile-section" data-section="websites" hidden></div>
+      <div class="profile-pinned-mount profile-section" data-section="pinned"></div>
       <div class="profile-timeline profile-section" data-section="notes">
         <h2 class="profile-timeline-heading visually-hidden">${_('Notes')}</h2>
       </div>
@@ -1853,6 +1872,65 @@ export class ProfileView extends View {
       timelineContainer.appendChild(this.timeline.getElement());
     } catch (_error) {
       console.error('❌ PV: Failed to mount timeline', _error);
+    }
+  }
+
+  /**
+   * Fetch the viewed user's pinned note (kind 10001 pin list) and render it
+   * above the notes feed. No pinned note → slot stays empty/hidden.
+   */
+  private async mountPinnedNote(): Promise<void> {
+    const mount = this.container.querySelector(
+      '.profile-pinned-mount'
+    ) as HTMLElement | null;
+    if (!mount) return;
+
+    try {
+      const { fetchPinnedNoteId } = await import('../../lists/pins');
+      const pinnedId = await fetchPinnedNoteId(this.pubkey, true);
+
+      if (!pinnedId) {
+        mount.innerHTML = '';
+        mount.hidden = true;
+        return;
+      }
+
+      // Fetch the pinned note itself (any kind the author pinned)
+      const { fetchNostrEvents } = await import(
+        '../../services/FetchNostrEvents'
+      );
+      const relays = [
+        ...new Set([
+          ...RelayConfig.getInstance().getReadRelays(),
+          ...RelayConfig.getInstance().getAggregatorRelays(),
+        ]),
+      ];
+      const result = await fetchNostrEvents({
+        relays,
+        ids: [pinnedId],
+        timeout: 5000,
+      });
+
+      const pinnedEvent = result.events[0];
+      if (!pinnedEvent) {
+        mount.innerHTML = '';
+        mount.hidden = true;
+        return;
+      }
+
+      mount.innerHTML = '';
+      mount.hidden = false;
+      const noteElement = NoteUI.createNoteElement(pinnedEvent, {
+        collapsible: true,
+        islFetchStats: true,
+        isLoggedIn: this.authService.getCurrentUser() !== null,
+        headerSize: 'medium',
+        depth: 0,
+      });
+      noteElement.classList.add('profile-pinned-note');
+      mount.appendChild(noteElement);
+    } catch (_error) {
+      console.error('❌ PV: Failed to mount pinned note', _error);
     }
   }
 

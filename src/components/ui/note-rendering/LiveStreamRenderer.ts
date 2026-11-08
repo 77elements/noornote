@@ -6,10 +6,10 @@
  * shell produced by NoteStructureBuilder (header + ISL + click-to-SNV).
  *
  * Addon-gated:
- *   - Live Streams Player addon ENABLED → full live-stream card (status badge,
+ *   - Live Streams addon ENABLED → full live-stream card (status badge,
  *     inline HLS player for live streams with a streaming URL, zap-stream
  *     button, chat input).
- *   - addon DISABLED → a compact hint card with a link to /addons/live-streams-player.
+ *   - addon DISABLED → a compact hint card with a link to /addons/live-streams.
  *
  * Top-level 30311 events in the timeline are also gated through here, so the
  * addon boundary is enforced once at the renderer layer.
@@ -19,7 +19,7 @@ import { _ } from '../../../i18n';
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { NoteStructureBuilder } from './NoteStructureBuilder';
 import { ArticlePreviewRenderer } from './ArticlePreviewRenderer';
-import { isLiveStreamsPlayerEnabled } from '../../../addons/live-streams-player/index';
+import { isLiveStreamsEnabled } from '../../../addons/live-streams/index';
 import { Router } from '../../../services/Router';
 
 export class LiveStreamRenderer {
@@ -41,7 +41,7 @@ export class LiveStreamRenderer {
     // strip the default text padding when only a card is shown.
     host.classList.add('event-content--live-stream-host');
 
-    if (isLiveStreamsPlayerEnabled()) {
+    if (isLiveStreamsEnabled()) {
       ArticlePreviewRenderer.getInstance().renderFromEvent(note.rawEvent, host);
     } else {
       LiveStreamRenderer.renderAddonDisabledHint(host as HTMLElement);
@@ -51,7 +51,7 @@ export class LiveStreamRenderer {
   }
 
   /**
-   * Compact fallback card shown when the Live Streams Player addon is off.
+   * Compact fallback card shown when the Live Streams addon is off.
    * Keeps the note visible in the timeline (header + ISL still work) while
    * nudging the user to enable the addon.
    */
@@ -61,7 +61,7 @@ export class LiveStreamRenderer {
     card.innerHTML = `
       <div class="live-stream-card__content">
         <p class="live-stream-card__hint">
-          ${_('Activate the <a class="live-stream-card__hint-link" href="/addons/live-streams-player">Live Streams Player</a> addon to see this live stream.')}
+          ${_('Activate the <a class="live-stream-card__hint-link" href="/addons/live-streams">Live Streams</a> addon to see this live stream.')}
         </p>
       </div>
     `;
@@ -70,7 +70,7 @@ export class LiveStreamRenderer {
       link.addEventListener('click', e => {
         e.preventDefault();
         e.stopPropagation();
-        Router.getInstance().navigate('/addons/live-streams-player');
+        Router.getInstance().navigate('/addons/live-streams');
       });
     }
     host.appendChild(card);

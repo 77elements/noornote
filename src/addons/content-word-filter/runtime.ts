@@ -1,7 +1,7 @@
 /**
  * Word Filter addon runtime.
  *
- * Like live-streams-player, this addon is already correctly lazy-loaded:
+ * Like live-streams, this addon is already correctly lazy-loaded:
  *   - Pure filter functions (`filterContentWords`, `getFilterWords`) live in
  *     `index.ts` with no singleton, no state, no timer, no listener.
  *   - Heavy UI modules (ContentWordFilterSettings, WordFilterAddonView) are

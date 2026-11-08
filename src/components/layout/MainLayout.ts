@@ -56,6 +56,10 @@ import { ListsMenuPartial } from './partials/ListsMenuPartial';
 import { ListsCountManager } from './managers/ListsCountManager';
 import { NavWheelPartial } from './partials/NavWheelPartial';
 import { applyNavMode, isNavWheelActive } from '../../helpers/navModeSetting';
+import {
+  isWhatsNewDismissed,
+  setWhatsNewDismissed,
+} from '../../helpers/whatsNew';
 import { isBackBarEnabled } from '../../helpers/backBarSetting';
 import {
   deactivateAllTabs,
@@ -1380,6 +1384,31 @@ export class MainLayout {
       });
     }
 
+    // What's New widget — x-button dismisses it for the current version;
+    // it reappears when the app version changes (next release).
+    const whatsNewDismiss = this.element.querySelector(
+      '.sidebar [data-action="whats-new-dismiss"]'
+    );
+    if (whatsNewDismiss) {
+      whatsNewDismiss.addEventListener('click', () => {
+        setWhatsNewDismissed(__APP_VERSION__);
+        this.element
+          .querySelector('[data-sidebar-widget="whats-new"]')
+          ?.remove();
+      });
+    }
+
+    // What's New link — navigate inside the app (same as the About link).
+    const whatsNewLink = this.element.querySelector<HTMLAnchorElement>(
+      '.sidebar [data-sidebar-widget="whats-new"] .sidebar-whats-new__link'
+    );
+    if (whatsNewLink) {
+      whatsNewLink.addEventListener('click', e => {
+        e.preventDefault();
+        Router.getInstance().navigate('/whats-new');
+      });
+    }
+
     // Download button (wheel-mode footer; classic mode uses the nav link)
     const downloadBtn = this.element.querySelector(
       '.sidebar [data-action="sidebar-download"]'
@@ -1904,6 +1933,29 @@ export class MainLayout {
                 <svg class="sidebar-collapse-toggle__icon"><use href="#icon-chevron-left"/></svg>
               </button>
             </div>
+            ${
+              isWhatsNewDismissed(__APP_VERSION__)
+                ? ''
+                : `
+            <div class="sidebar-widget-container" data-sidebar-widget="whats-new">
+              <div class="sidebar-widget sidebar-whats-new" data-whats-new>
+                <div class="sidebar-widget__cols">
+                  <a href="/whats-new/" class="sidebar-whats-new__link">
+                    <span>${_("What's new in v%s", __APP_VERSION__)}</span>
+                  </a>
+                  <button
+                    class="sidebar-widget__refresh sidebar-whats-new__close"
+                    type="button"
+                    data-action="whats-new-dismiss"
+                    aria-label="${_('Dismiss')}"
+                    title="${_('Dismiss')}"
+                  >
+                    <svg><use href="#icon-close"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>`
+            }
             <div class="sidebar-welcome-link">
               <a href="/welcome" class="primary-nav__link primary-nav__link--welcome">
                 <svg class="primary-nav__item-icon"><use href="#icon-home"/></svg>
@@ -1970,6 +2022,8 @@ export class MainLayout {
           </ul>
             <div class="sidebar-widget-container" data-sidebar-widget="btc-price"></div>
             <div class="sidebar-widget-container" data-sidebar-widget="nostr-majlis"></div>
+            <div class="sidebar-widget-container" data-sidebar-widget="live-streams"></div>
+            <div class="sidebar-widget-container" data-sidebar-widget="live-streams-mini-player"></div>
             <div class="data-saver-toggle"></div>
             <div class="l-row--split sidebar-logout">
               <button type="button" class="btn btn--passive btn--mini sidebar-download-btn" data-action="sidebar-download">

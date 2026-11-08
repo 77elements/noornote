@@ -12,9 +12,11 @@
 // Sidebar widgets navigate to their addon page on click (action buttons
 // inside keep their own behavior), so the sidebar instances get the pointer
 // affordance. Addon-page widget instances are display-only — not covered here.
+// The Live Streams widget navigates to the clicked stream's detail page instead.
 .wallet-balance-container .sidebar-widget,
 [data-sidebar-widget="btc-price"] .sidebar-widget,
-[data-sidebar-widget="nostr-majlis"] .sidebar-widget {
+[data-sidebar-widget="nostr-majlis"] .sidebar-widget,
+.live-streams-widget {
   cursor: pointer;
 }
 

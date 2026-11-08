@@ -126,11 +126,12 @@ export const ADDON_REGISTRY: AddonRegistryEntry[] = [
     description: 'Hide timeline notes containing words on your filter list.',
   },
   {
-    id: 'live-streams-player',
-    name: 'Live Streams Player',
-    route: '/addons/live-streams-player',
-    viewId: 'addon-live-streams-player',
+    id: 'live-streams',
+    name: 'Live Streams',
+    route: '/addons/live-streams',
+    viewId: 'addon-live-streams',
     description: 'Play NIP-53 live streams inline in the timeline.',
+    status: 'updated',
   },
   {
     id: 'scheduled-posts',
@@ -203,6 +204,5 @@ export const ADDON_REGISTRY: AddonRegistryEntry[] = [
     viewId: 'addon-feedback-board',
     description:
       'A public Kanban board between users and the developer — file wishes and bugs, follow progress.',
-    status: 'new',
   },
 ];

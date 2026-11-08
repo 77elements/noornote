@@ -13,6 +13,8 @@ import { AuthService } from '../../services/AuthService';
 import {
   fetchQuotedRepostCandidates,
   mergeChronologicalComments,
+  pinAuthorReplies,
+  isAuthorTopLevelReply,
   renderThreadedReplyNodes,
 } from '../../helpers/quotedReposts';
 import {
@@ -173,13 +175,22 @@ export class RepliesRenderer {
 
       const repliesList = this.container.querySelector('.snv-replies__list');
       if (repliesList) {
-        // Mix TOP-LEVEL replies and quoted reposts, sorted by timestamp
-        const comments = mergeChronologicalComments(threadTree, quotedReposts);
+        // Mix TOP-LEVEL replies and quoted reposts, sorted by timestamp, with
+        // the note author's direct replies pinned to the top (Twitter-style:
+        // corrections must not drown in the reply flood).
+        const comments = pinAuthorReplies(
+          mergeChronologicalComments(threadTree, quotedReposts),
+          this.noteAuthor
+        );
 
         // Render all comments
         for (const comment of comments) {
           if (comment.type === 'reply') {
-            this.renderThreadedReply(comment.node, repliesList);
+            this.renderThreadedReply(
+              comment.node,
+              repliesList,
+              isAuthorTopLevelReply(comment, this.noteAuthor)
+            );
           } else {
             await this.renderQuotedRepost(comment.event, repliesList);
           }
@@ -225,9 +236,16 @@ export class RepliesRenderer {
   /**
    * Render a threaded reply recursively with indentation
    */
-  private renderThreadedReply(node: ThreadNode, container: Element): void {
+  private renderThreadedReply(
+    node: ThreadNode,
+    container: Element,
+    isAuthorPin: boolean = false
+  ): void {
     renderThreadedReplyNodes(node, container, (event, depth) =>
-      this.createReplyElement(event, depth)
+      // isAuthorPin applies ONLY to the pinned node itself (depth 0) — the
+      // callback runs for the whole subtree, and replies hanging below the
+      // pinned author reply must NOT inherit the (Author) badge.
+      this.createReplyElement(event, depth, isAuthorPin && depth === 0)
     );
   }
 
@@ -236,7 +254,8 @@ export class RepliesRenderer {
    */
   private createReplyElement(
     reply: NostrEvent,
-    depth: number = 0
+    depth: number = 0,
+    isAuthorPin: boolean = false
   ): HTMLElement {
     const isUserLoggedIn = AuthService.getInstance().getCurrentUser() !== null;
 
@@ -247,6 +266,18 @@ export class RepliesRenderer {
       headerSize: 'small',
       depth: 0,
     });
+
+    // Author pin badge (Twitter-style): clarifies why this reply sits above
+    // the chronological flow. Inline, right after the username in the header.
+    if (isAuthorPin) {
+      const usernameEl = noteElement.querySelector('.user-identity__username');
+      if (usernameEl) {
+        const badge = document.createElement('span');
+        badge.className = 'badge snv-reply__author-badge';
+        badge.textContent = _('(Author)');
+        usernameEl.after(badge);
+      }
+    }
 
     // Load zaps list for this reply (if callback provided)
     const replyId = reply.id;

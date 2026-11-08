@@ -391,6 +391,17 @@ export class ViewMountingService {
           },
         };
 
+      case 'whats-new':
+        return {
+          factory: async () => {
+            const { WhatsNewView } = await import(
+              '../components/views/WhatsNewView'
+            );
+            const view = new WhatsNewView();
+            return { element: view.getElement() };
+          },
+        };
+
       case 'write-article':
         return {
           factory: async () => {
@@ -699,13 +710,25 @@ export class ViewMountingService {
           },
         };
 
-      case 'addon-live-streams-player':
+      case 'addon-live-streams':
         return {
           factory: async () => {
-            const { LiveStreamsPlayerAddonView } = await import(
-              '../addons/live-streams-player/LiveStreamsPlayerAddonView'
+            const { LiveStreamsAddonView } = await import(
+              '../addons/live-streams/LiveStreamsAddonView'
             );
-            const view = new LiveStreamsPlayerAddonView();
+            const view = new LiveStreamsAddonView();
+            return { element: view.getElement(), view };
+          },
+        };
+
+      case 'live-stream-detail':
+        return {
+          requiresParam: true,
+          factory: async param => {
+            const { LiveStreamDetailView } = await import(
+              '../addons/live-streams/LiveStreamDetailView'
+            );
+            const view = new LiveStreamDetailView(param!);
             return { element: view.getElement(), view };
           },
         };

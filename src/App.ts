@@ -44,6 +44,7 @@ const VIEW_PARAM_STATE_KEY: Record<string, string> = {
   article: 'currentArticleNaddr',
   'relay-browser': 'currentRelayUrl',
   'epub-reader': 'currentReaderUrl',
+  'live-stream-detail': 'currentLiveStreamNaddr',
 };
 
 export class App {
@@ -409,6 +410,7 @@ export class App {
     this.registerRoute('/login', 'login', 'not-logged-in', 'login-view');
     this.registerRoute('/setup', 'setup', 'profile-setup', 'setup-view');
     this.registerRoute('/about', 'about', 'about', 'abv');
+    this.registerRoute('/whats-new', 'whats-new', 'whats-new', 'wnv');
     this.registerRoute('/articles', 'articles', 'articles', 'atv');
 
     // Parameterized routes (public)
@@ -698,11 +700,19 @@ export class App {
       true
     );
     this.registerRoute(
-      '/addons/live-streams-player',
-      'addon-live-streams-player',
-      'addon-live-streams-player',
+      '/addons/live-streams',
+      'addon-live-streams',
+      'addon-live-streams',
       'adv',
       true
+    );
+    this.registerRoute(
+      '/addons/live-streams/stream/:naddr',
+      'live-stream-detail',
+      'live-stream-detail',
+      'lsd',
+      true,
+      params => params.naddr
     );
     this.registerRoute(
       '/addons/scheduled-posts',

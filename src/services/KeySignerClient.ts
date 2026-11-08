@@ -213,8 +213,7 @@ export class KeySignerClient {
 
       return response;
     } catch (_error) {
-      const errorMessage =
-        _error instanceof Error ? _error.message : String(_error);
+      const errorMessage = errMessage(_error);
       this.handleConnectionError(errorMessage);
     }
   }
@@ -231,8 +230,7 @@ export class KeySignerClient {
       const responseStr = await this.invokeWithTimeout(request);
       return JSON.parse(responseStr) as T;
     } catch (_error) {
-      const errorMessage =
-        _error instanceof Error ? _error.message : String(_error);
+      const errorMessage = errMessage(_error);
       throw new Error(`${method} failed: ${errorMessage}`);
     }
   }
@@ -333,8 +331,7 @@ export class KeySignerClient {
         await this.sendRequest('get_npub');
         return true;
       } catch (_error) {
-        const errorMessage =
-          _error instanceof Error ? _error.message : String(_error);
+        const errorMessage = errMessage(_error);
 
         if (
           this.isTransientError(errorMessage) &&

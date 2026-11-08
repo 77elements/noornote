@@ -354,6 +354,20 @@ export class RelaySettingsSection extends SettingsSection {
             <svg width="18" height="18"><use href="#icon-delete-extended"/></svg>
           </button>
         </div>
+
+        <section class="relay-nips nn-ui-toggle">
+          <div class="nn-ui-toggle__header" data-url="${relay.url}">
+            <div class="nn-ui-toggle__info">
+              <span class="nn-ui-toggle__title">${_('Supported NIPs')}</span>
+            </div>
+            <span class="nn-ui-toggle__toggle">
+              <svg width="20" height="20"><use href="#icon-chevron-down"/></svg>
+            </span>
+          </div>
+          <div class="nn-ui-toggle__content relay-nips__content">
+            <span class="relay-nips__placeholder">${_('Loading…')}</span>
+          </div>
+        </section>
       </div>
     `;
   }
@@ -390,6 +404,47 @@ export class RelaySettingsSection extends SettingsSection {
         this.handleRemoveRelay(e, contentContainer)
       );
     });
+
+    // "Supported NIPs" accordion: toggle open/closed, lazy-load the NIP-11
+    // info document on first expand (avoids a fetch burst per relay).
+    const nipHeaders = contentContainer.querySelectorAll(
+      '.relay-nips .nn-ui-toggle__header'
+    );
+    nipHeaders.forEach(header => {
+      header.addEventListener('click', () => {
+        const toggle = header.closest('.nn-ui-toggle');
+        if (!toggle) return;
+        const isOpen = toggle.classList.toggle('open');
+        const relayUrl = header.getAttribute('data-url') ?? '';
+        if (isOpen) void this.loadNips(toggle, relayUrl);
+      });
+    });
+  }
+
+  /**
+   * Fill the NIPs panel of one relay toggle (fetch once, cached per session).
+   */
+  private async loadNips(toggle: Element, relayUrl: string): Promise<void> {
+    const content = toggle.querySelector('.relay-nips__content');
+    if (!content) return;
+
+    const { fetchSupportedNips, formatNip } = await import(
+      '../../helpers/nip11'
+    );
+    const nips = await fetchSupportedNips(relayUrl);
+
+    if (!nips || nips.length === 0) {
+      content.innerHTML = `<span class="relay-nips__empty">${_(
+        'Not available — this relay publishes no NIP-11 info document (or CORS blocks it from the browser).'
+      )}</span>`;
+      return;
+    }
+
+    content.innerHTML = `
+      <div class="relay-nips__list">
+        ${nips.map(nip => `<span class="relay-nips__item">${formatNip(nip)}</span>`).join('')}
+      </div>
+    `;
   }
 
   /**

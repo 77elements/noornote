@@ -23,6 +23,8 @@ import { escapeHtml } from '../../../helpers/escapeHtml';
 import {
   fetchQuotedRepostCandidates,
   mergeChronologicalComments,
+  pinAuthorReplies,
+  isAuthorTopLevelReply,
   renderThreadedReplyNodes,
 } from '../../../helpers/quotedReposts';
 import { filterVisibleEvents } from '../../../lists/mutes';
@@ -172,14 +174,18 @@ export class ThreadManager {
       const repliesList = repliesContainer.querySelector('.snv-replies__list');
       if (!repliesList) return;
 
-      const comments = mergeChronologicalComments(
-        threadTree,
-        filteredQuotedReposts
+      const comments = pinAuthorReplies(
+        mergeChronologicalComments(threadTree, filteredQuotedReposts),
+        this.config.noteAuthor
       );
 
       for (const comment of comments) {
         if (comment.type === 'reply') {
-          this.renderThreadedReply(comment.node, repliesList);
+          this.renderThreadedReply(
+            comment.node,
+            repliesList,
+            isAuthorTopLevelReply(comment, this.config.noteAuthor)
+          );
         } else {
           await this.renderQuotedRepost(comment.event, repliesList);
         }
@@ -197,15 +203,23 @@ export class ThreadManager {
     }
   }
 
-  private renderThreadedReply(node: ThreadNode, container: Element): void {
+  private renderThreadedReply(
+    node: ThreadNode,
+    container: Element,
+    isAuthorPin: boolean = false
+  ): void {
     renderThreadedReplyNodes(node, container, (event, depth) =>
-      this.createReplyElement(event, depth)
+      // isAuthorPin applies ONLY to the pinned node itself (depth 0) — the
+      // callback runs for the whole subtree, and replies hanging below the
+      // pinned author reply must NOT inherit the (Author) badge.
+      this.createReplyElement(event, depth, isAuthorPin && depth === 0)
     );
   }
 
   private createReplyElement(
     reply: NostrEvent,
-    depth: number = 0
+    depth: number = 0,
+    isAuthorPin: boolean = false
   ): HTMLElement {
     const isUserLoggedIn = this.authService.getCurrentUser() !== null;
 
@@ -217,6 +231,18 @@ export class ThreadManager {
       depth: 0,
       replyContext: true,
     });
+
+    // Author pin badge (Twitter-style): clarifies why this reply sits above
+    // the chronological flow. Inline, right after the username in the header.
+    if (isAuthorPin) {
+      const usernameEl = noteElement.querySelector('.user-identity__username');
+      if (usernameEl) {
+        const badge = document.createElement('span');
+        badge.className = 'badge snv-reply__author-badge';
+        badge.textContent = _('(Author)');
+        usernameEl.after(badge);
+      }
+    }
 
     const replyId = reply.id;
     if (replyId) {

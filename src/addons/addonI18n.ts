@@ -38,8 +38,8 @@ export function translateAddonName(id: string): string {
       return _('Custom Emojis');
     case 'wordfilter':
       return _('Word Filter');
-    case 'live-streams-player':
-      return _('Live Streams Player');
+    case 'live-streams':
+      return _('Live Streams');
     case 'scheduled-posts':
       return _('Scheduled Posts');
     case 'badges':
@@ -100,7 +100,7 @@ export function translateAddonDescription(id: string): string {
       return _('Use your own NIP-30 custom emojis in notes and reactions.');
     case 'wordfilter':
       return _('Hide timeline notes containing words on your filter list.');
-    case 'live-streams-player':
+    case 'live-streams':
       return _('Play NIP-53 live streams inline in the timeline.');
     case 'scheduled-posts':
       return _('Schedule notes and articles for later publishing.');

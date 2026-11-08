@@ -232,6 +232,50 @@
   flex: 1;
 }
 
+// "Supported NIPs" accordion inside each relay item (NIP-11 info document).
+// Reuses the .nn-ui-toggle molecule; scoped overrides for the compact
+// in-item look (molecule's card background/border/radius would double up).
+.relay-item .relay-nips {
+  margin-top: $gap;
+  background: none;
+  border: none;
+  border-radius: 0;
+  margin-bottom: 0;
+
+  .nn-ui-toggle__header {
+    padding: calc($gap / 2) calc($gap / 2) calc($gap / 2) 0;
+  }
+
+  .nn-ui-toggle__title {
+    font-size: 0.9rem;
+  }
+
+  .nn-ui-toggle__content {
+    padding: calc($gap / 2) 0 0;
+  }
+}
+
+.relay-nips__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc($gap / 3);
+}
+
+.relay-nips__item {
+  @extend %small;
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--color-2);
+  border-radius: $radius-full;
+  color: var(--color-5);
+}
+
+.relay-nips__empty {
+  @extend %small;
+  color: var(--color-3);
+  line-height: 1.4;
+}
+
 
 .relay-remove-btn {
   background: none;

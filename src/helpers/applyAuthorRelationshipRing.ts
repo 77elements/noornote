@@ -25,8 +25,8 @@ export function applyAuthorRelationshipRing(
 ): void {
   if (!avatar) return;
 
-  const currentUser = AuthService.getInstance().getCurrentUser();
-  if (!currentUser || currentUser.pubkey === pubkey) return;
+  const auth = AuthService.getInstance();
+  if (!auth.getCurrentUser() || auth.isCurrentUser(pubkey)) return;
 
   Promise.all([
     RemoteMuteCheckService.getInstance().mutedByThemSimple(pubkey),

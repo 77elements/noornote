@@ -1,0 +1,45 @@
+// What's New view (/whats-new) — Highlight box + per-release sections.
+// Reuses .about-section (components/_about-view.scss) for the release cards;
+// only the highlight and the release-date badge live here.
+@use '../abstracts/variables' as *;
+@use '../base/typography' as *;
+
+.view-content--whats-new {
+  .whats-new-highlight {
+    background: var(--color-2);
+    border: 1px solid var(--color-3);
+    border-radius: $radius-xl;
+    padding: $gap * 1.5;
+    margin-bottom: $gap * 1.5;
+    position: relative;
+    overflow: hidden;
+
+    h2 {
+      font-weight: 600;
+      color: var(--color-5);
+      margin-bottom: calc($gap / 2);
+    }
+
+    p {
+      color: var(--color-5);
+      line-height: 1.6;
+      margin-bottom: 0;
+    }
+
+    &::before {
+      content: '✨';
+      position: absolute;
+      top: $gap;
+      right: $gap;
+      font-size: 2rem;
+      opacity: 0.35;
+    }
+  }
+
+  .whats-new-release-date {
+    color: var(--color-3);
+    font-weight: 400;
+    @extend %small;
+    margin-inline-start: calc($gap / 2);
+  }
+}

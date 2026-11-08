@@ -24,6 +24,27 @@ function buildIdPlugin(): PluginOption {
   };
 }
 
+// Dev-only: resolve /download/ to public/download/index.html instead of
+// falling into the SPA fallback (which renders an empty view). Production
+// web servers resolve directory indexes natively — this keeps dev behaving
+// like prod.
+function staticDirIndexPlugin(): PluginOption {
+  return {
+    name: 'noornote-static-dir-index',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        const raw = (req.url || '').split('?')[0] ?? '';
+        const path = raw.split('#')[0] ?? '';
+        if (/^\/download\/?$/.test(path)) {
+          req.url = path.replace(/\/$/, '') + '/index.html';
+        }
+        next();
+      });
+    },
+  };
+}
+
 export default defineConfig({
   // Base URL: './' for Electron (file:// protocol), '/' for Web (SPA deep links)
   base: process.env.ELECTRON_BUILD ? './' : '/',
@@ -202,6 +223,7 @@ export default defineConfig({
   // Plugin configuration
   plugins: [
     buildIdPlugin(),
+    staticDirIndexPlugin(),
     // Bundle analyzer for development
     ...(process.env.ANALYZE
       ? [

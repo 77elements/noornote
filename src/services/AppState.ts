@@ -50,11 +50,13 @@ export interface ViewState {
     | 'write-article'
     | 'edit-article'
     | 'articles'
-    | 'relay-browser';
+    | 'relay-browser'
+    | 'live-stream-detail';
   currentNoteId?: string;
   currentProfileNpub?: string;
   currentArticleNaddr?: string;
   currentRelayUrl?: string;
+  currentLiveStreamNaddr?: string;
   profileScrollPosition?: number;
   params?: Record<string, string>;
 }

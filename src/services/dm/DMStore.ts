@@ -90,14 +90,14 @@ export interface DMConversation {
 }
 
 const DB_NAME_PREFIX = 'noornote_dm_';
-// v5 → v6: re-issue of the expiresAt index. The original v4→v5 upgrade path
-// silently failed to create the index on some installs (either the upgrade
-// transaction was blocked by a stale connection, or the ELSE branch hit an
-// untracked error). v6 forces a fresh upgrade attempt; the missing index is
-// re-created by NoorDB's schema reconciliation on every upgrade.
-const DB_VERSION = 6;
+// v6 → v7: adds the `tombstones` store. Purged spam conversations previously
+// resurrected on the next relay backlog replay (dedup is wrapId-based, and
+// purge deleted those wrapIds). A tombstone row per purged sender makes the
+// drop permanent; DMService consults it before saveMessage.
+const DB_VERSION = 7;
 const MESSAGES_STORE = 'messages';
 const CONVERSATIONS_STORE = 'conversations';
+const TOMBSTONES_STORE = 'tombstones';
 
 export class DMStore {
   private static instance: DMStore;
@@ -234,6 +234,10 @@ export class DMStore {
           name: CONVERSATIONS_STORE,
           keyPath: 'pubkey',
           indexes: [{ name: 'lastMessageAt', keyPath: 'lastMessageAt' }],
+        },
+        {
+          name: TOMBSTONES_STORE,
+          keyPath: 'pubkey',
         },
       ],
     };
@@ -770,16 +774,23 @@ export class DMStore {
   /**
    * Hard-delete a conversation and all its messages (no resurrection).
    * Used for the "delete & mute" path where the sender is also muted.
+   * Writes a tombstone for the sender in the SAME transaction, so a later
+   * relay backlog replay (which dedups by wrapId — and purge removed those
+   * wrapIds) can never re-save the purged messages. See DMService.storeAndEmit.
    */
   public async purgeConversation(partnerPubkey: string): Promise<void> {
     await this.init();
 
     await this.db!.withTransaction(
-      [MESSAGES_STORE, CONVERSATIONS_STORE],
+      [MESSAGES_STORE, CONVERSATIONS_STORE, TOMBSTONES_STORE],
       'readwrite',
       tx =>
         new Promise<void>((resolve, reject) => {
           tx.objectStore(CONVERSATIONS_STORE).delete(partnerPubkey);
+          tx.objectStore(TOMBSTONES_STORE).put({
+            pubkey: partnerPubkey,
+            purgedAt: Math.floor(Date.now() / 1000),
+          });
 
           // Delete every message in this conversation via the conversationWith index
           const index = tx
@@ -797,6 +808,54 @@ export class DMStore {
           };
           cursorReq.onerror = () =>
             reject(cursorReq.error ?? new Error('IndexedDB request failed'));
+        })
+    );
+  }
+
+  /**
+   * Whether messages from this sender must never be re-saved (spam purge).
+   */
+  public async isTombstoned(partnerPubkey: string): Promise<boolean> {
+    await this.init();
+    if (!this.db?.isOpen) return false;
+    return this.db.withStore(
+      TOMBSTONES_STORE,
+      'readonly',
+      store =>
+        new Promise<boolean>((resolve, reject) => {
+          const req = store.get(partnerPubkey);
+          req.onsuccess = () => resolve(!!req.result);
+          req.onerror = () =>
+            reject(req.error ?? new Error('IndexedDB request failed'));
+        })
+    );
+  }
+
+  /** All tombstoned pubkeys (loaded once by DMService into an in-memory set). */
+  public async getTombstonedPubkeys(): Promise<string[]> {
+    await this.init();
+    if (!this.db?.isOpen) return [];
+    const rows = await this.db.getAll<{ pubkey: string; purgedAt: number }>(
+      TOMBSTONES_STORE
+    );
+    return rows.map(r => r.pubkey);
+  }
+
+  /**
+   * Remove a tombstone — called when the user explicitly unmutes the sender,
+   * so messages from them can be stored again.
+   */
+  public async clearTombstone(partnerPubkey: string): Promise<void> {
+    await this.init();
+    await this.db!.withStore(
+      TOMBSTONES_STORE,
+      'readwrite',
+      store =>
+        new Promise<void>((resolve, reject) => {
+          const req = store.delete(partnerPubkey);
+          req.onsuccess = () => resolve();
+          req.onerror = () =>
+            reject(req.error ?? new Error('IndexedDB request failed'));
         })
     );
   }

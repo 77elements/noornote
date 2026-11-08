@@ -74,6 +74,11 @@ export class DMService {
   private mutedPubkeys: Set<string> = new Set();
   private mutedPubkeysLoaded: boolean = false;
 
+  // Tombstoned senders (purged via delete & mute). Device-local, IndexedDB-
+  // backed — survives mute-list relay syncs (last-writer-wins overwrites can
+  // wipe the mute entries, but must never resurrect purged spam).
+  private tombstonedPubkeys: Set<string> = new Set();
+
   // Batch event emitting - collect events during fetch, emit once at end
   private isFetchingHistorical: boolean = false;
   private pendingBadgeUpdate: boolean = false;
@@ -221,6 +226,24 @@ export class DMService {
       try {
         // Initialize per-user database (automatically switches if different user)
         await this.dmStore.init(currentUser.pubkey);
+
+        // Load tombstones BEFORE any fetch so the relay backlog replay cannot
+        // resurrect purged conversations (their wrapIds are gone from the
+        // store, so wrapId dedup can no longer catch them).
+        try {
+          this.tombstonedPubkeys = new Set(
+            await this.dmStore.getTombstonedPubkeys()
+          );
+          if (this.tombstonedPubkeys.size > 0) {
+            diagLog('dms', 'DM tombstones loaded', {
+              count: this.tombstonedPubkeys.size,
+            });
+          }
+        } catch (tombstoneError) {
+          diagLog('dms', 'Tombstone load failed (fail-open)', {
+            error: String(tombstoneError),
+          });
+        }
 
         // Set current user pubkey
         this.userPubkey = currentUser.pubkey;
@@ -1206,6 +1229,36 @@ export class DMService {
     conversationWith: string,
     arrivedDuringBacklog = false
   ): Promise<void> {
+    // Spam shield: never store messages from muted or tombstoned (purged)
+    // senders. The relay backlog replays purged gift wraps on every start and
+    // wrapId dedup cannot catch them (purge removed those wrapIds) — without
+    // this gate the 100+ purged spam DMs resurrect in the local store.
+    if (!message.isMine) {
+      await this.loadMutedPubkeys();
+      const muted = this.isMutedSync(message.pubkey);
+      const tombstoned = this.tombstonedPubkeys.has(message.pubkey);
+      if (muted || tombstoned) {
+        // Tombstoned but no longer muted: allow only genuinely live arrivals
+        // (post-EOSE, not a historical/backlog replay) through, so explicitly
+        // unblocking a sender works for new messages while old purged wraps
+        // stay dead forever.
+        const isLiveArrival =
+          !arrivedDuringBacklog &&
+          !this.isFetchingHistorical &&
+          this.liveSubBacklogDone;
+        if (!(tombstoned && !muted && isLiveArrival)) {
+          diagLog('dms', 'DM from muted/tombstoned sender dropped', {
+            sender: message.pubkey.slice(0, 8),
+            muted,
+            tombstoned,
+            arrivedDuringBacklog,
+            wrapId: message.wrapId,
+          });
+          return;
+        }
+      }
+    }
+
     const { inserted, unreadBumped } = await this.dmStore.saveMessage(message);
 
     // Duplicate (already stored under this wrapId) — nothing new, no events.
@@ -1987,6 +2040,7 @@ export class DMService {
    */
   public async deleteAndMute(partnerPubkey: string): Promise<void> {
     await this.dmStore.purgeConversation(partnerPubkey);
+    this.tombstonedPubkeys.add(partnerPubkey);
     muteUser(partnerPubkey, true); // private mute — emits 'mute:updated'
     this.eventBus.emit('dm:badge-update');
   }

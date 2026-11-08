@@ -40,6 +40,7 @@ import {
   getHiddenHighlightAuthors,
   isExternalHighlight,
 } from '../../helpers/highlightSetting';
+import { isExpiredEvent } from '../../helpers/nip40';
 import type { TimelineConfig } from '../../components/timeline/TimelineConfig';
 
 /**
@@ -1100,6 +1101,16 @@ export class FeedOrchestrator extends Orchestrator {
           );
         }
       }
+    }
+
+    // NIP-40: drop events whose `expiration` tag has already passed
+    // (relays sometimes still serve stale expired events).
+    const beforeExpiry = filteredEvents.length;
+    filteredEvents = filteredEvents.filter(e => !isExpiredEvent(e));
+    if (filteredEvents.length < beforeExpiry) {
+      diagLog('system', 'NIP-40: dropped expired events from feed', {
+        removed: beforeExpiry - filteredEvents.length,
+      });
     }
 
     // Sort by timestamp (newest first)

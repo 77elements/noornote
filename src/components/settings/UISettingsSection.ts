@@ -40,6 +40,10 @@ import {
   setHideHighlightsEnabled,
 } from '../../helpers/highlightSetting';
 import {
+  isExpiryNoticeEnabled,
+  setExpiryNoticeEnabled,
+} from '../../helpers/nip40';
+import {
   isClassicMenuEnabled,
   setClassicMenuEnabled,
 } from '../../helpers/navModeSetting';
@@ -57,6 +61,7 @@ export class UISettingsSection extends SettingsSection {
   private classicMenuSwitch: Switch | null = null;
   private backBarSwitch: Switch | null = null;
   private hideHighlightsSwitch: Switch | null = null;
+  private expiryNoticeSwitch: Switch | null = null;
   private contentVisibilitySwitch: Switch | null = null;
   private clientTagSwitch: Switch | null = null;
   private calendarDropdown: NnDropdown | null = null;
@@ -211,6 +216,17 @@ export class UISettingsSection extends SettingsSection {
             <div class="setting__control" id="hide-highlights-switch-container"></div>
             <p class="setting__desc">
               ${_('When enabled, highlight posts by others that quote an external website (kind 9802 with a web source) are hidden from your timelines, including pure reposts of them. Your own highlights stay visible. Individual users can be hidden from their profile.')}
+            </p>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="setting">
+            <span class="setting__label">${_('Show expiry notice')}</span>
+            <div class="setting__control" id="show-expiry-notice-switch-container"></div>
+            <p class="setting__desc">
+              ${_('Show a small "Post expires on …" line under notes that carry an expiration time (NIP-40). Off by default.')}
+              ${_('Check that all of your write relays support NIP-40. Note: even if they do, someone could repost your note to relays without NIP-40 support — the expiration no longer applies there.')}
             </p>
           </div>
         </section>
@@ -576,6 +592,28 @@ export class UISettingsSection extends SettingsSection {
         hideHighlightsContainer as HTMLElement
       );
 
+      // Initialize Show-Expiry-Notice switch (NIP-40 line under expiring notes)
+      const expiryNoticeContainer = contentContainer.querySelector(
+        '#show-expiry-notice-switch-container'
+      );
+      if (expiryNoticeContainer) {
+        this.expiryNoticeSwitch = new Switch({
+          label: '',
+          checked: isExpiryNoticeEnabled(),
+          onChange: checked => {
+            setExpiryNoticeEnabled(checked);
+            ToastService.show(
+              checked ? _('Expiry notices shown') : _('Expiry notices hidden'),
+              'success'
+            );
+          },
+        });
+        expiryNoticeContainer.innerHTML = this.expiryNoticeSwitch.render();
+        this.expiryNoticeSwitch.setupEventListeners(
+          expiryNoticeContainer as HTMLElement
+        );
+      }
+
       // Initialize Show-Reactions switch (TV feed entries for followed users)
       const showReactionsContainer = contentContainer.querySelector(
         '#show-reactions-switch-container'
@@ -817,6 +855,11 @@ export class UISettingsSection extends SettingsSection {
    * Unmount section and cleanup
    */
   public unmount(): void {
+    if (this.expiryNoticeSwitch) {
+      this.expiryNoticeSwitch.destroy();
+      this.expiryNoticeSwitch = null;
+    }
+
     if (this.calendarDropdown) {
       this.calendarDropdown.destroy();
       this.calendarDropdown = null;

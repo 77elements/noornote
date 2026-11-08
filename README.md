@@ -221,6 +221,7 @@ If the app crashes, check the log files:
 - **Mutual changes (NoorNote-internal)** — kind `99001`, synthesized for notifications when someone follows or unfollows you. Not published to relays.
 - **Follower changes (NoorNote-internal)** — kind `99002`, synthesized for the Follower Notification addon when someone new follows you. Not published to relays.
 - **Community dhikr activity (NoorNote-internal)** — kind `99003`, synthesized for the Nostr-Majlis addon to notify about new dhikr rounds, significant commits and reached goals. Not published to relays.
+- **Pinned post** — kind `10001` (de-facto standard, used by several clients): replaceable event holding the id of one of the user's own notes, pinned to the top of their profile; read for display, published on pin/unpin
 - **Bookmark list (legacy)** — kind `10003`, NIP-51 legacy bookmark list (read for migration; new bookmarks go in kind `30003`)
 - **Ditto geocache** — kind `37516`, proprietary [Ditto](https://ditto.pub) feature with no NIP; rendered as a notice with an "open in Ditto" link instead of broken output
 - **Satellite Earth site page** — kind `35128` / kind `35129`, proprietary [Satellite Earth](https://satellite.earth) events (NAP protocol: 35128 site settings, 35129 site page); rendered as a notice card linking to the naddr on njump. Kind `35128` is shared with NIP-5A named-site manifests — NoorNote tells them apart by the NIP-5A-mandatory `path` tags

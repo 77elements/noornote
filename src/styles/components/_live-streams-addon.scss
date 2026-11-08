@@ -1,0 +1,172 @@
+// Live Streams addon — addon page stream list, sidebar widget, detail view.
+// The list uses the shared nn-card molecules; the widget reuses the shared
+// .sidebar-widget chrome. Grid only, no flexbox in new code.
+@use '../abstracts/variables' as *;
+@use '../base/typography' as *;
+
+// ── Addon page: stream list ──────────────────────────────────────────
+
+.live-streams-list__heading {
+  font-weight: 600;
+  color: var(--color-5);
+  margin-bottom: $gap;
+}
+
+.live-streams-list__empty {
+  color: var(--color-3);
+  @extend %small;
+}
+
+.live-streams-card {
+  &__badge {
+    position: absolute;
+    top: calc($gap / 2);
+    left: calc($gap / 2);
+    padding: calc($gap / 4) calc($gap / 2);
+    border-radius: $radius-pill;
+    background: var(--color-1);
+    color: var(--color-5);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  &__media--placeholder {
+    position: relative;
+
+    svg {
+      color: var(--color-3);
+    }
+  }
+
+  &.live-streams-card--live .live-streams-card__badge {
+    background: var(--color-6);
+    color: var(--color-1);
+  }
+
+  &.live-streams-card--ended .live-streams-card__badge,
+  &.live-streams-card--planned .live-streams-card__badge {
+    background: var(--color-2);
+    color: var(--color-3);
+  }
+}
+
+// ── Sidebar widget: currently-live streams of followed users ────────
+// Mini card (shared .sidebar-widget chrome), one row per stream:
+// avatar | title + "Started x ago" | live diode + "Live".
+
+.live-streams-widget {
+  &__item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: calc($gap / 2);
+    padding: calc($gap / 3) 0;
+    text-decoration: none;
+    color: inherit;
+
+    & + & {
+      border-top: 1px solid var(--color-2);
+    }
+  }
+
+  &__avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  &__info {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  &__title {
+    color: var(--color-5);
+    @include scaled-font-size(14px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__started {
+    color: var(--color-4);
+    @extend %small;
+  }
+
+  &__status {
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: center;
+    gap: calc($gap / 4);
+  }
+
+  &__diode {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-6);
+    animation: live-streams-diode-pulse 2s ease-in-out infinite;
+  }
+
+  &__status-label {
+    color: var(--color-5);
+    @extend %small;
+  }
+}
+
+@keyframes live-streams-diode-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+// ── Sidebar mini player: pinned background stream ───────────────────
+// Shows only when a stream is pinned (Play in background on the detail page):
+// title (→ detail page) | play/pause | stop (unpin).
+
+.live-streams-mini-player {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: calc($gap / 2);
+
+  &__title {
+    color: var(--color-5);
+    @include scaled-font-size(14px);
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  &__btn {
+    flex-shrink: 0;
+  }
+}
+
+// ── Detail view: /addons/live-streams/stream/<naddr> ────────────────
+
+.live-stream-detail {
+  &__loading,
+  &__error {
+    color: var(--color-3);
+    @extend %small;
+  }
+
+  &__error {
+    color: var(--color-4);
+  }
+
+  // The stream card already carries its own spacing.
+  &__stream {
+    margin-top: $gap;
+  }
+}

@@ -59,6 +59,7 @@ const ICONS = {
   notification: icon('bell'),
   link: icon('link'),
   share: icon('share-link'),
+  pin: icon('pin'),
 } as const;
 
 export class NoteMenu {
@@ -166,6 +167,24 @@ export class NoteMenu {
       `;
     }
 
+    // Pinned-post state (own notes only): read the user's pin list so the
+    // label flips between "Pin to profile" and "Unpin from profile".
+    let pinButton = '';
+    if (isOwnNote && this.options.eventId) {
+      const { fetchPinnedNoteId } = await import('../../lists/pins');
+      const currentUserPubkey = currentUser?.pubkey;
+      if (currentUserPubkey) {
+        const pinnedId = await fetchPinnedNoteId(currentUserPubkey);
+        const isPinned = pinnedId === this.options.eventId;
+        pinButton = `
+        <button class="note-menu-item" data-action="${isPinned ? 'unpin-note' : 'pin-note'}">
+          ${ICONS.pin}
+          ${isPinned ? _('Unpin from profile') : _('Pin to profile')}
+        </button>
+      `;
+      }
+    }
+
     // Check if thread is muted
     const muteOrch = MuteOrchestrator.getInstance();
     const isThreadMuted = await muteOrch.isEventMuted(this.options.eventId);
@@ -210,6 +229,8 @@ export class NoteMenu {
       </button>
 
       ${bookmarkButtons}
+
+      ${pinButton}
 
       ${
         !isOwnNote && isTribesEnabled()
@@ -417,6 +438,12 @@ export class NoteMenu {
       case 'delete-note':
         this.deleteNote();
         break;
+      case 'pin-note':
+        void this.togglePin(true);
+        break;
+      case 'unpin-note':
+        void this.togglePin(false);
+        break;
       case 'report':
         this.reportNote();
         break;
@@ -575,6 +602,31 @@ export class NoteMenu {
     deleteModal.show({
       eventId: this.options.eventId,
     });
+  }
+
+  /**
+   * Pin / unpin this own note to the top of the profile view (kind 10001).
+   * A new pin replaces the previous one (replaceable event); unpin publishes
+   * an empty pin list. PV re-renders the pinned slot via `pin:updated`.
+   */
+  private async togglePin(pin: boolean): Promise<void> {
+    if (!AuthGuard.requireAuth('pin note')) {
+      return;
+    }
+
+    try {
+      const { pinNote, unpinNote } = await import('../../lists/pins');
+      if (pin) {
+        await pinNote(this.options.eventId);
+        ToastService.show(_('Note pinned to profile'), 'success');
+      } else {
+        await unpinNote();
+        ToastService.show(_('Note unpinned from profile'), 'success');
+      }
+    } catch (error) {
+      console.error('Failed to toggle pin:', error);
+      ToastService.show(_('Failed to update pin'), 'error');
+    }
   }
 
   /**

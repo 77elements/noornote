@@ -58,6 +58,8 @@
 @use 'components/bolt11-invoice';
 @use 'components/translation-preview';
 @use 'components/live-stream-card';
+@use 'components/live-streams-addon';
+@use 'components/whats-new';
 @use 'components/user-identity';
 @use 'components/sync-status-badge';
 @use 'components/article-preview';
@@ -110,6 +112,7 @@
 @use 'components/calendar-addon';
 @use 'components/analytics-addon';
 @use 'components/about-view';
+@use 'components/whats-new-view';
 @use 'components/font-size-switcher';
 @use 'components/theme-switcher';
 @use 'components/pull-to-refresh';

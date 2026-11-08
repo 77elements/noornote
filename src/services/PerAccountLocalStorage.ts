@@ -78,6 +78,7 @@ export const StorageKeys = {
   // would orphan existing users' settings. Feature is named "Highlights" in UI.
   HIDE_HIGHLIGHTS: 'noornote_hide_ext_quotes_map', // boolean: drop kind:9802 highlights whose source is an external web URL (others' posts only)
   HIDE_HIGHLIGHTS_USERS: 'noornote_hide_ext_quotes_users_map', // Record<authorPubkey, true>: per-user override — hide that author's highlights
+  SHOW_EXPIRY_NOTICE: 'noornote_show_expiry_notice', // boolean: show "Post expires on …" line under NIP-40 expiring notes (default off)
   SHOW_REACTIONS: 'noornote_show_reactions', // boolean: show followed users' kind:7 reactions as feed entries in the TV
   LOCAL_SEARCH_ONLY: 'noornote_local_search_only', // boolean: spotlight search restricted to local caches — no relay/Primal request is sent
   SHOW_REACTIONS_USERS: 'noornote_show_reactions_users_map', // Record<authorPubkey, true>: per-user override — show that author's reactions in the TV
@@ -232,7 +233,16 @@ export const StorageKeys = {
   WALLET_BALANCE_ADDON_ENABLED: 'noornote_wallet_balance_addon_enabled_map',
   BTC_PRICE_ENABLED: 'noornote_btc_price_enabled_map',
   BTC_PRICE_SIDEBAR_WIDGET: 'noornote_btc_price_sidebar_widget_map',
+  // Live Streams addon: new key since the 2026-11 rename; the old
+  // LIVE_STREAMS_PLAYER_ENABLED key is kept as a migration fallback (see
+  // src/addons/live-streams/index.ts) — never delete it.
+  LIVE_STREAMS_ENABLED: 'noornote_live_streams_enabled_map',
   LIVE_STREAMS_PLAYER_ENABLED: 'noornote_live_streams_player_enabled_map',
+  LIVE_STREAMS_SIDEBAR_WIDGET: 'noornote_live_streams_sidebar_widget_map',
+  LIVE_STREAMS_PINNED: 'noornote_live_streams_pinned_map',
+  // What's New sidebar widget: dismissed version string ("1.10.0") — the
+  // widget reappears automatically when the app version changes.
+  WHATS_NEW_DISMISSED: 'noornote_whats_new_dismissed_map',
   BADGES_ENABLED: 'noornote_badges_enabled_map',
   BULK_DELETE_ENABLED: 'noornote_bulk_delete_enabled_map',
   NOTE_TAKING_ENABLED: 'noornote_note_taking_enabled_map',
