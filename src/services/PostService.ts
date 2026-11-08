@@ -65,6 +65,13 @@ export interface PostOptions {
    * event as an image-tag.
    */
   imageTags?: { imageUrl: string; taggedPubkeys: string[] }[];
+  /**
+   * NIP-40 expiration — lifetime of this note in seconds. When set, an
+   * `expiration` tag (unix timestamp) is added; supporting relays stop
+   * serving the note after that point, and NoorNote's ingestion drops
+   * expired events. NOT a deletion guarantee — relays may keep the data.
+   */
+  expiresInSeconds?: number;
 }
 
 export interface HighlightOptions {
@@ -125,6 +132,7 @@ export class PostService {
       quotedArticle,
       clientTag,
       imageTags,
+      expiresInSeconds,
     } = options;
     const { stripTrackingParams } = await import(
       '../helpers/stripTrackingParams'
@@ -257,6 +265,15 @@ export class PostService {
         tags.push(['client', clientTag.trim()]);
       }
 
+      // NIP-40 expiration — note stops being served after this point
+      // (best-effort: relays may keep the data, see PostOptions docs).
+      if (expiresInSeconds && expiresInSeconds > 0) {
+        tags.push([
+          'expiration',
+          String(Math.floor(Date.now() / 1000) + expiresInSeconds),
+        ]);
+      }
+
       // NIP-68 image tagging — attach `imeta` blocks with `annotate-user` lines
       // (center coordinates) per tagged user. Top-level `p` tags ensure the
       // recipient's `#p`-subscription fires and the NotificationsOrchestrator
@@ -302,6 +319,12 @@ export class PostService {
 
       // Custom emoji tags (NIP-30) — only when the addon is enabled
       const finalTags = await this.maybeAttachEmojiTags(content, tags);
+
+      // NIP-40: warn (non-blocking) when NO target relay advertises NIP-40 —
+      // the note may then be kept forever, the expiration tag is best-effort.
+      if (expiresInSeconds && expiresInSeconds > 0) {
+        void this.warnIfNoNip40Support(relays);
+      }
 
       // Build unsigned event
       const unsignedEvent = {
@@ -806,5 +829,32 @@ export class PostService {
       GifSearchService.getInstance().getGifMeta(url)
     );
     tags.push(...gifTags);
+  }
+
+  /**
+   * NIP-40 support check: fetch each target relay's info document (session-
+   * cached in helpers/nip11) and warn once when none advertises NIP-40.
+   * Fire-and-forget — never blocks or fails the publish.
+   */
+  private async warnIfNoNip40Support(relays: string[]): Promise<void> {
+    try {
+      const { fetchSupportedNips } = await import('../helpers/nip11');
+      const results = await Promise.all(
+        relays.map(async url => (await fetchSupportedNips(url))?.includes(40))
+      );
+      if (results.some(supported => supported === true)) return;
+
+      ToastService.show(
+        _(
+          'None of the selected relays support NIP-40 (expiration) — the note may be stored permanently.'
+        ),
+        'warning'
+      );
+    } catch (err) {
+      this.systemLogger.warn(
+        'PostService',
+        `NIP-40 relay check failed: ${String(err)}`
+      );
+    }
   }
 }

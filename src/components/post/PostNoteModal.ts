@@ -64,6 +64,8 @@ import {
   createComposerEventHandlers,
 } from './composerShared';
 import { openDraftInComposer } from '../../helpers/draftRouter';
+import { EXPIRY_CHOICES } from '../../helpers/nip40';
+import { NnDropdown } from '../ui/NnDropdown';
 import { attachPreviewClickToEdit } from '../../helpers/previewClickToEdit';
 import { isImageUrl } from '../../helpers/extractMedia';
 import { UserProfileService } from '../../services/UserProfileService';
@@ -106,6 +108,9 @@ export class PostNoteModal {
   private toolbar: PostEditorToolbar | null = null;
   private nsfwSwitch: Switch | null = null;
   private pollCreator: PollCreator | null = null;
+  /** NIP-40: selected lifetime in seconds (undefined = never expires). */
+  private expiresInSeconds: number | undefined;
+  private expiryDropdown: NnDropdown | null = null;
   private mentionAutocomplete: MentionAutocomplete | null = null;
   private customEmojiAutocomplete:
     | import('../../addons/custom-emojis/CustomEmojiAutocomplete').CustomEmojiAutocomplete
@@ -392,6 +397,7 @@ export class PostNoteModal {
         <div>
           ${this.toolbar.render()}
           <div class="post-note-options" id="post-note-options-container"></div>
+          <div class="post-note-expiry" id="post-note-expiry-container"></div>
           <div class="post-note-schedule-hint" id="post-note-schedule-hint">${this.renderScheduleHintHtml()}</div>
         </div>
         <div>
@@ -416,6 +422,80 @@ export class PostNoteModal {
       <span class="post-note-schedule-hint__text">${_('Will be published on')} ${escapeHtml(when)}</span>
       <button type="button" class="post-note-schedule-hint__clear" data-action="clear-schedule">${_('Clear')}</button>
     `;
+  }
+
+  /**
+   * NIP-40 "expires after" dropdown (composer). Mounted into its container;
+   * renders nothing when expiry makes no sense (polls, quotes, highlights,
+   * scheduled posts).
+   */
+  private mountExpiryDropdown(): void {
+    const container = document.querySelector(
+      '#post-note-expiry-container'
+    ) as HTMLElement | null;
+    if (!container) return;
+
+    if (this.pollData || this.highlightSource || this.scheduledAt !== null) {
+      container.innerHTML = '';
+      return;
+    }
+
+    const options = [
+      { value: '', label: _('Never expires') },
+      ...EXPIRY_CHOICES.map(c => ({
+        value: String(c.seconds),
+        label: _(c.labelKey),
+      })),
+      { value: 'custom', label: _('Custom…') },
+    ];
+
+    this.expiryDropdown = new NnDropdown({
+      options,
+      selectedValue: this.expiresInSeconds ? String(this.expiresInSeconds) : '',
+      className: 'post-note-expiry__dropdown',
+      width: '180px',
+      onChange: value => {
+        if (value === 'custom') {
+          void this.pickCustomExpiry();
+          return;
+        }
+        const seconds = Number(value);
+        this.expiresInSeconds =
+          Number.isFinite(seconds) && seconds > 0 ? seconds : undefined;
+        this.expiryDropdown?.setCustomLabel('');
+      },
+    });
+
+    container.innerHTML = '';
+    container.appendChild(this.expiryDropdown.getElement());
+  }
+
+  /**
+   * Custom expiry via the shared date/time picker (NIP-40 allows any unix
+   * timestamp). Falls back to "never" when the picker is cancelled.
+   */
+  private async pickCustomExpiry(): Promise<void> {
+    const { pickDateTime } = await import('../../helpers/datePickerModal');
+    const picked = await pickDateTime({
+      confirmLabel: _('Set expiry'),
+      min: new Date(),
+    });
+
+    if (!picked) {
+      // Cancelled — revert to "Never expires".
+      this.expiresInSeconds = undefined;
+      this.expiryDropdown?.setValue('');
+      this.expiryDropdown?.setCustomLabel('');
+      return;
+    }
+
+    const seconds = Math.max(
+      60,
+      Math.floor(picked.getTime() / 1000) - Math.floor(Date.now() / 1000)
+    );
+    this.expiresInSeconds = seconds;
+    this.expiryDropdown?.setValue('custom');
+    this.expiryDropdown?.setCustomLabel(picked.toLocaleString());
   }
 
   /**
@@ -511,6 +591,9 @@ export class PostNoteModal {
     if (this.toolbar && toolbarContainer) {
       this.toolbar.setupEventListeners(toolbarContainer as HTMLElement);
     }
+
+    // NIP-40 expiry dropdown
+    this.mountExpiryDropdown();
 
     this.mentionAutocomplete = createMentionAutocomplete('PostNoteModal');
 
@@ -1124,6 +1207,9 @@ export class PostNoteModal {
             ...(imageTagsPayload.length > 0
               ? { imageTags: imageTagsPayload }
               : {}),
+            ...(this.expiresInSeconds
+              ? { expiresInSeconds: this.expiresInSeconds }
+              : {}),
           })) ?? false;
       }
 
@@ -1308,6 +1394,8 @@ export class PostNoteModal {
     this.toolbar = null;
 
     this.nsfwSwitch?.destroy();
+    this.expiryDropdown?.destroy();
+    this.expiryDropdown = null;
     this.nsfwSwitch = null;
 
     this.pollCreator?.destroy();

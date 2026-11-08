@@ -4,6 +4,7 @@
  */
 
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
+import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { NoteStructureBuilder } from './NoteStructureBuilder';
 import { CollapsibleManager } from '../note-features/CollapsibleManager';
 import { PollRenderer } from '../note-features/PollRenderer';
@@ -12,6 +13,11 @@ import { QuotedNoteRenderer } from './QuotedNoteRenderer';
 import { renderPodcastCard, suppressPodcastUrlLinks } from './PodcastCard';
 import { renderWebCommentCard } from './WebCommentCard';
 import { extractPodcastRef } from '../../../helpers/podcastTags';
+import {
+  getEventExpiration,
+  isExpiryNoticeEnabled,
+} from '../../../helpers/nip40';
+import { _ } from '../../../i18n';
 
 export class OriginalNoteRenderer {
   /**
@@ -117,11 +123,42 @@ export class OriginalNoteRenderer {
       (element.querySelector('.event-content') || element).appendChild(webCard);
     }
 
+    // NIP-40 expiry notice (opt-in UI setting): small muted line under the
+    // note showing when supporting relays will stop serving it.
+    const expiryElement = this.buildExpiryNotice(webSource);
+    if (expiryElement) {
+      (element.querySelector('.event-content') || element).appendChild(
+        expiryElement
+      );
+    }
+
     // Setup collapsible for long notes (only for top-level notes with collapsible enabled)
     if (opts.depth === 0 && opts.collapsible) {
       CollapsibleManager.setup(element, { maxHeight: '40vh' });
     }
 
     return element;
+  }
+
+  /**
+   * NIP-40: "Post expires on …" / "Post expired on …" line under the note
+   * content. Only when the UI setting is on and the event carries a valid
+   * `expiration` tag.
+   */
+  private static buildExpiryNotice(event: NostrEvent): HTMLElement | null {
+    if (!isExpiryNoticeEnabled()) return null;
+
+    const expiration = getEventExpiration(event);
+    if (expiration === null) return null;
+
+    const when = new Date(expiration * 1000).toLocaleString();
+    const expired = expiration <= Math.floor(Date.now() / 1000);
+
+    const div = document.createElement('div');
+    div.className = 'note-expiry-notice';
+    div.textContent = expired
+      ? _('Post expired on %s', when)
+      : _('Post expires on %s', when);
+    return div;
   }
 }

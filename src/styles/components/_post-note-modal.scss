@@ -228,6 +228,24 @@ svg.upload-progress {
   align-items: center;
 }
 
+// NIP-40 "expires after" dropdown in the composer (NnDropdown molecule)
+.post-note-expiry {
+  display: flex;
+  align-items: center;
+  padding: 0 $gap calc($gap / 2);
+
+  &:empty {
+    display: none;
+  }
+}
+
+// "Post expires on …" line under expiring notes (opt-in UI setting)
+.note-expiry-notice {
+  color: var(--color-3);
+  font-size: 0.85rem;
+  margin-top: calc($gap / 3);
+}
+
 // Drafts tab (shared by the note + reply composers)
 .post-note-drafts {
   min-height: 200px;

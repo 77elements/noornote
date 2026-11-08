@@ -17,6 +17,7 @@ import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { NostrTransport } from './transport/NostrTransport';
 import { RelayConfig } from './RelayConfig';
 import { LRUCache, getCacheSize } from '../helpers/LRUCache';
+import { isExpiredEvent } from '../helpers/nip40';
 import { TypedEventBus } from '../core/TypedEventBus';
 
 export interface CachedNote {
@@ -120,6 +121,7 @@ export class NoteService {
    * an already-cached id (a very common case during scroll) is silent.
    */
   public registerNote(event: NostrEvent): void {
+    if (isExpiredEvent(event)) return;
     if (event.id && !this.cache.has(event.id)) {
       this.cache.set(event.id, {
         event,

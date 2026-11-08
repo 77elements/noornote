@@ -78,6 +78,7 @@ export const StorageKeys = {
   // would orphan existing users' settings. Feature is named "Highlights" in UI.
   HIDE_HIGHLIGHTS: 'noornote_hide_ext_quotes_map', // boolean: drop kind:9802 highlights whose source is an external web URL (others' posts only)
   HIDE_HIGHLIGHTS_USERS: 'noornote_hide_ext_quotes_users_map', // Record<authorPubkey, true>: per-user override — hide that author's highlights
+  SHOW_EXPIRY_NOTICE: 'noornote_show_expiry_notice', // boolean: show "Post expires on …" line under NIP-40 expiring notes (default off)
   SHOW_REACTIONS: 'noornote_show_reactions', // boolean: show followed users' kind:7 reactions as feed entries in the TV
   LOCAL_SEARCH_ONLY: 'noornote_local_search_only', // boolean: spotlight search restricted to local caches — no relay/Primal request is sent
   SHOW_REACTIONS_USERS: 'noornote_show_reactions_users_map', // Record<authorPubkey, true>: per-user override — show that author's reactions in the TV
