@@ -209,7 +209,10 @@ export class ThreadManager {
     isAuthorPin: boolean = false
   ): void {
     renderThreadedReplyNodes(node, container, (event, depth) =>
-      this.createReplyElement(event, depth, isAuthorPin)
+      // isAuthorPin applies ONLY to the pinned node itself (depth 0) — the
+      // callback runs for the whole subtree, and replies hanging below the
+      // pinned author reply must NOT inherit the (Author) badge.
+      this.createReplyElement(event, depth, isAuthorPin && depth === 0)
     );
   }
 
