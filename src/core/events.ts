@@ -439,6 +439,7 @@ export interface AppEvents {
   // ── Profile ────────────────────────────────
   'profile:updated': ProfileUpdatedPayload;
   'profileMounts:changed': ProfileMountsChangedPayload;
+  'pin:updated': { pubkey: string };
 
   // ── Relay ──────────────────────────────────
   'relay:connected': RelayConnectedPayload;

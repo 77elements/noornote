@@ -502,6 +502,20 @@
 // Profile Timeline Container
 .profile-timeline {}
 
+// Pinned note (kind 10001) shown above the notes feed
+.profile-pinned-mount {
+  margin-bottom: $gap;
+
+  &[hidden] {
+    display: none;
+  }
+
+  .profile-pinned-note {
+    // Visually distinguish the pinned card from the chronological feed
+    border-inline-start: 3px solid var(--color-6);
+  }
+}
+
 .profile-timeline-heading {
   margin-bottom: 0;
 }
