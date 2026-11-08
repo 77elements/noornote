@@ -1,10 +1,17 @@
 // Focus Shell (v2) — the mount layer for the Focus UI.
 //
 // While `html.ui--focus` is set, the classic interface chrome is hidden and
-// the empty single-column shell owns the screen. The shell itself starts
-// bare (no content, no styling beyond the frame) — everything inside gets
+// the shell owns the screen. The shell starts bare — everything inside gets
 // built step by step (docs/todos/v2-focus-ui.md). Colors are NOT touched:
-// the shell stays transparent and inherits the theme like the body does.
+// surfaces stay transparent / use the theme colors like the body does.
+//
+// Edge drawers: browser-tab-style handles at the bottom/top screen edge.
+// Click (or touch drag) slides a panel in as an OVERLAY on top of the
+// content. The tab is positioned outside the drawer box (negative offset),
+// so the closed transform parks the panel off-screen while the tab stays
+// visible; open, the tab merges onto the panel frame (folder-tab style).
+// Tab + panel frame use --color-3; both share ONE continuous marble
+// gradient (see the panel rule below).
 
 @use '../abstracts/variables' as *;
 
@@ -19,4 +26,116 @@ html.ui--focus {
   width: 100%;
   min-height: 100vh;
   padding: $gap; // TEMP: hosts the temporary Focus-UI switch until settings get their place
+}
+
+// Tab geometry: visible tab height + the 1px overlap that fuses the tab
+// onto the panel frame (folder-tab technique).
+$focus-tab-w: 160px;
+$focus-tab-h: 30px;
+$focus-tab-overlap: 1px;
+
+.focus-drawer {
+  --panel-h: 300px;
+
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: $z-back-bar; // overlay above shell content, below modals/toasts
+  transition: $transition-all;
+  will-change: transform;
+
+  // Closed: panel parked off-screen, only the tab pokes out at the edge.
+  &--bottom {
+    bottom: 0;
+    height: 300px;
+    transform: translateY(100%);
+
+    &.is-open {
+      transform: none;
+    }
+  }
+
+  &--top {
+    --panel-h: 150px;
+    top: 0;
+    height: 150px;
+    transform: translateY(-100%);
+
+    &.is-open {
+      transform: none;
+    }
+  }
+
+  // During touch/mouse drag the panel follows the finger directly.
+  &.is-dragging {
+    transition: none;
+  }
+}
+
+// One continuous marble sweep across tab + panel: both elements paint the
+// SAME virtual gradient box (viewport-wide, panel height + tab strip), and
+// background-position anchors that box to the panel's coordinate system.
+// The tab therefore shows the exact continuation of the panel's gradient —
+// no phase step ("aus einem Guss") in every drawer state, including the
+// slide animation (both move as one transformed subtree).
+.focus-drawer__panel {
+  height: 100%;
+  background-image: $marble-gradient;
+  background-repeat: no-repeat;
+  background-size: 100vw calc(var(--panel-h) + $focus-tab-h + $focus-tab-overlap);
+  // Same glass-stone treatment the classic sidebar (menu flyout) uses:
+  // marble gradient + glass blur, so later shell content shimmers through.
+  backdrop-filter: blur(10px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+
+  // Bottom surface: only the top line frames it (sides/bottom sit at the
+  // screen edge, no border needed there).
+  .focus-drawer--bottom & {
+    background-position: 0 (-$focus-tab-h - $focus-tab-overlap);
+    border-top: 1px solid var(--color-3);
+    border-radius: $radius-xl $radius-xl 0 0;
+  }
+
+  // Top surface: top + bottom line, no side borders.
+  .focus-drawer--top & {
+    background-position: 0 0;
+    border-top: 1px solid var(--color-3);
+    border-bottom: 1px solid var(--color-3);
+    border-radius: 0 0 $radius-xl $radius-xl;
+  }
+}
+
+.focus-drawer__tab {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: $focus-tab-w;
+  height: $focus-tab-h + $focus-tab-overlap;
+  padding: 0;
+  appearance: none;
+  // Glass look without the blur (the blur smeared the panel edge behind
+  // the tab): marble gradient over an opaque base, phase-aligned with the
+  // panel's gradient (see the panel rule above).
+  background-color: var(--color-1);
+  background-image: $marble-gradient;
+  background-repeat: no-repeat;
+  background-size: 100vw calc(var(--panel-h) + $focus-tab-h + $focus-tab-overlap);
+  border: 1px solid var(--color-3);
+  cursor: pointer;
+  touch-action: none; // vertical touch drags belong to the drawer
+  user-select: none;
+
+  .focus-drawer--bottom & {
+    top: -$focus-tab-h;
+    background-position: calc(#{$focus-tab-w / 2} - 50vw) (-$focus-tab-overlap);
+    border-bottom: none;
+    border-radius: $radius-xl $radius-xl 0 0;
+  }
+
+  .focus-drawer--top & {
+    bottom: -$focus-tab-h;
+    background-position: calc(#{$focus-tab-w / 2} - 50vw) calc(var(--panel-h) * -1 + $focus-tab-overlap);
+    border-top: none;
+    border-radius: 0 0 $radius-xl $radius-xl;
+  }
 }
