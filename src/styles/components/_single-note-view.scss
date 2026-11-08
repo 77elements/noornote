@@ -193,8 +193,17 @@
   // Styling for reply list container
 }
 
+// Author pin badge (Twitter-style top placement of the note author's direct
+// replies). Sits inline right after the username in the note header — used by
+// both RepliesRenderer (.snv-reply wrapper) and ThreadManager (bare card).
+.snv-reply__author-badge {
+  color: var(--color-6);
+  padding: 0 0.25rem 0 0;
+}
+
 // Individual Reply (wraps NoteUI .note-card)
 .snv-reply {
+
   // Threaded indentation based on depth
   // Each level indents by 24px (half of profile picture width)
   &[data-depth="1"] {
