@@ -486,6 +486,10 @@ export class App {
 
     // Authenticated routes
     this.registerRoute('/', 'timeline', 'timeline', 'tv', true);
+    // Explicit /timeline alias: the Focus UI (v2) shows this URL while the
+    // Social Media domain holds the focus — a reload or direct link must
+    // land on the timeline in the classic interface too.
+    this.registerRoute('/timeline', 'timeline', 'timeline', 'tv', true);
     this.registerRoute(
       '/notifications',
       'notifications',

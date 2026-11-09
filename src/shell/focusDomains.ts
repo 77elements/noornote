@@ -43,6 +43,12 @@ export interface FocusDomainDef {
    */
   icon?: string;
   /**
+   * URL the browser shows while this domain holds the focus ('' = home
+   * grid). Social uses the new /timeline; the other domains keep their
+   * classic URLs once their surfaces are wired.
+   */
+  route?: string;
+  /**
    * Create the domain surface for the focus column. Async so heavy views
    * are dynamically imported (code-split) only when first focused.
    */
@@ -67,6 +73,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     id: 'social',
     label: _('Social Media'),
     icon: 'icon-home',
+    route: '/timeline',
     createSurface: socialSurface,
   },
   { id: 'articles', label: _('Articles'), icon: 'icon-articles' },

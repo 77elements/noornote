@@ -24,6 +24,7 @@
 import { Switch } from '../components/ui/Switch';
 import { isFocusUiEnabled, setFocusUiEnabled } from '../helpers/focusUiSetting';
 import { LayoutService } from '../services/LayoutService';
+import { Router } from '../services/Router';
 import { ToastService } from '../services/ToastService';
 import { TypedEventBus } from '../core/TypedEventBus';
 import { FocusStage } from './focusStage';
@@ -192,6 +193,9 @@ export function mountFocusShell(): void {
         TypedEventBus.getInstance().emit('settings:focus-ui-changed', {
           enabled: false,
         });
+        // Back to the classic home: navigate('/') re-mounts the timeline
+        // view (the shell may have left the URL anywhere).
+        Router.getInstance().navigate('/', true);
         // Restore the classic layout classes immediately.
         void LayoutService.getInstance().refresh();
         ToastService.show(_('Classic interface active'), 'success');
@@ -271,6 +275,10 @@ export function mountFocusShell(): void {
   });
 
   document.getElementById('app')?.appendChild(shell);
+
+  // The home grid IS '/': a switch from a classic route (e.g. /settings/ui)
+  // rewrites the URL in place — no view mounting, no history entry.
+  Router.getInstance().replaceUrl('/');
 }
 
 /** Remove the Focus Shell (idempotent); tears down the stage surfaces. */

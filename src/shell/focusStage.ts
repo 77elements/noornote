@@ -24,11 +24,15 @@
  */
 
 import { _ } from '../i18n';
+import { Router } from '../services/Router';
 import {
   FOCUS_DOMAINS,
   type FocusDomainDef,
   type FocusDomainSurface,
 } from './focusDomains';
+
+/** URL of the home grid (no domain focused). */
+const HOME_ROUTE = '/';
 
 /** Morph duration/easing — single source for open and close. */
 const MORPH_MS = 380;
@@ -121,6 +125,9 @@ export class FocusStage {
   private async open(def: FocusDomainDef, el: HTMLElement): Promise<void> {
     this.morphing = true;
     this.activeId = def.id;
+    // URL follows the focus: the focused domain's route replaces the home
+    // '/' in place (no history entry — Back stays with the browser).
+    if (def.route) Router.getInstance().replaceUrl(def.route);
     const takeOver = window.matchMedia(MORPH_MIN_QUERY).matches;
 
     // Surface mounts BEFORE the morph: in document flow the column height
@@ -188,6 +195,8 @@ export class FocusStage {
     this.grid.classList.remove('is-focused');
     el.style.gridColumn = '';
     this.activeId = null;
+    // Back to the home grid URL (no-op when already there).
+    Router.getInstance().replaceUrl(HOME_ROUTE);
     this.restoreSideCircles();
     if (!first) return; // takeover / no-animate: plain class flip
 
