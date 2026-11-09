@@ -159,6 +159,7 @@ html.ui--focus {
     outline: none; // ...nor its outer ring
     border-radius: $radius-xl;
     background: none;
+    margin-top: 6rem; // clear the ED-t drawer above the column
   }
 }
 
@@ -206,9 +207,8 @@ html.ui--focus {
 // v1 UI settings step by step).
 .focus-object__actions {
   position: absolute;
-  top: 0;
-  right: 0;
-  transform: translate(50%, -12px); // 12px = half button: X centers on the corner
+  top: 3px;
+  right: -35px;
   display: none;
   flex-direction: column;
   align-items: center;
@@ -287,7 +287,6 @@ html.ui--focus {
 // but the classic pcc spacing (right padding) is v1-only — the focus column
 // manages its own spacing.
 .ui--focus .view-content {
-  margin-top: 3rem;
   padding: 0;
 }
 
@@ -296,6 +295,12 @@ html.ui--focus {
 .ui--focus .note-card:hover {
   background: transparent;
   border-bottom-color: var(--color-2);
+}
+
+// The sticky timeline header's opaque v1 background would cut a box out of
+// the shell gradient — transparent in the shell.
+.ui--focus .timeline .timeline-header {
+  background: transparent;
 }
 
 // Focus surface wrapper: hosts a domain's inner view swaps (articles:
