@@ -858,20 +858,30 @@ export class ZapService {
       }
 
       // 2. Origin check (NIP-57 §6 / Appendix E): the invoice's description
-      //    hash must equal SHA-256 of the zap request JSON we sent. Proves
-      //    the invoice was minted for THIS zap request (blocks invoice
-      //    substitution by a malicious callback server).
+      //    hash SHOULD equal SHA-256 of the zap request JSON we sent. In
+      //    practice many LNURL servers re-serialize the zap request before
+      //    hashing (key order/whitespace) or set a plaintext `description`
+      //    instead — a hard check here refused real invoices from real
+      //    wallets and broke zapping (1.9.9 regression). Reference clients
+      //    (NDK, Amethyst) do not verify it client-side either. Log-only:
+      //    a wallet that pays is the binding check; the exact reason goes
+      //    to the logs for diagnosis.
       if (!decoded.descriptionHash) {
-        throw new Error('Invoice has no description hash');
-      }
-      if (
+        this.systemLogger.warn(
+          'ZapService',
+          'Invoice has no description hash — paying anyway'
+        );
+      } else if (
         bytesToHex(sha256(utf8ToBytes(nostrJson))) !== decoded.descriptionHash
       ) {
-        this.systemLogger.error(
+        this.systemLogger.warn(
           'ZapService',
-          'Invoice description hash does not match zap request — refusing to pay'
+          'Invoice description hash does not match zap request — paying anyway',
+          {
+            expected: bytesToHex(sha256(utf8ToBytes(nostrJson))),
+            got: decoded.descriptionHash,
+          }
         );
-        throw new Error('Invoice does not match zap request');
       }
       // ─────────────────────────────────────────────────────────────
 

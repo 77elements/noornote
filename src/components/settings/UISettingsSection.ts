@@ -151,6 +151,9 @@ export class UISettingsSection extends SettingsSection {
           </div>
         </section>
 
+        <!-- TEMP-HOTFIX: Focus UI (v2) stays hidden until the v2 launch —
+             keep it secret. Rescue hatch: ?focusui=1 URL param still works.
+             Uncomment this section to re-expose the switch.
         <section class="section">
           <div class="setting">
             <span class="setting__label">${_('Focus UI (v2)')}</span>
@@ -160,6 +163,7 @@ export class UISettingsSection extends SettingsSection {
             </p>
           </div>
         </section>
+        -->
 
         <section class="section">
           <div class="setting">
