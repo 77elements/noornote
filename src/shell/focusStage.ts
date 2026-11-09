@@ -83,6 +83,18 @@ export class FocusStage {
     this.grid?.remove();
   }
 
+  /**
+   * Focus navigation seam: hand a view type to the ACTIVE surface's
+   * column (e.g. a note click in the timeline). Returns false when no
+   * surface is focused or it does not own the view type — the caller
+   * (ViewNavigationController) then navigates the classic way.
+   */
+  handleFocusNav(viewType: string, param?: string): boolean {
+    if (!this.activeId) return false;
+    const surface = this.surfaces.get(this.activeId);
+    return surface?.view?.handleFocusNav?.(viewType, param) ?? false;
+  }
+
   private createObject(def: FocusDomainDef): HTMLElement {
     const el = document.createElement('div');
     el.className = 'focus-object';

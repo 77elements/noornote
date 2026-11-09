@@ -247,10 +247,52 @@ html.ui--focus {
 
 // Surface slot: the focused domain's view mounts here (after the morph).
 // Definite height (fills the active object) — the view's own .view-content
-// (height: 100%) resolves against it exactly like in the classic layout;
-// NO overrides on .view-content.
+// (height: 100%) resolves against it exactly like in the classic layout.
+// The only sanctioned override on .view-content is the focus-scoped top
+// spacing below (clears the ED-t overlay).
 .focus-object__surface {
   height: 100%;
+}
+
+// Focus-scoped spacing: the embedded views keep their classic .view-content
+// styles; only the top offset is adjusted so content clears the ED-t drawer.
+.ui--focus .view-content {
+  margin-top: 3rem;
+}
+
+// Focus surface wrapper: hosts a domain's inner view swaps (articles:
+// list ↔ detail) inside the focus column. The classic SCC tab system has
+// no equivalent in the shell — detail views render in the column, the
+// back control returns to the list.
+.focus-surface {
+  position: relative;
+  height: 100%;
+}
+
+.focus-surface__back {
+  position: absolute;
+  top: 0;
+  left: $gap;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-3);
+  cursor: pointer;
+
+  svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+  }
+
+  &:hover {
+    opacity: 0.8;
+  }
 }
 
 // TEMP: the Focus-UI switch inside ED-t, until settings get their place in

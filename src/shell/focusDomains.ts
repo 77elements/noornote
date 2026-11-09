@@ -13,6 +13,8 @@
  */
 
 import { _ } from '../i18n';
+import { articlesSurface } from './focusArticlesSurface';
+import { socialSurface } from './focusSocialSurface';
 
 /**
  * Structural contract for the view behind a surface. Kept structural on
@@ -22,6 +24,12 @@ export interface FocusDomainSurfaceView {
   pause?(): void;
   resume?(): void;
   destroy?(): void;
+  /**
+   * Focus navigation seam: render a view type inside this surface's
+   * column (note/article details). Return false for types the surface
+   * does not own — they fall through to the classic navigation.
+   */
+  handleFocusNav?(viewType: string, param?: string): boolean;
 }
 
 /** A mounted domain surface, ready to append into the focus column. */
@@ -60,13 +68,6 @@ export interface FocusDomainDef {
   addon?: boolean;
 }
 
-/** The full Timeline as the "Social Media" surface (PoC). */
-const socialSurface = async (): Promise<FocusDomainSurface> => {
-  const { TimelineView } = await import('../components/views/TimelineView');
-  const view = new TimelineView();
-  return { element: view.getElement(), view };
-};
-
 /** FS primary domains in display order. `(a)` = addon-backed domain. */
 export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
   {
@@ -76,7 +77,13 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     route: '/timeline',
     createSurface: socialSurface,
   },
-  { id: 'articles', label: _('Articles'), icon: 'icon-articles' },
+  {
+    id: 'articles',
+    label: _('Articles'),
+    icon: 'icon-articles',
+    route: '/articles',
+    createSurface: articlesSurface,
+  },
   { id: 'videos', label: _('Videos'), icon: 'icon-video' },
   { id: 'recipes', label: _('Recipes'), icon: 'icon-book-open' },
   {

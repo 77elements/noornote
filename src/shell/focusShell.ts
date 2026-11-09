@@ -23,6 +23,7 @@
 
 import { Switch } from '../components/ui/Switch';
 import { isFocusUiEnabled, setFocusUiEnabled } from '../helpers/focusUiSetting';
+import { setFocusUiNavHandler } from '../helpers/focusUiNavigation';
 import { LayoutService } from '../services/LayoutService';
 import { Router } from '../services/Router';
 import { ToastService } from '../services/ToastService';
@@ -279,10 +280,17 @@ export function mountFocusShell(): void {
   // The home grid IS '/': a switch from a classic route (e.g. /settings/ui)
   // rewrites the URL in place — no view mounting, no history entry.
   Router.getInstance().replaceUrl('/');
+
+  // Focus navigation seam: while the shell lives, note/article clicks etc.
+  // render inside the ACTIVE surface's column (see focusStage.handleFocusNav).
+  setFocusUiNavHandler(
+    (viewType, param) => stage?.handleFocusNav(viewType, param) ?? false
+  );
 }
 
 /** Remove the Focus Shell (idempotent); tears down the stage surfaces. */
 export function unmountFocusShell(): void {
+  setFocusUiNavHandler(null);
   stage?.destroy();
   stage = null;
   document.getElementById(SHELL_ID)?.remove();

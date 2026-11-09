@@ -38,7 +38,13 @@ export class ArticleTimelineView extends View {
   private subtitleEl: HTMLElement | null = null;
   private settingsSubscription: string | null = null;
 
-  constructor() {
+  /**
+   * Optional focus-side click target: when provided, article clicks are
+   * handed here instead of going through ViewNavigationController (classic
+   * Router navigation / SCC tab system). Used by the Focus UI (v2) shell,
+   * which renders the article inside its own surface column.
+   */
+  constructor(private options?: { onOpenArticle?: (naddr: string) => void }) {
     super();
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--article-timeline';
@@ -71,7 +77,9 @@ export class ArticleTimelineView extends View {
     this.timeline = new ArticleTimeline({
       variant: 'main',
       onNavigate: (naddr, e) =>
-        getViewNavigationController().openView('article', naddr, e),
+        this.options?.onOpenArticle
+          ? this.options.onOpenArticle(naddr)
+          : getViewNavigationController().openView('article', naddr, e),
     });
     const contentArea = this.container.querySelector(
       '.article-timeline-view__content'

@@ -20,6 +20,7 @@ import { Router } from './Router';
 import { ViewTabManager } from './ViewTabManager';
 import { getSccDefaultTab } from '../helpers/sccDefaultTab';
 import { viewTypeToPath } from '../helpers/sccRoute';
+import { delegateToFocusUi } from '../helpers/focusUiNavigation';
 
 export type ViewType =
   | 'single-note'
@@ -57,6 +58,11 @@ export class ViewNavigationController {
     param?: string,
     event?: MouseEvent
   ): void {
+    // Focus UI (v2): while the shell is mounted, content renders inside its
+    // focused surface column (no Router navigation, no SCC tabs). The seam
+    // is a plain injected handler — see helpers/focusUiNavigation.ts.
+    if (delegateToFocusUi(viewType, param, event)) return;
+
     // Only 'right-pane' mode uses tab system
     if (!this.layoutService.isRightPane()) {
       // Route via traditional Router (for 'default', 'wide', 'mobile' modes)
