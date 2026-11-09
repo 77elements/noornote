@@ -84,6 +84,15 @@ export class FocusStage {
   }
 
   /**
+   * Re-open a domain's surface from its route (boot/reload restore): the
+   * URL is already correct, the surface opens with the standard morph.
+   */
+  restoreDomain(def: FocusDomainDef): void {
+    const el = this.objects.get(def.id);
+    if (el) void this.open(def, el);
+  }
+
+  /**
    * Focus navigation seam: hand a view type to the ACTIVE surface's
    * column (e.g. a note click in the timeline). Returns false when no
    * surface is focused or it does not own the view type — the caller

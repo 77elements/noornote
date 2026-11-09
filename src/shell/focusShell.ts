@@ -29,6 +29,7 @@ import { Router } from '../services/Router';
 import { ToastService } from '../services/ToastService';
 import { TypedEventBus } from '../core/TypedEventBus';
 import { FocusStage } from './focusStage';
+import { FOCUS_DOMAINS } from './focusDomains';
 import { _ } from '../i18n';
 
 const SHELL_ID = 'focus-shell';
@@ -277,9 +278,17 @@ export function mountFocusShell(): void {
 
   document.getElementById('app')?.appendChild(shell);
 
-  // The home grid IS '/': a switch from a classic route (e.g. /settings/ui)
-  // rewrites the URL in place — no view mounting, no history entry.
-  Router.getInstance().replaceUrl('/');
+  // The home grid IS '/'. A switch from a classic route (e.g. /settings/ui)
+  // rewrites the URL in place — no view mounting, no history entry. But a
+  // boot/reload ON a domain route (e.g. /timeline) restores that domain's
+  // focused surface instead, so the address survives reloads.
+  const bootPath = window.location.pathname;
+  const bootDomain = FOCUS_DOMAINS.find(d => d.route === bootPath);
+  if (bootDomain) {
+    stage.restoreDomain(bootDomain);
+  } else {
+    Router.getInstance().replaceUrl('/');
+  }
 
   // Focus navigation seam: while the shell lives, note/article clicks etc.
   // render inside the ACTIVE surface's column (see focusStage.handleFocusNav).
