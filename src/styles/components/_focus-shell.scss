@@ -159,7 +159,8 @@ html.ui--focus {
   }
 }
 
-// Inactive click area: covers the whole circle, carries the label.
+// Inactive click area: covers the whole circle, carries the icon (above)
+// and the label (below), both centered as one group.
 .focus-object__hit {
   position: absolute;
   inset: 0;
@@ -168,7 +169,9 @@ html.ui--focus {
   border-radius: inherit;
   background: transparent;
   display: grid;
-  place-items: center;
+  align-content: center;
+  justify-items: center;
+  gap: 8px;
   cursor: pointer;
 
   .focus-object--active & {
@@ -176,10 +179,17 @@ html.ui--focus {
   }
 }
 
-.focus-object__label {
-  @extend %compact;
+.focus-object__icon {
+  width: 56px;
+  height: 56px;
+  fill: var(--color-3);
+  opacity: 0.9;
+  filter: url(#nn-engrave-icon);
+}
 
-  padding: $gap;
+.focus-object__label {
+  @extend %h4;
+
   text-align: center;
   overflow-wrap: break-word;
 }

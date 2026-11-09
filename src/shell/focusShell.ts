@@ -237,6 +237,25 @@ export function mountFocusShell(): void {
           <feMergeNode in="light-rim"/>
         </feMerge>
       </filter>
+      <filter id="nn-engrave-icon" x="-20%" y="-20%" width="140%" height="140%">
+        <!-- Same stamped-in look as #nn-engrave, tuned for the ~56px FS
+             object icons (scaled offsets, boosted for small-size legibility). -->
+        <feOffset in="SourceAlpha" dx="0" dy="1.3" result="down"/>
+        <feGaussianBlur in="down" stdDeviation="0.25" result="down-blur"/>
+        <feComposite in="SourceAlpha" in2="down-blur" operator="out" result="top-rim"/>
+        <feFlood flood-color="rgb(0 0 0 / 0.9)" result="dark"/>
+        <feComposite in="dark" in2="top-rim" operator="in" result="dark-rim"/>
+        <feOffset in="SourceAlpha" dx="0" dy="-1.4" result="up"/>
+        <feGaussianBlur in="up" stdDeviation="0.25" result="up-blur"/>
+        <feComposite in="SourceAlpha" in2="up-blur" operator="out" result="bot-rim"/>
+        <feFlood flood-color="rgb(255 255 255 / 0.7)" result="light"/>
+        <feComposite in="light" in2="bot-rim" operator="in" result="light-rim"/>
+        <feMerge>
+          <feMergeNode in="SourceGraphic"/>
+          <feMergeNode in="dark-rim"/>
+          <feMergeNode in="light-rim"/>
+        </feMerge>
+      </filter>
     </svg>
     <svg class="focus-shell__brand-wheel" aria-hidden="true"><use href="#nn-logo"/></svg>`;
   stageEl.appendChild(brand);

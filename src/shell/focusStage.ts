@@ -85,6 +85,7 @@ export class FocusStage {
     el.dataset.domainId = def.id;
     el.innerHTML = `
       <button type="button" class="focus-object__hit">
+        ${def.icon ? `<svg class="focus-object__icon"><use href="#${def.icon}"/></svg>` : ''}
         <span class="focus-object__label">${def.label}</span>
       </button>
       <button type="button" class="focus-object__control"

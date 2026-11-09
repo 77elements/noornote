@@ -38,6 +38,11 @@ export interface FocusDomainDef {
   /** Translated label shown in the circle (i18n-ready at module load). */
   label: string;
   /**
+   * Sprite symbol id (public/icons.svg) shown as the circle's icon. Same
+   * sprite the classic navigation uses.
+   */
+  icon?: string;
+  /**
    * Create the domain surface for the focus column. Async so heavy views
    * are dynamically imported (code-split) only when first focused.
    */
@@ -58,40 +63,121 @@ const socialSurface = async (): Promise<FocusDomainSurface> => {
 
 /** FS primary domains in display order. `(a)` = addon-backed domain. */
 export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
-  { id: 'social', label: _('Social Media'), createSurface: socialSurface },
-  { id: 'articles', label: _('Articles') },
-  { id: 'videos', label: _('Videos') },
-  { id: 'recipes', label: _('Recipes') },
-  { id: 'notifications', label: _('Notifications') },
-  { id: 'messages', label: _('Messages') },
-  { id: 'bookmarks', label: _('Bookmarks'), addon: true },
-  { id: 'tribes', label: _('Tribes'), addon: true },
-  { id: 'follows', label: _('Follows') },
-  { id: 'muted', label: _('Muted'), addon: true },
-  { id: 'custom-emojis', label: _('Custom Emojis'), addon: true },
-  { id: 'live-streams', label: _('Live Streams'), addon: true },
-  { id: 'marketplace', label: _('Marketplace'), addon: true },
-  { id: 'follow-packs', label: _('Follow Packs'), addon: true },
-  { id: 'calendar', label: _('Calendar'), addon: true },
-  { id: 'note-taking', label: _('Note taking'), addon: true },
-  { id: 'scheduled-posts', label: _('Scheduled Posts'), addon: true },
-  { id: 'analytics', label: _('Analytics'), addon: true },
-  { id: 'badges', label: _('Badges'), addon: true },
-  { id: 'feedback-board', label: _('Feedback Board'), addon: true },
+  {
+    id: 'social',
+    label: _('Social Media'),
+    icon: 'icon-home',
+    createSurface: socialSurface,
+  },
+  { id: 'articles', label: _('Articles'), icon: 'icon-articles' },
+  { id: 'videos', label: _('Videos'), icon: 'icon-video' },
+  { id: 'recipes', label: _('Recipes'), icon: 'icon-book-open' },
+  {
+    id: 'notifications',
+    label: _('Notifications'),
+    icon: 'icon-notifications',
+  },
+  { id: 'messages', label: _('Messages'), icon: 'icon-email' },
+  {
+    id: 'bookmarks',
+    label: _('Bookmarks'),
+    icon: 'icon-bookmark',
+    addon: true,
+  },
+  { id: 'tribes', label: _('Tribes'), icon: 'icon-tribe', addon: true },
+  { id: 'follows', label: _('Follows'), icon: 'icon-follows' },
+  { id: 'muted', label: _('Muted'), icon: 'icon-mute', addon: true },
+  {
+    id: 'custom-emojis',
+    label: _('Custom Emojis'),
+    icon: 'icon-emoji',
+    addon: true,
+  },
+  {
+    id: 'live-streams',
+    label: _('Live Streams'),
+    icon: 'icon-play',
+    addon: true,
+  },
+  {
+    id: 'marketplace',
+    label: _('Marketplace'),
+    icon: 'icon-shopping-bag',
+    addon: true,
+  },
+  {
+    id: 'follow-packs',
+    label: _('Follow Packs'),
+    icon: 'icon-tribes-circles',
+    addon: true,
+  },
+  { id: 'calendar', label: _('Calendar'), icon: 'icon-calendar', addon: true },
+  {
+    id: 'note-taking',
+    label: _('Note taking'),
+    icon: 'icon-edit',
+    addon: true,
+  },
+  {
+    id: 'scheduled-posts',
+    label: _('Scheduled Posts'),
+    icon: 'icon-clock',
+    addon: true,
+  },
+  {
+    id: 'analytics',
+    label: _('Analytics'),
+    icon: 'icon-trending-up',
+    addon: true,
+  },
+  { id: 'badges', label: _('Badges'), icon: 'icon-badge', addon: true },
+  {
+    id: 'feedback-board',
+    label: _('Feedback Board'),
+    icon: 'icon-grid-dots',
+    addon: true,
+  },
   {
     id: 'hashtag-subscriptions',
     label: _('Hashtag Subscriptions'),
+    icon: 'icon-tag',
     addon: true,
   },
-  { id: 'bulk-delete', label: _('Bulk Delete'), addon: true },
-  { id: 'majlis', label: _('Nostr Majlis'), addon: true },
-  { id: 'extended-follows', label: _('Extended Follows'), addon: true },
+  {
+    id: 'bulk-delete',
+    label: _('Bulk Delete'),
+    icon: 'icon-trash',
+    addon: true,
+  },
+  { id: 'majlis', label: _('Nostr Majlis'), icon: 'icon-globe', addon: true },
+  {
+    id: 'extended-follows',
+    label: _('Extended Follows'),
+    icon: 'icon-user-16',
+    addon: true,
+  },
   {
     id: 'follower-notification',
     label: _('Follower Notification'),
+    icon: 'icon-bell',
     addon: true,
   },
-  { id: 'group-chats', label: _('Group Chats'), addon: true },
-  { id: 'wallet-balance', label: _('Wallet Balance'), addon: true },
-  { id: 'word-filter', label: _('Word Filter'), addon: true },
+  {
+    id: 'group-chats',
+    label: _('Group Chats'),
+    icon: 'icon-message',
+    addon: true,
+  },
+  {
+    id: 'wallet-balance',
+    label: _('Wallet Balance'),
+    icon: 'icon-zap',
+    addon: true,
+  },
+  {
+    id: 'word-filter',
+    label: _('Word Filter'),
+    icon: 'icon-eye-closed',
+    addon: true,
+  },
 ];
