@@ -258,9 +258,12 @@ describe('ZapService.fetchInvoice — verify invoice before wallet handoff', () 
     expect(loggerMock.error).not.toHaveBeenCalled();
   });
 
-  it('refuses an invoice whose description hash does not match the zap request', async () => {
+  it('pays an invoice whose description hash does not match (wallets re-serialize) — warn only', async () => {
     const svc = newService();
     // Invoice was minted for a DIFFERENT zap request (substitution attack).
+    // Reference clients (NDK, Amethyst) do not hard-refuse on this either:
+    // many real LNURL servers re-serialize the zap request before hashing,
+    // so a mismatch does not prove substitution. Log-only, keep zapping.
     mockHttpResponse({
       pr: buildInvoice({
         amountMillisats: 1_000_000,
@@ -270,20 +273,25 @@ describe('ZapService.fetchInvoice — verify invoice before wallet handoff', () 
 
     const invoice = await fetchInvoice(svc, ZAP_REQUEST, 1000);
 
-    expect(invoice).toBeNull();
-    expect(loggerMock.error).toHaveBeenCalledWith(
-      'ZapService',
-      expect.stringContaining('description hash')
-    );
+    expect(invoice).not.toBeNull();
+    const calls = loggerMock.warn.mock.calls as Array<
+      [string, string, Record<string, string>]
+    >;
+    const warnData = calls.find(c => c[1].includes('description hash'))?.[2];
+    expect(warnData?.got).toBe(WRONG_HASH);
   });
 
-  it('refuses an invoice without a description hash', async () => {
+  it('pays an invoice without a description hash — warn only', async () => {
     const svc = newService();
     mockHttpResponse({ pr: buildInvoice({ amountMillisats: 1_000_000 }) });
 
     const invoice = await fetchInvoice(svc, ZAP_REQUEST, 1000);
 
-    expect(invoice).toBeNull();
+    expect(invoice).not.toBeNull();
+    expect(loggerMock.warn).toHaveBeenCalledWith(
+      'ZapService',
+      expect.stringContaining('no description hash')
+    );
   });
 
   it('refuses an invoice for more than the requested amount', async () => {

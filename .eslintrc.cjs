@@ -82,6 +82,26 @@ module.exports = {
     // rationale as explicit-function-return-type. runtime.ts override kept for
     // documentation purposes.
     'no-return-await': 'error',
+
+    // v1/v2 boundary (2026-11-09): the v2 Focus Shell is a self-contained
+    // mount layer (src/shell/**). Classic code must NEVER build v2 behavior
+    // or import shell building blocks — the ONLY sanctioned seam outside the
+    // shell is src/helpers/focusUiSetting.ts (mount/unmount switch, see the
+    // overrides below). Reading the FLAG itself (isFocusUiEnabled) in
+    // LayoutService/UISettingsSection is fine: those are the sanctioned
+    // decision points, they don't import shell code.
+    'no-restricted-imports': [
+      'error',
+      {
+        patterns: [
+          {
+            group: ['**/shell/**', '**/shell'],
+            message:
+              'v1/v2 boundary: src/shell/** is the v2 Focus Shell layer. Import it only from src/helpers/focusUiSetting.ts (mount seam) or within src/shell itself. Classic components must not reach into v2.',
+          },
+        ],
+      },
+    ],
   },
   overrides: [
     {
@@ -100,6 +120,16 @@ module.exports = {
       rules: {
         '@typescript-eslint/no-explicit-any': 'off',
         'no-console': 'off',
+      },
+    },
+    {
+      // v1/v2 boundary sanctioned seams (see no-restricted-imports above):
+      // - src/shell/** is the v2 layer itself — internal imports are the rule.
+      // - src/helpers/focusUiSetting.ts is the ONLY v1-side module allowed to
+      //   import the shell (mount/unmount switch).
+      files: ['src/shell/**', 'src/helpers/focusUiSetting.ts'],
+      rules: {
+        'no-restricted-imports': 'off',
       },
     },
     {

@@ -21,6 +21,7 @@ import {
   type LayoutMode,
 } from './PerAccountLocalStorage';
 import { TypedEventBus } from '../core/TypedEventBus';
+import { isFocusUiEnabled } from '../helpers/focusUiSetting';
 import { PlatformService } from './PlatformService';
 
 type ScreenSize = 'desktop' | 'tablet' | 'phone';
@@ -226,6 +227,11 @@ export class LayoutService {
 
     // Remove all layout classes
     layoutClasses.forEach(cls => html.classList.remove(cls));
+
+    // Focus UI (v2): the shell owns the layout and is responsive on its own —
+    // the classic layout modes have no effect while it is active. The shell
+    // mounts via the `ui--focus` gate class (helpers/focusUiSetting.ts).
+    if (isFocusUiEnabled()) return;
 
     // Add current layout class
     html.classList.add(`layout--${this.effectiveMode}`);

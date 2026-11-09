@@ -85,7 +85,7 @@ export class LiveStreamsAddonView extends View {
           <div class="setting">
             <span class="setting__label">${_('Enable Live Streams')}</span>
             <div class="setting__control"></div>
-            <p class="setting__desc">${_('Play NIP-53 live streams inline right from the timeline — no need to leave NoorNote. Uses hls.js; large providers like zap.stream are supported out of the box. Currently running streams are listed below.')}</p>
+            <p class="setting__desc">${_('Play NIP-53 live streams inline right from the timeline, no need to leave NoorNote. Uses hls.js; large providers like zap.stream are supported out of the box. Currently running streams are listed below.')}</p>
           </div>
         </section>
         <div data-addon-content="livestreams"></div>

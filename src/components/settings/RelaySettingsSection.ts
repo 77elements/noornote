@@ -435,7 +435,7 @@ export class RelaySettingsSection extends SettingsSection {
 
     if (!nips || nips.length === 0) {
       content.innerHTML = `<span class="relay-nips__empty">${_(
-        'Not available — this relay publishes no NIP-11 info document (or CORS blocks it from the browser).'
+        'Not available: this relay publishes no NIP-11 info document (or CORS blocks it from the browser).'
       )}</span>`;
       return;
     }

@@ -7,42 +7,42 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "mime-version: 1.0\n"
 
-#: src/components/settings/UISettingsSection.ts:148
-#: src/components/settings/UISettingsSection.ts:348
+#: src/components/settings/UISettingsSection.ts:169
+#: src/components/settings/UISettingsSection.ts:380
 msgid "Gregorian"
 msgstr "Gregorianisch"
 
-#: src/components/settings/UISettingsSection.ts:150
-#: src/components/settings/UISettingsSection.ts:350
+#: src/components/settings/UISettingsSection.ts:171
+#: src/components/settings/UISettingsSection.ts:382
 msgid "Gregorian + Hijri"
 msgstr "Gregorianisch + Hijri"
 
-#: src/components/settings/UISettingsSection.ts:364
+#: src/components/settings/UISettingsSection.ts:396
 msgid "Gregorian + Hijri calendars"
 msgstr "Gregorianischer + Hijri-Kalender"
 
-#: src/components/settings/UISettingsSection.ts:362
+#: src/components/settings/UISettingsSection.ts:394
 msgid "Gregorian calendar"
 msgstr "Gregorianischer Kalender"
 
-#: src/components/settings/UISettingsSection.ts:349
+#: src/components/settings/UISettingsSection.ts:381
 msgid "Hijri (Islamic)"
 msgstr "Hijri (islamisch)"
 
-#: src/components/settings/UISettingsSection.ts:363
+#: src/components/settings/UISettingsSection.ts:395
 msgid "Hijri (Islamic) calendar"
 msgstr "Hijri (islamischer) Kalender"
 
-#: src/components/settings/UISettingsSection.ts:108
+#: src/components/settings/UISettingsSection.ts:119
 msgid "Language"
 msgstr "Sprache"
 
-#: src/components/settings/UISettingsSection.ts:328
+#: src/components/settings/UISettingsSection.ts:360
 msgid "Language changed"
 msgstr "Sprache geändert"
 
-#: src/components/settings/UISettingsSection.ts:368
-#: src/components/settings/UISettingsSection.ts:406
+#: src/components/settings/UISettingsSection.ts:400
+#: src/components/settings/UISettingsSection.ts:438
 #: src/helpers/ListSyncMode.ts:84
 msgid "Switched to %s"
 msgstr "Gewechselt zu %s"
@@ -256,21 +256,23 @@ msgid "Accounts and threads you have muted."
 msgstr "Konten und Threads, die du stummgeschaltet hast."
 
 #: src/addons/analytics/AnalyticsAddonView.ts:237
-#: src/components/layout/MainLayout.ts:1941
+#: src/components/layout/MainLayout.ts:1997
 #: src/components/settings/NotificationPrioritySection.ts:85
 #: src/components/views/ArticleTimelineView.ts:59
-#: src/components/views/ProfileView.ts:2249
-#: src/components/views/ProfileView.ts:724
+#: src/components/views/ProfileView.ts:2327
+#: src/components/views/ProfileView.ts:742
+#: src/shell/focusDomains.ts:62
 msgid "Articles"
 msgstr "Artikel"
 
 #: src/addons/addonI18n.ts:18
 #: src/addons/bookmarks/BookmarksAddonView.ts:122
-#: src/components/layout/MainLayout.ts:96
+#: src/components/layout/MainLayout.ts:101
 #: src/components/layout/partials/ListsMenuPartial.ts:45
 #: src/components/views/ListsOverviewView.ts:69
 #: src/lists/bookmarks.ts:4480
 #: src/lists/bookmarks.ts:4516
+#: src/shell/focusDomains.ts:58
 msgid "Bookmarks"
 msgstr "Lesezeichen"
 
@@ -294,15 +296,15 @@ msgstr "Aktiviere das Lesezeichen-Addon in Einstellungen → Addons."
 msgid "Enable the Tribes addon in Settings → Addons."
 msgstr "Aktiviere das Tribes-Addon in Einstellungen → Addons."
 
-#: src/components/layout/MainLayout.ts:1801
-#: src/components/layout/MainLayout.ts:2048
+#: src/components/layout/MainLayout.ts:1834
+#: src/components/layout/MainLayout.ts:2106
 #: src/components/views/SettingsView.ts:109
 #: src/components/views/SettingsView.ts:80
 msgid "Export DiagLogs"
 msgstr "DiagLogs exportieren"
 
 #: src/addons/analytics/AnalyticsAddonView.ts:241
-#: src/components/layout/MainLayout.ts:97
+#: src/components/layout/MainLayout.ts:102
 #: src/components/layout/partials/ListsMenuPartial.ts:52
 #: src/components/views/ListsOverviewView.ts:77
 msgid "Follows"
@@ -333,12 +335,12 @@ msgstr "Langtexte von deinen Follows 1., 2. und 3. Grades"
 msgid "Long-form content from your follows"
 msgstr "Langtexte von deinen Follows"
 
-#: src/components/layout/MainLayout.ts:1744
+#: src/components/layout/MainLayout.ts:1777
 #: src/components/views/SettingsView.ts:46
 msgid "Media"
 msgstr "Medien"
 
-#: src/components/layout/MainLayout.ts:98
+#: src/components/layout/MainLayout.ts:103
 #: src/components/layout/partials/ListsMenuPartial.ts:58
 #: src/components/views/ListsOverviewView.ts:85
 msgid "Muted"
@@ -372,7 +374,7 @@ msgstr "Relays"
 msgid "Saved notes, sorted into folders."
 msgstr "Gespeicherte Notizen, in Ordnern sortiert."
 
-#: src/components/layout/MainLayout.ts:1955
+#: src/components/layout/MainLayout.ts:2011
 #: src/components/views/SettingsView.ts:71
 msgid "Settings"
 msgstr "Einstellungen"
@@ -385,13 +387,13 @@ msgstr "Einzelner Beitrag"
 msgid "The accounts you follow, with outbox relays."
 msgstr "Die Konten, denen du folgst, mit Outbox-Relays."
 
-#: src/components/layout/MainLayout.ts:1920
+#: src/components/layout/MainLayout.ts:1976
 #: src/components/views/TimelineView.ts:208
 msgid "Timeline"
 msgstr "Timeline"
 
 #: src/addons/addonI18n.ts:20
-#: src/components/layout/MainLayout.ts:99
+#: src/components/layout/MainLayout.ts:104
 #: src/components/layout/partials/ListsMenuPartial.ts:64
 #: src/components/views/ListsOverviewView.ts:93
 #: src/lists/tribes.ts:2382
@@ -412,7 +414,7 @@ msgstr ""
 "Wähle eine aus, um sie zu öffnen."
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:835
-#: src/addons/calendar/BookingManager.ts:313
+#: src/addons/calendar/BookingManager.ts:311
 #: src/addons/calendar/CalendarCollectionsModal.ts:157
 #: src/addons/feedback-board/FeedbackBoardView.ts:633
 #: src/addons/follow-packs/FollowPackManager.ts:465
@@ -428,7 +430,7 @@ msgstr ""
 #: src/components/modals/UnlockNoorSignerModal.ts:68
 #: src/components/modals/ZapModal.ts:148
 #: src/components/onboarding/AccountSetupWizard.ts:1510
-#: src/components/post/PostNoteModal.ts:399
+#: src/components/post/PostNoteModal.ts:405
 #: src/components/profile/ProfileEditModal.ts:257
 #: src/components/reply/ReplyModal.ts:433
 #: src/components/report/ReportModal.ts:139
@@ -436,7 +438,7 @@ msgstr ""
 #: src/components/settings/ListSettingsSection.ts:325
 #: src/components/settings/ListSettingsSection.ts:367
 #: src/components/settings/PrivacySettingsSection.ts:270
-#: src/components/settings/RelaySettingsSection.ts:480
+#: src/components/settings/RelaySettingsSection.ts:535
 #: src/components/views/ConversationView.ts:620
 #: src/components/views/MessagesView.ts:1042
 #: src/components/views/MessagesView.ts:706
@@ -471,8 +473,8 @@ msgstr "Erstellen"
 msgid "Current:"
 msgstr "Aktuell:"
 
-#: src/components/layout/MainLayout.ts:1967
-#: src/components/layout/MainLayout.ts:1977
+#: src/components/layout/MainLayout.ts:2023
+#: src/components/layout/MainLayout.ts:2035
 #: src/components/modals/UpdateModal.ts:117
 #: src/components/ui/ImageViewer.ts:215
 msgid "Download"
@@ -494,7 +496,7 @@ msgid "Enter Password"
 msgstr "Passwort eingeben"
 
 #: src/components/modals/KeySignerPasswordModal.ts:124
-#: src/components/modals/UnlockNoorSignerModal.ts:128
+#: src/components/modals/UnlockNoorSignerModal.ts:127
 msgid "Incorrect password"
 msgstr "Falsches Passwort"
 
@@ -548,7 +550,7 @@ msgstr "Wechsel zu:"
 msgid "Switching..."
 msgstr "Wechsle…"
 
-#: src/components/modals/UnlockNoorSignerModal.ts:136
+#: src/components/modals/UnlockNoorSignerModal.ts:135
 #: src/components/modals/UnlockNoorSignerModal.ts:71
 msgid "Unlock"
 msgstr "Entsperren"
@@ -735,7 +737,7 @@ msgstr "Aktiv"
 msgid "Addon order reset to default"
 msgstr "Addon-Reihenfolge zurückgesetzt"
 
-#: src/components/layout/MainLayout.ts:2658
+#: src/components/layout/MainLayout.ts:2716
 #: src/components/views/AddonsOverviewView.ts:68
 msgid "Addons"
 msgstr "Addons"
@@ -852,7 +854,7 @@ msgstr "Lade Mitglieder…"
 #: src/components/ui/ReplyIndicator.ts:49
 #: src/components/ui/UserStatus.ts:42
 #: src/components/views/ListingReadView.ts:130
-#: src/components/views/ProfileView.ts:536
+#: src/components/views/ProfileView.ts:554
 #: src/lists/follows.ts:2621
 msgid "Loading..."
 msgstr "Lade…"
@@ -972,7 +974,7 @@ msgstr "Zurück zum Profil"
 
 #: src/components/views/ProfileBookingView.ts:186
 #: src/components/views/ProfileBookingView.ts:202
-#: src/components/views/ProfileView.ts:678
+#: src/components/views/ProfileView.ts:696
 msgid "Book a meeting"
 msgstr "Meeting buchen"
 
@@ -1127,7 +1129,7 @@ msgstr "⏱ Verschwindet in ~%s"
 msgid "All messages marked as read"
 msgstr "Alle Nachrichten als gelesen markiert"
 
-#: src/components/post/PostNoteModal.ts:719
+#: src/components/post/PostNoteModal.ts:802
 #: src/components/views/ConversationView.ts:621
 msgid "Apply"
 msgstr "Anwenden"
@@ -1160,6 +1162,7 @@ msgstr "Benutzerdefiniert (%s)"
 msgid "Custom duration"
 msgstr "Benutzerdefinierte Dauer"
 
+#: src/components/post/PostNoteModal.ts:449
 #: src/components/views/ConversationView.ts:429
 msgid "Custom…"
 msgstr "Benutzerdefiniert…"
@@ -1200,7 +1203,7 @@ msgid "Describe your video..."
 msgstr "Beschreibe dein Video…"
 
 #: src/addons/badges/BadgesView.ts:51
-#: src/addons/calendar/BookingManager.ts:352
+#: src/addons/calendar/BookingManager.ts:350
 #: src/addons/calendar/CalendarEventEditor.ts:149
 #: src/addons/feedback-board/FeedbackBoardView.ts:628
 #: src/addons/follow-packs/FollowPackManager.ts:507
@@ -1212,7 +1215,7 @@ msgid "Description"
 msgstr "Beschreibung"
 
 #: src/addons/marketplace/ListingEditorView.ts:277
-#: src/components/layout/MainLayout.ts:2037
+#: src/components/layout/MainLayout.ts:2095
 #: src/components/views/ArticleEditorView.ts:380
 #: src/components/views/VideoEditorView.ts:177
 msgid "Details"
@@ -1255,7 +1258,7 @@ msgstr "Die Dauer darf höchstens 1 Jahr betragen."
 msgid "Failed to load messages"
 msgstr "Nachrichten konnten nicht geladen werden"
 
-#: src/components/ui/NoteMenu.ts:624
+#: src/components/ui/NoteMenu.ts:676
 #: src/components/views/ConversationView.ts:987
 #: src/lists/mutes.ts:2360
 msgid "Failed to mute user"
@@ -1315,10 +1318,11 @@ msgstr "Medien-Modul nicht verfügbar"
 msgid "Message options"
 msgstr "Nachrichten-Optionen"
 
-#: src/components/layout/MainLayout.ts:1948
+#: src/components/layout/MainLayout.ts:2004
 #: src/components/search/GlobalSearchView.ts:398
 #: src/components/views/MessagesView.ts:167
 #: src/components/views/MessagesView.ts:933
+#: src/shell/focusDomains.ts:63
 msgid "Messages"
 msgstr "Nachrichten"
 
@@ -1328,22 +1332,22 @@ msgstr ""
 "Nachrichten verschwinden nach dieser Zeit. Minimum: 1 Minute, Maximum: 1 "
 "Jahr."
 
-#: src/components/ui/NoteMenu.ts:197
+#: src/components/ui/NoteMenu.ts:216
 #: src/components/views/ConversationView.ts:936
 msgid "Mute user"
 msgstr "Nutzer stummschalten"
 
-#: src/components/ui/NoteMenu.ts:187
+#: src/components/ui/NoteMenu.ts:206
 #: src/components/views/ConversationView.ts:934
 msgid "Mute user privately"
 msgstr "Nutzer privat stummschalten"
 
-#: src/components/ui/NoteMenu.ts:191
+#: src/components/ui/NoteMenu.ts:210
 #: src/components/views/ConversationView.ts:936
 msgid "Mute user publicly"
 msgstr "Nutzer öffentlich stummschalten"
 
-#: src/components/post/PostNoteModal.ts:998
+#: src/components/post/PostNoteModal.ts:1081
 #: src/components/views/ConversationView.ts:787
 msgid "No"
 msgstr "Nein"
@@ -1469,7 +1473,7 @@ msgstr "Video wird hochgeladen…"
 msgid "User options"
 msgstr "Nutzer-Optionen"
 
-#: src/components/layout/MainLayout.ts:2007
+#: src/components/layout/MainLayout.ts:2065
 #: src/components/views/VideoEditorView.ts:148
 msgid "Video"
 msgstr "Video"
@@ -1487,7 +1491,7 @@ msgid "Weeks"
 msgstr "Wochen"
 
 #: src/components/onboarding/AccountSetupWizard.ts:1673
-#: src/components/post/PostNoteModal.ts:997
+#: src/components/post/PostNoteModal.ts:1080
 #: src/components/views/ConversationView.ts:786
 msgid "Yes"
 msgstr "Ja"
@@ -1540,8 +1544,8 @@ msgstr "Titelbild"
 msgid "Delete Draft"
 msgstr "Entwurf löschen"
 
-#: src/addons/calendar/CalendarImportExport.ts:102
-#: src/addons/calendar/CalendarImportExport.ts:468
+#: src/addons/calendar/CalendarImportExport.ts:103
+#: src/addons/calendar/CalendarImportExport.ts:463
 #: src/components/views/ArticleEditorView.ts:1010
 msgid "Discard"
 msgstr "Verwerfen"
@@ -1629,8 +1633,8 @@ msgstr ""
 
 #: src/addons/bookmarks/BookmarksAddonView.ts:183
 #: src/addons/bulk-delete/BulkDeleteView.ts:690
-#: src/addons/calendar/CalendarImportExport.ts:117
-#: src/addons/calendar/CalendarImportExport.ts:130
+#: src/addons/calendar/CalendarImportExport.ts:118
+#: src/addons/calendar/CalendarImportExport.ts:131
 #: src/components/views/ArticleEditorView.ts:465
 #: src/components/views/ArticleEditorView.ts:517
 msgid "Reset"
@@ -1648,10 +1652,10 @@ msgstr "Entwurf speichern"
 msgid "Saving..."
 msgstr "Speichern…"
 
-#: src/components/post/PostNoteModal.ts:1037
-#: src/components/post/PostNoteModal.ts:388
-#: src/components/post/PostNoteModal.ts:456
-#: src/components/post/PostNoteModal.ts:475
+#: src/components/post/PostNoteModal.ts:1120
+#: src/components/post/PostNoteModal.ts:393
+#: src/components/post/PostNoteModal.ts:536
+#: src/components/post/PostNoteModal.ts:555
 #: src/components/views/ArticleEditorView.ts:1080
 #: src/helpers/datePickerModal.ts:304
 msgid "Schedule"
@@ -1713,7 +1717,7 @@ msgstr "Schreibe deinen Artikel in Markdown…"
 msgid "You have unsaved changes. Discard them?"
 msgstr "Du hast ungespeicherte Änderungen. Verwerfen?"
 
-#: src/components/views/ProfileView.ts:1452
+#: src/components/views/ProfileView.ts:1471
 #: src/lists/follows.ts:2387
 msgid ""
 "⚠️ Public label, stored in your contact list (NIP-02). Anyone who reads "
@@ -1722,23 +1726,23 @@ msgstr ""
 "⚠️ Öffentliches Label, in deiner Kontaktliste gespeichert (NIP-02). Jeder, "
 "der deine Folgeliste liest, kann es sehen."
 
-#: src/components/views/ProfileView.ts:958
+#: src/components/views/ProfileView.ts:977
 msgid "Article alerts"
 msgstr "Artikel-Alarme"
 
-#: src/components/views/ProfileView.ts:1406
-#: src/components/views/ProfileView.ts:681
+#: src/components/views/ProfileView.ts:1425
+#: src/components/views/ProfileView.ts:699
 msgid "Award Badge"
 msgstr "Abzeichen verleihen"
 
 #: src/addons/addonI18n.ts:46
 #: src/addons/badges/BadgesView.ts:35
-#: src/components/views/ProfileView.ts:2161
-#: src/components/views/ProfileView.ts:730
+#: src/components/views/ProfileView.ts:2239
+#: src/components/views/ProfileView.ts:748
 msgid "Badges"
 msgstr "Abzeichen"
 
-#: src/components/views/ProfileView.ts:2204
+#: src/components/views/ProfileView.ts:2282
 msgid "by"
 msgstr "von"
 
@@ -1747,163 +1751,164 @@ msgstr "von"
 #: src/addons/calendar/CalendarAddonView.ts:57
 #: src/addons/calendar/CalendarAddonView.ts:67
 #: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:208
-#: src/components/views/ProfileView.ts:2096
-#: src/components/views/ProfileView.ts:729
+#: src/components/views/ProfileView.ts:2174
+#: src/components/views/ProfileView.ts:747
+#: src/shell/focusDomains.ts:56
 msgid "Calendar"
 msgstr "Kalender"
 
-#: src/components/views/ProfileView.ts:1658
+#: src/components/views/ProfileView.ts:1677
 msgid "Choose a tribe"
 msgstr "Tribe wählen"
 
-#: src/components/views/ProfileView.ts:706
+#: src/components/views/ProfileView.ts:724
 msgid "Copied!"
 msgstr "Kopiert!"
 
-#: src/components/views/ProfileView.ts:671
+#: src/components/views/ProfileView.ts:689
 msgid "Copy npub"
 msgstr "npub kopieren"
 
-#: src/components/views/ProfileView.ts:1456
+#: src/components/views/ProfileView.ts:1475
 #: src/lists/follows.ts:2391
 msgid "e.g. Bob from work"
 msgstr "z. B. Bob aus der Arbeit"
 
-#: src/components/views/ProfileView.ts:1493
+#: src/components/views/ProfileView.ts:1512
 #: src/lists/follows.ts:2347
 #: src/lists/follows.ts:2429
 msgid "Edit private note"
 msgstr "Private Notiz bearbeiten"
 
-#: src/components/views/ProfileView.ts:900
+#: src/components/views/ProfileView.ts:919
 msgid "Edit your profile"
 msgstr "Profil bearbeiten"
 
-#: src/components/views/ProfileView.ts:1792
+#: src/components/views/ProfileView.ts:1811
 msgid "Failed to add to tribe"
 msgstr "Hinzufügen zum Tribe fehlgeschlagen"
 
 #: src/addons/analytics/AnalyticsAddonView.ts:242
-#: src/components/views/ProfileView.ts:664
+#: src/components/views/ProfileView.ts:682
 msgid "Followers"
 msgstr "Follower"
 
 #: src/components/navigation/SearchSpotlight.ts:366
 #: src/components/onboarding/AccountSetupWizard.ts:2778
 #: src/components/user-search/UserSearchInput.ts:322
-#: src/components/views/ProfileView.ts:660
+#: src/components/views/ProfileView.ts:678
 msgid "Following"
 msgstr "Folgt"
 
-#: src/components/views/ProfileView.ts:637
+#: src/components/views/ProfileView.ts:655
 msgid "Follows you"
 msgstr "Folgt dir"
 
-#: src/components/views/ProfileView.ts:956
+#: src/components/views/ProfileView.ts:975
 msgid "Get notified when this user posts a new article"
 msgstr "Benachrichtigen, wenn dieser Benutzer einen neuen Artikel veröffentlicht"
 
 #: src/components/qrcode/QRCodeModal.ts:128
 #: src/components/qrcode/QRCodeModal.ts:155
 #: src/components/qrcode/QRCodeModal.ts:163
-#: src/components/views/ProfileView.ts:696
+#: src/components/views/ProfileView.ts:714
 msgid "Lightning QR Code"
 msgstr "Lightning-QR-Code"
 
-#: src/components/views/ProfileView.ts:2250
+#: src/components/views/ProfileView.ts:2328
 msgid "Loading articles…"
 msgstr "Lade Artikel…"
 
-#: src/components/views/ProfileView.ts:355
+#: src/components/views/ProfileView.ts:370
 msgid "Loading profile..."
 msgstr "Lade Profil…"
 
-#: src/components/views/ProfileView.ts:2268
+#: src/components/views/ProfileView.ts:2346
 msgid "Loading videos…"
 msgstr "Lade Videos…"
 
-#: src/components/views/ProfileView.ts:2286
+#: src/components/views/ProfileView.ts:2364
 msgid "Loading websites…"
 msgstr "Lade Websites…"
 
-#: src/components/views/ProfileView.ts:1363
+#: src/components/views/ProfileView.ts:1382
 msgid "No badges created yet. Create one in Addons → Badges."
 msgstr "Noch keine Abzeichen erstellt. Erstelle eines unter Addons → Abzeichen."
 
-#: src/components/views/ProfileView.ts:1650
+#: src/components/views/ProfileView.ts:1669
 msgid "No tribes found. Create a tribe first in the Tribe view."
 msgstr "Keine Tribes gefunden. Erstelle zuerst einen Tribe in der Tribe-Ansicht."
 
-#: src/components/views/ProfileView.ts:723
 #: src/components/views/ProfileView.ts:741
+#: src/components/views/ProfileView.ts:760
 msgid "Notes"
 msgstr "Notizen"
 
-#: src/components/views/ProfileView.ts:993
+#: src/components/views/ProfileView.ts:1012
 msgid "Only suppresses notifications from this user's interactions with your notes"
 msgstr ""
 "Unterdrückt nur Benachrichtigungen über Interaktionen dieses Users mit "
 "deinen Notizen"
 
 #: src/addons/analytics/AnalyticsAddonView.ts:239
-#: src/components/views/ProfileView.ts:726
+#: src/components/views/ProfileView.ts:744
 msgid "Products"
 msgstr "Produkte"
 
-#: src/components/views/ProfileView.ts:1893
+#: src/components/views/ProfileView.ts:1971
 msgid "Profile module not available"
 msgstr "Profil-Modul nicht verfügbar"
 
-#: src/components/views/ProfileView.ts:1916
+#: src/components/views/ProfileView.ts:1994
 msgid "Search failed: %s"
 msgstr "Suche fehlgeschlagen: %s"
 
-#: src/components/views/ProfileView.ts:687
+#: src/components/views/ProfileView.ts:705
 msgid "Send message"
 msgstr "Nachricht senden"
 
-#: src/components/views/ProfileView.ts:1451
+#: src/components/views/ProfileView.ts:1470
 #: src/lists/follows.ts:2386
 msgid "Set Petname"
 msgstr "Petname festlegen"
 
-#: src/components/views/ProfileView.ts:1571
+#: src/components/views/ProfileView.ts:1590
 msgid "Set status…"
 msgstr "Status setzen…"
 
-#: src/components/settings/UISettingsSection.ts:200
-#: src/components/views/ProfileView.ts:965
+#: src/components/settings/UISettingsSection.ts:221
+#: src/components/views/ProfileView.ts:984
 msgid "Show reactions"
 msgstr "Reaktionen anzeigen"
 
-#: src/components/views/ProfileView.ts:963
+#: src/components/views/ProfileView.ts:982
 msgid "Show this user's reactions (likes) as entries in your timeline"
 msgstr "Reaktionen (Likes) dieses Users als Einträge in deiner Timeline anzeigen"
 
-#: src/components/views/ProfileView.ts:1163
-#: src/components/views/ProfileView.ts:992
+#: src/components/views/ProfileView.ts:1011
+#: src/components/views/ProfileView.ts:1182
 msgid "Soft muted"
 msgstr "Soft-Mute aktiv"
 
-#: src/components/views/ProfileView.ts:972
+#: src/components/views/ProfileView.ts:991
 msgid "Turn off Highlights"
 msgstr "Highlights ausblenden"
 
-#: src/components/views/ProfileView.ts:1770
+#: src/components/views/ProfileView.ts:1789
 msgid "User is already in tribe \"%s\""
 msgstr "User ist bereits im Tribe „%s“"
 
-#: src/components/views/ProfileView.ts:2285
-#: src/components/views/ProfileView.ts:728
+#: src/components/views/ProfileView.ts:2363
+#: src/components/views/ProfileView.ts:746
 msgid "Websites"
 msgstr "Websites"
 
 #: src/components/ui/InteractionStatusLine.ts:529
-#: src/components/ui/NoteMenu.ts:742
+#: src/components/ui/NoteMenu.ts:794
 msgid "Added to bookmarks"
 msgstr "Zu Lesezeichen hinzugefügt"
 
-#: src/components/ui/NoteMenu.ts:742
+#: src/components/ui/NoteMenu.ts:794
 msgid "Added to private bookmarks"
 msgstr "Zu privaten Lesezeichen hinzugefügt"
 
@@ -1916,42 +1921,43 @@ msgstr "Zu privaten Lesezeichen hinzugefügt"
 msgid "Analytics"
 msgstr "Statistik"
 
-#: src/components/ui/NoteMenu.ts:682
+#: src/components/ui/NoteMenu.ts:734
 msgid "Article notifications disabled"
 msgstr "Artikel-Benachrichtigungen deaktiviert"
 
 #: src/components/ui/InteractionStatusLine.ts:298
-#: src/components/ui/NoteMenu.ts:164
+#: src/components/ui/NoteMenu.ts:165
 #: src/lists/bookmarks.ts:4505
 msgid "Bookmark"
 msgstr "Lesezeichen"
 
 #: src/components/ui/ImageViewer.ts:221
-#: src/components/ui/NoteMenu.ts:521
+#: src/components/ui/NoteMenu.ts:548
 #: src/lists/follows-extended.ts:447
 #: src/services/ToastService.ts:218
+#: src/shell/focusStage.ts:85
 msgid "Close"
 msgstr "Schließen"
 
 #: src/addons/feedback-board/FeedbackBoardView.ts:295
-#: src/components/ui/NoteMenu.ts:204
+#: src/components/ui/NoteMenu.ts:223
 msgid "Copy event ID"
 msgstr "Event-ID kopieren"
 
-#: src/addons/calendar/BookingManager.ts:339
-#: src/components/ui/NoteMenu.ts:514
+#: src/addons/calendar/BookingManager.ts:337
+#: src/components/ui/NoteMenu.ts:541
 msgid "Copy link"
 msgstr "Link kopieren"
 
-#: src/components/ui/NoteMenu.ts:209
+#: src/components/ui/NoteMenu.ts:228
 msgid "Copy user ID"
 msgstr "Nutzer-ID kopieren"
 
-#: src/components/ui/NoteMenu.ts:244
+#: src/components/ui/NoteMenu.ts:265
 msgid "Delete note"
 msgstr "Notiz löschen"
 
-#: src/components/ui/NoteMenu.ts:835
+#: src/components/ui/NoteMenu.ts:887
 msgid "Failed to add author to tribe"
 msgstr "Hinzufügen des Autors zum Tribe fehlgeschlagen"
 
@@ -1961,12 +1967,12 @@ msgstr "Editor konnte nicht geöffnet werden"
 
 #: src/addons/marketplace/ListingView.ts:320
 #: src/components/ui/InteractionStatusLine.ts:536
-#: src/components/ui/NoteMenu.ts:752
+#: src/components/ui/NoteMenu.ts:804
 #: src/lists/bookmarks.ts:4872
 msgid "Failed to update bookmark"
 msgstr "Lesezeichen konnte nicht aktualisiert werden"
 
-#: src/components/ui/NoteMenu.ts:658
+#: src/components/ui/NoteMenu.ts:710
 msgid "Failed to update thread mute"
 msgstr "Thread-Stummschaltung konnte nicht aktualisiert werden"
 
@@ -1978,15 +1984,15 @@ msgstr "Ungültiges Event"
 msgid "Like"
 msgstr "Gefällt mir"
 
-#: src/components/ui/NoteMenu.ts:547
+#: src/components/ui/NoteMenu.ts:574
 msgid "Link"
 msgstr "Link"
 
-#: src/components/ui/NoteMenu.ts:262
+#: src/components/ui/NoteMenu.ts:283
 msgid "Mute thread"
 msgstr "Thread stummschalten"
 
-#: src/components/ui/NoteMenu.ts:769
+#: src/components/ui/NoteMenu.ts:821
 msgid "No tribes found. Create a tribe first."
 msgstr "Keine Tribes gefunden. Erstelle zuerst einen Tribe."
 
@@ -2000,19 +2006,19 @@ msgstr "Keine Schreib-Relays konfiguriert"
 msgid "Note not found"
 msgstr "Notiz nicht gefunden"
 
-#: src/components/ui/NoteMenu.ts:85
+#: src/components/ui/NoteMenu.ts:86
 msgid "Note options"
 msgstr "Notiz-Optionen"
 
-#: src/components/ui/NoteMenu.ts:269
+#: src/components/ui/NoteMenu.ts:290
 msgid "Notify on new articles"
 msgstr "Bei neuen Artikeln benachrichtigen"
 
-#: src/components/ui/NoteMenu.ts:158
+#: src/components/ui/NoteMenu.ts:159
 msgid "Private Bookmark"
 msgstr "Privates Lesezeichen"
 
-#: src/components/ui/NoteMenu.ts:154
+#: src/components/ui/NoteMenu.ts:155
 msgid "Public Bookmark"
 msgstr "Öffentliches Lesezeichen"
 
@@ -2020,28 +2026,28 @@ msgstr "Öffentliches Lesezeichen"
 msgid "Quoted Repost"
 msgstr "Zitierter Repost"
 
-#: src/components/ui/NoteMenu.ts:562
+#: src/components/ui/NoteMenu.ts:589
 msgid "Raw event data not available"
 msgstr "Raw-Event-Daten nicht verfügbar"
 
-#: src/components/ui/NoteMenu.ts:164
+#: src/components/ui/NoteMenu.ts:165
 msgid "Remove Bookmark"
 msgstr "Lesezeichen entfernen"
 
-#: src/components/ui/NoteMenu.ts:158
+#: src/components/ui/NoteMenu.ts:159
 msgid "Remove Private Bookmark"
 msgstr "Privates Lesezeichen entfernen"
 
-#: src/components/ui/NoteMenu.ts:154
+#: src/components/ui/NoteMenu.ts:155
 msgid "Remove Public Bookmark"
 msgstr "Öffentliches Lesezeichen entfernen"
 
 #: src/components/ui/InteractionStatusLine.ts:526
-#: src/components/ui/NoteMenu.ts:735
+#: src/components/ui/NoteMenu.ts:787
 msgid "Removed from bookmarks"
 msgstr "Aus Lesezeichen entfernt"
 
-#: src/components/ui/NoteMenu.ts:734
+#: src/components/ui/NoteMenu.ts:786
 msgid "Removed from private bookmarks"
 msgstr "Aus privaten Lesezeichen entfernt"
 
@@ -2054,11 +2060,11 @@ msgstr "Aus privaten Lesezeichen entfernt"
 #: src/components/reply/ReplyModal.ts:770
 #: src/components/reply/ReplyModal.ts:773
 #: src/components/ui/InteractionStatusLine.ts:321
-#: src/services/PostService.ts:517
+#: src/services/PostService.ts:540
 msgid "Reply"
 msgstr "Antworten"
 
-#: src/components/ui/NoteMenu.ts:253
+#: src/components/ui/NoteMenu.ts:274
 msgid "Report"
 msgstr "Melden"
 
@@ -2071,21 +2077,21 @@ msgstr "Melden"
 msgid "Repost"
 msgstr "Repost"
 
-#: src/components/ui/NoteMenu.ts:786
+#: src/components/ui/NoteMenu.ts:838
 msgid "Select a tribe to add this author to:"
 msgstr "Wähle einen Tribe, zu dem dieser Autor hinzugefügt werden soll:"
 
-#: src/components/ui/NoteMenu.ts:234
-#: src/components/ui/NoteMenu.ts:500
+#: src/components/ui/NoteMenu.ts:255
+#: src/components/ui/NoteMenu.ts:527
 msgid "Share article"
 msgstr "Artikel teilen"
 
-#: src/components/ui/NoteMenu.ts:234
-#: src/components/ui/NoteMenu.ts:500
+#: src/components/ui/NoteMenu.ts:255
+#: src/components/ui/NoteMenu.ts:527
 msgid "Share Note"
 msgstr "Notiz teilen"
 
-#: src/components/ui/NoteMenu.ts:269
+#: src/components/ui/NoteMenu.ts:290
 msgid "Stop article notifications"
 msgstr "Artikel-Benachrichtigungen stoppen"
 
@@ -2094,29 +2100,29 @@ msgstr "Artikel-Benachrichtigungen stoppen"
 msgid "This user has no Lightning wallet configured"
 msgstr "Dieser Nutzer hat kein Lightning-Wallet konfiguriert"
 
-#: src/components/ui/NoteMenu.ts:650
+#: src/components/ui/NoteMenu.ts:702
 msgid "Thread muted"
 msgstr "Thread stummgeschaltet"
 
-#: src/components/ui/NoteMenu.ts:647
+#: src/components/ui/NoteMenu.ts:699
 #: src/lists/mutes.ts:1710
 #: src/lists/mutes.ts:2214
 msgid "Thread unmuted"
 msgstr "Thread-Stummschaltung aufgehoben"
 
-#: src/components/ui/NoteMenu.ts:262
+#: src/components/ui/NoteMenu.ts:283
 msgid "Unmute thread"
 msgstr "Thread-Stummschaltung aufheben"
 
-#: src/components/ui/NoteMenu.ts:605
+#: src/components/ui/NoteMenu.ts:657
 msgid "User muted privately"
 msgstr "Nutzer privat stummgeschaltet"
 
-#: src/components/ui/NoteMenu.ts:605
+#: src/components/ui/NoteMenu.ts:657
 msgid "User muted publicly"
 msgstr "Nutzer öffentlich stummgeschaltet"
 
-#: src/components/ui/NoteMenu.ts:227
+#: src/components/ui/NoteMenu.ts:248
 msgid "View raw event"
 msgstr "Raw-Event anzeigen"
 
@@ -2125,7 +2131,7 @@ msgstr "Raw-Event anzeigen"
 msgid "You cannot zap your own notes"
 msgstr "Du kannst deine eigenen Notizen nicht zappen"
 
-#: src/components/ui/NoteMenu.ts:678
+#: src/components/ui/NoteMenu.ts:730
 msgid "You will be notified about new articles"
 msgstr "Du wirst über neue Artikel benachrichtigt"
 
@@ -2147,16 +2153,6 @@ msgstr "[Fehler beim Laden]"
 #: src/components/ui/ReplyIndicator.ts:72
 msgid "[Note not found]"
 msgstr "[Notiz nicht gefunden]"
-
-#: src/components/ui/note-rendering/LiveStreamRenderer.ts:64
-msgid ""
-"Activate the <a class=\"live-stream-card__hint-link\" "
-"href=\"/addons/live-streams-player\">Live Streams Player</a> addon to see "
-"this live stream."
-msgstr ""
-"Aktiviere das <a class=\"live-stream-card__hint-link\" "
-"href=\"/addons/live-streams-player\">Live Streams Player</a>-Addon, um "
-"diesen Livestream zu sehen."
 
 #: src/components/ui/note-rendering/EmojiPackRenderer.ts:107
 msgid "Add to Collection"
@@ -2192,7 +2188,7 @@ msgid "App"
 msgstr "App"
 
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:190
-#: src/components/layout/MainLayout.ts:2003
+#: src/components/layout/MainLayout.ts:2061
 #: src/components/ui/ThreadContextIndicator.ts:193
 msgid "Article"
 msgstr "Artikel"
@@ -2302,7 +2298,7 @@ msgstr "Follow-Pack"
 msgid "Follow pack was updated"
 msgstr "Follow-Pack wurde aktualisiert"
 
-#: src/components/settings/UISettingsSection.ts:125
+#: src/components/settings/UISettingsSection.ts:136
 #: src/components/ui/FontSizeSwitcher.ts:33
 msgid "Font Size"
 msgstr "Schriftgröße"
@@ -2355,6 +2351,7 @@ msgstr "Repostete Notiz wird geladen…"
 #: src/addons/badges/BadgesView.ts:69
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:1130
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:850
+#: src/components/settings/RelaySettingsSection.ts:368
 #: src/components/ui/note-rendering/ReactionFeedRenderer.ts:40
 msgid "Loading…"
 msgstr "Lädt…"
@@ -2365,6 +2362,7 @@ msgstr "Lädt…"
 #: src/components/ui/note-rendering/ListingRenderer.ts:62
 #: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1546
 #: src/helpers/renderQuotePreview.ts:153
+#: src/shell/focusDomains.ts:59
 msgid "Marketplace"
 msgstr "Marktplatz"
 
@@ -2382,7 +2380,7 @@ msgstr "Verschieben nach"
 msgid "Move to..."
 msgstr "Verschieben nach…"
 
-#: src/components/post/PostNoteModal.ts:1258
+#: src/components/post/PostNoteModal.ts:1344
 #: src/components/ui/note-features/NIP88PollRenderer.ts:112
 msgid "Multiple choice allowed"
 msgstr "Mehrfachauswahl erlaubt"
@@ -2526,6 +2524,10 @@ msgstr "Ohne Titel"
 msgid "Untitled App"
 msgstr "Unbetitelte App"
 
+#: src/addons/live-streams/LiveStreamsAddonView.ts:268
+#: src/addons/live-streams/LiveStreamsAddonView.ts:280
+#: src/addons/live-streams/LiveStreamsMiniPlayerWidget.ts:53
+#: src/addons/live-streams/LiveStreamsSidebarWidget.ts:136
 #: src/components/ui/note-rendering/ArticlePreviewRenderer.ts:172
 msgid "Untitled Stream"
 msgstr "Unbetitelter Stream"
@@ -2566,7 +2568,7 @@ msgstr "Zap-Beleg"
 msgid "Zap Stream"
 msgstr "Stream zappen"
 
-#: src/components/post/PostNoteModal.ts:720
+#: src/components/post/PostNoteModal.ts:803
 msgid "Applying..."
 msgstr "Wird angewendet…"
 
@@ -2575,12 +2577,12 @@ msgid "Bold"
 msgstr "Fett"
 
 #: src/addons/note-taking/NoteEditorModal.ts:303
-#: src/components/post/PostNoteModal.ts:417
+#: src/components/post/PostNoteModal.ts:423
 msgid "Clear"
 msgstr "Leeren"
 
 #: src/components/post/composerShared.ts:79
-#: src/components/post/PostNoteModal.ts:1006
+#: src/components/post/PostNoteModal.ts:1089
 msgid "Draft saved"
 msgstr "Entwurf gespeichert"
 
@@ -2596,36 +2598,36 @@ msgstr "Bild einfügen"
 msgid "Italic"
 msgstr "Kursiv"
 
-#: src/components/post/PostNoteModal.ts:996
+#: src/components/post/PostNoteModal.ts:1079
 msgid "Keep this unsent note in your drafts?"
 msgstr "Diese nicht gesendete Notiz in deinen Entwürfen behalten?"
 
-#: src/components/post/PostNoteModal.ts:189
+#: src/components/post/PostNoteModal.ts:194
 msgid "New Highlight"
 msgstr "Neues Highlight"
 
-#: src/components/post/PostNoteModal.ts:189
+#: src/components/post/PostNoteModal.ts:194
 msgid "New Note"
 msgstr "Neue Notiz"
 
-#: src/components/post/PostNoteModal.ts:1184
+#: src/components/post/PostNoteModal.ts:1270
 msgid "Note could not be published"
 msgstr "Notiz konnte nicht veröffentlicht werden"
 
-#: src/components/post/PostNoteModal.ts:729
-#: src/components/post/PostNoteModal.ts:756
+#: src/components/post/PostNoteModal.ts:812
+#: src/components/post/PostNoteModal.ts:839
 msgid "Only 50 tags permitted"
 msgstr "Wird angewendet…"
 
-#: src/components/post/PostNoteModal.ts:1037
-#: src/components/post/PostNoteModal.ts:389
-#: src/components/post/PostNoteModal.ts:456
+#: src/components/post/PostNoteModal.ts:1120
+#: src/components/post/PostNoteModal.ts:394
+#: src/components/post/PostNoteModal.ts:536
 msgid "Post"
 msgstr "Veröffentlichen"
 
-#: src/components/post/PostNoteModal.ts:1224
-#: src/components/post/PostNoteModal.ts:1232
-#: src/components/post/PostNoteModal.ts:386
+#: src/components/post/PostNoteModal.ts:1310
+#: src/components/post/PostNoteModal.ts:1318
+#: src/components/post/PostNoteModal.ts:391
 msgid "Post Highlight"
 msgstr "Highlight posten"
 
@@ -2641,16 +2643,16 @@ msgstr "Zitieren"
 msgid "Reply could not be published"
 msgstr "Überschrift"
 
-#: src/components/post/PostNoteModal.ts:995
+#: src/components/post/PostNoteModal.ts:1078
 msgid "Save as draft?"
 msgstr "Bild einfügen"
 
-#: src/components/post/PostNoteModal.ts:398
+#: src/components/post/PostNoteModal.ts:404
 #: src/components/reply/ReplyModal.ts:432
 msgid "Save draft"
 msgstr "Entwurf speichern"
 
-#: src/components/post/PostNoteModal.ts:471
+#: src/components/post/PostNoteModal.ts:551
 msgid "Schedule Post"
 msgstr "Diese nicht gesendete Notiz in deinen Entwürfen behalten?"
 
@@ -2658,33 +2660,33 @@ msgstr "Diese nicht gesendete Notiz in deinen Entwürfen behalten?"
 msgid "Show in my timeline"
 msgstr "In meiner Timeline zeigen"
 
-#: src/components/post/PostNoteModal.ts:718
+#: src/components/post/PostNoteModal.ts:801
 msgid "Tag different users, separate by comma"
 msgstr "Neue Notiz"
 
-#: src/components/post/PostNoteModal.ts:677
-#: src/components/post/PostNoteModal.ts:717
+#: src/components/post/PostNoteModal.ts:760
+#: src/components/post/PostNoteModal.ts:800
 msgid "Tag users"
 msgstr "Notiz konnte nicht veröffentlicht werden"
 
-#: src/components/post/PostNoteModal.ts:677
+#: src/components/post/PostNoteModal.ts:760
 msgid "Tag users in this image"
 msgstr "Nur 50 Tags zulässig"
 
-#: src/components/post/PostNoteModal.ts:723
+#: src/components/post/PostNoteModal.ts:806
 msgid "Tagged users will be publicly visible"
 msgstr "Posten"
 
-#: src/components/post/PostNoteModal.ts:1038
+#: src/components/post/PostNoteModal.ts:1121
 #: src/components/reply/ReplyModal.ts:695
 msgid "Waiting for signer approval…"
 msgstr "Warte auf Signer-Freigabe…"
 
-#: src/components/post/PostNoteModal.ts:340
+#: src/components/post/PostNoteModal.ts:345
 msgid "What's on your mind?"
 msgstr "Was beschäftigt dich?"
 
-#: src/components/post/PostNoteModal.ts:416
+#: src/components/post/PostNoteModal.ts:422
 msgid "Will be published on"
 msgstr "Antwort konnte nicht veröffentlicht werden"
 
@@ -2692,7 +2694,7 @@ msgstr "Antwort konnte nicht veröffentlicht werden"
 msgid "Write your reply..."
 msgstr "Als Entwurf speichern?"
 
-#: src/components/post/PostNoteModal.ts:339
+#: src/components/post/PostNoteModal.ts:344
 msgid "Write your thoughts about this highlight (optional)…"
 msgstr "Deine Gedanken zu diesem Highlight (optional)…"
 
@@ -2744,7 +2746,7 @@ msgstr "Alle Tribe-Mitglieder"
 msgid "Amount must be at least 1 sat"
 msgstr "Betrag muss mindestens 1 Sat betragen"
 
-#: src/components/settings/RelaySettingsSection.ts:474
+#: src/components/settings/RelaySettingsSection.ts:529
 msgid "Are you sure you want to remove this relay?"
 msgstr "Möchtest du dieses Relay wirklich entfernen?"
 
@@ -2957,7 +2959,7 @@ msgstr ""
 msgid "Failed to clear cache tables"
 msgstr "Cache-Tabellen konnten nicht geleert werden"
 
-#: src/components/settings/RelaySettingsSection.ts:619
+#: src/components/settings/RelaySettingsSection.ts:674
 msgid "Failed to save relay settings"
 msgstr "Relay-Einstellungen konnten nicht gespeichert werden"
 
@@ -3073,7 +3075,7 @@ msgstr "Listing-Frequenz: %s"
 msgid "Loading relay health status..."
 msgstr "Relay-Status wird geladen…"
 
-#: src/components/settings/RelaySettingsSection.ts:578
+#: src/components/settings/RelaySettingsSection.ts:633
 msgid "Local Relay"
 msgstr "Lokales Relay"
 
@@ -3282,7 +3284,7 @@ msgstr "Bitte NWC-Verbindungsstring eingeben"
 msgid "Please log in to migrate follow lists"
 msgstr "Zum Migrieren der Folgelisten bitte anmelden"
 
-#: src/components/settings/RelaySettingsSection.ts:515
+#: src/components/settings/RelaySettingsSection.ts:570
 msgid "Please log in to save relay settings"
 msgstr "Zum Speichern der Relay-Einstellungen bitte anmelden"
 
@@ -3370,7 +3372,7 @@ msgstr "Lesen"
 msgid "Recovery options:"
 msgstr "Wiederherstellungsoptionen:"
 
-#: src/components/settings/RelaySettingsSection.ts:617
+#: src/components/settings/RelaySettingsSection.ts:672
 msgid "Relay settings saved"
 msgstr "Relay-Einstellungen gespeichert"
 
@@ -3378,12 +3380,12 @@ msgstr "Relay-Einstellungen gespeichert"
 msgid "Relay Status"
 msgstr "Relay-Status"
 
-#: src/components/settings/RelaySettingsSection.ts:408
+#: src/components/settings/RelaySettingsSection.ts:463
 msgid "Relay URL must start with wss:// or ws://"
 msgstr "Relay-URL muss mit wss:// oder ws:// beginnen"
 
-#: src/addons/calendar/BookingManager.ts:329
-#: src/addons/calendar/BookingManager.ts:601
+#: src/addons/calendar/BookingManager.ts:327
+#: src/addons/calendar/BookingManager.ts:599
 #: src/addons/calendar/CalendarEventModal.ts:126
 #: src/addons/calendar/CalendarEventModal.ts:476
 #: src/addons/calendar/CalendarEventModal.ts:493
@@ -3393,7 +3395,7 @@ msgstr "Relay-URL muss mit wss:// oder ws:// beginnen"
 #: src/addons/marketplace/ListingEditorView.ts:248
 #: src/addons/marketplace/ListingEditorView.ts:601
 #: src/components/profile/ProfileSearchComponent.ts:308
-#: src/components/settings/RelaySettingsSection.ts:481
+#: src/components/settings/RelaySettingsSection.ts:536
 #: src/components/user-search/UserSearchInput.ts:397
 msgid "Remove"
 msgstr "Entfernen"
@@ -3402,7 +3404,7 @@ msgstr "Entfernen"
 msgid "Remove relay"
 msgstr "Relay entfernen"
 
-#: src/components/settings/RelaySettingsSection.ts:471
+#: src/components/settings/RelaySettingsSection.ts:526
 msgid "Remove Relay"
 msgstr "Relay entfernen"
 
@@ -3547,7 +3549,7 @@ msgstr "Sie bestimmt, wer in deiner Timeline erscheint."
 msgid "This operation is irreversible without using the reverse migration tool."
 msgstr "Dieser Vorgang ist ohne das Rück-Migrationswerkzeug unwiderruflich."
 
-#: src/components/settings/RelaySettingsSection.ts:420
+#: src/components/settings/RelaySettingsSection.ts:475
 msgid "This relay is already in your list"
 msgstr "Dieses Relay ist bereits in deiner Liste"
 
@@ -3635,7 +3637,7 @@ msgstr ""
 msgid "Write"
 msgstr "Schreiben"
 
-#: src/components/settings/RelaySettingsSection.ts:529
+#: src/components/settings/RelaySettingsSection.ts:584
 msgid "You need at least one read-relay and one write-relay configured."
 msgstr "Mindestens ein Lese-Relay und ein Schreib-Relay müssen konfiguriert sein."
 
@@ -4266,7 +4268,7 @@ msgstr ""
 "NoorSigner ist ein lokaler Schlüssel-Manager, der auf deinem Rechner läuft. "
 "Dein Private Key verlässt deinen Computer nie."
 
-#: src/addons/calendar/CalendarImportExport.ts:361
+#: src/addons/calendar/CalendarImportExport.ts:356
 #: src/addons/follow-packs/FollowPackManager.ts:778
 #: src/components/auth/AuthComponent.ts:69
 #: src/components/onboarding/AccountSetupWizard.ts:2970
@@ -4555,7 +4557,7 @@ msgid "Authentication failed. Please log in again."
 msgstr "Authentifizierung fehlgeschlagen. Bitte melde dich erneut an."
 
 #: src/addons/feedback-board/FeedbackBoardView.ts:748
-#: src/services/PostService.ts:517
+#: src/services/PostService.ts:540
 msgid "Comment"
 msgstr "Kommentar"
 
@@ -4632,7 +4634,7 @@ msgstr "Daemon konnte nicht gestoppt werden"
 msgid "Failed to stop key signer"
 msgstr "Key-Signer konnte nicht gestoppt werden"
 
-#: src/services/PostService.ts:459
+#: src/services/PostService.ts:482
 msgid "Highlight posted successfully!"
 msgstr "Highlight veröffentlicht!"
 
@@ -4755,7 +4757,7 @@ msgstr "Zeitüberschreitung der Anfrage. Bitte versuche es erneut."
 msgid "Signing failed"
 msgstr "Signierung fehlgeschlagen"
 
-#: src/App.ts:1010
+#: src/App.ts:1020
 #: src/services/managers/KeySignerConnectionManager.ts:413
 msgid "Stop NoorSigner Daemon?"
 msgstr "NoorSigner-Daemon stoppen?"
@@ -4820,38 +4822,38 @@ msgstr[1] "(%s Folgungen)"
 msgid "(loading…)"
 msgstr "(lädt…)"
 
-#: src/components/layout/MainLayout.ts:2294
+#: src/components/layout/MainLayout.ts:2352
 msgid "A terminal window will open. There:"
 msgstr "Ein Terminalfenster öffnet sich. Dort:"
 
 #: src/components/auth/AuthComponent.ts:134
-#: src/components/layout/MainLayout.ts:2314
+#: src/components/layout/MainLayout.ts:2372
 msgid "Add Account"
 msgstr "Konto hinzufügen"
 
-#: src/components/layout/MainLayout.ts:2101
+#: src/components/layout/MainLayout.ts:2159
 msgid "App updated."
 msgstr "App aktualisiert."
 
-#: src/components/layout/MainLayout.ts:3015
-#: src/components/layout/MainLayout.ts:906
+#: src/components/layout/MainLayout.ts:3073
+#: src/components/layout/MainLayout.ts:914
 msgid "Back to timeline"
 msgstr "Zurück zur Timeline"
 
-#: src/components/layout/MainLayout.ts:2299
+#: src/components/layout/MainLayout.ts:2357
 msgid "Close the terminal"
 msgstr "Schließe das Terminal"
 
-#: src/components/layout/MainLayout.ts:1189
-#: src/components/layout/MainLayout.ts:1903
+#: src/components/layout/MainLayout.ts:1197
+#: src/components/layout/MainLayout.ts:1936
 msgid "Collapse sidebar"
 msgstr "Sidebar einklappen"
 
-#: src/components/layout/MainLayout.ts:2300
+#: src/components/layout/MainLayout.ts:2358
 msgid "Come back here and log in with NoorSigner"
 msgstr "Komme hierher zurück und melde dich mit NoorSigner an"
 
-#: src/components/layout/MainLayout.ts:2179
+#: src/components/layout/MainLayout.ts:2237
 msgid "Data Saver"
 msgstr "Datensparmodus"
 
@@ -4859,7 +4861,7 @@ msgstr "Datensparmodus"
 msgid "Enter URL path (e.g., /profile, /note/...)"
 msgstr "URL-Pfad eingeben (z. B. /profile, /note/…)"
 
-#: src/components/layout/MainLayout.ts:1189
+#: src/components/layout/MainLayout.ts:1197
 msgid "Expand sidebar"
 msgstr "Sidebar ausklappen"
 
@@ -4879,15 +4881,15 @@ msgstr "Zurück (Cmd+←)"
 msgid "Go Forward (Cmd+→)"
 msgstr "Vor (Cmd+→)"
 
-#: src/components/layout/MainLayout.ts:1890
+#: src/components/layout/MainLayout.ts:1923
 msgid "Navigation"
 msgstr "Navigation"
 
-#: src/components/layout/MainLayout.ts:1993
+#: src/components/layout/MainLayout.ts:2051
 msgid "New Post"
 msgstr "Neuer Beitrag"
 
-#: src/components/layout/MainLayout.ts:1743
+#: src/components/layout/MainLayout.ts:1776
 msgid "Newest Articles"
 msgstr "Neueste Artikel"
 
@@ -4900,25 +4902,26 @@ msgid "No recent URLs"
 msgstr "Keine aktuellen URLs"
 
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:190
-#: src/components/layout/MainLayout.ts:1999
+#: src/components/layout/MainLayout.ts:2057
 #: src/lists/bookmarks.ts:3261
 msgid "Note"
 msgstr "Notiz"
 
-#: src/components/layout/MainLayout.ts:1934
+#: src/components/layout/MainLayout.ts:1990
 #: src/components/views/NotificationsView.ts:112
+#: src/shell/focusDomains.ts:64
 msgid "Notifications"
 msgstr "Mitteilungen"
 
-#: src/components/layout/MainLayout.ts:2302
+#: src/components/layout/MainLayout.ts:2360
 msgid "OK, got it"
 msgstr "OK, verstanden"
 
-#: src/components/layout/MainLayout.ts:1883
+#: src/components/layout/MainLayout.ts:1916
 msgid "Open menu"
 msgstr "Menü öffnen"
 
-#: src/components/layout/MainLayout.ts:2297
+#: src/components/layout/MainLayout.ts:2355
 msgid "Paste the nsec of the new account"
 msgstr "Füge den nsec des neuen Kontos ein"
 
@@ -4926,41 +4929,41 @@ msgstr "Füge den nsec des neuen Kontos ein"
 msgid "Please check your network connection and try again."
 msgstr "Bitte prüfe deine Netzwerkverbindung und versuche es erneut."
 
-#: src/components/layout/MainLayout.ts:2011
+#: src/components/layout/MainLayout.ts:2069
 msgid "Product"
 msgstr "Produkt"
 
 #: src/components/bookmarks/FolderCard.ts:73
-#: src/components/layout/MainLayout.ts:1927
+#: src/components/layout/MainLayout.ts:1983
 msgid "Profile"
 msgstr "Profil"
 
-#: src/components/layout/MainLayout.ts:899
+#: src/components/layout/MainLayout.ts:907
 msgid "Profile: %s"
 msgstr "Profil: %s"
 
-#: src/components/layout/MainLayout.ts:1745
+#: src/components/layout/MainLayout.ts:1778
 msgid "Recipes"
 msgstr "Rezepte"
 
-#: src/components/layout/MainLayout.ts:2102
+#: src/components/layout/MainLayout.ts:2160
 msgid "Reload"
 msgstr "Neu laden"
 
-#: src/components/layout/MainLayout.ts:1918
-#: src/components/layout/MainLayout.ts:1921
-#: src/components/layout/MainLayout.ts:1925
-#: src/components/layout/MainLayout.ts:1928
-#: src/components/layout/MainLayout.ts:1939
-#: src/components/layout/MainLayout.ts:1942
+#: src/components/layout/MainLayout.ts:1974
+#: src/components/layout/MainLayout.ts:1977
+#: src/components/layout/MainLayout.ts:1981
+#: src/components/layout/MainLayout.ts:1984
+#: src/components/layout/MainLayout.ts:1995
+#: src/components/layout/MainLayout.ts:1998
 msgid "Scroll to top"
 msgstr "Nach oben scrollen"
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:836
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:124
-#: src/components/layout/MainLayout.ts:1898
-#: src/components/layout/MainLayout.ts:1899
-#: src/components/layout/MainLayout.ts:1961
+#: src/components/layout/MainLayout.ts:1931
+#: src/components/layout/MainLayout.ts:1932
+#: src/components/layout/MainLayout.ts:2017
 msgid "Search"
 msgstr "Suche"
 
@@ -4972,7 +4975,7 @@ msgstr "Nur in lokalen Caches suchen"
 msgid "Search: (npub / nevent / username / full text)"
 msgstr "Suche: (npub / nevent / Benutzername / Volltext)"
 
-#: src/components/layout/MainLayout.ts:900
+#: src/components/layout/MainLayout.ts:908
 msgid "Search: %s"
 msgstr "Suche: %s"
 
@@ -4981,15 +4984,15 @@ msgstr "Suche: %s"
 msgid "Searching..."
 msgstr "Suche…"
 
-#: src/components/layout/MainLayout.ts:2298
+#: src/components/layout/MainLayout.ts:2356
 msgid "Set a password for this account"
 msgstr "Lege ein Passwort für dieses Konto fest"
 
-#: src/components/layout/MainLayout.ts:1981
+#: src/components/layout/MainLayout.ts:2039
 msgid "Sign in"
 msgstr "Anmelden"
 
-#: src/components/layout/MainLayout.ts:1985
+#: src/components/layout/MainLayout.ts:2043
 msgid "Sign out"
 msgstr "Logout"
 
@@ -4997,7 +5000,7 @@ msgstr "Logout"
 msgid "Syncing follow list..."
 msgstr "Folgelist wird synchronisiert…"
 
-#: src/components/layout/MainLayout.ts:1742
+#: src/components/layout/MainLayout.ts:1775
 msgid "System Logs"
 msgstr "System-Logs"
 
@@ -5007,7 +5010,7 @@ msgstr "System-Logs"
 msgid "Users"
 msgstr "Nutzer"
 
-#: src/components/layout/MainLayout.ts:1910
+#: src/components/layout/MainLayout.ts:1966
 msgid "Welcome"
 msgstr "Willkommen"
 
@@ -5072,7 +5075,7 @@ msgid_plural "%s days before"
 msgstr[0] "%s Tag vorher"
 msgstr[1] "%s Tage vorher"
 
-#: src/addons/calendar/BookingManager.ts:517
+#: src/addons/calendar/BookingManager.ts:515
 msgid "%s days"
 msgstr "%s Tage"
 
@@ -5088,6 +5091,7 @@ msgstr "%s Tage"
 #: src/addons/group-chats/GroupChatsSettings.ts:105
 #: src/addons/group-chats/GroupChatsSettings.ts:118
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:65
+#: src/addons/live-streams/LiveStreamsAddonView.ts:73
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:169
 #: src/addons/note-taking/NoteTakingAddonView.ts:43
 #: src/addons/profile-recognition/ProfileRecognitionSettings.ts:106
@@ -5116,6 +5120,7 @@ msgstr[1] "%s Emojis"
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:106
 #: src/addons/group-chats/GroupChatsSettings.ts:104
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:60
+#: src/addons/live-streams/LiveStreamsAddonView.ts:72
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:168
 #: src/addons/note-taking/NoteTakingAddonView.ts:42
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:51
@@ -5136,29 +5141,29 @@ msgid_plural "%s events"
 msgstr[0] "%s Ereignis"
 msgstr[1] "%s Ereignisse"
 
-#: src/addons/calendar/CalendarImportExport.ts:493
+#: src/addons/calendar/CalendarImportExport.ts:488
 msgid "%s event exported"
 msgid_plural "%s events exported"
 msgstr[0] "%s Ereignis exportiert"
 msgstr[1] "%s Ereignisse exportiert"
 
-#: src/addons/calendar/CalendarImportExport.ts:378
+#: src/addons/calendar/CalendarImportExport.ts:373
 msgid "%s event imported to this device"
 msgid_plural "%s events imported to this device"
 msgstr[0] "%s Ereignis auf dieses Gerät importiert"
 msgstr[1] "%s Ereignisse auf dieses Gerät importiert"
 
-#: src/addons/calendar/CalendarImportExport.ts:434
+#: src/addons/calendar/CalendarImportExport.ts:429
 msgid "%s event published to your relays"
 msgid_plural "%s events published to your relays"
 msgstr[0] "%s Ereignis an deine Relays veröffentlicht"
 msgstr[1] "%s Ereignisse an deine Relays veröffentlicht"
 
-#: src/addons/calendar/BookingManager.ts:506
+#: src/addons/calendar/BookingManager.ts:504
 msgid "%s hours"
 msgstr "%s Stunden"
 
-#: src/addons/calendar/CalendarImportExport.ts:119
+#: src/addons/calendar/CalendarImportExport.ts:120
 msgid "%s item is"
 msgid_plural "%s items are"
 msgstr[0] "%s Eintrag ist"
@@ -5170,8 +5175,8 @@ msgstr[1] "%s Einträge sind"
 msgid "%s members"
 msgstr "%s Mitglieder"
 
-#: src/addons/calendar/BookingManager.ts:484
-#: src/addons/calendar/BookingManager.ts:495
+#: src/addons/calendar/BookingManager.ts:482
+#: src/addons/calendar/BookingManager.ts:493
 msgid "%s minutes"
 msgstr "%s Minuten"
 
@@ -5225,8 +5230,8 @@ msgstr "+ Neuer Ereigniskalender"
 msgid "+%s more"
 msgstr "+%s weitere"
 
-#: src/components/settings/UISettingsSection.ts:529
-#: src/components/settings/UISettingsSection.ts:99
+#: src/components/settings/UISettingsSection.ts:110
+#: src/components/settings/UISettingsSection.ts:604
 msgid "1 week"
 msgstr "1 Woche"
 
@@ -5242,7 +5247,7 @@ msgstr "ein Gast"
 msgid "a Nostrord group"
 msgstr "einer Nostrord-Gruppe"
 
-#: src/addons/calendar/BookingManager.ts:378
+#: src/addons/calendar/BookingManager.ts:376
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:87
 #: src/addons/follow-packs/FollowPackManager.ts:598
 #: src/addons/group-chats/GroupChatsSettings.ts:277
@@ -5270,7 +5275,7 @@ msgstr "Emoji hinzufügen"
 msgid "Add label and press Enter…"
 msgstr "Label eingeben und Enter drücken …"
 
-#: src/components/views/ProfileView.ts:1494
+#: src/components/views/ProfileView.ts:1513
 msgid "Add private note. Only readable by you under this npub."
 msgstr "Private Notiz hinzufügen. Nur von dir lesbar unter diesem npub."
 
@@ -5302,7 +5307,7 @@ msgstr ""
 "Nach Ablauf des Zeitfensters hört das Blinken auf (du hast dich an das neue "
 "Profil gewöhnt)"
 
-#: src/components/settings/UISettingsSection.ts:532
+#: src/components/settings/UISettingsSection.ts:607
 msgid "all"
 msgstr "alle"
 
@@ -5315,7 +5320,7 @@ msgstr "ganztägig"
 msgid "All day"
 msgstr "Ganztägig"
 
-#: src/components/settings/UISettingsSection.ts:102
+#: src/components/settings/UISettingsSection.ts:113
 msgid "All self-reposts (any age)"
 msgstr "Alle eigenen Reposts (jedes Alter)"
 
@@ -5323,7 +5328,7 @@ msgstr "Alle eigenen Reposts (jedes Alter)"
 msgid "an Armada community"
 msgstr "einer Armada-Community"
 
-#: src/addons/calendar/BookingManager.ts:348
+#: src/addons/calendar/BookingManager.ts:346
 msgid "Appointment title"
 msgstr "Termin-Titel"
 
@@ -5344,7 +5349,7 @@ msgstr "Archiviere eine Notiz, um sie hier abzulegen."
 msgid "Archived"
 msgstr "Archiviert"
 
-#: src/components/settings/UISettingsSection.ts:230
+#: src/components/settings/UISettingsSection.ts:262
 msgid "Article excerpt limit in secondary content column"
 msgstr "Artikel-Kurzfassungs-Limit in der sekundären Inhaltsspalte"
 
@@ -5364,7 +5369,7 @@ msgstr "automatisch generiert"
 msgid "auto-generated, do not change"
 msgstr "automatisch generiert, nicht ändern"
 
-#: src/components/settings/UISettingsSection.ts:796
+#: src/components/settings/UISettingsSection.ts:893
 msgid "Auto-update check disabled"
 msgstr "Automatische Update-Prüfung deaktiviert"
 
@@ -5414,7 +5419,7 @@ msgstr "blossom.band (Blossom, gratis: 20 MiB)"
 msgid "booked"
 msgstr "gebucht"
 
-#: src/addons/calendar/BookingManager.ts:298
+#: src/addons/calendar/BookingManager.ts:296
 msgid "Booked by %s"
 msgstr "Gebucht von %s"
 
@@ -5424,15 +5429,15 @@ msgstr "Gebucht von %s"
 msgid "Booking cancelled"
 msgstr "Buchung storniert"
 
-#: src/addons/calendar/BookingManager.ts:217
+#: src/addons/calendar/BookingManager.ts:218
 msgid "Booking config failed: %s"
 msgstr "Buchungs-Konfiguration fehlgeschlagen: %s"
 
-#: src/addons/calendar/BookingManager.ts:336
+#: src/addons/calendar/BookingManager.ts:334
 msgid "Booking page"
 msgstr "Buchungsseite"
 
-#: src/addons/calendar/BookingManager.ts:553
+#: src/addons/calendar/BookingManager.ts:551
 msgid "Booking page link copied"
 msgstr "Buchungsseiten-Link kopiert"
 
@@ -5462,7 +5467,7 @@ msgstr "Bookmarks deaktiviert"
 msgid "Bookmarks enabled"
 msgstr "Bookmarks aktiviert"
 
-#: src/components/settings/UISettingsSection.ts:150
+#: src/components/settings/UISettingsSection.ts:171
 msgid "Both calendars side-by-side"
 msgstr "Beide Kalender nebeneinander"
 
@@ -5473,7 +5478,7 @@ msgstr "Beide Kalender nebeneinander"
 msgid "BTC Price"
 msgstr "BTC-Kurs"
 
-#: src/addons/calendar/BookingManager.ts:360
+#: src/addons/calendar/BookingManager.ts:358
 msgid "Buffer between slots"
 msgstr "Puffer zwischen Slots"
 
@@ -5493,7 +5498,7 @@ msgstr "Wird aufgebaut …"
 msgid "Bulk delete"
 msgstr "Sammellöschung"
 
-#: src/addons/calendar/CalendarImportExport.ts:233
+#: src/addons/calendar/CalendarImportExport.ts:234
 msgid "Calendar cleared on this device"
 msgstr "Kalender auf diesem Gerät geleert"
 
@@ -5517,8 +5522,8 @@ msgstr "Kalendername"
 msgid "Calibrating baseline (%s followers)…"
 msgstr "Basislinie wird kalibriert (%s Folgende) …"
 
-#: src/addons/calendar/BookingManager.ts:399
-#: src/addons/calendar/BookingManager.ts:404
+#: src/addons/calendar/BookingManager.ts:397
+#: src/addons/calendar/BookingManager.ts:402
 #: src/addons/calendar/CalendarEventModal.ts:510
 #: src/addons/calendar/CalendarEventModal.ts:517
 msgid "Cancel booking"
@@ -5532,7 +5537,7 @@ msgstr "Beitrag abbrechen"
 msgid "Cancel Scheduled Post"
 msgstr "Geplanten Beitrag abbrechen"
 
-#: src/addons/calendar/BookingManager.ts:296
+#: src/addons/calendar/BookingManager.ts:294
 msgid "Cancelling…"
 msgstr "Wird storniert …"
 
@@ -5549,7 +5554,7 @@ msgid "Check frequency for all supported group clients"
 msgstr "Prüffrequenz für alle unterstützten Gruppen-Clients"
 
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:162
-#: src/components/settings/UISettingsSection.ts:286
+#: src/components/settings/UISettingsSection.ts:318
 msgid "Check now"
 msgstr "Jetzt prüfen"
 
@@ -5571,7 +5576,7 @@ msgstr ""
 "Wähle, wo Bilder, Videos und andere Mediendateien hochgeladen werden. "
 "NoorNote unterstützt sowohl das Blossom- als auch das NIP-96-Protokoll."
 
-#: src/components/settings/UISettingsSection.ts:180
+#: src/components/settings/UISettingsSection.ts:201
 msgid "Classic Menu"
 msgstr "Klassisches Menü"
 
@@ -5762,7 +5767,7 @@ msgstr ""
 msgid "Date"
 msgstr "Datum"
 
-#: src/components/settings/UISettingsSection.ts:145
+#: src/components/settings/UISettingsSection.ts:166
 msgid "Date Format"
 msgstr "Datumsformat"
 
@@ -5771,8 +5776,8 @@ msgstr "Datumsformat"
 msgid "declined"
 msgstr "abgelehnt"
 
-#: src/components/settings/UISettingsSection.ts:135
-#: src/components/settings/UISettingsSection.ts:387
+#: src/components/settings/UISettingsSection.ts:146
+#: src/components/settings/UISettingsSection.ts:419
 msgid "Default"
 msgstr "Standard"
 
@@ -5820,7 +5825,7 @@ msgstr ""
 msgid "Delete this note? This removes it from this device."
 msgstr "Diese Notiz löschen? Sie wird von diesem Gerät entfernt."
 
-#: src/addons/calendar/CalendarImportExport.ts:248
+#: src/addons/calendar/CalendarImportExport.ts:249
 msgid "Deleted %s items from your relays"
 msgstr "%s Elemente von deinen Relays gelöscht"
 
@@ -5879,7 +5884,7 @@ msgstr "Dhikr aktualisiert"
 msgid "Diagrams"
 msgstr "Diagramme"
 
-#: src/components/settings/UISettingsSection.ts:220
+#: src/components/settings/UISettingsSection.ts:252
 msgid "Disable post truncation"
 msgstr "Beitrags-Kürzung deaktivieren"
 
@@ -5895,7 +5900,7 @@ msgstr "Sensible Medien anzeigen"
 msgid "Download .ics"
 msgstr ".ics herunterladen"
 
-#: src/addons/calendar/CalendarImportExport.ts:108
+#: src/addons/calendar/CalendarImportExport.ts:109
 msgid "Download your whole calendar as one .ics file."
 msgstr "Lade deinen gesamten Kalender als eine .ics-Datei herunter."
 
@@ -5991,7 +5996,7 @@ msgstr "Armada aktivieren"
 msgid "Enable Badges"
 msgstr "Badges aktivieren"
 
-#: src/addons/calendar/BookingManager.ts:344
+#: src/addons/calendar/BookingManager.ts:342
 msgid "Enable booking page"
 msgstr "Buchungsseite aktivieren"
 
@@ -6158,11 +6163,11 @@ msgstr "Autor ausschließen"
 msgid "excluded"
 msgstr "ausgeschlossen"
 
-#: src/addons/calendar/CalendarImportExport.ts:107
+#: src/addons/calendar/CalendarImportExport.ts:108
 msgid "Export"
 msgstr "Export"
 
-#: src/addons/calendar/CalendarImportExport.ts:111
+#: src/addons/calendar/CalendarImportExport.ts:112
 msgid "Export calendar (.ics)"
 msgstr "Kalender exportieren (.ics)"
 
@@ -6280,6 +6285,7 @@ msgstr "Follow-Pack aktualisiert"
 #: src/addons/addonI18n.ts:30
 #: src/addons/follow-packs/FollowPacksView.ts:21
 #: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:143
+#: src/shell/focusDomains.ts:60
 msgid "Follow Packs"
 msgstr "Follow-Packs"
 
@@ -6295,7 +6301,7 @@ msgstr "Follower-Benachrichtigung"
 msgid "for everyone"
 msgstr "für alle"
 
-#: src/addons/calendar/BookingManager.ts:314
+#: src/addons/calendar/BookingManager.ts:312
 msgid "Free"
 msgstr "Frei"
 
@@ -6347,7 +6353,7 @@ msgstr "Gruppen-Chats: eigene Beiträge ausgeschlossen"
 msgid "GroupChats: your own posts included"
 msgstr "Gruppen-Chats: eigene Beiträge eingeschlossen"
 
-#: src/addons/calendar/BookingManager.ts:303
+#: src/addons/calendar/BookingManager.ts:301
 msgid "guest"
 msgstr "Gast"
 
@@ -6373,7 +6379,7 @@ msgstr ""
 msgid "hidden"
 msgstr "ausgeblendet"
 
-#: src/components/settings/UISettingsSection.ts:210
+#: src/components/settings/UISettingsSection.ts:231
 msgid "Hide highlights"
 msgstr "Highlights ausblenden"
 
@@ -6417,7 +6423,7 @@ msgstr "Bildkomprimierung"
 msgid "Images"
 msgstr "Bilder"
 
-#: src/addons/calendar/CalendarImportExport.ts:66
+#: src/addons/calendar/CalendarImportExport.ts:67
 msgid "Import .ics file"
 msgstr ".ics-Datei importieren"
 
@@ -6430,7 +6436,7 @@ msgstr "Alle importieren"
 msgid "Import from another user"
 msgstr "Von anderem Benutzer importieren"
 
-#: src/addons/calendar/CalendarImportExport.ts:81
+#: src/addons/calendar/CalendarImportExport.ts:82
 msgid "Import to my calendar"
 msgstr "In meinen Kalender importieren"
 
@@ -6446,7 +6452,7 @@ msgstr "%s von „%s“ importiert"
 msgid "Imported as :%s: (shortcode collision)"
 msgstr "Als :%s: importiert (Shortcode-Kollision)"
 
-#: src/addons/calendar/CalendarImportExport.ts:473
+#: src/addons/calendar/CalendarImportExport.ts:468
 msgid "Imported events discarded"
 msgstr "Importierte Ereignisse verworfen"
 
@@ -6480,7 +6486,7 @@ msgstr "Ausgeschaltet lassen"
 msgid "Known"
 msgstr "Bekannt"
 
-#: src/components/settings/UISettingsSection.ts:132
+#: src/components/settings/UISettingsSection.ts:143
 msgid "Layout Mode"
 msgstr "Layout-Modus"
 
@@ -6518,10 +6524,6 @@ msgstr "Löschung des Listings angefragt"
 #: src/addons/marketplace/ListingService.ts:153
 msgid "Listing published successfully!"
 msgstr "Listing erfolgreich veröffentlicht!"
-
-#: src/addons/addonI18n.ts:42
-msgid "Live Streams Player"
-msgstr "Live-Streams-Player"
 
 #: src/components/analytics/AnalyticsModal.ts:133
 msgid "Loading analytics data..."
@@ -6565,7 +6567,7 @@ msgstr "Rezensionen werden geladen …"
 msgid "Loading scheduled posts..."
 msgstr "Geplante Beiträge werden geladen …"
 
-#: src/addons/calendar/BookingManager.ts:278
+#: src/addons/calendar/BookingManager.ts:276
 msgid "Loading slots…"
 msgstr "Slots werden geladen …"
 
@@ -6702,11 +6704,11 @@ msgstr ""
 "Noch keine Ereigniskalender. Erstelle einen und füge deine öffentlichen "
 "Ereignisse hinzu."
 
-#: src/addons/calendar/CalendarImportExport.ts:316
+#: src/addons/calendar/CalendarImportExport.ts:311
 msgid "No events in the selected range"
 msgstr "Keine Ereignisse im gewählten Zeitraum"
 
-#: src/addons/calendar/CalendarImportExport.ts:481
+#: src/addons/calendar/CalendarImportExport.ts:476
 msgid "No events to export"
 msgstr "Keine Ereignisse zum Exportieren"
 
@@ -6767,7 +6769,7 @@ msgstr "Noch keine zitierten Reposts"
 msgid "No replies yet"
 msgstr "Noch keine Antworten"
 
-#: src/addons/calendar/BookingManager.ts:280
+#: src/addons/calendar/BookingManager.ts:278
 msgid "No slots published yet. Save the config to generate them."
 msgstr ""
 "Noch keine Slots veröffentlicht. Speichere die Konfiguration, um sie zu "
@@ -6789,8 +6791,8 @@ msgstr ""
 msgid "No transactions yet"
 msgstr "Noch keine Transaktionen"
 
-#: src/addons/calendar/BookingManager.ts:333
-#: src/addons/calendar/BookingManager.ts:605
+#: src/addons/calendar/BookingManager.ts:331
+#: src/addons/calendar/BookingManager.ts:603
 msgid "No vacation ranges."
 msgstr "Keine Urlaubszeiträume."
 
@@ -6929,8 +6931,8 @@ msgstr "Periodisch neue Beiträge für deine Hashtags abrufen."
 msgid "Personal calendar"
 msgstr "Persönlicher Kalender"
 
-#: src/components/settings/UISettingsSection.ts:138
-#: src/components/settings/UISettingsSection.ts:391
+#: src/components/settings/UISettingsSection.ts:149
+#: src/components/settings/UISettingsSection.ts:423
 msgid "Phone"
 msgstr "Telefon"
 
@@ -6973,7 +6975,7 @@ msgstr "Bitte eine Bilddatei auswählen"
 msgid "Poll"
 msgstr "Umfrage"
 
-#: src/components/settings/UISettingsSection.ts:439
+#: src/components/settings/UISettingsSection.ts:471
 msgid "Post truncation disabled - all posts will be shown in full"
 msgstr "Beitrags-Kürzung deaktiviert - alle Beiträge werden vollständig angezeigt"
 
@@ -7036,7 +7038,7 @@ msgstr "Fortschritt"
 msgid "Public event: everyone on Nostr can read it."
 msgstr "Öffentliches Ereignis: Alle auf Nostr können es lesen."
 
-#: src/addons/calendar/CalendarImportExport.ts:98
+#: src/addons/calendar/CalendarImportExport.ts:99
 msgid "Publish %s event"
 msgid_plural "Publish %s events"
 msgstr[0] "%s Ereignis veröffentlichen"
@@ -7046,7 +7048,7 @@ msgstr[1] "%s Ereignisse veröffentlichen"
 msgid "Publish calendar"
 msgstr "Kalender veröffentlichen"
 
-#: src/addons/calendar/CalendarImportExport.ts:126
+#: src/addons/calendar/CalendarImportExport.ts:127
 msgid "Publish deletions"
 msgstr "Löschungen veröffentlichen"
 
@@ -7056,7 +7058,7 @@ msgstr "Löschungen veröffentlichen"
 msgid "Publish Follow Pack"
 msgstr "Follow-Pack veröffentlichen"
 
-#: src/addons/calendar/CalendarImportExport.ts:89
+#: src/addons/calendar/CalendarImportExport.ts:90
 msgid "Publish imports"
 msgstr "Importe veröffentlichen"
 
@@ -7070,23 +7072,23 @@ msgstr ""
 "Veröffentlicht direkt nach dem Speichern einen Timeline-Beitrag mit Link zu "
 "diesem Ereignis."
 
-#: src/addons/calendar/CalendarImportExport.ts:406
+#: src/addons/calendar/CalendarImportExport.ts:401
 msgid "Publishing %s…"
 msgstr "%s wird veröffentlicht …"
 
-#: src/addons/calendar/CalendarImportExport.ts:425
+#: src/addons/calendar/CalendarImportExport.ts:420
 msgid "Publishing finished: %s published, %s failed (still staged)"
 msgstr ""
 "Veröffentlichung abgeschlossen: %s veröffentlicht, %s fehlgeschlagen "
 "(weiterhin vorgemerkt)"
 
-#: src/addons/calendar/CalendarImportExport.ts:255
+#: src/addons/calendar/CalendarImportExport.ts:256
 msgid "Publishing the deletions failed: %s"
 msgstr "Veröffentlichen der Löschungen fehlgeschlagen: %s"
 
-#: src/addons/calendar/BookingManager.ts:192
-#: src/addons/calendar/CalendarImportExport.ts:126
-#: src/addons/calendar/CalendarImportExport.ts:98
+#: src/addons/calendar/BookingManager.ts:193
+#: src/addons/calendar/CalendarImportExport.ts:127
+#: src/addons/calendar/CalendarImportExport.ts:99
 msgid "Publishing…"
 msgstr "Wird veröffentlicht …"
 
@@ -7100,7 +7102,7 @@ msgstr "Qualität"
 msgid "Quran"
 msgstr "Quran"
 
-#: src/addons/calendar/CalendarImportExport.ts:74
+#: src/addons/calendar/CalendarImportExport.ts:75
 msgid "Range"
 msgstr "Zeitraum"
 
@@ -7116,7 +7118,7 @@ msgstr "Wieder einschließen"
 msgid "reacted to your %s"
 msgstr "hat auf %s reagiert"
 
-#: src/addons/calendar/BookingManager.ts:401
+#: src/addons/calendar/BookingManager.ts:399
 #: src/addons/calendar/CalendarEventModal.ts:514
 #: src/components/views/ProfileBookingView.ts:318
 msgid "Reason (optional)"
@@ -7235,11 +7237,11 @@ msgstr "Antworten (%s)"
 msgid "reposts/quotes"
 msgstr "Reposts/Zitate"
 
-#: src/addons/calendar/CalendarImportExport.ts:136
+#: src/addons/calendar/CalendarImportExport.ts:137
 msgid "Reset calendar"
 msgstr "Kalender zurücksetzen"
 
-#: src/addons/calendar/CalendarImportExport.ts:215
+#: src/addons/calendar/CalendarImportExport.ts:216
 msgid "Reset calendar?"
 msgstr "Kalender zurücksetzen?"
 
@@ -7251,7 +7253,7 @@ msgstr "Zurücksetzen fehlgeschlagen: %s"
 msgid "Reset filters"
 msgstr "Filter zurücksetzen"
 
-#: src/addons/calendar/CalendarImportExport.ts:219
+#: src/addons/calendar/CalendarImportExport.ts:220
 msgid "Reset locally"
 msgstr "Lokal zurücksetzen"
 
@@ -7290,13 +7292,13 @@ msgstr "Rezensionen & Zitate (%s)"
 msgid "Revoke"
 msgstr "Entziehen"
 
-#: src/components/settings/UISettingsSection.ts:136
-#: src/components/settings/UISettingsSection.ts:388
+#: src/components/settings/UISettingsSection.ts:147
+#: src/components/settings/UISettingsSection.ts:420
 msgid "Right Pane"
 msgstr "Rechter Bereich"
 
-#: src/addons/calendar/BookingManager.ts:225
-#: src/addons/calendar/BookingManager.ts:381
+#: src/addons/calendar/BookingManager.ts:223
+#: src/addons/calendar/BookingManager.ts:379
 msgid "Save & publish slots"
 msgstr "Slots speichern & veröffentlichen"
 
@@ -7449,7 +7451,7 @@ msgstr "Wähle deine Stadt, um Gebetszeiten zu sehen."
 msgid "Select your location to see prayer times."
 msgstr "Wähle deinen Standort, um Gebetszeiten zu sehen."
 
-#: src/components/settings/UISettingsSection.ts:516
+#: src/components/settings/UISettingsSection.ts:591
 msgid "Self-reposts hidden from timeline"
 msgstr "Eigene Reposts aus der Timeline ausgeblendet"
 
@@ -7539,7 +7541,7 @@ msgstr ""
 "Zeige die eigenen Emojis eines anderen Benutzers und importiere beliebige "
 "in dein persönliches Pack."
 
-#: src/components/settings/UISettingsSection.ts:203
+#: src/components/settings/UISettingsSection.ts:224
 msgid ""
 "Show the reactions (likes) of people you follow as entries in your "
 "timeline. Off by default. Individual users can be enabled from their "
@@ -7565,7 +7567,7 @@ msgstr ""
 "Zeigt das aktuelle Gebet und die verbleibende Zeit bis zum nächsten in der "
 "Sidebar."
 
-#: src/components/settings/UISettingsSection.ts:698
+#: src/components/settings/UISettingsSection.ts:795
 msgid "Side column articles: %s"
 msgstr "Artikel der Seitenspalte: %s"
 
@@ -7645,7 +7647,7 @@ msgid ""
 "DM."
 msgstr "Gast und alle Teilnehmer werden per DM über die Stornierung informiert."
 
-#: src/addons/calendar/BookingManager.ts:400
+#: src/addons/calendar/BookingManager.ts:398
 msgid "The guest and all participants will be informed by DM."
 msgstr "Gast und alle Teilnehmer werden per DM informiert."
 
@@ -7657,11 +7659,11 @@ msgstr "Der Gastgeber hat die Buchung „%s“ storniert"
 msgid "the Nostrord group \"%s\""
 msgstr "der Nostrord-Gruppe „%s“"
 
-#: src/addons/calendar/BookingManager.ts:245
+#: src/addons/calendar/BookingManager.ts:243
 msgid "The vacation end must be after the start"
 msgstr "Das Urlaubs-Ende muss nach dem Start liegen"
 
-#: src/components/settings/UISettingsSection.ts:118
+#: src/components/settings/UISettingsSection.ts:129
 msgid "Theme"
 msgstr "Theme"
 
@@ -7674,7 +7676,7 @@ msgstr "Dieser Kalender hat noch keine Ereignisse."
 msgid "this event"
 msgstr "dieses Ereignis"
 
-#: src/addons/calendar/CalendarImportExport.ts:462
+#: src/addons/calendar/CalendarImportExport.ts:457
 msgid ""
 "This removes the %s locally imported event from this device. It was never "
 "published, so nothing is lost on your relays."
@@ -7802,15 +7804,15 @@ msgstr "Medien hochladen"
 msgid "User is already in this pack"
 msgstr "Benutzer ist bereits in diesem Pack"
 
-#: src/addons/calendar/BookingManager.ts:373
+#: src/addons/calendar/BookingManager.ts:371
 msgid "Vacation"
 msgstr "Urlaub"
 
-#: src/addons/calendar/BookingManager.ts:376
+#: src/addons/calendar/BookingManager.ts:374
 msgid "Vacation from"
 msgstr "Urlaub von"
 
-#: src/addons/calendar/BookingManager.ts:377
+#: src/addons/calendar/BookingManager.ts:375
 msgid "Vacation to"
 msgstr "Urlaub bis"
 
@@ -7826,7 +7828,7 @@ msgstr "Beobachte %s Folgende auf Änderungen."
 msgid "Week"
 msgstr "Woche"
 
-#: src/addons/calendar/BookingManager.ts:371
+#: src/addons/calendar/BookingManager.ts:369
 msgid "Weekly availability"
 msgstr "Wöchentliche Verfügbarkeit"
 
@@ -7834,7 +7836,7 @@ msgstr "Wöchentliche Verfügbarkeit"
 msgid "What this badge represents…"
 msgstr "Was dieses Badge bedeutet …"
 
-#: src/components/settings/UISettingsSection.ts:272
+#: src/components/settings/UISettingsSection.ts:304
 msgid ""
 "When enabled, every event you publish carries a <code>client</code> tag "
 "identifying NoorNote. Other Nostr clients display this as \"via NoorNote\" "
@@ -7848,7 +7850,7 @@ msgstr ""
 msgid "When:"
 msgstr "Wann:"
 
-#: src/components/settings/UISettingsSection.ts:245
+#: src/components/settings/UISettingsSection.ts:277
 msgid ""
 "Whose articles appear in <strong>/articles</strong>. Higher degrees broaden "
 "the feed beyond your direct follows but take longer to build and include "
@@ -7899,7 +7901,7 @@ msgstr "Deine aktuellen Beiträge"
 msgid "Your scheduled posts"
 msgstr "Deine geplanten Beiträge"
 
-#: src/addons/calendar/BookingManager.ts:383
+#: src/addons/calendar/BookingManager.ts:381
 msgid "Your slots"
 msgstr "Deine Slots"
 
@@ -7926,13 +7928,13 @@ msgstr[1] "%s Elemente in verschiedenen Ordnern"
 msgid "%s new posts tagged #%s"
 msgstr "%s neue Beiträge mit #%s"
 
-#: src/addons/calendar/CalendarImportExport.ts:318
+#: src/addons/calendar/CalendarImportExport.ts:313
 msgid "%s outside"
 msgid_plural "%s outside"
 msgstr[0] "%s außerhalb"
 msgstr[1] "%s außerhalb"
 
-#: src/services/PostService.ts:580
+#: src/services/PostService.ts:603
 msgid "%s posted successfully!"
 msgstr "%s erfolgreich veröffentlicht!"
 
@@ -7949,15 +7951,15 @@ msgstr "+ %s weitere …"
 msgid "<strong>Interoperable</strong>, use any client you like"
 msgstr "<strong>Interoperabel</strong> - nutze jeden Client, der dir gefällt"
 
-#: src/components/views/ProfileView.ts:1508
+#: src/components/views/ProfileView.ts:1527
 #: src/lists/follows.ts:2416
 msgid "🔒 Encrypted note about this user. Only you can decrypt and read it."
 msgstr ""
 "🔒 Verschlüsselte Notiz über diesen Benutzer. Nur du kannst sie "
 "entschlüsseln und lesen."
 
-#: src/components/settings/UISettingsSection.ts:101
-#: src/components/settings/UISettingsSection.ts:531
+#: src/components/settings/UISettingsSection.ts:112
+#: src/components/settings/UISettingsSection.ts:606
 msgid "1 year"
 msgstr "1 Jahr"
 
@@ -7965,13 +7967,13 @@ msgstr "1 Jahr"
 msgid "1080p (Full HD)"
 msgstr "1080p (Full HD)"
 
-#: src/components/settings/UISettingsSection.ts:528
-#: src/components/settings/UISettingsSection.ts:98
+#: src/components/settings/UISettingsSection.ts:109
+#: src/components/settings/UISettingsSection.ts:603
 msgid "3 days"
 msgstr "3 Tage"
 
-#: src/components/settings/UISettingsSection.ts:100
-#: src/components/settings/UISettingsSection.ts:530
+#: src/components/settings/UISettingsSection.ts:111
+#: src/components/settings/UISettingsSection.ts:605
 msgid "3 months"
 msgstr "3 Monate"
 
@@ -8001,8 +8003,8 @@ msgstr ""
 "sie als Reaktionen oder in deinen Beiträgen via <code>:shortcode:</code>. "
 "Andere Nostr-Clients mit NIP-30-Unterstützung zeigen sie ebenfalls."
 
-#: src/components/ui/NoteMenu.ts:219
-#: src/components/ui/NoteMenu.ts:783
+#: src/components/ui/NoteMenu.ts:240
+#: src/components/ui/NoteMenu.ts:835
 msgid "Add author to Tribe"
 msgstr "Autor zum Tribe hinzufügen"
 
@@ -8019,11 +8021,11 @@ msgstr "Produkt hinzufügen"
 msgid "Add public events"
 msgstr "Öffentliche Ereignisse hinzufügen"
 
-#: src/components/views/ProfileView.ts:1009
+#: src/components/views/ProfileView.ts:1028
 msgid "Add to Tribe"
 msgstr "Zum Tribe hinzufügen"
 
-#: src/components/views/ProfileView.ts:1789
+#: src/components/views/ProfileView.ts:1808
 msgid "Added to tribe \"%s\""
 msgstr "Zum Tribe „%s“ hinzugefügt"
 
@@ -8071,7 +8073,7 @@ msgstr ""
 msgid "Appointment"
 msgstr "Termin"
 
-#: src/components/settings/UISettingsSection.ts:630
+#: src/components/settings/UISettingsSection.ts:727
 msgid "Article excerpt limit set to %s characters"
 msgstr "Artikel-Kurzfassungs-Limit auf %s Zeichen gesetzt"
 
@@ -8103,11 +8105,11 @@ msgstr ""
 msgid "Author"
 msgstr "Autor"
 
-#: src/components/settings/UISettingsSection.ts:795
+#: src/components/settings/UISettingsSection.ts:892
 msgid "Auto-update check enabled"
 msgstr "Automatische Update-Prüfung aktiviert"
 
-#: src/components/settings/UISettingsSection.ts:282
+#: src/components/settings/UISettingsSection.ts:314
 msgid "Automatically check for updates"
 msgstr "Automatisch nach Updates suchen"
 
@@ -8163,7 +8165,7 @@ msgstr "blossom.nostr.build (Blossom, gratis: 20 MiB)"
 msgid "blossom.primal.net (Blossom, free: 20 MiB)"
 msgstr "blossom.primal.net (Blossom, gratis: 20 MiB)"
 
-#: src/addons/calendar/BookingManager.ts:368
+#: src/addons/calendar/BookingManager.ts:366
 msgid "Bookable window"
 msgstr "Buchbares Zeitfenster"
 
@@ -8171,7 +8173,7 @@ msgstr "Buchbares Zeitfenster"
 msgid "Brief description for listing cards..."
 msgstr "Kurze Beschreibung für Listing-Karten …"
 
-#: src/components/settings/UISettingsSection.ts:183
+#: src/components/settings/UISettingsSection.ts:204
 msgid "Bring back the old, linear navigation."
 msgstr "Bring die alte, lineare Navigation zurück."
 
@@ -8189,7 +8191,7 @@ msgstr "Stöbere in kuratierten Follow-Packs, erstelle und teile eigene."
 msgid "by %s"
 msgstr "von %s"
 
-#: src/components/settings/UISettingsSection.ts:466
+#: src/components/settings/UISettingsSection.ts:498
 msgid "Circular navigation active"
 msgstr "Kreisende Navigation aktiv"
 
@@ -8197,7 +8199,7 @@ msgstr "Kreisende Navigation aktiv"
 msgid "City"
 msgstr "Stadt"
 
-#: src/components/settings/UISettingsSection.ts:465
+#: src/components/settings/UISettingsSection.ts:497
 msgid "Classic menu active"
 msgstr "Klassisches Menü aktiv"
 
@@ -8264,19 +8266,19 @@ msgstr "Tage vorher"
 msgid "Decrease font size"
 msgstr "Schriftgröße verkleinern"
 
-#: src/components/settings/UISettingsSection.ts:399
+#: src/components/settings/UISettingsSection.ts:431
 msgid "Default layout mode"
 msgstr "Standard-Layout-Modus"
 
-#: src/components/settings/UISettingsSection.ts:646
+#: src/components/settings/UISettingsSection.ts:743
 msgid "Degree 1 (direct follows)"
 msgstr "Grad 1 (direkte Folgungen)"
 
-#: src/components/settings/UISettingsSection.ts:647
+#: src/components/settings/UISettingsSection.ts:744
 msgid "Degree 2 (friends of friends)"
 msgstr "Grad 2 (Freunde von Folgungen)"
 
-#: src/components/settings/UISettingsSection.ts:648
+#: src/components/settings/UISettingsSection.ts:745
 msgid "Degree 3 (friends of friends of friends)"
 msgstr "Grad 3 (Freunde von Freunden von Folgungen)"
 
@@ -8307,11 +8309,11 @@ msgstr "Dhikr"
 msgid "Dhikr created"
 msgstr "Dhikr erstellt"
 
-#: src/components/settings/UISettingsSection.ts:163
+#: src/components/settings/UISettingsSection.ts:184
 msgid "Disable self-reposts younger than:"
 msgstr "Eigene Reposts jünger als ausblenden:"
 
-#: src/addons/calendar/CalendarImportExport.ts:461
+#: src/addons/calendar/CalendarImportExport.ts:456
 msgid "Discard imported events?"
 msgstr "Importierte Ereignisse verwerfen?"
 
@@ -8373,7 +8375,7 @@ msgstr "Zeiten werden abgerufen …"
 msgid "Get paid.<br><em>Not played.</em>"
 msgstr "Werde bezahlt.<br><em>Nicht vorgeführt.</em>"
 
-#: src/components/views/ProfileView.ts:638
+#: src/components/views/ProfileView.ts:656
 msgid "Has muted you"
 msgstr "hat dich stummgeschaltet"
 
@@ -8389,7 +8391,7 @@ msgstr ""
 "Blendet Notes mit bestimmten Wörtern aus allen Timelines aus. Verwalte "
 "deine blockierten Wörter unten."
 
-#: src/components/settings/UISettingsSection.ts:157
+#: src/components/settings/UISettingsSection.ts:178
 msgid "Hide self-reposts"
 msgstr "Eigene Reposts ausblenden"
 
@@ -8397,7 +8399,7 @@ msgstr "Eigene Reposts ausblenden"
 msgid "Hide this dhikr from everyone? You can un-hide it later."
 msgstr "Diesen Dhikr für alle ausblenden? Du kannst ihn später wieder einblenden."
 
-#: src/components/views/ProfileView.ts:970
+#: src/components/views/ProfileView.ts:989
 msgid "Hide this user's website highlights and reposts of them from your timelines"
 msgstr ""
 "Blendet die Website-Highlights dieses Benutzers und Reposts davon aus "
@@ -8407,11 +8409,11 @@ msgstr ""
 msgid "Hide timeline notes containing words on your filter list."
 msgstr "Blendet Timeline-Notes aus, die Wörter aus deiner Filterliste enthalten."
 
-#: src/components/settings/UISettingsSection.ts:545
+#: src/components/settings/UISettingsSection.ts:620
 msgid "Hiding all self-reposts"
 msgstr "Alle eigenen Reposts werden ausgeblendet"
 
-#: src/components/settings/UISettingsSection.ts:546
+#: src/components/settings/UISettingsSection.ts:621
 msgid "Hiding self-reposts younger than %s"
 msgstr "Eigene Reposts jünger als %s werden ausgeblendet"
 
@@ -8423,11 +8425,11 @@ msgstr "Hoch"
 msgid "highlighted your %s"
 msgstr "hat %s als Highlight markiert"
 
-#: src/components/settings/UISettingsSection.ts:569
+#: src/components/settings/UISettingsSection.ts:644
 msgid "Highlights shown again"
 msgstr "Highlights wieder eingeblendet"
 
-#: src/components/settings/UISettingsSection.ts:149
+#: src/components/settings/UISettingsSection.ts:170
 msgid "Hijri"
 msgstr "Hijri"
 
@@ -8479,7 +8481,7 @@ msgstr "Bild hochgeladen"
 msgid "Image URL"
 msgstr "Bild-URL"
 
-#: src/addons/calendar/CalendarImportExport.ts:60
+#: src/addons/calendar/CalendarImportExport.ts:61
 msgid "Import"
 msgstr "Import"
 
@@ -8491,7 +8493,7 @@ msgstr "hat mit %s interagiert"
 msgid "Invalid cache size values"
 msgstr "Ungültige Cache-Größenwerte"
 
-#: src/components/views/ProfileView.ts:347
+#: src/components/views/ProfileView.ts:362
 msgid "Invalid profile ID"
 msgstr "Ungültige Profil-ID"
 
@@ -8503,7 +8505,7 @@ msgstr "Einladung angenommen"
 msgid "is now following you"
 msgstr "folgt dir jetzt"
 
-#: src/components/settings/UISettingsSection.ts:149
+#: src/components/settings/UISettingsSection.ts:170
 msgid "Islamic calendar (e.g., \"26. Rabi' ath-Thani 1446\")"
 msgstr "Islamischer Kalender (z. B. „26. Rabi' ath-Thani 1446“)"
 
@@ -8517,7 +8519,7 @@ msgstr ""
 "Feiertage und Gemeinschafts-Dhikr. Wähle Diyanet für offizielle Zeiten oder "
 "eine auf deinem Gerät berechnete Methode."
 
-#: src/components/views/ProfileView.ts:538
+#: src/components/views/ProfileView.ts:556
 msgid "Joined Nostr on %s"
 msgstr "Bei Nostr seit %s"
 
@@ -8529,7 +8531,7 @@ msgstr "Zuletzt geprüft: %s."
 msgid "Last updated %s"
 msgstr "Zuletzt aktualisiert: %s"
 
-#: src/addons/calendar/BookingManager.ts:338
+#: src/addons/calendar/BookingManager.ts:336
 msgid ""
 "Let people book appointments in your free time. Your availability is public "
 "(the slots are regular NIP-52 calendar events); bookings arrive as a "
@@ -8608,7 +8610,7 @@ msgstr "Bestehende Dhikrs werden gesucht …"
 msgid "Low (smallest size)"
 msgstr "Niedrig (kleinste Größe)"
 
-#: src/components/settings/UISettingsSection.ts:669
+#: src/components/settings/UISettingsSection.ts:766
 msgid "Main article feed: %s"
 msgstr "Haupt-Artikel-Feed: %s"
 
@@ -8624,7 +8626,7 @@ msgstr ""
 msgid "Mark all seen"
 msgstr "Alle als gesehen markieren"
 
-#: src/components/settings/UISettingsSection.ts:235
+#: src/components/settings/UISettingsSection.ts:267
 msgid ""
 "Maximum number of characters for article excerpts in the side column. "
 "Default: 200."
@@ -8650,15 +8652,15 @@ msgstr "Media-Server gespeichert"
 msgid "Medium (recommended)"
 msgstr "Mittel (empfohlen)"
 
-#: src/components/settings/UISettingsSection.ts:259
+#: src/components/settings/UISettingsSection.ts:291
 msgid "Memory optimization (experimental)"
 msgstr "Speicher-Optimierung (experimentell)"
 
-#: src/components/settings/UISettingsSection.ts:731
+#: src/components/settings/UISettingsSection.ts:828
 msgid "Memory optimization disabled"
 msgstr "Speicher-Optimierung deaktiviert"
 
-#: src/components/settings/UISettingsSection.ts:730
+#: src/components/settings/UISettingsSection.ts:827
 msgid "Memory optimization enabled"
 msgstr "Speicher-Optimierung aktiviert"
 
@@ -8666,7 +8668,7 @@ msgstr "Speicher-Optimierung aktiviert"
 msgid "mentioned you in %s"
 msgstr "hat dich in %s erwähnt"
 
-#: src/addons/calendar/BookingManager.ts:364
+#: src/addons/calendar/BookingManager.ts:362
 msgid "Minimum notice"
 msgstr "Mindestvorlauf"
 
@@ -8760,7 +8762,7 @@ msgstr "Notiz gelöscht"
 msgid "Note for %s (optional, sent as a private message)"
 msgstr "Notiz für %s (optional, wird als private Nachricht gesendet)"
 
-#: src/components/views/ProfileView.ts:674
+#: src/components/views/ProfileView.ts:692
 msgid "npub QR Code"
 msgstr "npub-QR-Code"
 
@@ -8776,7 +8778,7 @@ msgstr "Open Source"
 msgid "Other differences"
 msgstr "Andere Unterschiede"
 
-#: src/components/settings/UISettingsSection.ts:568
+#: src/components/settings/UISettingsSection.ts:643
 msgid "Others' highlights hidden"
 msgstr "Highlights anderer ausgeblendet"
 
@@ -8788,7 +8790,7 @@ msgstr "Übersicht"
 msgid "Paste your one-time code from Rizful below."
 msgstr "Füge deinen Einmalcode von Rizful unten ein."
 
-#: src/components/settings/UISettingsSection.ts:403
+#: src/components/settings/UISettingsSection.ts:435
 msgid "Phone layout (390px width)"
 msgstr "Telefon-Layout (390px Breite)"
 
@@ -8800,7 +8802,7 @@ msgstr "Telefon:"
 msgid "Pick a district first"
 msgstr "Wähle zuerst einen Bezirk"
 
-#: src/addons/calendar/BookingManager.ts:238
+#: src/addons/calendar/BookingManager.ts:236
 msgid "Pick a from and to date first"
 msgstr "Wähle zuerst Von- und Bis-Datum"
 
@@ -8808,7 +8810,7 @@ msgstr "Wähle zuerst Von- und Bis-Datum"
 msgid "Pin to top"
 msgstr "Oben anpinnen"
 
-#: src/components/settings/UISettingsSection.ts:440
+#: src/components/settings/UISettingsSection.ts:472
 msgid "Post truncation enabled"
 msgstr "Beitrags-Kürzung aktiviert"
 
@@ -8820,11 +8822,11 @@ msgstr "hat einen neuen Artikel veröffentlicht"
 msgid "Posts module not ready"
 msgstr "Beiträge-Modul nicht bereit"
 
-#: src/components/settings/UISettingsSection.ts:758
+#: src/components/settings/UISettingsSection.ts:855
 msgid "Posts will be signed with \"via NoorNote\""
 msgstr "Beiträge werden mit „via NoorNote“ signiert"
 
-#: src/components/settings/UISettingsSection.ts:759
+#: src/components/settings/UISettingsSection.ts:856
 msgid "Posts will be signed without client tag"
 msgstr "Beiträge werden ohne Client-Tag signiert"
 
@@ -8855,7 +8857,7 @@ msgstr ""
 "öffentlich preiszugeben, wen du stummschalten. Deine Mute-Liste ist "
 "verschlüsselt und nur für dich sichtbar."
 
-#: src/components/views/ProfileView.ts:1507
+#: src/components/views/ProfileView.ts:1526
 #: src/lists/follows.ts:2415
 msgid "Private Note"
 msgstr "Private Notiz"
@@ -8882,13 +8884,13 @@ msgstr "hat dieses Listing zitiert:"
 msgid "Re-sync"
 msgstr "Neu synchronisieren"
 
-#: src/components/settings/UISettingsSection.ts:594
+#: src/components/settings/UISettingsSection.ts:691
 msgid "Reactions from people you follow now appear in your timeline"
 msgstr ""
 "Reaktionen von Menschen, denen du folgst, erscheinen jetzt in deiner "
 "Timeline"
 
-#: src/components/settings/UISettingsSection.ts:597
+#: src/components/settings/UISettingsSection.ts:694
 msgid "Reactions hidden from your timeline again"
 msgstr "Reaktionen wieder aus deiner Timeline ausgeblendet"
 
@@ -8925,15 +8927,15 @@ msgstr "Reposts (%s)"
 msgid "Reposts & quotes"
 msgstr "Reposts & Zitate"
 
-#: src/components/settings/UISettingsSection.ts:389
+#: src/components/settings/UISettingsSection.ts:421
 msgid "Right Pane (RSS Mode)"
 msgstr "Rechter Bereich (RSS-Modus)"
 
-#: src/components/settings/UISettingsSection.ts:400
+#: src/components/settings/UISettingsSection.ts:432
 msgid "Right pane mode (views as tabs)"
 msgstr "Rechtsbereich-Modus (Views als Tabs)"
 
-#: src/components/settings/UISettingsSection.ts:401
+#: src/components/settings/UISettingsSection.ts:433
 msgid "Right pane RSS mode (compact timeline)"
 msgstr "Rechtsbereich-RSS-Modus (kompakte Timeline)"
 
@@ -8960,7 +8962,7 @@ msgstr "Alle sichtbaren auswählen"
 msgid "Select by search term"
 msgstr "Nach Suchbegriff auswählen"
 
-#: src/components/settings/UISettingsSection.ts:517
+#: src/components/settings/UISettingsSection.ts:592
 msgid "Self-reposts shown again"
 msgstr "Eigene Reposts wieder eingeblendet"
 
@@ -9014,7 +9016,7 @@ msgstr "Zeige dein Lightning-Wallet-Guthaben in der Sidebar mit Fiat-Umrechnung.
 msgid "Sidebar Widget"
 msgstr "Sidebar-Widget"
 
-#: src/components/settings/UISettingsSection.ts:269
+#: src/components/settings/UISettingsSection.ts:301
 msgid "Sign posts with \"via NoorNote\""
 msgstr "Beiträge mit „via NoorNote“ signieren"
 
@@ -9022,7 +9024,7 @@ msgstr "Beiträge mit „via NoorNote“ signieren"
 msgid "silently zapped your %s"
 msgstr "hat anonym %s gezappt"
 
-#: src/components/settings/UISettingsSection.ts:138
+#: src/components/settings/UISettingsSection.ts:149
 msgid "Single-column layout (390px width) for phone development and testing"
 msgstr "Einspaltiges Layout (390px Breite) für Telefon-Entwicklung und Tests"
 
@@ -9036,7 +9038,7 @@ msgstr "Site-Hash"
 msgid "Skip compression for files below"
 msgstr "Komprimierung überspringen für Dateien unter"
 
-#: src/addons/calendar/BookingManager.ts:356
+#: src/addons/calendar/BookingManager.ts:354
 msgid "Slot length"
 msgstr "Slot-Länge"
 
@@ -9049,12 +9051,12 @@ msgstr "Slug"
 msgid "Slug / Identifier"
 msgstr "Slug / Kennung"
 
-#: src/components/views/ProfileView.ts:1163
-#: src/components/views/ProfileView.ts:992
+#: src/components/views/ProfileView.ts:1011
+#: src/components/views/ProfileView.ts:1182
 msgid "Soft mute"
 msgstr "Soft-Stumm"
 
-#: src/components/views/ProfileView.ts:1167
+#: src/components/views/ProfileView.ts:1186
 msgid "Soft mute lifted"
 msgstr "Soft-Stummschaltung aufgehoben"
 
@@ -9088,7 +9090,7 @@ msgstr ""
 "(Art. 45 DSGVO). Eine Übermittlung an die Server von MyNymbox erfolgt auf "
 "Grundlage der Ausnahmen des Art. 49 (1) DSGVO."
 
-#: src/components/settings/UISettingsSection.ts:148
+#: src/components/settings/UISettingsSection.ts:169
 msgid "Standard Western calendar (e.g., \"30. Oct. 2024\")"
 msgstr "Standard-Westernder Kalender (z. B. „30. Okt. 2024“)"
 
@@ -9124,7 +9126,7 @@ msgstr "Zeitstempel & Maker-Blob entfernen (EXIF)"
 msgid "Submit"
 msgstr "Absenden"
 
-#: src/components/views/ProfileView.ts:687
+#: src/components/views/ProfileView.ts:705
 msgid "Switch to NoorSigner or browser extension to send messages"
 msgstr "Wechsle zu NoorSigner oder Browser-Extension, um Nachrichten zu senden"
 
@@ -9174,19 +9176,19 @@ msgstr "Sie erhalten eine verschlüsselte Einladung mit dem View-Key des Ereigni
 msgid "They sell your data"
 msgstr "Sie verkaufen deine Daten"
 
-#: src/components/views/ProfileView.ts:1107
+#: src/components/views/ProfileView.ts:1126
 msgid "This user's highlights are now hidden"
 msgstr "Die Highlights dieses Benutzers sind jetzt ausgeblendet"
 
-#: src/components/views/ProfileView.ts:1108
+#: src/components/views/ProfileView.ts:1127
 msgid "This user's highlights are shown again"
 msgstr "Die Highlights dieses Benutzers werden wieder angezeigt"
 
-#: src/components/views/ProfileView.ts:1137
+#: src/components/views/ProfileView.ts:1156
 msgid "This user's reactions are hidden from your timeline again"
 msgstr "Die Reaktionen dieses Benutzers sind wieder aus deiner Timeline ausgeblendet"
 
-#: src/components/views/ProfileView.ts:1136
+#: src/components/views/ProfileView.ts:1155
 msgid "This user's reactions now appear in your timeline"
 msgstr "Die Reaktionen dieses Benutzers erscheinen jetzt in deiner Timeline"
 
@@ -9208,7 +9210,7 @@ msgstr "Titel *"
 msgid "to"
 msgstr "bis"
 
-#: src/components/views/ProfileView.ts:1758
+#: src/components/views/ProfileView.ts:1777
 msgid "Tribe not found"
 msgstr "Tribe nicht gefunden"
 
@@ -9259,24 +9261,25 @@ msgstr "Videokomprimierung deaktiviert"
 msgid "Video compression enabled"
 msgstr "Videokomprimierung aktiviert"
 
-#: src/components/views/ProfileView.ts:2267
-#: src/components/views/ProfileView.ts:725
+#: src/components/views/ProfileView.ts:2345
+#: src/components/views/ProfileView.ts:743
+#: src/shell/focusDomains.ts:55
 msgid "Videos"
 msgstr "Videos"
 
-#: src/components/settings/UISettingsSection.ts:136
+#: src/components/settings/UISettingsSection.ts:147
 msgid "Views open as tabs in the right pane, timeline stays visible in main pane"
 msgstr ""
 "Views öffnen sich als Tabs im rechten Bereich, die Timeline bleibt im "
 "Hauptbereich sichtbar"
 
-#: src/components/settings/UISettingsSection.ts:135
+#: src/components/settings/UISettingsSection.ts:146
 msgid "Views replace the timeline in the main pane, right pane shows System Logger"
 msgstr ""
 "Views ersetzen die Timeline im Hauptbereich, der rechte Bereich zeigt den "
 "System-Logger"
 
-#: src/components/settings/UISettingsSection.ts:137
+#: src/components/settings/UISettingsSection.ts:148
 msgid "Views replace the timeline, right pane is hidden for maximum content space"
 msgstr ""
 "Views ersetzen die Timeline, der rechte Bereich ist für maximalen Platz "
@@ -9305,7 +9308,7 @@ msgstr "Wallet nicht verbunden"
 msgid "Warning:"
 msgstr "Warnung:"
 
-#: src/components/settings/UISettingsSection.ts:213
+#: src/components/settings/UISettingsSection.ts:234
 msgid ""
 "When enabled, highlight posts by others that quote an external website "
 "(kind 9802 with a web source) are hidden from your timelines, including "
@@ -9317,7 +9320,7 @@ msgstr ""
 "inklusive reiner Reposts davon. Deine eigenen Highlights bleiben sichtbar. "
 "Einzelne Benutzer kannst du über deren Profil ausblenden."
 
-#: src/components/settings/UISettingsSection.ts:223
+#: src/components/settings/UISettingsSection.ts:255
 msgid ""
 "When enabled, long posts will always be displayed in full without \"Show "
 "More\" buttons."
@@ -9325,7 +9328,7 @@ msgstr ""
 "Aktiviert werden lange Beiträge immer vollständig ohne „Mehr "
 "anzeigen“-Buttons dargestellt."
 
-#: src/components/settings/UISettingsSection.ts:160
+#: src/components/settings/UISettingsSection.ts:181
 msgid ""
 "When enabled, reposts of a user's own notes are hidden from your timeline. "
 "Reposts of other people's notes are unaffected."
@@ -9393,7 +9396,7 @@ msgstr ""
 "Wenn du jemandem folgst, speichert die App dessen aktuellen Namen und "
 "Profilbild"
 
-#: src/components/settings/UISettingsSection.ts:252
+#: src/components/settings/UISettingsSection.ts:284
 msgid ""
 "Whose articles appear in the side column's \"Newest Articles\" tab. Same "
 "degree meaning as above; you can pick a narrower degree here to keep the "
@@ -9403,12 +9406,12 @@ msgstr ""
 "Gleiche Grad-Bedeutung wie oben; wähle hier einen engeren Grad, um die "
 "Seitenspalte auf nähere Kontakte zu fokussieren."
 
-#: src/components/settings/UISettingsSection.ts:137
-#: src/components/settings/UISettingsSection.ts:390
+#: src/components/settings/UISettingsSection.ts:148
+#: src/components/settings/UISettingsSection.ts:422
 msgid "Wide Mode"
 msgstr "Breitmodus"
 
-#: src/components/settings/UISettingsSection.ts:402
+#: src/components/settings/UISettingsSection.ts:434
 msgid "Wide mode (hide right pane)"
 msgstr "Breitmodus (rechten Bereich ausblenden)"
 
@@ -9419,7 +9422,7 @@ msgstr "Breitmodus (rechten Bereich ausblenden)"
 msgid "Word Filter"
 msgstr "Wortfilter"
 
-#: src/components/views/ProfileView.ts:1512
+#: src/components/views/ProfileView.ts:1531
 #: src/lists/follows.ts:2420
 msgid "Write anything you want to remember about this user…"
 msgstr "Schreibe alles, was du dir über diesen Benutzer merken willst …"
@@ -9488,7 +9491,7 @@ msgstr ""
 msgid "Your voice.<br><em>Unstoppable.</em>"
 msgstr "Deine Stimme.<br><em>Unaufhaltbar.</em>"
 
-#: src/components/views/ProfileView.ts:699
+#: src/components/views/ProfileView.ts:717
 msgid "Zap this user"
 msgstr "Diesen Benutzer zappen"
 
@@ -10326,7 +10329,7 @@ msgstr "Ordner löschen"
 msgid "Delete folder (items move to root)"
 msgstr "Ordner löschen (Einträge wandern nach Hauptebene)"
 
-#: src/components/layout/MainLayout.ts:101
+#: src/components/layout/MainLayout.ts:106
 msgid "List: %s"
 msgstr "Liste: %s"
 
@@ -10397,7 +10400,7 @@ msgstr "Zaps: Eing. (%s) %s | Ausg. (%s) %s"
 msgid "Zaps: Loading..."
 msgstr "Zaps: Laden …"
 
-#: src/components/layout/MainLayout.ts:2032
+#: src/components/layout/MainLayout.ts:2090
 msgid "← Back"
 msgstr "← Zurück"
 
@@ -10659,7 +10662,7 @@ msgstr "%s Konten"
 msgid "+ New Event"
 msgstr "+ Neues Event"
 
-#: src/components/layout/MainLayout.ts:2551
+#: src/components/layout/MainLayout.ts:2609
 msgid "About"
 msgstr "Über"
 
@@ -10767,6 +10770,8 @@ msgid "Direct messages are not available with Bunker URL login"
 msgstr "Private Mitteilungen sind mit Bunker-URL-Login nicht verfügbar"
 
 #: src/addons/calendar/CalendarGridView.ts:303
+#: src/components/layout/MainLayout.ts:1954
+#: src/components/layout/MainLayout.ts:1955
 msgid "Dismiss"
 msgstr "Ablehnen"
 
@@ -10811,15 +10816,15 @@ msgstr "Follow-Pack konnte nicht geladen werden"
 msgid "Failed to load note"
 msgstr "Note konnte nicht geladen werden"
 
-#: src/components/views/ProfileView.ts:416
+#: src/components/views/ProfileView.ts:434
 msgid "Failed to load profile"
 msgstr "Profil konnte nicht geladen werden"
 
-#: src/components/views/managers/ThreadManager.ts:194
+#: src/components/views/managers/ThreadManager.ts:200
 msgid "Failed to load replies"
 msgstr "Antworten konnten nicht geladen werden"
 
-#: src/components/replies/RepliesRenderer.ts:192
+#: src/components/replies/RepliesRenderer.ts:203
 msgid "Failed to load replies. Please try again."
 msgstr "Antworten konnten nicht geladen werden. Bitte erneut versuchen."
 
@@ -10890,8 +10895,8 @@ msgstr "Lade zitierte Inhalte..."
 msgid "Loading quoted note..."
 msgstr "Lade zitierte Note..."
 
-#: src/components/replies/RepliesRenderer.ts:90
-#: src/components/views/managers/ThreadManager.ts:128
+#: src/components/replies/RepliesRenderer.ts:92
+#: src/components/views/managers/ThreadManager.ts:130
 msgid "Loading replies..."
 msgstr "Lade Antworten..."
 
@@ -10960,8 +10965,8 @@ msgstr "Keine Notes auf diesem Relay gefunden"
 msgid "No recipes from your follows yet."
 msgstr "Noch keine Rezepte von deinen Konten."
 
-#: src/components/replies/RepliesRenderer.ts:136
-#: src/components/views/managers/ThreadManager.ts:154
+#: src/components/replies/RepliesRenderer.ts:138
+#: src/components/views/managers/ThreadManager.ts:156
 msgid "No replies or quotes yet"
 msgstr "Noch keine Antworten oder Zitate"
 
@@ -11257,12 +11262,12 @@ msgstr "Tribe „%s“ löschen? %s Mitglieder werden gelöscht."
 msgid "Delete tribe \"%s\"? 1 member will be deleted."
 msgstr "Tribe „%s“ löschen? 1 Mitglied wird gelöscht."
 
-#: src/addons/calendar/BookingManager.ts:428
+#: src/addons/calendar/BookingManager.ts:426
 #: src/addons/calendar/CalendarEventModal.ts:529
 msgid "failed DM: 1"
 msgstr "fehlgeschlagene DM: 1"
 
-#: src/addons/calendar/BookingManager.ts:428
+#: src/addons/calendar/BookingManager.ts:426
 #: src/addons/calendar/CalendarEventModal.ts:529
 msgid "failed DMs: %s"
 msgstr "fehlgeschlagene DMs: %s"
@@ -11307,7 +11312,7 @@ msgstr "Ungültige Datei"
 msgid "KeySigner connection unstable - logged out"
 msgstr "KeySigner-Verbindung instabil - abgemeldet"
 
-#: src/services/PostService.ts:336
+#: src/services/PostService.ts:359
 msgid "Note posted successfully!"
 msgstr "Note erfolgreich gepostet!"
 
@@ -11315,7 +11320,7 @@ msgstr "Note erfolgreich gepostet!"
 msgid "Please log in to upload files"
 msgstr "Bitte melde dich an, um Dateien hochzuladen"
 
-#: src/services/PostService.ts:335
+#: src/services/PostService.ts:358
 msgid "Poll posted successfully!"
 msgstr "Umfrage erfolgreich gepostet!"
 
@@ -11335,7 +11340,7 @@ msgstr "„%s\" vom Profil getrennt"
 msgid "An error occurred while deleting the note"
 msgstr "Fehler beim Löschen der Notiz"
 
-#: src/components/ui/NoteMenu.ts:832
+#: src/components/ui/NoteMenu.ts:884
 msgid "Author added to %s"
 msgstr "Autor zu %s hinzugefügt"
 
@@ -11449,19 +11454,19 @@ msgstr ""
 msgid "Remove loaded .po file"
 msgstr "Geladene .po-Datei entfernen"
 
-#: src/components/settings/UISettingsSection.ts:489
+#: src/components/settings/UISettingsSection.ts:564
 msgid "Back button hidden"
 msgstr "Zurück-Button ausgeblendet"
 
-#: src/components/settings/UISettingsSection.ts:489
+#: src/components/settings/UISettingsSection.ts:564
 msgid "Back button shown"
 msgstr "Zurück-Button eingeblendet"
 
-#: src/components/settings/UISettingsSection.ts:190
+#: src/components/settings/UISettingsSection.ts:211
 msgid "Global Back Button"
 msgstr "Globaler Zurück-Button"
 
-#: src/components/settings/UISettingsSection.ts:193
+#: src/components/settings/UISettingsSection.ts:214
 msgid "Show the Back button at the bottom of the content column."
 msgstr "Zeigt den Zurück-Button unten in der Inhaltsspalte an."
 
@@ -11786,11 +11791,11 @@ msgstr ""
 "jede Community manuell hinzufügen, indem du ihren Einladungslink unten "
 "einfügst."
 
-#: src/components/settings/UISettingsSection.ts:242
+#: src/components/settings/UISettingsSection.ts:274
 msgid "Article feed source, main view"
 msgstr "Artikel-Feed-Quelle, Hauptansicht"
 
-#: src/components/settings/UISettingsSection.ts:249
+#: src/components/settings/UISettingsSection.ts:281
 msgid "Article feed source, secondary column"
 msgstr "Artikel-Feed-Quelle, sekundäre Spalte"
 
@@ -11811,7 +11816,7 @@ msgstr "Buchung storniert, Gast und Teilnehmer informiert"
 msgid "Booking cancelled, host and 1 participant informed"
 msgstr "Buchung storniert, Gastgeber und 1 Teilnehmer informiert"
 
-#: src/addons/calendar/BookingManager.ts:205
+#: src/addons/calendar/BookingManager.ts:206
 msgid "Booking page disabled, published slots removed"
 msgstr "Buchungsseite deaktiviert, veröffentlichte Slots entfernt"
 
@@ -11819,7 +11824,7 @@ msgstr "Buchungsseite deaktiviert, veröffentlichte Slots entfernt"
 msgid "Card options"
 msgstr "Kartenoptionen"
 
-#: src/addons/calendar/CalendarImportExport.ts:132
+#: src/addons/calendar/CalendarImportExport.ts:133
 msgid ""
 "Clears your calendar on this device only, events, booking slots, saved and "
 "private events. Like unsaved changes in a desktop app: your relays still "
@@ -11869,15 +11874,15 @@ msgstr ""
 "lokal auf diesem Gerät, nichts wird veröffentlicht. Einzelne Termine können "
 "dies in ihrem Editor überschreiben."
 
-#: src/components/settings/UISettingsSection.ts:638
+#: src/components/settings/UISettingsSection.ts:735
 msgid "Degree 1, Direct follows"
 msgstr "Grad 1, Direkte Folgungen"
 
-#: src/components/settings/UISettingsSection.ts:639
+#: src/components/settings/UISettingsSection.ts:736
 msgid "Degree 2, Friends of friends"
 msgstr "Grad 2, Freunde von Folgungen"
 
-#: src/components/settings/UISettingsSection.ts:642
+#: src/components/settings/UISettingsSection.ts:739
 msgid "Degree 3, Friends of friends of friends (slow to build)"
 msgstr "Grad 3, Freunde von Freunden von Folgungen (langsam im Aufbau)"
 
@@ -11885,7 +11890,7 @@ msgstr "Grad 3, Freunde von Freunden von Folgungen (langsam im Aufbau)"
 msgid "Details (visible to everyone, this is a public event)"
 msgstr "Details (für alle sichtbar, dies ist ein öffentliches Ereignis)"
 
-#: src/addons/calendar/CalendarImportExport.ts:62
+#: src/addons/calendar/CalendarImportExport.ts:63
 msgid ""
 "Import a Google Calendar or any .ics export, events are previewed first and "
 "imported to this device. Publishing them to your relays is a separate step "
@@ -11986,7 +11991,7 @@ msgstr ""
 "Hintergrund an Relays übertragen wird, Relays können sie umsetzen oder "
 "nicht. Löschung ist nicht garantiert und nicht rückgängig zu machen."
 
-#: src/components/settings/UISettingsSection.ts:111
+#: src/components/settings/UISettingsSection.ts:122
 msgid "pilot translation (partial, untranslated text stays English)"
 msgstr "Pilot-Übersetzung (unvollständig, unübersetzter Text bleibt Englisch)"
 
@@ -12081,7 +12086,7 @@ msgstr ""
 msgid "Signer did not respond, message not sent"
 msgstr "Signer hat nicht geantwortet, Nachricht nicht gesendet"
 
-#: src/components/settings/UISettingsSection.ts:262
+#: src/components/settings/UISettingsSection.ts:294
 msgid ""
 "Skips rendering of off-screen notes (CSS <code>content-visibility: "
 "auto</code>). Significantly reduces memory usage on long timelines, "
@@ -12093,7 +12098,7 @@ msgstr ""
 "langen Timelines deutlich, besonders unter Linux. Kann beim schnellen "
 "Scrollen kleine Scrollbar-Sprünge verursachen, abschalten, wenn es stört."
 
-#: src/components/views/ProfileView.ts:1166
+#: src/components/views/ProfileView.ts:1185
 msgid "Soft muted, their interactions no longer notify you"
 msgstr "Soft-Mute aktiv, Interaktionen dieses Users benachrichtigen dich nicht mehr"
 
@@ -12161,7 +12166,7 @@ msgstr "Zap an den Entwickler senden"
 msgid "%s enabled, add communities below"
 msgstr "%s aktiviert, füge unten Communities hinzu"
 
-#: src/addons/calendar/CalendarImportExport.ts:91
+#: src/addons/calendar/CalendarImportExport.ts:92
 msgid ""
 "%s imported event is on this device only, it appears in your calendar "
 "locally, but your relays don't have it yet."
@@ -12208,7 +12213,7 @@ msgstr "Buchung storniert, %s Empfänger informiert"
 msgid "Booking cancelled, host and %s participants informed"
 msgstr "Buchung storniert, Gastgeber und %s Teilnehmer informiert"
 
-#: src/addons/calendar/BookingManager.ts:200
+#: src/addons/calendar/BookingManager.ts:201
 msgid "Booking page updated, %s slots published, %s removed"
 msgstr "Buchungsseite aktualisiert, %s Slots veröffentlicht, %s entfernt"
 
@@ -12292,7 +12297,7 @@ msgstr ""
 "Die Stornierung konnte nicht veröffentlicht werden, kein Relay hat sie "
 "akzeptiert. Prüfe deine Verbindung und versuche es erneut."
 
-#: src/addons/calendar/CalendarImportExport.ts:216
+#: src/addons/calendar/CalendarImportExport.ts:217
 msgid ""
 "This clears your whole calendar on this device: events, booking slots, "
 "saved and private events. Nothing is deleted on your relays yet, click "
@@ -12322,7 +12327,7 @@ msgstr ""
 "Geräts komprimiert (WebCodecs), dein Video verlässt dein Gerät erst beim "
 "Upload."
 
-#: src/addons/calendar/CalendarImportExport.ts:119
+#: src/addons/calendar/CalendarImportExport.ts:120
 msgid ""
 "Your calendar was cleared on this device. %s still on your relays, "
 "publishing the deletions makes the wipe permanent. Until then, reloading "
@@ -12391,6 +12396,254 @@ msgstr "%s neue Erwähnungen/Antworten in %s"
 #: src/components/notifications/NotificationItem.ts:719
 msgid "mentioned or replied to you in %s"
 msgstr "hat dich in %s erwähnt oder dir geantwortet"
+
+#: src/components/replies/RepliesRenderer.ts:277
+#: src/components/views/managers/ThreadManager.ts:242
+msgid "(Author)"
+msgstr "(Autor)"
+
+#: src/components/ui/note-rendering/LiveStreamRenderer.ts:64
+msgid ""
+"Activate the <a class=\"live-stream-card__hint-link\" "
+"href=\"/addons/live-streams\">Live Streams</a> addon to see this live "
+"stream."
+msgstr ""
+"Aktiviere das <a class=\"live-stream-card__hint-link\" "
+"href=\"/addons/live-streams\">Live Streams</a> Addon, um diesen Livestream "
+"zu sehen."
+
+#: src/components/settings/UISettingsSection.ts:530
+#: src/shell/focusShell.ts:197
+msgid "Classic interface active"
+msgstr "Klassische Oberfläche aktiv"
+
+#: src/addons/live-streams/LiveStreamsAddonView.ts:157
+msgid "Currently live"
+msgstr "Gerade live"
+
+#: src/addons/live-streams/LiveStreamsAddonView.ts:86
+msgid "Enable Live Streams"
+msgstr "Live Streams aktivieren"
+
+#: src/addons/live-streams/LiveStreamsAddonView.ts:254
+msgid "Ended"
+msgstr "Beendet"
+
+#: src/components/settings/UISettingsSection.ts:159
+msgid ""
+"Experimental v2 interface: all domains are equal surfaces, one takes the "
+"central focus. Layout modes have no effect while active. The classic "
+"interface stays the default and is one switch away."
+msgstr ""
+"Experimentelle v2-Oberfläche: Alle Domänen sind gleichwertige Flächen, eine "
+"nimmt den zentralen Fokus ein. Layout-Modi haben keine Wirkung, solange sie "
+"aktiv ist. Die klassische Oberfläche bleibt Standard und ist mit einem "
+"Schalter erreichbar."
+
+#: src/components/settings/UISettingsSection.ts:665
+msgid "Expiry notices hidden"
+msgstr "Ablaufhinweise ausgeblendet"
+
+#: src/components/settings/UISettingsSection.ts:665
+msgid "Expiry notices shown"
+msgstr "Ablaufhinweise eingeblendet"
+
+#: src/addons/live-streams/LiveStreamsAddonView.ts:236
+msgid "Failed to load live streams"
+msgstr "Livestreams konnten nicht geladen werden"
+
+#: src/components/ui/NoteMenu.ts:628
+msgid "Failed to update pin"
+msgstr "Pin konnte nicht aktualisiert werden"
+
+#: src/components/settings/UISettingsSection.ts:156
+#: src/shell/focusShell.ts:187
+msgid "Focus UI (v2)"
+msgstr "Focus UI (v2)"
+
+#: src/components/settings/UISettingsSection.ts:529
+msgid "Focus UI active. Layout modes are ignored."
+msgstr "Focus UI aktiv. Layout-Modi werden ignoriert."
+
+#: src/components/views/WhatsNewView.ts:76
+msgid "Highlight of v%s"
+msgstr "Highlight von v%s"
+
+#: src/addons/live-streams/LiveStreamsAddonView.ts:252
+#: src/addons/live-streams/LiveStreamsSidebarWidget.ts:141
+msgid "Live"
+msgstr "Live"
+
+#: src/addons/addonI18n.ts:42
+#: src/addons/live-streams/LiveStreamsAddonView.ts:72
+#: src/addons/live-streams/LiveStreamsAddonView.ts:73
+#: src/addons/live-streams/LiveStreamsAddonView.ts:83
+#: src/shell/focusDomains.ts:61
+msgid "Live Streams"
+msgstr "Live Streams"
+
+#: src/addons/live-streams/LiveStreamsAddonView.ts:174
+msgid "Loading more streams..."
+msgstr "Lade weitere Streams..."
+
+#: src/addons/live-streams/LiveStreamDetailView.ts:30
+msgid "Loading stream…"
+msgstr "Stream wird geladen…"
+
+#: src/components/post/PostNoteModal.ts:444
+msgid "Never expires"
+msgstr "Läuft nie ab"
+
+#: src/addons/live-streams/LiveStreamsAddonView.ts:161
+msgid "No live streams found."
+msgstr "Keine Livestreams gefunden."
+
+#: src/components/ui/NoteMenu.ts:621
+msgid "Note pinned to profile"
+msgstr "Note ans Profil angeheftet"
+
+#: src/components/ui/NoteMenu.ts:624
+msgid "Note unpinned from profile"
+msgstr "Note vom Profil entpinnt"
+
+#: src/addons/live-streams/LiveStreamsMiniPlayerWidget.ts:54
+msgid "Pause"
+msgstr "Pause"
+
+#: src/components/ui/NoteMenu.ts:182
+msgid "Pin to profile"
+msgstr "Ans Profil heften"
+
+#: src/addons/live-streams/LiveStreamsAddonView.ts:255
+msgid "Planned"
+msgstr "Geplant"
+
+#: src/addons/live-streams/LiveStreamsMiniPlayerWidget.ts:54
+msgid "Play"
+msgstr "Abspielen"
+
+#: src/addons/live-streams/LiveStreamDetailView.ts:78
+msgid "Play in background"
+msgstr "Im Hintergrund abspielen"
+
+#: src/components/ui/note-rendering/OriginalNoteRenderer.ts:160
+msgid "Post expired on %s"
+msgstr "Note ist am %s abgelaufen"
+
+#: src/components/ui/note-rendering/OriginalNoteRenderer.ts:161
+msgid "Post expires on %s"
+msgstr "Note läuft am %s ab"
+
+#: src/components/post/PostNoteModal.ts:480
+msgid "Set expiry"
+msgstr "Ablaufzeit setzen"
+
+#: src/components/settings/UISettingsSection.ts:244
+msgid ""
+"Show a small \"Post expires on …\" line under notes that carry an "
+"expiration time (NIP-40). Off by default."
+msgstr ""
+"Zeigt eine kleine Zeile \"Note läuft am … ab\" unter Notes mit Ablaufzeit "
+"(NIP-40). Standardmäßig aus."
+
+#: src/addons/live-streams/LiveStreamsAddonView.ts:153
+msgid ""
+"Show a widget in the sidebar with the currently-live streams of people you "
+"follow (max 3). The widget is hidden when nobody you follow is live."
+msgstr ""
+"Zeigt ein Widget in der Seitenleiste mit den gerade laufenden Streams der "
+"Leute, denen du folgst (max. 3). Das Widget bleibt verborgen, wenn niemand "
+"live ist."
+
+#: src/components/settings/UISettingsSection.ts:241
+msgid "Show expiry notice"
+msgstr "Ablaufhinweis anzeigen"
+
+#: src/addons/live-streams/LiveStreamsAddonView.ts:151
+msgid "Show Live Streams Widget"
+msgstr "Live-Streams-Widget anzeigen"
+
+#: src/addons/live-streams/LiveStreamsAddonView.ts:282
+#: src/addons/live-streams/LiveStreamsSidebarWidget.ts:137
+msgid "Started %s"
+msgstr "Gestartet %s"
+
+#: src/addons/live-streams/LiveStreamsMiniPlayerWidget.ts:57
+msgid "Stop"
+msgstr "Stopp"
+
+#: src/addons/live-streams/LiveStreamDetailView.ts:49
+#: src/addons/live-streams/LiveStreamDetailView.ts:97
+msgid "Stream not found on your relays."
+msgstr "Stream auf deinen Relays nicht gefunden."
+
+#: src/components/settings/RelaySettingsSection.ts:361
+msgid "Supported NIPs"
+msgstr "Unterstützte NIPs"
+
+#: src/components/ui/NoteMenu.ts:182
+msgid "Unpin from profile"
+msgstr "Vom Profil lösen"
+
+#: src/components/views/WhatsNewView.ts:73
+msgid "What's New"
+msgstr "Was ist neu"
+
+#: src/components/layout/MainLayout.ts:1948
+msgid "What's new in v%s"
+msgstr "Neu in v%s"
+
+#: src/components/settings/UISettingsSection.ts:245
+msgid ""
+"Check that all of your write relays support NIP-40. Note: even if they do, "
+"someone could repost your note to relays without NIP-40 support, and the "
+"expiration no longer applies there."
+msgstr ""
+"Prüfe, ob alle deine Write-Relays NIP-40 unterstützen. Hinweis: Auch dann "
+"könnte jemand deine Note auf Relays ohne NIP-40-Unterstützung repostieren, "
+"dort gilt die Ablaufzeit nicht mehr."
+
+#: src/services/PostService.ts:848
+msgid ""
+"None of the selected relays support NIP-40 (expiration), the note may be "
+"stored permanently."
+msgstr ""
+"Keines der ausgewählten Relays unterstützt NIP-40 (Ablaufzeit), die Note "
+"kann dauerhaft gespeichert werden."
+
+#: src/components/settings/RelaySettingsSection.ts:437
+msgid ""
+"Not available: this relay publishes no NIP-11 info document (or CORS blocks "
+"it from the browser)."
+msgstr ""
+"Nicht verfügbar: Dieses Relay veröffentlicht kein NIP-11-Info-Dokument "
+"(oder CORS blockiert es im Browser)."
+
+#: src/addons/live-streams/LiveStreamsAddonView.ts:88
+msgid ""
+"Play NIP-53 live streams inline right from the timeline, no need to leave "
+"NoorNote. Uses hls.js; large providers like zap.stream are supported out of "
+"the box. Currently running streams are listed below."
+msgstr ""
+"Spiele NIP-53-Livestreams direkt aus der Timeline ab, ohne NoorNote zu "
+"verlassen. Nutzt hls.js; große Anbieter wie zap.stream funktionieren ohne "
+"Einrichtung. Laufende Streams werden unten gelistet."
+
+#: src/shell/focusShell.ts:83
+msgid "Bottom panel"
+msgstr "Untere Fläche"
+
+#: src/shell/focusShell.ts:83
+msgid "Top panel"
+msgstr "Obere Fläche"
+
+#: src/shell/focusDomains.ts:57
+msgid "Nostr Majlis"
+msgstr "Nostr Majlis"
+
+#: src/shell/focusDomains.ts:54
+msgid "Social Media"
+msgstr "Social Media"
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"

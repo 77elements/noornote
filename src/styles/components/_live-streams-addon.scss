@@ -65,6 +65,14 @@
     text-decoration: none;
     color: inherit;
 
+    // The whole row is an <a> — the global link chrome (underline on
+    // hover/active/focus) must not leak into the widget.
+    &:hover,
+    &:active,
+    &:focus {
+      text-decoration: none;
+    }
+
     & + & {
       border-top: 1px solid var(--color-2);
     }

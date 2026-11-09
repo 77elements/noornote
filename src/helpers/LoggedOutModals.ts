@@ -40,7 +40,7 @@ const MODAL_MESSAGES: Record<string, { icon: string; text: string }> = {
   },
   dm: {
     icon: '✉️',
-    text: "Want to drop them a private message? Encrypted, peer-to-peer — but you'll need a key first.", // i18n-ok (translated at use site: _(msg.text))
+    text: "Want to drop them a private message? Encrypted, peer-to-peer, but you'll need a key first.", // i18n-ok (translated at use site: _(msg.text))
   },
 };
 
