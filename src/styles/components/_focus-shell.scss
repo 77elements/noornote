@@ -149,6 +149,7 @@ html.ui--focus {
 
   // Focused: the circle is the center column. Geometry is animated by
   // focusStage.ts (WAAPI); these are the final values it animates to.
+  // No background: the shell (and its watermark) shows through.
   &--active {
     max-width: none;
     width: 100%; // fill the 600px center column (base width is the 230px circle)
@@ -157,7 +158,7 @@ html.ui--focus {
     border: none; // the column needs no circle frame
     outline: none; // ...nor its outer ring
     border-radius: $radius-xl;
-    background: var(--color-1);
+    background: none;
   }
 }
 
@@ -262,6 +263,13 @@ html.ui--focus {
 .ui--focus .view-content {
   margin-top: 3rem;
   padding: 0;
+}
+
+// The classic note-card hover panel is a v1 feed affordance — the shell's
+// timeline cards stay flat on hover.
+.ui--focus .note-card:hover {
+  background: transparent;
+  border-bottom-color: var(--color-2);
 }
 
 // Focus surface wrapper: hosts a domain's inner view swaps (articles:
