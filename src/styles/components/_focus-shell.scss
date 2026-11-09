@@ -428,7 +428,7 @@ $focus-tab-overlap: 1px;
 .focus-drawer::after {
   content: '';
   position: absolute;
-  left: calc(50% - #{$focus-tab-w / 2});
+  left: calc(50% - #{$focus-tab-w * 0.5});
   width: $focus-tab-w;
   height: $focus-tab-h + $focus-tab-overlap;
   z-index: 1;
@@ -476,7 +476,7 @@ $focus-tab-overlap: 1px;
   position: absolute;
   // Centered WITHOUT transform (kept for safety; the marble lives on the
   // painter layer below, transforms on the window itself are harmless now).
-  left: calc(50% - #{$focus-tab-w / 2});
+  left: calc(50% - #{$focus-tab-w * 0.5});
   width: $focus-tab-w;
   height: $focus-tab-h + $focus-tab-overlap;
   padding: 0;
