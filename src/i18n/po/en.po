@@ -409,6 +409,7 @@ msgstr "Accounts and threads you have muted."
 #: src/components/views/ArticleTimelineView.ts:59
 #: src/components/views/ProfileView.ts:2327
 #: src/components/views/ProfileView.ts:742
+#: src/shell/focusDomains.ts:62
 msgid "Articles"
 msgstr "Articles"
 
@@ -419,6 +420,7 @@ msgstr "Articles"
 #: src/components/views/ListsOverviewView.ts:69
 #: src/lists/bookmarks.ts:4480
 #: src/lists/bookmarks.ts:4516
+#: src/shell/focusDomains.ts:58
 msgid "Bookmarks"
 msgstr "Bookmarks"
 
@@ -1538,6 +1540,7 @@ msgstr "Message options"
 #: src/components/search/GlobalSearchView.ts:398
 #: src/components/views/MessagesView.ts:167
 #: src/components/views/MessagesView.ts:933
+#: src/shell/focusDomains.ts:63
 msgid "Messages"
 msgstr "Messages"
 
@@ -2003,6 +2006,7 @@ msgstr "by"
 #: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:208
 #: src/components/views/ProfileView.ts:2174
 #: src/components/views/ProfileView.ts:747
+#: src/shell/focusDomains.ts:56
 msgid "Calendar"
 msgstr "Calendar"
 
@@ -2205,6 +2209,7 @@ msgstr "User is already in tribe \"%s\""
 
 #: src/components/views/ProfileView.ts:2345
 #: src/components/views/ProfileView.ts:743
+#: src/shell/focusDomains.ts:55
 msgid "Videos"
 msgstr "Videos"
 
@@ -2259,6 +2264,7 @@ msgstr "Bookmark"
 #: src/components/ui/NoteMenu.ts:548
 #: src/lists/follows-extended.ts:447
 #: src/services/ToastService.ts:218
+#: src/shell/focusStage.ts:85
 msgid "Close"
 msgstr "Close"
 
@@ -2687,6 +2693,7 @@ msgstr "Loading…"
 #: src/components/ui/note-rendering/ListingRenderer.ts:62
 #: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1546
 #: src/helpers/renderQuotePreview.ts:153
+#: src/shell/focusDomains.ts:59
 msgid "Marketplace"
 msgstr "Marketplace"
 
@@ -5365,6 +5372,7 @@ msgstr "Note"
 
 #: src/components/layout/MainLayout.ts:1990
 #: src/components/views/NotificationsView.ts:112
+#: src/shell/focusDomains.ts:64
 msgid "Notifications"
 msgstr "Notifications"
 
@@ -6813,6 +6821,7 @@ msgstr "Follow Pack updated"
 #: src/addons/addonI18n.ts:30
 #: src/addons/follow-packs/FollowPacksView.ts:21
 #: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:143
+#: src/shell/focusDomains.ts:60
 msgid "Follow Packs"
 msgstr "Follow Packs"
 
@@ -12256,7 +12265,7 @@ msgstr ""
 "stream."
 
 #: src/components/settings/UISettingsSection.ts:530
-#: src/shell/focusShell.ts:164
+#: src/shell/focusShell.ts:197
 msgid "Classic interface active"
 msgstr "Classic interface active"
 
@@ -12299,7 +12308,7 @@ msgid "Failed to update pin"
 msgstr "Failed to update pin"
 
 #: src/components/settings/UISettingsSection.ts:156
-#: src/shell/focusShell.ts:154
+#: src/shell/focusShell.ts:187
 msgid "Focus UI (v2)"
 msgstr "Focus UI (v2)"
 
@@ -12320,6 +12329,7 @@ msgstr "Live"
 #: src/addons/live-streams/LiveStreamsAddonView.ts:72
 #: src/addons/live-streams/LiveStreamsAddonView.ts:73
 #: src/addons/live-streams/LiveStreamsAddonView.ts:83
+#: src/shell/focusDomains.ts:61
 msgid "Live Streams"
 msgstr "Live Streams"
 
@@ -12469,13 +12479,21 @@ msgstr ""
 "NoorNote. Uses hls.js; large providers like zap.stream are supported out of "
 "the box. Currently running streams are listed below."
 
-#: src/shell/focusShell.ts:66
+#: src/shell/focusShell.ts:83
 msgid "Bottom panel"
 msgstr "Bottom panel"
 
-#: src/shell/focusShell.ts:66
+#: src/shell/focusShell.ts:83
 msgid "Top panel"
 msgstr "Top panel"
+
+#: src/shell/focusDomains.ts:57
+msgid "Nostr Majlis"
+msgstr "Nostr Majlis"
+
+#: src/shell/focusDomains.ts:54
+msgid "Social Media"
+msgstr "Social Media"
 
 #: src/addons/note-taking/NoteEditorModal.ts:362
 #: src/addons/note-taking/NoteEditorModal.ts:85

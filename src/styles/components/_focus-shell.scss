@@ -14,6 +14,8 @@
 // gradient (see the panel rule below).
 
 @use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 html.ui--focus {
   // Classic chrome: fully out of the way while the shell is active.
@@ -23,9 +25,234 @@ html.ui--focus {
 }
 
 .focus-shell {
+  // The shell is the frame (chrome lives here later); the empty central
+  // area below the ED overlays is the stage (.focus-stage).
   width: 100%;
-  min-height: 100vh;
-  padding: $gap; // TEMP: hosts the temporary Focus-UI switch until settings get their place
+}
+
+// The section radial lives on #app (not on the shell — the shell is only
+// as tall as its content, which would clip the 400px radial with a hard
+// seam). Scoped to the Focus UI via :has, the classic layout is untouched.
+#app:has(> .focus-shell) {
+  @extend %bg-section;
+}
+
+// Brand watermark: the logo sits huge and faint behind the home grid — a
+// start-screen flourish. Fixed to the viewport center, so it is always
+// central (scrolls never move it). Once a domain is focused the center
+// column covers it and it fades out entirely.
+.focus-shell__brand {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 60vmin;
+  height: 60vmin;
+  color: var(--color-3);
+  opacity: $watermark-opacity;
+  transition: opacity $transition-fast;
+  pointer-events: none;
+
+  .focus-shell__brand-wheel {
+    width: 100%;
+    height: 100%;
+    fill: currentColor;
+    filter: url(#nn-engrave);
+  }
+
+  // Focused state: home grid gone — the watermark has no stage to flavor.
+  :has(.focus-stage__grid.is-focused) & {
+    opacity: 0;
+  }
+}
+
+// The free central surface area under the ED overlays — the FS grid of
+// primary domain circles lives here (docs/todos/v2-focus-ui.md).
+.focus-stage {
+  position: relative; // anchor for the brand watermark
+  padding: $gap;
+
+  // Focused: the stage becomes a viewport-fixed box — the focused column
+  // gets the SAME scroll mechanics as the classic PCC (the view's own
+  // .timeline-view__timeline is the internal scroll container with
+  // overflow-y: auto; trim compensation, IO root and rootMargin prefetch
+  // work on it unchanged). Unfocused: normal flow, the page scrolls.
+  &:has(.focus-stage__grid.is-focused) {
+    height: 100dvh;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+}
+
+// FS grid: as many circles fit into a row as the width allows — the
+// content (.focus-object, 230px) drives the column count via auto-fill;
+// rows follow the document flow, starting under the ED-t strip.
+.focus-stage__grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 230px);
+  justify-content: center;
+  gap: $gap;
+
+  // Desktop breathes: wider gaps between the circles than on phone.
+  @include desktop {
+    gap: 2rem;
+  }
+
+  // Focused state: middle column (600px) takes the active object, the
+  // side columns hold the re-parented side stacks (see below). One full-
+  // height row — the focused column fills the stage, its inner view
+  // scrolls (classic .timeline-view__timeline mechanics).
+  &.is-focused {
+    height: 100%;
+    grid-template-columns: 1fr 600px 1fr;
+    grid-template-rows: 100%;
+
+    @media (max-width: 1099px) {
+      // Takeover: no morph, single full-width column.
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+// A primary domain object: a full circle with a double ring (15px inner +
+// 15px outer, no gap — the outer ring is an outline pulled INSIDE the box,
+// hugging the border, so the whole circle fits its grid cell exactly),
+// centered label. Fixed 230px — the grid auto-fill takes it as the column
+// unit. It carries the hit area, the control satellite and the surface slot
+// for the focused column.
+.focus-object {
+  position: relative;
+  width: 230px;
+  aspect-ratio: 1;
+  justify-self: center;
+  align-self: center;
+  // Double ring in one hue, darkened purely via alpha (see $ring-* in
+  // _variables.scss): inner ring 60%, outer ring 40%.
+  border: 15px solid $ring-inner;
+  outline: 15px solid $ring-outer;
+  outline-offset: -30px; // pull the outline in: directly inside the border
+  border-radius: 50%;
+  // Soft radial glow in the object hue, centered toward the top right,
+  // slightly lighter in the middle — gives the circle a lit, dome-like feel.
+  background-image: $focus-glow;
+  transition: border-color $transition-fast, outline-color $transition-fast,
+    background-color $transition-fast;
+
+  &:hover {
+    background-color: color-mix(in srgb, var(--color-3) 8%, transparent);
+    border-color: $ring-inner-hover;
+    outline-color: $ring-outer-hover;
+  }
+
+  // Focused: the circle is the center column. Geometry is animated by
+  // focusStage.ts (WAAPI); these are the final values it animates to.
+  &--active {
+    max-width: none;
+    width: 100%; // fill the 600px center column (base width is the 230px circle)
+    height: 100%; // fill the single full-height grid row
+    aspect-ratio: auto; // drop the circle ratio: the content defines the height
+    border: none; // the column needs no circle frame
+    outline: none; // ...nor its outer ring
+    border-radius: $radius-xl;
+    background: var(--color-1);
+  }
+}
+
+// Inactive click area: covers the whole circle, carries the label.
+.focus-object__hit {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: none;
+  border-radius: inherit;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+
+  .focus-object--active & {
+    display: none;
+  }
+}
+
+.focus-object__label {
+  @extend %compact;
+
+  padding: $gap;
+  text-align: center;
+  overflow-wrap: break-word;
+}
+
+// Object control satellite: a small circle straddling the object border at
+// its top-right corner. Only exists on the ACTIVE object (the grid circles
+// need no close control); there the box IS the column, so that corner puts
+// it at the top of the middle column (top-CENTER would collide with the
+// ED-t tab).
+.focus-object__control {
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translate(50%, -50%);
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 2px solid var(--color-3);
+  border-radius: 50%;
+  background: var(--color-1);
+  color: var(--color-3);
+  display: none;
+  place-items: center;
+  cursor: pointer;
+  z-index: $z-back-bar;
+
+  .focus-object--active & {
+    display: grid;
+  }
+}
+
+// Side stacks: while a domain is focused, the non-active circles are
+// re-parented into these two columns (focusStage.ts). Compact 230px
+// circles pinned to the row top. Focused state: the stage is viewport-
+// fixed, so each stack scrolls its own overflow (230px rhythm preserved).
+.focus-side-stack {
+  display: grid;
+  grid-template-columns: 230px;
+  justify-self: center;
+  align-self: start;
+  gap: inherit; // mirror the responsive grid gap
+
+  .focus-stage__grid.is-focused & {
+    height: 100%;
+    overflow-y: auto;
+    // Scrollable but chromeless: the columns stay wheel-scrollable (bottom
+    // circles stay reachable), yet no scrollbar is drawn next to the TV.
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+}
+
+// Surface slot: the focused domain's view mounts here (after the morph).
+// Definite height (fills the active object) — the view's own .view-content
+// (height: 100%) resolves against it exactly like in the classic layout;
+// NO overrides on .view-content.
+.focus-object__surface {
+  height: 100%;
+}
+
+// TEMP: the Focus-UI switch inside ED-t, until settings get their place in
+// the shell. Covers the ED-t panel area (not the tab) and centers the
+// switch vertically, left-aligned.
+.focus-shell__temp-switch {
+  position: absolute;
+  inset: 0;
+  padding: $gap;
+  display: grid;
+  align-content: center;
+  justify-content: start;
 }
 
 // Tab geometry: visible tab height + the 1px overlap that fuses the tab
@@ -35,6 +262,8 @@ $focus-tab-h: 30px;
 $focus-tab-overlap: 1px;
 
 .focus-drawer {
+  // Instances: ED-t = this--top, ED-b = this--bottom (AGENTS.md shorthand;
+  // the DOM ids #ed-t / #ed-b carry the same names).
   --panel-h: 300px;
 
   position: fixed;
@@ -56,9 +285,9 @@ $focus-tab-overlap: 1px;
   }
 
   &--top {
-    --panel-h: 150px;
+    --panel-h: 70px;
     top: 0;
-    height: 150px;
+    height: 70px;
     transform: translateY(-100%);
 
     &.is-open {
@@ -72,33 +301,76 @@ $focus-tab-overlap: 1px;
   }
 }
 
-// One continuous marble sweep across tab + panel: both elements paint the
-// SAME virtual gradient box (viewport-wide, panel height + tab strip), and
-// background-position anchors that box to the panel's coordinate system.
-// The tab therefore shows the exact continuation of the panel's gradient —
-// no phase step ("aus einem Guss") in every drawer state, including the
-// slide animation (both move as one transformed subtree).
-.focus-drawer__panel {
-  height: 100%;
+// The marble is painted ONCE by the ::before layer over the drawer box
+// (Multiple.js principle: one element paints, panel and tab are transparent
+// windows). inset: 0 → the marble never overhangs the drawer. Immune to
+// transforms (the drag mechanism keeps the drawer permanently transformed,
+// which kills background-attachment: fixed) and to any drawer state.
+// The painter also carries the glass (backdrop-filter) for the panel.
+.focus-drawer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
   background-image: $marble-gradient;
   background-repeat: no-repeat;
-  background-size: 100vw calc(var(--panel-h) + $focus-tab-h + $focus-tab-overlap);
-  // Same glass-stone treatment the classic sidebar (menu flyout) uses:
-  // marble gradient + glass blur, so later shell content shimmers through.
+  // Show the vein-rich middle band of the sweep (the box is only ~100px
+  // tall; the sweep is sized larger and shifted once — a fixed aesthetic
+  // choice on ONE element, can never desync between tab and panel).
+  background-size: 100vw 480px;
+  background-position: 0 -160px;
   backdrop-filter: blur(10px) saturate(1.2);
   -webkit-backdrop-filter: blur(10px) saturate(1.2);
+}
+
+// Tab marble: a second painter slice sitting EXACTLY on the tab box (same
+// centered column, same height, tab's rounded corners) — marble only where
+// the tab is, nothing over the page, nothing outside the corners. Its
+// gradient offset = painter offset shifted by the tab's distance from the
+// drawer edge (constant per variant), so the veins continue the panel sweep
+// by construction. z-index 1 lifts it ABOVE the panel frame line, so the
+// line cannot run between tab and panel (folder-tab look, no separator).
+.focus-drawer::after {
+  content: '';
+  position: absolute;
+  left: calc(50% - #{$focus-tab-w / 2});
+  width: $focus-tab-w;
+  height: $focus-tab-h + $focus-tab-overlap;
+  z-index: 1;
+  background-image: $marble-gradient;
+  background-repeat: no-repeat;
+  background-size: 100vw 480px;
+  backdrop-filter: blur(10px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+}
+
+.focus-drawer--bottom::after {
+  top: -$focus-tab-h;
+  border-radius: $radius-xl $radius-xl 0 0;
+  // Sweep rows at the tab's top edge (row 160 at drawer top, tab starts
+  // 30px above it → row 130).
+  background-position: 0 #{-160px + $focus-tab-h};
+}
+
+.focus-drawer--top::after {
+  bottom: -$focus-tab-h;
+  border-radius: 0 0 $radius-xl $radius-xl;
+  // Sweep rows at the tab's top edge (row 160 at drawer top, drawer 70px,
+  // tab starts 1px before the drawer's bottom → row 229).
+  background-position: 0 #{-160px - 70px + $focus-tab-overlap};
+}
+.focus-drawer__panel {
+  height: 100%;
 
   // Bottom surface: only the top line frames it (sides/bottom sit at the
   // screen edge, no border needed there).
   .focus-drawer--bottom & {
-    background-position: 0 (-$focus-tab-h - $focus-tab-overlap);
     border-top: 1px solid var(--color-3);
     border-radius: $radius-xl $radius-xl 0 0;
   }
 
   // Top surface: top + bottom line, no side borders.
   .focus-drawer--top & {
-    background-position: 0 0;
     border-top: 1px solid var(--color-3);
     border-bottom: 1px solid var(--color-3);
     border-radius: 0 0 $radius-xl $radius-xl;
@@ -107,35 +379,56 @@ $focus-tab-overlap: 1px;
 
 .focus-drawer__tab {
   position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  // Centered WITHOUT transform (kept for safety; the marble lives on the
+  // painter layer below, transforms on the window itself are harmless now).
+  left: calc(50% - #{$focus-tab-w / 2});
   width: $focus-tab-w;
   height: $focus-tab-h + $focus-tab-overlap;
   padding: 0;
   appearance: none;
-  // Glass look without the blur (the blur smeared the panel edge behind
-  // the tab): marble gradient over an opaque base, phase-aligned with the
-  // panel's gradient (see the panel rule above).
-  background-color: var(--color-1);
-  background-image: $marble-gradient;
-  background-repeat: no-repeat;
-  background-size: 100vw calc(var(--panel-h) + $focus-tab-h + $focus-tab-overlap);
+  // Tab = transparent WINDOW onto the painter layer (see .focus-drawer::before):
+  // it shows the painter's marble slice by pure geometry — the painter spans
+  // panel + tab strip as ONE element. No background, no backdrop-filter here.
+  background: transparent;
   border: 1px solid var(--color-3);
+  // Above the tab marble slice (::after, z-index 1) so the tab's own side
+  // borders and rounded corners stay crisp on top of it.
+  z-index: 2;
   cursor: pointer;
   touch-action: none; // vertical touch drags belong to the drawer
   user-select: none;
 
   .focus-drawer--bottom & {
     top: -$focus-tab-h;
-    background-position: calc(#{$focus-tab-w / 2} - 50vw) (-$focus-tab-overlap);
     border-bottom: none;
     border-radius: $radius-xl $radius-xl 0 0;
   }
 
   .focus-drawer--top & {
     bottom: -$focus-tab-h;
-    background-position: calc(#{$focus-tab-w / 2} - 50vw) calc(var(--panel-h) * -1 + $focus-tab-overlap);
     border-top: none;
     border-radius: 0 0 $radius-xl $radius-xl;
+  }
+
+  // Drag-handle grip: two engraved 70px lines, 4px apart, centered. The dark
+  // shadow under each line gives the engraved look typical of drag handles.
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    left: calc(50% - 35px);
+    width: 70px;
+    height: 2px;
+    background: var(--color-3);
+    opacity: $grip-line-opacity;
+    box-shadow: $grip-shadow;
+  }
+
+  &::before {
+    top: calc(50% - 4px);
+  }
+
+  &::after {
+    top: calc(50% + 2px);
   }
 }

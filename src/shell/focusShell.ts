@@ -7,14 +7,15 @@
  * `html.ui--focus` CSS gate (styles/components/_focus-shell.scss) while
  * the shell owns the screen.
  *
- * Edge drawers: browser-tab-style handles at the bottom and top screen
- * edge. Click (or drag on touch) slides a panel in as an overlay ON TOP
- * of the shell content — content is never pushed aside. Panels are empty
- * frames for now (green field); their content comes later.
+ * Edge drawers (ED-t top / ED-b bottom — AGENTS.md shorthand): browser-tab
+ * style handles at the top and bottom screen edge. Click (or drag on touch)
+ * slides a panel in as an overlay ON TOP of the shell content — content is
+ * never pushed aside. Panels are empty frames for now (green field); their
+ * content comes later.
  *
- * TEMPORARY: the shell currently also hosts the Focus-UI switch so the
- * user is never locked into the shell. This switch moves out again as
- * soon as Settings gets its proper place inside the shell.
+ * TEMPORARY: the Focus-UI switch lives inside the ED-t panel so the user
+ * is never locked into the shell. It moves out again as soon as Settings
+ * gets its proper place inside the shell.
  *
  * Rescue hatch (dev): `?focusui=0` boots the classic interface even when
  * the flag is on (see helpers/focusUiSetting.ts).
@@ -25,17 +26,25 @@ import { isFocusUiEnabled, setFocusUiEnabled } from '../helpers/focusUiSetting';
 import { LayoutService } from '../services/LayoutService';
 import { ToastService } from '../services/ToastService';
 import { TypedEventBus } from '../core/TypedEventBus';
+import { FocusStage } from './focusStage';
 import { _ } from '../i18n';
 
 const SHELL_ID = 'focus-shell';
 /** Movement beyond this many px counts as a drag, below it as a click. */
 const CLICK_SLOP_PX = 6;
+/** Live stage instance — cleaned up on shell unmount. */
+let stage: FocusStage | null = null;
+
+/** Drawer ids — ED-t (top) / ED-b (bottom), see AGENTS.md abbreviations. */
+type EdgeDrawerId = 'ed-t' | 'ed-b';
 
 const clamp = (v: number, min: number, max: number): number =>
   Math.min(Math.max(v, min), max);
 
 /**
  * One slide-in panel at a screen edge with a browser-tab handle.
+ * Instances: ED-t (top) / ED-b (bottom). Panel heights live ONLY in
+ * _focus-shell.scss (--panel-h) — this class reads them at mount time.
  *
  * Geometry (see _focus-shell.scss): the drawer box is the panel; the tab
  * is absolutely positioned OUTSIDE the box (negative offset), so the
@@ -51,14 +60,25 @@ class EdgeDrawer {
   private startY = 0;
   private hasMoved = false;
   private lastOffset = 0;
+  private panelHeight: number;
 
   constructor(
-    private readonly edge: 'top' | 'bottom',
-    private readonly panelHeight: number
-  ) {}
+    private readonly id: EdgeDrawerId,
+    fallbackPanelHeight: number
+  ) {
+    this.panelHeight = fallbackPanelHeight;
+  }
 
-  mount(parent: HTMLElement): void {
+  private get edge(): 'top' | 'bottom' {
+    return this.id === 'ed-t' ? 'top' : 'bottom';
+  }
+
+  mount(
+    parent: HTMLElement,
+    decoratePanel?: (panel: HTMLElement) => void
+  ): void {
     this.root = document.createElement('div');
+    this.root.id = this.id;
     this.root.className = `focus-drawer focus-drawer--${this.edge}`;
     const label = this.edge === 'top' ? _('Top panel') : _('Bottom panel');
     this.root.innerHTML = `
@@ -66,6 +86,12 @@ class EdgeDrawer {
       <button type="button" class="focus-drawer__tab"
         aria-label="${label}" aria-expanded="false"></button>
     `;
+    if (decoratePanel) {
+      const panel = this.root.querySelector(
+        '.focus-drawer__panel'
+      ) as HTMLElement;
+      decoratePanel(panel);
+    }
     this.tab = this.root.querySelector(
       '.focus-drawer__tab'
     ) as HTMLButtonElement;
@@ -74,6 +100,14 @@ class EdgeDrawer {
     this.tab.addEventListener('pointerup', this.onPointerUp);
     this.tab.addEventListener('pointercancel', this.onPointerCancel);
     parent.appendChild(this.root);
+    // Sync the drag math with the stylesheet (constructor value is only a
+    // fallback in case the custom property ever fails to resolve).
+    const cssHeight = parseFloat(
+      getComputedStyle(this.root).getPropertyValue('--panel-h')
+    );
+    if (Number.isFinite(cssHeight) && cssHeight > 0) {
+      this.panelHeight = cssHeight;
+    }
   }
 
   private onPointerDown = (e: PointerEvent): void => {
@@ -140,13 +174,15 @@ class EdgeDrawer {
   }
 }
 
-/** Mount the Focus Shell with its temporary switch and edge drawers. */
+/** Mount the Focus Shell with edge drawers; ED-t hosts the TEMP switch. */
 export function mountFocusShell(): void {
   if (document.getElementById(SHELL_ID)) return;
   const shell = document.createElement('div');
   shell.id = SHELL_ID;
   shell.className = 'focus-shell';
 
+  // TEMPORARY switch — lives inside the ED-t panel until settings get
+  // their place in the shell. Toggling OFF restores the classic interface.
   const switchBack = new Switch({
     label: _('Focus UI (v2)'),
     checked: isFocusUiEnabled(),
@@ -162,17 +198,65 @@ export function mountFocusShell(): void {
       }
     },
   });
-  shell.innerHTML = switchBack.render();
-  switchBack.setupEventListeners(shell);
+  const tempSwitchWrap = document.createElement('div');
+  tempSwitchWrap.className = 'focus-shell__temp-switch';
+  tempSwitchWrap.innerHTML = switchBack.render();
+  switchBack.setupEventListeners(tempSwitchWrap);
 
-  // Edge drawers: bottom panel 300px, top panel 150px (overlay panels).
-  new EdgeDrawer('bottom', 300).mount(shell);
-  new EdgeDrawer('top', 150).mount(shell);
+  // The stage: the free central surface area under the ED overlays —
+  // the FS grid of primary domain circles lands here.
+  const stageEl = document.createElement('div');
+  stageEl.id = 'focus-stage';
+  stageEl.className = 'focus-stage';
+  shell.appendChild(stageEl);
+
+  // Brand watermark: the logo sits huge and faint BEHIND the home grid —
+  // a start-screen flourish. Once a domain is focused, the center column
+  // covers it and it fades out entirely.
+  const brand = document.createElement('div');
+  brand.className = 'focus-shell__brand';
+  brand.innerHTML = `
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <filter id="nn-engrave" x="-10%" y="-10%" width="120%" height="120%">
+        <!-- Stamped-in look: crisp, barely blurred inner walls — dark wall
+             on the inner top edge, sharp light catch on the inner bottom
+             edge. Both rims are clipped to the mark's silhouette. -->
+        <feOffset in="SourceAlpha" dx="0" dy="3" result="down"/>
+        <feGaussianBlur in="down" stdDeviation="0.3" result="down-blur"/>
+        <feComposite in="SourceAlpha" in2="down-blur" operator="out" result="top-rim"/>
+        <feFlood flood-color="rgb(0 0 0 / 0.85)" result="dark"/>
+        <feComposite in="dark" in2="top-rim" operator="in" result="dark-rim"/>
+        <feOffset in="SourceAlpha" dx="0" dy="-3.5" result="up"/>
+        <feGaussianBlur in="up" stdDeviation="0.3" result="up-blur"/>
+        <feComposite in="SourceAlpha" in2="up-blur" operator="out" result="bot-rim"/>
+        <feFlood flood-color="rgb(255 255 255 / 0.4)" result="light"/>
+        <feComposite in="light" in2="bot-rim" operator="in" result="light-rim"/>
+        <feMerge>
+          <feMergeNode in="SourceGraphic"/>
+          <feMergeNode in="dark-rim"/>
+          <feMergeNode in="light-rim"/>
+        </feMerge>
+      </filter>
+    </svg>
+    <svg class="focus-shell__brand-wheel" aria-hidden="true"><use href="#nn-logo"/></svg>`;
+  stageEl.appendChild(brand);
+
+  stage = new FocusStage(stageEl);
+  stage.mount();
+
+  // Edge drawers ED-b (bottom) and ED-t (top) as overlays — heights live
+  // in SCSS (--panel-h) and are read at mount; numbers here are fallbacks.
+  new EdgeDrawer('ed-b', 300).mount(shell);
+  new EdgeDrawer('ed-t', 70).mount(shell, panel => {
+    panel.appendChild(tempSwitchWrap);
+  });
 
   document.getElementById('app')?.appendChild(shell);
 }
 
-/** Remove the Focus Shell (idempotent). */
+/** Remove the Focus Shell (idempotent); tears down the stage surfaces. */
 export function unmountFocusShell(): void {
+  stage?.destroy();
+  stage = null;
   document.getElementById(SHELL_ID)?.remove();
 }

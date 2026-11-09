@@ -1170,6 +1170,7 @@ msgstr ""
 #: src/components/views/ArticleTimelineView.ts:59
 #: src/components/views/ProfileView.ts:2327
 #: src/components/views/ProfileView.ts:742
+#: src/shell/focusDomains.ts:62
 msgid "Articles"
 msgstr ""
 
@@ -1567,6 +1568,7 @@ msgstr ""
 #: src/components/views/ListsOverviewView.ts:69
 #: src/lists/bookmarks.ts:4480
 #: src/lists/bookmarks.ts:4516
+#: src/shell/focusDomains.ts:58
 msgid "Bookmarks"
 msgstr ""
 
@@ -1590,7 +1592,7 @@ msgstr ""
 msgid "Both calendars side-by-side"
 msgstr ""
 
-#: src/shell/focusShell.ts:66
+#: src/shell/focusShell.ts:83
 msgid "Bottom panel"
 msgstr ""
 
@@ -1692,6 +1694,7 @@ msgstr ""
 #: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:208
 #: src/components/views/ProfileView.ts:2174
 #: src/components/views/ProfileView.ts:747
+#: src/shell/focusDomains.ts:56
 msgid "Calendar"
 msgstr ""
 
@@ -1906,7 +1909,7 @@ msgid "City"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:530
-#: src/shell/focusShell.ts:164
+#: src/shell/focusShell.ts:197
 msgid "Classic interface active"
 msgstr ""
 
@@ -1995,6 +1998,7 @@ msgstr ""
 #: src/components/ui/NoteMenu.ts:548
 #: src/lists/follows-extended.ts:447
 #: src/services/ToastService.ts:218
+#: src/shell/focusStage.ts:85
 msgid "Close"
 msgstr ""
 
@@ -4154,7 +4158,7 @@ msgid "Focus mode"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:156
-#: src/shell/focusShell.ts:154
+#: src/shell/focusShell.ts:187
 msgid "Focus UI (v2)"
 msgstr ""
 
@@ -4232,6 +4236,7 @@ msgstr ""
 #: src/addons/addonI18n.ts:30
 #: src/addons/follow-packs/FollowPacksView.ts:21
 #: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:143
+#: src/shell/focusDomains.ts:60
 msgid "Follow Packs"
 msgstr ""
 
@@ -5253,6 +5258,7 @@ msgstr ""
 #: src/addons/live-streams/LiveStreamsAddonView.ts:72
 #: src/addons/live-streams/LiveStreamsAddonView.ts:73
 #: src/addons/live-streams/LiveStreamsAddonView.ts:83
+#: src/shell/focusDomains.ts:61
 msgid "Live Streams"
 msgstr ""
 
@@ -5757,6 +5763,7 @@ msgstr ""
 #: src/components/ui/note-rendering/ListingRenderer.ts:62
 #: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1546
 #: src/helpers/renderQuotePreview.ts:153
+#: src/shell/focusDomains.ts:59
 msgid "Marketplace"
 msgstr ""
 
@@ -5913,6 +5920,7 @@ msgstr ""
 #: src/components/search/GlobalSearchView.ts:398
 #: src/components/views/MessagesView.ts:167
 #: src/components/views/MessagesView.ts:933
+#: src/shell/focusDomains.ts:63
 msgid "Messages"
 msgstr ""
 
@@ -6749,6 +6757,10 @@ msgstr ""
 msgid "Nostr illustration by @awayuki"
 msgstr ""
 
+#: src/shell/focusDomains.ts:57
+msgid "Nostr Majlis"
+msgstr ""
+
 #: src/components/views/AboutView.ts:104
 msgid "Nostr relays are operated by third parties. When connecting, your IP address may be logged by the relay operators. The choice of relays is yours and can be configured in the settings."
 msgstr ""
@@ -6932,6 +6944,7 @@ msgstr ""
 
 #: src/components/layout/MainLayout.ts:1990
 #: src/components/views/NotificationsView.ts:112
+#: src/shell/focusDomains.ts:64
 msgid "Notifications"
 msgstr ""
 
@@ -9510,6 +9523,10 @@ msgstr ""
 msgid "Slug and Name are required"
 msgstr ""
 
+#: src/shell/focusDomains.ts:54
+msgid "Social Media"
+msgstr ""
+
 #: src/components/onboarding/WelcomeInterstitials.ts:19
 msgid "Social Media that <em>can't</em> betray you."
 msgstr ""
@@ -10402,7 +10419,7 @@ msgstr ""
 msgid "Toggle visibility"
 msgstr ""
 
-#: src/shell/focusShell.ts:66
+#: src/shell/focusShell.ts:83
 msgid "Top panel"
 msgstr ""
 
@@ -10905,6 +10922,7 @@ msgstr ""
 
 #: src/components/views/ProfileView.ts:2345
 #: src/components/views/ProfileView.ts:743
+#: src/shell/focusDomains.ts:55
 msgid "Videos"
 msgstr ""
 
