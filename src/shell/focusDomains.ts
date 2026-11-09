@@ -30,6 +30,13 @@ export interface FocusDomainSurfaceView {
    * does not own — they fall through to the classic navigation.
    */
   handleFocusNav?(viewType: string, param?: string): boolean;
+  /**
+   * Return to the surface's root list state: destroy any in-column
+   * detail and re-attach the list. Called when the surface is detached
+   * from the focus column (close), so reopening always starts at the
+   * list — never in a stale detail.
+   */
+  reset?(): void;
 }
 
 /** A mounted domain surface, ready to append into the focus column. */

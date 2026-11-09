@@ -96,6 +96,17 @@ export class ArticlesSurface implements FocusDomainSurfaceView {
     Router.getInstance().replaceUrl('/articles');
   }
 
+  reset(): void {
+    if (!this.detailView) return;
+    this.detailView.destroy();
+    this.detailView = null;
+    this.detailEl = null;
+    if (this.listView) {
+      this.frame.element.appendChild(this.listView.getElement());
+    }
+    this.frame.setBackVisible(false);
+  }
+
   destroy(): void {
     this.listView?.destroy();
     this.listView = null;

@@ -95,6 +95,17 @@ export class SocialSurface implements FocusDomainSurfaceView {
     this.listView?.pause();
   }
 
+  reset(): void {
+    if (!this.detailView) return;
+    this.detailView.destroy();
+    this.detailView = null;
+    this.detailEl = null;
+    if (this.listView) {
+      this.frame.element.appendChild(this.listView.getElement());
+    }
+    this.frame.setBackVisible(false);
+  }
+
   resume(): void {
     this.listView?.resume();
   }

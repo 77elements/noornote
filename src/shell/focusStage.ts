@@ -205,10 +205,12 @@ export class FocusStage {
     const first = animate && !takeOver ? this.measureAll() : null;
 
     // Detach the surface first: the view pauses, its element is kept
-    // cached so reopening does not refetch everything.
+    // cached so reopening does not refetch everything. The surface
+    // returns to its list state — reopening never shows a stale detail.
     const surface = this.surfaces.get(def.id);
     if (surface) {
       surface.view?.pause?.();
+      surface.view?.reset?.();
       surface.element.remove();
     }
 

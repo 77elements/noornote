@@ -139,7 +139,9 @@ html.ui--focus {
   transition: border-color $transition-fast, outline-color $transition-fast,
     background-color $transition-fast;
 
-  &:hover {
+  // Hover tint only on the circle state — the focused column must not
+  // react to hover (its background shows above the embedded view).
+  &:not(&--active):hover {
     background-color: color-mix(in srgb, var(--color-3) 8%, transparent);
     border-color: $ring-inner-hover;
     outline-color: $ring-outer-hover;
@@ -254,10 +256,12 @@ html.ui--focus {
   height: 100%;
 }
 
-// Focus-scoped spacing: the embedded views keep their classic .view-content
-// styles; only the top offset is adjusted so content clears the ED-t drawer.
+// Focus-scoped overrides: the embedded views keep their classic structure,
+// but the classic pcc spacing (right padding) is v1-only — the focus column
+// manages its own spacing.
 .ui--focus .view-content {
   margin-top: 3rem;
+  padding: 0;
 }
 
 // Focus surface wrapper: hosts a domain's inner view swaps (articles:
