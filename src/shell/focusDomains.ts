@@ -37,6 +37,11 @@ export interface FocusDomainSurfaceView {
    * list — never in a stale detail.
    */
   reset?(): void;
+  /**
+   * Leave the in-column detail and return to the surface's list (the
+   * object's back action button — only shown while a detail is open).
+   */
+  back?(): void;
 }
 
 /** A mounted domain surface, ready to append into the focus column. */

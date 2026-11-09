@@ -107,6 +107,10 @@ export class ArticlesSurface implements FocusDomainSurfaceView {
     this.frame.setBackVisible(false);
   }
 
+  back(): void {
+    this.showList();
+  }
+
   destroy(): void {
     this.listView?.destroy();
     this.listView = null;

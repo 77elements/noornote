@@ -91,10 +91,6 @@ export class SocialSurface implements FocusDomainSurfaceView {
     Router.getInstance().replaceUrl('/timeline');
   }
 
-  pause(): void {
-    this.listView?.pause();
-  }
-
   reset(): void {
     if (!this.detailView) return;
     this.detailView.destroy();
@@ -104,6 +100,14 @@ export class SocialSurface implements FocusDomainSurfaceView {
       this.frame.element.appendChild(this.listView.getElement());
     }
     this.frame.setBackVisible(false);
+  }
+
+  back(): void {
+    this.showFeed();
+  }
+
+  pause(): void {
+    this.listView?.pause();
   }
 
   resume(): void {

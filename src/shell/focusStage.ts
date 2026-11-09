@@ -113,10 +113,16 @@ export class FocusStage {
         ${def.icon ? `<svg class="focus-object__icon"><use href="#${def.icon}"/></svg>` : ''}
         <span class="focus-object__label">${def.label}</span>
       </button>
-      <button type="button" class="focus-object__control"
-        aria-label="${_('Close')}">
-        <svg width="12" height="12" aria-hidden="true"><use href="#icon-close"/></svg>
-      </button>
+      <div class="focus-object__actions">
+        <button type="button" class="focus-object__control"
+          aria-label="${_('Close')}">
+          <svg width="12" height="12" aria-hidden="true"><use href="#icon-close"/></svg>
+        </button>
+        <button type="button" class="focus-object__back" hidden
+          aria-label="${_('Back')}">
+          <svg width="12" height="12" aria-hidden="true"><use href="#icon-back"/></svg>
+        </button>
+      </div>
       <div class="focus-object__surface"></div>
     `;
     el.addEventListener('click', () => void this.onObjectClick(def, el));
@@ -129,6 +135,19 @@ export class FocusStage {
         e.stopPropagation();
         this.close();
       }
+    });
+    // Action-button stack: the surface reports detail state via the frame
+    // (focusSurfaceFrame.setBackVisible bubbles 'focus:surface-back') —
+    // the back action shows only while a detail replaces the list.
+    const backBtn = el.querySelector('.focus-object__back') as HTMLElement;
+    el.addEventListener('focus:surface-back', e => {
+      const detail = (e as CustomEvent<{ visible?: boolean }>).detail;
+      backBtn.hidden = !detail?.visible;
+    });
+    backBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (this.activeId !== def.id || this.morphing) return;
+      this.surfaces.get(def.id)?.view?.back?.();
     });
     this.objects.set(def.id, el);
     return el;

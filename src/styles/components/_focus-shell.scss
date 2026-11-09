@@ -197,16 +197,30 @@ html.ui--focus {
   overflow-wrap: break-word;
 }
 
-// Object control satellite: a small circle straddling the object border at
-// its top-right corner. Only exists on the ACTIVE object (the grid circles
-// need no close control); there the box IS the column, so that corner puts
-// it at the top of the middle column (top-CENTER would collide with the
-// ED-t tab).
-.focus-object__control {
+// Object action buttons: a vertical stack of 24px circles on the active
+// object's top-right corner. The first button straddles the corner exactly
+// like the old single close control; further buttons stack downward along
+// the right border (half outside). Back is hidden until a detail view is
+// open (focusStage listens to the surface's 'focus:surface-back' event);
+// a settings button will join later (per-object settings, dissolves the
+// v1 UI settings step by step).
+.focus-object__actions {
   position: absolute;
   top: 0;
   right: 0;
-  transform: translate(50%, -50%);
+  transform: translate(50%, -12px); // 12px = half button: X centers on the corner
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: $z-back-bar;
+
+  .focus-object--active & {
+    display: flex;
+  }
+}
+
+.focus-object__control {
   width: 24px;
   height: 24px;
   padding: 0;
@@ -214,13 +228,25 @@ html.ui--focus {
   border-radius: 50%;
   background: var(--color-1);
   color: var(--color-3);
-  display: none;
+  display: grid;
   place-items: center;
   cursor: pointer;
-  z-index: $z-back-bar;
+}
 
-  .focus-object--active & {
-    display: grid;
+.focus-object__back {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 2px solid var(--color-3);
+  border-radius: 50%;
+  background: var(--color-1);
+  color: var(--color-3);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+
+  &[hidden] {
+    display: none;
   }
 }
 

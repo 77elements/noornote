@@ -37,6 +37,14 @@ export function createFocusSurfaceFrame(
     element,
     setBackVisible: visible => {
       backBtn.hidden = !visible;
+      // The object's action-button stack mirrors this state (the satellite
+      // back button below the close X) — focusStage listens on the object.
+      element.dispatchEvent(
+        new CustomEvent('focus:surface-back', {
+          bubbles: true,
+          detail: { visible },
+        })
+      );
     },
     destroy: () => {
       backBtn.remove();
