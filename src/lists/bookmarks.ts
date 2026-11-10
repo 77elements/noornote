@@ -3581,6 +3581,13 @@ export class BookmarkCard {
         'Untitled';
       return `Badge: ${title}`;
     }
+    if (event.kind === 32222) {
+      const name =
+        event.tags.find(t => t[0] === 'name')?.[1] ||
+        event.tags.find(t => t[0] === 'd')?.[1] ||
+        'Untitled';
+      return `Community: ${name}`;
+    }
     if (event.kind === 33331) {
       const name = event.tags.find(t => t[0] === 'name')?.[1] || 'Untitled';
       return `3D object: ${name}`;

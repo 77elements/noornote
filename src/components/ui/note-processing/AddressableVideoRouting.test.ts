@@ -11,22 +11,10 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 // The real ContentProcessor pulls in the lists/AutoSync chain (PlatformService,
 // SystemLogger singletons) which cannot load in the node test environment.
-vi.mock('../../../services/ContentProcessor', () => ({
-  ContentProcessor: {
-    getInstance: () => ({
-      processContentWithTags: (text: string) => ({
-        text,
-        html: text,
-        media: [],
-        links: [],
-        hashtags: [],
-        quotedReferences: [],
-        bolt11Invoices: [],
-      }),
-      getNonBlockingProfile: () => null,
-    }),
-  },
-}));
+vi.mock('../../../services/ContentProcessor', async () => {
+  const { contentProcessorMock } = await import('./noteProcessorTestMocks');
+  return contentProcessorMock;
+});
 
 // NoteProcessor transitively imports services that instantiate at module load
 // (HighlightProcessor → npubToUsername → UserProfileService →

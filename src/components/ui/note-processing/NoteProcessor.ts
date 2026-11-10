@@ -21,6 +21,7 @@ import { GitEventProcessor } from './GitEventProcessor';
 import { HighlightProcessor } from './HighlightProcessor';
 import { BadgeAwardProcessor } from './BadgeAwardProcessor';
 import { BadgeDefinitionProcessor } from './BadgeDefinitionProcessor';
+import { CommunityDefinitionProcessor } from './CommunityDefinitionProcessor';
 import { NsiteProcessor, isNsiteManifest } from './NsiteProcessor';
 import { LiveStreamProcessor } from './LiveStreamProcessor';
 import { ListingProcessor } from './ListingProcessor';
@@ -81,6 +82,11 @@ export class NoteProcessor {
         case 30009:
           // NIP-58 badge definition (self-contained addressable metadata).
           return BadgeDefinitionProcessor.process(event);
+        case 32222:
+          // Communikeys community definition (self-contained addressable
+          // metadata — see CommunityDefinitionProcessor for the deliberate
+          // feed-filter exclusion).
+          return CommunityDefinitionProcessor.process(event);
         case 20:
           return PictureNoteProcessor.process(event);
         case 21:

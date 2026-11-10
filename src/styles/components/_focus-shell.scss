@@ -281,6 +281,13 @@ html.ui--focus {
 // spacing below (clears the ED-t overlay).
 .focus-object__surface {
   height: 100%;
+  // The classic layout scrolls the .primary-content column — the shell
+  // column scrolls here instead. Views that manage their own scrolling
+  // (social timeline: overflow hidden + inner scroll) fit exactly and
+  // never double-scroll; views without internal scroll (articles) get
+  // the column scroll they had in v1.
+  overflow-y: auto;
+  @include custom-scrollbar;
 }
 
 // Focus-scoped overrides: the embedded views keep their classic structure,
