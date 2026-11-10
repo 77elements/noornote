@@ -13,22 +13,10 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 // The real ContentProcessor pulls in the lists/AutoSync chain (PlatformService,
 // SystemLogger singletons) which cannot load in the node test environment.
-vi.mock('../../../services/ContentProcessor', () => ({
-  ContentProcessor: {
-    getInstance: () => ({
-      processContentWithTags: (text: string) => ({
-        text,
-        html: text,
-        media: [],
-        links: [],
-        hashtags: [],
-        quotedReferences: [],
-        bolt11Invoices: [],
-      }),
-      getNonBlockingProfile: () => null,
-    }),
-  },
-}));
+vi.mock('../../../services/ContentProcessor', async () => {
+  const { contentProcessorMock } = await import('./noteProcessorTestMocks');
+  return contentProcessorMock;
+});
 
 vi.mock('../note-rendering/NoteStructureBuilder', () => ({
   NoteStructureBuilder: {
@@ -50,7 +38,7 @@ vi.mock('../../../helpers/UserMentionHelper', () => ({
     pubkey: string,
     profile: { username: string; avatarUrl?: string }
   ) =>
-    `<a class="mention-link mention-link--bg" data-profile-pubkey="${pubkey}"><img class="profile-pic profile-pic--mini" src="${profile.avatarUrl ?? ''}" width="18" height="18" /><span class="mention-name">${profile.username}</span></a>`,
+    `<a class="mention-link mention-link--bg" data-profile-pubkey="${pubkey}"><img class="profile-pic profile-pic--mini" src="${profile.avatarUrl ?? ''}" width="18" height="18" loading="lazy" decoding="async" /><span class="mention-name">${profile.username}</span></a>`,
   setupUserMentionHandlers: vi.fn(),
 }));
 
