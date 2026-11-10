@@ -215,6 +215,7 @@ If the app crashes, check the log files:
 - **Podcast Episodes** — kind `30054`, podcast draft NIP episode metadata (`title`, `audio`, `image`, `duration`, `episode`/`season` tags; shownotes in content), published by podcast clients like Nostr Compass; rendered as a podcast card with inline player
 - **Music Tracks** — kind `36787`, and **Music Playlists** — kind `34139` (podtunes/nostria convention): addressable track and playlist metadata (`title`, `audio`, `cover`, `duration`, `track`/`ref` tags). Rendered as cards with the shared inline player; playlists resolve their track references lazily via the quote pipeline. Display-only — NoorNote does not author music events.
 - **Zapstore Apps** — kind `32267`, app metadata for [Zapstore](https://zapstore.dev/) listings
+- **Communikeys community definition** — kind `32222` ([Communikeys](https://github.com/chebizarro/nostrc) community spec, used by BudaBit/Flotilla): self-contained community metadata (`name`, `description`, `picture`, `website`, `r` relays, permission blocks); rendered as a community card. Display-only — NoorNote does not author community definitions
 - **Zapstore Release Artifacts** — kind `30063`, release artifact metadata for Zapstore apps
 - **Polls (legacy / Pollerama)** — kind `6969`, alternative poll format predating NIP-88
 - **Primal Cache `USER_PROFILE_INFO`** — kind `10000105`, consumed from Primal's caching relay for `time_joined` lookup on profile pages

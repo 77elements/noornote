@@ -6,6 +6,7 @@
 
 import { type ProcessedNote, type NoteUIOptions } from '../types/NoteTypes';
 import { OriginalNoteRenderer } from './OriginalNoteRenderer';
+import { CommunityDefinitionRenderer } from './CommunityDefinitionRenderer';
 import { RepostRenderer } from './RepostRenderer';
 import { QuoteRenderer } from './QuoteRenderer';
 import { ZapReceiptRenderer } from './ZapReceiptRenderer';
@@ -70,6 +71,8 @@ export class NoteRendererFactory {
         return BadgeAwardRenderer.render(note, options);
       case 'badge-definition':
         return BadgeDefinitionRenderer.render(note, options);
+      case 'community-definition':
+        return CommunityDefinitionRenderer.render(note, options);
       case 'emoji-pack':
         return EmojiPackRenderer.render(note, options);
       case 'live-stream':

@@ -1,0 +1,79 @@
+// Communikeys community definition (kind 32222) — card layout for SNV /
+// quotes / reposts. Mirrors the .badge-award card structure.
+
+@use '../abstracts/variables' as *;
+@use '../base/typography' as *;
+
+.community-card {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: $gap;
+  align-items: start;
+  padding: $gap;
+  border: 1px solid var(--color-2);
+  border-radius: $radius-xl;
+  background: var(--color-1);
+
+  &__thumb {
+    width: 64px;
+    height: 64px;
+    border-radius: $radius-xl;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background: var(--color-2);
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    &--emoji {
+      font-size: 2rem;
+      background: transparent;
+    }
+  }
+
+  &__info {
+    min-width: 0;
+  }
+
+  &__kicker {
+    @extend %mini;
+    color: var(--color-4);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: calc($gap / 8);
+  }
+
+  &__name {
+    font-weight: 600;
+    color: var(--color-5);
+  }
+
+  &__owner {
+    @extend %small;
+    color: var(--color-3);
+    margin-top: calc($gap / 8);
+  }
+
+  &__desc {
+    @extend %small;
+    color: var(--color-4);
+    margin-top: calc($gap / 4);
+  }
+
+  &__website {
+    @extend %small;
+    display: inline-block;
+    margin-top: calc($gap / 4);
+  }
+
+  &__relays {
+    @extend %mini;
+    color: var(--color-3);
+    margin-top: calc($gap / 4);
+    overflow-wrap: anywhere;
+  }
+}

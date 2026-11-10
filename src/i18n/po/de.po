@@ -7,42 +7,42 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "mime-version: 1.0\n"
 
-#: src/components/settings/UISettingsSection.ts:169
-#: src/components/settings/UISettingsSection.ts:380
+#: src/components/settings/UISettingsSection.ts:168
+#: src/components/settings/UISettingsSection.ts:379
 msgid "Gregorian"
 msgstr "Gregorianisch"
 
-#: src/components/settings/UISettingsSection.ts:171
-#: src/components/settings/UISettingsSection.ts:382
+#: src/components/settings/UISettingsSection.ts:170
+#: src/components/settings/UISettingsSection.ts:381
 msgid "Gregorian + Hijri"
 msgstr "Gregorianisch + Hijri"
 
-#: src/components/settings/UISettingsSection.ts:396
+#: src/components/settings/UISettingsSection.ts:395
 msgid "Gregorian + Hijri calendars"
 msgstr "Gregorianischer + Hijri-Kalender"
 
-#: src/components/settings/UISettingsSection.ts:394
+#: src/components/settings/UISettingsSection.ts:393
 msgid "Gregorian calendar"
 msgstr "Gregorianischer Kalender"
 
-#: src/components/settings/UISettingsSection.ts:381
+#: src/components/settings/UISettingsSection.ts:380
 msgid "Hijri (Islamic)"
 msgstr "Hijri (islamisch)"
 
-#: src/components/settings/UISettingsSection.ts:395
+#: src/components/settings/UISettingsSection.ts:394
 msgid "Hijri (Islamic) calendar"
 msgstr "Hijri (islamischer) Kalender"
 
-#: src/components/settings/UISettingsSection.ts:119
+#: src/components/settings/UISettingsSection.ts:116
 msgid "Language"
 msgstr "Sprache"
 
-#: src/components/settings/UISettingsSection.ts:360
+#: src/components/settings/UISettingsSection.ts:359
 msgid "Language changed"
 msgstr "Sprache geändert"
 
-#: src/components/settings/UISettingsSection.ts:400
-#: src/components/settings/UISettingsSection.ts:438
+#: src/components/settings/UISettingsSection.ts:399
+#: src/components/settings/UISettingsSection.ts:437
 #: src/helpers/ListSyncMode.ts:84
 msgid "Switched to %s"
 msgstr "Gewechselt zu %s"
@@ -258,10 +258,10 @@ msgstr "Konten und Threads, die du stummgeschaltet hast."
 #: src/addons/analytics/AnalyticsAddonView.ts:237
 #: src/components/layout/MainLayout.ts:1997
 #: src/components/settings/NotificationPrioritySection.ts:85
-#: src/components/views/ArticleTimelineView.ts:59
+#: src/components/views/ArticleTimelineView.ts:65
 #: src/components/views/ProfileView.ts:2327
 #: src/components/views/ProfileView.ts:742
-#: src/shell/focusDomains.ts:62
+#: src/shell/focusDomains.ts:94
 msgid "Articles"
 msgstr "Artikel"
 
@@ -270,9 +270,9 @@ msgstr "Artikel"
 #: src/components/layout/MainLayout.ts:101
 #: src/components/layout/partials/ListsMenuPartial.ts:45
 #: src/components/views/ListsOverviewView.ts:69
-#: src/lists/bookmarks.ts:4480
-#: src/lists/bookmarks.ts:4516
-#: src/shell/focusDomains.ts:58
+#: src/lists/bookmarks.ts:4487
+#: src/lists/bookmarks.ts:4523
+#: src/shell/focusDomains.ts:109
 msgid "Bookmarks"
 msgstr "Lesezeichen"
 
@@ -307,6 +307,7 @@ msgstr "DiagLogs exportieren"
 #: src/components/layout/MainLayout.ts:102
 #: src/components/layout/partials/ListsMenuPartial.ts:52
 #: src/components/views/ListsOverviewView.ts:77
+#: src/shell/focusDomains.ts:114
 msgid "Follows"
 msgstr "Follows"
 
@@ -343,6 +344,7 @@ msgstr "Medien"
 #: src/components/layout/MainLayout.ts:103
 #: src/components/layout/partials/ListsMenuPartial.ts:58
 #: src/components/views/ListsOverviewView.ts:85
+#: src/shell/focusDomains.ts:115
 msgid "Muted"
 msgstr "Stummgeschaltet"
 
@@ -398,6 +400,7 @@ msgstr "Timeline"
 #: src/components/views/ListsOverviewView.ts:93
 #: src/lists/tribes.ts:2382
 #: src/lists/tribes.ts:2399
+#: src/shell/focusDomains.ts:113
 msgid "Tribes"
 msgstr "Tribes"
 
@@ -448,8 +451,8 @@ msgstr ""
 #: src/helpers/datePickerModal.ts:189
 #: src/helpers/datePickerModal.ts:331
 #: src/helpers/datePickerModal.ts:90
-#: src/lists/bookmarks.ts:3785
-#: src/lists/bookmarks.ts:3949
+#: src/lists/bookmarks.ts:3792
+#: src/lists/bookmarks.ts:3956
 #: src/lists/tribes.ts:2745
 #: src/lists/tribes.ts:2948
 #: src/services/AuthService.ts:838
@@ -482,7 +485,7 @@ msgstr "Download"
 
 #: src/components/modals/EditFolderModal.ts:57
 #: src/components/modals/NewFolderModal.ts:54
-#: src/lists/bookmarks.ts:3777
+#: src/lists/bookmarks.ts:3784
 msgid "Enter folder name..."
 msgstr "Ordnernamen eingeben…"
 
@@ -528,8 +531,8 @@ msgstr "Ordner umbenennen"
 #: src/addons/note-taking/NoteEditorModal.ts:92
 #: src/components/modals/EditFolderModal.ts:66
 #: src/components/settings/NotificationPrioritySection.ts:162
-#: src/lists/bookmarks.ts:3788
-#: src/lists/bookmarks.ts:3952
+#: src/lists/bookmarks.ts:3795
+#: src/lists/bookmarks.ts:3959
 msgid "Save"
 msgstr "Speichern"
 
@@ -830,7 +833,7 @@ msgstr "Lade App…"
 msgid "Loading book…"
 msgstr "Buch wird geladen…"
 
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:393
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:424
 msgid "Loading music…"
 msgstr "Musik wird geladen…"
 
@@ -1209,8 +1212,8 @@ msgstr "Beschreibe dein Video…"
 #: src/addons/follow-packs/FollowPackManager.ts:507
 #: src/addons/nostr-majlis/DhikrModal.ts:71
 #: src/components/views/VideoEditorView.ts:165
-#: src/lists/bookmarks.ts:3751
-#: src/lists/bookmarks.ts:3935
+#: src/lists/bookmarks.ts:3758
+#: src/lists/bookmarks.ts:3942
 msgid "Description"
 msgstr "Beschreibung"
 
@@ -1322,7 +1325,7 @@ msgstr "Nachrichten-Optionen"
 #: src/components/search/GlobalSearchView.ts:398
 #: src/components/views/MessagesView.ts:167
 #: src/components/views/MessagesView.ts:933
-#: src/shell/focusDomains.ts:63
+#: src/shell/focusDomains.ts:106
 msgid "Messages"
 msgstr "Nachrichten"
 
@@ -1512,6 +1515,8 @@ msgstr "automatisch generiert, nur ändern, wenn du weißt, was du tust"
 #: src/addons/marketplace/ListingEditorView.ts:186
 #: src/components/navigation/SearchSpotlight.ts:111
 #: src/components/views/ArticleEditorView.ts:312
+#: src/shell/focusStage.ts:122
+#: src/shell/focusSurfaceFrame.ts:30
 msgid "Back"
 msgstr "Zurück"
 
@@ -1646,7 +1651,7 @@ msgstr "Entwurf speichern"
 
 #: src/components/profile/ProfileEditModal.ts:260
 #: src/components/views/ArticleEditorView.ts:1172
-#: src/lists/bookmarks.ts:5373
+#: src/lists/bookmarks.ts:5380
 #: src/lists/follows.ts:1866
 #: src/lists/mutes.ts:1993
 msgid "Saving..."
@@ -1739,6 +1744,7 @@ msgstr "Abzeichen verleihen"
 #: src/addons/badges/BadgesView.ts:35
 #: src/components/views/ProfileView.ts:2239
 #: src/components/views/ProfileView.ts:748
+#: src/shell/focusDomains.ts:160
 msgid "Badges"
 msgstr "Abzeichen"
 
@@ -1753,7 +1759,7 @@ msgstr "von"
 #: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:208
 #: src/components/views/ProfileView.ts:2174
 #: src/components/views/ProfileView.ts:747
-#: src/shell/focusDomains.ts:56
+#: src/shell/focusDomains.ts:141
 msgid "Calendar"
 msgstr "Kalender"
 
@@ -1876,7 +1882,7 @@ msgstr "Petname festlegen"
 msgid "Set status…"
 msgstr "Status setzen…"
 
-#: src/components/settings/UISettingsSection.ts:221
+#: src/components/settings/UISettingsSection.ts:220
 #: src/components/views/ProfileView.ts:984
 msgid "Show reactions"
 msgstr "Reaktionen anzeigen"
@@ -1918,6 +1924,7 @@ msgstr "Zu privaten Lesezeichen hinzugefügt"
 #: src/addons/analytics/AnalyticsAddonView.ts:318
 #: src/components/analytics/AnalyticsModal.ts:49
 #: src/components/ui/InteractionStatusLine.ts:291
+#: src/shell/focusDomains.ts:156
 msgid "Analytics"
 msgstr "Statistik"
 
@@ -1927,7 +1934,7 @@ msgstr "Artikel-Benachrichtigungen deaktiviert"
 
 #: src/components/ui/InteractionStatusLine.ts:298
 #: src/components/ui/NoteMenu.ts:165
-#: src/lists/bookmarks.ts:4505
+#: src/lists/bookmarks.ts:4512
 msgid "Bookmark"
 msgstr "Lesezeichen"
 
@@ -1935,7 +1942,7 @@ msgstr "Lesezeichen"
 #: src/components/ui/NoteMenu.ts:548
 #: src/lists/follows-extended.ts:447
 #: src/services/ToastService.ts:218
-#: src/shell/focusStage.ts:85
+#: src/shell/focusStage.ts:118
 msgid "Close"
 msgstr "Schließen"
 
@@ -1968,7 +1975,7 @@ msgstr "Editor konnte nicht geöffnet werden"
 #: src/addons/marketplace/ListingView.ts:320
 #: src/components/ui/InteractionStatusLine.ts:536
 #: src/components/ui/NoteMenu.ts:804
-#: src/lists/bookmarks.ts:4872
+#: src/lists/bookmarks.ts:4879
 msgid "Failed to update bookmark"
 msgstr "Lesezeichen konnte nicht aktualisiert werden"
 
@@ -2277,7 +2284,7 @@ msgstr "BEENDET"
 msgid "Expired"
 msgstr "Abgelaufen"
 
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1230
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1272
 #: src/helpers/renderQuotePreview.ts:39
 msgid "Failed to load quoted note"
 msgstr "Zitierte Notiz konnte nicht geladen werden"
@@ -2298,13 +2305,13 @@ msgstr "Follow-Pack"
 msgid "Follow pack was updated"
 msgstr "Follow-Pack wurde aktualisiert"
 
-#: src/components/settings/UISettingsSection.ts:136
+#: src/components/settings/UISettingsSection.ts:133
 #: src/components/ui/FontSizeSwitcher.ts:33
 msgid "Font Size"
 msgstr "Schriftgröße"
 
 #: src/components/ui/note-rendering/GitEventRenderer.ts:160
-#: src/lists/bookmarks.ts:3646
+#: src/lists/bookmarks.ts:3653
 msgid "Git Issue"
 msgstr "Git Issue"
 
@@ -2360,9 +2367,9 @@ msgstr "Lädt…"
 #: src/addons/marketplace/MarketplaceAddonView.ts:34
 #: src/addons/marketplace/MarketplaceTimelineInjector.ts:220
 #: src/components/ui/note-rendering/ListingRenderer.ts:62
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1546
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1588
 #: src/helpers/renderQuotePreview.ts:153
-#: src/shell/focusDomains.ts:59
+#: src/shell/focusDomains.ts:131
 msgid "Marketplace"
 msgstr "Marktplatz"
 
@@ -2393,7 +2400,7 @@ msgstr "Nostr-Website"
 msgid "Note can't be rendered"
 msgstr "Notiz kann nicht dargestellt werden"
 
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1182
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1224
 msgid "Note from a user you've muted"
 msgstr "Notiz von einem stummgeschalteten Nutzer"
 
@@ -2462,7 +2469,7 @@ msgstr "Weniger anzeigen"
 msgid "Show More"
 msgstr "Mehr anzeigen"
 
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1183
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1225
 msgid "Show temporarily"
 msgstr "Vorübergehend anzeigen"
 
@@ -4757,7 +4764,7 @@ msgstr "Zeitüberschreitung der Anfrage. Bitte versuche es erneut."
 msgid "Signing failed"
 msgstr "Signierung fehlgeschlagen"
 
-#: src/App.ts:1020
+#: src/App.ts:1024
 #: src/services/managers/KeySignerConnectionManager.ts:413
 msgid "Stop NoorSigner Daemon?"
 msgstr "NoorSigner-Daemon stoppen?"
@@ -4909,7 +4916,7 @@ msgstr "Notiz"
 
 #: src/components/layout/MainLayout.ts:1990
 #: src/components/views/NotificationsView.ts:112
-#: src/shell/focusDomains.ts:64
+#: src/shell/focusDomains.ts:103
 msgid "Notifications"
 msgstr "Mitteilungen"
 
@@ -4935,6 +4942,7 @@ msgstr "Produkt"
 
 #: src/components/bookmarks/FolderCard.ts:73
 #: src/components/layout/MainLayout.ts:1983
+#: src/shell/focusDomains.ts:116
 msgid "Profile"
 msgstr "Profil"
 
@@ -4943,6 +4951,7 @@ msgid "Profile: %s"
 msgstr "Profil: %s"
 
 #: src/components/layout/MainLayout.ts:1778
+#: src/shell/focusDomains.ts:100
 msgid "Recipes"
 msgstr "Rezepte"
 
@@ -5180,7 +5189,7 @@ msgstr "%s Mitglieder"
 msgid "%s minutes"
 msgstr "%s Minuten"
 
-#: src/components/notifications/NotificationItem.ts:733
+#: src/components/notifications/NotificationItem.ts:739
 msgid "%s new messages in %s"
 msgstr "%s neue Nachrichten in %s"
 
@@ -5230,12 +5239,12 @@ msgstr "+ Neuer Ereigniskalender"
 msgid "+%s more"
 msgstr "+%s weitere"
 
-#: src/components/settings/UISettingsSection.ts:110
-#: src/components/settings/UISettingsSection.ts:604
+#: src/components/settings/UISettingsSection.ts:107
+#: src/components/settings/UISettingsSection.ts:602
 msgid "1 week"
 msgstr "1 Woche"
 
-#: src/components/notifications/NotificationItem.ts:747
+#: src/components/notifications/NotificationItem.ts:753
 msgid "A dhikr reached its goal"
 msgstr "Ein Dhikr hat sein Ziel erreicht"
 
@@ -5243,7 +5252,7 @@ msgstr "Ein Dhikr hat sein Ziel erreicht"
 msgid "a guest"
 msgstr "ein Gast"
 
-#: src/components/notifications/NotificationItem.ts:714
+#: src/components/notifications/NotificationItem.ts:720
 msgid "a Nostrord group"
 msgstr "einer Nostrord-Gruppe"
 
@@ -5307,7 +5316,7 @@ msgstr ""
 "Nach Ablauf des Zeitfensters hört das Blinken auf (du hast dich an das neue "
 "Profil gewöhnt)"
 
-#: src/components/settings/UISettingsSection.ts:607
+#: src/components/settings/UISettingsSection.ts:605
 msgid "all"
 msgstr "alle"
 
@@ -5320,11 +5329,11 @@ msgstr "ganztägig"
 msgid "All day"
 msgstr "Ganztägig"
 
-#: src/components/settings/UISettingsSection.ts:113
+#: src/components/settings/UISettingsSection.ts:110
 msgid "All self-reposts (any age)"
 msgstr "Alle eigenen Reposts (jedes Alter)"
 
-#: src/components/notifications/NotificationItem.ts:730
+#: src/components/notifications/NotificationItem.ts:736
 msgid "an Armada community"
 msgstr "einer Armada-Community"
 
@@ -5349,7 +5358,7 @@ msgstr "Archiviere eine Notiz, um sie hier abzulegen."
 msgid "Archived"
 msgstr "Archiviert"
 
-#: src/components/settings/UISettingsSection.ts:262
+#: src/components/settings/UISettingsSection.ts:261
 msgid "Article excerpt limit in secondary content column"
 msgstr "Artikel-Kurzfassungs-Limit in der sekundären Inhaltsspalte"
 
@@ -5369,7 +5378,7 @@ msgstr "automatisch generiert"
 msgid "auto-generated, do not change"
 msgstr "automatisch generiert, nicht ändern"
 
-#: src/components/settings/UISettingsSection.ts:893
+#: src/components/settings/UISettingsSection.ts:891
 msgid "Auto-update check disabled"
 msgstr "Automatische Update-Prüfung deaktiviert"
 
@@ -5455,7 +5464,7 @@ msgid "Bookmark read-state sync enabled"
 msgstr "Lesestatus-Sync für Bookmarks aktiviert"
 
 #: src/addons/marketplace/ListingView.ts:301
-#: src/lists/bookmarks.ts:4781
+#: src/lists/bookmarks.ts:4788
 msgid "Bookmark removed"
 msgstr "Bookmark entfernt"
 
@@ -5467,7 +5476,7 @@ msgstr "Bookmarks deaktiviert"
 msgid "Bookmarks enabled"
 msgstr "Bookmarks aktiviert"
 
-#: src/components/settings/UISettingsSection.ts:171
+#: src/components/settings/UISettingsSection.ts:170
 msgid "Both calendars side-by-side"
 msgstr "Beide Kalender nebeneinander"
 
@@ -5554,7 +5563,7 @@ msgid "Check frequency for all supported group clients"
 msgstr "Prüffrequenz für alle unterstützten Gruppen-Clients"
 
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:162
-#: src/components/settings/UISettingsSection.ts:318
+#: src/components/settings/UISettingsSection.ts:317
 msgid "Check now"
 msgstr "Jetzt prüfen"
 
@@ -5576,7 +5585,7 @@ msgstr ""
 "Wähle, wo Bilder, Videos und andere Mediendateien hochgeladen werden. "
 "NoorNote unterstützt sowohl das Blossom- als auch das NIP-96-Protokoll."
 
-#: src/components/settings/UISettingsSection.ts:201
+#: src/components/settings/UISettingsSection.ts:200
 msgid "Classic Menu"
 msgstr "Klassisches Menü"
 
@@ -5767,7 +5776,7 @@ msgstr ""
 msgid "Date"
 msgstr "Datum"
 
-#: src/components/settings/UISettingsSection.ts:166
+#: src/components/settings/UISettingsSection.ts:165
 msgid "Date Format"
 msgstr "Datumsformat"
 
@@ -5776,8 +5785,8 @@ msgstr "Datumsformat"
 msgid "declined"
 msgstr "abgelehnt"
 
-#: src/components/settings/UISettingsSection.ts:146
-#: src/components/settings/UISettingsSection.ts:419
+#: src/components/settings/UISettingsSection.ts:143
+#: src/components/settings/UISettingsSection.ts:418
 msgid "Default"
 msgstr "Standard"
 
@@ -5884,7 +5893,7 @@ msgstr "Dhikr aktualisiert"
 msgid "Diagrams"
 msgstr "Diagramme"
 
-#: src/components/settings/UISettingsSection.ts:252
+#: src/components/settings/UISettingsSection.ts:251
 msgid "Disable post truncation"
 msgstr "Beitrags-Kürzung deaktivieren"
 
@@ -6172,6 +6181,7 @@ msgid "Export calendar (.ics)"
 msgstr "Kalender exportieren (.ics)"
 
 #: src/addons/addonI18n.ts:22
+#: src/shell/focusDomains.ts:182
 msgid "Extended Follows"
 msgstr "Erweiterte Folgungen"
 
@@ -6285,7 +6295,7 @@ msgstr "Follow-Pack aktualisiert"
 #: src/addons/addonI18n.ts:30
 #: src/addons/follow-packs/FollowPacksView.ts:21
 #: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:143
-#: src/shell/focusDomains.ts:60
+#: src/shell/focusDomains.ts:137
 msgid "Follow Packs"
 msgstr "Follow-Packs"
 
@@ -6293,6 +6303,7 @@ msgstr "Follow-Packs"
 #: src/addons/follower-notification/FollowerNotificationAddonView.ts:16
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:106
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:107
+#: src/shell/focusDomains.ts:188
 msgid "Follower Notification"
 msgstr "Follower-Benachrichtigung"
 
@@ -6338,6 +6349,7 @@ msgstr "dabei"
 
 #: src/addons/addonI18n.ts:54
 #: src/addons/group-chats/GroupChatsAddonView.ts:20
+#: src/shell/focusDomains.ts:194
 msgid "Group Chats"
 msgstr "Gruppen-Chats"
 
@@ -6361,6 +6373,7 @@ msgstr "Gast"
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsAddonView.ts:16
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:60
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:65
+#: src/shell/focusDomains.ts:169
 msgid "Hashtag Subscriptions"
 msgstr "Hashtag-Abos"
 
@@ -6379,7 +6392,7 @@ msgstr ""
 msgid "hidden"
 msgstr "ausgeblendet"
 
-#: src/components/settings/UISettingsSection.ts:231
+#: src/components/settings/UISettingsSection.ts:230
 msgid "Hide highlights"
 msgstr "Highlights ausblenden"
 
@@ -6486,7 +6499,7 @@ msgstr "Ausgeschaltet lassen"
 msgid "Known"
 msgstr "Bekannt"
 
-#: src/components/settings/UISettingsSection.ts:143
+#: src/components/settings/UISettingsSection.ts:140
 msgid "Layout Mode"
 msgstr "Layout-Modus"
 
@@ -6648,7 +6661,7 @@ msgstr "Meine Listings"
 msgid "Name"
 msgstr "Name"
 
-#: src/components/notifications/NotificationItem.ts:734
+#: src/components/notifications/NotificationItem.ts:740
 msgid "New activity in %s"
 msgstr "Neue Aktivität in %s"
 
@@ -6666,7 +6679,7 @@ msgstr "Neues Listing"
 msgid "New note"
 msgstr "Neue Notiz"
 
-#: src/components/notifications/NotificationItem.ts:701
+#: src/components/notifications/NotificationItem.ts:707
 msgid "New post tagged #%s"
 msgstr "Neuer Beitrag mit #%s"
 
@@ -6820,6 +6833,7 @@ msgstr "Notiz gespeichert"
 #: src/addons/note-taking/NoteTakingAddonView.ts:42
 #: src/addons/note-taking/NoteTakingAddonView.ts:43
 #: src/addons/note-taking/NoteTakingAddonView.ts:52
+#: src/shell/focusDomains.ts:144
 msgid "Note taking"
 msgstr "Notizen"
 
@@ -6931,8 +6945,8 @@ msgstr "Periodisch neue Beiträge für deine Hashtags abrufen."
 msgid "Personal calendar"
 msgstr "Persönlicher Kalender"
 
-#: src/components/settings/UISettingsSection.ts:149
-#: src/components/settings/UISettingsSection.ts:423
+#: src/components/settings/UISettingsSection.ts:146
+#: src/components/settings/UISettingsSection.ts:422
 msgid "Phone"
 msgstr "Telefon"
 
@@ -6971,11 +6985,11 @@ msgid "Please select an image file"
 msgstr "Bitte eine Bilddatei auswählen"
 
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:190
-#: src/lists/bookmarks.ts:3624
+#: src/lists/bookmarks.ts:3631
 msgid "Poll"
 msgstr "Umfrage"
 
-#: src/components/settings/UISettingsSection.ts:471
+#: src/components/settings/UISettingsSection.ts:470
 msgid "Post truncation disabled - all posts will be shown in full"
 msgstr "Beitrags-Kürzung deaktiviert - alle Beiträge werden vollständig angezeigt"
 
@@ -7114,7 +7128,7 @@ msgstr "Deine Beiträge werden gerankt …"
 msgid "Re-include"
 msgstr "Wieder einschließen"
 
-#: src/components/notifications/NotificationItem.ts:683
+#: src/components/notifications/NotificationItem.ts:689
 msgid "reacted to your %s"
 msgstr "hat auf %s reagiert"
 
@@ -7224,7 +7238,7 @@ msgstr "„%s“ aus dem Filter entfernt"
 msgid "Repeat"
 msgstr "Wiederholung"
 
-#: src/components/notifications/NotificationItem.ts:677
+#: src/components/notifications/NotificationItem.ts:683
 msgid "replied to %s that mentioned you"
 msgstr "hat auf %s geantwortet (dort wurdest du erwähnt)"
 
@@ -7292,8 +7306,8 @@ msgstr "Rezensionen & Zitate (%s)"
 msgid "Revoke"
 msgstr "Entziehen"
 
-#: src/components/settings/UISettingsSection.ts:147
-#: src/components/settings/UISettingsSection.ts:420
+#: src/components/settings/UISettingsSection.ts:144
+#: src/components/settings/UISettingsSection.ts:419
 msgid "Right Pane"
 msgstr "Rechter Bereich"
 
@@ -7343,6 +7357,7 @@ msgstr "Beitrag planen"
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:51
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:52
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:62
+#: src/shell/focusDomains.ts:150
 msgid "Scheduled Posts"
 msgstr "Geplante Beiträge"
 
@@ -7451,7 +7466,7 @@ msgstr "Wähle deine Stadt, um Gebetszeiten zu sehen."
 msgid "Select your location to see prayer times."
 msgstr "Wähle deinen Standort, um Gebetszeiten zu sehen."
 
-#: src/components/settings/UISettingsSection.ts:591
+#: src/components/settings/UISettingsSection.ts:589
 msgid "Self-reposts hidden from timeline"
 msgstr "Eigene Reposts aus der Timeline ausgeblendet"
 
@@ -7541,7 +7556,7 @@ msgstr ""
 "Zeige die eigenen Emojis eines anderen Benutzers und importiere beliebige "
 "in dein persönliches Pack."
 
-#: src/components/settings/UISettingsSection.ts:224
+#: src/components/settings/UISettingsSection.ts:223
 msgid ""
 "Show the reactions (likes) of people you follow as entries in your "
 "timeline. Off by default. Individual users can be enabled from their "
@@ -7567,7 +7582,7 @@ msgstr ""
 "Zeigt das aktuelle Gebet und die verbleibende Zeit bis zum nächsten in der "
 "Sidebar."
 
-#: src/components/settings/UISettingsSection.ts:795
+#: src/components/settings/UISettingsSection.ts:793
 msgid "Side column articles: %s"
 msgstr "Artikel der Seitenspalte: %s"
 
@@ -7579,11 +7594,11 @@ msgstr "Slug (eindeutige Kennung)"
 msgid "Slug and Name are required"
 msgstr "Slug und Name sind erforderlich"
 
-#: src/components/notifications/NotificationItem.ts:745
+#: src/components/notifications/NotificationItem.ts:751
 msgid "Somebody committed to a dhikr"
 msgstr "Jemand hat am Dhikr teilgenommen"
 
-#: src/components/notifications/NotificationItem.ts:705
+#: src/components/notifications/NotificationItem.ts:711
 msgid "stopped following you back"
 msgstr "folgt dir nicht mehr zurück"
 
@@ -7621,11 +7636,11 @@ msgstr "Gelesene Bookmarks über Relays synchronisieren"
 msgid "Tafsir (Al-Mukhtasar)"
 msgstr "Tafsir (Al-Mukhtasar)"
 
-#: src/components/notifications/NotificationItem.ts:739
+#: src/components/notifications/NotificationItem.ts:745
 msgid "tagged you in an image"
 msgstr "hat dich in einem Bild markiert"
 
-#: src/components/notifications/NotificationItem.ts:729
+#: src/components/notifications/NotificationItem.ts:735
 msgid "the Armada community \"%s\""
 msgstr "der Armada-Community „%s“"
 
@@ -7655,7 +7670,7 @@ msgstr "Gast und alle Teilnehmer werden per DM informiert."
 msgid "The host cancelled the booking \"%s\""
 msgstr "Der Gastgeber hat die Buchung „%s“ storniert"
 
-#: src/components/notifications/NotificationItem.ts:713
+#: src/components/notifications/NotificationItem.ts:719
 msgid "the Nostrord group \"%s\""
 msgstr "der Nostrord-Gruppe „%s“"
 
@@ -7663,7 +7678,7 @@ msgstr "der Nostrord-Gruppe „%s“"
 msgid "The vacation end must be after the start"
 msgstr "Das Urlaubs-Ende muss nach dem Start liegen"
 
-#: src/components/settings/UISettingsSection.ts:129
+#: src/components/settings/UISettingsSection.ts:126
 msgid "Theme"
 msgstr "Theme"
 
@@ -7836,7 +7851,7 @@ msgstr "Wöchentliche Verfügbarkeit"
 msgid "What this badge represents…"
 msgstr "Was dieses Badge bedeutet …"
 
-#: src/components/settings/UISettingsSection.ts:304
+#: src/components/settings/UISettingsSection.ts:303
 msgid ""
 "When enabled, every event you publish carries a <code>client</code> tag "
 "identifying NoorNote. Other Nostr clients display this as \"via NoorNote\" "
@@ -7850,7 +7865,7 @@ msgstr ""
 msgid "When:"
 msgstr "Wann:"
 
-#: src/components/settings/UISettingsSection.ts:277
+#: src/components/settings/UISettingsSection.ts:276
 msgid ""
 "Whose articles appear in <strong>/articles</strong>. Higher degrees broaden "
 "the feed beyond your direct follows but take longer to build and include "
@@ -7868,8 +7883,8 @@ msgstr "Schreibe private, verschlüsselte Notizen, die allein dir gehören."
 msgid "You already follow everyone in this pack"
 msgstr "Du folgst bereits allen in diesem Pack"
 
-#: src/components/notifications/NotificationItem.ts:722
-#: src/components/notifications/NotificationItem.ts:731
+#: src/components/notifications/NotificationItem.ts:728
+#: src/components/notifications/NotificationItem.ts:737
 msgid "You posted to %s"
 msgstr "Du hast in %s gepostet"
 
@@ -7905,7 +7920,7 @@ msgstr "Deine geplanten Beiträge"
 msgid "Your slots"
 msgstr "Deine Slots"
 
-#: src/components/notifications/NotificationItem.ts:688
+#: src/components/notifications/NotificationItem.ts:694
 msgid "zapped your %s"
 msgstr "hat %s gezappt"
 
@@ -7924,7 +7939,7 @@ msgid_plural "%s items in different folders"
 msgstr[0] "%s Element in verschiedenen Ordnern"
 msgstr[1] "%s Elemente in verschiedenen Ordnern"
 
-#: src/components/notifications/NotificationItem.ts:702
+#: src/components/notifications/NotificationItem.ts:708
 msgid "%s new posts tagged #%s"
 msgstr "%s neue Beiträge mit #%s"
 
@@ -7958,8 +7973,8 @@ msgstr ""
 "🔒 Verschlüsselte Notiz über diesen Benutzer. Nur du kannst sie "
 "entschlüsseln und lesen."
 
-#: src/components/settings/UISettingsSection.ts:112
-#: src/components/settings/UISettingsSection.ts:606
+#: src/components/settings/UISettingsSection.ts:109
+#: src/components/settings/UISettingsSection.ts:604
 msgid "1 year"
 msgstr "1 Jahr"
 
@@ -7967,13 +7982,13 @@ msgstr "1 Jahr"
 msgid "1080p (Full HD)"
 msgstr "1080p (Full HD)"
 
-#: src/components/settings/UISettingsSection.ts:109
-#: src/components/settings/UISettingsSection.ts:603
+#: src/components/settings/UISettingsSection.ts:106
+#: src/components/settings/UISettingsSection.ts:601
 msgid "3 days"
 msgstr "3 Tage"
 
-#: src/components/settings/UISettingsSection.ts:111
-#: src/components/settings/UISettingsSection.ts:605
+#: src/components/settings/UISettingsSection.ts:108
+#: src/components/settings/UISettingsSection.ts:603
 msgid "3 months"
 msgstr "3 Monate"
 
@@ -8073,7 +8088,7 @@ msgstr ""
 msgid "Appointment"
 msgstr "Termin"
 
-#: src/components/settings/UISettingsSection.ts:727
+#: src/components/settings/UISettingsSection.ts:725
 msgid "Article excerpt limit set to %s characters"
 msgstr "Artikel-Kurzfassungs-Limit auf %s Zeichen gesetzt"
 
@@ -8105,11 +8120,11 @@ msgstr ""
 msgid "Author"
 msgstr "Autor"
 
-#: src/components/settings/UISettingsSection.ts:892
+#: src/components/settings/UISettingsSection.ts:890
 msgid "Auto-update check enabled"
 msgstr "Automatische Update-Prüfung aktiviert"
 
-#: src/components/settings/UISettingsSection.ts:314
+#: src/components/settings/UISettingsSection.ts:313
 msgid "Automatically check for updates"
 msgstr "Automatisch nach Updates suchen"
 
@@ -8128,7 +8143,7 @@ msgstr ""
 "solche Abruf ist eine direkte Anfrage von deinem Gerät an diesen "
 "Drittanbieter-Host."
 
-#: src/components/notifications/NotificationItem.ts:741
+#: src/components/notifications/NotificationItem.ts:747
 msgid "awarded you a badge"
 msgstr "hat dir ein Badge verliehen"
 
@@ -8173,7 +8188,7 @@ msgstr "Buchbares Zeitfenster"
 msgid "Brief description for listing cards..."
 msgstr "Kurze Beschreibung für Listing-Karten …"
 
-#: src/components/settings/UISettingsSection.ts:204
+#: src/components/settings/UISettingsSection.ts:203
 msgid "Bring back the old, linear navigation."
 msgstr "Bring die alte, lineare Navigation zurück."
 
@@ -8187,11 +8202,12 @@ msgstr "Stöbere in kuratierten Follow-Packs, erstelle und teile eigene."
 
 #: src/components/ui/note-rendering/BadgeAwardRenderer.ts:139
 #: src/components/ui/note-rendering/BadgeDefinitionRenderer.ts:106
+#: src/components/ui/note-rendering/CommunityDefinitionRenderer.ts:105
 #: src/components/views/AboutView.ts:138
 msgid "by %s"
 msgstr "von %s"
 
-#: src/components/settings/UISettingsSection.ts:498
+#: src/components/settings/UISettingsSection.ts:497
 msgid "Circular navigation active"
 msgstr "Kreisende Navigation aktiv"
 
@@ -8199,7 +8215,7 @@ msgstr "Kreisende Navigation aktiv"
 msgid "City"
 msgstr "Stadt"
 
-#: src/components/settings/UISettingsSection.ts:497
+#: src/components/settings/UISettingsSection.ts:496
 msgid "Classic menu active"
 msgstr "Klassisches Menü aktiv"
 
@@ -8239,6 +8255,7 @@ msgstr "Erstelle dein erstes Produkt-Listing"
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:51
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:52
 #: src/addons/custom-emojis/CustomEmojisView.ts:25
+#: src/shell/focusDomains.ts:119
 msgid "Custom Emojis"
 msgstr "Eigene Emojis"
 
@@ -8266,19 +8283,19 @@ msgstr "Tage vorher"
 msgid "Decrease font size"
 msgstr "Schriftgröße verkleinern"
 
-#: src/components/settings/UISettingsSection.ts:431
+#: src/components/settings/UISettingsSection.ts:430
 msgid "Default layout mode"
 msgstr "Standard-Layout-Modus"
 
-#: src/components/settings/UISettingsSection.ts:743
+#: src/components/settings/UISettingsSection.ts:741
 msgid "Degree 1 (direct follows)"
 msgstr "Grad 1 (direkte Folgungen)"
 
-#: src/components/settings/UISettingsSection.ts:744
+#: src/components/settings/UISettingsSection.ts:742
 msgid "Degree 2 (friends of friends)"
 msgstr "Grad 2 (Freunde von Folgungen)"
 
-#: src/components/settings/UISettingsSection.ts:745
+#: src/components/settings/UISettingsSection.ts:743
 msgid "Degree 3 (friends of friends of friends)"
 msgstr "Grad 3 (Freunde von Freunden von Folgungen)"
 
@@ -8309,7 +8326,7 @@ msgstr "Dhikr"
 msgid "Dhikr created"
 msgstr "Dhikr erstellt"
 
-#: src/components/settings/UISettingsSection.ts:184
+#: src/components/settings/UISettingsSection.ts:183
 msgid "Disable self-reposts younger than:"
 msgstr "Eigene Reposts jünger als ausblenden:"
 
@@ -8391,7 +8408,7 @@ msgstr ""
 "Blendet Notes mit bestimmten Wörtern aus allen Timelines aus. Verwalte "
 "deine blockierten Wörter unten."
 
-#: src/components/settings/UISettingsSection.ts:178
+#: src/components/settings/UISettingsSection.ts:177
 msgid "Hide self-reposts"
 msgstr "Eigene Reposts ausblenden"
 
@@ -8409,11 +8426,11 @@ msgstr ""
 msgid "Hide timeline notes containing words on your filter list."
 msgstr "Blendet Timeline-Notes aus, die Wörter aus deiner Filterliste enthalten."
 
-#: src/components/settings/UISettingsSection.ts:620
+#: src/components/settings/UISettingsSection.ts:618
 msgid "Hiding all self-reposts"
 msgstr "Alle eigenen Reposts werden ausgeblendet"
 
-#: src/components/settings/UISettingsSection.ts:621
+#: src/components/settings/UISettingsSection.ts:619
 msgid "Hiding self-reposts younger than %s"
 msgstr "Eigene Reposts jünger als %s werden ausgeblendet"
 
@@ -8421,15 +8438,15 @@ msgstr "Eigene Reposts jünger als %s werden ausgeblendet"
 msgid "High"
 msgstr "Hoch"
 
-#: src/components/notifications/NotificationItem.ts:737
+#: src/components/notifications/NotificationItem.ts:743
 msgid "highlighted your %s"
 msgstr "hat %s als Highlight markiert"
 
-#: src/components/settings/UISettingsSection.ts:644
+#: src/components/settings/UISettingsSection.ts:642
 msgid "Highlights shown again"
 msgstr "Highlights wieder eingeblendet"
 
-#: src/components/settings/UISettingsSection.ts:170
+#: src/components/settings/UISettingsSection.ts:169
 msgid "Hijri"
 msgstr "Hijri"
 
@@ -8485,7 +8502,7 @@ msgstr "Bild-URL"
 msgid "Import"
 msgstr "Import"
 
-#: src/components/notifications/NotificationItem.ts:749
+#: src/components/notifications/NotificationItem.ts:755
 msgid "interacted with your %s"
 msgstr "hat mit %s interagiert"
 
@@ -8501,11 +8518,11 @@ msgstr "Ungültige Profil-ID"
 msgid "Invitation accepted"
 msgstr "Einladung angenommen"
 
-#: src/components/notifications/NotificationItem.ts:709
+#: src/components/notifications/NotificationItem.ts:715
 msgid "is now following you"
 msgstr "folgt dir jetzt"
 
-#: src/components/settings/UISettingsSection.ts:170
+#: src/components/settings/UISettingsSection.ts:169
 msgid "Islamic calendar (e.g., \"26. Rabi' ath-Thani 1446\")"
 msgstr "Islamischer Kalender (z. B. „26. Rabi' ath-Thani 1446“)"
 
@@ -8610,7 +8627,7 @@ msgstr "Bestehende Dhikrs werden gesucht …"
 msgid "Low (smallest size)"
 msgstr "Niedrig (kleinste Größe)"
 
-#: src/components/settings/UISettingsSection.ts:766
+#: src/components/settings/UISettingsSection.ts:764
 msgid "Main article feed: %s"
 msgstr "Haupt-Artikel-Feed: %s"
 
@@ -8626,7 +8643,7 @@ msgstr ""
 msgid "Mark all seen"
 msgstr "Alle als gesehen markieren"
 
-#: src/components/settings/UISettingsSection.ts:267
+#: src/components/settings/UISettingsSection.ts:266
 msgid ""
 "Maximum number of characters for article excerpts in the side column. "
 "Default: 200."
@@ -8652,19 +8669,19 @@ msgstr "Media-Server gespeichert"
 msgid "Medium (recommended)"
 msgstr "Mittel (empfohlen)"
 
-#: src/components/settings/UISettingsSection.ts:291
+#: src/components/settings/UISettingsSection.ts:290
 msgid "Memory optimization (experimental)"
 msgstr "Speicher-Optimierung (experimentell)"
 
-#: src/components/settings/UISettingsSection.ts:828
+#: src/components/settings/UISettingsSection.ts:826
 msgid "Memory optimization disabled"
 msgstr "Speicher-Optimierung deaktiviert"
 
-#: src/components/settings/UISettingsSection.ts:827
+#: src/components/settings/UISettingsSection.ts:825
 msgid "Memory optimization enabled"
 msgstr "Speicher-Optimierung aktiviert"
 
-#: src/components/notifications/NotificationItem.ts:673
+#: src/components/notifications/NotificationItem.ts:679
 msgid "mentioned you in %s"
 msgstr "hat dich in %s erwähnt"
 
@@ -8778,7 +8795,7 @@ msgstr "Open Source"
 msgid "Other differences"
 msgstr "Andere Unterschiede"
 
-#: src/components/settings/UISettingsSection.ts:643
+#: src/components/settings/UISettingsSection.ts:641
 msgid "Others' highlights hidden"
 msgstr "Highlights anderer ausgeblendet"
 
@@ -8790,7 +8807,7 @@ msgstr "Übersicht"
 msgid "Paste your one-time code from Rizful below."
 msgstr "Füge deinen Einmalcode von Rizful unten ein."
 
-#: src/components/settings/UISettingsSection.ts:435
+#: src/components/settings/UISettingsSection.ts:434
 msgid "Phone layout (390px width)"
 msgstr "Telefon-Layout (390px Breite)"
 
@@ -8810,11 +8827,11 @@ msgstr "Wähle zuerst Von- und Bis-Datum"
 msgid "Pin to top"
 msgstr "Oben anpinnen"
 
-#: src/components/settings/UISettingsSection.ts:472
+#: src/components/settings/UISettingsSection.ts:471
 msgid "Post truncation enabled"
 msgstr "Beitrags-Kürzung aktiviert"
 
-#: src/components/notifications/NotificationItem.ts:696
+#: src/components/notifications/NotificationItem.ts:702
 msgid "posted a new article"
 msgstr "hat einen neuen Artikel veröffentlicht"
 
@@ -8822,11 +8839,11 @@ msgstr "hat einen neuen Artikel veröffentlicht"
 msgid "Posts module not ready"
 msgstr "Beiträge-Modul nicht bereit"
 
-#: src/components/settings/UISettingsSection.ts:855
+#: src/components/settings/UISettingsSection.ts:853
 msgid "Posts will be signed with \"via NoorNote\""
 msgstr "Beiträge werden mit „via NoorNote“ signiert"
 
-#: src/components/settings/UISettingsSection.ts:856
+#: src/components/settings/UISettingsSection.ts:854
 msgid "Posts will be signed without client tag"
 msgstr "Beiträge werden ohne Client-Tag signiert"
 
@@ -8884,13 +8901,13 @@ msgstr "hat dieses Listing zitiert:"
 msgid "Re-sync"
 msgstr "Neu synchronisieren"
 
-#: src/components/settings/UISettingsSection.ts:691
+#: src/components/settings/UISettingsSection.ts:689
 msgid "Reactions from people you follow now appear in your timeline"
 msgstr ""
 "Reaktionen von Menschen, denen du folgst, erscheinen jetzt in deiner "
 "Timeline"
 
-#: src/components/settings/UISettingsSection.ts:694
+#: src/components/settings/UISettingsSection.ts:692
 msgid "Reactions hidden from your timeline again"
 msgstr "Reaktionen wieder aus deiner Timeline ausgeblendet"
 
@@ -8902,11 +8919,11 @@ msgstr "Reaktionen-Modul nicht verfügbar"
 msgid "Relays: The Network"
 msgstr "Relays: Das Netzwerk"
 
-#: src/components/notifications/NotificationItem.ts:675
+#: src/components/notifications/NotificationItem.ts:681
 msgid "replied to your %s"
 msgstr "hat auf %s geantwortet"
 
-#: src/components/notifications/NotificationItem.ts:679
+#: src/components/notifications/NotificationItem.ts:685
 msgid "replied to your zap"
 msgstr "hat auf deinen Zap geantwortet"
 
@@ -8914,7 +8931,7 @@ msgstr "hat auf deinen Zap geantwortet"
 msgid "replies"
 msgstr "Antworten"
 
-#: src/components/notifications/NotificationItem.ts:681
+#: src/components/notifications/NotificationItem.ts:687
 msgid "reposted your %s"
 msgstr "hat %s geteilt"
 
@@ -8927,15 +8944,15 @@ msgstr "Reposts (%s)"
 msgid "Reposts & quotes"
 msgstr "Reposts & Zitate"
 
-#: src/components/settings/UISettingsSection.ts:421
+#: src/components/settings/UISettingsSection.ts:420
 msgid "Right Pane (RSS Mode)"
 msgstr "Rechter Bereich (RSS-Modus)"
 
-#: src/components/settings/UISettingsSection.ts:432
+#: src/components/settings/UISettingsSection.ts:431
 msgid "Right pane mode (views as tabs)"
 msgstr "Rechtsbereich-Modus (Views als Tabs)"
 
-#: src/components/settings/UISettingsSection.ts:433
+#: src/components/settings/UISettingsSection.ts:432
 msgid "Right pane RSS mode (compact timeline)"
 msgstr "Rechtsbereich-RSS-Modus (kompakte Timeline)"
 
@@ -8962,7 +8979,7 @@ msgstr "Alle sichtbaren auswählen"
 msgid "Select by search term"
 msgstr "Nach Suchbegriff auswählen"
 
-#: src/components/settings/UISettingsSection.ts:592
+#: src/components/settings/UISettingsSection.ts:590
 msgid "Self-reposts shown again"
 msgstr "Eigene Reposts wieder eingeblendet"
 
@@ -9016,15 +9033,15 @@ msgstr "Zeige dein Lightning-Wallet-Guthaben in der Sidebar mit Fiat-Umrechnung.
 msgid "Sidebar Widget"
 msgstr "Sidebar-Widget"
 
-#: src/components/settings/UISettingsSection.ts:301
+#: src/components/settings/UISettingsSection.ts:300
 msgid "Sign posts with \"via NoorNote\""
 msgstr "Beiträge mit „via NoorNote“ signieren"
 
-#: src/components/notifications/NotificationItem.ts:687
+#: src/components/notifications/NotificationItem.ts:693
 msgid "silently zapped your %s"
 msgstr "hat anonym %s gezappt"
 
-#: src/components/settings/UISettingsSection.ts:149
+#: src/components/settings/UISettingsSection.ts:146
 msgid "Single-column layout (390px width) for phone development and testing"
 msgstr "Einspaltiges Layout (390px Breite) für Telefon-Entwicklung und Tests"
 
@@ -9064,11 +9081,11 @@ msgstr "Soft-Stummschaltung aufgehoben"
 msgid "Solid badge - regular notifications"
 msgstr "Voll ausgefülltes Badge - reguläre Mitteilungen"
 
-#: src/components/notifications/NotificationItem.ts:743
+#: src/components/notifications/NotificationItem.ts:749
 msgid "Somebody started a new dhikr"
 msgstr "Jemand hat einen neuen Dhikr gestartet"
 
-#: src/components/notifications/NotificationItem.ts:723
+#: src/components/notifications/NotificationItem.ts:729
 msgid "Someone posted to %s"
 msgstr "Jemand hat in %s gepostet"
 
@@ -9090,7 +9107,7 @@ msgstr ""
 "(Art. 45 DSGVO). Eine Übermittlung an die Server von MyNymbox erfolgt auf "
 "Grundlage der Ausnahmen des Art. 49 (1) DSGVO."
 
-#: src/components/settings/UISettingsSection.ts:169
+#: src/components/settings/UISettingsSection.ts:168
 msgid "Standard Western calendar (e.g., \"30. Oct. 2024\")"
 msgstr "Standard-Westernder Kalender (z. B. „30. Okt. 2024“)"
 
@@ -9098,7 +9115,7 @@ msgstr "Standard-Westernder Kalender (z. B. „30. Okt. 2024“)"
 msgid "Start date"
 msgstr "Startdatum"
 
-#: src/components/notifications/NotificationItem.ts:707
+#: src/components/notifications/NotificationItem.ts:713
 msgid "started following you back!"
 msgstr "folgt dir jetzt auch!"
 
@@ -9263,29 +9280,29 @@ msgstr "Videokomprimierung aktiviert"
 
 #: src/components/views/ProfileView.ts:2345
 #: src/components/views/ProfileView.ts:743
-#: src/shell/focusDomains.ts:55
+#: src/shell/focusDomains.ts:99
 msgid "Videos"
 msgstr "Videos"
 
-#: src/components/settings/UISettingsSection.ts:147
+#: src/components/settings/UISettingsSection.ts:144
 msgid "Views open as tabs in the right pane, timeline stays visible in main pane"
 msgstr ""
 "Views öffnen sich als Tabs im rechten Bereich, die Timeline bleibt im "
 "Hauptbereich sichtbar"
 
-#: src/components/settings/UISettingsSection.ts:146
+#: src/components/settings/UISettingsSection.ts:143
 msgid "Views replace the timeline in the main pane, right pane shows System Logger"
 msgstr ""
 "Views ersetzen die Timeline im Hauptbereich, der rechte Bereich zeigt den "
 "System-Logger"
 
-#: src/components/settings/UISettingsSection.ts:148
+#: src/components/settings/UISettingsSection.ts:145
 msgid "Views replace the timeline, right pane is hidden for maximum content space"
 msgstr ""
 "Views ersetzen die Timeline, der rechte Bereich ist für maximalen Platz "
 "ausgeblendet"
 
-#: src/components/notifications/NotificationItem.ts:694
+#: src/components/notifications/NotificationItem.ts:700
 msgid "voted on your poll"
 msgstr "hat in deiner Umfrage abgestimmt"
 
@@ -9297,6 +9314,7 @@ msgstr "Warte auf die Bestätigungs-E-Mail und klicke darin auf „Verify your a
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:42
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:43
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:53
+#: src/shell/focusDomains.ts:200
 msgid "Wallet Balance"
 msgstr "Wallet-Guthaben"
 
@@ -9308,7 +9326,7 @@ msgstr "Wallet nicht verbunden"
 msgid "Warning:"
 msgstr "Warnung:"
 
-#: src/components/settings/UISettingsSection.ts:234
+#: src/components/settings/UISettingsSection.ts:233
 msgid ""
 "When enabled, highlight posts by others that quote an external website "
 "(kind 9802 with a web source) are hidden from your timelines, including "
@@ -9320,7 +9338,7 @@ msgstr ""
 "inklusive reiner Reposts davon. Deine eigenen Highlights bleiben sichtbar. "
 "Einzelne Benutzer kannst du über deren Profil ausblenden."
 
-#: src/components/settings/UISettingsSection.ts:255
+#: src/components/settings/UISettingsSection.ts:254
 msgid ""
 "When enabled, long posts will always be displayed in full without \"Show "
 "More\" buttons."
@@ -9328,7 +9346,7 @@ msgstr ""
 "Aktiviert werden lange Beiträge immer vollständig ohne „Mehr "
 "anzeigen“-Buttons dargestellt."
 
-#: src/components/settings/UISettingsSection.ts:181
+#: src/components/settings/UISettingsSection.ts:180
 msgid ""
 "When enabled, reposts of a user's own notes are hidden from your timeline. "
 "Reposts of other people's notes are unaffected."
@@ -9396,7 +9414,7 @@ msgstr ""
 "Wenn du jemandem folgst, speichert die App dessen aktuellen Namen und "
 "Profilbild"
 
-#: src/components/settings/UISettingsSection.ts:284
+#: src/components/settings/UISettingsSection.ts:283
 msgid ""
 "Whose articles appear in the side column's \"Newest Articles\" tab. Same "
 "degree meaning as above; you can pick a narrower degree here to keep the "
@@ -9406,12 +9424,12 @@ msgstr ""
 "Gleiche Grad-Bedeutung wie oben; wähle hier einen engeren Grad, um die "
 "Seitenspalte auf nähere Kontakte zu fokussieren."
 
-#: src/components/settings/UISettingsSection.ts:148
-#: src/components/settings/UISettingsSection.ts:422
+#: src/components/settings/UISettingsSection.ts:145
+#: src/components/settings/UISettingsSection.ts:421
 msgid "Wide Mode"
 msgstr "Breitmodus"
 
-#: src/components/settings/UISettingsSection.ts:434
+#: src/components/settings/UISettingsSection.ts:433
 msgid "Wide mode (hide right pane)"
 msgstr "Breitmodus (rechten Bereich ausblenden)"
 
@@ -9419,6 +9437,7 @@ msgstr "Breitmodus (rechten Bereich ausblenden)"
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:48
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:49
 #: src/addons/content-word-filter/WordFilterAddonView.ts:23
+#: src/shell/focusDomains.ts:206
 msgid "Word Filter"
 msgstr "Wortfilter"
 
@@ -9525,7 +9544,7 @@ msgstr "@alice, @bob, @charlie …"
 
 #: src/components/bookmarks/FolderCard.ts:180
 #: src/components/bookmarks/FolderCard.ts:66
-#: src/lists/bookmarks.ts:5100
+#: src/lists/bookmarks.ts:5107
 msgid "%s item"
 msgid_plural "%s items"
 msgstr[0] "%s Element"
@@ -9537,7 +9556,7 @@ msgid_plural "%s users follow <strong>%s</strong>"
 msgstr[0] "%s Benutzer folgt <strong>%s</strong>"
 msgstr[1] "%s Benutzer folgen <strong>%s</strong>"
 
-#: src/lists/bookmarks.ts:3767
+#: src/lists/bookmarks.ts:3774
 msgid "+ Create new folder..."
 msgstr "+ Neuen Ordner erstellen …"
 
@@ -9583,15 +9602,15 @@ msgstr "Bereits auf dem Stand der Relays"
 msgid "Backup list to file"
 msgstr "Liste in Datei sichern"
 
-#: src/lists/bookmarks.ts:5190
+#: src/lists/bookmarks.ts:5197
 msgid "Bookmark created"
 msgstr "Bookmark erstellt"
 
-#: src/lists/bookmarks.ts:4868
+#: src/lists/bookmarks.ts:4875
 msgid "Bookmark updated"
 msgstr "Bookmark aktualisiert"
 
-#: src/lists/bookmarks.ts:5359
+#: src/lists/bookmarks.ts:5366
 msgid "Bookmarks published successfully"
 msgstr "Bookmarks veröffentlicht"
 
@@ -9600,7 +9619,7 @@ msgstr "Bookmarks veröffentlicht"
 msgid "Check for changes"
 msgstr "Auf Änderungen prüfen"
 
-#: src/lists/bookmarks.ts:3662
+#: src/lists/bookmarks.ts:3669
 msgid "Closed"
 msgstr "Geschlossen"
 
@@ -9617,7 +9636,7 @@ msgid "Delete tribe \"%s\"?"
 msgstr "Tribe „%s“ löschen?"
 
 #: src/components/profile/ProfileArticlesCarousel.ts:203
-#: src/lists/bookmarks.ts:3663
+#: src/lists/bookmarks.ts:3670
 msgid "Draft"
 msgstr "Entwurf"
 
@@ -9639,7 +9658,7 @@ msgstr "Bearbeiten ›"
 msgid "Edit bookmark"
 msgstr "Bookmark bearbeiten"
 
-#: src/lists/bookmarks.ts:3898
+#: src/lists/bookmarks.ts:3905
 msgid "Edit Bookmark"
 msgstr "Bookmark bearbeiten"
 
@@ -9647,15 +9666,15 @@ msgstr "Bookmark bearbeiten"
 msgid "Failed to add members"
 msgstr "Mitglieder konnten nicht hinzugefügt werden"
 
-#: src/lists/bookmarks.ts:5197
+#: src/lists/bookmarks.ts:5204
 msgid "Failed to create bookmark"
 msgstr "Bookmark konnte nicht erstellt werden"
 
-#: src/lists/bookmarks.ts:5127
+#: src/lists/bookmarks.ts:5134
 msgid "Failed to create folder"
 msgstr "Ordner konnte nicht erstellt werden"
 
-#: src/lists/bookmarks.ts:5042
+#: src/lists/bookmarks.ts:5049
 msgid "Failed to delete folder"
 msgstr "Ordner konnte nicht gelöscht werden"
 
@@ -9675,7 +9694,7 @@ msgstr "Folgen fehlgeschlagen"
 msgid "Failed to load"
 msgstr "Laden fehlgeschlagen"
 
-#: src/lists/bookmarks.ts:4334
+#: src/lists/bookmarks.ts:4341
 msgid "Failed to load bookmarks"
 msgstr "Bookmarks konnten nicht geladen werden"
 
@@ -9691,7 +9710,7 @@ msgstr "Mute-Liste konnte nicht geladen werden"
 msgid "Failed to load tribes"
 msgstr "Tribes konnten nicht geladen werden"
 
-#: src/lists/bookmarks.ts:5105
+#: src/lists/bookmarks.ts:5112
 msgid "Failed to move bookmark"
 msgstr "Bookmark konnte nicht verschoben werden"
 
@@ -9699,7 +9718,7 @@ msgstr "Bookmark konnte nicht verschoben werden"
 msgid "Failed to move member"
 msgstr "Mitglied konnte nicht verschoben werden"
 
-#: src/lists/bookmarks.ts:5367
+#: src/lists/bookmarks.ts:5374
 #: src/lists/follows.ts:1857
 #: src/lists/mutes.ts:1587
 #: src/lists/mutes.ts:1987
@@ -9707,7 +9726,7 @@ msgstr "Mitglied konnte nicht verschoben werden"
 msgid "Failed to publish to relays"
 msgstr "Veröffentlichen zu Relays fehlgeschlagen"
 
-#: src/lists/bookmarks.ts:4806
+#: src/lists/bookmarks.ts:4813
 msgid "Failed to remove bookmark"
 msgstr "Bookmark konnte nicht entfernt werden"
 
@@ -9715,7 +9734,7 @@ msgstr "Bookmark konnte nicht entfernt werden"
 msgid "Failed to remove member"
 msgstr "Mitglied konnte nicht entfernt werden"
 
-#: src/lists/bookmarks.ts:4958
+#: src/lists/bookmarks.ts:4965
 msgid "Failed to rename folder"
 msgstr "Ordner konnte nicht umbenannt werden"
 
@@ -9729,13 +9748,13 @@ msgstr "Wiederherstellung fehlgeschlagen: %s"
 msgid "Failed to save"
 msgstr "Speichern fehlgeschlagen"
 
-#: src/lists/bookmarks.ts:5382
+#: src/lists/bookmarks.ts:5389
 #: src/lists/mutes.ts:1602
 #: src/lists/tribes.ts:3273
 msgid "Failed to save to file"
 msgstr "Speichern in Datei fehlgeschlagen"
 
-#: src/lists/bookmarks.ts:5349
+#: src/lists/bookmarks.ts:5356
 #: src/lists/follows.ts:1842
 #: src/lists/mutes.ts:1577
 #: src/lists/mutes.ts:1976
@@ -9763,7 +9782,7 @@ msgstr "Thread-Stummschaltung konnte nicht aufgehoben werden"
 msgid "Failed to unmute user"
 msgstr "Stummschaltung konnte nicht aufgehoben werden"
 
-#: src/lists/bookmarks.ts:5268
+#: src/lists/bookmarks.ts:5275
 #: src/lists/follows.ts:1771
 #: src/lists/mutes.ts:1530
 #: src/lists/mutes.ts:1929
@@ -9783,7 +9802,7 @@ msgstr ""
 "Datei ist leer. Nutze „Von Relays synchronisieren“, um deine Tribes "
 "wiederherzustellen."
 
-#: src/lists/bookmarks.ts:5502
+#: src/lists/bookmarks.ts:5509
 #: src/lists/follows.ts:1967
 #: src/lists/mutes.ts:1673
 #: src/lists/mutes.ts:2073
@@ -9796,15 +9815,15 @@ msgstr "Datei ist identisch zur aktuellen Liste"
 msgid "Filter by name..."
 msgstr "Nach Name filtern …"
 
-#: src/lists/bookmarks.ts:4500
+#: src/lists/bookmarks.ts:4507
 msgid "Folder"
 msgstr "Ordner"
 
-#: src/lists/bookmarks.ts:5036
+#: src/lists/bookmarks.ts:5043
 msgid "Folder deleted, bookmarks moved to root"
 msgstr "Ordner gelöscht, Bookmarks nach Hauptebene verschoben"
 
-#: src/lists/bookmarks.ts:4954
+#: src/lists/bookmarks.ts:4961
 msgid "Folder renamed"
 msgstr "Ordner umbenannt"
 
@@ -9838,16 +9857,16 @@ msgstr "Folgelist veröffentlicht"
 msgid "Hashtag"
 msgstr "Hashtag"
 
-#: src/lists/bookmarks.ts:3629
+#: src/lists/bookmarks.ts:3636
 msgid "Highlight"
 msgstr "Highlight"
 
-#: src/lists/bookmarks.ts:3629
+#: src/lists/bookmarks.ts:3636
 msgid "Highlight: %s"
 msgstr "Highlight: %s"
 
-#: src/lists/bookmarks.ts:3745
-#: src/lists/bookmarks.ts:3928
+#: src/lists/bookmarks.ts:3752
+#: src/lists/bookmarks.ts:3935
 msgid "https://..."
 msgstr "https:// …"
 
@@ -9863,7 +9882,7 @@ msgstr "Livestream"
 msgid "Load all"
 msgstr "Alle laden"
 
-#: src/lists/bookmarks.ts:4324
+#: src/lists/bookmarks.ts:4331
 msgid "Loading bookmarks..."
 msgstr "Lade Bookmarks …"
 
@@ -9885,8 +9904,8 @@ msgstr "Lade Mute-Liste …"
 msgid "Loading tribes..."
 msgstr "Lade Tribes …"
 
-#: src/lists/bookmarks.ts:5334
-#: src/lists/bookmarks.ts:5487
+#: src/lists/bookmarks.ts:5341
+#: src/lists/bookmarks.ts:5494
 msgid "Local bookmarks pushed to relays"
 msgstr "Lokale Bookmarks zu Relays übertragen"
 
@@ -9907,7 +9926,7 @@ msgstr "Lokale Mutes zu Relays übertragen"
 msgid "Local tribes pushed to relays"
 msgstr "Lokale Tribes zu Relays übertragen"
 
-#: src/lists/bookmarks.ts:4317
+#: src/lists/bookmarks.ts:4324
 msgid "Log in to see your bookmarks"
 msgstr "Melde dich an, um deine Bookmarks zu sehen"
 
@@ -9959,7 +9978,7 @@ msgstr "Zusammengeführt und zu Datei + Relays synchronisiert"
 msgid "Merged and synced to relays"
 msgstr "Zusammengeführt und zu Relays synchronisiert"
 
-#: src/lists/bookmarks.ts:5320
+#: src/lists/bookmarks.ts:5327
 msgid "Merged bookmarks and synced to relays"
 msgstr "Bookmarks zusammengeführt und zu Relays synchronisiert"
 
@@ -9967,7 +9986,7 @@ msgstr "Bookmarks zusammengeführt und zu Relays synchronisiert"
 msgid "Move bookmark"
 msgstr "Bookmark verschieben"
 
-#: src/lists/bookmarks.ts:5084
+#: src/lists/bookmarks.ts:5091
 #: src/lists/tribes.ts:2890
 msgid "Moved to %s"
 msgstr "Verschoben nach %s"
@@ -9999,15 +10018,15 @@ msgstr "Gegenseitige:"
 msgid "Never"
 msgstr "Nie"
 
-#: src/lists/bookmarks.ts:3714
+#: src/lists/bookmarks.ts:3721
 msgid "New Bookmark"
 msgstr "Neues Bookmark"
 
-#: src/lists/bookmarks.ts:3772
+#: src/lists/bookmarks.ts:3779
 msgid "New folder name"
 msgstr "Neuer Ordnername"
 
-#: src/lists/bookmarks.ts:4589
+#: src/lists/bookmarks.ts:4596
 msgid "No bookmarks yet"
 msgstr "Noch keine Bookmarks"
 
@@ -10059,16 +10078,16 @@ msgstr "NoorNote hat Bookmark-Ordner gelöscht"
 msgid "NoorNote deleted tribes"
 msgstr "NoorNote hat Tribes gelöscht"
 
-#: src/lists/bookmarks.ts:3658
+#: src/lists/bookmarks.ts:3665
 msgid "Open"
 msgstr "Offen"
 
-#: src/lists/bookmarks.ts:3756
-#: src/lists/bookmarks.ts:3940
+#: src/lists/bookmarks.ts:3763
+#: src/lists/bookmarks.ts:3947
 msgid "Optional description..."
 msgstr "Optionale Beschreibung …"
 
-#: src/lists/bookmarks.ts:3618
+#: src/lists/bookmarks.ts:3625
 msgid "Picture"
 msgstr "Bild"
 
@@ -10088,7 +10107,7 @@ msgstr "Bitte melde dich an, um deine Mute-Liste zu sehen."
 msgid "Please login to view tribes"
 msgstr "Bitte anmelden, um Tribes zu sehen"
 
-#: src/lists/bookmarks.ts:3624
+#: src/lists/bookmarks.ts:3631
 msgid "Poll: %s"
 msgstr "Umfrage: %s"
 
@@ -10100,7 +10119,7 @@ msgstr "Profil eines stummgeschalteten Benutzers"
 msgid "Published to relays"
 msgstr "Zu Relays veröffentlicht"
 
-#: src/lists/bookmarks.ts:5356
+#: src/lists/bookmarks.ts:5363
 #: src/lists/follows.ts:1851
 #: src/lists/mutes.ts:1583
 #: src/lists/mutes.ts:1982
@@ -10108,7 +10127,7 @@ msgstr "Zu Relays veröffentlicht"
 msgid "Publishing to relays..."
 msgstr "Wird zu Relays veröffentlicht …"
 
-#: src/lists/bookmarks.ts:5407
+#: src/lists/bookmarks.ts:5414
 #: src/lists/follows.ts:1909
 #: src/lists/mutes.ts:1626
 #: src/lists/mutes.ts:2027
@@ -10120,7 +10139,7 @@ msgstr "Wird aus Datei gelesen …"
 msgid "Remove member"
 msgstr "Mitglied entfernen"
 
-#: src/lists/bookmarks.ts:3632
+#: src/lists/bookmarks.ts:3639
 msgid "Repo"
 msgstr "Repo"
 
@@ -10140,15 +10159,15 @@ msgid "Restored from file (added %s, removed %s)"
 msgstr "Aus Datei wiederhergestellt (%s hinzugefügt, %s entfernt)"
 
 #: src/lists/bookmarks.ts:2938
-#: src/lists/bookmarks.ts:4616
+#: src/lists/bookmarks.ts:4623
 msgid "Root"
 msgstr "Hauptebene"
 
-#: src/lists/bookmarks.ts:3765
+#: src/lists/bookmarks.ts:3772
 msgid "Root Level"
 msgstr "Hauptebene"
 
-#: src/lists/bookmarks.ts:3763
+#: src/lists/bookmarks.ts:3770
 msgid "Save to"
 msgstr "Speichern unter"
 
@@ -10159,7 +10178,7 @@ msgstr "In Datei speichern"
 
 #: src/helpers/downloadMedia.ts:21
 #: src/helpers/downloadMedia.ts:39
-#: src/lists/bookmarks.ts:5379
+#: src/lists/bookmarks.ts:5386
 #: src/lists/follows.ts:1874
 #: src/lists/mutes.ts:2000
 msgid "Saved successfully"
@@ -10216,8 +10235,8 @@ msgid_plural "Synced %s new follows from relays"
 msgstr[0] "%s neue Folgung von Relays synchronisiert"
 msgstr[1] "%s neue Folgungen von Relays synchronisiert"
 
-#: src/lists/bookmarks.ts:5328
-#: src/lists/bookmarks.ts:5343
+#: src/lists/bookmarks.ts:5335
+#: src/lists/bookmarks.ts:5350
 msgid "Synced from relays"
 msgstr "Von Relays synchronisiert"
 
@@ -10240,7 +10259,7 @@ msgstr ""
 "auf den Relays. Mit den Buttons oben steuerst du, wie die Liste über die "
 "drei Orte synchron bleibt."
 
-#: src/lists/bookmarks.ts:5166
+#: src/lists/bookmarks.ts:5173
 msgid "This URL is already bookmarked"
 msgstr "Diese URL ist bereits gemerkt"
 
@@ -10345,7 +10364,7 @@ msgstr "+ Neu"
 msgid "Create new"
 msgstr "Neu erstellen"
 
-#: src/lists/bookmarks.ts:4491
+#: src/lists/bookmarks.ts:4498
 msgid "Mark as read"
 msgstr "Alle als gelesen markieren"
 
@@ -11328,11 +11347,11 @@ msgstr "Umfrage erfolgreich gepostet!"
 msgid "Zap timeout - please try again"
 msgstr "Zap-Timeout - bitte erneut versuchen"
 
-#: src/lists/bookmarks.ts:4695
+#: src/lists/bookmarks.ts:4702
 msgid "\"%s\" mounted to profile"
 msgstr "„%s\" am Profil angehängt"
 
-#: src/lists/bookmarks.ts:4698
+#: src/lists/bookmarks.ts:4705
 msgid "\"%s\" unmounted from profile"
 msgstr "„%s\" vom Profil getrennt"
 
@@ -11376,7 +11395,7 @@ msgstr "Löschanfrage konnte nicht gesendet werden"
 msgid "Failed to upload image"
 msgstr "Bild-Upload fehlgeschlagen"
 
-#: src/lists/bookmarks.ts:5122
+#: src/lists/bookmarks.ts:5129
 msgid "Folder \"%s\" created"
 msgstr "Ordner „%s\" erstellt"
 
@@ -11454,19 +11473,19 @@ msgstr ""
 msgid "Remove loaded .po file"
 msgstr "Geladene .po-Datei entfernen"
 
-#: src/components/settings/UISettingsSection.ts:564
+#: src/components/settings/UISettingsSection.ts:562
 msgid "Back button hidden"
 msgstr "Zurück-Button ausgeblendet"
 
-#: src/components/settings/UISettingsSection.ts:564
+#: src/components/settings/UISettingsSection.ts:562
 msgid "Back button shown"
 msgstr "Zurück-Button eingeblendet"
 
-#: src/components/settings/UISettingsSection.ts:211
+#: src/components/settings/UISettingsSection.ts:210
 msgid "Global Back Button"
 msgstr "Globaler Zurück-Button"
 
-#: src/components/settings/UISettingsSection.ts:214
+#: src/components/settings/UISettingsSection.ts:213
 msgid "Show the Back button at the bottom of the content column."
 msgstr "Zeigt den Zurück-Button unten in der Inhaltsspalte an."
 
@@ -11496,7 +11515,7 @@ msgstr "Fehlerhaftes 3D-Objekt"
 msgid "See model on snocrash.art"
 msgstr "Modell auf snocrash.art ansehen"
 
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:355
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:386
 msgid "Loading 3D model…"
 msgstr "Lade 3D-Modell…"
 
@@ -11546,6 +11565,7 @@ msgid "Enable Feedback Board"
 msgstr "Feedback-Board aktivieren"
 
 #: src/addons/feedback-board/FeedbackBoardView.ts:108
+#: src/shell/focusDomains.ts:163
 msgid "Feedback Board"
 msgstr "Feedback-Board"
 
@@ -11791,11 +11811,11 @@ msgstr ""
 "jede Community manuell hinzufügen, indem du ihren Einladungslink unten "
 "einfügst."
 
-#: src/components/settings/UISettingsSection.ts:274
+#: src/components/settings/UISettingsSection.ts:273
 msgid "Article feed source, main view"
 msgstr "Artikel-Feed-Quelle, Hauptansicht"
 
-#: src/components/settings/UISettingsSection.ts:281
+#: src/components/settings/UISettingsSection.ts:280
 msgid "Article feed source, secondary column"
 msgstr "Artikel-Feed-Quelle, sekundäre Spalte"
 
@@ -11874,15 +11894,15 @@ msgstr ""
 "lokal auf diesem Gerät, nichts wird veröffentlicht. Einzelne Termine können "
 "dies in ihrem Editor überschreiben."
 
-#: src/components/settings/UISettingsSection.ts:735
+#: src/components/settings/UISettingsSection.ts:733
 msgid "Degree 1, Direct follows"
 msgstr "Grad 1, Direkte Folgungen"
 
-#: src/components/settings/UISettingsSection.ts:736
+#: src/components/settings/UISettingsSection.ts:734
 msgid "Degree 2, Friends of friends"
 msgstr "Grad 2, Freunde von Folgungen"
 
-#: src/components/settings/UISettingsSection.ts:739
+#: src/components/settings/UISettingsSection.ts:737
 msgid "Degree 3, Friends of friends of friends (slow to build)"
 msgstr "Grad 3, Freunde von Freunden von Folgungen (langsam im Aufbau)"
 
@@ -11991,7 +12011,7 @@ msgstr ""
 "Hintergrund an Relays übertragen wird, Relays können sie umsetzen oder "
 "nicht. Löschung ist nicht garantiert und nicht rückgängig zu machen."
 
-#: src/components/settings/UISettingsSection.ts:122
+#: src/components/settings/UISettingsSection.ts:119
 msgid "pilot translation (partial, untranslated text stays English)"
 msgstr "Pilot-Übersetzung (unvollständig, unübersetzter Text bleibt Englisch)"
 
@@ -12014,7 +12034,7 @@ msgstr "Privat, verschlüsselt"
 msgid "Publishing failed, try again."
 msgstr "Veröffentlichen fehlgeschlagen, versuch es erneut."
 
-#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1245
+#: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1287
 msgid "Quoted repost, open to view"
 msgstr "Zitierter Repost, zum Ansehen öffnen"
 
@@ -12086,7 +12106,7 @@ msgstr ""
 msgid "Signer did not respond, message not sent"
 msgstr "Signer hat nicht geantwortet, Nachricht nicht gesendet"
 
-#: src/components/settings/UISettingsSection.ts:294
+#: src/components/settings/UISettingsSection.ts:293
 msgid ""
 "Skips rendering of off-screen notes (CSS <code>content-visibility: "
 "auto</code>). Significantly reduces memory usage on long timelines, "
@@ -12389,11 +12409,11 @@ msgstr ""
 "Clients dem Umzug nicht folgen. NoorNote überträgt dein Profil und deine "
 "Folgeliste automatisch an jedes neu hinzugefügte Write-Relay."
 
-#: src/components/notifications/NotificationItem.ts:718
+#: src/components/notifications/NotificationItem.ts:724
 msgid "%s new mentions/replies in %s"
 msgstr "%s neue Erwähnungen/Antworten in %s"
 
-#: src/components/notifications/NotificationItem.ts:719
+#: src/components/notifications/NotificationItem.ts:725
 msgid "mentioned or replied to you in %s"
 msgstr "hat dich in %s erwähnt oder dir geantwortet"
 
@@ -12412,8 +12432,7 @@ msgstr ""
 "href=\"/addons/live-streams\">Live Streams</a> Addon, um diesen Livestream "
 "zu sehen."
 
-#: src/components/settings/UISettingsSection.ts:530
-#: src/shell/focusShell.ts:197
+#: src/shell/focusShell.ts:203
 msgid "Classic interface active"
 msgstr "Klassische Oberfläche aktiv"
 
@@ -12429,7 +12448,7 @@ msgstr "Live Streams aktivieren"
 msgid "Ended"
 msgstr "Beendet"
 
-#: src/components/settings/UISettingsSection.ts:159
+#: src/components/settings/UISettingsSection.ts:157
 msgid ""
 "Experimental v2 interface: all domains are equal surfaces, one takes the "
 "central focus. Layout modes have no effect while active. The classic "
@@ -12440,11 +12459,11 @@ msgstr ""
 "aktiv ist. Die klassische Oberfläche bleibt Standard und ist mit einem "
 "Schalter erreichbar."
 
-#: src/components/settings/UISettingsSection.ts:665
+#: src/components/settings/UISettingsSection.ts:663
 msgid "Expiry notices hidden"
 msgstr "Ablaufhinweise ausgeblendet"
 
-#: src/components/settings/UISettingsSection.ts:665
+#: src/components/settings/UISettingsSection.ts:663
 msgid "Expiry notices shown"
 msgstr "Ablaufhinweise eingeblendet"
 
@@ -12456,16 +12475,12 @@ msgstr "Livestreams konnten nicht geladen werden"
 msgid "Failed to update pin"
 msgstr "Pin konnte nicht aktualisiert werden"
 
-#: src/components/settings/UISettingsSection.ts:156
-#: src/shell/focusShell.ts:187
+#: src/components/settings/UISettingsSection.ts:154
+#: src/shell/focusShell.ts:190
 msgid "Focus UI (v2)"
 msgstr "Focus UI (v2)"
 
-#: src/components/settings/UISettingsSection.ts:529
-msgid "Focus UI active. Layout modes are ignored."
-msgstr "Focus UI aktiv. Layout-Modi werden ignoriert."
-
-#: src/components/views/WhatsNewView.ts:76
+#: src/components/views/WhatsNewView.ts:102
 msgid "Highlight of v%s"
 msgstr "Highlight von v%s"
 
@@ -12478,7 +12493,7 @@ msgstr "Live"
 #: src/addons/live-streams/LiveStreamsAddonView.ts:72
 #: src/addons/live-streams/LiveStreamsAddonView.ts:73
 #: src/addons/live-streams/LiveStreamsAddonView.ts:83
-#: src/shell/focusDomains.ts:61
+#: src/shell/focusDomains.ts:125
 msgid "Live Streams"
 msgstr "Live Streams"
 
@@ -12538,7 +12553,7 @@ msgstr "Note läuft am %s ab"
 msgid "Set expiry"
 msgstr "Ablaufzeit setzen"
 
-#: src/components/settings/UISettingsSection.ts:244
+#: src/components/settings/UISettingsSection.ts:243
 msgid ""
 "Show a small \"Post expires on …\" line under notes that carry an "
 "expiration time (NIP-40). Off by default."
@@ -12555,7 +12570,7 @@ msgstr ""
 "Leute, denen du folgst (max. 3). Das Widget bleibt verborgen, wenn niemand "
 "live ist."
 
-#: src/components/settings/UISettingsSection.ts:241
+#: src/components/settings/UISettingsSection.ts:240
 msgid "Show expiry notice"
 msgstr "Ablaufhinweis anzeigen"
 
@@ -12585,7 +12600,7 @@ msgstr "Unterstützte NIPs"
 msgid "Unpin from profile"
 msgstr "Vom Profil lösen"
 
-#: src/components/views/WhatsNewView.ts:73
+#: src/components/views/WhatsNewView.ts:99
 msgid "What's New"
 msgstr "Was ist neu"
 
@@ -12593,7 +12608,7 @@ msgstr "Was ist neu"
 msgid "What's new in v%s"
 msgstr "Neu in v%s"
 
-#: src/components/settings/UISettingsSection.ts:245
+#: src/components/settings/UISettingsSection.ts:244
 msgid ""
 "Check that all of your write relays support NIP-40. Note: even if they do, "
 "someone could repost your note to relays without NIP-40 support, and the "
@@ -12629,21 +12644,29 @@ msgstr ""
 "verlassen. Nutzt hls.js; große Anbieter wie zap.stream funktionieren ohne "
 "Einrichtung. Laufende Streams werden unten gelistet."
 
-#: src/shell/focusShell.ts:83
+#: src/shell/focusShell.ts:86
 msgid "Bottom panel"
 msgstr "Untere Fläche"
 
-#: src/shell/focusShell.ts:83
+#: src/shell/focusShell.ts:86
 msgid "Top panel"
 msgstr "Obere Fläche"
 
-#: src/shell/focusDomains.ts:57
+#: src/shell/focusDomains.ts:179
 msgid "Nostr Majlis"
 msgstr "Nostr Majlis"
 
-#: src/shell/focusDomains.ts:54
+#: src/shell/focusDomains.ts:87
 msgid "Social Media"
 msgstr "Social Media"
+
+#: src/shell/focusDomains.ts:175
+msgid "Bulk Delete"
+msgstr "Massenlöschung"
+
+#: src/components/ui/note-rendering/CommunityDefinitionRenderer.ts:88
+msgid "Community"
+msgstr "Community"
 
 #: src/helpers/datePickerModal.ts:183
 msgctxt "date-range"
@@ -12667,275 +12690,285 @@ msgctxt "note-taking"
 msgid "Notes"
 msgstr "Notizen"
 
-#: src/components/notifications/NotificationItem.ts:586
+#: src/components/notifications/NotificationItem.ts:588
 msgctxt "notif-acc"
 msgid "app on Zapstore"
 msgstr "deine App im Zapstore"
 
-#: src/components/notifications/NotificationItem.ts:570
+#: src/components/notifications/NotificationItem.ts:572
 msgctxt "notif-acc"
 msgid "article"
 msgstr "deinen Artikel"
 
-#: src/components/notifications/NotificationItem.ts:578
+#: src/components/notifications/NotificationItem.ts:580
 msgctxt "notif-acc"
 msgid "bookmark list"
 msgstr "deine Lesezeichen-Liste"
 
-#: src/components/notifications/NotificationItem.ts:574
+#: src/components/notifications/NotificationItem.ts:576
 msgctxt "notif-acc"
 msgid "collection"
 msgstr "deine Sammlung"
 
-#: src/components/notifications/NotificationItem.ts:568
+#: src/components/notifications/NotificationItem.ts:570
 msgctxt "notif-acc"
 msgid "comment"
 msgstr "deinen Kommentar"
 
-#: src/components/notifications/NotificationItem.ts:594
+#: src/components/notifications/NotificationItem.ts:596
 msgctxt "notif-acc"
 msgid "emoji pack"
 msgstr "dein Emoji-Pack"
 
-#: src/components/notifications/NotificationItem.ts:648
+#: src/components/notifications/NotificationItem.ts:654
 msgctxt "notif-acc"
 msgid "event"
 msgstr "dein Event"
 
-#: src/components/notifications/NotificationItem.ts:620
+#: src/components/notifications/NotificationItem.ts:626
 msgctxt "notif-acc"
 msgid "file"
 msgstr "deine Datei"
 
-#: src/components/notifications/NotificationItem.ts:590
+#: src/components/notifications/NotificationItem.ts:592
 msgctxt "notif-acc"
 msgid "follow pack"
 msgstr "dein Follow-Pack"
 
-#: src/components/notifications/NotificationItem.ts:640
+#: src/components/notifications/NotificationItem.ts:646
 msgctxt "notif-acc"
 msgid "git issue"
 msgstr "dein Git-Issue"
 
-#: src/components/notifications/NotificationItem.ts:632
+#: src/components/notifications/NotificationItem.ts:638
 msgctxt "notif-acc"
 msgid "git patch"
 msgstr "deinen Git-Patch"
 
-#: src/components/notifications/NotificationItem.ts:606
+#: src/components/notifications/NotificationItem.ts:608
 msgctxt "notif-acc"
 msgid "git repository"
 msgstr "dein Git-Repository"
 
-#: src/components/notifications/NotificationItem.ts:644
+#: src/components/notifications/NotificationItem.ts:650
 msgctxt "notif-acc"
 msgid "git status update"
 msgstr "dein Git-Status-Update"
 
-#: src/components/notifications/NotificationItem.ts:628
+#: src/components/notifications/NotificationItem.ts:634
 msgctxt "notif-acc"
 msgid "group chat message"
 msgstr "deine Gruppenchat-Nachricht"
 
-#: src/components/notifications/NotificationItem.ts:600
+#: src/components/notifications/NotificationItem.ts:602
 msgctxt "notif-acc"
 msgid "listing"
 msgstr "dein Listing"
 
-#: src/components/notifications/NotificationItem.ts:598
+#: src/components/notifications/NotificationItem.ts:600
 msgctxt "notif-acc"
 msgid "live stream"
 msgstr "deinen Livestream"
 
-#: src/components/notifications/NotificationItem.ts:646
+#: src/components/notifications/NotificationItem.ts:652
 msgctxt "notif-acc"
 msgid "note"
 msgstr "dein Note"
 
-#: src/components/notifications/NotificationItem.ts:622
+#: src/components/notifications/NotificationItem.ts:628
 msgctxt "notif-acc"
 msgid "picture"
 msgstr "dein Bild"
 
-#: src/components/notifications/NotificationItem.ts:582
+#: src/components/notifications/NotificationItem.ts:584
 msgctxt "notif-acc"
 msgid "podcast episode"
 msgstr "deine Podcast-Episode"
 
-#: src/components/notifications/NotificationItem.ts:566
+#: src/components/notifications/NotificationItem.ts:568
 msgctxt "notif-acc"
 msgid "poll"
 msgstr "deine Umfrage"
 
-#: src/components/notifications/NotificationItem.ts:636
+#: src/components/notifications/NotificationItem.ts:642
 msgctxt "notif-acc"
 msgid "pull request"
 msgstr "deinen Pull Request"
 
-#: src/components/notifications/NotificationItem.ts:616
+#: src/components/notifications/NotificationItem.ts:622
 msgctxt "notif-acc"
 msgid "reaction"
 msgstr "deine Reaktion"
 
-#: src/components/notifications/NotificationItem.ts:624
+#: src/components/notifications/NotificationItem.ts:630
 msgctxt "notif-acc"
 msgid "video"
 msgstr "dein Video"
 
-#: src/components/notifications/NotificationItem.ts:602
+#: src/components/notifications/NotificationItem.ts:604
 msgctxt "notif-acc"
 msgid "website"
 msgstr "deine Website"
 
-#: src/components/notifications/NotificationItem.ts:618
+#: src/components/notifications/NotificationItem.ts:624
 msgctxt "notif-acc"
 msgid "zap"
 msgstr "deinen Zap"
 
-#: src/components/notifications/NotificationItem.ts:608
+#: src/components/notifications/NotificationItem.ts:610
 msgctxt "notif-acc"
 msgid "badge"
 msgstr "dein Abzeichen"
 
-#: src/components/notifications/NotificationItem.ts:612
+#: src/components/notifications/NotificationItem.ts:618
 msgctxt "notif-acc"
 msgid "3D object"
 msgstr "3D-Objekt"
 
-#: src/components/notifications/NotificationItem.ts:585
+#: src/components/notifications/NotificationItem.ts:614
+msgctxt "notif-acc"
+msgid "community"
+msgstr "deine Community"
+
+#: src/components/notifications/NotificationItem.ts:587
 msgctxt "notif-dat"
 msgid "app on Zapstore"
 msgstr "deiner App im Zapstore"
 
-#: src/components/notifications/NotificationItem.ts:570
+#: src/components/notifications/NotificationItem.ts:572
 msgctxt "notif-dat"
 msgid "article"
 msgstr "deinem Artikel"
 
-#: src/components/notifications/NotificationItem.ts:577
+#: src/components/notifications/NotificationItem.ts:579
 msgctxt "notif-dat"
 msgid "bookmark list"
 msgstr "deiner Lesezeichen-Liste"
 
-#: src/components/notifications/NotificationItem.ts:573
+#: src/components/notifications/NotificationItem.ts:575
 msgctxt "notif-dat"
 msgid "collection"
 msgstr "deiner Sammlung"
 
-#: src/components/notifications/NotificationItem.ts:568
+#: src/components/notifications/NotificationItem.ts:570
 msgctxt "notif-dat"
 msgid "comment"
 msgstr "deinem Kommentar"
 
-#: src/components/notifications/NotificationItem.ts:593
+#: src/components/notifications/NotificationItem.ts:595
 msgctxt "notif-dat"
 msgid "emoji pack"
 msgstr "deinem Emoji-Pack"
 
-#: src/components/notifications/NotificationItem.ts:648
+#: src/components/notifications/NotificationItem.ts:654
 msgctxt "notif-dat"
 msgid "event"
 msgstr "deinem Event"
 
-#: src/components/notifications/NotificationItem.ts:620
+#: src/components/notifications/NotificationItem.ts:626
 msgctxt "notif-dat"
 msgid "file"
 msgstr "deiner Datei"
 
-#: src/components/notifications/NotificationItem.ts:589
+#: src/components/notifications/NotificationItem.ts:591
 msgctxt "notif-dat"
 msgid "follow pack"
 msgstr "deinem Follow-Pack"
 
-#: src/components/notifications/NotificationItem.ts:639
+#: src/components/notifications/NotificationItem.ts:645
 msgctxt "notif-dat"
 msgid "git issue"
 msgstr "deinem Git-Issue"
 
-#: src/components/notifications/NotificationItem.ts:631
+#: src/components/notifications/NotificationItem.ts:637
 msgctxt "notif-dat"
 msgid "git patch"
 msgstr "deinem Git-Patch"
 
-#: src/components/notifications/NotificationItem.ts:605
+#: src/components/notifications/NotificationItem.ts:607
 msgctxt "notif-dat"
 msgid "git repository"
 msgstr "deinem Git-Repository"
 
-#: src/components/notifications/NotificationItem.ts:643
+#: src/components/notifications/NotificationItem.ts:649
 msgctxt "notif-dat"
 msgid "git status update"
 msgstr "deinem Git-Status-Update"
 
-#: src/components/notifications/NotificationItem.ts:627
+#: src/components/notifications/NotificationItem.ts:633
 msgctxt "notif-dat"
 msgid "group chat message"
 msgstr "deiner Gruppenchat-Nachricht"
 
-#: src/components/notifications/NotificationItem.ts:600
+#: src/components/notifications/NotificationItem.ts:602
 msgctxt "notif-dat"
 msgid "listing"
 msgstr "deinem Listing"
 
-#: src/components/notifications/NotificationItem.ts:597
+#: src/components/notifications/NotificationItem.ts:599
 msgctxt "notif-dat"
 msgid "live stream"
 msgstr "deinem Livestream"
 
-#: src/components/notifications/NotificationItem.ts:646
+#: src/components/notifications/NotificationItem.ts:652
 msgctxt "notif-dat"
 msgid "note"
 msgstr "deinem Note"
 
-#: src/components/notifications/NotificationItem.ts:622
+#: src/components/notifications/NotificationItem.ts:628
 msgctxt "notif-dat"
 msgid "picture"
 msgstr "deinem Bild"
 
-#: src/components/notifications/NotificationItem.ts:581
+#: src/components/notifications/NotificationItem.ts:583
 msgctxt "notif-dat"
 msgid "podcast episode"
 msgstr "deiner Podcast-Episode"
 
-#: src/components/notifications/NotificationItem.ts:566
+#: src/components/notifications/NotificationItem.ts:568
 msgctxt "notif-dat"
 msgid "poll"
 msgstr "deiner Umfrage"
 
-#: src/components/notifications/NotificationItem.ts:635
+#: src/components/notifications/NotificationItem.ts:641
 msgctxt "notif-dat"
 msgid "pull request"
 msgstr "deinem Pull Request"
 
-#: src/components/notifications/NotificationItem.ts:615
+#: src/components/notifications/NotificationItem.ts:621
 msgctxt "notif-dat"
 msgid "reaction"
 msgstr "deiner Reaktion"
 
-#: src/components/notifications/NotificationItem.ts:624
+#: src/components/notifications/NotificationItem.ts:630
 msgctxt "notif-dat"
 msgid "video"
 msgstr "deinem Video"
 
-#: src/components/notifications/NotificationItem.ts:602
+#: src/components/notifications/NotificationItem.ts:604
 msgctxt "notif-dat"
 msgid "website"
 msgstr "deiner Website"
 
-#: src/components/notifications/NotificationItem.ts:618
+#: src/components/notifications/NotificationItem.ts:624
 msgctxt "notif-dat"
 msgid "zap"
 msgstr "deinem Zap"
 
-#: src/components/notifications/NotificationItem.ts:608
+#: src/components/notifications/NotificationItem.ts:610
 msgctxt "notif-dat"
 msgid "badge"
 msgstr "deinem Abzeichen"
 
-#: src/components/notifications/NotificationItem.ts:611
+#: src/components/notifications/NotificationItem.ts:617
 msgctxt "notif-dat"
 msgid "3D object"
 msgstr "3D-Objekt"
+
+#: src/components/notifications/NotificationItem.ts:613
+msgctxt "notif-dat"
+msgid "community"
+msgstr "deiner Community"
 
 #: src/addons/nostr-majlis/NostrMajlisReminderService.ts:138
 #: src/addons/nostr-majlis/NostrMajlisReminderService.ts:199

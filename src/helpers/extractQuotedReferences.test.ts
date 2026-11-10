@@ -46,6 +46,24 @@ describe('extractQuotedReferences', () => {
     expect(refs).toHaveLength(1);
     expect(refs[0].type).toBe('addr');
   });
+
+  it('unwraps budabit-style URLs with the naddr mid-path (trailing path segments swallowed)', () => {
+    // budabit.club puts the naddr in the middle of the path:
+    // https://budabit.club/c/<naddr>/calendar — the trailing /calendar is
+    // site chrome and must NOT dangle as text next to the quote card.
+    const naddr = encodeNaddr({
+      kind: 32222,
+      pubkey: HEX_B,
+      identifier: `${'c'.repeat(63)}d`,
+    });
+    const unwrapped = unwrapStreamLinks(
+      `Join us https://budabit.club/c/${naddr}/calendar for details`
+    );
+    expect(unwrapped).toBe(`Join us nostr:${naddr} for details`);
+    const refs = extractQuotedReferences(unwrapped);
+    expect(refs).toHaveLength(1);
+    expect(refs[0].type).toBe('addr');
+  });
   it('ignores an naddr inside a URL query param (real-world false positive)', () => {
     const naddr = encodeNaddr({
       kind: 35129,

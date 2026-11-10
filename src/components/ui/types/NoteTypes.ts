@@ -24,6 +24,7 @@ export interface ProcessedNote {
     | 'highlight'
     | 'badge-award'
     | 'badge-definition'
+    | 'community-definition'
     | 'emoji-pack'
     | 'live-stream'
     | 'listing'

@@ -263,6 +263,12 @@ export class QuotedNoteRenderer {
       void this.renderBadgeDefinitionPreview(naddrRef, container);
       return;
     }
+    // Communikeys community definition (kind 32222) → inline community card
+    // (self-contained tags, same pattern as the badge-definition preview).
+    if (kind === 32222) {
+      void this.renderCommunityDefinitionPreview(naddrRef, container);
+      return;
+    }
     // SNO 3D object (kind 33331, DECK-0003) → fetch + render the canvas
     // viewer, mirroring the Git-repo/badge-definition preview pattern.
     if (kind === 33331) {
@@ -334,6 +340,31 @@ export class QuotedNoteRenderer {
         );
         container.appendChild(
           BadgeDefinitionRenderer.renderInlineCard(result.event)
+        );
+      }
+    } catch {
+      /* silent — container stays empty */
+    }
+  }
+
+  /**
+   * Fetch a Communikeys community definition (kind 32222) by naddr and render
+   * it as an inline community card. Falls back silently — the container stays
+   * empty on failure.
+   */
+  public async renderCommunityDefinitionPreview(
+    naddrRef: string,
+    container: Element
+  ): Promise<void> {
+    try {
+      const result =
+        await this.quoteFetcher.fetchQuotedEventWithError(naddrRef);
+      if (result.success && result.event.kind === 32222) {
+        const { CommunityDefinitionRenderer } = await import(
+          '../../../components/ui/note-rendering/CommunityDefinitionRenderer'
+        );
+        container.appendChild(
+          CommunityDefinitionRenderer.renderInlineCard(result.event)
         );
       }
     } catch {
@@ -610,6 +641,17 @@ export class QuotedNoteRenderer {
             );
             skeleton.replaceWith(
               BadgeDefinitionRenderer.renderInlineCard(result.event)
+            );
+            return;
+          }
+          // Communikeys community definition (kind 32222) → inline community
+          // card (self-contained — name/description/picture live in tags).
+          if (result.event.kind === 32222) {
+            const { CommunityDefinitionRenderer } = await import(
+              '../../../components/ui/note-rendering/CommunityDefinitionRenderer'
+            );
+            skeleton.replaceWith(
+              CommunityDefinitionRenderer.renderInlineCard(result.event)
             );
             return;
           }
