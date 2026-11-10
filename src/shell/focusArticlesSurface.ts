@@ -30,6 +30,13 @@ export class ArticlesSurface implements FocusDomainSurfaceView {
     | import('../components/views/ArticleView').ArticleView
     | null = null;
   private detailEl: HTMLElement | null = null;
+  /** List scroll position, saved when a detail replaces the list. */
+  private savedListScroll = 0;
+
+  /** The focus column's scroll container (the stage's surface slot). */
+  private get scrollSlot(): HTMLElement | null {
+    return this.frame.element.parentElement as HTMLElement | null;
+  }
 
   constructor() {
     // List mounts immediately — the surface IS the articles domain's content.
@@ -73,6 +80,9 @@ export class ArticlesSurface implements FocusDomainSurfaceView {
   private async showArticle(naddr: string): Promise<void> {
     const list = await this.ensureList();
     if (!list) return;
+    // Save the list's column scroll before the removal collapses the
+    // scrollable area (restored on back / list return).
+    this.savedListScroll = this.scrollSlot?.scrollTop ?? 0;
     list.getElement().remove();
     // A previous detail (if any) is stale — the back control always
     // destroys it, this is just a guard.
@@ -81,6 +91,7 @@ export class ArticlesSurface implements FocusDomainSurfaceView {
     this.detailView = new ArticleView(naddr);
     this.detailEl = this.detailView.getElement();
     this.frame.element.appendChild(this.detailEl);
+    if (this.scrollSlot) this.scrollSlot.scrollTop = 0;
     this.frame.setBackVisible(true);
     // Keep the classic URL scheme, in place (no view mounting, no history).
     Router.getInstance().replaceUrl(`/article/${naddr}`);
@@ -92,6 +103,7 @@ export class ArticlesSurface implements FocusDomainSurfaceView {
     this.detailView = null;
     this.detailEl = null;
     this.frame.element.appendChild(this.listView.getElement());
+    if (this.scrollSlot) this.scrollSlot.scrollTop = this.savedListScroll;
     this.frame.setBackVisible(false);
     Router.getInstance().replaceUrl('/articles');
   }
@@ -103,6 +115,7 @@ export class ArticlesSurface implements FocusDomainSurfaceView {
     this.detailEl = null;
     if (this.listView) {
       this.frame.element.appendChild(this.listView.getElement());
+      if (this.scrollSlot) this.scrollSlot.scrollTop = this.savedListScroll;
     }
     this.frame.setBackVisible(false);
   }

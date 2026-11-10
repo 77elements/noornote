@@ -113,6 +113,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
   { id: 'tribes', label: _('Tribes'), icon: 'icon-tribe', addon: true },
   { id: 'follows', label: _('Follows'), icon: 'icon-follows' },
   { id: 'muted', label: _('Muted'), icon: 'icon-mute', addon: true },
+  { id: 'profile', label: _('Profile'), icon: 'icon-profile' },
   {
     id: 'custom-emojis',
     label: _('Custom Emojis'),
