@@ -74,6 +74,8 @@ interface ShimSocket {
   onopen: ((ev: unknown) => void) | null;
   onmessage: ((ev: { data: string }) => void) | null;
   onclose: ((ev: unknown) => void) | null;
+  addEventListener(type: string, fn: (ev: { data: string }) => void): void;
+  removeEventListener(type: string, fn: (ev: { data: string }) => void): void;
   send(data: string): void;
   close(): void;
 }
@@ -192,5 +194,66 @@ describe('SharedWorkerWebSocket (via patched NDKRelay.connect)', () => {
     expect(fakePort.sentOf('detach')).toHaveLength(1);
     expect(onclose).toHaveBeenCalledTimes(1);
     expect(socket.readyState).toBe(3);
+  });
+
+  // Regression: NDK's keepalive probe adds a 'message' listener and removes it
+  // from inside the callback. A shim without addEventListener threw here.
+  it('supports addEventListener/removeEventListener for message', () => {
+    fakePort.clear();
+    const socket = connectShim();
+    const attach = fakePort.sentOf('attach')[0];
+    const seen: string[] = [];
+    const probe = (ev: { data: string }) => {
+      seen.push(ev.data);
+      socket.removeEventListener('message', probe);
+    };
+    socket.addEventListener('message', probe);
+
+    fakePort.receive({
+      type: 'attached',
+      url: 'wss://relay.example.com',
+      token: attach?.token,
+      epoch: 2,
+      state: 'open',
+    });
+    fakePort.receive({
+      type: 'message',
+      url: 'wss://relay.example.com',
+      epoch: 2,
+      data: '["NOTICE","pong"]',
+    });
+    fakePort.receive({
+      type: 'message',
+      url: 'wss://relay.example.com',
+      epoch: 2,
+      data: '["NOTICE","late"]',
+    });
+    // Removed after the first message, so the second is not delivered.
+    expect(seen).toEqual(['["NOTICE","pong"]']);
+  });
+
+  it('keeps onmessage and addEventListener delivery in sync', () => {
+    fakePort.clear();
+    const socket = connectShim();
+    const attach = fakePort.sentOf('attach')[0];
+    const viaHandler = vi.fn();
+    const viaListener = vi.fn();
+    socket.onmessage = viaHandler;
+    socket.addEventListener('message', viaListener);
+    fakePort.receive({
+      type: 'attached',
+      url: 'wss://relay.example.com',
+      token: attach?.token,
+      epoch: 5,
+      state: 'open',
+    });
+    fakePort.receive({
+      type: 'message',
+      url: 'wss://relay.example.com',
+      epoch: 5,
+      data: '["EOSE","s"]',
+    });
+    expect(viaHandler).toHaveBeenCalledWith({ data: '["EOSE","s"]' });
+    expect(viaListener).toHaveBeenCalledWith({ data: '["EOSE","s"]' });
   });
 });

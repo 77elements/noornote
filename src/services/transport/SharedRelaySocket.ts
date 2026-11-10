@@ -31,10 +31,14 @@ interface MultiplexerMsg {
   data?: string;
 }
 
+/** NDK only reads `data` from the event. */
+type SocketListener = (ev: { data: string }) => void;
+
 /**
  * WebSocket look-alike backed by a SharedWorker channel. Implements exactly
  * the surface NDK's connectivity uses: the four on* handlers, readyState,
- * send() and close().
+ * send(), close(), and addEventListener/removeEventListener for 'message'
+ * (NDK's keepalive probe uses a listener instead of onmessage).
  */
 class SharedWorkerWebSocket {
   readonly url: string;
@@ -45,6 +49,9 @@ class SharedWorkerWebSocket {
   onclose: ((ev: unknown) => void) | null = null;
   onerror: ((ev: unknown) => void) | null = null;
   onmessage: ((ev: { data: string }) => void) | null = null;
+
+  /** 'message' listeners added via addEventListener. */
+  private readonly listeners = new Set<SocketListener>();
 
   /** Socket generation this shim is attached to (-1 = not yet acknowledged). */
   private epoch = -1;
@@ -77,7 +84,7 @@ class SharedWorkerWebSocket {
         this.markOpen();
         break;
       case 'message':
-        if (typeof msg.data === 'string') this.onmessage?.({ data: msg.data });
+        if (typeof msg.data === 'string') this.deliver(msg.data);
         break;
       case 'close':
         this.readyState = 3; // CLOSED
@@ -88,6 +95,28 @@ class SharedWorkerWebSocket {
         this.onerror?.({});
         break;
     }
+  }
+
+  /** Hand a message to the onmessage handler and any addEventListener listeners. */
+  private deliver(data: string): void {
+    const ev = { data };
+    this.onmessage?.(ev);
+    // Copy: a listener may remove itself from inside its callback.
+    for (const fn of [...this.listeners]) {
+      try {
+        fn(ev);
+      } catch {
+        // Ignore failing listeners.
+      }
+    }
+  }
+
+  addEventListener(type: string, fn: SocketListener | null): void {
+    if (type === 'message' && fn) this.listeners.add(fn);
+  }
+
+  removeEventListener(type: string, fn: SocketListener | null): void {
+    if (type === 'message' && fn) this.listeners.delete(fn);
   }
 
   private markOpen(): void {
