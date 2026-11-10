@@ -1239,13 +1239,19 @@ export class DMService {
       const tombstoned = this.tombstonedPubkeys.has(message.pubkey);
       if (muted || tombstoned) {
         // Tombstoned but no longer muted: allow only genuinely live arrivals
-        // (post-EOSE, not a historical/backlog replay) through, so explicitly
-        // unblocking a sender works for new messages while old purged wraps
-        // stay dead forever.
+        // through, so explicitly unblocking a sender works for new messages
+        // while old purged wraps stay dead forever. "Live" additionally
+        // requires the message to be recent (within the NIP-17 backdate
+        // ceiling): a week-old spam wrap can only ever be a backlog/replay,
+        // so a relay misclassifying a stored replay as post-EOSE "live" can
+        // never smuggle it past the tombstone. Field evidence 2026-11-10:
+        // old wraps replayed post-EOSE arrived with liveSubBacklogDone=true.
+        const nowSec = Math.floor(Date.now() / 1000);
         const isLiveArrival =
           !arrivedDuringBacklog &&
           !this.isFetchingHistorical &&
-          this.liveSubBacklogDone;
+          this.liveSubBacklogDone &&
+          message.createdAt > nowSec - DMService.DM_BACKDATE_MARGIN_SECONDS;
         if (!(tombstoned && !muted && isLiveArrival)) {
           diagLog('dms', 'DM from muted/tombstoned sender dropped', {
             sender: message.pubkey.slice(0, 8),
@@ -2062,8 +2068,15 @@ export class DMService {
     let unknown = 0;
 
     for (const conv of conversations) {
-      // Skip muted users
-      if (this.isMutedSync(conv.pubkey)) {
+      // Skip muted users AND tombstoned (purged spam) senders. The mute list
+      // is relay-synced and a last-writer-wins overwrite can wipe mute
+      // entries — the device-local tombstone must keep hiding those
+      // conversations regardless (field evidence 2026-11-10: mutes wiped by
+      // sync made stored pre-tombstone spam conversations visible again).
+      if (
+        this.isMutedSync(conv.pubkey) ||
+        this.tombstonedPubkeys.has(conv.pubkey)
+      ) {
         continue;
       }
 
@@ -2095,20 +2108,25 @@ export class DMService {
     // Get all conversations first
     const allConversations = await this.dmStore.getConversations();
 
-    // Filter out muted users first, then by known/unknown
+    // Filter out muted users and tombstoned (purged spam) senders first, then
+    // by known/unknown. Tombstones must hide conversations independently of
+    // the mute list (which relay syncs can wipe — see getUnreadCountsSplit).
+    const blocked = (pubkey: string) =>
+      this.isMutedSync(pubkey) || this.tombstonedPubkeys.has(pubkey);
+
     let filtered: DMConversation[];
     if (filter === 'all') {
-      filtered = allConversations.filter(c => !this.isMutedSync(c.pubkey));
+      filtered = allConversations.filter(c => !blocked(c.pubkey));
     } else if (filter === 'known') {
       filtered = allConversations.filter(
         c =>
-          !this.isMutedSync(c.pubkey) &&
+          !blocked(c.pubkey) &&
           this.followCheckService.isFollowingSync(c.pubkey)
       );
     } else {
       filtered = allConversations.filter(
         c =>
-          !this.isMutedSync(c.pubkey) &&
+          !blocked(c.pubkey) &&
           !this.followCheckService.isFollowingSync(c.pubkey)
       );
     }

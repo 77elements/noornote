@@ -143,6 +143,11 @@ export const StorageKeys = {
   // DMToastNotifier suppresses "new message from unknown sender" toasts.
   // 0 / missing = off. Auto-expires after 24 h (see DMToastNotifier).
   DM_SPAM_MODE_UNTIL: 'noornote_dm_spam_mode_until_map',
+  // DM purge tombstones (per-account) — a { senderPubkey → purgedAt } map
+  // mirrored from the IndexedDB `tombstones` store. Same eviction-survival
+  // rationale as DM_READ_ANCHORS: if the WebView wipes IndexedDB, purged spam
+  // senders stay blocked because DMStore rehydrates tombstones from here.
+  DM_TOMBSTONES: 'noornote_dm_tombstones_map',
 
   // Notification priority settings (per-account)
   NOTIFICATION_PRIORITIES: 'noornote_notification_priorities_map',

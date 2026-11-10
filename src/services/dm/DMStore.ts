@@ -120,6 +120,15 @@ export class DMStore {
    * Value semantics match DMConversation.disappearingSeconds.
    */
   private disappearingMirror: Map<string, number | undefined> = new Map();
+  /**
+   * In-memory { senderPubkey → purgedAt } tombstone mirror. Same eviction-
+   * survival rationale as readAnchorMirror: purge tombstones live in IndexedDB
+   * (per-device), and an Android WebView eviction would wipe them — the relay
+   * backlog would then resurrect every purged spam conversation on the next
+   * seed/incremental fetch. The mirror in PerAccountLocalStorage survives
+   * eviction; getTombstonedPubkeys() unions both sources.
+   */
+  private tombstoneMirror: Map<string, number> = new Map();
 
   private constructor() {
     this.systemLogger = SystemLogger.getInstance();
@@ -178,6 +187,10 @@ export class DMStore {
         this.loadReadAnchorMirror(pubkey);
         // Same eviction-survival rationale for the disappearing-messages setting.
         this.loadDisappearingMirror(pubkey);
+        // And for the purge tombstones: if the WebView wiped IndexedDB, the
+        // tombstone store is empty but this mirror survived — a purged spam
+        // sender stays blocked on the next backlog replay.
+        this.loadTombstoneMirror(pubkey);
         // Defensive: NoorDB reconciles declared stores/indexes on EVERY upgrade,
         // which covers the historical v5 index-loss case. The recovery reopen
         // here only fires for the pathological "same-version open after a
@@ -661,6 +674,53 @@ export class DMStore {
   }
 
   /**
+   * Load the { senderPubkey → purgedAt } tombstone mirror from localStorage
+   * into memory for the given user. Called on init, before any message is
+   * processed. Union source for getTombstonedPubkeys() — see tombstoneMirror.
+   */
+  private loadTombstoneMirror(pubkey: string): void {
+    try {
+      const obj = PerAccountLocalStorage.getInstance().getForPubkey<
+        Record<string, number>
+      >(StorageKeys.DM_TOMBSTONES, pubkey, {});
+      this.tombstoneMirror = new Map(Object.entries(obj));
+      if (this.tombstoneMirror.size > 0) {
+        diagLog('dms', 'tombstone_mirror_loaded', {
+          count: this.tombstoneMirror.size,
+        });
+      }
+    } catch (error) {
+      this.tombstoneMirror = new Map();
+      diagLog('dms', 'tombstone_mirror_load_failed', {
+        error: String(error),
+      });
+    }
+  }
+
+  /**
+   * Persist the current in-memory tombstone map to localStorage. Every change
+   * (purge, clear) goes through here so the mirror never lags the IDB store.
+   */
+  private saveTombstoneMirror(): void {
+    if (!this.currentUserPubkey) return;
+    try {
+      const obj: Record<string, number> = {};
+      for (const [pk, ts] of this.tombstoneMirror) {
+        obj[pk] = ts;
+      }
+      PerAccountLocalStorage.getInstance().setForPubkey(
+        StorageKeys.DM_TOMBSTONES,
+        this.currentUserPubkey,
+        obj
+      );
+    } catch (error) {
+      diagLog('dms', 'tombstone_mirror_save_failed', {
+        error: String(error),
+      });
+    }
+  }
+
+  /**
    * Rebuild the read-anchor mirror from the current conversation records and
    * persist it. Used after bulk mark-all operations so the mirror stays in sync.
    */
@@ -810,13 +870,21 @@ export class DMStore {
             reject(cursorReq.error ?? new Error('IndexedDB request failed'));
         })
     );
+
+    // Mirror the tombstone to localStorage so it survives an IndexedDB
+    // eviction (the IDB row was written in the same transaction above).
+    this.tombstoneMirror.set(partnerPubkey, Math.floor(Date.now() / 1000));
+    this.saveTombstoneMirror();
   }
 
   /**
    * Whether messages from this sender must never be re-saved (spam purge).
+   * Checks the IndexedDB tombstone store AND the localStorage mirror — after
+   * an eviction only the mirror still knows about the purge.
    */
   public async isTombstoned(partnerPubkey: string): Promise<boolean> {
     await this.init();
+    if (this.tombstoneMirror.has(partnerPubkey)) return true;
     if (!this.db?.isOpen) return false;
     return this.db.withStore(
       TOMBSTONES_STORE,
@@ -831,14 +899,21 @@ export class DMStore {
     );
   }
 
-  /** All tombstoned pubkeys (loaded once by DMService into an in-memory set). */
+  /**
+   * All tombstoned pubkeys (loaded once by DMService into an in-memory set).
+   * Union of the IndexedDB tombstone store and the localStorage mirror —
+   * after a WebView eviction wiped IndexedDB, the mirror alone still answers.
+   */
   public async getTombstonedPubkeys(): Promise<string[]> {
     await this.init();
-    if (!this.db?.isOpen) return [];
-    const rows = await this.db.getAll<{ pubkey: string; purgedAt: number }>(
-      TOMBSTONES_STORE
-    );
-    return rows.map(r => r.pubkey);
+    const result = new Set(this.tombstoneMirror.keys());
+    if (this.db?.isOpen) {
+      const rows = await this.db.getAll<{ pubkey: string; purgedAt: number }>(
+        TOMBSTONES_STORE
+      );
+      for (const row of rows) result.add(row.pubkey);
+    }
+    return Array.from(result);
   }
 
   /**
@@ -847,6 +922,11 @@ export class DMStore {
    */
   public async clearTombstone(partnerPubkey: string): Promise<void> {
     await this.init();
+    // Clear the mirror first so a subsequent IDB hiccup can't resurrect the
+    // tombstone from localStorage after an explicit unblock.
+    this.tombstoneMirror.delete(partnerPubkey);
+    this.saveTombstoneMirror();
+    if (!this.db?.isOpen) return;
     await this.db!.withStore(
       TOMBSTONES_STORE,
       'readwrite',

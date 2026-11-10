@@ -26,19 +26,29 @@ vi.mock('../DiagnosticLogger', () => ({ diagLog: vi.fn() }));
 
 /** Konfigurierbarer localStorage-Mirror-Fixture (DM_READ_ANCHORS). */
 let readAnchorFixture: Record<string, number> = {};
+/** Konfigurierbarer localStorage-Mirror-Fixture (DM_TOMBSTONES). */
+let tombstoneFixture: Record<string, number> = {};
 
 vi.mock('../PerAccountLocalStorage', () => ({
   PerAccountLocalStorage: {
     getInstance: () => ({
-      getForPubkey: vi.fn((key: string) =>
-        key === 'dm_read_anchors' ? readAnchorFixture : {}
-      ),
-      setForPubkey: vi.fn(),
+      getForPubkey: vi.fn((key: string) => {
+        if (key === 'dm_read_anchors') return readAnchorFixture;
+        if (key === 'dm_tombstones') return tombstoneFixture;
+        return {};
+      }),
+      setForPubkey: vi.fn((key: string, _pubkey: string, value: unknown) => {
+        if (key === 'dm_read_anchors')
+          readAnchorFixture = value as Record<string, number>;
+        if (key === 'dm_tombstones')
+          tombstoneFixture = value as Record<string, number>;
+      }),
     }),
   },
   StorageKeys: {
     DM_READ_ANCHORS: 'dm_read_anchors',
     DM_DISAPPEARING_SETTINGS: 'dm_disappearing',
+    DM_TOMBSTONES: 'dm_tombstones',
   },
 }));
 
@@ -110,6 +120,7 @@ let store: DMStore;
 beforeEach(() => {
   (DMStore as unknown as { instance: null }).instance = null;
   readAnchorFixture = {};
+  tombstoneFixture = {};
   store = DMStore.getInstance();
 });
 
@@ -217,6 +228,39 @@ describe('DMStore on NoorDB', () => {
 
     // Explicit unblock (user unmutes the sender) clears the tombstone.
     await store.clearTombstone(PARTNER);
+    expect(await store.isTombstoned(PARTNER)).toBe(false);
+    expect(await store.getTombstonedPubkeys()).toEqual([]);
+  });
+
+  it('purge tombstones survive an IndexedDB eviction via the localStorage mirror', async () => {
+    await store.init(ME_TOMB);
+
+    await store.saveMessage(msg({ id: 'p1', wrapId: 'wp1', createdAt: 1_000 }));
+    await store.purgeConversation(PARTNER);
+
+    expect(tombstoneFixture[PARTNER]).toBeGreaterThan(0);
+
+    // Simulate the Android WebView eviction: the whole database is wiped.
+    store.close();
+    await new Promise<void>(resolve => {
+      const req = indexedDB.deleteDatabase(`noornote_dm_${ME_TOMB}`);
+      req.onsuccess = () => resolve();
+      req.onerror = () => resolve();
+    });
+
+    // Fresh store instance — IDB tombstone store is empty, only the mirror
+    // knows about the purge. The union load must still return the sender so
+    // the relay backlog cannot resurrect the purged conversation.
+    (DMStore as unknown as { instance: null }).instance = null;
+    store = DMStore.getInstance();
+    await store.init(ME_TOMB);
+
+    expect(await store.isTombstoned(PARTNER)).toBe(true);
+    expect(await store.getTombstonedPubkeys()).toEqual([PARTNER]);
+
+    // Explicit unblock clears both the IDB row and the mirror.
+    await store.clearTombstone(PARTNER);
+    expect(tombstoneFixture[PARTNER]).toBeUndefined();
     expect(await store.isTombstoned(PARTNER)).toBe(false);
     expect(await store.getTombstonedPubkeys()).toEqual([]);
   });
