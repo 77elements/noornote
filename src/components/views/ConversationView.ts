@@ -377,12 +377,35 @@ export class ConversationView extends View {
     // Reply buttons on incoming messages (delegated — bubbles re-render often)
     this.messagesContainer?.addEventListener('click', e => {
       const target = e.target as HTMLElement;
+
+      // Click on a quote inside a bubble: jump to the original message.
+      const quote = target.closest('[data-action="jump-to-reply"]');
+      if (quote) {
+        this.jumpToQuotedMessage((quote as HTMLElement).dataset.replyTo ?? '');
+        return;
+      }
+
       const replyBtn = target.closest('[data-action="reply"]');
       if (!replyBtn) return;
       const bubble = replyBtn.closest('.message') as HTMLElement | null;
       const msg = this.messages.find(m => m.id === bubble?.dataset.msgId);
       if (msg) this.startReply(msg);
     });
+  }
+
+  /**
+   * Scroll to (and briefly highlight) the message a reply quotes. Unknown or
+   * unrendered originals (expired, outside the loaded window) do nothing.
+   */
+  private jumpToQuotedMessage(replyToId: string): void {
+    if (!replyToId) return;
+    const targetEl = this.messagesContainer?.querySelector(
+      `[data-msg-id="${replyToId}"]`
+    );
+    if (!(targetEl instanceof HTMLElement)) return;
+    targetEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    targetEl.classList.add('message--reply-target');
+    setTimeout(() => targetEl.classList.remove('message--reply-target'), 1500);
   }
 
   /**
@@ -1277,9 +1300,9 @@ export class ConversationView extends View {
           original.content.length > 200
             ? `${original.content.slice(0, 200)}…`
             : original.content;
-        replyQuoteHtml = `<div class="message__reply-quote">${escapeHtml(
-          originalText
-        )}</div>`;
+        replyQuoteHtml = `<div class="message__reply-quote" data-action="jump-to-reply" data-reply-to="${escapeHtml(
+          message.replyTo
+        )}">${escapeHtml(originalText)}</div>`;
       }
     }
 
