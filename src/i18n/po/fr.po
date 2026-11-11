@@ -971,7 +971,7 @@ msgid "App updated."
 msgstr ""
 
 #: src/components/post/PostNoteModal.ts:802
-#: src/components/views/ConversationView.ts:621
+#: src/components/views/ConversationView.ts:758
 msgid "Apply"
 msgstr ""
 
@@ -1508,7 +1508,7 @@ msgstr ""
 
 #: src/components/ui/note-rendering/BadgeAwardRenderer.ts:139
 #: src/components/ui/note-rendering/BadgeDefinitionRenderer.ts:106
-#: src/components/ui/note-rendering/CommunityDefinitionRenderer.ts:105
+#: src/components/ui/note-rendering/CommunityDefinitionRenderer.ts:164
 #: src/components/views/AboutView.ts:138
 msgid "by %s"
 msgstr ""
@@ -1610,7 +1610,7 @@ msgstr ""
 #: src/components/settings/ListSettingsSection.ts:367
 #: src/components/settings/PrivacySettingsSection.ts:270
 #: src/components/settings/RelaySettingsSection.ts:535
-#: src/components/views/ConversationView.ts:620
+#: src/components/views/ConversationView.ts:757
 #: src/components/views/MessagesView.ts:1042
 #: src/components/views/MessagesView.ts:706
 #: src/components/views/MessagesView.ts:751
@@ -2026,7 +2026,7 @@ msgid ""
 "images and videos will be blurred."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:925
+#: src/components/views/ConversationView.ts:1062
 #: src/components/views/MessagesView.ts:727
 msgid "Conversation deleted"
 msgstr ""
@@ -2082,7 +2082,7 @@ msgstr ""
 msgid "Copy user ID"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:526
+#: src/components/views/ConversationView.ts:663
 msgid "Could not accept"
 msgstr ""
 
@@ -2158,7 +2158,7 @@ msgid ""
 "page."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:564
+#: src/components/views/ConversationView.ts:701
 msgid "Could not reject"
 msgstr ""
 
@@ -2182,7 +2182,7 @@ msgstr ""
 msgid "Could not update moderation"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:501
+#: src/components/views/ConversationView.ts:638
 msgid "Could not update setting"
 msgstr ""
 
@@ -2287,7 +2287,7 @@ msgstr ""
 msgid "Custom"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:428
+#: src/components/views/ConversationView.ts:565
 msgid "Custom (%s)"
 msgstr ""
 
@@ -2295,7 +2295,7 @@ msgstr ""
 msgid "Custom client tag"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:727
+#: src/components/views/ConversationView.ts:864
 msgid "Custom duration"
 msgstr ""
 
@@ -2316,7 +2316,7 @@ msgid "Custom..."
 msgstr ""
 
 #: src/components/post/PostNoteModal.ts:449
-#: src/components/views/ConversationView.ts:429
+#: src/components/views/ConversationView.ts:566
 msgid "Custom…"
 msgstr ""
 
@@ -2373,7 +2373,7 @@ msgid ""
 "Ramadan and the Eids by a day."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:613
+#: src/components/views/ConversationView.ts:750
 msgid "Days"
 msgstr ""
 
@@ -2490,8 +2490,8 @@ msgstr ""
 msgid "Delete Article"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:434
-#: src/components/views/ConversationView.ts:914
+#: src/components/views/ConversationView.ts:1051
+#: src/components/views/ConversationView.ts:571
 #: src/components/views/MessagesView.ts:625
 #: src/components/views/MessagesView.ts:695
 msgid "Delete conversation"
@@ -2574,7 +2574,7 @@ msgstr ""
 msgid "Delete this conversation with %s? It's removed only from this device."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:915
+#: src/components/views/ConversationView.ts:1052
 msgid "Delete this conversation? It is removed only from this device."
 msgstr ""
 
@@ -2733,19 +2733,19 @@ msgstr ""
 msgid "Disable self-reposts younger than:"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:437
+#: src/components/views/ConversationView.ts:574
 msgid "Disappearing messages"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:492
+#: src/components/views/ConversationView.ts:629
 msgid "Disappearing messages enabled"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:491
+#: src/components/views/ConversationView.ts:628
 msgid "Disappearing messages off"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:781
+#: src/components/views/ConversationView.ts:918
 msgid "Disappears in ~%s"
 msgstr ""
 
@@ -2812,7 +2812,7 @@ msgstr ""
 msgid "DM me on Nostr"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:783
+#: src/components/views/ConversationView.ts:920
 msgid "Do you accept the time limitation?"
 msgstr ""
 
@@ -2884,15 +2884,15 @@ msgstr ""
 msgid "Drag to reorder"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:607
+#: src/components/views/ConversationView.ts:744
 msgid "Duration"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:706
+#: src/components/views/ConversationView.ts:843
 msgid "Duration must be at least 1 minute."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:710
+#: src/components/views/ConversationView.ts:847
 msgid "Duration must be at most 1 year."
 msgstr ""
 
@@ -3573,7 +3573,7 @@ msgstr ""
 msgid "Failed to load listings"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:1220
+#: src/components/views/ConversationView.ts:1392
 #: src/components/views/MessagesView.ts:951
 msgid "Failed to load messages"
 msgstr ""
@@ -3640,7 +3640,7 @@ msgid "Failed to move member"
 msgstr ""
 
 #: src/components/ui/NoteMenu.ts:676
-#: src/components/views/ConversationView.ts:987
+#: src/components/views/ConversationView.ts:1124
 #: src/lists/mutes.ts:2360
 msgid "Failed to mute user"
 msgstr ""
@@ -4379,7 +4379,7 @@ msgstr ""
 msgid "Hollow badge - background notifications"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:612
+#: src/components/views/ConversationView.ts:749
 msgid "Hours"
 msgstr ""
 
@@ -4597,6 +4597,8 @@ msgid "Increase font size"
 msgstr ""
 
 #: src/components/post/PostEditorToolbar.ts:72
+#: src/components/views/ConversationView.ts:283
+#: src/components/views/ConversationView.ts:284
 msgid "Insert emoji"
 msgstr ""
 
@@ -5089,7 +5091,7 @@ msgstr "Chargement du média…"
 msgid "Loading members..."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:249
+#: src/components/views/ConversationView.ts:257
 #: src/components/views/MessagesView.ts:195
 #: src/components/views/MessagesView.ts:206
 msgid "Loading messages..."
@@ -5630,7 +5632,7 @@ msgstr ""
 msgid "Messages"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:605
+#: src/components/views/ConversationView.ts:742
 msgid "Messages will disappear after this time. Minimum: 1 minute, maximum: 1 year."
 msgstr ""
 
@@ -5650,7 +5652,7 @@ msgstr ""
 msgid "Minimum notice"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:611
+#: src/components/views/ConversationView.ts:748
 msgid "Minutes"
 msgstr ""
 
@@ -5756,17 +5758,17 @@ msgid "Mute thread"
 msgstr ""
 
 #: src/components/ui/NoteMenu.ts:216
-#: src/components/views/ConversationView.ts:936
+#: src/components/views/ConversationView.ts:1073
 msgid "Mute user"
 msgstr ""
 
 #: src/components/ui/NoteMenu.ts:206
-#: src/components/views/ConversationView.ts:934
+#: src/components/views/ConversationView.ts:1071
 msgid "Mute user privately"
 msgstr ""
 
 #: src/components/ui/NoteMenu.ts:210
-#: src/components/views/ConversationView.ts:936
+#: src/components/views/ConversationView.ts:1073
 msgid "Mute user publicly"
 msgstr ""
 
@@ -5973,7 +5975,7 @@ msgid "NIP-55 Android signer"
 msgstr ""
 
 #: src/components/post/PostNoteModal.ts:1081
-#: src/components/views/ConversationView.ts:787
+#: src/components/views/ConversationView.ts:924
 msgid "No"
 msgstr ""
 
@@ -6122,7 +6124,7 @@ msgstr ""
 msgid "No messages from unknown users"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:1065
+#: src/components/views/ConversationView.ts:1202
 msgid "No messages yet"
 msgstr ""
 
@@ -7942,6 +7944,7 @@ msgstr ""
 #: src/components/reply/ReplyModal.ts:770
 #: src/components/reply/ReplyModal.ts:773
 #: src/components/ui/InteractionStatusLine.ts:321
+#: src/components/views/ConversationView.ts:1286
 #: src/services/PostService.ts:540
 msgid "Reply"
 msgstr ""
@@ -8145,7 +8148,7 @@ msgstr ""
 #: src/components/relay-browser/RelayBrowser.ts:308
 #: src/components/system/OfflineOverlay.ts:49
 #: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:102
-#: src/components/views/ConversationView.ts:1221
+#: src/components/views/ConversationView.ts:1393
 #: src/components/views/MessagesView.ts:952
 #: src/services/ViewMountingService.ts:113
 msgid "Retry"
@@ -8595,7 +8598,7 @@ msgid ""
 "and cannot be undone. Relays may or may not honor it."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:1066
+#: src/components/views/ConversationView.ts:1203
 msgid "Send a message to start the conversation"
 msgstr ""
 
@@ -9732,7 +9735,7 @@ msgid ""
 "and follow the people that interest you."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:610
+#: src/components/views/ConversationView.ts:747
 msgid "Time unit"
 msgstr ""
 
@@ -9891,7 +9894,7 @@ msgstr ""
 msgid "Type @ to search your follows"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:255
+#: src/components/views/ConversationView.ts:273
 msgid "Type a message..."
 msgstr ""
 
@@ -10212,7 +10215,7 @@ msgstr ""
 msgid "User muted publicly"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:244
+#: src/components/views/ConversationView.ts:252
 msgid "User options"
 msgstr ""
 
@@ -10461,7 +10464,7 @@ msgstr ""
 msgid "Weekly availability"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:614
+#: src/components/views/ConversationView.ts:751
 msgid "Weeks"
 msgstr ""
 
@@ -10645,7 +10648,7 @@ msgstr ""
 
 #: src/components/onboarding/AccountSetupWizard.ts:1673
 #: src/components/post/PostNoteModal.ts:1080
-#: src/components/views/ConversationView.ts:786
+#: src/components/views/ConversationView.ts:923
 msgid "Yes"
 msgstr ""
 
@@ -11418,8 +11421,8 @@ msgstr ""
 msgid "Copy Permalink"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:1186
-#: src/components/views/ConversationView.ts:1202
+#: src/components/views/ConversationView.ts:1358
+#: src/components/views/ConversationView.ts:1374
 msgid "Could not send message, please try again"
 msgstr ""
 
@@ -11606,7 +11609,7 @@ msgid ""
 "device."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:1201
+#: src/components/views/ConversationView.ts:1373
 msgid "Signer did not respond, message not sent"
 msgstr ""
 
@@ -12065,8 +12068,12 @@ msgstr ""
 msgid "Bulk Delete"
 msgstr ""
 
-#: src/components/ui/note-rendering/CommunityDefinitionRenderer.ts:88
+#: src/components/ui/note-rendering/CommunityDefinitionRenderer.ts:93
 msgid "Community"
+msgstr ""
+
+#: src/components/views/ConversationView.ts:266
+msgid "Cancel reply"
 msgstr ""
 
 #: src/helpers/datePickerModal.ts:183

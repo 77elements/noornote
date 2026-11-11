@@ -33,9 +33,13 @@ import { QuotedNoteRenderer } from '../ui/note-rendering/QuotedNoteRenderer';
 import { replaceMediaPlaceholders } from '../../helpers/renderMediaContent';
 import { replaceBolt11Placeholders } from '../../helpers/renderBolt11';
 import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
+import { insertTextAtCursor } from '../../helpers/insertTextAtCursor';
+import { escapeHtml } from '../../helpers/escapeHtml';
 import { clearDmTabIfLeaving } from '../../helpers/DmTabPersistence';
 import { UserIdentity } from '../shared/UserIdentity';
 import { npubToHex } from '../../helpers/nip19';
+import { EmojiPicker, type CustomEmojiEntry } from '../emoji/EmojiPicker';
+import { isCustomEmojisEnabled } from '../../addons/custom-emojis/index';
 
 export class ConversationView extends View {
   private container: HTMLElement;
@@ -80,6 +84,10 @@ export class ConversationView extends View {
   private hasSeenInitialLogin: boolean = false;
   /** Subscription for user:login (account-switch detection). */
   private accountSwitchSubId: string | null = null;
+  /** Message currently being replied to (NIP-17 `e` tag with `reply` marker). */
+  private replyToMessage: DMMessage | null = null;
+  /** Emoji picker instance (Note-Composer component) — one at a time. */
+  private emojiPicker: EmojiPicker | null = null;
 
   constructor(partnerPubkey: string) {
     super();
@@ -250,6 +258,16 @@ export class ConversationView extends View {
       </div>
       <div class="conversation-view__disappearing-zone" data-zone="disappearing"></div>
       <div class="conversation-view__input">
+        <div class="conversation-view__quote" data-action="quote-bar" hidden>
+          <span class="conversation-view__quote-text"></span>
+          <button
+            class="btn-icon conversation-view__quote-close"
+            data-action="cancel-reply"
+            aria-label="${_('Cancel reply')}"
+          >
+            <svg width="14" height="14"><use href="#icon-close"/></svg>
+          </button>
+        </div>
         <textarea
           class="textarea conversation-view__textarea"
           placeholder="${_('Type a message...')}"
@@ -258,6 +276,16 @@ export class ConversationView extends View {
         <button class="btn btn--medium conversation-view__send-btn" disabled>
           <svg width="20" height="20"><use href="#icon-send"/></svg>
         </button>
+        <div class="conversation-view__toolbar">
+          <button
+            class="btn-icon conversation-view__emoji-btn"
+            data-action="emoji"
+            title="${_('Insert emoji')}"
+            aria-label="${_('Insert emoji')}"
+          >
+            <svg width="20" height="20"><use href="#icon-emoji"/></svg>
+          </button>
+        </div>
       </div>
     `;
 
@@ -332,6 +360,119 @@ export class ConversationView extends View {
         void this.sendMessage();
       }
     });
+
+    // Cancel reply (quote bar close button)
+    this.container
+      .querySelector('[data-action="cancel-reply"]')
+      ?.addEventListener('click', () => this.cancelReply());
+
+    // Emoji picker (same component as the Note Composer toolbar)
+    this.container
+      .querySelector('[data-action="emoji"]')
+      ?.addEventListener('click', e => {
+        e.stopPropagation();
+        void this.handleEmojiPicker();
+      });
+
+    // Reply buttons on incoming messages (delegated — bubbles re-render often)
+    this.messagesContainer?.addEventListener('click', e => {
+      const target = e.target as HTMLElement;
+      const replyBtn = target.closest('[data-action="reply"]');
+      if (!replyBtn) return;
+      const bubble = replyBtn.closest('.message') as HTMLElement | null;
+      const msg = this.messages.find(m => m.id === bubble?.dataset.msgId);
+      if (msg) this.startReply(msg);
+    });
+  }
+
+  /**
+   * Start a reply: show the quoted partner text above the composer. The
+   * NIP-17 `e` tag (reply marker) is attached on send — the quote itself
+   * travels as the tag, not as message text.
+   */
+  private startReply(message: DMMessage): void {
+    this.replyToMessage = message;
+    const bar = this.container.querySelector(
+      '[data-action="quote-bar"]'
+    ) as HTMLElement | null;
+    if (!bar) return;
+    const text = bar.querySelector('.conversation-view__quote-text');
+    if (text) text.textContent = message.content;
+    bar.hidden = false;
+    this.container
+      .querySelector('.conversation-view__textarea')
+      ?.scrollIntoView({ block: 'nearest' });
+    (
+      this.container.querySelector(
+        '.conversation-view__textarea'
+      ) as HTMLTextAreaElement | null
+    )?.focus();
+  }
+
+  /** Dismiss the reply quote bar. */
+  private cancelReply(): void {
+    this.replyToMessage = null;
+    const bar = this.container.querySelector(
+      '[data-action="quote-bar"]'
+    ) as HTMLElement | null;
+    if (bar) bar.hidden = true;
+  }
+
+  /**
+   * Emoji picker — same component the Note Composer uses (PostEditorToolbar
+   * pattern: destroy any open instance, load NIP-30 custom emojis only when
+   * the addon is enabled, insert at cursor).
+   */
+  private async handleEmojiPicker(): Promise<void> {
+    const emojiBtn = this.container.querySelector(
+      '[data-action="emoji"]'
+    ) as HTMLElement | null;
+    const textarea = this.container.querySelector(
+      '.conversation-view__textarea'
+    ) as HTMLTextAreaElement | null;
+    if (!emojiBtn || !textarea) return;
+
+    // Always destroy old picker and create fresh one to ensure correct positioning
+    if (this.emojiPicker) {
+      this.emojiPicker.destroy();
+      this.emojiPicker = null;
+    }
+
+    // Custom emojis (NIP-30) — only loaded when the addon is enabled
+    let customEmojis: CustomEmojiEntry[] | undefined;
+    if (isCustomEmojisEnabled()) {
+      try {
+        const { EmojiService } = await import(
+          '../../addons/custom-emojis/EmojiService'
+        );
+        const service = EmojiService.getInstance();
+        // Fire-and-forget refresh in background — initial render uses cached pack
+        void service.refreshFromRelays();
+        customEmojis = service.getEmojis();
+      } catch (err) {
+        this.systemLogger.warn(
+          'ConversationView',
+          `Custom emoji load failed: ${String(err)}`
+        );
+      }
+    }
+
+    this.emojiPicker = new EmojiPicker({
+      triggerElement: emojiBtn,
+      ...(customEmojis ? { customEmojis } : {}),
+      onSelect: (emoji: string) => {
+        textarea.value = insertTextAtCursor(textarea, textarea.value, emoji);
+        // Re-run resize + send-button state (same logic as the input handler)
+        textarea.style.height = 'auto';
+        textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
+        const sendBtn = this.container.querySelector(
+          '.conversation-view__send-btn'
+        ) as HTMLButtonElement | null;
+        if (sendBtn) sendBtn.disabled = !textarea.value.trim();
+        this.emojiPicker?.hide();
+      },
+    });
+    this.emojiPicker.show();
   }
 
   /**
@@ -1123,13 +1264,42 @@ export class ConversationView extends View {
         ? `<span class="message__expires-in" data-expires-at="${message.expiresAt}">${formatRemaining(message.expiresAt, Math.floor(Date.now() / 1000))}</span>`
         : '';
 
+    // Reply quote: when this message replies to another (NIP-17 `e` tag,
+    // reply marker), show the quoted text above the bubble content. The
+    // original lives in this conversation, so we resolve it locally — a
+    // missing original (expired, or older than the loaded window) renders
+    // without a quote, never as a bare event id.
+    let replyQuoteHtml = '';
+    if (message.replyTo) {
+      const original = this.messages.find(m => m.id === message.replyTo);
+      if (original) {
+        const originalText =
+          original.content.length > 200
+            ? `${original.content.slice(0, 200)}…`
+            : original.content;
+        replyQuoteHtml = `<div class="message__reply-quote">${escapeHtml(
+          originalText
+        )}</div>`;
+      }
+    }
+
+    // Reply affordance on incoming bubbles: mirrors chat-app conventions.
+    // Subtly colored so it does not compete with the bubble content.
+    const replyBtnHtml = message.isMine
+      ? ''
+      : `<button class="btn-icon message__reply-btn" data-action="reply" title="${_('Reply')}" aria-label="${_('Reply')}">
+          <svg width="14" height="14"><use href="#icon-reply"/></svg>
+        </button>`;
+
     messageEl.innerHTML = `
+      ${replyQuoteHtml}
       <div class="message__content">${htmlWithMedia}</div>
       <div class="message__quotes"></div>
       <div class="message__meta">
         <span class="message__time">${this.formatTime(message.createdAt)}</span>
         ${expiresIn}
       </div>
+      ${replyBtnHtml}
     `;
 
     // Render quoted notes if any
@@ -1168,27 +1338,30 @@ export class ConversationView extends View {
     sendBtn.disabled = true;
 
     // Clear the composer immediately so the message doesn't linger in the input
-    // while the send round-trips (gift-wrap + relay publish can take 1-2s).
-    // Restore the text if the send fails.
+    // while the send round-trips (gift-wrap + relay publish can take 1-2s, or
+    // hang on slow relays while the message is already delivered via echo).
+    // Restore the text (and the reply quote bar) if the send fails.
+    const replyToId = this.replyToMessage?.id;
     textarea.value = '';
     textarea.style.height = 'auto';
+    // Close the quote bar optimistically — a hanging publish must not leave it.
+    this.cancelReply();
 
     try {
       const success =
-        (await this.dmsApi?.sendMessage(this.partnerPubkey, content)) ?? false;
+        (await this.dmsApi?.sendMessage(
+          this.partnerPubkey,
+          content,
+          replyToId
+        )) ?? false;
 
       if (success) {
         this.systemLogger.info('ConversationView', 'Message sent');
       } else {
-        textarea.value = content;
-        this.systemLogger.error('ConversationView', 'Failed to send message');
-        ToastService.show(
-          _('Could not send message, please try again'),
-          'error'
-        );
+        this.restoreComposerAfterFailure(textarea, sendBtn, content, replyToId);
       }
     } catch (_error) {
-      textarea.value = content;
+      this.restoreComposerAfterFailure(textarea, sendBtn, content, replyToId);
       this.systemLogger.error(
         'ConversationView',
         'Error sending message:',
@@ -1206,6 +1379,36 @@ export class ConversationView extends View {
       this.isSending = false;
       sendBtn.disabled = !textarea.value.trim();
     }
+  }
+
+  /**
+   * Send failure: put the text, send-button state and reply quote bar back so
+   * nothing the user wrote or referenced is lost.
+   */
+  private restoreComposerAfterFailure(
+    textarea: HTMLTextAreaElement,
+    sendBtn: HTMLButtonElement,
+    content: string,
+    replyToId?: string
+  ): void {
+    textarea.value = content;
+    sendBtn.disabled = !content.trim();
+    if (replyToId) {
+      const original = this.messages.find(m => m.id === replyToId);
+      if (original) {
+        // Re-open the quote bar without stealing focus (startReply focuses).
+        this.replyToMessage = original;
+        const bar = this.container.querySelector(
+          '[data-action="quote-bar"]'
+        ) as HTMLElement | null;
+        if (bar) {
+          const text = bar.querySelector('.conversation-view__quote-text');
+          if (text) text.textContent = original.content;
+          bar.hidden = false;
+        }
+      }
+    }
+    this.systemLogger.error('ConversationView', 'Failed to send message');
   }
 
   /**
@@ -1263,6 +1466,10 @@ export class ConversationView extends View {
    */
   public destroy(): void {
     this.closeMenu();
+    if (this.emojiPicker) {
+      this.emojiPicker.destroy();
+      this.emojiPicker = null;
+    }
     // Leaving the DM section resets the persisted Known/Unknown tab (next
     // fresh entry lands on Known); list ↔ conversation navigation keeps it.
     clearDmTabIfLeaving(this.router.getCurrentPath());
