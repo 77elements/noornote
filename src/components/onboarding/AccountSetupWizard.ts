@@ -2171,39 +2171,39 @@ IMPORTANT:
           <div class="nn-carousel nn-carousel--sidecar">
             <div class="nn-carousel-slides">
               <div class="nn-carousel-slide active" data-slide="0">
-                <img src="/images/sidecar/sidecar-01.png" alt="${_('Add Sidecar to Chrome')}" class="nn-carousel-image" />
+                <img src="${import.meta.env.BASE_URL}images/sidecar/sidecar-01.png" alt="${_('Add Sidecar to Chrome')}" class="nn-carousel-image" />
                 <p class="nn-carousel-caption">${_('Click <strong>"Add to Chrome"</strong> to install Sidecar')}</p>
               </div>
               <div class="nn-carousel-slide" data-slide="1">
-                <img src="/images/sidecar/sidecar-02.png" alt="${_('Sidecar installed')}" class="nn-carousel-image" />
+                <img src="${import.meta.env.BASE_URL}images/sidecar/sidecar-02.png" alt="${_('Sidecar installed')}" class="nn-carousel-image" />
                 <p class="nn-carousel-caption">${_('Installed, your Nostr signer is ready')}</p>
               </div>
               <div class="nn-carousel-slide" data-slide="2">
-                <img src="/images/sidecar/sidecar-03.png" alt="${_('Pin Sidecar')}" class="nn-carousel-image" />
+                <img src="${import.meta.env.BASE_URL}images/sidecar/sidecar-03.png" alt="${_('Pin Sidecar')}" class="nn-carousel-image" />
                 <p class="nn-carousel-caption">${_('Open the <strong>puzzle-piece menu</strong> and pin Sidecar')}</p>
               </div>
               <div class="nn-carousel-slide" data-slide="3">
-                <img src="/images/sidecar/sidecar-04.png" alt="${_('Sidecar pinned')}" class="nn-carousel-image" />
+                <img src="${import.meta.env.BASE_URL}images/sidecar/sidecar-04.png" alt="${_('Sidecar pinned')}" class="nn-carousel-image" />
                 <p class="nn-carousel-caption">${_('Sidecar now stays in your toolbar')}</p>
               </div>
               <div class="nn-carousel-slide" data-slide="4">
-                <img src="/images/sidecar/sidecar-05.png" alt="${_('Set a PIN')}" class="nn-carousel-image" />
+                <img src="${import.meta.env.BASE_URL}images/sidecar/sidecar-05.png" alt="${_('Set a PIN')}" class="nn-carousel-image" />
                 <p class="nn-carousel-caption">${_('Click it, set a <strong>PIN or passphrase</strong> (min. 4 characters), then <strong>"Create keystore"</strong>')}</p>
               </div>
               <div class="nn-carousel-slide" data-slide="5">
-                <img src="/images/sidecar/sidecar-06.png" alt="${_('Import nsec')}" class="nn-carousel-image" />
+                <img src="${import.meta.env.BASE_URL}images/sidecar/sidecar-06.png" alt="${_('Import nsec')}" class="nn-carousel-image" />
                 <p class="nn-carousel-caption">${_('Click <strong>"Import nsec"</strong>')}</p>
               </div>
               <div class="nn-carousel-slide" data-slide="6">
-                <img src="/images/sidecar/sidecar-07.png" alt="${_('Paste nsec')}" class="nn-carousel-image" />
+                <img src="${import.meta.env.BASE_URL}images/sidecar/sidecar-07.png" alt="${_('Paste nsec')}" class="nn-carousel-image" />
                 <p class="nn-carousel-caption">${_('Paste your <strong>nsec</strong>, copied in step 1 or from your backup file')}</p>
               </div>
               <div class="nn-carousel-slide" data-slide="7">
-                <img src="/images/sidecar/sidecar-08.png" alt="${_('Import account')}" class="nn-carousel-image" />
+                <img src="${import.meta.env.BASE_URL}images/sidecar/sidecar-08.png" alt="${_('Import account')}" class="nn-carousel-image" />
                 <p class="nn-carousel-caption">${_('Sidecar loads your profile, click <strong>"Import account"</strong>')}</p>
               </div>
               <div class="nn-carousel-slide" data-slide="8">
-                <img src="/images/sidecar/sidecar-09.png" alt="${_('Sidecar ready')}" class="nn-carousel-image" />
+                <img src="${import.meta.env.BASE_URL}images/sidecar/sidecar-09.png" alt="${_('Sidecar ready')}" class="nn-carousel-image" />
                 <p class="nn-carousel-caption">${_('Done. Your identity is in Sidecar, now log in to NoorNote')}</p>
               </div>
             </div>

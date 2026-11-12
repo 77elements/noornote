@@ -24,7 +24,7 @@ interface WhatsNewCategory {
 /** The big feature of the CURRENT release — promotional tone. */
 // i18n-ok (release marketing text, English only)
 const HIGHLIGHT =
-  'Live Streams: a sidebar widget showing which people you follow are live right now, and Podcasts or Radio Stations that keep playing in the background while you use NoorNote as usual!';
+  'DMs just got better: reply quotes show the original message right in the conversation (tap it to jump there instantly), plus a built-in emoji picker!';
 
 /** Full release notes of the CURRENT version (replaced on every release). */
 const RELEASE: {
@@ -32,52 +32,27 @@ const RELEASE: {
   date: string;
   categories: WhatsNewCategory[];
 } = {
-  version: '1.9.10',
+  version: '0.9.12',
   date: 'November 2026',
   categories: [
     {
-      title: 'Zaps', // i18n-ok: WhatsNewView is English-only by design (like the update modal)
-      items: [
-        'Zapping fixed: a verification added in 1.9.9 was too strict and made many zaps fail with "Failed to fetch invoice". Zaps work reliably again.',
-      ],
-    },
-    {
-      title: 'Live Streams', // i18n-ok: WhatsNewView is English-only by design (like the update modal)
-      items: [
-        'Full stream list with detail pages, plus a new sidebar widget showing which people you follow are live right now.',
-        'Podcasts and radio stations can keep playing in the background while you use the app.',
-      ],
-    },
-    {
-      title: "What's New", // i18n-ok: WhatsNewView is English-only by design (like the update modal)
-      items: [
-        'New "What\'s New" widget in the sidebar: see the highlight and full notes of the current version right inside the app.',
-      ],
-    },
-    {
-      title: 'Notes & Profiles', // i18n-ok: WhatsNewView is English-only by design (like the update modal)
-      items: [
-        'Pinned post: pin one of your own notes to the top of your profile.',
-        'Your direct replies now stay pinned to the top of your own threads.',
-        'Relay settings now show which NIPs each relay supports.',
-      ],
-    },
-    {
-      title: 'Composer', // i18n-ok: WhatsNewView is English-only by design (like the update modal)
-      items: [
-        'Expiring notes (NIP-40): optionally set an expiry for your notes; expired notes disappear from feeds.',
-      ],
-    },
-    {
       title: 'DMs', // i18n-ok: WhatsNewView is English-only by design (like the update modal)
-      items: ['Purged spam DMs can no longer come back through relay backlog.'],
+      items: [
+        'Reply quotes: replies in a conversation show the original message as a quote — tap it to jump straight to that message.',
+        'New emoji picker in conversations.',
+        "Purged spam DMs can no longer come back, and senders you've purged stay hidden.",
+      ],
+    },
+    {
+      title: 'Communities', // i18n-ok: WhatsNewView is English-only by design (like the update modal)
+      items: [
+        'Community profiles shared in notes (kind 32222) now display as a proper community card instead of raw text.',
+      ],
     },
     {
       title: 'Fixes', // i18n-ok: WhatsNewView is English-only by design (like the update modal)
       items: [
-        'Group chat notifications now catch mentions and replies.',
-        'Alerts are shown as persistent toasts you dismiss with Ok.',
-        'Live Streams widget: no more underlined text on hover.',
+        'Relay fixes (by Mokhtar, via pull requests — thanks!): idle relays no longer crash, and evicted relays no longer reconnect endlessly (PRs #9 and #10).',
       ],
     },
   ],
