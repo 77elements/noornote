@@ -1,4 +1,4 @@
-# Release Notes 1.9.11 — compact (GitHub Release / Update Modal)
+# Release Notes 1.9.12 — compact (GitHub Release / Update Modal)
 
 ## DMs
 
@@ -12,4 +12,3 @@
 ## Fixes
 
 - Relay fixes (by Mokhtar, via pull requests — thanks!): idle relays no longer crash, and evicted relays no longer reconnect endlessly (PRs #9 and #10).
-- Focus UI: articles scroll correctly again.
