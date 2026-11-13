@@ -16,6 +16,7 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { _ } from '../../i18n';
 import { ModuleLoader } from '../../core/ModuleLoader';
+import { ensureModuleApi } from '../../helpers/ensureModuleApi';
 import type {
   ArticlesModuleApi,
   ArticleFeedFetchOptions,
@@ -355,7 +356,12 @@ export class ArticleTimeline {
     const follows = await this.resolveAuthors();
     if (follows.length === 0) return [];
 
-    const api = this.articlesApi;
+    // The articles module loads on user:login (async). Views that can be
+    // constructed at boot (focus shell deep-link reloads) may run before
+    // that init finished — the plain getter is null then and the feed
+    // would show empty forever. ensureModuleApi waits instead (no-op when
+    // already loaded).
+    const api = await ensureModuleApi<ArticlesModuleApi>('articles');
     if (!api) return [];
 
     const opts: ArticleFeedFetchOptions = {
