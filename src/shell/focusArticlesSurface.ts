@@ -85,7 +85,9 @@ export class ArticlesSurface implements FocusDomainSurfaceView {
     this.savedListScroll = this.scrollSlot?.scrollTop ?? 0;
     list.getElement().remove();
     // A previous detail (if any) is stale — the back control always
-    // destroys it, this is just a guard.
+    // destroys it, this is just a guard (destroy() does not detach the
+    // element, so remove it explicitly).
+    this.detailEl?.remove();
     this.detailView?.destroy();
     const { ArticleView } = await import('../components/views/ArticleView');
     this.detailView = new ArticleView(naddr);
@@ -99,6 +101,9 @@ export class ArticlesSurface implements FocusDomainSurfaceView {
 
   private showList(): void {
     if (!this.listView) return;
+    // ArticleView.destroy() does not detach its element — remove it here,
+    // otherwise it stays in the frame and pushes the list below it.
+    this.detailEl?.remove();
     this.detailView?.destroy();
     this.detailView = null;
     this.detailEl = null;
@@ -110,6 +115,7 @@ export class ArticlesSurface implements FocusDomainSurfaceView {
 
   reset(): void {
     if (!this.detailView) return;
+    this.detailEl?.remove();
     this.detailView.destroy();
     this.detailView = null;
     this.detailEl = null;
