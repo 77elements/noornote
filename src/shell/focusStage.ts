@@ -300,11 +300,14 @@ export class FocusStage {
   /** Move the circles back into the grid (registry order) and drop the stacks. */
   private restoreSideCircles(): void {
     if (!this.sideStacks) return;
+    // Append EVERY circle in registry order — including the one that
+    // stayed in the grid as the focused column. appendChild moves it, so
+    // the original order (social → articles → …) is restored exactly;
+    // re-appending only the stacked circles would place them all AFTER
+    // the formerly active object and shuffle the grid.
     for (const def of FOCUS_DOMAINS) {
       const circle = this.objects.get(def.id);
-      if (circle && circle.parentElement !== this.grid) {
-        this.grid.appendChild(circle);
-      }
+      if (circle) this.grid.appendChild(circle);
     }
     for (const stack of this.sideStacks) stack.remove();
     this.sideStacks = null;
