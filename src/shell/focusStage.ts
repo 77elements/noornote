@@ -41,6 +41,8 @@ const MORPH_EASING = 'cubic-bezier(0.4, 0, 0.2, 1)';
 const MORPH_MIN_WIDTH = 1100;
 /** Media query mirroring the SCSS takeover breakpoint (must stay in sync). */
 const MORPH_MIN_QUERY = `(max-width: ${MORPH_MIN_WIDTH - 1}px)`;
+/** Column scrolled this far → the scroll-to-top action appears (v1 parity). */
+const SCROLL_TOP_THRESHOLD = 100;
 
 export class FocusStage {
   private root: HTMLElement;
@@ -51,6 +53,11 @@ export class FocusStage {
   private sideStacks: [HTMLElement, HTMLElement] | null = null;
   private activeId: string | null = null;
   private morphing = false;
+  /** Per-object scroll-to-top action state (button + last scroll source). */
+  private scrollTopState = new Map<
+    string,
+    { btn: HTMLElement; source: HTMLElement | null }
+  >();
   private lastWidth = window.innerWidth;
   private onResize = (): void => {
     const width = window.innerWidth;
@@ -100,6 +107,7 @@ export class FocusStage {
     }
     this.surfaces.clear();
     this.objects.clear();
+    this.scrollTopState.clear();
     this.grid?.remove();
   }
 
@@ -142,6 +150,10 @@ export class FocusStage {
           aria-label="${_('Back')}">
           <svg width="15" height="15" aria-hidden="true"><use href="#icon-back"/></svg>
         </button>
+        <button type="button" class="focus-object__scroll-top" hidden
+          aria-label="${_('Scroll to top')}">
+          <svg width="15" height="15" aria-hidden="true" class="focus-object__scroll-top-icon"><use href="#icon-back"/></svg>
+        </button>
       </div>
       <div class="focus-object__surface"></div>
     `;
@@ -163,14 +175,89 @@ export class FocusStage {
     el.addEventListener('focus:surface-back', e => {
       const detail = (e as CustomEvent<{ visible?: boolean }>).detail;
       backBtn.hidden = !detail?.visible;
+      // Sync the scroll-to-top action with the swap (no scroll event
+      // fires when a view replaces another): a fresh detail starts at
+      // the top — hide; back on the list means its preserved scroll
+      // position — resync (button reappears if the list stayed scrolled).
+      const st = this.scrollTopState.get(def.id);
+      if (st) {
+        if (detail?.visible) {
+          st.btn.hidden = true;
+        } else {
+          const slot = el.querySelector(
+            '.focus-object__surface'
+          ) as HTMLElement;
+          st.source = this.findMainScroller(slot);
+          st.btn.hidden = !(
+            st.source && st.source.scrollTop > SCROLL_TOP_THRESHOLD
+          );
+        }
+      }
     });
     backBtn.addEventListener('click', e => {
       e.stopPropagation();
       if (this.activeId !== def.id || this.morphing) return;
       this.surfaces.get(def.id)?.view?.back?.();
     });
+
+    // Scroll-to-top action: visible once the column's main scroller is
+    // scrolled past the threshold, scrolls it back smooth on click. The
+    // captured scroll listener reaches BOTH scroll models — the slot
+    // itself (articles: the column scrolls) and internal scrollers
+    // (social: the timeline scrolls inside the view) — scroll doesn't
+    // bubble, but capture on the slot receives every descendant's event.
+    const slot = el.querySelector('.focus-object__surface') as HTMLElement;
+    const scrollTopBtn = el.querySelector(
+      '.focus-object__scroll-top'
+    ) as HTMLElement;
+    const scrollTop = { btn: scrollTopBtn, source: null as HTMLElement | null };
+    this.scrollTopState.set(def.id, scrollTop);
+    slot.addEventListener(
+      'scroll',
+      e => {
+        const t = e.target;
+        if (!(t instanceof HTMLElement)) return;
+        // Ignore stale events from views swapped out of the column (a
+        // detached timeline keeps polling and scrolling) — only elements
+        // currently IN the column drive the action.
+        if (!slot.contains(t)) return;
+        // Only the column's main scroller drives the action — the slot
+        // itself, or a descendant scroller occupying most of the column
+        // (social timeline). Small nested scrollers (dropdowns) don't.
+        if (t !== slot && t.clientHeight < slot.clientHeight * 0.6) return;
+        scrollTop.source = t;
+        scrollTop.btn.hidden = t.scrollTop <= SCROLL_TOP_THRESHOLD;
+      },
+      true
+    );
+    scrollTopBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      const t = scrollTop.source ?? this.findMainScroller(slot);
+      t?.scrollTo({ top: 0, behavior: 'smooth' });
+    });
     this.objects.set(def.id, el);
     return el;
+  }
+
+  /**
+   * The column's main scroll container: the slot itself when it overflows
+   * (articles), otherwise the first descendant that actually scrolls and
+   * occupies most of the column (the social timeline's inner scroller).
+   * Only called on open and click — never per scroll event.
+   */
+  private findMainScroller(slot: HTMLElement): HTMLElement | null {
+    const scrollable = (n: Element): boolean => {
+      const s = window.getComputedStyle(n);
+      return (
+        (s.overflowY === 'auto' || s.overflowY === 'scroll') &&
+        (n as HTMLElement).scrollHeight > (n as HTMLElement).clientHeight
+      );
+    };
+    if (scrollable(slot)) return slot;
+    for (const d of slot.querySelectorAll('*')) {
+      if (d instanceof HTMLElement && scrollable(d)) return d;
+    }
+    return null;
   }
 
   private async onObjectClick(
@@ -202,6 +289,15 @@ export class FocusStage {
     const slot = el.querySelector('.focus-object__surface') as HTMLElement;
     slot.appendChild(surface.element);
     surface.view?.resume?.();
+    // A reopened (cached) surface may already be scrolled — sync the
+    // scroll-to-top action to the restored state.
+    const st = this.scrollTopState.get(def.id);
+    if (st) {
+      st.source = this.findMainScroller(slot);
+      st.btn.hidden = !(
+        st.source && st.source.scrollTop > SCROLL_TOP_THRESHOLD
+      );
+    }
 
     let morphDone: Promise<unknown> = Promise.resolve();
     if (takeOver) {
@@ -251,6 +347,13 @@ export class FocusStage {
       surface.view?.pause?.();
       surface.view?.reset?.();
       surface.element.remove();
+    }
+    // The column is gone — reset the scroll-to-top action for a clean
+    // reopen (hidden until the user scrolls again).
+    const st = this.scrollTopState.get(def.id);
+    if (st) {
+      st.source = null;
+      st.btn.hidden = true;
     }
 
     el.classList.remove('focus-object--active');
