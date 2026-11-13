@@ -27,9 +27,18 @@ export interface FocusDomainSurfaceView {
   /**
    * Focus navigation seam: render a view type inside this surface's
    * column (note/article details). Return false for types the surface
-   * does not own — they fall through to the classic navigation.
+   * does not own — the stage then routes them to the domain that owns
+   * the type (cross-object switch) or, if none, to the classic
+   * navigation.
    */
   handleFocusNav?(viewType: string, param?: string): boolean;
+  /**
+   * Open the surface's detail for a seam param, resolving once the
+   * detail element is mounted (FocusListDetailSurface provides it). The
+   * stage awaits this on cross-object handoffs so the morph lands on
+   * the final content instead of an intermediate list.
+   */
+  openDetail?(param: string): Promise<void>;
   /**
    * Return to the surface's root list state: destroy any in-column
    * detail and re-attach the list. Called when the surface is detached
@@ -42,6 +51,12 @@ export interface FocusDomainSurfaceView {
    * object's back action button — only shown while a detail is open).
    */
   back?(): void;
+  /**
+   * Sync the browser URL with the surface's current state (list ↔
+   * detail). Called by the stage when a surface (re)mounts, so a
+   * preserved detail keeps its own route.
+   */
+  syncUrl?(): void;
 }
 
 /** A mounted domain surface, ready to append into the focus column. */
@@ -69,6 +84,15 @@ export interface FocusDomainDef {
    */
   route?: string;
   /**
+   * View types this domain's surface can render in the focus navigation
+   * seam. Cross-object routing: when the ACTIVE surface declines a view
+   * type, the stage switches the focus to the domain that owns it (e.g.
+   * a quoted-article click in the timeline morphs to the Articles
+   * object). Declared on the def — surfaces are created lazily, so
+   * ownership cannot be queried off an instance.
+   */
+  viewTypes?: string[];
+  /**
    * Create the domain surface for the focus column. Async so heavy views
    * are dynamically imported (code-split) only when first focused.
    */
@@ -87,6 +111,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     label: _('Social Media'),
     icon: 'icon-home',
     route: '/timeline',
+    viewTypes: ['single-note'],
     createSurface: socialSurface,
   },
   {
@@ -94,6 +119,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     label: _('Articles'),
     icon: 'icon-articles',
     route: '/articles',
+    viewTypes: ['article'],
     createSurface: articlesSurface,
   },
   { id: 'videos', label: _('Videos'), icon: 'icon-video' },

@@ -44,6 +44,12 @@ const MORPH_MIN_QUERY = `(max-width: ${MORPH_MIN_WIDTH - 1}px)`;
 /** Column scrolled this far → the scroll-to-top action appears (v1 parity). */
 const SCROLL_TOP_THRESHOLD = 100;
 
+/** A view type handed across objects: open this detail in the new column. */
+interface FocusHandoff {
+  viewType: string;
+  param: string;
+}
+
 export class FocusStage {
   private root: HTMLElement;
   private grid!: HTMLElement;
@@ -58,6 +64,8 @@ export class FocusStage {
     string,
     { btn: HTMLElement; source: HTMLElement | null }
   >();
+  /** Object-level history (def ids; back walks it, close removes). */
+  private hist: string[] = [];
   private lastWidth = window.innerWidth;
   private onResize = (): void => {
     const width = window.innerWidth;
@@ -108,6 +116,7 @@ export class FocusStage {
     this.surfaces.clear();
     this.objects.clear();
     this.scrollTopState.clear();
+    this.hist = [];
     this.grid?.remove();
   }
 
@@ -116,20 +125,29 @@ export class FocusStage {
    * URL is already correct, the surface opens with the standard morph.
    */
   restoreDomain(def: FocusDomainDef): void {
-    const el = this.objects.get(def.id);
-    if (el) void this.open(def, el);
+    void this.switchTo(def);
   }
 
   /**
    * Focus navigation seam: hand a view type to the ACTIVE surface's
-   * column (e.g. a note click in the timeline). Returns false when no
-   * surface is focused or it does not own the view type — the caller
+   * column (e.g. a note click in the timeline). When the active surface
+   * declines (or nothing is focused), the domain that OWNS the view type
+   * takes over: the focus switches to it (one morph) and the detail
+   * opens there — e.g. a quoted-article click inside the timeline morphs
+   * to the Articles object with the article already in the column.
+   * Returns false only when no domain owns the type — the caller
    * (ViewNavigationController) then navigates the classic way.
    */
   handleFocusNav(viewType: string, param?: string): boolean {
-    if (!this.activeId) return false;
-    const surface = this.surfaces.get(this.activeId);
-    return surface?.view?.handleFocusNav?.(viewType, param) ?? false;
+    if (this.activeId) {
+      const surface = this.surfaces.get(this.activeId);
+      if (surface?.view?.handleFocusNav?.(viewType, param)) return true;
+    }
+    if (!param || this.morphing) return false;
+    const def = FOCUS_DOMAINS.find(d => d.viewTypes?.includes(viewType));
+    if (!def?.createSurface) return false;
+    void this.switchTo(def, { viewType, param });
+    return true;
   }
 
   private createObject(def: FocusDomainDef): HTMLElement {
@@ -157,7 +175,7 @@ export class FocusStage {
       </div>
       <div class="focus-object__surface"></div>
     `;
-    el.addEventListener('click', () => void this.onObjectClick(def, el));
+    el.addEventListener('click', () => void this.onObjectClick(def));
     const control = el.querySelector('.focus-object__control') as HTMLElement;
     control.addEventListener('click', e => {
       // The control only exists on the active object (hidden in grid state
@@ -175,6 +193,14 @@ export class FocusStage {
     el.addEventListener('focus:surface-back', e => {
       const detail = (e as CustomEvent<{ visible?: boolean }>).detail;
       backBtn.hidden = !detail?.visible;
+      if (detail?.visible) {
+        // A detail opened from THIS surface's own list (the handoff's
+        // setBackVisible fires detached and never reaches here) becomes
+        // its own history entry — back returns to the list, not past
+        // it. Unconditional push: the top entry is the list state the
+        // detail was opened from (same object id, different state).
+        this.hist.push(def.id);
+      }
       // Sync the scroll-to-top action with the swap (no scroll event
       // fires when a view replaces another): a fresh detail starts at
       // the top — hide; back on the list means its preserved scroll
@@ -197,6 +223,23 @@ export class FocusStage {
     backBtn.addEventListener('click', e => {
       e.stopPropagation();
       if (this.activeId !== def.id || this.morphing) return;
+      // History-aware back: pop the current state; the previous entry
+      // is either another object (morph back — its surface state was
+      // preserved on the way in) or this object's own list (in-column
+      // back). At the history root the surface's list back no-ops.
+      if (this.hist.length > 1) {
+        this.hist.pop();
+        const targetId = this.hist[this.hist.length - 1];
+        if (targetId === def.id) {
+          this.surfaces.get(def.id)?.view?.back?.();
+          return;
+        }
+        const target = FOCUS_DOMAINS.find(d => d.id === targetId);
+        if (target) {
+          void this.switchTo(target, undefined, true);
+          return;
+        }
+      }
       this.surfaces.get(def.id)?.view?.back?.();
     });
 
@@ -260,35 +303,130 @@ export class FocusStage {
     return null;
   }
 
-  private async onObjectClick(
-    def: FocusDomainDef,
-    el: HTMLElement
-  ): Promise<void> {
-    if (this.morphing || this.activeId) return; // one focus at a time (PoC)
+  private async onObjectClick(def: FocusDomainDef): Promise<void> {
+    if (this.morphing) return; // a morph is running — ignore stray clicks
     if (!def.createSurface) return; // placeholder domain, no surface yet
-    await this.open(def, el);
+    if (this.activeId === def.id) return; // active body — close lives on the control
+    await this.switchTo(def);
   }
 
-  private async open(def: FocusDomainDef, el: HTMLElement): Promise<void> {
+  /**
+   * Object-to-object switch (also the cross-object seam entry): swap
+   * the focus to another domain in ONE morph — the old object shrinks
+   * back to its circle while the new one grows into the column. The
+   * optional handoff opens a detail on the new surface before the
+   * morph, so the column lands on its final content (e.g. the quoted
+   * article clicked inside the timeline).
+   */
+  private async switchTo(
+    def: FocusDomainDef,
+    nav?: FocusHandoff,
+    viaBack = false
+  ): Promise<void> {
+    const el = this.objects.get(def.id);
+    if (!el || !def.createSurface) return;
+    if (this.activeId === def.id) {
+      // Already focused: only the handoff matters (e.g. an article link
+      // clicked while the Articles object is open).
+      if (nav) {
+        this.surfaces
+          .get(def.id)
+          ?.view?.handleFocusNav?.(nav.viewType, nav.param);
+      }
+      return;
+    }
+    // History: every forward activation pushes (back walks without
+    // pushing).
+    if (!viaBack && this.hist[this.hist.length - 1] !== def.id) {
+      this.hist.push(def.id);
+    }
+    await this.open(def, el, nav);
+  }
+
+  private async open(
+    def: FocusDomainDef,
+    el: HTMLElement,
+    nav?: FocusHandoff
+  ): Promise<void> {
+    // Object-to-object switch: capture the old object up front — it is
+    // torn down inside the mutation phase below, so one FLIP pass
+    // animates the old object back to its circle while the new one
+    // grows into the column (no route detour through the home grid).
+    const oldId = this.activeId !== def.id ? this.activeId : null;
+    const oldEl = oldId ? this.objects.get(oldId) : undefined;
+    const oldSurface = oldId ? this.surfaces.get(oldId) : undefined;
+
     this.morphing = true;
     this.activeId = def.id;
-    // URL follows the focus: the focused domain's route replaces the home
-    // '/' in place (no history entry — Back stays with the browser).
-    if (def.route) Router.getInstance().replaceUrl(def.route);
     const takeOver = window.matchMedia(MORPH_MIN_QUERY).matches;
 
     // Surface mounts BEFORE the morph: in document flow the column height
     // is its content height — the FLIP needs the laid-out final geometry.
-    // Mount + class flip + measurement happen in one task (no paint in
-    // between), so the content never shows inside the small circle.
+    // A handoff detail is created first too (into the still-detached
+    // frame), so the column grows with the final content instead of a
+    // list that swaps away a moment later.
     const surface = await this.ensureSurface(def);
     if (this.activeId !== def.id) {
       this.morphing = false; // closed again while loading
       return;
     }
+    if (nav) {
+      try {
+        await surface.view?.openDetail?.(nav.param);
+        // The frame's setBackVisible event was dispatched while the frame
+        // was still detached (handoff runs before appendChild) — the
+        // object's back action is wired via that event, so set it here.
+        const backBtn = el.querySelector('.focus-object__back') as HTMLElement;
+        if (backBtn) backBtn.hidden = false;
+      } catch {
+        // Handoff failed (e.g. detail import) — fall back to the list
+        // and its URL instead of bricking the morph.
+        surface.view?.syncUrl?.();
+      }
+    }
+
+    // Measure the TRUE before-geometry: the old object is still the
+    // column, the new one still a circle.
+    const first = takeOver ? null : this.measureAll();
+
+    // Mutation phase (one task — no paint in between): swap the focus.
+    if (oldId) {
+      if (oldSurface) {
+        oldSurface.view?.pause?.();
+        // Handoff switch: the old object keeps its full state (list OR
+        // detail) — back returns to exactly what the user came from.
+        // Deliberate switches (circle click) reset it to the list.
+        if (!nav) {
+          oldSurface.view?.reset?.();
+        }
+        oldSurface.element.remove();
+      }
+      // The old column is gone — reset its scroll-to-top action for a
+      // clean reopen (same contract as close()).
+      const oldSt = this.scrollTopState.get(oldId);
+      if (oldSt) {
+        oldSt.source = null;
+        oldSt.btn.hidden = true;
+      }
+      if (oldEl) {
+        oldEl.classList.remove('focus-object--active');
+        oldEl.style.gridColumn = '';
+      }
+      this.restoreSideCircles();
+    }
+
     const slot = el.querySelector('.focus-object__surface') as HTMLElement;
     slot.appendChild(surface.element);
     surface.view?.resume?.();
+    el.classList.add('focus-object--active');
+    this.grid.classList.add('is-focused');
+    if (!takeOver) {
+      // The side circles re-parent into per-side stacks so their rows
+      // stay compact while the active column's content height stretches
+      // the middle row (in flow → the page scrolls the column).
+      el.style.gridColumn = '2';
+      this.reparentSideStacks(def.id);
+    }
     // A reopened (cached) surface may already be scrolled — sync the
     // scroll-to-top action to the restored state.
     const st = this.scrollTopState.get(def.id);
@@ -299,23 +437,17 @@ export class FocusStage {
       );
     }
 
-    let morphDone: Promise<unknown> = Promise.resolve();
-    if (takeOver) {
-      // Mobile takeover: no FLIP, CSS alone turns the object into the column.
-      el.classList.add('focus-object--active');
-      this.grid.classList.add('is-focused');
-    } else {
-      // FLIP: measure, switch the grid, then animate to the new geometry.
-      // The side circles re-parent into per-side stacks so their rows
-      // stay compact while the active column's content height stretches
-      // the middle row (in flow → the page scrolls the column).
-      const first = this.measureAll();
-      this.grid.classList.add('is-focused');
-      el.classList.add('focus-object--active');
-      el.style.gridColumn = '2';
-      this.reparentSideStacks(def.id);
-      morphDone = this.flipAll(first);
+    // URL follows the restored state (in place, no history entry): a
+    // handoff's detail set its own URL already; otherwise the surface
+    // syncs — a preserved detail keeps its route — falling back to the
+    // domain route.
+    if (!nav) {
+      if (surface.view?.syncUrl) surface.view.syncUrl();
+      else if (def.route) Router.getInstance().replaceUrl(def.route);
     }
+
+    let morphDone: Promise<unknown> = Promise.resolve();
+    if (first) morphDone = this.flipAll(first); // null = takeover, no FLIP
 
     await morphDone;
     if (this.activeId !== def.id) {
@@ -362,6 +494,9 @@ export class FocusStage {
     this.activeId = null;
     // Back to the home grid URL (no-op when already there).
     Router.getInstance().replaceUrl(HOME_ROUTE);
+    // The object left the history: its surface was reset above (a
+    // reopen starts at the list), so its history entries are gone too.
+    this.hist = this.hist.filter(id => id !== def.id);
     this.restoreSideCircles();
     if (!first) return; // takeover / no-animate: plain class flip
 

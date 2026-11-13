@@ -54,7 +54,11 @@ export interface FocusListDetailSurfaceConfig {
 export class FocusListDetailSurface implements FocusDomainSurfaceView {
   protected frame: FocusSurfaceFrame;
   private list: SurfaceViewHandle | null = null;
+  /** The constructor's pending list creation (awaited by openDetail). */
+  private listPromise: Promise<void> | null = null;
   private detail: SurfaceViewHandle | null = null;
+  /** The param of the detail currently shown (null = list state). */
+  private detailParam: string | null = null;
   private savedListScroll = 0;
 
   /** The focus column's scroll container (the stage's surface slot). */
@@ -67,7 +71,7 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
       this.showList()
     );
     // List mounts immediately — the surface IS the domain's content.
-    void config.createList().then(list => {
+    this.listPromise = config.createList().then(list => {
       this.list = list;
       this.frame.swapToList(list.getElement());
     });
@@ -94,6 +98,11 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
    * callbacks wired in the config's createList factory).
    */
   async openDetail(param: string): Promise<void> {
+    // A cross-object handoff can open a detail right after the surface
+    // was created — await the constructor's pending list creation so the
+    // list is never created twice and its late swapToList cannot clobber
+    // the detail swap below.
+    if (this.listPromise) await this.listPromise;
     if (!this.list) this.list = await this.config.createList();
     // Save the list's column scroll before the swap collapses the
     // scrollable area (restored on back / list return).
@@ -102,6 +111,7 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
     }
     this.detail?.destroy();
     this.detail = await this.config.createDetail(param);
+    this.detailParam = param;
     this.frame.swapToDetail(this.detail.getElement());
     if (this.config.preserveListScroll && this.scrollSlot) {
       this.scrollSlot.scrollTop = 0;
@@ -115,6 +125,7 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
     if (!this.list) return;
     this.detail?.destroy();
     this.detail = null;
+    this.detailParam = null;
     this.frame.swapToList(this.list.getElement());
     if (this.config.preserveListScroll && this.scrollSlot) {
       this.scrollSlot.scrollTop = this.savedListScroll;
@@ -128,6 +139,7 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
     if (!this.detail) return;
     this.detail.destroy();
     this.detail = null;
+    this.detailParam = null;
     if (this.list) {
       this.frame.swapToList(this.list.getElement());
       if (this.config.preserveListScroll && this.scrollSlot) {
@@ -139,6 +151,15 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
 
   back(): void {
     this.showList();
+  }
+
+  /** Sync the URL with the current state (a preserved detail keeps its route). */
+  syncUrl(): void {
+    Router.getInstance().replaceUrl(
+      this.detail && this.detailParam
+        ? this.config.detailRoute(this.detailParam)
+        : this.config.listRoute
+    );
   }
 
   pause(): void {

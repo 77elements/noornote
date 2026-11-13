@@ -291,7 +291,8 @@ export function mountFocusShell(): void {
   }
 
   // Focus navigation seam: while the shell lives, note/article clicks etc.
-  // render inside the ACTIVE surface's column (see focusStage.handleFocusNav).
+  // render inside the focused column — the stage routes view types across
+  // objects (see focusStage.handleFocusNav).
   setFocusUiNavHandler(
     (viewType, param) => stage?.handleFocusNav(viewType, param) ?? false
   );
