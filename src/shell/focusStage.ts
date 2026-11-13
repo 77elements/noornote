@@ -51,10 +51,30 @@ export class FocusStage {
   private sideStacks: [HTMLElement, HTMLElement] | null = null;
   private activeId: string | null = null;
   private morphing = false;
+  private lastWidth = window.innerWidth;
   private onResize = (): void => {
-    // Breakpoint crossings while a column is open break the inline grid
-    // placement — close silently instead of morphing across layouts.
-    if (this.activeId) this.close({ animate: false });
+    const width = window.innerWidth;
+    if (width === this.lastWidth) return;
+    this.lastWidth = width;
+    // Height-only resizes (devtools docked bottom, window grow) must keep
+    // the focused column — only WIDTH changes matter for the layout mode.
+    if (!this.activeId || this.morphing) return;
+    const def = FOCUS_DOMAINS.find(d => d.id === this.activeId);
+    const el = def ? this.objects.get(def.id) : undefined;
+    if (!def || !el) return;
+    const takeOver = window.matchMedia(MORPH_MIN_QUERY).matches;
+    if (takeOver) {
+      // Crossed DOWN into takeover: drop the FLIP artifacts (inline
+      // placement, side stacks) — the takeover CSS holds the column alone.
+      el.style.gridColumn = '';
+      this.restoreSideCircles();
+    } else if (!this.sideStacks) {
+      // Crossed UP into FLIP mode: re-place the column and re-parent the
+      // side stacks (takeover left the circles flat in the grid).
+      el.style.gridColumn = '2';
+      this.reparentSideStacks(def.id);
+    }
+    // Same-mode width changes: pure CSS reflow, nothing to do.
   };
 
   constructor(root: HTMLElement) {
@@ -116,11 +136,11 @@ export class FocusStage {
       <div class="focus-object__actions">
         <button type="button" class="focus-object__control"
           aria-label="${_('Close')}">
-          <svg width="12" height="12" aria-hidden="true"><use href="#icon-close"/></svg>
+          <svg width="15" height="15" aria-hidden="true"><use href="#icon-close"/></svg>
         </button>
         <button type="button" class="focus-object__back" hidden
           aria-label="${_('Back')}">
-          <svg width="12" height="12" aria-hidden="true"><use href="#icon-back"/></svg>
+          <svg width="15" height="15" aria-hidden="true"><use href="#icon-back"/></svg>
         </button>
       </div>
       <div class="focus-object__surface"></div>

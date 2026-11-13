@@ -47,7 +47,10 @@ import {
   isClassicMenuEnabled,
   setClassicMenuEnabled,
 } from '../../helpers/navModeSetting';
-import { isFocusUiEnabled } from '../../helpers/focusUiSetting';
+import {
+  isFocusUiEnabled,
+  setFocusUiEnabled,
+} from '../../helpers/focusUiSetting';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { SettingsModuleApi } from '../../modules/settings/contracts';
 import { _, availableLanguages, getUiLocale, setUiLocale } from '../../i18n';
@@ -60,8 +63,8 @@ export class UISettingsSection extends SettingsSection {
   private postTruncationSwitch: Switch | null = null;
   private hideSelfRepostsSwitch: Switch | null = null;
   private classicMenuSwitch: Switch | null = null;
-  // private focusUiSwitch: Switch | null = null;
-  // private focusUiSubId: string | null = null;
+  private focusUiSwitch: Switch | null = null;
+  private focusUiSubId: string | null = null;
   private backBarSwitch: Switch | null = null;
   private hideHighlightsSwitch: Switch | null = null;
   private expiryNoticeSwitch: Switch | null = null;
@@ -148,7 +151,6 @@ export class UISettingsSection extends SettingsSection {
           </div>
         </section>
 
-        <!--
         <section class="section">
           <div class="setting">
             <span class="setting__label">${_('Focus UI (v2)')}</span>
@@ -158,7 +160,6 @@ export class UISettingsSection extends SettingsSection {
             </p>
           </div>
         </section>
-        -->
 
         <section class="section">
           <div class="setting">
@@ -505,47 +506,47 @@ export class UISettingsSection extends SettingsSection {
       );
     }
 
-    // const focusUiContainer = contentContainer.querySelector(
-    //   '#focus-ui-switch-container'
-    // );
-    // if (focusUiContainer) {
-    //   this.focusUiSwitch = new Switch({
-    //     label: '',
-    //     checked: isFocusUiEnabled(),
-    //     onChange: checked => {
-    //       setFocusUiEnabled(checked);
-    //       this.eventBus.emit('settings:focus-ui-changed', { enabled: checked });
-    //       // Re-apply (or restore) the classic layout classes immediately.
-    //       void this.layoutService.refresh();
-    //       // The layout-mode dropdown only controls the classic interface —
-    //       // hide it while the Focus UI owns the layout.
-    //       contentContainer
-    //         .querySelector('#layout-mode-section')
-    //         ?.classList.toggle('is-hidden', checked);
-    //       ToastService.show(
-    //         checked
-    //           ? _('Focus UI active. Layout modes are ignored.')
-    //           : _('Classic interface active'),
-    //         'success'
-    //       );
-    //     },
-    //   });
-    //   focusUiContainer.innerHTML = this.focusUiSwitch.render();
-    //   this.focusUiSwitch.setupEventListeners(focusUiContainer as HTMLElement);
-    //
-    //   // The Focus UI can also be toggled from inside the shell (temporary
-    //   // switch) — keep this section's switch + layout-mode visibility in
-    //   // sync so the settings never show a stale state.
-    //   this.focusUiSubId = this.eventBus.on(
-    //     'settings:focus-ui-changed',
-    //     ({ enabled }) => {
-    //       this.focusUiSwitch?.setChecked(enabled);
-    //       contentContainer
-    //         .querySelector('#layout-mode-section')
-    //         ?.classList.toggle('is-hidden', enabled);
-    //     }
-    //   );
-    // }
+    const focusUiContainer = contentContainer.querySelector(
+      '#focus-ui-switch-container'
+    );
+    if (focusUiContainer) {
+      this.focusUiSwitch = new Switch({
+        label: '',
+        checked: isFocusUiEnabled(),
+        onChange: checked => {
+          setFocusUiEnabled(checked);
+          this.eventBus.emit('settings:focus-ui-changed', { enabled: checked });
+          // Re-apply (or restore) the classic layout classes immediately.
+          void this.layoutService.refresh();
+          // The layout-mode dropdown only controls the classic interface —
+          // hide it while the Focus UI owns the layout.
+          contentContainer
+            .querySelector('#layout-mode-section')
+            ?.classList.toggle('is-hidden', checked);
+          ToastService.show(
+            checked
+              ? _('Focus UI active. Layout modes are ignored.')
+              : _('Classic interface active'),
+            'success'
+          );
+        },
+      });
+      focusUiContainer.innerHTML = this.focusUiSwitch.render();
+      this.focusUiSwitch.setupEventListeners(focusUiContainer as HTMLElement);
+
+      // The Focus UI can also be toggled from inside the shell (temporary
+      // switch) — keep this section's switch + layout-mode visibility in
+      // sync so the settings never show a stale state.
+      this.focusUiSubId = this.eventBus.on(
+        'settings:focus-ui-changed',
+        ({ enabled }) => {
+          this.focusUiSwitch?.setChecked(enabled);
+          contentContainer
+            .querySelector('#layout-mode-section')
+            ?.classList.toggle('is-hidden', enabled);
+        }
+      );
+    }
 
     // Initialize Global Back Button switch (bar visible = default)
     const backBarContainer = contentContainer.querySelector(
@@ -942,15 +943,15 @@ export class UISettingsSection extends SettingsSection {
       this.layoutModeDropdown = null;
     }
 
-    // if (this.focusUiSwitch) {
-    //   this.focusUiSwitch.destroy();
-    //   this.focusUiSwitch = null;
-    // }
-    //
-    // if (this.focusUiSubId) {
-    //   this.eventBus.off(this.focusUiSubId);
-    //   this.focusUiSubId = null;
-    // }
+    if (this.focusUiSwitch) {
+      this.focusUiSwitch.destroy();
+      this.focusUiSwitch = null;
+    }
+
+    if (this.focusUiSubId) {
+      this.eventBus.off(this.focusUiSubId);
+      this.focusUiSubId = null;
+    }
 
     if (this.themeSwitcher) {
       this.themeSwitcher.destroy();

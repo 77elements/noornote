@@ -198,7 +198,7 @@ html.ui--focus {
   overflow-wrap: break-word;
 }
 
-// Object action buttons: a vertical stack of 24px circles on the active
+// Object action buttons: a vertical stack of 30px circles on the active
 // object's top-right corner. The first button straddles the corner exactly
 // like the old single close control; further buttons stack downward along
 // the right border (half outside). Back is hidden until a detail view is
@@ -221,8 +221,8 @@ html.ui--focus {
 }
 
 .focus-object__control {
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   border: 2px solid var(--color-3);
   border-radius: 50%;
@@ -234,8 +234,8 @@ html.ui--focus {
 }
 
 .focus-object__back {
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   border: 2px solid var(--color-3);
   border-radius: 50%;
