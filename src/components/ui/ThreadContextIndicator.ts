@@ -71,9 +71,18 @@ export class ThreadContextIndicator {
    */
   private async loadThreadContext(): Promise<void> {
     try {
-      const context = await this.singleNoteApi?.fetchParentChain(
-        this.options.noteId
-      );
+      // The single-note module runtime loads asynchronously (dynamic import +
+      // heavy orchestrator init). This indicator mounts ~0.4s into a cold
+      // page load — BEFORE the module's api exists — so the sync getApi()
+      // returns null and a bare `api?.fetchParentChain()` would resolve with
+      // an empty context forever (no retry). ensure() awaits load+init and
+      // then returns the real api.
+      const api =
+        this.singleNoteApi ??
+        (await ModuleLoader.getInstance().ensure<SingleNoteModuleApi>(
+          'single-note'
+        ));
+      const context = await api?.fetchParentChain(this.options.noteId);
 
       if (!context) {
         this.element.style.display = 'none';

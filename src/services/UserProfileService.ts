@@ -236,6 +236,20 @@ export class UserProfileService {
       return cached;
     }
 
+    // Persistent store stage (per-account IndexedDB, single-key read): a
+    // profile persisted in ANY previous session resolves in milliseconds —
+    // without waiting for relay sockets to connect. This closes the cold-
+    // start race where early renders (thread context, note headers) miss the
+    // still-empty LRU and would otherwise block on the relay boot for seconds.
+    // Same memory → IndexedDB → network order as the event fetch path. Runs
+    // BEFORE the in-flight dedup check: an already-running relay fetch must
+    // not hold us up when the store already has the answer.
+    const fromStore = await profileStore.get(pubkey);
+    if (fromStore) {
+      this.cacheProfile(pubkey, fromStore, { notify: false });
+      return fromStore;
+    }
+
     // Deduplication: if already fetching, wait for that request
     if (this.fetchingProfiles.has(pubkey)) {
       return (

@@ -60,6 +60,24 @@ export class NoteService {
       return cached.event;
     }
 
+    // Persistent event store (NDK Dexie/IndexedDB, direct read): resolves
+    // notes seen in ANY previous session in milliseconds, before relay
+    // sockets are up. Without this, thread context (parent chain, quotes)
+    // races the relay boot and costs seconds on a fresh page load — same
+    // mechanism as SNV's store stage for deep links.
+    if (!this.fetchingNotes.has(eventId)) {
+      try {
+        const fromStore =
+          await NostrTransport.getInstance().fetchEventFromStore(eventId);
+        if (fromStore) {
+          this.registerNote(fromStore);
+          return fromStore;
+        }
+      } catch {
+        // Store unavailable — fall through to relay fetch.
+      }
+    }
+
     // Deduplicate parallel requests
     if (this.fetchingNotes.has(eventId)) {
       return this.fetchingNotes.get(eventId)!;
