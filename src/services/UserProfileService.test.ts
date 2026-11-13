@@ -21,6 +21,7 @@ vi.mock('./ProfileStore', () => ({
   profileStore: {
     saveMany: vi.fn(),
     loadAll: vi.fn(async () => new Map()),
+    get: vi.fn(async () => null),
     delete: vi.fn(),
     wipePersisted: vi.fn(),
   },
@@ -48,6 +49,7 @@ import { profileStore } from './ProfileStore';
 const store = profileStore as unknown as {
   saveMany: ReturnType<typeof vi.fn>;
   loadAll: ReturnType<typeof vi.fn>;
+  get: ReturnType<typeof vi.fn>;
   delete: ReturnType<typeof vi.fn>;
   wipePersisted: vi.Mock;
 };
@@ -64,6 +66,7 @@ describe('UserProfileService (cache semantics)', () => {
   beforeEach(() => {
     orch.fetchProfile.mockReset();
     orch.fetchMultipleProfiles.mockReset();
+    store.get.mockReset().mockResolvedValue(null);
     // fresh singleton per test — UserProfileService.instance is private,
     // so reset through clearCache + a new reference is not possible; instead
     // reuse one instance and clear all mutable state.
@@ -181,6 +184,7 @@ describe('UserProfileService (ProfileStore integration)', () => {
     orch.fetchProfile.mockReset();
     orch.fetchMultipleProfiles.mockReset();
     store.loadAll.mockReset().mockResolvedValue(new Map());
+    store.get.mockReset().mockResolvedValue(null);
     service = UserProfileService.getInstance();
     service.clearCache();
     vi.useFakeTimers();

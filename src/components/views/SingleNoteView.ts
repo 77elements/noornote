@@ -27,7 +27,9 @@ import { AppState } from '../../services/AppState';
 import { Router } from '../../services/Router';
 import { NavigationDispatcher } from '../../services/NavigationDispatcher';
 import { TypedEventBus } from '../../core/TypedEventBus';
-import { encodeNpub, encodeNevent } from '../../services/NostrToolsAdapter';
+import { encodeNpub } from '../../services/NostrToolsAdapter';
+import { encodeNeventWithHints } from '../../helpers/encodeNeventWithHints';
+import { NostrTransport } from '../../services/transport/NostrTransport';
 import { decodeEventReference } from '../../helpers/nip19';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
@@ -116,7 +118,7 @@ export class SingleNoteView extends View {
       }
 
       if (event && !this.noteId.startsWith('naddr1')) {
-        this.canonicalizeUrl(event.id ?? decodeEventReference(this.noteId).id);
+        this.canonicalizeUrl(event);
       }
 
       if (!event) {
@@ -132,16 +134,21 @@ export class SingleNoteView extends View {
   }
 
   /**
-   * Normalise the address-bar URL to the one canonical /note/<nevent> form for this
-   * note. Whether it was opened as /note/<hex> (notifications) or a relay-hinted
-   * nevent (threads, search, bookmarks), the URL collapses to a single deterministic
-   * entry — so Back leaves the note instead of stepping through duplicate encodings.
-   * Only touches the primary (pathname) view; scc note tabs manage their own URL.
+   * Normalise the address-bar URL to one canonical /note/<nevent> form for this
+   * note. Whether it was opened as /note/<hex> (notifications), a hint-less
+   * nevent or a relay-hinted one (threads, search, bookmarks), the URL collapses
+   * to a single entry — so Back leaves the note instead of stepping through
+   * duplicate encodings.
+   * The canonical form KEEPS the NIP-19 hints (author + seen-on relays) on
+   * purpose: they are what makes a browser reload of a barely-replicated note
+   * find it again (SNV queries the hint relays first). Only touches the primary
+   * (pathname) view; scc note tabs manage their own URL.
    */
-  private canonicalizeUrl(hexId: string): void {
+  private canonicalizeUrl(event: NostrEvent): void {
     if (!window.location.pathname.startsWith('/note/')) return;
+    if (!event.id) return;
     try {
-      const canonical = `/note/${encodeNevent(hexId)}`;
+      const canonical = `/note/${encodeNeventWithHints(event)}`;
       if (this.router.getCurrentPath() !== canonical) {
         this.router.replaceUrl(canonical);
       }
@@ -183,6 +190,19 @@ export class SingleNoteView extends View {
     // on the read relays still carrying it — old notes often aren't there anymore.
     let event: NostrEvent | null =
       this.singleNoteApi?.getCachedNote(noteId) ?? null;
+
+    // Stage 0: persistent event store (NDK Dexie/IndexedDB, direct read). A
+    // note seen in ANY previous session resolves here in milliseconds —
+    // without waiting for relay sockets to connect — which is what makes a
+    // browser reload of a deep link instant instead of racing the relay
+    // boot. Relay stages below only run on store miss; the loaded note is
+    // kept fresh by live updates.
+    if (!event) {
+      event = await NostrTransport.getInstance().fetchEventFromStore(noteId);
+      if (event) {
+        this.systemLogger.info('SNV', 'Found in persistent event store');
+      }
+    }
 
     // Stage 1: Relay hints from the nevent itself. They name the relays where
     // the author's client saw the event — old notes often live ONLY there,

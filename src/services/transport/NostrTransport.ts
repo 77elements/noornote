@@ -23,6 +23,7 @@ import NDK, {
 // a separate worker chunk URL would break.
 import SigVerificationWorker from '@nostr-dev-kit/ndk/workers/sig-verification?worker&inline';
 import NDKCacheDexie, {
+  db as ndkCacheDb,
   type NDKCacheAdapterDexieOptions,
 } from '@nostr-dev-kit/ndk-cache-dexie';
 import { RelayConfig } from '../RelayConfig';
@@ -1366,6 +1367,64 @@ export class NostrTransport {
    */
   public getEventRelays(eventId: string): string[] {
     return Array.from(this.seenOnRelays.get(eventId) ?? []);
+  }
+
+  /**
+   * Persistent event store lookup — the Jumble-style deep-link path.
+   *
+   * Reads the NDK Dexie database DIRECTLY (raw IndexedDB get by id — no LRU,
+   * no relay connection): NDK's in-memory cache only holds the newest
+   * `eventCacheSize` events after warm-up, so id-lookups through
+   * ndk.fetchEvents(CACHE_FIRST/ONLY_CACHE) miss events that are provably
+   * sitting in IndexedDB. This resolves a browser reload of a deep-linked
+   * note in milliseconds, before any relay socket is up — exactly like
+   * other clients' getEventById(): memory → IndexedDB → network.
+   *
+   * Also seeds seen-on relays from the store's provenance table so the
+   * canonical URL carries relay hints again after a reload.
+   */
+  public async fetchEventFromStore(
+    eventId: string
+  ): Promise<NostrEvent | null> {
+    if (!ndkCacheDb) return null;
+    try {
+      const row = await ndkCacheDb.events.get(eventId);
+      if (!row) return null;
+
+      // row.event is NDKEvent.serialize(saveSig=false, includeId=true):
+      // [0, pubkey, created_at, kind, tags, content, id]
+      // (with saveSig=true the sig sits second-last — id is always last)
+      const arr = JSON.parse(row.event) as unknown[];
+      const lastRaw = arr[arr.length - 1];
+      const last = typeof lastRaw === 'string' ? lastRaw : '';
+      const id = last.length === 64 ? last : eventId;
+      const event: NostrEvent = {
+        id,
+        pubkey: String(arr[1]),
+        created_at: Number(arr[2]),
+        kind: Number(arr[3]),
+        tags: (arr[4] as string[][]) ?? [],
+        content: typeof arr[5] === 'string' ? arr[5] : '',
+      };
+
+      const provenance = await ndkCacheDb.eventRelays
+        .where('eventId')
+        .equals(eventId)
+        .toArray();
+      this.recordSeenOn(
+        eventId,
+        provenance.map(r => r.relayUrl)
+      );
+
+      diagLog('relays', 'Store hit', { eventCount: 1 });
+      return event;
+    } catch (error) {
+      this.systemLogger.warn(
+        'NostrTransport',
+        `Store lookup failed for ${eventId.slice(0, 8)}: ${String(error)}`
+      );
+      return null;
+    }
   }
 
   // ──────────────────────────────────────────────────────────────────────

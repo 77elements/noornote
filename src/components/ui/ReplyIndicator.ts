@@ -57,7 +57,15 @@ export class ReplyIndicator {
    */
   private async loadParentAuthor(): Promise<void> {
     try {
-      const info = await (this.singleNoteApi?.fetchParentAuthor(
+      // ensure() instead of the sync getter: this indicator mounts before the
+      // single-note runtime finished loading, where getApi() returns null and
+      // the parent author would permanently show "[Note not found]".
+      const api =
+        this.singleNoteApi ??
+        (await ModuleLoader.getInstance().ensure<SingleNoteModuleApi>(
+          'single-note'
+        ));
+      const info = await (api?.fetchParentAuthor(
         this.options.parentEventId,
         this.options.relayHint
       ) ?? Promise.resolve(null));

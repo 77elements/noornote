@@ -130,6 +130,27 @@ class ProfileStore {
     }
   }
 
+  /**
+   * Single-key read for the fetch path: resolves one non-expired persisted
+   * profile (or null). Lets UserProfileService serve a cache miss from the
+   * store in a few milliseconds instead of racing the relay boot — the same
+   * memory → IndexedDB → network order other clients use for events.
+   */
+  public async get(pubkey: string): Promise<UserProfile | null> {
+    try {
+      const db = await this.ensureDb();
+      if (!db) return null;
+      const entry = (await db.get(STORE, pubkey)) as
+        | PersistedProfile
+        | undefined;
+      if (!entry) return null;
+      if (Date.now() - entry.savedAt > PROFILE_TTL_MS) return null;
+      return entry.profile;
+    } catch {
+      return null;
+    }
+  }
+
   /** Explicit wipe for the Settings "clear cache" action. NOT for account
    *  switches — per-account DB naming already isolates accounts, and clearing
    *  on switch would destroy the newly-current account's warm cache. */

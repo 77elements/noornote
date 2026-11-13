@@ -23,7 +23,7 @@ import {
 } from '../../helpers/threadTree';
 import { RelayConfig } from '../../services/RelayConfig';
 import { SystemLogger } from '../../services/SystemLogger';
-import { encodeNevent } from '../../services/NostrToolsAdapter';
+import { encodeNeventWithHints } from '../../helpers/encodeNeventWithHints';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { Router } from '../../services/Router';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -332,8 +332,9 @@ export class RepliesRenderer {
     const profile = await profileService.getUserProfile(quoteEvent.pubkey);
     const username = profile?.display_name || profile?.name || 'Anonymous';
 
-    // Convert hex ID to nevent for navigation link
-    const nevent = encodeNevent(quoteEventId, [], quoteEvent.pubkey);
+    // Convert hex ID to nevent for navigation link (with NIP-19 relay/author
+    // hints so the URL survives a browser reload)
+    const nevent = encodeNeventWithHints(quoteEvent);
 
     // Create "X quoted this note:" header — entire line is one clickable link
     // (matches ThreadManager pattern; uses Router.navigate so SPA routing kicks in)

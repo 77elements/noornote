@@ -5,10 +5,8 @@
  */
 
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
-import {
-  encodeNevent,
-  type Event as NostrEvent,
-} from '../../../services/NostrToolsAdapter';
+import { type Event as NostrEvent } from '../../../services/NostrToolsAdapter';
+import { encodeNeventWithHints } from '../../../helpers/encodeNeventWithHints';
 import { NoteHeader } from '../NoteHeader';
 import { ThreadContextIndicator } from '../ThreadContextIndicator';
 import { InteractionStatusLine } from '../InteractionStatusLine';
@@ -356,8 +354,10 @@ export class NoteStructureBuilder {
         return;
       }
 
-      // Navigate to Single Note View.
-      const nevent = encodeNevent(note.id);
+      // Navigate to Single Note View. Encode WITH NIP-19 hints (author +
+      // seen-on relays) so the resulting URL survives a browser reload even
+      // for barely-replicated notes.
+      const nevent = encodeNeventWithHints(note.rawEvent);
       const navController = getViewNavigationController();
       navController.openView('single-note', nevent, e);
     });

@@ -18,7 +18,7 @@ import { UserProfileService } from '../../../services/UserProfileService';
 import { RelayConfig } from '../../../services/RelayConfig';
 import { Router } from '../../../services/Router';
 import { LayoutService } from '../../../services/LayoutService';
-import { encodeNevent } from '../../../services/NostrToolsAdapter';
+import { encodeNeventWithHints } from '../../../helpers/encodeNeventWithHints';
 import { escapeHtml } from '../../../helpers/escapeHtml';
 import {
   fetchQuotedRepostCandidates,
@@ -414,7 +414,7 @@ export class ThreadManager {
     const profile = await this.profileService.getUserProfile(quoteEvent.pubkey);
     const username = profile?.display_name || profile?.name || 'Anonymous';
 
-    const nevent = encodeNevent(eventId, [], quoteEvent.pubkey);
+    const nevent = encodeNeventWithHints(quoteEvent);
 
     const quoteHeader = document.createElement('div');
     quoteHeader.className = 'snv-quoted-repost__header';
