@@ -1,46 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockFetchEvents } = vi.hoisted(() => ({ mockFetchEvents: vi.fn() }));
+import * as harness from './articleFeedTestHarness';
+import { mockFetchEvents } from './articleFeedTestHarness';
 
-vi.mock('../../lists/relays', () => ({ fetchEvents: mockFetchEvents }));
-vi.mock('../../lists/follows', () => ({
-  getAllFollowedPubkeys: vi.fn(() => []),
-}));
-vi.mock('../../helpers/LRUCache', () => ({
-  LRUCache: class {
-    get() {
-      return undefined;
-    }
-    set() {
-      /* noop */
-    }
-    clear() {
-      /* noop */
-    }
-    get size() {
-      return 0;
-    }
-  },
-  getCacheSize: () => 10,
-}));
-vi.mock('../SystemLogger', () => ({
-  SystemLogger: {
-    getInstance: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
-  },
-}));
-vi.mock('./LongFormOrchestrator', () => ({
-  LongFormOrchestrator: { extractArticleMetadata: vi.fn(() => ({})) },
-}));
-vi.mock('./Orchestrator', () => ({
-  Orchestrator: class {
-    constructor(_name: string) {
-      /* stubbed base — no router/transport in tests */
-    }
-    destroy() {
-      /* noop */
-    }
-  },
-}));
+vi.mock('../../lists/relays', () => harness.relaysModule());
+vi.mock('../../lists/follows', () => harness.followsModule());
+vi.mock('../../helpers/LRUCache', () => harness.lruCacheModule());
+vi.mock('../SystemLogger', () => harness.systemLoggerModule());
+vi.mock('./LongFormOrchestrator', () => harness.longFormModule());
+vi.mock('./Orchestrator', () => harness.orchestratorBaseModule());
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import {

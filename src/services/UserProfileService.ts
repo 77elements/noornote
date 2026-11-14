@@ -53,7 +53,7 @@ import { getAvatarFallback } from '../helpers/avatarFallback';
 import { hexToNpub } from '../helpers/nip19';
 import { profileStore } from './ProfileStore';
 import { AuthService } from './AuthService';
-import { EventBus } from './EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 
 /** A profile is worth persisting/restoring only when it carries display data. */
 const hasDisplayData = (p: UserProfile): boolean =>
@@ -170,7 +170,7 @@ export class UserProfileService {
     // was actually connected (mobile cold start) get re-armed once a relay
     // really connects — the old failure's cooldown premise is void then.
     // Singleton-lifetime subscription (never off'd — the service lives forever).
-    EventBus.getInstance().on('relay:connected', () =>
+    TypedEventBus.getInstance().on('relay:connected', () =>
       this.scheduleConnectivitySweep()
     );
   }
