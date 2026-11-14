@@ -93,7 +93,9 @@ VERSION_CODE=$((ANDROID_MAJOR * 10000 + ANDROID_MINOR * 100 + ANDROID_PATCH))
 echo -e "${GREEN}[2/7] Updating RELEASE_NOTES.md and committing...${NC}"
 cp "$NOTES_COMPACT" RELEASE_NOTES.md
 git add package.json RELEASE_NOTES.md android/app/build.gradle
-git commit -m "Bump version to ${NEW_VERSION}"
+# Commit only when something is actually staged (idempotent re-runs, e.g. after
+# an aborted run where the version bump was already committed manually).
+git diff --cached --quiet || git commit -m "Bump version to ${NEW_VERSION}"
 
 echo -e "${GREEN}[3/7] Merging development → main...${NC}"
 git checkout main
