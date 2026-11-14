@@ -10,6 +10,7 @@
 import { Router } from './Router';
 import { AppState } from './AppState';
 import { ViewMountingService } from './ViewMountingService';
+import { isFocusUiEnabled } from '../helpers/focusUiSetting';
 
 export class PostLoginService {
   private static instance: PostLoginService;
@@ -129,10 +130,15 @@ export class PostLoginService {
             './orchestration/NotificationsOrchestrator'
           );
           await NotificationsOrchestrator.getInstance().start();
-          const { ArticleNotificationService } = await import(
-            './ArticleNotificationService'
-          );
-          ArticleNotificationService.getInstance().startPolling();
+          // Focus UI (v2): no background article fetching — the Articles
+          // object fetches when the user opens it. (Notifications itself
+          // stays: it drives the notifications diode.)
+          if (!isFocusUiEnabled()) {
+            const { ArticleNotificationService } = await import(
+              './ArticleNotificationService'
+            );
+            ArticleNotificationService.getInstance().startPolling();
+          }
         }),
         // hashtag-subscriptions is managed by AddonLoader via the user:login event.
         // Its runtime calls service.startPolling() — no explicit bootstrap here.
@@ -202,9 +208,13 @@ export class PostLoginService {
         await UserService.getInstance().getUserFollowing(pubkey);
       this.appState.setState('user', { followingPubkeys });
 
-      MentionProfileCache.getInstance()
-        .preloadProfiles(followingPubkeys)
-        .catch(() => {});
+      // Focus UI (v2): skip the mention-profile preload (relay fetches for
+      // EVERY follow) — profiles load on demand when surfaces render them.
+      if (!isFocusUiEnabled()) {
+        MentionProfileCache.getInstance()
+          .preloadProfiles(followingPubkeys)
+          .catch(() => {});
+      }
     } catch (error) {
       console.error('[PostLoginService] Failed to load follow list:', error);
     }

@@ -102,6 +102,10 @@ $focus-glow: radial-gradient(
 $grip-line-opacity: 0.6;
 $grip-shadow: 0 1px 2px rgba($color-black, 0.7);
 
+// Unread diode counters on the FS circles (v2): dark halo behind the
+// number for readability on the green badge.
+$diode-text-shadow: 0 1px 2px rgba($color-black, 0.7);
+
 // Brand watermark on the home grid (the rest of its look lives in the
 // nn-engrave SVG filter, focusShell.ts).
 $watermark-opacity: 0.1;

@@ -15,7 +15,23 @@ import type { MainLayout } from '../components/layout/MainLayout';
 import { Router } from './Router';
 import { ViewLifecycleManager } from './ViewLifecycleManager';
 import { SystemLogger } from './SystemLogger';
+import { isFocusUiEnabled } from '../helpers/focusUiSetting';
 import { _ } from '../i18n';
+
+/**
+ * View types that mount even while the Focus UI (v2) is active: the
+ * auth/onboarding flow has no v2 equivalent yet — without it nobody could
+ * log in or out from the shell. Everything else is owned by the shell and
+ * must NOT mount: classic views fetch their feeds on construction, so
+ * mounting them (hidden under the shell) would run exactly the v1
+ * background fetching the Focus UI exists to avoid.
+ */
+const FOCUS_UI_ALLOWED_VIEWS = new Set([
+  'welcome-view',
+  'login-view',
+  'create-account-view',
+  'setup-view',
+]);
 
 type ViewFactory = (
   param?: string
@@ -58,6 +74,10 @@ export class ViewMountingService {
    * Mount a view by type into .primary-content
    */
   public async mountView(viewType: string, param?: string): Promise<void> {
+    // Focus UI (v2): the shell owns the screen — classic views never mount
+    // (their constructors fetch feeds). Hard switch: v1 behavior untouched
+    // when the flag is off; auth/onboarding views stay available.
+    if (isFocusUiEnabled() && !FOCUS_UI_ALLOWED_VIEWS.has(viewType)) return;
     const primaryContent = document.querySelector('.primary-content');
     if (!primaryContent) return;
 

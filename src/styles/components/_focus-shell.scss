@@ -241,6 +241,33 @@ html.ui--focus {
   outline-color: var(--color-3);
 }
 
+// Unread diodes (v1 nn-wheel parity): green counters on the notifications,
+// messages and bookmarks circles at ~5 o'clock — always rendered (no hover
+// gating), driven by the same badge managers as the classic nav. The
+// two-class selector out-specifies the v1 .notifications-badge chrome (its
+// 20px pill would otherwise win the cascade).
+.focus-object .focus-object__diode {
+  position: absolute;
+  bottom: 10px;
+  right: 0;
+  min-width: 30px;
+  height: 30px;
+  padding: 0;
+  // The v1 badge is a padded text pill (line-height + padding centering);
+  // at the fixed 30px diode size flex centering is needed instead — the
+  // badge managers set display:inline-flex, so justify/align do the work.
+  justify-content: center;
+  align-items: center;
+  line-height: 1;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-5);
+  text-shadow: $diode-text-shadow;
+  border-radius: $radius-full;
+  z-index: $z-back-bar;
+  pointer-events: none; // never block the circle's click/hover
+}
+
 // Object action buttons: a vertical stack of 30px circles on the active
 // object's top-right corner. The first button straddles the corner exactly
 // like the old single close control; further buttons stack downward along

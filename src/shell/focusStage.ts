@@ -29,6 +29,9 @@ import {
   PerAccountLocalStorage,
   StorageKeys,
 } from '../services/PerAccountLocalStorage';
+import { NotificationsBadgeManager } from '../components/layout/managers/NotificationsBadgeManager';
+import { DMBadgeManager } from '../components/layout/managers/DMBadgeManager';
+import { ListsCountManager } from '../components/layout/managers/ListsCountManager';
 import {
   FOCUS_DOMAINS,
   type FocusDomainDef,
@@ -56,6 +59,21 @@ interface FocusHandoff {
   param: string;
 }
 
+/**
+ * Unread diodes on the circles (v1 nn-wheel parity): notifications, DMs
+ * and unread bookmarks. Same badge classes + SAME badge managers as the
+ * classic nav drive them (wired in mount), shown whenever unread exists —
+ * always rendered, no hover gating like the move handle.
+ */
+const DIODES: Record<string, string> = {
+  notifications:
+    '<span class="notifications-badge focus-object__diode"></span>',
+  messages:
+    '<span class="badge badge--green dm-badge focus-object__diode" style="display: none"></span>',
+  bookmarks:
+    '<span class="notifications-badge focus-object__diode" data-list-unread="bookmarks"></span>',
+};
+
 export class FocusStage {
   private root: HTMLElement;
   private grid!: HTMLElement;
@@ -68,6 +86,10 @@ export class FocusStage {
    * the side-stack distribution (see reparentSideStacks).
    */
   private order: string[] = [];
+  /** Unread-diode drivers (v1 badge managers over the shell's diodes). */
+  private badgeManagers: Array<{
+    destroy(): void;
+  }> = [];
   /** Side stacks while a domain is focused (see reparentSideStacks). */
   private sideStacks: [HTMLElement, HTMLElement] | null = null;
   private activeId: string | null = null;
@@ -125,6 +147,22 @@ export class FocusStage {
     }
     this.root.appendChild(this.grid);
     window.addEventListener('resize', this.onResize);
+    this.setupBadgeManagers();
+  }
+
+  /**
+   * Wire the SAME badge managers the classic nav uses to the shell's
+   * diode spans (notifications / DMs / unread bookmarks). Scoped to the
+   * grid; destroyed on shell unmount.
+   */
+  private setupBadgeManagers(): void {
+    const notif = this.grid.querySelector(
+      '.notifications-badge:not([data-list-unread])'
+    ) as HTMLElement | null;
+    const dm = this.grid.querySelector('.dm-badge') as HTMLElement | null;
+    if (notif) this.badgeManagers.push(new NotificationsBadgeManager(notif));
+    if (dm) this.badgeManagers.push(new DMBadgeManager(dm));
+    this.badgeManagers.push(new ListsCountManager(this.grid));
   }
 
   /**
@@ -163,6 +201,8 @@ export class FocusStage {
     this.objects.clear();
     this.scrollTopState.clear();
     this.hist = [];
+    for (const mgr of this.badgeManagers) mgr.destroy();
+    this.badgeManagers = [];
     this.grid?.remove();
   }
 
@@ -278,6 +318,7 @@ export class FocusStage {
             : ''
         }
       </div>
+      ${DIODES[def.id] ?? ''}
       <div class="focus-object__surface"></div>
     `;
     el.addEventListener('click', () => void this.onObjectClick(def));
