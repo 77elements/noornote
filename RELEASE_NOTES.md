@@ -1,4 +1,4 @@
-# Release Notes 1.9.13 — compact (GitHub Release / Update Modal)
+# Release Notes 1.9.14 — compact (GitHub Release / Update Modal)
 
 ## Speed
 
