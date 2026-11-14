@@ -30,6 +30,7 @@ import { ModalService } from '../../services/ModalService';
 import { AuthStateManager } from '../../services/AuthStateManager';
 import { AuthService } from '../../services/AuthService';
 import { TypedEventBus } from '../../core/TypedEventBus';
+import type { LayoutChangedPayload } from '../../core/events';
 import { WebUpdateCheck } from '../../services/WebUpdateCheck';
 // WalletBalanceDisplay is owned by src/addons/wallet-balance/runtime.ts and
 // managed by the AddonLoader. MainLayout only provides the mount point
@@ -58,6 +59,7 @@ import { NavWheelPartial } from './partials/NavWheelPartial';
 import { applyNavMode, isNavWheelActive } from '../../helpers/navModeSetting';
 import {
   applyFocusUi,
+  isFocusUiEnabled,
   registerFocusUiTypedTrigger,
 } from '../../helpers/focusUiSetting';
 import {
@@ -188,6 +190,7 @@ export class MainLayout {
     this.setupPullToRefresh();
     this.setupScrollListener();
     this.setupTabSwitching();
+    this.setupSccModeHandler();
     this.setupMentionLinks();
     this.initializeContent();
     this.setupAuthStateListener();
@@ -205,19 +208,24 @@ export class MainLayout {
   }
 
   /**
-   * Setup spacebar scrolling for primary content
+   * Setup page scrolling via keyboard for primary content: Space (and
+   * Shift+Space) plus PageDown/PageUp — the native page-scroll keys don't
+   * work reliably because scrolling happens inside an inner container, not
+   * on the document. Global window handler, so it works in every view.
    */
   private setupSpacebarScroll(): void {
     this.spacebarScrollHandler = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && !this.isInputFocused()) {
+      const isPageKey =
+        e.code === 'Space' || e.key === 'PageDown' || e.key === 'PageUp';
+      if (isPageKey && !this.isInputFocused()) {
         e.preventDefault();
         const scrollContainer =
           document.querySelector('.timeline-view__timeline') ||
           document.querySelector('.primary-content');
         if (scrollContainer) {
-          const scrollAmount = e.shiftKey
-            ? -window.innerHeight * 0.9
-            : window.innerHeight * 0.9;
+          const direction =
+            e.key === 'PageUp' || (e.code === 'Space' && e.shiftKey) ? -1 : 1;
+          const scrollAmount = direction * window.innerHeight * 0.9;
           scrollContainer.scrollBy({ top: scrollAmount, behavior: 'smooth' });
         }
       }
@@ -796,7 +804,7 @@ export class MainLayout {
 
   /**
    * Initialize global search view
-   * Mounts in scc (default/right-pane mode) or intercepts events for pcc rendering (wide mode)
+   * Mounts in scc (default/right-pane mode) or intercepts events for pcc rendering (tablet mode)
    */
   private async initializeGlobalSearchView(): Promise<void> {
     const { GlobalSearchView } = await import('../search/GlobalSearchView');
@@ -805,7 +813,7 @@ export class MainLayout {
     // single ?scc= writer here so search state is persisted like the other tabs.
     this.globalSearchView.onSccChange = () => this.syncScc();
 
-    // Mount in secondary content unless wide/mobile mode
+    // Mount in secondary content unless tablet/mobile mode
     if (this.layoutService.isSecondaryVisible()) {
       const secondaryContent = this.element.querySelector(
         '.secondary-content-body'
@@ -815,19 +823,49 @@ export class MainLayout {
       }
     }
 
-    // Intercept search events for wide mode to render in pcc
+    // Intercept search events for tablet mode to render in pcc
     this.setupSearchEventInterceptors();
+  }
 
-    // Listen for layout mode changes
-    this.eventBus.on('layout:changed', (data: { mode: string }) => {
+  /**
+   * SCC mount/unmount on layout mode changes. Registered synchronously in
+   * the constructor (NOT inside the async initializeGlobalSearchView) so a
+   * mode switch can never slip through before the listener exists.
+   *
+   * Hidden must mean NOT mounted: in tablet/phone modes the scc default
+   * content is torn down (the feeds would otherwise keep fetching and
+   * rendering for a display:none column) and remounted when a visible mode
+   * becomes active again.
+   */
+  private setupSccModeHandler(): void {
+    this.eventBus.on('layout:changed', (data: LayoutChangedPayload) => {
       if (data.mode === 'wide' || data.mode === 'mobile') {
         // Unmount from scc (search results will go to pcc via interceptors)
         if (this.globalSearchView) {
           const searchElement = this.globalSearchView.getElement();
           searchElement.remove();
         }
+        // Tear down the default tab content.
+        this.unmountSccDefaultContent();
+      } else if (
+        data.previousMode === 'wide' ||
+        data.previousMode === 'mobile'
+      ) {
+        // Back to a scc-visible mode: remount what was torn down.
+        this.mountSystemLogPanel();
+        const secondaryContent = this.element.querySelector(
+          '.secondary-content-body'
+        );
+        if (secondaryContent && this.globalSearchView) {
+          const searchElement = this.globalSearchView.getElement();
+          if (!searchElement.parentElement) {
+            secondaryContent.appendChild(searchElement);
+          }
+        }
+        this.activateSccDefault(getSccDefaultTab());
       } else {
-        // Mount in scc (default or right-pane mode)
+        // default/right-pane switch — scc content stays as-is; only make
+        // sure the search view is present.
         const secondaryContent = this.element.querySelector(
           '.secondary-content-body'
         );
@@ -839,12 +877,27 @@ export class MainLayout {
         }
       }
     });
+
+    // Focus shell: the classic chrome (incl. the scc column) is fully
+    // display:none while active — the default tab content must not stay
+    // mounted underneath. Remount on the way back to the classic interface.
+    this.eventBus.on(
+      'settings:focus-ui-changed',
+      (data: { enabled: boolean }) => {
+        if (data.enabled) {
+          this.unmountSccDefaultContent();
+        } else {
+          this.mountSystemLogPanel();
+          this.activateSccDefault(getSccDefaultTab());
+        }
+      }
+    );
   }
 
   /**
-   * Setup search event interceptors for wide mode
+   * Setup search event interceptors for tablet mode
    * Intercepts search events with HIGH PRIORITY (before GlobalSearchView)
-   * In wide mode: Prevents GlobalSearchView from processing tab creation, renders in pcc instead
+   * In tablet mode: Prevents GlobalSearchView from processing tab creation, renders in pcc instead
    */
   private setupSearchEventInterceptors(): void {
     // NOTE: TypedEventBus processes listeners in registration order
@@ -886,7 +939,7 @@ export class MainLayout {
   }
 
   /**
-   * Render search results in primary content (wide mode only)
+   * Render search results in primary content (tablet mode only)
    */
   private renderSearchInPrimaryContent(
     searchType: 'global' | 'hashtag' | 'profile',
@@ -1726,7 +1779,7 @@ export class MainLayout {
       };
 
       // Listen to primary-content scroll (used in layouts where it's the
-      // scroll container, e.g. right-pane / wide modes).
+      // scroll container, e.g. right-pane / tablet modes).
       const primaryContent = this.element.querySelector('.primary-content');
       if (primaryContent) {
         primaryContent.addEventListener('scroll', () =>
@@ -1813,7 +1866,12 @@ export class MainLayout {
       true
     );
 
-    this.activateSccDefault(savedDefault);
+    // Do NOT mount the default tab's content while the scc column is hidden
+    // (tablet/phone, focus shell): the feeds would fetch + render for
+    // nothing. Mounted on demand when a visible interface becomes active.
+    if (this.isSccActive()) {
+      this.activateSccDefault(savedDefault);
+    }
 
     this.eventBus.on('settings:scc-excerpt-limit-changed', () => {
       if (!this.sccArticleFeed) return;
@@ -1828,7 +1886,7 @@ export class MainLayout {
 
     // DiagLog export button in the SCC tab strip. The button is rendered
     // unconditionally; CSS hides it whenever the SCC itself is hidden
-    // (layout--phone, layout--wide, Capacitor). The click handler is cheap
+    // (layout--phone, layout--tablet, Capacitor). The click handler is cheap
     // and inert when the button is not visible.
     const diagExportBtn = this.element.querySelector<HTMLButtonElement>(
       '#scc-diag-export-btn'
@@ -1854,7 +1912,22 @@ export class MainLayout {
     return timeline;
   }
 
+  /**
+   * Whether the scc column content should physically exist. Two cases hide
+   * the column — layout mode (tablet/phone) and the focus shell — and in
+   * both, hidden must mean NOT mounted: the default tab's feeds would
+   * otherwise fetch and render for a display:none column.
+   */
+  private isSccActive(): boolean {
+    return this.layoutService.isSecondaryVisible() && !isFocusUiEnabled();
+  }
+
   private activateSccDefault(value: SccDefaultContent): void {
+    // While the scc column is hidden nothing in it may mount — feeds would
+    // fetch + render for nothing. Remounting happens in the layout:changed /
+    // focus-ui handlers when a visible interface becomes active.
+    if (!this.isSccActive()) return;
+
     const secondaryContent = this.element.querySelector(
       '.secondary-content'
     ) as HTMLElement;
@@ -1909,6 +1982,42 @@ export class MainLayout {
     if (value === 'system-log') this.systemLogger.refresh();
 
     this.syncScc();
+  }
+
+  /**
+   * Tear down the scc default content (tablet/phone modes). The scc column is
+   * CSS-hidden there, but hidden must mean NOT mounted: the default tab's
+   * feeds (Newest Articles / Media / Recipes) fetch and render otherwise —
+   * pure runtime RAM/network cost for content nobody can see. The search
+   * view has its own mount/unmount in the layout:changed handler below.
+   */
+  private unmountSccDefaultContent(): void {
+    this.sccArticleFeed?.destroy();
+    this.sccArticleFeed = null;
+    this.sccMediaFeed?.destroy();
+    this.sccMediaFeed = null;
+    this.sccRecipeFeed?.destroy();
+    this.sccRecipeFeed = null;
+
+    this.element
+      .querySelectorAll(
+        '[data-tab-content="newest-articles"], [data-tab-content="media"], [data-tab-content="recipes"]'
+      )
+      .forEach(el => ((el as HTMLElement).innerHTML = ''));
+
+    // The system logger element detaches with the column; the service keeps
+    // its log arrays and skips painting while detached (offsetParent check).
+    this.systemLogger.getElement().remove();
+  }
+
+  /** Remount the system log panel after it was torn down (back to a visible mode). */
+  private mountSystemLogPanel(): void {
+    const systemLogTab = this.element.querySelector(
+      '[data-tab-content="system-log"]'
+    );
+    if (systemLogTab && !this.systemLogger.getElement().isConnected) {
+      systemLogTab.appendChild(this.systemLogger.getElement());
+    }
   }
 
   /**
@@ -2108,7 +2217,7 @@ export class MainLayout {
             <!-- List tabs (Bookmarks/Follows/Mutes) will be inserted dynamically here -->
           </div>
           <div class="scc-tab-strip__action">
-            <!-- DiagLog export button: visible only when SCC itself is visible (CSS hides on phone/wide) -->
+            <!-- DiagLog export button: visible only when SCC itself is visible (CSS hides on phone/tablet) -->
             <button class="btn btn--mini btn--passive" id="scc-diag-export-btn" type="button" aria-label="${_('Export DiagLogs')}">${_('Export DiagLogs')}</button>
           </div>
         </div>
@@ -2444,11 +2553,13 @@ export class MainLayout {
       secondaryUser.appendChild(this.authComponent.getElement());
     }
 
-    // Mount debug logger in system-log tab content
+    // Mount debug logger in system-log tab content — but only while the scc
+    // column is actually visible (tablet/phone modes tear it down; the
+    // SystemLogger itself keeps logging, it just skips painting while hidden).
     const systemLogTab = this.element.querySelector(
       '[data-tab-content="system-log"]'
     );
-    if (systemLogTab) {
+    if (systemLogTab && this.isSccActive()) {
       systemLogTab.appendChild(this.systemLogger.getElement());
     }
 
@@ -2850,7 +2961,7 @@ export class MainLayout {
   }
 
   /**
-   * Render external follows in primary content (wide mode)
+   * Render external follows in primary content (tablet mode)
    */
   private renderExternalFollowsInPrimaryContent(
     pubkey: string,
@@ -2862,7 +2973,7 @@ export class MainLayout {
 
     primaryContent.innerHTML = '';
 
-    // Primary (wide) mode has no scc tab; ensure no stale ?scc= state lingers.
+    // Primary (tablet) mode has no scc tab; ensure no stale ?scc= state lingers.
     this.externalUserList = null;
     // Tear down any previously-open external manager before starting a new one.
     this.destroyExternalFollowManager();
@@ -3039,7 +3150,7 @@ export class MainLayout {
   }
 
   /**
-   * Render list in primary content (wide mode only)
+   * Render list in primary content (tablet mode only)
    * Replaces timeline/existing content
    */
   private renderListInPrimaryContent(
@@ -3107,7 +3218,7 @@ export class MainLayout {
   /**
    * Close the current list tab
    * Only used for right-pane mode (scc)
-   * For default/wide mode, back button navigates to '/'
+   * For default/tablet mode, back button navigates to '/'
    */
   public closeListTab(): void {
     if (this.currentListView) {
@@ -3293,6 +3404,9 @@ export class MainLayout {
     if (this.pullToRefresh) {
       this.pullToRefresh.destroy();
     }
+
+    // scc default content (may still be mounted in a visible layout mode).
+    this.unmountSccDefaultContent();
 
     this.element.remove();
   }

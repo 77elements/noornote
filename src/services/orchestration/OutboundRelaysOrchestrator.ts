@@ -200,21 +200,36 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
     return results;
   }
 
-  public getOutboundRelays(userRelayLists: UserRelayList[]): string[] {
+  /**
+   * @param includeRead Also consider the authors' NIP-65 READ relays. Write
+   * relays answer "where does this author PUBLISH"; read relays answer "where
+   * has this author BEEN SEEN" — the better signal for fetch-fallbacks like
+   * quote resolution, where the note may live only on a relay the quoter (or
+   * reposter) reads but never writes to. Feed/outbox callers keep the default
+   * (write-only) to hold the WebSocket budget down.
+   */
+  public getOutboundRelays(
+    userRelayLists: UserRelayList[],
+    includeRead: boolean = false
+  ): string[] {
     const outboundRelays = new Set<string>();
     const baseRelays = new Set(this.relayConfig.getReadRelays());
 
     for (const relayList of userRelayLists) {
-      // Cap each author to their top few write relays (like Jumble's slice(0,5)).
+      // Cap each author to their top few relays (like Jumble's slice(0,5)).
       // Without this, a feed of N authors fans out to ALL of everyone's relays and
       // blows the browser's WebSocket ceiling, leaving ProfileView empty. See the
       // connection-bloat fix in docs/todos/timeline-component-modularization.md.
       let perAuthor = 0;
-      for (const relay of relayList.writeRelays) {
+      const candidates = includeRead
+        ? [...relayList.writeRelays, ...relayList.readRelays]
+        : relayList.writeRelays;
+      for (const relay of candidates) {
         if (
           this.isValidRelay(relay) &&
           !baseRelays.has(relay) &&
-          this.isQualityRelay(relay)
+          this.isQualityRelay(relay) &&
+          !outboundRelays.has(relay)
         ) {
           outboundRelays.add(relay);
           if (++perAuthor >= MAX_OUTBOUND_RELAYS_PER_AUTHOR) break;
@@ -265,7 +280,8 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
 
   public async getCombinedRelays(
     pubkeys: string[],
-    includeOutbound: boolean = true
+    includeOutbound: boolean = true,
+    includeRead: boolean = false
   ): Promise<string[]> {
     const standardRelays = this.relayConfig.getReadRelays();
 
@@ -279,7 +295,7 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
 
     try {
       const relayLists = await this.discoverUserRelays(pubkeys);
-      const outboundRelays = this.getOutboundRelays(relayLists);
+      const outboundRelays = this.getOutboundRelays(relayLists, includeRead);
       const aggregatorRelays = this.relayConfig.getAggregatorRelays();
 
       const combined = [

@@ -214,6 +214,172 @@ export class FeedOrchestrator extends Orchestrator {
   /**
    * Load initial timeline feed (Cache-First Pattern)
    */
+  /**
+   * Relay/cache filters for the initial feed load — the single source of
+   * truth shared by the network fetch (loadInitialFeed) and the cache-only
+   * paint (loadInitialFeedFromCache), so both query the same content.
+   *
+   * cacheMode (instant cache paint): the window branch drops the `since`
+   * The network path starts at a 1h window and auto-expands up to 48h; the
+   * cache has no reason to replicate that dance — it holds whatever was
+   * cached before, so the query asks for the newest notes per author at any
+   * age and the caller slices to pageSize after sorting.
+   */
+  private buildInitialFeedFilters(
+    request: FeedLoadRequest,
+    params: Pick<
+      ReturnType<FeedOrchestrator['resolveFetchParams']>,
+      'pagination' | 'pageSize'
+    >,
+    cacheMode = false
+  ): NDKFilter<number>[] {
+    const {
+      followingPubkeys,
+      timeWindowHours = 1,
+      since: explicitSince,
+      until: explicitUntil,
+    } = request;
+    // Local derivation (not a parameter): TS's aliased-condition narrowing
+    // only works on const booleans derived IN this scope, keeping
+    // explicitSince/until narrowed to number below.
+    const isTimeRangeMode = explicitSince !== undefined;
+
+    if (params.pagination === 'until') {
+      const filters: NDKFilter<number>[] = [
+        {
+          authors: followingPubkeys,
+          kinds: feedKindsFor(request.config?.source.kind),
+          limit: params.pageSize,
+        },
+        ...this.reactionOverrideFilters(
+          request.config?.source.kind,
+          followingPubkeys,
+          { limit: params.pageSize }
+        ),
+      ];
+      const wc = this.webCommentFilter(
+        followingPubkeys,
+        { limit: params.pageSize },
+        false
+      );
+      if (wc) filters.push(wc);
+      return filters;
+    }
+
+    if (isTimeRangeMode) {
+      const filterObj: NDKFilter<number> = {
+        authors: followingPubkeys,
+        kinds: feedKindsFor(request.config?.source.kind),
+        limit: this.fetchLimit,
+        since: explicitSince,
+      };
+      if (explicitUntil !== undefined) {
+        filterObj.until = explicitUntil;
+      }
+      const filters: NDKFilter<number>[] = [
+        filterObj,
+        ...this.reactionOverrideFilters(
+          request.config?.source.kind,
+          followingPubkeys,
+          {
+            limit: this.fetchLimit,
+            ...(explicitSince !== undefined && { since: explicitSince }),
+            ...(explicitUntil !== undefined && { until: explicitUntil }),
+          }
+        ),
+      ];
+      const wcBounds: { since?: number; until?: number; limit: number } = {
+        since: explicitSince,
+        limit: this.fetchLimit,
+      };
+      if (explicitUntil !== undefined) wcBounds.until = explicitUntil;
+      const wc = this.webCommentFilter(
+        followingPubkeys,
+        wcBounds,
+        webCommentsIncludeViewer(request.config)
+      );
+      if (wc) filters.push(wc);
+      return filters;
+    }
+
+    // Window pagination (TimelineView live mode).
+    const windowSince = Math.floor(Date.now() / 1000) - timeWindowHours * 3600;
+    const filters: NDKFilter<number>[] = [
+      {
+        authors: followingPubkeys,
+        kinds: feedKindsFor(request.config?.source.kind),
+        limit: params.pageSize,
+        // cacheMode: no since — the cache query spans all ages (newest first).
+        ...(cacheMode ? {} : { since: windowSince }),
+      },
+      ...this.reactionOverrideFilters(
+        request.config?.source.kind,
+        followingPubkeys,
+        // Same for the per-user reaction-override filters.
+        cacheMode
+          ? { limit: params.pageSize }
+          : { limit: params.pageSize, since: windowSince }
+      ),
+    ];
+    const wc = this.webCommentFilter(
+      followingPubkeys,
+      cacheMode
+        ? { limit: params.pageSize }
+        : { since: windowSince, limit: params.pageSize },
+      webCommentsIncludeViewer(request.config)
+    );
+    if (wc) filters.push(wc);
+    return filters;
+  }
+
+  /**
+   * Instant cache paint: load the feed from the LOCAL NDK cache
+   * (IndexedDB) only — no network, no relay RTT. Used by the TV and the PV
+   * to render instantly on open while the network load (loadInitialFeed —
+   * windowed fetch for TV, gap-free loadProfileDirect for PV) refreshes in
+   * the background and merges into the painted state.
+   *
+   * PV pagination safety: loadMore uses `until = oldest event in state`, so
+   * cache-painted events can only EXTEND the covered range downwards
+   * (overlap → dedupe), never skip one.
+   *
+   * Returns null when the cache yields nothing usable (cold cache) so the
+   * caller falls back to the classic skeleton-then-fetch path unchanged.
+   * Same filter construction + same processing (mute, reply, word filters)
+   * as the network path.
+   */
+  public async loadInitialFeedFromCache(
+    request: FeedLoadRequest
+  ): Promise<FeedLoadResult | null> {
+    const params = this.resolveFetchParams(request);
+
+    const filters = this.buildInitialFeedFilters(request, params, true);
+    const events = await this.transport.fetchFromCache(filters);
+    if (events.length === 0) return null;
+
+    const applyWordFilter = request.config
+      ? request.config.applyWordFilter
+      : !request.exemptFromMuteFilter;
+    const filteredEvents = await this.processEvents(
+      events,
+      request.includeReplies,
+      request.exemptFromMuteFilter,
+      applyWordFilter
+    );
+    if (filteredEvents.length === 0) return null;
+
+    // The cache adapter delivers per-author batches (grouped by pubkey), not
+    // chronological — sort before slicing the page.
+    filteredEvents.sort((a, b) => b.created_at - a.created_at);
+    const resultEvents = filteredEvents.slice(0, params.pageSize);
+    this.registerNotes(resultEvents);
+    this.systemLogger.info(
+      'FeedOrchestrator',
+      `Cache paint: ${resultEvents.length} notes from local cache`
+    );
+    return { events: resultEvents, hasMore: true };
+  }
+
   public async loadInitialFeed(
     request: FeedLoadRequest
   ): Promise<FeedLoadResult> {
@@ -239,6 +405,7 @@ export class FeedOrchestrator extends Orchestrator {
     );
 
     try {
+      const fetchStart = Date.now();
       const relays = await this.getRelaysForRequest(
         followingPubkeys,
         specificRelay,
@@ -260,85 +427,7 @@ export class FeedOrchestrator extends Orchestrator {
       // 'until' pagination (ProfileView): direct fetch, limit only, no time window.
       // Time Range Mode: explicit since/until boundaries.
       // 'window' pagination (TimelineView): time-windowed fetch (default 1h).
-      let filters: NDKFilter<number>[];
-      if (params.pagination === 'until') {
-        filters = [
-          {
-            authors: followingPubkeys,
-            kinds: feedKindsFor(request.config?.source.kind),
-            limit: params.pageSize,
-          },
-          ...this.reactionOverrideFilters(
-            request.config?.source.kind,
-            followingPubkeys,
-            { limit: params.pageSize }
-          ),
-        ];
-        const wc = this.webCommentFilter(
-          followingPubkeys,
-          { limit: params.pageSize },
-          false
-        );
-        if (wc) filters.push(wc);
-      } else if (isTimeRangeMode) {
-        const filterObj: NDKFilter<number> = {
-          authors: followingPubkeys,
-          kinds: feedKindsFor(request.config?.source.kind),
-          limit: this.fetchLimit,
-          since: explicitSince,
-        };
-        if (explicitUntil !== undefined) {
-          filterObj.until = explicitUntil;
-        }
-        filters = [
-          filterObj,
-          ...this.reactionOverrideFilters(
-            request.config?.source.kind,
-            followingPubkeys,
-            {
-              limit: this.fetchLimit,
-              ...(explicitSince !== undefined && { since: explicitSince }),
-              ...(explicitUntil !== undefined && { until: explicitUntil }),
-            }
-          ),
-        ];
-        const wcBounds: { since?: number; until?: number; limit: number } = {
-          since: explicitSince,
-          limit: this.fetchLimit,
-        };
-        if (explicitUntil !== undefined) wcBounds.until = explicitUntil;
-        const wc = this.webCommentFilter(
-          followingPubkeys,
-          wcBounds,
-          webCommentsIncludeViewer(request.config)
-        );
-        if (wc) filters.push(wc);
-      } else {
-        const windowSince =
-          Math.floor(Date.now() / 1000) - timeWindowHours * 3600;
-        filters = [
-          {
-            authors: followingPubkeys,
-            kinds: feedKindsFor(request.config?.source.kind),
-            limit: params.pageSize,
-            since: windowSince,
-          },
-          ...this.reactionOverrideFilters(
-            request.config?.source.kind,
-            followingPubkeys,
-            { limit: params.pageSize, since: windowSince }
-          ),
-        ];
-        const wc = this.webCommentFilter(
-          followingPubkeys,
-          {
-            since: windowSince,
-            limit: params.pageSize,
-          },
-          webCommentsIncludeViewer(request.config)
-        );
-        if (wc) filters.push(wc);
-      }
+      const filters = this.buildInitialFeedFilters(request, params);
 
       const events = await this.fetchEvents(
         relays,
@@ -358,7 +447,7 @@ export class FeedOrchestrator extends Orchestrator {
 
       this.systemLogger.info(
         'FeedOrchestrator',
-        `Loaded ${filteredEvents.length} notes from relays`
+        `Loaded ${filteredEvents.length} notes from relays in ${Date.now() - fetchStart}ms`
       );
 
       // Skip auto-expand in time range mode (user selected explicit boundaries)
@@ -371,8 +460,18 @@ export class FeedOrchestrator extends Orchestrator {
         };
       }
 
-      // Auto-load more if needed (windowed feeds only - 'until' feeds get all via direct fetch)
-      const minimumNotes = 10;
+      // Auto-load more if needed (windowed feeds only - 'until' feeds get all via direct fetch).
+      // Paint-first policy: the skeleton must NOT wait for a "full-feeling"
+      // first screen. Older behavior blocked on accumulating minimumNotes=10
+      // through SEQUENTIAL relay round-trips — on sparse feeds that meant up
+      // to 16 chained requests before first paint (the "app opens too slowly"
+      // reports from low-end phones, where each mobile-RTT multiplies this).
+      // Now the loop only bridges the empty-first-window case (1h window with
+      // zero notes): it stops at the FIRST chunk that yields any event. From
+      // there hasMore=true and the InfiniteScroll sentinel (visible right
+      // below a short first screen) triggers loadMore by itself, so the feed
+      // still fills up — just after paint instead of before it.
+      const minimumNotes = 1;
       if (
         params.pagination === 'window' &&
         filteredEvents.length < minimumNotes
@@ -382,7 +481,7 @@ export class FeedOrchestrator extends Orchestrator {
 
         this.systemLogger.info(
           'FeedOrchestrator',
-          `⚠️ ${filteredEvents.length} events found in ${timeWindowHours}h window - Auto-loading more (minimum ${minimumNotes} needed)`
+          `⚠️ ${filteredEvents.length} events found in ${timeWindowHours}h window - Auto-loading until first paint content (minimum ${minimumNotes} needed)`
         );
 
         let accumulatedEvents = [...filteredEvents];

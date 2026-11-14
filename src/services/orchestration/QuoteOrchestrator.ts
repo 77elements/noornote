@@ -10,11 +10,16 @@
  * - Fetches events by ID (note, nevent, hex)
  * - Delegates addressable events (naddr) to LongFormOrchestrator
  * - Uses NoteService cache (cache-first, then relay fetch)
- * - Three-stage fetch: cache → standard relays → outbound relays fallback
+ * - Five-stage fetch: cache → hints → standard → indexer → outbound
+ *   (author + parent-author write AND read relays) → repost-embed recovery
  */
 
 import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
-import { decodeNip19 } from '../NostrToolsAdapter';
+import {
+  calculateEventHash,
+  decodeNip19,
+  type UnsignedEvent,
+} from '../NostrToolsAdapter';
 import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
 import { OutboundRelaysOrchestrator } from './OutboundRelaysOrchestrator';
@@ -322,7 +327,7 @@ export class QuoteOrchestrator extends Orchestrator {
   }
 
   /**
-   * Fetch event by ID with four-stage strategy
+   * Fetch event by ID with five-stage strategy
    * Stage 0: Check NoteService cache first
    * Stage 1: Try relay hints (from nevent)
    * Stage 2: Try standard relays
@@ -330,7 +335,11 @@ export class QuoteOrchestrator extends Orchestrator {
    *         zap receipts that don't live on the user's read relays)
    * Stage 3: If not found, try outbound relays of EVERY known relevant pubkey
    *         (quoted event's author + the parent-note author / reposter that
-   *         pulled it onto our radar in the first place).
+   *         pulled it onto our radar in the first place) — their WRITE and
+   *         READ relays, since the reposter's read set is where they saw it.
+   * Stage 4: Repost-embed recovery — kind:6/16 reposts of the quoted event
+   *         embed its full JSON; a hash-verified embed rescues notes that no
+   *         relay answers by id anymore (deleted or never propagated).
    *
    * @param outboundOnly Skip stages 1, 2 and 2.5 — go straight from cache to
    *        Stage 3 (outbound) with a longer timeout (15s). Used by retry path
@@ -480,12 +489,18 @@ export class QuoteOrchestrator extends Orchestrator {
     const outboundPubkeys = Array.from(
       new Set([author, ...extraOutboundPubkeys].filter((p): p is string => !!p))
     );
+    let stage3Relays: string[] = [];
     if (outboundPubkeys.length > 0) {
       try {
         const outboundRelays = await this.relayDiscovery.getCombinedRelays(
           outboundPubkeys,
+          true,
+          // includeRead: the quoter's/reposter's READ relays show where they
+          // SAW the quoted note — often the only place it still lives when
+          // their write relays and our read set don't intersect with it.
           true
         );
+        stage3Relays = outboundRelays;
         const standardRelays = new Set(this.transport.getReadRelays());
         const newRelays = outboundRelays.filter(r => !standardRelays.has(r));
 
@@ -493,56 +508,51 @@ export class QuoteOrchestrator extends Orchestrator {
         // relays are a subset of the standard set stage 2 just asked cleanly.
         // Re-asking would hit the NDK subscription dedupe and return instantly
         // empty — burning the timeout for nothing (observed 0-1ms answers).
+        // NOTE: this skips only the by-id re-ask — stage 4 (repost-embed
+        // recovery) still runs below, because it queries a DIFFERENT filter
+        // (#e repost search) that the dedupe cannot answer.
         if (newRelays.length === 0 && stage2Completed && !outboundOnly) {
           diagLog(
             'relays',
             'QuoteOrchestrator: stage 3 skipped (no new relays, stage 2 clean)',
             { eventId: shortId, relayCount: outboundRelays.length }
           );
-          diagLog('relays', 'QuoteOrchestrator: NOT FOUND after all stages', {
+        } else {
+          // Retry path: longer timeout — outbound relays (especially a bridge
+          // relay like mostr.pub the quoter used) often need extra seconds on
+          // their first connection of the session. 15s empirically covers the
+          // tail of the slow-EOSE distribution we see in the relays logs.
+          const stageTimeout = outboundOnly ? 15000 : 10000;
+          diagLog('relays', 'QuoteOrchestrator: stage 3 trying outbound', {
             eventId: shortId,
-            outboundPubkeyCount: outboundPubkeys.length,
-            hasHints: relayHints.length > 0,
+            pubkeys: outboundPubkeys.map(p => p.slice(0, 8)),
+            relayCount: outboundRelays.length,
+            newRelays: newRelays.slice(0, 5),
             outboundOnly,
-            timedOut,
           });
-          return { event: null, timedOut };
-        }
 
-        // Retry path: longer timeout — outbound relays (especially a bridge
-        // relay like mostr.pub the quoter used) often need extra seconds on
-        // their first connection of the session. 15s empirically covers the
-        // tail of the slow-EOSE distribution we see in the relays logs.
-        const stageTimeout = outboundOnly ? 15000 : 10000;
-        diagLog('relays', 'QuoteOrchestrator: stage 3 trying outbound', {
-          eventId: shortId,
-          pubkeys: outboundPubkeys.map(p => p.slice(0, 8)),
-          relayCount: outboundRelays.length,
-          newRelays: newRelays.slice(0, 5),
-          outboundOnly,
-        });
-
-        const events = await this.transport.fetch(
-          outboundRelays,
-          [filter],
-          stageTimeout,
-          true,
-          'QuoteOrch'
-        );
-        if (events[0]) {
-          diagLog(
-            'relays',
-            'QuoteOrchestrator: outbound fallback found quote',
-            { eventId: shortId, outboundOnly }
+          const events = await this.transport.fetch(
+            outboundRelays,
+            [filter],
+            stageTimeout,
+            true,
+            'QuoteOrch'
           );
-          this.noteService.registerNote(events[0]);
-          return { event: events[0], timedOut: false };
+          if (events[0]) {
+            diagLog(
+              'relays',
+              'QuoteOrchestrator: outbound fallback found quote',
+              { eventId: shortId, outboundOnly }
+            );
+            this.noteService.registerNote(events[0]);
+            return { event: events[0], timedOut: false };
+          }
+          diagLog('relays', 'QuoteOrchestrator: stage 3 returned empty', {
+            eventId: shortId,
+            relayCount: outboundRelays.length,
+            outboundOnly,
+          });
         }
-        diagLog('relays', 'QuoteOrchestrator: stage 3 returned empty', {
-          eventId: shortId,
-          relayCount: outboundRelays.length,
-          outboundOnly,
-        });
       } catch (error) {
         diagLog('relays', 'QuoteOrchestrator: stage 3 (outbound) failed', {
           eventId: shortId,
@@ -557,6 +567,43 @@ export class QuoteOrchestrator extends Orchestrator {
       });
     }
 
+    // Stage 4: Repost-embed recovery. A quoted note that no relay answers by
+    // id anymore (deleted at the source, or never propagated beyond its
+    // quoter's bubble) often survives VERBATIM inside kind:6/16 reposts of
+    // it — those carry the full inner event as JSON in their content. Ask
+    // the same relay union for reposts whose `e` tag points at the quoted
+    // id, unwrap the embed, and only accept it when the recomputed event
+    // hash matches the id we were asked for: the embed is relay-controlled
+    // content, and that hash check is what makes a forged inner event
+    // cryptographically impossible.
+    try {
+      const embedRelays = Array.from(
+        new Set([
+          ...this.transport.getReadRelays(),
+          ...stage3Relays,
+          ...relayHints,
+        ])
+      );
+      const recovered = await this.recoverQuotedFromRepostEmbeds(
+        eventId,
+        embedRelays
+      );
+      if (recovered) {
+        diagLog(
+          'relays',
+          'QuoteOrchestrator: recovered quote from repost embed',
+          { eventId: shortId, relayCount: embedRelays.length }
+        );
+        this.noteService.registerNote(recovered);
+        return { event: recovered, timedOut: false };
+      }
+    } catch (error) {
+      diagLog('relays', 'QuoteOrchestrator: stage 4 (embed recovery) failed', {
+        eventId: shortId,
+        error: String(error),
+      });
+    }
+
     diagLog('relays', 'QuoteOrchestrator: NOT FOUND after all stages', {
       eventId: shortId,
       outboundPubkeyCount: outboundPubkeys.length,
@@ -565,6 +612,48 @@ export class QuoteOrchestrator extends Orchestrator {
       timedOut,
     });
     return { event: null, timedOut };
+  }
+
+  /**
+   * Stage 4 helper: search kind:6/16 reposts that embed the quoted event as
+   * their content JSON (reposts of a deleted/lost note outlive the original
+   * on relay storage). Only an embed whose recomputed NIP-01 event hash
+   * equals the requested id is returned — relay-controlled inner content is
+   * otherwise untrustworthy. Returns null when no valid embed is found.
+   */
+  private async recoverQuotedFromRepostEmbeds(
+    eventId: string,
+    relays: string[]
+  ): Promise<NostrEvent | null> {
+    if (relays.length === 0) return null;
+    const repostFilter: NDKFilter = {
+      kinds: [6, 16],
+      '#e': [eventId],
+      limit: 20,
+    };
+    const reposts = await this.transport.fetch(
+      relays,
+      [repostFilter],
+      8000,
+      true,
+      'QuoteOrch'
+    );
+    for (const repost of reposts) {
+      if ((repost.kind !== 6 && repost.kind !== 16) || !repost.content) {
+        continue;
+      }
+      try {
+        const inner = JSON.parse(repost.content) as NostrEvent;
+        if (!inner || inner.id !== eventId) continue;
+        if (calculateEventHash(inner as unknown as UnsignedEvent) !== eventId)
+          continue;
+        return inner;
+      } catch {
+        // Content wasn't valid JSON (or a relay-authored variant) — the next
+        // repost may carry a clean embed.
+      }
+    }
+    return null;
   }
 
   // Orchestrator interface implementations (required by base class)

@@ -18,6 +18,7 @@ import {
   StorageKeys,
 } from '../services/PerAccountLocalStorage';
 import { diagLog } from '../services/DiagnosticLogger';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { mountFocusShell, unmountFocusShell } from '../shell/focusShell';
 
 /**
@@ -50,12 +51,19 @@ export function setFocusUiEnabled(enabled: boolean): void {
 /**
  * Sync the `ui--focus` gate class on <html> AND the shell mount with the
  * stored preference. Called on boot (MainLayout init) and on every toggle.
+ * Emits `settings:focus-ui-changed` on CHANGE so listeners (e.g. MainLayout
+ * gating secondary-column content) can react to both directions.
  */
 export function applyFocusUi(): void {
   const enabled = isFocusUiEnabled();
+  const changed =
+    document.documentElement.classList.contains('ui--focus') !== enabled;
   document.documentElement.classList.toggle('ui--focus', enabled);
   if (enabled) mountFocusShell();
   else unmountFocusShell();
+  if (changed) {
+    TypedEventBus.getInstance().emit('settings:focus-ui-changed', { enabled });
+  }
 }
 
 /**

@@ -176,6 +176,50 @@ describe('OutboundRelaysOrchestrator.getOutboundRelays', () => {
       'wss://new.two',
     ]);
   });
+
+  it('excludes read-only relays by default', () => {
+    const lists = [
+      relayList(
+        'pk1',
+        ['wss://write.example.com'],
+        ['wss://read-only.example.com']
+      ),
+    ];
+    expect(orch.getOutboundRelays(lists)).toEqual(['wss://write.example.com']);
+  });
+
+  it('includeRead adds the author read relays (where they SAW content)', () => {
+    const lists = [
+      relayList(
+        'pk1',
+        ['wss://write.example.com'],
+        ['wss://read-only.example.com']
+      ),
+    ];
+    expect(orch.getOutboundRelays(lists, true)).toEqual([
+      'wss://write.example.com',
+      'wss://read-only.example.com',
+    ]);
+  });
+
+  it('includeRead still dedupes against write relays and our read set', () => {
+    const lists = [
+      relayList('pk1', READ_RELAYS /* write */, READ_RELAYS /* read */),
+    ];
+    // Read set fully overlaps our own read relays → nothing new either way.
+    expect(orch.getOutboundRelays(lists, true)).toEqual([]);
+  });
+
+  it('includeRead respects the per-author cap across write+read combined', () => {
+    const lists = [
+      relayList(
+        'pk1',
+        ['wss://a.example.com', 'wss://b.example.com'],
+        ['wss://c.example.com', 'wss://d.example.com', 'wss://e.example.com']
+      ),
+    ];
+    expect(orch.getOutboundRelays(lists, true)).toHaveLength(4);
+  });
 });
 
 describe('OutboundRelaysOrchestrator.getCombinedRelays', () => {

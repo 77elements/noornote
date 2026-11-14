@@ -13,6 +13,7 @@ import type {
 } from '../../modules/timeline/contracts';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import { UserService } from '../../services/UserService';
+import { diagLog } from '../../services/DiagnosticLogger';
 import { RelayConfig } from '../../services/RelayConfig';
 import { AuthService } from '../../services/AuthService';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
@@ -669,6 +670,12 @@ export class Timeline extends View {
   private async initializeTimeline(): Promise<void> {
     this.stateManager.setLoading(true);
 
+    // Paint-latency instrumentation: the "app opens too slowly" reports need
+    // a breakdown of WHERE the skeleton time goes (auth, follow list, relay
+    // fetch, render). One diagLog per initialization, elapsed in ms.
+    const t0 = performance.now();
+    const marks: Record<string, number> = {};
+
     // Show skeleton loaders immediately (better UX than spinner)
     this.uiStateHandler.showSkeletonLoaders(5);
     this.uiStateHandler.hideEmptyState();
@@ -676,10 +683,12 @@ export class Timeline extends View {
     try {
       // Wait for auth to be fully initialized (session restore, NIP-46, etc.)
       await this.authService.waitForInitialization();
+      marks.authMs = Math.round(performance.now() - t0);
 
       // Boot-race guard: the timeline module may still be loading when the TV
       // mounts right after auto-login — await it before the first API call.
       await this.ensureTimelineApi();
+      marks.apiMs = Math.round(performance.now() - t0);
 
       // Get authors to fetch from the config source: explicit authors (profile /
       // tribe) or the current user's following list.
@@ -690,6 +699,7 @@ export class Timeline extends View {
         let followingPubkeys = await this.userService.getUserFollowing(
           this.userPubkey
         );
+        marks.followsMs = Math.round(performance.now() - t0);
 
         // Add current user to the list (to see own posts in timeline)
         if (!followingPubkeys.includes(this.userPubkey)) {
@@ -737,19 +747,65 @@ export class Timeline extends View {
       if (this.config.muteExemptPubkey) {
         feedRequest.exemptFromMuteFilter = this.config.muteExemptPubkey; // Don't filter profile user's notes in ProfileView
       }
+      // Instant cache paint: paint from the LOCAL cache immediately (no
+      // The Dexie cache holds notes from previous sessions — rendering them
+      // now removes the relay-RTT wait entirely. Cold cache → null → the
+      // classic skeleton-until-fetch path below runs unchanged.
+      let cachePainted = false;
+      if (!dateRange) {
+        try {
+          const cacheResult =
+            await this.timelineApi.loadInitialFeedFromCache(feedRequest);
+          if (cacheResult && cacheResult.events.length > 0) {
+            marks.cacheMs = Math.round(performance.now() - t0);
+            this.stateManager.setEvents(cacheResult.events);
+            this.uiStateHandler.hideSkeletonLoaders();
+            this.renderer.renderEvents();
+            cachePainted = true;
+            marks.paintAtMs = Math.round(performance.now() - t0);
+          }
+        } catch {
+          // Best-effort: cache paint failure must never block the network path.
+        }
+      }
+
       const result = (await this.timelineApi.loadInitialFeed(feedRequest)) ?? {
         events: [],
         hasMore: false,
       };
+      marks.fetchMs = Math.round(performance.now() - t0);
 
-      this.stateManager.setEvents(result.events);
+      if (cachePainted) {
+        // Merge the fresh relay results into the cache-painted feed —
+        // addEvents dedupes by id and keeps the descending order.
+        const cacheCount = this.stateManager.getEvents().length;
+        this.stateManager.addEvents(result.events);
+        // Re-render only when the network actually added something.
+        if (this.stateManager.getEvents().length > cacheCount) {
+          this.renderer.renderEvents();
+        }
+      } else {
+        this.stateManager.setEvents(result.events);
+      }
 
       // Hide skeletons and render actual events
       this.uiStateHandler.hideSkeletonLoaders();
       this.renderer.renderEvents();
+      marks.renderMs = Math.round(performance.now() - t0);
+      diagLog('system', 'TV init timing', {
+        ...marks,
+        events: result.events.length,
+      });
+      if (import.meta.env.DEV) {
+        console.debug(
+          '[TV init]',
+          JSON.stringify({ ...marks, events: result.events.length })
+        );
+      }
       // 0 notes (e.g. fresh profile with no posts) → empty state instead of
       // a blank section (renderEvents only ever HIDES the empty state).
-      if (result.events.length === 0) {
+      // Not shown when the cache already painted content.
+      if (result.events.length === 0 && !cachePainted) {
         this.uiStateHandler.showEmptyState();
       }
 

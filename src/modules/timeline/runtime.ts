@@ -33,6 +33,8 @@ export class TimelineRuntime implements ModuleRuntime<TimelineModuleApi> {
     return {
       loadInitialFeed: request =>
         orch?.loadInitialFeed(request) ?? Promise.resolve(emptyResult),
+      loadInitialFeedFromCache: request =>
+        orch?.loadInitialFeedFromCache(request) ?? Promise.resolve(null),
       loadMore: request =>
         orch?.loadMore(request) ?? Promise.resolve(emptyResult),
       loadLatestPerAuthor: (pubkeys, includeReplies, applyWordFilter) =>

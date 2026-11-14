@@ -787,6 +787,48 @@ export class NostrTransport {
   }
 
   /**
+   * Local-only cache query (instant cache paint): reads the NDK Dexie
+   * cache (IndexedDB) WITHOUT touching the network — no relay RTT, no EOSE
+   * wait. This is what lets the timeline paint instantly from previously
+   * cached notes while the network fetch runs in the background.
+   *
+   * The Dexie adapter is push-style: `query()` resolves with [] and delivers
+   * matches via `subscription.eventReceived`. A minimal subscription shim
+   * collects them (dedup by id). Filter handling (authors+kind indexes,
+   * since/until matching, per-filter limit) lives inside the adapter.
+   *
+   * Returns [] when there is no cache adapter or the query fails — callers
+   * fall back to the normal network path unchanged.
+   */
+  public async fetchFromCache(filters: NDKFilter[]): Promise<NostrEvent[]> {
+    const adapter = this.ndk.cacheAdapter as NDKCacheAdapter | undefined;
+    if (!adapter || typeof adapter.query !== 'function') return [];
+
+    const collected: NostrEvent[] = [];
+    const seen = new Set<string>();
+    const shim = {
+      filters,
+      pool: this.ndk.pool,
+      eventReceived: (event: NostrEvent): void => {
+        if (event?.id && !seen.has(event.id)) {
+          seen.add(event.id);
+          collected.push(event);
+        }
+      },
+    };
+
+    try {
+      await adapter.query(
+        shim as unknown as Parameters<NDKCacheAdapter['query']>[0]
+      );
+    } catch (error) {
+      console.debug('[NostrTransport] cache query failed:', error);
+      return [];
+    }
+    return collected;
+  }
+
+  /**
    * Shared core of fetch/fetchWithMeta. Never throws — errors (including the
    * internal 'Fetch timeout' rejection) are logged and reported through the
    * `timedOut` flag, preserving the historic fetch() contract of returning [].

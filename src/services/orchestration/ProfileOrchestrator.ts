@@ -47,7 +47,10 @@ export class ProfileOrchestrator extends Orchestrator {
   private systemLogger: SystemLogger;
 
   /** Profile cache (managed externally by UserProfileService) */
-  private fetchingProfiles: Map<string, Promise<Profile | null>> = new Map();
+  private fetchingProfiles: Map<
+    string,
+    Promise<{ profile: Profile | null; timedOut: boolean }>
+  > = new Map();
 
   private constructor() {
     super('ProfileOrchestrator');
@@ -72,6 +75,19 @@ export class ProfileOrchestrator extends Orchestrator {
     pubkey: string,
     relayHints?: string[]
   ): Promise<Profile | null> {
+    return (await this.fetchProfileWithMeta(pubkey, relayHints)).profile;
+  }
+
+  /**
+   * Fetch single profile with timeout telemetry. `timedOut` means the fetch
+   * window expired while the relays were still connecting/answering — NOT
+   * that the profile is absent. Callers use this to pick the retry cooldown
+   * (timeout → short window, clean miss → full window).
+   */
+  public async fetchProfileWithMeta(
+    pubkey: string,
+    relayHints?: string[]
+  ): Promise<{ profile: Profile | null; timedOut: boolean }> {
     // If already fetching, wait for that request
     if (this.fetchingProfiles.has(pubkey)) {
       return this.fetchingProfiles.get(pubkey)!;
@@ -89,12 +105,15 @@ export class ProfileOrchestrator extends Orchestrator {
   }
 
   /**
-   * Fetch single profile from relays (2-stage: aggregator → outbound)
+   * Fetch single profile from relays (2-stage: aggregator → outbound).
+   * Returns timeout telemetry: `timedOut` is true only when the overall
+   * attempt missed AND at least one stage ended in its fetch window expiring
+   * (a clean EOSE-empty answer proves absence for that stage instead).
    */
   private async fetchProfileFromRelays(
     pubkey: string,
     relayHints?: string[]
-  ): Promise<Profile | null> {
+  ): Promise<{ profile: Profile | null; timedOut: boolean }> {
     const filters: NDKFilter[] = [
       {
         authors: [pubkey],
@@ -102,6 +121,7 @@ export class ProfileOrchestrator extends Orchestrator {
         limit: 1,
       },
     ];
+    let sawTimeout = false;
 
     // Stage 0: caller-provided relay hints — e.g. the write relays of the user
     // who reposted this note. An unfollowed author's kind:0 is reliably on the
@@ -111,15 +131,19 @@ export class ProfileOrchestrator extends Orchestrator {
     // is never worse than before.
     if (relayHints && relayHints.length > 0) {
       try {
-        const hintEvents = await this.transport.fetch(
+        const { events, timedOut } = await this.transport.fetchWithMeta(
           relayHints,
           filters,
           4000,
           true,
           'ProfileOrch'
         );
-        if (hintEvents[0]) {
-          return this.parseProfileEvent(pubkey, hintEvents[0]);
+        sawTimeout = sawTimeout || timedOut;
+        if (events[0]) {
+          return {
+            profile: this.parseProfileEvent(pubkey, events[0]),
+            timedOut: false,
+          };
         }
       } catch {
         // Hint fetch failed — continue to the standard stages below.
@@ -130,16 +154,20 @@ export class ProfileOrchestrator extends Orchestrator {
     const relays = this.relayConfig.getAggregatorRelays();
 
     try {
-      const events = await this.transport.fetch(
+      const { events, timedOut } = await this.transport.fetchWithMeta(
         relays,
         filters,
         4000,
         false,
         'ProfileOrch'
       );
+      sawTimeout = sawTimeout || timedOut;
       const event = events[0];
       if (event) {
-        return this.parseProfileEvent(pubkey, event);
+        return {
+          profile: this.parseProfileEvent(pubkey, event),
+          timedOut: false,
+        };
       }
     } catch {
       // Aggregator fetch failed, continue to outbound
@@ -159,20 +187,24 @@ export class ProfileOrchestrator extends Orchestrator {
         newRelays: newRelays.slice(0, 5),
       });
 
-      const events = await this.transport.fetch(
+      const { events, timedOut } = await this.transport.fetchWithMeta(
         outboundRelays,
         filters,
         8000,
         true,
         'ProfileOrch'
       );
+      sawTimeout = sawTimeout || timedOut;
       if (events[0]) {
         diagLog(
           'relays',
           'ProfileOrchestrator: outbound fallback found profile',
           { pubkey: pubkey.slice(0, 8) }
         );
-        return this.parseProfileEvent(pubkey, events[0]);
+        return {
+          profile: this.parseProfileEvent(pubkey, events[0]),
+          timedOut: false,
+        };
       }
       diagLog('relays', 'ProfileOrchestrator: stage 2 returned empty', {
         pubkey: pubkey.slice(0, 8),
@@ -184,7 +216,7 @@ export class ProfileOrchestrator extends Orchestrator {
       });
     }
 
-    return null;
+    return { profile: null, timedOut: sawTimeout };
   }
 
   /**

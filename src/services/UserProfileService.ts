@@ -9,6 +9,12 @@
  *     cooldown + pubsub. All consumers (61 call sites) go through
  *     getUserProfile / getUserProfiles / getDisplayName / getDisplayPicture /
  *     subscribeToProfile.
+ *     Self-healing (since 2026-11-14): a subscribed-but-unresolved pubkey is
+ *     re-fetched automatically — bounded retry timers (max 3 attempts) plus a
+ *     `relay:connected` sweep that pre-empts pending retries. This closes the
+ *     mobile cold-start race where the first fetch wave ran against a
+ *     not-yet-connected relay pool and headers stayed "@npub…"/"Anonymous"
+ *     forever (timeout misses get an 8s cooldown instead of 30s).
  *   • ProfileOrchestrator — relay fetch only (2-stage: aggregator batch →
  *     author outbound recovery). No caching of its own.
  *   • MentionProfileCache — autocomplete preloader layered ON TOP of this
@@ -47,13 +53,24 @@ import { getAvatarFallback } from '../helpers/avatarFallback';
 import { hexToNpub } from '../helpers/nip19';
 import { profileStore } from './ProfileStore';
 import { AuthService } from './AuthService';
+import { TypedEventBus } from '../core/TypedEventBus';
 
 /** A profile is worth persisting/restoring only when it carries display data. */
 const hasDisplayData = (p: UserProfile): boolean =>
   !!(p.name || p.display_name || p.username || p.picture);
 
+/** Same test, null-safe — for probing the cache without a placeholder dance. */
+const hasRealProfile = (p: UserProfile | null | undefined): boolean =>
+  !!p && hasDisplayData(p);
+
 /** Debounce window for batched ProfileStore writes (ms). */
 const PERSIST_DEBOUNCE_MS = 2000;
+
+/** Per-pubkey failure record: when it failed and how long to back off. */
+interface FailedFetch {
+  ts: number;
+  cooldown: number;
+}
 
 export interface UserProfile {
   pubkey: string;
@@ -81,8 +98,10 @@ export class UserProfileService {
   );
 
   private orchestrator: ProfileOrchestrator;
-  private fetchingProfiles: Map<string, Promise<UserProfile | null>> =
-    new Map();
+  private fetchingProfiles: Map<
+    string,
+    Promise<{ profile: UserProfile | null; timedOut: boolean }>
+  > = new Map();
   private profileUpdateCallbacks: Map<
     string,
     Set<(profile: UserProfile) => void>
@@ -92,31 +111,51 @@ export class UserProfileService {
     (pubkey: string, profile: UserProfile) => void
   > = new Set();
 
-  /** Track failed fetches to prevent rapid retry storms (pubkey → timestamp) */
-  private failedFetches: Map<string, number> = new Map();
+  /** Track failed fetches to prevent rapid retry storms (pubkey → failure) */
+  private failedFetches: Map<string, FailedFetch> = new Map();
   private readonly FAILED_FETCH_COOLDOWN = 30000; // 30s — throttle retries for a missing profile without poisoning the cache
+  /** A TIMEOUT is not "not found" — the NDK subscription keeps running and
+   *  relays (esp. on slow mobile cold starts) may still answer. Short window. */
+  private readonly TIMEOUT_FETCH_COOLDOWN = 8000;
   private readonly FAILED_FETCH_MAX_ENTRIES = 500; // cap — drop oldest beyond this
+
+  /** Max automatic re-fetch attempts for a subscribed-but-unresolved pubkey
+   *  (the mobile cold-start case: first fetch ran before relays connected). */
+  private static readonly MAX_RESOLVE_ATTEMPTS = 3;
+  /** Connectivity sweep debounce — let more relays connect before probing. */
+  private static readonly SWEEP_DEBOUNCE_MS = 2000;
+  /** pubkey → pending retry timer (subscribe-retry loop). */
+  private resolveTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
+  /** pubkey → retry attempts spent (reset on real resolve / unsubscribe). */
+  private resolveAttempts: Map<string, number> = new Map();
+  /** Connectivity sweep debounce flag. */
+  private sweepScheduled = false;
 
   /**
    * Record a failed-fetch cooldown, evicting the oldest entry when the cap
    * is reached so long sessions on npub-heavy feeds can't grow the map forever.
+   * A timeout failure gets a SHORT cooldown: the fetch window expired while
+   * relays were still connecting/answering — not proof the profile is absent.
    */
-  private recordFailedFetch(pubkey: string): void {
+  private recordFailedFetch(pubkey: string, cooldownOverrideMs?: number): void {
     if (
       this.failedFetches.size >= this.FAILED_FETCH_MAX_ENTRIES &&
       !this.failedFetches.has(pubkey)
     ) {
       let oldestKey: string | null = null;
       let oldestTs = Infinity;
-      for (const [key, ts] of this.failedFetches) {
-        if (ts < oldestTs) {
-          oldestTs = ts;
+      for (const [key, failure] of this.failedFetches) {
+        if (failure.ts < oldestTs) {
+          oldestTs = failure.ts;
           oldestKey = key;
         }
       }
       if (oldestKey !== null) this.failedFetches.delete(oldestKey);
     }
-    this.failedFetches.set(pubkey, Date.now());
+    this.failedFetches.set(pubkey, {
+      ts: Date.now(),
+      cooldown: cooldownOverrideMs ?? this.FAILED_FETCH_COOLDOWN,
+    });
   }
 
   /** Debounced ProfileStore writes: dirty pubkeys + flush timer. */
@@ -127,6 +166,13 @@ export class UserProfileService {
 
   private constructor() {
     this.orchestrator = ProfileOrchestrator.getInstance();
+    // Connectivity-aware recovery: fetches that failed before the relay pool
+    // was actually connected (mobile cold start) get re-armed once a relay
+    // really connects — the old failure's cooldown premise is void then.
+    // Singleton-lifetime subscription (never off'd — the service lives forever).
+    TypedEventBus.getInstance().on('relay:connected', () =>
+      this.scheduleConnectivitySweep()
+    );
   }
 
   public static getInstance(): UserProfileService {
@@ -252,20 +298,18 @@ export class UserProfileService {
 
     // Deduplication: if already fetching, wait for that request
     if (this.fetchingProfiles.has(pubkey)) {
-      return (
-        (await this.fetchingProfiles.get(pubkey)!) ??
-        this.getDefaultProfile(pubkey)
-      );
+      const { profile } = await this.fetchingProfiles.get(pubkey)!;
+      return profile ?? this.getDefaultProfile(pubkey);
     }
 
     // Check if recently failed - return default profile during cooldown. A
     // caller-provided relay hint is a fresh source we may not have tried yet, so
     // it bypasses the cooldown (without a hint the cooldown behaves as before).
-    const lastFailed = this.failedFetches.get(pubkey);
+    const failure = this.failedFetches.get(pubkey);
     if (
       !relayHints?.length &&
-      lastFailed &&
-      Date.now() - lastFailed < this.FAILED_FETCH_COOLDOWN
+      failure &&
+      Date.now() - failure.ts < failure.cooldown
     ) {
       return this.getDefaultProfile(pubkey);
     }
@@ -275,7 +319,7 @@ export class UserProfileService {
     this.fetchingProfiles.set(pubkey, fetchPromise);
 
     try {
-      const profile = await fetchPromise;
+      const { profile, timedOut } = await fetchPromise;
 
       if (profile) {
         // Real profile found — cache it and clear any prior failure.
@@ -291,8 +335,14 @@ export class UserProfileService {
       // the exact flicker the app must never show. Only record a cooldown so
       // renders are throttled, and return the fallback to the direct caller
       // (their own Promise chain) — subscribers that already have real data
-      // keep it untouched.
-      this.recordFailedFetch(pubkey);
+      // keep it untouched. A TIMEOUT gets a shorter cooldown: the fetch
+      // window expired while relays were still answering (slow mobile cold
+      // start), which is not proof the profile is absent — the retry loop
+      // below re-arms quickly.
+      this.recordFailedFetch(
+        pubkey,
+        timedOut ? this.TIMEOUT_FETCH_COOLDOWN : undefined
+      );
       return this.getDefaultProfile(pubkey);
     } catch (error) {
       console.debug(`Failed to fetch profile for ${pubkey}:`, error);
@@ -369,7 +419,8 @@ export class UserProfileService {
           await Promise.all(
             batch.map(async pubkey => {
               try {
-                const profile = await this.orchestrator.fetchProfile(pubkey);
+                const { profile, timedOut } =
+                  await this.orchestrator.fetchProfileWithMeta(pubkey);
                 if (profile) {
                   const userProfile = profile as UserProfile;
                   this.cacheProfile(pubkey, userProfile, { notify: true });
@@ -379,7 +430,11 @@ export class UserProfileService {
                   // empty — record the retry cooldown exactly like the
                   // single-fetch path, so repeat renders don't re-hammer
                   // the relays for a profile that is genuinely unfindable.
-                  this.recordFailedFetch(pubkey);
+                  // A timeout gets the short window (relays may still answer).
+                  this.recordFailedFetch(
+                    pubkey,
+                    timedOut ? this.TIMEOUT_FETCH_COOLDOWN : undefined
+                  );
                 }
               } catch {
                 // Transport-level failure — also a spent attempt, cooldown applies.
@@ -411,12 +466,17 @@ export class UserProfileService {
   private async fetchProfileFromRelays(
     pubkey: string,
     relayHints?: string[]
-  ): Promise<UserProfile | null> {
+  ): Promise<{ profile: UserProfile | null; timedOut: boolean }> {
     // null = orchestrator found nothing on any relay (miss/timeout). The caller
     // (getUserProfile) turns that into a throttled, NON-cached fallback so a
     // transient miss never permanently poisons the cache with an empty profile.
-    const profile = await this.orchestrator.fetchProfile(pubkey, relayHints);
-    return profile ? (profile as UserProfile) : null;
+    // `timedOut` distinguishes an expired fetch window (relays may still
+    // answer — retry sooner) from a clean relay-side "not found".
+    const { profile, timedOut } = await this.orchestrator.fetchProfileWithMeta(
+      pubkey,
+      relayHints
+    );
+    return { profile: profile ? (profile as UserProfile) : null, timedOut };
   }
 
   /**
@@ -469,11 +529,20 @@ export class UserProfileService {
       // Immediate callback with cached data
       callback(cached);
     } else {
-      // Fetch from relays (relayHints, when provided, are tried first)
+      // Fetch from relays (relayHints, when provided, are tried first).
+      // If the fetch comes back name-less (relay miss or cold-start timeout),
+      // schedule bounded retries — on slow mobile connections the first
+      // attempt regularly runs before the relay pool is connected, and
+      // without a retry the header stays "@npub…" / "Anonymous" forever.
       this.getUserProfile(pubkey, relayHints)
-        .then(callback)
+        .then(profile => {
+          callback(profile);
+          if (!hasDisplayData(profile)) {
+            this.scheduleResolveRetry(pubkey);
+          }
+        })
         .catch(() => {
-          // Silent fail
+          this.scheduleResolveRetry(pubkey);
         });
     }
 
@@ -484,9 +553,115 @@ export class UserProfileService {
         callbacks.delete(callback);
         if (callbacks.size === 0) {
           this.profileUpdateCallbacks.delete(pubkey);
+          // Last subscriber gone — no one needs the retry loop anymore.
+          this.cancelResolveRetry(pubkey);
         }
       }
     };
+  }
+
+  /**
+   * Bounded self-healing retry for a subscribed-but-unresolved pubkey: one
+   * re-fetch per cooldown window, at most MAX_RESOLVE_ATTEMPTS. Success (a
+   * display-bearing profile entering the cache) resets the attempt counter
+   * and updates ALL subscribers via notifyProfileUpdate — the rendered
+   * headers patch themselves, no component code needed.
+   */
+  private scheduleResolveRetry(pubkey: string): void {
+    if (this.resolveTimers.has(pubkey)) return; // retry already armed
+    const attempt = (this.resolveAttempts.get(pubkey) ?? 0) + 1;
+    if (attempt > UserProfileService.MAX_RESOLVE_ATTEMPTS) return;
+    this.resolveAttempts.set(pubkey, attempt);
+    // Wait out the recorded cooldown (timeout failures back off shorter) so
+    // the retry is not bounced by the cooldown check inside getUserProfile.
+    const failure = this.failedFetches.get(pubkey);
+    const delay = failure ? failure.cooldown + 1000 : 1000;
+    const timer = setTimeout(() => {
+      this.resolveTimers.delete(pubkey);
+      void this.retryResolve(pubkey);
+    }, delay);
+    this.resolveTimers.set(pubkey, timer);
+  }
+
+  /** One retry step: fetch again if the pubkey is still wanted + unresolved. */
+  private async retryResolve(pubkey: string): Promise<void> {
+    if (!this.profileUpdateCallbacks.get(pubkey)?.size) {
+      this.resolveAttempts.delete(pubkey); // subscribers gone — stop caring
+      return;
+    }
+    if (hasRealProfile(this.profileCache.get(pubkey))) {
+      // Resolved in the meantime (batch fetch, warm, setCachedProfile).
+      this.resolveAttempts.delete(pubkey);
+      return;
+    }
+    try {
+      const profile = await this.getUserProfile(pubkey);
+      if (hasDisplayData(profile)) {
+        this.resolveAttempts.delete(pubkey); // resolved — reset the counter
+      } else {
+        this.scheduleResolveRetry(pubkey); // next attempt (bounded)
+      }
+    } catch {
+      this.scheduleResolveRetry(pubkey);
+    }
+  }
+
+  /** Stop the retry loop for a pubkey (unsubscribe / account switch). */
+  private cancelResolveRetry(pubkey: string): void {
+    const timer = this.resolveTimers.get(pubkey);
+    if (timer) {
+      clearTimeout(timer);
+      this.resolveTimers.delete(pubkey);
+    }
+    this.resolveAttempts.delete(pubkey);
+  }
+
+  /**
+   * Connectivity sweep: after a relay (re)connects, re-arm every subscribed
+   * pubkey that is still unresolved. This is the mobile cold-start fix —
+   * the first fetch wave ran against a not-yet-connected pool; now that the
+   * network is real, those profiles are fetchable. Debounced so a connect
+   * burst produces one sweep, not one per relay.
+   */
+  private scheduleConnectivitySweep(): void {
+    if (this.sweepScheduled) return;
+    this.sweepScheduled = true;
+    setTimeout(() => {
+      this.sweepScheduled = false;
+      this.sweepPendingResolves();
+    }, UserProfileService.SWEEP_DEBOUNCE_MS);
+  }
+
+  private sweepPendingResolves(): void {
+    for (const pubkey of Array.from(this.resolveAttempts.keys())) {
+      if (this.fetchingProfiles.has(pubkey)) continue; // fetch in flight
+      if (!this.profileUpdateCallbacks.get(pubkey)?.size) {
+        this.resolveAttempts.delete(pubkey); // nobody listening anymore
+        continue;
+      }
+      if (hasRealProfile(this.profileCache.get(pubkey))) {
+        this.resolveAttempts.delete(pubkey); // resolved in the meantime
+        continue;
+      }
+      const attempt = this.resolveAttempts.get(pubkey) ?? 0;
+      if (attempt >= UserProfileService.MAX_RESOLVE_ATTEMPTS) continue;
+      this.resolveAttempts.set(pubkey, attempt + 1);
+      // Pre-empt any armed retry timer: its delay was sized to outlast the
+      // old cooldown, and that cooldown's premise (network state) is void now.
+      const timer = this.resolveTimers.get(pubkey);
+      if (timer) {
+        clearTimeout(timer);
+        this.resolveTimers.delete(pubkey);
+      }
+      // The network state changed — the old failure's cooldown premise is
+      // void, so clear it and probe immediately.
+      this.failedFetches.delete(pubkey);
+      void this.getUserProfile(pubkey)
+        .then(profile => {
+          if (!hasDisplayData(profile)) this.scheduleResolveRetry(pubkey);
+        })
+        .catch(() => this.scheduleResolveRetry(pubkey));
+    }
   }
 
   /**
@@ -537,6 +712,10 @@ export class UserProfileService {
     opts: { notify?: boolean | 'display-only' } = {}
   ): void {
     this.profileCache.set(pubkey, profile);
+    if (hasDisplayData(profile)) {
+      // Real data landed — the resolve-retry loop for this pubkey is done.
+      this.resolveAttempts.delete(pubkey);
+    }
     if (opts.notify === true) {
       this.notifyProfileUpdate(pubkey, profile);
     } else if (opts.notify === 'display-only' && hasDisplayData(profile)) {
@@ -600,6 +779,11 @@ export class UserProfileService {
     this.profileCache.clear();
     this.failedFetches.clear();
     this.dirtyProfiles.clear();
+    // Tear down the resolve-retry state (pending timers would fire into a
+    // freshly-switched account's context otherwise).
+    for (const timer of this.resolveTimers.values()) clearTimeout(timer);
+    this.resolveTimers.clear();
+    this.resolveAttempts.clear();
     if (this.persistTimer !== null) {
       clearTimeout(this.persistTimer);
       this.persistTimer = null;

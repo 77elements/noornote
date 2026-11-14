@@ -428,6 +428,17 @@ export class CacheSettingsSection extends SettingsSection {
             }
           }
 
+          // "Profiles" covers MORE than the NDK table: the NoorNote profile
+          // cache (memory LRU + per-account ProfileStore mirror) must go too,
+          // or warmFromStore refills everything on the next start — the clear
+          // would look broken (profiles instantly back).
+          if (tableNames.includes('profiles')) {
+            const { UserProfileService } = await import(
+              '../../services/UserProfileService'
+            );
+            await UserProfileService.getInstance().wipePersisted();
+          }
+
           checkboxes.forEach(cb => (cb.checked = false));
           ToastService.show(
             tn(
@@ -463,6 +474,14 @@ export class CacheSettingsSection extends SettingsSection {
       async () => {
         try {
           const { db } = await import('@nostr-dev-kit/ndk-cache-dexie');
+
+          // Also wipe the NoorNote profile cache (memory LRU + ProfileStore
+          // mirror + resolve-retry state) — otherwise warmFromStore refills
+          // every profile on the next start and the clear looks broken.
+          const { UserProfileService } = await import(
+            '../../services/UserProfileService'
+          );
+          await UserProfileService.getInstance().wipePersisted();
 
           await Promise.all([
             db.events.clear(),

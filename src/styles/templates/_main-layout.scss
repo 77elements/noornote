@@ -55,9 +55,11 @@ html.sidebar-collapsed:not(.layout--phone) .main-layout {
 }
 
 // ========================================
-// Layout Mode: Wide (2-column, no secondary)
+// Layout Mode: Tablet (2-column, no secondary) — stored preference value
+// stays 'wide' for localStorage compatibility; UI + CSS class say tablet.
+// Both columns are capped at a tablet width and centered as a unit.
 // ========================================
-html.layout--wide .main-layout {
+html.layout--tablet .main-layout {
   // Base (phone): single column
   grid-template-columns: 1fr;
   grid-template-rows: auto 1fr;
@@ -78,6 +80,16 @@ html.layout--wide .main-layout {
 
   .secondary-content {
     display: none;
+  }
+}
+
+// On desktop screens the two columns keep a tablet-like footprint and sit
+// centered — an uncapped pcc stretching over a 1440px+ monitor is unusable.
+// The tablet media range (768-1023px) caps naturally, so only desktop needs it.
+@include desktop {
+  html.layout--tablet .main-layout {
+    max-width: $breakpoint-lg;
+    margin-inline: auto;
   }
 }
 

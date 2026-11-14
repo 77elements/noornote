@@ -23,7 +23,7 @@
 .data-saver-toggle {
   display: none;
 
-  .layout--wide &,
+  .layout--tablet &,
   .layout--phone & {
     display: block;
     padding-top: calc($gap / 2);

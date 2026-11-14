@@ -27,7 +27,6 @@ import { setFocusUiNavHandler } from '../helpers/focusUiNavigation';
 import { LayoutService } from '../services/LayoutService';
 import { Router } from '../services/Router';
 import { ToastService } from '../services/ToastService';
-import { TypedEventBus } from '../core/TypedEventBus';
 import { FocusStage } from './focusStage';
 import { FOCUS_DOMAINS } from './focusDomains';
 import { _ } from '../i18n';
@@ -219,9 +218,6 @@ export function mountFocusShell(): void {
     onChange: checked => {
       if (!checked) {
         setFocusUiEnabled(false);
-        TypedEventBus.getInstance().emit('settings:focus-ui-changed', {
-          enabled: false,
-        });
         // Back to the classic home: navigate('/') re-mounts the timeline
         // view (the shell may have left the URL anywhere).
         Router.getInstance().navigate('/', true);

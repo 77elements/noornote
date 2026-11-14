@@ -73,7 +73,7 @@ msgstr ""
 msgid "(Untitled event)"
 msgstr ""
 
-#: src/components/ui/ThreadContextIndicator.ts:190
+#: src/components/ui/ThreadContextIndicator.ts:199
 msgid "(untitled)"
 msgstr ""
 
@@ -81,11 +81,11 @@ msgstr ""
 msgid "(Video)"
 msgstr ""
 
-#: src/components/ui/ReplyIndicator.ts:107
+#: src/components/ui/ReplyIndicator.ts:115
 msgid "[Error loading]"
 msgstr ""
 
-#: src/components/ui/ReplyIndicator.ts:72
+#: src/components/ui/ReplyIndicator.ts:80
 msgid "[Note not found]"
 msgstr ""
 
@@ -445,7 +445,7 @@ msgstr ""
 msgid "%s/%s relays healthy (%s%)"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2090
+#: src/components/layout/MainLayout.ts:2205
 msgid "← Back"
 msgstr ""
 
@@ -569,11 +569,15 @@ msgstr[1] ""
 
 #: src/components/settings/UISettingsSection.ts:107
 #: src/components/settings/UISettingsSection.ts:602
+#: src/shell/focusSettings.ts:203
+#: src/shell/focusSettings.ts:98
 msgid "1 week"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:109
 #: src/components/settings/UISettingsSection.ts:604
+#: src/shell/focusSettings.ts:100
+#: src/shell/focusSettings.ts:205
 msgid "1 year"
 msgstr ""
 
@@ -583,11 +587,15 @@ msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:106
 #: src/components/settings/UISettingsSection.ts:601
+#: src/shell/focusSettings.ts:202
+#: src/shell/focusSettings.ts:97
 msgid "3 days"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:108
 #: src/components/settings/UISettingsSection.ts:603
+#: src/shell/focusSettings.ts:204
+#: src/shell/focusSettings.ts:99
 msgid "3 months"
 msgstr ""
 
@@ -635,7 +643,7 @@ msgstr ""
 msgid "A short bio helps others get to know you. You can always change this later."
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2352
+#: src/components/layout/MainLayout.ts:2467
 msgid "A terminal window will open. There:"
 msgstr ""
 
@@ -643,7 +651,7 @@ msgstr ""
 msgid "A title is required."
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2609
+#: src/components/layout/MainLayout.ts:2726
 msgid "About"
 msgstr ""
 
@@ -694,7 +702,7 @@ msgid "Add a Profile Picture"
 msgstr ""
 
 #: src/components/auth/AuthComponent.ts:134
-#: src/components/layout/MainLayout.ts:2372
+#: src/components/layout/MainLayout.ts:2487
 msgid "Add Account"
 msgstr ""
 
@@ -835,7 +843,7 @@ msgstr ""
 msgid "Addon order reset to default"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2716
+#: src/components/layout/MainLayout.ts:2833
 #: src/components/views/AddonsOverviewView.ts:68
 msgid "Addons"
 msgstr ""
@@ -869,6 +877,7 @@ msgid "After the window expires, the blinking stops (you have adapted to their n
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:605
+#: src/shell/focusSettings.ts:206
 msgid "all"
 msgstr ""
 
@@ -930,6 +939,7 @@ msgid "All muted users"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:110
+#: src/shell/focusSettings.ts:101
 msgid "All self-reposts (any age)"
 msgstr ""
 
@@ -1007,7 +1017,7 @@ msgstr ""
 #: src/addons/analytics/AnalyticsAddonView.ts:318
 #: src/components/analytics/AnalyticsModal.ts:49
 #: src/components/ui/InteractionStatusLine.ts:291
-#: src/shell/focusDomains.ts:156
+#: src/shell/focusDomains.ts:220
 msgid "Analytics"
 msgstr ""
 
@@ -1025,7 +1035,7 @@ msgstr ""
 #: src/components/navigation/SearchSpotlight.ts:363
 #: src/components/ui/note-rendering/ZapReceiptRenderer.ts:127
 #: src/components/ui/note-rendering/ZapReceiptRenderer.ts:44
-#: src/components/ui/ThreadContextIndicator.ts:162
+#: src/components/ui/ThreadContextIndicator.ts:171
 #: src/components/ui/UserStatus.ts:104
 #: src/components/ui/UserStatus.ts:92
 #: src/lists/bookmarks.ts:3181
@@ -1033,7 +1043,7 @@ msgstr ""
 msgid "Anonymous"
 msgstr ""
 
-#: src/components/ui/ThreadContextIndicator.ts:197
+#: src/components/ui/ThreadContextIndicator.ts:206
 msgid "App"
 msgstr ""
 
@@ -1049,12 +1059,12 @@ msgstr ""
 msgid "App not found"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2159
+#: src/components/layout/MainLayout.ts:2274
 msgid "App updated."
 msgstr ""
 
 #: src/components/post/PostNoteModal.ts:802
-#: src/components/views/ConversationView.ts:758
+#: src/components/views/ConversationView.ts:785
 msgid "Apply"
 msgstr ""
 
@@ -1118,8 +1128,8 @@ msgid "Armada communities are end-to-end encrypted (Concord protocol). Unlike No
 msgstr ""
 
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:190
-#: src/components/layout/MainLayout.ts:2061
-#: src/components/ui/ThreadContextIndicator.ts:193
+#: src/components/layout/MainLayout.ts:2176
+#: src/components/ui/ThreadContextIndicator.ts:202
 msgid "Article"
 msgstr ""
 
@@ -1136,6 +1146,7 @@ msgid "Article excerpt limit set to %s characters"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:273
+#: src/shell/focusSettings.ts:320
 msgid "Article feed source, main view"
 msgstr ""
 
@@ -1166,12 +1177,12 @@ msgid "Article title..."
 msgstr ""
 
 #: src/addons/analytics/AnalyticsAddonView.ts:237
-#: src/components/layout/MainLayout.ts:1997
+#: src/components/layout/MainLayout.ts:2112
 #: src/components/settings/NotificationPrioritySection.ts:85
 #: src/components/views/ArticleTimelineView.ts:65
 #: src/components/views/ProfileView.ts:2327
 #: src/components/views/ProfileView.ts:742
-#: src/shell/focusDomains.ts:94
+#: src/shell/focusDomains.ts:156
 msgid "Articles"
 msgstr ""
 
@@ -1280,8 +1291,8 @@ msgstr ""
 #: src/addons/marketplace/ListingEditorView.ts:186
 #: src/components/navigation/SearchSpotlight.ts:111
 #: src/components/views/ArticleEditorView.ts:312
-#: src/shell/focusStage.ts:122
-#: src/shell/focusSurfaceFrame.ts:30
+#: src/shell/focusStage.ts:225
+#: src/shell/focusSurfaceFrame.ts:42
 msgid "Back"
 msgstr ""
 
@@ -1312,8 +1323,8 @@ msgstr ""
 msgid "Back to root"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:3073
-#: src/components/layout/MainLayout.ts:914
+#: src/components/layout/MainLayout.ts:3190
+#: src/components/layout/MainLayout.ts:973
 msgid "Back to timeline"
 msgstr ""
 
@@ -1382,7 +1393,7 @@ msgstr ""
 #: src/addons/badges/BadgesView.ts:35
 #: src/components/views/ProfileView.ts:2239
 #: src/components/views/ProfileView.ts:748
-#: src/shell/focusDomains.ts:160
+#: src/shell/focusDomains.ts:224
 msgid "Badges"
 msgstr ""
 
@@ -1567,12 +1578,12 @@ msgstr ""
 
 #: src/addons/addonI18n.ts:18
 #: src/addons/bookmarks/BookmarksAddonView.ts:122
-#: src/components/layout/MainLayout.ts:101
+#: src/components/layout/MainLayout.ts:106
 #: src/components/layout/partials/ListsMenuPartial.ts:45
 #: src/components/views/ListsOverviewView.ts:69
 #: src/lists/bookmarks.ts:4487
 #: src/lists/bookmarks.ts:4523
-#: src/shell/focusDomains.ts:109
+#: src/shell/focusDomains.ts:173
 msgid "Bookmarks"
 msgstr ""
 
@@ -1596,7 +1607,7 @@ msgstr ""
 msgid "Both calendars side-by-side"
 msgstr ""
 
-#: src/shell/focusShell.ts:86
+#: src/shell/focusShell.ts:88
 msgid "Bottom panel"
 msgstr ""
 
@@ -1655,7 +1666,7 @@ msgstr ""
 msgid "Bulk delete"
 msgstr ""
 
-#: src/shell/focusDomains.ts:175
+#: src/shell/focusDomains.ts:239
 msgid "Bulk Delete"
 msgstr ""
 
@@ -1682,7 +1693,7 @@ msgstr ""
 msgid "Cache"
 msgstr ""
 
-#: src/components/settings/CacheSettingsSection.ts:477
+#: src/components/settings/CacheSettingsSection.ts:496
 msgid "Cache cleared successfully. Reloading..."
 msgstr ""
 
@@ -1703,7 +1714,7 @@ msgstr ""
 #: src/components/ui/note-rendering/CalendarEventCardRenderer.ts:208
 #: src/components/views/ProfileView.ts:2174
 #: src/components/views/ProfileView.ts:747
-#: src/shell/focusDomains.ts:141
+#: src/shell/focusDomains.ts:205
 msgid "Calendar"
 msgstr ""
 
@@ -1775,7 +1786,7 @@ msgstr ""
 #: src/components/settings/ListSettingsSection.ts:367
 #: src/components/settings/PrivacySettingsSection.ts:270
 #: src/components/settings/RelaySettingsSection.ts:535
-#: src/components/views/ConversationView.ts:757
+#: src/components/views/ConversationView.ts:784
 #: src/components/views/MessagesView.ts:1042
 #: src/components/views/MessagesView.ts:706
 #: src/components/views/MessagesView.ts:751
@@ -1921,7 +1932,7 @@ msgstr ""
 msgid "City"
 msgstr ""
 
-#: src/shell/focusShell.ts:203
+#: src/shell/focusShell.ts:226
 msgid "Classic interface active"
 msgstr ""
 
@@ -1942,11 +1953,11 @@ msgstr ""
 msgid "Clear All & Reload"
 msgstr ""
 
-#: src/components/settings/CacheSettingsSection.ts:457
+#: src/components/settings/CacheSettingsSection.ts:468
 msgid "Clear All Cache & Reload?"
 msgstr ""
 
-#: src/components/settings/CacheSettingsSection.ts:462
+#: src/components/settings/CacheSettingsSection.ts:473
 msgid "Clear Cache & Reload"
 msgstr ""
 
@@ -2010,7 +2021,7 @@ msgstr ""
 #: src/components/ui/NoteMenu.ts:548
 #: src/lists/follows-extended.ts:447
 #: src/services/ToastService.ts:218
-#: src/shell/focusStage.ts:118
+#: src/shell/focusStage.ts:221
 msgid "Close"
 msgstr ""
 
@@ -2019,7 +2030,7 @@ msgstr ""
 msgid "Close (ESC)"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2357
+#: src/components/layout/MainLayout.ts:2472
 msgid "Close the terminal"
 msgstr ""
 
@@ -2027,8 +2038,8 @@ msgstr ""
 msgid "Closed"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:1197
-#: src/components/layout/MainLayout.ts:1936
+#: src/components/layout/MainLayout.ts:1256
+#: src/components/layout/MainLayout.ts:2051
 msgid "Collapse sidebar"
 msgstr ""
 
@@ -2036,7 +2047,7 @@ msgstr ""
 msgid "Come back here and click the \"Open Rizful\" button below"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2358
+#: src/components/layout/MainLayout.ts:2473
 msgid "Come back here and log in with NoorSigner"
 msgstr ""
 
@@ -2225,7 +2236,7 @@ msgstr ""
 msgid "Control how sensitive content (NSFW) is displayed. When disabled, NSFW images and videos will be blurred."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:1062
+#: src/components/views/ConversationView.ts:1089
 #: src/components/views/MessagesView.ts:727
 msgid "Conversation deleted"
 msgstr ""
@@ -2289,7 +2300,7 @@ msgstr ""
 msgid "Copy user ID"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:663
+#: src/components/views/ConversationView.ts:690
 msgid "Could not accept"
 msgstr ""
 
@@ -2363,7 +2374,7 @@ msgstr ""
 msgid "Could not reach the Diyanet service. Check your connection and reopen this page."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:701
+#: src/components/views/ConversationView.ts:728
 msgid "Could not reject"
 msgstr ""
 
@@ -2383,8 +2394,7 @@ msgstr ""
 msgid "Could not save the event calendar"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:1358
-#: src/components/views/ConversationView.ts:1374
+#: src/components/views/ConversationView.ts:1398
 msgid "Could not send message, please try again"
 msgstr ""
 
@@ -2392,7 +2402,7 @@ msgstr ""
 msgid "Could not update moderation"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:638
+#: src/components/views/ConversationView.ts:665
 msgid "Could not update setting"
 msgstr ""
 
@@ -2499,7 +2509,7 @@ msgstr ""
 msgid "Custom"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:565
+#: src/components/views/ConversationView.ts:592
 msgid "Custom (%s)"
 msgstr ""
 
@@ -2507,7 +2517,7 @@ msgstr ""
 msgid "Custom client tag"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:864
+#: src/components/views/ConversationView.ts:891
 msgid "Custom duration"
 msgstr ""
 
@@ -2515,7 +2525,7 @@ msgstr ""
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:51
 #: src/addons/custom-emojis/CustomEmojisSettings.ts:52
 #: src/addons/custom-emojis/CustomEmojisView.ts:25
-#: src/shell/focusDomains.ts:119
+#: src/shell/focusDomains.ts:183
 msgid "Custom Emojis"
 msgstr ""
 
@@ -2528,7 +2538,7 @@ msgid "Custom..."
 msgstr ""
 
 #: src/components/post/PostNoteModal.ts:449
-#: src/components/views/ConversationView.ts:566
+#: src/components/views/ConversationView.ts:593
 msgid "Custom…"
 msgstr ""
 
@@ -2552,7 +2562,7 @@ msgstr ""
 msgid "Dashboard"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2237
+#: src/components/layout/MainLayout.ts:2352
 msgid "Data Saver"
 msgstr ""
 
@@ -2588,7 +2598,7 @@ msgstr ""
 msgid "Dates are calculated (Umm al-Qura calendar); local moon-sighting may shift Ramadan and the Eids by a day."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:750
+#: src/components/views/ConversationView.ts:777
 msgid "Days"
 msgstr ""
 
@@ -2643,26 +2653,32 @@ msgid "Default reminder lead for all events. Reminders stay local to this device
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:741
+#: src/shell/focusSettings.ts:342
 msgid "Degree 1 (direct follows)"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:733
+#: src/shell/focusSettings.ts:334
 msgid "Degree 1, Direct follows"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:742
+#: src/shell/focusSettings.ts:343
 msgid "Degree 2 (friends of friends)"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:734
+#: src/shell/focusSettings.ts:335
 msgid "Degree 2, Friends of friends"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:743
+#: src/shell/focusSettings.ts:344
 msgid "Degree 3 (friends of friends of friends)"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:737
+#: src/shell/focusSettings.ts:338
 msgid "Degree 3, Friends of friends of friends (slow to build)"
 msgstr ""
 
@@ -2729,8 +2745,8 @@ msgstr ""
 msgid "Delete comment"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:1051
-#: src/components/views/ConversationView.ts:571
+#: src/components/views/ConversationView.ts:1078
+#: src/components/views/ConversationView.ts:598
 #: src/components/views/MessagesView.ts:625
 #: src/components/views/MessagesView.ts:695
 msgid "Delete conversation"
@@ -2813,7 +2829,7 @@ msgstr ""
 msgid "Delete this conversation with %s? It's removed only from this device."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:1052
+#: src/components/views/ConversationView.ts:1079
 msgid "Delete this conversation? It is removed only from this device."
 msgstr ""
 
@@ -2913,7 +2929,7 @@ msgid "Description (optional)"
 msgstr ""
 
 #: src/addons/marketplace/ListingEditorView.ts:277
-#: src/components/layout/MainLayout.ts:2095
+#: src/components/layout/MainLayout.ts:2210
 #: src/components/views/ArticleEditorView.ts:380
 #: src/components/views/VideoEditorView.ts:177
 msgid "Details"
@@ -2971,26 +2987,28 @@ msgid "Direct messages are not available with Bunker URL login"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:251
+#: src/shell/focusSettings.ts:160
 msgid "Disable post truncation"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:183
+#: src/shell/focusSettings.ts:113
 msgid "Disable self-reposts younger than:"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:574
+#: src/components/views/ConversationView.ts:601
 msgid "Disappearing messages"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:629
+#: src/components/views/ConversationView.ts:656
 msgid "Disappearing messages enabled"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:628
+#: src/components/views/ConversationView.ts:655
 msgid "Disappearing messages off"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:918
+#: src/components/views/ConversationView.ts:945
 msgid "Disappears in ~%s"
 msgstr ""
 
@@ -3021,8 +3039,8 @@ msgid "Discovery tags"
 msgstr ""
 
 #: src/addons/calendar/CalendarGridView.ts:303
-#: src/components/layout/MainLayout.ts:1954
-#: src/components/layout/MainLayout.ts:1955
+#: src/components/layout/MainLayout.ts:2069
+#: src/components/layout/MainLayout.ts:2070
 msgid "Dismiss"
 msgstr ""
 
@@ -3055,7 +3073,7 @@ msgstr ""
 msgid "DM me on Nostr"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:920
+#: src/components/views/ConversationView.ts:947
 msgid "Do you accept the time limitation?"
 msgstr ""
 
@@ -3069,8 +3087,8 @@ msgstr ""
 msgid "Done. Your identity is in Sidecar, now log in to NoorNote"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2023
-#: src/components/layout/MainLayout.ts:2035
+#: src/components/layout/MainLayout.ts:2138
+#: src/components/layout/MainLayout.ts:2150
 #: src/components/modals/UpdateModal.ts:117
 #: src/components/ui/ImageViewer.ts:215
 msgid "Download"
@@ -3123,15 +3141,15 @@ msgstr ""
 msgid "Drag to reorder"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:744
+#: src/components/views/ConversationView.ts:771
 msgid "Duration"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:843
+#: src/components/views/ConversationView.ts:870
 msgid "Duration must be at least 1 minute."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:847
+#: src/components/views/ConversationView.ts:874
 msgid "Duration must be at most 1 year."
 msgstr ""
 
@@ -3608,11 +3626,11 @@ msgstr ""
 msgid "excluded"
 msgstr ""
 
-#: src/components/settings/CacheSettingsSection.ts:460
+#: src/components/settings/CacheSettingsSection.ts:471
 msgid "Excludes: Unpublished events and decrypted messages (protected from accidental deletion)."
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:1197
+#: src/components/layout/MainLayout.ts:1256
 msgid "Expand sidebar"
 msgstr ""
 
@@ -3625,10 +3643,12 @@ msgid "Expired"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:663
+#: src/shell/focusSettings.ts:266
 msgid "Expiry notices hidden"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:663
+#: src/shell/focusSettings.ts:266
 msgid "Expiry notices shown"
 msgstr ""
 
@@ -3640,8 +3660,8 @@ msgstr ""
 msgid "Export calendar (.ics)"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:1834
-#: src/components/layout/MainLayout.ts:2106
+#: src/components/layout/MainLayout.ts:1898
+#: src/components/layout/MainLayout.ts:2221
 #: src/components/views/SettingsView.ts:109
 #: src/components/views/SettingsView.ts:80
 msgid "Export DiagLogs"
@@ -3656,7 +3676,7 @@ msgid "Exporting..."
 msgstr ""
 
 #: src/addons/addonI18n.ts:22
-#: src/shell/focusDomains.ts:182
+#: src/shell/focusDomains.ts:246
 msgid "Extended Follows"
 msgstr ""
 
@@ -3706,11 +3726,11 @@ msgstr ""
 msgid "Failed to check for updates"
 msgstr ""
 
-#: src/components/settings/CacheSettingsSection.ts:486
+#: src/components/settings/CacheSettingsSection.ts:505
 msgid "Failed to clear cache"
 msgstr ""
 
-#: src/components/settings/CacheSettingsSection.ts:445
+#: src/components/settings/CacheSettingsSection.ts:456
 msgid "Failed to clear cache tables"
 msgstr ""
 
@@ -3833,7 +3853,7 @@ msgstr ""
 msgid "Failed to load live streams"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:1392
+#: src/components/views/ConversationView.ts:1446
 #: src/components/views/MessagesView.ts:951
 msgid "Failed to load messages"
 msgstr ""
@@ -3842,7 +3862,7 @@ msgstr ""
 msgid "Failed to load mute list"
 msgstr ""
 
-#: src/components/views/SingleNoteView.ts:130
+#: src/components/views/SingleNoteView.ts:188
 msgid "Failed to load note"
 msgstr ""
 
@@ -3871,7 +3891,7 @@ msgstr ""
 msgid "Failed to load scheduled posts"
 msgstr ""
 
-#: src/components/ui/ThreadContextIndicator.ts:93
+#: src/components/ui/ThreadContextIndicator.ts:102
 msgid "Failed to load thread context"
 msgstr ""
 
@@ -3900,7 +3920,7 @@ msgid "Failed to move member"
 msgstr ""
 
 #: src/components/ui/NoteMenu.ts:676
-#: src/components/views/ConversationView.ts:1124
+#: src/components/views/ConversationView.ts:1151
 #: src/lists/mutes.ts:2360
 msgid "Failed to mute user"
 msgstr ""
@@ -4079,7 +4099,7 @@ msgid "Failed: %s"
 msgstr ""
 
 #: src/addons/feedback-board/FeedbackBoardView.ts:108
-#: src/shell/focusDomains.ts:163
+#: src/shell/focusDomains.ts:227
 msgid "Feedback Board"
 msgstr ""
 
@@ -4177,7 +4197,7 @@ msgid "Focus mode"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:154
-#: src/shell/focusShell.ts:190
+#: src/shell/focusShell.ts:216
 msgid "Focus UI (v2)"
 msgstr ""
 
@@ -4224,7 +4244,7 @@ msgstr ""
 msgid "Follow Lists"
 msgstr ""
 
-#: src/components/ui/ThreadContextIndicator.ts:199
+#: src/components/ui/ThreadContextIndicator.ts:208
 msgid "Follow Pack"
 msgstr ""
 
@@ -4251,7 +4271,7 @@ msgstr ""
 #: src/addons/addonI18n.ts:30
 #: src/addons/follow-packs/FollowPacksView.ts:21
 #: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:143
-#: src/shell/focusDomains.ts:137
+#: src/shell/focusDomains.ts:201
 msgid "Follow Packs"
 msgstr ""
 
@@ -4260,7 +4280,7 @@ msgid "Follow Packs by <a href=\"https://github.com/callebtc/following.space\" t
 msgstr ""
 
 #: src/components/timeline/LastNotesPerFollow.ts:148
-#: src/components/timeline/Timeline.ts:432
+#: src/components/timeline/Timeline.ts:433
 msgid "Follow some users or check your relay connections."
 msgstr ""
 
@@ -4268,7 +4288,7 @@ msgstr ""
 msgid "Follow users to see their media here."
 msgstr ""
 
-#: src/components/layout/partials/SccRecipeFeed.ts:61
+#: src/components/layout/partials/SccRecipeFeed.ts:66
 msgid "Follow users to see their recipes here."
 msgstr ""
 
@@ -4288,7 +4308,7 @@ msgstr ""
 #: src/addons/follower-notification/FollowerNotificationAddonView.ts:16
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:106
 #: src/addons/follower-notification/FollowerNotificationSettings.ts:107
-#: src/shell/focusDomains.ts:188
+#: src/shell/focusDomains.ts:252
 msgid "Follower Notification"
 msgstr ""
 
@@ -4331,10 +4351,10 @@ msgid "Following..."
 msgstr ""
 
 #: src/addons/analytics/AnalyticsAddonView.ts:241
-#: src/components/layout/MainLayout.ts:102
+#: src/components/layout/MainLayout.ts:107
 #: src/components/layout/partials/ListsMenuPartial.ts:52
 #: src/components/views/ListsOverviewView.ts:77
-#: src/shell/focusDomains.ts:114
+#: src/shell/focusDomains.ts:178
 msgid "Follows"
 msgstr ""
 
@@ -4487,7 +4507,7 @@ msgstr ""
 
 #: src/addons/addonI18n.ts:54
 #: src/addons/group-chats/GroupChatsAddonView.ts:20
-#: src/shell/focusDomains.ts:194
+#: src/shell/focusDomains.ts:258
 msgid "Group Chats"
 msgstr ""
 
@@ -4527,7 +4547,7 @@ msgstr ""
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsAddonView.ts:16
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:60
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:65
-#: src/shell/focusDomains.ts:169
+#: src/shell/focusDomains.ts:233
 msgid "Hashtag Subscriptions"
 msgstr ""
 
@@ -4552,6 +4572,7 @@ msgid "hidden"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:230
+#: src/shell/focusSettings.ts:140
 msgid "Hide highlights"
 msgstr ""
 
@@ -4560,6 +4581,7 @@ msgid "Hide notes containing specific words from all timelines. Manage your bloc
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:177
+#: src/shell/focusSettings.ts:107
 msgid "Hide self-reposts"
 msgstr ""
 
@@ -4576,10 +4598,12 @@ msgid "Hide timeline notes containing words on your filter list."
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:618
+#: src/shell/focusSettings.ts:218
 msgid "Hiding all self-reposts"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:619
+#: src/shell/focusSettings.ts:219
 msgid "Hiding self-reposts younger than %s"
 msgstr ""
 
@@ -4595,7 +4619,7 @@ msgstr ""
 msgid "Highlight"
 msgstr ""
 
-#: src/components/views/WhatsNewView.ts:102
+#: src/components/views/WhatsNewView.ts:77
 msgid "Highlight of v%s"
 msgstr ""
 
@@ -4612,6 +4636,7 @@ msgid "highlighted your %s"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:642
+#: src/shell/focusSettings.ts:252
 msgid "Highlights shown again"
 msgstr ""
 
@@ -4647,7 +4672,7 @@ msgstr ""
 msgid "Hollow badge - background notifications"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:749
+#: src/components/views/ConversationView.ts:776
 msgid "Hours"
 msgstr ""
 
@@ -5101,12 +5126,12 @@ msgid "Later"
 msgstr ""
 
 #: src/components/timeline/LastNotesPerFollow.ts:107
-#: src/components/timeline/Timeline.ts:446
+#: src/components/timeline/Timeline.ts:447
 msgid "Latest"
 msgstr ""
 
 #: src/components/timeline/LastNotesPerFollow.ts:108
-#: src/components/timeline/Timeline.ts:447
+#: src/components/timeline/Timeline.ts:448
 msgid "Latest + Replies"
 msgstr ""
 
@@ -5226,11 +5251,11 @@ msgstr ""
 msgid "List sync: %s enabled"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:106
+#: src/components/layout/MainLayout.ts:111
 msgid "List: %s"
 msgstr ""
 
-#: src/components/ui/ThreadContextIndicator.ts:195
+#: src/components/ui/ThreadContextIndicator.ts:204
 #: src/lists/bookmarks.ts:3243
 msgid "Listing"
 msgstr ""
@@ -5279,7 +5304,7 @@ msgstr ""
 #: src/addons/live-streams/LiveStreamsAddonView.ts:72
 #: src/addons/live-streams/LiveStreamsAddonView.ts:73
 #: src/addons/live-streams/LiveStreamsAddonView.ts:83
-#: src/shell/focusDomains.ts:125
+#: src/shell/focusDomains.ts:189
 msgid "Live Streams"
 msgstr ""
 
@@ -5314,8 +5339,8 @@ msgstr ""
 msgid "Loading article..."
 msgstr ""
 
-#: src/components/article/ArticleTimeline.ts:108
-#: src/components/article/ArticleTimeline.ts:513
+#: src/components/article/ArticleTimeline.ts:109
+#: src/components/article/ArticleTimeline.ts:652
 msgid "Loading articles..."
 msgstr ""
 
@@ -5401,7 +5426,7 @@ msgid "Loading more conversations..."
 msgstr ""
 
 #: src/components/timeline/LastNotesPerFollow.ts:143
-#: src/components/timeline/Timeline.ts:420
+#: src/components/timeline/Timeline.ts:421
 msgid "Loading more events..."
 msgstr ""
 
@@ -5416,7 +5441,7 @@ msgstr ""
 #: src/addons/bulk-delete/BulkDeleteView.ts:655
 #: src/components/onboarding/PublicTimelineComponent.ts:78
 #: src/components/relay-browser/RelayBrowser.ts:56
-#: src/components/timeline/Timeline.ts:169
+#: src/components/timeline/Timeline.ts:170
 msgid "Loading more notes..."
 msgstr ""
 
@@ -5450,7 +5475,7 @@ msgstr ""
 msgid "Loading mute list..."
 msgstr ""
 
-#: src/components/views/SingleNoteView.ts:105
+#: src/components/views/SingleNoteView.ts:163
 msgid "Loading note..."
 msgstr ""
 
@@ -5475,7 +5500,7 @@ msgid "Loading quoted note..."
 msgstr ""
 
 #: src/components/layout/partials/SccRecipeFeed.ts:51
-#: src/components/layout/partials/SccRecipeFeed.ts:65
+#: src/components/layout/partials/SccRecipeFeed.ts:70
 msgid "Loading recipes..."
 msgstr ""
 
@@ -5688,7 +5713,7 @@ msgstr ""
 msgid "Logs exported"
 msgstr ""
 
-#: src/components/article/ArticleTimeline.ts:522
+#: src/components/article/ArticleTimeline.ts:661
 msgid "Long-form articles will appear here"
 msgstr ""
 
@@ -5704,7 +5729,7 @@ msgstr ""
 msgid "Long-form content from your follows"
 msgstr ""
 
-#: src/components/timeline/Timeline.ts:536
+#: src/components/timeline/Timeline.ts:537
 msgid "Look for new notes"
 msgstr ""
 
@@ -5725,6 +5750,7 @@ msgid "Low Priority"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:764
+#: src/shell/focusSettings.ts:359
 msgid "Main article feed: %s"
 msgstr ""
 
@@ -5783,8 +5809,8 @@ msgstr ""
 #: src/addons/marketplace/MarketplaceTimelineInjector.ts:220
 #: src/components/ui/note-rendering/ListingRenderer.ts:62
 #: src/components/ui/note-rendering/QuotedNoteRenderer.ts:1588
-#: src/helpers/renderQuotePreview.ts:153
-#: src/shell/focusDomains.ts:131
+#: src/helpers/renderQuotePreview.ts:156
+#: src/shell/focusDomains.ts:195
 msgid "Marketplace"
 msgstr ""
 
@@ -5826,7 +5852,7 @@ msgstr ""
 msgid "maybe"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:1777
+#: src/components/layout/MainLayout.ts:1836
 #: src/components/views/SettingsView.ts:46
 msgid "Media"
 msgstr ""
@@ -5880,14 +5906,17 @@ msgid "Members must be in a tribe"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:290
+#: src/shell/focusSettings.ts:170
 msgid "Memory optimization (experimental)"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:826
+#: src/shell/focusSettings.ts:303
 msgid "Memory optimization disabled"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:825
+#: src/shell/focusSettings.ts:302
 msgid "Memory optimization enabled"
 msgstr ""
 
@@ -5937,15 +5966,15 @@ msgstr ""
 msgid "Message sent"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2004
+#: src/components/layout/MainLayout.ts:2119
 #: src/components/search/GlobalSearchView.ts:398
 #: src/components/views/MessagesView.ts:167
 #: src/components/views/MessagesView.ts:933
-#: src/shell/focusDomains.ts:106
+#: src/shell/focusDomains.ts:170
 msgid "Messages"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:742
+#: src/components/views/ConversationView.ts:769
 msgid "Messages will disappear after this time. Minimum: 1 minute, maximum: 1 year."
 msgstr ""
 
@@ -5965,7 +5994,7 @@ msgstr ""
 msgid "Minimum notice"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:748
+#: src/components/views/ConversationView.ts:775
 msgid "Minutes"
 msgstr ""
 
@@ -6075,24 +6104,24 @@ msgid "Mute thread"
 msgstr ""
 
 #: src/components/ui/NoteMenu.ts:216
-#: src/components/views/ConversationView.ts:1073
+#: src/components/views/ConversationView.ts:1100
 msgid "Mute user"
 msgstr ""
 
 #: src/components/ui/NoteMenu.ts:206
-#: src/components/views/ConversationView.ts:1071
+#: src/components/views/ConversationView.ts:1098
 msgid "Mute user privately"
 msgstr ""
 
 #: src/components/ui/NoteMenu.ts:210
-#: src/components/views/ConversationView.ts:1073
+#: src/components/views/ConversationView.ts:1100
 msgid "Mute user publicly"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:103
+#: src/components/layout/MainLayout.ts:108
 #: src/components/layout/partials/ListsMenuPartial.ts:58
 #: src/components/views/ListsOverviewView.ts:85
-#: src/shell/focusDomains.ts:115
+#: src/shell/focusDomains.ts:179
 msgid "Muted"
 msgstr ""
 
@@ -6152,7 +6181,7 @@ msgstr ""
 msgid "Navigate with ← / → or click the page edges"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:1923
+#: src/components/layout/MainLayout.ts:2038
 msgid "Navigation"
 msgstr ""
 
@@ -6259,7 +6288,7 @@ msgstr ""
 msgid "New Note"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2051
+#: src/components/layout/MainLayout.ts:2166
 msgid "New Post"
 msgstr ""
 
@@ -6276,7 +6305,7 @@ msgstr ""
 msgid "New-follower window: %s"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:1776
+#: src/components/layout/MainLayout.ts:1835
 msgid "Newest Articles"
 msgstr ""
 
@@ -6325,7 +6354,7 @@ msgid "NIP-99 classified listings, browse, publish and manage your own."
 msgstr ""
 
 #: src/components/post/PostNoteModal.ts:1081
-#: src/components/views/ConversationView.ts:924
+#: src/components/views/ConversationView.ts:951
 msgid "No"
 msgstr ""
 
@@ -6341,11 +6370,11 @@ msgstr ""
 msgid "No archived tickets yet."
 msgstr ""
 
-#: src/components/article/ArticleTimeline.ts:521
+#: src/components/article/ArticleTimeline.ts:660
 msgid "No articles found"
 msgstr ""
 
-#: src/components/article/ArticleTimeline.ts:526
+#: src/components/article/ArticleTimeline.ts:665
 msgid "No articles from your follows yet."
 msgstr ""
 
@@ -6409,7 +6438,7 @@ msgstr ""
 msgid "No event calendars yet. Create one and add your public events to it."
 msgstr ""
 
-#: src/components/timeline/Timeline.ts:427
+#: src/components/timeline/Timeline.ts:428
 msgid "No events found"
 msgstr ""
 
@@ -6494,7 +6523,7 @@ msgstr ""
 msgid "No messages from unknown users"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:1202
+#: src/components/views/ConversationView.ts:1229
 msgid "No messages yet"
 msgstr ""
 
@@ -6507,7 +6536,7 @@ msgid "No muted users or threads"
 msgstr ""
 
 #: src/components/timeline/LastNotesPerFollow.ts:147
-#: src/components/timeline/Timeline.ts:426
+#: src/components/timeline/Timeline.ts:427
 msgid "No notes found"
 msgstr ""
 
@@ -6575,7 +6604,7 @@ msgstr ""
 msgid "No recent URLs"
 msgstr ""
 
-#: src/components/layout/partials/SccRecipeFeed.ts:76
+#: src/components/layout/partials/SccRecipeFeed.ts:81
 msgid "No recipes from your follows yet."
 msgstr ""
 
@@ -6779,7 +6808,7 @@ msgstr ""
 msgid "Nostr illustration by @awayuki"
 msgstr ""
 
-#: src/shell/focusDomains.ts:179
+#: src/shell/focusDomains.ts:243
 msgid "Nostr Majlis"
 msgstr ""
 
@@ -6857,7 +6886,7 @@ msgid "Not reached: %s"
 msgstr ""
 
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:190
-#: src/components/layout/MainLayout.ts:2057
+#: src/components/layout/MainLayout.ts:2172
 #: src/lists/bookmarks.ts:3261
 msgid "Note"
 msgstr ""
@@ -6884,7 +6913,7 @@ msgstr ""
 
 #: src/components/ui/interaction-managers/RepostManager.ts:139
 #: src/components/ui/interaction-managers/RepostManager.ts:251
-#: src/components/views/SingleNoteView.ts:123
+#: src/components/views/SingleNoteView.ts:181
 msgid "Note not found"
 msgstr ""
 
@@ -6912,7 +6941,7 @@ msgstr ""
 #: src/addons/note-taking/NoteTakingAddonView.ts:42
 #: src/addons/note-taking/NoteTakingAddonView.ts:43
 #: src/addons/note-taking/NoteTakingAddonView.ts:52
-#: src/shell/focusDomains.ts:144
+#: src/shell/focusDomains.ts:208
 msgid "Note taking"
 msgstr ""
 
@@ -6941,7 +6970,7 @@ msgstr ""
 msgid "Nothing found for “%s”."
 msgstr ""
 
-#: src/components/timeline/Timeline.ts:431
+#: src/components/timeline/Timeline.ts:432
 msgid "Nothing published here yet, or not available on your relays."
 msgstr ""
 
@@ -6965,9 +6994,9 @@ msgstr ""
 msgid "Notification priorities saved"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:1990
+#: src/components/layout/MainLayout.ts:2105
 #: src/components/views/NotificationsView.ts:112
-#: src/shell/focusDomains.ts:103
+#: src/shell/focusDomains.ts:167
 msgid "Notifications"
 msgstr ""
 
@@ -7039,7 +7068,7 @@ msgstr ""
 msgid "OK"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2360
+#: src/components/layout/MainLayout.ts:2475
 msgid "OK, got it"
 msgstr ""
 
@@ -7092,7 +7121,7 @@ msgstr ""
 msgid "Open in Armada"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:1916
+#: src/components/layout/MainLayout.ts:2031
 msgid "Open menu"
 msgstr ""
 
@@ -7160,7 +7189,7 @@ msgstr ""
 msgid "Original"
 msgstr ""
 
-#: src/components/views/SingleNoteView.ts:266
+#: src/components/views/SingleNoteView.ts:342
 msgid "Original note not found"
 msgstr ""
 
@@ -7181,6 +7210,7 @@ msgid "Other Third-Party Connections"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:641
+#: src/shell/focusSettings.ts:251
 msgid "Others' highlights hidden"
 msgstr ""
 
@@ -7241,7 +7271,7 @@ msgstr ""
 msgid "Paste the armada.buzz invite link (must contain /invite/)."
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2355
+#: src/components/layout/MainLayout.ts:2470
 msgid "Paste the nsec of the new account"
 msgstr ""
 
@@ -7570,10 +7600,12 @@ msgid "Post to:"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:470
+#: src/shell/focusSettings.ts:283
 msgid "Post truncation disabled - all posts will be shown in full"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:471
+#: src/shell/focusSettings.ts:284
 msgid "Post truncation enabled"
 msgstr ""
 
@@ -7728,7 +7760,7 @@ msgstr ""
 msgid "Private, encrypted"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2069
+#: src/components/layout/MainLayout.ts:2184
 msgid "Product"
 msgstr ""
 
@@ -7750,8 +7782,8 @@ msgid "Products carousel hidden on profiles"
 msgstr ""
 
 #: src/components/bookmarks/FolderCard.ts:73
-#: src/components/layout/MainLayout.ts:1983
-#: src/shell/focusDomains.ts:116
+#: src/components/layout/MainLayout.ts:2098
+#: src/shell/focusDomains.ts:180
 msgid "Profile"
 msgstr ""
 
@@ -7794,7 +7826,7 @@ msgstr ""
 msgid "Profile updated successfully!"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:907
+#: src/components/layout/MainLayout.ts:966
 msgid "Profile: %s"
 msgstr ""
 
@@ -7988,8 +8020,8 @@ msgstr ""
 msgid "Quoted note (max depth reached)"
 msgstr ""
 
-#: src/helpers/renderQuotePreview.ts:121
-#: src/helpers/renderQuotePreview.ts:79
+#: src/helpers/renderQuotePreview.ts:124
+#: src/helpers/renderQuotePreview.ts:82
 msgid "Quoted note not found"
 msgstr ""
 
@@ -8073,10 +8105,12 @@ msgid "Reactions"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:689
+#: src/shell/focusSettings.ts:235
 msgid "Reactions from people you follow now appear in your timeline"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:692
+#: src/shell/focusSettings.ts:236
 msgid "Reactions hidden from your timeline again"
 msgstr ""
 
@@ -8156,8 +8190,8 @@ msgstr ""
 msgid "Recipe hint: add a cover image, recipe clients expect one."
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:1778
-#: src/shell/focusDomains.ts:100
+#: src/components/layout/MainLayout.ts:1837
+#: src/shell/focusDomains.ts:164
 msgid "Recipes"
 msgstr ""
 
@@ -8173,7 +8207,7 @@ msgstr ""
 #: src/addons/analytics/AnalyticsAddonView.ts:396
 #: src/addons/analytics/AnalyticsAddonView.ts:776
 #: src/components/timeline/LastNotesPerFollow.ts:135
-#: src/components/timeline/Timeline.ts:412
+#: src/components/timeline/Timeline.ts:413
 msgid "Refresh"
 msgstr ""
 
@@ -8232,7 +8266,7 @@ msgstr ""
 msgid "Release Date"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2160
+#: src/components/layout/MainLayout.ts:2275
 msgid "Reload"
 msgstr ""
 
@@ -8426,7 +8460,7 @@ msgstr ""
 #: src/components/reply/ReplyModal.ts:770
 #: src/components/reply/ReplyModal.ts:773
 #: src/components/ui/InteractionStatusLine.ts:321
-#: src/components/views/ConversationView.ts:1286
+#: src/components/views/ConversationView.ts:1313
 #: src/services/PostService.ts:540
 msgid "Reply"
 msgstr ""
@@ -8634,7 +8668,7 @@ msgstr ""
 #: src/components/relay-browser/RelayBrowser.ts:308
 #: src/components/system/OfflineOverlay.ts:49
 #: src/components/timeline/timeline-ui/TimelineUIStateHandler.ts:102
-#: src/components/views/ConversationView.ts:1393
+#: src/components/views/ConversationView.ts:1447
 #: src/components/views/MessagesView.ts:952
 #: src/services/ViewMountingService.ts:113
 msgid "Retry"
@@ -8845,7 +8879,7 @@ msgstr ""
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:51
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:52
 #: src/addons/scheduled-posts/ScheduledPostsAddonView.ts:62
-#: src/shell/focusDomains.ts:150
+#: src/shell/focusDomains.ts:214
 msgid "Scheduled Posts"
 msgstr ""
 
@@ -8867,20 +8901,21 @@ msgstr ""
 msgid "Scheduling..."
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:1974
-#: src/components/layout/MainLayout.ts:1977
-#: src/components/layout/MainLayout.ts:1981
-#: src/components/layout/MainLayout.ts:1984
-#: src/components/layout/MainLayout.ts:1995
-#: src/components/layout/MainLayout.ts:1998
+#: src/components/layout/MainLayout.ts:2089
+#: src/components/layout/MainLayout.ts:2092
+#: src/components/layout/MainLayout.ts:2096
+#: src/components/layout/MainLayout.ts:2099
+#: src/components/layout/MainLayout.ts:2110
+#: src/components/layout/MainLayout.ts:2113
+#: src/shell/focusStage.ts:229
 msgid "Scroll to top"
 msgstr ""
 
 #: src/addons/bulk-delete/BulkDeleteView.ts:836
 #: src/addons/hashtag-subscriptions/HashtagSubscriptionsSettings.ts:124
-#: src/components/layout/MainLayout.ts:1931
-#: src/components/layout/MainLayout.ts:1932
-#: src/components/layout/MainLayout.ts:2017
+#: src/components/layout/MainLayout.ts:2046
+#: src/components/layout/MainLayout.ts:2047
+#: src/components/layout/MainLayout.ts:2132
 msgid "Search"
 msgstr ""
 
@@ -8937,7 +8972,7 @@ msgstr ""
 msgid "Search: (npub / nevent / username / full text)"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:908
+#: src/components/layout/MainLayout.ts:967
 msgid "Search: %s"
 msgstr ""
 
@@ -9074,10 +9109,12 @@ msgid "Selected:"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:589
+#: src/shell/focusSettings.ts:192
 msgid "Self-reposts hidden from timeline"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:590
+#: src/shell/focusSettings.ts:193
 msgid "Self-reposts shown again"
 msgstr ""
 
@@ -9094,7 +9131,7 @@ msgstr ""
 msgid "Send a deletion request for %s? This broadcasts a NIP-09 request to relays and cannot be undone. Relays may or may not honor it."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:1203
+#: src/components/views/ConversationView.ts:1230
 msgid "Send a message to start the conversation"
 msgstr ""
 
@@ -9157,7 +9194,7 @@ msgstr ""
 msgid "Set a custom client tag for this post"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2356
+#: src/components/layout/MainLayout.ts:2471
 msgid "Set a password for this account"
 msgstr ""
 
@@ -9216,8 +9253,9 @@ msgstr ""
 msgid "Setting up relays..."
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2011
+#: src/components/layout/MainLayout.ts:2126
 #: src/components/views/SettingsView.ts:71
+#: src/shell/focusStage.ts:236
 msgid "Settings"
 msgstr ""
 
@@ -9273,6 +9311,7 @@ msgid "Shortcode and URL are required"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:243
+#: src/shell/focusSettings.ts:153
 msgid "Show a small \"Post expires on …\" line under notes that carry an expiration time (NIP-40). Off by default."
 msgstr ""
 
@@ -9289,6 +9328,7 @@ msgid "Show different avatars"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:240
+#: src/shell/focusSettings.ts:150
 msgid "Show expiry notice"
 msgstr ""
 
@@ -9329,6 +9369,7 @@ msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:220
 #: src/components/views/ProfileView.ts:984
+#: src/shell/focusSettings.ts:130
 msgid "Show reactions"
 msgstr ""
 
@@ -9367,6 +9408,7 @@ msgid "Show the custom emojis of another user and import any of them into your p
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:223
+#: src/shell/focusSettings.ts:133
 msgid "Show the reactions (likes) of people you follow as entries in your timeline. Off by default. Individual users can be enabled from their profile."
 msgstr ""
 
@@ -9438,11 +9480,11 @@ msgstr ""
 msgid "Sidecar will ask you to confirm"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2039
+#: src/components/layout/MainLayout.ts:2154
 msgid "Sign in"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2043
+#: src/components/layout/MainLayout.ts:2158
 msgid "Sign out"
 msgstr ""
 
@@ -9454,7 +9496,7 @@ msgstr ""
 msgid "Sign posts with \"via NoorNote\""
 msgstr ""
 
-#: src/components/views/ConversationView.ts:1373
+#: src/components/views/ConversationView.ts:1397
 msgid "Signer did not respond, message not sent"
 msgstr ""
 
@@ -9491,7 +9533,7 @@ msgstr ""
 msgid "Single click sends zap with default amount. When disabled, click opens zap dialog."
 msgstr ""
 
-#: src/components/views/SingleNoteView.ts:277
+#: src/components/views/SingleNoteView.ts:353
 msgid "Single Post"
 msgstr ""
 
@@ -9526,6 +9568,7 @@ msgid "Skip this version"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:293
+#: src/shell/focusSettings.ts:173
 msgid "Skips rendering of off-screen notes (CSS <code>content-visibility: auto</code>). Significantly reduces memory usage on long timelines, especially on Linux. May cause minor scrollbar jumps when scrolling fast, disable if it bothers you."
 msgstr ""
 
@@ -9550,7 +9593,7 @@ msgstr ""
 msgid "Slug and Name are required"
 msgstr ""
 
-#: src/shell/focusDomains.ts:87
+#: src/shell/focusDomains.ts:147
 msgid "Social Media"
 msgstr ""
 
@@ -9807,7 +9850,7 @@ msgstr ""
 msgid "Subscribed, events added to your calendar grid"
 msgstr ""
 
-#: src/components/settings/CacheSettingsSection.ts:433
+#: src/components/settings/CacheSettingsSection.ts:444
 msgid "Successfully cleared 1 cache table"
 msgid_plural "Successfully cleared %s cache tables"
 msgstr[0] ""
@@ -9928,8 +9971,17 @@ msgstr ""
 msgid "Syncing follow list..."
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:1775
+#: src/components/layout/MainLayout.ts:1834
 msgid "System Logs"
+msgstr ""
+
+#: src/components/settings/UISettingsSection.ts:145
+#: src/components/settings/UISettingsSection.ts:421
+msgid "Tablet Mode"
+msgstr ""
+
+#: src/components/settings/UISettingsSection.ts:433
+msgid "Tablet mode (2 columns, centered)"
 msgstr ""
 
 #: src/addons/nostr-majlis/NostrMajlisAddonView.ts:516
@@ -10259,7 +10311,7 @@ msgid_plural "This will clear %s tables: %s."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/components/settings/CacheSettingsSection.ts:458
+#: src/components/settings/CacheSettingsSection.ts:469
 msgid "This will clear all safe cache tables and reload the app."
 msgstr ""
 
@@ -10353,7 +10405,7 @@ msgstr ""
 msgid "time left"
 msgstr ""
 
-#: src/components/timeline/Timeline.ts:448
+#: src/components/timeline/Timeline.ts:449
 msgid "Time Range"
 msgstr ""
 
@@ -10361,11 +10413,11 @@ msgstr ""
 msgid "Time to fill your timeline with interesting content. Browse the packs below and follow the people that interest you."
 msgstr ""
 
-#: src/components/views/ConversationView.ts:747
+#: src/components/views/ConversationView.ts:774
 msgid "Time unit"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:1976
+#: src/components/layout/MainLayout.ts:2091
 #: src/components/views/TimelineView.ts:208
 msgid "Timeline"
 msgstr ""
@@ -10446,7 +10498,7 @@ msgstr ""
 msgid "Toggle visibility"
 msgstr ""
 
-#: src/shell/focusShell.ts:86
+#: src/shell/focusShell.ts:88
 msgid "Top panel"
 msgstr ""
 
@@ -10508,12 +10560,12 @@ msgid "tribes"
 msgstr ""
 
 #: src/addons/addonI18n.ts:20
-#: src/components/layout/MainLayout.ts:104
+#: src/components/layout/MainLayout.ts:109
 #: src/components/layout/partials/ListsMenuPartial.ts:64
 #: src/components/views/ListsOverviewView.ts:93
 #: src/lists/tribes.ts:2382
 #: src/lists/tribes.ts:2399
-#: src/shell/focusDomains.ts:113
+#: src/shell/focusDomains.ts:177
 msgid "Tribes"
 msgstr ""
 
@@ -10675,7 +10727,7 @@ msgid "Unsubscribed from calendar"
 msgstr ""
 
 #: src/addons/marketplace/ListingEditorView.ts:343
-#: src/components/article/ArticleTimeline.ts:450
+#: src/components/article/ArticleTimeline.ts:589
 #: src/components/ui/note-rendering/CurationSetItems.ts:89
 msgid "Untitled"
 msgstr ""
@@ -10915,7 +10967,7 @@ msgstr ""
 msgid "video"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:2065
+#: src/components/layout/MainLayout.ts:2180
 #: src/components/views/VideoEditorView.ts:148
 msgid "Video"
 msgstr ""
@@ -10950,7 +11002,7 @@ msgstr ""
 
 #: src/components/views/ProfileView.ts:2345
 #: src/components/views/ProfileView.ts:743
-#: src/shell/focusDomains.ts:99
+#: src/shell/focusDomains.ts:163
 msgid "Videos"
 msgstr ""
 
@@ -11031,7 +11083,7 @@ msgstr ""
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:42
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:43
 #: src/addons/wallet-balance/WalletBalanceAddonView.ts:53
-#: src/shell/focusDomains.ts:200
+#: src/shell/focusDomains.ts:264
 msgid "Wallet Balance"
 msgstr ""
 
@@ -11104,11 +11156,11 @@ msgstr ""
 msgid "Weekly availability"
 msgstr ""
 
-#: src/components/views/ConversationView.ts:751
+#: src/components/views/ConversationView.ts:778
 msgid "Weeks"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:1966
+#: src/components/layout/MainLayout.ts:2081
 msgid "Welcome"
 msgstr ""
 
@@ -11124,11 +11176,11 @@ msgstr ""
 msgid "What this badge represents…"
 msgstr ""
 
-#: src/components/views/WhatsNewView.ts:99
+#: src/components/views/WhatsNewView.ts:74
 msgid "What's New"
 msgstr ""
 
-#: src/components/layout/MainLayout.ts:1948
+#: src/components/layout/MainLayout.ts:2063
 msgid "What's new in v%s"
 msgstr ""
 
@@ -11141,14 +11193,17 @@ msgid "When enabled, every event you publish carries a <code>client</code> tag i
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:233
+#: src/shell/focusSettings.ts:143
 msgid "When enabled, highlight posts by others that quote an external website (kind 9802 with a web source) are hidden from your timelines, including pure reposts of them. Your own highlights stay visible. Individual users can be hidden from their profile."
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:254
+#: src/shell/focusSettings.ts:163
 msgid "When enabled, long posts will always be displayed in full without \"Show More\" buttons."
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:180
+#: src/shell/focusSettings.ts:110
 msgid "When enabled, reposts of a user's own notes are hidden from your timeline. Reposts of other people's notes are unaffected."
 msgstr ""
 
@@ -11189,6 +11244,7 @@ msgid "Where:"
 msgstr ""
 
 #: src/components/settings/UISettingsSection.ts:276
+#: src/shell/focusSettings.ts:323
 msgid "Whose articles appear in <strong>/articles</strong>. Higher degrees broaden the feed beyond your direct follows but take longer to build and include authors you may not know."
 msgstr ""
 
@@ -11198,15 +11254,6 @@ msgstr ""
 
 #: src/components/onboarding/OnboardingComponent.ts:183
 msgid "Why Nostr?"
-msgstr ""
-
-#: src/components/settings/UISettingsSection.ts:145
-#: src/components/settings/UISettingsSection.ts:421
-msgid "Wide Mode"
-msgstr ""
-
-#: src/components/settings/UISettingsSection.ts:433
-msgid "Wide mode (hide right pane)"
 msgstr ""
 
 #: src/components/post/PostNoteModal.ts:422
@@ -11231,7 +11278,7 @@ msgstr ""
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:48
 #: src/addons/content-word-filter/ContentWordFilterSettings.ts:49
 #: src/addons/content-word-filter/WordFilterAddonView.ts:23
-#: src/shell/focusDomains.ts:206
+#: src/shell/focusDomains.ts:270
 msgid "Word Filter"
 msgstr ""
 
@@ -11271,7 +11318,7 @@ msgstr ""
 
 #: src/components/onboarding/AccountSetupWizard.ts:1673
 #: src/components/post/PostNoteModal.ts:1080
-#: src/components/views/ConversationView.ts:923
+#: src/components/views/ConversationView.ts:950
 msgid "Yes"
 msgstr ""
 

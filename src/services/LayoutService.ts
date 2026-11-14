@@ -3,13 +3,15 @@
  *
  * Single source of truth for layout state:
  * - Manages current layout mode ('default' | 'right-pane' | 'wide' | 'phone')
+ *   — 'wide' is the tablet mode (kept value for localStorage compatibility;
+ *   UI and CSS class say tablet)
  * - Sets CSS class on <html> element for CSS-driven styling
  * - Emits 'layout:changed' event for reactive updates
  * - Handles Electron window resize for phone mode
  *
  * Platform Priority:
  * - Desktop (≥1024px): User preference applies
- * - Tablet (768-1023px): Forces 'wide' mode
+ * - Tablet (768-1023px): Forces 'wide' (tablet) mode
  * - Phone (<768px): Forces 'phone' mode
  *
  * @service LayoutService
@@ -117,12 +119,22 @@ export class LayoutService {
 
   /**
    * Refresh mode from storage (e.g., after account switch)
+   * Emits layout:changed when the effective mode changed — listeners own the
+   * SCC mount/unmount and tab manager lifecycle, so a silent switch would
+   * leave a blank (or stale-mounted) secondary column.
    */
   public refresh(): void {
+    const previousMode = this.effectiveMode;
     this.userPreference = this.storage.getLayoutMode();
     this.currentScreenSize = this.detectScreenSize();
     this.effectiveMode = this.calculateEffectiveMode();
     this.applyLayoutClass();
+    if (this.effectiveMode !== previousMode) {
+      this.eventBus.emit('layout:changed', {
+        mode: this.effectiveMode,
+        previousMode,
+      });
+    }
   }
 
   /**
@@ -133,9 +145,11 @@ export class LayoutService {
   }
 
   /**
-   * Check if current mode is wide
+   * Check if current mode is tablet
+   * (The stored preference value and LayoutMode stay 'wide' for localStorage
+   * compatibility — UI and CSS class say tablet.)
    */
-  public isWide(): boolean {
+  public isTablet(): boolean {
     return this.effectiveMode === 'wide';
   }
 
@@ -155,7 +169,7 @@ export class LayoutService {
 
   /**
    * Check if secondary content should be visible
-   * (Hidden in 'wide' and 'phone' modes)
+   * (Hidden in tablet ('wide') and 'phone' modes)
    */
   public isSecondaryVisible(): boolean {
     return this.effectiveMode !== 'wide' && this.effectiveMode !== 'phone';
@@ -220,7 +234,7 @@ export class LayoutService {
     const layoutClasses = [
       'layout--default',
       'layout--right-pane',
-      'layout--wide',
+      'layout--tablet',
       'layout--phone',
       'layout--rss',
     ];
@@ -233,8 +247,10 @@ export class LayoutService {
     // mounts via the `ui--focus` gate class (helpers/focusUiSetting.ts).
     if (isFocusUiEnabled()) return;
 
-    // Add current layout class
-    html.classList.add(`layout--${this.effectiveMode}`);
+    // Add current layout class (mode value 'wide' renders as the tablet class)
+    html.classList.add(
+      `layout--${this.effectiveMode === 'wide' ? 'tablet' : this.effectiveMode}`
+    );
 
     // RSS variant behaves as right-pane; this marker only drives the compact timeline CSS.
     if (

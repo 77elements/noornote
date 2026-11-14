@@ -52,6 +52,7 @@ vi.mock('./Orchestrator', () => ({
 }));
 
 import { QuoteOrchestrator } from './QuoteOrchestrator';
+import { calculateEventHash } from '../NostrToolsAdapter';
 
 type MockFn = ReturnType<typeof vi.fn>;
 
@@ -183,13 +184,21 @@ describe('QuoteOrchestrator.fetchQuotedEvent — stage 3 fail fast', () => {
     getCombinedRelays = made.getCombinedRelays;
   });
 
-  it('skips the redundant re-fetch when discovery offers no new relays', async () => {
+  it('skips the redundant by-id re-fetch when discovery offers no new relays', async () => {
     // getCombinedRelays resolves to exactly the standard set (overlap case).
     const result = await orch.fetchQuotedEvent(HEX, 'c'.repeat(64));
     expect(result).toBeNull();
     expect(getCombinedRelays).toHaveBeenCalledTimes(1); // stage 3 was reached…
     expect(fetchWithMeta).toHaveBeenCalledTimes(1); // …stage 2 asked cleanly…
-    expect(transportFetch).toHaveBeenCalledTimes(0); // …and stage 3 skipped the re-ask
+    // …and stage 3 skipped the redundant by-id re-ask. Stage 4 (repost-embed
+    // recovery) still queries with a DIFFERENT filter (#e repost search) —
+    // the same relays legitimately get a second chance with a new question.
+    expect(transportFetch).toHaveBeenCalledTimes(1);
+    const stage4Call = transportFetch.mock.calls[0] as unknown as [
+      string[],
+      Array<Record<string, unknown>>,
+    ];
+    expect(stage4Call[1][0]['#e']).toEqual([HEX]);
   });
 
   it('still retries over the same relays when stage 2 threw (transient failure)', async () => {
@@ -342,5 +351,103 @@ describe('QuoteOrchestrator.fetchQuotedEventDetailed — miss flavor', () => {
     const again = await orch.fetchQuotedEventDetailed(HEX);
     expect(again.event).toBe(EVENT);
     expect(fetchWithMeta).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe('QuoteOrchestrator — stage 4: repost-embed recovery', () => {
+  let orch: InjectableQuoteOrchestrator;
+  let transportFetch: ReturnType<typeof vi.fn>;
+  let fetchWithMeta: ReturnType<typeof vi.fn>;
+
+  /** Build a kind:1 event whose id hash is cryptographically valid. */
+  function makeValidInner(content: string) {
+    const inner = {
+      pubkey: 'b'.repeat(64),
+      created_at: 1700000000,
+      kind: 1,
+      tags: [] as string[][],
+      content,
+    };
+    const id = calculateEventHash(inner as never);
+    return { ...inner, id, sig: 'x'.repeat(128) };
+  }
+
+  function makeRepost(inner: unknown, kind = 6) {
+    return {
+      id: 'd'.repeat(64),
+      pubkey: 'e'.repeat(64),
+      created_at: 1700000001,
+      kind,
+      tags: [['e', calculateEventHash(inner as never) /* overwritten below */]],
+      content: JSON.stringify(inner),
+      sig: 'y'.repeat(128),
+    };
+  }
+
+  beforeEach(() => {
+    const made = makeOrchestrator();
+    orch = made.orch;
+    transportFetch = made.transportFetch;
+    fetchWithMeta = made.fetchWithMeta;
+    getCachedNoteMock.mockReset().mockReturnValue(null);
+    // All by-id stages come up empty — the note only survives in embeds.
+    fetchWithMeta.mockResolvedValue({ events: [], timedOut: false });
+  });
+
+  it('recovers the quoted event from a kind:6 embed with a matching hash', async () => {
+    const inner = makeValidInner('rescued note content');
+    const repost = { ...makeRepost(inner), tags: [['e', inner.id]] };
+    transportFetch.mockResolvedValueOnce([repost]);
+
+    const result = await orch.fetchQuotedEventDetailed(inner.id);
+    expect(result.event).toEqual(inner);
+    expect(result.timedOut).toBe(false);
+    // The recovered event enters the NoteService so later renders hit cache.
+    expect(orch.noteService.registerNote).toHaveBeenCalledWith(inner);
+    // Stage 4 asked with the repost-search filter, not the by-id filter.
+    const stage4Call = transportFetch.mock.calls[0] as unknown as [
+      string[],
+      Array<Record<string, unknown>>,
+    ];
+    expect(stage4Call[1][0].kinds).toEqual([6, 16]);
+  });
+
+  it('rejects an embed whose id matches but whose hash was tampered with', async () => {
+    const inner = makeValidInner('original content');
+    const forged = { ...inner, content: 'tampered content' }; // hash no longer matches id
+    const repost = { ...makeRepost(forged), tags: [['e', inner.id]] };
+    transportFetch.mockResolvedValueOnce([repost]);
+
+    const result = await orch.fetchQuotedEventDetailed(inner.id);
+    expect(result.event).toBeNull();
+    expect(orch.noteService.registerNote).not.toHaveBeenCalled();
+  });
+
+  it('skips embeds whose inner id points somewhere else and unparsable content', async () => {
+    const otherInner = makeValidInner('a different note');
+    const otherRepost = {
+      ...makeRepost(otherInner),
+      tags: [['e', otherInner.id]],
+    };
+    const garbageRepost = {
+      id: 'f'.repeat(64),
+      pubkey: 'e'.repeat(64),
+      created_at: 1700000001,
+      kind: 6,
+      tags: [['e', otherInner.id]],
+      content: 'not json at all',
+      sig: 'y'.repeat(128),
+    };
+    transportFetch.mockResolvedValueOnce([garbageRepost, otherRepost]);
+
+    const result = await orch.fetchQuotedEventDetailed(otherInner.id);
+    expect(result.event).toEqual(otherInner);
+  });
+
+  it('returns null when no relay carries an embedding repost either', async () => {
+    transportFetch.mockResolvedValueOnce([]);
+    const result = await orch.fetchQuotedEventDetailed(HEX);
+    expect(result.event).toBeNull();
+    expect(result.timedOut).toBe(false);
   });
 });
