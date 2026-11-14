@@ -198,17 +198,18 @@ html.ui--focus {
   overflow-wrap: break-word;
 }
 
-// Object action buttons: a vertical stack of 24px circles on the active
+// Object action buttons: a vertical stack of 30px circles on the active
 // object's top-right corner. The first button straddles the corner exactly
 // like the old single close control; further buttons stack downward along
 // the right border (half outside). Back is hidden until a detail view is
 // open (focusStage listens to the surface's 'focus:surface-back' event);
-// a settings button will join later (per-object settings, dissolves the
-// v1 UI settings step by step).
+// scroll-to-top is hidden until the column is scrolled. Settings opens
+// the ED-b drawer with the object's own settings panel (per-object
+// settings, dissolves the v1 UI settings step by step).
 .focus-object__actions {
   position: absolute;
   top: 3px;
-  right: -35px;
+  right: -40px;
   display: none;
   flex-direction: column;
   align-items: center;
@@ -220,22 +221,12 @@ html.ui--focus {
   }
 }
 
-.focus-object__control {
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border: 2px solid var(--color-3);
-  border-radius: 50%;
-  background: var(--color-1);
-  color: var(--color-3);
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-}
-
-.focus-object__back {
-  width: 24px;
-  height: 24px;
+.focus-object__control,
+.focus-object__back,
+.focus-object__scroll-top,
+.focus-object__settings {
+  width: 30px;
+  height: 30px;
   padding: 0;
   border: 2px solid var(--color-3);
   border-radius: 50%;
@@ -248,6 +239,18 @@ html.ui--focus {
   &[hidden] {
     display: none;
   }
+}
+
+// Settings is a toggle: active while its drawer content is mounted.
+.focus-object__settings.is-active {
+  background: var(--color-3);
+  color: var(--color-1);
+}
+
+// Scroll-to-top reuses the back arrow rotated 90° right (left arrow → up
+// arrow with shaft).
+.focus-object__scroll-top-icon {
+  transform: rotate(90deg);
 }
 
 // Side stacks: while a domain is focused, the non-active circles are
@@ -367,6 +370,12 @@ $focus-tab-overlap: 1px;
   // Instances: ED-t = this--top, ED-b = this--bottom (AGENTS.md shorthand;
   // the DOM ids #ed-t / #ed-b carry the same names).
   --panel-h: 300px;
+  // Marble sweep height for the painter layers (::before panel, ::after
+  // tab slice). --bottom stretches it so the sweep ends exactly AT the
+  // drawer bottom (offset -160px above the top edge) — a fixed 480px
+  // sweep would run out mid-panel on the 45vh settings drawer and leave
+  // a bare-glass band below the marble.
+  --sweep-h: 480px;
 
   position: fixed;
   left: 0;
@@ -376,9 +385,13 @@ $focus-tab-overlap: 1px;
   will-change: transform;
 
   // Closed: panel parked off-screen, only the tab pokes out at the edge.
+  // ED-b hosts the object settings (tall enough to breathe, the panel
+  // body scrolls internally — settings lists grow per object).
   &--bottom {
+    --panel-h: 45vh;
+    --sweep-h: calc(45vh + 160px);
     bottom: 0;
-    height: 300px;
+    height: 45vh;
     transform: translateY(100%);
 
     &.is-open {
@@ -419,7 +432,7 @@ $focus-tab-overlap: 1px;
   // Show the vein-rich middle band of the sweep (the box is only ~100px
   // tall; the sweep is sized larger and shifted once — a fixed aesthetic
   // choice on ONE element, can never desync between tab and panel).
-  background-size: 100vw 480px;
+  background-size: 100vw var(--sweep-h);
   background-position: 0 -160px;
   backdrop-filter: blur(10px) saturate(1.2);
   -webkit-backdrop-filter: blur(10px) saturate(1.2);
@@ -441,7 +454,7 @@ $focus-tab-overlap: 1px;
   z-index: 1;
   background-image: $marble-gradient;
   background-repeat: no-repeat;
-  background-size: 100vw 480px;
+  background-size: 100vw var(--sweep-h);
   backdrop-filter: blur(10px) saturate(1.2);
   -webkit-backdrop-filter: blur(10px) saturate(1.2);
 }
@@ -469,6 +482,9 @@ $focus-tab-overlap: 1px;
   .focus-drawer--bottom & {
     border-top: 1px solid var(--color-3);
     border-radius: $radius-xl $radius-xl 0 0;
+    // Settings lists grow per object — the panel body scrolls internally,
+    // the tab stays at the screen edge (it sits outside the panel box).
+    overflow-y: auto;
   }
 
   // Top surface: top + bottom line, no side borders.
@@ -476,6 +492,33 @@ $focus-tab-overlap: 1px;
     border-top: 1px solid var(--color-3);
     border-bottom: 1px solid var(--color-3);
     border-radius: 0 0 $radius-xl $radius-xl;
+  }
+}
+
+// Object settings (ED-b content, mounted by focusStage): the domain's
+// settings sections laid out in responsive columns — 1 on phone, 2 on
+// tablet, 3 on desktop. Reuses the classic .section/.setting markup.
+.focus-settings {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $gap;
+  align-content: start;
+  align-items: start;
+  padding: $gap $gap calc($gap * 1.5);
+  max-width: 1400px;
+  margin: 0 auto;
+
+  @include tablet {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include desktop {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  // Grid gap takes over spacing — the sections' own margin would double it.
+  .section {
+    margin-bottom: 0;
   }
 }
 

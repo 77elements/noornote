@@ -56,7 +56,10 @@ import { ListsMenuPartial } from './partials/ListsMenuPartial';
 import { ListsCountManager } from './managers/ListsCountManager';
 import { NavWheelPartial } from './partials/NavWheelPartial';
 import { applyNavMode, isNavWheelActive } from '../../helpers/navModeSetting';
-import { applyFocusUi } from '../../helpers/focusUiSetting';
+import {
+  applyFocusUi,
+  registerFocusUiTypedTrigger,
+} from '../../helpers/focusUiSetting';
 import {
   isWhatsNewDismissed,
   setWhatsNewDismissed,
@@ -283,6 +286,9 @@ export class MainLayout {
 
     // Focus UI gate: `ui--focus` on <html> decides classic vs. v2 shell.
     applyFocusUi();
+    // Secret typed switch (`focusui`) — the user-only path into v2 while
+    // the public UI-settings switch stays hidden (v2 embargo).
+    registerFocusUiTypedTrigger();
 
     // Lazy-load list managers (they pull in heavy deps)
     void this.loadListManagers();

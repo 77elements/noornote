@@ -57,3 +57,36 @@ export function applyFocusUi(): void {
   if (enabled) mountFocusShell();
   else unmountFocusShell();
 }
+
+/**
+ * Secret keyboard switch: typing `focusui` anywhere (outside inputs)
+ * toggles between the classic interface and the Focus Shell — the
+ * user-only path into v2 while the public UI-settings switch stays
+ * hidden. Same rolling-buffer pattern as the i18n preview trigger.
+ * Registered once at boot (MainLayout init).
+ */
+const FOCUS_UI_TRIGGER_WORD = 'focusui';
+
+export function registerFocusUiTypedTrigger(): void {
+  let buffer = '';
+  document.addEventListener('keydown', event => {
+    const target = event.target as HTMLElement | null;
+    if (
+      target &&
+      (target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
+        target.isContentEditable)
+    ) {
+      buffer = ''; // typing in a field must never accumulate the buffer
+      return;
+    }
+    if (event.key.length !== 1) return; // ignore modifiers/Enter/arrows
+    buffer = (buffer + event.key.toLowerCase()).slice(
+      -FOCUS_UI_TRIGGER_WORD.length
+    );
+    if (buffer !== FOCUS_UI_TRIGGER_WORD) return;
+    buffer = '';
+    setFocusUiEnabled(!isFocusUiEnabled());
+  });
+}
