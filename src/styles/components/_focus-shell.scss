@@ -198,6 +198,49 @@ html.ui--focus {
   overflow-wrap: break-word;
 }
 
+// Move handle (drag & drop reorder): sits at ~2 o'clock of the circle,
+// shown on hover in the grid state only. Grabbing it starts a pointer
+// drag — dropping the circle on another SWAPS the two positions
+// (focusStage persists the order per account).
+.focus-object__move {
+  position: absolute;
+  top: 10px;
+  right: 0;
+  display: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 2px solid var(--color-3);
+  border-radius: 50%;
+  background: var(--color-1);
+  color: var(--color-3);
+  cursor: grab;
+  touch-action: none; // the pointer drag must not scroll the page
+  z-index: $z-back-bar;
+
+  .focus-object:not(.focus-object--active):hover & {
+    display: grid;
+  }
+}
+
+// Active drag: the source circle follows the cursor (transform set by
+// focusStage) and must not shadow the drop target in elementFromPoint;
+// the hovered counterpart ring-lights as the drop target.
+.focus-object.is-drag-source {
+  pointer-events: none;
+  z-index: $z-back-bar;
+
+  .focus-object__move {
+    cursor: grabbing;
+  }
+}
+
+.focus-object.is-drop-target {
+  border-color: var(--color-3);
+  outline-color: var(--color-3);
+}
+
 // Object action buttons: a vertical stack of 30px circles on the active
 // object's top-right corner. The first button straddles the corner exactly
 // like the old single close control; further buttons stack downward along

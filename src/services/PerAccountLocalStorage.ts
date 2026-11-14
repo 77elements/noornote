@@ -96,6 +96,11 @@ export const StorageKeys = {
   // Focus Shell. While on, the classic layout modes have no effect.
   // See helpers/focusUiSetting.ts.
   FOCUS_UI: 'noornote_focus_ui_map',
+  // Focus UI (per-account): user-defined order of the FS grid circles —
+  // array of domain ids; unknown ids append in registry order, stale ones
+  // are dropped (focusStage.loadOrder). Set by drag & drop on the circles'
+  // move handles; drop on another circle SWAPS the two positions.
+  FOCUS_UI_ORDER: 'noornote_focus_ui_object_order_map',
   // Global back bar (per-account): true (default) = show the .nn-back-bar Back
   // button above the primary content bottom edge. See helpers/backBarSetting.ts.
   BACK_BAR_ENABLED: 'noornote_back_bar_enabled_map',
