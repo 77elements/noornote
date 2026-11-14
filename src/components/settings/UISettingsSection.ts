@@ -142,7 +142,7 @@ export class UISettingsSection extends SettingsSection {
             <ul class="setting__desc">
               <li><strong>${_('Default')}:</strong> ${_('Views replace the timeline in the main pane, right pane shows System Logger')}</li>
               <li><strong>${_('Right Pane')}:</strong> ${_('Views open as tabs in the right pane, timeline stays visible in main pane')}</li>
-              <li><strong>${_('Wide Mode')}:</strong> ${_('Views replace the timeline, right pane is hidden for maximum content space')}</li>
+              <li><strong>${_('Tablet Mode')}:</strong> ${_('Views replace the timeline, right pane is hidden for maximum content space')}</li>
               <li><strong>${_('Phone')}:</strong> ${_('Single-column layout (390px width) for phone development and testing')}</li>
             </ul>
           </div>
@@ -418,7 +418,7 @@ export class UISettingsSection extends SettingsSection {
           { value: 'default', label: _('Default') },
           { value: 'right-pane', label: _('Right Pane') },
           { value: 'right-pane-rss', label: _('Right Pane (RSS Mode)') },
-          { value: 'wide', label: _('Wide Mode') },
+          { value: 'wide', label: _('Tablet Mode') },
           { value: 'phone', label: _('Phone') },
         ],
         selectedValue: currentMode,
@@ -430,7 +430,7 @@ export class UISettingsSection extends SettingsSection {
             default: _('Default layout mode'),
             'right-pane': _('Right pane mode (views as tabs)'),
             'right-pane-rss': _('Right pane RSS mode (compact timeline)'),
-            wide: _('Wide mode (hide right pane)'),
+            wide: _('Tablet mode (2 columns, centered)'),
             phone: _('Phone layout (390px width)'),
           };
 

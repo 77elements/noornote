@@ -55,6 +55,11 @@ export class SccRecipeFeed {
     void this.loadInitial();
   }
 
+  /** Teardown when the SCC column is unmounted (tablet/phone modes). */
+  public destroy(): void {
+    this.infiniteScroll.destroy();
+  }
+
   private async loadInitial(): Promise<void> {
     const follows = getAllFollowedPubkeys();
     if (follows.length === 0) {
