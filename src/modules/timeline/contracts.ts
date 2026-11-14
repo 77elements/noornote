@@ -13,8 +13,10 @@ export interface TimelineModuleApi {
   loadInitialFeed(request: FeedLoadRequest): Promise<FeedLoadResult>;
   /**
    * Amethyst-mode initial paint: same request, but served from the LOCAL NDK
-   * cache only (no network). Returns null when the cache has nothing usable —
-   * caller then falls back to loadInitialFeed (network).
+   * cache only (no network). Works for TV and PV alike — the network load
+   * (loadInitialFeed / loadProfileDirect) runs afterwards and merges.
+   * Returns null when the cache has nothing usable — caller then falls back
+   * to loadInitialFeed (network).
    */
   loadInitialFeedFromCache(
     request: FeedLoadRequest

@@ -334,22 +334,24 @@ export class FeedOrchestrator extends Orchestrator {
 
   /**
    * Amethyst-mode initial paint: load the feed from the LOCAL NDK cache
-   * (IndexedDB) only — no network, no relay RTT. Used by the TV to render
-   * instantly on open while loadInitialFeed refreshes from the relays in
-   * the background.
+   * (IndexedDB) only — no network, no relay RTT. Used by the TV and the PV
+   * to render instantly on open while the network load (loadInitialFeed —
+   * windowed fetch for TV, gap-free loadProfileDirect for PV) refreshes in
+   * the background and merges into the painted state.
    *
-   * Returns null when the cache yields nothing usable (cold cache, direct
-   * fetch views) so the caller falls back to the classic skeleton-then-fetch
-   * path unchanged. Same filter construction + same processing (mute, reply,
-   * word filters) as the network path.
+   * PV pagination safety: loadMore uses `until = oldest event in state`, so
+   * cache-painted events can only EXTEND the covered range downwards
+   * (overlap → dedupe), never skip one.
+   *
+   * Returns null when the cache yields nothing usable (cold cache) so the
+   * caller falls back to the classic skeleton-then-fetch path unchanged.
+   * Same filter construction + same processing (mute, reply, word filters)
+   * as the network path.
    */
   public async loadInitialFeedFromCache(
     request: FeedLoadRequest
   ): Promise<FeedLoadResult | null> {
     const params = this.resolveFetchParams(request);
-    // Direct-fetch views (ProfileView) deliberately bypass the cache: their
-    // pagination needs gap-free relay results — leave them untouched.
-    if (params.fetchMode !== 'cache-first') return null;
 
     const filters = this.buildInitialFeedFilters(request, params, true);
     const events = await this.transport.fetchFromCache(filters);

@@ -3,10 +3,10 @@
  * from the LOCAL NDK cache (no network) so the timeline paints instantly on
  * open, with the relay fetch refreshing afterwards.
  *
- * Regression guard: cache-first views must get a sorted, page-sized result
- * built through the SAME filter construction and processing as the network
- * path; direct-fetch views (ProfileView pagination) and cold caches must
- * return null so the caller falls back to the network path unchanged.
+ * Regression guard: cache-first AND direct-fetch views (PV) must get a
+ * sorted, page-sized result built through the SAME filter construction and
+ * processing as the network path; cold caches must return null so the
+ * caller falls back to the network path unchanged.
  *
  * Pattern: Object.create instance with heavy deps injected/mocked — private
  * collaborators (processEvents/registerNotes) are replaced on the instance;
@@ -170,15 +170,34 @@ describe('FeedOrchestrator.loadInitialFeedFromCache — Amethyst-mode paint', ()
     expect(result).toBeNull();
   });
 
-  it('leaves direct-fetch views (ProfileView) untouched — returns null', async () => {
+  it('paints direct-fetch views (ProfileView) from cache too — gap-free network path unchanged', async () => {
+    const note = makeEvent('1'.repeat(64), 1_700_000_000);
+    orch.transport.fetchFromCache.mockResolvedValue([note]);
+
     const result = await orch.loadInitialFeedFromCache({
       followingPubkeys: ['a'.repeat(64)],
       includeReplies: false,
       config: PV_CONFIG,
     });
 
-    expect(result).toBeNull();
-    expect(orch.transport.fetchFromCache).not.toHaveBeenCalled();
+    expect(orch.transport.fetchFromCache).toHaveBeenCalledTimes(1);
+    expect(result?.events).toEqual([note]);
+    expect(result?.hasMore).toBe(true);
+    expect(orch.registerNotes).toHaveBeenCalledWith([note]);
+
+    // PV filters: until-pagination branch — authors + kinds + limit, and the
+    // network path (loadProfileDirect) stays gap-free regardless of what the
+    // cache painted (loadMore cursor = oldest state event, overlap → dedupe).
+    const filters = (
+      orch.transport.fetchFromCache.mock.calls[0] as unknown as [
+        Array<Record<string, unknown>>,
+      ]
+    )[0];
+    const main = filters.find(
+      f => f.kinds && (f.kinds as number[]).includes(1)
+    );
+    expect(main?.since).toBeUndefined();
+    expect(main?.until).toBeUndefined();
   });
 
   it('queries the cache WITHOUT a since bound (cache spans all ages)', async () => {
