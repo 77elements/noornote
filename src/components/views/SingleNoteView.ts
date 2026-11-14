@@ -31,7 +31,15 @@ import { encodeNpub } from '../../services/NostrToolsAdapter';
 import { encodeNeventWithHints } from '../../helpers/encodeNeventWithHints';
 import { NostrTransport } from '../../services/transport/NostrTransport';
 import { decodeEventReference } from '../../helpers/nip19';
+import {
+  saveScrollPosition,
+  getScrollPosition,
+  findScrollableAncestor,
+} from '../../helpers/scrollMemory';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+
+/** Debounce for the scroll-position save (ms). */
+const SCROLL_SAVE_DEBOUNCE_MS = 250;
 
 export class SingleNoteView extends View {
   private container: HTMLElement;
@@ -58,6 +66,9 @@ export class SingleNoteView extends View {
   // Managers
   private threadManager?: ThreadManager;
   private liveUpdatesManager?: LiveUpdatesManager;
+
+  // Scroll memory (session map, see helpers/scrollMemory.ts)
+  private scrollSaveTimer: ReturnType<typeof setTimeout> | undefined;
 
   // TypedEventBus subscription IDs
   private muteUpdatedSubscriptionId?: string;
@@ -97,7 +108,52 @@ export class SingleNoteView extends View {
 
     this.reactionsApi?.resetFetchCounter();
     this.setupMuteListener();
+    window.addEventListener('scroll', this.handleScrollCapture, true);
     void this.render();
+  }
+
+  /**
+   * Capture-phase scroll tracking: scroll events don't bubble, so only a
+   * capture-phase window listener sees them — regardless of which layout
+   * ancestor (classic `.primary-content`, v2 focus column, window) is the
+   * actual scroll container. Debounced; the latest offset is in the memory
+   * by the time the user navigates away. Multiple SNV instances (tabs) each
+   * save under their own note id; `isConnected` guards against detached
+   * instances reacting to scrolls of the active one.
+   */
+  private readonly handleScrollCapture = (): void => {
+    if (!this.currentNoteId || !this.container.isConnected) return;
+    if (this.scrollSaveTimer !== undefined) {
+      clearTimeout(this.scrollSaveTimer);
+    }
+    this.scrollSaveTimer = setTimeout(() => {
+      this.scrollSaveTimer = undefined;
+      if (!this.currentNoteId || !this.container.isConnected) return;
+      saveScrollPosition(
+        this.currentNoteId,
+        findScrollableAncestor(this.container).scrollTop
+      );
+    }, SCROLL_SAVE_DEBOUNCE_MS);
+  };
+
+  /**
+   * Restore the user's last scroll offset after the thread has rendered
+   * (double-rAF, same pattern as ScrollPositionManager: one frame for
+   * layout, one for paint). Replies loading images slightly later can shift
+   * content — the restored offset may land a bit off in very long threads;
+   * accepted (same trade-off as the timeline restore).
+   */
+  private restoreScrollPosition(): void {
+    const noteId = this.currentNoteId;
+    if (!noteId) return;
+    const saved = getScrollPosition(noteId);
+    if (saved === undefined || saved <= 0) return;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!this.container.isConnected) return;
+        findScrollableAncestor(this.container).scrollTop = saved;
+      });
+    });
   }
 
   private async render(): Promise<void> {
@@ -355,6 +411,7 @@ export class SingleNoteView extends View {
       await this.threadManager.loadReplies(quotedReposts);
     }
 
+    this.restoreScrollPosition();
     this.liveUpdatesManager?.startLiveUpdates();
   }
 
@@ -471,6 +528,12 @@ export class SingleNoteView extends View {
   }
 
   public destroy(): void {
+    window.removeEventListener('scroll', this.handleScrollCapture, true);
+    if (this.scrollSaveTimer !== undefined) {
+      clearTimeout(this.scrollSaveTimer);
+      this.scrollSaveTimer = undefined;
+    }
+
     this._zapsListController?.destroy();
     this._zapsListController = null;
 
