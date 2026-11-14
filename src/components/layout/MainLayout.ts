@@ -205,19 +205,24 @@ export class MainLayout {
   }
 
   /**
-   * Setup spacebar scrolling for primary content
+   * Setup page scrolling via keyboard for primary content: Space (and
+   * Shift+Space) plus PageDown/PageUp — the native page-scroll keys don't
+   * work reliably because scrolling happens inside an inner container, not
+   * on the document. Global window handler, so it works in every view.
    */
   private setupSpacebarScroll(): void {
     this.spacebarScrollHandler = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && !this.isInputFocused()) {
+      const isPageKey =
+        e.code === 'Space' || e.key === 'PageDown' || e.key === 'PageUp';
+      if (isPageKey && !this.isInputFocused()) {
         e.preventDefault();
         const scrollContainer =
           document.querySelector('.timeline-view__timeline') ||
           document.querySelector('.primary-content');
         if (scrollContainer) {
-          const scrollAmount = e.shiftKey
-            ? -window.innerHeight * 0.9
-            : window.innerHeight * 0.9;
+          const direction =
+            e.key === 'PageUp' || (e.code === 'Space' && e.shiftKey) ? -1 : 1;
+          const scrollAmount = direction * window.innerHeight * 0.9;
           scrollContainer.scrollBy({ top: scrollAmount, behavior: 'smooth' });
         }
       }
