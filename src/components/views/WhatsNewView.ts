@@ -32,7 +32,7 @@ const RELEASE: {
   date: string;
   categories: WhatsNewCategory[];
 } = {
-  version: '1.9.13',
+  version: '1.9.14',
   date: 'November 2026',
   categories: [
     {

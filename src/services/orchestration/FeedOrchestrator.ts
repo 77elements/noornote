@@ -1599,7 +1599,14 @@ export class FeedOrchestrator extends Orchestrator {
 
     this.pollingFollowingPubkeys = followingPubkeys;
     this.pollingSourceKind = sourceKind;
-    this.lastCheckedTimestamp = lastLoadedTimestamp;
+    // Future-skew clamp: a single future-dated event in the feed (broken
+    // client clock, spam) would push the since-anchor past `now`, silently
+    // blinding every poll until real time catches up — background
+    // accumulation dies for hours while the foreground looks fine.
+    this.lastCheckedTimestamp = Math.min(
+      lastLoadedTimestamp,
+      Math.floor(Date.now() / 1000)
+    );
     this.newNotesCallback = callback;
     this.pollingIncludeReplies = includeReplies;
     this.pollingSpecificRelay = specificRelay;
@@ -1683,6 +1690,31 @@ export class FeedOrchestrator extends Orchestrator {
   /**
    * Poll relays for new notes
    */
+  /** Consecutive empty-poll counter — drives the throttled drift diagLog. */
+  private consecutiveEmptyPolls = 0;
+
+  /**
+   * Structured evidence for "new notes stop accumulating" reports: after 3
+   * consecutive empty polls (then every 15th), log the since-anchor vs now.
+   * A positive `anchorAheadBySec` proves a future-dated event poisoned the
+   * anchor; empty relays list proves a config/health problem.
+   */
+  private trackEmptyPoll(relayCount: number): void {
+    this.consecutiveEmptyPolls++;
+    const n = this.consecutiveEmptyPolls;
+    if (n !== 3 && n % 15 !== 0) return;
+    const now = Math.floor(Date.now() / 1000);
+    diagLog('system', 'Poll found no new notes (repeatedly)', {
+      consecutiveEmpty: n,
+      sinceAnchor: this.lastCheckedTimestamp,
+      nowTs: now,
+      anchorAheadBySec: this.lastCheckedTimestamp - now,
+      relayCount,
+      intervalSec: Math.round(this.pollingInterval / 1000),
+      sourceKind: this.pollingSourceKind,
+    });
+  }
+
   private async poll(): Promise<void> {
     if (!this.newNotesCallback || this.pollingFollowingPubkeys.length === 0) {
       return;
@@ -1751,6 +1783,7 @@ export class FeedOrchestrator extends Orchestrator {
       if (filteredEvents.length > 0) {
         // Cache polled events for later retrieval (already sorted by processEvents)
         this.polledEventsCache = filteredEvents;
+        this.consecutiveEmptyPolls = 0;
 
         // Only log when count changes - compact format
         // Only log if currently in Timeline view (not SNV, Profile, etc.)
@@ -1789,6 +1822,7 @@ export class FeedOrchestrator extends Orchestrator {
       } else {
         this.lastFoundCount = 0;
         this.polledEventsCache = [];
+        this.trackEmptyPoll(relays.length);
       }
 
       // Log manual poll result
