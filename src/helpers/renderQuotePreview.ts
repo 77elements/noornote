@@ -63,16 +63,19 @@ async function renderNeventPreview(
   // fallback for notes that live outside that set.
   let event = await NoteService.getInstance().getNote(data.id);
 
-  if (!event && data.relays && data.relays.length > 0) {
-    const transport = NostrTransport.getInstance();
-    const events = await transport.fetch(
-      [...new Set(data.relays)],
-      [{ ids: [data.id], limit: 1 }],
-      5000,
-      false,
-      'renderQuotePreview'
+  // Full-pipeline fallback (stages incl. repost-embed recovery): a deleted
+  // quoted note still renders in the compose preview, exactly like in SNV —
+  // the user must not see "not found" here when the note is recoverable.
+  if (!event) {
+    const { QuoteOrchestrator } = await import(
+      '../services/orchestration/QuoteOrchestrator'
     );
-    event = events[0] ?? null;
+    event = (
+      await QuoteOrchestrator.getInstance().fetchQuotedEventDetailed(
+        data.id,
+        data.author
+      )
+    ).event;
   }
 
   if (!event) {

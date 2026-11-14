@@ -1,13 +1,21 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const { mockFetchProfile, mockFetchMultipleProfiles } = vi.hoisted(() => ({
-  mockFetchProfile: vi.fn(),
+  mockFetchProfile: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
   mockFetchMultipleProfiles: vi.fn(),
 }));
 
 vi.mock('./orchestration/ProfileOrchestrator', () => {
   const instance = {
+    // UserProfileService consumes the *WithMeta shape; route it through the
+    // same mock so existing fetchProfile-based tests keep their semantics.
     fetchProfile: mockFetchProfile,
+    fetchProfileWithMeta: (...args: unknown[]) =>
+      mockFetchProfile(...args).then((profile: unknown) =>
+        profile !== null && typeof profile === 'object' && 'timedOut' in profile
+          ? (profile as { profile: unknown; timedOut: boolean })
+          : { profile, timedOut: false }
+      ),
     fetchMultipleProfiles: mockFetchMultipleProfiles,
   };
   return {
@@ -31,6 +39,28 @@ vi.mock('./AuthService', () => ({
   AuthService: {
     getInstance: () => ({
       getCurrentUser: () => ({ npub: 'npub1test', pubkey: 'pk' }),
+    }),
+  },
+}));
+
+// EventBus pulls in SystemLogger (DOM-dependent) — mock it and capture the
+// 'relay:connected' handler in a plain array (survives vi.clearAllMocks(),
+// which would wipe mock.calls history across describes).
+const { mockEventEmit, relayHandlers } = vi.hoisted(() => ({
+  mockEventEmit: vi.fn(),
+  relayHandlers: [] as Array<(data?: unknown) => void>,
+}));
+
+vi.mock('./EventBus', () => ({
+  EventBus: {
+    getInstance: () => ({
+      on: (event: string, cb: (data?: unknown) => void) => {
+        if (event === 'relay:connected') relayHandlers.push(cb);
+        return 'sub-1';
+      },
+      off: vi.fn(),
+      emit: mockEventEmit,
+      once: vi.fn(() => 'sub-1'),
     }),
   },
 }));
@@ -307,5 +337,109 @@ describe('UserProfileService (render-ready fallbacks)', () => {
     expect(a).toMatch(/^data:image\/svg\+xml/);
     expect(UserProfileService.displayPictureOf(null, PK)).toBe(a); // deterministic
     expect(UserProfileService.displayPictureOf(null, PK2)).not.toBe(a); // per-pubkey
+  });
+});
+
+describe('UserProfileService (self-healing resolve retries)', () => {
+  let service: UserProfileService;
+
+  beforeEach(() => {
+    // targeted resets — vi.clearAllMocks() would also wipe the captured
+    // EventBus 'relay:connected' handler registration from the constructor.
+    orch.fetchProfile.mockReset();
+    orch.fetchMultipleProfiles.mockReset();
+    store.get.mockReset().mockResolvedValue(null);
+    service = UserProfileService.getInstance();
+    service.clearCache();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('a TIMEOUT miss gets a short cooldown, a clean miss the full one', async () => {
+    // timeout miss → 8s window
+    orch.fetchProfile.mockResolvedValueOnce({ profile: null, timedOut: true });
+    await service.getUserProfile(PK);
+    await vi.advanceTimersByTimeAsync(5000);
+    orch.fetchProfile.mockClear();
+    orch.fetchProfile.mockResolvedValueOnce(realProfile(PK, 'late'));
+    await service.getUserProfile(PK); // still inside the 8s window → no fetch
+    expect(orch.fetchProfile).not.toHaveBeenCalled();
+
+    // past the window the fetch runs again
+    await vi.advanceTimersByTimeAsync(4000);
+    const late = await service.getUserProfile(PK);
+    expect(orch.fetchProfile).toHaveBeenCalledTimes(1);
+    expect(late.name).toBe('late');
+
+    // clean miss → 30s window
+    service.clearCache();
+    orch.fetchProfile.mockReset().mockResolvedValueOnce(null);
+    await service.getUserProfile(PK2);
+    orch.fetchProfile.mockClear();
+    await vi.advanceTimersByTimeAsync(9000);
+    await service.getUserProfile(PK2);
+    expect(orch.fetchProfile).not.toHaveBeenCalled(); // still cooling down
+    await vi.advanceTimersByTimeAsync(22000); // 31s total → window over
+    orch.fetchProfile.mockResolvedValueOnce(realProfile(PK2, 'late2'));
+    await service.getUserProfile(PK2);
+    expect(orch.fetchProfile).toHaveBeenCalledTimes(1);
+  });
+
+  it('a subscribed-but-unresolved pubkey retries and patches subscribers', async () => {
+    orch.fetchProfile
+      .mockResolvedValueOnce(null) // initial fetch: miss
+      .mockResolvedValueOnce(null) // retry 1: still miss
+      .mockResolvedValueOnce(realProfile(PK, 'late')); // retry 2: resolves
+
+    const seen: string[] = [];
+    const unsub = service.subscribeToProfile(PK, p => seen.push(p.name ?? '?'));
+
+    // retry fires after the 30s cooldown (+1s safety)
+    await vi.advanceTimersByTimeAsync(31000);
+    await vi.advanceTimersByTimeAsync(31000);
+
+    expect(seen).toContain('late');
+    unsub();
+  });
+
+  it('retry attempts are bounded (no endless relay hammering)', async () => {
+    orch.fetchProfile.mockResolvedValue(null); // always miss
+    const unsub = service.subscribeToProfile(PK, () => {});
+
+    // 1 initial + MAX_RESOLVE_ATTEMPTS retries, then silence
+    for (let i = 0; i < 6; i++) {
+      await vi.advanceTimersByTimeAsync(31000);
+    }
+    expect(orch.fetchProfile).toHaveBeenCalledTimes(4);
+    unsub();
+  });
+
+  it('relay:connected pre-empts the retry timer and re-fetches immediately', async () => {
+    orch.fetchProfile.mockResolvedValueOnce({ profile: null, timedOut: true });
+    const unsub = service.subscribeToProfile(PK, () => {}); // cold-start timeout miss
+
+    // Fire the captured 'relay:connected' handler (EventBus is mocked).
+    expect(relayHandlers.length).toBeGreaterThan(0);
+    relayHandlers[relayHandlers.length - 1]();
+    await vi.advanceTimersByTimeAsync(2000); // sweep debounce
+
+    expect(orch.fetchProfile).toHaveBeenCalledTimes(2); // sweep re-fetched
+    unsub();
+  });
+
+  it('unsubscribing cancels the pending retry', async () => {
+    // dedicated pubkey — PK may carry subscribers leaked from other tests,
+    // and a remaining subscriber legitimately keeps the retry loop alive.
+    const PK3 = 'cc'.repeat(32);
+    orch.fetchProfile.mockResolvedValue(null);
+    const unsub = service.subscribeToProfile(PK3, () => {});
+    await vi.advanceTimersByTimeAsync(100); // let the initial fetch settle
+    unsub();
+
+    await vi.advanceTimersByTimeAsync(60000);
+    expect(orch.fetchProfile).toHaveBeenCalledTimes(1); // no retry after unsub
   });
 });
