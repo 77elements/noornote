@@ -57,13 +57,16 @@ const clamp = (v: number, min: number, max: number): number =>
  */
 class EdgeDrawer {
   private root!: HTMLElement;
+  private panelEl!: HTMLElement;
   private tab!: HTMLButtonElement;
-  private open = false;
+  private isOpen = false;
   private activePointer: number | null = null;
   private startY = 0;
   private hasMoved = false;
   private lastOffset = 0;
   private panelHeight: number;
+  /** Fired on every transition to closed (FocusSettingsDrawer contract). */
+  private onClosedCb: (() => void) | null = null;
 
   constructor(
     private readonly id: EdgeDrawerId,
@@ -102,6 +105,9 @@ class EdgeDrawer {
     this.tab.addEventListener('pointermove', this.onPointerMove);
     this.tab.addEventListener('pointerup', this.onPointerUp);
     this.tab.addEventListener('pointercancel', this.onPointerCancel);
+    this.panelEl = this.root.querySelector(
+      '.focus-drawer__panel'
+    ) as HTMLElement;
     parent.appendChild(this.root);
     // Sync the drag math with the stylesheet (constructor value is only a
     // fallback in case the custom property ever fails to resolve).
@@ -118,7 +124,7 @@ class EdgeDrawer {
     this.activePointer = e.pointerId;
     this.startY = e.clientY;
     this.hasMoved = false;
-    this.lastOffset = this.open ? 0 : this.panelHeight;
+    this.lastOffset = this.isOpen ? 0 : this.panelHeight;
     // Synthetic pointers (tests) have no active pointer id to capture.
     try {
       this.tab.setPointerCapture(e.pointerId);
@@ -136,7 +142,7 @@ class EdgeDrawer {
     // Offset along the close direction: 0 = fully open, height = closed.
     const along = this.edge === 'bottom' ? dy : -dy;
     this.lastOffset = clamp(
-      this.open ? along : this.panelHeight + along,
+      this.isOpen ? along : this.panelHeight + along,
       0,
       this.panelHeight
     );
@@ -150,7 +156,7 @@ class EdgeDrawer {
     this.activePointer = null;
     this.root.classList.remove('is-dragging');
     if (!this.hasMoved) {
-      this.setOpen(!this.open); // plain click toggles
+      this.setOpen(!this.isOpen); // plain click toggles
       return;
     }
     // Drag: snap to the nearer end state.
@@ -167,13 +173,34 @@ class EdgeDrawer {
   /** Clear the inline drag transform and animate back to the stored state. */
   private snapToState(): void {
     this.root.style.transform = '';
-    this.root.classList.toggle('is-open', this.open);
-    this.tab.setAttribute('aria-expanded', String(this.open));
+    this.root.classList.toggle('is-open', this.isOpen);
+    this.tab.setAttribute('aria-expanded', String(this.isOpen));
   }
 
   private setOpen(open: boolean): void {
-    this.open = open;
+    const wasOpen = this.isOpen;
+    this.isOpen = open;
     this.snapToState();
+    if (wasOpen && !open) this.onClosedCb?.();
+  }
+
+  // Public API (FocusSettingsDrawer contract): the stage opens the ED-b
+  // with a per-object settings panel and learns about closes from any
+  // path (tab click, drag snap, programmatic close).
+  get panel(): HTMLElement {
+    return this.panelEl;
+  }
+
+  open(): void {
+    this.setOpen(true);
+  }
+
+  close(): void {
+    this.setOpen(false);
+  }
+
+  setOnClosed(cb: (() => void) | null): void {
+    this.onClosedCb = cb;
   }
 }
 
@@ -271,10 +298,15 @@ export function mountFocusShell(): void {
 
   // Edge drawers ED-b (bottom) and ED-t (top) as overlays — heights live
   // in SCSS (--panel-h) and are read at mount; numbers here are fallbacks.
-  new EdgeDrawer('ed-b', 300).mount(shell);
+  const edB = new EdgeDrawer('ed-b', 300);
+  edB.mount(shell);
   new EdgeDrawer('ed-t', 70).mount(shell, panel => {
     panel.appendChild(tempSwitchWrap);
   });
+
+  // Object settings (gear action): the stage mounts the focused object's
+  // settings panel into the ED-b panel and opens/closes the drawer.
+  stage.bindSettingsDrawer(edB);
 
   document.getElementById('app')?.appendChild(shell);
 

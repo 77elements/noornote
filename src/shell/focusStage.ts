@@ -29,6 +29,8 @@ import {
   FOCUS_DOMAINS,
   type FocusDomainDef,
   type FocusDomainSurface,
+  type FocusSettingsDrawer,
+  type FocusSettingsView,
 } from './focusDomains';
 
 /** URL of the home grid (no domain focused). */
@@ -66,6 +68,11 @@ export class FocusStage {
   >();
   /** Object-level history (def ids; back walks it, close removes). */
   private hist: string[] = [];
+  /** ED-b bottom drawer (object settings), injected by the shell. */
+  private drawer: FocusSettingsDrawer | null = null;
+  private settingsView: FocusSettingsView | null = null;
+  private settingsDef: FocusDomainDef | null = null;
+  private settingsHost: HTMLElement | null = null;
   private lastWidth = window.innerWidth;
   private onResize = (): void => {
     const width = window.innerWidth;
@@ -110,6 +117,9 @@ export class FocusStage {
   /** Full teardown (shell unmount): destroy every cached surface. */
   destroy(): void {
     window.removeEventListener('resize', this.onResize);
+    this.onSettingsClosed();
+    this.drawer?.setOnClosed(null);
+    this.drawer = null;
     for (const surface of this.surfaces.values()) {
       surface.view?.destroy?.();
     }
@@ -126,6 +136,53 @@ export class FocusStage {
    */
   restoreDomain(def: FocusDomainDef): void {
     void this.switchTo(def);
+  }
+
+  /**
+   * Wire the ED-b bottom drawer (the shell owns it; the stage mounts the
+   * per-object settings panel into its panel on the gear action).
+   */
+  bindSettingsDrawer(drawer: FocusSettingsDrawer): void {
+    this.drawer = drawer;
+    // Any close path (tab click, drag snap, programmatic close) tears the
+    // mounted panel down and clears the gear's active state.
+    drawer.setOnClosed(() => this.onSettingsClosed());
+  }
+
+  /**
+   * The gear action: open the ED-b bottom drawer with this object's
+   * settings panel. Toggle — clicking again closes via the drawer.
+   */
+  private toggleSettings(def: FocusDomainDef, btn: HTMLElement): void {
+    if (!def.createSettings || !this.drawer) return;
+    if (this.settingsView) {
+      this.drawer.close();
+      return;
+    }
+    const host = document.createElement('div');
+    host.className = 'focus-settings';
+    this.settingsHost = host;
+    this.settingsDef = def;
+    this.settingsView = def.createSettings();
+    this.drawer.panel.appendChild(host);
+    this.settingsView.mount(host);
+    this.drawer.open();
+    btn.classList.add('is-active');
+  }
+
+  /** Drawer closed (any way): tear the settings panel down. */
+  private onSettingsClosed(): void {
+    if (this.settingsDef) {
+      this.objects
+        .get(this.settingsDef.id)
+        ?.querySelector('.focus-object__settings')
+        ?.classList.remove('is-active');
+    }
+    this.settingsView?.destroy();
+    this.settingsView = null;
+    this.settingsHost?.remove();
+    this.settingsHost = null;
+    this.settingsDef = null;
   }
 
   /**
@@ -172,6 +229,15 @@ export class FocusStage {
           aria-label="${_('Scroll to top')}">
           <svg width="15" height="15" aria-hidden="true" class="focus-object__scroll-top-icon"><use href="#icon-back"/></svg>
         </button>
+        ${
+          def.createSettings
+            ? `
+        <button type="button" class="focus-object__settings"
+          aria-label="${_('Settings')}">
+          <svg width="15" height="15" aria-hidden="true"><use href="#icon-settings"/></svg>
+        </button>`
+            : ''
+        }
       </div>
       <div class="focus-object__surface"></div>
     `;
@@ -278,6 +344,19 @@ export class FocusStage {
       const t = scrollTop.source ?? this.findMainScroller(slot);
       t?.scrollTo({ top: 0, behavior: 'smooth' });
     });
+
+    // Settings action (gear): opens the ED-b bottom drawer with THIS
+    // object's settings panel (def.createSettings decides visibility).
+    if (def.createSettings) {
+      const settingsBtn = el.querySelector(
+        '.focus-object__settings'
+      ) as HTMLElement;
+      settingsBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        if (this.activeId !== def.id || this.morphing) return;
+        this.toggleSettings(def, settingsBtn);
+      });
+    }
     this.objects.set(def.id, el);
     return el;
   }
@@ -348,6 +427,9 @@ export class FocusStage {
     el: HTMLElement,
     nav?: FocusHandoff
   ): Promise<void> {
+    // Column content switches — object settings (ED-b) belong to the old
+    // object and follow it out.
+    if (this.settingsView) this.drawer?.close();
     // Object-to-object switch: capture the old object up front — it is
     // torn down inside the mutation phase below, so one FLIP pass
     // animates the old object back to its circle while the new one
@@ -464,6 +546,8 @@ export class FocusStage {
     const el = def ? this.objects.get(def.id) : undefined;
     if (!def || !el) return;
     const takeOver = window.matchMedia(MORPH_MIN_QUERY).matches;
+    // Object settings (ED-b) die with their object.
+    if (this.settingsView) this.drawer?.close();
 
     // Capture the focused geometry FIRST (content still mounted): in
     // document flow the column height is its content — after the surface

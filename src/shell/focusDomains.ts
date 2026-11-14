@@ -15,6 +15,7 @@
 import { _ } from '../i18n';
 import { articlesSurface } from './focusArticlesSurface';
 import { socialSurface } from './focusSocialSurface';
+import { articlesSettings, socialSettings } from './focusSettings';
 
 /**
  * Structural contract for the view behind a surface. Kept structural on
@@ -67,6 +68,34 @@ export interface FocusDomainSurface {
   view?: FocusDomainSurfaceView;
 }
 
+/**
+ * Per-object settings panel for the ED-b bottom drawer (the gear action
+ * button). Panels compose their OWN small setting list from the SAME
+ * storage helpers the classic settings use — identical storage keys,
+ * identical TypedEventBus events — so both UIs share one state. The v1
+ * sections are monoliths (theme/language/layout mixed with feed toggles)
+ * and are deliberately NOT mounted here: a panel carries only what its
+ * object needs. The classic UI settings dissolve step by step as objects
+ * gain panels.
+ */
+export interface FocusSettingsView {
+  mount(el: HTMLElement): void;
+  destroy(): void;
+}
+
+/**
+ * The ED-b bottom drawer API the stage needs for object settings.
+ * Implemented by the shell's EdgeDrawer via structural typing — the
+ * stage never imports the shell.
+ */
+export interface FocusSettingsDrawer {
+  panel: HTMLElement;
+  open(): void;
+  close(): void;
+  /** Callback fired on every transition to closed (tab, drag, program). */
+  setOnClosed(cb: (() => void) | null): void;
+}
+
 export interface FocusDomainDef {
   /** Stable id, also carried as data-domain-id on the FS object. */
   id: string;
@@ -98,6 +127,13 @@ export interface FocusDomainDef {
    */
   createSurface?: () => Promise<FocusDomainSurface>;
   /**
+   * Per-object settings panel (ED-b bottom drawer, gear action button).
+   * Presence = the object shows the settings action at all. Sync — the
+   * panels are lightweight (Switch/NnDropdown compositions), unlike the
+   * surfaces.
+   */
+  createSettings?: () => FocusSettingsView;
+  /**
    * Addon-backed domain: the object is provided by an AddonLoader addon.
    * Marked now, rendered differently later (docs/todos/v2-focus-ui.md).
    */
@@ -113,6 +149,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     route: '/timeline',
     viewTypes: ['single-note'],
     createSurface: socialSurface,
+    createSettings: socialSettings,
   },
   {
     id: 'articles',
@@ -121,6 +158,7 @@ export const FOCUS_DOMAINS: readonly FocusDomainDef[] = [
     route: '/articles',
     viewTypes: ['article'],
     createSurface: articlesSurface,
+    createSettings: articlesSettings,
   },
   { id: 'videos', label: _('Videos'), icon: 'icon-video' },
   { id: 'recipes', label: _('Recipes'), icon: 'icon-book-open' },
