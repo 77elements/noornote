@@ -12,7 +12,6 @@
   background: $marble-gradient;
   backdrop-filter: blur(10px) saturate(1.2);
   -webkit-backdrop-filter: blur(10px) saturate(1.2);
-  border: 1px solid color-mix(in srgb, var(--color-4) 30%, transparent);
   border-radius: $radius-pill;
   padding: $gap;
   box-shadow: $box-shadow;

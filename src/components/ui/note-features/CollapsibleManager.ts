@@ -82,7 +82,7 @@ export class CollapsibleManager {
         .querySelectorAll<HTMLElement>('.collapsible-wrapper')
         .forEach(wrapper => {
           const btn = wrapper.parentElement?.querySelector<HTMLElement>(
-            ':scope > .btn--show-more'
+            ':scope > .show-more-link'
           );
           if (btn) CollapsibleManager.checkAndCollapse(wrapper, btn);
         });
@@ -125,10 +125,12 @@ export class CollapsibleManager {
       contentRoot.appendChild(wrapper);
     }
 
-    const showMoreBtn = document.createElement('button');
-    showMoreBtn.className = 'btn btn--passive btn--show-more';
+    // Simple text link (not a button): clicking it just toggles the clamp.
+    const showMoreBtn = document.createElement('a');
+    showMoreBtn.className = 'show-more-link';
+    showMoreBtn.setAttribute('href', '#');
     showMoreBtn.setAttribute('data-action', 'show-more');
-    showMoreBtn.textContent = _('Show More');
+    showMoreBtn.textContent = `[${_('Show More')}]`;
     showMoreBtn.style.display = 'none';
 
     if (excludedChild) {
@@ -138,10 +140,13 @@ export class CollapsibleManager {
     }
 
     showMoreBtn.addEventListener('click', e => {
+      e.preventDefault();
       e.stopPropagation();
       const collapsed = wrapper.classList.toggle('is-collapsed');
       wrapper.classList.toggle('is-expanded', !collapsed);
-      showMoreBtn.textContent = collapsed ? _('Show More') : _('Show Less');
+      showMoreBtn.textContent = collapsed
+        ? `[${_('Show More')}]`
+        : `[${_('Show Less')}]`;
     });
 
     pendingMeasurements.set(contentRoot, { wrapper, btn: showMoreBtn });
@@ -186,7 +191,7 @@ export class CollapsibleManager {
     if (overflowing) {
       btnEl.style.display = 'block';
       wrapperEl.classList.add('is-collapsed');
-      btnEl.textContent = _('Show More');
+      btnEl.textContent = `[${_('Show More')}]`;
     } else {
       btnEl.style.display = 'none';
       wrapperEl.classList.remove('is-collapsed');

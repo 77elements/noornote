@@ -330,36 +330,61 @@ export class NoteStructureBuilder {
       islInstance = isl;
     }
 
-    // Add click handler to navigate to Single Note View
-    noteDiv.addEventListener('mousedown', e => {
-      const target = e.target as HTMLElement;
+    // Add click handler to navigate to Single Note View.
+    // Navigation happens on mouseup (click), NOT mousedown: a press-hold-
+    // drag to select text must not open the SNV. Two guards reject
+    // selection gestures — a non-collapsed selection at release, and a
+    // pointer that moved further than a small slop between press and
+    // release. A short click/tap still navigates as before.
+    let downX = 0;
+    let downY = 0;
 
-      // Don't navigate if clicking on interactive elements
-      if (
-        target.tagName === 'A' ||
-        target.tagName === 'BUTTON' ||
-        target.tagName === 'IMG' ||
-        target.tagName === 'VIDEO' ||
-        target.closest('a') ||
-        target.closest('button') ||
-        target.closest('.note-header') ||
-        target.closest('.hashtag') ||
-        target.closest('.quote-box') ||
-        target.closest('.article-preview-card') ||
-        target.closest('.timeline-listing-card') ||
-        target.closest('.reply-indicator') ||
-        target.closest('.thread-context-indicator') ||
-        target.closest('.nn-dropdown')
-      ) {
-        return;
-      }
+    const isInteractiveTarget = (target: HTMLElement): boolean =>
+      target.tagName === 'A' ||
+      target.tagName === 'BUTTON' ||
+      target.tagName === 'IMG' ||
+      target.tagName === 'VIDEO' ||
+      !!target.closest('a') ||
+      !!target.closest('button') ||
+      !!target.closest('.note-header') ||
+      !!target.closest('.hashtag') ||
+      !!target.closest('.quote-box') ||
+      !!target.closest('.article-preview-card') ||
+      !!target.closest('.timeline-listing-card') ||
+      !!target.closest('.reply-indicator') ||
+      !!target.closest('.thread-context-indicator') ||
+      !!target.closest('.nn-dropdown');
 
+    const navigateToSnv = (e: MouseEvent): void => {
       // Navigate to Single Note View. Encode WITH NIP-19 hints (author +
       // seen-on relays) so the resulting URL survives a browser reload even
       // for barely-replicated notes.
       const nevent = encodeNeventWithHints(note.rawEvent);
       const navController = getViewNavigationController();
       navController.openView('single-note', nevent, e);
+    };
+
+    noteDiv.addEventListener('mousedown', e => {
+      downX = e.clientX;
+      downY = e.clientY;
+    });
+
+    noteDiv.addEventListener('click', e => {
+      const target = e.target as HTMLElement;
+
+      // Don't navigate if clicking on interactive elements
+      if (isInteractiveTarget(target)) return;
+
+      // Don't navigate when the release ended a text-selection drag
+      const selection = window.getSelection();
+      if (selection && !selection.isCollapsed) return;
+
+      // Don't navigate when the pointer travelled (drag gesture)
+      const dx = e.clientX - downX;
+      const dy = e.clientY - downY;
+      if (dx * dx + dy * dy > 36) return; // > 6px slop
+
+      navigateToSnv(e);
     });
 
     // Register lifecycle against the DOM node (see instancesByElement above).
