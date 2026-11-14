@@ -17,10 +17,11 @@
  * firehose mode was the root cause of the spam problem and has been removed.
  */
 
-import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { Orchestrator } from './Orchestrator';
 import { SystemLogger } from '../SystemLogger';
 import { LongFormOrchestrator } from './LongFormOrchestrator';
+import { NostrTransport } from '../transport/NostrTransport';
 import { getTag } from '../../helpers/tagUtils';
 import { LRUCache, getCacheSize } from '../../helpers/LRUCache';
 import { getAllFollowedPubkeys } from '../../lists/follows';
@@ -270,6 +271,50 @@ export class ArticleFeedOrchestrator extends Orchestrator {
     const oldestTimestamp = oldest ? (oldest.created_at || until) - 1 : until;
 
     return { articles: page, oldestTimestamp };
+  }
+
+  /**
+   * Instant cache paint for the article feed: read the newest cached
+   * kind:30023 articles for `authors` from the LOCAL NDK cache (IndexedDB)
+   * — no network, no relay RTT. The ArticleTimeline paints this instantly
+   * while fetchFollowingArticles refreshes from the relays in the background.
+   *
+   * Same batching as the network path (huge FOAF author arrays); the cache
+   * query is local so the batches are cheap. Dedup by addressable id (the
+   * cache stores one version per pubkey:d-tag — the newest seen) + sort desc
+   * + page slice, mirroring fetchFollowingArticles' output contract.
+   */
+  public static async fetchArticlesFromCache(
+    authors: string[],
+    limit: number
+  ): Promise<NostrEvent[]> {
+    if (authors.length === 0 || limit <= 0) return [];
+
+    const batches: string[][] = [];
+    for (let i = 0; i < authors.length; i += AUTHOR_FETCH_BATCH) {
+      batches.push(authors.slice(i, i + AUTHOR_FETCH_BATCH));
+    }
+    const filters: NDKFilter[] = batches.map(batch => ({
+      kinds: [30023],
+      authors: batch,
+      limit,
+    }));
+
+    let allEvents: NostrEvent[] = [];
+    try {
+      allEvents = await NostrTransport.getInstance().fetchFromCache(filters);
+    } catch (error) {
+      SystemLogger.getInstance().warn(
+        'ArticleFeedOrchestrator',
+        `Cache query failed: ${String(error)}`
+      );
+      return [];
+    }
+    if (allEvents.length === 0) return [];
+
+    const deduped = ArticleFeedOrchestrator.dedupeByAddressableId(allEvents);
+    deduped.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+    return deduped.slice(0, limit);
   }
 
   // ─────────────────────────────────────────────────────────────────────────

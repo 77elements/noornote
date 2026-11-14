@@ -219,7 +219,7 @@ export class FeedOrchestrator extends Orchestrator {
    * truth shared by the network fetch (loadInitialFeed) and the cache-only
    * paint (loadInitialFeedFromCache), so both query the same content.
    *
-   * cacheMode (Amethyst-mode): the window branch drops the `since` bound.
+   * cacheMode (instant cache paint): the window branch drops the `since`
    * The network path starts at a 1h window and auto-expands up to 48h; the
    * cache has no reason to replicate that dance — it holds whatever was
    * cached before, so the query asks for the newest notes per author at any
@@ -333,7 +333,7 @@ export class FeedOrchestrator extends Orchestrator {
   }
 
   /**
-   * Amethyst-mode initial paint: load the feed from the LOCAL NDK cache
+   * Instant cache paint: load the feed from the LOCAL NDK cache
    * (IndexedDB) only — no network, no relay RTT. Used by the TV and the PV
    * to render instantly on open while the network load (loadInitialFeed —
    * windowed fetch for TV, gap-free loadProfileDirect for PV) refreshes in

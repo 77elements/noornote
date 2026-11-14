@@ -747,7 +747,7 @@ export class Timeline extends View {
       if (this.config.muteExemptPubkey) {
         feedRequest.exemptFromMuteFilter = this.config.muteExemptPubkey; // Don't filter profile user's notes in ProfileView
       }
-      // Amethyst-mode: paint from the LOCAL cache immediately (no network).
+      // Instant cache paint: paint from the LOCAL cache immediately (no
       // The Dexie cache holds notes from previous sessions — rendering them
       // now removes the relay-RTT wait entirely. Cold cache → null → the
       // classic skeleton-until-fetch path below runs unchanged.

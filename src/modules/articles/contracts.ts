@@ -38,6 +38,12 @@ export interface ArticlesModuleApi {
   fetchFollowingArticles(
     opts: ArticleFeedFetchOptions
   ): Promise<ArticleFeedFetchResult>;
+  /** Instant cache paint: newest cached kind:30023 articles for `authors`,
+   *  local NDK cache only (no network). Dedup + sort + slice included. */
+  fetchArticlesFromCache(
+    authors: string[],
+    limit: number
+  ): Promise<NostrEvent[]>;
   /** Stable addressable id (pubkey:d-tag) for an article event. */
   getArticleAddressableId(event: NostrEvent): string;
   /** Alias for extractArticleMetadata — kept for the legacy module-API name. */

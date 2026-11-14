@@ -1,5 +1,5 @@
 /**
- * Amethyst-mode cache paint: loadInitialFeedFromCache serves the initial feed
+ * Instant cache paint: loadInitialFeedFromCache serves the initial feed
  * from the LOCAL NDK cache (no network) so the timeline paints instantly on
  * open, with the relay fetch refreshing afterwards.
  *
@@ -90,7 +90,7 @@ function makeCacheOrchestrator(): InjectableCacheOrchestrator {
   return orch;
 }
 
-describe('FeedOrchestrator.loadInitialFeedFromCache — Amethyst-mode paint', () => {
+describe('FeedOrchestrator.loadInitialFeedFromCache — instant cache paint', () => {
   let orch: InjectableCacheOrchestrator;
 
   beforeEach(() => {

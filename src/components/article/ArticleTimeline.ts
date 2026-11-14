@@ -299,6 +299,14 @@ export class ArticleTimeline {
   private async loadInitial(): Promise<void> {
     this.showLoading();
 
+    // Instant cache paint: paint the cached article list immediately (local
+    // NDK cache, no network), then refresh the newest window from the relays
+    // in the background. Cold cache → the classic loading-then-fetch path.
+    if (await this.paintFromCache()) {
+      void this.refreshFromNetwork();
+      return;
+    }
+
     const result = await this.fetchPage();
     if (result.length === 0) {
       this.showEmpty();
@@ -316,6 +324,131 @@ export class ArticleTimeline {
     // Safety-net scroll listener on the same root (IO alone is unreliable
     // in nested-scroller layouts).
     if (scrollRoot) this.attachScrollRootListener(scrollRoot);
+  }
+
+  /**
+   * Instant cache paint: render the article list from the local NDK cache
+   * (IndexedDB) immediately — no relay RTT. Deliberately does NOT resolve
+   * the FOAF author sample (degree 2/3 builds are slow on first use, which
+   * would reintroduce the wait we're removing): the paint queries the cheap
+   * in-memory author set (direct follows + article-alert subscriptions) —
+   * a correct subset at every FOAF degree. The background refresh
+   * (refreshFromNetwork) resolves the full sampled author set and merges.
+   *
+   * Registers the painted articles in the seen-set and seeds the pagination
+   * cursor at the oldest painted article, so loadMore continues below the
+   * painted content. Returns false when the cache is cold — caller falls
+   * back unchanged.
+   */
+  private async paintFromCache(): Promise<boolean> {
+    try {
+      const api = await ensureModuleApi<ArticlesModuleApi>('articles');
+      if (!api) return false;
+      // Cheap in-memory author set — never the FOAF build (slow first use).
+      const { getAllFollowedPubkeys } = await import('../../lists/follows');
+      const allowed = new Set<string>(getAllFollowedPubkeys());
+      for (const pk of api.getSubscribedArticlePubkeys()) allowed.add(pk);
+      if (allowed.size === 0) return false;
+      const cached = await api.fetchArticlesFromCache(
+        [...allowed],
+        this.pageSize
+      );
+      if (cached.length === 0) return false;
+
+      for (const article of cached) {
+        this.seenIds.add(api.getArticleAddressableId(article));
+        this.articles.push(article);
+      }
+      const oldest = cached[cached.length - 1];
+      this.oldestTimestamp = (oldest?.created_at || 0) - 1;
+
+      this.renderArticles(this.articles);
+      const scrollRoot = this.findScrollRoot();
+      this.infiniteScroll.observe(this.articlesContainer, scrollRoot);
+      if (scrollRoot) this.attachScrollRootListener(scrollRoot);
+      return true;
+    } catch {
+      // Best-effort: any cache failure falls back to the network path.
+      return false;
+    }
+  }
+
+  /**
+   * Background network refresh after a cache paint: walk the NEW-article
+   * region from `now` downwards until it meets the painted content (page
+   * smaller than pageSize or nothing new), merging everything into the
+   * painted list and re-rendering sorted. Addressable-id dedupe keeps the
+   * newest version of each article — so replaceable updates propagate too.
+   *
+   * The loop matters when more than one page of new articles arrived since
+   * the last visit: a single window would leave a permanent gap between the
+   * fetched window's oldest and the painted cursor. Common case (nothing
+   * new) stops after ONE round-trip.
+   *
+   * Blocks loadMore while running (isLoading) so the merge can't race an
+   * append-based pagination into a lost update.
+   */
+  private async refreshFromNetwork(): Promise<void> {
+    this.isLoading = true;
+    try {
+      const follows = await this.resolveAuthors();
+      const api = await ensureModuleApi<ArticlesModuleApi>('articles');
+      if (!api || follows.length === 0) return;
+
+      const byId = new Map<string, NostrEvent>();
+      for (const article of this.articles) {
+        byId.set(api.getArticleAddressableId(article), article);
+      }
+      let merged = false;
+      let until = Math.floor(Date.now() / 1000);
+
+      for (let round = 0; round < 4; round++) {
+        const result = await api.fetchFollowingArticles({
+          authors: follows,
+          until,
+          limit: this.pageSize,
+          excludeIds: new Set<string>(),
+        });
+        if (result.articles.length === 0) break;
+
+        let roundMerged = false;
+        for (const article of result.articles) {
+          const id = api.getArticleAddressableId(article);
+          const existing = byId.get(id);
+          if (!existing) {
+            roundMerged = true;
+            byId.set(id, article);
+            this.seenIds.add(id);
+          } else if ((article.created_at || 0) > (existing.created_at || 0)) {
+            // Updated version of an already-painted article.
+            roundMerged = true;
+            byId.set(id, article);
+          }
+        }
+        merged = merged || roundMerged;
+
+        // Full page → possibly more new articles below this window; walk on.
+        until = result.oldestTimestamp;
+        if (result.articles.length < this.pageSize || !roundMerged) break;
+      }
+      if (!merged) return;
+
+      const sorted = [...byId.values()].sort(
+        (a, b) => (b.created_at || 0) - (a.created_at || 0)
+      );
+      this.articles = sorted;
+      // Keep the deeper cursor: loadMore must continue below everything shown.
+      const mergedCursor = (sorted[sorted.length - 1]?.created_at || 0) - 1;
+      if (mergedCursor < this.oldestTimestamp) {
+        this.oldestTimestamp = mergedCursor;
+      }
+
+      this.renderArticles(this.articles);
+    } catch {
+      // Best-effort — the painted cache stays visible regardless.
+    } finally {
+      this.isLoading = false;
+    }
   }
 
   private async handleLoadMore(): Promise<void> {

@@ -85,6 +85,8 @@ export class ArticlesRuntime implements ModuleRuntime<ArticlesModuleApi> {
       fetchFollowingArticles: opts =>
         FoCls?.fetchFollowingArticles(opts) ??
         Promise.resolve({ articles: [], oldestTimestamp: opts.until }),
+      fetchArticlesFromCache: (authors, limit) =>
+        FoCls?.fetchArticlesFromCache(authors, limit) ?? Promise.resolve([]),
       getArticleAddressableId: event =>
         FoCls?.getAddressableId(event) ?? `${event.pubkey}:`,
       extractArticleFeedMetadata: event =>

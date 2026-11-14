@@ -787,7 +787,7 @@ export class NostrTransport {
   }
 
   /**
-   * Local-only cache query (Amethyst-mode initial paint): reads the NDK Dexie
+   * Local-only cache query (instant cache paint): reads the NDK Dexie
    * cache (IndexedDB) WITHOUT touching the network — no relay RTT, no EOSE
    * wait. This is what lets the timeline paint instantly from previously
    * cached notes while the network fetch runs in the background.
