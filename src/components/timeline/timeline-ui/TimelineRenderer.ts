@@ -2,49 +2,86 @@
  * TimelineRenderer
  * Handles rendering of timeline events (notes/cards)
  *
- * DOM Ceiling: Limits the number of top-level .note-card elements in the DOM.
- * When appending new cards at the bottom, excess cards are removed from the top
- * (with scroll position compensation). Events stay in StateManager for dedup/pagination.
+ * No DOM ceiling: what was loaded stays in the DOM (user decision
+ * 2026-11-14 — ceiling trims removed the newest cards mid-session).
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { diagLog } from '../../../services/DiagnosticLogger';
 import { NoteUI } from '../../ui/NoteUI';
 import { TimelineStateManager } from '../timeline-state/TimelineStateManager';
 import { TimelineUIStateHandler } from './TimelineUIStateHandler';
-import { getCacheSize } from '../../../helpers/LRUCache';
 import {
   getFirstPaintCount,
   getRenderBatchSize,
 } from '../../../helpers/deviceTier';
 
-/** Max top-level .note-card elements in the DOM before trimming */
-const MAX_DOM_CARDS = getCacheSize(150, 100, 60);
-
 export class TimelineRenderer {
   private element: HTMLElement;
   private stateManager: TimelineStateManager;
   private uiStateHandler: TimelineUIStateHandler;
-  /**
-   * ProfileView must always show the COMPLETE author timeline (no matter how the
-   * user enters it, and so a back-from-note lands exactly where they left off).
-   * Trimming the DOM/state would drop the newest cards once the user scrolls
-   * deep, so it is disabled for ProfileView. The main Timeline keeps trimming.
-   */
-  private readonly disableTrim: boolean;
   /** Incremented per renderEvents(); pending progressive batches with an
    *  older token are stale and stop silently. */
   private renderToken = 0;
+  /** Currently scheduled progressive batches (null when none pending).
+   *  appendNewEvents flushes these first — a loadMore append must never
+   *  land ABOVE still-unrendered newer notes (the rootMargin prefetch
+   *  fires loadMore long before the user reaches the load trigger). */
+  private pendingBatches: {
+    events: NostrEvent[];
+    cursor: number;
+    token: number;
+    /** Set by flushProgressiveBatches — already-scheduled steps must die. */
+    cancelled?: boolean;
+  } | null = null;
+  /** DOM-order mirror of top-level card ids (oldest analysis aid): every DOM
+   *  writer keeps this in sync; checkOrderInvariant() compares it against the
+   *  state and logs structured drift evidence for log-export analysis. */
+  private domOrder: Array<{ id: string; ts: number }> = [];
 
   constructor(
     element: HTMLElement,
     stateManager: TimelineStateManager,
-    uiStateHandler: TimelineUIStateHandler,
-    disableTrim: boolean = false
+    uiStateHandler: TimelineUIStateHandler
   ) {
     this.element = element;
     this.stateManager = stateManager;
     this.uiStateHandler = uiStateHandler;
-    this.disableTrim = disableTrim;
+  }
+
+  /**
+   * Compare the DOM-order mirror against the state order and the real DOM
+   * card count; on drift, log structured evidence (top ids + timestamps of
+   * both sides, first mismatch position) for user log exports. Cheap:
+   * prefix comparison + one :scope count query.
+   */
+  private checkOrderInvariant(reason: string): void {
+    const events = this.stateManager.getEvents();
+    let firstMismatch = -1;
+    for (let i = 0; i < this.domOrder.length; i++) {
+      if (events[i]?.id !== this.domOrder[i]!.id) {
+        firstMismatch = i;
+        break;
+      }
+    }
+    const domCount = this.element.querySelectorAll(
+      ':scope > .note-card'
+    ).length;
+    if (firstMismatch === -1 && domCount === this.domOrder.length) return;
+    diagLog('system', 'Timeline order drift detected', {
+      reason,
+      firstMismatch,
+      domCount,
+      mirrorCount: this.domOrder.length,
+      stateCount: events.length,
+      domTop: this.domOrder.slice(0, 10),
+      stateTop: events.slice(0, 10).map(e => ({ id: e.id!, ts: e.created_at })),
+    });
+  }
+
+  /** Rebuild the mirror from a render pass (full DOM replacement). */
+  private resetMirror(ids: Array<{ id: string; ts: number }>): void {
+    this.domOrder = ids;
   }
 
   /**
@@ -82,6 +119,12 @@ export class TimelineRenderer {
       }
       this.element.insertBefore(fragment, loadTrigger);
 
+      // Mirror + invariant: DOM starts as the first batch of `events`.
+      this.resetMirror(
+        events.slice(0, firstBatch).map(e => ({ id: e.id!, ts: e.created_at }))
+      );
+      this.checkOrderInvariant('initial-paint');
+
       // Hide empty state if we have events
       if (events.length > 0) {
         this.uiStateHandler.hideEmptyState();
@@ -107,11 +150,23 @@ export class TimelineRenderer {
   ): void {
     if (startIndex >= events.length) return;
     const token = this.renderToken;
+    const pending: {
+      events: NostrEvent[];
+      cursor: number;
+      token: number;
+      cancelled?: boolean;
+    } = {
+      events,
+      cursor: startIndex,
+      token,
+    };
+    this.pendingBatches = pending;
     let cursor = startIndex;
     const step = (): void => {
-      if (token !== this.renderToken) return; // superseded by a newer render
+      if (token !== this.renderToken || pending.cancelled) return; // superseded or flushed
       const trigger = this.element.querySelector('.timeline-load-trigger');
       if (!trigger) return;
+      const batchStart = cursor;
       const batchEnd = Math.min(cursor + getRenderBatchSize(), events.length);
       const fragment = document.createDocumentFragment();
       for (let i = cursor; i < batchEnd; i++) {
@@ -119,11 +174,51 @@ export class TimelineRenderer {
       }
       cursor = batchEnd;
       this.element.insertBefore(fragment, trigger);
+      for (let i = batchStart; i < batchEnd; i++) {
+        this.domOrder.push({
+          id: events[i]!.id!,
+          ts: events[i]!.created_at,
+        });
+      }
+      this.checkOrderInvariant('progressive-batch');
       if (cursor < events.length) {
+        pending.cursor = cursor;
         window.setTimeout(step, 0);
+      } else {
+        this.pendingBatches = null;
       }
     };
     window.setTimeout(step, 0);
+  }
+
+  /**
+   * Render all still-pending progressive batches SYNCHRONOUSLY. Called by
+   * appendNewEvents (loadMore) so appended older notes can never land above
+   * not-yet-rendered newer ones — the rootMargin prefetch triggers loadMore
+   * long before the user reaches the bottom, so this interleave is common,
+   * not rare. Stale pending batches (superseded render) are dropped.
+   */
+  public flushProgressiveBatches(): void {
+    const pending = this.pendingBatches;
+    this.pendingBatches = null;
+    if (!pending || pending.token !== this.renderToken) return;
+    // Already-scheduled steps keep running off the closure — cancel them
+    // explicitly or they would re-insert the flushed cards (duplicates).
+    pending.cancelled = true;
+    const trigger = this.element.querySelector('.timeline-load-trigger');
+    if (!trigger || pending.cursor >= pending.events.length) return;
+    const fragment = document.createDocumentFragment();
+    for (let i = pending.cursor; i < pending.events.length; i++) {
+      fragment.appendChild(this.createNoteElement(pending.events[i]!, i));
+    }
+    this.element.insertBefore(fragment, trigger);
+    for (let i = pending.cursor; i < pending.events.length; i++) {
+      this.domOrder.push({
+        id: pending.events[i]!.id!,
+        ts: pending.events[i]!.created_at,
+      });
+    }
+    this.checkOrderInvariant('flush-before-append');
   }
 
   /**
@@ -135,6 +230,10 @@ export class TimelineRenderer {
     if (!loadTrigger) return;
 
     try {
+      // A pending progressive batch holds NEWER notes than any loadMore
+      // result — flush it first, or its cards would insert below ours.
+      this.flushProgressiveBatches();
+
       // Render ALL notes SYNCHRONOUSLY (no await, instant!)
       const fragment = document.createDocumentFragment();
 
@@ -145,9 +244,10 @@ export class TimelineRenderer {
 
       // Insert notes before load trigger
       this.element.insertBefore(fragment, loadTrigger);
-
-      // Trim excess cards from the top of the timeline
-      this.trimExcessCards();
+      for (const event of newEvents) {
+        this.domOrder.push({ id: event.id!, ts: event.created_at });
+      }
+      this.checkOrderInvariant('loadmore-append');
     } catch (error) {
       console.error(`❌ APPEND FAILED:`, error);
     }
@@ -172,59 +272,14 @@ export class TimelineRenderer {
 
       // Insert right after timeline-header (at the top of notes)
       this.element.insertBefore(fragment, header.nextSibling);
+      this.domOrder = [
+        ...newEvents.map(e => ({ id: e.id!, ts: e.created_at })),
+        ...this.domOrder,
+      ];
+      this.checkOrderInvariant('prepend');
     } catch (error) {
       console.error(`❌ PREPEND FAILED:`, error);
     }
-  }
-
-  /**
-   * Remove top-level .note-card elements from the top when DOM exceeds MAX_DOM_CARDS.
-   * Compensates scroll position so the user doesn't see a jump.
-   */
-  private trimExcessCards(): void {
-    // ProfileView keeps the full timeline (see disableTrim) — never trim.
-    if (this.disableTrim) return;
-
-    // Get only top-level note-cards (not nested quotes)
-    const topLevelCards = this.getTopLevelCards();
-    const excess = topLevelCards.length - MAX_DOM_CARDS;
-    if (excess <= 0) return;
-
-    // Find the scroll container (.timeline-view__timeline)
-    const scrollContainer = this.element.parentElement;
-    if (!scrollContainer) return;
-
-    // Snapshot scroll BEFORE removing so we can keep the viewport anchored.
-    // The removed cards sit above the viewport, so the content below shifts up by
-    // exactly the amount the container shrinks — shift scrollTop up by the same.
-    const prevScrollTop = scrollContainer.scrollTop;
-    const prevScrollHeight = scrollContainer.scrollHeight;
-
-    for (let i = 0; i < excess; i++) {
-      const card = topLevelCards[i]!;
-      // Cleanup NoteUI internals (ISL, headers, etc.)
-      NoteUI.cleanupElement(card);
-      card.remove();
-    }
-
-    // Reading scrollHeight forces a synchronous reflow, so this delta reflects
-    // the actual removed height (reflow-accurate — unlike summing each card's
-    // getBoundingClientRect, which is wrong while images are still loading).
-    // overflow-anchor:none on the container stops the browser from also adjusting
-    // scrollTop, which would double-correct and yank the viewport to the top.
-    const removedHeight = prevScrollHeight - scrollContainer.scrollHeight;
-    scrollContainer.scrollTop = Math.max(0, prevScrollTop - removedHeight);
-
-    // Trim StateManager events to match DOM ceiling (prevent unbounded growth)
-    this.stateManager.trimEvents(MAX_DOM_CARDS);
-  }
-
-  /**
-   * Get top-level .note-card elements (excludes nested quotes/embeds)
-   */
-  private getTopLevelCards(): HTMLElement[] {
-    const allCards = this.element.querySelectorAll(':scope > .note-card');
-    return Array.from(allCards) as HTMLElement[];
   }
 
   /**

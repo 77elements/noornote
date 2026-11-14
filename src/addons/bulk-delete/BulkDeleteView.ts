@@ -417,7 +417,6 @@ export class BulkDeleteView extends View {
       pagination: 'window',
       pageSize: 50,
       polling: false,
-      trimDom: false,
       marketplaceInjection: false,
       applyWordFilter: false,
       muteExemptPubkey: pubkey,

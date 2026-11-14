@@ -74,21 +74,6 @@ describe('TimelineStateManager', () => {
     expect(sm.getEvents().map(e => e.id)).toEqual(['a', 'b']);
   });
 
-  it('trimEvents removes from the front (newest, matching the DOM trim) and keeps the index in sync', () => {
-    const sm = new TimelineStateManager();
-    sm.setEvents([
-      makeEvent('newest', 300),
-      makeEvent('mid', 200),
-      makeEvent('oldest', 100),
-    ]);
-
-    sm.trimEvents(2);
-
-    expect(sm.getEvents().map(e => e.id)).toEqual(['mid', 'oldest']);
-    // Removed 'newest' can be re-added (index was synced)
-    expect(sm.addEvent(makeEvent('newest', 300))).toBe(true);
-  });
-
   it('clearEvents / clear / reset drop everything and allow re-adding', () => {
     const sm = new TimelineStateManager();
     sm.setEvents([makeEvent('a', 300)]);

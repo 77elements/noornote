@@ -185,13 +185,12 @@ export class Timeline extends View {
     this.islStatsUpdater = new ISLStatsUpdater(this.element);
     this.scrollPositionManager = new ScrollPositionManager(this.element);
 
-    // Initialize renderer. `trimDom: false` (ProfileView) keeps the complete
-    // author timeline — full history + preserved scroll on return.
+    // Initialize renderer. No DOM ceiling — the full timeline stays mounted
+    // (user decision 2026-11-14: loaded notes must never disappear).
     this.renderer = new TimelineRenderer(
       this.element,
       this.stateManager,
-      this.uiStateHandler,
-      !this.config.trimDom
+      this.uiStateHandler
     );
 
     this.setupViewDropdown();

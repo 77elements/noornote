@@ -44,7 +44,6 @@ describe('buildTimelineConfig use-case matrix', () => {
     expect(c.fetchMode).toBe('direct');
     expect(c.pagination).toBe('until');
     expect(c.pageSize).toBe(200);
-    expect(c.trimDom).toBe(false);
     expect(c.polling).toBe(true);
     expect(c.marketplaceInjection).toBe(false);
     expect(c.muteExemptPubkey).toBe(PK);
@@ -66,7 +65,6 @@ describe('buildTimelineConfig use-case matrix', () => {
     expect(c.fetchMode).toBe('cache-first');
     expect(c.pagination).toBe('window');
     expect(c.pageSize).toBe(50);
-    expect(c.trimDom).toBe(true);
     expect(c.applyWordFilter).toBe(true);
     expect(c.muteExemptPubkey).toBeUndefined();
     expect(c.curatedFallbackWhenEmpty).toBeUndefined();
@@ -94,10 +92,8 @@ describe('buildTimelineConfig use-case matrix', () => {
     expect(c.source).toEqual({ kind: 'following' });
     expect(c.marketplaceInjection).toBe(true);
     expect(c.curatedFallbackWhenEmpty).toBe(true);
-    expect(c.trimDom).toBe(true);
     expect(c.pagination).toBe('window');
   });
-
   it('following with no saved mode defaults to latest (replies off)', () => {
     expect(followingTimelineConfig().includeReplies).toBe(false);
   });

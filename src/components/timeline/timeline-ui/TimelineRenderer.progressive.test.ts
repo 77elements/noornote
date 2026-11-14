@@ -67,12 +67,7 @@ function makeRenderer(events: NostrEvent[]): {
     showErrorState: vi.fn(),
   } as unknown as TimelineUIStateHandler;
 
-  const renderer = new TimelineRenderer(
-    element,
-    stateManager,
-    uiStateHandler,
-    true
-  );
+  const renderer = new TimelineRenderer(element, stateManager, uiStateHandler);
   return { renderer, element };
 }
 
@@ -143,5 +138,39 @@ describe('TimelineRenderer.renderEvents — progressive first paint', () => {
     const ids = renderedIds(element);
     expect(ids).toHaveLength(4);
     expect(ids.every(id => fewer.some(e => e.id === id))).toBe(true);
+  });
+
+  it('flushes pending batches before an append — loadMore notes never land above newer ones', () => {
+    // Real-world regression: the rootMargin prefetch fires loadMore while
+    // progressive batches are still pending. Pending batches hold NEWER
+    // notes than the loadMore result — without the flush they inserted
+    // BELOW the appended older notes (visible as a 3-minute-old note
+    // sitting under a 32-minute-old one).
+    const events = Array.from(
+      { length: 7 },
+      (_, i) => makeEvent(`${i + 1}`.padEnd(64, '0')) // ids 1..7, newest first
+    );
+    const { renderer, element } = makeRenderer(events);
+
+    renderer.renderEvents();
+    expect(renderedIds(element)).toHaveLength(3); // ids 1..3
+
+    // loadMore appends OLDER notes while batches for 4..7 are still pending.
+    const older = [
+      makeEvent('8'.padEnd(64, '0')),
+      makeEvent('9'.padEnd(64, '0')),
+    ];
+    renderer.appendNewEvents(older);
+
+    vi.runAllTimers();
+    // 4..7 must render ABOVE 8..9 — i.e. the flush completed the pending
+    // batches before the append, and no stale batch fires afterwards.
+    const ids = renderedIds(element);
+    expect(ids).toHaveLength(9);
+    expect(ids).toEqual([
+      ...events.map(e => e.id),
+      '8'.padEnd(64, '0'),
+      '9'.padEnd(64, '0'),
+    ]);
   });
 });
