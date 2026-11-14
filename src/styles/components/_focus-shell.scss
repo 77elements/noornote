@@ -219,7 +219,10 @@ html.ui--focus {
   touch-action: none; // the pointer drag must not scroll the page
   z-index: $z-back-bar;
 
-  .focus-object:not(.focus-object--active):hover & {
+  // Reordering is a home-grid affordance only — while ANY domain is
+  // focused (grid.is-focused, e.g. /timeline) the handles stay hidden
+  // (the circles live in the side stacks there).
+  .focus-stage__grid:not(.is-focused) .focus-object:not(.focus-object--active):hover & {
     display: grid;
   }
 }
