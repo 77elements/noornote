@@ -67,12 +67,7 @@ function makeRenderer(events: NostrEvent[]): {
     showErrorState: vi.fn(),
   } as unknown as TimelineUIStateHandler;
 
-  const renderer = new TimelineRenderer(
-    element,
-    stateManager,
-    uiStateHandler,
-    true
-  );
+  const renderer = new TimelineRenderer(element, stateManager, uiStateHandler);
   return { renderer, element };
 }
 

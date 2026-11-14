@@ -66,8 +66,6 @@ export interface TimelineConfig {
   pageSize: number;
   /** Poll for new notes (only meaningful for live ranges). */
   polling: boolean;
-  /** Trim the DOM/state at a ceiling (false = keep full history, e.g. ProfileView). */
-  trimDom: boolean;
   /** Inject marketplace listings (main timeline only). */
   marketplaceInjection: boolean;
   /** Pubkey not muted in its own feed (the profile owner). */
@@ -122,7 +120,6 @@ export function buildTimelineConfig(
       pagination: 'until',
       pageSize: isDataSaverEnabled() ? 100 : 200,
       polling: true,
-      trimDom: false,
       marketplaceInjection: false,
       muteExemptPubkey: filterAuthorPubkey,
       applyWordFilter: false,
@@ -143,7 +140,6 @@ export function buildTimelineConfig(
       pagination: 'window',
       pageSize: defaultPageSize,
       polling: true,
-      trimDom: true,
       marketplaceInjection: false,
       applyWordFilter: true,
       loadMoreWindowHours: 720,
@@ -161,7 +157,6 @@ export function buildTimelineConfig(
     pagination: 'window',
     pageSize: defaultPageSize,
     polling: true,
-    trimDom: true,
     marketplaceInjection: true,
     applyWordFilter: true,
     curatedFallbackWhenEmpty: true,

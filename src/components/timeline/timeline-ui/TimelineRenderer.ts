@@ -2,9 +2,8 @@
  * TimelineRenderer
  * Handles rendering of timeline events (notes/cards)
  *
- * DOM Ceiling: Limits the number of top-level .note-card elements in the DOM.
- * When appending new cards at the bottom, excess cards are removed from the top
- * (with scroll position compensation). Events stay in StateManager for dedup/pagination.
+ * No DOM ceiling: what was loaded stays in the DOM (user decision
+ * 2026-11-14 — ceiling trims removed the newest cards mid-session).
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -12,26 +11,15 @@ import { diagLog } from '../../../services/DiagnosticLogger';
 import { NoteUI } from '../../ui/NoteUI';
 import { TimelineStateManager } from '../timeline-state/TimelineStateManager';
 import { TimelineUIStateHandler } from './TimelineUIStateHandler';
-import { getCacheSize } from '../../../helpers/LRUCache';
 import {
   getFirstPaintCount,
   getRenderBatchSize,
 } from '../../../helpers/deviceTier';
 
-/** Max top-level .note-card elements in the DOM before trimming */
-const MAX_DOM_CARDS = getCacheSize(150, 100, 60);
-
 export class TimelineRenderer {
   private element: HTMLElement;
   private stateManager: TimelineStateManager;
   private uiStateHandler: TimelineUIStateHandler;
-  /**
-   * ProfileView must always show the COMPLETE author timeline (no matter how the
-   * user enters it, and so a back-from-note lands exactly where they left off).
-   * Trimming the DOM/state would drop the newest cards once the user scrolls
-   * deep, so it is disabled for ProfileView. The main Timeline keeps trimming.
-   */
-  private readonly disableTrim: boolean;
   /** Incremented per renderEvents(); pending progressive batches with an
    *  older token are stale and stop silently. */
   private renderToken = 0;
@@ -54,13 +42,11 @@ export class TimelineRenderer {
   constructor(
     element: HTMLElement,
     stateManager: TimelineStateManager,
-    uiStateHandler: TimelineUIStateHandler,
-    disableTrim: boolean = false
+    uiStateHandler: TimelineUIStateHandler
   ) {
     this.element = element;
     this.stateManager = stateManager;
     this.uiStateHandler = uiStateHandler;
-    this.disableTrim = disableTrim;
   }
 
   /**
@@ -261,9 +247,6 @@ export class TimelineRenderer {
       for (const event of newEvents) {
         this.domOrder.push({ id: event.id!, ts: event.created_at });
       }
-
-      // Trim excess cards from the top of the timeline
-      this.trimExcessCards();
       this.checkOrderInvariant('loadmore-append');
     } catch (error) {
       console.error(`❌ APPEND FAILED:`, error);
@@ -297,58 +280,6 @@ export class TimelineRenderer {
     } catch (error) {
       console.error(`❌ PREPEND FAILED:`, error);
     }
-  }
-
-  /**
-   * Remove top-level .note-card elements from the top when DOM exceeds MAX_DOM_CARDS.
-   * Compensates scroll position so the user doesn't see a jump.
-   */
-  private trimExcessCards(): void {
-    // ProfileView keeps the full timeline (see disableTrim) — never trim.
-    if (this.disableTrim) return;
-
-    // Get only top-level note-cards (not nested quotes)
-    const topLevelCards = this.getTopLevelCards();
-    const excess = topLevelCards.length - MAX_DOM_CARDS;
-    if (excess <= 0) return;
-
-    // Find the scroll container (.timeline-view__timeline)
-    const scrollContainer = this.element.parentElement;
-    if (!scrollContainer) return;
-
-    // Snapshot scroll BEFORE removing so we can keep the viewport anchored.
-    // The removed cards sit above the viewport, so the content below shifts up by
-    // exactly the amount the container shrinks — shift scrollTop up by the same.
-    const prevScrollTop = scrollContainer.scrollTop;
-    const prevScrollHeight = scrollContainer.scrollHeight;
-
-    for (let i = 0; i < excess; i++) {
-      const card = topLevelCards[i]!;
-      // Cleanup NoteUI internals (ISL, headers, etc.)
-      NoteUI.cleanupElement(card);
-      card.remove();
-    }
-    // Keep the mirror in sync with the removed top cards.
-    this.domOrder.splice(0, excess);
-
-    // Reading scrollHeight forces a synchronous reflow, so this delta reflects
-    // the actual removed height (reflow-accurate — unlike summing each card's
-    // getBoundingClientRect, which is wrong while images are still loading).
-    // overflow-anchor:none on the container stops the browser from also adjusting
-    // scrollTop, which would double-correct and yank the viewport to the top.
-    const removedHeight = prevScrollHeight - scrollContainer.scrollHeight;
-    scrollContainer.scrollTop = Math.max(0, prevScrollTop - removedHeight);
-
-    // Trim StateManager events to match DOM ceiling (prevent unbounded growth)
-    this.stateManager.trimEvents(MAX_DOM_CARDS);
-  }
-
-  /**
-   * Get top-level .note-card elements (excludes nested quotes/embeds)
-   */
-  private getTopLevelCards(): HTMLElement[] {
-    const allCards = this.element.querySelectorAll(':scope > .note-card');
-    return Array.from(allCards) as HTMLElement[];
   }
 
   /**

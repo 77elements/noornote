@@ -72,12 +72,10 @@ export class LastNotesPerFollow extends View {
 
     this.stateManager = new TimelineStateManager();
     this.uiStateHandler = new TimelineUIStateHandler(this.element);
-    // Allow DOM trimming (long ranked list) — same as the main timeline.
     this.renderer = new TimelineRenderer(
       this.element,
       this.stateManager,
-      this.uiStateHandler,
-      false
+      this.uiStateHandler
     );
     this.islStatsUpdater = new ISLStatsUpdater(this.element);
     this.scrollPositionManager = new ScrollPositionManager(this.element);

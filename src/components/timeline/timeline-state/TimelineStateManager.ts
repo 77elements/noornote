@@ -75,20 +75,6 @@ export class TimelineStateManager {
   }
 
   /**
-   * Trim events array to maxSize. Removes from the FRONT of the array —
-   * the newest events — matching the renderer's DOM trim from the top
-   * (viewport stays anchored while scrolled deep into older content).
-   */
-  trimEvents(maxSize: number): void {
-    if (this.events.length > maxSize) {
-      const removed = this.events.splice(0, this.events.length - maxSize);
-      for (const event of removed) {
-        if (event.id) this.eventIds.delete(event.id);
-      }
-    }
-  }
-
-  /**
    * Clear all events
    */
   clearEvents(): void {
