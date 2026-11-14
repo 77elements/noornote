@@ -1,14 +1,19 @@
-# Release Notes 1.9.12 — compact (GitHub Release / Update Modal)
+# Release Notes 1.9.13 — compact (GitHub Release / Update Modal)
 
-## DMs
+## Speed
 
-- **Reply quotes**: replies in a chat show the original message as a quote — tap it to jump straight to that message. Plus a new emoji picker in conversations.
-- Purged spam DMs can no longer come back, and senders you've purged stay hidden.
+- **NoorNote now loads things noticeably faster and goes even easier on your device's memory.** Your timeline, profile pages and articles appear instantly — NoorNote shows what's already on your device first, then quietly refreshes in the background.
 
-## Communities
+## Tablet Mode
 
-- Community profiles shared in notes (kind 32222) now display as a proper community card instead of raw text.
+- "Wide Mode" is now called "Tablet Mode", and on large screens the two columns sit nicely centered.
+
+## Nice touches
+
+- Scroll through feeds with the Page Up / Page Down keys.
+- When you come back to a note you were reading, NoorNote remembers where you had scrolled to.
 
 ## Fixes
 
-- Relay fixes (by Mokhtar, via pull requests — thanks!): idle relays no longer crash, and evicted relays no longer reconnect endlessly (PRs #9 and #10).
+- Quotes of deleted notes still show up when they appear inside a repost.
+- Opening a note link — and reloading it — now reliably lands you on the right note.
