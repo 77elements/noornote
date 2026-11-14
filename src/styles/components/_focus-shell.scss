@@ -316,36 +316,10 @@ html.ui--focus {
 // Focus surface wrapper: hosts a domain's inner view swaps (articles:
 // list ↔ detail) inside the focus column. The classic SCC tab system has
 // no equivalent in the shell — detail views render in the column, the
-// back control returns to the list.
+// object's action-button stack (focusStage) provides the back control.
 .focus-surface {
   position: relative;
   height: 100%;
-}
-
-.focus-surface__back {
-  position: absolute;
-  top: 0;
-  left: $gap;
-  z-index: 10;
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--color-3);
-  cursor: pointer;
-
-  svg {
-    width: 20px;
-    height: 20px;
-    fill: currentColor;
-  }
-
-  &:hover {
-    opacity: 0.8;
-  }
 }
 
 // TEMP: the Focus-UI switch inside ED-t, until settings get their place in

@@ -605,6 +605,10 @@ export class FocusStage {
     const right = document.createElement('div');
     right.className = 'focus-side-stack';
     right.style.gridColumn = '3';
+    // Reading-order distribution: the active circle leaves the sequence
+    // (its slot becomes the content column), the rest alternate starting
+    // with the LEFT stack — social active → Articles left, Videos right,
+    // Recipes left … (1 Content 2 / 3 4 / 5 6 in registry order).
     let next: HTMLElement = left;
     for (const def of FOCUS_DOMAINS) {
       if (def.id === activeId) continue;

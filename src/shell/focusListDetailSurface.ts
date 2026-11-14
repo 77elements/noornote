@@ -67,9 +67,7 @@ export class FocusListDetailSurface implements FocusDomainSurfaceView {
   }
 
   constructor(private readonly config: FocusListDetailSurfaceConfig) {
-    this.frame = createFocusSurfaceFrame(config.className, () =>
-      this.showList()
-    );
+    this.frame = createFocusSurfaceFrame(config.className);
     // List mounts immediately — the surface IS the domain's content.
     this.listPromise = config.createList().then(list => {
       this.list = list;
