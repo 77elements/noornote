@@ -12,6 +12,10 @@ import { NoteUI } from '../../ui/NoteUI';
 import { TimelineStateManager } from '../timeline-state/TimelineStateManager';
 import { TimelineUIStateHandler } from './TimelineUIStateHandler';
 import { getCacheSize } from '../../../helpers/LRUCache';
+import {
+  getFirstPaintCount,
+  getRenderBatchSize,
+} from '../../../helpers/deviceTier';
 
 /** Max top-level .note-card elements in the DOM before trimming */
 const MAX_DOM_CARDS = getCacheSize(150, 100, 60);
@@ -27,6 +31,9 @@ export class TimelineRenderer {
    * deep, so it is disabled for ProfileView. The main Timeline keeps trimming.
    */
   private readonly disableTrim: boolean;
+  /** Incremented per renderEvents(); pending progressive batches with an
+   *  older token are stale and stop silently. */
+  private renderToken = 0;
 
   constructor(
     element: HTMLElement,
@@ -41,8 +48,15 @@ export class TimelineRenderer {
   }
 
   /**
-   * Render all events using NoteUI components (full refresh)
-   * SYNCHRONOUS - instant rendering
+   * Render all events using NoteUI components (full refresh).
+   *
+   * Progressive first paint: only the first batch renders synchronously, the
+   * rest follows in small chunks between frames. On weak phones a 50-card
+   * synchronous burst blocked the main thread for the whole build — the user
+   * stared at the skeleton/blank pane while the page was technically "done
+   * loading". Batching keeps the paint fast and the remaining cards stream
+   * in without blocking input. A monotonically increasing token invalidates
+   * pending batches when a new renderEvents() replaces the DOM.
    */
   public renderEvents(): void {
     const loadTrigger = this.element.querySelector('.timeline-load-trigger');
@@ -54,29 +68,62 @@ export class TimelineRenderer {
       card.remove();
     });
 
+    // Invalidate any progressive batches from a previous render.
+    this.renderToken++;
+
     try {
-      // Render all notes SYNCHRONOUSLY
-      const fragment = document.createDocumentFragment();
       const events = this.stateManager.getEvents();
 
-      events.forEach((event, index) => {
-        const noteElement = this.createNoteElement(event, index);
-        fragment.appendChild(noteElement);
-      });
-
-      // Insert before load trigger
+      // First batch: synchronous, sized for the device tier.
+      const firstBatch = Math.min(events.length, getFirstPaintCount());
+      const fragment = document.createDocumentFragment();
+      for (let i = 0; i < firstBatch; i++) {
+        fragment.appendChild(this.createNoteElement(events[i]!, i));
+      }
       this.element.insertBefore(fragment, loadTrigger);
 
       // Hide empty state if we have events
       if (events.length > 0) {
         this.uiStateHandler.hideEmptyState();
       }
+
+      this.scheduleProgressiveBatches(events, firstBatch);
     } catch (error) {
       console.error('❌ Error rendering notes:', error);
       if (error instanceof Error) console.error('Stack trace:', error.stack);
       // Show error state - no fallback needed, NoteUI is single source of truth
       this.uiStateHandler.showErrorState('Failed to render timeline events');
     }
+  }
+
+  /**
+   * Render the remaining events in small batches between frames. Each batch
+   * re-queries the load trigger (a re-render may have replaced the DOM in
+   * between; the token check makes stale batches no-ops).
+   */
+  private scheduleProgressiveBatches(
+    events: NostrEvent[],
+    startIndex: number
+  ): void {
+    if (startIndex >= events.length) return;
+    const token = this.renderToken;
+    let cursor = startIndex;
+    const step = (): void => {
+      if (token !== this.renderToken) return; // superseded by a newer render
+      const trigger = this.element.querySelector('.timeline-load-trigger');
+      if (!trigger) return;
+      const batchEnd = Math.min(cursor + getRenderBatchSize(), events.length);
+      const fragment = document.createDocumentFragment();
+      for (let i = cursor; i < batchEnd; i++) {
+        fragment.appendChild(this.createNoteElement(events[i]!, i));
+      }
+      cursor = batchEnd;
+      this.element.insertBefore(fragment, trigger);
+      if (cursor < events.length) {
+        window.setTimeout(step, 0);
+      }
+    };
+    window.setTimeout(step, 0);
   }
 
   /**

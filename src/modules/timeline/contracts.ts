@@ -11,6 +11,14 @@ export type NewNotesCallback = (info: NewNotesInfo) => void;
 
 export interface TimelineModuleApi {
   loadInitialFeed(request: FeedLoadRequest): Promise<FeedLoadResult>;
+  /**
+   * Amethyst-mode initial paint: same request, but served from the LOCAL NDK
+   * cache only (no network). Returns null when the cache has nothing usable —
+   * caller then falls back to loadInitialFeed (network).
+   */
+  loadInitialFeedFromCache(
+    request: FeedLoadRequest
+  ): Promise<FeedLoadResult | null>;
   loadMore(
     request: FeedLoadRequest & { until: number }
   ): Promise<FeedLoadResult>;
