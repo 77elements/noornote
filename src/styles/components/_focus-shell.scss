@@ -383,12 +383,6 @@ html.ui--focus {
   border-bottom-color: var(--color-2);
 }
 
-// The sticky timeline header's opaque v1 background would cut a box out of
-// the shell gradient — transparent in the shell.
-.ui--focus .timeline .timeline-header {
-  background: transparent;
-}
-
 // Focus surface wrapper: hosts a domain's inner view swaps (articles:
 // list ↔ detail) inside the focus column. The classic SCC tab system has
 // no equivalent in the shell — detail views render in the column, the
