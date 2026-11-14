@@ -24,7 +24,7 @@ interface WhatsNewCategory {
 /** The big feature of the CURRENT release — promotional tone. */
 // i18n-ok (release marketing text, English only)
 const HIGHLIGHT =
-  'DMs just got better: reply quotes show the original message right in the conversation (tap it to jump there instantly), plus a built-in emoji picker!';
+  'NoorNote now loads things noticeably faster and goes even easier on your device\u2019s memory!';
 
 /** Full release notes of the CURRENT version (replaced on every release). */
 const RELEASE: {
@@ -32,27 +32,34 @@ const RELEASE: {
   date: string;
   categories: WhatsNewCategory[];
 } = {
-  version: '1.9.12',
+  version: '1.9.13',
   date: 'November 2026',
   categories: [
     {
-      title: 'DMs', // i18n-ok: WhatsNewView is English-only by design (like the update modal)
+      title: 'Speed', // i18n-ok: WhatsNewView is English-only by design (like the update modal)
       items: [
-        'Reply quotes: replies in a conversation show the original message as a quote — tap it to jump straight to that message.',
-        'New emoji picker in conversations.',
-        "Purged spam DMs can no longer come back, and senders you've purged stay hidden.",
+        "NoorNote loads noticeably faster: your timeline, profile pages and articles appear instantly — NoorNote shows what's already on your device first, then quietly refreshes in the background.",
+        "Lighter on your device's memory, especially on phones and tablets.",
       ],
     },
     {
-      title: 'Communities', // i18n-ok: WhatsNewView is English-only by design (like the update modal)
+      title: 'Tablet Mode', // i18n-ok: WhatsNewView is English-only by design (like the update modal)
       items: [
-        'Community profiles shared in notes (kind 32222) now display as a proper community card instead of raw text.',
+        '"Wide Mode" is now called "Tablet Mode", and on large screens the two columns sit nicely centered.',
+      ],
+    },
+    {
+      title: 'Nice touches', // i18n-ok: WhatsNewView is English-only by design (like the update modal)
+      items: [
+        'Scroll through feeds with the Page Up / Page Down keys.',
+        'When you come back to a note you were reading, NoorNote remembers where you had scrolled to.',
       ],
     },
     {
       title: 'Fixes', // i18n-ok: WhatsNewView is English-only by design (like the update modal)
       items: [
-        'Relay fixes (by Mokhtar, via pull requests — thanks!): idle relays no longer crash, and evicted relays no longer reconnect endlessly (PRs #9 and #10).',
+        'Quotes of deleted notes still show up when they appear inside a repost.',
+        'Opening a note link — and reloading it — now reliably lands you on the right note.',
       ],
     },
   ],
