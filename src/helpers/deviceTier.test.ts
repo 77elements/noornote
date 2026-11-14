@@ -22,22 +22,18 @@ function setHints(
   memoryGb: number | undefined
 ): void {
   const nav = navigator as NavWithHints;
-  if (cores === undefined) {
-    delete (nav as { hardwareConcurrency?: number }).hardwareConcurrency;
-  } else {
-    Object.defineProperty(nav, 'hardwareConcurrency', {
-      value: cores,
-      configurable: true,
-    });
-  }
-  if (memoryGb === undefined) {
-    delete nav.deviceMemory;
-  } else {
-    Object.defineProperty(nav, 'deviceMemory', {
-      value: memoryGb,
-      configurable: true,
-    });
-  }
+  // NOTE: `delete` cannot remove jsdom's prototype getters (e.g.
+  // hardwareConcurrency reflects the HOST cpu count) — an undefined hint
+  // must be shadowed with an own configurable property instead, otherwise
+  // the "no hints" case silently depends on the machine running the tests.
+  Object.defineProperty(nav, 'hardwareConcurrency', {
+    value: cores,
+    configurable: true,
+  });
+  Object.defineProperty(nav, 'deviceMemory', {
+    value: memoryGb,
+    configurable: true,
+  });
 }
 
 describe('deviceTier', () => {
