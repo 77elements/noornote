@@ -57,23 +57,10 @@ html.content-visibility-auto .note-card {
 .note-card {
   margin: 0;
   padding: $gap;
-  border-bottom: 1px solid var(--color-2);
   border-radius: $radius-xl;
-  transition: background 0.2s ease;
 
   // Smooth scrolling optimizations (containment for better rendering performance)
   contain: layout style;
-
-  &:hover {
-    background: var(--color-2);
-    border-bottom-color: transparent;
-  }
-
-  // Hide the divider directly above a hovered card so the straight line
-  // doesn't ride up against the hovered panel's rounded corner.
-  &:has(+ .note-card:hover) {
-    border-bottom-color: transparent;
-  }
 
   // Reply indicator (shows parent author) - DEPRECATED, use thread-context-indicator
   .reply-indicator {
@@ -330,12 +317,7 @@ html.content-visibility-auto .note-card {
     // provides the 16px frame + divider, so the inner one carries none.
     > .note-card {
       padding: 0;
-      border-bottom: none;
       margin-bottom: 0;
-
-      &:hover {
-        background: transparent; // Hover effect on parent only
-      }
     }
   }
 
@@ -593,7 +575,7 @@ html.content-visibility-auto .note-card {
   }
 
   .isl,
-  .btn--show-more {
+  .show-more-link {
     display: none;
   }
 }

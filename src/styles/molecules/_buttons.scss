@@ -251,12 +251,13 @@
 }
 
 // ========================================
-// Show More/Less Button Modifier
+// Show More/Less Link
 // ========================================
 
-.btn--show-more {
+.show-more-link {
   display: block;
   margin: calc($gap * 0.75) auto;
+  text-align: center;
 }
 
 // ========================================
