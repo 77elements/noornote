@@ -126,10 +126,11 @@ export class TimelineView extends View {
 
     this.userPubkey = currentUser.pubkey;
 
-    // Accessibility: Page heading for screen readers
+    // Page heading — visible, mirrors the article view's title style
+    // (v2 surface chrome; classic v1 shows it above the tab bar too).
     const pageHeading = document.createElement('h1');
-    pageHeading.className = 'visually-hidden';
-    pageHeading.textContent = _('Notes - Timeline');
+    pageHeading.className = 'timeline-view__title';
+    pageHeading.textContent = _('Social Media');
     this.container.appendChild(pageHeading);
 
     // Build tabs: Timeline first, then tribes (async for addon lazy-loading)

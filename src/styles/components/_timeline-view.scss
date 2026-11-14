@@ -5,8 +5,20 @@
 
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 // Child element styles only - container styles in _view-content.scss
+
+// Visible page heading ("Social Media") — mirrors the article view title
+// (v2 surface chrome; classic v1 shows it above the tab bar too).
+.timeline-view__title {
+  @extend %h1;
+
+  font-weight: 600;
+  color: var(--color-5);
+  margin: 0 0 $gap 0;
+}
+
 .timeline-view__header {
   flex-shrink: 0;
   border-bottom: 1px solid var(--color-2);

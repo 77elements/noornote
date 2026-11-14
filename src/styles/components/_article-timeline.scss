@@ -20,11 +20,6 @@
   margin: 0 0 calc($gap / 4) 0;
 }
 
-.article-timeline-view__subtitle {
-  color: var(--color-3);
-  margin: 0;
-}
-
 // Timeline container
 // (empty/error message styling via %feed-state-messages)
 .article-timeline {

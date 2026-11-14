@@ -336,6 +336,9 @@ html.ui--focus {
   justify-self: center;
   align-self: start;
   gap: inherit; // mirror the responsive grid gap
+  // Same top offset as the focused column (clears the ED-t drawer) — the
+  // first side circle aligns with the column's top edge.
+  margin-top: 6rem;
 
   .focus-stage__grid.is-focused & {
     height: 100%;
