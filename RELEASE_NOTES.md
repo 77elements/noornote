@@ -1,19 +1,14 @@
-# Release Notes 1.9.14 — compact (GitHub Release / Update Modal)
+# NoorNote 1.9.15
 
-## Speed
+**Feed engine**
 
-- **NoorNote now loads things noticeably faster and goes even easier on your device's memory.** Your timeline, profile pages and articles appear instantly — NoorNote shows what's already on your device first, then quietly refreshes in the background.
+- Reworked initial feed query shape: cursor-based pagination with oversampled request limits and post-filter page slicing, replacing the previous time-windowed first page.
+- Background feed refresh window extended to 10s for slow relay responses.
 
-## Tablet Mode
+**Pagination reliability**
 
-- "Wide Mode" is now called "Tablet Mode", and on large screens the two columns sit nicely centered.
+- Scroll pagination now re-validates the load trigger after every page, eliminating stalls on pages shorter than the viewport; bounded terminal latch for exhausted cursors.
 
-## Nice touches
+**Interface**
 
-- Scroll through feeds with the Page Up / Page Down keys.
-- When you come back to a note you were reading, NoorNote remembers where you had scrolled to.
-
-## Fixes
-
-- Quotes of deleted notes still show up when they appear inside a repost.
-- Opening a note link — and reloading it — now reliably lands you on the right note.
+- Visual-hidden page headings; inactive tab color aligned to the interactive palette token.
